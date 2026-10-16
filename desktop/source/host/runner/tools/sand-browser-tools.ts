@@ -646,10 +646,112 @@ function validateArguments(
   }
 }
 
+type BrowserToolDependencies<Context> = BrowserDriverDependencies<Context> & {
+  readonly onPossibleNavigation?: (context: Context) => void;
+};
+
+/** One browser action: its arguments checked, Auto-review's preflight, the driver, the navigation hook. */
+async function runBrowserSpec<Context>(
+  driver: SandBrowserDriver<Context>,
+  dependencies: BrowserToolDependencies<Context>,
+  spec: BrowserToolSpec,
+  context: Context,
+  args: Record<string, unknown>,
+  metadata: { readonly toolCallId: string; readonly stateHandler?: unknown; readonly workspacePaths?: readonly string[] },
+): Promise<BrowserDriverOutput> {
+  try {
+    validateArguments(spec.schema ?? {}, args);
+    if (dependencies.autoReview !== undefined) {
+      const exactAction = toBrowserReviewAction(spec.op, args, dependencies.getDefaultViewId());
+      await runSandBrowserAutoReviewPreflight({
+        ctx: context as unknown as OperationContext,
+        resourceAccessor: dependencies.resourceAccessor as ResourceAccessor<RemoteExecManager>,
+        options: {
+          ...dependencies.autoReview,
+          captureReviewState: (stateCtx, stateToolCallId) => captureBrowserReviewState({
+            ctx: stateCtx,
+            resourceAccessor: dependencies.resourceAccessor as ResourceAccessor<RemoteExecManager>,
+            toolCallId: stateToolCallId,
+            resolveDisplayNumber: dependencies.autoReview!.resolveDisplayNumber,
+            ...(spec.op !== "tabs" && exactAction.viewId === undefined ? {} : { viewId: exactAction.viewId }),
+          }),
+        },
+        exactAction,
+        toolCallId: metadata.toolCallId,
+        ...(metadata.stateHandler === undefined ? {} : { stateHandler: metadata.stateHandler }),
+        ...(metadata.workspacePaths === undefined ? {} : { workspacePaths: metadata.workspacePaths }),
+      });
+    }
+    const output = await driver.run(context, {
+      op: spec.op,
+      toolCallId: metadata.toolCallId,
+      args,
+      ...(spec.skipScreenshot === undefined
+        ? {}
+        : { skipScreenshot: spec.skipScreenshot }),
+    });
+    if (spec.canNavigate === true && output.isError !== true) {
+      dependencies.onPossibleNavigation?.(context);
+    }
+    return output;
+  } catch (error) {
+    return {
+      text: error instanceof Error ? error.message : String(error),
+      isError: true,
+    };
+  }
+}
+
+/**
+ * The agent's one browser step of its own (15 October 2026): open a page in
+ * its own Chrome, on its own desktop, in front, and stop. Until then the
+ * agent had no browser tool and started a whole browserUse subagent to open
+ * a page for the person to sign in on: the founder's Apple sign-in ran a
+ * helper with its own model calls, then a second helper to check. Clicking,
+ * typing and reading pages stay with the browserUse subagent; this takes no
+ * screenshot, so nothing piles up in the agent's own conversation.
+ */
+const OPEN_PAGE_SPEC: BrowserToolSpec = {
+  id: "OPEN_PAGE",
+  name: "OpenPage",
+  op: "navigate",
+  description: "Open a web page in your computer's own browser (Chrome on your desktop, the screen the person sees when you hand the computer over) and bring it to the front. It only opens the page: it does not click, type or read it, and returns the page's title and address. Use it when the person has to act on a page themselves (sign in, pass a 2FA step, approve something): open the page with this, then call request_box_help in this same turn. For anything that needs clicking, typing or reading a page, dispatch a browserUse subagent as before.",
+  schema: { required: ["url"], describe: { url: "The full address to open, starting with https:// (or http://)." } },
+  canNavigate: true,
+  skipScreenshot: true,
+};
+
+export function createSandOpenPageTool<Context>(
+  dependencies: BrowserToolDependencies<Context>,
+): BrowserToolDefinition<Context> {
+  const driver = new SandBrowserDriver(dependencies);
+  return {
+    id: OPEN_PAGE_SPEC.id,
+    name: OPEN_PAGE_SPEC.name,
+    description: OPEN_PAGE_SPEC.description,
+    op: OPEN_PAGE_SPEC.op,
+    schema: OPEN_PAGE_SPEC.schema ?? {},
+    canNavigate: true,
+    skipScreenshot: true,
+    async execute(context, args, metadata) {
+      const url = typeof args.url === "string" ? args.url.trim() : "";
+      if (!/^https?:\/\/\S+$/i.test(url)) {
+        return { text: "OpenPage needs one full address starting with https:// (or http://).", isError: true };
+      }
+      const output = await runBrowserSpec(driver, dependencies, OPEN_PAGE_SPEC, context, { url, front: true }, metadata);
+      if (output.isError === true) return output;
+      return {
+        text: `${output.text}\n\nThe page is open in front on your computer. If the person has to act on it, call request_box_help now, in this same turn.`,
+      };
+    },
+    render(output) {
+      return { kind: "text", text: output.text, ...(output.isError === true ? { isError: true } : {}) };
+    },
+  };
+}
+
 export function createSandBrowserTools<Context>(
-  dependencies: BrowserDriverDependencies<Context> & {
-    readonly onPossibleNavigation?: (context: Context) => void;
-  },
+  dependencies: BrowserToolDependencies<Context>,
 ): BrowserToolDefinition<Context>[] {
   const driver = new SandBrowserDriver(dependencies);
   return BROWSER_TOOL_SPECS.map((spec) => ({
@@ -660,49 +762,7 @@ export function createSandBrowserTools<Context>(
     schema: spec.schema ?? {},
     ...(spec.canNavigate === true ? { canNavigate: true } : {}),
     ...(spec.skipScreenshot === true ? { skipScreenshot: true } : {}),
-    async execute(context, args, metadata) {
-      try {
-        validateArguments(spec.schema ?? {}, args);
-        if (dependencies.autoReview !== undefined) {
-          const exactAction = toBrowserReviewAction(spec.op, args, dependencies.getDefaultViewId());
-          await runSandBrowserAutoReviewPreflight({
-            ctx: context as unknown as OperationContext,
-            resourceAccessor: dependencies.resourceAccessor as ResourceAccessor<RemoteExecManager>,
-            options: {
-              ...dependencies.autoReview,
-              captureReviewState: (stateCtx, stateToolCallId) => captureBrowserReviewState({
-                ctx: stateCtx,
-                resourceAccessor: dependencies.resourceAccessor as ResourceAccessor<RemoteExecManager>,
-                toolCallId: stateToolCallId,
-                resolveDisplayNumber: dependencies.autoReview!.resolveDisplayNumber,
-                ...(spec.op !== "tabs" && exactAction.viewId === undefined ? {} : { viewId: exactAction.viewId }),
-              }),
-            },
-            exactAction,
-            toolCallId: metadata.toolCallId,
-            ...(metadata.stateHandler === undefined ? {} : { stateHandler: metadata.stateHandler }),
-            ...(metadata.workspacePaths === undefined ? {} : { workspacePaths: metadata.workspacePaths }),
-          });
-        }
-        const output = await driver.run(context, {
-          op: spec.op,
-          toolCallId: metadata.toolCallId,
-          args,
-          ...(spec.skipScreenshot === undefined
-            ? {}
-            : { skipScreenshot: spec.skipScreenshot }),
-        });
-        if (spec.canNavigate === true && output.isError !== true) {
-          dependencies.onPossibleNavigation?.(context);
-        }
-        return output;
-      } catch (error) {
-        return {
-          text: error instanceof Error ? error.message : String(error),
-          isError: true,
-        };
-      }
-    },
+    execute: (context, args, metadata) => runBrowserSpec(driver, dependencies, spec, context, args, metadata),
     render(output) {
       if (output.imageB64 != null && output.imageB64.length > 0) {
         const key = stashScreenshot(output.imageB64);

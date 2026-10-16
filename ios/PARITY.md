@@ -164,7 +164,7 @@ Every card uses the Messages grey `#e9e9eb` (light), with no border. Buttons use
    - Connecting: `desktopMcp {action:"authenticateServer", args:[serverId, accountKey, "connector_card"]}` returns a URL. The URL opens in the system sign-in sheet. The page comes back to `/app/connected.html`, which calls `completeMcpOAuth {stateId, code}`. The `mcp-auth` event then refreshes the card.
    - A `listener-connect` card ("Connect Slack so this routine can fire.") uses `getListenerConnectUrl {platform}`.
    - The phone shows a static line.
-3. **Flights**: see §1. There is no Book button: booking isn't available.
+3. **Flights**: see §1. Each flight's sheet ends with "Book with Simeon" (13 October 2026, docs/services-agents.md §10a): the traveller form in the chat, then the flight's checkout card.
 4. **Email and Slack drafts** (`email-draft`, `slack-draft`; `view-ClhdNXKM.js`, `view-DyaeCHiE.js`)
    - Email: "New email" with a status pill. From is read-only; To, Subject and Body can be edited. A long body shows "Show more".
    - Send email (enabled only when the addresses are valid) sends `sendDraft {agentId, entryId, draft}`. Discard sends `discardDraft`.
@@ -1024,6 +1024,12 @@ stays the web sign-in. The iPhone's sign-in never goes by the web billing
 page any more (Apple's in-app purchase rule): a person without a plan
 signs in, then sees the app's own plans. Delete Account revokes the Apple
 sign-in at Apple. Not yet run on an iPhone.
+
+## 36. Booking a flight (13 October 2026)
+
+The founder: "we can book thru duffel. all we need is a form. when they enter their info then we take care of checkouts thru link etc." (docs/services-agents.md §10a). The flight's sheet ends with "Book with Simeon" (the blue pill, full width; a spinner while the computer asks the airline for the price again; the computer's own sentence above it when it can't). The traveller form comes into the chat as a card: the airline's round mark at 44, "Travellers" and the route, the date and times, the fare and total, then "Add traveller details" and "Used only for this booking. Simeon keeps it on your computer until the flight is booked." The details are filled in on a sheet in the system's form: the flight at the top, then one section per traveller ("Traveller 1 · Adult"): first name, last name, Title, Gender on ID, Date of birth, Email, Phone with country code, and the passport (number, issuing country, expiry) when the airline needs it or Add passport is pressed; Continue checks each field first and says the first thing to fix in red under its traveller. Once sent, the card says the names with a green check. The flight's checkout card is the checkout card with an aeroplane in the tile, "Flight", "<agent> wants to book a flight with <airline>", the flight in a field-grey block (the airline's mark, the route, the date and times, who flies) in place of the shop's picture, and the flight's own words after Allow: "Approved · paying the airline", "Your bank wants to confirm it's you" with Open the computer, "Booking with the airline…", "Booked · Booking reference RZPNX8 · The airline emails the ticket.", "Not booked" (the reason), or "Not confirmed". The gallery chat shows a form and a booked flight; the demo's Book, Continue and Allow walk the whole path.
+
+Not yet built or run on an iPhone (Linux here: the files parse, the core's tests pass).
 
 ## Suggested order (the founder decides)
 

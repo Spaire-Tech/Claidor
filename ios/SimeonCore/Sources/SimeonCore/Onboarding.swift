@@ -185,7 +185,7 @@ extension AppStore {
     let name = Onboarding.normalizedName(typed)
     guard !name.isEmpty, let backend else { return }
     _ = try? await backend.server("user/name", method: "POST", body: ["name": .string(name)])
-    if let account { self.account = Account(name: name, email: account.email, pictureURL: account.pictureURL) }
+    if let account { self.account = Account(name: name, email: account.email, pictureURL: account.pictureURL, id: account.id) }
   }
 
   /** Whether the person's computer answers now: the first run asks from its start, every 2.5 s until it does (`onboarding-box-probe`), so the hand-off can say "Getting your team ready…". */

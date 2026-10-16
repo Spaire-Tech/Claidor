@@ -37,6 +37,9 @@ final class MacKeychain: TokenVault, @unchecked Sendable {
 @MainActor
 @Observable
 final class MacSession {
+  /** Where the computer answered last time, beside the session in the Keychain (the Electron app's kept address); forgotten with the session. */
+  private static let savedGateway = KeychainSavedGateway(service: "com.simeonlabs.simeon.mac")
+
   enum Phase: Equatable {
     /** Reading the Keychain at launch. */
     case starting
@@ -148,7 +151,8 @@ final class MacSession {
       guard let profile = try? await api.profile(), let self, self.api === api, let account = Account(profile: profile) else { return }
       self.store.account = account
     }
-    let backend = LiveBackend(gateway: Gateway(api: api), api: api)
+    // The computer's address kept from the last launch is used at once while the broker is asked (the Electron app's fast path).
+    let backend = LiveBackend(gateway: Gateway(api: api, saved: Self.savedGateway), api: api)
     // Calls (step 11): none while `SIMEON_VOICE_CALLS` switches them off; a failed call waits on the banner (its 20 s or Close);
     // each step goes to voice-call.log, as the Electron app's.
     if voiceCallsEnabled() {
@@ -201,7 +205,10 @@ final class MacSession {
 
   /** The server ended the sign-in (its refresh was refused): back to the sign-in screen (`SandAuthSignInExpiredError`). */
   private func ended() {
+    // Already signed out (Delete Account, Log Out): a late refusal of an earlier call does not replace what the sign-in screen says.
+    guard api != nil else { return }
     store.detach()
+    Self.savedGateway.write(nil)
     api = nil
     phase = .signedOut(message: "Your Simeon sign-in expired. Sign in again.")
   }
@@ -217,14 +224,17 @@ final class MacSession {
    */
   func deleteAccount() async -> String? {
     guard let api else { return "Sign in to Simeon first." }
+    // When the answer never came but the account went (`SimeonAPI.deleteAccount`), the plan read before says whether Apple bills one.
+    let applePlan = billedByApple
     let appleRunsOn: Bool
     do {
-      appleRunsOn = try await api.deleteAccount()
+      appleRunsOn = try await api.deleteAccount() || applePlan
     } catch {
-      return error.localizedDescription
+      return PlainWords.error(error.localizedDescription, fallback: "Try again in a little while.")
     }
-    store.detach()
     self.api = nil
+    store.detach()
+    Self.savedGateway.write(nil)
     // A plan bought in the iPhone app keeps charging until the person cancels it with Apple.
     phase = .signedOut(message: appleRunsOn ? AccountMenu.deletedApple : AccountMenu.deleted)
     return nil
@@ -233,6 +243,7 @@ final class MacSession {
   /** Log out (the account menu's and Settings' Sign Out, after their question): the pair forgotten, the sign-in screen. */
   func signOut() async {
     store.detach()
+    Self.savedGateway.write(nil)
     await api?.signOut()
     api = nil
     phase = .signedOut(message: nil)

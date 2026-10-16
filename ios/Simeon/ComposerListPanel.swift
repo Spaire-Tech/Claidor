@@ -36,7 +36,7 @@ struct ComposerListPanel: View {
             Button { pick(index) } label: {
               ComposerListRow(item: item, lit: index == highlighted, height: rowHeight)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.tactile)
             .id(index)
             .onHover { inside in if inside && highlighted != index { highlighted = index } }
             .accessibilityAddTraits(index == highlighted ? .isSelected : [])

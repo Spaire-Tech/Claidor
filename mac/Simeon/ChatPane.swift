@@ -563,6 +563,18 @@ private struct TranscriptRow: View {
       CloudAgentCardView(bcId: bcId, look: look)
         .frame(maxWidth: limit(640), alignment: .leading)
         .padding(.top, startsGroup ? 12 : 0)
+    case .purchase(let id, let card):
+      PurchaseCardView(entryId: id, agentId: agentId, card: card, look: look)
+        .frame(maxWidth: limit(420), alignment: .leading)
+        .padding(.top, startsGroup ? 12 : 0)
+    case .products(let id, let card):
+      ProductsCardView(entryId: id, agentId: agentId, card: card, look: look)
+        .frame(maxWidth: limit(420), alignment: .leading)
+        .padding(.top, startsGroup ? 12 : 0)
+    case .flightPassengers(let id, let card):
+      FlightPassengersCardView(entryId: id, agentId: agentId, card: card, look: look)
+        .frame(maxWidth: limit(420), alignment: .leading)
+        .padding(.top, startsGroup ? 12 : 0)
     case .request(_, .computer(let requestId, let instruction, let resolution)):
       ComputerHandoffCard(agentId: agentId, requestId: requestId, instruction: instruction, resolution: resolution, look: look)
         .frame(maxWidth: limit(380), alignment: .leading)

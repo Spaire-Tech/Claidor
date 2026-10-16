@@ -9,7 +9,8 @@ in this order:
 1. The subscription ends now, at Stripe, so nothing is charged after.
 2. The cloud computers go: each container and both of its volumes
    (`/workspace` and the data folder: the agents' chats, memory, files,
-   the apps' credentials the computer held, the browser's sign-ins).
+   the apps' credentials the computer held, the browser's sign-ins), and
+   their backups in the backup bucket (`simeon/sand/box_store.py`).
 3. The apps signed in through our apps provider are disconnected there,
    each voice call's transcript is deleted at the voice provider, and a
    Sign in with Apple is revoked at Apple (Apple asks this of every app
@@ -19,6 +20,10 @@ in this order:
    the computers' rows, and every session, so every device is signed out.
 5. The user is anonymised by the inherited `soft_delete_user` (email,
    picture, name gone; sign-in accounts and push devices deleted).
+
+First the person's computer is held (the lock `EnsureSandBox` takes), so
+the app's reconnect, which follows the container's removal within
+seconds, cannot rebuild it while the delete runs (`_hold_the_computer`).
 
 Steps 1 and 2 must succeed: if Stripe or a computer's server cannot be
 reached, nothing else is done and the app says to try again (both steps
@@ -33,7 +38,9 @@ person; the free month keeps only a hash of the e-mail).
 
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass, field
+from datetime import timedelta
 from typing import Any
 
 import structlog
@@ -49,8 +56,9 @@ from simeon.plans.service import plans as plans_service
 from simeon.plans.stripe_billing import stripe_billing
 from simeon.postgres import AsyncSession, get_db_session
 from simeon.routing import APIRouter
+from simeon.sand import box_store
 from simeon.sand.box_hosts import BoxHostError, find_box_host
-from simeon.sand.box_service import BoxBrokerService
+from simeon.sand.box_service import BoxBrokerService, BoxEnsureInProgress
 from simeon.sand.skill_registry_service import delete_tarball
 from simeon.user.service import user as user_service
 
@@ -76,6 +84,8 @@ class AccountDeletionBlocked(Exception):
 class DeletionReport:
     subscription: str = "none"
     computers: int = 0
+    #: Objects removed from the backup bucket (`box_store.delete_user`).
+    backups_deleted: int = 0
     apps_disconnected: int = 0
     transcripts_deleted: int = 0
     #: A plan Apple bills is still live: the person cancels it with Apple.
@@ -156,6 +166,17 @@ async def _remove_computers(repository: AccountDeletionRepository, user: User) -
     return removed
 
 
+async def _delete_backups(user: User, report: DeletionReport) -> None:
+    """The computers' backups (`box_store.py`): every object under the
+    person's prefix in the backup bucket."""
+    if not box_store.enabled():
+        return
+    try:
+        report.backups_deleted = await asyncio.to_thread(box_store.delete_user, user.id)
+    except Exception as error:
+        report.incomplete.append(f"computer backups ({error})")
+
+
 async def _disconnect_apps(user: User, report: DeletionReport) -> None:
     if not configured():
         return
@@ -220,12 +241,47 @@ async def _revoke_apple(
             report.incomplete.append(f"Sign in with Apple ({error})")
 
 
+#: How long the delete waits for a computer being started to finish
+#: (`EnsureSandBox` holds the same lock while it waits for the box).
+ENSURE_LOCK_WAIT = timedelta(seconds=30)
+ENSURE_LOCK_POLL = 1.0
+
+
+async def _hold_the_computer(session: AsyncSession, user: User) -> None:
+    """Take the person's ensure lock for the rest of the delete (14 October
+    2026). Removing the container drops the app's connection, and the app
+    asks for its computer again within seconds: without the lock that ask
+    rebuilt the container the delete had just removed, held locks on the
+    person's sessions, and stalled the delete past the app's patience, so
+    the app said it failed and the account was deleted anyway. With it, the
+    ask is told the computer is still starting and tries again; by then the
+    sessions are gone and it is signed out."""
+    deadline = utc_now() + ENSURE_LOCK_WAIT
+    while True:
+        try:
+            await BoxBrokerService._take_ensure_lock(session, user.id)
+            return
+        except BoxEnsureInProgress:
+            if utc_now() >= deadline:
+                log.warning(
+                    "desktop.account.delete_blocked",
+                    step="computer_starting",
+                    user_id=str(user.id),
+                )
+                raise AccountDeletionBlocked(
+                    "Your agents' computer is starting."
+                ) from None
+            await asyncio.sleep(ENSURE_LOCK_POLL)
+
+
 async def delete_account(session: AsyncSession, user: User) -> DeletionReport:
     repository = AccountDeletionRepository(session)
     report = DeletionReport()
+    await _hold_the_computer(session, user)
     report.subscription = await _end_subscription(session, user)
     report.apple_subscription = billed_by_apple(await plan_of(session, user.id))
     report.computers = await _remove_computers(repository, user)
+    await _delete_backups(user, report)
     await _disconnect_apps(user, report)
     await _delete_transcripts(repository, user, report)
     await _revoke_apple(repository, user, report)
@@ -245,6 +301,7 @@ async def delete_account(session: AsyncSession, user: User) -> DeletionReport:
         user_id=str(user.id),
         subscription=report.subscription,
         computers=report.computers,
+        backups=report.backups_deleted,
         apps=report.apps_disconnected,
         transcripts=report.transcripts_deleted,
         rows=report.rows,

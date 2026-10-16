@@ -345,7 +345,7 @@ public enum ComposerLists {
     actions.append(Action(id: "info:settings", label: "Chat Settings", keywords: ["details", "notifications"], detail: "Current chat"))
     actions.append(Action(id: "settings:general", label: "Settings: General", keywords: ["account", "model", "notifications", "preferences", "appearance", "theme", "mode", "security", "yubikey", "webauthn"], detail: "Settings"))
     if showsUsage { actions.append(Action(id: "settings:usage", label: "Settings: Usage & Billing", keywords: ["usage", "billing", "spend", "limit", "on-demand", "plan", "quota"], detail: "Settings")) }
-    actions.append(Action(id: "overlay:plugins", label: "Plugins", keywords: ["plugins", "marketplace", "tools", "skills", "mcp", "connectors", "customize"]))
+    actions.append(Action(id: "overlay:plugins", label: "Connectors", keywords: ["plugins", "marketplace", "tools", "skills", "mcp", "connectors", "customize"]))
     actions.append(Action(id: "theme:system", label: "Theme: System", keywords: ["appearance", "os", "auto", "follow"], detail: "Settings · Appearance"))
     actions.append(Action(id: "theme:light", label: "Theme: Light", keywords: ["appearance", "day", "bright"], detail: "Settings · Appearance"))
     actions.append(Action(id: "theme:dark", label: "Theme: Dark", keywords: ["appearance", "night", "mode"], detail: "Settings · Appearance"))

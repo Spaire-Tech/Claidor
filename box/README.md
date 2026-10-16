@@ -22,6 +22,7 @@ what runs inside, and the small contract the host relies on.
 | `ensure-machine-id`, `link-chrome-session` | `bin/` | One machine id that survives a new container on the same volume; a fork window's Chrome sharing the primary profile's sign-ins. |
 | `deps/` | `box/deps/` | `package.json` and its lock: the add-ons the host loads (`tree-sitter`, `tree-sitter-bash`, `web-tree-sitter`), versions as in `desktop/package.json`. |
 | `test/smoke.sh` | `box/test/` | Runs the whole box on a Linux machine without Docker and checks the contract (40 checks). |
+| `test/screen-latency.py` | `box/test/` | Times a change on the screen to the VNC viewer's update, for x11vnc and picom flags given (15 October 2026: why `simeon-desktop` lets both use X DAMAGE). |
 
 The host bundle is not in the image. The server (`BoxSpec`,
 `server/simeon/sand/box_hosts.py`) and the Mac (`local-docker-host-connector.ts`)

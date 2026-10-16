@@ -55,19 +55,29 @@ final class MacConnector {
     Task { await ask.go() }
   }
 
-  /** A chat card's Add (`connectApp`): the consent, then the app's sign-in in the window, closed once the app is connected. */
+  /**
+   * A chat card's Connect (`Connecting`; Add until 13 October 2026): the
+   * consent, then the app added and its sign-in opened in the window in one
+   * go, closed once the app is connected. A sign-in the person cancels takes
+   * the app it added back out, the card's spinner held until that is done.
+   */
   func connect(_ name: String, store: AppStore) {
     ask(name, store: store) { [weak self] in
       guard let self, self.connecting == nil else { return }
       // The card's spinner while the page is asked for.
       self.connecting = name
-      guard let url = await store.connectApp(named: name) else {
+      guard let start = await store.beginConnect(named: name) else {
         self.connecting = nil
         return
       }
-      await self.signIn(url, name: name, store: store) {
+      let end = await self.signIn(start.url, name: name, store: store) {
         await store.loadApps()
         return store.isConnected(name)
+      }
+      if Connecting.undoes(end, start: start) {
+        self.connecting = name
+        await store.undoConnect(start, name: name)
+        if self.connecting == name { self.connecting = nil }
       }
     }
   }
@@ -78,9 +88,14 @@ final class MacConnector {
    * sign-in takes the first one's place. A vendor that only sends sign-ins
    * back to `localhost:8787` (Canva, Square, Vercel, Dropbox) lands on this
    * Mac's own loopback while the sheet is open (`LoopbackSignIn`); with the
-   * Electron app open and listening there, it says so instead.
+   * Electron app open and listening there, it says so instead. How it ended
+   * (`SignInEnd`): a Connect takes back the app it added only when the person
+   * cancelled.
    */
-  func signIn(_ url: URL, name: String, store: AppStore?, done: @escaping @MainActor () async -> Bool) async {
+  @discardableResult
+  func signIn(_ url: URL, name: String, store: AppStore?, done: @escaping @MainActor () async -> Bool) async -> SignInEnd {
+    // The sign-in's last page sends the person back to this app (the browser's too, when the sheet won't open).
+    let url = Connecting.returning(url, to: SimeonConfig.macURLScheme)
     session?.cancel()
     // The replaced sign-in's listener lets go of the address now, not when its wait next wakes.
     catcher?.stop()
@@ -99,9 +114,9 @@ final class MacConnector {
     if let store, let signInState = LoopbackSignIn.state(returningHere: url) {
       guard let listening = await LoopbackCatcher.start(state: signInState, finish: "\(SimeonConfig.macURLScheme)://connected") else {
         store.problem = LoopbackSignIn.busyMessage(name)
-        return
+        return .cancelled
       }
-      guard current == token else { listening.stop(); return }
+      guard current == token else { listening.stop(); return .replaced }
       catcher = listening
       Task { @MainActor in
         if let answer = await listening.answer() {
@@ -110,10 +125,22 @@ final class MacConnector {
         }
       }
     }
+    // A sign-in that returns through Simeon Labs' server comes back to this
+    // app, which finishes it on its own computer: never the web page, which
+    // used whichever account the browser held (`AppReturnSignIn`).
+    if let store, let returning = AppReturnSignIn.state(returningViaServer: url) {
+      await store.sendSignInBack(state: returning, scheme: SimeonConfig.macURLScheme)
+      guard current == token else { return .replaced }
+    }
     let state = SignInSheetState()
-    // Closed on the vendor's confirm page: look a little longer. Cancelled: two looks, then the buttons are free again.
-    let session = ASWebAuthenticationSession(url: url, callback: .customScheme(SimeonConfig.macURLScheme)) { _, error in
-      state.close(confirmed: (error as? ASWebAuthenticationSessionError)?.code != .canceledLogin)
+    // Closed on the vendor's confirm page, or back on our address: look a little longer. Cancelled, or back saying it didn't work: two looks, then the buttons are free again.
+    let session = ASWebAuthenticationSession(url: url, callback: .customScheme(SimeonConfig.macURLScheme)) { callback, error in
+      if let answer = AppReturnSignIn.answer(callback) {
+        if let store { Task { @MainActor in await store.finishLoopbackSignIn(answer, name: name) } }
+        state.close(confirmed: answer.error == nil)
+        return
+      }
+      state.close(confirmed: (error as? ASWebAuthenticationSessionError)?.code != .canceledLogin && !Connecting.failed(callback))
     }
     session.presentationContextProvider = presenter
     // The person's own browser sign-ins (Google's, Apple's) are kept and used.
@@ -121,25 +148,80 @@ final class MacConnector {
     self.session = session
     guard session.start() else {
       NSWorkspace.shared.open(url)
-      // A loopback sign-in in the browser still comes back to this Mac: keep listening while it is done.
-      guard catcher != nil else { return }
+      // In the browser, it may finish there: never taken back. A loopback sign-in still comes back to this Mac: keep listening while it is done.
+      guard catcher != nil else { return .unconfirmed }
       for _ in 0..<150 {
         try? await Task.sleep(nanoseconds: 2_000_000_000)
-        guard current == token else { return }
-        if await done() { return }
+        guard current == token else { return .replaced }
+        if await done() { return .connected }
       }
-      return
+      return .unconfirmed
     }
     for _ in 0..<150 {
       try? await Task.sleep(nanoseconds: 2_000_000_000)
-      guard current == token else { return }
+      guard current == token else { return .replaced }
       if await done() {
         session.cancel()
-        return
+        return .connected
       }
-      if !state.keepGoing() { return }
+      if !state.keepGoing() { return state.ending }
     }
     session.cancel()
+    return .unconfirmed
+  }
+}
+
+/**
+ * Stripe's own page for a plan bought on the web (14 October 2026, the
+ * founder: Update card "takes me to the sign in page of simeon. not good"),
+ * the iPhone's `BillingPage`: asked for with the app's sign-in
+ * (`AppStore.billingPortal`) and shown in Apple's sign-in sheet on the
+ * window, not the web's billing page. The page ends on the app's own link
+ * (`/desktop/billing/back`), which closes the sheet; after a failed payment
+ * the plan is then charged on the card just saved, and the plan and the
+ * access read again, so Send comes back. The browser when the sheet can't
+ * open (the plan is read again when the window comes forward).
+ */
+@MainActor
+final class MacBillingPage {
+  static let shared = MacBillingPage()
+  private var session: ASWebAuthenticationSession?
+  private let presenter = MacSignInPresenter()
+
+  /** Opens the page; nil when it opened, else why not. */
+  func open(flow: String?, tier: String?, store: AppStore) async -> String? {
+    guard session == nil else { return nil }
+    let paymentFailed = store.usage.summary?.paymentFailed == true
+    let answer = await store.billingPortal(flow: flow, tier: tier, back: SimeonConfig.macURLScheme)
+    guard let url = answer.url else { return answer.message ?? "Couldn’t open billing. Try again." }
+    let finished = await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
+      let once = BillingSheetEnd(continuation)
+      let sheet = ASWebAuthenticationSession(url: url, callback: .customScheme(SimeonConfig.macURLScheme)) { callback, _ in
+        once.end(callback != nil)
+      }
+      sheet.presentationContextProvider = presenter
+      sheet.prefersEphemeralWebBrowserSession = false
+      session = sheet
+      if !sheet.start() {
+        NSWorkspace.shared.open(url)
+        once.end(false)
+      }
+    }
+    session = nil
+    await store.settleAfterCardPage(paymentFailed: paymentFailed && finished)
+    return nil
+  }
+}
+
+/** The billing sheet's end, said once: whether it came back on the app's link. */
+private final class BillingSheetEnd: @unchecked Sendable {
+  private let lock = NSLock()
+  private var continuation: CheckedContinuation<Bool, Never>?
+
+  init(_ continuation: CheckedContinuation<Bool, Never>) { self.continuation = continuation }
+
+  func end(_ finished: Bool) {
+    lock.withLock { () -> CheckedContinuation<Bool, Never>? in defer { continuation = nil }; return continuation }?.resume(returning: finished)
   }
 }
 
@@ -157,12 +239,19 @@ final class SignInSheetState: @unchecked Sendable {
   private let lock = NSLock()
   private var open = true
   private var pollsLeft = 0
+  private var confirmed = false
 
   func close(confirmed: Bool) {
     lock.withLock {
       open = false
       pollsLeft = confirmed ? 10 : 2
+      self.confirmed = confirmed
     }
+  }
+
+  /** How a sheet that closed before the app was connected ended: the person's Cancel, or closed on the vendor's page (it may still finish). */
+  var ending: SignInEnd {
+    lock.withLock { confirmed ? SignInEnd.unconfirmed : SignInEnd.cancelled }
   }
 
   func keepGoing() -> Bool {
@@ -201,24 +290,27 @@ struct ConnectConsentLayer: View {
 }
 
 /**
- * The iPhone's consent (`ConnectConsentSheet`) on the Mac: the app's logo
- * (56) and name (20, semibold), what it does; three points with their
- * symbols in the window's blue (what the agents reach in it, that the person
- * stays in charge, that agents can get things wrong); a hairline; the small
- * print (who handles the sign-in, where the information goes, the app's own
- * terms, and for some apps one more thing). Connect in Apple's prominent
- * glass, in the blue, and Cancel under it. 440 wide, 22 round, scrolling
- * when the window is short. Return connects, Escape cancels.
+ * The consent on the Mac, as Muse's (the founder, 13 October 2026: "its
+ * wider than ours. ours is too thin, therefore we need to scroll down to
+ * see all"): 600 wide, so it all shows at once; × at the top left; the
+ * app's logo (64) and name (22, semibold), what it does; three points with
+ * their symbols in the window's blue (what the agents reach in it, that the
+ * person stays in charge, that agents can get things wrong); a hairline; the
+ * small print (who handles the sign-in, where the information goes, the
+ * app's own terms, and for some apps one more thing); Connect across the
+ * foot in Apple's prominent glass, in the blue. It scrolls only in a window
+ * too short for it. Return connects; Escape, × or a click beside it cancels.
  */
 private struct ConnectConsentDialog: View {
   let consent: ConnectConsent
   let look: Look
   let connect: () -> Void
   let cancel: () -> Void
+  @State private var hoveringClose = false
 
   var body: some View {
-    let shape = RoundedRectangle(cornerRadius: 22, style: .continuous)
-    // As tall as it needs; when the window is too short for it, the words scroll over the buttons.
+    let shape = RoundedRectangle(cornerRadius: 24, style: .continuous)
+    // As tall as it needs; only a window too short for it scrolls the words over the button.
     ViewThatFits(in: .vertical) {
       VStack(spacing: 0) {
         content
@@ -229,13 +321,13 @@ private struct ConnectConsentDialog: View {
         buttons
       }
     }
-    .frame(width: 440)
+    .frame(width: 600)
+    .overlay(alignment: .topLeading) { close }
     .background(look.elevated, in: shape)
     .clipShape(shape)
     .overlay(shape.strokeBorder(look.ink.opacity(0.1), lineWidth: 1))
     .shadow(color: .black.opacity(look.dark ? 0.5 : 0.22), radius: 30, x: 0, y: 12)
-    .frame(maxHeight: 640)
-    .padding(.vertical, 40)
+    .padding(.vertical, 32)
     .background(ViewerKeys(aboveLocks: true) { event in
       let mods = event.modifierFlags.intersection([.command, .shift, .option, .control])
       guard mods.isEmpty else { return false }
@@ -253,16 +345,32 @@ private struct ConnectConsentDialog: View {
     .accessibilityAddTraits(.isModal)
   }
 
+  /** × (28, round), at the top left as Muse's; darker on the grey under the pointer. */
+  private var close: some View {
+    Button(action: cancel) {
+      Image(systemName: "xmark")
+        .font(.system(size: 12, weight: .semibold))
+        .foregroundStyle(hoveringClose ? look.ink : look.inkSecondary)
+        .frame(width: 28, height: 28)
+        .background(Circle().fill(look.ink.opacity(hoveringClose ? 0.1 : 0.06)))
+        .contentShape(Circle())
+    }
+    .buttonStyle(.hand)
+    .onHover { hoveringClose = $0 }
+    .padding(16)
+    .accessibilityLabel("Cancel")
+  }
+
   private var content: some View {
     VStack(spacing: 0) {
-      AppLogoTile(name: consent.title, look: look, side: 56)
+      AppLogoTile(name: consent.title, look: look, side: 64)
         .shadow(color: .black.opacity(0.12), radius: 6, y: 2)
-        .padding(.top, 28)
+        .padding(.top, 36)
         .accessibilityHidden(true)
       Text(consent.title)
-        .font(.system(size: 20, weight: .semibold))
+        .font(.system(size: 22, weight: .semibold))
         .foregroundStyle(look.ink)
-        .padding(.top, 14)
+        .padding(.top, 16)
         .accessibilityAddTraits(.isHeader)
       if !consent.summary.isEmpty {
         Text(consent.summary)
@@ -271,15 +379,15 @@ private struct ConnectConsentDialog: View {
           .multilineTextAlignment(.center)
           .fixedSize(horizontal: false, vertical: true)
           .padding(.top, 6)
-          .padding(.horizontal, 32)
+          .padding(.horizontal, 64)
       }
       VStack(alignment: .leading, spacing: 18) {
         ForEach(Array(consent.points.enumerated()), id: \.offset) { _, point in
-          HStack(alignment: .top, spacing: 14) {
+          HStack(alignment: .top, spacing: 16) {
             Image(systemName: point.symbol)
-              .font(.system(size: 18, weight: .regular))
+              .font(.system(size: 19, weight: .regular))
               .foregroundStyle(look.yours)
-              .frame(width: 26)
+              .frame(width: 28)
               .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 3) {
               Text(point.title)
@@ -295,13 +403,14 @@ private struct ConnectConsentDialog: View {
         }
       }
       .frame(maxWidth: .infinity, alignment: .leading)
-      .padding(.horizontal, 28)
-      .padding(.top, 24)
+      .padding(.horizontal, 48)
+      .padding(.top, 26)
       Rectangle()
         .fill(look.ink.opacity(0.1))
         .frame(height: 0.5)
+        .padding(.horizontal, 48)
         .padding(.top, 22)
-      VStack(alignment: .leading, spacing: 10) {
+      VStack(alignment: .leading, spacing: 8) {
         ForEach(consent.smallPrint + (consent.note.map { [$0] } ?? []), id: \.self) { line in
           Text(line)
             .font(.system(size: 12))
@@ -310,36 +419,26 @@ private struct ConnectConsentDialog: View {
         }
       }
       .frame(maxWidth: .infinity, alignment: .leading)
-      .padding(.horizontal, 28)
-      .padding(.vertical, 16)
+      .padding(.horizontal, 48)
+      .padding(.top, 14)
+      .padding(.bottom, 8)
     }
   }
 
   private var buttons: some View {
-    VStack(spacing: 2) {
-      Button(action: connect) {
-        Text("Connect")
-          .font(.system(size: 14, weight: .semibold))
-          .foregroundStyle(Color.white)
-          .frame(maxWidth: .infinity)
-          .frame(height: 32)
-      }
-      .prominentGlassButton()
-      .controlSize(.large)
-      .tint(look.yours)
-      .handCursor()
-      Button(action: cancel) {
-        Text("Cancel")
-          .font(.system(size: 14))
-          .foregroundStyle(look.ink)
-          .frame(maxWidth: .infinity)
-          .frame(height: 32)
-          .contentShape(Rectangle())
-      }
-      .buttonStyle(.hand)
+    Button(action: connect) {
+      Text("Connect")
+        .font(.system(size: 14, weight: .semibold))
+        .foregroundStyle(Color.white)
+        .frame(maxWidth: .infinity)
+        .frame(height: 36)
     }
-    .padding(.horizontal, 28)
-    .padding(.top, 8)
-    .padding(.bottom, 14)
+    .prominentGlassButton()
+    .controlSize(.large)
+    .tint(look.yours)
+    .handCursor()
+    .padding(.horizontal, 48)
+    .padding(.top, 16)
+    .padding(.bottom, 28)
   }
 }

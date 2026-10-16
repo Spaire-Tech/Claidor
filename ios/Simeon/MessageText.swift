@@ -94,12 +94,19 @@ enum MentionArt {
     return image
   }
 
-  /** A connected app's mark for a card's tile (`Connectors/<slug>`), or a brand's, or nil. */
+  /** A connected app's mark for a card's tile (`Connectors/<slug>`, else by the connector's id: "monday.com" is `monday`), or a brand's, or nil. */
   static func connector(_ name: String) -> UIImage? {
     let slug = CatalogApp.slug(name)
     if let image = UIImage(named: "Connectors/\(slug)") { return image }
+    if let id = ConnectorIcons.id(for: name), let image = UIImage(named: "Connectors/\(id)") { return image }
     if let brand = Brands.mentions.first(where: { $0.name.lowercased() == name.lowercased() }) { return UIImage(named: "Brands/\(brand.key)") }
     return nil
+  }
+
+  /** A connector's own app icon (`AppIcons/<id>`, the logo filling the tile, 14 October 2026), by its id or any of its names; nil for an app that is not a connector. */
+  static func appIcon(id: String? = nil, name: String) -> UIImage? {
+    guard let key = id.flatMap(ConnectorIcons.id(for:)) ?? ConnectorIcons.id(for: name) else { return nil }
+    return UIImage(named: "AppIcons/\(key)")
   }
 
   private static func padded(width: CGFloat, height: CGFloat, draw: (UIGraphicsImageRendererContext) -> Void) -> UIImage {
@@ -123,9 +130,15 @@ enum MentionArt {
  */
 @MainActor
 enum InlineText {
-  private static var cache: [String: Text] = [:]
+  /** A run's words, and the agents whose pills are in them (each once, in order), for a tap to open (`MentionTaps`). */
+  struct Made {
+    let text: Text
+    let agents: [String]
+  }
 
-  static func make(_ markdown: String, size: CGFloat = MessageType.size, weight: Font.Weight = .regular, colour: Color? = nil, mentioning: Mentioning?) -> Text {
+  private static var cache: [String: Made] = [:]
+
+  static func made(_ markdown: String, size: CGFloat = MessageType.size, weight: Font.Weight = .regular, colour: Color? = nil, mentioning: Mentioning?) -> Made {
     let key = "\(size)|\(weight)|\(mentioning?.dark ?? false)|\(mentioning.map { $0.agents.map { "\($0.name)=\($0.picture?.key ?? "")" }.joined(separator: ",") + "|" + ($0.personName ?? "") } ?? "-")|\(markdown)"
     if colour == nil, let made = cache[key] { return made }
     let made = build(markdown, size: size, weight: weight, colour: colour, mentioning: mentioning)
@@ -138,7 +151,7 @@ enum InlineText {
 
   private struct Style { var bold = false; var italic = false; var code = false; var struck = false; var link = false }
 
-  private static func build(_ markdown: String, size: CGFloat, weight: Font.Weight, colour: Color?, mentioning: Mentioning?) -> Text {
+  private static func build(_ markdown: String, size: CGFloat, weight: Font.Weight, colour: Color?, mentioning: Mentioning?) -> Made {
     let options = AttributedString.MarkdownParsingOptions(allowsExtendedAttributes: false, interpretedSyntax: .inlineOnlyPreservingWhitespace, failurePolicy: .returnPartiallyParsedIfPossible)
     let parsed = (try? AttributedString(markdown: markdown, options: options)) ?? AttributedString(markdown)
 
@@ -195,8 +208,9 @@ enum InlineText {
       return out
     }
 
-    guard !marks.isEmpty else { return Text(piece(0, characters.count)) }
+    guard !marks.isEmpty else { return Made(text: Text(piece(0, characters.count)), agents: []) }
     var text = Text(verbatim: "")
+    var agents: [String] = []
     var cursor = 0
     let em = size
     for mark in marks {
@@ -209,17 +223,19 @@ enum InlineText {
         }
         text = Text("\(text)\(Text(piece(mark.start, mark.end, mention: tint)))")
       case .agent(let id):
-        // The face, the name and the pill's end, each marked for `MentionPills` to draw the glass behind; word joiners and the name's unbreaking spaces keep the pill on one line.
+        // The face, the name and the pill's end, each marked for `MentionPills` to draw the glass behind (and a tap to find); word joiners and the name's unbreaking spaces keep the pill on one line.
         let picture = mentioning?.agents.first { $0.id == id }?.picture
-        let joiner = Text(verbatim: "\u{2060}").customAttribute(MentionPill())
-        text = Text("\(text)\(Text(Image(uiImage: MentionArt.agent(picture, em: em, dark: mentioning?.dark ?? false))).baselineOffset(-0.2 * em).customAttribute(MentionPill()))\(joiner)")
-        text = Text("\(text)\(Text(piece(mark.start, mark.end, mention: Ink.title, agent: true)).customAttribute(MentionPill()))\(joiner)")
-        text = Text("\(text)\(Text(Image(uiImage: MentionArt.pillEnd(em: em))).baselineOffset(-0.2 * em).customAttribute(MentionPill()))")
+        let pill = MentionPill(agentId: id)
+        let joiner = Text(verbatim: "\u{2060}").customAttribute(pill)
+        text = Text("\(text)\(Text(Image(uiImage: MentionArt.agent(picture, em: em, dark: mentioning?.dark ?? false))).baselineOffset(-0.2 * em).customAttribute(pill))\(joiner)")
+        text = Text("\(text)\(Text(piece(mark.start, mark.end, mention: Ink.title, agent: true)).customAttribute(pill))\(joiner)")
+        text = Text("\(text)\(Text(Image(uiImage: MentionArt.pillEnd(em: em))).baselineOffset(-0.2 * em).customAttribute(pill))")
+        if !agents.contains(id) { agents.append(id) }
       }
       cursor = mark.end
     }
     if cursor < characters.count { text = Text("\(text)\(Text(piece(cursor, characters.count)))") }
-    return text
+    return Made(text: text, agents: agents)
   }
 
   private static func styleKey(_ style: Style) -> Int {
@@ -233,42 +249,48 @@ struct MarkdownView: View {
   let mentioning: Mentioning?
   var depth = 0
 
-  @Environment(\.colorScheme) private var scheme
-
   var body: some View {
     VStack(alignment: .leading, spacing: 10) {
       ForEach(Array(blocks.enumerated()), id: \.offset) { _, block in
         MarkdownBlockView(block: block, mentioning: mentioning, depth: depth)
       }
     }
-    .textRenderer(MentionPills(dark: scheme == .dark))
   }
 }
 
-/** A run of an agent's mention: its face, its name and the pill's end (`InlineText`). */
-struct MentionPill: TextAttribute {}
+/** A run of an agent's mention: its face, its name and the pill's end (`InlineText`), and whose it is. */
+struct MentionPill: TextAttribute {
+  var agentId: String
+}
 
 /**
  * Each mention of an agent in a glass pill (the founder, 12 October 2026:
  * "the pill, but water glass, and the name in our blue"): drawn behind the
  * mention's runs, a clear frosted fill, a bright rim, a soft shadow. Apple's
  * own Liquid Glass is a view's effect and cannot wrap a word inside a
- * paragraph, so the glass is drawn; the same on every system.
+ * paragraph, so the glass is drawn; the same on every system. Where each
+ * pill was drawn goes to `spots`, for a tap to find (`MentionTaps`).
  */
 struct MentionPills: TextRenderer {
   var dark: Bool
+  var spots: MentionSpots? = nil
 
   /** The pill reaches a little past the line, and its shadow below it: room to draw them on a block's first and last lines. */
   var displayPadding: EdgeInsets { EdgeInsets(top: 3, leading: 1, bottom: 3, trailing: 1) }
 
   func draw(layout: Text.Layout, in ctx: inout GraphicsContext) {
-    var pills: [CGRect] = []
+    var pills: [MentionSpots.Spot] = []
     for line in layout {
-      var current: CGRect?
+      var current: MentionSpots.Spot?
       for run in line {
-        if run[MentionPill.self] != nil {
+        if let pill = run[MentionPill.self] {
           let rect = run.typographicBounds.rect
-          current = current.map { $0.union(rect) } ?? rect
+          if let open = current, open.agentId == pill.agentId {
+            current = MentionSpots.Spot(rect: open.rect.union(rect), agentId: open.agentId)
+          } else {
+            if let done = current { pills.append(done) }
+            current = MentionSpots.Spot(rect: rect, agentId: pill.agentId)
+          }
         } else if let done = current {
           pills.append(done)
           current = nil
@@ -276,7 +298,8 @@ struct MentionPills: TextRenderer {
       }
       if let done = current { pills.append(done) }
     }
-    for rect in pills { glass(rect, in: &ctx) }
+    spots?.record(pills)
+    for pill in pills { glass(pill.rect, in: &ctx) }
     for line in layout { ctx.draw(line) }
   }
 
@@ -295,6 +318,72 @@ struct MentionPills: TextRenderer {
   }
 }
 
+/** Where a run of words drew its agents' pills, in its own space: written as it draws, read by a tap. */
+final class MentionSpots: @unchecked Sendable {
+  struct Spot {
+    let rect: CGRect
+    let agentId: String
+  }
+
+  private let lock = NSLock()
+  private var spots: [Spot] = []
+
+  func record(_ drawn: [Spot]) {
+    lock.lock(); defer { lock.unlock() }
+    spots = drawn
+  }
+
+  /** The agent whose pill is under the finger, a few points around it counting. */
+  func agent(at point: CGPoint) -> String? {
+    lock.lock(); defer { lock.unlock() }
+    return spots.first { $0.rect.insetBy(dx: -4, dy: -6).contains(point) }?.agentId
+  }
+}
+
+/**
+ * A run of words whose agents' pills open their chats (the founder, 12
+ * October 2026): the pills drawn on this run itself, so a tap lands where
+ * they were drawn; a tap anywhere else, a link's, a long press's, goes on as
+ * before. The chat opens as a tapped notification's does.
+ */
+struct MentionTaps: ViewModifier {
+  let agents: [String]
+  let mentioning: Mentioning?
+  @State private var spots = MentionSpots()
+
+  @ViewBuilder
+  func body(content: Content) -> some View {
+    if agents.isEmpty {
+      content
+    } else {
+      content
+        .textRenderer(MentionPills(dark: mentioning?.dark ?? false, spots: spots))
+        .simultaneousGesture(SpatialTapGesture().onEnded { tap in
+          if let id = spots.agent(at: tap.location) { open(id) }
+        })
+        .accessibilityActions {
+          ForEach(agents, id: \.self) { id in
+            if let name = mentioning?.agents.first(where: { $0.id == id })?.name {
+              Button("Open \(name)") { open(id) }
+            }
+          }
+        }
+    }
+  }
+
+  private func open(_ id: String) {
+    Haptics.tap()
+    Notifications.shared.openAgent = id
+  }
+}
+
+extension View {
+  /** These words' agent pills open their chats (`MentionTaps`). */
+  func mentionTaps(_ made: InlineText.Made, mentioning: Mentioning?) -> some View {
+    modifier(MentionTaps(agents: made.agents, mentioning: mentioning))
+  }
+}
+
 struct MarkdownBlockView: View {
   let block: MarkdownBlock
   let mentioning: Mentioning?
@@ -307,7 +396,9 @@ struct MarkdownBlockView: View {
         // `$$…$$` within its lines: the paragraph drawn with its maths (Rendering.swift).
         RenderedBlock(kind: .mathText(text))
       } else {
-        InlineText.make(text, mentioning: mentioning)
+        let made = InlineText.made(text, mentioning: mentioning)
+        made.text
+          .mentionTaps(made, mentioning: mentioning)
           .lineSpacing(MessageType.spacing())
           .fixedSize(horizontal: false, vertical: true)
       }
@@ -315,7 +406,9 @@ struct MarkdownBlockView: View {
       // Over the Mac's, with the message's 17: h1 25 / 31, h2 20 / 27, h3 and below the message's own 17 / 23 with 8 above; all 600.
       let size: CGFloat = level == 1 ? 25 : level == 2 ? 20 : MessageType.size
       let line: CGFloat = level == 1 ? 31 : level == 2 ? 27 : MessageType.lineHeight
-      InlineText.make(text, size: size, weight: .semibold, mentioning: mentioning)
+      let made = InlineText.made(text, size: size, weight: .semibold, mentioning: mentioning)
+      made.text
+        .mentionTaps(made, mentioning: mentioning)
         .lineSpacing(MessageType.spacing(size: size, lineHeight: line))
         .fixedSize(horizontal: false, vertical: true)
         .padding(.top, level >= 3 ? 8 : 0)
@@ -438,7 +531,7 @@ struct CodeBlockView: View {
           .padding(.horizontal, 12).padding(.bottom, 8).padding(.top, 2)
           .contentShape(.rect)
       }
-      .buttonStyle(.plain)
+      .buttonStyle(.tactile)
     }
     }
     .frame(maxWidth: .infinity, alignment: .leading)
@@ -449,7 +542,7 @@ struct CodeBlockView: View {
         Image(systemName: copied ? "checkmark" : "doc.on.doc").font(.system(size: 11, weight: .medium)).foregroundStyle(Ink.secondary)
           .frame(width: 24, height: 24).tapRoom(10)
       }
-      .buttonStyle(.plain)
+      .buttonStyle(.tactile)
       .padding(4)
       .accessibilityLabel(copied ? "Copied" : "Copy code")
       #if os(macOS)
@@ -486,7 +579,9 @@ struct MarkdownTable: View {
       Grid(alignment: .leading, horizontalSpacing: 0, verticalSpacing: 0) {
         GridRow {
           ForEach(Array(header.enumerated()), id: \.offset) { index, cell in
-            InlineText.make(cell, size: 16, weight: .medium, mentioning: mentioning)
+            let made = InlineText.made(cell, size: 16, weight: .medium, mentioning: mentioning)
+            made.text
+              .mentionTaps(made, mentioning: mentioning)
               .foregroundStyle(Ink.primary)
               .gridColumnAlignment(alignment(index))
               .padding(8)
@@ -496,7 +591,9 @@ struct MarkdownTable: View {
           Divider().overlay(Ink.hairline).gridCellUnsizedAxes(.horizontal)
           GridRow {
             ForEach(Array(row.enumerated()), id: \.offset) { _, cell in
-              InlineText.make(cell, size: 16, mentioning: mentioning)
+              let made = InlineText.made(cell, size: 16, mentioning: mentioning)
+              made.text
+                .mentionTaps(made, mentioning: mentioning)
                 .foregroundStyle(Ink.secondary)
                 .padding(8)
             }

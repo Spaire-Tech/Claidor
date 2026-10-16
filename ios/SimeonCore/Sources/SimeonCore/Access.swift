@@ -45,14 +45,15 @@ public struct SandAccess: Equatable, Sendable {
   }
 
   private static let byReason: [Reason: Words] = [
-    .teamPrivacyMode: Words(title: "Your team's privacy mode blocks Simeon", body: "Simeon can't run under Privacy Mode (Legacy). Ask a team admin to move the team off it.", action: "See Details"),
-    .teamSetupRequired: Words(title: "Your team hasn't set up Simeon yet", body: "A team admin has to finish Simeon setup before members can send messages.", action: "See Details"),
-    .teamAccessRequired: Words(title: "Your team hasn't given this account Simeon", body: "Your team's settings withhold Simeon. A team admin can grant it.", action: "Request Access"),
-    .notOffered: Words(title: "Simeon is not available for this account", body: "There's nothing to set up or purchase here.", action: nil),
-    .freeTrialAvailable: Words(title: "Start a Simeon trial to send messages", body: "This account can try Simeon now.", action: "Start Trial"),
-    .paywallIndividual: Words(title: "Simeon needs an Ultra plan", body: "Upgrade to Ultra to send messages with Simeon.", action: "Get Ultra"),
-    .paywallTeamMember: Words(title: "Simeon needs a Premium seat", body: "Ask a team admin to move this account to a Premium seat.", action: "Request Access"),
-    .paywallTeamAdmin: Words(title: "Simeon needs a Premium seat", body: "Move this account to a Premium seat to send messages.", action: "Manage Seats"),
+    // In Simeon's own words: none of the plans or settings of the app it was built from (PlainWords, 13 October 2026).
+    .teamPrivacyMode: Words(title: "Simeon isn’t available on this account", body: "Ask your team’s admin to turn it on.", action: "Check Access"),
+    .teamSetupRequired: Words(title: "Simeon isn’t set up for your team yet", body: "Ask your team’s admin to finish setting it up.", action: "Check Access"),
+    .teamAccessRequired: Words(title: "Simeon isn’t available on this account", body: "Ask your team’s admin to turn it on.", action: "Check Access"),
+    .notOffered: Words(title: "Simeon isn’t available on this account", body: "There's nothing to set up or purchase here.", action: nil),
+    .freeTrialAvailable: Words(title: "Start your free month to send messages", body: "This account can try Simeon now.", action: "Start Trial"),
+    .paywallIndividual: Words(title: "Simeon needs a plan", body: "Choose a plan to send messages.", action: "See plans"),
+    .paywallTeamMember: Words(title: "Simeon needs a plan", body: "Ask your team’s admin to add this account.", action: "Check Access"),
+    .paywallTeamAdmin: Words(title: "Simeon needs a plan", body: "Choose a plan for this account to send messages.", action: "See plans"),
   ]
 
   /** The composer's notice (`T1t`): only while sending is off. */

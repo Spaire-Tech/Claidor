@@ -22,9 +22,13 @@ Three windows, one shape:
   00:00 UTC to the next Monday, the plan's `weekly_credits`. Stripe
   cannot reset a meter weekly, so the week is counted here, from
   `desktop_usage`.
-- **No plan** (never subscribed, trial lapsed, cancelled, dunning over):
-  the week, with a limit of 0, so every metered call is refused with a
-  sentence that says where to subscribe.
+- **No plan** (never subscribed, trial lapsed, cancelled, dunning over,
+  or the first charge after the trial failed): the week, with a limit of
+  0, so every metered call is refused with a sentence that says where to
+  subscribe, or, when the card failed, to update it (`payment_failed`).
+  A failed renewal after a paid period keeps the plan while the card is
+  retried; a failed first charge does not, as nothing was paid (14
+  October 2026).
 
 The allowance is read before every metered call (`budget_refusal`), so
 it is one indexed lookup and no Stripe call; the aggregate is the usage
@@ -131,8 +135,13 @@ class Allowance:
     #: scheduled to end without a charge).
     trial_cancelable: bool = False
     #: Who bills the plan: `stripe`, `app_store`, or None for free, none
-    #: and the free month.
+    #: and the free month. Also set with `payment_failed`, so the app
+    #: sends the person to whoever holds the card.
     provider: str | None = None
+    #: No plan because the first charge after the trial failed: the
+    #: subscription is still there and the card is being retried, so the
+    #: person updates the card rather than choosing a plan.
+    payment_failed: bool = False
 
     @property
     def paid(self) -> bool:
@@ -172,7 +181,14 @@ def _free(now: datetime) -> Allowance:
     )
 
 
-def _none(now: datetime, *, trial_ended: datetime | None = None) -> Allowance:
+def _none(
+    now: datetime,
+    *,
+    trial_ended: datetime | None = None,
+    unpaid: PlanRow | None = None,
+) -> Allowance:
+    """No plan. `unpaid` is the subscription whose first charge after the
+    trial failed, when that is why."""
     start, end = week_bounds(now)
     return Allowance(
         plan_name=TIER_NAMES[TierKey.inactive],
@@ -182,6 +198,8 @@ def _none(now: datetime, *, trial_ended: datetime | None = None) -> Allowance:
         period_start=start,
         period_end=end,
         trial_end=trial_ended,
+        provider=unpaid.provider if unpaid is not None else None,
+        payment_failed=unpaid is not None,
     )
 
 
@@ -208,8 +226,13 @@ def allowance_of(
     """The allowance one synced subscription row gives, with billing on:
     Stripe's or Apple's, read the same way."""
     moment = now or utc_now()
-    if subscription is None or not subscription.billable_at(moment):
+    if subscription is None:
         return _none(moment)
+    if not subscription.billable_at(moment):
+        return _none(
+            moment,
+            unpaid=subscription if subscription.unpaid_after_trial else None,
+        )
     tier = tier_from_value(subscription.tier) if subscription.tier else None
     if tier is None or tier not in PAID_TIERS:
         return _none(moment)

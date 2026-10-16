@@ -484,8 +484,8 @@ final class ComposerMenuTests: XCTestCase {
     func labels(_ query: String, group: Bool = false) -> [String] {
       ComposerLists.slashItems(skills: [], actions: ComposerLists.appActions(isGroup: group, hasHiddenAgents: false), query: query).map(\.label)
     }
-    XCTAssertEqual(labels(""), ["Org Chart", "Channels", "Chat Settings", "Settings: General", "Settings: Usage & Billing", "Plugins", "Theme: System", "Theme: Light"])
-    XCTAssertEqual(labels("", group: true), ["Org Chart", "Members", "Channels", "Chat Settings", "Settings: General", "Settings: Usage & Billing", "Plugins", "Theme: System"])
+    XCTAssertEqual(labels(""), ["Org Chart", "Channels", "Chat Settings", "Settings: General", "Settings: Usage & Billing", "Connectors", "Theme: System", "Theme: Light"])
+    XCTAssertEqual(labels("", group: true), ["Org Chart", "Members", "Channels", "Chat Settings", "Settings: General", "Settings: Usage & Billing", "Connectors", "Theme: System"])
     XCTAssertEqual(labels("theme"), ["Theme: Dark", "Theme: Light", "Theme: System", "Settings: General"])
     XCTAssertEqual(labels("set"), ["Settings: General", "Settings: Usage & Billing", "Chat Settings", "Theme: System", "Theme: Light", "Theme: Dark"])
     XCTAssertEqual(labels("chan"), ["Channels", "Chat Settings"])

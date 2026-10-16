@@ -40,7 +40,7 @@ struct AgentPageSheet: View {
                     .frame(width: 44, height: 44)
                     .contentShape(.circle)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.tactile)
                 .accessibilityLabel("Edit agent avatar")
                 .offset(x: 2, y: 2)
               }
@@ -286,7 +286,7 @@ struct RoutinesTab: View {
                 .background(Ink.primary, in: Capsule())
                 .contentShape(.capsule)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.tactile)
           }
           .padding(.top, 20)
         } else {
@@ -299,7 +299,7 @@ struct RoutinesTab: View {
                 .frame(minHeight: 44)
                 .contentShape(.rect)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.tactile)
           }
           ForEach(Routine.listed(list)) { routine in
             Button { open(routine) } label: {
@@ -315,7 +315,7 @@ struct RoutinesTab: View {
               .padding(.vertical, 12)
               .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.tactile)
             .accessibilityLabel("\(routine.name), \(routine.rowDetail)")
             Rectangle().fill(Ink.hairline).frame(height: 1)
           }

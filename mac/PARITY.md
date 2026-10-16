@@ -318,8 +318,8 @@ The menus, zoom and full screen are in §9.
 
 | What | Where | Phone | Mac |
 |---|---|---|---|
-| Marketplace and Yours, search, Filter (Connectors, Skills; Public, Team) | recovered `plugins/overlay/browser.tsx` | yes (11 October 2026: the Mac's Type and Ownership in the phone's filter, beside its categories; Yours › Private) | written (`MacPlugins`, `Plugins`): "Plugins" in a window of its own (1000 × 700): Marketplace and Yours, the Filter menu, "Search plugins" (⌘F), the sections with Featured first and "Show N more", the results ranked by the overlay's fuzzy score; checked against the overlay's own functions on 160 random catalogs |
-| An app: Add, Authenticate, Enable, Disable, Remove; Connected, Authentication required, Starting, Disconnected, Error, Disabled by team admin | same | partly | written: Add (setup first when it needs values, the skills synced after), Added for anything installed, Uninstall, Remove or the team's label, the status words ("Needs auth"), Authenticate in the browser with "Reopen" and, after ten minutes, "Retry"; the notices as the overlay words them |
+| Marketplace and Yours, search, Filter (Connectors, Skills; Public, Team) | recovered `plugins/overlay/browser.tsx` | yes (11 October 2026: the Mac's Type and Ownership in the phone's filter, beside its categories; Yours › Private) | written (`MacPlugins`, `Plugins`): "Connectors" (13 October 2026, was "Plugins") over the window, 760 wide: "Search connectors" (⌘F) in glass and the Filter menu, Available and Yours in our glass segmented control, the sections with Featured first and every app shown one to a row, the results ranked by the overlay's fuzzy score; checked against the overlay's own functions on 160 random catalogs |
+| An app: Add, Authenticate, Enable, Disable, Remove; Connected, Authentication required, Starting, Disconnected, Error, Disabled by team admin | same | partly | written: Add (setup first when it needs values, the skills synced after), Added for anything installed, Uninstall, Remove or the team's label, the status words ("Needs auth"), Authenticate in the browser with "Reopen" and, after ten minutes, "Retry"; the notices as the overlay words them. Since 13 October 2026 (the founder, by design, not the Electron window's): one Connect, the app added and its sign-in waited for in one go, Connected only once signed in, a cancelled sign-in taking the app back out; Authenticate reads Connect (STEPS.md, "One Connect") |
 | Setup values (Edit Values, Save Values) and Details | same | yes (11 October 2026: the setup page as a sheet; Details on a server's page) | written: the setup page (secrets hidden, "(optional)", what is required, Add or Save Values) and a server's Details (Source, Transport, URL or Command, Tools) |
 | Its tools, each with a switch | same | yes | written: folded, "n of m enabled", the names as the overlay shortens them, each switch changed at once, a failure under them |
 | Its accounts: rename, remove, Add Another Account, Authorize | same | yes | part: each account with its state and sign-in, the default first; rename, remove and Add Another Account are behind `mcp_multi_account`, off in Simeon, so not built |
@@ -422,10 +422,10 @@ How the Mac calls them, beyond what `Gateway.swift` does now:
 |---|---|---|
 | `sendPrompt` with a 15 s deadline and a retry that the nonce makes safe | partly (Resend by hand) | |
 | `listAgents` and `countAgents`: 15 s and one retry; `createAgent`: up to 3 retries (the host dedupes by nonce, `x-sand-mint-dedupe`) | no | |
-| A 35 s stall watchdog on the event stream, and a forced reconnect (`forceGatewayReconnect`) | partly (45 s timeout, 1–15 s backoff) | |
-| A `/health` probe with the token before reconnecting | no | |
+| A 35 s stall watchdog on the event stream, and a forced reconnect (`forceGatewayReconnect`) | yes since 16 October 2026: 35 s, and 1, 2, 4, 8, then 10 s between dials; the forced reconnect is Retry | the same (SimeonCore) |
+| A `/health` probe with the token before reconnecting | yes since 16 October 2026: 1.5 s, trusted 5 s, the broker only when it fails | the same (SimeonCore) |
 | Reconnect on wake from sleep (`powerMonitor` resume, main `coordinator/desktop-connectivity.ts`) | no | |
-| The last box address kept for 7 days, per account, so launch reconnects at once (main `box/gateway-descriptor-*.ts`) | no | |
+| The last box address kept for 7 days, per account, so launch reconnects at once (main `box/gateway-descriptor-*.ts`) | yes since 16 October 2026: in the Keychain, tried once at launch while the broker is asked | the same (SimeonCore) |
 | Slim avatars (`x-sand-slim-avatars: 1`), avatars from `GET /avatars/{agentId}` | no | |
 
 ## 4. Events from the cloud computer

@@ -4,12 +4,12 @@ import XCTest
 /** The Plugins overlay's words and small rules (step 9's spec, §10.3), against the window's. */
 final class PluginsOverlayTests: XCTestCase {
   func testTheEmptyLines() {
-    XCTAssertEqual(Plugins.marketplaceEmpty(loaded: false, catalogEmpty: true, filterSet: true, query: "x"), "Loading the marketplace…")
-    XCTAssertEqual(Plugins.marketplaceEmpty(loaded: true, catalogEmpty: false, filterSet: true, query: "x"), "No plugins match the current filters")
-    XCTAssertEqual(Plugins.marketplaceEmpty(loaded: true, catalogEmpty: false, filterSet: false, query: " zzzz "), "No plugins match \"zzzz\"")
-    XCTAssertEqual(Plugins.marketplaceEmpty(loaded: true, catalogEmpty: true, filterSet: false, query: ""), "The marketplace isn't available right now. Check back later.")
-    XCTAssertEqual(Plugins.installedEmpty(query: ""), "Nothing installed yet. Find plugins in the Marketplace tab.")
-    XCTAssertEqual(Plugins.installedEmpty(query: "lin"), "No installed plugins match \"lin\"")
+    XCTAssertEqual(Plugins.marketplaceEmpty(loaded: false, catalogEmpty: true, filterSet: true, query: "x"), "Loading connectors…")
+    XCTAssertEqual(Plugins.marketplaceEmpty(loaded: true, catalogEmpty: false, filterSet: true, query: "x"), "No connectors match the current filters")
+    XCTAssertEqual(Plugins.marketplaceEmpty(loaded: true, catalogEmpty: false, filterSet: false, query: " zzzz "), "No connectors match \"zzzz\"")
+    XCTAssertEqual(Plugins.marketplaceEmpty(loaded: true, catalogEmpty: true, filterSet: false, query: ""), "Connectors aren't available right now. Check back later.")
+    XCTAssertEqual(Plugins.installedEmpty(query: ""), "Nothing added yet. Find connectors in Available.")
+    XCTAssertEqual(Plugins.installedEmpty(query: "lin"), "No connectors you added match \"lin\"")
     XCTAssertEqual(Plugins.privateEmpty(agentOpen: false, query: "x"), "Open an agent to see its private skills")
     XCTAssertEqual(Plugins.privateEmpty(agentOpen: true, query: ""), "No private skills yet. Ask your Agent to create one for you.")
     XCTAssertEqual(Plugins.privateEmpty(agentOpen: true, query: "q"), "No private skills match \"q\"")
@@ -41,7 +41,7 @@ final class PluginsOverlayTests: XCTestCase {
     XCTAssertEqual(Plugins.tone("initializing"), .tertiary)
     XCTAssertEqual(Plugins.signInKey("Google_Calendar-2"), "googlecalendar2")
     XCTAssertEqual(Plugins.signInKey("gmail--Work"), "gmail--Work")
-    XCTAssertEqual(Plugins.signInButton(.none), "Authenticate")
+    XCTAssertEqual(Plugins.signInButton(.none), "Connect")
     XCTAssertEqual(Plugins.signInButton(.waiting), "Reopen")
     XCTAssertEqual(Plugins.signInButton(.timedOut), "Retry")
   }

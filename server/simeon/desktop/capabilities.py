@@ -35,10 +35,12 @@ from simeon.routing import APIRouter
 
 from .auth import ProxyCaller, get_proxy_caller
 from .pricing import (
+    IMAGE_EDIT_MODEL,
     IMAGE_MAX_PROMPT_CHARACTERS,
     IMAGE_MAX_REFERENCE_BYTES,
     IMAGE_MAX_REFERENCE_IMAGES,
     IMAGE_MODEL,
+    LEGACY_IMAGE_MODEL,
     TRANSCRIPTION_MAX_BYTES,
     TRANSCRIPTION_MODEL,
     WEB_SEARCH_CALL_MODEL,
@@ -82,6 +84,10 @@ WEB_SEARCH_INSTRUCTIONS = (
 
 IMAGE_SIZES = frozenset({"auto", "1024x1024", "1536x1024", "1024x1536"})
 IMAGE_QUALITIES = frozenset({"auto", "low", "medium", "high"})
+#: What "auto" is sent as. GPT Image 2.5 adds `xhigh` and `max`, and left
+#: to choose it may pick one of them; a picture nobody asked to be dear
+#: is drawn at medium.
+IMAGE_DEFAULT_QUALITY = "medium"
 IMAGE_REFERENCE_MIME_TYPES = frozenset({"image/png", "image/jpeg", "image/webp"})
 REFUSAL_PREVIEW = 1000
 
@@ -352,6 +358,51 @@ def _reference_images(value: Any) -> list[tuple[bytes, str]] | JSONResponse:
     return images
 
 
+async def _draw(
+    client: httpx.AsyncClient,
+    model: DesktopModel,
+    fields: dict[str, Any],
+    references: list[tuple[bytes, str]],
+) -> httpx.Response:
+    """One call to OpenAI's image API on `model`: `/images/edits` as
+    multipart when there are reference images, `/images/generations`
+    otherwise."""
+    body = {"model": model.model_id, **fields}
+    if references:
+        return await client.post(
+            _openai_url("/images/edits"),
+            headers=_openai_headers(),
+            data={key: str(value) for key, value in body.items()},
+            files=[
+                (
+                    "image[]",
+                    (f"reference-{index}.{mime.split('/')[1]}", raw, mime),
+                )
+                for index, (raw, mime) in enumerate(references)
+            ],
+        )
+    return await client.post(
+        _openai_url("/images/generations"), headers=_openai_headers(), json=body
+    )
+
+
+def _model_unavailable(upstream: httpx.Response) -> bool:
+    """Whether OpenAI refused the model itself for this account (not
+    found, or not allowed), as opposed to the picture asked for. A
+    refused description keeps its refusal; only this falls back."""
+    if upstream.status_code in (403, 404):
+        return True
+    if upstream.status_code != 400:
+        return False
+    try:
+        error = json.loads(upstream.content).get("error")
+    except (ValueError, AttributeError):
+        return False
+    return isinstance(error, dict) and (
+        error.get("code") == "model_not_found" or error.get("param") == "model"
+    )
+
+
 @router.post(
     "/api/proxy/v1/images/generations",
     name="desktop:images",
@@ -366,9 +417,12 @@ async def images_generations(
 
     `{prompt, size?, quality?, reference_images?}` in; `{data: [{b64_json,
     mime_type}], usage}` out. With no reference the call is
-    `/v1/images/generations`; with one or more it is `/v1/images/edits`,
-    which is the same model reading pictures as well as words. Metered
-    from the usage OpenAI reports, at the picture's own output price.
+    `/v1/images/generations` on `IMAGE_MODEL`; with one or more it is
+    `/v1/images/edits` on `IMAGE_EDIT_MODEL`, reading pictures as well as
+    words. "auto" quality is sent as `IMAGE_DEFAULT_QUALITY`. When OpenAI
+    will not serve the model to this account, the call is made once more
+    on `LEGACY_IMAGE_MODEL`. Metered from the usage OpenAI reports, at
+    the picture's own output price, under the model that drew it.
     """
     payload = _json_object(await request.body())
     if isinstance(payload, JSONResponse):
@@ -397,34 +451,27 @@ async def images_generations(
     if refused is not None:
         return refused
 
+    model = IMAGE_EDIT_MODEL if references else IMAGE_MODEL
     fields = {
-        "model": IMAGE_MODEL.model_id,
         "prompt": prompt.strip(),
         "n": 1,
         "size": size,
-        "quality": quality,
+        "quality": IMAGE_DEFAULT_QUALITY if quality == "auto" else quality,
     }
     async with httpx.AsyncClient(timeout=upstream_timeout()) as client:
         try:
-            if references:
-                upstream = await client.post(
-                    _openai_url("/images/edits"),
-                    headers=_openai_headers(),
-                    data={key: str(value) for key, value in fields.items()},
-                    files=[
-                        (
-                            "image[]",
-                            (f"reference-{index}.{mime.split('/')[1]}", raw, mime),
-                        )
-                        for index, (raw, mime) in enumerate(references)
-                    ],
+            upstream = await _draw(client, model, fields, references)
+            if _model_unavailable(upstream):
+                # This account is not served the new model (yet): the
+                # picture is drawn on the one before rather than not at all.
+                log.warning(
+                    "desktop.images.model_unavailable",
+                    model=model.model_id,
+                    status=upstream.status_code,
+                    fallback=LEGACY_IMAGE_MODEL.model_id,
                 )
-            else:
-                upstream = await client.post(
-                    _openai_url("/images/generations"),
-                    headers=_openai_headers(),
-                    json=fields,
-                )
+                model = LEGACY_IMAGE_MODEL
+                upstream = await _draw(client, model, fields, references)
         except httpx.HTTPError as error:
             log.warning("desktop.images.upstream_unreachable", error=str(error))
             return error_response(
@@ -436,21 +483,23 @@ async def images_generations(
             request,
             session,
             caller,
-            IMAGE_MODEL,
+            model,
             Usage(),
             upstream.status_code,
             "images",
         )
-        return _refusal(IMAGE_MODEL, upstream)
+        return _refusal(model, upstream)
 
     try:
         answer = upstream.json()
     except ValueError:
         answer = {}
-    usage = image_usage(answer.get("usage") if isinstance(answer, dict) else None)
+    usage = image_usage(
+        answer.get("usage") if isinstance(answer, dict) else None, model
+    )
     if usage == Usage():
-        log.warning("desktop.images.usage_missing", model=IMAGE_MODEL.model_id)
-    await _record(request, session, caller, IMAGE_MODEL, usage, 200, "images")
+        log.warning("desktop.images.usage_missing", model=model.model_id)
+    await _record(request, session, caller, model, usage, 200, "images")
 
     data = answer.get("data") if isinstance(answer, dict) else None
     pictures = [
@@ -459,7 +508,7 @@ async def images_generations(
         if isinstance(one, dict) and isinstance(one.get("b64_json"), str)
     ]
     if not pictures:
-        log_upstream_refusal(IMAGE_MODEL, 200, upstream.content[:REFUSAL_PREVIEW])
+        log_upstream_refusal(model, 200, upstream.content[:REFUSAL_PREVIEW])
         return error_response(
             "api_error", "The image service returned no picture.", 502
         )

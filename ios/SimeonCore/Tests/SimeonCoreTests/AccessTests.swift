@@ -1,7 +1,7 @@
 import XCTest
 @testable import SimeonCore
 
-/** The access words against the main bundle's `T1t`, `dzn` and `gft` run over every state and reason (`Fixtures/access.json`). */
+/** The access words against the main bundle's `T1t`, `dzn` and `gft` run over every state and reason (`Fixtures/access.json`), the reasons' words Simeon's own since 13 October 2026 (no inherited plan names). */
 final class AccessTests: XCTestCase {
   func testWordsAndPauseAsTheWindow() throws {
     let url = Bundle.module.url(forResource: "access", withExtension: "json", subdirectory: "Fixtures")!

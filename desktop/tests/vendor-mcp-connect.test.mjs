@@ -340,7 +340,7 @@ test("a vendor that only takes the loopback is asked for it even when the box st
     const catalog = await load("source/shared/node/vendor-mcp/catalog.ts", "vendor-catalog-loopback");
     try {
       const loopback = catalog.module.VENDOR_MCP_CONNECTORS.filter((connector) => connector.loopbackOnly === true).map((connector) => connector.id).sort();
-      assert.deepEqual(loopback, ["canva", "dropbox", "square", "vercel"]);
+      assert.deepEqual(loopback, ["canva", "dropbox", "lovable", "square", "vercel"]);
     } finally {
       await catalog.dispose();
     }
@@ -361,4 +361,42 @@ test("a vendor that only takes the loopback is asked for it even when the box st
     await rm(root, { recursive: true, force: true });
     await dispose();
   }
+});
+
+test("the box signs in to a vendor that takes only client documents as Simeon's document on Simeon Labs' server, and says so in the sign-in log (13 October 2026)", async () => {
+  // A catalog vendor (Notion's row) answering with Shopify's metadata shape: no registration
+  // endpoint, client documents read. Shopify itself stays with our apps service until it
+  // approves Simeon's client (it refused every client but Claude's when measured).
+  const { module, dispose } = await load("source/shared/node/vendor-mcp/backend-exec.ts", "vendor-backend-document");
+  const root = await mkdtemp(path.join(os.tmpdir(), "simeon-vendor-document-"));
+  try {
+    const { writeFileSync } = await import("node:fs");
+    writeFileSync(path.join(root, "vendor-mcp-installs.json"), JSON.stringify([{ id: "notion", url: "https://mcp.notion.com/mcp", connected: false }]));
+    const documentsOnly = async (input) => {
+      const url = typeof input === "string" ? input : input.url;
+      if (url === "https://mcp.notion.com/.well-known/oauth-protected-resource/mcp") return new Response(JSON.stringify({ resource: "https://mcp.notion.com/mcp", authorization_servers: ["https://setup.shopify.com/auth"], scopes_supported: ["read_all_orders", "write_products"] }), { headers: { "content-type": "application/json" } });
+      if (url === "https://setup.shopify.com/.well-known/oauth-authorization-server/auth") return new Response(JSON.stringify({ issuer: "https://setup.shopify.com/auth", authorization_endpoint: "https://setup.shopify.com/oauth/authorize", token_endpoint: "https://setup.shopify.com/oauth/token", token_endpoint_auth_methods_supported: ["none"], client_id_metadata_document_supported: true, code_challenge_methods_supported: ["S256"] }), { headers: { "content-type": "application/json" } });
+      return new Response("not found", { status: 404 });
+    };
+    const hosted = "https://api.simeonlabs.com/desktop/mcp-oauth/callback";
+    const document = "https://api.simeonlabs.com/desktop/mcp-oauth/client.json";
+    const exec = module.createVendorMcpBackendExec({ rootDir: () => root, fetch: documentsOnly, now: () => 1_000, canStartAuth: true, clientMetadataUrl: document });
+    const status = await exec.checkAuthStatus({ serverId: exec.serverIdForPlugin("notion"), accountKey: "default", oauthRedirectUri: hosted });
+    assert.equal(status.requiresAuth, true);
+    assert.equal(new URL(status.authUrl).searchParams.get("client_id"), document);
+    assert.equal(new URL(status.authUrl).searchParams.get("redirect_uri"), hosted);
+    assert.match(await readFile(path.join(root, "vendor-mcp-signin.log"), "utf8"), /notion sign-in started: client=https:\/\/api\.simeonlabs\.com\/desktop\/mcp-oauth\/client\.json registered=by our document secret=no /);
+
+    const without = module.createVendorMcpBackendExec({ rootDir: () => root, fetch: documentsOnly, now: () => 1_000, canStartAuth: true });
+    const refused = await without.checkAuthStatus({ serverId: without.serverIdForPlugin("notion"), accountKey: "default", oauthRedirectUri: hosted });
+    assert.match(refused.error, /coming soon/i);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+    await dispose();
+  }
+
+  // The host gives both its vendor and its custom-server sign-ins the document beside the hosted callback.
+  const service = await readFile(path.join(repoRoot, "source/host/extensions/mcp/mcp-service.ts"), "utf8");
+  assert.match(service, /new URL\("desktop\/mcp-oauth\/client\.json", backendUrl/);
+  assert.equal((service.match(/clientMetadataUrl: hostedMcpOAuthClientUrl\(\)/g) ?? []).length, 2);
 });

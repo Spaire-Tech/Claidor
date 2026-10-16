@@ -168,7 +168,8 @@ The Electron app and the web app have no button yet. In order:
 
 1. The subscription ends now at Stripe (`stripe_billing.cancel_subscription`).
 2. Each cloud computer the person ever had is removed with both of its volumes
-   (`/workspace` and the data folder).
+   (`/workspace` and the data folder), then its backups in the backup bucket
+   (`box_store.delete_user`; a failure there is reported, not blocking).
 3. The apps signed in through the apps provider are disconnected there, and
    each call's transcript is deleted at the voice provider.
 4. The person's rows go (`account_repository.py`: memory, call records,
@@ -185,10 +186,32 @@ reached, nothing else is done, the server answers `503` with the sentence the
 app shows ("… Try again in a few minutes."), and the person is still signed
 in. Both steps are safe to repeat.
 
+**"It said it failed, and the account was deleted anyway"** (the founder, 14
+October 2026). Two things together. The delete takes a while (Stripe, the
+container and its volumes, one call per connected app and per call
+transcript), and the apps waited one minute (URLSession's default) before
+saying "The request timed out." And removing the container dropped the app's
+connection, so within seconds the app asked for its computer again
+(`EnsureSandBox`), which rebuilt the container the delete had just removed and
+held locks on the person's sessions, stalling the delete further. Now:
+
+- Before step 1 the delete takes the person's ensure lock, the one
+  `EnsureSandBox` takes (`_hold_the_computer`), so the reconnect is told the
+  computer is still starting and tries again; by then the sessions are gone and
+  it is signed out. If a computer is being started when the delete begins, the
+  delete waits up to 30 seconds, then answers `503` "Your agents' computer is
+  starting. Try again in a few minutes." having done nothing.
+- The apps wait five minutes for the answer (`SimeonAPI.deleteTimeout`). If it
+  still does not come (or a gateway answers 502/504), they ask the server
+  whether the account is gone (`/desktop/api/user/profile` refused with 401)
+  for about half a minute before saying anything.
+- A call made before the delete and refused after it no longer turns "Your
+  account was deleted." into "Your Simeon sign-in ended."
+
 When it misbehaves:
 
-- `desktop.account.delete_blocked step=subscription|computer`: the step that
-  stopped it, with the error.
+- `desktop.account.delete_blocked step=subscription|computer|computer_starting`:
+  the step that stopped it, with the error.
 - `desktop.account.delete_incomplete incomplete=[…]`: an app sign-in, a call
   transcript or a skill archive the provider would not delete. The account is
   gone; finish those by hand at the provider.
@@ -199,6 +222,15 @@ When it misbehaves:
   `Instance '<OAuthAccount …>' has been deleted`). The rows were rolled back
   after steps 1 to 3 had happened, so such an account lost its computer and
   apps but stayed. Deleting it again now finishes it.
+- `Unhandled exception … ix_users_email_case_insensitive` on `DELETE
+  /desktop/api/account` (15 October 2026, 14:40 PT): an address deleted,
+  signed up with again and deleted again. Step 5 replaced the e-mail with a
+  hash of it, and every e-mail is unique, deleted rows included, so the second
+  deletion collided with the first and was rolled back. The hash now takes the
+  account's id too (`soft_delete_user`; `tests/user/test_service.py`,
+  `test_the_same_address_deleted_twice`). The free month keeps its own hash
+  of the address (`DesktopFreeTrial.email_hash`), unchanged, so deleting and
+  signing up again still starts no second free month.
 
 **Not yet verified:** a deletion from the packaged iPhone or Mac app against
 `api.simeonlabs.com`.
@@ -231,7 +263,7 @@ All are under `/desktop` (`server/simeon/desktop/endpoints.py`,
 | `POST /desktop/api/proxy/v1/voice/calls` | Opens a voice call: `{token, conversation_id, agent_id}` for ElevenLabs Agents (`server/simeon/desktop/voice.py`, `docs/services-agents.md` section 9). |
 | `POST /desktop/api/proxy/v1/voice/calls/{conversation_id}/end` | The app hung up: `{seconds}` in, `{seconds, summary}` out. Bills the call once. |
 | `GET /desktop/api/proxy/v1/voice/voices` | The voice picker's curated list, cached for an hour. |
-| `GET /desktop/api/models/available` | The models offered to the app. |
+| `GET /desktop/api/models/available` | The models offered to the app, with their roles under the person's policy. The box's credential reads it too: the engine follows the roles. |
 | `GET /desktop/api/models/pricing-catalog` | Their prices. |
 | `GET /desktop/api/user/quota` | The person's allowance and usage, for the Usage tab: the plan, the window, the limit, the trial's end, where to change plan (`services-billing.md`, section 4). |
 
@@ -243,20 +275,61 @@ reports is converted to credits and stored as a `desktop_usage` row.
 The catalogue is `MODELS` in `server/simeon/desktop/pricing.py`. One credit is
 one input token at $3.00 per million.
 
-| Model id | Role | Price per million tokens |
-|---|---|---|
-| `gpt-6-sol` | `primary`: the agent loop, every reply the person reads, its subagents (executor, computer and browser use) | $2.00 in, $0.20 cached, $10.00 out |
-| `gpt-6-luna` | `cheap`: summaries, memory, the auto-review classifier, and a step re-run after a rate limit | $0.10 in, $0.01 cached, $0.50 out |
-| `claude-sonnet-5` | `fallback`: only when the primary's provider is down | $3.00 in |
-| `gemini-2.5-flash` | `video`: the watch-video subagents | $0.30 in (to confirm) |
-| `gpt-5.6-terra`, `gpt-5.6-luna` | `retired`: still served to older app builds, never offered | $2.00 / $0.20 in |
-| `gpt-6-astra`, `claude-opus-5`, `claude-haiku-4-5-20251001`, `gemini-2.5-pro` | no role: priced, not offered | |
+**One setting chooses the family** (13 October 2026). `SIMEON_DESKTOP_MODELS`
+picks a policy (`ModelPolicy`, `POLICY_ROLES`), and
+`SIMEON_DESKTOP_MODELS_BY_EMAIL` picks one for a few people first:
 
-`/desktop/api/models/available` lists only models that have a role, are not
-retired, and whose provider has a key on the server. The app's model menu keeps
-only the `primary` row, so there is nothing for the person to choose
-(`desktop/source/electron-main/models/simeon-model-catalog.ts`). The proxy
-refuses any model with no role: "This model is not offered by the desktop app."
+| Policy | `primary`: the agent loop, every reply, its helpers | `cheap`: summaries, memory, safety checks, titles | `fallback`: a step whose provider failed |
+|---|---|---|---|
+| `openai` (the default) | `gpt-6-sol` | `gpt-6-luna` | `claude-sonnet-5-5` |
+| `claude` | `claude-sonnet-5-5` | `claude-haiku-5-5` | `gpt-6-sol` |
+| `claude-opus` | `claude-opus-5-5` | `claude-haiku-5-5` | `gpt-6-sol` |
+
+The engine reads the roles from `/desktop/api/models/available` when the host
+starts and every five minutes after (`simeon-model-roles.ts`), so a change of
+setting reaches every cloud computer within minutes, with no release. The
+last answer is kept on the box's data volume (`model-roles.json`) and taken
+back when the host starts, and until a first read succeeds the host asks
+again every five seconds (14 October 2026). Before that, a computer that
+woke up used GPT-6 Sol and Luna until its first read, which failed while the
+box's sign-in was not there yet and was retried only thirty seconds later:
+under the Claude policy the first messages after a wake went to GPT. Only a
+computer that has never read the roles now uses GPT-6 Sol and Luna, which
+every policy serves; an engine built before 13 October names them whatever
+the setting says, so the Claude policies keep serving GPT-6 Luna as
+`retired`.
+
+| Model id | Price per million tokens: input, cache write, cache read, output |
+|---|---|
+| `claude-sonnet-5-5` | $2.00, $2.50, $0.10, $10.00 |
+| `claude-opus-5-5` | $4.00, $5.00, $0.20, $20.00 |
+| `claude-haiku-5-5` | $0.10, $0.125, $0.01, $0.50; five times each past a 100,000-token prompt |
+| `gpt-6-sol` | $2.00, nothing, $0.20, $10.00 |
+| `gpt-6-luna` | $0.10, nothing, $0.01, $0.50 |
+| `gemini-2.5-flash` (`video`) | $0.30 in (to confirm) |
+| `gpt-5.6-terra`, `gpt-5.6-luna`, `claude-sonnet-5` (`retired`: served, never offered) | $2.00 / $0.20 / $2.00 in |
+| `gpt-6-astra`, `claude-opus-5`, `claude-haiku-4-5-20251001`, `gemini-2.5-pro` (no role: priced, never served) | |
+
+The Claude prices were read off platform.claude.com on 13 October 2026; the
+earlier Claude rows were listed at older, higher prices until then.
+
+`/desktop/api/models/available` lists only models that have a role under the
+person's policy, are not retired, and whose provider has a key on the server.
+The proxy serves a model with any role under that policy, `retired` included,
+and refuses the rest: "This model is not offered by the desktop app."
+
+**Claude on the wire** (`claude-messages.ts`). The engine writes three things
+the AI SDK's Anthropic provider does not: `output_config.effort` (our levels;
+`none` reads as `low`), `thinking: {type: "adaptive", block_binding:
+{prefix_mismatch_behavior: "drop_block"}}` with the beta header
+`thinking-binding-controls-2026-08-01` (a Claude 5.5 thinking block whose
+earlier prompt changed, after a summary for instance, is dropped rather than
+refused with a 400), and two cache breakpoints: after the system prompt, and
+the top-level `cache_control` that the API moves to each request's last
+block. Thinking blocks go back on later calls with their signatures. When
+Claude fails before it has said anything (overloaded, rate limited, a server
+error, not offered), the step runs once on the fallback and writes
+`[simeon] model-fallback`.
 
 **Effort.** The app sends reasoning effort per call
 (`desktop/source/host/extensions/inference/provider-session.ts`):
@@ -295,6 +368,16 @@ model and per reason:
 cd server && uv run python -m scripts.desktop_usage_report someone@example.com --hours 48
 ```
 
+Add `--calls` to list every call, oldest first, with the time since the
+previous call to the same model, what the model read back from its stored copy
+of the prompt ("reused") and what it had to store again ("stored"). A Claude
+call that stored 10,000 tokens or more again carries a note: more than five
+minutes since that model's last call means Claude had let its copy go
+(Anthropic keeps it five minutes after its last use); within five minutes it
+means the start of the request changed, or the call belonged to another chat.
+On Render it runs in the API service's Shell, from `/app/server`:
+`uv run python -m scripts.desktop_usage_report someone@example.com --hours 24 --calls`.
+
 **What the prompt keeps stable.** The system prompt puts the parts that change
 while a conversation goes on last: the channels, the teammates, the list of
 routines, the connected apps' instructions and the discovery notice
@@ -325,7 +408,7 @@ line. This means the server and the app can be deployed in either order.
 | Capability | Model | Price |
 |---|---|---|
 | Web search | `gpt-5.6-luna` with OpenAI's hosted `web_search` tool, one non-streaming call | tokens, plus $0.01 per search |
-| Images | `gpt-image-1`, quality `medium` unless asked (avatars `low`) | $5 text in, $10 image in, $40 image out, per million tokens |
+| Images | `gpt-image-2.5-flare` for a new picture, `gpt-image-2.5-sunburst` when editing one (a call with reference images); quality `medium` unless asked (avatars `low`). If OpenAI will not serve the new model to the account, the same call is made once on `gpt-image-1` and a `desktop.images.model_unavailable` line is logged | $5 text in, $8 image in, $30 image out, per million tokens (`gpt-image-1`: $10 image in, $40 out) |
 | Transcription | `gpt-4o-mini-transcribe` | $0.003 per minute of audio; 25 MB upload limit |
 | Speech | `gpt-4o-mini-tts`, voice `alloy` | $15 per million characters; 4,000 characters a call |
 
@@ -451,7 +534,27 @@ box and `SAND_KEEP_BOX_RUNNING_ON_QUIT=1` always keeps it running
 ### Settings on Render
 
 - `SIMEON_OPENAI_API_KEY`: the OpenAI key. Without it, no OpenAI model is offered.
-- `ANTHROPIC_API_KEY` (or `SIMEON_ANTHROPIC_API_KEY`): Claude, for the fallback.
+- `ANTHROPIC_API_KEY` (or `SIMEON_ANTHROPIC_API_KEY`): Claude. Without it no
+  Claude model is offered, and a Claude policy answers on GPT-6 Sol.
+- `SIMEON_DESKTOP_MODELS`: `openai` (the default), `claude` or `claude-opus`.
+- `SIMEON_DESKTOP_CLAUDE_VIA`: `anthropic` (the default) or `bedrock`, Claude
+  in Amazon Bedrock so AWS credits pay for it (14 October 2026,
+  `server/simeon/desktop/bedrock.py`). With `bedrock`, a Claude call goes to
+  `bedrock-mantle.{region}.api.aws/anthropic/v1/messages`: the same request
+  and event stream, the model named `anthropic.claude-…`, signed with
+  `SIMEON_DESKTOP_BEDROCK_ACCESS_KEY_ID` and
+  `SIMEON_DESKTOP_BEDROCK_SECRET_ACCESS_KEY` (an AWS user allowed
+  `bedrock-mantle:CreateInference` and nothing else) in
+  `SIMEON_DESKTOP_BEDROCK_REGION` (default `us-west-2`, beside Render's
+  Oregon). Bedrock alone is enough to offer Claude. When Bedrock does not
+  answer with a 200 (refused, not enabled, overloaded, unreachable), the same
+  call is made once on `ANTHROPIC_API_KEY` if it is set, and
+  `desktop.proxy.bedrock_fallback` logs Bedrock's status and words. The
+  first use of each Claude model on the AWS account turns it on; AWS may ask
+  for the use case once. Not verified: no call has reached Bedrock yet.
+- `SIMEON_DESKTOP_MODELS_BY_EMAIL`: the same choice for a few people first, as
+  JSON: `{"you@example.com": "claude"}`. A value that is not a policy stops
+  the deploy at boot rather than serving the wrong models.
 - `SIMEON_GEMINI_API_KEY`: Gemini, for the video role.
 - `SIMEON_DESKTOP_MONTHLY_CREDITS` (only a server with no billing configured
   reads it), `SIMEON_DESKTOP_HOURLY_CREDITS`: only to change the defaults.
@@ -462,6 +565,8 @@ box and `SAND_KEEP_BOX_RUNNING_ON_QUIT=1` always keeps it running
 - `SAND_SIMEON_REASONING_EFFORT`, `SAND_SIMEON_CHEAP_REASONING_EFFORT`:
   override the effort (`none`, `low`, `medium`, `high`, `xhigh`, `max`).
 - `SAND_SIMEON_MAX_OUTPUT_TOKENS`: the output ceiling per call.
+- `SAND_SIMEON_MODEL`, `SAND_SIMEON_CHEAP_MODEL`, `SAND_SIMEON_FALLBACK_MODEL`:
+  hold a role on one engine whatever the server says (testing only).
 - `SAND_AGENT_MAX_STEPS`, `SAND_HIDDEN_TURN_MAX_STEPS`, `SAND_ROUTINE_MAX_STEPS`:
   the step limits.
 - `SAND_AGENT_MESSAGE_MAX_HOPS`: agent messages in a row.
@@ -470,17 +575,58 @@ box and `SAND_KEEP_BOX_RUNNING_ON_QUIT=1` always keeps it running
 
 - On the server, read `desktop.proxy.upstream_refused` first. It holds the
   provider's own sentence explaining the refusal. Also check
-  `desktop.proxy.upstream_unreachable` and `desktop.proxy.usage_not_recorded`,
+  `desktop.proxy.upstream_unreachable`, `desktop.proxy.usage_not_recorded`
+  and, with Claude on Bedrock, `desktop.proxy.bedrock_fallback`,
   and for capabilities `desktop.search.*`, `desktop.images.*`,
   `desktop.transcription.*`, `desktop.speech.*` and `desktop.video.generate`.
 - In the box, each model call writes a `[simeon] model=… effort=… input=…
-  cached=… output=… tools=… offered=…` line. A failed call writes
-  `[simeon] model-error`. A switch to the cheap model after a rate limit writes
-  `[simeon] model-fallback`.
+  cached=… output=… tools=… offered=…` line; a Claude call adds `written=`,
+  the prompt tokens written to the cache (input counts fresh, cached and
+  written together). A failed call writes `[simeon] model-error`. A step moved
+  to another model writes `[simeon] model-fallback` (GPT to the cheap model
+  after a rate limit; Claude to its fallback). The roles the engine follows
+  are on `[simeon] model-roles primary=… cheap=… fallback=…`, written when
+  they change, `model-roles remembered …` when the host starts on the kept
+  ones, or `model-roles unread` when the read fails.
+- A tool the model makes up no longer fails the run (15 October 2026: Claude
+  called `CheckSubagent`, and the box log read `[sand][turn] agent run failed
+  … NoSuchToolError … unavailable tool 'CheckSubagent'`). The call now
+  reaches the agent's loop, which answers `Tool not found: <name>. Available
+  tools: …`, and the model goes on with a real one; the step's line shows it
+  as `tools=CheckSubagent(…)`. Connector calls the AI SDK runs itself get the
+  same answer. Only the real tools are ever offered
+  (`answeringUnknownTools`, `desktop/tests/unknown-tool-call.test.mjs`).
+- **"`tool_use` ids were found without `tool_result` blocks immediately
+  after"** (`desktop.proxy.upstream_refused`, status 400; the founder's form,
+  15 October 2026, three times in a row). Claude takes a step's results as
+  the very next message, every `tool_result` first in it, before any text or
+  picture. The loop keeps each result as a message of its own and puts a
+  result's screenshot after it as a user message; the AI SDK merges them in
+  that order, so with two calls in one step and a screenshot from the first,
+  the second's result came after the picture and Claude refused the
+  conversation, and every later step of it. The server put the computer to
+  sleep at 15:17 PT after its 30 idle minutes (nothing running, no app
+  attached), before the refusals at 15:19, so the sleep did not cut the form
+  off. Now, on Claude's wire only (`pairedForClaude`, `provider-session.ts`),
+  each step's results follow it at once in the order of its calls; a call
+  with no result (a run stopped mid-step) is answered "This tool call was
+  interrupted…" as an error, so the agent looks before it repeats it; a
+  result with no call is left out. A conversation already in that shape is
+  sent byte for byte as before (`desktop/tests/claude-tool-results.test.mjs`,
+  which builds the request with the AI SDK's own Claude provider and checks
+  it against Claude's rules). In the box, a repair writes `[simeon]
+  claude-tool-results repaired reordered=… interrupted=… dropped=…`; a refused
+  call writes `[simeon] model-error-messages` with the conversation's shape
+  (`tool:tool-result` and `user:text+image` in order). The stored
+  conversation is not rewritten: it is put in order each time it is sent, so
+  a conversation that broke before this engine works again with it.
 
 **Not yet verified:** GPT-6 Sol and Luna have not run against OpenAI. The
 spend guards have not run on a Mac. The Gemini prices are marked "to confirm"
-in the code.
+in the code. The Claude path (13 October 2026) has run only against a stubbed
+proxy (`desktop/tests/claude-path.test.mjs`); no request has reached
+Anthropic, and the cost test (`docs/cost-test-set.md`) has not been run on
+it.
 
 ---
 
@@ -580,6 +726,22 @@ volumes, in any of these cases:
 A box that is busy keeps its current program until the app next connects to
 it while it is idle (`sand.box.update_deferred`).
 
+**How the apps reach it (16 October 2026).** The iPhone and Mac apps find
+the box the way the Electron app does (`ios/SimeonCore/Sources/SimeonCore/Gateway.swift`):
+
+- At launch they go straight to the address the broker gave last time, kept
+  in the Keychain for that account for seven days
+  (`SavedGateway.swift`), and ask `EnsureSandBox` in the background. The
+  kept address is tried once. If it fails (the box slept, or was rebuilt),
+  they wait for the broker's answer. Signing out forgets it.
+- Once they have an address, they keep using it while the event stream is
+  up. Otherwise they first ask the box's `/health` (1.5 s, trusted for 5 s),
+  and call `EnsureSandBox` again only when that gets no answer.
+- The event stream dials again after 1, 2, 4, 8, then every 10 seconds, and
+  a stream silent for 35 seconds counts as dead (the host pings every 15).
+- When the broker answers `SAND_BOX_BLOCKED`, they do not ask again until its
+  `retry-after` (a minute without one, 15 minutes at most).
+
 Each box has two volumes: `/workspace` and `/home/box/sand-data`.
 
 **The proxy.** The API forwards the box's ports at `/sand-box/{box_id}/p/{port}/…`,
@@ -588,7 +750,11 @@ for both HTTP and WebSocket (`server/simeon/sand/box_proxy.py`). The ports are
 passes only with the box's network token, sent as the `network_token` query
 parameter or the `x-anyrun-network-token` header. Inside the box, the host runs
 the same token check in front of the screen stream
-(`desktop/source/host/box-stream-guard.ts`).
+(`desktop/source/host/box-stream-guard.ts`). WebSockets are passed on without
+per-message deflate on either side (`--ws-per-message-deflate false` in
+`server/Dockerfile`, `compression=None` towards the box): the screen's pictures
+are already compressed, and deflating them cost about 10 ms per update for
+nothing (`docs/services-agents.md` §15).
 
 **Placement across several servers.** `SIMEON_BOX_HOSTS` lists the box servers
 as JSON:
@@ -623,7 +789,10 @@ All servers share one CA, so one client certificate opens every one of them.
   - A box that is busy stays awake. A box that is only waiting on the person's
     approval can still sleep.
   - So does a box the app is attached to through the proxy, tracked by a Redis
-    key that lasts 180 seconds.
+    key that lasts 180 seconds. Each minute it stays attached, the box's
+    `last_active_at` is set to now (16 October 2026), so its idle time starts
+    when the app goes. The Electron app had the same effect by calling
+    `EnsureSandBox` every 30 seconds while it was open.
   - Any other box idle for `SIMEON_BOX_IDLE_HIBERNATE_AFTER` (30 minutes) is
     stopped with its files kept, and the app shows it as sleeping.
 - **Wake.** `EnsureSandBox` wakes a sleeping box. So does `sand.box.wake`,
@@ -678,6 +847,64 @@ routes. Other desktop routes refuse it. A refresh never accepts it.
 the migration log that `WatchSandBoxMigration` streams is also in Redis, so
 more than one API process can serve boxes.
 
+**Backups** (14 October 2026, `server/simeon/sand/box_store.py`), the upstream
+app's own design, switched on by `SIMEON_BOX_STORE_BUCKET`:
+
+- The host in the box backs itself up (`box-store-sync` in
+  `desktop/source/host/extensions/box-store-sync/`): every two minutes, and
+  five seconds after an agent's turn ends, it copies the agents' data
+  (`/home/box/sand-data`), the workspace, the app sign-ins (`cli-config`) and
+  Chrome's cookies, saved logins and site data (the whole Chrome profile only
+  when idle, at most every 15 minutes) to S3. Each file is stored once under
+  its sha256 (`blobs/`), with one `manifest.json` naming what goes where. The
+  box never deletes anything.
+- It asks the server for presigned S3 URLs over the upstream's agent-store
+  calls on `simeon.v1.CloudAgentService`: `MintAgentStoreToken` (a one-hour
+  token naming the person's store, sent back as `x-agent-store-token`), then
+  `PresignAgentStoreReads` and `PresignAgentStoreWrites`. A write with a
+  condition (`If-None-Match: *` or `If-Match`) carries a second, conflict URL
+  where the box keeps its copy when the condition fails, so nothing is lost.
+  The bytes go straight between the box and S3, never through the API.
+- A store belongs to one person: its id is derived from the person and the
+  box (`store-<uuid>`), and every key lives under
+  `box-stores/<user id>/`. Delete Account removes that prefix.
+- The box is told (`box_env`): `SAND_BOX_STORE_SYNC=1`, its store
+  (`SAND_BOX_STORE_ID`) and the bucket's address, which the host adds to its
+  allowlist of presigned-URL hosts (`SIMEON_AGENT_STORE_BUCKET_HOSTS`). Every
+  container made with backups on carries the label `com.simeonlabs.box-store`;
+  an idle box made before is replaced on its volumes once (`stale_store`), as
+  a box on an older host program is.
+- Restoring, the upstream's order: before a container is replaced, the API
+  asks the box to bring its backup up to date (`POST /api/snapshotBoxStoreNow`,
+  30 seconds). The new container is told to copy the backup in before its
+  host starts (`SIMEON_BOX_STORE_RESTORE` with a new
+  `SIMEON_BOX_STORE_RESTORE_ID`; the host runs `host-main.cjs --box-copy-in`,
+  `desktop/source/host/box/box-store-restore.ts`), once per container:
+  - `always` after that backup succeeded, since Chrome and the app sign-ins
+    live outside the two volumes;
+  - `fresh` otherwise, only onto an empty agents folder and only when a backup
+    exists (or S3 could not say), so a container lost with its volumes kept
+    never trades newer files for an older backup.
+  A failed copy stops the host and the supervisor starts it again; after three
+  failures it starts without the backup, with backups paused in that container
+  so its empty folders never replace the backup.
+- The new container's credential is committed before the container starts
+  (15 October 2026, `BoxBrokerService._mint_credential`). Until then it was
+  written in the ensure request's own transaction, saved only when the request
+  ended, after the box answered (up to `BOX_READY_TIMEOUT`); the box's first
+  act, the copy, renewed with a credential the server could not see yet, and
+  every rebuild for a new engine ended in three refused copies
+  (`[box-copy-in] result outcome=failed … renewal failed (HTTP 401)`), about a
+  minute of "connecting", and a box without its Chrome sign-ins and with
+  backups paused. `tests/sand/test_box_broker.py` renews from a second
+  connection while ensure is still open.
+- The computer's three actions, as upstream: **Update** brings the backup up
+  to date and swaps the container on the same files; **Recover computer**
+  (`ForceRecreateSandBox`) backs up as far as the box answers, wipes the
+  agents' data and boots from the backup; a **reset**
+  (`RecreateSandBox` with `preserveData: false`) wipes the files and the
+  backup together.
+
 ### Settings on Render
 
 Put these in the environment group that both the API and the worker read,
@@ -694,6 +921,9 @@ because the worker runs the sleeper and the wake. Full steps are in
 | `SIMEON_BOX_IDLE_HIBERNATE_AFTER` | `PT30M`; `PT0S` never sleeps |
 | `SIMEON_BOX_MEMORY_LIMIT_MB`, `SIMEON_BOX_CPU_LIMIT` | `4096`, `2.0`; `0` means no limit |
 | `SIMEON_BOX_MAX_RUNNING` | `3`; `0` means no limit |
+| `SIMEON_BOX_STORE_BUCKET` | the backup bucket's name; empty: no backups |
+| `SIMEON_BOX_STORE_REGION` | the bucket's region, `us-west-2` by default |
+| `SIMEON_BOX_STORE_ACCESS_KEY_ID`, `_SECRET_ACCESS_KEY` | a key with `s3:GetObject`, `s3:PutObject`, `s3:DeleteObject` and `s3:ListBucket` on that bucket only (ListBucket makes a missing file read 404, which the box needs) |
 
 Leave `SIMEON_BOX_HOST_ADDRESS` and `SIMEON_BOX_PUBLIC_URL_TEMPLATE` empty so
 the API proxies the ports itself.
@@ -731,6 +961,13 @@ settings is not read (`desktop/source/shared/box-runtime.ts`).
   - `sand.box.proxy.refused` and `sand.box.proxy.unreachable` cover the proxy.
 - For the bundle: `sand.box.bundle.version` shows a new version was read, and
   `sand.box.bundle.pointer_unread` shows the version file could not be read.
+- For backups: `sand.box.store` (with `restore=always|fresh|none`) for every
+  container made with backups on; `sand.box.store.flush` with `flushed=` before
+  a container is replaced; `sand.box_store.head_failed` when S3 could not say
+  whether a backup exists; `sand.box.store.clear_failed` when a reset could not
+  empty the backup. In the box, `[box-store-restore]` and `[box-store-sync]`
+  lines in `/tmp/sand-host.log`, and the copy itself in `/tmp/sand-copy-in.log`
+  (`[box-copy-in] result outcome=hydrated`).
 - On the worker: `sand.box.hibernated`, `sand.box.sleeper`,
   `sand.box.sleep.failed`, `sand.box.woken`, `sand.box.wake.deferred`.
 - In the box, `/tmp/sand-host.log`:
@@ -741,7 +978,9 @@ settings is not read (`desktop/source/shared/box-runtime.ts`).
 
 **Not yet verified:** the cloud computer has been tested against two real
 Docker Engines, but has not run in the packaged app on a Mac. Sleep and wake
-have not run against the production VM.
+have not run against the production VM. Backups have been tested against a
+local S3 and with the engine's tests, not yet on a real computer with a real
+bucket; old files in the bucket are never cleaned up yet (the box only adds).
 
 ## 5. The Mac app's releases
 

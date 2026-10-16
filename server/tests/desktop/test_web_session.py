@@ -105,6 +105,26 @@ class TestWebSession:
             "/app/connected.html?error=access_denied&error_description=No"
         )
 
+    async def test_simeon_s_client_document_names_itself_and_the_callback(
+        self, client: httpx.AsyncClient
+    ) -> None:
+        """Shopify and Zendesk read Simeon as a client from this document
+        (a client ID metadata document): its `client_id` must be the very
+        address they fetched, the box's return address must be listed, and
+        it carries no secret."""
+        response = await client.get("/desktop/mcp-oauth/client.json")
+        assert response.status_code == 200
+        assert response.headers["content-type"].startswith("application/json")
+        assert response.headers["cache-control"] == "public, max-age=3600"
+        body = response.json()
+        base = settings.BASE_URL.rstrip("/")
+        assert body["client_id"] == f"{base}/desktop/mcp-oauth/client.json"
+        assert f"{base}/desktop/mcp-oauth/callback" in body["redirect_uris"]
+        assert body["client_name"] == "Simeon"
+        assert body["token_endpoint_auth_method"] == "none"
+        assert body["grant_types"] == ["authorization_code", "refresh_token"]
+        assert not any("secret" in key for key in body)
+
     @pytest.mark.auth
     async def test_a_web_session_has_no_mac_to_hand_a_daemon_credential_to(
         self, client: httpx.AsyncClient

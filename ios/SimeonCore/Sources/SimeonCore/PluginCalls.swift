@@ -228,13 +228,13 @@ extension AppStore {
     do {
       id = try await calls.createSetupAgent()
     } catch {
-      return (nil, error.localizedDescription)
+      return (nil, PlainWords.error(error.localizedDescription))
     }
     await reloadRoster()
     do {
       try await calls.sendSetupRequest(to: id)
     } catch {
-      return (id, error.localizedDescription)
+      return (id, PlainWords.error(error.localizedDescription))
     }
     return (id, nil)
   }

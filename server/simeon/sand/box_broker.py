@@ -35,9 +35,11 @@ import structlog
 from fastapi import Depends, Request
 from fastapi.responses import JSONResponse
 
+from simeon.config import settings
 from simeon.desktop.allowance import billing_url
 from simeon.desktop.auth import get_desktop_session
 from simeon.desktop.service import desktop
+from simeon.kit.db.postgres import AsyncSessionMaker
 from simeon.models import DesktopSession
 from simeon.openapi import APITag
 from simeon.postgres import AsyncSession, get_db_session
@@ -200,27 +202,57 @@ async def _still_starting(call: ConnectCall, error: BaseException) -> ConnectErr
 # --- the RPCs -----------------------------------------------------------------------
 
 
-async def require_a_plan(call: ConnectCall) -> None:
+async def require_a_plan(call: ConnectCall, *, reaching: bool = False) -> None:
     """With billing required and no plan, no box: `permission_denied`
     with no hint header, which the Mac's host connector reads as access
     denied (`box-host-connector.ts`), so the window shows its access
     cover with the words `GetSandAccessStatus` gives and keeps asking
     for the box; once the plan is on Stripe the next ask succeeds and
-    the cover goes, with nothing to restart (`docs/services-billing.md`)."""
+    the cover goes, with nothing to restart (`docs/services-billing.md`).
+
+    Reaching the box (`EnsureSandBox`, `reaching`) is let through since
+    14 October 2026 while `DESKTOP_COMPUTER_WITHOUT_PLAN` is on: the apps
+    then show the account's agents and chats, hold sending (the access
+    state is still payment required) and say why over the composer, and
+    every metered call is still refused with 402. A rebuild still waits
+    for a plan."""
     allowance = await desktop.allowance(call.db, call.caller.user)
     if allowance.none:
-        log.info("sand.box.ensure.no_plan", user=str(call.caller.user_id))
-        raise ConnectError(
-            "permission_denied",
-            f"No active plan. Choose one at {billing_url()}.",
+        allowed = reaching and settings.DESKTOP_COMPUTER_WITHOUT_PLAN
+        log.info(
+            "sand.box.ensure.no_plan",
+            user=str(call.caller.user_id),
+            payment_failed=allowance.payment_failed,
+            allowed=allowed,
         )
+        if allowed:
+            return
+        if not allowance.payment_failed:
+            message = f"No active plan. Choose one at {billing_url()}."
+        elif allowance.provider == "app_store":
+            message = (
+                "Your payment didn't go through. Update your payment method "
+                "in your Apple Account settings."
+            )
+        else:
+            message = (
+                f"Your payment didn't go through. Update your card at {billing_url()}."
+            )
+        raise ConnectError("permission_denied", message)
+
+
+def _committed(call: ConnectCall) -> AsyncSessionMaker | None:
+    """The app's sessionmaker, for the new box's credential: committed
+    before the box starts, since the box uses it at once
+    (`BoxBrokerService._mint_credential`). The test client has none."""
+    return getattr(call.request.state, "async_sessionmaker", None)
 
 
 @service.unary("EnsureSandBox")
 async def ensure_sand_box(call: ConnectCall) -> dict[str, Any]:
-    await require_a_plan(call)
+    await require_a_plan(call, reaching=True)
     try:
-        box = await broker.ensure(call.db, call.caller)
+        box = await broker.ensure(call.db, call.caller, committed=_committed(call))
     except (BoxHostError, BoxBrokerRefused) as error:
         log.warning(
             "sand.box.ensure.refused", user=str(call.caller.user_id), error=str(error)
@@ -261,6 +293,7 @@ async def recreate_sand_box(call: ConnectCall) -> dict[str, Any]:
             redis=call.redis,
             preserve_data=preserve is not False,
             force=force is True,
+            committed=_committed(call),
         )
     except BoxBrokerRefused as error:
         raise connect_error_for(error)
@@ -274,7 +307,12 @@ async def force_recreate_sand_box(call: ConnectCall) -> dict[str, Any]:
     await require_a_plan(call)
     try:
         outcome = await broker.recreate(
-            call.db, call.caller, redis=call.redis, preserve_data=False, force=True
+            call.db,
+            call.caller,
+            redis=call.redis,
+            preserve_data=False,
+            force=True,
+            committed=_committed(call),
         )
     except BoxBrokerRefused as error:
         raise connect_error_for(error)

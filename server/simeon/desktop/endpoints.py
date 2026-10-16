@@ -69,9 +69,17 @@ from .auth import (
     get_desktop_session,
     get_proxy_caller,
 )
+from .bedrock import (
+    bedrock_body,
+    bedrock_configured,
+    bedrock_headers,
+    bedrock_messages_url,
+)
 from .capabilities import router as capabilities_router
 from .composio import forward as composio_forward
+from .flight_booking import router as flight_booking_router
 from .flights import router as flights_router
+from .mcp_oauth_return import router as mcp_oauth_return_router
 
 # Straight from the price list rather than through `service`, which
 # re-exports only what it uses itself — a name it merely passed through
@@ -103,11 +111,12 @@ from .service import (
     SpokenApi,
     Usage,
     desktop,
-    model_by_id,
+    model_policy,
     offered_models,
     provider_api_key,
     provider_base_url,
     provider_configured,
+    served_model,
     set_preferred_name,
     tally_for,
     usage_from_answer,
@@ -364,13 +373,23 @@ async def set_name(
     return _ok(desktop.user_payload(user))
 
 
+#: The apps' own URL schemes: the Mac's `simeon`, the iPhone's
+#: `simeon-ios` (`SimeonConfig.urlScheme`).
+APP_SCHEMES = ("simeon", "simeon-ios")
+
+
 class PortalBody(BaseModel):
     """The app's Manage plan card: `flow` `update_confirm` with a `tier`
-    for an upgrade, nothing for the portal's front page."""
+    for an upgrade, nothing for the portal's front page; `payment_method`
+    for a card that failed (the banner over the composer). `back` names
+    the app that asks (its URL scheme): Stripe's page then ends on
+    `/desktop/billing/back`, which hands the person to the app, instead of
+    the web's billing page, which asks them to sign in (14 October 2026)."""
 
     model_config = ConfigDict(extra="ignore")
     flow: Literal["update_confirm", "cancel", "payment_method"] | None = None
     tier: str | None = None
+    back: Literal["simeon", "simeon-ios"] | None = None
 
 
 @router.post("/api/billing/portal", name="desktop:billing_portal")
@@ -386,13 +405,59 @@ async def billing_portal(
     tier = tier_from_value(body.tier) if body.tier else None
     if body.flow == "update_confirm" and (tier is None or tier not in PAID_TIERS):
         return _fail(400, "That plan is not one of ours.", status=400)
+    back = (
+        settings.generate_external_url(
+            f"/desktop/billing/back?{urlencode({'to': body.back})}"
+        )
+        if body.back
+        else None
+    )
     try:
         url = await plans_service.create_portal(
-            session, desktop_session.user, flow=body.flow, tier=tier
+            session,
+            desktop_session.user,
+            flow=body.flow,
+            tier=tier,
+            return_url=back,
+            back_when_done=back is not None,
         )
     except PlansError as error:
         return _fail(error.status_code, error.message, status=error.status_code)
     return _ok({"portalUrl": url})
+
+
+@router.post("/api/billing/settle", name="desktop:billing_settle")
+async def billing_settle(
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+    session: AsyncSession = Depends(get_db_session),
+) -> JSONResponse:
+    """Asked by the app as Stripe's card page closes after a failed
+    payment: the unpaid plan charged now on the card just saved
+    (`PlansService.settle_unpaid`). `paid` says whether the plan is on."""
+    try:
+        paid = await plans_service.settle_unpaid(session, desktop_session.user)
+    except PlansError as error:
+        return _fail(error.status_code, error.message, status=error.status_code)
+    return _ok({"paid": paid})
+
+
+@router.get("/billing/back", name="desktop:billing_back", response_model=None)
+async def billing_back(to: str | None = Query(default=None)) -> RedirectResponse:
+    """Where Stripe's page ends when the app opened it (`PortalBody.back`):
+    on to the app's own link, which closes the app's sign-in sheet the page
+    was shown in, or brings the app forward from a browser. Anything but
+    one of the apps' schemes goes to the web's billing page."""
+    if to in APP_SCHEMES:
+        return RedirectResponse(
+            f"{to}://app/v1/open",
+            status_code=302,
+            headers={"Cache-Control": "no-store"},
+        )
+    return RedirectResponse(
+        settings.generate_frontend_url("/billing"),
+        status_code=302,
+        headers={"Cache-Control": "no-store"},
+    )
 
 
 @router.get("/api/user/quota", name="desktop:quota")
@@ -584,12 +649,17 @@ async def memory_list(
 
 @router.get("/api/models/available", name="desktop:models")
 async def models_available(
-    desktop_session: DesktopSession = Depends(get_desktop_session),
+    desktop_session: DesktopSession = Depends(get_desktop_or_box_session),
 ) -> JSONResponse:
     """The menu. A provider Simeon holds no key for is not on it: a
     missing key reads as « not available here », never as an error at the
-    moment somebody sends a message."""
-    return _ok([one.available() for one in offered_models()])
+    moment somebody sends a message.
+
+    The box's credential reads it too (13 October 2026): the engine on the
+    person's cloud computer follows the roles here (`ModelPolicy`), and the
+    menu says nothing the model proxy the credential already reaches would
+    not."""
+    return _ok([one.available() for one in offered_models(desktop_session.user)])
 
 
 @router.get("/api/models/pricing-catalog", name="desktop:pricing")
@@ -1101,7 +1171,7 @@ async def proxy_models(
     which is the worst kind of failure to debug.
     """
     return JSONResponse(
-        openai_models_list(offered_models(), SpokenApi.openai_completions)
+        openai_models_list(offered_models(caller.user), SpokenApi.openai_completions)
     )
 
 
@@ -1148,14 +1218,17 @@ async def _proxy(
         return _error("invalid_request_error", "The body is not JSON.", 400)
     if not isinstance(payload, dict):
         return _error("invalid_request_error", "The body must be an object.", 400)
-    model = model_by_id(
-        model_id if model_id is not None else str(payload.get("model", ""))
+    user = caller.user
+    model = served_model(
+        model_id if model_id is not None else str(payload.get("model", "")),
+        model_policy(user),
     )
-    if model is None or model.role is None:
-        # A priced row with no role (Astra at 10x, Opus at 5x, Gemini Pro) is
-        # in the catalogue so an old usage row still means something, not so
-        # a bearer can name it and be served at that price (F-122,
-        # 25 September 2026). What the proxy serves is what it offers.
+    if model is None:
+        # A priced row with no role under this person's policy (Astra at
+        # 10x, Opus 5, Gemini Pro) is in the catalogue so an old usage row
+        # still means something, not so a bearer can name it and be served
+        # at that price (F-122, 25 September 2026). What the proxy serves is
+        # what the policy offers, and what it has retired.
         return _error(
             "invalid_request_error",
             "This model is not offered by the desktop app.",
@@ -1173,7 +1246,6 @@ async def _proxy(
         )
     if not provider_configured(model.provider):
         return _error("api_error", "The model service is not configured.", 503)
-    user = caller.user
     refused = await budget_refusal(session, user)
     if refused is not None:
         return refused
@@ -1184,6 +1256,24 @@ async def _proxy(
     url = f"{provider_base_url(model.provider)}{upstream_path or wire.upstream_path}"
     headers = wire.headers(request)
     body = wire.body(payload, raw, model)
+    # Where the call is sent, in order: Claude through Bedrock first when it
+    # is chosen (`simeon.desktop.bedrock`), the provider itself otherwise or
+    # after it. A later address is tried only when an earlier one did not
+    # answer with a 200.
+    attempts: list[tuple[str, dict[str, str], bytes]] = [(url, headers, body)]
+    if spoken is SpokenApi.anthropic_messages and bedrock_configured():
+        bedrock_url = bedrock_messages_url()
+        bedrock_request_body = bedrock_body(payload)
+        forwarded = {key: value for key, value in headers.items() if key != "x-api-key"}
+        attempts = [
+            (
+                bedrock_url,
+                bedrock_headers(bedrock_url, bedrock_request_body, forwarded),
+                bedrock_request_body,
+            )
+        ]
+        if provider_api_key(DesktopProvider.anthropic):
+            attempts.append((url, headers, body))
     user_id, session_id = user.id, caller.session_id
     reason = call_reason(request)
     if spoken is SpokenApi.gemini_generate_content:
@@ -1235,7 +1325,22 @@ async def _proxy(
 
     if not stream:
         async with httpx.AsyncClient(timeout=_timeout()) as client:
-            upstream = await client.post(url, headers=headers, content=body)
+            for attempt_url, attempt_headers, attempt_body in attempts[:-1]:
+                try:
+                    upstream = await client.post(
+                        attempt_url, headers=attempt_headers, content=attempt_body
+                    )
+                except httpx.HTTPError as error:
+                    _log_bedrock_fallback(model, None, str(error).encode())
+                    continue
+                if upstream.status_code == 200:
+                    break
+                _log_bedrock_fallback(model, upstream.status_code, upstream.content)
+            else:
+                last_url, last_headers, last_body = attempts[-1]
+                upstream = await client.post(
+                    last_url, headers=last_headers, content=last_body
+                )
         usage = Usage()
         try:
             answer = upstream.json()
@@ -1254,17 +1359,29 @@ async def _proxy(
         return JSONResponse(answer, status_code=upstream.status_code)
 
     client = httpx.AsyncClient(timeout=_timeout())
-    upstream_request = client.build_request("POST", url, headers=headers, content=body)
-    try:
-        upstream = await client.send(upstream_request, stream=True)
-    except httpx.HTTPError as error:
-        await client.aclose()
-        log.warning(
-            "desktop.proxy.upstream_unreachable",
-            provider=model.provider.value,
-            error=str(error),
+    for index, (attempt_url, attempt_headers, attempt_body) in enumerate(attempts):
+        last = index == len(attempts) - 1
+        upstream_request = client.build_request(
+            "POST", attempt_url, headers=attempt_headers, content=attempt_body
         )
-        return _error("api_error", "The model service could not be reached.", 502)
+        try:
+            upstream = await client.send(upstream_request, stream=True)
+        except httpx.HTTPError as error:
+            if not last:
+                _log_bedrock_fallback(model, None, str(error).encode())
+                continue
+            await client.aclose()
+            log.warning(
+                "desktop.proxy.upstream_unreachable",
+                provider=model.provider.value,
+                error=str(error),
+            )
+            return _error("api_error", "The model service could not be reached.", 502)
+        if upstream.status_code == 200 or last:
+            break
+        refusal_body = await upstream.aread()
+        await upstream.aclose()
+        _log_bedrock_fallback(model, upstream.status_code, refusal_body)
 
     if upstream.status_code != 200:
         # An error is small and not an event stream: read it, meter
@@ -1304,6 +1421,18 @@ async def _proxy(
         status_code=200,
         media_type=upstream.headers.get("content-type", "text/event-stream"),
         headers={"cache-control": "no-store"},
+    )
+
+
+def _log_bedrock_fallback(
+    model: DesktopModel, status: int | None, content: bytes
+) -> None:
+    """Bedrock did not answer, and the call goes to the Anthropic key."""
+    log.warning(
+        "desktop.proxy.bedrock_fallback",
+        model=model.model_id,
+        status=status,
+        preview=content[:500].decode(errors="replace"),
     )
 
 
@@ -1461,6 +1590,7 @@ router.include_router(voice_router)
 # the sign-in link, status and disconnect; the provider behind them never named.
 router.include_router(apps_router)
 router.include_router(flights_router)
+router.include_router(flight_booking_router)
 router.include_router(releases_router)
 
 # Pushes to the person's iPhone (`push.py`): the phone registers at
@@ -1471,6 +1601,10 @@ router.include_router(push_router)
 # app sign-ins, the transcripts, the rows, every session; the user anonymised.
 router.include_router(account_deletion_router)
 router.include_router(app_store_router)
+
+# A connected app's sign-in finished by the app that opened it, not the web
+# page (`mcp_oauth_return.py`).
+router.include_router(mcp_oauth_return_router)
 
 
 # Apps through Composio: the app's six calls, forwarded with Simeon's

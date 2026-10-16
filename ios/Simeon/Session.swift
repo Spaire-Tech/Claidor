@@ -174,7 +174,8 @@ final class SessionController {
     if store.account == nil, let known = Self.rememberedAccount() { store.account = known; personName.value = known.name }
     if !holding { phase = .signedIn }
     // The voice call: ElevenLabs' kit on the phone, the Mac's call protocol in SimeonCore (LiveCall).
-    let backend = LiveBackend(gateway: Gateway(api: api), api: api)
+    // The computer's address kept from the last launch is used at once while the broker is asked (the Electron app's fast path).
+    let backend = LiveBackend(gateway: Gateway(api: api, saved: Self.savedGateway), api: api)
     let names = personName
     let store = store
     #if os(macOS)
@@ -220,14 +221,17 @@ final class SessionController {
 
   private static let accountKey = "simeon.account"
 
-  /** The account's name and e-mail on this phone (not a secret: what Settings shows), for its initials at the next launch. */
+  /** Where the computer answered last time, beside the session in the Keychain (the Electron app's kept address); forgotten with the session. */
+  private static let savedGateway = KeychainSavedGateway(service: AppPlatform.keychainService)
+
+  /** The account's name, e-mail and id on this phone (not a secret: what Settings shows, and who approves a purchase), for the next launch before the profile answers. */
   private static func remember(_ account: Account?) {
-    if let account { UserDefaults.standard.set(["name": account.name, "email": account.email], forKey: accountKey) } else { UserDefaults.standard.removeObject(forKey: accountKey) }
+    if let account { UserDefaults.standard.set(["name": account.name, "email": account.email, "id": account.id ?? ""], forKey: accountKey) } else { UserDefaults.standard.removeObject(forKey: accountKey) }
   }
 
   private static func rememberedAccount() -> Account? {
     guard let saved = UserDefaults.standard.dictionary(forKey: accountKey) as? [String: String], let name = saved["name"], let email = saved["email"] else { return nil }
-    return Account(name: name, email: email)
+    return Account(name: name, email: email, id: saved["id"].flatMap { $0.isEmpty ? nil : $0 })
   }
 
   /**
@@ -275,7 +279,7 @@ final class SessionController {
       } catch {
         guard let self, self.api === signedIn else { return }
         let unreachable = GatewayError.neverArrived(error) || error is URLError
-        self.handOff = .failed(unreachable ? Onboarding.unreachable : error.localizedDescription)
+        self.handOff = .failed(unreachable ? Onboarding.unreachable : PlainWords.error(error.localizedDescription))
       }
     }
   }
@@ -313,12 +317,16 @@ final class SessionController {
   }
 
   private func ended() {
+    // Already signed out here (Delete Account, Sign Out): a call made before, refused after, changes nothing and
+    // does not replace what the sign-in screen says (14 October 2026: "Your account was deleted" became "sign-in ended").
+    guard api != nil else { return }
     store.detach()
     Purchases.shared.stop()
     Notifications.shared.forget()
     FreeMonthAsk.forget()
     NotificationPictures.forget()
     Self.remember(nil)
+    Self.savedGateway.write(nil)
     api = nil
     askedForNotifications = false
     forgetFirstRun()
@@ -496,19 +504,23 @@ final class SessionController {
   /** Settings › Delete Account: nil once the account is gone (and the app signed out), else why not. */
   func deleteAccount() async -> String? {
     guard let api else { return "Sign in to Simeon first." }
+    // When the answer never came but the account went (`SimeonAPI.deleteAccount`), the plan read before says whether Apple bills one.
+    let applePlan = store.usage.summary?.billedByApple == true
     let appleRunsOn: Bool
     do {
-      appleRunsOn = try await api.deleteAccount()
+      appleRunsOn = try await api.deleteAccount() || applePlan
     } catch {
-      return error.localizedDescription
+      return PlainWords.error(error.localizedDescription, fallback: "Try again in a little while.")
     }
+    // First, before anything waits: a late refusal of a call made before the delete is not a sign-out (`ended`).
+    self.api = nil
     store.detach()
     Purchases.shared.stop()
     await Notifications.shared.stop()
     FreeMonthAsk.forget()
     NotificationPictures.forget()
     Self.remember(nil)
-    self.api = nil
+    Self.savedGateway.write(nil)
     askedForNotifications = false
     forgetFirstRun()
     // A plan bought through Apple keeps charging until the person cancels it there.
@@ -524,6 +536,7 @@ final class SessionController {
     FreeMonthAsk.forget()
     NotificationPictures.forget()
     Self.remember(nil)
+    Self.savedGateway.write(nil)
     api = nil
     askedForNotifications = false
     forgetFirstRun()
@@ -547,21 +560,32 @@ final class AppConnector {
   private let presenter = SheetPresenter()
   private(set) var connecting: String?
 
-  func connect(_ name: String, store: AppStore) async {
-    guard connecting == nil else { return }
+  /**
+   * Connect (`Connecting`): the app added on the computer and its sign-in
+   * opened at once, in one go; how the sign-in ended, or nil when none
+   * opened (`store.problem` says why). One the person cancelled takes back
+   * the app it added, so nothing is left added and not signed in; the
+   * spinner stays until that is done, so a second Connect can't meet it.
+   */
+  @discardableResult
+  func connect(_ name: String, store: AppStore) async -> SignInEnd? {
+    guard connecting == nil else { return nil }
     connecting = name
     defer { connecting = nil; session = nil }
-    guard let url = await store.connectApp(named: name) else { return }
-    await signIn(url, name: name, store: store) { store.isConnected(name) }
+    guard let start = await store.beginConnect(named: name) else { return store.isConnected(name) ? SignInEnd.connected : nil }
+    let end = await signIn(start.url, name: name, store: store) { store.isConnected(name) }
+    if Connecting.undoes(end, start: start) { await store.undoConnect(start, name: name) }
+    return end
   }
 
-  /** One account of an app already added: its sign-in again (an account that needs it, from the app's page). */
-  func signIn(_ account: ConnectedApp, store: AppStore) async {
-    guard connecting == nil else { return }
+  /** One account of an app already added: its sign-in again (an account that needs it, from the app's page or Your plugins); how it ended. */
+  @discardableResult
+  func signIn(_ account: ConnectedApp, store: AppStore) async -> SignInEnd? {
+    guard connecting == nil else { return nil }
     connecting = account.name
     defer { connecting = nil; session = nil }
-    guard let url = await store.signInURL(account) else { return }
-    await signIn(url, name: account.name, store: store) { store.accounts(of: account.serverId).contains { $0.accountKey == account.accountKey && $0.status == "connected" } }
+    guard let url = await store.signInURL(account) else { return nil }
+    return await signIn(url, name: account.name, store: store) { store.accounts(of: account.serverId).contains { $0.accountKey == account.accountKey && $0.status == "connected" } }
   }
 
   /**
@@ -570,12 +594,13 @@ final class AppConnector {
    * back to `localhost:8787` (Canva, Square, Vercel, Dropbox) lands on this
    * iPhone's own loopback while the sheet is open (`LoopbackSignIn`).
    */
-  private func signIn(_ url: URL, name: String, store: AppStore, done: @escaping () -> Bool) async {
+  private func signIn(_ url: URL, name: String, store: AppStore, done: @escaping () -> Bool) async -> SignInEnd {
+    let url = Connecting.returning(url, to: AppPlatform.urlScheme)
     var catcher: LoopbackCatcher?
     if let signInState = LoopbackSignIn.state(returningHere: url) {
       guard let listening = await LoopbackCatcher.start(state: signInState, finish: "\(AppPlatform.urlScheme)://connected") else {
         store.problem = LoopbackSignIn.busyMessage(name)
-        return
+        return .cancelled
       }
       catcher = listening
       Task { @MainActor in
@@ -586,25 +611,85 @@ final class AppConnector {
       }
     }
     defer { catcher?.stop() }
+    // A sign-in that returns through Simeon Labs' server comes back to this
+    // app, which finishes it on its own computer: never the web page, which
+    // used whichever account the browser held (`AppReturnSignIn`).
+    if let returning = AppReturnSignIn.state(returningViaServer: url) {
+      await store.sendSignInBack(state: returning, scheme: AppPlatform.urlScheme)
+    }
     let state = SheetState()
-    // Closed on the vendor's confirm page: look a little longer. Cancelled: two looks, then the buttons are free again (Cancel used to hold every Add for 20 s).
-    let session = ASWebAuthenticationSession(url: url, callback: .customScheme(AppPlatform.urlScheme)) { _, error in
-      state.close(confirmed: (error as? ASWebAuthenticationSessionError)?.code != .canceledLogin)
+    // Closed on the vendor's confirm page, or back on our address: look a little longer. Cancelled, or back saying it didn't work: two looks, then the buttons are free again (Cancel used to hold every Add for 20 s).
+    let session = ASWebAuthenticationSession(url: url, callback: .customScheme(AppPlatform.urlScheme)) { callback, error in
+      if let answer = AppReturnSignIn.answer(callback) {
+        Task { @MainActor in await store.finishLoopbackSignIn(answer, name: name) }
+        state.close(confirmed: answer.error == nil)
+        return
+      }
+      state.close(confirmed: (error as? ASWebAuthenticationSessionError)?.code != .canceledLogin && !Connecting.failed(callback))
     }
     session.presentationContextProvider = presenter
     session.prefersEphemeralWebBrowserSession = false
     self.session = session
     guard session.start() else {
       store.problem = "The sign-in page didn't open. Try again."
-      return
+      return .cancelled
     }
     for _ in 0..<150 {
       try? await Task.sleep(nanoseconds: 2_000_000_000)
       await store.loadApps()
-      if done() { session.cancel(); return }
-      if !state.keepGoing() { return }
+      if done() { session.cancel(); return .connected }
+      if !state.keepGoing() { return state.ending }
     }
     session.cancel()
+    return .unconfirmed
+  }
+}
+
+/**
+ * Stripe's own page for a plan bought on the web (14 October 2026, the
+ * founder: Update card "takes me to the sign in page of simeon. not good"):
+ * asked for with the app's sign-in (`AppStore.billingPortal`) and shown in
+ * the system's sign-in sheet over the app, not the web's billing page. The
+ * page ends on the app's own link (`/desktop/billing/back`), which closes
+ * the sheet; after a failed payment the plan is then charged on the card
+ * just saved, and the plan and the access read again, so Send comes back.
+ * Safari when the sheet can't open.
+ */
+@MainActor
+final class BillingPage {
+  static let shared = BillingPage()
+  private var session: ASWebAuthenticationSession?
+  private let presenter = SheetPresenter()
+
+  /** Opens the page; nil when it opened, else why not. */
+  func open(flow: String?, tier: String?, store: AppStore, openURL: OpenURLAction) async -> String? {
+    guard session == nil else { return nil }
+    let paymentFailed = store.usage.summary?.paymentFailed == true
+    let answer = await store.billingPortal(flow: flow, tier: tier, back: AppPlatform.urlScheme)
+    guard let url = answer.url else { return answer.message ?? "Couldn’t open billing. Try again." }
+    let finished: Bool
+    do {
+      _ = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<URL, Error>) in
+        let once = ResumeOnce(continuation)
+        let sheet = ASWebAuthenticationSession(url: url, callback: .customScheme(AppPlatform.urlScheme)) { url, error in
+          if let url { once.resume(returning: url) } else { once.resume(throwing: error ?? ASWebAuthenticationSessionError(.canceledLogin)) }
+        }
+        sheet.presentationContextProvider = presenter
+        sheet.prefersEphemeralWebBrowserSession = false
+        session = sheet
+        if !sheet.start() {
+          openURL(url)
+          once.resume(throwing: URLError(.cannotLoadFromNetwork))
+        }
+      }
+      finished = true
+    } catch {
+      // Closed before the end: nothing to charge; the plan is read again all the same.
+      finished = false
+    }
+    session = nil
+    await store.settleAfterCardPage(paymentFailed: paymentFailed && finished)
+    return nil
   }
 }
 
@@ -633,9 +718,15 @@ final class SheetState: @unchecked Sendable {
   private let lock = NSLock()
   private var open = true
   private var pollsLeft = 0
+  private var confirmed = false
 
   func close(confirmed: Bool) {
-    lock.withLock { open = false; pollsLeft = confirmed ? 10 : 2 }
+    lock.withLock { open = false; pollsLeft = confirmed ? 10 : 2; self.confirmed = confirmed }
+  }
+
+  /** How a sheet that closed before the app was connected ended: the person's Cancel, or closed on the vendor's page (it may still finish). */
+  var ending: SignInEnd {
+    lock.withLock { confirmed ? SignInEnd.unconfirmed : SignInEnd.cancelled }
   }
 
   func keepGoing() -> Bool {

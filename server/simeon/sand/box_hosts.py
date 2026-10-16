@@ -122,6 +122,8 @@ class BoxSpec:
     workspace_volume: str
     data_volume: str
     extra_env: dict[str, str] = field(default_factory=dict)
+    #: Labels beyond the owner's (`box_store.LABEL` when backups are on).
+    labels: dict[str, str] = field(default_factory=dict)
     #: `--memory` (no swap beyond it) and `--cpus`; zero is no limit. The
     #: Mac's `docker run` sets neither (Docker Desktop's VM is the bound);
     #: a shared host needs both (`SIMEON_BOX_MEMORY_LIMIT_MB`, `_CPU_LIMIT`).
@@ -176,6 +178,9 @@ class ProvisionedBox:
     #: The `com.simeonlabs.box.host-sha256` label: which host program
     #: the container mounts. None on a container made before 29 September.
     host_sha256: str | None = None
+    #: The `com.simeonlabs.box-store` label: made with backups on
+    #: (`box_store.py`). None on a container made without.
+    box_store: str | None = None
 
 
 class BoxHost(Protocol):
@@ -492,6 +497,7 @@ class DockerBoxHost:
             f"{OWNER_LABEL}.schema-version": SCHEMA_VERSION,
             f"{OWNER_LABEL}.inference-credential": "1",
             "com.simeonlabs.box": "1",
+            **spec.labels,
         }
         binds = [
             f"{spec.workspace_volume}:/workspace",
@@ -607,6 +613,7 @@ class DockerBoxHost:
                 or ""
             )
             or None,
+            box_store=str(labels.get("com.simeonlabs.box-store") or "") or None,
         )
 
     async def run_state(self, provider_box_id: str) -> BoxRunState | None:

@@ -24,6 +24,7 @@ from pydantic_settings import (
     SettingsConfigDict,
 )
 
+from simeon.desktop.pricing import ModelPolicy
 from simeon.enums import TaxProcessor
 from simeon.kit.address import Address, CountryAlpha2
 from simeon.kit.jwk import JWKSFile
@@ -220,12 +221,32 @@ class Settings(BaseSettings):
     # self-hosted server). Production sets it once the Stripe catalogue is
     # in place (`docs/services-billing.md`).
     DESKTOP_BILLING_REQUIRED: bool = False
+    # Whether an account with no plan (a failed payment, a trial or plan
+    # that ended) still reaches its own cloud computer, so the apps show
+    # its agents and chats with sending held and the reason over the
+    # composer (the founder, 14 October 2026: "still access to the app.
+    # just cant send message"). Every metered call stays refused with 402
+    # either way. False: the computer is refused too, and the apps show
+    # their full-screen cover, as before (`box_broker.require_a_plan`).
+    DESKTOP_COMPUTER_WITHOUT_PLAN: bool = True
     # People who never need a plan, by e-mail (staff, friends).
     DESKTOP_BILLING_EXEMPT_EMAILS: set[str] = set()
     # E-mails whose free month (`simeon.plans.free_month`) may start again,
     # on an iPhone that already had one and after an earlier free month:
     # the founder's test accounts, to try the first run more than once.
     DESKTOP_FREE_TRIAL_TEST_EMAILS: set[str] = set()
+    # Which family answers in the app (`simeon.desktop.pricing.ModelPolicy`,
+    # 13 October 2026): "openai" (GPT-6 Sol answers, Luna does the
+    # machinery, Claude Sonnet 5.5 stands by), "claude" (Claude Sonnet 5.5,
+    # Haiku 5.5, GPT-6 Sol standing by) or "claude-opus" (Opus 5.5 in
+    # Sonnet's place). Every engine reads it from /desktop/api/models/available
+    # within minutes; nothing needs a release. A family whose key is unset
+    # (ANTHROPIC_API_KEY, OPENAI_API_KEY) is offered nothing, and the engine
+    # then answers on whatever is.
+    DESKTOP_MODELS: ModelPolicy = ModelPolicy.openai
+    # The same choice for a few people first, by e-mail, as a JSON object:
+    # {"you@example.com": "claude"}. Everyone else follows DESKTOP_MODELS.
+    DESKTOP_MODELS_BY_EMAIL: dict[str, ModelPolicy] = {}
     # Where the Mac app's releases are served from (`simeon.desktop.releases`):
     # the folder that holds `darwin-arm64/latest.json` and the version
     # folders. Unset, the public bucket's `releases/` folder.
@@ -236,6 +257,16 @@ class Settings(BaseSettings):
     # error at the moment somebody sends a message.
     DESKTOP_ANTHROPIC_BASE_URL: str = "https://api.anthropic.com"
     DESKTOP_OPENAI_BASE_URL: str = "https://api.openai.com"
+    # Where Claude is reached (`simeon.desktop.bedrock`, 14 October 2026):
+    # "anthropic" (api.anthropic.com on ANTHROPIC_API_KEY) or "bedrock"
+    # (Claude in Amazon Bedrock, so AWS credits pay for it), signed with the
+    # access key below, which should be allowed bedrock-mantle:CreateInference
+    # and nothing else. A Bedrock call that is not answered with a 200 is
+    # made once more on ANTHROPIC_API_KEY when it is set.
+    DESKTOP_CLAUDE_VIA: Literal["anthropic", "bedrock"] = "anthropic"
+    DESKTOP_BEDROCK_REGION: str = "us-west-2"
+    DESKTOP_BEDROCK_ACCESS_KEY_ID: str = ""
+    DESKTOP_BEDROCK_SECRET_ACCESS_KEY: str = ""
     # Sharing (simeon/sand/sharing.py, 25 September 2026): how long an
     # invite link opens the room, and how many joins one person may try
     # a minute before `/sand/share-rooms/join` answers `rate-limited`.
@@ -289,6 +320,11 @@ class Settings(BaseSettings):
     DUFFEL_ACCESS_TOKEN: str = ""
     DUFFEL_BASE_URL: str = "https://api.duffel.com"
     FLIGHT_SEARCHES_PER_HOUR: int = 30
+    # Booking (simeon/desktop/flight_booking.py, 13 October 2026): the
+    # traveller pays the airline by card through Duffel's card form, which
+    # Duffel switches on per account (help@duffel.com). Orders a person can
+    # place in a day; each one is also one per offer.
+    FLIGHT_BOOKINGS_PER_DAY: int = 6
 
     # Pushes to the person's iPhone go through Expo's push service
     # (simeon/desktop/push.py, 8 October 2026). Expo needs no key of ours
@@ -379,6 +415,22 @@ class Settings(BaseSettings):
     # when every accepting server is full, one more is refused with the
     # SAND_BOX_BLOCKED hold and a retry-after. Zero: no limit.
     BOX_MAX_RUNNING: int = 3
+    # Backups of each cloud computer, the upstream app's way (14 October
+    # 2026, `simeon/sand/box_store.py`): the box copies its data,
+    # workspace, Chrome session and app sign-ins to this S3 bucket every
+    # two minutes, and a box made fresh copies them back before its host
+    # starts. Empty: no backups, as before. The key needs s3:GetObject,
+    # s3:PutObject, s3:DeleteObject and s3:ListBucket on the bucket
+    # (ListBucket makes a missing object read 404, which the box needs).
+    BOX_STORE_BUCKET: str = ""
+    BOX_STORE_REGION: str = "us-west-2"
+    BOX_STORE_ACCESS_KEY_ID: str = ""
+    BOX_STORE_SECRET_ACCESS_KEY: str = ""
+    BOX_STORE_PREFIX: str = "box-stores"
+    # Tests only (a local S3): the bucket's own address otherwise.
+    BOX_STORE_ENDPOINT_URL: str | None = None
+    # How long a presigned URL and the box's store token last.
+    BOX_STORE_URL_TTL: timedelta = timedelta(hours=1)
 
     # Apps through Composio (simeon/desktop/composio.py). One key for the
     # whole of Simeon, held here and nowhere else: the desktop app never

@@ -56,7 +56,11 @@ test("the driver finds playwright-core outside its own folder", async () => {
     assert.match(source, /requirePlaywright\("playwright-core\/lib\/utilsBundle"\)/);
     assert.match(source, /npm root -g/);
     assert.doesNotMatch(source, /npm", \["install"/, "it never installs anything from the network");
-    assert.match(source, /if \(PLAYWRIGHT_ROOT\) roots\.push/, "the host's own copy is tried after the image's");
+    // Order since 15 October 2026 (tests/agent-browser-handoff.test.mjs runs it):
+    // the usual folders, npm's global folder only when they fail, then the host's copy.
+    const lookup = source.slice(source.indexOf("async function requirePlaywright"), source.indexOf("async function openCdpSocket"));
+    assert.ok(lookup.indexOf("for (const root of roots)") < lookup.indexOf("await npmGlobalRoot()"), "npm is asked after the usual folders");
+    assert.ok(lookup.indexOf("await npmGlobalRoot()") < lookup.indexOf("if (PLAYWRIGHT_ROOT) {"), "the host's own copy is tried after the image's");
   } finally {
     await dispose();
   }

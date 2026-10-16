@@ -38,17 +38,33 @@ test("the store is vendor MCPs that can Connect, then Coming soon for the rest",
     } = loaded.module;
     // 28 September 2026: the eighteen Coming soon cards are apps Simeon Labs' server serves (`appsToolkit`), and thirteen more were appended.
     // 3 October 2026: fourteen more for founders, appended (twelve served by our apps service, Mercury and PostHog by their own MCP).
-    assert.equal(VENDOR_MCP_CONNECTORS.length, 79);
+    // 13 October 2026: Link, run by a CLI on the cloud computer (`boxCli`), appended.
+    // 13 October 2026: Granola and Resend on their own servers, appended; ten apps moved in place from our apps service to their makers' servers.
+    // 13 October 2026: SharePoint, OneNote and Microsoft To Do (our apps service) and Lovable (its own server, loopback), appended.
+    // 14 October 2026: Shop, run from the cloud computer (`boxCli`), appended.
+    assert.equal(VENDOR_MCP_CONNECTORS.length, 87);
     const ids = VENDOR_MCP_CONNECTORS.map((item) => item.id);
-    assert.equal(new Set(ids).size, 79);
-    assert.deepEqual(ids.slice(52), ["google-analytics", "google-search-console", "youtube", "kit", "instagram", "facebook", "calendly", "cal-com", "attio", "zendesk", "microsoft-teams", "discord", "mercury", "posthog", "google-ads", "tiktok-ads", "microsoft-excel", "reddit", "pinterest", "gumroad", "google-classroom", "gorgias", "zoho-desk", "zoho-bigin", "gong", "capsule-crm", "dialpad"])
+    assert.equal(new Set(ids).size, 87);
+    assert.deepEqual(ids.slice(52), ["google-analytics", "google-search-console", "youtube", "kit", "instagram", "facebook", "calendly", "cal-com", "attio", "zendesk", "microsoft-teams", "discord", "mercury", "posthog", "google-ads", "tiktok-ads", "microsoft-excel", "reddit", "pinterest", "gumroad", "google-classroom", "gorgias", "zoho-desk", "zoho-bigin", "gong", "capsule-crm", "dialpad", "link", "granola", "resend", "sharepoint", "onenote", "microsoft-to-do", "lovable", "shop"])
+    assert.equal(vendorMcpConnectorById("link")?.boxCli, "link");
+    assert.equal(vendorMcpConnectorById("shop")?.boxCli, "shop");
     // 7 October 2026: thirteen of the founder's picks with one-click sign-in, appended, all served by our apps service.;
-    assert.equal(vendorMcpConnectorById("cal-com")?.appsToolkit, "cal");
+    assert.equal(vendorMcpConnectorById("cal-com")?.url, "https://mcp.cal.com/mcp");
+    assert.equal(vendorMcpConnectorById("cal-com")?.appsToolkit, undefined);
+    assert.equal(vendorMcpConnectorById("ashby")?.url, "https://mcp.ashbyhq.com/mcp/v1");
+    assert.equal(vendorMcpConnectorById("gmail")?.appsToolkit, "gmail");
     assert.equal(vendorMcpConnectorById("mercury")?.url, "https://mcp.mercury.com/mcp");
     const vendors = VENDOR_MCP_CONNECTORS.filter((item) => item.appsToolkit == null);
     const apps = VENDOR_MCP_CONNECTORS.filter((item) => item.appsToolkit != null);
-    assert.equal(vendors.length, 23);
-    assert.equal(apps.length, 56);
+    // 13 October 2026: Shopify and Zendesk stay with our apps service. Shopify's own server takes only
+    // clients it has approved; Zendesk's is per account ({subdomain}.zendesk.com/api/mcp), and mcp.zendesk.com signs nobody in.
+    assert.equal(vendorMcpConnectorById("shopify")?.appsToolkit, "shopify");
+    assert.equal(vendorMcpConnectorById("zendesk")?.appsToolkit, "zendesk");
+    assert.equal(vendors.length, 38);
+    assert.equal(apps.length, 49);
+    assert.equal(vendorMcpConnectorById("sharepoint")?.appsToolkit, "share_point");
+    assert.equal(vendorMcpConnectorById("microsoft-to-do")?.appsToolkit, "microsoft_todo");
+    assert.equal(vendorMcpConnectorById("lovable")?.loopbackOnly, true);
     assert.equal(VENDOR_MCP_CONNECTORS.some((item) => item.comingSoon === true), false);
     assert.ok(VENDOR_MCP_CONNECTORS.every((item) => typeof item.url === "string" && item.url.startsWith("https://")));
     assert.ok(apps.every((item) => item.url.endsWith(`/desktop/api/apps/mcp/${item.appsToolkit}`)));
@@ -95,7 +111,7 @@ test("the marketplace listing is our store, including Coming soon cards", async 
     assert.equal(gmail.vendorMcpUrl, undefined);
 
     const signedOut = await marketplace.module.fetchVendorMarketplacePlugins(async () => null);
-    assert.equal(signedOut.plugins.length, 79);
+    assert.equal(signedOut.plugins.length, 87);
     assert.equal(signedOut.includesPrivateMarketplaces, false);
     assert.ok(signedOut.plugins.some((plugin) => plugin.pluginId === "notion" && plugin.vendorMcpUrl === "https://mcp.notion.com/mcp"));
     // Signed out, the server cannot be asked: an app stays Coming soon, with no address.
@@ -265,7 +281,7 @@ test("getCatalog lists our store; live Connect goes to the vendor, Coming soon d
     });
 
     const views = await flow.getCatalog(async () => "simeon_da_test");
-    assert.equal(views.length, 79);
+    assert.equal(views.length, 87);
     assert.ok(views.some((view) => view.id === "notion" && view.vendorMcpUrl === "https://mcp.notion.com/mcp"));
     assert.ok(views.some((view) => view.id === "gmail" && view.comingSoon == null && view.vendorMcpUrl.endsWith("/desktop/api/apps/mcp/gmail")));
     assert.equal(views.some((view) => view.comingSoon === true), false);
@@ -315,7 +331,7 @@ test("every store card has a logo, and in-repo data marks skip a network fetch",
   const marketplace = await load("source/shared/node/vendor-mcp/marketplace.ts", "vendor-logos");
   try {
     const listing = await marketplace.module.fetchVendorMarketplacePlugins();
-    assert.equal(listing.plugins.length, 79);
+    assert.equal(listing.plugins.length, 87);
     assert.ok(listing.plugins.every((plugin) => typeof plugin.logoUrl === "string" && plugin.logoUrl.length > 0));
     const notion = listing.plugins.find((plugin) => plugin.pluginId === "notion");
     assert.match(notion.logoUrl, /^data:image\//);

@@ -181,12 +181,115 @@ final class PluginCallsTests: XCTestCase {
     box.answers["createAgent"] = ["ok": true]
     let none = await store.makePluginSetupAgent()
     XCTAssertNil(none.id)
-    XCTAssertEqual(none.failure, "createAgent: no agent in the answer")
-    XCTAssertEqual(Plugins.agentFailedNotice(none.failure ?? "").text, "Couldn't start the agent: createAgent: no agent in the answer")
+    // The gateway's own words never show (PlainWords, 13 October 2026).
+    XCTAssertEqual(none.failure, PlainWords.unavailable)
+    XCTAssertEqual(Plugins.agentFailedNotice(none.failure ?? "").text, "Couldn't start the agent: \(PlainWords.unavailable)")
 
     let signedOut = AppStore()
     let out = await signedOut.makePluginSetupAgent()
     XCTAssertEqual(out.failure, "Sign in to Simeon first.")
+  }
+
+  /** Apps that can't be added yet (the founder, 13 October 2026: "mark a clearer coming soon … they cant be added"). */
+  @MainActor
+  func testAppsThatCantBeAddedYetSayComingSoon() async throws {
+    // Before Simeon Labs' server answers: the apps that need its own sign-in with the company.
+    let store = AppStore()
+    XCTAssertTrue(store.isComingSoon("Xero"))
+    XCTAssertTrue(store.isComingSoon("docusign"))
+    XCTAssertFalse(store.isComingSoon("Gmail"))
+
+    let box = PluginsBox()
+    box.answers["desktopMcp:getCatalog"] = ["plugins": [["id": "xero", "displayName": "Xero"], ["id": "acme", "displayName": "Acme", "comingSoon": true], ["id": "gmail", "displayName": "Gmail"]]]
+    box.answers["server:apps"] = ["available": true, "comingSoon": ["gusto", "Brex"]]
+    await store.attach(box)
+    await store.loadApps()
+    XCTAssertEqual(store.appsComingSoon, ["gusto", "brex"])
+    XCTAssertFalse(store.isComingSoon("Xero"), "its own sign-in is set up on the server: Add is back")
+    XCTAssertTrue(store.isComingSoon("Gusto"))
+    XCTAssertTrue(store.isComingSoon("Acme"), "the catalog's own word holds")
+    XCTAssertFalse(store.isComingSoon("Gmail"))
+
+    // An older server names none: the list stays as it is.
+    box.answers["server:apps"] = ["available": true]
+    await store.loadAppsComingSoon()
+    XCTAssertEqual(store.appsComingSoon, ["gusto", "brex"])
+    XCTAssertNil(AppsComingSoon.from(["available": true]))
+    XCTAssertEqual(AppsComingSoon.from(["comingSoon": []]), [])
+  }
+
+  /** One Connect (the founder, 13 October 2026: "should just be a connect button"): added and signed in at once, and nothing left half added. */
+  @MainActor
+  func testConnectAddsAndSignsInAndTakesBackWhatItLeftHalfAdded() async throws {
+    let box = PluginsBox()
+    box.answers["desktopMcp:getCatalog"] = ["plugins": [["id": "linear", "displayName": "Linear"]]]
+    box.answers["desktopMcp:listServers"] = ["servers": []]
+    box.answers["desktopMcp:installEntry"] = ["servers": [["id": "900042", "name": "Linear", "pluginId": "linear", "status": "needsAuth"]]]
+    box.answers["desktopMcp:vendorServerIdForPlugin"] = "900042"
+    box.answers["desktopMcp:authenticateServer"] = ["status": "started", "authorizationUrl": "https://linear.app/oauth"]
+    box.answers["desktopMcp:uninstallPlugin"] = ["removed": true, "state": ["servers": []]]
+    let store = AppStore()
+    await store.attach(box)
+    await store.loadApps()
+
+    // Connect: installed, then its sign-in asked for at once.
+    let started = await store.beginConnect(named: "Linear")
+    let start = try XCTUnwrap(started)
+    XCTAssertEqual(start, ConnectStart(url: URL(string: "https://linear.app/oauth")!, addedPlugin: "linear"))
+    XCTAssertEqual(box.sent("desktopMcp:authenticateServer")?["args"], ["900042", "default", "connector_card"])
+
+    // Cancelled: taken back. One that may still finish is never taken back.
+    XCTAssertTrue(Connecting.undoes(.cancelled, start: start))
+    XCTAssertFalse(Connecting.undoes(.unconfirmed, start: start))
+    XCTAssertFalse(Connecting.undoes(.connected, start: start))
+    XCTAssertFalse(Connecting.undoes(.cancelled, start: ConnectStart(url: start.url, addedPlugin: nil)), "an app that was there before stays")
+    await store.undoConnect(start, name: "Linear")
+    XCTAssertEqual(box.all("desktopMcp:uninstallPlugin"), [["action": "uninstallPlugin", "args": ["linear"]]])
+
+    // Connected as the sheet closed: kept.
+    box.answers["desktopMcp:listServers"] = ["servers": [["id": "900042", "name": "Linear", "pluginId": "linear", "status": "connected"]]]
+    await store.undoConnect(start, name: "Linear")
+    XCTAssertEqual(box.all("desktopMcp:uninstallPlugin").count, 1)
+
+    // A sign-in that doesn't open: what this connect added goes at once, and the line says why.
+    box.answers["desktopMcp:listServers"] = ["servers": []]
+    await store.loadApps()
+    box.answers["desktopMcp:authenticateServer"] = ["status": "not-supported", "message": "Linear is coming soon in Simeon."]
+    let refused = await store.beginConnect(named: "Linear")
+    XCTAssertNil(refused)
+    XCTAssertEqual(store.problem, "Linear didn't connect: Linear is coming soon in Simeon.")
+    XCTAssertEqual(box.all("desktopMcp:uninstallPlugin").count, 2)
+
+    // Signed in already: kept, even before the list says so.
+    box.answers["desktopMcp:authenticateServer"] = ["status": "already-authenticated"]
+    let already = await store.beginConnect(named: "Linear")
+    XCTAssertNil(already)
+    XCTAssertEqual(box.all("desktopMcp:uninstallPlugin").count, 2)
+
+    // The words.
+    XCTAssertEqual(Plugins.signInButton(.none), "Connect")
+    XCTAssertEqual(Connecting.connectedNotice("Linear", skills: 0, error: nil).text, "Connected Linear")
+    XCTAssertEqual(Connecting.connectedNotice("Linear", skills: 2, error: nil).text, "Connected Linear and 2 skills")
+    XCTAssertTrue(Connecting.connectedNotice("Linear", skills: 0, error: "offline").isError)
+    XCTAssertEqual(Connecting.notConnectedNotice("Linear").text, "Linear wasn't connected")
+    XCTAssertEqual(Connecting.didntConnect("Linear", why: nil), "Linear didn't connect. Try again.")
+  }
+
+  /** 13 October 2026: the sign-in's last page sends the person back to the app that opened it, and says when it failed. */
+  func testOurStartLinkNamesTheAppThatOpensIt() {
+    let start = URL(string: "https://api.simeonlabs.com/desktop/apps/start?to=https%3A%2F%2Faccounts.google.com%2Fo&e=1&s=ab")!
+    let back = Connecting.returning(start, to: "simeon-ios")
+    let items = URLComponents(url: back, resolvingAgainstBaseURL: false)!.queryItems!
+    XCTAssertEqual(items.map(\.name), ["to", "e", "s", "back"])
+    XCTAssertEqual(items.last?.value, "simeon-ios")
+    XCTAssertEqual(items.first?.value, "https://accounts.google.com/o", "the signed link is left as it was")
+    XCTAssertEqual(Connecting.returning(back, to: "simeon").query?.components(separatedBy: "back=").count, 2, "named once")
+    let vendor = URL(string: "https://mcp.notion.com/authorize?state=x")!
+    XCTAssertEqual(Connecting.returning(vendor, to: "simeon-ios"), vendor)
+
+    XCTAssertFalse(Connecting.failed(URL(string: "simeon-ios://connected")))
+    XCTAssertTrue(Connecting.failed(URL(string: "simeon-ios://connected?status=failed")))
+    XCTAssertFalse(Connecting.failed(nil))
   }
 }
 
@@ -234,6 +337,12 @@ final class PluginsBox: AgentBackend, @unchecked Sendable {
   func routines(_ agentId: String) async throws -> [JSON] { [] }
   func events() -> AsyncStream<BackendEvent> { AsyncStream { _ in } }
   var call: CallEngine? { nil }
-  func server(_ path: String, method: String?, body: JSON?) async throws -> JSON { [:] }
+  /** Simeon Labs' server, answered by "server:<path>". */
+  func server(_ path: String, method: String?, body: JSON?) async throws -> JSON {
+    lock.withLock {
+      log.append(("server:\(path)", body ?? .null))
+      return answers["server:\(path)"] ?? [:]
+    }
+  }
   func screen(_ agentId: String) async throws -> ScreenState { ScreenState(socket: nil, state: "starting") }
 }

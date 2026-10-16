@@ -72,16 +72,27 @@ export function formatAgentRunError(error: Error): string {
   return simeonFacingProviderError(getBackendErrorDetailMessage(error) ?? errorMessage(error));
 }
 
+/**
+ * The person never reads what is behind Simeon (the founder, 13 October
+ * 2026: "it should not say Simeon is out of OpenAI credits, should just say
+ * not available for the moment"): a model company's refusal (its credits,
+ * its limits, its name), a status code, a setting's name or the plumbing's
+ * own words give way to one plain sentence. Simeon Labs' own refusals for
+ * the plan's credits (code 40200, 40201) are the person's and stay: the apps
+ * read their code. The apps filter what they show the same way
+ * (ios/SimeonCore PlainWords.swift).
+ */
 const OPENAI_ACCOUNT_QUOTA = /no credits remaining|insufficient_quota|platform\.openai\.com\/settings\/organization\/billing/i;
-const SIMEON_OPENAI_QUOTA_DETAIL =
-  "Simeon could not reach the model because OpenAI has no credits left on Simeon Labs' account. This is not your OpenAI billing page.";
+const BEHIND_SIMEON =
+  /no credits remaining|insufficient_quota|exceeded your current quota|credit balance is too low|platform\.openai\.com|\b(open ?ai|anthropic|claude|gemini|google ai|vertex|x\.?ai|grok|eleven ?labs|composio)\b|\boverloaded\b|\brate[ _-]?limit|\b(status|http)\s*:?\s*\d{3}\b|\b(SAND|SIMEON|CLAIDOR)_[A-Z_]+\b|\bgateway\b|\bproxy\b|\bserved by\b/i;
+const SIMEON_UNAVAILABLE_DETAIL = "Simeon isn't available at the moment. Try again in a little while.";
 const CLAUDE_CODE_INSTALL = /Claude Code is not installed/i;
-const SIMEON_NOT_CLAUDE_DETAIL =
-  "Simeon talks to Simeon Labs' server, not Claude Code. Sign in to Simeon and try again.";
+const SIMEON_SIGN_IN_DETAIL = "Sign in to Simeon again, then try again.";
 
 export function simeonFacingProviderError(message: string): string {
-  if (OPENAI_ACCOUNT_QUOTA.test(message)) return SIMEON_OPENAI_QUOTA_DETAIL;
-  if (CLAUDE_CODE_INSTALL.test(message)) return SIMEON_NOT_CLAUDE_DETAIL;
+  if (CLAUDE_CODE_INSTALL.test(message)) return SIMEON_SIGN_IN_DETAIL;
+  if (/\(code 4020[01]\)/.test(message)) return message;
+  if (BEHIND_SIMEON.test(message)) return SIMEON_UNAVAILABLE_DETAIL;
   return message;
 }
 export function formatSandUsageResetIn(
@@ -217,10 +228,11 @@ export function describeAgentRunError(error: unknown): Record<string, unknown> {
     );
   else if (!shown) shown = formatted;
   shown = simeonFacingProviderError(shown);
-  const facingTitle = title && OPENAI_ACCOUNT_QUOTA.test(`${title}\n${shown}`)
+  const facingTitle = title && (OPENAI_ACCOUNT_QUOTA.test(`${title}\n${shown}`) || BEHIND_SIMEON.test(title))
     ? "Agent failed to respond"
     : title;
-  const facingActions = actions.filter((action) => typeof action.url !== "string" || !/platform\.openai\.com/i.test(action.url));
+  // A refusal's buttons lead behind Simeon (a model company's billing page): only Simeon Labs' own stay.
+  const facingActions = actions.filter((action) => typeof action.url !== "string" || /^https:\/\/(app\.|www\.)?simeonlabs\.com\//i.test(action.url));
   return {
     ...(facingTitle ? { title: facingTitle } : {}),
     detail: shown,

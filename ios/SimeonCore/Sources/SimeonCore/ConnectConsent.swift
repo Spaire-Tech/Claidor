@@ -5,10 +5,12 @@ import Foundation
  * 9 October 2026: "when you click on add … before you go to the link to
  * connect"): the app, what the agents will be able to reach in it, that
  * the person stays in charge, that agents can get things wrong, who handles
- * the sign-in (Composio for the apps it serves, the app itself for the
- * rest), where the information goes, and, for some apps, one more thing
- * worth knowing about that app. One template; each app fills it a little
- * differently.
+ * the sign-in (Simeon, through its sign-in partner, for the apps Simeon's
+ * server serves; the app itself for the rest), where the information goes,
+ * and, for some apps, one more thing worth knowing about that app. One
+ * template; each app fills it a little differently. The partner is not
+ * named (the founder, 13 October 2026: "white label composio as best as you
+ * can"); the privacy policy covers it as a provider of app connections.
  */
 public struct ConnectConsent: Identifiable, Equatable, Sendable {
   /** Who handles the sign-in and holds the access. */
@@ -57,21 +59,26 @@ public struct ConnectConsent: Identifiable, Equatable, Sendable {
       Point(symbol: "checkmark.circle", title: "Check their work", body: "Agents can misread a request or take a step you didn't expect. Look over what they do in \(title), especially at first."),
     ]
 
-    let signIn: String
-    switch route {
-    case .composio:
-      signIn = "Composio, the service Simeon uses to connect apps, handles the \(title) sign-in and holds its access. Simeon never sees your password."
-    case .vendor(let host):
-      signIn = "You'll sign in on \(title)'s own page, and \(title) runs this connection from its own server (\(host)). Simeon never sees your password."
-    case .unknown:
-      signIn = "You'll sign in on \(title)'s own page. Simeon never sees your password."
-    }
+    let signIn = Self.signInSentence[key]?.replacingOccurrences(of: "{App}", with: title) ?? Self.signInLine(route, title: title)
     smallPrint = [
       signIn,
       "What your agents read in \(title) becomes part of your chats with them and is sent to the AI models that do the work.",
       "\(title)'s own terms and privacy policy apply to the information it shares with Simeon.",
     ]
     note = Self.notes[key] ?? (Self.money.contains(key) ? "Anything that moves money in \(title) is real. Ask your agents to check with you before they move any." : nil)
+  }
+
+  /** Who handles the sign-in, by the app's route. */
+  static func signInLine(_ route: Route, title: String) -> String {
+    switch route {
+    case .composio:
+      // The app's own sign-in page may name the partner (Google's does, for Simeon has no Google app of its own yet): said here without its name, so the person isn't surprised.
+      return "Simeon connects \(title) through a secure sign-in partner, who keeps its access for your agents. \(title)'s page may show the partner's name. Simeon never sees your password."
+    case .vendor(let host):
+      return "You'll sign in on \(title)'s own page, and \(title) runs this connection from its own server (\(host)). Simeon never sees your password."
+    case .unknown:
+      return "You'll sign in on \(title)'s own page. Simeon never sees your password."
+    }
   }
 
   /** Composio when the catalog names its toolkit or the app is served from Simeon's own apps address; the app's server otherwise. */
@@ -155,6 +162,12 @@ public struct ConnectConsent: Identifiable, Equatable, Sendable {
     "posthog": "analytics, insights and feature flags",
     "google-ads": "campaigns, ad groups, keywords and results",
     "tiktok-ads": "campaigns, ads, audiences and reports",
+    "granola": "your meeting notes, transcripts and folders",
+    "resend": "your emails, domains, audiences and broadcasts",
+    "sharepoint": "your sites, lists and files",
+    "onenote": "your notebooks, sections and pages",
+    "microsoft-to-do": "your tasks and lists",
+    "lovable": "your projects, workspaces and their code",
   ]
 
   /** Apps the agents can only read (the catalog says so). */
@@ -163,6 +176,16 @@ public struct ConnectConsent: Identifiable, Equatable, Sendable {
   /** Apps whose reach is said another way. */
   static let reachSentence: [String: String] = [
     "linkedin": "Your agents can read your profile and publish posts on {App}.",
+    "link": "Your agents can ask {App} for a one-time card to pay for something you asked them to buy, and read the bank and card accounts you choose to share.",
+    "shop": "Your agents can find products across Shopify stores, pay for what you asked them to buy with your {App} card, and track your orders.",
+  ]
+
+  /** Apps whose sign-in is said another way. */
+  static let signInSentence: [String: String] = [
+    // Link signs in with a code on link.com or in its app, and runs on Simeon's cloud computer (desktop/source/shared/node/link-wallet/).
+    "link": "You'll approve the connection on link.com or in the {App} app; your cloud computer keeps it. Simeon never sees your password or your card numbers.",
+    // Shop signs in with a code on Shop's own page, and runs from Simeon's cloud computer (desktop/source/shared/node/shop-wallet/).
+    "shop": "You'll approve the connection on {App}'s own page with your {App} account; your cloud computer keeps it. Simeon never sees your password or your card numbers.",
   ]
 
   /** Apps where money moves for real. */
@@ -186,5 +209,9 @@ public struct ConnectConsent: Identifiable, Equatable, Sendable {
     "gmail": "Emails your agents send go out from your own address.",
     "outlook": "Emails your agents send go out from your own address.",
     "docusign": "Envelopes your agents send go out in your name.",
+    "resend": "Emails your agents send go out from your own domains.",
+    "lovable": "Your agents can change and publish your projects. Published changes go live.",
+    "shop": "Nothing is paid until you press Allow on the purchase. At a Shopify store, Shop then places the order with your Shop card; anywhere else, you approve it in the Shop app and the store gets a one-time card, never your real one.",
+    "link": "Nothing is paid until you approve the purchase in the Link app, up to $500 each and $500 a day. Get the Link app on your phone (or add a passkey at link.com): Link approves agents' purchases only there. Each purchase gets its own one-time card, never your real one. US accounts only.",
   ]
 }

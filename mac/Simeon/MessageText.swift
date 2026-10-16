@@ -68,30 +68,39 @@ enum InlineImages {
   }
 }
 
-/** A run of an agent's mention: its face, its name and the pill's end (`MessageLine.mention`). */
-struct MentionPill: TextAttribute {}
+/** A run of an agent's mention: its face, its name and the pill's end (`MessageLine.mention`), and whose it is. */
+struct MentionPill: TextAttribute {
+  var agentId: String
+}
 
 /**
  * Each mention of an agent in a glass pill (the founder, 12 October 2026:
  * "the pill, but water glass, and the name in our blue"): drawn behind the
  * mention's runs, a clear frosted fill, a bright rim, a soft shadow. Apple's
  * own Liquid Glass is a view's effect and cannot wrap a word inside a
- * paragraph, so the glass is drawn; the same on macOS 15 and 26.
+ * paragraph, so the glass is drawn; the same on macOS 15 and 26. Where each
+ * pill was drawn goes to `spots`, for a click to find (`MentionClicks`).
  */
 struct MentionPills: TextRenderer {
   var dark: Bool
+  var spots: MentionSpots? = nil
 
   /** The pill reaches a little past the line, and its shadow below it: room to draw them on a block's first and last lines. */
   var displayPadding: EdgeInsets { EdgeInsets(top: 3, leading: 1, bottom: 3, trailing: 1) }
 
   func draw(layout: Text.Layout, in ctx: inout GraphicsContext) {
-    var pills: [CGRect] = []
+    var pills: [MentionSpots.Spot] = []
     for line in layout {
-      var current: CGRect?
+      var current: MentionSpots.Spot?
       for run in line {
-        if run[MentionPill.self] != nil {
+        if let pill = run[MentionPill.self] {
           let rect = run.typographicBounds.rect
-          current = current.map { $0.union(rect) } ?? rect
+          if let open = current, open.agentId == pill.agentId {
+            current = MentionSpots.Spot(rect: open.rect.union(rect), agentId: open.agentId)
+          } else {
+            if let done = current { pills.append(done) }
+            current = MentionSpots.Spot(rect: rect, agentId: pill.agentId)
+          }
         } else if let done = current {
           pills.append(done)
           current = nil
@@ -99,7 +108,8 @@ struct MentionPills: TextRenderer {
       }
       if let done = current { pills.append(done) }
     }
-    for rect in pills { glass(rect, in: &ctx) }
+    spots?.record(pills)
+    for pill in pills { glass(pill.rect, in: &ctx) }
     for line in layout { ctx.draw(line) }
   }
 
@@ -115,6 +125,81 @@ struct MentionPills: TextRenderer {
     let rim = dark ? [Color.white.opacity(0.24), Color.white.opacity(0.06)] : [Color.white, Color.white.opacity(0.55)]
     ctx.stroke(shape, with: .linearGradient(Gradient(colors: rim), startPoint: top, endPoint: bottom), lineWidth: 0.75)
     if !dark { ctx.stroke(shape, with: .color(.black.opacity(0.07)), lineWidth: 0.5) }
+  }
+}
+
+/** Where a line of words drew its agents' pills, in its own space: written as it draws, read by a click. */
+final class MentionSpots: @unchecked Sendable {
+  struct Spot {
+    let rect: CGRect
+    let agentId: String
+  }
+
+  private let lock = NSLock()
+  private var spots: [Spot] = []
+
+  func record(_ drawn: [Spot]) {
+    lock.lock(); defer { lock.unlock() }
+    spots = drawn
+  }
+
+  /** The agent whose pill is under the pointer. */
+  func agent(at point: CGPoint) -> String? {
+    lock.lock(); defer { lock.unlock() }
+    return spots.first { $0.rect.insetBy(dx: -2, dy: -2).contains(point) }?.agentId
+  }
+}
+
+/**
+ * A line of words whose agents' pills open their chats (the founder, 12
+ * October 2026), with the pointing hand over a pill: the pills drawn on
+ * this line itself, so a click lands where they were drawn; a click
+ * anywhere else, a link's, a selection's, goes on as before. The agent opens
+ * as a click on its sidebar row opens it.
+ */
+struct MentionClicks: ViewModifier {
+  let agents: [String]
+  let line: MessageLine
+  @Environment(WindowState.self) private var window: WindowState?
+  @Environment(AppStore.self) private var store: AppStore?
+  @State private var spots = MentionSpots()
+  @State private var overPill = false
+
+  @ViewBuilder
+  func body(content: Content) -> some View {
+    if agents.isEmpty {
+      content
+    } else {
+      content
+        .textRenderer(MentionPills(dark: line.look.dark, spots: spots))
+        .simultaneousGesture(SpatialTapGesture().onEnded { click in
+          if let id = spots.agent(at: click.location) { open(id) }
+        })
+        .onContinuousHover { phase in
+          var over = false
+          if case .active(let point) = phase { over = spots.agent(at: point) != nil }
+          // The words are selectable, and their I-beam won over the pointer style below: no hand over a mention (the
+          // founder, 13 October 2026). The hand is put up by hand while over a pill and taken down as it leaves.
+          if over && !overPill { NSCursor.pointingHand.push() }
+          if !over && overPill { NSCursor.pop() }
+          if over { NSCursor.pointingHand.set() }
+          if over != overPill { overPill = over }
+        }
+        .onDisappear { if overPill { NSCursor.pop(); overPill = false } }
+        .pointerStyle(overPill ? .link : nil)
+        .accessibilityActions {
+          ForEach(agents, id: \.self) { id in
+            if let name = line.agents.first(where: { $0.id == id })?.name {
+              Button("Open \(name)") { open(id) }
+            }
+          }
+        }
+    }
+  }
+
+  private func open(_ id: String) {
+    guard let window, let store, store.agents.contains(where: { $0.id == id }) else { return }
+    window.choose(id, store: store)
   }
 }
 
@@ -173,9 +258,17 @@ struct MessageLine {
     return String(parsed.characters)
   }
 
-  func text(_ markdown: String) -> Text {
+  /** The line's words, its agents' pills opening their chats on a click (`MentionClicks`). */
+  func clickable(_ markdown: String) -> some View {
+    let made = made(markdown)
+    return made.text.modifier(MentionClicks(agents: made.agents, line: self))
+  }
+
+  /** The line's words, and the agents whose pills are in them (each once, in order). */
+  func made(_ markdown: String) -> (text: Text, agents: [String]) {
     let parsed = (try? AttributedString(markdown: markdown, options: MessageLine.parsing)) ?? AttributedString(markdown)
     let marks = FindLine(find, text: String(parsed.characters))
+    var named: [String] = []
     var pieces: [Text] = []
     // Where each run starts in the words shown (UTF-16), so find's marks land on it.
     var offset = 0
@@ -197,16 +290,16 @@ struct MessageLine {
         if let url = part.url {
           pieces.append(linked(part.text, url, style: style, at: partOffset, marks: marks))
         } else {
-          pieces += plain(part.text, style: style, at: partOffset, marks: marks)
+          pieces += plain(part.text, style: style, at: partOffset, marks: marks, named: &named)
         }
         partOffset += (part.text as NSString).length
       }
     }
-    return MessageLine.joined(pieces)
+    return (MessageLine.joined(pieces), named)
   }
 
-  /** Words with their app and agent names. */
-  private func plain(_ words: String, style: Style, at offset: Int, marks: FindLine?) -> [Text] {
+  /** Words with their app and agent names; each agent named goes to `named`. */
+  private func plain(_ words: String, style: Style, at offset: Int, marks: FindLine?, named: inout [String]) -> [Text] {
     let ink = style.struck ? look.inkTertiary : colour
     guard marksNames else { return [painted(words, ink: ink, style: style, at: offset, marks: marks)] }
     let ns = words as NSString
@@ -217,6 +310,7 @@ struct MessageLine {
         pieces.append(painted(ns.substring(with: NSRange(location: cursor, length: match.location - cursor)), ink: ink, style: style, at: offset + cursor, marks: marks))
       }
       let name = ns.substring(with: NSRange(location: match.location, length: match.length))
+      if case .agent(let id) = match.kind, !named.contains(id) { named.append(id) }
       pieces.append(mention(name, kind: match.kind, style: style, at: offset + match.location, marks: marks))
       cursor = match.location + match.length
     }
@@ -317,12 +411,13 @@ struct MessageLine {
       let picture = Text(Image(nsImage: logo).renderingMode(brand.mono ? .template : .original)).foregroundColor(tint).baselineOffset(drop)
       return MessageLine.joined([picture, Text(verbatim: "\u{202F}"), words])
     case .agent(let id):
-      // The face, the name and the pill's end, each marked for `MentionPills` to draw the glass behind; word joiners keep them on one line.
+      // The face, the name and the pill's end, each marked for `MentionPills` to draw the glass behind (and a click to find); word joiners keep them on one line.
       let picture = agents.first { $0.id == id }?.picture
-      let face = Text(InlineImages.face(picture, em: size, dark: look.dark)).baselineOffset(-0.2 * size).customAttribute(MentionPill())
-      let words = painted(kept, ink: look.blue, style: style, at: offset, marks: marks).fontWeight(.semibold).customAttribute(MentionPill())
-      let end = Text(InlineImages.pillEnd(em: size)).baselineOffset(-0.2 * size).customAttribute(MentionPill())
-      let joiner = Text(verbatim: "\u{2060}").customAttribute(MentionPill())
+      let pill = MentionPill(agentId: id)
+      let face = Text(InlineImages.face(picture, em: size, dark: look.dark)).baselineOffset(-0.2 * size).customAttribute(pill)
+      let words = painted(kept, ink: look.blue, style: style, at: offset, marks: marks).fontWeight(.semibold).customAttribute(pill)
+      let end = Text(InlineImages.pillEnd(em: size)).baselineOffset(-0.2 * size).customAttribute(pill)
+      let joiner = Text(verbatim: "\u{2060}").customAttribute(pill)
       return MessageLine.joined([face, joiner, words, joiner, end])
     }
   }
@@ -363,7 +458,6 @@ struct MessageBlocks: View {
         BlockView(block: block, line: lines[index], first: index == 0)
       }
     }
-    .textRenderer(MentionPills(dark: line.look.dark))
   }
 
   /** Each block's line, find's current match counted past the blocks before it. */
@@ -410,7 +504,7 @@ private struct BlockView: View {
         let height = size * 1.3
         let tracking: CGFloat = level == 1 ? -0.012 * size : level == 2 ? -0.008 * size : 0
         let above: CGFloat = level == 1 ? 20 : level == 2 ? 16 : level == 3 ? 12 : 8
-        line.with(size: size, lineHeight: height, colour: line.look.ink).text(text)
+        line.with(size: size, lineHeight: height, colour: line.look.ink).clickable(text)
           .font(.system(size: size, weight: .semibold))
           .tracking(tracking)
           .fixedSize(horizontal: false, vertical: true)
@@ -420,7 +514,7 @@ private struct BlockView: View {
         let size: CGFloat = level == 1 ? 22 : level == 2 ? 17 : 14
         let height: CGFloat = level == 1 ? 28 : level == 2 ? 24 : 20
         let tracking: CGFloat = level == 1 ? -0.264 : level == 2 ? -0.136 : -0.042
-        line.with(size: size, lineHeight: height).text(text)
+        line.with(size: size, lineHeight: height).clickable(text)
           .font(.system(size: size, weight: .semibold))
           .tracking(tracking)
           .fixedSize(horizontal: false, vertical: true)
@@ -465,7 +559,7 @@ private struct BlockView: View {
 /** A paragraph at the line's size and line height. */
 @MainActor
 private func paragraph(_ text: String, line: MessageLine) -> some View {
-  line.text(text)
+  line.clickable(text)
     .font(.system(size: line.size))
     .fixedSize(horizontal: false, vertical: true)
     .cssLineHeight(line.lineHeight, size: line.size)
@@ -638,7 +732,7 @@ private struct TableBlock: View {
 
   private func cell(_ text: String, column: Int, line: MessageLine) -> some View {
     let alignment = column < alignments.count ? alignments[column] : .leading
-    return line.text(text)
+    return line.clickable(text)
       .font(.system(size: size))
       .multilineTextAlignment(alignment == .trailing ? .trailing : alignment == .center ? .center : .leading)
       .cssLineHeight(height, size: size)

@@ -2540,3 +2540,108 @@ and 4 apart, 66 a row (the phone's 80); the butterfly 46 (the phone's 56),
 10 before the text; the title in a grey box (`Look.tag`, `#252527` on
 dark) with its words in our blue, 11.5 medium, 10 after the name (the
 phone's 14 and 13). The rail keeps the window's 54 and 36.
+
+### One Connect (13 October 2026)
+
+The founder: "there is no logic, in the 'add' - then takes you to this
+authenticate button. should just be a connect button … you add it, the
+iframe appears, you say connect, it says added. then you have to go to
+'yours' to authenticate." Measured in the code that day: Add installed the
+app, started its sign-in in the background with any failure dropped
+(`try?` in `PluginsModel.install`), and said "Added"; the Marketplace row
+said "Added" for anything installed, signed in or not; the sign-in then
+waited in Yours under Authenticate. Now, on the Mac and the iPhone, with
+the consent kept:
+
+- One button, Connect, everywhere an app can be connected (the
+  Marketplace row, the plugin's page, a chat card, Yours). It installs the
+  app and opens its sign-in in one go, and the window waits for it
+  (`connectAfterInstall`): "Connected Gmail" once it is, with the skills
+  synced as before.
+- A sign-in the person cancels, or one that never opens, takes the app it
+  added back out (`uninstallPlugin`, as Uninstall does; `Connecting.undoes`,
+  `AppStore.undoConnect`), unless the computer says it connected after
+  all; "Gmail wasn't connected" or why it didn't. One that closed on the
+  vendor's page before the computer said so is kept ("Finishing Gmail's
+  sign-in…"): it may still finish.
+- The Marketplace row says Connected only for an app signed in; an
+  installed app still waiting for its sign-in says Connect (its sign-in
+  only); another state shows its status word; "Added" is left for a plugin
+  of skills alone. Authenticate reads Connect in Yours and on a page.
+- The values a setup page takes are kept whatever the sign-in after it
+  does; that sign-in no longer holds the window busy.
+
+Shared in `SimeonCore/Connecting.swift` and `AppStore.beginConnect`, with
+a test (`PluginCallsTests`). Not yet run on a Mac or an iPhone.
+
+### Connectors, in our design (13 October 2026)
+
+A first pass copied Muse's screens (bold section titles, rounded groups
+with lines, Featured cards, See all, the Mac's blue segmented control, a
+search field with a blue edge). The founder: "that's not our design ...
+that bold title 'creativity' big title WHY. you went off style", "whats
+that blue picker. what happens to water glass. what is that search bar",
+"the see all makes no sense". So the page is the approved Connect apps
+design again (11 October 2026), with only what was asked:
+
+- Named Connectors; Yours is no longer a page behind "4 connected" but
+  the second half of Apple's segmented control, Available | Yours ("connected
+  become yours"): on the iPhone the system's own (glass on iOS 26); on the
+  Mac `GlassSegments`, a capsule of our glass with the chosen half a lighter
+  capsule sliding to it, no blue.
+- Every app of each section is shown: no See all, View all or Show N more.
+- The logos larger on their tiles: 42 at 76% on the iPhone's rows (was 37
+  at 60%), 40 at 76% on the Mac's (the Mac's own logo filled its grey tile).
+- The Mac: "Search connectors" as a capsule of glass with no edge when it
+  has the keys, the filter a round glass button beside it (the sidebar's);
+  one app to a row as on the iPhone, no card and no line, a faint fill
+  under the pointer; 760 wide.
+- Kept from the first pass: the Mac's consent at 600 wide with × at the
+  top, not stopping at 640 high; "Connectors" in ⌘K and "/".
+
+Not yet built or run on a Mac or an iPhone (Linux here: the files parse,
+the core's tests pass).
+
+
+### The checkout card (13 October 2026)
+
+The founder: "we also need a card for each payment. like muse screenshot.
+i'll let you make sure we implement this all logically." One card for each
+purchase, before Link is asked for anything (docs/services-agents.md §7d).
+It sits in the chat like the "Your turn on the computer" card: the cart in a
+44-point tile, "Checkout" and "<agent> wants to place an order at
+<site>"; "Check the items, delivery and terms on the shop's page before you
+allow it."; the checkout as the agent left it (16:10, its top, 12 round on
+the Mac, 14 on the iPhone) with "Review order ↗" in glass over its corner;
+the Link card that pays ("Visa •••• 1234", "Pay with Link", the network's
+mark on a small white card); "Total" and the amount; Deny and Allow as the
+36-point pills (grey, blue). A Test pill and "Link's test mode: nothing is
+charged." in test mode. After Allow the buttons give way to where it stands:
+"Asking Link…", "Approve it in the Link app" with Open Link, "Approved ·
+placing your order", then "Ordered · Order #1042 · Arrives …", "Didn't go
+through", "Denied", "Expired" or "Canceled" ("Nothing was paid."). The
+iPhone's card has the flight card's frame (nearly the chat's width, 22
+round); the Mac's is 420 wide, 20 round. The gallery chat (`--gallery`)
+shows one waiting and one ordered; the demo's Allow walks through Link to
+the order.
+
+Not yet built or run on a Mac or an iPhone (Linux here: the files parse,
+the core's tests pass).
+
+### Booking a flight (13 October 2026)
+
+The founder: "we can book thru duffel. all we need is a form. when they
+enter their info then we take care of checkouts thru link etc."
+(docs/services-agents.md §10a). Under a flight in the pane, "Book with
+Simeon" (the blue 36-point pill; the computer's sentence above it when it
+can't): the traveller form goes into the chat and the pane closes. The form
+is a card like the checkout card (420 wide, 20 round): the airline's mark,
+"Travellers" and the route, the date and times, the fare and total, "Add
+traveller details" and the privacy line; the details on a 460 by 620 sheet
+in the grouped form, one section per traveller, Cancel and Continue (Return)
+at its foot. The flight's checkout card has an aeroplane in its tile, the
+flight in a white block (dark: #3a3a3c) where a shop's picture goes, and
+Open the computer while the bank checks the card.
+
+Not yet built or run on a Mac (Linux here: the files parse, the core's
+tests pass).

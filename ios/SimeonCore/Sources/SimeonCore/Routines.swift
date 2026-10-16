@@ -72,8 +72,8 @@ public struct RoutineRun: Identifiable, Hashable, Sendable {
   /** What woke it, for an event. */
   public let event: String?
 
-  /** The history row's tooltip (`detail ?? event`). */
-  public var summary: String { detail ?? event ?? "" }
+  /** The history row's tooltip (`detail ?? event`): a failure in plain words (PlainWords). */
+  public var summary: String { detail.map { PlainWords.error($0, fallback: "This run didn’t finish. It will try again at its next time.") } ?? event ?? "" }
   public var startedAt: Double? { at }
 
   init?(_ json: JSON) {

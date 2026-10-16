@@ -115,7 +115,12 @@ final class CloudComputerTests: XCTestCase {
       ("guest loaded url=x", .keep),
     ]
     for (line, want) in cases { XCTAssertEqual(ComputerStreamReason.change(for: line), want, line) }
+    // The log's place and the screen's own terms stay in the log (PlainWords, 13 October 2026).
     XCTAssertEqual(ComputerStreamReason.notice(lead: ComputerStreamReason.notConnecting, reason: nil, filePath: "/tmp/l.log"),
-                   "The computer's screen isn't connecting. No reason was reported yet. Details: /tmp/l.log")
+                   "The computer's screen isn't connecting. Try again in a little while.")
+    XCTAssertEqual(ComputerStreamReason.notice(lead: ComputerStreamReason.notConnecting, reason: "noVNC cannot reach the desktop's socket.", filePath: nil),
+                   "The computer's screen isn't connecting. Try again in a little while.")
+    XCTAssertEqual(ComputerStreamReason.notice(lead: ComputerStreamReason.notConnecting, reason: "The desktop is asking for a password.", filePath: nil),
+                   "The computer's screen isn't connecting. The desktop is asking for a password.")
   }
 }

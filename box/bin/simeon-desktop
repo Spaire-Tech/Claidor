@@ -76,7 +76,15 @@ AS_BOX=(runuser -u box -- env HOME=/home/box USER=box LOGNAME=box DISPLAY="$DISP
 
 /usr/local/bin/sand-wallpaper paint "$DISPLAY" || true
 
-launch x11vnc 3 "/tmp/x11vnc$DISPLAY.log" --listen-port "$VNC_PORT" -- x11vnc -display "$DISPLAY" -localhost -nopw -shared -forever -noxdamage -rfbport "$VNC_PORT" -quiet
+# x11vnc finds what changed on the screen through X DAMAGE, and picom below
+# repaints only what changed, so those changes are small. Measured 15 October
+# 2026 on this stack (Xvfb 1280x800, picom xrender, x11vnc 0.9.16), the time
+# from a change on the screen to the viewer's update: with -noxdamage and
+# picom --no-use-damage (as before), a letter 156 ms and a 2-pixel caret
+# 574 ms at the median, up to 1.75 s; as now, 28 and 40 ms, at most 45 ms.
+# picom also used a tenth of the CPU (0.07 s against 0.76 s for 200 small
+# changes), and every rectangle drawn read back right on the root window.
+launch x11vnc 3 "/tmp/x11vnc$DISPLAY.log" --listen-port "$VNC_PORT" -- x11vnc -display "$DISPLAY" -localhost -nopw -shared -forever -rfbport "$VNC_PORT" -quiet
 
 if [ -n "$NOVNC_TOKEN" ]; then
   mkdir -p "$NOVNC_TOKEN_DIR"
@@ -91,6 +99,6 @@ for _ in $(seq 1 50); do
   if xprop -display "$DISPLAY" -root _NET_SUPPORTING_WM_CHECK 2>/dev/null | grep -q "window id"; then break; fi
   sleep 0.2
 done
-launch picom 2 "/tmp/picom$DISPLAY.log" -- "${AS_BOX[@]}" picom --backend xrender --no-vsync --no-use-damage
+launch picom 2 "/tmp/picom$DISPLAY.log" -- "${AS_BOX[@]}" picom --backend xrender --no-vsync
 
 log "ready (${WIDTH}x${HEIGHT}, vnc $VNC_PORT${NOVNC_TOKEN:+, token $NOVNC_TOKEN}${NOVNC_TOKEN:-, novnc $NOVNC_PORT})"

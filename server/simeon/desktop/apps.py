@@ -28,6 +28,12 @@ made through it is kept):
 - `GET  /apps/oauth/callback` — the redirect URI to register in a
   provider's console when Simeon Labs brings its own OAuth app, so the
   address bar shows api.simeonlabs.com; forwarded to Composio's callback.
+- `GET  /apps/start` — where every sign-in starts (13 October 2026, the
+  founder: "white label composio as best as you can"): a signed link of
+  ours that sends the browser on to the provider's own sign-in page, so
+  the iPhone's and the Mac's sign-in sheet say simeonlabs.com, and
+  Composio's own link page is skipped whenever it only redirects
+  (`provider_page`).
 
 Every text that reaches a person or the agent — tool descriptions,
 errors — has the word Composio replaced (`scrub`).
@@ -35,12 +41,16 @@ errors — has the word Composio replaced (`scrub`).
 
 from __future__ import annotations
 
+import base64
+import binascii
+import hashlib
+import hmac
 import html
 import json
 import re
 import time
 from typing import Any
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urljoin, urlsplit
 
 import httpx
 import structlog
@@ -77,16 +87,52 @@ _MIN_IMPORTANT = 5
 _PAGE_LIMIT = 1000
 _MAX_PAGES = 5
 COMPOSIO_CALLBACK = "https://backend.composio.dev/api/v3/toolkits/auth/callback"
+#: The provider's own addresses: a sign-in link on one of them is followed
+#: to the app's sign-in page when it only redirects there (`provider_page`).
+_COMPOSIO_DOMAINS = ("composio.dev", "composio.io")
+#: How long a start link of ours is good for (the provider's own lasts about as long).
+_START_TTL_S = 15 * 60
+#: Asking the provider's link where it leads: a quick question, never a wait for the person.
+_LINK_TIMEOUT_S = 5.0
+#: The provider's hosted Connect page, `connect.composio.dev/link/lk_…`
+#: (`provider_page`): the token its page hands on with.
+_LINK_PAGE = re.compile(r"^/link/(lk_[A-Za-z0-9_-]{4,64})/?$")
+#: What the provider's Connect page asks its own backend, without a key,
+#: to find where the sign-in goes (read from the page's script on 13
+#: October 2026; the documented way, `long_redirect_url`, is refused for
+#: the provider's own sign-ins since July 2026).
+_LINK_SESSION = "api/v3.1/internal/connected_accounts/link/{token}"
+#: The apps that open a sign-in and are sent back to once it is done
+#: (`apps_start`, `apps_connected`): the iPhone's scheme and the Mac's,
+#: with the Mac's earlier one.
+_APP_SCHEMES = frozenset({"simeon-ios", "simeon", "simeon-mac"})
+#: Which app opened the sign-in, for the page it ends on.
+_BACK_COOKIE = "simeon_apps_back"
 NOT_CONFIGURED = "Apps are not switched on for this server yet."
 
 #: Apps whose provider lends no sign-in of its own (measured 11 October
-#: 2026: no managed OAuth for these, and Ashby takes only an API key). Their
-#: link works once Simeon Labs registers its own app with each company and
-#: names the auth config in `COMPOSIO_AUTH_CONFIGS` (docs/services-agents.md,
-#: 7c); until then a refused link is "coming soon" on the card, not the
-#: provider's error.
+#: 2026: no managed OAuth for these). Their link works once Simeon Labs
+#: registers its own app with each company and names the auth config in
+#: `COMPOSIO_AUTH_CONFIGS` (docs/services-agents.md, 7c); until then a refused
+#: link is "coming soon" on the card, not the provider's error. Klaviyo and
+#: Ashby left the list on 13 October 2026: the apps reach their makers' own
+#: MCP servers instead, which sign anyone in. Shopify's own server reads
+#: Simeon's client document (`app_sign_in.py`) but takes only clients it has
+#: approved, so Shopify stays here until it approves Simeon. OneNote and
+#: Microsoft To Do joined the same day (Composio's toolkit pages: "requires
+#: connections to go through your own OAuth app"); Simeon Labs' Microsoft
+#: app, once registered, serves them with Teams and Outlook.
 OWN_APP_NEEDED = frozenset(
-    {"gusto", "xero", "shopify", "brex", "pipedrive", "docusign", "klaviyo", "ashby"}
+    {
+        "gusto",
+        "xero",
+        "shopify",
+        "brex",
+        "pipedrive",
+        "docusign",
+        "onenote",
+        "microsoft_todo",
+    }
 )
 
 
@@ -367,6 +413,140 @@ async def sign_in_link(user: User, toolkit: str) -> str:
     return url
 
 
+def _is_composio(url: str) -> bool:
+    host = (urlsplit(url).hostname or "").lower()
+    return any(host == one or host.endswith("." + one) for one in _COMPOSIO_DOMAINS)
+
+
+async def _past_link_page(url: str) -> str | None:
+    """Where the provider's hosted Connect page would send the person, asked
+    for here so they never see it (the founder, 13 October 2026: "that
+    simeon wants to connect page makes no sense ... it goes to the page
+    that ends connection immediately without me clicking anything. please
+    remove it as we already have our consent page"). The page does just
+    this when the app asks for nothing (a shop's or a subdomain's name):
+    it reads its link, and with nothing to ask it starts the sign-in at
+    once and goes where that answers. Anything else, or any answer not
+    understood, and the page is kept: it still works, one screen longer."""
+    parts = urlsplit(url)
+    match = _LINK_PAGE.match(parts.path)
+    if not _is_composio(url) or match is None:
+        return None
+    session_url = _api_url(_LINK_SESSION.format(token=match.group(1)))
+    try:
+        async with httpx.AsyncClient(timeout=_LINK_TIMEOUT_S) as client:
+            read = await client.get(session_url, headers={"accept": "application/json"})
+            link = read.json() if read.status_code == 200 else None
+            account = link.get("connected_account") if isinstance(link, dict) else None
+            if not isinstance(account, dict):
+                log.info("desktop.apps.link_kept", reason=f"read {read.status_code}")
+                return None
+            shared = (account.get("experimental") or {}).get("account_type") == "SHARED"
+            if (
+                account.get("status") != "INITIALIZING"
+                or account.get("expected_input_fields")
+                or shared
+            ):
+                # A form to fill, a team account, or a sign-in already under way: the page asks.
+                log.info("desktop.apps.link_kept", reason="the page asks something")
+                return None
+            started = await client.post(
+                session_url, headers={"accept": "application/json"}, json={"input": {}}
+            )
+            answer = started.json() if started.status_code < 300 else None
+    except (httpx.HTTPError, ValueError) as error:
+        log.info("desktop.apps.link_kept", reason=type(error).__name__)
+        return None
+    if not isinstance(answer, dict):
+        log.warning("desktop.apps.link_kept", reason=f"start {started.status_code}")
+        return None
+    to = answer.get("redirect_url")
+    if (
+        not isinstance(to, str)
+        or answer.get("status") != "INITIATED"
+        or urlsplit(to).scheme != "https"
+    ):
+        log.warning("desktop.apps.link_kept", reason=f"start {started.status_code}")
+        return None
+    return to
+
+
+async def provider_page(url: str) -> str:
+    """The app's own sign-in page behind the provider's link (white label,
+    13 October 2026): the link is asked for where it leads, without
+    following it, as the browser would; while it only redirects (as the
+    provider's documented `long_redirect_url` does), the person goes
+    straight to Google's, Slack's or HubSpot's page and never sees the
+    provider's. The hosted "Connect" page is asked the same way
+    (`_past_link_page`); one that has something to ask is kept as it is,
+    and so is any link when the provider can't be asked."""
+    past = await _past_link_page(url)
+    if past is not None:
+        url = past
+    current = url
+    for _ in range(4):
+        if not _is_composio(current):
+            break
+        try:
+            async with httpx.AsyncClient(
+                timeout=_LINK_TIMEOUT_S, follow_redirects=False
+            ) as client:
+                response = await client.get(current, headers={"accept": "text/html"})
+        except httpx.HTTPError as error:
+            log.info("desktop.apps.link_kept", reason=type(error).__name__)
+            return url
+        location = response.headers.get("location")
+        if response.status_code not in {301, 302, 303, 307, 308} or not location:
+            log.info("desktop.apps.link_kept", reason=f"status {response.status_code}")
+            return url
+        current = urljoin(current, location)
+    if _is_composio(current) or urlsplit(current).scheme != "https":
+        return url
+    log.info("desktop.apps.link_direct", host=urlsplit(current).hostname)
+    return current
+
+
+def _start_signature(expires: int, url: str) -> str:
+    message = f"simeon-apps-start|{expires}|{url}".encode()
+    return hmac.new(settings.SECRET.encode(), message, hashlib.sha256).hexdigest()
+
+
+def start_url(url: str, *, now: float | None = None) -> str:
+    """A link of ours that leads to `url`, signed so it leads nowhere else
+    and good for a quarter of an hour: where the sign-in sheet opens, so it
+    names simeonlabs.com.
+
+    The address travels as base64url (`t`), letters, digits, `-` and `_`
+    only. Until 13 October 2026 it travelled as itself (`to`), and the apps,
+    adding their `back=` through Apple's `URLComponents.queryItems`, wrote
+    it back with every `+` bare, which a query reads as a space: Google's
+    `scope=a+b` arrived as `scope=a b`, the signature no longer matched,
+    and a Google sign-in opened from the Mac said the link had expired.
+    Nothing in base64url can be rewritten that way."""
+    expires = int(now if now is not None else time.time()) + _START_TTL_S
+    target = base64.urlsafe_b64encode(url.encode()).decode().rstrip("=")
+    query = urlencode({"t": target, "e": expires, "s": _start_signature(expires, url)})
+    return f"{settings.BASE_URL.rstrip('/')}/desktop/apps/start?{query}"
+
+
+def _start_targets(request: Request) -> list[str]:
+    """The address a start link names, in the forms it may have come in:
+    `t`, or a link made before it (`to`), as sent and with the spaces the
+    apps' rewrite made of its `+` put back."""
+    target = str(request.query_params.get("t", ""))
+    if target:
+        try:
+            return [
+                base64.urlsafe_b64decode(target + "=" * (-len(target) % 4)).decode()
+            ]
+        except (binascii.Error, UnicodeDecodeError, ValueError):
+            return []
+    to = str(request.query_params.get("to", ""))
+    if not to:
+        return []
+    return [to, to.replace(" ", "+")] if " " in to else [to]
+
+
 def _error(message: str, status: int) -> JSONResponse:
     return JSONResponse(
         {"error": {"type": "apps_error", "message": message}}, status_code=status
@@ -478,8 +658,12 @@ async def apps_available(
     """Whether apps can be connected here. The desktop asks before it offers
     Connect on any app card (`vendor-mcp/apps-availability.ts`): a server
     without this route, or without the provider's key, keeps them Coming
-    soon instead of sending the person nowhere."""
-    return JSONResponse({"available": configured()})
+    soon instead of sending the person nowhere. `comingSoon` names the apps
+    that can't be added yet: those needing Simeon Labs' own app with the
+    company, until it is named in `COMPOSIO_AUTH_CONFIGS` (the iPhone and
+    Mac apps say "Coming soon" on their cards and offer no Add)."""
+    soon = sorted(OWN_APP_NEEDED - set(own_auth_configs()))
+    return JSONResponse({"available": configured(), "comingSoon": soon})
 
 
 @router.post("/api/apps/mcp/{toolkit}", name="desktop:apps_mcp")
@@ -569,6 +753,8 @@ async def apps_connect(
         toolkit=toolkit,
         user_id=str(desktop_session.user.id),
     )
+    # Ours first, then the app's own page: the provider's address shows nowhere it can be helped.
+    url = start_url(await provider_page(url))
     return JSONResponse({"toolkit": toolkit, "connected": False, "url": url})
 
 
@@ -594,16 +780,30 @@ _CONNECTED_PAGE = """<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>Simeon</title>
 <style>:root{{color-scheme:light dark}}body{{margin:0;min-height:100vh;display:grid;place-items:center;
 font:16px/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;background:#f5f5f7;color:#1d1d1f}}
-@media (prefers-color-scheme:dark){{body{{background:#1c1c1e;color:#f5f5f7}}.card{{background:#2c2c2e}}}}
 .card{{background:#fff;border-radius:18px;padding:36px 40px;text-align:center;max-width:360px;
 box-shadow:0 0 0 .5px rgba(20,30,60,.08),0 1px 2px rgba(20,30,60,.05)}}
-h1{{font-size:20px;font-weight:600;margin:0 0 6px}}p{{margin:0;opacity:.7}}</style></head>
+h1{{font-size:20px;font-weight:600;margin:0 0 6px}}p{{margin:0;opacity:.7}}
+@media (prefers-color-scheme:dark){{body{{background:#1c1c1e;color:#f5f5f7}}.card{{background:#2c2c2e;box-shadow:none}}}}</style></head>
 <body><div class="card"><h1>{title}</h1><p>{body}</p></div></body></html>"""
 
 
 @router.get("/apps/connected", name="desktop:apps_connected")
-async def apps_connected(request: Request) -> HTMLResponse:
+async def apps_connected(request: Request) -> Response:
+    """Where a sign-in ends. Opened from the iPhone or the Mac (`apps_start`
+    kept which), it goes straight back to the app, whose sign-in sheet
+    closes on its own address (the founder, 13 October 2026: "the last
+    screen after something is connected makes no sense ... should take us
+    back"); in a browser's tab it says it is done."""
     failed = str(request.query_params.get("status", "")).lower() in {"failed", "error"}
+    back = request.cookies.get(_BACK_COOKIE, "")
+    if back in _APP_SCHEMES:
+        response = RedirectResponse(
+            f"{back}://connected" + ("?status=failed" if failed else ""),
+            status_code=302,
+            headers={"cache-control": "no-store"},
+        )
+        response.delete_cookie(_BACK_COOKIE, path="/desktop/apps")
+        return response
     title = "That didn't work" if failed else "Connected"
     body = (
         "Go back to Simeon and try again."
@@ -614,6 +814,57 @@ async def apps_connected(request: Request) -> HTMLResponse:
         _CONNECTED_PAGE.format(title=html.escape(title), body=html.escape(body)),
         headers={"cache-control": "no-store"},
     )
+
+
+@router.get("/apps/start", name="desktop:apps_start")
+async def apps_start(request: Request) -> Response:
+    signature = str(request.query_params.get("s", ""))
+    try:
+        expires = int(request.query_params.get("e", "0"))
+    except ValueError:
+        expires = 0
+    to = next(
+        (
+            one
+            for one in _start_targets(request)
+            if one.startswith("https://")
+            and hmac.compare_digest(_start_signature(expires, one), signature)
+        ),
+        None,
+    )
+    # Two refusals, told apart in the log and on the page: a link that was
+    # never ours, or that something changed on its way, and one that is
+    # simply old.
+    if to is None or expires < time.time():
+        expired = to is not None
+        log.info(
+            "desktop.apps.start_refused", reason="expired" if expired else "signature"
+        )
+        return HTMLResponse(
+            _CONNECTED_PAGE.format(
+                title="That link has expired" if expired else "That link didn't work",
+                body="Go back to Simeon and try again.",
+            ),
+            status_code=400,
+            headers={"cache-control": "no-store"},
+        )
+    response = RedirectResponse(
+        to, status_code=302, headers={"cache-control": "no-store"}
+    )
+    # The app that opened this (`?back=` its scheme, outside the signature: it
+    # only ever names one of ours) is where the sign-in's last page sends the person.
+    back = str(request.query_params.get("back", "")).strip().lower()
+    if back in _APP_SCHEMES:
+        response.set_cookie(
+            _BACK_COOKIE,
+            back,
+            max_age=_START_TTL_S,
+            path="/desktop/apps",
+            secure=settings.BASE_URL.startswith("https://"),
+            httponly=True,
+            samesite="lax",
+        )
+    return response
 
 
 @router.get("/apps/oauth/callback", name="desktop:apps_oauth_callback")

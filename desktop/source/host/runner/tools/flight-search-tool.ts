@@ -61,6 +61,8 @@ function searchSignature(args: Record<string, unknown>): string {
 }
 
 export interface FlightSummary {
+  /** Duffel's offer id: what BookFlight books (13 October 2026). */
+  readonly offerId?: string;
   /** Why it is on the shortlist: Fastest, Cheapest, Refundable, or empty. */
   readonly label?: string;
   readonly airline?: string;
@@ -102,14 +104,14 @@ function summaryLine(offer: FlightSummary, index: number): string {
   const times = [offer.depart, offer.arrive].filter(Boolean).join("–");
   const terms = [offer.refundable ? `cancellation: ${offer.refundable}` : "", offer.changeable ? `changes: ${offer.changeable}` : "", offer.bags ? `bags: ${offer.bags}` : ""].filter(Boolean).join("; ");
   const why = offer.label ? `[${offer.label}] ` : "";
-  return `${index + 1}. ${why}${[offer.airline, offer.price, offer.priceNote, times, offer.stops, offer.duration, offer.returnTimes].filter(Boolean).join(" · ")}${terms ? ` (${terms})` : ""}`;
+  return `${index + 1}. ${why}${[offer.airline, offer.price, offer.priceNote, times, offer.stops, offer.duration, offer.returnTimes].filter(Boolean).join(" · ")}${terms ? ` (${terms})` : ""}${offer.offerId ? ` [offer_id ${offer.offerId}]` : ""}`;
 }
 
 export const SEARCH_FLIGHTS_DESCRIPTION = [
   "Search live flights and show the user a results card. Use this for any question about flights: prices, times, the fastest or cheapest way from one place to another, what lands before a given time, refundable fares. Never look up flights on airline websites, Google Flights or other travel sites, and never hand a flight search to a browser or research subagent; this is faster and its data is exact.",
   "Before asking anything, use what you already know: memory, past trips, email and calendar for their home airport, preferred and avoided airlines, cabin, and any meeting the flight has to make. With \"me\" and one date, search one adult, one way, and say that assumption with the result. Ask before searching only when a missing fact would change the route (you don't know where they leave from) or the travellers; ask that one thing in one short question. This search prices adults only: if a child or infant is travelling, say so instead of searching them as adults.",
   "Search the whole trip at once and once per question: a round trip is one search with return_date. Run it again only with different arguments: when an airline they prefer or would expect on the route is missing, run one search with airlines set to it. Its absence then means it isn't in the bookable results, not that the airline doesn't fly there.",
-  "The card shows the options, fastest whole journey first, and lets the user pick; it is the answer. Afterwards send one short message: the recommendation and the one reason that decides it, plus any assumption you made. Do not repeat prices, times or terms from the card, add a details section, or ask the user to type which flight they want. Never name the flight data provider. Booking is not available yet.",
+  "The card shows the options, fastest whole journey first, and lets the user pick; it is the answer. Afterwards send one short message: the recommendation and the one reason that decides it, plus any assumption you made. Do not repeat prices, times or terms from the card, add a details section, or ask the user to type which flight they want. Never name the flight data provider. Each flight on the card has \"Book with Simeon\": the person books from there, or asks you, and then you call BookFlight with that flight's offer_id. Never book a flight on a website.",
 ].join(" ");
 
 export function createSearchFlightsTool(deps: FlightSearchDependencies) {
@@ -148,7 +150,7 @@ export function createSearchFlightsTool(deps: FlightSearchDependencies) {
         `The results card is shown to the user${entryId == null ? "" : ` (entry ${entryId})`}, ${ranked}, out of ${answer.found} offers. Do not list these flights again.`,
         ...answer.summary.map(summaryLine),
         answer.test ? "These are test results (a pretend airline and made-up prices), not real fares; say so in a few words." : "",
-        "Now send one short message: the recommendation and the one reason that decides it (for example the time saved, or the money saved for the longer trip), plus the assumptions you made (one adult, one way, the airports). Do not repeat prices, times or terms, add a details section, ask them to type a choice, or name the data provider. Do not search again with the same arguments. Booking is not available yet.",
+        "Now send one short message: the recommendation and the one reason that decides it (for example the time saved, or the money saved for the longer trip), plus the assumptions you made (one adult, one way, the airports). Do not repeat prices, times or terms, add a details section, ask them to type a choice, or name the data provider. Do not search again with the same arguments. To book, the person taps Book with Simeon on a flight or asks you; only then call BookFlight with its offer_id.",
       ].filter(Boolean).join("\n");
     },
   });

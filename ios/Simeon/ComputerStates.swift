@@ -504,7 +504,7 @@ private struct ComputerPills: View {
             ProgressPill(title: RebuildWords.title(kind), subtitle: steps.steps.indices.contains(steps.activeIndex) ? steps.steps[steps.activeIndex].label : nil,
                          progress: steps.progress)
           }
-          .buttonStyle(.plain)
+          .buttonStyle(.tactile)
           .accessibilityLabel(RebuildWords.bannerLabel)
           .transition(.move(edge: .top).combined(with: .opacity))
         }
@@ -613,7 +613,7 @@ struct ComputerDiskBanner: View {
             .contentShape(.capsule)
             .fixedSize()
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.tactile)
         .disabled(launching)
       }
       .padding(.horizontal, 14)
@@ -655,7 +655,10 @@ extension AppStore {
  * bought there lifts the cover at once. An account no plan can help gets
  * Simeon Labs' page. Read again when it shows and each time the app comes
  * forward: the first run, which could not be decided while the computer
- * refused, is decided then.
+ * refused, is decided then. Since 14 October 2026 the server lets an
+ * account with no plan reach its computer, so this shows only when that is
+ * switched off (`DESKTOP_COMPUTER_WITHOUT_PLAN`); the app stays open and
+ * the line over the composer says why Send waits.
  */
 struct AccessCover: View {
   @Environment(AppStore.self) private var store
@@ -664,9 +667,16 @@ struct AccessCover: View {
   @Environment(\.scenePhase) private var scenePhase
   @State private var showsPlans = false
   @State private var askingSignOut = false
+  @State private var purchases = Purchases.shared
 
   var body: some View {
-    let words = PhoneUpgrade.cover(access: store.access, usage: store.usage.summary)
+    let summary = store.usage.summary
+    // A failed payment (14 October 2026) goes where the card is (`PhoneUpgrade.route`): the plans for an Apple plan,
+    // Stripe's card page in the app where Apple allows the link, else no button.
+    let failed = store.access.state == .paymentRequired && summary?.paymentFailed == true
+    let mend = failed ? PhoneUpgrade.route(access: store.access, usage: summary, webLinkAllowed: purchases.webLinkAllowed) : .none
+    let cover = PhoneUpgrade.cover(access: store.access, usage: summary)
+    let words = failed && mend == .none ? PhoneUpgrade.withoutUpgrade(cover) : cover
     VStack(spacing: 0) {
       Spacer(minLength: 24)
       LogoShimmer().frame(width: 46, height: 46)
@@ -688,7 +698,25 @@ struct AccessCover: View {
       Spacer(minLength: 24)
       if let action = words.action {
         Button {
-          if store.access.state == .paymentRequired { showsPlans = true } else { openURL(SandAccess.page) }
+          if failed {
+            switch mend {
+            case .plans:
+              showsPlans = true
+            case .portal(let flow, let tier):
+              Task {
+                if let failure = await BillingPage.shared.open(flow: flow, tier: tier, store: store, openURL: openURL) { store.problem = failure }
+                await readAgain()
+              }
+            case .web(let url):
+              openURL(url)
+            case .none:
+              break
+            }
+          } else if store.access.state == .paymentRequired {
+            showsPlans = true
+          } else {
+            openURL(SandAccess.page)
+          }
         } label: {
           Text(action)
             .font(.system(size: 17, weight: .semibold))
@@ -705,7 +733,7 @@ struct AccessCover: View {
       Button { askingSignOut = true } label: {
         Text("Sign Out").font(.system(size: 16, weight: .medium)).frame(height: 44).contentShape(.rect)
       }
-      .buttonStyle(.plain)
+      .buttonStyle(.tactile)
       .foregroundStyle(Ink.secondary)
       .padding(.top, 8)
       .padding(.bottom, 20)

@@ -399,6 +399,20 @@ public enum Mentions {
 
   private static let agentPatterns = LockedBox<[String: NSRegularExpression]>([:])
 
+  /** Whether the word at `location` begins a sentence: nothing but spaces, quotes, brackets and list or emphasis marks since the text's start, a line break, or a full stop, question or exclamation mark, or colon ("1. Link your account" too). */
+  static func startsSentence(_ text: NSString, at location: Int) -> Bool {
+    let skipped = CharacterSet.whitespaces.union(CharacterSet(charactersIn: "*_\"'\u{201C}\u{2018}([>#-\u{2022}"))
+    let ends = CharacterSet(charactersIn: ".!?:\u{2026}")
+    var index = location - 1
+    while index >= 0 {
+      guard let scalar = Unicode.Scalar(text.character(at: index)) else { return false }
+      if CharacterSet.newlines.contains(scalar) { return true }
+      if !skipped.contains(scalar) { return ends.contains(scalar) }
+      index -= 1
+    }
+    return true
+  }
+
   static func pattern(_ names: [String]) -> NSRegularExpression {
     let escaped = names.sorted { $0.count > $1.count }.map(NSRegularExpression.escapedPattern(for:))
     return try! NSRegularExpression(pattern: "(?<![\\w@/.-])(?:\(escaped.joined(separator: "|")))(?![\\w-])")
@@ -410,7 +424,10 @@ public enum Mentions {
     let whole = NSRange(location: 0, length: ns.length)
     var matches: [Match] = []
     for result in brandPattern.matches(in: text, range: whole) {
-      if let brand = brandByName[ns.substring(with: result.range)] { matches.append(Match(location: result.range.location, length: result.range.length, kind: .brand(brand))) }
+      guard let brand = brandByName[ns.substring(with: result.range)] else { continue }
+      // "Link your account", "Square one": an app whose name is an everyday word is not marked as a sentence's first word.
+      if brand.ordinaryWord && startsSentence(ns, at: result.range.location) { continue }
+      matches.append(Match(location: result.range.location, length: result.range.length, kind: .brand(brand)))
     }
     let person = personName?.trimmingCharacters(in: .whitespaces).lowercased()
     let named = agents.filter { $0.name.trimmingCharacters(in: .whitespaces).count >= 2 && $0.name.lowercased() != person }

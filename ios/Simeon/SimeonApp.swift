@@ -547,7 +547,7 @@ struct OnboardingFlow: View {
       Button(action: advance) {
         Text("Skip").font(.system(size: 17, weight: .medium)).frame(maxWidth: .infinity).frame(height: 48).contentShape(.rect)
       }
-      .buttonStyle(.plain)
+      .buttonStyle(.tactile)
       .foregroundStyle(Ink.primary)
       .padding(.top, 6)
       .padding(.bottom, 8)
@@ -568,9 +568,10 @@ struct OnboardingFlow: View {
       header(.notifications) {
         Image(systemName: "bell")
           .font(.system(size: 28, weight: .regular))
-          .foregroundStyle(Color.black)
+          .foregroundStyle(Ink.primary)
           .frame(width: 72, height: 72)
-          .background(Color.white, in: Circle())
+          .background(Ink.tile, in: Circle())
+          .overlay(Circle().stroke(Ink.tileEdge, lineWidth: 0.5))
           .accessibilityHidden(true)
       }
       Toggle(isOn: notificationsSwitch) {

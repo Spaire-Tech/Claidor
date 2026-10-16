@@ -1,6 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
 
 import { MCP_OAUTH_LOOPBACK_CALLBACK_URL } from "../mcp/mcp-oauth-loopback.js";
+import { savePendingSignIn, takeSavedPendingSignIn } from "../mcp/pending-sign-ins-file.js";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value != null && !Array.isArray(value);
@@ -30,11 +31,14 @@ const pendingVendorMcpAuths = new Map<string, { readonly pending: VendorMcpOAuth
 export function rememberVendorMcpPendingAuth(pending: VendorMcpOAuthPending, now = Date.now()): void {
   for (const [state, entry] of pendingVendorMcpAuths) if (now - entry.startedAtMs > VENDOR_MCP_PENDING_AUTH_TTL_MS) pendingVendorMcpAuths.delete(state);
   pendingVendorMcpAuths.set(pending.state, { pending, startedAtMs: now });
+  savePendingSignIn("vendor", pending, now, VENDOR_MCP_PENDING_AUTH_TTL_MS);
 }
 
 export function takeVendorMcpPendingAuth(state: string, now = Date.now()): VendorMcpOAuthPending | undefined {
+  // The disk copy goes either way; it answers alone after a host restart.
+  const saved = takeSavedPendingSignIn("vendor", state, now, VENDOR_MCP_PENDING_AUTH_TTL_MS);
   const entry = pendingVendorMcpAuths.get(state);
-  if (entry == null) return undefined;
+  if (entry == null) return saved;
   pendingVendorMcpAuths.delete(state);
   return now - entry.startedAtMs > VENDOR_MCP_PENDING_AUTH_TTL_MS ? undefined : entry.pending;
 }
@@ -192,6 +196,19 @@ export function registrationAuthMethod(metadata: Record<string, unknown>): "none
   return null;
 }
 
+/**
+ * Whether Simeon can sign in as the client its own metadata document
+ * describes (a client ID metadata document, the MCP specification's
+ * 2025-11-25 sign-in): the vendor says it reads such documents, and takes a
+ * public client at its token endpoint (the document names no secret).
+ */
+export function acceptsClientMetadataDocument(metadata: Record<string, unknown>): boolean {
+  return metadata.client_id_metadata_document_supported === true && registrationAuthMethod(metadata) === "none";
+}
+
+/** How Simeon became the vendor's client: an app registered by hand, our metadata document, or a registration on the spot. */
+export type VendorMcpClientSource = "by-us" | "document" | "dynamic";
+
 export async function startVendorMcpOAuth(args: {
   readonly pluginId: string;
   readonly mcpUrl: string;
@@ -201,7 +218,15 @@ export async function startVendorMcpOAuth(args: {
   readonly remember?: boolean;
   /** An app registered by hand in the vendor's console (a public client): no dynamic registration. */
   readonly clientId?: string;
-}): Promise<VendorMcpOAuthStart> {
+  /**
+   * The address of Simeon's client metadata document on Simeon Labs' server
+   * (`…/desktop/mcp-oauth/client.json`, `server/simeon/desktop/app_sign_in.py`),
+   * sent as the client ID to a vendor that registers no clients but reads
+   * such documents (13 October 2026; Shopify reads them but takes only the clients it has approved). A vendor that
+   * registers clients keeps doing so: that is what worked before.
+   */
+  readonly clientMetadataUrl?: string;
+}): Promise<VendorMcpOAuthStart & { readonly clientSource: VendorMcpClientSource }> {
   const fetchImpl = args.fetch ?? fetch;
   const redirectUri = args.redirectUri ?? MCP_OAUTH_LOOPBACK_CALLBACK_URL;
   const resource = await discoverProtectedResource(args.mcpUrl, fetchImpl);
@@ -213,9 +238,13 @@ export async function startVendorMcpOAuth(args: {
     throw new Error(`The vendor did not advertise OAuth for ${args.mcpUrl}.`);
   }
   if (args.clientId != null && args.clientId.length > 0) {
-    return finishStart({ ...args, redirectUri, authorizationEndpoint, tokenEndpoint, clientId: args.clientId, scopes: resource.scopes, resource: vendorMcpResourceFor(args.mcpUrl, resource.resource) });
+    return { ...finishStart({ ...args, redirectUri, authorizationEndpoint, tokenEndpoint, clientId: args.clientId, scopes: resource.scopes, resource: vendorMcpResourceFor(args.mcpUrl, resource.resource) }), clientSource: "by-us" };
   }
   if (typeof registrationEndpoint !== "string") {
+    const documentUrl = args.clientMetadataUrl;
+    if (documentUrl != null && documentUrl.startsWith("https://") && acceptsClientMetadataDocument(metadata)) {
+      return { ...finishStart({ ...args, redirectUri, authorizationEndpoint, tokenEndpoint, clientId: documentUrl, scopes: resource.scopes, resource: vendorMcpResourceFor(args.mcpUrl, resource.resource) }), clientSource: "document" };
+    }
     throw new Error(`${args.pluginId} needs an app we register first. It is coming soon.`);
   }
   const authMethod = registrationAuthMethod(metadata);
@@ -250,7 +279,7 @@ export async function startVendorMcpOAuth(args: {
   if (registeredMethod !== "none" && authMethod === "client_secret_post" && clientSecret == null) {
     throw new Error(`${args.pluginId} registered Simeon without the client secret its token endpoint requires.`);
   }
-  return finishStart({ ...args, redirectUri, authorizationEndpoint, tokenEndpoint, clientId, ...(clientSecret == null ? {} : { clientSecret }), scopes: resource.scopes, resource: vendorMcpResourceFor(args.mcpUrl, resource.resource) });
+  return { ...finishStart({ ...args, redirectUri, authorizationEndpoint, tokenEndpoint, clientId, ...(clientSecret == null ? {} : { clientSecret }), scopes: resource.scopes, resource: vendorMcpResourceFor(args.mcpUrl, resource.resource) }), clientSource: "dynamic" };
 }
 
 function finishStart(args: {

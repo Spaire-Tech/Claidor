@@ -38,6 +38,11 @@ from simeon.kit.db.models import RecordModel
 if TYPE_CHECKING:
     from .user import User
 
+#: How long after the trial's end the first paid period may start and
+#: still be the trial's own first charge: Stripe starts it at the trial's
+#: end, to the second.
+TRIAL_CONVERSION_SLACK = timedelta(days=1)
+
 
 class DesktopSubscription(RecordModel):
     __tablename__ = "desktop_subscriptions"
@@ -108,14 +113,32 @@ class DesktopSubscription(RecordModel):
 
     @property
     def billable(self) -> bool:
-        """Whether the plan's allowance applies: trialing, paid, or paid
-        and being retried."""
+        """Whether Stripe still holds a live subscription for the person:
+        trialing, paid, or being retried. A second checkout is refused
+        while it is (`PlansService.create_checkout`); whether it gives an
+        allowance is `billable_at`."""
         return self.status in ("trialing", "active", "past_due")
 
+    @property
+    def unpaid_after_trial(self) -> bool:
+        """The trial ended and its first charge failed (14 October 2026).
+        Stripe marks the subscription `past_due` and retries the card, but
+        nothing was ever paid, so the plan does not start until a charge
+        goes through. A renewal that fails after a paid period keeps the
+        plan while Stripe retries."""
+        return (
+            self.status == "past_due"
+            and self.trial_end is not None
+            and self.current_period_start is not None
+            and self.current_period_start <= self.trial_end + TRIAL_CONVERSION_SLACK
+        )
+
     def billable_at(self, now: datetime) -> bool:
-        """Stripe's status is kept current by its webhooks, so the moment
-        does not matter here; Apple's rows need it."""
-        return self.billable
+        """Whether the plan's allowance applies: trialing, paid, or a paid
+        plan whose renewal is being retried. Stripe's status is kept
+        current by its webhooks, so the moment does not matter here;
+        Apple's rows need it."""
+        return self.billable and not self.unpaid_after_trial
 
     @property
     def trialing(self) -> bool:
@@ -196,12 +219,24 @@ class DesktopAppStoreSubscription(RecordModel):
     def user(cls) -> Mapped["User"]:
         return relationship("User", lazy="raise")
 
+    @property
+    def unpaid_after_trial(self) -> bool:
+        """Apple is retrying the first charge after the free week (14
+        October 2026): `trial_end` is only set while the latest transaction
+        is the free week's (`app_store.snapshot_of`), so a `past_due` row
+        with it was never paid. The plan starts when Apple's retry goes
+        through (a new transaction); Apple's grace period, if it is on,
+        covers only renewals of a paid plan here."""
+        return self.status == "past_due" and self.trial_end is not None
+
     def billable_at(self, now: datetime) -> bool:
-        """Trialing, paid, or in Apple's grace period, and not past the
-        period's end by more than the renewal slack: a renewal that never
-        came (a missed notification, an app never opened) ends the plan by
-        itself."""
+        """Trialing, paid, or in Apple's grace period after a paid period,
+        and not past the period's end by more than the renewal slack: a
+        renewal that never came (a missed notification, an app never
+        opened) ends the plan by itself."""
         if self.status not in ("trialing", "active", "past_due"):
+            return False
+        if self.unpaid_after_trial:
             return False
         ends = max(
             (

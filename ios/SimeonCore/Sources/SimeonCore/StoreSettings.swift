@@ -142,22 +142,47 @@ extension AppStore {
   public var showsAccessCover: Bool { accessBlocked && !hasReachedBox && !rebuild.isHardLocked }
 
   /**
-   * Stripe's portal for the Manage Plan card: the confirmation of the next
-   * plan up (`flow` "update_confirm" with its `tier`), or its front page. The
-   * page's address, or the words to show under the card.
+   * Stripe's portal for the Manage Plan card and the banner over the
+   * composer: the confirmation of the next plan up (`flow` "update_confirm"
+   * with its `tier`), the card form for a payment that failed
+   * (`payment_method`), or its front page. `back` is the app's URL scheme:
+   * the page then ends on the app's own link, so the app's sheet closes
+   * (14 October 2026; it ended on the web's billing page, which asks to sign
+   * in). The page's address, or the words to show.
    */
-  public func billingPortal(flow: String?, tier: String?) async -> (url: URL?, message: String?) {
+  public func billingPortal(flow: String?, tier: String?, back: String? = nil) async -> (url: URL?, message: String?) {
     let fallback = "Couldn’t open billing. Try again."
     guard let backend else { return (nil, "Sign in to Simeon to continue") }
-    var body: JSON = [:]
-    if flow == "update_confirm", let tier { body = ["flow": "update_confirm", "tier": .string(tier)] }
+    var fields: [String: JSON] = [:]
+    if flow == PhoneUpgrade.upgradeFlow, let tier {
+      fields["flow"] = .string(PhoneUpgrade.upgradeFlow)
+      fields["tier"] = .string(tier)
+    } else if flow == PhoneUpgrade.paymentMethodFlow {
+      fields["flow"] = .string(PhoneUpgrade.paymentMethodFlow)
+    }
+    if let back { fields["back"] = .string(back) }
+    let body = JSON.object(fields)
     do {
       let answer = try await backend.server("billing/portal", method: "POST", body: body)
       guard let text = answer["portalUrl"]?.string, text.hasPrefix("https://"), let url = URL(string: text) else { return (nil, fallback) }
       return (url, nil)
     } catch {
-      let message = error.localizedDescription
+      let message = PlainWords.error(error.localizedDescription, fallback: fallback)
       return (nil, message.isEmpty ? fallback : message)
     }
+  }
+
+  /**
+   * Stripe's card page closed after a failed payment: the plan charged now
+   * on the card just saved (`/desktop/api/billing/settle`), then the plan and
+   * the access read again, so the line over the composer goes and Send comes
+   * back at once when it went through.
+   */
+  public func settleAfterCardPage(paymentFailed: Bool) async {
+    if paymentFailed, let backend {
+      _ = try? await backend.server("billing/settle", method: "POST", body: [:])
+    }
+    await refreshAccess()
+    await refreshUsage()
   }
 }

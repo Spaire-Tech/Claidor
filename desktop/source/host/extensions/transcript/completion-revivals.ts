@@ -93,10 +93,23 @@ export class CompletionRevivals {
   readonly revivingSubagentAgentIds = new Set<string>();
   readonly pendingShellCompletions = new Map<string, ShellCompletion[]>();
   readonly revivingShellAgentIds = new Set<string>();
+  /** Agents being stopped by the person (Stop task): their helpers' results, all stopped, wake no one. */
+  readonly stoppingAgentIds = new Set<string>();
 
   constructor(readonly tm: TranscriptManagerLike) {}
 
   handleBackgroundSubagentCompletion(completion: SubagentCompletion): void {
+    if (this.stoppingAgentIds.has(completion.parentAgentId)) {
+      this.tm.telemetry.reportSubagentRevival({
+        parentAgentId: completion.parentAgentId,
+        outcome: "dropped",
+        completionCount: 1,
+        subagentType: completion.subagentType,
+        subagentAgentId: completion.subagentAgentId,
+        reason: "stopped_by_person",
+      });
+      return;
+    }
     if (this.tm.sessions.deletedAgentIds.has(completion.parentAgentId)) {
       this.tm.telemetry.reportSubagentRevival({
         parentAgentId: completion.parentAgentId,

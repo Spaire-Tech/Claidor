@@ -33,32 +33,58 @@ struct PhonePrimaryStyle: ButtonStyle {
  * 150, changing with the name as it is typed (a woman's name gets a woman's
  * face; AgentFaces.preview), "Name your agent" in a 52 pt field, Create. The
  * agent keeps that face, is asked to introduce itself, and its chat opens.
- * No colours to pick (the founder, 12 October 2026).
+ * No colours to pick (the founder, 12 October 2026). The pencil on the face
+ * opens the avatar editor for the agent to be (the founder, 13 October
+ * 2026): another face, a picture generated or uploaded, its voice; kept here
+ * (AgentDraft) and sent with the agent at Create.
  */
 struct NewAgentSheet: View {
   let created: (String) -> Void
   @Environment(AppStore.self) private var store
   @State private var name = ""
+  @State private var draft = AgentDraft()
+  @State private var editingAvatar = false
   @State private var busy = false
   @State private var failed = false
   @FocusState private var naming: Bool
 
   private var trimmed: String { name.split(whereSeparator: \.isWhitespace).joined(separator: " ") }
-  private var face: AgentFace? { AgentFaces.preview(name: trimmed, agents: store.agents) }
+
+  /** The picture drawn or uploaded, else the face picked, else the one the name gets. */
+  private var picture: UIImage? {
+    if let png = draft.picture, let image = UIImage(data: png) { return image }
+    return draft.shownFace(agents: store.agents).flatMap { AgentPictures.image($0) }
+  }
 
   var body: some View {
     NavigationStack {
       VStack(spacing: 0) {
-        PictureCircle(image: face.flatMap { AgentPictures.image($0) })
-          .frame(width: 150, height: 150)
-          .frame(maxWidth: .infinity, minHeight: 170, maxHeight: .infinity)
+        ZStack(alignment: .bottomTrailing) {
+          PictureCircle(image: picture)
+            .frame(width: 150, height: 150)
+          // The agent page's pencil, at the sheet's larger face.
+          Button { naming = false; editingAvatar = true } label: {
+            Image(systemName: "pencil").font(.system(size: 15, weight: .medium)).foregroundStyle(Ink.primary)
+              .frame(width: 36, height: 36)
+              .background(Ink.bubbleTheirs, in: Circle())
+              .frame(width: 44, height: 44)
+              .contentShape(.circle)
+          }
+          .buttonStyle(.tactile)
+          .accessibilityLabel("Edit agent avatar")
+          .offset(x: 2, y: 2)
+        }
+        .frame(maxWidth: .infinity, minHeight: 170, maxHeight: .infinity)
         TextField("Name your agent", text: $name)
           .font(.system(size: 17))
           .multilineTextAlignment(.center)
           .focused($naming)
           .submitLabel(.done)
           .onSubmit(create)
-          .onChange(of: name) { _, value in if value.count > 60 { name = String(value.prefix(60)) } }
+          .onChange(of: name) { _, value in
+            if value.count > 60 { name = String(value.prefix(60)) }
+            draft.name = trimmed
+          }
           .padding(.horizontal, 16)
           .frame(height: 52)
           .background(Ink.ground, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
@@ -69,7 +95,7 @@ struct NewAgentSheet: View {
           Text("Couldn’t create the agent. Try again.").font(.system(size: 14)).foregroundStyle(Ink.danger).multilineTextAlignment(.center).padding(.horizontal, 16).padding(.bottom, 8)
         }
         Button(busy ? "Creating…" : "Create", action: create)
-          .buttonStyle(PhonePrimaryStyle())
+          .buttonStyle(Tactile(look: PhonePrimaryStyle()))
           .disabled(trimmed.isEmpty || busy)
           .padding(.horizontal, 16).padding(.bottom, 16)
       }
@@ -77,6 +103,9 @@ struct NewAgentSheet: View {
       .navigationTitle("New Agent")
       .inlineBarTitle()
       .toolbar { ToolbarItem(placement: .leadingBar) { CloseButton() } }
+      .sheet(isPresented: $editingAvatar) {
+        AvatarEditor(draft: $draft).problemAlert()
+      }
     }
   }
 
@@ -85,9 +114,9 @@ struct NewAgentSheet: View {
     guard !name.isEmpty, !busy else { return }
     busy = true
     failed = false
-    let face = face
+    let draft = draft
     Task {
-      let id = await store.createAgent(name: name, face: face)
+      let id = await store.createAgent(name: name, draft: draft)
       busy = false
       if let id { Haptics.success(); created(id) } else { Haptics.warning(); failed = true }
     }
@@ -163,7 +192,7 @@ struct NewGroupSheet: View {
                 .frame(height: 64)
                 .contentShape(Rectangle())
               }
-              .buttonStyle(.plain)
+              .buttonStyle(.tactile)
               .accessibilityAddTraits(on ? .isSelected : [])
             }
           }
@@ -177,7 +206,7 @@ struct NewGroupSheet: View {
         ToolbarItem(placement: .leadingBar) { CloseButton() }
         ToolbarItem(placement: .trailingBar) {
           Button(busy ? "Creating…" : "Next", action: create)
-            .buttonStyle(PhonePrimaryStyle(small: true))
+            .buttonStyle(Tactile(look: PhonePrimaryStyle(small: true)))
             .disabled(picked.count < 2 || busy)
         }
       }

@@ -24,7 +24,8 @@
 #     dbus, fonts.
 #   - tools an agent uses from the shell: git, gh, ripgrep, jq, ffmpeg,
 #     poppler, python3, uv, LibreOffice (documents), playwright-core and
-#     bun (browser scripts).
+#     bun (browser scripts), and Stripe's link-cli (the Link app: purchases
+#     the person approves in the Link app, and their bank accounts).
 #   - Node 22 (the LTS line the host and exec daemon bundles are built for,
 #     esbuild target node22), and the tree-sitter add-ons the host loads
 #     from /home/box/deps, compiled here against that Node. Not Node 24:
@@ -45,6 +46,7 @@ ARG CHROME_VERSION=151.0.7922.169
 ARG PLAYWRIGHT_CORE_VERSION=1.59.1
 ARG BUN_VERSION=1.4.2
 ARG UV_VERSION=0.12.23
+ARG LINK_CLI_VERSION=0.27.1
 
 ENV DEBIAN_FRONTEND=noninteractive \
     DISPLAY=:1 \
@@ -105,6 +107,15 @@ RUN set -eux \
 # publish there as well as on GitHub, and both are checked at build time.
 RUN set -eux \
     && npm install -g "bun@${BUN_VERSION}" && bun --version | grep -qx "${BUN_VERSION}" \
+    && npm cache clean --force
+# Stripe's Link CLI for the Link app (desktop/source/shared/node/link-wallet/,
+# 13 October 2026). Its install script is skipped: it fetches Stripe's agent
+# skills with npx, which Simeon's own Link tools replace. A box from an older
+# image installs the same version on its data volume the first time Link is
+# added.
+RUN set -eux \
+    && npm install -g --ignore-scripts "@stripe/link-cli@${LINK_CLI_VERSION}" \
+    && NO_UPDATE_NOTIFIER=1 link-cli --version | grep -qx "${LINK_CLI_VERSION}" \
     && npm cache clean --force
 RUN set -eux \
     && python3 -m venv /opt/uv && /opt/uv/bin/pip install --no-cache-dir "uv==${UV_VERSION}" \

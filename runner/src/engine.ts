@@ -166,7 +166,10 @@ export const buildRequest = (model: EngineModel, system: string, messages: reado
         path: '/v1/messages',
         body: {
           model: model.id,
-          max_tokens: Math.min(model.maxTokens, 8_192),
+          // Claude 5.5 thinks by default and its thinking counts against
+          // max_tokens, so the answer needs more room than 8,192 left it
+          // (13 October 2026).
+          max_tokens: Math.min(model.maxTokens, 16_384),
           ...(system ? { system } : {}),
           messages: messages.map((message) => ({ role: message.role, content: message.content })),
         },

@@ -41,6 +41,7 @@ import {
   adaptBrowserTool,
   adaptComputerTool,
   adaptContextFirstTool,
+  openPageToolParameters,
 } from "./sand-loop-tool.js";
 import { cloudAgentToolParameters } from "../../cloud-agents/cloud-agent-tool-parameters.js";
 import {
@@ -55,6 +56,7 @@ import {
 } from "./sand-computer-tool.js";
 import {
   createSandBrowserTools,
+  createSandOpenPageTool,
   type BrowserDriverDependencies,
 } from "./sand-browser-tools.js";
 import {
@@ -67,6 +69,8 @@ import {
 } from "./box-help-tool.js";
 import { createDraftExternalMessageTool, createMarkDraftDeliveredTool, type DraftToolDependencies } from "./draft-message-tool.js";
 import { createSearchFlightsTool, type FlightSearchDependencies } from "./flight-search-tool.js";
+import { createBookFlightTool, type BookFlightDependencies } from "./book-flight-tool.js";
+import { createMarkPurchaseDoneTool, createRequestPurchaseTool, createSearchProductsTool, createShowProductsTool, type PurchaseToolDependencies } from "./purchase-tool.js";
 import {
   createGenerateImageTool,
   type GenerateImageToolDependencies,
@@ -83,6 +87,7 @@ import {
 import { createToolCallExecutionTimeoutError } from "../../../packages/agent/tools/common.js";
 import {
   createAwaitTool,
+  withoutHelperSettledSignal,
   type AwaitToolOptions,
   type AwaitToolResourceAccessor,
 } from "../../../packages/agent/tools/core/await.js";
@@ -549,14 +554,16 @@ export interface TurnToolFactories {
   cloudAgent?(): TurnTool;
   boxShell?(): TurnTool | undefined;
   boxRead?(): TurnTool;
-  boxAwait?(): TurnTool;
+  boxAwait?(scope?: TurnAwaitToolScope): TurnTool;
   fileTransfer?(): readonly TurnTool[];
   computer?(): TurnTool;
   browser?(): readonly TurnTool[];
+  openPage?(): TurnTool;
   screenshot?(): TurnTool;
   requestBoxHelp?(): TurnTool;
   drafts?(): readonly TurnTool[];
-  flights?(): TurnTool;
+  purchases?(): readonly TurnTool[];
+  flights?(): readonly TurnTool[];
   mcpMeta?(dynamicToolRegistry?: DynamicToolRegistry): readonly TurnTool[];
   mcpManagement?(): readonly TurnTool[];
   subagentManagement?(): readonly TurnTool[];
@@ -691,6 +698,7 @@ export interface TurnToolsetFactoryInputs {
   readonly fileTransfer?: TurnFileTransferToolFactoryInput;
   readonly requestBoxHelp?: TurnBoxHelpToolFactoryInput;
   readonly drafts?: TurnDraftToolFactoryInput;
+  readonly purchases?: TurnPurchaseToolFactoryInput;
   readonly flights?: TurnFlightToolFactoryInput;
   readonly generateImage?: TurnGenerateImageToolFactoryInput;
   readonly webSearch?: TurnWebSearchToolFactoryInput;
@@ -749,6 +757,10 @@ export interface TurnToolsetHostFactoryProvider {
     turn: TurnToolsetTurnInput,
     props: TurnToolsetBuildProps,
   ) => TurnDraftToolFactoryInput;
+  readonly createPurchaseToolInputs?: (
+    turn: TurnToolsetTurnInput,
+    props: TurnToolsetBuildProps,
+  ) => TurnPurchaseToolFactoryInput;
   readonly createFlightToolInputs?: (
     turn: TurnToolsetTurnInput,
     props: TurnToolsetBuildProps,
@@ -956,6 +968,16 @@ export function createTurnBrowserToolFactory(
   return () => createSandBrowserTools(input.dependencies).map((tool) => asTurnTool(adaptBrowserTool(tool)));
 }
 
+/** The agent's own OpenPage, on the same browser as its browserUse subagent's tools (15 October 2026). */
+export function createTurnOpenPageToolFactory(
+  input: TurnBrowserToolFactoryInput,
+): () => TurnTool {
+  return () => {
+    const tool = createSandOpenPageTool(input.dependencies);
+    return asTurnTool(adaptBrowserTool(tool, openPageToolParameters(tool.schema)));
+  };
+}
+
 export function createTurnFileTransferToolFactory(
   input: TurnFileTransferToolFactoryInput,
 ): () => readonly TurnTool[] {
@@ -972,14 +994,29 @@ export function createTurnDraftToolFactory(
   return () => [asTurnTool(createDraftExternalMessageTool(input.dependencies)), asTurnTool(createMarkDraftDeliveredTool(input.dependencies))];
 }
 
+export interface TurnPurchaseToolFactoryInput {
+  readonly dependencies: PurchaseToolDependencies;
+}
+
+export function createTurnPurchaseToolFactory(
+  input: TurnPurchaseToolFactoryInput,
+): () => readonly TurnTool[] {
+  return () => [asTurnTool(createSearchProductsTool(input.dependencies)), asTurnTool(createShowProductsTool(input.dependencies)), asTurnTool(createRequestPurchaseTool(input.dependencies)), asTurnTool(createMarkPurchaseDoneTool(input.dependencies))];
+}
+
 export interface TurnFlightToolFactoryInput {
   readonly dependencies: FlightSearchDependencies;
+  /** BookFlight (13 October 2026); absent where flights can't be booked. */
+  readonly booking?: BookFlightDependencies;
 }
 
 export function createTurnFlightToolFactory(
   input: TurnFlightToolFactoryInput,
-): () => TurnTool {
-  return () => asTurnTool(createSearchFlightsTool(input.dependencies));
+): () => readonly TurnTool[] {
+  return () => [
+    asTurnTool(createSearchFlightsTool(input.dependencies)),
+    ...(input.booking === undefined ? [] : [asTurnTool(createBookFlightTool(input.booking))]),
+  ];
 }
 
 export function createTurnBoxHelpToolFactory(
@@ -1006,12 +1043,18 @@ export function createTurnWebFetchToolFactory(
   return () => asTurnTool(createWebFetchTool(input.dependencies));
 }
 
+/** Whose turn the AwaitShell is built for. */
+export interface TurnAwaitToolScope {
+  /** A subagent's sleep never ends on a helper settling (`withoutHelperSettledSignal`, 15 October 2026). */
+  readonly forSubagent?: boolean;
+}
+
 export function createTurnAwaitToolFactory(
   input: TurnAwaitToolFactoryInput,
-): () => TurnTool {
-  return () => asTurnTool(createAwaitTool(
+): (scope?: TurnAwaitToolScope) => TurnTool {
+  return (scope) => asTurnTool(createAwaitTool(
     input.resourceAccessor,
-    input.options,
+    scope?.forSubagent === true ? withoutHelperSettledSignal(input.options) : input.options,
     input.promptVersion,
   ));
 }
@@ -1108,8 +1151,8 @@ export function createTurnToolsetFactories(
   input: TurnToolsetFactoryInputs,
 ): Pick<
   TurnToolFactories,
-  "task" | "mcpMeta" | "computer" | "browser" | "screenshot"
-  | "fileTransfer" | "requestBoxHelp" | "drafts" | "flights" | "generateImage" | "webSearch" | "webFetch" | "externalAwait"
+  "task" | "mcpMeta" | "computer" | "browser" | "openPage" | "screenshot"
+  | "fileTransfer" | "requestBoxHelp" | "drafts" | "purchases" | "flights" | "generateImage" | "webSearch" | "webFetch" | "externalAwait"
   | "boxAwait" | "externalShell" | "externalRead" | "boxShell" | "boxRead"
   | "sendMessage" | "sendToAgent" | "reaction" | "createAgent" | "updateAgent" | "updateState"
   | "subagentManagement"
@@ -1130,7 +1173,10 @@ export function createTurnToolsetFactories(
       : { computer: createTurnComputerToolFactory(input.computer) }),
     ...(input.browser === undefined
       ? {}
-      : { browser: createTurnBrowserToolFactory(input.browser) }),
+      : {
+        browser: createTurnBrowserToolFactory(input.browser),
+        openPage: createTurnOpenPageToolFactory(input.browser),
+      }),
     ...(input.screenshot === undefined
       ? {}
       : { screenshot: createTurnScreenshotToolFactory(input.screenshot) }),
@@ -1143,6 +1189,9 @@ export function createTurnToolsetFactories(
     ...(input.drafts === undefined
       ? {}
       : { drafts: createTurnDraftToolFactory(input.drafts) }),
+    ...(input.purchases === undefined
+      ? {}
+      : { purchases: createTurnPurchaseToolFactory(input.purchases) }),
     ...(input.flights === undefined
       ? {}
       : { flights: createTurnFlightToolFactory(input.flights) }),
@@ -1246,6 +1295,9 @@ export function createTurnToolsetFactoriesForTurn(
     ...(provider.createDraftToolInputs === undefined
       ? {}
       : { drafts: provider.createDraftToolInputs(turn, props) }),
+    ...(provider.createPurchaseToolInputs === undefined
+      ? {}
+      : { purchases: provider.createPurchaseToolInputs(turn, props) }),
     ...(provider.createFlightToolInputs === undefined
       ? {}
       : { flights: provider.createFlightToolInputs(turn, props) }),
@@ -1508,7 +1560,7 @@ export function buildTurnTools(
     const generateImage = factories.generateImage?.();
     if (generateImage !== undefined) tools.push(generateImage);
     const flights = factories.flights?.();
-    if (flights !== undefined) tools.push(flights);
+    if (flights !== undefined) tools.push(...flights);
   }
 
   if (
@@ -1525,7 +1577,7 @@ export function buildTurnTools(
     const boxRead = scoped(factories.boxRead?.());
     if (boxRead !== undefined) tools.push(boxRead);
     if (!host.isBoxScopedSubagent) {
-      const boxAwait = scoped(factories.boxAwait?.());
+      const boxAwait = scoped(factories.boxAwait?.({ forSubagent: host.isSubagentRunner }));
       if (boxAwait !== undefined) tools.push(boxAwait);
       const fileTransfer = factories.fileTransfer?.();
       if (fileTransfer !== undefined) tools.push(...fileTransfer.map((tool) => withLocalToolScope(tool, agentId, host.localToolPermission)));
@@ -1555,10 +1607,17 @@ export function buildTurnTools(
   ) {
     const screenshot = factories.screenshot?.();
     if (screenshot !== undefined) tools.push(screenshot);
+    // Opens a page for the person to act on, before request_box_help; the
+    // browserUse subagent keeps every other browser step.
+    const openPage = factories.openPage?.();
+    if (openPage !== undefined) tools.push(openPage);
     const requestBoxHelp = factories.requestBoxHelp?.();
     if (requestBoxHelp !== undefined) tools.push(requestBoxHelp);
     const drafts = factories.drafts?.();
     if (drafts !== undefined) tools.push(...drafts);
+    // The checkout card needs the browser on the box: the checkout is open there.
+    const purchases = factories.purchases?.();
+    if (purchases !== undefined) tools.push(...purchases);
   }
 
   // The immutable builder only offers the MCP discovery/call pair when the

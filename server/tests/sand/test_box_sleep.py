@@ -196,6 +196,32 @@ class TestSleep:
         assert await broker.hibernate_idle(session, redis) == []
         assert host.boxes[box.provider_box_id]["running"] is True
 
+    async def test_its_idle_time_starts_when_the_app_goes(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        redis: Redis,
+        host: FakeBoxHost,
+        health: dict[str, BoxHealth],
+    ) -> None:
+        # Open for 90 minutes with nothing running: the app being there is
+        # the box in use, as the upstream app's Mac asking for it every 30 s
+        # made it (16 October 2026).
+        _, box = await _awake_box(client, session, user)
+        await _age(session, box, 90)
+        await mark_attached(redis, box.id)
+        assert await broker.hibernate_idle(session, redis) == []
+        assert box.last_active_at is not None
+        assert utc_now() - box.last_active_at < timedelta(minutes=1)
+
+        # The app closes: the box stays awake for its 30 idle minutes, then sleeps.
+        await redis.delete(box_service.attached_key(box.id))
+        assert await broker.hibernate_idle(session, redis) == []
+        assert host.boxes[box.provider_box_id]["running"] is True
+        await _age(session, box, 31)
+        assert await broker.hibernate_idle(session, redis) == [box.id]
+
     async def test_an_unreachable_idle_box_sleeps(
         self,
         client: httpx.AsyncClient,

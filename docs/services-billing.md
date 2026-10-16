@@ -153,7 +153,17 @@ was; the public name and statement descriptor are what a person sees.
    keeps asking for its box; once the plan is on Stripe the next ask
    succeeds and the cover goes, with nothing to restart or sign in to
    again. Metered calls get the same answer meanwhile: `402`, code
-   `40200`, naming the billing page. Every link the app opens carries
+   `40200`, naming the billing page. **Since 14 October 2026 the box is
+   not refused for want of a plan** (`DESKTOP_COMPUTER_WITHOUT_PLAN`, on by
+   default; section 6): the founder, signed in to an account whose payment
+   had failed, was held on the cover, and its Update card opened the web's
+   sign-in page ("what should happen, is still access to the app. just cant
+   send message. and explain the reason below"). Now the apps open as
+   usual with the account's agents and chats; `GetSandAccessStatus` still
+   says payment required, so Send waits and the line over the composer
+   says why, with the button (section 4, "No plan in the apps"). A rebuild
+   (`RecreateSandBox`) still waits for a plan. Turned off, the cover comes
+   back as before. Every link the app opens carries
    `from=app` (the cover, Usage & Billing's `upgradeUrl`, a served
    error): the page afterwards says "Go back to Simeon" and brings the
    app forward on its own link (`simeon://app/v1/open`) instead of
@@ -179,14 +189,115 @@ counts: a live plan (the bigger if two are live), else the Stripe row.
 |---|---|---|---|
 | Billing not required, or an exempt e-mail | calendar month | `SIMEON_DESKTOP_MONTHLY_CREDITS` | `free` |
 | Trialing | `trial_start` to `trial_end` | the plan's `trial_credits` | `trialing` |
-| Active or past due | Monday to Monday | the plan's `weekly_credits` | `active`, `past_due` |
+| Active, or past due after a paid period | Monday to Monday | the plan's `weekly_credits` | `active`, `past_due` |
 | No plan (none, cancelled, unpaid, incomplete) | the week | 0 | `none` |
+| The first charge after the trial failed | the week | 0 | `none`, with `paymentFailed: true` |
+
+**A failed first charge is no plan** (14 October 2026). When the trial
+ends and the card is refused, Stripe marks the subscription `past_due` and
+retries the card for a while; Apple, with its billing grace period on, does
+the same. Until then `past_due` counted, so a person whose card never paid
+had the plan anyway (the founder's own test). Now a `past_due` subscription
+whose current period is the first one after the trial
+(`DesktopSubscription.unpaid_after_trial`: `current_period_start` within a
+day of `trial_end`; for Apple, a `past_due` row whose latest transaction is
+still the free week's) gives no allowance. The quota says so
+(`paymentFailed: true`, `billedBy` naming who holds the card), the proxy's
+refusal says "Your payment didn't go through … Update your card at
+app.simeonlabs.com/billing" (for Apple: "… in your Apple Account
+settings"), and the apps hold Send with that reason over the composer (the
+cloud computer is refused with the same sentence only when
+`DESKTOP_COMPUTER_WITHOUT_PLAN` is off). The
+subscription itself stays Stripe's: the web billing page shows it as past
+due with "Update your card", and a second checkout is still refused. Once a
+retried charge goes through, the webhook writes `active` and the plan
+starts. A renewal that fails after a paid month keeps the plan while the
+card is retried, as before.
+
+Two dashboard settings go with it: in Stripe, Billing › Revenue recovery ›
+Retries, "If all retries for a payment fail" should be **Cancel the
+subscription** (so a card that never pays ends the subscription instead of
+leaving it past due), and the customer e-mails for failed payments should
+be on; in App Store Connect, the app's Billing Grace Period, if it is on,
+should be for paid-to-paid renewals only.
 
 Every metered route reads it before calling a provider (`budget_refusal`,
 `server/simeon/desktop/proxy_common.py`) and refuses with `402`, code
 `40200`, and a sentence that says which: "This week's credits are used …
-They reset on Monday …", "Your trial credits are used up …", "No active
-plan …", each naming `app.simeonlabs.com/billing`.
+They reset on Monday …", "Your trial credits are used up …", "Your payment
+didn't go through …", "No active plan …", each naming
+`app.simeonlabs.com/billing` (but Apple's failed payment).
+
+**What the apps say about the credits** (iPhone and Mac, over the composer,
+grey, never red; `ios/SimeonCore/Sources/SimeonCore/Upgrade.swift`):
+spent ("This week’s credits are used", "You’ve used your free credits",
+with Upgrade), and since 13 October 2026 **near the limit**: "You’re
+approaching your usage limit / You’ve used 81% of this week’s credits. They
+reset on Monday." from 80% of `creditsLimit`, again from 95%
+(`PhoneUpgrade.approaching`). The person can close it; it stays closed for
+that step of that period (`ApproachingClosed`, kept in the app's settings).
+The Electron window never had this line. The apps read the quota as a chat
+opens and as each answer ends, at most every 30 s (`loadUsage`). On the
+iPhone, Upgrade opens the plans (or the web, by the rules of
+`PhoneUpgrade.route`); on the Mac, Settings › Usage & Billing.
+
+**No plan in the apps** (14 October 2026). With no plan, a failed payment
+included, the iPhone and the Mac open as usual: the agents, their chats
+and the computer are all there, Send waits (`SandAccess.pausesSending`),
+and the line over the composer, grey like the credits' line, says why
+(`PhoneUpgrade.banner`, `MacUpgrade.cover`):
+
+| Account | Title / words | Button, iPhone | Button, Mac |
+|---|---|---|---|
+| Card failed, plan bought on the web | "Your payment didn’t go through" / "You can’t send messages until your card is updated." | Update card: Stripe's card form (where Apple allows the link; else no button) | Update card: Stripe's card form |
+| Payment failed, plan bought on the iPhone | "… / You can’t send messages until your Apple payment method is updated." | See plans: the plans, with a line over them and Update payment (Apple's page) | Update payment: Apple's page |
+| Free month over | "Your free month has ended" / "Choose a plan to send messages again." | See plans | See plans: the web's plans page |
+| Never had a plan | "Choose a plan to start" (iPhone), "Start your free trial to send messages" or "Simeon needs a plan" (Mac) | See plans | the web's plans page |
+
+Stripe's page opens **in the app**, not the web: the app asks
+`POST /desktop/api/billing/portal` with `flow` (`payment_method` for the
+card form, `update_confirm` and the plan above for an upgrade) and `back`
+(its URL scheme, `simeon-ios` or `simeon`), and shows the link in Apple's
+sign-in sheet (`BillingPage` on the iPhone, `MacBillingPage` on the Mac).
+The link already carries the person, so there is no sign-in on the way;
+until then every button opened `app.simeonlabs.com/billing`, which asked
+the person to sign in again. Stripe's page ends on
+`/desktop/billing/back?to=<scheme>` (also as soon as the card is saved,
+through the flow's `after_completion`), which hands over to the app's own
+link and closes the sheet. After a failed payment the app then asks
+`POST /desktop/api/billing/settle` (`PlansService.settle_unpaid`): the
+subscription is moved to the card just saved (a checkout put the old card
+on the subscription itself, and Stripe keeps retrying that one), its open
+invoice is charged now instead of at Stripe's next retry, and the copy is
+updated, so the line goes and Send comes back at once. A card refused
+again leaves everything as it was. Settings' Manage Plan and the credits'
+Upgrade for a plan bought on the web open the same page the same way.
+
+**The Mac with no plan** (14 October 2026). The iPhone starts the free
+month itself at first sign-in; the Mac does not. An account with no plan
+gets the cover over the Mac's window (`AccessCover`, `MacUpgrade` in
+`ios/SimeonCore/Sources/SimeonCore/Upgrade.swift`): one that never had a
+trial reads "Start your free trial to send messages / 30 days free, then
+your plan. Add a card on the web; cancel anytime." and Start Free Trial
+opens the plans page (`upgradeUrl`, `app.simeonlabs.com/billing?from=app`),
+where Stripe's checkout takes a card and starts the 30-day trial (the
+founder's choice that day); one that had its trial reads "Simeon needs a
+plan" with See plans to the same page; a failed payment reads "Your payment
+didn't go through" with Update card. The cover names the account it is
+signed in to and has Sign Out. Until then the window's own words said
+"Start your free month", and every button opened simeonlabs.com, where
+nothing starts a trial.
+
+**What the apps never say.** No banner, card, alert or notice names what is
+behind Simeon: a model company (its credits, limits or name), a status code,
+a setting's name, an address or the plumbing's words. Since 13 October 2026
+the engine turns such a refusal into "Simeon isn't available at the moment.
+Try again in a little while." (`simeonFacingProviderError`,
+`desktop/source/host/extensions/transcript/agent-run-error.ts`, live once a
+new host bundle is published), and both apps pass every error they show
+through `PlainWords` (`ios/SimeonCore/Sources/SimeonCore/PlainWords.swift`),
+which keeps plain words and replaces the rest. The words themselves stay in
+the log (the computer's `/tmp/sand-host.log`, the apps' trace).
 
 `GET /desktop/api/user/quota` carries the plan to the app. Its first eight
 keys are what every shipped app reads and keep their meaning (`creditsLimit`,
@@ -243,6 +354,7 @@ spend (section 8).
 |---|---|---|
 | `SIMEON_DESKTOP_BILLING_REQUIRED` | API, worker | `true` once the catalogue is on Stripe and the portal is configured. Unset: no billing, free monthly allowance. |
 | `SIMEON_DESKTOP_BILLING_EXEMPT_EMAILS` | API | Staff and friends, as a JSON list of e-mails; they stay on the free month. |
+| `SIMEON_DESKTOP_COMPUTER_WITHOUT_PLAN` | API | `true` (the default): an account with no plan still reaches its cloud computer, so the apps stay open with Send held (section 3, item 6). `false`: the computer is refused and the apps show the full-screen cover, as before 14 October 2026. Every metered call is refused either way. |
 | `SIMEON_STRIPE_SECRET_KEY`, `SIMEON_STRIPE_PUBLISHABLE_KEY` | API, worker | Stripe keys. |
 | `SIMEON_STRIPE_WEBHOOK_SECRET` | API | The Stripe webhook for `https://api.simeonlabs.com/v1/integrations/stripe/webhook`. Besides the `payment_intent.*`, `setup_intent.*`, `charge.*` and `refund.*` events it already carries, add `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`. |
 | `SIMEON_STRIPE_CREDITS_METER_EVENT`, `SIMEON_STRIPE_BOX_SECONDS_METER_EVENT` | API, worker | Only to rename the meters; the defaults are `simeon_credits` and `simeon_box_seconds`. |
@@ -272,9 +384,14 @@ and the Customer Portal configuration by hand (section 2). The migration
   ended at once. **`plans.trial.card_unreadable`**: the card could not be
   read, so the check passed the person.
 - **`plans.trial.cancelled`**: the app's Cancel trial button worked.
-- **`sand.box.ensure.no_plan`**: the window asked for its box without a
-  plan and was shown the cover; one line per ask, so a person stuck on
-  the cover shows up as a run of them.
+- **`sand.box.ensure.no_plan`**: an app asked for its box without a
+  plan; `allowed=True` when it was let through (the app open with Send
+  held), `allowed=False` when it was refused and shown the cover. One line
+  per ask.
+- **`plans.settle`**: after Stripe's card page closed in the app, whether
+  the unpaid plan is now paid (`paid`). **`plans.settle.declined`**: the
+  card just saved was refused too, with Stripe's code; the person still
+  sees "Your payment didn't go through".
 - **`plans.report_usage.done`**: the five-minute report, with how many
   credit and box events were sent and how many people were skipped.
   **`plans.usage.credits_not_sent`** and **`plans.usage.box_not_sent`**:
@@ -407,7 +524,9 @@ changed price needs no server change.
    notification is caught up.
 5. **How a row counts.** Before its expiry: `trialing` in the free week,
    `active` after. Past it while Apple retries the charge in its billing
-   grace period: `past_due`, which still counts. Refunded or revoked:
+   grace period: `past_due`, which still counts after a paid period, and
+   not after the free week, when nothing was paid yet (section 4).
+   Refunded or revoked:
    `canceled` at once. Each row counts until its expiry (or the grace
    period's end) plus 12 hours, so a renewal Apple has not told the server
    about yet does not cut anyone off. Apple's free week counts as the

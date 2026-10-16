@@ -826,6 +826,11 @@ export class SandAgentRunner<T = unknown> {
     return this.subagents.hasRunningSubagents();
   }
 
+  /** Called each time one of this agent's subagents settles; returns the unsubscribe. */
+  onSubagentSettled(listener: () => void): () => void {
+    return this.subagents.onSubagentSettled(listener);
+  }
+
   getSubagentOutline(id: string): Promise<readonly unknown[]> {
     return this.subagents.getSubagentOutline(id);
   }
@@ -1123,6 +1128,8 @@ export class SandAgentRunner<T = unknown> {
           update.message.type === "widget"
           || update.message.type === "secret-request"
           || update.message.type === "auto-review-approval"
+          // The checkout card waits on the person's Allow, as a question does (purchase-tool.ts).
+          || update.message.type === "purchase"
         ) {
           active.awaitingUserSelection = true;
           this.#awaitingUserSelection = true;

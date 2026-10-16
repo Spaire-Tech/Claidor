@@ -10,12 +10,18 @@ Prints, for the account named by email:
   from apps built before it read as "(not said)";
 - a timeline in ten-minute buckets (UTC), so a runaway loop shows as a
   wall of calls;
-- the busiest single hour.
+- the busiest single hour;
+- with `--calls`, every call on its own line, oldest first: when it was
+  made, the time since the previous call to the same model, and how much
+  of the prompt the model read back from its stored copy ("reused") and
+  how much it had to store again ("stored"), with a note on a Claude call
+  that stored a large part again, saying why.
 
 Nothing is written.
 
     python -m scripts.desktop_usage_report someone@example.com
     python -m scripts.desktop_usage_report someone@example.com --hours 48
+    python -m scripts.desktop_usage_report someone@example.com --hours 6 --calls
 
 Run it where the server runs, so it reads the same ``SIMEON_POSTGRES_*``
 environment as the API.
@@ -34,6 +40,12 @@ from simeon.models import DesktopUsage, User
 from simeon.postgres import create_async_engine
 
 BUCKET = timedelta(minutes=10)
+#: How long Claude keeps a stored prompt after its last use (Anthropic's
+#: prompt caching, default lifetime). A later call stores it again.
+CLAUDE_CACHE_LIFETIME = timedelta(minutes=5)
+#: Below this, a Claude call storing part of its prompt is the normal
+#: growth of a conversation (the new message, the last tool results).
+LARGE_STORE_TOKENS = 10_000
 
 
 async def find_user(session: AsyncSession, email: str) -> User | None:
@@ -47,7 +59,65 @@ def dollars(credits: int) -> float:
     return credits * CREDIT_USD_PER_MILLION_INPUT / 1_000_000
 
 
-async def run(email: str, hours: int) -> int:
+def _gap(delta: timedelta | None) -> str:
+    if delta is None:
+        return "-"
+    seconds = int(delta.total_seconds())
+    if seconds < 60:
+        return f"{seconds}s"
+    if seconds < 3600:
+        return f"{seconds // 60}m {seconds % 60:02d}s"
+    return f"{seconds // 3600}h {seconds % 3600 // 60:02d}m"
+
+
+def _prompt(row: DesktopUsage) -> int:
+    return row.input_tokens + row.cache_read_tokens + row.cache_creation_tokens
+
+
+def _store_note(
+    row: DesktopUsage, previous: DesktopUsage | None, gap: timedelta | None
+) -> str:
+    """Why a Claude call stored a large part of its prompt again, or "".
+
+    Only Claude stores a prompt at a price (OpenAI's cache costs nothing
+    to fill), and a few thousand tokens stored is a conversation growing.
+    """
+    if row.provider != "anthropic" or row.cache_creation_tokens < LARGE_STORE_TOKENS:
+        return ""
+    if previous is None or gap is None:
+        return "first call to this model in the window: stored in full"
+    if gap > CLAUDE_CACHE_LIFETIME:
+        return "over 5 min since this model's last call: its copy had expired"
+    if row.cache_read_tokens * 2 < _prompt(previous):
+        return "within 5 min, yet stored again: the request's start changed, or another chat"
+    return ""
+
+
+def call_lines(rows: list[DesktopUsage]) -> list[str]:
+    """One line per call, oldest first, for `--calls`."""
+    lines = [
+        f"{'time (UTC)':14} {'gap':>8} {'model':24} {'reason':12} "
+        f"{'fresh':>8} {'reused':>9} {'stored':>9} {'output':>7} {'dollars':>8}  note"
+    ]
+    last_by_model: dict[str, DesktopUsage] = {}
+    for row in sorted(rows, key=lambda item: item.created_at):
+        previous = last_by_model.get(row.model)
+        gap = None if previous is None else row.created_at - previous.created_at
+        note = _store_note(row, previous, gap)
+        if row.upstream_status >= 400:
+            note = f"refused by the provider ({row.upstream_status})"
+        created = row.created_at.astimezone(UTC)
+        lines.append(
+            f"{created:%m-%d %H:%M:%S} {_gap(gap):>8} {row.model:24} "
+            f"{row.reason or '(not said)':12} {row.input_tokens:8,} "
+            f"{row.cache_read_tokens:9,} {row.cache_creation_tokens:9,} "
+            f"{row.output_tokens:7,} {dollars(row.credits):8.3f}  {note}".rstrip()
+        )
+        last_by_model[row.model] = row
+    return lines
+
+
+async def run(email: str, hours: int, list_calls: bool = False) -> int:
     engine = create_async_engine("script")
     try:
         sessionmaker = create_async_sessionmaker(engine)
@@ -130,11 +200,20 @@ async def run(email: str, hours: int) -> int:
     busiest, count = max(hours_seen.items(), key=lambda item: item[1])
     print()
     print(f"busiest hour: {busiest:%Y-%m-%d %H:00} UTC with {count} calls")
+    if list_calls:
+        print()
+        print(
+            'every call, oldest first ("reused": read back from the model\'s '
+            'stored copy; "stored": written to it again):'
+        )
+        for line in call_lines(rows):
+            print(f"  {line}")
     return 0
 
 
 def main(argv: list[str]) -> int:
     hours = 24
+    list_calls = False
     arguments: list[str] = []
     index = 0
     while index < len(argv):
@@ -142,6 +221,10 @@ def main(argv: list[str]) -> int:
         if argument == "--hours" and index + 1 < len(argv):
             hours = int(argv[index + 1])
             index += 2
+            continue
+        if argument == "--calls":
+            list_calls = True
+            index += 1
             continue
         if argument.startswith("--"):
             print(__doc__, file=sys.stderr)
@@ -151,7 +234,7 @@ def main(argv: list[str]) -> int:
     if len(arguments) != 1:
         print(__doc__, file=sys.stderr)
         return 2
-    return asyncio.run(run(arguments[0], hours))
+    return asyncio.run(run(arguments[0], hours, list_calls))
 
 
 if __name__ == "__main__":

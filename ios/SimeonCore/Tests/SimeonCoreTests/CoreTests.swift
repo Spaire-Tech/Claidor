@@ -24,6 +24,28 @@ final class ScriptedHTTP: HTTPClient, @unchecked Sendable {
   var sent: [URLRequest] { lock.lock(); defer { lock.unlock() }; return requests }
 }
 
+/** A server whose first answer never comes (the request times out); the next requests get the scripted answers. */
+final class Unanswered: HTTPClient, @unchecked Sendable {
+  private let rest: ScriptedHTTP
+  private let lock = NSLock()
+  private var first = true
+  private var timedOut: [URLRequest] = []
+
+  init(then answers: [(URLRequest) -> HTTPAnswer]) { rest = ScriptedHTTP(answers) }
+
+  func send(_ request: URLRequest) async throws -> HTTPAnswer {
+    let isFirst: Bool = lock.withLock {
+      defer { first = false }
+      if first { timedOut.append(request) }
+      return first
+    }
+    if isFirst { throw URLError(.timedOut) }
+    return try await rest.send(request)
+  }
+
+  var sent: [URLRequest] { lock.withLock { timedOut } + rest.sent }
+}
+
 func json(_ text: String) -> Data { Data(text.utf8) }
 
 final class SignInTests: XCTestCase {
@@ -195,6 +217,44 @@ final class TokenTests: XCTestCase {
     XCTAssertEqual(sent[1].value(forHTTPHeaderField: "authorization"), "Bearer t")
   }
 
+  /**
+   * 14 October 2026: the delete outlasted URLSession's minute, the app said it failed, and the server went on and
+   * deleted the account. Now the delete waits five minutes, and when no answer comes the server is asked.
+   */
+  func testADeleteWhoseAnswerNeverCameIsCheckedWithTheServer() async throws {
+    let vault = MemoryVault(SessionTokens(accessToken: "t", refreshToken: "r", expiresAtMs: 9e15))
+    let http = Unanswered(then: [
+      { _ in HTTPAnswer(status: 200, body: json(#"{"email":"a@b.c"}"#)) },
+      { _ in HTTPAnswer(status: 401) },
+    ])
+    let api = SimeonAPI(base: URL(string: "https://api.example.com")!, clientVersion: "1", vault: vault, http: http)
+    let ended = Flag()
+    await api.onSessionEnded { ended.set() }
+    let appleRunsOn = try await api.deleteAccount(checkEvery: 0)
+    XCTAssertFalse(appleRunsOn)
+    XCTAssertNil(vault.read())
+    XCTAssertFalse(ended.value, "the account's end is the delete's answer, not a sign-out")
+    let sent = http.sent
+    XCTAssertEqual(sent.map(\.httpMethod), ["DELETE", "GET", "GET"])
+    XCTAssertEqual(sent[0].timeoutInterval, SimeonAPI.deleteTimeout)
+    XCTAssertEqual(sent[1].url?.path, "/desktop/api/user/profile")
+  }
+
+  func testADeleteWhoseAnswerNeverCameAndTheAccountIsStillThereSaysSo() async {
+    let vault = MemoryVault(SessionTokens(accessToken: "t", refreshToken: "r", expiresAtMs: 9e15))
+    let present: (URLRequest) -> HTTPAnswer = { _ in HTTPAnswer(status: 200, body: json(#"{"email":"a@b.c"}"#)) }
+    let http = Unanswered(then: Array(repeating: present, count: 6))
+    let api = SimeonAPI(base: URL(string: "https://api.example.com")!, clientVersion: "1", vault: vault, http: http)
+    do {
+      try await api.deleteAccount(checkEvery: 0)
+      XCTFail("still there")
+    } catch {
+      XCTAssertTrue(error is URLError)
+    }
+    XCTAssertNotNil(vault.read(), "still signed in, so trying again works")
+    XCTAssertEqual(http.sent.count, 7)
+  }
+
   func testASpentPairEndsTheSession() async {
     let vault = MemoryVault(SessionTokens(accessToken: "old", refreshToken: "spent", expiresAtMs: 0))
     let http = ScriptedHTTP([{ _ in HTTPAnswer(status: 200, body: json(#"{"shouldLogout":true}"#)) }])
@@ -279,8 +339,14 @@ final class GatewayTests: XCTestCase {
     let http = ScriptedHTTP([
       { _ in HTTPAnswer(status: 200, body: json(#"{"gatewayUrl":"https://box"}"#)) },
       { _ in HTTPAnswer(status: 200, body: json(#"{"accepted":true}"#)) },
+      // No event stream here: the next call asks the box's /health first, and trusts it for 5 s (the Electron app's `ensureConnection`).
+      { request in
+        XCTAssertEqual(request.url?.absoluteString, "https://box/health")
+        return HTTPAnswer(status: 200, body: json(#"{"ok":true}"#))
+      },
       { _ in HTTPAnswer(status: 200, body: json(#"{"agent":{"id":"agent-9","name":"Nora"}}"#)) },
       { _ in HTTPAnswer(status: 200, body: json(#"{"agent":{"id":"group-1"}}"#)) },
+      { _ in HTTPAnswer(status: 200, body: json(#"{"agent":{"id":"agent-10","name":"Leo"}}"#)) },
     ])
     let api = SimeonAPI(base: URL(string: "https://x")!, clientVersion: "1", vault: vault, http: http)
     let backend = LiveBackend(gateway: Gateway(api: api, http: http))
@@ -294,12 +360,19 @@ final class GatewayTests: XCTestCase {
     XCTAssertEqual(send["prompt"], "Hi")
     XCTAssertEqual(send["attachmentPaths"], [])
     XCTAssertTrue(send["clientNonce"]?.string?.hasPrefix("ios-") ?? false)
-    let create = try JSON.parse(http.sent[2].httpBody!)
+    XCTAssertEqual(http.sent.count, 5, "one /health, then trusted")
+    let create = try JSON.parse(http.sent[3].httpBody!)
     // The face the sheet showed is kept on it; the host picks its colour.
     XCTAssertNil(create["avatarColor"])
     XCTAssertEqual(create["avatarShape"], "clay-03")
+    XCTAssertNil(create["voiceId"])
+    // The voice picked with the pencil goes with the agent (AgentDraft).
+    _ = try await backend.createAgent(name: "Leo", face: "clay-04", voiceId: "s3TPKV1kjDlVtZbl4Ksh")
+    let voiced = try JSON.parse(http.sent[5].httpBody!)
+    XCTAssertEqual(voiced["voiceId"], "s3TPKV1kjDlVtZbl4Ksh")
+    XCTAssertEqual(voiced["avatarShape"], "clay-04")
     XCTAssertEqual(create["isKickstartRequested"], true)
-    XCTAssertEqual(try JSON.parse(http.sent[3].httpBody!)["memberAgentIds"], ["simeon", "iris"])
+    XCTAssertEqual(try JSON.parse(http.sent[4].httpBody!)["memberAgentIds"], ["simeon", "iris"])
   }
 
   func testAnAgentsScreenGoesThroughTheProxy() throws {
@@ -403,11 +476,14 @@ final class ChatTests: XCTestCase {
         }
       case .notice(_, let text): return text == Chat.notShown ? "notice" : text
       case .cloudAgent(_, let bcId): return "cloud-agent:\(bcId)"
+      case .products(_, let card): return "products:\(card.products.count)"
+      case .purchase(_, let card): return card.flight == nil ? "purchase:\(card.domain):\(card.state.rawValue)" : "flight-checkout:\(card.flight?.route ?? ""):\(card.state.rawValue)"
+      case .flightPassengers(_, let card): return "travellers:\(card.flight.route):\(card.state.rawValue)"
       case .file(_, let name, _, _): return "file:\(name)"
       default: return "other"
       }
     }
-    XCTAssertEqual(kinds, ["me", "them", "question", "question-answered", "question-dismissed", "draft:email:Ready to send", "draft:slack:Ready to send", "flights:4", "flights:2", "connector:Linear:To read the launch tickets.", "listener:slack:so this routine can fire", "approval:Delete 3 files in ~/Downloads:pending", "secret:Stripe API key", "computer:waiting", "cloud-agent:bc-1", "file:Payouts September.pdf"])
+    XCTAssertEqual(kinds, ["me", "them", "question", "question-answered", "question-dismissed", "draft:email:Ready to send", "draft:slack:Ready to send", "flights:4", "flights:2", "connector:Linear:To read the launch tickets.", "listener:slack:so this routine can fire", "approval:Delete 3 files in ~/Downloads:pending", "secret:Stripe API key", "computer:waiting", "cloud-agent:bc-1", "products:2", "purchase:ncvss.com:review", "purchase:ncvss.com:ordered", "travellers:Seattle to Los Angeles:open", "flight-checkout:Seattle to Los Angeles:ordered", "file:Payouts September.pdf"])
     guard case .flights(_, let flights) = rows.first(where: { if case .flights = $0 { return true }; return false })! else { return XCTFail() }
     XCTAssertEqual(flights.title, "Seattle to Los Angeles")
     XCTAssertEqual(flights.offers[3].legs.count, 2)
@@ -857,6 +933,23 @@ final class MarkdownTests: XCTestCase {
     XCTAssertEqual(calendar.key, "google-calendar")
     guard case .agent(let id) = found[0].kind else { return XCTFail() }
     XCTAssertEqual(id, "theo")
+  }
+
+  /** The connectors added after the Mac window's list (14 October 2026): Link coloured mid-sentence, never as a sentence's first word; LinkedIn stays LinkedIn; another spelling of an app keeps its logo. */
+  func testConnectorNamesAndEverydayWords() {
+    func named(_ text: String) -> [String] {
+      Mentions.find(in: text, agents: []).compactMap { match in
+        guard case .brand(let brand) = match.kind else { return nil }
+        return "\((text as NSString).substring(with: NSRange(location: match.location, length: match.length)))=\(brand.key)"
+      }
+    }
+    XCTAssertEqual(named("Your Link wallet checks out; re-add it in the Link app."), ["Link=link", "Link=link"])
+    XCTAssertEqual(named("Link your Google Calendar first. Then Square and Ramp."), ["Google Calendar=google-calendar", "Square=square", "Ramp=ramp"])
+    XCTAssertEqual(named("1. Link the card\n- **Square** is next\n\"Kit\" sends it"), [])
+    XCTAssertEqual(named("Post on LinkedIn, Facebook Pages and TikTok Ads, then OneDrive and monday.com."), ["LinkedIn=linkedin", "Facebook Pages=facebook", "TikTok Ads=tiktok", "OneDrive=onedrive", "monday.com=monday"])
+    XCTAssertEqual(named("Granola, Resend and Microsoft To Do."), ["Granola=granola", "Resend=resend", "Microsoft To Do=microsoft-to-do"])
+    // An app whose name is not an everyday word is marked anywhere, first word included.
+    XCTAssertEqual(named("Stripe charged it."), ["Stripe=stripe"])
   }
 
   func testAvasChatIsQuickInTheCore() {
@@ -1370,18 +1463,60 @@ final class ConnectConsentTests: XCTestCase {
     XCTAssertEqual(consent.points[0].body, "Your agents can read and use customers, payments, subscriptions and invoices in Stripe.")
     XCTAssertEqual(consent.route, .vendor(host: "mcp.stripe.com"))
     XCTAssertTrue(consent.smallPrint[0].contains("Stripe's own page"))
-    XCTAssertFalse(consent.smallPrint.joined().contains("Composio"), "only the apps Composio serves name it")
+    XCTAssertFalse(consent.smallPrint.joined().contains("Composio"), "no consent names the sign-in partner")
     XCTAssertEqual(consent.note, "Anything that moves money in Stripe is real. Ask your agents to check with you before they move any.")
   }
 
-  func testComposioIsNamedForTheAppsItServes() {
+  func testTheSignInPartnerIsNeverNamed() {
     let gmail = CatalogApp(id: "gmail", name: "gmail", title: "Gmail", summary: "Search, read, draft, and manage email.", serverURL: "https://api.simeonlabs.com/desktop/api/apps/mcp/gmail")
     let consent = ConnectConsent(app: gmail, name: "Gmail")
     XCTAssertEqual(consent.route, .composio)
-    XCTAssertTrue(consent.smallPrint[0].hasPrefix("Composio, the service Simeon uses to connect apps"))
+    // White label (13 October 2026): the partner is said, not named.
+    XCTAssertTrue(consent.smallPrint[0].hasPrefix("Simeon connects Gmail through a secure sign-in partner"))
+    XCTAssertFalse(([consent.title, consent.summary, consent.note ?? ""] + consent.smallPrint + consent.points.map(\.body)).joined().lowercased().contains("composio"))
     XCTAssertEqual(consent.note, "Emails your agents send go out from your own address.")
     let byToolkit = CatalogApp(id: "notion", name: "notion", title: "Notion", summary: "", composioToolkit: "notion")
     XCTAssertEqual(ConnectConsent(app: byToolkit, name: "Notion").route, .composio)
+  }
+
+  /** Link (13 October 2026): approval in the Link app, a one-time card, no card number seen. */
+  func testLinkSaysEveryPurchaseWaitsForTheLinkApp() {
+    let link = ConnectConsent(app: CatalogApp(id: "link", name: "link", title: "Link", summary: "Buy what you ask for.", serverURL: "https://link.com/agents"), name: "Link")
+    XCTAssertTrue(link.points[0].body.contains("one-time card"))
+    XCTAssertTrue(link.smallPrint[0].hasPrefix("You'll approve the connection on link.com or in the Link app"))
+    XCTAssertTrue(link.smallPrint[0].contains("never sees your password or your card numbers"))
+    XCTAssertTrue(link.note?.hasPrefix("Nothing is paid until you approve the purchase in the Link app") == true)
+  }
+
+  /** Shop (14 October 2026): Shop's own page to connect, Allow before anything is paid, a one-time card elsewhere. */
+  func testShopSaysHowItPays() {
+    let shop = ConnectConsent(app: CatalogApp(id: "shop", name: "shop", title: "Shop", summary: "Find products across Shopify stores.", serverURL: "https://shop.app"), name: "Shop")
+    XCTAssertTrue(shop.points[0].body.contains("pay for what you asked them to buy with your Shop card"))
+    XCTAssertTrue(shop.smallPrint[0].hasPrefix("You'll approve the connection on Shop's own page"))
+    XCTAssertTrue(shop.note?.hasPrefix("Nothing is paid until you press Allow") == true)
+    XCTAssertEqual(ConnectorIcons.id(for: "Shop"), "shop")
+    XCTAssertEqual(ConnectorIcons.id(for: "Shopify"), "shopify", "Shop and Shopify stay apart")
+  }
+
+  /** Apps on their makers' own servers (13 October 2026): the maker's page and server are named. */
+  func testAnAppOnItsMakersServerSaysSo() {
+    let granola = ConnectConsent(app: CatalogApp(id: "granola", name: "granola", title: "Granola", summary: "", serverURL: "https://mcp.granola.ai/mcp"), name: "Granola")
+    XCTAssertEqual(granola.route, .vendor(host: "mcp.granola.ai"))
+    XCTAssertEqual(granola.points[0].body, "Your agents can read and use your meeting notes, transcripts and folders in Granola.")
+    XCTAssertTrue(granola.smallPrint[0].contains("Granola runs this connection from its own server (mcp.granola.ai)"))
+    let resend = ConnectConsent(app: CatalogApp(id: "resend", name: "resend", title: "Resend", summary: "", serverURL: "https://mcp.resend.com"), name: "Resend")
+    XCTAssertEqual(resend.note, "Emails your agents send go out from your own domains.")
+    // Shopify's own server takes only the clients it has approved (13 October 2026): still "Coming soon".
+    XCTAssertTrue(AppsComingSoon.builtIn.contains("shopify"))
+    // The server names an app by Composio's name, the catalog by its own: either finds it.
+    XCTAssertTrue(AppsComingSoon.names(AppsComingSoon.builtIn, "microsoft-to-do"))
+    XCTAssertTrue(AppsComingSoon.names(AppsComingSoon.builtIn, "Microsoft To Do"))
+    XCTAssertTrue(AppsComingSoon.names(["Microsoft_ToDo"], "microsoft-to-do"))
+    XCTAssertFalse(AppsComingSoon.names(AppsComingSoon.builtIn, "Microsoft Teams"))
+    XCTAssertFalse(AppsComingSoon.names(AppsComingSoon.builtIn, ""))
+    let lovable = ConnectConsent(app: CatalogApp(id: "lovable", name: "lovable", title: "Lovable", summary: "", serverURL: "https://mcp.lovable.dev"), name: "Lovable")
+    XCTAssertEqual(lovable.points[0].body, "Your agents can read and use your projects, workspaces and their code in Lovable.")
+    XCTAssertEqual(lovable.route, .vendor(host: "mcp.lovable.dev"))
   }
 
   func testTheExtraLayerAndTheUnknown() {

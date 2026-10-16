@@ -16,6 +16,7 @@ from typing import Any
 from urllib.parse import urlparse
 from uuid import UUID
 
+import stripe as stripe_lib
 import structlog
 
 from simeon.config import settings
@@ -148,6 +149,16 @@ def snapshot_of(subscription: Any) -> dict[str, Any]:
     }
 
 
+def _id_of(value: Any) -> str | None:
+    """A Stripe reference, expanded or not: its id."""
+    if isinstance(value, str):
+        return value or None
+    if value is None:
+        return None
+    found = value.get("id") if hasattr(value, "get") else None
+    return found if isinstance(found, str) else None
+
+
 def _raw(subscription: Any) -> dict[str, Any]:
     try:
         return dict(subscription.to_dict_recursive())
@@ -271,12 +282,16 @@ class PlansService:
         return_url: str | None = None,
         flow: str | None = None,
         tier: TierKey | None = None,
+        back_when_done: bool = False,
     ) -> str:
         """Stripe's Customer Portal: cards, invoices, a plan change or a
         cancellation. `flow` opens the portal on one of those;
         `update_confirm` with a `tier` opens straight on the confirmation
         of that one plan, skipping the portal's own picker (the person
-        already chose on the billing page)."""
+        already chose on the billing page). `back_when_done` sends the
+        person on to `return_url` as soon as that one step is done (the
+        app's sheet then closes by itself), instead of Stripe's own
+        confirmation page."""
         if not settings.STRIPE_SECRET_KEY:
             raise BillingNotConfigured()
         if billed_by_apple(await self.plan_of(session, user)):
@@ -317,8 +332,59 @@ class PlansService:
                 }
             elif flow == "payment_method":
                 params["flow_data"] = {"type": "payment_method_update"}
+        if back_when_done and "flow_data" in params and allowed_return_url(return_url):
+            params["flow_data"]["after_completion"] = {
+                "type": "redirect",
+                "redirect": {"return_url": params["return_url"]},
+            }
         portal = await stripe_billing.create_portal_session(**params)
         return str(portal.url)
+
+    async def settle_unpaid(self, session: AsyncSession, user: User) -> bool:
+        """After the person changed their card on Stripe's page from the
+        app (14 October 2026): a subscription past due is charged now on
+        that card instead of at Stripe's next retry, days away. The page
+        sets the customer's default card, but a checkout put the old one on
+        the subscription itself, and Stripe keeps retrying that one, so the
+        subscription is moved to the new card first. True once the plan is
+        paid; the copy is updated at once (the webhook follows)."""
+        if not settings.STRIPE_SECRET_KEY:
+            raise BillingNotConfigured()
+        row = await self.subscription_of(session, user)
+        if row is None or row.status != "past_due":
+            return False
+        customer = await stripe_billing.retrieve_customer(row.stripe_customer_id)
+        card = _id_of(
+            (customer.get("invoice_settings") or {}).get("default_payment_method")
+        )
+        if card is None:
+            return False
+        subscription = await stripe_billing.retrieve_subscription(
+            row.stripe_subscription_id
+        )
+        if _id_of(subscription.get("default_payment_method")) != card:
+            subscription = await stripe_billing.modify_subscription(
+                row.stripe_subscription_id, default_payment_method=card
+            )
+        invoice_id = _id_of(subscription.get("latest_invoice"))
+        if invoice_id is not None:
+            invoice = await stripe_billing.retrieve_invoice(invoice_id)
+            if invoice.get("status") == "open":
+                try:
+                    await stripe_billing.pay_invoice(invoice_id, payment_method=card)
+                except stripe_lib.StripeError as error:
+                    log.info(
+                        "plans.settle.declined",
+                        user_id=str(user.id),
+                        invoice=invoice_id,
+                        error=getattr(error, "code", None) or type(error).__name__,
+                    )
+                    return False
+        fresh = await stripe_billing.retrieve_subscription(row.stripe_subscription_id)
+        await self.apply_stripe_subscription(session, fresh)
+        paid = fresh.get("status") in ("active", "trialing")
+        log.info("plans.settle", user_id=str(user.id), paid=paid)
+        return paid
 
     async def _plan_change_item(
         self, subscription: DesktopSubscription, tier: TierKey

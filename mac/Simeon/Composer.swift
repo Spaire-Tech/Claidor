@@ -51,9 +51,11 @@ struct Composer: View {
   @State private var dictation = Dictation()
   /** The height of what stands over the field: the access notice (step 13) and the Allow card (step 14). */
   @State private var noticeHeight: CGFloat = 0
+  /** The near-the-limit lines closed (`ApproachingClosed`), kept between launches. */
+  @AppStorage(ApproachingClosed.key) private var approachingClosed = ""
 
   private var overField: Bool {
-    store.access.notice != nil || (agentId != NewChatState.draftKey && store.localAsks[agentId] != nil)
+    store.access.notice != nil || creditsLine != nil || (agentId != NewChatState.draftKey && store.localAsks[agentId] != nil)
   }
 
   /** Each chat's picks while its words wait (the window keeps them in the draft's document). */
@@ -110,11 +112,29 @@ struct Composer: View {
     // Over the field and as wide, 8 apart: whether this account may use Simeon (`Qvn`, step 13; sending waits under
     // it), then the agent's first waiting ask to use this Mac (`BLn`, step 14; an agent's chat only).
     .above(gap: 8) {
-      let notice = store.access.notice
+      // With no plan, the Mac's words and the web's plans page (`MacUpgrade`, 14 October 2026), not simeonlabs.com; a card
+      // that failed, Stripe's card page in the app. The window stays open meanwhile and Send waits (the founder: "still
+      // access to the app. just cant send message").
+      let notice = store.access.notice.map { _ in MacUpgrade.cover(access: store.access, usage: store.usage.summary) }
+      let credits = notice == nil ? creditsLine : nil
       let ask = agentId == NewChatState.draftKey ? nil : store.localAsks[agentId]
-      if notice != nil || ask != nil {
+      if notice != nil || credits != nil || ask != nil {
         VStack(spacing: 8) {
-          if let notice { AccessNotice(words: notice, look: look) }
+          if let notice {
+            AccessNotice(words: notice, look: look, action: {
+              switch MacUpgrade.route(access: store.access, usage: store.usage.summary) {
+              case .portal(let flow, let tier):
+                Task { if let failure = await MacBillingPage.shared.open(flow: flow, tier: tier, store: store) { store.problem = failure } }
+              case .web(let url):
+                _ = NSWorkspace.shared.open(url)
+              case .plans, .none:
+                break
+              }
+            })
+          }
+          if let credits {
+            AccessNotice(words: credits.words, look: look, action: { settings.open(.usage) }, close: credits.key == nil ? nil : { closeApproaching(credits.key) })
+          }
           if let ask { LocalAskDock(ask: ask, agentId: agentId, look: look).id(ask.entryId) }
         }
         .fixedSize(horizontal: false, vertical: true)
@@ -133,6 +153,11 @@ struct Composer: View {
     .task(id: agentId) {
       // The new chat's own field has no agent's skills to read.
       if agentId != NewChatState.draftKey { await picks.load(agentId, store: store) }
+    }
+    // The usage read as a chat opens and as each answer ends (at most every 30 s), so the credits' line shows in time.
+    .task(id: agentId) { await store.loadUsage() }
+    .onChange(of: store.agent(agentId)?.isRunningTurn ?? false) { was, now in
+      if was && !now { Task { await store.loadUsage() } }
     }
     // The messages end over the field and what stands over it.
     .onChange(of: height + (overField ? noticeHeight + 8 : 0), initial: true) { _, value in control.composerHeight = value }
@@ -169,6 +194,27 @@ struct Composer: View {
     case .transcribing: return "Transcribing…"
     case .idle: return reply?.placeholder ?? (hasFiles ? "Add a message, or hit send." : "Message \(name)")
     }
+  }
+
+  /**
+   * The credits' line over the field (13 October 2026, as the iPhone's,
+   * not red): spent, with Upgrade; else near the limit (80%, then 95%),
+   * which the person can close until the next step. The key is set for the
+   * line that closes.
+   */
+  private var creditsLine: (words: SandAccess.Words, key: String?)? {
+    let outOfCredits = store.trayList.shown(for: agentId).contains(where: PhoneUpgrade.isOutOfCredits)
+    if let words = PhoneUpgrade.banner(access: store.access, usage: store.usage.summary, outOfCredits: outOfCredits) { return (words, nil) }
+    if let near = PhoneUpgrade.approaching(access: store.access, usage: store.usage.summary), !ApproachingClosed.contains(near.key, in: approachingClosed) {
+      return (near.words, near.key)
+    }
+    return nil
+  }
+
+  /** The near-the-limit line closed until the next step. */
+  private func closeApproaching(_ key: String?) {
+    guard let key else { return }
+    withAnimation(.easeOut(duration: 0.15)) { approachingClosed = ApproachingClosed.adding(key, to: approachingClosed) }
   }
 
   /** A line over the words (`sand-prompt-error-notice`, `…-attachment-notice`): 11 on 14, padded 0 2. */

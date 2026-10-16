@@ -165,6 +165,8 @@ export function createSubagentRuntime(host: SubagentRuntimeHost) {
   const subagentOutlines = new Map<string, readonly unknown[]>();
   const pendingSubagentSteers = new Map<string, string>();
   const abortingSubagents = new Set<string>();
+  /** Told each time a subagent settles: the parent's sleep ends with it (`await.ts`). */
+  const settledListeners = new Set<() => void>();
 
   let onBackgroundSubagentDispatched:
     | ((event: {
@@ -313,6 +315,9 @@ export function createSubagentRuntime(host: SubagentRuntimeHost) {
           : "error";
       logLifecycle("settled", subagentAgentId, record.status);
       emitSubagentsChanged();
+      for (const listener of [...settledListeners]) {
+        try { listener(); } catch { /* a listener's failure must not stop the settle */ }
+      }
     }
     host.emitAsyncTasksChanged();
 
@@ -518,6 +523,10 @@ export function createSubagentRuntime(host: SubagentRuntimeHost) {
       return [...subagentRegistry.values()].some(
         (record) => record.status === "running",
       );
+    },
+    onSubagentSettled(listener: () => void): () => void {
+      settledListeners.add(listener);
+      return () => { settledListeners.delete(listener); };
     },
     getSubagentOutline,
     async drainBackgroundSubagents(): Promise<void> {

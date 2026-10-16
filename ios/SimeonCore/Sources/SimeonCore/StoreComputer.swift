@@ -125,6 +125,46 @@ extension AppStore {
     _ = try? await backend?.command("handBackForeverBox", ["id": .string(agentId), "trigger": .string(skip ? "dismissed" : "button")])
   }
 
+  // MARK: The whole computer on the phone (15 October 2026)
+
+  /**
+   * What the person's tap on the computer focused (`typingFocus`,
+   * host/box/typing-focus.ts): the field's kind, for the phone's keyboard,
+   * or `.none` for nothing to type into. Nil when the computer did not say
+   * (an engine without the question, no answer): the keyboard is then left
+   * as it is.
+   */
+  public func typingFocus(_ agentId: String) async -> TypingField? {
+    guard let backend, let answer = try? await backend.command("typingFocus", ["id": .string(agentId)]), let focus = answer["focus"]?.string else { return nil }
+    return TypingField(rawValue: focus) ?? .text
+  }
+
+  /**
+   * The person takes control: the computer's Chrome is made ready to see
+   * their taps (`typingFocus` with `prepare`), so the first tap's field is
+   * known too. Nothing comes back; an engine without it does no harm.
+   */
+  public func prepareTypingFocus(_ agentId: String) async {
+    _ = try? await backend?.command("typingFocus", ["id": .string(agentId), "prepare": true])
+  }
+
+  /**
+   * Take control (`takeComputerControl`): a working agent is stopped and the
+   * computer is the person's until they hand it back; true when that
+   * started a hand-off (handing back then resumes the agent).
+   */
+  public func takeComputerControl(_ agentId: String) async -> Bool {
+    guard let backend, let answer = try? await backend.command("takeComputerControl", ["id": .string(agentId)]) else { return false }
+    return answer["handoff"]?.bool ?? false
+  }
+
+  /** Stop task (`stopAgentTask`): the agent's run and its helpers stop; an open hand-off ends without waking it. */
+  @discardableResult
+  public func stopAgentTask(_ agentId: String) async -> Bool {
+    guard let backend, let answer = try? await backend.command("stopAgentTask", ["id": .string(agentId)]) else { return false }
+    return answer["stopped"]?.bool ?? false
+  }
+
   /** The address of a screen the host gave (its loopback page), through Simeon Labs' proxy. */
   public func screenSocket(_ vncUrl: String) async -> URL? {
     await backend?.screenSocket(vncUrl)
@@ -203,4 +243,18 @@ extension AppStore {
       break
     }
   }
+}
+
+/**
+ * The field a tap on the computer focused, as the computer's Chrome names
+ * it (`host/box/typing-focus.ts`): an input's type, `text` for a text area
+ * or an editable block, `none` for nothing to type into. A kind the phone
+ * does not know is typed into as text.
+ */
+public enum TypingField: String, Sendable, Equatable {
+  case none = ""
+  case text, email, password, search, tel, url, number
+
+  /** The phone's keyboard comes up for it. */
+  public var takesTyping: Bool { self != .none }
 }

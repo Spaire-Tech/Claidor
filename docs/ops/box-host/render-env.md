@@ -113,6 +113,22 @@ differs (`docs/services-core.md`, the cloud computer):
 Size `SIMEON_BOX_MAX_RUNNING` to the VM: its memory, less about 2 GB for
 the system, divided by `SIMEON_BOX_MEMORY_LIMIT_MB`.
 
+Backups of each computer (`docs/services-core.md`, the cloud computer,
+"Backups") need an S3 bucket of their own and a key for it only:
+
+| Name | Value |
+|---|---|
+| `SIMEON_BOX_STORE_BUCKET` | the bucket's name; empty: no backups |
+| `SIMEON_BOX_STORE_REGION` | the bucket's region (default `us-west-2`) |
+| `SIMEON_BOX_STORE_ACCESS_KEY_ID` | the key's id |
+| `SIMEON_BOX_STORE_SECRET_ACCESS_KEY` | the key's secret (a secret: paste it in Render only) |
+
+The key needs `s3:GetObject`, `s3:PutObject`, `s3:DeleteObject` on
+`arn:aws:s3:::<bucket>/*` and `s3:ListBucket` on `arn:aws:s3:::<bucket>`.
+Block all public access on the bucket. Once set, each idle computer is
+replaced once on its own files so it starts backing up; a computer that is
+working waits until it is idle.
+
 ## Several box servers
 
 `SIMEON_BOX_HOSTS` lists every server as JSON. A new person's computer is
@@ -164,8 +180,15 @@ On the Mac, after `cd desktop && npm run package`, with the `aws` command
 line signed in to an account that can write the folder:
 
 ```
-SIMEON_HOST_BUNDLE_S3=s3://<bucket>/host-bundles npm run publish:host-bundle
+SIMEON_HOST_BUNDLE_S3=s3://simeon-host-bundles/host-bundles npm run publish:host-bundle
 ```
+
+Simeon's cloud computers read `s3://simeon-host-bundles/host-bundles`
+(checked 15 October 2026: its pointer named `39f816750c81`, the version a
+cloud computer's log showed running). `simeonlabs-files-public/host-bundles`
+is not it: it holds a 4 October bundle and one of 15 October that no
+computer reads. After publishing, the pointer must name the new commit:
+`curl -s https://simeon-host-bundles.s3.amazonaws.com/host-bundles/sand-host-bundle-latest.version`.
 
 It refuses a build with uncommitted changes (the version is the commit).
 The folder must be readable over plain HTTPS without credentials (the same

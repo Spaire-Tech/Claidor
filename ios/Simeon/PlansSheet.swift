@@ -10,7 +10,10 @@ import SimeonCore
  * Purchases; the one sentence Apple asks for, then the Terms and the
  * Privacy Policy, and in the United States the web's billing page as well.
  * Monthly only, no free week (the free month starts at the first sign-in).
- * It closes once the plan has started.
+ * It closes once the plan has started. When an Apple plan's payment failed
+ * (14 October 2026: the banner's button opens the plans on the iPhone, the
+ * founder's choice), a line over the plans says so, with Apple's own page
+ * for the payment method.
  */
 struct PlansSheet: View {
   /** Open on this plan (an upgrade's), else Pro. */
@@ -18,6 +21,7 @@ struct PlansSheet: View {
 
   @Environment(\.dismiss) private var dismiss
   @Environment(\.openURL) private var openURL
+  @Environment(AppStore.self) private var store
   @State private var purchases = Purchases.shared
   @State private var tier = "pro"
   @State private var problem: String?
@@ -40,6 +44,24 @@ struct PlansSheet: View {
               .multilineTextAlignment(.center)
           }
           .padding(.top, 12)
+
+          if PhoneUpgrade.applePaymentFailed(store.usage.summary) {
+            // Apple is retrying the plan's payment: the card is mended at Apple, not by a second plan.
+            VStack(alignment: .leading, spacing: 6) {
+              Text(PhoneUpgrade.paymentFailedTitle).font(.system(size: 15, weight: .semibold)).foregroundStyle(Ink.primary)
+              Text(PhoneUpgrade.paymentFailedApple).font(.system(size: 14)).foregroundStyle(Ink.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+              Button { openURL(PhoneUpgrade.appleBilling) } label: {
+                Text(PhoneUpgrade.updatePayment).font(.system(size: 15, weight: .medium))
+              }
+              .foregroundStyle(Ink.link)
+              .padding(.top, 2)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(16)
+            .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(Ink.groupedRow))
+            .padding(.top, 24)
+          }
 
           if let plans = purchases.plans {
             let sold = purchases.sold(plans.plans(yearly: false))
@@ -199,7 +221,7 @@ private struct PlanRow: View {
       .padding(.vertical, 14)
       .contentShape(.rect)
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.tactile)
     .accessibilityAddTraits(selected ? .isSelected : [])
   }
 }

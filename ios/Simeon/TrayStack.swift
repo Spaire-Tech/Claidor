@@ -26,7 +26,7 @@ struct TrayStack: View {
           HStack {
             Spacer()
             Button("Clear all") { Task { await store.clearTrays() } }
-              .buttonStyle(.plain)
+              .buttonStyle(.tactile)
               .font(.system(size: 12, weight: .medium))
               .foregroundStyle(Ink.secondary)
           }
@@ -60,18 +60,19 @@ private struct TrayCard: View {
         .padding(.top, 1)
       VStack(alignment: .leading, spacing: 2) {
         HStack(alignment: .firstTextBaseline, spacing: 6) {
-          Text(tray.title).font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.primary)
+          // In plain words (PlainWords): never a model company's refusal, a status code or a setting's name.
+          Text(tray.shownTitle).font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.primary)
           if let count = tray.countLabel {
             Text(count).font(.system(size: 13, weight: .medium)).monospacedDigit().foregroundStyle(Ink.tertiary)
               .accessibilityLabel("Occurred \(tray.count ?? 0) times")
           }
         }
-        if !tray.detail.isEmpty {
-          Text(tray.detail).font(.system(size: 13)).foregroundStyle(Ink.secondary)
+        if !tray.shownDetail.isEmpty {
+          Text(tray.shownDetail).font(.system(size: 13)).foregroundStyle(Ink.secondary)
             .fixedSize(horizontal: false, vertical: true)
             .textSelection(.enabled)
         }
-        let links = tray.actions.compactMap { action -> (String, URL)? in
+        let links = tray.shownActions.compactMap { action -> (String, URL)? in
           if case .openURL(let label, let url) = action, let address = URL(string: url) { return (label, address) }
           return nil
         }
@@ -97,7 +98,7 @@ private struct TrayCard: View {
             Image(systemName: copied ? "checkmark" : "doc.on.doc").font(.system(size: 12, weight: .medium)).frame(width: 24, height: 24)
               .tapRoom(EdgeInsets(top: 10, leading: 8, bottom: 10, trailing: 1))
           }
-          .buttonStyle(.plain)
+          .buttonStyle(.tactile)
           .foregroundStyle(Ink.secondary)
           .accessibilityLabel("Copy request ID")
           .help("Copy request ID")
@@ -106,7 +107,7 @@ private struct TrayCard: View {
           Image(systemName: "xmark").font(.system(size: 12, weight: .medium)).frame(width: 24, height: 24)
             .tapRoom(EdgeInsets(top: 10, leading: 1, bottom: 10, trailing: 10))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.tactile)
         .foregroundStyle(Ink.secondary)
         .accessibilityLabel("Dismiss notification")
         .help("Dismiss notification")

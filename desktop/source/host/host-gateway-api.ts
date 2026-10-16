@@ -9,6 +9,7 @@ import {
   searchPluginsForGateway,
 } from "./host-plugin-gateway.js";
 import { executeRoutedAgentTool as runRoutedAgentTool } from "./extensions/transcript/routed-agent-tools.js";
+import { HOST_LOG_PREFIX, logHostLine } from "../shared/host-log.js";
 
 export const HOST_CAPABILITIES = [
   "orderedReplicasV1",
@@ -40,6 +41,8 @@ export interface HostGatewayDependencies {
   releaseAgentBox(agentId: string): Promise<void>;
   handleDesktopMcpAuthCompletion(completion: unknown): Promise<void>;
   forgetLocalToolPermission(agentId: string): void;
+  /** What a tap on the phone's whole computer focused (`host/box/typing-focus.ts`), or with `prepare` the agent's Chrome made ready for the taps; absent where the host has none. */
+  readonly typingFocus?: (agentId: string, prepare?: boolean) => Promise<{ focus: string }>;
   readonly now?: () => number;
 }
 
@@ -264,6 +267,34 @@ export function createHostGatewayApi(
     discardDraft: (args: any) => {
       markActive("user_action");
       return method(manager, "discardDraft")({ agentId: args.agentId, entryId: args.entryId });
+    },
+    // The checkout card (purchase-cards.ts): Allow asks the card's wallet (the box's Link, or its Shop) with the card the person picked on it and their approval (Face ID on the device); `resume` only makes sure a card with a wallet is watched.
+    answerPurchase: (args: any) => {
+      if (args?.resume !== true) markActive("user_action");
+      const mcp = deps.extensions.api("mcp");
+      return method(manager, "answerPurchase")(
+        { agentId: args.agentId, entryId: args.entryId, allow: args.allow === true, resume: args.resume === true, ...(typeof args?.paymentMethodId === "string" && args.paymentMethodId.length > 0 ? { paymentMethodId: args.paymentMethodId } : {}), ...(args?.approval != null && typeof args.approval === "object" ? { approval: args.approval } : {}) },
+        { ...(mcp?.linkWallet == null ? {} : { link: mcp.linkWallet }), ...(mcp?.shopWallet == null ? {} : { shop: mcp.shopWallet }) },
+      );
+    },
+    // Buy on one product of the products card (14 October 2026): the agent is woken to buy exactly that one.
+    buyProduct: (args: any) => {
+      markActive("user_action");
+      return method(manager, "buyProduct")({ agentId: args?.agentId, entryId: args?.entryId, index: typeof args?.index === "number" ? args.index : -1 });
+    },
+    // Booking a flight (13 October 2026, flight-bookings.ts): "Book with Simeon" on a flight in the search card, and the traveller form's Continue.
+    startFlightBooking: (args: any) => {
+      markActive("user_action");
+      return method(manager, "startFlightBooking")({
+        agentId: args?.agentId,
+        ...(typeof args?.entryId === "string" ? { entryId: args.entryId } : {}),
+        ...(typeof args?.offerIndex === "number" ? { offerIndex: args.offerIndex } : {}),
+        ...(typeof args?.offerId === "string" ? { offerId: args.offerId } : {}),
+      });
+    },
+    submitFlightPassengers: (args: any) => {
+      markActive("user_action");
+      return method(manager, "submitFlightPassengers")({ agentId: args?.agentId, entryId: args?.entryId, passengers: args?.passengers, cancel: args?.cancel === true });
     },
     reactToMessage: (args: any) => {
       markActive("user_action");
@@ -629,6 +660,45 @@ export function createHostGatewayApi(
         args.id,
         args.trigger ?? "button"
       ),
+    // The phone's keyboard on the whole computer (15 October 2026, `host/box/typing-focus.ts`); `prepare` when the person takes control.
+    typingFocus: async (args: any) =>
+      deps.typingFocus == null
+        ? { focus: "" }
+        : await deps.typingFocus(String(args.id ?? ""), args.prepare === true),
+    /**
+     * Take control while the agent works: its run and helpers stop (it
+     * would fight the person for the page) and the computer is the person's
+     * until they hand it back, which resumes the agent ("taken-back"). An
+     * agent with nothing running is not disturbed: the person just has the
+     * page, and handing it back changes nothing.
+     */
+    takeComputerControl: async (args: any) => {
+      const id = String(args.id ?? "");
+      if (!method(manager, "isAgentWorking")(id)) {
+        logHostLine(`${HOST_LOG_PREFIX} take-control agent=${id} working=false`);
+        return { handoff: false };
+      }
+      await method(manager, "stopAgentTask")(id);
+      const started = method(deps.extensions.api("session"), "startHandoff")({
+        agentId: id,
+        instruction: "You took control of the computer.",
+        source: "person"
+      });
+      logHostLine(`${HOST_LOG_PREFIX} take-control agent=${id} working=true handoff=${started?.kind ?? "none"}`);
+      return { handoff: started?.kind === "started" || started?.kind === "already-pending" };
+    },
+    /** Stop task: the run and its helpers stop, and a hand-off still open ends without waking the agent. */
+    stopAgentTask: async (args: any) => {
+      const id = String(args.id ?? "");
+      const session = deps.extensions.api("session");
+      const handoff = method(session, "pendingHandoff")(id) != null;
+      if (handoff) {
+        await method(session, "endHandoff")(id, "stopped");
+      }
+      const result = await method(manager, "stopAgentTask")(id);
+      logHostLine(`${HOST_LOG_PREFIX} stop-task agent=${id} stopped=${result?.stopped === true} handoff-ended=${handoff}`);
+      return result;
+    },
 
     startTeachRecording: (args: any) =>
       method(deps.extensions.api("teach-recording"), "start")(args),

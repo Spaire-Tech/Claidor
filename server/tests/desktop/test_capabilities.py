@@ -17,7 +17,9 @@ from simeon.config import settings
 from simeon.desktop import proxy_common as proxy_common_module
 from simeon.desktop.capabilities import WEB_SEARCH_MODEL, web_search_answer
 from simeon.desktop.pricing import (
+    IMAGE_EDIT_MODEL,
     IMAGE_MODEL,
+    LEGACY_IMAGE_MODEL,
     SPEECH_MODEL,
     TRANSCRIPTION_MODEL,
     WEB_SEARCH_CALL_MODEL,
@@ -276,10 +278,24 @@ IMAGE_ANSWER: dict[str, Any] = {
 class TestPricingAPicture:
     def test_reference_image_tokens_are_weighed_at_their_own_price(self) -> None:
         usage = image_usage(IMAGE_ANSWER["usage"])
-        # 30 text tokens plus 20 image tokens at twice a text token's price.
-        assert usage == Usage(input_tokens=70, output_tokens=1000)
+        # 30 text tokens plus 20 image tokens at 8/5 a text token's price.
+        assert usage == Usage(input_tokens=62, output_tokens=1000)
         assert credits_for(IMAGE_MODEL, usage) > credits_for(
             IMAGE_MODEL, Usage(input_tokens=50, output_tokens=1000)
+        )
+        # gpt-image-1 charged twice a text token's price for them.
+        assert image_usage(IMAGE_ANSWER["usage"], LEGACY_IMAGE_MODEL) == Usage(
+            input_tokens=70, output_tokens=1000
+        )
+
+    def test_the_new_model_costs_less_than_the_one_before(self) -> None:
+        # $30 a million picture tokens against gpt-image-1's $40.
+        picture = Usage(input_tokens=50, output_tokens=1000)
+        assert credits_for(IMAGE_MODEL, picture) < credits_for(
+            LEGACY_IMAGE_MODEL, picture
+        )
+        assert credits_for(IMAGE_EDIT_MODEL, picture) == credits_for(
+            IMAGE_MODEL, picture
         )
 
     def test_an_undetailed_or_missing_usage_still_counts_what_it_can(self) -> None:
@@ -316,18 +332,20 @@ class TestImages:
         ]
         sent = json.loads(route.calls[0].request.content)
         assert sent == {
-            "model": IMAGE_MODEL.model_id,
+            "model": "gpt-image-2.5-flare",
             "prompt": "a lighthouse at dusk",
             "n": 1,
             "size": "1536x1024",
-            "quality": "auto",
+            # "auto" was asked (by saying nothing): the new model's dearer
+            # levels are never chosen for us.
+            "quality": "medium",
         }
         rows = await _rows(session)
         assert len(rows) == 1
-        assert rows[0].model == IMAGE_MODEL.model_id
-        assert (rows[0].input_tokens, rows[0].output_tokens) == (70, 1000)
+        assert rows[0].model == "gpt-image-2.5-flare"
+        assert (rows[0].input_tokens, rows[0].output_tokens) == (62, 1000)
         assert rows[0].credits == credits_for(
-            IMAGE_MODEL, Usage(input_tokens=70, output_tokens=1000)
+            IMAGE_MODEL, Usage(input_tokens=62, output_tokens=1000)
         )
 
     async def test_a_reference_image_sends_the_call_to_edits_as_multipart(
@@ -359,7 +377,70 @@ class TestImages:
         assert sent.headers["content-type"].startswith("multipart/form-data")
         assert b'name="image[]"' in sent.content
         assert b"\xff\xd8 jpeg bytes" in sent.content
-        assert b'name="model"' in sent.content
+        assert b'name="model"\r\n\r\ngpt-image-2.5-sunburst' in sent.content
+        rows = await _rows(session)
+        assert [row.model for row in rows] == ["gpt-image-2.5-sunburst"]
+
+    async def test_a_quality_asked_for_is_kept(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch.object(settings, "OPENAI_API_KEY", "sk-openai")
+        headers = await _signed_in(client, session, user)
+        with respx.mock(assert_all_called=True) as mock:
+            route = mock.post(f"{OPENAI}/v1/images/generations").mock(
+                return_value=httpx.Response(200, json=IMAGE_ANSWER)
+            )
+            response = await client.post(
+                "/desktop/api/proxy/v1/images/generations",
+                headers=headers,
+                json={"prompt": "a face", "size": "1024x1024", "quality": "low"},
+            )
+        assert response.status_code == 200, response.text
+        assert json.loads(route.calls[0].request.content)["quality"] == "low"
+
+    @pytest.mark.parametrize(
+        ("status", "error"),
+        [
+            (404, {"message": "The model does not exist.", "code": "model_not_found"}),
+            (403, {"message": "Your organization must be verified to use this model."}),
+            (400, {"message": "Invalid model.", "param": "model"}),
+        ],
+    )
+    async def test_a_model_this_account_is_not_served_falls_back_to_the_one_before(
+        self,
+        status: int,
+        error: dict[str, Any],
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch.object(settings, "OPENAI_API_KEY", "sk-openai")
+        headers = await _signed_in(client, session, user)
+        with respx.mock(assert_all_called=True) as mock:
+            route = mock.post(f"{OPENAI}/v1/images/generations").mock(
+                side_effect=[
+                    httpx.Response(status, json={"error": error}),
+                    httpx.Response(200, json=IMAGE_ANSWER),
+                ]
+            )
+            response = await client.post(
+                "/desktop/api/proxy/v1/images/generations",
+                headers=headers,
+                json={"prompt": "a lighthouse at dusk"},
+            )
+        assert response.status_code == 200, response.text
+        models = [json.loads(call.request.content)["model"] for call in route.calls]
+        assert models == ["gpt-image-2.5-flare", "gpt-image-1"]
+        rows = await _rows(session)
+        assert [(row.model, row.input_tokens) for row in rows] == [("gpt-image-1", 70)]
+        assert rows[0].credits == credits_for(
+            LEGACY_IMAGE_MODEL, Usage(input_tokens=70, output_tokens=1000)
+        )
 
     async def test_bad_arguments_are_refused_before_openai(
         self,
@@ -410,7 +491,7 @@ class TestImages:
             "error": {"message": "Your request was rejected by the safety system."}
         }
         with respx.mock(assert_all_called=True) as mock:
-            mock.post(f"{OPENAI}/v1/images/generations").mock(
+            route = mock.post(f"{OPENAI}/v1/images/generations").mock(
                 return_value=httpx.Response(400, json=refusal)
             )
             response = await client.post(
@@ -420,6 +501,8 @@ class TestImages:
             )
         assert response.status_code == 400
         assert response.json() == refusal
+        # A refused description is not a refused model: no second try.
+        assert route.call_count == 1
         rows = await _rows(session)
         assert [(row.upstream_status, row.credits) for row in rows] == [(400, 0)]
 

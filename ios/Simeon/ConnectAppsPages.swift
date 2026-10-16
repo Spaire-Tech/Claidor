@@ -2,8 +2,8 @@ import SwiftUI
 import SimeonCore
 
 /**
- * Connect apps' pages and parts beyond the Marketplace and Your plugins
- * lists (Settings.swift), ported from the Mac's Plugins window
+ * Connectors' pages and parts beyond its two lists (Settings.swift),
+ * ported from the Mac's Plugins window
  * (mac/Simeon/PluginsWindow.swift) with its behaviour and words, drawn as
  * the phone's Connect apps is drawn: a plugin's page, the setup page, a
  * skill's page, Yours › Private, the GitHub banner, the Team mark, the
@@ -47,7 +47,7 @@ struct PluginNoticeBar: View {
             .frame(width: 28, height: 28)
             .contentShape(.rect)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.tactile)
         .accessibilityLabel("Dismiss")
       }
       .padding(.leading, 14)
@@ -64,23 +64,6 @@ struct PluginNoticeBar: View {
 }
 
 // MARK: - The filter
-
-/** The filter disc beside the search (the reference's, 42, in the control's fill): its menu, the glyph in blue while something is chosen. */
-struct PluginsFilterDisc<Choices: View>: View {
-  let active: Bool
-  @ViewBuilder var choices: () -> Choices
-
-  var body: some View {
-    Menu { choices() } label: {
-      Image(systemName: "line.3.horizontal.decrease")
-        .font(.system(size: 16, weight: .medium))
-        .foregroundStyle(active ? Ink.blue : Ink.primary)
-        .frame(width: 42, height: 42)
-        .background(Ink.groupedRow, in: Circle())
-    }
-    .accessibilityLabel("Filter plugins")
-  }
-}
 
 /** The Mac's Filter menu (`ii`): Type (All types, Connectors, Skills), then Ownership (All, Team, Public); one choice each. */
 struct PluginFilterPickers: View {
@@ -123,9 +106,9 @@ struct TeamBadge: View {
   }
 }
 
-/** A skill's tile (the Mac's `SkillTile`): the list mark on the logos' tile, at the rows' size (37) or a page's (56). */
+/** A skill's tile (the Mac's `SkillTile`): the list mark on the logos' tile, at the rows' size (42) or a page's (56). */
 struct SkillTile: View {
-  var size: CGFloat = 37
+  var size: CGFloat = ConnectorLogo.row
 
   var body: some View {
     let shape = RoundedRectangle(cornerRadius: size * 11 / 40, style: .continuous)
@@ -140,11 +123,14 @@ struct SkillTile: View {
 }
 
 /**
- * Add, on a Marketplace row and on a plugin's page (the Mac's
- * `requestAdd`): a skills-only plugin is added at once, for Private's
- * agent; the rest ask first (ConnectConsentSheet), then open the setup page
- * when the plugin asks for values, or else install the app and open its
- * sign-in (AppConnector), its skills synced once it is connected.
+ * Connect, on a Marketplace row and on a plugin's page (the Mac's
+ * `requestAdd`; Add until 13 October 2026, `Connecting`): a skills-only
+ * plugin is added at once, for Private's agent; the rest ask first
+ * (ConnectConsentSheet), then open the setup page when the plugin asks for
+ * values, or else install the app and open its sign-in in one go
+ * (AppConnector), its skills synced once it is connected. A sign-in the
+ * person cancels takes the app back out: nothing waits under a second
+ * button in Your plugins.
  */
 struct PluginAddButton<Label: View>: View {
   /** The app's name as the connect knows it (`CatalogApp.title`). */
@@ -160,7 +146,7 @@ struct PluginAddButton<Label: View>: View {
 
   var body: some View {
     Button(action: add) { label() }
-      .buttonStyle(.plain)
+      .buttonStyle(.tactile)
       .disabled(connector.connecting != nil || model.isBusy)
       // The setup page or the sign-in opens once the consent has gone.
       .sheet(item: $asking, onDismiss: {
@@ -171,8 +157,8 @@ struct PluginAddButton<Label: View>: View {
           return
         }
         Task {
-          await connector.connect(name, store: store)
-          if let entry = model.entry(entryId) { await model.connected(entry, name: name) }
+          let end = await connector.connect(name, store: store)
+          await model.connectEnded(model.entry(entryId), name: name, end: end)
         }
       }) { consent in
         ConnectConsentSheet(consent: consent) { confirmed = true }
@@ -220,7 +206,7 @@ struct GitHubBanner: View {
       } label: {
         PluginPill(title: model.launchingFix ? "Opening…" : "Fix with agent", fill: Ink.pillButton, ink: Ink.primary)
       }
-      .buttonStyle(.plain)
+      .buttonStyle(.tactile)
       .disabled(model.launchingFix)
     }
     .padding(14)
@@ -237,21 +223,22 @@ struct SkillsPluginRow: View {
 
   var body: some View {
     NavigationLink { PluginPage(entryId: entry.id) } label: {
-      HStack(spacing: 16) {
-        ConnectorTile(name: entry.displayName, size: 37)
+      HStack(spacing: 14) {
+        ConnectorTile(name: entry.displayName, size: ConnectorLogo.row, logo: ConnectorLogo.fill, id: entry.id)
         VStack(alignment: .leading, spacing: 2) {
           HStack(spacing: 6) {
-            Text(entry.displayName).font(.system(size: 16.4)).foregroundStyle(Ink.primary).lineLimit(1)
+            Text(entry.displayName).font(.system(size: 17)).foregroundStyle(Ink.primary).lineLimit(1)
             if let team = Plugins.modeLabel(mode) { TeamBadge(tip: team) }
           }
-          Text(Plugins.contributions(entry)).font(.system(size: 13)).foregroundStyle(Ink.secondary).lineLimit(1)
+          Text(Plugins.contributions(entry)).font(.system(size: 15)).foregroundStyle(Ink.secondary).lineLimit(1)
         }
         Spacer(minLength: 0)
+        ConnectorMark.added()
       }
       .contentShape(.rect)
     }
-    .buttonStyle(.plain)
-    .padding(.vertical, 17)
+    .buttonStyle(.tactile)
+    .padding(.vertical, 13.5)
   }
 }
 
@@ -268,12 +255,12 @@ struct PrivateSkillsSection: View {
   @Environment(ConnectAppsModel.self) private var model
 
   var body: some View {
-    PluginsSectionHead(title: "Private") {
+    ConnectorsSectionTitle(title: "Private") {
       if !model.skillAgents.isEmpty { agentMenu }
     }
     if model.agentId == nil || skills.isEmpty {
       Text(Plugins.privateEmpty(agentOpen: model.agentId != nil, query: query))
-        .font(.system(size: 13))
+        .font(.system(size: 15))
         .foregroundStyle(Ink.secondary)
         .padding(.top, 8)
     } else {
@@ -307,11 +294,11 @@ struct PrivateSkillRow: View {
   var body: some View {
     HStack(spacing: 12) {
       NavigationLink { SkillPage(skillId: skill.id) } label: {
-        HStack(spacing: 16) {
+        HStack(spacing: 14) {
           SkillTile()
           VStack(alignment: .leading, spacing: 2) {
-            Text(skill.name).font(.system(size: 16.4)).foregroundStyle(Ink.primary).lineLimit(1)
-            Text(skill.subtitle).font(.system(size: 13)).foregroundStyle(Ink.secondary).lineLimit(2)
+            Text(skill.name).font(.system(size: 17)).foregroundStyle(Ink.primary).lineLimit(1)
+            Text(skill.subtitle).font(.system(size: 15)).foregroundStyle(Ink.secondary).lineLimit(1)
           }
           Spacer(minLength: 0)
         }
@@ -325,7 +312,7 @@ struct PrivateSkillRow: View {
           .tint(Ink.blue)
       }
     }
-    .padding(.vertical, 17)
+    .padding(.vertical, 13.5)
   }
 }
 
@@ -572,7 +559,7 @@ struct PluginMetaLine: View {
             }
             .contentShape(.rect)
           }
-          .buttonStyle(.plain)
+          .buttonStyle(.tactile)
         }
       }
       .font(.system(size: 13))
@@ -726,13 +713,16 @@ struct PluginPage: View {
       Button("Rename") { if let account = renaming { Task { await store.renameAccount(account, to: newName) } }; renaming = nil }
       Button("Cancel", role: .cancel) { renaming = nil }
     }
-    // The sign-in page opens once the sheet has gone.
+    // The sign-in page opens once the sheet has gone; then how it went, as Connect says it.
     .sheet(item: $asking, onDismiss: {
       let account = signingIn
       signingIn = nil
       guard confirmed, let account else { confirmed = false; return }
       confirmed = false
-      Task { await connector.signIn(account, store: store) }
+      Task {
+        let end = await connector.signIn(account, store: store)
+        await model.connectEnded(model.entry(for: account), name: account.name, end: end)
+      }
     }) { consent in
       ConnectConsentSheet(consent: consent) { confirmed = true }
     }
@@ -742,11 +732,11 @@ struct PluginPage: View {
 
   private func head(_ shown: Shown, connected: Bool) -> some View {
     HStack(spacing: 14) {
-      ConnectorTile(name: shown.name, size: 56)
+      ConnectorTile(name: shown.name, size: 56, logo: ConnectorLogo.fill, id: shown.entry?.id ?? shown.catalogApp?.id)
       VStack(alignment: .leading, spacing: 3) {
         Text(shown.name).font(.system(size: 20, weight: .semibold)).foregroundStyle(Ink.primary)
         if let first = shown.accounts.first {
-          Text(connected ? "Connected · \(tools.isEmpty ? first.toolCount : tools.filter { !$0.isDisabled }.count) tools" : "Not signed in")
+          Text(connected ? "Connected · \(tools.isEmpty ? first.toolCount : tools.filter { !$0.isDisabled }.count) tools" : "Not connected")
             .font(.system(size: 13)).foregroundStyle(connected ? Ink.secondary : Ink.danger)
         }
         if let entry = shown.entry {
@@ -777,20 +767,21 @@ struct PluginPage: View {
     }
   }
 
-  /** Add (the blue, as the Mac's page has it), the spinner while it is added, or Soon. */
+  /** Connect (the blue, as the Mac's page has it; Add until 13 October 2026, `Connecting`), the spinner while it connects, or Coming soon (`AppsComingSoon`). */
   @ViewBuilder
   private func addButton(_ entryId: String) -> some View {
     let app = store.catalog.first { $0.id == entryId }
     let name = app?.title ?? model.entry(entryId)?.displayName ?? entryId
-    if app?.comingSoon == true {
-      Text("Soon").font(.system(size: 13)).foregroundStyle(Ink.tertiary)
+    if app?.comingSoon == true || store.isComingSoon(entryId) {
+      PluginPill(title: AppsComingSoon.label, fill: Ink.pillButton, ink: Ink.tertiary)
+        .accessibilityLabel("\(name) is coming soon")
     } else if model.adding == entryId || connector.connecting == name {
       ProgressView().controlSize(.small).frame(width: 44)
     } else {
       PluginAddButton(name: name, catalogApp: app, entryId: entryId) {
-        PluginPill(title: "Add", fill: Ink.authenticate, ink: .white)
+        PluginPill(title: Connecting.connect, fill: Ink.authenticate, ink: .white)
       }
-      .accessibilityLabel("Add \(name)")
+      .accessibilityLabel("Connect \(name)")
     }
   }
 
@@ -802,7 +793,7 @@ struct PluginPage: View {
         HStack {
           VStack(alignment: .leading, spacing: 2) {
             Text(account.accountName).font(.system(size: 17))
-            Text(account.status == "connected" ? "Connected" : "Needs sign-in")
+            Text(account.status == "connected" ? Connecting.connected : "Not connected")
               .font(.system(size: 13)).foregroundStyle(account.status == "connected" ? Ink.secondary : Ink.danger)
           }
           Spacer()
@@ -810,11 +801,11 @@ struct PluginPage: View {
             if connector.connecting == account.name {
               ProgressView().controlSize(.small)
             } else {
-              Button("Sign in") {
+              Button(Connecting.connect) {
                 signingIn = account
                 asking = ConnectConsent(app: store.catalogApp(named: account.name), name: account.name)
               }
-              .buttonStyle(GreyButtonStyle(capsule: true))
+              .buttonStyle(Tactile(look: GreyButtonStyle(capsule: true)))
               .disabled(connector.connecting != nil)
             }
           }
@@ -835,7 +826,7 @@ struct PluginPage: View {
       if loadingTools && tools.isEmpty {
         HStack { ProgressView(); Text("Loading tools…").foregroundStyle(Ink.secondary) }
       } else if tools.isEmpty {
-        Text(connected ? "No tools listed." : "Sign in to see its tools.").foregroundStyle(Ink.secondary)
+        Text(connected ? "No tools listed." : "Connect it to see its tools.").foregroundStyle(Ink.secondary)
       }
       ForEach(tools) { tool in
         // The switch moves at once and holds until the box answers, so a second tap cannot undo the first.
@@ -873,7 +864,7 @@ struct PluginPage: View {
           Text("Setup Values").foregroundStyle(Ink.primary)
           Spacer()
           Button("Edit Values") { model.editValues(entry) }
-            .buttonStyle(GreyButtonStyle(capsule: true))
+            .buttonStyle(Tactile(look: GreyButtonStyle(capsule: true)))
             .disabled(model.isBusy)
         }
       }

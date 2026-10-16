@@ -59,7 +59,10 @@ test("Simeon reports the working window, not Terra's 1.05M physical one", async 
     assert.equal(window.module.SIMEON_WORKING_CONTEXT_TOKENS, 200_000);
     // Summarization reads its own, smaller window (8 October 2026).
     assert.equal(window.module.SIMEON_SUMMARIZATION_WINDOW_TOKENS, 120_000);
-    assert.match(providers, /aiSdkExecutor\([^\n]+SIMEON_SUMMARIZATION_WINDOW_TOKENS, \{ reasoningEffort \}, \{ model: id, effort: reasoningEffort[^\n]*\}\)/);
+    // Both wires (GPT on Responses, Claude on Messages since 13 October 2026).
+    assert.match(providers, /aiSdkExecutor\(simeonLanguageModel[^\n]+SIMEON_SUMMARIZATION_WINDOW_TOKENS, \{ reasoningEffort \}, callInfo,/);
+    assert.match(providers, /aiSdkExecutor\(claudeLanguageModel[^\n]+SIMEON_SUMMARIZATION_WINDOW_TOKENS, \{\}, callInfo,/);
+    assert.match(providers, /const callInfo = \{ model: id, effort: /);
     assert.match(providers, /cacheWriteTokens: 0, maxTokens: SIMEON_SUMMARIZATION_WINDOW_TOKENS \}/);
     assert.match(host, /agentTokenLimit: SIMEON_WORKING_CONTEXT_TOKENS/);
     assert.doesNotMatch(providers, /maxTokens: 0 \}\)\);\n  if \(onUsage/);

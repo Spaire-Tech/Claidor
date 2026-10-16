@@ -127,6 +127,22 @@ async function ensureChrome(port, display) {
 // folders (Simeon, 2 October 2026).
 let PLAYWRIGHT_ROOT = "";
 
+// \`npm root -g\` starts npm, a quarter to half a second, and every browser
+// step used to run it before trying anything, though the folders above
+// usually answer (15 October 2026). It now runs only when they don't, once
+// per step; the order of the places tried is unchanged.
+let NPM_GLOBAL_ROOT;
+async function npmGlobalRoot() {
+  if (NPM_GLOBAL_ROOT === undefined) {
+    NPM_GLOBAL_ROOT = "";
+    try {
+      const { execSync } = await import("node:child_process");
+      NPM_GLOBAL_ROOT = execSync("npm root -g", { encoding: "utf8", timeout: 5000, stdio: ["ignore", "pipe", "ignore"] }).trim();
+    } catch {}
+  }
+  return NPM_GLOBAL_ROOT;
+}
+
 async function requirePlaywright(specifier) {
   if (specifier === "playwright-core") {
     try {
@@ -146,27 +162,25 @@ async function requirePlaywright(specifier) {
   ]) {
     if (folder) roots.push(folder.replace(/[/]+$/, "") + "/noop.js");
   }
-  try {
-    const { execSync } = await import("node:child_process");
-    const globalRoot = execSync("npm root -g", { encoding: "utf8", timeout: 5000, stdio: ["ignore", "pipe", "ignore"] }).trim();
-    if (globalRoot) roots.push(globalRoot + "/noop.js");
-  } catch {}
-  let lastError;
-  // Simeon's own copy, written beside this helper by the host, after the
-  // image's: the host passes its folder in the request.
-  if (PLAYWRIGHT_ROOT) roots.push(PLAYWRIGHT_ROOT + "/lib/noop.js");
   for (const root of roots) {
     try {
-      if (PLAYWRIGHT_ROOT && root === PLAYWRIGHT_ROOT + "/lib/noop.js") {
-        const bundled = createRequire(root)("./playwright-core.cjs");
-        return specifier === "playwright-core" ? bundled.core : bundled.utilsBundle;
-      }
       return createRequire(root)(specifier);
-    } catch (error) {
-      lastError = error;
-    }
+    } catch {}
   }
-  void lastError;
+  const globalRoot = await npmGlobalRoot();
+  if (globalRoot) {
+    try {
+      return createRequire(globalRoot + "/noop.js")(specifier);
+    } catch {}
+  }
+  // Simeon's own copy, written beside this helper by the host, after the
+  // image's: the host passes its folder in the request.
+  if (PLAYWRIGHT_ROOT) {
+    try {
+      const bundled = createRequire(PLAYWRIGHT_ROOT + "/lib/noop.js")("./playwright-core.cjs");
+      return specifier === "playwright-core" ? bundled.core : bundled.utilsBundle;
+    } catch {}
+  }
   throw new Error("The browser on this computer isn't ready yet: it could not be started. Try again in a minute; if it keeps happening, report that the browser could not start.");
 }
 
@@ -550,11 +564,15 @@ const OPS = {
       page.setDefaultTimeout(ACTION_TIMEOUT_MS);
       await page.goto(request.url, { waitUntil: "domcontentloaded", timeout: NAVIGATE_TIMEOUT_MS });
       await page.waitForLoadState("load", { timeout: 5000 }).catch(() => {});
+      if (request.front === true) await page.bringToFront().catch(() => {});
       return { page, viewId, summary: "Opened " + request.url + " in a new tab" };
     }
     const { page, viewId } = await resolvePage(request, context, state);
     await page.goto(request.url, { waitUntil: "domcontentloaded", timeout: NAVIGATE_TIMEOUT_MS });
     await page.waitForLoadState("load", { timeout: 5000 }).catch(() => {});
+    // OpenPage (the agent's own step) puts the page in front, where the
+    // person looks when the computer is handed over.
+    if (request.front === true) await page.bringToFront().catch(() => {});
     return { page, viewId, summary: "Navigated to " + request.url };
   },
   snapshot: async ({ request, context, state }) => {

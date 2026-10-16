@@ -91,7 +91,7 @@ struct ChatView: View {
               .frame(width: 180, height: 44)
               .contentShape(.rect)
           }
-          .buttonStyle(.plain)
+          .buttonStyle(.tactile)
           .accessibilityHidden(true)
         }
         .sharedBackgroundVisibility(.hidden)
@@ -305,6 +305,8 @@ struct ChatMessages: View {
   @State private var dividerSeen = false
   @State private var dividerDismissed = false
   @State private var settled = false
+  /** The person moved the chat (a drag, a jump to a quote or a search hit): the opening stops holding it at its end. */
+  @State private var leftEnd = false
   /** How many of the newest rows are drawn: a long chat opened at its end drew every message above it first, and stood still. More come in as you scroll up. 24 fill a screen and more; 40 made each chat open slower than it needed to. */
   @State private var window = ChatMessages.firstWindow
   /** The top of the drawn rows (the spinner over them) is on screen. */
@@ -339,8 +341,10 @@ struct ChatMessages: View {
               // row appears at once, seen or not.
               .onScrollVisibilityChange(threshold: 0.5) { visible in if topInSight != visible { topInSight = visible } }
               .onDisappear { topInSight = false }
-              .task(id: [hidden, topInSight ? 1 : 0]) {
-                guard topInSight else { return }
+              // Not before the chat has settled at its end: on the first layout the view still sits at the top, and loading
+              // from there moved every row before the chat reached its end.
+              .task(id: [hidden, topInSight ? 1 : 0, settled || leftEnd ? 1 : 0]) {
+                guard topInSight, settled || leftEnd else { return }
                 if hidden > 0 { window += ChatMessages.firstWindow }
                 else if thread == nil, store.olderBefore[agentId] != nil { await store.loadOlder(agentId) }
               }
@@ -376,6 +380,7 @@ struct ChatMessages: View {
       .onAppear {
         let lit = glow
         actions?.jump = { id in
+          leftEnd = true
           reveal(id) { withAnimation(.snappy) { reader.scrollTo(id, anchor: .center) } }
           lit.id = id
           Task { @MainActor in
@@ -397,7 +402,7 @@ struct ChatMessages: View {
       .onScrollGeometryChange(for: Bool.self) { geometry in
         geometry.contentSize.height > geometry.containerSize.height && geometry.visibleRect.minY < 300
       } action: { _, nearTop in
-        guard nearTop else { return }
+        guard nearTop, settled || leftEnd else { return }
         if allRows.count > window { window += ChatMessages.firstWindow } else if thread == nil, store.olderBefore[agentId] != nil { Task { await store.loadOlder(agentId) } }
       }
       .onScrollGeometryChange(for: Bool.self) { geometry in
@@ -405,6 +410,20 @@ struct ChatMessages: View {
       } action: { _, bottom in
         if atBottom != bottom { atBottom = bottom }
         if bottom && unseen != 0 { unseen = 0 }
+      }
+      // A chat opens at its end (15 October 2026, the founder: "the messages don't always open at the bottom ... they open at
+      // random places"). `defaultScrollAnchor` alone placed the view once, on the first layout, before the rows had their
+      // widths and heights (and, for a chat still on its way from the computer, before it had rows), and it stayed wherever
+      // that left it. So the end is asked for again while the rows settle, until the person moves the chat themselves.
+      .onScrollPhaseChange { _, phase in
+        if phase == .interacting && !leftEnd { leftEnd = true }
+      }
+      .task { await holdAtEnd(reader) }
+      .onChange(of: [all.count, rows.count]) { _, _ in
+        // Rows came after the chat opened (its lines from the computer, older ones above them, more of them drawn): still at
+        // its end, as an opening would be, until the person has moved it.
+        guard !leftEnd else { return }
+        Task { await holdAtEnd(reader) }
       }
       // New rows at the bottom: drawn too (the window grows by them), and counted on the pill when you are reading further up. Older lines loaded at the top are neither.
       .onChange(of: all.last?.id) { old, _ in
@@ -460,6 +479,15 @@ struct ChatMessages: View {
     .task {
       try? await Task.sleep(nanoseconds: 700_000_000)
       settled = true
+    }
+  }
+
+  /** To the chat's end now and a few times over its first second, as the rows take their sizes; never once the person has moved it or a search hit is being shown. */
+  private func holdAtEnd(_ reader: ScrollViewProxy) async {
+    for pause: UInt64 in [0, 50, 150, 300, 500] {
+      if pause > 0 { try? await Task.sleep(nanoseconds: pause * 1_000_000) }
+      guard !Task.isCancelled, !leftEnd, store.revealing[agentId] == nil else { return }
+      reader.scrollTo(Self.bottomId, anchor: .bottom)
     }
   }
 
@@ -694,6 +722,9 @@ struct ChatComposer: View {
   /** Where the draft is kept: the chat's, or its thread's. */
   private var draftKey: String { AppStore.draftScope(agentId, thread: thread) }
 
+  /** The approaching-limit lines closed (`ApproachingClosed`), kept between launches. */
+  @AppStorage(ApproachingClosed.key) private var approachingClosed = ""
+
   /** A card in this chat carries the server's 402 for spent credits (drawn as the banner, not as a card). */
   private var outOfCredits: Bool { store.trayList.shown(for: agentId).contains(where: PhoneUpgrade.isOutOfCredits) }
 
@@ -742,6 +773,10 @@ struct ChatComposer: View {
       if let words = PhoneUpgrade.banner(access: store.access, usage: store.usage.summary, outOfCredits: outOfCredits) {
         // No plan, or the credits spent (12 October 2026): why, and the plans; Send waits meanwhile when there is no plan.
         AccessNotice(words: words)
+      } else if let near = PhoneUpgrade.approaching(access: store.access, usage: store.usage.summary), !ApproachingClosed.contains(near.key, in: approachingClosed) {
+        // Near the limit (13 October 2026): the same quiet line, which the person can close until the next step.
+        AccessNotice(words: near.words) { withAnimation(.snappy) { approachingClosed = ApproachingClosed.adding(near.key, to: approachingClosed) } }
+          .transition(.opacity)
       }
       #if os(macOS)
       if let ask = store.localAsks[agentId] {
@@ -771,7 +806,7 @@ struct ChatComposer: View {
             Image(systemName: "xmark").font(.system(size: 11, weight: .bold)).foregroundStyle(Ink.secondary)
               .frame(width: 32, height: 32).contentShape(.circle)
           }
-          .buttonStyle(.plain)
+          .buttonStyle(.tactile)
           .accessibilityLabel("Cancel reply")
         }
         .padding(.leading, 14).padding(.trailing, 4)
@@ -786,7 +821,7 @@ struct ChatComposer: View {
           Image(systemName: "plus").font(.system(size: 19, weight: .regular)).foregroundStyle(Ink.primary)
             .frame(width: 40, height: 40)
         }
-        .buttonStyle(GlassDisc())
+        .buttonStyle(Tactile(look: GlassDisc()))
         .accessibilityLabel("Attach")
         HStack(alignment: .bottom, spacing: 4) {
           TextField(placeholder, text: $draft, axis: .vertical)
@@ -833,7 +868,7 @@ struct ChatComposer: View {
               .transition(.scale(scale: 0.6).combined(with: .opacity))
             }
           }
-          .buttonStyle(.plain)
+          .buttonStyle(.tactile)
           .frame(width: 36, height: 36)
           .padding(.trailing, 2).padding(.bottom, 2)
           .animation(.easeOut(duration: 0.2), value: mode)
@@ -889,6 +924,11 @@ struct ChatComposer: View {
     .onChange(of: outOfCredits, initial: true) { was, now in
       guard now else { return }
       Task { if was { await store.loadUsage() } else { await store.refreshUsage() } }
+    }
+    // The usage read as the chat opens and as each answer ends (at most every 30 s), so the line near the limit shows in time.
+    .task(id: agentId) { await store.loadUsage() }
+    .onChange(of: store.agent(agentId)?.isRunningTurn ?? false) { was, now in
+      if was && !now { Task { await store.loadUsage() } }
     }
     #if os(macOS)
     // ⌘L and ⌘I put the cursor here (the Mac's Agent menu).
@@ -1094,8 +1134,8 @@ struct ChatRowView: View, Equatable {
       UnreadDivider()
     case .bubble(let bubble):
       BubbleView(bubble: bubble, agentId: agentId, inGroup: store.groupIds.contains(agentId))
-    case .flights(_, let card):
-      FlightsCardView(card: card)
+    case .flights(let id, let card):
+      FlightsCardView(card: card, entryId: id, agentId: agentId)
     case .file(let id, let name, let url, let fromPerson):
       FileCardView(entryId: id, name: name, url: url, agentId: agentId, fromPerson: fromPerson)
     case .question(let id, let card):
@@ -1124,6 +1164,12 @@ struct ChatRowView: View, Equatable {
       ThreadLinkRow(rootId: rootId, count: count, side: side)
     case .cloudAgent(let id, let bcId):
       CloudAgentCard(entryId: id, bcId: bcId, agentId: agentId)
+    case .purchase(let id, let card):
+      PurchaseCardView(entryId: id, agentId: agentId, card: card, openComputer: openComputer)
+    case .products(let id, let card):
+      ProductsCardView(entryId: id, agentId: agentId, card: card)
+    case .flightPassengers(let id, let card):
+      FlightPassengersCardView(entryId: id, agentId: agentId, card: card)
     }
   }
 }
@@ -1176,6 +1222,9 @@ struct BubbleView: View {
   @State private var reactionsSeen: Set<String>?
   /** Show more on a long message (the Mac folds one past 664 pt). */
   @State private var expanded = false
+  /** How far the message is pulled to the right to answer it (ReplySwipe), and whether it went far enough. */
+  @State private var replyPull: CGFloat = 0
+  @State private var replyArmed = false
 
   /** What is drawn of the message: 3,000 characters folded, 40,000 open. A message of megabytes (a file or an image pasted as text) laid out whole held the screen still for minutes. */
   private var shown: (text: String, clipped: Bool) { Chat.clipped(bubble.text, limit: expanded ? 40_000 : 3_000) }
@@ -1207,7 +1256,7 @@ struct BubbleView: View {
             .padding(.horizontal, 8).padding(.top, 4)
             .tapRoom(EdgeInsets(top: 10, leading: 0, bottom: 0, trailing: 0))
           }
-          .buttonStyle(.plain)
+          .buttonStyle(.tactile)
           .frame(maxWidth: ChatMetrics.bubbleMax(width), alignment: bubble.fromPerson ? .trailing : .leading)
           .accessibilityLabel(threadOfTarget == nil ? "Jump to replied message" : "Open reply thread")
         }
@@ -1221,6 +1270,8 @@ struct BubbleView: View {
             Haptics.press()
             messageMenu?.target = MessageTarget(bubble: bubble)
           })
+          // Pulled to the right: answer it, as the menu's Reply does (none in a thread, where the menu has none either).
+          .gesture(ReplySwipe(enabled: thread == nil && reply != nil, pull: pullToReply, ended: letGoOfReply))
           #else
           // On the Mac a message's actions are its right-click menu (mac/Simeon/MacChat.swift); a link card's and a
           // picture's own items come first in theirs. "More emoji" opens over the message.
@@ -1230,12 +1281,44 @@ struct BubbleView: View {
           .padding(.bottom, bubble.reactions.isEmpty ? 0 : 16)
         if let offline = bubble.sentOfflineAtMs { SentOfflineLine(ms: offline) }
       }
+      .overlay(alignment: .leading) {
+        if replyPull > 0 {
+          // The arrow comes in from the left with the message, and fills once far enough.
+          Image(systemName: "arrowshape.turn.up.left.fill")
+            .font(.system(size: 15, weight: .semibold))
+            .foregroundStyle(replyArmed ? Ink.primary : Ink.tertiary)
+            .frame(width: 30, height: 30)
+            .background(Ink.pillButton, in: Circle())
+            .scaleEffect(0.6 + 0.4 * min(1, replyPull / ReplySwipeRule.threshold))
+            .opacity(min(1, replyPull / ReplySwipeRule.threshold))
+            .offset(x: -38)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+        }
+      }
+      .offset(x: replyPull)
       .modifier(PeekShift(moves: bubble.fromPerson))
       if !bubble.fromPerson { Spacer(minLength: 0) }
     }
     .overlay(alignment: .trailing) {
       if let ms = bubble.timestampMs { PeekTime(ms: ms) }
     }
+  }
+
+  /** The message follows the finger to the right, slower past the line; a tap under the finger as it crosses it. */
+  private func pullToReply(_ x: CGFloat) {
+    let line = ReplySwipeRule.threshold
+    replyPull = x <= line ? x : line + (x - line) * 0.3
+    let armed = x >= line
+    if armed && !replyArmed { Haptics.tap() }
+    replyArmed = armed
+  }
+
+  /** Let go: past the line, the composer answers this message; the message springs back either way. */
+  private func letGoOfReply(_ armed: Bool) {
+    if armed { reply?.target = bubble }
+    replyArmed = false
+    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { replyPull = 0 }
   }
 
   @ViewBuilder
@@ -1313,7 +1396,7 @@ struct BubbleView: View {
       .padding(.vertical, 4)
       .contentShape(.rect)
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.tactile)
   }
 
   @ViewBuilder
@@ -1648,6 +1731,72 @@ struct MessageHold: UIGestureRecognizerRepresentable {
     if press.state == .began { action() }
   }
 }
+
+/**
+ * A message pulled to the right to answer it (the founder, 13 October 2026:
+ * "when you swipe right on a message, its reply to that message. like any
+ * messaging app"): UIKit's pan, starting only for a drag mostly to the
+ * right that does not start at the screen's left edge, alongside the
+ * scroll. The time pull (PeekPan) starts only to the left and the long
+ * press gives way as the finger moves, so neither meets it.
+ */
+struct ReplySwipe: UIGestureRecognizerRepresentable {
+  let enabled: Bool
+  /** How far the finger has gone to the right. */
+  let pull: (CGFloat) -> Void
+  /** Let go: whether it went past the line. */
+  let ended: (Bool) -> Void
+
+  func makeUIGestureRecognizer(context: Context) -> UIPanGestureRecognizer {
+    let pan = UIPanGestureRecognizer()
+    pan.delegate = ReplySwipeRule.shared
+    return pan
+  }
+
+  func updateUIGestureRecognizer(_ pan: UIPanGestureRecognizer, context: Context) {
+    pan.isEnabled = enabled
+  }
+
+  func handleUIGestureRecognizerAction(_ pan: UIPanGestureRecognizer, context: Context) {
+    let x = max(0, pan.translation(in: pan.view).x)
+    switch pan.state {
+    case .began, .changed: pull(x)
+    case .ended: ended(x >= ReplySwipeRule.threshold)
+    default: ended(false)
+    }
+  }
+}
+
+/**
+ * When the reply pull may start, and how it shares the screen: a drag mostly
+ * to the right that starts clear of the left edge; the scroll goes on beside
+ * it; the system's back swipe (from the edge, and from anywhere on iOS 26)
+ * waits for it to give way on a message, so a swipe that starts on a message
+ * answers it and one that starts at the edge or between messages goes back.
+ */
+final class ReplySwipeRule: NSObject, UIGestureRecognizerDelegate {
+  static let shared = ReplySwipeRule()
+  /** How far to pull for the reply (Messages' and WhatsApp's are about this). */
+  static let threshold: CGFloat = 56
+  /** The strip at the screen's left edge left to the back swipe. */
+  static let edge: CGFloat = 32
+
+  func gestureRecognizerShouldBegin(_ recognizer: UIGestureRecognizer) -> Bool {
+    guard let pan = recognizer as? UIPanGestureRecognizer else { return false }
+    let velocity = pan.velocity(in: pan.view)
+    let startX = pan.location(in: nil).x - pan.translation(in: nil).x
+    return velocity.x > 0 && abs(velocity.x) > abs(velocity.y) * 1.5 && startX > Self.edge
+  }
+
+  func gestureRecognizer(_ recognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool {
+    other.view is UIScrollView
+  }
+
+  func gestureRecognizer(_ recognizer: UIGestureRecognizer, shouldBeRequiredToFailBy other: UIGestureRecognizer) -> Bool {
+    guard other is UIPanGestureRecognizer, !(other.view is UIScrollView), let mine = recognizer.view, let theirs = other.view else { return false }
+    return mine.isDescendant(of: theirs)
+  }
+}
 #endif
 
 /**
@@ -1765,13 +1914,13 @@ struct NewMessagesPill: View {
         .frame(height: 34)
         .contentShape(.rect)
       }
-      .buttonStyle(.plain)
+      .buttonStyle(.tactile)
       Button(action: dismiss) {
         Image(systemName: "xmark").font(.system(size: 10, weight: .semibold)).foregroundStyle(Ink.secondary)
           .frame(width: 30, height: 34)
           .contentShape(.rect)
       }
-      .buttonStyle(.plain)
+      .buttonStyle(.tactile)
       .accessibilityLabel("Dismiss new messages")
     }
     .padding(.trailing, 4)
@@ -1793,7 +1942,7 @@ struct FailedSendRow: View {
       Button { Task { await store.resend(nonce, in: agentId) } } label: { action("Resend") }
       Button { store.discardFailed(nonce, in: agentId) } label: { action("Delete") }
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.tactile)
     .font(.system(size: 12, weight: .medium))
     .accessibilityElement(children: .contain)
     .accessibilityLabel("Failed message actions")
@@ -1905,7 +2054,7 @@ struct MessageActionsSheet: View {
                 .background(Ink.pill, in: Circle())
                 .contentShape(.circle)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.tactile)
           }
           Button { choosingEmoji = true } label: {
             Image(systemName: "face.smiling").font(.system(size: 22)).foregroundStyle(Ink.secondary)
@@ -1916,7 +2065,7 @@ struct MessageActionsSheet: View {
               .background(Ink.pill, in: Circle())
               .contentShape(.circle)
           }
-          .buttonStyle(.plain)
+          .buttonStyle(.tactile)
           .accessibilityLabel("Another reaction")
         }
         // Inside a thread every message answers it: no Reply, no new thread.
@@ -1958,7 +2107,7 @@ struct MessageActionsSheet: View {
           .frame(height: 54)
           .contentShape(.rect)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.tactile)
       }
     }
     .background(Ink.pill, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
@@ -2102,18 +2251,24 @@ struct SelectableText: UIViewRepresentable {
  * 2026: the founder's "usage banner saying they're out of usage and that
  * they should upgrade"): its title over its words, and the button, routed
  * as Settings' Usage & Billing routes its own (`PhoneUpgrade.route`): the
- * App Store's plans (on the plan above for an Apple plan), the web's page
- * for a plan bought there where Apple allows the link (else no button, so
- * the App Store never sells a second plan), simeonlabs.com for an account
- * no plan can help.
+ * App Store's plans (on the plan above for an Apple plan), Stripe's own
+ * page in the app for a plan bought on the web where Apple allows the link
+ * (`BillingPage`; else no button, so the App Store never sells a second
+ * plan), simeonlabs.com for an account no plan can help. Since 14 October
+ * 2026 it is also the whole of what a failed payment or no plan shows: the
+ * app stays open and Send waits.
  */
 struct AccessNotice: View {
   let words: SandAccess.Words
+  /** Close, for the line near the limit (the others stay while they are true). */
+  var close: (() -> Void)? = nil
   @Environment(\.openURL) private var openURL
   @Environment(AppStore.self) private var store
   @State private var purchases = Purchases.shared
   @State private var showsPlans = false
   @State private var plansTier: String?
+  /** Stripe's page is being asked for. */
+  @State private var opening = false
 
   var body: some View {
     let route = PhoneUpgrade.route(access: store.access, usage: store.usage.summary, webLinkAllowed: purchases.webLinkAllowed)
@@ -2125,20 +2280,41 @@ struct AccessNotice: View {
       }
       Spacer(minLength: 8)
       if let action = words.action {
-        Button(action) {
+        Button {
           switch route {
           case .plans(let tier):
             plansTier = tier
             showsPlans = true
+          case .portal(let flow, let tier):
+            Task {
+              opening = true
+              if let failure = await BillingPage.shared.open(flow: flow, tier: tier, store: store, openURL: openURL) { store.problem = failure }
+              opening = false
+            }
           case .web(let url):
             openURL(url)
           case .none:
             break
           }
+        } label: {
+          // The button takes the app's ink (white in the dark): its word the ground's, or it was white on white (13 October 2026).
+          Text(action).foregroundStyle(Ink.ground)
         }
+        .disabled(opening)
         .buttonStyle(.borderedProminent)
         .buttonBorderShape(.capsule)
         .controlSize(.small)
+      }
+      if let close {
+        Button(action: close) {
+          Image(systemName: "xmark").font(.system(size: 11, weight: .semibold)).foregroundStyle(Ink.secondary)
+            .frame(width: 24, height: 24)
+            .frame(width: 44, height: 44)
+            .contentShape(.rect)
+        }
+        .buttonStyle(.tactile)
+        .padding(.vertical, -12).padding(.trailing, -10)
+        .accessibilityLabel("Close")
       }
     }
     .padding(.horizontal, 14).padding(.vertical, 10)

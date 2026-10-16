@@ -266,7 +266,9 @@ def snapshot_of(
     - Before its expiry: `trialing` in the free week (the introductory
       offer), else `active`.
     - Past it, while Apple retries the charge in its grace period:
-      `past_due`, which still counts.
+      `past_due`, which still counts after a paid period; after the free
+      week nothing was paid yet, and it does not
+      (`DesktopAppStoreSubscription.unpaid_after_trial`).
     - Otherwise `canceled`.
     """
     parsed = parse_product_id(transaction.productId)

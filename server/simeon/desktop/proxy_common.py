@@ -60,6 +60,17 @@ def quota_exhausted_response(allowance: Allowance | None = None) -> JSONResponse
             f"Monthly credits exhausted (code {QUOTA_EXHAUSTED_CODE}). "
             "The allowance resets at the start of next month."
         )
+    elif allowance.payment_failed and allowance.provider == "app_store":
+        message = (
+            f"Your payment didn't go through (code {QUOTA_EXHAUSTED_CODE}). "
+            "Update your payment method in your Apple Account settings "
+            "to keep going."
+        )
+    elif allowance.payment_failed:
+        message = (
+            f"Your payment didn't go through (code {QUOTA_EXHAUSTED_CODE}). "
+            f"Update your card at {url} to keep going."
+        )
     elif allowance.none:
         message = (
             f"No active plan (code {QUOTA_EXHAUSTED_CODE}). "

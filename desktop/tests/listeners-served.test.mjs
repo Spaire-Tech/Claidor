@@ -28,6 +28,16 @@ async function load(entry, name) {
   return { module, dispose: () => rm(dir, { recursive: true, force: true }) };
 }
 
+/**
+ * Waits until `check` holds, at most 3 s. A fire's completion is a request to
+ * the relay server: on a busy machine (a MacBook Air running the whole suite,
+ * 13 October 2026) it took longer than the fixed 50 ms these tests paused.
+ */
+async function until(check) {
+  const deadline = Date.now() + 3_000;
+  while (!check() && Date.now() < deadline) await new Promise((resolve) => setTimeout(resolve, 10));
+}
+
 /** A manual polling policy: the test drives every tick. */
 function manualPolling() {
   const ticks = [];
@@ -137,11 +147,14 @@ test("the fire consumer polls a fire, runs it for its event, completes it and ac
     });
     consumer.start();
     await consumer.tick();
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await until(() => state.completions.length > 0);
     assert.equal(fired.length, 1);
     assert.equal(fired[0].runUuid, FIRE.id);
     assert.deepEqual(fired[0].event, { source: "slack", channel: "#eng", sender: "@U_ALICE", text: "<@U_BOT> ship it", isMention: true, ts: "1.0", threadTs: "0.9", timestampMs: 1_790_000_000_000 });
     assert.deepEqual(state.completions, [{ runUuid: FIRE.id, status: "succeeded" }]);
+    // The server records the completion before its answer reaches the consumer, which only then
+    // owes the ack (15 October 2026: under the whole suite's load the poll went out first).
+    await until(() => consumer.states.get(FIRE.id)?.phase === "reported");
     await consumer.tick();
     const polls = state.calls.filter((call) => call.path === "/sand/automation-events/poll");
     assert.deepEqual(polls.at(-1).body, { ackRunUuids: [FIRE.id] }, "the completion is acked on the next poll");
@@ -171,7 +184,7 @@ test("a fire whose definition revision is stale is refused, not run", async () =
     });
     consumer.start();
     await consumer.tick();
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await until(() => state.completions.length > 0);
     assert.equal(dropped[0].reason, "definition_changed");
     assert.deepEqual(state.completions, [{ runUuid: FIRE.id, status: "failed", errorMessage: "Automation definition changed on the Sand box" }]);
   } finally {

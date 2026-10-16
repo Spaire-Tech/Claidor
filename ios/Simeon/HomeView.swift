@@ -160,7 +160,10 @@ struct HomeView: View {
       // system's black (the founder, 11 October 2026: "the darkest background coming up sometimes").
       .containerBackground(Ink.listGround, for: .navigation)
       .navigationDestination(for: String.self) { agentId in
+        // One chat per agent: an agent's name tapped in another's chat replaces the chat on screen, and without its own
+        // identity the screen kept the first chat's state and never opened the second (an empty chat, 13 October 2026).
         ChatView(agentId: agentId, opening: openingCall(for: agentId))
+          .id(agentId)
       }
       .refreshable {
         await store.reloadRoster()
@@ -437,7 +440,7 @@ private struct AgentList<Actions: View>: View {
           Text(searching ? "No results" : filter == .unread ? "No unread chats" : "No saved agents yet.").font(.system(size: 15.6)).foregroundStyle(Ink.secondary)
           if !searching && rows.hiddenCount > 0 {
             Button("Show Hidden Agents") { showsHidden = true }
-              .buttonStyle(GreyButtonStyle())
+              .buttonStyle(Tactile(look: GreyButtonStyle()))
           }
         }
       }
@@ -598,7 +601,7 @@ struct ListBottomBar: View {
             Image(systemName: "xmark.circle.fill").font(.system(size: 17)).foregroundStyle(Ink.tertiary)
               .frame(width: 30, height: 30).tapRoom(7)
           }
-          .buttonStyle(.plain)
+          .buttonStyle(.tactile)
           .accessibilityLabel("Clear search")
         } else {
           Button { dictation.isListening ? dictation.stop() : dictation.start { text in query = text } } label: {
@@ -606,7 +609,7 @@ struct ListBottomBar: View {
               .foregroundStyle(dictation.isListening ? Ink.danger : Ink.secondary)
               .frame(width: 30, height: 30).tapRoom(7)
           }
-          .buttonStyle(.plain)
+          .buttonStyle(.tactile)
           .accessibilityLabel(dictation.isListening ? "Stop dictation" : "Dictate")
         }
       }
@@ -621,7 +624,7 @@ struct ListBottomBar: View {
           Image(systemName: "xmark").font(.system(size: 17, weight: .medium)).foregroundStyle(Ink.primary)
             .frame(width: 48, height: 48)
         }
-        .buttonStyle(GlassDisc())
+        .buttonStyle(Tactile(look: GlassDisc()))
         .accessibilityLabel("Close search")
       } else {
         Menu {
@@ -633,6 +636,8 @@ struct ListBottomBar: View {
             .contentShape(.circle)
             .glassEffect(.regular, in: .circle)
         }
+        // A menu opened from the bottom of the screen lists its items upwards (the first nearest the button); fixed, New Agent stays on top (the founder, 12 October 2026).
+        .menuOrder(.fixed)
         .accessibilityLabel("New")
       }
     }
@@ -682,7 +687,7 @@ struct PinGrid<Actions: View>: View {
     Button { open(agent.id) } label: {
       PinTile(agent: agent, members: members[agent.id] ?? []).equatable()
     }
-    .buttonStyle(PinPress())
+    .buttonStyle(Tactile(look: PinPress()))
     .contextMenu { menu(agent) } preview: { ChatPeek(agentId: agent.id).environment(store) }
     .draggable(agent.id) {
       AgentAvatar(agent: agent, members: members[agent.id] ?? []).frame(width: 72, height: 72)
@@ -994,7 +999,8 @@ struct ProblemAlert: ViewModifier {
     content.alert("Something went wrong", isPresented: Binding(get: { store.problem != nil }, set: { shown in if !shown && store.problem != nil { store.problem = nil } })) {
       Button("OK", role: .cancel) { store.problem = nil }
     } message: {
-      Text(store.problem ?? "")
+      // What failed, never the words behind it (PlainWords).
+      Text(store.problemShown ?? "")
     }
   }
 }
@@ -1102,7 +1108,7 @@ struct SearchResults: View {
                 .background(tab == item ? AnyShapeStyle(Ink.primary) : AnyShapeStyle(Color(.tertiarySystemFill)), in: Capsule())
                 .contentShape(Capsule())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.tactile)
             .accessibilityAddTraits(tab == item ? .isSelected : [])
           }
         }
@@ -1176,7 +1182,7 @@ struct SearchResults: View {
     if store.usage.summary == nil || store.usage.showsSection {
       list.append(SearchAction(id: "settings:usage", label: "Settings: Usage & Billing", detail: "Settings", symbol: "chart.bar", keywords: ["usage", "billing", "spend", "limit", "on-demand", "plan", "quota"]) { openSheet(.usage) })
     }
-    list.append(SearchAction(id: "overlay:plugins", label: "Plugins", detail: "Connect apps", symbol: "puzzlepiece.extension", keywords: ["plugins", "marketplace", "tools", "skills", "mcp", "connectors", "connect apps", "customize"]) { openSheet(.plugins) })
+    list.append(SearchAction(id: "overlay:plugins", label: "Connectors", detail: "Connect apps", symbol: "puzzlepiece.extension", keywords: ["plugins", "marketplace", "tools", "skills", "mcp", "connectors", "connect apps", "customize"]) { openSheet(.plugins) })
     for (value, name, symbol) in [("system", "System", "circle.lefthalf.filled"), ("light", "Light", "sun.max"), ("dark", "Dark", "moon")] {
       list.append(SearchAction(id: "theme-\(value)", label: "Theme: \(name)", detail: "Settings · Appearance", symbol: symbol, keywords: ["appearance", "mode", "theme"], current: theme == value) { theme = value })
     }
@@ -1386,7 +1392,7 @@ struct SearchRow<Leading: View>: View {
       .padding(.vertical, 4)
       .contentShape(.rect)
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.tactile)
   }
 }
 

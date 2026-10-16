@@ -68,6 +68,14 @@ class TestBoxCredential:
                 headers={"Authorization": f"Bearer {body['accessToken']}"},
             )
         ).status_code == 200
+        # ...and the model menu, since 13 October 2026, because the engine
+        # in the box follows the roles it names...
+        menu = await client.get(
+            "/desktop/api/models/available",
+            headers={"Authorization": f"Bearer {body['accessToken']}"},
+        )
+        assert menu.status_code == 200, menu.text
+        assert isinstance(menu.json()["data"], list)
         # ...and nothing else on the desktop router: not the connectors,
         # not sign-out for the whole desktop.
         for path in (

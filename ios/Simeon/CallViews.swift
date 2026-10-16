@@ -86,7 +86,7 @@ struct CallButtons: View {
           .foregroundStyle(call.isMuted ? Ink.callMuted : Ink.primary)
           .frame(width: size, height: size)
       }
-      .buttonStyle(GlassDisc())
+      .buttonStyle(Tactile(look: GlassDisc()))
       .accessibilityLabel(call.isMuted ? "Unmute" : "Mute")
       Button { withAnimation(.snappy) { showsTranscript.toggle() } } label: {
         Image(systemName: "text.alignleft")
@@ -94,7 +94,7 @@ struct CallButtons: View {
           .foregroundStyle(Ink.primary)
           .frame(width: size, height: size)
       }
-      .buttonStyle(GlassDisc(tint: showsTranscript ? Ink.primary.opacity(0.12) : nil))
+      .buttonStyle(Tactile(look: GlassDisc(tint: showsTranscript ? Ink.primary.opacity(0.12) : nil)))
       .accessibilityLabel("Transcript")
       .accessibilityAddTraits(showsTranscript ? .isSelected : [])
       if spreadsEnd { Spacer(minLength: 0) }
@@ -109,7 +109,7 @@ struct CallButtons: View {
       .accessibilityLabel("End call")
       .disabled(call.phase == .ended)
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.tactile)
   }
 }
 
@@ -175,7 +175,7 @@ struct CallScreen: View {
                 .frame(width: 48, height: 48)
             }
             // The whole disc takes the tap; it took it on the chevron alone.
-            .buttonStyle(GlassDisc())
+            .buttonStyle(Tactile(look: GlassDisc()))
             .accessibilityLabel("Back to the chat")
             Spacer()
           }

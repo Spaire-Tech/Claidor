@@ -14,6 +14,9 @@ own pretend airline, Duffel Airways, and real airlines' sandboxes, at
 unrealistic prices; the card then says "Test results" so nobody takes them
 for real fares.
 
+Every offer on the card carries its Duffel `offerId`, which "Book with
+Simeon" books (`flight_booking.py`, 13 October 2026).
+
 What it does, in order:
 
 - A city or an airport is turned into an IATA code: three letters are taken
@@ -118,7 +121,9 @@ class SearchRefused(Exception):
 
 
 class DuffelClient:
-    """The two Duffel calls Simeon makes, and nothing else."""
+    """The Duffel calls Simeon makes, and nothing else: places and offers
+    for the search, and an offer, a component client key and an order for a
+    booking (`flight_booking.py`)."""
 
     def __init__(self, token: str, base_url: str) -> None:
         self.token = token
@@ -171,6 +176,29 @@ class DuffelClient:
             params={"return_offers": "true", "supplier_timeout": "15000"},
             json={"data": body},
         )
+        data = answer.get("data") if isinstance(answer, dict) else None
+        return data if isinstance(data, dict) else {}
+
+    async def offer(self, offer_id: str) -> dict[str, Any]:
+        """One offer as it stands now (its price and expiry move)."""
+        answer = await self._request(
+            "GET",
+            f"/air/offers/{offer_id}",
+            params={"return_available_services": "false"},
+        )
+        data = answer.get("data") if isinstance(answer, dict) else None
+        return data if isinstance(data, dict) else {}
+
+    async def client_key(self) -> str:
+        """A component client key: the card form's and the bank check's only
+        credential, made with no claims (Duffel's API reference)."""
+        answer = await self._request("POST", "/identity/component_client_keys", json={})
+        data = answer.get("data") if isinstance(answer, dict) else None
+        key = data.get("component_client_key") if isinstance(data, dict) else None
+        return key if isinstance(key, str) else ""
+
+    async def create_order(self, body: dict[str, Any]) -> dict[str, Any]:
+        answer = await self._request("POST", "/air/orders", json={"data": body})
         data = answer.get("data") if isinstance(answer, dict) else None
         return data if isinstance(data, dict) else {}
 
@@ -522,6 +550,9 @@ def offer_for_card(
     travellers = f"{adults} adult{'s' if adults != 1 else ''}"
     cabin_name = _fare(first, cabin, _text(slices[0].get("fare_brand_name")))
     return {
+        # What "Book with Simeon" books (flight_booking.py); Duffel's offers
+        # last minutes, so the booking asks for it again before anything.
+        "offerId": _text(offer.get("id")),
         "airline": _text(owner.get("name")),
         "logo": _text(owner.get("logo_symbol_url")),
         "price": money(offer.get("total_amount"), offer.get("total_currency")),
@@ -785,6 +816,7 @@ def summary_for(card: dict[str, Any]) -> list[dict[str, str]]:
         {
             key: offer.get(key, "")
             for key in (
+                "offerId",
                 "label",
                 "airline",
                 "price",

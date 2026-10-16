@@ -38,7 +38,7 @@ struct AttachmentChip: View {
           .frame(width: 30, height: 30)
           .contentShape(.circle)
       }
-      .buttonStyle(.plain)
+      .buttonStyle(.tactile)
       .accessibilityLabel("Remove \(file.name)")
     }
     .padding(.leading, 6).padding(.trailing, 2).padding(.vertical, 6)

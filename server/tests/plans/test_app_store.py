@@ -194,18 +194,27 @@ def transaction(signer: Signer) -> Transaction:
     return make
 
 
-def _renewal(signer: Signer, original: str, *, auto_renew: bool) -> str:
-    return signer.sign(
-        {
-            "originalTransactionId": original,
-            "autoRenewProductId": PRO_MONTHLY,
-            "productId": PRO_MONTHLY,
-            "autoRenewStatus": 1 if auto_renew else 0,
-            "signedDate": _ms(utc_now()),
-            "environment": "Sandbox",
-            "isInBillingRetryPeriod": False,
-        }
-    )
+def _renewal(
+    signer: Signer,
+    original: str,
+    *,
+    auto_renew: bool,
+    grace_until: dt.datetime | None = None,
+) -> str:
+    """Apple's renewal info; with `grace_until`, Apple is retrying a
+    failed charge in its billing grace period until then."""
+    payload: dict[str, Any] = {
+        "originalTransactionId": original,
+        "autoRenewProductId": PRO_MONTHLY,
+        "productId": PRO_MONTHLY,
+        "autoRenewStatus": 1 if auto_renew else 0,
+        "signedDate": _ms(utc_now()),
+        "environment": "Sandbox",
+        "isInBillingRetryPeriod": grace_until is not None,
+    }
+    if grace_until is not None:
+        payload["gracePeriodExpiresDate"] = _ms(grace_until)
+    return signer.sign(payload)
 
 
 def _notification(
@@ -504,6 +513,65 @@ class TestFromApple:
         assert row is not None
         assert row.billable_at(utc_now())
         assert not row.billable_at(utc_now() + dt.timedelta(days=2))
+
+    async def test_a_failed_charge_after_the_free_week_is_no_plan(
+        self,
+        session: AsyncSession,
+        user: User,
+        transaction: Transaction,
+        signer: Signer,
+    ) -> None:
+        """Apple's grace period, if it is on in App Store Connect, would
+        keep the plan while Apple retries the first charge (14 October
+        2026). Nothing was paid yet, so here it does not."""
+        decoded = await app_store.decode_transaction(transaction(user, days_left=-1))
+        renewal = await app_store.decode_renewal(
+            _renewal(
+                signer,
+                "2000000000000001",
+                auto_renew=True,
+                grace_until=utc_now() + dt.timedelta(days=15),
+            )
+        )
+        row = await app_store.apply(
+            session, decoded, renewal, signed_at=utc_now(), raw={}, user=user
+        )
+        assert row is not None
+        assert row.status == "past_due"
+        assert row.unpaid_after_trial
+        assert not row.billable_at(utc_now())
+        allowance = await resolve_allowance(session, user)
+        assert allowance.none
+        assert allowance.payment_failed
+        assert allowance.provider == "app_store"
+
+    async def test_a_failed_renewal_after_a_paid_month_keeps_the_plan(
+        self,
+        session: AsyncSession,
+        user: User,
+        transaction: Transaction,
+        signer: Signer,
+    ) -> None:
+        decoded = await app_store.decode_transaction(
+            transaction(user, trial=False, days_left=-1)
+        )
+        renewal = await app_store.decode_renewal(
+            _renewal(
+                signer,
+                "2000000000000001",
+                auto_renew=True,
+                grace_until=utc_now() + dt.timedelta(days=15),
+            )
+        )
+        row = await app_store.apply(
+            session, decoded, renewal, signed_at=utc_now(), raw={}, user=user
+        )
+        assert row is not None
+        assert row.status == "past_due"
+        assert not row.unpaid_after_trial
+        allowance = await resolve_allowance(session, user)
+        assert allowance.status == "past_due"
+        assert not allowance.payment_failed
 
     async def test_a_notification_for_nobody_is_answered_and_ignored(
         self,

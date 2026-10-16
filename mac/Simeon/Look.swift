@@ -97,7 +97,7 @@ struct Look {
 
   /** A plain button's and a status pill's grey (`rgba(119,119,119,.063)`). */
   var wash: Color { Color(red: 119 / 255, green: 119 / 255, blue: 119 / 255).opacity(dark ? 0.14 : 0.063) }
-  /** "Added" on an app's card: green on a green wash. */
+  /** "Connected" on an app's card: green on a green wash. */
   var added: Color { dark ? Color(hex: 0x38d591) : Color(hex: 0x009957) }
   var addedWash: Color { Color(hex: 0x00c972).opacity(dark ? 0.173 : 0.09) }
   /** An app's logo tile (`sand-tool-icon--logo`). */

@@ -156,10 +156,20 @@ public final class AppStore {
   @ObservationIgnored public internal(set) var usageReadAt: Date?
   /** Something went wrong that the person should hear about, once. */
   public var problem: String?
+  /** The problem as the person reads it (PlainWords): what failed, never the words behind it. */
+  public var problemShown: String? { problem.map { PlainWords.problem($0) } }
   /** Each chat's first ask to use this Mac still waiting (`entries.find(NNe)`): the Mac's dock above the composer. */
   public private(set) var localAsks: [String: LocalAsk] = [:]
   /** Auto-review approvals answered here, by entry, until the box's own copy says so (the window's `QWn`). */
   public private(set) var answeredApprovals: [String: String] = [:]
+  /** Checkout cards answered here (Allow is `sending`, Deny `denied`), until the computer's copy says so. */
+  public private(set) var answeredPurchases: [String: PurchaseCard.State] = [:]
+  /** Checkout cards with Link this app asked the computer to keep watching, once each. */
+  @ObservationIgnored private var watchedPurchases: Set<String> = []
+  /** The Link card picked on a checkout card here (its id), until Allow carries it to the computer. */
+  public private(set) var pickedPurchaseCards: [String: String] = [:]
+  /** Buy pressed here on a products card (the product's place), until the computer's copy says so. */
+  public private(set) var pressedProducts: [String: Int] = [:]
   /** The computer's notices ("Agent failed to respond"…), an open agent's drawn over its composer (`hVn`). */
   public private(set) var trayList = TrayList()
   /** Each file card's line once read (`readAttachmentText`, kept for the session as the window keeps it). */
@@ -243,6 +253,8 @@ public final class AppStore {
   /** Connected apps, as the box's manager lists them (`desktopMcp listServers`), and the catalog to add more from. */
   public private(set) var apps: [ConnectedApp] = []
   public private(set) var catalog: [CatalogApp] = []
+  /** The apps that can't be added yet (`AppsComingSoon`): the server's list once read. */
+  public private(set) var appsComingSoon: Set<String> = AppsComingSoon.builtIn
 
   public private(set) var backend: AgentBackend?
   @ObservationIgnored private var listening: Task<Void, Never>?
@@ -378,7 +390,7 @@ public final class AppStore {
     backend = nil
     agents = []; transcripts = [:]; chatRows = [:]; runFlags = [:]; steps = [:]; call = nil; callLevels = []; isLive = false; account = nil; usage = .empty; usageReadAt = nil; access = .checking; accessBlocked = false; hasReachedBox = false; openChat = nil
     layoutTask?.cancel(); layoutTask = nil; pendingLayout = []; refreshing = []; caughtUp = [:]
-    pendingAnswers = [:]; answeredApprovals = [:]; localAsks = [:]; trayList = TrayList(); fileLines = [:]; fileReadsAsText = [:]; unreadAfter = [:]; apps = []; catalog = []; pinnedIds = []; routinesByAgent = [:]; sidebarSections = nil
+    pendingAnswers = [:]; answeredApprovals = [:]; answeredPurchases = [:]; watchedPurchases = []; pickedPurchaseCards = [:]; pressedProducts = [:]; localAsks = [:]; trayList = TrayList(); fileLines = [:]; fileReadsAsText = [:]; unreadAfter = [:]; apps = []; catalog = []; appsComingSoon = AppsComingSoon.builtIn; pinnedIds = []; routinesByAgent = [:]; sidebarSections = nil
     streamingOnly = [:]; outbox = [:]; sentOffline = [:]; arrived = []; olderBefore = [:]; loadingOlder = []; paged = []; firstRunAgentId = nil; revealing = [:]
     openThreads = [:]; threadRows = [:]; threadRoots = [:]; loadFailed = []; isDown = false
     computer = ComputerBook(); subagentsByAgent = [:]; pointers = [:]; lastComputerCatchUp = .distantPast
@@ -679,6 +691,8 @@ public final class AppStore {
     let ask = LocalAsk.waiting(in: entries)
     if localAsks[agentId] != ask { localAsks[agentId] = ask }
     for entry in entries where pendingAnswers[entry.id] != nil && (entry["respondedValue"]?.text != nil || entry["widgetDismissed"]?.bool == true) { pendingAnswers[entry.id] = nil }
+    for entry in entries where answeredPurchases[entry.id] != nil && (entry["purchaseState"]?.text ?? "review") != "review" { answeredPurchases[entry.id] = nil }
+    for entry in entries where pressedProducts[entry.id] != nil && entry["productsBuying"]?.int == pressedProducts[entry.id] { pressedProducts[entry.id] = nil }
     settleOutbox(agentId, entries)
     if soon { scheduleLayout(agentId) } else { layOut(agentId) }
   }
@@ -1057,7 +1071,7 @@ public final class AppStore {
   public private(set) var composerNotice: ComposerNotice?
 
   public func showComposerNotice(_ text: String, in agentId: String, seconds: Double = 6) {
-    let notice = ComposerNotice(agentId: agentId, text: text)
+    let notice = ComposerNotice(agentId: agentId, text: PlainWords.error(text))
     composerNotice = notice
     Task { @MainActor [weak self] in
       try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
@@ -1251,6 +1265,96 @@ public final class AppStore {
     }
   }
 
+  /**
+   * Allow or Deny on a checkout card (`answerPurchase`): the card shows the
+   * answer at once; Allow then waits on Link, which asks the person to
+   * approve it in the Link app. A failed answer comes back to the buttons.
+   */
+  public func answerPurchase(_ entryId: String, allow: Bool, confirmed: PurchaseApproval.Confirmed? = nil, in agentId: String) async {
+    guard answeredPurchases[entryId] == nil else { return }
+    answeredPurchases[entryId] = allow ? .sending : .denied
+    var args: JSON = ["agentId": .string(agentId), "entryId": .string(entryId), "allow": .bool(allow)]
+    // The card picked on the card rides with Allow (14 October 2026); the computer checks it with Link first.
+    if allow, let picked = pickedPurchaseCards[entryId] { args = args.setting("paymentMethodId", .string(picked)) }
+    // Allow confirmed on this device (Face ID): the computer hands it to Link as the approval, so no Link app is asked.
+    if allow, let confirmed, let approval = purchaseApproval(confirmed) { args = args.setting("approval", approval.json) }
+    let reply = await command("answerPurchase", args, failure: allow ? "The purchase didn't go to Link" : "Couldn't deny the purchase")
+    // Not taken (no answer, or the card still waits: Link refused the card picked, which its line says): the buttons are back.
+    if reply == nil || (reply?.object != nil && (reply?["purchaseState"]?.text ?? "review") == "review") {
+      answeredPurchases[entryId] = nil
+    }
+  }
+
+  /**
+   * The approval Allow carries, once the device confirmed it: who (this
+   * account: its id on Simeon Labs' server, else its e-mail), when, how. Nil
+   * only when nobody is signed in (Link then asks in its app). Until 14
+   * October 2026 it needed the id, which a name saved in the app dropped
+   * (`saveName`), so Allow went out without the approval.
+   */
+  public func purchaseApproval(_ confirmed: PurchaseApproval.Confirmed, at date: Date = Date()) -> PurchaseApproval? {
+    guard let account else { return nil }
+    let who = account.id.flatMap { $0.isEmpty ? nil : $0 } ?? account.email.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !who.isEmpty else { return nil }
+    return PurchaseApproval(approvedAt: date, authenticationMethod: confirmed.method, deviceType: confirmed.deviceType, userId: who, userName: account.name.isEmpty ? nil : account.name)
+  }
+
+  /** A Link card picked on a checkout card, before Allow: the card shows it at once; Allow carries it. */
+  public func pickPurchaseCard(_ entryId: String, cardId: String) {
+    pickedPurchaseCards[entryId] = cardId
+  }
+
+  /**
+   * "Buy with <agent>" on one product of a products card (`buyProduct`): the
+   * card marks it at once, and the agent is woken to buy exactly that one.
+   * A failed press comes back to the button.
+   */
+  public func buyProduct(_ entryId: String, index: Int, in agentId: String) async {
+    guard pressedProducts[entryId] != index else { return }
+    pressedProducts[entryId] = index
+    if await command("buyProduct", ["agentId": .string(agentId), "entryId": .string(entryId), "index": .number(Double(index))], failure: "Couldn't tell your agent to buy it") == nil {
+      pressedProducts[entryId] = nil
+    }
+  }
+
+  /**
+   * A checkout card still with Link, on screen: the computer makes sure it
+   * is watching Link for it (after a restart nothing is), and closes a
+   * flight it was paying when it restarted. It never answers a card; once
+   * per card and state while the app runs.
+   */
+  public func keepWatchingPurchase(_ entryId: String, in agentId: String, state: PurchaseCard.State = .approving) async {
+    let key = "\(entryId)#\(state.rawValue)"
+    guard !watchedPurchases.contains(key), let backend else { return }
+    watchedPurchases.insert(key)
+    _ = try? await backend.command("answerPurchase", ["agentId": .string(agentId), "entryId": .string(entryId), "resume": .bool(true)])
+  }
+
+  /** "Book with Simeon" on a flight (`startFlightBooking`): the traveller form in the chat, or why not. */
+  public func startFlightBooking(entryId: String, offerIndex: Int, in agentId: String) async -> FlightBookingAnswer {
+    guard let backend else { return FlightBookingAnswer(message: "Your computer isn't connected.") }
+    do {
+      return FlightBookingAnswer(reply: try await backend.command("startFlightBooking", ["agentId": .string(agentId), "entryId": .string(entryId), "offerIndex": .number(Double(offerIndex))]))
+    } catch {
+      return FlightBookingAnswer(message: error.localizedDescription)
+    }
+  }
+
+  /** The traveller form's Continue (`submitFlightPassengers`): the flight's checkout card, or what to fix. */
+  public func submitFlightPassengers(_ entryId: String, travellers: [Traveller], in agentId: String) async -> FlightBookingAnswer {
+    guard let backend else { return FlightBookingAnswer(message: "Your computer isn't connected.") }
+    do {
+      return FlightBookingAnswer(reply: try await backend.command("submitFlightPassengers", ["agentId": .string(agentId), "entryId": .string(entryId), "passengers": .array(travellers.map(\.json))]))
+    } catch {
+      return FlightBookingAnswer(message: error.localizedDescription)
+    }
+  }
+
+  /** The traveller form's Cancel. */
+  public func cancelFlightPassengers(_ entryId: String, in agentId: String) async {
+    await command("submitFlightPassengers", ["agentId": .string(agentId), "entryId": .string(entryId), "cancel": .bool(true)], failure: "Couldn't cancel the booking")
+  }
+
   /** The question card's X (`dismissWidget`). */
   public func dismissQuestion(_ entryId: String, in agentId: String) async {
     pendingAnswers[entryId] = ""
@@ -1410,6 +1514,8 @@ public final class AppStore {
     let needsCatalog = catalog.isEmpty
     async let servers = try? backend.command("desktopMcp", ["action": "listServers", "args": []])
     async let list = needsCatalog ? try? backend.command("desktopMcp", ["action": "getCatalog", "args": []]) : nil
+    // Which apps can't be added yet, from Simeon Labs' server (`AppsComingSoon`).
+    async let soon: Void = needsCatalog ? loadAppsComingSoon() : ()
     if let state = await servers {
       let next = (state["servers"]?.array ?? state.array ?? []).compactMap(ConnectedApp.init)
       if next != apps { apps = next }
@@ -1419,6 +1525,25 @@ public final class AppStore {
       let next = (list.array ?? list["plugins"]?.array ?? []).compactMap(CatalogApp.init)
       if next != catalog { catalog = next }
     }
+    await soon
+  }
+
+  /** Which apps can't be added yet, read from Simeon Labs' server (`AppsComingSoon`); an older server's answer, or none, keeps the list as it is. */
+  public func loadAppsComingSoon() async {
+    guard let backend, let answer = try? await backend.server("apps", method: nil, body: nil),
+          let named = AppsComingSoon.from(answer), named != appsComingSoon else { return }
+    appsComingSoon = named
+  }
+
+  /**
+   * Whether an app can't be added yet: its card says "Coming soon" and has
+   * no Add (`AppsComingSoon`; or the catalog says so, when the server serves
+   * no apps at all). By its id, its name or its title.
+   */
+  public func isComingSoon(_ app: String) -> Bool {
+    if AppsComingSoon.names(appsComingSoon, app) { return true }
+    guard let found = catalogApp(named: app) else { return false }
+    return found.comingSoon || AppsComingSoon.names(appsComingSoon, found.id)
   }
 
   /** When the connected apps were last read, so Add does not read them again a moment later. */
@@ -1437,23 +1562,32 @@ public final class AppStore {
     return apps.contains { $0.status == "connected" && ($0.name.lowercased() == key || ($0.pluginId != nil && $0.pluginId == plugin)) }
   }
 
-  /**
-   * Connect an app as the card's Add does on the Mac: install it from the
-   * catalog when it is not there, then start its sign-in; the sign-in's web
-   * address, for the system's sign-in sheet.
-   */
+  /** The sign-in page of an app's Connect (`beginConnect`), for callers that need no more. */
   public func connectApp(named name: String) async -> URL? {
+    await beginConnect(named: name)?.url
+  }
+
+  /**
+   * Connect (`Connecting`): install the app from the catalog when it is not
+   * there, then start its sign-in; the sign-in's web address, for the
+   * system's sign-in sheet, and whether this connect added the app. An app
+   * this connect added whose sign-in then doesn't open is taken back at
+   * once, so nothing stays half added; `problem` says why.
+   */
+  public func beginConnect(named name: String) async -> ConnectStart? {
     guard let backend else { return nil }
     // The box's app events keep the list current, so it is read here only when it never was.
     if catalog.isEmpty || appsLoadedAt == nil { await loadApps() }
     let key = name.lowercased()
     var server = apps.first { $0.name.lowercased() == key || ($0.pluginId != nil && $0.pluginId == catalogApp(named: name)?.id) }
+    var added: String?
     if server == nil, let plugin = catalogApp(named: name) {
       do {
         // The install and the vendor's server id at once (the second only names the server the first makes).
         async let installed = backend.command("desktopMcp", ["action": "installEntry", "args": [["entryId": .string(plugin.id)]]])
         async let vendorId = try? backend.command("desktopMcp", ["action": "vendorServerIdForPlugin", "args": [.string(plugin.id)]])
         let state = try await installed
+        added = plugin.id
         apps = (state["servers"]?.array ?? []).compactMap(ConnectedApp.init)
         appsLoadedAt = Date()
         if let vendor = await vendorId, let id = vendor.text {
@@ -1470,11 +1604,34 @@ public final class AppStore {
     if server.status == "connected" { return nil }
     do {
       let started = try await backend.command("desktopMcp", ["action": "authenticateServer", "args": [.string(server.serverId), .string(server.accountKey), "connector_card"]])
-      return await signInStarted(started, name: name)
+      if let url = await signInStarted(started, name: name) { return ConnectStart(url: url, addedPlugin: added) }
+      // Signed in already: kept, whatever the list says yet.
+      if started["status"]?.string == "already-authenticated" { return nil }
     } catch {
-      problem = "Couldn't connect \(name): \(error.localizedDescription)"
-      return nil
+      problem = Connecting.didntConnect(name, why: PlainWords.error(error.localizedDescription))
     }
+    // No sign-in to open: the app this connect added goes again, unless it turned out signed in already.
+    if let added { await takeBack(added, name: name) }
+    return nil
+  }
+
+  /**
+   * A connect whose sign-in was cancelled (`Connecting.undoes`): the app it
+   * added is uninstalled again (`uninstallPlugin`, as Uninstall on its page
+   * does), so it isn't left added and not signed in. One the computer says
+   * is connected after all is kept.
+   */
+  public func undoConnect(_ start: ConnectStart, name: String) async {
+    guard let plugin = start.addedPlugin else { return }
+    await takeBack(plugin, name: name)
+  }
+
+  private func takeBack(_ plugin: String, name: String) async {
+    guard let backend else { return }
+    await readApps()
+    if isConnected(name) { return }
+    _ = try? await backend.command("desktopMcp", ["action": "uninstallPlugin", "args": [.string(plugin)]])
+    await readApps()
   }
 
   /** The sign-in's page; or, when the box has none to offer, why (it was already signed in, or the app can't sign in here), said rather than silently dropped. */
@@ -1484,7 +1641,7 @@ public final class AppStore {
       await readApps()
       return nil
     }
-    problem = started["message"]?.text ?? "\(name) didn't offer a sign-in."
+    problem = Connecting.didntConnect(name, why: started["message"]?.text)
     return nil
   }
 
@@ -1564,6 +1721,41 @@ public final class AppStore {
     guard let backend else { return nil }
     do {
       let id = try await backend.createAgent(name: name, face: face?.id)
+      await reloadRoster()
+      return id
+    } catch {
+      problem = "Couldn't create \(name): \(error.localizedDescription)"
+      return nil
+    }
+  }
+
+  /**
+   * New Agent with what the person chose with the pencil (AgentDraft): the
+   * face and the voice go with the agent; a picture drawn or uploaded goes
+   * right after it, and no face is put on over it (a pass giving faces that
+   * already took the new agent finishes first). Nothing chosen: as above.
+   */
+  public func createAgent(name: String, draft: AgentDraft) async -> String? {
+    guard draft.chosen else { return await createAgent(name: name, face: draft.shownFace(agents: agents)) }
+    guard let backend else { return nil }
+    var draft = draft
+    draft.name = name
+    draft.settleVoice(agents: agents, voices: await voices())
+    do {
+      let id = try await backend.createAgent(name: name, face: draft.shownFace(agents: agents)?.id, voiceId: draft.voiceId)
+      if let picture = draft.picture {
+        let claimed = facesSent.contains(id)
+        facesSent.insert(id)
+        if claimed, let givingFaces { await givingFaces.value }
+        do {
+          _ = try await backend.command("setAgentAvatarBytes", ["id": .string(id), "pngBase64": .string(picture.base64EncodedString())])
+          pendingFaces[id] = nil
+        } catch {
+          // Its face then, as any agent with no picture.
+          Trace.mark("picture for new agent \(id) not saved: \(error.localizedDescription)")
+          facesSent.remove(id)
+        }
+      }
       await reloadRoster()
       return id
     } catch {

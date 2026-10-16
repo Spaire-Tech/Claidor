@@ -1,5 +1,6 @@
-import { cp, mkdir, readdir, rm, stat } from "node:fs/promises";
+import { cp, mkdir, readdir, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import {
   outputApp,
   outputDir,
@@ -11,6 +12,7 @@ import {
   simeonVersion
 } from "./lib/config.mjs";
 import { buildFidelityReconstructedAsar } from "./clean-build.mjs";
+import { ENGINE_SOURCE_PATHS, SOURCE_STAMP_SUFFIX } from "./lib/host-bundle-publish.mjs";
 import { signAppBundleAdHoc } from "./lib/codesign.mjs";
 import { renameMacBundleIdentity } from "./lib/macos-bundle-rename.mjs";
 import { plistIdentityRewrites } from "./lib/macos-plist-identity.mjs";
@@ -162,4 +164,8 @@ const verification = await verifyReconstructedMacPackage({
   simeonExecutableName: renamed.executable.to,
 });
 
+// What it was built from, for `npm run publish:host-bundle` (`staleAppReason`): written last, so only an app that was
+// built to the end carries it.
+const sourceCommit = await capture("git", ["log", "-1", "--format=%H", "--", ...ENGINE_SOURCE_PATHS], { cwd: path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..") });
+await writeFile(`${outputApp}${SOURCE_STAMP_SUFFIX}`, `${sourceCommit}\n`);
 console.log(`Packaged application: ${outputApp} (executable ${renamed.executable.to}, ${renamed.helpers.length} helpers renamed, ${verification.runtime.nodeFileCount} native manifest entries, ${verification.runtime.runtimeFileCount} unpacked runtime files)`);

@@ -133,8 +133,9 @@ public struct GatewayConnection: Sendable, Equatable {
   public func eventsRequest() -> URLRequest {
     var request = URLRequest(url: URL(string: baseURL + Self.eventsPath)!)
     for (name, value) in headers(["accept": "text/event-stream"]) { request.setValue(value, forHTTPHeaderField: name) }
-    // The host pings every 15 s (`SSE_HEARTBEAT_MS`); a stream silent for 45 s is dead (a phone that slept), so it errors and the loop reconnects.
-    request.timeoutInterval = 45
+    // The host pings every 15 s (`SSE_HEARTBEAT_MS`); a stream silent for 35 s is dead (a phone that slept), so it errors and the loop
+    // reconnects: the Electron app's stall watchdog (`SSE_STALL_TIMEOUT_MS`), 45 s here until 16 October 2026.
+    request.timeoutInterval = Gateway.stallSeconds
     return request
   }
 }
@@ -172,31 +173,177 @@ public struct GatewayError: Error, LocalizedError, Sendable {
  * (`EnsureSandBox`), POST each command to `{gateway}/api/{method}`, read
  * events from `{gateway}/events`. Everything else the window does with the
  * agents happens in the host there; the app only asks and listens.
+ *
+ * Found and kept as the Electron app finds and keeps it (16 October 2026):
+ * - At launch, the address kept from the last launch (`SavedGateway`) at
+ *   once, while the broker is asked again in the background
+ *   (`createGatewayConnectFastPath`); once this run has a live answer, the
+ *   broker's answers only. A kept address is tried once: if it fails, the
+ *   live answer is waited for.
+ * - A known address is used as it is while the event stream is up, or
+ *   while the box answered `/health` in the last 5 s; otherwise `/health`
+ *   is asked first (1.5 s), and only when it does not answer is the broker
+ *   asked again (`SandHostSupervisor.ensureConnection`). A dropped stream
+ *   makes the next call ask `/health` (`invalidateHealthCache`).
+ * - The broker saying the box server is full (`SAND_BOX_BLOCKED`) is not
+ *   asked again until its `retry-after` (a minute without one, 15 minutes at
+ *   most), as `BrokeredHostConnector.connect` holds it.
+ * - The event stream dials again after 1, 2, 4, 8, then every 10 s
+ *   (`SSE_RECONNECT_MIN_MS`, `SSE_RECONNECT_MAX_MS`), and a stream silent
+ *   for 35 s is dead (`SSE_STALL_TIMEOUT_MS`).
  */
 public actor Gateway {
-  private let api: SimeonAPI
-  private let http: HTTPClient
-  private var connection: GatewayConnection?
-  private var resolving: Task<GatewayConnection, Error>?
+  /** A box's `/health` answers within 1.5 s (`HEALTH_TIMEOUT_MS`)… */
+  public static let healthTimeout: TimeInterval = 1.5
+  /** …and is trusted for 5 s (`HEALTH_PROBE_TTL_MS`). */
+  public static let healthTrusted: TimeInterval = 5
+  /** A stream silent this long is dead (`SSE_STALL_TIMEOUT_MS`); the host pings every 15 s. */
+  public static let stallSeconds: TimeInterval = 35
+  /** A full box server is not asked again for its `retry-after`, else a minute, never more than 15 minutes (`BOX_BLOCKED_FALLBACK_HOLD_MS`, `BOX_BLOCKED_MAX_HOLD_MS`). */
+  public static let blockedHold: TimeInterval = 60
+  public static let blockedHoldMax: TimeInterval = 15 * 60
+  /** The broker's refusal hints (`x-automation-failure-hint`). */
+  static let hintHeader = "x-automation-failure-hint"
+  static let blockedHint = "SAND_BOX_BLOCKED"
+  static let noStorageHint = "CLOUD_AGENT_STORAGE_DISABLED"
 
-  public init(api: SimeonAPI, http: HTTPClient = URLSessionClient()) {
-    self.api = api; self.http = http
+  /** The wait before the event stream dials again after `failures` failures in a row: 1, 2, 4, 8, then 10 s. */
+  public static func reconnectDelay(failures: Int) -> TimeInterval {
+    min(10, pow(2, Double(max(failures, 1) - 1)))
   }
 
-  /** Where the box is now, asking the broker when we do not know. */
+  private let api: SimeonAPI
+  private let http: HTTPClient
+  private let saved: SavedGatewayStore?
+  /** Seconds that only go forward (the uptime), for the health and hold clocks. */
+  private let clock: @Sendable () -> TimeInterval
+  private let now: @Sendable () -> Date
+  private var connection: GatewayConnection?
+  private var resolving: Task<GatewayConnection, Error>?
+  private var lastHealthyAt = -TimeInterval.infinity
+  private var healthEpoch = 0
+  private var streamLive = false
+  /** This run has had a live answer from the broker: from then on the kept address is not used. */
+  private var hasLiveConnection = false
+  /** The kept address has been handed out once this run. */
+  private var keptUsed = false
+  private var deniedScopes: Set<String> = []
+  private var blocked: (error: Error, until: TimeInterval)?
+
+  public init(api: SimeonAPI, http: HTTPClient = URLSessionClient(), saved: SavedGatewayStore? = nil, clock: @escaping @Sendable () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }, now: @escaping @Sendable () -> Date = { Date() }) {
+    self.api = api; self.http = http; self.saved = saved; self.clock = clock; self.now = now
+  }
+
+  /** Where the box is now: the known address while it answers, else the broker's (`ensureConnection`). */
   public func currentConnection() async throws -> GatewayConnection {
-    if let connection { return connection }
-    if let resolving { return try await resolving.value }
-    let task = Task { try GatewayConnection(box: try await api.connect("EnsureSandBox")) }
-    resolving = task
-    defer { resolving = nil }
-    let resolved = try await task.value
-    connection = resolved
-    return resolved
+    if let cached = connection {
+      if streamLive { return cached }
+      if clock() - lastHealthyAt < Self.healthTrusted { return cached }
+      let epoch = healthEpoch
+      if await answersHealth(cached) {
+        if epoch == healthEpoch { lastHealthyAt = clock() }
+        return cached
+      }
+    }
+    if !hasLiveConnection, !keptUsed, let kept = keptConnection() {
+      // The Electron app's fast path: the kept address now, the broker asked meanwhile (its answer replaces it when it comes).
+      keptUsed = true
+      _ = live()
+      connection = kept
+      lastHealthyAt = -.infinity
+      return kept
+    }
+    return try await live().value
   }
 
   /** Forget where the box was: the next call asks the broker again (a restarted box can move). */
-  public func invalidate() { connection = nil }
+  public func invalidate() {
+    connection = nil
+    keptUsed = true
+    lastHealthyAt = -.infinity
+  }
+
+  /** A broker call is out (for the tests). */
+  var isAskingBroker: Bool { resolving != nil }
+
+  /** The stream is up: its address needs no `/health` while it lasts. */
+  func streamConnected() { streamLive = true }
+
+  /** The stream dropped (the Electron app's `transport-down`): the next call asks `/health` before it trusts the address. */
+  func streamDropped() {
+    streamLive = false
+    healthEpoch += 1
+    lastHealthyAt = -.infinity
+  }
+
+  /** The address kept from an earlier launch, for the account signed in now. */
+  private func keptConnection() -> GatewayConnection? {
+    guard let saved, let scope = api.accountScope, !deniedScopes.contains(scope) else { return nil }
+    return SavedGateway.decode(saved.read(), accountScope: scope, now: now())
+  }
+
+  /** One `EnsureSandBox` at a time; its answer becomes the address and is kept for the next launch. */
+  private func live() -> Task<GatewayConnection, Error> {
+    if let resolving { return resolving }
+    if let held = blocked, clock() < held.until {
+      let error = held.error
+      return Task { throw error }
+    }
+    let api = self.api
+    let scope = api.accountScope
+    let task = Task<GatewayConnection, Error> {
+      do {
+        let fresh = try GatewayConnection(box: try await api.connect("EnsureSandBox"))
+        self.answered(fresh, scope: scope)
+        return fresh
+      } catch {
+        self.refused(error, scope: scope)
+        throw error
+      }
+    }
+    resolving = task
+    return task
+  }
+
+  private func answered(_ fresh: GatewayConnection, scope: String?) {
+    resolving = nil
+    blocked = nil
+    // Signed out, or into another account, while the broker answered: nothing is kept (`scopeAtDispatch`).
+    guard api.accountScope == scope else { return }
+    hasLiveConnection = true
+    connection = fresh
+    lastHealthyAt = -.infinity
+    if let scope {
+      deniedScopes.remove(scope)
+      saved?.write(SavedGateway.encode(fresh, accountScope: scope, savedAt: now()))
+    }
+  }
+
+  private func refused(_ error: Error, scope: String?) {
+    resolving = nil
+    guard let refusal = error as? SimeonAPIError else { return }
+    let hint = refusal.header(Self.hintHeader)
+    if hint == Self.blockedHint {
+      let retryAfter = refusal.header("retry-after").flatMap(Double.init).flatMap { $0 > 0 ? $0 : nil }
+      blocked = (error, clock() + min(retryAfter ?? Self.blockedHold, Self.blockedHoldMax))
+    }
+    // Refused for this account (no access, no storage): its kept address goes (`isBrokerDenial`).
+    let denied = hint == Self.noStorageHint || (hint == nil && (refusal.status == 401 || refusal.status == 403))
+    if denied, let scope, api.accountScope == scope {
+      deniedScopes.insert(scope)
+      saved?.write(nil)
+    }
+  }
+
+  /** Whether the box answers `/health` within 1.5 s with `ok` (`fetchHealth`). */
+  private func answersHealth(_ connection: GatewayConnection) async -> Bool {
+    guard let url = URL(string: connection.baseURL + "/health") else { return false }
+    var request = URLRequest(url: url)
+    for (name, value) in connection.headers() { request.setValue(value, forHTTPHeaderField: name) }
+    request.timeoutInterval = Self.healthTimeout
+    guard let answer = try? await http.send(request), answer.ok else { return false }
+    return answer.json?["ok"]?.bool == true
+  }
 
   /** One command. A call that never reached the box (no connection, a moved box) asks the broker once more and is sent once more; any other failure is the caller's. */
   public func command(_ method: String, _ args: JSON = [:]) async throws -> JSON {
@@ -220,15 +367,18 @@ public actor Gateway {
 
   #if canImport(Darwin)
   /**
-   * The host's events until the task is cancelled, reconnecting with a
-   * growing wait (1 s to 15 s) and asking the broker again after two
-   * failures in a row. `onState` hears "connected" and "down".
+   * The host's events until the task is cancelled, dialling again after 1,
+   * 2, 4, 8, then every 10 s, as the Electron app does (`runEventLoop`). A
+   * stream that was up and dropped makes the next dial ask the box's
+   * `/health` first, and the broker only when that does not answer
+   * (`currentConnection`). `onState` hears "connected" and "down".
    */
   public nonisolated func events(onState: @escaping @Sendable (Bool) -> Void = { _ in }) -> AsyncStream<GatewayEvent> {
     AsyncStream { continuation in
       let task = Task {
         var failures = 0
         while !Task.isCancelled {
+          var connected = false
           do {
             let connection = try await self.currentConnection()
             let (bytes, response) = try await URLSession.shared.bytes(for: connection.eventsRequest())
@@ -236,6 +386,8 @@ public actor Gateway {
               throw GatewayError(message: "events answered \((response as? HTTPURLResponse)?.statusCode ?? 0)", refused: false)
             }
             failures = 0
+            connected = true
+            await self.streamConnected()
             onState(true)
             var parser = EventStreamParser()
             var buffer: [UInt8] = []
@@ -248,12 +400,15 @@ public actor Gateway {
               }
             }
           } catch {
-            if Task.isCancelled { break }
+            if Task.isCancelled {
+              if connected { await self.streamDropped() }
+              break
+            }
           }
+          if connected { await self.streamDropped() }
           onState(false)
           failures += 1
-          if failures >= 2 { await self.invalidate() }
-          try? await Task.sleep(nanoseconds: UInt64(min(pow(2, Double(failures - 1)), 15) * 1_000_000_000))
+          try? await Task.sleep(nanoseconds: UInt64(Gateway.reconnectDelay(failures: failures) * 1_000_000_000))
         }
         continuation.finish()
       }

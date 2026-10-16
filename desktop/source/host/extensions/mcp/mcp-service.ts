@@ -7,6 +7,11 @@ import { isVendorMcpPluginId, vendorMcpServerId } from "../../../shared/node/ven
 import { loadVendorMcpInstalls, removeVendorMcpInstall, upsertVendorMcpInstall } from "../../../shared/node/vendor-mcp/installs.js";
 import { fetchVendorEffectivePlugins, fetchVendorMarketplacePlugins } from "../../../shared/node/vendor-mcp/marketplace.js";
 import { createVendorMcpBackendExec } from "../../../shared/node/vendor-mcp/backend-exec.js";
+import { fillCheckout } from "../../../shared/node/link-wallet/checkout-fill.js";
+import { createLinkCli } from "../../../shared/node/link-wallet/link-cli.js";
+import { createLinkTools } from "../../../shared/node/link-wallet/link-tools.js";
+import { createShopClient } from "../../../shared/node/shop-wallet/shop-mcp.js";
+import { createShopTools } from "../../../shared/node/shop-wallet/shop-tools.js";
 import { withVendorAccountServers } from "../../../shared/node/vendor-mcp/display.js";
 import { adoptVendorMcpStore, loadVendorMcpStore, serializeVendorMcpStoreForPeer } from "../../../shared/node/vendor-mcp/installs.js";
 import {
@@ -35,6 +40,8 @@ import {
 import type { CapableBox } from "../../box/box-capabilities.js";
 import { createSandMcpStateExecutor } from "../../ports/mcp-state-executor.js";
 import { createBoxSandMcpExec } from "./box-mcp-exec.js";
+import { join } from "node:path";
+import { persistPendingSignInsAt } from "../../../shared/node/mcp/pending-sign-ins-file.js";
 
 export interface McpServerSummary { id: string; name: string; serverIdentifier: string; accountKey: string; pluginId?: string | null; isTeamServer: boolean; status: string; statusDetail?: string; transport: string; toolCount: number; disabledToolCount?: number; customInstructions: string }
 export interface CatalogField { key: string; label: string; hint: string; isRequired?: boolean; isSecret?: boolean }
@@ -226,6 +233,10 @@ export interface McpHostPort { dispose(): void | Promise<void>; listBoxServers(i
 export function hostedMcpOAuthCallbackUrl(backendUrl: string = getSandInferenceBackendUrl()): string {
   return new URL("desktop/mcp-oauth/callback", backendUrl.endsWith("/") ? backendUrl : `${backendUrl}/`).toString();
 }
+/** `…/desktop/mcp-oauth/client.json` on the same server: Simeon's client metadata document, the client ID a vendor that registers no clients reads (`vendor-mcp/oauth.ts`). The server builds the document's own `client_id` from the same address. */
+export function hostedMcpOAuthClientUrl(backendUrl: string = getSandInferenceBackendUrl()): string {
+  return new URL("desktop/mcp-oauth/client.json", backendUrl.endsWith("/") ? backendUrl : `${backendUrl}/`).toString();
+}
 export interface McpHostServiceDeps {
   auth: {
     getAccessToken(args: { backendUrl: string }): Promise<string>;
@@ -272,12 +283,18 @@ export class McpHostService {
     // The sign-in starts here too, for the window on the web, and comes
     // back through the server's hosted callback (4 October 2026); the Mac's
     // window starts its own, on its loopback.
-    const accountBackendMcpExec = createAccountMcpBackendExec({ rootDir: getSandRootDir, fallback: simeonBackendMcpExec, canStartAuth: true, log: deps.log });
+    const accountBackendMcpExec = createAccountMcpBackendExec({ rootDir: getSandRootDir, fallback: simeonBackendMcpExec, canStartAuth: true, clientMetadataUrl: hostedMcpOAuthClientUrl(), log: deps.log });
     // Vendor connectors are served here, in the box, from the credential
     // store (`vendor-mcp/backend-exec.ts`): the Mac's sign-ins arrive by
     // sync, the web's finish here, and each side refreshes its own.
     // Apps Simeon Labs' server serves take the box's own credential (`vendor-mcp/backend-exec.ts`, `appsToolkit`).
-    const backendMcpExec = createVendorMcpBackendExec({ rootDir: getSandRootDir, fallback: accountBackendMcpExec, canStartAuth: true, getServerAccessToken: async () => { try { const token = await deps.auth.getAccessToken({ backendUrl: getSandInferenceBackendUrl() }); return token.length > 0 ? token : null; } catch { return null; } }, log: deps.log });
+    // Link (Stripe's agent wallet) runs here, on the cloud computer, through its own CLI (`shared/node/link-wallet/`).
+    const linkWallet = createLinkTools({ cli: createLinkCli({ rootDir: getSandRootDir, log: deps.log }), rootDir: getSandRootDir, fillCheckout, log: deps.log });
+    // Shop (14 October 2026): Shopify's Shop MCP, called from here with the person's Shop sign-in kept on the data volume (`shared/node/shop-wallet/`).
+    const shopWallet = createShopTools({ client: createShopClient({ rootDir: getSandRootDir, log: deps.log }), rootDir: getSandRootDir, fillCheckout, log: deps.log });
+    // Started sign-ins survive a host restart (`pending-sign-ins-file.ts`).
+    persistPendingSignInsAt(join(getSandRootDir(), "mcp-pending-sign-ins.json"));
+    const backendMcpExec = createVendorMcpBackendExec({ rootDir: getSandRootDir, fallback: accountBackendMcpExec, canStartAuth: true, linkWallet, shopWallet, clientMetadataUrl: hostedMcpOAuthClientUrl(), getServerAccessToken: async () => { try { const token = await deps.auth.getAccessToken({ backendUrl: getSandInferenceBackendUrl() }); return token.length > 0 ? token : null; } catch { return null; } }, log: deps.log });
     this.backendMcpExec = backendMcpExec;
     this.accountBackendMcpExec = accountBackendMcpExec;
     this.hostMcp = createHostMcp({
@@ -308,7 +325,8 @@ export class McpHostService {
       ...(deps.onDiscoveryFailed === undefined ? {} : { onDiscoveryFailed: deps.onDiscoveryFailed }),
       ...(deps.onConnectorAuth === undefined ? {} : { onConnectorAuth: deps.onConnectorAuth }),
     });
-    this.api = { mcp: this.hostMcp.mcp, management: this.hostMcp.management, window: this.hostMcp.window, completeOAuth: (args: { stateId: string; code: string }) => this.completeOAuth(args), replaceVendorMcpStore: (installs: unknown) => adoptVendorMcpStore(getSandRootDir(), installs, "incoming").changed, readVendorMcpStore: () => this.readVendorMcpStore(), replaceAccountMcpStore: (store: unknown) => adoptAccountMcpStore(getSandRootDir(), store).changed, readAccountMcpStore: () => this.readAccountMcpStore(), listBoxServers: (ids: readonly string[]) => this.listBoxServers(ids), subscribeToAuthCompletion: (listener: (event: unknown) => void) => { this.authCompletionListeners.add(listener); return () => this.authCompletionListeners.delete(listener); }, noteAuthCompletedElsewhere: (serverId: string, accountKey: string) => this.hostMcp.noteAuthCompletedElsewhere(serverId, accountKey), subscribeToServersUpdated: (listener: (event: { servers: unknown[] }) => void) => { this.serversUpdatedListeners.add(listener); return () => this.serversUpdatedListeners.delete(listener); }, syncPluginSkills: async () => await deps.pluginSkills?.sync("desktop") ?? [], pluginSyncStatus: () => deps.pluginSkills?.status() ?? { authBlocked: [] } };
+    // linkWallet and shopWallet: the same Link and Shop the "link" and "shop" apps' tools use, for the checkout card (transcript/purchase-cards.ts, the RequestPurchase tool).
+    this.api = { mcp: this.hostMcp.mcp, management: this.hostMcp.management, window: this.hostMcp.window, linkWallet, shopWallet, completeOAuth: (args: { stateId: string; code: string }) => this.completeOAuth(args), replaceVendorMcpStore: (installs: unknown) => adoptVendorMcpStore(getSandRootDir(), installs, "incoming").changed, readVendorMcpStore: () => this.readVendorMcpStore(), replaceAccountMcpStore: (store: unknown) => adoptAccountMcpStore(getSandRootDir(), store).changed, readAccountMcpStore: () => this.readAccountMcpStore(), listBoxServers: (ids: readonly string[]) => this.listBoxServers(ids), subscribeToAuthCompletion: (listener: (event: unknown) => void) => { this.authCompletionListeners.add(listener); return () => this.authCompletionListeners.delete(listener); }, noteAuthCompletedElsewhere: (serverId: string, accountKey: string) => this.hostMcp.noteAuthCompletedElsewhere(serverId, accountKey), subscribeToServersUpdated: (listener: (event: { servers: unknown[] }) => void) => { this.serversUpdatedListeners.add(listener); return () => this.serversUpdatedListeners.delete(listener); }, syncPluginSkills: async () => await deps.pluginSkills?.sync("desktop") ?? [], pluginSyncStatus: () => deps.pluginSkills?.status() ?? { authBlocked: [] } };
   }
   setSettingsStore(settings: unknown): void { this.hostMcp.setSettingsStore?.(settings); }
   setBoxMcpExec(exec: unknown): void { this.hostMcp.setBoxMcpExec?.(exec); }

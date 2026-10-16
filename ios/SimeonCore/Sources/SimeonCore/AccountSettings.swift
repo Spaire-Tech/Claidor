@@ -216,6 +216,12 @@ public struct UsageSummary: Equatable, Sendable {
   public let managePlan: ManagePlan?
   /** The plan was bought in the iPhone app: Apple changes and cancels it (`billedBy` in the quota, 12 October 2026). */
   public let billedByApple: Bool
+  /**
+   * No plan because the first charge after the trial failed (`paymentFailed`
+   * in the quota, 14 October 2026): the person updates the card with whoever
+   * bills it (`billedByApple`) rather than choosing a plan.
+   */
+  public let paymentFailed: Bool
 
   private static let nextTiers: [String: ManagePlan.NextTier?] = ["standard": .init(tier: "pro", label: "Pro"), "pro": .init(tier: "max", label: "Max"), "max": nil]
 
@@ -249,10 +255,12 @@ public struct UsageSummary: Equatable, Sendable {
     upgrade = Self.upgrade(quota)
     managePlan = Self.plan(quota)
     billedByApple = quota["billedBy"]?.string == "apple"
+    paymentFailed = quota["paymentFailed"]?.bool == true
   }
 
   private static func upgrade(_ quota: JSON) -> UpgradeButton? {
     guard let text = quota["upgradeUrl"]?.text, let url = URL(string: text), let scheme = url.scheme?.lowercased(), ["http", "https"].contains(scheme), url.host?.isEmpty == false else { return nil }
+    if quota["paymentFailed"]?.bool == true { return UpgradeButton(label: "Update card", url: url) }
     let status = quota["subscriptionStatus"]?.string
     return UpgradeButton(label: status == "none" || status == "trialing" ? "Choose a plan" : "Get more usage", url: url)
   }

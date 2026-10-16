@@ -32,6 +32,38 @@ A change is kept when the pass count is the same or better and the cost is
 lower. A single task that flips from pass to fail is read again by hand before
 deciding: one run is noisy.
 
+## Comparing the model families
+
+Since 13 October 2026 one server setting chooses who answers
+(`docs/services-core.md`, section 2): `openai` (GPT-6 Sol), `claude` (Claude
+Sonnet 5.5) or `claude-opus` (Claude Opus 5.5). To compare them on the same
+thirty tasks without moving anyone else:
+
+1. On Render, set `ANTHROPIC_API_KEY` on the API service (it is the key the
+   proxy uses; it is never sent to a box).
+2. Use a test account, the same one for every run. Set
+   `SIMEON_DESKTOP_MODELS_BY_EMAIL` to `{"test@example.com": "claude"}` and
+   wait for the deploy. Within five minutes the box's host log
+   (`/tmp/sand-host.log`) shows
+   `[simeon] model-roles primary=claude-sonnet-5-5 cheap=claude-haiku-5-5 fallback=gpt-6-sol`,
+   and every `[simeon] model=` line names Claude.
+3. Run the thirty tasks, read the report, and keep the totals per model and
+   per reason.
+4. Change the line to `"claude-opus"`, wait for the new `model-roles` line,
+   and run them again. Then remove the line (or set it to `"openai"`) for the
+   GPT-6 Sol run.
+5. Compare dollars, pass count and the cached share. On Claude, `cached ÷
+   input` should climb after each turn's first call; `written=` on the
+   `model=` line is what each call paid to write the cache (1.25x input).
+   Claude keeps that copy five minutes after its last use, so on Claude
+   send each task within five minutes of the last answer, or the run
+   measures the wait instead of the change. The report's `--calls` list
+   shows the gap before every call and notes each call that stored its
+   prompt again, with the reason.
+
+A `[simeon] model-fallback from=claude-…` line means a step ran on GPT-6 Sol
+because Claude failed; read the reason on the line before counting that task.
+
 ## The tasks
 
 | # | Kind | Message to send | Passes when |

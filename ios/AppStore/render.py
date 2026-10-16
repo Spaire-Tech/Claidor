@@ -10,7 +10,18 @@ from PIL import Image
 from playwright.async_api import async_playwright
 
 HERE = pathlib.Path(__file__).resolve().parent
-ORDER = [("Main", "01-team"), ("Message", "02-message"), ("Computer", "03-computer"), ("Apps", "04-apps"), ("Call", "05-call"), ("Approve", "06-approve")]
+ORDER = [
+    ("Main", "01-teammates"),
+    ("Computer", "02-own-computer"),
+    ("Chief", "03-chief-of-staff"),
+    ("Tools", "04-connect-apps"),
+    ("Approve", "05-your-ok"),
+    ("Shopping", "06-buys-for-the-team"),
+    ("Travel", "07-work-trips"),
+    ("Call", "08-call-for-update"),
+]
+# The canvas's one tweak, the ground behind the phones, at the value the screenshots use.
+GROUND = "#F2F2F2"
 
 
 def local_page(name: str) -> pathlib.Path:
@@ -19,6 +30,7 @@ def local_page(name: str) -> pathlib.Path:
     html = re.sub(r"/_blob/([0-9a-f]{32})", lambda m: f"../assets/{blobs[m.group(1)]}", html)
     html = html.replace('<script src="./support.js"></script>', '<link rel="stylesheet" href="../fonts/fonts.css">')
     html = re.sub(r'<link rel="stylesheet" href="https://fonts\.googleapis\.com[^"]*">', "", html)
+    html = html.replace("{{ground}}", GROUND)
     out = HERE / f"build/{name}.html"
     out.parent.mkdir(exist_ok=True)
     out.write_text(html)

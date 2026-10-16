@@ -52,6 +52,15 @@ public enum Tokens {
     return nowMs + 60 * 60_000
   }
 
+  /** The account the access token is for: its envelope's `sub` (`envelope_access_token`), nil for a token that is not one. */
+  public static func subject(ofAccessToken token: String) -> String? {
+    var body = token
+    if let range = body.range(of: "^[a-z_]+_da_", options: .regularExpression) { body.removeSubrange(range) }
+    let parts = body.split(separator: ".", omittingEmptySubsequences: false)
+    guard parts.count > 1, let bytes = bytesFromBase64URL(String(parts[1])), let claims = try? JSON.parse(Data(bytes)), let sub = claims["sub"]?.string, !sub.isEmpty else { return nil }
+    return sub
+  }
+
   public static func needsRefresh(_ session: SessionTokens, nowMs: Double) -> Bool {
     nowMs >= session.expiresAtMs - refreshAheadMs
   }

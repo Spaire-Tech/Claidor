@@ -35,8 +35,11 @@ computer, and the app asks it and listens to it the way the web window does
   `uploadAttachment`, `desktopMcp`, `getHostSettings`,
   `createAgentAutomation`, `ensureForeverBox`, `voiceCall` and the rest).
   It reads `{gateway}/events` for live changes: the roster, each chat's
-  entries, the steps an agent is on. See `Gateway.swift`, `Backend.swift`
-  and `Store.swift`.
+  entries, the steps an agent is on. At launch it uses the address kept
+  from last time while it asks the broker, and before asking again it
+  checks the box's `/health`, as the Electron app does
+  (`docs/services-core.md` §4). See `Gateway.swift`, `SavedGateway.swift`,
+  `Backend.swift` and `Store.swift`.
 - **The chats.** The host sends finished entries ("add", "update",
   "remove"). The app keeps them by id and draws them. It folds them the
   window's way: a time stamp after 15 minutes, "N messages with …" for
@@ -172,6 +175,28 @@ profile, not from the configuration.
   a chat clears its notifications.
 - **The computer**: each agent's own screen, live, through noVNC's client
   (bundled in `Simeon/Computer/`, MPL 2.0) on the box's WebSocket.
+- **Connectors** (14 October 2026, the founder's reference: ChatGPT's
+  Plugins): Apple's bar with the title's menu (Available or Yours) and the
+  filter, each category's name with › over its first four apps (the name
+  opens all of them), + on each row, the search floating at the bottom
+  (`Settings.swift` `ConnectAppsSheet`, `ConnectorsList.swift`). Every
+  connector shows its own app icon (`Assets.xcassets/AppIcons`): 74 from the
+  apps' own App Store listings, 12 with no iOS app drawn from their marks in
+  `desktop/brand/connector-logos`. `python3 ios/scripts/app_icons.py` builds
+  the icons and `GeneratedAppIcons.swift` from the catalogue, and fails when
+  a connector has none; `… fetch` takes them again (where each came from:
+  `desktop/brand/app-icons/sources.json`). `ConnectorIcons` finds an icon by
+  any of an app's names ("monday.com", "Facebook Pages", "Excel").
+- **App names in messages** (`Mentions.find`, `GeneratedBrands.swift`): the
+  Mac window's 75 spellings, and since 14 October 2026 the 36 connectors added
+  after it plus "Facebook Pages" and "TikTok Ads"
+  (`ios/scripts/connector-mentions.json`, iPhone and Mac only), each in its
+  colour with its logo. A name that is also an everyday word (Link, Kit,
+  Square, Ramp, Capsule, Mercury, Apollo, Gong) is not marked as a sentence's
+  first word ("Link your account"). `node ios/scripts/make-assets.mjs` draws
+  the logos into `Assets.xcassets/Brands`, copies them to the Mac's, and
+  writes the Swift list (`CHROMIUM=` the Chromium binary when it is not at
+  `/opt/pw-browsers/chromium`).
 - **Sign-in and the first run** (12 October 2026): Apple's own sheet and
   Google's own page (`AppleSignIn`, `GoogleSignIn`), each answered with the
   pair by the server, no web page between; then the free month is asked for

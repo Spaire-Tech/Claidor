@@ -24,11 +24,33 @@ test("OpenAI account-quota refusals do not send the person to platform.openai.co
   );
   assert.match(source, /export function simeonFacingProviderError/);
   assert.match(source, /no credits remaining\|insufficient_quota\|platform\\.openai\\.com/);
-  assert.match(source, /OpenAI has no credits left on Simeon Labs' account/);
   assert.match(source, /Claude Code is not installed/);
-  assert.match(source, /Simeon talks to Simeon Labs' server, not Claude Code/);
   assert.match(source, /simeonFacingProviderError\(shown\)/);
   assert.doesNotMatch(source, /Add credits to continue using the API/);
+  // Nothing behind Simeon is named to the person (13 October 2026).
+  assert.doesNotMatch(source, /OpenAI has no credits left/);
+  assert.doesNotMatch(source, /not Claude Code/);
+});
+
+test("a model company's refusal reads as Simeon not being available, the plan's own refusals stay", async () => {
+  const loaded = await loadModule("source/host/extensions/transcript/agent-run-error.ts", "agent-run-error-plain");
+  try {
+    const { simeonFacingProviderError, describeAgentRunError } = loaded.module;
+    const plain = "Simeon isn't available at the moment. Try again in a little while.";
+    assert.equal(simeonFacingProviderError("429 You exceeded your current quota, please check your plan and billing details."), plain);
+    assert.equal(simeonFacingProviderError("Your credit balance is too low to access the Anthropic API."), plain);
+    assert.equal(simeonFacingProviderError("Gemini request failed (503: overloaded)."), plain);
+    assert.equal(simeonFacingProviderError("claude-sonnet is served by anthropic and is not reached through the openai API."), plain);
+    assert.equal(simeonFacingProviderError("The step budget ran out (SAND_AGENT_MAX_STEPS)."), plain);
+    assert.equal(simeonFacingProviderError("Claude Code is not installed"), "Sign in to Simeon again, then try again.");
+    const week = "This week's credits are used (code 40200). They reset on Monday. Upgrade at https://app.simeonlabs.com/billing to keep going now.";
+    assert.equal(simeonFacingProviderError(week), week);
+    assert.equal(simeonFacingProviderError("The file was too large to attach."), "The file was too large to attach.");
+    const described = describeAgentRunError(new Error("insufficient_quota: no credits remaining, see platform.openai.com/settings/organization/billing"));
+    assert.equal(described.detail, plain);
+  } finally {
+    await loaded.dispose();
+  }
 });
 
 test("an upgrade button opens the billing page on the plan's card", async () => {

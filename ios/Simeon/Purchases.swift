@@ -119,7 +119,7 @@ final class Purchases {
         return .cancelled
       }
     } catch {
-      return .failed(error.localizedDescription)
+      return .failed(PlainWords.error(error.localizedDescription))
     }
   }
 
@@ -132,12 +132,12 @@ final class Purchases {
     } catch StoreKitError.userCancelled {
       return .cancelled
     } catch {
-      return .failed(error.localizedDescription)
+      return .failed(PlainWords.error(error.localizedDescription))
     }
     switch await sendEntitlements() {
     case .none: return .failed(PlansCopy.nothingToRestore)
     case .some(nil): return .done
-    case .some(let problem?): return .failed(problem)
+    case .some(let problem?): return .failed(PlainWords.error(problem))
     }
   }
 

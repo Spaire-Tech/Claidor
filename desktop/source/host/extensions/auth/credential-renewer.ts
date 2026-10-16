@@ -86,10 +86,20 @@ export async function readDevInferenceCredentialFile(args: {
   }
 }
 
+// A new box asks for its first credential seconds after it starts, before
+// the server has saved the credential it was made with (the broker writes it
+// in the same request that waits for the box to answer). Those first refusals
+// are retried at the base delay, not backed off, so the box has its
+// credential seconds after the server saves it instead of minutes
+// (15 October 2026: backups and connector sign-ins failing "Waiting for a
+// model credential" for a minute or two after every restart).
+export const FIRST_CREDENTIAL_FAST_RETRIES = 24;
+
 export class SandInferenceCredentialRenewer {
   private readonly abort = new AbortController();
   private loop: Promise<void> | undefined;
   private consecutiveFailures = 0;
+  private renewedOnce = false;
   private interruptRefreshWait: (() => void) | undefined;
   private onDemandRenewal: PromiseWithResolvers<void> | undefined;
 
@@ -137,6 +147,7 @@ export class SandInferenceCredentialRenewer {
       if (this.abort.signal.aborted) return null;
       this.options.setCredential(renewed);
       this.consecutiveFailures = 0;
+      this.renewedOnce = true;
       this.reportResult("renewed", Date.now() - cycleStartedAtMs);
       const untilRefresh = renewed.expiresAtMs - Date.now() - REFRESH_LEEWAY_MS;
       return { kind: "refresh", delayMs: Math.min(Math.max(untilRefresh, MIN_REFRESH_INTERVAL_MS), MAX_REFRESH_INTERVAL_MS) };
@@ -153,7 +164,8 @@ export class SandInferenceCredentialRenewer {
     const signal = this.abort.signal;
     if (signal.aborted) return;
     if (next.kind === "backoff") {
-      await this.options.retry.schedule(next.attempt, signal).elapsed.catch((error) => {
+      const attempt = !this.renewedOnce && next.attempt <= FIRST_CREDENTIAL_FAST_RETRIES ? 1 : next.attempt;
+      await this.options.retry.schedule(attempt, signal).elapsed.catch((error) => {
         if (!signal.aborted) console.warn(`[sand-credential-renewer] backoff wait failed (${errorLogTag(error)})`);
       });
       return;

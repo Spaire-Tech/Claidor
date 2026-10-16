@@ -129,6 +129,8 @@ public protocol AgentBackend: AnyObject, Sendable {
   func markRead(_ agentId: String) async
   /** A new agent, with the face it was shown with (AgentFaces); its id. */
   func createAgent(name: String, face: String?) async throws -> String
+  /** The same, with the voice picked for it (AgentDraft). */
+  func createAgent(name: String, face: String?, voiceId: String?) async throws -> String
   /** A new group of agents; its id. */
   func createGroup(name: String, memberIds: [String]) async throws -> String
   /** The answer to a question card. */
@@ -163,6 +165,13 @@ extension AgentBackend {
   /** No dictation where nothing transcribes (the window's "Voice transcription source is unavailable."). */
   public func transcribe(audio: Data, mimeType: String) async throws -> String {
     throw SimeonAPIError(message: "Voice transcription source is unavailable.", status: 0)
+  }
+}
+
+extension AgentBackend {
+  /** A backend with no voices keeps none (the demo, stand-ins). */
+  public func createAgent(name: String, face: String?, voiceId: String?) async throws -> String {
+    try await createAgent(name: name, face: face)
   }
 }
 
@@ -358,6 +367,10 @@ public final class LiveBackend: AgentBackend, @unchecked Sendable {
   }
 
   public func createAgent(name: String, face: String?) async throws -> String {
+    try await createAgent(name: name, face: face, voiceId: nil)
+  }
+
+  public func createAgent(name: String, face: String?, voiceId: String?) async throws -> String {
     // The window's New Agent (router-renderer-patch.mjs, phone-create-sheets), introduced at once. The face the sheet showed is
     // kept on it (`avatarShape`) and put on once it is listed (AgentFaces); its colour is the host's (no app shows it now).
     var args: JSON = [
@@ -365,6 +378,8 @@ public final class LiveBackend: AgentBackend, @unchecked Sendable {
       "isKickstartRequested": true, "origin": "user", "clientNonce": .string("ios-\(UUID().uuidString.lowercased())"),
     ]
     if let face { args = args.setting("avatarShape", .string(face)) }
+    // The host keeps a voice given with the agent (`mintAgent`, host-gateway-api.ts).
+    if let voiceId { args = args.setting("voiceId", .string(voiceId)) }
     let answer = try await gateway.command("createAgent", args)
     guard let id = answer["agent"]?["id"]?.text else { throw GatewayError(message: "createAgent: no agent in the answer", refused: true) }
     return id

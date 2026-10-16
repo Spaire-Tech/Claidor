@@ -39,11 +39,13 @@ from simeon.desktop.tokens import (
     BOX_CREDENTIAL_PREFIXES,
 )
 from simeon.kit.crypto import generate_token_hash_pair, get_token_hash
+from simeon.kit.db.postgres import AsyncSessionMaker
 from simeon.kit.utils import generate_uuid, utc_now
 from simeon.models import DesktopSession, SandBox
 from simeon.postgres import AsyncSession
 from simeon.redis import Redis
 
+from . import box_store
 from .box_hosts import (
     EGRESS_TUNNEL_PORT,
     FORK_NOVNC_PORT,
@@ -235,6 +237,38 @@ async def _never_rejected(url: str, token: str) -> bool:
 _health_check: HealthCheck = gateway_health
 _token_check: HealthCheck = gateway_token_rejected
 
+#: How long the box gets to finish its backup before its container is
+#: replaced: the upstream app's own (`FLUSH_TIMEOUT_MS`,
+#: `dev-box-recreate-plane.ts`).
+FLUSH_TIMEOUT_S = 30.0
+
+
+async def gateway_flush_box_store(url: str, token: str) -> bool:
+    """The box's backup brought up to date now (`snapshotBoxStoreNow`,
+    the upstream app's step before it replaces a container): True when the
+    box says every file is in the backup."""
+    try:
+        async with httpx.AsyncClient(timeout=FLUSH_TIMEOUT_S) as client:
+            response = await client.post(
+                f"{url}/api/snapshotBoxStoreNow",
+                headers={"authorization": f"Bearer {token}"},
+                json={"includeIdleOnly": True},
+            )
+        if response.status_code != 200:
+            return False
+        body = response.json()
+    except (httpx.HTTPError, ValueError):
+        return False
+    return isinstance(body, dict) and body.get("ok") is True
+
+
+_flush_box_store: HealthCheck = gateway_flush_box_store
+
+
+def set_flush_for_tests(flush: HealthCheck | None) -> None:
+    global _flush_box_store
+    _flush_box_store = flush or gateway_flush_box_store
+
 
 def set_health_check_for_tests(
     check: HealthCheck | None, token_rejected: HealthCheck | None = None
@@ -413,10 +447,34 @@ class BoxBrokerService:
         return f"simeon-box-{box_id.hex}-workspace", f"simeon-box-{box_id.hex}-data"
 
     async def _mint_credential(
-        self, db: AsyncSession, parent: DesktopSession
-    ) -> tuple[DesktopSession, str]:
+        self,
+        db: AsyncSession,
+        parent: DesktopSession,
+        committed: AsyncSessionMaker | None = None,
+    ) -> tuple[UUID, str]:
+        """A new credential for the box about to start, and its row's id.
+
+        Written and committed on a session of its own where the app gives
+        one (`committed`), before the container starts (15 October 2026).
+        Written on the request's session, it was saved only when the
+        request ended, and `ensure` ends only after the box answers, up to
+        `BOX_READY_TIMEOUT` later. The box's first act is to copy its
+        backup in with that credential (`box-copy-in.ts`), so every copy
+        was refused (401, "Sand inference-credential renewal failed"),
+        three times, until the box gave up and started without its backup:
+        its Chrome sign-ins lost and its backups paused. The test client
+        gives no sessionmaker and keeps the request's session."""
         try:
-            return await desktop.issue_box_credential(db, parent)
+            if committed is None:
+                row, credential = await desktop.issue_box_credential(db, parent)
+                return row.id, credential
+            async with committed() as fresh:
+                own = await fresh.get(DesktopSession, parent.id)
+                if own is None:
+                    raise DesktopUnauthenticated("This desktop session has expired.")
+                row, credential = await desktop.issue_box_credential(fresh, own)
+                await fresh.commit()
+                return row.id, credential
         except DesktopUnauthenticated as error:
             raise BoxBrokerRefused("unauthenticated", error.message)
 
@@ -443,10 +501,34 @@ class BoxBrokerService:
         box.image_digest = provisioned.image_digest
 
     async def _create(
-        self, db: AsyncSession, host: BoxHost, parent: DesktopSession, box: SandBox
+        self,
+        db: AsyncSession,
+        host: BoxHost,
+        parent: DesktopSession,
+        box: SandBox,
+        *,
+        restore: str | None = None,
+        committed: AsyncSessionMaker | None = None,
     ) -> None:
-        credential_row, credential = await self._mint_credential(db, parent)
-        box.credential_session_id = credential_row.id
+        """A new container for the row. With backups on (`box_store.py`)
+        it backs itself up, and copies the last backup in before its host
+        starts: `restore="always"` after the old container's backup was
+        brought up to date (its Chrome and app sign-ins live outside the
+        two volumes) or to recover the computer from it; `"never"` after a
+        reset; by default only onto an empty data volume, and only when
+        there is a backup (or S3 could not say)."""
+        extra_env: dict[str, str] = {}
+        labels: dict[str, str] = {}
+        if box_store.enabled():
+            if restore == "never":
+                restore = None
+            elif restore != "always":
+                has = await asyncio.to_thread(box_store.has_backup, parent.user_id)
+                restore = None if has is False else "fresh"
+            extra_env = box_store.box_env(parent.user_id, restore=restore)
+            labels = {box_store.LABEL: box_store.LABEL_VALUE}
+        credential_id, credential = await self._mint_credential(db, parent, committed)
+        box.credential_session_id = credential_id
         box.gateway_token = box.gateway_token or secrets.token_hex(32)
         box.network_token = box.network_token or secrets.token_hex(32)
         workspace, data = self.volumes(box.id)
@@ -460,8 +542,16 @@ class BoxBrokerService:
             data_volume=data,
             memory_mb=max(settings.BOX_MEMORY_LIMIT_MB, 0),
             cpus=max(settings.BOX_CPU_LIMIT, 0.0),
+            extra_env=extra_env,
+            labels=labels,
         )
         provisioned = await host.create(spec)
+        if box_store.enabled():
+            log.info(
+                "sand.box.store",
+                box=str(box.id),
+                restore=restore or "none",
+            )
         box.provider = host.name
         box.state = "running"
         self._apply(box, provisioned)
@@ -499,10 +589,17 @@ class BoxBrokerService:
                 return False
             await asyncio.sleep(self.ready_poll)
 
-    async def ensure(self, db: AsyncSession, caller: DesktopSession) -> SandBox:
+    async def ensure(
+        self,
+        db: AsyncSession,
+        caller: DesktopSession,
+        *,
+        committed: AsyncSessionMaker | None = None,
+    ) -> SandBox:
         """`EnsureSandBox`: the person's box, created, started or reused,
         with its URLs stamped. Raises `BoxBrokerRefused` (a Connect code
-        and a sentence) and `BoxHostError`."""
+        and a sentence) and `BoxHostError`. `committed` writes a new box's
+        credential before the box starts (`_mint_credential`)."""
         parent = await self._parent_of(db, caller)
         # One ensure per person at a time (Render, 4 October 2026). The page,
         # the Mac app and its helper all ask within seconds of each other,
@@ -532,13 +629,21 @@ class BoxBrokerService:
             expected_host = getattr(host, "expected_host_sha256", None)
             stale_host = False
             stale_image = False
+            # Made before backups were switched on (`box_store.py`): replaced
+            # on its volumes like a box on an older host program.
+            stale_store = False
+            current: ProvisionedBox | None = None
             if state is not None and credential_live:
                 current = await host.inspect(box.provider_box_id)
                 if current is not None:
                     stale_image = current.image != box_image_reference()
+                    stale_store = (
+                        box_store.enabled()
+                        and current.box_store != box_store.LABEL_VALUE
+                    )
                 if expected_host is not None:
                     stale_host = current is None or current.host_sha256 != expected_host
-            if (stale_host or stale_image) and state == "running":
+            if (stale_host or stale_image or stale_store) and state == "running":
                 # The upstream app's supervisor swaps the host only when the box is
                 # idle (the upgrade command waits while it is busy): a box
                 # working, or waiting on the person's approval, keeps its
@@ -549,9 +654,16 @@ class BoxBrokerService:
                         box=str(box.id),
                         stale_host=stale_host,
                         stale_image=stale_image,
+                        stale_store=stale_store,
                     )
-                    stale_host = stale_image = False
-            if state is None or not credential_live or stale_host or stale_image:
+                    stale_host = stale_image = stale_store = False
+            if (
+                state is None
+                or not credential_live
+                or stale_host
+                or stale_image
+                or stale_store
+            ):
                 # Absent on the host, its credential died with a sign-out, or
                 # the wrong host program or image: a fresh container on the
                 # same volumes, a fresh credential.
@@ -562,12 +674,20 @@ class BoxBrokerService:
                     credential_live=credential_live,
                     stale_host=stale_host,
                     stale_image=stale_image,
+                    stale_store=stale_store,
                 )
                 if state != "running":
                     await self.check_capacity(repository, host, box)
+                restore = (
+                    "always"
+                    if state == "running" and await self.flush_box_store(box, current)
+                    else None
+                )
                 if state is not None:
                     await host.remove(box.provider_box_id, volumes=[])
-                await self._create(db, host, parent, box)
+                await self._create(
+                    db, host, parent, box, restore=restore, committed=committed
+                )
                 created = True
             elif state == "stopped":
                 await self.check_capacity(repository, host, box)
@@ -597,7 +717,7 @@ class BoxBrokerService:
                     await host.remove(box.provider_box_id, volumes=[])
                     box.gateway_token = ""
                     box.network_token = ""
-                    await self._create(db, host, parent, box)
+                    await self._create(db, host, parent, box, committed=committed)
                     created = True
         else:
             if box is not None:
@@ -619,7 +739,7 @@ class BoxBrokerService:
             host = await self.place(repository, box)
             box.provider = host.name
             try:
-                await self._create(db, host, parent, box)
+                await self._create(db, host, parent, box, committed=committed)
             except BoxHostError:
                 # A brand-new box that did not come up leaves nothing
                 # behind: the host removed its container, and its two
@@ -684,6 +804,7 @@ class BoxBrokerService:
         redis: Redis,
         preserve_data: bool,
         force: bool,
+        committed: AsyncSessionMaker | None = None,
     ) -> RecreateOutcome:
         """`RecreateSandBox` and `ForceRecreateSandBox`: the container is
         replaced now, on the same volumes (`preserve_data`) or on fresh
@@ -723,6 +844,22 @@ class BoxBrokerService:
             state = await host.run_state(box.provider_box_id)
             if state != "running":
                 await self.check_capacity(repository, host, box)
+            # With backups on, the upstream app's three
+            # (`dev-box-recreate-plane.ts`): an update brings the backup up to
+            # date, then swaps the container on the same files; a recovery
+            # (force) does the same as far as the box answers, wipes the
+            # agents' data and boots from the backup; a reset wipes the data
+            # and the backup together. Without backups, as before.
+            backups = box_store.enabled()
+            recover = backups and force and not preserve_data
+            flushed = False
+            if state == "running" and backups and (preserve_data or recover):
+                await migrations.record(
+                    redis, box.id, operation_id, PHASE_BACKING_UP, "Saving a backup"
+                )
+                flushed = await self.flush_box_store(
+                    box, await host.inspect(box.provider_box_id)
+                )
             if state is not None:
                 if not preserve_data:
                     await migrations.record(
@@ -730,13 +867,33 @@ class BoxBrokerService:
                     )
                 await host.remove(
                     box.provider_box_id,
-                    volumes=[] if preserve_data else [workspace, data],
+                    volumes=[]
+                    if preserve_data
+                    else [data]
+                    if recover
+                    else [workspace, data],
                 )
+            if backups and not preserve_data and not recover:
+                try:
+                    await asyncio.to_thread(box_store.clear_box_store, parent.user_id)
+                except Exception as error:
+                    # The new box starts empty either way ("never"), and its
+                    # first backup replaces the old manifest.
+                    log.warning(
+                        "sand.box.store.clear_failed", box=str(box.id), error=str(error)
+                    )
             # A new credential, so the new container never carries one a
             # previous container exposed.
             box.gateway_token = ""
             box.network_token = ""
-            await self._create(db, host, parent, box)
+            restore: str | None = None
+            if recover or flushed:
+                restore = "always"
+            elif backups and not preserve_data:
+                restore = "never"
+            await self._create(
+                db, host, parent, box, restore=restore, committed=committed
+            )
             self.stamp_urls(box)
             box.last_ensured_at = utc_now()
             box.last_active_at = box.last_ensured_at
@@ -860,6 +1017,20 @@ class BoxBrokerService:
         log.info("sand.box.placed", box=str(box.id), server=best.name)
         return best
 
+    async def flush_box_store(
+        self, box: SandBox, container: ProvisionedBox | None
+    ) -> bool:
+        """The running box's backup brought up to date, when it keeps one
+        (`box_store.LABEL` on its container): True once it says so."""
+        if container is None or container.box_store != box_store.LABEL_VALUE:
+            return False
+        url = self.internal_url(box, GATEWAY_PORT)
+        if url is None:
+            return False
+        flushed = await _flush_box_store(url, box.gateway_token)
+        log.info("sand.box.store.flush", box=str(box.id), flushed=flushed)
+        return flushed
+
     async def health_of(self, box: SandBox) -> BoxHealth:
         url = self.internal_url(box, GATEWAY_PORT)
         if url is None:
@@ -932,6 +1103,16 @@ class BoxBrokerService:
                     box.last_active_at = min(last_busy, now)
                     await repository.update(box, flush=True)
             if await is_attached(redis, box.id):
+                # An app open on the box is the box in use, so its idle time
+                # starts when the app goes (16 October 2026). The upstream
+                # app's Mac asked for the box every 30 s while it was open
+                # (`LOCAL_EXEC_DAEMON_REFRESH_INTERVAL_MS`, each an
+                # EnsureSandBox, which stamps `last_active_at` here); until
+                # then a box idle for 30 minutes with the app open slept
+                # within a few minutes of the app closing (Render, 15
+                # October 2026: asleep at 22:17:11, wanted at 22:18:47).
+                box.last_active_at = now
+                await repository.update(box, flush=True)
                 continue
             idle_since = box.last_active_at or box.last_ensured_at or box.created_at
             if now - idle_since < after:

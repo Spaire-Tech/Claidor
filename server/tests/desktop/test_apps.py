@@ -2,7 +2,10 @@
 HTTP with the provider mocked: the MCP server per app, sign-in, status,
 disconnect, and that the provider's name never comes back."""
 
+import base64
 import json
+import time
+from urllib.parse import parse_qs, urlencode, urlparse
 
 import httpx
 import pytest
@@ -92,12 +95,27 @@ class TestAvailability:
         mocker: MockerFixture,
     ) -> None:
         headers = await _signed_in(client, session, user)
+        soon = sorted(apps_module.OWN_APP_NEEDED)
         response = await client.get("/desktop/api/apps", headers=headers)
-        assert response.json() == {"available": True}
+        assert response.json() == {"available": True, "comingSoon": soon}
         mocker.patch.object(settings, "COMPOSIO_API_KEY", "")
         response = await client.get("/desktop/api/apps", headers=headers)
-        assert response.json() == {"available": False}
+        assert response.json() == {"available": False, "comingSoon": soon}
         assert (await client.get("/desktop/api/apps")).status_code == 401
+
+    async def test_an_app_with_our_own_sign_in_is_no_longer_coming_soon(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        # The iPhone and Mac apps offer Add once Simeon Labs' own app is named.
+        mocker.patch.object(settings, "COMPOSIO_AUTH_CONFIGS", {"xero": "ac_x"})
+        headers = await _signed_in(client, session, user)
+        response = await client.get("/desktop/api/apps", headers=headers)
+        assert "xero" not in response.json()["comingSoon"]
+        assert "gusto" in response.json()["comingSoon"]
 
 
 @pytest.mark.asyncio
@@ -393,11 +411,22 @@ class TestSigningIn:
                 "/desktop/api/apps/gmail/connect", headers=headers
             )
         assert response.status_code == 200, response.text
-        assert response.json() == {
-            "toolkit": "gmail",
-            "connected": False,
-            "url": "https://accounts.google.com/o/oauth2/auth?x=1",
-        }
+        body = response.json()
+        assert body["toolkit"] == "gmail"
+        assert body["connected"] is False
+        # The sign-in starts on our address (white label, 13 October 2026) and leads to Google's page.
+        assert body["url"].startswith(
+            f"{settings.BASE_URL.rstrip('/')}/desktop/apps/start?"
+        )
+        assert "composio" not in body["url"].lower()
+        started = await client.get(
+            body["url"].replace(settings.BASE_URL.rstrip("/"), "")
+        )
+        assert started.status_code == 302
+        assert (
+            started.headers["location"]
+            == "https://accounts.google.com/o/oauth2/auth?x=1"
+        )
         assert json.loads(created.calls[0].request.content) == {
             "user_id": composio_user_id(user)
         }
@@ -476,7 +505,7 @@ class TestSigningIn:
                 "/desktop/api/apps/xero/connect", headers=headers
             )
         assert response.status_code == 200, response.text
-        assert response.json()["url"] == "https://login.xero.com/x"
+        assert _start_target(response.json()["url"]) == "https://login.xero.com/x"
         assert json.loads(created.calls[0].request.content) == {
             "user_id": composio_user_id(user),
             "auth_configs": {"xero": "ac_xero1"},
@@ -549,7 +578,9 @@ class TestSigningIn:
             started = await client.post("/desktop/api/apps/gmail/connect", headers=box)
             gone = await client.delete("/desktop/api/apps/gmail", headers=box)
         assert started.status_code == 200, started.text
-        assert started.json()["url"].startswith("https://accounts.google.com/")
+        assert _start_target(started.json()["url"]).startswith(
+            "https://accounts.google.com/"
+        )
         assert gone.json() == {"toolkit": "gmail", "disconnected": 1}
 
     async def test_status_and_disconnect(
@@ -569,11 +600,283 @@ class TestSigningIn:
         assert gone.json() == {"toolkit": "gmail", "disconnected": 1}
         assert deleted.called
 
+    async def test_the_providers_link_is_followed_to_the_apps_own_page(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _signed_in(client, session, user)
+        short = "https://backend.composio.dev/api/v3/s/abc123"
+        with respx.mock(assert_all_called=True) as mock:
+            mock.get(f"{API}/api/v3.1/connected_accounts").mock(
+                return_value=_accounts()
+            )
+            mock.post(f"{API}/api/v3.1/tool_router/session").mock(
+                return_value=httpx.Response(201, json={"session_id": "trs_1"})
+            )
+            mock.post(f"{API}/api/v3.1/tool_router/session/trs_1/link").mock(
+                return_value=httpx.Response(
+                    201,
+                    json={
+                        "link_token": "t",
+                        "redirect_url": short,
+                        "connected_account_id": "ca_2",
+                    },
+                )
+            )
+            mock.get(short).mock(
+                return_value=httpx.Response(
+                    302,
+                    headers={
+                        "location": "https://slack.com/oauth/v2/authorize?state=s"
+                    },
+                )
+            )
+            response = await client.post(
+                "/desktop/api/apps/slack/connect", headers=headers
+            )
+        url = response.json()["url"]
+        assert "composio" not in url.lower()
+        started = await client.get(url.replace(settings.BASE_URL.rstrip("/"), ""))
+        assert (
+            started.headers["location"]
+            == "https://slack.com/oauth/v2/authorize?state=s"
+        )
+
+    async def _connect_through_link_page(
+        self,
+        client: httpx.AsyncClient,
+        headers: dict[str, str],
+        mock: respx.MockRouter,
+        page: str,
+    ) -> str:
+        apps_module._sessions.clear()
+        mock.get(f"{API}/api/v3.1/connected_accounts").mock(return_value=_accounts())
+        mock.post(f"{API}/api/v3.1/tool_router/session").mock(
+            return_value=httpx.Response(201, json={"session_id": "trs_1"})
+        )
+        mock.post(f"{API}/api/v3.1/tool_router/session/trs_1/link").mock(
+            return_value=httpx.Response(
+                201,
+                json={
+                    "link_token": "t",
+                    "redirect_url": page,
+                    "connected_account_id": "ca_2",
+                },
+            )
+        )
+        response = await client.post("/desktop/api/apps/gmail/connect", headers=headers)
+        assert response.status_code == 200, response.text
+        started = await client.get(
+            response.json()["url"].replace(settings.BASE_URL.rstrip("/"), "")
+        )
+        return started.headers["location"]
+
+    async def test_the_providers_connect_page_is_skipped(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        """13 October 2026: the hosted page said "Simeon wants to connect"
+        and went on by itself. Asked here as the page asks, the person goes
+        straight to Google's page."""
+        headers = await _signed_in(client, session, user)
+        page = "https://connect.composio.dev/link/lk_AbCdEfGhIjKl"
+        link = f"{API}/api/v3.1/internal/connected_accounts/link/lk_AbCdEfGhIjKl"
+        with respx.mock(assert_all_called=True) as mock:
+            mock.get(link).mock(
+                return_value=httpx.Response(
+                    200,
+                    json={
+                        "connected_account": {
+                            "id": "ca_2",
+                            "status": "INITIALIZING",
+                            "expected_input_fields": [],
+                        },
+                        "toolkit": {"slug": "gmail", "name": "Gmail"},
+                        "project": {"name": "Simeon"},
+                    },
+                )
+            )
+            started = mock.post(link).mock(
+                return_value=httpx.Response(
+                    200,
+                    json={
+                        "status": "INITIATED",
+                        "redirect_url": "https://accounts.google.com/o/oauth2/auth?state=s",
+                    },
+                )
+            )
+            location = await self._connect_through_link_page(
+                client, headers, mock, page
+            )
+        assert location == "https://accounts.google.com/o/oauth2/auth?state=s"
+        assert json.loads(started.calls[0].request.content) == {"input": {}}
+        # As the page asks it: no key of ours goes with it.
+        assert "x-api-key" not in started.calls[0].request.headers
+
+    async def test_a_providers_page_that_asks_something_is_kept(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        """A shop's or a subdomain's name to type: the page asks it, so it stays."""
+        headers = await _signed_in(client, session, user)
+        page = "https://connect.composio.dev/link/lk_AbCdEfGhIjKl"
+        link = f"{API}/api/v3.1/internal/connected_accounts/link/lk_AbCdEfGhIjKl"
+        with respx.mock(assert_all_called=True) as mock:
+            mock.get(link).mock(
+                return_value=httpx.Response(
+                    200,
+                    json={
+                        "connected_account": {
+                            "status": "INITIALIZING",
+                            "expected_input_fields": [
+                                {"name": "shop", "required": True}
+                            ],
+                        }
+                    },
+                )
+            )
+            mock.get(page).mock(
+                return_value=httpx.Response(200, text="<html>Connect</html>")
+            )
+            # No sign-in is started for it: an unmatched POST would fail the mock.
+            location = await self._connect_through_link_page(
+                client, headers, mock, page
+            )
+        assert location == page
+
+    async def test_a_providers_page_that_cant_be_asked_is_kept(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _signed_in(client, session, user)
+        page = "https://connect.composio.dev/link/lk_AbCdEfGhIjKl"
+        link = f"{API}/api/v3.1/internal/connected_accounts/link/lk_AbCdEfGhIjKl"
+        for refusal in (
+            httpx.Response(404, json={"error": {"message": "Link session not found"}}),
+            httpx.Response(200, text="not json"),
+        ):
+            with respx.mock(assert_all_called=True) as mock:
+                mock.get(link).mock(return_value=refusal)
+                mock.get(page).mock(
+                    return_value=httpx.Response(200, text="<html>Connect</html>")
+                )
+                location = await self._connect_through_link_page(
+                    client, headers, mock, page
+                )
+            assert location == page
+        with respx.mock(assert_all_called=True) as mock:
+            mock.get(link).mock(
+                return_value=httpx.Response(
+                    200,
+                    json={"connected_account": {"status": "INITIALIZING"}},
+                )
+            )
+            mock.post(link).mock(return_value=httpx.Response(500, json={}))
+            mock.get(page).mock(
+                return_value=httpx.Response(200, text="<html>Connect</html>")
+            )
+            location = await self._connect_through_link_page(
+                client, headers, mock, page
+            )
+        assert location == page
+
+    async def test_a_start_link_leads_only_where_it_was_signed_for(
+        self, client: httpx.AsyncClient
+    ) -> None:
+        good = apps_module.start_url("https://accounts.google.com/o/oauth2/auth?x=1")
+        path = good.replace(settings.BASE_URL.rstrip("/"), "")
+        assert (await client.get(path)).status_code == 302
+        signed = parse_qs(urlparse(path).query)
+        evil = base64.urlsafe_b64encode(b"https://evil.example.com/").decode()
+        tampered = "/desktop/apps/start?" + urlencode(
+            {"t": evil, "e": signed["e"][0], "s": signed["s"][0]}
+        )
+        refused = await client.get(tampered)
+        assert refused.status_code == 400
+        assert "location" not in refused.headers
+        assert "That link didn't work" in refused.text
+        old = apps_module.start_url(
+            "https://accounts.google.com/o/oauth2/auth?x=1", now=0
+        )
+        expired = await client.get(old.replace(settings.BASE_URL.rstrip("/"), ""))
+        assert expired.status_code == 400
+        assert "That link has expired" in expired.text
+
+    async def test_a_link_made_before_the_change_still_leads_on(
+        self, client: httpx.AsyncClient
+    ) -> None:
+        """Links handed out in the old form (`to=`) live a quarter of an
+        hour; one whose `+` the apps' rewrite made a space still leads on."""
+        google = "https://accounts.google.com/o/oauth2/auth?scope=a+b&x=1"
+        expires = int(time.time()) + 600
+        signature = apps_module._start_signature(expires, google)
+        legacy = "/desktop/apps/start?" + urlencode(
+            {"to": google, "e": expires, "s": signature}
+        )
+        assert (await client.get(legacy)).headers["location"] == google
+        spaced = legacy.replace("a%2Bb", "a+b")
+        assert spaced != legacy
+        assert (await client.get(spaced)).headers["location"] == google
+
+    async def test_a_start_link_survives_the_apps_adding_their_return_address(
+        self, client: httpx.AsyncClient
+    ) -> None:
+        """13 October 2026: every Google sign-in opened from the Mac said
+        "That link has expired". The apps add `back=` to our link through
+        Apple's `URLComponents.queryItems` (`Connecting.returning`), which
+        decodes every value and writes it back with `+` left bare, and a
+        bare `+` in a query reads as a space: Google's `scope=a+b` came back
+        as `scope=a b`, the signature no longer matched, and every link was
+        refused. The link now carries the address in a form that rewrite
+        cannot change."""
+        google = (
+            "https://accounts.google.com/o/oauth2/v2/auth?client_id=1.apps"
+            "&redirect_uri=https%3A%2F%2Fapi.simeonlabs.com%2Fdesktop%2Fapps"
+            "%2Foauth%2Fcallback&scope=openid+https%3A%2F%2Fwww.googleapis.com"
+            "%2Fauth%2Fgmail.modify&state=a%2Bb%3D"
+        )
+        good = apps_module.start_url(google)
+        rewritten = _as_apple_adds_back(good, "simeon")
+        started = await client.get(rewritten.replace(settings.BASE_URL.rstrip("/"), ""))
+        assert started.status_code == 302, started.text
+        assert started.headers["location"] == google
+        assert "simeon_apps_back=simeon" in started.headers["set-cookie"]
+
+    async def test_the_sign_in_ends_back_in_the_app_that_opened_it(
+        self, client: httpx.AsyncClient
+    ) -> None:
+        """13 October 2026: "the last screen after something is connected
+        makes no sense ... should take us back". The app names itself on our
+        start link; the last page sends the person to it, and the app's
+        sign-in sheet closes on its own address."""
+        good = apps_module.start_url("https://accounts.google.com/o/oauth2/auth?x=1")
+        path = good.replace(settings.BASE_URL.rstrip("/"), "")
+        started = await client.get(path + "&back=simeon-ios")
+        assert started.status_code == 302
+        assert "simeon_apps_back=simeon-ios" in started.headers["set-cookie"]
+        done = await client.get("/desktop/apps/connected?status=success")
+        assert done.status_code == 302
+        assert done.headers["location"] == "simeon-ios://connected"
+        # Once: a later sign-in in a browser's tab ends on the page.
+        assert (await client.get("/desktop/apps/connected")).status_code == 200
+
+        await client.get(path + "&back=simeon")
+        failed = await client.get("/desktop/apps/connected?status=failed")
+        assert failed.headers["location"] == "simeon://connected?status=failed"
+
+        # Only our own apps: any other scheme is never kept.
+        client.cookies.clear()
+        other = await client.get(path + "&back=javascript")
+        assert "set-cookie" not in other.headers
+        assert (await client.get("/desktop/apps/connected")).status_code == 200
+
     async def test_the_landing_page_and_the_callback_are_ours(
         self, client: httpx.AsyncClient
     ) -> None:
         page = await client.get("/desktop/apps/connected")
         assert page.status_code == 200
+        # Dark mode, 13 October 2026: the card's white came after the dark
+        # rule and won, and the page was light text on white. The dark rule
+        # now comes last.
+        assert page.text.index(".card{background:#fff") < page.text.index(
+            "prefers-color-scheme:dark"
+        )
         assert "Simeon" in page.text
         assert "composio" not in page.text.lower()
         callback = await client.get("/desktop/apps/oauth/callback?code=abc&state=xyz")
@@ -609,3 +912,28 @@ def test_scrub() -> None:
         apps_module.scrub("Powered by Composio, see composio.dev")
         == "Powered by Simeon, see simeonlabs.com"
     )
+
+
+def _as_apple_adds_back(url: str, scheme: str) -> str:
+    """What `Connecting.returning` (SimeonCore) does to our link, as Apple's
+    `URLComponents.queryItems` does it: every value percent-decoded (a `+`
+    stays a `+`), then written back percent-encoding only what a query may
+    not hold bare, `&` and `#` included and `+` not."""
+    from urllib.parse import quote, unquote, urlsplit
+
+    parts = urlsplit(url)
+    items = [
+        (unquote(name), unquote(value))
+        for name, _, value in (pair.partition("=") for pair in parts.query.split("&"))
+        if name != "back"
+    ]
+    items.append(("back", scheme))
+    safe = "!$'()*+,-./:;=?@_~"
+    query = "&".join(f"{quote(n, safe=safe)}={quote(v, safe=safe)}" for n, v in items)
+    return f"{parts.scheme}://{parts.netloc}{parts.path}?{query}"
+
+
+def _start_target(url: str) -> str:
+    """Where one of our start links leads (`t`, base64url)."""
+    target = parse_qs(urlparse(url).query)["t"][0]
+    return base64.urlsafe_b64decode(target + "=" * (-len(target) % 4)).decode()

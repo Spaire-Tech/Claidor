@@ -136,7 +136,7 @@ struct ComputerTabPreview: View {
         Button { open = true } label: {
           Color.clear.contentShape(.rect)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.tactile)
         .accessibilityLabel(first?.title ?? "Open computer")
         if !open {
           if url != nil {
@@ -248,9 +248,9 @@ private struct ComputerAttention: View {
       HStack(spacing: 8) {
         Spacer(minLength: 0)
         Button("Skip this step") { answer(skip: true) }
-          .buttonStyle(AttentionButtonStyle(primary: false))
+          .buttonStyle(Tactile(look: AttentionButtonStyle(primary: false)))
         Button("I'm done, continue") { answer(skip: false) }
-          .buttonStyle(AttentionButtonStyle(primary: true))
+          .buttonStyle(Tactile(look: AttentionButtonStyle(primary: true)))
       }
     }
     .padding(12)
@@ -319,7 +319,7 @@ struct ComputerPlaceholderView: View {
             .background(Ink.pillButton, in: Capsule())
             .contentShape(.capsule)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.tactile)
         .padding(.top, 4)
         // The reason, at once, under "Can't reach…" (`computer-stream-notice.ts`).
         Text(ScreenNotices.shared.notice(ComputerStreamReason.statusUnreadable))
@@ -459,7 +459,7 @@ struct HelperStrip: View {
         } label: {
           tile(helper.title)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.tactile)
         .accessibilityLabel("Switch to \(helper.title)")
       }
       if let more = strip.more {

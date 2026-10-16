@@ -87,4 +87,9 @@ ENV SIMEON_IP_GEOLOCATION_DATABASE_NAME=country_asn.mmdb
 ARG RELEASE_VERSION
 ENV RELEASE_VERSION=${RELEASE_VERSION}
 
-CMD ["uv", "run", "uvicorn", "simeon.app:app", "--host", "0.0.0.0", "--port", "10000"]
+# No per-message deflate on WebSockets: the only ones are the box proxy's
+# (`simeon/sand/box_proxy.py`: the computer's screen and the egress tunnel),
+# whose bytes are already compressed (JPEG, zlib) or encrypted. Deflating a
+# 150 KB screen update cost 10.6 ms of CPU here and saved nothing (measured
+# 15 October 2026).
+CMD ["uv", "run", "uvicorn", "simeon.app:app", "--host", "0.0.0.0", "--port", "10000", "--ws-per-message-deflate", "false"]

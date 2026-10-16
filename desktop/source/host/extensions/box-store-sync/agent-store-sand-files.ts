@@ -9,6 +9,7 @@ import { BcsAgentStoreTransport } from "../../../packages/agent-store-sync/bcs-t
 import { AGENT_STORE_SYNC_CLIENT_CONFIG_DEFAULTS } from "../../../packages/agent-store-sync/sync-client-config.js";
 import { TokenCachingAgentStoreClient } from "../../../packages/agent-store-sync/token-caching-client.js";
 import { normalizeS3Etag } from "../../../packages/agent-store-sync/etag.js";
+import { agentStoreBucketHosts } from "../../../packages/agent-store-sync/presigned-url.js";
 import { createSandBackendTransport, getSandInferenceBackendUrl } from "../../../shared/node/simeon-backend/simeon-inference.js";
 import { sha256Hex } from "../../sha256.js";
 import { reportBoxStoreDiagnostic } from "./box-store-diagnostics.js";
@@ -98,10 +99,6 @@ interface MutableWriteBaseline {
   readonly source: "session" | "probe" | "absent";
 }
 
-const BCS_AGENT_STORE_BUCKET_HOSTS = new Set([
-  "agent-stores.s3.us-east-1.amazonaws.com",
-  "agent-stores.s3.amazonaws.com",
-]);
 const WINDOWS_RESERVED = new Set([
   "con", "prn", "aux", "nul",
   "com1", "com2", "com3", "com4", "com5", "com6", "com7", "com8", "com9",
@@ -168,7 +165,8 @@ function validatePresignedUrl(rawUrl: string, relPath: string): void {
   if (url.protocol !== "https:") {
     throw new Error(`Refusing presigned URL for ${relPath}: Refused presigned URL with non-https scheme: ${url.protocol}`);
   }
-  const allowed = BCS_AGENT_STORE_BUCKET_HOSTS;
+  // The upstream's bucket and the one Simeon Labs' server names to the box.
+  const allowed = new Set(agentStoreBucketHosts());
   if (!allowed.has(url.hostname.toLowerCase())) {
     throw new Error(
       `Refusing presigned URL for ${relPath}: Refused presigned URL whose host is not in the allowlist: ${url.hostname}`,

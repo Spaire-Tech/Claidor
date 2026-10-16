@@ -3,10 +3,13 @@ import SwiftUI
 import SimeonCore
 
 /**
- * Plugins (`overlay:plugins`, K01–K09): in Settings' place over the whole
- * window (one overlay at a time), the same panel and dim, no motion
- * anywhere. "Plugins", Marketplace and Yours, the filter and "Search
- * plugins"; the catalog by section with "Show N more"; a plugin's page
+ * Connectors (`overlay:plugins`, K01–K09; "Plugins" until 13 October 2026,
+ * when it took the iPhone's Connectors: "in mac design it better for it to
+ * match iphone. use apple style picker"): in Settings' place over the whole
+ * window (one overlay at a time), the same panel and dim. "Connectors", the
+ * search in glass with the filter beside it, Available | Yours as Apple's
+ * segmented control in our glass (not the Mac's blue one); the catalog by
+ * section, every app shown, one to a row as on the iPhone; a plugin's page
  * (Add, Uninstall, its accounts, tools, setup values, connectors, skills),
  * a server's page, the setup page, a skill's page; the notice at the
  * bottom. Opened by Connect apps, ⌘K and "/" "Plugins", ⌘⇧M, ⌘⇧W and a
@@ -98,7 +101,7 @@ struct PluginsLayer: View {
             .contentShape(Rectangle())
             .onTapGesture { plugins.close() }
           PluginsPanel(look: look)
-            .frame(width: max(0, min(1000, box.size.width - 40)), height: max(0, min(702, box.size.height - 94)))
+            .frame(width: max(0, min(760, box.size.width - 40)), height: max(0, min(720, box.size.height - 94)))
             .id(plugins.opening)
         }
         .frame(width: box.size.width, height: box.size.height)
@@ -107,7 +110,10 @@ struct PluginsLayer: View {
       .task(id: plugins.opening) {
         let model = plugins.model
         model.store = store
+        // Which apps can't be added yet, from Simeon Labs' server, while the rest loads.
+        async let soon: Void = store.loadAppsComingSoon()
         await model.load(agentId: window.selected)
+        await soon
         // The servers every 15 s while it is open (`retainServers`).
         while !Task.isCancelled {
           try? await Task.sleep(nanoseconds: 15_000_000_000)
@@ -135,7 +141,7 @@ private struct PluginsPanel: View {
         if let page = model.path.last {
           DetailBar(title: PluginPages.title(page, model: model), look: look) { model.path.removeLast() }
         } else {
-          Text("Plugins")
+          Text("Connectors")
             .font(.system(size: 17, weight: .medium))
             .tracking(-0.136)
             .foregroundStyle(look.ink)
@@ -175,7 +181,7 @@ private struct PluginsPanel: View {
     .contentShape(Rectangle())
     .onTapGesture {}
     .accessibilityElement(children: .contain)
-    .accessibilityLabel("Plugins")
+    .accessibilityLabel("Connectors")
     .accessibilityAddTraits(.isModal)
   }
 }
@@ -248,71 +254,82 @@ private struct PressScale: ButtonStyle {
 
 // MARK: - The bar
 
-/** `sand-plugins__bar`: padded 22 above, 32 at the sides, 6 under; the tabs, then Filter and the search, 24 apart at least. */
+/**
+ * Under the title, as the iPhone has them: the search in glass with the
+ * filter beside it, then Available | Yours (GlassSegments); padded 20
+ * above, 32 at the sides, 6 under.
+ */
 private struct PluginsBar: View {
   let look: Look
-  @Environment(PluginsState.self) private var plugins
 
   var body: some View {
-    let model = plugins.model
-    HStack(spacing: 24) {
-      HStack(spacing: 0) {
-        PluginsTab(title: "Marketplace", selected: model.tab == .marketplace, look: look) { model.tab = .marketplace }
-        PluginsTab(title: "Yours", selected: model.tab == .yours, look: look) { model.tab = .yours }
-      }
-      .accessibilityElement(children: .contain)
-      .accessibilityLabel("Plugins view")
-      Spacer(minLength: 0)
+    VStack(spacing: 14) {
       HStack(spacing: 8) {
-        FilterButton(look: look)
         PluginsSearch(look: look)
+        FilterButton(look: look)
       }
+      GlassSegments(look: look)
     }
-    .padding(EdgeInsets(top: 22, leading: 32, bottom: 6, trailing: 32))
+    .padding(EdgeInsets(top: 20, leading: 32, bottom: 6, trailing: 32))
   }
 }
 
-/** A tab (28 high, padded 8, 13): chosen on the press; the chosen one white and lifted (light) or on the grey (dark). */
-private struct PluginsTab: View {
-  let title: String
-  let selected: Bool
+/**
+ * Available | Yours, as Apple's segmented control in our glass (the
+ * founder, 13 October 2026: "use apple style picker", and of the Mac's own,
+ * "whats that blue picker"): a capsule of glass (the material before macOS
+ * 26), 34 high and 280 wide; the chosen half a lighter capsule that slides
+ * to it (white and lifted on light, the grey on dark), its word in the ink
+ * at 13 medium, the other at 60%. Chosen on the click.
+ */
+private struct GlassSegments: View {
   let look: Look
-  let choose: () -> Void
-  @State private var hovering = false
+  @Environment(PluginsState.self) private var plugins
+  @Namespace private var thumb
 
   var body: some View {
-    Text(title)
-      .font(.system(size: 13))
-      .tracking(-0.08)
-      .foregroundStyle(selected || hovering ? look.ink : look.inkTertiary)
-      .lineLimit(1)
-      .padding(.horizontal, 8)
-      .frame(height: 28)
-      .background {
-        if selected {
-          if look.dark {
-            RoundedRectangle(cornerRadius: 8, style: .continuous).fill(look.rowHover)
-          } else {
-            RoundedRectangle(cornerRadius: 9, style: .continuous)
-              .fill(Color.white)
-              .shadow(color: Color(red: 20 / 255, green: 30 / 255, blue: 60 / 255).opacity(0.09), radius: 0.5)
-              .shadow(color: Color(red: 20 / 255, green: 30 / 255, blue: 60 / 255).opacity(0.06), radius: 1, x: 0, y: 1)
+    HStack(spacing: 0) {
+      segment("Available", .marketplace)
+      segment("Yours", .yours)
+    }
+    .padding(3)
+    .frame(width: 280, height: 34)
+    .liquidGlass(in: Capsule())
+    .accessibilityElement(children: .contain)
+    .accessibilityLabel("Show")
+  }
+
+  private func segment(_ title: String, _ tab: PluginsModel.Tab) -> some View {
+    let model = plugins.model
+    let chosen = model.tab == tab
+    return Button {
+      guard !chosen else { return }
+      withAnimation(.snappy(duration: 0.22)) { model.tab = tab }
+    } label: {
+      Text(title)
+        .font(.system(size: 13, weight: chosen ? .medium : .regular))
+        .foregroundStyle(chosen ? look.ink : look.inkSecondary)
+        .lineLimit(1)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background {
+          if chosen {
+            Capsule()
+              .fill(look.dark ? Color.white.opacity(0.14) : Color.white)
+              .shadow(color: Color(red: 20 / 255, green: 30 / 255, blue: 60 / 255).opacity(look.dark ? 0 : 0.12), radius: 1.5, x: 0, y: 1)
+              .matchedGeometryEffect(id: "chosen", in: thumb)
           }
         }
-      }
-      .contentShape(Rectangle())
-      // Chosen on the press, as the window's tabs are.
-      .gesture(DragGesture(minimumDistance: 0).onChanged { _ in if !selected { choose() } })
-      .handCursor()
-      .onHover { hovering = $0 }
-      .accessibilityElement()
-      .accessibilityLabel(title)
-      .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
-      .accessibilityAction { choose() }
+        .contentShape(Capsule())
+    }
+    .buttonStyle(.hand)
+    // No keyboard ring around a half (the Mac's blue focus ring; the search panel's tabs do the same).
+    .focusable(false)
+    .accessibilityLabel(title)
+    .accessibilityAddTraits(chosen ? [.isButton, .isSelected] : .isButton)
   }
 }
 
-/** Filter (28, 6 round): grey, darker under the pointer, on the grey while the tab's filter is set; its menu stays open while choosing. */
+/** Filter (34, round, in glass, as the sidebar's round buttons): its glyph in grey, in the ink while the tab's filter is set; its menu stays open while choosing. */
 private struct FilterButton: View {
   let look: Look
   @Environment(PluginsState.self) private var plugins
@@ -324,17 +341,17 @@ private struct FilterButton: View {
     let active = !model.filter.isAll
     Button { FilterMenu.show(model: model, under: spot.frame) } label: {
       Image(systemName: "line.3.horizontal.decrease")
-        .font(.system(size: 14, weight: .regular))
+        .font(.system(size: 13, weight: .medium))
         .foregroundStyle(hovering || active ? look.ink : look.inkSecondary)
-        .frame(width: 28, height: 28)
-        .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(active ? look.fillHover : hovering ? look.rowHover : .clear))
-        .contentShape(Rectangle())
+        .frame(width: 34, height: 34)
+        .contentShape(Circle())
     }
     .buttonStyle(.hand)
+    .liquidGlass(in: .circle)
     .onHover { hovering = $0 }
     .background(WindowSpotReader(spot: spot))
-    .help("Filter plugins")
-    .accessibilityLabel("Filter plugins")
+    .help("Filter connectors")
+    .accessibilityLabel("Filter connectors")
     .accessibilityAddTraits(active ? .isSelected : [])
   }
 }
@@ -343,7 +360,7 @@ private struct FilterButton: View {
 @MainActor
 private enum FilterMenu {
   static func show(model: PluginsModel, under frame: CGRect) {
-    let menu = NSMenu(title: "Filter plugins")
+    let menu = NSMenu(title: "Filter connectors")
     menu.autoenablesItems = false
     menu.minimumWidth = 180
     var types: [(PluginFilter.Kind, CheckMenuRow)] = []
@@ -375,7 +392,12 @@ private enum FilterMenu {
   }
 }
 
-/** "Search plugins" (240 × 32): the glass, the words at 14; white and lifted (light) or the grey (dark); the blue edge while it has the keys. Follows each key. */
+/**
+ * "Search connectors" (the bar's width, 34 high): a capsule of glass, as the
+ * iPhone's search, the glass and the words in grey, × once something is
+ * typed; no edge when it has the keys (13 October 2026: "what is that
+ * search bar? that has blue underline when you click?"). Follows each key.
+ */
 private struct PluginsSearch: View {
   let look: Look
   @Environment(PluginsState.self) private var plugins
@@ -385,36 +407,34 @@ private struct PluginsSearch: View {
 
   var body: some View {
     @Bindable var model = plugins.model
-    HStack(spacing: 4) {
+    HStack(spacing: 6) {
       Image(systemName: "magnifyingglass")
-        .font(.system(size: 13))
-        .foregroundStyle(look.inkTertiary)
-        .frame(width: 14, height: 14)
-      TextField("", text: $model.query, prompt: Text("Search plugins").foregroundStyle(look.inkTertiary))
+        .font(.system(size: 13, weight: .medium))
+        .foregroundStyle(look.inkSecondary)
+        .frame(width: 16, height: 16)
+      TextField("", text: $model.query, prompt: Text("Search connectors").foregroundStyle(look.inkTertiary))
         .textFieldStyle(.plain)
         .font(.system(size: 14))
         .foregroundStyle(look.ink)
         .autocorrectionDisabled()
         .focused($focused)
-        .accessibilityLabel("Search plugins")
-    }
-    .padding(EdgeInsets(top: 0, leading: 8, bottom: 0, trailing: 4))
-    .frame(width: 240, height: 32)
-    .background {
-      if look.dark {
-        RoundedRectangle(cornerRadius: 8, style: .continuous).fill(look.rowHover)
-      } else {
-        RoundedRectangle(cornerRadius: 10, style: .continuous)
-          .fill(Color.white)
-          .shadow(color: Color(red: 20 / 255, green: 30 / 255, blue: 60 / 255).opacity(0.09), radius: 0.5)
-          .shadow(color: Color(red: 20 / 255, green: 30 / 255, blue: 60 / 255).opacity(0.05), radius: 1, x: 0, y: 1)
+        .accessibilityLabel("Search connectors")
+      if !model.query.isEmpty {
+        Button { model.query = "" } label: {
+          Image(systemName: "xmark.circle.fill")
+            .font(.system(size: 13))
+            .foregroundStyle(look.inkTertiary)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.hand)
+        .accessibilityLabel("Clear search")
       }
     }
-    .overlay {
-      RoundedRectangle(cornerRadius: look.dark ? 8 : 10, style: .continuous)
-        .strokeBorder(focused ? look.unread : .clear, lineWidth: 1)
-    }
-    .contentShape(Rectangle())
+    .padding(.horizontal, 12)
+    .frame(maxWidth: .infinity)
+    .frame(height: 34)
+    .liquidGlass(in: Capsule())
+    .contentShape(Capsule())
     .onTapGesture { focused = true }
     .onChange(of: plugins.searchFocus) { _, _ in
       // And its words picked, as the window's ⌘F selects them.
@@ -453,7 +473,7 @@ private struct PluginsList: View {
   }
 }
 
-/** Marketplace (`ci`): the sections (Featured, then A–Z), or "Results" while searching; each folded at 4 with "Show N more". */
+/** Available (`ci`): the sections (Featured, then A–Z), or "Results" while searching; every app of each shown (13 October 2026: "the see all makes no sense"). */
 private struct MarketplaceList: View {
   let look: Look
   @Environment(PluginsState.self) private var plugins
@@ -488,35 +508,49 @@ private struct MarketplaceSection: View {
 
   var body: some View {
     let model = plugins.model
-    let shown = Plugins.collapse(entries, expanded: model.expanded.contains(title) || !folds, limit: Plugins.marketplaceLimit)
     VStack(alignment: .leading, spacing: 0) {
       SectionHeading(title: title, look: look)
       PluginsGrid(look: look) {
-        ForEach(shown.visible) { entry in
-          PluginRow(title: entry.displayName, line: entry.description, team: Plugins.teamMark(entry), look: look,
+        ForEach(entries) { entry in
+          // An app that can't be added yet: dimmed, "Coming soon" in place of Add (`AppsComingSoon`).
+          let soon = !model.installed(entry).isInstalled && model.comingSoon(entry)
+          PluginRow(title: entry.displayName, line: entry.description, team: Plugins.teamMark(entry), look: look, dimmed: soon,
                     icon: { PluginIcon(name: entry.displayName, iconUrl: entry.iconUrl, look: look) },
                     open: { model.path.append(.plugin(entry.id)) }) {
-            if model.installed(entry).isInstalled {
-              AddedMark(look: look)
-            } else if model.adding == entry.id {
+            // One Connect (`Connecting`, 13 October 2026): an app shows Connected only once it is signed in.
+            if model.adding == entry.id {
               AddingSpinner(name: entry.displayName, look: look)
+            } else if model.installed(entry).isInstalled {
+              let server = model.serverState(entry)
+              if entry.connectorList.isEmpty || server == nil {
+                AddedMark(title: "Added", look: look)
+              } else if let server, server.status == "needsAuth" {
+                PluginPill(title: Plugins.signInButton(model.signInState(server, accountKey: server.accountKey)), kind: .secondary, disabled: model.isBusy, look: look) {
+                  model.requestSignIn(server, accountKey: server.accountKey)
+                }
+                .accessibilityLabel("Connect \(entry.displayName)")
+              } else if let server, server.status != "connected" {
+                StatusWord(status: server.status, detail: server.statusDetail, look: look)
+              } else {
+                AddedMark(title: Connecting.connected, look: look)
+              }
+            } else if soon {
+              PluginPill(title: AppsComingSoon.label, kind: .soon, look: look)
+                .accessibilityLabel("\(entry.displayName) is coming soon")
             } else {
-              PluginPill(title: "Add", kind: .secondary, disabled: model.isBusy, look: look) {
+              PluginPill(title: Connecting.connect, kind: .secondary, disabled: model.isBusy, look: look) {
                 model.requestAdd(entry, agentId: window.selected)
               }
-              .accessibilityLabel("Add \(entry.displayName)")
+              .accessibilityLabel("Connect \(entry.displayName)")
             }
           }
         }
-      }
-      if shown.hidden > 0 {
-        ShowMore(title: "Show \(shown.hidden) more", look: look) { model.expanded.insert(title) }
       }
     }
   }
 }
 
-/** Yours (`ki`): the GitHub banner, Installed (folded at 6, "Show all N plugins"), Private (the open agent's skills). */
+/** Yours (`ki`): the GitHub banner, Installed (all of them), Private (the open agent's skills). */
 private struct YoursList: View {
   let look: Look
   @Environment(PluginsState.self) private var plugins
@@ -540,12 +574,8 @@ private struct YoursList: View {
         if items.isEmpty {
           YoursEmpty(text: Plugins.installedEmpty(query: q), look: look)
         } else {
-          let shown = Plugins.collapse(items, expanded: model.expanded.contains("Installed") || !q.isEmpty, limit: Plugins.installedLimit)
           PluginsGrid(look: look) {
-            ForEach(Array(shown.visible.enumerated()), id: \.offset) { _, item in InstalledRow(item: item, look: look) }
-          }
-          if shown.hidden > 0 {
-            ShowMore(title: "Show all \(items.count) plugins", look: look) { model.expanded.insert("Installed") }
+            ForEach(Array(items.enumerated()), id: \.offset) { _, item in InstalledRow(item: item, look: look) }
           }
         }
       }
@@ -556,7 +586,7 @@ private struct YoursList: View {
         if agentId == nil || skills.isEmpty {
           YoursEmpty(text: Plugins.privateEmpty(agentOpen: agentId != nil, query: q), look: look)
         } else {
-          VStack(spacing: look.dark ? 2 : 12) {
+          VStack(spacing: 2) {
             ForEach(skills) { skill in
               PluginRow(title: skill.name, line: skill.subtitle, team: nil, look: look,
                         icon: { SkillTile(side: 40, look: look) },
@@ -640,37 +670,13 @@ private struct SectionHeading: View {
   }
 }
 
-/** Two equal columns: 12 apart both ways (light), or rows 2 and columns 8 apart (dark). */
+/** One app to a row, as the iPhone lists them (two columns until 13 October 2026), 2 apart. */
 private struct PluginsGrid<Content: View>: View {
   let look: Look
   @ViewBuilder let content: Content
 
   var body: some View {
-    let gap: CGFloat = look.dark ? 8 : 12
-    LazyVGrid(columns: [GridItem(.flexible(), spacing: gap, alignment: .leading), GridItem(.flexible(), spacing: gap, alignment: .leading)],
-              alignment: .leading, spacing: look.dark ? 2 : 12) { content }
-  }
-}
-
-/** "Show N more" / "Show all N plugins" (`ot`, 22): 12 in grey, darker under the pointer; the rest shown in place. */
-private struct ShowMore: View {
-  let title: String
-  let look: Look
-  let action: () -> Void
-  @State private var hovering = false
-
-  var body: some View {
-    Button(action: action) {
-      Text(title)
-        .font(.system(size: 12))
-        .foregroundStyle(hovering ? look.ink : look.inkSecondary)
-        .padding(.vertical, 4)
-        .padding(.horizontal, 8)
-        .frame(height: 22)
-        .contentShape(Rectangle())
-    }
-    .buttonStyle(.hand)
-    .onHover { hovering = $0 }
+    LazyVStack(alignment: .leading, spacing: 2) { content }
   }
 }
 
@@ -690,16 +696,18 @@ private struct YoursEmpty: View {
 }
 
 /**
- * A row (`fs`, 64, padded 12): the open part (the icon, 10, then the name
+ * A row (`fs`, 64, padded 12): the open part (the logo, 12, then the name
  * at 13 medium with its Team mark and one line at 13 in grey, each cut
- * short) and its control. White, 14 round, lifted (light); on dark no fill,
- * 16 round, a faint fill under the pointer.
+ * short) and its control. No card and no line, as the iPhone's rows and the
+ * sidebar's: a faint fill under the pointer, 12 round.
  */
 private struct PluginRow<Icon: View, Trailing: View>: View {
   let title: String
   let line: String
   let team: String?
   let look: Look
+  /** Faded, for an app that can't be added yet. */
+  var dimmed = false
   @ViewBuilder let icon: Icon
   let open: () -> Void
   @ViewBuilder let trailing: Trailing
@@ -708,7 +716,7 @@ private struct PluginRow<Icon: View, Trailing: View>: View {
   var body: some View {
     HStack(spacing: 12) {
       Button(action: open) {
-        HStack(spacing: 10) {
+        HStack(spacing: 12) {
           icon
           VStack(alignment: .leading, spacing: 1) {
             HStack(spacing: 6) {
@@ -729,6 +737,7 @@ private struct PluginRow<Icon: View, Trailing: View>: View {
           }
           Spacer(minLength: 0)
         }
+        .opacity(dimmed ? 0.6 : 1)
         .contentShape(Rectangle())
       }
       .buttonStyle(.hand)
@@ -737,16 +746,7 @@ private struct PluginRow<Icon: View, Trailing: View>: View {
     }
     .padding(12)
     .frame(height: 64)
-    .background {
-      if look.dark {
-        RoundedRectangle(cornerRadius: 16, style: .continuous).fill(hovering ? look.ink.opacity(0.05) : .clear)
-      } else {
-        RoundedRectangle(cornerRadius: 14, style: .continuous)
-          .fill(Color.white)
-          .shadow(color: Color(red: 20 / 255, green: 30 / 255, blue: 60 / 255).opacity(0.07), radius: 0.5)
-          .shadow(color: Color(red: 20 / 255, green: 30 / 255, blue: 60 / 255).opacity(0.04), radius: 1, x: 0, y: 1)
-      }
-    }
+    .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(hovering ? look.rowHover : .clear))
     .onHover { hovering = $0 }
   }
 }
@@ -770,7 +770,12 @@ private struct TeamBadge: View {
   }
 }
 
-/** An app's icon (`ToolIcon`): its logo on the grey tile (40, 11 round; 56, 16 round on a page), else its first letter. */
+/**
+ * An app's icon (`ToolIcon`), as the iPhone draws it: its logo at 76% of
+ * its tile (13 October 2026: "bigger the logos"), the tile white with a
+ * hairline edge (light) or the raised grey (dark); else its first letter.
+ * 40 on a row (11 round), 56 on a page.
+ */
 private struct PluginIcon: View {
   let name: String
   let iconUrl: String?
@@ -782,18 +787,20 @@ private struct PluginIcon: View {
     let model = plugins.model
     let bundled = AppLogoTile.logo(name)
     let image = bundled ?? iconUrl.flatMap { model.logos[$0] }
-    Group {
+    let shape = RoundedRectangle(cornerRadius: side * 11 / 40, style: .continuous)
+    ZStack {
+      shape.fill(look.dark ? Color(hex: 0x232325) : Color.white)
       if let image {
         Image(nsImage: image).resizable().interpolation(.high).aspectRatio(contentMode: .fit)
+          .frame(width: side * 0.76, height: side * 0.76)
       } else {
         Text(String(name.prefix(1)).uppercased())
-          .font(.system(size: side == 40 ? 14 : 20, weight: .semibold))
+          .font(.system(size: side * 0.36, weight: .semibold))
           .foregroundStyle(look.inkSecondary)
       }
     }
     .frame(width: side, height: side)
-    .background(look.fillHover)
-    .clipShape(RoundedRectangle(cornerRadius: side == 40 ? 11 : 16, style: .continuous))
+    .overlay(shape.strokeBorder(look.ink.opacity(look.dark ? 0.12 : 0.08), lineWidth: 0.5))
     .task(id: iconUrl) {
       guard bundled == nil, let iconUrl else { return }
       await model.loadLogo(iconUrl)
@@ -822,11 +829,12 @@ private struct SkillTile: View {
 
 /**
  * A pill (26 high, 13 round, padded 10, 12): secondary (the grey, darker
- * under the pointer), primary (the blue with white words) or a team's
- * label (no fill, grey, faded). Faded to 56% while it waits.
+ * under the pointer), primary (the blue with white words), a team's
+ * label (no fill, grey, faded) or Coming soon (the grey, grey words, not a
+ * button). Faded to 56% while it waits.
  */
 private struct PluginPill: View {
-  enum Kind { case secondary, primary, label }
+  enum Kind { case secondary, primary, label, soon }
   let title: String
   let kind: Kind
   var disabled = false
@@ -846,7 +854,7 @@ private struct PluginPill: View {
         .contentShape(Capsule())
     }
     .buttonStyle(.hand)
-    .disabled(disabled || kind == .label)
+    .disabled(disabled || kind == .label || kind == .soon)
     .opacity(disabled || kind == .label ? 0.56 : 1)
     .onHover { hovering = $0 }
     .fixedSize()
@@ -857,6 +865,7 @@ private struct PluginPill: View {
     case .secondary: return look.ink
     case .primary: return Color(hex: 0xfcfcfc)
     case .label: return look.inkSecondary
+    case .soon: return look.inkTertiary
     }
   }
 
@@ -866,6 +875,7 @@ private struct PluginPill: View {
     case .secondary: return live ? look.fillHover : look.pluginPill
     case .primary: return live ? look.link : look.unread
     case .label: return .clear
+    case .soon: return look.pluginPill
     }
   }
 }
@@ -887,18 +897,19 @@ private struct AddingSpinner: View {
     .frame(width: 34, height: 26)
     .onAppear { withAnimation(.linear(duration: 0.7).repeatForever(autoreverses: false)) { turning = true } }
     .accessibilityElement()
-    .accessibilityLabel("Adding \(name)")
+    .accessibilityLabel("Connecting \(name)")
   }
 }
 
-/** Added (`di`): a green tick and "Added" at 12 in the faint grey. Not a button. */
+/** Connected (`di`, "Added" until 13 October 2026; still "Added" for a plugin of skills alone): a green tick and its word at 12 in the faint grey. Not a button. */
 private struct AddedMark: View {
+  var title = Connecting.connected
   let look: Look
 
   var body: some View {
     HStack(spacing: 5) {
       Image(systemName: "checkmark").font(.system(size: 10, weight: .semibold)).foregroundStyle(look.success)
-      Text("Added").font(.system(size: 12)).foregroundStyle(look.inkTertiary)
+      Text(title).font(.system(size: 12)).foregroundStyle(look.inkTertiary)
     }
     .padding(EdgeInsets(top: 2, leading: 6, bottom: 2, trailing: 8))
     .frame(height: 20)
@@ -1126,6 +1137,7 @@ private struct PluginPage: View {
           MetaLine(market: entry.marketplace?.displayName, homepage: entry.homepage, look: look)
         } action: {
           PageActionView(action: Plugins.pageAction(installed: installed.isInstalled, mode: mode), adding: model.adding == entry.id, name: entry.displayName, look: look,
+                         comingSoon: !installed.isInstalled && model.comingSoon(entry),
                          add: { model.requestAdd(entry, agentId: window.selected) },
                          remove: {
                            Task {
@@ -1202,12 +1214,13 @@ private struct ServerPage: View {
   }
 }
 
-/** The page's action (`ft`): Add (the blue, or the spinner), Uninstall, the team's label with Remove, or the team's label alone. No question asked. */
+/** The page's action (`ft`): Connect (the blue, or the spinner; Coming soon for an app that can't be added yet; Add until 13 October 2026), Uninstall, the team's label with Remove, or the team's label alone. No question asked. */
 private struct PageActionView: View {
   let action: Plugins.PageAction
   let adding: Bool
   let name: String
   let look: Look
+  var comingSoon = false
   let add: () -> Void
   let remove: () -> Void
   @Environment(PluginsState.self) private var plugins
@@ -1216,10 +1229,12 @@ private struct PageActionView: View {
     let busy = plugins.model.isBusy
     switch action {
     case .add:
-      if adding {
+      if comingSoon {
+        PluginPill(title: AppsComingSoon.label, kind: .soon, look: look).accessibilityLabel("\(name) is coming soon")
+      } else if adding {
         AddingSpinner(name: name, look: look)
       } else {
-        PluginPill(title: "Add", kind: .primary, disabled: busy, look: look, action: add).accessibilityLabel("Add \(name)")
+        PluginPill(title: Connecting.connect, kind: .primary, disabled: busy, look: look, action: add).accessibilityLabel("Connect \(name)")
       }
     case .uninstall:
       PluginPill(title: "Uninstall", kind: .secondary, disabled: busy, look: look, action: remove)

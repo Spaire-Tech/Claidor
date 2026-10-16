@@ -8,8 +8,10 @@ from simeon.desktop.pricing import (
     CREDIT_USD_PER_MILLION_INPUT,
     MODELS,
     MODELS_OWNER,
+    POLICY_ROLES,
     PROVIDER_TOKEN_WEIGHTS,
     DesktopProvider,
+    ModelPolicy,
     ModelRole,
     OpenAIResponsesUsageTally,
     OpenAIUsageTally,
@@ -18,7 +20,9 @@ from simeon.desktop.pricing import (
     UsageTally,
     credits_for,
     model_by_id,
+    models_under,
     openai_models_list,
+    served_model,
     tally_for,
     usage_from_answer,
 )
@@ -80,35 +84,80 @@ class TestCatalogue:
             DesktopProvider.gemini,
         }
 
-    def test_exactly_one_model_holds_each_role(self) -> None:
-        # The policy of 13 September 2026: OpenAI serves everything the
-        # person sees, on cost, and one Claude model stands behind it so a
-        # single provider outage is not a total outage. Two models sharing
-        # a role would mean nothing decides which one answers.
-        by_role: dict[ModelRole, list[str]] = {}
-        for model in MODELS:
-            if model.role is not None:
-                by_role.setdefault(model.role, []).append(model.model_id)
+    def test_exactly_one_model_holds_each_role_under_every_policy(
+        self,
+    ) -> None:
+        # Two models sharing a role would mean nothing decides which one
+        # answers. Whichever family answers, the other stands by, so one
+        # provider's outage is not a total outage.
+        def roles(policy: ModelPolicy) -> dict[ModelRole, list[str]]:
+            by_role: dict[ModelRole, list[str]] = {}
+            for model in models_under(policy):
+                if model.role is not None:
+                    by_role.setdefault(model.role, []).append(model.model_id)
+            return by_role
 
+        openai = roles(ModelPolicy.openai)
+        assert openai[ModelRole.primary] == ["gpt-6-sol"]
+        assert openai[ModelRole.cheap] == ["gpt-6-luna"]
+        assert openai[ModelRole.fallback] == ["claude-sonnet-5-5"]
         # 28 September 2026: GPT-6 Sol and Luna replace GPT-5.6 Terra and
         # Luna, which stay served to older apps under `retired`.
-        assert by_role[ModelRole.primary] == ["gpt-6-sol"]
-        assert by_role[ModelRole.cheap] == ["gpt-6-luna"]
-        assert by_role[ModelRole.retired] == ["gpt-5.6-terra", "gpt-5.6-luna"]
-        assert by_role[ModelRole.fallback] == ["claude-sonnet-5"]
-        assert by_role[ModelRole.video] == ["gemini-2.5-flash"]
+        assert openai[ModelRole.retired] == [
+            "claude-sonnet-5",
+            "gpt-5.6-terra",
+            "gpt-5.6-luna",
+        ]
+        assert openai[ModelRole.video] == ["gemini-2.5-flash"]
 
-    def test_the_fallback_is_the_only_anthropic_model_with_a_role(self) -> None:
-        anthropic_roles = {
-            model.model_id: model.role
-            for model in MODELS
-            if model.provider is DesktopProvider.anthropic
-        }
-        assert anthropic_roles == {
-            "claude-sonnet-5": ModelRole.fallback,
-            "claude-opus-5": None,
-            "claude-haiku-4-5-20251001": None,
-        }
+        claude = roles(ModelPolicy.claude)
+        assert claude[ModelRole.primary] == ["claude-sonnet-5-5"]
+        assert claude[ModelRole.cheap] == ["claude-haiku-5-5"]
+        assert claude[ModelRole.fallback] == ["gpt-6-sol"]
+        assert claude[ModelRole.video] == ["gemini-2.5-flash"]
+
+        opus = roles(ModelPolicy.claude_opus)
+        assert opus[ModelRole.primary] == ["claude-opus-5-5"]
+        assert opus[ModelRole.cheap] == ["claude-haiku-5-5"]
+        assert opus[ModelRole.fallback] == ["gpt-6-sol"]
+
+    def test_an_engine_built_before_a_switch_is_still_answered(self) -> None:
+        # Every engine on a box until it takes a new bundle names GPT-6 Sol
+        # for the loop and GPT-6 Luna for the machinery, whatever the server
+        # says. Flipping the setting must not leave those agents silent.
+        for policy in ModelPolicy:
+            assert served_model("gpt-6-sol", policy) is not None, policy
+            assert served_model("gpt-6-luna", policy) is not None, policy
+
+    def test_a_policy_s_own_models_are_served_and_nothing_unpriced(self) -> None:
+        for policy, table in POLICY_ROLES.items():
+            for model_id in table:
+                assert model_by_id(model_id) is not None, model_id
+                assert served_model(model_id, policy) is not None
+        # Opus 5.5 is served only where a policy names it.
+        assert served_model("claude-opus-5-5", ModelPolicy.openai) is None
+        assert served_model("claude-opus-5-5", ModelPolicy.claude) is None
+        assert served_model("claude-opus-5-5", ModelPolicy.claude_opus) is not None
+        # Haiku 5.5 does the machinery under a Claude policy only.
+        assert served_model("claude-haiku-5-5", ModelPolicy.openai) is None
+        # Priced rows with no role are never served.
+        for policy in ModelPolicy:
+            assert served_model("claude-opus-5", policy) is None
+            assert served_model("gpt-6-astra", policy) is None
+            assert served_model("gemini-2.5-pro", policy) is None
+            assert served_model("no-such-model", policy) is None
+
+    def test_a_policy_is_spelled_as_the_setting_spells_it(self) -> None:
+        assert ModelPolicy("openai") is ModelPolicy.openai
+        assert ModelPolicy("claude") is ModelPolicy.claude
+        assert ModelPolicy("claude-opus") is ModelPolicy.claude_opus
+
+    def test_the_static_roles_hold_under_every_policy(self) -> None:
+        # `video` and `retired` belong to the model; the policy tables hold
+        # the rest, so nothing in MODELS itself is primary, cheap or
+        # fallback.
+        for model in MODELS:
+            assert model.role in (None, ModelRole.video, ModelRole.retired)
 
     def test_astra_is_priced_but_withheld(self) -> None:
         # Withheld because every OpenAI model runs with
@@ -122,8 +171,16 @@ class TestCatalogue:
         assert astra.cost_multiplier > 0
 
     def test_available_carries_the_role(self) -> None:
-        sol = next(model for model in MODELS if model.model_id == "gpt-6-sol")
+        sol = model_by_id("gpt-6-sol", ModelPolicy.openai)
+        assert sol is not None
         assert sol.available()["role"] == "primary"
+        sonnet = model_by_id("claude-sonnet-5-5", ModelPolicy.claude)
+        assert sonnet is not None
+        assert sonnet.available()["role"] == "primary"
+        assert sonnet.available()["transportApi"] == "anthropic-messages"
+        sol = model_by_id("gpt-6-sol", ModelPolicy.claude)
+        assert sol is not None
+        assert sol.available()["role"] == "fallback"
 
     def test_the_gpt_multipliers_are_the_published_prices_in_credit_units(
         self,
@@ -163,25 +220,72 @@ class TestPriceTable:
         # The exception touches nothing else on the list.
         assert astra.weights.cache_read == terra.weights.cache_read
 
-    def test_the_claude_weights_are_unchanged(self) -> None:
-        sonnet = model_by_id("claude-sonnet-5")
-        haiku = model_by_id("claude-haiku-4-5-20251001")
-        assert sonnet is not None
+    def test_the_claude_5_5_list_in_credit_units(self) -> None:
+        # platform.claude.com/docs pricing, read 13 October 2026, dollars per
+        # million tokens: input, five-minute cache write, cache read, output.
+        published = {
+            "claude-sonnet-5-5": (2.00, 2.50, 0.10, 10.00),
+            "claude-opus-5-5": (4.00, 5.00, 0.20, 20.00),
+            "claude-haiku-5-5": (0.10, 0.125, 0.01, 0.50),
+        }
+        credit = CREDIT_USD_PER_MILLION_INPUT
+        for model_id, (fresh, write, read, out) in published.items():
+            model = model_by_id(model_id)
+            assert model is not None
+            # 50,000 tokens: inside Haiku's short-prompt price.
+            assert credits_for(model, Usage(input_tokens=50_000)) == round(
+                50_000 * fresh / credit
+            )
+            assert credits_for(model, Usage(output_tokens=50_000)) == round(
+                50_000 * out / credit
+            )
+            assert credits_for(model, Usage(cache_creation_tokens=50_000)) == round(
+                50_000 * write / credit
+            )
+            assert credits_for(model, Usage(cache_read_tokens=50_000)) == round(
+                50_000 * read / credit
+            )
+
+    def test_haiku_5_5_costs_five_times_past_a_100k_prompt(self) -> None:
+        haiku = model_by_id("claude-haiku-5-5")
         assert haiku is not None
-        usage = Usage(input_tokens=1000, output_tokens=100, cache_read_tokens=10_000)
-        assert credits_for(sonnet, usage) == 2500
-        assert credits_for(haiku, usage) == 500
+        short = Usage(input_tokens=1_000, cache_read_tokens=99_000, output_tokens=500)
+        long = Usage(input_tokens=1_001, cache_read_tokens=99_000, output_tokens=500)
+        # $0.10 in, $0.01 cached, $0.50 out up to 100,000 tokens of prompt.
+        assert credits_for(haiku, short) == round(
+            (1_000 * 0.10 + 99_000 * 0.01 + 500 * 0.50) / 3.00
+        )
+        # $0.50, $0.05, $2.50 beyond: the whole call, not the excess.
+        assert credits_for(haiku, long) == round(
+            (1_001 * 0.50 + 99_000 * 0.05 + 500 * 2.50) / 3.00
+        )
+        # Sonnet and Opus have one price at every length.
+        sonnet = model_by_id("claude-sonnet-5-5")
+        assert sonnet is not None
+        assert credits_for(sonnet, Usage(input_tokens=900_000)) == 600_000
+
+    def test_the_earlier_claude_rows_are_their_real_prices(self) -> None:
+        # Listed at $3 / $15, $15 / $75 and $0.60 / $3 until 13 October 2026.
+        for model_id, usd in (
+            ("claude-sonnet-5", 2.00),
+            ("claude-opus-5", 5.00),
+            ("claude-haiku-4-5-20251001", 1.00),
+        ):
+            model = model_by_id(model_id)
+            assert model is not None
+            assert model.cost_multiplier == usd / CREDIT_USD_PER_MILLION_INPUT
+            assert model.weights == PROVIDER_TOKEN_WEIGHTS[DesktopProvider.anthropic]
 
     def test_a_gpt_token_is_not_priced_like_a_claude_token(self) -> None:
         usage = Usage(input_tokens=1_000_000)
-        sonnet = model_by_id("claude-sonnet-5")
+        opus = model_by_id("claude-opus-5-5")
         astra = model_by_id("gpt-6-astra")
         luna = model_by_id("gpt-5.6-luna")
-        assert sonnet is not None
+        assert opus is not None
         assert astra is not None
         assert luna is not None
-        # A million input tokens: $3 on Sonnet, $10 on Astra, $0.20 on Luna.
-        assert credits_for(sonnet, usage) == 1_000_000
+        # A million input tokens: $4 on Opus 5.5, $10 on Astra, $0.20 on Luna.
+        assert credits_for(opus, usage) == round(1_000_000 * 4.00 / 3.00)
         assert credits_for(astra, usage) == round(1_000_000 * 10.00 / 3.00)
         assert credits_for(luna, usage) == round(1_000_000 * 0.20 / 3.00)
 
@@ -331,7 +435,11 @@ class TestTheMenuAnOpenAiCompatibleClientReads:
         assert "gpt-5.6-terra" in ids
         assert "gpt-5.6-luna" in ids
         assert "claude-sonnet-5" not in ids
-        assert all(model_by_id(one).provider is DesktopProvider.openai for one in ids)
+        assert all(
+            (model := model_by_id(one)) is not None
+            and model.provider is DesktopProvider.openai
+            for one in ids
+        )
 
     def test_the_anthropic_wire_offers_claude_and_not_the_gpts(self) -> None:
         listed = openai_models_list(MODELS, SpokenApi.anthropic_messages)
