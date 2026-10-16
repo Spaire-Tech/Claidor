@@ -1375,8 +1375,13 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
       customInstructions: ReadonlyMap<string, string>;
       discoveryUnavailable: boolean;
     } = { connectedServerNames: [], customInstructions: new Map(), discoveryUnavailable: false };
+    // One refresh at a time: a turn that starts while one is still asking
+    // the connectors leaves it to finish rather than asking them again.
+    let mcpTurnSnapshotRefreshing = false;
     const refreshMcpTurnSnapshot = async (discoveryFailed: boolean): Promise<void> => {
       mcpTurnSnapshot.discoveryUnavailable = discoveryFailed;
+      if (mcpTurnSnapshotRefreshing) return;
+      mcpTurnSnapshotRefreshing = true;
       try {
         const installed = await method(mcp.management, "listInstalled")?.();
         if (Array.isArray(installed)) {
@@ -1388,6 +1393,8 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
         if (instructions instanceof Map) mcpTurnSnapshot.customInstructions = instructions;
       } catch {
         // The snapshot keeps its last value; the prompt is never blocked on it.
+      } finally {
+        mcpTurnSnapshotRefreshing = false;
       }
     };
     let shellWatchWatermark:
@@ -3301,13 +3308,20 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
         ...(mcp.mcp != null && typeof mcp.mcp.getTools === "function"
           ? {
               mcp: {
+                // The snapshot is refreshed without the turn waiting: this
+                // turn's prompt is already built (createProductionTurnAgentRunInput
+                // assembles it before asking for tools), so the refresh
+                // serves the next one. Until 16 October 2026 the turn
+                // waited for it, and it asks every installed connector
+                // (`listInstalled`): about 3 s before each answer on the
+                // cloud computer, most of it for connectors not signed in.
                 getTools: async (runContext: Context) => {
                   try {
                     const tools = await mcp.mcp.getTools(runContext);
-                    await refreshMcpTurnSnapshot(false);
+                    void refreshMcpTurnSnapshot(false);
                     return tools;
                   } catch (error) {
-                    await refreshMcpTurnSnapshot(true);
+                    void refreshMcpTurnSnapshot(true);
                     throw error;
                   }
                 },

@@ -9,6 +9,10 @@
 #   /etc/machine-id               the box's own id
 #   /home/box/sand-host/host-main.cjs, /home/box/box-exec-daemon/main.cjs
 #
+# and, where the image mounts a tmpfs on /tmp (box2's: half the memory), has
+# bound a folder of the disk over it (`TMP_ON_DISK`), so /tmp is on the disk
+# as in a Docker container.
+#
 # The template is made from box2's own image (box/e2b/build_template.py,
 # 16 October 2026), whose start is /usr/local/bin/start-sand-box, or from
 # Simeon's image (box/), whose start is /usr/local/bin/start-simeon-box; this

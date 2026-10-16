@@ -84,6 +84,27 @@ HOST_DIR = "/home/box/sand-host"
 HOST_MAIN = f"{HOST_DIR}/host-main.cjs"
 EXEC_DAEMON_MAIN = "/home/box/box-exec-daemon/main.cjs"
 
+#: The folder on the VM's disk that becomes /tmp (`TMP_ON_DISK`).
+DISK_TMP = "/var/lib/simeon/tmp"
+#: /tmp on the VM's disk, as in a Docker container and on E2B's own images
+#: (their envd unit: "/tmp is a plain rootfs dir, not a tmpfs"). In VMs made
+#: from box2's image, /tmp was a tmpfs of half the memory (measured 16
+#: October 2026: 2.0G on a 4 GB VM), so the engine's disk check
+#: (`disk-pressure-guard.ts`: 2 GiB free or less is "hard") showed "Computer
+#: is critically low on disk space" on every computer with 9.6G free on its
+#: disk, and what the computer wrote there took memory and made each freeze
+#: longer. A folder on the disk is bound over it before anything of ours
+#: starts, with what the template left there copied in. Prints `tmp=moved`,
+#: `tmp=disk` (already on the disk) or `tmp=kept` (the bind failed; the
+#: computer works, with the tmpfs).
+TMP_ON_DISK = (
+    'if [ "$(stat -f -c %T /tmp)" != tmpfs ]; then echo tmp=disk; '
+    f"elif mkdir -p {DISK_TMP} && chmod 1777 {DISK_TMP} && "
+    f"{{ cp -a /tmp/. {DISK_TMP}/ 2>/dev/null; true; }} && "
+    f"mount --bind {DISK_TMP} /tmp; then echo tmp=moved; "
+    "else echo tmp=kept; fi"
+)
+
 #: How long a box stays awake if the sleeper stops pushing its timeout out
 #: (the worker is down): then it pauses. An hour is also the most E2B's
 #: free plan allows.
@@ -247,7 +268,7 @@ class E2BBoxHost:
         except Exception as error:
             raise _host_error("start a new computer", error) from error
         try:
-            workers = await self._boot(sandbox, spec)
+            facts = await self._boot(sandbox, spec)
         except BoxHostError:
             await self._kill_quietly(sandbox.sandbox_id)
             raise
@@ -260,7 +281,7 @@ class E2BBoxHost:
             sandbox=sandbox.sandbox_id,
             name=spec.name,
             template=self.template,
-            workers=workers,
+            **facts,
         )
         return self._provisioned(
             sandbox.sandbox_id,
@@ -269,9 +290,10 @@ class E2BBoxHost:
             sandbox.traffic_access_token,
         )
 
-    async def _boot(self, sandbox: Any, spec: BoxSpec) -> str:
+    async def _boot(self, sandbox: Any, spec: BoxSpec) -> dict[str, str]:
         """Writes the person's settings and the host, then starts the stack.
-        Answers where the host's workers come from: "image" or "bundle"."""
+        Answers, for the log, where the host's workers come from ("image" or
+        "bundle") and where /tmp is (`TMP_ON_DISK`)."""
         assert self.bundle is not None
         # box2's image (the template since 16 October 2026) holds the host's
         # folder already, as on Docker, where only host-main.cjs is mounted
@@ -319,6 +341,10 @@ class E2BBoxHost:
         await sandbox.files.write(
             EXEC_DAEMON_MAIN, self.bundle.box_exec_daemon, user="root"
         )
+        moved = await sandbox.commands.run(TMP_ON_DISK, user="root", timeout=30)
+        tmp = str(getattr(moved, "stdout", "")).strip().removeprefix("tmp=")
+        if tmp == "kept":
+            log.warning("sand.box.e2b.tmp_in_memory", sandbox=sandbox.sandbox_id)
         # The clock first, then the stack, detached from this command so it
         # outlives it.
         await sandbox.commands.run(
@@ -327,7 +353,7 @@ class E2BBoxHost:
             user="root",
             timeout=30,
         )
-        return workers
+        return {"workers": workers, "tmp": tmp or "unknown"}
 
     async def inspect(self, provider_box_id: str) -> ProvisionedBox | None:
         try:

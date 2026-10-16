@@ -29,7 +29,7 @@ from simeon.models import User
 from simeon.postgres import AsyncSession
 from simeon.redis import Redis
 from simeon.sand import box_e2b, box_hosts, box_proxy, box_service
-from simeon.sand.box_e2b import E2BBoxHost, env_file, machine_id_of
+from simeon.sand.box_e2b import TMP_ON_DISK, E2BBoxHost, env_file, machine_id_of
 from simeon.sand.box_hosts import (
     HOST_COMPANIONS,
     BoxBlocked,
@@ -63,6 +63,8 @@ class FakeE2B:
         self.fail_boot = False
         #: The template holds the host's workers, as box2's image does.
         self.image_workers = False
+        #: What `TMP_ON_DISK` answers: box2's image has a tmpfs on /tmp.
+        self.tmp_answer = "tmp=moved"
         self.busy_connects = 0
         self.create_error: BaseException | None = None
         self.api: list[dict[str, Any]] = []
@@ -93,6 +95,10 @@ class FakeE2B:
                 if "agent-store-worker.cjs ]" in cmd:
                     found = "image" if fake.image_workers else "bundle"
                     return SimpleNamespace(exit_code=0, stdout=f"{found}\n", stderr="")
+                if cmd == TMP_ON_DISK:
+                    return SimpleNamespace(
+                        exit_code=0, stdout=f"{fake.tmp_answer}\n", stderr=""
+                    )
                 return SimpleNamespace(exit_code=0, stdout="", stderr="")
 
         return SimpleNamespace(
@@ -307,6 +313,22 @@ class TestE2BHost:
             "agent-isolation" in path
             for path in sdk.boxes[made.provider_box_id]["files"]
         )
+
+    async def test_tmp_goes_on_the_disk_before_anything_starts(self) -> None:
+        """16 October 2026: /tmp in box2's image was a 2 GB tmpfs, and every
+        computer said it was critically low on disk space. It is put on the
+        disk, as on Docker, before the stack starts; a computer where that
+        fails is still made."""
+        for answer in ("tmp=moved", "tmp=disk", "tmp=kept"):
+            sdk = FakeE2B()
+            sdk.image_workers = True
+            sdk.tmp_answer = answer
+            made = await _host(sdk).create(_spec())
+            commands = [cmd for cmd, _ in sdk.boxes[made.provider_box_id]["commands"]]
+            assert TMP_ON_DISK in commands
+            assert commands.index(TMP_ON_DISK) == len(commands) - 2
+            assert "setsid -f /usr/local/bin/start-simeon-vm" in commands[-1]
+        assert "mount --bind /var/lib/simeon/tmp /tmp" in TMP_ON_DISK
 
     def test_a_new_worker_alone_is_a_new_host(self) -> None:
         changed = HostBundle(

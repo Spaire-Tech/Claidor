@@ -245,6 +245,20 @@ on box2's image). A computer the server no longer knows (its entry was
 taken out) freezes itself within the hour; kill it (`e2b sandbox kill
 <id>`, or in E2B's dashboard).
 
+**"Computer is critically low on disk space" with a disk far from full.**
+In a VM made from box2's image, `/tmp` was a tmpfs of half the memory (2.0G
+on a 4 GB VM, measured 16 October 2026), and the engine's disk check reads
+`/tmp`: 2 GiB free or less is "critical". Since then the server binds a
+folder of the disk (`/var/lib/simeon/tmp`) over `/tmp` before the stack
+starts, as Docker has it; `sand.box.e2b.created` says `tmp=moved` (or
+`tmp=disk`; `tmp=kept` with `sand.box.e2b.tmp_in_memory` when the bind
+failed). A computer made before that keeps its tmpfs: as root inside it,
+`mount -o remount,size=12G /tmp` lifts the cap without moving anything (the
+warning goes within a minute; files in `/tmp` still use memory), and its
+next replacement gets the disk. The engine published after 16 October 2026
+also leaves a tmpfs out of the check, and on a small disk says "low" at 30%
+free rather than 8 GiB (an E2B computer has 15 GiB, 9.6 free when new).
+
 ## The API's size
 
 Every message and every screen frame between an app and its computer

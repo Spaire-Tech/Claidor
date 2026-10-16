@@ -72,7 +72,9 @@ router = APIRouter(include_in_schema=False)
 _TOOLKIT = re.compile(r"^[a-z0-9_]{1,64}$")
 _TIMEOUT = httpx.Timeout(60.0, connect=10.0)
 # A Composio call slower than this is logged, so "it takes forever" has a line.
-_SLOW_CALL_MS = 5_000
+# At 5 s (until 16 October 2026) the ~1.8 s answers to every connector not
+# signed in, which each agent turn waited for, left no line at all.
+_SLOW_CALL_MS = 1_000
 _PROTOCOL_VERSION = "2025-06-18"
 _TOOLS_TTL_S = 600.0
 # Every app is served its whole tool list, featured ("important") tools
