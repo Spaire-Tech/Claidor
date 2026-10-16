@@ -39,7 +39,7 @@ logging.config.dictConfig({"version": 1, "disable_existing_loggers": True})
 #: Each plan's picture on Stripe's checkout page and in its emails (the app's
 #: icon, served by the website). Without one, Checkout shows a grey square
 #: beside "Simeon Standard" (the founder, 16 October 2026).
-PRODUCT_IMAGE = "https://simeonlabs.com/img/simeon-icon.png"
+PRODUCT_IMAGE = "https://www.simeonlabs.com/img/simeon-icon.png"
 
 
 def _dollars(cents: int) -> str:

@@ -65,7 +65,7 @@ test key first, then the live key.
 
 | On Stripe | Found by | What |
 |---|---|---|
-| Product × 3 | `metadata.simeon_tier` = `standard`, `pro`, `max` | "Simeon Standard", "Simeon Pro", "Simeon Max", with the weekly and trial credits in metadata, and the app's icon as their picture (`https://simeonlabs.com/img/simeon-icon.png`, so Checkout shows it beside the plan's name, not a grey square). |
+| Product × 3 | `metadata.simeon_tier` = `standard`, `pro`, `max` | "Simeon Standard", "Simeon Pro", "Simeon Max", with the weekly and trial credits in metadata, and the app's icon as their picture (`https://www.simeonlabs.com/img/simeon-icon.png`, so Checkout shows it beside the plan's name, not a grey square). |
 | Price × 6 | `lookup_key` = `simeon_<tier>_<month\|year>` | Recurring, USD, tax inclusive. Monthly at the list price, yearly at twenty percent off. A changed amount archives the old price and moves the lookup key to the new one. |
 | Billing Meter × 2 | `event_name` = `simeon_credits`, `simeon_box_seconds` | Sum of `payload.value`, by `stripe_customer_id`. What a person used, for Stripe's dashboard and, later, for on-demand prices. |
 
