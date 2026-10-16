@@ -726,6 +726,22 @@ volumes, in any of these cases:
 A box that is busy keeps its current program until the app next connects to
 it while it is idle (`sand.box.update_deferred`).
 
+**How the apps reach it (16 October 2026).** The iPhone and Mac apps find
+the box the way the Electron app does (`ios/SimeonCore/Sources/SimeonCore/Gateway.swift`):
+
+- At launch they go straight to the address the broker gave last time, kept
+  in the Keychain for that account for seven days
+  (`SavedGateway.swift`), and ask `EnsureSandBox` in the background. The
+  kept address is tried once. If it fails (the box slept, or was rebuilt),
+  they wait for the broker's answer. Signing out forgets it.
+- Once they have an address, they keep using it while the event stream is
+  up. Otherwise they first ask the box's `/health` (1.5 s, trusted for 5 s),
+  and call `EnsureSandBox` again only when that gets no answer.
+- The event stream dials again after 1, 2, 4, 8, then every 10 seconds, and
+  a stream silent for 35 seconds counts as dead (the host pings every 15).
+- When the broker answers `SAND_BOX_BLOCKED`, they do not ask again until its
+  `retry-after` (a minute without one, 15 minutes at most).
+
 Each box has two volumes: `/workspace` and `/home/box/sand-data`.
 
 **The proxy.** The API forwards the box's ports at `/sand-box/{box_id}/p/{port}/…`,
@@ -773,7 +789,10 @@ All servers share one CA, so one client certificate opens every one of them.
   - A box that is busy stays awake. A box that is only waiting on the person's
     approval can still sleep.
   - So does a box the app is attached to through the proxy, tracked by a Redis
-    key that lasts 180 seconds.
+    key that lasts 180 seconds. Each minute it stays attached, the box's
+    `last_active_at` is set to now (16 October 2026), so its idle time starts
+    when the app goes. The Electron app had the same effect by calling
+    `EnsureSandBox` every 30 seconds while it was open.
   - Any other box idle for `SIMEON_BOX_IDLE_HIBERNATE_AFTER` (30 minutes) is
     stopped with its files kept, and the app shows it as sleeping.
 - **Wake.** `EnsureSandBox` wakes a sleeping box. So does `sand.box.wake`,

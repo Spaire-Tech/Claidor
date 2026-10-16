@@ -339,6 +339,11 @@ final class GatewayTests: XCTestCase {
     let http = ScriptedHTTP([
       { _ in HTTPAnswer(status: 200, body: json(#"{"gatewayUrl":"https://box"}"#)) },
       { _ in HTTPAnswer(status: 200, body: json(#"{"accepted":true}"#)) },
+      // No event stream here: the next call asks the box's /health first, and trusts it for 5 s (the Electron app's `ensureConnection`).
+      { request in
+        XCTAssertEqual(request.url?.absoluteString, "https://box/health")
+        return HTTPAnswer(status: 200, body: json(#"{"ok":true}"#))
+      },
       { _ in HTTPAnswer(status: 200, body: json(#"{"agent":{"id":"agent-9","name":"Nora"}}"#)) },
       { _ in HTTPAnswer(status: 200, body: json(#"{"agent":{"id":"group-1"}}"#)) },
       { _ in HTTPAnswer(status: 200, body: json(#"{"agent":{"id":"agent-10","name":"Leo"}}"#)) },
@@ -355,18 +360,19 @@ final class GatewayTests: XCTestCase {
     XCTAssertEqual(send["prompt"], "Hi")
     XCTAssertEqual(send["attachmentPaths"], [])
     XCTAssertTrue(send["clientNonce"]?.string?.hasPrefix("ios-") ?? false)
-    let create = try JSON.parse(http.sent[2].httpBody!)
+    XCTAssertEqual(http.sent.count, 5, "one /health, then trusted")
+    let create = try JSON.parse(http.sent[3].httpBody!)
     // The face the sheet showed is kept on it; the host picks its colour.
     XCTAssertNil(create["avatarColor"])
     XCTAssertEqual(create["avatarShape"], "clay-03")
     XCTAssertNil(create["voiceId"])
     // The voice picked with the pencil goes with the agent (AgentDraft).
     _ = try await backend.createAgent(name: "Leo", face: "clay-04", voiceId: "s3TPKV1kjDlVtZbl4Ksh")
-    let voiced = try JSON.parse(http.sent[4].httpBody!)
+    let voiced = try JSON.parse(http.sent[5].httpBody!)
     XCTAssertEqual(voiced["voiceId"], "s3TPKV1kjDlVtZbl4Ksh")
     XCTAssertEqual(voiced["avatarShape"], "clay-04")
     XCTAssertEqual(create["isKickstartRequested"], true)
-    XCTAssertEqual(try JSON.parse(http.sent[3].httpBody!)["memberAgentIds"], ["simeon", "iris"])
+    XCTAssertEqual(try JSON.parse(http.sent[4].httpBody!)["memberAgentIds"], ["simeon", "iris"])
   }
 
   func testAnAgentsScreenGoesThroughTheProxy() throws {

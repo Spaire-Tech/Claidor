@@ -422,10 +422,10 @@ How the Mac calls them, beyond what `Gateway.swift` does now:
 |---|---|---|
 | `sendPrompt` with a 15 s deadline and a retry that the nonce makes safe | partly (Resend by hand) | |
 | `listAgents` and `countAgents`: 15 s and one retry; `createAgent`: up to 3 retries (the host dedupes by nonce, `x-sand-mint-dedupe`) | no | |
-| A 35 s stall watchdog on the event stream, and a forced reconnect (`forceGatewayReconnect`) | partly (45 s timeout, 1–15 s backoff) | |
-| A `/health` probe with the token before reconnecting | no | |
+| A 35 s stall watchdog on the event stream, and a forced reconnect (`forceGatewayReconnect`) | yes since 16 October 2026: 35 s, and 1, 2, 4, 8, then 10 s between dials; the forced reconnect is Retry | the same (SimeonCore) |
+| A `/health` probe with the token before reconnecting | yes since 16 October 2026: 1.5 s, trusted 5 s, the broker only when it fails | the same (SimeonCore) |
 | Reconnect on wake from sleep (`powerMonitor` resume, main `coordinator/desktop-connectivity.ts`) | no | |
-| The last box address kept for 7 days, per account, so launch reconnects at once (main `box/gateway-descriptor-*.ts`) | no | |
+| The last box address kept for 7 days, per account, so launch reconnects at once (main `box/gateway-descriptor-*.ts`) | yes since 16 October 2026: in the Keychain, tried once at launch while the broker is asked | the same (SimeonCore) |
 | Slim avatars (`x-sand-slim-avatars: 1`), avatars from `GET /avatars/{agentId}` | no | |
 
 ## 4. Events from the cloud computer

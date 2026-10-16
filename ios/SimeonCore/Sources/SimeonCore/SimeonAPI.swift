@@ -22,7 +22,14 @@ public struct SimeonAPIError: Error, LocalizedError, Sendable {
   public let status: Int
   /** The refusal's own code when the answer names one (`error.code`, e.g. OpenAI's `moderation_blocked`). */
   public var code: String? = nil
+  /** The answer's headers (a Connect refusal's hint, `x-automation-failure-hint`, and its `retry-after`). */
+  public var headers: [String: String] = [:]
   public var errorDescription: String? { message }
+
+  /** One header of the answer, whatever case it came in. */
+  public func header(_ name: String) -> String? {
+    headers.first { $0.key.caseInsensitiveCompare(name) == .orderedSame }?.value
+  }
 }
 
 /**
@@ -52,6 +59,11 @@ public actor SimeonAPI {
   public func onSessionEnded(_ handler: @escaping @Sendable () -> Void) { onEnded = handler }
 
   public var isSignedIn: Bool { vault.read() != nil }
+
+  /** The signed-in account (its token's `sub`), nil when signed out: what a computer's address kept between launches belongs to (`SavedGateway`). */
+  public nonisolated var accountScope: String? {
+    vault.read().flatMap { Tokens.subject(ofAccessToken: $0.accessToken) }
+  }
 
   public func signedIn(with pair: TokenPair) {
     vault.write(SessionTokens(pair: pair, nowMs: now()))
@@ -199,7 +211,7 @@ public actor SimeonAPI {
     let answer = try await http.send(request)
     if answer.status == 401 { sessionEnded() }
     guard answer.ok else {
-      throw SimeonAPIError(message: answer.json?["message"]?.text ?? "Simeon's cloud computer answered \(method) with \(answer.status).", status: answer.status)
+      throw SimeonAPIError(message: answer.json?["message"]?.text ?? "Simeon's cloud computer answered \(method) with \(answer.status).", status: answer.status, headers: answer.headers)
     }
     return answer.json ?? [:]
   }

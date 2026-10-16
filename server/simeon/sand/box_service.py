@@ -1103,6 +1103,16 @@ class BoxBrokerService:
                     box.last_active_at = min(last_busy, now)
                     await repository.update(box, flush=True)
             if await is_attached(redis, box.id):
+                # An app open on the box is the box in use, so its idle time
+                # starts when the app goes (16 October 2026). The upstream
+                # app's Mac asked for the box every 30 s while it was open
+                # (`LOCAL_EXEC_DAEMON_REFRESH_INTERVAL_MS`, each an
+                # EnsureSandBox, which stamps `last_active_at` here); until
+                # then a box idle for 30 minutes with the app open slept
+                # within a few minutes of the app closing (Render, 15
+                # October 2026: asleep at 22:17:11, wanted at 22:18:47).
+                box.last_active_at = now
+                await repository.update(box, flush=True)
                 continue
             idle_since = box.last_active_at or box.last_ensured_at or box.created_at
             if now - idle_since < after:

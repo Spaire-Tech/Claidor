@@ -35,8 +35,11 @@ computer, and the app asks it and listens to it the way the web window does
   `uploadAttachment`, `desktopMcp`, `getHostSettings`,
   `createAgentAutomation`, `ensureForeverBox`, `voiceCall` and the rest).
   It reads `{gateway}/events` for live changes: the roster, each chat's
-  entries, the steps an agent is on. See `Gateway.swift`, `Backend.swift`
-  and `Store.swift`.
+  entries, the steps an agent is on. At launch it uses the address kept
+  from last time while it asks the broker, and before asking again it
+  checks the box's `/health`, as the Electron app does
+  (`docs/services-core.md` §4). See `Gateway.swift`, `SavedGateway.swift`,
+  `Backend.swift` and `Store.swift`.
 - **The chats.** The host sends finished entries ("add", "update",
   "remove"). The app keeps them by id and draws them. It folds them the
   window's way: a time stamp after 15 minutes, "N messages with …" for

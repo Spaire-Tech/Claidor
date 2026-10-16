@@ -174,7 +174,8 @@ final class SessionController {
     if store.account == nil, let known = Self.rememberedAccount() { store.account = known; personName.value = known.name }
     if !holding { phase = .signedIn }
     // The voice call: ElevenLabs' kit on the phone, the Mac's call protocol in SimeonCore (LiveCall).
-    let backend = LiveBackend(gateway: Gateway(api: api), api: api)
+    // The computer's address kept from the last launch is used at once while the broker is asked (the Electron app's fast path).
+    let backend = LiveBackend(gateway: Gateway(api: api, saved: Self.savedGateway), api: api)
     let names = personName
     let store = store
     #if os(macOS)
@@ -219,6 +220,9 @@ final class SessionController {
   }
 
   private static let accountKey = "simeon.account"
+
+  /** Where the computer answered last time, beside the session in the Keychain (the Electron app's kept address); forgotten with the session. */
+  private static let savedGateway = KeychainSavedGateway(service: AppPlatform.keychainService)
 
   /** The account's name, e-mail and id on this phone (not a secret: what Settings shows, and who approves a purchase), for the next launch before the profile answers. */
   private static func remember(_ account: Account?) {
@@ -322,6 +326,7 @@ final class SessionController {
     FreeMonthAsk.forget()
     NotificationPictures.forget()
     Self.remember(nil)
+    Self.savedGateway.write(nil)
     api = nil
     askedForNotifications = false
     forgetFirstRun()
@@ -515,6 +520,7 @@ final class SessionController {
     FreeMonthAsk.forget()
     NotificationPictures.forget()
     Self.remember(nil)
+    Self.savedGateway.write(nil)
     askedForNotifications = false
     forgetFirstRun()
     // A plan bought through Apple keeps charging until the person cancels it there.
@@ -530,6 +536,7 @@ final class SessionController {
     FreeMonthAsk.forget()
     NotificationPictures.forget()
     Self.remember(nil)
+    Self.savedGateway.write(nil)
     api = nil
     askedForNotifications = false
     forgetFirstRun()
