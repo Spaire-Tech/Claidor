@@ -206,24 +206,39 @@ Three things, once:
  {"name": "e2b-1", "kind": "e2b", "users": ["you@example.com"], "idle_minutes": 10, "max_running": 20}]
 ```
 
-- `users`: who has their computer there (e-mail addresses or user ids), and
-  nowhere else. A listed person's computer moves there at their next
-  EnsureSandBox while it is idle: its backup is brought up to date, the
-  Docker computer is stopped (not removed, so its files stay on box2), and
-  the new one copies the backup in. Without `users`, the entry takes new
-  people like any other server.
+- `users`: who has their computer there (e-mail addresses or user ids), or
+  `["*"]` for everyone (17 October 2026). A listed person's computer moves
+  there at their next EnsureSandBox while it is idle and there is room: its
+  backup is brought up to date, the Docker computer is stopped (not removed,
+  so its files stay on box2), and the new one copies the backup in. When the
+  entry is full (`max_running` awake) or `"accepting": false`, a new computer
+  is made on a server that names nobody (box2), logged as
+  `sand.box.placed_fallback` with `wanted`, `reason` (`full` or `closed`)
+  and `server`, and moves over at a later start once there is room; a
+  computer already on box2 keeps working there meanwhile
+  (`sand.box.move_deferred reason=full`). A computer already on E2B that
+  wakes while it is full waits for room (the app's "computers are busy"
+  hold) rather than move. Without `users`, the entry takes new people like
+  any other server.
 - `idle_minutes`: how long a computer there stays awake unused (Docker's
   is `SIMEON_BOX_IDLE_HIBERNATE_AFTER`, 30 minutes). Waking takes a second,
   so it can be short; E2B charges only while a computer is awake.
 - `max_running`: computers awake at once there. E2B's own limit is 20 on
-  its free plan and 100 on Pro.
+  its free plan and 100 on Pro, counting every running sandbox on the E2B
+  account, including test computers and any that are not Simeon's: leave
+  room for those, or E2B refuses the last ones and the app holds.
 - `template`: only to use another template than `SIMEON_E2B_TEMPLATE`
   (`simeon-box`).
 
-`SIMEON_BOX_HOST_PROVIDER` stays `docker`. To go back, take the person off
-`users` (or the entry out of the list): their next EnsureSandBox makes a
-computer on Docker again and copies the backup in. The log lines are
-`sand.box.moved`, `sand.box.move_deferred`, `sand.box.move_failed` (the new
+`SIMEON_BOX_HOST_PROVIDER` stays `docker`. Going back: taking a person off
+`users` (or `"accepting": false`) sends only new computers to box2; a
+computer already on E2B stays there and keeps working (it is not moved back
+on its own). Taking the entry out of the list gives each E2B person a fresh
+computer on box2 at their next start, copied from their last backup (up to
+two minutes old, since the E2B computer is not asked to bring it up to
+date first); their E2B computer is left frozen. The log lines are
+`sand.box.placed_fallback`, `sand.box.moved`, `sand.box.move_deferred`,
+`sand.box.move_failed` (the new
 computer did not come up; the old one is made again on box2),
 `sand.box.e2b.created`,
 `sand.box.keep_alive_failed` and, as before, `sand.box.hibernated`.

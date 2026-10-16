@@ -458,6 +458,18 @@ class TestEntries:
             ("c@z.com",),
         )
 
+    def test_a_star_names_everyone(self, mocker: MockerFixture) -> None:
+        mocker.patch.object(
+            settings,
+            "BOX_HOSTS",
+            '[{"name": "us-west-1", "docker_host": "tcp://box2:2376", "max_running": 3},'
+            ' {"name": "e2b-1", "kind": "e2b", "users": ["*"], "idle_minutes": 10,'
+            '  "max_running": 18}]',
+        )
+        docker, cloud = box_host_entries()
+        assert docker.users == ()
+        assert cloud.users == (box_hosts.EVERYONE,)
+
     def test_a_docker_server_still_needs_its_daemon(
         self, mocker: MockerFixture
     ) -> None:
@@ -690,6 +702,119 @@ class TestOnE2B:
         assert (await _box_of(session, user)).provider == "us-west-1"
         assert e2b.created == []
         assert all(box["running"] for box in docker.boxes.values())
+
+    async def test_everyone_on_e2b_and_a_full_e2b_spills_over_to_box2(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        user_second: User,
+        fleet: tuple[FakeBoxHost, E2BBoxHost],
+        e2b: FakeE2B,
+        dials: list[tuple[str, dict[str, str]]],
+        backups: Any,
+        mocker: MockerFixture,
+    ) -> None:
+        """17 October 2026: E2B for everyone (`"users": ["*"]`), so many at
+        once at most. A new computer that finds it full is made on box2,
+        said in the log, and moves over at a later start once there is
+        room; until then it keeps working on box2, never stopped for a move
+        that cannot be made."""
+        docker, cloud = fleet
+        cloud.users = (box_hosts.EVERYONE,)
+        cloud.max_running = 1
+        log = mocker.patch.object(box_service, "log")
+
+        first, _ = await _signed_in(client, session, user)
+        assert (await _ensure(client, first)).status_code == 200
+        assert (await _box_of(session, user)).provider == "e2b-1"
+
+        second, _ = await _signed_in(client, session, user_second)
+        assert (await _ensure(client, second)).status_code == 200
+        assert (await _box_of(session, user_second)).provider == "us-west-1"
+        fallback = [
+            call.kwargs
+            for call in log.warning.call_args_list
+            if call.args == ("sand.box.placed_fallback",)
+        ]
+        assert len(fallback) == 1
+        assert (
+            fallback[0]["wanted"],
+            fallback[0]["reason"],
+            fallback[0]["server"],
+        ) == (
+            "e2b-1",
+            "full",
+            "us-west-1",
+        )
+
+        # Still full: the next start leaves it running where it is.
+        assert (await _ensure(client, second)).status_code == 200
+        assert any(
+            call.args == ("sand.box.move_deferred",) and call.kwargs["reason"] == "full"
+            for call in log.info.call_args_list
+        )
+        assert all(box["running"] for box in docker.boxes.values())
+        assert docker.removed == []
+        assert len(e2b.created) == 1
+
+        # Room again: it moves over through its backup, box2's copy kept.
+        cloud.max_running = 2
+        assert (await _ensure(client, second)).status_code == 200
+        session.expunge_all()
+        assert (await _box_of(session, user_second)).provider == "e2b-1"
+        assert len(e2b.created) == 2
+        assert docker.removed == []
+
+    async def test_a_closed_e2b_server_sends_new_computers_to_box2(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        fleet: tuple[FakeBoxHost, E2BBoxHost],
+        e2b: FakeE2B,
+        dials: list[tuple[str, dict[str, str]]],
+    ) -> None:
+        """A listed person (here by address) was held while their server was
+        closed; a server set to `"accepting": false` sends them to box2."""
+        docker, cloud = fleet
+        cloud.accepting = False
+        access, _ = await _signed_in(client, session, user)
+        assert (await _ensure(client, access)).status_code == 200
+        assert (await _box_of(session, user)).provider == "us-west-1"
+        assert e2b.created == []
+
+    async def test_put_back_to_a_short_list_e2b_computers_stay_where_they_are(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        user_second: User,
+        fleet: tuple[FakeBoxHost, E2BBoxHost],
+        e2b: FakeE2B,
+        dials: list[tuple[str, dict[str, str]]],
+        backups: Any,
+    ) -> None:
+        """What going back to `"users": ["one@person"]` does (17 October
+        2026): a person no longer listed keeps the computer they have on E2B
+        (it is never moved back to box2 on its own), and new people go to
+        box2."""
+        docker, cloud = fleet
+        cloud.users = (box_hosts.EVERYONE,)
+        access, _ = await _signed_in(client, session, user)
+        assert (await _ensure(client, access)).status_code == 200
+        assert (await _box_of(session, user)).provider == "e2b-1"
+
+        cloud.users = ("somebody.else@example.com",)
+        assert (await _ensure(client, access)).status_code == 200
+        session.expunge_all()
+        assert (await _box_of(session, user)).provider == "e2b-1"
+        assert len(e2b.created) == 1
+        assert docker.created == []
+
+        other, _ = await _signed_in(client, session, user_second)
+        assert (await _ensure(client, other)).status_code == 200
+        assert (await _box_of(session, user_second)).provider == "us-west-1"
 
     async def test_a_sleeping_computer_on_an_old_template_is_woken_backed_up_and_replaced(
         self,
