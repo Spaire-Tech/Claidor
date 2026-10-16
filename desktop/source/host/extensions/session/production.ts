@@ -5,6 +5,7 @@ import type { Executor, RemoteExecManager } from "../../../packages/agent-exec/r
 import type { ResourceAccessor } from "../../../packages/agent-exec/resource-provider.js";
 import { AgentStore2, deriveConversationStateFromStructure } from "../../../packages/agent-kv/agent-store.js";
 import { createContext } from "../../../packages/context/core.js";
+import { HOST_LOG_PREFIX, logHostLine } from "../../../shared/host-log.js";
 import { loggerKey } from "../../../packages/context/logger.js";
 import {
   ComputerUseAction,
@@ -224,6 +225,7 @@ export function createSessionProductionExtras(
       const box = context.deps["forever-box"].box;
       return {
         grabScreenshot: agentId => grabHandoffScreenshot(box, requestContext, agentId),
+        log: line => logHostLine(`${HOST_LOG_PREFIX} ${line}`),
         onStarted: event => {
           void context.host.events.emit("session.box-handoff-started", event);
         },
