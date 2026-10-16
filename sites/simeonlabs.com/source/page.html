@@ -645,7 +645,6 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .plan3 .btn{align-self:flex-start;margin-top:auto;height:clamp(36px,2.3vw,42px);padding:0 clamp(16px,1.1vw,20px);font-size:clamp(14px,.95vw,16px)}
 .plan3 .btn.ghost{background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.06)}
 .plan3 .btn.ghost:hover{background:#f2f2f4}
-.pnote{margin:clamp(22px,2vw,36px) auto 0;max-width:60em;text-align:center;font-size:clamp(14px,.9vw,16.5px);line-height:1.55;letter-spacing:-.01em;color:var(--ink3)}
 @supports (grid-template-rows:subgrid){.plans3{grid-template-rows:repeat(7,auto)}.plan3{display:grid;grid-template-rows:subgrid;row-gap:0;grid-row:span 7;align-content:start}.plan3 .btn{margin-top:0;align-self:start;justify-self:start}}
 @media (max-width:1068px){.plans3{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:734px){.plans3{grid-template-columns:1fr;gap:14px}.plan3{border-radius:24px}}
@@ -662,6 +661,8 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .close3 h2{margin:0 auto;font-family:"Newsreader",Georgia,"Times New Roman",serif;font-weight:400;font-size:clamp(44px,4.4vw,88px);line-height:1;letter-spacing:-.02em}
 .close3 .ctas{display:flex;justify-content:center;gap:clamp(10px,.7vw,14px);flex-wrap:wrap;margin-top:clamp(28px,2.4vw,44px)}
 .close3 .btn{height:clamp(44px,3.05vw,61px);padding:0 clamp(20px,1.6vw,32px);font-size:clamp(16px,1.15vw,23px)}
+.close3 .btn.go{display:none} /* on a phone the close offers Download for iOS, as the top does, and Request a demo beside it (the founder, 12 October 2026) */
+@media (max-width:734px){.close3 .ctas .btn:not(.ghost):not(.go){display:none}.close3 .btn.go{display:inline-flex;order:-1}}
 
 /* Security and integrations: a serif headline beside the promise, then two grey panels of icon rows. */
 .trust{padding:clamp(100px,9vw,170px) 0 clamp(40px,4vw,80px)}
@@ -1051,7 +1052,6 @@ footer a:hover{color:var(--ink)}
       <h2>Pricing</h2>
     </div>
     <div class="plans3"><div class="plan3"><h3>Trial</h3><p class="tag">For the first week</p><div class="pr">Free<small>/ 7 days</small></div><p class="per">5,000,000 credits once.</p><p class="inc">Includes:</p><ul><li>Every agent and every feature</li><li>A cloud computer for each agent</li><li>Card on file, one trial per card</li><li>Becomes Standard on day 8 unless you cancel</li></ul><a class="btn" href="https://app.simeonlabs.com/billing?plan=standard">Try it free</a></div><div class="plan3"><h3>Standard</h3><p class="tag">For a light week of work</p><div class="pr">$20<small>/ month</small></div><p class="per">3,750,000 credits a week.</p><p class="inc">Everything in the trial, plus:</p><ul><li>Routines that run while your Mac is closed</li><li>Discord and Slack channels, voice calls</li><li>Memory shared across your agents</li><li>Keep going past the week&#8217;s allowance on demand</li></ul><a class="btn" href="https://app.simeonlabs.com/billing?plan=standard">Get Standard</a></div><div class="plan3"><h3>Pro</h3><p class="tag">For agents working every day</p><div class="pr">$60<small>/ month</small></div><p class="per">12,500,000 credits a week.</p><p class="inc">Everything in Standard, plus:</p><ul><li>Three times the weekly work of Standard</li><li>Room for routines that run every day</li></ul><a class="btn" href="https://app.simeonlabs.com/billing?plan=pro">Get Pro</a></div><div class="plan3"><h3>Max</h3><p class="tag">For a team of agents that never stops</p><div class="pr">$200<small>/ month</small></div><p class="per">40,000,000 credits a week.</p><p class="inc">Everything in Pro, plus:</p><ul><li>Eleven times the weekly work of Standard</li><li>Agents on routines all week long</li><li>Our highest allowance</li></ul><a class="btn" href="https://app.simeonlabs.com/billing?plan=max">Get Max</a></div></div>
-    <p class="pnote">A credit is one token of input on the middle model. A typical task, one that reads a few pages and writes something back, is about 100,000 credits. Allowances reset every Monday. Unused credits do not carry over.</p>
   </div>
 </section>
 
@@ -1067,7 +1067,7 @@ footer a:hover{color:var(--ink)}
 <section class="close3" aria-label="Get started">
   <div class="wrap">
     <h2>Your team is ready<br>when you are.</h2>
-    <div class="ctas"><a class="btn" href="https://api.simeonlabs.com/desktop/download/mac"><svg class="apl" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></svg>Download for Mac</a><a class="btn ghost" href="#app">Request a demo&nbsp;&#8594;</a></div>
+    <div class="ctas"><a class="btn" href="https://api.simeonlabs.com/desktop/download/mac"><svg class="apl" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></svg>Download for Mac</a><a class="btn ghost" href="#app">Request a demo&nbsp;&#8594;</a><span class="btn go"><svg class="apl" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></svg>Download for iOS</span></div>
   </div>
 </section>
 
