@@ -148,7 +148,7 @@ RUN chmod 755 /usr/local/bin/* \
     && node --check /usr/local/bin/simeon-supervisor.mjs \
     && node --check /usr/local/bin/simeon-window-router.mjs \
     && node --check /usr/local/bin/sand-wallpaper-tone.mjs \
-    && bash -n /usr/local/bin/start-simeon-box /usr/local/bin/simeon-desktop /usr/local/bin/start-window /usr/local/bin/stop-window /usr/local/bin/box-chrome /usr/local/bin/box-chrome-policy /usr/local/bin/box-doctor /usr/local/bin/sand-wallpaper /usr/local/bin/ensure-machine-id /usr/local/bin/link-chrome-session
+    && bash -n /usr/local/bin/start-simeon-box /usr/local/bin/start-simeon-vm /usr/local/bin/simeon-desktop /usr/local/bin/start-window /usr/local/bin/stop-window /usr/local/bin/box-chrome /usr/local/bin/box-chrome-policy /usr/local/bin/box-doctor /usr/local/bin/sand-wallpaper /usr/local/bin/ensure-machine-id /usr/local/bin/link-chrome-session
 
 ARG SIMEON_BOX_VERSION=dev
 RUN printf '%s\n' "$SIMEON_BOX_VERSION" > /etc/simeon-box-version

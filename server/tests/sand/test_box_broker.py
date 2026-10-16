@@ -772,7 +772,7 @@ def backups(mocker: MockerFixture) -> Any:
         side_effect=lambda user_id: state.cleared.append(str(user_id)) or 0,
     )
 
-    async def flush(url: str, token: str) -> bool:
+    async def flush(url: str, token: str, **_: Any) -> bool:
         state.flushes.append(url)
         return state.flushed
 
@@ -1131,7 +1131,7 @@ async def test_the_proxy_gives_its_database_connection_back_before_it_streams() 
     finally:
         box_proxy.set_lookup_for_tests(None)
     assert calls == ["open", "lookup", "closed"]
-    assert resolved == (box, "10.0.0.7", 40000)
+    assert resolved == (box, "http://10.0.0.7:40000", {})
 
 
 @pytest.mark.asyncio

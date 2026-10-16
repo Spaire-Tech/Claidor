@@ -46,7 +46,12 @@ from simeon.postgres import AsyncSession
 from simeon.routing import APIRouter
 
 from .box_hosts import BOX_PORTS
-from .box_service import ATTACHED_REFRESH_SECONDS, broker, mark_attached
+from .box_service import (
+    ATTACHED_REFRESH_SECONDS,
+    broker,
+    dial_headers,
+    mark_attached,
+)
 
 log = structlog.get_logger()
 
@@ -122,13 +127,16 @@ def read_network_token(headers: Any, query: Any) -> str:
     return str(query.get(NETWORK_TOKEN_QUERY, "") or "").strip()
 
 
-def upstream_target(box: SandBox, port: int) -> tuple[str, int] | None:
+def upstream_target(box: SandBox, port: int) -> tuple[str, dict[str, str]] | None:
+    """The box's port as the API dials it (`broker.internal_url`: a Docker
+    server's published port, or E2B's per-port address) and the headers
+    that dial needs (an E2B box's traffic token)."""
     if port not in BOX_PORTS:
         return None
-    host_port = box.host_port(port)
-    if host_port is None:
+    base = broker.internal_url(box, port)
+    if base is None:
         return None
-    return box.host_address, host_port
+    return base, dial_headers(box)
 
 
 def _redis_of(connection: Request | WebSocket) -> Any:
@@ -168,7 +176,7 @@ def forwardable(headers: Any) -> dict[str, str]:
 
 async def _resolve(
     sessions: LookupSessions, box_id: UUID, port: int, token: str
-) -> tuple[SandBox, str, int] | JSONResponse:
+) -> tuple[SandBox, str, dict[str, str]] | JSONResponse:
     async with sessions() as db:
         box = await _lookup(db, box_id, token)
     if box is None:
@@ -200,17 +208,17 @@ async def _proxy_http(
     )
     if isinstance(resolved, JSONResponse):
         return resolved
-    box, host, host_port = resolved
+    box, base, dial = resolved
     redis = _redis_of(request)
     if redis is not None:
         await mark_attached(redis, box.id)
     query = request.url.query
-    url = f"http://{host}:{host_port}/{path}" + (f"?{query}" if query else "")
+    url = f"{base}/{path}" + (f"?{query}" if query else "")
     client = _client_factory()
     upstream = client.build_request(
         request.method,
         url,
-        headers=forwardable(request.headers),
+        headers={**forwardable(request.headers), **dial},
         content=request.stream(),
     )
     try:
@@ -368,9 +376,10 @@ async def _proxy_ws(
             else "port not proxied",
         )
         return
-    box, host, host_port = resolved
+    box, base, dial = resolved
     query = websocket.url.query
-    url = f"ws://{host}:{host_port}/{path}" + (f"?{query}" if query else "")
+    # http → ws, https → wss.
+    url = "ws" + base.removeprefix("http") + f"/{path}" + (f"?{query}" if query else "")
     requested: list[Subprotocol] = [
         Subprotocol(p.strip())
         for p in websocket.headers.get("sec-websocket-protocol", "").split(",")
@@ -380,7 +389,7 @@ async def _proxy_ws(
         k: v
         for k, v in websocket.headers.items()
         if k.lower() in ("authorization", NETWORK_TOKEN_HEADER)
-    }
+    } | dial
     try:
         upstream = await connect(
             url,

@@ -40,7 +40,7 @@ def resolved(monkeypatch: pytest.MonkeyPatch) -> Any:
     box = SimpleNamespace(id=uuid.uuid4())
 
     async def resolve(*_: Any) -> Any:
-        return box, "box1.example", 41340
+        return box, "http://box1.example:41340", {}
 
     monkeypatch.setattr(box_proxy, "_resolve", resolve)
     yield box

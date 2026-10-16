@@ -157,6 +157,51 @@ secret files above open all of them: run `setup-box-host.sh` on the new VM
 with `JOIN_CA_DIR` (the script's header says how). Put the new server's
 Render outbound addresses in its firewall the same way.
 
+## E2B: computers that freeze and wake in a second
+
+An entry with `"kind": "e2b"` is E2B's service instead of a Docker server
+(`server/simeon/sand/box_e2b.py`, 16 October 2026): each computer is a small
+virtual machine, frozen whole when idle and back in about a second. Three
+things, once:
+
+1. **The key.** `E2B_API_KEY` (or `SIMEON_E2B_API_KEY`) in the shared
+   environment group, so the API and the worker both have it: the worker's
+   sleeper freezes computers and keeps awake ones awake. Also as the GitHub
+   repository secret `E2B_API_KEY`, for the template build.
+2. **The template.** GitHub → Actions → **E2B template** → Run workflow. It
+   builds `box/` into the template `simeon-box` and then makes one test
+   computer and prints what it measured (start, freeze and wake times, the
+   clock after a wake, disk, memory). The last step must be green.
+3. **The entry**, added to `SIMEON_BOX_HOSTS` in the shared group:
+
+```
+[{"name": "us-west-1", "docker_host": "tcp://box2.simeonlabs.com:2376", "max_running": 3},
+ {"name": "e2b-1", "kind": "e2b", "users": ["you@example.com"], "idle_minutes": 10, "max_running": 20}]
+```
+
+- `users`: who has their computer there (e-mail addresses or user ids), and
+  nowhere else. A listed person's computer moves there at their next
+  EnsureSandBox while it is idle: its backup is brought up to date, the
+  Docker computer is stopped (not removed, so its files stay on box2), and
+  the new one copies the backup in. Without `users`, the entry takes new
+  people like any other server.
+- `idle_minutes`: how long a computer there stays awake unused (Docker's
+  is `SIMEON_BOX_IDLE_HIBERNATE_AFTER`, 30 minutes). Waking takes a second,
+  so it can be short; E2B charges only while a computer is awake.
+- `max_running`: computers awake at once there. E2B's own limit is 20 on
+  its free plan and 100 on Pro.
+- `template`: only to use another template than `SIMEON_E2B_TEMPLATE`
+  (`simeon-box`).
+
+`SIMEON_BOX_HOST_PROVIDER` stays `docker`. To go back, take the person off
+`users` (or the entry out of the list): their next EnsureSandBox makes a
+computer on Docker again and copies the backup in. The log lines are
+`sand.box.moved`, `sand.box.move_deferred`, `sand.box.e2b.created`,
+`sand.box.keep_alive_failed` and, as before, `sand.box.hibernated`.
+
+On E2B's free plan a computer can run at most an hour before E2B freezes it
+(each freeze resets that); Pro allows 24 hours.
+
 ## The API's size
 
 Every message and every screen frame between an app and its computer

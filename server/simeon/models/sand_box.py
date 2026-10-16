@@ -49,6 +49,12 @@ class SandBox(RecordModel):
     host_address: Mapped[str] = mapped_column(String(256), nullable=False)
     #: Inner port → published host port, as strings ("1340" → 32768).
     ports: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    #: What reaching the box needs beyond `host_address` and `ports`:
+    #: `{"kind": "e2b", "traffic_token": …}` for an E2B box
+    #: (`box_service.dial_headers`); empty for Docker.
+    host_meta: Mapped[dict[str, Any]] = mapped_column(
+        JSONB, nullable=False, default=dict, server_default="{}"
+    )
     gateway_token: Mapped[str] = mapped_column(Text, nullable=False)
     network_token: Mapped[str] = mapped_column(Text, nullable=False)
     #: What the last `EnsureSandBox` answered, so the local-exec trade and

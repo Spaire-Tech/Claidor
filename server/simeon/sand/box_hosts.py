@@ -15,12 +15,11 @@ Two implementations, chosen by `SIMEON_BOX_HOST_PROVIDER`:
   container and `PUT /containers/{id}/archive`) and bind-mounted
   read-only into every box, which is labelled with its sha256 so a box
   on an older bundle is replaced.
-- `e2b`: a stub. The `e2b` package is not in `uv.lock` (checked 25
-  September 2026: `grep -n 'name = "e2b"' server/uv.lock` finds nothing),
-  and E2B's per-port hostnames are `<port>-<id>.e2b.app`, which is not
-  the `<label>-<port>` shape the app's tunnel derivation reads
-  (`box-connection.ts`); both are written up in
-  `docs/services-core.md`.
+- `e2b` (16 October 2026): each box is an E2B sandbox, a small virtual
+  machine frozen whole when idle and back in about a second
+  (`box_e2b.py`). A server in `SIMEON_BOX_HOSTS` is one or the other by
+  its `kind`. The app never sees E2B's `<port>-<id>.e2b.app` hostnames:
+  it reaches every box through the API's proxy (`box_proxy.py`).
 
 Nothing here touches the database; the broker keeps the row.
 """
@@ -181,6 +180,10 @@ class ProvisionedBox:
     #: The `com.simeonlabs.box-store` label: made with backups on
     #: (`box_store.py`). None on a container made without.
     box_store: str | None = None
+    #: What the API needs to reach a box that is not a published Docker
+    #: port: `{"kind": "e2b", "traffic_token": …}` (`box_service.dial_headers`).
+    #: Empty for Docker.
+    host_meta: dict[str, str] = field(default_factory=dict)
 
 
 class BoxHost(Protocol):
@@ -385,6 +388,8 @@ class DockerBoxHost:
         name: str = "docker",
         max_running: int | None = None,
         accepting: bool = True,
+        users: tuple[str, ...] = (),
+        idle_after: timedelta | None = None,
     ) -> None:
         self.client = client
         self.host_address = host_address
@@ -395,6 +400,8 @@ class DockerBoxHost:
             settings.BOX_MAX_RUNNING if max_running is None else max_running
         )
         self.accepting = accepting
+        self.users = users
+        self.idle_after = idle_after
 
     async def _pull(self, image: str) -> None:
         # `repo:tag` → fromImage=repo, tag=tag; `repo@sha256:…` → fromImage as is.
@@ -656,42 +663,6 @@ class DockerBoxHost:
                 )
 
 
-# --- e2b ----------------------------------------------------------------------
-
-
-class E2BBoxHost:
-    """Not built. `e2b` is not in the lockfile, and E2B's hostnames do
-    not fit the app's tunnel rule; see the module docstring."""
-
-    name = "e2b"
-    max_running = 0
-    accepting = True
-
-    def _refuse(self) -> BoxHostUnavailable:
-        return BoxHostUnavailable(
-            "Simeon's cloud computer on E2B is not built yet (the e2b package is not "
-            "installed); set SIMEON_BOX_HOST_PROVIDER=docker with a Docker daemon."
-        )
-
-    async def create(self, spec: BoxSpec) -> ProvisionedBox:
-        raise self._refuse()
-
-    async def inspect(self, provider_box_id: str) -> ProvisionedBox | None:
-        raise self._refuse()
-
-    async def run_state(self, provider_box_id: str) -> BoxRunState | None:
-        raise self._refuse()
-
-    async def start(self, provider_box_id: str) -> None:
-        raise self._refuse()
-
-    async def stop(self, provider_box_id: str) -> None:
-        raise self._refuse()
-
-    async def remove(self, provider_box_id: str, *, volumes: list[str]) -> None:
-        raise self._refuse()
-
-
 # --- choosing one --------------------------------------------------------------
 
 _bundle_cache: dict[str, HostBundle] = {}
@@ -803,13 +774,23 @@ async def load_host_bundle(url: str) -> HostBundle | None:
 
 @dataclass(frozen=True)
 class BoxHostEntry:
-    """One box server in `SIMEON_BOX_HOSTS`."""
+    """One box server in `SIMEON_BOX_HOSTS`: `kind` "docker" (the default,
+    with `docker_host`) or "e2b" (with `template`, default
+    `SIMEON_E2B_TEMPLATE`). `users` (e-mail addresses or user ids), when
+    given, is who may have a computer there, and those people have theirs
+    nowhere else (`BoxBrokerService.place`); `idle_minutes` is how long a
+    computer there stays awake unused (default
+    `SIMEON_BOX_IDLE_HIBERNATE_AFTER`)."""
 
     name: str
-    docker_host: str
+    docker_host: str = ""
     address: str = ""
     max_running: int | None = None
     accepting: bool = True
+    kind: str = "docker"
+    template: str = ""
+    users: tuple[str, ...] = ()
+    idle_minutes: float | None = None
 
 
 def box_host_entries() -> list[BoxHostEntry]:
@@ -836,12 +817,23 @@ def box_host_entries() -> list[BoxHostEntry]:
         if not isinstance(item, dict):
             raise BoxHostUnavailable("Each SIMEON_BOX_HOSTS entry must be an object.")
         name = str(item.get("name") or "").strip()
+        kind = str(item.get("kind") or "docker").strip().lower()
         docker_host = str(item.get("docker_host") or "").strip()
-        if not name or not docker_host:
+        if kind not in ("docker", "e2b"):
             raise BoxHostUnavailable(
-                "Each SIMEON_BOX_HOSTS entry needs a name and a docker_host."
+                f"SIMEON_BOX_HOSTS entry {name!r} has kind {kind!r}; "
+                'use "docker" or "e2b".'
+            )
+        if not name or (kind == "docker" and not docker_host):
+            raise BoxHostUnavailable(
+                "Each SIMEON_BOX_HOSTS entry needs a name and a docker_host "
+                '(or "kind": "e2b").'
             )
         max_running = item.get("max_running")
+        users = item.get("users") or []
+        if isinstance(users, str):
+            users = users.split(",")
+        idle = item.get("idle_minutes")
         entries.append(
             BoxHostEntry(
                 name=name,
@@ -849,6 +841,12 @@ def box_host_entries() -> list[BoxHostEntry]:
                 address=str(item.get("address") or "").strip(),
                 max_running=int(max_running) if max_running is not None else None,
                 accepting=item.get("accepting", True) is not False,
+                kind=kind,
+                template=str(item.get("template") or "").strip(),
+                users=tuple(
+                    str(user).strip().lower() for user in users if str(user).strip()
+                ),
+                idle_minutes=float(idle) if idle is not None else None,
             )
         )
     names = [entry.name for entry in entries]
@@ -865,33 +863,57 @@ async def resolve_box_hosts() -> list[BoxHost]:
     if _host_override is not None:
         return _host_override
     provider = settings.BOX_HOST_PROVIDER.strip().lower()
-    if provider == "e2b":
-        return [E2BBoxHost()]
-    if provider != "docker":
+    if provider not in ("docker", "e2b"):
         raise BoxHostUnavailable(BOX_HOST_UNAVAILABLE_SENTENCE)
     bundle = await load_host_bundle(settings.BOX_HOST_BUNDLE_URL)
-    entries = box_host_entries()
+    if provider == "e2b" and not settings.BOX_HOSTS.strip():
+        # Every computer on E2B, under the one name "e2b".
+        entries = [BoxHostEntry(name="e2b", kind="e2b")]
+    else:
+        entries = box_host_entries()
     key = json.dumps(
         [dataclasses.asdict(entry) for entry in entries]
         + [bundle.key if bundle is not None else ""]
     )
     if _fleet_cache is not None and _fleet_cache[0] == key:
         return _fleet_cache[1]
-    fleet: list[BoxHost] = [
-        DockerBoxHost(
-            docker_client_from_settings(entry.docker_host),
-            host_address=docker_host_address_from_settings(
-                entry.docker_host, entry.address
-            ),
-            bundle=bundle,
-            name=entry.name,
-            max_running=entry.max_running,
-            accepting=entry.accepting,
-        )
-        for entry in entries
-    ]
+    fleet = [_host_of(entry, bundle) for entry in entries]
     _fleet_cache = (key, fleet)
     return fleet
+
+
+def _host_of(entry: BoxHostEntry, bundle: HostBundle | None) -> BoxHost:
+    # Who may have a computer there, and how long one stays awake unused
+    # (`BoxBrokerService.place`, `hibernate_idle`).
+    idle_after = (
+        timedelta(minutes=entry.idle_minutes)
+        if entry.idle_minutes is not None
+        else None
+    )
+    if entry.kind == "e2b":
+        from .box_e2b import E2BBoxHost
+
+        return E2BBoxHost(
+            name=entry.name,
+            template=entry.template or settings.E2B_TEMPLATE,
+            bundle=bundle,
+            max_running=entry.max_running,
+            accepting=entry.accepting,
+            users=entry.users,
+            idle_after=idle_after,
+        )
+    return DockerBoxHost(
+        docker_client_from_settings(entry.docker_host),
+        host_address=docker_host_address_from_settings(
+            entry.docker_host, entry.address
+        ),
+        bundle=bundle,
+        name=entry.name,
+        max_running=entry.max_running,
+        accepting=entry.accepting,
+        users=entry.users,
+        idle_after=idle_after,
+    )
 
 
 async def find_box_host(name: str) -> BoxHost | None:

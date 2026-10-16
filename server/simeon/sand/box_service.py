@@ -19,7 +19,7 @@ import asyncio
 import json
 import secrets
 import time
-from collections.abc import AsyncIterator, Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable, Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -42,11 +42,13 @@ from simeon.kit.crypto import generate_token_hash_pair, get_token_hash
 from simeon.kit.db.postgres import AsyncSessionMaker
 from simeon.kit.utils import generate_uuid, utc_now
 from simeon.models import DesktopSession, SandBox
-from simeon.postgres import AsyncSession
+from simeon.postgres import AsyncReadSession, AsyncSession
 from simeon.redis import Redis
 from simeon.user.repository import UserRepository
 
 from . import box_store
+from .box_e2b import KIND as E2B_KIND
+from .box_e2b import TRAFFIC_HEADER as E2B_TRAFFIC_HEADER
 from .box_hosts import (
     EGRESS_TUNNEL_PORT,
     FORK_NOVNC_PORT,
@@ -200,21 +202,30 @@ migrations = MigrationLog()
 
 # --- readiness ------------------------------------------------------------------
 
-HealthCheck = Callable[[str, str], Awaitable[bool]]
+#: `(url, gateway token)`, and `headers=` the dial needs beyond the
+#: token (an E2B box's traffic token, `dial_headers`); given only when there
+#: are some, so a check written for Docker boxes takes two arguments.
+HealthCheck = Callable[..., Awaitable[bool]]
 
 
-async def gateway_health(url: str, token: str) -> bool:
+def _with(token: str, headers: Mapping[str, str] | None) -> dict[str, str]:
+    return {**(headers or {}), "authorization": f"Bearer {token}"}
+
+
+async def gateway_health(
+    url: str, token: str, *, headers: Mapping[str, str] | None = None
+) -> bool:
     try:
         async with httpx.AsyncClient(timeout=3.0) as client:
-            response = await client.get(
-                f"{url}/health", headers={"authorization": f"Bearer {token}"}
-            )
+            response = await client.get(f"{url}/health", headers=_with(token, headers))
         return response.status_code == 200
     except httpx.HTTPError:
         return False
 
 
-async def gateway_token_rejected(url: str, token: str) -> bool:
+async def gateway_token_rejected(
+    url: str, token: str, *, headers: Mapping[str, str] | None = None
+) -> bool:
     """True only when the box's gateway answers `/health` with 401: it
     runs with another token than the row's, so the container answering is
     not the one the row describes (Render, 4 October 2026). A host still
@@ -223,15 +234,13 @@ async def gateway_token_rejected(url: str, token: str) -> bool:
     (`gateway-server.ts`)."""
     try:
         async with httpx.AsyncClient(timeout=3.0) as client:
-            response = await client.get(
-                f"{url}/health", headers={"authorization": f"Bearer {token}"}
-            )
+            response = await client.get(f"{url}/health", headers=_with(token, headers))
         return response.status_code == 401
     except httpx.HTTPError:
         return False
 
 
-async def _never_rejected(url: str, token: str) -> bool:
+async def _never_rejected(url: str, token: str, **_: Any) -> bool:
     return False
 
 
@@ -244,7 +253,9 @@ _token_check: HealthCheck = gateway_token_rejected
 FLUSH_TIMEOUT_S = 30.0
 
 
-async def gateway_flush_box_store(url: str, token: str) -> bool:
+async def gateway_flush_box_store(
+    url: str, token: str, *, headers: Mapping[str, str] | None = None
+) -> bool:
     """The box's backup brought up to date now (`snapshotBoxStoreNow`,
     the upstream app's step before it replaces a container): True when the
     box says every file is in the backup."""
@@ -252,7 +263,7 @@ async def gateway_flush_box_store(url: str, token: str) -> bool:
         async with httpx.AsyncClient(timeout=FLUSH_TIMEOUT_S) as client:
             response = await client.post(
                 f"{url}/api/snapshotBoxStoreNow",
-                headers={"authorization": f"Bearer {token}"},
+                headers=_with(token, headers),
                 json={"includeIdleOnly": True},
             )
         if response.status_code != 200:
@@ -314,15 +325,15 @@ class BoxHealth:
         return self.is_busy and not self.busy_only_awaiting_approval
 
 
-HealthReport = Callable[[str, str], Awaitable[BoxHealth]]
+HealthReport = Callable[..., Awaitable[BoxHealth]]
 
 
-async def gateway_health_report(url: str, token: str) -> BoxHealth:
+async def gateway_health_report(
+    url: str, token: str, *, headers: Mapping[str, str] | None = None
+) -> BoxHealth:
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
-            response = await client.get(
-                f"{url}/health", headers={"authorization": f"Bearer {token}"}
-            )
+            response = await client.get(f"{url}/health", headers=_with(token, headers))
         if response.status_code != 200:
             return BoxHealth(reachable=False)
         body = response.json()
@@ -376,6 +387,24 @@ async def is_attached(redis: Redis, box_id: UUID) -> bool:
         # Unknown is treated as attached: a box is never put to sleep on
         # a Redis failure.
         return True
+
+
+# --- reaching a box ------------------------------------------------------------
+
+
+def dial_headers(box: SandBox) -> dict[str, str]:
+    """What the API sends to a box besides its own request: an E2B box's
+    traffic token, without which E2B's proxy refuses the request (public
+    traffic to the box is off, `box_e2b.py`). Empty for Docker."""
+    token = (box.host_meta or {}).get("traffic_token")
+    return {E2B_TRAFFIC_HEADER: token} if token else {}
+
+
+def _dial(box: SandBox) -> dict[str, Any]:
+    """`dial_headers` as the gateway checks take it: only when there are
+    some, so a check written for Docker boxes keeps its two arguments."""
+    headers = dial_headers(box)
+    return {"headers": headers} if headers else {}
 
 
 # --- the image -------------------------------------------------------------------
@@ -462,8 +491,12 @@ class BoxBrokerService:
 
     @staticmethod
     def internal_url(box: SandBox, inner_port: int) -> str | None:
-        """Where the API itself reaches a port (the box host's published
-        port), for the proxy and the health check."""
+        """Where the API itself reaches a port, for the proxy and the health
+        check: the box host's published port (Docker), or E2B's
+        `https://<port>-<sandbox>.<domain>`, which wants the box's traffic
+        token as well (`dial_headers`)."""
+        if (box.host_meta or {}).get("kind") == E2B_KIND:
+            return f"https://{inner_port}-{box.provider_box_id}.{box.host_address}"
         host_port = box.host_port(inner_port)
         if host_port is None:
             return None
@@ -554,11 +587,19 @@ class BoxBrokerService:
         return parent
 
     def _apply(self, box: SandBox, provisioned: ProvisionedBox) -> None:
+        # E2B gives a box's traffic token only when it is made: a later read
+        # of the same box (`inspect`) keeps the one stored.
+        same = box.provider_box_id == provisioned.provider_box_id
         box.provider_box_id = provisioned.provider_box_id
         box.host_address = provisioned.host_address
         box.ports = {str(k): v for k, v in provisioned.ports.items()}
         box.image = provisioned.image
         box.image_digest = provisioned.image_digest
+        box.host_meta = (
+            {**(box.host_meta or {}), **provisioned.host_meta}
+            if same
+            else dict(provisioned.host_meta)
+        )
 
     async def _create(
         self,
@@ -592,8 +633,8 @@ class BoxBrokerService:
         box.gateway_token = box.gateway_token or secrets.token_hex(32)
         box.network_token = box.network_token or secrets.token_hex(32)
         workspace, data = self.volumes(box.id)
-        image = await image_for(db, parent.user_id)
-        if image != box_image_reference():
+        image = await self._image_on(db, host, parent.user_id)
+        if image not in (box_image_reference(), getattr(host, "image_reference", None)):
             log.info("sand.box.image_trial", box=str(box.id), image=image)
         spec = BoxSpec(
             name=f"simeon-box-{box.id.hex}",
@@ -619,6 +660,95 @@ class BoxBrokerService:
         mark_running(box)
         self._apply(box, provisioned)
 
+    @staticmethod
+    async def _image_on(db: AsyncSession, host: BoxHost, user_id: UUID) -> str:
+        """What a box on this server should run: the server's own (an E2B
+        template, `image_reference`), else the person's image (`image_for`)."""
+        own = getattr(host, "image_reference", None)
+        return own if isinstance(own, str) and own else await image_for(db, user_id)
+
+    @staticmethod
+    async def _listed_on(
+        db: AsyncSession | AsyncReadSession, user_id: UUID, hosts: list[BoxHost]
+    ) -> list[BoxHost]:
+        """The servers that name this person in their `users`
+        (`SIMEON_BOX_HOSTS`): theirs, and only theirs."""
+        listing = [host for host in hosts if getattr(host, "users", ())]
+        if not listing:
+            return []
+        names = {str(user_id).lower()}
+        if any("@" in user for host in listing for user in getattr(host, "users")):
+            user = await UserRepository.from_session(db).get_by_id(user_id)
+            if user is not None:
+                names.add(user.email.lower())
+        return [host for host in listing if names & set(getattr(host, "users", ()))]
+
+    async def _move_if_listed(
+        self,
+        db: AsyncSession,
+        repository: SandBoxRepository,
+        parent: DesktopSession,
+        box: SandBox,
+        host: BoxHost,
+        *,
+        committed: AsyncSessionMaker | None,
+    ) -> BoxHost | None:
+        """A person listed on another server (`users`) whose box is still on
+        this one gets a new box there, through the backup, when the box is
+        idle: its backup is brought up to date (a sleeping one was when it
+        went to sleep), the old box is stopped, not removed, so its files stay
+        where they were, and the new box copies the backup in. The server it
+        moved to, or None when it stays (not listed elsewhere, busy, or no
+        backup to carry its files)."""
+        hosts = await resolve_box_hosts()
+        listed = await self._listed_on(db, parent.user_id, hosts)
+        if not listed or any(h.name == host.name for h in listed):
+            return None
+        targets = [h for h in listed if h.accepting]
+        if not targets:
+            return None
+        target = targets[0]
+        if not box_store.enabled():
+            log.warning(
+                "sand.box.move_skipped",
+                box=str(box.id),
+                to=target.name,
+                reason="no backups",
+            )
+            return None
+        state = await host.run_state(box.provider_box_id)
+        if state == "running":
+            if (await self.health_of(box)).is_busy:
+                log.info("sand.box.move_deferred", box=str(box.id), reason="busy")
+                return None
+            if not await self.flush_box_store(
+                box, await host.inspect(box.provider_box_id)
+            ):
+                log.warning("sand.box.move_deferred", box=str(box.id), reason="backup")
+                return None
+            await host.stop(box.provider_box_id)
+        elif state == "stopped":
+            if await asyncio.to_thread(box_store.has_backup, parent.user_id) is False:
+                log.warning(
+                    "sand.box.move_skipped", box=str(box.id), reason="no backup"
+                )
+                return None
+        await self.check_capacity(repository, target, box)
+        old = (host.name, box.provider_box_id)
+        await self._create(
+            db, target, parent, box, restore="always", committed=committed
+        )
+        log.info(
+            "sand.box.moved",
+            box=str(box.id),
+            user=str(parent.user_id),
+            frm=old[0],
+            old_box=old[1],
+            to=target.name,
+            new_box=box.provider_box_id,
+        )
+        return target
+
     async def _credential_is_live(self, db: AsyncSession, box: SandBox) -> bool:
         if box.credential_session_id is None:
             return False
@@ -638,7 +768,7 @@ class BoxBrokerService:
         url = self.internal_url(box, GATEWAY_PORT)
         if url is None:
             return False
-        return await _token_check(url, box.gateway_token)
+        return await _token_check(url, box.gateway_token, **_dial(box))
 
     async def wait_ready(self, box: SandBox) -> bool:
         url = self.internal_url(box, GATEWAY_PORT)
@@ -646,7 +776,7 @@ class BoxBrokerService:
             return False
         deadline = utc_now() + settings.BOX_READY_TIMEOUT
         while True:
-            if await _health_check(url, box.gateway_token):
+            if await _health_check(url, box.gateway_token, **_dial(box)):
                 return True
             if utc_now() >= deadline:
                 return False
@@ -679,6 +809,16 @@ class BoxBrokerService:
             await resolve_box_hosts()
         created = False
         if box is not None and host is not None:
+            moved_to = await self._move_if_listed(
+                db, repository, parent, box, host, committed=committed
+            )
+            if moved_to is not None:
+                host = moved_to
+                created = True
+        if created:
+            assert box is not None
+            assert host is not None
+        elif box is not None and host is not None:
             state = await host.run_state(box.provider_box_id)
             credential_live = await self._credential_is_live(db, box)
             # The Mac's rules (local-docker-host-connector.ts): a container
@@ -699,13 +839,27 @@ class BoxBrokerService:
             if state is not None and credential_live:
                 current = await host.inspect(box.provider_box_id)
                 if current is not None:
-                    stale_image = current.image != await image_for(db, parent.user_id)
+                    stale_image = current.image != await self._image_on(
+                        db, host, parent.user_id
+                    )
                     stale_store = (
                         box_store.enabled()
                         and current.box_store != box_store.LABEL_VALUE
                     )
                 if expected_host is not None:
                     stale_host = current is None or current.host_sha256 != expected_host
+            if (
+                (stale_host or stale_image or stale_store)
+                and state == "stopped"
+                and credential_live
+                and getattr(host, "keeps_files", True) is False
+            ):
+                # Its files live on its own disk (E2B), not on volumes that
+                # outlive it: it is woken so its backup can be brought up to
+                # date before it is replaced, below.
+                await self.check_capacity(repository, host, box)
+                await host.start(box.provider_box_id)
+                state = "running"
             if (stale_host or stale_image or stale_store) and state == "running":
                 # The upstream app's supervisor swaps the host only when the box is
                 # idle (the upgrade command waits while it is busy): a box
@@ -741,17 +895,34 @@ class BoxBrokerService:
                 )
                 if state != "running":
                     await self.check_capacity(repository, host, box)
-                restore = (
-                    "always"
-                    if state == "running" and await self.flush_box_store(box, current)
-                    else None
+                flushed = state == "running" and await self.flush_box_store(
+                    box, current
                 )
-                if state is not None:
-                    await host.remove(box.provider_box_id, volumes=[])
-                await self._create(
-                    db, host, parent, box, restore=restore, committed=committed
-                )
-                created = True
+                if (
+                    not flushed
+                    and state == "running"
+                    and credential_live
+                    and getattr(host, "keeps_files", True) is False
+                ):
+                    # Only out of date, and its files live on its own disk
+                    # (E2B): it stays as it is until its backup can be
+                    # brought up to date, rather than lose what is not in it.
+                    log.warning(
+                        "sand.box.update_deferred", box=str(box.id), reason="backup"
+                    )
+                    mark_running(box)
+                else:
+                    if state is not None:
+                        await host.remove(box.provider_box_id, volumes=[])
+                    await self._create(
+                        db,
+                        host,
+                        parent,
+                        box,
+                        restore="always" if flushed else None,
+                        committed=committed,
+                    )
+                    created = True
             elif state == "stopped":
                 await self.check_capacity(repository, host, box)
                 await host.start(box.provider_box_id)
@@ -1059,7 +1230,11 @@ class BoxBrokerService:
         blocked hold, the same one a full single server gave."""
         best: BoxHost | None = None
         best_free = -1.0
-        for host in await resolve_box_hosts():
+        hosts = await resolve_box_hosts()
+        # A person named on servers' `users` is placed there and only there;
+        # everyone else on the servers that name nobody.
+        listed = await self._listed_on(repository.session, box.user_id, hosts)
+        for host in listed or [h for h in hosts if not getattr(h, "users", ())]:
             if not host.accepting:
                 continue
             limit = host.max_running
@@ -1087,7 +1262,7 @@ class BoxBrokerService:
         url = self.internal_url(box, GATEWAY_PORT)
         if url is None:
             return False
-        flushed = await _flush_box_store(url, box.gateway_token)
+        flushed = await _flush_box_store(url, box.gateway_token, **_dial(box))
         log.info("sand.box.store.flush", box=str(box.id), flushed=flushed)
         return flushed
 
@@ -1095,7 +1270,7 @@ class BoxBrokerService:
         url = self.internal_url(box, GATEWAY_PORT)
         if url is None:
             return BoxHealth(reachable=False)
-        return await _health_report(url, box.gateway_token)
+        return await _health_report(url, box.gateway_token, **_dial(box))
 
     async def hibernate(
         self,
@@ -1152,6 +1327,17 @@ class BoxBrokerService:
                 mark_stopped(box, "hibernated" if state == "stopped" else "absent")
                 await repository.update(box, flush=True)
                 continue
+            keep_alive = getattr(host, "keep_alive", None)
+            if keep_alive is not None:
+                # E2B pauses a box whose timeout passes; while it is awake,
+                # the timeout is pushed out here, so the broker, not E2B,
+                # decides when it sleeps (`box_e2b.py`).
+                try:
+                    await keep_alive(box.provider_box_id)
+                except BoxHostError as error:
+                    log.warning(
+                        "sand.box.keep_alive_failed", box=str(box.id), error=str(error)
+                    )
             health = await self.health_of(box)
             if health.holds_awake:
                 box.last_active_at = now
@@ -1175,7 +1361,9 @@ class BoxBrokerService:
                 await repository.update(box, flush=True)
                 continue
             idle_since = box.last_active_at or box.last_ensured_at or box.created_at
-            if now - idle_since < after:
+            # A server's own idle time (`idle_minutes` in SIMEON_BOX_HOSTS):
+            # shorter where waking takes a second (E2B).
+            if now - idle_since < (getattr(host, "idle_after", None) or after):
                 continue
             try:
                 outcome = await self.hibernate(

@@ -776,6 +776,43 @@ as JSON:
 
 All servers share one CA, so one client certificate opens every one of them.
 
+**Computers on E2B** (16 October 2026, `server/simeon/sand/box_e2b.py`). An
+entry with `"kind": "e2b"` puts computers on E2B's service: each one is a
+small virtual machine (Firecracker) made from the template built from `box/`
+(`.github/workflows/e2b_template.yml`, `box/e2b/`), frozen whole when it
+sleeps and back in about a second, open tabs and running programs included.
+This is the design the Electron app's own cloud used, a microVM per
+computer hibernated to a snapshot. What differs from Docker:
+
+- **Making one.** The template boots with nothing of ours running and nothing
+  private in it, because every computer made from it starts from the same
+  memory. Through E2B's agent in the VM the server writes the person's
+  settings (`/run/simeon/box.env`), fresh randomness, the machine id (the
+  box's id) and the host bundle, then starts `box/bin/start-simeon-vm`, which
+  does what Docker did for the container and runs the same `start-simeon-box`.
+- **Sleep and wake.** Sleep is a pause, a snapshot of the whole VM; wake is a
+  resume, after which the server sets the VM's clock (the host trusts
+  `Date.now()` for its one-hour token). E2B is told to pause, never kill, a
+  computer whose timeout passes, and the sleeper pushes the timeout out
+  every minute while the computer is awake, so the broker decides when it
+  sleeps. An entry's `idle_minutes` sets its own idle time.
+- **Files.** There are no volumes: the person's files are on the VM's own
+  disk and in the backup (below). So a computer that needs replacing (a new
+  host bundle or template) is woken if asleep, its backup is brought up to
+  date, and only then is it replaced; if the backup cannot be brought up to
+  date it stays as it is (`sand.box.update_deferred`, reason `backup`).
+- **Reaching it.** The API dials `https://<port>-<sandbox>.<domain>` with the
+  computer's traffic token (`e2b-traffic-access-token`, kept in
+  `sand_boxes.host_meta`); E2B refuses its ports to anyone without it. The
+  app never sees E2B: it reaches every computer through the API's proxy.
+- **Who.** An entry's `users` lists who has their computer there, and nowhere
+  else. A listed person's computer on another server moves at their next
+  idle `EnsureSandBox`: backup brought up to date, the old computer stopped
+  (not removed), the new one made with the backup copied in
+  (`sand.box.moved`).
+
+Setting it up on Render and GitHub: `docs/ops/box-host/render-env.md`, "E2B".
+
 **Capacity and sleep.**
 
 - **Size.** Each box is capped at `SIMEON_BOX_MEMORY_LIMIT_MB` (4096, no swap

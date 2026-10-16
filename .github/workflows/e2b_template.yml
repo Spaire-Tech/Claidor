@@ -1,0 +1,65 @@
+name: E2B template
+
+# Builds Simeon's cloud computer (`box/Dockerfile`) as an E2B template, the
+# small virtual machine each person's computer is made from when it runs
+# on E2B (`server/simeon/sand/box_e2b.py`, 16 October 2026), then makes one
+# test computer from it and measures it (`box/e2b/check_template.py`):
+# how long it takes to start, to freeze and to wake, its clock after a
+# wake, its disk and memory, and that its screen refuses a request without
+# its traffic token. The test computer is removed afterwards.
+#
+# Runs by hand only (Actions → E2B template → Run workflow). It needs the
+# repository secret E2B_API_KEY (Settings → Secrets and variables →
+# Actions), the same key Render holds. A build runs every RUN step of the
+# Dockerfile on E2B's machines and can take a while; E2B allows an hour.
+
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: Template name (the server's SIMEON_E2B_TEMPLATE)
+        default: simeon-box
+        required: true
+      check_only:
+        description: Skip the build and only measure the existing template
+        type: boolean
+        default: false
+
+concurrency:
+  group: e2b-template
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    env:
+      E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: E2B's library, the version the server runs
+        run: pip install "e2b==2.56.0" "httpx>=0.27"
+
+      - name: The key is there
+        run: |
+          if [ -z "$E2B_API_KEY" ]; then
+            echo "::error::Add the repository secret E2B_API_KEY (the key Render holds)."
+            exit 1
+          fi
+
+      - name: What E2B will run
+        run: python box/e2b/build_template.py "${{ inputs.name }}" --dry-run
+
+      - name: Build the template
+        if: ${{ !inputs.check_only }}
+        run: python box/e2b/build_template.py "${{ inputs.name }}"
+
+      - name: Make a test computer and measure it
+        run: python box/e2b/check_template.py "${{ inputs.name }}"

@@ -46,7 +46,7 @@ def health() -> Any:
     """What the box's `/health` says; tests change it."""
     state: dict[str, BoxHealth] = {"now": BoxHealth(reachable=True)}
 
-    async def report(url: str, token: str) -> BoxHealth:
+    async def report(url: str, token: str, **_: Any) -> BoxHealth:
         return state["now"]
 
     box_service.set_health_report_for_tests(report)

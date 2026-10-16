@@ -396,6 +396,22 @@ class Settings(BaseSettings):
     # EnsureSandBox, their files copied back from the backup. Empty: nobody.
     BOX_IMAGE_TRIAL: str = ""
     BOX_IMAGE_TRIAL_USERS: str = ""
+    # E2B (16 October 2026): a server in SIMEON_BOX_HOSTS with
+    # "kind": "e2b" makes each computer an E2B sandbox, a small virtual
+    # machine that is frozen whole when idle and back in about a second
+    # (simeon/sand/box_e2b.py). The key is read from the unprefixed
+    # E2B_API_KEY (the name E2B's own library reads) first, then the
+    # prefixed names. E2B_TEMPLATE is the template built from box/
+    # (.github/workflows/e2b_template.yml); E2B_DOMAIN is empty for E2B's
+    # own cloud (e2b.app).
+    E2B_API_KEY: str = Field(
+        default="",
+        validation_alias=AliasChoices(
+            "E2B_API_KEY", "SIMEON_E2B_API_KEY", "CLAIDOR_E2B_API_KEY"
+        ),
+    )
+    E2B_TEMPLATE: str = "simeon-box"
+    E2B_DOMAIN: str = ""
     # A .tar or .tar.gz with `host/host-main.cjs` and
     # `box-exec-daemon/main.cjs` (what `npm run package` builds into
     # desktop/dist), uploaded into the container before it starts. Empty:

@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+# The cloud computer's start on a virtual machine (E2B, 16 October 2026),
+# run as root by the server (`E2BBoxHost.create`, server/simeon/sand/box_e2b.py)
+# once per new computer, after it has written:
+#
+#   /run/simeon/box.env           the person's settings (`BoxSpec.environment()`),
+#                                 one `export KEY='value'` per line
+#   /run/simeon/seed              64 random bytes from the server
+#   /etc/machine-id               the box's own id
+#   /home/box/sand-host/host-main.cjs, /home/box/box-exec-daemon/main.cjs
+#
+# A VM made from a template starts from the template's memory, so nothing
+# private and nothing random is in the template: the settings, the machine
+# id and fresh randomness arrive here, and only then does anything of ours
+# start. It does what Docker did for the container (box/Dockerfile): the
+# image's ENV and WORKDIR, the open-files limit, tini as the reaper of the
+# desktop pieces, the supervisor's output in /tmp/sand-supervisor.log, and a
+# restart when the stack exits (Docker's `unless-stopped`). After a freeze
+# the processes resume where they were; this script does not run again.
+set -uo pipefail
+
+ENV_FILE=/run/simeon/box.env
+SEED=/run/simeon/seed
+LOG=/tmp/sand-supervisor.log
+
+log() { printf '[start-simeon-vm] %s\n' "$*" >>"$LOG"; }
+
+if [ -f "$SEED" ]; then
+  cat "$SEED" >/dev/urandom 2>/dev/null || true
+  rm -f "$SEED"
+fi
+
+if [ ! -f "$ENV_FILE" ]; then
+  log "no $ENV_FILE: the server writes it before starting this script"
+  exit 64
+fi
+chmod 600 "$ENV_FILE"
+
+# The image's own settings (box/Dockerfile ENV), which a VM made from the
+# image does not carry into a process started from outside.
+export DEBIAN_FRONTEND=noninteractive DISPLAY=:1 LANG=C.UTF-8 LC_ALL=C.UTF-8 \
+  SAND_TREE_SITTER_NODE_DEPS=/home/box/deps NODE_PATH=/home/box/deps \
+  EXEC_DAEMON_CWD=/workspace BROWSER=/usr/local/bin/box-chrome HOME=/root \
+  PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+# The person's settings (set -a is not needed: every line exports).
+# shellcheck disable=SC1090
+. "$ENV_FILE"
+
+ulimit -n 1048576 2>/dev/null || ulimit -n 65536 2>/dev/null || true
+ip link set lo up 2>/dev/null || true
+mkdir -p /workspace
+cd /workspace || exit 1
+
+touch "$LOG" && chmod a+rw "$LOG"
+log "starting; machine id $(cat /etc/machine-id 2>/dev/null || echo none)"
+
+# The stack restarts when it exits, as Docker's `unless-stopped` did; a
+# quick second exit waits longer, so a stack that cannot start does not spin.
+delay=2
+while true; do
+  started=$(date +%s)
+  /usr/bin/tini -s -- /usr/local/bin/start-simeon-box >>"$LOG" 2>&1
+  code=$?
+  if [ $(( $(date +%s) - started )) -gt 60 ]; then delay=2; else delay=$(( delay < 30 ? delay * 2 : 30 )); fi
+  log "the stack exited with $code; starting again in ${delay}s"
+  sleep "$delay"
+done
