@@ -49,9 +49,21 @@ def dockerfile_without_entrypoint() -> str:
     return "\n".join(kept) + "\n"
 
 
+def box_ignore_patterns() -> list[str]:
+    """The box's own ignore rules (`box/Dockerfile.dockerignore`). The
+    repository root's `.dockerignore` belongs to the runner's image and
+    excludes everything but `runner/`; Docker reads the box's file in its
+    place, and E2B applies these after the root one, so they win (16
+    October 2026: without them E2B found no file to copy)."""
+    lines = (ROOT / "box" / "Dockerfile.dockerignore").read_text().splitlines()
+    return [line.strip() for line in lines if line.strip() and not line.startswith("#")]
+
+
 def template() -> AsyncTemplate:
     built = (
-        AsyncTemplate(file_context_path=str(ROOT))
+        AsyncTemplate(
+            file_context_path=str(ROOT), file_ignore_patterns=box_ignore_patterns()
+        )
         .from_dockerfile(dockerfile_without_entrypoint())
         .run_cmd(": > /etc/machine-id && rm -f /var/lib/dbus/machine-id", user="root")
     )
