@@ -341,6 +341,12 @@ events (`server/simeon/plans/service.py`, `report_usage`):
   its last report, the seconds between `sand_boxes.usage_metered_at` (or
   when it was last started) and now (or when it hibernated), as one
   `simeon_box_seconds` event per box; then `usage_metered_at` moves.
+  A box that wakes has `usage_metered_at` moved past its sleep, keeping
+  the seconds it ran before the sleep that were not sent yet
+  (`box_service.mark_running`); a box found stopped outside the broker
+  records when (`mark_stopped`). Until 16 October 2026 nothing moved it on
+  a wake, and the next report counted the whole sleep as running time
+  (`test_a_woken_box_is_not_billed_for_its_sleep`).
 - A person with no Stripe customer (free month, exempt) is skipped and
   counted in `skipped`.
 

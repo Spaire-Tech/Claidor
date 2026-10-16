@@ -281,6 +281,8 @@ class TestSleep:
         host.boxes[box.provider_box_id]["running"] = False
         assert await broker.hibernate_idle(session, redis) == []
         assert box.state == "hibernated"
+        # When it was seen stopped, so the meter stops counting there.
+        assert box.hibernated_at is not None
 
 
 @pytest.mark.asyncio
@@ -301,6 +303,50 @@ class TestWake:
         assert box.state == "running"
         assert box.hibernated_at is None
         assert await broker.wake(session, user.id) == "awake"
+
+    async def test_the_meter_skips_the_sleep_after_a_wake(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        host: FakeBoxHost,
+        health: dict[str, BoxHealth],
+    ) -> None:
+        """Sent until an hour ago, ran two minutes more, slept: woken, the
+        meter counts from two minutes before the wake, not from an hour ago
+        (16 October 2026)."""
+        _, box = await _awake_box(client, session, user)
+        hour_ago = utc_now() - timedelta(hours=1)
+        box.usage_metered_at = hour_ago
+        await broker.hibernate(session, host, box, force=True)
+        box.hibernated_at = hour_ago + timedelta(minutes=2)
+
+        assert await broker.wake(session, user.id) == "woken"
+        assert box.usage_metered_at is not None
+        unsent = utc_now() - box.usage_metered_at
+        assert timedelta(minutes=2) <= unsent < timedelta(minutes=2, seconds=30)
+
+    async def test_ensure_moves_the_meter_past_the_sleep(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        host: FakeBoxHost,
+        health: dict[str, BoxHealth],
+    ) -> None:
+        access, box = await _awake_box(client, session, user)
+        hour_ago = utc_now() - timedelta(hours=1)
+        box.usage_metered_at = hour_ago
+        await broker.hibernate(session, host, box, force=True)
+        box.hibernated_at = hour_ago
+        await SandBoxRepository.from_session(session).update(box, flush=True)
+
+        again = await _ensure(client, access)
+        assert again.status_code == 200, again.text
+        session.expunge_all()
+        woken = await _box_of(session, user)
+        assert woken.usage_metered_at is not None
+        assert utc_now() - woken.usage_metered_at < timedelta(seconds=30)
 
     async def test_wake_without_a_cloud_box(
         self, session: AsyncSession, user: User, host: FakeBoxHost

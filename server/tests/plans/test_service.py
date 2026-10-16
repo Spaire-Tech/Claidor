@@ -33,6 +33,7 @@ from simeon.plans.service import (
     plans,
 )
 from simeon.postgres import AsyncSession
+from simeon.sand.box_service import mark_running
 from tests.fixtures.database import SaveFixture
 from tests.fixtures.random_objects import create_user
 
@@ -689,6 +690,51 @@ class TestReportUsage:
         counts = await plans.report_usage(session, now=now + timedelta(minutes=10))
         assert counts["box_events"] == 0
         meter.assert_not_awaited()
+
+    async def test_a_woken_box_is_not_billed_for_its_sleep(
+        self,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+        billing: None,
+        mocker: MockerFixture,
+    ) -> None:
+        """16 October 2026: a box metered, asleep for two hours, then woken
+        was billed the two hours at the next send."""
+        await plans.apply_stripe_subscription(
+            session, stripe_subscription(user, status="active")
+        )
+        started = utc_now() - timedelta(hours=2)
+        box = SandBox(
+            user_id=user.id,
+            provider="docker",
+            provider_box_id="c",
+            host_address="127.0.0.1",
+            ports={},
+            gateway_token="g",
+            network_token="n",
+            state="running",
+            last_ensured_at=started,
+        )
+        await save_fixture(box)
+        meter = mocker.patch(
+            "simeon.plans.service.stripe_billing.create_meter_event", new=AsyncMock()
+        )
+        await plans.report_usage(session, now=started + timedelta(minutes=10))
+        assert meter.await_args.kwargs["value"] == 600
+
+        # Ran two more minutes, slept, and wakes now, before the meter
+        # sent those two minutes.
+        box.state = "hibernated"
+        box.hibernated_at = started + timedelta(minutes=12)
+        woken = utc_now()
+        mark_running(box, woken)
+        box.hibernated_at = None
+        await save_fixture(box)
+        meter.reset_mock()
+        await plans.report_usage(session, now=woken + timedelta(minutes=5))
+        # The two minutes before the sleep and the five since the wake.
+        assert meter.await_args.kwargs["value"] == 420
 
     async def test_without_a_key_nothing_is_sent(
         self, session: AsyncSession, user: User, mocker: MockerFixture

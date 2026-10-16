@@ -21,7 +21,7 @@ import secrets
 import time
 from collections.abc import AsyncIterator, Awaitable, Callable
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from urllib.parse import quote
 from uuid import UUID, uuid4
@@ -377,6 +377,42 @@ async def is_attached(redis: Redis, box_id: UUID) -> bool:
         return True
 
 
+# --- the running clock --------------------------------------------------------
+#
+# The meter (`plans.report_usage`) sends each box's running seconds from
+# `usage_metered_at` (or, before its first send, `last_ensured_at`) to now
+# while it runs, or to `hibernated_at` once it sleeps. Until 16 October 2026
+# nothing moved that mark when a box woke, so the next send counted the
+# whole sleep as running time. A box that starts running again has its mark
+# moved past the sleep, keeping the seconds it ran before the sleep that
+# were not sent yet; a box that was found stopped records when.
+
+
+def mark_running(box: SandBox, now: datetime | None = None) -> None:
+    """The box runs from `now` (a wake, a start, a new container)."""
+    now = now or utc_now()
+    if box.state != "running":
+        since = box.usage_metered_at or box.last_ensured_at
+        if since is not None:
+            stopped = box.hibernated_at
+            unsent = (
+                stopped - since
+                if stopped is not None and stopped > since
+                else timedelta(0)
+            )
+            box.usage_metered_at = now - unsent
+    box.state = "running"
+
+
+def mark_stopped(box: SandBox, state: str, now: datetime | None = None) -> None:
+    """The box was found not running ("hibernated" or "absent") outside
+    the broker's own sleep: it is counted as running until now, the
+    moment it was seen, as the meter did while the row said running."""
+    if box.state == "running" and box.hibernated_at is None:
+        box.hibernated_at = now or utc_now()
+    box.state = state
+
+
 #: `SandBoxBlockedInfo` for a full host. The window shows title and
 #: detail (each 1–400 characters) and holds for `retry-after`.
 CAPACITY_BLOCK_REASON = "capacity"
@@ -553,7 +589,7 @@ class BoxBrokerService:
                 restore=restore or "none",
             )
         box.provider = host.name
-        box.state = "running"
+        mark_running(box)
         self._apply(box, provisioned)
 
     async def _credential_is_live(self, db: AsyncSession, box: SandBox) -> bool:
@@ -695,12 +731,12 @@ class BoxBrokerService:
                 inspected = await host.inspect(box.provider_box_id)
                 if inspected is not None:
                     self._apply(box, inspected)
-                box.state = "running"
+                mark_running(box)
             else:
                 inspected = await host.inspect(box.provider_box_id)
                 if inspected is not None:
                     self._apply(box, inspected)
-                box.state = "running"
+                mark_running(box)
                 if await self._token_rejected(box):
                     # The container answers, with another token than the
                     # row's: it is not the one this row describes (Render,
@@ -944,13 +980,10 @@ class BoxBrokerService:
         except BoxHostError as error:
             log.warning("sand.box.run_state.unknown", box=str(box.id), error=str(error))
             return RUN_STATE_ABSENT, False
-        box.state = (
-            "running"
-            if state == "running"
-            else "hibernated"
-            if state == "stopped"
-            else "absent"
-        )
+        if state == "running":
+            mark_running(box)
+        else:
+            mark_stopped(box, "hibernated" if state == "stopped" else "absent")
         await repository.update(box, flush=True)
         if state == "running":
             return RUN_STATE_RUNNING, False
@@ -1089,7 +1122,7 @@ class BoxBrokerService:
                 continue
             if state != "running":
                 # Stopped or removed outside the broker: record it.
-                box.state = "hibernated" if state == "stopped" else "absent"
+                mark_stopped(box, "hibernated" if state == "stopped" else "absent")
                 await repository.update(box, flush=True)
                 continue
             health = await self.health_of(box)
@@ -1146,12 +1179,12 @@ class BoxBrokerService:
             return "no-box"
         state = await host.run_state(box.provider_box_id)
         if state is None:
-            box.state = "absent"
+            mark_stopped(box, "absent")
             await repository.update(box, flush=True)
             return "no-box"
         if state == "running":
             if box.state != "running":
-                box.state = "running"
+                mark_running(box)
                 await repository.update(box, flush=True)
             return "awake"
         try:
@@ -1163,7 +1196,7 @@ class BoxBrokerService:
         if inspected is not None:
             self._apply(box, inspected)
             self.stamp_urls(box)
-        box.state = "running"
+        mark_running(box)
         box.last_active_at = utc_now()
         box.hibernated_at = None
         await repository.update(box, flush=True)
