@@ -1,9 +1,25 @@
 {
+ "ahrefs": {
+  "from": "connector-logos/ahrefs.svg",
+  "ground": "#3a57fc",
+  "fit": "cover"
+ },
+ "aircall": {
+  "from": "App Store",
+  "bundleId": "com.aircall.Aircall",
+  "app": "Aircall",
+  "seller": "Aircall.io Inc."
+ },
  "airtable": {
   "from": "App Store",
   "bundleId": "com.FormaGrid.Hyperbase",
   "app": "Airtable",
   "seller": "Formagrid Inc."
+ },
+ "amplitude": {
+  "from": "connector-logos/amplitude.svg",
+  "ground": "#ffffff",
+  "fit": "0.8"
  },
  "apollo": {
   "from": "connector-logos/apollo.svg",
@@ -27,22 +43,60 @@
   "app": "Attio",
   "seller": "Attio Limited"
  },
+ "avoma": {
+  "from": "App Store",
+  "bundleId": "com.avoma.Avoma",
+  "app": "Avoma",
+  "seller": "Avoma Inc"
+ },
+ "bannerbear": {
+  "from": "connector-logos/bannerbear.svg",
+  "ground": "#64daee",
+  "fit": "cover"
+ },
  "basecamp": {
   "from": "App Store",
   "bundleId": "com.basecamp.bc3-ios",
   "app": "Basecamp - Project Management",
   "seller": "37Signals LLC"
  },
+ "beehiiv": {
+  "from": "connector-logos/beehiiv.svg",
+  "ground": "#ffffff",
+  "fit": "0.8"
+ },
  "bitbucket": {
   "from": "connector-logos/bitbucket.svg",
   "ground": "#ffffff",
   "fit": "0.7"
+ },
+ "bitly": {
+  "from": "App Store",
+  "bundleId": "com.bitly.Bitly",
+  "app": "Bitly: Link Shortener",
+  "seller": "Bitly, Inc."
+ },
+ "black-forest-labs": {
+  "from": "connector-logos/black-forest-labs.svg",
+  "ground": "#ffffff",
+  "fit": "cover"
  },
  "box": {
   "from": "App Store",
   "bundleId": "net.box.BoxNet",
   "app": "Box: The power of Content + AI",
   "seller": "Box, Inc."
+ },
+ "breezy-hr": {
+  "from": "App Store",
+  "bundleId": "com.breezyhr.Breezy",
+  "app": "Breezy HR",
+  "seller": "Breezy HR Inc."
+ },
+ "brevo": {
+  "from": "connector-logos/brevo.svg",
+  "ground": "#0b996e",
+  "fit": "cover"
  },
  "brex": {
   "from": "App Store",
@@ -62,6 +116,11 @@
   "app": "Calendly: Meeting Scheduling",
   "seller": "Calendly, LLC"
  },
+ "canny": {
+  "from": "connector-logos/canny.svg",
+  "ground": "#525df9",
+  "fit": "cover"
+ },
  "canva": {
   "from": "App Store",
   "bundleId": "com.canva.canvaeditor",
@@ -74,6 +133,11 @@
   "app": "Capsule CRM",
   "seller": "Zestia Ltd"
  },
+ "captions": {
+  "from": "connector-logos/captions.svg",
+  "ground": "#1d1f20",
+  "fit": "cover"
+ },
  "clay": {
   "from": "connector-logos/clay.svg",
   "ground": "#ffffff",
@@ -85,10 +149,32 @@
   "app": "ClickUp: Tasks, Chat, Docs, AI",
   "seller": "Mango Technologies, Inc."
  },
+ "close": {
+  "from": "App Store",
+  "bundleId": "com.close.mobile",
+  "app": "Close CRM",
+  "seller": "Elastic Inc"
+ },
  "cloudflare": {
   "from": "connector-logos/cloudflare.svg",
   "ground": "#ffffff",
   "fit": "0.74"
+ },
+ "cloudinary": {
+  "from": "connector-logos/cloudinary.svg",
+  "ground": "#3448c5",
+  "fit": "cover"
+ },
+ "coda": {
+  "from": "connector-logos/coda.svg",
+  "ground": "#ffffff",
+  "fit": "0.8"
+ },
+ "coinbase": {
+  "from": "App Store",
+  "bundleId": "com.vilcsak.bitcoin2",
+  "app": "Coinbase: Buy Crypto & Stocks",
+  "seller": "Coinbase, Inc."
  },
  "confluence": {
   "from": "App Store",
@@ -100,6 +186,27 @@
   "from": "connector-logos/contentful.svg",
   "ground": "#ffffff",
   "fit": "0.7"
+ },
+ "creatomate": {
+  "from": "connector-logos/creatomate.svg",
+  "ground": "#ffffff",
+  "fit": "0.78"
+ },
+ "customer-io": {
+  "from": "connector-logos/customer-io.svg",
+  "ground": "#0b353b",
+  "fit": "cover"
+ },
+ "datadog": {
+  "from": "App Store",
+  "bundleId": "com.datadog.flagship",
+  "app": "Datadog",
+  "seller": "Datadog, Inc."
+ },
+ "dataforseo": {
+  "from": "connector-logos/dataforseo.svg",
+  "ground": "#ffffff",
+  "fit": "0.78"
  },
  "descript": {
   "from": "connector-logos/descript.svg",
@@ -141,6 +248,11 @@
   "app": "Dynamics 365 Sales",
   "seller": "Microsoft Corporation"
  },
+ "elevenlabs": {
+  "from": "connector-logos/elevenlabs.svg",
+  "ground": "#ffffff",
+  "fit": "cover"
+ },
  "eraser": {
   "from": "connector-logos/eraser.svg",
   "ground": "#ffffff",
@@ -152,6 +264,11 @@
   "app": "Eventbrite",
   "seller": "Eventbrite"
  },
+ "exa": {
+  "from": "connector-logos/exa.svg",
+  "ground": "#1f40ed",
+  "fit": "cover"
+ },
  "excalidraw": {
   "from": "connector-logos/excalidraw.svg",
   "ground": "#ffffff",
@@ -162,6 +279,11 @@
   "bundleId": "com.facebook.Facebook",
   "app": "Facebook",
   "seller": "Meta Platforms, Inc."
+ },
+ "fal": {
+  "from": "connector-logos/fal.svg",
+  "ground": "#ffc4d8",
+  "fit": "cover"
  },
  "fathom": {
   "from": "App Store",
@@ -181,6 +303,12 @@
   "app": "Figma",
   "seller": "Figma, Inc."
  },
+ "fireflies": {
+  "from": "App Store",
+  "bundleId": "ai.fireflies.mobile",
+  "app": "Fireflies: AI notetaker",
+  "seller": "FIREFLIES.AI CORP."
+ },
  "freshbooks": {
   "from": "App Store",
   "bundleId": "com.freshbooks.helios",
@@ -192,6 +320,12 @@
   "bundleId": "app.gamma.mobile",
   "app": "Gamma: AI Slides & Design",
   "seller": "Gamma Tech, Inc."
+ },
+ "getresponse": {
+  "from": "App Store",
+  "bundleId": "com.implix.GetResponse",
+  "app": "GetResponse App",
+  "seller": "GetResponse Sp. z o.o."
  },
  "github": {
   "from": "App Store",
@@ -356,6 +490,11 @@
   "ground": "#ffffff",
   "fit": "0.78"
  },
+ "hunter": {
+  "from": "connector-logos/hunter.svg",
+  "ground": "#ffffff",
+  "fit": "cover"
+ },
  "instagram": {
   "from": "App Store",
   "bundleId": "com.burbn.instagram",
@@ -374,6 +513,12 @@
   "app": "Jira Cloud by Atlassian",
   "seller": "Atlassian Pty Ltd"
  },
+ "jotform": {
+  "from": "App Store",
+  "bundleId": "com.jotform.v2",
+  "app": "Jotform - Form, Sign & Survey",
+  "seller": "Jotform Inc"
+ },
  "kit": {
   "from": "connector-logos/kit.svg",
   "ground": "#44b1ff",
@@ -382,6 +527,11 @@
  "klaviyo": {
   "from": "connector-logos/klaviyo.svg",
   "ground": "#ffffff",
+  "fit": "cover"
+ },
+ "lemlist": {
+  "from": "connector-logos/lemlist.svg",
+  "ground": "#316bff",
   "fit": "cover"
  },
  "linear": {
@@ -414,6 +564,11 @@
   "app": "Lucidchart",
   "seller": "Lucid Software Inc"
  },
+ "lusha": {
+  "from": "connector-logos/lusha.svg",
+  "ground": "#ffffff",
+  "fit": "0.78"
+ },
  "magic-patterns": {
   "from": "connector-logos/magic-patterns.svg",
   "ground": "#ffffff",
@@ -424,6 +579,18 @@
   "bundleId": "com.theRocketScienceGroup.mailChimp",
   "app": "Mailchimp Email Marketing",
   "seller": "Intuit Inc."
+ },
+ "mailerlite": {
+  "from": "App Store",
+  "bundleId": "com.mailerlite-inc.mailerlite-v2",
+  "app": "MailerLite Manager",
+  "seller": "MailerLite, Inc."
+ },
+ "make": {
+  "from": "App Store",
+  "bundleId": "com.Integromat.skoumal",
+  "app": "Make for iOS",
+  "seller": "Celonis s.r.o."
  },
  "mercury": {
   "from": "App Store",
@@ -455,6 +622,22 @@
   "app": "Miro: your visual workspace",
   "seller": "Realtimeboard Inc."
  },
+ "missive": {
+  "from": "App Store",
+  "bundleId": "com.missiveapp.mail",
+  "app": "Missive - Email, Chat & Tasks",
+  "seller": "Heliom Inc."
+ },
+ "mixmax": {
+  "from": "connector-logos/mixmax.svg",
+  "ground": "#ffffff",
+  "fit": "cover"
+ },
+ "mixpanel": {
+  "from": "connector-logos/mixpanel.svg",
+  "ground": "#1b0b3b",
+  "fit": "cover"
+ },
  "mobbin": {
   "from": "connector-logos/mobbin.svg",
   "ground": "#ffffff",
@@ -465,6 +648,11 @@
   "bundleId": "com.monday.monday",
   "app": "monday.com - AI Work Platform",
   "seller": "monday.com Ltd."
+ },
+ "moz": {
+  "from": "connector-logos/moz.svg",
+  "ground": "#4dbdeb",
+  "fit": "cover"
  },
  "mural": {
   "from": "App Store",
@@ -569,6 +757,11 @@
   "ground": "#000000",
   "fit": "cover"
  },
+ "postman": {
+  "from": "connector-logos/postman.svg",
+  "ground": "#ffffff",
+  "fit": "0.8"
+ },
  "productboard": {
   "from": "connector-logos/productboard.svg",
   "ground": "#ffffff",
@@ -580,11 +773,23 @@
   "app": "Intuit QuickBooks for Business",
   "seller": "Intuit Inc."
  },
+ "railway": {
+  "from": "App Store",
+  "bundleId": "com.railway.app",
+  "app": "Railway",
+  "seller": "Railway Corporation"
+ },
  "ramp": {
   "from": "App Store",
   "bundleId": "com.ramp.Ramp.ios",
   "app": "Ramp",
   "seller": "Ramp Business Corporation"
+ },
+ "razorpay": {
+  "from": "App Store",
+  "bundleId": "com.razorpay.payments.app",
+  "app": "Razorpay - Accept Payments Now",
+  "seller": "Razorpay Software Pvt. Ltd."
  },
  "read-ai": {
   "from": "App Store",
@@ -604,16 +809,38 @@
   "app": "Reddit",
   "seller": "REDDIT, INC."
  },
+ "replicate": {
+  "from": "connector-logos/replicate.svg",
+  "ground": "#e21c20",
+  "fit": "cover"
+ },
  "resend": {
   "from": "connector-logos/resend.png",
   "ground": "#ffffff",
   "fit": "cover"
+ },
+ "runway": {
+  "from": "App Store",
+  "bundleId": "com.runwayml.mobiletest",
+  "app": "Runway: AI Image & Video",
+  "seller": "Runway AI, Inc."
  },
  "salesforce": {
   "from": "App Store",
   "bundleId": "com.salesforce.chatter",
   "app": "Salesforce",
   "seller": "salesforce.com"
+ },
+ "sanity": {
+  "from": "connector-logos/sanity.svg",
+  "ground": "#0d0e12",
+  "fit": "cover"
+ },
+ "semrush": {
+  "from": "App Store",
+  "bundleId": "com.semrush.tracking",
+  "app": "SEMrush",
+  "seller": "SEMrush CY LTD"
  },
  "sentry": {
   "from": "connector-logos/sentry.svg",
@@ -643,6 +870,16 @@
   "app": "Shopify: Sell. Run a business.",
   "seller": "Shopify Inc."
  },
+ "shortcut": {
+  "from": "connector-logos/shortcut.svg",
+  "ground": "#494bcb",
+  "fit": "cover"
+ },
+ "shotstack": {
+  "from": "connector-logos/shotstack.svg",
+  "ground": "#ffffff",
+  "fit": "0.78"
+ },
  "slack": {
   "from": "App Store",
   "bundleId": "com.tinyspeck.chatlyio",
@@ -661,6 +898,11 @@
   "app": "Square Point of Sale (POS)",
   "seller": "Block, Inc."
  },
+ "storyblok": {
+  "from": "connector-logos/storyblok.svg",
+  "ground": "#1f1f1f",
+  "fit": "cover"
+ },
  "stripe": {
   "from": "App Store",
   "bundleId": "com.stripe.dashboard",
@@ -670,6 +912,22 @@
  "supabase": {
   "from": "connector-logos/supabase.svg",
   "ground": "#1c1c1c",
+  "fit": "cover"
+ },
+ "surveymonkey": {
+  "from": "App Store",
+  "bundleId": "com.surveymonkey.SurveyMonkey",
+  "app": "SurveyMonkey",
+  "seller": "SURVEYMONKEY INC."
+ },
+ "tally": {
+  "from": "connector-logos/tally.svg",
+  "ground": "#ffffff",
+  "fit": "cover"
+ },
+ "tavily": {
+  "from": "connector-logos/tavily.svg",
+  "ground": "#1f1e1e",
   "fit": "cover"
  },
  "ticktick": {
@@ -683,6 +941,12 @@
   "bundleId": "com.zhiliaoapp.musically",
   "app": "TikTok - Videos, Shop & LIVE",
   "seller": "TIKTOK PTE. LTD."
+ },
+ "tldv": {
+  "from": "App Store",
+  "bundleId": "com.tldv.tldvlite",
+  "app": "tl;dv Mobile: AI Notetaker",
+  "seller": "tldx Solutions GmbH"
  },
  "todoist": {
   "from": "App Store",
@@ -707,6 +971,11 @@
   "ground": "#faf9fb",
   "fit": "cover"
  },
+ "typefully": {
+  "from": "connector-logos/typefully.svg",
+  "ground": "#34b4f6",
+  "fit": "cover"
+ },
  "vercel": {
   "from": "connector-logos/vercel.svg",
   "ground": "#000000",
@@ -729,11 +998,22 @@
   "app": "WhatsApp Business",
   "seller": "WhatsApp Inc."
  },
+ "wistia": {
+  "from": "connector-logos/wistia.svg",
+  "ground": "#ffffff",
+  "fit": "0.78"
+ },
  "wix": {
   "from": "App Store",
   "bundleId": "com.wix.admin",
   "app": "Wix - Website Builder",
   "seller": "WIX.COM, INC."
+ },
+ "workable": {
+  "from": "App Store",
+  "bundleId": "com.workable.ats",
+  "app": "Workable",
+  "seller": "Workable Software Limited"
  },
  "wrike": {
   "from": "App Store",

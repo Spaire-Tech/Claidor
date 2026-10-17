@@ -423,6 +423,50 @@ takes the app back out, so nothing is left added and not signed in (`SimeonCore/
   (`OPEN_CONNECTED_CLIENT_ID`, a marker, never a token) and calls its tools with no
   `Authorization` header, on the Mac and the box alike; Add connects it with no sign-in page, and
   the consent sheet says there is nothing to sign in to (`ConnectConsent.signInSentence`).
+- **Fifty-two more on their makers' servers** (17 October 2026, later; the founder, of the
+  apps marked "own API key": "i see their mcps, not keys. please look online", then "add all
+  52, test the 3 as you go"). Each is the maker's own hosted server, found in its docs or the
+  official MCP registry (`registry.modelcontextprotocol.io/v0/servers?search=`): Beehiiv,
+  MailerLite, GetResponse, Customer.io, Lemlist, Mixpanel, Amplitude, Bitly, Ahrefs, Moz,
+  DataForSEO, Semrush, Brevo, Runway, FLUX (Black Forest Labs), fal.ai, Replicate, Creatomate,
+  Shotstack, Bannerbear, Cloudinary, Sanity, Wistia, Captions, ElevenLabs, Storyblok, Coda, Make,
+  Tally, Jotform, SurveyMonkey, Canny, Fireflies, tl;dv, Avoma, Missive, Mixmax, Close, Hunter,
+  Lusha, Aircall, Workable, Breezy HR, Postman, Railway, Datadog, Tavily, Exa, Shortcut, Razorpay,
+  Coinbase and Typefully (server ids 900141 to 900192). Measured that day as the seventeen were:
+  - 41 registered Simeon with the hosted return address and answered its authorize page with
+    the maker's login or consent page (or a page of the server's own). Ahrefs'
+    (`app.ahrefs.com`) and Breezy HR's (`oauth.breezy.hr`) answered the probe 403, likely bot
+    protection, so they are checked only as far as registration. Coda, Make, Wistia and Razorpay
+    register confidential clients only (`client_secret_post`, as PandaDoc).
+  - 8 refused the hosted address and took the loopback, so they are `loopbackOnly`: Semrush,
+    Brevo, Storyblok, SurveyMonkey, Avoma, Lusha, Shortcut and Coinbase (SurveyMonkey and Lusha
+    as confidential clients). Like Canva, they connect from the iPhone and the Mac app, not from
+    the web window. Semrush's page sent the probe straight back complaining its `state` was too
+    short; the engine's is the app's name and 22 random characters.
+  - 3 register no clients and read client documents: ElevenLabs, Canny and Aircall. The test
+    (the founder's "the 3"): Simeon's own document (`client.json`, above) as the client, with
+    each return address. All three opened their real sign-in page with no complaint about the
+    client (ElevenLabs' authorize page answered 200, Canny's went on to `canny.io/install-mcp`,
+    Aircall's to `auth.aircall.io/login/oauth`), and `acceptsClientMetadataDocument` in
+    `oauth.ts` picks the document for each (log line `registered=by our document`).
+  - fal.ai's main server (`mcp.fal.ai`) has registration switched off; its relay
+    (`mcp.fal.ai/mcp-relay`) registers and signs in through `authkit.fal.ai`, so the catalogue
+    uses the relay. Bannerbear's root address serves all 30 of its tools.
+  - Worth knowing, and said in each app's consent note (`ConnectConsent.notes`): Replicate's
+    sign-in page asks for an API token from the person's Replicate account; Moz needs a Moz API
+    plan, tl;dv and Canny their Pro plans (tl;dv is read-only); Datadog's address is its US1 site
+    only; Coinbase may let only apps it has approved sign in; the image, video and voice makers
+    (Runway, FLUX, fal.ai, Replicate, ElevenLabs, Creatomate, Shotstack, Bannerbear) charge their
+    own credits. Captions' server is not in its maker's docs; its sign-in goes to `mirage.app`.
+  - Not added, looked for that day: makers that take only apps they approve (Meta Ads,
+    HighLevel, Instantly, Render, BambooHR; PhotoRoom refused both return addresses); a server
+    address per account (Outline, ActiveCampaign, Freshdesk); an API key and no sign-in (Penpot,
+    Clockify, Crisp, Firecrawl); servers that run only on the person's own machine (LINE,
+    Iterable, Meshy, Toggl, Paystack); no server found (Telegram, SendGrid, Luma, Remove.bg,
+    Pexels, Giphy, Motion, Wise, Lemon Squeezy, Copper, Recruitee, Lever, Canvas). Dropbox Sign
+    is the Dropbox connector's.
+  - Not yet verified: nobody has signed in to any of the 52 and no tool has been called; the
+    loopback ones not on a device.
 - **Zendesk stays on our apps service.** `mcp.zendesk.com` advertises client documents, but
   its authorize page sends everyone to "Help Center Closed" (measured 13 October 2026): it
   behaves as a Zendesk account named "mcp" that nobody can sign in to. Zendesk's own server is

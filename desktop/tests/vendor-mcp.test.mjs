@@ -44,11 +44,12 @@ test("the store is vendor MCPs that can Connect, then Coming soon for the rest",
     // 14 October 2026: Shop, run from the cloud computer (`boxCli`), appended.
     // 17 October 2026: 36 apps Composio signs anyone in to (our apps service) and 17 on their makers' own servers, appended;
     // the five Zoho apps retired the same day, each keeping its place so no other connector's server id moves.
-    assert.equal(VENDOR_MCP_CONNECTORS.length, 135);
+    // 17 October 2026: 52 more on their makers' own servers (each signs anyone in through registration or Simeon's client document), appended.
+    assert.equal(VENDOR_MCP_CONNECTORS.length, 187);
     const ids = VENDOR_MCP_CONNECTORS.map((item) => item.id);
-    assert.equal(new Set(ids).size, 135);
+    assert.equal(new Set(ids).size, 187);
     assert.equal(ids.some((id) => id.startsWith("zoho")), false);
-    assert.deepEqual(ids.slice(52), ["google-analytics", "google-search-console", "youtube", "kit", "instagram", "facebook", "calendly", "cal-com", "attio", "zendesk", "microsoft-teams", "discord", "mercury", "posthog", "google-ads", "tiktok-ads", "microsoft-excel", "reddit", "pinterest", "gumroad", "google-classroom", "gorgias", "gong", "capsule-crm", "dialpad", "link", "granola", "resend", "sharepoint", "onenote", "microsoft-to-do", "lovable", "shop", "whatsapp", "twitch", "reddit-ads", "pinterest-ads", "omnisend", "dub", "eventbrite", "google-photos", "mural", "zeplin", "contentful", "box", "confluence", "notebooklm", "basecamp", "wrike", "ticktick", "harvest", "typeform", "productboard", "google-maps", "webex", "fathom", "freshbooks", "ynab", "splitwise", "shippo", "dynamics-365", "gitlab", "bitbucket", "pagerduty", "google-bigquery", "hugging-face", "excalidraw", "heygen", "higgsfield", "gamma", "descript", "lucid", "eraser", "mobbin", "magic-patterns", "pandadoc", "otter", "read-ai", "fellow", "plaid", "clay", "netlify", "neon"])
+    assert.deepEqual(ids.slice(52), ["google-analytics", "google-search-console", "youtube", "kit", "instagram", "facebook", "calendly", "cal-com", "attio", "zendesk", "microsoft-teams", "discord", "mercury", "posthog", "google-ads", "tiktok-ads", "microsoft-excel", "reddit", "pinterest", "gumroad", "google-classroom", "gorgias", "gong", "capsule-crm", "dialpad", "link", "granola", "resend", "sharepoint", "onenote", "microsoft-to-do", "lovable", "shop", "whatsapp", "twitch", "reddit-ads", "pinterest-ads", "omnisend", "dub", "eventbrite", "google-photos", "mural", "zeplin", "contentful", "box", "confluence", "notebooklm", "basecamp", "wrike", "ticktick", "harvest", "typeform", "productboard", "google-maps", "webex", "fathom", "freshbooks", "ynab", "splitwise", "shippo", "dynamics-365", "gitlab", "bitbucket", "pagerduty", "google-bigquery", "hugging-face", "excalidraw", "heygen", "higgsfield", "gamma", "descript", "lucid", "eraser", "mobbin", "magic-patterns", "pandadoc", "otter", "read-ai", "fellow", "plaid", "clay", "netlify", "neon", "beehiiv", "mailerlite", "getresponse", "customer-io", "lemlist", "mixpanel", "amplitude", "bitly", "ahrefs", "moz", "dataforseo", "semrush", "brevo", "runway", "black-forest-labs", "fal", "replicate", "creatomate", "shotstack", "bannerbear", "cloudinary", "sanity", "wistia", "captions", "elevenlabs", "storyblok", "coda", "make", "tally", "jotform", "surveymonkey", "canny", "fireflies", "tldv", "avoma", "missive", "mixmax", "close", "hunter", "lusha", "aircall", "workable", "breezy-hr", "postman", "railway", "datadog", "tavily", "exa", "shortcut", "razorpay", "coinbase", "typefully"])
     assert.equal(vendorMcpConnectorById("link")?.boxCli, "link");
     assert.equal(vendorMcpConnectorById("shop")?.boxCli, "shop");
     // 7 October 2026: thirteen of the founder's picks with one-click sign-in, appended, all served by our apps service.;
@@ -63,13 +64,19 @@ test("the store is vendor MCPs that can Connect, then Coming soon for the rest",
     // clients it has approved; Zendesk's is per account ({subdomain}.zendesk.com/api/mcp), and mcp.zendesk.com signs nobody in.
     assert.equal(vendorMcpConnectorById("shopify")?.appsToolkit, "shopify");
     assert.equal(vendorMcpConnectorById("zendesk")?.appsToolkit, "zendesk");
-    assert.equal(vendors.length, 55);
+    assert.equal(vendors.length, 107);
     assert.equal(apps.length, 80);
     assert.equal(vendorMcpConnectorById("sharepoint")?.appsToolkit, "share_point");
     assert.equal(vendorMcpConnectorById("microsoft-to-do")?.appsToolkit, "microsoft_todo");
     assert.equal(vendorMcpConnectorById("lovable")?.loopbackOnly, true);
     // 17 October 2026: Gamma's registration refused the hosted return address and took the loopback.
     assert.equal(vendorMcpConnectorById("gamma")?.loopbackOnly, true);
+    // The same day, eight of the 52 refused the hosted return address and took the loopback.
+    for (const id of ["semrush", "brevo", "storyblok", "surveymonkey", "avoma", "lusha", "shortcut", "coinbase"]) {
+      assert.equal(vendorMcpConnectorById(id)?.loopbackOnly, true, id);
+    }
+    assert.equal(vendorMcpConnectorById("elevenlabs")?.url, "https://api.us.elevenlabs.io/v1/mcp");
+    assert.equal(vendorMcpConnectorById("black-forest-labs")?.name, "FLUX");
     assert.equal(vendorMcpConnectorById("notebooklm")?.appsToolkit, "notebook_lm");
     assert.equal(vendorMcpConnectorById("zoho-crm"), undefined);
     assert.equal(vendorMcpConnectorById("plaid")?.url, "https://api.dashboard.plaid.com/mcp/");
@@ -122,7 +129,7 @@ test("the marketplace listing is our store, including Coming soon cards", async 
     assert.equal(gmail.vendorMcpUrl, undefined);
 
     const signedOut = await marketplace.module.fetchVendorMarketplacePlugins(async () => null);
-    assert.equal(signedOut.plugins.length, 135);
+    assert.equal(signedOut.plugins.length, 187);
     assert.equal(signedOut.includesPrivateMarketplaces, false);
     assert.ok(signedOut.plugins.some((plugin) => plugin.pluginId === "notion" && plugin.vendorMcpUrl === "https://mcp.notion.com/mcp"));
     // Signed out, the server cannot be asked: an app stays Coming soon, with no address.
@@ -292,7 +299,7 @@ test("getCatalog lists our store; live Connect goes to the vendor, Coming soon d
     });
 
     const views = await flow.getCatalog(async () => "simeon_da_test");
-    assert.equal(views.length, 135);
+    assert.equal(views.length, 187);
     assert.ok(views.some((view) => view.id === "notion" && view.vendorMcpUrl === "https://mcp.notion.com/mcp"));
     assert.ok(views.some((view) => view.id === "gmail" && view.comingSoon == null && view.vendorMcpUrl.endsWith("/desktop/api/apps/mcp/gmail")));
     assert.equal(views.some((view) => view.comingSoon === true), false);
@@ -342,7 +349,7 @@ test("every store card has a logo, and in-repo data marks skip a network fetch",
   const marketplace = await load("source/shared/node/vendor-mcp/marketplace.ts", "vendor-logos");
   try {
     const listing = await marketplace.module.fetchVendorMarketplacePlugins();
-    assert.equal(listing.plugins.length, 135);
+    assert.equal(listing.plugins.length, 187);
     assert.ok(listing.plugins.every((plugin) => typeof plugin.logoUrl === "string" && plugin.logoUrl.length > 0));
     const notion = listing.plugins.find((plugin) => plugin.pluginId === "notion");
     assert.match(notion.logoUrl, /^data:image\//);

@@ -107,6 +107,20 @@ STORE_APPS = {
     "gamma": "app.gamma.mobile", "lucid": "com.lucidchart.app",
     "pandadoc": "com.pandadoc.mobile", "otter": "com.aisense.otter",
     "read-ai": "read.ai.meeting-notes", "fellow": "co.fellow.app",
+    # 17 October 2026, later: the 52 on their makers' servers, checked the
+    # same way (the App Store's own search, apps.apple.com, as the lookup API
+    # refused this machine that day). Make's app is listed by Celonis, which
+    # owns Make; Missive's by Heliom, its maker.
+    "mailerlite": "com.mailerlite-inc.mailerlite-v2", "getresponse": "com.implix.GetResponse",
+    "bitly": "com.bitly.Bitly", "semrush": "com.semrush.tracking",
+    "runway": "com.runwayml.mobiletest", "make": "com.Integromat.skoumal",
+    "jotform": "com.jotform.v2", "surveymonkey": "com.surveymonkey.SurveyMonkey",
+    "fireflies": "ai.fireflies.mobile", "tldv": "com.tldv.tldvlite",
+    "avoma": "com.avoma.Avoma", "missive": "com.missiveapp.mail",
+    "close": "com.close.mobile", "aircall": "com.aircall.Aircall",
+    "workable": "com.workable.ats", "breezy-hr": "com.breezyhr.Breezy",
+    "railway": "com.railway.app", "datadog": "com.datadog.flagship",
+    "razorpay": "com.razorpay.payments.app", "coinbase": "com.vilcsak.bitcoin2",
 }
 
 #: No iOS app of their own: the mark from connector-logos on its ground.
@@ -131,6 +145,25 @@ MADE = {
     "magic-patterns": ("#ffffff", 0.74), "plaid": ("#ffffff", 0.78),
     "clay": ("#ffffff", 0.78), "netlify": ("#ffffff", "cover"),
     "neon": ("#000000", "cover"),
+    # 17 October 2026, later: the 32 of the 52 with no iOS app of their own
+    # (Coda's is now Superhuman Docs, ElevenLabs' are ElevenReader and
+    # ElevenMusic: their marks are the ones people know from the connector).
+    "beehiiv": ("#ffffff", 0.80), "customer-io": ("#0b353b", "cover"),
+    "lemlist": ("#316bff", "cover"), "mixpanel": ("#1b0b3b", "cover"),
+    "amplitude": ("#ffffff", 0.80), "ahrefs": ("#3a57fc", "cover"),
+    "moz": ("#4dbdeb", "cover"), "dataforseo": ("#ffffff", 0.78),
+    "brevo": ("#0b996e", "cover"), "black-forest-labs": ("#ffffff", "cover"),
+    "fal": ("#ffc4d8", "cover"), "replicate": ("#e21c20", "cover"),
+    "creatomate": ("#ffffff", 0.78), "shotstack": ("#ffffff", 0.78),
+    "bannerbear": ("#64daee", "cover"), "cloudinary": ("#3448c5", "cover"),
+    "sanity": ("#0d0e12", "cover"), "wistia": ("#ffffff", 0.78),
+    "captions": ("#1d1f20", "cover"), "elevenlabs": ("#ffffff", "cover"),
+    "storyblok": ("#1f1f1f", "cover"), "coda": ("#ffffff", 0.80),
+    "tally": ("#ffffff", "cover"), "canny": ("#525df9", "cover"),
+    "mixmax": ("#ffffff", "cover"), "hunter": ("#ffffff", "cover"),
+    "lusha": ("#ffffff", 0.78), "postman": ("#ffffff", 0.80),
+    "tavily": ("#1f1e1e", "cover"), "exa": ("#1f40ed", "cover"),
+    "shortcut": ("#494bcb", "cover"), "typefully": ("#34b4f6", "cover"),
 }
 
 

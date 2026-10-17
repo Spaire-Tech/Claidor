@@ -79,8 +79,10 @@ test("a vendor connector has a stable numeric server id and reads back as a plug
     assert.equal(new Set(ids).size, ids.length, "every connector has its own id");
     // The five Zoho apps left the store on 17 October 2026; their places stay, so the connectors after them keep their ids
     // (the numbers measured before they left), and a connect card from before answers no connector.
-    assert.equal(VENDOR_MCP_PLACE_COUNT, 140);
+    // The 52 on their makers' servers came after, the same day, from 900141.
+    assert.equal(VENDOR_MCP_PLACE_COUNT, 192);
     assert.deepEqual(["gorgias", "gong", "shop", "freshbooks", "dynamics-365", "neon"].map(vendorMcpServerId), ["900074", "900077", "900087", "900112", "900118", "900140"]);
+    assert.deepEqual(["beehiiv", "typefully"].map(vendorMcpServerId), ["900141", "900192"]);
     for (const old of ["900075", "900076", "900111", "900113", "900117"]) assert.equal(vendorMcpPluginIdForServerId(old), undefined, old);
     assert.equal(vendorMcpServerId("zoho-desk"), undefined);
   } finally {
@@ -347,7 +349,7 @@ test("a vendor that only takes the loopback is asked for it even when the box st
     const catalog = await load("source/shared/node/vendor-mcp/catalog.ts", "vendor-catalog-loopback");
     try {
       const loopback = catalog.module.VENDOR_MCP_CONNECTORS.filter((connector) => connector.loopbackOnly === true).map((connector) => connector.id).sort();
-      assert.deepEqual(loopback, ["canva", "dropbox", "gamma", "lovable", "square", "vercel"]);
+      assert.deepEqual(loopback, ["avoma", "brevo", "canva", "coinbase", "dropbox", "gamma", "lovable", "lusha", "semrush", "shortcut", "square", "storyblok", "surveymonkey", "vercel"]);
     } finally {
       await catalog.dispose();
     }

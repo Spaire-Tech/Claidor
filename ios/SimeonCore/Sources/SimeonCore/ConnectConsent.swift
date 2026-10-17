@@ -219,16 +219,70 @@ public struct ConnectConsent: Identifiable, Equatable, Sendable {
     "clay": "your tables, and research on companies and people",
     "netlify": "your sites, deploys and environment settings",
     "neon": "your projects, branches and databases",
+    // 17 October 2026, later: 52 on their makers' own servers.
+    "beehiiv": "your publications, posts and subscribers",
+    "mailerlite": "subscribers, groups, campaigns and automations",
+    "getresponse": "contacts, lists, newsletters and automations",
+    "customer-io": "people, segments, campaigns and messages",
+    "lemlist": "your campaigns, leads and replies",
+    "mixpanel": "your projects' events, funnels and retention",
+    "amplitude": "your charts, dashboards, cohorts and experiments",
+    "bitly": "your short links, QR codes and clicks",
+    "brevo": "contacts, lists, and email and SMS campaigns",
+    "creatomate": "your templates and the videos and images made from them",
+    "shotstack": "your video edits and renders",
+    "bannerbear": "your templates and the images and videos made from them",
+    "cloudinary": "your images, videos and folders",
+    "sanity": "your projects, documents and schemas",
+    "wistia": "your videos, channels and stats",
+    "captions": "your videos and projects",
+    "storyblok": "your spaces, stories, components and assets",
+    "coda": "your docs, tables and pages",
+    "make": "your scenarios and their runs",
+    "tally": "your forms and their submissions",
+    "jotform": "your forms and their submissions",
+    "surveymonkey": "your surveys and their responses",
+    "canny": "feature requests, votes, comments and your roadmap",
+    "fireflies": "your meeting transcripts, summaries and action items",
+    "tldv": "your meeting recordings, transcripts and notes",
+    "avoma": "your meeting notes, transcripts and deal insights",
+    "missive": "your team inbox's conversations, drafts and tasks",
+    "mixmax": "your sequences, meetings and email tracking",
+    "close": "leads, contacts, opportunities and calls",
+    "aircall": "your team's calls and their details",
+    "workable": "jobs, candidates and your hiring pipeline",
+    "breezy-hr": "positions, candidates and your pipeline",
+    "postman": "your workspaces, collections and APIs",
+    "railway": "your projects, services, deploys and logs",
+    "datadog": "logs, metrics, monitors and incidents",
+    "shortcut": "stories, epics and iterations",
+    "razorpay": "payments, orders, refunds and settlements",
+    "typefully": "your drafts, scheduled posts and social accounts",
   ]
 
   /** Apps the agents can only read (the catalog says so). */
-  static let readOnly: Set<String> = ["mercury", "figma", "otter", "plaid"]
+  static let readOnly: Set<String> = ["mercury", "figma", "otter", "plaid", "tldv"]
 
   /** Apps whose reach is said another way. */
   static let reachSentence: [String: String] = [
     "linkedin": "Your agents can read your profile and publish posts on {App}.",
     "link": "Your agents can ask {App} for a one-time card to pay for something you asked them to buy, and read the bank and card accounts you choose to share.",
     "shop": "Your agents can find products across Shopify stores, pay for what you asked them to buy with your {App} card, and track your orders.",
+    // Services that answer from their own data (the web, search engines, contact databases) or run AI models, not an account's records.
+    "ahrefs": "Your agents can look up backlinks, keywords and site audits in {App}.",
+    "moz": "Your agents can look up domain authority, links and keywords in {App}.",
+    "dataforseo": "Your agents can look up search results, keywords and backlinks with {App}.",
+    "semrush": "Your agents can look up keywords, traffic and backlinks for any site in {App}.",
+    "hunter": "Your agents can find and verify professional email addresses with {App}.",
+    "lusha": "Your agents can look up contact and company details with {App}.",
+    "tavily": "Your agents can search the web and read pages through {App}.",
+    "exa": "Your agents can search the web and read pages through {App}.",
+    "runway": "Your agents can make and edit videos and images with {App}'s AI models.",
+    "black-forest-labs": "Your agents can make and edit images with {App}, Black Forest Labs' AI models.",
+    "fal": "Your agents can run {App}'s AI models for images, video and audio.",
+    "replicate": "Your agents can run AI models on {App}.",
+    "elevenlabs": "Your agents can make speech, sound effects and music with {App}, and use your voices.",
+    "coinbase": "Your agents can use your {App} account through Coinbase for Agents, within what you allow when you sign in.",
   ]
 
   /** Apps whose sign-in is said another way. */
@@ -242,7 +296,7 @@ public struct ConnectConsent: Identifiable, Equatable, Sendable {
   ]
 
   /** Apps where money moves for real. */
-  static let money: Set<String> = ["stripe", "paypal", "square", "ramp", "brex", "quickbooks", "xero", "gusto", "freshbooks"]
+  static let money: Set<String> = ["stripe", "paypal", "square", "ramp", "brex", "quickbooks", "xero", "gusto", "freshbooks", "razorpay", "coinbase"]
 
   /** One more thing worth knowing about an app. */
   static let notes: [String: String] = [
@@ -284,5 +338,36 @@ public struct ConnectConsent: Identifiable, Equatable, Sendable {
     "plaid": "For teams building on Plaid: it reads your integration's dashboard, not your own bank accounts.",
     "shop": "Nothing is paid until you press Allow on the purchase. At a Shopify store, Shop then places the order with your Shop card; anywhere else, you approve it in the Shop app and the store gets a one-time card, never your real one.",
     "link": "Nothing is paid until you approve the purchase in the Link app, up to $500 each and $500 a day. Get the Link app on your phone (or add a passkey at link.com): Link approves agents' purchases only there. Each purchase gets its own one-time card, never your real one. US accounts only.",
+    "beehiiv": "Posts your agents send reach your real subscribers.",
+    "mailerlite": "Campaigns your agents send reach your real subscribers.",
+    "getresponse": "Newsletters your agents send reach your real contacts.",
+    "customer-io": "Messages your agents send reach real people.",
+    "brevo": "Emails and texts your agents send reach your real contacts.",
+    "lemlist": "Campaigns your agents start send real emails to your leads.",
+    "mixmax": "Emails your agents send go out from your own address.",
+    "missive": "Messages your agents send go out from your team's addresses.",
+    "typefully": "Posts your agents publish go out on your accounts.",
+    "sanity": "Documents your agents publish go live on your site.",
+    "storyblok": "Stories your agents publish go live on your site.",
+    "railway": "Changes here can affect your live services.",
+    "make": "Scenarios your agents run do real work in the apps they connect, and use your Make operations.",
+    "runway": "Making videos and images uses your Runway credits.",
+    "black-forest-labs": "Making images uses your Black Forest Labs credits.",
+    "fal": "Running models uses your fal.ai credits.",
+    "replicate": "Replicate's page asks for an API token from your Replicate account. Running models is billed to that account.",
+    "elevenlabs": "Making speech, sound effects and music uses your ElevenLabs credits.",
+    "creatomate": "Rendering uses your Creatomate credits.",
+    "shotstack": "Rendering uses your Shotstack credits.",
+    "bannerbear": "Making images and videos uses your Bannerbear credits.",
+    "dataforseo": "Each lookup is charged to your DataForSEO balance.",
+    "hunter": "Searches and verifications use your Hunter credits.",
+    "lusha": "Lookups use your Lusha credits.",
+    "tavily": "Searches use your Tavily credits.",
+    "exa": "Searches are billed to your Exa account.",
+    "moz": "Needs a Moz API plan.",
+    "canny": "Works on Canny's Pro plan.",
+    "tldv": "Read only, on tl;dv's Pro plan.",
+    "datadog": "Works with Datadog's US1 site (app.datadoghq.com).",
+    "coinbase": "Anything that moves money or crypto in Coinbase is real. Ask your agents to check with you before they move any. Coinbase may let only apps it has approved sign in; if its page refuses, Coinbase can't be connected yet.",
   ]
 }

@@ -973,6 +973,9 @@ final class MarkdownTests: XCTestCase {
     XCTAssertEqual(named("Run Pinterest Ads and Reddit Ads, not Pinterest."), ["Pinterest Ads=pinterest-ads", "Reddit Ads=reddit-ads", "Pinterest=pinterest"])
     XCTAssertEqual(named("Clay first. Neon after."), [])
     XCTAssertEqual(named("Excalidraw drew it; HeyGen voiced it."), ["Excalidraw=excalidraw", "HeyGen=heygen"])
+    // The 52 on their makers' servers, later that day: FLUX by its maker's name too, names with dots and semicolons.
+    XCTAssertEqual(named("Black Forest Labs makes FLUX; fal.ai and tl;dv too."), ["Black Forest Labs=black-forest-labs", "FLUX=black-forest-labs", "fal.ai=fal", "tl;dv=tldv"])
+    XCTAssertEqual(named("Make sure Close is open. Hunter found it in Customer.io and lemlist."), ["Close=close", "Customer.io=customer-io", "lemlist=lemlist"])
   }
 
   func testAvasChatIsQuickInTheCore() {
@@ -1549,6 +1552,17 @@ final class ConnectConsentTests: XCTestCase {
     XCTAssertEqual(otter.points[0].body, "Your agents can read your meeting transcripts and summaries in Otter.ai.")
     let freshbooks = ConnectConsent(app: CatalogApp(id: "freshbooks", name: "freshbooks", title: "FreshBooks", summary: ""), name: "FreshBooks")
     XCTAssertEqual(freshbooks.note, "Anything that moves money in FreshBooks is real. Ask your agents to check with you before they move any.")
+    // The 52 on their makers' servers: a model maker said by what it makes, tl;dv read-only, Coinbase's money and approval.
+    let elevenlabs = ConnectConsent(app: CatalogApp(id: "elevenlabs", name: "elevenlabs", title: "ElevenLabs", summary: "", serverURL: "https://api.us.elevenlabs.io/v1/mcp"), name: "ElevenLabs")
+    XCTAssertEqual(elevenlabs.route, .vendor(host: "api.us.elevenlabs.io"))
+    XCTAssertEqual(elevenlabs.points[0].body, "Your agents can make speech, sound effects and music with ElevenLabs, and use your voices.")
+    XCTAssertEqual(elevenlabs.note, "Making speech, sound effects and music uses your ElevenLabs credits.")
+    let tldv = ConnectConsent(app: CatalogApp(id: "tldv", name: "tldv", title: "tl;dv", summary: "", serverURL: "https://mcp.tldv.io/mcp"), name: "tl;dv")
+    XCTAssertEqual(tldv.points[0].body, "Your agents can read your meeting recordings, transcripts and notes in tl;dv.")
+    let coinbase = ConnectConsent(app: CatalogApp(id: "coinbase", name: "coinbase", title: "Coinbase", summary: "", serverURL: "https://agents.coinbase.com/mcp"), name: "Coinbase")
+    XCTAssertTrue(coinbase.note?.hasPrefix("Anything that moves money or crypto in Coinbase is real.") == true)
+    let razorpay = ConnectConsent(app: CatalogApp(id: "razorpay", name: "razorpay", title: "Razorpay", summary: ""), name: "Razorpay")
+    XCTAssertEqual(razorpay.note, "Anything that moves money in Razorpay is real. Ask your agents to check with you before they move any.")
   }
 
   func testTheExtraLayerAndTheUnknown() {
