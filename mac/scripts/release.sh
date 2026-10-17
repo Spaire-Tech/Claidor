@@ -168,7 +168,9 @@ xcodebuild -exportArchive -archivePath "$WORK/Simeon.xcarchive" -exportPath "$WO
 APP="$WORK/export/Simeon.app"
 [ -d "$APP" ] || fail "The export has no Simeon.app."
 codesign --verify --deep --strict --verbose=2 "$APP"
-codesign -dvv "$APP" 2>&1 | grep -q "Authority=Developer ID Application" || fail "Simeon.app is not signed with a Developer ID Application certificate."
+# grep reads all of codesign's output: `grep -q` stops at the first match, codesign
+# then dies of SIGPIPE, and pipefail read that as unsigned (17 October 2026).
+codesign -dvv "$APP" 2>&1 | grep "Authority=Developer ID Application" >/dev/null || fail "Simeon.app is not signed with a Developer ID Application certificate."
 shown=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$APP/Contents/Info.plist")
 [ "$shown" = "$VERSION" ] || fail "The app says version $shown, not $VERSION."
 [ "$(/usr/libexec/PlistBuddy -c "Print :SUPublicEDKey" "$APP/Contents/Info.plist")" = "$KEY" ] || fail "The app does not carry Sparkle's public key."
@@ -213,7 +215,7 @@ spctl --assess --type open --context context:primary-signature --verbose=2 "$DMG
 say "Writing the feed and the record"
 SIGNATURE=$("$SPARKLE_BIN/sign_update" "$ZIP")
 # `sparkle:edSignature="…" length="…"`, as sign_update prints it.
-echo "$SIGNATURE" | grep -q 'sparkle:edSignature=' || fail "Sparkle could not sign the update: $SIGNATURE"
+grep -q 'sparkle:edSignature=' <<<"$SIGNATURE" || fail "Sparkle could not sign the update: $SIGNATURE"
 PUB_DATE=$(date -u +"%Y-%m-%dT%H:%M:%S.000Z")
 RSS_DATE=$(LC_ALL=C date -u +"%a, %d %b %Y %H:%M:%S +0000")
 FOLDER_URL="$URL/$PLATFORM/$VERSION"
