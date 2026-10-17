@@ -168,10 +168,64 @@ public struct ConnectConsent: Identifiable, Equatable, Sendable {
     "onenote": "your notebooks, sections and pages",
     "microsoft-to-do": "your tasks and lists",
     "lovable": "your projects, workspaces and their code",
+    // 17 October 2026: the 53 added that day.
+    "whatsapp": "your WhatsApp Business messages and templates",
+    "twitch": "your channel, streams, clips and chat",
+    "reddit-ads": "campaigns, ad groups, ads and reports",
+    "pinterest-ads": "campaigns, ad groups and their results",
+    "omnisend": "contacts, campaigns and automations",
+    "dub": "your short links, QR codes and clicks",
+    "eventbrite": "your events, tickets, orders and attendees",
+    "google-photos": "your photos and albums",
+    "mural": "your workspaces, murals and sticky notes",
+    "zeplin": "projects, screens, components and style guides",
+    "contentful": "your spaces, content types and entries",
+    "box": "your files and folders, and who they're shared with",
+    "confluence": "your spaces and pages",
+    "notebooklm": "your notebooks, sources and audio overviews",
+    "basecamp": "your projects, to-dos, messages and schedules",
+    "wrike": "your tasks, projects and folders",
+    "ticktick": "your tasks and lists",
+    "harvest": "time entries, projects, clients and invoices",
+    "typeform": "your forms and their responses",
+    "productboard": "features, notes and customer feedback",
+    "google-maps": "places, directions and travel times",
+    "webex": "your meetings, recordings and messages",
+    "fathom": "your recorded meetings, summaries and transcripts",
+    "zoho-mail": "your email and folders",
+    "freshbooks": "invoices, clients, expenses and time",
+    "zoho-books": "invoices, bills, contacts and your books",
+    "ynab": "your budgets, accounts and transactions",
+    "splitwise": "your shared expenses, groups and balances",
+    "shippo": "shipping rates, labels and tracking",
+    "zoho-crm": "leads, contacts, deals and accounts",
+    "dynamics-365": "leads, accounts, contacts and opportunities",
+    "gitlab": "projects, issues, merge requests and pipelines",
+    "bitbucket": "repositories, pull requests and pipelines",
+    "pagerduty": "incidents, on-call schedules and services",
+    "google-bigquery": "your datasets and tables",
+    "hugging-face": "your models, datasets and Spaces",
+    "excalidraw": "the diagrams they draw",
+    "heygen": "your videos, avatars and voices",
+    "higgsfield": "your images, videos and characters",
+    "gamma": "your presentations, documents and pages",
+    "descript": "your projects, media and edits",
+    "lucid": "your diagrams and boards",
+    "eraser": "your diagrams and documents",
+    "mobbin": "Mobbin's library of app screens and flows",
+    "magic-patterns": "your designs and their history",
+    "pandadoc": "your documents, templates and their status",
+    "otter": "your meeting transcripts and summaries",
+    "read-ai": "your meeting summaries, transcripts and action items",
+    "fellow": "your meeting notes, action items and agendas",
+    "plaid": "your Plaid integration's Items, Link conversion and usage",
+    "clay": "your tables, and research on companies and people",
+    "netlify": "your sites, deploys and environment settings",
+    "neon": "your projects, branches and databases",
   ]
 
   /** Apps the agents can only read (the catalog says so). */
-  static let readOnly: Set<String> = ["mercury", "figma"]
+  static let readOnly: Set<String> = ["mercury", "figma", "otter", "plaid"]
 
   /** Apps whose reach is said another way. */
   static let reachSentence: [String: String] = [
@@ -186,10 +240,12 @@ public struct ConnectConsent: Identifiable, Equatable, Sendable {
     "link": "You'll approve the connection on link.com or in the {App} app; your cloud computer keeps it. Simeon never sees your password or your card numbers.",
     // Shop signs in with a code on Shop's own page, and runs from Simeon's cloud computer (desktop/source/shared/node/shop-wallet/).
     "shop": "You'll approve the connection on {App}'s own page with your {App} account; your cloud computer keeps it. Simeon never sees your password or your card numbers.",
+    // Excalidraw's server answers anyone (`noSignIn` in the catalog): there is nothing to sign in to.
+    "excalidraw": "There's nothing to sign in to: your agents draw on {App}'s own server (mcp.excalidraw.com), and Simeon holds no account of yours there.",
   ]
 
   /** Apps where money moves for real. */
-  static let money: Set<String> = ["stripe", "paypal", "square", "ramp", "brex", "quickbooks", "xero", "gusto"]
+  static let money: Set<String> = ["stripe", "paypal", "square", "ramp", "brex", "quickbooks", "xero", "gusto", "freshbooks", "zoho-books"]
 
   /** One more thing worth knowing about an app. */
   static let notes: [String: String] = [
@@ -211,6 +267,25 @@ public struct ConnectConsent: Identifiable, Equatable, Sendable {
     "docusign": "Envelopes your agents send go out in your name.",
     "resend": "Emails your agents send go out from your own domains.",
     "lovable": "Your agents can change and publish your projects. Published changes go live.",
+    "whatsapp": "Works with WhatsApp Business accounts, not personal WhatsApp. Messages your agents send go out from your business number.",
+    "notebooklm": "Works with NotebookLM Enterprise in a licensed Google Cloud project, not the free NotebookLM.",
+    "reddit-ads": "Changes to live campaigns and budgets can spend money.",
+    "pinterest-ads": "Changes to live campaigns and budgets can spend money.",
+    "zoho-mail": "Emails your agents send go out from your own address.",
+    "pandadoc": "Documents your agents send go out in your name.",
+    "shippo": "Labels your agents buy are charged to your Shippo account.",
+    "gitlab": "Your agents act with your GitLab access, in every project you can reach.",
+    "bitbucket": "Your agents act with your Bitbucket access, in every repository you can reach.",
+    "netlify": "Changes here can affect your live sites.",
+    "neon": "Changes here can affect your live data.",
+    "contentful": "Entries your agents publish go live on your site.",
+    "google-bigquery": "Queries are billed to your Google Cloud project.",
+    "heygen": "Making videos uses your HeyGen credits.",
+    "higgsfield": "Making images and videos uses your Higgsfield credits.",
+    "gamma": "Making presentations uses your Gamma credits.",
+    "clay": "Enrichment uses your Clay credits.",
+    "excalidraw": "A drawing your agents share gets a link on excalidraw.com that anyone with the link can open.",
+    "plaid": "For teams building on Plaid: it reads your integration's dashboard, not your own bank accounts.",
     "shop": "Nothing is paid until you press Allow on the purchase. At a Shopify store, Shop then places the order with your Shop card; anywhere else, you approve it in the Shop app and the store gets a one-time card, never your real one.",
     "link": "Nothing is paid until you approve the purchase in the Link app, up to $500 each and $500 a day. Get the Link app on your phone (or add a passkey at link.com): Link approves agents' purchases only there. Each purchase gets its own one-time card, never your real one. US accounts only.",
   ]

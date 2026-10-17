@@ -329,7 +329,8 @@ test("both managers, the loopback, the gateway and the resync are wired to the v
 test("a vendor that only takes the loopback is asked for it even when the box starts the sign-in for the iPhone (Canva, 11 October 2026)", async () => {
   // Canva's authorize page answers "Invalid redirect URI" to Simeon Labs'
   // hosted callback; Square and Vercel refuse it at registration; Dropbox
-  // registers no client for it. The box asks them for the loopback, where
+  // registers no client for it; Gamma refuses it at registration (17 October
+  // 2026). The box asks them for the loopback, where
   // the iPhone and the Mac app in Swift listen while their sheet is open
   // (ios/SimeonCore/Sources/SimeonCore/LoopbackSignIn.swift). Every other
   // vendor keeps the hosted address the box is given.
@@ -340,7 +341,7 @@ test("a vendor that only takes the loopback is asked for it even when the box st
     const catalog = await load("source/shared/node/vendor-mcp/catalog.ts", "vendor-catalog-loopback");
     try {
       const loopback = catalog.module.VENDOR_MCP_CONNECTORS.filter((connector) => connector.loopbackOnly === true).map((connector) => connector.id).sort();
-      assert.deepEqual(loopback, ["canva", "dropbox", "lovable", "square", "vercel"]);
+      assert.deepEqual(loopback, ["canva", "dropbox", "gamma", "lovable", "square", "vercel"]);
     } finally {
       await catalog.dispose();
     }
@@ -399,4 +400,50 @@ test("the box signs in to a vendor that takes only client documents as Simeon's 
   const service = await readFile(path.join(repoRoot, "source/host/extensions/mcp/mcp-service.ts"), "utf8");
   assert.match(service, /new URL\("desktop\/mcp-oauth\/client\.json", backendUrl/);
   assert.equal((service.match(/clientMetadataUrl: hostedMcpOAuthClientUrl\(\)/g) ?? []).length, 2);
+});
+
+test("a maker's server with nothing to sign in to (Excalidraw, 17 October 2026) connects on Add, in the box too, and its tools go out with no bearer", async () => {
+  const { module, dispose } = await load("source/shared/node/vendor-mcp/backend-exec.ts", "vendor-backend-open");
+  const root = await mkdtemp(path.join(os.tmpdir(), "simeon-vendor-open-"));
+  try {
+    const { createVendorMcpBackendExec, OPEN_CONNECTED_CLIENT_ID } = module;
+    const { writeFileSync, readFileSync } = await import("node:fs");
+    const EXCALIDRAW = "https://mcp.excalidraw.com/mcp";
+    const calls = [];
+    const fetchImpl = async (url, init) => {
+      const body = init?.body == null ? {} : JSON.parse(String(init.body));
+      calls.push({ url: String(url), method: body.method, authorization: new Headers(init?.headers).get("authorization") });
+      if (String(url) !== EXCALIDRAW) return new Response("not found", { status: 404 });
+      if (body.method === "initialize") return sse([{ jsonrpc: "2.0", id: body.id, result: { protocolVersion: "2025-06-18", capabilities: { tools: {} }, serverInfo: { name: "Excalidraw", version: "1.0.0" } } }]);
+      if (body.method === "notifications/initialized") return new Response(null, { status: 202 });
+      if (body.method === "tools/list") return sse([{ jsonrpc: "2.0", id: body.id, result: { tools: [{ name: "create_view", description: "Renders a diagram.", inputSchema: { type: "object" } }, { name: "export_to_excalidraw", description: "Share link.", inputSchema: { type: "object" } }] } }]);
+      if (body.method === "tools/call") return sse([{ jsonrpc: "2.0", id: body.id, result: { content: [{ type: "text", text: "https://excalidraw.com/#json=abc" }] } }]);
+      return new Response("unexpected", { status: 500 });
+    };
+    const read = () => JSON.parse(readFileSync(path.join(root, "vendor-mcp-installs.json"), "utf8")).find((row) => row.id === "excalidraw");
+    writeFileSync(path.join(root, "vendor-mcp-installs.json"), JSON.stringify([{ id: "excalidraw", url: EXCALIDRAW, connected: false }]));
+    const changed = [];
+    const box = createVendorMcpBackendExec({ rootDir: () => root, fetch: fetchImpl, now: () => 5_000_000, canStartAuth: false, onCredentialChanged: (id) => changed.push(id) });
+    const serverId = box.serverIdForPlugin("excalidraw");
+    const status = await box.checkAuthStatus({ serverId, accountKey: "default", oauthRedirectUri: "https://api.simeonlabs.com/desktop/mcp-oauth/callback" });
+    assert.deepEqual(status, { id: serverId, isAvailable: true, requiresAuth: false, hasValidToken: true, authUrl: "", error: "" }, "connected on Add, no sign-in page");
+    assert.equal(calls.length, 0, "no sign-in was started anywhere");
+    assert.equal(read().credential.clientId, OPEN_CONNECTED_CLIENT_ID, "the row is marked connected for the lists");
+    assert.deepEqual(changed, ["excalidraw"]);
+
+    const [listed] = await box.listTools(["excalidraw"]);
+    assert.equal(listed.status, "connected");
+    assert.deepEqual(listed.tools.map((tool) => tool.name), ["create_view", "export_to_excalidraw"]);
+    const ran = await box.executeTool({ serverIdentifier: "excalidraw", toolName: "export_to_excalidraw", args: {}, toolCallId: "c1" });
+    assert.equal(ran.result.case, "success");
+    assert.equal(ran.result.value.content[0].content.value.text, "https://excalidraw.com/#json=abc");
+    assert.ok(calls.length > 0 && calls.every((call) => call.authorization == null), "no Authorization header, not even the marker");
+    assert.deepEqual(changed, ["excalidraw"], "marked once");
+
+    const mac = createVendorMcpBackendExec({ rootDir: () => root, fetch: fetchImpl, now: () => 5_000_000, canStartAuth: true });
+    assert.deepEqual(await mac.validateTokens([{ serverUrl: EXCALIDRAW, accountKey: "default" }]), [{ serverUrl: EXCALIDRAW, accountKey: "default", hasValidToken: true }]);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+    await dispose();
+  }
 });

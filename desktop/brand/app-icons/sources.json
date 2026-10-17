@@ -27,6 +27,23 @@
   "app": "Attio",
   "seller": "Attio Limited"
  },
+ "basecamp": {
+  "from": "App Store",
+  "bundleId": "com.basecamp.bc3-ios",
+  "app": "Basecamp - Project Management",
+  "seller": "37Signals LLC"
+ },
+ "bitbucket": {
+  "from": "connector-logos/bitbucket.svg",
+  "ground": "#ffffff",
+  "fit": "0.7"
+ },
+ "box": {
+  "from": "App Store",
+  "bundleId": "net.box.BoxNet",
+  "app": "Box: The power of Content + AI",
+  "seller": "Box, Inc."
+ },
  "brex": {
   "from": "App Store",
   "bundleId": "com.brex.mobile.ios",
@@ -57,6 +74,11 @@
   "app": "Capsule CRM",
   "seller": "Zestia Ltd"
  },
+ "clay": {
+  "from": "connector-logos/clay.svg",
+  "ground": "#ffffff",
+  "fit": "0.78"
+ },
  "clickup": {
   "from": "App Store",
   "bundleId": "com.clickup.mobile",
@@ -67,6 +89,22 @@
   "from": "connector-logos/cloudflare.svg",
   "ground": "#ffffff",
   "fit": "0.74"
+ },
+ "confluence": {
+  "from": "App Store",
+  "bundleId": "com.atlassian.confluence.app",
+  "app": "Confluence Cloud",
+  "seller": "Atlassian Pty Ltd"
+ },
+ "contentful": {
+  "from": "connector-logos/contentful.svg",
+  "ground": "#ffffff",
+  "fit": "0.7"
+ },
+ "descript": {
+  "from": "connector-logos/descript.svg",
+  "ground": "#651a39",
+  "fit": "cover"
  },
  "dialpad": {
   "from": "App Store",
@@ -92,11 +130,50 @@
   "app": "Dropbox: Cloud Storage Backup",
   "seller": "Dropbox, Inc."
  },
+ "dub": {
+  "from": "connector-logos/dub.svg",
+  "ground": "#000000",
+  "fit": "cover"
+ },
+ "dynamics-365": {
+  "from": "App Store",
+  "bundleId": "com.microsoft.dynamics.iphone.moca.sales",
+  "app": "Dynamics 365 Sales",
+  "seller": "Microsoft Corporation"
+ },
+ "eraser": {
+  "from": "connector-logos/eraser.svg",
+  "ground": "#ffffff",
+  "fit": "0.74"
+ },
+ "eventbrite": {
+  "from": "App Store",
+  "bundleId": "com.eventbrite.attendee",
+  "app": "Eventbrite",
+  "seller": "Eventbrite"
+ },
+ "excalidraw": {
+  "from": "connector-logos/excalidraw.svg",
+  "ground": "#ffffff",
+  "fit": "0.74"
+ },
  "facebook": {
   "from": "App Store",
   "bundleId": "com.facebook.Facebook",
   "app": "Facebook",
   "seller": "Meta Platforms, Inc."
+ },
+ "fathom": {
+  "from": "App Store",
+  "bundleId": "video.fathom.ios",
+  "app": "Fathom AI Notetaker",
+  "seller": "Fathom Video Inc."
+ },
+ "fellow": {
+  "from": "App Store",
+  "bundleId": "co.fellow.app",
+  "app": "Fellow - AI Meeting Assistant",
+  "seller": "Fellow Insights, Inc."
  },
  "figma": {
   "from": "App Store",
@@ -104,11 +181,28 @@
   "app": "Figma",
   "seller": "Figma, Inc."
  },
+ "freshbooks": {
+  "from": "App Store",
+  "bundleId": "com.freshbooks.helios",
+  "app": "FreshBooks Invoicing App",
+  "seller": "2ndSite Inc"
+ },
+ "gamma": {
+  "from": "App Store",
+  "bundleId": "app.gamma.mobile",
+  "app": "Gamma: AI Slides & Design",
+  "seller": "Gamma Tech, Inc."
+ },
  "github": {
   "from": "App Store",
   "bundleId": "com.github.stormbreaker.prod",
   "app": "GitHub",
   "seller": "GitHub"
+ },
+ "gitlab": {
+  "from": "connector-logos/gitlab.svg",
+  "ground": "#ffffff",
+  "fit": "0.74"
  },
  "gmail": {
   "from": "App Store",
@@ -134,6 +228,11 @@
   "app": "Google Analytics",
   "seller": "Google LLC"
  },
+ "google-bigquery": {
+  "from": "connector-logos/google-bigquery.svg",
+  "ground": "#ffffff",
+  "fit": "0.7"
+ },
  "google-calendar": {
   "from": "App Store",
   "bundleId": "com.google.calendar",
@@ -158,10 +257,22 @@
   "app": "Google Drive",
   "seller": "Google LLC"
  },
+ "google-maps": {
+  "from": "App Store",
+  "bundleId": "com.google.Maps",
+  "app": "Google Maps",
+  "seller": "Google LLC"
+ },
  "google-meet": {
   "from": "App Store",
   "bundleId": "com.google.Tachyon",
   "app": "Google Meet",
+  "seller": "Google LLC"
+ },
+ "google-photos": {
+  "from": "App Store",
+  "bundleId": "com.google.photos",
+  "app": "Google Photos: Backup & Edit",
   "seller": "Google LLC"
  },
  "google-search-console": {
@@ -217,11 +328,33 @@
   "app": "Gusto Mobile",
   "seller": "Gusto, inc."
  },
+ "harvest": {
+  "from": "App Store",
+  "bundleId": "com.getharvest.Harvest",
+  "app": "Harvest: Track Time & Invoice",
+  "seller": "Iridesco, LLC"
+ },
+ "heygen": {
+  "from": "App Store",
+  "bundleId": "com.heygen.mobile",
+  "app": "AI Avatar Generator - HeyGen",
+  "seller": "HeyGen Technology Inc."
+ },
+ "higgsfield": {
+  "from": "connector-logos/higgsfield.svg",
+  "ground": "#d1fe17",
+  "fit": "cover"
+ },
  "hubspot": {
   "from": "App Store",
   "bundleId": "com.hubspot.CRMAppRelease",
   "app": "HubSpot",
   "seller": "HubSpot"
+ },
+ "hugging-face": {
+  "from": "connector-logos/hugging-face.svg",
+  "ground": "#ffffff",
+  "fit": "0.78"
  },
  "instagram": {
   "from": "App Store",
@@ -275,6 +408,17 @@
   "app": "Lovable: Build Apps With AI",
   "seller": "Lovable Labs Incorporated"
  },
+ "lucid": {
+  "from": "App Store",
+  "bundleId": "com.lucidchart.app",
+  "app": "Lucidchart",
+  "seller": "Lucid Software Inc"
+ },
+ "magic-patterns": {
+  "from": "connector-logos/magic-patterns.svg",
+  "ground": "#ffffff",
+  "fit": "0.74"
+ },
  "mailchimp": {
   "from": "App Store",
   "bundleId": "com.theRocketScienceGroup.mailChimp",
@@ -311,17 +455,49 @@
   "app": "Miro: your visual workspace",
   "seller": "Realtimeboard Inc."
  },
+ "mobbin": {
+  "from": "connector-logos/mobbin.svg",
+  "ground": "#ffffff",
+  "fit": "cover"
+ },
  "monday": {
   "from": "App Store",
   "bundleId": "com.monday.monday",
   "app": "monday.com - AI Work Platform",
   "seller": "monday.com Ltd."
  },
+ "mural": {
+  "from": "App Store",
+  "bundleId": "co.mural.iOS",
+  "app": "Mural - Visual Collaboration",
+  "seller": "Tactivos Inc."
+ },
+ "neon": {
+  "from": "connector-logos/neon.svg",
+  "ground": "#000000",
+  "fit": "cover"
+ },
+ "netlify": {
+  "from": "connector-logos/netlify.svg",
+  "ground": "#ffffff",
+  "fit": "cover"
+ },
+ "notebooklm": {
+  "from": "App Store",
+  "bundleId": "com.google.NotebookLM",
+  "app": "Gemini Notebook",
+  "seller": "Google LLC"
+ },
  "notion": {
   "from": "App Store",
   "bundleId": "notion.id",
   "app": "Notion: Notes, Tasks, AI",
   "seller": "Notion Labs, Incorporated"
+ },
+ "omnisend": {
+  "from": "connector-logos/omnisend.svg",
+  "ground": "#ffffff",
+  "fit": "cover"
  },
  "onedrive": {
   "from": "App Store",
@@ -335,11 +511,29 @@
   "app": "Microsoft OneNote",
   "seller": "Microsoft Corporation"
  },
+ "otter": {
+  "from": "App Store",
+  "bundleId": "com.aisense.otter",
+  "app": "Otter Transcribe Voice Notes",
+  "seller": "Otter.ai, Inc."
+ },
  "outlook": {
   "from": "App Store",
   "bundleId": "com.microsoft.Office.Outlook",
   "app": "Microsoft Outlook",
   "seller": "Microsoft Corporation"
+ },
+ "pagerduty": {
+  "from": "App Store",
+  "bundleId": "com.pagerduty.PagerDuty",
+  "app": "PagerDuty",
+  "seller": "PagerDuty Inc."
+ },
+ "pandadoc": {
+  "from": "App Store",
+  "bundleId": "com.pandadoc.mobile",
+  "app": "PandaDoc - Create & Send docs",
+  "seller": "Quote Roller Inc."
  },
  "paypal": {
   "from": "App Store",
@@ -353,16 +547,32 @@
   "app": "Pinterest",
   "seller": "Pinterest, Inc."
  },
+ "pinterest-ads": {
+  "from": "App Store",
+  "bundleId": "pinterest",
+  "app": "Pinterest",
+  "seller": "Pinterest, Inc."
+ },
  "pipedrive": {
   "from": "App Store",
   "bundleId": "com.pipedrive.Pipedrive",
   "app": "Pipedrive \u2013 Sales CRM",
   "seller": "Pipedrive Inc"
  },
+ "plaid": {
+  "from": "connector-logos/plaid.svg",
+  "ground": "#ffffff",
+  "fit": "0.78"
+ },
  "posthog": {
   "from": "connector-logos/posthog.svg",
   "ground": "#000000",
   "fit": "cover"
+ },
+ "productboard": {
+  "from": "connector-logos/productboard.svg",
+  "ground": "#ffffff",
+  "fit": "0.7"
  },
  "quickbooks": {
   "from": "App Store",
@@ -376,7 +586,19 @@
   "app": "Ramp",
   "seller": "Ramp Business Corporation"
  },
+ "read-ai": {
+  "from": "App Store",
+  "bundleId": "read.ai.meeting-notes",
+  "app": "Read AI: Transcripts and Notes",
+  "seller": "Read AI, Inc."
+ },
  "reddit": {
+  "from": "App Store",
+  "bundleId": "com.reddit.Reddit",
+  "app": "Reddit",
+  "seller": "REDDIT, INC."
+ },
+ "reddit-ads": {
   "from": "App Store",
   "bundleId": "com.reddit.Reddit",
   "app": "Reddit",
@@ -404,6 +626,11 @@
   "app": "Microsoft SharePoint",
   "seller": "Microsoft Corporation"
  },
+ "shippo": {
+  "from": "connector-logos/shippo.svg",
+  "ground": "#ffffff",
+  "fit": "0.8"
+ },
  "shop": {
   "from": "App Store",
   "bundleId": "com.jadedlabs.arrive",
@@ -422,6 +649,12 @@
   "app": "Slack",
   "seller": "SLACK TECHNOLOGIES L.L.C."
  },
+ "splitwise": {
+  "from": "App Store",
+  "bundleId": "com.Splitwise.SplitwiseMobile",
+  "app": "Splitwise",
+  "seller": "Splitwise, Inc."
+ },
  "square": {
   "from": "App Store",
   "bundleId": "com.squareup.square",
@@ -438,6 +671,12 @@
   "from": "connector-logos/supabase.svg",
   "ground": "#1c1c1c",
   "fit": "cover"
+ },
+ "ticktick": {
+  "from": "App Store",
+  "bundleId": "com.TickTick.task",
+  "app": "TickTick:To-Do List & Calendar",
+  "seller": "Appest Limited"
  },
  "tiktok-ads": {
   "from": "App Store",
@@ -457,15 +696,38 @@
   "app": "Trello: Daily Task Tracker",
   "seller": "Trello, Inc."
  },
+ "twitch": {
+  "from": "App Store",
+  "bundleId": "tv.twitch",
+  "app": "Twitch: Live Streaming",
+  "seller": "Twitch Interactive, Inc."
+ },
+ "typeform": {
+  "from": "connector-logos/typeform.svg",
+  "ground": "#faf9fb",
+  "fit": "cover"
+ },
  "vercel": {
   "from": "connector-logos/vercel.svg",
   "ground": "#000000",
   "fit": "cover"
  },
+ "webex": {
+  "from": "App Store",
+  "bundleId": "com.cisco.squared",
+  "app": "Webex",
+  "seller": "Cisco"
+ },
  "webflow": {
   "from": "connector-logos/webflow.svg",
   "ground": "#146ef5",
   "fit": "cover"
+ },
+ "whatsapp": {
+  "from": "App Store",
+  "bundleId": "net.whatsapp.WhatsAppSMB",
+  "app": "WhatsApp Business",
+  "seller": "WhatsApp Inc."
  },
  "wix": {
   "from": "App Store",
@@ -473,11 +735,23 @@
   "app": "Wix - Website Builder",
   "seller": "WIX.COM, INC."
  },
+ "wrike": {
+  "from": "App Store",
+  "bundleId": "Wrike.WrikeApp",
+  "app": "Wrike: Trusted work delivery",
+  "seller": "Wrike, Inc."
+ },
  "xero": {
   "from": "App Store",
   "bundleId": "JEC2FK53N4.com.xero.XeroTouch",
   "app": "Xero Accounting for business",
   "seller": "Xero Ltd"
+ },
+ "ynab": {
+  "from": "App Store",
+  "bundleId": "com.youneedabudget.evergreen.YNAB-Evergreen",
+  "app": "YNAB",
+  "seller": "You Need A Budget LLC"
  },
  "youtube": {
   "from": "App Store",
@@ -491,16 +765,39 @@
   "app": "Zendesk Support",
   "seller": "Zendesk, Inc."
  },
+ "zeplin": {
+  "from": "connector-logos/zeplin.svg",
+  "ground": "#ffffff",
+  "fit": "cover"
+ },
  "zoho-bigin": {
   "from": "App Store",
   "bundleId": "com.zoho.bigin",
   "app": "Bigin by Zoho CRM",
   "seller": "Zoho Corporation"
  },
+ "zoho-books": {
+  "from": "App Store",
+  "bundleId": "com.zoho.zbooks",
+  "app": "Accounting App - Zoho Books",
+  "seller": "Zoho Corporation"
+ },
+ "zoho-crm": {
+  "from": "App Store",
+  "bundleId": "com.zoho.zcrm",
+  "app": "Zoho CRM - Sales & Marketing",
+  "seller": "Zoho Corporation"
+ },
  "zoho-desk": {
   "from": "App Store",
   "bundleId": "com.zoho.zsupport",
   "app": "Zoho Desk",
+  "seller": "Zoho Corporation"
+ },
+ "zoho-mail": {
+  "from": "App Store",
+  "bundleId": "com.zoho.zmail",
+  "app": "Zoho Mail - Email and Calendar",
   "seller": "Zoho Corporation"
  },
  "zoom": {

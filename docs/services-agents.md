@@ -402,6 +402,27 @@ takes the app back out, so nothing is left added and not signed in (`SimeonCore/
   must switch third-party MCP clients on. Word and PowerPoint have no app of their own anywhere
   (no Composio toolkit, no Microsoft server for people's own accounts): their files are
   OneDrive's and SharePoint's, which agents open, change on their computer and save back.
+- **Seventeen more on their makers' servers** (17 October 2026, the founder: "a lot more
+  connectors … the best out there"): HeyGen, Higgsfield, Gamma, Descript, Lucid, Eraser, Mobbin,
+  Magic Patterns, PandaDoc, Otter.ai, Read AI, Fellow, Plaid, Clay, Netlify, Neon and Excalidraw.
+  Each was probed that day (an unsigned `initialize` answered 401 naming its OAuth metadata, a
+  registration endpoint, S256), and Simeon was registered once with the hosted return address
+  and its authorize page opened without a session, as a first sign-in does. All took the hosted
+  address except **Gamma**, whose registration answered `invalid_redirect_uri` and took the
+  loopback, so Gamma is `loopbackOnly`. PandaDoc registers confidential clients only
+  (`client_secret_post`, kept with the credential). Plaid's server is Plaid's dashboard for teams
+  building on Plaid (Items, Link conversion, usage; read-only), not a person's bank accounts:
+  Link (7d) reads those. Higgsfield's sits behind Cloudflare, which refuses Python's default user
+  agent (error 1010) and took Node's. A refused address only shows at a person's first sign-in
+  (the sign-in log names the vendor's answer), so the authorize pages that send a person to log
+  in first (all but Read AI's) could not be checked past the login.
+- **Excalidraw needs no sign-in** (`noSignIn` in `catalog.ts`): `https://mcp.excalidraw.com/mcp`
+  answers `initialize` and `tools/list` to anyone (`read_me`, `create_view`,
+  `export_to_excalidraw`, which uploads a drawing to excalidraw.com and answers a share link,
+  `save_checkpoint`, `read_checkpoint`). `backend-exec.ts` marks the row connected at once
+  (`OPEN_CONNECTED_CLIENT_ID`, a marker, never a token) and calls its tools with no
+  `Authorization` header, on the Mac and the box alike; Add connects it with no sign-in page, and
+  the consent sheet says there is nothing to sign in to (`ConnectConsent.signInSentence`).
 - **Zendesk stays on our apps service.** `mcp.zendesk.com` advertises client documents, but
   its authorize page sends everyone to "Help Center Closed" (measured 13 October 2026): it
   behaves as a Zendesk account named "mcp" that nobody can sign in to. Zendesk's own server is
@@ -439,6 +460,26 @@ and the others marked `app(…)` in
 `catalog.ts` connect through Simeon. The provider behind them is never named in the app.
 (Asana, Todoist, Intercom, Klaviyo, Ashby, Calendly, Cal.com, Attio, Gorgias and Gong moved to
 their makers' own servers on 13 October 2026; see 7a.)
+
+36 more joined on 17 October 2026, each one a toolkit whose Composio page that day said
+"Composio-managed OAuth available? Yes", so Add works in one tap with nothing to register:
+WhatsApp (Business accounts only), Twitch, Reddit Ads, Pinterest Ads, Omnisend, Dub, Eventbrite,
+Google Photos, Mural, Zeplin, Contentful, Box, Confluence, NotebookLM, Basecamp, Wrike, TickTick,
+Harvest, Typeform, Productboard, Google Maps, Webex, Fathom, Zoho Mail, FreshBooks, Zoho Books,
+YNAB, Splitwise, Shippo, Zoho CRM, Dynamics 365, GitLab, Bitbucket, PagerDuty, Google BigQuery and
+Hugging Face. The server serves any toolkit slug, so `apps.py` needed nothing. Composio's
+NotebookLM toolkit is **NotebookLM Enterprise** (a licensed Google Cloud project), not the free
+NotebookLM, and the card and the consent sheet say so. Not verified on a device yet: a real
+sign-in and a tool call through each of them.
+
+Each new connector has, like the others: its mark in `desktop/brand/connector-logos` (Composio's
+logo service, except Zoho Mail, Zoho Books and Zoho CRM, which it answers with the Zoho company
+logo, cropped from Zoho's own product logos, and Dynamics 365, which it answers with Microsoft's
+four squares, cropped from Wikimedia Commons' Dynamics 365 logo); its app tile from its iOS app
+on the App Store, or its mark on its ground when it has none (`ios/scripts/app_icons.py`); its
+colour and logo in the chat (`ios/scripts/connector-mentions.json`; WhatsApp and Typeform were in
+the Mac window's list already); and its line on the consent sheet (`ConnectConsent.swift`). The
+agents know them from the catalogue (`SIMEON_CONNECTOR_NAMES` in their brief, and SearchPlugins).
 
 **How it works.**
 

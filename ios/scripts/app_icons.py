@@ -86,6 +86,27 @@ STORE_APPS = {
     "sharepoint": "com.microsoft.sharepoint", "onenote": "com.microsoft.onenote",
     "microsoft-to-do": "com.microsoft.to-do", "lovable": "dev.lovable.build",
     "shop": "com.jadedlabs.arrive",
+    # 17 October 2026, checked by hand the same way. WhatsApp's connector is
+    # WhatsApp Business, so its app is; Reddit Ads and Pinterest Ads have no
+    # app of their own (Reddit's and Pinterest's are the ones people know);
+    # Dynamics 365's is Dynamics 365 Sales; Lucid's is Lucidchart; NotebookLM's
+    # app is listed as "Gemini Notebook" by Google.
+    "whatsapp": "net.whatsapp.WhatsAppSMB", "twitch": "tv.twitch",
+    "reddit-ads": "com.reddit.Reddit", "pinterest-ads": "pinterest",
+    "eventbrite": "com.eventbrite.attendee", "google-photos": "com.google.photos",
+    "mural": "co.mural.iOS", "box": "net.box.BoxNet",
+    "confluence": "com.atlassian.confluence.app", "notebooklm": "com.google.NotebookLM",
+    "basecamp": "com.basecamp.bc3-ios", "wrike": "Wrike.WrikeApp",
+    "ticktick": "com.TickTick.task", "harvest": "com.getharvest.Harvest",
+    "google-maps": "com.google.Maps", "webex": "com.cisco.squared",
+    "fathom": "video.fathom.ios", "zoho-mail": "com.zoho.zmail",
+    "freshbooks": "com.freshbooks.helios", "zoho-books": "com.zoho.zbooks",
+    "ynab": "com.youneedabudget.evergreen.YNAB-Evergreen", "splitwise": "com.Splitwise.SplitwiseMobile",
+    "zoho-crm": "com.zoho.zcrm", "dynamics-365": "com.microsoft.dynamics.iphone.moca.sales",
+    "pagerduty": "com.pagerduty.PagerDuty", "heygen": "com.heygen.mobile",
+    "gamma": "app.gamma.mobile", "lucid": "com.lucidchart.app",
+    "pandadoc": "com.pandadoc.mobile", "otter": "com.aisense.otter",
+    "read-ai": "read.ai.meeting-notes", "fellow": "co.fellow.app",
 }
 
 #: No iOS app of their own: the mark from connector-logos on its ground.
@@ -97,6 +118,19 @@ MADE = {
     "webflow": ("#146ef5", "cover"), "cloudflare": ("#ffffff", 0.74),
     "apollo": ("#ebf212", "cover"), "klaviyo": ("#ffffff", "cover"),
     "kit": ("#44b1ff", "cover"), "google-search-console": ("#ffffff", 0.70),
+    # 17 October 2026: no iOS app of their own (the App Store's matches were
+    # other makers' apps or clients for them).
+    "omnisend": ("#ffffff", "cover"), "dub": ("#000000", "cover"),
+    "zeplin": ("#ffffff", "cover"), "contentful": ("#ffffff", 0.70),
+    "typeform": ("#faf9fb", "cover"), "productboard": ("#ffffff", 0.70),
+    "shippo": ("#ffffff", 0.80), "gitlab": ("#ffffff", 0.74),
+    "bitbucket": ("#ffffff", 0.70), "google-bigquery": ("#ffffff", 0.70),
+    "hugging-face": ("#ffffff", 0.78), "excalidraw": ("#ffffff", 0.74),
+    "higgsfield": ("#d1fe17", "cover"), "descript": ("#651a39", "cover"),
+    "eraser": ("#ffffff", 0.74), "mobbin": ("#ffffff", "cover"),
+    "magic-patterns": ("#ffffff", 0.74), "plaid": ("#ffffff", 0.78),
+    "clay": ("#ffffff", 0.78), "netlify": ("#ffffff", "cover"),
+    "neon": ("#000000", "cover"),
 }
 
 

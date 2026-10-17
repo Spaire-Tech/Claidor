@@ -136,6 +136,8 @@ export interface BoxCliWallet {
 
 /** The credential row an app our server serves carries once connected: a marker, never a token (the token is always the account's current one). */
 export const APPS_CONNECTED_CLIENT_ID = "simeon-apps";
+/** The same for a maker's server that needs no sign-in (`noSignIn`): a marker; its tools are called with no bearer. */
+export const OPEN_CONNECTED_CLIENT_ID = "simeon-open";
 
 /** `…/desktop/api/apps/mcp/<toolkit>` → `…/desktop/api/apps/<toolkit><suffix>`. */
 export function appsRouteUrl(mcpUrl: string, suffix: string): string {
@@ -164,6 +166,7 @@ export function createVendorMcpBackendExec(options: VendorMcpBackendExecOptions)
   };
   const isApp = (install: VendorMcpInstall): boolean => vendorMcpConnectorById(install.id)?.appsToolkit != null;
   const isBoxCli = (install: VendorMcpInstall): boolean => vendorMcpConnectorById(install.id)?.boxCli != null;
+  const isOpen = (install: VendorMcpInstall): boolean => vendorMcpConnectorById(install.id)?.noSignIn === true;
   /** The wallet behind an app run on the cloud computer (Link's, Shop's), when this side has it. */
   const walletFor = (install: VendorMcpInstall): BoxCliWallet | undefined => {
     const kind = vendorMcpConnectorById(install.id)?.boxCli;
@@ -248,6 +251,11 @@ export function createVendorMcpBackendExec(options: VendorMcpBackendExecOptions)
       const connected = await boxConnected(install, false);
       markBox(install, connected);
       return connected ? { accessToken: "connected", tokenEndpoint: install.url, clientId: boxClientId(install) } : undefined;
+    }
+    if (isOpen(install)) {
+      // Nothing to sign in to: the row is marked connected (so the lists say so) and the tools go out with no bearer.
+      if (install.credential?.clientId !== OPEN_CONNECTED_CLIENT_ID && setVendorMcpCredential(options.rootDir(), install.id, { accessToken: "open", tokenEndpoint: install.url, clientId: OPEN_CONNECTED_CLIENT_ID }, now) != null) options.onCredentialChanged?.(install.id);
+      return { accessToken: "", tokenEndpoint: install.url, clientId: OPEN_CONNECTED_CLIENT_ID };
     }
     if (isApp(install)) {
       // An app our server serves answers with the account's own bearer; a 401 on its tools means "not connected yet".

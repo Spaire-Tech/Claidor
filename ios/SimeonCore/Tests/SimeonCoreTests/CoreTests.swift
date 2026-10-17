@@ -968,6 +968,11 @@ final class MarkdownTests: XCTestCase {
     XCTAssertEqual(named("Granola, Resend and Microsoft To Do."), ["Granola=granola", "Resend=resend", "Microsoft To Do=microsoft-to-do"])
     // An app whose name is not an everyday word is marked anywhere, first word included.
     XCTAssertEqual(named("Stripe charged it."), ["Stripe=stripe"])
+    // 17 October 2026: the 53 added that day, the longer name first, everyday words only mid-sentence.
+    XCTAssertEqual(named("Put it in Box, then Confluence and Lucidchart; GitLab, Otter.ai and BigQuery too."), ["Box=box", "Confluence=confluence", "Lucidchart=lucid", "GitLab=gitlab", "Otter.ai=otter", "BigQuery=google-bigquery"])
+    XCTAssertEqual(named("Run Pinterest Ads and Reddit Ads, not Pinterest."), ["Pinterest Ads=pinterest-ads", "Reddit Ads=reddit-ads", "Pinterest=pinterest"])
+    XCTAssertEqual(named("Clay first. Neon after."), [])
+    XCTAssertEqual(named("Excalidraw drew it; HeyGen voiced it."), ["Excalidraw=excalidraw", "HeyGen=heygen"])
   }
 
   func testAvasChatIsQuickInTheCore() {
@@ -1535,6 +1540,15 @@ final class ConnectConsentTests: XCTestCase {
     let lovable = ConnectConsent(app: CatalogApp(id: "lovable", name: "lovable", title: "Lovable", summary: "", serverURL: "https://mcp.lovable.dev"), name: "Lovable")
     XCTAssertEqual(lovable.points[0].body, "Your agents can read and use your projects, workspaces and their code in Lovable.")
     XCTAssertEqual(lovable.route, .vendor(host: "mcp.lovable.dev"))
+    // 17 October 2026: Excalidraw's server signs nobody in, so the sheet says so; Otter.ai's is read-only.
+    let excalidraw = ConnectConsent(app: CatalogApp(id: "excalidraw", name: "excalidraw", title: "Excalidraw", summary: "", serverURL: "https://mcp.excalidraw.com/mcp"), name: "Excalidraw")
+    XCTAssertEqual(excalidraw.route, .vendor(host: "mcp.excalidraw.com"))
+    XCTAssertTrue(excalidraw.smallPrint[0].hasPrefix("There's nothing to sign in to"))
+    XCTAssertTrue(excalidraw.note?.contains("excalidraw.com") == true)
+    let otter = ConnectConsent(app: CatalogApp(id: "otter", name: "otter", title: "Otter.ai", summary: "", serverURL: "https://mcp.otter.ai/mcp"), name: "Otter.ai")
+    XCTAssertEqual(otter.points[0].body, "Your agents can read your meeting transcripts and summaries in Otter.ai.")
+    let freshbooks = ConnectConsent(app: CatalogApp(id: "freshbooks", name: "freshbooks", title: "FreshBooks", summary: ""), name: "FreshBooks")
+    XCTAssertEqual(freshbooks.note, "Anything that moves money in FreshBooks is real. Ask your agents to check with you before they move any.")
   }
 
   func testTheExtraLayerAndTheUnknown() {

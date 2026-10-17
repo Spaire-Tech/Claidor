@@ -10,7 +10,8 @@ import {
 // Simeon told the founder there was no Instagram connector and offered the
 // box's browser, and found the connector only when told it existed. The
 // catalogue is fixed for a build, so the brief stays the same from turn to
-// turn (about 330 tokens, read from the prompt cache).
+// turn (about 330 tokens, read from the prompt cache; about 500 since 17
+// October 2026, when the catalogue went from 87 connectors to 140).
 export const SIMEON_CONNECTOR_NAMES = VENDOR_MCP_CONNECTORS
   .filter((item) => item.comingSoon !== true)
   .map((item) => item.name)

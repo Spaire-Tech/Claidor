@@ -60,6 +60,12 @@ export interface VendorMcpConnector {
    * sign-in come from the computer; `url` is the app's own page.
    */
   readonly boxCli?: "link" | "shop";
+  /**
+   * The maker's server needs no sign-in (17 October 2026: Excalidraw's,
+   * which answers its tools to anyone). Adding it connects it: its tools are
+   * called with no bearer, and its row is marked connected at once.
+   */
+  readonly noSignIn?: true;
 }
 
 /** Our server's MCP address for an app it serves (`/desktop/api/apps/mcp/<toolkit>`). */
@@ -197,6 +203,66 @@ export const VENDOR_MCP_CONNECTORS: readonly VendorMcpConnector[] = [
   // 14 October 2026, the founder ("build the whole shop integration. make sure its the exact flow as link"): Shop, run from the
   // cloud computer (`boxCli`) against Shop MCP, the person's Shop sign-in kept there. Shopping search works without it.
   { id: "shop", name: "Shop", category: G.Finance, url: "https://shop.app", boxCli: "shop", description: "Find products across Shopify stores and buy them with your Shop card, with your OK for each purchase. Track your orders." },
+  // 17 October 2026, the founder ("a lot more connectors … the best out there, most famous for each category"): the 36 whose
+  // Composio toolkit page says "Composio-managed OAuth available? Yes", so Add works in one tap, read from Composio's toolkit
+  // pages that day. NotebookLM's is NotebookLM Enterprise (a licensed Google Cloud project), and WhatsApp's is WhatsApp Business.
+  app({ id: "whatsapp", name: "WhatsApp", category: G.Social, description: "Messages and templates on your WhatsApp Business account. Not personal WhatsApp." }, "whatsapp"),
+  app({ id: "twitch", name: "Twitch", category: G.Social, description: "Your channel, streams, clips, and chat." }, "twitch"),
+  app({ id: "reddit-ads", name: "Reddit Ads", category: G.Marketing, description: "Campaigns, ad groups, ads, and reports." }, "reddit_ads"),
+  app({ id: "pinterest-ads", name: "Pinterest Ads", category: G.Marketing, description: "Campaigns, ad groups, and their results." }, "pinterest_ads"),
+  app({ id: "omnisend", name: "Omnisend", category: G.Marketing, description: "Contacts, campaigns, and automations for your store's email and SMS." }, "omnisend"),
+  app({ id: "dub", name: "Dub", category: G.Marketing, description: "Short links, QR codes, and click analytics." }, "dub"),
+  app({ id: "eventbrite", name: "Eventbrite", category: G.Marketing, description: "Your events, tickets, orders, and attendees." }, "eventbrite"),
+  app({ id: "google-photos", name: "Google Photos", category: G.Creativity, description: "Find, upload, and share photos and albums." }, "googlephotos"),
+  app({ id: "mural", name: "Mural", category: G.Creativity, description: "Workspaces, murals, and the sticky notes on them." }, "mural"),
+  app({ id: "zeplin", name: "Zeplin", category: G.Creativity, description: "Projects, screens, components, and style guides." }, "zeplin"),
+  app({ id: "contentful", name: "Contentful", category: G.Creativity, description: "Spaces, content types, and entries in your CMS." }, "contentful"),
+  app({ id: "box", name: "Box", category: G.FilesDocs, description: "Search, read, and share files and folders." }, "box"),
+  app({ id: "confluence", name: "Confluence", category: G.FilesDocs, description: "Search, read, and write spaces and pages." }, "confluence"),
+  app({ id: "notebooklm", name: "NotebookLM", category: G.FilesDocs, description: "Notebooks, sources, and audio overviews in NotebookLM Enterprise. Not the free NotebookLM." }, "notebook_lm"),
+  app({ id: "basecamp", name: "Basecamp", category: G.Productivity, description: "Projects, to-dos, messages, and schedules." }, "basecamp"),
+  app({ id: "wrike", name: "Wrike", category: G.Productivity, description: "Tasks, projects, and folders." }, "wrike"),
+  app({ id: "ticktick", name: "TickTick", category: G.Productivity, description: "Tasks, lists, and due dates." }, "ticktick"),
+  app({ id: "harvest", name: "Harvest", category: G.Productivity, description: "Time entries, projects, clients, and invoices." }, "harvest"),
+  app({ id: "typeform", name: "Typeform", category: G.Productivity, description: "Forms and their responses." }, "typeform"),
+  app({ id: "productboard", name: "Productboard", category: G.Productivity, description: "Features, notes, and customer feedback." }, "productboard"),
+  app({ id: "google-maps", name: "Google Maps", category: G.Productivity, description: "Places, directions, and travel times." }, "google_maps"),
+  app({ id: "webex", name: "Webex", category: G.Meetings, description: "Meetings, recordings, and messages." }, "webex"),
+  app({ id: "fathom", name: "Fathom", category: G.Meetings, description: "Your recorded meetings, summaries, and transcripts." }, "fathom"),
+  app({ id: "zoho-mail", name: "Zoho Mail", category: G.MailCalendar, description: "Search, read, and send email." }, "zoho_mail"),
+  app({ id: "freshbooks", name: "FreshBooks", category: G.Finance, description: "Invoices, clients, expenses, and time." }, "freshbooks"),
+  app({ id: "zoho-books", name: "Zoho Books", category: G.Finance, description: "Invoices, bills, contacts, and your books." }, "zoho_books"),
+  app({ id: "ynab", name: "YNAB", category: G.Finance, description: "Budgets, accounts, and transactions (You Need A Budget)." }, "ynab"),
+  app({ id: "splitwise", name: "Splitwise", category: G.Finance, description: "Shared expenses, groups, and who owes whom." }, "splitwise"),
+  app({ id: "shippo", name: "Shippo", category: G.Finance, description: "Shipping rates, labels, and tracking." }, "shippo"),
+  app({ id: "zoho-crm", name: "Zoho CRM", category: G.Sales, description: "Leads, contacts, deals, and accounts." }, "zoho"),
+  app({ id: "dynamics-365", name: "Dynamics 365", category: G.Sales, description: "Leads, accounts, contacts, and opportunities in Microsoft Dynamics." }, "dynamics365"),
+  app({ id: "gitlab", name: "GitLab", category: G.Developer, description: "Projects, issues, merge requests, and pipelines." }, "gitlab"),
+  app({ id: "bitbucket", name: "Bitbucket", category: G.Developer, description: "Repositories, pull requests, and pipelines." }, "bitbucket"),
+  app({ id: "pagerduty", name: "PagerDuty", category: G.Developer, description: "Incidents, on-call schedules, and services." }, "pagerduty"),
+  app({ id: "google-bigquery", name: "Google BigQuery", category: G.Developer, description: "Datasets and tables, and the SQL to query them." }, "googlebigquery"),
+  app({ id: "hugging-face", name: "Hugging Face", category: G.Developer, description: "Models, datasets, and Spaces." }, "hugging_face"),
+  // The same day, 17 apps on their makers' own MCP servers, each probed then: a 401 naming OAuth metadata, an open
+  // registration endpoint and S256, and a registration of Simeon with the hosted return address (Gamma refused it and took
+  // the loopback, so it is loopback-only, as Canva is). Excalidraw's answers its tools to anyone (`noSignIn`). Plaid's
+  // is Plaid's dashboard for teams building on Plaid, not a person's bank accounts (Link reads those).
+  { id: "excalidraw", name: "Excalidraw", category: G.Creativity, url: "https://mcp.excalidraw.com/mcp", noSignIn: true, description: "Draw hand-drawn diagrams, and share them on excalidraw.com." },
+  { id: "heygen", name: "HeyGen", category: G.Creativity, url: "https://mcp.heygen.com/mcp/v1/", description: "Make videos with AI avatars and voices." },
+  { id: "higgsfield", name: "Higgsfield", category: G.Creativity, url: "https://mcp.higgsfield.ai/mcp", description: "Generate images and videos with AI models." },
+  { id: "gamma", name: "Gamma", category: G.Creativity, url: "https://mcp.gamma.app/mcp", loopbackOnly: true, description: "Make presentations, documents, and web pages." },
+  { id: "descript", name: "Descript", category: G.Creativity, url: "https://api.descript.com/v2/mcp", description: "Edit video and podcasts: import media, run edits, export." },
+  { id: "lucid", name: "Lucid", category: G.Creativity, url: "https://mcp.lucid.app/mcp", description: "Diagrams and whiteboards in Lucidchart and Lucidspark." },
+  { id: "eraser", name: "Eraser", category: G.Creativity, url: "https://app.eraser.io/api/mcp", description: "Technical diagrams and docs." },
+  { id: "mobbin", name: "Mobbin", category: G.Creativity, url: "https://api.mobbin.com/mcp", description: "Search real apps' screens and flows for design ideas." },
+  { id: "magic-patterns", name: "Magic Patterns", category: G.Creativity, url: "https://mcp.magicpatterns.com/mcp", description: "Design and change app screens by describing them." },
+  { id: "pandadoc", name: "PandaDoc", category: G.FilesDocs, url: "https://mcp.pandadoc.com/v1/mcp", description: "Proposals, quotes, and contracts: create, send, and track." },
+  { id: "otter", name: "Otter.ai", category: G.Meetings, url: "https://mcp.otter.ai/mcp", description: "Your meeting transcripts and summaries. Read-only." },
+  { id: "read-ai", name: "Read AI", category: G.Meetings, url: "https://api.read.ai/mcp", description: "Meeting summaries, transcripts, and action items." },
+  { id: "fellow", name: "Fellow", category: G.Meetings, url: "https://fellow.app/mcp", description: "Meeting notes, action items, and agendas." },
+  { id: "plaid", name: "Plaid", category: G.Finance, url: "https://api.dashboard.plaid.com/mcp/", description: "Your Plaid integration's Items, Link conversion, and usage. For teams building on Plaid. Read-only." },
+  { id: "clay", name: "Clay", category: G.Sales, url: "https://api.clay.com/v3/mcp", description: "Research companies and people, and enrich your lists." },
+  { id: "netlify", name: "Netlify", category: G.Developer, url: "https://netlify-mcp.netlify.app/mcp", description: "Sites, deploys, and environment settings." },
+  { id: "neon", name: "Neon", category: G.Developer, url: "https://mcp.neon.tech/mcp", description: "Postgres projects, branches, and SQL." },
 ];
 
 const byId = new Map(VENDOR_MCP_CONNECTORS.map((item) => [item.id, item]));
