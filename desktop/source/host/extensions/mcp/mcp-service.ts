@@ -9,6 +9,7 @@ import { fetchVendorEffectivePlugins, fetchVendorMarketplacePlugins } from "../.
 import { createVendorMcpBackendExec } from "../../../shared/node/vendor-mcp/backend-exec.js";
 import { fillCheckout } from "../../../shared/node/link-wallet/checkout-fill.js";
 import { createLinkCli } from "../../../shared/node/link-wallet/link-cli.js";
+import { createLinkServer } from "../../../shared/node/link-wallet/link-server.js";
 import { createLinkTools } from "../../../shared/node/link-wallet/link-tools.js";
 import { createShopClient } from "../../../shared/node/shop-wallet/shop-mcp.js";
 import { createShopTools } from "../../../shared/node/shop-wallet/shop-tools.js";
@@ -289,12 +290,15 @@ export class McpHostService {
     // sync, the web's finish here, and each side refreshes its own.
     // Apps Simeon Labs' server serves take the box's own credential (`vendor-mcp/backend-exec.ts`, `appsToolkit`).
     // Link (Stripe's agent wallet) runs here, on the cloud computer, through its own CLI (`shared/node/link-wallet/`).
-    const linkWallet = createLinkTools({ cli: createLinkCli({ rootDir: getSandRootDir, log: deps.log }), rootDir: getSandRootDir, fillCheckout, log: deps.log });
+    // Its sign-in is Simeon Labs' own Link client, held by the server, which hands each command an access token (`link-server.ts`, 17 October 2026).
+    const serverAccessToken = async (): Promise<string | null> => { try { const token = await deps.auth.getAccessToken({ backendUrl: getSandInferenceBackendUrl() }); return token.length > 0 ? token : null; } catch { return null; } };
+    const linkServer = createLinkServer({ backendUrl: getSandInferenceBackendUrl, accessToken: serverAccessToken, log: deps.log });
+    const linkWallet = createLinkTools({ cli: createLinkCli({ rootDir: getSandRootDir, log: deps.log, serverToken: linkServer.accessToken }), rootDir: getSandRootDir, fillCheckout, log: deps.log, server: linkServer });
     // Shop (14 October 2026): Shopify's Shop MCP, called from here with the person's Shop sign-in kept on the data volume (`shared/node/shop-wallet/`).
     const shopWallet = createShopTools({ client: createShopClient({ rootDir: getSandRootDir, log: deps.log }), rootDir: getSandRootDir, fillCheckout, log: deps.log });
     // Started sign-ins survive a host restart (`pending-sign-ins-file.ts`).
     persistPendingSignInsAt(join(getSandRootDir(), "mcp-pending-sign-ins.json"));
-    const backendMcpExec = createVendorMcpBackendExec({ rootDir: getSandRootDir, fallback: accountBackendMcpExec, canStartAuth: true, linkWallet, shopWallet, clientMetadataUrl: hostedMcpOAuthClientUrl(), getServerAccessToken: async () => { try { const token = await deps.auth.getAccessToken({ backendUrl: getSandInferenceBackendUrl() }); return token.length > 0 ? token : null; } catch { return null; } }, log: deps.log });
+    const backendMcpExec = createVendorMcpBackendExec({ rootDir: getSandRootDir, fallback: accountBackendMcpExec, canStartAuth: true, linkWallet, shopWallet, clientMetadataUrl: hostedMcpOAuthClientUrl(), getServerAccessToken: serverAccessToken, log: deps.log });
     this.backendMcpExec = backendMcpExec;
     this.accountBackendMcpExec = accountBackendMcpExec;
     this.hostMcp = createHostMcp({

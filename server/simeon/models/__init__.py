@@ -35,6 +35,7 @@ from .desktop_billing import (
     DesktopSubscription,
     DesktopTrialRedemption,
 )
+from .desktop_link import DesktopLinkWallet
 from .desktop_share import (
     DesktopShareEvent,
     DesktopShareJoinRequest,
@@ -165,6 +166,7 @@ __all__ = [
     "DesktopAppStoreSubscription",
     "DesktopFreeTrial",
     "DesktopAuthCode",
+    "DesktopLinkWallet",
     "DesktopMemoryFile",
     "DesktopSession",
     "DesktopShareEvent",

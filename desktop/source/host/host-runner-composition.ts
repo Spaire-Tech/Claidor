@@ -195,9 +195,7 @@ import { HOST_LOG_PREFIX, logHostLine } from "../shared/host-log.js";
 import { configuredSimeonModel } from "./extensions/inference/provider-session.js";
 import { BOX_CHROME_PORTS, captureCheckout, fetchCheckoutIcon } from "../shared/node/link-wallet/checkout-fill.js";
 import type { LinkTools } from "../shared/node/link-wallet/link-tools.js";
-import { linkAuthFile } from "../shared/node/link-wallet/link-cli.js";
 import type { ShopTools } from "../shared/node/shop-wallet/shop-tools.js";
-import { existsSync } from "node:fs";
 import type { WalletCheckoutFacts } from "./runner/tools/purchase-tool.js";
 
 // The model id the composition projects onto the loop (parentModelInfo,
@@ -2395,8 +2393,8 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
                 if (asked != null) return await from(asked);
                 const notConnected = (answer: WalletCheckoutFacts): boolean => !answer.ok && /isn't connected/.test(answer.message);
                 const neither: WalletCheckoutFacts = { ok: false, message: "Neither Link nor Shop is connected, so nothing can be paid yet. Propose one with ProposeConnector (Link pays at any store; Shop pays with the person's Shop card), or call AuthenticateMcpServer for one that's installed; then call RequestPurchase again." };
-                // Link first when it has a sign-in on this computer (or Shop has none), so a person with only Shop connected never starts Link's CLI (its first run installs it).
-                const linkFirst = link != null && (shop == null || existsSync(linkAuthFile(getSandRootDir())) || !shop.hasSignIn());
+                // Link first when it has a sign-in (this computer's, or the server's) or Shop has none, so a person with only Shop connected never starts Link's CLI (its first run installs it).
+                const linkFirst = link != null && (shop == null || link.hasSignIn() || !shop.hasSignIn());
                 const [first, second] = linkFirst ? ["link", "shop"] as const : ["shop", "link"] as const;
                 if ((first === "link" ? link : shop) == null) return await from(second);
                 const tried = await from(first);
