@@ -180,34 +180,34 @@ class TestSeedPlatformProducts:
         ).scalar_one()
         assert legacy_count == 0
 
-        # Standard — monthly $20 + annual $192 (20% off 12 × $20 = $240).
+        # Standard — monthly $30 + annual $288 (20% off 12 × $30 = $360).
         standard_monthly = await _find("standard", "month")
         assert standard_monthly.name == "Simeon Standard"
         assert standard_monthly.trial_interval_count == 7
         standard_monthly_price = await _price_for(standard_monthly)
         assert isinstance(standard_monthly_price, ProductPriceFixed)
-        assert standard_monthly_price.price_amount == 2000
+        assert standard_monthly_price.price_amount == 3000
 
         standard_annual = await _find("standard", "year")
         assert standard_annual.name == "Simeon Standard (Annual)"
         assert standard_annual.trial_interval_count == 7
         standard_annual_price = await _price_for(standard_annual)
         assert isinstance(standard_annual_price, ProductPriceFixed)
-        assert standard_annual_price.price_amount == 19200  # $192.00
+        assert standard_annual_price.price_amount == 28800  # $288.00
 
-        # Pro — monthly $60 + annual $576.
+        # Pro — monthly $100 + annual $960.
         pro_monthly = await _find("pro", "month")
         assert pro_monthly.name == "Simeon Pro"
         assert pro_monthly.trial_interval_count == 7
         pro_monthly_price = await _price_for(pro_monthly)
         assert isinstance(pro_monthly_price, ProductPriceFixed)
-        assert pro_monthly_price.price_amount == 6000
+        assert pro_monthly_price.price_amount == 10000
 
         pro_annual = await _find("pro", "year")
         assert pro_annual.name == "Simeon Pro (Annual)"
         pro_annual_price = await _price_for(pro_annual)
         assert isinstance(pro_annual_price, ProductPriceFixed)
-        assert pro_annual_price.price_amount == 57600  # $576.00
+        assert pro_annual_price.price_amount == 96000  # $960.00
 
         # Max — monthly $200 + annual $1,920.
         max_monthly = await _find("max", "month")
@@ -269,7 +269,7 @@ class TestSeedPlatformProducts:
         assert isinstance(active[0], ProductPriceFixed)
         assert active[0].price_amount == 2500
         assert isinstance(archived[0], ProductPriceFixed)
-        assert archived[0].price_amount == 2000
+        assert archived[0].price_amount == 3000
 
     async def test_configure_platform_org_enables_multiple_subscriptions(
         self,

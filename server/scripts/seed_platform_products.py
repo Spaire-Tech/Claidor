@@ -165,7 +165,7 @@ class PriceSpec:
     price_currency: str = "usd"
     price_amount_cents: int | None = None  # required if amount_type == fixed
     # tax_behavior=inclusive on Standard/Pro/Max means the headline
-    # price ($20 / $60 / $200) is what the person pays — Simeon Labs absorbs
+    # price ($30 / $100 / $200) is what the person pays — Simeon Labs absorbs
     # the sales tax internally rather than tacking it on top. Legacy stays
     # None (no tax to compute on a $0 product).
     tax_behavior: TaxBehaviorOption | None = None
@@ -187,28 +187,28 @@ class ProductSpec:
 
 
 _STANDARD_DESCRIPTION = (
-    "For a light week of work. 3,750,000 credits a week: about thirty tasks. "
+    "For a light week of work. 5,000,000 credits a week: about fifty tasks. "
     "Every agent and every feature, a cloud computer for each agent, "
     "routines that run while your Mac is closed. 7 days free, card on file."
 )
 _PRO_DESCRIPTION = (
-    "For agents working every day. 12,500,000 credits a week, three times "
+    "For agents working every day. 17,500,000 credits a week, 3.5 times "
     "Standard, with room for routines that run every day. 7 days free, "
     "card on file."
 )
 _MAX_DESCRIPTION = (
-    "For a team of agents that never stops. 40,000,000 credits a week, "
-    "eleven times Standard: agents on routines all week long. Our highest "
+    "For a team of agents that never stops. 60,000,000 credits a week, "
+    "twelve times Standard: agents on routines all week long. Our highest "
     "allowance. 7 days free, card on file."
 )
 
 # Annual = 20% off the monthly run-rate, whole dollars, and what the site
-# shows: $16, $48 and $160 a month billed yearly.
-#   $20/mo  -> $192/yr
-#   $60/mo  -> $576/yr
+# shows: $24, $80 and $160 a month billed yearly.
+#   $30/mo  -> $288/yr
+#   $100/mo -> $960/yr
 #   $200/mo -> $1,920/yr
-_ANNUAL_STANDARD_CENTS = 19200
-_ANNUAL_PRO_CENTS = 57600
+_ANNUAL_STANDARD_CENTS = 28800
+_ANNUAL_PRO_CENTS = 96000
 _ANNUAL_MAX_CENTS = 192000
 
 # Every plan starts with the same trial: seven days, card on file, charged
@@ -256,9 +256,9 @@ def _plan_specs(
 
 PRODUCT_SPECS: list[ProductSpec] = [
     *_plan_specs(
-        "standard", "Standard", _STANDARD_DESCRIPTION, 2000, _ANNUAL_STANDARD_CENTS
+        "standard", "Standard", _STANDARD_DESCRIPTION, 3000, _ANNUAL_STANDARD_CENTS
     ),
-    *_plan_specs("pro", "Pro", _PRO_DESCRIPTION, 6000, _ANNUAL_PRO_CENTS),
+    *_plan_specs("pro", "Pro", _PRO_DESCRIPTION, 10000, _ANNUAL_PRO_CENTS),
     *_plan_specs("max", "Max", _MAX_DESCRIPTION, 20000, _ANNUAL_MAX_CENTS),
 ]
 

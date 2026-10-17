@@ -85,6 +85,6 @@ public enum PlansCopy {
   /** Where an Apple plan is changed or cancelled (also the server's words, `MANAGE_ON_IPHONE`). */
   public static let manageInSettings = "Your plan is billed through Apple. Change or cancel it in Settings › your name › Subscriptions."
 
-  /** "$20.00 per month" from StoreKit's own price text. */
+  /** "$30.00 per month" from StoreKit's own price text. */
   public static func price(_ display: String, yearly: Bool = false) -> String { "\(display) per \(yearly ? "year" : "month")" }
 }

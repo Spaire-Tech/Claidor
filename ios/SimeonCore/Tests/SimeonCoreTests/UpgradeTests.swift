@@ -25,7 +25,7 @@ final class UpgradeTests: XCTestCase {
     let trialSpent = usage(["subscriptionStatus": "trialing", "creditsLimit": 5_000_000, "creditsUsed": 5_000_000, "creditsRemaining": 0])
     XCTAssertEqual(PhoneUpgrade.banner(access: granted, usage: trialSpent)?.title, "You’ve used your free credits")
     XCTAssertEqual(PhoneUpgrade.banner(access: granted, usage: trialSpent)?.action, "Upgrade")
-    let weekSpent = usage(["subscriptionStatus": "active", "tier": "standard", "creditsLimit": 3_750_000, "creditsUsed": 3_750_000, "creditsRemaining": 0])
+    let weekSpent = usage(["subscriptionStatus": "active", "tier": "standard", "creditsLimit": 5_000_000, "creditsUsed": 5_000_000, "creditsRemaining": 0])
     XCTAssertEqual(PhoneUpgrade.banner(access: granted, usage: weekSpent)?.title, "This week’s credits are used")
     // The server's 402 in the chat, before there is a summary.
     XCTAssertEqual(PhoneUpgrade.banner(access: granted, usage: nil, outOfCredits: true)?.title, "You’re out of credits")

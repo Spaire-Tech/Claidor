@@ -72,7 +72,7 @@ public enum DemoData {
     return [
       you("x0u", 90, "Show me everything you can send me.", now: now),
       says("x1", 89, "## A heading\n\nSome `inline code`, *italic*, ~~struck~~ and [a link](https://simeonlabs.com). Iris and Theo use **Stripe** and Google Calendar.\n\n- bullet one\n  - nested bullet\n- [ ] a task\n- [x] a done task\n\n> a quote from someone\n\n```js\nconst a = 1;\n```\n\n| Name | Price |\n|:--|--:|\n| Tea | 3 |\n| Coffee | 4 |\n\n---\n\n### Smaller heading\n\nEnd.", now: now),
-      card("x2", 88, ["type": "widget", "widget": ["prompt": "Which plan should I buy?", "helpText": "Both renew monthly.", "options": [["label": "Pro", "description": "$20 a month"], ["label": "Team"]], "allowCustom": true]], now: now),
+      card("x2", 88, ["type": "widget", "widget": ["prompt": "Which plan should I buy?", "helpText": "Both renew monthly.", "options": [["label": "Pro", "description": "$100 a month"], ["label": "Team"]], "allowCustom": true]], now: now),
       card("x3", 87, ["type": "widget", "widget": ["prompt": "Send the reminder now?", "options": [["label": "Yes"], ["label": "Later"]]]], now: now).setting("respondedValue", "Yes"),
       card("x4", 86, ["type": "widget", "widget": ["prompt": "Archive the old tickets?", "options": [["label": "Yes"], ["label": "No"]]]], now: now).setting("widgetDismissed", true),
       card("x5", 85, ["type": "email-draft", "draft": ["from": "bass@simeonlabs.com", "to": ["dana@brightline.com"], "subject": "Your refund", "body": "Hi Dana,\n\nThe $960 refund for September is on its way. It should reach your card in 5 to 10 days.\n\nBest,\nBass"]], now: now),

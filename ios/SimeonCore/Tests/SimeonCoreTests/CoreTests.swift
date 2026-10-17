@@ -491,7 +491,7 @@ final class ChatTests: XCTestCase {
     XCTAssertEqual(FlightsCard.initials("Alaska Airlines"), "AL")
     XCTAssertEqual(FlightsCard.initials("Delta Air Lines"), "DL")
     guard case .question(_, let question) = rows.first(where: { if case .question = $0 { return true }; return false })! else { return XCTFail() }
-    XCTAssertEqual(question.options[0], QuestionOption(label: "Pro", description: "$20 a month"))
+    XCTAssertEqual(question.options[0], QuestionOption(label: "Pro", description: "$100 a month"))
   }
 
   func testExchangesAndRoutinesAreWordedLikeTheWindow() {

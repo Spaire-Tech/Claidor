@@ -29,9 +29,9 @@ class TestPlans:
         assert response.status_code == 200
         items = response.json()["items"]
         assert [item["tier"] for item in items] == ["standard", "pro", "max"]
-        assert items[0]["monthly_price_cents"] == 2000
-        assert items[0]["annual_price_cents"] == 19200
-        assert items[0]["weekly_credits"] == 3_750_000
+        assert items[0]["monthly_price_cents"] == 3000
+        assert items[0]["annual_price_cents"] == 28800
+        assert items[0]["weekly_credits"] == 5_000_000
         assert items[0]["trial_days"] == 30
         assert items[2]["monthly_lookup_key"] == "simeon_max_month"
 

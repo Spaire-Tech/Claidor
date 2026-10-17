@@ -256,7 +256,7 @@ const CARD_COPY: Record<
     tag: 'For agents working every day',
     includes: 'Everything in Standard, plus:',
     lines: [
-      'Three times the weekly work of Standard',
+      '3.5 times the weekly work of Standard',
       'Room for routines that run every day',
     ],
   },
@@ -264,7 +264,7 @@ const CARD_COPY: Record<
     tag: 'For a team of agents that never stops',
     includes: 'Everything in Pro, plus:',
     lines: [
-      'Eleven times the weekly work of Standard',
+      'Twelve times the weekly work of Standard',
       'Agents on routines all week long',
       'Our highest allowance',
     ],
