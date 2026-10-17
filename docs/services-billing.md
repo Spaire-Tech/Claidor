@@ -29,18 +29,18 @@ unset. The code stays with the inherited shop
 
 ## 1. The plans
 
-| Plan | Monthly (web) | Yearly (web) | Monthly (iPhone) | Credits a week | Trial |
-|---|---|---|---|---|---|
-| Standard | $30 | $288 | $29.99 | 5,000,000 | 30 days, 5,000,000 credits once |
-| Pro | $100 | $960 | $99.99 | 17,500,000 (3.5 × Standard) | same |
-| Max | $200 | $1,920 | $199.99 | 60,000,000 (12 × Standard) | same |
+| Plan | Monthly (web and iPhone) | Yearly (web) | Credits a week | Trial |
+|---|---|---|---|---|
+| Standard | $30 | $288 | 5,000,000 | 30 days, 5,000,000 credits once |
+| Pro | $100 | $960 | 17,500,000 (3.5 × Standard) | same |
+| Max | $200 | $1,920 | 60,000,000 (12 × Standard) | same |
 
 The prices and allowances changed on 17 October 2026 (from $20, $60 and
 $200, with 3,750,000, 12,500,000 and 40,000,000 credits a week). Before that,
 every allowance was five times what it was until 8 October 2026 (the founder:
 "a simple onboarding run eats it all. multiply all by 5. at least for now").
 The yearly prices stay twenty percent off twelve months (`YEARLY_DISCOUNT`).
-The iPhone sells the monthly plans only, at Apple's nearest price points.
+The iPhone sells the monthly plans only, at the same prices as the web.
 At list price the week's credits of each plan cost more than the plan when
 fully used; the plans are priced for the person who comes back.
 
@@ -497,9 +497,9 @@ so a renamed product is a setting, not an app release.
 
 | Product id | Price (US) | Level in the group |
 |---|---|---|
-| `com.simeonlabs.simeon.max.monthly` | $199.99 a month | 1 |
-| `com.simeonlabs.simeon.pro.monthly` | $99.99 a month | 2 |
-| `com.simeonlabs.simeon.standard.monthly` | $29.99 a month | 3 |
+| `com.simeonlabs.simeon.max.monthly` | $200.00 a month | 1 |
+| `com.simeonlabs.simeon.pro.monthly` | $100.00 a month | 2 |
+| `com.simeonlabs.simeon.standard.monthly` | $30.00 a month | 3 |
 | `com.simeonlabs.simeon.<tier>.yearly` | not sold on the iPhone | same as monthly |
 
 The iPhone sells the three monthly plans (17 October 2026; $20.00, $60.00
@@ -510,8 +510,8 @@ month replaces it (section 10). The levels make a move between plans an
 upgrade (at once, prorated by Apple) or a downgrade (at the next renewal),
 as Apple's own sheet does them.
 
-Apple sets the price points, so the iPhone's prices are a cent under the
-web's. The yearly products may exist in App Store Connect without a
+The monthly prices are the web's to the cent: Apple has $30.00, $100.00
+and $200.00 price points. The yearly products may exist in App Store Connect without a
 price; the sheet shows only what the App Store returns (`Purchases.sold`).
 Max yearly ($1,920 on the web) is above Apple's standard price points,
 which stop at $1,000.

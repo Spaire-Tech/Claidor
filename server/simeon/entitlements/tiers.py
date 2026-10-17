@@ -255,7 +255,7 @@ _INACTIVE = TierEntitlements(
 #: iPhone app's free month gives the same (`simeon.plans.free_month`).
 TRIAL_CREDITS = 5_000_000
 
-# Standard, $30 a month on the web ($29.99 on the iPhone): 5,000,000 credits a
+# Standard, $30 a month on the web and the iPhone: 5,000,000 credits a
 # week (3,750,000 until 17 October 2026, 750,000 until 8 October 2026).
 # Model cost at list is more than the price when the week is used up; the
 # plan is priced for the person who comes back, not the heaviest week.
@@ -322,7 +322,7 @@ _STANDARD = TierEntitlements(
 )
 
 
-# Pro, $100 a month on the web ($99.99 on the iPhone): 17,500,000 credits a
+# Pro, $100 a month on the web and the iPhone: 17,500,000 credits a
 # week (12,500,000 until 17 October 2026), 3.5 times Standard. Room for
 # routines that run every day.
 _PRO = TierEntitlements(
@@ -369,7 +369,7 @@ _PRO = TierEntitlements(
 )
 
 
-# Max, $200 a month on the web ($199.99 on the iPhone): 60,000,000 credits a
+# Max, $200 a month on the web and the iPhone: 60,000,000 credits a
 # week (40,000,000 until 17 October 2026), twelve times Standard. Agents on
 # routines all week long.
 _MAX = TierEntitlements(

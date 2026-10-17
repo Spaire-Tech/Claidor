@@ -37,7 +37,7 @@ final class ApplePlansTests: XCTestCase {
   }
 
   func testTheSheetSaysPricePeriodRenewalAndHowToCancel() {
-    XCTAssertEqual(PlansCopy.price("$29.99"), "$29.99 per month")
+    XCTAssertEqual(PlansCopy.price("$30.00"), "$30.00 per month")
     XCTAssertEqual(PlansCopy.price("$288.00", yearly: true), "$288.00 per year")
     XCTAssertTrue(PlansCopy.renewal.contains("Auto-renews monthly"))
     XCTAssertTrue(PlansCopy.renewal.contains("until you cancel in Settings"))
