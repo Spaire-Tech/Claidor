@@ -168,7 +168,7 @@ public struct ConnectConsent: Identifiable, Equatable, Sendable {
     "onenote": "your notebooks, sections and pages",
     "microsoft-to-do": "your tasks and lists",
     "lovable": "your projects, workspaces and their code",
-    // 17 October 2026: the 53 added that day.
+    // 17 October 2026: the ones added that day (the Zoho apps left the same day).
     "whatsapp": "your WhatsApp Business messages and templates",
     "twitch": "your channel, streams, clips and chat",
     "reddit-ads": "campaigns, ad groups, ads and reports",
@@ -192,13 +192,10 @@ public struct ConnectConsent: Identifiable, Equatable, Sendable {
     "google-maps": "places, directions and travel times",
     "webex": "your meetings, recordings and messages",
     "fathom": "your recorded meetings, summaries and transcripts",
-    "zoho-mail": "your email and folders",
     "freshbooks": "invoices, clients, expenses and time",
-    "zoho-books": "invoices, bills, contacts and your books",
     "ynab": "your budgets, accounts and transactions",
     "splitwise": "your shared expenses, groups and balances",
     "shippo": "shipping rates, labels and tracking",
-    "zoho-crm": "leads, contacts, deals and accounts",
     "dynamics-365": "leads, accounts, contacts and opportunities",
     "gitlab": "projects, issues, merge requests and pipelines",
     "bitbucket": "repositories, pull requests and pipelines",
@@ -245,7 +242,7 @@ public struct ConnectConsent: Identifiable, Equatable, Sendable {
   ]
 
   /** Apps where money moves for real. */
-  static let money: Set<String> = ["stripe", "paypal", "square", "ramp", "brex", "quickbooks", "xero", "gusto", "freshbooks", "zoho-books"]
+  static let money: Set<String> = ["stripe", "paypal", "square", "ramp", "brex", "quickbooks", "xero", "gusto", "freshbooks"]
 
   /** One more thing worth knowing about an app. */
   static let notes: [String: String] = [
@@ -271,7 +268,6 @@ public struct ConnectConsent: Identifiable, Equatable, Sendable {
     "notebooklm": "Works with NotebookLM Enterprise in a licensed Google Cloud project, not the free NotebookLM.",
     "reddit-ads": "Changes to live campaigns and budgets can spend money.",
     "pinterest-ads": "Changes to live campaigns and budgets can spend money.",
-    "zoho-mail": "Emails your agents send go out from your own address.",
     "pandadoc": "Documents your agents send go out in your name.",
     "shippo": "Labels your agents buy are charged to your Shippo account.",
     "gitlab": "Your agents act with your GitLab access, in every project you can reach.",

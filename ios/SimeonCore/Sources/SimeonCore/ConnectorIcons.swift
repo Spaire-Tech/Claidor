@@ -7,7 +7,8 @@ import Foundation
  * ("monday.com", "Facebook Pages", "Excel"), the assets by the catalogue's id
  * ("monday", "facebook", "microsoft-excel"). The logos were looked up by the
  * title's slug, and five titles' slugs are not their id, so those five drew a
- * letter. An id, a title, its slug, or a name the agents and the box use for
+ * letter (Bigin by Zoho, one of the five, left the store on 17 October
+ * 2026). An id, a title, its slug, or a name the agents and the box use for
  * the app all find it here.
  */
 public enum ConnectorIcons {
@@ -16,7 +17,6 @@ public enum ConnectorIcons {
     "facebook": "facebook", "meta business suite": "facebook",
     "monday": "monday",
     "excel": "microsoft-excel", "microsoft excel": "microsoft-excel",
-    "bigin": "zoho-bigin", "zoho bigin": "zoho-bigin",
     "capsule crm": "capsule-crm",
     "microsoft outlook": "outlook",
     "microsoft onedrive": "onedrive",

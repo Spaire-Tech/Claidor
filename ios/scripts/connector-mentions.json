@@ -1,11 +1,10 @@
 {
-  "about": "Apps a message can name in the iPhone and Mac apps beyond the Mac window's list (desktop/brand/app-logos/apps.json, which the web window also reads): the connectors added since (14 October 2026; 51 more on 17 October 2026, WhatsApp and Typeform being in the Mac's list already). make-assets.mjs draws each logo into Brands/<key> and adds the spellings to GeneratedBrands.swift. color is the brand's colour (made readable on the message bubble the same way); mono marks a one-colour logo drawn in the name's colour; ordinaryWord marks a name that is also an everyday word, not marked as the first word of a sentence ('Link your account'). aliases name an app already in the list another way.",
+  "about": "Apps a message can name in the iPhone and Mac apps beyond the Mac window's list (desktop/brand/app-logos/apps.json, which the web window also reads): the connectors added since (14 October 2026; 48 more on 17 October 2026, WhatsApp and Typeform being in the Mac's list already, and the Zoho apps gone the same day). make-assets.mjs draws each logo into Brands/<key> and adds the spellings to GeneratedBrands.swift. color is the brand's colour (made readable on the message bubble the same way); mono marks a one-colour logo drawn in the name's colour; ordinaryWord marks a name that is also an everyday word, not marked as the first word of a sentence ('Link your account'). aliases name an app already in the list another way.",
   "apps": [
     { "name": "Apollo", "key": "apollo", "logo": "connector-logos/apollo.svg", "color": "#EBF212", "ordinaryWord": true },
     { "name": "Ashby", "key": "ashby", "logo": "connector-logos/ashby.svg", "color": "#2D21CD" },
     { "name": "Attio", "key": "attio", "logo": "connector-logos/attio.svg", "color": "#1C1D1F", "mono": true },
     { "name": "Basecamp", "key": "basecamp", "logo": "connector-logos/basecamp.svg", "color": "#38B048", "ordinaryWord": true },
-    { "name": "Bigin by Zoho", "key": "zoho-bigin", "logo": "connector-logos/zoho-bigin.svg", "color": "#23AE73" },
     { "name": "Bitbucket", "key": "bitbucket", "logo": "connector-logos/bitbucket.svg", "color": "#2684FF" },
     { "name": "Box", "key": "box", "logo": "connector-logos/box.svg", "color": "#0061D5", "ordinaryWord": true },
     { "name": "Brex", "key": "brex", "logo": "connector-logos/brex.svg", "color": "#171717" },
@@ -84,11 +83,7 @@
     { "name": "Wix", "key": "wix", "logo": "connector-logos/wix.svg", "color": "#000000", "mono": true },
     { "name": "Wrike", "key": "wrike", "logo": "connector-logos/wrike.svg", "color": "#08CF65" },
     { "name": "YNAB", "key": "ynab", "logo": "connector-logos/ynab.svg", "color": "#5058F8" },
-    { "name": "Zeplin", "key": "zeplin", "logo": "connector-logos/zeplin.svg", "color": "#FDBD39" },
-    { "name": "Zoho Books", "key": "zoho-books", "logo": "connector-logos/zoho-books.svg", "color": "#226DB4" },
-    { "name": "Zoho CRM", "key": "zoho-crm", "logo": "connector-logos/zoho-crm.svg", "color": "#0068B8" },
-    { "name": "Zoho Desk", "key": "zoho-desk", "logo": "connector-logos/zoho-desk.svg", "color": "#E42527" },
-    { "name": "Zoho Mail", "key": "zoho-mail", "logo": "connector-logos/zoho-mail.svg", "color": "#226DB4" }
+    { "name": "Zeplin", "key": "zeplin", "logo": "connector-logos/zeplin.svg", "color": "#FDBD39" }
   ],
   "aliases": [
     { "name": "Facebook Pages", "key": "facebook" },

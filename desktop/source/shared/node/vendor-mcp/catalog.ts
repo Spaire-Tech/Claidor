@@ -77,6 +77,23 @@ function app(connector: Omit<VendorMcpConnector, "url" | "appsToolkit" | "coming
   return { ...connector, appsToolkit: toolkit, get url() { return appsMcpUrl(toolkit); } };
 }
 
+/**
+ * A connector taken out of the store keeps its place in the list, so no other
+ * connector's server id moves (17 October 2026, the founder: "Can we remove
+ * all zohos"). The place is listed nowhere and answers no plugin id.
+ */
+interface RetiredPlace {
+  readonly retired: string;
+}
+
+function retired(id: string): RetiredPlace {
+  return { retired: id };
+}
+
+function isConnector(place: VendorMcpConnector | RetiredPlace): place is VendorMcpConnector {
+  return !("retired" in place);
+}
+
 const G = VENDOR_MCP_GROUP;
 
 /**
@@ -88,7 +105,7 @@ const G = VENDOR_MCP_GROUP;
  * our server (13 October 2026, `oauth.ts`); Shopify's takes only the clients
  * it has approved, so Shopify stays with our apps service for now.
  */
-export const VENDOR_MCP_CONNECTORS: readonly VendorMcpConnector[] = [
+const VENDOR_MCP_PLACES: readonly (VendorMcpConnector | RetiredPlace)[] = [
   app({ id: "gmail", name: "Gmail", category: G.MailCalendar, description: "Search, read, draft, and manage email." }, "gmail"),
   app({ id: "outlook", name: "Outlook", category: G.MailCalendar, description: "Mail and Microsoft 365 calendar." }, "outlook"),
   app({ id: "google-calendar", name: "Google Calendar", category: G.MailCalendar, description: "Search events and schedule meetings." }, "googlecalendar"),
@@ -173,8 +190,8 @@ export const VENDOR_MCP_CONNECTORS: readonly VendorMcpConnector[] = [
   app({ id: "gumroad", name: "Gumroad", category: G.Finance, description: "Products, sales, and subscribers." }, "gumroad"),
   app({ id: "google-classroom", name: "Google Classroom", category: G.Learning, description: "Courses, assignments, students, and grades." }, "google_classroom"),
   { id: "gorgias", name: "Gorgias", category: G.Sales, url: "https://mcp.gorgias.com/mcp", description: "Support tickets, customers, and replies for your store." },
-  app({ id: "zoho-desk", name: "Zoho Desk", category: G.Sales, description: "Support tickets, contacts, and agents." }, "zoho_desk"),
-  app({ id: "zoho-bigin", name: "Bigin by Zoho", category: G.Sales, description: "Contacts, deals, and pipelines in a small-business CRM." }, "zoho_bigin"),
+  retired("zoho-desk"),
+  retired("zoho-bigin"),
   { id: "gong", name: "Gong", category: G.Sales, url: "https://mcp.gong.io/mcp", description: "Sales calls, transcripts, and deal insights." },
   app({ id: "capsule-crm", name: "Capsule", category: G.Sales, description: "Contacts, opportunities, and tasks in your CRM." }, "capsule_crm"),
   app({ id: "dialpad", name: "Dialpad", category: G.Sales, description: "Calls, texts, contacts, and call summaries." }, "dialpad"),
@@ -206,6 +223,7 @@ export const VENDOR_MCP_CONNECTORS: readonly VendorMcpConnector[] = [
   // 17 October 2026, the founder ("a lot more connectors … the best out there, most famous for each category"): the 36 whose
   // Composio toolkit page says "Composio-managed OAuth available? Yes", so Add works in one tap, read from Composio's toolkit
   // pages that day. NotebookLM's is NotebookLM Enterprise (a licensed Google Cloud project), and WhatsApp's is WhatsApp Business.
+  // Zoho Mail, Zoho Books and Zoho CRM were retired the same day, with Zoho Desk and Bigin (the founder: "remove all zohos").
   app({ id: "whatsapp", name: "WhatsApp", category: G.Social, description: "Messages and templates on your WhatsApp Business account. Not personal WhatsApp." }, "whatsapp"),
   app({ id: "twitch", name: "Twitch", category: G.Social, description: "Your channel, streams, clips, and chat." }, "twitch"),
   app({ id: "reddit-ads", name: "Reddit Ads", category: G.Marketing, description: "Campaigns, ad groups, ads, and reports." }, "reddit_ads"),
@@ -229,13 +247,13 @@ export const VENDOR_MCP_CONNECTORS: readonly VendorMcpConnector[] = [
   app({ id: "google-maps", name: "Google Maps", category: G.Productivity, description: "Places, directions, and travel times." }, "google_maps"),
   app({ id: "webex", name: "Webex", category: G.Meetings, description: "Meetings, recordings, and messages." }, "webex"),
   app({ id: "fathom", name: "Fathom", category: G.Meetings, description: "Your recorded meetings, summaries, and transcripts." }, "fathom"),
-  app({ id: "zoho-mail", name: "Zoho Mail", category: G.MailCalendar, description: "Search, read, and send email." }, "zoho_mail"),
+  retired("zoho-mail"),
   app({ id: "freshbooks", name: "FreshBooks", category: G.Finance, description: "Invoices, clients, expenses, and time." }, "freshbooks"),
-  app({ id: "zoho-books", name: "Zoho Books", category: G.Finance, description: "Invoices, bills, contacts, and your books." }, "zoho_books"),
+  retired("zoho-books"),
   app({ id: "ynab", name: "YNAB", category: G.Finance, description: "Budgets, accounts, and transactions (You Need A Budget)." }, "ynab"),
   app({ id: "splitwise", name: "Splitwise", category: G.Finance, description: "Shared expenses, groups, and who owes whom." }, "splitwise"),
   app({ id: "shippo", name: "Shippo", category: G.Finance, description: "Shipping rates, labels, and tracking." }, "shippo"),
-  app({ id: "zoho-crm", name: "Zoho CRM", category: G.Sales, description: "Leads, contacts, deals, and accounts." }, "zoho"),
+  retired("zoho-crm"),
   app({ id: "dynamics-365", name: "Dynamics 365", category: G.Sales, description: "Leads, accounts, contacts, and opportunities in Microsoft Dynamics." }, "dynamics365"),
   app({ id: "gitlab", name: "GitLab", category: G.Developer, description: "Projects, issues, merge requests, and pipelines." }, "gitlab"),
   app({ id: "bitbucket", name: "Bitbucket", category: G.Developer, description: "Repositories, pull requests, and pipelines." }, "bitbucket"),
@@ -265,6 +283,8 @@ export const VENDOR_MCP_CONNECTORS: readonly VendorMcpConnector[] = [
   { id: "neon", name: "Neon", category: G.Developer, url: "https://mcp.neon.tech/mcp", description: "Postgres projects, branches, and SQL." },
 ];
 
+export const VENDOR_MCP_CONNECTORS: readonly VendorMcpConnector[] = VENDOR_MCP_PLACES.filter(isConnector);
+
 const byId = new Map(VENDOR_MCP_CONNECTORS.map((item) => [item.id, item]));
 
 export function vendorMcpConnectorById(id: string): VendorMcpConnector | undefined {
@@ -289,13 +309,16 @@ export function isVendorMcpComingSoon(id: string): boolean {
 export const VENDOR_MCP_SERVER_ID_BASE = 900_000;
 
 export function vendorMcpServerId(pluginId: string): string | undefined {
-  const index = VENDOR_MCP_CONNECTORS.findIndex((item) => item.id === pluginId.trim());
+  const index = VENDOR_MCP_PLACES.findIndex((item) => isConnector(item) && item.id === pluginId.trim());
   return index < 0 ? undefined : String(VENDOR_MCP_SERVER_ID_BASE + index + 1);
 }
 
 export function vendorMcpPluginIdForServerId(serverId: string | number): string | undefined {
   const numeric = typeof serverId === "number" ? serverId : Number(String(serverId).trim());
   if (!Number.isSafeInteger(numeric)) return undefined;
-  const index = numeric - VENDOR_MCP_SERVER_ID_BASE - 1;
-  return index >= 0 && index < VENDOR_MCP_CONNECTORS.length ? VENDOR_MCP_CONNECTORS[index]?.id : undefined;
+  const place = VENDOR_MCP_PLACES[numeric - VENDOR_MCP_SERVER_ID_BASE - 1];
+  return place != null && isConnector(place) ? place.id : undefined;
 }
+
+/** How many places the list has, the retired ones included: the next server id is the base plus this plus one. */
+export const VENDOR_MCP_PLACE_COUNT = VENDOR_MCP_PLACES.length;

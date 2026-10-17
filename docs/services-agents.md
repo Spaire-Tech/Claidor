@@ -461,24 +461,30 @@ and the others marked `app(…)` in
 (Asana, Todoist, Intercom, Klaviyo, Ashby, Calendly, Cal.com, Attio, Gorgias and Gong moved to
 their makers' own servers on 13 October 2026; see 7a.)
 
-36 more joined on 17 October 2026, each one a toolkit whose Composio page that day said
+33 more joined on 17 October 2026, each one a toolkit whose Composio page that day said
 "Composio-managed OAuth available? Yes", so Add works in one tap with nothing to register:
 WhatsApp (Business accounts only), Twitch, Reddit Ads, Pinterest Ads, Omnisend, Dub, Eventbrite,
 Google Photos, Mural, Zeplin, Contentful, Box, Confluence, NotebookLM, Basecamp, Wrike, TickTick,
-Harvest, Typeform, Productboard, Google Maps, Webex, Fathom, Zoho Mail, FreshBooks, Zoho Books,
-YNAB, Splitwise, Shippo, Zoho CRM, Dynamics 365, GitLab, Bitbucket, PagerDuty, Google BigQuery and
-Hugging Face. The server serves any toolkit slug, so `apps.py` needed nothing. Composio's
-NotebookLM toolkit is **NotebookLM Enterprise** (a licensed Google Cloud project), not the free
-NotebookLM, and the card and the consent sheet say so. Not verified on a device yet: a real
-sign-in and a tool call through each of them.
+Harvest, Typeform, Productboard, Google Maps, Webex, Fathom, FreshBooks, YNAB, Splitwise, Shippo,
+Dynamics 365, GitLab, Bitbucket, PagerDuty, Google BigQuery and Hugging Face. The server serves any
+toolkit slug, so `apps.py` needed nothing. Composio's NotebookLM toolkit is **NotebookLM
+Enterprise** (a licensed Google Cloud project), not the free NotebookLM, and the card and the
+consent sheet say so. Not verified on a device yet: a real sign-in and a tool call through each of
+them.
+
+**No Zoho apps** (17 October 2026, the founder: "Can we remove all zohos"): Zoho Desk, Bigin by
+Zoho, and the Zoho Mail, Zoho Books and Zoho CRM added that morning are gone from the store, the
+logos, the chat and the consent sheet. Each keeps its place in `catalog.ts` as `retired("…")`:
+a connector's server id is its place in the list, and connect cards in old chats carry those ids,
+so no other connector's id moves, and a retired id answers no connector. A Zoho app someone had
+added stays in their install file but is listed nowhere and reached by nothing.
 
 Each new connector has, like the others: its mark in `desktop/brand/connector-logos` (Composio's
-logo service, except Zoho Mail, Zoho Books and Zoho CRM, which it answers with the Zoho company
-logo, cropped from Zoho's own product logos, and Dynamics 365, which it answers with Microsoft's
-four squares, cropped from Wikimedia Commons' Dynamics 365 logo); its app tile from its iOS app
-on the App Store, or its mark on its ground when it has none (`ios/scripts/app_icons.py`); its
-colour and logo in the chat (`ios/scripts/connector-mentions.json`; WhatsApp and Typeform were in
-the Mac window's list already); and its line on the consent sheet (`ConnectConsent.swift`). The
+logo service, except Dynamics 365, which it answers with Microsoft's four squares, cropped from
+Wikimedia Commons' Dynamics 365 logo); its app tile from its iOS app on the App Store, or its mark
+on its ground when it has none (`ios/scripts/app_icons.py`); its colour and logo in the chat
+(`ios/scripts/connector-mentions.json`; WhatsApp and Typeform were in the Mac window's list
+already); and its line on the consent sheet (`ConnectConsent.swift`). The
 agents know them from the catalogue (`SIMEON_CONNECTOR_NAMES` in their brief, and SearchPlugins).
 
 **How it works.**

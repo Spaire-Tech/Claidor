@@ -66,7 +66,7 @@ function vendorFixture({ token = "tok-1", expiresIn = 3600, refreshed = "tok-2",
 test("a vendor connector has a stable numeric server id and reads back as a plugin id", async () => {
   const { module, dispose } = await load("source/shared/node/vendor-mcp/catalog.ts", "vendor-ids");
   try {
-    const { vendorMcpServerId, vendorMcpPluginIdForServerId, VENDOR_MCP_SERVER_ID_BASE, VENDOR_MCP_CONNECTORS } = module;
+    const { vendorMcpServerId, vendorMcpPluginIdForServerId, VENDOR_MCP_SERVER_ID_BASE, VENDOR_MCP_CONNECTORS, VENDOR_MCP_PLACE_COUNT } = module;
     const id = vendorMcpServerId("notion");
     assert.match(id, /^\d+$/);
     assert.ok(Number(id) > VENDOR_MCP_SERVER_ID_BASE);
@@ -74,9 +74,15 @@ test("a vendor connector has a stable numeric server id and reads back as a plug
     assert.equal(vendorMcpPluginIdForServerId(Number(id)), "notion");
     assert.equal(vendorMcpServerId("nope"), undefined);
     assert.equal(vendorMcpPluginIdForServerId("12"), undefined);
-    assert.equal(vendorMcpPluginIdForServerId(String(VENDOR_MCP_SERVER_ID_BASE + VENDOR_MCP_CONNECTORS.length + 1)), undefined);
+    assert.equal(vendorMcpPluginIdForServerId(String(VENDOR_MCP_SERVER_ID_BASE + VENDOR_MCP_PLACE_COUNT + 1)), undefined);
     const ids = VENDOR_MCP_CONNECTORS.map((item) => vendorMcpServerId(item.id));
     assert.equal(new Set(ids).size, ids.length, "every connector has its own id");
+    // The five Zoho apps left the store on 17 October 2026; their places stay, so the connectors after them keep their ids
+    // (the numbers measured before they left), and a connect card from before answers no connector.
+    assert.equal(VENDOR_MCP_PLACE_COUNT, 140);
+    assert.deepEqual(["gorgias", "gong", "shop", "freshbooks", "dynamics-365", "neon"].map(vendorMcpServerId), ["900074", "900077", "900087", "900112", "900118", "900140"]);
+    for (const old of ["900075", "900076", "900111", "900113", "900117"]) assert.equal(vendorMcpPluginIdForServerId(old), undefined, old);
+    assert.equal(vendorMcpServerId("zoho-desk"), undefined);
   } finally {
     await dispose();
   }

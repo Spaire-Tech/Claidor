@@ -770,36 +770,6 @@
   "ground": "#ffffff",
   "fit": "cover"
  },
- "zoho-bigin": {
-  "from": "App Store",
-  "bundleId": "com.zoho.bigin",
-  "app": "Bigin by Zoho CRM",
-  "seller": "Zoho Corporation"
- },
- "zoho-books": {
-  "from": "App Store",
-  "bundleId": "com.zoho.zbooks",
-  "app": "Accounting App - Zoho Books",
-  "seller": "Zoho Corporation"
- },
- "zoho-crm": {
-  "from": "App Store",
-  "bundleId": "com.zoho.zcrm",
-  "app": "Zoho CRM - Sales & Marketing",
-  "seller": "Zoho Corporation"
- },
- "zoho-desk": {
-  "from": "App Store",
-  "bundleId": "com.zoho.zsupport",
-  "app": "Zoho Desk",
-  "seller": "Zoho Corporation"
- },
- "zoho-mail": {
-  "from": "App Store",
-  "bundleId": "com.zoho.zmail",
-  "app": "Zoho Mail - Email and Calendar",
-  "seller": "Zoho Corporation"
- },
  "zoom": {
   "from": "App Store",
   "bundleId": "us.zoom.videomeetings",

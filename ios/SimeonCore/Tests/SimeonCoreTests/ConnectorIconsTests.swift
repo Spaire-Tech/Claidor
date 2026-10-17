@@ -27,7 +27,8 @@ final class ConnectorIconsTests: XCTestCase {
   func testTheFiveThatWereMissing() {
     XCTAssertEqual(ConnectorIcons.id(for: "monday.com"), "monday")
     XCTAssertEqual(ConnectorIcons.id(for: "Facebook Pages"), "facebook")
-    XCTAssertEqual(ConnectorIcons.id(for: "Bigin by Zoho"), "zoho-bigin")
+    // Bigin by Zoho left the store on 17 October 2026, with every Zoho app: no icon of its own any more.
+    XCTAssertNil(ConnectorIcons.id(for: "Bigin by Zoho"))
     XCTAssertEqual(ConnectorIcons.id(for: "Capsule"), "capsule-crm")
     XCTAssertEqual(ConnectorIcons.id(for: "Excel"), "microsoft-excel")
   }
