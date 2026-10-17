@@ -14,14 +14,19 @@
 //     a file only this computer can read, types it into the checkout page
 //     through Chrome's DevTools port (`checkout-fill.ts`) and deletes it, and
 //     every answer here is scrubbed of card numbers, codes and tokens.
-// The sign-in is Link's device flow: `auth login` gives a link.com page that
-// already carries the code, the apps open it in their sign-in sheet, and
-// `auth status` finishes it once the person approved.
+// The sign-in (17 October 2026) is Simeon Labs' own Link client, through the
+// server (`link-server.ts`): the apps open the server's link in their sign-in
+// sheet, the person approves "Simeon" on Link's page, and the server keeps
+// the tokens and hands each command an access token. Where the server can't
+// (no client there yet), it is Link's device flow as before: `auth login`
+// gives a link.com page that already carries the code, and `auth status`
+// finishes it once the person approved.
 
 import { randomUUID } from "node:crypto";
-import { readFileSync, readdirSync, rmSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
-import { LINK_CLIENT_NAME, LINK_SOURCE_ACTIONS, linkDir, type LinkCli, type LinkCliAnswer } from "./link-cli.js";
+import { LINK_CLIENT_NAME, LINK_SOURCE_ACTIONS, linkAuthFile, linkDir, type LinkCli, type LinkCliAnswer } from "./link-cli.js";
+import type { LinkServer } from "./link-server.js";
 import type { CheckoutCard, CheckoutFillResult, fillCheckout as FillCheckout } from "./checkout-fill.js";
 
 export interface LinkToolDefinition {
@@ -136,6 +141,8 @@ export interface LinkToolsOptions {
   /** Types the card into the checkout (`checkout-fill.ts`); absent where there is no browser to fill. */
   readonly fillCheckout?: typeof FillCheckout;
   readonly log?: (message: string) => void;
+  /** Simeon's server, which signs in with Simeon Labs' own Link client and holds the tokens (`link-server.ts`); the CLI is given its tokens too (`createLinkCli`'s `serverToken`). */
+  readonly server?: LinkServer;
 }
 
 export function createLinkTools(options: LinkToolsOptions) {
@@ -378,16 +385,37 @@ export function createLinkTools(options: LinkToolsOptions) {
     if (!answer.ok) log(`[link] report failed: ${answer.code}`);
   };
 
-  /** Whether the person's Link is connected; a sign-in they just approved is finished here (`auth status` takes the pending code's tokens). */
+  /**
+   * Whether the person's Link is connected: held by Simeon's server, else
+   * this computer's own sign-in file (Link's device code, from before 17
+   * October 2026; a sign-in just approved there is finished here, `auth
+   * status` taking the pending code's tokens).
+   */
   const signInStatus = async (): Promise<{ readonly authenticated: boolean; readonly pending: boolean; readonly error?: string }> => {
+    const held = await options.server?.status();
+    if (held?.connected === true) return { authenticated: true, pending: false };
     const answer = await cli.run(["auth", "status"]);
     if (!answer.ok) return { authenticated: false, pending: false, error: answer.message };
     const record = answer.value != null && typeof answer.value === "object" ? answer.value as Record<string, unknown> : {};
     return { authenticated: record.authenticated === true, pending: record.pending === true };
   };
 
-  /** Starts the device sign-in: the link.com page with the code in it, for the apps' sign-in sheet. */
-  const startSignIn = async (forceReauth: boolean): Promise<{ readonly authenticated: true } | { readonly url: string; readonly phrase: string } | { readonly error: string }> => {
+  /**
+   * Starts the sign-in for the apps' sign-in sheet: the server's link to
+   * Link's own page, where the person approves Simeon (Simeon Labs' client),
+   * else, on a server without the client, Link's device-code page.
+   */
+  const startSignIn = async (forceReauth: boolean): Promise<{ readonly authenticated: true } | { readonly url: string; readonly phrase: string; readonly via: "server" | "device" } | { readonly error: string }> => {
+    if (options.server != null) {
+      const started = await options.server.start();
+      if ("url" in started) {
+        // A sign-in from before, in this computer's own file, would stand in for the new one wherever the server's is missing.
+        if (forceReauth) await cli.run(["auth", "logout"]);
+        return { url: started.url, phrase: "", via: "server" };
+      }
+      if ("error" in started) return started;
+      log("[link] the server has no Link client; signing in with Link's device code");
+    }
     if (forceReauth) await cli.run(["auth", "logout"]);
     const answer = await cli.run(["auth", "login", "--client-name", LINK_CLIENT_NAME, ...LINK_SOURCE_ACTIONS.flatMap((action) => ["--source-actions", action])]);
     if (!answer.ok) return { error: answer.message };
@@ -395,12 +423,19 @@ export function createLinkTools(options: LinkToolsOptions) {
     if (record.authenticated === true) return { authenticated: true };
     const url = text(record.verification_url);
     if (!url.startsWith("https://")) return { error: "Link gave no sign-in page." };
-    return { url, phrase: text(record.phrase) };
+    return { url, phrase: text(record.phrase), via: "device" };
   };
 
-  const signOut = async (): Promise<void> => { await cli.run(["auth", "logout"]); };
+  /** Disconnects: the server revokes Simeon's grant at Link and forgets it, and this computer's own sign-in, if any, is logged out. */
+  const signOut = async (): Promise<void> => {
+    await options.server?.disconnect();
+    await cli.run(["auth", "logout"]);
+  };
 
-  return { tools: LINK_TOOLS, call, signInStatus, startSignIn, signOut, checkoutFacts, requestSpend, spendStatus, cancelSpend, reportOutcome, withCard, personFacts };
+  /** Whether a purchase should try Link first: a sign-in on this computer, or the server's, as it last said. */
+  const hasSignIn = (): boolean => options.server?.knownConnected() === true || existsSync(linkAuthFile(options.rootDir()));
+
+  return { tools: LINK_TOOLS, call, signInStatus, startSignIn, signOut, hasSignIn, checkoutFacts, requestSpend, spendStatus, cancelSpend, reportOutcome, withCard, personFacts };
 }
 
 export type LinkTools = ReturnType<typeof createLinkTools>;

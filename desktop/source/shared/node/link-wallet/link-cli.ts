@@ -8,6 +8,10 @@
 // accounts they chose to share. This file finds the CLI, installs it when
 // the image has none, and runs it; `link-tools.ts` turns its commands into
 // the agents' tools and `checkout-fill.ts` types a card into a checkout.
+// Since 17 October 2026 the sign-in is Simeon Labs' own Link client, held
+// by Simeon's server (`link-server.ts`): each command is given the server's
+// access token as `LINK_ACCESS_TOKEN`; the device code remains for a server
+// without the client, and a computer signed in that way before.
 //
 // The CLI keeps its sign-in in one file on the data volume
 // (`<sandRoot>/link/auth.json`, with `--auth`), so it survives a box update;
@@ -57,6 +61,14 @@ export interface LinkCliOptions {
   readonly exec?: LinkCliExec;
   readonly exists?: (path: string) => boolean;
   readonly log?: (message: string) => void;
+  /**
+   * The person's Link access token from Simeon's server
+   * (`link-server.ts`), for every command but `auth`'s; undefined when the
+   * server holds no connection, and the command then uses this computer's
+   * own sign-in file (Link's device code, from before 17 October 2026).
+   * `refresh` once Link refused the token it was given.
+   */
+  readonly serverToken?: (refresh: boolean) => Promise<string | undefined>;
 }
 
 /** A command's answer: its JSON when it worked, else Link's own code and sentence. */
@@ -173,13 +185,27 @@ export function createLinkCli(options: LinkCliOptions) {
     try { chmodSync(dir, 0o700); } catch { /* best effort */ }
     const [file, ...lead] = command as [string, ...string[]];
     const signIn = args[0] === "auth" && args[1] === "login";
-    const result = await exec(file, [...lead, ...args, "--auth", linkAuthFile(options.rootDir()), "--format", "json"], {
-      // No update notices, no skill install, and a home of its own on the data volume (HOME may be gone from a box command's environment).
-      env: { ...env, HOME: dir, NO_UPDATE_NOTIFIER: "1", LINK_CLI_SKIP_SKILL_INSTALL: "1", npm_config_update_notifier: "false", ...(signIn ? deviceLabelEnv(dir, env, log) : {}) },
-      cwd: dir,
-      timeoutMs: runOptions.timeoutMs ?? 60_000,
-    });
-    return readLinkCliAnswer(result, { list: LINK_LIST_COMMANDS.has(args.slice(0, 2).join(" ")) });
+    // `auth` (login, status, logout) is this computer's own sign-in file: never the server's token.
+    const usesServer = args[0] !== "auth" && options.serverToken != null;
+    const once = async (refresh: boolean): Promise<{ readonly answer: LinkCliAnswer; readonly withToken: boolean }> => {
+      const token = usesServer ? await options.serverToken?.(refresh) : undefined;
+      const result = await exec(file, [...lead, ...args, "--auth", linkAuthFile(options.rootDir()), "--format", "json"], {
+        // No update notices, no skill install, and a home of its own on the data volume (HOME may be gone from a box command's environment).
+        // A token from the server is the CLI's sign-in for this command; it never refreshes one itself (the refresh token stays on the server).
+        env: { ...withoutLinkTokens(env), HOME: dir, NO_UPDATE_NOTIFIER: "1", LINK_CLI_SKIP_SKILL_INSTALL: "1", npm_config_update_notifier: "false", ...(signIn ? deviceLabelEnv(dir, env, log) : {}), ...(token == null ? {} : { LINK_ACCESS_TOKEN: token, LINK_NO_REFRESH: "1" }) },
+        cwd: dir,
+        timeoutMs: runOptions.timeoutMs ?? 60_000,
+      });
+      return { answer: readLinkCliAnswer(result, { list: LINK_LIST_COMMANDS.has(args.slice(0, 2).join(" ")) }), withToken: token != null };
+    };
+    const first = await once(false);
+    if (!first.withToken || !tokenRefused(first.answer)) return first.answer;
+    // Link refused the server's token (expired early, or the grant revoked): one more try with a fresh one.
+    log("[link] Link refused the access token; asking the server for a fresh one");
+    const second = await once(true);
+    // Still refused, or the server has no connection any more: what every tool already says for a Link not connected.
+    if (!second.withToken || tokenRefused(second.answer)) return { ok: false, code: "NOT_AUTHENTICATED", message: "Link isn't connected any more." };
+    return second.answer;
   };
 
   return {
@@ -192,6 +218,23 @@ export function createLinkCli(options: LinkCliOptions) {
 }
 
 export type LinkCli = ReturnType<typeof createLinkCli>;
+
+/**
+ * Whether Link refused the token the command was given. With
+ * `LINK_NO_REFRESH` the CLI answers a 401 with `{"code": "UNKNOWN",
+ * "message": "Access token expired. Update LINK_ACCESS_TOKEN and retry."}`
+ * (measured on 0.27.1 against a stand-in for Link's API, 17 October 2026),
+ * not with its `NOT_AUTHENTICATED`.
+ */
+function tokenRefused(answer: LinkCliAnswer): boolean {
+  return !answer.ok && (answer.code.toLowerCase() === "not_authenticated" || /LINK_ACCESS_TOKEN/.test(answer.message));
+}
+
+/** The environment without any Link token of its own: only the server's, given per command, is ever the CLI's. */
+function withoutLinkTokens(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  const { LINK_ACCESS_TOKEN: _access, LINK_REFRESH_TOKEN: _refresh, LINK_NO_REFRESH: _noRefresh, ...rest } = env;
+  return rest;
+}
 
 /** The sign-in's environment for `LINK_DEVICE_LABEL`; none when the file can't be written (Link then shows the container's id, as before). */
 function deviceLabelEnv(dir: string, env: NodeJS.ProcessEnv, log: (message: string) => void): Record<string, string> {

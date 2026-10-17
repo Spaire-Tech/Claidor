@@ -368,7 +368,7 @@ export function createVendorMcpBackendExec(options: VendorMcpBackendExecOptions)
       return { id, isAvailable: false, requiresAuth: false, hasValidToken: false, authUrl: "", error: started.error };
     }
     markBox(install, false);
-    appendVendorMcpSigninLog(options.rootDir(), `${install.id} sign-in started with ${name}'s device code`, now);
+    appendVendorMcpSigninLog(options.rootDir(), "via" in started && started.via === "server" ? `${install.id} sign-in started with Simeon's own ${name} client` : `${install.id} sign-in started with ${name}'s device code`, now);
     return { id, isAvailable: true, requiresAuth: true, hasValidToken: false, authUrl: started.url, error: "" };
   };
 

@@ -12,7 +12,7 @@ in this order:
    the apps' credentials the computer held, the browser's sign-ins), and
    their backups in the backup bucket (`simeon/sand/box_store.py`).
 3. The apps signed in through our apps provider are disconnected there,
-   each voice call's transcript is deleted at the voice provider, and a
+   Link's grant is revoked at Link (`link_wallet.disconnect`), each voice call's transcript is deleted at the voice provider, and a
    Sign in with Apple is revoked at Apple (Apple asks this of every app
    that offers it, 12 October 2026).
 4. The rows: memory, call records, routines, listeners, sharing, cloud
@@ -63,6 +63,7 @@ from simeon.sand.skill_registry_service import delete_tarball
 from simeon.user.service import user as user_service
 
 from . import apps as apps_module
+from . import link_wallet
 from . import voice as voice_module
 from .account_repository import AccountDeletionRepository
 from .auth import get_desktop_session
@@ -208,6 +209,20 @@ async def _disconnect_apps(user: User, report: DeletionReport) -> None:
     apps_module.forget_user(user)
 
 
+async def _disconnect_link(
+    session: AsyncSession, user: User, report: DeletionReport
+) -> None:
+    """Link's grant revoked at Link and the person's tokens forgotten
+    (`link_wallet.disconnect`)."""
+    try:
+        result = await link_wallet.disconnect(session, user.id)
+    except Exception as error:
+        report.incomplete.append(f"Link ({error})")
+        return
+    if result["disconnected"] and not result["revoked"]:
+        report.incomplete.append("Link (not revoked at Link)")
+
+
 async def _delete_transcripts(
     repository: AccountDeletionRepository, user: User, report: DeletionReport
 ) -> None:
@@ -283,6 +298,7 @@ async def delete_account(session: AsyncSession, user: User) -> DeletionReport:
     report.computers = await _remove_computers(repository, user)
     await _delete_backups(user, report)
     await _disconnect_apps(user, report)
+    await _disconnect_link(session, user, report)
     await _delete_transcripts(repository, user, report)
     await _revoke_apple(repository, user, report)
     for key in await repository.personal_skill_archives(user.id):

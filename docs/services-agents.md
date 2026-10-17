@@ -611,23 +611,48 @@ Nothing is paid until the person approves the purchase in the Link app; each pur
 one-time card, never their real one. Purchases work for US and Canadian Link accounts, bank
 reading for US ones.
 
-**How it works.** No server of ours is involved. The engine runs Stripe's own CLI,
-`@stripe/link-cli` 0.27.1, on the person's cloud computer
-(`desktop/source/shared/node/link-wallet/`), as a third kind of app beside the vendors' and the
-ones our server serves (`boxCli` in `vendor-mcp/catalog.ts`; `vendor-mcp/backend-exec.ts`).
-* **Sign-in.** Add runs `link-cli auth login --client-name Simeon` with the four financial
-  source actions; Link answers a page on app.link.com that already carries the code
-  (`/device/setup?code=…`), which the apps open in their sign-in sheet. The person signs in to
-  Link there (or approves in the Link app); the sign-in's watch runs `auth status` every 5 s,
-  which finishes it. The approval screen names "Simeon on your cloud computer" with Link's
-  generic look and "Link hasn't verified Simeon…": the CLI writes "<client name> on
-  <hostname>", and a box's hostname is its container's id ("Simeon on 81e167da4ad7" until 14
-  October 2026), so `auth login` runs with a file Node loads first that answers
-  `LINK_DEVICE_LABEL` for the hostname (`link-cli.ts`). Simeon's own name and logo there, and no
-  warning, need Simeon Labs' registered OAuth client (below).
-* **Where it lives.** The sign-in is one file on the data volume,
-  `/home/box/sand-data/link/auth.json` (0600), so a box update keeps it. The CLI comes with the
-  image (`box/Dockerfile`, `LINK_CLI_VERSION`); a box on an older image installs the same version
+**How it works.** The engine runs Stripe's own CLI, `@stripe/link-cli` 0.27.1, on the person's
+cloud computer (`desktop/source/shared/node/link-wallet/`), as a third kind of app beside the
+vendors' and the ones our server serves (`boxCli` in `vendor-mcp/catalog.ts`;
+`vendor-mcp/backend-exec.ts`). Since 17 October 2026 its sign-in is Simeon Labs' own Link
+client, run and held by our server (`server/simeon/desktop/link_wallet.py`, below).
+* **Sign-in.** Add asks the server for a sign-in link (`POST /desktop/api/link/start`): a start
+  link of ours (`/desktop/apps/start`, as every app's) that leads to Link's own page,
+  `https://login.link.com/auth`, with Simeon's client id, the Stripe account's publishable key,
+  PKCE (S256), `payment_methods.agentic userinfo:read` and, as `authorization_details`, the four
+  financial source actions. The apps open it in their sign-in sheet; the person signs in to Link
+  and approves **Simeon**, with its name and logo. Link sends them to
+  `https://api.simeonlabs.com/desktop/apps/link/callback` (the redirect registered with Stripe),
+  where the server takes the state once (Redis, 15 minutes), exchanges the code at
+  `https://login.link.com/auth/token`, keeps the tokens and sends the person to the page every
+  sign-in ends on, which takes the iPhone and the Mac back to the app (`simeon-ios://connected`).
+  The sign-in's watch asks the server every 5 s (`GET /desktop/api/link/status`), which finishes
+  it. A server without the client (`SIMEON_LINK_CLIENT_ID`, `SIMEON_LINK_CLIENT_SECRET` and a
+  publishable key) answers 503, and the box signs in as it did before: `link-cli auth login
+  --client-name Simeon`, a page on app.link.com that already carries the code, Link's generic
+  look and "Simeon on your cloud computer" (`LINK_DEVICE_LABEL` for the hostname, `link-cli.ts`).
+  A server that can't be reached is said so; no device code is started behind its back.
+* **Each command's token.** The server keeps Link's access and refresh tokens, sealed
+  (`DesktopLinkWallet`, `simeon/kit/sealed.py`: Fernet, a key derived from `SIMEON_SECRET`), one
+  row per person, so every agent's computer shares the one connection. Before a Link command the
+  box asks for a live access token (`POST /desktop/api/link/token`, the box's own credential
+  only) and runs the CLI with `LINK_ACCESS_TOKEN` and `LINK_NO_REFRESH` (the refresh token never
+  leaves the server); it keeps the token until two minutes before its end, and the server
+  refreshes one with less than five minutes left. Link rotates the refresh token on every
+  refresh, so the row is locked while one is made and the new one is written at once; two
+  computers told "expired" together refresh once. Link refusing a token (0.27.1 answers `UNKNOWN`
+  with "Access token expired. Update LINK_ACCESS_TOKEN and retry.", measured against a stand-in
+  for Link's API) makes the box ask for a fresh one and run the command once more; refused again,
+  every tool says Link isn't connected. A refresh Link refuses as `invalid_grant` (the person
+  ended it in Link) forgets the connection; any other failure keeps it.
+* **Disconnect.** Removing Link (`DELETE /desktop/api/link`, from the box's sign-out) revokes the
+  refresh token at `https://login.link.com/auth/revoke`, which ends the grant, and deletes the
+  row; it is deleted even when Link can't be reached (logged). The box also runs `auth logout`
+  for a sign-in of its own from before. Deleting the account does the same (step 3).
+* **Where it lives.** The connection is the server's row. A computer signed in with the device
+  code before 17 October 2026 keeps its file, `/home/box/sand-data/link/auth.json` (0600), which
+  the CLI uses while the server holds no connection. The CLI comes with the image
+  (`box/Dockerfile`, `LINK_CLI_VERSION`); a box on an older image installs the same version
   under `/home/box/sand-data/link/cli` the first time Link is used (about 150 MB, 15 to 35 s).
   Its install script is skipped: it fetches Stripe's agent skills with npx.
 * **The agents' tools** (`link-tools.ts`): `get_wallet`, `wait_for_approval`, `pay_checkout`,
@@ -751,16 +776,32 @@ ones our server serves (`boxCli` in `vendor-mcp/catalog.ts`; `vendor-mcp/backend
   and `[purchase] watching <lsrq_…> failed: <code>` for the cards; for a card without its
   picture, `[simeon] [purchase] no picture: <why> (<agent>)` (no checkout address, no Chrome
   answered on ports …, no tab on <site> (open: <sites>), the tab … didn't draw, nowhere to keep
-  it); `link sign-in started with Link's
-  device code` and `link connected` in `vendor-mcp-signin.log` on the data volume.
-* **Later: Simeon's own client.** Stripe asks agent products to register an OAuth client (the
-  Link Agent Wallet application form, redirect `https://api.simeonlabs.com/desktop/apps/link/callback`,
-  settings `SIMEON_LINK_CLIENT_ID` / `SIMEON_LINK_CLIENT_SECRET` on the API service). With it the
-  approval screen carries Simeon's name, and bank reading needs the company's Stripe account (the one Simeon's billing uses)
-  registered for Financial Connections (registered and approved, 14 October 2026, the founder). The
-  application was sent; no client yet, and the server's side of this sign-in is not built. Only the sign-in changes then: the server holds the
-  tokens and hands the box `LINK_ACCESS_TOKEN`, which the same CLI reads.
-* **Not yet verified.** Tested here: the CLI's sign-in start and status against Link's real
+  it); `link sign-in started with Simeon's own Link client` (or `with Link's device code`) and
+  `link connected` in `vendor-mcp-signin.log` on the data volume; `[link] Link refused the access
+  token; asking the server for a fresh one` and `[link] server token answered <status>` in the
+  host log. Server: `desktop.link.sign_in_started`, `desktop.link.connected` (with the granted
+  scope), `desktop.link.sign_in_declined` (Link's `error`), `desktop.link.callback_refused`
+  (`reason=state`: an unknown or spent state), `desktop.link.exchange_failed` (Link's status and
+  `error`), `desktop.link.refreshed`, `desktop.link.refresh_failed`, `desktop.link.grant_gone`,
+  `desktop.link.unreadable` (sealed under another `SECRET`), `desktop.link.disconnected`
+  (`revoked=`) and `desktop.link.revoke_failed`. None carries a token, a code or the secret.
+* **Simeon's own client** (17 October 2026). Stripe approved Simeon Labs' Link Agent Wallet OAuth
+  client (redirect `https://api.simeonlabs.com/desktop/apps/link/callback`). Settings on the API
+  service: `SIMEON_LINK_CLIENT_ID`, `SIMEON_LINK_CLIENT_SECRET`, and the publishable key Link asks
+  for on the sign-in link and the token calls, `SIMEON_STRIPE_PUBLISHABLE_KEY` (or
+  `SIMEON_LINK_PUBLISHABLE_KEY` to name another): the `pk_live_…` of the Stripe account the client
+  was registered with, the one registered for Financial Connections (approved 14 October 2026),
+  without which only `read_link_transactions` would be granted. Endpoints, scopes and token rules
+  from docs.stripe.com/agentic-commerce/link-cli/oauth and …/financial-connections/agents/
+  financial-insights (read 17 October 2026); `LINK_ACCESS_TOKEN` and `LINK_NO_REFRESH` from the
+  CLI's own code (0.27.1, `ResourceFactory`).
+* **Not yet verified.** Simeon's own client: the server's start, callback, sealed tokens, refresh
+  (ahead, asked, rotated, refused, `invalid_grant`), disconnect and account deletion against a
+  mocked Link (`server/tests/desktop/test_link_wallet.py`); the box's server client, the token per
+  command and the sign-in switch (`desktop/tests/link-server.test.mjs`); and the real CLI 0.27.1
+  given a token by the engine's runner against a stand-in for Link's API (refused, refreshed,
+  accepted). Not against Link itself: no sign-in through the approved client, no real token,
+  refresh or revoke yet, and nothing on a device. Tested here before: the CLI's sign-in start and status against Link's real
   server (no account approved), the tools and the card's whole path (Deny, Allow, a double
   Allow, Link's approval, decline and refusal, the order, a card in a chat that isn't open, the
   card picked on the card and one Link refuses, the products card's Buy) against a scripted CLI

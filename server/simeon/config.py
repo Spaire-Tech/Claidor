@@ -690,6 +690,17 @@ class Settings(BaseSettings):
     STRIPE_CREDITS_METER_EVENT: str = "simeon_credits"
     STRIPE_BOX_SECONDS_METER_EVENT: str = "simeon_box_seconds"
 
+    # Link, Stripe's agent wallet (`simeon.desktop.link_wallet`,
+    # docs/services-agents.md §7d): Simeon Labs' registered OAuth client, so
+    # the person's approval screen names Simeon. The secret never leaves the
+    # server. Link asks for a Stripe publishable key on the sign-in link and
+    # the token calls: the account's own (`STRIPE_PUBLISHABLE_KEY`) unless
+    # one is named here. Without the client id and secret the box signs in
+    # with Link's device code, as before.
+    LINK_CLIENT_ID: str = ""
+    LINK_CLIENT_SECRET: str = ""
+    LINK_PUBLISHABLE_KEY: str = ""
+
     # Plans bought in the iPhone app with Apple's in-app purchase
     # (`simeon.plans.app_store`, docs/services-billing.md). The iPhone app's
     # bundle id; the app's Apple ID from App Store Connect (App Information,

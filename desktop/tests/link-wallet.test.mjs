@@ -145,7 +145,7 @@ test("the tools build Link's commands, hide cards and tokens, and sign in with t
   for (const tool of LINK_TOOLS) assert.equal(tool.inputSchema.type, "object", tool.name);
 
   // Sign-in: the page with the code in it, then connected once approved.
-  assert.deepEqual(await link.startSignIn(false), { url: "https://app.link.com/device/setup?code=warmth-woo-won-charm", phrase: "warmth-woo-won-charm" });
+  assert.deepEqual(await link.startSignIn(false), { url: "https://app.link.com/device/setup?code=warmth-woo-won-charm", phrase: "warmth-woo-won-charm", via: "device" });
   const login = fake.calls.find((call) => call.command[0] === "auth" && call.command[1] === "login").command;
   assert.deepEqual(login.slice(0, 4), ["auth", "login", "--client-name", "Simeon"]);
   assert.deepEqual(login.filter((_item, index) => login[index - 1] === "--source-actions"), ["read_link_transactions", "read_external_transactions", "read_balances", "read_source_details"]);

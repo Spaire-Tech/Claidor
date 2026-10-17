@@ -16,6 +16,7 @@ from sqlalchemy import delete, select
 
 from simeon.models import (
     DesktopAuthCode,
+    DesktopLinkWallet,
     DesktopMemoryFile,
     DesktopSession,
     DesktopShareEvent,
@@ -91,6 +92,9 @@ class AccountDeletionRepository:
             ),
             "voice_calls": delete(DesktopVoiceCall).where(
                 DesktopVoiceCall.user_id == user_id
+            ),
+            "link_wallets": delete(DesktopLinkWallet).where(
+                DesktopLinkWallet.user_id == user_id
             ),
             "routines": delete(SandAutomation).where(SandAutomation.user_id == user_id),
             "listener_events": delete(SandListenerEvent).where(

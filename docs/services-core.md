@@ -170,9 +170,12 @@ The Electron app and the web app have no button yet. In order:
 2. Each cloud computer the person ever had is removed with both of its volumes
    (`/workspace` and the data folder), then its backups in the backup bucket
    (`box_store.delete_user`; a failure there is reported, not blocking).
-3. The apps signed in through the apps provider are disconnected there, and
-   each call's transcript is deleted at the voice provider.
-4. The person's rows go (`account_repository.py`: memory, call records,
+3. The apps signed in through the apps provider are disconnected there,
+   Link's grant is revoked at Link and its tokens forgotten
+   (`link_wallet.disconnect`, docs/services-agents.md §7d), and each call's
+   transcript is deleted at the voice provider.
+4. The person's rows go (`account_repository.py`: memory, call records, the
+   Link connection,
    routines, listeners, sharing, cloud agents, their own skills and the skill
    archives in file storage, the computers' rows, every session, so every
    device is signed out).
