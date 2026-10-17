@@ -124,11 +124,11 @@ class TestCatalog:
             "simeon_max_year",
         ]
         amounts = {price.lookup_key: price.unit_amount for price in prices()}
-        assert amounts["simeon_standard_month"] == 2000
-        assert amounts["simeon_standard_year"] == 19200
-        assert amounts["simeon_pro_year"] == 57600
+        assert amounts["simeon_standard_month"] == 3000
+        assert amounts["simeon_standard_year"] == 28800
+        assert amounts["simeon_pro_year"] == 96000
         assert amounts["simeon_max_year"] == 192000
-        assert yearly_cents(2000) == 19200
+        assert yearly_cents(3000) == 28800
 
     def test_lookup_keys_round_trip(self) -> None:
         parsed = parse_lookup_key("simeon_pro_year")

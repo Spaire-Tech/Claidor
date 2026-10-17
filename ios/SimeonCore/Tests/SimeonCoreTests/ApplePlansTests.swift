@@ -9,10 +9,10 @@ import XCTest
 final class ApplePlansTests: XCTestCase {
   private let products: JSON = [
     "products": [
-      ["productId": "com.simeonlabs.simeon.standard.monthly", "tier": "standard", "interval": "month", "name": "Standard", "weeklyCredits": 3_750_000],
-      ["productId": "com.simeonlabs.simeon.standard.yearly", "tier": "standard", "interval": "year", "name": "Standard", "weeklyCredits": 3_750_000],
-      ["productId": "com.simeonlabs.simeon.pro.monthly", "tier": "pro", "interval": "month", "name": "Pro", "weeklyCredits": 12_500_000],
-      ["productId": "com.simeonlabs.simeon.pro.yearly", "tier": "pro", "interval": "year", "name": "Pro", "weeklyCredits": 12_500_000],
+      ["productId": "com.simeonlabs.simeon.standard.monthly", "tier": "standard", "interval": "month", "name": "Standard", "weeklyCredits": 5_000_000],
+      ["productId": "com.simeonlabs.simeon.standard.yearly", "tier": "standard", "interval": "year", "name": "Standard", "weeklyCredits": 5_000_000],
+      ["productId": "com.simeonlabs.simeon.pro.monthly", "tier": "pro", "interval": "month", "name": "Pro", "weeklyCredits": 17_500_000],
+      ["productId": "com.simeonlabs.simeon.pro.yearly", "tier": "pro", "interval": "year", "name": "Pro", "weeklyCredits": 17_500_000],
       ["productId": "bad", "tier": "pro", "interval": "week"],
     ],
     "webSubscribeUrl": "https://app.simeonlabs.com/billing?from=app",
@@ -37,8 +37,8 @@ final class ApplePlansTests: XCTestCase {
   }
 
   func testTheSheetSaysPricePeriodRenewalAndHowToCancel() {
-    XCTAssertEqual(PlansCopy.price("$20.00"), "$20.00 per month")
-    XCTAssertEqual(PlansCopy.price("$192.00", yearly: true), "$192.00 per year")
+    XCTAssertEqual(PlansCopy.price("$29.99"), "$29.99 per month")
+    XCTAssertEqual(PlansCopy.price("$288.00", yearly: true), "$288.00 per year")
     XCTAssertTrue(PlansCopy.renewal.contains("Auto-renews monthly"))
     XCTAssertTrue(PlansCopy.renewal.contains("until you cancel in Settings"))
     XCTAssertFalse(PlansCopy.renewal.contains("Free"), "no free week: the free month starts at sign-in")

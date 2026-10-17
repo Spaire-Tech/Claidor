@@ -24,7 +24,7 @@ BillingInterval = Literal["month", "year"]
 #: for no card (`simeon.plans.free_month`).
 TRIAL_DAYS = 30
 
-#: Yearly is 20% off twelve months, in whole dollars: $192, $576, $1,920.
+#: Yearly is 20% off twelve months, in whole dollars: $288, $960, $1,920.
 YEARLY_DISCOUNT = 0.8
 
 LOOKUP_KEY_PREFIX = "simeon"
@@ -32,17 +32,17 @@ LOOKUP_KEY_PREFIX = "simeon"
 #: What each product says on Stripe's checkout page and invoices.
 PRODUCT_DESCRIPTIONS: dict[TierKey, str] = {
     TierKey.standard: (
-        "For a light week of work. 3,750,000 credits a week, about thirty tasks. "
+        "For a light week of work. 5,000,000 credits a week, about fifty tasks. "
         "Every agent and every feature, a cloud computer for each agent, "
         "routines that run while your Mac is closed."
     ),
     TierKey.pro: (
-        "For agents working every day. 12,500,000 credits a week, three times "
+        "For agents working every day. 17,500,000 credits a week, 3.5 times "
         "Standard, with room for routines that run every day."
     ),
     TierKey.max: (
-        "For a team of agents that never stops. 40,000,000 credits a week, "
-        "eleven times Standard: agents on routines all week long."
+        "For a team of agents that never stops. 60,000,000 credits a week, "
+        "twelve times Standard: agents on routines all week long."
     ),
 }
 

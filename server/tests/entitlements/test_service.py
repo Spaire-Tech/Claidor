@@ -120,12 +120,12 @@ class TestGetTier:
     @pytest.mark.parametrize(
         ("tier_label", "expected", "monthly_cents"),
         [
-            ("standard", TierKey.standard, 2000),
-            ("pro", TierKey.pro, 6000),
+            ("standard", TierKey.standard, 3000),
+            ("pro", TierKey.pro, 10000),
             ("max", TierKey.max, 20000),
             # The creator-era keys resolve to the plan that replaced them.
-            ("starter", TierKey.standard, 2000),
-            ("studio", TierKey.pro, 6000),
+            ("starter", TierKey.standard, 3000),
+            ("studio", TierKey.pro, 10000),
             ("scale", TierKey.max, 20000),
         ],
     )
@@ -308,7 +308,7 @@ class TestGetForOrganization:
         assert result.tier == TierKey.standard
         assert result.transaction_fee.percent_basis_points == 700
         assert result.transaction_fee.fixed_cents == 30
-        assert result.monthly_price_cents == 2000
+        assert result.monthly_price_cents == 3000
         assert result.features.email_sequences_and_segments is True
         assert result.features.customer_wallet is False
         # Email is metered on list size only — sends and active sequences
@@ -341,8 +341,8 @@ class TestTierDefinitions:
         from simeon.entitlements.tiers import get_definition
 
         studio = get_definition(TierKey.pro)
-        assert studio.monthly_price_cents == 6000
-        assert studio.weekly_credits == 12_500_000
+        assert studio.monthly_price_cents == 10000
+        assert studio.weekly_credits == 17_500_000
         assert studio.trial_credits == 5_000_000
         assert studio.transaction_fee.percent_basis_points == 500
         assert studio.transaction_fee.fixed_cents == 30
@@ -357,8 +357,8 @@ class TestTierDefinitions:
         from simeon.entitlements.tiers import get_definition
 
         starter = get_definition(TierKey.standard)
-        assert starter.monthly_price_cents == 2000
-        assert starter.weekly_credits == 3_750_000
+        assert starter.monthly_price_cents == 3000
+        assert starter.weekly_credits == 5_000_000
         assert starter.trial_credits == 5_000_000
         assert starter.transaction_fee.percent_basis_points == 700
         assert starter.transaction_fee.fixed_cents == 30
@@ -396,7 +396,7 @@ class TestTierDefinitions:
 
         scale = get_definition(TierKey.max)
         assert scale.monthly_price_cents == 20000
-        assert scale.weekly_credits == 40_000_000
+        assert scale.weekly_credits == 60_000_000
         assert scale.trial_credits == 5_000_000
         assert scale.transaction_fee.percent_basis_points == 300
         assert scale.transaction_fee.fixed_cents == 30

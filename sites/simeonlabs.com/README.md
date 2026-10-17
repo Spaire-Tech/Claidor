@@ -68,7 +68,7 @@ edge shared by the wordmark, the headline and the demo.
   from the customer's side, then one big photo (`img/phone.webp`) with a live call playing out
   as text over it and a white Learn more, with nowhere to go yet, inside the picture. The section
   is in the page but `hidden` until the phone product ships; remove the attribute to show it.
-- **Pricing** (a free week, Standard $20, Pro $60, Max $200; each card says the week's credits),
+- **Pricing** (a free month, Standard $30, Pro $100, Max $200; each card says the week's credits),
   **Questions and answers**, and the closing line.
 
 Download and Download for Mac fetch the Mac app (`api.simeonlabs.com/desktop/download/mac`),

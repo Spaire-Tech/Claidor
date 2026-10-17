@@ -1,7 +1,7 @@
 # What the server does for the app, part 3: plans and billing
 
 Simeon sells three plans to the person who signs in from the Mac: Standard
-($20 a month), Pro ($60) and Max ($200), each with a 30-day free trial on a
+($30 a month), Pro ($100) and Max ($200), each with a 30-day free trial on a
 card (seven days until 12 October 2026), and each with a number of credits
 a week. Stripe Billing owns the
 products, the prices, the trial, the subscription, the invoices and the
@@ -29,14 +29,18 @@ unset. The code stays with the inherited shop
 
 ## 1. The plans
 
-| Plan | Monthly | Yearly | Credits a week | Trial |
-|---|---|---|---|---|
-| Standard | $20 | $192 | 3,750,000 | 30 days, 5,000,000 credits once |
-| Pro | $60 | $576 | 12,500,000 | same |
-| Max | $200 | $1,920 | 40,000,000 | same |
+| Plan | Monthly (web) | Yearly (web) | Monthly (iPhone) | Credits a week | Trial |
+|---|---|---|---|---|---|
+| Standard | $30 | $288 | $29.99 | 5,000,000 | 30 days, 5,000,000 credits once |
+| Pro | $100 | $960 | $99.99 | 17,500,000 (3.5 × Standard) | same |
+| Max | $200 | $1,920 | $199.99 | 60,000,000 (12 × Standard) | same |
 
-Every allowance is five times what it was until 8 October 2026 (the founder:
+The prices and allowances changed on 17 October 2026 (from $20, $60 and
+$200, with 3,750,000, 12,500,000 and 40,000,000 credits a week). Before that,
+every allowance was five times what it was until 8 October 2026 (the founder:
 "a simple onboarding run eats it all. multiply all by 5. at least for now").
+The yearly prices stay twenty percent off twelve months (`YEARLY_DISCOUNT`).
+The iPhone sells the monthly plans only, at Apple's nearest price points.
 At list price the week's credits of each plan cost more than the plan when
 fully used; the plans are priced for the person who comes back.
 
@@ -493,23 +497,24 @@ so a renamed product is a setting, not an app release.
 
 | Product id | Price (US) | Level in the group |
 |---|---|---|
-| `com.simeonlabs.simeon.max.monthly` | $200.00 a month | 1 |
-| `com.simeonlabs.simeon.max.yearly` | not sold through Apple yet (below) | 1 |
-| `com.simeonlabs.simeon.pro.monthly` | $60.00 a month | 2 |
-| `com.simeonlabs.simeon.pro.yearly` | $579.00 a year (Apple has no $576) | 2 |
-| `com.simeonlabs.simeon.standard.monthly` | $20.00 a month | 3 |
-| `com.simeonlabs.simeon.standard.yearly` | $191.99 a year (Apple has no $192) | 3 |
+| `com.simeonlabs.simeon.max.monthly` | $199.99 a month | 1 |
+| `com.simeonlabs.simeon.pro.monthly` | $99.99 a month | 2 |
+| `com.simeonlabs.simeon.standard.monthly` | $29.99 a month | 3 |
+| `com.simeonlabs.simeon.<tier>.yearly` | not sold on the iPhone | same as monthly |
 
-Each has an introductory offer: free, one week, for new subscribers. The
-levels make a move between plans an upgrade (at once, prorated by Apple)
-or a downgrade (at the next renewal), as Apple's own sheet does them.
+The iPhone sells the three monthly plans (17 October 2026; $20.00, $60.00
+and $200.00 before). The plans sheet offers the monthly ones only
+(`PlansSheet`, `plans(yearly: false)`) and shows StoreKit's own price, so
+it shows whatever App Store Connect holds. No introductory offer: the free
+month replaces it (section 10). The levels make a move between plans an
+upgrade (at once, prorated by Apple) or a downgrade (at the next renewal),
+as Apple's own sheet does them.
 
-Apple sets the price points, so two yearly prices differ from the web's
-by a few dollars (12 October 2026). Max yearly ($1,920) is above Apple's
-standard price points, which stop at $1,000; prices above it need the
-Account Holder to request Apple's higher price points. Until that is
-granted the product is not created, and the plans sheet shows only what
-the App Store returns (`Purchases.sold`), so Max is monthly on the iPhone.
+Apple sets the price points, so the iPhone's prices are a cent under the
+web's. The yearly products may exist in App Store Connect without a
+price; the sheet shows only what the App Store returns (`Purchases.sold`).
+Max yearly ($1,920 on the web) is above Apple's standard price points,
+which stop at $1,000.
 The server never reads a price: the tier comes from the product id, so a
 changed price needs no server change.
 
@@ -583,9 +588,9 @@ The migration `desktop_app_store_1012` adds `desktop_app_store_subscriptions`.
 2. **App Store Small Business Program**: apply in the developer account
    (developer.apple.com › Programs › App Store Small Business Program).
 3. **The subscription group and products**: in the app › Monetization ›
-   Subscriptions, create the group "Simeon" and the six products of the
-   table, each with its price, a display name ("Simeon Pro") and a
-   description ("12,500,000 credits a week"), no introductory offer (the
+   Subscriptions, create the group "Simeon" and the three monthly products
+   of the table, each with its price, a display name ("Simeon Pro") and a
+   description ("17,500,000 credits a week"), no introductory offer (the
    free week was removed on 12 October 2026: the free month replaces it,
    section 10), and a review screenshot of the plans sheet.
 4. **Server notifications**: in the app › App Information › App Store

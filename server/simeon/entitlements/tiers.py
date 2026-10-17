@@ -255,10 +255,10 @@ _INACTIVE = TierEntitlements(
 #: iPhone app's free month gives the same (`simeon.plans.free_month`).
 TRIAL_CREDITS = 5_000_000
 
-# Standard, $20 a month: 3,750,000 credits a week (750,000 until 8 October
-# 2026). Model cost at list is more than the price when the week is used
-# up; the plan is priced for the person who comes back, not the heaviest
-# week.
+# Standard, $30 a month on the web ($29.99 on the iPhone): 5,000,000 credits a
+# week (3,750,000 until 17 October 2026, 750,000 until 8 October 2026).
+# Model cost at list is more than the price when the week is used up; the
+# plan is priced for the person who comes back, not the heaviest week.
 _STANDARD = TierEntitlements(
     tier=TierKey.standard,
     # Steep fee spine (7% / 5% / 3%, all + $0.30) so moving up a tier buys a
@@ -315,15 +315,16 @@ _STANDARD = TierEntitlements(
         audit_logs=False,
     ),
     rate_limit_group="elevated",
-    monthly_price_cents=2000,
-    weekly_credits=3_750_000,
+    monthly_price_cents=3000,
+    weekly_credits=5_000_000,
     trial_credits=TRIAL_CREDITS,
     overage_grace_pct=10,
 )
 
 
-# Pro, $60 a month: 12,500,000 credits a week (2,500,000 until 8 October 2026), three times Standard. Room
-# for routines that run every day.
+# Pro, $100 a month on the web ($99.99 on the iPhone): 17,500,000 credits a
+# week (12,500,000 until 17 October 2026), 3.5 times Standard. Room for
+# routines that run every day.
 _PRO = TierEntitlements(
     tier=TierKey.pro,
     transaction_fee=TransactionFee(percent_basis_points=500, fixed_cents=30),
@@ -361,17 +362,16 @@ _PRO = TierEntitlements(
         audit_logs=False,
     ),
     rate_limit_group="elevated",
-    monthly_price_cents=6000,
-    weekly_credits=12_500_000,
+    monthly_price_cents=10000,
+    weekly_credits=17_500_000,
     trial_credits=TRIAL_CREDITS,
     overage_grace_pct=10,
 )
 
 
-# Max, $200 a month: 40,000,000 credits a week (8,000,000 until 8 October 2026), about eleven times
-# Standard. Agents on routines all week long. The earlier site sold a
-# twenty-times plan at $100, which costs $180 of model time at list if
-# used; this one pays.
+# Max, $200 a month on the web ($199.99 on the iPhone): 60,000,000 credits a
+# week (40,000,000 until 17 October 2026), twelve times Standard. Agents on
+# routines all week long.
 _MAX = TierEntitlements(
     tier=TierKey.max,
     # 3% base is at/under the true MoR cost floor (~3.5%); it stays profitable
@@ -414,7 +414,7 @@ _MAX = TierEntitlements(
     ),
     rate_limit_group="elevated",
     monthly_price_cents=20000,
-    weekly_credits=40_000_000,
+    weekly_credits=60_000_000,
     trial_credits=TRIAL_CREDITS,
     overage_grace_pct=10,
 )

@@ -157,7 +157,7 @@ class TestResolveAllowance:
         assert allowance.status == "active"
         assert allowance.plan_name == "Pro"
         assert allowance.tier == "pro"
-        assert allowance.credits_limit == 12_500_000
+        assert allowance.credits_limit == 17_500_000
         start, end = week_bounds()
         assert (allowance.period_start, allowance.period_end) == (start, end)
         assert allowance.paid
@@ -178,7 +178,7 @@ class TestResolveAllowance:
         )
         allowance = await resolve_allowance(session, user)
         assert allowance.status == "past_due"
-        assert allowance.credits_limit == 3_750_000
+        assert allowance.credits_limit == 5_000_000
         assert allowance.paid
 
     async def test_a_failed_first_charge_after_the_trial_is_no_plan(
@@ -217,7 +217,7 @@ class TestResolveAllowance:
         )
         allowance = await resolve_allowance(session, user)
         assert allowance.status == "active"
-        assert allowance.credits_limit == 12_500_000
+        assert allowance.credits_limit == 17_500_000
         assert not allowance.payment_failed
 
     async def test_a_failed_renewal_after_a_paid_month_keeps_the_week(
@@ -233,7 +233,7 @@ class TestResolveAllowance:
         assert not row.unpaid_after_trial
         allowance = await resolve_allowance(session, user)
         assert allowance.status == "past_due"
-        assert allowance.credits_limit == 12_500_000
+        assert allowance.credits_limit == 17_500_000
         assert not allowance.payment_failed
 
     async def test_a_trial_gets_its_own_window_and_credits(
@@ -371,8 +371,8 @@ class TestQuotaAndRefusal:
         )
         quota = await desktop.quota(session, user)
         assert quota["creditsUsed"] == 100_000
-        # Standard's week (3,750,000 since 8 October 2026) less this week's 100,000.
-        assert quota["creditsRemaining"] == 3_650_000
+        # Standard's week (5,000,000 since 17 October 2026) less this week's 100,000.
+        assert quota["creditsRemaining"] == 4_900_000
         assert not await desktop.exhausted(session, user)
 
     async def test_no_plan_is_exhausted_before_the_first_call(
