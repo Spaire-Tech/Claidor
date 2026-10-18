@@ -23,14 +23,14 @@ const AuthShell = ({
       <div className="flex w-full items-center">
         <LogoType labs height={40} className="-ml-[7px] w-[138px]" />
       </div>
-      <main className="flex w-full grow flex-col items-center justify-center pt-12 pb-6 lg:pt-6">
-        <div className="flex w-full max-w-[640px] flex-col items-center gap-10">
-          <div className="flex flex-col items-center gap-4 text-center">
-            <h1 className="font-[family-name:var(--font-newsreader)] text-[48px] leading-[1.02] font-normal tracking-[-0.025em] text-balance sm:text-[60px] lg:text-[64px]">
+      <main className="flex w-full grow flex-col items-center justify-center pt-10 pb-6 sm:pt-12 lg:pt-6">
+        <div className="flex w-full max-w-[640px] flex-col items-center gap-8 sm:gap-10">
+          <div className="flex flex-col items-center gap-3 text-center sm:gap-4">
+            <h1 className="font-[family-name:var(--font-newsreader)] text-[38px] leading-[1.05] font-normal tracking-[-0.025em] text-balance sm:text-[56px] lg:text-[64px]">
               {heading}
             </h1>
             {line ? (
-              <p className="max-w-[460px] font-[family-name:var(--font-newsreader)] text-[20px] leading-[1.35] text-balance text-[#3a3a3c] sm:text-[22px]">
+              <p className="max-w-[460px] font-[family-name:var(--font-newsreader)] text-[17px] leading-[1.4] text-balance text-[#3a3a3c] sm:text-[22px] sm:leading-[1.35]">
                 {line}
               </p>
             ) : null}

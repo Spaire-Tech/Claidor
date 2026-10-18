@@ -98,7 +98,7 @@ const ClientPage = ({
         <button
           type="submit"
           disabled={loading}
-          className="h-[52px] w-full rounded-[12px] bg-black text-[17px] font-medium tracking-[-0.01em] text-white transition-colors hover:bg-[#1d1d1f] disabled:opacity-60"
+          className="h-[50px] w-full rounded-full bg-black text-[16px] sm:h-[52px] sm:text-[17px] font-medium tracking-[-0.01em] text-white transition-colors hover:bg-[#1d1d1f] disabled:opacity-60"
         >
           {loading ? 'Signing in…' : 'Sign in'}
         </button>

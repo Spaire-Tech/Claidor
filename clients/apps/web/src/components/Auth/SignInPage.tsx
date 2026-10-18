@@ -59,7 +59,7 @@ const PROBLEMS: Record<string, string> = {
 }
 
 const provider =
-  'flex h-[52px] w-full items-center justify-center gap-3 rounded-[12px] border border-[#d9d9de] bg-white text-[17px] font-medium tracking-[-0.01em] text-[#1d1d1f] transition-colors hover:bg-[#f5f5f7]'
+  'flex h-[50px] w-full items-center justify-center gap-3 rounded-full border border-[#d9d9de] bg-white text-[16px] font-medium tracking-[-0.01em] text-[#1d1d1f] transition-colors hover:bg-[#f5f5f7] sm:h-[52px] sm:text-[17px]'
 
 const SignInPage = ({
   mode,
@@ -167,12 +167,12 @@ const SignInPage = ({
             placeholder="Enter your email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="h-[52px] w-full rounded-[12px] border border-[#d9d9de] bg-white px-4 text-[17px] text-[#1d1d1f] placeholder:text-[#a1a1a6] focus:border-[#1d1d1f] focus:outline-none"
+            className="h-[50px] w-full rounded-full border border-[#d9d9de] bg-white px-5 text-[16px] sm:h-[52px] sm:text-[17px] text-[#1d1d1f] placeholder:text-[#a1a1a6] focus:border-[#1d1d1f] focus:outline-none"
           />
           <button
             type="submit"
             disabled={sending}
-            className="h-[52px] w-full rounded-[12px] bg-black text-[17px] font-medium tracking-[-0.01em] text-white transition-colors hover:bg-[#1d1d1f] disabled:cursor-not-allowed disabled:opacity-60"
+            className="h-[50px] w-full rounded-full bg-black text-[16px] font-medium sm:h-[52px] sm:text-[17px] tracking-[-0.01em] text-white transition-colors hover:bg-[#1d1d1f] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {sending ? 'Sending code…' : 'Continue with email'}
           </button>
