@@ -30,6 +30,7 @@ import { join } from "node:path";
 import { shopDir, type ShopAnswer, type ShopClient } from "./shop-mcp.js";
 import { fillAnswer, type CheckoutFacts, type LinkCardChoice, type LinkToolDefinition, type LinkToolResult, type SpendAnswer, type SpendRequestInput } from "../link-wallet/link-tools.js";
 import { formatPurchaseMoney } from "../link-wallet/purchase-card.js";
+import { rememberCatalogPrice } from "./catalog-prices.js";
 import type { CheckoutCard, fillCheckout as FillCheckout } from "../link-wallet/checkout-fill.js";
 
 const string = (description: string): Record<string, unknown> => ({ type: "string", description });
@@ -165,6 +166,17 @@ export function shopProductSummary(product: Record<string, unknown>): Record<str
     ...(options.length > 0 ? { options } : {}),
     ...(plain(record(product.description).plain ?? product.description, 160).length > 0 ? { description: plain(record(product.description).plain ?? product.description, 160) } : {}),
   };
+}
+
+/** The featured variant's price as the catalog gave it, kept for the products card (`catalog-prices.ts`). */
+export function rememberProductPrice(product: Record<string, unknown>): void {
+  const variant = records(product.variants)[0] ?? {};
+  const raw = record(variant.price);
+  const amount = Number(raw.amount);
+  const price = money(variant.price);
+  if (text(variant.id).length === 0 || !Number.isFinite(amount) || price.length === 0) return;
+  const was = money(variant.list_price);
+  rememberCatalogPrice(text(variant.id), { amount, currency: text(raw.currency).toLowerCase() || "usd", price, ...(was.length > 0 && was !== price ? { was } : {}) });
 }
 
 /** Shop's messages, as lines the agent and the person can read. */
@@ -686,6 +698,7 @@ export function createShopTools(options: ShopToolsOptions) {
         }, "optional");
         if (!answer.ok || answer.isError) return answerText(answer);
         const value = record(answer.value);
+        for (const product of records(value.products)) rememberProductPrice(product);
         const products = records(value.products).map(shopProductSummary);
         const pagination = record(value.pagination);
         const notes = messageLines(value.messages);
@@ -700,6 +713,7 @@ export function createShopTools(options: ShopToolsOptions) {
         if (!answer.ok || answer.isError) return answerText(answer);
         const value = record(answer.value);
         const product = Object.keys(record(value.product)).length > 0 ? record(value.product) : value;
+        rememberProductPrice(product);
         const notes = messageLines(value.messages);
         return { text: JSON.stringify({ ...shopProductSummary(product), ...(notes.length > 0 ? { notes } : {}) }, null, 1), isError: false };
       }

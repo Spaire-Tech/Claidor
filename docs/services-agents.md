@@ -765,11 +765,26 @@ client, run and held by our server (`server/simeon/desktop/link_wallet.py`, belo
      <agent>" and "View website". Buy (gateway `buyProduct`) marks that product on the card
      (`productsBuying`, so a double tap or a second device wakes nobody again) and wakes the agent
      with exactly which one, its page and price, to buy it the way below.
+     A product from Shop's search (it carries `shop_variant_id`) shows the price Shop's catalog
+     gave, not the one the agent wrote (`withCatalogPrice` in `purchase-tool.ts`, from the prices
+     `search_products` and `get_product` keep in `shop-wallet/catalog-prices.ts` for six hours),
+     and the agent is told which it corrected so it quotes the right one. 18 October 2026: on the
+     founder's first Claude Haiku 5.5 test the agent quoted a $139.99 monitor at $159.99. A
+     product found on a shop's own pages keeps the price the agent read there.
   1. A browser subagent opens the shop, fills the cart and the delivery details (from
      `get_wallet`: the sole or default address, name, email, phone) and stops at the last step
      before paying, leaving that tab open. The agent tells the person what the order is (Order,
      Delivery, Price, Terms). It never asks which card pays.
-  2. `RequestPurchase` checks the person's Link (connected, nothing to verify, the amount within
+  2. `RequestPurchase` first checks the total against the checkout page itself (18 October 2026,
+     `shared/node/link-wallet/checkout-total.ts`): it reads the checkout tab's text
+     (`readCheckoutText` in `checkout-fill.ts`, the tab `captureCheckout` takes its picture of),
+     and the total must be the amount the page names as its total ("Total", "Order total",
+     "Grand total", with the amount on that line or the next three, as Shopify writes "Total",
+     "USD", "$179.99"), or, on a page that names none, an amount the page shows. Otherwise the
+     agent is told the page's figure and nothing is asked of Link; a checkout not open in the
+     computer's browser is refused the same way. The card's total was the agent's own reading
+     until then, and Link is asked for exactly that amount.
+     It then checks the person's Link (connected, nothing to verify, the amount within
      their per-purchase, daily and 30-day limits, and their cards: those Link marks unusable by
      agents, `capabilities.agentic_payments.eligible: false`, are left out), takes a JPEG of the
      checkout tab (`captureCheckout`, below) with the shop's icon, and posts the card: Checkout,

@@ -157,7 +157,7 @@ export interface PurchaseEntryFields {
 }
 
 /** Currencies without minor units (Stripe's list), so 500 JPY is ¥500. */
-const ZERO_DECIMAL = new Set(["bif", "clp", "djf", "gnf", "jpy", "kmf", "krw", "mga", "pyg", "rwf", "ugx", "vnd", "vuv", "xaf", "xof", "xpf"]);
+export const ZERO_DECIMAL: ReadonlySet<string> = new Set(["bif", "clp", "djf", "gnf", "jpy", "kmf", "krw", "mga", "pyg", "rwf", "ugx", "vnd", "vuv", "xaf", "xof", "xpf"]);
 
 /** An amount in the smallest unit as the person reads it: 8000 usd → "$80.00". */
 export function formatPurchaseMoney(amount: number, currency: string): string {

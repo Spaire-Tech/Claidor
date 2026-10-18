@@ -3,9 +3,10 @@
  * of the checkout card (`shared/node/link-wallet/purchase-card.ts`).
  *
  * RequestPurchase is the only way an agent starts a payment. It checks the
- * person's Link first (connected, nothing to verify, the amount within their
- * limits, the card that pays), takes a picture of the checkout tab, and
- * posts the card; the turn then ends, as after a question. Link is asked
+ * total against the checkout page itself (the amount the page names as its
+ * total, `checkout-total.ts`), then the person's Link (connected, nothing to
+ * verify, the amount within their limits, the card that pays), takes a
+ * picture of the checkout tab, and posts the card; the turn then ends, as after a question. Link is asked
  * for nothing until the person presses Allow on the card, and the agent is
  * woken once Link has approved (or the person or Link said no).
  * MarkPurchaseDone closes the card after the agent paid: ordered with the
@@ -27,6 +28,9 @@ import {
 import { PRODUCTS_MESSAGE_TYPE, productsCardText, type ProductCardItem, type ProductsCardMessage } from "../../../shared/node/link-wallet/product-card.js";
 import type { CheckoutFacts } from "../../../shared/node/link-wallet/link-tools.js";
 import type { ShopCheckoutFacts } from "../../../shared/node/shop-wallet/shop-tools.js";
+import { checkTotalOnPage, moneyAmountsIn } from "../../../shared/node/link-wallet/checkout-total.js";
+import { hostOfAddress } from "../../../shared/node/link-wallet/box-chrome-tabs.js";
+import { catalogPriceFor } from "../../../shared/node/shop-wallet/catalog-prices.js";
 
 const amount = (description: string) => z.number().int().min(0).describe(description);
 
@@ -77,6 +81,8 @@ export interface PurchaseToolDependencies {
   persistPicture?(url: string): Promise<{ readonly url: string; readonly width?: number; readonly height?: number } | undefined>;
   /** Shop's catalog search (`shop-tools.ts` `search_products`), which needs no Shop account; undefined where the computer has no Shop. */
   searchProducts?(args: Record<string, unknown>): Promise<{ readonly text: string; readonly isError: boolean }> | undefined;
+  /** The checkout tab's text (`document.body.innerText`); undefined when no tab on that site answers. The card's total is checked against it. */
+  readCheckoutPage?(checkoutUrl: string): Promise<string | undefined>;
   /** The checkout tab's picture (and the shop's icon), saved where the apps can read them; undefined when no tab on that site could be taken. */
   capturePreview(checkoutUrl: string): Promise<{ readonly url: string; readonly width?: number; readonly height?: number; readonly iconUrl?: string } | undefined>;
   /** Appends the card (the checkout card, or the products card); returns its entry id when the transport reports one. */
@@ -118,6 +124,21 @@ export function productFromArgs(product: z.infer<typeof showProductsParameters>[
   };
 }
 
+/**
+ * A product from Shop's catalog carries the catalog's own price, whatever the
+ * agent wrote (`catalog-prices.ts`, 18 October 2026: the agent quoted a
+ * $139.99 monitor at $159.99). A product found anywhere else keeps the price
+ * the agent read on its page. `correction` says what changed, for the agent.
+ */
+export function withCatalogPrice(product: ProductCardItem, nowMs: number): { readonly product: ProductCardItem; readonly correction?: string } {
+  const known = product.shop == null ? undefined : catalogPriceFor(product.shop.variantId, nowMs);
+  if (known == null) return { product };
+  const written = product.price ?? "";
+  const same = written.length > 0 && moneyAmountsIn(written, known.currency)[0] === known.amount;
+  const priced = { ...product, price: known.price };
+  return same || written.length === 0 ? { product: priced } : { product: priced, correction: `"${product.title}" is ${known.price} (you wrote ${written})` };
+}
+
 export function createShowProductsTool(deps: PurchaseToolDependencies) {
   return defineCommunicateTool(deps, {
     id: "SHOW_PRODUCTS",
@@ -127,14 +148,18 @@ export function createShowProductsTool(deps: PurchaseToolDependencies) {
     describeActivity: (args: z.infer<typeof showProductsParameters>) => ({ detail: args.products.length === 1 ? `Showing ${args.products[0]?.title ?? "a product"}` : `Showing ${args.products.length} products` }),
     execute: async (_ctx, args: z.infer<typeof showProductsParameters>, resolved) => {
       const products: ProductCardItem[] = [];
+      const corrected: string[] = [];
       for (const given of args.products) {
         const product = productFromArgs(given);
         if (typeof product === "string") return product;
-        products.push(product);
+        const priced = withCatalogPrice(product, (resolved.now ?? Date.now)());
+        if (priced.correction != null) corrected.push(priced.correction);
+        products.push(priced.product);
       }
       const message: ProductsCardMessage = { type: PRODUCTS_MESSAGE_TYPE, content: productsCardText(products), products };
       const entryId = resolved.emitCard(message, (resolved.now ?? Date.now)());
-      return `The products card is in the chat${entryId == null ? "" : ` (entry ${entryId})`}. The person opens one and presses Buy (you're woken with which one, to buy it through the checkout card) or View website. Don't list them again in text; at most one short line on which you'd pick and why, then stop.`;
+      const prices = corrected.length === 0 ? "" : ` The card shows the prices Shop's catalog gave, not the ones you wrote: ${corrected.join("; ")}. Quote those.`;
+      return `The products card is in the chat${entryId == null ? "" : ` (entry ${entryId})`}.${prices} The person opens one and presses Buy (you're woken with which one, to buy it through the checkout card) or View website. Don't list them again in text; at most one short line on which you'd pick and why, then stop.`;
     },
   });
 }
@@ -284,6 +309,13 @@ export function createRequestPurchaseTool(deps: PurchaseToolDependencies) {
         const entryId = resolved.emitCard(message, (resolved.now ?? Date.now)());
         const differs = message.purchase.amount !== args.total ? ` Shop's total is ${message.purchase.total}, which the card shows.` : "";
         return `The checkout card for ${message.purchase.total} at ${message.purchase.merchant}, paid through Shop, is in the chat${entryId == null ? "" : ` (entry ${entryId})`}.${differs} ${PURCHASE_SHOWN_NOTE_SHOP_CHECKOUT}`;
+      }
+      // The total is the checkout page's own before the wallet is asked for it (`checkout-total.ts`).
+      if (resolved.readCheckoutPage != null) {
+        const pageText = await resolved.readCheckoutPage(args.checkout_url).catch(() => undefined);
+        if (pageText == null) return `The checkout isn't open in your computer's browser (no tab on ${hostOfAddress(args.checkout_url)} could be read), so its total can't be checked against the page. Nothing was asked of the wallet. Open the checkout at its last step before paying, then call RequestPurchase again with that tab's own address as checkout_url.`;
+        const checked = checkTotalOnPage({ total: args.total, currency: args.currency, pageText, format: (amount) => formatPurchaseMoney(amount, args.currency.toLowerCase()) });
+        if (!checked.ok) return checked.message;
       }
       const asked = resolved.checkoutFacts({ amount: args.total, currency: args.currency, ...(args.payment_method_id == null || args.payment_method_id.length === 0 ? {} : { paymentMethodId: args.payment_method_id }), ...(args.wallet == null ? {} : { wallet: args.wallet }) });
       if (asked == null) return "Link and Shop run on the cloud computer and aren't available here, so nothing can be bought from this conversation.";

@@ -260,6 +260,37 @@ export async function captureCheckout(options: { readonly pageHint: string; read
   return undefined;
 }
 
+/**
+ * The checkout's text as the person reads it (`document.body.innerText`),
+ * from the same tab `captureCheckout` takes its picture of, so the card's
+ * total can be checked against the page (`checkout-total.ts`). Nothing on
+ * the page is touched; nothing when no tab is on that site.
+ */
+export async function readCheckoutText(options: { readonly pageHint: string; readonly ports?: readonly number[]; readonly log?: (line: string) => void }): Promise<string | undefined> {
+  const log = options.log ?? (() => undefined);
+  const hint = options.pageHint.trim();
+  if (hint.length === 0) { log("no page text: no checkout address"); return undefined; }
+  const tabs = await listTabsOn(options.ports ?? BOX_CHROME_PORTS);
+  const showing = tabsShowing(tabs, hint);
+  if (showing.length === 0) { log(`no page text: no tab on ${hostOf(hint)}`); return undefined; }
+  const read = async (tab: BoxChromeTab): Promise<string | undefined> => {
+    const answer = await tabCommand<{ result?: { value?: unknown } }>(tab, "Runtime.evaluate", { expression: "document.body ? document.body.innerText : ''", returnByValue: true }, 5000);
+    const value = answer?.result?.value;
+    return typeof value === "string" && value.trim().length > 0 ? value : undefined;
+  };
+  for (const tab of showing.slice(0, 2)) {
+    const first = await read(tab);
+    if (first != null) return first;
+    // A tab Chrome put to sleep answers once it is in front.
+    await activateTab(tab);
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    const second = await read(tab);
+    if (second != null) return second;
+    log(`no page text: the tab on ${hostOf(tab.url)} (port ${tab.port}) didn't answer`);
+  }
+  return undefined;
+}
+
 async function screenshotTab(tab: BoxChromeTab): Promise<Uint8Array | undefined> {
   const take = async (): Promise<Uint8Array | undefined> => {
     const shot = await tabCommand<{ data?: unknown }>(tab, "Page.captureScreenshot", { format: "jpeg", quality: 70 }, 8000);

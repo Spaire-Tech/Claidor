@@ -193,7 +193,7 @@ import type {
 import type { AgentRule } from "../packages/proto/generated/agent/v1/agent_rules_pb.js";
 import { HOST_LOG_PREFIX, logHostLine } from "../shared/host-log.js";
 import { configuredSimeonModel } from "./extensions/inference/provider-session.js";
-import { BOX_CHROME_PORTS, captureCheckout, fetchCheckoutIcon } from "../shared/node/link-wallet/checkout-fill.js";
+import { BOX_CHROME_PORTS, captureCheckout, fetchCheckoutIcon, readCheckoutText } from "../shared/node/link-wallet/checkout-fill.js";
 import type { LinkTools } from "../shared/node/link-wallet/link-tools.js";
 import type { ShopTools } from "../shared/node/shop-wallet/shop-tools.js";
 import type { WalletCheckoutFacts } from "./runner/tools/purchase-tool.js";
@@ -2434,6 +2434,11 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
                   persistPicture,
                   // SearchProducts: Shop's catalog, signed out unless the person connected Shop (then with their preferences).
                   ...(shop == null ? {} : { searchProducts: (args: Record<string, unknown>) => shop.call("search_products", args) }),
+                  // The checkout's text, from the same tab the picture is taken of: the card's total is checked against it.
+                  readCheckoutPage: async (checkoutUrl) => {
+                    const own = 9222 + (boxAgentWindowIndex(extensions.api("forever-box").box as any, session.id) ?? 1);
+                    return await readCheckoutText({ pageHint: checkoutUrl, ports: [own, ...BOX_CHROME_PORTS.filter((port) => port !== own)], log: (line) => logHostLine(`${HOST_LOG_PREFIX} [purchase] ${line} (${session.id})`) });
+                  },
                   // The agent's own Chrome first (9222 + its window), then the computer's others.
                   capturePreview: async (checkoutUrl) => {
                     const own = 9222 + (boxAgentWindowIndex(extensions.api("forever-box").box as any, session.id) ?? 1);
