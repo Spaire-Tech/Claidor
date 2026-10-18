@@ -52,87 +52,123 @@ async def _rows(session: AsyncSession) -> Sequence[Row[Any]]:
     return (await session.execute(DesktopUsage.__table__.select())).all()
 
 
-RESPONSES_ANSWER: dict[str, Any] = {
-    "id": "resp_1",
-    "output": [
+CLAUDE_ANSWER: dict[str, Any] = {
+    "id": "msg_1",
+    "type": "message",
+    "role": "assistant",
+    "content": [
         {
-            "type": "web_search_call",
-            "id": "ws_1",
-            "status": "completed",
-            "action": {
-                "type": "search",
-                "query": "tide tables brest",
-                "sources": [
-                    {"type": "url", "url": "https://tides.example/brest"},
-                    {"type": "url", "url": "https://example.org/cited"},
-                ],
-            },
+            "type": "server_tool_use",
+            "id": "srvtoolu_1",
+            "name": "web_search",
+            "input": {"query": "tide tables brest"},
         },
         {
-            "type": "message",
-            "role": "assistant",
+            "type": "web_search_tool_result",
+            "tool_use_id": "srvtoolu_1",
             "content": [
                 {
-                    "type": "output_text",
-                    "text": "Brest has two high tides a day. The next is at 14:02.",
-                    "annotations": [
-                        {
-                            "type": "url_citation",
-                            "start_index": 0,
-                            "end_index": 32,
-                            "url": "https://example.org/cited",
-                            "title": "Cited page",
-                        }
-                    ],
+                    "type": "web_search_result",
+                    "url": "https://tides.example/brest",
+                    "title": "Brest tides",
+                    "encrypted_content": "x",
+                },
+                {
+                    "type": "web_search_result",
+                    "url": "https://example.org/cited",
+                    "title": "Cited page",
+                    "encrypted_content": "y",
+                },
+            ],
+        },
+        {
+            "type": "text",
+            "text": "Brest has two high tides a day.",
+            "citations": [
+                {
+                    "type": "web_search_result_location",
+                    "url": "https://example.org/cited",
+                    "title": "Cited page",
+                    "cited_text": " Two high tides a day at Brest. ",
+                    "encrypted_index": "z",
                 }
             ],
         },
+        {"type": "text", "text": " The next is at 14:02."},
     ],
+    "stop_reason": "end_turn",
     "usage": {
-        "input_tokens": 120,
-        "input_tokens_details": {"cached_tokens": 20},
+        "input_tokens": 100,
+        "cache_read_input_tokens": 20,
         "output_tokens": 30,
+        "server_tool_use": {"web_search_requests": 1},
     },
 }
+
+ANTHROPIC = f"{settings.DESKTOP_ANTHROPIC_BASE_URL}/v1/messages"
 
 
 class TestReadingASearchAnswer:
     def test_the_answer_its_pages_and_the_count_of_searches(self) -> None:
-        result = web_search_answer(RESPONSES_ANSWER)
+        result = web_search_answer(CLAUDE_ANSWER)
         assert result["answer"] == (
             "Brest has two high tides a day. The next is at 14:02."
         )
         assert result["searches"] == 1
-        # The cited page comes first, carrying the sentence it supports;
-        # a page visited but not cited follows with nothing but its address.
+        # The cited page comes first, carrying the sentence it quotes; a
+        # page the search returned but the answer did not cite follows with
+        # its title and no text.
         assert result["documents"] == [
             {
                 "url": "https://example.org/cited",
                 "title": "Cited page",
-                "text": "Brest has two high tides a day.",
+                "text": "Two high tides a day at Brest.",
             },
-            {"url": "https://tides.example/brest", "title": "", "text": ""},
+            {"url": "https://tides.example/brest", "title": "Brest tides", "text": ""},
         ]
+        assert "error" not in result
+
+    def test_without_a_count_the_searches_asked_are_counted(self) -> None:
+        answer = {**CLAUDE_ANSWER, "usage": {"input_tokens": 1}}
+        assert web_search_answer(answer)["searches"] == 1
+
+    def test_a_failed_search_says_why(self) -> None:
+        failed = {
+            "content": [
+                {"type": "server_tool_use", "name": "web_search", "input": {}},
+                {
+                    "type": "web_search_tool_result",
+                    "content": {
+                        "type": "web_search_tool_result_error",
+                        "error_code": "too_many_requests",
+                    },
+                },
+            ]
+        }
+        result = web_search_answer(failed)
+        assert result["error"] == "too_many_requests"
+        assert result["documents"] == []
 
     def test_garbage_is_an_empty_answer_not_an_error(self) -> None:
         assert web_search_answer(None) == {"answer": "", "documents": [], "searches": 0}
-        assert web_search_answer({"output": "nope"})["documents"] == []
+        assert web_search_answer({"content": "nope"})["documents"] == []
 
 
 @pytest.mark.asyncio
 class TestWebSearch:
-    async def test_a_search_is_made_on_openai_read_and_metered_twice(
+    async def test_a_search_is_made_on_claude_read_and_metered_twice(
         self,
         client: httpx.AsyncClient,
         session: AsyncSession,
         user: User,
         mocker: MockerFixture,
     ) -> None:
-        mocker.patch.object(settings, "OPENAI_API_KEY", "sk-openai")
+        mocker.patch.object(settings, "ANTHROPIC_API_KEY", "sk-ant")
+        mocker.patch.object(settings, "OPENAI_API_KEY", "")
         headers = await _signed_in(client, session, user)
         with respx.mock(assert_all_called=True) as mock:
-            route = mock.post(f"{OPENAI}/v1/responses").mock(
-                return_value=httpx.Response(200, json=RESPONSES_ANSWER)
+            route = mock.post(ANTHROPIC).mock(
+                return_value=httpx.Response(200, json=CLAUDE_ANSWER)
             )
             response = await client.post(
                 "/desktop/api/proxy/v1/web/search",
@@ -147,11 +183,16 @@ class TestWebSearch:
             "https://tides.example/brest",
         ]
 
-        sent = json.loads(route.calls[0].request.content)
-        assert route.calls[0].request.headers["authorization"] == "Bearer sk-openai"
-        assert sent["model"] == WEB_SEARCH_MODEL.model_id
-        assert sent["input"] == "tide tables brest"
-        assert sent["tools"] == [{"type": "web_search"}]
+        request = route.calls[0].request
+        sent = json.loads(request.content)
+        assert request.headers["x-api-key"] == "sk-ant"
+        assert request.headers["anthropic-version"]
+        assert "authorization" not in request.headers
+        assert sent["model"] == WEB_SEARCH_MODEL.model_id == "claude-haiku-5-5"
+        assert sent["messages"] == [{"role": "user", "content": "tide tables brest"}]
+        assert sent["tools"] == [
+            {"type": "web_search_20250305", "name": "web_search", "max_uses": 3}
+        ]
         assert "stream" not in sent
 
         rows = {row.model: row for row in await _rows(session)}
@@ -171,23 +212,95 @@ class TestWebSearch:
             Usage(input_tokens=100, output_tokens=30, cache_read_tokens=20),
         )
         calls = rows[WEB_SEARCH_CALL_MODEL.model_id]
+        assert WEB_SEARCH_CALL_MODEL.model_id == "claude-web-search"
         assert calls.input_tokens == 1
         assert calls.credits == credits_for(
             WEB_SEARCH_CALL_MODEL, Usage(input_tokens=1)
         )
         assert calls.credits > 0
 
-    async def test_nothing_to_search_for_is_refused_before_openai(
+    async def test_a_cheap_model_that_refuses_is_asked_again_on_sonnet(
         self,
         client: httpx.AsyncClient,
         session: AsyncSession,
         user: User,
         mocker: MockerFixture,
     ) -> None:
-        mocker.patch.object(settings, "OPENAI_API_KEY", "sk-openai")
+        mocker.patch.object(settings, "ANTHROPIC_API_KEY", "sk-ant")
+        headers = await _signed_in(client, session, user)
+        refusal = {
+            "type": "error",
+            "error": {
+                "type": "invalid_request_error",
+                "message": "web_search is not supported",
+            },
+        }
+        with respx.mock(assert_all_called=True) as mock:
+            route = mock.post(ANTHROPIC).mock(
+                side_effect=[
+                    httpx.Response(400, json=refusal),
+                    httpx.Response(200, json=CLAUDE_ANSWER),
+                ]
+            )
+            response = await client.post(
+                "/desktop/api/proxy/v1/web/search",
+                headers=headers,
+                json={"query": "tide tables brest"},
+            )
+        assert response.status_code == 200, response.text
+        second = json.loads(route.calls[1].request.content)
+        assert second["model"] == "claude-sonnet-5-5"
+        assert second["tools"][0]["type"] == "web_search_20260209"
+        rows = sorted((row.model, row.upstream_status) for row in await _rows(session))
+        assert rows == [
+            ("claude-haiku-5-5", 400),
+            ("claude-sonnet-5-5", 200),
+            ("claude-web-search", 200),
+        ]
+
+    async def test_a_search_that_found_nothing_because_it_failed_is_a_502(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch.object(settings, "ANTHROPIC_API_KEY", "sk-ant")
+        headers = await _signed_in(client, session, user)
+        failed = {
+            "content": [
+                {"type": "server_tool_use", "name": "web_search", "input": {}},
+                {
+                    "type": "web_search_tool_result",
+                    "content": {
+                        "type": "web_search_tool_result_error",
+                        "error_code": "unavailable",
+                    },
+                },
+            ],
+            "usage": {"input_tokens": 10, "output_tokens": 0},
+        }
+        with respx.mock(assert_all_called=True) as mock:
+            mock.post(ANTHROPIC).mock(return_value=httpx.Response(200, json=failed))
+            response = await client.post(
+                "/desktop/api/proxy/v1/web/search",
+                headers=headers,
+                json={"query": "anything"},
+            )
+        assert response.status_code == 502
+        assert "unavailable" in response.json()["error"]["message"]
+
+    async def test_nothing_to_search_for_is_refused_before_claude(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch.object(settings, "ANTHROPIC_API_KEY", "sk-ant")
         headers = await _signed_in(client, session, user)
         with respx.mock(assert_all_called=False) as mock:
-            route = mock.post(f"{OPENAI}/v1/responses")
+            route = mock.post(ANTHROPIC)
             for body in ({}, {"query": "   "}, {"query": "x" * 1001}):
                 response = await client.post(
                     "/desktop/api/proxy/v1/web/search", headers=headers, json=body
@@ -204,14 +317,18 @@ class TestWebSearch:
         user: User,
         mocker: MockerFixture,
     ) -> None:
-        mocker.patch.object(settings, "OPENAI_API_KEY", "sk-openai")
+        mocker.patch.object(settings, "ANTHROPIC_API_KEY", "sk-ant")
         warn = mocker.patch.object(proxy_common_module.log, "warning")
         headers = await _signed_in(client, session, user)
-        refusal = {"error": {"message": "web_search is not available for this model."}}
+        refusal = {
+            "type": "error",
+            "error": {
+                "type": "invalid_request_error",
+                "message": "web_search is not available.",
+            },
+        }
         with respx.mock(assert_all_called=True) as mock:
-            mock.post(f"{OPENAI}/v1/responses").mock(
-                return_value=httpx.Response(400, json=refusal)
-            )
+            mock.post(ANTHROPIC).mock(return_value=httpx.Response(400, json=refusal))
             response = await client.post(
                 "/desktop/api/proxy/v1/web/search",
                 headers=headers,
@@ -220,10 +337,16 @@ class TestWebSearch:
         assert response.status_code == 400
         assert response.json() == refusal
         logged = [c for c in warn.call_args_list if c.args[0] == UPSTREAM_REFUSED]
-        assert len(logged) == 1
+        assert [one.kwargs["model"] for one in logged] == [
+            "claude-haiku-5-5",
+            "claude-sonnet-5-5",
+        ]
         assert "web_search" in logged[0].kwargs["body"]
         rows = await _rows(session)
-        assert [(row.upstream_status, row.credits) for row in rows] == [(400, 0)]
+        assert [(row.upstream_status, row.credits) for row in rows] == [
+            (400, 0),
+            (400, 0),
+        ]
 
     async def test_without_a_key_or_with_no_credits_left_nothing_is_called(
         self,
@@ -235,14 +358,22 @@ class TestWebSearch:
     ) -> None:
         headers = await _signed_in(client, session, user)
         with respx.mock(assert_all_called=False) as mock:
-            route = mock.post(f"{OPENAI}/v1/responses")
-            mocker.patch.object(settings, "OPENAI_API_KEY", "")
+            route = mock.post(ANTHROPIC)
+            mocker.patch.object(settings, "ANTHROPIC_API_KEY", "")
+            response = await client.post(
+                "/desktop/api/proxy/v1/web/search", headers=headers, json={"query": "a"}
+            )
+            assert response.status_code == 503
+            # Bedrock alone serves Claude but no web search: the Anthropic key it is.
+            mocker.patch.object(settings, "DESKTOP_CLAUDE_VIA", "bedrock")
+            mocker.patch.object(settings, "DESKTOP_BEDROCK_ACCESS_KEY_ID", "AKIA")
+            mocker.patch.object(settings, "DESKTOP_BEDROCK_SECRET_ACCESS_KEY", "secret")
             response = await client.post(
                 "/desktop/api/proxy/v1/web/search", headers=headers, json={"query": "a"}
             )
             assert response.status_code == 503
 
-            mocker.patch.object(settings, "OPENAI_API_KEY", "sk-openai")
+            mocker.patch.object(settings, "ANTHROPIC_API_KEY", "sk-ant")
             await save_fixture(
                 DesktopUsage(
                     user_id=user.id,

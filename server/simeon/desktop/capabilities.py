@@ -7,8 +7,9 @@ The desktop agent advertises four tools that are not a model turn. Until
 every one of them failed the moment the app was pointed here
 (`docs/services-core.md`). Web fetch now runs on the
 person's machine and needs nothing from us. The other three need a
-provider, and these are their doors: each on OpenAI with Simeon's key,
-each metered in the same unit as a model turn (`pricing.py`).
+provider, and these are their doors: search on Claude (since 18 October
+2026), pictures and dictation on OpenAI, each with Simeon's key and each
+metered in the same unit as a model turn (`pricing.py`).
 
 Same manners as the speech route in `endpoints.py`: the body is read by
 hand so every refusal comes back in the one error shape the app already
@@ -45,11 +46,16 @@ from .pricing import (
     TRANSCRIPTION_MODEL,
     WEB_SEARCH_CALL_MODEL,
     WEB_SEARCH_MAX_QUERY_CHARACTERS,
+    WEB_SEARCH_MAX_USES,
     WEB_SEARCH_MODEL_ID,
+    WEB_SEARCH_SECOND_MODEL_ID,
+    WEB_SEARCH_SECOND_TOOL,
+    WEB_SEARCH_TOOL,
     image_usage,
     transcription_seconds,
 )
 from .proxy_common import (
+    ANTHROPIC_VERSION,
     budget_refusal,
     error_response,
     log_upstream_refusal,
@@ -64,7 +70,6 @@ from .service import (
     model_by_id,
     provider_api_key,
     provider_base_url,
-    provider_configured,
     usage_from_answer,
 )
 
@@ -72,10 +77,16 @@ log = structlog.get_logger()
 
 router = APIRouter(include_in_schema=False)
 
-_WEB_SEARCH_MODEL = model_by_id(WEB_SEARCH_MODEL_ID)
-if _WEB_SEARCH_MODEL is None:  # pragma: no cover - a catalogue mistake, caught at boot
-    raise RuntimeError(f"{WEB_SEARCH_MODEL_ID} is not in the catalogue")
-WEB_SEARCH_MODEL: DesktopModel = _WEB_SEARCH_MODEL
+
+def _catalogued(model_id: str) -> DesktopModel:
+    model = model_by_id(model_id)
+    if model is None:  # pragma: no cover - a catalogue mistake, caught at boot
+        raise RuntimeError(f"{model_id} is not in the catalogue")
+    return model
+
+
+WEB_SEARCH_MODEL = _catalogued(WEB_SEARCH_MODEL_ID)
+WEB_SEARCH_SECOND_MODEL = _catalogued(WEB_SEARCH_SECOND_MODEL_ID)
 
 WEB_SEARCH_INSTRUCTIONS = (
     "Search the web for the query. Answer in a few plain sentences, and "
@@ -108,10 +119,14 @@ def _json_object(raw: bytes) -> dict[str, Any] | JSONResponse:
 
 
 async def _gate(
-    session: AsyncSession, caller: ProxyCaller, what: str
+    session: AsyncSession,
+    caller: ProxyCaller,
+    what: str,
+    provider: DesktopProvider = DesktopProvider.openai,
 ) -> JSONResponse | None:
-    """The two refusals every door makes before calling anyone."""
-    if not provider_configured(DesktopProvider.openai):
+    """The two refusals every door makes before calling anyone. The
+    provider's own key, not Bedrock: Bedrock serves no web search."""
+    if not provider_api_key(provider):
         return error_response(
             "api_error", f"The {what} service is not configured.", 503
         )
@@ -161,69 +176,94 @@ def _openai_url(path: str) -> str:
 
 def web_search_answer(payload: Any) -> dict[str, Any]:
     """What the agent's `web_search` tool wants — an answer and the pages
-    it rests on — read out of one `/v1/responses` answer that carried the
-    hosted `web_search` tool.
+    it rests on — read out of one Messages answer that carried Claude's
+    `web_search` tool.
 
-    The answer is the message text. The pages are its `url_citation`
-    annotations, each with the sentence it supports as its text, and
-    after them any page the search visited without citing
-    (`web_search_call.action.sources`), title-less and text-less, so the
-    agent can still fetch it. `searches` is how many times the tool ran,
-    which is what OpenAI charges for over the tokens.
+    The answer is the text. The pages are its `web_search_result_location`
+    citations, each with the sentence it quotes, and after them every
+    other page the searches returned (`web_search_tool_result`), with its
+    title and no text, so the agent can still fetch it. `searches` is how
+    many searches ran (`usage.server_tool_use.web_search_requests`, else
+    the `server_tool_use` blocks), which is what Anthropic charges for over
+    the tokens. A search that failed answers with an error object in place
+    of its results; its code comes back as `error`.
     """
-    answer = ""
+    parts: list[str] = []
     documents: list[dict[str, str]] = []
     seen: set[str] = set()
-    searches = 0
-    uncited: list[str] = []
-    output = payload.get("output") if isinstance(payload, dict) else None
-    for item in output if isinstance(output, list) else []:
-        if not isinstance(item, dict):
+    returned: list[tuple[str, str]] = []
+    asked = 0
+    error: str | None = None
+    content = payload.get("content") if isinstance(payload, dict) else None
+    for block in content if isinstance(content, list) else []:
+        if not isinstance(block, dict):
             continue
-        if item.get("type") == "web_search_call":
-            searches += 1
-            action = item.get("action")
-            sources = action.get("sources") if isinstance(action, dict) else None
-            for source in sources if isinstance(sources, list) else []:
-                url = source.get("url") if isinstance(source, dict) else None
-                if isinstance(url, str) and url:
-                    uncited.append(url)
-            continue
-        if item.get("type") != "message":
-            continue
-        for part in item.get("content") or []:
-            if not isinstance(part, dict) or part.get("type") != "output_text":
+        kind = block.get("type")
+        if kind == "server_tool_use" and block.get("name") == "web_search":
+            asked += 1
+        elif kind == "web_search_tool_result":
+            results = block.get("content")
+            if isinstance(results, dict):
+                code = results.get("error_code")
+                error = code if isinstance(code, str) and code else "unavailable"
                 continue
-            text = part.get("text")
+            for result in results if isinstance(results, list) else []:
+                url = result.get("url") if isinstance(result, dict) else None
+                if isinstance(url, str) and url:
+                    title = result.get("title")
+                    returned.append((url, title if isinstance(title, str) else ""))
+        elif kind == "text":
+            text = block.get("text")
             if not isinstance(text, str):
                 continue
-            answer += text
-            for note in part.get("annotations") or []:
-                if not isinstance(note, dict) or note.get("type") != "url_citation":
+            parts.append(text)
+            for citation in block.get("citations") or []:
+                if (
+                    not isinstance(citation, dict)
+                    or citation.get("type") != "web_search_result_location"
+                ):
                     continue
-                url = note.get("url")
+                url = citation.get("url")
                 if not isinstance(url, str) or not url or url in seen:
                     continue
                 seen.add(url)
-                start, end = note.get("start_index"), note.get("end_index")
-                cited = (
-                    text[start:end]
-                    if isinstance(start, int) and isinstance(end, int)
-                    else ""
-                )
-                title = note.get("title")
+                title, cited = citation.get("title"), citation.get("cited_text")
                 documents.append(
                     {
                         "url": url,
                         "title": title if isinstance(title, str) else "",
-                        "text": cited.strip(),
+                        "text": cited.strip() if isinstance(cited, str) else "",
                     }
                 )
-    for url in uncited:
+    for url, title in returned:
         if url not in seen:
             seen.add(url)
-            documents.append({"url": url, "title": "", "text": ""})
-    return {"answer": answer.strip(), "documents": documents, "searches": searches}
+            documents.append({"url": url, "title": title, "text": ""})
+    usage = payload.get("usage") if isinstance(payload, dict) else None
+    server = usage.get("server_tool_use") if isinstance(usage, dict) else None
+    counted = server.get("web_search_requests") if isinstance(server, dict) else None
+    searches = counted if isinstance(counted, int) and counted >= 0 else asked
+    answer: dict[str, Any] = {
+        "answer": "".join(parts).strip(),
+        "documents": documents,
+        "searches": searches,
+    }
+    if error is not None:
+        answer["error"] = error
+    return answer
+
+
+def _search_body(model: DesktopModel, tool: str, query: str) -> dict[str, Any]:
+    return {
+        "model": model.model_id,
+        "max_tokens": 4096,
+        "system": WEB_SEARCH_INSTRUCTIONS,
+        "messages": [{"role": "user", "content": query}],
+        "tools": [
+            {"type": tool, "name": "web_search", "max_uses": WEB_SEARCH_MAX_USES}
+        ],
+        "output_config": {"effort": "low"},
+    }
 
 
 @router.post("/api/proxy/v1/web/search", name="desktop:web_search", response_model=None)
@@ -235,11 +275,16 @@ async def web_search(
     """One search of the web, as the agent's tool asks for it:
     `{query}` in, `{answer, documents[{url, title, text}]}` out.
 
-    OpenAI's hosted `web_search` tool does the searching, on the cheap
-    model, in one non-streaming `/v1/responses` call. Two usage rows come
-    out of it: the tokens on the reading model's own row, and the
-    searches made on `WEB_SEARCH_CALL_MODEL`'s, because OpenAI bills the
-    two separately and a single row could count only one of them.
+    Claude's server-side `web_search` tool does the searching, on the
+    cheap model, in one non-streaming `/v1/messages` call; a 400 from the
+    cheap model is asked once more on Claude Sonnet 5.5. Always on the
+    Anthropic key, even when Claude otherwise goes through Bedrock, which
+    serves no web search. Two usage rows come out of it: the tokens on the
+    reading model's own row, and the searches made on
+    `WEB_SEARCH_CALL_MODEL`'s, because Anthropic bills the two separately
+    and a single row could count only one of them. Until 18 October 2026
+    this was OpenAI's hosted search, and it stopped when the OpenAI
+    account ran out of money.
     """
     payload = _json_object(await request.body())
     if isinstance(payload, JSONResponse):
@@ -255,41 +300,42 @@ async def web_search(
             f"That is longer than {WEB_SEARCH_MAX_QUERY_CHARACTERS} characters.",
             400,
         )
-    refused = await _gate(session, caller, "search")
+    refused = await _gate(session, caller, "search", DesktopProvider.anthropic)
     if refused is not None:
         return refused
 
-    body = {
-        "model": WEB_SEARCH_MODEL.model_id,
-        "instructions": WEB_SEARCH_INSTRUCTIONS,
-        "input": query.strip(),
-        "tools": [{"type": "web_search"}],
-        "tool_choice": "auto",
-        "include": ["web_search_call.action.sources"],
-        "store": False,
+    url = f"{provider_base_url(DesktopProvider.anthropic)}/v1/messages"
+    headers = {
+        "x-api-key": provider_api_key(DesktopProvider.anthropic),
+        "anthropic-version": ANTHROPIC_VERSION,
+        "content-type": "application/json",
     }
+    tries = (
+        (WEB_SEARCH_MODEL, WEB_SEARCH_TOOL),
+        (WEB_SEARCH_SECOND_MODEL, WEB_SEARCH_SECOND_TOOL),
+    )
     async with httpx.AsyncClient(timeout=upstream_timeout()) as client:
-        try:
-            upstream = await client.post(
-                _openai_url("/responses"), headers=_openai_headers(), json=body
+        for index, (model, tool) in enumerate(tries):
+            try:
+                upstream = await client.post(
+                    url, headers=headers, json=_search_body(model, tool, query.strip())
+                )
+            except httpx.HTTPError as error:
+                log.warning("desktop.search.upstream_unreachable", error=str(error))
+                return error_response(
+                    "api_error", "The search service could not be reached.", 502
+                )
+            if upstream.status_code == 200:
+                break
+            await _record(
+                request, session, caller, model, Usage(), upstream.status_code, "search"
             )
-        except httpx.HTTPError as error:
-            log.warning("desktop.search.upstream_unreachable", error=str(error))
-            return error_response(
-                "api_error", "The search service could not be reached.", 502
-            )
-
-    if upstream.status_code != 200:
-        await _record(
-            request,
-            session,
-            caller,
-            WEB_SEARCH_MODEL,
-            Usage(),
-            upstream.status_code,
-            "search",
-        )
-        return _refusal(WEB_SEARCH_MODEL, upstream)
+            if upstream.status_code == 400 and index + 1 < len(tries):
+                # Refused as asked (the cheap model and its tool): written down,
+                # then asked of the next.
+                log_upstream_refusal(model, upstream.status_code, upstream.content)
+                continue
+            return _refusal(model, upstream)
 
     try:
         answer = upstream.json()
@@ -300,8 +346,8 @@ async def web_search(
         request,
         session,
         caller,
-        WEB_SEARCH_MODEL,
-        usage_from_answer(SpokenApi.openai_responses, answer),
+        model,
+        usage_from_answer(SpokenApi.anthropic_messages, answer),
         200,
         "search",
     )
@@ -315,6 +361,15 @@ async def web_search(
             200,
             "search",
         )
+    failed = result.pop("error", None)
+    if failed is not None:
+        log.warning("desktop.search.failed", model=model.model_id, error=failed)
+        if not result["answer"] and not result["documents"]:
+            return error_response(
+                "api_error",
+                f"The web search failed ({failed}); try again in a moment.",
+                502,
+            )
     return JSONResponse(result, headers={"cache-control": "no-store"})
 
 

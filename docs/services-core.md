@@ -440,7 +440,7 @@ line. This means the server and the app can be deployed in either order.
 
 | Capability | Model | Price |
 |---|---|---|
-| Web search | `gpt-5.6-luna` with OpenAI's hosted `web_search` tool, one non-streaming call | tokens, plus $0.01 per search |
+| Web search | `claude-haiku-5-5` with Claude's server-side `web_search` tool (`web_search_20250305`, up to 3 searches), one non-streaming `/v1/messages` call on `ANTHROPIC_API_KEY` (Bedrock serves no web search); a 400 is asked once more on `claude-sonnet-5-5` with `web_search_20260209`. Until 18 October 2026 it was `gpt-5.6-luna` with OpenAI's hosted search, and it stopped when the OpenAI account ran out of money. A search that failed (`web_search_tool_result_error`) logs `desktop.search.failed` and, with nothing found, answers 502 | tokens, plus $0.01 per search (`claude-web-search` rows) |
 | Images | `gpt-image-2.5-flare` for a new picture, `gpt-image-2.5-sunburst` when editing one (a call with reference images); quality `medium` unless asked (avatars `low`). If OpenAI will not serve the new model to the account, the same call is made once on `gpt-image-1` and a `desktop.images.model_unavailable` line is logged | $5 text in, $8 image in, $30 image out, per million tokens (`gpt-image-1`: $10 image in, $40 out) |
 | Transcription | `gpt-4o-mini-transcribe` | $0.003 per minute of audio; 25 MB upload limit |
 | Speech | `gpt-4o-mini-tts`, voice `alloy` | $15 per million characters; 4,000 characters a call |
@@ -581,8 +581,12 @@ box and `SAND_KEEP_BOX_RUNNING_ON_QUIT=1` always keeps it running
 ### Settings on Render
 
 - `SIMEON_OPENAI_API_KEY`: the OpenAI key. Without it, no OpenAI model is offered.
+  Still needed on a Claude policy for pictures (GPT Image), dictation
+  (`gpt-4o-mini-transcribe`, the apps' microphone), speech and the fallback
+  model (GPT-6 Sol); an empty OpenAI account stops those four, not Claude.
 - `ANTHROPIC_API_KEY` (or `SIMEON_ANTHROPIC_API_KEY`): Claude. Without it no
-  Claude model is offered, and a Claude policy answers on GPT-6 Sol.
+  Claude model is offered, and a Claude policy answers on GPT-6 Sol. Web search
+  needs this key even when Claude goes through Bedrock.
 - `SIMEON_DESKTOP_MODELS`: `claude` (the default since 18 October 2026),
   `openai`, `claude-haiku` or `claude-opus`. Set on Render, it wins over the
   default.

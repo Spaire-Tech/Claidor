@@ -93,7 +93,7 @@ from .pricing import (
     openai_models_list,
     video_models,
 )
-from .proxy_common import budget_refusal
+from .proxy_common import ANTHROPIC_VERSION, budget_refusal
 from .proxy_common import error_response as _error
 from .proxy_common import log_upstream_refusal as _log_upstream_refusal
 from .proxy_common import upstream_timeout as _timeout
@@ -133,7 +133,6 @@ log = structlog.get_logger()
 
 router = APIRouter(prefix="/desktop", tags=["desktop", APITag.private])
 
-ANTHROPIC_VERSION = "2023-06-01"
 # The app's URL scheme is `simeon://` since 23 September 2026 (the
 # packager's bundle rename); `caisra://`
 # is still taken so a build from before that day can finish a sign-in.

@@ -508,8 +508,8 @@ MODELS: tuple[DesktopModel, ...] = (
         output_weight=5.0,
     ),
     # $0.20 per million input tokens, output 6x. Retired like Terra; web
-    # search still runs on it (`WEB_SEARCH_MODEL_ID`), since whether GPT-6
-    # Luna takes the web_search tool is not established.
+    # search ran on it until 18 October 2026 (`WEB_SEARCH_MODEL_ID` is
+    # Claude's since).
     DesktopModel(
         "gpt-5.6-luna",
         "GPT-5.6 Luna",
@@ -1057,9 +1057,10 @@ def usage_from_answer(spoken: SpokenApi, answer: Any) -> Usage:
 # The agent advertises four tools that are not a model turn: web search,
 # web fetch, image generation and audio transcription. Fetch runs on the
 # person's machine and costs nothing here. The other three are served by
-# the routes in `simeon.desktop.capabilities`, each on OpenAI with
-# Simeon's key, and each priced below in the same unit as everything
-# else so the usage table keeps meaning one thing.
+# the routes in `simeon.desktop.capabilities` with Simeon's keys (search
+# on Claude since 18 October 2026, pictures and dictation on OpenAI), and
+# each priced below in the same unit as everything else so the usage
+# table keeps meaning one thing.
 #
 # ⚠️ **None of the four dollar figures below has been checked against a
 # price page.** Like `SPEECH_USD_PER_MILLION_CHARACTERS` they are single
@@ -1070,14 +1071,26 @@ def usage_from_answer(spoken: SpokenApi, answer: Any) -> Usage:
 # and corrects them; a wrong figure moves the meter, never the bill OpenAI
 # sends Simeon Labs.
 
-#: What OpenAI charges per call of its hosted `web_search` tool, on top
-#: of the tokens the model that reads the results spends.
+#: What one search costs on top of the tokens the model that reads the
+#: results spends: Claude's server-side `web_search` tool, $10 per 1,000
+#: searches (OpenAI's hosted search was the same, $0.01 a call).
 WEB_SEARCH_USD_PER_CALL = 0.01
 
 #: The model that reads the search results and writes the short answer:
 #: the cheap one, because the person never sees this turn and the
-#: searching is done by the tool, not the model.
-WEB_SEARCH_MODEL_ID = "gpt-5.6-luna"
+#: searching is done by the tool, not the model. Claude since 18 October
+#: 2026: on GPT-5.6 Luna the agents' search stopped the day the OpenAI
+#: account ran dry, while every Claude answer went on.
+WEB_SEARCH_MODEL_ID = "claude-haiku-5-5"
+#: Its tool, the version every Claude model takes.
+WEB_SEARCH_TOOL = "web_search_20250305"
+#: Asked once more when the cheap model refuses the request itself (a
+#: 400): Claude Sonnet 5.5 with the newer tool, which it is documented to
+#: take. Neither has been called from here yet.
+WEB_SEARCH_SECOND_MODEL_ID = "claude-sonnet-5-5"
+WEB_SEARCH_SECOND_TOOL = "web_search_20260209"
+#: Searches one call may make: enough to look twice and check once.
+WEB_SEARCH_MAX_USES = 3
 
 WEB_SEARCH_MAX_QUERY_CHARACTERS = 1_000
 
@@ -1085,6 +1098,14 @@ WEB_SEARCH_MAX_QUERY_CHARACTERS = 1_000
 #: tokens**: a usage row naming this model counts the searches made,
 #: and the tokens the reading model spent go on that model's own row.
 WEB_SEARCH_CALL_MODEL = DesktopModel(
+    "claude-web-search",
+    "Claude web search",
+    "One search of the web, made for the agent.",
+    WEB_SEARCH_USD_PER_CALL / (CREDIT_USD_PER_MILLION_INPUT / 1_000_000),
+)
+#: The same, on OpenAI, until 18 October 2026: kept so its usage rows
+#: still name something.
+OPENAI_WEB_SEARCH_CALL_MODEL = DesktopModel(
     "openai-web-search",
     "OpenAI web search",
     "One search of the web, made for the agent.",

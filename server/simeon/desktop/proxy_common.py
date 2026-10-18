@@ -30,6 +30,9 @@ from .service import (
 
 log = structlog.get_logger()
 
+#: The Messages API version every Claude call names (the proxy and web search).
+ANTHROPIC_VERSION = "2023-06-01"
+
 #: The one line to read when something fails through the proxy: the
 #: provider's own sentence, in full. See `log_upstream_refusal`.
 UPSTREAM_REFUSED = "desktop.proxy.upstream_refused"
