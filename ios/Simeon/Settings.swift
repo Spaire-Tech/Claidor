@@ -48,6 +48,10 @@ struct SettingsSheet: View {
         .listRowBackground(Ink.groupedRow)
         Section {
           Button { showsApps = true } label: { ConnectAppsRow() }
+          // The founder, 18 October 2026: Wallet, Secure credentials store, Permissions and Messaging channels here, in
+          // that order and with no icons; Permissions first, holding Auto-review and its rules. The other three join as
+          // each is built.
+          NavigationLink { PermissionsPage(settings: $settings) } label: { Text("Permissions").foregroundStyle(Ink.primary) }
         }
         .listRowBackground(Ink.groupedRow)
         AgentSettingsSection(settings: $settings)
@@ -238,10 +242,10 @@ struct ConnectAppsRow: View {
 }
 
 /**
- * The agents' settings, the same on the iPhone and the Mac: Auto-review and
- * its rules, and the time zone the agents' computer keeps (set
- * automatically, or chosen). `settings` is the box's host settings, read
- * once by the page that holds this section.
+ * The agents' settings: the time zone the agents' computer keeps (set
+ * automatically, or chosen). Auto-review and its rules moved to
+ * Permissions (PermissionsPage) on 18 October 2026. `settings` is the box's
+ * host settings, read once by the page that holds this section.
  */
 struct AgentSettingsSection: View {
   @Binding var settings: JSON?
@@ -252,19 +256,6 @@ struct AgentSettingsSection: View {
 
   var body: some View {
     Section("Agents") {
-      Toggle(isOn: autoReview) {
-        VStack(alignment: .leading, spacing: 3) {
-          Text("Auto-review")
-          Text("Simeon checks each action before it runs and asks you first when needed.")
-            .font(.system(size: 13)).foregroundStyle(Ink.secondary)
-        }
-      }
-      .tint(Ink.blue)
-      NavigationLink {
-        AutoReviewRules(settings: $settings)
-      } label: {
-        LabeledContent("Auto-review Rules", value: rulesCount == 0 ? "None" : "\(rulesCount)")
-      }
       Toggle(isOn: automaticZone) {
         VStack(alignment: .leading, spacing: 3) {
           Text("Set Time Zone Automatically")
@@ -305,6 +296,41 @@ struct AgentSettingsSection: View {
         Task { if let next = await store.setHostSettings(["userTimeZoneOverride": .string(zone)]) { settings = next } }
       }
     )
+  }
+
+}
+
+/**
+ * Permissions (the founder, 18 October 2026: "bring auto review and auto
+ * review rules there"): Auto-review, with the line saying what it does, and
+ * its rules. `settings` is the box's host settings, read by Settings.
+ */
+struct PermissionsPage: View {
+  @Binding var settings: JSON?
+  @Environment(SimeonCore.AppStore.self) private var store
+
+  var body: some View {
+    Form {
+      Section {
+        Toggle(isOn: autoReview) {
+          VStack(alignment: .leading, spacing: 3) {
+            Text("Auto-review")
+            Text("Simeon checks each action before it runs and asks you first when needed.")
+              .font(.system(size: 13)).foregroundStyle(Ink.secondary)
+          }
+        }
+        .tint(Ink.blue)
+        NavigationLink {
+          AutoReviewRules(settings: $settings)
+        } label: {
+          LabeledContent("Auto-review Rules", value: rulesCount == 0 ? "None" : "\(rulesCount)")
+        }
+      }
+      .listRowBackground(Ink.groupedRow)
+    }
+    .groupedGround()
+    .navigationTitle("Permissions")
+    .inlineBarTitle()
   }
 
   private var instructions: JSON { settings?["autoReviewInstructions"] ?? ["isEnabled": true, "allowInstructions": [], "blockInstructions": []] }
