@@ -9,6 +9,7 @@ from simeon.desktop.pricing import (
     MODELS,
     MODELS_OWNER,
     POLICY_ROLES,
+    POLICY_SECOND_ROLES,
     PROVIDER_TOKEN_WEIGHTS,
     DesktopProvider,
     ModelPolicy,
@@ -22,6 +23,7 @@ from simeon.desktop.pricing import (
     model_by_id,
     models_under,
     openai_models_list,
+    second_role_rows,
     served_model,
     tally_for,
     usage_from_answer,
@@ -121,6 +123,39 @@ class TestCatalogue:
         assert opus[ModelRole.cheap] == ["claude-haiku-5-5"]
         assert opus[ModelRole.fallback] == ["gpt-6-sol"]
 
+        # Haiku holds `cheap` too, as a second role (`POLICY_SECOND_ROLES`).
+        haiku = roles(ModelPolicy.claude_haiku)
+        assert haiku[ModelRole.primary] == ["claude-haiku-5-5"]
+        assert ModelRole.cheap not in haiku
+        assert haiku[ModelRole.fallback] == ["gpt-6-sol"]
+        assert haiku[ModelRole.video] == ["gemini-2.5-flash"]
+
+    def test_haiku_does_the_machinery_too_under_its_own_policy(self) -> None:
+        # The engine takes the first row of each role from
+        # `/api/models/available`, and a row carries one role: Haiku is
+        # listed a second time, as `cheap`, and only under `claude-haiku`.
+        offered = models_under(ModelPolicy.claude_haiku)
+        second = second_role_rows(offered, ModelPolicy.claude_haiku)
+        assert [(one.model_id, one.role) for one in second] == [
+            ("claude-haiku-5-5", ModelRole.cheap)
+        ]
+        assert second[0].available()["role"] == "cheap"
+        for policy in (ModelPolicy.openai, ModelPolicy.claude, ModelPolicy.claude_opus):
+            assert second_role_rows(models_under(policy), policy) == ()
+        # Not offered, not listed again: a policy with no Anthropic key
+        # offers Sol alone, and nothing names Haiku for the machinery.
+        sol_only = tuple(one for one in offered if one.model_id == "gpt-6-sol")
+        assert second_role_rows(sol_only, ModelPolicy.claude_haiku) == ()
+
+    def test_a_second_role_is_a_role_nobody_else_holds(self) -> None:
+        for policy, table in POLICY_SECOND_ROLES.items():
+            for model_id, role in table.items():
+                # The model already answers under the policy...
+                assert POLICY_ROLES[policy].get(model_id) not in (None, role)
+                # ...and no other model holds the second role there, or the
+                # engine would take whichever row came first.
+                assert role not in POLICY_ROLES[policy].values()
+
     def test_an_engine_built_before_a_switch_is_still_answered(self) -> None:
         # Every engine on a box until it takes a new bundle names GPT-6 Sol
         # for the loop and GPT-6 Luna for the machinery, whatever the server
@@ -138,8 +173,13 @@ class TestCatalogue:
         assert served_model("claude-opus-5-5", ModelPolicy.openai) is None
         assert served_model("claude-opus-5-5", ModelPolicy.claude) is None
         assert served_model("claude-opus-5-5", ModelPolicy.claude_opus) is not None
-        # Haiku 5.5 does the machinery under a Claude policy only.
+        # Haiku 5.5 is served under a Claude policy only.
         assert served_model("claude-haiku-5-5", ModelPolicy.openai) is None
+        assert served_model("claude-haiku-5-5", ModelPolicy.claude_haiku) is not None
+        # A conversation mid-turn on Sonnet or Opus when the setting moves
+        # to Haiku is still answered.
+        assert served_model("claude-sonnet-5-5", ModelPolicy.claude_haiku) is not None
+        assert served_model("claude-opus-5-5", ModelPolicy.claude_haiku) is not None
         # Priced rows with no role are never served.
         for policy in ModelPolicy:
             assert served_model("claude-opus-5", policy) is None
@@ -151,6 +191,7 @@ class TestCatalogue:
         assert ModelPolicy("openai") is ModelPolicy.openai
         assert ModelPolicy("claude") is ModelPolicy.claude
         assert ModelPolicy("claude-opus") is ModelPolicy.claude_opus
+        assert ModelPolicy("claude-haiku") is ModelPolicy.claude_haiku
 
     def test_the_static_roles_hold_under_every_policy(self) -> None:
         # `video` and `retired` belong to the model; the policy tables hold

@@ -284,9 +284,21 @@ picks a policy (`ModelPolicy`, `POLICY_ROLES`), and
 
 | Policy | `primary`: the agent loop, every reply, its helpers | `cheap`: summaries, memory, safety checks, titles | `fallback`: a step whose provider failed |
 |---|---|---|---|
-| `openai` (the default) | `gpt-6-sol` | `gpt-6-luna` | `claude-sonnet-5-5` |
+| `claude-haiku` (the default since 18 October 2026) | `claude-haiku-5-5` | `claude-haiku-5-5` | `gpt-6-sol` |
+| `openai` (the default until then) | `gpt-6-sol` | `gpt-6-luna` | `claude-sonnet-5-5` |
 | `claude` | `claude-sonnet-5-5` | `claude-haiku-5-5` | `gpt-6-sol` |
 | `claude-opus` | `claude-opus-5-5` | `claude-haiku-5-5` | `gpt-6-sol` |
+
+Under `claude-haiku` one model holds two roles. A row of the list carries one
+role and the engine takes the first row holding each, so
+`/desktop/api/models/available` lists Haiku twice, as `primary` and again as
+`cheap` (`POLICY_SECOND_ROLES`, `available_rows`); the window's menu shows
+only `primary` rows, and `/v1/models`, the pricing catalogue and
+`AvailableModels` name it once. Sonnet 5.5 and Opus 5.5 stay served as
+`retired` under it, so a turn already running on either when the setting
+changes is still answered. The founder's reason: Haiku is a twentieth of
+Sonnet's price, and most of an agent's work is tool calls and connectors.
+Not yet compared with Sonnet on the cost test set (`docs/cost-test-set.md`).
 
 The engine reads the roles from `/desktop/api/models/available` when the host
 starts and every five minutes after (`simeon-model-roles.ts`), so a change of
@@ -549,7 +561,9 @@ box and `SAND_KEEP_BOX_RUNNING_ON_QUIT=1` always keeps it running
 - `SIMEON_OPENAI_API_KEY`: the OpenAI key. Without it, no OpenAI model is offered.
 - `ANTHROPIC_API_KEY` (or `SIMEON_ANTHROPIC_API_KEY`): Claude. Without it no
   Claude model is offered, and a Claude policy answers on GPT-6 Sol.
-- `SIMEON_DESKTOP_MODELS`: `openai` (the default), `claude` or `claude-opus`.
+- `SIMEON_DESKTOP_MODELS`: `claude-haiku` (the default since 18 October
+  2026), `openai`, `claude` or `claude-opus`. Set on Render, it wins over the
+  default.
 - `SIMEON_DESKTOP_CLAUDE_VIA`: `anthropic` (the default) or `bedrock`, Claude
   in Amazon Bedrock so AWS credits pay for it (14 October 2026,
   `server/simeon/desktop/bedrock.py`). With `bedrock`, a Claude call goes to

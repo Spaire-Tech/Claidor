@@ -111,6 +111,7 @@ from .service import (
     IncomingMemoryFile,
     SpokenApi,
     Usage,
+    available_rows,
     desktop,
     model_policy,
     offered_models,
@@ -661,7 +662,7 @@ async def models_available(
     person's cloud computer follows the roles here (`ModelPolicy`), and the
     menu says nothing the model proxy the credential already reaches would
     not."""
-    return _ok([one.available() for one in offered_models(desktop_session.user)])
+    return _ok(available_rows(desktop_session.user))
 
 
 @router.get("/api/models/pricing-catalog", name="desktop:pricing")

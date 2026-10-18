@@ -236,10 +236,21 @@ class TestSession:
         mocker.patch.object(settings, "GEMINI_API_KEY", "")
         models = await client.get("/desktop/api/models/available", headers=headers)
         rows = models.json()["data"]
+        # Under the default policy, Haiku for everything, with only
+        # Anthropic's key: Haiku, as the model that answers and again as the
+        # one that does the machinery.
+        assert [(row["modelId"], row["role"]) for row in rows] == [
+            ("claude-haiku-5-5", "primary"),
+            ("claude-haiku-5-5", "cheap"),
+        ]
+        assert all(row["apiFormat"] == "anthropic" for row in rows)
+
+        mocker.patch.object(settings, "DESKTOP_MODELS", ModelPolicy.openai)
+        models = await client.get("/desktop/api/models/available", headers=headers)
+        rows = models.json()["data"]
         # Under the OpenAI policy with only Anthropic's key, the fallback
         # is all there is to offer.
         assert {row["modelId"] for row in rows} == {"claude-sonnet-5-5"}
-        assert all(row["apiFormat"] == "anthropic" for row in rows)
 
     async def test_no_bearer_is_401(self, client: httpx.AsyncClient) -> None:
         response = await client.get("/desktop/api/user/profile")
@@ -765,6 +776,7 @@ class TestTwoProviders:
     ) -> None:
         access, _ = await _signed_in(client, session, user)
         headers = {"Authorization": f"Bearer {access}"}
+        mocker.patch.object(settings, "DESKTOP_MODELS", ModelPolicy.openai)
 
         mocker.patch.object(settings, "ANTHROPIC_API_KEY", "sk-anthropic")
         mocker.patch.object(settings, "OPENAI_API_KEY", "")
@@ -804,20 +816,29 @@ class TestTwoProviders:
         mocker.patch.object(settings, "ANTHROPIC_API_KEY", "sk-anthropic")
         mocker.patch.object(settings, "OPENAI_API_KEY", "sk-openai")
 
-        async def roles() -> dict[str, str]:
+        async def roles() -> set[tuple[str, str]]:
             offered = (
                 await client.get("/desktop/api/models/available", headers=headers)
             ).json()
             return {
-                one["modelId"]: one["role"]
+                (one["modelId"], one["role"])
                 for one in offered["data"]
                 if one["role"] != "video"
             }
 
+        # The default since 18 October 2026: Haiku answers and does the
+        # machinery, listed once for each.
         assert await roles() == {
-            "gpt-6-sol": "primary",
-            "gpt-6-luna": "cheap",
-            "claude-sonnet-5-5": "fallback",
+            ("claude-haiku-5-5", "primary"),
+            ("claude-haiku-5-5", "cheap"),
+            ("gpt-6-sol", "fallback"),
+        }
+
+        mocker.patch.object(settings, "DESKTOP_MODELS", ModelPolicy.openai)
+        assert await roles() == {
+            ("gpt-6-sol", "primary"),
+            ("gpt-6-luna", "cheap"),
+            ("claude-sonnet-5-5", "fallback"),
         }
 
         # Only this person, by e-mail in any case.
@@ -827,18 +848,18 @@ class TestTwoProviders:
             {user.email.upper(): ModelPolicy.claude},
         )
         assert await roles() == {
-            "claude-sonnet-5-5": "primary",
-            "claude-haiku-5-5": "cheap",
-            "gpt-6-sol": "fallback",
+            ("claude-sonnet-5-5", "primary"),
+            ("claude-haiku-5-5", "cheap"),
+            ("gpt-6-sol", "fallback"),
         }
 
         # Everyone, with the person's own line winning.
         mocker.patch.object(settings, "DESKTOP_MODELS_BY_EMAIL", {})
         mocker.patch.object(settings, "DESKTOP_MODELS", ModelPolicy.claude_opus)
         assert await roles() == {
-            "claude-opus-5-5": "primary",
-            "claude-haiku-5-5": "cheap",
-            "gpt-6-sol": "fallback",
+            ("claude-opus-5-5", "primary"),
+            ("claude-haiku-5-5", "cheap"),
+            ("gpt-6-sol", "fallback"),
         }
 
     async def test_the_proxy_serves_what_the_person_s_policy_names(
@@ -854,7 +875,8 @@ class TestTwoProviders:
         mocker.patch.object(settings, "OPENAI_API_KEY", "sk-openai")
         body = {"model": "claude-haiku-5-5", "max_tokens": 1, "messages": []}
 
-        # Haiku 5.5 does the machinery under a Claude policy only.
+        # Haiku 5.5 is served under a Claude policy only.
+        mocker.patch.object(settings, "DESKTOP_MODELS", ModelPolicy.openai)
         refused = await client.post(
             "/desktop/api/proxy/v1/messages", json=body, headers=headers
         )

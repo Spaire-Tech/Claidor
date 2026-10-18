@@ -66,6 +66,7 @@ from .pricing import (
     credits_for,
     model_by_id,
     models_under,
+    second_role_rows,
     served_model,
     tally_for,
     usage_from_answer,
@@ -209,6 +210,20 @@ def offered_models(user: User | None = None) -> tuple[DesktopModel, ...]:
         and one.role is not ModelRole.retired
         and provider_configured(one.provider)
     )
+
+
+def available_rows(user: User | None = None) -> list[dict[str, Any]]:
+    """`/api/models/available`: the offered models (`offered_models`),
+    then each one again with the second role its policy gives it
+    (`POLICY_SECOND_ROLES`). The engine and the cloud runner take the first
+    row of each role, so under `claude-haiku` Haiku is both the model that
+    answers and the one that does the machinery; the window's menu shows
+    only `primary` rows and never sees the second."""
+    offered = offered_models(user)
+    return [
+        one.available()
+        for one in (*offered, *second_role_rows(offered, model_policy(user)))
+    ]
 
 
 # --- credits --------------------------------------------------------------------
@@ -1183,6 +1198,7 @@ __all__ = [
     "TokenWeights",
     "Usage",
     "UsageTally",
+    "available_rows",
     "challenge_for",
     "credits_for",
     "desktop",

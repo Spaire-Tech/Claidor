@@ -238,12 +238,14 @@ class Settings(BaseSettings):
     # Which family answers in the app (`simeon.desktop.pricing.ModelPolicy`,
     # 13 October 2026): "openai" (GPT-6 Sol answers, Luna does the
     # machinery, Claude Sonnet 5.5 stands by), "claude" (Claude Sonnet 5.5,
-    # Haiku 5.5, GPT-6 Sol standing by) or "claude-opus" (Opus 5.5 in
-    # Sonnet's place). Every engine reads it from /desktop/api/models/available
-    # within minutes; nothing needs a release. A family whose key is unset
+    # Haiku 5.5, GPT-6 Sol standing by), "claude-opus" (Opus 5.5 in
+    # Sonnet's place) or "claude-haiku" (Haiku 5.5 answers and does the
+    # machinery, GPT-6 Sol standing by; the default since 18 October 2026).
+    # Every engine reads it from /desktop/api/models/available within
+    # minutes; nothing needs a release. A family whose key is unset
     # (ANTHROPIC_API_KEY, OPENAI_API_KEY) is offered nothing, and the engine
     # then answers on whatever is.
-    DESKTOP_MODELS: ModelPolicy = ModelPolicy.openai
+    DESKTOP_MODELS: ModelPolicy = ModelPolicy.claude_haiku
     # The same choice for a few people first, by e-mail, as a JSON object:
     # {"you@example.com": "claude"}. Everyone else follows DESKTOP_MODELS.
     DESKTOP_MODELS_BY_EMAIL: dict[str, ModelPolicy] = {}

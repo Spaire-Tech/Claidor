@@ -93,6 +93,11 @@ class ModelPolicy(StrEnum):
     #: As `claude`, with Claude Opus 5.5 answering: for the cost test, and
     #: for the day the extra intelligence is worth twice the price.
     claude_opus = "claude-opus"
+    #: Claude Haiku 5.5 answers and does the machinery too, GPT-6 Sol stands
+    #: by. Everyone's since 18 October 2026 (the founder: "haiku is so cheap
+    #: … its using tools. most of the time"): a twentieth of Sonnet's price,
+    #: on work that is mostly tool calls and connectors.
+    claude_haiku = "claude-haiku"
 
 
 class DesktopProvider(StrEnum):
@@ -387,7 +392,7 @@ MODELS: tuple[DesktopModel, ...] = (
     DesktopModel(
         "claude-haiku-5-5",
         "Claude Haiku 5.5",
-        "Anthropic's quickest and cheapest model, for simple steps.",
+        "Anthropic's quickest and cheapest model.",
         0.10 / CREDIT_USD_PER_MILLION_INPUT,
         context_window=1_000_000,
         max_tokens=128_000,
@@ -568,7 +573,39 @@ POLICY_ROLES: dict[ModelPolicy, dict[str, ModelRole]] = {
         # may still be mid-turn on Sonnet when the setting changes.
         "claude-sonnet-5-5": ModelRole.retired,
     },
+    # Haiku is the cheap model as well (`POLICY_SECOND_ROLES`).
+    ModelPolicy.claude_haiku: {
+        "claude-haiku-5-5": ModelRole.primary,
+        "gpt-6-sol": ModelRole.fallback,
+        "gpt-6-luna": ModelRole.retired,
+        # Mid-turn on the model of the policy before when the setting changes.
+        "claude-sonnet-5-5": ModelRole.retired,
+        "claude-opus-5-5": ModelRole.retired,
+    },
 }
+
+
+#: A second role a policy gives a model that already holds one in
+#: `POLICY_ROLES`: the policy where one model does both jobs. A row of
+#: `/api/models/available` carries one role and the engine takes the first
+#: row holding each, so such a model is listed once more with this role
+#: (`second_role_rows`). Only that list: a menu, `/v1/models` and the
+#: pricing catalogue name each model once.
+POLICY_SECOND_ROLES: dict[ModelPolicy, dict[str, ModelRole]] = {
+    ModelPolicy.claude_haiku: {"claude-haiku-5-5": ModelRole.cheap},
+}
+
+
+def second_role_rows(
+    models: Sequence[DesktopModel], policy: ModelPolicy
+) -> tuple[DesktopModel, ...]:
+    """Each of `models` that `policy` gives a second role, with that role."""
+    roles = POLICY_SECOND_ROLES.get(policy, {})
+    return tuple(
+        replace(one, role=roles[one.model_id])
+        for one in models
+        if one.model_id in roles
+    )
 
 
 def models_under(policy: ModelPolicy) -> tuple[DesktopModel, ...]:
