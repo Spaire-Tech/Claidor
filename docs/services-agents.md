@@ -1762,6 +1762,23 @@ helper had finished long before, and sent another helper to check. Now:
   and to put a whole form in one task. Two helpers had been running because Claude refused
   their requests ("the browser helpers kept crashing", `docs/services-core.md`, "`tool_use` ids
   were found without `tool_result` blocks"), and the agent sent more.
+- **Checkout forms the helpers could not see or type into** (18 October 2026, the founder's
+  Altex test on Claude Haiku 5.5). Three things, none of them the model's:
+  - The page reader (`SNAPSHOT_FN` in `sand-browser-driver-source.ts`) saw 6 of the checkout's
+    30 fields (`Captured page snapshot (6 interactive refs)`). Shopify wraps the whole checkout
+    form in an element drawn with `display: contents`, which has no size, and the reader skipped
+    anything without a size with everything inside it. It now reads through such an element;
+    the same checkout gives 29 refs, the email, name, address, city, state, ZIP and phone
+    fields among them. Every Shopify store's checkout had this.
+  - A helper's actions in one step ran at the same time: the loop starts every tool call of a
+    step at once (`tool-stream-executor.ts`). The browser helper clicked the email field and
+    pressed a key in one step, and the press landed first. Each helper's browser tools, and its
+    `Computer` calls, now run one after another in the order asked (`one-at-a-time.ts`).
+  - The desktop helper's first click said `left_click`, Claude's own name for it, and was
+    refused. `Computer` now reads Claude's names (`left_click`, `right_click`, `double_click`,
+    `triple_click`, `middle_click`, `mouse_move`, `left_click_drag`) as its own.
+  `desktop/tests/helper-actions.test.mjs` (the reader's case in real Chrome, on a page shaped
+  like Shopify's checkout).
 
 This needs no server change and no setting on Render: it is all in the engine, and reaches the
 cloud computers when the founder's agent publishes a new host bundle.

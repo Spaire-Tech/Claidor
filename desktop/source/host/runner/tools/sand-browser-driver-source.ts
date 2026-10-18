@@ -527,6 +527,15 @@ const SNAPSHOT_FN = (opts) => {
     if (!(el instanceof win.HTMLElement)) return;
     const tag = el.tagName.toLowerCase();
     if (tag === "script" || tag === "style" || tag === "noscript") return;
+    // An element with display: contents draws no box of its own and its
+    // children are laid out in its place, so it has no size and read as
+    // hidden. Shopify's checkout wraps its whole form in one: on 18 October
+    // 2026 the reader saw 6 of an Altex checkout's 30 fields and the agent
+    // could not fill it.
+    if (el.getAttribute("aria-hidden") !== "true" && win.getComputedStyle(el).display === "contents") {
+      for (const child of el.children) walk(child, depth);
+      return;
+    }
     if (!isVisible(el)) return;
     const isInteractive = el.matches(interactiveMatcher);
     const isHeading = /^h[1-6]$/.test(tag);

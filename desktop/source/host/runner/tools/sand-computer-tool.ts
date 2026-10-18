@@ -20,6 +20,7 @@ import {
 } from "../sand-computer-auto-review.js";
 import type { SandAutoReviewMode } from "../sand-auto-review.js";
 import { SandToolInputError } from "./tool-input-error.js";
+import { createOneAtATime } from "./one-at-a-time.js";
 
 export const MOUSE_BUTTONS = { left: "LEFT", right: "RIGHT", middle: "MIDDLE" } as const;
 export const SCROLL_DIRECTIONS = { up: "UP", down: "DOWN", left: "LEFT", right: "RIGHT" } as const;
@@ -74,13 +75,36 @@ export function buildComputerActionCoreSchema(actions: readonly [ComputerActionN
 const FOLLOW_UP_ACTIONS = COMPUTER_ACTIONS.filter((action) => action !== "screenshot") as [ComputerActionName, ...ComputerActionName[]];
 const REVIEWABLE_FOLLOW_UP_ACTIONS = FOLLOW_UP_ACTIONS.filter(isSandComputerAutoReviewBypassAction) as [ComputerActionName, ...ComputerActionName[]];
 
+/**
+ * The names Claude's own computer-use tool gives its actions, read as ours.
+ * On 18 October 2026 Claude Sonnet 5.5's first click on the desktop said
+ * `left_click`, was refused, and cost the helper a step.
+ */
+const ACTION_ALIASES: Readonly<Record<string, Readonly<Record<string, unknown>>>> = {
+  left_click: { action: "click" },
+  right_click: { action: "click", button: "right" },
+  middle_click: { action: "click", button: "middle" },
+  double_click: { action: "click", count: 2 },
+  triple_click: { action: "click", count: 3 },
+  mouse_move: { action: "move" },
+  left_click_drag: { action: "drag" },
+};
+
+export function withComputerActionAliases(raw: unknown): unknown {
+  if (raw == null || typeof raw !== "object" || Array.isArray(raw)) return raw;
+  const record = raw as Record<string, unknown>;
+  const alias = typeof record.action === "string" ? ACTION_ALIASES[record.action] : undefined;
+  const then = Array.isArray(record.then) ? record.then.map(withComputerActionAliases) : undefined;
+  return alias === undefined && then === undefined ? raw : { ...record, ...(alias ?? {}), ...(then === undefined ? {} : { then }) };
+}
+
 export function buildComputerParameters(autoReview?: { readonly mode: SandAutoReviewMode }) {
   const allowed = autoReview?.mode === "enforce" ? REVIEWABLE_FOLLOW_UP_ACTIONS : FOLLOW_UP_ACTIONS;
-  return z.object({
+  return z.preprocess(withComputerActionAliases, z.object({
     ...actionCoreShape,
     then: z.array(buildComputerActionCoreSchema(allowed)).min(1).max(SAND_COMPUTER_MAX_FOLLOW_UP_ACTIONS).optional(),
     description: z.string().optional(),
-  }).superRefine((args, ctx) => {
+  })).superRefine((args, ctx) => {
     validateAction(args, ctx);
     if (autoReview?.mode === "enforce" && (args.action === "click" || args.action === "drag") && !args.description?.trim()) {
       ctx.addIssue({ code: "custom", path: ["description"], message: "Click and drag require description: a concise statement of the intended UI target and purpose." });
@@ -284,47 +308,53 @@ export function createComputerLoopGuard(limit = SAND_COMPUTER_LOOP_LIMIT, window
 export function createComputerTool<Context>(deps: ComputerToolDependencies<Context>) {
   const parameters = buildComputerParameters(deps.autoReview);
   const loopGuard = createComputerLoopGuard();
+  // Two Computer calls in one step share one screen: the second waits for the first.
+  const inTurn = createOneAtATime();
   return {
     id: "OPENAI_COMPUTER_USE", name: "Computer", parameters,
-    async execute(raw: unknown, meta: { context: Context; toolCallId?: string; signal?: AbortSignal; stateHandler?: unknown; workspacePaths?: readonly string[] }): Promise<ComputerUseResult> {
-      const parsed = parameters.parse(raw) as ComputerActionArgs;
-      const { then, ...primary } = parsed;
-      const sequence = [primary, ...(then ?? [])];
-      const actions = sequence.map(toAction);
-      if (sequence.at(-1)?.action !== "screenshot") actions.push(toAction({ action: "screenshot" }));
-      if (primary.action !== "screenshot" && !loopGuard.check(toExactActionArgs(parsed))) return { result: { case: "error", value: { error: SAND_COMPUTER_LOOP_MESSAGE } } };
-      if (deps.autoReview != null) {
-        await runSandComputerAutoReviewPreflight({
-          ctx: meta.context as unknown as import("../../../packages/context/core.js").Context,
-          resourceAccessor: deps.resourceAccessor as ResourceAccessor<RemoteExecManager>,
-          exactAction: toExactActionArgs(parsed),
-          ...(parsed.description == null ? {} : { description: parsed.description }),
-          toolCallId: meta.toolCallId ?? "",
-          ...(meta.stateHandler === undefined ? {} : { stateHandler: meta.stateHandler }),
-          ...(meta.workspacePaths === undefined ? {} : { workspacePaths: meta.workspacePaths }),
-          ...(meta.signal == null ? {} : { signal: meta.signal }),
-          options: {
-            ...deps.autoReview,
-            captureDisplayStateIdentity: (ctx, toolCallId) => captureComputerDisplayStateIdentity(
-              ctx,
-              deps.resourceAccessor as ResourceAccessor<RemoteExecManager>,
-              toolCallId,
-              deps.autoReview!.resolveDisplayNumber,
-            ),
-          },
-        });
-      }
-      const reported = reportedBatchPosition(sequence);
-      if (reported != null) deps.onComputerAction?.(reported);
-      const description = parsed.description?.trim();
-      const result = await executeAndPersistComputerUse(meta.context, deps, {
-        toolCallId: meta.toolCallId ?? "", actions,
-        ...(deps.isUnicodeTypingEnabled?.() === true ? { bindUnmappedCharacters: true } : {}),
-        ...(description == null || description.length === 0 ? {} : { description }),
-      });
-      loopGuard.sawScreen(result.result.case === "success" ? (result.result.value as ComputerUseSuccess).screenshot : undefined);
-      return result;
+    execute(raw: unknown, meta: { context: Context; toolCallId?: string; signal?: AbortSignal; stateHandler?: unknown; workspacePaths?: readonly string[] }): Promise<ComputerUseResult> {
+      return inTurn(() => act(raw, meta));
     },
     render: (output: ComputerUseResult) => ({ content: describeOutcome(output, "computer") }),
   };
+
+  async function act(raw: unknown, meta: { context: Context; toolCallId?: string; signal?: AbortSignal; stateHandler?: unknown; workspacePaths?: readonly string[] }): Promise<ComputerUseResult> {
+    const parsed = parameters.parse(raw) as ComputerActionArgs;
+    const { then, ...primary } = parsed;
+    const sequence = [primary, ...(then ?? [])];
+    const actions = sequence.map(toAction);
+    if (sequence.at(-1)?.action !== "screenshot") actions.push(toAction({ action: "screenshot" }));
+    if (primary.action !== "screenshot" && !loopGuard.check(toExactActionArgs(parsed))) return { result: { case: "error", value: { error: SAND_COMPUTER_LOOP_MESSAGE } } };
+    if (deps.autoReview != null) {
+      await runSandComputerAutoReviewPreflight({
+        ctx: meta.context as unknown as import("../../../packages/context/core.js").Context,
+        resourceAccessor: deps.resourceAccessor as ResourceAccessor<RemoteExecManager>,
+        exactAction: toExactActionArgs(parsed),
+        ...(parsed.description == null ? {} : { description: parsed.description }),
+        toolCallId: meta.toolCallId ?? "",
+        ...(meta.stateHandler === undefined ? {} : { stateHandler: meta.stateHandler }),
+        ...(meta.workspacePaths === undefined ? {} : { workspacePaths: meta.workspacePaths }),
+        ...(meta.signal == null ? {} : { signal: meta.signal }),
+        options: {
+          ...deps.autoReview,
+          captureDisplayStateIdentity: (ctx, toolCallId) => captureComputerDisplayStateIdentity(
+            ctx,
+            deps.resourceAccessor as ResourceAccessor<RemoteExecManager>,
+            toolCallId,
+            deps.autoReview!.resolveDisplayNumber,
+          ),
+        },
+      });
+    }
+    const reported = reportedBatchPosition(sequence);
+    if (reported != null) deps.onComputerAction?.(reported);
+    const description = parsed.description?.trim();
+    const result = await executeAndPersistComputerUse(meta.context, deps, {
+      toolCallId: meta.toolCallId ?? "", actions,
+      ...(deps.isUnicodeTypingEnabled?.() === true ? { bindUnmappedCharacters: true } : {}),
+      ...(description == null || description.length === 0 ? {} : { description }),
+    });
+    loopGuard.sawScreen(result.result.case === "success" ? (result.result.value as ComputerUseSuccess).screenshot : undefined);
+    return result;
+  }
 }

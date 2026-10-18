@@ -20,6 +20,7 @@ import {
   SAND_BROWSER_RESULT_MARKER,
 } from "./sand-browser-driver-source.js";
 import { SAND_BROWSER_PLAYWRIGHT_FILES, SAND_BROWSER_PLAYWRIGHT_VERSION } from "./sand-browser-playwright.gen.js";
+import { createOneAtATime } from "./one-at-a-time.js";
 
 export const BOX_CDP_PORT_BASE = 9_222;
 
@@ -754,6 +755,8 @@ export function createSandBrowserTools<Context>(
   dependencies: BrowserToolDependencies<Context>,
 ): BrowserToolDefinition<Context>[] {
   const driver = new SandBrowserDriver(dependencies);
+  // The browser helper's actions in one step act on one page: each waits for the one before.
+  const inTurn = createOneAtATime();
   return BROWSER_TOOL_SPECS.map((spec) => ({
     id: spec.id,
     name: spec.name,
@@ -762,7 +765,7 @@ export function createSandBrowserTools<Context>(
     schema: spec.schema ?? {},
     ...(spec.canNavigate === true ? { canNavigate: true } : {}),
     ...(spec.skipScreenshot === true ? { skipScreenshot: true } : {}),
-    execute: (context, args, metadata) => runBrowserSpec(driver, dependencies, spec, context, args, metadata),
+    execute: (context, args, metadata) => inTurn(() => runBrowserSpec(driver, dependencies, spec, context, args, metadata)),
     render(output) {
       if (output.imageB64 != null && output.imageB64.length > 0) {
         const key = stashScreenshot(output.imageB64);
