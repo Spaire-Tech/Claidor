@@ -145,7 +145,7 @@ async function shopFixture(t, tools, options = {}) {
   let clock = options.now ?? 1_800_000_000_000;
   const logs = [];
   const shopClient = client.module.createShopClient({ rootDir: () => root, fetch: shop.fetch, now: () => clock, env: options.env ?? {}, log: (line) => logs.push(line) });
-  const wallet = toolsModule.module.createShopTools({ client: shopClient, rootDir: () => root, now: () => clock, sleep: async (ms) => { clock += ms; }, log: (line) => logs.push(line), ...(options.fillCheckout == null ? {} : { fillCheckout: options.fillCheckout }) });
+  const wallet = toolsModule.module.createShopTools({ client: shopClient, rootDir: () => root, now: () => clock, sleep: async (ms) => { clock += ms; }, log: (line) => logs.push(line), ...(options.fillCheckout == null ? {} : { fillCheckout: options.fillCheckout }), ...(options.linkConnected == null ? {} : { linkConnected: options.linkConnected }) });
   return { root, shop, client: shopClient, wallet, modules: { client: client.module, tools: toolsModule.module }, logs, tick: (ms) => { clock += ms; }, signIn: () => { mkdirSync(path.join(root, "shop"), { recursive: true }); writeFileSync(path.join(root, "shop", "auth.json"), JSON.stringify({ accessToken: "at-live", refreshToken: "rt-live", expiresAtMs: clock + 3_600_000, clientId: "5c733ab2-1903-400a-891e-7ba20c09e2a3" })); } };
 }
 
@@ -447,6 +447,47 @@ test("Shop's checkout gets the buyer's phone and email, and when it can't finish
   assert.equal(e164("555-123-4567"), "+15551234567");
   assert.equal(e164("1 (555) 123 4567"), "+15551234567");
   assert.equal(e164("12345"), "");
+});
+
+test("the delivery address carries the phone, and with Link connected a checkout Shop can't finish goes on to the store's own checkout with Link (18 October 2026, Deskery)", async (t) => {
+  // Deskery through Shop: the account's address chosen with no phone on it, and Shop's "Enter a phone number to use this delivery method".
+  const address = ACCOUNT.addresses[0];
+  const doc = (fulfillment, messages = []) => ({
+    id: "gid://shopify/Checkout/desk?key=k",
+    status: "incomplete",
+    currency: "USD",
+    line_items: [{ id: "line-1", item: { id: "gid://shopify/ProductVariant/48084346568936", title: "deli 17-piece office supplies set", price: 2399 }, quantity: 1 }],
+    totals: [{ type: "subtotal", amount: 2399, display_text: "Subtotal" }, { type: "total", amount: 3089, display_text: "Total" }],
+    payment: { instruments: [] },
+    fulfillment,
+    messages,
+    continue_url: "https://shop.app/checkouts/f/desk?key=k",
+  });
+  const chosen = { methods: [{ id: "m1", type: "shipping", destinations: [address], selected_destination_id: "addr-1" }] };
+  const asked = [{ type: "error", content: "Enter a phone number to use this delivery method", severity: "requires_buyer_input" }];
+  const run = async (linkConnected) => {
+    const { shop, wallet, signIn } = await shopFixture(t, {
+      get_account: () => ({ value: ACCOUNT }),
+      create_checkout: () => ({ value: doc(chosen, asked) }),
+      update_checkout: (args) => ({ value: doc(args.checkout.fulfillment, asked) }),
+    }, { linkConnected: () => linkConnected });
+    signIn();
+    const prepared = await wallet.call("prepare_checkout", { shop: "deskery.myshopify.com", items: [{ variant_id: "gid://shopify/ProductVariant/48084346568936" }], merchant_name: "Deskery", product_url: "https://deskerysupply.com/products/b07mjymx8z", phone: "(206) 555-0100", email: "ada@example.com" });
+    return { shop, prepared };
+  };
+  const { shop, prepared } = await run(true);
+  assert.equal(prepared.isError, false);
+  const [withPhone] = shop.tool("update_checkout");
+  assert.ok(withPhone != null, "the chosen address is sent again, now with the phone");
+  assert.deepEqual(withPhone.args.checkout.fulfillment.methods[0].destinations, [{ ...address, phone_number: "+12065550100" }]);
+  assert.equal(withPhone.args.checkout.fulfillment.methods[0].selected_destination_id, "addr-1");
+  assert.match(prepared.text, /Shop says: Enter a phone number to use this delivery method/);
+  assert.match(prepared.text, /The person's Link is connected, so finish it at the store's own checkout and pay with Link, without asking them first: say in one line that you're finishing it at the store with Link, then send a browser subagent to the product's page \(https:\/\/deskerysupply\.com\/products\/b07mjymx8z\)/);
+  assert.match(prepared.text, /Only if the store's checkout won't work, send them Shop's own page to pay there: https:\/\/shop\.app\/checkouts\/f\/desk\?key=k$/);
+  assert.doesNotMatch(prepared.text, /Send the person Shop's own page for it, unchanged/);
+  // Without Link, Shop's own page, as before.
+  const without = await run(false);
+  assert.match(without.prepared.text, /Send the person Shop's own page for it, unchanged, as a link to review and pay there/);
 });
 
 test("the checkout card answers a Shop card with Shop: the spend request goes to Shop, the wake names Shop's tools; a Shop checkout is placed at Allow", async (t) => {

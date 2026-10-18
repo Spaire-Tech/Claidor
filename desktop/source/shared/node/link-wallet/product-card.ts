@@ -94,7 +94,7 @@ export function buildProductBuyWakePrompt(entryId: string, product: ProductCardI
     "say in one short line that you're setting up the checkout;",
     product.shop == null
       ? browser
-      : `it is in Shop's catalog (variant_id "${product.shop.variantId}", shop "${product.shop.domain}"): when Shop is connected, call prepare_checkout on Shop (server "shop") with that shop and variant (quantity 1 unless they said otherwise), merchant_name, product_url "${product.url}" and their phone and email from Link's get_wallet, then RequestPurchase with the shop_checkout it gives (or send them Shop's own page to review and pay when it gives one); when Shop isn't connected or the checkout isn't ready, ${browser}`,
+      : `it is in Shop's catalog (variant_id "${product.shop.variantId}", shop "${product.shop.domain}"): when Shop is connected, call prepare_checkout on Shop (server "shop") with that shop and variant (quantity 1 unless they said otherwise), merchant_name, product_url "${product.url}" and their phone and email from Link's get_wallet, then RequestPurchase with the shop_checkout it gives; when the checkout isn't ready, do what prepare_checkout says next (with Link connected, the store's own checkout paid with Link); when Shop isn't connected, ${browser}`,
     "Don't ask them to confirm again in chat or which card pays: the checkout card does both.]",
   ].join(" ");
 }

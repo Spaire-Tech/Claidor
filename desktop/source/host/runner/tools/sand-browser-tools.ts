@@ -34,6 +34,9 @@ const PLAYWRIGHT_LIBRARY = "lib/playwright-core.cjs";
 export const SAND_BROWSER_PLAYWRIGHT_BOX_DIR = `${SAND_BROWSER_DRIVER_BOX_DIR}/playwright-core-${SAND_BROWSER_PLAYWRIGHT_VERSION}-${(SAND_BROWSER_PLAYWRIGHT_FILES[PLAYWRIGHT_LIBRARY]?.sha256 ?? "none").slice(0, 12)}`;
 export const PENDING_SCREENSHOT_CAP = 32;
 
+/** The longest one browser step may take, the driver's own 90-second limit and some. */
+export const SAND_BROWSER_STEP_LIMIT_MS = 120_000;
+
 const pendingScreenshots = new Map<string, string>();
 
 export function stashScreenshot(imageB64: string): string {
@@ -314,12 +317,21 @@ export class SandBrowserDriver<Context = unknown> {
       "utf8",
     ).toString("base64");
 
-    const shell = await this.dependencies.executeShell(context, {
-      command: `node ${SAND_BROWSER_DRIVER_BOX_PATH} ${encoded}`,
-      name: "node",
-      workingDirectory: "/workspace",
-      toolCallId: `sand-browser-${input.op}-${sanitizeForBoxPath(input.toolCallId)}`,
-    });
+    // The driver ends itself after 90 seconds; a command that still hasn't
+    // come back after two minutes is given up here, so a browser step can
+    // never hold a helper (and the screen) for ever (18 October 2026).
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const shell = await Promise.race([
+      this.dependencies.executeShell(context, {
+        command: `node ${SAND_BROWSER_DRIVER_BOX_PATH} ${encoded}`,
+        name: "node",
+        workingDirectory: "/workspace",
+        toolCallId: `sand-browser-${input.op}-${sanitizeForBoxPath(input.toolCallId)}`,
+      }),
+      new Promise<never>((_resolve, reject) => {
+        timer = setTimeout(() => reject(new SandBrowserDriverError(`The browser on this computer didn't answer within ${SAND_BROWSER_STEP_LIMIT_MS / 60_000} minutes; try the step again.`)), SAND_BROWSER_STEP_LIMIT_MS);
+      }),
+    ]).finally(() => clearTimeout(timer));
     if (shell.case !== "success") {
       throw new SandBrowserDriverError(
         `The browser on this computer did not respond (${shell.case || "unknown"}).`,

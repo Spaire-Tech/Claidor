@@ -193,6 +193,14 @@ export function checkoutBuyer(account: Record<string, unknown>, address: Record<
   return Object.keys(buyer).length > 0 ? buyer : undefined;
 }
 
+/** The account's address for delivery, with the phone on it when it has none of its own (or only a masked one). */
+export function withDeliveryPhone(address: Record<string, unknown>, phone: string): Record<string, unknown> {
+  const own = text(address.phone_number) || text(address.phone);
+  if (phone.length === 0 || (own.length > 0 && !own.includes("*"))) return address;
+  const { phone: _masked, ...rest } = address;
+  return { ...rest, phone_number: phone };
+}
+
 /** A phone in E.164 as Shop asks ("+15551234567"); a ten-digit number is taken as North American. "" when it can't be. */
 export function e164(value: string): string {
   const digits = value.replace(/[^\d+]/g, "");
@@ -352,6 +360,13 @@ export interface ShopToolsOptions {
   readonly rootDir: () => string;
   /** Types the card into the checkout (`checkout-fill.ts`); absent where there is no browser to fill. */
   readonly fillCheckout?: typeof FillCheckout;
+  /**
+   * Whether the person's Link is connected: when Shop can't finish a
+   * checkout, the agent goes on to the store's own checkout and pays with
+   * Link rather than sending them Shop's page (18 October 2026, the founder:
+   * "the shop confusion is annoying. knowing it could clearly use link").
+   */
+  readonly linkConnected?: () => boolean;
   readonly now?: () => number;
   readonly sleep?: (ms: number) => Promise<void>;
   readonly log?: (message: string) => void;
@@ -561,9 +576,14 @@ export function createShopTools(options: ShopToolsOptions) {
     if (shop.length === 0 || items.length === 0) return { text: "prepare_checkout needs shop (the store's shop domain from search_products) and items with their variant_id.", isError: true };
     const read = await account();
     if (!read.ok) return { text: `${read.message} Without Shop, buy it in the browser: open the product's page and go through its checkout, then RequestPurchase.`, isError: true };
-    const address = preferredAddress(read.value);
+    const saved = preferredAddress(read.value);
     const key = `${shop}\u0000${JSON.stringify(items)}\u0000${now()}`;
-    const buyer = checkoutBuyer(record(read.value.buyer), address, { phone: text(args.phone), email: text(args.email) });
+    const buyer = checkoutBuyer(record(read.value.buyer), saved, { phone: text(args.phone), email: text(args.email) });
+    // The delivery address carries the phone too: a store's delivery method
+    // can want one on the address itself, whatever the buyer has (18 October
+    // 2026, Deskery through Shop: "Enter a phone number to use this delivery
+    // method", the phone having gone on the buyer only).
+    const address = saved == null ? undefined : withDeliveryPhone(saved, buyer?.phone_number ?? "");
     const created = await client.call("create_checkout", {
       shop,
       checkout: { line_items: items.map((item) => ({ item: { id: item.id }, quantity: item.quantity })), context: { address_country: text(address?.address_country) || "US" }, ...(buyer === undefined ? {} : { buyer }) },
@@ -572,9 +592,16 @@ export function createShopTools(options: ShopToolsOptions) {
     if (!created.ok || created.isError) return answerText(created);
     let doc = record(created.value);
     if (text(doc.id).length === 0) return { text: "Shop opened no checkout for this.", isError: true };
-    // The delivery address: the account's preferred one, copied unchanged, where the checkout has a delivery method waiting for one.
+    // The delivery address: the account's preferred one, where the checkout
+    // has a delivery method waiting for one, or has it chosen without the
+    // phone this one now carries.
     const methods = records(record(doc.fulfillment).methods);
-    if (address != null && methods.length > 0 && methods.every((method) => text(method.selected_destination_id).length === 0)) {
+    const phoneOf = (place: Record<string, unknown> | undefined): string => { const own = text(place?.phone_number) || text(place?.phone); return own.includes("*") ? "" : own; };
+    const chosenWithoutPhone = (method: Record<string, unknown>): boolean => {
+      const chosen = text(method.selected_destination_id);
+      return chosen.length > 0 && chosen === text(address?.id) && phoneOf(records(method.destinations).find((place) => text(place.id) === chosen)).length === 0 && phoneOf(address).length > 0;
+    };
+    if (address != null && methods.length > 0 && (methods.every((method) => text(method.selected_destination_id).length === 0) || chosenWithoutPhone(methods[0]!))) {
       const withAddress = JSON.parse(JSON.stringify(doc)) as Record<string, unknown>;
       const first = records(record(withAddress.fulfillment).methods)[0] as Record<string, unknown>;
       first.destinations = [...records(first.destinations).filter((item) => text(item.id) !== text(address.id)), address];
@@ -618,6 +645,15 @@ export function createShopTools(options: ShopToolsOptions) {
     // unchanged (18 October 2026: the agent was sent to the store's site
     // instead, which wanted the same sign-in Shop had stopped at).
     const continueUrl = text(doc.continue_url);
+    // With Link connected the store's own checkout comes next, paid with
+    // Link, and Shop's page only if that fails; without it, Shop's page.
+    if (options.linkConnected?.() === true) {
+      const page = /^https:\/\//.test(productUrl) ? ` (${productUrl})` : "";
+      return {
+        text: `Shop can't finish this checkout by itself (${status || "no status"}). ${summary} The person's Link is connected, so finish it at the store's own checkout and pay with Link, without asking them first: say in one line that you're finishing it at the store with Link, then send a browser subagent to the product's page${page} to add it to the cart and go through the store's checkout as a guest, with the contact and delivery details from Link's get_wallet, stopping at the last step before paying; then call RequestPurchase as for any store.${continueUrl.startsWith("https://") ? ` Only if the store's checkout won't work, send them Shop's own page to pay there: ${continueUrl}` : ""}`,
+        isError: false,
+      };
+    }
     if (continueUrl.startsWith("https://")) {
       return {
         text: `Shop can't finish this checkout by itself (${status || "no status"}). ${summary} Send the person Shop's own page for it, unchanged, as a link to review and pay there (they're signed in to Shop on their phone): ${continueUrl} Say in one line what's in it and why Shop needs them; nothing is paid until they pay on that page. If they'd rather not, go on to the next comparable item.`,

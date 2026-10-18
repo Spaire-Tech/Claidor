@@ -1886,6 +1886,42 @@ helper had finished long before, and sent another helper to check. Now:
     (`claudeImageRefusal`, `provider-session.ts`).
   `desktop/tests/browser-helper-files-and-pictures.test.mjs` (in real Chrome: the caught window,
   both kinds of upload field, the refusals, the 2000-pixel shot; and the wire's picture limits).
+- **A purchase that stalled at a popup, then locked the screen** (18 October 2026, Rhea buying a
+  desk set from Deskery). Five things, each fixed where it happened:
+  - A store popup over the button: Deskery's "Get 10% off" opened over "Add to cart"; the click
+    waited ten seconds and failed with Playwright's call log. Before a click (`click`, `type`,
+    `upload_file`) the driver now hit-tests the element's centre; when something else is on top,
+    it clicks that layer's own way out ("No, thanks", "Close", ×) or presses Escape, then clicks
+    (`clickThroughPopups`, `COVER_FN` in `sand-browser-driver-source.ts`). Only a dismissal is
+    ever clicked. A cover it can't clear fails at once with a sentence naming it ("something on
+    the page is over it (div "…"), most likely a popup"). The helper's guidance says to close a
+    popup and that one error is never the end of the task. `desktop/tests/helper-popups.test.mjs`
+    (real Chrome: Klaviyo's popup closed by "No, thanks" with the offer untaken, one closed by
+    Escape, one named).
+  - A helper stuck in a step: a model answer had no deadline once its headers came (the body
+    rode on no signal), nor did a browser command. An answer with nothing new for three minutes
+    is now cancelled (`SIMEON_STREAM_IDLE_MS`, `nextWithin` in `provider-session.ts`; log line
+    `[simeon] model-stalled`), and a browser step past two minutes is given up
+    (`SAND_BROWSER_STEP_LIMIT_MS`). `desktop/tests/stalled-steps.test.mjs`.
+  - Stop that never let go of the screen: StopSubagent only interrupted the helper, which is heard
+    between steps, and the screen was freed when its turn settled, so a stuck helper kept it and
+    three helpers sent after it were refused as "already using the screen". A stopped helper not
+    settled within ten seconds is now settled for it, marked stopped and the screen freed
+    (`SUBAGENT_STOP_GRACE_MS` in `subagent-runtime.ts`; log line `[simeon] subagent=stop-forced`);
+    its stuck step ending later settles nothing twice. `desktop/tests/subagent-host-log.test.mjs`.
+  - CheckSubagent blind: nothing fed a helper's activity, so every running helper read "0 tool
+    call(s), no tool activity recorded yet", and Rhea told the person the helper "hadn't started
+    clicking yet". Each tool call now reaches the runner's activity with its own name and, when it
+    failed, its sentence (`toolActivityOf` in `tool-call-log.ts`, the `onToolCall` observer in
+    `host-runner-composition.ts`).
+  - Shop asked for a phone the agent had sent: the phone went on the buyer only, and Deskery's
+    delivery method wants one on the delivery address. The account's address now carries the
+    phone when it has none of its own (`withDeliveryPhone`), also when Shop had already chosen
+    it. And when Shop can't finish a checkout while the person's Link is connected, the tool now
+    says to finish it at the store's own checkout and pay with Link, without asking, and to send
+    Shop's page only if that fails (`linkConnected` in `shop-tools.ts`); the founder: "the shop
+    confusion is annoying. knowing it could clearly use link". Without Link, Shop's page as
+    before. `desktop/tests/shop-wallet.test.mjs`.
 
 This needs no server change and no setting on Render: it is all in the engine, and reaches the
 cloud computers when the founder's agent publishes a new host bundle.

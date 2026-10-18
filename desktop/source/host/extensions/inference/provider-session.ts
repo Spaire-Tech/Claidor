@@ -835,7 +835,34 @@ function logModelCallError(error: unknown, callInfo: { readonly model: string; r
   modelCallLog(`${HOST_LOG_PREFIX} model-error-schemas ${clipForHostLog(toolSchemaSummary(tools), 6000)}`);
 }
 
-function settleAiSdkStream(result: ReturnType<typeof streamText>, invocationId: string, onUsage?: (usage: UsageRecord) => void, maxTokens = 0, callInfo?: { readonly model: string; readonly effort: string; readonly budget?: string; readonly prefix?: string; readonly reason?: string }, tools?: ToolSet, messages?: readonly CoreMessage[], onRequestId?: (requestId: string) => void, onCutOff?: () => void, wire: SimeonWire = "openai") {
+/**
+ * How long a model's answer may go without a single new piece before it is
+ * given up (18 October 2026). The network deadline covers the connection and
+ * the headers only, and nothing timed the body: an answer that stalled after
+ * its first bytes kept its step waiting for ever. Rhea's browser helper sat
+ * like that, holding the screen, and three helpers sent after it were
+ * refused. Three minutes is past the loop's own first-token budget (150 s).
+ */
+export const SIMEON_STREAM_IDLE_MS = 180_000;
+
+/** The stream's next piece, or an error once `ms` pass without one (and the request cancelled). */
+export async function nextWithin<T>(iterator: AsyncIterator<T>, ms: number, cancel?: (reason: Error) => void): Promise<IteratorResult<T>> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const stalled = new Promise<never>((_resolve, reject) => {
+    timer = setTimeout(() => {
+      const error = new Error(`The model stopped answering: nothing came for ${Math.round(ms / 1000)} s.`);
+      cancel?.(error);
+      reject(error);
+    }, ms);
+  });
+  try {
+    return await Promise.race([iterator.next(), stalled]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function settleAiSdkStream(result: ReturnType<typeof streamText>, invocationId: string, onUsage?: (usage: UsageRecord) => void, maxTokens = 0, callInfo?: { readonly model: string; readonly effort: string; readonly budget?: string; readonly prefix?: string; readonly reason?: string }, tools?: ToolSet, messages?: readonly CoreMessage[], onRequestId?: (requestId: string) => void, onCutOff?: () => void, wire: SimeonWire = "openai", cancel?: (reason: Error) => void, idleMs = SIMEON_STREAM_IDLE_MS) {
   const startedAtMs = Date.now();
   const failure = deferred<never>();
   failure.promise.catch(() => undefined);
@@ -843,8 +870,21 @@ function settleAiSdkStream(result: ReturnType<typeof streamText>, invocationId: 
   const fullStream = (async function* () {
     let ended = false;
     let lastType: string | undefined;
+    const pieces = result.fullStream[Symbol.asyncIterator]();
     try {
-      for await (const part of result.fullStream) {
+      for (;;) {
+        let next: IteratorResult<Awaited<ReturnType<typeof pieces.next>>["value"]>;
+        try {
+          next = await nextWithin(pieces, idleMs, cancel);
+        } catch (error) {
+          if (error instanceof Error && error.message.startsWith("The model stopped answering")) {
+            modelCallLog(`${HOST_LOG_PREFIX} model-stalled model=${callInfo?.model ?? "?"} after=${Math.round((Date.now() - startedAtMs) / 1000)}s idle=${Math.round(idleMs / 1000)}s`);
+            fail(error);
+          }
+          throw error;
+        }
+        if (next.done === true) break;
+        const part = next.value;
         if (part.type === "error") { logModelCallError(part.error, callInfo, tools, messages); const next = asError(part.error); fail(next); throw next; }
         // The loop pins a thinking signature on the reasoning part before it
         // (tool-stream-executor.ts) and drops one that has none. Claude sends
@@ -857,6 +897,7 @@ function settleAiSdkStream(result: ReturnType<typeof streamText>, invocationId: 
       ended = true;
     } finally {
       if (ended) queueMicrotask(() => fail(new Error("The model stream ended without a response.")));
+      else void Promise.resolve(pieces.return?.()).catch(() => undefined);
     }
   })();
   const race = <T>(promise: Promise<T>): Promise<T> => Promise.race([promise, failure.promise]);
@@ -908,8 +949,11 @@ function aiSdkExecutor(model: LanguageModelV1, messages: readonly ProviderMessag
   const system = coreMessages.some(message => message.role === "system") ? undefined : ROUTER_SYSTEM_PROMPT;
   // upstream-era tool schemas (Task included) omit additionalProperties.
   // OpenAI's Responses default is strict:true, which then refuses them.
+  // Each call can be cancelled: an answer that stalls is (`settleAiSdkStream`).
+  const cancelCall = new AbortController();
   const result = streamText({
     model,
+    abortSignal: cancelCall.signal,
     ...(system === undefined ? {} : { system }),
     messages: coreMessages,
     ...(tools === undefined ? {} : { tools }),
@@ -921,7 +965,7 @@ function aiSdkExecutor(model: LanguageModelV1, messages: readonly ProviderMessag
     // knows none of them.
     providerOptions: wire === "anthropic" ? {} : { openai: { strictSchemas: false, ...openaiOptions } },
   });
-  return settleAiSdkStream(result, invocationId, onUsage, maxTokens, prefixedCallInfo, tools, coreMessages, onRequestId, onCutOff, wire);
+  return settleAiSdkStream(result, invocationId, onUsage, maxTokens, prefixedCallInfo, tools, coreMessages, onRequestId, onCutOff, wire, (reason) => cancelCall.abort(reason));
 }
 
 // Simeon's metered proxy, on the Responses wire: the one that takes reasoning

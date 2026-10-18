@@ -1,6 +1,9 @@
 import { clipForHostLog, HOST_LOG_PREFIX, logHostLine } from "../../shared/host-log.js";
 import { deriveBackgroundSubagentTitle, formatSteerPrompt } from "./background-work.js";
 
+/** How long a stopped helper has to end its turn before it is ended for it (`abortSubagent`). */
+export const SUBAGENT_STOP_GRACE_MS = 10_000;
+
 export interface SubagentLineage {
   readonly parentRequestId?: string;
   readonly parentAgentToolCallId?: string;
@@ -262,20 +265,25 @@ export function createSubagentRuntime(host: SubagentRuntimeHost) {
       turn = Promise.reject(error);
     }
 
-    const promise = turn
-      .then((result) =>
-        settleBackgroundSubagentTurn(
+    // A run settles once: a stop that had to end it by force
+    // (`abortSubagent`) has already settled it when its turn comes back.
+    const current = (): boolean => backgroundSubagentRuns.get(subagentAgentId) === promise;
+    const promise: Promise<void> = turn
+      .then((result) => current()
+        ? settleBackgroundSubagentTurn(
           subagentAgentId,
           result.aborted
             ? { status: "aborted" }
             : { status: "completed", text: result.text },
-        ),
+        )
+        : undefined,
       )
-      .catch((error: unknown) =>
-        settleBackgroundSubagentTurn(subagentAgentId, {
+      .catch((error: unknown) => current()
+        ? settleBackgroundSubagentTurn(subagentAgentId, {
           status: "error",
           error: errorMessage(error),
-        }),
+        })
+        : undefined,
       );
     backgroundSubagentRuns.set(subagentAgentId, promise);
   }
@@ -476,6 +484,20 @@ export function createSubagentRuntime(host: SubagentRuntimeHost) {
     }
     host.emitAsyncTasksChanged();
     runner.interrupt("Stopped by the parent agent.");
+    // The interrupt is only heard between steps: a helper stuck in one (a
+    // model answer that never ends, a browser command that never returns)
+    // never settled, kept the screen, and every helper sent after it was
+    // refused as "already using the screen" (18 October 2026, Rhea, three
+    // times). Not settled within a few seconds, it is settled here: marked
+    // stopped, the screen freed. Its stuck step may still end later; the
+    // loop stops there, its turn being aborted.
+    const running = backgroundSubagentRuns.get(subagentAgentId);
+    const timer = setTimeout(() => {
+      if (running === undefined || backgroundSubagentRuns.get(subagentAgentId) !== running) return;
+      logHostLine(`${HOST_LOG_PREFIX} subagent=stop-forced id=${subagentAgentId} after=${SUBAGENT_STOP_GRACE_MS}ms`);
+      void settleBackgroundSubagentTurn(subagentAgentId, { status: "aborted" });
+    }, SUBAGENT_STOP_GRACE_MS);
+    (timer as { unref?: () => void }).unref?.();
     return "ok";
   }
 

@@ -29,6 +29,8 @@ import {
   type SummarizationPromptSession,
 } from "../packages/agent-summarization/summarization-handler.js";
 import { getAgentBlobStore } from "./runner/sand-agent-runner.js";
+import { getOutlineToolCallName } from "./runner/conversation-outline.js";
+import { toolActivityOf } from "./runner/tool-call-log.js";
 import type { AgentProfileForRunner } from "./runner/sand-agent-runner.js";
 import { productionPdfTextExtractor } from "./runner/pdf-text-extractor.js";
 import type {
@@ -3291,7 +3293,18 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
               systemPromptGenerator: () => promptAssembly?.getSystemPrompt() ?? DEFAULT_SAND_SYSTEM_PROMPT,
             },
             emitUpdate,
-            interactionObservers: {},
+            // Each tool call reaches the runner's activity, which
+            // CheckSubagent reads (18 October 2026: it was never fed).
+            interactionObservers: {
+              onToolCall: (phase, _callId, toolCall) => {
+                if (phase !== "toolCallStarted" && phase !== "toolCallCompleted") return;
+                const observation = (builtRunner as { observation?: { toolStarted?: (name: string) => void; toolCompleted?: (name: string, failed?: boolean, summary?: string) => void } } | undefined)?.observation;
+                const call = toolCall as Parameters<typeof getOutlineToolCallName>[0];
+                const activity = toolActivityOf(call as unknown as Record<string, unknown>, getOutlineToolCallName(call));
+                if (phase === "toolCallStarted") observation?.toolStarted?.(activity.name);
+                else observation?.toolCompleted?.(activity.name, activity.failed, activity.detail);
+              },
+            },
             diskPressureReminder: foreverBox.diskPressureReminder,
             ...(promptAssembly === undefined
               ? {}

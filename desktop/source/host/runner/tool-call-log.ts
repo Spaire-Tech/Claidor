@@ -53,3 +53,25 @@ export function summarizeToolCallOutcome(toolCall: Loose): string {
   try { rendered = JSON.stringify(record[first]); } catch { rendered = String(record[first]); }
   return `result=${first} ${clipForHostLog(rendered, 120)}`;
 }
+
+/**
+ * One tool call as a helper's activity (`turn-observation.ts`), for
+ * CheckSubagent: the tool's own name (a host tool carries it in its step,
+ * `communicate-tool.ts`), whether it failed, and the failure's sentence.
+ * Until 18 October 2026 nothing fed the activity at all, so every running
+ * helper read "0 tool call(s), no tool activity recorded yet": Rhea was told
+ * her stuck helper "hadn't started clicking yet".
+ */
+export function toolActivityOf(toolCall: Loose, fallbackName: string): { readonly name: string; readonly failed: boolean; readonly detail?: string } {
+  let name = fallbackName;
+  const step = toolCall?.tool?.value?.args?.currentStep;
+  if (typeof step === "string" && step.length > 0) {
+    try {
+      const parsed = JSON.parse(step) as Loose;
+      if (typeof parsed?.tool === "string" && parsed.tool.length > 0) name = parsed.tool;
+    } catch { /* not a host tool's step */ }
+  }
+  const outcome = summarizeToolCallOutcome(toolCall);
+  const failure = /^result=\w*(error|fail|reject)\w* detail=(.*)$/is.exec(outcome);
+  return failure == null ? { name, failed: false } : { name, failed: true, detail: clipForHostLog(failure[2] ?? "", 160) };
+}

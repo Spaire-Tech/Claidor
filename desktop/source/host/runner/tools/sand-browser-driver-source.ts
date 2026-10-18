@@ -641,7 +641,97 @@ function catchFileChoosers(context) {
   return caught;
 }
 
-const FILE_CHOOSER_CAUGHT = "That opened a file picker, which was closed with nothing chosen. To attach a file there, call browser_upload_file with the upload button's (or file field's) ref and the file's path on your computer.";
+// A store's popup (an email sign-up, a "10% off" offer) can open over the
+// element a step aims at. On 18 October 2026 Deskery's covered "Add to cart"
+// as Rhea's helper clicked it: the click waited ten seconds and failed with
+// Playwright's call log, and the helper went no further. Before a click the
+// element's centre is now hit-tested; when something else is on top, the
+// layer it belongs to is searched for its own way out ("No, thanks", a
+// close ×) and that is clicked, else Escape is pressed. Only a dismissal is
+// ever clicked: nothing that accepts, subscribes or pays.
+const COVER_FN = (el) => {
+  const doc = el.ownerDocument;
+  const win = doc.defaultView;
+  const rect = el.getBoundingClientRect();
+  if (rect.width === 0 || rect.height === 0) return null;
+  const x = rect.left + rect.width / 2;
+  const y = rect.top + rect.height / 2;
+  if (x < 0 || y < 0 || x > win.innerWidth || y > win.innerHeight) return null;
+  const top = doc.elementFromPoint(x, y);
+  if (top === null || top === el || el.contains(top) || top.contains(el)) return null;
+  const words = (node) => (node.getAttribute("aria-label") || node.getAttribute("title") || node.innerText || node.textContent || "").replace(/\\s+/g, " ").trim();
+  const shown = (node) => {
+    const box = node.getBoundingClientRect();
+    const style = win.getComputedStyle(node);
+    return box.width > 0 && box.height > 0 && style.visibility !== "hidden" && style.display !== "none";
+  };
+  // The layer on top: the outermost dialog or fixed box around what was hit,
+  // and around the middle of the window, where a centred popup sits.
+  const layerOf = (hit) => {
+    let layer = null;
+    for (let at = hit; at !== null && at !== doc.body && at !== doc.documentElement; at = at.parentElement) {
+      if (at.getAttribute("role") === "dialog" || at.getAttribute("aria-modal") === "true" || win.getComputedStyle(at).position === "fixed") layer = at;
+    }
+    return layer;
+  };
+  const layers = [layerOf(top), layerOf(doc.elementFromPoint(win.innerWidth / 2, win.innerHeight / 2))].filter((one, index, all) => one !== null && !one.contains(el) && all.indexOf(one) === index);
+  const SAYS_NO = /^(no,? ?thanks?|no thank you|no,? i('|’)?m good|not now|maybe later|close|dismiss|skip|x|×|✕|✖)[.!]?$/i;
+  const SAYS_CLOSE = /^(close|dismiss)|close (dialog|modal|popup|form)/i;
+  let way = null;
+  for (const layer of layers) {
+    const candidates = [...layer.querySelectorAll("button, a, [role='button'], [aria-label], [title]")].filter(shown);
+    way = candidates.find((one) => SAYS_NO.test(words(one))) ?? candidates.find((one) => SAYS_CLOSE.test(one.getAttribute("aria-label") || one.getAttribute("title") || "")) ?? null;
+    if (way !== null) break;
+  }
+  const stamp = String(Date.now()) + String(Math.random()).slice(2, 6);
+  if (way !== null) way.setAttribute("data-simeon-dismiss", stamp);
+  return {
+    covered: (top.tagName.toLowerCase() + " " + JSON.stringify(words(top).slice(0, 80))).trim(),
+    ...(way === null ? {} : { stamp, way: words(way).slice(0, 40) || "close" }),
+  };
+};
+
+/**
+ * Clears a popup over the element, if one is there, and says what it did;
+ * undefined when nothing covered it or nothing could be done about it.
+ */
+async function closeCoveringPopup(page, element) {
+  await element.scrollIntoViewIfNeeded({ timeout: 3000 }).catch(() => {});
+  const cover = await element.evaluate(COVER_FN).catch(() => null);
+  if (cover === null) return undefined;
+  if (cover.stamp !== undefined) {
+    const frame = (await element.ownerFrame().catch(() => null)) ?? page.mainFrame();
+    const way = frame.locator('[data-simeon-dismiss="' + cover.stamp + '"]');
+    const closed = await way.click({ timeout: 3000 }).then(() => true, () => false);
+    if (closed) {
+      await sleep(400);
+      return "Closed a popup over it first (" + JSON.stringify(cover.way) + ").";
+    }
+  }
+  await page.keyboard.press("Escape").catch(() => {});
+  await sleep(300);
+  const still = await element.evaluate(COVER_FN).catch(() => null);
+  return still === null ? "Pressed Escape to close a popup over it first." : undefined;
+}
+
+/** The click, through a popup over it; what was closed on the way, if anything. A click a popup still blocks says so plainly. */
+async function clickThroughPopups(page, element, options, label) {
+  const cleared = await closeCoveringPopup(page, element);
+  try {
+    await element.click(options);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (!message.includes("intercepts pointer events")) throw error;
+    const cover = await element.evaluate(COVER_FN).catch(() => null);
+    throw new Error(
+      "Clicking " + label + " didn't work: something on the page is over it" + (cover === null ? "" : " (" + cover.covered + ")") +
+      ", most likely a popup or banner. Close it first: take a browser_snapshot and click its close or \\"No thanks\\" button, or press Escape; then click again."
+    );
+  }
+  return cleared;
+}
+
+const FILE_CHOOSER_CAUGHT ="That opened a file picker, which was closed with nothing chosen. To attach a file there, call browser_upload_file with the upload button's (or file field's) ref and the file's path on your computer.";
 
 function filesToUpload(value) {
   const asked = (Array.isArray(value) ? value : typeof value === "string" ? [value] : [])
@@ -744,9 +834,10 @@ const OPS = {
         };
       }
     }
-    await element.click(options);
+    const label = request.element ?? request.ref;
+    const cleared = await clickThroughPopups(page, element, options, label);
     await page.waitForLoadState("domcontentloaded", { timeout: 3000 }).catch(() => {});
-    return { page, viewId, summary: "Clicked " + (request.element ?? request.ref) };
+    return { page, viewId, summary: (cleared === undefined ? "" : cleared + " ") + "Clicked " + label };
   },
   mouse_click_xy: async ({ request, context, state }) => {
     const { page, viewId } = await resolvePage(request, context, state);
@@ -759,7 +850,7 @@ const OPS = {
   type: async ({ request, context, state }) => {
     const { page, viewId } = await resolvePage(request, context, state);
     const element = await refHandle(page, request.ref);
-    await element.click({ timeout: ACTION_TIMEOUT_MS });
+    const cleared = await clickThroughPopups(page, element, { timeout: ACTION_TIMEOUT_MS }, request.element ?? request.ref);
     if (request.clear === true) {
       await element.fill("").catch(() => {});
     }
@@ -768,7 +859,7 @@ const OPS = {
       await page.keyboard.press("Enter");
       await page.waitForLoadState("domcontentloaded", { timeout: 5000 }).catch(() => {});
     }
-    return { page, viewId, summary: "Typed into " + (request.element ?? request.ref) };
+    return { page, viewId, summary: (cleared === undefined ? "" : cleared + " ") + "Typed into " + (request.element ?? request.ref) };
   },
   fill: async ({ request, context, state }) => {
     const { page, viewId } = await resolvePage(request, context, state);
@@ -804,7 +895,7 @@ const OPS = {
       // A styled button or drop zone opens the file window from its own
       // click: it is caught before it opens and given the files.
       const chooser = page.waitForEvent("filechooser", { timeout: FILE_CHOOSER_TIMEOUT_MS }).catch(() => undefined);
-      await element.click(clickOptionsFor(request));
+      await clickThroughPopups(page, element, clickOptionsFor(request), label);
       const opened = await chooser;
       if (opened === undefined) {
         throw new Error("Clicking " + label + " opened no file picker. Take a snapshot and pass the ref of the page's upload button or file field.");

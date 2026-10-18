@@ -136,7 +136,7 @@ export function createSubagentManagementTools(
         if (dependencies.abortSubagent(args.subagent_id) === "not-running") {
           return notRunningMessage(args.subagent_id, dependencies.listRunningSubagents());
         }
-        return `Stopping subagent ${args.subagent_id}. It will be torn down and won't report back.`;
+        return `Stopping subagent ${args.subagent_id}. It will be torn down and won't report back; its screen is free for another helper within ten seconds.`;
       },
     }),
   ];

@@ -134,11 +134,12 @@ export function createTurnObservation(
     host.onEvent?.({ type: "tool-started", name, at: now() });
   }
 
-  function toolCompleted(name: string, failed = false): void {
+  function toolCompleted(name: string, failed = false, summary?: string): void {
     if (lastTool === name) lastTool = undefined;
     recordToolActivity({
       status: failed ? "failed" : "done",
       name,
+      ...(summary == null || summary.length === 0 ? {} : { summary }),
     });
     host.onEvent?.({ type: "tool-completed", name, at: now() });
   }
