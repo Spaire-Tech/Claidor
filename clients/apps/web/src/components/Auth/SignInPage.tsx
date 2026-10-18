@@ -140,8 +140,8 @@ const SignInPage = ({
 
   return (
     <AuthShell
-      heading="Your team is ready"
-      line="Create a team of agents for any part of your business."
+      heading="Get it off your plate"
+      line="Your doing partners for every part of your business."
     >
       <div className="flex flex-col gap-3">
         <a href={googleUrl} onClick={() => submitted('google')} className={provider}>

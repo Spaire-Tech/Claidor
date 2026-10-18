@@ -30,7 +30,7 @@ const AuthShell = ({
               {heading}
             </h1>
             {line ? (
-              <p className="max-w-[460px] font-[family-name:var(--font-newsreader)] text-[17px] leading-[1.4] text-balance text-[#3a3a3c] sm:text-[22px] sm:leading-[1.35]">
+              <p className="font-[family-name:var(--font-newsreader)] text-[clamp(14px,3.9vw,17px)] leading-[1.4] text-balance text-[#3a3a3c] min-[360px]:whitespace-nowrap sm:text-[22px] sm:leading-[1.35]">
                 {line}
               </p>
             ) : null}
