@@ -13,10 +13,12 @@ export const metadata: Metadata = {
 export default async function Page(props: {
   searchParams: Promise<{
     return_to?: string
+    error?: string
   }>
 }) {
   const searchParams = await props.searchParams
-  const { return_to, ...rest } = searchParams
+  // `error`: a way in that came back without signing in (Sign in with Apple not set up yet).
+  const { return_to, error, ...rest } = searchParams
 
   const api = await getServerSideAPI()
   const userOrganizations = await getUserOrganizations(api)
@@ -24,5 +26,10 @@ export default async function Page(props: {
     redirect(return_to ?? '/app')
   }
 
-  return <SignInPage mode="signup" returnTo={return_to} returnParams={rest} />
+  return <SignInPage
+      mode="signup"
+      returnTo={return_to}
+      returnParams={rest}
+      error={error}
+    />
 }

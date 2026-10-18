@@ -81,7 +81,7 @@ class TestTheChallenge:
 
 @pytest.mark.asyncio
 class TestLoginDeepControl:
-    async def test_anonymous_is_sent_to_the_api_s_sign_in_and_asked_back(
+    async def test_anonymous_is_sent_to_the_web_sign_in_and_asked_back(
         self, client: httpx.AsyncClient
     ) -> None:
         _, challenge, uuid = _login_metadata()
@@ -97,8 +97,12 @@ class TestLoginDeepControl:
         )
         assert response.status_code == 303
         location = urlparse(response.headers["location"])
-        # The API's own Google sign-in: no web app in the way.
-        assert location.path.endswith("/integrations/google/login/authorize")
+        # The web app's sign-in page (18 October 2026: Google, Apple and
+        # e-mail), each of whose ways comes back to this very link.
+        assert response.headers["location"].startswith(
+            settings.generate_frontend_url("/login?")
+        )
+        assert response.headers["cache-control"] == "no-store"
         return_to = parse_qs(location.query)["return_to"][0]
         assert return_to.startswith(
             settings.generate_external_url("/loginDeepControl?")
@@ -156,17 +160,48 @@ class TestLoginDeepControl:
         # In the screen's design: the site's mark and wordmark, the pills.
         assert 'aria-label="SimeonLabs"' in page.text
         assert 'class="pill glass"' in page.text
-        # The Google button, and a link with no way named (the Mac's), go to Google.
-        for provider in ("google", None):
-            response = await client.get(
-                "/loginDeepControl",
-                params={**params, **({"provider": provider} if provider else {})},
-                follow_redirects=False,
-            )
-            assert response.status_code == 303
-            assert urlparse(response.headers["location"]).path.endswith(
-                "/integrations/google/login/authorize"
-            )
+        # The Google button goes to Google; a link with no way named (the
+        # Mac's) to the web sign-in page.
+        response = await client.get(
+            "/loginDeepControl",
+            params={**params, "provider": "google"},
+            follow_redirects=False,
+        )
+        assert response.status_code == 303
+        assert urlparse(response.headers["location"]).path.endswith(
+            "/integrations/google/login/authorize"
+        )
+        response = await client.get(
+            "/loginDeepControl", params=params, follow_redirects=False
+        )
+        assert response.status_code == 303
+        assert response.headers["location"].startswith(
+            settings.generate_frontend_url("/login?")
+        )
+
+    async def test_the_web_page_s_apple_button_before_apple_is_set_up(
+        self, client: httpx.AsyncClient, mocker: MockerFixture
+    ) -> None:
+        """The web sign-in page's Continue with Apple (18 October 2026):
+        with Apple not set up on the server, back to that page with the
+        reason and the same way home, rather than an error from Apple."""
+        mocker.patch.object(settings, "APPLE_CLIENT_ID", "")
+        _, challenge, uuid = _login_metadata()
+        way_home = settings.generate_external_url(
+            f"/loginDeepControl?challenge={challenge}&uuid={uuid}&mode=login"
+        )
+        response = await client.get(
+            "/v1/integrations/apple/authorize",
+            params={"return_to": way_home},
+            follow_redirects=False,
+        )
+        assert response.status_code == 303
+        assert response.headers["location"].startswith(
+            settings.generate_frontend_url("/login?")
+        )
+        query = parse_qs(urlparse(response.headers["location"]).query)
+        assert query["error"] == ["apple_unavailable"]
+        assert query["return_to"] == [way_home]
 
     @pytest.mark.auth
     async def test_a_signed_in_person_is_asked_before_anything_is_written(
