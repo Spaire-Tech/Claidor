@@ -4,12 +4,23 @@ export const SAND_BROWSER_DRIVER_BOX_PATH = SAND_BROWSER_DRIVER_BOX_DIR + "/driv
 export const SAND_BROWSER_RESULT_MARKER = "__SAND_BROWSER_RESULT__";
 export const SAND_BROWSER_DRIVER_SOURCE = `
 import { spawn } from "node:child_process";
-import { mkdirSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, realpathSync, renameSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 
 const RESULT_MARKER = "__SAND_BROWSER_RESULT__";
 const STATE_DIR = "/tmp/.sand-browser";
 const ACTION_TIMEOUT_MS = 10000;
 const NAVIGATE_TIMEOUT_MS = 25000;
+// Claude refuses a picture over 2000 pixels on a side once a request holds
+// more than twenty (provider-session.ts, CLAUDE_MANY_IMAGES_MAX_SIDE), and
+// a full-page screenshot of a long form is several thousand pixels tall
+// (18 October 2026: Sage's job application). A full-page shot keeps at most
+// this much, from where the page is scrolled.
+const FULL_PAGE_MAX_SIDE = 2000;
+// Files a page may be given come from the workspace only, where the
+// person's attachments land (/workspace/uploads): never the computer's own
+// settings and sign-ins.
+const UPLOAD_ROOT = "/workspace";
+const FILE_CHOOSER_TIMEOUT_MS = 5000;
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -616,6 +627,47 @@ function clickOptionsFor(args) {
   return options;
 }
 
+// A page's "Upload" button opens Chrome's own file window, which no browser
+// tool can work: on 18 October 2026 one stayed open on the person's screen
+// after Sage's helper clicked a résumé field. While a step runs, every tab's
+// file windows are caught before they open (Playwright's filechooser
+// interception); upload_file fills one, any other is closed unopened and
+// the step says so.
+function catchFileChoosers(context) {
+  const caught = { count: 0 };
+  for (const page of context.pages()) {
+    if (!page.isClosed()) page.on("filechooser", () => { caught.count += 1; });
+  }
+  return caught;
+}
+
+const FILE_CHOOSER_CAUGHT = "That opened a file picker, which was closed with nothing chosen. To attach a file there, call browser_upload_file with the upload button's (or file field's) ref and the file's path on your computer.";
+
+function filesToUpload(value) {
+  const asked = (Array.isArray(value) ? value : typeof value === "string" ? [value] : [])
+    .filter((one) => typeof one === "string" && one.trim().length > 0)
+    .map((one) => one.trim());
+  if (asked.length === 0) {
+    throw new Error("browser_upload_file needs paths: the file or files to attach, as paths on your computer (for example /workspace/uploads/resume.pdf).");
+  }
+  let root = UPLOAD_ROOT;
+  try { root = realpathSync(UPLOAD_ROOT); } catch {}
+  return asked.map((one) => {
+    const wanted = one.startsWith("/") ? one : UPLOAD_ROOT + "/" + one;
+    let real;
+    try {
+      real = realpathSync(wanted);
+    } catch {
+      throw new Error("No file at " + wanted + " on your computer. The person's attachments are in /workspace/uploads; list them with Shell (ls /workspace/uploads) and pass the full path.");
+    }
+    if (real !== root && !real.startsWith(root + "/")) {
+      throw new Error("Only files in /workspace can be attached to a page; " + wanted + " is outside it. Copy it into /workspace first if it is the person's file.");
+    }
+    if (!statSync(real).isFile()) throw new Error(wanted + " is a folder, not a file.");
+    return real;
+  });
+}
+
 const OPS = {
   navigate: async ({ request, context, state }) => {
     if (request.newTab === true) {
@@ -739,6 +791,29 @@ const OPS = {
       viewId,
       summary: "Selected " + JSON.stringify(selected) + " in " + (request.element ?? request.ref),
     };
+  },
+  upload_file: async ({ request, context, state }) => {
+    const { page, viewId } = await resolvePage(request, context, state);
+    const paths = filesToUpload(request.paths);
+    const element = await refHandle(page, request.ref);
+    const label = request.element ?? request.ref;
+    const isFileField = await element.evaluate((el) => el.tagName === "INPUT" && el.type === "file").catch(() => false);
+    if (isFileField) {
+      await element.setInputFiles(paths, { timeout: ACTION_TIMEOUT_MS });
+    } else {
+      // A styled button or drop zone opens the file window from its own
+      // click: it is caught before it opens and given the files.
+      const chooser = page.waitForEvent("filechooser", { timeout: FILE_CHOOSER_TIMEOUT_MS }).catch(() => undefined);
+      await element.click(clickOptionsFor(request));
+      const opened = await chooser;
+      if (opened === undefined) {
+        throw new Error("Clicking " + label + " opened no file picker. Take a snapshot and pass the ref of the page's upload button or file field.");
+      }
+      await opened.setFiles(paths, { timeout: ACTION_TIMEOUT_MS });
+    }
+    await page.waitForLoadState("domcontentloaded", { timeout: 3000 }).catch(() => {});
+    const names = paths.map((one) => one.slice(one.lastIndexOf("/") + 1)).join(", ");
+    return { page, viewId, summary: "Attached " + names + " to " + label, fileChooserFilled: true };
   },
   press_key: async ({ request, context, state }) => {
     const { page, viewId } = await resolvePage(request, context, state);
@@ -986,6 +1061,7 @@ async function run(request) {
     const loadedLastViewId = state.lastViewId;
     const op = OPS[request.op];
     if (op === undefined) throw new Error("Unknown op: " + String(request.op));
+    const fileChoosers = catchFileChoosers(context);
     const result = await op({ request, context, state });
     // Record the view's URL so a discard-churned target can be re-adopted by
     // URL on a later call (see resolvePage).
@@ -1021,18 +1097,34 @@ async function run(request) {
       out.title = await result.page.title().catch(() => "");
       if (typeof request.screenshotPath === "string" && request.screenshotPath.length > 0) {
         mkdirSync(STATE_DIR, { recursive: true });
+        const shot = { path: request.screenshotPath, timeout: 8000, scale: "css" };
+        if (result.fullPage === true) {
+          shot.fullPage = true;
+          const size = await result.page
+            .evaluate(() => ({
+              width: document.documentElement.scrollWidth,
+              height: document.documentElement.scrollHeight,
+              top: Math.round(window.scrollY),
+            }))
+            .catch(() => undefined);
+          if (size !== undefined && (size.width > FULL_PAGE_MAX_SIDE || size.height > FULL_PAGE_MAX_SIDE)) {
+            const height = Math.min(size.height, FULL_PAGE_MAX_SIDE);
+            const top = Math.max(0, Math.min(size.top, size.height - height));
+            shot.clip = { x: 0, y: top, width: Math.min(size.width, FULL_PAGE_MAX_SIDE), height };
+            out.summary += " The page is " + String(size.width) + "×" + String(size.height) +
+              " pixels; the picture shows " + String(FULL_PAGE_MAX_SIDE) + " of them, from " + String(top) +
+              " to " + String(top + height) + ". Scroll and take another to see the rest.";
+          }
+        }
         await result.page
-          .screenshot({
-            path: request.screenshotPath,
-            timeout: 8000,
-            fullPage: result.fullPage === true,
-          })
+          .screenshot(shot)
           .then(() => {
             out.screenshot = true;
           })
           .catch(() => {});
       }
     }
+    if (fileChoosers.count > 0 && result.fileChooserFilled !== true) out.summary += " " + FILE_CHOOSER_CAUGHT;
     return out;
   } finally {
     await browser.close().catch(() => {});

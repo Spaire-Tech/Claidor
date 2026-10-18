@@ -521,6 +521,8 @@ export function toBrowserReviewAction(
     ...(stringValue("text") == null ? {} : { text: stringValue("text") }),
     ...(stringValue("value") == null ? {} : { value: stringValue("value") }),
     ...(stringArray("values") == null ? {} : { values: stringArray("values") }),
+    // The files a page is given, which Auto-review reads as the values.
+    ...(op !== "upload_file" ? {} : stringValue("paths") != null ? { values: [stringValue("paths")!] } : stringArray("paths") == null ? {} : { values: stringArray("paths") }),
     ...(stringValue("key") == null ? {} : { key: stringValue("key") }),
     ...(op !== "cdp" || stringValue("method") == null
       ? {}
@@ -619,6 +621,7 @@ const BROWSER_TOOL_SPECS: readonly BrowserToolSpec[] = [
   { id: "BROWSER_TYPE", name: "browser_type", op: "type", description: "Type text into an input, textarea, or contenteditable element by ref.", schema: { required: ["ref", "text"] }, canNavigate: true },
   { id: "BROWSER_FILL", name: "browser_fill", op: "fill", description: "Set the value of an input, textarea, or contenteditable element by ref.", schema: { required: ["ref", "value"] } },
   { id: "BROWSER_SELECT_OPTION", name: "browser_select_option", op: "select_option", description: "Select one or more options in a select element by ref.", schema: { required: ["ref", "values"] } },
+  { id: "BROWSER_UPLOAD_FILE", name: "browser_upload_file", op: "upload_file", description: "Attach files from your computer to a page: a résumé, a photo, a document. Pass the ref of the page's upload button, drop zone or file field, and paths: the files' full paths on your computer (the person's attachments are in /workspace/uploads; only files in /workspace can be attached). Never browser_click an upload button to attach a file: that opens a system file window no tool can use.", schema: { required: ["ref", "paths", "element"], describe: { paths: "The files to attach, as full paths on your computer, for example [\"/workspace/uploads/resume.pdf\"].", element: ELEMENT_DESCRIPTION } }, canNavigate: true },
   { id: "BROWSER_PRESS_KEY", name: "browser_press_key", op: "press_key", description: "Press a key in the browser page, for example Enter, Escape, Tab, ArrowDown, or a single character.", schema: { required: ["key"] }, canNavigate: true },
   { id: "BROWSER_SCROLL", name: "browser_scroll", op: "scroll", description: "Scroll the page or scroll an element into view (pass its ref)." },
   { id: "BROWSER_DRAG", name: "browser_drag", op: "drag", description: "Drag an element by ref to another ref (targetRef) or viewport coordinates (targetX, targetY). Pass sourceRef and element.", schema: { required: ["sourceRef", "element"], describe: { element: ELEMENT_DESCRIPTION } } },
@@ -626,7 +629,7 @@ const BROWSER_TOOL_SPECS: readonly BrowserToolSpec[] = [
   { id: "BROWSER_HIGHLIGHT", name: "browser_highlight", op: "highlight", description: "Highlight an element by ref in the browser page for visual grounding. The returned screenshot shows the highlight.", schema: { required: ["ref"] } },
   { id: "BROWSER_CDP", name: "browser_cdp", op: "cdp", description: "Send a Chrome DevTools Protocol command to the target browser tab. Do not use CDP Input.* methods; use dedicated browser tools for clicks, text input, key presses, scrolling, and drag-and-drop. Browser-wide, storage, cookie, cache, permission, and target-management commands are denied.", schema: { required: ["method"] }, canNavigate: true },
   { id: "BROWSER_TABS", name: "browser_tabs", op: "tabs", description: "List, create, close, or select a browser tab.", schema: { required: ["action"], enum: { action: ["list", "new", "close", "select"] } }, skipScreenshot: true },
-  { id: "BROWSER_TAKE_SCREENSHOT", name: "browser_take_screenshot", op: "screenshot", description: "Take a screenshot of the current page. Usually redundant: every browser action already returns one. Use fullPage for the full scrollable page." },
+  { id: "BROWSER_TAKE_SCREENSHOT", name: "browser_take_screenshot", op: "screenshot", description: "Take a screenshot of the current page. Usually redundant: every browser action already returns one. fullPage: true shows up to 2000 pixels of the page from where it is scrolled; for a longer page scroll and take another, or read it with browser_snapshot." },
 ];
 
 function validateArguments(

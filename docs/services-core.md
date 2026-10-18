@@ -424,6 +424,13 @@ upstream app. From 2 to 8 October 2026 only the latest three to seven stayed
 (`SIMEON_KEPT_TOOL_IMAGES`, now Infinity; `SIMEON_TOOL_IMAGE_DROP_BATCH`), and
 a helper repeating the same clicks could not see what it had done three
 steps before. The pruning stays in the code for a kept count set on purpose.
+On Claude the latest twenty stay (`SIMEON_CLAUDE_KEPT_TOOL_IMAGES`, 18 October
+2026): Claude refuses a request with more than twenty pictures if any is over
+2000 pixels on a side, and one over 8000 pixels or 5 MB at any time, so such a
+picture is sent as a line of text instead (`claudeImageRefusal`). A browser
+helper's full-page screenshot keeps at most 2000 pixels. The refusal, before
+this, was Claude's sentence on a `desktop.proxy.upstream_refused` line with
+`status=400`.
 
 **Empty answers.** Every `[simeon] model=` line ends with `outcome=` (`tools`,
 `text` or `empty`: a paid call that produced neither) and `reason=` (the

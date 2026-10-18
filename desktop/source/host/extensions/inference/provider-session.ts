@@ -26,6 +26,7 @@ import { simeonGeminiEndpoint, streamGeminiGenerateContent, toGeminiRequest, typ
 import { CLAUDE_HOUR_CACHE_REASONS, claudeEffortFor, claudeUsage, isClaudeModelId, isClaudeProviderFailure, withClaudeBetaHeader, withClaudeRequestOptions, type ClaudeEffort } from "./claude-messages.js";
 import { simeonModelRoles } from "./simeon-model-roles.js";
 import { configuredSimeonVideoModel, isGeminiVideoModelId } from "../../../shared/video-availability.js";
+import { readImageFileDimensions } from "../../../shared/media/image-dimensions.js";
 import type { LabelMessage, PromptExecutor } from "./sand-labeling.js";
 
 type Loose = Record<string, any>;
@@ -489,6 +490,7 @@ function partText(parts: readonly Loose[]): string {
 // had done three steps before. The pruning stays in the code with the kept
 // count at Infinity, so a smaller SIMEON_KEPT_TOOL_IMAGES can be tried again
 // on purpose. Pictures the person attached are never dropped either way.
+// On Claude the latest twenty stay (SIMEON_CLAUDE_KEPT_TOOL_IMAGES, below).
 export const SIMEON_KEPT_TOOL_IMAGES = Number.POSITIVE_INFINITY;
 // The agent's own Screenshot pictures are another matter (15 October 2026):
 // its conversation lasts for days, where a helper's ends with its task, and
@@ -498,8 +500,60 @@ export const SIMEON_KEPT_TOOL_IMAGES = Number.POSITIVE_INFINITY;
 export const SIMEON_KEPT_AGENT_SCREENSHOTS = 3;
 export const SIMEON_AGENT_SCREENSHOT_TOOL_NAME = "Screenshot";
 export const SIMEON_TOOL_IMAGE_DROP_BATCH = 5;
+// Claude's own limits on pictures (platform.claude.com, Vision): at most 100
+// in a request, none over 5 MB, none over 8000 pixels on a side, and none over
+// 2000 once the request carries more than 20. A helper that keeps every
+// screenshot passes all three on a long job (18 October 2026: Sage's browser
+// helper filling a job application, a screenshot after every field, died
+// twice on what it called an image-size error). On Claude the latest twenty
+// tool pictures stay, older ones going five at a time as the agent's own do,
+// and a picture Claude would refuse becomes a line of text rather than
+// failing the whole call.
+export const SIMEON_CLAUDE_KEPT_TOOL_IMAGES = 20;
+export const CLAUDE_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
+export const CLAUDE_IMAGE_MAX_SIDE = 8000;
+export const CLAUDE_MANY_IMAGES = 20;
+export const CLAUDE_MANY_IMAGES_MAX_SIDE = 2000;
 const TOOL_IMAGE_INTRO = "Image output of the tool call(s) above.";
 const TOOL_IMAGE_DROPPED = "Image output of the tool call(s) above. (Not shown again: only the latest screenshots are kept; take a new one if you need to look.)";
+
+function imageBytes(image: unknown): Uint8Array | undefined {
+  if (image instanceof Uint8Array) return image;
+  if (typeof image === "string" && !/^[a-z][a-z0-9+.-]*:/i.test(image)) {
+    const bytes = Buffer.from(image, "base64");
+    return bytes.length > 0 ? bytes : undefined;
+  }
+  return undefined;
+}
+
+/** A picture Claude would refuse (`CLAUDE_IMAGE_*`): why, in words for the model; undefined for one it takes. */
+export function claudeImageRefusal(image: unknown, maxSide: number): string | undefined {
+  const bytes = imageBytes(image);
+  if (bytes === undefined) return undefined;
+  const size = readImageFileDimensions(bytes);
+  if (bytes.length <= CLAUDE_IMAGE_MAX_BYTES && (size == null || (size.width <= maxSide && size.height <= maxSide))) return undefined;
+  const shape = size == null ? `${Math.round(bytes.length / 1024)} KB` : `${size.width}×${size.height} pixels, ${Math.round(bytes.length / 1024)} KB`;
+  return `(A picture of ${shape} was left out: Claude takes none over ${maxSide} pixels on a side or 5 MB. If it was a screenshot, take the visible window rather than the full page.)`;
+}
+
+// Claude's limits on the pictures of one request, applied to the copy the wire sees.
+function withinClaudeImageLimits(out: Loose[]): void {
+  const count = out.reduce((total, message) => total + (Array.isArray(message.content) ? message.content.filter((part: Loose) => part?.type === "image").length : 0), 0);
+  const maxSide = count > CLAUDE_MANY_IMAGES ? CLAUDE_MANY_IMAGES_MAX_SIDE : CLAUDE_IMAGE_MAX_SIDE;
+  for (let index = 0; index < out.length; index += 1) {
+    const message = out[index]!;
+    if (!Array.isArray(message.content)) continue;
+    let changed = false;
+    const content = (message.content as Loose[]).map((part) => {
+      if (part?.type !== "image") return part;
+      const refusal = claudeImageRefusal(part.image, maxSide);
+      if (refusal === undefined) return part;
+      changed = true;
+      return { type: "text", text: refusal };
+    });
+    if (changed) out[index] = { ...message, content };
+  }
+}
 
 // Which provider's wire a call is written for. OpenAI's Responses wire for
 // every GPT model; Anthropic's Messages wire for Claude (13 October 2026).
@@ -575,11 +629,13 @@ export function toCoreMessages(messages: readonly ProviderMessage[], wire: Simeo
       out.push({ role: "user", content: [{ type: "text", text: TOOL_IMAGE_INTRO }, ...images] });
     }
   }
-  for (const [messages, kept] of [[toolImageMessages, SIMEON_KEPT_TOOL_IMAGES], [agentScreenshotMessages, SIMEON_KEPT_AGENT_SCREENSHOTS]] as const) {
+  const keptToolImages = wire === "anthropic" ? SIMEON_CLAUDE_KEPT_TOOL_IMAGES : SIMEON_KEPT_TOOL_IMAGES;
+  for (const [messages, kept] of [[toolImageMessages, keptToolImages], [agentScreenshotMessages, SIMEON_KEPT_AGENT_SCREENSHOTS]] as const) {
     const droppable = Math.max(0, messages.length - kept);
     const dropped = droppable - (droppable % SIMEON_TOOL_IMAGE_DROP_BATCH);
     for (const index of messages.slice(0, dropped)) out[index] = { role: "user", content: [{ type: "text", text: TOOL_IMAGE_DROPPED }] };
   }
+  if (wire === "anthropic") withinClaudeImageLimits(out);
   return (wire === "anthropic" ? pairedForClaude(withoutEmptyContent(out)) : out) as CoreMessage[];
 }
 

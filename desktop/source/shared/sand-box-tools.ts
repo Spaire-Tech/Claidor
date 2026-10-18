@@ -79,6 +79,7 @@ const BROWSER_TOOL_SPECS: readonly { readonly name: string; readonly description
   { name: "browser_type", description: "Type text into an input, textarea, or contenteditable element by ref.", required: ["ref", "text"], properties: { ref: { type: "string" }, text: { type: "string" } } },
   { name: "browser_fill", description: "Set the value of an input, textarea, or contenteditable element by ref.", required: ["ref", "value"], properties: { ref: { type: "string" }, value: { type: "string" } } },
   { name: "browser_select_option", description: "Select one or more options in a select element by ref.", required: ["ref", "values"], properties: { ref: { type: "string" }, values: { type: "array", items: { type: "string" } } } },
+  { name: "browser_upload_file", description: "Attach files from your computer to a page by the ref of its upload button or file field.", required: ["ref", "paths"], properties: { ref: { type: "string" }, paths: { type: "array", items: { type: "string" } } } },
   { name: "browser_press_key", description: "Press a key in the browser page, for example Enter, Escape, Tab, ArrowDown, or a single character.", required: ["key"], properties: { key: { type: "string" } } },
   { name: "browser_scroll", description: "Scroll the page or scroll an element into view (pass its ref).", properties: { ref: { type: "string" } } },
   { name: "browser_drag", description: "Drag an element by ref to another ref or viewport coordinates.", required: ["sourceRef"], properties: { sourceRef: { type: "string" }, targetRef: { type: "string" }, x: { type: "number" }, y: { type: "number" } } },
@@ -86,7 +87,7 @@ const BROWSER_TOOL_SPECS: readonly { readonly name: string; readonly description
   { name: "browser_highlight", description: "Highlight an element by ref in the browser page for visual grounding.", required: ["ref"], properties: { ref: { type: "string" } } },
   { name: "browser_cdp", description: "Send a Chrome DevTools Protocol command to the target browser tab.", required: ["method"], properties: { method: { type: "string" }, params: { type: "object" } } },
   { name: "browser_tabs", description: "List, create, close, or select a browser tab.", required: ["action"], properties: { action: { type: "string", enum: ["list", "new", "close", "select"] }, viewId: { type: "string" } } },
-  { name: "browser_take_screenshot", description: "Take a screenshot of the current page. Usually redundant: every browser action already returns one.", properties: { fullPage: { type: "boolean" } } },
+  { name: "browser_take_screenshot", description: "Take a screenshot of the current page. Usually redundant: every browser action already returns one. fullPage shows up to 2000 pixels from where the page is scrolled.", properties: { fullPage: { type: "boolean" } } },
 ];
 
 export const SAND_HOST_TOOL_NAMES = [

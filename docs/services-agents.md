@@ -1850,6 +1850,29 @@ helper had finished long before, and sent another helper to check. Now:
     the panel after an email registered with Shop was not seen, with no such email to try.
   `desktop/tests/helper-actions.test.mjs` (the reader's cases in real Chrome, on pages shaped
   like Shopify's checkout and its store sign-in, run through the driver itself).
+- **A job application the browser helper could not finish** (18 October 2026, Sage). The first
+  try died on a screenshot error and left Chrome's own file window open on the person's screen;
+  the second hit an image-size error partway through the form.
+  - Attaching a file: the helper clicked the résumé field, which opens Chrome's file window, and
+    no browser tool can work it. `browser_upload_file` (op `upload_file` in
+    `sand-browser-driver-source.ts`) takes the ref of the upload button, drop zone or file field
+    and `paths`, the files on the computer: a file field is given them directly; a styled button
+    is clicked with the window caught before it opens (Playwright's `filechooser`) and given
+    them. Only files under `/workspace` (where the person's attachments land, `/workspace/uploads`)
+    can be attached, so a page can never be handed the computer's own settings or sign-ins.
+    While any step runs every tab's file windows are caught, so none opens on the screen; a click
+    that opened one says so and points to `browser_upload_file`. The helper's and the agent's
+    guidance say to name a file's path in the task and never to click an upload button for this.
+  - Pictures Claude refuses: every tool screenshot stayed in the request, and Claude refuses a
+    picture over 2000 pixels on a side once a request holds more than twenty, or over 8000 or
+    5 MB at any time (platform.claude.com, Vision). A full-page screenshot of a long form is
+    several thousand pixels tall. A full-page shot now keeps at most 2000 pixels from where the
+    page is scrolled, and says the page's size; on Claude the latest twenty tool pictures stay,
+    older ones going five at a time (`SIMEON_CLAUDE_KEPT_TOOL_IMAGES`; GPT keeps them all, as
+    before), and a picture Claude would refuse becomes a line of text instead of failing the call
+    (`claudeImageRefusal`, `provider-session.ts`).
+  `desktop/tests/browser-helper-files-and-pictures.test.mjs` (in real Chrome: the caught window,
+  both kinds of upload field, the refusals, the 2000-pixel shot; and the wire's picture limits).
 
 This needs no server change and no setting on Render: it is all in the engine, and reaches the
 cloud computers when the founder's agent publishes a new host bundle.

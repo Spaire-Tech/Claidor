@@ -85,6 +85,7 @@ const TOOL_OWNER_TEAM_MAP: Record<string, ToolOwnerTeam> = {
   BROWSER_TYPE: "async",
   BROWSER_FILL: "async",
   BROWSER_SELECT_OPTION: "async",
+  BROWSER_UPLOAD_FILE: "async",
   BROWSER_PRESS_KEY: "async",
   BROWSER_SCROLL: "async",
   BROWSER_DRAG: "async",
