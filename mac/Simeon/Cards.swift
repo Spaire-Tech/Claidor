@@ -2015,12 +2015,17 @@ struct ProductsCardView: View {
             VStack(alignment: .leading, spacing: 2) {
               Text(product.title).font(.system(size: 14, weight: .semibold)).foregroundStyle(ink).lineLimit(2).multilineTextAlignment(.leading)
               Text(product.byline).font(.system(size: 12)).foregroundStyle(grey).lineLimit(1)
+              // Buying in blue at the right, then Bought in green, as the computer card's ending (18 October 2026).
               HStack(spacing: 6) {
                 if let price = product.price { Text(price).font(.system(size: 13)).foregroundStyle(grey).monospacedDigit() }
-                if shown.buying == product.index { StatusPill(text: ProductsCard.buyingLabel, look: look) }
+                Spacer(minLength: 0)
+                if let status = shown.status(of: product) {
+                  let tint = Self.tint(status, look: look)
+                  StatusPill(text: status.label, look: look, dot: tint, ink: tint, wash: tint.opacity(look.dark ? 0.2 : 0.1), large: true)
+                }
               }
             }
-            Spacer(minLength: 0)
+            .frame(maxWidth: .infinity, alignment: .leading)
           }
           .padding(12)
           .background(hovered == product.index ? hairline : Color.clear)
@@ -2036,10 +2041,18 @@ struct ProductsCardView: View {
     .background(look.dark ? Color(hex: 0x2c2c2e) : look.theirs, in: RoundedRectangle(cornerRadius: 20))
     .clipShape(RoundedRectangle(cornerRadius: 20))
     .sheet(item: $open) { product in
-      MacProductSheet(product: product, agentId: agentId, agentName: store.agent(agentId)?.name ?? "", buying: card.shown(pressed: store.pressedProducts[entryId]).buying == product.index, look: look) {
+      MacProductSheet(product: product, agentId: agentId, agentName: store.agent(agentId)?.name ?? "", status: card.shown(pressed: store.pressedProducts[entryId]).status(of: product), look: look) {
         open = nil
         Task { await store.buyProduct(entryId, index: product.index, in: agentId) }
       }
+    }
+  }
+
+  /** Buying in blue, Bought in green: the computer card's Skipped and Done. */
+  static func tint(_ status: ProductsCard.Status, look: Look) -> Color {
+    switch status {
+    case .buying: return look.link
+    case .bought: return look.added
     }
   }
 }
@@ -2077,7 +2090,7 @@ private struct MacProductSheet: View {
   let product: ProductsCard.Product
   let agentId: String
   let agentName: String
-  let buying: Bool
+  let status: ProductsCard.Status?
   let look: Look
   let buy: () -> Void
   @Environment(\.openURL) private var openURL
@@ -2101,11 +2114,11 @@ private struct MacProductSheet: View {
         Button("Close") { dismiss() }.keyboardShortcut(.cancelAction)
         Spacer()
         Button(ProductsCard.viewWebsite) { openURL(product.url) }
-        Button(buying ? ProductsCard.buyingLabel : ProductsCard.buyLabel(agent: agentName), action: buy)
+        Button(status?.label ?? ProductsCard.buyLabel(agent: agentName), action: buy)
           .keyboardShortcut(.defaultAction)
-          .tint(blue)
+          .tint(status == .bought ? look.added : blue)
           .buttonStyle(.borderedProminent)
-          .disabled(buying)
+          .disabled(status != nil)
       }
       .controlSize(.large)
     }

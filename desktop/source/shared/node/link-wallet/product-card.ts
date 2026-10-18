@@ -5,7 +5,9 @@
 // shows them. The person opens one and presses "Buy with <agent>" (or "View
 // website"); Buy marks that product on the card (`productsBuying`) and wakes
 // the agent with exactly which one, and the purchase goes on as every
-// purchase does, to the checkout card (`purchase-card.ts`).
+// purchase does, to the checkout card (`purchase-card.ts`). Once that
+// purchase is ordered the product is marked bought (`productsBought`, 18
+// October 2026, the founder: "then bought … once that is done - in green").
 
 export const PRODUCTS_MESSAGE_TYPE = "products";
 
@@ -38,9 +40,29 @@ export interface ProductsCardMessage {
   readonly products: readonly ProductCardItem[];
 }
 
-/** The entry's own field: the product the person pressed Buy on (its index). */
+/** The entry's own fields: the product the person pressed Buy on (its index) while it is being bought, and those bought. */
 export interface ProductsEntryFields {
   readonly productsBuying?: number;
+  readonly productsBought?: readonly number[];
+}
+
+/** The same store, "www." aside: "checkout.bestbuy.com" is bestbuy.com's. */
+export function sameStore(a: string, b: string): boolean {
+  const one = a.trim().replace(/^www\./i, "").toLowerCase(), other = b.trim().replace(/^www\./i, "").toLowerCase();
+  return one.length > 0 && other.length > 0 && (one === other || one.endsWith(`.${other}`) || other.endsWith(`.${one}`));
+}
+
+/**
+ * The product an ordered purchase bought, of a card whose Buy was pressed:
+ * the pressed one when the purchase was at its store, else the one other
+ * product on the card from that store (the agent went on to a like item when
+ * the first store blocked it); none when the purchase was anywhere else.
+ */
+export function productBoughtBy(products: readonly ProductCardItem[], pressed: number, purchase: { readonly domain: string }): number | undefined {
+  const atStore = (product: ProductCardItem | undefined): boolean => product != null && [product.domain, product.shop?.domain].some((domain) => domain != null && sameStore(domain, purchase.domain));
+  if (atStore(products[pressed])) return pressed;
+  const others = products.flatMap((product, index) => atStore(product) ? [index] : []);
+  return others.length === 1 ? others[0] : undefined;
 }
 
 /** "Practice Book · $2.23", or the first two and how many more. */

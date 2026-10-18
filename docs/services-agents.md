@@ -765,6 +765,19 @@ client, run and held by our server (`server/simeon/desktop/link_wallet.py`, belo
      <agent>" and "View website". Buy (gateway `buyProduct`) marks that product on the card
      (`productsBuying`, so a double tap or a second device wakes nobody again) and wakes the agent
      with exactly which one, its page and price, to buy it the way below.
+     The row shows a blue "Buying" pill at its right while that purchase is under way, then a green
+     "Bought" once it is ordered (18 October 2026, the founder: "make it blue, and on the right, like
+     the take over computer card. then bought … in green"; the computer card's Skipped and Done
+     colours). The host does it when a checkout card ends (`settleProductsBuy` in
+     `purchase-cards.ts`): it takes the nearest products card above it with a product pressed;
+     ordered at that product's store (`sameStore`: `checkout.bestbuy.com` is `bestbuy.com`'s; a Shop
+     product's Shopify domain counts), or at the one other product's store on the card when the
+     agent went on to a like item, that product goes into `productsBought`. Any other ending
+     (denied, failed, canceled, expired, or ordered somewhere not on the card) only clears
+     `productsBuying`, so the card never says Buying with nothing under way and Buy can be pressed
+     again. A bought product's Buy is refused and its sheet's button says Bought. Log line:
+     `[purchase] products card <agent>/<entry>: product N bought` (or `no longer buying (<state> at
+     <domain>)`).
      A product from Shop's search (it carries `shop_variant_id`) shows the price Shop's catalog
      gave, not the one the agent wrote (`withCatalogPrice` in `purchase-tool.ts`, from the prices
      `search_products` and `get_product` keep in `shop-wallet/catalog-prices.ts` for six hours),

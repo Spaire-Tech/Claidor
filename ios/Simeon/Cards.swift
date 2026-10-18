@@ -2390,7 +2390,7 @@ struct ProductsCardView: View {
     VStack(spacing: 0) {
       ForEach(shown.products) { product in
         Button { Haptics.tap(); open = product } label: {
-          ProductRow(product: product, agentId: agentId, buying: shown.buying == product.index)
+          ProductRow(product: product, agentId: agentId, status: shown.status(of: product))
         }
         .buttonStyle(.tactile)
         if product.index != shown.products.last?.index {
@@ -2402,7 +2402,7 @@ struct ProductsCardView: View {
     .background(Ink.bubbleTheirs, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
     .modifier(CardEdge(radius: 22))
     .sheet(item: $open) { product in
-      ProductSheet(product: product, agentId: agentId, agentName: store.agent(agentId)?.name ?? "", buying: card.shown(pressed: store.pressedProducts[entryId]).buying == product.index) {
+      ProductSheet(product: product, agentId: agentId, agentName: store.agent(agentId)?.name ?? "", status: card.shown(pressed: store.pressedProducts[entryId]).status(of: product)) {
         Haptics.press()
         open = nil
         Task { await store.buyProduct(entryId, index: product.index, in: agentId) }
@@ -2411,13 +2411,27 @@ struct ProductsCardView: View {
       .presentationDragIndicator(.visible)
     }
   }
+
+  /** Buying in blue, Bought in green: the computer card's Skipped and Done. */
+  static func tint(_ status: ProductsCard.Status) -> Color {
+    switch status {
+    case .buying: return Ink.link
+    case .bought: return Ink.success
+    }
+  }
 }
 
-/** One product in the card: its picture, its name on two lines, who sells it, its price; "Buying" once Buy was pressed. */
+/**
+ * One product in the card: its picture, its name on two lines, who sells it,
+ * its price, and at the right of the price a pill once Buy was pressed:
+ * Buying in blue, then Bought in green once the order is placed (18 October
+ * 2026, the founder: "make it blue, and on the right, like the take over
+ * computer card"; it had been a grey pill beside the price).
+ */
 private struct ProductRow: View {
   let product: ProductsCard.Product
   let agentId: String
-  let buying: Bool
+  let status: ProductsCard.Status?
 
   var body: some View {
     HStack(alignment: .center, spacing: 14) {
@@ -2429,10 +2443,14 @@ private struct ProductRow: View {
         Text(product.byline).font(.system(size: 14)).foregroundStyle(Ink.fineGrey).lineLimit(1)
         HStack(spacing: 8) {
           if let price = product.price { Text(price).font(.system(size: 15)).foregroundStyle(Ink.fineGrey).monospacedDigit() }
-          if buying { StatusPill(text: ProductsCard.buyingLabel, size: 12) }
+          Spacer(minLength: 0)
+          if let status {
+            let tint = ProductsCardView.tint(status)
+            StatusPill(text: status.label, dot: tint, ink: tint, wash: tint.opacity(0.12)).fixedSize()
+          }
         }
       }
-      Spacer(minLength: 0)
+      .frame(maxWidth: .infinity, alignment: .leading)
     }
     .padding(14)
     .contentShape(Rectangle())
@@ -2481,7 +2499,7 @@ private struct ProductSheet: View {
   let product: ProductsCard.Product
   let agentId: String
   let agentName: String
-  let buying: Bool
+  let status: ProductsCard.Status?
   let buy: () -> Void
   @Environment(\.openURL) private var openURL
   @Environment(\.dismiss) private var dismiss
@@ -2505,14 +2523,14 @@ private struct ProductSheet: View {
       }
       VStack(spacing: 6) {
         Button(action: buy) {
-          Text(buying ? ProductsCard.buyingLabel : ProductsCard.buyLabel(agent: agentName))
+          Text(status?.label ?? ProductsCard.buyLabel(agent: agentName))
             .font(.system(size: 17, weight: .semibold)).foregroundStyle(.white)
             .frame(maxWidth: .infinity).frame(height: 52)
-            .background(Ink.bubbleMine.opacity(buying ? 0.5 : 1), in: Capsule())
+            .background((status == .bought ? Ink.success : Ink.bubbleMine).opacity(status == nil ? 1 : 0.5), in: Capsule())
             .contentShape(Capsule())
         }
         .buttonStyle(.tactile)
-        .disabled(buying)
+        .disabled(status != nil)
         Button { openURL(product.url) } label: {
           Text(ProductsCard.viewWebsite).font(.system(size: 17, weight: .medium)).foregroundStyle(Ink.primary)
             .frame(maxWidth: .infinity).frame(height: 48).contentShape(Rectangle())

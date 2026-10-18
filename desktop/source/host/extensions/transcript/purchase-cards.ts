@@ -18,6 +18,8 @@
  *     never answers a card that waits on the person.
  * MarkPurchaseDone (the agent, after paying) closes the card as ordered,
  * failed or canceled and tells Link how it went.
+ * A purchase that ends settles the products card whose Buy led to it: the
+ * product shows Bought once ordered, and Buying goes otherwise.
  *
  * The card's entry may belong to any agent, open or not, so each change is
  * written to that agent's own transcript and sent to the apps with its id.
@@ -47,7 +49,7 @@ import {
 import type { LinkTools, SpendAnswer } from "../../../shared/node/link-wallet/link-tools.js";
 import type { ShopTools } from "../../../shared/node/shop-wallet/shop-tools.js";
 import { buildFlightFailedWakePrompt, buildFlightUncertainWakePrompt, purchaseFlightOf } from "../../../shared/node/flight-booking/flight-booking.js";
-import { PRODUCTS_MESSAGE_TYPE, buildProductBuyWakePrompt, type ProductCardItem, type ProductsEntryFields } from "../../../shared/node/link-wallet/product-card.js";
+import { PRODUCTS_MESSAGE_TYPE, buildProductBuyWakePrompt, productBoughtBy, type ProductCardItem, type ProductsEntryFields } from "../../../shared/node/link-wallet/product-card.js";
 
 type PurchaseEntry = TranscriptEntry & PurchaseEntryFields & { readonly message: { readonly type: typeof PURCHASE_MESSAGE_TYPE; readonly purchase: PurchaseCardData } };
 type ProductsEntry = TranscriptEntry & ProductsEntryFields & { readonly message: { readonly type: typeof PRODUCTS_MESSAGE_TYPE; readonly products: readonly ProductCardItem[] } };
@@ -226,8 +228,8 @@ export class PurchaseCards {
   /**
    * "Buy" on one product of a products card (14 October 2026): the card marks
    * it, and the agent is woken to buy exactly that one through the checkout
-   * card. The same product pressed again (a double tap, a second device)
-   * wakes nobody.
+   * card. The same product pressed again (a double tap, a second device), or
+   * one already bought, wakes nobody.
    */
   async buyProduct(args: { readonly agentId: string; readonly entryId: string; readonly index: number }): Promise<TranscriptEntry | null> {
     const current = await this.readAs(args.agentId, args.entryId, isProductsEntry);
@@ -236,7 +238,7 @@ export class PurchaseCards {
     if (product == null) return current;
     let took = false;
     const stamped = await this.stampAs(args.agentId, args.entryId, isProductsEntry, (entry) => {
-      if (entry.productsBuying === args.index) return null;
+      if (entry.productsBuying === args.index || entry.productsBought?.includes(args.index) === true) return null;
       took = true;
       return { productsBuying: args.index };
     });
@@ -494,18 +496,60 @@ export class PurchaseCards {
   }
 
   private async readAs<E>(agentId: string, entryId: string, is: (entry: unknown) => entry is E): Promise<E | null> {
-    if (this.tm.sessions?.isAgentGone?.(agentId) === true) return null;
-    const live = this.liveSession(agentId);
-    const entries: unknown[] = live != null
-      ? live.db.getTranscriptEntries()
-      : await Promise.resolve(this.tm.sessionStore?.readAgentTranscriptEntries?.(agentId) ?? []);
-    const found = entries.find((entry) => (entry as { id?: unknown }).id === entryId);
+    const found = (await this.entriesOf(agentId)).find((entry) => (entry as { id?: unknown }).id === entryId);
     return is(found) ? found : null;
   }
 
-  /** Writes a change to the card in its agent's transcript and sends it to the apps; null from `change` leaves it as it is. */
-  private stamp(agentId: string, entryId: string, change: (entry: PurchaseEntry) => PurchasePatch | null): Promise<TranscriptEntry | null> {
-    return this.stampAs(agentId, entryId, isPurchaseEntry, change);
+  private async entriesOf(agentId: string): Promise<unknown[]> {
+    if (this.tm.sessions?.isAgentGone?.(agentId) === true) return [];
+    const live = this.liveSession(agentId);
+    return live != null
+      ? live.db.getTranscriptEntries()
+      : await Promise.resolve(this.tm.sessionStore?.readAgentTranscriptEntries?.(agentId) ?? []);
+  }
+
+  /**
+   * Writes a change to the card in its agent's transcript and sends it to the
+   * apps; null from `change` leaves it as it is. A change that ends the
+   * purchase also settles the products card it came from.
+   */
+  private async stamp(agentId: string, entryId: string, change: (entry: PurchaseEntry) => PurchasePatch | null): Promise<TranscriptEntry | null> {
+    const seen: { ended?: PurchaseState } = {};
+    const stamped = await this.stampAs(agentId, entryId, isPurchaseEntry, (entry) => {
+      const patch = change(entry);
+      const next = patch?.purchaseState;
+      if (next != null && PURCHASE_FINAL_STATES.has(next) && !PURCHASE_FINAL_STATES.has(purchaseStateOf(entry))) seen.ended = next;
+      return patch;
+    });
+    if (seen.ended != null && stamped != null) {
+      await this.settleProductsBuy(agentId, entryId, seen.ended).catch((error: unknown) => this.log(`[purchase] settling the products card for ${agentId}/${entryId} failed: ${error instanceof Error ? error.message : String(error)}`));
+    }
+    return stamped;
+  }
+
+  /**
+   * The products card whose Buy led to a purchase that just ended (18 October
+   * 2026, the founder: "make it blue … then bought … once that is done - in
+   * green"): the nearest one above the checkout card with a product pressed.
+   * Ordered at that product's store, or at the one other product's on the
+   * card (`productBoughtBy`), that product shows Bought. Anything else clears
+   * Buying, so the card never says Buying with nothing under way, and the
+   * person can press Buy again.
+   */
+  private async settleProductsBuy(agentId: string, entryId: string, state: PurchaseState): Promise<void> {
+    const entries = await this.entriesOf(agentId);
+    const at = entries.findIndex((entry) => (entry as { id?: unknown }).id === entryId);
+    const purchase = entries[at];
+    if (!isPurchaseEntry(purchase) || purchaseFlightOf(purchase.message.purchase) != null) return;
+    const products = entries.slice(0, at).reverse().find((entry): entry is ProductsEntry => isProductsEntry(entry) && entry.productsBuying != null);
+    const pressed = products?.productsBuying;
+    if (products == null || pressed == null) return;
+    const bought = state === "ordered" ? productBoughtBy(products.message.products, pressed, purchase.message.purchase) : undefined;
+    await this.stampAs(agentId, products.id, isProductsEntry, (entry) => entry.productsBuying !== pressed ? null : {
+      productsBuying: undefined,
+      ...(bought == null ? {} : { productsBought: [...new Set([...(entry.productsBought ?? []), bought])] }),
+    });
+    this.log(`[purchase] products card ${agentId}/${products.id}: ${bought == null ? `product ${pressed} no longer buying (${state} at ${purchase.message.purchase.domain})` : `product ${bought} bought`}`);
   }
 
   private async stampAs<E extends TranscriptEntry>(agentId: string, entryId: string, is: (entry: unknown) => entry is E, change: (entry: E) => Readonly<Record<string, unknown>> | null): Promise<TranscriptEntry | null> {

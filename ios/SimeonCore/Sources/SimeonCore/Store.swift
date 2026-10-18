@@ -692,7 +692,7 @@ public final class AppStore {
     if localAsks[agentId] != ask { localAsks[agentId] = ask }
     for entry in entries where pendingAnswers[entry.id] != nil && (entry["respondedValue"]?.text != nil || entry["widgetDismissed"]?.bool == true) { pendingAnswers[entry.id] = nil }
     for entry in entries where answeredPurchases[entry.id] != nil && (entry["purchaseState"]?.text ?? "review") != "review" { answeredPurchases[entry.id] = nil }
-    for entry in entries where pressedProducts[entry.id] != nil && entry["productsBuying"]?.int == pressedProducts[entry.id] { pressedProducts[entry.id] = nil }
+    for entry in entries where pressedProducts[entry.id] != nil && (entry["productsBuying"]?.int == pressedProducts[entry.id] || (entry["productsBought"]?.array ?? []).contains(where: { $0.int == pressedProducts[entry.id] })) { pressedProducts[entry.id] = nil }
     settleOutbox(agentId, entries)
     if soon { scheduleLayout(agentId) } else { layOut(agentId) }
   }

@@ -427,9 +427,12 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
         stamp(agentId, entryId) { $0.setting("purchaseState", "denied") }
       }
     case "buyProduct":
-      // As the box would: the card marks the product; the agent then sets up the checkout.
+      // As the box would: the card marks the product; the agent then sets up the checkout, and once it is ordered the product shows Bought.
       guard let index = args["index"]?.int else { break }
       stamp(agentId, entryId) { $0.setting("productsBuying", .number(Double(index))) }
+      later(8) { [weak self] in
+        self?.stamp(agentId, entryId) { raw in raw.setting("productsBuying", nil).setting("productsBought", JSON.array((raw["productsBought"]?.array ?? []) + [JSON.number(Double(index))])) }
+      }
     case "handBackForeverBox":
       // As the host writes it (box-handoff-service.ts `decideBoxHandBack`): Skip "dismissed" (the card's Skipped), I'm done "completed" (Done).
       let resolution = args["trigger"]?.string == "dismissed" ? "dismissed" : "completed"

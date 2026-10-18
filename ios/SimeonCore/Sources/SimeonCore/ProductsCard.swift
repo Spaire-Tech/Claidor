@@ -9,7 +9,11 @@ import Foundation
  * "View website". As Muse shows a product before buying it.
  *
  * The message (`send-message` of type `products`) carries the products; the
- * entry carries which one the person pressed Buy on (`productsBuying`).
+ * entry carries which one the person pressed Buy on while it is being bought
+ * (`productsBuying`) and those bought (`productsBought`, set by the computer
+ * once that purchase is ordered; 18 October 2026, the founder: "make it blue,
+ * and on the right, like the take over computer card. then bought … in
+ * green").
  */
 public struct ProductsCard: Hashable, Sendable {
   public struct Product: Hashable, Sendable, Identifiable {
@@ -37,11 +41,13 @@ public struct ProductsCard: Hashable, Sendable {
   }
 
   public let products: [Product]
-  /** The product the person pressed Buy on. */
+  /** The product the person pressed Buy on, while it is being bought. */
   public let buying: Int?
+  /** The products bought from this card. */
+  public let bought: Set<Int>
 
-  public init(products: [Product], buying: Int? = nil) {
-    self.products = products; self.buying = buying
+  public init(products: [Product], buying: Int? = nil, bought: Set<Int> = []) {
+    self.products = products; self.buying = buying; self.bought = bought
   }
 
   init?(message: JSON, entry: Entry) {
@@ -57,13 +63,34 @@ public struct ProductsCard: Hashable, Sendable {
     }
     guard !products.isEmpty else { return nil }
     self.products = products
-    self.buying = entry["productsBuying"]?.int
+    let bought = Set((entry["productsBought"]?.array ?? []).compactMap { $0.int })
+    let buying = entry["productsBuying"]?.int
+    self.bought = bought
+    self.buying = buying.flatMap { bought.contains($0) ? nil : $0 }
   }
 
   /** The card as the person sees it now: their own Buy shows at once, before the computer echoes it. */
   public func shown(pressed: Int?) -> ProductsCard {
-    guard let pressed, buying != pressed, products.contains(where: { $0.index == pressed }) else { return self }
-    return ProductsCard(products: products, buying: pressed)
+    guard let pressed, buying != pressed, !bought.contains(pressed), products.contains(where: { $0.index == pressed }) else { return self }
+    return ProductsCard(products: products, buying: pressed, bought: bought)
+  }
+
+  /** Where one product is: being bought, bought, or neither. */
+  public func status(of product: Product) -> Status? {
+    if bought.contains(product.index) { return .bought }
+    return buying == product.index ? .buying : nil
+  }
+
+  /** A product's pill on the right of its row: blue while it is being bought, green once it is (as the computer card's ending). */
+  public enum Status: Hashable, Sendable {
+    case buying, bought
+
+    public var label: String {
+      switch self {
+      case .buying: return ProductsCard.buyingLabel
+      case .bought: return ProductsCard.boughtLabel
+      }
+    }
   }
 
   // MARK: Words
@@ -76,4 +103,5 @@ public struct ProductsCard: Hashable, Sendable {
 
   public static let viewWebsite = "View website"
   public static let buyingLabel = "Buying"
+  public static let boughtLabel = "Bought"
 }

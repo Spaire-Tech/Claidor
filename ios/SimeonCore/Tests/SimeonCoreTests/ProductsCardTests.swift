@@ -41,6 +41,22 @@ final class ProductsCardTests: XCTestCase {
     XCTAssertEqual(try self.card(["productsBuying": 1]).buying, 1)
   }
 
+  func testBuyingIsBlueUntilTheComputerSaysBought() throws {
+    let buying = try card(["productsBuying": 1])
+    XCTAssertEqual(buying.status(of: buying.products[1]), .buying)
+    XCTAssertNil(buying.status(of: buying.products[0]))
+    XCTAssertEqual(ProductsCard.Status.buying.label, "Buying")
+    let bought = try card(["productsBought": [1]])
+    XCTAssertEqual(bought.bought, [1])
+    XCTAssertNil(bought.buying)
+    XCTAssertEqual(bought.status(of: bought.products[1]), .bought)
+    XCTAssertEqual(ProductsCard.Status.bought.label, "Bought")
+    XCTAssertEqual(bought.shown(pressed: 1), bought, "a bought product isn't bought again")
+    XCTAssertEqual(bought.shown(pressed: 0).status(of: bought.products[0]), .buying, "another one still can be")
+    XCTAssertEqual(bought.shown(pressed: 0).bought, [1])
+    XCTAssertNil(try card(["productsBuying": 1, "productsBought": [1]]).buying, "Bought wins")
+  }
+
   @MainActor
   func testBuyGoesToTheComputerWithTheProductsPlace() async throws {
     let store = AppStore()
@@ -53,8 +69,9 @@ final class ProductsCardTests: XCTestCase {
     XCTAssertNil(shown("x12o")?.buying)
     await store.buyProduct("x12o", index: 1, in: "cards")
     XCTAssertEqual(shown("x12o")?.buying, 1, "shown at once")
-    for _ in 0..<200 where store.pressedProducts["x12o"] != nil { try await Task.sleep(nanoseconds: 5_000_000) }
-    XCTAssertEqual(shown("x12o")?.buying, 1)
+    for _ in 0..<400 where shown("x12o")?.bought.contains(1) != true { try await Task.sleep(nanoseconds: 5_000_000) }
+    XCTAssertEqual(shown("x12o")?.bought, [1], "the demo's purchase was ordered")
+    XCTAssertNil(shown("x12o")?.buying)
     XCTAssertNil(store.pressedProducts["x12o"], "the computer's own copy took over")
   }
 }

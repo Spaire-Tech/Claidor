@@ -350,6 +350,72 @@ test("ShowProducts posts the products card; Buy marks the product and wakes the 
   }
 });
 
+test("a purchase that ends settles the products card: Bought once ordered at the pressed product's store, Buying gone otherwise", async () => {
+  const words = await load("source/shared/node/link-wallet/product-card.ts", "product-card-bought");
+  const cards = await load("source/host/extensions/transcript/purchase-cards.ts", "purchase-cards-bought");
+  try {
+    const { sameStore, productBoughtBy } = words.module;
+    assert.ok(sameStore("checkout.bestbuy.com", "www.bestbuy.com"));
+    assert.ok(!sameStore("notbestbuy.com", "bestbuy.com"));
+    assert.ok(!sameStore("", "bestbuy.com"));
+    const products = [
+      { title: "Dell P2217H", url: "https://www.bestbuy.com/site/dell", domain: "bestbuy.com", price: "$139.99" },
+      { title: "Dell P2217H (refurbished)", url: "https://monitors.example/p/dell", domain: "monitors.example", price: "$99.00", shop: { variantId: "v1", domain: "53c4f8-91.myshopify.com" } },
+      { title: "LG 22MP", url: "https://www.bestbuy.com/site/lg", domain: "bestbuy.com", price: "$129.99" },
+    ];
+    assert.equal(productBoughtBy(products, 0, { domain: "checkout.bestbuy.com" }), 0, "the pressed one");
+    assert.equal(productBoughtBy(products, 0, { domain: "53c4f8-91.myshopify.com" }), 1, "the one other product at that store, by its Shop domain");
+    assert.equal(productBoughtBy(products, 1, { domain: "bestbuy.com" }), undefined, "two others at that store: which one isn't known");
+    assert.equal(productBoughtBy(products, 0, { domain: "amazon.com" }), undefined);
+
+    const checkout = (id, domain, purchaseState) => ({ kind: "send-message", id, timestampMs: 50, ...(purchaseState == null ? {} : { purchaseState }), message: { type: "purchase", content: `Checkout at ${domain}`, purchase: { merchant: "Store", domain, url: `https://${domain}/checkout`, amount: 13999, currency: "usd", total: "$139.99", items: [], totals: [], test: false, link: { credentialType: "card", context: "x", test: false } } } });
+    const { tm, open, emitted, wakes } = fakeManager({ type: "products", content: "Dell P2217H · $139.99", products });
+    const purchases = new cards.module.PurchaseCards(tm, { retryDelayMs: 0, log: () => undefined });
+    const card = () => open.entries[0];
+
+    // Ordered at the pressed product's store: it shows Bought, and the apps are sent the card.
+    await purchases.buyProduct({ agentId: "a1", entryId: "t3s1", index: 0 });
+    await until(() => wakes.length === 1, "the Buy wake");
+    open.entries.push(checkout("t3s2", "checkout.bestbuy.com", "approved"));
+    assert.equal((await purchases.markPurchaseDone({ agentId: "a1", entryId: "t3s2", outcome: "ordered", order: "BBY01" }, undefined)).ok, true);
+    assert.equal(card().productsBuying, undefined);
+    assert.deepEqual(card().productsBought, [0]);
+    assert.ok(emitted.some((event) => event.entry?.id === "t3s1" && event.entry.productsBought?.[0] === 0), "the apps see Bought");
+    // Bought: Buy on it again wakes nobody.
+    await purchases.buyProduct({ agentId: "a1", entryId: "t3s1", index: 0 });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    assert.equal(card().productsBuying, undefined);
+    assert.equal(wakes.length, 1);
+
+    // Another one pressed and its checkout denied: Buying goes, and it can be pressed again.
+    await purchases.buyProduct({ agentId: "a1", entryId: "t3s1", index: 2 });
+    assert.equal(card().productsBuying, 2);
+    open.entries.push(checkout("t3s3", "bestbuy.com"));
+    await purchases.answerPurchase({ agentId: "a1", entryId: "t3s3", allow: false }, undefined);
+    assert.equal(open.entries.find((entry) => entry.id === "t3s3").purchaseState, "denied");
+    assert.equal(card().productsBuying, undefined);
+    assert.deepEqual(card().productsBought, [0]);
+
+    // Pressed again, then ordered at a store not on the card: Buying goes, nothing more is marked.
+    await purchases.buyProduct({ agentId: "a1", entryId: "t3s1", index: 2 });
+    assert.equal(card().productsBuying, 2);
+    open.entries.push(checkout("t3s4", "amazon.com", "approved"));
+    await purchases.markPurchaseDone({ agentId: "a1", entryId: "t3s4", outcome: "ordered" }, undefined);
+    assert.equal(card().productsBuying, undefined);
+    assert.deepEqual(card().productsBought, [0]);
+
+    // Pressed, the first store blocked it, and the like item on the card (by its Shop domain) was ordered.
+    await purchases.buyProduct({ agentId: "a1", entryId: "t3s1", index: 2 });
+    open.entries.push(checkout("t3s5", "53c4f8-91.myshopify.com", "approved"));
+    await purchases.markPurchaseDone({ agentId: "a1", entryId: "t3s5", outcome: "ordered" }, undefined);
+    assert.deepEqual(card().productsBought, [0, 1]);
+    assert.equal(card().productsBuying, undefined);
+  } finally {
+    await cards.dispose();
+    await words.dispose();
+  }
+});
+
 test("Allow approved with Face ID: Link is handed the approval and, taking it, the agent is woken to pay with no Link app", async () => {
   const tool = await load("source/host/runner/tools/purchase-tool.ts", "purchase-tool-approve");
   const cards = await load("source/host/extensions/transcript/purchase-cards.ts", "purchase-cards-approve");
