@@ -49,8 +49,9 @@ struct SettingsSheet: View {
         Section {
           Button { showsApps = true } label: { ConnectAppsRow() }
           // The founder, 18 October 2026: Wallet, Secure credentials store, Permissions and Messaging channels here, in
-          // that order and with no icons; Permissions first, holding Auto-review and its rules. The other three join as
-          // each is built.
+          // that order and with no icons; Permissions first, holding Auto-review and its rules, then Wallet (Link by Stripe
+          // and Shop Pay). The other two join as each is built.
+          NavigationLink { WalletPage() } label: { Text("Wallet").foregroundStyle(Ink.primary) }
           NavigationLink { PermissionsPage(settings: $settings) } label: { Text("Permissions").foregroundStyle(Ink.primary) }
         }
         .listRowBackground(Ink.groupedRow)

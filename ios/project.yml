@@ -17,7 +17,7 @@ settings:
     # app, the short first run, Face ID, the simpler plans; build 5: pushes
     # as messages from the agents, the notifications switch, the account
     # page with Delete Account).
-    CURRENT_PROJECT_VERSION: "18"
+    CURRENT_PROJECT_VERSION: "19"
     CODE_SIGN_STYLE: Automatic
     # The Apple developer team Simeon publishes from: set it here, or in
     # Xcode under Signing & Capabilities, once (ios/README.md).
