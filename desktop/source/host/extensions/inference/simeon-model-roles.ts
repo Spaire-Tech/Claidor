@@ -35,6 +35,12 @@ export interface SimeonModelRoles {
   readonly cheap?: string;
   /** Answers a step when the primary's provider fails. */
   readonly fallback?: string;
+  /**
+   * Drives the desktop for the agent: the computerUse helper, which the
+   * upstream app runs on a stronger model than its agent (Claude Opus there,
+   * `sand-agent-model.ts`). None named, the primary does it (18 October 2026).
+   */
+  readonly computer?: string;
 }
 
 export const SIMEON_MODEL_ROLES_PATH = "models/available";
@@ -80,11 +86,12 @@ export function parseSimeonModelRoles(body: unknown): SimeonModelRoles | undefin
       && FOLLOWED_TRANSPORTS.has(transportOf(one)));
     return typeof row?.modelId === "string" ? row.modelId.trim() : undefined;
   };
-  const primary = holder("primary"), cheap = holder("cheap"), fallback = holder("fallback");
+  const primary = holder("primary"), cheap = holder("cheap"), fallback = holder("fallback"), computer = holder("computer");
   return {
     ...(primary === undefined ? {} : { primary }),
     ...(cheap === undefined ? {} : { cheap }),
     ...(fallback === undefined ? {} : { fallback }),
+    ...(computer === undefined ? {} : { computer }),
   };
 }
 
@@ -96,16 +103,17 @@ export interface SimeonModelRolesSource {
   readonly rememberIn?: string;
 }
 
-/** Roles as a file kept them: only the three names, each a non-empty string. */
+/** Roles as a file kept them: only the four names, each a non-empty string. */
 function keptRoles(value: unknown): SimeonModelRoles | undefined {
   if (value == null || typeof value !== "object" || Array.isArray(value)) return undefined;
   const record = value as Record<string, unknown>;
   const name = (key: string): string | undefined => typeof record[key] === "string" && (record[key] as string).trim().length > 0 ? (record[key] as string).trim() : undefined;
-  const primary = name("primary"), cheap = name("cheap"), fallback = name("fallback");
+  const primary = name("primary"), cheap = name("cheap"), fallback = name("fallback"), computer = name("computer");
   return {
     ...(primary === undefined ? {} : { primary }),
     ...(cheap === undefined ? {} : { cheap }),
     ...(fallback === undefined ? {} : { fallback }),
+    ...(computer === undefined ? {} : { computer }),
   };
 }
 
@@ -135,7 +143,7 @@ export function recallSimeonModelRoles(file: string): SimeonModelRoles | undefin
   if (Object.keys(current).length === 0) {
     current = roles;
     lastKept = `${JSON.stringify(roles)}\n`;
-    note(`${HOST_LOG_PREFIX} model-roles remembered primary=${roles.primary ?? "-"} cheap=${roles.cheap ?? "-"} fallback=${roles.fallback ?? "-"}`);
+    note(`${HOST_LOG_PREFIX} model-roles remembered primary=${roles.primary ?? "-"} cheap=${roles.cheap ?? "-"} fallback=${roles.fallback ?? "-"} computer=${roles.computer ?? "-"}`);
   }
   return roles;
 }
@@ -159,7 +167,7 @@ export async function refreshSimeonModelRoles(source: SimeonModelRolesSource): P
     }
     current = roles;
     if (source.rememberIn !== undefined) keep(source.rememberIn, roles);
-    note(`${HOST_LOG_PREFIX} model-roles primary=${roles.primary ?? "-"} cheap=${roles.cheap ?? "-"} fallback=${roles.fallback ?? "-"}`);
+    note(`${HOST_LOG_PREFIX} model-roles primary=${roles.primary ?? "-"} cheap=${roles.cheap ?? "-"} fallback=${roles.fallback ?? "-"} computer=${roles.computer ?? "-"}`);
     return roles;
   } catch (error) {
     note(`${HOST_LOG_PREFIX} model-roles unread reason=${error instanceof Error ? error.message : String(error)}`);

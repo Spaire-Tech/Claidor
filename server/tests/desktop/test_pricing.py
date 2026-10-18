@@ -123,12 +123,17 @@ class TestCatalogue:
         assert opus[ModelRole.cheap] == ["claude-haiku-5-5"]
         assert opus[ModelRole.fallback] == ["gpt-6-sol"]
 
-        # Haiku holds `cheap` too, as a second role (`POLICY_SECOND_ROLES`).
+        # Haiku holds `cheap` too, as a second role (`POLICY_SECOND_ROLES`);
+        # Sonnet drives the desktop, as Opus does in the upstream app.
         haiku = roles(ModelPolicy.claude_haiku)
         assert haiku[ModelRole.primary] == ["claude-haiku-5-5"]
         assert ModelRole.cheap not in haiku
+        assert haiku[ModelRole.computer] == ["claude-sonnet-5-5"]
         assert haiku[ModelRole.fallback] == ["gpt-6-sol"]
         assert haiku[ModelRole.video] == ["gemini-2.5-flash"]
+        # The other policies name no computer model: the primary drives it.
+        for policy in (ModelPolicy.openai, ModelPolicy.claude, ModelPolicy.claude_opus):
+            assert ModelRole.computer not in roles(policy), policy
 
     def test_haiku_does_the_machinery_too_under_its_own_policy(self) -> None:
         # The engine takes the first row of each role from
@@ -176,9 +181,11 @@ class TestCatalogue:
         # Haiku 5.5 is served under a Claude policy only.
         assert served_model("claude-haiku-5-5", ModelPolicy.openai) is None
         assert served_model("claude-haiku-5-5", ModelPolicy.claude_haiku) is not None
-        # A conversation mid-turn on Sonnet or Opus when the setting moves
-        # to Haiku is still answered.
-        assert served_model("claude-sonnet-5-5", ModelPolicy.claude_haiku) is not None
+        # Sonnet drives the desktop under Haiku's policy; a conversation
+        # mid-turn on Opus when the setting moves to Haiku is still answered.
+        sonnet = served_model("claude-sonnet-5-5", ModelPolicy.claude_haiku)
+        assert sonnet is not None
+        assert sonnet.role is ModelRole.computer
         assert served_model("claude-opus-5-5", ModelPolicy.claude_haiku) is not None
         # Priced rows with no role are never served.
         for policy in ModelPolicy:

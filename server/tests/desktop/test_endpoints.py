@@ -236,10 +236,11 @@ class TestSession:
         mocker.patch.object(settings, "GEMINI_API_KEY", "")
         models = await client.get("/desktop/api/models/available", headers=headers)
         rows = models.json()["data"]
-        # Under the default policy, Haiku for everything, with only
-        # Anthropic's key: Haiku, as the model that answers and again as the
-        # one that does the machinery.
+        # Under the default policy with only Anthropic's key: Sonnet for the
+        # desktop, Haiku as the model that answers and again as the one that
+        # does the machinery.
         assert [(row["modelId"], row["role"]) for row in rows] == [
+            ("claude-sonnet-5-5", "computer"),
             ("claude-haiku-5-5", "primary"),
             ("claude-haiku-5-5", "cheap"),
         ]
@@ -827,10 +828,11 @@ class TestTwoProviders:
             }
 
         # The default since 18 October 2026: Haiku answers and does the
-        # machinery, listed once for each.
+        # machinery, listed once for each; Sonnet drives the desktop.
         assert await roles() == {
             ("claude-haiku-5-5", "primary"),
             ("claude-haiku-5-5", "cheap"),
+            ("claude-sonnet-5-5", "computer"),
             ("gpt-6-sol", "fallback"),
         }
 

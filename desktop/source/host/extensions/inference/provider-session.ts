@@ -163,6 +163,16 @@ export function configuredSimeonFallbackModel(): string | undefined {
   return readSimeonEnv(process.env, "SAND_SIMEON_FALLBACK_MODEL")?.trim() || simeonModelRoles().fallback || undefined;
 }
 
+// The model the computerUse helper drives the desktop on: the one the server
+// names for it, else the primary. The upstream app runs that helper on a
+// stronger model than its agent (Claude Opus there, `sand-agent-model.ts`);
+// under `claude-haiku` the server names Claude Sonnet 5.5 for it while Haiku
+// answers (the founder, 18 October 2026: "Main is haiku. Chore haiku.
+// Computer use sonnet"). Its effort stays the helpers' low.
+export function configuredSimeonComputerModel(): string {
+  return readSimeonEnv(process.env, "SAND_SIMEON_COMPUTER_MODEL")?.trim() || simeonModelRoles().computer || configuredSimeonModel();
+}
+
 // The video model (Gemini, `shared/video-availability.ts`) is reached by
 // the `isVideoSubagent` flag alone, never by name: the upstream app's
 // summarization session names `gemini-2.5-flash` too
@@ -176,6 +186,7 @@ export function isConfiguredSimeonModelId(value: string | undefined): boolean {
   return id === configuredSimeonModel()
     || id === configuredSimeonCheapModel()
     || id === configuredSimeonFallbackModel()
+    || id === configuredSimeonComputerModel()
     || id === DEFAULT_SIMEON_MODEL
     || id === DEFAULT_SIMEON_CHEAP_MODEL;
 }
@@ -264,6 +275,7 @@ export function isHelperSimeonSession(options?: SimeonSessionModelOptions): bool
 
 export function simeonModelForSession(options?: SimeonSessionModelOptions): string {
   if (options?.isVideoSubagent === true) return configuredSimeonVideoModel();
+  if (options?.isComputerUseSubagent === true) return configuredSimeonComputerModel();
   const named = options?.model?.trim();
   if (named && isConfiguredSimeonModelId(named)) return followRole(named);
   const sessionModel = options?.modelId?.trim();

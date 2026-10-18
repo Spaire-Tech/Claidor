@@ -282,23 +282,31 @@ one input token at $3.00 per million.
 picks a policy (`ModelPolicy`, `POLICY_ROLES`), and
 `SIMEON_DESKTOP_MODELS_BY_EMAIL` picks one for a few people first:
 
-| Policy | `primary`: the agent loop, every reply, its helpers | `cheap`: summaries, memory, safety checks, titles | `fallback`: a step whose provider failed |
-|---|---|---|---|
-| `claude-haiku` (the default since 18 October 2026) | `claude-haiku-5-5` | `claude-haiku-5-5` | `gpt-6-sol` |
-| `openai` (the default until then) | `gpt-6-sol` | `gpt-6-luna` | `claude-sonnet-5-5` |
-| `claude` | `claude-sonnet-5-5` | `claude-haiku-5-5` | `gpt-6-sol` |
-| `claude-opus` | `claude-opus-5-5` | `claude-haiku-5-5` | `gpt-6-sol` |
+| Policy | `primary`: the agent loop, every reply, its helpers | `cheap`: summaries, memory, safety checks, titles | `computer`: the computerUse helper, on the screen | `fallback`: a step whose provider failed |
+|---|---|---|---|---|
+| `claude-haiku` (the default since 18 October 2026) | `claude-haiku-5-5` | `claude-haiku-5-5` | `claude-sonnet-5-5` | `gpt-6-sol` |
+| `openai` (the default until then) | `gpt-6-sol` | `gpt-6-luna` | the primary | `claude-sonnet-5-5` |
+| `claude` | `claude-sonnet-5-5` | `claude-haiku-5-5` | the primary | `gpt-6-sol` |
+| `claude-opus` | `claude-opus-5-5` | `claude-haiku-5-5` | the primary | `gpt-6-sol` |
 
 Under `claude-haiku` one model holds two roles. A row of the list carries one
 role and the engine takes the first row holding each, so
 `/desktop/api/models/available` lists Haiku twice, as `primary` and again as
 `cheap` (`POLICY_SECOND_ROLES`, `available_rows`); the window's menu shows
 only `primary` rows, and `/v1/models`, the pricing catalogue and
-`AvailableModels` name it once. Sonnet 5.5 and Opus 5.5 stay served as
-`retired` under it, so a turn already running on either when the setting
-changes is still answered. The founder's reason: Haiku is a twentieth of
-Sonnet's price, and most of an agent's work is tool calls and connectors.
-Not yet compared with Sonnet on the cost test set (`docs/cost-test-set.md`).
+`AvailableModels` name it once. Sonnet 5.5 drives the desktop (`computer`),
+as the upstream app runs its computer-use helper on Claude Opus above its own
+model (`SAND_COMPUTER_USE_MODEL_SELECTION`, `shared/agents/sand-agent-model.ts`);
+an engine built before 18 October ignores that row and drives it on Haiku.
+The helper keeps the helpers' low effort. The upstream also turns thinking off
+there; Sonnet 5.5 refuses `thinking: {type: "disabled"}`, and Anthropic
+advises adaptive thinking at low effort over its `between_tools` setting, so
+thinking stays adaptive. Opus 5.5 stays served as `retired`, so a turn
+already running on it when the setting changes is still answered. The
+founder's reason: Haiku is a twentieth of Sonnet's price, and most of an
+agent's work is tool calls and connectors; the screen is where a small model
+slips. Not yet compared with Sonnet on the cost test set
+(`docs/cost-test-set.md`).
 
 The engine reads the roles from `/desktop/api/models/available` when the host
 starts and every five minutes after (`simeon-model-roles.ts`), so a change of
@@ -592,8 +600,9 @@ box and `SAND_KEEP_BOX_RUNNING_ON_QUIT=1` always keeps it running
 - `SAND_SIMEON_REASONING_EFFORT`, `SAND_SIMEON_CHEAP_REASONING_EFFORT`:
   override the effort (`none`, `low`, `medium`, `high`, `xhigh`, `max`).
 - `SAND_SIMEON_MAX_OUTPUT_TOKENS`: the output ceiling per call.
-- `SAND_SIMEON_MODEL`, `SAND_SIMEON_CHEAP_MODEL`, `SAND_SIMEON_FALLBACK_MODEL`:
-  hold a role on one engine whatever the server says (testing only).
+- `SAND_SIMEON_MODEL`, `SAND_SIMEON_CHEAP_MODEL`, `SAND_SIMEON_FALLBACK_MODEL`,
+  `SAND_SIMEON_COMPUTER_MODEL`: hold a role on one engine whatever the server
+  says (testing only).
 - `SAND_AGENT_MAX_STEPS`, `SAND_HIDDEN_TURN_MAX_STEPS`, `SAND_ROUTINE_MAX_STEPS`:
   the step limits.
 - `SAND_AGENT_MESSAGE_MAX_HOPS`: agent messages in a row.
@@ -612,7 +621,7 @@ box and `SAND_KEEP_BOX_RUNNING_ON_QUIT=1` always keeps it running
   written together). A failed call writes `[simeon] model-error`. A step moved
   to another model writes `[simeon] model-fallback` (GPT to the cheap model
   after a rate limit; Claude to its fallback). The roles the engine follows
-  are on `[simeon] model-roles primary=… cheap=… fallback=…`, written when
+  are on `[simeon] model-roles primary=… cheap=… fallback=… computer=…`, written when
   they change, `model-roles remembered …` when the host starts on the kept
   ones, or `model-roles unread` when the read fails.
 - A tool the model makes up no longer fails the run (15 October 2026: Claude

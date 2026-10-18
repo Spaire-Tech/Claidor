@@ -46,14 +46,14 @@ same thirty tasks without moving anyone else:
    `SIMEON_DESKTOP_MODELS_BY_EMAIL` to `{"test@example.com": "claude"}` and
    wait for the deploy. Within five minutes the box's host log
    (`/tmp/sand-host.log`) shows
-   `[simeon] model-roles primary=claude-sonnet-5-5 cheap=claude-haiku-5-5 fallback=gpt-6-sol`,
+   `[simeon] model-roles primary=claude-sonnet-5-5 cheap=claude-haiku-5-5 fallback=gpt-6-sol computer=-`,
    and every `[simeon] model=` line names Claude.
 3. Run the thirty tasks, read the report, and keep the totals per model and
    per reason.
 4. Change the line to `"claude-opus"`, wait for the new `model-roles` line,
    and run them again; then to `"openai"` for the GPT-6 Sol run. Remove the
    line for the Haiku run (the default), whose `model-roles` line reads
-   `primary=claude-haiku-5-5 cheap=claude-haiku-5-5 fallback=gpt-6-sol`.
+   `primary=claude-haiku-5-5 cheap=claude-haiku-5-5 fallback=gpt-6-sol computer=claude-sonnet-5-5`.
 5. Compare dollars, pass count and the cached share. On Claude, `cached ÷
    input` should climb after each turn's first call; `written=` on the
    `model=` line is what each call paid to write the cache (1.25x input).

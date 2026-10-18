@@ -144,7 +144,7 @@ test("the roles are read off the server's model list, and the defaults hold unti
     assert.equal(api.configuredSimeonModel(), "claude-sonnet-5-5");
     assert.equal(api.configuredSimeonCheapModel(), "claude-haiku-5-5");
     assert.equal(api.configuredSimeonFallbackModel(), "gpt-6-sol");
-    assert.ok(lines.includes("[simeon] model-roles primary=claude-sonnet-5-5 cheap=claude-haiku-5-5 fallback=gpt-6-sol"), lines.join("\n"));
+    assert.ok(lines.includes("[simeon] model-roles primary=claude-sonnet-5-5 cheap=claude-haiku-5-5 fallback=gpt-6-sol computer=-"), lines.join("\n"));
   });
 
   // A failed read keeps what was read before.
@@ -185,7 +185,7 @@ test("the roles read are kept on the data volume, so a computer that starts agai
     assert.deepEqual(api.recallSimeonModelRoles(file), CLAUDE_ROLES);
     assert.equal(api.configuredSimeonModel(), "claude-sonnet-5-5");
     assert.equal(api.configuredSimeonCheapModel(), "claude-haiku-5-5");
-    assert.ok(lines.includes("[simeon] model-roles remembered primary=claude-sonnet-5-5 cheap=claude-haiku-5-5 fallback=gpt-6-sol"), lines.join("\n"));
+    assert.ok(lines.includes("[simeon] model-roles remembered primary=claude-sonnet-5-5 cheap=claude-haiku-5-5 fallback=gpt-6-sol computer=-"), lines.join("\n"));
 
     // A read in this run wins over the file; a file that holds nothing usable is left alone.
     api.setSimeonModelRolesForTest({ primary: "gpt-6-sol" });
@@ -237,6 +237,58 @@ test("a turn follows the primary role; the cheap and helper sessions follow thei
   } finally {
     api.setSimeonModelRolesForTest({});
     if (previous === undefined) delete process.env.SAND_SIMEON_MODEL; else process.env.SAND_SIMEON_MODEL = previous;
+    await dispose();
+  }
+});
+
+test("the computerUse helper drives the desktop on the model the server names for it, as the upstream's runs on Opus; Haiku does the rest", async () => {
+  // 18 October 2026, the founder: "Main is haiku. Chore haiku. Computer use sonnet". The server's
+  // `claude-haiku` policy lists Haiku twice (primary, then cheap) and Sonnet with the computer role.
+  const HAIKU_ROWS = [
+    { modelId: "claude-sonnet-5-5", role: "computer", provider: "anthropic", transportApi: "anthropic-messages" },
+    { modelId: "claude-haiku-5-5", role: "primary", provider: "anthropic", transportApi: "anthropic-messages" },
+    { modelId: "gpt-6-sol", role: "fallback", provider: "openai", transportApi: "openai-responses" },
+    { modelId: "gemini-2.5-flash", role: "video", transportApi: "gemini-generate-content" },
+    { modelId: "claude-haiku-5-5", role: "cheap", provider: "anthropic", transportApi: "anthropic-messages" },
+  ];
+  const HAIKU_ROLES = { primary: "claude-haiku-5-5", cheap: "claude-haiku-5-5", fallback: "gpt-6-sol", computer: "claude-sonnet-5-5" };
+  await withProxy(async () => Response.json({ code: 0, data: HAIKU_ROWS }), async (api, _requests, lines) => {
+    const file = path.join(process.env.SAND_DATA_ROOT, api.SIMEON_MODEL_ROLES_FILE);
+    assert.deepEqual(await api.refreshSimeonModelRoles({ getAccessToken: async () => "simeon_da_token", rememberIn: file }), HAIKU_ROLES);
+    assert.ok(lines.includes("[simeon] model-roles primary=claude-haiku-5-5 cheap=claude-haiku-5-5 fallback=gpt-6-sol computer=claude-sonnet-5-5"), lines.join("\n"));
+    assert.deepEqual(JSON.parse(readFileSync(file, "utf8")), HAIKU_ROLES);
+
+    // The agent, its chores and the browser helper on Haiku; the desktop on Sonnet, whatever id the upstream names.
+    assert.equal(api.simeonModelForSession({ modelId: "gpt-6-sol" }), "claude-haiku-5-5");
+    assert.equal(api.simeonModelForSession({ isSummarizationSession: true, modelId: "gemini-2.5-flash" }), "claude-haiku-5-5");
+    assert.equal(api.simeonModelForSession({ isBrowserUseSubagent: true }), "claude-haiku-5-5");
+    assert.equal(api.simeonModelForSession({ modelId: "claude-opus-4-8", isComputerUseSubagent: true }), "claude-sonnet-5-5");
+    assert.equal(api.simeonModelForSession({ model: "claude-haiku-5-5", isComputerUseSubagent: true }), "claude-sonnet-5-5");
+    assert.equal(api.createProviderPromptSession("simeon", { isComputerUseSubagent: true }).getModelId(), "claude-sonnet-5-5");
+    assert.equal(api.isConfiguredSimeonModelId("claude-sonnet-5-5"), true);
+    // At the helpers' effort, low, as the upstream's computer-use subagent runs.
+    assert.equal(api.simeonReasoningEffortForSession({ isComputerUseSubagent: true }), "low");
+
+    // A host started again takes the computer role back from the file.
+    api.setSimeonModelRolesForTest({});
+    assert.deepEqual(api.recallSimeonModelRoles(file), HAIKU_ROLES);
+    assert.equal(api.configuredSimeonComputerModel(), "claude-sonnet-5-5");
+  });
+
+  const { module: api, dispose } = await load();
+  const previous = process.env.SAND_SIMEON_COMPUTER_MODEL;
+  try {
+    // No computer role named: the primary drives the desktop, as before.
+    api.setSimeonModelRolesForTest(CLAUDE_ROLES);
+    assert.equal(api.configuredSimeonComputerModel(), "claude-sonnet-5-5");
+    api.setSimeonModelRolesForTest({ primary: "claude-haiku-5-5" });
+    assert.equal(api.simeonModelForSession({ isComputerUseSubagent: true }), "claude-haiku-5-5");
+    // The environment still wins.
+    process.env.SAND_SIMEON_COMPUTER_MODEL = "claude-opus-5-5";
+    assert.equal(api.simeonModelForSession({ isComputerUseSubagent: true }), "claude-opus-5-5");
+  } finally {
+    api.setSimeonModelRolesForTest({});
+    if (previous === undefined) delete process.env.SAND_SIMEON_COMPUTER_MODEL; else process.env.SAND_SIMEON_COMPUTER_MODEL = previous;
     await dispose();
   }
 });

@@ -58,11 +58,18 @@ class ModelRole(StrEnum):
                  chat titles, sidebar previews. Never read as "the agent".
     `fallback` — answers when the primary's provider is down. Never the
                  default, never shown, never in a menu.
+    `computer` — drives the desktop for the agent (the engine's computerUse
+                 helper). None named, the primary does it.
     """
 
     primary = "primary"
     cheap = "cheap"
     fallback = "fallback"
+    #: The computerUse helper: screenshots, clicks and typing on the
+    #: cloud computer's screen, which the upstream app runs on a stronger
+    #: model than its agent (Claude Opus there). Never in the menu
+    #: (18 October 2026).
+    computer = "computer"
     #: Watches a video on the agent's behalf: the watchVideo / videoReview
     #: subagents run on it and nothing else does. Never in the menu — the
     #: person never talks to it — but offered, so the app can register the
@@ -93,10 +100,12 @@ class ModelPolicy(StrEnum):
     #: As `claude`, with Claude Opus 5.5 answering: for the cost test, and
     #: for the day the extra intelligence is worth twice the price.
     claude_opus = "claude-opus"
-    #: Claude Haiku 5.5 answers and does the machinery too, GPT-6 Sol stands
-    #: by. Everyone's since 18 October 2026 (the founder: "haiku is so cheap
-    #: … its using tools. most of the time"): a twentieth of Sonnet's price,
-    #: on work that is mostly tool calls and connectors.
+    #: Claude Haiku 5.5 answers and does the machinery too, Claude Sonnet 5.5
+    #: drives the desktop, GPT-6 Sol stands by. Everyone's since 18 October
+    #: 2026 (the founder: "haiku is so cheap … its using tools. most of the
+    #: time", then "Main is haiku. Chore haiku. Computer use sonnet", as the
+    #: upstream app runs Claude Opus on the screen): a twentieth of
+    #: Sonnet's price on work that is mostly tool calls and connectors.
     claude_haiku = "claude-haiku"
 
 
@@ -576,10 +585,10 @@ POLICY_ROLES: dict[ModelPolicy, dict[str, ModelRole]] = {
     # Haiku is the cheap model as well (`POLICY_SECOND_ROLES`).
     ModelPolicy.claude_haiku: {
         "claude-haiku-5-5": ModelRole.primary,
+        "claude-sonnet-5-5": ModelRole.computer,
         "gpt-6-sol": ModelRole.fallback,
         "gpt-6-luna": ModelRole.retired,
         # Mid-turn on the model of the policy before when the setting changes.
-        "claude-sonnet-5-5": ModelRole.retired,
         "claude-opus-5-5": ModelRole.retired,
     },
 }
