@@ -386,3 +386,46 @@ test("on Claude, a conversation past the summary line is summarized: the loop co
     await loaded.dispose();
   }
 });
+
+test("a summary started in a short turn is kept when the turn ends, not thrown away (18 October 2026)", async () => {
+  // The founder's checkout log: past 108k every wake was a turn of one or
+  // two steps, shorter than the 13-15 s a summary takes, so each summary was
+  // discarded when its turn ended and the next turn paid for another: ten in
+  // six minutes, none used. The turn now waits for the one it started.
+  const loaded = await loadHarness();
+  const previousFetch = globalThis.fetch;
+  const console_ = captureConsole();
+  try {
+    pin(loaded.dataDir);
+    loaded.module.setSimeonModelRolesForTest({ primary: "claude-sonnet-5-5", cheap: "claude-haiku-5-5", fallback: "gpt-6-sol" });
+    const reasons = [];
+    let mainCalls = 0;
+    const turn = await runTurn(loaded, {
+      ingest: (update) => (update.type === "send-message" ? "t1s1" : undefined),
+      respond: async ({ headers }) => {
+        const reason = headers.get("x-simeon-call-reason");
+        reasons.push(reason);
+        if (reason === "summary") {
+          // Still being written when the turn's last step is done.
+          await new Promise((resolve) => setTimeout(resolve, 300));
+          return claudeStream(90, { text: "<summary>The person said hi and the agent greeted them.</summary>", usage: { input_tokens: 2_000, cache_read_input_tokens: 0 } });
+        }
+        mainCalls += 1;
+        // Two steps, as a wake in the log: a message, then the turn's end,
+        // both while the summary started after the first is still running.
+        return mainCalls === 1
+          ? claudeStream(1, { toolUse: { name: "SendMessage", input: { type: "text", content: GREETING } }, usage: { input_tokens: 500, cache_read_input_tokens: 110_000 } })
+          : claudeStream(mainCalls, { text: "done", usage: { input_tokens: 600, cache_read_input_tokens: 110_000 } });
+      },
+    });
+    assert.equal(mainCalls, 2, reasons.join(","));
+    assert.equal(reasons.filter((reason) => reason === "summary").length, 1, reasons.join(","));
+    assert.equal(turn.finalState.summaryArchives.length, 1, "the summary is kept in the conversation");
+  } finally {
+    loaded.module.setSimeonModelRolesForTest({});
+    console_.restore();
+    globalThis.fetch = previousFetch;
+    unpin();
+    await loaded.dispose();
+  }
+});

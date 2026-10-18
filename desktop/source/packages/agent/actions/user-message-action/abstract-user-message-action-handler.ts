@@ -885,6 +885,13 @@ interface UserMessageActionHandlerConfigLike {
   readonly agentResponseComparison?: AgentResponseComparisonCapabilityLike | undefined;
   readonly backgroundSummarizationProps: BackgroundSummarizationProps & {
     readonly requireTriggerThresholdForMidLoopPersist?: boolean | undefined;
+    /**
+     * At the end of a turn past the start line, wait for the summary already
+     * being written and keep it, instead of discarding it short of the persist
+     * line (Simeon, 18 October 2026: its turns are one or two steps, shorter
+     * than a summary takes, so every summary was paid for and thrown away).
+     */
+    readonly keepStartedSummaryAtTurnEnd?: boolean | undefined;
   };
   readonly maxSteps?: number | undefined;
   readonly conversationId?: string | undefined;
@@ -2741,7 +2748,9 @@ export class AbstractUserMessageActionHandler {
             const endOfTurnMessages = fromRedactedCoreMessages(rootPromptExecutor.getMessages(), PrivacyCapability.UNSAFE_ALWAYS_ALLOWED);
             const imageCountAtTurnEnd = countImagePartsInMessages(endOfTurnMessages);
             const shouldPersistForImageThreshold = imageCountAtTurnEnd >= IMAGE_SUMMARIZATION_TRIGGER_COUNT;
-            const shouldPersist = shouldPersistForTokenThreshold || shouldPersistForImageThreshold;
+            const shouldKeepStartedSummary = this.config.backgroundSummarizationProps.keepStartedSummaryAtTurnEnd === true &&
+              shouldStartBackgroundSummarization(tokenDetails.usedTokens, tokenDetails.maxTokens, this.config.backgroundSummarizationProps);
+            const shouldPersist = shouldPersistForTokenThreshold || shouldPersistForImageThreshold || shouldKeepStartedSummary;
             const completedPersistTriggerReason = shouldPersistForImageThreshold ? "approaching_image_limit" : isSelfSummary ? "self_summary_completed" : "threshold_met";
             if (shouldPersist) {
               if (stateHandler.backgroundSummarizationHasCompleted) {
@@ -2788,6 +2797,18 @@ export class AbstractUserMessageActionHandler {
                     currentInvocationId: stateHandler.lastStepInvocationId,
                     isToolCall: totalToolCallsInTurn > 0,
                     triggerReason: shouldBlockForImageThreshold ? "approaching_image_limit" : "significantly_over_token_limit",
+                    resourceAccessor: this.resourceAccessor,
+                  });
+                } else if (shouldKeepStartedSummary) {
+                  logger.info(ctx, "[summarization-persist] At end of turn, waiting for the background summarization already started and persisting it", {
+                    usedTokens: tokenDetails.usedTokens,
+                    maxTokens: tokenDetails.maxTokens,
+                  });
+                  await this.orchestrator.handleSummarization(ctx, stateHandler, rootPromptExecutor, this.interactionListener, this.config, requestContext, {
+                    backgroundSummarizationMode: BackgroundSummarizationMode.WaitForCompletionIfStarted,
+                    currentInvocationId: stateHandler.lastStepInvocationId,
+                    isToolCall: totalToolCallsInTurn > 0,
+                    triggerReason: "approaching_token_limit",
                     resourceAccessor: this.resourceAccessor,
                   });
                 } else {

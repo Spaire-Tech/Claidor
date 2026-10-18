@@ -543,7 +543,14 @@ three minutes):
   keeps its budget on the 200k working window. The upstream app read the
   window per model from its server; ours is fixed. The cost: older detail is
   compressed sooner. (For part of 18 October 2026 the window was 95,000, to
-  keep Claude Haiku 5.5 under its 100k-token price step.)
+  keep Claude Haiku 5.5 under its 100k-token price step.) A turn that ends
+  past the start line waits for the summary it started and keeps it
+  (`keepStartedSummaryAtTurnEnd`, `turn-agent-composition.ts`): an agent's
+  turn here is one or two steps, shorter than the 13–15 s a summary takes,
+  and the upstream rule threw away any summary unfinished, or finished short
+  of 95%, when its turn ended. In the founder's checkout log (18 October)
+  that was ten summaries in six minutes, each about 40k tokens on Haiku, none
+  used, while every main call carried 108k–126k.
   Until 18 October 2026 a conversation on Claude was never summarized: the
   AI SDK counts Claude's uncached tokens only, so the loop saw 1–3k a step
   while 115k–125k was sent (the founder's Haiku checkout log). The loop now

@@ -216,6 +216,10 @@ const DEFAULT_BACKGROUND_SUMMARIZATION = {
   unusedPercentTokensThresholdToPersistBackgroundSummarization: 0.05,
   discardOnError: true,
   requireTriggerThresholdForMidLoopPersist: true,
+  // A turn here is one or two steps, shorter than a summary takes: without
+  // this, every summary started past 108k was discarded when its turn ended,
+  // and the next turn paid for another (18 October 2026, ten in six minutes).
+  keepStartedSummaryAtTurnEnd: true,
 } as const;
 
 export interface TurnAgentStaticConfigInputs {
