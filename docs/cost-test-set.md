@@ -35,10 +35,10 @@ deciding: one run is noisy.
 ## Comparing the model families
 
 Since 13 October 2026 one server setting chooses who answers
-(`docs/services-core.md`, section 2): `claude-haiku` (Claude Haiku 5.5 for
-everything, the default since 18 October 2026), `openai` (GPT-6 Sol), `claude`
-(Claude Sonnet 5.5) or `claude-opus` (Claude Opus 5.5). To compare them on the
-same thirty tasks without moving anyone else:
+(`docs/services-core.md`, section 2): `claude` (Claude Sonnet 5.5, the
+default since 18 October 2026), `openai` (GPT-6 Sol), `claude-haiku` (Claude
+Haiku 5.5 for everything) or `claude-opus` (Claude Opus 5.5). To compare them
+on the same thirty tasks without moving anyone else:
 
 1. On Render, set `ANTHROPIC_API_KEY` on the API service (it is the key the
    proxy uses; it is never sent to a box).
@@ -51,8 +51,8 @@ same thirty tasks without moving anyone else:
 3. Run the thirty tasks, read the report, and keep the totals per model and
    per reason.
 4. Change the line to `"claude-opus"`, wait for the new `model-roles` line,
-   and run them again; then to `"openai"` for the GPT-6 Sol run. Remove the
-   line for the Haiku run (the default), whose `model-roles` line reads
+   and run them again; then to `"openai"` for the GPT-6 Sol run, and to
+   `"claude-haiku"` for the Haiku run, whose `model-roles` line reads
    `primary=claude-haiku-5-5 cheap=claude-haiku-5-5 fallback=gpt-6-sol computer=claude-sonnet-5-5`.
 5. Compare dollars, pass count and the cached share. On Claude, `cached ÷
    input` should climb after each turn's first call; `written=` on the

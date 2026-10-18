@@ -351,13 +351,13 @@ function claudeStream(n, { toolUse, text, usage }) {
 test("on Claude, a conversation past the summary line is summarized: the loop counts the cached prompt (18 October 2026)", async () => {
   // The founder's Haiku checkout sent 115k to 125k tokens on every call and
   // nothing summarized it: the AI SDK counts only Claude's uncached tokens,
-  // so the loop saw 500 here and never reached 85k.
+  // so the loop saw 500 here and never reached 108k.
   const loaded = await loadHarness();
   const previousFetch = globalThis.fetch;
   const console_ = captureConsole();
   try {
     pin(loaded.dataDir);
-    loaded.module.setSimeonModelRolesForTest({ primary: "claude-haiku-5-5", cheap: "claude-haiku-5-5", fallback: "gpt-6-sol" });
+    loaded.module.setSimeonModelRolesForTest({ primary: "claude-sonnet-5-5", cheap: "claude-haiku-5-5", fallback: "gpt-6-sol" });
     const reasons = [];
     let mainCalls = 0;
     const turn = await runTurn(loaded, {
@@ -368,10 +368,10 @@ test("on Claude, a conversation past the summary line is summarized: the loop co
         reasons.push(reason);
         if (reason === "summary") return claudeStream(90, { text: "<summary>The person said hi and the agent greeted them.</summary>", usage: { input_tokens: 2_000, cache_read_input_tokens: 0 } });
         mainCalls += 1;
-        // 500 fresh and 90,000 read from the cache: a 90.5k prompt.
+        // 500 fresh and 110,000 read from the cache: a 110.5k prompt.
         return mainCalls === 1
-          ? claudeStream(1, { toolUse: { name: "SendMessage", input: { type: "text", content: GREETING } }, usage: { input_tokens: 500, cache_read_input_tokens: 90_000 } })
-          : claudeStream(mainCalls, { text: "done", usage: { input_tokens: 600, cache_read_input_tokens: 90_000 } });
+          ? claudeStream(1, { toolUse: { name: "SendMessage", input: { type: "text", content: GREETING } }, usage: { input_tokens: 500, cache_read_input_tokens: 110_000 } })
+          : claudeStream(mainCalls, { text: "done", usage: { input_tokens: 600, cache_read_input_tokens: 110_000 } });
       },
     });
     assert.ok(turn.requests.length >= 2, reasons.join(","));

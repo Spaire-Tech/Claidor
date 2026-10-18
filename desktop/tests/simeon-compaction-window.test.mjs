@@ -58,7 +58,7 @@ test("Simeon reports the working window, not Terra's 1.05M physical one", async 
   try {
     assert.equal(window.module.SIMEON_WORKING_CONTEXT_TOKENS, 200_000);
     // Summarization reads its own, smaller window (8 October 2026).
-    assert.equal(window.module.SIMEON_SUMMARIZATION_WINDOW_TOKENS, 95_000);
+    assert.equal(window.module.SIMEON_SUMMARIZATION_WINDOW_TOKENS, 120_000);
     // Both wires (GPT on Responses, Claude on Messages since 13 October 2026).
     assert.match(providers, /aiSdkExecutor\(simeonLanguageModel[^\n]+SIMEON_SUMMARIZATION_WINDOW_TOKENS, \{ reasoningEffort \}, callInfo,/);
     assert.match(providers, /aiSdkExecutor\(claudeLanguageModel[^\n]+SIMEON_SUMMARIZATION_WINDOW_TOKENS, \{\}, callInfo,/);
@@ -71,17 +71,17 @@ test("Simeon reports the working window, not Terra's 1.05M physical one", async 
   }
 });
 
-test("a long conversation is summarized from 85k tokens, under Haiku's 100k price step (18 October 2026)", async () => {
+test("a long conversation is summarized from about 108k tokens, not 180k (8 October 2026)", async () => {
   // The staffing log: the Chief of Staff sent 161k tokens on every call and
-  // nothing summarized it, because summarizing began at 180k (108k from 8
-  // October). The founder's Haiku checkout: 115k to 125k on every call.
-  const loaded = await load("source/packages/agent-summarization/background-summarization.ts", "compaction-window-95k");
-  const window = await load("source/shared/inference/simeon-context-window.ts", "simeon-window-95k");
+  // nothing summarized it, because summarizing began at 180k. The founder's
+  // Haiku checkout (18 October 2026): 115k to 125k on every call.
+  const loaded = await load("source/packages/agent-summarization/background-summarization.ts", "compaction-window-120k");
+  const window = await load("source/shared/inference/simeon-context-window.ts", "simeon-window-120k");
   try {
     const { getBackgroundSummarizationTriggerThreshold, shouldStartBackgroundSummarization } = loaded.module;
     const W = window.module.SIMEON_SUMMARIZATION_WINDOW_TOKENS;
-    assert.equal(getBackgroundSummarizationTriggerThreshold(W, simeonBudget), 85_000);
-    assert.equal(shouldStartBackgroundSummarization(84_999, W, simeonBudget), false);
+    assert.equal(getBackgroundSummarizationTriggerThreshold(W, simeonBudget), 108_000);
+    assert.equal(shouldStartBackgroundSummarization(107_999, W, simeonBudget), false);
     assert.equal(shouldStartBackgroundSummarization(114_924, W, simeonBudget), true);
     assert.equal(shouldStartBackgroundSummarization(161_000, W, simeonBudget), true);
     // A new agent's first call (~49k: prompt and tools) is far below it.

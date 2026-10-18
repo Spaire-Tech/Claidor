@@ -236,12 +236,10 @@ class TestSession:
         mocker.patch.object(settings, "GEMINI_API_KEY", "")
         models = await client.get("/desktop/api/models/available", headers=headers)
         rows = models.json()["data"]
-        # Under the default policy with only Anthropic's key: Sonnet for the
-        # desktop, Haiku as the model that answers and again as the one that
-        # does the machinery.
+        # Under the default policy with only Anthropic's key: Sonnet answers
+        # (and drives the desktop, as the primary), Haiku does the machinery.
         assert [(row["modelId"], row["role"]) for row in rows] == [
-            ("claude-sonnet-5-5", "computer"),
-            ("claude-haiku-5-5", "primary"),
+            ("claude-sonnet-5-5", "primary"),
             ("claude-haiku-5-5", "cheap"),
         ]
         assert all(row["apiFormat"] == "anthropic" for row in rows)
@@ -827,8 +825,17 @@ class TestTwoProviders:
                 if one["role"] != "video"
             }
 
-        # The default since 18 October 2026: Haiku answers and does the
-        # machinery, listed once for each; Sonnet drives the desktop.
+        # The default since 18 October 2026: Sonnet answers, Haiku does the
+        # machinery.
+        assert await roles() == {
+            ("claude-sonnet-5-5", "primary"),
+            ("claude-haiku-5-5", "cheap"),
+            ("gpt-6-sol", "fallback"),
+        }
+
+        # Haiku for everything: listed once for each role it holds, and
+        # Sonnet drives the desktop.
+        mocker.patch.object(settings, "DESKTOP_MODELS", ModelPolicy.claude_haiku)
         assert await roles() == {
             ("claude-haiku-5-5", "primary"),
             ("claude-haiku-5-5", "cheap"),

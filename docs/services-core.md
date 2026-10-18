@@ -284,9 +284,9 @@ picks a policy (`ModelPolicy`, `POLICY_ROLES`), and
 
 | Policy | `primary`: the agent loop, every reply, its helpers | `cheap`: summaries, memory, safety checks, titles | `computer`: the computerUse helper, on the screen | `fallback`: a step whose provider failed |
 |---|---|---|---|---|
-| `claude-haiku` (the default since 18 October 2026) | `claude-haiku-5-5` | `claude-haiku-5-5` | `claude-sonnet-5-5` | `gpt-6-sol` |
-| `openai` (the default until then) | `gpt-6-sol` | `gpt-6-luna` | the primary | `claude-sonnet-5-5` |
-| `claude` | `claude-sonnet-5-5` | `claude-haiku-5-5` | the primary | `gpt-6-sol` |
+| `claude` (the default since 18 October 2026) | `claude-sonnet-5-5` | `claude-haiku-5-5` | the primary | `gpt-6-sol` |
+| `claude-haiku` (the default for part of 18 October 2026; its answers repeated themselves) | `claude-haiku-5-5` | `claude-haiku-5-5` | `claude-sonnet-5-5` | `gpt-6-sol` |
+| `openai` (the default until 18 October 2026) | `gpt-6-sol` | `gpt-6-luna` | the primary | `claude-sonnet-5-5` |
 | `claude-opus` | `claude-opus-5-5` | `claude-haiku-5-5` | the primary | `gpt-6-sol` |
 
 Under `claude-haiku` one model holds two roles. A row of the list carries one
@@ -535,15 +535,15 @@ three minutes):
   Before, each message was a turn of its own on the whole conversation, as in
   the upstream app: the Chief of Staff, at 161k tokens a call, took one per
   teammate reply.
-- **A long conversation is summarized from 85k tokens, under Claude Haiku
-  5.5's 100k price step.** Summarization reads
-  `SIMEON_SUMMARIZATION_WINDOW_TOKENS` (95,000 since 18 October 2026, 120,000
-  before; `shared/inference/simeon-context-window.ts`): it starts at 90% and
-  the summary is swapped in once it is ready. Above about 119k a turn waits for
-  the summary. The instructions and tools alone are about 50k, so about 35k of
-  conversation stays word for word. The skills list keeps its budget on the
-  200k working window. The upstream app read the window per model from its
-  server; ours is fixed. The cost: older detail is compressed sooner.
+- **A long conversation is summarized from about 108k tokens, not 180k.**
+  Summarization reads `SIMEON_SUMMARIZATION_WINDOW_TOKENS` (120,000;
+  `shared/inference/simeon-context-window.ts`): it starts at 90% and the
+  summary is swapped in once it is ready. Above 150k a turn waits for the
+  summary. The instructions and tools alone are about 50k. The skills list
+  keeps its budget on the 200k working window. The upstream app read the
+  window per model from its server; ours is fixed. The cost: older detail is
+  compressed sooner. (For part of 18 October 2026 the window was 95,000, to
+  keep Claude Haiku 5.5 under its 100k-token price step.)
   Until 18 October 2026 a conversation on Claude was never summarized: the
   AI SDK counts Claude's uncached tokens only, so the loop saw 1–3k a step
   while 115k–125k was sent (the founder's Haiku checkout log). The loop now
@@ -576,8 +576,8 @@ box and `SAND_KEEP_BOX_RUNNING_ON_QUIT=1` always keeps it running
 - `SIMEON_OPENAI_API_KEY`: the OpenAI key. Without it, no OpenAI model is offered.
 - `ANTHROPIC_API_KEY` (or `SIMEON_ANTHROPIC_API_KEY`): Claude. Without it no
   Claude model is offered, and a Claude policy answers on GPT-6 Sol.
-- `SIMEON_DESKTOP_MODELS`: `claude-haiku` (the default since 18 October
-  2026), `openai`, `claude` or `claude-opus`. Set on Render, it wins over the
+- `SIMEON_DESKTOP_MODELS`: `claude` (the default since 18 October 2026),
+  `openai`, `claude-haiku` or `claude-opus`. Set on Render, it wins over the
   default.
 - `SIMEON_DESKTOP_CLAUDE_VIA`: `anthropic` (the default) or `bedrock`, Claude
   in Amazon Bedrock so AWS credits pay for it (14 October 2026,
