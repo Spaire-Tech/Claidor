@@ -65,7 +65,7 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .hero{padding:clamp(40px,8.1vw,162px) 0 0;color:#000}
 .hero h1{max-width:13em;font-family:"Newsreader",Georgia,"Times New Roman",serif;font-size:clamp(30px,2.2vw,44px);line-height:1.08;font-weight:400;letter-spacing:-.02em;text-wrap:balance}
 .hero .ctas{display:flex;gap:clamp(10px,.7vw,14px);flex-wrap:wrap;margin-top:clamp(18px,1.6vw,32px)}
-/* The headline and its buttons a size down (18 October 2026). */
+/* The headline and its buttons a size down (18 October 2026); the section titles, their lines, the statement and the closing title went down with them. */
 .hero .btn{height:clamp(40px,2.5vw,50px);padding:0 clamp(18px,1.3vw,26px);font-size:clamp(15px,.95vw,19px)}
 /* On a phone the hero breathes (4 October 2026): a long pause under the bar, a headline that leaves air on the right, and room before the app. */
 .hero .btn.go{display:none} /* the phone's one button: Download for iOS, no link until there is an app (6 October 2026) */
@@ -81,7 +81,7 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 /* The statement between the app and the gallery, in the middle of its own white space: Apple's
    intro-statement setting, large and centred, the point in black and the rest in grey. */
 .statement{padding-block:clamp(96px,10vw,200px)}
-.statement p{max-width:30em;margin:0 auto;text-align:center;font-size:clamp(24px,1.9vw,38px);line-height:1.21;font-weight:400;letter-spacing:-.022em;color:var(--ink3);text-wrap:balance} /* the hero headline's size, weight and spacing */
+.statement p{max-width:30em;margin:0 auto;text-align:center;font-size:clamp(22px,1.5vw,30px);line-height:1.21;font-weight:400;letter-spacing:-.022em;color:var(--ink3);text-wrap:balance} /* the hero headline's size, weight and spacing */
 .statement b{font-weight:400;color:#000}
 @supports (-webkit-background-clip:text) or (background-clip:text){
   .statement p,.statement b{color:transparent;background:linear-gradient(100deg,var(--ink3) 0 38%,#000 46% 54%,var(--ink3) 62% 100%) 0 0/250% 100%;-webkit-background-clip:text;background-clip:text;animation:stmt-light 6s linear infinite}
@@ -657,7 +657,7 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .qa3 summary:focus-visible{outline:2px solid var(--blue);outline-offset:4px;border-radius:6px}
 .qa3 details p{margin:0;padding:0 0 clamp(22px,1.8vw,32px);max-width:46em;font-size:clamp(16px,1.02vw,19.5px);line-height:1.6;color:var(--ink2)}
 .close3{padding:clamp(120px,10vw,200px) 0 clamp(120px,10vw,200px);text-align:center}
-.close3 h2{margin:0 auto;font-family:"Newsreader",Georgia,"Times New Roman",serif;font-weight:400;font-size:clamp(44px,4.4vw,88px);line-height:1;letter-spacing:-.02em}
+.close3 h2{margin:0 auto;font-family:"Newsreader",Georgia,"Times New Roman",serif;font-weight:400;font-size:clamp(34px,3.2vw,64px);line-height:1.02;letter-spacing:-.02em}
 .close3 .ctas{display:flex;justify-content:center;gap:clamp(10px,.7vw,14px);flex-wrap:wrap;margin-top:clamp(28px,2.4vw,44px)}
 .close3 .btn{height:clamp(40px,2.5vw,50px);padding:0 clamp(18px,1.3vw,26px);font-size:clamp(15px,.95vw,19px)}
 .close3 .btn.go{display:none} /* on a phone the close offers Download for iOS, as the top does, and Request a demo beside it (the founder, 12 October 2026) */
@@ -667,8 +667,8 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .trust{padding:clamp(100px,9vw,170px) 0 clamp(40px,4vw,80px)}
 #team+.trust{padding-top:clamp(56px,4.4vw,88px)}
 .trust-top{display:grid;grid-template-columns:1fr 1fr;gap:clamp(24px,5vw,96px);align-items:start}
-.trust h2{margin:0;font-family:"Newsreader",Georgia,"Times New Roman",serif;font-weight:400;font-size:clamp(36px,2.9vw,58px);line-height:1.04;letter-spacing:-.02em;max-width:11em;text-wrap:balance}
-.trust-top p{margin:clamp(4px,.45vw,9px) 0 0;max-width:30em;font-size:clamp(17px,1.2vw,23px);line-height:1.5;letter-spacing:-.01em;color:var(--ink2)}
+.trust h2{margin:0;font-family:"Newsreader",Georgia,"Times New Roman",serif;font-weight:400;font-size:clamp(28px,2.2vw,44px);line-height:1.08;letter-spacing:-.02em;max-width:11em;text-wrap:balance}
+.trust-top p{margin:clamp(4px,.45vw,9px) 0 0;max-width:30em;font-size:clamp(16px,1vw,19px);line-height:1.5;letter-spacing:-.01em;color:var(--ink2)}
 .tpanel{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,3.6fr);gap:24px;margin-top:clamp(40px,4vw,80px);padding:clamp(28px,3vw,56px);border-radius:28px;background:#fafafb}
 .tpanel+.tpanel{margin-top:22px}
 .tpanel h3{margin:0;font-size:clamp(20px,1.35vw,26px);font-weight:500;color:#3a3a3c;letter-spacing:-.02em;line-height:1.3}
