@@ -146,6 +146,35 @@ test("a products card shows the price Shop's catalog gave, not the agent's copy 
   }
 });
 
+test("a used item says so: Shop's catalog marks it and the card shows it, whatever the agent wrote (18 October 2026)", async () => {
+  const { module, dispose } = await load("tests/fixtures/purchase-prices-entry.ts", "prices-condition");
+  try {
+    module.forgetCatalogPricesForTest();
+    // As the live catalog answered "computer monitor": 8 of the 20 were ["secondhand"].
+    const used = { id: "gid://shopify/Product/9", title: "Samsung S27A600UUN 27\u201d QHD USB-C Monitor", variants: [{ id: "gid://shopify/ProductVariant/52606573183207", condition: ["secondhand"], price: { amount: 7999, currency: "USD" }, seller: { name: "G-electronic", url: "https://gelectronic.store", domain: "g-electronic-9008.myshopify.com" } }] };
+    const summary = module.shopProductSummary(used);
+    assert.equal(summary.condition, "used");
+    assert.equal(summary.store_site, "https://gelectronic.store");
+    assert.equal(summary.shop, "g-electronic-9008.myshopify.com");
+    assert.equal(module.conditionOf({ condition: ["new"] }), "new");
+    assert.equal(module.conditionOf({ condition: ["refurbished"] }), "refurbished");
+    assert.equal(module.conditionOf({}), undefined);
+    module.rememberProductPrice(used);
+    module.rememberProductPrice({ id: "gid://shopify/Product/10", title: "Dell SE2225H", variants: [{ id: "gid://shopify/ProductVariant/10", condition: ["new"], price: { amount: 5999, currency: "USD" } }] });
+    module.rememberProductPrice({ id: "gid://shopify/Product/11", title: "Dell P2217H", variants: [{ id: "gid://shopify/ProductVariant/11", condition: ["secondhand"], price: { amount: 6300, currency: "USD" } }] });
+    let card;
+    const tool = module.createShowProductsTool({ emitCard: (posted) => { card = posted; return "t4s0"; }, capturePreview: async () => undefined, checkoutFacts: () => undefined, markPurchaseDone: async () => ({ ok: true }) });
+    await run(tool, { products: [
+      { title: "Samsung S27A600UUN 27\u201d QHD USB-C Monitor", url: "https://gelectronic.store/products/samsung-s27a600uun", price: "$79.99", shop_variant_id: "52606573183207", shop: "g-electronic-9008.myshopify.com" },
+      { title: "Dell SE2225H", url: "https://example-shop.com/products/se2225h", price: "$59.99", shop_variant_id: "10", shop: "example-shop.myshopify.com" },
+      { title: "Dell P2217H (refurbished)", url: "https://epc.example/products/p2217h", price: "$63.00", shop_variant_id: "11", shop: "epc.myshopify.com" },
+    ] });
+    assert.deepEqual(card.products.map((product) => product.title), ["Samsung S27A600UUN 27\u201d QHD USB-C Monitor (used)", "Dell SE2225H", "Dell P2217H (refurbished)"]);
+  } finally {
+    await dispose();
+  }
+});
+
 test("the checkout's text is read off the tab the agent's Chrome has open, and only on that shop's site", { skip: CHROMIUM === undefined ? "no Chromium here" : false, timeout: 60_000 }, async () => {
   const { module, dispose } = await load("source/shared/node/link-wallet/checkout-fill.ts", "checkout-fill");
   const page = `<!doctype html><html><body>${ALTEX_CHECKOUT.split("\n").map((line) => `<div>${line.replace(/</g, "&lt;")}</div>`).join("")}</body></html>`;

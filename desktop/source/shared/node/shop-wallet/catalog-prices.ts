@@ -15,6 +15,8 @@ export interface CatalogPrice {
   readonly price: string;
   /** The list price when it's on sale, written the same way. */
   readonly was?: string;
+  /** "new", "used" or "refurbished", when the catalog says. */
+  readonly condition?: string;
   readonly seenAtMs: number;
 }
 

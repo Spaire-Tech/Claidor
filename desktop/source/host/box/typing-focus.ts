@@ -36,6 +36,7 @@
  */
 import WebSocketModule from "ws";
 import { HOST_LOG_PREFIX, logHostLine } from "../../shared/host-log.js";
+import { classifyBotBlockPage } from "../runner/bot-block-detection.js";
 
 /** Chrome's DevTools port is this plus the agent's display number (`box/bin/box-chrome`). */
 export const TYPING_FOCUS_CDP_PORT_BASE = 9222;
@@ -213,6 +214,57 @@ export interface FocusTarget {
   readonly socketUrl: string;
 }
 
+/**
+ * A bot check (Cloudflare's "Just a moment...", its check frame, a captcha):
+ * the person's to answer, so no listener goes into it and nothing reads it
+ * while they do (18 October 2026: every tap put one in PzDeals' Cloudflare
+ * frame, and the founder's taps never cleared it).
+ */
+export function isBotCheckTarget(info: Record<string, unknown>): boolean {
+  return classifyBotBlockPage({ url: typeof info.url === "string" ? info.url : "", title: typeof info.title === "string" ? info.title : "" }) !== undefined;
+}
+
+/** A bot check on screen in the Chrome on `port`: which kind, on which site (the page's own, else the check's). */
+export interface BotCheckShown {
+  readonly family: string;
+  readonly host: string;
+}
+
+export async function botCheckShown(port: number): Promise<BotCheckShown | undefined> {
+  try {
+    const response = await fetch(`http://127.0.0.1:${port}/json/list`, { signal: AbortSignal.timeout(1_500) });
+    if (!response.ok) return undefined;
+    const rows = await response.json() as unknown;
+    const targets = (Array.isArray(rows) ? rows : []) as Record<string, unknown>[];
+    // A page that is itself the check names the shop; a check frame only names the check.
+    for (const kind of ["page", "iframe"]) {
+      for (const row of targets) {
+        if (row.type !== kind) continue;
+        const hit = classifyBotBlockPage({ url: typeof row.url === "string" ? row.url : "", title: typeof row.title === "string" ? row.title : "" });
+        if (hit !== undefined) return { family: hit.family, host: hit.blockedHost };
+      }
+    }
+  } catch {}
+  return undefined;
+}
+
+let exitNetworkRead: Promise<string> | undefined;
+
+/** The computer's way out to the internet, as Cloudflare sees it (its address, data centre and country): read once, for the bot-check lines. */
+export function boxExitNetwork(): Promise<string> {
+  exitNetworkRead ??= (async () => {
+    try {
+      const response = await fetch("https://www.cloudflare.com/cdn-cgi/trace", { signal: AbortSignal.timeout(4_000) });
+      const text = await response.text();
+      const field = (name: string): string => new RegExp(`^${name}=(.*)$`, "m").exec(text)?.[1]?.trim() ?? "?";
+      return `ip=${field("ip")} colo=${field("colo")} loc=${field("loc")}`;
+    } catch {
+      return "unknown";
+    }
+  })();
+  return exitNetworkRead;
+}
+
 /** Chrome's pages and out-of-process frames on `port`; none when Chrome is not there. */
 export async function listFocusTargets(port: number, create: CdpSocketFactory = defaultSocket): Promise<FocusTarget[]> {
   let connection: CdpConnection | undefined;
@@ -226,7 +278,7 @@ export async function listFocusTargets(port: number, create: CdpSocketFactory = 
     const infos = Array.isArray(result.targetInfos) ? result.targetInfos as Record<string, unknown>[] : [];
     return infos.flatMap((info): FocusTarget[] => {
       const id = typeof info.targetId === "string" ? info.targetId : "";
-      if ((info.type !== "page" && info.type !== "iframe") || id.length === 0) return [];
+      if ((info.type !== "page" && info.type !== "iframe") || id.length === 0 || isBotCheckTarget(info)) return [];
       return [{ type: info.type, id, socketUrl: `ws://127.0.0.1:${port}/devtools/page/${id}` }];
     });
   } catch {
@@ -369,6 +421,9 @@ export interface TypingFocusesOptions extends TypingFocusOptions {
   readonly portFor?: (display: number) => number;
   readonly settleMs?: number;
   readonly log?: (line: string) => void;
+  /** A bot check on screen (`botCheckShown`), and the computer's way out (`boxExitNetwork`): tests give their own. */
+  readonly botCheck?: (port: number) => Promise<BotCheckShown | undefined>;
+  readonly exitNetwork?: () => Promise<string>;
 }
 
 /**
@@ -380,6 +435,11 @@ export interface TypingFocusesOptions extends TypingFocusOptions {
 export function createTypingFocus(options: TypingFocusesOptions): (agentId: string, prepare?: boolean) => Promise<{ focus: TypingFocus }> {
   const log = options.log ?? logHostLine;
   const seen = new Map<number, number>();
+  const botCheck = options.botCheck ?? botCheckShown;
+  const exitNetwork = options.exitNetwork ?? boxExitNetwork;
+  // A bot check the person was handed, per Chrome: whether their taps clear
+  // it says whether the check or the computer's address is the wall.
+  const checks = new Map<number, BotCheckShown & { readonly sinceMs: number; taps: number }>();
   return async (agentId, prepare = false) => {
     const display = options.displayFor(agentId) ?? 1;
     const port = (options.portFor ?? ((index: number) => TYPING_FOCUS_CDP_PORT_BASE + index))(display);
@@ -387,6 +447,13 @@ export function createTypingFocus(options: TypingFocusesOptions): (agentId: stri
     if (prepare) {
       seen.set(port, Math.max(seen.get(port) ?? 0, await prepareTypingFocus(port, options)));
       log(`${HOST_LOG_PREFIX} typing-focus prepared agent=${agentId} port=${port} ms=${Date.now() - startedAt}`);
+      const shown = await botCheck(port);
+      if (shown === undefined) {
+        checks.delete(port);
+      } else {
+        checks.set(port, { ...shown, sinceMs: Date.now(), taps: 0 });
+        log(`${HOST_LOG_PREFIX} bot-check handed-over agent=${agentId} ${shown.family} on ${shown.host} exit ${await exitNetwork()}`);
+      }
       return { focus: "" };
     }
     const settleMs = options.settleMs ?? TYPING_FOCUS_SETTLE_MS;
@@ -394,6 +461,17 @@ export function createTypingFocus(options: TypingFocusesOptions): (agentId: stri
     const reading = await readTypingFocus(port, { ...options, after: seen.get(port) ?? 0 });
     seen.set(port, Math.max(seen.get(port) ?? 0, reading.lastPressAt));
     log(`${HOST_LOG_PREFIX} typing-focus agent=${agentId} port=${port} focus=${reading.focus || "none"} by=${reading.by} frames=${reading.frames} ms=${Date.now() - startedAt}`);
+    const check = checks.get(port);
+    if (check !== undefined) {
+      check.taps += 1;
+      const seconds = Math.round((Date.now() - check.sinceMs) / 1000);
+      if (await botCheck(port) === undefined) {
+        checks.delete(port);
+        log(`${HOST_LOG_PREFIX} bot-check cleared agent=${agentId} on ${check.host} after ${seconds}s and ${check.taps} tap(s)`);
+      } else if (check.taps % 5 === 0) {
+        log(`${HOST_LOG_PREFIX} bot-check still-shown agent=${agentId} on ${check.host} after ${seconds}s and ${check.taps} tap(s)`);
+      }
+    }
     return { focus: reading.focus };
   };
 }

@@ -102,3 +102,142 @@ test("a helper's actions in one step run one after another, in the order asked",
   const computer = await readFile(path.join(repoRoot, "source/host/runner/tools/sand-computer-tool.ts"), "utf8");
   assert.match(computer, /return inTurn\(\(\) => act\(raw, meta\)\);/);
 });
+
+// Shopify's store sign-in, as read off gelectronic.store on 18 October 2026:
+// the email field and Continue in the page, "Continue with Shop" in
+// <shop-login>'s open shadow root, which holds a frame from another site.
+function signInPage(otherOrigin) {
+  return `<!doctype html><html><body>
+  <h1>Sign in</h1>
+  <input aria-label="Email"><button onclick="this.textContent='Continue pressed'">Continue</button>
+  <shop-login></shop-login>
+  <iframe src="/code" width="320" height="90"></iframe>
+  <iframe src="/hidden" width="0" height="0" style="border:0"></iframe>
+  <script>
+    customElements.define("shop-login", class extends HTMLElement {
+      constructor() {
+        super();
+        const root = this.attachShadow({ mode: "open" });
+        root.innerHTML = '<button onclick="this.textContent=\\'Shop pressed\\'">Continue with Shop</button>'
+          + '<a href="#" onclick="this.textContent=\\'Email chosen\\'; return false">Use email instead</a>'
+          + '<iframe src="${otherOrigin}/shop" width="320" height="90"></iframe>';
+      }
+    });
+  </script>
+</body></html>`;
+}
+
+test("the page reader reads a sign-in drawn in a shadow root and in frames, and the helper clicks and types there (18 October 2026)", { skip: CHROMIUM === undefined ? "no Chromium here" : false, timeout: 90_000 }, async () => {
+  const { createServer } = await import("node:http");
+  const { spawn } = await import("node:child_process");
+  const { writeFile } = await import("node:fs/promises");
+  const { module, dispose } = await load("source/host/runner/tools/sand-browser-driver-source.ts", "driver-frames");
+  // Two sites: the store's page and Shop's frame (localhost and 127.0.0.1 are different sites, so the frame is out of process, as Shop's is).
+  const shop = createServer((request, response) => {
+    response.setHeader("content-type", "text/html");
+    response.end(`<!doctype html><body><button onclick="this.textContent='Frame pressed'">Inside Shop's frame</button></body>`);
+  });
+  await new Promise((resolve) => shop.listen(0, "127.0.0.1", resolve));
+  const store = createServer((request, response) => {
+    response.setHeader("content-type", "text/html");
+    if (request.url === "/code") return response.end(`<!doctype html><body><input aria-label="Sign-in code"></body>`);
+    if (request.url === "/hidden") return response.end(`<!doctype html><body><button>Tracking</button></body>`);
+    response.end(signInPage(`http://127.0.0.1:${shop.address().port}`));
+  });
+  await new Promise((resolve) => store.listen(0, "127.0.0.1", resolve));
+  const dir = await mkdtemp(path.join(os.tmpdir(), "simeon-driver-frames-"));
+  // The driver sits in the tree so it finds playwright-core as on the box; `/.tmp*/` is ignored by git.
+  const driverDir = path.join(repoRoot, `.tmp-driver-${process.pid}`);
+  const driver = path.join(driverDir, "driver.mjs");
+  const port = 9600 + (process.pid % 300);
+  const display = 900 + (process.pid % 90);
+  const chrome = spawn(CHROMIUM, ["--headless=new", "--no-sandbox", "--no-first-run", `--remote-debugging-port=${port}`, `--user-data-dir=${path.join(dir, "profile")}`, "about:blank"], { stdio: "ignore" });
+  const drive = async (request) => {
+    const encoded = Buffer.from(JSON.stringify({ display, cdpPort: port, viewId: "test", ...request })).toString("base64");
+    const child = spawn(process.execPath, [driver, encoded], { stdio: ["ignore", "pipe", "inherit"] });
+    let out = "";
+    child.stdout.on("data", (chunk) => { out += chunk; });
+    await new Promise((resolve) => child.on("exit", resolve));
+    const marker = out.lastIndexOf(module.SAND_BROWSER_RESULT_MARKER);
+    return JSON.parse(out.slice(marker + module.SAND_BROWSER_RESULT_MARKER.length).trim());
+  };
+  try {
+    const { mkdir } = await import("node:fs/promises");
+    await mkdir(driverDir, { recursive: true });
+    await writeFile(driver, module.SAND_BROWSER_DRIVER_SOURCE);
+    for (let tries = 0; tries < 50; tries += 1) {
+      if (await fetch(`http://127.0.0.1:${port}/json/version`).then(() => true, () => false)) break;
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    const opened = await drive({ op: "navigate", url: `http://localhost:${store.address().port}/` });
+    assert.equal(opened.ok, true, JSON.stringify(opened));
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    const read = async () => {
+      const snapshot = await drive({ op: "snapshot" });
+      assert.equal(snapshot.ok, true, JSON.stringify(snapshot));
+      return snapshot.data;
+    };
+    const refOf = (text, label) => {
+      const line = text.split("\n").find((one) => one.includes(label) && one.includes("[ref="));
+      assert.ok(line, `${label} is read:\n${text}`);
+      return /\[ref=([a-z0-9]+)\]/.exec(line)[1];
+    };
+    let page = await read();
+    // The page's own fields, as before.
+    assert.match(refOf(page, 'textbox "Email"'), /^e\d+$/);
+    // The shadow root's button and link, in the page's own refs.
+    const shopButton = refOf(page, 'button "Continue with Shop"');
+    const emailInstead = refOf(page, 'link "Use email instead"');
+    assert.match(shopButton, /^e\d+$/);
+    // The frames shown, each after the page under its site, with refs of their own; the hidden one left out.
+    assert.match(page, /- frame "127\.0\.0\.1"\n {2}- button "Inside Shop's frame" \[ref=f\de1\]/);
+    const codeField = refOf(page, 'textbox "Sign-in code"');
+    assert.match(codeField, /^f\de1$/);
+    assert.ok(!page.includes("Tracking"), page);
+
+    assert.equal((await drive({ op: "click", ref: emailInstead, element: "Use email instead" })).ok, true);
+    assert.equal((await drive({ op: "click", ref: refOf(page, "Inside Shop's frame"), element: "the frame's button" })).ok, true);
+    const filled = await drive({ op: "fill", ref: codeField, value: "482913" });
+    assert.equal(filled.ok, true, JSON.stringify(filled));
+    page = await read();
+    assert.match(page, /link "Email chosen"/);
+    assert.match(page, /button "Frame pressed"/);
+    assert.match(page, /textbox "Sign-in code" \[ref=f\de1\] value="482913"/);
+    // A ref from an earlier snapshot of a frame is refused, not guessed.
+    assert.equal((await drive({ op: "click", ref: "f9e9", element: "nothing" })).ok, false);
+  } finally {
+    chrome.kill("SIGKILL");
+    store.close();
+    shop.close();
+    await rm(driverDir, { recursive: true, force: true });
+    await rm(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+    await rm(`/tmp/.sand-browser/views-${display}.json`, { force: true });
+    await dispose();
+  }
+});
+
+test("bot checks and card fields are never read: the person answers the one, the checkout card types the other", async () => {
+  const { module, dispose } = await load("source/host/runner/tools/sand-browser-driver-source.ts", "driver-skipped-frames");
+  try {
+    const source = module.SAND_BROWSER_DRIVER_SOURCE;
+    const pattern = source.slice(source.indexOf("const SKIPPED_FRAME_HOSTS = ") + "const SKIPPED_FRAME_HOSTS = ".length, source.indexOf(";\n\nfunction readableFrameHost"));
+    const fn = source.slice(source.indexOf("function readableFrameHost"), source.indexOf("\nconst SNAPSHOT_FN"));
+    const readableFrameHost = new Function(`const SKIPPED_FRAME_HOSTS = ${pattern}; ${fn}; return readableFrameHost;`)();
+    for (const url of [
+      "https://challenges.cloudflare.com/cdn-cgi/challenge-platform/h/b/turnstile/if/ov2/av0/rcv/abc",
+      "https://newassets.hcaptcha.com/captcha/v1/abc/static/hcaptcha.html",
+      "https://www.google.com/recaptcha/api2/anchor?k=abc",
+      "https://www.recaptcha.net/recaptcha/api2/anchor",
+      "https://js.stripe.com/v3/elements-inner-card.html",
+      "https://checkout.pci.shopifyinc.com/build/abc/card_fields.html",
+      "https://www.paypal.com/smart/buttons",
+      "about:blank",
+      "javascript:void(0)",
+    ]) assert.equal(readableFrameHost(url), undefined, url);
+    assert.equal(readableFrameHost("https://shop.app/accounts/pre_auth?client_id=x"), "shop.app");
+    assert.equal(readableFrameHost("https://gelectronic.store/services/login_with_shop/authorize"), "gelectronic.store");
+    assert.equal(readableFrameHost("https://www.google.com/maps/embed"), "www.google.com");
+  } finally {
+    await dispose();
+  }
+});

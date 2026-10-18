@@ -243,3 +243,39 @@ test("no Chrome on the agent's display is no keyboard, and the answer waits for 
   assert.deepEqual(await read("agent-1", true), { focus: "" });
   assert.match(lines[1], /^\[simeon\] typing-focus prepared agent=agent-1 port=3 ms=\d+$/);
 });
+
+test("a bot check handed to the person is left alone and watched: the hand-over names it and the way out, and whether it cleared is logged (18 October 2026)", async () => {
+  const focus = await load();
+  // PzDeals' Cloudflare wall, as the founder was handed it: no listener goes into the page or its check frame.
+  assert.equal(focus.isBotCheckTarget({ type: "page", url: "https://www.pzdeals.com/products/dell-se2225h", title: "Just a moment..." }), true);
+  assert.equal(focus.isBotCheckTarget({ type: "iframe", url: "https://challenges.cloudflare.com/cdn-cgi/challenge-platform/h/b/turnstile/if/ov2/av0/rcv/abc", title: "" }), true);
+  assert.equal(focus.isBotCheckTarget({ type: "page", url: "https://www.pzdeals.com/products/dell-se2225h", title: "Dell SE2225H" }), false);
+  assert.equal(focus.isBotCheckTarget({ type: "page", url: "https://gelectronic.store/checkout", title: "Sign in - G-electronic" }), false);
+
+  const wall = { family: "cloudflare_challenge", host: "pzdeals.com" };
+  const answers = [wall, wall, undefined];
+  let asked = 0;
+  const lines = [];
+  const options = { displayFor: () => 4, portFor: (display) => display, settleMs: 0, retryMs: 1, retries: 0, log: (line) => lines.push(line), exitNetwork: async () => "ip=34.1.2.3 colo=SEA loc=US" };
+  const read = focus.createTypingFocus({ ...options, botCheck: async () => answers[Math.min(asked++, answers.length - 1)] });
+  await read("agent-1", true);
+  await read("agent-1");
+  await read("agent-1");
+  await read("agent-1");
+  const checks = lines.filter((line) => line.includes("bot-check"));
+  assert.equal(checks[0], "[simeon] bot-check handed-over agent=agent-1 cloudflare_challenge on pzdeals.com exit ip=34.1.2.3 colo=SEA loc=US");
+  assert.match(checks[1], /^\[simeon\] bot-check cleared agent=agent-1 on pzdeals\.com after \d+s and 2 tap\(s\)$/);
+  assert.equal(checks.length, 2, "nothing more once it cleared");
+
+  // A wall that never clears says so every fifth tap; no wall, no lines.
+  const stuck = [];
+  const stuckRead = focus.createTypingFocus({ ...options, log: (line) => stuck.push(line), botCheck: async () => wall });
+  await stuckRead("agent-2", true);
+  for (let tap = 0; tap < 5; tap += 1) await stuckRead("agent-2");
+  assert.match(stuck.filter((line) => line.includes("bot-check")).at(-1), /^\[simeon\] bot-check still-shown agent=agent-2 on pzdeals\.com after \d+s and 5 tap\(s\)$/);
+  const quiet = [];
+  const quietRead = focus.createTypingFocus({ ...options, log: (line) => quiet.push(line), botCheck: async () => undefined });
+  await quietRead("agent-3", true);
+  await quietRead("agent-3");
+  assert.equal(quiet.filter((line) => line.includes("bot-check")).length, 0);
+});

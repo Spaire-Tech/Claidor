@@ -771,10 +771,36 @@ client, run and held by our server (`server/simeon/desktop/link_wallet.py`, belo
      and the agent is told which it corrected so it quotes the right one. 18 October 2026: on the
      founder's first Claude Haiku 5.5 test the agent quoted a $139.99 monitor at $159.99. A
      product found on a shop's own pages keeps the price the agent read there.
+     **Where the agent shops** (18 October 2026, the founder's third monitor attempt: three
+     stores in six minutes, wholesale-only, a Cloudflare wall and a required sign-in). It
+     searches the big retailers that sell the thing (Amazon, Walmart, Target, Best Buy, Costco;
+     Newegg and B&H for electronics; the brand's own store) with WebSearch and Shop's catalog with
+     SearchProducts, and compares; it prefers a new item from an established store with an
+     ordinary guest checkout over the cheapest listing, passes over wholesale, surplus and
+     liquidation sellers, and offers used only when asked or clearly better
+     (`system-prompt.ts`). Until then the prompt said "use SearchProducts first", and the agent
+     looked nowhere else: Shop's catalog holds only Shopify stores, and for cheap monitors that
+     is surplus, refurbished and trade sellers (measured: 8 of the 20 cheapest were used).
+     SearchProducts now keeps each result's `condition` ("new"/"used") and the seller's own site
+     (`store_site`), and the card adds "(used)" to a catalog product the catalog marks used,
+     whatever the agent wrote (`conditionOf` in `shop-tools.ts`, `withCatalogPrice`).
   1. A browser subagent opens the shop, fills the cart and the delivery details (from
      `get_wallet`: the sole or default address, name, email, phone) and stops at the last step
      before paying, leaving that tab open. The agent tells the person what the order is (Order,
      Delivery, Price, Terms). It never asks which card pays.
+     **A store that wants an account first** (18 October 2026, agreed by the founder): the
+     helper enters the person's email and takes the route that emails a one-time code ("Use
+     email instead", "Email me a code"), never "Continue with Shop", Google, Apple or Facebook,
+     and stops at the code field; the agent reads the code from the person's connected Gmail or
+     Outlook (the newest message with a code from that store or Shopify), or asks them for it in
+     one message, and sends the helper back to type it. No other code: never a password, never
+     a bank's, Link's, Shop's, Apple's or Google's (`system-prompt.ts`, both helpers' rules in
+     `prompt-collector-glue.ts`). **A store that blocks the purchase** (wholesale only, a login
+     to see the price, out of stock, a bot check, a sign-in it can't pass): the agent goes on to
+     the next comparable item it found, same kind and size, new unless they chose used, at the
+     same price or lower, and says in one line what it switched to and why; it asks only when
+     nothing comparable is left. The founder agreed to this ahead of time; the checkout card still
+     shows exactly what would be bought before anything is paid.
   2. `RequestPurchase` first checks the total against the checkout page itself (18 October 2026,
      `shared/node/link-wallet/checkout-total.ts`): it reads the checkout tab's text
      (`readCheckoutText` in `checkout-fill.ts`, the tab `captureCheckout` takes its picture of),
@@ -978,6 +1004,12 @@ Shop's tools and sign-ins the same way, the connected marker being `simeon-shop`
   nothing when it isn't `ready_for_complete` or its total moved, and sends `complete_checkout`
   once with the instrument copied exactly as offered plus `selected: true`; an answer that never
   came back is read again, never sent twice ("Not confirmed" otherwise).
+  Since 18 October 2026 the checkout is opened with the buyer (`checkoutBuyer`): the account's
+  name, and the phone (E.164) and email the agent passes from Link's `get_wallet`, else the
+  account's own when Shop shows them unmasked; at G-electronic Shop's checkout stopped short of
+  a phone number, none sent. A checkout Shop can't finish by itself now gives the agent Shop's
+  own `continue_url` to send the person, unchanged, to review and pay on Shop's page, as Shop's
+  tool asks; until then the agent was sent to the store's site, which wanted the same sign-in.
 - **A spend request.** `create_spend_request` with the store's name and origin, the total in its
   currency as the limit, Shop's totals (shipping as `fulfillment`, a discount negative, one
   `total`), the saved card picked and an intent of 100 to 500 characters with no addresses
@@ -1792,8 +1824,19 @@ helper had finished long before, and sent another helper to check. Now:
   - The desktop helper's first click said `left_click`, Claude's own name for it, and was
     refused. `Computer` now reads Claude's names (`left_click`, `right_click`, `double_click`,
     `triple_click`, `middle_click`, `mouse_move`, `left_click_drag`) as its own.
-  `desktop/tests/helper-actions.test.mjs` (the reader's case in real Chrome, on a page shaped
-  like Shopify's checkout).
+  - The page reader did not look inside shadow roots or frames (18 October 2026, the third
+    attempt). Shopify's store sign-in draws "Continue with Shop", and the panel an email
+    registered with Shop opens, inside `<shop-login>`'s open shadow root, which holds a frame
+    from another site; the helper saw the email field and Continue, and reported Continue with
+    Shop as the only way on. The reader now walks open shadow roots like children, and reads
+    each shown frame after the page in its own document, its refs written `f1e2` (a frame that
+    loaded before the step connected is asked its own address). Bot checks (Cloudflare,
+    hCaptcha, reCAPTCHA, Arkose) and card fields (Stripe, Shopify's card fields, Braintree,
+    Adyen, PayPal) are never read: the person answers the one, the checkout card types the
+    other. On G-electronic's live sign-in it now reads "Continue with Shop" (7 refs, 6 before);
+    the panel after an email registered with Shop was not seen, with no such email to try.
+  `desktop/tests/helper-actions.test.mjs` (the reader's cases in real Chrome, on pages shaped
+  like Shopify's checkout and its store sign-in, run through the driver itself).
 
 This needs no server change and no setting on Render: it is all in the engine, and reaches the
 cloud computers when the founder's agent publishes a new host bundle.
@@ -1942,6 +1985,14 @@ ignores `prepare` and answers by `document.hasFocus()`.
 **When it misbehaves.** Box log, `/tmp/sand-host.log`:
 
 - `[simeon] typing-focus prepared agent=… port=… ms=N` when the person takes control.
+- `[simeon] bot-check handed-over agent=… cloudflare_challenge on <site> exit ip=… colo=…
+  loc=…` when the person takes control with a bot check on screen (18 October 2026): which
+  check, on which site, and the computer's way out as Cloudflare sees it (its address, the
+  Cloudflare data centre and country, read once from `cloudflare.com/cdn-cgi/trace`). Then
+  `bot-check cleared … after Ns and N tap(s)` once the check is gone, or `bot-check
+  still-shown …` every fifth tap while it isn't. A check that never clears for a person's taps
+  points at the computer's address, not at the taps. While the person has control, typing-focus
+  puts no listener in a bot check's page or frame (`isBotCheckTarget`).
 - `[simeon] typing-focus agent=… port=… focus=email|text|…|none by=press|unwatched|none
   frames=N ms=N` after each tap. `by=press`: a listener saw the tap, and `focus` is that
   frame's. `by=unwatched`: a page loaded since the last question, which a press just reached.

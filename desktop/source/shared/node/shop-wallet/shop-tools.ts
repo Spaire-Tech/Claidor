@@ -96,6 +96,8 @@ export const SHOP_TOOLS: readonly LinkToolDefinition[] = [
       merchant_name: string("The store as the person knows it, for the checkout card."),
       product_url: string("The product's page (its url from search_products): what Review order opens."),
       discount_code: string("A discount code the person gave you."),
+      phone: string("The person's phone, from Link's get_wallet: many stores won't take an order without one."),
+      email: string("The person's email, from Link's get_wallet, when Shop's account doesn't show it in full."),
     }, ["shop", "items"]),
   },
   {
@@ -150,15 +152,18 @@ export function shopProductSummary(product: Record<string, unknown>): Record<str
   const was = money(variant.list_price);
   const price = money(variant.price);
   const ratingValue = Number(rating.value);
+  const condition = conditionOf(variant);
   return {
     product_id: text(product.id),
     variant_id: text(variant.id),
     title: text(product.title) || text(variant.title),
     ...(chosen.length > 0 ? { variant: chosen } : {}),
+    ...(condition === undefined ? {} : { condition }),
     ...(price.length > 0 ? { price } : {}),
     ...(was.length > 0 && was !== price ? { was } : {}),
     available: record(variant.availability).available !== false,
     ...(text(seller.name).length > 0 ? { seller: text(seller.name) } : {}),
+    ...(text(seller.url).length > 0 ? { store_site: text(seller.url) } : {}),
     ...(text(seller.domain).length > 0 ? { shop: text(seller.domain) } : {}),
     ...(text(variant.url).length > 0 ? { url: text(variant.url) } : {}),
     ...(image.length > 0 ? { image_url: image } : {}),
@@ -168,7 +173,48 @@ export function shopProductSummary(product: Record<string, unknown>): Record<str
   };
 }
 
-/** The featured variant's price as the catalog gave it, kept for the products card (`catalog-prices.ts`). */
+/**
+ * Who's buying, for Shop's checkout (`buyer`): the account's name, and the
+ * phone and email the agent read from Link's wallet, else the account's own
+ * when Shop shows them in full (it masks them: "a***@example.com"). Many
+ * stores won't take an order without a phone; on 18 October 2026 Shop's
+ * checkout at G-electronic stopped there, with none sent.
+ */
+export function checkoutBuyer(account: Record<string, unknown>, address: Record<string, unknown> | undefined, given: { readonly phone: string; readonly email: string }): Record<string, string> | undefined {
+  const whole = (value: string): string => (value.includes("*") ? "" : value);
+  const phone = e164(given.phone) || e164(whole(text(account.phone_number) || text(account.phone))) || e164(whole(text(address?.phone_number) || text(address?.phone)));
+  const email = (given.email.includes("@") ? given.email : "") || (whole(text(account.email)).includes("@") ? text(account.email) : "");
+  const buyer: Record<string, string> = {
+    ...(text(account.first_name).length > 0 ? { first_name: text(account.first_name) } : {}),
+    ...(text(account.last_name).length > 0 ? { last_name: text(account.last_name) } : {}),
+    ...(email.length > 0 ? { email } : {}),
+    ...(phone.length > 0 ? { phone_number: phone } : {}),
+  };
+  return Object.keys(buyer).length > 0 ? buyer : undefined;
+}
+
+/** A phone in E.164 as Shop asks ("+15551234567"); a ten-digit number is taken as North American. "" when it can't be. */
+export function e164(value: string): string {
+  const digits = value.replace(/[^\d+]/g, "");
+  if (/^\+\d{8,15}$/.test(digits)) return digits;
+  const bare = digits.replace(/\+/g, "");
+  if (bare.length === 10) return `+1${bare}`;
+  if (bare.length === 11 && bare.startsWith("1")) return `+${bare}`;
+  return "";
+}
+
+/**
+ * New or used, as the catalog marks a variant (`condition: ["secondhand"]`).
+ * Kept since 18 October 2026: 8 of the 20 cheapest monitors the founder's
+ * agent was shown were used, and nothing said so.
+ */
+export function conditionOf(variant: Record<string, unknown>): string | undefined {
+  const raw = (Array.isArray(variant.condition) ? variant.condition : [variant.condition]).map((one) => text(one).toLowerCase()).find((one) => one.length > 0);
+  if (raw === undefined) return undefined;
+  return raw === "secondhand" || raw === "used" ? "used" : raw;
+}
+
+/** The featured variant's price (and whether it's used) as the catalog gave it, kept for the products card (`catalog-prices.ts`). */
 export function rememberProductPrice(product: Record<string, unknown>): void {
   const variant = records(product.variants)[0] ?? {};
   const raw = record(variant.price);
@@ -176,7 +222,8 @@ export function rememberProductPrice(product: Record<string, unknown>): void {
   const price = money(variant.price);
   if (text(variant.id).length === 0 || !Number.isFinite(amount) || price.length === 0) return;
   const was = money(variant.list_price);
-  rememberCatalogPrice(text(variant.id), { amount, currency: text(raw.currency).toLowerCase() || "usd", price, ...(was.length > 0 && was !== price ? { was } : {}) });
+  const condition = conditionOf(variant);
+  rememberCatalogPrice(text(variant.id), { amount, currency: text(raw.currency).toLowerCase() || "usd", price, ...(was.length > 0 && was !== price ? { was } : {}), ...(condition === undefined ? {} : { condition }) });
 }
 
 /** Shop's messages, as lines the agent and the person can read. */
@@ -507,9 +554,10 @@ export function createShopTools(options: ShopToolsOptions) {
     if (!read.ok) return { text: `${read.message} Without Shop, buy it in the browser: open the product's page and go through its checkout, then RequestPurchase.`, isError: true };
     const address = preferredAddress(read.value);
     const key = `${shop}\u0000${JSON.stringify(items)}\u0000${now()}`;
+    const buyer = checkoutBuyer(record(read.value.buyer), address, { phone: text(args.phone), email: text(args.email) });
     const created = await client.call("create_checkout", {
       shop,
-      checkout: { line_items: items.map((item) => ({ item: { id: item.id }, quantity: item.quantity })), context: { address_country: text(address?.address_country) || "US" } },
+      checkout: { line_items: items.map((item) => ({ item: { id: item.id }, quantity: item.quantity })), context: { address_country: text(address?.address_country) || "US" }, ...(buyer === undefined ? {} : { buyer }) },
       meta: { "idempotency-key": shopIdempotencyKey(`${key}\u0000create`) },
     }, "required");
     if (!created.ok || created.isError) return answerText(created);
@@ -557,6 +605,16 @@ export function createShopTools(options: ShopToolsOptions) {
       return { text: `The Shop checkout ${handle} is ready. ${summary} Now call RequestPurchase with shop_checkout "${handle}", merchant_name, checkout_url (the product's page), these items and the total; the person checks the card and presses Allow, and Shop places the order with their Shop Pay card. Show every warning above to them first.`, isError: false };
     }
     if (status === "completed") return { text: `Shop says this checkout is already completed. ${summary}`, isError: false };
+    // Shop's own page to review and pay it, which its tool asks to be shared
+    // unchanged (18 October 2026: the agent was sent to the store's site
+    // instead, which wanted the same sign-in Shop had stopped at).
+    const continueUrl = text(doc.continue_url);
+    if (continueUrl.startsWith("https://")) {
+      return {
+        text: `Shop can't finish this checkout by itself (${status || "no status"}). ${summary} Send the person Shop's own page for it, unchanged, as a link to review and pay there (they're signed in to Shop on their phone): ${continueUrl} Say in one line what's in it and why Shop needs them; nothing is paid until they pay on that page. If they'd rather not, go on to the next comparable item.`,
+        isError: false,
+      };
+    }
     return {
       text: `Shop can't finish this checkout by itself (${status || "no status"}). ${summary} Buy it in the browser instead: open the product's page, add it to the cart and go to the store's checkout, then call RequestPurchase as for any store.`,
       isError: false,

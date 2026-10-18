@@ -246,6 +246,7 @@ test("the agents' Shop tools: a trimmed search, an account without secrets, orde
     was: "$179.95",
     available: true,
     seller: "Fit2Run",
+    store_site: "https://www.fit2run.com",
     shop: "53c4f8-91.myshopify.com",
     url: "https://www.fit2run.com/products/on-cloudsurfer-max?variant=50319744696629",
     image_url: "https://cdn.shopify.com/s/files/shoe.png",
@@ -418,6 +419,36 @@ test("a Shopify store is paid through Shop at Allow: the checkout opened with th
   assert.match(refused.text, /Shop isn't connected.*browser/s);
 });
 
+test("Shop's checkout gets the buyer's phone and email, and when it can't finish, the person gets Shop's own page to review and pay (18 October 2026)", async (t) => {
+  // G-electronic: Shop's checkout stopped at a sign-in and a phone number, none sent, and the agent was told to use the browser, where the same sign-in waited.
+  const checkout = {
+    id: "gid://shopify/Checkout/xyz?key=k",
+    status: "incomplete",
+    currency: "USD",
+    line_items: [{ id: "line-1", item: { id: "gid://shopify/ProductVariant/52606573183207", title: "Samsung S27A600UUN", price: 7999 }, quantity: 1 }],
+    totals: [{ type: "total", amount: 7999, display_text: "Total" }],
+    payment: { instruments: [] },
+    messages: [{ type: "error", content: "Sign in to check out.", severity: "requires_buyer_input" }],
+    continue_url: "https://shop.app/checkouts/f/xyz?key=k",
+  };
+  const { shop, wallet, signIn, modules } = await shopFixture(t, { get_account: () => ({ value: ACCOUNT }), create_checkout: () => ({ value: checkout }) });
+  signIn();
+  const prepared = await wallet.call("prepare_checkout", { shop: "g-electronic-9008.myshopify.com", items: [{ variant_id: "gid://shopify/ProductVariant/52606573183207" }], phone: "(555) 123-4567", email: "ada@example.com" });
+  assert.equal(prepared.isError, false);
+  const [created] = shop.tool("create_checkout");
+  assert.deepEqual(created.args.checkout.buyer, { first_name: "Ada", last_name: "Lovelace", email: "ada@example.com", phone_number: "+15551234567" });
+  assert.match(prepared.text, /Send the person Shop's own page for it, unchanged, as a link to review and pay there \(they're signed in to Shop on their phone\): https:\/\/shop\.app\/checkouts\/f\/xyz\?key=k /);
+  assert.doesNotMatch(prepared.text, /Buy it in the browser instead/);
+  // Shop masks the account's own email and phone: a masked one is never sent.
+  const { checkoutBuyer, e164 } = modules.tools;
+  assert.deepEqual(checkoutBuyer(ACCOUNT.buyer, undefined, { phone: "", email: "" }), { first_name: "Ada", last_name: "Lovelace" });
+  assert.deepEqual(checkoutBuyer({ phone_number: "+1***4567" }, { phone_number: "+44 20 7946 0958" }, { phone: "", email: "" }), { phone_number: "+442079460958" });
+  assert.equal(checkoutBuyer({}, undefined, { phone: "", email: "" }), undefined);
+  assert.equal(e164("555-123-4567"), "+15551234567");
+  assert.equal(e164("1 (555) 123 4567"), "+15551234567");
+  assert.equal(e164("12345"), "");
+});
+
 test("the checkout card answers a Shop card with Shop: the spend request goes to Shop, the wake names Shop's tools; a Shop checkout is placed at Allow", async (t) => {
   const tool = await load("source/host/runner/tools/purchase-tool.ts", "shop-purchase-tool");
   const cards = await load("source/host/extensions/transcript/purchase-cards.ts", "shop-purchase-cards");
@@ -541,7 +572,18 @@ test("SearchProducts searches Shop's catalog with no account, and says so where 
 
 test("the agents' instructions and the Shop app's place in the store", async () => {
   const prompt = await readFile(path.join(repoRoot, "source/host/runner/system-prompt.ts"), "utf8");
-  for (const words of ["Shop (MCP server \\\"shop\\\"", "SearchProducts first", "prepare_checkout", "shop_checkout", "Shop always asks in the Shop app"]) assert.ok(prompt.includes(words), words);
+  for (const words of ["Shop (MCP server \\\"shop\\\"", "prepare_checkout", "shop_checkout", "Shop always asks in the Shop app"]) assert.ok(prompt.includes(words), words);
+  // 18 October 2026: Shop's catalog is one place to look, beside the big retailers, never the only one; it was "first" and the agent shopped nowhere else.
+  assert.ok(!prompt.includes("SearchProducts first"));
+  assert.match(prompt, /WebSearch the item at the big retailers that sell it \(for most goods Amazon, Walmart, Target, Best Buy and Costco/);
+  assert.match(prompt, /Prefer a new item from an established store with an ordinary guest checkout over the cheapest listing anywhere/);
+  // The two rules the founder agreed to that day: switch on a blocked store, and a store's emailed sign-in code.
+  assert.match(prompt, /A store that blocks the purchase .* go on to the next comparable item you found .* at the same price or lower/);
+  assert.match(prompt, /A store that wants an account before checkout: take the email route, never \\"Continue with Shop\\"/);
+  assert.match(prompt, /never a password, and never a code from their bank, Link, Shop, Apple or Google/);
+  const glue = await readFile(path.join(repoRoot, "source/host/runner/prompt-collector-glue.ts"), "utf8");
+  assert.equal(glue.split("never tick or solve one yourself").length - 1, 2, "both helpers leave a bot check to the person");
+  assert.equal(glue.split("take the route that emails a one-time code").length - 1, 2, "both helpers take the emailed code at a store's sign-in");
   const catalog = await readFile(path.join(repoRoot, "source/shared/node/vendor-mcp/catalog.ts"), "utf8");
   assert.match(catalog, /id: "shop", name: "Shop", category: G\.Finance, url: "https:\/\/shop\.app", boxCli: "shop"/);
 });

@@ -425,17 +425,53 @@ async function resolvePage(request, context, state) {
 }
 
 async function refHandle(page, ref) {
+  const stale = () => new Error(
+    "Unknown or stale ref " + JSON.stringify(ref) + ". Take a fresh browser_snapshot and use a ref from it."
+  );
+  // A frame's ref (f2e3) lives in that frame's own document, written by the
+  // same snapshot as the page's (its generation).
+  if (typeof ref === "string" && /^f\\d+e\\d+$/.test(ref)) {
+    const generation = await page.evaluate(() => globalThis.__sandRefsGeneration).catch(() => undefined);
+    if (generation === undefined) throw stale();
+    for (const frame of page.frames()) {
+      if (frame === page.mainFrame() || frame.isDetached()) continue;
+      const handle = await withinFrameTime(frame.evaluateHandle(([r, g]) => {
+        const map = globalThis.__sandRefs;
+        return globalThis.__sandRefsGeneration === g && map instanceof Map ? map.get(r) : undefined;
+      }, [ref, generation]).catch(() => undefined));
+      const element = handle === undefined ? null : handle.asElement();
+      if (element !== null) return element;
+    }
+    throw stale();
+  }
   const handle = await page.evaluateHandle((r) => {
     const map = globalThis.__sandRefs;
     return map instanceof Map ? map.get(r) : undefined;
   }, ref);
   const element = handle.asElement();
-  if (element === null) {
-    throw new Error(
-      "Unknown or stale ref " + JSON.stringify(ref) + ". Take a fresh browser_snapshot and use a ref from it."
-    );
-  }
+  if (element === null) throw stale();
   return element;
+}
+
+// A frame still loading can keep a question waiting; none holds a step up for long.
+function withinFrameTime(promise) {
+  return Promise.race([promise, sleep(2000).then(() => undefined)]);
+}
+
+// Frames the page reader leaves out (18 October 2026). A bot check is the
+// person's to answer, never the helper's; card fields are typed by the
+// checkout card, never by a helper.
+const SKIPPED_FRAME_HOSTS = /(^|\\.)(challenges\\.cloudflare\\.com|hcaptcha\\.com|recaptcha\\.net|arkoselabs\\.com|funcaptcha\\.com|js\\.stripe\\.com|stripe\\.network|checkout\\.pci\\.shopifyinc\\.com|shopifycs\\.com|braintreegateway\\.com|adyen\\.com|paypal\\.com)$/;
+
+function readableFrameHost(url) {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return undefined;
+    if (SKIPPED_FRAME_HOSTS.test(parsed.hostname) || parsed.pathname.startsWith("/recaptcha/")) return undefined;
+    return parsed.hostname;
+  } catch {
+    return undefined;
+  }
 }
 
 const SNAPSHOT_FN = (opts) => {
@@ -445,9 +481,11 @@ const SNAPSHOT_FN = (opts) => {
   if (!root) return { lines: ["(no matching element for selector)"], refCount: 0 };
   const refs = new Map();
   globalThis.__sandRefs = refs;
+  globalThis.__sandRefsGeneration = opts.generation;
+  const prefix = typeof opts.prefix === "string" ? opts.prefix : "e";
   let refCounter = 0;
   const lines = [];
-  const maxNodes = 400;
+  const maxNodes = typeof opts.maxNodes === "number" ? opts.maxNodes : 400;
   let nodeCount = 0;
   const interactiveMatcher =
     "a[href], button, input, select, textarea, summary, " +
@@ -504,7 +542,7 @@ const SNAPSHOT_FN = (opts) => {
     if (name) line += " " + JSON.stringify(name);
     if (el.matches(interactiveMatcher) && !el.disabled) {
       refCounter += 1;
-      const ref = "e" + String(refCounter);
+      const ref = prefix + String(refCounter);
       refs.set(ref, el);
       line += " [ref=" + ref + "]";
     }
@@ -532,8 +570,23 @@ const SNAPSHOT_FN = (opts) => {
     // hidden. Shopify's checkout wraps its whole form in one: on 18 October
     // 2026 the reader saw 6 of an Altex checkout's 30 fields and the agent
     // could not fill it.
+    // What a custom element draws sits in its shadow root, which the walk
+    // reads like children (open roots only; a closed one can't be read).
+    // Shopify's store sign-in puts "Continue with Shop" in <shop-login>'s
+    // (18 October 2026): the helper never saw it, nor the way past it.
+    const shadow = el.shadowRoot;
+    const walkInside = (at) => {
+      if (shadow) for (const child of shadow.children) walk(child, at);
+      for (const child of el.children) walk(child, at);
+    };
     if (el.getAttribute("aria-hidden") !== "true" && win.getComputedStyle(el).display === "contents") {
-      for (const child of el.children) walk(child, depth);
+      walkInside(depth);
+      return;
+    }
+    if (shadow && el.getAttribute("aria-hidden") !== "true" && !isVisible(el)) {
+      // A host's own box can be empty while what it draws is not.
+      const style = win.getComputedStyle(el);
+      if (style.display !== "none" && style.visibility !== "hidden") walkInside(depth);
       return;
     }
     if (!isVisible(el)) return;
@@ -547,7 +600,7 @@ const SNAPSHOT_FN = (opts) => {
       childDepth = depth + 1;
       if (isInteractive || isTextual) return;
     }
-    for (const child of el.children) walk(child, childDepth);
+    walkInside(childDepth);
   };
   walk(root, 0);
   if (nodeCount >= maxNodes) lines.push("(snapshot truncated at " + String(maxNodes) + " elements)");
@@ -586,16 +639,43 @@ const OPS = {
   },
   snapshot: async ({ request, context, state }) => {
     const { page, viewId } = await resolvePage(request, context, state);
-    const result = await page.evaluate(SNAPSHOT_FN, {
+    const selector = typeof request.selector === "string" && request.selector.length > 0 ? request.selector : undefined;
+    const base = {
       interactive: request.interactive === true,
       maxDepth: typeof request.maxDepth === "number" ? request.maxDepth : 20,
-      selector: typeof request.selector === "string" && request.selector.length > 0 ? request.selector : undefined,
-    });
-    const data = result.lines.join("\\n");
+      generation: String(Date.now()) + "-" + String(Math.random()).slice(2, 8),
+    };
+    const result = await page.evaluate(SNAPSHOT_FN, { ...base, selector, prefix: "e" });
+    const lines = [...result.lines];
+    let refCount = result.refCount;
+    // Each shown frame is read in its own document, after the page, its refs
+    // written fN eM: a store's sign-in or a widget often sits in one.
+    if (selector === undefined) {
+      let frameNumber = 0;
+      for (const frame of page.frames()) {
+        if (frame === page.mainFrame() || frame.isDetached()) continue;
+        // A frame from another site that loaded before this step connected
+        // has no address here until it navigates again; it knows its own.
+        const url = frame.url() || ((await withinFrameTime(frame.evaluate(() => globalThis.location.href).catch(() => ""))) ?? "");
+        const host = readableFrameHost(url);
+        if (host === undefined) continue;
+        const owner = (await withinFrameTime(frame.frameElement().catch(() => null))) ?? null;
+        const box = owner === null ? null : ((await withinFrameTime(owner.boundingBox().catch(() => null))) ?? null);
+        if (box === null || box.width < 2 || box.height < 2) continue;
+        frameNumber += 1;
+        if (frameNumber > 8) break;
+        const inner = await withinFrameTime(frame.evaluate(SNAPSHOT_FN, { ...base, prefix: "f" + String(frameNumber) + "e", maxNodes: 120 }).catch(() => undefined));
+        if (inner === undefined || inner.refCount === 0) continue;
+        lines.push("- frame " + JSON.stringify(host));
+        for (const line of inner.lines) lines.push("  " + line);
+        refCount += inner.refCount;
+      }
+    }
+    const data = lines.join("\\n");
     return {
       page,
       viewId,
-      summary: "Captured page snapshot (" + String(result.refCount) + " interactive refs)",
+      summary: "Captured page snapshot (" + String(refCount) + " interactive refs)",
       data,
     };
   },

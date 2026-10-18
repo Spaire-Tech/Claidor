@@ -57,11 +57,11 @@ export function buildProductBuyWakePrompt(entryId: string, product: ProductCardI
   const price = product.price == null || product.price.length === 0 ? "" : ` for ${product.price}`;
   const browser = "have a browser subagent put it in the cart and go to the shop's checkout (guest checkout when the shop allows it, contact and delivery details from Link's get_wallet or Shop's get_account), stopping at the last step before paying; ask only for what's missing, in one message; then call RequestPurchase.";
   return [
-    `[The person pressed Buy on the products card (entry ${entryId}): "${product.title}"${who}${price}, ${product.url}. Buy exactly this one, the way every purchase goes:`,
+    `[The person pressed Buy on the products card (entry ${entryId}): "${product.title}"${who}${price}, ${product.url}. Buy this one, the way every purchase goes (if its store blocks the purchase, go on to the next comparable item at the same price or lower, as the purchase steps say):`,
     "say in one short line that you're setting up the checkout;",
     product.shop == null
       ? browser
-      : `it is in Shop's catalog (variant_id "${product.shop.variantId}", shop "${product.shop.domain}"): when Shop is connected, call prepare_checkout on Shop (server "shop") with that shop and variant (quantity 1 unless they said otherwise), merchant_name and product_url "${product.url}", then RequestPurchase with the shop_checkout it gives; when Shop isn't connected or the checkout isn't ready, ${browser}`,
+      : `it is in Shop's catalog (variant_id "${product.shop.variantId}", shop "${product.shop.domain}"): when Shop is connected, call prepare_checkout on Shop (server "shop") with that shop and variant (quantity 1 unless they said otherwise), merchant_name, product_url "${product.url}" and their phone and email from Link's get_wallet, then RequestPurchase with the shop_checkout it gives (or send them Shop's own page to review and pay when it gives one); when Shop isn't connected or the checkout isn't ready, ${browser}`,
     "Don't ask them to confirm again in chat or which card pays: the checkout card does both.]",
   ].join(" ");
 }

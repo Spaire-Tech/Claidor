@@ -93,7 +93,7 @@ export interface PurchaseToolDependencies {
 
 export const showProductsParameters = z.object({
   products: z.array(z.object({
-    title: z.string().trim().min(1).max(200).describe("The product's name as the shop writes it."),
+    title: z.string().trim().min(1).max(200).describe("The product's name as the shop writes it; a used, refurbished or open-box item says so: \"Dell P2217H (refurbished)\"."),
     url: z.string().trim().min(1).describe("The product's own page on the shop (https)."),
     price: z.string().trim().max(40).optional().describe("The price exactly as the shop shows it, with its currency: \"$2.23\". Leave out when the page shows none."),
     seller: z.string().trim().max(120).optional().describe("Who makes or sells it, as the page names them."),
@@ -124,6 +124,8 @@ export function productFromArgs(product: z.infer<typeof showProductsParameters>[
   };
 }
 
+const SAYS_SECOND_HAND = /\b(used|refurb\w*|renewed|pre-?owned|open[- ]box|second[- ]?hand|reconditioned)\b/i;
+
 /**
  * A product from Shop's catalog carries the catalog's own price, whatever the
  * agent wrote (`catalog-prices.ts`, 18 October 2026: the agent quoted a
@@ -135,7 +137,9 @@ export function withCatalogPrice(product: ProductCardItem, nowMs: number): { rea
   if (known == null) return { product };
   const written = product.price ?? "";
   const same = written.length > 0 && moneyAmountsIn(written, known.currency)[0] === known.amount;
-  const priced = { ...product, price: known.price };
+  // A used item says so on the card when the catalog says it is (18 October 2026: nothing did).
+  const secondHand = known.condition !== undefined && known.condition !== "new" && !SAYS_SECOND_HAND.test(product.title);
+  const priced = { ...product, price: known.price, ...(secondHand ? { title: `${product.title} (${known.condition})` } : {}) };
   return same || written.length === 0 ? { product: priced } : { product: priced, correction: `"${product.title}" is ${known.price} (you wrote ${written})` };
 }
 
@@ -189,7 +193,7 @@ export function createSearchProductsTool(deps: PurchaseToolDependencies) {
   return defineCommunicateTool(deps, {
     id: "SEARCH_PRODUCTS",
     name: "SearchProducts",
-    description: "Search millions of stores that run on Shopify (Shop's catalog) for products to buy: each result's title, price as the shop charges it (and the list price when on sale), availability, seller, its photo (image_url), rating, sizes and colours, its page (url), and the variant_id and shop that ShowProducts and Shop's prepare_checkout take. Needs no account. Use it first whenever the person wants to buy something, with hard requirements in the filters (max_price, size, color, ships_to) and the query in their own words; then show what fits with ShowProducts. Stores that don't run on Shopify aren't here: look for those in the browser.",
+    description: "Search Shop's catalog: products from stores that run on Shopify, many of them small, and none of Amazon, Walmart, Target, Best Buy, Costco or Newegg. Each result has its title, condition (new or used), price as the shop charges it (and the list price when on sale), availability, seller and the seller's own site (store_site), its photo (image_url), rating, sizes and colours, its page (url), and the variant_id and shop that ShowProducts and Shop's prepare_checkout take. Needs no account. It is one place to look, not the only one: for most things also WebSearch the big retailers that sell it, and compare. Put hard requirements in the filters (max_price, size, color, ships_to) and the query in the person's own words; then show what fits with ShowProducts.",
     parameters: searchProductsParameters,
     describeActivity: (args: z.infer<typeof searchProductsParameters>) => ({ detail: `Searching shops for ${args.query ?? "similar products"}` }),
     execute: async (_ctx, args: z.infer<typeof searchProductsParameters>, resolved) => {
