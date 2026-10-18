@@ -63,12 +63,13 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 
 /* Hero: one sentence on the left edge, two buttons under it, nothing else. */
 .hero{padding:clamp(40px,8.1vw,162px) 0 0;color:#000}
-.hero h1{max-width:13em;font-family:"Newsreader",Georgia,"Times New Roman",serif;font-size:clamp(36px,2.9vw,58px);line-height:1.04;font-weight:400;letter-spacing:-.02em;text-wrap:balance}
+.hero h1{max-width:13em;font-family:"Newsreader",Georgia,"Times New Roman",serif;font-size:clamp(30px,2.2vw,44px);line-height:1.08;font-weight:400;letter-spacing:-.02em;text-wrap:balance}
 .hero .ctas{display:flex;gap:clamp(10px,.7vw,14px);flex-wrap:wrap;margin-top:clamp(18px,1.6vw,32px)}
-.hero .btn{height:clamp(44px,3.05vw,61px);padding:0 clamp(20px,1.6vw,32px);font-size:clamp(16px,1.15vw,23px)}
+/* The headline and its buttons a size down (18 October 2026). */
+.hero .btn{height:clamp(40px,2.5vw,50px);padding:0 clamp(18px,1.3vw,26px);font-size:clamp(15px,.95vw,19px)}
 /* On a phone the hero breathes (4 October 2026): a long pause under the bar, a headline that leaves air on the right, and room before the app. */
 .hero .btn.go{display:none} /* the phone's one button: Download for iOS, no link until there is an app (6 October 2026) */
-@media (max-width:734px){.hero{padding-top:88px}.hero h1{font-size:31px;line-height:1.1;max-width:11.5em}.hero .ctas{margin-top:26px}.hero .ctas .btn{display:none}.hero .btn.go{display:inline-flex}}
+@media (max-width:734px){.hero{padding-top:88px}.hero h1{font-size:28px;line-height:1.12;max-width:11.5em}.hero .ctas{margin-top:26px}.hero .ctas .btn{display:none}.hero .btn.go{display:inline-flex}}
 .btn .apl{width:1.05em;height:1.05em;margin:-.18em .45em 0 -.1em;flex:none}
 
 /* Section headings and the section anatomy. */
@@ -657,7 +658,7 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .close3{padding:clamp(120px,10vw,200px) 0 clamp(120px,10vw,200px);text-align:center}
 .close3 h2{margin:0 auto;font-family:"Newsreader",Georgia,"Times New Roman",serif;font-weight:400;font-size:clamp(44px,4.4vw,88px);line-height:1;letter-spacing:-.02em}
 .close3 .ctas{display:flex;justify-content:center;gap:clamp(10px,.7vw,14px);flex-wrap:wrap;margin-top:clamp(28px,2.4vw,44px)}
-.close3 .btn{height:clamp(44px,3.05vw,61px);padding:0 clamp(20px,1.6vw,32px);font-size:clamp(16px,1.15vw,23px)}
+.close3 .btn{height:clamp(40px,2.5vw,50px);padding:0 clamp(18px,1.3vw,26px);font-size:clamp(15px,.95vw,19px)}
 .close3 .btn.go{display:none} /* on a phone the close offers Download for iOS, as the top does, and Request a demo beside it (the founder, 12 October 2026) */
 @media (max-width:734px){.close3 .ctas .btn:not(.ghost):not(.go){display:none}.close3 .btn.go{display:inline-flex;order:-1}}
 
