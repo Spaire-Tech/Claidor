@@ -11,4 +11,10 @@ export const SIMEON_WORKING_CONTEXT_TOKENS = 200_000;
 // tokens on every call, and every teammate's reply woke him on all of it.
 // The upstream app read this per model from its own server; ours is fixed.
 // The skills list keeps its budget on the working window above.
-export const SIMEON_SUMMARIZATION_WINDOW_TOKENS = 120_000;
+//
+// 95k since 18 October 2026: summarizing starts at 85k, so a conversation
+// stays under the 100k-token prompt past which Claude Haiku 5.5 costs five
+// times as much (the instructions and tools alone are about 50k). Claude's
+// conversations were never summarized before that day: the loop counted only
+// their uncached tokens (`settleAiSdkStream`).
+export const SIMEON_SUMMARIZATION_WINDOW_TOKENS = 95_000;

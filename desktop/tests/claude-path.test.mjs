@@ -120,7 +120,7 @@ async function drain(result) {
   const parts = [];
   for await (const part of result.fullStream) parts.push(part);
   await result.response;
-  return { parts, usage: await result.extendedUsage };
+  return { parts, usage: await result.extendedUsage, loopUsage: await result.usage };
 }
 
 test("the roles are read off the server's model list, and the defaults hold until then", async () => {
@@ -298,7 +298,7 @@ test("a Claude call carries effort, thinking that survives a rewritten prompt, c
     api.setSimeonModelRolesForTest(CLAUDE_ROLES);
     const session = api.createProviderPromptSession("simeon", { modelId: "gpt-6-sol" });
     assert.equal(session.getModelId(), "claude-sonnet-5-5");
-    const { parts, usage } = await drain(session.getExecutor([{ role: "system", content: "You are Simeon." }, { role: "user", content: "hi" }]).stream(undefined, "inv-1"));
+    const { parts, usage, loopUsage } = await drain(session.getExecutor([{ role: "system", content: "You are Simeon." }, { role: "user", content: "hi" }]).stream(undefined, "inv-1"));
 
     assert.equal(requests.length, 1);
     const [sent] = requests;
@@ -329,6 +329,10 @@ test("a Claude call carries effort, thinking that survives a rewritten prompt, c
 
     // 40 fresh, 9,000 read and 1,200 written: the server meters each at its own price.
     assert.deepEqual({ ...usage, maxTokens: undefined }, { inputTokens: 40, outputTokens: 25, cacheReadTokens: 9_000, cacheWriteTokens: 1_200, maxTokens: undefined });
+    // The loop sizes the conversation (and summarizes it) by the whole prompt,
+    // not the 40 uncached tokens the AI SDK counts for Claude (18 October 2026).
+    assert.equal(loopUsage.promptTokens, 10_240);
+    assert.equal(loopUsage.totalTokens, 10_265);
     const line = lines.find((one) => one.startsWith("[simeon] model=claude-sonnet-5-5"));
     assert.ok(line, lines.join("\n"));
     assert.match(line, / effort=high input=10240 cached=9000 output=25 /);

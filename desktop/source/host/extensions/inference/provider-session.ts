@@ -829,7 +829,18 @@ function settleAiSdkStream(result: ReturnType<typeof streamText>, invocationId: 
     return { inputTokens: Math.max(0, prompt - cached - written), outputTokens: value.completionTokens, cacheReadTokens: cached, cacheWriteTokens: written, maxTokens };
   });
   if (onUsage != null) void extendedUsage.then(onUsage, () => undefined);
-  return { fullStream, response: race(result.response), usage: race(result.usage), extendedUsage, providerMetadata: race(result.providerMetadata), invocationId: Promise.resolve(invocationId) };
+  // The loop sizes the conversation by this count and summarizes from it
+  // (SIMEON_SUMMARIZATION_WINDOW_TOKENS). The AI SDK's Anthropic count is the
+  // uncached part only, so on Claude the loop saw 1-3k tokens a step and never
+  // summarized (18 October 2026: 125k sent on every call); it is the whole
+  // prompt here, as OpenAI's is.
+  const usage = wire === "anthropic"
+    ? Promise.all([race(result.usage), metadata]).then(([value, provider]) => {
+      const prompt = claudeUsage(value.promptTokens, provider).prompt;
+      return { ...value, promptTokens: prompt, totalTokens: prompt + value.completionTokens };
+    })
+    : race(result.usage);
+  return { fullStream, response: race(result.response), usage, extendedUsage, providerMetadata: race(result.providerMetadata), invocationId: Promise.resolve(invocationId) };
 }
 
 function aiSdkExecutor(model: LanguageModelV1, messages: readonly ProviderMessage[], invocationId: string, definitions?: readonly Loose[], executeTool?: RoutedToolExecutor, onUsage?: (usage: UsageRecord) => void, maxTokens = 0, openaiOptions: Record<string, unknown> = {}, callInfo?: { readonly model: string; readonly effort: string; readonly budget?: string }, onRequestId?: (requestId: string) => void, promptCacheKey?: string, onCutOff?: () => void, wire: SimeonWire = "openai") {

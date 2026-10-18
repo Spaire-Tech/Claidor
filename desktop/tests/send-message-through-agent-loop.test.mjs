@@ -88,14 +88,16 @@ const GREETING = "Hey, I'm New Agent. What would you like to tackle first?";
 // One product turn: the real Agent on the real tool session, with the real
 // SendMessage tool, its delivery going through the real transport. `ingest`
 // stands for the transcript manager's handleAgentUpdate.
-async function runTurn(loaded, { ingest, firstCallArgs = { type: "text", content: GREETING } }) {
+async function runTurn(loaded, { ingest, firstCallArgs = { type: "text", content: GREETING }, respond }) {
   const { module: m, dataDir } = loaded;
   const requests = [];
   const hostLog = [];
   m.setHostLogSink((line) => hostLog.push(line));
   m.setSimeonCredentialSource({ getAccessToken: async () => "simeon_da_loop" });
-  globalThis.fetch = async (_input, init) => {
-    requests.push(JSON.parse(init?.body ?? "{}"));
+  globalThis.fetch = async (input, init) => {
+    const body = JSON.parse(init?.body ?? "{}");
+    requests.push(body);
+    if (respond != null) return respond({ url: typeof input === "string" ? input : input.url, headers: new Headers(init?.headers), body }, requests);
     // Step one: the model greets through SendMessage. Then it writes text
     // and the loop ends, if it was told the message landed or not.
     return requests.length === 1
@@ -318,6 +320,66 @@ test("an acknowledgement marked final:false keeps the turn going", async () => {
     });
     assert.equal(turn.requests.length, 2);
   } finally {
+    console_.restore();
+    globalThis.fetch = previousFetch;
+    unpin();
+    await loaded.dispose();
+  }
+});
+
+// Claude's Messages stream: one tool_use or one text block, with the usage
+// Claude reports (fresh, read from the cache and written to it apart).
+function claudeStream(n, { toolUse, text, usage }) {
+  const block = toolUse !== undefined
+    ? [
+      { type: "content_block_start", index: 0, content_block: { type: "tool_use", id: `toolu_${n}`, name: toolUse.name, input: {} } },
+      { type: "content_block_delta", index: 0, delta: { type: "input_json_delta", partial_json: JSON.stringify(toolUse.input) } },
+    ]
+    : [
+      { type: "content_block_start", index: 0, content_block: { type: "text", text: "" } },
+      { type: "content_block_delta", index: 0, delta: { type: "text_delta", text } },
+    ];
+  return sse([
+    { type: "message_start", message: { id: `msg_${n}`, type: "message", role: "assistant", model: "claude-haiku-5-5", content: [], usage: { output_tokens: 1, cache_creation_input_tokens: 0, ...usage } } },
+    ...block,
+    { type: "content_block_stop", index: 0 },
+    { type: "message_delta", delta: { stop_reason: toolUse !== undefined ? "tool_use" : "end_turn" }, usage: { output_tokens: 30 } },
+    { type: "message_stop" },
+  ]);
+}
+
+test("on Claude, a conversation past the summary line is summarized: the loop counts the cached prompt (18 October 2026)", async () => {
+  // The founder's Haiku checkout sent 115k to 125k tokens on every call and
+  // nothing summarized it: the AI SDK counts only Claude's uncached tokens,
+  // so the loop saw 500 here and never reached 85k.
+  const loaded = await loadHarness();
+  const previousFetch = globalThis.fetch;
+  const console_ = captureConsole();
+  try {
+    pin(loaded.dataDir);
+    loaded.module.setSimeonModelRolesForTest({ primary: "claude-haiku-5-5", cheap: "claude-haiku-5-5", fallback: "gpt-6-sol" });
+    const reasons = [];
+    let mainCalls = 0;
+    const turn = await runTurn(loaded, {
+      ingest: (update) => (update.type === "send-message" ? "t1s1" : undefined),
+      respond: ({ url, headers }) => {
+        assert.equal(url, "https://api.simeonlabs.com/desktop/api/proxy/v1/messages");
+        const reason = headers.get("x-simeon-call-reason");
+        reasons.push(reason);
+        if (reason === "summary") return claudeStream(90, { text: "<summary>The person said hi and the agent greeted them.</summary>", usage: { input_tokens: 2_000, cache_read_input_tokens: 0 } });
+        mainCalls += 1;
+        // 500 fresh and 90,000 read from the cache: a 90.5k prompt.
+        return mainCalls === 1
+          ? claudeStream(1, { toolUse: { name: "SendMessage", input: { type: "text", content: GREETING } }, usage: { input_tokens: 500, cache_read_input_tokens: 90_000 } })
+          : claudeStream(mainCalls, { text: "done", usage: { input_tokens: 600, cache_read_input_tokens: 90_000 } });
+      },
+    });
+    assert.ok(turn.requests.length >= 2, reasons.join(","));
+    // The summary runs beside the loop; give it a moment to be asked for.
+    for (let waited = 0; !reasons.includes("summary") && waited < 5_000; waited += 50) await new Promise((resolve) => setTimeout(resolve, 50));
+    assert.ok(reasons.includes("summary"), `a summary was asked for (calls: ${reasons.join(",")})`);
+  } finally {
+    loaded.module.setSimeonModelRolesForTest({});
     console_.restore();
     globalThis.fetch = previousFetch;
     unpin();

@@ -535,13 +535,20 @@ three minutes):
   Before, each message was a turn of its own on the whole conversation, as in
   the upstream app: the Chief of Staff, at 161k tokens a call, took one per
   teammate reply.
-- **A long conversation is summarized from about 108k tokens, not 180k.**
-  Summarization reads `SIMEON_SUMMARIZATION_WINDOW_TOKENS` (120,000;
-  `shared/inference/simeon-context-window.ts`): it starts at 90% and the
-  summary is swapped in at 95%. Above 150k a turn waits for the summary. The
-  skills list keeps its budget on the 200k working window. The upstream app
-  read the window per model from its server; ours is fixed. The cost: older
-  detail is compressed sooner.
+- **A long conversation is summarized from 85k tokens, under Claude Haiku
+  5.5's 100k price step.** Summarization reads
+  `SIMEON_SUMMARIZATION_WINDOW_TOKENS` (95,000 since 18 October 2026, 120,000
+  before; `shared/inference/simeon-context-window.ts`): it starts at 90% and
+  the summary is swapped in once it is ready. Above about 119k a turn waits for
+  the summary. The instructions and tools alone are about 50k, so about 35k of
+  conversation stays word for word. The skills list keeps its budget on the
+  200k working window. The upstream app read the window per model from its
+  server; ours is fixed. The cost: older detail is compressed sooner.
+  Until 18 October 2026 a conversation on Claude was never summarized: the
+  AI SDK counts Claude's uncached tokens only, so the loop saw 1–3k a step
+  while 115k–125k was sent (the founder's Haiku checkout log). The loop now
+  reads the whole prompt (`settleAiSdkStream`, `provider-session.ts`), as it
+  does on OpenAI.
 - **An agent with no routines gets a pointer to the routines guide, not the
   guide.** About 16,000 characters (3,900 tokens) came off each of its calls;
   the guide is `/home/box/reference/routines.md`, written with the other
