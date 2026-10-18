@@ -2041,9 +2041,9 @@ struct ProductsCardView: View {
     .background(look.dark ? Color(hex: 0x2c2c2e) : look.theirs, in: RoundedRectangle(cornerRadius: 20))
     .clipShape(RoundedRectangle(cornerRadius: 20))
     .sheet(item: $open) { product in
-      MacProductSheet(product: product, agentId: agentId, agentName: store.agent(agentId)?.name ?? "", status: card.shown(pressed: store.pressedProducts[entryId]).status(of: product), look: look) {
+      MacProductSheet(entryId: entryId, agentId: agentId, agentName: store.agent(agentId)?.name ?? "", card: card, look: look, current: product) { chosen in
         open = nil
-        Task { await store.buyProduct(entryId, index: product.index, in: agentId) }
+        Task { await store.buyProduct(entryId, index: chosen.index, in: agentId) }
       }
     }
   }
@@ -2085,44 +2085,254 @@ private struct MacProductPicture: View {
   }
 }
 
-/** One product, opened: its picture, who sells it, its name and price, Buy with <agent> in the blue, View website, Close. */
+/**
+ * One product, opened, as a store's page: the iPhone's (18 October 2026, the
+ * founder's screenshots of Muse) in a sheet. Its picture large, "Sold by",
+ * its name and price, "Buy with <agent>" in a light blue capsule and View
+ * website, what it is in three lines with See more, its stars under
+ * Reviews, and the card's other products under More like this, each opening
+ * in place. Escape or the X closes it.
+ */
 private struct MacProductSheet: View {
-  let product: ProductsCard.Product
+  let entryId: String
   let agentId: String
   let agentName: String
-  let status: ProductsCard.Status?
+  let card: ProductsCard
   let look: Look
-  let buy: () -> Void
+  @State var current: ProductsCard.Product
+  let buy: (ProductsCard.Product) -> Void
+  @Environment(AppStore.self) private var store
   @Environment(\.openURL) private var openURL
   @Environment(\.dismiss) private var dismiss
 
+  private var ink: Color { look.dark ? Color(hex: 0xf5f5f7) : Color(hex: 0x1d1d1f) }
+  private var grey: Color { look.dark ? Color(hex: 0x98989d) : Color(hex: 0x6e6e73) }
+  private var hairline: Color { look.dark ? Color.white.opacity(0.1) : Color.black.opacity(0.08) }
+
   var body: some View {
-    let ink = look.dark ? Color(hex: 0xf5f5f7) : Color(hex: 0x1d1d1f)
-    let grey = look.dark ? Color(hex: 0x98989d) : Color(hex: 0x6e6e73)
-    let blue = look.dark ? Color(hex: 0x2f6db0) : Color(hex: 0x255a93)
-    VStack(alignment: .leading, spacing: 16) {
-      MacProductPicture(url: product.imageURL, agentId: agentId, look: look, fit: true)
-        .frame(maxWidth: .infinity).frame(height: 260)
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-      VStack(alignment: .leading, spacing: 4) {
-        Text(product.byline).font(.system(size: 13)).foregroundStyle(grey)
-        Text(product.title).font(.system(size: 20, weight: .semibold)).foregroundStyle(ink).fixedSize(horizontal: false, vertical: true)
-        if let price = product.price { Text(price).font(.system(size: 15, weight: .medium)).foregroundStyle(ink).monospacedDigit() }
-        if let detail = product.detail { Text(detail).font(.system(size: 13)).foregroundStyle(grey).fixedSize(horizontal: false, vertical: true).padding(.top, 2) }
+    let shown = card.shown(pressed: store.pressedProducts[entryId])
+    let product = shown.products.first { $0.index == current.index } ?? current
+    let status = shown.status(of: product)
+    let others = shown.others(than: product)
+    ScrollViewReader { reader in
+      ScrollView {
+        VStack(alignment: .leading, spacing: 0) {
+          MacProductPicture(url: product.imageURL, agentId: agentId, look: look, fit: true)
+            .frame(maxWidth: .infinity).frame(height: 280)
+            .id("top")
+          VStack(alignment: .leading, spacing: 0) {
+            Text(product.soldBy).font(.system(size: 13)).foregroundStyle(grey).lineLimit(1)
+            Text(product.title).font(.system(size: 22)).foregroundStyle(ink).fixedSize(horizontal: false, vertical: true).padding(.top, 4)
+            if let price = product.price {
+              MacProductPrice(price: price, listPrice: product.listPrice, ink: ink, grey: grey, size: 16).padding(.top, 6)
+            }
+            MacProductBuyButton(label: status?.label ?? ProductsCard.buyLabel(agent: agentName), status: status, look: look, ink: ink) { buy(product) }
+              .padding(.top, 18)
+            Button { openURL(product.url) } label: {
+              Text(ProductsCard.viewWebsite).font(.system(size: 15)).foregroundStyle(ink)
+                .frame(maxWidth: .infinity).frame(height: 36).contentShape(Rectangle())
+            }
+            .buttonStyle(.hand)
+            .padding(.top, 4)
+            if let detail = product.detail {
+              MacProductDescription(text: detail, ink: ink, grey: grey).padding(.top, 20).id("about-\(product.index)")
+            }
+            if !product.stars.isEmpty {
+              Text(ProductsCard.reviews).font(.system(size: 16, weight: .semibold)).foregroundStyle(ink).padding(.top, 26)
+              Button { openURL(product.url) } label: { MacProductReviewsRow(product: product, agentId: agentId, look: look, ink: ink, grey: grey, hairline: hairline) }
+                .buttonStyle(.hand)
+                .padding(.top, 10)
+                .help("Opens the reviews on the shop's page")
+            }
+          }
+          .padding(.horizontal, 20)
+          .padding(.top, 16)
+          if !others.isEmpty {
+            Text(ProductsCard.moreLikeThis).font(.system(size: 16, weight: .semibold)).foregroundStyle(ink)
+              .padding(.horizontal, 20).padding(.top, 26)
+            ScrollView(.horizontal, showsIndicators: false) {
+              HStack(alignment: .top, spacing: 14) {
+                ForEach(others) { other in
+                  Button { current = other } label: { MacProductTile(product: other, agentId: agentId, look: look, ink: ink, grey: grey, hairline: hairline) }
+                    .buttonStyle(.hand)
+                }
+              }
+              .padding(.horizontal, 20)
+            }
+            .padding(.top, 10)
+          }
+        }
+        .padding(.bottom, 24)
       }
-      HStack(spacing: 10) {
-        Button("Close") { dismiss() }.keyboardShortcut(.cancelAction)
-        Spacer()
-        Button(ProductsCard.viewWebsite) { openURL(product.url) }
-        Button(status?.label ?? ProductsCard.buyLabel(agent: agentName), action: buy)
-          .keyboardShortcut(.defaultAction)
-          .tint(status == .bought ? look.added : blue)
-          .buttonStyle(.borderedProminent)
-          .disabled(status != nil)
-      }
-      .controlSize(.large)
+      .onChange(of: current.index) { withAnimation(.snappy) { reader.scrollTo("top", anchor: .top) } }
     }
-    .padding(20)
-    .frame(width: 440)
+    .tracking(-0.15)
+    .frame(width: 460, height: 680)
+    .background(look.dark ? Color(hex: 0x1e1e1e) : Color.white)
+    .overlay(alignment: .topTrailing) {
+      Button { dismiss() } label: {
+        Image(systemName: "xmark").font(.system(size: 12, weight: .semibold)).foregroundStyle(ink)
+          .frame(width: 28, height: 28)
+          .background(look.dark ? Color(hex: 0x3a3a3c) : Color.white, in: Circle())
+          .shadow(color: .black.opacity(0.15), radius: 4, y: 1)
+          .contentShape(Circle())
+      }
+      .buttonStyle(.hand)
+      .keyboardShortcut(.cancelAction)
+      .padding(12)
+      .help("Close")
+    }
+  }
+}
+
+/** Buy with <agent> in the light blue capsule; Buying faded while it is under way, Bought in green once ordered. Return presses it. */
+private struct MacProductBuyButton: View {
+  let label: String
+  let status: ProductsCard.Status?
+  let look: Look
+  let ink: Color
+  let action: () -> Void
+
+  var body: some View {
+    let bought = status == .bought
+    let blue: Color = look.dark ? Color(hex: 0x1e3c5c) : Color(hex: 0xbcdcfb)
+    let wash: Color = bought ? look.addedWash : blue.opacity(status == nil ? 1 : 0.55)
+    Button(action: action) {
+      Text(label)
+        .font(.system(size: 15, weight: .medium))
+        .foregroundStyle(bought ? look.added : ink)
+        .frame(maxWidth: .infinity).frame(height: 38)
+        .background(wash, in: Capsule())
+        .contentShape(Capsule())
+    }
+    .buttonStyle(.hand)
+    .disabled(status != nil)
+    .keyboardShortcut(.defaultAction)
+  }
+}
+
+/** The Reviews row: the product's picture in a framed square, its name, its stars. */
+private struct MacProductReviewsRow: View {
+  let product: ProductsCard.Product
+  let agentId: String
+  let look: Look
+  let ink: Color
+  let grey: Color
+  let hairline: Color
+
+  var body: some View {
+    HStack(spacing: 12) {
+      MacProductPicture(url: product.imageURL, agentId: agentId, look: look, fit: true)
+        .frame(width: 48, height: 48)
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(hairline, lineWidth: 1))
+      VStack(alignment: .leading, spacing: 3) {
+        Text(product.title).font(.system(size: 14)).foregroundStyle(ink).lineLimit(1)
+        MacProductStars(product: product, ink: ink, grey: grey)
+      }
+      .frame(maxWidth: .infinity, alignment: .leading)
+    }
+    .contentShape(Rectangle())
+  }
+}
+
+/** A price, and the price before the sale struck through after it in grey. */
+private struct MacProductPrice: View {
+  let price: String
+  let listPrice: String?
+  let ink: Color
+  let grey: Color
+  var size: CGFloat = 13
+
+  var body: some View {
+    HStack(spacing: 4) {
+      Text(price).foregroundStyle(ink)
+      if let listPrice { Text(listPrice).strikethrough().foregroundStyle(grey) }
+    }
+    .font(.system(size: size))
+    .monospacedDigit()
+    .lineLimit(1)
+  }
+}
+
+/** Five stars to the nearest half, then "4.5" and "(153)". */
+private struct MacProductStars: View {
+  let product: ProductsCard.Product
+  let ink: Color
+  let grey: Color
+
+  var body: some View {
+    HStack(spacing: 5) {
+      HStack(spacing: 1) {
+        ForEach(Array(product.stars.enumerated()), id: \.offset) { _, star in
+          Image(systemName: star == .full ? "star.fill" : star == .half ? "star.leadinghalf.filled" : "star")
+            .font(.system(size: 12))
+            .foregroundStyle(Color(hex: 0xf5a524))
+        }
+      }
+      if let rating = product.ratingText { Text(rating).foregroundStyle(ink.opacity(0.7)) }
+      if let reviews = product.reviewsText { Text(reviews).foregroundStyle(grey) }
+    }
+    .font(.system(size: 13))
+    .monospacedDigit()
+  }
+}
+
+/** What the product is, in three lines with See more when there is more; `**bold**` drawn bold. */
+private struct MacProductDescription: View {
+  let text: String
+  let ink: Color
+  let grey: Color
+  @State private var open = false
+  @State private var whole: CGFloat = 0
+  @State private var shown: CGFloat = 0
+
+  var body: some View {
+    let words = (try? AttributedString(markdown: text, options: AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace))) ?? AttributedString(text)
+    VStack(alignment: .leading, spacing: 4) {
+      Text(words)
+        .font(.system(size: 14))
+        .foregroundStyle(ink)
+        .lineLimit(open ? nil : 3)
+        .fixedSize(horizontal: false, vertical: true)
+        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { shown = $0 }
+        .background(alignment: .topLeading) {
+          Text(words).font(.system(size: 14)).fixedSize(horizontal: false, vertical: true).hidden()
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { whole = $0 }
+        }
+      if open || whole > shown + 1 {
+        Button { withAnimation(.snappy) { open.toggle() } } label: {
+          Text(open ? ProductsCard.seeLess : ProductsCard.seeMore).font(.system(size: 14)).foregroundStyle(grey)
+        }
+        .buttonStyle(.hand)
+      }
+    }
+    .frame(maxWidth: .infinity, alignment: .leading)
+  }
+}
+
+/** One of More like this: its picture in a framed square, its name, who sells it, its price. */
+private struct MacProductTile: View {
+  let product: ProductsCard.Product
+  let agentId: String
+  let look: Look
+  let ink: Color
+  let grey: Color
+  let hairline: Color
+  static let side: CGFloat = 120
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 2) {
+      MacProductPicture(url: product.imageURL, agentId: agentId, look: look, fit: true)
+        .frame(width: Self.side, height: Self.side)
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(hairline, lineWidth: 1))
+        .padding(.bottom, 6)
+      Text(product.title).font(.system(size: 13, weight: .semibold)).foregroundStyle(ink).lineLimit(1)
+      Text(product.byline).font(.system(size: 13)).foregroundStyle(grey).lineLimit(1)
+      if let price = product.price { MacProductPrice(price: price, listPrice: product.listPrice, ink: ink, grey: grey) }
+    }
+    .frame(width: Self.side, alignment: .leading)
+    .contentShape(Rectangle())
   }
 }

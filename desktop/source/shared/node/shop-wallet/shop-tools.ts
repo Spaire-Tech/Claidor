@@ -223,7 +223,16 @@ export function rememberProductPrice(product: Record<string, unknown>): void {
   if (text(variant.id).length === 0 || !Number.isFinite(amount) || price.length === 0) return;
   const was = money(variant.list_price);
   const condition = conditionOf(variant);
-  rememberCatalogPrice(text(variant.id), { amount, currency: text(raw.currency).toLowerCase() || "usd", price, ...(was.length > 0 && was !== price ? { was } : {}), ...(condition === undefined ? {} : { condition }) });
+  const rating = record(variant.rating ?? product.rating);
+  const stars = Number(rating.value), reviews = Number(rating.count);
+  rememberCatalogPrice(text(variant.id), {
+    amount,
+    currency: text(raw.currency).toLowerCase() || "usd",
+    price,
+    ...(was.length > 0 && was !== price ? { was } : {}),
+    ...(condition === undefined ? {} : { condition }),
+    ...(Number.isFinite(stars) && stars > 0 ? { rating: Math.round(stars * 10) / 10, ...(Number.isInteger(reviews) && reviews > 0 ? { reviews } : {}) } : {}),
+  });
 }
 
 /** Shop's messages, as lines the agent and the person can read. */

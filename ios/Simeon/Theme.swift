@@ -94,6 +94,10 @@ enum Ink {
   /** The call button's glyph (`.simeon-call-button`). */
   static let callGlyph = Color.dynamic(light: "#255a93", dark: "#8cb8e8")
   static let link = Color.dynamic(light: "#0c64c1", dark: "#459ffe")
+  /** An opened product's Buy capsule, a light blue with dark words on it, and its stars (18 October 2026, the founder's store screenshots). */
+  static let storeBuy = Color.dynamic(light: "#bcdcfb", dark: "#1e3c5c")
+  static let storeBuyText = Color.dynamic(light: "#141414", dark: "#fcfcfc")
+  static let stars = Color(RGB(hex: "#f5a524"))
   static let codeInk = Color.dynamic(light: "#c21d2e", dark: "#ff6b78")
   static let codeTint = Color.dynamic(light: "#77777717", dark: "#ffffff17")
   /** The reaction pill under a bubble. */

@@ -775,7 +775,20 @@ client, run and held by our server (`server/simeon/desktop/link_wallet.py`, belo
      agent went on to a like item, that product goes into `productsBought`. Any other ending
      (denied, failed, canceled, expired, or ordered somewhere not on the card) only clears
      `productsBuying`, so the card never says Buying with nothing under way and Buy can be pressed
-     again. A bought product's Buy is refused and its sheet's button says Bought. Log line:
+     again. A bought product's Buy is refused and its sheet's button says Bought.
+     Opened, a product is a store's page (18 October 2026, the founder's screenshots of Muse:
+     "inside i want it to be like this. like a store"; `ProductSheet` on the iPhone,
+     `MacProductSheet` on the Mac): its picture large under the close button, "Sold by: <seller or
+     shop>", its name and price (the sale's list price struck through after it), "Buy with
+     <agent>" in a light blue capsule and View website under it, what it is in three lines with
+     See more (`**bold**` drawn bold), a Reviews row (its picture, name, stars to the nearest half,
+     "4.5 (153)"; a tap opens the shop's page), and More like this: the card's other products
+     side by side, each opening in the same sheet. `ShowProducts` takes `list_price`, `rating`
+     and `review_count`, and a `description` of two or three sentences (up to 600 characters). For
+     a product from Shop's search the list price and the stars are the catalog's own, kept with
+     its price (`catalog-prices.ts`); a list price the catalog doesn't have is dropped. The
+     screenshots showed no price for the opened product itself; it is shown here under the name.
+     Log line:
      `[purchase] products card <agent>/<entry>: product N bought` (or `no longer buying (<state> at
      <domain>)`).
      A product from Shop's search (it carries `shop_variant_id`) shows the price Shop's catalog

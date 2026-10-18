@@ -34,6 +34,36 @@ final class ProductsCardTests: XCTestCase {
     XCTAssertEqual(Chat.cardText(Self.message), "Practice Book \"The Ways Of Water\" · $2.23")
   }
 
+  func testTheOpenedProductReadsAsAStorePage() throws {
+    let message: JSON = ["type": "products", "content": "Element 24\" · $99.99", "products": [
+      ["title": "Element 24\" 1080P FHD IPS Display Computer Monitor", "url": "https://officedepot.com/a/element-24", "domain": "officedepot.com", "price": "$99.99", "listPrice": "$119.99", "seller": "Office Depot", "rating": 4.46, "reviewCount": 153, "description": "A reliable choice. It has a **100Hz refresh rate**."],
+      ["title": "Element 27\" 1080P", "url": "https://element.com/27", "price": "$123.84", "listPrice": "$123.84", "seller": "Element", "reviewCount": 12],
+      ["title": "Element 24\" 100Hz", "url": "https://element.com/24", "price": "$100.26", "rating": 4, "reviewCount": 0],
+    ]]
+    let raw: JSON = ["id": "t9s1", "kind": "send-message", "timestampMs": 1, "message": message]
+    guard case .products(_, let card) = try XCTUnwrap(Chat.row(for: Entry(raw)!)) else { return XCTFail("not a products card") }
+    let monitor = card.products[0]
+    XCTAssertEqual(monitor.soldBy, "Sold by: Office Depot")
+    XCTAssertEqual(monitor.listPrice, "$119.99")
+    XCTAssertEqual(monitor.ratingText, "4.5")
+    XCTAssertEqual(monitor.reviewsText, "(153)")
+    XCTAssertEqual(monitor.stars, [.full, .full, .full, .full, .half])
+    XCTAssertEqual(monitor.detail, "A reliable choice. It has a **100Hz refresh rate**.", "the bold stays for the page to draw")
+    XCTAssertNil(card.products[1].listPrice, "no struck price equal to the price")
+    XCTAssertNil(card.products[1].rating)
+    XCTAssertNil(card.products[1].reviewsText, "no review count without stars")
+    XCTAssertEqual(card.products[1].soldBy, "Sold by: Element")
+    XCTAssertEqual(card.products[2].ratingText, "4.0")
+    XCTAssertNil(card.products[2].reviewsText)
+    XCTAssertEqual(card.products[2].stars, [.full, .full, .full, .full, .empty])
+    XCTAssertEqual(ProductsCard.Product(index: 0, title: "x", url: URL(string: "https://a.com")!, domain: "a.com", rating: 4.2).stars, [.full, .full, .full, .full, .empty])
+    XCTAssertEqual(ProductsCard.Product(index: 0, title: "x", url: URL(string: "https://a.com")!, domain: "a.com", rating: 0.7).stars, [.half, .empty, .empty, .empty, .empty])
+    XCTAssertEqual(card.others(than: monitor).map(\.index), [1, 2], "More like this: the card's other products")
+    XCTAssertEqual(ProductsCard.moreLikeThis, "More like this")
+    XCTAssertEqual(ProductsCard.reviews, "Reviews")
+    XCTAssertEqual(ProductsCard.seeMore, "See more")
+  }
+
   func testBuyShowsAtOnceAndTheComputersCopyWins() throws {
     let card = try card()
     XCTAssertEqual(card.shown(pressed: 0).buying, 0, "Buy shows at once")

@@ -98,7 +98,10 @@ export const showProductsParameters = z.object({
     price: z.string().trim().max(40).optional().describe("The price exactly as the shop shows it, with its currency: \"$2.23\". Leave out when the page shows none."),
     seller: z.string().trim().max(120).optional().describe("Who makes or sells it, as the page names them."),
     image_url: z.string().trim().optional().describe("The product's own picture from its page (https; og:image or the main product photo, or Shop's image_url), never a made-up or generic one."),
-    description: z.string().trim().max(200).optional().describe("One short line: format, size, what's included."),
+    description: z.string().trim().max(600).optional().describe("What it is and why it fits, in two or three sentences from its page (the opened product shows the first lines, then See more); **bold** the one or two facts that matter most: \"It has a **100Hz refresh rate** that makes scrolling feel smooth.\""),
+    list_price: z.string().trim().max(40).optional().describe("Only when it's on sale: the price before the sale, as the shop shows it struck through (\"$119.99\"), or Shop's was."),
+    rating: z.number().min(0).max(5).optional().describe("Its stars out of five, as the shop or Shop's rating shows them (4.5). Leave out when the page shows none."),
+    review_count: z.number().int().min(0).optional().describe("How many reviews that rating is from (153)."),
     shop_variant_id: z.string().trim().optional().describe("For a product from Shop's search_products: its variant_id, so Buy can check out through Shop."),
     shop: z.string().trim().optional().describe("For a product from Shop's search_products: its shop (the store's Shopify domain)."),
   })).min(1).max(6).describe("What you found, best first: one product when there is one to buy, up to six to choose from."),
@@ -112,6 +115,8 @@ export function productFromArgs(product: z.infer<typeof showProductsParameters>[
   const image = (product.image_url ?? "").trim();
   const price = product.price ?? "", seller = product.seller ?? "", description = product.description ?? "";
   const variantId = product.shop_variant_id ?? "", shop = (product.shop ?? "").replace(/^https?:\/\//, "").replace(/\/.*$/, "").toLowerCase();
+  const listPrice = product.list_price ?? "";
+  const rating = product.rating != null && product.rating > 0 ? Math.round(product.rating * 10) / 10 : undefined;
   return {
     title: product.title,
     url,
@@ -120,6 +125,8 @@ export function productFromArgs(product: z.infer<typeof showProductsParameters>[
     ...(seller.length > 0 ? { seller } : {}),
     ...(/^https:\/\/\S+$/i.test(image) ? { imageUrl: image } : {}),
     ...(description.length > 0 ? { description } : {}),
+    ...(listPrice.length > 0 && listPrice !== price ? { listPrice } : {}),
+    ...(rating === undefined ? {} : { rating, ...(product.review_count != null && product.review_count > 0 ? { reviewCount: product.review_count } : {}) }),
     ...(variantId.length > 0 && shop.length > 0 ? { shop: { variantId, domain: shop } } : {}),
   };
 }
@@ -139,7 +146,10 @@ export function withCatalogPrice(product: ProductCardItem, nowMs: number): { rea
   const same = written.length > 0 && moneyAmountsIn(written, known.currency)[0] === known.amount;
   // A used item says so on the card when the catalog says it is (18 October 2026: nothing did).
   const secondHand = known.condition !== undefined && known.condition !== "new" && !SAYS_SECOND_HAND.test(product.title);
-  const priced = { ...product, price: known.price, ...(secondHand ? { title: `${product.title} (${known.condition})` } : {}) };
+  // The sale's list price and the stars are the catalog's too: no list price there, none on the card.
+  const { listPrice: _written, rating: _stars, reviewCount: _reviews, ...rest } = product;
+  const rated = known.rating === undefined ? { ...(product.rating === undefined ? {} : { rating: product.rating }), ...(product.reviewCount === undefined ? {} : { reviewCount: product.reviewCount }) } : { rating: known.rating, ...(known.reviews === undefined ? {} : { reviewCount: known.reviews }) };
+  const priced: ProductCardItem = { ...rest, price: known.price, ...(known.was === undefined ? {} : { listPrice: known.was }), ...rated, ...(secondHand ? { title: `${product.title} (${known.condition})` } : {}) };
   return same || written.length === 0 ? { product: priced } : { product: priced, correction: `"${product.title}" is ${known.price} (you wrote ${written})` };
 }
 

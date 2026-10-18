@@ -17,6 +17,9 @@ export interface CatalogPrice {
   readonly was?: string;
   /** "new", "used" or "refurbished", when the catalog says. */
   readonly condition?: string;
+  /** Its stars out of five and how many reviews, when the catalog has them: the opened product's Reviews row. */
+  readonly rating?: number;
+  readonly reviews?: number;
   readonly seenAtMs: number;
 }
 

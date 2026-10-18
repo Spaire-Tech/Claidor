@@ -146,6 +146,43 @@ test("a products card shows the price Shop's catalog gave, not the agent's copy 
   }
 });
 
+test("the opened product's page in a store's layout: the sale's list price and the stars, Shop's own for a catalog product (18 October 2026)", async () => {
+  const { module, dispose } = await load("tests/fixtures/purchase-prices-entry.ts", "prices-store-page");
+  try {
+    module.forgetCatalogPricesForTest();
+    // As the catalog answers: the rating on the variant, the list price when on sale.
+    module.rememberProductPrice({ id: "gid://shopify/Product/24", title: "Element 24\" 1080P FHD IPS Monitor", variants: [{ id: "gid://shopify/ProductVariant/24", price: { amount: 9999, currency: "USD" }, list_price: { amount: 11999, currency: "USD" }, rating: { value: 4.46, count: 153 } }] });
+    module.rememberProductPrice({ id: "gid://shopify/Product/27", title: "Element 27\" Monitor", variants: [{ id: "gid://shopify/ProductVariant/27", price: { amount: 12384, currency: "USD" } }] });
+    assert.equal(module.catalogPriceFor("24").rating, 4.5);
+    assert.equal(module.catalogPriceFor("24").reviews, 153);
+    let card;
+    const tool = module.createShowProductsTool({ emitCard: (posted) => { card = posted; return "t5s0"; }, capturePreview: async () => undefined, checkoutFacts: () => undefined, markPurchaseDone: async () => ({ ok: true }) });
+    const description = "This 24-inch monitor is a straightforward, reliable choice for daily office work and casual streaming. It features a **100Hz refresh rate** that makes scrolling and video playback feel smooth, and an IPS panel that keeps colours true from any angle.";
+    const said = await run(tool, { products: [
+      // The agent wrote stars and a list price; the catalog's own win.
+      { title: "Element 24\" 1080P FHD IPS Monitor", url: "https://officedepot.example/products/element-24", price: "$99.99", list_price: "$129.99", rating: 4, review_count: 9, description, shop_variant_id: "24", shop: "officedepot.myshopify.com" },
+      // The catalog has no sale and no stars: none on the card, whatever the agent wrote.
+      { title: "Element 27\" Monitor", url: "https://element.example/products/27", price: "$123.84", list_price: "$150.00", shop_variant_id: "27", shop: "element.myshopify.com" },
+      // A shop's own page: what the agent read there.
+      { title: "Element 24\" 100Hz", url: "https://other.example/element-24", price: "$100.26", list_price: "$124.12", rating: 4.25, review_count: 40, seller: "Element Electronics" },
+      { title: "Same price twice", url: "https://other.example/twice", price: "$50.00", list_price: "$50.00", rating: 0 },
+    ] });
+    assert.equal(JSON.parse(said).success != null, true, said);
+    const [first, second, third, fourth] = card.products;
+    assert.deepEqual([first.price, first.listPrice, first.rating, first.reviewCount], ["$99.99", "$119.99", 4.5, 153]);
+    assert.equal(first.description, description, "a few sentences, bold kept");
+    assert.deepEqual([second.listPrice, second.rating, second.reviewCount], [undefined, undefined, undefined]);
+    assert.deepEqual([third.listPrice, third.rating, third.reviewCount], ["$124.12", 4.3, 40]);
+    assert.deepEqual([fourth.listPrice, fourth.rating], [undefined, undefined], "no list price equal to the price, no zero stars");
+    // Shop's search result names them for the agent too.
+    const summary = module.shopProductSummary({ id: "gid://shopify/Product/24", title: "Element", variants: [{ id: "24", price: { amount: 9999, currency: "USD" }, list_price: { amount: 11999, currency: "USD" }, rating: { value: 4.46, count: 153 } }] });
+    assert.equal(summary.was, "$119.99");
+    assert.equal(summary.rating, "4.46 (153 reviews)");
+  } finally {
+    await dispose();
+  }
+});
+
 test("a used item says so: Shop's catalog marks it and the card shows it, whatever the agent wrote (18 October 2026)", async () => {
   const { module, dispose } = await load("tests/fixtures/purchase-prices-entry.ts", "prices-condition");
   try {

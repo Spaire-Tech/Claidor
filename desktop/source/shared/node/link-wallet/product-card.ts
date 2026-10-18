@@ -23,8 +23,19 @@ export interface ProductCardItem {
   readonly seller?: string;
   /** The product's own picture on the shop (https). */
   readonly imageUrl?: string;
-  /** One line: format, size, what's in it. */
+  /** What it is, in a few sentences (the opened product's page shows the first lines, then See more); `**bold**` for the key facts. */
   readonly description?: string;
+  /**
+   * The price before a sale, as the shop shows it struck through: "$119.99".
+   * With the star rating and how many reviews, for the opened product's page
+   * in a store's layout (18 October 2026, the founder after Muse: "inside i
+   * want it to be like this. like a store").
+   */
+  readonly listPrice?: string;
+  /** Stars out of five, as the shop shows them: 4.5. */
+  readonly rating?: number;
+  /** How many reviews the rating is from: 153. */
+  readonly reviewCount?: number;
   /**
    * The product as Shop's catalog knows it (14 October 2026, `shop-tools.ts`
    * `search_products`): the featured variant and the store's Shopify domain,
