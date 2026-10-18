@@ -629,7 +629,7 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 }
 
 /* Pricing, questions and the closing call: the same serif headline and pale panels as the trust section. */
-/* Pricing: Trial, Standard, Pro and Max on the pale panels (the founder, 4 October 2026): the name, who it is for, the price in Switzer, the week's credits under it, what the plan includes, a small button at the foot. */
+/* Pricing: Trial, Standard, Pro and Max on the pale panels (the founder, 4 October 2026): the name, who it is for, the price in Switzer, what the plan includes (the credits under the price taken off, 18 October 2026), a small button at the foot. */
 @font-face{font-family:"Switzer";src:url(fonts/switzer-400.woff2) format("woff2");font-weight:400;font-style:normal;font-display:swap}
 .plans3{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:22px;margin-top:clamp(40px,4vw,80px)}
 .plan3{display:flex;flex-direction:column;padding:clamp(28px,2.4vw,44px) clamp(24px,2.1vw,40px);border-radius:28px;background:#fafafb}
@@ -637,7 +637,6 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .plan3 .tag{margin:4px 0 0;font-size:clamp(14px,.9vw,17px);letter-spacing:-.01em;color:var(--ink3)}
 .plan3 .pr{margin-top:clamp(18px,1.6vw,30px);font-family:"Switzer",var(--font);font-weight:400;font-size:clamp(40px,3vw,60px);line-height:1;letter-spacing:-.03em;color:var(--ink)}
 .plan3 .pr small{font-family:var(--font);font-weight:400;font-size:clamp(14px,.9vw,17px);letter-spacing:-.01em;color:var(--ink2);margin-left:5px}
-.plan3 .per{margin-top:10px;font-size:clamp(14px,.9vw,17px);line-height:1.45;letter-spacing:-.01em;color:var(--ink3)}
 .plan3 .inc{margin:clamp(20px,1.8vw,34px) 0 0;padding-top:clamp(18px,1.6vw,28px);border-top:1px solid #ececef;font-size:clamp(15px,.95vw,17.5px);letter-spacing:-.01em;color:var(--ink3)}
 .plan3 ul{list-style:none;margin:12px 0 clamp(26px,2.4vw,40px);padding:0;display:grid;gap:9px;align-content:start;font-size:clamp(15px,.98vw,18px);line-height:1.4;letter-spacing:-.01em;color:#3a3a3c}
 .plan3 li{display:flex;gap:9px;align-items:flex-start}
@@ -645,7 +644,7 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .plan3 .btn{align-self:flex-start;margin-top:auto;height:clamp(36px,2.3vw,42px);padding:0 clamp(16px,1.1vw,20px);font-size:clamp(14px,.95vw,16px)}
 .plan3 .btn.ghost{background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.06)}
 .plan3 .btn.ghost:hover{background:#f2f2f4}
-@supports (grid-template-rows:subgrid){.plans3{grid-template-rows:repeat(7,auto)}.plan3{display:grid;grid-template-rows:subgrid;row-gap:0;grid-row:span 7;align-content:start}.plan3 .btn{margin-top:0;align-self:start;justify-self:start}}
+@supports (grid-template-rows:subgrid){.plans3{grid-template-rows:repeat(6,auto)}.plan3{display:grid;grid-template-rows:subgrid;row-gap:0;grid-row:span 6;align-content:start}.plan3 .btn{margin-top:0;align-self:start;justify-self:start}}
 @media (max-width:1068px){.plans3{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:734px){.plans3{grid-template-columns:1fr;gap:14px}.plan3{border-radius:24px}}
 .qa3{margin-top:clamp(40px,4vw,80px);padding:clamp(12px,1.2vw,24px) clamp(28px,3vw,56px);border-radius:28px;background:#fafafb}
@@ -1108,7 +1107,7 @@ footer a:hover{color:var(--ink)}
     <div class="trust-top">
       <h2>Pricing</h2>
     </div>
-    <div class="plans3"><div class="plan3"><h3>Trial</h3><p class="tag">For the first month</p><div class="pr">Free<small>/ 30 days</small></div><p class="per">5,000,000 credits once.</p><p class="inc">Includes:</p><ul><li>Every agent and every feature</li><li>A cloud computer for each agent</li><li>Card on file, one trial per card</li><li>Becomes Standard on day 31 unless you cancel</li></ul><a class="btn" href="https://app.simeonlabs.com/billing?plan=standard">Try it free</a></div><div class="plan3"><h3>Standard</h3><p class="tag">For a light week of work</p><div class="pr">$30<small>/ month</small></div><p class="per">5,000,000 credits a week.</p><p class="inc">Everything in the trial, plus:</p><ul><li>Routines that run while your Mac is closed</li><li>Discord and Slack channels, voice calls</li><li>Memory shared across your agents</li><li>Keep going past the week&#8217;s allowance on demand</li></ul><a class="btn" href="https://app.simeonlabs.com/billing?plan=standard">Get Standard</a></div><div class="plan3"><h3>Pro</h3><p class="tag">For agents working every day</p><div class="pr">$100<small>/ month</small></div><p class="per">17,500,000 credits a week.</p><p class="inc">Everything in Standard, plus:</p><ul><li>3.5 times the weekly work of Standard</li><li>Room for routines that run every day</li></ul><a class="btn" href="https://app.simeonlabs.com/billing?plan=pro">Get Pro</a></div><div class="plan3"><h3>Max</h3><p class="tag">For a team of agents that never stops</p><div class="pr">$200<small>/ month</small></div><p class="per">60,000,000 credits a week.</p><p class="inc">Everything in Pro, plus:</p><ul><li>Twelve times the weekly work of Standard</li><li>Agents on routines all week long</li><li>Our highest allowance</li></ul><a class="btn" href="https://app.simeonlabs.com/billing?plan=max">Get Max</a></div></div>
+    <div class="plans3"><div class="plan3"><h3>Trial</h3><p class="tag">For the first month</p><div class="pr">Free<small>/ 30 days</small></div><p class="inc">Includes:</p><ul><li>Every agent and every feature</li><li>A cloud computer for each agent</li><li>Card on file, one trial per card</li><li>Becomes Standard on day 31 unless you cancel</li></ul><a class="btn" href="https://app.simeonlabs.com/billing?plan=standard">Try it free</a></div><div class="plan3"><h3>Standard</h3><p class="tag">For a light week of work</p><div class="pr">$30<small>/ month</small></div><p class="inc">Everything in the trial, plus:</p><ul><li>Routines that run while your Mac is closed</li><li>Discord and Slack channels, voice calls</li><li>Memory shared across your agents</li><li>Keep going past the week&#8217;s allowance on demand</li></ul><a class="btn" href="https://app.simeonlabs.com/billing?plan=standard">Get Standard</a></div><div class="plan3"><h3>Pro</h3><p class="tag">For agents working every day</p><div class="pr">$100<small>/ month</small></div><p class="inc">Everything in Standard, plus:</p><ul><li>3.5 times the weekly work of Standard</li><li>Room for routines that run every day</li></ul><a class="btn" href="https://app.simeonlabs.com/billing?plan=pro">Get Pro</a></div><div class="plan3"><h3>Max</h3><p class="tag">For a team of agents that never stops</p><div class="pr">$200<small>/ month</small></div><p class="inc">Everything in Pro, plus:</p><ul><li>Twelve times the weekly work of Standard</li><li>Agents on routines all week long</li><li>Our highest allowance</li></ul><a class="btn" href="https://app.simeonlabs.com/billing?plan=max">Get Max</a></div></div>
   </div>
 </section>
 
