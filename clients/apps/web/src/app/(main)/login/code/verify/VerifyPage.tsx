@@ -1,7 +1,6 @@
 'use client'
 
 import { CONFIG } from '@/utils/config'
-import Button from '@simeon/ui/components/atoms/Button'
 import {
   InputOTP,
   InputOTPGroup,
@@ -54,7 +53,7 @@ const ClientPage = ({
     <Form {...form}>
       <form
         ref={formRef}
-        className="flex w-full flex-col items-center gap-y-6"
+        className="flex w-full flex-col items-center gap-y-5"
         action={`${CONFIG.BASE_URL}/v1/login-code/authenticate?${urlSearchParams.toString()}`}
         method="POST"
         onSubmit={onSubmit}
@@ -85,7 +84,7 @@ const ClientPage = ({
                         <InputOTPSlot
                           key={index}
                           index={index}
-                          className="h-12 w-12 border-gray-300 text-xl md:h-16 md:w-16 md:text-2xl"
+                          className="h-12 w-11 border-[#d9d9de] bg-white text-xl text-[#1d1d1f] sm:h-14 sm:w-12 sm:text-2xl"
                         />
                       ))}
                     </InputOTPGroup>
@@ -96,9 +95,13 @@ const ClientPage = ({
             )
           }}
         />
-        <Button type="submit" size="lg" className="w-full" loading={loading}>
-          Sign in
-        </Button>
+        <button
+          type="submit"
+          disabled={loading}
+          className="h-[50px] w-full rounded-full bg-black text-[16px] sm:h-[52px] sm:text-[17px] font-medium tracking-[-0.01em] text-white transition-colors hover:bg-[#1d1d1f] disabled:opacity-60"
+        >
+          {loading ? 'Signing in…' : 'Sign in'}
+        </button>
       </form>
     </Form>
   )

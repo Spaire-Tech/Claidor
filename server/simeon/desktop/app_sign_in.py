@@ -346,6 +346,19 @@ async def login_deep_control(
     return_to = settings.generate_external_url(f"/loginDeepControl?{urlencode(kept)}")
 
     if not is_user(auth_subject):
+        if provider not in PROVIDERS:
+            # The Mac names no way in: the web app's sign-in page (the
+            # founder, 18 October 2026: Google, Apple and e-mail on one
+            # page), each of whose ways comes back here with the session
+            # cookie set. The iPhone's buttons name theirs and go straight
+            # to it, below.
+            return RedirectResponse(
+                settings.generate_frontend_url(
+                    f"/login?return_to={quote(return_to, safe='')}"
+                ),
+                303,
+                headers=NO_STORE,
+            )
         way = _provider(provider)
         if way == "apple" and not apple_sign_in_ready():
             google = settings.generate_external_url(

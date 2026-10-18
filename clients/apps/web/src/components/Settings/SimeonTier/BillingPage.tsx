@@ -1,9 +1,9 @@
 'use client'
 
+import LogoType from '@/components/Brand/LogoType'
 import { toast } from '@/components/Toast/use-toast'
 import {
   CurrentSubscription,
-  formatCredits,
   formatDollarAmount,
   hasPlan,
   PAID_TIERS,
@@ -117,13 +117,9 @@ const BillingPage = ({
         href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400&display=swap"
       />
       <header className={styles.bar}>
-        <a href="https://simeonlabs.com" aria-label="Simeon">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            className={styles.wordmark}
-            src="/assets/logotype-simeon.png"
-            alt="Simeon"
-          />
+        {/* The company's wordmark, as on the website's bar and the sign-in. */}
+        <a href="https://simeonlabs.com" aria-label="SimeonLabs">
+          <LogoType labs height={34} className={styles.wordmark} />
         </a>
         {email && (
           <span className={styles.who}>
@@ -237,37 +233,30 @@ const AllSet = ({
 
 // --- "Choose your plan" / "Adjust your plan" -------------------------------
 
-/** The site's pricing cards, word for word (sites/simeonlabs.com, #pricing). */
-const CARD_COPY: Record<
-  PaidTierKey,
-  { tag: string; includes: string; lines: string[] }
-> = {
+/**
+ * The site's pricing cards (sites/simeonlabs.com, #pricing). The site's
+ * Trial card is not here, every plan starts with its free month, so
+ * Standard lists the trial's lines and its own together.
+ */
+const CARD_COPY: Record<PaidTierKey, { includes: string; lines: string[] }> = {
   standard: {
-    tag: 'For a light week of work',
-    includes: 'Everything in the trial, plus:',
+    includes: 'Includes:',
     lines: [
-      'Routines that run while your Mac is closed',
-      'Discord and Slack channels, voice calls',
-      'Memory shared across your agents',
-      'Keep going past the week’s allowance on demand',
+      'Each agent’s own computer',
+      'Signs into your tools',
+      'Routines on a schedule',
+      'Slack, Discord and voice calls',
+      'Work anywhere: Mac and iPhone',
+      'Weekly usage, more on demand',
     ],
   },
   pro: {
-    tag: 'For agents working every day',
     includes: 'Everything in Standard, plus:',
-    lines: [
-      '3.5 times the weekly work of Standard',
-      'Room for routines that run every day',
-    ],
+    lines: ['3.5x Standard usage', 'For agents busy every day'],
   },
   max: {
-    tag: 'For a team of agents that never stops',
     includes: 'Everything in Pro, plus:',
-    lines: [
-      'Twelve times the weekly work of Standard',
-      'Agents on routines all week long',
-      'Our highest allowance',
-    ],
+    lines: ['12x Standard usage', 'Our highest allowance'],
   },
 }
 
@@ -367,6 +356,7 @@ const AdjustPlan = ({
               key={item.tier}
               plan={item}
               current={current}
+              trial={!subscribed}
               label={label}
               busy={pending !== null}
               pending={pending === item.tier}
@@ -390,6 +380,7 @@ const AdjustPlan = ({
 const PlanCard = ({
   plan,
   current,
+  trial,
   label,
   busy,
   pending,
@@ -397,6 +388,8 @@ const PlanCard = ({
 }: {
   plan: Plan
   current: boolean
+  /** No plan yet: choosing one starts its free month. */
+  trial: boolean
   label: string
   busy: boolean
   pending: boolean
@@ -409,28 +402,15 @@ const PlanCard = ({
         <h3>{tierDisplayName(plan.tier)}</h3>
         {current && <span className={styles.badge}>Current plan</span>}
       </div>
-      <p className={styles.tag}>{copy.tag}</p>
       <div className={styles.price}>
         ${formatDollarAmount(plan.monthly_price_cents)}
         <small>/ month</small>
       </div>
-      <p className={styles.per}>
-        {formatCredits(plan.weekly_credits)} credits a week.
+      <p className={styles.billed}>
+        {trial
+          ? `Free for ${plan.trial_days} days, then monthly`
+          : 'Billed monthly'}
       </p>
-      <div className={styles.trial}>
-        <div className={styles.trialPrice}>
-          Free<small>/ {plan.trial_days} days</small>
-        </div>
-        <p className={styles.per}>
-          {formatCredits(plan.trial_credits)} credits once.
-        </p>
-      </div>
-      <p className={styles.inc}>{copy.includes}</p>
-      <ul>
-        {copy.lines.map((line) => (
-          <li key={line}>{line}</li>
-        ))}
-      </ul>
       {current ? (
         <button
           type="button"
@@ -449,6 +429,12 @@ const PlanCard = ({
           {pending ? 'One moment…' : label}
         </button>
       )}
+      <p className={styles.inc}>{copy.includes}</p>
+      <ul>
+        {copy.lines.map((line) => (
+          <li key={line}>{line}</li>
+        ))}
+      </ul>
     </div>
   )
 }

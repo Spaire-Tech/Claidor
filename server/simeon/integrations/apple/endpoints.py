@@ -1,5 +1,6 @@
 import secrets
 from typing import Any
+from urllib.parse import urlencode
 
 from fastapi import Depends, Form, Request
 from fastapi.responses import RedirectResponse
@@ -11,6 +12,7 @@ from httpx_oauth.oauth2 import GetAccessTokenError
 from simeon.auth.dependencies import WebUserOrAnonymous
 from simeon.auth.models import is_user
 from simeon.auth.service import auth as auth_service
+from simeon.config import settings
 from simeon.exceptions import NotPermitted
 from simeon.integrations.loops.service import loops as loops_service
 from simeon.kit.http import ReturnTo
@@ -47,6 +49,27 @@ async def apple_authorize(
 ) -> RedirectResponse:
     if is_user(auth_subject):
         raise NotPermitted()
+
+    if not all(
+        (
+            settings.APPLE_CLIENT_ID,
+            settings.APPLE_TEAM_ID,
+            settings.APPLE_KEY_ID,
+            settings.APPLE_KEY_VALUE,
+        )
+    ):
+        # Sign in with Apple is not set up on this server yet (the same
+        # four settings as `apple_sign_in_ready` in simeon.desktop.app_sign_in):
+        # back to the web sign-in page, which says so and keeps the way home,
+        # rather than an error from Apple (18 October 2026: the page's
+        # Continue with Apple).
+        return RedirectResponse(
+            settings.generate_frontend_url(
+                "/login?"
+                + urlencode({"return_to": return_to, "error": "apple_unavailable"})
+            ),
+            303,
+        )
 
     state: dict[str, Any] = {"return_to": return_to}
     if signup_attribution:

@@ -206,8 +206,9 @@ def sign_in_url(request: Request, return_to: str, provider: str = "google") -> s
     """Where a browser with no session goes to sign in: the API's own
     Google sign-in, or its Apple one when the iPhone's Continue with Apple
     asked for it (9 October 2026), either coming back to `return_to` with
-    the session cookie set. There is no web app in front of the Mac app (6
-    October 2026), so nothing here sends anyone to one."""
+    the session cookie set. The Mac's sign-in link names no way and goes
+    to the web app's sign-in page instead (`/loginDeepControl`, 18 October
+    2026); the iPhone's buttons name theirs and come here."""
     path = request.app.url_path_for(
         "integrations.apple.authorize"
         if provider == "apple"

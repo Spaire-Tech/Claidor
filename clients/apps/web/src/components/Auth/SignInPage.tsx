@@ -1,20 +1,22 @@
 'use client'
 
-import LogoType from '@/components/Brand/LogoType'
+import AuthShell, { Legal } from '@/components/Auth/AuthShell'
+import { LoginCodeError, useSendLoginCode } from '@/hooks/loginCode'
 import { usePostHog, type EventName } from '@/hooks/posthog'
-import { getGoogleAuthorizeLoginURL } from '@/utils/auth'
-import Link from 'next/link'
-import { useEffect, useMemo } from 'react'
+import { getAppleAuthorizeURL, getGoogleAuthorizeLoginURL } from '@/utils/auth'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 
-// The web app's sign-in and sign-up (4 October 2026, the founder: "based
-// on our website design. something simple like cursor. but in light.
-// SimeonLabs up there, google only for now"). Where the Mac app sends a
-// person to sign up, and where the web window sends a person who is not
-// signed in. One column, centred, on the website's type and colours:
-// the SimeonLabs wordmark top left, a serif heading, a line under it,
-// the pill button, and Terms and Privacy at the foot. It works at phone
-// width: the column is the viewport minus the gutters.
-const GoogleMark = () => (
+// The web app's sign-in and sign-up, after Claude's (the founder, 18
+// October 2026: "with continue with apple, google, email etc. just remove
+// the download mac"): the heading and its line in the website's serif, then
+// one card with Continue with Google, Continue with Apple, "OR", the e-mail
+// and Continue with email, and the Terms and Privacy line. Each way comes
+// back to `returnTo`; from the Mac app that is its own sign-in link on the
+// API (`/loginDeepControl`), which then asks "Continue as …" and hands the
+// app its session. The e-mail way sends a six-character code
+// (`/login/code/verify`). The photo and the phone's single column are the
+// frame's (AuthShell).
+export const GoogleMark = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 48 48"
@@ -41,17 +43,43 @@ const GoogleMark = () => (
   </svg>
 )
 
+const AppleMark = () => (
+  <svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true">
+    <path
+      fill="currentColor"
+      d="M16.37 12.6c-.03-2.6 2.12-3.85 2.22-3.91-1.21-1.77-3.09-2.01-3.76-2.04-1.6-.16-3.12.94-3.93.94-.81 0-2.06-.92-3.39-.89-1.74.03-3.35 1.01-4.25 2.57-1.81 3.14-.46 7.79 1.3 10.34.86 1.25 1.89 2.65 3.24 2.6 1.3-.05 1.79-.84 3.36-.84 1.57 0 2.01.84 3.39.81 1.4-.02 2.29-1.27 3.14-2.52.99-1.45 1.4-2.85 1.42-2.92-.03-.01-2.73-1.05-2.74-4.14zM13.79 4.97c.72-.87 1.2-2.07 1.07-3.27-1.03.04-2.28.69-3.02 1.55-.66.77-1.24 1.99-1.09 3.17 1.15.09 2.32-.58 3.04-1.45z"
+    />
+  </svg>
+)
+
+/** Why a way in came back without signing in (`?error=`), in the page's own words. */
+const PROBLEMS: Record<string, string> = {
+  apple_unavailable:
+    'Sign in with Apple is coming soon. Continue with Google or your email for now.',
+}
+
+const provider =
+  'flex h-[50px] w-full items-center justify-center gap-3 rounded-full border border-[#d9d9de] bg-white text-[16px] font-medium tracking-[-0.01em] text-[#1d1d1f] transition-colors hover:bg-[#f5f5f7] sm:h-[52px] sm:text-[17px]'
+
 const SignInPage = ({
   mode,
   returnTo,
   returnParams,
+  error,
 }: {
   mode: 'login' | 'signup'
   returnTo?: string
   returnParams?: Record<string, string>
+  error?: string
 }) => {
   const posthog = usePostHog()
   const signup = mode === 'signup'
+  const sendLoginCode = useSendLoginCode()
+  const [email, setEmail] = useState('')
+  const [sending, setSending] = useState(false)
+  const [problem, setProblem] = useState<string | undefined>(
+    error ? (PROBLEMS[error] ?? 'That sign-in did not go through. Try again.') : undefined,
+  )
 
   const resolvedReturnTo = useMemo(() => {
     const path = returnTo ?? '/app'
@@ -69,60 +97,96 @@ const SignInPage = ({
     posthog.capture(event, { returnTo: resolvedReturnTo })
   }, [posthog, resolvedReturnTo, signup])
 
+  const attribution = signup ? JSON.stringify({ intent: 'creator' }) : undefined
   const googleUrl = getGoogleAuthorizeLoginURL({
     return_to: resolvedReturnTo,
-    ...(signup ? { attribution: JSON.stringify({ intent: 'creator' }) } : {}),
+    ...(attribution ? { attribution } : {}),
+  })
+  const appleUrl = getAppleAuthorizeURL({
+    return_to: resolvedReturnTo,
+    ...(attribution ? { attribution } : {}),
   })
 
+  const submitted = (method: 'google' | 'apple' | 'code') =>
+    posthog.capture(
+      signup ? 'global:user:signup:submit' : 'global:user:login:submit',
+      { method },
+    )
+
+  const sendCode = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const address = email.trim()
+    if (!address || sending) return
+    setSending(true)
+    setProblem(undefined)
+    submitted('code')
+    try {
+      await sendLoginCode(
+        address,
+        resolvedReturnTo,
+        signup ? { intent: 'creator' } : undefined,
+      )
+    } catch (e) {
+      const detail =
+        e instanceof LoginCodeError ? e.error?.[0]?.msg : undefined
+      setProblem(
+        detail
+          ? 'Enter a valid email address.'
+          : 'We could not send the code. Try again.',
+      )
+      setSending(false)
+    }
+  }
+
   return (
-    <div className="flex min-h-screen w-full flex-col items-center bg-white px-6 pt-7 pb-8 text-[#1d1d1f] sm:px-10 sm:pt-8 sm:pb-9">
-      <div className="flex w-full items-center">
-        <LogoType labs height={40} className="-ml-[7px] w-[138px]" />
-      </div>
-      <main className="flex w-full max-w-[400px] grow flex-col items-center justify-center gap-9 pb-10">
-        <div className="flex flex-col items-center gap-3 text-center">
-          <h1 className="font-[family-name:var(--font-newsreader)] text-[36px] leading-[1.1] font-normal tracking-[-0.02em] sm:text-[40px]">
-            {signup ? 'Welcome to Simeon' : 'Welcome back'}
-          </h1>
-          <p className="text-[18px] leading-[1.4] text-[#6e6e73] sm:text-[19px]">
-            {signup
-              ? 'Create a team of agents for any part of your business.'
-              : 'Sign in to your team of agents.'}
-          </p>
-        </div>
-        <a
-          href={googleUrl}
-          className="flex h-[50px] w-full items-center justify-center gap-3 rounded-full bg-black text-[17px] font-medium tracking-[-0.01em] text-white transition-colors hover:bg-[#1d1d1f]"
-        >
+    <AuthShell
+      heading="Get it off your plate"
+      line="Your doing partners for every part of your business."
+    >
+      <div className="flex flex-col gap-3">
+        <a href={googleUrl} onClick={() => submitted('google')} className={provider}>
           <GoogleMark />
           <span>Continue with Google</span>
         </a>
-        <p className="text-center text-[15px] leading-[1.4] text-[#6e6e73]">
-          {signup ? 'Already have an account? ' : "Don't have an account? "}
-          <Link
-            href={signup ? '/login' : '/signup'}
-            className="text-[#0066cc] hover:text-[#0052a3]"
-          >
-            {signup ? 'Log in' : 'Sign up'}
-          </Link>
-        </p>
-      </main>
-      <p className="text-center text-[14px] text-[#86868b]">
-        <a
-          href="https://www.simeonlabs.com/legal/terms-of-service"
-          className="text-[#0066cc] hover:text-[#0052a3]"
-        >
-          Terms of Service
-        </a>{' '}
-        and{' '}
-        <a
-          href="https://www.simeonlabs.com/legal/privacy-policy"
-          className="text-[#0066cc] hover:text-[#0052a3]"
-        >
-          Privacy Policy
+        <a href={appleUrl} onClick={() => submitted('apple')} className={provider}>
+          <AppleMark />
+          <span>Continue with Apple</span>
         </a>
-      </p>
-    </div>
+        <div className="py-2 text-center text-[13px] font-medium tracking-[0.06em] text-[#86868b]">
+          OR
+        </div>
+        <form onSubmit={sendCode} className="flex flex-col gap-3" noValidate>
+          <label htmlFor="sign-in-email" className="sr-only">
+            Email
+          </label>
+          <input
+            id="sign-in-email"
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            placeholder="Enter your email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="h-[50px] w-full rounded-full border border-[#d9d9de] bg-white px-5 text-[16px] sm:h-[52px] sm:text-[17px] text-[#1d1d1f] placeholder:text-[#a1a1a6] focus:border-[#1d1d1f] focus:outline-none"
+          />
+          <button
+            type="submit"
+            disabled={sending}
+            className="h-[50px] w-full rounded-full bg-black text-[16px] font-medium sm:h-[52px] sm:text-[17px] tracking-[-0.01em] text-white transition-colors hover:bg-[#1d1d1f] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {sending ? 'Sending code…' : 'Continue with email'}
+          </button>
+        </form>
+        {problem ? (
+          <p role="alert" className="text-center text-[14px] leading-[1.45] text-[#c21d2e]">
+            {problem}
+          </p>
+        ) : null}
+        <div className="pt-3">
+          <Legal />
+        </div>
+      </div>
+    </AuthShell>
   )
 }
 
