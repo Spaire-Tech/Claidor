@@ -33,14 +33,14 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 64px;
+  height: 72px;
   padding: 0 clamp(20px, 3vw, 48px);
 }
 
 .wordmark {
   display: block;
-  height: 20px;
-  width: auto;
+  margin-left: -6px;
+  color: var(--ink);
 }
 
 .who {
@@ -134,26 +134,45 @@
   letter-spacing: -0.01em;
 }
 
+/* Three cards the size of the site's four (.plans3): the row is narrower
+   than the page, so each card keeps the site card's proportions. */
 .plans {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 22px;
-  margin-top: clamp(32px, 3.6vw, 56px);
+  max-width: 1080px;
+  margin: clamp(32px, 3.6vw, 56px) auto 0;
 }
 
-@media (max-width: 960px) {
+@media (max-width: 900px) {
   .plans {
     grid-template-columns: 1fr;
+    max-width: 440px;
     gap: 14px;
   }
 }
 
+/* The site's card (.plan3): the name, the price, how it is billed, a
+   full-width button, then what it includes. */
 .plan {
   display: flex;
   flex-direction: column;
-  padding: clamp(28px, 2.4vw, 40px) clamp(24px, 2.1vw, 36px);
+  padding: clamp(28px, 2.4vw, 44px) clamp(24px, 2.1vw, 40px);
   border-radius: 28px;
   background: var(--card);
+}
+
+@supports (grid-template-rows: subgrid) {
+  .plans {
+    grid-template-rows: repeat(6, auto);
+  }
+  .plan {
+    display: grid;
+    grid-template-rows: subgrid;
+    grid-row: span 6;
+    row-gap: 0;
+    align-content: start;
+  }
 }
 
 .planCurrent {
@@ -169,15 +188,15 @@
 
 .plan h3 {
   margin: 0;
-  font-size: clamp(20px, 1.35vw, 26px);
-  font-weight: 500;
-  letter-spacing: -0.02em;
-  color: #3a3a3c;
+  font-size: clamp(16px, 1.05vw, 20px);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  color: var(--ink2);
 }
 
 .badge {
   padding: 3px 10px;
-  border-radius: 8px;
+  border-radius: 99px;
   background: rgba(0, 0, 0, 0.06);
   color: var(--ink2);
   font-size: 14px;
@@ -185,55 +204,62 @@
   white-space: nowrap;
 }
 
-.price {
-  margin-top: clamp(18px, 1.6vw, 28px);
+@font-face {
+  font-family: 'Switzer';
+  src: url('/assets/fonts/switzer-400.woff2') format('woff2');
   font-weight: 400;
-  font-size: clamp(40px, 3vw, 56px);
+  font-style: normal;
+  font-display: swap;
+}
+
+.price {
+  margin-top: clamp(16px, 1.4vw, 26px);
+  font-family: 'Switzer', var(--font);
+  font-weight: 400;
+  font-size: clamp(40px, 3vw, 60px);
   line-height: 1;
   letter-spacing: -0.03em;
 }
 
 .price small {
+  font-family: var(--font);
   font-weight: 400;
-  font-size: clamp(14px, 0.9vw, 17px);
+  font-size: clamp(15px, 1vw, 19px);
   letter-spacing: -0.01em;
   color: var(--ink2);
-  margin-left: 5px;
+  margin-left: 6px;
 }
 
-.per {
-  margin-top: 10px;
-  font-size: clamp(14px, 0.9vw, 17px);
-  line-height: 1.45;
+.billed {
+  margin: 10px 0 0;
+  font-size: clamp(15px, 1vw, 18px);
   letter-spacing: -0.01em;
-  color: var(--ink3);
+  color: var(--ink2);
 }
 
 .inc {
-  margin: clamp(20px, 1.8vw, 30px) 0 0;
-  padding-top: clamp(18px, 1.6vw, 26px);
-  border-top: 1px solid var(--line);
-  font-size: clamp(15px, 0.95vw, 17px);
+  margin: clamp(26px, 2.2vw, 40px) 0 0;
+  font-size: clamp(15px, 1vw, 18px);
   letter-spacing: -0.01em;
-  color: var(--ink3);
+  color: var(--ink);
 }
 
 .plan ul {
   list-style: none;
-  margin: 12px 0 clamp(26px, 2.4vw, 40px);
+  margin: 14px 0 0;
   padding: 0;
   display: grid;
-  gap: 9px;
+  gap: 12px;
   align-content: start;
-  font-size: clamp(15px, 0.98vw, 17px);
+  font-size: clamp(15px, 1vw, 18px);
   line-height: 1.4;
   letter-spacing: -0.01em;
-  color: #3a3a3c;
+  color: var(--ink2);
 }
 
 .plan li {
   display: flex;
-  gap: 9px;
+  gap: 12px;
   align-items: flex-start;
 }
 
@@ -276,10 +302,11 @@
 }
 
 .plan .btn {
-  margin-top: auto;
   width: 100%;
-  height: 46px;
-  font-size: 16px;
+  margin-top: clamp(22px, 2vw, 36px);
+  height: clamp(46px, 2.9vw, 54px);
+  padding: 0 20px;
+  font-size: clamp(15px, 1.05vw, 18px);
 }
 
 .ghost {
@@ -300,7 +327,8 @@
 }
 
 .foot {
-  margin-top: clamp(28px, 3vw, 44px);
+  max-width: 1080px;
+  margin: clamp(28px, 3vw, 44px) auto 0;
   padding-top: 22px;
   border-top: 1px solid var(--line);
   text-align: center;
@@ -411,44 +439,6 @@
 
 .muted {
   color: var(--ink3);
-}
-
-/* The site's card, word for word and line for line. */
-
-.tag {
-  margin: 4px 0 0;
-  font-size: clamp(14px, 0.9vw, 17px);
-  letter-spacing: -0.01em;
-  color: var(--ink3);
-}
-
-.trial {
-  margin-top: clamp(16px, 1.4vw, 24px);
-  padding-top: clamp(14px, 1.2vw, 20px);
-  border-top: 1px solid var(--line);
-}
-
-.trialPrice {
-  font-weight: 400;
-  font-size: clamp(24px, 1.7vw, 30px);
-  line-height: 1;
-  letter-spacing: -0.03em;
-}
-
-.trialPrice small {
-  font-weight: 400;
-  font-size: clamp(14px, 0.9vw, 17px);
-  letter-spacing: -0.01em;
-  color: var(--ink2);
-  margin-left: 5px;
-}
-
-.plan .btn {
-  align-self: flex-start;
-  width: auto;
-  height: clamp(36px, 2.3vw, 42px);
-  padding: 0 clamp(16px, 1.1vw, 20px);
-  font-size: clamp(14px, 0.95vw, 16px);
 }
 
 .foot .stripe {
