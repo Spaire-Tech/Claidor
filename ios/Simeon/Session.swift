@@ -78,9 +78,10 @@ final class SessionController {
   private(set) var signingInWith: SignIn.Provider?
   /**
    * Signed in, the app still loading (the agents, whether this is a first
-   * run, the account): the sign-in screen stays and says so, rather than an
+   * run, the account): "Setting up Simeon's computer" shows
+   * (`SettingUpScreen`, 19 October 2026, as on the Mac), rather than an
    * empty list (the founder, 9 October 2026: "it stays in a empty screen
-   * waiting").
+   * waiting") or the sign-in screen with a spinner.
    */
   private(set) var finishing = false
   /** The first run (Onboarding.swift): being looked up, to do, or done. Only a new account does it. */
@@ -157,7 +158,7 @@ final class SessionController {
 
   /**
    * Into the app. At launch (under the launch cover) the list shows at once;
-   * straight after a sign-in (`holding`) the sign-in screen stays, saying
+   * straight after a sign-in (`holding`) "Setting up Simeon's computer" stays, saying
    * so, until the agents are in, the first run is decided and the account
    * is known (a moment at most for that), so the list never shows empty and
    * the account button never shows a "?" (the founder, 9 October 2026).

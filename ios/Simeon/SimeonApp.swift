@@ -145,8 +145,16 @@ struct RootView: View {
       // Under the launch cover.
       Ink.ground.ignoresSafeArea()
     case .signedOut, .signingIn:
-      // One screen for both, so the pressed button keeps its spinner while the sheet is open.
-      SignInScreen()
+      // One screen for both, so the pressed button keeps its spinner while the sheet is open; once the account is in,
+      // "Setting up Simeon's computer" until the app is ready, as on the Mac.
+      ZStack {
+        if session.finishing && session.phase == .signingIn {
+          SettingUpScreen().transition(.opacity)
+        } else {
+          SignInScreen().transition(.opacity)
+        }
+      }
+      .animation(.easeInOut(duration: 0.3), value: session.finishing && session.phase == .signingIn)
     case .signedIn:
       // A new account's first run, then the list (Simeon's chat open on top when he was just made).
       ZStack {
@@ -185,7 +193,7 @@ struct SignInScreen: View {
   static let terms = URL(string: "https://www.simeonlabs.com/legal/terms-of-service")!
   static let privacy = URL(string: "https://www.simeonlabs.com/legal/privacy-policy")!
 
-  /** What the screen says above the buttons: a sign-in that went wrong. While the account loads, the pressed button's spinner says it alone (the founder, 12 October 2026: "if the google icon is already loading, we dont need the text"). */
+  /** What the screen says above the buttons: a sign-in that went wrong. While Apple's or Google's sheet is open, the pressed button's spinner says it alone (the founder, 12 October 2026: "if the google icon is already loading, we dont need the text"); once the account is in, `SettingUpScreen` takes the screen. */
   private var message: String? {
     if case .signedOut(let message) = session.phase { return message }
     return nil
@@ -336,6 +344,27 @@ struct EmailSignInButton: View {
       .frame(height: 50)
     }
     .buttonStyle(.glass)
+  }
+}
+
+/**
+ * "Setting up Simeon's computer" between a sign-in and the app (the founder,
+ * 19 October 2026: "instead of having the thing load in the sign in page,
+ * have setting up computer like in mac. with the light thing animation"):
+ * the Mac's words (`SettingUp`, mac/Simeon/SignInScreen.swift), 17 medium,
+ * the light sweeping across them (`ShimmerText`), in the middle of the
+ * app's ground. It shows while the account loads after Apple, Google or
+ * Log in or sign up gave it (`SessionController.finishing`).
+ */
+struct SettingUpScreen: View {
+  static let words = "Setting up Simeon\u{2019}s computer"
+
+  var body: some View {
+    ShimmerText(text: Self.words, font: .system(size: 17, weight: .medium))
+      .frame(maxWidth: .infinity, maxHeight: .infinity)
+      .background(Ink.ground)
+      .accessibilityElement(children: .ignore)
+      .accessibilityLabel(Self.words)
   }
 }
 
