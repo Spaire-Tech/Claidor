@@ -148,7 +148,13 @@ enum InlineText {
   private static var cache: [String: Made] = [:]
 
   static func made(_ markdown: String, size: CGFloat = MessageType.size, weight: Font.Weight = .regular, colour: Color? = nil, mentioning: Mentioning?) -> Made {
-    let key = "\(size)|\(weight)|\(mentioning?.dark ?? false)|\(mentioning.map { $0.agents.map { "\($0.name)=\($0.picture?.key ?? "")" }.joined(separator: ",") + "|" + ($0.personName ?? "") + "|" + ($0.speaker ?? "") } ?? "-")|\(markdown)"
+    // In steps: one expression of `+` and `??` is more than the compiler will check in time.
+    var names = "-"
+    if let mentioning {
+      let agents: String = mentioning.agents.map { agent in "\(agent.name)=\(agent.picture?.key ?? "")" }.joined(separator: ",")
+      names = "\(agents)|\(mentioning.personName ?? "")|\(mentioning.speaker ?? "")"
+    }
+    let key = "\(size)|\(weight)|\(mentioning?.dark ?? false)|\(names)|\(markdown)"
     if colour == nil, let made = cache[key] { return made }
     let made = build(markdown, size: size, weight: weight, colour: colour, mentioning: mentioning)
     if colour == nil {
