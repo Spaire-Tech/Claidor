@@ -64,7 +64,7 @@ struct FlightPassengersCardView: View {
   }
 }
 
-/** The flight in a card: the date and times, then its fare and the total. */
+/** The flight in a card: the date and times, then its fare and the total, and what changed since the search. */
 struct FlightSummaryLines: View {
   let flight: BookedFlight
 
@@ -77,8 +77,20 @@ struct FlightSummaryLines: View {
       if !fare.isEmpty {
         Text(fare).font(.system(size: 13)).foregroundStyle(Ink.fineGrey).fixedSize(horizontal: false, vertical: true)
       }
+      FlightChangedLine(flight: flight)
     }
     .accessibilityElement(children: .combine)
+  }
+}
+
+/** What changed since the person last saw the flight (its price, times or fare terms), in the danger colour: a fresh decision (19 October 2026, Muse's rule). */
+struct FlightChangedLine: View {
+  let flight: BookedFlight
+
+  var body: some View {
+    if !flight.changed.isEmpty {
+      Text(flight.changed).font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.danger).fixedSize(horizontal: false, vertical: true)
+    }
   }
 }
 
@@ -150,7 +162,7 @@ struct TravellersSheet: View {
 
   private func send() async {
     for (index, traveller) in travellers.enumerated() {
-      if let found = traveller.problem(passportNeeded: card.flight.documentsRequired) {
+      if let found = traveller.problem(passportNeeded: card.flight.documentsRequired, adultOn: card.adultOn(index)) {
         problem = (index, found.message)
         Haptics.tap()
         return
@@ -262,6 +274,7 @@ struct FlightCheckoutBlock: View {
             .font(.system(size: 13)).foregroundStyle(Ink.fineGrey)
             .fixedSize(horizontal: false, vertical: true)
         }
+        FlightChangedLine(flight: flight)
       }
       Spacer(minLength: 0)
     }

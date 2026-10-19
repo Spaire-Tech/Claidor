@@ -28,6 +28,15 @@ need the Duffel key, which never leaves the server:
   with its 3-D Secure session. One order per offer per person: a second ask
   for the same offer is refused, and an answer that never came back is
   reported as uncertain, never retried (Muse's rule, and ours).
+- `POST /desktop/api/flights/order-status`: for an order whose answer never
+  came, whether Duffel has it now (its orders made from that offer, this
+  person's), so the card can say Booked instead of "check your email".
+
+Duffel's "Order creation response handling" (read 19 October 2026) decides
+each answer: 201 booked; 200 booked with its details still to come (an order
+paid by card); 202 still being confirmed; 503 certainly not booked; 500, 502,
+504 and no answer may have booked it. Placing an order can take up to 120 s,
+so the order waits 135 s (Duffel asks for at least 130).
 """
 
 from __future__ import annotations
@@ -69,6 +78,14 @@ _DOCUMENT = re.compile(r"^[A-Za-z0-9]{5,20}$")
 _COUNTRY = re.compile(r"^[A-Za-z]{2}$")
 _TITLES = {"mr", "ms", "mrs", "miss", "dr"}
 _GENDERS = {"m", "f"}
+# Duffel: a traveller under 18 is searched by age; an "adult" is 18 or over,
+# counted on the day of the last flight (as Duffel counts an infant's age).
+_ADULT_AGE = 18
+_UNCERTAIN = {
+    "booked": False,
+    "uncertain": True,
+    "message": "The airline didn't answer, so it isn't certain the flight was booked. Don't book it again: Simeon keeps checking, and the airline emails the traveller if it was.",
+}
 # Stripe's currencies without minor units, so Link is asked for ¥500, not ¥5.
 _ZERO_DECIMAL = {
     "BIF", "CLP", "DJF", "GNF", "JPY", "KMF", "KRW", "MGA",
@@ -115,6 +132,25 @@ def _requested_cabin(offer: dict[str, Any]) -> str:
     return "economy"
 
 
+def last_flight_date(offer: dict[str, Any]) -> str:
+    """The day the last flight leaves ("2026-11-12", the airport's own day):
+    the day a traveller's age counts on."""
+    segments = [
+        segment
+        for slice_ in flights._slices(offer)
+        for segment in flights._segments(slice_)
+    ]
+    leaves = _text(segments[-1].get("departing_at"))[:10] if segments else ""
+    try:
+        return date.fromisoformat(leaves).isoformat()
+    except ValueError:
+        return ""
+
+
+def age_on(born: date, day: date) -> int:
+    return day.year - born.year - ((day.month, day.day) < (born.month, born.day))
+
+
 def offer_for_booking(offer: dict[str, Any], *, test: bool) -> dict[str, Any]:
     """What the engine needs to book this offer, as Duffel has it now."""
     owner = _dict(offer.get("owner"))
@@ -154,6 +190,7 @@ def offer_for_booking(offer: dict[str, Any], *, test: bool) -> dict[str, Any]:
         "conditionsUrl": _text(owner.get("conditions_of_carriage_url")),
         "route": route,
         "roundTrip": len(slices) > 1,
+        "lastFlightDate": last_flight_date(offer),
         "card": card,
         "test": test,
     }
@@ -172,10 +209,15 @@ def _born_on(value: Any) -> str:
 
 
 def passenger_for_duffel(
-    given: Any, *, expected_ids: set[str], documents_required: bool
+    given: Any,
+    *,
+    expected_ids: set[str],
+    documents_required: bool,
+    adult_on: date | None = None,
 ) -> dict[str, Any]:
     """One traveller as Duffel's order takes them, checked field by field
-    (the engine checked the form too; this side never trusts that)."""
+    (the engine checked the form too; this side never trusts that). An adult
+    is 18 or over on `adult_on`, the day of the last flight."""
     one = _dict(given)
     passenger_id = _text(one.get("id"))
     if not _PASSENGER_ID.match(passenger_id) or passenger_id not in expected_ids:
@@ -202,13 +244,21 @@ def passenger_for_duffel(
         raise BookingRefused(
             "The phone number needs its country code, like +1 206 555 0100."
         )
+    born_on = _born_on(one.get("born_on"))
+    if (
+        adult_on is not None
+        and age_on(date.fromisoformat(born_on), adult_on) < _ADULT_AGE
+    ):
+        raise BookingRefused(
+            "Each adult must be 18 or older on the day of the last flight; check the date of birth."
+        )
     passenger: dict[str, Any] = {
         "id": passenger_id,
         "title": title,
         "gender": gender,
         "given_name": given_name,
         "family_name": family_name,
-        "born_on": _born_on(one.get("born_on")),
+        "born_on": born_on,
         "email": email,
         "phone_number": phone,
     }
@@ -235,6 +285,42 @@ def passenger_for_duffel(
     elif documents_required:
         raise BookingRefused("This airline needs each traveller's passport.")
     return passenger
+
+
+async def _order_made(
+    api: flights.DuffelClient, offer_id: str, user_id: str
+) -> dict[str, Any] | None:
+    """This person's order made from this offer, when Duffel has one (its
+    orders by `offer_id`; Duffel says one can take a while to show)."""
+    try:
+        orders = await api.orders_for_offer(offer_id)
+    except flights.DuffelError as error:
+        log.warning(
+            "desktop.flights.order_lookup_failed",
+            offer_id=offer_id,
+            status=error.status,
+            body=error.body[:500] or "(empty)",
+        )
+        return None
+    return next(
+        (
+            one
+            for one in orders
+            if _text(_dict(one.get("metadata")).get("simeon_user")) == user_id
+        ),
+        None,
+    )
+
+
+def _booked(order: dict[str, Any], *, test: bool) -> dict[str, Any]:
+    return {
+        "booked": True,
+        "orderId": _text(order.get("id")),
+        "bookingReference": _text(order.get("booking_reference")),
+        "total": flights.money(order.get("total_amount"), order.get("total_currency")),
+        "airline": _text(_dict(order.get("owner")).get("name")),
+        "test": test,
+    }
 
 
 def _duffel_sentence(error: flights.DuffelError) -> str:
@@ -404,17 +490,23 @@ async def flight_order(
             raise BookingRefused(
                 "The price changed since it was approved; nothing was booked.", 409
             )
-        expected = {
-            _text(one.get("id"))
+        types = {
+            _text(one.get("id")): _text(one.get("type")) or "adult"
             for one in offer.get("passengers") or []
             if isinstance(one, dict)
-        } - {""}
+        }
+        expected = set(types) - {""}
+        last_day = last_flight_date(offer)
+        last = date.fromisoformat(last_day) if last_day else None
         passengers = [
             passenger_for_duffel(
                 one,
                 expected_ids=expected,
                 documents_required=offer.get("passenger_identity_documents_required")
                 is True,
+                adult_on=last
+                if types.get(_text(_dict(one).get("id"))) == "adult"
+                else None,
             )
             for one in given
         ]
@@ -454,7 +546,7 @@ async def flight_order(
         "metadata": {"simeon_user": user_id},
     }
     try:
-        order = await api.create_order(order_body)
+        status, order = await api.create_order(order_body)
     except flights.DuffelError as error:
         log.warning(
             "desktop.flights.order_refused",
@@ -464,41 +556,95 @@ async def flight_order(
             body=error.body[:1000] or "(empty)",
             test=api.is_test,
         )
-        if error.status == 0 or error.status >= 500:
-            # The airline may have it: never ask again for this offer.
-            await redis.set(lock, "uncertain", ex=86400)
-            return flights._answer(
-                {
-                    "booked": False,
-                    "uncertain": True,
-                    "message": "The airline didn't answer, so it isn't certain the flight was booked. Don't book it again: check for the airline's email first.",
-                }
+        if error.status == 503:
+            # Duffel: "We know for sure that no booking was created in the
+            # supplier systems."
+            await redis.delete(lock)
+            return flights._refuse(
+                "The airline's booking system was busy, and nothing was booked. Try again in a few minutes.",
+                409,
             )
-        await redis.delete(lock)
-        return flights._refuse(
-            f"The flight was not booked: {_duffel_sentence(error)}", 409
+        if error.status == 0 or error.status >= 500:
+            # The airline may have it: never ask again for this offer; look for it.
+            await redis.set(lock, "uncertain", ex=86400)
+            found = await _order_made(api, offer_id, user_id)
+            if found is None:
+                return flights._answer(_UNCERTAIN)
+            order, status = found, 201
+        else:
+            await redis.delete(lock)
+            return flights._refuse(
+                f"The flight was not booked: {_duffel_sentence(error)}", 409
+            )
+    if status == 202:
+        # Duffel is still confirming it with the airline: never ask again.
+        await redis.set(lock, "uncertain", ex=86400)
+        log.info(
+            "desktop.flights.order_pending",
+            user_id=user_id,
+            offer_id=offer_id,
+            test=api.is_test,
+        )
+        return flights._answer(
+            {
+                **_UNCERTAIN,
+                "message": "The airline is still confirming the booking. Don't book it again: Simeon keeps checking, and the airline emails the traveller.",
+            }
         )
     await redis.set(lock, "booked", ex=86400)
-    reference = _text(order.get("booking_reference"))
+    if status == 200 and not _text(order.get("booking_reference")):
+        # Booked, its details still to come (an order paid by card).
+        order = await _order_made(api, offer_id, user_id) or order
+    answer = _booked(order, test=api.is_test)
     log.info(
         "desktop.flights.order",
         user_id=user_id,
         offer_id=offer_id,
-        order_id=_text(order.get("id")),
-        booking_reference=reference,
-        total=flights.money(order.get("total_amount"), order.get("total_currency")),
+        status=status,
+        order_id=answer["orderId"],
+        booking_reference=answer["bookingReference"],
+        total=answer["total"],
         passengers=len(passengers),
         test=api.is_test,
     )
-    return flights._answer(
-        {
-            "booked": True,
-            "orderId": _text(order.get("id")),
-            "bookingReference": reference,
-            "total": flights.money(
-                order.get("total_amount"), order.get("total_currency")
-            ),
-            "airline": _text(_dict(order.get("owner")).get("name")),
-            "test": api.is_test,
-        }
+    return flights._answer(answer)
+
+
+@router.post("/api/flights/order-status", name="desktop:flights_order_status")
+async def flight_order_status(
+    request: Request,
+    desktop_session: DesktopSession = Depends(get_desktop_or_box_session),
+    redis: Redis = Depends(get_redis),
+) -> JSONResponse:
+    """`{offer_id}` of an order whose answer never came (or was still being
+    confirmed) in; `{booked: true, …}` once Duffel has this person's order
+    from it, else `{booked: false, uncertain: true}`."""
+    if not settings.DUFFEL_ACCESS_TOKEN:
+        return flights._refuse("Flight booking is not switched on yet.", 503)
+    user_id = str(desktop_session.user_id)
+    try:
+        offer_id = _offer_id(await _json_body(request))
+    except BookingRefused as refused:
+        return flights._refuse(refused.message, refused.status)
+    lock = f"desktop:flights:order:{user_id}:{offer_id}"
+    if await redis.get(lock) is None:
+        return flights._refuse(
+            "No booking of this flight is waiting to be confirmed.", 404
+        )
+    if await _over_limit(redis, f"desktop:flights:status:{user_id}", 120, 3600):
+        return flights._refuse("Too many checks; try again later.", 429)
+    api = flights.client()
+    found = await _order_made(api, offer_id, user_id)
+    if found is None:
+        return flights._answer({"booked": False, "uncertain": True})
+    await redis.set(lock, "booked", ex=86400)
+    answer = _booked(found, test=api.is_test)
+    log.info(
+        "desktop.flights.order_found",
+        user_id=user_id,
+        offer_id=offer_id,
+        order_id=answer["orderId"],
+        booking_reference=answer["bookingReference"],
+        test=api.is_test,
     )
+    return flights._answer(answer)

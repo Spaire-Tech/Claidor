@@ -89,6 +89,12 @@ public struct FlightPassengersCard: Hashable, Sendable {
 
   /** In the chat list and a quote. */
   public var listLine: String { "Traveller details · \(flight.route)" }
+
+  /** The day this traveller must be 18 by, for an adult's seat (the last flight's day); nil for a child's or with no day. */
+  public func adultOn(_ index: Int) -> String? {
+    let type = flight.passengers.indices.contains(index) ? flight.passengers[index].type : "adult"
+    return type == "adult" && !flight.lastFlightDate.isEmpty ? flight.lastFlightDate : nil
+  }
 }
 
 /** The flight on the form and the checkout card (the host's `FlightBlock`). */
@@ -107,11 +113,16 @@ public struct BookedFlight: Hashable, Sendable {
   public let isTest: Bool
   /** On the checkout card: who flies. */
   public let travellers: [String]
+  /** The day the last flight leaves ("2026-11-12"): an adult is 18 or over on it. */
+  public let lastFlightDate: String
+  /** What changed since the person last saw it ("Changed since you picked it: Price now $239.40 (was $214.10)"), or empty. */
+  public let changed: String
 
-  public init(offerId: String, route: String, airline: String, logo: String = "", date: String = "", from: String = "", to: String = "", depart: String = "", arrive: String = "", duration: String = "", stops: String = "", priceNote: String = "", returnTimes: String = "", total: String, documentsRequired: Bool = false, conditionsURL: URL? = nil, passengers: [Seat], isTest: Bool, travellers: [String] = []) {
+  public init(offerId: String, route: String, airline: String, logo: String = "", date: String = "", from: String = "", to: String = "", depart: String = "", arrive: String = "", duration: String = "", stops: String = "", priceNote: String = "", returnTimes: String = "", total: String, documentsRequired: Bool = false, conditionsURL: URL? = nil, passengers: [Seat], isTest: Bool, travellers: [String] = [], lastFlightDate: String = "", changed: String = "") {
     self.offerId = offerId; self.route = route; self.airline = airline; self.logo = logo; self.date = date; self.from = from; self.to = to
     self.depart = depart; self.arrive = arrive; self.duration = duration; self.stops = stops; self.priceNote = priceNote; self.returnTimes = returnTimes
     self.total = total; self.documentsRequired = documentsRequired; self.conditionsURL = conditionsURL; self.passengers = passengers; self.isTest = isTest; self.travellers = travellers
+    self.lastFlightDate = lastFlightDate; self.changed = changed
   }
 
   init?(json: JSON) {
@@ -129,6 +140,7 @@ public struct BookedFlight: Hashable, Sendable {
     self.passengers = seats.isEmpty ? [Seat(id: "", type: "adult")] : seats
     self.isTest = json["test"]?.bool ?? false
     self.travellers = (json["travellers"]?.array ?? []).compactMap(\.text)
+    self.lastFlightDate = s("lastFlightDate"); self.changed = s("changed")
   }
 
   /** "Thu, Nov 12 · 6:49am – 9:34am · Nonstop" */
@@ -195,8 +207,8 @@ public struct Traveller: Hashable, Sendable {
     return .object(fields)
   }
 
-  /** The first thing to fix, as the host checks it (`checkTravellers`), so Continue says it at once: the field and the sentence. */
-  public func problem(passportNeeded: Bool, today: Date = Date()) -> (field: String, message: String)? {
+  /** The first thing to fix, as the host checks it (`checkTravellers`), so Continue says it at once: the field and the sentence. `adultOn`: the day an adult must be 18 by (`FlightPassengersCard.adultOn`). */
+  public func problem(passportNeeded: Bool, adultOn: String? = nil, today: Date = Date()) -> (field: String, message: String)? {
     let name = #/^[^\d!"#$%&()*+,./:;<=>?@\[\\\]^_`{|}~]{1,40}$/#
     let given = givenName.trimmingCharacters(in: .whitespaces), family = familyName.trimmingCharacters(in: .whitespaces)
     if given.wholeMatch(of: name) == nil { return ("given_name", "Write the first name as on the ID.") }
@@ -205,6 +217,7 @@ public struct Traveller: Hashable, Sendable {
     if gender == nil { return ("gender", "Choose the gender on the ID.") }
     let now = Self.day(today)
     guard let born = Self.date(bornOn), bornOn < now, Calendar(identifier: .gregorian).component(.year, from: born) >= 1900 else { return ("born_on", "The date of birth isn't right.") }
+    if let adultOn, Self.date(adultOn) != nil, Self.age(bornOn, on: adultOn) < 18 { return ("born_on", "An adult must be 18 or older on the day of the last flight; check the date of birth.") }
     if email.trimmingCharacters(in: .whitespaces).wholeMatch(of: #/^[^@\s]{1,64}@[^@\s]{1,190}\.[^@\s]{2,}$/#) == nil { return ("email", "The email address isn't right.") }
     let digits = phone.replacingOccurrences(of: #"[\s().-]"#, with: "", options: .regularExpression)
     if digits.wholeMatch(of: #/^\+[1-9]\d{6,14}$/#) == nil { return ("phone_number", "The phone number needs its country code, like +1 206 555 0100.") }
@@ -217,6 +230,13 @@ public struct Traveller: Hashable, Sendable {
       return ("passport", "This airline needs the passport.")
     }
     return nil
+  }
+
+  /** Whole years from one "YYYY-MM-DD" to another. */
+  public static func age(_ born: String, on day: String) -> Int {
+    let b = born.split(separator: "-").compactMap { Int($0) }, d = day.split(separator: "-").compactMap { Int($0) }
+    guard b.count == 3, d.count == 3 else { return 0 }
+    return d[0] - b[0] - ((d[1], d[2]) < (b[1], b[2]) ? 1 : 0)
   }
 
   /** "1987-07-24" for a date picked on the form (the calendar day, wherever the person is). */

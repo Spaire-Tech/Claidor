@@ -63,6 +63,8 @@ export interface FlightOfferFacts {
   /** "Seattle to Los Angeles" */
   readonly route: string;
   readonly roundTrip?: boolean;
+  /** The day the last flight leaves ("2026-11-12"): a traveller's age counts on it. */
+  readonly lastFlightDate?: string;
   /** The flight as the search card draws it (`offer_for_card`). */
   readonly card?: Record<string, unknown> | null;
   readonly test: boolean;
@@ -83,10 +85,18 @@ export interface FlightBlock {
   readonly stops?: string;
   readonly priceNote?: string;
   readonly returnTimes?: string;
+  /** The fare's terms as the search card says them, to notice a change. */
+  readonly refundable?: string;
+  readonly changeable?: string;
+  readonly bags?: string;
   readonly total: string;
   readonly documentsRequired: boolean;
   readonly conditionsUrl?: string;
   readonly passengers: readonly { readonly id: string; readonly type: string }[];
+  /** The day the last flight leaves ("2026-11-12"): an adult is 18 or over on it. */
+  readonly lastFlightDate?: string;
+  /** What changed since the person last saw the flight ("Price now $239.40 (was $214.10)"), shown on the form or the checkout card. */
+  readonly changed?: string;
   readonly test: boolean;
 }
 
@@ -168,12 +178,44 @@ export function flightBlock(offer: FlightOfferFacts): FlightBlock {
     ...optional("stops", field("stops")),
     ...optional("priceNote", field("priceNote")),
     ...optional("returnTimes", field("returnTimes")),
+    ...optional("refundable", field("refundable")),
+    ...optional("changeable", field("changeable")),
+    ...optional("bags", field("bags")),
     total: offer.total,
     documentsRequired: offer.documentsRequired,
     ...optional("conditionsUrl", offer.conditionsUrl),
     passengers: offer.passengers.map((one) => ({ id: one.id, type: one.type })),
+    ...optional("lastFlightDate", offer.lastFlightDate),
     test: offer.test,
   };
+}
+
+/** A flight as a person compares two looks at it: the search card's (`price`) or a block's (`total`). */
+export type FlightLook = { readonly [K in "price" | "total" | "date" | "depart" | "arrive" | "stops" | "returnTimes" | "refundable" | "changeable" | "bags"]?: unknown };
+
+/**
+ * What changed between two looks at a flight, in the person's words
+ * ("Price now $239.40 (was $214.10) · Leaves 9:10am (was 8:05am)"), or
+ * undefined when nothing did. Muse's rule (19 October 2026): a moved price,
+ * schedule or fare terms is a fresh decision, so the person sees it before
+ * allowing. A fact missing from either look is not a change.
+ */
+export function flightChanges(before: FlightLook, after: FlightLook): string | undefined {
+  const said: string[] = [];
+  const was = (label: string, from: unknown, to: unknown): void => {
+    const old = text(from), now = text(to);
+    if (old.length > 0 && now.length > 0 && old !== now) said.push(`${label} ${now} (was ${old})`);
+  };
+  was("Price now", before.total ?? before.price, after.total ?? after.price);
+  was("Date now", before.date, after.date);
+  was("Leaves", before.depart, after.depart);
+  was("Arrives", before.arrive, after.arrive);
+  was("Now", before.stops, after.stops);
+  was("Return now", before.returnTimes, after.returnTimes);
+  was("Refunds:", before.refundable, after.refundable);
+  was("Changes:", before.changeable, after.changeable);
+  was("Bags:", before.bags, after.bags);
+  return said.length > 0 ? `Changed since you picked it: ${said.join(" · ")}` : undefined;
 }
 
 /** "Seattle to Los Angeles · Tue, Nov 12 · $361.20" */
@@ -192,8 +234,8 @@ export function travellerPrefill(passengerCount: number, link: { readonly name?:
   return Array.from({ length: Math.max(1, passengerCount) }, (_unused, index) => (index === 0 ? first : {}));
 }
 
-export function flightPassengersMessage(offer: FlightOfferFacts, prefill: readonly TravellerPrefill[]): FlightPassengersMessage {
-  const flight = flightBlock(offer);
+export function flightPassengersMessage(offer: FlightOfferFacts, prefill: readonly TravellerPrefill[], changed?: string): FlightPassengersMessage {
+  const flight = { ...flightBlock(offer), ...(changed == null || changed.length === 0 ? {} : { changed }) };
   return { type: FLIGHT_PASSENGERS_MESSAGE_TYPE, content: `Traveller details for ${flightLine(flight)}`, flight, prefill };
 }
 
@@ -205,6 +247,16 @@ const PHONE = /^\+[1-9]\d{6,14}$/;
 export type TravellerCheck =
   | { readonly ok: true; readonly travellers: readonly FlightTraveller[] }
   | { readonly ok: false; readonly message: string; readonly index?: number; readonly field?: string };
+
+/** Duffel: a traveller under 18 is searched by age; an "adult" is 18 or over on the day of the last flight. */
+const ADULT_AGE = 18;
+
+/** Whole years from `born` to `on`, both "YYYY-MM-DD". */
+export function ageOn(born: string, on: string): number {
+  const [by, bm, bd] = born.split("-").map(Number) as [number, number, number];
+  const [oy, om, od] = on.split("-").map(Number) as [number, number, number];
+  return oy - by - (om < bm || (om === bm && od < bd) ? 1 : 0);
+}
 
 function day(value: unknown): Date | undefined {
   const given = text(value);
@@ -218,7 +270,7 @@ function day(value: unknown): Date | undefined {
  * them again): one for each passenger on the offer, every field as Duffel
  * needs it, and the passport when the airline asks for one.
  */
-export function checkTravellers(given: unknown, flight: Pick<FlightBlock, "passengers" | "documentsRequired">, today: Date = new Date()): TravellerCheck {
+export function checkTravellers(given: unknown, flight: Pick<FlightBlock, "passengers" | "documentsRequired" | "lastFlightDate">, today: Date = new Date()): TravellerCheck {
   if (!Array.isArray(given) || given.length !== flight.passengers.length) return { ok: false, message: `Fill in all ${flight.passengers.length === 1 ? "the traveller's details" : `${flight.passengers.length} travellers' details`}.` };
   const now = today.toISOString().slice(0, 10);
   const travellers: FlightTraveller[] = [];
@@ -239,6 +291,9 @@ export function checkTravellers(given: unknown, flight: Pick<FlightBlock, "passe
     if (gender !== "m" && gender !== "f") return refuse("gender", "choose the gender on the ID.");
     const born = day(one.born_on);
     if (born == null || text(one.born_on) >= now || born.getUTCFullYear() < 1900) return refuse("born_on", "the date of birth isn't right.");
+    // An adult with a birth date that makes them a child fails at the airline, after the person approved (Muse's Frontier booking: a birth year of 2026).
+    const lastDay = text(flight.lastFlightDate);
+    if ((flight.passengers[index]?.type ?? "adult") === "adult" && day(lastDay) != null && ageOn(text(one.born_on), lastDay) < ADULT_AGE) return refuse("born_on", "an adult must be 18 or older on the day of the last flight; check the date of birth.");
     const email = text(one.email);
     if (!EMAIL.test(email)) return refuse("email", "the email address isn't right.");
     const phone = text(one.phone_number).replace(/[\s().-]/g, "");
@@ -286,8 +341,10 @@ export function flightCheckoutCard(args: {
   readonly paymentMethodId?: string;
   /** The person's Link cards an agent may pay with: with several, the card's chooser (as on every checkout card). */
   readonly cards?: readonly { readonly id: string; readonly brand: string; readonly last4: string; readonly name?: string; readonly isDefault?: boolean }[];
+  /** What changed since the form (`flightChanges`), shown on the card before Allow. */
+  readonly changed?: string;
 }): PurchaseCardMessage {
-  const flight = flightBlock(args.offer);
+  const flight = { ...flightBlock(args.offer), ...(args.changed == null || args.changed.length === 0 ? {} : { changed: args.changed }) };
   const names = travellerNames(args.travellers);
   const currency = args.offer.currency.toLowerCase();
   const total = formatPurchaseMoney(args.offer.amountMinor, currency);
@@ -330,7 +387,8 @@ const flightWords = (flight: Pick<PurchaseFlight, "route" | "airline" | "total" 
 export const FLIGHT_FORM_SHOWN_NOTE = "The traveller form is in the chat. The person fills it in and presses Continue; then the flight's checkout card shows, they allow it and approve it in Link, and Simeon pays the airline and books it. You are told when it is booked or if it fails. Stop here: say nothing more this turn, don't ask for their details in chat, and don't book it any other way.";
 
 export function buildFlightBookedWakePrompt(entryId: string, flight: PurchaseFlight, reference: string, test: boolean): string {
-  return `[The flight ${flightWords(flight)} for ${flight.travellers.join(" and ")} is booked: booking reference ${reference}${test ? " (Duffel's test mode: a pretend airline, nothing charged, no real ticket)" : ""}. The checkout card (entry ${entryId}) shows it. Tell the person in one line: booked, the reference, and that the airline emails the ticket to the traveller. Don't book it again.]`;
+  const said = reference.length > 0 ? `booking reference ${reference}` : "the booking reference comes in the airline's email";
+  return `[The flight ${flightWords(flight)} for ${flight.travellers.join(" and ")} is booked: ${said}${test ? " (Duffel's test mode: a pretend airline, nothing charged, no real ticket)" : ""}. The checkout card (entry ${entryId}) shows it. Tell the person in one line: booked${reference.length > 0 ? ", the reference," : ""} and that the airline emails the ticket to the traveller. Don't book it again.]`;
 }
 
 export function buildFlightFailedWakePrompt(entryId: string, flight: PurchaseFlight, reason: string): string {
@@ -338,5 +396,5 @@ export function buildFlightFailedWakePrompt(entryId: string, flight: PurchaseFli
 }
 
 export function buildFlightUncertainWakePrompt(entryId: string, flight: PurchaseFlight): string {
-  return `[It isn't certain whether the flight ${flightWords(flight)} was booked: the airline didn't answer in time (checkout card ${entryId}). Never book it again. Tell the person in one line to check the traveller's email for the airline's confirmation before anything else, and that you'll help if nothing arrives.]`;
+  return `[It isn't certain yet whether the flight ${flightWords(flight)} was booked: the airline didn't answer in time (checkout card ${entryId}). Never book it again. Simeon keeps checking with the airline for a few hours, and the card says Booked if it was; you are told then. Tell the person in one line that it isn't confirmed yet, that you're checking, and that the airline's email to the traveller also means it's booked.]`;
 }

@@ -13,7 +13,13 @@
  *     checkout card): the price is checked again, Duffel's card form is
  *     filled with the one-time Link card on the cloud computer, the bank
  *     checks it, the order is placed, and the card shows the booking
- *     reference. The agent is told how it went.
+ *     reference. The agent is told how it went. An order whose answer never
+ *     came is asked after for a few hours (`settle`), and the card says
+ *     Booked once Duffel has it.
+ *
+ * A flight that changed since the person last saw it (the price, the times,
+ * the fare's terms) says so on the form and on the checkout card
+ * (`flightChanges`, 19 October 2026, from Muse's rule).
  *
  * The composition hands this its services (`setFlightBookingServices`): the
  * server, the box's Link, the agent's browser and where files go.
@@ -28,16 +34,20 @@ import {
   buildFlightFailedWakePrompt,
   buildFlightUncertainWakePrompt,
   checkTravellers,
+  flightBlock,
+  flightChanges,
   flightCheckoutCard,
   flightPassengersMessage,
   purchaseFlightOf,
   travellerNames,
   travellerPrefill,
   type FlightBlock,
+  type FlightLook,
   type FlightOfferFacts,
   type FlightPassengersEntryFields,
   type FlightPassengersMessage,
   type FlightTraveller,
+  type PurchaseFlight,
 } from "../../../shared/node/flight-booking/flight-booking.js";
 import { duffelPayPageUrl, payOnDuffelPage, sayOnPayPage } from "../../../shared/node/flight-booking/duffel-pay.js";
 import type { PurchaseCardData } from "../../../shared/node/link-wallet/purchase-card.js";
@@ -79,6 +89,15 @@ interface SavedTravellers {
 /** Details nobody booked with are gone after a day. */
 const KEEP_TRAVELLERS_MS = 24 * 60 * 60_000;
 
+/**
+ * After an order whose answer never came, Duffel is asked again this long
+ * after it, then after each wait in turn: an order can take a couple of
+ * hours to show in its list (its "Order creation response handling").
+ */
+export const SETTLE_WAITS_MS: readonly number[] = [30_000, 2 * 60_000, 10 * 60_000, 30 * 60_000, 60 * 60_000];
+
+type BookedAnswer = { booked?: boolean; uncertain?: boolean; message?: string; bookingReference?: string; orderId?: string; test?: boolean };
+
 export function isFlightFormEntry(entry: unknown): entry is FormEntry {
   const record = entry as { kind?: unknown; message?: { type?: unknown; flight?: { offerId?: unknown } } } | null | undefined;
   return record?.kind === "send-message" && record.message?.type === FLIGHT_PASSENGERS_MESSAGE_TYPE && typeof record.message.flight?.offerId === "string";
@@ -91,19 +110,24 @@ const sentence = (error: unknown, fallback: string): string => {
   return said.length > 0 ? said : fallback;
 };
 
-/** The offer id of one flight on a search card's message (```simeon-flights). */
-export function offerIdOnSearchCard(entry: unknown, index: number): string {
+/** One flight on a search card's message (```simeon-flights), as the card drew it. */
+export function offerOnSearchCard(entry: unknown, index: number): Record<string, unknown> | undefined {
   const message = (entry as { message?: { content?: unknown } } | null | undefined)?.message;
   const content = text(message?.content) || text((entry as { content?: unknown } | null | undefined)?.content);
   const block = /```simeon-flights\s*\n([\s\S]*?)\n```/.exec(content)?.[1];
-  if (block == null) return "";
+  if (block == null) return undefined;
   try {
     const card = JSON.parse(block) as { offers?: unknown };
-    const offers = Array.isArray(card.offers) ? card.offers : [];
-    return text((offers[index] as { offerId?: unknown } | undefined)?.offerId);
+    const offer = (Array.isArray(card.offers) ? card.offers : [])[index];
+    return offer != null && typeof offer === "object" ? offer as Record<string, unknown> : undefined;
   } catch {
-    return "";
+    return undefined;
   }
+}
+
+/** The offer id of one flight on a search card's message. */
+export function offerIdOnSearchCard(entry: unknown, index: number): string {
+  return text(offerOnSearchCard(entry, index)?.offerId);
 }
 
 export class FlightBookings {
@@ -113,17 +137,19 @@ export class FlightBookings {
   /** Checkout cards being paid. */
   private readonly paying = new Set<string>();
   private readonly log: (line: string) => void;
+  private readonly settleWaitsMs: readonly number[];
 
-  constructor(private readonly tm: TranscriptManagerLike, options: { readonly log?: (line: string) => void } = {}) {
+  constructor(private readonly tm: TranscriptManagerLike, options: { readonly log?: (line: string) => void; readonly settleWaitsMs?: readonly number[] } = {}) {
     this.log = options.log ?? ((line) => logHostLine(`${HOST_LOG_PREFIX} ${line}`));
+    this.settleWaitsMs = options.settleWaitsMs ?? SETTLE_WAITS_MS;
   }
 
   setFlightBookingServices(services: FlightBookingServices | undefined): void {
     this.services = services;
   }
 
-  /** The offer again and what the form starts with (Link's name, email and phone). */
-  async prepareFlightForm(offerId: string): Promise<{ readonly ok: true; readonly message: FlightPassengersMessage; readonly offer: FlightOfferFacts } | { readonly ok: false; readonly message: string }> {
+  /** The offer again and what the form starts with (Link's name, email and phone); what changed since `seen` (the search card's flight) says so on it. */
+  async prepareFlightForm(offerId: string, seen?: FlightLook): Promise<{ readonly ok: true; readonly message: FlightPassengersMessage; readonly offer: FlightOfferFacts } | { readonly ok: false; readonly message: string }> {
     const services = this.services;
     if (services == null) return { ok: false, message: "Flight booking isn't available on this computer." };
     if (!/^off_[A-Za-z0-9_]{6,80}$/.test(offerId)) return { ok: false, message: "This flight can't be booked from here (it came from an older search). Search again for a fresh one." };
@@ -134,7 +160,8 @@ export class FlightBookings {
       return { ok: false, message: sentence(error, "The flight couldn't be checked; try again in a moment.") };
     }
     const person = await services.wallet()?.personFacts().catch(() => undefined);
-    return { ok: true, message: flightPassengersMessage(offer, travellerPrefill(offer.passengers.length, person)), offer };
+    const changed = seen == null ? undefined : flightChanges(seen, { ...(offer.card ?? {}), total: offer.total });
+    return { ok: true, message: flightPassengersMessage(offer, travellerPrefill(offer.passengers.length, person), changed), offer };
   }
 
   /** "Book with Simeon" on a flight: the traveller form in that agent's chat (the one already open for that flight, if any). */
@@ -143,18 +170,20 @@ export class FlightBookings {
     if (agentId.length === 0) return { ok: false, message: "No chat to book in." };
     const entries = await this.entries(agentId);
     let offerId = text(args.offerId);
+    let seen: Record<string, unknown> | undefined;
     if (offerId.length === 0) {
       const card = entries.find((entry) => entry.id === args.entryId);
-      offerId = card == null ? "" : offerIdOnSearchCard(card, Math.max(0, Math.floor(Number(args.offerIndex ?? 0))));
       if (card == null) return { ok: false, message: "That flight card isn't in this chat any more." };
+      seen = offerOnSearchCard(card, Math.max(0, Math.floor(Number(args.offerIndex ?? 0))));
+      offerId = text(seen?.offerId);
     }
     const open = entries.find((entry) => isFlightFormEntry(entry) && entry.message.flight.offerId === offerId && (entry.passengersState ?? "open") === "open");
     if (open != null) return { ok: true, entryId: open.id };
-    const prepared = await this.prepareFlightForm(offerId);
+    const prepared = await this.prepareFlightForm(offerId, seen);
     if (!prepared.ok) return prepared;
     const entry = await this.append(agentId, prepared.message as unknown as Record<string, unknown>);
     if (entry == null) return { ok: false, message: "The form couldn't be added to this chat." };
-    this.log(`[flight] form ${agentId}/${entry.id} for ${offerId} (${prepared.offer.total}${prepared.offer.test ? ", test" : ""})`);
+    this.log(`[flight] form ${agentId}/${entry.id} for ${offerId} (${prepared.offer.total}${prepared.offer.test ? ", test" : ""})${prepared.message.flight.changed != null ? `; ${prepared.message.flight.changed}` : ""}`);
     return { ok: true, entryId: entry.id };
   }
 
@@ -196,14 +225,16 @@ export class FlightBookings {
         return { ok: false, message: said };
       }
       this.saveTravellers(args.agentId, args.entryId, { offerId: offer.offerId, travellers: checked.travellers, savedAtMs: Date.now() });
-      const card = flightCheckoutCard({ offer, formEntryId: args.entryId, travellers: checked.travellers, card: facts.card, ...(facts.paymentMethodId.length === 0 ? {} : { paymentMethodId: facts.paymentMethodId }), ...((facts.cards ?? []).length > 1 ? { cards: facts.cards } : {}) });
+      // What changed since the form showed it: a fresh decision, on the card before Allow.
+      const changed = flightChanges(flight, flightBlock(offer));
+      const card = flightCheckoutCard({ offer, formEntryId: args.entryId, travellers: checked.travellers, card: facts.card, ...(facts.paymentMethodId.length === 0 ? {} : { paymentMethodId: facts.paymentMethodId }), ...((facts.cards ?? []).length > 1 ? { cards: facts.cards } : {}), ...(changed == null ? {} : { changed }) });
       const appended = await this.append(args.agentId, card as unknown as Record<string, unknown>);
       if (appended == null) {
         this.forgetTravellers(args.agentId, args.entryId);
         return { ok: false, message: "The checkout card couldn't be added to this chat." };
       }
       await this.stampForm(args.agentId, args.entryId, (entry) => ({ passengersState: "saved", passengersNames: travellerNames(checked.travellers), passengersCheckoutId: appended.id, passengersNote: undefined, message: withoutPrefill(entry.message) }));
-      this.log(`[flight] travellers saved ${args.agentId}/${args.entryId}: ${checked.travellers.length}, checkout ${appended.id} (${offer.total}${offer.test ? ", test" : ""})`);
+      this.log(`[flight] travellers saved ${args.agentId}/${args.entryId}: ${checked.travellers.length}, checkout ${appended.id} (${offer.total}${offer.test ? ", test" : ""})${changed == null ? "" : `; ${changed}`}`);
       return { ok: true, entryId: appended.id };
     } finally {
       this.submitting.delete(key);
@@ -279,7 +310,7 @@ export class FlightBookings {
       this.log(`[flight] card confirmed ${agentId}/${entryId}${result.challenged ? " after the bank's check" : ""}; booking`);
       await step("booking", "Booking with the airline…");
 
-      let order: { booked?: boolean; uncertain?: boolean; message?: string; bookingReference?: string; orderId?: string; test?: boolean };
+      let order: BookedAnswer;
       try {
         order = await services.api("flights/order", { offer_id: offer.offerId, passengers: saved.travellers, amount: offer.amount, currency: offer.currency, three_d_secure_session_id: result.threeDSecureSessionId });
       } catch (error) {
@@ -292,25 +323,69 @@ export class FlightBookings {
       const say = services.say ?? sayOnPayPage;
       if (order.booked === true) {
         const reference = text(order.bookingReference);
-        await purchases.update(agentId, entryId, () => ({ purchaseState: "ordered", purchaseStep: undefined, purchaseOrder: reference.slice(0, 80), purchaseNote: `Booked with ${flight.airline}` }));
-        void wallet.reportOutcome({ domain: card.domain, spendRequestId, outcome: "success" }).catch(() => undefined);
-        this.forgetTravellers(agentId, flight.formEntryId);
-        void say(port, `Booked. Booking reference ${reference}.`).catch(() => undefined);
-        this.log(`[flight] booked ${agentId}/${entryId}: ${reference} ${text(order.orderId)}${order.test === true ? " (test)" : ""}`);
-        purchases.wakeAgent(agentId, "flight-booked", buildFlightBookedWakePrompt(entryId, flight, reference, order.test === true || offer.test));
+        await this.booked(agentId, entryId, flight, card, spendRequestId, order, offer.test);
+        void say(port, reference.length > 0 ? `Booked. Booking reference ${reference}.` : "Booked.").catch(() => undefined);
         return;
       }
-      // The airline never answered: it may have the booking. Never ask again.
+      // The airline never answered: it may have the booking. Never ask again; ask Duffel after it for a while.
       const said = text(order.message) || "The airline didn't answer, so it isn't certain the flight was booked.";
       await purchases.update(agentId, entryId, () => ({ purchaseState: "failed", purchaseStep: "uncertain", purchaseNote: said }));
       this.forgetTravellers(agentId, flight.formEntryId);
       this.log(`[flight] uncertain ${agentId}/${entryId}`);
       purchases.wakeAgent(agentId, "flight-uncertain", buildFlightUncertainWakePrompt(entryId, flight));
+      this.settle(agentId, entryId, flight, card, spendRequestId, offer.test);
     } catch (error) {
       await fail(sentence(error, "Something went wrong while paying."));
     } finally {
       this.paying.delete(key);
     }
+  }
+
+  /** The card says Booked (the reference, or that it comes by email), Link hears it went through, and the agent is told. */
+  private async booked(agentId: string, entryId: string, flight: PurchaseFlight, card: PurchaseCardData, spendRequestId: string, order: BookedAnswer, test: boolean): Promise<void> {
+    const reference = text(order.bookingReference);
+    const note = reference.length > 0 ? `Booked with ${flight.airline}` : `Booked with ${flight.airline}; the booking reference comes in the airline's email`;
+    await this.tm.purchaseCards.update(agentId, entryId, () => ({ purchaseState: "ordered", purchaseStep: undefined, purchaseOrder: reference.slice(0, 80), purchaseNote: note }));
+    void this.services?.wallet()?.reportOutcome({ domain: card.domain, spendRequestId, outcome: "success" }).catch(() => undefined);
+    this.forgetTravellers(agentId, flight.formEntryId);
+    this.log(`[flight] booked ${agentId}/${entryId}: ${reference || "(reference to come)"} ${text(order.orderId)}${order.test === true ? " (test)" : ""}`);
+    this.tm.purchaseCards.wakeAgent(agentId, "flight-booked", buildFlightBookedWakePrompt(entryId, flight, reference, order.test === true || test));
+  }
+
+  /**
+   * An order whose answer never came: Duffel asked after it at each of
+   * `SETTLE_WAITS_MS` (`POST desktop/api/flights/order-status`), and the card
+   * says Booked once it has it. Nothing here says "not booked": a missing
+   * order may still show later, so the card keeps "Not confirmed" and its
+   * note says to look for the airline's email. A restart ends the asking.
+   */
+  private settle(agentId: string, entryId: string, flight: PurchaseFlight, card: PurchaseCardData, spendRequestId: string, test: boolean, attempt = 0): void {
+    const wait = this.settleWaitsMs[attempt];
+    if (wait == null) {
+      this.log(`[flight] still not confirmed ${agentId}/${entryId} after ${attempt} checks`);
+      void this.tm.purchaseCards.update(agentId, entryId, (entry: { purchaseStep?: string }) => entry.purchaseStep === "uncertain" ? { purchaseNote: "Still not confirmed by the airline. Don't book it again: if the traveller has the airline's email, it's booked." } : null);
+      return;
+    }
+    const timer = setTimeout(() => {
+      void (async () => {
+        const services = this.services;
+        if (services == null) return;
+        let answer: BookedAnswer | undefined;
+        try {
+          answer = await services.api<BookedAnswer>("flights/order-status", { offer_id: flight.offerId });
+        } catch (error) {
+          // The server knows of no such order (or the asking is over): stop; anything else, ask again later.
+          if ((error as { status?: unknown } | null)?.status === 404) return;
+        }
+        if (answer?.booked === true) {
+          this.log(`[flight] the lost order was found ${agentId}/${entryId}`);
+          await this.booked(agentId, entryId, flight, card, spendRequestId, answer, test);
+          return;
+        }
+        this.settle(agentId, entryId, flight, card, spendRequestId, test, attempt + 1);
+      })().catch(() => undefined);
+    }, wait);
+    (timer as { unref?: () => void }).unref?.();
   }
 
   /** Whether this card is being paid now (a restart stops it). */

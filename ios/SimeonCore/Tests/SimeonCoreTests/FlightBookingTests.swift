@@ -83,6 +83,28 @@ final class FlightBookingTests: XCTestCase {
     XCTAssertEqual(Traveller.day(Traveller.date("1987-07-24")!), "1987-07-24")
     XCTAssertEqual(Traveller.Title.miss.label, "Miss")
     XCTAssertEqual(Traveller.Title.dr.label, "Dr")
+
+    // An adult is 18 on the day of the last flight (19 October 2026: Muse's booking died on a birth year of 2026, after approval).
+    var baby = ada; baby.bornOn = "2026-03-01"
+    XCTAssertNil(baby.problem(passportNeeded: false, today: today), "no flight day, no age check")
+    XCTAssertEqual(baby.problem(passportNeeded: false, adultOn: "2026-11-12", today: today)?.field, "born_on")
+    var eighteen = ada; eighteen.bornOn = "2008-11-12"
+    XCTAssertNil(eighteen.problem(passportNeeded: false, adultOn: "2026-11-12", today: today))
+    var seventeen = ada; seventeen.bornOn = "2008-11-13"
+    XCTAssertEqual(seventeen.problem(passportNeeded: false, adultOn: "2026-11-12", today: today)?.message, "An adult must be 18 or older on the day of the last flight; check the date of birth.")
+    XCTAssertEqual(Traveller.age("2008-11-12", on: "2026-11-12"), 18)
+    XCTAssertEqual(Traveller.age("2008-11-13", on: "2026-11-12"), 17)
+  }
+
+  func testAnAdultSeatAndWhatChangedComeWithTheFlight() throws {
+    let card = try form()
+    XCTAssertNil(card.adultOn(0), "a form from before the flight's day checks no age")
+    XCTAssertEqual(card.flight.changed, "")
+    let message: JSON = ["type": "flight-passengers", "content": "Traveller details", "flight": Self.flight.setting("lastFlightDate", "2026-11-12").setting("changed", "Changed since you picked it: Price now $380.00 (was $361.20)")]
+    guard case .flightPassengers(_, let dated) = try XCTUnwrap(Chat.row(for: entry(message))) else { return XCTFail("not the traveller form") }
+    XCTAssertEqual(dated.adultOn(0), "2026-11-12")
+    XCTAssertNil(dated.adultOn(1), "a child's seat")
+    XCTAssertEqual(dated.flight.changed, "Changed since you picked it: Price now $380.00 (was $361.20)")
   }
 
   func testTheFlightOnTheCheckoutCardSaysWhereSimeonIs() throws {

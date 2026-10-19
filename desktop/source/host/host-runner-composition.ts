@@ -884,7 +884,8 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
   // box (where Duffel's card form is filled) and the data folder (where the
   // travellers' details wait between the form and the order).
   method(extensions.api("transcript"), "setFlightBookingServices")?.({
-    api: (path: string, json: unknown) => simeonApiData(serverAuth, path, { method: "POST", json, signal: AbortSignal.timeout(120_000) }),
+    // The order waits longer than the server's own wait on Duffel (135 s), so its answer is never lost here.
+    api: (path: string, json: unknown) => simeonApiData(serverAuth, path, { method: "POST", json, signal: AbortSignal.timeout(path === "flights/order" ? 160_000 : 120_000) }),
     wallet: () => (extensions.api("mcp") as { linkWallet?: LinkTools }).linkWallet,
     browserPort: (agentId: string) => 9222 + (boxAgentWindowIndex(extensions.api("forever-box").box as any, agentId) ?? 1),
     backendUrl: () => getConfiguredBackendUrl(),

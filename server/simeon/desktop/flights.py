@@ -71,6 +71,9 @@ log = structlog.get_logger()
 router = APIRouter(include_in_schema=False)
 
 _TIMEOUT = httpx.Timeout(45.0, connect=10.0)
+# Placing an order: airlines can take up to 120 s, and Duffel asks for a client
+# timeout of at least 130 s (its "Order creation response handling").
+_ORDER_TIMEOUT = httpx.Timeout(135.0, connect=10.0)
 _IATA = re.compile(r"^[A-Za-z]{3}$")
 _HHMM = re.compile(r"^([01]?\d|2[0-3]):([0-5]\d)$")
 _CABINS = {"economy", "premium_economy", "business", "first"}
@@ -141,6 +144,19 @@ class DuffelClient:
         params: dict[str, Any] | None = None,
         json: Any = None,
     ) -> Any:
+        return (await self._exchange(method, path, params=params, json=json))[1]
+
+    async def _exchange(
+        self,
+        method: str,
+        path: str,
+        *,
+        params: dict[str, Any] | None = None,
+        json: Any = None,
+        timeout: httpx.Timeout = _TIMEOUT,
+    ) -> tuple[int, Any]:
+        """Duffel's status and answer; a refusal (4xx, 5xx) or no answer
+        raises `DuffelError`."""
         headers = {
             "Authorization": f"Bearer {self.token}",
             "Duffel-Version": "v2",
@@ -148,7 +164,7 @@ class DuffelClient:
             "Content-Type": "application/json",
         }
         try:
-            async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
+            async with httpx.AsyncClient(timeout=timeout) as client:
                 response = await client.request(
                     method,
                     f"{self.base_url}{path}",
@@ -160,7 +176,10 @@ class DuffelClient:
             raise DuffelError(0, str(error), path) from error
         if response.status_code >= 400:
             raise DuffelError(response.status_code, response.text, path)
-        return response.json()
+        try:
+            return response.status_code, response.json()
+        except ValueError:
+            return response.status_code, None
 
     async def place_suggestions(self, query: str) -> list[dict[str, Any]]:
         answer = await self._request(
@@ -197,10 +216,23 @@ class DuffelClient:
         key = data.get("component_client_key") if isinstance(data, dict) else None
         return key if isinstance(key, str) else ""
 
-    async def create_order(self, body: dict[str, Any]) -> dict[str, Any]:
-        answer = await self._request("POST", "/air/orders", json={"data": body})
+    async def create_order(self, body: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+        """Duffel's status with the order: 201 booked, 200 booked with its
+        details still to come (an order paid by card), 202 still being
+        confirmed (never ask again)."""
+        status, answer = await self._exchange(
+            "POST", "/air/orders", json={"data": body}, timeout=_ORDER_TIMEOUT
+        )
         data = answer.get("data") if isinstance(answer, dict) else None
-        return data if isinstance(data, dict) else {}
+        return status, data if isinstance(data, dict) else {}
+
+    async def orders_for_offer(self, offer_id: str) -> list[dict[str, Any]]:
+        """The orders made from this offer (List orders' `offer_id`)."""
+        answer = await self._request(
+            "GET", "/air/orders", params={"offer_id": offer_id, "limit": "10"}
+        )
+        data = answer.get("data") if isinstance(answer, dict) else None
+        return [one for one in data or [] if isinstance(one, dict)]
 
 
 def client() -> DuffelClient:
