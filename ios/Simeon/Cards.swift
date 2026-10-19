@@ -2581,7 +2581,7 @@ private struct ProductSheet: View {
   }
 }
 
-/** Buy with <agent> in the light blue capsule; Buying faded while it is under way, Bought in green once ordered. */
+/** Buy with <agent> in the chat's blue with white words (19 October 2026, the founder: "make that button our blue"); Buying faded while it is under way, Bought in green once ordered. */
 private struct ProductBuyButton: View {
   let label: String
   let status: ProductsCard.Status?
@@ -2589,11 +2589,11 @@ private struct ProductBuyButton: View {
 
   var body: some View {
     let bought = status == .bought
-    let wash: Color = bought ? Ink.success.opacity(0.16) : Ink.storeBuy.opacity(status == nil ? 1 : 0.55)
+    let wash: Color = bought ? Ink.success.opacity(0.16) : Ink.blue.opacity(status == nil ? 1 : 0.55)
     Button(action: action) {
       Text(label)
         .font(.system(size: 18, weight: .medium))
-        .foregroundStyle(bought ? Ink.success : Ink.storeBuyText)
+        .foregroundStyle(bought ? Ink.success : Ink.mineText)
         .frame(maxWidth: .infinity).frame(height: 48)
         .background(wash, in: Capsule())
         .contentShape(Capsule())

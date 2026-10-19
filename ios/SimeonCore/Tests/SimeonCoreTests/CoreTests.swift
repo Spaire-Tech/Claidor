@@ -347,6 +347,7 @@ final class GatewayTests: XCTestCase {
       { _ in HTTPAnswer(status: 200, body: json(#"{"agent":{"id":"agent-9","name":"Nora"}}"#)) },
       { _ in HTTPAnswer(status: 200, body: json(#"{"agent":{"id":"group-1"}}"#)) },
       { _ in HTTPAnswer(status: 200, body: json(#"{"agent":{"id":"agent-10","name":"Leo"}}"#)) },
+      { _ in HTTPAnswer(status: 200, body: json(#"{"agent":{"id":"agent-11","name":"Ada"}}"#)) },
     ])
     let api = SimeonAPI(base: URL(string: "https://x")!, clientVersion: "1", vault: vault, http: http)
     let backend = LiveBackend(gateway: Gateway(api: api, http: http))
@@ -373,6 +374,13 @@ final class GatewayTests: XCTestCase {
     XCTAssertEqual(voiced["avatarShape"], "clay-04")
     XCTAssertEqual(create["isKickstartRequested"], true)
     XCTAssertEqual(try JSON.parse(http.sent[4].httpBody!)["memberAgentIds"], ["simeon", "iris"])
+    // No title given, none sent; the title New Agent asks for goes with the agent, trimmed.
+    XCTAssertNil(create["title"])
+    XCTAssertNil(voiced["title"])
+    _ = try await backend.createAgent(name: "Ada", title: "  Personal Shopper ", face: "clay-05", voiceId: nil)
+    let titled = try JSON.parse(http.sent[6].httpBody!)
+    XCTAssertEqual(titled["title"], "Personal Shopper")
+    XCTAssertEqual(titled["name"], "Ada")
   }
 
   func testAnAgentsScreenGoesThroughTheProxy() throws {

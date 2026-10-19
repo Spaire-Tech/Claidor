@@ -131,6 +131,8 @@ public protocol AgentBackend: AnyObject, Sendable {
   func createAgent(name: String, face: String?) async throws -> String
   /** The same, with the voice picked for it (AgentDraft). */
   func createAgent(name: String, face: String?, voiceId: String?) async throws -> String
+  /** The same, with its title ("Personal Shopper"; empty for none). */
+  func createAgent(name: String, title: String, face: String?, voiceId: String?) async throws -> String
   /** A new group of agents; its id. */
   func createGroup(name: String, memberIds: [String]) async throws -> String
   /** The answer to a question card. */
@@ -172,6 +174,11 @@ extension AgentBackend {
   /** A backend with no voices keeps none (the demo, stand-ins). */
   public func createAgent(name: String, face: String?, voiceId: String?) async throws -> String {
     try await createAgent(name: name, face: face)
+  }
+
+  /** A backend that keeps no titles (stand-ins) makes the agent without one. */
+  public func createAgent(name: String, title: String, face: String?, voiceId: String?) async throws -> String {
+    try await createAgent(name: name, face: face, voiceId: voiceId)
   }
 }
 
@@ -371,12 +378,19 @@ public final class LiveBackend: AgentBackend, @unchecked Sendable {
   }
 
   public func createAgent(name: String, face: String?, voiceId: String?) async throws -> String {
+    try await createAgent(name: name, title: "", face: face, voiceId: voiceId)
+  }
+
+  public func createAgent(name: String, title: String, face: String?, voiceId: String?) async throws -> String {
     // The window's New Agent (router-renderer-patch.mjs, phone-create-sheets), introduced at once. The face the sheet showed is
     // kept on it (`avatarShape`) and put on once it is listed (AgentFaces); its colour is the host's (no app shows it now).
     var args: JSON = [
       "name": .string(name), "description": "",
       "isKickstartRequested": true, "origin": "user", "clientNonce": .string("ios-\(UUID().uuidString.lowercased())"),
     ]
+    // Its title is its role in its own prompt and the tag under its name (`mintAgent` keeps it, host-gateway-api.ts).
+    let role = title.trimmingCharacters(in: .whitespacesAndNewlines)
+    if !role.isEmpty { args = args.setting("title", .string(role)) }
     if let face { args = args.setting("avatarShape", .string(face)) }
     // The host keeps a voice given with the agent (`mintAgent`, host-gateway-api.ts).
     if let voiceId { args = args.setting("voiceId", .string(voiceId)) }

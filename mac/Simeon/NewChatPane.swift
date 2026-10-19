@@ -54,6 +54,12 @@ final class NewChatState {
     NewChat.rows(candidates: store.agents.map(NewChat.Candidate.init), recipients: recipients, query: query)
   }
 
+  /** How many the line takes: the window's six, or one while group chats are hidden (Features.groupChats). */
+  var limit: Int { Features.groupChats ? NewChat.maxRecipients : 1 }
+
+  /** The line can take someone more: with group chats hidden, only while it is empty (its menu and its "Add another" go once one is on it). */
+  var takesMore: Bool { Features.groupChats || recipients.isEmpty }
+
   /** The new chat is open with no agent's chat under it: the sidebar shows its draft row, and no row is the open agent's. */
   func hidesOpenRow(_ window: WindowState) -> Bool { isOpen && previewId(window) == nil }
 
@@ -73,7 +79,7 @@ final class NewChatState {
 
   /** Tab, a comma, a click on a row that adds: the row becomes a chip and the words go (`z4n.add`). A single agent on the line opens under it. */
   func add(_ row: NewChat.Row, store: AppStore, window: WindowState) {
-    guard let next = NewChat.adding(row.recipient, to: recipients) else { return }
+    guard recipients.count < limit, let next = NewChat.adding(row.recipient, to: recipients) else { return }
     recipients = next
     query = ""
     menuOpen = true
@@ -136,7 +142,7 @@ final class NewChatState {
       remove(at: recipients.count - 1, store: store, window: window)
       return true
     case .enter:
-      let full = recipients.count >= NewChat.maxRecipients
+      let full = recipients.count >= limit
       let picked = full || !rows.indices.contains(lit) ? nil : rows[lit]
       commit(NewChat.commit(recipients: recipients, query: query, highlighted: picked), store: store, window: window, sidebar: sidebar)
       return true
@@ -151,7 +157,7 @@ final class NewChatState {
       }
       return true
     case .shortcut(let number):
-      guard menuOpen, number >= 1, number <= NewChat.shortcutRows, number <= rows.count else { return false }
+      guard menuOpen, takesMore, number >= 1, number <= NewChat.shortcutRows, number <= rows.count else { return false }
       activate(number - 1, store: store, window: window, sidebar: sidebar)
       return true
     }
@@ -411,7 +417,7 @@ private struct ToLine: View {
         }
         ToField(
           text: newChat.query,
-          placeholder: NewChat.fieldPlaceholder(recipients: newChat.recipients),
+          placeholder: newChat.takesMore ? NewChat.fieldPlaceholder(recipients: newChat.recipients) : "",
           focus: newChat.focus,
           look: look,
           changed: { newChat.typed($0, store: store) },
@@ -442,7 +448,7 @@ private struct ToLine: View {
       .background(look.ground)
       .overlay(alignment: .bottom) { Rectangle().fill(look.ink.opacity(0.1)).frame(height: 1).offset(y: 1) }
       .overlay(alignment: .topLeading) {
-        if newChat.menuOpen {
+        if newChat.menuOpen && newChat.takesMore {
           RecipientMenu(look: look, width: min(560, max(0, box.size.width - 8 - 26 - 12)), maxHeight: max(120, box.size.height - 60))
             .offset(x: 8 + 26, y: 35)
             .transition(.opacity.combined(with: .scale(scale: 0.98, anchor: .top)).animation(.timingCurve(0.23, 1, 0.32, 1, duration: 0.1)))

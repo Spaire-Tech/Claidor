@@ -162,7 +162,7 @@ The menus, zoom and full screen are in §9.
 
 | What | Where | Phone | Mac |
 |---|---|---|---|
-| The new chat (⌘N): a "To:" line to search or create agents ("Create “name”"), chips (six at most), ↑↓ Tab , Backspace Return Esc ⌘1–9; the one agent's chat behind it; several make a group named after them; a new agent introduces itself, or takes a name that reads like a request as its first message; "50 is the maximum" | bundle `L4n`, `Bie`, `J4n`, `HDn` | partly (New Agent and New Group Chat sheets) | written (`NewChat`, `MacNewChat`) |
+| The new chat (⌘N): a "To:" line to search or create agents ("Create “name”"), chips (six at most), ↑↓ Tab , Backspace Return Esc ⌘1–9; the one agent's chat behind it; several make a group named after them; a new agent introduces itself, or takes a name that reads like a request as its first message; "50 is the maximum" | bundle `L4n`, `Bie`, `J4n`, `HDn` | partly (New Agent and New Group Chat sheets) | written (`NewChat`, `MacNewChat`); with group chats hidden (`Features.groupChats`, 19 October 2026) the line takes one agent, and its menu and "Add another" go once one is on it |
 | The 12 colours; the shape picker hidden | patch 1901-1938 | yes | written |
 | Duplicate | production `agent-row-actions-model.ts` | yes | written |
 

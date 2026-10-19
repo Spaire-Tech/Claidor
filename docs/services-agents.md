@@ -780,7 +780,8 @@ client, run and held by our server (`server/simeon/desktop/link_wallet.py`, belo
      "inside i want it to be like this. like a store"; `ProductSheet` on the iPhone,
      `MacProductSheet` on the Mac): its picture large under the close button, "Sold by: <seller or
      shop>", its name and price (the sale's list price struck through after it), "Buy with
-     <agent>" in a light blue capsule and View website under it, what it is in three lines with
+     <agent>" in the chat's blue with white words (19 October 2026; it was a light blue) and View
+     website under it, what it is in three lines with
      See more (`**bold**` drawn bold), a Reviews row (its picture, name, stars to the nearest half,
      "4.5 (153)"; a tap opens the shop's page), and More like this: the card's other products
      side by side, each opening in the same sheet. `ShowProducts` takes `list_price`, `rating`
@@ -1137,9 +1138,17 @@ Upload, the voice) works on the agent to be (`AgentDraft` in SimeonCore) and not
 Create; then the face and the voice go with `createAgent` (`avatarShape`, `voiceId`) and a
 picture drawn or uploaded right after it, with no face put on over it
 (`AppStore.createAgent(name:draft:)`). A face picked brings a voice of its gender, so a woman's
-face picked for "Leo" speaks with a woman's voice. Untouched, the agent is made as before. The
+face picked for "Leo" speaks with a woman's voice. Untouched, the agent is made as before. Under
+the name the sheet asks for a title (19 October 2026, "Title, like Personal Shopper"; it may stay
+empty): it goes with `createAgent` (`title`), is the tag under the agent's name, and is the
+agent's role in its own prompt ("Role: Personal Shopper. This is the job the user made you
+for", `system-prompt-assembly.ts`), so its first hello names it; that line is the engine's and
+reaches an agent only with a new host bundle. The
 Mac makes agents from the new chat's To: line, which shows no face; there the pencil is on the
-agent's pane once it exists. Mentions in messages are
+agent's pane once it exists. Group chats are hidden for now (19 October 2026,
+`Features.groupChats` in SimeonCore, one line to bring them back): the iPhone's compose button
+opens New Agent at once and search has no New Group Chat, and the Mac's To: line takes one
+agent. Groups already made still show and work. Mentions in messages are
 the face in a glass pill with the name in the app's blue; names are no longer coloured. A tap
 (a click on the Mac, with the pointing hand) on a pill opens that agent's chat: each pill is
 drawn on its own line of words and records where it was drawn (`MentionSpots`), and the tap is

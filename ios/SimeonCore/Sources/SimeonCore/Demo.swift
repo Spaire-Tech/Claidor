@@ -242,9 +242,15 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
   public func markRead(_ agentId: String) async { touch(agentId) { $0.hasUnread = false; $0.unreadCount = 0 } }
 
   public func createAgent(name: String, face: String?) async throws -> String {
+    try await createAgent(name: name, title: "", face: face, voiceId: nil)
+  }
+
+  public func createAgent(name: String, title: String, face: String?, voiceId: String?) async throws -> String {
     let id = "agent-\(UUID().uuidString.prefix(6).lowercased())"
     var agent = Agent(id: id, name: name, lastActivityAt: Date().timeIntervalSince1970 * 1000)
     agent.avatarShape = face
+    let role = title.trimmingCharacters(in: .whitespacesAndNewlines)
+    if !role.isEmpty { agent.title = role }
     lock.withLock { agents.append(agent); transcripts[id] = [] }
     emit(.agentUpserted(agent))
     playOnboarding(id)

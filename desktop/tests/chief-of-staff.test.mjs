@@ -125,3 +125,10 @@ test("a brief that is an agent's first message carries the staffed cue, and the 
   const profileWatch = await readFile(path.join(repoRoot, "source/host/extensions/transcript/profile-watch.ts"), "utf8");
   assert.match(profileWatch, /title: profile\?\.title \?\? "",/);
 });
+
+test("the title given at New Agent is the agent's role in its own prompt, and the first hello names it", async () => {
+  const assembly = await readFile(path.join(repoRoot, "source/host/runner/system-prompt-assembly.ts"), "utf8");
+  assert.match(assembly, /const role = profile\.title\?\.trim\(\) \?\? "";\n\s*if \(role\.length > 0 && !sharedRoom\) lines\.push\(`Role: \$\{role\}\. This is the job the user made you for; work as that role\.`\);/);
+  const { SAND_ONBOARDING_KICKSTART_PROMPT } = await loadModule("source/shared/agents/onboarding.ts", "onboarding");
+  assert.match(SAND_ONBOARDING_KICKSTART_PROMPT, /say who you are \(and your role, when your profile gives you one\); if you have neither a description nor a role yet, say you're a blank slate/);
+});

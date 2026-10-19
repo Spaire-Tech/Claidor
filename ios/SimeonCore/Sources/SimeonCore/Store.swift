@@ -1716,11 +1716,11 @@ public final class AppStore {
     }
   }
 
-  /** New Agent: the agent's id, to open its chat. `face` is the one the sheet showed (`AgentFaces.preview`), put on once the roster lists it (StoreFaces.swift). */
-  public func createAgent(name: String, face: AgentFace? = nil) async -> String? {
+  /** New Agent: the agent's id, to open its chat. `face` is the one the sheet showed (`AgentFaces.preview`), put on once the roster lists it (StoreFaces.swift); `title` its job, empty for none. */
+  public func createAgent(name: String, title: String = "", face: AgentFace? = nil) async -> String? {
     guard let backend else { return nil }
     do {
-      let id = try await backend.createAgent(name: name, face: face?.id)
+      let id = try await backend.createAgent(name: name, title: title, face: face?.id, voiceId: nil)
       await reloadRoster()
       return id
     } catch {
@@ -1736,13 +1736,13 @@ public final class AppStore {
    * already took the new agent finishes first). Nothing chosen: as above.
    */
   public func createAgent(name: String, draft: AgentDraft) async -> String? {
-    guard draft.chosen else { return await createAgent(name: name, face: draft.shownFace(agents: agents)) }
+    guard draft.chosen else { return await createAgent(name: name, title: draft.title, face: draft.shownFace(agents: agents)) }
     guard let backend else { return nil }
     var draft = draft
     draft.name = name
     draft.settleVoice(agents: agents, voices: await voices())
     do {
-      let id = try await backend.createAgent(name: name, face: draft.shownFace(agents: agents)?.id, voiceId: draft.voiceId)
+      let id = try await backend.createAgent(name: name, title: draft.title, face: draft.shownFace(agents: agents)?.id, voiceId: draft.voiceId)
       if let picture = draft.picture {
         let claimed = facesSent.contains(id)
         facesSent.insert(id)

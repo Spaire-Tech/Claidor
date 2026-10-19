@@ -4,7 +4,7 @@ import UIKit
 #endif
 import SimeonCore
 
-/** The sheets the list opens: New Agent and New Group Chat from the compose button, Settings from the account button, Usage & Billing and Plugins from search (search is the list's own field). */
+/** The sheets the list opens: New Agent (and New Group Chat, while Features.groupChats is on) from the compose button, Settings from the account button, Usage & Billing and Plugins from search (search is the list's own field). */
 enum HomeSheet: String, Identifiable {
   case newAgent, newGroup, settings, usage, plugins
   var id: String { rawValue }
@@ -296,7 +296,7 @@ struct HomeView: View {
     guard let first = parts.first else { return }
     switch first {
     case "new-agent": sheet = .newAgent
-    case "new-group": sheet = .newGroup
+    case "new-group": sheet = Features.groupChats ? HomeSheet.newGroup : HomeSheet.newAgent
     case "search": searchFocused = true
     case "settings": sheet = .settings
     case "pins":
@@ -626,24 +626,33 @@ struct ListBottomBar: View {
         }
         .buttonStyle(Tactile(look: GlassDisc()))
         .accessibilityLabel("Close search")
-      } else {
+      } else if Features.groupChats {
         Menu {
           Button(action: newAgent) { Label("New Agent", systemImage: "person.crop.circle.badge.plus") }
           Button(action: newGroup) { Label("New Group Chat", systemImage: "person.2") }
         } label: {
-          Image(systemName: "square.and.pencil").font(.system(size: 19, weight: .medium)).foregroundStyle(Ink.primary)
-            .frame(width: 48, height: 48)
-            .contentShape(.circle)
-            .glassEffect(.regular, in: .circle)
+          composeMark.glassEffect(.regular, in: .circle)
         }
         // A menu opened from the bottom of the screen lists its items upwards (the first nearest the button); fixed, New Agent stays on top (the founder, 12 October 2026).
         .menuOrder(.fixed)
         .accessibilityLabel("New")
+      } else {
+        // With group chats hidden (Features.groupChats), the button is New Agent itself (the founder, 19 October 2026).
+        Button(action: newAgent) { composeMark }
+          .buttonStyle(Tactile(look: GlassDisc()))
+          .accessibilityLabel("New Agent")
       }
     }
     .padding(.horizontal, 16)
     .padding(.top, 6)
     .padding(.bottom, 4)
+  }
+
+  /** New chat's pencil in its 48 circle. */
+  private var composeMark: some View {
+    Image(systemName: "square.and.pencil").font(.system(size: 19, weight: .medium)).foregroundStyle(Ink.primary)
+      .frame(width: 48, height: 48)
+      .contentShape(.circle)
   }
 }
 #endif
@@ -1169,8 +1178,10 @@ struct SearchResults: View {
     }
     list += [
       SearchAction(id: "new-agent", label: "New Agent", detail: "Agents", symbol: "person.crop.circle.badge.plus", keywords: ["create", "add", "hire"]) { openSheet(.newAgent) },
-      SearchAction(id: "new-group", label: "New Group Chat", detail: "Agents", symbol: "person.2", keywords: ["create", "group", "team"]) { openSheet(.newGroup) },
     ]
+    if Features.groupChats {
+      list.append(SearchAction(id: "new-group", label: "New Group Chat", detail: "Agents", symbol: "person.2", keywords: ["create", "group", "team"]) { openSheet(.newGroup) })
+    }
     if !store.hiddenAgents.isEmpty {
       list.append(SearchAction(id: "hidden", label: "Open Hidden Agents", detail: "List", symbol: "eye.slash", keywords: ["hidden", "sidebar"], run: showHidden))
     }

@@ -2,7 +2,8 @@
 
 The iPhone app in SwiftUI, Apple's own toolkit. It draws the phone design
 the founder made on 8 October 2026 on the review link (the list, a chat,
-the + menu with New Agent and New Group Chat, the agent's page, search,
+the compose button for New Agent (New Group Chat is hidden for now,
+`Features.groupChats`), the agent's page, search,
 Settings and the call) with Apple's own parts. Its bars, sheets, menus,
 buttons and the composer get iOS 26's Liquid Glass, and back is the native
 swipe.

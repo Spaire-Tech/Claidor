@@ -252,19 +252,11 @@ struct AgentSettingsSection: View {
   @Binding var settings: JSON?
   @Environment(SimeonCore.AppStore.self) private var store
 
-  /** This device, as the time zone's line names it. */
-  private var device: String { AppPlatform.isMac ? "Mac" : "phone" }
-
   var body: some View {
     Section("Agents") {
-      Toggle(isOn: automaticZone) {
-        VStack(alignment: .leading, spacing: 3) {
-          Text("Set Time Zone Automatically")
-          Text("Your agents' computer follows this \(device)'s time zone.")
-            .font(.system(size: 13)).foregroundStyle(Ink.secondary)
-        }
-      }
-      .tint(Ink.blue)
+      // The words alone, with no line under them (the founder, 19 October 2026).
+      Toggle("Set Time Zone Automatically", isOn: automaticZone)
+        .tint(Ink.blue)
       if automaticZone.wrappedValue {
         LabeledContent("Time Zone", value: zoneName)
       } else {

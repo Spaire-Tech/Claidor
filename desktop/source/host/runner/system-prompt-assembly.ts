@@ -114,6 +114,9 @@ function profileSection(profile: AgentProfileForPrompt | null, sharedRoom: boole
     lines.push(`Title: ${title}`);
     if (!sharedRoom) lines.push(`Your agent name is "${title}". If the user asks for your name, answer with "${title}".`);
   }
+  // The job the person gave the agent when they made it (New Agent's title field, 19 October 2026): "Personal Shopper".
+  const role = profile.title?.trim() ?? "";
+  if (role.length > 0 && !sharedRoom) lines.push(`Role: ${role}. This is the job the user made you for; work as that role.`);
   if (description.length > 0) lines.push(`Description: ${description}`);
   if (!sharedRoom && profile.filePath.length > 0) {
     lines.push(`Your profile is a JSON config file at ${toModelVisiblePath(profile.filePath)} with "name", "description", and "title" fields, which you can read with your shell tools. To rename yourself or rewrite your own description, use the update_state tool (target "profile", action "set"); it preserves every field you do not pass. Name and description edits are announced in a profile-update message for the current context and folded into this Agent profile section after the next conversation summary.`);

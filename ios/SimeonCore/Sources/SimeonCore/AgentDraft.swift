@@ -11,6 +11,8 @@ import Foundation
  */
 public struct AgentDraft: Equatable, Sendable {
   public var name: String
+  /** Its job, "Personal Shopper" (the founder, 19 October 2026: New Agent asks for a title, not just a name); empty for none. */
+  public var title = ""
   /** A face the person picked (a tap, Shuffle); nil follows the name. */
   public private(set) var face: AgentFace?
   /** A picture drawn or uploaded, cropped: the 256-pixel PNG the editor makes. */

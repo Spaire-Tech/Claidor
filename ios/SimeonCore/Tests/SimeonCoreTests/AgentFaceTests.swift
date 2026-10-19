@@ -313,4 +313,21 @@ final class AgentDraftTests: XCTestCase {
     let plain = try XCTUnwrap(made2)
     XCTAssertEqual(store.agent(plain)?.avatarShape, AgentFaces.preview(name: "Ava", agents: store.agents.filter { $0.id != plain })?.id)
   }
+
+  func testATitleGivenAtNewAgentIsTheAgentsTitle() async throws {
+    let store = AppStore()
+    await store.attach(DemoBackend(seed: DemoData.seed(), pace: 0.01, call: nil))
+    // Nothing else chosen, and with a face picked: the title goes with the agent either way.
+    var plain = AgentDraft(name: "Ada")
+    plain.title = "Personal Shopper"
+    let madeFirst = await store.createAgent(name: "Ada", draft: plain)
+    let first = try XCTUnwrap(madeFirst)
+    XCTAssertEqual(store.agent(first)?.title, "Personal Shopper")
+    var picked = AgentDraft(name: "Leo")
+    picked.title = "Travel"
+    picked.wear(try XCTUnwrap(AgentFaces.pool.first { $0.gender == "male" }), agents: store.agents, voices: [])
+    let madeSecond = await store.createAgent(name: "Leo", draft: picked)
+    let second = try XCTUnwrap(madeSecond)
+    XCTAssertEqual(store.agent(second)?.title, "Travel")
+  }
 }

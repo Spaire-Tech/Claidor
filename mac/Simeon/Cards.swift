@@ -2126,7 +2126,7 @@ private struct MacProductSheet: View {
             if let price = product.price {
               MacProductPrice(price: price, listPrice: product.listPrice, ink: ink, grey: grey, size: 16).padding(.top, 6)
             }
-            MacProductBuyButton(label: status?.label ?? ProductsCard.buyLabel(agent: agentName), status: status, look: look, ink: ink) { buy(product) }
+            MacProductBuyButton(label: status?.label ?? ProductsCard.buyLabel(agent: agentName), status: status, look: look) { buy(product) }
               .padding(.top, 18)
             Button { openURL(product.url) } label: {
               Text(ProductsCard.viewWebsite).font(.system(size: 15)).foregroundStyle(ink)
@@ -2185,22 +2185,21 @@ private struct MacProductSheet: View {
   }
 }
 
-/** Buy with <agent> in the light blue capsule; Buying faded while it is under way, Bought in green once ordered. Return presses it. */
+/** Buy with <agent> in the chat's blue with white words, as the iPhone's; Buying faded while it is under way, Bought in green once ordered. Return presses it. */
 private struct MacProductBuyButton: View {
   let label: String
   let status: ProductsCard.Status?
   let look: Look
-  let ink: Color
   let action: () -> Void
 
   var body: some View {
     let bought = status == .bought
-    let blue: Color = look.dark ? Color(hex: 0x1e3c5c) : Color(hex: 0xbcdcfb)
+    let blue: Color = look.dark ? Color(hex: 0x2f6db0) : Color(hex: 0x255a93)
     let wash: Color = bought ? look.addedWash : blue.opacity(status == nil ? 1 : 0.55)
     Button(action: action) {
       Text(label)
         .font(.system(size: 15, weight: .medium))
-        .foregroundStyle(bought ? look.added : ink)
+        .foregroundStyle(bought ? look.added : Color(hex: 0xfcfcfc))
         .frame(maxWidth: .infinity).frame(height: 38)
         .background(wash, in: Capsule())
         .contentShape(Capsule())

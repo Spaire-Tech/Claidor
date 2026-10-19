@@ -4,11 +4,12 @@ import SwiftUI
 /**
  * Wallet (the founder, 18 October 2026, with Muse's for reference: "wallet
  * is just another connectors page basically. but link and shop"): what the
- * agents pay with when they buy something for the person. Its mark, its
- * name and a line on what it is, then Link by Stripe and Shop Pay, named as
- * the purchase card names them. One that is connected opens its page
- * (PluginPage), as on Connectors; one that is not says Add, which asks first
- * as every connect does (PluginAddButton) and then opens its sign-in.
+ * agents pay with when they buy something for the person. As plain as
+ * Permissions (the founder, 19 October 2026): "Wallet" in the bar, then
+ * Link by Stripe and Shop Pay, named as the purchase card names them. One
+ * that is connected opens its page (PluginPage), as on Connectors; one that
+ * is not says Add, which asks first as every connect does (PluginAddButton)
+ * and then opens its sign-in.
  */
 struct WalletPage: View {
   @Environment(SimeonCore.AppStore.self) private var store
@@ -20,14 +21,13 @@ struct WalletPage: View {
 
   var body: some View {
     Form {
-      Section { head }
-        .listRowBackground(Color.clear)
       Section {
         ForEach(Self.wallets, id: \.id) { wallet in WalletRow(id: wallet.id, name: wallet.name) }
       }
       .listRowBackground(Ink.groupedRow)
     }
     .groupedGround()
+    .navigationTitle("Wallet")
     .inlineBarTitle()
     .overlay(alignment: .bottom) { PluginNoticeBar().animation(.easeOut(duration: 0.2), value: model.notice) }
     .task {
@@ -36,25 +36,6 @@ struct WalletPage: View {
       await model.load()
     }
     .environment(model)
-  }
-
-  private var head: some View {
-    VStack(spacing: 12) {
-      Image(systemName: "wallet.bifold")
-        .font(.system(size: 30, weight: .regular))
-        .foregroundStyle(Ink.primary)
-        .frame(width: 64, height: 64)
-        .background(Ink.groupedRow, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .accessibilityHidden(true)
-      Text("Wallet").font(.system(size: 24, weight: .bold)).foregroundStyle(Ink.primary)
-      Text("Securely save payment methods for your agents to use when making purchases for you.")
-        .font(.system(size: 15))
-        .foregroundStyle(Ink.secondary)
-        .multilineTextAlignment(.center)
-        .fixedSize(horizontal: false, vertical: true)
-    }
-    .frame(maxWidth: .infinity)
-    .padding(.top, 4)
   }
 }
 

@@ -31,7 +31,8 @@ struct PhonePrimaryStyle: ButtonStyle {
 /**
  * New Agent (round 3, `__simeonNewAgentSheet`): the face it will wear at
  * 150, changing with the name as it is typed (a woman's name gets a woman's
- * face; AgentFaces.preview), "Name your agent" in a 52 pt field, Create. The
+ * face; AgentFaces.preview), "Name your agent" in a 52 pt field, its title
+ * under it (the founder, 19 October 2026; may stay empty), Create. The
  * agent keeps that face, is asked to introduce itself, and its chat opens.
  * No colours to pick (the founder, 12 October 2026). The pencil on the face
  * opens the avatar editor for the agent to be (the founder, 13 October
@@ -42,11 +43,13 @@ struct NewAgentSheet: View {
   let created: (String) -> Void
   @Environment(AppStore.self) private var store
   @State private var name = ""
+  @State private var title = ""
   @State private var draft = AgentDraft()
   @State private var editingAvatar = false
   @State private var busy = false
   @State private var failed = false
   @FocusState private var naming: Bool
+  @FocusState private var titling: Bool
 
   private var trimmed: String { name.split(whereSeparator: \.isWhitespace).joined(separator: " ") }
 
@@ -63,7 +66,7 @@ struct NewAgentSheet: View {
           PictureCircle(image: picture)
             .frame(width: 150, height: 150)
           // The agent page's pencil, at the sheet's larger face.
-          Button { naming = false; editingAvatar = true } label: {
+          Button { naming = false; titling = false; editingAvatar = true } label: {
             Image(systemName: "pencil").font(.system(size: 15, weight: .medium)).foregroundStyle(Ink.primary)
               .frame(width: 36, height: 36)
               .background(Ink.bubbleTheirs, in: Circle())
@@ -79,17 +82,26 @@ struct NewAgentSheet: View {
           .font(.system(size: 17))
           .multilineTextAlignment(.center)
           .focused($naming)
-          .submitLabel(.done)
-          .onSubmit(create)
+          .submitLabel(.next)
+          .onSubmit { titling = true }
           .onChange(of: name) { _, value in
             if value.count > 60 { name = String(value.prefix(60)) }
             draft.name = trimmed
           }
-          .padding(.horizontal, 16)
-          .frame(height: 52)
-          .background(Ink.ground, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-          .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).stroke(Ink.edge, lineWidth: 1))
-          .padding(.horizontal, 16)
+          .modifier(NewAgentField())
+          .padding(.bottom, 10)
+        // Its job, not just a name (the founder, 19 October 2026): the tag under its name and its role in its own prompt.
+        TextField("Title, like Personal Shopper", text: $title)
+          .font(.system(size: 17))
+          .multilineTextAlignment(.center)
+          .focused($titling)
+          .submitLabel(.done)
+          .onSubmit(create)
+          .onChange(of: title) { _, value in
+            if value.count > 60 { title = String(value.prefix(60)) }
+            draft.title = title.split(whereSeparator: \.isWhitespace).joined(separator: " ")
+          }
+          .modifier(NewAgentField())
           .padding(.bottom, 22)
         if failed {
           Text("Couldn’t create the agent. Try again.").font(.system(size: 14)).foregroundStyle(Ink.danger).multilineTextAlignment(.center).padding(.horizontal, 16).padding(.bottom, 8)
@@ -120,6 +132,18 @@ struct NewAgentSheet: View {
       busy = false
       if let id { Haptics.success(); created(id) } else { Haptics.warning(); failed = true }
     }
+  }
+}
+
+/** A New Agent field: 52 high, the ground with a hairline, 22 round, 16 in from the sheet's sides. */
+private struct NewAgentField: ViewModifier {
+  func body(content: Content) -> some View {
+    content
+      .padding(.horizontal, 16)
+      .frame(height: 52)
+      .background(Ink.ground, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+      .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).stroke(Ink.edge, lineWidth: 1))
+      .padding(.horizontal, 16)
   }
 }
 
