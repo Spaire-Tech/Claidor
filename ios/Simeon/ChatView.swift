@@ -1100,7 +1100,7 @@ struct ChatComposer: View {
     dictation.cancel()
     #if os(iOS)
     // What the keyboard is still composing (a predicted word, an accent) set down first: SwiftUI won't empty a field holding it.
-    let field = typing ? TypingField.current() : nil
+    let field = typing ? FocusedTextInput.current() : nil
     field?.unmarkText()
     #endif
     place("", chips: [])
@@ -1113,7 +1113,7 @@ struct ChatComposer: View {
       Task { @MainActor in
         for pause: UInt64 in [50_000_000, 300_000_000] {
           try? await Task.sleep(nanoseconds: pause)
-          if draft.isEmpty { TypingField.empty(field) }
+          if draft.isEmpty { FocusedTextInput.empty(field) }
         }
       }
     }
@@ -1139,13 +1139,13 @@ struct ChatComposer: View {
  * words beside the mic, and the next letter typed brought them all back.
  */
 @MainActor
-enum TypingField {
+enum FocusedTextInput {
   private static weak var found: UIResponder?
 
   /** The field that has the keyboard, if one does. */
   static func current() -> (UIView & UITextInput)? {
     found = nil
-    _ = UIApplication.shared.sendAction(#selector(UIResponder.simeonNoteTyping), to: nil, from: nil, for: nil)
+    _ = UIApplication.shared.sendAction(#selector(UIResponder.simeonNoteFocused), to: nil, from: nil, for: nil)
     return found as? (UIView & UITextInput)
   }
 
@@ -1160,7 +1160,7 @@ enum TypingField {
 }
 
 extension UIResponder {
-  @objc fileprivate func simeonNoteTyping() { TypingField.note(self) }
+  @objc fileprivate func simeonNoteFocused() { FocusedTextInput.note(self) }
 }
 #endif
 
