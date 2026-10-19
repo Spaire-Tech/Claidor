@@ -160,6 +160,8 @@ export function createLinkTools(options: LinkToolsOptions) {
     const current = await cli.run(["spend-request", "retrieve", id]);
     if (!current.ok) return answerText(current);
     const { status, type } = statusOf(current);
+    const asked = linkActionText(current);
+    if (asked != null) return { text: asked, isError: true };
     if (status !== "approved") return { text: `This purchase is ${status || "not approved"}, not approved: ${status === "pending_approval" || status === "created" ? "call wait_for_approval first." : "tell the person, and create a new purchase only if they ask."}`, isError: true };
     if (type === "link_pay_token") {
       const withToken = await cli.run(["spend-request", "retrieve", id, "--include", "link_pay_token"]);
@@ -188,6 +190,8 @@ export function createLinkTools(options: LinkToolsOptions) {
     try {
       const written = await cli.run(["spend-request", "retrieve", id, "--include", "card", "--output-file", file, "--force"]);
       if (!written.ok) return { ok: false, message: `Link: ${written.message} (${written.code})`, answer: written };
+      const asked = linkActionText(written);
+      if (asked != null) return { ok: false, message: asked };
       let card: CheckoutCard;
       try { card = cardFromFile(JSON.parse(readFileSync(file, "utf8")) as unknown); } catch (error) { return { ok: false, message: `Link's card could not be read: ${error instanceof Error ? error.message : String(error)}` }; }
       rmSync(file, { force: true });
@@ -568,6 +572,22 @@ function spendAnswer(answer: LinkCliAnswer): SpendAnswer {
     ...(approvalUrl.startsWith("https://") ? { approvalUrl } : {}),
     ...(status === "requires_action" ? { action: { message: text(next?.display_message) || "Link needs something from you before it can approve this.", ...(actionUrl.startsWith("https://") ? { url: actionUrl } : {}), resumes: text(next?.resolution) === "auto_resume" } } : {}),
   };
+}
+
+/**
+ * What Link asks of the person before it releases the card
+ * (`requires_action`), in its own words and with its own page, for the agent
+ * to pass on; undefined when it asks nothing. 19 October 2026: Muse, paying
+ * with the founder's Link, was stopped at this step ("Link answered that it
+ * needs you to finish a step on its own site"), and Simeon's agent was told
+ * only "This purchase is requires_action, not approved".
+ */
+function linkActionText(answer: LinkCliAnswer): string | undefined {
+  const spend = spendAnswer(answer);
+  if (!spend.ok || spend.action == null) return undefined;
+  const where = spend.action.url == null ? " They do it in the Link app (https://link.com/download)." : ` Send them Link's page for it in the chat, unchanged: ${spend.action.url}`;
+  const next = spend.action.resumes ? "Once they say it's done, call pay_checkout again." : "Once they say it's done, this purchase can't go on: call RequestPurchase again for a new checkout card.";
+  return `Link won't release the card until the person does one thing at Link: "${spend.action.message}".${where} ${next} Nothing was paid.`;
 }
 
 /** The person's payment methods from `payment-methods list`: the CLI prints the list itself; Link's own API wraps it in `payment_details`. */

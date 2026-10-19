@@ -887,6 +887,13 @@ client, run and held by our server (`server/simeon/desktop/link_wallet.py`, belo
        Link app` and is asked in the Link app as it is (`spend-request request-approval <id>`),
        never made twice. Link's approval page, when it comes to that, opens with the person's
        email filled in (`fromEmail`, as Link's own instructions ask). `desktop/tests/link-wallet.test.mjs`.
+     * **Link's own step before the card** (19 October 2026: Muse, paying with the founder's
+       Link, was stopped when it asked for the card: "Link answered that it needs you to finish a
+       step on its own site"). A spend request in `requires_action` at `pay_checkout`, or when the
+       card is retrieved, now reaches the agent as Link's own sentence and page
+       (`status_details.requires_action.next_action`), with what comes after (`auto_resume`: pay
+       again once done; otherwise a new checkout card); before, it read "This purchase is
+       requires_action, not approved" and the page was lost (`linkActionText` in `link-tools.ts`).
      * **Link refusing it** (Simeon may need Link's approval as a partner for this: the
        registered client below): the host makes the same request the old way
        (`--request-approval`, the card's own key) and logs `[link] approval in Simeon refused:

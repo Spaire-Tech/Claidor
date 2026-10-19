@@ -133,6 +133,10 @@ test("the tools build Link's commands, hide cards and tokens, and sign in with t
       return { value: { id: "lsrq_1", status: "approved", card_output_file: "…" } };
     },
     "spend-request retrieve lsrq_1": { value: { id: "lsrq_1", status: "approved", credential_type: "card", card: { brand: "visa", last4: "4242", number: "4242424242424242", cvc: "123" } } },
+    // Link asking the person for a step of its own before the card (19 October 2026, the founder's Mastercard ending 1005).
+    "spend-request retrieve lsrq_act": { value: { id: "lsrq_act", status: "requires_action", credential_type: "card", status_details: { requires_action: { next_action: { type: "re_authorize", display_message: "Confirm your Mastercard ending 1005 to keep using it.", action_url: "https://app.link.com/actions/abc", resolution: "create_new_spend_request" } } } } },
+    "spend-request retrieve lsrq_late --include card": { value: { id: "lsrq_late", status: "requires_action", status_details: { requires_action: { next_action: { type: "three_d_secure", display_message: "Your bank wants to confirm this purchase.", action_url: "https://app.link.com/actions/3ds", resolution: "auto_resume" } } } } },
+    "spend-request retrieve lsrq_late": { value: { id: "lsrq_late", status: "approved", credential_type: "card" } },
     "sources list": { code: 1, value: { code: "NOT_AUTHENTICATED", message: "Not authenticated." } },
     "transactions list": { value: { data: [{ id: "lbctxn_1", amount: -4999, description: "ACME Coffee" }], has_more: false } },
   });
@@ -218,6 +222,13 @@ test("the tools build Link's commands, hide cards and tokens, and sign in with t
   assert.equal(filled[0].pageHint, "shop.example.com");
   assert.doesNotMatch(paid.text, /4242424242424242|123/);
   assert.deepEqual(readdirSync(path.join(root, "link")).filter((name) => name.startsWith("card-")), [], "the card file is gone");
+  // Link asks the person for a step first: its words and its page reach the agent, and no card is typed.
+  const step = await link.call("pay_checkout", { spend_request_id: "lsrq_act", checkout_url: "shop.example.com" });
+  assert.equal(step.isError, true);
+  assert.equal(step.text, 'Link won\'t release the card until the person does one thing at Link: "Confirm your Mastercard ending 1005 to keep using it.". Send them Link\'s page for it in the chat, unchanged: https://app.link.com/actions/abc Once they say it\'s done, this purchase can\'t go on: call RequestPurchase again for a new checkout card. Nothing was paid.');
+  const bank = await link.call("pay_checkout", { spend_request_id: "lsrq_late", checkout_url: "shop.example.com" });
+  assert.match(bank.text, /"Your bank wants to confirm this purchase\."\. Send them Link's page for it in the chat, unchanged: https:\/\/app\.link\.com\/actions\/3ds Once they say it's done, call pay_checkout again\./);
+  assert.equal(filled.length, 1, "nothing typed for either");
   const retrieved = await link.call("list_purchases", {});
   assert.doesNotMatch(JSON.stringify(scrubLinkSecrets({ card: { number: "4242424242424242", cvc: "123", last4: "4242" } })), /4242424242424242|"123"/);
   assert.equal(retrieved.isError, false);
