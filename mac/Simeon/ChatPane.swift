@@ -869,7 +869,7 @@ private struct BubbleRow: View {
         if let call = CallRecordView.parse(bubble.text) {
           CallRecordView(duration: call.duration, recap: call.recap, look: look)
         } else {
-          MessageBlocks(blocks: Markdown.cachedBlocks(bubble.text), line: MessageLine(size: 14, lineHeight: 20, colour: look.theirsText, look: look, agents: store.mentionNames, personName: store.account?.name, find: findMarks))
+          MessageBlocks(blocks: Markdown.cachedBlocks(bubble.text), line: MessageLine(size: 14, lineHeight: 20, colour: look.theirsText, look: look, agents: store.mentionNames, personName: store.account?.name, find: findMarks, speaker: bubble.author?.id ?? agentId))
         }
         if let tag = bubble.channel {
           ChannelTagView(tag: tag, ink: look.theirsText)

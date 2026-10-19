@@ -202,7 +202,7 @@ private struct ExchangeMessage: View {
 
   private var bubble: some View {
     let shape = UnevenRoundedRectangle(topLeadingRadius: first ? 18 : 6, bottomLeadingRadius: 6, bottomTrailingRadius: 18, topTrailingRadius: 18)
-    return MessageBlocks(blocks: Markdown.cachedBlocks(text), line: MessageLine(size: 14, lineHeight: 20, colour: look.theirsText, look: look, agents: store.mentionNames, personName: store.account?.name))
+    return MessageBlocks(blocks: Markdown.cachedBlocks(text), line: MessageLine(size: 14, lineHeight: 20, colour: look.theirsText, look: look, agents: store.mentionNames, personName: store.account?.name, speaker: sender.id))
       .font(.system(size: 14))
       .tracking(-0.042)
       .foregroundStyle(look.theirsText)
