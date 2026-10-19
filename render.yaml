@@ -1,6 +1,20 @@
 # The Render services. Since 5 October 2026 the live services run in Oregon
 # (docs/ops/box-host/render-env.md, "Where the services run"); `region` below
 # says so for a Blueprint made from this file.
+#
+# THE LIVE NAMES ARE NOT THESE. The Oregon services were made by hand, not
+# from this file: `simeon-api`, `simeon-worker`, `simeon-postgres`,
+# `simeon-redis` and the group `simeon-shared` (the runner,
+# `simeonlabs-maty-runner`, stayed in Frankfurt). The `claidor-*` names below
+# are the first Blueprint's, kept so that a Blueprint still linked to this file
+# makes nothing new: renamed, it would make a second set of services and an
+# empty database. Read this file for which settings exist; set them on the
+# live services. Where they differ from it (checked 19 October 2026): the
+# e-mail settings are on `simeon-api` and `simeon-worker` themselves, not in
+# the group, and the worker needs them too (it sends the mail the API
+# queues); the App Review sign-in is in `simeon-shared`
+# (docs/services-core.md, Sign-in, "Settings on Render").
+#
 # Claidor on Render — infrastructure as a blueprint.
 #
 # Create with: Render dashboard → New → Blueprint → point at this repo.
@@ -287,7 +301,8 @@ envVarGroups:
 
       # --- email (login codes, alerts later) ---
       # Start with `logger` to get the app up without Resend; switch to
-      # `resend` once the sending domain is verified.
+      # `resend` once the sending domain is verified. The worker sends the
+      # mail, so it needs the sender and the key as much as the API does.
       - key: CLAIDOR_EMAIL_SENDER
         value: logger
       - key: CLAIDOR_RESEND_API_KEY

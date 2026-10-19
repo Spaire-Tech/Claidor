@@ -130,6 +130,8 @@ final class Dictation {
   @ObservationIgnored private var engine: AVAudioEngine?
   @ObservationIgnored private var request: SFSpeechAudioBufferRecognitionRequest?
   @ObservationIgnored private var task: SFSpeechRecognitionTask?
+  /** Each listening's number: what arrives for an earlier one, after `cancel`, writes nothing. */
+  @ObservationIgnored private var listening = 0
 
   func start(_ write: @escaping (String) -> Void) {
     guard !isListening else { return }
@@ -168,14 +170,23 @@ final class Dictation {
     self.engine = engine
     self.request = request
     isListening = true
+    listening += 1
+    let mine = listening
     task = recognizer.recognitionTask(with: request) { [weak self] result, error in
       let text = result?.bestTranscription.formattedString
       let final = result?.isFinal ?? false
       Task { @MainActor in
+        guard let self, self.listening == mine else { return }
         if let text { write(text) }
-        if error != nil || final { self?.stop() }
+        if error != nil || final { self.stop() }
       }
     }
+  }
+
+  /** Stopped, and what is still on its way dropped: the message it was writing was sent. (Stop keeps the last words, which come after it.) */
+  func cancel() {
+    listening += 1
+    stop()
   }
 
   func stop() {
