@@ -87,6 +87,21 @@ test("the form, the travellers' checks and the flight's checkout card", async ()
       assert.equal(refused.ok, false, JSON.stringify(change));
       assert.equal(refused.field, field);
     }
+    // An adult is 18 on the day of the last flight (19 October 2026: Muse's booking died on a birth year of 2026, after approval).
+    const dated = { ...form.flight, lastFlightDate: "2026-11-12" };
+    const baby = module.checkTravellers([{ ...TRAVELLER, born_on: "2026-03-01" }], dated, today);
+    assert.equal(baby.field, "born_on");
+    assert.match(baby.message, /18 or older on the day of the last flight/);
+    assert.equal(module.checkTravellers([{ ...TRAVELLER, born_on: "2008-11-12" }], dated, today).ok, true, "18 that day");
+    assert.equal(module.checkTravellers([{ ...TRAVELLER, born_on: "2008-11-13" }], dated, today).field, "born_on", "a day short");
+    assert.equal(module.checkTravellers([{ ...TRAVELLER, born_on: "2026-03-01" }], form.flight, today).ok, true, "no flight day (an older server): no age check");
+    assert.equal(module.checkTravellers([{ ...TRAVELLER, born_on: "2016-03-01" }], { ...dated, passengers: [{ id: TRAVELLER.id, type: "child" }] }, today).ok, true, "a child's seat");
+    assert.equal(module.ageOn("2008-11-12", "2026-11-12"), 18);
+
+    // What changed between two looks at a flight, in the person's words.
+    assert.equal(module.flightChanges({ price: "$340.00", depart: "6:49 AM", refundable: "Refundable" }, { total: "$361.20", depart: "7:15 AM", refundable: "Not refundable" }), "Changed since you picked it: Price now $361.20 (was $340.00) · Leaves 7:15 AM (was 6:49 AM) · Refunds: Not refundable (was Refundable)");
+    assert.equal(module.flightChanges({ price: "$361.20", depart: "6:49 AM" }, { total: "$361.20", depart: "6:49 AM", arrive: "9:34 AM" }), undefined, "the same, and a fact one side lacks, is no change");
+
     const needsPassport = { ...form.flight, documentsRequired: true };
     assert.equal(module.checkTravellers([TRAVELLER], needsPassport, today).field, "passport");
     const withPassport = module.checkTravellers([{ ...TRAVELLER, passport: { number: "533 401 372", issuing_country_code: "us", expires_on: "2030-01-01" } }], needsPassport, today);
@@ -115,8 +130,13 @@ test("the form, the travellers' checks and the flight's checkout card", async ()
     assert.equal(module.purchaseFlightOf(card.purchase).offerId, OFFER_ID);
     assert.equal(module.purchaseFlightOf({ merchant: "NCVSS" }), undefined);
 
+    const changedCard = module.flightCheckoutCard({ offer: OFFER, formEntryId: "t2s1", travellers: good.travellers, card: { brand: "Visa", last4: "4242" }, changed: "Changed since you picked it: Price now $361.20 (was $340.00)" });
+    assert.equal(changedCard.purchase.flight.changed, "Changed since you picked it: Price now $361.20 (was $340.00)");
+    assert.equal(card.purchase.flight.changed, undefined);
+
     const flight = card.purchase.flight;
     assert.match(module.buildFlightBookedWakePrompt("t2s2", flight, "RZPNX8", true), /booking reference RZPNX8.*test mode.*Don't book it again/s);
+    assert.match(module.buildFlightBookedWakePrompt("t2s2", flight, "", false), /the booking reference comes in the airline's email/);
     assert.match(module.buildFlightUncertainWakePrompt("t2s2", flight), /Never book it again/);
     assert.match(module.buildFlightFailedWakePrompt("t2s2", flight, "The card was declined."), /was not booked.*declined.*don't retry/s);
   } finally {
@@ -184,7 +204,7 @@ function fakeWallet({ approve = true } = {}) {
   };
 }
 
-async function harness({ offer = OFFER, order, payResult, approve = true } = {}) {
+async function harness({ offer = OFFER, order, payResult, approve = true, status = [] } = {}) {
   const flights = await load("source/host/extensions/transcript/flight-bookings.ts", `flight-bookings-${Math.random().toString(36).slice(2)}`);
   const purchases = await load("source/host/extensions/transcript/purchase-cards.ts", `purchase-cards-${Math.random().toString(36).slice(2)}`);
   const dataDir = await mkdtemp(path.join(os.tmpdir(), "simeon-flight-data-"));
@@ -194,13 +214,15 @@ async function harness({ offer = OFFER, order, payResult, approve = true } = {})
   const paid = [];
   let offerNow = offer;
   tm.purchaseCards = new purchases.module.PurchaseCards(tm, { retryDelayMs: 0, log: () => undefined });
-  tm.flightBookings = new flights.module.FlightBookings(tm, { log: () => undefined });
+  tm.flightBookings = new flights.module.FlightBookings(tm, { log: () => undefined, settleWaitsMs: [0, 0, 0] });
+  const statuses = [...status];
   tm.flightBookings.setFlightBookingServices({
     api: async (route, json) => {
       asked.push([route, json]);
       if (route === "flights/offer") return offerNow;
       if (route === "flights/client-key") return { clientKey: "head.eyJ0b2tlbiI6InRvayJ9.sig", test: true };
       if (route === "flights/order") { if (order instanceof Error) throw order; return order ?? { booked: true, orderId: "ord_1", bookingReference: "RZPNX8", test: true }; }
+      if (route === "flights/order-status") { const next = statuses.shift(); if (next instanceof Error || next == null) throw next ?? Object.assign(new Error("No booking of this flight is waiting to be confirmed."), { status: 404 }); return next; }
       throw new Error(`unexpected ${route}`);
     },
     wallet: () => wallet,
@@ -314,6 +336,69 @@ test("a lost answer to the order is uncertain, never 'not booked', and the card 
     assert.equal(card.purchaseStep, "uncertain");
     assert.ok(!h.wallet.calls.some(([kind]) => kind === "cancel"), "the airline may have charged it");
     await until(() => h.wakes.some((wake) => wake.source === "flight-uncertain"), "the agent told");
+  } finally {
+    await h.dispose();
+  }
+});
+
+test("a lost order is asked after, and the card says Booked once Duffel has it", async () => {
+  const lost = Object.assign(new Error("The operation was aborted due to timeout"), { name: "TimeoutError" });
+  const h = await harness({ order: lost, status: [{ booked: false, uncertain: true }, { booked: true, orderId: "ord_late", bookingReference: "LATE42", test: true }] });
+  try {
+    const { checkout } = await toCheckout(h);
+    await h.tm.purchaseCards.answerPurchase({ agentId: "a1", entryId: checkout, allow: true }, h.wallet);
+    await until(() => h.entries.find((entry) => entry.id === checkout).purchaseState === "ordered", "the order found");
+    const card = h.entries.find((entry) => entry.id === checkout);
+    assert.equal(card.purchaseOrder, "LATE42");
+    assert.equal(card.purchaseStep, undefined);
+    assert.deepEqual(h.asked.filter(([route]) => route === "flights/order-status").map(([, json]) => json), [{ offer_id: OFFER_ID }, { offer_id: OFFER_ID }]);
+    assert.equal(h.asked.filter(([route]) => route === "flights/order").length, 1, "never ordered again");
+    assert.ok(h.wallet.calls.some(([kind, args]) => kind === "report" && args.outcome === "success"));
+    await until(() => h.wakes.some((wake) => wake.source === "flight-booked"), "the agent told");
+    assert.match(h.wakes.find((wake) => wake.source === "flight-booked").prompt, /LATE42/);
+  } finally {
+    await h.dispose();
+  }
+});
+
+test("a lost order Duffel never shows stays 'Not confirmed', and says to look for the airline's email", async () => {
+  const lost = Object.assign(new Error("The operation was aborted due to timeout"), { name: "TimeoutError" });
+  const h = await harness({ order: lost, status: [{ booked: false, uncertain: true }, { booked: false, uncertain: true }, { booked: false, uncertain: true }] });
+  try {
+    const { checkout } = await toCheckout(h);
+    await h.tm.purchaseCards.answerPurchase({ agentId: "a1", entryId: checkout, allow: true }, h.wallet);
+    await until(() => /Still not confirmed/.test(h.entries.find((entry) => entry.id === checkout).purchaseNote ?? ""), "the last check");
+    const card = h.entries.find((entry) => entry.id === checkout);
+    assert.equal(card.purchaseState, "failed");
+    assert.equal(card.purchaseStep, "uncertain");
+    assert.match(card.purchaseNote, /Don't book it again/);
+    assert.equal(h.asked.filter(([route]) => route === "flights/order-status").length, 3);
+    assert.ok(!h.wallet.calls.some(([kind]) => kind === "cancel"));
+  } finally {
+    await h.dispose();
+  }
+});
+
+test("a flight that changed since the search, or since the form, says so before Allow; an adult too young is stopped on the form", async () => {
+  const h = await harness({ offer: { ...OFFER, lastFlightDate: "2026-11-12" } });
+  try {
+    h.entries[0].message.content = `\`\`\`simeon-flights\n${JSON.stringify({ title: "Seattle to Los Angeles", offers: [{ offerId: OFFER_ID, airline: "Duffel Airways", price: "$340.00", depart: "6:49 AM" }] })}\n\`\`\``;
+    const started = await h.tm.flightBookings.startFlightBooking({ agentId: "a1", entryId: "t1s1", offerIndex: 0 });
+    const form = h.entries.find((entry) => entry.id === started.entryId);
+    assert.equal(form.message.flight.changed, "Changed since you picked it: Price now $361.20 (was $340.00)");
+    assert.equal(form.message.flight.lastFlightDate, "2026-11-12");
+
+    const offersAsked = h.asked.filter(([route]) => route === "flights/offer").length;
+    const young = await h.tm.flightBookings.submitFlightPassengers({ agentId: "a1", entryId: started.entryId, passengers: [{ ...TRAVELLER, born_on: "2026-03-01" }] });
+    assert.equal(young.ok, false);
+    assert.equal(young.field, "born_on");
+    assert.equal(h.asked.filter(([route]) => route === "flights/offer").length, offersAsked, "stopped on the form, before anything is asked");
+
+    h.setOffer({ ...OFFER, lastFlightDate: "2026-11-12", amount: "380.00", amountMinor: 38000, total: "$380.00", card: { ...OFFER.card, depart: "7:15 AM" } });
+    const sent = await h.tm.flightBookings.submitFlightPassengers({ agentId: "a1", entryId: started.entryId, passengers: [TRAVELLER] });
+    const checkout = h.entries.find((entry) => entry.id === sent.entryId);
+    assert.equal(checkout.message.purchase.amount, 38000, "the card asks for today's price");
+    assert.equal(checkout.message.purchase.flight.changed, "Changed since you picked it: Price now $380.00 (was $361.20) · Leaves 7:15 AM (was 6:49 AM)");
   } finally {
     await h.dispose();
   }

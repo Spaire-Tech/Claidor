@@ -31,7 +31,7 @@ struct FlightPassengersCardView: View {
           Text(card.flight.route).font(.system(size: 13)).foregroundStyle(grey)
         }
       }
-      MacFlightLines(flight: card.flight, ink: ink, grey: grey)
+      MacFlightLines(flight: card.flight, ink: ink, grey: grey, alert: look.danger)
       switch card.state {
       case .open:
         VStack(alignment: .leading, spacing: 8) {
@@ -72,11 +72,12 @@ struct FlightPassengersCardView: View {
   }
 }
 
-/** The flight's date and times, then its fare and total. */
+/** The flight's date and times, then its fare and total, and what changed since the search (in `alert`). */
 struct MacFlightLines: View {
   let flight: BookedFlight
   let ink: Color
   let grey: Color
+  var alert: Color = .red
 
   var body: some View {
     VStack(alignment: .leading, spacing: 3) {
@@ -86,6 +87,9 @@ struct MacFlightLines: View {
       let fare = [flight.priceNote, flight.total].filter { !$0.isEmpty }.joined(separator: " · ")
       if !fare.isEmpty {
         Text(fare).font(.system(size: 12)).foregroundStyle(grey).fixedSize(horizontal: false, vertical: true)
+      }
+      if !flight.changed.isEmpty {
+        Text(flight.changed).font(.system(size: 12, weight: .medium)).foregroundStyle(alert).fixedSize(horizontal: false, vertical: true)
       }
     }
   }
@@ -139,7 +143,7 @@ struct MacTravellersSheet: View {
 
   private func send() async {
     for (index, traveller) in travellers.enumerated() {
-      if let found = traveller.problem(passportNeeded: card.flight.documentsRequired) {
+      if let found = traveller.problem(passportNeeded: card.flight.documentsRequired, adultOn: card.adultOn(index)) {
         problem = (index, found.message)
         NSSound.beep()
         return
@@ -235,6 +239,10 @@ struct MacFlightCheckoutBlock: View {
         if !flight.whenLine.isEmpty { Text(flight.whenLine).font(.system(size: 12)).foregroundStyle(grey) }
         if !flight.travellers.isEmpty {
           Label(flight.travellers.joined(separator: ", "), systemImage: "person.fill").font(.system(size: 12)).foregroundStyle(grey)
+        }
+        // What changed since the form (19 October 2026, Muse's rule): a fresh decision, before Allow.
+        if !flight.changed.isEmpty {
+          Text(flight.changed).font(.system(size: 12, weight: .medium)).foregroundStyle(look.danger).fixedSize(horizontal: false, vertical: true)
         }
       }
       Spacer(minLength: 0)

@@ -2,7 +2,9 @@
 Duffel mocked: the offer asked for again, the client key for the card form,
 the pay page, and the order: paid by card with its bank check, refused when
 the price moved or a traveller is missing, never placed twice for one offer,
-and reported as uncertain (not retried) when Duffel's answer never came."""
+reported as uncertain (not retried) when Duffel's answer never came, and
+then found among Duffel's orders from that offer; Duffel's 200, 202 and 503
+read as its "Order creation response handling" says."""
 
 import json
 from datetime import date, timedelta
@@ -145,6 +147,7 @@ class TestOffer:
         assert data["route"] == "Seattle to Los Angeles"
         assert data["card"]["offerId"] == OFFER_ID
         assert data["card"]["priceNote"] == "1 adult · Economy · One way"
+        assert data["lastFlightDate"] == DAY.isoformat()
         assert data["test"] is True
 
     async def test_a_gone_offer_is_a_sentence(
@@ -405,7 +408,145 @@ class TestOrder:
         assert retried.status_code == 200
         assert placed.call_count == 2
 
-    async def test_no_answer_is_uncertain_and_never_asked_again(
+    async def test_no_answer_is_uncertain_never_asked_again_and_found_later(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        headers = await _signed_in(client, session, user)
+        mine = {
+            "id": "ord_late",
+            "booking_reference": "LATE42",
+            "total_amount": "361.20",
+            "total_currency": "USD",
+            "owner": {"name": "Duffel Airways"},
+            "metadata": {"simeon_user": str(user.id)},
+        }
+        someone_elses = {**mine, "id": "ord_other", "metadata": {"simeon_user": "x"}}
+        with respx.mock() as mock:
+            mock.get(f"{API}/air/offers/{OFFER_ID}").mock(
+                return_value=httpx.Response(200, json={"data": _offer()})
+            )
+            placed = mock.post(f"{API}/air/orders").mock(
+                side_effect=httpx.ReadTimeout("no answer")
+            )
+            listed = mock.get(f"{API}/air/orders").mock(
+                side_effect=[
+                    httpx.Response(200, json={"data": []}),
+                    httpx.Response(200, json={"data": [someone_elses]}),
+                    httpx.Response(200, json={"data": [someone_elses, mine]}),
+                ]
+            )
+            first = await client.post(
+                "/desktop/api/flights/order", headers=headers, json=_order_body()
+            )
+            second = await client.post(
+                "/desktop/api/flights/order", headers=headers, json=_order_body()
+            )
+            not_yet = await client.post(
+                "/desktop/api/flights/order-status",
+                headers=headers,
+                json={"offer_id": OFFER_ID},
+            )
+            found = await client.post(
+                "/desktop/api/flights/order-status",
+                headers=headers,
+                json={"offer_id": OFFER_ID},
+            )
+        assert first.status_code == 200
+        assert first.json()["data"]["booked"] is False
+        assert first.json()["data"]["uncertain"] is True
+        assert second.status_code == 409
+        assert placed.call_count == 1
+        assert listed.calls[0].request.url.params["offer_id"] == OFFER_ID
+        assert not_yet.json()["data"] == {"booked": False, "uncertain": True}
+        assert found.status_code == 200, found.text
+        assert found.json()["data"] == {
+            "booked": True,
+            "orderId": "ord_late",
+            "bookingReference": "LATE42",
+            "total": "$361.20",
+            "airline": "Duffel Airways",
+            "test": True,
+        }
+
+    async def test_status_of_an_order_never_asked_for_is_refused(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _signed_in(client, session, user)
+        with respx.mock(assert_all_called=False) as mock:
+            listed = mock.get(f"{API}/air/orders")
+            response = await client.post(
+                "/desktop/api/flights/order-status",
+                headers=headers,
+                json={"offer_id": OFFER_ID},
+            )
+        assert response.status_code == 404
+        assert not listed.called
+
+    async def test_a_lost_answer_found_at_once_is_booked(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _signed_in(client, session, user)
+        with respx.mock() as mock:
+            mock.get(f"{API}/air/offers/{OFFER_ID}").mock(
+                return_value=httpx.Response(200, json={"data": _offer()})
+            )
+            mock.post(f"{API}/air/orders").mock(
+                return_value=httpx.Response(502, json={"errors": [{"message": "x"}]})
+            )
+            mock.get(f"{API}/air/orders").mock(
+                return_value=httpx.Response(
+                    200,
+                    json={
+                        "data": [
+                            {
+                                "id": "ord_3",
+                                "booking_reference": "FOUND1",
+                                "metadata": {"simeon_user": str(user.id)},
+                            }
+                        ]
+                    },
+                )
+            )
+            response = await client.post(
+                "/desktop/api/flights/order", headers=headers, json=_order_body()
+            )
+        assert response.json()["data"]["booked"] is True
+        assert response.json()["data"]["bookingReference"] == "FOUND1"
+
+    async def test_503_is_certainly_not_booked_and_frees_the_offer(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _signed_in(client, session, user)
+        with respx.mock(assert_all_called=False) as mock:
+            mock.get(f"{API}/air/offers/{OFFER_ID}").mock(
+                return_value=httpx.Response(200, json={"data": _offer()})
+            )
+            placed = mock.post(f"{API}/air/orders").mock(
+                side_effect=[
+                    httpx.Response(503, json={"errors": [{"message": "busy"}]}),
+                    httpx.Response(
+                        201, json={"data": {"id": "ord_4", "booking_reference": "R2"}}
+                    ),
+                ]
+            )
+            listed = mock.get(f"{API}/air/orders")
+            busy = await client.post(
+                "/desktop/api/flights/order", headers=headers, json=_order_body()
+            )
+            later = await client.post(
+                "/desktop/api/flights/order", headers=headers, json=_order_body()
+            )
+        assert busy.status_code == 409
+        assert "nothing was booked" in busy.json()["error"]["message"]
+        assert later.json()["data"]["booked"] is True
+        assert placed.call_count == 2
+        assert not listed.called
+
+    async def test_202_is_still_being_confirmed(
         self, client: httpx.AsyncClient, session: AsyncSession, user: User
     ) -> None:
         headers = await _signed_in(client, session, user)
@@ -414,22 +555,105 @@ class TestOrder:
                 return_value=httpx.Response(200, json={"data": _offer()})
             )
             placed = mock.post(f"{API}/air/orders").mock(
-                side_effect=httpx.ReadTimeout("no answer")
+                return_value=httpx.Response(202, json={"data": {}})
             )
-            first = await client.post(
+            pending = await client.post(
                 "/desktop/api/flights/order", headers=headers, json=_order_body()
             )
-            second = await client.post(
+            again = await client.post(
                 "/desktop/api/flights/order", headers=headers, json=_order_body()
             )
-        assert first.status_code == 200
-        assert first.json()["data"]["booked"] is False
-        assert first.json()["data"]["uncertain"] is True
-        assert second.status_code == 409
+        data = pending.json()["data"]
+        assert data["booked"] is False
+        assert data["uncertain"] is True
+        assert "still confirming" in data["message"]
+        assert again.status_code == 409
+        assert placed.call_count == 1
+
+    async def test_200_takes_its_booking_reference_from_the_order_list(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _signed_in(client, session, user)
+        with respx.mock() as mock:
+            mock.get(f"{API}/air/offers/{OFFER_ID}").mock(
+                return_value=httpx.Response(200, json={"data": _offer()})
+            )
+            mock.post(f"{API}/air/orders").mock(
+                return_value=httpx.Response(200, json={"data": {"id": "ord_5"}})
+            )
+            mock.get(f"{API}/air/orders").mock(
+                return_value=httpx.Response(
+                    200,
+                    json={
+                        "data": [
+                            {
+                                "id": "ord_5",
+                                "booking_reference": "LATER5",
+                                "metadata": {"simeon_user": str(user.id)},
+                            }
+                        ]
+                    },
+                )
+            )
+            response = await client.post(
+                "/desktop/api/flights/order", headers=headers, json=_order_body()
+            )
+        data = response.json()["data"]
+        assert data["booked"] is True
+        assert data["bookingReference"] == "LATER5"
+
+    async def test_an_adult_is_18_on_the_day_of_the_last_flight(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _signed_in(client, session, user)
+        # 18 years are 6574 or 6575 days: a day short of either, and a day past both.
+        seventeen = DAY - timedelta(days=6570)
+        eighteen = DAY - timedelta(days=6576)
+        with respx.mock(assert_all_called=False) as mock:
+            mock.get(f"{API}/air/offers/{OFFER_ID}").mock(
+                return_value=httpx.Response(200, json={"data": _offer()})
+            )
+            placed = mock.post(f"{API}/air/orders").mock(
+                return_value=httpx.Response(
+                    201, json={"data": {"id": "ord_6", "booking_reference": "A18"}}
+                )
+            )
+            this_year = await client.post(
+                "/desktop/api/flights/order",
+                headers=headers,
+                json=_order_body(
+                    passengers=[
+                        _traveller(
+                            born_on=(date.today() - timedelta(days=200)).isoformat()
+                        )
+                    ]
+                ),
+            )
+            too_young = await client.post(
+                "/desktop/api/flights/order",
+                headers=headers,
+                json=_order_body(
+                    passengers=[_traveller(born_on=seventeen.isoformat())]
+                ),
+            )
+            just = await client.post(
+                "/desktop/api/flights/order",
+                headers=headers,
+                json=_order_body(passengers=[_traveller(born_on=eighteen.isoformat())]),
+            )
+        assert this_year.status_code == 400
+        assert "18 or older" in this_year.json()["error"]["message"]
+        assert too_young.status_code == 400
+        assert just.status_code == 200, just.text
         assert placed.call_count == 1
 
 
 class TestShapes:
+    def test_age_on_the_day(self) -> None:
+        assert flight_booking.age_on(date(2008, 11, 12), date(2026, 11, 12)) == 18
+        assert flight_booking.age_on(date(2008, 11, 13), date(2026, 11, 12)) == 17
+        assert flight_booking.last_flight_date({"slices": []}) == ""
+
     def test_minor_units(self) -> None:
         assert flight_booking.minor_units("361.20", "USD") == 36120
         assert flight_booking.minor_units("500", "JPY") == 500
