@@ -192,9 +192,17 @@ profile, not from the configuration.
   Mac window's 75 spellings, and since 14 October 2026 the 36 connectors added
   after it plus "Facebook Pages" and "TikTok Ads"
   (`ios/scripts/connector-mentions.json`, iPhone and Mac only), each in its
-  colour with its logo. A name that is also an everyday word (Link, Kit,
-  Square, Ramp, Capsule, Mercury, Apollo, Gong) is not marked as a sentence's
-  first word ("Link your account"). `node ios/scripts/make-assets.mjs` draws
+  colour with its logo. A name that is also an everyday word (`ordinaryWord`:
+  Link, Shop, Kit, Square, Ramp, Close, Make…) is marked only where its
+  sentence makes it the app (19 October 2026): a cue before it ("pay with
+  Link", "open Shop", "in Box", "signed in to Link"), an app's word after it
+  ("your Shop account", "the Link wallet") or another app beside it ("Gmail,
+  Link and Shop"); never as a verb ("we can Shop here"), after "the" alone
+  ("the Link is here"), in a title ("Payment Link") or as a sentence's first
+  word ("Link your account"). An agent's name is not dressed where it is a
+  product's or a name being given ("the Simeon app", "Simeon's website",
+  "Simeon Labs", "an app called Simeon", "my app name is Simeon"), nor in the
+  speaker's own message. `node ios/scripts/make-assets.mjs` draws
   the logos into `Assets.xcassets/Brands`, copies them to the Mac's, and
   writes the Swift list (`CHROMIUM=` the Chromium binary when it is not at
   `/opt/pw-browsers/chromium`).

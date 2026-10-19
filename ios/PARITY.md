@@ -110,6 +110,7 @@ Bubble (bundle `_o={message:`; patch 1716, 1804):
 
 **Agent names** (patch 1476-1536):
 - Every agent in the roster is matched, except the person's own name and names shorter than 2 characters.
+- The iPhone and the Mac app (`Mentions.find`, 19 October 2026) also skip the speaker's own name and a name used as a product's or a name being given ("the Simeon app", "an app called Simeon"), and mark an everyday-word app (Link, Shop) only where its sentence makes it the app. The window keeps the plain match; its list has no everyday words.
 - Drawing: the agent's butterfly, 1.44em × 1.05em and cropped to `3 30 223 163`, then the name at weight 500.
 - The colour is the palette's top stop, made readable. These are the Mac's values (light / dark):
 

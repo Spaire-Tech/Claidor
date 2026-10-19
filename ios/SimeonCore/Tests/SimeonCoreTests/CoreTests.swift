@@ -983,7 +983,68 @@ final class MarkdownTests: XCTestCase {
     XCTAssertEqual(named("Excalidraw drew it; HeyGen voiced it."), ["Excalidraw=excalidraw", "HeyGen=heygen"])
     // The 52 on their makers' servers, later that day: FLUX by its maker's name too, names with dots and semicolons.
     XCTAssertEqual(named("Black Forest Labs makes FLUX; fal.ai and tl;dv too."), ["Black Forest Labs=black-forest-labs", "FLUX=black-forest-labs", "fal.ai=fal", "tl;dv=tldv"])
-    XCTAssertEqual(named("Make sure Close is open. Hunter found it in Customer.io and lemlist."), ["Close=close", "Customer.io=customer-io", "lemlist=lemlist"])
+    XCTAssertEqual(named("Make sure Close is open. Hunter found it in Customer.io and lemlist."), ["Customer.io=customer-io", "lemlist=lemlist"])
+    XCTAssertEqual(named("Log the call in Close, then open your Hunter account."), ["Close=close", "Hunter=hunter"])
+  }
+
+  /**
+   * An everyday word is an app only where its sentence makes it one (the
+   * founder, 19 October 2026: "yes we can Shop here" wore Shop's logo, "the
+   * Link is here" Link's).
+   */
+  func testEverydayWordsAreAppsOnlyInAnAppsPlace() {
+    func named(_ text: String) -> [String] {
+      Mentions.find(in: text, agents: []).compactMap { match in
+        guard case .brand = match.kind else { return nil }
+        return (text as NSString).substring(with: NSRange(location: match.location, length: match.length))
+      }
+    }
+    // As a verb, after "the", in a title: plain.
+    XCTAssertEqual(named("Yes, we can Shop here."), [])
+    XCTAssertEqual(named("Sure, the Link is here: https://example.com"), [])
+    XCTAssertEqual(named("Here's the Payment Link for the Coffee Shop app."), [])
+    XCTAssertEqual(named("I'll Close the deal and let's Square it up."), [])
+    XCTAssertEqual(named("Click to Link your card."), [])
+    // A cue before it, an app's word after it, or another app beside it: the app.
+    XCTAssertEqual(named("You can pay with Link or check out via **Shop**."), ["Link", "Shop"])
+    XCTAssertEqual(named("Your Shop account and the Link wallet are ready; Link's checkout too."), ["Shop", "Link", "Link"])
+    XCTAssertEqual(named("I signed in to Link, then connected Square."), ["Link", "Square"])
+    XCTAssertEqual(named("Connected: Gmail, Link and Shop."), ["Gmail", "Link", "Shop"])
+    XCTAssertEqual(named("Link and Shop are in your Wallet."), ["Link", "Shop"])
+    XCTAssertEqual(named("Pay with Stripe Link."), ["Stripe", "Link"])
+    // A name that is not an everyday word stays marked wherever it is.
+    XCTAssertEqual(named("Yes, the Stripe charge and the Gmail draft are here."), ["Stripe", "Gmail"])
+  }
+
+  /** An agent's name used as a product's or a name being given is plain; the speaker's own name too (the founder, 19 October 2026: "my app name is Simeon" wore the agent Simeon's pill). */
+  func testAnAgentsNameUsedAsAThingsIsPlain() {
+    let agents = [Mentions.AgentName(name: "Simeon", id: "simeon"), Mentions.AgentName(name: "Theo", id: "theo")]
+    func named(_ text: String, speaker: String? = nil) -> [String] {
+      Mentions.find(in: text, agents: agents, speaker: speaker).compactMap { match in
+        guard case .agent(let id) = match.kind else { return nil }
+        return id
+      }
+    }
+    XCTAssertEqual(named("Got it: your app is called Simeon, and the Simeon app is on the App Store."), [])
+    XCTAssertEqual(named("So your app name is Simeon. I'll read Simeon's website and the Simeon customer feedback."), [])
+    XCTAssertEqual(named("I'll look at the onboarding in Simeon and at your startup, Simeon, after Simeon Labs."), [])
+    // The agents themselves.
+    XCTAssertEqual(named("Ask Simeon, or let Theo plan it; Simeon will check Theo's draft."), ["simeon", "theo", "simeon", "theo"])
+    XCTAssertEqual(named("I left a note in Theo's chat for Simeon."), ["theo", "simeon"])
+    // Simeon writing about Simeon: its own name is never its pill.
+    XCTAssertEqual(named("I'm Simeon. Simeon helps founders, and Theo helps me.", speaker: "simeon"), ["theo"])
+  }
+
+  /** A Mac line's run is read in its whole line: the names inside it, at the line's offsets. */
+  func testMentionsWithinARun() {
+    // "Pay with **Link** or ask Theo.": the bold run alone is "Link", a sentence's first word were it read by itself.
+    let line = "Pay with Link or ask Theo."
+    let agents = [Mentions.AgentName(name: "Theo", id: "theo")]
+    let run = (line as NSString).range(of: "Link")
+    XCTAssertEqual(Mentions.find(in: line, within: run, agents: agents).map(\.location), [run.location])
+    XCTAssertEqual(Mentions.find(in: "Link", agents: agents).count, 0)
+    let rest = NSRange(location: NSMaxRange(run), length: (line as NSString).length - NSMaxRange(run))
+    XCTAssertEqual(Mentions.find(in: line, within: rest, agents: agents).map(\.kind), [.agent(id: "theo")])
   }
 
   func testAvasChatIsQuickInTheCore() {
@@ -999,7 +1060,8 @@ final class MarkdownTests: XCTestCase {
       XCTAssertEqual(Markdown.blocks(line).count, 1)
       return Mentions.find(in: line, agents: agents, personName: "Bass Fall").map { (line as NSString).substring(with: NSRange(location: $0.location, length: $0.length)) }
     }
-    XCTAssertEqual(found, [["Ava"], ["Simeon", "Gmail"], ["Simeon", "Leo"]])
+    // "Simeon customer feedback" is the product's; "Simeon's feedback" could be the agent's.
+    XCTAssertEqual(found, [["Ava"], ["Gmail"], ["Simeon", "Leo"]])
     XCTAssertLessThan(Date().timeIntervalSince(start), 0.1)
   }
 

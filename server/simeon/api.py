@@ -18,6 +18,7 @@ from simeon.customer_notifications.endpoints import (
 from simeon.customer_portal.endpoints import router as customer_portal_router
 from simeon.customer_seat.endpoints import router as customer_seat_router
 from simeon.customer_session.endpoints import router as customer_session_router
+from simeon.desktop.email_sign_in import web_router as login_password_router
 from simeon.discount.endpoints import router as discount_router
 from simeon.dispute.endpoints import router as dispute_router
 from simeon.email_broadcast.endpoints import router as email_broadcast_router
@@ -91,6 +92,8 @@ router.include_router(discord_router)
 router.include_router(apple_router)
 # /login-code
 router.include_router(login_code_router)
+# app.simeonlabs.com's password sign-in, beside the codes (19 October 2026).
+router.include_router(login_password_router)
 # /notifications
 router.include_router(notifications_router)
 # /personal_access_tokens

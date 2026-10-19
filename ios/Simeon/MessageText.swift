@@ -27,20 +27,29 @@ enum MessageType {
   }
 }
 
-/** Who a message can name: the roster's agents, the person's own name (never dressed as an agent), and the theme the marks are drawn for. */
+/** Who a message can name: the roster's agents, the person's own name (never dressed as an agent), the agent who wrote it (its own name is not dressed either), and the theme the marks are drawn for. */
 struct Mentioning: Equatable {
   var agents: [Mentions.AgentName]
   var personName: String?
+  var speaker: String?
   var dark: Bool
 
   init(agents: [Agent], personName: String?, dark: Bool) {
     self.init(names: agents.filter { !$0.isGroup }.map { Mentions.AgentName(name: $0.name.trimmingCharacters(in: .whitespaces), id: $0.id, picture: $0.picture) }, personName: personName, dark: dark)
   }
 
-  init(names: [Mentions.AgentName], personName: String?, dark: Bool) {
+  init(names: [Mentions.AgentName], personName: String?, speaker: String? = nil, dark: Bool) {
     self.agents = names
     self.personName = personName
+    self.speaker = speaker
     self.dark = dark
+  }
+
+  /** The same for a message the agent with this id wrote. */
+  func spoken(by speaker: String?) -> Mentioning {
+    var out = self
+    out.speaker = speaker
+    return out
   }
 }
 
@@ -139,7 +148,7 @@ enum InlineText {
   private static var cache: [String: Made] = [:]
 
   static func made(_ markdown: String, size: CGFloat = MessageType.size, weight: Font.Weight = .regular, colour: Color? = nil, mentioning: Mentioning?) -> Made {
-    let key = "\(size)|\(weight)|\(mentioning?.dark ?? false)|\(mentioning.map { $0.agents.map { "\($0.name)=\($0.picture?.key ?? "")" }.joined(separator: ",") + "|" + ($0.personName ?? "") } ?? "-")|\(markdown)"
+    let key = "\(size)|\(weight)|\(mentioning?.dark ?? false)|\(mentioning.map { $0.agents.map { "\($0.name)=\($0.picture?.key ?? "")" }.joined(separator: ",") + "|" + ($0.personName ?? "") + "|" + ($0.speaker ?? "") } ?? "-")|\(markdown)"
     if colour == nil, let made = cache[key] { return made }
     let made = build(markdown, size: size, weight: weight, colour: colour, mentioning: mentioning)
     if colour == nil {
@@ -169,7 +178,7 @@ enum InlineText {
     // Names, at character offsets; none inside code or a link.
     var marks: [(start: Int, end: Int, kind: Mentions.Kind)] = []
     if let mentioning {
-      for match in Mentions.find(in: plain, agents: mentioning.agents, personName: mentioning.personName) {
+      for match in Mentions.find(in: plain, agents: mentioning.agents, personName: mentioning.personName, speaker: mentioning.speaker) {
         guard let range = Range(NSRange(location: match.location, length: match.length), in: plain) else { continue }
         let start = plain.distance(from: plain.startIndex, to: range.lowerBound)
         let end = start + plain[range].count

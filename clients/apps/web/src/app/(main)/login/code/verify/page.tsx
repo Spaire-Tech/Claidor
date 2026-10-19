@@ -1,4 +1,5 @@
 import AuthShell, { Legal } from '@/components/Auth/AuthShell'
+import { Or, provider, quietLink } from '@/components/Auth/parts'
 import { Metadata } from 'next'
 import Link from 'next/link'
 import VerifyPage from './VerifyPage'
@@ -9,8 +10,10 @@ export const metadata: Metadata = {
 
 // The e-mail way's second step, in the sign-in page's own frame (18 October
 // 2026): the code just sent, then back to `return_to` (from the Mac app, its
-// sign-in link). "Use a different email" goes back to the first step with
-// the same way home.
+// sign-in link). Continue with password goes to the account's password
+// instead (`/login/password`, 19 October 2026, as the iPhone's Log in or sign
+// up). "Use a different email" goes back to the first step with the same way
+// home.
 export default async function Page(props: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
@@ -21,6 +24,10 @@ export default async function Page(props: {
   const back = return_to
     ? `/login?${new URLSearchParams({ return_to })}`
     : '/login'
+  const withPassword = `/login/password?${new URLSearchParams({
+    ...(email ? { email } : {}),
+    ...(return_to ? { return_to } : {}),
+  })}`
 
   return (
     <AuthShell
@@ -33,10 +40,11 @@ export default async function Page(props: {
     >
       <div className="flex flex-col gap-5">
         <VerifyPage return_to={return_to} error={error} email={email} />
-        <Link
-          href={back}
-          className="text-center text-[15px] text-[#1d1d1f] underline decoration-black/20 underline-offset-2 hover:decoration-black/50"
-        >
+        <Or />
+        <Link href={withPassword} className={provider}>
+          Continue with password
+        </Link>
+        <Link href={back} className={quietLink}>
           Use a different email
         </Link>
         <Legal />

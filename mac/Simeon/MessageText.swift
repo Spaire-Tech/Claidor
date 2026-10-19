@@ -213,7 +213,8 @@ struct MentionClicks: ViewModifier {
  * link or code), app names in their colour after their logo at 500, and
  * agents' names in the app's blue at 600 after their face, in a glass pill
  * (the founder, 12 October 2026).
- * The person's own name is never an agent's.
+ * The person's own name is never an agent's, nor the speaker's own; each
+ * name is read in the whole line (`Mentions.find`, `within` the run).
  */
 @MainActor
 struct MessageLine {
@@ -227,10 +228,12 @@ struct MessageLine {
   var marksNames = true
   /** Find's marks on these words (step 2d), counted from the start of what this line draws. */
   var find: FindMarks?
+  /** The agent who wrote these words (its id): its own name is not dressed. */
+  var speaker: String?
 
   /** The same line at another size or in another colour (a heading, a table, a quote). */
   func with(size: CGFloat? = nil, lineHeight: CGFloat? = nil, colour: Color? = nil) -> MessageLine {
-    MessageLine(size: size ?? self.size, lineHeight: lineHeight ?? self.lineHeight, colour: colour ?? self.colour, look: look, agents: agents, personName: personName, marksNames: marksNames, find: find)
+    MessageLine(size: size ?? self.size, lineHeight: lineHeight ?? self.lineHeight, colour: colour ?? self.colour, look: look, agents: agents, personName: personName, marksNames: marksNames, find: find, speaker: speaker)
   }
 
   /** The same line with these marks (a table's cell). */
@@ -267,7 +270,8 @@ struct MessageLine {
   /** The line's words, and the agents whose pills are in them (each once, in order). */
   func made(_ markdown: String) -> (text: Text, agents: [String]) {
     let parsed = (try? AttributedString(markdown: markdown, options: MessageLine.parsing)) ?? AttributedString(markdown)
-    let marks = FindLine(find, text: String(parsed.characters))
+    let shown = String(parsed.characters)
+    let marks = FindLine(find, text: shown)
     var named: [String] = []
     var pieces: [Text] = []
     // Where each run starts in the words shown (UTF-16), so find's marks land on it.
@@ -290,7 +294,7 @@ struct MessageLine {
         if let url = part.url {
           pieces.append(linked(part.text, url, style: style, at: partOffset, marks: marks))
         } else {
-          pieces += plain(part.text, style: style, at: partOffset, marks: marks, named: &named)
+          pieces += plain(part.text, style: style, at: partOffset, in: shown, marks: marks, named: &named)
         }
         partOffset += (part.text as NSString).length
       }
@@ -298,14 +302,15 @@ struct MessageLine {
     return (MessageLine.joined(pieces), named)
   }
 
-  /** Words with their app and agent names; each agent named goes to `named`. */
-  private func plain(_ words: String, style: Style, at offset: Int, marks: FindLine?, named: inout [String]) -> [Text] {
+  /** Words with their app and agent names, read in the whole line (`shown`, these words at `offset` in it); each agent named goes to `named`. */
+  private func plain(_ words: String, style: Style, at offset: Int, in shown: String, marks: FindLine?, named: inout [String]) -> [Text] {
     let ink = style.struck ? look.inkTertiary : colour
     guard marksNames else { return [painted(words, ink: ink, style: style, at: offset, marks: marks)] }
     let ns = words as NSString
     var pieces: [Text] = []
     var cursor = 0
-    for match in Mentions.find(in: words, agents: agents, personName: personName) {
+    for found in Mentions.find(in: shown, within: NSRange(location: offset, length: ns.length), agents: agents, personName: personName, speaker: speaker) {
+      let match = (location: found.location - offset, length: found.length, kind: found.kind)
       if match.location > cursor {
         pieces.append(painted(ns.substring(with: NSRange(location: cursor, length: match.location - cursor)), ink: ink, style: style, at: offset + cursor, marks: marks))
       }

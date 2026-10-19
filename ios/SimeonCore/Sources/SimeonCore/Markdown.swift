@@ -418,30 +418,191 @@ public enum Mentions {
     return try! NSRegularExpression(pattern: "(?<![\\w@/.-])(?:\(escaped.joined(separator: "|")))(?![\\w-])")
   }
 
-  /** Brand names, then agent names in what is left (the Mac runs the brand step first). Agents: every one at least two letters long, but never the person's own name. */
-  public static func find(in text: String, agents: [AgentName], personName: String? = nil) -> [Match] {
+  /**
+   * Brand names, then agent names in what is left (the Mac runs the brand
+   * step first), each read in its sentence (the founder, 19 October 2026:
+   * "yes we can Shop here" wore Shop's logo, "the Link is here" Link's, and
+   * "my app name is Simeon" the agent Simeon's pill).
+   *
+   * An app whose name is an everyday word (`ordinaryWord`: Link, Shop,
+   * Square, Close…) is marked only where the words around it make it the
+   * app (`namesTheApp`); any other app is marked wherever it is written.
+   * Agents: every one at least two letters long, but never the person's own
+   * name, the speaker's own (`speaker`, an agent's id: its "I'm Simeon" or
+   * the product it is named after), nor a name used as a thing's
+   * (`namesAThing`: "the Simeon app", "an app called Simeon").
+   *
+   * `within` keeps only the names wholly inside that part of `text` (a run
+   * of a Mac line), read in the whole line as the iPhone reads them.
+   */
+  public static func find(in text: String, within part: NSRange? = nil, agents: [AgentName], personName: String? = nil, speaker: String? = nil) -> [Match] {
     let ns = text as NSString
-    let whole = NSRange(location: 0, length: ns.length)
+    let searched = NSRange(location: 0, length: ns.length)
+    let found: [(range: NSRange, brand: BrandMention)] = brandPattern.matches(in: text, range: searched).compactMap { result in
+      brandByName[ns.substring(with: result.range)].map { (result.range, $0) }
+    }
     var matches: [Match] = []
-    for result in brandPattern.matches(in: text, range: whole) {
-      guard let brand = brandByName[ns.substring(with: result.range)] else { continue }
-      // "Link your account", "Square one": an app whose name is an everyday word is not marked as a sentence's first word.
-      if brand.ordinaryWord && startsSentence(ns, at: result.range.location) { continue }
-      matches.append(Match(location: result.range.location, length: result.range.length, kind: .brand(brand)))
+    for (index, candidate) in found.enumerated() {
+      if candidate.brand.ordinaryWord && !namesTheApp(ns, at: index, of: found.map(\.range)) { continue }
+      matches.append(Match(location: candidate.range.location, length: candidate.range.length, kind: .brand(candidate.brand)))
     }
     let person = personName?.trimmingCharacters(in: .whitespaces).lowercased()
-    let named = agents.filter { $0.name.trimmingCharacters(in: .whitespaces).count >= 2 && $0.name.lowercased() != person }
+    let named = agents.filter { $0.name.trimmingCharacters(in: .whitespaces).count >= 2 && $0.name.lowercased() != person && $0.id != speaker }
     if !named.isEmpty {
       var byName: [String: AgentName] = [:]
       for agent in named where byName[agent.name] == nil { byName[agent.name] = agent }
       let agentPattern = agentPattern(Array(byName.keys))
-      for result in agentPattern.matches(in: text, range: whole) {
+      for result in agentPattern.matches(in: text, range: searched) {
         let overlaps = matches.contains { NSIntersectionRange(NSRange(location: $0.location, length: $0.length), result.range).length > 0 }
-        if overlaps { continue }
+        if overlaps || namesAThing(ns, result.range) { continue }
         if let agent = byName[ns.substring(with: result.range)] { matches.append(Match(location: result.range.location, length: result.range.length, kind: .agent(id: agent.id))) }
       }
     }
+    if let part { matches.removeAll { $0.location < part.location || $0.location + $0.length > NSMaxRange(part) } }
     return matches.sorted { $0.location < $1.location }
+  }
+
+  // MARK: Reading a name in its sentence
+
+  /** Words after an everyday-word app's name that make it the app: "your Link wallet", "the Shop app", "Square payments", "Link's checkout". */
+  static let appNouns: Set<String> = [
+    "account", "accounts", "api", "app", "apps", "balance", "board", "boards", "card", "cards", "checkout", "connection", "connector", "connectors",
+    "crm", "dashboard", "dashboards", "database", "extension", "inbox", "integration", "integrations", "login", "mcp", "order", "orders", "pay",
+    "payment", "payments", "plugin", "profile", "project", "projects", "settings", "store", "subscription", "wallet", "wallets", "workspace", "workspaces",
+  ]
+
+  /** Words just before an everyday-word app's name that make it the app: "pay with Link", "open Shop", "saved in Box". Not a bare "to": "to Shop", "to Close" are verbs. */
+  static let appCues: Set<String> = [
+    "connect", "connected", "connecting", "connects", "from", "in", "inside", "into", "on", "onto", "open", "opened", "opening", "opens",
+    "reconnect", "reconnected", "through", "use", "used", "uses", "using", "via", "with",
+  ]
+
+  /** The words before "to" that make "to" a cue: "signed in to Link", "connected to Square", "switch to Shop". */
+  static let appCuesBeforeTo: Set<String> = ["back", "connect", "connected", "connecting", "in", "reconnect", "reconnected", "switch", "switched"]
+
+  /** Words after which an everyday word is a verb, whatever follows: "we can Shop here", "let's Link them", "please Close it". */
+  static let verbCues: Set<String> = [
+    "can", "can't", "cannot", "could", "couldn't", "did", "didn't", "do", "don't", "i'd", "i'll", "let's", "may", "might", "must", "please",
+    "shall", "should", "shouldn't", "to", "we'd", "we'll", "will", "won't", "would", "wouldn't", "you'd", "you'll",
+  ]
+
+  /** What joins names in a list ("Gmail, Link and Shop", "Square/Ramp", "Stripe Link"): an everyday word beside an app's name is that app too. */
+  static let listJoins: Set<String> = ["", ",", "&", "/", "+", "and", "or", ", and", ", or"]
+
+  /** Words before a name that make it a name being given, not an agent: "an app called Simeon", "my app name is Simeon", "known as Simeon". */
+  static let namingWords: Set<String> = ["called", "dubbed", "named", "name's", "titled"]
+  static let namingPairs: Set<String> = ["known as", "name is", "name was", "names are"]
+
+  /** Words before a name that make it a thing's: "the Simeon app", "your Simeon account". No one writes "the Theo". */
+  static let thingWords: Set<String> = ["a", "an", "its", "my", "our", "the", "their", "your"]
+
+  /** The same for a place, but not before a possessive: "built in Simeon", yet "in Theo's chat" is the agent's. */
+  static let placeWords: Set<String> = ["in", "inside", "into", "within"]
+
+  /** What a name stands beside when it is a product or a company's ("the company Simeon", "my app, Simeon"). */
+  static let productWords: Set<String> = ["app", "brand", "business", "company", "platform", "product", "startup", "website"]
+
+  /** Words after a name that make it a product or a company's: "Simeon app", "Simeon Labs", "Simeon customer feedback". Never a verb an agent does ("let Theo plan it"). */
+  static let productNouns: Set<String> = [
+    "account", "accounts", "ai", "android", "app", "apps", "beta", "codebase", "customer", "customers", "dashboard", "desktop", "docs", "domain",
+    "feedback", "homepage", "inc", "ios", "iphone", "labs", "landing", "logo", "mac", "marketing", "onboarding", "pricing", "product", "repo",
+    "roadmap", "site", "subscription", "subscriptions", "user", "users", "waitlist", "web", "website",
+  ]
+
+  /** The same after "'s", less what an agent has of its own (its account, its feedback): "Simeon's website", "Simeon's onboarding". */
+  static let productNounsAfterPossessive: Set<String> = [
+    "android", "app", "apps", "codebase", "customers", "domain", "homepage", "ios", "iphone", "landing", "logo", "mac", "marketing", "onboarding",
+    "pricing", "product", "repo", "roadmap", "site", "subscription", "subscriptions", "users", "waitlist", "website",
+  ]
+
+  /**
+   * Whether the everyday-word app at `index` of the names found is the app
+   * here: a cue before it ("pay with Link"), another app's name beside it
+   * ("Gmail, Link and Shop") or an app's word after it ("your Shop
+   * account"). Never as a verb ("we can Shop here"), nor as a word in a
+   * title ("Payment Link"), nor as a sentence's first word ("Link your
+   * account") unless it is in a list of apps.
+   */
+  static func namesTheApp(_ text: NSString, at index: Int, of found: [NSRange]) -> Bool {
+    let range = found[index]
+    func joined(_ from: Int, _ to: Int) -> Bool {
+      guard from <= to else { return false }
+      let between = text.substring(with: NSRange(location: from, length: to - from)).filter { !"*_~".contains($0) }
+      return listJoins.contains(between.split(whereSeparator: { $0 == " " || $0 == "\t" }).joined(separator: " ").lowercased())
+    }
+    let listed = (index > 0 && joined(NSMaxRange(found[index - 1]), range.location)) || (index + 1 < found.count && joined(NSMaxRange(range), found[index + 1].location))
+    if startsSentence(text, at: range.location) { return listed }
+    let appWordAfter = word(after: NSMaxRange(range), in: text).map { appNouns.contains(key($0.word)) } == true
+    guard let before = word(before: range.location, in: text) else { return listed || appWordAfter }
+    let cue = key(before.word)
+    if cue == "to", let earlier = word(before: before.location, in: text), appCuesBeforeTo.contains(key(earlier.word)) { return true }
+    if appCues.contains(cue) { return true }
+    if verbCues.contains(cue) { return false }
+    // A word in a title: a capital before it that does not start the sentence and is not another app's name.
+    if before.word.first?.isUppercase == true, !startsSentence(text, at: before.location), !found.contains(where: { NSLocationInRange(before.location, $0) }) { return false }
+    return listed || appWordAfter
+  }
+
+  /** Whether the agent's name at `range` is used as a thing's or a name being given: "the Simeon app", "Simeon's website", "in Simeon", "an app called Simeon", "my app, Simeon". */
+  static func namesAThing(_ text: NSString, _ range: NSRange) -> Bool {
+    let after = word(after: NSMaxRange(range), in: text)
+    if let after, (after.possessive ? productNounsAfterPossessive : productNouns).contains(key(after.word)) { return true }
+    if let before = word(before: range.location, in: text) {
+      let last = key(before.word)
+      if thingWords.contains(last) || namingWords.contains(last) || productWords.contains(last) { return true }
+      if placeWords.contains(last) && after?.possessive != true { return true }
+      if let earlier = word(before: before.location, in: text), namingPairs.contains("\(key(earlier.word)) \(last)") { return true }
+    }
+    if let apposed = word(before: range.location, in: text, through: ",:"), productWords.contains(key(apposed.word)) { return true }
+    return false
+  }
+
+  /** A word as the lists above spell it: lower case, a curly apostrophe straight. */
+  static func key(_ word: String) -> String {
+    word.lowercased().replacingOccurrences(of: "\u{2019}", with: "'")
+  }
+
+  /** What may stand between a name and the word beside it: spaces, emphasis and quotation marks ("called **Simeon**", "named \u{201C}Simeon\u{201D}"). */
+  private static let wordGap = CharacterSet(charactersIn: " \t*_~\"'\u{201C}\u{201D}\u{2018}\u{2019}")
+  private static let apostrophes = CharacterSet(charactersIn: "'\u{2019}")
+
+  private static func scalar(_ text: NSString, _ index: Int) -> Unicode.Scalar? {
+    guard index >= 0, index < text.length else { return nil }
+    return Unicode.Scalar(text.character(at: index))
+  }
+
+  private static func isLetter(_ text: NSString, _ index: Int) -> Bool {
+    scalar(text, index).map(CharacterSet.alphanumerics.contains) ?? false
+  }
+
+  /** The word before `location` and where it starts ("name's" whole), over spaces and emphasis only, or a comma or colon too (`through`); nil past any other mark. */
+  static func word(before location: Int, in text: NSString, through: String = "") -> (word: String, location: Int)? {
+    let gap = wordGap.union(CharacterSet(charactersIn: through))
+    var index = location - 1
+    while let s = scalar(text, index), gap.contains(s) { index -= 1 }
+    let end = index + 1
+    while index >= 0 {
+      if isLetter(text, index) { index -= 1; continue }
+      if let s = scalar(text, index), apostrophes.contains(s), index + 1 < end, isLetter(text, index - 1) { index -= 1; continue }
+      break
+    }
+    guard index + 1 < end else { return nil }
+    return (text.substring(with: NSRange(location: index + 1, length: end - index - 1)), index + 1)
+  }
+
+  /** The word after `end` ("sign-in" whole), past a possessive "'s" if there is one, over spaces and emphasis only. */
+  static func word(after end: Int, in text: NSString) -> (word: String, possessive: Bool)? {
+    var index = end
+    var possessive = false
+    if let s = scalar(text, index), apostrophes.contains(s), scalar(text, index + 1) == "s", !isLetter(text, index + 2) {
+      possessive = true
+      index += 2
+    }
+    while let s = scalar(text, index), wordGap.contains(s) { index += 1 }
+    let start = index
+    while index < text.length, isLetter(text, index) || (scalar(text, index) == "-" && isLetter(text, index + 1) && index > start) { index += 1 }
+    guard index > start else { return nil }
+    return (text.substring(with: NSRange(location: start, length: index - start)), possessive)
   }
 }
 

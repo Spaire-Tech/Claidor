@@ -27,6 +27,14 @@ async def _authenticate(scope: Scope) -> tuple[str, RateLimitGroup]:
 
 _BASE_RULES: dict[str, Sequence[Rule]] = {
     "^/v1/login-code": [Rule(minute=6, hour=12, block_time=900, zone="login-code")],
+    "^/v1/login-password": [
+        Rule(minute=6, hour=12, block_time=900, zone="login-password")
+    ],
+    # The apps' email sign-in (`desktop/email_sign_in.py`): a code asked for, then it
+    # or a password, a few times over; per e-mail limits sit behind these.
+    "^/auth/email": [
+        Rule(minute=10, hour=60, block_time=900, zone="desktop-email-sign-in")
+    ],
     "^/v1/customer-portal/customer-session/(request|authenticate)": [
         Rule(minute=6, hour=12, block_time=900, zone="customer-session-login")
     ],

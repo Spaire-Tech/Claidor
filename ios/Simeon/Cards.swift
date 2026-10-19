@@ -1728,7 +1728,7 @@ struct ExchangePage: View {
                   Text(sender.name).font(.system(size: 13)).foregroundStyle(Ink.secondary).padding(.leading, 12)
                 }
                 // Cut as the chat's bubbles are: a message of megabytes laid out whole holds the screen still.
-                MarkdownView(blocks: Markdown.cachedBlocks(Chat.clipped(text, limit: 20_000).text), mentioning: mentioning)
+                MarkdownView(blocks: Markdown.cachedBlocks(Chat.clipped(text, limit: 20_000).text), mentioning: mentioning.spoken(by: sender.id))
                   .foregroundStyle(Ink.theirsText)
                   .padding(.horizontal, 12).padding(.vertical, 8)
                   .background(Ink.bubbleTheirs, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
