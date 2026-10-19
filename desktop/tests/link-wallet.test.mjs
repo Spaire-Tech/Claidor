@@ -271,7 +271,8 @@ test("Allow approved in Simeon is handed to Link as the approval; Link refusing 
   assert.deepEqual(taken, { ok: true, id: "lsrq_9", status: "approved", approvedInSimeon: true });
   const [sent] = creates();
   assert.ok(sent.includes("--approve"));
-  assert.ok(!sent.includes("--request-approval"), "nothing asked in the Link app");
+  // The CLI asks in the Link app unless told not to (19 October 2026: without this flag, Allow ended at Link's approval page).
+  assert.ok(sent.includes("--no-request-approval") && !sent.includes("--request-approval"), "nothing asked in the Link app");
   assert.equal(sent[sent.indexOf("--idempotency-key") + 1], "simeon-abc-approved", "its own key");
   assert.deepEqual(JSON.parse(sent[sent.indexOf("--approval-detail") + 1]), base.approval);
   assert.match(lines.at(-1), /purchase approved in Simeon: approved lsrq_9/);
@@ -302,6 +303,30 @@ test("Allow approved in Simeon is handed to Link as the approval; Link refusing 
   await link.requestSpend(withoutApproval);
   assert.equal(creates().length, 1);
   assert.ok(creates()[0].includes("--request-approval"));
+});
+
+test("a request Link made but didn't approve with Simeon's approval is asked in the Link app as it is, and Link's page opens on the person's email", async (t) => {
+  const runner = await load("source/shared/node/link-wallet/link-cli.ts", "link-cli-not-taken");
+  const tools = await load("source/shared/node/link-wallet/link-tools.ts", "link-tools-not-taken");
+  t.after(runner.dispose);
+  t.after(tools.dispose);
+  const root = await mkdtemp(path.join(os.tmpdir(), "simeon-link-not-taken-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const fake = fakeCli({
+    "spend-request create": { value: [{ id: "lsrq_11", status: "created" }] },
+    "spend-request request-approval": { value: [{ id: "lsrq_11", status: "pending_approval", approval_url: "https://app.link.com/activity/approve/lsrq_11?ref=cli" }] },
+    "user-info retrieve": { value: { name: "Ada Lovelace", email: "ada+shop@example.com" } },
+  });
+  const cli = runner.module.createLinkCli({ rootDir: () => root, env: {}, exists: () => true, exec: fake.exec });
+  const lines = [];
+  const link = tools.module.createLinkTools({ cli, rootDir: () => root, log: (line) => lines.push(line) });
+  const approval = { approved_at: 1_760_430_000, approval_method: "click", app_name: "Simeon", external_user_id: "u1" };
+  const answer = await link.requestSpend({ idempotencyKey: "simeon-def", credentialType: "card", amount: 3487, currency: "usd", context: "x".repeat(120), merchantName: "BZBox", merchantUrl: "https://bzbox.com/checkout", lineItems: [{ name: "Kit", unitAmount: 3487, quantity: 1 }], totals: [{ type: "total", label: "Total", amount: 3487 }], test: false, approval });
+  assert.deepEqual(answer, { ok: true, id: "lsrq_11", status: "pending_approval", approvalUrl: "https://app.link.com/activity/approve/lsrq_11?ref=cli&fromEmail=ada%2Bshop%40example.com" });
+  const commands = fake.calls.map((call) => call.command.slice(0, 2).join(" "));
+  assert.equal(commands.filter((command) => command === "spend-request create").length, 1, "one request, never a second");
+  assert.deepEqual(fake.calls.find((call) => call.command[1] === "request-approval").command.slice(0, 3), ["spend-request", "request-approval", "lsrq_11"]);
+  assert.ok(lines.includes("[link] approval in Simeon not taken: created lsrq_11; asking in the Link app"));
 });
 
 const chromiumPath = process.env.SIMEON_CHROMIUM ?? "/opt/pw-browsers/chromium-1194/chrome-linux/chrome";

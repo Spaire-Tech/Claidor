@@ -338,7 +338,12 @@ export function createLinkTools(options: LinkToolsOptions) {
     if (request.credentialType === "link_pay_token" && (request.merchantAccountId ?? "").length === 0) return { ok: false, code: "MISSING_MERCHANT_ACCOUNT", message: "A Link pay token needs the checkout's merchant account." };
     const command = (delegated: boolean): string[] => {
       const args = ["spend-request", "create", "--credential-type", request.credentialType, "--amount", String(request.amount), "--currency", request.currency.toLowerCase() || "usd", "--context", request.context];
-      if (delegated) args.push("--approve", "--approval-detail", JSON.stringify(request.approval), "--idempotency-key", `${request.idempotencyKey}-approved`);
+      // `--no-request-approval`: the CLI asks for approval in the Link app
+      // unless told not to (`requestApproval` defaults to true), and Link's
+      // delegated approval is `approve` without it (the CLI refuses the two
+      // together for a Link pay token). Sent with both, Allow ended at Link's
+      // approval page (19 October 2026).
+      if (delegated) args.push("--approve", "--no-request-approval", "--approval-detail", JSON.stringify(request.approval), "--idempotency-key", `${request.idempotencyKey}-approved`);
       else args.push("--request-approval", "--idempotency-key", request.idempotencyKey);
       if (request.credentialType === "link_pay_token") args.push("--merchant-account-id", request.merchantAccountId as string);
       else args.push("--merchant-name", request.merchantName, "--merchant-url", request.merchantUrl);
@@ -352,9 +357,18 @@ export function createLinkTools(options: LinkToolsOptions) {
     if (request.approval != null) {
       let delegated = spendAnswer(await cli.run(command(true), { timeoutMs: 90_000 }));
       if (!delegated.ok && delegated.code === "LINK_CLI_FAILED") delegated = spendAnswer(await cli.run(command(true), { timeoutMs: 90_000 }));
-      if (delegated.ok) {
+      // Approved (or on to the bank's own check, `requires_action`): Link took it.
+      if (delegated.ok && (delegated.status === "approved" || delegated.status === "succeeded" || delegated.status === "requires_action")) {
         log(`[link] purchase approved in Simeon: ${delegated.status} ${delegated.id}`);
-        return { ...delegated, approvedInSimeon: true };
+        return { ...delegated, approvedInSimeon: delegated.status !== "requires_action" };
+      }
+      if (delegated.ok) {
+        // Made but not approved: Link kept Simeon's approval out. That same
+        // request is asked in the Link app, rather than a second one made.
+        log(`[link] approval in Simeon not taken: ${delegated.status} ${delegated.id}; asking in the Link app`);
+        const asked = spendAnswer(await cli.run(["spend-request", "request-approval", delegated.id], { timeoutMs: 90_000 }));
+        if (asked.ok) log(`[link] purchase requested: ${asked.status} ${asked.id}`);
+        return asked.ok ? await withEmail(asked) : asked;
       }
       // A CLI that never answered, twice: say so, and make nothing more (the first may yet stand at Link).
       if (delegated.code === "LINK_CLI_FAILED" || delegated.code === "LINK_UNAVAILABLE") return delegated;
@@ -363,7 +377,24 @@ export function createLinkTools(options: LinkToolsOptions) {
     }
     const spend = spendAnswer(await cli.run(command(false), { timeoutMs: 90_000 }));
     if (spend.ok) log(`[link] purchase requested: ${spend.status} ${spend.id}`);
-    return spend;
+    return spend.ok ? await withEmail(spend) : spend;
+  };
+
+  /**
+   * Link's approval page with the person's email filled in (`fromEmail`, as
+   * Link's own instructions ask), so it opens on their account rather than
+   * asking who they are (19 October 2026, the founder: "it takes me to that
+   * external link when i have to re-enter link infos").
+   */
+  const withEmail = async (spend: Extract<SpendAnswer, { ok: true }>): Promise<SpendAnswer> => {
+    if (spend.approvalUrl == null) return spend;
+    let url: URL;
+    try { url = new URL(spend.approvalUrl); } catch { return spend; }
+    if (url.hostname !== "app.link.com" || url.searchParams.has("fromEmail")) return spend;
+    const email = (await personFacts().catch(() => undefined))?.email ?? "";
+    if (!email.includes("@")) return spend;
+    url.searchParams.set("fromEmail", email);
+    return { ...spend, approvalUrl: url.toString() };
   };
 
   /** Where a spend request stands, waiting up to `seconds` for it to move on from created or pending approval. */

@@ -872,9 +872,21 @@ client, run and held by our server (`server/simeon/desktop/link_wallet.py`, belo
        external_user_name, device_type: "mobile", authentication_method: "biometric_face",
        agent_log_id: <entry>, external_session_id: <agent>}'` (Link's delegated approval, the
        CLI's undocumented `--approve`, which posts to `/spend-requests/create_delegated`), with
-       its own idempotency key (`<card's>-approved`). Link answering approved, the agent is woken
-       to pay at once: no Link app, no sign-in page. An approval more than ten minutes off, or
-       without an account id, is not handed on.
+       `--no-request-approval` and its own idempotency key (`<card's>-approved`). Link answering
+       approved, the agent is woken to pay at once: no Link app, no sign-in page. An approval
+       more than ten minutes off, or without an account id, is not handed on.
+     * **The flag that was missing** (19 October 2026, the founder after Face ID and Allow: "it
+       takes me to that external link when i have to re-enter link infos"). The CLI asks for
+       approval in the Link app unless told not to (`requestApproval` defaults to true, read in
+       `@stripe/link-cli` 0.27.1's `dist/cli.js`), so the delegated request went to Link with
+       `request_approval: true` too; the CLI itself refuses the pair for a Link pay token
+       ("--approve with Link Pay Token requires --no-request-approval"). The host also took any
+       answer to the delegated request as approved. Now: approved (or `requires_action`, the
+       bank's own check) is Link taking it; a request made but not approved (`created`,
+       `pending_approval`) logs `[link] approval in Simeon not taken: <status> <id>; asking in the
+       Link app` and is asked in the Link app as it is (`spend-request request-approval <id>`),
+       never made twice. Link's approval page, when it comes to that, opens with the person's
+       email filled in (`fromEmail`, as Link's own instructions ask). `desktop/tests/link-wallet.test.mjs`.
      * **Link refusing it** (Simeon may need Link's approval as a partner for this: the
        registered client below): the host makes the same request the old way
        (`--request-approval`, the card's own key) and logs `[link] approval in Simeon refused:
