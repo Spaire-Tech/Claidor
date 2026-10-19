@@ -128,12 +128,19 @@ their Google name in `user.meta` (`server/simeon/integrations/google/service.py`
   same key also trades its code and revokes on Delete Account (for
   `SIMEON_APPLE_BUNDLE_ID`, the key's primary App ID).
 - For Log in or sign up's codes to reach anyone: `SIMEON_EMAIL_SENDER=resend` and
-  `SIMEON_RESEND_API_KEY`, with `SIMEON_EMAIL_FROM_DOMAIN` verified at Resend. With the
-  default `logger` the code is only written to the API's log and no e-mail goes out.
+  `SIMEON_RESEND_API_KEY`, with `SIMEON_EMAIL_FROM_DOMAIN` verified at Resend, on **both**
+  `simeon-api` and `simeon-worker`. The API only queues the e-mail (`email.send`,
+  `simeon/email/sender.py`) with its From address (`mail@` the API's domain); the worker
+  sends it with its own sender and key (`simeon/email/tasks.py`). On Render these are set
+  on the two services themselves, not in `simeon-shared` (checked 19 October 2026, under
+  their `CLAIDOR_` names). With the default `logger` the code is only written to the
+  worker's log and no e-mail goes out: the worker's `email.send.actor_start` line says
+  `sender_class=ResendEmailSender` when it sends.
 - For Apple's review: `SIMEON_APP_REVIEW_EMAIL` (the review account's e-mail) and
-  `SIMEON_APP_REVIEW_OTP_CODE` (six digits). That e-mail then signs in with that code
-  and no inbox; the reviewer can also be given a password, set from Settings › Account
-  › Password after signing in that way once.
+  `SIMEON_APP_REVIEW_OTP_CODE` (six digits), in `simeon-shared` (only the API reads
+  them). That e-mail then signs in with that code and no inbox; the reviewer can also be
+  given a password, set in the iPhone app (Settings › Account › Password) after signing
+  in that way once. app.simeonlabs.com has no page that sets one.
 
 The pages the browser shows (the confirm page, "You're signed in", the Apple page)
 are drawn in the iPhone sign-in screen's design since 9 October 2026: simeonlabs.com's
