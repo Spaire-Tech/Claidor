@@ -70,7 +70,7 @@ import {
 import { createDraftExternalMessageTool, createMarkDraftDeliveredTool, type DraftToolDependencies } from "./draft-message-tool.js";
 import { createSearchFlightsTool, type FlightSearchDependencies } from "./flight-search-tool.js";
 import { createBookFlightTool, type BookFlightDependencies } from "./book-flight-tool.js";
-import { createMarkPurchaseDoneTool, createRequestPurchaseTool, createSearchProductsTool, createShowProductsTool, type PurchaseToolDependencies } from "./purchase-tool.js";
+import { createMarkPurchaseDoneTool, createRequestPurchaseTool, createShowProductsTool, type PurchaseToolDependencies } from "./purchase-tool.js";
 import {
   createGenerateImageTool,
   type GenerateImageToolDependencies,
@@ -1001,7 +1001,8 @@ export interface TurnPurchaseToolFactoryInput {
 export function createTurnPurchaseToolFactory(
   input: TurnPurchaseToolFactoryInput,
 ): () => readonly TurnTool[] {
-  return () => [asTurnTool(createSearchProductsTool(input.dependencies)), asTurnTool(createShowProductsTool(input.dependencies)), asTurnTool(createRequestPurchaseTool(input.dependencies)), asTurnTool(createMarkPurchaseDoneTool(input.dependencies))];
+  // No SearchProducts (19 October 2026): Shop's catalog is out of buying.
+  return () => [asTurnTool(createShowProductsTool(input.dependencies)), asTurnTool(createRequestPurchaseTool(input.dependencies)), asTurnTool(createMarkPurchaseDoneTool(input.dependencies))];
 }
 
 export interface TurnFlightToolFactoryInput {

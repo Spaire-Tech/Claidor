@@ -84,17 +84,19 @@ export function productsCardText(products: readonly ProductCardItem[]): string {
   return products.length > 2 ? `${shown}; and ${products.length - 2} more` : shown;
 }
 
-/** The person pressed Buy on one product: the agent buys exactly that one, through the checkout card. */
+/**
+ * The person pressed Buy on one product: the agent buys exactly that one,
+ * at the store's own checkout, paid with Link (19 October 2026: never
+ * through Shop, whose checkout stopped every time, even for a product from
+ * Shop's catalog).
+ */
 export function buildProductBuyWakePrompt(entryId: string, product: ProductCardItem): string {
   const who = product.seller == null || product.seller.length === 0 ? "" : ` by ${product.seller}`;
   const price = product.price == null || product.price.length === 0 ? "" : ` for ${product.price}`;
-  const browser = "have a browser subagent put it in the cart and go to the shop's checkout (guest checkout when the shop allows it, contact and delivery details from Link's get_wallet or Shop's get_account), stopping at the last step before paying; ask only for what's missing, in one message; then call RequestPurchase.";
   return [
-    `[The person pressed Buy on the products card (entry ${entryId}): "${product.title}"${who}${price}, ${product.url}. Buy this one, the way every purchase goes (if its store blocks the purchase, go on to the next comparable item at the same price or lower, as the purchase steps say):`,
+    `[The person pressed Buy on the products card (entry ${entryId}): "${product.title}"${who}${price}, ${product.url}. Buy this one, the way every purchase goes (a bot check: hand them the screen; a store that can't sell it: the next comparable item at the same price or lower, as the purchase steps say):`,
     "say in one short line that you're setting up the checkout;",
-    product.shop == null
-      ? browser
-      : `it is in Shop's catalog (variant_id "${product.shop.variantId}", shop "${product.shop.domain}"): when Shop is connected, call prepare_checkout on Shop (server "shop") with that shop and variant (quantity 1 unless they said otherwise), merchant_name, product_url "${product.url}" and their phone and email from Link's get_wallet, then RequestPurchase with the shop_checkout it gives; when the checkout isn't ready, do what prepare_checkout says next (with Link connected, the store's own checkout paid with Link); when Shop isn't connected, ${browser}`,
+    "have one browser subagent open that page, put it in the cart and go through the store's checkout (as a guest when the store allows it, contact and delivery details from Link's get_wallet), stopping at the last step before paying; ask only for what's missing, in one message; then call RequestPurchase, paid with Link.",
     "Don't ask them to confirm again in chat or which card pays: the checkout card does both.]",
   ].join(" ");
 }

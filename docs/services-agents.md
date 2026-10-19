@@ -1942,6 +1942,35 @@ cloud computers when the founder's agent publishes a new host bundle.
     The main agent's purchase steps and the browser helper's instructions now say to open only
     addresses a search, a tool or a page gave, and to use a store's own search box
     (`system-prompt.ts`, `prompt-collector-glue.ts`).
+- **One way to buy, without Shop** (19 October 2026, Miles buying office supplies; the founder:
+  "Why shop is taking over like this and NOT EVEN WORKING"). Shop was in the purchase at three
+  points, and its checkout stopped every time it was tried (G-electronic, Deskery, OfficeTap,
+  Poppin: a sign-in, a phone, an apartment line):
+  - the instructions searched Shop's catalog (SearchProducts) beside the big retailers, which
+    turned up small Shopify stores, and checked a product from it out through Shop first;
+  - Buy on a products card for such a product went to Shop's `prepare_checkout`;
+  - the checkout card paid with Shop first whenever this computer didn't yet know that Link was
+    connected, and it didn't until some Link command had run since the engine started (Link's
+    sign-in is held by the server since 18 October, `knownConnected` in `link-server.ts`). The
+    same flag sent Poppin's stopped Shop checkout to Shop's own page instead of on to Link.
+
+  Now a purchase goes one way: the store's own checkout through one browser subagent, paid with
+  a one-time Link card. SearchProducts is no longer one of the agent's tools (`turn-toolset.ts`);
+  the instructions name Shop only for orders the person tracks there, or when they ask for Shop
+  by name; Buy on a products card never goes through Shop (`buildProductBuyWakePrompt`); the
+  checkout card asks Link first whenever the computer has it (`host-runner-composition.ts`); and
+  `prepare_checkout` opens nothing when Link is connected, asking the server when the computer
+  doesn't know yet (`isConnected` in `link-tools.ts`), log `[shop] checkout at <shop> not
+  opened: Link is connected`.
+
+  The other half of "always blocked": a rule written on 18 October told the agent to leave a
+  store that shows a bot check and try the next one. The computers run on a data centre's
+  addresses (box2 at Hetzner), which big stores' bot checks score as likely bots, so the agent
+  hopped from store to store and ended on small Shopify stores. A bot check now goes to the person
+  at once, at that store (OpenPage, then `request_box_help` with reason captcha), and the agent
+  carries on there when they hand it back; only a store that can't sell it (wholesale, a login
+  to see the price, out of stock) is switched for a like item. Neither the agent nor its helper
+  solves a bot check. `desktop/tests/shop-wallet.test.mjs`.
 
 **How it works.**
 

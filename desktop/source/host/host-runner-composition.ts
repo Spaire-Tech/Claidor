@@ -2395,8 +2395,10 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
                 if (asked != null) return await from(asked);
                 const notConnected = (answer: WalletCheckoutFacts): boolean => !answer.ok && /isn't connected/.test(answer.message);
                 const neither: WalletCheckoutFacts = { ok: false, message: "Neither Link nor Shop is connected, so nothing can be paid yet. Propose one with ProposeConnector (Link pays at any store; Shop pays with the person's Shop card), or call AuthenticateMcpServer for one that's installed; then call RequestPurchase again." };
-                // Link first when it has a sign-in (this computer's, or the server's) or Shop has none, so a person with only Shop connected never starts Link's CLI (its first run installs it).
-                const linkFirst = link != null && (shop == null || link.hasSignIn() || !shop.hasSignIn());
+                // Link first whenever this computer has it (19 October 2026). It
+                // came first only once something had asked the server about Link,
+                // so on a freshly started engine Shop went first and paid.
+                const linkFirst = link != null;
                 const [first, second] = linkFirst ? ["link", "shop"] as const : ["shop", "link"] as const;
                 if ((first === "link" ? link : shop) == null) return await from(second);
                 const tried = await from(first);

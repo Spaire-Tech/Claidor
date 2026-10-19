@@ -449,7 +449,7 @@ test("Shop's checkout gets the buyer's phone and email, and when it can't finish
   assert.equal(e164("12345"), "");
 });
 
-test("the delivery address carries the phone, and with Link connected a checkout Shop can't finish goes on to the store's own checkout with Link (18 October 2026, Deskery)", async (t) => {
+test("the delivery address carries the phone (18 October 2026, Deskery), and with Link connected no Shop checkout is opened at all (19 October 2026)", async (t) => {
   // Deskery through Shop: the account's address chosen with no phone on it, and Shop's "Enter a phone number to use this delivery method".
   const address = ACCOUNT.addresses[0];
   const doc = (fulfillment, messages = []) => ({
@@ -466,28 +466,30 @@ test("the delivery address carries the phone, and with Link connected a checkout
   const chosen = { methods: [{ id: "m1", type: "shipping", destinations: [address], selected_destination_id: "addr-1" }] };
   const asked = [{ type: "error", content: "Enter a phone number to use this delivery method", severity: "requires_buyer_input" }];
   const run = async (linkConnected) => {
-    const { shop, wallet, signIn } = await shopFixture(t, {
+    const { shop, wallet, signIn, logs } = await shopFixture(t, {
       get_account: () => ({ value: ACCOUNT }),
       create_checkout: () => ({ value: doc(chosen, asked) }),
       update_checkout: (args) => ({ value: doc(args.checkout.fulfillment, asked) }),
-    }, { linkConnected: () => linkConnected });
+    }, { linkConnected });
     signIn();
     const prepared = await wallet.call("prepare_checkout", { shop: "deskery.myshopify.com", items: [{ variant_id: "gid://shopify/ProductVariant/48084346568936" }], merchant_name: "Deskery", product_url: "https://deskerysupply.com/products/b07mjymx8z", phone: "(206) 555-0100", email: "ada@example.com" });
-    return { shop, prepared };
+    return { shop, prepared, logs };
   };
-  const { shop, prepared } = await run(true);
+  // Without Link: the account's address, now with the phone, and Shop's own page.
+  const { shop, prepared } = await run(() => false);
   assert.equal(prepared.isError, false);
   const [withPhone] = shop.tool("update_checkout");
   assert.ok(withPhone != null, "the chosen address is sent again, now with the phone");
   assert.deepEqual(withPhone.args.checkout.fulfillment.methods[0].destinations, [{ ...address, phone_number: "+12065550100" }]);
   assert.equal(withPhone.args.checkout.fulfillment.methods[0].selected_destination_id, "addr-1");
   assert.match(prepared.text, /Shop says: Enter a phone number to use this delivery method/);
-  assert.match(prepared.text, /The person's Link is connected, so finish it at the store's own checkout and pay with Link, without asking them first: say in one line that you're finishing it at the store with Link, then send a browser subagent to the product's page \(https:\/\/deskerysupply\.com\/products\/b07mjymx8z\)/);
-  assert.match(prepared.text, /Only if the store's checkout won't work, send them Shop's own page to pay there: https:\/\/shop\.app\/checkouts\/f\/desk\?key=k$/);
-  assert.doesNotMatch(prepared.text, /Send the person Shop's own page for it, unchanged/);
-  // Without Link, Shop's own page, as before.
-  const without = await run(false);
-  assert.match(without.prepared.text, /Send the person Shop's own page for it, unchanged, as a link to review and pay there/);
+  assert.match(prepared.text, /Send the person Shop's own page for it, unchanged, as a link to review and pay there/);
+  // With Link (asked of the server, as on a freshly started engine): Shop isn't touched, the store's own checkout with Link is.
+  const linked = await run(async () => true);
+  assert.equal(linked.prepared.isError, true);
+  assert.equal(linked.shop.tool("get_account").length + linked.shop.tool("create_checkout").length, 0);
+  assert.match(linked.prepared.text, /^Not through Shop: the person's Link is connected, so this is bought at the store's own checkout and paid with Link\. Send one browser subagent to the product's page \(https:\/\/deskerysupply\.com\/products\/b07mjymx8z\)/);
+  assert.ok(linked.logs.includes("[shop] checkout at deskery.myshopify.com not opened: Link is connected"));
 });
 
 test("the delivery address takes the apartment line Link has for the same place when Shop's has none (19 October 2026, OfficeTap)", async (t) => {
@@ -658,20 +660,29 @@ test("SearchProducts searches Shop's catalog with no account, and says so where 
   assert.match(await run(tool.module.createSearchProductsTool(base), { query: "x" }), /isn't available here/);
 });
 
-test("the agents' instructions and the Shop app's place in the store", async () => {
+test("the agents' instructions: one way to buy, Shop only when asked for by name (19 October 2026)", async () => {
   const prompt = await readFile(path.join(repoRoot, "source/host/runner/system-prompt.ts"), "utf8");
-  for (const words of ["Shop (MCP server \\\"shop\\\"", "prepare_checkout", "shop_checkout", "Shop always asks in the Shop app"]) assert.ok(prompt.includes(words), words);
-  // 18 October 2026: Shop's catalog is one place to look, beside the big retailers, never the only one; it was "first" and the agent shopped nowhere else.
-  assert.ok(!prompt.includes("SearchProducts first"));
+  assert.match(prompt, /Every purchase goes one way: the store's own checkout, paid with a one-time Link card\. Shop \(MCP server \\"shop\\"\) is only for the orders they track there: never search, check out or pay through Shop unless the user asks for Shop by name/);
+  for (const words of ["SearchProducts", "prepare_checkout", "shop_checkout", "Shop always asks in the Shop app", "any warning Shop gave"]) assert.ok(!prompt.includes(words), words);
   assert.match(prompt, /WebSearch the item at the big retailers that sell it \(for most goods Amazon, Walmart, Target, Best Buy and Costco/);
   assert.match(prompt, /Prefer a new item from an established store with an ordinary guest checkout over the cheapest listing anywhere/);
-  // The two rules the founder agreed to that day: switch on a blocked store, and a store's emailed sign-in code.
-  assert.match(prompt, /A store that blocks the purchase .* go on to the next comparable item you found .* at the same price or lower/);
+  // A bot check is handed to the person at once, at that store; a store that can't sell it is switched for a like item.
+  assert.match(prompt, /A bot check on the store's page .* is not a dead end: neither you nor the subagent ever solves one, so hand them the screen at once, in the same turn \(OpenPage on that page, then request_box_help with reason captcha\), and carry on at that store/);
+  assert.match(prompt, /A store that can't sell it .* go on to the next comparable item you found .* at the same price or lower/);
   assert.match(prompt, /A store that wants an account before checkout: take the email route, never \\"Continue with Shop\\"/);
   assert.match(prompt, /never a password, and never a code from their bank, Link, Shop, Apple or Google/);
   const glue = await readFile(path.join(repoRoot, "source/host/runner/prompt-collector-glue.ts"), "utf8");
   assert.equal(glue.split("never tick or solve one yourself").length - 1, 2, "both helpers leave a bot check to the person");
   assert.equal(glue.split("take the route that emails a one-time code").length - 1, 2, "both helpers take the emailed code at a store's sign-in");
+  // Shop's catalog search is no longer one of the agent's tools, and Buy on a products card never goes through Shop.
+  const toolset = await readFile(path.join(repoRoot, "source/host/runner/tools/turn-toolset.ts"), "utf8");
+  assert.ok(!toolset.includes("createSearchProductsTool("));
+  const card = await load("source/shared/node/link-wallet/product-card.ts", "product-card-buy");
+  try {
+    const wake = card.module.buildProductBuyWakePrompt("t1s1", { title: "Poppin Starter Set", url: "https://www.poppin.com/products/starter", domain: "poppin.com", price: "$60.50", shop: { variantId: "gid://shopify/ProductVariant/1", domain: "poppin.myshopify.com" } });
+    assert.doesNotMatch(wake, /prepare_checkout|Shop's catalog|variant_id/);
+    assert.match(wake, /have one browser subagent open that page, put it in the cart and go through the store's checkout .* then call RequestPurchase, paid with Link\./);
+  } finally { await card.dispose(); }
   const catalog = await readFile(path.join(repoRoot, "source/shared/node/vendor-mcp/catalog.ts"), "utf8");
   assert.match(catalog, /id: "shop", name: "Shop", category: G\.Finance, url: "https:\/\/shop\.app", boxCli: "shop"/);
 });

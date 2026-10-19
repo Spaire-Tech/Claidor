@@ -295,7 +295,7 @@ export class McpHostService {
     const linkServer = createLinkServer({ backendUrl: getSandInferenceBackendUrl, accessToken: serverAccessToken, log: deps.log });
     const linkWallet = createLinkTools({ cli: createLinkCli({ rootDir: getSandRootDir, log: deps.log, serverToken: linkServer.accessToken }), rootDir: getSandRootDir, fillCheckout, log: deps.log, server: linkServer });
     // Shop (14 October 2026): Shopify's Shop MCP, called from here with the person's Shop sign-in kept on the data volume (`shared/node/shop-wallet/`).
-    const shopWallet = createShopTools({ client: createShopClient({ rootDir: getSandRootDir, log: deps.log }), rootDir: getSandRootDir, fillCheckout, linkConnected: () => linkWallet.hasSignIn(), linkAddresses: () => linkWallet.deliveryAddresses(), log: deps.log });
+    const shopWallet = createShopTools({ client: createShopClient({ rootDir: getSandRootDir, log: deps.log }), rootDir: getSandRootDir, fillCheckout, linkConnected: () => linkWallet.isConnected(), linkAddresses: () => linkWallet.deliveryAddresses(), log: deps.log });
     // Started sign-ins survive a host restart (`pending-sign-ins-file.ts`).
     persistPendingSignInsAt(join(getSandRootDir(), "mcp-pending-sign-ins.json"));
     const backendMcpExec = createVendorMcpBackendExec({ rootDir: getSandRootDir, fallback: accountBackendMcpExec, canStartAuth: true, linkWallet, shopWallet, clientMetadataUrl: hostedMcpOAuthClientUrl(), getServerAccessToken: serverAccessToken, log: deps.log });

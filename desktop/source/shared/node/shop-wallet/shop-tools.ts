@@ -385,12 +385,13 @@ export interface ShopToolsOptions {
   /** Types the card into the checkout (`checkout-fill.ts`); absent where there is no browser to fill. */
   readonly fillCheckout?: typeof FillCheckout;
   /**
-   * Whether the person's Link is connected: when Shop can't finish a
-   * checkout, the agent goes on to the store's own checkout and pays with
-   * Link rather than sending them Shop's page (18 October 2026, the founder:
-   * "the shop confusion is annoying. knowing it could clearly use link").
+   * Whether the person's Link is connected: then prepare_checkout opens no
+   * Shop checkout at all and points to the store's own, paid with Link (18
+   * October 2026, the founder: "the shop confusion is annoying. knowing it
+   * could clearly use link"; 19 October: "Why shop is taking over like this
+   * and NOT EVEN WORKING").
    */
-  readonly linkConnected?: () => boolean;
+  readonly linkConnected?: () => boolean | Promise<boolean>;
   /** Link's saved delivery addresses (`link-tools.ts`), for what Shop's saved one lacks: the apartment line. */
   readonly linkAddresses?: () => Promise<readonly LinkDeliveryAddress[]>;
   readonly now?: () => number;
@@ -600,6 +601,11 @@ export function createShopTools(options: ShopToolsOptions) {
     const shop = text(args.shop).replace(/^https?:\/\//, "").replace(/\/.*$/, "").toLowerCase();
     const items = records(args.items).map((item) => ({ id: text(item.variant_id), quantity: Math.max(1, Math.round(Number(item.quantity ?? 1)) || 1) })).filter((item) => item.id.length > 0);
     if (shop.length === 0 || items.length === 0) return { text: "prepare_checkout needs shop (the store's shop domain from search_products) and items with their variant_id.", isError: true };
+    if (await Promise.resolve(options.linkConnected?.()).catch(() => false) === true) {
+      log(`[shop] checkout at ${shop} not opened: Link is connected`);
+      const page = /^https:\/\//.test(text(args.product_url)) ? ` (${text(args.product_url)})` : "";
+      return { text: `Not through Shop: the person's Link is connected, so this is bought at the store's own checkout and paid with Link. Send one browser subagent to the product's page${page} to put it in the cart and go through the store's checkout as a guest, with the contact and delivery details from Link's get_wallet, stopping at the last step before paying; then call RequestPurchase.`, isError: true };
+    }
     const read = await account();
     if (!read.ok) return { text: `${read.message} Without Shop, buy it in the browser: open the product's page and go through its checkout, then RequestPurchase.`, isError: true };
     const saved = preferredAddress(read.value);
@@ -676,17 +682,9 @@ export function createShopTools(options: ShopToolsOptions) {
     if (status === "completed") return { text: `Shop says this checkout is already completed. ${summary}`, isError: false };
     // Shop's own page to review and pay it, which its tool asks to be shared
     // unchanged (18 October 2026: the agent was sent to the store's site
-    // instead, which wanted the same sign-in Shop had stopped at).
+    // instead, which wanted the same sign-in Shop had stopped at). Only
+    // without Link: with it, no Shop checkout was opened (above).
     const continueUrl = text(doc.continue_url);
-    // With Link connected the store's own checkout comes next, paid with
-    // Link, and Shop's page only if that fails; without it, Shop's page.
-    if (options.linkConnected?.() === true) {
-      const page = /^https:\/\//.test(productUrl) ? ` (${productUrl})` : "";
-      return {
-        text: `Shop can't finish this checkout by itself (${status || "no status"}). ${summary} The person's Link is connected, so finish it at the store's own checkout and pay with Link, without asking them first: say in one line that you're finishing it at the store with Link, then send a browser subagent to the product's page${page} to add it to the cart and go through the store's checkout as a guest, with the contact and delivery details from Link's get_wallet, stopping at the last step before paying; then call RequestPurchase as for any store.${continueUrl.startsWith("https://") ? ` Only if the store's checkout won't work, send them Shop's own page to pay there: ${continueUrl}` : ""}`,
-        isError: false,
-      };
-    }
     if (continueUrl.startsWith("https://")) {
       return {
         text: `Shop can't finish this checkout by itself (${status || "no status"}). ${summary} Send the person Shop's own page for it, unchanged, as a link to review and pay there (they're signed in to Shop on their phone): ${continueUrl} Say in one line what's in it and why Shop needs them; nothing is paid until they pay on that page. If they'd rather not, go on to the next comparable item.`,
