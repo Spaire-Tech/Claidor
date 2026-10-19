@@ -256,7 +256,7 @@ const CARD_COPY: Record<PaidTierKey, { includes: string; lines: string[] }> = {
   },
   max: {
     includes: 'Everything in Pro, plus:',
-    lines: ['12x Standard usage', 'Our highest allowance'],
+    lines: ['12x Standard usage', 'Earliest access to all products'],
   },
 }
 

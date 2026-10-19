@@ -278,9 +278,12 @@ async def posters(app_path):
                 pg = await b.new_page(viewport={"width": w, "height": h}, device_scale_factor=2)
                 if name == "held":
                     await pg.add_init_script("Object.defineProperty(window, 'frameElement', { get: () => ({ hasAttribute: () => true, removeAttribute() {} }) })")
-                await pg.goto(f"http://127.0.0.1:{srv.server_port}/{app_path}/index.html?theme=light")
-                # The same moment the page reveals the live app: its sidebar drawn and its fonts in.
+                await pg.goto(f"http://127.0.0.1:{srv.server_port}/{app_path}/index.html?theme=light&still")
+                # What the page shows: the story already told (`still`), its sidebar drawn and its fonts in.
                 await pg.wait_for_selector(".sand-agents-sidebar", state="attached")
+                for text in ("The agenda went out", "Launch review.docx"):
+                    await pg.wait_for_selector(f"text={text}")
+                await pg.wait_for_timeout(400)
                 await pg.evaluate("document.fonts.ready")
                 await pg.screenshot(path=f"{OUT}/app-poster-{name}.jpg", type="jpeg", quality=82)
                 await pg.close()
@@ -301,6 +304,12 @@ async def main():
     page = re.sub(r"%FACE:([a-z-]+)%", lambda m: f"faces/{faces.face(m.group(1))}.webp", page)
     open(f"{OUT}/index.html", "w", encoding="utf-8").write(page)
     shutil.copytree(APP, f"{OUT}/app")
+    # `?still` plays the story at once (desktop/demo/bridge.ts); a bundle built before that line gets it here.
+    bridge = open(f"{OUT}/app/demo-bridge.js").read()
+    if 'has("still")' not in bridge:
+        assert bridge.count("timeScale: 0.5,") == 1, "demo-bridge.js: no timeScale to make still"
+        bridge = bridge.replace("timeScale: 0.5,", 'timeScale: new URLSearchParams(location.search).has("still") ? 0 : 0.5,')
+        open(f"{OUT}/app/demo-bridge.js", "w").write(bridge)
     guard = open(f"{HERE}/scroll-guard.js").read()
     open(f"{OUT}/app/scroll-guard.js", "w").write(guard)
     idx = open(f"{OUT}/app/index.html").read()

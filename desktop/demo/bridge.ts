@@ -24,7 +24,8 @@ const emit = (channel: string, event: any, payload?: any) => {
 
 const backend = createDemoBackend({
   // Twice the scripted pace: at 1x Simeon read as slow to think and answer (the founder, 28 September 2026).
-  timeScale: 0.5,
+  // `?still`: the whole story at once, no typing (the website on a computer; the founder, 18 October 2026).
+  timeScale: new URLSearchParams(location.search).has("still") ? 0 : 0.5,
   pushCoordinatorEvent: (family, payload) => server?.postEvent(family, payload),
   pushMainEvent: (event, payload) => emit(`sand-rpc:main:e:${event}`, {}, payload),
   reconnectCoordinator: () => openCoordinatorPort(),
