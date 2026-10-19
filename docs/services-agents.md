@@ -894,6 +894,17 @@ client, run and held by our server (`server/simeon/desktop/link_wallet.py`, belo
        (`status_details.requires_action.next_action`), with what comes after (`auto_resume`: pay
        again once done; otherwise a new checkout card); before, it read "This purchase is
        requires_action, not approved" and the page was lost (`linkActionText` in `link-tools.ts`).
+     * **Link's answer: no approval policy** (19 October 2026, the founder's Eureka desk, read
+       from the computer's log: `approval in Simeon refused: … no approval policy is configured`,
+       a 409). Link takes an app's approval only under an *approval policy* for that app and
+       person (rules: an action, a per-purchase limit, the cards it covers; `link-cli
+       approval-policy retrieve` reads it, nothing in the CLI makes one). Link's agents page lists
+       "Set controls for when your agent can spend with and without your approval" as coming
+       soon. Until Link sets one up for Simeon, every purchase is approved in the Link app. After
+       that answer the host asks in the Link app at once for an hour (`LINK_NO_POLICY_RECHECK_MS`,
+       log `[link] approval in Simeon skipped: …`) instead of waiting on the same refusal; the
+       card's watch now logs Link's words with its code (`[purchase] watching <id> failed:
+       <code> <message>`).
      * **Link refusing it** (Simeon may need Link's approval as a partner for this: the
        registered client below): the host makes the same request the old way
        (`--request-approval`, the card's own key) and logs `[link] approval in Simeon refused:

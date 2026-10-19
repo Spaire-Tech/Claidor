@@ -308,6 +308,24 @@ test("Allow approved in Simeon is handed to Link as the approval; Link refusing 
   assert.equal(creates().length, 2);
   assert.ok(creates().every((command) => command.includes("--approve")), "asked again the same way, never in the Link app");
 
+  // Link has no approval policy for Simeon (19 October 2026, a 409): the next purchases ask in the Link app at once, for an hour.
+  fake.calls.length = 0;
+  let clock = 1_800_000_000_000;
+  const policyLines = [];
+  const timed = tools.module.createLinkTools({ cli, rootDir: () => root, log: (line) => policyLines.push(line), now: () => clock });
+  delegatedAnswer = { code: 1, value: { code: "spend_request_conflict", message: "no approval policy is configured" } };
+  await timed.requestSpend(base);
+  assert.equal(creates().length, 2, "offered once, refused, asked in the Link app");
+  fake.calls.length = 0;
+  await timed.requestSpend(base);
+  assert.equal(creates().length, 1);
+  assert.ok(creates()[0].includes("--request-approval") && !creates()[0].includes("--approve"));
+  assert.ok(policyLines.includes("[link] approval in Simeon skipped: Link has no approval policy for Simeon; asking in the Link app"));
+  clock += tools.module.LINK_NO_POLICY_RECHECK_MS;
+  fake.calls.length = 0;
+  await timed.requestSpend(base);
+  assert.ok(creates()[0].includes("--approve"), "offered again an hour on");
+
   // No approval from the apps: as before, asked in the Link app only.
   fake.calls.length = 0;
   const { approval: _none, ...withoutApproval } = base;

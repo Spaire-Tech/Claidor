@@ -418,7 +418,7 @@ export class PurchaseCards {
           const answer = await wallet.spendStatus(spendRequestId, WATCH_STEP_SECONDS).catch((error: unknown) => ({ ok: false as const, code: "LINK_FAILED", message: error instanceof Error ? error.message : String(error) }));
           if (!answer.ok) {
             if (answer.code === "POLLING_TIMEOUT") continue;
-            this.log(`[purchase] watching ${spendRequestId} failed: ${answer.code}`);
+            this.log(`[purchase] watching ${spendRequestId} failed: ${answer.code} ${(answer.message.split("\n")[0] ?? "").slice(0, 200)}`);
             if (answer.code === "NOT_AUTHENTICATED" || answer.code === "NOT_FOUND") { await this.apply(agentId, entryId, answer, wallet); return; }
             await new Promise((resolve) => setTimeout(resolve, this.retryDelayMs));
             continue;

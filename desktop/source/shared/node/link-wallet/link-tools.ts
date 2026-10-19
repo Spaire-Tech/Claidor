@@ -143,6 +143,7 @@ export interface LinkToolsOptions {
   readonly log?: (message: string) => void;
   /** Simeon's server, which signs in with Simeon Labs' own Link client and holds the tokens (`link-server.ts`); the CLI is given its tokens too (`createLinkCli`'s `serverToken`). */
   readonly server?: LinkServer;
+  readonly now?: () => number;
 }
 
 export function createLinkTools(options: LinkToolsOptions) {
@@ -338,6 +339,12 @@ export function createLinkTools(options: LinkToolsOptions) {
    * the other; a delegated request whose answer was lost (the CLI died) is
    * asked once more with its own key rather than made a second way.
    */
+  // Until when Link is known to have no approval policy for Simeon and this
+  // person, so Allow asks in the Link app at once instead of first waiting on
+  // a refusal (19 October 2026, Link: "no approval policy is configured", 409).
+  let noPolicyUntil = 0;
+  const now = options.now ?? Date.now;
+
   const requestSpend = async (request: SpendRequestInput): Promise<SpendAnswer> => {
     if (request.credentialType === "link_pay_token" && (request.merchantAccountId ?? "").length === 0) return { ok: false, code: "MISSING_MERCHANT_ACCOUNT", message: "A Link pay token needs the checkout's merchant account." };
     const command = (delegated: boolean): string[] => {
@@ -358,7 +365,8 @@ export function createLinkTools(options: LinkToolsOptions) {
       args.push("--metadata", `source:${LINK_CLIENT_NAME}`);
       return args;
     };
-    if (request.approval != null) {
+    if (request.approval != null && now() < noPolicyUntil) log("[link] approval in Simeon skipped: Link has no approval policy for Simeon; asking in the Link app");
+    if (request.approval != null && now() >= noPolicyUntil) {
       let delegated = spendAnswer(await cli.run(command(true), { timeoutMs: 90_000 }));
       if (!delegated.ok && delegated.code === "LINK_CLI_FAILED") delegated = spendAnswer(await cli.run(command(true), { timeoutMs: 90_000 }));
       // Approved (or on to the bank's own check, `requires_action`): Link took it.
@@ -378,6 +386,7 @@ export function createLinkTools(options: LinkToolsOptions) {
       if (delegated.code === "LINK_CLI_FAILED" || delegated.code === "LINK_UNAVAILABLE") return delegated;
       // Link's own refusal (Simeon not allowed to approve for the person, a field it wants): ask in the Link app instead.
       log(`[link] approval in Simeon refused: ${delegated.code} ${(delegated.message.split("\n")[0] ?? "").slice(0, 200)}; asking in the Link app`);
+      if (/approval policy/i.test(delegated.message)) noPolicyUntil = now() + LINK_NO_POLICY_RECHECK_MS;
     }
     const spend = spendAnswer(await cli.run(command(false), { timeoutMs: 90_000 }));
     if (spend.ok) log(`[link] purchase requested: ${spend.status} ${spend.id}`);
@@ -501,6 +510,9 @@ export type LinkTools = ReturnType<typeof createLinkTools>;
 
 /** Link's cap on one purchase, in US cents (README, 0.27.1). */
 export const LINK_MAX_PURCHASE_CENTS = 50_000;
+
+/** How long a "no approval policy" answer from Link stands before Simeon's approval is offered to Link again. */
+export const LINK_NO_POLICY_RECHECK_MS = 60 * 60_000;
 
 /** One card in the person's Link an agent may pay with, as the checkout card's chooser shows it. */
 export interface LinkCardChoice {
