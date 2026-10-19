@@ -244,16 +244,18 @@ struct ConnectAppsRow: View {
 
 /**
  * The agents' settings: the time zone the agents' computer keeps (set
- * automatically, or chosen). Auto-review and its rules moved to
- * Permissions (PermissionsPage) on 18 October 2026. `settings` is the box's
- * host settings, read once by the page that holds this section.
+ * automatically, or chosen), in a section with no title (the founder, 19
+ * October 2026: "in settings remove the word agents"). Auto-review and its
+ * rules moved to Permissions (PermissionsPage) on 18 October 2026.
+ * `settings` is the box's host settings, read once by the page that holds
+ * this section.
  */
 struct AgentSettingsSection: View {
   @Binding var settings: JSON?
   @Environment(SimeonCore.AppStore.self) private var store
 
   var body: some View {
-    Section("Agents") {
+    Section {
       // The words alone, with no line under them (the founder, 19 October 2026).
       Toggle("Set Time Zone Automatically", isOn: automaticZone)
         .tint(Ink.blue)
