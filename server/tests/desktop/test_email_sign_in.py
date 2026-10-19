@@ -255,3 +255,40 @@ class TestPassword:
             "/desktop/api/account/password", json={"password": "a good passphrase"}
         )
         assert answer.status_code == 401
+
+
+@pytest.mark.asyncio
+class TestWebPassword:
+    """app.simeonlabs.com's "Continue with password" (`/v1/login-password`)."""
+
+    async def test_the_right_password_gives_the_browser_its_session(
+        self, client: httpx.AsyncClient, save_fixture: SaveFixture
+    ) -> None:
+        person = await create_user(save_fixture)
+        person.password_hash = passwords.hash_password("the right one")
+        await save_fixture(person)
+        answer = await client.post(
+            "/v1/login-password/authenticate",
+            params={"return_to": "/app"},
+            data={"email": person.email, "password": "the right one"},
+        )
+        assert answer.status_code == 303, answer.text
+        assert answer.headers["location"].endswith("/app")
+        assert answer.headers.get("set-cookie")
+
+    async def test_a_wrong_one_goes_back_to_the_form_with_the_sentence(
+        self, client: httpx.AsyncClient, save_fixture: SaveFixture
+    ) -> None:
+        person = await create_user(save_fixture)
+        person.password_hash = passwords.hash_password("the right one")
+        await save_fixture(person)
+        answer = await client.post(
+            "/v1/login-password/authenticate",
+            params={"return_to": "/app"},
+            data={"email": person.email, "password": "a wrong one"},
+        )
+        assert answer.status_code == 303
+        location = answer.headers["location"]
+        assert "/login/password?" in location
+        assert "error=Wrong+email+or+password" in location
+        assert not answer.headers.get("set-cookie")

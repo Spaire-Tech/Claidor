@@ -32,15 +32,21 @@ from __future__ import annotations
 import asyncio
 import hashlib
 from typing import Any, Literal
+from urllib.parse import urlencode
 
 import structlog
 from email_validator import EmailNotValidError
 from email_validator import validate_email as validate_email_syntax
-from fastapi import Depends, Request
-from fastapi.responses import JSONResponse
+from fastapi import Depends, Form, Request
+from fastapi.responses import JSONResponse, RedirectResponse
 
+from simeon.auth.dependencies import WebUserOrAnonymous
+from simeon.auth.models import is_user
+from simeon.auth.service import auth as auth_service
+from simeon.config import settings
 from simeon.integrations.loops.service import loops as loops_service
 from simeon.kit.email import validate_email
+from simeon.kit.http import ReturnTo
 from simeon.login_code.service import LoginCodeError
 from simeon.login_code.service import login_code as login_code_service
 from simeon.models import DesktopSession, User
@@ -61,6 +67,9 @@ log = structlog.get_logger()
 #: `/auth/email/*`, beside `/auth/apple`, and `/desktop/api/account/password`
 #: (mounted on the app itself: the desktop router's module is imported here).
 router = APIRouter(tags=["desktop", APITag.private])
+#: `/v1/login-password/authenticate`: the web's password sign-in, beside the
+#: web's login codes (`/v1/login-code`), on the API's `/v1` router.
+web_router = APIRouter(prefix="/login-password", tags=["login_code", APITag.private])
 
 NO_STORE = {"Cache-Control": "no-store"}
 
@@ -265,3 +274,51 @@ async def set_account_password(
     session.add(user)
     log.info("desktop.account.password_set", user_id=str(user.id), changed=had)
     return JSONResponse({"set": True}, headers=NO_STORE)
+
+
+@web_router.post("/authenticate", name="login_password:authenticate")
+async def web_password(
+    request: Request,
+    return_to: ReturnTo,
+    auth_subject: WebUserOrAnonymous,
+    email: str = Form(""),
+    password: str = Form(""),
+    session: AsyncSession = Depends(get_db_session),
+    redis: Redis = Depends(get_redis),
+) -> RedirectResponse:
+    """app.simeonlabs.com's "Continue with password" (its `/login/password`
+    form): the account's password gives the browser its session, as a code
+    does (`/v1/login-code/authenticate`), and goes on to `return_to` (from
+    the Mac app, its sign-in link). A refusal goes back to the form with the
+    same one sentence, under the same per-email limits as the app's."""
+    if is_user(auth_subject):
+        return RedirectResponse(return_to, 303)
+
+    def refused(message: str) -> RedirectResponse:
+        query = urlencode({"return_to": return_to, "email": email, "error": message})
+        url = settings.generate_frontend_url(f"/login/password?{query}")
+        return RedirectResponse(url, 303)
+
+    address = _address(email.strip()[:_FIELD_MAX])
+    password = password[:_FIELD_MAX]
+    if address is None or not password:
+        return refused(WRONG_PASSWORD)
+    if await _locked(redis, address):
+        return refused(TOO_MANY_TRIES)
+    user = await UserRepository.from_session(session).get_by_email(address)
+    stored = user.password_hash if user is not None else None
+    if not await passwords.verify_password_async(password, stored) or user is None:
+        await _count(redis, _key("failed", address))
+        return refused(WRONG_PASSWORD)
+    if not user.can_authenticate:
+        return refused(CLOSED)
+    await redis.delete(_key("failed", address))
+    posthog.user_login(user, "password")
+    log.info("desktop.sign_in.email", user_id=str(user.id), how="password", web=True)
+    response = await auth_service.get_login_response(
+        session, request, user, return_to=return_to
+    )
+    # As the web's code sign-in does (`login_code/endpoints.py`): the session
+    # written before the browser follows the redirect, or it can arrive first.
+    await session.commit()
+    return response

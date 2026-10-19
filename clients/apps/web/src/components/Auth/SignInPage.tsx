@@ -1,6 +1,7 @@
 'use client'
 
 import AuthShell, { Legal } from '@/components/Auth/AuthShell'
+import { Or, provider } from '@/components/Auth/parts'
 import { LoginCodeError, useSendLoginCode } from '@/hooks/loginCode'
 import { usePostHog, type EventName } from '@/hooks/posthog'
 import { getAppleAuthorizeURL, getGoogleAuthorizeLoginURL } from '@/utils/auth'
@@ -14,8 +15,10 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react'
 // back to `returnTo`; from the Mac app that is its own sign-in link on the
 // API (`/loginDeepControl`), which then asks "Continue as …" and hands the
 // app its session. The e-mail way sends a six-character code
-// (`/login/code/verify`). The photo and the phone's single column are the
-// frame's (AuthShell).
+// (`/login/code/verify`), where Continue with password goes to the account's
+// password instead (`/login/password`, 19 October 2026, as the iPhone's Log in
+// or sign up). The photo and the phone's single column are the frame's
+// (AuthShell).
 export const GoogleMark = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -58,9 +61,6 @@ const PROBLEMS: Record<string, string> = {
     'Sign in with Apple is coming soon. Continue with Google or your email for now.',
 }
 
-const provider =
-  'flex h-[50px] w-full items-center justify-center gap-3 rounded-full border border-[#d9d9de] bg-white text-[16px] font-medium tracking-[-0.01em] text-[#1d1d1f] transition-colors hover:bg-[#f5f5f7] sm:h-[52px] sm:text-[17px]'
-
 const SignInPage = ({
   mode,
   returnTo,
@@ -78,7 +78,9 @@ const SignInPage = ({
   const [email, setEmail] = useState('')
   const [sending, setSending] = useState(false)
   const [problem, setProblem] = useState<string | undefined>(
-    error ? (PROBLEMS[error] ?? 'That sign-in did not go through. Try again.') : undefined,
+    error
+      ? (PROBLEMS[error] ?? 'That sign-in did not go through. Try again.')
+      : undefined,
   )
 
   const resolvedReturnTo = useMemo(() => {
@@ -127,8 +129,7 @@ const SignInPage = ({
         signup ? { intent: 'creator' } : undefined,
       )
     } catch (e) {
-      const detail =
-        e instanceof LoginCodeError ? e.error?.[0]?.msg : undefined
+      const detail = e instanceof LoginCodeError ? e.error?.[0]?.msg : undefined
       setProblem(
         detail
           ? 'Enter a valid email address.'
@@ -144,17 +145,23 @@ const SignInPage = ({
       line="Your doing partners for every part of your business."
     >
       <div className="flex flex-col gap-3">
-        <a href={googleUrl} onClick={() => submitted('google')} className={provider}>
+        <a
+          href={googleUrl}
+          onClick={() => submitted('google')}
+          className={provider}
+        >
           <GoogleMark />
           <span>Continue with Google</span>
         </a>
-        <a href={appleUrl} onClick={() => submitted('apple')} className={provider}>
+        <a
+          href={appleUrl}
+          onClick={() => submitted('apple')}
+          className={provider}
+        >
           <AppleMark />
           <span>Continue with Apple</span>
         </a>
-        <div className="py-2 text-center text-[13px] font-medium tracking-[0.06em] text-[#86868b]">
-          OR
-        </div>
+        <Or />
         <form onSubmit={sendCode} className="flex flex-col gap-3" noValidate>
           <label htmlFor="sign-in-email" className="sr-only">
             Email
@@ -167,18 +174,21 @@ const SignInPage = ({
             placeholder="Enter your email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="h-[50px] w-full rounded-full border border-[#d9d9de] bg-white px-5 text-[16px] sm:h-[52px] sm:text-[17px] text-[#1d1d1f] placeholder:text-[#a1a1a6] focus:border-[#1d1d1f] focus:outline-none"
+            className="h-[50px] w-full rounded-full border border-[#d9d9de] bg-white px-5 text-[16px] text-[#1d1d1f] placeholder:text-[#a1a1a6] focus:border-[#1d1d1f] focus:outline-none sm:h-[52px] sm:text-[17px]"
           />
           <button
             type="submit"
             disabled={sending}
-            className="h-[50px] w-full rounded-full bg-black text-[16px] font-medium sm:h-[52px] sm:text-[17px] tracking-[-0.01em] text-white transition-colors hover:bg-[#1d1d1f] disabled:cursor-not-allowed disabled:opacity-60"
+            className="h-[50px] w-full rounded-full bg-black text-[16px] font-medium tracking-[-0.01em] text-white transition-colors hover:bg-[#1d1d1f] disabled:cursor-not-allowed disabled:opacity-60 sm:h-[52px] sm:text-[17px]"
           >
             {sending ? 'Sending code…' : 'Continue with email'}
           </button>
         </form>
         {problem ? (
-          <p role="alert" className="text-center text-[14px] leading-[1.45] text-[#c21d2e]">
+          <p
+            role="alert"
+            className="text-center text-[14px] leading-[1.45] text-[#c21d2e]"
+          >
             {problem}
           </p>
         ) : null}
