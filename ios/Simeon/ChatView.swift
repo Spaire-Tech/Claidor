@@ -1096,10 +1096,30 @@ struct ChatComposer: View {
     defer { hook?.afterSend?() }
     // In a thread every message answers its first one; else the message Reply was chosen on.
     let answering = thread ?? reply?.target?.id
+    // Dictation still on its way writes nothing more: the message it was writing has gone.
+    dictation.cancel()
+    #if os(iOS)
+    // What the keyboard is still composing (a predicted word, an accent) set down first: SwiftUI won't empty a field holding it.
+    let field = typing ? TypingField.current() : nil
+    field?.unmarkText()
+    #endif
     place("", chips: [])
+    // The chat's kept draft goes now, not when typing pauses: a composer drawn again meanwhile would bring the words back.
+    store.setDraft("", for: draftKey)
+    #if os(iOS)
+    // And a field still showing the words once the draft is empty is emptied here (the founder, 19 October 2026: the message
+    // had gone, and its words were still in the composer, beside the mic).
+    if let field {
+      Task { @MainActor in
+        for pause: UInt64 in [50_000_000, 300_000_000] {
+          try? await Task.sleep(nanoseconds: pause)
+          if draft.isEmpty { TypingField.empty(field) }
+        }
+      }
+    }
+    #endif
     attachments = []
     if thread == nil { reply?.target = nil }
-    dictation.stop()
     // The composer's pictures are shown in the chat as they are, before anything goes to the computer.
     let id = AppStore.newMessageId()
     for (index, file) in files.enumerated() { if let preview = file.preview { ChatImages.keep(preview, under: [AppStore.outboxFileURL(id, index)]) } }
@@ -1110,6 +1130,39 @@ struct ChatComposer: View {
     Task { await store.send(text, to: agentId, attachments: files.map { ($0.name, $0.data) }, replyTo: answering, inThread: inThread, richText: rich, id: id) }
   }
 }
+
+#if os(iOS)
+/**
+ * The field the keyboard is typing in (the first responder), for Send:
+ * SwiftUI's field can keep showing words the keyboard was still composing
+ * after its text is set to empty, so the composer showed a sent message's
+ * words beside the mic, and the next letter typed brought them all back.
+ */
+@MainActor
+enum TypingField {
+  private static weak var found: UIResponder?
+
+  /** The field that has the keyboard, if one does. */
+  static func current() -> (UIView & UITextInput)? {
+    found = nil
+    _ = UIApplication.shared.sendAction(#selector(UIResponder.simeonNoteTyping), to: nil, from: nil, for: nil)
+    return found as? (UIView & UITextInput)
+  }
+
+  fileprivate static func note(_ responder: UIResponder) { found = responder }
+
+  /** Its words set down and taken out, through the keyboard's own path, so the keyboard and SwiftUI both hear of it. */
+  static func empty(_ field: UIView & UITextInput) {
+    field.unmarkText()
+    guard let all = field.textRange(from: field.beginningOfDocument, to: field.endOfDocument), !all.isEmpty else { return }
+    field.replace(all, withText: "")
+  }
+}
+
+extension UIResponder {
+  @objc fileprivate func simeonNoteTyping() { TypingField.note(self) }
+}
+#endif
 
 /** One row of the chat. */
 struct ChatRowView: View, Equatable {
