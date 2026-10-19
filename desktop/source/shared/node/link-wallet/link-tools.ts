@@ -435,7 +435,23 @@ export function createLinkTools(options: LinkToolsOptions) {
   /** Whether a purchase should try Link first: a sign-in on this computer, or the server's, as it last said. */
   const hasSignIn = (): boolean => options.server?.knownConnected() === true || existsSync(linkAuthFile(options.rootDir()));
 
-  return { tools: LINK_TOOLS, call, signInStatus, startSignIn, signOut, hasSignIn, checkoutFacts, requestSpend, spendStatus, cancelSpend, reportOutcome, withCard, personFacts };
+  /**
+   * The saved delivery addresses, for Shop's checkout to fill what Shop's
+   * saved one lacks (`shop-tools.ts`, `withLinkLine2`); none when Link isn't
+   * connected or can't say.
+   */
+  const deliveryAddresses = async (): Promise<readonly { readonly line1: string; readonly line2: string; readonly postalCode: string }[]> => {
+    if (!hasSignIn()) return [];
+    const answer = await cli.run(["shipping-address", "list"]);
+    if (!answer.ok) return [];
+    const list = Array.isArray(answer.value) ? answer.value : (answer.value as { data?: unknown } | null)?.data;
+    return records(list).map((item) => {
+      const place = item.address != null && typeof item.address === "object" ? item.address as Record<string, unknown> : item;
+      return { line1: text(place.line1) || text(place.line_1), line2: text(place.line2) || text(place.line_2), postalCode: text(place.postal_code) || text(place.postalCode) };
+    });
+  };
+
+  return { tools: LINK_TOOLS, call, signInStatus, startSignIn, signOut, hasSignIn, checkoutFacts, requestSpend, spendStatus, cancelSpend, reportOutcome, withCard, personFacts, deliveryAddresses };
 }
 
 export type LinkTools = ReturnType<typeof createLinkTools>;

@@ -145,7 +145,7 @@ async function shopFixture(t, tools, options = {}) {
   let clock = options.now ?? 1_800_000_000_000;
   const logs = [];
   const shopClient = client.module.createShopClient({ rootDir: () => root, fetch: shop.fetch, now: () => clock, env: options.env ?? {}, log: (line) => logs.push(line) });
-  const wallet = toolsModule.module.createShopTools({ client: shopClient, rootDir: () => root, now: () => clock, sleep: async (ms) => { clock += ms; }, log: (line) => logs.push(line), ...(options.fillCheckout == null ? {} : { fillCheckout: options.fillCheckout }), ...(options.linkConnected == null ? {} : { linkConnected: options.linkConnected }) });
+  const wallet = toolsModule.module.createShopTools({ client: shopClient, rootDir: () => root, now: () => clock, sleep: async (ms) => { clock += ms; }, log: (line) => logs.push(line), ...(options.fillCheckout == null ? {} : { fillCheckout: options.fillCheckout }), ...(options.linkConnected == null ? {} : { linkConnected: options.linkConnected }), ...(options.linkAddresses == null ? {} : { linkAddresses: options.linkAddresses }) });
   return { root, shop, client: shopClient, wallet, modules: { client: client.module, tools: toolsModule.module }, logs, tick: (ms) => { clock += ms; }, signIn: () => { mkdirSync(path.join(root, "shop"), { recursive: true }); writeFileSync(path.join(root, "shop", "auth.json"), JSON.stringify({ accessToken: "at-live", refreshToken: "rt-live", expiresAtMs: clock + 3_600_000, clientId: "5c733ab2-1903-400a-891e-7ba20c09e2a3" })); } };
 }
 
@@ -488,6 +488,53 @@ test("the delivery address carries the phone, and with Link connected a checkout
   // Without Link, Shop's own page, as before.
   const without = await run(false);
   assert.match(without.prepared.text, /Send the person Shop's own page for it, unchanged, as a link to review and pay there/);
+});
+
+test("the delivery address takes the apartment line Link has for the same place when Shop's has none (19 October 2026, OfficeTap)", async (t) => {
+  const address = ACCOUNT.addresses[0];
+  const doc = (fulfillment) => ({
+    id: "gid://shopify/Checkout/tap?key=k",
+    status: "incomplete",
+    currency: "USD",
+    line_items: [{ id: "line-1", item: { id: "gid://shopify/ProductVariant/1", title: "Office set", price: 2399 }, quantity: 1 }],
+    totals: [{ type: "total", amount: 2399, display_text: "Total" }],
+    payment: { instruments: [] },
+    fulfillment,
+    messages: [{ type: "error", content: "Add an apartment or suite number", severity: "requires_buyer_input" }],
+  });
+  const chosen = { methods: [{ id: "m1", type: "shipping", destinations: [{ ...address, phone_number: "+12065550100" }], selected_destination_id: "addr-1" }] };
+  const run = async (link) => {
+    const { shop, wallet, signIn, logs } = await shopFixture(t, {
+      get_account: () => ({ value: ACCOUNT }),
+      create_checkout: () => ({ value: doc(chosen) }),
+      update_checkout: (args) => ({ value: doc(args.checkout.fulfillment) }),
+    }, { linkAddresses: async () => link });
+    signIn();
+    await wallet.call("prepare_checkout", { shop: "officetap.myshopify.com", items: [{ variant_id: "gid://shopify/ProductVariant/1" }], phone: "(206) 555-0100" });
+    return { sent: shop.tool("update_checkout")[0]?.args.checkout.fulfillment.methods[0], logs };
+  };
+  // Link's address for the same place, written its own way, with the apartment.
+  const { sent, logs } = await run([{ line1: "9 Elsewhere Rd", line2: "Unit 2", postalCode: "10001" }, { line1: "1 Example Way.", line2: "Apt 4B", postalCode: "98101-1234" }]);
+  assert.deepEqual(sent.destinations, [{ ...address, extended_address: "Apt 4B", phone_number: "+12065550100" }]);
+  assert.equal(sent.selected_destination_id, "addr-1");
+  assert.ok(logs.includes("[shop] delivery address: apartment line from Link"));
+  assert.ok(!logs.some((line) => line.includes("4B")), "the address itself is never logged");
+  // Another place, or none with an apartment: Shop's address as it is, and nothing sent again.
+  assert.equal((await run([{ line1: "2 Example Way", line2: "Apt 4B", postalCode: "98101" }])).sent, undefined);
+  assert.equal((await run([{ line1: "1 Example Way", line2: "", postalCode: "98101" }])).sent, undefined);
+  assert.equal((await run([])).sent, undefined);
+});
+
+test("withLinkLine2 leaves an address that already has its unit", async (t) => {
+  const { module, dispose } = await load("source/shared/node/shop-wallet/shop-tools.ts", "shop-tools-line2");
+  t.after(dispose);
+  const link = [{ line1: "1 Example Way", line2: "Apt 4B", postalCode: "98101" }];
+  const base = { id: "a", street_address: "1 Example Way", postal_code: "98101" };
+  assert.equal(module.withLinkLine2({ ...base, extended_address: "Suite 9" }, link).extended_address, "Suite 9");
+  const inline = { ...base, street_address: "1 Example Way #4B" };
+  assert.equal(module.withLinkLine2(inline, link), inline);
+  assert.equal(module.withLinkLine2({ ...base, street_address: "1 Example Way Apt. 4" }, link).extended_address, undefined);
+  assert.equal(module.withLinkLine2(base, link).extended_address, "Apt 4B");
 });
 
 test("the checkout card answers a Shop card with Shop: the spend request goes to Shop, the wake names Shop's tools; a Shop checkout is placed at Allow", async (t) => {

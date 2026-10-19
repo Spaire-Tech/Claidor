@@ -20,6 +20,7 @@ import json
 import secrets
 import time
 from collections.abc import AsyncIterator, Awaitable, Callable, Mapping
+from contextlib import AbstractAsyncContextManager
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -39,7 +40,6 @@ from simeon.desktop.tokens import (
     BOX_CREDENTIAL_PREFIXES,
 )
 from simeon.kit.crypto import generate_token_hash_pair, get_token_hash
-from simeon.kit.db.postgres import AsyncSessionMaker
 from simeon.kit.utils import generate_uuid, utc_now
 from simeon.models import DesktopSession, SandBox
 from simeon.postgres import AsyncReadSession, AsyncSession
@@ -94,6 +94,25 @@ LOCAL_BOX_REASON = (
     "This computer runs in Docker on the user's Mac; it is updated from "
     "Simeon on the Mac (Settings → Updates), not from here."
 )
+
+
+#: Where a new box's credential is written and committed before the box
+#: starts (`_mint_credential`): the request's sessionmaker, or the
+#: worker's for the sleeper's update (`box_tasks.py`).
+type SessionOpener = Callable[[], AbstractAsyncContextManager[AsyncSession]]
+
+
+@dataclass(frozen=True)
+class OutOfDate:
+    """What a box runs that is no longer current: the host program (a newer
+    engine was published), the image, or a box made before backups."""
+
+    host: bool = False
+    image: bool = False
+    store: bool = False
+
+    def __bool__(self) -> bool:
+        return self.host or self.image or self.store
 
 
 class BoxEnsureInProgress(Exception):
@@ -390,6 +409,16 @@ async def is_attached(redis: Redis, box_id: UUID) -> bool:
         return True
 
 
+# A box the sleeper sent to be updated is not sent again for this long:
+# the update runs once, or, if it found the box busy or failed, is tried
+# again after it.
+UPDATE_RETRY_SECONDS = 600
+
+
+def update_key(box_id: UUID) -> str:
+    return f"sand:box:update:{box_id}"
+
+
 # --- reaching a box ------------------------------------------------------------
 
 
@@ -553,7 +582,7 @@ class BoxBrokerService:
         self,
         db: AsyncSession,
         parent: DesktopSession,
-        committed: AsyncSessionMaker | None = None,
+        committed: SessionOpener | None = None,
     ) -> tuple[UUID, str]:
         """A new credential for the box about to start, and its row's id.
 
@@ -619,7 +648,7 @@ class BoxBrokerService:
         box: SandBox,
         *,
         restore: str | None = None,
-        committed: AsyncSessionMaker | None = None,
+        committed: SessionOpener | None = None,
     ) -> None:
         """A new container for the row. With backups on (`box_store.py`)
         it backs itself up, and copies the last backup in before its host
@@ -701,7 +730,7 @@ class BoxBrokerService:
         box: SandBox,
         host: BoxHost,
         *,
-        committed: AsyncSessionMaker | None,
+        committed: SessionOpener | None,
     ) -> BoxHost | None:
         """A person listed on another server (`users`) whose box is still on
         this one gets a new box there, through the backup, when the box is
@@ -807,6 +836,31 @@ class BoxBrokerService:
             and row.refresh_expires_at > utc_now()
         )
 
+    async def _out_of_date(
+        self, db: AsyncSession, host: BoxHost, box: SandBox
+    ) -> tuple[ProvisionedBox | None, OutOfDate]:
+        """The box as its server reports it, and what it runs that is no
+        longer current. The Mac's rules (local-docker-host-connector.ts): a
+        container whose host program is not the current bundle
+        (`localDockerContainerNeedsReplace`), or that runs another image
+        than the one configured (the Mac refuses it), is replaced on the
+        same volumes. A box made before 29 September mounts no host at all;
+        one on a later image than the pinned one runs the image's own host
+        from /opt/sand and never reads the mounted one. One made before
+        backups were switched on (`box_store.py`) is replaced the same way."""
+        current = await host.inspect(box.provider_box_id)
+        stale_image = stale_store = False
+        if current is not None:
+            stale_image = current.image != await self._image_on(db, host, box.user_id)
+            stale_store = (
+                box_store.enabled() and current.box_store != box_store.LABEL_VALUE
+            )
+        expected_host = getattr(host, "expected_host_sha256", None)
+        stale_host = expected_host is not None and (
+            current is None or current.host_sha256 != expected_host
+        )
+        return current, OutOfDate(host=stale_host, image=stale_image, store=stale_store)
+
     async def _token_rejected(self, box: SandBox) -> bool:
         url = self.internal_url(box, GATEWAY_PORT)
         if url is None:
@@ -830,7 +884,7 @@ class BoxBrokerService:
         db: AsyncSession,
         caller: DesktopSession,
         *,
-        committed: AsyncSessionMaker | None = None,
+        committed: SessionOpener | None = None,
     ) -> SandBox:
         """`EnsureSandBox`: the person's box, created, started or reused,
         with its URLs stamped. Raises `BoxBrokerRefused` (a Connect code
@@ -864,33 +918,11 @@ class BoxBrokerService:
         elif box is not None and host is not None:
             state = await host.run_state(box.provider_box_id)
             credential_live = await self._credential_is_live(db, box)
-            # The Mac's rules (local-docker-host-connector.ts): a container
-            # whose host program is not the current bundle
-            # (`localDockerContainerNeedsReplace`), or that runs another
-            # image than the one configured (the Mac refuses it), is
-            # replaced on the same volumes. A box made before 29 September
-            # mounts no host at all; one on a later image than the pinned
-            # one runs the image's own host from /opt/sand and never reads
-            # the mounted one.
-            expected_host = getattr(host, "expected_host_sha256", None)
-            stale_host = False
-            stale_image = False
-            # Made before backups were switched on (`box_store.py`): replaced
-            # on its volumes like a box on an older host program.
-            stale_store = False
             current: ProvisionedBox | None = None
+            stale = OutOfDate()
             if state is not None and credential_live:
-                current = await host.inspect(box.provider_box_id)
-                if current is not None:
-                    stale_image = current.image != await self._image_on(
-                        db, host, parent.user_id
-                    )
-                    stale_store = (
-                        box_store.enabled()
-                        and current.box_store != box_store.LABEL_VALUE
-                    )
-                if expected_host is not None:
-                    stale_host = current is None or current.host_sha256 != expected_host
+                current, stale = await self._out_of_date(db, host, box)
+            stale_host, stale_image, stale_store = stale.host, stale.image, stale.store
             if (
                 (stale_host or stale_image or stale_store)
                 and state == "stopped"
@@ -1081,7 +1113,7 @@ class BoxBrokerService:
         redis: Redis,
         preserve_data: bool,
         force: bool,
-        committed: AsyncSessionMaker | None = None,
+        committed: SessionOpener | None = None,
     ) -> RecreateOutcome:
         """`RecreateSandBox` and `ForceRecreateSandBox`: the container is
         replaced now, on the same volumes (`preserve_data`) or on fresh
@@ -1227,7 +1259,12 @@ class BoxBrokerService:
             mark_stopped(box, "hibernated" if state == "stopped" else "absent")
         await repository.update(box, flush=True)
         if state == "running":
-            return RUN_STATE_RUNNING, False
+            # Out of date (19 October 2026): a newer engine was published
+            # while it ran. Answered false always until then, the apps took
+            # the computer as current and never offered "Update Simeon's
+            # Computer" ("/" and Search on the iPhone, the Mac's sidebar).
+            _, stale = await self._out_of_date(db, host, box)
+            return RUN_STATE_RUNNING, bool(stale)
         if state == "stopped":
             return RUN_STATE_HIBERNATED, False
         return RUN_STATE_ABSENT, False
@@ -1370,12 +1407,20 @@ class BoxBrokerService:
         log.info("sand.box.hibernated", box=str(box.id), user=str(box.user_id))
         return RecreateOutcome(started=True)
 
-    async def hibernate_idle(self, db: AsyncSession, redis: Redis) -> list[UUID]:
+    async def hibernate_idle(
+        self,
+        db: AsyncSession,
+        redis: Redis,
+        *,
+        update: Callable[[UUID], None] | None = None,
+    ) -> list[UUID]:
         """The sleeper, every minute (`box_tasks.py`): each box the broker
         left running on this host is asked how it is; one that holds work
         stays awake and has its `last_active_at` moved; one that has been
         idle for `SIMEON_BOX_IDLE_HIBERNATE_AFTER`, and that no app is
-        attached to through the proxy, is put to sleep."""
+        attached to through the proxy, is put to sleep. One that is idle,
+        unattached and out of date is handed to `update` (the person's id)
+        instead, at most once every `UPDATE_RETRY_SECONDS`."""
         after = settings.BOX_IDLE_HIBERNATE_AFTER
         if after.total_seconds() <= 0:
             return []
@@ -1434,6 +1479,34 @@ class BoxBrokerService:
                 box.last_active_at = now
                 await repository.update(box, flush=True)
                 continue
+            if update is not None and health.reachable and not health.is_busy:
+                # Updated as soon as it is idle (19 October 2026). Until
+                # then a box was updated only when an app connected to it
+                # idle: published at 23:59:45 on 18 October, Rhea's box woke
+                # 12 s later on the old engine (the server reads the
+                # published version every 10 minutes) and kept it for
+                # hours. Nobody is on its screen now (not attached), so the
+                # swap interrupts no one.
+                _, stale = await self._out_of_date(db, host, box)
+                if stale:
+                    try:
+                        first = await redis.set(
+                            update_key(box.id), "1", ex=UPDATE_RETRY_SECONDS, nx=True
+                        )
+                    except Exception:
+                        first = False
+                    if first:
+                        log.info(
+                            "sand.box.update_idle",
+                            box=str(box.id),
+                            stale_host=stale.host,
+                            stale_image=stale.image,
+                            stale_store=stale.store,
+                        )
+                        update(box.user_id)
+                        continue
+                    # Sent already: one the update could not replace still
+                    # sleeps by the usual rule, rather than stay awake.
             idle_since = box.last_active_at or box.last_ensured_at or box.created_at
             # A server's own idle time (`idle_minutes` in SIMEON_BOX_HOSTS):
             # shorter where waking takes a second (E2B).
@@ -1491,6 +1564,34 @@ class BoxBrokerService:
         await repository.update(box, flush=True)
         log.info("sand.box.woken", box=str(box.id), user=str(user_id))
         return "woken"
+
+    async def update_idle(
+        self, db: AsyncSession, user_id: UUID, *, committed: SessionOpener | None
+    ) -> str:
+        """The sleeper's update (`sand.box.update_idle`): the person's box,
+        out of date, is replaced the way EnsureSandBox replaces it when an
+        app connects to it idle (its backup brought up to date, a new
+        container on the same files), on behalf of the desktop it belongs
+        to. EnsureSandBox checks again, so a box busy by now keeps its
+        program (`sand.box.update_deferred`). Answers what it did, for the
+        log: `ensured` (`sand.box.ensure.recreate` says whether it was
+        replaced), `no-box`, `signed-out`."""
+        box = await SandBoxRepository.from_session(db).get_by_user(user_id)
+        if box is None or box.credential_session_id is None:
+            return "no-box"
+        sessions = DesktopSessionRepository.from_session(db)
+        credential = await sessions.get_one_or_none(
+            sessions.get_base_statement().where(
+                DesktopSession.id == box.credential_session_id
+            )
+        )
+        parent = (
+            await sessions.get_parent_of(credential) if credential is not None else None
+        )
+        if parent is None or parent.is_revoked:
+            return "signed-out"
+        await self.ensure(db, parent, committed=committed)
+        return "ensured"
 
     async def box_of_watcher(
         self, db: AsyncSession, caller: DesktopSession

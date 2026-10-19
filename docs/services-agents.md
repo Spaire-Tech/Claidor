@@ -1926,6 +1926,23 @@ helper had finished long before, and sent another helper to check. Now:
 This needs no server change and no setting on Render: it is all in the engine, and reaches the
 cloud computers when the founder's agent publishes a new host bundle.
 
+- **The next try, still on the old engine** (19 October 2026). The engine above was published,
+  but Rhea's computer woke 12 seconds after the publish on the old one and kept it for hours (the founder's agent, from the Render logs). A
+  computer then took a new engine only when an app connected to it idle. The server now also
+  replaces an idle computer with no app on it as soon as it is out of date, and tells the apps
+  an update is waiting so they offer "Update Simeon's Computer" (`docs/services-core.md`, the
+  sleeper's update). The same round found two more things:
+  - Shop asked OfficeTap's checkout for an apartment or suite number: Shop's saved address had
+    none, and Link's address for the same place did. Before the checkout, the account's address
+    now takes the apartment line from Link's address with the same ZIP, house number and street
+    when it has none (`withLinkLine2` in `shop-tools.ts`, Link's addresses from
+    `deliveryAddresses` in `link-tools.ts`). The log says `[shop] delivery address: apartment
+    line from Link`; the address itself is never logged.
+  - Miles wrote Staples' and Office Depot's search addresses himself, and both were dead pages.
+    The main agent's purchase steps and the browser helper's instructions now say to open only
+    addresses a search, a tool or a page gave, and to use a store's own search box
+    (`system-prompt.ts`, `prompt-collector-glue.ts`).
+
 **How it works.**
 
 - OpenPage: `createSandOpenPageTool` in `host/runner/tools/sand-browser-tools.ts`, offered only

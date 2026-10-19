@@ -201,6 +201,30 @@ export function withDeliveryPhone(address: Record<string, unknown>, phone: strin
   return { ...rest, phone_number: phone };
 }
 
+/** A delivery address as Link's wallet keeps it, as far as matching it to Shop's needs. */
+export interface LinkDeliveryAddress {
+  readonly line1: string;
+  readonly line2: string;
+  readonly postalCode: string;
+}
+
+/** "123 Main" of "123 Main Street": the house number and the street's first word, lower case. */
+const streetKey = (line: string): string => line.toLowerCase().replace(/[^a-z0-9 ]/g, " ").trim().split(/\s+/).slice(0, 2).join(" ");
+
+/**
+ * The account's address with the apartment, suite or unit that Link's
+ * wallet has for the same place (same ZIP, house number and street) when
+ * Shop's has none (19 October 2026, OfficeTap through Shop asked for one:
+ * Shop's saved address had no apartment line, Link's had it).
+ */
+export function withLinkLine2(address: Record<string, unknown>, link: readonly LinkDeliveryAddress[]): Record<string, unknown> {
+  const line1 = text(address.street_address) || text(address.line1);
+  if (text(address.extended_address).length > 0 || text(address.line2).length > 0 || /\b(apt|apartment|suite|ste|unit)\b\.?\s*\w|#\s*\w/i.test(line1)) return address;
+  const zip = text(address.postal_code).slice(0, 5);
+  const same = link.find((place) => place.line2.length > 0 && place.postalCode.trim().slice(0, 5) === zip && zip.length > 0 && streetKey(place.line1) === streetKey(line1) && streetKey(line1).includes(" "));
+  return same == null ? address : { ...address, extended_address: same.line2.trim() };
+}
+
 /** A phone in E.164 as Shop asks ("+15551234567"); a ten-digit number is taken as North American. "" when it can't be. */
 export function e164(value: string): string {
   const digits = value.replace(/[^\d+]/g, "");
@@ -367,6 +391,8 @@ export interface ShopToolsOptions {
    * "the shop confusion is annoying. knowing it could clearly use link").
    */
   readonly linkConnected?: () => boolean;
+  /** Link's saved delivery addresses (`link-tools.ts`), for what Shop's saved one lacks: the apartment line. */
+  readonly linkAddresses?: () => Promise<readonly LinkDeliveryAddress[]>;
   readonly now?: () => number;
   readonly sleep?: (ms: number) => Promise<void>;
   readonly log?: (message: string) => void;
@@ -582,8 +608,12 @@ export function createShopTools(options: ShopToolsOptions) {
     // The delivery address carries the phone too: a store's delivery method
     // can want one on the address itself, whatever the buyer has (18 October
     // 2026, Deskery through Shop: "Enter a phone number to use this delivery
-    // method", the phone having gone on the buyer only).
-    const address = saved == null ? undefined : withDeliveryPhone(saved, buyer?.phone_number ?? "");
+    // method", the phone having gone on the buyer only). And the apartment
+    // line Link has for the same place when Shop's lacks it (OfficeTap).
+    const link = saved == null || options.linkAddresses == null ? [] : await options.linkAddresses().catch(() => []);
+    const completed = saved == null ? undefined : withLinkLine2(saved, link);
+    if (completed !== saved) log("[shop] delivery address: apartment line from Link");
+    const address = completed == null ? undefined : withDeliveryPhone(completed, buyer?.phone_number ?? "");
     const created = await client.call("create_checkout", {
       shop,
       checkout: { line_items: items.map((item) => ({ item: { id: item.id }, quantity: item.quantity })), context: { address_country: text(address?.address_country) || "US" }, ...(buyer === undefined ? {} : { buyer }) },
@@ -594,14 +624,17 @@ export function createShopTools(options: ShopToolsOptions) {
     if (text(doc.id).length === 0) return { text: "Shop opened no checkout for this.", isError: true };
     // The delivery address: the account's preferred one, where the checkout
     // has a delivery method waiting for one, or has it chosen without the
-    // phone this one now carries.
+    // phone or the apartment line this one now carries.
     const methods = records(record(doc.fulfillment).methods);
     const phoneOf = (place: Record<string, unknown> | undefined): string => { const own = text(place?.phone_number) || text(place?.phone); return own.includes("*") ? "" : own; };
-    const chosenWithoutPhone = (method: Record<string, unknown>): boolean => {
+    const chosenIncomplete = (method: Record<string, unknown>): boolean => {
       const chosen = text(method.selected_destination_id);
-      return chosen.length > 0 && chosen === text(address?.id) && phoneOf(records(method.destinations).find((place) => text(place.id) === chosen)).length === 0 && phoneOf(address).length > 0;
+      const place = records(method.destinations).find((item) => text(item.id) === chosen);
+      const lacksPhone = phoneOf(place).length === 0 && phoneOf(address).length > 0;
+      const lacksLine2 = text(place?.extended_address).length === 0 && text(address?.extended_address).length > 0;
+      return chosen.length > 0 && chosen === text(address?.id) && (lacksPhone || lacksLine2);
     };
-    if (address != null && methods.length > 0 && (methods.every((method) => text(method.selected_destination_id).length === 0) || chosenWithoutPhone(methods[0]!))) {
+    if (address != null && methods.length > 0 && (methods.every((method) => text(method.selected_destination_id).length === 0) || chosenIncomplete(methods[0]!))) {
       const withAddress = JSON.parse(JSON.stringify(doc)) as Record<string, unknown>;
       const first = records(record(withAddress.fulfillment).methods)[0] as Record<string, unknown>;
       first.destinations = [...records(first.destinations).filter((item) => text(item.id) !== text(address.id)), address];

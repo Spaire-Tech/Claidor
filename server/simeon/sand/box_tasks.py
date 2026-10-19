@@ -20,13 +20,14 @@ from simeon.worker import (
     AsyncSessionMaker,
     CronTrigger,
     RedisMiddleware,
+    SQLAlchemyMiddleware,
     TaskPriority,
     actor,
     enqueue_job,
 )
 
 from .box_hosts import BoxHostError
-from .box_service import broker
+from .box_service import BoxBrokerRefused, BoxEnsureInProgress, broker
 
 log = structlog.get_logger()
 
@@ -45,7 +46,7 @@ WAKE_MAX_ATTEMPTS = 60
 async def sand_box_hibernate_idle() -> None:
     redis = RedisMiddleware.get()
     async with AsyncSessionMaker() as session:
-        slept = await broker.hibernate_idle(session, redis)
+        slept = await broker.hibernate_idle(session, redis, update=_update_idle)
     if slept:
         log.info("sand.box.sleeper", slept=[str(box_id) for box_id in slept])
 
@@ -67,3 +68,25 @@ async def sand_box_wake(user_id: str, attempt: int = 1) -> None:
                 attempt=attempt + 1,
                 delay=WAKE_RETRY_DELAY_MS,
             )
+
+
+def _update_idle(user_id: UUID) -> None:
+    enqueue_job("sand.box.update_idle", user_id=str(user_id))
+
+
+@actor(actor_name="sand.box.update_idle", priority=TaskPriority.LOW, max_retries=0)
+async def sand_box_update_idle(user_id: str) -> None:
+    """An out-of-date box the sleeper found idle, with no app on it,
+    replaced on its files (`broker.update_idle`). A refusal leaves it as it
+    was; the sleeper sends it again after `UPDATE_RETRY_SECONDS`."""
+    try:
+        async with AsyncSessionMaker() as session:
+            outcome = await broker.update_idle(
+                session,
+                UUID(user_id),
+                committed=SQLAlchemyMiddleware.get_async_session,
+            )
+    except (BoxHostError, BoxBrokerRefused, BoxEnsureInProgress, TimeoutError) as error:
+        log.warning("sand.box.update_idle.failed", user=user_id, error=str(error))
+        return
+    log.info("sand.box.update_idle.done", user=user_id, outcome=outcome)

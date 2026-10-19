@@ -24,7 +24,7 @@ from ._enqueue import (
 from ._httpx import HTTPXMiddleware
 from ._queues import TaskPriority, TaskQueue
 from ._redis import RedisMiddleware
-from ._sqlalchemy import AsyncSessionMaker
+from ._sqlalchemy import AsyncSessionMaker, SQLAlchemyMiddleware
 
 _ = _prometheus_metrics  # for mypy and ruff: ensure import is used
 
@@ -111,6 +111,7 @@ __all__ = [
     "HTTPXMiddleware",
     "JobQueueManager",
     "RedisMiddleware",
+    "SQLAlchemyMiddleware",
     "TaskPriority",
     "TaskQueue",
     "actor",

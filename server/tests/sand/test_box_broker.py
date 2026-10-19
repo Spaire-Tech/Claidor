@@ -953,6 +953,28 @@ class TestRunState:
             "state"
         ] == RUN_STATE_HIBERNATED
 
+    async def test_an_update_is_offered_while_a_newer_engine_waits(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        host: FakeBoxHost,
+    ) -> None:
+        """19 October 2026: answered false always, the apps never offered
+        "Update Simeon's Computer" for a box on an older engine."""
+        access, _ = await _signed_in(client, session, user)
+        auth = {"Authorization": f"Bearer {access}"}
+        await _ensure(client, access)
+        assert (await client.post(RUN_STATE, json={}, headers=auth)).json() == {
+            "state": RUN_STATE_RUNNING,
+            "imageUpdateAvailable": False,
+        }
+        host.expected_host_sha256 = "f2805435"
+        assert (await client.post(RUN_STATE, json={}, headers=auth)).json() == {
+            "state": RUN_STATE_RUNNING,
+            "imageUpdateAvailable": True,
+        }
+
     async def test_from_the_cloud_box_credential_and_from_a_local_one(
         self,
         client: httpx.AsyncClient,

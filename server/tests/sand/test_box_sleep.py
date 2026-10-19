@@ -236,6 +236,93 @@ class TestSleep:
         health["now"] = BoxHealth(reachable=False)
         assert await broker.hibernate_idle(session, redis) == [box.id]
 
+    async def test_an_idle_out_of_date_box_is_sent_to_be_updated_once(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        redis: Redis,
+        host: FakeBoxHost,
+        health: dict[str, BoxHealth],
+    ) -> None:
+        """19 October 2026: a newer engine published while the box ran is
+        put on it as soon as it is idle with no app on it, not at the next
+        connect."""
+        _, box = await _awake_box(client, session, user)
+        sent: list[Any] = []
+        assert await broker.hibernate_idle(session, redis, update=sent.append) == []
+        assert sent == []
+
+        host.expected_host_sha256 = "f2805435"
+        await _age(session, box, 31)
+        assert await broker.hibernate_idle(session, redis, update=sent.append) == []
+        assert sent == [user.id]
+        # Not put to sleep the minute it is sent, and not sent again every
+        # minute; one the update could not replace sleeps as any other.
+        assert host.boxes[box.provider_box_id]["running"] is True
+        assert await broker.hibernate_idle(session, redis, update=sent.append) == [
+            box.id
+        ]
+        assert sent == [user.id]
+
+    async def test_a_busy_or_watched_out_of_date_box_is_left_alone(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        redis: Redis,
+        host: FakeBoxHost,
+        health: dict[str, BoxHealth],
+    ) -> None:
+        _, box = await _awake_box(client, session, user)
+        host.expected_host_sha256 = "f2805435"
+        sent: list[Any] = []
+        for busy in (
+            BoxHealth(reachable=True, is_busy=True),
+            BoxHealth(reachable=True, is_busy=True, busy_only_awaiting_approval=True),
+            BoxHealth(reachable=False),
+        ):
+            health["now"] = busy
+            await broker.hibernate_idle(session, redis, update=sent.append)
+        health["now"] = BoxHealth(reachable=True)
+        await mark_attached(redis, box.id)
+        await broker.hibernate_idle(session, redis, update=sent.append)
+        assert sent == []
+
+    async def test_the_update_replaces_it_on_its_files(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        host: FakeBoxHost,
+        health: dict[str, BoxHealth],
+    ) -> None:
+        _, box = await _awake_box(client, session, user)
+        old = box.provider_box_id
+        host.expected_host_sha256 = "f2805435"
+
+        assert await broker.update_idle(session, user.id, committed=None) == "ensured"
+
+        assert host.removed == [(old, [])]
+        assert len(host.created) == 2
+        assert host.created[1].workspace_volume == host.created[0].workspace_volume
+        assert host.boxes[box.provider_box_id]["host_sha256"] == "f2805435"
+
+    async def test_the_update_waits_for_a_box_busy_by_then(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        host: FakeBoxHost,
+        health: dict[str, BoxHealth],
+    ) -> None:
+        _, box = await _awake_box(client, session, user)
+        host.expected_host_sha256 = "f2805435"
+        health["now"] = BoxHealth(reachable=True, is_busy=True)
+        assert await broker.update_idle(session, user.id, committed=None) == "ensured"
+        assert host.removed == []
+        assert len(host.created) == 1
+
     async def test_zero_means_never(
         self,
         client: httpx.AsyncClient,

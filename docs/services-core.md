@@ -784,8 +784,22 @@ volumes, in any of these cases:
 - it runs a host program other than the current bundle,
 - it runs an image other than the pinned one.
 
-A box that is busy keeps its current program until the app next connects to
-it while it is idle (`sand.box.update_deferred`).
+A box that is busy keeps its current program (`sand.box.update_deferred`).
+It is updated at the first of:
+
+- an app connecting to it while it is idle;
+- the sleeper's minute (since 19 October 2026): a running box that is out of
+  date, idle (not busy, not waiting on an approval card) and with no app
+  attached is replaced on its files by the `sand.box.update_idle` job, the
+  same way an idle connect replaces it. It is sent once every 10 minutes at
+  most. Before then a published engine reached a box only at an idle
+  connect, and Rhea's box ran the old engine for hours after a publish;
+- "Update Simeon's Computer" in the app. `GetSandBoxRunState` now answers
+  `imageUpdateAvailable: true` while the box is out of date (it answered
+  false always), which is what offers the entry in "/" and Search on the
+  iPhone and in the Mac's sidebar. The box asks when it starts and once a
+  day, so the entry can lag a publish by up to a day; the sleeper's update
+  does not wait for it.
 
 **How the apps reach it (16 October 2026).** The iPhone and Mac apps find
 the box the way the Electron app does (`ios/SimeonCore/Sources/SimeonCore/Gateway.swift`):
@@ -1084,6 +1098,12 @@ settings is not read (`desktop/source/shared/box-runtime.ts`).
     the session was rolled back before answering.
   - `sand.box.update_deferred` means a new version is waiting for the box to
     be idle.
+  - `sand.box.update_idle` (with `stale_host`, `stale_image`, `stale_store`)
+    means the sleeper found the box idle, with no app on it, and out of date,
+    and sent it to be replaced; `sand.box.update_idle.done` with
+    `outcome=ensured` follows, then the usual `sand.box.ensure.recreate`.
+    `sand.box.update_idle.failed` gives the reason it was left as it was
+    (tried again after 10 minutes).
   - `sand.box.capacity.refused` and `sand.box.placed` cover placement.
   - `sand.box.proxy.refused` and `sand.box.proxy.unreachable` cover the proxy.
 - For the bundle: `sand.box.bundle.version` shows a new version was read, and
