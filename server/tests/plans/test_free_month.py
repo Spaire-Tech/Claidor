@@ -1,21 +1,14 @@
 """The free month (`simeon/plans/free_month.py`, 12 October 2026): the
-iPhone app's free trial, no card, one per person and one per iPhone.
-
-Apple's DeviceCheck is answered by `respx`, with the developer token
-signed by a key made for the test, as Apple would receive it."""
+iPhone app's free trial, no card, one per person by account and e-mail, and
+never by device (19 October 2026): every account on one iPhone has its own."""
 
 from __future__ import annotations
 
-import json
 from datetime import timedelta
 from typing import Any
 
 import httpx
-import jwt
 import pytest
-import respx
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric import ec
 from pytest_mock import MockerFixture
 from sqlalchemy import select
 
@@ -40,79 +33,22 @@ from simeon.sand.dashboard import (
 from tests.desktop.test_allowance import _person_with_plan, billing_on
 from tests.desktop.test_endpoints import _signed_in
 from tests.fixtures.database import SaveFixture
+from tests.fixtures.random_objects import create_user
 
-PRODUCTION = "https://api.devicecheck.apple.com/v1"
-DEVELOPMENT = "https://api.development.devicecheck.apple.com/v1"
 TOKEN = "ZGV2aWNlLXRva2Vu"
-
-
-@pytest.fixture
-def device_check_key(mocker: MockerFixture) -> ec.EllipticCurvePrivateKey:
-    """A DeviceCheck key, as the developer account would hand one out."""
-    key = ec.generate_private_key(ec.SECP256R1())
-    pem = key.private_bytes(
-        serialization.Encoding.PEM,
-        serialization.PrivateFormat.PKCS8,
-        serialization.NoEncryption(),
-    ).decode()
-    mocker.patch.object(settings, "APPLE_DEVICECHECK_KEY_ID", "DCKEY12345")
-    mocker.patch.object(settings, "APPLE_DEVICECHECK_KEY_VALUE", pem)
-    mocker.patch.object(settings, "APPLE_TEAM_ID", "496QXRMJXG")
-    return key
-
-
-def _apple(
-    mock: respx.MockRouter,
-    key: ec.EllipticCurvePrivateKey,
-    *,
-    used: bool | None,
-    base: str = PRODUCTION,
-) -> tuple[respx.Route, respx.Route]:
-    """Apple's two routes: the bits (`used` None for a device never
-    marked) and the update, each checking the developer token."""
-
-    def authorised(request: httpx.Request) -> None:
-        bearer = request.headers["Authorization"].removeprefix("Bearer ")
-        claims = jwt.decode(bearer, key.public_key(), algorithms=["ES256"])
-        assert claims["iss"] == "496QXRMJXG"
-        assert jwt.get_unverified_header(bearer)["kid"] == "DCKEY12345"
-        assert json.loads(request.content)["device_token"] == TOKEN
-
-    def query(request: httpx.Request) -> httpx.Response:
-        authorised(request)
-        if used is None:
-            return httpx.Response(200, text="Failed to find bit state")
-        return httpx.Response(
-            200, json={"bit0": used, "bit1": False, "last_update_time": "2026-10"}
-        )
-
-    def update(request: httpx.Request) -> httpx.Response:
-        authorised(request)
-        assert json.loads(request.content)["bit0"] is True
-        return httpx.Response(200)
-
-    return (
-        mock.post(f"{base}/query_two_bits").mock(side_effect=query),
-        mock.post(f"{base}/update_two_bits").mock(side_effect=update),
-    )
 
 
 @pytest.mark.asyncio
 class TestStart:
-    async def test_a_new_person_on_a_new_iphone_gets_thirty_days(
-        self,
-        mocker: MockerFixture,
-        session: AsyncSession,
-        user: User,
-        device_check_key: ec.EllipticCurvePrivateKey,
+    async def test_a_new_person_gets_thirty_days(
+        self, mocker: MockerFixture, session: AsyncSession, user: User
     ) -> None:
         billing_on(mocker)
-        with respx.mock(assert_all_called=True) as mock:
-            _apple(mock, device_check_key, used=None)
-            outcome = await free_month.start(session, user, device_token=TOKEN)
+        outcome = await free_month.start(session, user)
         assert outcome.reason == free_month.STARTED
         assert outcome.trial is not None
         assert outcome.trial.credits == TRIAL_CREDITS
+        assert not outcome.trial.device_checked
         assert outcome.trial.ends_at - outcome.trial.starts_at == timedelta(
             days=catalog.TRIAL_DAYS
         )
@@ -130,60 +66,15 @@ class TestStart:
         assert access["state"] == SAND_ACCESS_STATE_GRANTED
 
     async def test_asking_again_keeps_the_same_month(
-        self,
-        mocker: MockerFixture,
-        session: AsyncSession,
-        user: User,
-        device_check_key: ec.EllipticCurvePrivateKey,
+        self, mocker: MockerFixture, session: AsyncSession, user: User
     ) -> None:
         billing_on(mocker)
-        with respx.mock(assert_all_called=True) as mock:
-            _apple(mock, device_check_key, used=None)
-            first = await free_month.start(session, user, device_token=TOKEN)
-        with respx.mock(assert_all_called=False) as mock:
-            query, _ = _apple(mock, device_check_key, used=True)
-            again = await free_month.start(session, user, device_token=TOKEN)
-            assert not query.called
+        first = await free_month.start(session, user)
+        again = await free_month.start(session, user)
         assert again.reason == free_month.RUNNING
         assert again.trial is not None
         assert first.trial is not None
         assert again.trial.id == first.trial.id
-
-    async def test_an_iphone_that_had_one_gets_none(
-        self,
-        mocker: MockerFixture,
-        session: AsyncSession,
-        user: User,
-        device_check_key: ec.EllipticCurvePrivateKey,
-    ) -> None:
-        billing_on(mocker)
-        with respx.mock(assert_all_called=False) as mock:
-            _, update = _apple(mock, device_check_key, used=True)
-            outcome = await free_month.start(session, user, device_token=TOKEN)
-            assert not update.called
-        assert outcome.reason == free_month.DEVICE_USED
-        assert await free_month.free_trial_of(session, user) is None
-        assert (await resolve_allowance(session, user)).status == STATUS_NONE
-
-    async def test_a_development_token_is_asked_of_apples_development_service(
-        self,
-        mocker: MockerFixture,
-        session: AsyncSession,
-        user: User,
-        device_check_key: ec.EllipticCurvePrivateKey,
-    ) -> None:
-        billing_on(mocker)
-        with respx.mock(assert_all_called=True) as mock:
-            # Production does not know the token; development does.
-            mock.post(f"{PRODUCTION}/query_two_bits").mock(
-                return_value=httpx.Response(400, text="Missing or badly formatted")
-            )
-            mock.post(f"{PRODUCTION}/update_two_bits").mock(
-                return_value=httpx.Response(400, text="Missing or badly formatted")
-            )
-            _apple(mock, device_check_key, used=None, base=DEVELOPMENT)
-            outcome = await free_month.start(session, user, device_token=TOKEN)
-        assert outcome.reason == free_month.STARTED
 
     async def test_a_person_who_had_a_card_trial_gets_none(
         self,
@@ -191,7 +82,6 @@ class TestStart:
         session: AsyncSession,
         save_fixture: SaveFixture,
         user: User,
-        device_check_key: ec.EllipticCurvePrivateKey,
     ) -> None:
         billing_on(mocker)
         await save_fixture(
@@ -199,10 +89,7 @@ class TestStart:
                 user_id=user.id, email=user.email, stripe_subscription_id="sub_old"
             )
         )
-        with respx.mock(assert_all_called=False) as mock:
-            query, _ = _apple(mock, device_check_key, used=None)
-            outcome = await free_month.start(session, user, device_token=TOKEN)
-            assert not query.called
+        outcome = await free_month.start(session, user)
         assert outcome.reason == free_month.HAD_TRIAL
 
     async def test_the_same_email_after_a_deleted_account_gets_none(
@@ -211,7 +98,6 @@ class TestStart:
         session: AsyncSession,
         save_fixture: SaveFixture,
         user: User,
-        device_check_key: ec.EllipticCurvePrivateKey,
     ) -> None:
         billing_on(mocker)
         now = utc_now()
@@ -226,9 +112,7 @@ class TestStart:
                 device_checked=True,
             )
         )
-        with respx.mock(assert_all_called=False) as mock:
-            _apple(mock, device_check_key, used=None)
-            outcome = await free_month.start(session, user, device_token=TOKEN)
+        outcome = await free_month.start(session, user)
         assert outcome.reason == free_month.HAD_TRIAL
 
     async def test_a_live_plan_needs_no_free_month(
@@ -239,42 +123,16 @@ class TestStart:
         user: User,
     ) -> None:
         await _person_with_plan(save_fixture, mocker, user, tier="pro", status="active")
-        outcome = await free_month.start(session, user, device_token=TOKEN)
+        outcome = await free_month.start(session, user)
         assert outcome.reason == free_month.NOT_NEEDED
 
     async def test_without_billing_nobody_needs_one(
         self, session: AsyncSession, user: User
     ) -> None:
-        outcome = await free_month.start(session, user, device_token=TOKEN)
+        outcome = await free_month.start(session, user)
         assert outcome.reason == free_month.NOT_NEEDED
 
-    async def test_without_devicecheck_set_up_none_starts(
-        self, mocker: MockerFixture, session: AsyncSession, user: User
-    ) -> None:
-        billing_on(mocker)
-        mocker.patch.object(settings, "APPLE_DEVICECHECK_KEY_ID", "")
-        outcome = await free_month.start(session, user, device_token=TOKEN)
-        assert outcome.reason == free_month.UNAVAILABLE
-
-    async def test_when_apple_cannot_be_asked_none_starts(
-        self,
-        mocker: MockerFixture,
-        session: AsyncSession,
-        user: User,
-        device_check_key: ec.EllipticCurvePrivateKey,
-    ) -> None:
-        billing_on(mocker)
-        with respx.mock(assert_all_called=False) as mock:
-            mock.post(f"{PRODUCTION}/query_two_bits").mock(
-                return_value=httpx.Response(
-                    401, text="Unable to verify authorization token"
-                )
-            )
-            outcome = await free_month.start(session, user, device_token=TOKEN)
-        assert outcome.reason == free_month.UNAVAILABLE
-        assert await free_month.free_trial_of(session, user) is None
-
-    async def test_a_test_email_starts_again_on_any_iphone(
+    async def test_a_test_email_starts_again(
         self,
         mocker: MockerFixture,
         session: AsyncSession,
@@ -296,14 +154,9 @@ class TestStart:
                 device_checked=True,
             )
         )
-        with respx.mock(assert_all_called=False) as mock:
-            # Apple is never asked for a test e-mail.
-            route = mock.route(host="api.devicecheck.apple.com")
-            outcome = await free_month.start(session, user, device_token=TOKEN)
-            assert not route.called
+        outcome = await free_month.start(session, user)
         assert outcome.reason == free_month.STARTED
         assert outcome.trial is not None
-        assert not outcome.trial.device_checked
 
 
 @pytest.mark.asyncio
@@ -380,17 +233,13 @@ class TestFromTheApp:
         client: httpx.AsyncClient,
         session: AsyncSession,
         user: User,
-        device_check_key: ec.EllipticCurvePrivateKey,
     ) -> None:
         billing_on(mocker)
         access, _ = await _signed_in(client, session, user)
-        with respx.mock(assert_all_called=True) as mock:
-            _apple(mock, device_check_key, used=None, base=DEVELOPMENT)
-            response = await client.post(
-                "/desktop/api/billing/free-month",
-                headers={"Authorization": f"Bearer {access}"},
-                json={"deviceToken": TOKEN, "development": True},
-            )
+        response = await client.post(
+            "/desktop/api/billing/free-month",
+            headers={"Authorization": f"Bearer {access}"},
+        )
         assert response.status_code == 200, response.text
         body = response.json()
         assert body["outcome"] == "started"
@@ -410,6 +259,31 @@ class TestFromTheApp:
             .all()
         )
         assert len(rows) == 1
+
+    async def test_two_accounts_on_one_iphone_each_have_a_month(
+        self,
+        mocker: MockerFixture,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        """An older app still sends the phone's DeviceCheck token; it is not
+        read (the founder, 19 October 2026: "a device could have two to three
+        accounts, thats fine")."""
+        billing_on(mocker)
+        second = await create_user(save_fixture)
+        outcomes = []
+        for person in (user, second):
+            access, _ = await _signed_in(client, session, person)
+            response = await client.post(
+                "/desktop/api/billing/free-month",
+                headers={"Authorization": f"Bearer {access}"},
+                json={"deviceToken": TOKEN, "development": True},
+            )
+            assert response.status_code == 200, response.text
+            outcomes.append(response.json()["outcome"])
+        assert outcomes == ["started", "started"]
 
     async def test_signed_out_is_refused(self, client: httpx.AsyncClient) -> None:
         response = await client.post(

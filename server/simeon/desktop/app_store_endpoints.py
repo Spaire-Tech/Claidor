@@ -110,27 +110,22 @@ async def apple_transactions(
     )
 
 
-class FreeMonthBody(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-    #: `DCDevice.generateToken()`, base64, a few kilobytes.
-    deviceToken: str = Field(min_length=1, max_length=16_000)
-    #: The app's guess at which DeviceCheck service knows its token: a
-    #: build run from Xcode is signed for development.
-    development: bool = False
-
-
 @router.post("/api/billing/free-month", name="desktop:free_month")
 async def start_free_month(
-    body: FreeMonthBody,
     desktop_session: DesktopSession = Depends(get_desktop_session),
     session: AsyncSession = Depends(get_db_session),
 ) -> JSONResponse:
-    """Start the person's free month if they and this iPhone never had
-    one. Always 200 with what happened (`free_month.Outcome.reason`) and
-    the quota the app shows next."""
+    """Start the person's free month if they never had a trial. Always 200
+    with what happened (`free_month.Outcome.reason`) and the quota the app
+    shows next. What an older app sends (its DeviceCheck token) is not
+    read: a phone's other accounts each have their own month."""
     user = desktop_session.user
-    outcome = await free_month.start(
-        session, user, device_token=body.deviceToken, development=body.development
+    outcome = await free_month.start(session, user)
+    log.info(
+        "free_month.answered",
+        user_id=str(user.id),
+        outcome=outcome.reason,
+        ends_at=outcome.trial.ends_at.isoformat() if outcome.trial else None,
     )
     return JSONResponse(
         {

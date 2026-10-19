@@ -4,15 +4,14 @@ The founder dropped Apple's free week ("the whole free trial makes it
 complicated"): a person signs in on the iPhone and has thirty days with
 the trial's credits (`catalog.TRIAL_DAYS`, `tiers.TRIAL_CREDITS`), no
 checkout; when the days or the credits run out, the app offers the plans.
-On the web and the Mac the trial still takes a card (abuse: a browser or
-a Mac cannot be told apart, an iPhone can).
+On the web and the Mac the trial still takes a card, one per card.
 
-One per person and one per iPhone:
-
-- the person: no free month, card trial or Apple free week before, by
-  account and by e-mail (a hash of it, kept after the account is deleted);
-- the iPhone: Apple's DeviceCheck bit (`device_check`), which survives
-  deleting the app and signing in with another account.
+One per person, by account and by e-mail (a hash of it, kept after the
+account is deleted), and none after a card trial or Apple's free week.
+Never by device (the founder, 19 October 2026: "we shouldnt base anything
+on device. a device could have two to three accounts, thats fine. the thing
+we base on are cards"): Apple's DeviceCheck, which allowed one per iPhone,
+is gone, and every account on one phone has its own month.
 
 The app asks after every sign-in (`POST /desktop/api/billing/free-month`);
 the answer says whether the month started, is already running, or why not,
@@ -33,7 +32,7 @@ from simeon.kit.utils import utc_now
 from simeon.models import DesktopFreeTrial, User
 from simeon.postgres import AsyncSession
 
-from . import catalog, device_check
+from . import catalog
 from .effective import plan_of
 from .repository import DesktopFreeTrialRepository, DesktopTrialRedemptionRepository
 
@@ -44,15 +43,12 @@ STARTED = "started"
 RUNNING = "running"
 NOT_NEEDED = "not_needed"
 HAD_TRIAL = "had_trial"
-DEVICE_USED = "device_used"
-UNAVAILABLE = "unavailable"
 
 
 @dataclass(frozen=True)
 class Outcome:
-    #: `started`, `running`, `not_needed` (a plan, or billing off),
-    #: `had_trial`, `device_used`, or `unavailable` (DeviceCheck not set
-    #: up, or Apple could not be asked).
+    #: `started`, `running`, `not_needed` (a plan, or billing off), or
+    #: `had_trial`.
     reason: str
     trial: DesktopFreeTrial | None = None
 
@@ -91,14 +87,8 @@ async def had_trial(session: AsyncSession, user: User) -> bool:
     )
 
 
-async def start(
-    session: AsyncSession,
-    user: User,
-    *,
-    device_token: str,
-    development: bool = False,
-) -> Outcome:
-    """Start the person's free month if they and this iPhone never had one."""
+async def start(session: AsyncSession, user: User) -> Outcome:
+    """Start the person's free month if they never had a trial."""
     # Imported here: `simeon.desktop.allowance` reads this module's table.
     from simeon.desktop.allowance import billing_exempt, billing_required
 
@@ -115,23 +105,6 @@ async def start(
     test = _test_email(user)
     if not test and await had_trial(session, user):
         return Outcome(HAD_TRIAL)
-    if not test:
-        if not device_check.configured():
-            log.warning("free_month.device_check_not_configured", user_id=str(user.id))
-            return Outcome(UNAVAILABLE)
-        try:
-            if await device_check.free_month_used(
-                device_token, development=development
-            ):
-                log.info("free_month.device_used", user_id=str(user.id))
-                return Outcome(DEVICE_USED)
-        except device_check.DeviceCheckError as error:
-            log.warning(
-                "free_month.device_check_failed",
-                user_id=str(user.id),
-                error=error.message,
-            )
-            return Outcome(UNAVAILABLE)
 
     trial = DesktopFreeTrial(
         user_id=user.id,
@@ -139,21 +112,9 @@ async def start(
         starts_at=now,
         ends_at=now + timedelta(days=catalog.TRIAL_DAYS),
         credits=TRIAL_CREDITS,
-        device_checked=not test,
+        device_checked=False,
     )
     await DesktopFreeTrialRepository.from_session(session).create(trial, flush=True)
-    if not test:
-        try:
-            await device_check.mark_free_month_used(
-                device_token, development=development
-            )
-        except device_check.DeviceCheckError as error:
-            # The month stands: the account and the e-mail already count it.
-            log.warning(
-                "free_month.device_mark_failed",
-                user_id=str(user.id),
-                error=error.message,
-            )
     log.info(
         "free_month.started",
         user_id=str(user.id),
@@ -164,12 +125,10 @@ async def start(
 
 
 __all__ = [
-    "DEVICE_USED",
     "HAD_TRIAL",
     "NOT_NEEDED",
     "RUNNING",
     "STARTED",
-    "UNAVAILABLE",
     "Outcome",
     "email_hash",
     "free_trial_of",

@@ -1,14 +1,14 @@
-import DeviceCheck
 import Foundation
 import SimeonCore
 
 /**
  * The free month at a sign-in (SimeonCore's `FreeMonth`, 12 October 2026):
- * this iPhone's DeviceCheck token to Simeon Labs' server, which starts the
- * person's thirty free days unless they or this phone had them. Asked
- * before the agents load, six seconds at most: past that the app goes on,
- * and an answer that comes later still opens the computer (`whenStarted`).
- * Once the answer settles it, not again until the next sign-in.
+ * Simeon Labs' server starts the person's thirty free days unless they had
+ * a trial. Nothing about the phone is sent (19 October 2026: every account
+ * on one iPhone has its own month). Asked before the agents load, six
+ * seconds at most: past that the app goes on, and an answer that comes
+ * later still opens the computer (`whenStarted`). Once the answer settles
+ * it, not again until the next sign-in.
  */
 @MainActor
 enum FreeMonthAsk {
@@ -42,22 +42,7 @@ enum FreeMonthAsk {
 
   /** True when the month started or was already running. */
   private static func askNow(_ backend: AgentBackend) async -> Bool {
-    // The Simulator has no DeviceCheck: no free month there (the plans show instead).
-    guard DCDevice.current.isSupported else {
-      Trace.log("[simeon] free month: no DeviceCheck on this device")
-      return false
-    }
-    let token: Data
-    do {
-      token = try await DCDevice.current.generateToken()
-    } catch {
-      Trace.log("[simeon] free month: no device token (\(error.localizedDescription))")
-      return false
-    }
-    // A build signed for development (run from Xcode, whatever its configuration) has a token only Apple's development
-    // DeviceCheck knows; the signing profile says which (as for push notifications).
-    let development = Notifications.sandbox
-    let outcome = await FreeMonth.start(deviceToken: token.base64EncodedString(), development: development) { path, method, body in
+    let outcome = await FreeMonth.start { path, method, body in
       try await backend.server(path, method: method, body: body)
     }
     Trace.log("[simeon] free month: \(outcome)")
