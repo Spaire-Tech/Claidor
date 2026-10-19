@@ -215,6 +215,8 @@ struct SignInScreen: View {
       VStack(spacing: 12) {
         SignInButton(provider: .apple, busy: session.signingInWith == .apple) { start(.apple) }
         SignInButton(provider: .google, busy: session.signingInWith == .google) { start(.google) }
+        // The founder's ChatGPT reference (19 October 2026): an email, then a code or a password (EmailSignInSheet).
+        EmailSignInButton(busy: session.signingInWithEmail) { showsEmail = true }
       }
       .frame(maxWidth: 420)
       Text(Self.legal)
@@ -229,7 +231,30 @@ struct SignInScreen: View {
     .padding(.horizontal, 24)
     .frame(maxWidth: .infinity, maxHeight: .infinity)
     .background(Ink.ground)
+    .sheet(isPresented: $showsEmail, onDismiss: {
+      // Apple's sheet or Google's page once this one has gone: presented while it closes, they don't show.
+      if let provider = pendingProvider {
+        pendingProvider = nil
+        start(provider)
+      }
+    }) {
+      EmailSignInSheet(
+        provider: { provider in
+          pendingProvider = provider
+          showsEmail = false
+        },
+        signedIn: { pair in
+          showsEmail = false
+          Task { await session.signIn(with: pair) }
+        }
+      )
+      .presentationBackground(Ink.ground)
+    }
   }
+
+  @State private var showsEmail = false
+  /** Continue with Google or Apple pressed in Log in or sign up: started when its sheet has closed. */
+  @State private var pendingProvider: SignIn.Provider?
 
   private func start(_ provider: SignIn.Provider) {
     Task { await session.signIn(with: provider) }
@@ -255,6 +280,7 @@ struct SignInScreen: View {
  * in the reference (measured on it: Apple's about 1.35 times the capitals'
  * height, Google's "G" about 1.2 times, 8 to 9 points before the words): 16
  * and 15 points beside 17-point type, whose capitals are 12, 8 points apart.
+ * Log in or sign up is the third (`EmailSignInButton`), in Google's glass.
  */
 struct SignInButton: View {
   let provider: SignIn.Provider
@@ -288,6 +314,28 @@ struct SignInButton: View {
     .foregroundStyle(ink)
     .frame(maxWidth: .infinity)
     .frame(height: 50)
+  }
+}
+
+/** Log in or sign up, under Google's, in the same glass with no logo; the spinner while its sign-in enters the app. */
+struct EmailSignInButton: View {
+  let busy: Bool
+  let action: () -> Void
+
+  var body: some View {
+    Button(action: action) {
+      Group {
+        if busy {
+          ProgressView().tint(Ink.primary).frame(width: 16, height: 16)
+        } else {
+          Text("Log in or sign up").font(.system(size: 17, weight: .semibold))
+        }
+      }
+      .foregroundStyle(Ink.primary)
+      .frame(maxWidth: .infinity)
+      .frame(height: 50)
+    }
+    .buttonStyle(.glass)
   }
 }
 

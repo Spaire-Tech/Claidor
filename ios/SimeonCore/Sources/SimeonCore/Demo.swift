@@ -581,6 +581,14 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
       return ["preferredName": body?["name"] ?? .null]
     case "user/profile":
       return ["email": "bass@example.com", "preferredName": .null, "suggestedName": "Bass"]
+    case EmailSignIn.accountPasswordPath:
+      // Settings › Account › Password, as the server answers it (`email_sign_in.py`).
+      guard method == "PUT" else { return ["set": .bool(lock.withLock { passwordSet })] }
+      guard (body?["password"]?.string ?? "").count >= EmailSignIn.minimumPassword else {
+        throw SimeonAPIError(message: "Use at least \(EmailSignIn.minimumPassword) characters.", status: 400)
+      }
+      lock.withLock { passwordSet = true }
+      return ["set": true]
     case "proxy/v1/voice/voices":
       return .array([("ljX1ZrXuDIIRVcmiVSyR", "Michael"), ("1t1EeRixsJrKbiF1zwM6", "Jerry"), ("XcXEQzuLXRU9RcfWzEJt", "Veda"), ("s3TPKV1kjDlVtZbl4Ksh", "Adam"), ("UgBBYS2sOqTuMpoF3BR0", "Mark"), ("6OzrBCQf8cjERkYgzSg8", "Jamal")].map { ["id": .string($0.0), "name": .string($0.1)] })
     default:
@@ -649,6 +657,8 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
     }
   }
 
+  /** Whether the demo account has set a password (Settings › Account). */
+  private var passwordSet = false
   private var hostSettings: JSON = ["pinnedAgentIds": [], "autoReviewInstructions": ["isEnabled": true, "allowInstructions": [], "blockInstructions": []], "userTimeZone": .string(TimeZone.current.identifier), "userTimeZoneOverride": nil]
   private var connected: Set<String> = ["gmail", "notion"]
   private var pendingEmits: [(String, Entry)] = []

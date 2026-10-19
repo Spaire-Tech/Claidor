@@ -489,6 +489,36 @@ final class SessionController {
     }
   }
 
+  /** Log in or sign up (EmailSignInSheet) under way: its button on the sign-in screen shows the spinner. */
+  private(set) var signingInWithEmail = false
+
+  /** Log in or sign up's code to the email (`EmailSignIn`). */
+  func emailCode(_ email: String) async -> EmailSignIn.Sent {
+    await EmailSignIn.requestCode(api: launch.api, email: email, clientVersion: Self.clientVersion, http: URLSessionClient())
+  }
+
+  /** The code from the email, for the pair; not yet signed in (`signIn(with:)` enters). */
+  func emailVerify(_ email: String, code: String) async -> EmailSignIn.Outcome {
+    await EmailSignIn.verify(api: launch.api, email: email, code: code, clientVersion: Self.clientVersion, http: URLSessionClient())
+  }
+
+  /** The account's password, for the pair; not yet signed in (`signIn(with:)` enters). */
+  func emailPassword(_ email: String, password: String) async -> EmailSignIn.Outcome {
+    await EmailSignIn.password(api: launch.api, email: email, password: password, clientVersion: Self.clientVersion, http: URLSessionClient())
+  }
+
+  /** Log in or sign up's pair (a code or a password, 19 October 2026): kept as Apple's is, and the app entered. */
+  func signIn(with pair: TokenPair) async {
+    guard phase != .signingIn else { return }
+    phase = .signingIn
+    signingInWithEmail = true
+    defer { signingInWithEmail = false }
+    vault.write(SessionTokens(pair: pair, nowMs: Date().timeIntervalSince1970 * 1000))
+    finishing = true
+    await enter(holding: true)
+    finishing = false
+  }
+
   /** Settings' Cancel while signing in: the sign-in sheet closed, as its own Cancel does. */
   func cancelSignIn() {
     sheetState?.close(confirmed: false)

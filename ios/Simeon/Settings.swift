@@ -383,6 +383,8 @@ struct AccountPage: View {
           }
         }
         .accessibilityHint("Copies the email")
+        // Signing in with the email and a password (EmailSignInSheet): set or changed here, never at sign-up (19 October 2026).
+        NavigationLink { PasswordPage() } label: { Text("Password").foregroundStyle(Ink.primary) }
       }
       .listRowBackground(Ink.groupedRow)
       Section {
@@ -423,6 +425,80 @@ struct AccountPage: View {
       Button("OK", role: .cancel) {}
     } message: {
       Text(deleteProblem ?? "")
+    }
+  }
+}
+
+/**
+ * Account › Password (19 October 2026): a password to sign in with the
+ * email (Log in or sign up › Continue with password), set or changed while
+ * signed in, typed twice. Forgotten, it is replaced here after signing in
+ * with a code.
+ */
+struct PasswordPage: View {
+  @Environment(SimeonCore.AppStore.self) private var store
+  @Environment(\.dismiss) private var dismiss
+  @State private var hasPassword: Bool?
+  @State private var password = ""
+  @State private var again = ""
+  @State private var saving = false
+  @State private var problem: String?
+  @FocusState private var first: Bool
+
+  private var mismatch: Bool { !again.isEmpty && again != password }
+  private var ready: Bool { password.count >= EmailSignIn.minimumPassword && again == password }
+
+  var body: some View {
+    Form {
+      Section {
+        SecureField(hasPassword == true ? "New password" : "Password", text: $password)
+          .textContentType(.newPassword)
+          .focused($first)
+        SecureField("Type it again", text: $again)
+          .textContentType(.newPassword)
+          .onSubmit(save)
+      } footer: {
+        Text(problem ?? (mismatch ? "The two don't match." : "At least \(EmailSignIn.minimumPassword) characters. You'll sign in with \(store.account?.email ?? "your email") and this password."))
+          .foregroundStyle(problem != nil || mismatch ? Ink.danger : Ink.secondary)
+      }
+      .listRowBackground(Ink.groupedRow)
+      Section {
+        Button(action: save) {
+          HStack {
+            Text(hasPassword == true ? "Change Password" : "Set Password")
+            if saving {
+              Spacer()
+              ProgressView()
+            }
+          }
+        }
+        .disabled(!ready || saving)
+      }
+      .listRowBackground(Ink.groupedRow)
+    }
+    .groupedGround()
+    .navigationTitle("Password")
+    .inlineBarTitle()
+    .task {
+      first = true
+      hasPassword = await store.hasPassword()
+    }
+  }
+
+  private func save() {
+    guard ready, !saving else { return }
+    saving = true
+    problem = nil
+    Task {
+      let refused = await store.setPassword(password)
+      saving = false
+      if let refused {
+        Haptics.warning()
+        problem = refused
+      } else {
+        Haptics.success()
+        dismiss()
+      }
     }
   }
 }

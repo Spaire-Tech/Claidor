@@ -32,6 +32,25 @@ extension AppStore {
     }
   }
 
+  /** Settings › Account › Password: whether the account has one (`GET /desktop/api/account/password`); nil when it can't be asked. */
+  public func hasPassword() async -> Bool? {
+    guard let backend else { return nil }
+    return try? await backend.server(EmailSignIn.accountPasswordPath, method: "GET", body: nil)["set"]?.bool
+  }
+
+  /** Set or change the account's password (`PUT`, signed in): nil once it is saved, else the sentence to show ("Use at least 8 characters."). */
+  public func setPassword(_ password: String) async -> String? {
+    guard let backend else { return "Sign in to Simeon first." }
+    do {
+      _ = try await backend.server(EmailSignIn.accountPasswordPath, method: "PUT", body: ["password": .string(password)])
+      return nil
+    } catch let error as SimeonAPIError where !error.message.isEmpty {
+      return error.message
+    } catch {
+      return "The password wasn't saved. Try again."
+    }
+  }
+
   /** Cancel Trial (`CancelSandTrial`): nil once it is done and the usage read again, else what to say in the dialog. */
   public func cancelTrial() async -> String? {
     guard let backend else { return "Sign in to Simeon to continue" }

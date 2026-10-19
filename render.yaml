@@ -293,6 +293,6 @@ envVarGroups:
       - key: CLAIDOR_RESEND_API_KEY
         sync: false
       - key: CLAIDOR_EMAIL_FROM_NAME
-        value: Claidor
+        value: Simeon
       - key: CLAIDOR_EMAIL_FROM_DOMAIN
         value: simeonlabs.com

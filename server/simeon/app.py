@@ -15,6 +15,7 @@ from simeon.checkout import ip_geolocation
 from simeon.checkout_link.app import app as checkout_link_redirect_app
 from simeon.config import settings
 from simeon.desktop.app_sign_in import router as desktop_app_sign_in_router
+from simeon.desktop.email_sign_in import router as desktop_email_sign_in_router
 from simeon.desktop.endpoints import router as desktop_router
 from simeon.exception_handlers import add_exception_handlers
 from simeon.health.endpoints import router as health_router
@@ -282,6 +283,9 @@ def create_app() -> FastAPI:
     # of these with a leading slash, which discards any path its base URL
     # carried, so nothing under /desktop would ever be called.
     app.include_router(desktop_app_sign_in_router)
+    # /auth/email/* and /desktop/api/account/password: the apps' email code and
+    # password sign-in (19 October 2026).
+    app.include_router(desktop_email_sign_in_router)
 
     # /maty/runner: the queue the cloud engine takes its work from
     app.include_router(maty_router)

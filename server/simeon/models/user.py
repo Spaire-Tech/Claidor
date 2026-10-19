@@ -166,6 +166,14 @@ class User(RecordModel):
 
     meta: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
 
+    # The apps' password sign-in (19 October 2026, `simeon.desktop.passwords`):
+    # scrypt's salt and digest, never the password. None until the person sets
+    # one while signed in, so an account is never given a password by someone
+    # who has not proved the email is theirs.
+    password_hash: Mapped[str | None] = mapped_column(
+        String(256), nullable=True, default=None
+    )
+
     @hybrid_property
     def can_authenticate(self) -> bool:
         return self.deleted_at is None and self.blocked_at is None
