@@ -16,7 +16,7 @@ The iPhone app sells the same three plans through Apple's in-app purchase
 (12 October 2026): Apple takes the payment and the server keeps a copy of
 what Apple signed. Section 9 says how. Its trial is the free month: 30
 days with no card, started by the app at the first sign-in, one per
-person and one per iPhone (section 10).
+person, never by device (section 10).
 
 Nothing here gates anyone until `SIMEON_DESKTOP_BILLING_REQUIRED` is
 `true`. Without it, every person has the free monthly allowance
@@ -647,26 +647,26 @@ the credits run out the app offers the plans sheet. On the web and the Mac
 the trial still takes a card: a browser or a Mac cannot be told apart, an
 iPhone can.
 
-**One per person and one per iPhone** (`server/simeon/plans/free_month.py`):
+**One per person, never by device** (`server/simeon/plans/free_month.py`):
+no free month, card trial or Apple free week before, by account and by
+e-mail. The row (`desktop_free_trials`) keeps a SHA-256 of the e-mail, so
+deleting the account and signing up again with the same address gives no
+second month. A card trial on the web or the Mac is one per card.
 
-- the person: no free month, card trial or Apple free week before, by
-  account and by e-mail. The row (`desktop_free_trials`) keeps a SHA-256 of
-  the e-mail, so deleting the account and signing up again with the same
-  address gives no second month;
-- the iPhone: Apple's DeviceCheck (`server/simeon/plans/device_check.py`).
-  Apple keeps two bits per device for the developer team, through deleting
-  the app and signing in with another account; bit 0 means "this iPhone had
-  its free month". The server reads it before a month starts and sets it
-  after.
+Until 19 October 2026 an iPhone also had only one, through Apple's
+DeviceCheck. The founder: "we shouldnt base anything on device. a device
+could have two to three accounts, thats fine. the thing we base on are
+cards." Every account on one phone now has its own month; the app sends
+nothing about the phone, and what an older app sends is not read. (The
+same day a new account on the founder's iPhone, bass@simeonlabs.com, had no
+month and no `free_month` line in the log at all: the answers other than a
+started month wrote nothing, so which one it was is not known.)
 
 **The call.** After every sign-in the app sends
-`POST /desktop/api/billing/free-month {deviceToken, development}` (the
-token from `DCDevice.generateToken()`; `development` for a build run from
-Xcode, whose token only Apple's development service knows; the other
-service is asked when Apple does not know the token). The answer is
-always 200: `outcome` (`started`, `running`, `not_needed` for a plan or
-billing off, `had_trial`, `device_used`, `unavailable`), `endsAt`, and the
-quota.
+`POST /desktop/api/billing/free-month`. The answer is always 200: `outcome`
+(`started`, `running`, `not_needed` for a plan or billing off, `had_trial`),
+`endsAt`, and the quota. Each answer is logged (`free_month.answered`, with
+the outcome).
 
 **How it counts.** With no live plan, `resolve_allowance` reads the free
 month: while it runs, status `trialing`, plan name "Free trial", no tier
@@ -680,23 +680,15 @@ other, with no trial (it is the person's one trial).
 
 | Setting | What |
 |---|---|
-| `SIMEON_APPLE_DEVICECHECK_KEY_ID` | The key's id (developer account › Keys, DeviceCheck ticked) |
-| `SIMEON_APPLE_DEVICECHECK_KEY_VALUE` | The `.p8` file's text, with its BEGIN and END lines |
-| `SIMEON_APPLE_TEAM_ID` | `496QXRMJXG`, already set for Sign in with Apple |
-| `SIMEON_DESKTOP_FREE_TRIAL_TEST_EMAILS` | Optional: e-mails whose free month may start again on an iPhone that had one, to try the first run more than once (delete the account in the app, sign in again) |
+| `SIMEON_DESKTOP_FREE_TRIAL_TEST_EMAILS` | Optional: e-mails whose free month may start again after one before, to try the first run more than once (delete the account in the app, sign in again) |
 
-Without the DeviceCheck key the iPhone gets no free month (`unavailable`)
-and is offered the plans.
+`SIMEON_APPLE_DEVICECHECK_KEY_ID` and `SIMEON_APPLE_DEVICECHECK_KEY_VALUE`
+are no longer read and can go from `simeon-shared`.
 
 **When it misbehaves:**
 
+- **`free_month.answered`**: every answer, with its `outcome`; none at a
+  sign-in means the app never asked (the Xcode console says
+  `[simeon] free month: …`).
 - **`free_month.started`**: a month began, with its end and whether it was
   a test e-mail.
-- **`free_month.device_used`**: the iPhone already had one.
-- **`free_month.device_check_not_configured`**: the key settings are
-  missing.
-- **`free_month.device_check_failed`** with **`device_check.query_refused`**
-  or **`device_check.unknown_token`**: Apple refused the question (a wrong
-  key or team gives 401) or knows the token in neither service.
-- **`free_month.device_mark_failed`**: the month started but Apple did not
-  keep the mark; the account and the e-mail still count it.

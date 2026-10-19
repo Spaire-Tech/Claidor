@@ -209,8 +209,8 @@ profile, not from the configuration.
 - **Sign-in and the first run** (12 October 2026): Apple's own sheet and
   Google's own page (`AppleSignIn`, `GoogleSignIn`), each answered with the
   pair by the server, no web page between; then the free month is asked for
-  with the phone's DeviceCheck token (`FreeMonthAsk.swift`,
-  docs/services-billing.md section 10); then three screens, one question
+  (`FreeMonthAsk.swift`, docs/services-billing.md section 10: one per
+  person, never by device); then three screens, one question
   each: the name ("What should we call you?"), Face ID (the lock,
   `AppLock.swift`), notifications with their switch (on, Continue brings
   Apple's prompt; off, Settings' Notifications is off). Simeon is made out of sight meanwhile; his chat opens at the end.

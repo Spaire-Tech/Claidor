@@ -716,10 +716,10 @@ class Settings(BaseSettings):
     APPLE_APP_ID: int | None = None
     APPLE_PRODUCT_PREFIX: str = "com.simeonlabs.simeon"
     APPLE_ONLINE_CHECKS: bool = True
-    # Apple's DeviceCheck (`simeon.plans.device_check`): one free month per
-    # iPhone. A key from the developer account (Keys, DeviceCheck ticked):
-    # its id and the .p8 file's text; the team is APPLE_TEAM_ID. Without
-    # them the iPhone app is not offered the free month.
+    # Apple's DeviceCheck: no longer read (19 October 2026, the founder:
+    # "we shouldnt base anything on device"; `simeon.plans.free_month`).
+    # Kept so a deployment that still sets them starts as before; they can
+    # go from Render.
     APPLE_DEVICECHECK_KEY_ID: str = ""
     APPLE_DEVICECHECK_KEY_VALUE: str = ""
     APPLE_DEVICECHECK_BASE: str = "https://api.devicecheck.apple.com"
