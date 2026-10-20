@@ -1916,17 +1916,16 @@ struct RoutinesLine: View {
   var openRoutine: (String) -> Void = { _ in }
 
   var body: some View {
-    let verb = Chat.routineVerb(action)
     EventLine {
       if routines.count >= 3 {
-        Text(verb)
+        Text(Chat.routineVerb(action))
         Menu {
           ForEach(routines, id: \.id) { routine in Button(routine.name) { openRoutine(routine.id) } }
         } label: {
           chip(Text("\(routines.count) routines"), trailing: true)
         }
       } else {
-        Text(routines.count == 1 ? "\(verb) routine" : "\(verb) routines")
+        Text(Chat.routineLabel(action, count: routines.count))
         ForEach(Array(routines.enumerated()), id: \.offset) { index, routine in
           if index > 0 { Text("and") }
           Button { openRoutine(routine.id) } label: { chip(Text(routine.name), trailing: false) }.buttonStyle(.tactile)

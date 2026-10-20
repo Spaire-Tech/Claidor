@@ -14,8 +14,8 @@ public enum LocalToolPermission: String, CaseIterable, Sendable {
   public static let choices: [LocalToolPermission] = [.always, .ask, .never]
   public static let `default`: LocalToolPermission = .ask
 
-  public static let title = "Execution on Local Computer"
-  public static let explanation = "Let the assistant open files and run tasks on your computer. Auto-review still checks everything first."
+  public static let title = L10n.text("Execution on Local Computer")
+  public static let explanation = L10n.text("Let the assistant open files and run tasks on your computer. Auto-review still checks everything first.")
 
   /** Anything else read as the default (`normalizeSandLocalToolPermission`). */
   public init(normalizing value: String?) {
@@ -34,9 +34,9 @@ public enum LocalToolPermission: String, CaseIterable, Sendable {
   /** The menu's words (`XGn`). */
   public var label: String {
     switch self {
-    case .never: "Never allow"
-    case .always: "Always allow"
-    case .ask: "Ask every time"
+    case .never: L10n.text("Never allow")
+    case .always: L10n.text("Always allow")
+    case .ask: L10n.text("Ask every time")
     }
   }
 
@@ -54,7 +54,7 @@ public enum LocalToolPermission: String, CaseIterable, Sendable {
 
   /** The line under the explanation while a team admin caps it. */
   public static func ceilingLine(_ ceiling: LocalToolPermission) -> String {
-    "Your team's admin allows at most \"\(ceiling.label)\""
+    L10n.text("Your team's admin allows at most \"\(ceiling.label)\"")
   }
 
   /**

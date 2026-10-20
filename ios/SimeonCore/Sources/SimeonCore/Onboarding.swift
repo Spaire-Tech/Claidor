@@ -18,23 +18,23 @@ public enum OnboardingStep: Int, CaseIterable, Sendable {
 
   public var title: String {
     switch self {
-    case .name: return "What should we call you?"
-    case .faceID: return "Unlock Simeon with Face ID"
-    case .notifications: return "Let Simeon tell you when work is done"
+    case .name: return L10n.text("What should we call you?")
+    case .faceID: return L10n.text("Unlock Simeon with Face ID")
+    case .notifications: return L10n.text("Let Simeon tell you when work is done")
     }
   }
 
   /** The title as the phone unlocks: "Unlock Simeon with Touch ID" on an iPhone with a button. */
   public func title(unlockingWith biometry: String) -> String {
-    self == .faceID ? "Unlock Simeon with \(biometry)" : title
+    self == .faceID ? L10n.text("Unlock Simeon with \(biometry)") : title
   }
 
   /** The line under the title. */
   public var detail: String? {
     switch self {
     case .name: return nil
-    case .faceID: return "Keep your agents private on this iPhone."
-    case .notifications: return "Get notified when an agent finishes a task or needs you."
+    case .faceID: return L10n.text("Keep your agents private on this iPhone.")
+    case .notifications: return L10n.text("Get notified when an agent finishes a task or needs you.")
     }
   }
 
@@ -48,14 +48,14 @@ public enum OnboardingStep: Int, CaseIterable, Sendable {
 }
 
 public enum Onboarding {
-  public static let nameLabel = "Name"
+  public static let nameLabel = L10n.text("onboarding.name", default: "Name")
   /** The notifications step's switch, in a card as the founder's reference has its own (12 October 2026). */
-  public static let notificationsSwitch = "Notifications"
-  public static let notificationsSwitchLine = "You can turn them off anytime in Settings."
-  public static let failed = "Simeon couldn’t finish setting up"
-  public static let unreachable = "Can't reach your computer right now. Check your connection and try again."
+  public static let notificationsSwitch = L10n.text("Notifications")
+  public static let notificationsSwitchLine = L10n.text("You can turn them off anytime in Settings.")
+  public static let failed = L10n.text("Simeon couldn’t finish setting up")
+  public static let unreachable = L10n.text("Can't reach your computer right now. Check your connection and try again.")
   /** While the hand-off is still going once the first run is over (the list, before Simeon is there). */
-  public static let gettingReady = "Getting Simeon ready…"
+  public static let gettingReady = L10n.text("Getting Simeon ready…")
 
   /**
    * The hand-off's one line (the window's `jqn`, `Xqn`), from the newest
@@ -63,10 +63,10 @@ public enum Onboarding {
    * pulled, "Waking your computer…" while it sleeps.
    */
   public static func handOffLine(ready: Bool, percent: Int? = nil, sleeping: Bool = false) -> String {
-    if ready { return "Getting your team ready…" }
-    if let percent { return "Setting up your Simeon… \(percent)%" }
-    if sleeping { return "Waking your computer…" }
-    return "Setting up your Simeon…"
+    if ready { return L10n.text("Getting your team ready…") }
+    if let percent { return L10n.text("Setting up your Simeon… \(percent)%") }
+    if sleeping { return L10n.text("Waking your computer…") }
+    return L10n.text("Setting up your Simeon…")
   }
 
   /**

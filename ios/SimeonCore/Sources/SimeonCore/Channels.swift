@@ -68,9 +68,9 @@ public struct ChannelsView: Equatable, Sendable {
   public func subtitle(_ manifest: Manifest) -> String {
     switch state(manifest) {
     case .connected:
-      if let connection = connection(manifest) { return "Connected as \(connection.label)" }
+      if let connection = connection(manifest) { return L10n.text("Connected as \(connection.label)") }
       return manifest.blurb
-    case .error(let detail): return detail ?? "The platform rejected this connection."
+    case .error(let detail): return detail ?? L10n.text("The platform rejected this connection.")
     default: return manifest.blurb
     }
   }
@@ -78,19 +78,19 @@ public struct ChannelsView: Equatable, Sendable {
   /** The chip beside it (`O0n`); none to connect. */
   public static func chip(_ state: RowState) -> String? {
     switch state {
-    case .comingSoon: "Soon"
-    case .connected: "Connected"
-    case .error: "Needs attention"
-    case .connecting: "Connecting"
+    case .comingSoon: L10n.text("Soon")
+    case .connected: L10n.text("Connected")
+    case .error: L10n.text("Needs attention")
+    case .connecting: L10n.text("channel.connecting", default: "Connecting")
     case .available: nil
     }
   }
 
-  public static let intro = "Connect this agent to a messaging platform so it can talk to people there. You can also just ask it in chat, like \"connect me to a messaging platform\"."
-  public static let none = "No connectors available."
-  public static let storedSecurely = "Stored securely, never shown to your agent."
+  public static let intro = L10n.text("Connect this agent to a messaging platform so it can talk to people there. You can also just ask it in chat, like \"connect me to a messaging platform\".")
+  public static let none = L10n.text("No connectors available.")
+  public static let storedSecurely = L10n.text("Stored securely, never shown to your agent.")
 
-  public static func placeholder(_ manifest: Manifest) -> String { "Paste your \(manifest.credentialLabel)" }
+  public static func placeholder(_ manifest: Manifest) -> String { L10n.text("Paste your \(manifest.credentialLabel)") }
 
   /**
    * "How to connect" (`C0n`): it reads the window's own table, which still
@@ -98,8 +98,8 @@ public struct ChannelsView: Equatable, Sendable {
    * row offers.
    */
   public static func guide(_ manifest: Manifest) -> (title: String, description: String, blurb: String) {
-    let blurb = manifest.platform == "slack" ? "Message in Slack channels and DMs (coming soon)." : manifest.platform == "discord" ? "Message in Discord servers and DMs (coming soon)." : manifest.blurb
-    return ("Connect \(manifest.displayName)", "Connecting \(manifest.displayName) is not available yet.", blurb)
+    let blurb = manifest.platform == "slack" ? L10n.text("Message in Slack channels and DMs (coming soon).") : manifest.platform == "discord" ? L10n.text("Message in Discord servers and DMs (coming soon).") : manifest.blurb
+    return (L10n.text("Connect \(manifest.displayName)"), L10n.text("Connecting \(manifest.displayName) is not available yet."), blurb)
   }
 }
 

@@ -141,7 +141,7 @@ extension FlightOffer {
     guard !back.isEmpty, back.count < legs.count else { return legs.isEmpty ? [] : [FlightWay(title: "", legs: legs)] }
     let out = Array(legs.prefix(legs.count - back.count))
     return [
-      FlightWay(title: ["Outbound", date].filter { !$0.isEmpty }.joined(separator: " · "), legs: out),
+      FlightWay(title: date.isEmpty ? L10n.text("Outbound") : L10n.text("Outbound · \(date)"), legs: out),
       FlightWay(title: back[0].heading, legs: back),
     ]
   }
@@ -154,22 +154,36 @@ extension FlightOffer {
   /** The fare's terms in a line each: cancelling, changing, bags. */
   public var terms: [String] {
     var lines: [String] = []
+    // The server's words (`flights.py`) are read in English; the sentences around them are the app's.
     switch refundable {
     case "": break
-    case "Full refund", "No refund": lines.append("\(refundable) if you cancel")
-    case "Not stated": lines.append("Refund rules not stated")
-    default: lines.append(refundable.hasPrefix("Refund minus ") ? "\(refundable) if you cancel" : "Cancellation: \(refundable)")
+    case "Full refund": lines.append(L10n.text("Full refund if you cancel"))
+    case "No refund": lines.append(L10n.text("No refund if you cancel"))
+    case "Not stated": lines.append(L10n.text("Refund rules not stated"))
+    default:
+      if refundable.hasPrefix("Refund minus ") {
+        let fee = String(refundable.dropFirst("Refund minus ".count))
+        lines.append(L10n.text("Refund minus \(fee) if you cancel"))
+      } else {
+        lines.append(L10n.text("Cancellation: \(refundable)"))
+      }
     }
     switch changeable {
     case "": break
-    case "Free": lines.append("Free changes")
-    case "Not allowed": lines.append("No changes allowed")
-    case "Not stated": lines.append("Change rules not stated")
-    default: lines.append(changeable.hasSuffix(" fee") ? "Changes for a \(changeable)" : "Changes: \(changeable)")
+    case "Free": lines.append(L10n.text("Free changes"))
+    case "Not allowed": lines.append(L10n.text("No changes allowed"))
+    case "Not stated": lines.append(L10n.text("Change rules not stated"))
+    default:
+      if changeable.hasSuffix(" fee") {
+        let fee = String(changeable.dropLast(" fee".count))
+        lines.append(L10n.text("Changes for a \(fee) fee"))
+      } else {
+        lines.append(L10n.text("Changes: \(changeable)"))
+      }
     }
     switch bags {
     case "": break
-    case "Not stated": lines.append("Bags not stated")
+    case "Not stated": lines.append(L10n.text("Bags not stated"))
     default: lines.append(bags)
     }
     return lines
@@ -183,21 +197,23 @@ extension FlightLeg {
 
   private static func when(_ day: String, _ time: String) -> String {
     let clock = FlightText.clock(time, days: day.isEmpty)
-    return [day, clock].filter { !$0.isEmpty }.joined(separator: " at ")
+    guard !day.isEmpty, !clock.isEmpty else { return day.isEmpty ? clock : day }
+    return L10n.text("\(day) at \(clock)")
   }
 
   /** "DL 2830 · Delta Air Lines", then "Operated by SkyWest" when another airline flies it. */
   public var flightLines: [String] {
     let parts = flight.components(separatedBy: " · operated by ")
     let number = [parts[0], carrier].filter { !$0.isEmpty }.joined(separator: " · ")
-    return [number] + (parts.count > 1 ? ["Operated by \(parts[1])"] : [])
+    return [number] + (parts.count > 1 ? [L10n.text("Operated by \(parts[1])")] : [])
   }
 
   /** "1h 38m layover in Phoenix", between this flight and the next. */
   public var layoverLine: String {
     guard !layover.isEmpty, !layover.hasPrefix("Layover") else { return layover }
-    guard let place = layover.range(of: " in ") else { return "\(layover) layover" }
-    return layover.replacingCharacters(in: place, with: " layover in ")
+    guard let place = layover.range(of: " in ") else { return L10n.text("\(layover) layover") }
+    let span = String(layover[..<place.lowerBound]), city = String(layover[place.upperBound...])
+    return L10n.text("\(span) layover in \(city)")
   }
 }
 

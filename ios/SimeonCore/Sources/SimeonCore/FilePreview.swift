@@ -236,7 +236,7 @@ public enum FilePreview {
 
   public static func sheet(_ text: String, name: String) -> Sheet {
     let rows = rows(text, delimiter: delimiter(text, name: name), maxRows: tableRows)
-    return Sheet(name: "Sheet 1", rows: rows, totalRows: rows.count < tableRows ? rows.count : rowCount(text))
+    return Sheet(name: L10n.text("Sheet 1"), rows: rows, totalRows: rows.count < tableRows ? rows.count : rowCount(text))
   }
 
   /** "3 rows", "1 row", "1,204 rows" under the name: the rows less the heading row (`kvn`). */
@@ -244,24 +244,25 @@ public enum FilePreview {
     let rows = max(0, totalRows - 1)
     let formatter = NumberFormatter()
     formatter.numberStyle = .decimal
-    formatter.locale = Locale(identifier: "en_US")
-    return "\(formatter.string(from: NSNumber(value: rows)) ?? "\(rows)") \(rows == 1 ? "row" : "rows")"
+    formatter.locale = L10n.locale()
+    let number = formatter.string(from: NSNumber(value: rows)) ?? "\(rows)"
+    return rows == 1 ? L10n.text("\(number) row") : L10n.text("\(number) rows")
   }
 
   /** A cell's detail heading (`wvn`): "Revenue · row 2", "Column 3 · header". */
   public static func cellLabel(column: Int, row: Int, heading: String) -> String {
-    let name = heading.isEmpty ? "Column \(column + 1)" : heading
-    return row < 0 ? "\(name) · header" : "\(name) · row \(row + 1)"
+    let name = heading.isEmpty ? L10n.text("Column \(column + 1)") : heading
+    return row < 0 ? L10n.text("\(name) · header") : L10n.text("\(name) · row \(row + 1)")
   }
 
   /** "2 pages", "1 page" (`evn`). */
-  public static func pagesLine(_ pages: Int) -> String { "\(pages) \(pages == 1 ? "page" : "pages")" }
+  public static func pagesLine(_ pages: Int) -> String { pages == 1 ? L10n.text("1 page") : L10n.text("\(pages) pages") }
 
   // MARK: JSON
 
   /** An object's or list's size beside its name (`_kn`): "[2 items]", "{1 key}". */
   public static func jsonSummary(isList: Bool, count: Int) -> String {
-    isList ? (count == 1 ? "[1 item]" : "[\(count) items]") : (count == 1 ? "{1 key}" : "{\(count) keys}")
+    isList ? (count == 1 ? L10n.text("[1 item]") : L10n.text("[\(count) items]")) : (count == 1 ? L10n.text("{1 key}") : L10n.text("{\(count) keys}"))
   }
 }
 

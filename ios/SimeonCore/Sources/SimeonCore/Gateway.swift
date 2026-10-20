@@ -73,7 +73,7 @@ public struct GatewayConnection: Sendable, Equatable {
 
   public init(box: JSON) throws {
     guard let base = box["gatewayUrl"]?.text else {
-      throw SimeonAPIError(message: "Simeon's cloud computer has no gateway address yet. Try again in a moment.", status: 0)
+      throw SimeonAPIError(message: L10n.text("Simeon's cloud computer has no gateway address yet. Try again in a moment."), status: 0)
     }
     self.init(baseURL: base.trimmingTrailingSlashes, token: box["gatewayToken"]?.text, networkToken: box["networkToken"]?.text, screenURL: box["vncUrl"]?.text, forkScreenBase: box["forkVncBaseUrl"]?.text?.trimmingTrailingSlashes)
   }

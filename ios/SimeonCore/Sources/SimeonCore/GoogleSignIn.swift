@@ -23,7 +23,7 @@ import FoundationNetworking
 public enum GoogleSignIn {
   public static let configPath = "/auth/google/config"
   public static let path = "/auth/google"
-  public static let failed = "Google sign-in didn't finish. Try again."
+  public static let failed = L10n.text("Google sign-in didn't finish. Try again.")
 
   /** What the server says the app opens Google's page with. */
   public struct Config: Sendable, Equatable {

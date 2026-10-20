@@ -184,7 +184,7 @@ extension Agent {
    * taken out, "Sent a link · …", or "Sent 2 images".
    */
   public var previewLine: String {
-    if awaitingUserResponse, let reason = waitingReason, !reason.isEmpty { return "Waiting for you: \(reason)" }
+    if awaitingUserResponse, let reason = waitingReason, !reason.isEmpty { return L10n.text("Waiting for you: \(reason)") }
     if let entry = lastEntry, let line = Preview.line(entry), !line.isEmpty { return line }
     if let preview = lastMessagePreview { return Preview.plain(preview) }
     return description
@@ -195,7 +195,7 @@ extension Agent {
 public enum Preview {
   public static func line(_ entry: JSON) -> String? {
     switch entry["kind"]?.string {
-    case "link": return entry["url"]?.text.map { "Sent a link · \($0)" }
+    case "link": return entry["url"]?.text.map { L10n.text("Sent a link · \($0)") }
     case "attachment": return attachments(count: entry["count"]?.int ?? 1, kinds: entry["kinds"]?.object ?? [:])
     case "text": return entry["text"]?.string.map(plain)
     default: return nil
@@ -244,26 +244,36 @@ public enum Preview {
     return text.split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
   }
 
-  static let labels: [String: (String, String)] = [
-    "image": ("image", "images"), "video": ("video", "videos"), "audio": ("audio file", "audio files"), "pdf": ("PDF", "PDFs"),
-    "markdown": ("Markdown file", "Markdown files"), "table": ("spreadsheet", "spreadsheets"), "json": ("JSON file", "JSON files"),
-    "text": ("text file", "text files"), "document": ("document", "documents"), "archive": ("archive", "archives"), "file": ("file", "files"),
-  ]
+  /** The kinds a preview names; any other is a file. */
+  static let named: Set<String> = ["image", "video", "audio", "pdf", "markdown", "table", "json", "text", "document", "archive", "file"]
 
+  /** "1 image", "2 images". */
   static func label(_ kind: String, _ count: Int) -> String {
-    let words = labels[kind] ?? labels["file"]!
-    return "\(count) \(count == 1 ? words.0 : words.1)"
+    let one = count == 1
+    switch kind {
+    case "image": return one ? L10n.text("1 image") : L10n.text("\(count) images")
+    case "video": return one ? L10n.text("1 video") : L10n.text("\(count) videos")
+    case "audio": return one ? L10n.text("1 audio file") : L10n.text("\(count) audio files")
+    case "pdf": return one ? L10n.text("1 PDF") : L10n.text("\(count) PDFs")
+    case "markdown": return one ? L10n.text("1 Markdown file") : L10n.text("\(count) Markdown files")
+    case "table": return one ? L10n.text("1 spreadsheet") : L10n.text("\(count) spreadsheets")
+    case "json": return one ? L10n.text("1 JSON file") : L10n.text("\(count) JSON files")
+    case "text": return one ? L10n.text("1 text file") : L10n.text("\(count) text files")
+    case "document": return one ? L10n.text("1 document") : L10n.text("\(count) documents")
+    case "archive": return one ? L10n.text("1 archive") : L10n.text("\(count) archives")
+    default: return one ? L10n.text("1 file") : L10n.text("\(count) files")
+    }
   }
 
   static func attachments(count: Int, kinds: [String: JSON]) -> String {
     let total = max(1, count)
     let present = kinds.compactMap { key, value -> (String, Int)? in
       guard let n = value.int, n > 0 else { return nil }
-      return (labels[key] == nil ? "file" : key, n)
+      return (named.contains(key) ? key : "file", n)
     }.sorted { $0.0 < $1.0 }
-    if present.isEmpty { return "Sent \(label("file", total))" }
-    if present.count == 1 { return "Sent \(label(present[0].0, total))" }
-    return "Sent \(label("file", total)) · " + present.map { label($0.0, $0.1) }.joined(separator: ", ")
+    if present.isEmpty { return L10n.text("Sent \(label("file", total))") }
+    if present.count == 1 { return L10n.text("Sent \(label(present[0].0, total))") }
+    return L10n.text("Sent \(label("file", total)) · \(present.map { label($0.0, $0.1) }.joined(separator: ", "))")
   }
 }
 
@@ -326,13 +336,13 @@ public struct Entry: Identifiable, Hashable, Sendable {
     case "widget": return message["widget"]?["prompt"]?.text
     case "connector":
       guard let name = message["connector"]?.text else { return nil }
-      return message["variant"]?.string == "connected" ? "\(name) connected" : "Connect \(name)"
+      return message["variant"]?.string == "connected" ? L10n.text("\(name) connected") : L10n.text("Connect \(name)")
     case "connectors":
       // The window's preview (`Lvn`): "Connect Gmail, Notion", or "Connect tools".
       let names = message["connectors"]?.array?.compactMap(\.text) ?? []
-      return names.isEmpty ? "Connect tools" : "Connect " + names.joined(separator: ", ")
-    case "listener-connect": return message["platform"]?.string == "slack" ? "Connect Slack" : "Connect GitHub"
-    case "attachment": return message["url"]?.text.map(fileName(ofURL:)) ?? "Sent a file"
+      return names.isEmpty ? L10n.text("Connect tools") : L10n.text("Connect \(names.joined(separator: ", "))")
+    case "listener-connect": return message["platform"]?.string == "slack" ? L10n.text("Connect Slack") : L10n.text("Connect GitHub")
+    case "attachment": return message["url"]?.text.map(fileName(ofURL:)) ?? L10n.text("Sent a file")
     default: return message["content"]?.text.map { by + plain($0) }
     }
   }

@@ -153,38 +153,38 @@ public enum Jump {
   public static func commands(orgChart: Bool, hiddenCount: Int, current: Agent?, hasChannels: Bool, usage: Bool = true, theme: String, computerUpdate: Bool = false) -> [Command] {
     var list: [Command] = []
     if orgChart {
-      list.append(Command(id: "view:org-chart", label: "Org Chart", icon: "organization-filled", keywords: ["open", "organization", "network", "graph"], detail: "Views"))
+      list.append(Command(id: "view:org-chart", label: L10n.text("Org Chart"), icon: "organization-filled", keywords: ["open", "organization", "network", "graph"], detail: L10n.text("Views")))
     }
     if hiddenCount > 0 {
-      list.append(Command(id: "open-hidden-chats", label: "Open Hidden Agents", icon: "eye-slash", keywords: ["hidden", "unhide", "hide", "sidebar", "bots"], detail: "Sidebar"))
+      list.append(Command(id: "open-hidden-chats", label: L10n.text("Open Hidden Agents"), icon: "eye-slash", keywords: ["hidden", "unhide", "hide", "sidebar", "bots"], detail: L10n.text("Sidebar")))
     }
     if let current {
       if current.showsMembers {
-        list.append(Command(id: "info:members", label: "Members", icon: "people", keywords: ["people", "group", "participants"], detail: "Current chat"))
+        list.append(Command(id: "info:members", label: L10n.text("Members"), icon: "people", keywords: ["people", "group", "participants"], detail: L10n.text("Current chat")))
       }
       if hasChannels {
-        list.append(Command(id: "info:channels", label: "Channels", icon: "chat-bubbles", keywords: ["messaging", "platforms", "connect"], detail: "Current chat"))
+        list.append(Command(id: "info:channels", label: L10n.text("Channels"), icon: "chat-bubbles", keywords: ["messaging", "platforms", "connect"], detail: L10n.text("Current chat")))
       }
-      list.append(Command(id: "info:settings", label: "Chat Settings", icon: "settings-gear", keywords: ["details", "notifications"], detail: "Current chat"))
+      list.append(Command(id: "info:settings", label: L10n.text("Chat Settings"), icon: "settings-gear", keywords: ["details", "notifications"], detail: L10n.text("Current chat")))
     }
-    list.append(Command(id: "settings:general", label: "Settings: General", icon: "settings-gear",
-                        keywords: ["account", "model", "notifications", "preferences", "appearance", "theme", "mode", "security", "yubikey", "webauthn"], detail: "Settings"))
+    list.append(Command(id: "settings:general", label: L10n.text("Settings: General"), icon: "settings-gear",
+                        keywords: ["account", "model", "notifications", "preferences", "appearance", "theme", "mode", "security", "yubikey", "webauthn"], detail: L10n.text("Settings")))
     if usage {
-      list.append(Command(id: "settings:usage", label: "Settings: Usage & Billing", icon: "chart-bars",
-                          keywords: ["usage", "billing", "spend", "limit", "on-demand", "plan", "quota"], detail: "Settings"))
+      list.append(Command(id: "settings:usage", label: L10n.text("Settings: Usage & Billing"), icon: "chart-bars",
+                          keywords: ["usage", "billing", "spend", "limit", "on-demand", "plan", "quota"], detail: L10n.text("Settings")))
     }
-    list.append(Command(id: "overlay:plugins", label: "Connectors", icon: "plug", keywords: ["plugins", "marketplace", "tools", "skills", "mcp", "connectors", "customize"]))
+    list.append(Command(id: "overlay:plugins", label: L10n.text("Connectors"), icon: "plug", keywords: ["plugins", "marketplace", "tools", "skills", "mcp", "connectors", "customize"]))
     let themes: [(String, String, String, [String])] = [
-      ("system", "Theme: System", "display", ["appearance", "os", "auto", "follow"]),
-      ("light", "Theme: Light", "sun", ["appearance", "day", "bright"]),
-      ("dark", "Theme: Dark", "moon", ["appearance", "night", "mode"]),
+      ("system", L10n.text("Theme: System"), "display", ["appearance", "os", "auto", "follow"]),
+      ("light", L10n.text("Theme: Light"), "sun", ["appearance", "day", "bright"]),
+      ("dark", L10n.text("Theme: Dark"), "moon", ["appearance", "night", "mode"]),
     ]
     for (id, label, icon, keywords) in themes {
-      list.append(Command(id: "theme:\(id)", label: label, icon: icon, keywords: keywords, detail: "Settings · Appearance", isActive: id == theme))
+      list.append(Command(id: "theme:\(id)", label: label, icon: icon, keywords: keywords, detail: L10n.text("Settings · Appearance"), isActive: id == theme))
     }
     if computerUpdate {
-      list.append(Command(id: "update:computer", label: "Update Simeon's Computer", icon: "device-desktop",
-                          keywords: ["box", "image", "machine", "recreate", "latest", "shared"], detail: "Updates"))
+      list.append(Command(id: "update:computer", label: L10n.text("Update Simeon's Computer"), icon: "device-desktop",
+                          keywords: ["box", "image", "machine", "recreate", "latest", "shared"], detail: L10n.text("Updates")))
     }
     return list
   }
@@ -214,12 +214,12 @@ public enum Jump {
     /** What the All tab says at its right (`kFn`). */
     public var kind: String {
       switch self {
-      case .agent(let agent, _): return agent.isGroup ? "Group" : "Agent"
-      case .command: return "Action"
-      case .message: return "Message"
-      case .file: return "File"
-      case .link: return "Link"
-      case .routine: return "Routine"
+      case .agent(let agent, _): return agent.isGroup ? L10n.text("Group") : L10n.text("Agent")
+      case .command: return L10n.text("Action")
+      case .message: return L10n.text("Message")
+      case .file: return L10n.text("File")
+      case .link: return L10n.text("Link")
+      case .routine: return L10n.text("Routine")
       }
     }
 
@@ -353,15 +353,15 @@ public enum Jump {
 
   /** What an empty tab says (`GFn`, `VFn`): its words, a line under them, and whether its icon is the glass (else people). */
   public static func empty(tab: SearchTab, unavailable: Bool) -> (label: String, hint: String?, glass: Bool) {
-    if unavailable { return ("Search unavailable", "Try again in a moment.", true) }
+    if unavailable { return (L10n.text("Search unavailable"), L10n.text("Try again in a moment."), true) }
     switch tab {
-    case .all, .agents: return ("No agents yet", nil, false)
-    case .messages: return ("Search messages", "Type to find messages across your chats.", true)
-    case .groups: return ("No group chats yet", nil, false)
-    case .files: return ("No files yet", nil, false)
-    case .links: return ("No links in this chat yet", nil, false)
-    case .routines: return ("No routines yet", nil, false)
-    case .actions: return ("No actions", nil, false)
+    case .all, .agents: return (L10n.text("No agents yet"), nil, false)
+    case .messages: return (L10n.text("Search messages"), L10n.text("Type to find messages across your chats."), true)
+    case .groups: return (L10n.text("No group chats yet"), nil, false)
+    case .files: return (L10n.text("No files yet"), nil, false)
+    case .links: return (L10n.text("No links in this chat yet"), nil, false)
+    case .routines: return (L10n.text("No routines yet"), nil, false)
+    case .actions: return (L10n.text("No actions"), nil, false)
     }
   }
 

@@ -187,26 +187,6 @@
         }
       }
     },
-    "%@ routine" : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ la routine"
-          }
-        }
-      }
-    },
-    "%@ routines" : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ les routines"
-          }
-        }
-      }
-    },
     "%@%@" : {
       "shouldTranslate" : false
     },

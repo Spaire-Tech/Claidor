@@ -55,7 +55,7 @@ public struct Routine: Identifiable, Hashable, Sendable {
   public var isRunning: Bool { runs.first?.status == "running" }
 
   /** A row's second line: the host's words, or "Paused" (`G2n`). */
-  public var rowDetail: String { isEnabled ? summary : "Paused" }
+  public var rowDetail: String { isEnabled ? summary : L10n.text("Paused") }
 }
 
 /** One run of a routine, for its history (`AutomationRun`). */
@@ -73,7 +73,7 @@ public struct RoutineRun: Identifiable, Hashable, Sendable {
   public let event: String?
 
   /** The history row's tooltip (`detail ?? event`): a failure in plain words (PlainWords). */
-  public var summary: String { detail.map { PlainWords.error($0, fallback: "This run didn’t finish. It will try again at its next time.") } ?? event ?? "" }
+  public var summary: String { detail.map { PlainWords.error($0, fallback: L10n.text("This run didn’t finish. It will try again at its next time.")) } ?? event ?? "" }
   public var startedAt: Double? { at }
 
   init?(_ json: JSON) {
@@ -127,8 +127,8 @@ public enum RoutineDraft {
     return best
   }
 
-  public static let saveError = "Couldn't save this routine."
-  public static let empty = "Routines are recurring tasks this agent runs on a schedule."
+  public static let saveError = L10n.text("Couldn't save this routine.")
+  public static let empty = L10n.text("Routines are recurring tasks this agent runs on a schedule.")
 }
 
 /**
@@ -223,28 +223,30 @@ public enum Schedule: Hashable, Sendable {
     }
   }
 
-  public static let weekdayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+  public static let weekdayNames = [L10n.text("Sunday"), L10n.text("Monday"), L10n.text("Tuesday"), L10n.text("Wednesday"), L10n.text("Thursday"), L10n.text("Friday"), L10n.text("Saturday")]
 
   /** "Every Monday at 9:00 AM", "Every hour at :15", "Weekdays at 8:30 AM". */
   public var summary: String {
     switch self {
-    case .hourly(let m): return m == 0 ? "Every hour" : String(format: "Every hour at :%02d", m)
-    case .daily(let h, let m): return "Every day at \(Self.clock(h, m))"
-    case .weekdays(let h, let m): return "Weekdays at \(Self.clock(h, m))"
-    case .weekly(let d, let h, let m): return "Every \(Self.weekdayNames[d % 7]) at \(Self.clock(h, m))"
-    case .monthly(let day, let h, let m): return "Every month on the \(Self.ordinal(day)) at \(Self.clock(h, m))"
-    case .everyMinutes(let n): return n == 1 ? "Every minute" : "Every \(n) minutes"
-    case .everyHours(let n): return n == 1 ? "Every hour" : "Every \(n) hours"
-    case .custom(let line): return line.isEmpty ? "No schedule" : "Custom (\(line))"
+    case .hourly(let m): return m == 0 ? L10n.text("Every hour") : L10n.text("Every hour at \(String(format: ":%02d", m))")
+    case .daily(let h, let m): return L10n.text("Every day at \(Self.clock(h, m))")
+    case .weekdays(let h, let m): return L10n.text("Weekdays at \(Self.clock(h, m))")
+    case .weekly(let d, let h, let m): return L10n.text("Every \(Self.weekdayNames[d % 7]) at \(Self.clock(h, m))")
+    case .monthly(let day, let h, let m): return L10n.text("Every month on the \(Self.ordinal(day)) at \(Self.clock(h, m))")
+    case .everyMinutes(let n): return n == 1 ? L10n.text("Every minute") : L10n.text("Every \(n) minutes")
+    case .everyHours(let n): return n == 1 ? L10n.text("Every hour") : L10n.text("Every \(n) hours")
+    case .custom(let line): return line.isEmpty ? L10n.text("No schedule") : L10n.text("Custom (\(line))")
     }
   }
 
   public static func clock(_ hour: Int, _ minute: Int) -> String {
+    guard AppLanguage.isEnglish(AppLanguage.current) else { return RoutineSchedule.localClock(hour, minute) }
     let h12 = hour % 12 == 0 ? 12 : hour % 12
     return String(format: "%d:%02d %@", h12, minute, hour < 12 ? "AM" : "PM")
   }
 
   static func ordinal(_ n: Int) -> String {
+    guard AppLanguage.isEnglish(AppLanguage.current) else { return RoutineSchedule.ordinal(n) }
     let suffix = (11...13).contains(n % 100) ? "th" : ["th", "st", "nd", "rd", "th", "th", "th", "th", "th", "th"][n % 10]
     return "\(n)\(suffix)"
   }

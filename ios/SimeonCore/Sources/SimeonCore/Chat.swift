@@ -58,11 +58,11 @@ public struct DraftCard: Hashable, Sendable {
 
   /** What the card says beside its title ("Ready to send", "Sending…", "Sent", "Discarded"). */
   public var status: String {
-    if isDismissed { return "Discarded" }
+    if isDismissed { return L10n.text("Discarded") }
     switch state {
-    case "sending": return "Sending…"
-    case "sent": return "Sent"
-    default: return "Ready to send"
+    case "sending": return L10n.text("Sending…")
+    case "sent": return L10n.text("Sent")
+    default: return L10n.text("Ready to send")
     }
   }
 }
@@ -126,9 +126,9 @@ public enum Exchange: Hashable, Sendable {
   /** The words before the agents' chip: "Message from", "Messaged", "4 messages with". */
   public var label: String {
     switch self {
-    case .single(let inbound, _): return inbound ? "Message from" : "Messaged"
-    case .fanout: return "Messaged"
-    case .thread(let count, _): return "\(count) messages with"
+    case .single(let inbound, _): return inbound ? L10n.text("Message from") : L10n.text("Messaged")
+    case .fanout: return L10n.text("Messaged")
+    case .thread(let count, _): return L10n.text("\(count) messages with")
     }
   }
 
@@ -342,9 +342,9 @@ public struct ChannelTag: Hashable, Sendable {
 
   /** "From Ada on Discord", "From Discord", "Sent to Slack". */
   public var title: String {
-    guard inbound else { return "Sent to \(platform)" }
-    if let sender, !sender.isEmpty { return "From \(sender) on \(platform)" }
-    return "From \(platform)"
+    guard inbound else { return L10n.text("Sent to \(platform)") }
+    if let sender, !sender.isEmpty { return L10n.text("From \(sender) on \(platform)") }
+    return L10n.text("From \(platform)")
   }
 }
 
@@ -381,12 +381,12 @@ public struct CloudAgentInfo: Hashable, Sendable {
   /** The badge: "Creating", "Running", "Done", "Error", "Expired", "Status unavailable". */
   public var statusLabel: String {
     switch status {
-    case .creating: return "Creating"
-    case .running: return "Running"
-    case .finished: return "Done"
-    case .error: return "Error"
-    case .expired: return "Expired"
-    case .unknown: return "Status unavailable"
+    case .creating: return L10n.text("Creating")
+    case .running: return L10n.text("Running")
+    case .finished: return L10n.text("Done")
+    case .error: return L10n.text("Error")
+    case .expired: return L10n.text("Expired")
+    case .unknown: return L10n.text("Status unavailable")
     }
   }
 
@@ -427,7 +427,10 @@ public struct CloudAgentInfo: Hashable, Sendable {
   }
 
   /** "3 files changed". */
-  public var changedLabel: String? { filesChanged > 0 ? "\(filesChanged) file\(filesChanged == 1 ? "" : "s") changed" : nil }
+  public var changedLabel: String? {
+    guard filesChanged > 0 else { return nil }
+    return filesChanged == 1 ? L10n.text("1 file changed") : L10n.text("\(filesChanged) files changed")
+  }
 
   /** Where Open goes (`cloudAgentWebUrl`): Simeon's page for the run. */
   public static func webURL(_ bcId: String) -> URL? {
@@ -490,7 +493,7 @@ public enum Chat {
 
   /** A new stamp after a quarter of an hour without a line, or on a new day (the window's `zIn`, `OIn = 900 s`). */
   public static let stampGap: TimeInterval = 15 * 60
-  public static let notShown = "This message can't be shown in this version of Simeon."
+  public static let notShown = L10n.text("This message can't be shown in this version of Simeon.")
 
   /**
    * The chat's rows. `unreadAfter` (milliseconds) puts the "New" line before
@@ -585,15 +588,15 @@ public enum Chat {
     switch ReplyPreview(root) {
     case .text(let raw):
       let text = plainPreview(raw)
-      if text.isEmpty { return "Thread" }
+      if text.isEmpty { return L10n.text("Thread") }
       guard text.count > 40 else { return text }
       var head = String(text.prefix(39))
       while let last = head.last, last.isWhitespace || ":;,.!?\u{2013}\u{2014}-".contains(last) { head.removeLast() }
       return head + "…"
-    case .image: return "Photo"
+    case .image: return L10n.text("Photo")
     case .file(let url, let name): return name.flatMap { $0.isEmpty ? nil : $0 } ?? fileBaseName(url)
     case .link(let url): return URL(string: url)?.host ?? url
-    case .missing: return "Thread"
+    case .missing: return L10n.text("Thread")
     }
   }
 
@@ -637,26 +640,30 @@ public enum Chat {
     case "widget": return message["widget"]?["prompt"]?.string ?? ""
     case "cloud-agent":
       let title = message["title"]?.string?.trimmingCharacters(in: .whitespaces) ?? ""
-      return title.isEmpty ? "Cloud agent" : "Cloud agent: \(title)"
+      return title.isEmpty ? L10n.text("Cloud agent") : L10n.text("Cloud agent: \(title)")
     case "secret-request": return message["secretRequest"]?["label"]?.string ?? ""
     case "email-draft":
       let subject = message["draft"]?["subject"]?.string ?? ""
       return subject.isEmpty ? (message["draft"]?["body"]?.string ?? "") : subject
     case "slack-draft": return message["draft"]?["body"]?.string ?? ""
     case "permission-request": return message["permission"]?["title"]?.string ?? ""
-    case "auto-review-approval": return "Approval required: \(message["approval"]?["summary"]?.string ?? "")"
-    case "local-tool-permission": return "Permission required: \(message["ask"]?["target"]?.string ?? "")"
+    case "auto-review-approval":
+      let summary = message["approval"]?["summary"]?.string ?? ""
+      return L10n.text("Approval required: \(summary)")
+    case "local-tool-permission":
+      let target = message["ask"]?["target"]?.string ?? ""
+      return L10n.text("Permission required: \(target)")
     case "connector":
       let name = message["connector"]?.string ?? ""
-      return message["variant"]?.string == "connected" ? "\(name) connected" : "Connect \(name)"
+      return message["variant"]?.string == "connected" ? L10n.text("\(name) connected") : L10n.text("Connect \(name)")
     case "connectors":
       let names = message["connectors"]?.array?.compactMap(\.text) ?? []
-      return names.isEmpty ? "Connect tools" : "Connect " + names.joined(separator: ", ")
-    case "listener-connect": return message["platform"]?.string == "slack" ? "Connect Slack" : "Connect GitHub"
-    case "purchase": return message["content"]?.string ?? "Checkout"
-    case "products": return message["content"]?.string ?? "Products"
-    case "flight-passengers": return message["content"]?.string ?? "Traveller details"
-    default: return "Message"
+      return names.isEmpty ? L10n.text("Connect tools") : L10n.text("Connect \(names.joined(separator: ", "))")
+    case "listener-connect": return message["platform"]?.string == "slack" ? L10n.text("Connect Slack") : L10n.text("Connect GitHub")
+    case "purchase": return message["content"]?.string ?? L10n.text("Checkout")
+    case "products": return message["content"]?.string ?? L10n.text("Products")
+    case "flight-passengers": return message["content"]?.string ?? L10n.text("Traveller details")
+    default: return L10n.text("Message")
     }
   }
 
@@ -914,21 +921,21 @@ public enum Chat {
     switch ReplyPreview(entry) {
     case .text(let raw):
       let text = plainPreview(raw)
-      return text.isEmpty ? "(empty)" : clippedLine(text, limit)
-    case .image: return "Photo"
+      return text.isEmpty ? L10n.text("(empty)") : clippedLine(text, limit)
+    case .image: return L10n.text("Photo")
     case .file(let url, let name): return clippedLine((name?.isEmpty == false ? name! : fileBaseName(url)), limit)
     case .link(let url): return clippedLine(URL(string: url)?.host ?? url, limit)
-    case .missing: return "(deleted)"
+    case .missing: return L10n.text("(deleted)")
     }
   }
 
   /** The composer's words while answering this (the window's `x9n`): "Reply…", or "Reply to attachment…", "Reply to file…", "Reply to link…". */
   public static func replyPlaceholder(_ entry: Entry?) -> String {
     switch ReplyPreview(entry) {
-    case .image: return "Reply to attachment…"
-    case .file: return "Reply to file…"
-    case .link: return "Reply to link…"
-    case .text, .missing: return "Reply…"
+    case .image: return L10n.text("Reply to attachment…")
+    case .file: return L10n.text("Reply to file…")
+    case .link: return L10n.text("Reply to link…")
+    case .text, .missing: return L10n.text("Reply…")
     }
   }
 
@@ -971,9 +978,29 @@ public enum Chat {
     return out
   }
 
-  /** "Created", "Updated", "Enabled", "Disabled", "Deleted", else "Changed" (`Y5e`). */
+  /** The words before a routines line's chips: "Created routine", "Created routines" (`XPn`); from three on, `routineVerb` before a "3 routines" chip. */
+  public static func routineLabel(_ action: String, count: Int) -> String {
+    let one = count == 1
+    switch action {
+    case "created": return one ? L10n.text("Created routine") : L10n.text("Created routines")
+    case "updated": return one ? L10n.text("Updated routine") : L10n.text("Updated routines")
+    case "enabled": return one ? L10n.text("Enabled routine") : L10n.text("Enabled routines")
+    case "disabled": return one ? L10n.text("Disabled routine") : L10n.text("Disabled routines")
+    case "deleted": return one ? L10n.text("Deleted routine") : L10n.text("Deleted routines")
+    default: return one ? L10n.text("Changed routine") : L10n.text("Changed routines")
+    }
+  }
+
+  /** "Created", "Updated", "Enabled", "Disabled", "Deleted", else "Changed" (`Y5e`), before a chip of three routines or more. */
   public static func routineVerb(_ action: String) -> String {
-    ["created": "Created", "updated": "Updated", "enabled": "Enabled", "disabled": "Disabled", "deleted": "Deleted"][action] ?? "Changed"
+    switch action {
+    case "created": return L10n.text("routine.created", default: "Created")
+    case "updated": return L10n.text("routine.updated", default: "Updated")
+    case "enabled": return L10n.text("routine.enabled", default: "Enabled")
+    case "disabled": return L10n.text("routine.disabled", default: "Disabled")
+    case "deleted": return L10n.text("routine.deleted", default: "Deleted")
+    default: return L10n.text("routine.changed", default: "Changed")
+    }
   }
 
   static func row(for entry: Entry) -> ChatRow? {
@@ -993,9 +1020,9 @@ public enum Chat {
     case "notice":
       guard let text = entry["text"]?.text ?? entry.content, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
       // A notice the computer wrote in its own terms reads plainly (PlainWords).
-      return .notice(id: entry.id, text: PlainWords.error(text, fallback: "Something didn’t work here. Try again in a little while."))
+      return .notice(id: entry.id, text: PlainWords.error(text, fallback: L10n.text("Something didn’t work here. Try again in a little while.")))
     case "user-attachment":
-      let name = entry["file_name"]?.text ?? entry["fileName"]?.text ?? entry["file_path"]?.text.map(fileName(ofURL:)) ?? entry["filePath"]?.text.map(fileName(ofURL:)) ?? "Attachment"
+      let name = entry["file_name"]?.text ?? entry["fileName"]?.text ?? entry["file_path"]?.text.map(fileName(ofURL:)) ?? entry["filePath"]?.text.map(fileName(ofURL:)) ?? L10n.text("Attachment")
       return .file(id: entry.id, name: name, url: entry["file_path"]?.string ?? entry["filePath"]?.string ?? "", fromPerson: true)
     case "send-message":
       guard let message = entry.message else { return nil }
@@ -1042,7 +1069,7 @@ public enum Chat {
         return .request(id: entry.id, card: .approval(requestId: approval["requestId"]?.string ?? "", summary: approval["summary"]?.string ?? "", reason: approval["reason"]?.string ?? "", command: approval["command"]?.string, status: approval["status"]?.string ?? "pending", surface: approval["surface"]?.string, proposedRule: approval["proposedRule"]?.string))
       case "secret-request":
         guard let secret = message["secretRequest"] else { return nil }
-        return .request(id: entry.id, card: .secret(label: secret["label"]?.string ?? "A secret", description: secret["description"]?.string ?? "", provided: entry["secretProvided"]?.bool ?? false))
+        return .request(id: entry.id, card: .secret(label: secret["label"]?.string ?? L10n.text("A secret"), description: secret["description"]?.string ?? "", provided: entry["secretProvided"]?.bool ?? false))
       case "cloud-agent":
         guard let bcId = message["bcId"]?.text, !bcId.isEmpty else { return nil }
         return .cloudAgent(id: entry.id, bcId: bcId)
@@ -1061,7 +1088,7 @@ public enum Chat {
         return .notice(id: entry.id, text: LocalToolAsk.outcome(status: ask.status))
       case "permission-request":
         // The older card, retired in the window (`yGe`, variant "retired").
-        return .notice(id: entry.id, text: "This message type is no longer supported in Simeon.")
+        return .notice(id: entry.id, text: L10n.text("This message type is no longer supported in Simeon."))
       default:
         if let text = message["content"]?.text {
           return .bubble(Bubble(id: entry.id, text: text, fromPerson: false, author: entry.author, showsName: false, showsAvatar: false, reactions: reactions, isStreaming: false, replyTo: entry["replyTo"]?.text, timestampMs: entry.timestampMs))
@@ -1078,11 +1105,11 @@ public enum Chat {
         }
         return .voiceCall(id: entry.id, seconds: event["seconds"]?.int ?? 0, lines: lines, live: event["status"]?.string == "live")
       case "name-changed":
-        return event["to"]?.text.map { .notice(id: entry.id, text: "Renamed to \($0)") }
+        return event["to"]?.text.map { .notice(id: entry.id, text: L10n.text("Renamed to \($0)")) }
       case "channel-connected":
-        return event["label"]?.text.map { .notice(id: entry.id, text: "Connected to \($0)") }
+        return event["label"]?.text.map { .notice(id: entry.id, text: L10n.text("Connected to \($0)")) }
       case "channel-disconnected":
-        return event["label"]?.text.map { .notice(id: entry.id, text: "Disconnected from \($0)") }
+        return event["label"]?.text.map { .notice(id: entry.id, text: L10n.text("Disconnected from \($0)")) }
       default:
         return nil
       }
@@ -1114,8 +1141,8 @@ public enum Chat {
   public static func stampText(_ date: Date, now: Date = Date(), calendar: Calendar = .current, locale: Locale = .current) -> String {
     let formatter = { (template: String) in Chat.formatter(template, calendar: calendar, locale: locale) }
     let clock = formatter("jmm").string(from: date)
-    if calendar.isDate(date, inSameDayAs: now) { return "Today \(clock)" }
-    if let yesterday = calendar.date(byAdding: .day, value: -1, to: now), calendar.isDate(date, inSameDayAs: yesterday) { return "Yesterday \(clock)" }
+    if calendar.isDate(date, inSameDayAs: now) { return L10n.text("Today \(clock)") }
+    if let yesterday = calendar.date(byAdding: .day, value: -1, to: now), calendar.isDate(date, inSameDayAs: yesterday) { return L10n.text("Yesterday \(clock)") }
     if calendar.component(.year, from: date) == calendar.component(.year, from: now) { return "\(formatter("EEEMMMd").string(from: date)) \(clock)" }
     return "\(formatter("MMMdyyyy").string(from: date)) \(clock)"
   }
@@ -1125,7 +1152,7 @@ public enum Chat {
     let formatter = { (template: String) in Chat.formatter(template, calendar: calendar, locale: locale) }
     let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: date), to: calendar.startOfDay(for: now)).day ?? 0
     if days <= 0 { return formatter("jmm").string(from: date) }
-    if days == 1 { return "Yesterday" }
+    if days == 1 { return L10n.text("Yesterday") }
     if days < 7 { return formatter("EEEE").string(from: date) }
     if calendar.component(.year, from: date) == calendar.component(.year, from: now) { return formatter("Md").string(from: date) }
     return formatter("Mdyy").string(from: date)
@@ -1165,7 +1192,7 @@ public enum Chat {
 
   /** A call's line in the chat (`__simeonVoiceEvent`): "Voice chat · now" while it is on, then "Voice chat · 02:48" ("1:02:05" past the hour). */
   public static func voiceChatLabel(seconds: Int, live: Bool) -> String {
-    live ? "Voice chat · now" : "Voice chat · \(callLength(max(0, seconds)))"
+    live ? L10n.text("Voice chat · now") : L10n.text("Voice chat · \(callLength(max(0, seconds)))")
   }
 
   /** A call's length the Mac's way: "01:11", or "1:02:05" past the hour. */

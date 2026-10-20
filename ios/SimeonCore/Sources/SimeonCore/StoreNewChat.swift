@@ -19,7 +19,7 @@ extension AppStore {
    * (`isIntroductionSuppressed`, when it opens on a draft). Its id.
    */
   public func createChatAgent(name: String, kickstart: Bool, suppressIntroduction: Bool = false) async throws -> String {
-    guard let backend else { throw CreateFailure.other("Not connected") }
+    guard let backend else { throw CreateFailure.other(L10n.text("Not connected")) }
     do {
       let answer = try await backend.command("createAgent", [
         "name": .string(NewChat.cleanName(name)), "description": "", "origin": "user",
@@ -38,7 +38,7 @@ extension AppStore {
 
   /** A group of agents named for its people ("Theo, Iris", 72 at most). Its id. */
   public func createChatGroup(name: String, memberIds: [String]) async throws -> String {
-    guard let backend else { throw CreateFailure.other("Not connected") }
+    guard let backend else { throw CreateFailure.other(L10n.text("Not connected")) }
     do {
       let answer = try await backend.command("createGroup", ["name": .string(NewChat.cleanName(name)), "description": "", "memberAgentIds": JSON(memberIds)])
       guard let id = answer["agent"]?["id"]?.text ?? answer["id"]?.text else { throw CreateFailure.other("No group in the answer") }
@@ -54,6 +54,6 @@ extension AppStore {
   /** The computer's refusal as the window reads it: its "50 is the maximum" is the limit. */
   static func createFailure(_ error: Error) -> CreateFailure {
     let text = (error as? GatewayError)?.message ?? error.localizedDescription
-    return text.contains(NewChat.limitError) ? .limit : .other(PlainWords.error(text, fallback: "Couldn’t create the agent. Try again in a little while."))
+    return text.contains(NewChat.limitError) ? .limit : .other(PlainWords.error(text, fallback: L10n.text("Couldn’t create the agent. Try again in a little while.")))
   }
 }

@@ -58,10 +58,10 @@ public struct ProductsCard: Hashable, Sendable {
     // MARK: The opened product's page, in a store's layout
 
     /** "Sold by: Office Depot", over the name. */
-    public var soldBy: String { "Sold by: \(byline)" }
+    public var soldBy: String { L10n.text("Sold by: \(byline)") }
 
     /** "4.5" (or "4.0"), by the stars. */
-    public var ratingText: String? { rating.map { String(format: "%.1f", $0) } }
+    public var ratingText: String? { rating.map { String(format: "%.1f", locale: L10n.locale(), $0) } }
 
     /** "(153)", after the rating. */
     public var reviewsText: String? { reviewCount.map { "(\($0))" } }
@@ -139,14 +139,14 @@ public struct ProductsCard: Hashable, Sendable {
   /** "Buy with Ada" */
   public static func buyLabel(agent: String) -> String {
     let who = agent.trimmingCharacters(in: .whitespacesAndNewlines)
-    return who.isEmpty ? "Buy" : "Buy with \(who)"
+    return who.isEmpty ? L10n.text("Buy") : L10n.text("Buy with \(who)")
   }
 
-  public static let viewWebsite = "View website"
-  public static let seeMore = "See more"
-  public static let seeLess = "See less"
-  public static let reviews = "Reviews"
-  public static let moreLikeThis = "More like this"
-  public static let buyingLabel = "Buying"
-  public static let boughtLabel = "Bought"
+  public static let viewWebsite = L10n.text("View website")
+  public static let seeMore = L10n.text("See more")
+  public static let seeLess = L10n.text("See less")
+  public static let reviews = L10n.text("Reviews")
+  public static let moreLikeThis = L10n.text("More like this")
+  public static let buyingLabel = L10n.text("Buying")
+  public static let boughtLabel = L10n.text("Bought")
 }

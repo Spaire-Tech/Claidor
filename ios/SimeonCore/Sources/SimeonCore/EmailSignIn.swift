@@ -20,8 +20,8 @@ public enum EmailSignIn {
   public static let accountPasswordPath = "account/password"
 
   public static let unreachable = AppleSignIn.unreachable
-  public static let failed = "Sign-in didn't finish. Try again."
-  public static let badEmail = "Enter a valid email address."
+  public static let failed = L10n.text("Sign-in didn't finish. Try again.")
+  public static let badEmail = L10n.text("Enter a valid email address.")
   /** The shortest password the server takes (`passwords.MIN_LENGTH`). */
   public static let minimumPassword = 8
 

@@ -177,6 +177,11 @@ def swift_literal(text: str, start: int) -> tuple[str, int]:
                 i += 1
             out.append("(?:%@|%lld)")
             continue
+        if text.startswith("\\u{", i):
+            end = text.index("}", i)
+            out.append(re.escape(chr(int(text[i + 3:end], 16))))
+            i = end + 1
+            continue
         if text[i] == "\\":
             out.append(re.escape({"n": "\n", "t": "\t"}.get(text[i + 1], text[i + 1])))
             i += 2

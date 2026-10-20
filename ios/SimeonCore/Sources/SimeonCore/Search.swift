@@ -12,14 +12,14 @@ public enum SearchTab: String, CaseIterable, Sendable {
 
   public var title: String {
     switch self {
-    case .all: return "All"
-    case .messages: return "Messages"
-    case .agents: return "Agents"
-    case .groups: return "Groups"
-    case .files: return "Files"
-    case .links: return "Links"
-    case .routines: return "Routines"
-    case .actions: return "Actions"
+    case .all: return L10n.text("search.all", default: "All")
+    case .messages: return L10n.text("Messages")
+    case .agents: return L10n.text("Agents")
+    case .groups: return L10n.text("Groups")
+    case .files: return L10n.text("Files")
+    case .links: return L10n.text("Links")
+    case .routines: return L10n.text("Routines")
+    case .actions: return L10n.text("Actions")
     }
   }
 
@@ -29,13 +29,13 @@ public enum SearchTab: String, CaseIterable, Sendable {
   /** What a tab says when it has nothing (`VFn`). */
   public var empty: (text: String, hint: String?) {
     switch self {
-    case .all, .agents: return ("No agents yet", nil)
-    case .messages: return ("Search messages", "Type to find messages across your chats.")
-    case .groups: return ("No group chats yet", nil)
-    case .files: return ("No files yet", nil)
-    case .links: return ("No links in your chats yet", nil)
-    case .routines: return ("No routines yet", nil)
-    case .actions: return ("No actions", nil)
+    case .all, .agents: return (L10n.text("No agents yet"), nil)
+    case .messages: return (L10n.text("Search messages"), L10n.text("Type to find messages across your chats."))
+    case .groups: return (L10n.text("No group chats yet"), nil)
+    case .files: return (L10n.text("No files yet"), nil)
+    case .links: return (L10n.text("No links in your chats yet"), nil)
+    case .routines: return (L10n.text("No routines yet"), nil)
+    case .actions: return (L10n.text("No actions"), nil)
     }
   }
 }
@@ -72,7 +72,7 @@ public struct FileHit: Identifiable, Hashable, Sendable {
   public init?(_ json: JSON) {
     guard let agentId = json["agentId"]?.text, let entryId = json["entryId"]?.text else { return nil }
     self.agentId = agentId; self.entryId = entryId
-    fileName = json["fileName"]?.string ?? "File"
+    fileName = json["fileName"]?.string ?? L10n.text("File")
     kind = json["kind"]?.string ?? "file"
     timestampMs = json["timestampMs"]?.double
     width = json["width"]?.int
@@ -210,23 +210,23 @@ public enum Search {
   public static func ago(_ ms: Double?, now: Date = Date()) -> String? {
     guard let ms else { return nil }
     let seconds = max(0, now.timeIntervalSince1970 - ms / 1000)
-    if seconds < 60 { return "now" }
+    if seconds < 60 { return L10n.text("ago.now", default: "now") }
     let minutes = Int(seconds / 60)
-    if minutes < 60 { return "\(minutes)m ago" }
+    if minutes < 60 { return L10n.text("\(minutes)m ago") }
     let hours = minutes / 60
-    if hours < 24 { return "\(hours)h ago" }
+    if hours < 24 { return L10n.text("\(hours)h ago") }
     let days = hours / 24
-    if days < 30 { return "\(days)d ago" }
-    if days < 365 { return "\(days / 30)mo ago" }
-    return "\(days / 365)y ago"
+    if days < 30 { return L10n.text("\(days)d ago") }
+    if days < 365 { return L10n.text("\(days / 30)mo ago") }
+    return L10n.text("\(days / 365)y ago")
   }
 
   /** A message's second line: who wrote to whom ("You to Theo", "Theo to you"; in a group "You in Launch", "In Launch"), and when. */
   public static func messageLine(_ hit: MessageHit, chat: Agent?, now: Date = Date()) -> String {
-    let name = chat?.name ?? "an agent"
+    let name = chat?.name ?? L10n.text("an agent")
     let who: String
-    if chat?.isGroup == true { who = hit.fromPerson ? "You in \(name)" : "In \(name)" }
-    else { who = hit.fromPerson ? "You to \(name)" : "\(name) to you" }
+    if chat?.isGroup == true { who = hit.fromPerson ? L10n.text("You in \(name)") : L10n.text("In \(name)") }
+    else { who = hit.fromPerson ? L10n.text("You to \(name)") : L10n.text("\(name) to you") }
     return [who, ago(hit.timestampMs, now: now)].compactMap { $0 }.joined(separator: " · ")
   }
 

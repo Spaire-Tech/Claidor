@@ -21,8 +21,8 @@ import FoundationNetworking
  */
 public enum AppleSignIn {
   public static let path = "/auth/apple"
-  public static let failed = "Sign in with Apple didn't finish. Try again."
-  public static let unreachable = "Simeon can't be reached. Check your connection and try again."
+  public static let failed = L10n.text("Sign in with Apple didn't finish. Try again.")
+  public static let unreachable = L10n.text("Simeon can't be reached. Check your connection and try again.")
 
   /** One sign-in's nonce: `raw` goes to Simeon Labs' server, `hashed` (its SHA-256, hex) to Apple. */
   public struct Nonce: Sendable, Equatable {

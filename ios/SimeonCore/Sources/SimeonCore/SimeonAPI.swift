@@ -118,7 +118,7 @@ public actor SimeonAPI {
   }
 
   private func authorized(_ request: inout URLRequest) async throws {
-    guard let token = await accessToken() else { throw SimeonAPIError(message: "Sign in to Simeon first.", status: 401) }
+    guard let token = await accessToken() else { throw SimeonAPIError(message: L10n.text("Sign in to Simeon first."), status: 401) }
     request.setValue("Bearer \(token)", forHTTPHeaderField: "authorization")
     request.setValue("application/json", forHTTPHeaderField: "accept")
     for (name, value) in clientHeaders { request.setValue(value, forHTTPHeaderField: name) }
@@ -250,7 +250,7 @@ public actor SimeonAPI {
    */
   @discardableResult
   public func deleteAccount(checkEvery: UInt64 = 5_000_000_000) async throws -> Bool {
-    guard vault.read() != nil else { throw SimeonAPIError(message: "Sign in to Simeon first.", status: 401) }
+    guard vault.read() != nil else { throw SimeonAPIError(message: L10n.text("Sign in to Simeon first."), status: 401) }
     deleting = true
     defer { deleting = false }
     do {

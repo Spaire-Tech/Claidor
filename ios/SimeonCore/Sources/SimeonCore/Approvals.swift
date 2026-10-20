@@ -14,18 +14,18 @@ public enum AutoReviewCard {
   /** The title by surface (`ee`, `te` for any other). */
   public static func title(surface: String?) -> (title: String, subject: Subject) {
     switch surface {
-    case "host_shell", "box_shell": ("The agent wants to run a command", .command)
-    case "mcp": ("The agent wants to use a connected service", .details)
-    case "subagent": ("The agent wants to run a task", .details)
-    default: ("Auto-review Paused This Action", .details)
+    case "host_shell", "box_shell": (L10n.text("The agent wants to run a command"), .command)
+    case "mcp": (L10n.text("The agent wants to use a connected service"), .details)
+    case "subagent": (L10n.text("The agent wants to run a task"), .details)
+    default: (L10n.text("Auto-review Paused This Action"), .details)
     }
   }
 
   /** Where it runs (`J`). */
   public static func location(surface: String?) -> String? {
     switch surface {
-    case "host_shell": "Runs on your local computer"
-    case "box_shell", "computer": "Runs on Simeon's computer"
+    case "host_shell": L10n.text("Runs on your local computer")
+    case "box_shell", "computer": L10n.text("Runs on Simeon's computer")
     default: nil
     }
   }
@@ -35,12 +35,12 @@ public enum AutoReviewCard {
   /** The answered card's dot and word (`ae`); none while it waits. */
   public static func badge(status: String) -> (kind: BadgeKind, label: String)? {
     switch status {
-    case "approved": (.success, "Allowed once")
-    case "always": (.success, "Always allowed")
-    case "denied": (.danger, "Denied")
-    case "expired": (.muted, "Expired")
+    case "approved": (.success, L10n.text("Allowed once"))
+    case "always": (.success, L10n.text("Always allowed"))
+    case "denied": (.danger, L10n.text("Denied"))
+    case "expired": (.muted, L10n.text("Expired"))
     case "pending": nil
-    default: (.muted, "Status unavailable")
+    default: (.muted, L10n.text("Status unavailable"))
     }
   }
 
@@ -63,14 +63,13 @@ public enum AutoReviewCard {
   public static func clip(_ text: String) -> String {
     let units = Array(text.utf16)
     guard units.count > clipLength else { return text }
-    return String(decoding: units.prefix(clipLength), as: UTF16.self) + "...[\(units.count - clipLength) chars omitted]..."
+    return String(decoding: units.prefix(clipLength), as: UTF16.self) + L10n.text("...[\(units.count - clipLength) chars omitted]...")
   }
 
   /** The line under an Always allowed card (`ue`). */
   public static func settledNote(status: String, rule: String?) -> String? {
     guard status == "always" else { return nil }
-    let note = "A rule always allowing this was added to your Auto-review settings"
-    return rule.map { "\(note): “\($0)”" } ?? note
+    return rule.map { L10n.text("A rule always allowing this was added to your Auto-review settings: “\($0)”") } ?? L10n.text("A rule always allowing this was added to your Auto-review settings")
   }
 
   /** The proposed rule as Always allow saves it: trimmed, secrets taken out, spaces as one (`ce`). */
@@ -157,21 +156,21 @@ extension AutoReviewInstructions {
  * gone.
  */
 public enum LocalToolAsk {
-  public static let title = "Allow Simeon and all agents to run commands on your local computer?"
-  public static let description = "This applies to Simeon and every agent. It can always be changed in Settings."
-  public static let denyOnce = "Deny once"
-  public static let denyOnceTooltip = "Deny once (Esc)"
-  public static let failure = "Your answer didn't go through. Check your connection and try again."
-  public static let loadingPolicy = "Always allow is disabled while team policy loads"
-  public static let blockedByPolicy = "Always allow is disabled by team policy"
+  public static let title = L10n.text("Allow Simeon and all agents to run commands on your local computer?")
+  public static let description = L10n.text("This applies to Simeon and every agent. It can always be changed in Settings.")
+  public static let denyOnce = L10n.text("Deny once")
+  public static let denyOnceTooltip = L10n.text("Deny once (Esc)")
+  public static let failure = L10n.text("Your answer didn't go through. Check your connection and try again.")
+  public static let loadingPolicy = L10n.text("Always allow is disabled while team policy loads")
+  public static let blockedByPolicy = L10n.text("Always allow is disabled by team policy")
 
   /** The answered card's line (`_Ln`). */
   public static func outcome(status: String) -> String {
     switch status {
-    case "always": "Simeon can run commands on your computer."
-    case "never": "Simeon cannot run commands on your computer."
-    case "denied", "expired": "Simeon was not allowed to run commands on your computer."
-    default: "Simeon can run commands on your computer this time."
+    case "always": L10n.text("Simeon can run commands on your computer.")
+    case "never": L10n.text("Simeon cannot run commands on your computer.")
+    case "denied", "expired": L10n.text("Simeon was not allowed to run commands on your computer.")
+    default: L10n.text("Simeon can run commands on your computer this time.")
     }
   }
 

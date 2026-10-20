@@ -58,37 +58,37 @@ public struct FlightPassengersCard: Hashable, Sendable {
 
   // MARK: Words
 
-  public static let title = "Travellers"
-  public static let fillIn = "Add traveller details"
-  public static let asOnID = "Names exactly as on the ID used to travel."
-  public static let privacy = "Used only for this booking. Simeon keeps it on your computer until the flight is booked."
-  public static let next = "Continue"
-  public static let cancel = "Cancel"
+  public static let title = L10n.text("Travellers")
+  public static let fillIn = L10n.text("Add traveller details")
+  public static let asOnID = L10n.text("Names exactly as on the ID used to travel.")
+  public static let privacy = L10n.text("Used only for this booking. Simeon keeps it on your computer until the flight is booked.")
+  public static let next = L10n.text("Continue")
+  public static let cancel = L10n.text("Cancel")
 
   /** "Ada wants to book a flight" */
   public static func headline(agent: String) -> String {
     let who = agent.trimmingCharacters(in: .whitespacesAndNewlines)
-    return "\(who.isEmpty ? "Your agent" : who) wants to book a flight"
+    return who.isEmpty ? L10n.text("Your agent wants to book a flight") : L10n.text("\(who) wants to book a flight")
   }
 
   /** "Traveller 1 · Adult", or just "Adult" for one. */
   public func seatLabel(_ index: Int) -> String {
     let type = flight.passengers.indices.contains(index) ? flight.passengers[index].type : "adult"
-    let kind = type == "child" ? "Child" : type.hasPrefix("infant") ? "Infant" : "Adult"
-    return flight.passengers.count > 1 ? "Traveller \(index + 1) · \(kind)" : kind
+    let kind = type == "child" ? L10n.text("Child") : type.hasPrefix("infant") ? L10n.text("Infant") : L10n.text("Adult")
+    return flight.passengers.count > 1 ? L10n.text("Traveller \(index + 1) · \(kind)") : kind
   }
 
   /** Where it stands once answered, for the line under the card. */
   public var status: String? {
     switch state {
     case .open: return nil
-    case .saved: return names.isEmpty ? "Details saved" : names.joined(separator: ", ")
-    case .canceled: return "Canceled"
+    case .saved: return names.isEmpty ? L10n.text("Details saved") : names.joined(separator: ", ")
+    case .canceled: return L10n.text("Canceled")
     }
   }
 
   /** In the chat list and a quote. */
-  public var listLine: String { "Traveller details · \(flight.route)" }
+  public var listLine: String { L10n.text("Traveller details · \(flight.route)") }
 
   /** The day this traveller must be 18 by, for an adult's seat (the last flight's day); nil for a child's or with no day. */
   public func adultOn(_ index: Int) -> String? {
@@ -154,12 +154,20 @@ public struct BookedFlight: Hashable, Sendable {
 public struct Traveller: Hashable, Sendable {
   public enum Title: String, CaseIterable, Sendable {
     case mr, ms, mrs, miss, dr
-    public var label: String { self == .miss ? "Miss" : rawValue.prefix(1).uppercased() + rawValue.dropFirst() }
+    public var label: String {
+      switch self {
+      case .mr: return L10n.text("Mr")
+      case .ms: return L10n.text("Ms")
+      case .mrs: return L10n.text("Mrs")
+      case .miss: return L10n.text("Miss")
+      case .dr: return L10n.text("Dr")
+      }
+    }
   }
 
   public enum Gender: String, CaseIterable, Sendable {
     case f, m
-    public var label: String { self == .f ? "Female" : "Male" }
+    public var label: String { self == .f ? L10n.text("Female") : L10n.text("Male") }
   }
 
   public var id: String
@@ -211,23 +219,23 @@ public struct Traveller: Hashable, Sendable {
   public func problem(passportNeeded: Bool, adultOn: String? = nil, today: Date = Date()) -> (field: String, message: String)? {
     let name = #/^[^\d!"#$%&()*+,./:;<=>?@\[\\\]^_`{|}~]{1,40}$/#
     let given = givenName.trimmingCharacters(in: .whitespaces), family = familyName.trimmingCharacters(in: .whitespaces)
-    if given.wholeMatch(of: name) == nil { return ("given_name", "Write the first name as on the ID.") }
-    if family.wholeMatch(of: name) == nil { return ("family_name", "Write the last name as on the ID.") }
-    if title == nil { return ("title", "Choose a title.") }
-    if gender == nil { return ("gender", "Choose the gender on the ID.") }
+    if given.wholeMatch(of: name) == nil { return ("given_name", L10n.text("Write the first name as on the ID.")) }
+    if family.wholeMatch(of: name) == nil { return ("family_name", L10n.text("Write the last name as on the ID.")) }
+    if title == nil { return ("title", L10n.text("Choose a title.")) }
+    if gender == nil { return ("gender", L10n.text("Choose the gender on the ID.")) }
     let now = Self.day(today)
-    guard let born = Self.date(bornOn), bornOn < now, Calendar(identifier: .gregorian).component(.year, from: born) >= 1900 else { return ("born_on", "The date of birth isn't right.") }
-    if let adultOn, Self.date(adultOn) != nil, Self.age(bornOn, on: adultOn) < 18 { return ("born_on", "An adult must be 18 or older on the day of the last flight; check the date of birth.") }
-    if email.trimmingCharacters(in: .whitespaces).wholeMatch(of: #/^[^@\s]{1,64}@[^@\s]{1,190}\.[^@\s]{2,}$/#) == nil { return ("email", "The email address isn't right.") }
+    guard let born = Self.date(bornOn), bornOn < now, Calendar(identifier: .gregorian).component(.year, from: born) >= 1900 else { return ("born_on", L10n.text("The date of birth isn't right.")) }
+    if let adultOn, Self.date(adultOn) != nil, Self.age(bornOn, on: adultOn) < 18 { return ("born_on", L10n.text("An adult must be 18 or older on the day of the last flight; check the date of birth.")) }
+    if email.trimmingCharacters(in: .whitespaces).wholeMatch(of: #/^[^@\s]{1,64}@[^@\s]{1,190}\.[^@\s]{2,}$/#) == nil { return ("email", L10n.text("The email address isn't right.")) }
     let digits = phone.replacingOccurrences(of: #"[\s().-]"#, with: "", options: .regularExpression)
-    if digits.wholeMatch(of: #/^\+[1-9]\d{6,14}$/#) == nil { return ("phone_number", "The phone number needs its country code, like +1 206 555 0100.") }
+    if digits.wholeMatch(of: #/^\+[1-9]\d{6,14}$/#) == nil { return ("phone_number", L10n.text("The phone number needs its country code, like +1 206 555 0100.")) }
     let passport = passportNumber.replacingOccurrences(of: " ", with: "")
     if !passport.isEmpty {
-      if passport.wholeMatch(of: #/^[A-Za-z0-9]{5,20}$/#) == nil { return ("passport", "The passport number isn't right.") }
-      if passportCountry.uppercased().wholeMatch(of: #/^[A-Z]{2}$/#) == nil { return ("passport", "Choose the passport's country.") }
-      guard Self.date(passportExpires) != nil, passportExpires > now else { return ("passport", "That passport has expired.") }
+      if passport.wholeMatch(of: #/^[A-Za-z0-9]{5,20}$/#) == nil { return ("passport", L10n.text("The passport number isn't right.")) }
+      if passportCountry.uppercased().wholeMatch(of: #/^[A-Z]{2}$/#) == nil { return ("passport", L10n.text("Choose the passport's country.")) }
+      guard Self.date(passportExpires) != nil, passportExpires > now else { return ("passport", L10n.text("That passport has expired.")) }
     } else if passportNeeded {
-      return ("passport", "This airline needs the passport.")
+      return ("passport", L10n.text("This airline needs the passport."))
     }
     return nil
   }
@@ -272,11 +280,11 @@ public struct FlightBookingAnswer: Hashable, Sendable {
   }
 
   init(reply: JSON?) {
-    guard let reply else { self.init(message: "The computer didn't answer. Try again in a moment."); return }
+    guard let reply else { self.init(message: L10n.text("The computer didn't answer. Try again in a moment.")); return }
     if reply["ok"]?.bool == true, let id = reply["entryId"]?.text {
       self.init(entryId: id)
     } else {
-      self.init(message: reply["message"]?.text ?? "That didn't work.", index: reply["index"]?.int, field: reply["field"]?.text)
+      self.init(message: reply["message"]?.text ?? L10n.text("That didn't work."), index: reply["index"]?.int, field: reply["field"]?.text)
     }
   }
 }

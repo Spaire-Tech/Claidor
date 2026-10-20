@@ -438,19 +438,19 @@ public final class RoutineTestRuns {
 /** A trigger source's name, as the Mac's Add menu words it ("On a schedule", "Slack message"…): the title of its editor on the iPhone. */
 extension TriggerRow {
   public static func sourceLabel(_ platform: String) -> String {
-    platform == "schedule" ? "On a schedule" : (sources.first { $0.platform == platform }?.label ?? platform)
+    platform == "schedule" ? L10n.text("On a schedule") : (sources.first { $0.platform == platform }?.label ?? platform)
   }
 
   /** The Add menu's Cadence (`A2n`): each choice's words, and its line or the days its times run on; `opens` says whether its editor opens once it is added. */
   public static let cadences: [(label: String, line: String?, days: String?, opens: Bool)] = [
-    ("Every hour", "0 * * * *", nil, false),
-    ("Every day", nil, "*", false),
-    ("Weekdays", nil, "1-5", false),
-    ("Every week", RoutineSchedule.line(RoutineSchedule.start("weekly", from: nil)), nil, true),
-    ("Every month", RoutineSchedule.line(RoutineSchedule.start("monthly", from: nil)), nil, true),
-    ("Interval", RoutineSchedule.line(RoutineSchedule.start("interval", from: nil)), nil, true),
+    (L10n.text("Every hour"), "0 * * * *", nil, false),
+    (L10n.text("Every day"), nil, "*", false),
+    (L10n.text("Weekdays"), nil, "1-5", false),
+    (L10n.text("Every week"), RoutineSchedule.line(RoutineSchedule.start("weekly", from: nil)), nil, true),
+    (L10n.text("Every month"), RoutineSchedule.line(RoutineSchedule.start("monthly", from: nil)), nil, true),
+    (L10n.text("Interval"), RoutineSchedule.line(RoutineSchedule.start("interval", from: nil)), nil, true),
     // Advanced… saves "0 8 * * *" and its editor shows Every day (the window's own quirk).
-    ("Advanced\u{2026}", RoutineSchedule.line(RoutineSchedule.start("advanced", from: nil)), nil, true),
+    (L10n.text("Advanced\u{2026}"), RoutineSchedule.line(RoutineSchedule.start("advanced", from: nil)), nil, true),
   ]
 
   /** A Cadence time's line: "minute hour * * days" (`A2n`). */

@@ -67,33 +67,36 @@ public enum AgentNetwork {
   /** The card's word and whether it is green (`ae`). */
   public static func cardWord(_ agent: Agent) -> (text: String, live: Bool) {
     switch state(agent) {
-    case .typing: ("Typing…", true)
-    case .working: ("Working…", true)
-    case .waiting: ("Waiting for you", false)
-    case .idle: ("Idle", false)
+    case .typing: (L10n.text("Typing…"), true)
+    case .working: (L10n.text("Working…"), true)
+    case .waiting: (L10n.text("Waiting for you"), false)
+    case .idle: (L10n.text("Idle"), false)
     }
   }
 
   /** The line under a node (`ke`): none for an idle agent; a group's member count. */
   public static func caption(_ agent: Agent) -> (text: String, live: Bool) {
     switch state(agent) {
-    case .typing: return ("Typing…", true)
-    case .working: return ("Working…", true)
-    case .waiting: return ("Waiting for you", false)
+    case .typing: return (L10n.text("Typing…"), true)
+    case .working: return (L10n.text("Working…"), true)
+    case .waiting: return (L10n.text("Waiting for you"), false)
     case .idle:
       guard agent.isGroup else { return ("", false) }
       return (members(agent.memberIds.count), false)
     }
   }
 
-  public static func members(_ count: Int) -> String { "\(count) \(count == 1 ? "member" : "members")" }
+  public static func members(_ count: Int) -> String { count == 1 ? L10n.text("1 member") : L10n.text("\(count) members") }
 
   /** "4 agents · 1 group · 2 message links". */
   public static func subtitle(_ agents: [Agent], edges: [Edge]) -> String {
     let groups = agents.filter(\.isGroup).count
     let solo = agents.count - groups
     let links = edges.filter { $0.kind == .message }.count
-    return "\(solo) \(solo == 1 ? "agent" : "agents") · \(groups) \(groups == 1 ? "group" : "groups") · \(links) message \(links == 1 ? "link" : "links")"
+    let agentsPart = solo == 1 ? L10n.text("1 agent") : L10n.text("\(solo) agents")
+    let groupsPart = groups == 1 ? L10n.text("1 group") : L10n.text("\(groups) groups")
+    let linksPart = links == 1 ? L10n.text("1 message link") : L10n.text("\(links) message links")
+    return "\(agentsPart) · \(groupsPart) · \(linksPart)"
   }
 
   /** The nodes' order for the layout: oldest first, then by id (`Ce`). */
@@ -226,23 +229,23 @@ public enum AgentNetwork {
 
   // MARK: Words (step 12's spec, §§2–3)
 
-  public static let title = "Org chart"
-  public static let footer = "Solid links are real agent-to-agent message history; dashed links are group membership. A link lights up while both agents are mid-turn. Scroll to zoom, drag to pan, double-click to reset."
+  public static let title = L10n.text("Org chart")
+  public static let footer = L10n.text("Solid links are real agent-to-agent message history; dashed links are group membership. A link lights up while both agents are mid-turn. Scroll to zoom, drag to pan, double-click to reset.")
   /** The iPhone's foot: the window's first two sentences, then what a finger does there (a pinch, a drag, a double tap). */
-  public static let touchFooter = "Solid links are real agent-to-agent message history; dashed links are group membership. A link lights up while both agents are mid-turn. Pinch to zoom, drag to pan, double-tap to reset."
-  public static let noAgents = "No agents yet. Create a few teammates and the network draws itself."
-  public static let readOnly = "Read-only — a conversation between two agents"
-  public static let noMessages = "No messages between these two yet."
-  public static let loading = "Loading conversation…"
-  public static let couldNotLoad = "Couldn't load this conversation."
+  public static let touchFooter = L10n.text("Solid links are real agent-to-agent message history; dashed links are group membership. A link lights up while both agents are mid-turn. Pinch to zoom, drag to pan, double-tap to reset.")
+  public static let noAgents = L10n.text("No agents yet. Create a few teammates and the network draws itself.")
+  public static let readOnly = L10n.text("Read-only — a conversation between two agents")
+  public static let noMessages = L10n.text("No messages between these two yet.")
+  public static let loading = L10n.text("Loading conversation…")
+  public static let couldNotLoad = L10n.text("Couldn't load this conversation.")
   /** A talking link's description for VoiceOver. */
-  public static let talkingNow = "Agents are talking now"
+  public static let talkingNow = L10n.text("Agents are talking now")
   /** A group's card shows this many members, then "+N". */
   public static let memberCap = 12
 
   /** A link's tooltip and label: "Conversation between Scout and Simeon", "Simeon is a member of Launch squad". */
   public static func edgeLabel(_ kind: EdgeKind, source: String, target: String) -> String {
-    kind == .message ? "Conversation between \(source) and \(target)" : "\(target) is a member of \(source)"
+    kind == .message ? L10n.text("Conversation between \(source) and \(target)") : L10n.text("\(target) is a member of \(source)")
   }
 
   /** "Scout ⇄ Simeon" (`Rs`). */
@@ -251,9 +254,9 @@ public enum AgentNetwork {
   /** The line under a message link's pair: green while they talk. */
   public static func exchangeCaption(_ activity: Activity) -> (text: String, live: Bool) {
     switch activity {
-    case .talking: ("Talking now", true)
-    case .recent: ("Active recently", false)
-    case .idle: ("Agent-to-agent conversation", false)
+    case .talking: (L10n.text("Talking now"), true)
+    case .recent: (L10n.text("Active recently"), false)
+    case .idle: (L10n.text("Agent-to-agent conversation"), false)
     }
   }
 

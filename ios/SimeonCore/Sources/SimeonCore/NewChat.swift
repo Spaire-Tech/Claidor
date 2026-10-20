@@ -12,10 +12,10 @@ public enum NewChat {
   public static let defaultName = "New Agent"
   /** ⌘1 to ⌘9 pick the first nine rows (`Ymt`). */
   public static let shortcutRows = 9
-  /** The host's answer when 50 agents exist (`e5e`), and the alert it shows. */
+  /** The host's answer when 50 agents exist (`e5e`, read in English), and the alert it shows. */
   public static let limitError = "50 is the maximum"
-  public static let limitTitle = "50 is the maximum"
-  public static let limitMessage = "Delete a Agent from the sidebar to make room for a new one. Your existing Agents are untouched."
+  public static let limitTitle = L10n.text("50 is the maximum")
+  public static let limitMessage = L10n.text("Delete a Agent from the sidebar to make room for a new one. Your existing Agents are untouched.")
 
   /** Someone on the To: line: an agent, or one still to be made. */
   public enum Recipient: Hashable, Sendable {
@@ -43,8 +43,8 @@ public enum NewChat {
     /** What the row reads (`D4n`). */
     public var label: String {
       switch self {
-      case .createNew: return "Create new Agent"
-      case .create(let name): return "Create \u{201C}\(name)\u{201D}"
+      case .createNew: return L10n.text("Create new Agent")
+      case .create(let name): return L10n.text("Create \u{201C}\(name)\u{201D}")
       case .agent(_, let name, _): return name
       }
     }
@@ -183,22 +183,22 @@ public enum NewChat {
 
   /** The empty menu's line. */
   public static func emptyText(query: String) -> String {
-    query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Type a name to create a Agent" : "No matching Agents"
+    query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? L10n.text("Type a name to create a Agent") : L10n.text("No matching Agents")
   }
 
   /** The field's placeholder. */
   public static func fieldPlaceholder(recipients: [Recipient]) -> String {
-    recipients.isEmpty ? "Search or create Agents" : "Add or create another Agent"
+    recipients.isEmpty ? L10n.text("Search or create Agents") : L10n.text("Add or create another Agent")
   }
 
   /** The composer's placeholder while the new chat is open (`$4n`). */
   public static func composerPlaceholder(recipients: [Recipient]) -> String {
-    recipients.isEmpty ? "Message Agent" : "Message \(recipients.map(\.name).joined(separator: ", "))"
+    recipients.isEmpty ? L10n.text("Message Agent") : L10n.text("Message \(recipients.map(\.name).joined(separator: ", "))")
   }
 
   /** The draft row in the sidebar while the new chat is open. */
   public static func draftRowLabel(recipients: [Recipient]) -> String {
-    recipients.isEmpty ? "Create new" : recipients.map(\.name).joined(separator: ", ")
+    recipients.isEmpty ? L10n.text("Create new") : recipients.map(\.name).joined(separator: ", ")
   }
 
   /** Whether choosing a row opens its chat at once instead of adding a chip: Create new Agent, Create “x” on an empty line, and a group. */
