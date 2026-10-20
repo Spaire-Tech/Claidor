@@ -83,6 +83,7 @@ from simeon.routing import APIRouter
 
 from .allowance import BILLING_PATH
 from .endpoints import client_version_of, sign_in_url
+from .language import answer_in_request_language
 from .mcp_oauth_return import APP_RETURN_HOST, app_return_for
 from .service import (
     DesktopUnauthenticated,
@@ -101,7 +102,10 @@ from .sign_in_brand import (
 
 log = structlog.get_logger()
 
-router = APIRouter(tags=["desktop", APITag.private])
+router = APIRouter(
+    tags=["desktop", APITag.private],
+    dependencies=[Depends(answer_in_request_language)],
+)
 
 #: The app's own protocol-token rule, copied from
 #: `desktop/source/electron-main/auth/auth-callback-registration.ts`.

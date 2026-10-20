@@ -79,7 +79,7 @@ from .capabilities import router as capabilities_router
 from .composio import forward as composio_forward
 from .flight_booking import router as flight_booking_router
 from .flights import router as flights_router
-from .language import normalize_language
+from .language import answer_in_request_language, normalize_language
 from .link_wallet import router as link_wallet_router
 from .mcp_oauth_return import router as mcp_oauth_return_router
 
@@ -132,7 +132,12 @@ from .voice import router as voice_router
 
 log = structlog.get_logger()
 
-router = APIRouter(prefix="/desktop", tags=["desktop", APITag.private])
+router = APIRouter(
+    prefix="/desktop",
+    tags=["desktop", APITag.private],
+    # Each answer in the request's language (`say`): the apps' or the engine's.
+    dependencies=[Depends(answer_in_request_language)],
+)
 
 # The app's URL scheme is `simeon://` since 23 September 2026 (the
 # packager's bundle rename); `caisra://`

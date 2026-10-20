@@ -1,12 +1,19 @@
 import { Hr, Section, Text } from '@react-email/components'
+import { words } from '../words'
 
-const Footer = ({ email }: { email: string | null }) => (
+const Footer = ({
+  email,
+  language,
+}: {
+  email: string | null
+  language?: string | null
+}) => (
   <>
     <Hr />
     <Section className="text-center text-sm">
       {email && (
         <Text className="mb-2 text-gray-500">
-          This email was sent to{' '}
+          {words(language).sentToBefore}{' '}
           <a
             href={`mailto:${email}`}
             className="font-semibold"
@@ -24,7 +31,7 @@ const Footer = ({ email }: { email: string | null }) => (
               {email}
             </span>
           </a>
-          .
+          {words(language).sentToAfter}
         </Text>
       )}
       <Text className="font-semibold text-gray-900">Simeon Labs</Text>

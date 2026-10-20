@@ -60,16 +60,24 @@ from simeon.user.repository import UserRepository
 from . import passwords
 from .auth import get_desktop_session
 from .endpoints import client_version_of
+from .language import answer_in_request_language
 from .service import desktop, envelope_access_token
 
 log = structlog.get_logger()
 
 #: `/auth/email/*`, beside `/auth/apple`, and `/desktop/api/account/password`
 #: (mounted on the app itself: the desktop router's module is imported here).
-router = APIRouter(tags=["desktop", APITag.private])
+router = APIRouter(
+    tags=["desktop", APITag.private],
+    dependencies=[Depends(answer_in_request_language)],
+)
 #: `/v1/login-password/authenticate`: the web's password sign-in, beside the
 #: web's login codes (`/v1/login-code`), on the API's `/v1` router.
-web_router = APIRouter(prefix="/login-password", tags=["login_code", APITag.private])
+web_router = APIRouter(
+    prefix="/login-password",
+    tags=["login_code", APITag.private],
+    dependencies=[Depends(answer_in_request_language)],
+)
 
 NO_STORE = {"Cache-Control": "no-store"}
 

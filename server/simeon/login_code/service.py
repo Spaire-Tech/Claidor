@@ -8,6 +8,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 
 from simeon.config import settings
+from simeon.desktop.language import current_language, translated
+from simeon.desktop.words import say
 from simeon.email.react import render_email_template
 from simeon.email.schemas import LoginCodeEmail, LoginCodeProps
 from simeon.email.sender import enqueue_email
@@ -61,18 +63,24 @@ class LoginCodeService:
         self,
         login_code: LoginCode,
         code: str,
+        *,
+        language: str | None = None,
     ) -> None:
+        """The code by email, in `language` (the request's by default: the
+        app's or the browser's `Accept-Language`)."""
         delta = login_code.expires_at - utc_now()
         code_lifetime_minutes = int(ceil(delta.seconds / 60))
+        language = translated(language) if language is not None else current_language()
 
         email = login_code.email
-        subject = "Sign in to Simeon"
+        subject = say("email.login_code.subject", language=language or "en")
         body = render_email_template(
             LoginCodeEmail(
                 props=LoginCodeProps(
                     email=email,
                     code=code,
                     code_lifetime_minutes=code_lifetime_minutes,
+                    language=language,
                 )
             )
         )

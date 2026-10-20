@@ -1121,6 +1121,8 @@ export interface components {
       code: string
       /** Code Lifetime Minutes */
       code_lifetime_minutes: number
+      /** Language */
+      language?: string | null
     }
     /** MaintainerAccountCreditsGrantedNotificationPayload */
     MaintainerAccountCreditsGrantedNotificationPayload: {
