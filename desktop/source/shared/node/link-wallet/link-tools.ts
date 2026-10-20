@@ -25,6 +25,8 @@
 import { randomUUID } from "node:crypto";
 import { existsSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
+import { say } from "../../say.js";
+import { isEnglishOrUnset } from "../../user-language.js";
 import { LINK_CLIENT_NAME, LINK_SOURCE_ACTIONS, linkAuthFile, linkDir, type LinkCli, type LinkCliAnswer } from "./link-cli.js";
 import type { LinkServer } from "./link-server.js";
 import type { CheckoutCard, CheckoutFillResult, fillCheckout as FillCheckout } from "./checkout-fill.js";
@@ -278,26 +280,38 @@ export function createLinkTools(options: LinkToolsOptions) {
    * dollars, so another currency is checked against the $500 cap only by
    * Link itself.
    */
-  const checkoutFacts = async (request: { readonly amount: number; readonly currency: string; readonly paymentMethodId?: string }): Promise<CheckoutFacts> => {
+  const checkoutFacts = async (request: { readonly amount: number; readonly currency: string; readonly paymentMethodId?: string; readonly language?: string }): Promise<CheckoutFacts> => {
+    const language = request.language;
     const [user, methods] = await Promise.all([cli.run(["user-info", "retrieve"]), cli.run(["payment-methods", "list"])]);
     for (const answer of [user, methods]) {
-      if (!answer.ok) return { ok: false, message: answer.code === "NOT_AUTHENTICATED" ? NOT_CONNECTED : `Link: ${answer.message} (${answer.code})` };
+      if (!answer.ok) {
+        return answer.code === "NOT_AUTHENTICATED"
+          ? { ok: false, message: NOT_CONNECTED, person: say(language, "link.notConnected") }
+          : { ok: false, message: `Link: ${answer.message} (${answer.code})`, person: say(language, "link.failed", { message: answer.message, code: answer.code }) };
+      }
     }
     const info = user.ok && user.value != null && typeof user.value === "object" ? user.value as Record<string, unknown> : {};
     const step = info.agent_wallet_verification_requirement != null && typeof info.agent_wallet_verification_requirement === "object" ? info.agent_wallet_verification_requirement as Record<string, unknown> : undefined;
     const stepStatus = text(step?.status);
     if (stepStatus.length > 0 && stepStatus !== "not_required" && stepStatus !== "complete") {
       const url = text(step?.action_url);
-      return { ok: false, message: stepStatus === "pending" ? "Link is still checking the person's identity; nothing can be bought until it's done. Tell them, and try again once Link says it's finished." : `Link needs the person to verify their identity before an agent can buy anything (${stepStatus.replace(/_/g, " ")}). Send them this link in the chat${url.length > 0 ? `: ${url}` : " (Link gave none: they open the Link app)"}; once they say it's done, call RequestPurchase again.` };
+      if (stepStatus === "pending") return { ok: false, message: "Link is still checking the person's identity; nothing can be bought until it's done. Tell them, and try again once Link says it's finished.", person: say(language, "link.identityPending") };
+      return {
+        ok: false,
+        message: `Link needs the person to verify their identity before an agent can buy anything (${stepStatus.replace(/_/g, " ")}). Send them this link in the chat${url.length > 0 ? `: ${url}` : " (Link gave none: they open the Link app)"}; once they say it's done, call RequestPurchase again.`,
+        person: url.length > 0 ? say(language, "link.identityNeeded", { url }) : say(language, "link.identityNeededApp"),
+      };
     }
     const limits = info.agent_wallet_spend_limits != null && typeof info.agent_wallet_spend_limits === "object" ? info.agent_wallet_spend_limits as Record<string, Record<string, unknown> | undefined> : undefined;
     if ((request.currency || "usd").toLowerCase() === "usd") {
       const money = (cents: number): string => `$${(cents / 100).toFixed(2)}`;
+      // The person's sentence shows dollars as their language writes them ("12,34 $US").
+      const shown = (cents: number): string => isEnglishOrUnset(language) ? money(cents) : new Intl.NumberFormat(language, { style: "currency", currency: "USD" }).format(cents / 100);
       const perPurchase = typeof limits?.per_transaction?.limit === "number" ? limits.per_transaction.limit : LINK_MAX_PURCHASE_CENTS;
-      if (request.amount > perPurchase) return { ok: false, message: `${money(request.amount)} is over the person's Link limit of ${money(perPurchase)} a purchase. Tell them; nothing was asked of Link.` };
-      for (const [key, label] of [["daily", "today"], ["thirty_day", "in the last 30 days"]] as const) {
+      if (request.amount > perPurchase) return { ok: false, message: `${money(request.amount)} is over the person's Link limit of ${money(perPurchase)} a purchase. Tell them; nothing was asked of Link.`, person: say(language, "link.overLimit", { amount: shown(request.amount), limit: shown(perPurchase) }) };
+      for (const [key, label, said] of [["daily", "today", "link.overToday"], ["thirty_day", "in the last 30 days", "link.overMonth"]] as const) {
         const remaining = limits?.[key]?.remaining;
-        if (typeof remaining === "number" && request.amount > remaining) return { ok: false, message: `${money(request.amount)} is more than the ${money(remaining)} the person's Link limits leave ${label}. Tell them; nothing was asked of Link.` };
+        if (typeof remaining === "number" && request.amount > remaining) return { ok: false, message: `${money(request.amount)} is more than the ${money(remaining)} the person's Link limits leave ${label}. Tell them; nothing was asked of Link.`, person: say(language, said, { amount: shown(request.amount), remaining: shown(remaining) }) };
       }
     }
     const listed = methods.ok ? paymentMethodsOf(methods.value) : [];
@@ -309,11 +323,12 @@ export function createLinkTools(options: LinkToolsOptions) {
     const method = wanted.length > 0
       ? listed.find((item) => text(item.id) === wanted)
       : listed.find((item) => item.is_default === true) ?? (listed.length === 1 ? listed[0] : undefined);
-    if (wanted.length > 0 && method == null) return { ok: false, message: `Link has no payment method "${wanted}" for this person. Call get_wallet for their methods, or leave payment_method_id out: the card lets them choose.` };
-    if (listed.length === 0) return { ok: false, message: "The person has no card in Link yet. Ask them to add one in the Link app or at link.com, then call RequestPurchase again." };
+    if (wanted.length > 0 && method == null) return { ok: false, message: `Link has no payment method "${wanted}" for this person. Call get_wallet for their methods, or leave payment_method_id out: the card lets them choose.`, person: say(language, "link.unknownCard") };
+    if (listed.length === 0) return { ok: false, message: "The person has no card in Link yet. Ask them to add one in the Link app or at link.com, then call RequestPurchase again.", person: say(language, "link.noCard") };
     if (usable.length === 0) {
       const named = listed.map((item) => cardOf(item)).map((card) => `${card.name || card.brand}${card.last4.length > 0 ? ` ending ${card.last4}` : ""}`);
-      return { ok: false, message: `Link says none of the person's cards can be used for purchases by an agent (${named.join(", ")}). Ask them to add another card in the Link app or at link.com, then call RequestPurchase again. Nothing was asked of Link.` };
+      const shownCards = listed.map((item) => cardOf(item)).map((card) => card.last4.length > 0 ? say(language, "link.cardEnding", { card: card.name || card.brand, last4: card.last4 }) : card.name || card.brand);
+      return { ok: false, message: `Link says none of the person's cards can be used for purchases by an agent (${named.join(", ")}). Ask them to add another card in the Link app or at link.com, then call RequestPurchase again. Nothing was asked of Link.`, person: say(language, "link.noAgentCard", { cards: shownCards.join(", ") }) };
     }
     // No card named and no default, or the default is one Link won't let an agent use: the person picks on the card.
     if (method == null || (wanted.length === 0 && agenticRefusal(method) != null)) {
@@ -324,7 +339,8 @@ export function createLinkTools(options: LinkToolsOptions) {
     const refused = agenticRefusal(method);
     if (refused != null) {
       const card = cardOf(method);
-      return { ok: false, message: `Link says the ${card.name || card.brand}${card.last4.length > 0 ? ` ending ${card.last4}` : ""} can't be used for purchases by an agent${refused.length > 0 ? ` (${refused})` : ""}. Leave payment_method_id out and call RequestPurchase again: the card lets the person choose among the cards Link allows. Nothing was asked of Link.` };
+      const shownCard = card.last4.length > 0 ? say(language, "link.cardEnding", { card: card.name || card.brand, last4: card.last4 }) : card.name || card.brand;
+      return { ok: false, message: `Link says the ${card.name || card.brand}${card.last4.length > 0 ? ` ending ${card.last4}` : ""} can't be used for purchases by an agent${refused.length > 0 ? ` (${refused})` : ""}. Leave payment_method_id out and call RequestPurchase again: the card lets the person choose among the cards Link allows. Nothing was asked of Link.`, person: say(language, "link.cardNotForAgents", { card: shownCard }) };
     }
     return { ok: true, paymentMethodId: text(method.id), card: cardOf(method), cards, ...holder };
   };
@@ -532,7 +548,8 @@ export interface LinkCardChoice {
  */
 export type CheckoutFacts =
   | { readonly ok: true; readonly paymentMethodId: string; readonly card: { readonly brand: string; readonly last4: string; readonly name: string }; readonly cards: readonly LinkCardChoice[]; readonly holder?: string }
-  | { readonly ok: false; readonly message: string };
+  /** `message` is for the agent; `person`, when given, the same said to the person in their language (the flight's traveller form shows it). */
+  | { readonly ok: false; readonly message: string; readonly person?: string };
 
 export interface SpendRequestInput {
   readonly idempotencyKey: string;
@@ -565,6 +582,9 @@ export type SpendAnswer =
   }
   | { readonly ok: false; readonly code: string; readonly message: string };
 
+/** Link's `requires_action` when it gives no sentence of its own; the checkout card says it in the person's language. */
+export const LINK_ACTION_DEFAULT = "Link needs something from you before it can approve this.";
+
 function spendAnswer(answer: LinkCliAnswer): SpendAnswer {
   if (!answer.ok) return { ok: false, code: answer.code, message: answer.code === "NOT_AUTHENTICATED" ? "Link isn't connected any more." : answer.message };
   const root = answer.value != null && typeof answer.value === "object" ? answer.value as Record<string, unknown> : {};
@@ -582,7 +602,7 @@ function spendAnswer(answer: LinkCliAnswer): SpendAnswer {
     id,
     status,
     ...(approvalUrl.startsWith("https://") ? { approvalUrl } : {}),
-    ...(status === "requires_action" ? { action: { message: text(next?.display_message) || "Link needs something from you before it can approve this.", ...(actionUrl.startsWith("https://") ? { url: actionUrl } : {}), resumes: text(next?.resolution) === "auto_resume" } } : {}),
+    ...(status === "requires_action" ? { action: { message: text(next?.display_message) || LINK_ACTION_DEFAULT, ...(actionUrl.startsWith("https://") ? { url: actionUrl } : {}), resumes: text(next?.resolution) === "auto_resume" } } : {}),
   };
 }
 

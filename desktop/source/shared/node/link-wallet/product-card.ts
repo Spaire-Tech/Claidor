@@ -9,6 +9,8 @@
 // purchase is ordered the product is marked bought (`productsBought`, 18
 // October 2026, the founder: "then bought … once that is done - in green").
 
+import { say } from "../../say.js";
+
 export const PRODUCTS_MESSAGE_TYPE = "products";
 
 export interface ProductCardItem {
@@ -76,12 +78,12 @@ export function productBoughtBy(products: readonly ProductCardItem[], pressed: n
   return others.length === 1 ? others[0] : undefined;
 }
 
-/** "Practice Book · $2.23", or the first two and how many more. */
-export function productsCardText(products: readonly ProductCardItem[]): string {
+/** "Practice Book · $2.23", or the first two and how many more, in the person's language. */
+export function productsCardText(products: readonly ProductCardItem[], language?: string): string {
   const line = (product: ProductCardItem): string => product.price == null || product.price.length === 0 ? product.title : `${product.title} · ${product.price}`;
   if (products.length === 1) return line(products[0]!);
   const shown = products.slice(0, 2).map(line).join("; ");
-  return products.length > 2 ? `${shown}; and ${products.length - 2} more` : shown;
+  return products.length > 2 ? say(language, "products.more", { shown, count: products.length - 2 }) : shown;
 }
 
 /**

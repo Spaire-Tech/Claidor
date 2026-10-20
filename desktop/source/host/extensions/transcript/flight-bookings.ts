@@ -27,6 +27,7 @@
 import { mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { HOST_LOG_PREFIX, logHostLine } from "../../../shared/host-log.js";
+import { say } from "../../../shared/say.js";
 import {
   DUFFEL_TEST_CARD,
   FLIGHT_PASSENGERS_MESSAGE_TYPE,
@@ -148,41 +149,48 @@ export class FlightBookings {
     this.services = services;
   }
 
-  /** The offer again and what the form starts with (Link's name, email and phone); what changed since `seen` (the search card's flight) says so on it. */
-  async prepareFlightForm(offerId: string, seen?: FlightLook): Promise<{ readonly ok: true; readonly message: FlightPassengersMessage; readonly offer: FlightOfferFacts } | { readonly ok: false; readonly message: string }> {
+  /**
+   * The offer again and what the form starts with (Link's name, email and
+   * phone); what changed since `seen` (the search card's flight) says so on
+   * it. The form is in the person's language; a refusal is in `language`
+   * (the person's from the apps' Book, English for the agent's BookFlight).
+   */
+  async prepareFlightForm(offerId: string, seen?: FlightLook, language?: string): Promise<{ readonly ok: true; readonly message: FlightPassengersMessage; readonly offer: FlightOfferFacts } | { readonly ok: false; readonly message: string }> {
     const services = this.services;
-    if (services == null) return { ok: false, message: "Flight booking isn't available on this computer." };
-    if (!/^off_[A-Za-z0-9_]{6,80}$/.test(offerId)) return { ok: false, message: "This flight can't be booked from here (it came from an older search). Search again for a fresh one." };
+    if (services == null) return { ok: false, message: say(language, "flight.unavailable") };
+    if (!/^off_[A-Za-z0-9_]{6,80}$/.test(offerId)) return { ok: false, message: say(language, "flight.olderSearch") };
     let offer: FlightOfferFacts;
     try {
       offer = await services.api<FlightOfferFacts>("flights/offer", { offer_id: offerId });
     } catch (error) {
-      return { ok: false, message: sentence(error, "The flight couldn't be checked; try again in a moment.") };
+      return { ok: false, message: sentence(error, say(language, "flight.checkFailed")) };
     }
     const person = await services.wallet()?.personFacts().catch(() => undefined);
-    const changed = seen == null ? undefined : flightChanges(seen, { ...(offer.card ?? {}), total: offer.total });
-    return { ok: true, message: flightPassengersMessage(offer, travellerPrefill(offer.passengers.length, person), changed), offer };
+    const shown = this.language();
+    const changed = seen == null ? undefined : flightChanges(seen, { ...(offer.card ?? {}), total: offer.total }, shown);
+    return { ok: true, message: flightPassengersMessage(offer, travellerPrefill(offer.passengers.length, person), changed, shown), offer };
   }
 
   /** "Book with Simeon" on a flight: the traveller form in that agent's chat (the one already open for that flight, if any). */
   async startFlightBooking(args: { readonly agentId: string; readonly entryId?: string; readonly offerIndex?: number; readonly offerId?: string }): Promise<{ readonly ok: true; readonly entryId: string } | { readonly ok: false; readonly message: string }> {
+    const language = this.language();
     const agentId = text(args.agentId);
-    if (agentId.length === 0) return { ok: false, message: "No chat to book in." };
+    if (agentId.length === 0) return { ok: false, message: say(language, "flight.noChat") };
     const entries = await this.entries(agentId);
     let offerId = text(args.offerId);
     let seen: Record<string, unknown> | undefined;
     if (offerId.length === 0) {
       const card = entries.find((entry) => entry.id === args.entryId);
-      if (card == null) return { ok: false, message: "That flight card isn't in this chat any more." };
+      if (card == null) return { ok: false, message: say(language, "flight.cardGone") };
       seen = offerOnSearchCard(card, Math.max(0, Math.floor(Number(args.offerIndex ?? 0))));
       offerId = text(seen?.offerId);
     }
     const open = entries.find((entry) => isFlightFormEntry(entry) && entry.message.flight.offerId === offerId && (entry.passengersState ?? "open") === "open");
     if (open != null) return { ok: true, entryId: open.id };
-    const prepared = await this.prepareFlightForm(offerId, seen);
+    const prepared = await this.prepareFlightForm(offerId, seen, language);
     if (!prepared.ok) return prepared;
     const entry = await this.append(agentId, prepared.message as unknown as Record<string, unknown>);
-    if (entry == null) return { ok: false, message: "The form couldn't be added to this chat." };
+    if (entry == null) return { ok: false, message: say(language, "flight.formNotAdded") };
     this.log(`[flight] form ${agentId}/${entry.id} for ${offerId} (${prepared.offer.total}${prepared.offer.test ? ", test" : ""})${prepared.message.flight.changed != null ? `; ${prepared.message.flight.changed}` : ""}`);
     return { ok: true, entryId: entry.id };
   }
@@ -190,48 +198,49 @@ export class FlightBookings {
   /** The form's Continue (or its Cancel): the travellers kept on this computer, and the flight's checkout card. */
   async submitFlightPassengers(args: { readonly agentId: string; readonly entryId: string; readonly passengers?: unknown; readonly cancel?: boolean }): Promise<{ readonly ok: true; readonly entryId: string } | { readonly ok: false; readonly message: string; readonly index?: number; readonly field?: string }> {
     const services = this.services;
+    const language = this.language();
     const form = await this.readForm(args.agentId, args.entryId);
-    if (form == null) return { ok: false, message: "That traveller form isn't in this chat." };
+    if (form == null) return { ok: false, message: say(language, "flight.formGone") };
     const state = form.passengersState ?? "open";
     if (state === "saved" && form.passengersCheckoutId != null) return { ok: true, entryId: form.passengersCheckoutId };
-    if (state !== "open") return { ok: false, message: "This form is closed." };
+    if (state !== "open") return { ok: false, message: say(language, "flight.formClosed") };
     if (args.cancel === true) {
       await this.stampForm(args.agentId, args.entryId, (entry) => (entry.passengersState ?? "open") === "open" ? { passengersState: "canceled", passengersNote: undefined, message: withoutPrefill(entry.message) } : null);
       return { ok: true, entryId: args.entryId };
     }
-    if (services == null) return { ok: false, message: "Flight booking isn't available on this computer." };
+    if (services == null) return { ok: false, message: say(language, "flight.unavailable") };
     const flight: FlightBlock = form.message.flight;
-    const checked = checkTravellers(args.passengers, flight);
+    const checked = checkTravellers(args.passengers, flight, new Date(), language);
     if (!checked.ok) return checked;
     const key = `${args.agentId}\u0000${args.entryId}`;
-    if (this.submitting.has(key)) return { ok: false, message: "Already on it." };
+    if (this.submitting.has(key)) return { ok: false, message: say(language, "flight.alreadyOnIt") };
     this.submitting.add(key);
     try {
       let offer: FlightOfferFacts;
       try {
         offer = await services.api<FlightOfferFacts>("flights/offer", { offer_id: flight.offerId });
       } catch (error) {
-        const said = sentence(error, "The flight couldn't be checked; try again in a moment.");
+        const said = sentence(error, say(language, "flight.checkFailed"));
         await this.stampForm(args.agentId, args.entryId, () => ({ passengersNote: said }));
         return { ok: false, message: said };
       }
       const wallet = services.wallet();
-      if (wallet == null) return { ok: false, message: "Link isn't on this computer, so nothing can be paid from here." };
-      const facts = await wallet.checkoutFacts({ amount: offer.amountMinor, currency: offer.currency });
+      if (wallet == null) return { ok: false, message: say(language, "flight.noLink") };
+      const facts = await wallet.checkoutFacts({ amount: offer.amountMinor, currency: offer.currency, ...(language == null ? {} : { language }) });
       if (!facts.ok) {
-        // Link's own words, for the person (not the agent): connect Link, verify, a limit.
-        const said = facts.message.replace(/ Tell them;.*$/, "").replace(/ Send them this link in the chat/, " Open Link");
+        // Link's words for the person (not the agent's): connect Link, verify, a limit.
+        const said = facts.person ?? facts.message.replace(/ Tell them;.*$/, "").replace(/ Send them this link in the chat/, " Open Link");
         await this.stampForm(args.agentId, args.entryId, () => ({ passengersNote: said }));
         return { ok: false, message: said };
       }
       this.saveTravellers(args.agentId, args.entryId, { offerId: offer.offerId, travellers: checked.travellers, savedAtMs: Date.now() });
       // What changed since the form showed it: a fresh decision, on the card before Allow.
-      const changed = flightChanges(flight, flightBlock(offer));
-      const card = flightCheckoutCard({ offer, formEntryId: args.entryId, travellers: checked.travellers, card: facts.card, ...(facts.paymentMethodId.length === 0 ? {} : { paymentMethodId: facts.paymentMethodId }), ...((facts.cards ?? []).length > 1 ? { cards: facts.cards } : {}), ...(changed == null ? {} : { changed }) });
+      const changed = flightChanges(flight, flightBlock(offer), language);
+      const card = flightCheckoutCard({ offer, formEntryId: args.entryId, travellers: checked.travellers, card: facts.card, ...(facts.paymentMethodId.length === 0 ? {} : { paymentMethodId: facts.paymentMethodId }), ...((facts.cards ?? []).length > 1 ? { cards: facts.cards } : {}), ...(changed == null ? {} : { changed }), ...(language == null ? {} : { language }) });
       const appended = await this.append(args.agentId, card as unknown as Record<string, unknown>);
       if (appended == null) {
         this.forgetTravellers(args.agentId, args.entryId);
-        return { ok: false, message: "The checkout card couldn't be added to this chat." };
+        return { ok: false, message: say(language, "flight.cardNotAdded") };
       }
       await this.stampForm(args.agentId, args.entryId, (entry) => ({ passengersState: "saved", passengersNames: travellerNames(checked.travellers), passengersCheckoutId: appended.id, passengersNote: undefined, message: withoutPrefill(entry.message) }));
       this.log(`[flight] travellers saved ${args.agentId}/${args.entryId}: ${checked.travellers.length}, checkout ${appended.id} (${offer.total}${offer.test ? ", test" : ""})${changed == null ? "" : `; ${changed}`}`);
@@ -251,6 +260,7 @@ export class FlightBookings {
     const purchases = this.tm.purchaseCards;
     const services = this.services;
     const wallet = services?.wallet();
+    const language = this.language();
     const step = (purchaseStep: "paying" | "verify" | "booking", purchaseNote: string) => purchases.update(agentId, entryId, (entry: { purchaseState?: string }) => entry.purchaseState === "approved" ? { purchaseStep, purchaseNote } : null);
     const fail = async (reason: string): Promise<void> => {
       this.log(`[flight] not booked ${agentId}/${entryId}: ${reason}`);
@@ -263,27 +273,27 @@ export class FlightBookings {
       purchases.wakeAgent(agentId, "flight-failed", buildFlightFailedWakePrompt(entryId, flight, reason));
     };
     try {
-      if (services == null || wallet == null) return await fail("Flight booking isn't available on this computer.");
+      if (services == null || wallet == null) return await fail(say(language, "flight.unavailable"));
       const saved = this.loadTravellers(agentId, flight.formEntryId);
-      if (saved == null || saved.offerId !== flight.offerId) return await fail("The traveller details are no longer on the computer; the form has to be filled in again.");
-      await step("paying", "Paying the airline…");
+      if (saved == null || saved.offerId !== flight.offerId) return await fail(say(language, "flight.travellersGone"));
+      await step("paying", say(language, "flight.paying"));
 
       // The price again: never more than the person approved.
       let offer: FlightOfferFacts;
       try {
         offer = await services.api<FlightOfferFacts>("flights/offer", { offer_id: flight.offerId });
       } catch (error) {
-        return await fail(sentence(error, "The flight couldn't be checked."));
+        return await fail(sentence(error, say(language, "flight.checkFailedShort")));
       }
-      if (offer.amountMinor !== card.amount || offer.currency.toLowerCase() !== card.currency.toLowerCase()) return await fail(`The price changed to ${offer.total} after it was approved, so nothing was paid.`);
+      if (offer.amountMinor !== card.amount || offer.currency.toLowerCase() !== card.currency.toLowerCase()) return await fail(say(language, "flight.priceChanged", { total: offer.total }));
 
       let clientKey: string;
       try {
         clientKey = (await services.api<{ clientKey?: string }>("flights/client-key", {})).clientKey ?? "";
       } catch (error) {
-        return await fail(sentence(error, "The airline's payment form couldn't be set up."));
+        return await fail(sentence(error, say(language, "flight.payFormFailed")));
       }
-      if (clientKey.length === 0) return await fail("The airline's payment form couldn't be set up.");
+      if (clientKey.length === 0) return await fail(say(language, "flight.payFormFailed"));
 
       const port = services.browserPort(agentId);
       const pay = services.pay ?? payOnDuffelPage;
@@ -298,17 +308,18 @@ export class FlightBookings {
           offerId: offer.offerId,
           card: typed,
           holder,
-          onChallenge: () => { void step("verify", "Your bank wants to confirm it's you. Open the computer to finish."); },
+          onChallenge: () => { void step("verify", say(language, "flight.bankCheck")); },
+          ...(language == null ? {} : { language }),
         });
       });
       if (!paid.ok) return await fail(paid.message);
       const result = paid.value;
       if (!result.ok) {
         this.log(`[flight] pay page stopped at ${result.stage}: filled ${(result.filled ?? []).join(", ") || "nothing"}${(result.missing ?? []).length > 0 ? `; not found: ${(result.missing ?? []).join(", ")}` : ""}${result.fieldsSeen != null && result.fieldsSeen.length > 0 ? `; the form's fields: ${result.fieldsSeen}` : ""}`);
-        return await fail(`The payment didn't go through: ${result.message}`);
+        return await fail(say(language, "flight.payFailed", { why: result.message }));
       }
       this.log(`[flight] card confirmed ${agentId}/${entryId}${result.challenged ? " after the bank's check" : ""}; booking`);
-      await step("booking", "Booking with the airline…");
+      await step("booking", say(language, "flight.booking"));
 
       let order: BookedAnswer;
       try {
@@ -316,26 +327,26 @@ export class FlightBookings {
       } catch (error) {
         // Only the server's clear no (a 4xx with its sentence) means nothing was booked; a lost answer may have booked it.
         const status = (error as { status?: unknown } | null)?.status;
-        if (typeof status === "number" && status >= 400 && status < 500) return await fail(sentence(error, "The airline didn't accept the booking."));
+        if (typeof status === "number" && status >= 400 && status < 500) return await fail(sentence(error, say(language, "flight.notAccepted")));
         this.log(`[flight] the order's answer was lost ${agentId}/${entryId}: ${sentence(error, "no answer")}`);
         order = { booked: false, uncertain: true };
       }
-      const say = services.say ?? sayOnPayPage;
+      const sayOnPage = services.say ?? sayOnPayPage;
       if (order.booked === true) {
         const reference = text(order.bookingReference);
         await this.booked(agentId, entryId, flight, card, spendRequestId, order, offer.test);
-        void say(port, reference.length > 0 ? `Booked. Booking reference ${reference}.` : "Booked.").catch(() => undefined);
+        void sayOnPage(port, reference.length > 0 ? say(language, "flight.bookedPageRef", { reference }) : say(language, "flight.bookedPage")).catch(() => undefined);
         return;
       }
       // The airline never answered: it may have the booking. Never ask again; ask Duffel after it for a while.
-      const said = text(order.message) || "The airline didn't answer, so it isn't certain the flight was booked.";
+      const said = text(order.message) || say(language, "flight.noAnswer");
       await purchases.update(agentId, entryId, () => ({ purchaseState: "failed", purchaseStep: "uncertain", purchaseNote: said }));
       this.forgetTravellers(agentId, flight.formEntryId);
       this.log(`[flight] uncertain ${agentId}/${entryId}`);
       purchases.wakeAgent(agentId, "flight-uncertain", buildFlightUncertainWakePrompt(entryId, flight));
       this.settle(agentId, entryId, flight, card, spendRequestId, offer.test);
     } catch (error) {
-      await fail(sentence(error, "Something went wrong while paying."));
+      await fail(sentence(error, say(language, "flight.payError")));
     } finally {
       this.paying.delete(key);
     }
@@ -344,7 +355,7 @@ export class FlightBookings {
   /** The card says Booked (the reference, or that it comes by email), Link hears it went through, and the agent is told. */
   private async booked(agentId: string, entryId: string, flight: PurchaseFlight, card: PurchaseCardData, spendRequestId: string, order: BookedAnswer, test: boolean): Promise<void> {
     const reference = text(order.bookingReference);
-    const note = reference.length > 0 ? `Booked with ${flight.airline}` : `Booked with ${flight.airline}; the booking reference comes in the airline's email`;
+    const note = reference.length > 0 ? say(this.language(), "flight.bookedWith", { airline: flight.airline }) : say(this.language(), "flight.bookedWithEmail", { airline: flight.airline });
     await this.tm.purchaseCards.update(agentId, entryId, () => ({ purchaseState: "ordered", purchaseStep: undefined, purchaseOrder: reference.slice(0, 80), purchaseNote: note }));
     void this.services?.wallet()?.reportOutcome({ domain: card.domain, spendRequestId, outcome: "success" }).catch(() => undefined);
     this.forgetTravellers(agentId, flight.formEntryId);
@@ -363,7 +374,7 @@ export class FlightBookings {
     const wait = this.settleWaitsMs[attempt];
     if (wait == null) {
       this.log(`[flight] still not confirmed ${agentId}/${entryId} after ${attempt} checks`);
-      void this.tm.purchaseCards.update(agentId, entryId, (entry: { purchaseStep?: string }) => entry.purchaseStep === "uncertain" ? { purchaseNote: "Still not confirmed by the airline. Don't book it again: if the traveller has the airline's email, it's booked." } : null);
+      void this.tm.purchaseCards.update(agentId, entryId, (entry: { purchaseStep?: string }) => entry.purchaseStep === "uncertain" ? { purchaseNote: say(this.language(), "flight.stillUnconfirmed") } : null);
       return;
     }
     const timer = setTimeout(() => {
@@ -386,6 +397,11 @@ export class FlightBookings {
       })().catch(() => undefined);
     }, wait);
     (timer as { unref?: () => void }).unref?.();
+  }
+
+  /** The person's language (`userLanguage`): the form's and the card's lines are theirs. */
+  private language(): string | undefined {
+    return this.tm.userLanguage?.();
   }
 
   /** Whether this card is being paid now (a restart stops it). */

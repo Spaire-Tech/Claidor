@@ -25,6 +25,7 @@
  * written to that agent's own transcript and sent to the apps with its id.
  */
 import { HOST_LOG_PREFIX, logHostLine } from "../../../shared/host-log.js";
+import { say } from "../../../shared/say.js";
 import { updateEntry } from "./transcript-store.js";
 import type { TranscriptEntry, TranscriptManagerLike } from "./transcript-hub.js";
 import {
@@ -46,7 +47,7 @@ import {
   type PurchaseEntryFields,
   type PurchaseState,
 } from "../../../shared/node/link-wallet/purchase-card.js";
-import type { LinkTools, SpendAnswer } from "../../../shared/node/link-wallet/link-tools.js";
+import { LINK_ACTION_DEFAULT, type LinkTools, type SpendAnswer } from "../../../shared/node/link-wallet/link-tools.js";
 import type { ShopTools } from "../../../shared/node/shop-wallet/shop-tools.js";
 import { buildFlightFailedWakePrompt, buildFlightUncertainWakePrompt, purchaseFlightOf } from "../../../shared/node/flight-booking/flight-booking.js";
 import { PRODUCTS_MESSAGE_TYPE, buildProductBuyWakePrompt, productBoughtBy, type ProductCardItem, type ProductsEntryFields } from "../../../shared/node/link-wallet/product-card.js";
@@ -156,7 +157,7 @@ export class PurchaseCards {
     }
     if (wallet == null) {
       const name = purchaseWalletOf(card).name;
-      const failed = await this.stamp(args.agentId, args.entryId, () => ({ purchaseState: "failed", purchaseNote: `${name} isn't on this computer.` }));
+      const failed = await this.stamp(args.agentId, args.entryId, () => ({ purchaseState: "failed", purchaseNote: say(this.language(), "purchase.walletMissing", { wallet: name }) }));
       this.wake(args.agentId, "purchase-failed", buildPurchaseClosedWakePrompt(args.entryId, card, "failed", `${name} isn't available on this computer`));
       return failed;
     }
@@ -213,14 +214,15 @@ export class PurchaseCards {
     };
     if (offered == null || offered.id === own) {
       if (asked.length > 0 && offered == null) this.log(`[purchase] ${args.agentId}/${args.entryId}: a card the checkout card didn't offer was asked for; its own pays`);
-      if ((own ?? "").length === 0 && (card.cards ?? []).length > 1) return await keepWaiting("Choose the card that pays, then press Allow.");
+      if ((own ?? "").length === 0 && (card.cards ?? []).length > 1) return await keepWaiting(say(this.language(), "purchase.chooseCard"));
       return { ok: true, ...((own ?? "").length === 0 ? {} : { paymentMethodId: own }) };
     }
     // A Shop checkout's ways to pay are the checkout's own, checked again when it is paid; a wallet's saved card is checked with the wallet now.
     if (wallet.checkoutFacts != null && card.shopCheckout == null) {
       const name = purchaseWalletOf(card).name;
       const facts = await wallet.checkoutFacts({ amount: card.amount, currency: card.currency, paymentMethodId: offered.id }).catch((error: unknown) => ({ ok: false as const, message: error instanceof Error ? error.message : String(error) }));
-      if (!facts.ok) return await keepWaiting(/can't be used for purchases by an agent/.test(facts.message) ? `${name} won't let an agent pay with the ${offered.name || offered.brand} ending ${offered.last4}. Choose another card.` : `${name} couldn't check that card. Try again, or choose another.`);
+      // The wallet's sentence is the agent's (English); the person's is said here.
+      if (!facts.ok) return await keepWaiting(/can't be used for purchases by an agent/.test(facts.message) ? say(this.language(), "purchase.cardRefused", { wallet: name, card: offered.name || offered.brand, last4: offered.last4 }) : say(this.language(), "purchase.cardCheckFailed", { wallet: name }));
     }
     return { ok: true, paymentMethodId: offered.id, change: { purchasePaymentMethodId: offered.id, purchaseCard: { brand: offered.brand, last4: offered.last4, ...(offered.name == null || offered.name.length === 0 ? {} : { name: offered.name }) } } };
   }
@@ -286,7 +288,7 @@ export class PurchaseCards {
       const stamped = await this.stamp(agentId, entryId, (entry) => {
         if (PURCHASE_FINAL_STATES.has(purchaseStateOf(entry)) || purchaseStateOf(entry) === "approved") return null;
         failed = true;
-        return { purchaseState: "failed", purchaseNote: plainWalletError(spend.message, purchaseWalletOf(card).name) };
+        return { purchaseState: "failed", purchaseNote: spendFailureNote(spend, purchaseWalletOf(card).name, this.language()) };
       });
       if (failed) {
         this.tm.flightBookings?.flightClosed?.(agentId, card);
@@ -299,12 +301,12 @@ export class PurchaseCards {
       const stamped = await this.stamp(agentId, entryId, () => ({
         purchaseState: "approving",
         purchaseSpendRequestId: spend.id,
-        ...(spend.action != null ? { purchaseNote: spend.action.message } : {}),
+        ...(spend.action != null ? { purchaseNote: this.actionNote(spend.action.message) } : {}),
         ...((spend.action?.url ?? spend.approvalUrl) == null ? {} : { purchaseActionUrl: spend.action?.url ?? spend.approvalUrl }),
       }));
       if (spend.action != null && !spend.action.resumes) {
         // Link wants something done first that does not come back by itself: this request is over.
-        await this.stamp(agentId, entryId, () => ({ purchaseState: "failed", purchaseNote: spend.action?.message ?? "Link needs something from you first." }));
+        await this.stamp(agentId, entryId, () => ({ purchaseState: "failed", purchaseNote: spend.action == null ? say(this.language(), "purchase.linkNeedsActionFirst") : this.actionNote(spend.action.message) }));
         this.wake(agentId, "purchase-action", buildPurchaseActionWakePrompt(entryId, card, spend.action.message));
         return await this.read(agentId, entryId);
       }
@@ -322,7 +324,7 @@ export class PurchaseCards {
       // A flight: Simeon pays the airline itself (`flight-bookings.ts`); the agent is told how it went.
       const flights = this.tm.flightBookings;
       if (flights?.payApprovedFlight == null) {
-        await this.stamp(agentId, entryId, () => ({ purchaseState: "failed", purchaseNote: "Flight booking isn't available on this computer." }));
+        await this.stamp(agentId, entryId, () => ({ purchaseState: "failed", purchaseNote: say(this.language(), "flight.unavailable") }));
         void wallet.cancelSpend(spend.id).catch(() => false);
         return await this.read(agentId, entryId);
       }
@@ -349,13 +351,14 @@ export class PurchaseCards {
     const card = current.message.purchase;
     const handle = card.shopCheckout?.handle ?? "";
     const confirmed = purchaseApprovalFrom(approval, this.now());
+    const language = this.language();
     if (wallet.completeShopCheckout == null) {
-      await this.stamp(agentId, entryId, () => ({ purchaseState: "failed", purchaseNote: "Shop isn't on this computer." }));
+      await this.stamp(agentId, entryId, () => ({ purchaseState: "failed", purchaseNote: say(language, "purchase.walletMissing", { wallet: "Shop" }) }));
       this.wake(agentId, "purchase-failed", buildPurchaseClosedWakePrompt(entryId, card, "failed", "Shop isn't available on this computer"));
       return await this.read(agentId, entryId);
     }
-    const outcome = await wallet.completeShopCheckout({ handle, ...(instrumentId == null ? {} : { instrumentId }), amount: card.amount, currency: card.currency, idempotencyKey: purchaseIdempotencyKey(agentId, entryId, current.timestampMs) })
-      .catch((error: unknown) => ({ ok: false as const, code: "UNCERTAIN", message: `Shop didn't confirm the order (${error instanceof Error ? error.message : String(error)}). Check the Shop app or your email before trying again.` }));
+    const outcome = await wallet.completeShopCheckout({ handle, ...(instrumentId == null ? {} : { instrumentId }), amount: card.amount, currency: card.currency, idempotencyKey: purchaseIdempotencyKey(agentId, entryId, current.timestampMs), ...(language == null ? {} : { language }) })
+      .catch((error: unknown) => ({ ok: false as const, code: "UNCERTAIN", message: say(language, "purchase.shopUnconfirmed", { why: error instanceof Error ? error.message : String(error) }) }));
     this.log(`[purchase] allowed ${agentId}/${entryId} with Shop checkout${confirmed?.authenticationMethod == null ? "" : ` (${confirmed.authenticationMethod})`}: ${outcome.ok ? outcome.status : `failed ${outcome.code}`}`);
     if (outcome.ok && outcome.status === "completed") {
       const stamped = await this.stamp(agentId, entryId, () => ({ purchaseState: "ordered", purchaseOrder: outcome.order.slice(0, 80), purchaseNote: undefined, purchaseActionUrl: undefined }));
@@ -368,7 +371,7 @@ export class PurchaseCards {
       this.watchShopCheckout(agentId, entryId, handle, wallet);
       return stamped;
     }
-    const stamped = await this.stamp(agentId, entryId, () => ({ purchaseState: "failed", purchaseNote: plainWalletError(outcome.message, "Shop") }));
+    const stamped = await this.stamp(agentId, entryId, () => ({ purchaseState: "failed", purchaseNote: plainWalletError(outcome.message, "Shop", language) }));
     this.wake(agentId, "purchase-failed", outcome.code === "UNCERTAIN" ? buildShopUncertainWakePrompt(entryId, card) : buildPurchaseClosedWakePrompt(entryId, card, "failed", outcome.message));
     return stamped;
   }
@@ -426,7 +429,8 @@ export class PurchaseCards {
           if (purchaseStateForLinkStatus(answer.status) === "approving" && (answer.action == null || answer.action.resumes)) {
             // 3-D Secure and the like: the card shows Link's page, and the request goes on by itself once it's done.
             const action = answer.action;
-            if (action != null) await this.stamp(agentId, entryId, (entry) => entry.purchaseNote === action.message ? null : { purchaseNote: action.message, ...(action.url == null ? {} : { purchaseActionUrl: action.url }) });
+            const note = action == null ? undefined : this.actionNote(action.message);
+            if (action != null) await this.stamp(agentId, entryId, (entry) => entry.purchaseNote === note ? null : { purchaseNote: note, ...(action.url == null ? {} : { purchaseActionUrl: action.url }) });
             continue;
           }
           await this.apply(agentId, entryId, answer, wallet);
@@ -470,8 +474,8 @@ export class PurchaseCards {
       if (purchaseStateOf(entry) !== "approved") return null;
       took = true;
       return booking
-        ? { purchaseState: "failed", purchaseStep: "uncertain", purchaseNote: "The computer restarted while booking, so it isn't certain the flight was booked. Check for the airline's email before trying again." }
-        : { purchaseState: "failed", purchaseStep: undefined, purchaseNote: "The computer restarted before paying; nothing was booked." };
+        ? { purchaseState: "failed", purchaseStep: "uncertain", purchaseNote: say(this.language(), "flight.restartedBooking") }
+        : { purchaseState: "failed", purchaseStep: undefined, purchaseNote: say(this.language(), "flight.restartedPaying") };
     });
     if (!took) return stamped;
     this.log(`[flight] ${booking ? "uncertain" : "not booked"} after a restart ${agentId}/${entryId}`);
@@ -483,8 +487,18 @@ export class PurchaseCards {
 
   private wake(agentId: string, source: string, prompt: string): void {
     void Promise.resolve()
-      .then(() => this.tm.backgroundWakes.runHiddenPromptWake(agentId, source, prompt, "The purchase follow-up failed"))
+      .then(() => this.tm.backgroundWakes.runHiddenPromptWake(agentId, source, prompt, say(this.language(), "purchase.followUpFailed")))
       .catch((error: unknown) => this.log(`[purchase] wake ${source} failed: ${error instanceof Error ? error.message : String(error)}`));
+  }
+
+  /** The person's language (`userLanguage`): the card's lines are theirs. */
+  private language(): string | undefined {
+    return this.tm.userLanguage?.();
+  }
+
+  /** What Link asks of the person: its own sentence, or ours when it gave none. */
+  private actionNote(message: string): string {
+    return message === LINK_ACTION_DEFAULT ? say(this.language(), "purchase.linkNeedsAction") : message;
   }
 
   private liveSession(agentId: string): any {
@@ -595,8 +609,15 @@ export class PurchaseCards {
 }
 
 /** The wallet's own error, short enough for one line on the card. */
-function plainWalletError(message: string, wallet: string): string {
+function plainWalletError(message: string, wallet: string, language: string | undefined): string {
   const line = message.split("\n")[0]?.trim() ?? "";
-  if (line.length === 0) return `${wallet} couldn't set this up.`;
+  if (line.length === 0) return say(language, "purchase.walletFailed", { wallet });
   return line.length > 160 ? `${line.slice(0, 157)}…` : line;
+}
+
+/** A spend request that failed, for the card: the wallet's words, or Simeon's own (not connected, no request) in the person's language. */
+function spendFailureNote(spend: { readonly code: string; readonly message: string }, wallet: string, language: string | undefined): string {
+  if (spend.code === "NOT_AUTHENTICATED") return say(language, "purchase.walletDisconnected", { wallet });
+  if (spend.code === "NO_SPEND_REQUEST") return say(language, "purchase.walletNoRequest", { wallet });
+  return plainWalletError(spend.message, wallet, language);
 }

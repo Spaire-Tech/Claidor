@@ -27,6 +27,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { chmodSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { say } from "../../say.js";
 import { shopDir, type ShopAnswer, type ShopClient } from "./shop-mcp.js";
 import { fillAnswer, type CheckoutFacts, type LinkCardChoice, type LinkToolDefinition, type LinkToolResult, type SpendAnswer, type SpendRequestInput } from "../link-wallet/link-tools.js";
 import { formatPurchaseMoney } from "../link-wallet/purchase-card.js";
@@ -744,26 +745,28 @@ export function createShopTools(options: ShopToolsOptions) {
    * At Allow on a Shop checkout's card: read afresh, still ready and still
    * the total the person saw, then paid once with the way to pay they picked
    * (copied exactly as Shop offered it, `selected: true`). An answer that
-   * never came back is read again, never sent twice.
+   * never came back is read again, never sent twice. Its own sentences are
+   * shown on the card, in the person's `language`; Shop's pass as they come.
    */
-  const completeShopCheckout = async (args: { readonly handle: string; readonly instrumentId?: string; readonly amount: number; readonly currency: string; readonly idempotencyKey: string }): Promise<ShopCheckoutOutcome> => {
+  const completeShopCheckout = async (args: { readonly handle: string; readonly instrumentId?: string; readonly amount: number; readonly currency: string; readonly idempotencyKey: string; readonly language?: string }): Promise<ShopCheckoutOutcome> => {
+    const language = args.language;
     const stored = storedCheckout(args.handle);
-    if (stored == null) return { ok: false, code: "NO_CHECKOUT", message: "This Shop checkout is no longer on the computer (they last six hours)." };
+    if (stored == null) return { ok: false, code: "NO_CHECKOUT", message: say(language, "shop.checkoutGone") };
     const read = await client.call("get_checkout", { shop: stored.shop, id: stored.id }, "required");
     if (!read.ok || read.isError) return { ok: false, code: read.ok ? read.errorCode ?? "SHOP_REFUSED" : read.code, message: read.ok ? read.text : read.message };
     const doc = record(read.value);
     const status = text(doc.status);
     if (status === "completed") return { ok: true, status: "completed", order: orderLabel(doc.order) };
-    if (status === "requires_escalation") return { ok: true, status: "requires_escalation", ...(text(doc.continue_url).startsWith("https://") ? { url: text(doc.continue_url) } : {}), message: messageLines(doc.messages).join(" ") || "The shop needs you to finish a step on its page." };
-    if (status !== "ready_for_complete") return { ok: false, code: "CHECKOUT_NOT_READY", message: `The checkout is ${status || "not ready"}; nothing was paid.` };
+    if (status === "requires_escalation") return { ok: true, status: "requires_escalation", ...(text(doc.continue_url).startsWith("https://") ? { url: text(doc.continue_url) } : {}), message: messageLines(doc.messages).join(" ") || say(language, "shop.stepOnPage") };
+    if (status !== "ready_for_complete") return { ok: false, code: "CHECKOUT_NOT_READY", message: status.length > 0 ? say(language, "shop.checkoutIs", { status }) : say(language, "shop.checkoutNotReady") };
     const total = Number(records(doc.totals).find((line) => text(line.type) === "total")?.amount);
     if (total !== args.amount || (text(doc.currency).toLowerCase() || "usd") !== args.currency.toLowerCase()) {
-      return { ok: false, code: "TOTAL_CHANGED", message: `The total changed to ${formatPurchaseMoney(total, text(doc.currency) || "usd")} since the card was shown; nothing was paid.` };
+      return { ok: false, code: "TOTAL_CHANGED", message: say(language, "shop.totalChanged", { total: formatPurchaseMoney(total, text(doc.currency) || "usd") }) };
     }
     const instruments = records(record(doc.payment).instruments);
     const wanted = args.instrumentId?.trim() ?? "";
     const instrument = wanted.length > 0 ? instruments.find((item) => text(item.id) === wanted) : instruments.length === 1 ? instruments[0] : undefined;
-    if (instrument == null) return { ok: false, code: "NO_INSTRUMENT", message: wanted.length > 0 ? "The card picked is no longer offered for this checkout; nothing was paid." : "Choose the card that pays, then press Allow." };
+    if (instrument == null) return { ok: false, code: "NO_INSTRUMENT", message: wanted.length > 0 ? say(language, "shop.cardNoLongerOffered") : say(language, "purchase.chooseCard") };
     const sent = await client.call("complete_checkout", {
       shop: stored.shop,
       id: stored.id,
@@ -776,20 +779,20 @@ export function createShopTools(options: ShopToolsOptions) {
         const again = await client.call("get_checkout", { shop: stored.shop, id: stored.id }, "required");
         const after = again.ok && !again.isError ? record(again.value) : undefined;
         if (after != null && text(after.status) === "completed" && after.order != null) return { ok: true, status: "completed", order: orderLabel(after.order) };
-        if (after != null && text(after.status) === "requires_escalation") return { ok: true, status: "requires_escalation", ...(text(after.continue_url).startsWith("https://") ? { url: text(after.continue_url) } : {}), message: messageLines(after.messages).join(" ") || "The shop needs you to finish a step on its page." };
+        if (after != null && text(after.status) === "requires_escalation") return { ok: true, status: "requires_escalation", ...(text(after.continue_url).startsWith("https://") ? { url: text(after.continue_url) } : {}), message: messageLines(after.messages).join(" ") || say(language, "shop.stepOnPage") };
         if (after != null && text(after.status) !== "complete_in_progress") break;
         await sleep(3_000);
       }
-      return { ok: false, code: "UNCERTAIN", message: "Shop didn't confirm the order. Check the Shop app or your email before trying again." };
+      return { ok: false, code: "UNCERTAIN", message: say(language, "shop.unconfirmed") };
     };
     if (!sent.ok) {
       log(`[shop] completing ${args.handle} got no answer (${sent.code}); reading it again`);
       return await settle();
     }
-    if (sent.isError) return { ok: false, code: sent.errorCode ?? "SHOP_REFUSED", message: sent.text || "Shop refused the payment; nothing was paid." };
+    if (sent.isError) return { ok: false, code: sent.errorCode ?? "SHOP_REFUSED", message: sent.text || say(language, "shop.refused") };
     const done = record(sent.value);
     if (text(done.status) === "completed" && done.order != null) return { ok: true, status: "completed", order: orderLabel(done.order) };
-    if (text(done.status) === "requires_escalation") return { ok: true, status: "requires_escalation", ...(text(done.continue_url).startsWith("https://") ? { url: text(done.continue_url) } : {}), message: messageLines(done.messages).join(" ") || "The shop needs you to finish a step on its page." };
+    if (text(done.status) === "requires_escalation") return { ok: true, status: "requires_escalation", ...(text(done.continue_url).startsWith("https://") ? { url: text(done.continue_url) } : {}), message: messageLines(done.messages).join(" ") || say(language, "shop.stepOnPage") };
     return await settle();
   };
 

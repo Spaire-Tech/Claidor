@@ -89,6 +89,8 @@ export interface PurchaseToolDependencies {
   emitCard(message: PurchaseCardMessage | ProductsCardMessage, timestampMs: number): string | undefined;
   markPurchaseDone(args: { readonly entryId: string; readonly outcome: "ordered" | "failed" | "canceled"; readonly order?: string; readonly detail?: string }): Promise<{ readonly ok: true } | { readonly ok: false; readonly message: string }>;
   now?: () => number;
+  /** The person's language (`userLanguage`): the cards' own text, which the chat list shows. */
+  language?: () => string | undefined;
 }
 
 export const showProductsParameters = z.object({
@@ -170,7 +172,7 @@ export function createShowProductsTool(deps: PurchaseToolDependencies) {
         if (priced.correction != null) corrected.push(priced.correction);
         products.push(priced.product);
       }
-      const message: ProductsCardMessage = { type: PRODUCTS_MESSAGE_TYPE, content: productsCardText(products), products };
+      const message: ProductsCardMessage = { type: PRODUCTS_MESSAGE_TYPE, content: productsCardText(products, deps.language?.()), products };
       const entryId = resolved.emitCard(message, (resolved.now ?? Date.now)());
       const prices = corrected.length === 0 ? "" : ` The card shows the prices Shop's catalog gave, not the ones you wrote: ${corrected.join("; ")}. Quote those.`;
       return `The products card is in the chat${entryId == null ? "" : ` (entry ${entryId})`}.${prices} The person opens one and presses Buy (you're woken with which one, to buy it through the checkout card) or View website. Don't list them again in text; at most one short line on which you'd pick and why, then stop.`;
@@ -223,8 +225,8 @@ export const PURCHASE_SHOWN_NOTE_SHOP = "Nothing has been paid and Shop has not 
 /** The same, for a Shop checkout Shop pays itself at Allow. */
 export const PURCHASE_SHOWN_NOTE_SHOP_CHECKOUT = "Nothing has been paid. The person checks the card (Shop's own items and total), picks the card that pays, and presses Allow (Shop then places the order with Shop Pay; no browser, nothing for you to pay) or Deny; you are told how it went. Stop here: say nothing more this turn, and don't ask which card or for a go-ahead in chat.";
 
-export function purchaseCardFromArgs(args: z.infer<typeof requestPurchaseParameters>, facts: Extract<CheckoutFacts, { ok: true }> & { readonly wallet?: PurchaseWalletName }, preview: (NonNullable<PurchaseCardData["preview"]> & { readonly iconUrl?: string }) | undefined, shopCheckout?: Extract<ShopCheckoutFacts, { ok: true }> & { readonly handle: string }): PurchaseCardMessage | string {
-  if (shopCheckout != null) return shopCheckoutCardFromArgs(args, shopCheckout, preview);
+export function purchaseCardFromArgs(args: z.infer<typeof requestPurchaseParameters>, facts: Extract<CheckoutFacts, { ok: true }> & { readonly wallet?: PurchaseWalletName }, preview: (NonNullable<PurchaseCardData["preview"]> & { readonly iconUrl?: string }) | undefined, shopCheckout?: Extract<ShopCheckoutFacts, { ok: true }> & { readonly handle: string }, language?: string): PurchaseCardMessage | string {
+  if (shopCheckout != null) return shopCheckoutCardFromArgs(args, shopCheckout, preview, language);
   const url = args.checkout_url.includes("://") ? args.checkout_url : `https://${args.checkout_url}`;
   const domain = purchaseDomain(url);
   if (domain.length === 0 || !/^https:\/\//i.test(url)) return "checkout_url must be the https address of the checkout page open in the browser.";
@@ -262,7 +264,7 @@ export function purchaseCardFromArgs(args: z.infer<typeof requestPurchaseParamet
     },
     ...(shop ? { wallet: "shop" as const } : {}),
   };
-  return { type: PURCHASE_MESSAGE_TYPE, content: purchaseCardText(purchase), purchase };
+  return { type: PURCHASE_MESSAGE_TYPE, content: purchaseCardText(purchase, language), purchase };
 }
 
 /**
@@ -270,7 +272,7 @@ export function purchaseCardFromArgs(args: z.infer<typeof requestPurchaseParamet
  * totals, currency and ways to pay, read afresh, never the agent's figures;
  * the picture is the product's own (there is no checkout tab to take).
  */
-function shopCheckoutCardFromArgs(args: z.infer<typeof requestPurchaseParameters>, shop: Extract<ShopCheckoutFacts, { ok: true }> & { readonly handle: string }, preview: (NonNullable<PurchaseCardData["preview"]> & { readonly iconUrl?: string }) | undefined): PurchaseCardMessage | string {
+function shopCheckoutCardFromArgs(args: z.infer<typeof requestPurchaseParameters>, shop: Extract<ShopCheckoutFacts, { ok: true }> & { readonly handle: string }, preview: (NonNullable<PurchaseCardData["preview"]> & { readonly iconUrl?: string }) | undefined, language?: string): PurchaseCardMessage | string {
   const merchant = shop.merchant ?? args.merchant_name;
   const total = formatPurchaseMoney(shop.amount, shop.currency);
   const base = { merchant, domain: shop.domain, total, items: shop.items };
@@ -298,7 +300,7 @@ function shopCheckoutCardFromArgs(args: z.infer<typeof requestPurchaseParameters
     wallet: "shop",
     shopCheckout: { handle: shop.handle },
   };
-  return { type: PURCHASE_MESSAGE_TYPE, content: purchaseCardText(purchase), purchase };
+  return { type: PURCHASE_MESSAGE_TYPE, content: purchaseCardText(purchase, language), purchase };
 }
 
 export function createRequestPurchaseTool(deps: PurchaseToolDependencies) {
@@ -318,7 +320,7 @@ export function createRequestPurchaseTool(deps: PurchaseToolDependencies) {
         const shop = await read;
         if (!shop.ok) return shop.message;
         const picture = shop.imageUrl == null ? undefined : await resolved.persistPicture?.(shop.imageUrl).catch(() => undefined);
-        const message = purchaseCardFromArgs(args, { ...shop.facts, wallet: "shop" }, picture, { ...shop, handle });
+        const message = purchaseCardFromArgs(args, { ...shop.facts, wallet: "shop" }, picture, { ...shop, handle }, deps.language?.());
         if (typeof message === "string") return message;
         const entryId = resolved.emitCard(message, (resolved.now ?? Date.now)());
         const differs = message.purchase.amount !== args.total ? ` Shop's total is ${message.purchase.total}, which the card shows.` : "";
@@ -336,7 +338,7 @@ export function createRequestPurchaseTool(deps: PurchaseToolDependencies) {
       const facts = await asked;
       if (!facts.ok) return facts.message;
       const preview = await resolved.capturePreview(args.checkout_url).catch(() => undefined);
-      const message = purchaseCardFromArgs(args, facts, preview);
+      const message = purchaseCardFromArgs(args, facts, preview, undefined, deps.language?.());
       if (typeof message === "string") return message;
       const entryId = resolved.emitCard(message, (resolved.now ?? Date.now)());
       const walletName = facts.wallet === "shop" ? "Shop" : "Link";

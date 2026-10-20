@@ -2435,6 +2435,8 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
               };
               return {
                 dependencies: {
+                  // The cards' own text (the chat list's preview) in the person's language.
+                  language: userLanguage,
                   checkoutFacts: (request) => link == null && shop == null ? undefined : facts(request),
                   ...(shop == null ? {} : {
                     shopCheckoutCard: async (handle: string) => {
