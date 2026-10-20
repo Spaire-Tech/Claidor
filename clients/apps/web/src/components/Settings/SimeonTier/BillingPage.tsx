@@ -17,7 +17,14 @@ import {
   useSyncCheckout,
 } from '@/hooks/queries/plans'
 import { CONFIG } from '@/utils/config'
+import {
+  getTranslationLocale,
+  useTranslations,
+  type AcceptedLocale,
+  type TranslateFn,
+} from '@simeon/i18n'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { withParts } from '../../Auth/AuthShell'
 import styles from './BillingPage.module.css'
 
 const APPLE_PATH =
@@ -65,7 +72,21 @@ interface BillingPageProps {
   upgraded: boolean
   /** `?checkout_session_id=`: the checkout that just came back, to copy in. */
   checkoutSessionId: string | null
+  /** The page's language (`pageLocale`, 20 October 2026). */
+  locale: AcceptedLocale
 }
+
+/** A month's price: "$30" in English as always; "30 $" in another language, in its own format. */
+const monthlyPrice = (cents: number, locale: AcceptedLocale): string =>
+  getTranslationLocale(locale) === 'en'
+    ? `$${formatDollarAmount(cents)}`
+    : new Intl.NumberFormat(locale, {
+        style: 'currency',
+        currency: 'USD',
+        currencyDisplay: 'narrowSymbol',
+        minimumFractionDigits: cents % 100 === 0 ? 0 : 2,
+        maximumFractionDigits: 2,
+      }).format(cents / 100)
 
 /**
  * app.simeonlabs.com/billing, the one page the web app is for, in the
@@ -85,7 +106,9 @@ const BillingPage = ({
   fromApp,
   upgraded,
   checkoutSessionId,
+  locale,
 }: BillingPageProps) => {
+  const t = useTranslations(locale)
   const subscription = useMySubscription()
   const sync = useSyncCheckout()
   const synced = useRef<string | null>(null)
@@ -123,8 +146,12 @@ const BillingPage = ({
         </a>
         {email && (
           <span className={styles.who}>
-            <span className={styles.whoEmail}>Signed in as {email} · </span>
-            <a href={`${CONFIG.BASE_URL}/v1/auth/logout`}>Log out</a>
+            <span className={styles.whoEmail}>
+              {t('simeon.billing.signedInAs', { email })}
+            </span>
+            <a href={`${CONFIG.BASE_URL}/v1/auth/logout`}>
+              {t('simeon.billing.logOut')}
+            </a>
           </span>
         )}
       </header>
@@ -137,6 +164,7 @@ const BillingPage = ({
           justPaid={upgraded || checkoutSessionId !== null}
           billedByApple={billedByApple}
           onAdjust={() => setAdjusting(true)}
+          t={t}
         />
       ) : (
         <AdjustPlan
@@ -145,6 +173,8 @@ const BillingPage = ({
           highlight={plan}
           returnTo={returnTo}
           fromApp={fromApp}
+          t={t}
+          locale={locale}
         />
       )}
     </div>
@@ -160,6 +190,7 @@ const AllSet = ({
   justPaid,
   billedByApple,
   onAdjust,
+  t,
 }: {
   sub: CurrentSubscription | undefined
   returnTo: string | null
@@ -167,6 +198,7 @@ const AllSet = ({
   justPaid: boolean
   billedByApple: boolean
   onAdjust: () => void
+  t: TranslateFn
 }) => {
   const trialing = sub?.status === 'trialing'
 
@@ -178,51 +210,54 @@ const AllSet = ({
     else if (fromApp && justPaid) window.location.replace(OPEN_APP_URL)
   }, [returnTo, fromApp, justPaid])
 
-  const started = justPaid && trialing ? 'Your free month has started. ' : ''
+  const started = justPaid && trialing
   return (
     <>
       <section className={styles.set}>
-        <h1 className={styles.setTitle}>You&apos;re all set!</h1>
+        <h1 className={styles.setTitle}>{t('simeon.billing.allSet')}</h1>
         <p className={styles.setLede}>
           {returnTo
-            ? 'Taking you back to Simeon to finish signing in'
+            ? t('simeon.billing.takingYouBack')
             : fromApp
-              ? `${started}Go back to Simeon`
-              : `${started}Download Simeon to get started`}
+              ? started
+                ? t('simeon.billing.goBackStarted')
+                : t('simeon.billing.goBack')
+              : started
+                ? t('simeon.billing.downloadStarted')
+                : t('simeon.billing.download')}
         </p>
         <div className={styles.setActions}>
           {returnTo ? (
             <a className={styles.btn} href={returnTo}>
-              Continue signing in to Simeon
+              {t('simeon.billing.continueSigningIn')}
             </a>
           ) : fromApp ? (
             <a className={styles.btn} href={OPEN_APP_URL}>
-              Open Simeon
+              {t('simeon.billing.openSimeon')}
             </a>
           ) : (
             <a className={styles.btn} href={DOWNLOAD_URL}>
               <Apple />
-              Download Simeon for macOS
+              {t('simeon.billing.downloadMac')}
             </a>
           )}
         </div>
       </section>
       <footer className={styles.setFoot}>
         <span>
-          {sub && (
-            <>
-              Simeon {tierDisplayName(sub.tier)}
-              {trialing ? ', on trial' : ''} ·{' '}
-            </>
-          )}
+          {sub &&
+            (trialing
+              ? t('simeon.billing.planLineTrial', {
+                  plan: tierDisplayName(sub.tier),
+                })
+              : t('simeon.billing.planLine', {
+                  plan: tierDisplayName(sub.tier),
+                }))}
           {billedByApple ? (
-            <>
-              Billed through Apple. Change or cancel it on your iPhone in
-              Settings › your name › Subscriptions.
-            </>
+            t('simeon.billing.billedByApple')
           ) : (
             <button type="button" onClick={onAdjust}>
-              Adjust your plan
+              {t('simeon.billing.adjustPlan')}
             </button>
           )}
         </span>
@@ -238,39 +273,59 @@ const AllSet = ({
  * Trial card is not here, every plan starts with its free month, so
  * Standard lists the trial's lines and its own together.
  */
-const CARD_COPY: Record<PaidTierKey, { includes: string; lines: string[] }> = {
-  standard: {
-    includes: 'Includes:',
-    lines: [
-      'Each agent’s own computer',
-      'Signs into your tools',
-      'Routines on a schedule',
-      'Slack, Discord and voice calls',
-      'Work anywhere: Mac and iPhone',
-      'Weekly usage, more on demand',
-    ],
-  },
-  pro: {
-    includes: 'Everything in Standard, plus:',
-    lines: ['3.5x Standard usage', 'For agents busy every day'],
-  },
-  max: {
-    includes: 'Everything in Pro, plus:',
-    lines: ['12x Standard usage', 'Earliest access to all products'],
-  },
-}
+const CARD_COPY: Record<PaidTierKey, { includes: CardKey; lines: CardKey[] }> =
+  {
+    standard: {
+      includes: 'simeon.billing.standardIncludes',
+      lines: [
+        'simeon.billing.standardComputer',
+        'simeon.billing.standardTools',
+        'simeon.billing.standardRoutines',
+        'simeon.billing.standardChannels',
+        'simeon.billing.standardAnywhere',
+        'simeon.billing.standardUsage',
+      ],
+    },
+    pro: {
+      includes: 'simeon.billing.proIncludes',
+      lines: ['simeon.billing.proUsage', 'simeon.billing.proBusy'],
+    },
+    max: {
+      includes: 'simeon.billing.maxIncludes',
+      lines: ['simeon.billing.maxUsage', 'simeon.billing.maxAccess'],
+    },
+  }
+
+type CardKey =
+  | 'simeon.billing.standardIncludes'
+  | 'simeon.billing.standardComputer'
+  | 'simeon.billing.standardTools'
+  | 'simeon.billing.standardRoutines'
+  | 'simeon.billing.standardChannels'
+  | 'simeon.billing.standardAnywhere'
+  | 'simeon.billing.standardUsage'
+  | 'simeon.billing.proIncludes'
+  | 'simeon.billing.proUsage'
+  | 'simeon.billing.proBusy'
+  | 'simeon.billing.maxIncludes'
+  | 'simeon.billing.maxUsage'
+  | 'simeon.billing.maxAccess'
 
 const AdjustPlan = ({
   sub,
   subscribed,
   returnTo,
   fromApp,
+  t,
+  locale,
 }: {
   sub: CurrentSubscription | undefined
   subscribed: boolean
   highlight: PaidTierKey | null
   returnTo: string | null
   fromApp: boolean
+  t: TranslateFn
+  locale: AcceptedLocale
 }) => {
   const plans = usePlans()
   const startCheckout = useStartCheckout()
@@ -312,13 +367,13 @@ const AdjustPlan = ({
         window.location.assign(checkout_url)
       } catch {
         toast({
-          title: 'Could not open the checkout',
-          description: 'Please try again in a moment.',
+          title: t('simeon.billing.checkoutFailed'),
+          description: t('simeon.billing.tryAgain'),
         })
         setPending(null)
       }
     },
-    [back, fromApp, openPortal, returnTo, startCheckout, subscribed],
+    [back, fromApp, openPortal, returnTo, startCheckout, subscribed, t],
   )
 
   const portal = useCallback(async () => {
@@ -328,29 +383,32 @@ const AdjustPlan = ({
       window.location.assign(portal_url)
     } catch {
       toast({
-        title: 'Could not open your billing page',
-        description: 'Please try again in a moment.',
+        title: t('simeon.billing.portalFailed'),
+        description: t('simeon.billing.tryAgain'),
       })
       setPending(null)
     }
-  }, [back, openPortal])
+  }, [back, openPortal, t])
 
   const currentIndex = sub ? PAID_TIERS.indexOf(sub.tier as PaidTierKey) : -1
 
   return (
     <main className={styles.main}>
       <h1 className={styles.title}>
-        {subscribed ? 'Adjust your plan' : 'Choose your plan'}
+        {subscribed
+          ? t('simeon.billing.adjustPlan')
+          : t('simeon.billing.choosePlan')}
       </h1>
 
       <div className={styles.plans}>
         {ordered.map((item, index) => {
           const current = subscribed && sub?.tier === item.tier
+          const plan = tierDisplayName(item.tier)
           const label = !subscribed
-            ? `Start your ${tierDisplayName(item.tier)} Trial`
+            ? t('simeon.billing.startTrial', { plan })
             : index > currentIndex
-              ? `Upgrade to ${tierDisplayName(item.tier)}`
-              : `Switch to ${tierDisplayName(item.tier)}`
+              ? t('simeon.billing.upgradeTo', { plan })
+              : t('simeon.billing.switchTo', { plan })
           return (
             <PlanCard
               key={item.tier}
@@ -361,6 +419,8 @@ const AdjustPlan = ({
               busy={pending !== null}
               pending={pending === item.tier}
               onChoose={() => choose(item.tier)}
+              t={t}
+              locale={locale}
             />
           )
         })}
@@ -369,7 +429,10 @@ const AdjustPlan = ({
       {subscribed && (
         <p className={styles.foot}>
           <button type="button" onClick={() => portal()}>
-            Manage billing on <span className={styles.stripe}>Stripe</span>
+            {withParts(
+              t('simeon.billing.manageOnStripe', { stripe: '{stripe}' }),
+              { stripe: <span className={styles.stripe}>Stripe</span> },
+            )}
           </button>
         </p>
       )}
@@ -385,6 +448,8 @@ const PlanCard = ({
   busy,
   pending,
   onChoose,
+  t,
+  locale,
 }: {
   plan: Plan
   current: boolean
@@ -394,22 +459,28 @@ const PlanCard = ({
   busy: boolean
   pending: boolean
   onChoose: () => void
+  t: TranslateFn
+  locale: AcceptedLocale
 }) => {
   const copy = CARD_COPY[plan.tier]
   return (
     <div className={`${styles.plan} ${current ? styles.planCurrent : ''}`}>
       <div className={styles.planHead}>
         <h3>{tierDisplayName(plan.tier)}</h3>
-        {current && <span className={styles.badge}>Current plan</span>}
+        {current && (
+          <span className={styles.badge}>
+            {t('simeon.billing.currentPlan')}
+          </span>
+        )}
       </div>
       <div className={styles.price}>
-        ${formatDollarAmount(plan.monthly_price_cents)}
-        <small>/ month</small>
+        {monthlyPrice(plan.monthly_price_cents, locale)}
+        <small>{t('simeon.billing.perMonth')}</small>
       </div>
       <p className={styles.billed}>
         {trial
-          ? `Free for ${plan.trial_days} days, then monthly`
-          : 'Billed monthly'}
+          ? t('simeon.billing.freeThenMonthly', { days: plan.trial_days })
+          : t('simeon.billing.billedMonthly')}
       </p>
       {current ? (
         <button
@@ -417,7 +488,7 @@ const PlanCard = ({
           className={`${styles.btn} ${styles.ghost}`}
           disabled
         >
-          Your current plan
+          {t('simeon.billing.yourCurrentPlan')}
         </button>
       ) : (
         <button
@@ -426,13 +497,13 @@ const PlanCard = ({
           disabled={busy}
           onClick={onChoose}
         >
-          {pending ? 'One moment…' : label}
+          {pending ? t('simeon.billing.oneMoment') : label}
         </button>
       )}
-      <p className={styles.inc}>{copy.includes}</p>
+      <p className={styles.inc}>{t(copy.includes)}</p>
       <ul>
         {copy.lines.map((line) => (
-          <li key={line}>{line}</li>
+          <li key={line}>{t(line)}</li>
         ))}
       </ul>
     </div>

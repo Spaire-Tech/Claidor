@@ -5,6 +5,7 @@ import { Or, provider } from '@/components/Auth/parts'
 import { LoginCodeError, useSendLoginCode } from '@/hooks/loginCode'
 import { usePostHog, type EventName } from '@/hooks/posthog'
 import { getAppleAuthorizeURL, getGoogleAuthorizeLoginURL } from '@/utils/auth'
+import { useTranslations, type AcceptedLocale } from '@simeon/i18n'
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 
 // The web app's sign-in and sign-up, after Claude's (the founder, 18
@@ -56,9 +57,8 @@ const AppleMark = () => (
 )
 
 /** Why a way in came back without signing in (`?error=`), in the page's own words. */
-const PROBLEMS: Record<string, string> = {
-  apple_unavailable:
-    'Sign in with Apple is coming soon. Continue with Google or your email for now.',
+const PROBLEMS: Record<string, 'simeon.signIn.appleUnavailable'> = {
+  apple_unavailable: 'simeon.signIn.appleUnavailable',
 }
 
 const SignInPage = ({
@@ -66,21 +66,23 @@ const SignInPage = ({
   returnTo,
   returnParams,
   error,
+  locale,
 }: {
   mode: 'login' | 'signup'
   returnTo?: string
   returnParams?: Record<string, string>
   error?: string
+  /** The page's language (`pageLocale`). */
+  locale: AcceptedLocale
 }) => {
+  const t = useTranslations(locale)
   const posthog = usePostHog()
   const signup = mode === 'signup'
   const sendLoginCode = useSendLoginCode()
   const [email, setEmail] = useState('')
   const [sending, setSending] = useState(false)
   const [problem, setProblem] = useState<string | undefined>(
-    error
-      ? (PROBLEMS[error] ?? 'That sign-in did not go through. Try again.')
-      : undefined,
+    error ? t(PROBLEMS[error] ?? 'simeon.signIn.didNotGoThrough') : undefined,
   )
 
   const resolvedReturnTo = useMemo(() => {
@@ -132,8 +134,8 @@ const SignInPage = ({
       const detail = e instanceof LoginCodeError ? e.error?.[0]?.msg : undefined
       setProblem(
         detail
-          ? 'Enter a valid email address.'
-          : 'We could not send the code. Try again.',
+          ? t('simeon.signIn.invalidEmail')
+          : t('simeon.signIn.couldNotSend'),
       )
       setSending(false)
     }
@@ -141,8 +143,9 @@ const SignInPage = ({
 
   return (
     <AuthShell
-      heading="Get it off your plate"
-      line="Your doing partners for every part of your business."
+      heading={t('simeon.signIn.heading')}
+      line={t('simeon.signIn.line')}
+      locale={locale}
     >
       <div className="flex flex-col gap-3">
         <a
@@ -151,7 +154,7 @@ const SignInPage = ({
           className={provider}
         >
           <GoogleMark />
-          <span>Continue with Google</span>
+          <span>{t('simeon.signIn.continueWithGoogle')}</span>
         </a>
         <a
           href={appleUrl}
@@ -159,19 +162,19 @@ const SignInPage = ({
           className={provider}
         >
           <AppleMark />
-          <span>Continue with Apple</span>
+          <span>{t('simeon.signIn.continueWithApple')}</span>
         </a>
-        <Or />
+        <Or locale={locale} />
         <form onSubmit={sendCode} className="flex flex-col gap-3" noValidate>
           <label htmlFor="sign-in-email" className="sr-only">
-            Email
+            {t('simeon.signIn.email')}
           </label>
           <input
             id="sign-in-email"
             type="email"
             inputMode="email"
             autoComplete="email"
-            placeholder="Enter your email"
+            placeholder={t('simeon.signIn.enterEmail')}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="h-[50px] w-full rounded-full border border-[#d9d9de] bg-white px-5 text-[16px] text-[#1d1d1f] placeholder:text-[#a1a1a6] focus:border-[#1d1d1f] focus:outline-none sm:h-[52px] sm:text-[17px]"
@@ -181,7 +184,9 @@ const SignInPage = ({
             disabled={sending}
             className="h-[50px] w-full rounded-full bg-black text-[16px] font-medium tracking-[-0.01em] text-white transition-colors hover:bg-[#1d1d1f] disabled:cursor-not-allowed disabled:opacity-60 sm:h-[52px] sm:text-[17px]"
           >
-            {sending ? 'Sending code…' : 'Continue with email'}
+            {sending
+              ? t('simeon.signIn.sendingCode')
+              : t('simeon.signIn.continueWithEmail')}
           </button>
         </form>
         {problem ? (
@@ -193,7 +198,7 @@ const SignInPage = ({
           </p>
         ) : null}
         <div className="pt-3">
-          <Legal />
+          <Legal locale={locale} />
         </div>
       </div>
     </AuthShell>

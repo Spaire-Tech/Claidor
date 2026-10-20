@@ -1,11 +1,20 @@
 import AuthShell, { Legal } from '@/components/Auth/AuthShell'
 import { Or, provider, quietLink } from '@/components/Auth/parts'
+import { pageLocale } from '@/utils/i18n'
+import { getTranslator } from '@simeon/i18n'
 import { Metadata } from 'next'
 import Link from 'next/link'
 import VerifyPage from './VerifyPage'
 
-export const metadata: Metadata = {
-  title: 'Enter verification code',
+export async function generateMetadata(props: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}): Promise<Metadata> {
+  const { locale } = await props.searchParams
+  return {
+    title: getTranslator(await pageLocale(locale as string | undefined))(
+      'simeon.signIn.codeTitle',
+    ),
+  }
 }
 
 // The e-mail way's second step, in the sign-in page's own frame (18 October
@@ -21,6 +30,8 @@ export default async function Page(props: {
   const email = searchParams.email as string
   const return_to = searchParams.return_to as string | undefined
   const error = searchParams.error as string | undefined
+  const locale = await pageLocale(searchParams.locale as string | undefined)
+  const t = getTranslator(locale)
   const back = return_to
     ? `/login?${new URLSearchParams({ return_to })}`
     : '/login'
@@ -31,23 +42,29 @@ export default async function Page(props: {
 
   return (
     <AuthShell
-      heading="Check your email"
+      heading={t('simeon.signIn.checkEmail')}
       line={
         email
-          ? `We sent a six-character code to ${email}.`
-          : 'We sent you a six-character code.'
+          ? t('simeon.signIn.codeSentTo', { email })
+          : t('simeon.signIn.codeSent')
       }
+      locale={locale}
     >
       <div className="flex flex-col gap-5">
-        <VerifyPage return_to={return_to} error={error} email={email} />
-        <Or />
+        <VerifyPage
+          return_to={return_to}
+          error={error}
+          email={email}
+          locale={locale}
+        />
+        <Or locale={locale} />
         <Link href={withPassword} className={provider}>
-          Continue with password
+          {t('simeon.signIn.continueWithPassword')}
         </Link>
         <Link href={back} className={quietLink}>
-          Use a different email
+          {t('simeon.signIn.differentEmail')}
         </Link>
-        <Legal />
+        <Legal locale={locale} />
       </div>
     </AuthShell>
   )

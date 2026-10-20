@@ -1,5 +1,6 @@
 // The sign-in pages' shared pieces, with no 'use client' so the server pages
 // (`/login/code/verify`, `/login/password`) and the client ones both take them.
+import { getTranslator, type AcceptedLocale } from '@simeon/i18n'
 
 /** The outlined round button (Continue with Google, with Apple, with password). */
 export const provider =
@@ -18,8 +19,8 @@ export const quietLink =
   'text-center text-[15px] text-[#1d1d1f] underline decoration-black/20 underline-offset-2 hover:decoration-black/50'
 
 /** "OR" between two ways in. */
-export const Or = () => (
+export const Or = ({ locale }: { locale: AcceptedLocale }) => (
   <div className="py-2 text-center text-[13px] font-medium tracking-[0.06em] text-[#86868b]">
-    OR
+    {getTranslator(locale)('simeon.signIn.or')}
   </div>
 )
