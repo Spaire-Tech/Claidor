@@ -177,6 +177,17 @@ the login and poll URLs come from the first two.
 **Not yet verified:** a full sign-in round trip from the packaged app against
 `api.simeonlabs.com`, and the refresh grace in use on a Mac.
 
+### The person's language
+
+Since 20 October 2026 the iPhone and Mac apps send their language as
+`Accept-Language` on every request, and after every sign-in tell it to
+`POST /desktop/api/user/profile` with `{"language": "fr"}` (`""` forgets it).
+The server keeps it in `users.language` (`simeon/desktop/language.py`) and
+answers it in the profile as `language`; none is English. A tag that is not a
+language is refused with 400 and nothing changes. The same sign-in writes it on
+the person's computer as the host setting `userLanguage`, which the agents and
+calls read (`docs/localization.md`). The shop's `customer.locale` is not this.
+
 ### Deleting an account
 
 Apple asks every app that makes accounts to let people delete theirs from

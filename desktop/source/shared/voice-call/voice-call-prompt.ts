@@ -1,3 +1,5 @@
+import { languageCode, languageName, normalizeUserLanguage } from "../user-language.js";
+
 /**
  * Every sentence a voice call puts in front of the voice model or the
  * person, in one place (30 September 2026): the per-call prompt built from
@@ -41,8 +43,27 @@ export interface VoiceCallTranscriptLine {
 export const VOICE_CALL_TRANSCRIPT_LINES = 6;
 /** Longest single message the prompt carries, in characters. */
 export const VOICE_CALL_LINE_MAX_CHARS = 600;
-/** The call's language. ElevenLabs hears and speaks it; English until the app has a setting. */
+/** The call's language when the person has none, or one the voice does not speak. ElevenLabs hears and speaks it. */
 export const VOICE_CALL_LANGUAGE = "en";
+
+/**
+ * The languages a call can be in, as ElevenLabs names them, by the person's
+ * language (their apps' `userLanguage`, `shared/user-language.ts`). The
+ * server gives its platform agent the same ones (`VOICE_LANGUAGES` in
+ * `server/simeon/desktop/voice.py`), and the core too (`VoiceCallText`): a
+ * language the agent was not given is refused, so one is added in all three
+ * (docs/localization.md; `scripts/check_translations.py` checks they match).
+ */
+const VOICE_CALL_LANGUAGES: Readonly<Record<string, string>> = {
+  en: "en", fr: "fr",
+};
+
+/** The call's language for the person's: "fr" for "fr-CA"; English for none, or one the voice does not speak yet. */
+export function voiceCallLanguage(userLanguage: string | null | undefined): string {
+  const tag = normalizeUserLanguage(userLanguage);
+  if (tag == null) return VOICE_CALL_LANGUAGE;
+  return VOICE_CALL_LANGUAGES[tag] ?? VOICE_CALL_LANGUAGES[languageCode(tag)] ?? VOICE_CALL_LANGUAGE;
+}
 /**
  * The voice the picker shows as chosen when the agent has none: Michael, the
  * server's own default (`VOICE_DEFAULT_VOICE_ID` in
@@ -99,7 +120,7 @@ export function transcriptLinesFromEntries(entries: readonly unknown[], limit = 
  * the agent over the `voice:<call>` channel), and what comes back is said as
  * its own.
  */
-export function buildVoiceCallPrompt(args: { readonly agent: VoiceCallAgentProfile; readonly transcript: readonly VoiceCallTranscriptLine[]; readonly personName?: string | null; readonly teammates?: readonly VoiceCallTeammate[] }): string {
+export function buildVoiceCallPrompt(args: { readonly agent: VoiceCallAgentProfile; readonly transcript: readonly VoiceCallTranscriptLine[]; readonly personName?: string | null; readonly teammates?: readonly VoiceCallTeammate[]; readonly language?: string | null }): string {
   const name = collapse(args.agent.name) || "your agent";
   const person = clamp(collapse(args.personName ?? ""), 60);
   const them = person.length > 0 ? person : "the person";
@@ -152,10 +173,29 @@ export function buildVoiceCallPrompt(args: { readonly agent: VoiceCallAgentProfi
     "- When they wrap up (thanks, that's all, bye), say a short, natural goodbye in your own words and call end_call.",
     "- If the line goes quiet, check in lightly once, like a person would.",
   ].join("\n");
-  return `${who}\n\n${teammates}\n\n${recent}\n\n${rules}`;
+  if (voiceCallLanguage(args.language) === VOICE_CALL_LANGUAGE) return `${who}\n\n${teammates}\n\n${recent}\n\n${rules}`;
+  return `${who}\n\n${teammates}\n\n${recent}\n\n${rules}\n\n${voiceCallLanguageRule(args.language)}`;
 }
 
-const GREETINGS: readonly ((name: string, person: string) => string)[] = [
+/**
+ * The call's language, at the end of its prompt when it is not English: the
+ * voice speaks the person's language ("Brazilian Portuguese", by their own
+ * tag) from its first word, and "tu" in French (docs/localization.md). Names
+ * stay as they are.
+ */
+export function voiceCallLanguageRule(userLanguage: string | null | undefined): string {
+  const tag = normalizeUserLanguage(userLanguage) ?? VOICE_CALL_LANGUAGE;
+  return [
+    "Language:",
+    `- Speak ${languageName(tag)} for the whole call. If they speak another language to you, answer in theirs.`,
+    ...(languageCode(tag) === "fr" ? ["- Say \"tu\" to them, warm and direct, never stiff, unless they ask for \"vous\" or their messages above say \"vous\"."] : []),
+    "- Names stay as they are: Simeon, your name and your teammates' names, and the names of apps (Gmail, Slack, Shop).",
+  ].join("\n");
+}
+
+type Greeting = (name: string, person: string) => string;
+
+const GREETINGS: readonly Greeting[] = [
   (name, person) => `Hey${person}, it's ${name}. What's up?`,
   (name, person) => `Hi${person}, ${name} here. What can I do for you?`,
   (name, person) => `Hey${person}, ${name} speaking. What do you need?`,
@@ -163,12 +203,30 @@ const GREETINGS: readonly ((name: string, person: string) => string)[] = [
   (name) => `${name} here. What's on your mind?`,
 ];
 
-/** A short greeting with the agent's name; `pick` in [0, 1) chooses which, so calls do not all open alike. */
-export function buildFirstMessage(agentName: string, pick: number, personName?: string | null): string {
+/**
+ * The greetings in the call's other languages, as many as the English ones
+ * and in the same spirit (calm, no exclamation mark); French says "tu". A
+ * language with none here opens with the English one, which the voice then
+ * follows in the person's language. Kept word for word in
+ * `ios/SimeonCore/Sources/SimeonCore/VoiceCall.swift`.
+ */
+const GREETINGS_BY_LANGUAGE: Readonly<Record<string, readonly Greeting[]>> = {
+  fr: [
+    (name, person) => `Salut${person}, c’est ${name}. Quoi de neuf\u202f?`,
+    (name, person) => `Bonjour${person}, ${name} à l’appareil. Qu’est-ce que je peux faire pour toi\u202f?`,
+    (name, person) => `Salut${person}, ici ${name}. De quoi as-tu besoin\u202f?`,
+    (name, person) => `Bonjour${person}, c’est ${name}. Comment je peux t’aider\u202f?`,
+    (name) => `${name} à l’appareil. Qu’est-ce que tu as en tête\u202f?`,
+  ],
+};
+
+/** A short greeting with the agent's name; `pick` in [0, 1) chooses which, so calls do not all open alike. In the call's language (`voiceCallLanguage`). */
+export function buildFirstMessage(agentName: string, pick: number, personName?: string | null, language?: string | null): string {
   const name = collapse(agentName) || "your agent";
   const person = clamp(collapse(personName ?? ""), 60);
-  const index = Math.min(GREETINGS.length - 1, Math.max(0, Math.floor((Number.isFinite(pick) ? pick : 0) * GREETINGS.length)));
-  return GREETINGS[index]!(name, person.length > 0 ? ` ${person}` : "");
+  const greetings = GREETINGS_BY_LANGUAGE[voiceCallLanguage(language)] ?? GREETINGS;
+  const index = Math.min(greetings.length - 1, Math.max(0, Math.floor((Number.isFinite(pick) ? pick : 0) * greetings.length)));
+  return greetings[index]!(name, person.length > 0 ? ` ${person}` : "");
 }
 
 export interface VoiceCallOverrides {
@@ -184,13 +242,15 @@ export function buildVoiceCallOverrides(args: {
   readonly voiceId?: string | null;
   readonly pick: number;
   readonly personName?: string | null;
+  /** The person's language (`userLanguage`); none is English. */
+  readonly language?: string | null;
 }): VoiceCallOverrides {
   const voiceId = typeof args.voiceId === "string" && args.voiceId.trim().length > 0 ? args.voiceId.trim() : null;
   return {
     agent: {
-      prompt: { prompt: buildVoiceCallPrompt({ agent: args.agent, transcript: args.transcript, personName: args.personName ?? null, teammates: args.teammates ?? [] }) },
-      firstMessage: buildFirstMessage(args.agent.name, args.pick, args.personName ?? null),
-      language: VOICE_CALL_LANGUAGE,
+      prompt: { prompt: buildVoiceCallPrompt({ agent: args.agent, transcript: args.transcript, personName: args.personName ?? null, teammates: args.teammates ?? [], language: args.language ?? null }) },
+      firstMessage: buildFirstMessage(args.agent.name, args.pick, args.personName ?? null, args.language ?? null),
+      language: voiceCallLanguage(args.language),
     },
     ...(voiceId == null ? {} : { tts: { voiceId } }),
   };

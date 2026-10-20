@@ -45,14 +45,16 @@ public actor SimeonAPI {
 
   public nonisolated let base: URL
   public nonisolated let clientVersion: String
+  /** The app's language (`AppLanguage`), sent on every request as `Accept-Language`. */
+  public nonisolated let language: String
   private let vault: TokenVault
   private let http: HTTPClient
   private let now: @Sendable () -> Double
   private var refreshing: Task<SessionTokens?, Never>?
   private var onEnded: (@Sendable () -> Void)?
 
-  public init(base: URL = SimeonConfig.defaultAPI, clientVersion: String, vault: TokenVault, http: HTTPClient = URLSessionClient(), now: @escaping @Sendable () -> Double = { Date().timeIntervalSince1970 * 1000 }) {
-    self.base = base; self.clientVersion = clientVersion; self.vault = vault; self.http = http; self.now = now
+  public init(base: URL = SimeonConfig.defaultAPI, clientVersion: String, vault: TokenVault, http: HTTPClient = URLSessionClient(), language: String = AppLanguage.current, now: @escaping @Sendable () -> Double = { Date().timeIntervalSince1970 * 1000 }) {
+    self.base = base; self.clientVersion = clientVersion; self.vault = vault; self.http = http; self.language = language; self.now = now
   }
 
   /** Called once when the server ends the session (a spent refresh token, a 401). */
@@ -69,9 +71,9 @@ public actor SimeonAPI {
     vault.write(SessionTokens(pair: pair, nowMs: now()))
   }
 
-  /** The headers the Mac app sends the broker (`sand-client-metadata.ts`). */
+  /** The headers the Mac app sends the broker (`sand-client-metadata.ts`), and the app's language. */
   public nonisolated var clientHeaders: [String: String] {
-    ["x-simeon-client-type": "sand", SimeonConfig.clientVersionHeader: clientVersion, "x-sand-box-namespace": "prod"]
+    ["x-simeon-client-type": "sand", SimeonConfig.clientVersionHeader: clientVersion, "x-sand-box-namespace": "prod", SimeonConfig.languageHeader: language]
   }
 
   private func url(_ path: String) -> URL {
@@ -101,7 +103,7 @@ public actor SimeonAPI {
   }
 
   private func refresh(_ current: SessionTokens) async -> SessionTokens? {
-    let request = URLRequest.post(url(Tokens.refreshPath), json: ["grant_type": "refresh_token", "refresh_token": .string(current.refreshToken)])
+    let request = URLRequest.post(url(Tokens.refreshPath), json: ["grant_type": "refresh_token", "refresh_token": .string(current.refreshToken)], headers: [SimeonConfig.languageHeader: language])
     let answer = try? await http.send(request)
     switch Tokens.readRefreshAnswer(status: answer?.status, body: answer?.json, nowMs: now()) {
     case .refreshed(let next):
@@ -169,16 +171,18 @@ public actor SimeonAPI {
   /**
    * Dictation (`audio_transcriptions` in server/simeon/desktop/capabilities.py,
    * as the Mac's `simeon-transcribe.ts` sends it): the recording as OpenAI's
-   * multipart `file` ("audio.mp4" for `audio/mp4`), no language (OpenAI
-   * finds it), at `/desktop/api/proxy/v1/audio/transcriptions`; what was
-   * said comes back as `{text, seconds}`.
+   * multipart `file` ("audio.mp4" for `audio/mp4`), at
+   * `/desktop/api/proxy/v1/audio/transcriptions`; what was said comes back as
+   * `{text, seconds}`. With the app's language as `language` when it is not
+   * English (20 October 2026: the Mac's dictation heard in French); in English
+   * none is sent, as before, and OpenAI finds it.
    */
   public func transcribe(audio: Data, mimeType: String) async throws -> String {
     let mime = mimeType.split(separator: ";").first.map { String($0).trimmingCharacters(in: .whitespaces) } ?? "audio/webm"
     let boundary = "simeon-\(UUID().uuidString.lowercased())"
     var request = URLRequest(url: url(Self.desktopPrefix + "proxy/v1/audio/transcriptions"))
     request.httpMethod = "POST"
-    request.httpBody = Self.multipartFile(audio, filename: Self.audioFilename(mime), mimeType: mime, boundary: boundary)
+    request.httpBody = Self.multipartFile(audio, filename: Self.audioFilename(mime), mimeType: mime, boundary: boundary, language: Self.dictationLanguage(language))
     try await authorized(&request)
     request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "content-type")
     let answer = try await http.send(request)
@@ -195,9 +199,17 @@ public actor SimeonAPI {
     return "audio.\(subtype.split(separator: "+").first.map(String.init) ?? "webm")"
   }
 
-  /** One file as `multipart/form-data`, the field named `file`. */
-  static func multipartFile(_ data: Data, filename: String, mimeType: String, boundary: String) -> Data {
+  /** The language dictation is heard in: the two letters OpenAI takes ("fr"), or nil for English (OpenAI then finds it). */
+  static func dictationLanguage(_ language: String) -> String? {
+    AppLanguage.isEnglish(language) ? nil : AppLanguage.code(language)
+  }
+
+  /** One file as `multipart/form-data`, the field named `file`, after the `language` field when there is one. */
+  static func multipartFile(_ data: Data, filename: String, mimeType: String, boundary: String, language: String? = nil) -> Data {
     var body = Data()
+    if let language {
+      body.append(Data("--\(boundary)\r\nContent-Disposition: form-data; name=\"language\"\r\n\r\n\(language)\r\n".utf8))
+    }
     body.append(Data("--\(boundary)\r\nContent-Disposition: form-data; name=\"file\"; filename=\"\(filename)\"\r\nContent-Type: \(mimeType)\r\n\r\n".utf8))
     body.append(data)
     body.append(Data("\r\n--\(boundary)--\r\n".utf8))
@@ -286,6 +298,7 @@ public actor SimeonAPI {
     var request = URLRequest(url: url(Self.desktopPrefix + "auth/logout"))
     request.httpMethod = "POST"
     request.setValue("Bearer \(token)", forHTTPHeaderField: "authorization")
+    request.setValue(language, forHTTPHeaderField: SimeonConfig.languageHeader)
     _ = try? await http.send(request)
   }
 }

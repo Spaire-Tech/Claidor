@@ -173,6 +173,9 @@ export class TranscriptManager {
   /** The person's name, for a staffed agent's first turn (`agent-to-agent-messaging.ts`); set by the composition. */
   requestContextUserFullName: (() => string | undefined) | undefined;
   setUserFullNameResolver(resolve: () => string | undefined): void { this.requestContextUserFullName = resolve; }
+  /** The person's language, for the first-run cues (`shared/user-language.ts`); set by the composition. */
+  userLanguage: (() => string | undefined) | undefined;
+  setUserLanguageResolver(resolve: () => string | undefined): void { this.userLanguage = resolve; }
 
   memory: any = NO_MEMORY;
   contentSearch: any = NO_CONTENT_SEARCH;

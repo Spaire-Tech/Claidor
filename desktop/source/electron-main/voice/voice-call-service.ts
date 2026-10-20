@@ -66,6 +66,8 @@ export interface VoiceCallServiceOptions {
   readonly isEnabled: () => boolean;
   /** The name the person gave (else Google's first name), for the voice to call them by; null when none. */
   readonly getPersonName?: () => Promise<string | null>;
+  /** The person's language ("fr"); none is English (`voiceCallLanguage`). */
+  readonly getLanguage?: () => string | null;
   readonly log: (line: string) => void;
   readonly onMenuChanged?: () => void;
   readonly now?: () => number;
@@ -283,6 +285,7 @@ export function createVoiceCallService(options: VoiceCallServiceOptions): VoiceC
       voiceId,
       pick: random(),
       personName,
+      language: options.getLanguage?.() ?? null,
     });
     active.conversationId = ticket.conversationId;
     active.channel?.dispose();

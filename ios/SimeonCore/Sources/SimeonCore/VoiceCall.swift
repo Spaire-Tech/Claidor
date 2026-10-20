@@ -12,7 +12,20 @@ public enum VoiceCallText {
   public static let lineMaxChars = 600
   public static let relayMaxChars = 2_000
   public static let teammatesMax = 20
-  public static let language = "en"
+  /** The call's language when the app is in English, or in one the voice does not speak. */
+  public static let defaultLanguage = "en"
+  /**
+   * The languages a call can be in, as ElevenLabs names them, by the app's language (`VOICE_CALL_LANGUAGES` in
+   * voice-call-prompt.ts). The server gives its platform agent the same (`VOICE_LANGUAGES` in voice.py): a language
+   * it was not given is refused, so one is added in all three (docs/localization.md).
+   */
+  static let languages: [String: String] = ["en": "en", "fr": "fr"]
+
+  /** The call's language for the app's: "fr" for "fr-CA"; English for one the voice does not speak yet. */
+  public static func language(for appLanguage: String) -> String {
+    let tag = AppLanguage.tag(appLanguage)
+    return languages[tag] ?? languages[AppLanguage.code(tag)] ?? defaultLanguage
+  }
 
   public static let calling = "Calling…"
   public static let ended = "Call ended"
@@ -61,7 +74,7 @@ public enum VoiceCallText {
   }
 
   /** The per-call system prompt (`buildVoiceCallPrompt`): the voice IS the agent, in the first person. */
-  public static func prompt(name rawName: String, title rawTitle: String, description rawDescription: String, transcript: [Line], personName: String?, teammates: [(name: String, title: String)]) -> String {
+  public static func prompt(name rawName: String, title rawTitle: String, description rawDescription: String, transcript: [Line], personName: String?, teammates: [(name: String, title: String)], language: String = defaultLanguage) -> String {
     let name = collapse(rawName).isEmpty ? "your agent" : collapse(rawName)
     let person = clamp(collapse(personName ?? ""), 60)
     let them = person.isEmpty ? "the person" : person
@@ -109,21 +122,46 @@ public enum VoiceCallText {
       "- When they wrap up (thanks, that's all, bye), say a short, natural goodbye in your own words and call end_call.",
       "- If the line goes quiet, check in lightly once, like a person would.",
     ].joined(separator: "\n")
-    return "\(who.joined(separator: " "))\n\n\(teammatesText)\n\n\(recent)\n\n\(rules)"
+    let base = "\(who.joined(separator: " "))\n\n\(teammatesText)\n\n\(recent)\n\n\(rules)"
+    return self.language(for: language) == defaultLanguage ? base : "\(base)\n\n\(languageRule(language))"
   }
 
-  /** A short greeting with the agent's name (`buildFirstMessage`); `pick` in [0, 1) chooses which. */
-  public static func firstMessage(name rawName: String, pick: Double, personName: String?) -> String {
+  /** The call's language at the end of its prompt when it is not English (`voiceCallLanguageRule`): the app's, from the first word, "tu" in French. */
+  static func languageRule(_ appLanguage: String) -> String {
+    let tag = AppLanguage.tag(appLanguage)
+    var lines = ["Language:", "- Speak \(AppLanguage.englishName(tag)) for the whole call. If they speak another language to you, answer in theirs."]
+    if AppLanguage.code(tag) == "fr" { lines.append("- Say \"tu\" to them, warm and direct, never stiff, unless they ask for \"vous\" or their messages above say \"vous\".") }
+    lines.append("- Names stay as they are: Simeon, your name and your teammates' names, and the names of apps (Gmail, Slack, Shop).")
+    return lines.joined(separator: "\n")
+  }
+
+  /**
+   * A short greeting with the agent's name (`buildFirstMessage`); `pick` in [0, 1) chooses which. In the call's
+   * language: French says "tu", word for word as voice-call-prompt.ts; a language with none of its own opens in English.
+   */
+  public static func firstMessage(name rawName: String, pick: Double, personName: String?, language: String = defaultLanguage) -> String {
     let name = collapse(rawName).isEmpty ? "your agent" : collapse(rawName)
     let person = clamp(collapse(personName ?? ""), 60)
     let p = person.isEmpty ? "" : " \(person)"
-    let greetings = [
-      "Hey\(p), it's \(name). What's up?",
-      "Hi\(p), \(name) here. What can I do for you?",
-      "Hey\(p), \(name) speaking. What do you need?",
-      "Hi\(p), it's \(name). How can I help?",
-      "\(name) here. What's on your mind?",
-    ]
+    let greetings: [String]
+    switch self.language(for: language) {
+    case "fr":
+      greetings = [
+        "Salut\(p), c’est \(name). Quoi de neuf\u{202F}?",
+        "Bonjour\(p), \(name) à l’appareil. Qu’est-ce que je peux faire pour toi\u{202F}?",
+        "Salut\(p), ici \(name). De quoi as-tu besoin\u{202F}?",
+        "Bonjour\(p), c’est \(name). Comment je peux t’aider\u{202F}?",
+        "\(name) à l’appareil. Qu’est-ce que tu as en tête\u{202F}?",
+      ]
+    default:
+      greetings = [
+        "Hey\(p), it's \(name). What's up?",
+        "Hi\(p), \(name) here. What can I do for you?",
+        "Hey\(p), \(name) speaking. What do you need?",
+        "Hi\(p), it's \(name). How can I help?",
+        "\(name) here. What's on your mind?",
+      ]
+    }
     let index = min(greetings.count - 1, max(0, Int((pick.isFinite ? pick : 0) * Double(greetings.count))))
     return greetings[index]
   }
@@ -376,8 +414,11 @@ public final class LiveCall: CallEngine, @unchecked Sendable {
     let person = personName()
     let teammates = roster.filter { $0.id != agentId && !$0.isGroup && !$0.isRemoteRoom && !$0.isHidden && !$0.name.isEmpty }.map { (name: $0.name, title: $0.title) }
     let name = row?.name ?? agentName
-    let prompt = VoiceCallText.prompt(name: name, title: row?.title ?? "", description: row?.description ?? "", transcript: VoiceCallText.lines(entries), personName: person, teammates: teammates)
-    let greeting = VoiceCallText.firstMessage(name: name, pick: Double.random(in: 0..<1), personName: person)
+    // In the app's language (`AppLanguage`): the voice hears and speaks it, its first line too.
+    let appLanguage = AppLanguage.current
+    let language = VoiceCallText.language(for: appLanguage)
+    let prompt = VoiceCallText.prompt(name: name, title: row?.title ?? "", description: row?.description ?? "", transcript: VoiceCallText.lines(entries), personName: person, teammates: teammates, language: appLanguage)
+    let greeting = VoiceCallText.firstMessage(name: name, pick: Double.random(in: 0..<1), personName: person, language: appLanguage)
     // The voice its picker shows, never one taken off the list (9 October 2026); nil is the agent's own, Michael.
     let voiceId: String?
     if let voiceFor { voiceId = await voiceFor(agentId) } else { voiceId = row?.voiceId }
@@ -391,7 +432,7 @@ public final class LiveCall: CallEngine, @unchecked Sendable {
     guard !isFinished else { return }
     log("connect: token issued for agent \(agentId) (voice \(voiceId ?? "the agent's own"), \(entries.count) chat entries read)")
     do {
-      try await transport.start(token: token, prompt: prompt, firstMessage: greeting, voiceId: voiceId, language: VoiceCallText.language) { [weak self] event in
+      try await transport.start(token: token, prompt: prompt, firstMessage: greeting, voiceId: voiceId, language: language) { [weak self] event in
         self?.handle(event, agentId: agentId)
       }
     } catch {

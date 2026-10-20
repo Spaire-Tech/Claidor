@@ -1,4 +1,5 @@
 import { staffedFirstRunCue } from "../../../shared/agents/chief-of-staff.js";
+import { firstRunCueInLanguage } from "../../../shared/user-language.js";
 import {
   buildAgentInboundBatchWakePrompt,
   buildAgentInboundWakePrompt,
@@ -305,7 +306,7 @@ export class AgentToAgentMessaging {
                 : buildAgentInboundBatchWakePrompt(turn);
             const result = await runner.run(
               isStaffing
-                ? `${staffedFirstRunCue({ fromName: message.from.name, personName: this.tm.requestContextUserFullName?.() ?? null })}\n\n${prompt}`
+                ? `${firstRunCueInLanguage(staffedFirstRunCue({ fromName: message.from.name, personName: this.tm.requestContextUserFullName?.() ?? null }), this.tm.userLanguage?.())}\n\n${prompt}`
                 : prompt,
               {
                 hidden: true,

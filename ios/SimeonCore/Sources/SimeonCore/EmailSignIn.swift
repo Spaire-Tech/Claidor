@@ -83,7 +83,7 @@ public enum EmailSignIn {
 
   private static func request(_ api: URL, _ path: String, _ fields: [String: JSON], _ clientVersion: String) -> URLRequest {
     let url = URL(string: api.absoluteString.trimmingTrailingSlashes + path)!
-    return URLRequest.post(url, json: .object(fields), headers: [SimeonConfig.clientVersionHeader: clientVersion])
+    return URLRequest.post(url, json: .object(fields), headers: SimeonConfig.serverHeaders(clientVersion: clientVersion))
   }
 
   private static func trimmed(_ email: String) -> String {

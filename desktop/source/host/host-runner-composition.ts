@@ -875,6 +875,8 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
   const auth = extensions.api("auth");
   // A staffed agent's first turn names the person (`shared/agents/chief-of-staff.ts`, 7 October 2026).
   method(extensions.api("transcript"), "setUserFullNameResolver")?.(() => method(auth, "getUserFullName")?.());
+  // And its first hello in the person's language (`shared/user-language.ts`, 20 October 2026).
+  method(extensions.api("transcript"), "setUserLanguageResolver")?.(() => { const value = method(extensions.api("settings"), "getUserLanguage")?.(); return typeof value === "string" ? value : undefined; });
   // SearchFlights' searches per turn, so the same search is not run twice in one turn.
   const flightSearchesByTurn = new WeakMap<object, Set<string>>();
   // Simeon Labs' server as this computer's signed-in person (flight search and booking).
@@ -1632,6 +1634,10 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
                   : {}),
               };
             },
+          },
+          userLanguage: () => {
+            const value = method(settings, "getUserLanguage")?.();
+            return typeof value === "string" ? value : undefined;
           },
           automationStore: () => (session.automations ?? null) as ReturnType<SystemPromptAssemblyDependencies["automationStore"]>,
           workflowStore: () => (session.workflows ?? null) as ReturnType<SystemPromptAssemblyDependencies["workflowStore"]>,

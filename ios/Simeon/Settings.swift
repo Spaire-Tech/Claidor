@@ -77,6 +77,20 @@ struct SettingsSheet: View {
           .pickerStyle(.menu)
           .tint(Ink.secondary)
           .onChange(of: theme) { _, _ in Haptics.select() }
+          // The app's language in its own name (20 October 2026). The app follows the phone's language by itself; this
+          // opens iOS's own page for the app (Settings › Simeon › Language), where another is chosen. iOS then opens the
+          // app again in it, and the agents are told (`AppStore.tellLanguage`).
+          Button {
+            #if os(iOS)
+            if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
+            #endif
+          } label: {
+            HStack {
+              Text("Language").foregroundStyle(Ink.primary)
+              Spacer()
+              Text(verbatim: AppLanguage.ownName(AppLanguage.current)).foregroundStyle(Ink.secondary)
+            }
+          }
           Toggle("Haptics", isOn: $haptics)
             .tint(Ink.blue)
             // Turned on, it is felt at once: the way to tell it works.

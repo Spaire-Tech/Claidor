@@ -7,13 +7,14 @@ import type { SandAutoReviewInstructions } from "../../../shared/sand-auto-revie
 import type { SidebarSection } from "../../../shared/sidebar-sections.js";
 import { SandSettingsStore } from "../../../shared/node/settings/sand-settings-store.js";
 import { isSandInferenceProvider, type SandInferenceProvider } from "../../../shared/inference-router.js";
+import { normalizeUserLanguage } from "../../../shared/user-language.js";
 
 export function isValidIanaTimeZone(value: string): boolean { try { new Intl.DateTimeFormat("en", { timeZone: value }).format(); return true; } catch { return false; } }
 
 export interface HostSettingsUpdate {
   notifications?: unknown; mcpCustomInstructions?: Record<string, string>; mcpCustomInstructionsByServerId?: Record<string, string>;
   mcpDisabledToolsByServerId?: Record<string, string[]>; mcpCustomInstructionsAccountScope?: string | null; mcpBoxServers?: string[];
-  userTimeZone?: string; userTimeZoneOverride?: string; agentDefaultModel?: SandAgentModelSelection | null; computerUseModel?: SandAgentModelSelection | null;
+  userTimeZone?: string; userTimeZoneOverride?: string; userLanguage?: string; agentDefaultModel?: SandAgentModelSelection | null; computerUseModel?: SandAgentModelSelection | null;
   autoReviewInstructions?: SandAutoReviewInstructions; localToolPermission?: unknown; webauthnProxyEnabled?: boolean; pinnedAgentIds?: string[];
   sidebarSections?: SidebarSection[]; hasSeenOnboarding?: boolean; featureFlagOverrides?: Record<string, boolean>; inferenceProvider?: unknown;
 }
@@ -26,11 +27,11 @@ export class SettingsService {
   constructor(private readonly settingsPath = join(getSandRootDir(), "settings.json")) { this.store = new SandSettingsStore(settingsPath); }
   getSettingsPath(): string { return this.settingsPath; }
   getHostSettings() {
-    const userTimeZone = this.store.getDetectedUserTimeZone(); const userTimeZoneOverride = this.store.getUserTimeZoneOverride();
+    const userTimeZone = this.store.getDetectedUserTimeZone(); const userTimeZoneOverride = this.store.getUserTimeZoneOverride(); const userLanguage = this.store.getUserLanguage();
     const agentDefaultModel = this.store.getAgentDefaultModel(); const computerUseModel = this.store.getComputerUseModel();
     const scope = this.store.getMcpCustomInstructionsAccountScope(); const pinnedAgentIds = this.store.getPinnedAgentIds();
     const sidebarSections = this.store.getSidebarSections(); const hasSeenOnboarding = this.store.getHasSeenOnboarding();
-    return { notifications: this.store.getNotificationConfig(), mcpCustomInstructions: this.store.getMcpCustomInstructions(), mcpCustomInstructionsByServerId: this.store.getMcpCustomInstructionsByServerId(), mcpDisabledToolsByServerId: this.store.getMcpDisabledToolsByServerId(), ...(scope === undefined ? {} : { mcpCustomInstructionsAccountScope: scope }), mcpBoxServers: this.store.getMcpBoxServers(), autoReviewInstructions: this.store.getAutoReviewInstructions(), localToolPermission: this.store.getLocalToolPermission(), webauthnProxyEnabled: this.store.getWebauthnProxyEnabled(), inferenceProvider: this.store.getInferenceProvider(), inferenceRouterUsage: this.store.getInferenceRouterUsage(), ...(userTimeZone === undefined ? {} : { userTimeZone }), ...(userTimeZoneOverride === undefined ? {} : { userTimeZoneOverride }), ...(agentDefaultModel === undefined ? {} : { agentDefaultModel }), ...(computerUseModel === undefined ? {} : { computerUseModel }), ...(pinnedAgentIds === undefined ? {} : { pinnedAgentIds }), sidebarSections: sidebarSections ?? [], ...(hasSeenOnboarding === undefined ? {} : { hasSeenOnboarding }) };
+    return { notifications: this.store.getNotificationConfig(), mcpCustomInstructions: this.store.getMcpCustomInstructions(), mcpCustomInstructionsByServerId: this.store.getMcpCustomInstructionsByServerId(), mcpDisabledToolsByServerId: this.store.getMcpDisabledToolsByServerId(), ...(scope === undefined ? {} : { mcpCustomInstructionsAccountScope: scope }), mcpBoxServers: this.store.getMcpBoxServers(), autoReviewInstructions: this.store.getAutoReviewInstructions(), localToolPermission: this.store.getLocalToolPermission(), webauthnProxyEnabled: this.store.getWebauthnProxyEnabled(), inferenceProvider: this.store.getInferenceProvider(), inferenceRouterUsage: this.store.getInferenceRouterUsage(), ...(userTimeZone === undefined ? {} : { userTimeZone }), ...(userTimeZoneOverride === undefined ? {} : { userTimeZoneOverride }), ...(userLanguage === undefined ? {} : { userLanguage }), ...(agentDefaultModel === undefined ? {} : { agentDefaultModel }), ...(computerUseModel === undefined ? {} : { computerUseModel }), ...(pinnedAgentIds === undefined ? {} : { pinnedAgentIds }), sidebarSections: sidebarSections ?? [], ...(hasSeenOnboarding === undefined ? {} : { hasSeenOnboarding }) };
   }
   setHostSettings(update: HostSettingsUpdate) {
     const previousUserTimeZone = this.store.getUserTimeZone(); this.store.setNotificationConfig(update.notifications ?? {});
@@ -41,6 +42,8 @@ export class SettingsService {
     if (update.mcpBoxServers !== undefined) this.store.setMcpBoxServers(update.mcpBoxServers);
     if (update.userTimeZone !== undefined && (update.userTimeZone === "" || isValidIanaTimeZone(update.userTimeZone))) this.store.setUserTimeZone(update.userTimeZone);
     if (update.userTimeZoneOverride !== undefined && (update.userTimeZoneOverride === "" || isValidIanaTimeZone(update.userTimeZoneOverride))) this.store.setUserTimeZoneOverride(update.userTimeZoneOverride);
+    // "" clears it (English); anything that is not a language tag is ignored.
+    if (update.userLanguage !== undefined && (update.userLanguage === "" || normalizeUserLanguage(update.userLanguage) !== undefined)) this.store.setUserLanguage(update.userLanguage);
     if (update.agentDefaultModel === null) this.store.setAgentDefaultModel(undefined); else if (isSandAgentModelSelection(update.agentDefaultModel)) this.store.setAgentDefaultModel(update.agentDefaultModel);
     if (update.autoReviewInstructions !== undefined) this.store.setAutoReviewInstructions(update.autoReviewInstructions);
     if (update.localToolPermission !== undefined) this.store.setLocalToolPermission(normalizeSandLocalToolPermission(update.localToolPermission));
@@ -59,6 +62,7 @@ export class SettingsService {
   getAgentDefaultModel(): SandAgentModelSelection | undefined { return this.store.getAgentDefaultModel(); }
   getComputerUseModel(): SandAgentModelSelection | undefined { return this.store.getComputerUseModel(); }
   getUserTimeZone(): string | undefined { return this.store.getUserTimeZone(); }
+  getUserLanguage(): string | undefined { return this.store.getUserLanguage(); }
   getAutoReviewInstructions(): SandAutoReviewInstructions { return this.store.getAutoReviewInstructions(); }
   getLocalToolPermission(): SandLocalToolPermission { return this.store.getLocalToolPermission(); }
   setLocalToolPermission(value: SandLocalToolPermission): void { this.store.setLocalToolPermission(value); }

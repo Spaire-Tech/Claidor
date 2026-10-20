@@ -580,7 +580,9 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
     case "user/name":
       return ["preferredName": body?["name"] ?? .null]
     case "user/profile":
-      return ["email": "bass@example.com", "preferredName": .null, "suggestedName": "Bass"]
+      if method == "POST", let language = body?["language"]?.string { lock.withLock { profileLanguage = language } }
+      let profile: JSON = ["email": "bass@example.com", "preferredName": .null, "suggestedName": "Bass"]
+      return lock.withLock { profileLanguage }.map { profile.setting("language", .string($0)) } ?? profile
     case EmailSignIn.accountPasswordPath:
       // Settings › Account › Password, as the server answers it (`email_sign_in.py`).
       guard method == "PUT" else { return ["set": .bool(lock.withLock { passwordSet })] }
@@ -659,6 +661,8 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
 
   /** Whether the demo account has set a password (Settings › Account). */
   private var passwordSet = false
+  /** The language the app told (`POST user/profile`, `AppStore.tellLanguage`), as the server keeps it. */
+  private var profileLanguage: String?
   private var hostSettings: JSON = ["pinnedAgentIds": [], "autoReviewInstructions": ["isEnabled": true, "allowInstructions": [], "blockInstructions": []], "userTimeZone": .string(TimeZone.current.identifier), "userTimeZoneOverride": nil]
   private var connected: Set<String> = ["gmail", "notion"]
   private var pendingEmits: [(String, Entry)] = []

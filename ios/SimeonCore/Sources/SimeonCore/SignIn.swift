@@ -19,6 +19,13 @@ public enum SimeonConfig {
   public static let macURLScheme = "simeon"
   /** What the server stores on the session row, so a phone's session reads as one (`client_version_of`). */
   public static let clientVersionHeader = "x-simeon-client-version"
+  /** The app's language, on every request to Simeon Labs' server (`AppLanguage`): the server answers in it. */
+  public static let languageHeader = "accept-language"
+
+  /** The headers of a request to the server before sign-in: the app's version and its language. */
+  public static func serverHeaders(clientVersion: String, language: String = AppLanguage.current) -> [String: String] {
+    [clientVersionHeader: clientVersion, languageHeader: language]
+  }
 }
 
 /**
@@ -106,7 +113,7 @@ public enum SignIn {
     for attempt in 0..<maxAttempts {
       if !keepGoing() { return .stopped }
       do {
-        let request = URLRequest.post(url, json: ["uuid": .string(metadata.uuid), "verifier": .string(metadata.verifier)], headers: [SimeonConfig.clientVersionHeader: clientVersion])
+        let request = URLRequest.post(url, json: ["uuid": .string(metadata.uuid), "verifier": .string(metadata.verifier)], headers: SimeonConfig.serverHeaders(clientVersion: clientVersion))
         let answer = try await http.send(request)
         if answer.status == 404 {
           consecutiveErrors = 0

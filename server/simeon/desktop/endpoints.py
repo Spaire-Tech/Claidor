@@ -79,6 +79,7 @@ from .capabilities import router as capabilities_router
 from .composio import forward as composio_forward
 from .flight_booking import router as flight_booking_router
 from .flights import router as flights_router
+from .language import normalize_language
 from .link_wallet import router as link_wallet_router
 from .mcp_oauth_return import router as mcp_oauth_return_router
 
@@ -351,6 +352,35 @@ async def profile(
     too, with its own credential, for the agent's user-info block
     (`host/extensions/auth/user-full-name-service.ts`)."""
     return _ok(desktop.user_payload(desktop_session.user))
+
+
+class ProfileBody(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    #: The app's language ("fr", "pt-BR"); "" forgets it (English).
+    language: str | None = None
+
+
+@router.post("/api/user/profile", name="desktop:profile_update")
+async def update_profile(
+    body: ProfileBody,
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+    session: AsyncSession = Depends(get_db_session),
+) -> JSONResponse:
+    """What the apps tell about the person: their language, after every
+    sign-in and whenever it changes (`simeon.desktop.language`). Kept on
+    the account for what is written without a request, like the sign-in
+    code email. Answers the profile, as `GET` does."""
+    user = desktop_session.user
+    if body.language is not None:
+        if body.language.strip() == "":
+            user.language = None
+        else:
+            language = normalize_language(body.language)
+            if language is None:
+                return _fail(400, "That is not a language.", status=400)
+            user.language = language
+        session.add(user)
+    return _ok(desktop.user_payload(user))
 
 
 class NameBody(BaseModel):

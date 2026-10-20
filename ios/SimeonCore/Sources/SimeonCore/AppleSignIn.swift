@@ -58,7 +58,7 @@ public enum AppleSignIn {
     if let givenName, !givenName.isEmpty { fields["givenName"] = .string(givenName) }
     if let familyName, !familyName.isEmpty { fields["familyName"] = .string(familyName) }
     let url = URL(string: api.absoluteString.trimmingTrailingSlashes + path)!
-    let request = URLRequest.post(url, json: .object(fields), headers: [SimeonConfig.clientVersionHeader: clientVersion])
+    let request = URLRequest.post(url, json: .object(fields), headers: SimeonConfig.serverHeaders(clientVersion: clientVersion))
     do {
       let answer = try await http.send(request)
       if answer.ok, let pair = TokenPair(answer.json) { return .tokens(pair) }

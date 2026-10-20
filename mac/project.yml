@@ -13,6 +13,9 @@ options:
     # surfaces use the system's material (Simeon/Glass.swift).
     macOS: "15.0"
   createIntermediateGroups: true
+  # English is the source language; the others are translations
+  # (docs/localization.md, 20 October 2026).
+  developmentLanguage: en
 settings:
   base:
     SWIFT_VERSION: "5.0"
@@ -82,6 +85,12 @@ targets:
         CFBundleDisplayName: Simeon
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        # The languages the app is in (docs/localization.md): iOS opens it in
+        # French on a French iPhone and shows Settings › Simeon › Language;
+        # the Mac's picker lists them. A language added here is asked for
+        # everywhere by scripts/check_translations.py.
+        CFBundleDevelopmentRegion: en
+        CFBundleLocalizations: [en, fr]
         # The Mac app's scheme, the Electron app's until it was retired (11
         # October 2026); the server's confirm page opens `simeon://app/v1/open`.
         CFBundleURLTypes:

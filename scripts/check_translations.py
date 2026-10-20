@@ -1,0 +1,181 @@
+#!/usr/bin/env python3
+"""Fail when any English sentence of Simeon's has no translation (docs/localization.md).
+
+The languages are the apps' (`CFBundleLocalizations` in ios/project.yml, English
+left out): adding one there makes this ask for it everywhere. It reads:
+
+- every String Catalog (`*.xcstrings`) under ios/ and mac/: each string the
+  apps show needs a translated value in each language (plural and device
+  variations: every form);
+- the voice calls' greetings: the engine's (`voice-call-prompt.ts`) and the
+  core's (`VoiceCall.swift`), as many in each language as in English, the
+  same words in both;
+- the server's voice agent (`VOICE_LANGUAGES` in voice.py): a first message
+  in each language.
+
+Run it with `python3 scripts/check_names.py` before pushing.
+"""
+
+from __future__ import annotations
+
+import json
+import re
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+
+
+def languages() -> list[str]:
+    text = (ROOT / "ios/project.yml").read_text()
+    found = re.search(r"CFBundleLocalizations:\s*\[([^\]]*)\]", text)
+    if found is None:
+        return []
+    tags = [tag.strip() for tag in found.group(1).split(",") if tag.strip()]
+    return [tag for tag in tags if tag != "en"]
+
+
+def catalogs() -> list[Path]:
+    found: list[Path] = []
+    for folder in ("ios", "mac"):
+        for path in sorted((ROOT / folder).rglob("*.xcstrings")):
+            if ".build" in path.parts or "DerivedData" in path.parts:
+                continue
+            found.append(path)
+    return found
+
+
+def unit_missing(unit: dict | None) -> bool:
+    if not isinstance(unit, dict):
+        return True
+    value = unit.get("value")
+    return unit.get("state") not in ("translated",) or not isinstance(value, str) or value == ""
+
+
+def localization_missing(entry: dict | None) -> bool:
+    """A translation is there when its string unit is, or every form of its variations is."""
+    if not isinstance(entry, dict):
+        return True
+    if "stringUnit" in entry:
+        return unit_missing(entry["stringUnit"])
+    variations = entry.get("variations")
+    if not isinstance(variations, dict) or not variations:
+        return True
+    for forms in variations.values():
+        if not isinstance(forms, dict) or not forms:
+            return True
+        for form in forms.values():
+            if localization_missing(form):
+                return True
+    return False
+
+
+def check_catalog(path: Path, wanted: list[str]) -> list[str]:
+    problems: list[str] = []
+    data = json.loads(path.read_text())
+    source = data.get("sourceLanguage", "en")
+    if source != "en":
+        problems.append(f"{path.relative_to(ROOT)}: the source language is {source}, not en")
+    for key, string in sorted(data.get("strings", {}).items()):
+        if string.get("shouldTranslate") is False:
+            continue
+        if string.get("extractionState") == "stale":
+            continue
+        localizations = string.get("localizations", {})
+        for language in wanted:
+            if localization_missing(localizations.get(language)):
+                problems.append(f"{path.relative_to(ROOT)}: {key!r} has no {language}")
+    return problems
+
+
+def engine_greetings() -> dict[str, list[str]]:
+    text = (ROOT / "desktop/source/shared/voice-call/voice-call-prompt.ts").read_text()
+    out: dict[str, list[str]] = {}
+    english = re.search(r"const GREETINGS: readonly Greeting\[\] = \[(.*?)\n\];", text, re.S)
+    if english:
+        out["en"] = re.findall(r"=> `([^`]*)`", english.group(1))
+    by_language = re.search(r"const GREETINGS_BY_LANGUAGE[^=]*= \{(.*?)\n\};", text, re.S)
+    if by_language:
+        for language, body in re.findall(r"\n  ([\w-]+): \[(.*?)\n  \],", by_language.group(1), re.S):
+            out[language] = re.findall(r"=> `([^`]*)`", body)
+    return out
+
+
+def core_greetings() -> dict[str, list[str]]:
+    text = (ROOT / "ios/SimeonCore/Sources/SimeonCore/VoiceCall.swift").read_text()
+    out: dict[str, list[str]] = {}
+    for label, body in re.findall(r'\n    (case "[\w-]+"|default):\n      greetings = \[(.*?)\n      \]', text, re.S):
+        language = "en" if label == "default" else label.split('"')[1]
+        out[language] = re.findall(r'\n        "(.*)",', body)
+    return out
+
+
+def same_words(engine: str, core: str) -> bool:
+    def plain(text: str) -> str:
+        return (
+            text.replace("${person}", "{person}").replace("\\(p)", "{person}")
+            .replace("${name}", "{name}").replace("\\(name)", "{name}")
+            .replace("\\u202f", " ").replace("\\u{202F}", " ")
+        )
+
+    return plain(engine) == plain(core)
+
+
+def check_greetings(wanted: list[str]) -> list[str]:
+    problems: list[str] = []
+    engine, core = engine_greetings(), core_greetings()
+    if not engine.get("en") or not core.get("en"):
+        return ["voice calls: the English greetings could not be read (voice-call-prompt.ts, VoiceCall.swift)"]
+    for language in wanted:
+        for where, table in (("voice-call-prompt.ts", engine), ("VoiceCall.swift", core)):
+            if len(table.get(language, [])) != len(table["en"]):
+                problems.append(f"{where}: {len(table.get(language, []))} greetings in {language}, {len(table['en'])} in English")
+        pairs = zip(engine.get(language, []), core.get(language, []))
+        for index, (a, b) in enumerate(pairs):
+            if not same_words(a, b):
+                problems.append(f"voice calls: greeting {index + 1} in {language} differs between the engine ({a!r}) and the core ({b!r})")
+    return problems
+
+
+def check_server_voice(wanted: list[str]) -> list[str]:
+    """The server's agent has each language, and the engine and the core send
+    exactly the languages it has (one it was not given is refused)."""
+    text = (ROOT / "server/simeon/desktop/voice.py").read_text()
+    table = re.search(r"VOICE_LANGUAGES: dict\[str, str\] = \{(.*?)\n\}", text, re.S)
+    server = set(re.findall(r'\n    "([\w-]+)": ', table.group(1))) if table else set()
+    problems = [f"server/simeon/desktop/voice.py: VOICE_LANGUAGES has no {language}" for language in wanted if language not in server]
+    engine_text = (ROOT / "desktop/source/shared/voice-call/voice-call-prompt.ts").read_text()
+    engine_table = re.search(r"const VOICE_CALL_LANGUAGES[^=]*= \{(.*?)\};", engine_text, re.S)
+    engine = set(re.findall(r':\s*"([\w-]+)"', engine_table.group(1))) if engine_table else set()
+    core_text = (ROOT / "ios/SimeonCore/Sources/SimeonCore/VoiceCall.swift").read_text()
+    core_table = re.search(r"static let languages: \[String: String\] = \[(.*?)\]", core_text, re.S)
+    core = set(re.findall(r':\s*"([\w-]+)"', core_table.group(1))) if core_table else set()
+    for where, sent in (("voice-call-prompt.ts VOICE_CALL_LANGUAGES", engine), ("VoiceCall.swift VoiceCallText.languages", core)):
+        if sent != server | {"en"}:
+            problems.append(f"{where} sends {sorted(sent)}; the server's agent has {sorted(server | {'en'})}")
+    return problems
+
+
+def main() -> int:
+    wanted = languages()
+    if not wanted:
+        print("check_translations: no language besides English in ios/project.yml (CFBundleLocalizations)")
+        return 1
+    problems: list[str] = []
+    for path in catalogs():
+        problems += check_catalog(path, wanted)
+    problems += check_greetings(wanted)
+    problems += check_server_voice(wanted)
+    if problems:
+        for problem in problems[:200]:
+            print(problem)
+        if len(problems) > 200:
+            print(f"… and {len(problems) - 200} more")
+        print(f"check_translations: {len(problems)} missing")
+        return 1
+    print(f"check_translations: every string has {', '.join(wanted)} ({len(catalogs())} catalogs)")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
