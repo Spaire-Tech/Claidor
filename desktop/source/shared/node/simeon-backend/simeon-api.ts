@@ -1,4 +1,5 @@
 import { getConfiguredBackendUrl } from "../simeon-token.js";
+import { isEnglishOrUnset, normalizeUserLanguage } from "../../user-language.js";
 
 // Simeon's metered doors for the desktop app, all under one prefix on the
 // API host: the model proxy (`/responses`, `/messages`, `/chat/completions`),
@@ -68,6 +69,14 @@ export interface SimeonProxyRequest {
   readonly form?: FormData;
   readonly signal?: AbortSignal;
   readonly fetch?: typeof fetch;
+  /** The person's language (`userLanguage`): the server's sentences come back in it. */
+  readonly language?: string | undefined;
+}
+
+/** `Accept-Language` for the person's language, as the apps send theirs; none for English or none known. */
+function setLanguage(headers: Headers, language: string | undefined): void {
+  const tag = normalizeUserLanguage(language);
+  if (tag !== undefined && !isEnglishOrUnset(tag)) headers.set("accept-language", tag);
 }
 
 // One authenticated call to a door under the prefix. The body is JSON or a
@@ -76,6 +85,7 @@ export interface SimeonProxyRequest {
 export async function simeonProxyRequest(auth: SimeonApiAuth, path: string, request: SimeonProxyRequest = {}): Promise<Response> {
   const token = await auth.getAccessToken();
   const headers = new Headers({ authorization: `Bearer ${token}`, accept: "application/json" });
+  setLanguage(headers, request.language);
   let body: BodyInit | undefined;
   if (request.form != null) {
     body = request.form;
@@ -107,6 +117,8 @@ export interface SimeonApiRequest {
   readonly json?: unknown;
   readonly signal?: AbortSignal;
   readonly fetch?: typeof fetch;
+  /** The person's language (`userLanguage`): the server's sentences come back in it. */
+  readonly language?: string | undefined;
 }
 
 // One authenticated call to an account door, with the envelope opened: the
@@ -117,6 +129,7 @@ export interface SimeonApiRequest {
 export async function simeonApiData<T = unknown>(auth: SimeonApiAuth, path: string, request: SimeonApiRequest = {}): Promise<T> {
   const token = await auth.getAccessToken();
   const headers = new Headers({ authorization: `Bearer ${token}`, accept: "application/json" });
+  setLanguage(headers, request.language);
   const method = request.method ?? (request.json === undefined ? "GET" : "POST");
   let body: BodyInit | undefined;
   if (request.json !== undefined) {
