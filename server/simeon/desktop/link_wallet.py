@@ -67,6 +67,7 @@ from simeon.routing import APIRouter
 from .apps import start_url
 from .auth import get_desktop_or_box_session
 from .link_repository import LinkWalletRepository
+from .words import say
 
 log = structlog.get_logger()
 
@@ -414,7 +415,7 @@ async def disconnect(session: AsyncSession, user_id: UUID) -> dict[str, bool]:
 
 def _not_configured() -> JSONResponse:
     return JSONResponse(
-        {"error": "Link can't be connected here yet.", "configured": False},
+        {"error": say("link.not_configured"), "configured": False},
         status_code=503,
     )
 
@@ -531,7 +532,7 @@ async def link_token(
     try:
         grant = await access_for(session, desktop_session.user_id, force_refresh=force)
     except LinkUnavailable:
-        return JSONResponse({"error": "Link could not be reached."}, status_code=502)
+        return JSONResponse({"error": say("link.unreachable")}, status_code=502)
     headers = {"cache-control": "no-store"}
     if grant is None:
         return JSONResponse({"connected": False}, headers=headers)

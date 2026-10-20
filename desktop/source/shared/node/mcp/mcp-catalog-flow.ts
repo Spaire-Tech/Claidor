@@ -1,5 +1,7 @@
 import { fetchVendorMarketplacePlugins } from "../vendor-mcp/marketplace.js";
 import { CATALOG_CACHE_TTL_MS } from "./mcp-catalog-cache.js";
+import { say } from "../../say.js";
+import { currentUserLanguage } from "../../user-language.js";
 import { SandMcpConfigError } from "./mcp-config-error.js";
 import { findMissingRequiredCatalogFields } from "./mcp-plugin-variables.js";
 import type { SandMarketplacePlugin } from "./mcp-marketplace.js";
@@ -92,9 +94,7 @@ export class SandMcpCatalogFlow {
       plugin = this.catalog.get(id);
     }
     if (plugin == null)
-      throw new SandMcpConfigError(
-        `Unknown marketplace plugin "${id}". Reopen settings and try again.`,
-      );
+      throw new SandMcpConfigError(say(currentUserLanguage(), "mcp.unknownPlugin", { id }));
     return plugin;
   }
   private assertRequired(
@@ -135,9 +135,7 @@ export class SandMcpCatalogFlow {
     }
     if (plugin.vendorMcpUrl != null) {
       if (this.core.connectVendorMcp == null) {
-        throw new SandMcpConfigError(
-          `Connecting "${plugin.displayName}" needs the desktop Plugins overlay.`,
-        );
+        throw new SandMcpConfigError(say(currentUserLanguage(), "mcp.needsPluginsOverlay", { name: plugin.displayName }));
       }
       await this.core.connectVendorMcp({
         pluginId: plugin.pluginId,
@@ -148,9 +146,7 @@ export class SandMcpCatalogFlow {
     }
     if (plugin.composioToolkit != null) {
       if (this.core.connectComposioToolkit == null) {
-        throw new SandMcpConfigError(
-          `Connecting "${plugin.displayName}" needs the Simeon desktop app.`,
-        );
+        throw new SandMcpConfigError(say(currentUserLanguage(), "mcp.needsDesktopApp", { name: plugin.displayName }));
       }
       await this.core.connectComposioToolkit(plugin.composioToolkit);
       return this.core.reloadServers();

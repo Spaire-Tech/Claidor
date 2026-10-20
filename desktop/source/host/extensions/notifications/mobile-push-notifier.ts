@@ -27,6 +27,7 @@
 import { clipForHostLog, HOST_LOG_PREFIX, logHostLine } from "../../../shared/host-log.js";
 import { getSandBackendClientHeaders } from "../../../shared/node/sand-client-metadata.js";
 import { buildNotificationContent, SandOsNotificationDecider, toNotificationSnapshot, type NotificationAgent, type NotificationTransition } from "../../../shared/os-notification.js";
+import { acceptLanguageHeader, currentUserLanguage } from "../../../shared/user-language.js";
 
 export const SAND_PHONE_PUSH_PATH = "/desktop/push";
 export const SAND_PHONE_PUSH_TIMEOUT_MS = 10_000;
@@ -72,7 +73,8 @@ export function createSandMobilePushSender(deps: {
       const accessToken = await deps.getAccessToken({ backendUrl });
       const response = await (deps.fetchImpl ?? fetch)(new URL(SAND_PHONE_PUSH_PATH, backendUrl).toString(), {
         method: "POST",
-        headers: { authorization: `Bearer ${accessToken}`, "content-type": "application/json", accept: "application/json", ...getSandBackendClientHeaders() },
+        // The server writes a card's line in the person's language (`push.py`).
+        headers: { authorization: `Bearer ${accessToken}`, "content-type": "application/json", accept: "application/json", ...getSandBackendClientHeaders(), ...acceptLanguageHeader(currentUserLanguage()) },
         body: JSON.stringify(push),
         signal: AbortSignal.timeout(deps.timeoutMs ?? SAND_PHONE_PUSH_TIMEOUT_MS)
       });

@@ -7,6 +7,7 @@ from simeon.auth.dependencies import WebUserOrAnonymous
 from simeon.auth.models import is_user
 from simeon.auth.service import auth as auth_service
 from simeon.config import settings
+from simeon.desktop.language import answer_in_request_language
 from simeon.integrations.loops.service import loops as loops_service
 from simeon.kit.db.postgres import AsyncSession
 from simeon.kit.email import EmailStrDNS
@@ -20,7 +21,12 @@ from .schemas import LoginCodeRequest
 from .service import LoginCodeError
 from .service import login_code as login_code_service
 
-router = APIRouter(prefix="/login-code", tags=["login_code", APITag.private])
+router = APIRouter(
+    prefix="/login-code",
+    tags=["login_code", APITag.private],
+    # The code's email in the browser's language (`login_code.service.send`).
+    dependencies=[Depends(answer_in_request_language)],
+)
 
 
 @router.post("/request", status_code=202)

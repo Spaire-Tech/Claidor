@@ -1521,7 +1521,8 @@ public final class AppStore {
     // Both at once: each is a round trip to the person's computer.
     let needsCatalog = catalog.isEmpty
     async let servers = try? backend.command("desktopMcp", ["action": "listServers", "args": []])
-    async let list = needsCatalog ? try? backend.command("desktopMcp", ["action": "getCatalog", "args": []]) : nil
+    // The connectors' descriptions and groups in the app's language (`vendorCatalogInLanguage`, 20 October 2026).
+    async let list = needsCatalog ? try? backend.command("desktopMcp", ["action": "getCatalog", "args": [["language": .string(AppLanguage.current)]]]) : nil
     // Which apps can't be added yet, from Simeon Labs' server (`AppsComingSoon`).
     async let soon: Void = needsCatalog ? loadAppsComingSoon() : ()
     if let state = await servers {

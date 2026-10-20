@@ -69,6 +69,23 @@ test("a language tag is kept as BCP 47 writes it; anything else is no language",
   }
 });
 
+test("the server hears the person's language, never English or none", async () => {
+  const { module, dispose } = await load("source/shared/user-language.ts", "user-language-header");
+  try {
+    assert.deepEqual(module.acceptLanguageHeader("fr"), { "accept-language": "fr" });
+    assert.deepEqual(module.acceptLanguageHeader("pt_BR"), { "accept-language": "pt-BR" });
+    for (const nothing of [undefined, null, "", "en", "en-GB", "français"]) assert.deepEqual(module.acceptLanguageHeader(nothing), {}, String(nothing));
+    assert.equal(module.currentUserLanguage(), undefined, "unpinned: English");
+    module.pinUserLanguageReader(() => "fr");
+    assert.equal(module.currentUserLanguage(), "fr");
+    module.pinUserLanguageReader(() => { throw new Error("settings not ready"); });
+    assert.equal(module.currentUserLanguage(), undefined);
+    module.pinUserLanguageReader(null);
+  } finally {
+    await dispose();
+  }
+});
+
 test("the prompt names the language, says tu in French, and keeps names as they are", async () => {
   const { module, dispose } = await load("source/shared/user-language.ts", "user-language-prompt");
   try {

@@ -64,6 +64,8 @@ from simeon.routing import APIRouter
 from .app_results import tidy_result
 from .auth import get_desktop_or_box_session
 from .composio import composio_user_id, configured
+from .language import current_language
+from .words import say
 
 log = structlog.get_logger()
 
@@ -778,7 +780,7 @@ async def apps_disconnect(
     return JSONResponse({"toolkit": toolkit, "disconnected": len(accounts)})
 
 
-_CONNECTED_PAGE = """<!doctype html><html lang="en"><head><meta charset="utf-8">
+_CONNECTED_PAGE = """<!doctype html><html lang="{lang}"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>Simeon</title>
 <style>:root{{color-scheme:light dark}}body{{margin:0;min-height:100vh;display:grid;place-items:center;
 font:16px/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;background:#f5f5f7;color:#1d1d1f}}
@@ -806,14 +808,14 @@ async def apps_connected(request: Request) -> Response:
         )
         response.delete_cookie(_BACK_COOKIE, path="/desktop/apps")
         return response
-    title = "That didn't work" if failed else "Connected"
-    body = (
-        "Go back to Simeon and try again."
-        if failed
-        else "You can close this tab and go back to Simeon."
-    )
+    title = say("apps.page.failed") if failed else say("apps.page.connected")
+    body = say("apps.page.try_again") if failed else say("apps.page.close_tab")
     return HTMLResponse(
-        _CONNECTED_PAGE.format(title=html.escape(title), body=html.escape(body)),
+        _CONNECTED_PAGE.format(
+            lang=current_language() or "en",
+            title=html.escape(title),
+            body=html.escape(body),
+        ),
         headers={"cache-control": "no-store"},
     )
 
@@ -844,8 +846,12 @@ async def apps_start(request: Request) -> Response:
         )
         return HTMLResponse(
             _CONNECTED_PAGE.format(
-                title="That link has expired" if expired else "That link didn't work",
-                body="Go back to Simeon and try again.",
+                lang=current_language() or "en",
+                title=html.escape(
+                    say("apps.page.expired") if expired else say("apps.page.broken"),
+                    quote=False,
+                ),
+                body=html.escape(say("apps.page.try_again"), quote=False),
             ),
             status_code=400,
             headers={"cache-control": "no-store"},

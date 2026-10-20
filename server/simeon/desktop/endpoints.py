@@ -79,7 +79,7 @@ from .capabilities import router as capabilities_router
 from .composio import forward as composio_forward
 from .flight_booking import router as flight_booking_router
 from .flights import router as flights_router
-from .language import normalize_language
+from .language import answer_in_request_language, normalize_language
 from .link_wallet import router as link_wallet_router
 from .mcp_oauth_return import router as mcp_oauth_return_router
 
@@ -129,10 +129,16 @@ from .skill_store import archive_path, marketplace_item
 from .skill_store import catalog as skill_store_catalog
 from .video import VIDEO_CALL_LOG, count_video_parts, parse_gemini_call
 from .voice import router as voice_router
+from .words import say
 
 log = structlog.get_logger()
 
-router = APIRouter(prefix="/desktop", tags=["desktop", APITag.private])
+router = APIRouter(
+    prefix="/desktop",
+    tags=["desktop", APITag.private],
+    # Each answer in the request's language (`say`): the apps' or the engine's.
+    dependencies=[Depends(answer_in_request_language)],
+)
 
 # The app's URL scheme is `simeon://` since 23 September 2026 (the
 # packager's bundle rename); `caisra://`
@@ -377,7 +383,7 @@ async def update_profile(
         else:
             language = normalize_language(body.language)
             if language is None:
-                return _fail(400, "That is not a language.", status=400)
+                return _fail(400, say("profile.not_a_language"), status=400)
             user.language = language
         session.add(user)
     return _ok(desktop.user_payload(user))
@@ -436,7 +442,7 @@ async def billing_portal(
     link in the browser (`docs/services-billing.md`, section 4)."""
     tier = tier_from_value(body.tier) if body.tier else None
     if body.flow == "update_confirm" and (tier is None or tier not in PAID_TIERS):
-        return _fail(400, "That plan is not one of ours.", status=400)
+        return _fail(400, say("billing.unknown_plan"), status=400)
     back = (
         settings.generate_external_url(
             f"/desktop/billing/back?{urlencode({'to': body.back})}"
@@ -543,7 +549,7 @@ async def feedback(
     """
     message = body.message.strip()
     if not message:
-        return _fail(40001, "Feedback needs a message.", status=400)
+        return _fail(40001, say("feedback.empty"), status=400)
     log.info(
         "desktop.feedback.received",
         user_id=str(desktop_session.user.id),

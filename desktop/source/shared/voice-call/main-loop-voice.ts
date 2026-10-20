@@ -9,6 +9,8 @@
  * with SendMessage on that address. The words below are the upstream app's, with its
  * SendToUser named SendMessage, Simeon's tool for the same thing.
  */
+import { say } from "../say.js";
+import { currentUserLanguage } from "../user-language.js";
 
 export const VOICE_ADDRESS_PREFIX = "voice:";
 export const VOICE_SEND_TOOL = "SendMessage";
@@ -131,12 +133,13 @@ export function voiceCallDuration(seconds: number): string {
   return hours > 0 ? `${hours}:${minutes}:${rest}` : `${minutes}:${rest}`;
 }
 
-/** A call's line in words, for the sidebar's preview: "Voice chat · 01:49", or "Voice chat" while it is on. */
+/** A call's line in words, for the sidebar's preview: "Voice chat · 01:49", or "Voice chat" while it is on; in the person's language. */
 export function voiceCallLineText(event: unknown): string | null {
   if (typeof event !== "object" || event === null) return null;
   const call = event as { type?: unknown; status?: unknown; seconds?: unknown };
   if (call.type !== VOICE_CALL_EVENT) return null;
-  return call.status === "ended" && typeof call.seconds === "number" ? `Voice chat · ${voiceCallDuration(call.seconds)}` : "Voice chat";
+  const language = currentUserLanguage();
+  return call.status === "ended" && typeof call.seconds === "number" ? say(language, "preview.voiceChatEnded", { length: voiceCallDuration(call.seconds) }) : say(language, "preview.voiceChat");
 }
 
 /** A call id safe for an address and a file name. */

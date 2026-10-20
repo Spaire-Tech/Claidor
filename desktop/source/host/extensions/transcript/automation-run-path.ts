@@ -14,6 +14,7 @@ import { sandErrorDetail } from "../../ports/telemetry.js";
 import { errorMessage } from "../../../shared/errors.js";
 import { formatRemoteAgentId } from "../../../shared/agents/sharing.js";
 import { describeAgentRunError } from "./agent-run-error.js";
+import { say } from "../../../shared/say.js";
 import { GroupChatOrchestrator } from "./group-chat-orchestrator.js";
 import {
   isBackgroundAutomationTrigger,
@@ -288,7 +289,7 @@ export class AutomationRunPath {
                   args.automation.id,
                   runId,
                   "error",
-                  "Interrupted by a host update; resuming after restart.",
+                  say(this.tm.userLanguage?.(), "run.interruptedByUpdate"),
                 );
                 this.tm.upgradeResume.markAgentResumePending(
                   session,
@@ -306,7 +307,7 @@ export class AutomationRunPath {
                   runId,
                   result.aborted ? "error" : "ok",
                   result.aborted
-                    ? "Interrupted before it finished."
+                    ? say(this.tm.userLanguage?.(), "run.interrupted")
                     : undefined,
                 );
                 telemetryOutcome = result.aborted ? "interrupted" : "ok";
@@ -324,7 +325,7 @@ export class AutomationRunPath {
               error: classifyAgentError(error),
               detail: sandErrorDetail(error),
             });
-            const description = describeAgentRunError(error) as Record<
+            const description = describeAgentRunError(error, this.tm.userLanguage?.()) as Record<
               string,
               any
             >;
@@ -332,7 +333,7 @@ export class AutomationRunPath {
               isTransientStreamError(error) &&
               description.errorKind == null &&
               description.rawDetail == null
-                ? `Lost the connection repeatedly and gave up after retrying: ${description.detail}`
+                ? say(this.tm.userLanguage?.(), "run.lostConnection", { detail: String(description.detail) })
                 : String(description.detail);
             this.finishAutomationRun(
               session,
@@ -416,7 +417,7 @@ export class AutomationRunPath {
     if (!shouldNotifyAutomationFailure(occurrence)) return;
     this.tm.trayErrors.pushError({
       agentId: session.id,
-      title: `Automation "${automation.name}" failed`,
+      title: say(this.tm.userLanguage?.(), "tray.routineFailed", { name: automation.name }),
       detail,
       ...(description.errorKind == null
         ? {}

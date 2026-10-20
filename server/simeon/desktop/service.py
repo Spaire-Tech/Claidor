@@ -77,6 +77,7 @@ from .repository import (
     DesktopSessionRepository,
     DesktopUsageRepository,
 )
+from .words import say
 
 #: The app treats these numeric codes, inside a message or a payload,
 #: as « credits exhausted » (desktop/src/common/coworkErrorClassify.ts).
@@ -369,7 +370,7 @@ def set_preferred_name(user: User, raw: str) -> str:
     person by. Raises ValueError when it is empty or too long."""
     value = " ".join(raw.split())
     if not value or len(value) > PREFERRED_NAME_MAX:
-        raise ValueError("A name of 1 to 60 characters.")
+        raise ValueError(say("profile.name_length"))
     meta = dict(user.meta or {})
     meta["preferred_name"] = value
     user.meta = meta

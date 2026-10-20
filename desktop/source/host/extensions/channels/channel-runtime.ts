@@ -2,6 +2,8 @@ import { buildChannelOutboundMessage, type ChannelOutboundMessage } from "../../
 import { CHANNEL_TOKEN_FIELD, SLACK_BOT_TOKEN_FIELD } from "../../../shared/channel-credential.js";
 import { DISCORD_PLATFORM, findConnectorManifest, isChannelsServed, parseChannelAddress, SLACK_PLATFORM } from "../../../shared/channels.js";
 import { logHostLine } from "../../../shared/host-log.js";
+import { say } from "../../../shared/say.js";
+import { currentUserLanguage } from "../../../shared/user-language.js";
 import type { ChannelConnectionStatus } from "../session/channel-store.js";
 import { createChannelLogger, errorSentence, type ChannelLogSink } from "./channel-log.js";
 import { createChannelHttp, type ChannelHttp } from "./channel-http.js";
@@ -57,13 +59,14 @@ export function requiredCredentialFields(platform: string): readonly string[] {
   return platform === SLACK_PLATFORM ? [CHANNEL_TOKEN_FIELD, SLACK_BOT_TOKEN_FIELD] : [CHANNEL_TOKEN_FIELD];
 }
 
+/** A pending connection's status, in the person's language (`say`). */
 export function missingCredentialSentence(platform: string, missing: readonly string[]): string {
+  const language = currentUserLanguage();
   const name = findConnectorManifest(platform)?.displayName ?? platform;
   if (platform === SLACK_PLATFORM) {
-    const which = missing.includes(CHANNEL_TOKEN_FIELD) ? "the app-level token (xapp-…)" : "the bot token (xoxb-…)";
-    return `Waiting for ${which}: Slack needs both, paste it into the Channels tab or answer a secret-request for field "${missing[0]}".`;
+    return say(language, missing.includes(CHANNEL_TOKEN_FIELD) ? "channel.waitingSlackAppToken" : "channel.waitingSlackBotToken", { field: missing[0] ?? "" });
   }
-  return `Waiting for the ${name} ${missing.join(", ")}.`;
+  return say(language, "channel.waitingFor", { name, fields: missing.join(", ") });
 }
 
 export function createChannelRuntime(options: ChannelRuntimeOptions) {

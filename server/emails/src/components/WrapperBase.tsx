@@ -1,6 +1,12 @@
 import { Font, Head, Html, Tailwind } from '@react-email/components'
 
-const WrapperBase = ({ children }: { children: React.ReactNode }) => {
+const WrapperBase = ({
+  children,
+  lang = 'en',
+}: {
+  children: React.ReactNode
+  lang?: string
+}) => {
   return (
     <Tailwind
       config={{
@@ -13,7 +19,7 @@ const WrapperBase = ({ children }: { children: React.ReactNode }) => {
         },
       }}
     >
-      <Html lang="en">
+      <Html lang={lang}>
         <Head>
           <Font
             fontFamily="Inter"

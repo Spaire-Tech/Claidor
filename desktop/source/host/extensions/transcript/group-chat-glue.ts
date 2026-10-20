@@ -45,6 +45,7 @@ import {
   type GroupOrchestratorDeps,
 } from "./group-chat-orchestrator.js";
 import { describeAgentRunError } from "./agent-run-error.js";
+import { say } from "../../../shared/say.js";
 import { AgentGoneError } from "./session-runtime.js";
 import { nextEntryId } from "./transcript-entry-ids.js";
 import {
@@ -239,8 +240,8 @@ export class GroupChatGlue {
     } catch (error) {
       this.tm.trayErrors.pushError({
         agentId: session.id,
-        title: "Group chat failed",
-        ...describeAgentRunError(error),
+        title: say(this.tm.userLanguage?.(), "tray.groupChatFailed"),
+        ...describeAgentRunError(error, this.tm.userLanguage?.()),
       });
       await this.tm.roster.emitAgentUpdate(session.id);
     } finally {

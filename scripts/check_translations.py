@@ -14,7 +14,11 @@ left out): adding one there makes this ask for it everywhere. It reads:
   in each language;
 - the shared core's sentences (`L10n.text("…")` in ios/SimeonCore): each one
   is a key of the core's catalog (Resources/Localizable.xcstrings), so the
-  first check asks for its translations.
+  first check asks for its translations;
+- the engine's, the server's and the emails' tables (`say`): each language's
+  table has every key of the English one, with the same `{values}`
+  (desktop/source/shared/words, server/simeon/desktop/words,
+  server/emails/src/words.ts).
 
 Run it with `python3 scripts/check_names.py` before pushing.
 """
@@ -210,6 +214,47 @@ def check_core_keys() -> list[str]:
     return problems
 
 
+def table_keys(text: str, name: str) -> dict[str, str]:
+    """The `"key": "value"` pairs of one object or dict named `name` in a source file (TS or Python)."""
+    found = re.search(rf"\b{name}\b[^=\n]*=\s*\{{(.*?)\n\}}", text, re.S)
+    if found is None:
+        return {}
+    # A value may be written over several lines: "a" "b" (Python), "a" + "b" (TS), in parentheses.
+    pairs = re.findall(r'^\s*"([^"]+)"\s*:\s*\(?\s*((?:"(?:[^"\\]|\\.)*"\s*\+?\s*)+)', found.group(1), re.M)
+    pairs += re.findall(r"^\s*([A-Za-z]\w*)\s*:\s*\(?\s*((?:'(?:[^'\\]|\\.)*'\s*\+?\s*)+)", found.group(1), re.M)
+    return {key: value for key, value in pairs}
+
+
+#: The emails' tables (`server/emails/src/words.ts`) are named for their language.
+EMAIL_TABLES = {"en": "ENGLISH", "fr": "FRENCH", "es": "SPANISH", "de": "GERMAN", "pt-BR": "BRAZILIAN_PORTUGUESE", "ja": "JAPANESE", "it": "ITALIAN", "nl": "DUTCH", "ko": "KOREAN", "zh-Hant": "TRADITIONAL_CHINESE", "ar": "ARABIC"}
+
+
+def check_tables(wanted: list[str]) -> list[str]:
+    """Each translation of the engine's, the server's and the emails' sentences has every English key, with its `{values}`."""
+    sets: list[tuple[str, dict[str, str], dict[str, dict[str, str]]]] = []
+    for part in sorted((ROOT / "desktop/source/shared/words/areas").glob("*.ts")) + sorted((ROOT / "server/simeon/desktop/words").glob("_[a-z]*.py")):
+        text = part.read_text()
+        name = lambda language: language.upper().replace("-", "_")  # noqa: E731
+        sets.append((str(part.relative_to(ROOT)), table_keys(text, "EN"), {language: table_keys(text, name(language)) for language in wanted}))
+    words = ROOT / "server/simeon/desktop/words"
+    sets.append((
+        "server/simeon/desktop/words/<language>.py",
+        table_keys((words / "en.py").read_text(), "WORDS"),
+        {language: table_keys((words / f"{language}.py").read_text(), "WORDS") if (words / f"{language}.py").exists() else {} for language in wanted},
+    ))
+    emails = (ROOT / "server/emails/src/words.ts").read_text()
+    sets.append(("server/emails/src/words.ts", table_keys(emails, "ENGLISH"), {language: table_keys(emails, EMAIL_TABLES.get(language, language.upper())) for language in wanted}))
+    problems: list[str] = []
+    for where, english, translations in sets:
+        for language, table in translations.items():
+            for key, value in english.items():
+                if key not in table:
+                    problems.append(f"{where}: {key!r} has no {language}")
+                elif sorted(re.findall(r"\{(\w+)\}", table[key])) != sorted(re.findall(r"\{(\w+)\}", value)):
+                    problems.append(f"{where}: {key!r} in {language} has other {{values}}")
+    return problems
+
+
 def main() -> int:
     wanted = languages()
     if not wanted:
@@ -221,6 +266,7 @@ def main() -> int:
     problems += check_greetings(wanted)
     problems += check_server_voice(wanted)
     problems += check_core_keys()
+    problems += check_tables(wanted)
     if problems:
         for problem in problems[:200]:
             print(problem)

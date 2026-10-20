@@ -96,3 +96,30 @@ export function firstRunCueInLanguage(cue: string, raw: string | null | undefine
   const address = languageCode(tag) === "fr" ? " Say \"tu\" to the user." : "";
   return `${cue}\nThe user's apps are in ${english}: write every message of this turn to the user in ${english}, question widgets (question, options and helpText) included, and say any wording quoted above for the user in ${english}, in the same spirit.${address} Names of apps, connectors and agents stay as they are.`;
 }
+
+/** `Accept-Language` for the person's language, as the apps send theirs, so Simeon Labs' server answers in it; none for English or none known. */
+export function acceptLanguageHeader(raw: string | null | undefined): Record<string, string> {
+  const tag = normalizeUserLanguage(raw);
+  return tag === undefined || isEnglishOrUnset(tag) ? {} : { "accept-language": tag };
+}
+
+/**
+ * The person's language for the engine's sentences outside the transcript
+ * manager (`say`, `shared/say.ts`): sidebar previews, notifications,
+ * approval summaries, connector and channel messages. The host's
+ * composition pins the settings' `userLanguage` here once; unpinned (the
+ * tests, the retired Electron app) it is none, and every sentence is English.
+ */
+let pinnedUserLanguage: (() => string | undefined) | null = null;
+
+export function pinUserLanguageReader(read: (() => string | undefined) | null): void {
+  pinnedUserLanguage = read;
+}
+
+export function currentUserLanguage(): string | undefined {
+  try {
+    return pinnedUserLanguage?.();
+  } catch {
+    return undefined;
+  }
+}

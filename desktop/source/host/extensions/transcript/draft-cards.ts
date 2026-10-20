@@ -16,6 +16,7 @@
  * a decline: the agent is told once and must not redraft unasked.
  */
 import { getTranscript, updateEntry } from "./transcript-store.js";
+import { say } from "../../../shared/say.js";
 import type { TranscriptEntry, TranscriptManagerLike } from "./transcript-hub.js";
 
 export type DraftSendState = "editable" | "sending" | "sent";
@@ -81,7 +82,7 @@ export class DraftCards {
     const merged = { ...current.message.draft, ...(args.draft ?? {}) };
     const updated = this.stamp(args.entryId, (entry) => ({ ...entry, message: { ...(entry.message as object), draft: merged }, draftSendState: "sending" as DraftSendState, widgetDismissed: false }));
     if (updated == null) return null;
-    await this.tm.backgroundWakes.runHiddenPromptWake(args.agentId, "draft-send", buildDraftSendWakePrompt(args.entryId, { type: current.message.type, draft: merged }), "Sending the draft failed");
+    await this.tm.backgroundWakes.runHiddenPromptWake(args.agentId, "draft-send", buildDraftSendWakePrompt(args.entryId, { type: current.message.type, draft: merged }), say(this.tm.userLanguage?.(), "tray.draftSendFailed"));
     return this.find(args.entryId);
   }
 
@@ -93,7 +94,7 @@ export class DraftCards {
     if (current.draftSendState === "sent") return current;
     const updated = this.stamp(args.entryId, (entry) => ({ ...entry, draftSendState: "editable" as DraftSendState, widgetDismissed: true }));
     if (updated == null) return null;
-    await this.tm.backgroundWakes.runHiddenPromptWake(args.agentId, "draft-discard", buildDraftDiscardWakePrompt(args.entryId, current.message), "Draft discard follow-up failed");
+    await this.tm.backgroundWakes.runHiddenPromptWake(args.agentId, "draft-discard", buildDraftDiscardWakePrompt(args.entryId, current.message), say(this.tm.userLanguage?.(), "tray.draftDiscardFailed"));
     return updated;
   }
 

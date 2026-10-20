@@ -1,3 +1,5 @@
+import { say, type WordKey } from "./say.js";
+
 export const DISCORD_PLATFORM = "discord";
 export const SLACK_PLATFORM = "slack";
 
@@ -54,6 +56,26 @@ export const CONNECTOR_MANIFESTS: readonly ConnectorManifest[] = [
 export function connectorManifests(env: NodeJS.ProcessEnv = process.env): readonly ConnectorManifest[] {
   if (isChannelsServed(env)) return CONNECTOR_MANIFESTS;
   return CONNECTOR_MANIFESTS.map((manifest) => ({ ...manifest, availability: "coming-soon" as const, blurb: `${manifest.blurb.replace(/\.$/, "")} (coming soon).` }));
+}
+
+/** Each platform's words for the apps' Channels tab (`say`); the agent reads the English manifests. */
+const MANIFEST_WORDS: Readonly<Record<string, { readonly blurb: WordKey; readonly credentialLabel: WordKey }>> = {
+  [DISCORD_PLATFORM]: { blurb: "channel.discordBlurb", credentialLabel: "channel.discordCredential" },
+  [SLACK_PLATFORM]: { blurb: "channel.slackBlurb", credentialLabel: "channel.slackCredential" },
+};
+
+/** The manifests for the apps, in the person's language (20 October 2026). */
+export function connectorManifestsForPerson(language: string | null | undefined, env: NodeJS.ProcessEnv = process.env): readonly ConnectorManifest[] {
+  return connectorManifests(env).map((manifest) => {
+    const words = MANIFEST_WORDS[manifest.platform];
+    if (words == null) return manifest;
+    const blurb = say(language, words.blurb);
+    return {
+      ...manifest,
+      blurb: manifest.availability === "coming-soon" ? say(language, "channel.comingSoon", { blurb: blurb.replace(/\.$/, "") }) : blurb,
+      credentialLabel: say(language, words.credentialLabel),
+    };
+  });
 }
 
 export interface ChannelAddress {

@@ -1,4 +1,5 @@
 import { errorMessage } from "../../../shared/errors.js";
+import { say } from "../../../shared/say.js";
 
 export const PROVIDER_OVERLOAD_ERROR_TITLE = "Model provider is overloaded";
 export const PROVIDER_OVERLOAD_ERROR_DETAIL =
@@ -68,8 +69,19 @@ export function getBackendErrorDetailMessage(error: unknown): string | null {
       ? title
       : `${title}\n\n${message}`;
 }
-export function formatAgentRunError(error: Error): string {
-  return simeonFacingProviderError(getBackendErrorDetailMessage(error) ?? errorMessage(error));
+/** The words of a run's error, in the person's `language` where they are Simeon's own. */
+export function formatAgentRunError(error: Error, language?: string): string {
+  return simeonFacingProviderError(conversationTooLarge(error, language) ?? getBackendErrorDetailMessage(error) ?? errorMessage(error), language);
+}
+
+/** A conversation over its size (`SandConversationTooLargeError`), said in the person's language. */
+function conversationTooLarge(error: unknown, language: string | undefined): string | null {
+  for (let at = error, depth = 0; at != null && typeof at === "object" && depth < 4; at = (at as { cause?: unknown }).cause, depth += 1) {
+    const found = at as { isConversationTooLarge?: unknown; sizeMb?: unknown; limitMb?: unknown };
+    if (found.isConversationTooLarge === true && typeof found.sizeMb === "number" && typeof found.limitMb === "number")
+      return say(language, "run.conversationTooLarge", { size: found.sizeMb, limit: found.limitMb });
+  }
+  return null;
 }
 
 /**
@@ -85,14 +97,13 @@ export function formatAgentRunError(error: Error): string {
 const OPENAI_ACCOUNT_QUOTA = /no credits remaining|insufficient_quota|platform\.openai\.com\/settings\/organization\/billing/i;
 const BEHIND_SIMEON =
   /no credits remaining|insufficient_quota|exceeded your current quota|credit balance is too low|platform\.openai\.com|\b(open ?ai|anthropic|claude|gemini|google ai|vertex|x\.?ai|grok|eleven ?labs|composio)\b|\boverloaded\b|\brate[ _-]?limit|\b(status|http)\s*:?\s*\d{3}\b|\b(SAND|SIMEON|CLAIDOR)_[A-Z_]+\b|\bgateway\b|\bproxy\b|\bserved by\b/i;
-const SIMEON_UNAVAILABLE_DETAIL = "Simeon isn't available at the moment. Try again in a little while.";
 const CLAUDE_CODE_INSTALL = /Claude Code is not installed/i;
-const SIMEON_SIGN_IN_DETAIL = "Sign in to Simeon again, then try again.";
 
-export function simeonFacingProviderError(message: string): string {
-  if (CLAUDE_CODE_INSTALL.test(message)) return SIMEON_SIGN_IN_DETAIL;
+/** The message, or one plain sentence in the person's `language` when it names what is behind Simeon. */
+export function simeonFacingProviderError(message: string, language?: string): string {
+  if (CLAUDE_CODE_INSTALL.test(message)) return say(language, "run.signInAgain");
   if (/\(code 4020[01]\)/.test(message)) return message;
-  if (BEHIND_SIMEON.test(message)) return SIMEON_UNAVAILABLE_DETAIL;
+  if (BEHIND_SIMEON.test(message)) return say(language, "run.unavailable");
   return message;
 }
 export function formatSandUsageResetIn(
@@ -161,6 +172,7 @@ export function checkoutDeepControlUrl(action: {
 }
 export function mapErrorDetailButtons(
   buttons: readonly ErrorButton[] | null | undefined,
+  language?: string,
 ): Array<Record<string, unknown>> {
   const actions: Array<Record<string, unknown>> = [];
   let hasSwitch = false;
@@ -182,14 +194,14 @@ export function mapErrorDetailButtons(
       case "upgrade":
         actions.push({
           kind: "open-url",
-          label: button.label || "Upgrade",
+          label: button.label || say(language, "run.upgrade"),
           url: checkoutDeepControlUrl(value),
         });
         break;
       case "upgradeChoice":
         actions.push({
           kind: "open-url",
-          label: button.label || "Upgrade",
+          label: button.label || say(language, "run.upgrade"),
           // The billing page, not the upstream's pricing page (F-132).
           url: `${SIMEON_BILLING_URL}?from=app`,
         });
@@ -214,12 +226,13 @@ export function mapErrorDetailButtons(
   return actions;
 }
 
-export function describeAgentRunError(error: unknown): Record<string, unknown> {
+/** A run's error as a tray shows it, in the person's `language` (`userLanguage`) where the words are Simeon's own. */
+export function describeAgentRunError(error: unknown, language?: string): Record<string, unknown> {
   const formatted =
-      error instanceof Error ? formatAgentRunError(error) : errorMessage(error),
+      error instanceof Error ? formatAgentRunError(error, language) : errorMessage(error),
     detail = findBackendConnectError(error)?.findDetails()[0]?.details,
     title = detail?.title?.trim() ?? "",
-    actions = mapErrorDetailButtons(detail?.buttons);
+    actions = mapErrorDetailButtons(detail?.buttons, language);
   let shown = title ? (detail?.detail?.trim() ?? "") : formatted;
   if (detail?.additionalInfo?.rateLimitReason === SAND_INCLUDED_LIMIT_REASON)
     shown = withRelativeSandIncludedLimitReset(
@@ -227,9 +240,9 @@ export function describeAgentRunError(error: unknown): Record<string, unknown> {
       detail.additionalInfo.nextResetAt,
     );
   else if (!shown) shown = formatted;
-  shown = simeonFacingProviderError(shown);
+  shown = simeonFacingProviderError(shown, language);
   const facingTitle = title && (OPENAI_ACCOUNT_QUOTA.test(`${title}\n${shown}`) || BEHIND_SIMEON.test(title))
-    ? "Agent failed to respond"
+    ? say(language, "tray.agentFailed")
     : title;
   // A refusal's buttons lead behind Simeon (a model company's billing page): only Simeon Labs' own stay.
   const facingActions = actions.filter((action) => typeof action.url !== "string" || /^https:\/\/(app\.|www\.)?simeonlabs\.com\//i.test(action.url));

@@ -30,6 +30,7 @@
 // card is not one Duffel's test mode knows, so Duffel's is typed instead, and
 // the log says so.
 
+import { say, type WordKey } from "../../say.js";
 import {
   PURCHASE_MESSAGE_TYPE,
   formatPurchaseMoney,
@@ -194,28 +195,28 @@ export function flightBlock(offer: FlightOfferFacts): FlightBlock {
 export type FlightLook = { readonly [K in "price" | "total" | "date" | "depart" | "arrive" | "stops" | "returnTimes" | "refundable" | "changeable" | "bags"]?: unknown };
 
 /**
- * What changed between two looks at a flight, in the person's words
- * ("Price now $239.40 (was $214.10) · Leaves 9:10am (was 8:05am)"), or
- * undefined when nothing did. Muse's rule (19 October 2026): a moved price,
- * schedule or fare terms is a fresh decision, so the person sees it before
- * allowing. A fact missing from either look is not a change.
+ * What changed between two looks at a flight, in the person's words and
+ * language ("Price now $239.40 (was $214.10) · Leaves 9:10am (was 8:05am)"),
+ * or undefined when nothing did. Muse's rule (19 October 2026): a moved
+ * price, schedule or fare terms is a fresh decision, so the person sees it
+ * before allowing. A fact missing from either look is not a change.
  */
-export function flightChanges(before: FlightLook, after: FlightLook): string | undefined {
+export function flightChanges(before: FlightLook, after: FlightLook, language?: string): string | undefined {
   const said: string[] = [];
-  const was = (label: string, from: unknown, to: unknown): void => {
+  const was = (key: WordKey, from: unknown, to: unknown): void => {
     const old = text(from), now = text(to);
-    if (old.length > 0 && now.length > 0 && old !== now) said.push(`${label} ${now} (was ${old})`);
+    if (old.length > 0 && now.length > 0 && old !== now) said.push(say(language, key, { now, was: old }));
   };
-  was("Price now", before.total ?? before.price, after.total ?? after.price);
-  was("Date now", before.date, after.date);
-  was("Leaves", before.depart, after.depart);
-  was("Arrives", before.arrive, after.arrive);
-  was("Now", before.stops, after.stops);
-  was("Return now", before.returnTimes, after.returnTimes);
-  was("Refunds:", before.refundable, after.refundable);
-  was("Changes:", before.changeable, after.changeable);
-  was("Bags:", before.bags, after.bags);
-  return said.length > 0 ? `Changed since you picked it: ${said.join(" · ")}` : undefined;
+  was("flight.change.price", before.total ?? before.price, after.total ?? after.price);
+  was("flight.change.date", before.date, after.date);
+  was("flight.change.depart", before.depart, after.depart);
+  was("flight.change.arrive", before.arrive, after.arrive);
+  was("flight.change.stops", before.stops, after.stops);
+  was("flight.change.return", before.returnTimes, after.returnTimes);
+  was("flight.change.refunds", before.refundable, after.refundable);
+  was("flight.change.changes", before.changeable, after.changeable);
+  was("flight.change.bags", before.bags, after.bags);
+  return said.length > 0 ? say(language, "flight.changed", { changes: said.join(" · ") }) : undefined;
 }
 
 /** "Seattle to Los Angeles · Tue, Nov 12 · $361.20" */
@@ -234,9 +235,9 @@ export function travellerPrefill(passengerCount: number, link: { readonly name?:
   return Array.from({ length: Math.max(1, passengerCount) }, (_unused, index) => (index === 0 ? first : {}));
 }
 
-export function flightPassengersMessage(offer: FlightOfferFacts, prefill: readonly TravellerPrefill[], changed?: string): FlightPassengersMessage {
+export function flightPassengersMessage(offer: FlightOfferFacts, prefill: readonly TravellerPrefill[], changed?: string, language?: string): FlightPassengersMessage {
   const flight = { ...flightBlock(offer), ...(changed == null || changed.length === 0 ? {} : { changed }) };
-  return { type: FLIGHT_PASSENGERS_MESSAGE_TYPE, content: `Traveller details for ${flightLine(flight)}`, flight, prefill };
+  return { type: FLIGHT_PASSENGERS_MESSAGE_TYPE, content: say(language, "flight.formContent", { flight: flightLine(flight) }), flight, prefill };
 }
 
 const TITLES = new Set(["mr", "ms", "mrs", "miss", "dr"]);
@@ -268,48 +269,51 @@ function day(value: unknown): Date | undefined {
 /**
  * The form's travellers checked before anything is kept (the server checks
  * them again): one for each passenger on the offer, every field as Duffel
- * needs it, and the passport when the airline asks for one.
+ * needs it, and the passport when the airline asks for one. The sentence is
+ * the person's, in their language.
  */
-export function checkTravellers(given: unknown, flight: Pick<FlightBlock, "passengers" | "documentsRequired" | "lastFlightDate">, today: Date = new Date()): TravellerCheck {
-  if (!Array.isArray(given) || given.length !== flight.passengers.length) return { ok: false, message: `Fill in all ${flight.passengers.length === 1 ? "the traveller's details" : `${flight.passengers.length} travellers' details`}.` };
+export function checkTravellers(given: unknown, flight: Pick<FlightBlock, "passengers" | "documentsRequired" | "lastFlightDate">, today: Date = new Date(), language?: string): TravellerCheck {
+  if (!Array.isArray(given) || given.length !== flight.passengers.length) return { ok: false, message: flight.passengers.length === 1 ? say(language, "traveller.fillOne") : say(language, "traveller.fillAll", { count: flight.passengers.length }) };
   const now = today.toISOString().slice(0, 10);
   const travellers: FlightTraveller[] = [];
   for (const [index, raw] of given.entries()) {
     const one = (raw != null && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
-    const who = flight.passengers.length > 1 ? `Traveller ${index + 1}: ` : "";
-    const refuse = (field: string, message: string): TravellerCheck => ({ ok: false, message: `${who}${message}`, index, field });
+    const refuse = (field: string, key: WordKey): TravellerCheck => {
+      const problem = say(language, key);
+      return { ok: false, message: flight.passengers.length > 1 ? say(language, "traveller.numbered", { number: index + 1, problem }) : problem, index, field };
+    };
     const expected = flight.passengers[index]?.id ?? "";
     const id = text(one.id) || expected;
-    if (id !== expected) return refuse("id", "this traveller isn't on the flight.");
+    if (id !== expected) return refuse("id", "traveller.notOnFlight");
     const given_name = text(one.given_name).replace(/\s+/g, " ");
     const family_name = text(one.family_name).replace(/\s+/g, " ");
-    if (!NAME.test(given_name)) return refuse("given_name", "write the first name as on the ID.");
-    if (!NAME.test(family_name)) return refuse("family_name", "write the last name as on the ID.");
+    if (!NAME.test(given_name)) return refuse("given_name", "traveller.givenName");
+    if (!NAME.test(family_name)) return refuse("family_name", "traveller.familyName");
     const title = text(one.title).toLowerCase().replace(/\.$/, "");
-    if (!TITLES.has(title)) return refuse("title", "choose a title.");
+    if (!TITLES.has(title)) return refuse("title", "traveller.title");
     const gender = text(one.gender).toLowerCase();
-    if (gender !== "m" && gender !== "f") return refuse("gender", "choose the gender on the ID.");
+    if (gender !== "m" && gender !== "f") return refuse("gender", "traveller.gender");
     const born = day(one.born_on);
-    if (born == null || text(one.born_on) >= now || born.getUTCFullYear() < 1900) return refuse("born_on", "the date of birth isn't right.");
+    if (born == null || text(one.born_on) >= now || born.getUTCFullYear() < 1900) return refuse("born_on", "traveller.bornOn");
     // An adult with a birth date that makes them a child fails at the airline, after the person approved (Muse's Frontier booking: a birth year of 2026).
     const lastDay = text(flight.lastFlightDate);
-    if ((flight.passengers[index]?.type ?? "adult") === "adult" && day(lastDay) != null && ageOn(text(one.born_on), lastDay) < ADULT_AGE) return refuse("born_on", "an adult must be 18 or older on the day of the last flight; check the date of birth.");
+    if ((flight.passengers[index]?.type ?? "adult") === "adult" && day(lastDay) != null && ageOn(text(one.born_on), lastDay) < ADULT_AGE) return refuse("born_on", "traveller.adultAge");
     const email = text(one.email);
-    if (!EMAIL.test(email)) return refuse("email", "the email address isn't right.");
+    if (!EMAIL.test(email)) return refuse("email", "traveller.email");
     const phone = text(one.phone_number).replace(/[\s().-]/g, "");
-    if (!PHONE.test(phone)) return refuse("phone_number", "the phone number needs its country code, like +1 206 555 0100.");
+    if (!PHONE.test(phone)) return refuse("phone_number", "traveller.phone");
     const passportGiven = one.passport != null && typeof one.passport === "object" ? one.passport as Record<string, unknown> : undefined;
     let passport: FlightTraveller["passport"];
     if (passportGiven != null && text(passportGiven.number).length > 0) {
       const number = text(passportGiven.number).replace(/\s+/g, "");
       const country = text(passportGiven.issuing_country_code).toUpperCase();
       const expires = day(passportGiven.expires_on);
-      if (!/^[A-Za-z0-9]{5,20}$/.test(number)) return refuse("passport", "the passport number isn't right.");
-      if (!/^[A-Z]{2}$/.test(country)) return refuse("passport", "choose the passport's country.");
-      if (expires == null || text(passportGiven.expires_on) <= now) return refuse("passport", "that passport has expired.");
+      if (!/^[A-Za-z0-9]{5,20}$/.test(number)) return refuse("passport", "traveller.passportNumber");
+      if (!/^[A-Z]{2}$/.test(country)) return refuse("passport", "traveller.passportCountry");
+      if (expires == null || text(passportGiven.expires_on) <= now) return refuse("passport", "traveller.passportExpired");
       passport = { number, issuing_country_code: country, expires_on: text(passportGiven.expires_on) };
     } else if (flight.documentsRequired) {
-      return refuse("passport", "this airline needs the passport.");
+      return refuse("passport", "traveller.passportNeeded");
     }
     travellers.push({ id, title: title as FlightTraveller["title"], gender, given_name, family_name, born_on: text(one.born_on), email, phone_number: phone, ...(passport == null ? {} : { passport }) });
   }
@@ -343,6 +347,8 @@ export function flightCheckoutCard(args: {
   readonly cards?: readonly { readonly id: string; readonly brand: string; readonly last4: string; readonly name?: string; readonly isDefault?: boolean }[];
   /** What changed since the form (`flightChanges`), shown on the card before Allow. */
   readonly changed?: string;
+  /** The person's language, for the card's own words (Link's context stays English). */
+  readonly language?: string;
 }): PurchaseCardMessage {
   const flight = { ...flightBlock(args.offer), ...(args.changed == null || args.changed.length === 0 ? {} : { changed: args.changed }) };
   const names = travellerNames(args.travellers);
@@ -350,11 +356,11 @@ export function flightCheckoutCard(args: {
   const total = formatPurchaseMoney(args.offer.amountMinor, currency);
   const domain = flightDomain(args.offer.conditionsUrl);
   const description = [flight.priceNote, names.join(", ")].filter((part) => part != null && part.length > 0).join(" · ");
-  const items = [{ name: `Flight ${flight.route}${flight.date == null ? "" : `, ${flight.date}`}`, quantity: 1, unitAmount: args.offer.amountMinor, ...(description.length > 0 ? { description } : {}) }];
+  const items = [{ name: flight.date == null ? say(args.language, "flight.item", { route: flight.route }) : say(args.language, "flight.itemOn", { route: flight.route, date: flight.date }), quantity: 1, unitAmount: args.offer.amountMinor, ...(description.length > 0 ? { description } : {}) }];
   const times = [flight.depart, flight.arrive].filter((part) => part != null && part.length > 0).join(" to ");
   const said = `Flight ${flight.route} on ${flight.airline}${flight.date == null ? "" : `, ${flight.date}`}${times.length > 0 ? `, ${times}` : ""}, for ${names.join(" and ")}, paid to the airline through Duffel, as the person asked in Simeon and allowed on its checkout card.`;
   const purchase: PurchaseCardData & { readonly flight: PurchaseFlight } = {
-    merchant: flight.airline || "Airline",
+    merchant: flight.airline || say(args.language, "flight.airline"),
     domain,
     url: args.offer.conditionsUrl != null && args.offer.conditionsUrl.startsWith("https://") ? args.offer.conditionsUrl : "https://duffel.com",
     amount: args.offer.amountMinor,
@@ -373,7 +379,7 @@ export function flightCheckoutCard(args: {
     },
     flight: { ...flight, total, formEntryId: args.formEntryId, travellers: names },
   };
-  return { type: PURCHASE_MESSAGE_TYPE, content: `Flight ${flightLine({ route: flight.route, ...(flight.date == null ? {} : { date: flight.date }), total })}`, purchase };
+  return { type: PURCHASE_MESSAGE_TYPE, content: say(args.language, "flight.cardContent", { flight: flightLine({ route: flight.route, ...(flight.date == null ? {} : { date: flight.date }), total }) }), purchase };
 }
 
 export function purchaseFlightOf(card: PurchaseCardData): PurchaseFlight | undefined {

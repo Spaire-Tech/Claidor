@@ -1,5 +1,7 @@
 import type { ChannelOutboundMessage } from "../../../shared/channel-messaging.js";
 import { SLACK_PLATFORM } from "../../../shared/channels.js";
+import { say, type WordKey } from "../../../shared/say.js";
+import { currentUserLanguage } from "../../../shared/user-language.js";
 import { chunkText, createChannelHttp, readAttachmentFile, type ChannelHttp } from "./channel-http.js";
 import { describeToken, errorSentence } from "./channel-log.js";
 import { realConnectorClock, reconnectDelayMs, type ChannelConnector, type ConnectorCallbacks, type ConnectorClock } from "./connector.js";
@@ -16,13 +18,13 @@ import { createChannelSocket, socketText, SOCKET_OPEN, type ChannelSocket, type 
 export const SLACK_API_BASE = "https://slack.com/api";
 export const SLACK_MESSAGE_LIMIT = 4000;
 export const SLACK_INBOUND_DEDUPE_SIZE = 200;
-/** Slack's own reasons for `ok: false` on the two calls that open a connection, in a person's words. */
-export const SLACK_AUTH_ERRORS: Readonly<Record<string, string>> = {
-  invalid_auth: "Slack refused the token (invalid_auth). Check it in the app's settings and store it again.",
-  not_authed: "Slack saw no token (not_authed).",
-  account_inactive: "Slack says the token's account is inactive (account_inactive).",
-  token_revoked: "Slack says the token was revoked (token_revoked); reinstall the app and store the new tokens.",
-  missing_scope: "The app token lacks connections:write (missing_scope); add the scope under Socket Mode and store the token again.",
+/** Slack's own reasons for `ok: false` on the two calls that open a connection, in a person's words (`say`, the person's language). */
+export const SLACK_AUTH_ERRORS: Readonly<Record<string, WordKey>> = {
+  invalid_auth: "channel.slackInvalidAuth",
+  not_authed: "channel.slackNotAuthed",
+  account_inactive: "channel.slackAccountInactive",
+  token_revoked: "channel.slackTokenRevoked",
+  missing_scope: "channel.slackMissingScope",
 };
 const SKIPPED_MESSAGE_SUBTYPES = new Set(["message_changed", "message_deleted", "channel_join", "channel_leave", "bot_message", "message_replied", "thread_broadcast", "channel_topic", "channel_purpose", "channel_name", "group_join", "group_leave"]);
 
@@ -119,9 +121,10 @@ export class SlackConnector implements ChannelConnector {
       } catch (error) {
         const code = errorSentence(error).match(/Slack [a-z.]+: ([a-z_]+)/)?.[1];
         const fatal = code == null ? null : SLACK_AUTH_ERRORS[code];
-        if (fatal != null) { this.log("error", { detail: fatal }); this.options.callbacks.onStatus("error", fatal); break; }
+        // The log in English, the status (the Channels tab, the agent's channels list) in the person's language.
+        if (fatal != null) { this.log("error", { detail: say(undefined, fatal) }); this.options.callbacks.onStatus("error", say(currentUserLanguage(), fatal)); break; }
         this.log("error", { detail: errorSentence(error), attempt: this.attempt });
-        this.options.callbacks.onStatus("connecting", `Reconnecting to Slack (${errorSentence(error)}).`);
+        this.options.callbacks.onStatus("connecting", say(currentUserLanguage(), "channel.reconnectingSlack", { why: errorSentence(error) }));
         await this.clock.sleep(reconnectDelayMs(this.attempt, undefined, undefined, this.options.random), this.abort.signal);
         this.attempt += 1;
         continue;
@@ -129,7 +132,7 @@ export class SlackConnector implements ChannelConnector {
       const closed = await this.connectOnce(url);
       if (this.stopped) break;
       this.log("disconnect", { code: closed.code, reason: closed.reason, attempt: this.attempt });
-      this.options.callbacks.onStatus("connecting", `Reconnecting to Slack (${closed.reason || `close ${closed.code}`}).`);
+      this.options.callbacks.onStatus("connecting", say(currentUserLanguage(), "channel.reconnectingSlack", { why: closed.reason || `close ${closed.code}` }));
       if (closed.reason !== "refresh_requested") { await this.clock.sleep(reconnectDelayMs(this.attempt, undefined, undefined, this.options.random), this.abort.signal); this.attempt += 1; }
     }
   }
@@ -147,7 +150,7 @@ export class SlackConnector implements ChannelConnector {
         try { payload = JSON.parse(socketText(data)) as Record<string, any>; } catch { return; }
         try {
           if (typeof payload.envelope_id === "string" && socket.readyState === SOCKET_OPEN) socket.send(JSON.stringify({ envelope_id: payload.envelope_id }));
-          if (payload.type === "hello") { this.attempt = 0; this.log("ready", { connections: payload.num_connections ?? null }); this.options.callbacks.onStatus("connected", "Connected over Socket Mode."); return; }
+          if (payload.type === "hello") { this.attempt = 0; this.log("ready", { connections: payload.num_connections ?? null }); this.options.callbacks.onStatus("connected", say(currentUserLanguage(), "channel.connectedSocketMode")); return; }
           if (payload.type === "disconnect") { closeReason = typeof payload.reason === "string" ? payload.reason : "disconnect"; socket.close(1000, closeReason); return; }
           if (payload.type === "events_api") this.handleEvent(payload.payload?.event ?? {}, typeof payload.payload?.event_id === "string" ? payload.payload.event_id : null);
         } catch (error) { this.log("error", { detail: errorSentence(error) }); }

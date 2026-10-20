@@ -1,4 +1,5 @@
 import { formatTimestamp } from "../../../shared/automation-schedule.js";
+import { SAY_LANGUAGES, say } from "../../../shared/say.js";
 export const SPEND_GUARD_IDLE_TTL_MS = 3 * 24 * 60 * 60_000;
 export const SPEND_GUARD_MIN_UNREAD_COUNT = 15;
 export const SPEND_GUARD_MIN_FIRES_SINCE_VIEWED = 20;
@@ -68,35 +69,35 @@ export interface SpendGuardWidget {
   prompt: string;
   options: Array<{ label: string; value: string; style?: string }>;
 }
-export function buildSpendGuardNudgeWidget(): SpendGuardWidget {
+/** The card asking whether the routines keep running, in the person's `language` (`userLanguage`). */
+export function buildSpendGuardNudgeWidget(language?: string): SpendGuardWidget {
   return {
-    prompt: "You've been away for a bit — keep my routines running?",
+    prompt: say(language, "guard.nudge"),
     options: [
       {
-        label: "Keep them running",
+        label: say(language, "guard.keep"),
         value: SPEND_GUARD_ANSWER_VALUES.keep,
         style: "primary",
       },
-      { label: "Pause them all", value: SPEND_GUARD_ANSWER_VALUES.pause },
+      { label: say(language, "guard.pauseAll"), value: SPEND_GUARD_ANSWER_VALUES.pause },
       {
-        label: "Keep running, don't ask again",
+        label: say(language, "guard.optOut"),
         value: SPEND_GUARD_ANSWER_VALUES.optOut,
       },
     ],
   };
 }
-export function buildSpendGuardPausedWidget(): SpendGuardWidget {
+export function buildSpendGuardPausedWidget(language?: string): SpendGuardWidget {
   return {
-    prompt:
-      "I paused all your routines while you were away to avoid wasted spend. Want me to start them back up?",
+    prompt: say(language, "guard.paused"),
     options: [
       {
-        label: "Resume routines",
+        label: say(language, "guard.resume"),
         value: SPEND_GUARD_ANSWER_VALUES.resume,
         style: "primary",
       },
       {
-        label: "Keep them paused",
+        label: say(language, "guard.stayPaused"),
         value: SPEND_GUARD_ANSWER_VALUES.stayPaused,
       },
     ],
@@ -121,11 +122,12 @@ export function isSpendGuardCard(
   widget: SpendGuardWidget,
   value: string,
 ): boolean {
+  // A card asked in any of Simeon's languages (the person may have changed theirs since).
   return (
-    [
-      buildSpendGuardNudgeWidget().prompt,
-      buildSpendGuardPausedWidget().prompt,
-    ].includes(widget.prompt) &&
+    SAY_LANGUAGES.flatMap((language) => [
+      buildSpendGuardNudgeWidget(language).prompt,
+      buildSpendGuardPausedWidget(language).prompt,
+    ]).includes(widget.prompt) &&
     widget.options.some((option) => option.value === value)
   );
 }

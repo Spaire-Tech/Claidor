@@ -10,6 +10,8 @@ import {
 } from "./host-plugin-gateway.js";
 import { executeRoutedAgentTool as runRoutedAgentTool } from "./extensions/transcript/routed-agent-tools.js";
 import { HOST_LOG_PREFIX, logHostLine } from "../shared/host-log.js";
+import { say } from "../shared/say.js";
+import { currentUserLanguage } from "../shared/user-language.js";
 
 export const HOST_CAPABILITIES = [
   "orderedReplicasV1",
@@ -681,7 +683,7 @@ export function createHostGatewayApi(
       await method(manager, "stopAgentTask")(id);
       const started = method(deps.extensions.api("session"), "startHandoff")({
         agentId: id,
-        instruction: "You took control of the computer.",
+        instruction: say(currentUserLanguage(), "waiting.tookControl"),
         source: "person"
       });
       logHostLine(`${HOST_LOG_PREFIX} take-control agent=${id} working=true handoff=${started?.kind ?? "none"}`);

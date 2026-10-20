@@ -314,6 +314,15 @@ class TestPush:
         (_,), kwargs = enqueue_job.call_args
         assert kwargs["body"] == "Has a question for you"
         assert kwargs["agent_name"] == "Chief of Staff"
+        # In the person's language when the engine sends it (20 October 2026).
+        response = await client.post(
+            PUSH,
+            json={**_push_body(body="email-draft", agent_id="agent-2")},
+            headers={**_bearer(box), "Accept-Language": "fr"},
+        )
+        assert response.status_code == 202, response.text
+        (_,), kwargs = enqueue_job.call_args
+        assert kwargs["body"] == "A rédigé un e-mail"
 
     async def test_the_mac_may_post_one_too(
         self,

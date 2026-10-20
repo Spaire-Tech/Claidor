@@ -116,6 +116,8 @@ class ClientInvoiceEmail(BaseModel):
 class LoginCodeProps(EmailProps):
     code: str
     code_lifetime_minutes: int
+    #: The person's language ("fr"): the email's words (`emails/src/words.ts`).
+    language: str | None = None
 
 
 class LoginCodeEmail(BaseModel):

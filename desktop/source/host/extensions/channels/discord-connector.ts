@@ -1,5 +1,7 @@
 import type { ChannelOutboundMessage } from "../../../shared/channel-messaging.js";
 import { DISCORD_PLATFORM } from "../../../shared/channels.js";
+import { say, type WordKey } from "../../../shared/say.js";
+import { currentUserLanguage } from "../../../shared/user-language.js";
 import { chunkText, createChannelHttp, readAttachmentFile, type ChannelHttp } from "./channel-http.js";
 import { describeToken, errorSentence } from "./channel-log.js";
 import { realConnectorClock, reconnectDelayMs, type ChannelConnector, type ConnectorCallbacks, type ConnectorClock } from "./connector.js";
@@ -18,14 +20,14 @@ export const DISCORD_MESSAGE_LIMIT = 2000;
 export const DISCORD_TYPING_INTERVAL_MS = 8_000;
 // GUILDS | GUILD_MESSAGES | GUILD_MESSAGE_REACTIONS | DIRECT_MESSAGES | DIRECT_MESSAGE_REACTIONS | MESSAGE_CONTENT
 export const DISCORD_INTENTS = (1 << 0) | (1 << 9) | (1 << 10) | (1 << 12) | (1 << 13) | (1 << 15);
-/** Close codes after which Discord says not to reconnect; each has a sentence the status carries. */
-export const DISCORD_FATAL_CLOSE_CODES: Readonly<Record<number, string>> = {
-  4004: "Discord refused the bot token (authentication failed). Check the token in the Developer Portal and store it again.",
-  4010: "Discord refused the shard (invalid shard).",
-  4011: "Discord requires sharding for this bot; Simeon does not shard.",
-  4012: "Discord refused the gateway version.",
-  4013: "Discord refused the gateway intents (invalid intents).",
-  4014: "Discord refused a privileged intent: turn on Message Content Intent under the bot's Privileged Gateway Intents in the Developer Portal, then reconnect.",
+/** Close codes after which Discord says not to reconnect; each has a sentence the status carries (`say`, the person's language). */
+export const DISCORD_FATAL_CLOSE_CODES: Readonly<Record<number, WordKey>> = {
+  4004: "channel.discordBadToken",
+  4010: "channel.discordInvalidShard",
+  4011: "channel.discordShardingRequired",
+  4012: "channel.discordGatewayVersion",
+  4013: "channel.discordInvalidIntents",
+  4014: "channel.discordPrivilegedIntent",
 };
 
 const OP = { DISPATCH: 0, HEARTBEAT: 1, IDENTIFY: 2, RESUME: 6, RECONNECT: 7, INVALID_SESSION: 9, HELLO: 10, HEARTBEAT_ACK: 11 } as const;
@@ -105,12 +107,13 @@ export class DiscordConnector implements ChannelConnector {
       if (this.stopped) break;
       const fatal = DISCORD_FATAL_CLOSE_CODES[closed.code];
       if (fatal != null) {
-        this.log("error", { code: closed.code, detail: fatal });
-        this.options.callbacks.onStatus("error", fatal);
+        // The log in English, the status (the Channels tab, the agent's channels list) in the person's language.
+        this.log("error", { code: closed.code, detail: say(undefined, fatal) });
+        this.options.callbacks.onStatus("error", say(currentUserLanguage(), fatal));
         break;
       }
       this.log("disconnect", { code: closed.code, reason: closed.reason, attempt: this.attempt });
-      this.options.callbacks.onStatus("connecting", `Reconnecting to Discord (${closed.reason || `close ${closed.code}`}).`);
+      this.options.callbacks.onStatus("connecting", say(currentUserLanguage(), "channel.reconnectingDiscord", { why: closed.reason || `close ${closed.code}` }));
       await this.clock.sleep(reconnectDelayMs(this.attempt, undefined, undefined, this.options.random), this.abort.signal);
       this.attempt += 1;
     }
@@ -165,7 +168,7 @@ export class DiscordConnector implements ChannelConnector {
       this.attempt = 0;
       const name = discordSenderName(data.user, this.selfId ?? "bot");
       this.log("ready", { bot: name, botId: this.selfId, guilds: Array.isArray(data.guilds) ? data.guilds.length : null });
-      this.options.callbacks.onStatus("connected", `Connected as ${name}.`);
+      this.options.callbacks.onStatus("connected", say(currentUserLanguage(), "channel.connectedAs", { name }));
       return;
     }
     if (event === "RESUMED") { this.attempt = 0; this.log("ready", { resumed: true }); this.options.callbacks.onStatus("connected"); return; }

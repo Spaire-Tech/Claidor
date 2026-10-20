@@ -13,6 +13,7 @@ from pytest_mock import MockerFixture
 from sqlalchemy import select
 
 from simeon.desktop import email_sign_in, passwords
+from simeon.desktop.words import say
 from simeon.models import User
 from simeon.postgres import AsyncSession
 from tests.fixtures.database import SaveFixture
@@ -121,7 +122,7 @@ class TestEmailCode:
             "/auth/email/verify", json={"email": "wrong@example.com", "code": "ZZZZZZ"}
         )
         assert answer.status_code == 400
-        assert answer.json()["message"] == email_sign_in.WRONG_CODE
+        assert answer.json()["message"] == say(email_sign_in.WRONG_CODE)
 
     async def test_not_an_email_is_refused(self, client: httpx.AsyncClient) -> None:
         answer = await client.post("/auth/email/code", json={"email": "not an email"})
@@ -157,7 +158,7 @@ class TestEmailCode:
             json={"email": "guess@example.com", "code": mailbox.last},
         )
         assert right.status_code == 429
-        assert right.json()["message"] == email_sign_in.TOO_MANY_TRIES
+        assert right.json()["message"] == say(email_sign_in.TOO_MANY_TRIES)
 
     async def test_app_review_signs_in_with_its_fixed_code(
         self, client: httpx.AsyncClient, mocker: MockerFixture
@@ -230,7 +231,7 @@ class TestPassword:
             assert answer.status_code == 401
             assert answer.json() == {
                 "error": "wrong_password",
-                "message": email_sign_in.WRONG_PASSWORD,
+                "message": say(email_sign_in.WRONG_PASSWORD),
             }
 
     async def test_too_many_wrong_passwords_lock_the_email(

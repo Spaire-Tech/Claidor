@@ -11,6 +11,7 @@ from fastapi import Depends
 
 from simeon.auth.dependencies import WebUserRead, WebUserWrite
 from simeon.desktop.allowance import billing_exempt, billing_required
+from simeon.desktop.language import answer_in_request_language
 from simeon.entitlements.schemas import Entitlements
 from simeon.entitlements.tiers import PAID_TIERS, TIER_NAMES, TierKey, get_definition
 from simeon.openapi import APITag
@@ -36,7 +37,12 @@ from .schemas import (
 )
 from .service import plans as plans_service
 
-router = APIRouter(prefix="/plans", tags=["plans", APITag.private])
+router = APIRouter(
+    prefix="/plans",
+    tags=["plans", APITag.private],
+    # The billing page's refusals in the browser's language (`say`).
+    dependencies=[Depends(answer_in_request_language)],
+)
 
 
 def plan_list() -> PlanList:

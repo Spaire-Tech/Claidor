@@ -83,6 +83,7 @@ from simeon.routing import APIRouter
 
 from .allowance import BILLING_PATH
 from .endpoints import client_version_of, sign_in_url
+from .language import answer_in_request_language, current_language
 from .mcp_oauth_return import APP_RETURN_HOST, app_return_for
 from .service import (
     DesktopUnauthenticated,
@@ -98,10 +99,14 @@ from .sign_in_brand import (
     WORDMARK_PNG_BASE64,
     WORDMARK_WIDTH,
 )
+from .words import say
 
 log = structlog.get_logger()
 
-router = APIRouter(tags=["desktop", APITag.private])
+router = APIRouter(
+    tags=["desktop", APITag.private],
+    dependencies=[Depends(answer_in_request_language)],
+)
 
 #: The app's own protocol-token rule, copied from
 #: `desktop/source/electron-main/auth/auth-callback-registration.ts`.
@@ -171,12 +176,19 @@ def _deep_link(redirect_target: str | None) -> str | None:
 #: 9 October 2026: "by continuing you're agreeing etc.. should be in the
 #: second screen to"). The addresses the app, the Mac's window and the web
 #: app link.
-LEGAL = (
-    '<p class="legal">By continuing, you agree to our'
-    ' <a href="https://www.simeonlabs.com/legal/terms-of-service">Terms</a> &amp;'
-    ' <a href="https://www.simeonlabs.com/legal/privacy-policy">Privacy Policy</a>.'
-    "</p>"
-)
+def _legal() -> str:
+    """The line, in the request's language, with its two links."""
+    terms = (
+        '<a href="https://www.simeonlabs.com/legal/terms-of-service">'
+        f"{escape(say('sign_in.page.terms'))}</a>"
+    )
+    privacy = (
+        '<a href="https://www.simeonlabs.com/legal/privacy-policy">'
+        f"{escape(say('sign_in.page.privacy'))}</a>"
+    )
+    line = escape(say("sign_in.page.legal"), quote=False)
+    line = line.replace("{terms}", terms).replace("{privacy}", privacy)
+    return f'<p class="legal">{line}</p>'
 
 
 def _page(
@@ -206,7 +218,7 @@ def _page(
     return HTMLResponse(
         headers={"Cache-Control": "no-store"},
         content="<!doctype html>"
-        '<html lang="en"><head><meta charset="utf-8">'
+        f'<html lang="{current_language() or "en"}"><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
         '<meta name="color-scheme" content="light dark">'
         f"<title>{escape(title)} · {PRODUCT}</title>"
@@ -334,8 +346,8 @@ async def login_deep_control(
 ) -> RedirectResponse | HTMLResponse:
     if not is_deep_control_param(uuid) or not is_deep_control_param(challenge):
         return _page(
-            "That link is incomplete",
-            f"<p>Open {PRODUCT} and sign in from there.</p>",
+            say("sign_in.page.incomplete"),
+            f"<p>{escape(say('sign_in.page.sign_in_there', product=PRODUCT))}</p>",
         )
 
     kept = {"challenge": challenge, "uuid": uuid, "mode": mode}
@@ -365,10 +377,11 @@ async def login_deep_control(
                 f"/loginDeepControl?{urlencode({**kept, 'provider': 'google'})}"
             )
             return _page(
-                "Sign in with Apple is coming soon",
-                "<p>For now, continue with Google.</p>",
+                say("sign_in.page.apple_soon"),
+                f"<p>{escape(say('sign_in.page.google_for_now'))}</p>",
                 actions=f'<a class="pill glass" href="{escape(google, quote=True)}">'
-                f"{GOOGLE_G_SVG}Continue with Google</a>{LEGAL}",
+                f"{GOOGLE_G_SVG}{escape(say('sign_in.page.continue_with_google'))}</a>"
+                f"{_legal()}",
             )
         return RedirectResponse(sign_in_url(request, return_to, way), 303)
 
@@ -397,12 +410,14 @@ async def login_deep_control(
             session, auth_subject.subject, uuid=uuid, challenge=challenge
         )
         return _page(
-            f"You're signed in to {PRODUCT}",
-            f"<p>Your plan is on. You can close this tab and go back to {PRODUCT}.</p>",
+            say("sign_in.page.signed_in", product=PRODUCT),
+            f"<p>{escape(say('sign_in.page.plan_on', product=PRODUCT))}</p>",
             deep_link=_deep_link(redirectTarget),
         )
 
-    email = escape(auth_subject.subject.email)
+    continue_as = escape(
+        say("sign_in.page.continue_as", email=auth_subject.subject.email)
+    )
     fields = "".join(
         f'<input type="hidden" name="{name}" value="{escape(value, quote=True)}">'
         for name, value in (
@@ -424,14 +439,15 @@ async def login_deep_control(
     # (the founder, 6 October 2026). It ends the browser's session and goes
     # to the web login, with this very link as the way back.
     return _page(
-        f"Sign in to {PRODUCT}",
+        say("sign_in.page.title", product=PRODUCT),
         "",
         heading=False,
         actions=f'<form method="post" action="/loginDeepControl">{fields}'
-        f'<button class="pill" type="submit">Continue as {email}</button></form>'
+        f'<button class="pill" type="submit">{continue_as}</button></form>'
         f'<form method="post" action="/loginDeepControl/switch">{fields}'
-        '<button class="pill glass" type="submit">Use a different account</button>'
-        f"</form>{LEGAL}",
+        '<button class="pill glass" type="submit">'
+        f"{escape(say('sign_in.page.other_account'))}</button>"
+        f"</form>{_legal()}",
     )
 
 
@@ -456,8 +472,8 @@ async def switch_deep_control(
         or not is_deep_control_param(challenge)
     ):
         return _page(
-            "That sign-in could not be completed",
-            f"<p>Open {PRODUCT} and try again.</p>",
+            say("sign_in.page.failed"),
+            f"<p>{escape(say('sign_in.page.try_again', product=PRODUCT))}</p>",
         )
     kept = {"challenge": challenge, "uuid": uuid, "mode": mode}
     if redirectTarget:
@@ -490,16 +506,16 @@ async def confirm_deep_control(
         or not is_deep_control_param(challenge)
     ):
         return _page(
-            "That sign-in could not be completed",
-            f"<p>Open {PRODUCT} and try again.</p>",
+            say("sign_in.page.failed"),
+            f"<p>{escape(say('sign_in.page.try_again', product=PRODUCT))}</p>",
         )
 
     await desktop.begin_deep_control(
         session, auth_subject.subject, uuid=uuid, challenge=challenge
     )
     return _page(
-        f"You're signed in to {PRODUCT}",
-        f"<p>You can close this tab and go back to {PRODUCT}.</p>",
+        say("sign_in.page.signed_in", product=PRODUCT),
+        f"<p>{escape(say('sign_in.page.close_tab', product=PRODUCT))}</p>",
         deep_link=_deep_link(redirectTarget),
     )
 
@@ -747,7 +763,7 @@ async def google_native_sign_in(
     code, verifier = field("code"), field("codeVerifier")
     if not code or not verifier:
         return JSONResponse(
-            {"error": "bad_request", "message": "Google sign-in didn't finish."},
+            {"error": "bad_request", "message": say("sign_in.google_unfinished")},
             status_code=400,
             headers=NO_STORE,
         )
@@ -772,7 +788,7 @@ async def google_native_sign_in(
         return JSONResponse(
             {
                 "error": "account_closed",
-                "message": "This account can't sign in to Simeon.",
+                "message": say("sign_in.closed"),
             },
             status_code=403,
             headers=NO_STORE,
@@ -824,7 +840,7 @@ async def apple_native_sign_in(
     identity_token, nonce = field("identityToken"), field("nonce")
     if not identity_token or not nonce:
         return JSONResponse(
-            {"error": "bad_request", "message": "Sign in with Apple didn't finish."},
+            {"error": "bad_request", "message": say("sign_in.apple_unfinished")},
             status_code=400,
             headers=NO_STORE,
         )
@@ -855,7 +871,7 @@ async def apple_native_sign_in(
         return JSONResponse(
             {
                 "error": "account_closed",
-                "message": "This account can't sign in to Simeon.",
+                "message": say("sign_in.closed"),
             },
             status_code=403,
             headers=NO_STORE,

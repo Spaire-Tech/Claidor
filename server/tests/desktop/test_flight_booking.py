@@ -664,3 +664,60 @@ class TestShapes:
         assert card is not None
         assert card["offerId"] == OFFER_ID
         assert flights.summary_for({"offers": [card]})[0]["offerId"] == OFFER_ID
+
+
+@pytest.mark.asyncio
+class TestThePersonsLanguage:
+    """The engine sends the person's language (`Accept-Language`, 20 October
+    2026): each refusal it shows comes back in it, English without one."""
+
+    async def test_a_refusal_answers_in_the_requests_language(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        headers = await _signed_in(client, session, user)
+        with respx.mock(assert_all_called=False) as mock:
+            mock.get(f"{API}/air/offers/{OFFER_ID}").mock(
+                return_value=httpx.Response(200, json={"data": _offer("380.00")})
+            )
+            french = await client.post(
+                "/desktop/api/flights/order",
+                headers={**headers, "Accept-Language": "fr-FR,fr;q=0.9"},
+                json=_order_body(),
+            )
+            english = await client.post(
+                "/desktop/api/flights/order", headers=headers, json=_order_body()
+            )
+            phone = await client.post(
+                "/desktop/api/flights/order",
+                headers={**headers, "Accept-Language": "fr"},
+                json=_order_body(
+                    amount="380.00", passengers=[_traveller(phone_number="2065550100")]
+                ),
+            )
+            mocker.patch.object(settings, "DUFFEL_ACCESS_TOKEN", "")
+            off = await client.post(
+                "/desktop/api/flights/offer",
+                headers={**headers, "Accept-Language": "fr"},
+                json={"offer_id": OFFER_ID},
+            )
+        assert french.status_code == 409
+        assert (
+            french.json()["error"]["message"]
+            == "Le prix a changé depuis ton accord\u202f; rien n’a été réservé."
+        )
+        assert english.status_code == 409
+        assert (
+            english.json()["error"]["message"]
+            == "The price changed since it was approved; nothing was booked."
+        )
+        assert phone.status_code == 400
+        assert "indicatif pays" in phone.json()["error"]["message"]
+        assert off.status_code == 503
+        assert (
+            off.json()["error"]["message"]
+            == "La réservation de vols n’est pas encore activée."
+        )

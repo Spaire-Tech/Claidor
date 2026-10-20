@@ -14,6 +14,7 @@
 // not found the log lists the fields the form does have (their names and
 // labels, never a value): the first real run says what to add.
 
+import { say } from "../../say.js";
 import { choose, firstEditable, loadBoxPlaywright, typeInto, type CheckoutCard, type Frame, type Locator, type PlaywrightLike } from "../link-wallet/checkout-fill.js";
 
 const CARDS_ORIGIN = "https://api.duffel.cards";
@@ -67,6 +68,8 @@ export interface DuffelPayOptions {
   /** How long the bank check may take, the person's part included. */
   readonly verifyTimeoutMs?: number;
   readonly pollMs?: number;
+  /** The person's language: a stop's sentence is shown on the flight's card. */
+  readonly language?: string;
 }
 
 type FieldKind = "name on card" | "card number" | "expiry" | "expiry month" | "expiry year" | "security code" | "address line 1" | "address line 2" | "city" | "region" | "postal code" | "country";
@@ -154,14 +157,15 @@ async function status(page: PayPage): Promise<PayPageStatus | undefined> {
 const pause = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export async function payOnDuffelPage(options: DuffelPayOptions): Promise<DuffelPayResult> {
+  const language = options.language;
   let playwright: PayPlaywright;
-  try { playwright = (options.loadPlaywright ?? (loadBoxPlaywright as unknown as () => PayPlaywright))(); } catch (error) { return { ok: false, stage: "browser", message: `The browser can't be reached from here: ${error instanceof Error ? error.message : String(error)}` }; }
+  try { playwright = (options.loadPlaywright ?? (loadBoxPlaywright as unknown as () => PayPlaywright))(); } catch (error) { return { ok: false, stage: "browser", message: say(language, "pay.browserUnreachable", { why: error instanceof Error ? error.message : String(error) }) }; }
   let browser: PayBrowser;
-  try { browser = await playwright.chromium.connectOverCDP(`http://127.0.0.1:${options.port}`, { timeout: 8000 }); } catch (error) { return { ok: false, stage: "browser", message: `The computer's browser didn't answer (${error instanceof Error ? error.message : String(error)}).` }; }
+  try { browser = await playwright.chromium.connectOverCDP(`http://127.0.0.1:${options.port}`, { timeout: 8000 }); } catch (error) { return { ok: false, stage: "browser", message: say(language, "pay.browserNoAnswer", { why: error instanceof Error ? error.message : String(error) }) }; }
   const poll = options.pollMs ?? 1000;
   try {
     const context = browser.contexts()[0];
-    if (context == null) return { ok: false, stage: "browser", message: "The computer's browser has no window open." };
+    if (context == null) return { ok: false, stage: "browser", message: say(language, "pay.noWindow") };
     const page = await context.newPage();
     await page.goto(options.pageUrl, { waitUntil: "domcontentloaded", timeout: 30_000 });
     await page.bringToFront().catch(() => undefined);
@@ -170,11 +174,11 @@ export async function payOnDuffelPage(options: DuffelPayOptions): Promise<Duffel
     let ready: PayPageStatus | undefined;
     for (let waited = 0; waited < 40_000; waited += poll) {
       ready = await status(page);
-      if (ready?.phase === "failed") return { ok: false, stage: "form", message: ready.error ?? "The payment page couldn't start." };
+      if (ready?.phase === "failed") return { ok: false, stage: "form", message: ready.error ?? say(language, "pay.pageNoStart") };
       if (ready?.phase === "form" && page.frames().some((frame) => frame.url().startsWith(CARDS_ORIGIN))) break;
       await pause(poll);
     }
-    if (ready?.phase !== "form") return { ok: false, stage: "form", message: "Duffel's card form didn't load." };
+    if (ready?.phase !== "form") return { ok: false, stage: "form", message: say(language, "pay.formNotLoaded") };
     await pause(Math.min(1500, poll * 2));
 
     // The card and its billing address, typed in Duffel's frames only (never the page around them).
@@ -200,12 +204,12 @@ export async function payOnDuffelPage(options: DuffelPayOptions): Promise<Duffel
     if (filled.has("expiry month")) needed.push("expiry year");
     const missing = needed.filter((kind) => !filled.has(kind));
     const absent = (Object.keys(values) as FieldKind[]).filter((kind) => !filled.has(kind) && kind !== "expiry month" && kind !== "expiry year" && kind !== "expiry" && !needed.includes(kind));
-    if (missing.length > 0) return { ok: false, stage: "card", message: `Duffel's card form had no ${missing.join(", ")} field that could be filled.`, filled: [...filled], missing: [...missing, ...absent], fieldsSeen: await describeFields(frames) };
+    if (missing.length > 0) return { ok: false, stage: "card", message: say(language, "pay.fieldsMissing", { fields: missing.join(", ") }), filled: [...filled], missing: [...missing, ...absent], fieldsSeen: await describeFields(frames) };
 
     // Duffel keeps the card for 25 minutes under an id.
     const made = await page.evaluate(() => (globalThis as unknown as { simeonPay: { createCard(): Promise<{ ok: boolean; card?: { id?: string; last_4_digits?: string }; error?: string }> } }).simeonPay.createCard()).catch((error: unknown) => ({ ok: false, error: error instanceof Error ? error.message : String(error) }) as { ok: boolean; card?: { id?: string; last_4_digits?: string }; error?: string });
     const cardId = made.ok ? made.card?.id ?? "" : "";
-    if (!made.ok || cardId.length === 0) return { ok: false, stage: "card", message: made.error ?? "Duffel's card form didn't take the card.", filled: [...filled], missing: absent, fieldsSeen: await describeFields(frames) };
+    if (!made.ok || cardId.length === 0) return { ok: false, stage: "card", message: made.error ?? say(language, "pay.cardNotTaken"), filled: [...filled], missing: absent, fieldsSeen: await describeFields(frames) };
 
     // The bank check: most cards pass without a word; some banks want the person.
     await page.evaluate((args: never) => {
@@ -217,7 +221,7 @@ export async function payOnDuffelPage(options: DuffelPayOptions): Promise<Duffel
     for (let waited = 0; waited < limit; waited += poll) {
       const now = await status(page);
       if (now?.phase === "ready" && now.session?.id != null) return { ok: true, threeDSecureSessionId: now.session.id, cardLast4: made.card?.last_4_digits ?? "", filled: [...filled], challenged };
-      if (now?.phase === "failed") return { ok: false, stage: "verify", message: now.error ?? "The bank didn't confirm the card.", filled: [...filled] };
+      if (now?.phase === "failed") return { ok: false, stage: "verify", message: now.error ?? say(language, "pay.bankNotConfirmed"), filled: [...filled] };
       if (now?.phase === "challenge" && !challenged) {
         challenged = true;
         await page.bringToFront().catch(() => undefined);
@@ -225,9 +229,9 @@ export async function payOnDuffelPage(options: DuffelPayOptions): Promise<Duffel
       }
       await pause(poll);
     }
-    return { ok: false, stage: "verify", message: challenged ? "The bank's check wasn't finished in time." : "The bank didn't answer in time.", filled: [...filled] };
+    return { ok: false, stage: "verify", message: challenged ? say(language, "pay.bankCheckLate") : say(language, "pay.bankNoAnswer"), filled: [...filled] };
   } catch (error) {
-    return { ok: false, stage: "browser", message: `The payment page stopped: ${error instanceof Error ? error.message : String(error)}` };
+    return { ok: false, stage: "browser", message: say(language, "pay.pageStopped", { why: error instanceof Error ? error.message : String(error) }) };
   } finally {
     // Disconnects only: the tab stays, with the page's last words on it.
     await browser.close().catch(() => undefined);

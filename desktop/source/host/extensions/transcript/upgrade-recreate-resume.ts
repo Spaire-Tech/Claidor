@@ -4,6 +4,7 @@ import {
   type DurablePendingWakeMarker,
 } from "./sand-pending-wake-store.js";
 import { describeAgentRunError } from "./agent-run-error.js";
+import { say } from "../../../shared/say.js";
 import { classifyAgentError } from "./turn-runtime.js";
 import { sandErrorDetail } from "../../ports/telemetry.js";
 import type { TranscriptManagerLike } from "./transcript-hub.js";
@@ -165,8 +166,8 @@ export class UpgradeRecreateResume {
           });
           this.tm.trayErrors.pushError({
             agentId: session.id,
-            title: "Agent failed to resume after host update",
-            ...describeAgentRunError(error),
+            title: say(this.tm.userLanguage?.(), "tray.resumeAfterUpdateFailed"),
+            ...describeAgentRunError(error, this.tm.userLanguage?.()),
           });
         } finally {
           this.tm.ackObligations.retireAckRunToken(session.id, ackToken);

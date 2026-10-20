@@ -5,7 +5,7 @@ import { adoptAccountMcpStore, loadAccountMcpStore, parseAccountMcpServerConfigV
 import { SandMcpConfigError } from "../../../shared/node/mcp/mcp-config-error.js";
 import { isVendorMcpPluginId, vendorMcpServerId } from "../../../shared/node/vendor-mcp/catalog.js";
 import { loadVendorMcpInstalls, removeVendorMcpInstall, upsertVendorMcpInstall } from "../../../shared/node/vendor-mcp/installs.js";
-import { fetchVendorEffectivePlugins, fetchVendorMarketplacePlugins } from "../../../shared/node/vendor-mcp/marketplace.js";
+import { fetchVendorEffectivePlugins, fetchVendorMarketplacePlugins, vendorCatalogInLanguage } from "../../../shared/node/vendor-mcp/marketplace.js";
 import { createVendorMcpBackendExec } from "../../../shared/node/vendor-mcp/backend-exec.js";
 import { fillCheckout } from "../../../shared/node/link-wallet/checkout-fill.js";
 import { createLinkCli } from "../../../shared/node/link-wallet/link-cli.js";
@@ -197,7 +197,9 @@ export function createHostMcp(deps: CreateHostMcpOptions): McpHostPort {
   const window = {
     listServers: () => manager.listServers(),
     listEffectivePlugins: () => manager.listEffectivePlugins(),
-    getCatalog: () => manager.getCatalog(token),
+    // The iPhone and Mac apps name their language (20 October 2026): the connectors' words come back in it.
+    // The window on the web names none and stays English, as it is.
+    getCatalog: async (options?: { language?: unknown }) => vendorCatalogInLanguage(await manager.getCatalog(token), typeof options?.language === "string" ? options.language : undefined),
     resolvePluginLogo: (url: string) => manager.resolvePluginLogo(url),
     installEntry: async (request: { entryId: string; values?: Record<string, string> }) => {
       const state = await mutate(() => manager.installEntry(request, token));

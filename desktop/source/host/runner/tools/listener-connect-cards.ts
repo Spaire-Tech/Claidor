@@ -1,3 +1,6 @@
+import { say } from "../../../shared/say.js";
+import { currentUserLanguage } from "../../../shared/user-language.js";
+
 export interface ListenerConnectCardDependencies {
   readonly trigger: unknown;
   readonly platformsInTrigger: (trigger: unknown) => readonly string[];
@@ -29,7 +32,8 @@ export async function surfaceListenerConnectCards(
     dependencies.emit({
       type: "listener-connect",
       platform,
-      reason: "so this routine can fire",
+      // The apps write "Connect Slack {reason}.", in the person's language.
+      reason: say(currentUserLanguage(), "listener.reason"),
     });
   }
   const names = disconnected

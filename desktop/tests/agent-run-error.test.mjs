@@ -25,7 +25,7 @@ test("OpenAI account-quota refusals do not send the person to platform.openai.co
   assert.match(source, /export function simeonFacingProviderError/);
   assert.match(source, /no credits remaining\|insufficient_quota\|platform\\.openai\\.com/);
   assert.match(source, /Claude Code is not installed/);
-  assert.match(source, /simeonFacingProviderError\(shown\)/);
+  assert.match(source, /simeonFacingProviderError\(shown, language\)/);
   assert.doesNotMatch(source, /Add credits to continue using the API/);
   // Nothing behind Simeon is named to the person (13 October 2026).
   assert.doesNotMatch(source, /OpenAI has no credits left/);
@@ -48,6 +48,11 @@ test("a model company's refusal reads as Simeon not being available, the plan's 
     assert.equal(simeonFacingProviderError("The file was too large to attach."), "The file was too large to attach.");
     const described = describeAgentRunError(new Error("insufficient_quota: no credits remaining, see platform.openai.com/settings/organization/billing"));
     assert.equal(described.detail, plain);
+    // In the person's language (20 October 2026); English, or none, as before.
+    assert.equal(simeonFacingProviderError("Gemini request failed (503: overloaded).", "fr"), "Simeon n’est pas disponible pour le moment. Réessaie dans un moment.");
+    assert.equal(simeonFacingProviderError("Gemini request failed (503: overloaded).", "en"), plain);
+    assert.equal(simeonFacingProviderError(week, "fr"), week, "the plan's own refusal stays as the server wrote it");
+    assert.equal(describeAgentRunError(new Error("insufficient_quota"), "fr").detail, "Simeon n’est pas disponible pour le moment. Réessaie dans un moment.");
   } finally {
     await loaded.dispose();
   }

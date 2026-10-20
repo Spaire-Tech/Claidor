@@ -4,6 +4,8 @@ import {
   stripMarkupAndBoundConnectorError,
 } from "../../mcp.js";
 import { isDeadlineExceededConnectError } from "../../connect-errors.js";
+import { say } from "../../say.js";
+import { currentUserLanguage } from "../../user-language.js";
 import { brandedEnumOf } from "../../errors/bounded.js";
 import { SandError } from "../../errors/registry.js";
 import {
@@ -142,8 +144,7 @@ export class SandMcpAuthWatchLifecycle {
         return {
           status: "not-supported",
           serverName: server.name,
-          message:
-            "This connector is disabled by your team admin's MCP policy, so it can't be authenticated.",
+          message: say(currentUserLanguage(), "mcp.adminBlocked"),
         };
       }
     }
@@ -152,8 +153,7 @@ export class SandMcpAuthWatchLifecycle {
       return {
         status: "not-supported",
         serverName: server.name,
-        message:
-          "This connector runs on Simeon's computer and does not use browser sign-in. Configure credentials via its env settings instead.",
+        message: say(currentUserLanguage(), "mcp.noBrowserSignIn"),
       };
     }
     let status: any;
@@ -201,10 +201,7 @@ export class SandMcpAuthWatchLifecycle {
       );
       if (authorizationUrl == null) {
         this.refused("invalid_auth_url", serverId, server.name);
-        return fail(
-          "not-supported",
-          "Only HTTPS authentication URLs are supported unless the MCP server is running on localhost.",
-        );
+        return fail("not-supported", say(currentUserLanguage(), "mcp.httpsOnly"));
       }
       const slotIdentifier =
         server.accounts?.find((slot) => slot.accountKey === accountKey)
@@ -236,16 +233,10 @@ export class SandMcpAuthWatchLifecycle {
     const detail = stripMarkupAndBoundConnectorError(status.error ?? "");
     if (!status.isAvailable && !status.requiresAuth) {
       this.refused("unreachable", serverId, server.name);
-      return fail(
-        "unreachable",
-        detail || "The connector reported no details.",
-      );
+      return fail("unreachable", detail || say(currentUserLanguage(), "mcp.noDetails"));
     }
     this.refused("no_auth_link", serverId, server.name);
-    return fail(
-      "not-supported",
-      detail || "This connector did not provide a sign-in link.",
-    );
+    return fail("not-supported", detail || say(currentUserLanguage(), "mcp.noSignInLink"));
   }
   beginPendingAuthWatch(
     args: Omit<

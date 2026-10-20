@@ -29,9 +29,9 @@ public struct PluginCalls: Sendable {
 
   // MARK: Reading
 
-  /** The catalog (`getCatalog`): a list, or one under `plugins`. */
+  /** The catalog (`getCatalog`): a list, or one under `plugins`, its words in the app's language (`vendorCatalogInLanguage`). */
   public func catalog() async throws -> [PluginEntry] {
-    let answer = try await mcp("getCatalog")
+    let answer = try await mcp("getCatalog", [["language": .string(AppLanguage.current)]])
     return (answer.array ?? answer["plugins"]?.array ?? []).compactMap(PluginEntry.init(json:))
   }
 

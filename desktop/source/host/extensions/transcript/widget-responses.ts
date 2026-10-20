@@ -1,4 +1,5 @@
 import { errorLogTag } from "../../../shared/errors.js";
+import { say } from "../../../shared/say.js";
 import {
   getMainTranscriptEntries,
   getThreadTranscriptEntries,
@@ -377,8 +378,8 @@ export class WidgetResponses {
     if (!(await this.routeSecret(session.id, request.target, trimmed))) {
       this.tm.trayErrors.pushError({
         agentId: session.id,
-        title: "Could not store the secret",
-        detail: "The secure input could not write the credential to its store.",
+        title: say(this.tm.userLanguage?.(), "tray.secretNotStored"),
+        detail: say(this.tm.userLanguage?.(), "tray.secretNotStoredDetail"),
       });
       return;
     }
@@ -391,7 +392,7 @@ export class WidgetResponses {
     await this.tm.boxHandoff.resumeWithHiddenPrompt(
       session.id,
       buildSecretProvidedAck(request),
-      "Agent failed to resume after secret submission",
+      "tray.resumeAfterSecretFailed",
     );
   }
 
@@ -570,7 +571,7 @@ export class WidgetResponses {
     await this.tm.boxHandoff.resumeWithHiddenPrompt(
       agentId,
       `[The user reacted ${emoji} to your message: "${messageQuote}". You don't need to reply; act on it only if it's useful (e.g. acknowledge, adjust, or continue).]`,
-      "Agent failed to resume after reaction",
+      "tray.resumeAfterReactionFailed",
     );
   }
 

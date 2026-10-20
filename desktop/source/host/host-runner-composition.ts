@@ -85,6 +85,7 @@ import type { BookFlightDependencies } from "./runner/tools/book-flight-tool.js"
 import { getSandRootDir } from "./host-paths.js";
 import { getConfiguredBackendUrl } from "../shared/node/simeon-token.js";
 import { simeonApiData } from "../shared/node/simeon-backend/simeon-api.js";
+import { pinUserLanguageReader } from "../shared/user-language.js";
 import { createRepeatSendGuard } from "./runner/repeat-send-guard.js";
 import { createAgentPromptSession } from "./extensions/inference/extension.js";
 import { connectorManifests } from "../shared/channels.js";
@@ -876,7 +877,12 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
   // A staffed agent's first turn names the person (`shared/agents/chief-of-staff.ts`, 7 October 2026).
   method(extensions.api("transcript"), "setUserFullNameResolver")?.(() => method(auth, "getUserFullName")?.());
   // And its first hello in the person's language (`shared/user-language.ts`, 20 October 2026).
-  method(extensions.api("transcript"), "setUserLanguageResolver")?.(() => { const value = method(extensions.api("settings"), "getUserLanguage")?.(); return typeof value === "string" ? value : undefined; });
+  const userLanguage = (): string | undefined => { const value = method(extensions.api("settings"), "getUserLanguage")?.(); return typeof value === "string" ? value : undefined; };
+  method(extensions.api("transcript"), "setUserLanguageResolver")?.(userLanguage);
+  // The computer's own trays in it too (forever-box-service.ts).
+  method(extensions.api("forever-box"), "setLanguageResolver")?.(userLanguage);
+  // And the engine's other sentences the person reads: previews, notifications, approvals, connectors, channels.
+  pinUserLanguageReader(userLanguage);
   // SearchFlights' searches per turn, so the same search is not run twice in one turn.
   const flightSearchesByTurn = new WeakMap<object, Set<string>>();
   // Simeon Labs' server as this computer's signed-in person (flight search and booking).
@@ -887,7 +893,8 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
   // travellers' details wait between the form and the order).
   method(extensions.api("transcript"), "setFlightBookingServices")?.({
     // The order waits longer than the server's own wait on Duffel (135 s), so its answer is never lost here.
-    api: (path: string, json: unknown) => simeonApiData(serverAuth, path, { method: "POST", json, signal: AbortSignal.timeout(path === "flights/order" ? 160_000 : 120_000) }),
+    // Its refusals come back in the person's language; a search's fields stay English (the apps read them).
+    api: (path: string, json: unknown) => simeonApiData(serverAuth, path, { method: "POST", json, signal: AbortSignal.timeout(path === "flights/order" ? 160_000 : 120_000), language: userLanguage() }),
     wallet: () => (extensions.api("mcp") as { linkWallet?: LinkTools }).linkWallet,
     browserPort: (agentId: string) => 9222 + (boxAgentWindowIndex(extensions.api("forever-box").box as any, agentId) ?? 1),
     backendUrl: () => getConfiguredBackendUrl(),
@@ -2431,6 +2438,8 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
               };
               return {
                 dependencies: {
+                  // The cards' own text (the chat list's preview) in the person's language.
+                  language: userLanguage,
                   checkoutFacts: (request) => link == null && shop == null ? undefined : facts(request),
                   ...(shop == null ? {} : {
                     shopCheckoutCard: async (handle: string) => {

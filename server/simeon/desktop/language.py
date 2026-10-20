@@ -12,6 +12,10 @@ checkout's and are not this.
 from __future__ import annotations
 
 import re
+from contextvars import ContextVar
+from typing import Annotated
+
+from fastapi import Depends, Request
 
 #: The longest tag kept ("zh-Hant-TW" is 10; BCP 47 allows more).
 LANGUAGE_MAX = 35
@@ -38,3 +42,68 @@ def normalize_language(raw: str | None) -> str | None:
         else:
             out.append(part.lower())
     return "-".join(out)
+
+
+#: The languages the server answers in besides English: those with a table
+#: in `simeon/desktop/words/` (`say`).
+TRANSLATED = ("fr",)
+
+#: The language of the request being answered; None is English.
+_current: ContextVar[str | None] = ContextVar("simeon_language", default=None)
+
+
+def translated(raw: str | None) -> str | None:
+    """The language of Simeon's that a tag asks for ("fr" for "fr-CA"), or
+    None (English) when Simeon is not translated into it."""
+    tag = normalize_language(raw)
+    if tag is None:
+        return None
+    if tag in TRANSLATED:
+        return tag
+    code = tag.split("-")[0]
+    return code if code in TRANSLATED else None
+
+
+def accepted_language(header: str | None) -> str | None:
+    """The first language of an `Accept-Language` Simeon is translated into,
+    by its weight ("fr-FR,fr;q=0.9,en;q=0.8" is French); None is English.
+    English named before any other reads as English."""
+    if not header:
+        return None
+    ranked: list[tuple[float, int, str]] = []
+    for index, part in enumerate(header.split(",")[:20]):
+        tag, _, params = part.strip().partition(";")
+        weight = 1.0
+        for param in params.split(";"):
+            name, _, value = param.strip().partition("=")
+            if name.strip() == "q":
+                try:
+                    weight = float(value)
+                except ValueError:
+                    weight = 0.0
+        if tag and tag != "*" and weight > 0:
+            ranked.append((-weight, index, tag))
+    for _, _, tag in sorted(ranked):
+        if normalize_language(tag) is not None and tag.split("-")[0].lower() == "en":
+            return None
+        language = translated(tag)
+        if language is not None:
+            return language
+    return None
+
+
+async def answer_in_request_language(request: Request) -> str | None:
+    """The routers' dependency: what this request is answered in, from its
+    `Accept-Language` (the apps send theirs, the engine the person's). `say`
+    reads it for the rest of the request."""
+    language = accepted_language(request.headers.get("accept-language"))
+    _current.set(language)
+    return language
+
+
+RequestLanguage = Annotated[str | None, Depends(answer_in_request_language)]
+
+
+def current_language() -> str | None:
+    """The language of the request being answered (None is English)."""
+    return _current.get()

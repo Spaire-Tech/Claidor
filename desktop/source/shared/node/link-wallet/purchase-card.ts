@@ -23,6 +23,7 @@
 // and the fields beside it), stamped by the host (`purchase-cards.ts`).
 
 import { createHash } from "node:crypto";
+import { say } from "../../say.js";
 
 export const PURCHASE_MESSAGE_TYPE = "purchase";
 
@@ -186,9 +187,9 @@ export function purchaseItemsLine(items: readonly PurchaseItem[]): string {
   return items.map((item) => item.quantity > 1 ? `${item.name} ×${item.quantity}` : item.name).join(", ");
 }
 
-/** The card in words: what an app from before the card shows, and the chat list's line. */
-export function purchaseCardText(card: Pick<PurchaseCardData, "domain" | "merchant" | "total">): string {
-  return `Checkout at ${card.domain || card.merchant} · ${card.total}`;
+/** The card in words, in the person's language: what an app from before the card shows, and the chat list's line. */
+export function purchaseCardText(card: Pick<PurchaseCardData, "domain" | "merchant" | "total">, language?: string): string {
+  return say(language, "purchase.cardContent", { where: card.domain || card.merchant, total: card.total });
 }
 
 /**
