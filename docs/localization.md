@@ -65,6 +65,7 @@ agents says "tu": warm and direct, like a capable friend at work, never stiff.
 | The iPhone app's screens | `ios/Simeon/Localizable.xcstrings`; its permission prompts in `ios/Simeon/InfoPlist.xcstrings` | `check_translations.py` |
 | The notification extension | `ios/SimeonNotifications/Localizable.xcstrings` | `check_translations.py` |
 | The Mac app's screens | `mac/Simeon/Localizable.xcstrings` (with the strings of `ios/Simeon/Voice.swift` and `Computer.swift`, which the Mac also builds); `mac/Simeon/InfoPlist.xcstrings` | `check_translations.py` |
+| The shared core's sentences (`SimeonCore`, `SimeonMacCore`): cards, consent, routines, calls, errors, plans | `ios/SimeonCore/Sources/SimeonCore/Resources/Localizable.xcstrings`, read by `L10n.text` | `check_translations.py` (each `L10n.text` is in it) |
 | The engine (the agents' prompts, voice calls) | `desktop/source/shared/user-language.ts`; the calls' greetings in `voice-call-prompt.ts` | `desktop/tests/user-language.test.mjs` |
 | The core (calls) | `ios/SimeonCore/Sources/SimeonCore/VoiceCall.swift` (`firstMessage`), word for word as the engine's | `LanguageTests.swift` |
 | The server's voice agent | `VOICE_LANGUAGES` in `server/simeon/desktop/voice.py` | `server/tests/desktop/test_language.py` |
@@ -92,9 +93,38 @@ Xcode reads the code's strings into the String Catalogs on each build
   "Ouverte", beside the button "Ouvrir"), `traveller.title` (Civilité, beside an
   agent's Titre).
 - Counts: plural variations in the catalog (French "one" covers 0 and 1).
-- Words written by the shared core (`SimeonCore`) or the engine and shown as
-  they come are not in these catalogs: stages 3 and 4 of the plan translate
-  them where they are made.
+- Words written by the shared core or the engine and shown as they come are
+  not in these catalogs: they are translated where they are made (below, and
+  stage 4 of the plan for the engine).
+
+### Writing the core's sentences
+
+The core (`ios/SimeonCore`) has no screens and builds on Linux, where Apple's
+`String(localized:)` does not exist. It writes each sentence it shows through
+`L10n.text` (`L10n.swift`), which reads the core's own catalog on the iPhone
+and the Mac and returns the English on Linux, so `swift test` reads every
+sentence as before:
+
+```swift
+L10n.text("Couldn’t reach \(name).")            // key "Couldn’t reach %@."
+L10n.text("\(count) agents")                    // key "%lld agents", a French plural
+L10n.text("section.open", default: "Open")      // one English word, two meanings
+```
+
+- The key is the English with each value as Apple's format writes it: a
+  `String` is `%@`, an `Int` is `%lld`, a `%` is `%%`. Only those two types
+  go in a sentence (a `Double` would read "2.500000": format it first), so
+  what builds on Linux builds on the iPhone.
+- The English keeps its own `n == 1` branch; the French plural is a variation
+  of the count's key.
+- Dates, times and money are shown in `L10n.locale()`: the English screens'
+  own locale (`en_US`) while the app is in English, else the app's language
+  in the person's region. Reading a date keeps `en_US_POSIX`.
+- Not translated: what a model reads (prompts, the call's instructions),
+  what the server or the engine parses, logs, and anything stored or compared.
+- A new sentence: add its key and its French to the catalog (the JSON, or
+  Xcode's catalog editor, entries marked `manual`); `check_translations.py`
+  names any `L10n.text` whose key is missing.
 
 ## When it misbehaves
 
@@ -110,7 +140,8 @@ Xcode reads the code's strings into the String Catalogs on each build
 
 1. The apps: add it to `CFBundleLocalizations` in `ios/project.yml` (the app
    and the notification extension) and `mac/project.yml`, then fill its column
-   in each String Catalog (Xcode's catalog editor, or the JSON).
+   in each String Catalog, the core's included (Xcode's catalog editor, or the
+   JSON).
 2. The calls: add it to `VOICE_CALL_LANGUAGES` (engine), `VoiceCallText.languages`
    (core) and `VOICE_LANGUAGES` (server, with its first message), add its
    greetings beside the French ones (engine and core, word for word), then
