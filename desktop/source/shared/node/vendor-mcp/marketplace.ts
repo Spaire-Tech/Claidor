@@ -1,5 +1,8 @@
 import type { SandMarketplacePlugin } from "../mcp/mcp-marketplace.js";
-import { VENDOR_MCP_CONNECTORS, type VendorMcpConnector } from "./catalog.js";
+import { say } from "../../say.js";
+import { languageCode, normalizeUserLanguage } from "../../user-language.js";
+import { CATALOG_FR, CATALOG_GROUPS_FR } from "../../words/parts/catalog.js";
+import { VENDOR_MCP_CONNECTORS, VENDOR_MCP_GROUP, type VendorMcpConnector } from "./catalog.js";
 import { isAppsServiceAvailable } from "./apps-availability.js";
 import { vendorPluginLogoUrl } from "./logos.js";
 
@@ -24,7 +27,51 @@ export function vendorConnectorToPlugin(item: VendorMcpConnector): SandMarketpla
 
 /** An app shown while our server cannot serve apps: Coming soon, with no address to connect to. */
 export function appComingSoon(item: VendorMcpConnector): VendorMcpConnector {
-  return { id: item.id, name: item.name, category: item.category, description: `Coming soon. ${item.description}`, comingSoon: true, ...(item.appsToolkit == null ? {} : { appsToolkit: item.appsToolkit }) };
+  return { id: item.id, name: item.name, category: item.category, description: say(undefined, "catalog.comingSoon", { description: item.description }), comingSoon: true, ...(item.appsToolkit == null ? {} : { appsToolkit: item.appsToolkit }) };
+}
+
+/** Each language's connector words, by connector id and group key; English is the catalog's own. */
+const CATALOG_WORDS: Readonly<Record<string, { readonly descriptions: Readonly<Record<string, string>>; readonly groups: Readonly<Record<string, string>> }>> = {
+  fr: { descriptions: CATALOG_FR, groups: CATALOG_GROUPS_FR },
+};
+const GROUP_KEYS: ReadonlyMap<string, string> = new Map(Object.entries(VENDOR_MCP_GROUP).map(([key, name]) => [name, key]));
+const CONNECTORS_BY_ID: ReadonlyMap<string, VendorMcpConnector> = new Map(VENDOR_MCP_CONNECTORS.map((item) => [item.id, item]));
+
+/**
+ * The connectors list the apps show, in the person's language (20 October
+ * 2026, docs/localization.md): each connector's description and group, and
+ * an app not served yet with its "Coming soon." in front. English, no
+ * language, a connector with no translation and anything not from the
+ * catalog (the person's own servers) stay as they are; the views given are
+ * not changed (the catalog keeps them cached).
+ */
+export function vendorCatalogInLanguage<View extends { readonly id: string; readonly description?: string; readonly category?: string; readonly connectors?: unknown[] }>(views: readonly View[], language: string | null | undefined): View[] {
+  const tag = normalizeUserLanguage(language);
+  const words = tag == null ? undefined : (CATALOG_WORDS[tag] ?? CATALOG_WORDS[languageCode(tag)]);
+  if (words == null) return [...views];
+  return views.map((view) => {
+    const item = CONNECTORS_BY_ID.get(view.id);
+    if (item == null) return view;
+    const translated = words.descriptions[item.id];
+    const describe = (text: string): string => {
+      if (translated == null) return text;
+      if (text === item.description) return translated;
+      if (text === say(undefined, "catalog.comingSoon", { description: item.description })) return say(tag, "catalog.comingSoon", { description: translated });
+      return text;
+    };
+    const groupKey = view.category == null ? undefined : GROUP_KEYS.get(view.category);
+    const group = groupKey == null ? undefined : words.groups[groupKey];
+    const connectors = view.connectors?.map((connector) => {
+      const row = connector as { readonly description?: unknown } | null;
+      return row != null && typeof row === "object" && typeof row.description === "string" ? { ...row, description: describe(row.description) } : connector;
+    });
+    return {
+      ...view,
+      ...(view.description == null ? {} : { description: describe(view.description) }),
+      ...(group == null ? {} : { category: group }),
+      ...(connectors == null ? {} : { connectors }),
+    };
+  });
 }
 
 export async function fetchVendorMarketplacePlugins(
