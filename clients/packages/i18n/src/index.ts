@@ -39,7 +39,16 @@ import pt from './locales/pt'
 import ptPT from './locales/pt-PT'
 import sv from './locales/sv'
 
-const translations: Record<SupportedLocale, LocaleShape<Translations>> = {
+/**
+ * Simeon's own pages (`simeon`: the website's sign-in and billing, 20
+ * October 2026) are in English and French. The checkout's other languages
+ * have no words for them, and read English there (`lookup`).
+ */
+type LocaleTable = Omit<LocaleShape<Translations>, 'simeon'> & {
+  simeon?: LocaleShape<Translations>['simeon']
+}
+
+const translations: Record<SupportedLocale, LocaleTable> = {
   en,
   nl,
   sv,
@@ -60,62 +69,80 @@ export function getTranslations(
     translations[DEFAULT_LOCALE]) as Translations
 }
 
-export const useTranslations = (locale: AcceptedLocale): TranslateFn => {
-  return useCallback(
-    ((key: string, interpolations?: Record<string, unknown>) => {
-      const translations = getTranslations(locale)
+/** `locale` where Simeon's own pages have its words, else English (the checkout's other languages). */
+export function simeonLocale(locale: AcceptedLocale): AcceptedLocale {
+  return translations[getTranslationLocale(locale)]?.simeon
+    ? locale
+    : DEFAULT_LOCALE
+}
 
-      const value = key
-        .split('.')
-        .reduce<unknown>(
-          (obj, k) => (obj as Record<string, unknown>)[k],
-          translations,
-        )
+const at = (table: unknown, key: string): unknown =>
+  key
+    .split('.')
+    .reduce<unknown>(
+      (obj, k) =>
+        obj !== null && typeof obj === 'object'
+          ? (obj as Record<string, unknown>)[k]
+          : undefined,
+      table,
+    )
 
-      // Handle plural objects
-      if (
-        typeof value === 'object' &&
-        value !== null &&
-        '_mode' in value &&
-        (value as { _mode: string })._mode === 'plural'
-      ) {
-        const pluralObj = value as Record<string, string>
-        const count = (interpolations as { count: number })?.count ?? 0
+/** The entry at `key` in `locale`, or the English one where that locale has none. */
+const lookup = (locale: AcceptedLocale, key: string): unknown =>
+  at(getTranslations(locale), key) ?? at(en, key)
 
-        // Exact match first (=0, =1, etc.), then fall back to 'other'
-        const template = pluralObj[`=${count}`] ?? pluralObj.other
-
-        // Replace # with count, then handle other interpolations
-        let result = template.replace(/#/g, count.toString())
-
-        if (interpolations) {
-          result = result.replace(/\{([a-zA-Z0-9_]+)\}/g, (_, k) => {
-            const val = interpolations[k]
-            return val === undefined ? `{${k}}` : String(val)
-          })
-        }
-
-        return result
-      }
-
-      // Handle annotated entries — extract the value string
-      const template =
-        typeof value === 'object' &&
-        value !== null &&
-        'value' in value &&
-        typeof (value as { value: unknown }).value === 'string'
-          ? (value as { value: string }).value
-          : (value as string)
-
-      if (!interpolations) {
-        return template
-      }
-
-      return template.replace(/\{([a-zA-Z0-9_]+)\}/g, (_, k) => {
+const fill = (template: string, interpolations?: Record<string, unknown>) =>
+  interpolations
+    ? template.replace(/\{([a-zA-Z0-9_]+)\}/g, (_, k) => {
         const val = interpolations[k]
         return val === undefined ? `{${k}}` : String(val)
       })
-    }) as TranslateFn,
+    : template
+
+/** The translate function for `locale`, outside React too (a server page, its metadata). */
+export function getTranslator(locale: AcceptedLocale): TranslateFn {
+  return ((key: string, interpolations?: Record<string, unknown>) => {
+    const value = lookup(locale, key)
+
+    // Handle plural objects
+    if (
+      typeof value === 'object' &&
+      value !== null &&
+      '_mode' in value &&
+      (value as { _mode: string })._mode === 'plural'
+    ) {
+      const pluralObj = value as Record<string, string>
+      const count = (interpolations as { count: number })?.count ?? 0
+
+      // Exact match first (=0, =1, etc.), then fall back to 'other'
+      const template = pluralObj[`=${count}`] ?? pluralObj.other
+
+      // Replace # with count, then handle other interpolations
+      return fill(template.replace(/#/g, count.toString()), interpolations)
+    }
+
+    // Handle annotated entries — extract the value string
+    const template =
+      typeof value === 'object' &&
+      value !== null &&
+      'value' in value &&
+      typeof (value as { value: unknown }).value === 'string'
+        ? (value as { value: string }).value
+        : (value as string)
+
+    return fill(template, interpolations)
+  }) as TranslateFn
+}
+
+export const useTranslations = (locale: AcceptedLocale): TranslateFn => {
+  return useCallback(
+    ((key: string, interpolations?: Record<string, unknown>) =>
+      (
+        getTranslator(locale) as (
+          key: string,
+          interpolations?: Record<string, unknown>,
+        ) => string
+      )(key, interpolations)) as TranslateFn,
     [locale],
   )
 }

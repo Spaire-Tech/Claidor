@@ -1,3 +1,8 @@
+import {
+  isAcceptedLocale,
+  simeonLocale,
+  type AcceptedLocale,
+} from '@simeon/i18n'
 import { headers } from 'next/headers'
 
 const SUPPORTED_LOCALES = [
@@ -71,4 +76,17 @@ export async function resolveLocale(
   }
 
   return 'en'
+}
+
+/**
+ * The language of Simeon's own pages, the sign-in and the billing page (20
+ * October 2026, docs/localization.md): `?locale=`, else the browser's, else
+ * English. They are in English and French; the checkout's other languages
+ * read English there (`simeonLocale`).
+ */
+export async function pageLocale(
+  queryLocale?: string,
+): Promise<AcceptedLocale> {
+  const locale = await resolveLocale(queryLocale)
+  return isAcceptedLocale(locale) ? simeonLocale(locale) : 'en'
 }

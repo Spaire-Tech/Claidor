@@ -1,12 +1,20 @@
 import BillingPage from '@/components/Settings/SimeonTier/BillingPage'
 import { PaidTierKey } from '@/hooks/queries/plans'
 import { CONFIG } from '@/utils/config'
+import { pageLocale } from '@/utils/i18n'
 import { getAuthenticatedUser } from '@/utils/user'
+import { getTranslator } from '@simeon/i18n'
 import { Metadata } from 'next'
 
-export const metadata: Metadata = {
-  title: 'Billing',
-  description: 'Your Simeon plan, card and invoices',
+export async function generateMetadata(props: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}): Promise<Metadata> {
+  const searchParams = await props.searchParams
+  const t = getTranslator(await pageLocale(first(searchParams.locale)))
+  return {
+    title: t('simeon.billing.title'),
+    description: t('simeon.billing.description'),
+  }
 }
 
 const PLANS: readonly PaidTierKey[] = ['standard', 'pro', 'max']
@@ -63,6 +71,7 @@ export default async function Page(props: {
       fromApp={first(searchParams.from) === 'app'}
       upgraded={searchParams.upgraded === '1'}
       checkoutSessionId={checkoutSessionOf(searchParams.checkout_session_id)}
+      locale={await pageLocale(first(searchParams.locale))}
     />
   )
 }

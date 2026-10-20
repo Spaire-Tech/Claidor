@@ -1,11 +1,18 @@
 import SignInPage from '@/components/Auth/SignInPage'
 import { getServerSideAPI } from '@/utils/client/serverside'
+import { pageLocale } from '@/utils/i18n'
 import { getUserOrganizations } from '@/utils/user'
+import { getTranslator } from '@simeon/i18n'
 import { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 
-export const metadata: Metadata = {
-  title: 'Sign up to Simeon',
+export async function generateMetadata(props: {
+  searchParams: Promise<{ locale?: string }>
+}): Promise<Metadata> {
+  const { locale } = await props.searchParams
+  return {
+    title: getTranslator(await pageLocale(locale))('simeon.signIn.signupTitle'),
+  }
 }
 
 // Where the Mac app sends a person to sign up. A person who is already
@@ -14,6 +21,7 @@ export default async function Page(props: {
   searchParams: Promise<{
     return_to?: string
     error?: string
+    locale?: string
   }>
 }) {
   const searchParams = await props.searchParams
@@ -26,10 +34,13 @@ export default async function Page(props: {
     redirect(return_to ?? '/app')
   }
 
-  return <SignInPage
+  return (
+    <SignInPage
       mode="signup"
       returnTo={return_to}
       returnParams={rest}
       error={error}
+      locale={await pageLocale(searchParams.locale)}
     />
+  )
 }

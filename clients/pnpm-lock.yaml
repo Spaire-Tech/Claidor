@@ -151,6 +151,9 @@ importers:
       '@simeon/customer-portal':
         specifier: workspace:*
         version: link:../../packages/customer-portal
+      '@simeon/i18n':
+        specifier: workspace:^
+        version: link:../../packages/i18n
       '@simeon/mdx':
         specifier: workspace:*
         version: link:../../packages/mdx

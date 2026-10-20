@@ -2,6 +2,7 @@
 
 import { field, primary } from '@/components/Auth/parts'
 import { CONFIG } from '@/utils/config'
+import { useTranslations, type AcceptedLocale } from '@simeon/i18n'
 import { useState, type FormEvent } from 'react'
 
 // The password form: a plain POST to the API (`/v1/login-password/authenticate`),
@@ -11,11 +12,14 @@ const PasswordForm = ({
   email,
   return_to,
   error,
+  locale,
 }: {
   email: string
   return_to?: string
   error?: string
+  locale: AcceptedLocale
 }) => {
+  const t = useTranslations(locale)
   const [address, setAddress] = useState(email)
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -41,7 +45,7 @@ const PasswordForm = ({
       ) : (
         <>
           <label htmlFor="sign-in-email" className="sr-only">
-            Email
+            {t('simeon.signIn.email')}
           </label>
           <input
             id="sign-in-email"
@@ -49,7 +53,7 @@ const PasswordForm = ({
             type="email"
             inputMode="email"
             autoComplete="username"
-            placeholder="Enter your email"
+            placeholder={t('simeon.signIn.enterEmail')}
             value={address}
             onChange={(e) => setAddress(e.target.value)}
             className={field}
@@ -57,14 +61,14 @@ const PasswordForm = ({
         </>
       )}
       <label htmlFor="sign-in-password" className="sr-only">
-        Password
+        {t('simeon.signIn.password')}
       </label>
       <input
         id="sign-in-password"
         name="password"
         type="password"
         autoComplete="current-password"
-        placeholder="Password"
+        placeholder={t('simeon.signIn.password')}
         autoFocus
         value={password}
         onChange={(e) => setPassword(e.target.value)}
@@ -79,11 +83,10 @@ const PasswordForm = ({
         </p>
       ) : null}
       <button type="submit" disabled={loading} className={primary}>
-        {loading ? 'Signing in…' : 'Continue'}
+        {loading ? t('simeon.signIn.signingIn') : t('simeon.signIn.continue')}
       </button>
       <p className="text-center text-[13px] leading-[1.45] text-[#86868b]">
-        No password yet? Use a code, then set one in the Simeon app under
-        Settings › Account.
+        {t('simeon.signIn.noPassword')}
       </p>
     </form>
   )

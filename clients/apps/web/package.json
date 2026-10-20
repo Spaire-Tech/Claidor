@@ -55,6 +55,7 @@
     "@simeon/client": "workspace:*",
     "@simeon/currency": "workspace:^",
     "@simeon/customer-portal": "workspace:*",
+    "@simeon/i18n": "workspace:^",
     "@simeon/mdx": "workspace:*",
     "@spaire/sdk": "^0.45.1",
     "@simeon/ui": "workspace:*",

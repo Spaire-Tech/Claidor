@@ -1,6 +1,7 @@
 'use client'
 
 import { CONFIG } from '@/utils/config'
+import { useTranslations, type AcceptedLocale } from '@simeon/i18n'
 import {
   InputOTP,
   InputOTPGroup,
@@ -20,11 +21,14 @@ const ClientPage = ({
   return_to,
   error,
   email,
+  locale,
 }: {
   return_to?: string
   error?: string
   email?: string
+  locale: AcceptedLocale
 }) => {
+  const t = useTranslations(locale)
   const form = useForm<{ code: string }>()
   const { control, setError } = form
 
@@ -98,9 +102,9 @@ const ClientPage = ({
         <button
           type="submit"
           disabled={loading}
-          className="h-[50px] w-full rounded-full bg-black text-[16px] sm:h-[52px] sm:text-[17px] font-medium tracking-[-0.01em] text-white transition-colors hover:bg-[#1d1d1f] disabled:opacity-60"
+          className="h-[50px] w-full rounded-full bg-black text-[16px] font-medium tracking-[-0.01em] text-white transition-colors hover:bg-[#1d1d1f] disabled:opacity-60 sm:h-[52px] sm:text-[17px]"
         >
-          {loading ? 'Signing in…' : 'Sign in'}
+          {loading ? t('simeon.signIn.signingIn') : t('simeon.signIn.signIn')}
         </button>
       </form>
     </Form>

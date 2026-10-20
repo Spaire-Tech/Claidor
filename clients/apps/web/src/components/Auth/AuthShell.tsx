@@ -1,6 +1,7 @@
 import LogoType from '@/components/Brand/LogoType'
+import { getTranslator, type AcceptedLocale } from '@simeon/i18n'
 import Image from 'next/image'
-import type { ReactNode } from 'react'
+import { Fragment, type ReactNode } from 'react'
 
 // The sign-in pages' frame (the founder, 18 October 2026, after Claude's
 // sign-in: "make it like this"): the SimeonLabs wordmark top left; on a
@@ -8,14 +9,17 @@ import type { ReactNode } from 'react'
 // of the room built round a boulder on the right, rounded; on a phone one
 // centred column, no photo. The Mac app's sign-in (`/loginDeepControl`)
 // sends a browser with no session here, so this is the page people see
-// between the app and "Continue as …".
+// between the app and "Continue as …". In the page's language
+// (`pageLocale`, 20 October 2026).
 const AuthShell = ({
   heading,
   line,
+  locale,
   children,
 }: {
   heading: string
   line?: string
+  locale: AcceptedLocale
   children: ReactNode
 }) => (
   <div className="flex min-h-screen w-full bg-[#fafafa] text-[#1d1d1f]">
@@ -45,7 +49,7 @@ const AuthShell = ({
       <div className="sticky top-6 h-[calc(100vh-48px)] w-full overflow-hidden rounded-[28px] bg-[#e8e4de]">
         <Image
           src="/assets/sign-in/room.webp"
-          alt="A living room built around a boulder, with white sofas and a globe hanging on a string"
+          alt={getTranslator(locale)('simeon.signIn.photo')}
           fill
           priority
           sizes="50vw"
@@ -56,24 +60,50 @@ const AuthShell = ({
   </div>
 )
 
-export const Legal = () => (
-  <p className="text-center text-[13px] leading-[1.5] text-[#86868b]">
-    By continuing, you agree to Simeon&rsquo;s{' '}
-    <a
-      href="https://www.simeonlabs.com/legal/terms-of-service"
-      className="text-[#1d1d1f] underline decoration-black/20 underline-offset-2 hover:decoration-black/50"
-    >
-      Terms of Service
-    </a>{' '}
-    and{' '}
-    <a
-      href="https://www.simeonlabs.com/legal/privacy-policy"
-      className="text-[#1d1d1f] underline decoration-black/20 underline-offset-2 hover:decoration-black/50"
-    >
-      Privacy Policy
-    </a>
-    .
-  </p>
-)
+/** A translated sentence with React parts in its `{name}` places (a link in the Terms line). */
+export const withParts = (
+  sentence: string,
+  parts: Record<string, ReactNode>,
+): ReactNode[] =>
+  sentence.split(/(\{\w+\})/).map((piece, index) => {
+    const name = /^\{(\w+)\}$/.exec(piece)?.[1]
+    return (
+      <Fragment key={index}>
+        {name !== undefined && name in parts ? parts[name] : piece}
+      </Fragment>
+    )
+  })
+
+const legalLink =
+  'text-[#1d1d1f] underline decoration-black/20 underline-offset-2 hover:decoration-black/50'
+
+export const Legal = ({ locale }: { locale: AcceptedLocale }) => {
+  const t = getTranslator(locale)
+  return (
+    <p className="text-center text-[13px] leading-[1.5] text-[#86868b]">
+      {withParts(
+        t('simeon.signIn.legal', { terms: '{terms}', privacy: '{privacy}' }),
+        {
+          terms: (
+            <a
+              href="https://www.simeonlabs.com/legal/terms-of-service"
+              className={legalLink}
+            >
+              {t('simeon.signIn.terms')}
+            </a>
+          ),
+          privacy: (
+            <a
+              href="https://www.simeonlabs.com/legal/privacy-policy"
+              className={legalLink}
+            >
+              {t('simeon.signIn.privacy')}
+            </a>
+          ),
+        },
+      )}
+    </p>
+  )
+}
 
 export default AuthShell

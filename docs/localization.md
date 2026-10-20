@@ -41,6 +41,9 @@ agents says "tu": warm and direct, like a capable friend at work, never stiff.
   from then on, and saves it to the person's shared memory ("Prefers to be
   addressed as vous in French") so every agent follows it.
 - The app's own screens always say "tu".
+- The website's sign-in and billing pages say "tu" too; the inherited
+  shop's dashboard and checkout are not Simeon's pages and are left as
+  they are.
 - One exception: the inherited checkout page's legal payment text
   (`clients/packages/i18n/src/locales/fr.ts`, `checkout.footer.mandate*`)
   keeps its formal wording. It is legal text, and Simeon does not sell through
@@ -71,6 +74,7 @@ agents says "tu": warm and direct, like a capable friend at work, never stiff.
 | The engine's sentences shown as they come: card notes, refusals, trays, previews, notifications, approvals, the connectors list | `desktop/source/shared/words/areas/*.ts` (an `EN` and an `FR` object in each), read by `say(language, key, values)` (`shared/say.ts`) | `desktop/tests/say.test.mjs`, `check_translations.py`, the type check |
 | The server's answers: refusals, the sign-in pages, the free month | `server/simeon/desktop/words/` (`_booking.py`, `_account.py`: `EN` and `FR`; `en.py`, `fr.py` gather them), read by `say(key, **values)` in the request's `Accept-Language` | `server/tests/desktop/test_words.py`, `check_translations.py` |
 | The sign-in code email | `server/emails/src/words.ts` | `check_translations.py` |
+| The website's pages Simeon owns: sign-in (`/login`, `/signup`, the code and password pages) and `/billing` | `clients/packages/i18n/src/locales/en.ts` and `fr.ts`, under `simeon`; the page's language from `pageLocale` (`clients/apps/web/src/utils/i18n.ts`: `?locale=`, else the browser's, else English) | `clients/packages/i18n/src/simeon.test.ts` |
 | The engine (the agents' prompts, voice calls) | `desktop/source/shared/user-language.ts`; the calls' greetings in `voice-call-prompt.ts` | `desktop/tests/user-language.test.mjs` |
 | The core (calls) | `ios/SimeonCore/Sources/SimeonCore/VoiceCall.swift` (`firstMessage`), word for word as the engine's | `LanguageTests.swift` |
 | The server's voice agent | `VOICE_LANGUAGES` in `server/simeon/desktop/voice.py` | `server/tests/desktop/test_language.py` |
@@ -190,5 +194,8 @@ say("email.login_code.subject", language="fr")
    `shared/say.ts`; `server/simeon/desktop/words/_*.py`, a `<language>.py`
    and `TABLES` in `words/__init__.py`, and `TRANSLATED` in `language.py`;
    `server/emails/src/words.ts`).
-4. Run `python3 scripts/check_translations.py`, the tests, and read every
+4. The website: the language's `simeon` words in its file under
+   `clients/packages/i18n/src/locales/` (the checkout's other languages,
+   which have none, read English on Simeon's pages).
+5. Run `python3 scripts/check_translations.py`, the tests, and read every
    screen in the new language on an iPhone and a Mac.
