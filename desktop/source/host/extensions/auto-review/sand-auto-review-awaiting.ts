@@ -1,10 +1,13 @@
+import { say } from "../../../shared/say.js";
+import { currentUserLanguage } from "../../../shared/user-language.js";
 import type { SandAutoReviewEvent } from "../../runner/sand-auto-review.js";
 
 export const SAND_AUTO_REVIEW_AWAITING_TAB_ID = "auto-review";
 export interface SandAutoReviewAwaitingState { readonly tabId: string; readonly reason: string; readonly since: number }
 export interface SandAutoReviewAwaitingSink { trySetForTab(agentId: string, state: SandAutoReviewAwaitingState): void; clearForTab(agentId: string, tabId: string, options?: { readonly ifSinceBefore?: number }): void }
 
-export function buildSandAutoReviewAwaitingReason(summary: string): string { return `Approval needed: ${summary}`; }
+/** "Approval needed: …", in the person's language (`say`). */
+export function buildSandAutoReviewAwaitingReason(summary: string): string { return say(currentUserLanguage(), "waiting.approvalNeeded", { summary }); }
 
 export class SandAutoReviewAwaitingBridge {
   readonly #pendingByAgent = new Map<string, Map<string, string>>();

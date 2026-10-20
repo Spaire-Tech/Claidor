@@ -1,7 +1,7 @@
-import { EN as CATALOG } from "./parts/catalog.js";
-import { EN as PREVIEWS } from "./parts/previews.js";
-import { EN as PURCHASES } from "./parts/purchases.js";
-import { EN as TRAYS } from "./parts/trays.js";
+import { EN as CATALOG } from "./areas/catalog.js";
+import { EN as PREVIEWS } from "./areas/previews.js";
+import { EN as PURCHASES } from "./areas/purchases.js";
+import { EN as TRAYS } from "./areas/trays.js";
 
 /**
  * The engine's sentences in English, the source language (`say`, `../say.ts`).

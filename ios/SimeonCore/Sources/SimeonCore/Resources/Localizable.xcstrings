@@ -10105,6 +10105,28 @@
         }
       }
     },
+    "Run a command on Simeon's computer" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exécuter une commande sur l’ordinateur de Simeon"
+          }
+        }
+      }
+    },
+    "Run a command on your local computer" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exécuter une commande sur ton ordinateur local"
+          }
+        }
+      }
+    },
     "run.failed" : {
       "extractionState" : "manual",
       "localizations" : {

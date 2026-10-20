@@ -24,7 +24,7 @@ outside the apps:
 | The agents | `## Language` in every agent's instructions; a closing line on the first-run cues (each agent's hello, Simeon's introduction, a staffed agent's first turn) | `desktop/source/shared/user-language.ts` |
 | Voice calls | the call's `language`, its first line and a `Language:` rule in its prompt | `voice-call-prompt.ts` (engine), `VoiceCallText` (core); the server's agent knows each language (`VOICE_LANGUAGES` in `server/simeon/desktop/voice.py`) |
 | Dictation | the iPhone's speech recognizer follows the phone; the server's transcription gets `language` when it is not English | `SimeonAPI.transcribe` |
-| The engine's calls to the server | `Accept-Language` (the person's) on the flight booking calls, so the server's refusals come back in it; a flight search's fields stay English (the apps read them) | `simeonApiData(…, { language })`, `host-runner-composition.ts` |
+| The engine's calls to the server | `Accept-Language` (the person's) on the flight booking calls and the phone pushes, so the server's refusals and a push's card line come back in it; a flight search's fields stay English (the apps read them) | `acceptLanguageHeader` (`shared/user-language.ts`), `simeonApiData(…, { language })`, `mobile-push-notifier.ts` |
 | The sign-in code email | the request's `Accept-Language` (the app's, or the browser's) | `login_code.service.send`, `server/emails/src/words.ts` |
 
 English, or no language, leaves every prompt and every request exactly as it
@@ -68,7 +68,7 @@ agents says "tu": warm and direct, like a capable friend at work, never stiff.
 | The notification extension | `ios/SimeonNotifications/Localizable.xcstrings` | `check_translations.py` |
 | The Mac app's screens | `mac/Simeon/Localizable.xcstrings` (with the strings of `ios/Simeon/Voice.swift` and `Computer.swift`, which the Mac also builds); `mac/Simeon/InfoPlist.xcstrings` | `check_translations.py` |
 | The shared core's sentences (`SimeonCore`, `SimeonMacCore`): cards, consent, routines, calls, errors, plans | `ios/SimeonCore/Sources/SimeonCore/Resources/Localizable.xcstrings`, read by `L10n.text` | `check_translations.py` (each `L10n.text` is in it) |
-| The engine's sentences shown as they come: card notes, refusals, trays, previews, notifications, approvals, the connectors list | `desktop/source/shared/words/parts/*.ts` (an `EN` and an `FR` object in each), read by `say(language, key, values)` (`shared/say.ts`) | `desktop/tests/say.test.mjs`, `check_translations.py`, the type check |
+| The engine's sentences shown as they come: card notes, refusals, trays, previews, notifications, approvals, the connectors list | `desktop/source/shared/words/areas/*.ts` (an `EN` and an `FR` object in each), read by `say(language, key, values)` (`shared/say.ts`) | `desktop/tests/say.test.mjs`, `check_translations.py`, the type check |
 | The server's answers: refusals, the sign-in pages, the free month | `server/simeon/desktop/words/` (`_booking.py`, `_account.py`: `EN` and `FR`; `en.py`, `fr.py` gather them), read by `say(key, **values)` in the request's `Accept-Language` | `server/tests/desktop/test_words.py`, `check_translations.py` |
 | The sign-in code email | `server/emails/src/words.ts` | `check_translations.py` |
 | The engine (the agents' prompts, voice calls) | `desktop/source/shared/user-language.ts`; the calls' greetings in `voice-call-prompt.ts` | `desktop/tests/user-language.test.mjs` |
@@ -150,10 +150,11 @@ say("email.login_code.subject", language="fr")
   with the same keys and the same `{values}`. The type check (engine) and
   the tests (both) fail on a missing one.
 - The engine's language is the host setting `userLanguage`
-  (`this.tm.userLanguage?.()` in the transcript extension; elsewhere the
-  caller passes it). The server's is the request's `Accept-Language`
+  (`this.tm.userLanguage?.()` in the transcript extension,
+  `currentUserLanguage()` where nothing passes it in; unset, as in the
+  tests, it is English). The server's is the request's `Accept-Language`
   (`language.answer_in_request_language`, on the apps' routers); the engine
-  sends the person's on its booking calls.
+  sends the person's on its booking calls and pushes.
 - Not translated: what a model reads (tool results, wake prompts, the
   agents' instructions), what the apps parse (a flight search's fields, the
   call's `Voice call · …` line), logs and error codes.
@@ -169,7 +170,7 @@ say("email.login_code.subject", language="fr")
 - The account's language: `GET /desktop/api/user/profile` answers `language`.
 - A server refusal in English to a French person: the request had no
   `Accept-Language` naming French. The apps send theirs on every request;
-  the engine sends the person's on the flight booking calls only.
+  the engine sends the person's on the flight booking calls and the pushes only.
 
 ## Adding a language
 
@@ -185,7 +186,7 @@ say("email.login_code.subject", language="fr")
    `pt-br`; the call's rule still says "Brazilian Portuguese"), Chinese
    (Traditional) is `zh`.
 3. The engine, the server and the emails: add the language's table beside
-   each `FR` (`desktop/source/shared/words/parts/*.ts` and `TABLES` in
+   each `FR` (`desktop/source/shared/words/areas/*.ts` and `TABLES` in
    `shared/say.ts`; `server/simeon/desktop/words/_*.py`, a `<language>.py`
    and `TABLES` in `words/__init__.py`, and `TRANSLATED` in `language.py`;
    `server/emails/src/words.ts`).

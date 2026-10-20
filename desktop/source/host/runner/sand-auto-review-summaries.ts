@@ -1,3 +1,8 @@
+import { say } from "../../shared/say.js";
+import { currentUserLanguage } from "../../shared/user-language.js";
+
+// An approval card's summary is written in the person's language (`say`, 20 October 2026);
+// the MCP `command` line stays as the tool's own words.
 const SAND_AUTO_REVIEW_SECRET_KEY_PATTERN = /(?:authorization|api.?key|credential|password|secret|token)/i;
 const SAND_AUTO_REVIEW_SECRET_VALUE_PATTERN = /^(?:bearer\s+)?[A-Za-z0-9_+\/-]{24,}={0,2}$/i;
 
@@ -29,11 +34,11 @@ export function compactHeadAndTail(value: string, maxChars: number): string {
 }
 
 export function shellLocationPhrase(surface: string): string {
-  return surface === "host_shell" ? "on your local computer" : "on Simeon's computer";
+  return say(currentUserLanguage(), surface === "host_shell" ? "approval.onLocalComputer" : "approval.onSimeonComputer");
 }
 
 export function genericSandShellAutoReviewSummary(surface: string): string {
-  return surface === "host_shell" ? "Run a command on your local computer" : "Run a command on Simeon's computer";
+  return say(currentUserLanguage(), surface === "host_shell" ? "approval.runOnLocalComputer" : "approval.runOnSimeonComputer");
 }
 
 export function describeSandShellAutoReviewAction(args: {
@@ -43,7 +48,7 @@ export function describeSandShellAutoReviewAction(args: {
 }): string {
   const location = shellLocationPhrase(args.surface);
   const description = args.description?.replace(/\s+/g, " ").trim();
-  const cwd = args.workingDirectory === undefined ? "" : ` from ${compact(args.workingDirectory, 100)}`;
+  const cwd = args.workingDirectory === undefined ? "" : say(currentUserLanguage(), "approval.fromFolder", { folder: compact(args.workingDirectory, 100) });
   if (description !== undefined && description.length > 0) {
     const head = description.replace(/[.!?]+$/u, "");
     return compact(`${head} ${location}${cwd}`, 340);
@@ -89,7 +94,8 @@ export function summarizeSandMcpAutoReviewAction(args: {
 
 export function genericSandMcpAutoReviewSummary(serverDisplayName: string): string {
   const safeServer = compact(serverDisplayName, 80);
-  return safeServer.length > 0 ? `Use ${safeServer}` : "Use a connected service";
+  const language = currentUserLanguage();
+  return say(language, "approval.use", { service: safeServer.length > 0 ? safeServer : say(language, "approval.connectedService") });
 }
 
 export const MCP_DESTINATION_KEYS = new Set([
@@ -141,11 +147,11 @@ export function fallbackSandMcpAutoReviewSummary(args: {
   const server = compact(args.serverDisplayName, 80);
   const action = humanizeMcpToolAction(args.toolName);
   const hint = safeMcpDestinationHint(args.mcpArguments);
-  if (server.length === 0 && action === undefined) return "Use a connected service";
   if (action === undefined) return genericSandMcpAutoReviewSummary(server);
-  const base = server.length > 0 ? `Use ${server} to ${action}` : `Use a connected service to ${action}`;
+  const language = currentUserLanguage();
+  const base = say(language, "approval.useTo", { service: server.length > 0 ? server : say(language, "approval.connectedService"), action });
   if (hint === undefined || base.toLowerCase().includes(hint.toLowerCase())) return base;
-  return `${base} to ${hint}`;
+  return say(language, "approval.toward", { action: base, destination: hint });
 }
 
 export function describeSandMcpAutoReviewAction(args: {
@@ -158,7 +164,7 @@ export function describeSandMcpAutoReviewAction(args: {
   const server = compact(args.serverDisplayName, 80);
   if (description !== undefined && description.length > 0) {
     const head = description.replace(/[.!?]+$/u, "");
-    if (server.length > 0 && !mentionsServer(head, server)) return compact(`${head} with ${server}`, 340);
+    if (server.length > 0 && !mentionsServer(head, server)) return compact(say(currentUserLanguage(), "approval.with", { action: head, service: server }), 340);
     return compact(head, 340);
   }
   return fallbackSandMcpAutoReviewSummary({
@@ -176,20 +182,23 @@ export function summarizeSandAutomationWriteAction(args: {
   readonly isEnabled?: boolean;
   readonly referencingRoutineNames?: readonly string[];
 }): string {
-  const name = compact(args.name, 80) || "a routine";
+  const language = currentUserLanguage();
+  const name = compact(args.name, 80) || say(language, "approval.aRoutine");
   const instruction = compactHeadAndTail(redactSandAutoReviewInlineSecrets(args.prompt), 240);
   if (args.operation === "workflow_body") {
     const routines = args.referencingRoutineNames
       ?.map((routine) => compact(routine, 40))
       .filter((routine) => routine.length > 0)
       .slice(0, 3)
-      .join(", ") || "standing orders";
-    return `Change workflow \u201C${name}\u201D used by ${routines}: \u201C${instruction}\u201D`;
+      .join(", ") || say(language, "approval.standingOrders");
+    return say(language, "approval.changeWorkflow", { name, routines, instruction });
   }
-  const when = compact(args.triggerDescription, 120) || "on a trigger";
-  const verb = args.operation === "create" ? "Save" : "Change";
-  const paused = args.isEnabled === false ? " (paused)" : "";
-  return `${verb} the routine \u201C${name}\u201D${paused} to run ${when.toLowerCase()}: \u201C${instruction}\u201D`;
+  const when = (compact(args.triggerDescription, 120) || say(language, "approval.onATrigger")).toLowerCase();
+  const paused = args.isEnabled === false;
+  const key = args.operation === "create"
+    ? (paused ? "approval.saveRoutinePaused" : "approval.saveRoutine")
+    : (paused ? "approval.changeRoutinePaused" : "approval.changeRoutine");
+  return say(language, key, { name, when, instruction });
 }
 
 export function summarizeSandCloudAgentAction(args: {
@@ -201,18 +210,19 @@ export function summarizeSandCloudAgentAction(args: {
   readonly repoUrl?: string;
   readonly title?: string;
 }): string {
+  const language = currentUserLanguage();
   const instruction = compactHeadAndTail(redactSandAutoReviewInlineSecrets(args.prompt), 240);
   const imageCount = args.imageCount ?? 0;
-  const images = imageCount > 0 ? ` with ${imageCount} attached image${imageCount === 1 ? "" : "s"} it can see` : "";
+  const images = imageCount === 0 ? "" : imageCount === 1 ? say(language, "approval.withImage") : say(language, "approval.withImages", { count: imageCount });
   if (args.action === "reply") {
-    const target = compact(args.agentId ?? "", 40) || "a cloud agent";
-    const interrupt = args.interrupt === true ? " (interrupt)" : "";
-    return `Send a follow-up to cloud agent ${target}${interrupt}${images}: \u201C${instruction}\u201D`;
+    const target = compact(args.agentId ?? "", 40) || say(language, "approval.aCloudAgent");
+    const interrupt = args.interrupt === true ? say(language, "approval.interrupt") : "";
+    return say(language, "approval.cloudFollowUp", { target, interrupt, images, instruction });
   }
   const repo = compact(args.repoUrl ?? "", 120);
-  const titled = args.title !== undefined && args.title.trim().length > 0 ? ` \u201C${compact(args.title, 80)}\u201D` : "";
-  const where = repo.length > 0 ? ` on ${repo}` : "";
-  return `Launch a cloud agent${titled}${where}${images}: \u201C${instruction}\u201D`;
+  const title = args.title !== undefined && args.title.trim().length > 0 ? say(language, "approval.titled", { title: compact(args.title, 80) }) : "";
+  const where = repo.length > 0 ? say(language, "approval.onRepo", { repo }) : "";
+  return say(language, "approval.cloudLaunch", { title, repo: where, images, instruction });
 }
 
 export type CloudLifecycleAction = "rename" | "cancel" | "archive" | "unarchive" | "delete";
@@ -222,24 +232,23 @@ export function summarizeSandCloudAgentLifecycleAction(args: {
   readonly agentId: string;
   readonly title?: string;
 }): string {
-  const target = compact(args.agentId, 40) || "a cloud agent";
+  const language = currentUserLanguage();
+  const target = compact(args.agentId, 40) || say(language, "approval.aCloudAgent");
   switch (args.action) {
-    case "rename": {
-      const title = args.title !== undefined && args.title.trim().length > 0 ? ` to \u201C${compact(args.title, 80)}\u201D` : "";
-      return `Rename cloud agent ${target}${title}`;
-    }
-    case "cancel": return `Cancel the active run of cloud agent ${target}`;
-    case "archive": return `Archive cloud agent ${target}`;
-    case "unarchive": return `Unarchive cloud agent ${target}`;
-    case "delete": return `Permanently delete cloud agent ${target}`;
+    case "rename":
+      return args.title !== undefined && args.title.trim().length > 0
+        ? say(language, "approval.cloudRenameTo", { target, title: compact(args.title, 80) })
+        : say(language, "approval.cloudRename", { target });
+    case "cancel": return say(language, "approval.cloudCancel", { target });
+    case "archive": return say(language, "approval.cloudArchive", { target });
+    case "unarchive": return say(language, "approval.cloudUnarchive", { target });
+    case "delete": return say(language, "approval.cloudDelete", { target });
   }
 }
 
 export function summarizeSandSubagentAction(args: { readonly action: string; readonly prompt: string }): string {
   const instruction = compactHeadAndTail(redactSandAutoReviewInlineSecrets(args.prompt), 240);
-  return args.action === "steer"
-    ? `Send a follow-up to a running task: \u201C${instruction}\u201D`
-    : `Run a task on Simeon's computer: \u201C${instruction}\u201D`;
+  return say(currentUserLanguage(), args.action === "steer" ? "approval.taskFollowUp" : "approval.runTask", { instruction });
 }
 
 export interface SandBrowserSummaryArgs {
@@ -258,24 +267,27 @@ export interface SandBrowserSummaryArgs {
 }
 
 export function summarizeSandBrowserAutoReviewAction(args: SandBrowserSummaryArgs): string {
+  const language = currentUserLanguage();
   const element = args.element?.replace(/\s+/g, " ").trim();
-  const target = element !== undefined && element.length > 0 ? `\u201C${compact(element, 160)}\u201D` : "an element";
+  const target = element !== undefined && element.length > 0 ? say(language, "approval.quoted", { text: compact(element, 160) }) : say(language, "approval.anElement");
   const page = args.targetPageUrl !== undefined && args.targetPageUrl.length > 0
-    ? ` on ${compactHeadAndTail(redactSandAutoReviewInlineSecrets(args.targetPageUrl), 120)}`
+    ? say(language, "approval.onPage", { page: compactHeadAndTail(redactSandAutoReviewInlineSecrets(args.targetPageUrl), 120) })
     : "";
-  const summarize = (action: string): string => compact(`${action}${page} in the box browser`, 340);
+  const summarize = (action: string): string => compact(say(language, "approval.inBrowser", { action, page }), 340);
   switch (args.op) {
-    case "navigate": return compact(`Open \u201C${redactSandAutoReviewInlineSecrets(args.url ?? "")}\u201D in the box browser`, 340);
+    case "navigate": return compact(say(language, "approval.browserOpen", { url: redactSandAutoReviewInlineSecrets(args.url ?? "") }), 340);
     case "click":
-    case "mouse_click_xy": return summarize(`Click ${target}`);
+    case "mouse_click_xy": return summarize(say(language, "approval.click", { target }));
     case "type": return summarize(summarizeTypedText(args.text ?? ""));
     case "fill": return summarize(summarizeTypedText(args.value ?? ""));
-    case "select_option": return summarize(`Select \u201C${redactSandAutoReviewInlineSecrets((args.values ?? []).join(", "))}\u201D in ${target}`);
-    case "press_key": return summarize(`Press ${args.key?.slice(0, 80) ?? "a key"}`);
-    case "drag": return summarize(`Drag ${target}`);
-    case "cdp": return summarize(`Run CDP command ${args.cdpMethod?.slice(0, 120) ?? ""} with ${compactHeadAndTail(redactSandAutoReviewInlineSecrets(args.cdpParams ?? "{}"), 160)}`);
-    case "tabs": return summarize(args.tabsAction === "close" ? `Close browser tab${args.tabIndex !== undefined ? ` ${args.tabIndex}` : ""}` : "Open a new browser tab");
-    default: return compact(`Browser ${args.op} on Simeon's computer`, 340);
+    case "select_option": return summarize(say(language, "approval.select", { values: redactSandAutoReviewInlineSecrets((args.values ?? []).join(", ")), target }));
+    case "press_key": return summarize(say(language, "approval.press", { key: args.key?.slice(0, 80) ?? say(language, "approval.aKey") }));
+    case "drag": return summarize(say(language, "approval.drag", { target }));
+    case "cdp": return summarize(say(language, "approval.cdp", { method: args.cdpMethod?.slice(0, 120) ?? "", params: compactHeadAndTail(redactSandAutoReviewInlineSecrets(args.cdpParams ?? "{}"), 160) }));
+    case "tabs": return summarize(args.tabsAction === "close"
+      ? (args.tabIndex !== undefined ? say(language, "approval.closeTabNumber", { index: args.tabIndex }) : say(language, "approval.closeTab"))
+      : say(language, "approval.openTab"));
+    default: return compact(say(language, "approval.browserOther", { op: args.op }), 340);
   }
 }
 
@@ -286,11 +298,12 @@ export function summarizeTypedText(text: string): string {
     || SAND_AUTO_REVIEW_SECRET_VALUE_PATTERN.test(text.trim())
     || /(?:api[_ -]?key|authorization|credential|password|secret|token)\s*[:=]/i.test(text)
     || (/^[A-Za-z0-9+/_=-]{24,}$/.test(text.trim()) && !text.trim().includes(" "));
+  const language = currentUserLanguage();
   return looksSensitive || normalized.length === 0
-    ? `Type ${text.length} characters`
-    : `Type ${text.length} characters (\u201C${normalized}\u201D)`;
+    ? say(language, "approval.type", { count: text.length })
+    : say(language, "approval.typeShown", { count: text.length, text: normalized });
 }
 
 export function summarizeSandComputerTypedText(text: string): string {
-  return `${summarizeTypedText(text)} on Simeon's computer`;
+  return say(currentUserLanguage(), "approval.onSimeonComputerAfter", { action: summarizeTypedText(text) });
 }

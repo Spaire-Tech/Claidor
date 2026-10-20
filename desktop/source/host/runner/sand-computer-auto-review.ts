@@ -8,6 +8,8 @@ import { withToolExecutionTimeoutSuspended } from "../../packages/agent/tools/to
 import { SmartModeRiskTarget, type SmartModeClassifierConversationMessage } from "../../packages/proto/generated/agent/v1/smart_mode_classifier_exec_pb.js";
 import { fingerprintSandAutoReviewTarget, type SandAutoReviewController, type SandAutoReviewMode } from "./sand-auto-review.js";
 import { summarizeSandComputerTypedText } from "./sand-auto-review-summaries.js";
+import { say } from "../../shared/say.js";
+import { currentUserLanguage } from "../../shared/user-language.js";
 import { runSandAutoReviewClassifier, type AutoReviewClassifierDecision } from "./sand-auto-review-classifier-run.js";
 export const SAND_COMPUTER_CLASSIFIER_TARGET_ACTION = "sand_computer";
 export const SAND_COMPUTER_AUTO_REVIEW_MAX_DESCRIPTION_CHARS = 500;
@@ -79,8 +81,10 @@ export function buildSandComputerClassifierRiskTarget(args: { canonicalTarget: R
   });
 }
 export function summarizeBlockedAction(target: ReturnType<typeof buildSandComputerAutoReviewCanonicalTarget>, fingerprint: string, reason: string) {
-  const action = target.exactAction, purpose = target.description == null ? "" : ` to ${target.description.slice(0, 160)}`;
-  const summary = action.action === "click" ? `Click at (${action.x}, ${action.y}) on Simeon's computer${purpose}` : action.action === "drag" ? `Drag from (${action.x}, ${action.y}) to (${action.x2}, ${action.y2}) on Simeon's computer${purpose}` : action.action === "type" ? summarizeSandComputerTypedText(action.text ?? "") : `Press ${action.key?.slice(0, 80) ?? "a key"} on Simeon's computer`;
+  // In the person's language (`say`, 20 October 2026).
+  const language = currentUserLanguage();
+  const action = target.exactAction, purpose = target.description == null ? "" : say(language, "approval.toPurpose", { purpose: target.description.slice(0, 160) });
+  const summary = action.action === "click" ? say(language, "approval.clickAt", { x: String(action.x), y: String(action.y), purpose }) : action.action === "drag" ? say(language, "approval.dragFrom", { x: String(action.x), y: String(action.y), x2: String(action.x2), y2: String(action.y2), purpose }) : action.action === "type" ? summarizeSandComputerTypedText(action.text ?? "") : say(language, "approval.pressOn", { key: action.key?.slice(0, 80) ?? say(language, "approval.aKey") });
   return { surface: "computer", fingerprint, reason, summary };
 }
 

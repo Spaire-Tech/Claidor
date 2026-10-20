@@ -1,5 +1,5 @@
 import { getConfiguredBackendUrl } from "../simeon-token.js";
-import { isEnglishOrUnset, normalizeUserLanguage } from "../../user-language.js";
+import { acceptLanguageHeader } from "../../user-language.js";
 
 // Simeon's metered doors for the desktop app, all under one prefix on the
 // API host: the model proxy (`/responses`, `/messages`, `/chat/completions`),
@@ -75,8 +75,7 @@ export interface SimeonProxyRequest {
 
 /** `Accept-Language` for the person's language, as the apps send theirs; none for English or none known. */
 function setLanguage(headers: Headers, language: string | undefined): void {
-  const tag = normalizeUserLanguage(language);
-  if (tag !== undefined && !isEnglishOrUnset(tag)) headers.set("accept-language", tag);
+  for (const [name, value] of Object.entries(acceptLanguageHeader(language))) headers.set(name, value);
 }
 
 // One authenticated call to a door under the prefix. The body is JSON or a

@@ -219,8 +219,9 @@ def table_keys(text: str, name: str) -> dict[str, str]:
     found = re.search(rf"\b{name}\b[^=\n]*=\s*\{{(.*?)\n\}}", text, re.S)
     if found is None:
         return {}
-    pairs = re.findall(r'^\s*"([^"]+)"\s*:\s*((?:"(?:[^"\\]|\\.)*"\s*)+)', found.group(1), re.M)
-    pairs += re.findall(r"^\s*([A-Za-z]\w*)\s*:\s*((?:'(?:[^'\\]|\\.)*'\s*)+)", found.group(1), re.M)
+    # A value may be written over several lines: "a" "b" (Python), "a" + "b" (TS), in parentheses.
+    pairs = re.findall(r'^\s*"([^"]+)"\s*:\s*\(?\s*((?:"(?:[^"\\]|\\.)*"\s*\+?\s*)+)', found.group(1), re.M)
+    pairs += re.findall(r"^\s*([A-Za-z]\w*)\s*:\s*\(?\s*((?:'(?:[^'\\]|\\.)*'\s*\+?\s*)+)", found.group(1), re.M)
     return {key: value for key, value in pairs}
 
 
@@ -231,7 +232,7 @@ EMAIL_TABLES = {"en": "ENGLISH", "fr": "FRENCH", "es": "SPANISH", "de": "GERMAN"
 def check_tables(wanted: list[str]) -> list[str]:
     """Each translation of the engine's, the server's and the emails' sentences has every English key, with its `{values}`."""
     sets: list[tuple[str, dict[str, str], dict[str, dict[str, str]]]] = []
-    for part in sorted((ROOT / "desktop/source/shared/words/parts").glob("*.ts")) + sorted((ROOT / "server/simeon/desktop/words").glob("_*.py")):
+    for part in sorted((ROOT / "desktop/source/shared/words/areas").glob("*.ts")) + sorted((ROOT / "server/simeon/desktop/words").glob("_[a-z]*.py")):
         text = part.read_text()
         name = lambda language: language.upper().replace("-", "_")  # noqa: E731
         sets.append((str(part.relative_to(ROOT)), table_keys(text, "EN"), {language: table_keys(text, name(language)) for language in wanted}))

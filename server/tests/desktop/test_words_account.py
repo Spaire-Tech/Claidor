@@ -87,10 +87,13 @@ class TestTheSignInCodesEmail:
     ) -> None:
         sent: list[dict[str, Any]] = []
         rendered: list[Any] = []
+
+        def render(email: Any) -> str:
+            rendered.append(email)
+            return "<html></html>"
+
         mocker.patch.object(
-            login_code_module,
-            "render_email_template",
-            side_effect=lambda email: rendered.append(email) or "<html></html>",
+            login_code_module, "render_email_template", side_effect=render
         )
         mocker.patch.object(
             login_code_module,

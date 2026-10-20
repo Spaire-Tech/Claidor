@@ -4,7 +4,6 @@ email in the language it is given, and English, or none, reads as before."""
 
 import re
 
-import httpx
 import pytest
 
 from simeon.desktop.language import accepted_language, translated
@@ -41,7 +40,10 @@ def test_each_translation_has_every_sentence_with_its_values() -> None:
     for language, table in TABLES.items():
         assert set(table) == set(en.WORDS), language
         for key, english in en.WORDS.items():
-            assert set(VALUE.findall(table[key])) == set(VALUE.findall(english)), (language, key)
+            assert set(VALUE.findall(table[key])) == set(VALUE.findall(english)), (
+                language,
+                key,
+            )
             assert table[key].strip(), (language, key)
 
 

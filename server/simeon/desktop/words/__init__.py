@@ -33,7 +33,9 @@ def say(key: str, /, *, language: str | None = None, **values: object) -> str:
     table = TABLES.get(tag or "", {})
     template = table.get(key) or en.WORDS[key]
     return _VALUE.sub(
-        lambda found: str(values[found.group(1)]) if found.group(1) in values else found.group(0),
+        lambda found: str(values[found.group(1)])
+        if found.group(1) in values
+        else found.group(0),
         template,
     )
 

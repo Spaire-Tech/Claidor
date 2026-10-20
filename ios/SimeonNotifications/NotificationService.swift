@@ -73,10 +73,10 @@ final class NotificationService: UNNotificationServiceExtension {
     return name.isEmpty ? "Simeon" : name
   }
 
-  /** The title said "needs you"; the message from the agent says it now. */
+  /** The title said "needs you"; the message from the agent says it now. The engine's "Waiting for your input." is in the person's language. */
   static func needsYouLine(_ reason: String) -> String {
     let trimmed = reason.trimmingCharacters(in: .whitespacesAndNewlines)
-    if trimmed.isEmpty || trimmed == "Waiting for your input." { return String(localized: "Needs your input.") }
+    if trimmed.isEmpty || trimmed == "Waiting for your input." || trimmed == String(localized: "Waiting for your input.") { return String(localized: "Needs your input.") }
     return String(localized: "Needs you: \(trimmed)")
   }
 }

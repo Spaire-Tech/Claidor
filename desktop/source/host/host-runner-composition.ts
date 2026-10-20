@@ -85,6 +85,7 @@ import type { BookFlightDependencies } from "./runner/tools/book-flight-tool.js"
 import { getSandRootDir } from "./host-paths.js";
 import { getConfiguredBackendUrl } from "../shared/node/simeon-token.js";
 import { simeonApiData } from "../shared/node/simeon-backend/simeon-api.js";
+import { pinUserLanguageReader } from "../shared/user-language.js";
 import { createRepeatSendGuard } from "./runner/repeat-send-guard.js";
 import { createAgentPromptSession } from "./extensions/inference/extension.js";
 import { connectorManifests } from "../shared/channels.js";
@@ -880,6 +881,8 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
   method(extensions.api("transcript"), "setUserLanguageResolver")?.(userLanguage);
   // The computer's own trays in it too (forever-box-service.ts).
   method(extensions.api("forever-box"), "setLanguageResolver")?.(userLanguage);
+  // And the engine's other sentences the person reads: previews, notifications, approvals, connectors, channels.
+  pinUserLanguageReader(userLanguage);
   // SearchFlights' searches per turn, so the same search is not run twice in one turn.
   const flightSearchesByTurn = new WeakMap<object, Set<string>>();
   // Simeon Labs' server as this computer's signed-in person (flight search and booking).

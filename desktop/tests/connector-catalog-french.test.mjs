@@ -32,7 +32,7 @@ function assertFrench(where, text) {
 
 test("every connector and every group has its French, and no French is for a connector the catalog lacks", async () => {
   const catalog = await load("source/shared/node/vendor-mcp/catalog.ts", "catalog-en");
-  const words = await load("source/shared/words/parts/catalog.ts", "catalog-fr");
+  const words = await load("source/shared/words/areas/catalog.ts", "catalog-fr");
   try {
     const { VENDOR_MCP_CONNECTORS, VENDOR_MCP_GROUP } = catalog.module;
     const { CATALOG_FR, CATALOG_GROUPS_FR } = words.module;
@@ -49,7 +49,7 @@ test("every connector and every group has its French, and no French is for a con
 
 test("the catalog answered in French: descriptions, groups and Coming soon; English and the web window as before", async () => {
   const loaded = await load("source/shared/node/vendor-mcp/marketplace.ts", "catalog-language");
-  const words = await load("source/shared/words/parts/catalog.ts", "catalog-language-fr");
+  const words = await load("source/shared/words/areas/catalog.ts", "catalog-language-fr");
   try {
     const { vendorCatalogInLanguage, appComingSoon, vendorConnectorToPlugin } = loaded.module;
     const { CATALOG_FR, CATALOG_GROUPS_FR } = words.module;

@@ -1,7 +1,7 @@
 import type { SandMarketplacePlugin } from "../mcp/mcp-marketplace.js";
 import { say } from "../../say.js";
 import { languageCode, normalizeUserLanguage } from "../../user-language.js";
-import { CATALOG_FR, CATALOG_GROUPS_FR } from "../../words/parts/catalog.js";
+import { CATALOG_FR, CATALOG_GROUPS_FR } from "../../words/areas/catalog.js";
 import { VENDOR_MCP_CONNECTORS, VENDOR_MCP_GROUP, type VendorMcpConnector } from "./catalog.js";
 import { isAppsServiceAvailable } from "./apps-availability.js";
 import { vendorPluginLogoUrl } from "./logos.js";

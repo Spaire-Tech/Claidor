@@ -44,9 +44,13 @@ public enum AutoReviewCard {
     }
   }
 
-  /** A summary that only says "run this" says nothing the command does not (`ie`, `re`, `le`). */
+  /**
+   * A summary that only says "run this" says nothing the command does not (`ie`, `re`, `le`). The engine
+   * writes its two in the person's language (`approval.runOn…`, `desktop/source/shared/words/parts/previews.ts`).
+   */
   public static func summarySaysNothing(_ summary: String) -> Bool {
     if summary == "Run a command on your local computer" || summary == "Run a command on Simeon's computer" || summary == "Run a command on the agent's VM" { return true }
+    if summary == L10n.text("Run a command on your local computer") || summary == L10n.text("Run a command on Simeon's computer") { return true }
     if summary.hasPrefix("Run “") || summary.hasPrefix("Run \"") { return true }
     return summary.range(of: "^Use .+ tool .+ with ", options: .regularExpression) != nil
   }

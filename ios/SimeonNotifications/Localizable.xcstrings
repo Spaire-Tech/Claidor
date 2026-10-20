@@ -20,6 +20,17 @@
           }
         }
       }
+    },
+    "Waiting for your input." : {
+      "comment" : "The engine's push body with no reason, in the person's language (desktop/source/shared/words/parts/previews.ts, notify.waiting); read, not shown.",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En attente de ta réponse."
+          }
+        }
+      }
     }
   },
   "version" : "1.0"
