@@ -101,6 +101,7 @@ export class SandInferenceCredentialRenewer {
   private consecutiveFailures = 0;
   private renewedOnce = false;
   private interruptRefreshWait: (() => void) | undefined;
+  private interruptBackoffWait: (() => void) | undefined;
   private onDemandRenewal: PromiseWithResolvers<void> | undefined;
 
   constructor(private readonly options: {
@@ -117,7 +118,9 @@ export class SandInferenceCredentialRenewer {
 
   requestImmediateRenewal(): Promise<boolean> {
     if (this.onDemandRenewal !== undefined) return this.onDemandRenewal.promise.then(() => true);
-    const interrupt = this.interruptRefreshWait;
+    // A refused credential's backoff is cut short too (20 October 2026): a sign-out revoked it, the next sign-in made it
+    // good again without a new box (`revive_box_credential`), and the box's first model call waited out up to five minutes.
+    const interrupt = this.interruptRefreshWait ?? this.interruptBackoffWait;
     if (interrupt === undefined) return Promise.resolve(false);
     this.onDemandRenewal = Promise.withResolvers<void>();
     const result = this.onDemandRenewal.promise.then(() => true);
@@ -165,9 +168,18 @@ export class SandInferenceCredentialRenewer {
     if (signal.aborted) return;
     if (next.kind === "backoff") {
       const attempt = !this.renewedOnce && next.attempt <= FIRST_CREDENTIAL_FAST_RETRIES ? 1 : next.attempt;
-      await this.options.retry.schedule(attempt, signal).elapsed.catch((error) => {
-        if (!signal.aborted) console.warn(`[sand-credential-renewer] backoff wait failed (${errorLogTag(error)})`);
-      });
+      const cut = new AbortController();
+      const finish = () => cut.abort();
+      this.interruptBackoffWait = finish;
+      signal.addEventListener("abort", finish, { once: true });
+      try {
+        await this.options.retry.schedule(attempt, cut.signal).elapsed.catch((error) => {
+          if (!cut.signal.aborted) console.warn(`[sand-credential-renewer] backoff wait failed (${errorLogTag(error)})`);
+        });
+      } finally {
+        signal.removeEventListener("abort", finish);
+        if (this.interruptBackoffWait === finish) this.interruptBackoffWait = undefined;
+      }
       return;
     }
     await new Promise<void>((resolve) => {
