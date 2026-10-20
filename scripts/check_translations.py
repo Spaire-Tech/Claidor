@@ -18,7 +18,9 @@ left out): adding one there makes this ask for it everywhere. It reads:
 - the engine's, the server's and the emails' tables (`say`): each language's
   table has every key of the English one, with the same `{values}`
   (desktop/source/shared/words, server/simeon/desktop/words,
-  server/emails/src/words.ts).
+  server/emails/src/words.ts);
+- the App Store page (ios/AppStore/metadata): each language's folder has
+  every field the English one has, within App Store Connect's limits.
 
 Run it with `python3 scripts/check_names.py` before pushing.
 """
@@ -255,6 +257,34 @@ def check_tables(wanted: list[str]) -> list[str]:
     return problems
 
 
+#: App Store Connect's limits, in characters.
+LISTING_LIMITS = {"name.txt": 30, "subtitle.txt": 30, "promotional_text.txt": 170, "keywords.txt": 100, "description.txt": 4000, "release_notes.txt": 4000}
+
+
+def check_listing(wanted: list[str]) -> list[str]:
+    """The App Store page in each language: every English field, each within its limit."""
+    root = ROOT / "ios/AppStore/metadata"
+    english = root / "en-US"
+    if not english.is_dir():
+        return []
+    problems: list[str] = []
+    for language in wanted:
+        folders = [path for path in root.iterdir() if path.is_dir() and path.name.split("-")[0] == language.split("-")[0]]
+        if not folders:
+            problems.append(f"ios/AppStore/metadata: no {language} folder")
+            continue
+        for folder in folders:
+            for field in sorted(english.glob("*.txt")):
+                path = folder / field.name
+                if not path.is_file() or not path.read_text().strip():
+                    problems.append(f"{path.relative_to(ROOT)}: missing")
+    for path in sorted(root.glob("*/*.txt")):
+        limit = LISTING_LIMITS.get(path.name)
+        if limit is not None and len(path.read_text().strip()) > limit:
+            problems.append(f"{path.relative_to(ROOT)}: longer than App Store Connect's {limit}")
+    return problems
+
+
 def main() -> int:
     wanted = languages()
     if not wanted:
@@ -267,6 +297,7 @@ def main() -> int:
     problems += check_server_voice(wanted)
     problems += check_core_keys()
     problems += check_tables(wanted)
+    problems += check_listing(wanted)
     if problems:
         for problem in problems[:200]:
             print(problem)
