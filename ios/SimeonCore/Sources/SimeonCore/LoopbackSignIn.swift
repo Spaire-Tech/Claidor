@@ -73,7 +73,7 @@ public enum LoopbackSignIn {
 
   /** Why the listener could not start: another app holds the address (on a Mac, the Electron app's own sign-in). */
   public static func busyMessage(_ name: String) -> String {
-    "\(name)'s sign-in comes back to localhost:8787, and another app is using it. Quit the other Simeon app and try again."
+    L10n.text("\(name)'s sign-in comes back to localhost:8787, and another app is using it. Quit the other Simeon app and try again.")
   }
 }
 
@@ -86,7 +86,7 @@ extension AppStore {
    */
   public func finishLoopbackSignIn(_ answer: LoopbackSignIn.Answer, name: String) async {
     if let refused = answer.error {
-      problem = answer.errorDescription ?? "\(name) refused the sign-in (\(refused))."
+      problem = answer.errorDescription ?? L10n.text("\(name) refused the sign-in (\(refused)).")
       return
     }
     guard let code = answer.code, let backend else { return }
@@ -94,7 +94,7 @@ extension AppStore {
       _ = try await backend.command("completeMcpOAuth", ["stateId": .string(answer.state), "code": .string(code)])
       await loadApps()
     } catch {
-      problem = "Couldn't finish connecting \(name): \(error.localizedDescription)"
+      problem = L10n.text("Couldn't finish connecting \(name): \(error.localizedDescription)")
     }
   }
 }

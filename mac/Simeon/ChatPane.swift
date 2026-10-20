@@ -1067,13 +1067,12 @@ private struct RoutinesLine: View {
   @Environment(SidebarLayout.self) private var layout
 
   var body: some View {
-    let verb = Chat.routineVerb(action)
     if routines.count >= 3 {
-      SystemEvent(label: verb, look: look) {
+      SystemEvent(label: Chat.routineVerb(action), look: look) {
         EventChip(title: String(localized: "\(routines.count) routines"), help: String(localized: "\(routines.count) routines, show list"), look: look, spacing: 2, action: showList) { clock }
       }
     } else {
-      SystemEvent(label: "\(verb) \(routines.count == 1 ? "routine" : "routines")", look: look) {
+      SystemEvent(label: Chat.routineLabel(action, count: routines.count), look: look) {
         ForEach(Array(routines.enumerated()), id: \.offset) { index, routine in
           if index > 0 {
             Text("and").foregroundStyle(look.inkSecondary).fixedSize()

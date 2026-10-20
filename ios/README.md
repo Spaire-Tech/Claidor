@@ -225,7 +225,10 @@ profile, not from the configuration.
   it (`AppLanguage.swift`, `AppStore.tellLanguage`). The screens' French is
   in `Simeon/Localizable.xcstrings` and `InfoPlist.xcstrings` (the
   permission prompts), and the pushes' in
-  `SimeonNotifications/Localizable.xcstrings`.
+  `SimeonNotifications/Localizable.xcstrings`. What the shared core writes
+  (cards, consent, routines, errors, plans) is translated in the core's own
+  catalog, `SimeonCore/Sources/SimeonCore/Resources/Localizable.xcstrings`,
+  through `L10n.text`; on Linux it reads English.
 - **Plans** are bought in the app with Apple's in-app purchase (StoreKit 2,
   `Simeon/Purchases.swift`, `Simeon/PlansSheet.swift`): monthly, no free
   week (the free month is the trial); the server checks Apple's signature

@@ -11,30 +11,30 @@ import Foundation
 extension Plugins {
   // MARK: Empty lines (`oi`, Yours' sections)
 
-  public static let loadingMarketplace = "Loading connectors…"
-  public static let noFilterMatch = "No connectors match the current filters"
-  public static let marketplaceUnavailable = "Connectors aren't available right now. Check back later."
+  public static let loadingMarketplace = L10n.text("Loading connectors…")
+  public static let noFilterMatch = L10n.text("No connectors match the current filters")
+  public static let marketplaceUnavailable = L10n.text("Connectors aren't available right now. Check back later.")
 
   /** Available (Marketplace until 13 October 2026, when Plugins became Connectors) with nothing to draw: loading, a filter, a search, or no catalog (a failed read says the same). */
   public static func marketplaceEmpty(loaded: Bool, catalogEmpty: Bool, filterSet: Bool, query: String) -> String {
     let q = query.trimmingCharacters(in: .whitespacesAndNewlines)
     if !loaded && catalogEmpty { return loadingMarketplace }
     if filterSet { return noFilterMatch }
-    if !q.isEmpty { return "No connectors match \"\(q)\"" }
+    if !q.isEmpty { return L10n.text("No connectors match \"\(q)\"") }
     return marketplaceUnavailable
   }
 
   /** Yours › Apps with nothing in it. */
   public static func installedEmpty(query: String) -> String {
     let q = query.trimmingCharacters(in: .whitespacesAndNewlines)
-    return q.isEmpty ? "Nothing added yet. Find connectors in Available." : "No connectors you added match \"\(q)\""
+    return q.isEmpty ? L10n.text("Nothing added yet. Find connectors in Available.") : L10n.text("No connectors you added match \"\(q)\"")
   }
 
   /** Yours › Private with nothing in it. */
   public static func privateEmpty(agentOpen: Bool, query: String) -> String {
     let q = query.trimmingCharacters(in: .whitespacesAndNewlines)
-    if !agentOpen { return "Open an agent to see its private skills" }
-    return q.isEmpty ? "No private skills yet. Ask your Agent to create one for you." : "No private skills match \"\(q)\""
+    if !agentOpen { return L10n.text("Open an agent to see its private skills") }
+    return q.isEmpty ? L10n.text("No private skills yet. Ask your Agent to create one for you.") : L10n.text("No private skills match \"\(q)\"")
   }
 
   // MARK: The team's (`ct`, `hi`, `Xn`)
@@ -42,8 +42,8 @@ extension Plugins {
   /** What a team install says beside it: "Managed by your team", "Added by your team", or nothing. */
   public static func modeLabel(_ mode: PluginInstallMode) -> String? {
     switch mode {
-    case .teamRequired: return "Managed by your team"
-    case .teamDefault: return "Added by your team"
+    case .teamRequired: return L10n.text("Managed by your team")
+    case .teamDefault: return L10n.text("Added by your team")
     case .user: return nil
     }
   }
@@ -64,8 +64,8 @@ extension Plugins {
     guard installed, let mode else { return .add }
     switch mode {
     case .user: return .uninstall
-    case .teamDefault: return .remove(label: "Added by your team")
-    case .teamRequired: return .managed(label: "Managed by your team")
+    case .teamDefault: return .remove(label: L10n.text("Added by your team"))
+    case .teamRequired: return .managed(label: L10n.text("Managed by your team"))
     }
   }
 
@@ -118,8 +118,8 @@ extension Plugins {
   public static func signInButton(_ state: SignInState) -> String {
     switch state {
     case .none: return Connecting.connect
-    case .waiting: return "Reopen"
-    case .timedOut: return "Retry"
+    case .waiting: return L10n.text("Reopen")
+    case .timedOut: return L10n.text("Retry")
     }
   }
 
@@ -145,16 +145,16 @@ extension Plugins {
 
   public static func setupIntro(_ name: String, editing: Bool) -> String {
     editing
-      ? "Saving replaces all of \(name)'s setup values and applies them to its connectors. Current values aren't shown; a field left blank is cleared."
-      : "\(name) needs a few values before it can be added"
+      ? L10n.text("Saving replaces all of \(name)'s setup values and applies them to its connectors. Current values aren't shown; a field left blank is cleared.")
+      : L10n.text("\(name) needs a few values before it can be added")
   }
 
-  public static func setupSubmit(_ name: String, editing: Bool) -> String { editing ? "Save Values" : "Add \(name)" }
+  public static func setupSubmit(_ name: String, editing: Bool) -> String { editing ? L10n.text("Save Values") : L10n.text("Add \(name)") }
 
-  public static func requiredLine(_ label: String) -> String { "\(label) is required" }
+  public static func requiredLine(_ label: String) -> String { L10n.text("\(label) is required") }
 
   public static func fillInLine(missing: Int) -> String {
-    missing > 1 ? "Fill in the required fields to continue" : "Fill in the required field to continue"
+    missing > 1 ? L10n.text("Fill in the required fields to continue") : L10n.text("Fill in the required field to continue")
   }
 
   // MARK: A server's Details (`wi`, `Ii`, `Fl`)
@@ -163,12 +163,12 @@ extension Plugins {
     switch transport {
     case "http": return "HTTP"
     case "sse": return "SSE"
-    case "stdio": return "Command"
+    case "stdio": return L10n.text("Command")
     default: return transport
     }
   }
 
-  public static func sourceWord(isTeamServer: Bool) -> String { isTeamServer ? "Your team" : "Added manually" }
+  public static func sourceWord(isTeamServer: Bool) -> String { isTeamServer ? L10n.text("Your team") : L10n.text("Added manually") }
 
   /** The meta line of a server's page: its address's host. */
   public static func hostLine(_ url: String?) -> String? {
@@ -183,7 +183,7 @@ extension Plugins {
   }
 
   /** The Tools card's summary (`ht`). */
-  public static func enabledLine(_ tools: [PluginTool]) -> String { "\(tools.filter { !$0.isDisabled }.count) of \(tools.count) enabled" }
+  public static func enabledLine(_ tools: [PluginTool]) -> String { L10n.text("\(tools.filter { !$0.isDisabled }.count) of \(tools.count) enabled") }
 
   /** A value shown in Details: "—" when there is none. */
   public static func detailValue(_ value: String?) -> String {
@@ -199,18 +199,18 @@ extension Plugins {
     return agentOpen && changed && filled && !saving
   }
 
-  public static let skillDescriptionHint = "Required. Describe when to use this skill."
+  public static let skillDescriptionHint = L10n.text("Required. Describe when to use this skill.")
 
   // MARK: More notices
 
-  public static let needsAgentNotice = Notice(isError: true, text: "Open an agent to add skills")
+  public static let needsAgentNotice = Notice(isError: true, text: L10n.text("Open an agent to add skills"))
 
   public static func skillsDidntSyncNotice(_ name: String, _ why: String) -> Notice {
-    Notice(isError: true, text: "Added \(name), but its skills didn't sync: \(why)")
+    Notice(isError: true, text: L10n.text("Added \(name), but its skills didn't sync: \(why)"))
   }
 
-  public static func setupSavedNotice(_ name: String) -> Notice { Notice(isError: false, text: "Saved \(name)'s setup values") }
-  public static func savedNotice(_ name: String) -> Notice { Notice(isError: false, text: "Saved \(name)") }
-  public static func deletedNotice(_ name: String) -> Notice { Notice(isError: false, text: "Deleted \(name)") }
-  public static func agentFailedNotice(_ why: String) -> Notice { Notice(isError: true, text: "Couldn't start the agent: \(why)") }
+  public static func setupSavedNotice(_ name: String) -> Notice { Notice(isError: false, text: L10n.text("Saved \(name)'s setup values")) }
+  public static func savedNotice(_ name: String) -> Notice { Notice(isError: false, text: L10n.text("Saved \(name)")) }
+  public static func deletedNotice(_ name: String) -> Notice { Notice(isError: false, text: L10n.text("Deleted \(name)")) }
+  public static func agentFailedNotice(_ why: String) -> Notice { Notice(isError: true, text: L10n.text("Couldn't start the agent: \(why)")) }
 }

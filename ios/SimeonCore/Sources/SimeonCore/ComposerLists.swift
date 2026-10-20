@@ -229,12 +229,12 @@ public enum ComposerLists {
   /** A connector's line under its name (`X5n`). */
   public static func connectorStatus(_ app: ConnectedApp) -> String {
     switch app.status {
-    case "connected": return "connected"
-    case "needsAuth": return "needs auth"
-    case "error": return "error"
-    case "initializing": return "connecting"
-    case "disconnected": return "disconnected"
-    case "disabledByTeamAdminPolicy": return "disabled"
+    case "connected": return L10n.text("mention.connected", default: "connected")
+    case "needsAuth": return L10n.text("mention.needsAuth", default: "needs auth")
+    case "error": return L10n.text("mention.error", default: "error")
+    case "initializing": return L10n.text("mention.connecting", default: "connecting")
+    case "disconnected": return L10n.text("mention.disconnected", default: "disconnected")
+    case "disabledByTeamAdminPolicy": return L10n.text("mention.disabled", default: "disabled")
     default: return app.accountKey == "default" ? (app.url ?? "") : app.accountKey
     }
   }
@@ -259,22 +259,22 @@ public enum ComposerLists {
   public static func mentionRows(members: [Agent], isGroupChat: Bool, routines: [ComposerMenus.Skill], connectors: [ConnectedApp]) -> [MentionRow] {
     var rows: [MentionRow] = []
     if isGroupChat && members.count >= 2 {
-      rows.append(MentionRow(key: "assistants:\(everyoneId)", id: everyoneId, category: .assistants, label: "everyone", keywords: ["all"], tag: "Agent", icon: .everyone, insert: .mention(id: everyoneId, label: "everyone")))
+      rows.append(MentionRow(key: "assistants:\(everyoneId)", id: everyoneId, category: .assistants, label: "everyone", keywords: ["all"], tag: L10n.text("Agent"), icon: .everyone, insert: .mention(id: everyoneId, label: "everyone")))
     }
     for member in members {
       rows.append(MentionRow(key: "assistants:\(member.id)", id: member.id, category: .assistants, label: member.name,
-                             subtitle: member.isGroup ? "\(member.memberIds.count) agents" : nil, tag: member.isGroup ? "Group" : "Agent",
+                             subtitle: member.isGroup ? L10n.text("\(member.memberIds.count) agents") : nil, tag: member.isGroup ? L10n.text("Group") : L10n.text("Agent"),
                              icon: member.isGroup ? .group : .agent(id: member.id), insert: .mention(id: member.id, label: member.name)))
     }
     for routine in routines {
       rows.append(MentionRow(key: "automations:\(routine.id)", id: routine.id, category: .automations, label: routine.name, subtitle: routine.subtitle,
-                             tag: "Routine", icon: .routine(iconId: routine.iconId, iconURL: routine.iconURL),
+                             tag: L10n.text("Routine"), icon: .routine(iconId: routine.iconId, iconURL: routine.iconURL),
                              insert: .workflow(id: routine.id, label: routine.name, iconId: routine.iconId, iconURL: routine.iconURL)))
     }
     for app in connectors {
       let id = "mcp:\(app.serverIdentifier)"
       let label = connectorLabel(app.name, accountKey: app.accountKey)
-      rows.append(MentionRow(key: "tools:\(id)", id: id, category: .tools, label: label, subtitle: connectorStatus(app), tag: "Plugin",
+      rows.append(MentionRow(key: "tools:\(id)", id: id, category: .tools, label: label, subtitle: connectorStatus(app), tag: L10n.text("Plugin"),
                              icon: .connector(iconId: nil, iconURL: nil, name: app.name),
                              insert: .workflow(id: "mcp:\(app.serverId)", label: label, iconId: nil, iconURL: nil)))
     }
@@ -312,7 +312,7 @@ public enum ComposerLists {
   /** What "@" says with nothing to offer: the typed name not found, in curly quotes. */
   public static func mentionEmptyText(_ query: String) -> String {
     let typed = query.trimmingCharacters(in: .whitespacesAndNewlines)
-    return typed.isEmpty ? "Nothing to mention yet" : "No matches for \u{201C}\(typed)\u{201D}"
+    return typed.isEmpty ? L10n.text("Nothing to mention yet") : L10n.text("No matches for “\(typed)”")
   }
 
   // MARK: "/" (`u5n`)
@@ -338,18 +338,19 @@ public enum ComposerLists {
    */
   public static func appActions(isGroup: Bool, hasHiddenAgents: Bool, hasChannels: Bool = true, showsOrgChart: Bool = true, showsUsage: Bool = true, computerUpdate: Bool = false) -> [Action] {
     var actions: [Action] = []
-    if showsOrgChart { actions.append(Action(id: "org-chart", label: "Org Chart", keywords: ["open", "organization", "network", "graph"], detail: "Views")) }
-    if hasHiddenAgents { actions.append(Action(id: "open-hidden-chats", label: "Open Hidden Agents", keywords: ["hidden", "unhide", "hide", "sidebar", "bots"], detail: "Sidebar")) }
-    if isGroup { actions.append(Action(id: "info:members", label: "Members", keywords: ["people", "group", "participants"], detail: "Current chat")) }
-    if hasChannels { actions.append(Action(id: "info:channels", label: "Channels", keywords: ["messaging", "platforms", "connect"], detail: "Current chat")) }
-    actions.append(Action(id: "info:settings", label: "Chat Settings", keywords: ["details", "notifications"], detail: "Current chat"))
-    actions.append(Action(id: "settings:general", label: "Settings: General", keywords: ["account", "model", "notifications", "preferences", "appearance", "theme", "mode", "security", "yubikey", "webauthn"], detail: "Settings"))
-    if showsUsage { actions.append(Action(id: "settings:usage", label: "Settings: Usage & Billing", keywords: ["usage", "billing", "spend", "limit", "on-demand", "plan", "quota"], detail: "Settings")) }
-    actions.append(Action(id: "overlay:plugins", label: "Connectors", keywords: ["plugins", "marketplace", "tools", "skills", "mcp", "connectors", "customize"]))
-    actions.append(Action(id: "theme:system", label: "Theme: System", keywords: ["appearance", "os", "auto", "follow"], detail: "Settings · Appearance"))
-    actions.append(Action(id: "theme:light", label: "Theme: Light", keywords: ["appearance", "day", "bright"], detail: "Settings · Appearance"))
-    actions.append(Action(id: "theme:dark", label: "Theme: Dark", keywords: ["appearance", "night", "mode"], detail: "Settings · Appearance"))
-    if computerUpdate { actions.append(Action(id: "computer-update", label: "Update Simeon's Computer", keywords: ["box", "image", "machine", "recreate", "latest", "shared"], detail: "Updates")) }
+    let currentChat = L10n.text("Current chat"), settings = L10n.text("Settings"), appearance = L10n.text("Settings · Appearance")
+    if showsOrgChart { actions.append(Action(id: "org-chart", label: L10n.text("Org Chart"), keywords: ["open", "organization", "network", "graph"], detail: L10n.text("Views"))) }
+    if hasHiddenAgents { actions.append(Action(id: "open-hidden-chats", label: L10n.text("Open Hidden Agents"), keywords: ["hidden", "unhide", "hide", "sidebar", "bots"], detail: L10n.text("Sidebar"))) }
+    if isGroup { actions.append(Action(id: "info:members", label: L10n.text("Members"), keywords: ["people", "group", "participants"], detail: currentChat)) }
+    if hasChannels { actions.append(Action(id: "info:channels", label: L10n.text("Channels"), keywords: ["messaging", "platforms", "connect"], detail: currentChat)) }
+    actions.append(Action(id: "info:settings", label: L10n.text("Chat Settings"), keywords: ["details", "notifications"], detail: currentChat))
+    actions.append(Action(id: "settings:general", label: L10n.text("Settings: General"), keywords: ["account", "model", "notifications", "preferences", "appearance", "theme", "mode", "security", "yubikey", "webauthn"], detail: settings))
+    if showsUsage { actions.append(Action(id: "settings:usage", label: L10n.text("Settings: Usage & Billing"), keywords: ["usage", "billing", "spend", "limit", "on-demand", "plan", "quota"], detail: settings)) }
+    actions.append(Action(id: "overlay:plugins", label: L10n.text("Connectors"), keywords: ["plugins", "marketplace", "tools", "skills", "mcp", "connectors", "customize"]))
+    actions.append(Action(id: "theme:system", label: L10n.text("Theme: System"), keywords: ["appearance", "os", "auto", "follow"], detail: appearance))
+    actions.append(Action(id: "theme:light", label: L10n.text("Theme: Light"), keywords: ["appearance", "day", "bright"], detail: appearance))
+    actions.append(Action(id: "theme:dark", label: L10n.text("Theme: Dark"), keywords: ["appearance", "night", "mode"], detail: appearance))
+    if computerUpdate { actions.append(Action(id: "computer-update", label: L10n.text("Update Simeon's Computer"), keywords: ["box", "image", "machine", "recreate", "latest", "shared"], detail: L10n.text("Updates"))) }
     return actions
   }
 
@@ -373,8 +374,8 @@ public enum ComposerLists {
 
     /** "Skill" or "Action". */
     public var tag: String {
-      if case .action = self { return "Action" }
-      return "Skill"
+      if case .action = self { return L10n.text("Action") }
+      return L10n.text("Skill")
     }
 
     /** A skill's description; an action's place ("Settings", "Current chat"). */
@@ -405,7 +406,7 @@ public enum ComposerLists {
   /** What "/" says with nothing to offer (straight quotes). */
   public static func slashEmptyText(_ query: String, hasAny: Bool) -> String {
     let typed = query.trimmingCharacters(in: .whitespacesAndNewlines)
-    return hasAny && !typed.isEmpty ? "No matches for \"\(typed)\"" : "Nothing to reference yet"
+    return hasAny && !typed.isEmpty ? L10n.text("No matches for \"\(typed)\"") : L10n.text("Nothing to reference yet")
   }
 
   // MARK: "#" (`D_n`, `Iyn`)

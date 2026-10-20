@@ -18,8 +18,8 @@ public struct SidebarSection: Hashable, Sendable {
  */
 public enum SidebarSections {
   public static let unassignedId = "__agents__"
-  public static let unassignedName = "Unassigned"
-  public static let newName = "New section"
+  public static let unassignedName = L10n.text("Unassigned")
+  public static let newName = L10n.text("New section")
 
   /** Ids trimmed, empty and repeated ones dropped, each agent in its first section only; "Unassigned" appended, or nothing when no section of the person's is left (`dZ.normalize`). */
   public static func normalize(_ sections: [SidebarSection]) -> [SidebarSection] {
@@ -147,16 +147,16 @@ public enum SidebarSections {
   // MARK: Words
 
   /** "Move to" in the row's menu, for one row or a selection. */
-  public static func moveLabel(count: Int) -> String { count > 1 ? "Move \(count) agents to" : "Move to" }
+  public static func moveLabel(count: Int) -> String { count > 1 ? L10n.text("Move \(count) agents to") : L10n.text("Move to") }
 
   /** The new-section item: "New section" under a list of sections, otherwise "Move to new section" (`Fct`). */
   public static func newSectionLabel(inList: Bool, count: Int) -> String {
-    inList ? newName : count > 1 ? "Move \(count) agents to new section" : "Move to new section"
+    inList ? newName : count > 1 ? L10n.text("Move \(count) agents to new section") : L10n.text("Move to new section")
   }
 
-  public static func deleteTitle(name: String) -> String { "Delete \u{201C}\(name)\u{201D}" }
-  public static let deleteMessage = "Its agents move to Unassigned. No agents are deleted."
-  public static let emptySection = "Drag chats here"
+  public static func deleteTitle(name: String) -> String { L10n.text("Delete \u{201C}\(name)\u{201D}") }
+  public static let deleteMessage = L10n.text("Its agents move to Unassigned. No agents are deleted.")
+  public static let emptySection = L10n.text("Drag chats here")
 }
 
 /** Several rows at once: ⌘-click, ⇧-click and a plain click, as the shipped sidebar does them. */
@@ -210,27 +210,27 @@ public struct SidebarSelection: Equatable, Sendable {
 /** The delete confirmation for one or more agents or groups (`I3n`). */
 public enum AgentDeletion {
   public static func title(_ agents: [Agent]) -> String {
-    if agents.count == 1 { return "Delete \u{201C}\(agents[0].name)\u{201D}" }
-    return "Delete \(agents.count) \(allGroups(agents) ? "groups" : "agents")"
+    if agents.count == 1 { return L10n.text("Delete \u{201C}\(agents[0].name)\u{201D}") }
+    return allGroups(agents) ? L10n.text("Delete \(agents.count) groups") : L10n.text("Delete \(agents.count) agents")
   }
 
   public static func message(_ agents: [Agent]) -> String {
     let single = agents.count == 1
     if allGroups(agents) {
       return single
-        ? "This permanently deletes the group and its chat history. The Agents in it are not deleted and remain available individually. This can't be undone."
-        : "This permanently deletes the groups and their chat history. The Agents in them are not deleted and remain available individually. This can't be undone."
+        ? L10n.text("This permanently deletes the group and its chat history. The Agents in it are not deleted and remain available individually. This can't be undone.")
+        : L10n.text("This permanently deletes the groups and their chat history. The Agents in them are not deleted and remain available individually. This can't be undone.")
     }
     return single
-      ? "This permanently deletes the agent and its chat history. This can't be undone."
-      : "This permanently deletes the agents and their chat history. This can't be undone."
+      ? L10n.text("This permanently deletes the agent and its chat history. This can't be undone.")
+      : L10n.text("This permanently deletes the agents and their chat history. This can't be undone.")
   }
 
-  public static let pending = "Deleting..."
-  public static let failure = "Deleting failed. Check your connection and try again."
+  public static let pending = L10n.text("Deleting...")
+  public static let failure = L10n.text("Deleting failed. Check your connection and try again.")
 
   /** The row menu's item: "Delete", or "Delete N agents" for a selection. */
-  public static func menuLabel(count: Int) -> String { count > 1 ? "Delete \(count) agents" : "Delete" }
+  public static func menuLabel(count: Int) -> String { count > 1 ? L10n.text("Delete \(count) agents") : L10n.text("Delete") }
 
   static func allGroups(_ agents: [Agent]) -> Bool { !agents.isEmpty && agents.allSatisfy(\.isGroup) }
 }

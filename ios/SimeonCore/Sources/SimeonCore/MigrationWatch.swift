@@ -62,7 +62,12 @@ public enum RecreateAnswer: Equatable, Sendable {
   static func read(_ answer: JSON, preserveData: Bool) -> RecreateAnswer {
     guard answer["started"]?.bool == true else {
       let reason = answer["reason"]?.string ?? ""
-      return .rejected("Couldn't \(preserveData ? "update" : "reset") the computer\(reason.isEmpty ? "" : " (\(reason))"). It is unchanged.")
+      switch (preserveData, reason.isEmpty) {
+      case (true, true): return .rejected(L10n.text("Couldn't update the computer. It is unchanged."))
+      case (true, false): return .rejected(L10n.text("Couldn't update the computer (\(reason)). It is unchanged."))
+      case (false, true): return .rejected(L10n.text("Couldn't reset the computer. It is unchanged."))
+      case (false, false): return .rejected(L10n.text("Couldn't reset the computer (\(reason)). It is unchanged."))
+      }
     }
     return answer["operationId"]?.text.map { .started(operationId: $0) } ?? .untrackable
   }
@@ -217,7 +222,7 @@ extension SimeonAPI {
           request.httpBody = ConnectEnvelopes.envelope(message)
           request.setValue("application/connect+json", forHTTPHeaderField: "content-type")
           request.setValue("1", forHTTPHeaderField: "connect-protocol-version")
-          guard let token = await self.accessToken() else { throw SimeonAPIError(message: "Sign in to Simeon first.", status: 401) }
+          guard let token = await self.accessToken() else { throw SimeonAPIError(message: L10n.text("Sign in to Simeon first."), status: 401) }
           request.setValue("Bearer \(token)", forHTTPHeaderField: "authorization")
           for (name, value) in self.clientHeaders { request.setValue(value, forHTTPHeaderField: name) }
           request.timeoutInterval = 60

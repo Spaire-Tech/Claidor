@@ -27,16 +27,16 @@ public enum GroupMembers {
 
   /** The words under the list: the limit at six, else when there is no one left to add. */
   public static func footer(count: Int, candidates: Int) -> String? {
-    if count >= limit { return "Groups can have up to \(limit) members." }
-    if candidates == 0 { return "Create more Agents to add them here." }
+    if count >= limit { return L10n.text("Groups can have up to \(limit) members.") }
+    if candidates == 0 { return L10n.text("Create more Agents to add them here.") }
     return nil
   }
 
   /** The remove dialog's title (`F2n`). */
-  public static func removeTitle(_ name: String) -> String { "Remove \(name) from this conversation?" }
+  public static func removeTitle(_ name: String) -> String { L10n.text("Remove \(name) from this conversation?") }
   /** Remove's words while the change is on its way (three full stops, as the window has them). */
-  public static let removing = "Removing..."
-  public static let removeFailed = "Removing failed. Check your connection and try again."
+  public static let removing = L10n.text("Removing...")
+  public static let removeFailed = L10n.text("Removing failed. Check your connection and try again.")
 
   /** At Remove in the dialog: the members after `id` goes, read from the current list; nil when nothing is to be sent (it is the last one, or already gone). */
   public static func without(_ id: String, current: [String]) -> [String]? {
@@ -94,25 +94,29 @@ public enum FlightPane {
     func joined(_ parts: [String]) -> String { parts.filter { !$0.isEmpty }.joined(separator: " · ") }
     var out: [Section] = []
     if !offer.price.isEmpty {
-      out.append(Section(heading: "Price", rows: rows([("Total", offer.price, offer.priceNote)]), note: nil))
+      out.append(Section(heading: L10n.text("Price"), rows: rows([(L10n.text("Total"), offer.price, offer.priceNote)]), note: nil))
     }
     for (index, leg) in offer.legs.enumerated() {
       let carrier = !leg.carrier.isEmpty && leg.carrier != offer.airline ? leg.carrier : ""
       let last = index == offer.legs.count - 1
       var note: String?
       if !last && !leg.layover.isEmpty {
-        if let range = leg.layover.range(of: " in ") { note = leg.layover.replacingCharacters(in: range, with: " layover in ") } else { note = leg.layover }
+        if let range = leg.layover.range(of: " in ") {
+          note = L10n.text("\(String(leg.layover[..<range.lowerBound])) layover in \(String(leg.layover[range.upperBound...]))")
+        } else {
+          note = leg.layover
+        }
       }
       out.append(Section(heading: joined([leg.heading, "\(leg.from) \u{2192} \(leg.to)"]), rows: rows([
-        ("Departs", joined([leg.departDay, leg.depart]), nil),
-        ("Arrives", joined([leg.arriveDay, leg.arrive]), nil),
-        ("Flight", joined([leg.flight, carrier]), nil),
-        ("Cabin", leg.cabin, nil),
-        ("Time in the air", leg.duration, nil),
+        (L10n.text("Departs"), joined([leg.departDay, leg.depart]), nil),
+        (L10n.text("Arrives"), joined([leg.arriveDay, leg.arrive]), nil),
+        (L10n.text("Flight"), joined([leg.flight, carrier]), nil),
+        (L10n.text("Cabin"), leg.cabin, nil),
+        (L10n.text("Time in the air"), leg.duration, nil),
       ]), note: note))
     }
     if !offer.refundable.isEmpty || !offer.changeable.isEmpty || !offer.bags.isEmpty {
-      out.append(Section(heading: "Fare", rows: rows([("Cancellation", offer.refundable, nil), ("Changes", offer.changeable, nil), ("Bags", offer.bags, nil)]), note: nil))
+      out.append(Section(heading: L10n.text("Fare"), rows: rows([(L10n.text("Cancellation"), offer.refundable, nil), (L10n.text("Changes"), offer.changeable, nil), (L10n.text("Bags"), offer.bags, nil)]), note: nil))
     }
     return out
   }

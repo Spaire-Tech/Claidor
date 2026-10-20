@@ -85,7 +85,7 @@ public struct AvatarCrop: Equatable, Sendable {
 
   /** "Choose an image smaller than 25 MB." for a file over the limit (`Sln`). */
   public static func sizeProblem(bytes: Int) -> String? {
-    bytes > maxBytes ? "Choose an image smaller than 25 MB." : nil
+    bytes > maxBytes ? L10n.text("Choose an image smaller than 25 MB.") : nil
   }
 
   static func clampZoom(_ value: Double) -> Double { value.isFinite ? clamp(value, minZoom, maxZoom) : minZoom }
@@ -98,27 +98,27 @@ public struct AvatarCrop: Equatable, Sendable {
 
 /** The avatar editor's words, as shipped. */
 public enum AvatarEditorWords {
-  public static let dropZone = "Drag, drop, or paste an image"
-  public static let browse = "Browse files"
-  public static let pickerTitle = "Choose an avatar image"
+  public static let dropZone = L10n.text("Drag, drop, or paste an image")
+  public static let browse = L10n.text("Browse files")
+  public static let pickerTitle = L10n.text("Choose an avatar image")
   public static let pickerTypes = ["png", "jpg", "jpeg", "webp", "gif", "bmp"]
-  public static let notAnImage = "Selected file is not a valid image."
-  public static let unreadable = "That file could not be read."
-  public static let unloadable = "That image could not be loaded."
-  public static let exportFailed = "Could not export the avatar."
-  public static let pastedName = "Pasted image"
-  public static let voicesUnavailable = "Voices aren\u{2019}t available right now."
-  public static let voiceNotSaved = "Couldn\u{2019}t save the voice."
-  public static let generationEmpty = "Image generation returned no picture."
+  public static let notAnImage = L10n.text("Selected file is not a valid image.")
+  public static let unreadable = L10n.text("That file could not be read.")
+  public static let unloadable = L10n.text("That image could not be loaded.")
+  public static let exportFailed = L10n.text("Could not export the avatar.")
+  public static let pastedName = L10n.text("Pasted image")
+  public static let voicesUnavailable = L10n.text("Voices aren’t available right now.")
+  public static let voiceNotSaved = L10n.text("Couldn’t save the voice.")
+  public static let generationEmpty = L10n.text("Image generation returned no picture.")
 
   /** The editor's tabs since faces (12 October 2026): the catalogue's faces, a picture drawn from words, one of the person's own. */
-  public static let faces = "Faces"
-  public static let generate = "Generate"
-  public static let upload = "Upload"
+  public static let faces = L10n.text("Faces")
+  public static let generate = L10n.text("Generate")
+  public static let upload = L10n.text("Upload")
   /** The Faces tab's gender switch and Shuffle. */
-  public static let woman = "Woman"
-  public static let man = "Man"
-  public static let shuffle = "Shuffle"
+  public static let woman = L10n.text("Woman")
+  public static let man = L10n.text("Man")
+  public static let shuffle = L10n.text("Shuffle")
 
   /**
    * The Reset beside the editor's tabs: back to the face the agent was
@@ -128,7 +128,7 @@ public enum AvatarEditorWords {
   public static func reset(_ agent: Agent) -> String? {
     guard !agent.isGroup else { return nil }
     if let worn = AgentFaces.worn(agent), worn == AgentFaces.given(agent) { return nil }
-    return "Reset face"
+    return L10n.text("Reset face")
   }
 
   /** The gender the Faces tab opens on: the face the agent wears or was given, else the one it would be given. */

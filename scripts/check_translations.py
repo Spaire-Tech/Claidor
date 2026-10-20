@@ -11,7 +11,10 @@ left out): adding one there makes this ask for it everywhere. It reads:
   core's (`VoiceCall.swift`), as many in each language as in English, the
   same words in both;
 - the server's voice agent (`VOICE_LANGUAGES` in voice.py): a first message
-  in each language.
+  in each language;
+- the shared core's sentences (`L10n.text("…")` in ios/SimeonCore): each one
+  is a key of the core's catalog (Resources/Localizable.xcstrings), so the
+  first check asks for its translations.
 
 Run it with `python3 scripts/check_names.py` before pushing.
 """
@@ -156,6 +159,57 @@ def check_server_voice(wanted: list[str]) -> list[str]:
     return problems
 
 
+CORE = ROOT / "ios/SimeonCore/Sources"
+CORE_CATALOG = CORE / "SimeonCore/Resources/Localizable.xcstrings"
+
+
+def swift_literal(text: str, start: int) -> tuple[str, int]:
+    """The pattern of the string literal at `start` (each `\\(…)` a value) and where it ends."""
+    out, i = [], start + 1
+    while text[i] != '"':
+        if text.startswith("\\(", i):
+            depth, i = 1, i + 2
+            while depth:
+                if text[i] == '"':
+                    i = swift_literal(text, i)[1]
+                    continue
+                depth += {"(": 1, ")": -1}.get(text[i], 0)
+                i += 1
+            out.append("(?:%@|%lld)")
+            continue
+        if text.startswith("\\u{", i):
+            end = text.index("}", i)
+            out.append(re.escape(chr(int(text[i + 3:end], 16))))
+            i = end + 1
+            continue
+        if text[i] == "\\":
+            out.append(re.escape({"n": "\n", "t": "\t"}.get(text[i + 1], text[i + 1])))
+            i += 2
+            continue
+        out.append("%%" if text[i] == "%" else re.escape(text[i]))
+        i += 1
+    return "".join(out), i + 1
+
+
+def check_core_keys() -> list[str]:
+    """Every sentence the core shows (`L10n.text`) is in its catalog: String values are `%@`, Int ones `%lld`."""
+    keys = set(json.loads(CORE_CATALOG.read_text()).get("strings", {}))
+    problems: list[str] = []
+    for path in sorted(CORE.rglob("*.swift")):
+        if path.name == "L10n.swift":
+            continue
+        text = path.read_text()
+        for call in re.finditer(r"\bL10n\.text\(\s*", text):
+            line = text.count("\n", 0, call.start()) + 1
+            if text[call.end()] != '"':
+                problems.append(f"{path.relative_to(ROOT)}:{line}: L10n.text takes a string literal")
+                continue
+            pattern, _ = swift_literal(text, call.end())
+            if not any(re.fullmatch(pattern, key) for key in keys):
+                problems.append(f"{path.relative_to(ROOT)}:{line}: not in the core's catalog ({CORE_CATALOG.relative_to(ROOT)})")
+    return problems
+
+
 def main() -> int:
     wanted = languages()
     if not wanted:
@@ -166,6 +220,7 @@ def main() -> int:
         problems += check_catalog(path, wanted)
     problems += check_greetings(wanted)
     problems += check_server_voice(wanted)
+    problems += check_core_keys()
     if problems:
         for problem in problems[:200]:
             print(problem)

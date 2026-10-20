@@ -79,7 +79,7 @@ public struct AutoReviewInstructions: Equatable, Sendable {
   public static let maxRules = 20
   public static let maxCharacters = 1_000
   /** Under a full list's composer (`Ys`). */
-  public static let limitNote = "max \(maxRules) rules"
+  public static let limitNote = L10n.text("max \(maxRules) rules")
 
   public var isEnabled: Bool
   public var allow: [String]
@@ -111,7 +111,7 @@ public struct AutoReviewInstructions: Equatable, Sendable {
     return AutoReviewInstructions(isEnabled: json?["isEnabled"]?.bool ?? true, allow: list("allowInstructions"), ask: list("blockInstructions"))
   }
 
-  public static func label(_ behavior: Behavior) -> String { behavior == .allow ? "Allow automatically" : "Ask first" }
+  public static func label(_ behavior: Behavior) -> String { behavior == .allow ? L10n.text("Allow automatically") : L10n.text("Ask first") }
 
   public func list(_ behavior: Behavior) -> [String] { behavior == .allow ? allow : ask }
 
@@ -189,7 +189,7 @@ public struct UsageSummary: Equatable, Sendable {
     public let nextTier: NextTier?
 
     /** The card's line (the patch's `line`): when the trial ends or the usage resets, and "Upgrade for more usage." when there is a plan above. */
-    public func line(locale: Locale = .current, timeZone: TimeZone = .current) -> String {
+    public func line(locale: Locale = L10n.locale(english: .current), timeZone: TimeZone = .current) -> String {
       var when: String?
       if let periodEndMs {
         let formatter = DateFormatter()
@@ -198,8 +198,8 @@ public struct UsageSummary: Equatable, Sendable {
         formatter.setLocalizedDateFormatFromTemplate("MMMd")
         when = formatter.string(from: Date(timeIntervalSince1970: periodEndMs / 1000))
       }
-      let head = status == "trialing" ? (when.map { "Your trial ends on \($0)." } ?? "Your trial is running.") : (when.map { "Usage resets on \($0)." } ?? "")
-      return (head + (nextTier != nil ? " Upgrade for more usage." : "")).trimmingCharacters(in: .whitespaces)
+      let head = status == "trialing" ? (when.map { L10n.text("Your trial ends on \($0).") } ?? L10n.text("Your trial is running.")) : (when.map { L10n.text("Usage resets on \($0).") } ?? "")
+      return (head + (nextTier != nil ? " " + L10n.text("Upgrade for more usage.") : "")).trimmingCharacters(in: .whitespaces)
     }
   }
 
@@ -260,9 +260,9 @@ public struct UsageSummary: Equatable, Sendable {
 
   private static func upgrade(_ quota: JSON) -> UpgradeButton? {
     guard let text = quota["upgradeUrl"]?.text, let url = URL(string: text), let scheme = url.scheme?.lowercased(), ["http", "https"].contains(scheme), url.host?.isEmpty == false else { return nil }
-    if quota["paymentFailed"]?.bool == true { return UpgradeButton(label: "Update card", url: url) }
+    if quota["paymentFailed"]?.bool == true { return UpgradeButton(label: L10n.text("Update card"), url: url) }
     let status = quota["subscriptionStatus"]?.string
-    return UpgradeButton(label: status == "none" || status == "trialing" ? "Choose a plan" : "Get more usage", url: url)
+    return UpgradeButton(label: status == "none" || status == "trialing" ? L10n.text("Choose a plan") : L10n.text("Get more usage"), url: url)
   }
 
   private static func plan(_ quota: JSON) -> ManagePlan? {
@@ -300,8 +300,8 @@ public struct UsageMeters: Equatable, Sendable {
     public let resetLabel: String?
   }
 
-  public static let onDemandTitle = "On-demand usage"
-  public static let noIncludedUsage = "No included usage available on your plan right now."
+  public static let onDemandTitle = L10n.text("On-demand usage")
+  public static let noIncludedUsage = L10n.text("No included usage available on your plan right now.")
 
   public let weekly: Meter?
   public let includedUsageTitle: String
@@ -315,7 +315,7 @@ public struct UsageMeters: Equatable, Sendable {
     if let percent = summary.usagePercent {
       let reset = summary.isTrial
         ? Self.countdown(summary.resetMs, now: nowMs, verb: "Ends")
-        : Self.countdown(summary.resetMs, now: nowMs, verb: "Resets") ?? (summary.hasNonZeroIncludedLimit ? "Resets in 7 days" : nil)
+        : Self.countdown(summary.resetMs, now: nowMs, verb: "Resets") ?? (summary.hasNonZeroIncludedLimit ? L10n.text("Resets in 7 days") : nil)
       weekly = Meter(valueLabel: Self.percent(percent), barPercent: max(0, min(100, percent)), resetLabel: reset)
     } else {
       weekly = nil
@@ -330,7 +330,7 @@ public struct UsageMeters: Equatable, Sendable {
     } else {
       onDemand = nil
     }
-    includedUsageTitle = summary.isTrial ? "Trial usage" : "Weekly usage"
+    includedUsageTitle = summary.isTrial ? L10n.text("Trial usage") : L10n.text("Weekly usage")
     upgrade = summary.upgrade
     upgradeSupportingText = Self.supportingText(summary)
     canCancelTrial = summary.isTrial && summary.canCancelTrial
@@ -338,28 +338,33 @@ public struct UsageMeters: Equatable, Sendable {
 
   private static func supportingText(_ summary: UsageSummary) -> String? {
     guard summary.upgrade != nil else { return nil }
-    if !summary.hasNonZeroIncludedLimit && summary.hasAvailableUsage, let percent = summary.usagePercent, percent < 100 { return "Get more Simeon usage" }
-    if summary.isTrial { return "You’ve used all of your trial usage" }
-    if summary.hasEndedTrial { return "Your trial has ended. Upgrade to continue using Simeon." }
+    if !summary.hasNonZeroIncludedLimit && summary.hasAvailableUsage, let percent = summary.usagePercent, percent < 100 { return L10n.text("Get more Simeon usage") }
+    if summary.isTrial { return L10n.text("You’ve used all of your trial usage") }
+    if summary.hasEndedTrial { return L10n.text("Your trial has ended. Upgrade to continue using Simeon.") }
     return nil
   }
 
-  /** "Resets today", "Resets in 1 day", "Ends in 3 days" (`jct`): whole days, rounded up. */
+  /** "Resets today", "Resets in 1 day", "Ends in 3 days" (`jct`): whole days, rounded up. `verb` is "Resets" or "Ends". */
   public static func countdown(_ resetMs: Double?, now: Double, verb: String) -> String? {
     guard let resetMs, resetMs.isFinite else { return nil }
     let left = resetMs - now
-    if left <= 0 { return "\(verb) today" }
+    let ends = verb == "Ends"
+    if left <= 0 { return ends ? L10n.text("Ends today") : L10n.text("Resets today") }
     let days = Int((left / 86_400_000).rounded(.up))
-    return days == 1 ? "\(verb) in 1 day" : "\(verb) in \(days) days"
+    if days == 1 { return ends ? L10n.text("Ends in 1 day") : L10n.text("Resets in 1 day") }
+    return ends ? L10n.text("Ends in \(days) days") : L10n.text("Resets in \(days) days")
   }
 
   /** "42%", "1%" for anything above nothing and under one (`qct`). */
   public static func percent(_ value: Double) -> String {
-    guard value.isFinite else { return "0%" }
+    guard value.isFinite else { return shown(0) }
     let clamped = max(0, min(100, value))
-    if clamped > 0 && clamped < 1 { return "1%" }
-    return "\(Int(clamped.rounded(.toNearestOrAwayFromZero)))%"
+    if clamped > 0 && clamped < 1 { return shown(1) }
+    return shown(Int(clamped.rounded(.toNearestOrAwayFromZero)))
   }
+
+  /** "42%", "42 %" in French. */
+  private static func shown(_ percent: Int) -> String { L10n.text("\(percent)%") }
 
   /** The account menu's spend (`wze`): "$12.5", "$100", "$1.2k" from a thousand dollars up; a half goes up, as the window's ("$1.3k" for $1,250). */
   public static func compactMoney(_ cents: Double) -> String {
@@ -405,7 +410,7 @@ public struct UsageMeters: Equatable, Sendable {
     let dollars = cents / 100
     let whole = dollars.rounded(.towardZero) == dollars
     let formatter = NumberFormatter()
-    formatter.locale = Locale(identifier: "en_US")
+    formatter.locale = L10n.locale()
     formatter.numberStyle = .currency
     formatter.currencyCode = "USD"
     formatter.minimumFractionDigits = whole ? 0 : 2
@@ -445,7 +450,7 @@ public enum TimeZoneChoices {
   public static func label(_ zone: String) -> String { zone.replacingOccurrences(of: "_", with: " ") }
 
   public static func automaticLabel(detected: String?) -> String {
-    detected.map { "Auto-detect (\(label($0)))" } ?? "Auto-detect"
+    detected.map { L10n.text("Auto-detect (\(label($0)))") } ?? L10n.text("Auto-detect")
   }
 
   /** The menu's values in order: `automatic`, the override when it is not a known zone, then the known zones. */
@@ -460,16 +465,17 @@ public enum TimeZoneChoices {
     override.map(label) ?? automaticLabel(detected: detected)
   }
 
-  /** The time now in a zone, as a menu row shows it beside the zone ("8:16 PM"). */
-  public static func timeNow(in zone: String, now: Date = Date(), locale: Locale = Locale(identifier: "en_US")) -> String {
+  /** The time now in a zone, as a menu row shows it beside the zone ("8:16 PM", "20:16" in French). */
+  public static func timeNow(in zone: String, now: Date = Date(), locale: Locale = L10n.locale()) -> String {
     timesNow(in: [zone], now: now, locale: locale)[0]
   }
 
   /** The time now in each zone, in order ("" for a zone not known), with one formatter for the whole menu (some 600 rows). */
-  public static func timesNow(in zones: [String], now: Date = Date(), locale: Locale = Locale(identifier: "en_US")) -> [String] {
+  public static func timesNow(in zones: [String], now: Date = Date(), locale: Locale = L10n.locale()) -> [String] {
     let formatter = DateFormatter()
     formatter.locale = locale
-    formatter.dateFormat = "h:mm a"
+    // English keeps its own "h:mm a"; another language writes the time its own way.
+    if AppLanguage.isEnglish(AppLanguage.tag(locale.identifier)) { formatter.dateFormat = "h:mm a" } else { formatter.setLocalizedDateFormatFromTemplate("jmm") }
     return zones.map { zone in
       guard let timeZone = TimeZone(identifier: zone) else { return "" }
       formatter.timeZone = timeZone

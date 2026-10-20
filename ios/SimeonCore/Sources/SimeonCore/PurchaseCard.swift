@@ -57,7 +57,7 @@ public struct PurchaseCard: Hashable, Sendable {
     }
 
     /** "Mastercard Debit •••• 1005": the name in Link (or the network) and the last four. */
-    public var line: String { PurchaseCard.cardLine(brand: brand, last4: last4, name: name) ?? "Card" }
+    public var line: String { PurchaseCard.cardLine(brand: brand, last4: last4, name: name) ?? L10n.text("Card") }
   }
 
   public let merchant: String
@@ -142,7 +142,7 @@ public struct PurchaseCard: Hashable, Sendable {
     self.cards = (purchase["cards"]?.array ?? []).compactMap { card in
       let id = text(card["id"]), last4 = text(card["last4"]), name = text(card["name"])
       guard !id.isEmpty else { return nil }
-      return Choice(id: id, brand: text(card["brand"]).isEmpty ? "Card" : text(card["brand"]), last4: last4, name: name.isEmpty ? nil : name, isDefault: card["isDefault"]?.bool ?? false)
+      return Choice(id: id, brand: text(card["brand"]).isEmpty ? L10n.text("Card") : text(card["brand"]), last4: last4, name: name.isEmpty ? nil : name, isDefault: card["isDefault"]?.bool ?? false)
     }
     self.preview = purchase["preview"].flatMap(ChatImage.init)
     self.icon = purchase["icon"].flatMap(ChatImage.init)
@@ -172,30 +172,30 @@ public struct PurchaseCard: Hashable, Sendable {
 
   // MARK: Words
 
-  public static let title = "Checkout"
-  public static let check = "Check the items, delivery and terms on the shop's page before you allow it."
-  public static let reviewOrder = "Review order"
+  public static let title = L10n.text("Checkout")
+  public static let check = L10n.text("Check the items, delivery and terms on the shop's page before you allow it.")
+  public static let reviewOrder = L10n.text("Review order")
   public static let payWithLink = "Link by Stripe"
-  public static let chooseCard = "Choose the card that pays"
-  public static let cardsTitle = "Pay with"
-  public static let cardsFooter = "Your cards in Link. Add or remove cards in the Link app or at link.com."
-  public static let totalLabel = "Total"
-  public static let deny = "Deny"
-  public static let allow = "Allow"
-  public static let openLink = "Open Link"
-  public static let getLinkApp = "Get the Link app"
+  public static let chooseCard = L10n.text("Choose the card that pays")
+  public static let cardsTitle = L10n.text("Pay with")
+  public static let cardsFooter = L10n.text("Your cards in Link. Add or remove cards in the Link app or at link.com.")
+  public static let totalLabel = L10n.text("Total")
+  public static let deny = L10n.text("Deny")
+  public static let allow = L10n.text("Allow")
+  public static let openLink = L10n.text("Open Link")
+  public static let getLinkApp = L10n.text("Get the Link app")
   /** Where Link sends people for its app (Link's own command-line tool shows the same address). */
   public static let linkAppURL = URL(string: "https://link.com/download")!
-  public static let testNote = "Link's test mode: nothing is charged."
+  public static let testNote = L10n.text("Link's test mode: nothing is charged.")
 
   // Shop's words (14 October 2026).
   public static let payWithShop = "Shop"
-  public static let openShop = "Open Shop"
-  public static let getShopApp = "Get the Shop app"
+  public static let openShop = L10n.text("Open Shop")
+  public static let getShopApp = L10n.text("Get the Shop app")
   public static let shopAppURL = URL(string: "https://shop.app")!
-  public static let openStorePage = "Open the store's page"
-  public static let shopCardsFooter = "Your cards in Shop. Add or remove cards in the Shop app."
-  public static let shopCheckoutCardsFooter = "The ways to pay this store offers you through Shop."
+  public static let openStorePage = L10n.text("Open the store's page")
+  public static let shopCardsFooter = L10n.text("Your cards in Shop. Add or remove cards in the Shop app.")
+  public static let shopCheckoutCardsFooter = L10n.text("The ways to pay this store offers you through Shop.")
 
   /** What the card row names beside the card that pays: "Link by Stripe" or "Shop". */
   public var walletLabel: String { wallet == .shop ? Self.payWithShop : Self.payWithLink }
@@ -212,7 +212,7 @@ public struct PurchaseCard: Hashable, Sendable {
   /** "Ada wants to place an order at ncvss.com" */
   public static func headline(agent: String, domain: String) -> String {
     let who = agent.trimmingCharacters(in: .whitespacesAndNewlines)
-    return "\(who.isEmpty ? "Your agent" : who) wants to place an order at \(domain)"
+    return who.isEmpty ? L10n.text("Your agent wants to place an order at \(domain)") : L10n.text("\(who) wants to place an order at \(domain)")
   }
 
   /** "Mastercard Debit •••• 1005": the card's name in Link (else its network) and its last four; nil when Link gave nothing. */
@@ -225,7 +225,7 @@ public struct PurchaseCard: Hashable, Sendable {
     switch (named ?? brand, last4) {
     case let (title?, last4?): return "\(title) •••• \(last4)"
     case let (title?, nil): return title
-    case let (nil, last4?): return "Card •••• \(last4)"
+    case let (nil, last4?): return L10n.text("Card •••• \(last4)")
     default: return nil
     }
   }
@@ -248,15 +248,20 @@ public struct PurchaseCard: Hashable, Sendable {
   public var waitsOnPerson: Bool { state == .review }
 
   /** A flight's card: "Flight". */
-  public static let flightTitle = "Flight"
-  public static let flightCheck = "Check the flight, the travellers' names and the total before you allow it."
-  public static let flightTestNote = "Test mode: a pretend airline, nothing is charged."
-  public static let openComputer = "Open the computer"
+  public static let flightTitle = L10n.text("Flight")
+  public static let flightCheck = L10n.text("Check the flight, the travellers' names and the total before you allow it.")
+  public static let flightTestNote = L10n.text("Test mode: a pretend airline, nothing is charged.")
+  public static let openComputer = L10n.text("Open the computer")
 
   /** "Ada wants to book a flight with Duffel Airways" */
   public static func flightHeadline(agent: String, airline: String) -> String {
     let who = agent.trimmingCharacters(in: .whitespacesAndNewlines)
-    return "\(who.isEmpty ? "Your agent" : who) wants to book a flight\(airline.isEmpty ? "" : " with \(airline)")"
+    switch (who.isEmpty, airline.isEmpty) {
+    case (true, true): return L10n.text("Your agent wants to book a flight")
+    case (true, false): return L10n.text("Your agent wants to book a flight with \(airline)")
+    case (false, true): return L10n.text("\(who) wants to book a flight")
+    case (false, false): return L10n.text("\(who) wants to book a flight with \(airline)")
+    }
   }
 
   /** The heading: "Checkout", or "Flight" for a flight. */
@@ -270,14 +275,14 @@ public struct PurchaseCard: Hashable, Sendable {
     if flight != nil, let flightStatus { return flightStatus }
     switch state {
     case .review: return nil
-    case .sending: return (wallet == .link ? "Asking Link…" : isShopCheckout ? "Placing your order with Shop…" : "Asking Shop…", .working)
-    case .approving: return (wallet == .link ? "Approve it in the Link app" : isShopCheckout ? "Finish on the store's page" : "Approve it in the Shop app", .working)
-    case .approved: return ("Approved · placing your order", .working)
-    case .ordered: return ("Ordered", .success)
-    case .failed: return ("Didn't go through", .danger)
-    case .denied: return ("Denied", .neutral)
-    case .expired: return ("Expired", .neutral)
-    case .canceled: return ("Canceled", .neutral)
+    case .sending: return (wallet == .link ? L10n.text("Asking Link…") : isShopCheckout ? L10n.text("Placing your order with Shop…") : L10n.text("Asking Shop…"), .working)
+    case .approving: return (wallet == .link ? L10n.text("Approve it in the Link app") : isShopCheckout ? L10n.text("Finish on the store's page") : L10n.text("Approve it in the Shop app"), .working)
+    case .approved: return (L10n.text("Approved · placing your order"), .working)
+    case .ordered: return (L10n.text("Ordered"), .success)
+    case .failed: return (L10n.text("Didn't go through"), .danger)
+    case .denied: return (L10n.text("Denied"), .neutral)
+    case .expired: return (L10n.text("Expired"), .neutral)
+    case .canceled: return (L10n.text("Canceled"), .neutral)
     }
   }
 
@@ -288,12 +293,12 @@ public struct PurchaseCard: Hashable, Sendable {
     switch state {
     case .approved:
       switch step {
-      case .verify: return ("Your bank wants to confirm it's you", .working)
-      case .booking: return ("Booking with the airline…", .working)
-      default: return ("Approved · paying the airline", .working)
+      case .verify: return (L10n.text("Your bank wants to confirm it's you"), .working)
+      case .booking: return (L10n.text("Booking with the airline…"), .working)
+      default: return (L10n.text("Approved · paying the airline"), .working)
       }
-    case .ordered: return ("Booked", .success)
-    case .failed: return step == .uncertain ? ("Not confirmed", .neutral) : ("Not booked", .danger)
+    case .ordered: return (L10n.text("Booked"), .success)
+    case .failed: return step == .uncertain ? (L10n.text("Not confirmed"), .neutral) : (L10n.text("Not booked"), .danger)
     default: return nil
     }
   }
@@ -303,11 +308,11 @@ public struct PurchaseCard: Hashable, Sendable {
     if flight != nil {
       switch state {
       case .approved:
-        return step == .verify ? "Open the computer to finish the check; the booking goes on by itself." : nil
+        return step == .verify ? L10n.text("Open the computer to finish the check; the booking goes on by itself.") : nil
       case .ordered:
-        return [order.map { "Booking reference \($0)" }, "The airline emails the ticket."].compactMap { $0 }.joined(separator: " · ")
+        return [order.map { L10n.text("Booking reference \($0)") }, L10n.text("The airline emails the ticket.")].compactMap { $0 }.joined(separator: " · ")
       case .failed:
-        return note ?? "Nothing was booked."
+        return note ?? L10n.text("Nothing was booked.")
       default:
         break
       }
@@ -316,12 +321,15 @@ public struct PurchaseCard: Hashable, Sendable {
     case .approving:
       return note ?? (wallet == .link ? Self.approvingDetail : Self.shopApprovingDetail)
     case .ordered:
-      let number = order.map { "Order \($0.hasPrefix("#") ? $0 : "#\($0)")" }
+      let number = order.map { order in
+        let numbered = order.hasPrefix("#") ? order : "#\(order)"
+        return L10n.text("Order \(numbered)")
+      }
       return [number, note].compactMap { $0 }.joined(separator: " · ").nilIfEmpty
     case .failed:
-      return note ?? "Nothing was paid."
+      return note ?? L10n.text("Nothing was paid.")
     case .denied, .expired, .canceled:
-      return "Nothing was paid."
+      return L10n.text("Nothing was paid.")
     default:
       return nil
     }
@@ -333,13 +341,13 @@ public struct PurchaseCard: Hashable, Sendable {
    * sign-in alone; the founder was sent to sign in and then told to get the
    * app, with nothing here having said so.
    */
-  public static let approvingDetail = "Link sent it to the Link app on your phone. No Link app yet? Get it and sign in once; every purchase after that is one tap. Or open it on link.com with a passkey. It waits 30 minutes."
+  public static let approvingDetail = L10n.text("Link sent it to the Link app on your phone. No Link app yet? Get it and sign in once; every purchase after that is one tap. Or open it on link.com with a passkey. It waits 30 minutes.")
 
   /** The same for Shop: it asks in the Shop app, with the account the person connected. */
-  public static let shopApprovingDetail = "Shop sent it to the Shop app on your phone. Approve it there; nothing is paid until you do. No Shop app yet? Get it and sign in with the account you connected."
+  public static let shopApprovingDetail = L10n.text("Shop sent it to the Shop app on your phone. Approve it there; nothing is paid until you do. No Shop app yet? Get it and sign in with the account you connected.")
 
   /** In the chat list and a quote: "Checkout at ncvss.com · $80.00", "Flight Seattle to Los Angeles · $361.20". */
-  public var listLine: String { flight.map { "Flight \($0.route) · \(total)" } ?? "Checkout at \(domain) · \(total)" }
+  public var listLine: String { flight.map { L10n.text("Flight \($0.route) · \(total)") } ?? L10n.text("Checkout at \(domain) · \(total)") }
 }
 
 private extension String {

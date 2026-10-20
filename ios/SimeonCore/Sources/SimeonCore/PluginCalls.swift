@@ -204,7 +204,7 @@ extension Plugins {
 
   /** Details' Tools for switches counted by the app (the iPhone's `AppTool`s): "n of m enabled" once read, else the server's own count (`toolsValue`). */
   public static func toolsValue(enabled: Int, total: Int, count: Int) -> String {
-    total == 0 ? "\(count)" : "\(enabled) of \(total) enabled"
+    total == 0 ? "\(count)" : L10n.text("\(enabled) of \(total) enabled")
   }
 
   /** The Plugin Setup agent already made, when there is one (by its purpose). */
@@ -222,7 +222,7 @@ extension AppStore {
    * the app says as `Plugins.agentFailedNotice`.
    */
   public func makePluginSetupAgent() async -> (id: String?, failure: String?) {
-    guard let backend else { return (nil, "Sign in to Simeon first.") }
+    guard let backend else { return (nil, L10n.text("Sign in to Simeon first.")) }
     let calls = PluginCalls(backend)
     let id: String
     do {

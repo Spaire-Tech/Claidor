@@ -383,9 +383,9 @@ public struct RebuildSteps: Equatable, Sendable {
   /** 0 to 1. */
   public let progress: Double
 
-  public static let updateLabels = ["Getting ready", "Backing up your data", "Recreating Simeon's computer", "Starting Simeon's computer", "Cleaning up", "Reconnecting"]
-  public static let resetLabels = ["Getting ready", "Wiping your data", "Creating Simeon's computer", "Starting Simeon's computer", "Cleaning up", "Reconnecting"]
-  public static let recoverLabels = ["Getting ready", "Recreating Simeon's computer", "Starting Simeon's computer", "Reconnecting"]
+  public static let updateLabels = [L10n.text("Getting ready"), L10n.text("Backing up your data"), L10n.text("Recreating Simeon's computer"), L10n.text("Starting Simeon's computer"), L10n.text("Cleaning up"), L10n.text("Reconnecting")]
+  public static let resetLabels = [L10n.text("Getting ready"), L10n.text("Wiping your data"), L10n.text("Creating Simeon's computer"), L10n.text("Starting Simeon's computer"), L10n.text("Cleaning up"), L10n.text("Reconnecting")]
+  public static let recoverLabels = [L10n.text("Getting ready"), L10n.text("Recreating Simeon's computer"), L10n.text("Starting Simeon's computer"), L10n.text("Reconnecting")]
 
   /** The step a stage or a server phase stands for, by kind (`e8n`, `t8n`, `n8n`); `afterOthers` is a cleaning-up seen after another phase. */
   static func index(_ kind: RebuildLock.Kind, stage: RebuildLock.Stage?, phase: MigrationPhase?, afterOthers: Bool = true) -> Int? {
@@ -557,19 +557,19 @@ public struct RebuildSurface: Equatable, Sendable {
 public enum RebuildWords {
   public static func title(_ kind: RebuildLock.Kind) -> String {
     switch kind {
-    case .update: return "Updating Simeon's Computer"
-    case .reset: return "Resetting Simeon's Computer"
-    case .recover, .reconnecting: return "Recovering Simeon's Computer"
+    case .update: return L10n.text("Updating Simeon's Computer")
+    case .reset: return L10n.text("Resetting Simeon's Computer")
+    case .recover, .reconnecting: return L10n.text("Recovering Simeon's Computer")
     }
   }
 
-  public static let continueInBackground = "Continue in Background"
-  public static let bannerLabel = "View Simeon's Computer progress"
+  public static let continueInBackground = L10n.text("Continue in Background")
+  public static let bannerLabel = L10n.text("View Simeon's Computer progress")
 
   /** The banner while the stream is away (`g8n`, `y8n`): its title and line under it. */
   public static func reconnecting(stage: RebuildLock.Stage?, connected: Bool) -> (title: String, subtitle: String?) {
-    if stage == .downloading || stage == .starting { return ("Simeon's computer restarting", "Starting Simeon's computer") }
-    return connected ? ("Checking connection", "Reconnecting") : ("Reconnecting", nil)
+    if stage == .downloading || stage == .starting { return (L10n.text("Simeon's computer restarting"), L10n.text("Starting Simeon's computer")) }
+    return connected ? (L10n.text("Checking connection"), L10n.text("Reconnecting")) : (L10n.text("Reconnecting"), nil)
   }
 
   // MARK: Update
@@ -597,91 +597,92 @@ public enum RebuildWords {
   }
 
   /** Nobody working (`K1t`). */
-  public static let updateIdle = Confirmation(title: "Update Simeon's Computer?", description: "This updates the shared computer all your agents run on to the latest version. Their files and logins are kept.",
-                                             confirm: "Update Simeon's Computer", cancel: "Not now", secondary: nil, warning: nil, destructive: false)
+  public static let updateIdle = Confirmation(title: L10n.text("Update Simeon's Computer?"), description: L10n.text("This updates the shared computer all your agents run on to the latest version. Their files and logins are kept."),
+                                             confirm: L10n.text("Update Simeon's Computer"), cancel: L10n.text("Not now"), secondary: nil, warning: nil, destructive: false)
 
   /** One agent or more working (`FAe`). */
   public static func updateBusy(_ names: [String]) -> Confirmation {
     let several = names.count > 1
-    return Confirmation(title: several ? "Update while agents are working?" : "An agent is working", description: busyDescription(names),
-                        confirm: several ? "Update when agents are done" : "Update when done", cancel: "Cancel", secondary: "Update anyway", warning: nil, destructive: false)
+    return Confirmation(title: several ? L10n.text("Update while agents are working?") : L10n.text("An agent is working"), description: busyDescription(names),
+                        confirm: several ? L10n.text("Update when agents are done") : L10n.text("Update when done"), cancel: L10n.text("Cancel"), secondary: L10n.text("Update anyway"), warning: nil, destructive: false)
   }
 
   static func busyDescription(_ names: [String]) -> String {
-    if names.count > 1 { return "\(nameList(names)) are working on Simeon's computer right now. Updating recreates the computer and interrupts their current turns. Files and logins are kept." }
+    if names.count > 1 { return L10n.text("\(nameList(names)) are working on Simeon's computer right now. Updating recreates the computer and interrupts their current turns. Files and logins are kept.") }
     let name = (names.first ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-    return "\(name.isEmpty ? "An agent is" : "\(name) is") working right now. Waiting lets its current turn finish. Updating now recreates the computer and interrupts it. Files and logins are kept either way."
+    if name.isEmpty { return L10n.text("An agent is working right now. Waiting lets its current turn finish. Updating now recreates the computer and interrupts it. Files and logins are kept either way.") }
+    return L10n.text("\(name) is working right now. Waiting lets its current turn finish. Updating now recreates the computer and interrupts it. Files and logins are kept either way.")
   }
 
   /** "A and B", "A, B, and 3 other agents", "A and 1 other agent", "N agents" (`Gbn`). */
   public static func nameList(_ names: [String]) -> String {
     let kept = names.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
-    guard let first = kept.first else { return "\(names.count) agents" }
+    guard let first = kept.first else { return L10n.text("\(names.count) agents") }
     let second = kept.count > 1 ? kept[1] : nil
     let others = names.count - (second == nil ? 1 : 2)
-    func otherAgents(_ n: Int) -> String { "\(n) other \(n == 1 ? "agent" : "agents")" }
-    guard let second else { return "\(first) and \(otherAgents(others))" }
-    return others == 0 ? "\(first) and \(second)" : "\(first), \(second), and \(otherAgents(others))"
+    guard let second else { return others == 1 ? L10n.text("\(first) and 1 other agent") : L10n.text("\(first) and \(others) other agents") }
+    if others == 0 { return L10n.text("\(first) and \(second)") }
+    return others == 1 ? L10n.text("\(first), \(second), and 1 other agent") : L10n.text("\(first), \(second), and \(others) other agents")
   }
 
   /** Why a confirmed action is refused, kept in the dialog in red (`zAe`). */
   public static func refusal(update: Bool, isBlocked: Bool, pending: RebuildLock.Kind?, canReset: Bool, canUpdate: Bool) -> String? {
-    if isBlocked { return "Further computer updates and resets are disabled for this session. Restart Simeon after the computer is available again." }
-    if pending != nil { return "The computer is already being rebuilt." }
-    if !update && !canReset { return "Open an agent to reset the shared computer." }
-    if update && !canUpdate { return "Open an agent to update the shared computer." }
+    if isBlocked { return L10n.text("Further computer updates and resets are disabled for this session. Restart Simeon after the computer is available again.") }
+    if pending != nil { return L10n.text("The computer is already being rebuilt.") }
+    if !update && !canReset { return L10n.text("Open an agent to reset the shared computer.") }
+    if update && !canUpdate { return L10n.text("Open an agent to update the shared computer.") }
     return nil
   }
 
   // MARK: The lifecycle dialogs (`j8n`)
 
-  public static let unreachableTitle = "Couldn't Reach Simeon's Computer"
-  public static let unreachableBody = "Your agents, files, and logins are safe. If it doesn't reconnect on its own, recover Simeon's computer to keep the data."
-  public static let recoverButton = "Recover Simeon's Computer"
-  public static let recoverTitle = "Recover Simeon's Computer?"
-  public static let recoverBody = "This recreates Simeon's computer and reconnects. Your agents, files, and logins are kept."
-  public static let longerTitle = "Taking longer than expected"
-  public static let keepWaiting = "Keep waiting"
+  public static let unreachableTitle = L10n.text("Couldn't Reach Simeon's Computer")
+  public static let unreachableBody = L10n.text("Your agents, files, and logins are safe. If it doesn't reconnect on its own, recover Simeon's computer to keep the data.")
+  public static let recoverButton = L10n.text("Recover Simeon's Computer")
+  public static let recoverTitle = L10n.text("Recover Simeon's Computer?")
+  public static let recoverBody = L10n.text("This recreates Simeon's computer and reconnects. Your agents, files, and logins are kept.")
+  public static let longerTitle = L10n.text("Taking longer than expected")
+  public static let keepWaiting = L10n.text("Keep waiting")
 
   public static func longerBody(_ kind: RebuildLock.Kind) -> String {
     switch kind {
-    case .reset: return "The reset is still running \u{2014} rebuilding Simeon's computer can take a few minutes. You can keep waiting, or continue in the background."
-    case .recover, .reconnecting: return "The recovery is still running \u{2014} recreating Simeon's computer can take a few minutes. You can keep waiting, or continue in the background."
-    case .update: return "The update is still running \u{2014} a large image download can take a few minutes. You can keep waiting, or continue in the background."
+    case .reset: return L10n.text("The reset is still running — rebuilding Simeon's computer can take a few minutes. You can keep waiting, or continue in the background.")
+    case .recover, .reconnecting: return L10n.text("The recovery is still running — recreating Simeon's computer can take a few minutes. You can keep waiting, or continue in the background.")
+    case .update: return L10n.text("The update is still running — a large image download can take a few minutes. You can keep waiting, or continue in the background.")
     }
   }
 
   public static func failedTitle(_ kind: RebuildLock.Kind) -> String {
     switch kind {
-    case .update: return "Update failed"
-    case .reset: return "Reset failed"
-    default: return "Recover failed"
+    case .update: return L10n.text("Update failed")
+    case .reset: return L10n.text("Reset failed")
+    default: return L10n.text("Recover failed")
     }
   }
 
   public static func failedBody(_ kind: RebuildLock.Kind) -> String {
     switch kind {
-    case .update: return "The update couldn't finish, so Simeon's computer is still on its previous image. Your agents, files, and logins are safe."
-    case .reset: return "The reset couldn't finish. Simeon's computer may be in a partial state \u{2014} retry to run the reset again."
-    default: return "The recovery couldn't finish, so Simeon's computer may still be unreachable. Your agents, files, and logins are safe."
+    case .update: return L10n.text("The update couldn't finish, so Simeon's computer is still on its previous image. Your agents, files, and logins are safe.")
+    case .reset: return L10n.text("The reset couldn't finish. Simeon's computer may be in a partial state — retry to run the reset again.")
+    default: return L10n.text("The recovery couldn't finish, so Simeon's computer may still be unreachable. Your agents, files, and logins are safe.")
     }
   }
 
   public static func retry(_ kind: RebuildLock.Kind) -> String {
     switch kind {
-    case .update: return "Retry Update"
-    case .reset: return "Retry Reset"
-    default: return "Retry Recovery"
+    case .update: return L10n.text("Retry Update")
+    case .reset: return L10n.text("Retry Reset")
+    default: return L10n.text("Retry Recovery")
     }
   }
 
   // MARK: Low disk (`D8n`; Simeon keeps the automatic Disk Saver on)
 
-  public static func diskTitle(hard: Bool) -> String { hard ? "Computer is critically low on disk space" : "Computer is low on disk space" }
-  public static let diskBody = "Disk Saver is auditing usage and will propose safe cleanup. Nothing is deleted without confirmation."
-  public static let diskButton = "Go to Disk Saver"
-  public static let diskOpening = "Opening Disk Saver\u{2026}"
-  /** The agent the button opens or makes (`z8n`). */
+  public static func diskTitle(hard: Bool) -> String { hard ? L10n.text("Computer is critically low on disk space") : L10n.text("Computer is low on disk space") }
+  public static let diskBody = L10n.text("Disk Saver is auditing usage and will propose safe cleanup. Nothing is deleted without confirmation.")
+  public static let diskButton = L10n.text("Go to Disk Saver")
+  public static let diskOpening = L10n.text("Opening Disk Saver…")
+  /** The agent the button opens or makes (`z8n`): its name and description are the agent's own, kept in English like every agent's name. */
   public static let diskSaverName = "Disk Saver"
   public static let diskSaverDescription = "Audits disk usage on Simeon's computer and proposes safe cleanup for approval."
 }

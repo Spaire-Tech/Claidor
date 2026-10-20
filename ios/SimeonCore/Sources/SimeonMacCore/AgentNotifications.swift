@@ -73,14 +73,14 @@ public enum AgentNotifications {
   /** The notification's words (`buildNotificationContent`). */
   public static func content(_ transition: Transition) -> (title: String, body: String) {
     let trimmed = jsTrim(transition.agentName)
-    let name = trimmed.isEmpty ? "Your agent" : trimmed
+    let name = trimmed.isEmpty ? L10n.text("Your agent") : trimmed
     switch transition.kind {
     case .needsInput:
       let reason = jsTrim(transition.reason ?? "")
-      return ("\(name) needs you", reason.isEmpty ? "Waiting for your input." : truncate(reason))
+      return (L10n.text("\(name) needs you"), reason.isEmpty ? L10n.text("Waiting for your input.") : truncate(reason))
     case .done:
       let summary = jsTrim(transition.lastMessagePreview ?? "")
-      return (name, summary.isEmpty ? "Open Simeon to see what it did." : truncate(summary))
+      return (name, summary.isEmpty ? L10n.text("Open Simeon to see what it did.") : truncate(summary))
     }
   }
 

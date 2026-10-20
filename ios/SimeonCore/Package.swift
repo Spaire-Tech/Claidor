@@ -10,6 +10,8 @@ import PackageDescription
 
 let package = Package(
   name: "SimeonCore",
+  // The core's sentences are English in the code, translated in Resources/Localizable.xcstrings (L10n.swift).
+  defaultLocalization: "en",
   platforms: [.iOS(.v26), .macOS(.v15)],
   products: [
     .library(name: "SimeonCore", targets: ["SimeonCore"]),
@@ -19,7 +21,7 @@ let package = Package(
   targets: [
     // The Mac window's emoji list (emojibase, MIT; Resources/EMOJIBASE-LICENSE.txt), made by ios/scripts/make-emoji.mjs.
     // The agents' faces (Resources/Faces, made by ios/scripts/make-faces.py), copied byte for byte: the host knows a face by its bytes' hash.
-    .target(name: "SimeonCore", resources: [.copy("Resources/emoji.json"), .copy("Resources/EMOJIBASE-LICENSE.txt"), .copy("Resources/Faces")], swiftSettings: [.swiftLanguageMode(.v5)]),
+    .target(name: "SimeonCore", resources: [.copy("Resources/emoji.json"), .copy("Resources/EMOJIBASE-LICENSE.txt"), .copy("Resources/Faces"), .process("Resources/Localizable.xcstrings")], swiftSettings: [.swiftLanguageMode(.v5)]),
     .target(name: "SimeonMacCore", dependencies: ["SimeonCore"], swiftSettings: [.swiftLanguageMode(.v5)]),
     // Fixtures/: what the shipped window's own code answered, to check the ports against (the tests say which).
     .testTarget(name: "SimeonCoreTests", dependencies: ["SimeonCore"], resources: [.copy("Fixtures")], swiftSettings: [.swiftLanguageMode(.v5)]),

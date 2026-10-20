@@ -44,7 +44,23 @@ public enum EmojiCatalog {
               let codes = row[3] as? [String], let search = row[4] as? String else { return nil }
         return Emoji(id: id, name: name, character: character, shortcodes: codes, search: search)
       }
-      return EmojiCategory(id: id, label: label, emojis: emojis)
+      return EmojiCategory(id: id, label: Self.label(id: id, english: label), emojis: emojis)
+    }
+  }
+
+  /** A group's name in the app's language; the list's own English for a group it does not know. */
+  static func label(id: String, english: String) -> String {
+    switch id {
+    case "smileys-emotion": return L10n.text("Smileys & emotion")
+    case "people-body": return L10n.text("People & body")
+    case "animals-nature": return L10n.text("Animals & nature")
+    case "food-drink": return L10n.text("Food & drink")
+    case "travel-places": return L10n.text("Travel & places")
+    case "activities": return L10n.text("Activities")
+    case "objects": return L10n.text("Objects")
+    case "symbols": return L10n.text("Symbols")
+    case "flags": return L10n.text("Flags")
+    default: return english
     }
   }
 

@@ -647,7 +647,7 @@ private struct ScheduleFields: View {
       TriggerChoice(label: String(localized: "Interval amount"), options: RoutineSchedule.intervalChoices(unit, current: amount).map { (value: $0, label: String($0)) }, value: amount) {
         save(.interval(amount: $0, unit: unit))
       }
-      TriggerChoice(label: String(localized: "Interval unit"), options: RoutineWords.units.map { (value: $0, label: $0) }, value: unit) { next in
+      TriggerChoice(label: String(localized: "Interval unit"), options: RoutineWords.units.map { (value: $0, label: RoutineWords.unitLabel($0)) }, value: unit) { next in
         save(.interval(amount: Self.amount(amount, for: next), unit: next))
       }
     case .advanced:

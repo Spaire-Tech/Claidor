@@ -13,9 +13,9 @@ import Foundation
  */
 public enum PlainWords {
   /** The sentence for anything the model service or Simeon's own servers refused or could not do. */
-  public static let unavailable = "Simeon isn’t available at the moment. Try again in a little while."
+  public static let unavailable = L10n.text("Simeon isn’t available at the moment. Try again in a little while.")
   /** The same, for one agent's answer. */
-  public static let noAnswer = "Your agent couldn’t answer right now. Try again in a little while."
+  public static let noAnswer = L10n.text("Your agent couldn’t answer right now. Try again in a little while.")
 
   /**
    * The words of an error as the person may read them: `text` when it names
@@ -39,7 +39,7 @@ public enum PlainWords {
     if let colon = trimmed.range(of: ": ") {
       let head = String(trimmed[..<colon.lowerBound]).trimmingCharacters(in: .whitespaces)
       if !head.isEmpty, head.count <= 80, !isInternal(head) {
-        return head.trimmingCharacters(in: CharacterSet(charactersIn: ".")) + ". Try again in a little while."
+        return L10n.text("\(head.trimmingCharacters(in: CharacterSet(charactersIn: "."))). Try again in a little while.")
       }
     }
     return fallback

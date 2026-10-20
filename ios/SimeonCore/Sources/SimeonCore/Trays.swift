@@ -68,7 +68,7 @@ public struct Tray: Identifiable, Hashable, Sendable {
   public var copyableRequestId: String? { requestId.flatMap { $0.isEmpty ? nil : $0 } }
 
   /** The title as the person reads it (PlainWords): nothing behind Simeon named. */
-  public var shownTitle: String { PlainWords.error(title, fallback: "Something went wrong") }
+  public var shownTitle: String { PlainWords.error(title, fallback: L10n.text("Something went wrong")) }
   /** The words under it (PlainWords): a model company's refusal, a status code, a setting's name give way to a plain sentence. */
   public var shownDetail: String { PlainWords.error(detail, fallback: PlainWords.noAnswer) }
   /** Its links, only while its words are its own: a refusal's links lead behind Simeon (a model company's billing page). */
@@ -153,13 +153,18 @@ public struct TrayList: Equatable, Sendable {
  * computer has none, nothing while it is read.
  */
 public enum FileLine {
-  public static let missing = "Couldn't read file"
+  public static let missing = L10n.text("Couldn't read file")
 
   /** "512 B", "1.3 KB" under 10 KB, "42 KB", "3.4 MB". */
   public static func size(_ bytes: Int) -> String {
-    if bytes < 1024 { return "\(bytes) B" }
-    if bytes < 1024 * 1024 { return "\(fixed(Double(bytes) / 1024, digits: bytes < 10 * 1024 ? 1 : 0)) KB" }
-    return "\(fixed(Double(bytes) / (1024 * 1024), digits: 1)) MB"
+    if bytes < 1024 { return L10n.text("\(bytes) B") }
+    if bytes < 1024 * 1024 { return L10n.text("\(decimal(Double(bytes) / 1024, digits: bytes < 10 * 1024 ? 1 : 0)) KB") }
+    return L10n.text("\(decimal(Double(bytes) / (1024 * 1024), digits: 1)) MB")
+  }
+
+  /** `fixed` with the decimal mark of the app's language ("1,3" in French). */
+  static func decimal(_ value: Double, digits: Int) -> String {
+    fixed(value, digits: digits).replacingOccurrences(of: ".", with: L10n.locale().decimalSeparator ?? ".")
   }
 
   /** `toFixed`: a tie goes up, as JavaScript rounds. */

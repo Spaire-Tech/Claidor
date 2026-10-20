@@ -44,7 +44,7 @@ public struct PurchaseApproval: Hashable, Sendable {
 
   /** The words under Face ID: "Approve $2.47 at gumroad.com". */
   public static func reason(for card: PurchaseCard) -> String {
-    card.flight.map { "Approve \(card.total) for the flight \($0.route)" } ?? "Approve \(card.total) at \(card.domain)"
+    card.flight.map { L10n.text("Approve \(card.total) for the flight \($0.route)") } ?? L10n.text("Approve \(card.total) at \(card.domain)")
   }
 
   #if canImport(LocalAuthentication)
@@ -61,7 +61,7 @@ public struct PurchaseApproval: Hashable, Sendable {
     let deviceType: String? = nil
     #endif
     let biometric = LAContext()
-    biometric.localizedFallbackTitle = "Use Passcode"
+    biometric.localizedFallbackTitle = L10n.text("Use Passcode")
     if biometric.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: nil) {
       do {
         if try await biometric.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason) {

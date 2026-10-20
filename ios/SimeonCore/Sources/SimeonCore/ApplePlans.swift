@@ -70,21 +70,21 @@ public struct ApplePlans: Equatable, Sendable {
  * starts at the first sign-in, `FreeMonth`).
  */
 public enum PlansCopy {
-  public static let title = "Choose a plan"
-  public static let subtitle = "Higher plans include more usage."
-  public static let subscribe = "Subscribe"
-  public static let restore = "Restore Purchases"
-  public static let webLink = "Subscribe on the web instead"
-  public static let unavailable = "Plans can't be loaded right now. Check your connection and try again."
-  public static let pending = "Your purchase is waiting for approval. Simeon starts as soon as it's approved."
-  public static let nothingToRestore = "There's no Simeon subscription on this Apple ID to restore."
+  public static let title = L10n.text("Choose a plan")
+  public static let subtitle = L10n.text("Higher plans include more usage.")
+  public static let subscribe = L10n.text("Subscribe")
+  public static let restore = L10n.text("Restore Purchases")
+  public static let webLink = L10n.text("Subscribe on the web instead")
+  public static let unavailable = L10n.text("Plans can't be loaded right now. Check your connection and try again.")
+  public static let pending = L10n.text("Your purchase is waiting for approval. Simeon starts as soon as it's approved.")
+  public static let nothingToRestore = L10n.text("There's no Simeon subscription on this Apple ID to restore.")
   /** Apple's rule for an auto-renewing subscription, in one sentence. */
-  public static let renewal = "Auto-renews monthly. Your Apple ID is charged each month until you cancel in Settings › Apple Account › Subscriptions."
+  public static let renewal = L10n.text("Auto-renews monthly. Your Apple ID is charged each month until you cancel in Settings › Apple Account › Subscriptions.")
   public static let termsURL = URL(string: "https://simeonlabs.com/terms")!
   public static let privacyURL = URL(string: "https://simeonlabs.com/privacy")!
   /** Where an Apple plan is changed or cancelled (also the server's words, `MANAGE_ON_IPHONE`). */
-  public static let manageInSettings = "Your plan is billed through Apple. Change or cancel it in Settings › your name › Subscriptions."
+  public static let manageInSettings = L10n.text("Your plan is billed through Apple. Change or cancel it in Settings › your name › Subscriptions.")
 
   /** "$30.00 per month" from StoreKit's own price text. */
-  public static func price(_ display: String, yearly: Bool = false) -> String { "\(display) per \(yearly ? "year" : "month")" }
+  public static func price(_ display: String, yearly: Bool = false) -> String { yearly ? L10n.text("\(display) per year") : L10n.text("\(display) per month") }
 }

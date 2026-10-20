@@ -28,7 +28,7 @@ public struct SandAccess: Equatable, Sendable {
   public static let unknown = SandAccess(state: .unknown, reason: .unspecified)
   /** Where every button of the cover and the notice goes (`pft`): the patch's replacement won over the billing page. */
   public static let page = URL(string: "https://simeonlabs.com")!
-  public static let tagline = "Your team of always-on agents that finish the work."
+  public static let tagline = L10n.text("Your team of always-on agents that finish the work.")
 
   public init(state: State, reason: Reason) { self.state = state; self.reason = reason }
 
@@ -46,14 +46,14 @@ public struct SandAccess: Equatable, Sendable {
 
   private static let byReason: [Reason: Words] = [
     // In Simeon's own words: none of the plans or settings of the app it was built from (PlainWords, 13 October 2026).
-    .teamPrivacyMode: Words(title: "Simeon isn’t available on this account", body: "Ask your team’s admin to turn it on.", action: "Check Access"),
-    .teamSetupRequired: Words(title: "Simeon isn’t set up for your team yet", body: "Ask your team’s admin to finish setting it up.", action: "Check Access"),
-    .teamAccessRequired: Words(title: "Simeon isn’t available on this account", body: "Ask your team’s admin to turn it on.", action: "Check Access"),
-    .notOffered: Words(title: "Simeon isn’t available on this account", body: "There's nothing to set up or purchase here.", action: nil),
-    .freeTrialAvailable: Words(title: "Start your free month to send messages", body: "This account can try Simeon now.", action: "Start Trial"),
-    .paywallIndividual: Words(title: "Simeon needs a plan", body: "Choose a plan to send messages.", action: "See plans"),
-    .paywallTeamMember: Words(title: "Simeon needs a plan", body: "Ask your team’s admin to add this account.", action: "Check Access"),
-    .paywallTeamAdmin: Words(title: "Simeon needs a plan", body: "Choose a plan for this account to send messages.", action: "See plans"),
+    .teamPrivacyMode: Words(title: L10n.text("Simeon isn’t available on this account"), body: L10n.text("Ask your team’s admin to turn it on."), action: L10n.text("Check Access")),
+    .teamSetupRequired: Words(title: L10n.text("Simeon isn’t set up for your team yet"), body: L10n.text("Ask your team’s admin to finish setting it up."), action: L10n.text("Check Access")),
+    .teamAccessRequired: Words(title: L10n.text("Simeon isn’t available on this account"), body: L10n.text("Ask your team’s admin to turn it on."), action: L10n.text("Check Access")),
+    .notOffered: Words(title: L10n.text("Simeon isn’t available on this account"), body: L10n.text("There's nothing to set up or purchase here."), action: nil),
+    .freeTrialAvailable: Words(title: L10n.text("Start your free month to send messages"), body: L10n.text("This account can try Simeon now."), action: L10n.text("Start Trial")),
+    .paywallIndividual: Words(title: L10n.text("Simeon needs a plan"), body: L10n.text("Choose a plan to send messages."), action: L10n.text("See plans")),
+    .paywallTeamMember: Words(title: L10n.text("Simeon needs a plan"), body: L10n.text("Ask your team’s admin to add this account."), action: L10n.text("Check Access")),
+    .paywallTeamAdmin: Words(title: L10n.text("Simeon needs a plan"), body: L10n.text("Choose a plan for this account to send messages."), action: L10n.text("See plans")),
   ]
 
   /** The composer's notice (`T1t`): only while sending is off. */
@@ -62,9 +62,9 @@ public struct SandAccess: Equatable, Sendable {
     case .checking, .unknown, .granted:
       return nil
     case .unavailable:
-      return reasonWords ?? Words(title: "Simeon is not available for this account", body: "Sending is off until this account is given access. Check what it needs on the web.", action: "Check Access")
+      return reasonWords ?? Words(title: L10n.text("Simeon is not available for this account"), body: L10n.text("Sending is off until this account is given access. Check what it needs on the web."), action: L10n.text("Check Access"))
     case .paymentRequired:
-      return reasonWords ?? Words(title: "Simeon is not included in this plan", body: "Sending is off until this account has Simeon. Check the options on the web.", action: "Check Access")
+      return reasonWords ?? Words(title: L10n.text("Simeon is not included in this plan"), body: L10n.text("Sending is off until this account has Simeon. Check the options on the web."), action: L10n.text("Check Access"))
     }
   }
 
@@ -72,7 +72,7 @@ public struct SandAccess: Equatable, Sendable {
 
   /** The cover's words (`dzn`): the notice's, else that this account isn't set up for Simeon yet. */
   public var cover: Words {
-    notice ?? Words(title: "Simeon isn’t available on this account yet", body: "Check what this account needs on the web.", action: "Check Access")
+    notice ?? Words(title: L10n.text("Simeon isn’t available on this account yet"), body: L10n.text("Check what this account needs on the web."), action: L10n.text("Check Access"))
   }
 
   /** Send waits while this account has no Simeon (`gft`). */

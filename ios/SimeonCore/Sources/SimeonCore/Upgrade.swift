@@ -24,14 +24,14 @@ import Foundation
  * words (`SandAccess`).
  */
 public enum PhoneUpgrade {
-  public static let seePlans = "See plans"
-  public static let upgrade = "Upgrade"
-  public static let paymentFailedTitle = "Your payment didn’t go through"
-  public static let updateCard = "Update card"
-  public static let updatePayment = "Update payment"
+  public static let seePlans = L10n.text("See plans")
+  public static let upgrade = L10n.text("Upgrade")
+  public static let paymentFailedTitle = L10n.text("Your payment didn’t go through")
+  public static let updateCard = L10n.text("Update card")
+  public static let updatePayment = L10n.text("Update payment")
   /** Under the title of a failed payment: why Send waits. */
-  public static let paymentFailedCard = "You can’t send messages until your card is updated."
-  public static let paymentFailedApple = "You can’t send messages until your Apple payment method is updated."
+  public static let paymentFailedCard = L10n.text("You can’t send messages until your card is updated.")
+  public static let paymentFailedApple = L10n.text("You can’t send messages until your Apple payment method is updated.")
   /** Apple's own page for the Apple Account's payment method (Apple's advice for a failed renewal). */
   public static let appleBilling = URL(string: "https://apps.apple.com/account/billing")!
 
@@ -47,9 +47,9 @@ public enum PhoneUpgrade {
       return SandAccess.Words(title: paymentFailedTitle, body: paymentFailedCard, action: updateCard)
     }
     if usage?.hasEndedTrial == true {
-      return SandAccess.Words(title: "Your free month has ended", body: "Choose a plan to send messages again.", action: seePlans)
+      return SandAccess.Words(title: L10n.text("Your free month has ended"), body: L10n.text("Choose a plan to send messages again."), action: seePlans)
     }
-    return SandAccess.Words(title: "Choose a plan to start", body: "You can send messages once this account has a plan.", action: seePlans)
+    return SandAccess.Words(title: L10n.text("Choose a plan to start"), body: L10n.text("You can send messages once this account has a plan."), action: seePlans)
   }
 
   /**
@@ -71,12 +71,12 @@ public enum PhoneUpgrade {
     let spent = usage.map { !$0.hasAvailableUsage && ($0.hasNonZeroIncludedLimit || outOfCredits) } ?? outOfCredits
     guard spent else { return nil }
     if usage?.isTrial == true {
-      return SandAccess.Words(title: "You’ve used your free credits", body: "Choose a plan to keep your agents working.", action: upgrade)
+      return SandAccess.Words(title: L10n.text("You’ve used your free credits"), body: L10n.text("Choose a plan to keep your agents working."), action: upgrade)
     }
     if let usage, usage.hasNonZeroIncludedLimit, !usage.isTrial {
-      return SandAccess.Words(title: "This week’s credits are used", body: "They reset on Monday. Upgrade to keep going now.", action: upgrade)
+      return SandAccess.Words(title: weekUsedTitle, body: L10n.text("They reset on Monday. Upgrade to keep going now."), action: upgrade)
     }
-    return SandAccess.Words(title: "You’re out of credits", body: "Choose a plan to keep your agents working.", action: upgrade)
+    return SandAccess.Words(title: L10n.text("You’re out of credits"), body: L10n.text("Choose a plan to keep your agents working."), action: upgrade)
   }
 
   /**
@@ -94,7 +94,9 @@ public enum PhoneUpgrade {
     public let key: String
   }
 
-  public static let approachingTitle = "You’re approaching your usage limit"
+  public static let approachingTitle = L10n.text("You’re approaching your usage limit")
+  /** The banner's title once a paid week's credits are spent. */
+  static let weekUsedTitle = L10n.text("This week’s credits are used")
   public static let approachingSteps = [80, 95]
 
   public static func approaching(access: SandAccess, usage: UsageSummary?, now: Date = Date(), timeZone: TimeZone = .current) -> Approaching? {
@@ -104,27 +106,27 @@ public enum PhoneUpgrade {
     let used = Int(percent.rounded(.down))
     let body: String
     if usage.isTrial {
-      body = "You’ve used \(used)% of your free credits."
+      body = L10n.text("You’ve used \(used)% of your free credits.")
     } else if let reset = usage.resetMs.map({ Date(timeIntervalSince1970: $0 / 1000) }), reset > now {
-      body = "You’ve used \(used)% of this week’s credits. They reset \(day(reset, now: now, timeZone: timeZone))."
+      body = L10n.text("You’ve used \(used)% of this week’s credits. They reset \(day(reset, now: now, timeZone: timeZone)).")
     } else {
-      body = "You’ve used \(used)% of this week’s credits."
+      body = L10n.text("You’ve used \(used)% of this week’s credits.")
     }
     return Approaching(words: SandAccess.Words(title: approachingTitle, body: body, action: upgrade), step: step, key: "\(Int(usage.resetMs ?? 0))|\(step)")
   }
 
-  /** "today", "tomorrow", else "on Monday", in the person's time zone. */
+  /** "today", "tomorrow", else "on Monday", in the person's time zone (French "aujourd'hui", "demain", "lundi"). */
   static func day(_ date: Date, now: Date, timeZone: TimeZone) -> String {
     var calendar = Calendar(identifier: .gregorian)
     calendar.timeZone = timeZone
     let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: now), to: calendar.startOfDay(for: date)).day ?? 0
-    if days <= 0 { return "today" }
-    if days == 1 { return "tomorrow" }
+    if days <= 0 { return L10n.text("reset.today", default: "today") }
+    if days == 1 { return L10n.text("reset.tomorrow", default: "tomorrow") }
     let format = DateFormatter()
-    format.locale = Locale(identifier: "en_US_POSIX")
+    format.locale = L10n.locale(english: Locale(identifier: "en_US_POSIX"))
     format.timeZone = timeZone
     format.dateFormat = "EEEE"
-    return "on " + format.string(from: date)
+    return L10n.text("reset.weekday", default: "on \(format.string(from: date))")
   }
 
   /** Where the banner's button goes (as Settings' Usage & Billing routes its own). */
@@ -179,7 +181,7 @@ public enum PhoneUpgrade {
     guard words.action != nil else { return words }
     // Near the limit, the line says only how much is used; a failed payment, only that the card needs updating.
     if words.title == approachingTitle || words.title == paymentFailedTitle { return SandAccess.Words(title: words.title, body: words.body, action: nil) }
-    let body = words.title == "This week’s credits are used" ? "They reset on Monday." : "Your agents wait until your plan has credits again."
+    let body = words.title == weekUsedTitle ? L10n.text("They reset on Monday.") : L10n.text("Your agents wait until your plan has credits again.")
     return SandAccess.Words(title: words.title, body: body, action: nil)
   }
 
@@ -213,12 +215,12 @@ public enum MacUpgrade {
       return SandAccess.Words(title: PhoneUpgrade.paymentFailedTitle, body: PhoneUpgrade.paymentFailedCard, action: PhoneUpgrade.updateCard)
     }
     if access.reason == .freeTrialAvailable {
-      return SandAccess.Words(title: "Start your free trial to send messages", body: "30 days free, then your plan. Add a card on the web; cancel anytime.", action: "Start Free Trial")
+      return SandAccess.Words(title: L10n.text("Start your free trial to send messages"), body: L10n.text("30 days free, then your plan. Add a card on the web; cancel anytime."), action: L10n.text("Start Free Trial"))
     }
     if usage?.hasEndedTrial == true {
-      return SandAccess.Words(title: "Your free month has ended", body: "Choose a plan to send messages again.", action: PhoneUpgrade.seePlans)
+      return SandAccess.Words(title: L10n.text("Your free month has ended"), body: L10n.text("Choose a plan to send messages again."), action: PhoneUpgrade.seePlans)
     }
-    return SandAccess.Words(title: "Simeon needs a plan", body: "Choose a plan on the web to send messages.", action: PhoneUpgrade.seePlans)
+    return SandAccess.Words(title: L10n.text("Simeon needs a plan"), body: L10n.text("Choose a plan on the web to send messages."), action: PhoneUpgrade.seePlans)
   }
 
   /**

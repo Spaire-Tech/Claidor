@@ -75,14 +75,14 @@ public struct ComputerPlaceholder: Equatable, Sendable {
   public let isBusy: Bool
   public let hasRetry: Bool
 
-  public static let local = "This agent runs on your machine. There's no separate desktop to stream."
-  public static let booting = "Booting up the computer"
-  public static let settingUp = "Setting up the computer"
+  public static let local = L10n.text("This agent runs on your machine. There's no separate desktop to stream.")
+  public static let booting = L10n.text("Booting up the computer")
+  public static let settingUp = L10n.text("Setting up the computer")
 
   /** The shipped function, as it is. */
   public static func copy(screenLoading: Bool, unavailable: Bool, name: String, emptyMessage: String?, emptyLoading: Bool, pullPercent: Double?) -> ComputerPlaceholder {
-    if screenLoading { return .init(message: "Switching to \(name)'s screen\u{2026}", percent: nil, isBusy: true, hasRetry: false) }
-    if unavailable { return .init(message: "Can't reach \(name)'s screen", percent: nil, isBusy: false, hasRetry: true) }
+    if screenLoading { return .init(message: L10n.text("Switching to \(name)'s screen…"), percent: nil, isBusy: true, hasRetry: false) }
+    if unavailable { return .init(message: L10n.text("Can't reach \(name)'s screen"), percent: nil, isBusy: false, hasRetry: true) }
     if let pullPercent { return .init(message: settingUp, percent: pullPercent, isBusy: true, hasRetry: false) }
     return .init(message: emptyMessage ?? booting, percent: nil, isBusy: emptyLoading, hasRetry: false)
   }
@@ -112,7 +112,7 @@ public struct ComputerHelper: Identifiable, Equatable, Sendable {
     subagents.compactMap { row in
       guard row["status"]?.string == "running", row["subagentType"]?.string == "computerUse", let id = row["subagentId"]?.text else { return nil }
       let title = (row["title"]?.string ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-      return ComputerHelper(subagentId: id, title: title.isEmpty ? "Subagent" : title)
+      return ComputerHelper(subagentId: id, title: title.isEmpty ? L10n.text("Subagent") : title)
     }
   }
 
@@ -184,10 +184,10 @@ public enum HandoffOutcome: String, Equatable, Sendable {
 
   public var label: String {
     switch self {
-    case .done: return "Done"
-    case .answered: return "Answered"
-    case .skipped: return "Skipped"
-    case .canceled: return "Canceled"
+    case .done: return L10n.text("handoff.done", default: "Done")
+    case .answered: return L10n.text("handoff.answered", default: "Answered")
+    case .skipped: return L10n.text("handoff.skipped", default: "Skipped")
+    case .canceled: return L10n.text("handoff.canceled", default: "Canceled")
     }
   }
 }
@@ -260,7 +260,7 @@ public struct ScreenCrashes: Equatable, Sendable {
   /** The full view shows it again: start over. */
   public mutating func reset() { count = 0; last = nil; gaveUp = false }
 
-  public static let unavailable = "Screen preview unavailable"
+  public static let unavailable = L10n.text("Screen preview unavailable")
 }
 
 /**
@@ -309,29 +309,29 @@ public enum ComputerStreamReason {
     }
     if match(#"\bstate=connected\b"#) != nil || match(#"\bguest connected\b"#) != nil { return .clear }
     if line.contains("local docker: gateway ready") { return .keep }
-    if line.contains("attach rewrite partition") { return .set("The screen webview used the wrong session partition; it was corrected.") }
+    if line.contains("attach rewrite partition") { return .set(L10n.text("The screen webview used the wrong session partition; it was corrected.")) }
     if let m = match(#"box reachability outcome=(\S+) method=(\S+) cause=(\S+)"#) {
       switch m[1] {
       case "timeout": return .set("The computer's gateway did not answer \"\(m[2])\" within the deadline.")
       case "network": return .set("The computer's gateway could not be reached for \"\(m[2])\" (\(m[3])).")
-      case "box_blocked": return .set("The computer is blocked or paused.")
+      case "box_blocked": return .set(L10n.text("The computer is blocked or paused."))
       default: return .set("The computer's gateway failed \"\(m[2])\": \(m[1]) (\(m[3])).")
       }
     }
     if let m = match(#"local docker FAILED: (.+)$"#) { return .set(m[1]) }
-    if let m = match(#"guest load FAILED code=(-?\d+) \(([^)]*)\)"#) { return .set("The screen page did not load (\(m[2]), \(m[1])).") }
-    if line.contains("guest preload FAILED") { return .set("The screen page's helper script failed to load.") }
-    if line.contains("renderer gone") { return .set("The screen page crashed.") }
+    if let m = match(#"guest load FAILED code=(-?\d+) \(([^)]*)\)"#) { return .set(L10n.text("The screen page did not load (\(m[2]), \(m[1])).")) }
+    if line.contains("guest preload FAILED") { return .set(L10n.text("The screen page's helper script failed to load.")) }
+    if line.contains("renderer gone") { return .set(L10n.text("The screen page crashed.")) }
     if line.contains("[SimeonScreen]") {
       if line.contains("noVNC did not start") { return .set("noVNC never started inside the screen page.") }
-      if line.contains("dialog=noVNC_credentials_dlg") { return .set("The desktop is asking for a password.") }
+      if line.contains("dialog=noVNC_credentials_dlg") { return .set(L10n.text("The desktop is asking for a password.")) }
       if line.contains("dialog=noVNC_connect_dlg") { return .set("noVNC is waiting for a Connect click: autoconnect did not fire.") }
       if line.contains("status=\"Failed to connect to server\"") { return .set("noVNC cannot reach the desktop's socket.") }
-      if line.contains("status=\"Something went wrong, connection is closed\"") { return .set("The desktop closed the connection.") }
+      if line.contains("status=\"Something went wrong, connection is closed\"") { return .set(L10n.text("The desktop closed the connection.")) }
       if line.contains("status=\"Disconnected\"") { return .set("noVNC disconnected.") }
-      if let m = match(#"page error: (.+)$"#) { return .set("Error inside the screen page: \(m[1])") }
+      if let m = match(#"page error: (.+)$"#) { return .set(L10n.text("Error inside the screen page: \(m[1])")) }
     }
-    if let m = match(#"guest console\[error\] (.+)$"#) { return .set("Error inside the screen page: \(m[1])") }
+    if let m = match(#"guest console\[error\] (.+)$"#) { return .set(L10n.text("Error inside the screen page: \(m[1])")) }
     return .keep
   }
 
@@ -342,12 +342,12 @@ public enum ComputerStreamReason {
    */
   public static func notice(lead: String, reason: String?, filePath: String?) -> String {
     let said = reason.map { PlainWords.error($0, fallback: "") } ?? ""
-    return [lead, said.isEmpty ? "Try again in a little while." : said].joined(separator: " ")
+    return [lead, said.isEmpty ? L10n.text("Try again in a little while.") : said].joined(separator: " ")
   }
 
   /** Under a spinner up 20 s, and in "Can't reach…" at once. */
-  public static let notConnecting = "The computer's screen isn't connecting."
-  public static let statusUnreadable = "The computer's status could not be read."
+  public static let notConnecting = L10n.text("The computer's screen isn't connecting.")
+  public static let statusUnreadable = L10n.text("The computer's status could not be read.")
 }
 
 /**

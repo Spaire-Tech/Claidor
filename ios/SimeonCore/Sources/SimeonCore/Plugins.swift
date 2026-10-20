@@ -178,9 +178,12 @@ public struct AgentSkill: Equatable, Sendable, Identifiable {
   /** Its page stays open (`Rn`). */
   public var hasPage: Bool { isPrivate || source == "managed" }
   /** The row's line (`bi`). */
-  public var subtitle: String { "\(source == "plugin" ? "Published" : "Created locally") · \(description.isEmpty ? "Skill" : description)" }
+  public var subtitle: String {
+    let origin = source == "plugin" ? L10n.text("Published") : L10n.text("Created locally")
+    return "\(origin) · \(description.isEmpty ? L10n.text("Skill") : description)"
+  }
   /** The page's kind line. */
-  public var kindLine: String { source == "plugin" ? "Shared with your team" : source == "managed" ? "Managed by your organization" : "Private skill" }
+  public var kindLine: String { source == "plugin" ? L10n.text("Shared with your team") : source == "managed" ? L10n.text("Managed by your organization") : L10n.text("Private skill") }
 }
 
 /** A row of Yours › Installed (`rt`): a plugin with its connectors, or a server no plugin claims. */
@@ -204,8 +207,8 @@ public struct PluginFilter: Equatable, Sendable {
   public init(type: Kind = .all, ownership: Ownership = .all) { self.type = type; self.ownership = ownership }
   public var isAll: Bool { type == .all && ownership == .all }
 
-  public static func label(_ kind: Kind) -> String { kind == .all ? "All types" : kind == .connectors ? "Connectors" : "Skills" }
-  public static func label(_ ownership: Ownership) -> String { ownership == .all ? "All" : ownership == .team ? "Team" : "Public" }
+  public static func label(_ kind: Kind) -> String { kind == .all ? L10n.text("All types") : kind == .connectors ? L10n.text("Connectors") : L10n.text("Skills") }
+  public static func label(_ ownership: Ownership) -> String { ownership == .all ? L10n.text("All") : ownership == .team ? L10n.text("Team") : L10n.text("Public") }
 }
 
 public enum Plugins {
@@ -487,7 +490,13 @@ public enum Plugins {
   // MARK: Words
 
   /** "1 connector", "2 skills" (`us`). */
-  public static func count(_ n: Int, _ noun: String) -> String { "\(n) \(n == 1 ? noun : noun + "s")" }
+  public static func count(_ n: Int, _ noun: String) -> String {
+    switch noun {
+    case "connector": return n == 1 ? L10n.text("1 connector") : L10n.text("\(n) connectors")
+    case "skill": return n == 1 ? L10n.text("1 skill") : L10n.text("\(n) skills")
+    default: return "\(n) \(n == 1 ? noun : noun + "s")"
+    }
+  }
 
   /** A plugin row's line (`tt`): its connectors and skills, or "no supported contributions". */
   public static func contributions(_ entry: PluginEntry) -> String {
@@ -498,7 +507,7 @@ public enum Plugins {
     var parts: [String] = []
     if connectors > 0 { parts.append(count(connectors, "connector")) }
     if let skills, skills > 0 { parts.append(count(skills, "skill")) }
-    return parts.isEmpty ? "no supported contributions" : parts.joined(separator: " · ")
+    return parts.isEmpty ? L10n.text("no supported contributions") : parts.joined(separator: " · ")
   }
 
   /** A connector row's line (`Wl`): its entry's counts, else "1 connector". */
@@ -509,12 +518,12 @@ public enum Plugins {
   /** The status pill's word (`LBn`). */
   public static func statusWord(_ status: String) -> String {
     switch status {
-    case "connected": return "Connected"
-    case "needsAuth": return "Needs auth"
-    case "error": return "Error"
-    case "initializing": return "Starting"
-    case "disconnected": return "Disconnected"
-    case "disabledByTeamAdminPolicy": return "Disabled by team admin"
+    case "connected": return L10n.text("Connected")
+    case "needsAuth": return L10n.text("Needs auth")
+    case "error": return L10n.text("Error")
+    case "initializing": return L10n.text("Starting")
+    case "disconnected": return L10n.text("Disconnected")
+    case "disabledByTeamAdminPolicy": return L10n.text("Disabled by team admin")
     default: return status
     }
   }
@@ -548,7 +557,7 @@ public enum Plugins {
 
   /** An account's name (`vi`, `P5n`): "Default", else its key without quotes and brackets, 64 characters at most. */
   public static func accountLabel(_ key: String) -> String {
-    if key == PluginServer.defaultAccount { return "Default" }
+    if key == PluginServer.defaultAccount { return L10n.text("Default") }
     let stripped = key.replacingOccurrences(of: "[\"'`\\\\\\[\\]{}()<>]", with: "", options: .regularExpression)
     let spaced = stripped.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression).trimmingCharacters(in: .whitespacesAndNewlines)
     return String(decoding: Array(spaced.utf16.prefix(64)), as: UTF16.self)
@@ -558,9 +567,14 @@ public enum Plugins {
   public static func authBlockedLine(_ names: [String]) -> String {
     let named = names.filter { !$0.isEmpty }
     if named.isEmpty || named.count > 3 {
-      return "\(names.count) installed \(names.count == 1 ? "plugin" : "plugins") can't be fetched until Simeon's computer can read their source repository."
+      return names.count == 1
+        ? L10n.text("1 installed plugin can't be fetched until Simeon's computer can read their source repository.")
+        : L10n.text("\(names.count) installed plugins can't be fetched until Simeon's computer can read their source repository.")
     }
-    return "\(named.joined(separator: ", ")) \(named.count == 1 ? "is" : "are") installed, but their content can't be fetched until Simeon's computer can read the source repository."
+    let list = named.joined(separator: ", ")
+    return named.count == 1
+      ? L10n.text("\(list) is installed, but their content can't be fetched until Simeon's computer can read the source repository.")
+      : L10n.text("\(list) are installed, but their content can't be fetched until Simeon's computer can read the source repository.")
   }
 
   /** "Copy link"'s address (`Ll`). */
@@ -586,30 +600,32 @@ public enum Plugins {
 
   public static func signInNotice(status: String, message: String?) -> Notice {
     switch status {
-    case "already-authenticated": return Notice(isError: false, text: "Already authenticated")
-    case "not-configured": return Notice(isError: true, text: "Server is not configured")
+    case "already-authenticated": return Notice(isError: false, text: L10n.text("Already authenticated"))
+    case "not-configured": return Notice(isError: true, text: L10n.text("Server is not configured"))
     case "not-supported": return Notice(isError: true, text: message ?? "")
-    case "unreachable": return Notice(isError: true, text: "Couldn't start sign-in: \(message ?? "")")
-    case "started": return Notice(isError: false, text: "Opened the OAuth flow in your browser. Return here once it completes.")
+    case "unreachable": return Notice(isError: true, text: L10n.text("Couldn't start sign-in: \(message ?? "")"))
+    case "started": return Notice(isError: false, text: L10n.text("Opened the OAuth flow in your browser. Return here once it completes."))
     default: return Notice(isError: true, text: message ?? status)
     }
   }
 
   public static func addedNotice(_ name: String, added: Int, failed: [String], error: String?) -> Notice {
     if error != nil || !failed.isEmpty {
-      return Notice(isError: true, text: "Added \(name), but not all of its skills: \(error ?? "couldn't add \(failed.joined(separator: ", "))").")
+      let why = error ?? L10n.text("couldn't add \(failed.joined(separator: ", "))")
+      return Notice(isError: true, text: L10n.text("Added \(name), but not all of its skills: \(why)."))
     }
-    return Notice(isError: false, text: added > 0 ? "Added \(name) and \(added == 1 ? "1 skill" : "\(added) skills")" : "Added \(name)")
+    guard added > 0 else { return Notice(isError: false, text: L10n.text("Added \(name)")) }
+    return Notice(isError: false, text: added == 1 ? L10n.text("Added \(name) and 1 skill") : L10n.text("Added \(name) and \(added) skills"))
   }
 
   public static func skillsAddedNotice(_ name: String, added: Int) -> Notice {
-    Notice(isError: false, text: added == 0 ? "Added \(name)" : added == 1 ? "Added 1 skill from \(name)" : "Added \(added) skills from \(name)")
+    Notice(isError: false, text: added == 0 ? L10n.text("Added \(name)") : added == 1 ? L10n.text("Added 1 skill from \(name)") : L10n.text("Added \(added) skills from \(name)"))
   }
 
   public static func removedNotice(_ name: String, removed: Bool, reason: String?) -> Notice {
-    if removed { return Notice(isError: false, text: "Removed \(name)") }
-    if reason == "team-server" { return Notice(isError: true, text: "\(name) is provided by your team and can't be removed here") }
-    return Notice(isError: true, text: "Couldn't remove \(name). It may be managed elsewhere. Reopen settings and try again.")
+    if removed { return Notice(isError: false, text: L10n.text("Removed \(name)")) }
+    if reason == "team-server" { return Notice(isError: true, text: L10n.text("\(name) is provided by your team and can't be removed here")) }
+    return Notice(isError: true, text: L10n.text("Couldn't remove \(name). It may be managed elsewhere. Reopen settings and try again."))
   }
 
   /** "Plugin Setup", the agent Fix with agent makes, and what it is first told (`Ql`, `Xl`, `Zl`). */
@@ -639,7 +655,7 @@ public enum Plugins {
 public enum AppsComingSoon {
   public static let builtIn: Set<String> = ["gusto", "xero", "shopify", "brex", "pipedrive", "docusign", "onenote", "microsoft_todo"]
   /** What the card says in place of Add. */
-  public static let label = "Coming soon"
+  public static let label = L10n.text("Coming soon")
 
   /** A name as the list matches it: its letters and digits alone, so the server's "microsoft_todo" names the catalog's "microsoft-to-do". */
   public static func key(_ name: String) -> String {

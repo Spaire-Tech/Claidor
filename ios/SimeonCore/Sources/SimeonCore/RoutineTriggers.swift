@@ -16,7 +16,6 @@ public enum RoutineSchedule {
   }
 
   static let aliases = ["@hourly": "0 * * * *", "@daily": "0 0 * * *", "@midnight": "0 0 * * *", "@weekly": "0 0 * * 0", "@monthly": "0 0 1 * *", "@yearly": "0 0 1 1 *", "@annually": "0 0 1 1 *"]
-  static let intervalUnits: [String: (seconds: Double, word: String)] = ["s": (1, "second"), "m": (60, "minute"), "h": (3600, "hour"), "d": (86400, "day")]
 
   /** "@every 30m": its amount and unit letter (`eAe`). */
   static func every(_ text: String) -> (amount: Int, unit: String)? {
@@ -94,17 +93,29 @@ public enum RoutineSchedule {
 
   // MARK: Words (`dgn`)
 
-  public static let weekdays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
-  static let shortWeekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
-  public static let months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+  public static let weekdays = [L10n.text("Sunday"), L10n.text("Monday"), L10n.text("Tuesday"), L10n.text("Wednesday"), L10n.text("Thursday"), L10n.text("Friday"), L10n.text("Saturday")]
+  static let shortWeekdays = [L10n.text("Sun"), L10n.text("Mon"), L10n.text("Tue"), L10n.text("Wed"), L10n.text("Thu"), L10n.text("Fri"), L10n.text("Sat")]
+  public static let months = [L10n.text("January"), L10n.text("February"), L10n.text("March"), L10n.text("April"), L10n.text("May"), L10n.text("June"),
+                              L10n.text("July"), L10n.text("August"), L10n.text("September"), L10n.text("October"), L10n.text("November"), L10n.text("December")]
+  static let shortMonths = [L10n.text("Jan"), L10n.text("Feb"), L10n.text("Mar"), L10n.text("Apr"), L10n.text("May"), L10n.text("Jun"),
+                            L10n.text("Jul"), L10n.text("Aug"), L10n.text("Sep"), L10n.text("Oct"), L10n.text("Nov"), L10n.text("Dec")]
 
-  /** "9:05 AM" (`Mu`). */
+  /** "9:05 AM" (`Mu`); another language's own way ("09:05"). */
   public static func clock(_ hour: Int, _ minute: Int) -> String {
-    "\(hour % 12 == 0 ? 12 : hour % 12):\(String(format: "%02d", minute)) \(hour < 12 ? "AM" : "PM")"
+    guard AppLanguage.isEnglish(AppLanguage.current) else { return localClock(hour, minute) }
+    return "\(hour % 12 == 0 ? 12 : hour % 12):\(String(format: "%02d", minute)) \(hour < 12 ? "AM" : "PM")"
   }
 
-  /** "1st", "22nd" (`Sme`). */
+  /** A time of day as the app's language writes it in the person's region. */
+  static func localClock(_ hour: Int, _ minute: Int) -> String {
+    var utc = Calendar(identifier: .gregorian)
+    utc.timeZone = TimeZone(identifier: "UTC")!
+    return Chat.formatter("jmm", calendar: utc, locale: L10n.locale()).string(from: Date(timeIntervalSince1970: Double(hour * 3600 + minute * 60)))
+  }
+
+  /** "1st", "22nd" (`Sme`); a day of the month as another language writes it ("1er", "22"). */
   public static func ordinal(_ n: Int) -> String {
+    guard AppLanguage.isEnglish(AppLanguage.current) else { return L10n.text("day.ordinal", default: "\(n)") }
     var suffix = "th"
     if n % 100 < 11 || n % 100 > 13 {
       if n % 10 == 1 { suffix = "st" } else if n % 10 == 2 { suffix = "nd" } else if n % 10 == 3 { suffix = "rd" }
@@ -115,15 +126,15 @@ public enum RoutineSchedule {
   /** "a and b", "a, b, and c" (`Fge`). */
   static func andList(_ items: [String]) -> String {
     if items.count <= 1 { return items.first ?? "" }
-    if items.count == 2 { return "\(items[0]) and \(items[1])" }
-    return items.dropLast().joined(separator: ", ") + ", and " + items[items.count - 1]
+    if items.count == 2 { return L10n.text("\(items[0]) and \(items[1])") }
+    return L10n.text("\(items.dropLast().joined(separator: ", ")), and \(items[items.count - 1])")
   }
 
   /** "a or b", "a, b, or c" (`L1`). */
   static func orList(_ items: [String]) -> String {
     if items.count <= 1 { return items.first ?? "" }
-    if items.count == 2 { return "\(items[0]) or \(items[1])" }
-    return items.dropLast().joined(separator: ", ") + ", or " + items[items.count - 1]
+    if items.count == 2 { return L10n.text("\(items[0]) or \(items[1])") }
+    return L10n.text("\(items.dropLast().joined(separator: ", ")), or \(items[items.count - 1])")
   }
 
   /** The step of an evenly spaced list, from its first two (`$ge`). */
@@ -146,8 +157,8 @@ public enum RoutineSchedule {
     if domLimited && dowLimited { return nil }
     if dowLimited {
       guard allMonths else { return nil }
-      if cron.dayOfWeek == [1, 2, 3, 4, 5] { return ("Weekdays", " on weekdays") }
-      if cron.dayOfWeek == [0, 6] { return ("Weekends", " on weekends") }
+      if cron.dayOfWeek == [1, 2, 3, 4, 5] { return (L10n.text("Weekdays"), L10n.text("schedule.onWeekdays", default: " on weekdays")) }
+      if cron.dayOfWeek == [0, 6] { return (L10n.text("Weekends"), L10n.text("schedule.onWeekends", default: " on weekends")) }
       let sorted = cron.dayOfWeek.sorted()
       guard let first = sorted.first, let last = sorted.last else { return nil }
       if sorted.count > 3 {
@@ -156,22 +167,22 @@ public enum RoutineSchedule {
         return (span, ", \(span)")
       }
       let names = andList(sorted.map { weekdays[$0] })
-      return ("Every \(names)", " on \(names)")
+      return (L10n.text("Every \(names)"), L10n.text("schedule.onDays", default: " on \(names)"))
     }
     if domLimited {
       let sorted = cron.dayOfMonth.sorted()
       if allMonths {
         guard sorted.count <= 3 else { return nil }
         let names = andList(sorted.map(ordinal))
-        return ("On the \(names) of every month", " on the \(names) of every month")
+        return (L10n.text("On the \(names) of every month"), L10n.text("schedule.onMonthDays", default: " on the \(names) of every month"))
       }
       if cron.month.count == 1, sorted.count == 1, let month = cron.month.first, let day = sorted.first {
-        let date = "\(months[month - 1]) \(day)"
-        return ("Every \(date)", " on \(date)")
+        let date = L10n.text("schedule.monthDay", default: "\(months[month - 1]) \(day)")
+        return (L10n.text("Every \(date)"), L10n.text("schedule.onDate", default: " on \(date)"))
       }
       return nil
     }
-    return allMonths ? ("Every day", nil) : nil
+    return allMonths ? (L10n.text("Every day"), nil) : nil
   }
 
   static func minuteMark(_ minute: Int) -> String { ":" + String(format: "%02d", minute) }
@@ -183,23 +194,26 @@ public enum RoutineSchedule {
     guard let firstMinute = minutes.first, let lastMinute = minutes.last, let firstHour = hours.first, let lastHour = hours.last else { return nil }
     let everyHour = hours.count == 24
     if minutes.count == 1 {
-      let suffix = firstMinute == 0 ? "" : " at \(minuteMark(firstMinute))"
-      if everyHour { return .interval(base: "Every hour\(suffix)", window: nil) }
+      let mark = minuteMark(firstMinute)
+      if everyHour { return .interval(base: firstMinute == 0 ? L10n.text("Every hour") : L10n.text("Every hour at \(mark)"), window: nil) }
       if hours.count == 1 { return .times([clock(firstHour, firstMinute)]) }
       if let gap = step(hours) {
-        let base = gap == 1 ? "Every hour" : "Every \(gap) hours"
-        if firstHour == 0 && lastHour + gap > 23 { return .interval(base: "\(base)\(suffix)", window: nil) }
+        let base = gap == 1 ? L10n.text("Every hour") : L10n.text("Every \(gap) hours")
+        if firstHour == 0 && lastHour + gap > 23 {
+          if firstMinute == 0 { return .interval(base: base, window: nil) }
+          return .interval(base: gap == 1 ? L10n.text("Every hour at \(mark)") : L10n.text("Every \(gap) hours at \(mark)"), window: nil)
+        }
         if gap == 1 || hours.count > 3 { return .interval(base: base, window: "\(clock(firstHour, firstMinute)) \u{2013} \(clock(lastHour, firstMinute))") }
       }
       return hours.count <= 3 ? .times(hours.map { clock($0, firstMinute) }) : nil
     }
     let base: String
     if minutes.first == 0, let gap = step(minutes), lastMinute + gap > 59 {
-      base = gap == 1 ? "Every minute" : "Every \(gap) minutes"
+      base = gap == 1 ? L10n.text("Every minute") : L10n.text("Every \(gap) minutes")
     } else {
       if minutes.count > 3 { return nil }
       if !everyHour && hours.count == 1 { return .times(minutes.map { clock(firstHour, $0) }) }
-      base = "Every hour at \(andList(minutes.map(minuteMark)))"
+      base = L10n.text("Every hour at \(andList(minutes.map(minuteMark)))")
     }
     if everyHour { return .interval(base: base, window: nil) }
     if hours.count == 1 || step(hours) == 1 { return .interval(base: base, window: "\(clock(firstHour, firstMinute)) \u{2013} \(clock(lastHour, lastMinute))") }
@@ -210,13 +224,18 @@ public enum RoutineSchedule {
   public static func describe(_ text: String) -> String {
     let line = normalized(text)
     if let interval = every(line) {
-      let word = intervalUnits[interval.unit]?.word ?? ""
-      return interval.amount == 1 ? "Every \(word)" : "Every \(interval.amount) \(word)s"
+      let n = interval.amount
+      switch interval.unit {
+      case "s": return n == 1 ? L10n.text("Every second") : L10n.text("Every \(n) seconds")
+      case "m": return n == 1 ? L10n.text("Every minute") : L10n.text("Every \(n) minutes")
+      case "h": return n == 1 ? L10n.text("Every hour") : L10n.text("Every \(n) hours")
+      default: return n == 1 ? L10n.text("Every day") : L10n.text("Every \(n) days")
+      }
     }
     guard let cron = cron(line), let days = days(cron), let times = times(cron) else { return line }
     let words: String
     switch times {
-    case .times(let list): words = "\(days.lead) at \(andList(list))"
+    case .times(let list): words = L10n.text("schedule.daysAt", default: "\(days.lead) at \(andList(list))")
     case .interval(let base, let window): words = base + (days.on ?? "") + (window.map { ", \($0)" } ?? "")
     }
     return cron.timeZone.map { "\(words) (\($0))" } ?? words
@@ -268,8 +287,8 @@ public enum RoutineSchedule {
 
   /** The Frequency picker's choices, in its order (`Ign`). */
   public static let frequencies: [(value: String, label: String)] = [
-    ("hourly", "Every hour"), ("daily", "Every day"), ("weekdays", "Weekdays"), ("weekly", "Every week"),
-    ("monthly", "Every month"), ("interval", "Interval"), ("advanced", "Advanced"), ("custom", "Custom"),
+    ("hourly", L10n.text("Every hour")), ("daily", L10n.text("Every day")), ("weekdays", L10n.text("Weekdays")), ("weekly", L10n.text("Every week")),
+    ("monthly", L10n.text("Every month")), ("interval", L10n.text("Interval")), ("advanced", L10n.text("Advanced")), ("custom", L10n.text("Custom")),
   ]
 
   /** The shape the picker shows for a schedule (`sTe`); nil for one it can only show as Custom. */
@@ -421,16 +440,22 @@ public enum RoutineSchedule {
   public static func row(_ text: String) -> (lead: String, rest: String) {
     if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return ("Cron", "\u{2026}") }
     switch shape(text) {
-    case .hourly(let m): return ("Every", m == 0 ? "hour" : "hour at \(minuteMark(m))")
-    case .daily(let t): return ("Every", "day at \(clock(t.hour, t.minute))")
-    case .weekdays(let t): return ("On", "weekdays at \(clock(t.hour, t.minute))")
-    case .weekly(let d, let t): return ("Every", "\(weekdays[d]) at \(clock(t.hour, t.minute))")
-    case .monthly(let d, let t): return ("Monthly", "on the \(ordinal(d)) at \(clock(t.hour, t.minute))")
+    case .hourly(let m): return split(m == 0 ? L10n.text("Every hour") : L10n.text("Every hour at \(minuteMark(m))"))
+    case .daily(let t): return split(L10n.text("Every day at \(clock(t.hour, t.minute))"))
+    case .weekdays(let t): return split(L10n.text("On weekdays at \(clock(t.hour, t.minute))"))
+    case .weekly(let d, let t): return split(L10n.text("Every \(weekdays[d]) at \(clock(t.hour, t.minute))"))
+    case .monthly(let d, let t): return split(L10n.text("Monthly on the \(ordinal(d)) at \(clock(t.hour, t.minute))"))
     default:
       let words = describe(text)
-      guard let space = words.firstIndex(of: " "), words != text.trimmingCharacters(in: .whitespacesAndNewlines) else { return ("Cron", words) }
-      return (String(words[..<space]), String(words[words.index(after: space)...]))
+      guard words.contains(" "), words != text.trimmingCharacters(in: .whitespacesAndNewlines) else { return ("Cron", words) }
+      return split(words)
     }
+  }
+
+  /** A row's sentence with its first word apart, the word the row shows in the text's colour. */
+  static func split(_ words: String) -> (lead: String, rest: String) {
+    guard let space = words.firstIndex(of: " ") else { return (words, "") }
+    return (String(words[..<space]), String(words[words.index(after: space)...]))
   }
 
   /** The add menu's 96 times, 15 minutes apart ("12:00 AM" … "11:45 PM"), each its hour and minute (`A2n`). */
@@ -466,9 +491,9 @@ public enum RoutineSchedule {
   static func relative(_ ms: Double, now: Double, zone: TimeZone) -> String {
     let minute = 60_000.0, hour = 3_600_000.0
     let delta = ms - now
-    if delta > 0 && delta < hour { return "in \(Int((delta / minute).rounded(.up))) min" }
-    if delta <= 0 && -delta < minute { return "just now" }
-    if delta <= 0 && -delta < hour { return "\(Int((-delta / minute).rounded(.down))) min ago" }
+    if delta > 0 && delta < hour { return L10n.text("in \(Int((delta / minute).rounded(.up))) min") }
+    if delta <= 0 && -delta < minute { return L10n.text("just now") }
+    if delta <= 0 && -delta < hour { return L10n.text("\(Int((-delta / minute).rounded(.down))) min ago") }
     var calendar = Calendar(identifier: .gregorian)
     calendar.timeZone = zone
     let date = Date(timeIntervalSince1970: ms / 1000), today = Date(timeIntervalSince1970: now / 1000)
@@ -483,14 +508,13 @@ public enum RoutineSchedule {
     }
     let days = dayNumber(parts) - dayNumber(nowParts)
     let weekday = weekdays[(parts.weekday ?? 1) - 1]
-    if days == 0 { return "today at \(at)" }
-    if days == 1 { return "tomorrow at \(at)" }
-    if days == -1 { return "yesterday at \(at)" }
-    if days > 1 && days < 7 { return "\(weekday) at \(at)" }
-    if days < -1 && days > -7 { return "last \(weekday) at \(at)" }
-    let shortMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-    let date2 = "\(shortMonths[(parts.month ?? 1) - 1]) \(parts.day ?? 1)"
-    return parts.year == nowParts.year ? "\(date2) at \(at)" : "\(date2), \(parts.year ?? 0) at \(at)"
+    if days == 0 { return L10n.text("today at \(at)") }
+    if days == 1 { return L10n.text("tomorrow at \(at)") }
+    if days == -1 { return L10n.text("yesterday at \(at)") }
+    if days > 1 && days < 7 { return L10n.text("schedule.dayAt", default: "\(weekday) at \(at)") }
+    if days < -1 && days > -7 { return L10n.text("last \(weekday) at \(at)") }
+    let date2 = L10n.text("schedule.monthDay", default: "\(shortMonths[(parts.month ?? 1) - 1]) \(parts.day ?? 1)")
+    return parts.year == nowParts.year ? L10n.text("schedule.dayAt", default: "\(date2) at \(at)") : L10n.text("\(date2), \(String(parts.year ?? 0)) at \(at)")
   }
 }
 
@@ -516,8 +540,8 @@ public enum TriggerRow: Hashable, Sendable {
 
   /** The add menu's sources after "On a schedule", in its order, with their words. */
   public static let sources: [(platform: String, label: String)] = [
-    ("slack", "Slack message"), ("github", "Git event"), ("microsoftTeams", "Teams message"),
-    ("linear", "Linear issue"), ("sentry", "Sentry alert"), ("pagerduty", "PagerDuty incident"),
+    ("slack", L10n.text("Slack message")), ("github", L10n.text("Git event")), ("microsoftTeams", L10n.text("Teams message")),
+    ("linear", L10n.text("Linear issue")), ("sentry", L10n.text("Sentry alert")), ("pagerduty", L10n.text("PagerDuty incident")),
   ]
 
   /** A new row for a source, as the window starts one (`Hgn`). */
@@ -665,18 +689,20 @@ public enum TriggerRow: Hashable, Sendable {
 
   // MARK: Words (`g2n`…`S2n`)
 
-  static let gitWords = ["pr-opened": "a PR opens", "pr-pushed": "a PR is updated", "pr-merged": "a PR merges", "review-requested": "a review is requested",
-                         "review-approved": "a review approves a PR", "review-changes-requested": "a review requests changes", "review-commented": "a review comments on a PR",
-                         "pr-comment": "a PR comment lands", "inline-review-comment": "an inline review comment lands", "review-thread-resolved": "a review thread is resolved",
-                         "review-thread-unresolved": "a review thread is reopened", "issue-assigned": "an issue is assigned", "ci-passed": "CI passes", "ci-failed": "CI fails"]
+  static let gitWords = ["pr-opened": L10n.text("a PR opens"), "pr-pushed": L10n.text("a PR is updated"), "pr-merged": L10n.text("a PR merges"), "review-requested": L10n.text("a review is requested"),
+                         "review-approved": L10n.text("a review approves a PR"), "review-changes-requested": L10n.text("a review requests changes"), "review-commented": L10n.text("a review comments on a PR"),
+                         "pr-comment": L10n.text("a PR comment lands"), "inline-review-comment": L10n.text("an inline review comment lands"), "review-thread-resolved": L10n.text("a review thread is resolved"),
+                         "review-thread-unresolved": L10n.text("a review thread is reopened"), "issue-assigned": L10n.text("an issue is assigned"), "ci-passed": L10n.text("CI passes"), "ci-failed": L10n.text("CI fails")]
 
   /** The Git events in the window's order, under their headings (`xmt`). */
   public static let gitSections: [(title: String, events: [(kind: String, label: String)])] = [
-    ("Pull request", [("pr-opened", "Opened"), ("pr-pushed", "Updated"), ("pr-merged", "Merged")]),
-    ("Review", [("review-requested", "Requested"), ("review-approved", "Approved"), ("review-changes-requested", "Changes requested"), ("review-commented", "Commented"), ("review-thread-resolved", "Thread resolved"), ("review-thread-unresolved", "Thread reopened")]),
-    ("Comment", [("pr-comment", "PR comment"), ("inline-review-comment", "Inline review comment")]),
-    ("Checks", [("ci-passed", "CI passed"), ("ci-failed", "CI failed")]),
-    ("Issue", [("issue-assigned", "Assigned")]),
+    (L10n.text("Pull request"), [("pr-opened", L10n.text("pr.opened", default: "Opened")), ("pr-pushed", L10n.text("pr.updated", default: "Updated")), ("pr-merged", L10n.text("pr.merged", default: "Merged"))]),
+    (L10n.text("Review"), [("review-requested", L10n.text("review.requested", default: "Requested")), ("review-approved", L10n.text("review.approved", default: "Approved")),
+                           ("review-changes-requested", L10n.text("Changes requested")), ("review-commented", L10n.text("review.commented", default: "Commented")),
+                           ("review-thread-resolved", L10n.text("Thread resolved")), ("review-thread-unresolved", L10n.text("Thread reopened"))]),
+    (L10n.text("Comment"), [("pr-comment", L10n.text("PR comment")), ("inline-review-comment", L10n.text("Inline review comment"))]),
+    (L10n.text("Checks"), [("ci-passed", L10n.text("CI passed")), ("ci-failed", L10n.text("CI failed"))]),
+    (L10n.text("Issue"), [("issue-assigned", L10n.text("issue.assigned", default: "Assigned"))]),
   ]
 
   /** A Git event ticked or unticked in the menu, the list kept in the window's order (`Kgn`); the last one can be unticked. */
@@ -690,50 +716,78 @@ public enum TriggerRow: Hashable, Sendable {
   /** The row's sentence in the editor, its first word apart. */
   public var words: (lead: String, rest: String) {
     let more = "\u{2026}"
-    func place(_ channel: String) -> String {
+    func slackPlace(_ channel: String) -> String {
       let c = channel.trimmingCharacters(in: .whitespacesAndNewlines)
-      return c.isEmpty ? "in \(more)" : c == "*" ? "anywhere on Slack" : "in \(c)"
+      return c == "*" ? L10n.text("anywhere on Slack") : L10n.text("in \(c.isEmpty ? more : c)")
     }
+    func quoted(_ text: String) -> String { L10n.text("\"\(text)\"") }
+    // Each sentence is whole in every language; the row shows its first word in the text's colour.
+    let split = RoutineSchedule.split
     switch self {
     case .schedule(let text): return RoutineSchedule.row(text)
     case .slack(let channel, let match, let keyword, let emoji, let bySelf):
+      let place = slackPlace(channel)
       switch match {
       case "keyword":
         let word = keyword.trimmingCharacters(in: .whitespacesAndNewlines)
-        return ("New", "messages containing \(word.isEmpty ? more : "\"\(word)\"") \(place(channel))")
-      case "mention": return ("When", "@mentioned \(place(channel))")
+        return split(L10n.text("New messages containing \(word.isEmpty ? more : quoted(word)) \(place)"))
+      case "mention": return split(L10n.text("When @mentioned \(place)"))
       case "reaction":
         let names = Self.emojiNames(emoji).map { ":\($0):" }
-        return ("Reaction", "\(names.isEmpty ? "added" : "\(RoutineSchedule.orList(names)) added")\(bySelf ? " by me" : "") \(place(channel))")
-      default: return ("New", "messages \(place(channel))")
+        if names.isEmpty { return split(bySelf ? L10n.text("Reaction added by me \(place)") : L10n.text("Reaction added \(place)")) }
+        let list = RoutineSchedule.orList(names)
+        return split(bySelf ? L10n.text("Reaction \(list) added by me \(place)") : L10n.text("Reaction \(list) added \(place)"))
+      default: return split(L10n.text("New messages \(place)"))
       }
     case .github(let repo, let events, _, let branch):
       let r = repo.trimmingCharacters(in: .whitespacesAndNewlines), b = branch.trimmingCharacters(in: .whitespacesAndNewlines)
-      let phrases = events.map { Self.isCI($0) && !b.isEmpty ? "\(Self.gitWords[$0] ?? $0) on \(b)" : (Self.gitWords[$0] ?? $0) }
-      return ("When", "\(phrases.isEmpty ? more : RoutineSchedule.orList(phrases)) in \(r.isEmpty ? more : r)")
+      let phrases = events.map { Self.isCI($0) && !b.isEmpty ? L10n.text("git.onBranch", default: "\(Self.gitWords[$0] ?? $0) on \(b)") : (Self.gitWords[$0] ?? $0) }
+      return split(L10n.text("When \(phrases.isEmpty ? more : RoutineSchedule.orList(phrases)) in \(r.isEmpty ? more : r)"))
     case .teams(let tenant, let teams, let channels, let contains, _, _):
       let t = RoutineSchedule.orList(Self.ids(teams)), c = RoutineSchedule.orList(Self.ids(channels))
       let s = contains.trimmingCharacters(in: .whitespacesAndNewlines)
-      let missing = tenant.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? " (tenant \(more))" : ""
-      return ("New", "messages\(s.isEmpty ? "" : " containing \"\(s)\"") in \(t.isEmpty ? more : t)\(c.isEmpty ? "" : " (in \(c))")\(missing)")
+      let inTeams = t.isEmpty ? more : t
+      var sentence = s.isEmpty ? L10n.text("New messages in \(inTeams)") : L10n.text("New messages containing \(quoted(s)) in \(inTeams)")
+      if !c.isEmpty { sentence += L10n.text(" (in \(c))") }
+      if tenant.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { sentence += L10n.text(" (tenant \(more))") }
+      return split(sentence)
     case .linear(let event, let statuses, _, let projects, let teams):
-      let t = RoutineSchedule.orList(Self.ids(teams)), forTeams = t.isEmpty ? "" : " for \(t)"
+      let t = RoutineSchedule.orList(Self.ids(teams)), forTeams = t.isEmpty ? "" : L10n.text(" for \(t)")
       let p = RoutineSchedule.orList(Self.ids(projects))
+      let inProjects = p.isEmpty ? L10n.text("all projects") : p
       switch event {
       case "statusChanged":
         let s = RoutineSchedule.orList(Self.ids(statuses))
-        return ("Issue", "status \u{2192} \(s.isEmpty ? "any status" : s) in \(p.isEmpty ? "all projects" : p)\(forTeams)")
-      case "endOfCycle": return ("At", "end of cycle for \(t.isEmpty ? "all teams" : t)")
-      default: return ("Issue", "created in \(p.isEmpty ? "all projects" : p)\(forTeams)")
+        let status = s.isEmpty ? L10n.text("any status") : s
+        return split(L10n.text("Issue status \u{2192} \(status) in \(inProjects)") + forTeams)
+      case "endOfCycle":
+        let forWhom = t.isEmpty ? L10n.text("all teams") : t
+        return split(L10n.text("At end of cycle for \(forWhom)"))
+      default: return split(L10n.text("Issue created in \(inProjects)") + forTeams)
       }
     case .sentry(let event, let projects):
-      let words = ["issueCreated": "created", "issueResolved": "resolved", "issueAssigned": "assigned", "issueArchived": "archived", "issueUnresolved": "unresolved", "issueAny": "any event"]
       let p = RoutineSchedule.orList(Self.ids(projects))
-      return ("Issue", "\(words[event] ?? event) in \(p.isEmpty ? "all projects" : p)")
+      let inProjects = p.isEmpty ? L10n.text("all projects") : p
+      switch event {
+      case "issueCreated": return split(L10n.text("Issue created in \(inProjects)"))
+      case "issueResolved": return split(L10n.text("Issue resolved in \(inProjects)"))
+      case "issueAssigned": return split(L10n.text("Issue assigned in \(inProjects)"))
+      case "issueArchived": return split(L10n.text("Issue archived in \(inProjects)"))
+      case "issueUnresolved": return split(L10n.text("Issue unresolved in \(inProjects)"))
+      case "issueAny": return split(L10n.text("Issue any event in \(inProjects)"))
+      default: return split(L10n.text("Issue \(event) in \(inProjects)"))
+      }
     case .pagerduty(let event, let services):
-      let words = ["incidentTriggered": "triggered", "incidentAcknowledged": "acknowledged", "incidentResolved": "resolved", "incidentEscalated": "escalated", "incidentAny": "any event"]
       let s = RoutineSchedule.orList(Self.ids(services))
-      return ("Incident", "\(words[event] ?? event) on \(s.isEmpty ? "all services" : s)")
+      let onServices = s.isEmpty ? L10n.text("all services") : s
+      switch event {
+      case "incidentTriggered": return split(L10n.text("Incident triggered on \(onServices)"))
+      case "incidentAcknowledged": return split(L10n.text("Incident acknowledged on \(onServices)"))
+      case "incidentResolved": return split(L10n.text("Incident resolved on \(onServices)"))
+      case "incidentEscalated": return split(L10n.text("Incident escalated on \(onServices)"))
+      case "incidentAny": return split(L10n.text("Incident any event on \(onServices)"))
+      default: return split(L10n.text("Incident \(event) on \(onServices)"))
+      }
     }
   }
 
@@ -754,27 +808,45 @@ public enum TriggerRow: Hashable, Sendable {
 /** The routine editor's choices and their words, in the shipped window's order. */
 public enum RoutineWords {
   /** Slack's event menu (`Ygn`), and what its button reads (`Zgn`). */
-  public static let slackEvents: [(value: String, label: String)] = [("message", "New message in channel"), ("reaction", "Reaction added to message"), ("mention", "Agent is mentioned")]
-  public static let slackButton = ["message": "New messages", "reaction": "Reaction added", "mention": "Agent is mentioned"]
-  public static let reactors: [(value: Bool, label: String)] = [(false, "Anyone"), (true, "Only me")]
-  public static let linearEvents: [(value: String, label: String)] = [("issueCreated", "Issue created"), ("statusChanged", "Issue status changed"), ("endOfCycle", "End of cycle")]
-  public static let sentryEvents: [(value: String, label: String)] = [("issueCreated", "Created"), ("issueResolved", "Resolved"), ("issueAssigned", "Assigned"), ("issueArchived", "Archived"), ("issueUnresolved", "Unresolved"), ("issueAny", "Any issue event")]
-  public static let pagerdutyEvents: [(value: String, label: String)] = [("incidentTriggered", "Triggered"), ("incidentAcknowledged", "Acknowledged"), ("incidentResolved", "Resolved"), ("incidentEscalated", "Escalated"), ("incidentAny", "Any incident event")]
-  public static let teamsMatch: [(value: Bool, label: String)] = [(false, "Text"), (true, "Regex")]
-  public static let teamsAudience: [(value: Bool, label: String)] = [(false, "Anyone"), (true, "Only linked users")]
+  public static let slackEvents: [(value: String, label: String)] = [("message", L10n.text("New message in channel")), ("reaction", L10n.text("Reaction added to message")), ("mention", L10n.text("Agent is mentioned"))]
+  public static let slackButton = ["message": L10n.text("New messages"), "reaction": L10n.text("Reaction added"), "mention": L10n.text("Agent is mentioned")]
+  public static let reactors: [(value: Bool, label: String)] = [(false, L10n.text("Anyone")), (true, L10n.text("Only me"))]
+  public static let linearEvents: [(value: String, label: String)] = [("issueCreated", L10n.text("Issue created")), ("statusChanged", L10n.text("Issue status changed")), ("endOfCycle", L10n.text("End of cycle"))]
+  public static let sentryEvents: [(value: String, label: String)] = [
+    ("issueCreated", L10n.text("issue.created", default: "Created")), ("issueResolved", L10n.text("issue.resolved", default: "Resolved")),
+    ("issueAssigned", L10n.text("issue.assigned", default: "Assigned")), ("issueArchived", L10n.text("issue.archived", default: "Archived")),
+    ("issueUnresolved", L10n.text("issue.unresolved", default: "Unresolved")), ("issueAny", L10n.text("Any issue event")),
+  ]
+  public static let pagerdutyEvents: [(value: String, label: String)] = [
+    ("incidentTriggered", L10n.text("incident.triggered", default: "Triggered")), ("incidentAcknowledged", L10n.text("incident.acknowledged", default: "Acknowledged")),
+    ("incidentResolved", L10n.text("incident.resolved", default: "Resolved")), ("incidentEscalated", L10n.text("incident.escalated", default: "Escalated")),
+    ("incidentAny", L10n.text("Any incident event")),
+  ]
+  public static let teamsMatch: [(value: Bool, label: String)] = [(false, L10n.text("Text")), (true, L10n.text("Regex"))]
+  public static let teamsAudience: [(value: Bool, label: String)] = [(false, L10n.text("Anyone")), (true, L10n.text("Only linked users"))]
   /** The Advanced grid's Days (`_gn`) and Time mode (`Ogn`). */
-  public static let dayKinds: [(value: String, label: String)] = [("every-day", "Every day"), ("days-of-week", "Days of the week"), ("days-of-month", "Days of the month")]
-  public static let timeKinds: [(value: String, label: String)] = [("at-times", "At times"), ("interval", "Every")]
+  public static let dayKinds: [(value: String, label: String)] = [("every-day", L10n.text("Every day")), ("days-of-week", L10n.text("Days of the week")), ("days-of-month", L10n.text("Days of the month"))]
+  public static let timeKinds: [(value: String, label: String)] = [("at-times", L10n.text("At times")), ("interval", L10n.text("timeMode.every", default: "Every"))]
   /** Days of the week as the Every week picker lists them: Monday first, Sunday last (`wmt`). */
   public static let weekOrder = [1, 2, 3, 4, 5, 6, 0]
   public static let units = ["minutes", "hours", "days"]
   /** The Advanced grid's Every takes minutes or hours only (`Jgn`). */
   public static let windowUnits = ["minutes", "hours"]
 
+  /** A unit as the person reads it: `units` are the values saved. */
+  public static func unitLabel(_ unit: String) -> String {
+    switch unit {
+    case "minutes": return L10n.text("unit.minutes", default: "minutes")
+    case "hours": return L10n.text("unit.hours", default: "hours")
+    case "days": return L10n.text("unit.days", default: "days")
+    default: return unit
+    }
+  }
+
   /** "Any month", or the months picked, short and in order ("Jan, Mar") (`Ngn`). */
   public static func monthsLabel(_ months: [Int]?) -> String {
-    guard let months, !months.isEmpty else { return "Any month" }
-    return Array(Set(months)).sorted().map { (1...12).contains($0) ? String(RoutineSchedule.months[$0 - 1].prefix(3)) : String($0) }.joined(separator: ", ")
+    guard let months, !months.isEmpty else { return L10n.text("Any month") }
+    return Array(Set(months)).sorted().map { (1...12).contains($0) ? RoutineSchedule.shortMonths[$0 - 1] : String($0) }.joined(separator: ", ")
   }
 
   /** A month or a day ticked or unticked, the list kept in order (`Tmt`). */
@@ -799,20 +871,20 @@ public enum RoutineWords {
 
   /** The Git events button: the first chosen one's label and "+N", or "Pick events" (`a2n`). */
   public static func gitButton(_ events: [String]) -> String {
-    guard let first = events.first else { return "Pick events" }
+    guard let first = events.first else { return L10n.text("Pick events") }
     let label = TriggerRow.gitSections.flatMap(\.events).first { $0.kind == first }?.label ?? first
     return events.count > 1 ? "\(label) +\(events.count - 1)" : label
   }
 
   /** The add menu's words: "Add trigger" with none yet, "Add another" after. */
-  public static func addLabel(rows: Int) -> String { rows == 0 ? "Add trigger" : "Add another" }
+  public static func addLabel(rows: Int) -> String { rows == 0 ? L10n.text("Add trigger") : L10n.text("Add another") }
 
   /** A run's status for its icon's label (`J2n`). */
   public static func runStatus(_ status: String) -> String {
     switch status {
-    case "running": return "Running"
-    case "ok": return "Succeeded"
-    default: return "Failed"
+    case "running": return L10n.text("Running")
+    case "ok": return L10n.text("run.succeeded", default: "Succeeded")
+    default: return L10n.text("run.failed", default: "Failed")
     }
   }
 }

@@ -13,9 +13,9 @@ import Foundation
  */
 public enum Connecting {
   /** The button of an app that isn't connected, wherever it shows (a list's row, its page, a chat card, Your plugins). */
-  public static let connect = "Connect"
+  public static let connect = L10n.text("Connect")
   /** What an app that is connected says in place of the button. */
-  public static let connected = "Connected"
+  public static let connected = L10n.text("Connected")
 
   /** A connect that ended so takes back the app it added: only one the person cancelled, never one that may still finish. */
   public static func undoes(_ end: SignInEnd, start: ConnectStart) -> Bool {
@@ -24,24 +24,25 @@ public enum Connecting {
 
   /** Once connected: the app, and the skills it brought, as the Add notice said them. */
   public static func connectedNotice(_ name: String, skills: Int, error: String?) -> Plugins.Notice {
-    if let error { return Plugins.Notice(isError: true, text: "Connected \(name), but its skills didn't sync: \(error)") }
-    return Plugins.Notice(isError: false, text: skills > 0 ? "Connected \(name) and \(skills == 1 ? "1 skill" : "\(skills) skills")" : "Connected \(name)")
+    if let error { return Plugins.Notice(isError: true, text: L10n.text("Connected \(name), but its skills didn't sync: \(error)")) }
+    if skills == 1 { return Plugins.Notice(isError: false, text: L10n.text("Connected \(name) and 1 skill")) }
+    return Plugins.Notice(isError: false, text: skills > 0 ? L10n.text("Connected \(name) and \(skills) skills") : L10n.text("Connected \(name)"))
   }
 
   /** The sign-in closed before the app was connected: it was taken back, and Connect is there again. */
   public static func notConnectedNotice(_ name: String) -> Plugins.Notice {
-    Plugins.Notice(isError: false, text: "\(name) wasn't connected")
+    Plugins.Notice(isError: false, text: L10n.text("\(name) wasn't connected"))
   }
 
   /** The sign-in closed on the vendor's page and the computer hasn't said so yet: it is kept, and shows Connected in a moment. */
   public static func stillConnectingNotice(_ name: String) -> Plugins.Notice {
-    Plugins.Notice(isError: false, text: "Finishing \(name)'s sign-in…")
+    Plugins.Notice(isError: false, text: L10n.text("Finishing \(name)'s sign-in…"))
   }
 
   /** What the sign-in that never opened says. */
   public static func didntConnect(_ name: String, why: String?) -> String {
-    guard let why, !why.isEmpty else { return "\(name) didn't connect. Try again." }
-    return "\(name) didn't connect: \(why)"
+    guard let why, !why.isEmpty else { return L10n.text("\(name) didn't connect. Try again.") }
+    return L10n.text("\(name) didn't connect: \(why)")
   }
 
   /**

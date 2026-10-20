@@ -30,7 +30,10 @@ public enum AttachmentLimits {
   public static func admit(_ incoming: Int, staged: Int) -> (accepted: Int, notice: String?) {
     let accepted = min(incoming, max(0, maxStaged - staged))
     let left = incoming - accepted
-    return (accepted, left > 0 ? "Only \(maxStaged) attachments allowed — \(left) \(left == 1 ? "wasn't" : "weren't") added." : nil)
+    guard left > 0 else { return (accepted, nil) }
+    return (accepted, left == 1
+      ? L10n.text("Only \(maxStaged) attachments allowed — \(left) wasn't added.")
+      : L10n.text("Only \(maxStaged) attachments allowed — \(left) weren't added."))
   }
 
   /** The line for the files that could not be attached: one by name, else how many. */
@@ -38,12 +41,15 @@ public enum AttachmentLimits {
     guard let first = refused.first else { return nil }
     if refused.count == 1 {
       switch first.reason {
-      case .tooLarge: return "\"\(first.name)\" is too large to attach (max \(isVideo(first.name) ? "200 MB for video" : "25 MB"))."
-      case .empty: return "\"\(first.name)\" is empty, so it wasn't attached."
-      case .failed: return "Couldn't attach \"\(first.name)\"."
+      case .tooLarge:
+        return isVideo(first.name)
+          ? L10n.text("\"\(first.name)\" is too large to attach (max 200 MB for video).")
+          : L10n.text("\"\(first.name)\" is too large to attach (max 25 MB).")
+      case .empty: return L10n.text("\"\(first.name)\" is empty, so it wasn't attached.")
+      case .failed: return L10n.text("Couldn't attach \"\(first.name)\".")
       }
     }
-    if refused.allSatisfy({ $0.reason == .tooLarge }) { return "\(refused.count) files are too large to attach (max 25 MB, or 200 MB for video)." }
-    return "\(refused.count) files couldn't be attached."
+    if refused.allSatisfy({ $0.reason == .tooLarge }) { return L10n.text("\(refused.count) files are too large to attach (max 25 MB, or 200 MB for video).") }
+    return L10n.text("\(refused.count) files couldn't be attached.")
   }
 }
