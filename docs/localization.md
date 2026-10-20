@@ -135,8 +135,11 @@ L10n.text("section.open", default: "Open")      // one English word, two meaning
 - Not translated: what a model reads (prompts, the call's instructions),
   what the server or the engine parses, logs, and anything stored or compared.
 - A new sentence: add its key and its French to the catalog (the JSON, or
-  Xcode's catalog editor, entries marked `manual`); `check_translations.py`
-  names any `L10n.text` whose key is missing.
+  Xcode's catalog editor); `check_translations.py` names any `L10n.text`
+  whose key is missing. Never mark an entry `manual`: since Xcode 26 a
+  manual entry gets a Swift symbol made from its key, and keys that differ
+  only in case or punctuation ("Sign out", "Sign out?") then stop the build
+  (20 October 2026, 34 errors in SimeonCore).
 
 ### Writing the engine's and the server's sentences
 
