@@ -19,6 +19,8 @@ import hashlib
 import hmac
 import secrets
 
+from .words import say
+
 #: OWASP's scrypt setting for 16 MiB (Password Storage Cheat Sheet).
 _N, _R, _P = 2**14, 8, 5
 _DIGEST_BYTES = 32
@@ -85,9 +87,9 @@ async def verify_password_async(password: str, stored: str | None) -> bool:
 def password_problem(password: str, email: str) -> str | None:
     """The sentence the app shows for a password it can't take; None when it can."""
     if len(password) < MIN_LENGTH:
-        return f"Use at least {MIN_LENGTH} characters."
+        return say("password.too_short", count=MIN_LENGTH)
     if len(password) > MAX_LENGTH:
-        return f"Use {MAX_LENGTH} characters or fewer."
+        return say("password.too_long", count=MAX_LENGTH)
     if password.strip().lower() == email.strip().lower():
-        return "Choose a password that isn't your email."
+        return say("password.is_email")
     return None

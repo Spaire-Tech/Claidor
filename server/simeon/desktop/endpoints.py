@@ -129,6 +129,7 @@ from .skill_store import archive_path, marketplace_item
 from .skill_store import catalog as skill_store_catalog
 from .video import VIDEO_CALL_LOG, count_video_parts, parse_gemini_call
 from .voice import router as voice_router
+from .words import say
 
 log = structlog.get_logger()
 
@@ -382,7 +383,7 @@ async def update_profile(
         else:
             language = normalize_language(body.language)
             if language is None:
-                return _fail(400, "That is not a language.", status=400)
+                return _fail(400, say("profile.not_a_language"), status=400)
             user.language = language
         session.add(user)
     return _ok(desktop.user_payload(user))
@@ -441,7 +442,7 @@ async def billing_portal(
     link in the browser (`docs/services-billing.md`, section 4)."""
     tier = tier_from_value(body.tier) if body.tier else None
     if body.flow == "update_confirm" and (tier is None or tier not in PAID_TIERS):
-        return _fail(400, "That plan is not one of ours.", status=400)
+        return _fail(400, say("billing.unknown_plan"), status=400)
     back = (
         settings.generate_external_url(
             f"/desktop/billing/back?{urlencode({'to': body.back})}"
@@ -548,7 +549,7 @@ async def feedback(
     """
     message = body.message.strip()
     if not message:
-        return _fail(40001, "Feedback needs a message.", status=400)
+        return _fail(40001, say("feedback.empty"), status=400)
     log.info(
         "desktop.feedback.received",
         user_id=str(desktop_session.user.id),

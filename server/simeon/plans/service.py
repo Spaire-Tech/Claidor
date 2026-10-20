@@ -20,6 +20,7 @@ import stripe as stripe_lib
 import structlog
 
 from simeon.config import settings
+from simeon.desktop.words import say
 from simeon.entitlements.tiers import TierKey
 from simeon.exceptions import PolarError
 from simeon.kit.utils import utc_now
@@ -50,15 +51,12 @@ class PlansError(PolarError): ...
 
 class BillingNotConfigured(PlansError):
     def __init__(self) -> None:
-        super().__init__("Billing is not configured on this server.", 503)
+        super().__init__(say("billing.not_configured"), 503)
 
 
 class AlreadySubscribed(PlansError):
     def __init__(self) -> None:
-        super().__init__(
-            "You already have a plan. Change or cancel it from the billing page.",
-            409,
-        )
+        super().__init__(say("billing.already_subscribed"), 409)
 
 
 class BilledByApple(PlansError):
@@ -66,12 +64,12 @@ class BilledByApple(PlansError):
     not Stripe's checkout or portal."""
 
     def __init__(self) -> None:
-        super().__init__(MANAGE_ON_IPHONE, 409)
+        super().__init__(say(MANAGE_ON_IPHONE), 409)
 
 
 class NoSubscription(PlansError):
     def __init__(self) -> None:
-        super().__init__("You have no plan to manage yet.", 404)
+        super().__init__(say("billing.no_subscription"), 404)
 
 
 class UnknownPrice(PlansError):
@@ -84,12 +82,12 @@ class UnknownPrice(PlansError):
 
 class BadReturnUrl(PlansError):
     def __init__(self) -> None:
-        super().__init__("That return address is not one of ours.", 400)
+        super().__init__(say("billing.bad_return_url"), 400)
 
 
 class CheckoutNotYours(PlansError):
     def __init__(self) -> None:
-        super().__init__("That checkout belongs to another account.", 403)
+        super().__init__(say("billing.checkout_not_yours"), 403)
 
 
 def _str(value: Any) -> str | None:

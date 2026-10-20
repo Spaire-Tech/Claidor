@@ -58,6 +58,7 @@ from appstoreserverlibrary.signed_data_verifier import (
 )
 
 from simeon.config import settings
+from simeon.desktop.words import say
 from simeon.entitlements.tiers import PAID_TIERS, TIER_NAMES, TierKey, get_definition
 from simeon.exceptions import PolarError
 from simeon.kit.utils import utc_now
@@ -75,11 +76,9 @@ ROOTS = Path(__file__).parent / "apple_roots"
 #: How a plan's interval reads in its product id.
 INTERVAL_WORDS: dict[BillingInterval, str] = {"month": "monthly", "year": "yearly"}
 
-#: Where an Apple plan is changed or cancelled, for every surface that cannot do it.
-MANAGE_ON_IPHONE = (
-    "Your plan is billed through Apple. Change or cancel it on your iPhone in "
-    "Settings › your name › Subscriptions."
-)
+#: Where an Apple plan is changed or cancelled, for every surface that cannot
+#: do it: the sentence's key (`say`, `simeon/desktop/words/_account.py`).
+MANAGE_ON_IPHONE = "billing.manage_on_iphone"
 
 
 class AppStoreError(PolarError): ...
@@ -87,25 +86,17 @@ class AppStoreError(PolarError): ...
 
 class AppStoreUnverified(AppStoreError):
     def __init__(self) -> None:
-        super().__init__("Apple's receipt for this purchase couldn't be checked.", 400)
+        super().__init__(say("app_store.unverified"), 400)
 
 
 class AppStoreNotConfigured(AppStoreError):
     def __init__(self) -> None:
-        super().__init__(
-            "Purchases in the app aren't set up on Simeon's server yet. "
-            "Try again later.",
-            503,
-        )
+        super().__init__(say("app_store.not_configured"), 503)
 
 
 class NotYourPurchase(AppStoreError):
     def __init__(self) -> None:
-        super().__init__(
-            "This purchase belongs to another Simeon account. Sign in with "
-            "that account, or use a different Apple ID.",
-            409,
-        )
+        super().__init__(say("app_store.not_your_purchase"), 409)
 
 
 # --- products -----------------------------------------------------------------

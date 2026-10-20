@@ -68,6 +68,7 @@ from . import voice as voice_module
 from .account_repository import AccountDeletionRepository
 from .auth import get_desktop_session
 from .composio import composio_user_id, configured
+from .words import say
 
 log = structlog.get_logger()
 
@@ -111,7 +112,7 @@ async def _end_subscription(session: AsyncSession, user: User) -> str:
     if row is None or row.status in _ENDED:
         return "none"
     if not settings.STRIPE_SECRET_KEY:
-        raise AccountDeletionBlocked("Billing can't be reached right now.")
+        raise AccountDeletionBlocked(say("account.delete.billing_unreachable"))
     try:
         await stripe_billing.cancel_subscription(row.stripe_subscription_id)
     except Exception as error:
@@ -122,7 +123,7 @@ async def _end_subscription(session: AsyncSession, user: User) -> str:
             error=str(error),
         )
         raise AccountDeletionBlocked(
-            "Your subscription couldn't be ended right now."
+            say("account.delete.subscription_not_ended")
         ) from error
     row.status = "canceled"
     row.cancel_at_period_end = False
@@ -139,7 +140,7 @@ async def _remove_computers(repository: AccountDeletionRepository, user: User) -
             host = await find_box_host(box.provider)
         except BoxHostError as error:
             raise AccountDeletionBlocked(
-                "Your agents' computer couldn't be reached right now."
+                say("account.delete.computer_unreachable")
             ) from error
         if host is None:
             # The server it was made on is no longer configured: nothing of
@@ -161,7 +162,7 @@ async def _remove_computers(repository: AccountDeletionRepository, user: User) -
                 error=str(error),
             )
             raise AccountDeletionBlocked(
-                "Your agents' computer couldn't be deleted right now."
+                say("account.delete.computer_not_deleted")
             ) from error
         removed += 1
     return removed
@@ -284,7 +285,7 @@ async def _hold_the_computer(session: AsyncSession, user: User) -> None:
                     user_id=str(user.id),
                 )
                 raise AccountDeletionBlocked(
-                    "Your agents' computer is starting."
+                    say("account.delete.computer_starting")
                 ) from None
             await asyncio.sleep(ENSURE_LOCK_POLL)
 
@@ -341,7 +342,7 @@ async def delete_account_route(
             {
                 "error": {
                     "type": "account_deletion_blocked",
-                    "message": f"{blocked} Try again in a few minutes.",
+                    "message": say("account.delete.try_again", why=blocked),
                 }
             },
             status_code=503,

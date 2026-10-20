@@ -62,6 +62,7 @@ from .auth import get_desktop_session
 from .endpoints import client_version_of
 from .language import answer_in_request_language
 from .service import desktop, envelope_access_token
+from .words import say
 
 log = structlog.get_logger()
 
@@ -86,12 +87,13 @@ WINDOW_SECONDS = 15 * 60
 CODES_PER_WINDOW = 5
 FAILURES_PER_WINDOW = 10
 
-WRONG_CODE = "That code is wrong or has expired. Check the email, or send a new one."
-WRONG_PASSWORD = "Wrong email or password. If you've never set a password, use the code we email you."
-TOO_MANY_CODES = "Too many codes asked for this email. Try again in a few minutes."
-TOO_MANY_TRIES = "Too many tries for this email. Try again in a few minutes."
-CLOSED = "This account can't sign in to Simeon."
-BAD_EMAIL = "Enter a valid email address."
+#: Each refusal's sentence, in the request's language (`say`, `words/_account.py`).
+WRONG_CODE = "sign_in.wrong_code"
+WRONG_PASSWORD = "sign_in.wrong_password"
+TOO_MANY_CODES = "sign_in.too_many_codes"
+TOO_MANY_TRIES = "sign_in.too_many_tries"
+CLOSED = "sign_in.closed"
+BAD_EMAIL = "sign_in.bad_email"
 
 #: The longest field read from a body.
 _FIELD_MAX = 512
@@ -186,15 +188,15 @@ async def email_code(
     fields = await _body(request)
     address = _address(fields.get("email", ""))
     if address is None:
-        return _refusal("bad_email", BAD_EMAIL, 400)
+        return _refusal("bad_email", say(BAD_EMAIL), 400)
     try:
         # Its domain takes mail (the web's check); a blocking lookup, off the loop.
         await asyncio.to_thread(validate_email, address)
     except EmailNotValidError:
-        return _refusal("bad_email", BAD_EMAIL, 400)
+        return _refusal("bad_email", say(BAD_EMAIL), 400)
     if await _count(redis, _key("sent", address)) > CODES_PER_WINDOW:
         log.info("desktop.sign_in.email.code_limited")
-        return _refusal("too_many", TOO_MANY_CODES, 429)
+        return _refusal("too_many", say(TOO_MANY_CODES), 429)
     code_model, code = await login_code_service.request(session, address)
     await login_code_service.send(code_model, code)
     return JSONResponse({"sent": True}, status_code=202, headers=NO_STORE)
@@ -212,18 +214,18 @@ async def email_verify(
     # Codes are capitals and digits (`LOGIN_CODE_LENGTH`); a phone keyboard may not type capitals.
     code = "".join(fields.get("code", "").split()).upper()
     if address is None or not code:
-        return _refusal("bad_request", WRONG_CODE, 400)
+        return _refusal("bad_request", say(WRONG_CODE), 400)
     if await _locked(redis, address):
-        return _refusal("too_many", TOO_MANY_TRIES, 429)
+        return _refusal("too_many", say(TOO_MANY_TRIES), 429)
     try:
         user, signup = await login_code_service.authenticate(
             session, code=code, email=address
         )
     except LoginCodeError:
         await _count(redis, _key("failed", address))
-        return _refusal("wrong_code", WRONG_CODE, 400)
+        return _refusal("wrong_code", say(WRONG_CODE), 400)
     if not user.can_authenticate:
-        return _refusal("account_closed", CLOSED, 403)
+        return _refusal("account_closed", say(CLOSED), 403)
     await redis.delete(_key("failed", address))
     return await _signed_in(request, session, user, how="code", signup=signup)
 
@@ -239,16 +241,16 @@ async def email_password(
     address = _address(fields.get("email", ""))
     password = fields.get("password", "")
     if address is None or not password:
-        return _refusal("wrong_password", WRONG_PASSWORD, 401)
+        return _refusal("wrong_password", say(WRONG_PASSWORD), 401)
     if await _locked(redis, address):
-        return _refusal("too_many", TOO_MANY_TRIES, 429)
+        return _refusal("too_many", say(TOO_MANY_TRIES), 429)
     user = await UserRepository.from_session(session).get_by_email(address)
     stored = user.password_hash if user is not None else None
     if not await passwords.verify_password_async(password, stored) or user is None:
         await _count(redis, _key("failed", address))
-        return _refusal("wrong_password", WRONG_PASSWORD, 401)
+        return _refusal("wrong_password", say(WRONG_PASSWORD), 401)
     if not user.can_authenticate:
-        return _refusal("account_closed", CLOSED, 403)
+        return _refusal("account_closed", say(CLOSED), 403)
     await redis.delete(_key("failed", address))
     return await _signed_in(request, session, user, how="password", signup=False)
 
@@ -302,8 +304,8 @@ async def web_password(
     if is_user(auth_subject):
         return RedirectResponse(return_to, 303)
 
-    def refused(message: str) -> RedirectResponse:
-        query = urlencode({"return_to": return_to, "email": email, "error": message})
+    def refused(key: str) -> RedirectResponse:
+        query = urlencode({"return_to": return_to, "email": email, "error": say(key)})
         url = settings.generate_frontend_url(f"/login/password?{query}")
         return RedirectResponse(url, 303)
 
