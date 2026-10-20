@@ -65,6 +65,7 @@ from simeon.routing import APIRouter
 
 from .auth import get_desktop_or_box_session
 from .proxy_common import error_response
+from .words import say
 
 log = structlog.get_logger()
 
@@ -891,7 +892,7 @@ async def resolve_place(api: DuffelClient, query: str) -> tuple[str, str]:
     """`(IATA code, city name)` for a city or an airport."""
     text = _text(query)
     if not text:
-        raise SearchRefused("Say where the flight leaves from and where it goes.")
+        raise SearchRefused(say("search.places_missing"))
     suggestions = await api.place_suggestions(text)
     if _IATA.match(text):
         code = text.upper()
@@ -915,7 +916,7 @@ async def resolve_place(api: DuffelClient, query: str) -> tuple[str, str]:
         if one.get("type") == "city" and len(airports) == 1:
             code = airports[0]
         return code.upper(), _city(one) or text
-    raise SearchRefused(f"I couldn't find an airport for “{text}”.")
+    raise SearchRefused(say("search.no_airport", place=text))
 
 
 async def _over_limit(redis: Redis, user_id: str) -> bool:
@@ -952,11 +953,11 @@ async def search_flights(
     priority?, airlines?}` in;
     `{card, summary, test, found}` out, `card` null when nothing matched."""
     if not settings.DUFFEL_ACCESS_TOKEN:
-        return _refuse("Flight search is not switched on yet.", 503)
+        return _refuse(say("search.not_switched_on"), 503)
     user_id = str(desktop_session.user_id)
     if await _over_limit(redis, user_id):
         log.info("desktop.flights.rate_limited", user_id=user_id)
-        return _refuse("Too many flight searches this hour; try again later.", 429)
+        return _refuse(say("search.too_many"), 429)
 
     try:
         body = await request.json()
@@ -975,9 +976,9 @@ async def search_flights(
             else None
         )
         if return_date is not None and return_date < departure:
-            raise SearchRefused("The return date is before the departure date.")
+            raise SearchRefused(say("search.return_before"))
         if departure < date.today():
-            raise SearchRefused("That date has passed.")
+            raise SearchRefused(say("search.date_passed"))
         adults = body.get("adults", 1)
         if (
             not isinstance(adults, int)
@@ -1048,10 +1049,8 @@ async def search_flights(
             body=error.body[:1000] or "(empty)",
         )
         if error.status == 0:
-            return _refuse(
-                "The flight search could not be reached; try again in a moment.", 502
-            )
-        return _refuse("The flight search did not answer; try again in a moment.", 502)
+            return _refuse(say("search.unreachable"), 502)
+        return _refuse(say("search.no_answer"), 502)
 
     offers = [one for one in found.get("offers") or [] if isinstance(one, dict)]
     picked = pick_offers(

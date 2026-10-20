@@ -59,6 +59,7 @@ from simeon.routing import APIRouter
 
 from . import flights
 from .auth import get_desktop_or_box_session
+from .words import say
 
 log = structlog.get_logger()
 
@@ -81,11 +82,13 @@ _GENDERS = {"m", "f"}
 # Duffel: a traveller under 18 is searched by age; an "adult" is 18 or over,
 # counted on the day of the last flight (as Duffel counts an infant's age).
 _ADULT_AGE = 18
-_UNCERTAIN = {
-    "booked": False,
-    "uncertain": True,
-    "message": "The airline didn't answer, so it isn't certain the flight was booked. Don't book it again: Simeon keeps checking, and the airline emails the traveller if it was.",
-}
+
+
+def _uncertain(key: str = "flight.uncertain") -> dict[str, Any]:
+    """An order whose answer never came, in the request's language."""
+    return {"booked": False, "uncertain": True, "message": say(key)}
+
+
 # Stripe's currencies without minor units, so Link is asked for ¥500, not ¥5.
 _ZERO_DECIMAL = {
     "BIF", "CLP", "DJF", "GNF", "JPY", "KMF", "KRW", "MGA",
@@ -200,11 +203,9 @@ def _born_on(value: Any) -> str:
     try:
         born = date.fromisoformat(_text(value))
     except ValueError as error:
-        raise BookingRefused(
-            "Each date of birth must be a date like 1990-04-21."
-        ) from error
+        raise BookingRefused(say("traveller.dob_format")) from error
     if born >= date.today() or born.year < 1900:
-        raise BookingRefused("A date of birth is not right; check it.")
+        raise BookingRefused(say("traveller.dob_wrong"))
     return born.isoformat()
 
 
@@ -221,37 +222,31 @@ def passenger_for_duffel(
     one = _dict(given)
     passenger_id = _text(one.get("id"))
     if not _PASSENGER_ID.match(passenger_id) or passenger_id not in expected_ids:
-        raise BookingRefused("A traveller doesn't belong to this flight's offer.")
+        raise BookingRefused(say("traveller.not_on_offer"))
     given_name, family_name = (
         _text(one.get("given_name")),
         _text(one.get("family_name")),
     )
     if not _NAME.match(given_name) or not _NAME.match(family_name):
-        raise BookingRefused(
-            "First and last names must be written as on the ID, letters only."
-        )
+        raise BookingRefused(say("traveller.names"))
     title = _text(one.get("title")).lower()
     if title not in _TITLES:
-        raise BookingRefused("Title must be Mr, Ms, Mrs, Miss or Dr.")
+        raise BookingRefused(say("traveller.title"))
     gender = _text(one.get("gender")).lower()
     if gender not in _GENDERS:
-        raise BookingRefused("Gender must be m or f, as on the ID.")
+        raise BookingRefused(say("traveller.gender"))
     email = _text(one.get("email"))
     if not _EMAIL.match(email):
-        raise BookingRefused("The email address is not right.")
+        raise BookingRefused(say("traveller.email"))
     phone = re.sub(r"[\s()-]", "", _text(one.get("phone_number")))
     if not _PHONE.match(phone):
-        raise BookingRefused(
-            "The phone number needs its country code, like +1 206 555 0100."
-        )
+        raise BookingRefused(say("traveller.phone"))
     born_on = _born_on(one.get("born_on"))
     if (
         adult_on is not None
         and age_on(date.fromisoformat(born_on), adult_on) < _ADULT_AGE
     ):
-        raise BookingRefused(
-            "Each adult must be 18 or older on the day of the last flight; check the date of birth."
-        )
+        raise BookingRefused(say("traveller.adult_age"))
     passenger: dict[str, Any] = {
         "id": passenger_id,
         "title": title,
@@ -269,11 +264,11 @@ def passenger_for_duffel(
         try:
             expires = date.fromisoformat(_text(passport.get("expires_on")))
         except ValueError as error:
-            raise BookingRefused("The passport's expiry must be a date.") from error
+            raise BookingRefused(say("traveller.passport_expiry_format")) from error
         if not _DOCUMENT.match(number) or not _COUNTRY.match(country):
-            raise BookingRefused("The passport number or country is not right.")
+            raise BookingRefused(say("traveller.passport_number"))
         if expires <= date.today():
-            raise BookingRefused("That passport has expired.")
+            raise BookingRefused(say("traveller.passport_expired"))
         passenger["identity_documents"] = [
             {
                 "type": "passport",
@@ -283,7 +278,7 @@ def passenger_for_duffel(
             }
         ]
     elif documents_required:
-        raise BookingRefused("This airline needs each traveller's passport.")
+        raise BookingRefused(say("traveller.passport_needed"))
     return passenger
 
 
@@ -332,7 +327,7 @@ def _duffel_sentence(error: flights.DuffelError) -> str:
     found = _dict(body).get("errors")
     first = _dict(found[0]) if isinstance(found, list) and found else {}
     message = _text(first.get("message")) or _text(first.get("title"))
-    return message[:240] if message else "The airline did not accept it."
+    return message[:240] if message else say("flight.airline_refused")
 
 
 def _offer_id(body: dict[str, Any]) -> str:
@@ -368,13 +363,13 @@ def _upstream(error: flights.DuffelError, what: str) -> JSONResponse:
         step=what,
     )
     if error.status in (404, 410) or (400 <= error.status < 500 and what == "offer"):
-        return flights._refuse(
-            "That flight's price is no longer available; search again for a fresh one.",
-            409,
-        )
-    return flights._refuse(
-        f"The flight's {what} could not be reached; try again in a moment.", 502
+        return flights._refuse(say("flight.price_gone"), 409)
+    unreachable = (
+        "flight.offer_unreachable"
+        if what == "offer"
+        else "flight.payment_form_unreachable"
     )
+    return flights._refuse(say(unreachable), 502)
 
 
 @router.post("/api/flights/offer", name="desktop:flights_offer")
@@ -384,7 +379,7 @@ async def flight_offer(
 ) -> JSONResponse:
     """`{offer_id}` in; the offer as it stands now out (`offer_for_booking`)."""
     if not settings.DUFFEL_ACCESS_TOKEN:
-        return flights._refuse("Flight booking is not switched on yet.", 503)
+        return flights._refuse(say("flight.not_switched_on"), 503)
     try:
         offer_id = _offer_id(await _json_body(request))
     except BookingRefused as refused:
@@ -396,7 +391,7 @@ async def flight_offer(
         return _upstream(error, "offer")
     shaped = offer_for_booking(offer, test=api.is_test)
     if not shaped["passengers"] or shaped["amountMinor"] is None:
-        return flights._refuse("That flight can't be booked here.", 409)
+        return flights._refuse(say("flight.cannot_book_here"), 409)
     log.info(
         "desktop.flights.offer",
         user_id=str(desktop_session.user_id),
@@ -416,7 +411,7 @@ async def flight_client_key(
 ) -> JSONResponse:
     """A component client key for the pay page: `{clientKey, test}`."""
     if not settings.DUFFEL_ACCESS_TOKEN:
-        return flights._refuse("Flight booking is not switched on yet.", 503)
+        return flights._refuse(say("flight.not_switched_on"), 503)
     user_id = str(desktop_session.user_id)
     if await _over_limit(
         redis,
@@ -424,16 +419,14 @@ async def flight_client_key(
         settings.FLIGHT_BOOKINGS_PER_DAY * 4,
         86400,
     ):
-        return flights._refuse(
-            "Too many flight payments today; try again tomorrow.", 429
-        )
+        return flights._refuse(say("flight.too_many_payments"), 429)
     api = flights.client()
     try:
         key = await api.client_key()
     except flights.DuffelError as error:
         return _upstream(error, "payment form")
     if not key:
-        return flights._refuse("The flight's payment form could not be set up.", 502)
+        return flights._refuse(say("flight.payment_form_failed"), 502)
     log.info("desktop.flights.client_key", user_id=user_id, test=api.is_test)
     return flights._answer({"clientKey": key, "test": api.is_test})
 
@@ -461,7 +454,7 @@ async def flight_order(
     in; `{booked: true, orderId, bookingReference, …}`, or `{booked: false,
     uncertain: true, message}` when Duffel's answer never came back."""
     if not settings.DUFFEL_ACCESS_TOKEN:
-        return flights._refuse("Flight booking is not switched on yet.", 503)
+        return flights._refuse(say("flight.not_switched_on"), 503)
     user_id = str(desktop_session.user_id)
     api = flights.client()
     try:
@@ -469,14 +462,14 @@ async def flight_order(
         offer_id = _offer_id(body)
         session_id = _text(body.get("three_d_secure_session_id"))
         if not _SESSION_ID.match(session_id):
-            raise BookingRefused("The card's bank check is missing.")
+            raise BookingRefused(say("flight.bank_check_missing"))
         amount = _text(body.get("amount"))
         currency = _text(body.get("currency")).upper()
         if not _AMOUNT.match(amount) or not _CURRENCY.match(currency):
             raise BookingRefused("amount and currency must be the offer's own.")
         given = body.get("passengers")
         if not isinstance(given, list) or not 1 <= len(given) <= 9:
-            raise BookingRefused("Send each traveller's details.")
+            raise BookingRefused(say("flight.travellers_missing"))
         # The offer again, so the order pays exactly what Duffel asks now and
         # names exactly its travellers.
         try:
@@ -487,9 +480,7 @@ async def flight_order(
             _text(offer.get("total_amount")) != amount
             or _text(offer.get("total_currency")).upper() != currency
         ):
-            raise BookingRefused(
-                "The price changed since it was approved; nothing was booked.", 409
-            )
+            raise BookingRefused(say("flight.price_changed"), 409)
         types = {
             _text(one.get("id")): _text(one.get("type")) or "adult"
             for one in offer.get("passengers") or []
@@ -511,7 +502,7 @@ async def flight_order(
             for one in given
         ]
         if {one["id"] for one in passengers} != expected:
-            raise BookingRefused("Every traveller on this offer needs their details.")
+            raise BookingRefused(say("flight.every_traveller"))
     except BookingRefused as refused:
         return flights._refuse(refused.message, refused.status)
 
@@ -521,16 +512,11 @@ async def flight_order(
         settings.FLIGHT_BOOKINGS_PER_DAY,
         86400,
     ):
-        return flights._refuse(
-            "Too many flight bookings today; try again tomorrow.", 429
-        )
+        return flights._refuse(say("flight.too_many_bookings"), 429)
     # One order per offer: a second ask (a retry, two devices) never books twice.
     lock = f"desktop:flights:order:{user_id}:{offer_id}"
     if not await redis.set(lock, "placing", nx=True, ex=86400):
-        return flights._refuse(
-            "This flight is already being booked. Check the airline's email before trying again.",
-            409,
-        )
+        return flights._refuse(say("flight.already_booking"), 409)
     order_body = {
         "type": "instant",
         "selected_offers": [offer_id],
@@ -560,21 +546,18 @@ async def flight_order(
             # Duffel: "We know for sure that no booking was created in the
             # supplier systems."
             await redis.delete(lock)
-            return flights._refuse(
-                "The airline's booking system was busy, and nothing was booked. Try again in a few minutes.",
-                409,
-            )
+            return flights._refuse(say("flight.airline_busy"), 409)
         if error.status == 0 or error.status >= 500:
             # The airline may have it: never ask again for this offer; look for it.
             await redis.set(lock, "uncertain", ex=86400)
             found = await _order_made(api, offer_id, user_id)
             if found is None:
-                return flights._answer(_UNCERTAIN)
+                return flights._answer(_uncertain())
             order, status = found, 201
         else:
             await redis.delete(lock)
             return flights._refuse(
-                f"The flight was not booked: {_duffel_sentence(error)}", 409
+                say("flight.not_booked", why=_duffel_sentence(error)), 409
             )
     if status == 202:
         # Duffel is still confirming it with the airline: never ask again.
@@ -585,12 +568,7 @@ async def flight_order(
             offer_id=offer_id,
             test=api.is_test,
         )
-        return flights._answer(
-            {
-                **_UNCERTAIN,
-                "message": "The airline is still confirming the booking. Don't book it again: Simeon keeps checking, and the airline emails the traveller.",
-            }
-        )
+        return flights._answer(_uncertain("flight.still_confirming"))
     await redis.set(lock, "booked", ex=86400)
     if status == 200 and not _text(order.get("booking_reference")):
         # Booked, its details still to come (an order paid by card).
@@ -620,7 +598,7 @@ async def flight_order_status(
     confirmed) in; `{booked: true, …}` once Duffel has this person's order
     from it, else `{booked: false, uncertain: true}`."""
     if not settings.DUFFEL_ACCESS_TOKEN:
-        return flights._refuse("Flight booking is not switched on yet.", 503)
+        return flights._refuse(say("flight.not_switched_on"), 503)
     user_id = str(desktop_session.user_id)
     try:
         offer_id = _offer_id(await _json_body(request))
@@ -628,11 +606,9 @@ async def flight_order_status(
         return flights._refuse(refused.message, refused.status)
     lock = f"desktop:flights:order:{user_id}:{offer_id}"
     if await redis.get(lock) is None:
-        return flights._refuse(
-            "No booking of this flight is waiting to be confirmed.", 404
-        )
+        return flights._refuse(say("flight.nothing_waiting"), 404)
     if await _over_limit(redis, f"desktop:flights:status:{user_id}", 120, 3600):
-        return flights._refuse("Too many checks; try again later.", 429)
+        return flights._refuse(say("flight.too_many_checks"), 429)
     api = flights.client()
     found = await _order_made(api, offer_id, user_id)
     if found is None:

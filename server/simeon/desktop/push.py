@@ -57,6 +57,7 @@ from simeon.worker import enqueue_job
 
 from . import apns
 from .auth import get_desktop_or_box_session, get_desktop_session
+from .words import say
 
 log = structlog.get_logger()
 
@@ -80,26 +81,27 @@ def clip(text: str, limit: int) -> str:
 
 #: A card's type name as an engine from before 12 October 2026 sent it for
 #: the card's words (a question card's push read "widget"): a sentence
-#: instead. Engines since send what the card says
-#: (`session-projection.ts`, `cardPreviewText`).
+#: instead (`say`, in the request's language). Engines since send what the
+#: card says (`session-projection.ts`, `cardPreviewText`).
 CARD_SENTENCES = {
-    "widget": "Has a question for you",
-    "secret-request": "Needs a secret from you",
-    "permission-request": "Needs your permission",
-    "local-tool-permission": "Needs your permission",
-    "auto-review-approval": "Needs your approval",
-    "connector": "Connect an app",
-    "connectors": "Connect tools",
-    "listener-connect": "Connect an app",
-    "email-draft": "Drafted an email",
-    "slack-draft": "Drafted a Slack message",
-    "cloud-agent": "Cloud agent",
+    "widget": "push.card.question",
+    "secret-request": "push.card.secret",
+    "permission-request": "push.card.permission",
+    "local-tool-permission": "push.card.permission",
+    "auto-review-approval": "push.card.approval",
+    "connector": "push.card.connect_app",
+    "connectors": "push.card.connect_tools",
+    "listener-connect": "push.card.connect_app",
+    "email-draft": "push.card.email_draft",
+    "slack-draft": "push.card.slack_draft",
+    "cloud-agent": "push.card.cloud_agent",
 }
 
 
 def readable(body: str) -> str:
     """The push's words, never a card's type name."""
-    return CARD_SENTENCES.get(body.strip(), body)
+    key = CARD_SENTENCES.get(body.strip())
+    return say(key) if key is not None else body
 
 
 class PushDeviceBody(BaseModel):
