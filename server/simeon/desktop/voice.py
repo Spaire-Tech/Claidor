@@ -84,7 +84,7 @@ VOICE_AGENT_NAME = "Simeon voice"
 #: 2026 Jessica left the list and Michael became the default without a bump,
 #: the agent kept Jessica as its own voice, and every call that named no
 #: voice still spoke as Jessica (the founder, 9 October 2026).
-VOICE_AGENT_CONFIG_VERSION = 10
+VOICE_AGENT_CONFIG_VERSION = 11
 
 #: The model that thinks during the call. Fast over clever: the call's
 #: real work runs in the person's own agent behind the call (`send_task`), and a
@@ -129,6 +129,17 @@ VOICE_FALLBACK_VOICE_ID = "cjVigY5qzO86Huf0OWal"
 
 VOICE_DEFAULT_LANGUAGE = "en"
 VOICE_DEFAULT_FIRST_MESSAGE = "Hi, it's me. What's up?"
+
+#: The calls' other languages (20 October 2026), as ElevenLabs names them,
+#: each with the first message a call says when the app sends none. The app
+#: sets a call's language from the person's (`voiceCallLanguage` in
+#: `voice-call-prompt.ts`, `VoiceCallText.language(for:)` in the core): a
+#: language the agent was not given is refused, so a new one goes here and
+#: the version above goes up. With any of them the agent speaks through
+#: ElevenLabs' multilingual model; English keeps `VOICE_TTS_MODEL`.
+VOICE_LANGUAGES: dict[str, str] = {
+    "fr": "Salut, c’est moi. Quoi de neuf\u202f?",
+}
 
 #: The fallback prompt. The app overrides it on every call with the
 #: agent's own (its name, its manner, what it is working on); this is
@@ -242,7 +253,9 @@ VOICE_RECAP_DESCRIPTION = (
     "them, 'I' for the agent. Start with 'You'. One or two short sentences: "
     "what they called about, and what the agent did or will do. Plain, warm, "
     "no greeting, no sign-off. Never write 'the user', 'the caller' or 'the "
-    "customer', and never name the person."
+    "customer', and never name the person. Write it in the language the call "
+    "was in; in French, say 'tu' and start with 'Tu', unless they said 'vous' "
+    "on the call."
 )
 
 
@@ -273,6 +286,10 @@ def agent_config(
                 "model_id": VOICE_TTS_MODEL,
                 "voice_id": voice_id,
                 "stability": VOICE_TTS_STABILITY,
+            },
+            "language_presets": {
+                language: {"overrides": {"agent": {"first_message": first}}}
+                for language, first in VOICE_LANGUAGES.items()
             },
             "turn": {
                 "turn_timeout": 7,
@@ -620,6 +637,47 @@ async def _pick_voice(api: ElevenLabsClient) -> str:
     return listed[0]
 
 
+def _english_only(config: dict[str, Any]) -> dict[str, Any]:
+    """The agent without the calls' other languages, and without this
+    version's tag, so the next start tries them again."""
+    conversation = {
+        key: value
+        for key, value in config["conversation_config"].items()
+        if key != "language_presets"
+    }
+    tags = [tag for tag in config["tags"] if tag != VOICE_AGENT_VERSION_TAG]
+    return {**config, "conversation_config": conversation, "tags": tags}
+
+
+async def _write_agent(
+    api: ElevenLabsClient, agent_id: str | None, config: dict[str, Any]
+) -> str:
+    """Create or rewrite the agent. The calls' other languages
+    (`VOICE_LANGUAGES`, 20 October 2026) were written before they could be
+    tried against ElevenLabs: refused, the agent is written without them, so
+    English calls go on, and the refusal is logged
+    (`desktop.voice.languages_refused`)."""
+    try:
+        if agent_id is None:
+            return await api.create_agent(config)
+        await api.update_agent(agent_id, config)
+        return agent_id
+    except ElevenLabsError as error:
+        if not 400 <= error.status < 500:
+            raise
+        log.warning(
+            "desktop.voice.languages_refused",
+            status=error.status,
+            error=error.body[:2_000],
+            languages=sorted(VOICE_LANGUAGES),
+        )
+        english = _english_only(config)
+        if agent_id is None:
+            return await api.create_agent(english)
+        await api.update_agent(agent_id, english)
+        return agent_id
+
+
 async def _sync_agent(api: ElevenLabsClient) -> str:
     agent_id = _oldest(await api.find_agents(VOICE_AGENT_NAME))
     if agent_id is not None:
@@ -630,7 +688,7 @@ async def _sync_agent(api: ElevenLabsClient) -> str:
     voice_id = await _pick_voice(api)
     config = agent_config(await _ensure_tools(api), voice_id)
     if agent_id is None:
-        agent_id = await api.create_agent(config)
+        agent_id = await _write_agent(api, None, config)
         log.info(
             "desktop.voice.agent_created",
             agent_id=agent_id,
@@ -638,7 +696,7 @@ async def _sync_agent(api: ElevenLabsClient) -> str:
             version=VOICE_AGENT_CONFIG_VERSION,
         )
     else:
-        await api.update_agent(agent_id, config)
+        await _write_agent(api, agent_id, config)
         log.info(
             "desktop.voice.agent_synced",
             agent_id=agent_id,
@@ -799,12 +857,22 @@ def _transcript(conversation: dict[str, Any] | None) -> list[dict[str, str]]:
     return out[:VOICE_TRANSCRIPT_MAX_LINES]
 
 
+#: How a recap starts when it speaks to the person: English "You", and
+#: French "Tu" or "Vous" (a recap of a call in French, 20 October 2026).
+RECAP_OPENINGS = ("you", "tu", "vous")
+
+
 def recap_for(recap: str | None, name: str | None) -> str | None:
-    """The recap with the person's name in front: "Bass, you asked me to…"."""
+    """The recap with the person's name in front: "Bass, you asked me to…",
+    "Bass, tu m’as demandé…"."""
     if recap is None or not name:
         return recap
-    if recap[:3].lower() == "you" and (len(recap) == 3 or not recap[3].isalpha()):
-        return f"{name}, {recap[:1].lower()}{recap[1:]}"
+    for opening in RECAP_OPENINGS:
+        size = len(opening)
+        if recap[:size].lower() == opening and (
+            len(recap) == size or not recap[size].isalpha()
+        ):
+            return f"{name}, {recap[:1].lower()}{recap[1:]}"
     return recap
 
 

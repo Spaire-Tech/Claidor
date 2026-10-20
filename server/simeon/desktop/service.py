@@ -810,6 +810,8 @@ class DesktopService:
             "avatarUrl": user.avatar_url,
             "phone": None,
             "accountMode": "personal",
+            # The language the apps last told (`POST user/profile`); absent is English.
+            **({"language": user.language} if user.language else {}),
         }
 
     # credits

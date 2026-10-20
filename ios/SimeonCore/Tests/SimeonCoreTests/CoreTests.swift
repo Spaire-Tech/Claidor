@@ -618,12 +618,13 @@ final class FakeVoice: VoiceTransport, @unchecked Sendable {
   let lock = NSLock()
   var events: (@Sendable (VoiceEvent) -> Void)?
   var started: (token: String, prompt: String, first: String, voice: String?)?
+  var language: String?
   var said: [String] = []
   var results: [String: String] = [:]
   var ended = false
 
   func start(token: String, prompt: String, firstMessage: String, voiceId: String?, language: String, events: @escaping @Sendable (VoiceEvent) -> Void) async throws {
-    lock.withLock { started = (token, prompt, firstMessage, voiceId); self.events = events }
+    lock.withLock { started = (token, prompt, firstMessage, voiceId); self.language = language; self.events = events }
     events(.connected(conversationId: nil))
   }
   func setMuted(_ muted: Bool) async {}

@@ -68,6 +68,7 @@ public enum GoogleSignIn {
     let url = URL(string: api.absoluteString.trimmingTrailingSlashes + configPath)!
     var request = URLRequest(url: url)
     request.timeoutInterval = 8
+    request.setValue(AppLanguage.current, forHTTPHeaderField: SimeonConfig.languageHeader)
     guard let answer = try? await http.send(request), answer.ok else { return nil }
     return Config(answer.json?["google"])
   }
@@ -109,7 +110,7 @@ public enum GoogleSignIn {
   public static func signIn(api: URL, code: String, attempt: Attempt, clientVersion: String, http: HTTPClient) async -> AppleSignIn.Outcome {
     let url = URL(string: api.absoluteString.trimmingTrailingSlashes + path)!
     let body: JSON = .object(["code": .string(code), "codeVerifier": .string(attempt.verifier)])
-    let request = URLRequest.post(url, json: body, headers: [SimeonConfig.clientVersionHeader: clientVersion])
+    let request = URLRequest.post(url, json: body, headers: SimeonConfig.serverHeaders(clientVersion: clientVersion))
     do {
       let answer = try await http.send(request)
       if answer.ok, let pair = TokenPair(answer.json) { return .tokens(pair) }

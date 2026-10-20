@@ -369,6 +369,8 @@ public final class AppStore {
     connectRebuild(backend)
     // Whether this account may use Simeon, beside the agents (`sandAccess.connect`).
     Task { await refreshAccess() }
+    // The app's language, to the computer and the account (`tellLanguage`): the agents write in it.
+    Task { await tellLanguage() }
     Task { await loadTrays() }
     await reloadRoster()
     await loadPins()
@@ -483,6 +485,8 @@ public final class AppStore {
       if recovered, let backend {
         computerReconnected()
         Task { await loadTrays() }
+        // A computer rebuilt meanwhile starts with no language: told again.
+        Task { await tellLanguage() }
         Task { rebuild.migrationReadBack(await backend.migrationStatus()) }
         Task {
           await reloadRoster()

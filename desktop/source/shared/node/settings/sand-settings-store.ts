@@ -12,6 +12,7 @@ import { coerceToEnabledTrack, isSandUpdateTrack, type SandUpdateTrack } from ".
 import { isSandAgentModelSelection, type SandAgentModelSelection } from "../../agents/sand-agent-model.js";
 import { emptySandInferenceRouterUsage, normalizeSandInferenceProvider, PRODUCT_INFERENCE_PROVIDER, resolveProductInferenceProvider, type SandInferenceProvider, type SandInferenceRouterUsage } from "../../inference-router.js";
 import { isSandBoxRuntime, resolveSandBoxRuntime, type SandBoxRuntime } from "../../box-runtime.js";
+import { normalizeUserLanguage } from "../../user-language.js";
 
 export const SETTINGS_VERSION = 1;
 export const SAND_DOWNGRADE_MAX_FAST_MIGRATION_ID = "downgrade-persisted-max-fast";
@@ -25,7 +26,7 @@ export interface SandStoredSettings {
   conciergeConsent: "unset" | "allowed" | "denied"; settingsMigrations: string[];
   hasSeenOnboarding?: boolean; hasSeenOnboardingAccountScope?: string; updateTrackOverride?: SandUpdateTrack; themePreference?: SandThemePreference;
   agentDefaultModel?: SandAgentModelSelection; computerUseModel?: SandAgentModelSelection; notifications?: Record<string, unknown>;
-  userTimeZone?: string; userTimeZoneOverride?: string; autoReviewInstructions?: SandAutoReviewInstructions;
+  userTimeZone?: string; userTimeZoneOverride?: string; userLanguage?: string; autoReviewInstructions?: SandAutoReviewInstructions;
   localToolPermission?: SandLocalToolPermission; localToolPermissionCeiling?: SandLocalToolPermission;
   inferenceProvider?: SandInferenceProvider; inferenceRouterUsage?: SandInferenceRouterUsage;
   boxRuntime?: SandBoxRuntime;
@@ -67,6 +68,8 @@ function parseSettings(value: unknown): SandStoredSettings | null {
   if (isSandAgentModelSelection(raw.computerUseModel)) result.computerUseModel = raw.computerUseModel;
   if (typeof raw.notifications === "object" && raw.notifications != null && !Array.isArray(raw.notifications)) result.notifications = raw.notifications as Record<string, unknown>;
   for (const key of ["userTimeZone", "userTimeZoneOverride", "mcpCustomInstructionsAccountScope"] as const) if (typeof raw[key] === "string" && raw[key].length > 0) result[key] = raw[key];
+  const userLanguage = normalizeUserLanguage(raw.userLanguage);
+  if (userLanguage !== undefined) result.userLanguage = userLanguage;
   if (typeof raw.autoReviewInstructions === "object" && raw.autoReviewInstructions != null) result.autoReviewInstructions = normalizeSandAutoReviewInstructions(raw.autoReviewInstructions as Record<string, unknown>);
   if (isSandLocalToolPermission(raw.localToolPermission)) result.localToolPermission = raw.localToolPermission;
   if (isSandLocalToolPermission(raw.localToolPermissionCeiling)) result.localToolPermissionCeiling = raw.localToolPermissionCeiling;
@@ -157,6 +160,9 @@ export class SandSettingsStore {
   getUserTimeZoneOverride(): string | undefined { return this.load().userTimeZoneOverride; }
   setUserTimeZone(value?: string): void { this.update((s) => { const { userTimeZone: _old, ...rest } = s; const trimmed = value?.trim(); return trimmed == null || trimmed.length === 0 ? rest : { ...rest, userTimeZone: trimmed }; }); }
   setUserTimeZoneOverride(value?: string): void { this.update((s) => { const { userTimeZoneOverride: _old, ...rest } = s; const trimmed = value?.trim(); return trimmed == null || trimmed.length === 0 ? rest : { ...rest, userTimeZoneOverride: trimmed }; }); }
+  // The person's language, as the apps write it (`shared/user-language.ts`); undefined reads as English.
+  getUserLanguage(): string | undefined { return this.load().userLanguage; }
+  setUserLanguage(value?: string): void { this.update((s) => { const { userLanguage: _old, ...rest } = s; const tag = normalizeUserLanguage(value); return tag === undefined ? rest : { ...rest, userLanguage: tag }; }); }
   getMcpBoxServers(): string[] { return this.load().mcpBoxServers; }
   setMcpBoxServers(names: readonly string[]): void { this.update((s) => ({ ...s, mcpBoxServers: [...new Set(names)] })); }
   getRawMcpCustomInstruction(name: string): string | undefined { return this.load().mcpCustomInstructions[name]; }

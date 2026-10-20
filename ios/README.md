@@ -216,6 +216,13 @@ profile, not from the configuration.
   Apple's prompt; off, Settings' Notifications is off). Simeon is made out of sight meanwhile; his chat opens at the end.
   Google needs `SIMEON_GOOGLE_IOS_CLIENT_ID` on the server (an OAuth client
   of type iOS); until then the app uses the web sign-in.
+- **Language** (20 October 2026, `docs/localization.md`): the app follows the
+  phone's language (English and French, `CFBundleLocalizations` in
+  `project.yml`), and Settings' Language row opens iOS's own page for it
+  (Settings › Simeon › Language). The language goes to the server on every
+  request (`Accept-Language`), and after every sign-in to the account and the
+  person's computer (`userLanguage`), so the agents, calls and dictation use
+  it (`AppLanguage.swift`, `AppStore.tellLanguage`).
 - **Plans** are bought in the app with Apple's in-app purchase (StoreKit 2,
   `Simeon/Purchases.swift`, `Simeon/PlansSheet.swift`): monthly, no free
   week (the free month is the trial); the server checks Apple's signature

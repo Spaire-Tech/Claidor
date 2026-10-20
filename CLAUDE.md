@@ -61,6 +61,11 @@ skills, connectors, avatars, approvals). Running the box servers:
   colour) and run `node ios/scripts/make-assets.mjs`; keep only its new
   `Brands/<key>` logos and the `GeneratedBrands.swift` rows from the run.
   `desktop/tests/connector-chat-colours.test.mjs` fails otherwise.
+- **Languages.** English is the source language in the code; French (and each
+  later language) is a translation, in one place per platform, in "tu"
+  (`docs/localization.md`). The person's language travels to the server
+  (`Accept-Language`, `users.language`) and the agents (`userLanguage`). Run
+  `python3 scripts/check_translations.py` with `check_names.py`.
 - **Server code:** never call `session.commit()` in request code (the session
   commits at the end of the request; see `server/CLAUDE.md`).
 - **Git:** no model names in commits or pull requests. PR bodies follow
@@ -93,8 +98,9 @@ mac/scripts/build.sh
 mac/scripts/release.sh
 cd mac && xcodegen generate && open SimeonMac.xcodeproj
 
-# Earlier names
+# Earlier names, and every string translated (docs/localization.md)
 python3 scripts/check_names.py
+python3 scripts/check_translations.py
 ```
 
 ## Known state

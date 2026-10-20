@@ -35,6 +35,7 @@ import { renderAutomationListSystemPrompt, renderAutomationsPointerSystemPrompt,
 import { ROUTINES_GUIDE_REFERENCE_PATH } from "./box-reference-docs.js";
 import { renderTimeZoneSystemPrompt } from "../../shared/timezone.js";
 import { renderUserIdentitySystemPrompt } from "../sand-user-identity.js";
+import { renderUserLanguageSystemPrompt } from "../../shared/user-language.js";
 import { renderWorkflowsSystemPrompt } from "../../shared/workflow-model.js";
 import { renderChannelsSystemPrompt, type ChannelConnectionSummary } from "../../shared/channel-messaging.js";
 import { renderAgentDirectorySystemPrompt, type AgentAddress, type AgentGroupAddress } from "../agents/agent-messaging.js";
@@ -85,6 +86,8 @@ export interface SystemPromptAssemblyDependencies {
   readonly isMemoryFreezeEnabled?: () => boolean;
   readonly isBoxScopedSubagent: () => boolean;
   readonly requestContext: { resolve(): { readonly timeZone: string; readonly userFullName?: string } };
+  /** The person's language, the apps' `userLanguage` host setting; undefined (or English) leaves the prompt as it was. */
+  readonly userLanguage?: () => string | undefined;
   readonly automationStore: () => { getLocation(): string | null | undefined; list(): readonly AutomationRecord[]; listDefinitions?(): readonly AutomationRecord[] } | null;
   readonly workflowStore: () => { getLocation(): string | null | undefined } | null;
   readonly channelStore: () => { getLocation(): string | null | undefined; listConnections(): readonly ChannelConnectionSummary[] } | null;
@@ -228,6 +231,11 @@ export function createSystemPromptAssembly(deps: SystemPromptAssemblyDependencie
     return rendered.length > 0 ? rendered : null;
   }
 
+  function getUserLanguageSection(): string | null {
+    const rendered = renderUserLanguageSystemPrompt(deps.userLanguage?.());
+    return rendered.length > 0 ? rendered : null;
+  }
+
   function getUserIdentitySection(): string | null {
     const rendered = renderUserIdentitySystemPrompt(deps.requestContext.resolve().userFullName);
     return rendered.length > 0 ? rendered : null;
@@ -293,8 +301,10 @@ export function createSystemPromptAssembly(deps: SystemPromptAssemblyDependencie
     if (deps.isSpotlightEnabled?.() !== false) sections.push(spotlightPromptSection({ canSendMessage: !deps.isSubagentRunner }));
     const profile = deps.isSharedRoomRunner ? profileSection(resolveProfileForPrompt(), true) : snapshot?.profileSection ?? profileSection(resolveProfileForPrompt(), false);
     if (profile != null) sections.push(profile);
-    if (deps.isSharedRoomRunner) return sections.join("\n\n");
     const add = (value: string | null | undefined): void => { if (value != null && value.length > 0) sections.push(value); };
+    // The person's language, in a group chat too: they read it. A subagent writes to its agent, not to them.
+    if (!deps.isSubagentRunner) add(getUserLanguageSection());
+    if (deps.isSharedRoomRunner) return sections.join("\n\n");
     // The Chief of Staff's standing rule, by title (7 October 2026, `shared/agents/chief-of-staff.ts`).
     if (!deps.isSubagentRunner && isChiefOfStaffTitle(deps.agentProfileProvider()?.title)) add(chiefOfStaffSection(deps.requestContext.resolve().userFullName));
     add(getUserIdentitySection());

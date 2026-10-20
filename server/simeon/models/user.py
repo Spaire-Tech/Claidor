@@ -174,6 +174,14 @@ class User(RecordModel):
         String(256), nullable=True, default=None
     )
 
+    # The person's language as the iPhone and Mac apps tell it ("fr", "pt-BR";
+    # 20 October 2026, `simeon.desktop.language`), for what is written without a
+    # request, like the sign-in code email. None reads as English. Not the
+    # inherited shop's `customer.locale`.
+    language: Mapped[str | None] = mapped_column(
+        String(35), nullable=True, default=None
+    )
+
     @hybrid_property
     def can_authenticate(self) -> bool:
         return self.deleted_at is None and self.blocked_at is None

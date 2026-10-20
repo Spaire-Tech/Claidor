@@ -128,6 +128,18 @@ extension AppStore {
     return (try? await backend.command("setHostSettings", update)) != nil
   }
 
+  /**
+   * The app's language (`AppLanguage`), told where text is written outside the app: the person's computer as the host
+   * setting `userLanguage`, beside `userTimeZone` (the agents write in it, a call speaks it), and the account
+   * (`POST user/profile`, for emails sent without a request). After every sign-in (`attach`); changing the language
+   * relaunches the app, which tells it again. Quietly: a refusal is told again at the next launch.
+   */
+  public func tellLanguage(_ language: String = AppLanguage.current) async {
+    guard let backend else { return }
+    _ = try? await backend.command("setHostSettings", ["userLanguage": .string(language)])
+    _ = try? await backend.server("user/profile", method: "POST", body: ["language": .string(language)])
+  }
+
   /** Timezone (`setTimeZoneOverride`): the zone the agents and routines use, or nil for the one this Mac is in. */
   public func setTimeZone(_ zone: String?, detected: String = TimeZone.current.identifier) async -> Bool {
     await writeHostSettings(["userTimeZone": .string(detected), "userTimeZoneOverride": .string(zone ?? "")])

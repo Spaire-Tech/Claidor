@@ -5,7 +5,7 @@ import SimeonMacCore
 
 /**
  * Settings › General (`Sa`), its sections 28 apart: Account (the person,
- * Copy email, Sign Out; Delete Account, ours), Appearance (Theme), Agent (Timezone, Execution on
+ * Copy email, Sign Out; Delete Account, ours), Appearance (Theme, Language), Agent (Timezone, Execution on
  * Local Computer, Auto-review and its rules), Security Key. A change is
  * shown once the computer has taken it, its control waiting meanwhile; a
  * refusal leaves the old value and says nothing.
@@ -23,6 +23,7 @@ struct SettingsGeneralPage: View {
       }
       SettingsSection(title: "Appearance", look: look) {
         ThemeRow(look: look)
+        LanguageRow(look: look)
       }
       SettingsSection(title: "Agent", look: look) {
         TimezoneRow(model: model, look: look)
@@ -307,6 +308,63 @@ private struct ThemeRow: View {
     SettingsRow(label: "Theme", look: look) {
       SettingsSelect(label: "Theme", options: [(value: "system", label: "Follow System"), (value: "light", label: "Light"), (value: "dark", label: "Dark")],
                      value: ["light", "dark"].contains(theme) ? theme : "system", look: look) { MacTheme.set($0) }
+    }
+  }
+}
+
+/**
+ * Language (20 October 2026): System (the Mac's own order of languages), or one the app is in, each in its own name.
+ * The choice is the app's own `AppleLanguages`, which macOS reads at launch, so a change asks to relaunch, with the
+ * button that does; the relaunched app tells the agents (`AppStore.tellLanguage`).
+ */
+private struct LanguageRow: View {
+  let look: Look
+  @State private var chosen = MacLanguage.chosen
+
+  var body: some View {
+    let waiting = chosen != MacLanguage.atLaunch
+    SettingsRow(label: "Language", hints: waiting ? [String(localized: "Relaunch Simeon to use it.")] : [], look: look) {
+      HStack(spacing: 8) {
+        if waiting { SettingsButton(title: String(localized: "Relaunch"), kind: .primary, look: look) { MacLanguage.relaunch() } }
+        SettingsSelect(label: "Language", options: MacLanguage.options, value: chosen, look: look) { value in
+          MacLanguage.choose(value)
+          chosen = value
+        }
+      }
+    }
+  }
+}
+
+/** The app's language on the Mac: chosen in Settings › General, kept as the app's own `AppleLanguages`. */
+enum MacLanguage {
+  /** The picker's System: no language of the app's own, the Mac's order. */
+  static let system = "system"
+  private static let key = "AppleLanguages"
+
+  /** What the picker shows chosen: the app's own language, or System. */
+  static var chosen: String {
+    let own = UserDefaults.standard.persistentDomain(forName: Bundle.main.bundleIdentifier ?? "")?[key] as? [String]
+    return own?.first.map(AppLanguage.tag) ?? system
+  }
+
+  /** The choice the app was opened with: a different one waits for a relaunch. */
+  static let atLaunch = chosen
+
+  /** System, then each language the app is in, in its own name (English, Français, …). */
+  static var options: [(value: String, label: String)] {
+    [(value: system, label: String(localized: "System"))] + AppLanguage.available(Bundle.main.localizations).map { (value: $0, label: AppLanguage.ownName($0)) }
+  }
+
+  static func choose(_ value: String) {
+    if value == system { UserDefaults.standard.removeObject(forKey: key) } else { UserDefaults.standard.set([value], forKey: key) }
+  }
+
+  /** Opens Simeon again and quits this one, as Move to Applications does (`MacServices`). */
+  static func relaunch() {
+    let configuration = NSWorkspace.OpenConfiguration()
+    configuration.createsNewApplicationInstance = true
+    NSWorkspace.shared.openApplication(at: Bundle.main.bundleURL, configuration: configuration) { _, _ in
+      Task { @MainActor in NSApp.terminate(nil) }
     }
   }
 }
