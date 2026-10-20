@@ -572,6 +572,153 @@ class TestEnsureSandBox:
         response = await _ensure(client, box_access)
         assert response.status_code == 401
 
+    async def test_signing_in_again_wakes_the_same_computer(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        host: FakeBoxHost,
+    ) -> None:
+        """20 October 2026: a sign-out revoked the box's credential, and the
+        next sign-in rebuilt the computer to give it a new one, almost a
+        minute behind "Setting up Simeon's computer". The credential the
+        box holds is made good again and the sleeping computer woken."""
+        access, _ = await _signed_in(client, session, user)
+        body = (await _ensure(client, access)).json()
+        container = next(iter(host.boxes))
+        credential = dict(line.split("=", 1) for line in host.created[0].environment())[
+            "SAND_INFERENCE_RENEWAL_CREDENTIAL"
+        ]
+        await host.stop(container)
+        await client.post(
+            "/desktop/api/auth/logout", headers={"Authorization": f"Bearer {access}"}
+        )
+        # Signed out: the computer is cut off, as before.
+        assert (
+            await client.post(
+                "/sand-box/inference-credential", json={"credential": credential}
+            )
+        ).status_code == 401
+
+        again, _ = await _signed_in(client, session, user)
+        woken = await _ensure(client, again)
+        assert woken.status_code == 200, woken.text
+        assert woken.json()["podId"] == body["podId"]
+        assert woken.json()["gatewayToken"] == body["gatewayToken"]
+        assert len(host.created) == 1
+        assert host.removed == []
+        assert host.boxes[container]["running"]
+        renewed = await client.post(
+            "/sand-box/inference-credential", json={"credential": credential}
+        )
+        assert renewed.status_code == 200, renewed.text
+        # It belongs to the new sign-in now: that one's sign-out cuts it off.
+        await client.post(
+            "/desktop/api/auth/logout", headers={"Authorization": f"Bearer {again}"}
+        )
+        assert (
+            await client.post(
+                "/sand-box/inference-credential", json={"credential": credential}
+            )
+        ).status_code == 401
+
+    async def test_a_computer_out_of_date_is_still_replaced_after_a_sign_in(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        host: FakeBoxHost,
+    ) -> None:
+        access, _ = await _signed_in(client, session, user)
+        await _ensure(client, access)
+        old = next(iter(host.boxes))
+        await client.post(
+            "/desktop/api/auth/logout", headers={"Authorization": f"Bearer {access}"}
+        )
+        host.expected_host_sha256 = "f2805435"
+        again, _ = await _signed_in(client, session, user)
+        assert (await _ensure(client, again)).status_code == 200
+        assert len(host.created) == 2
+        assert old not in host.boxes
+
+
+@pytest.mark.asyncio
+async def test_a_woken_computer_renews_while_ensure_still_waits(
+    worker_id: str, host: FakeBoxHost
+) -> None:
+    """The credential made good again is committed before the computer
+    wakes (`_revive_credential`), as a new one is (`_mint_credential`): a
+    woken computer asks with it at once, on its own connection, while the
+    request is still open."""
+    engine = create_async_engine(
+        dsn=get_database_url(worker_id),
+        application_name=f"test_{worker_id}_box_revive",
+        pool_size=settings.DATABASE_POOL_SIZE,
+        pool_recycle=settings.DATABASE_POOL_RECYCLE_SECONDS,
+    )
+    sessionmaker = create_async_sessionmaker(engine)
+    user_id = uuid4()
+    renewals: list[str] = []
+    start = host.start
+
+    try:
+        async with sessionmaker() as earlier:
+            person = User(id=user_id, email=f"{user_id.hex}@example.com")
+            earlier.add(person)
+            await earlier.flush()
+            first, _, _ = await desktop.issue_app_session(earlier, person)
+            first_id = first.id
+            await earlier.commit()
+        async with sessionmaker() as request_db:
+            caller = await request_db.get(DesktopSession, first_id)
+            assert caller is not None
+            await box_service.broker.ensure(request_db, caller, committed=sessionmaker)
+            await request_db.commit()
+        container = next(iter(host.boxes))
+        credential = dict(line.split("=", 1) for line in host.created[0].environment())[
+            "SAND_INFERENCE_RENEWAL_CREDENTIAL"
+        ]
+        await host.stop(container)
+        async with sessionmaker() as out:
+            leaving = await out.get(DesktopSession, first_id)
+            assert leaving is not None
+            await desktop.revoke(out, leaving)
+            await out.commit()
+
+        async def start_and_renew(provider_box_id: str) -> None:
+            await start(provider_box_id)
+            async with sessionmaker() as box_side:
+                try:
+                    await desktop.renew_box_access(box_side, credential)
+                    renewals.append("renewed")
+                except DesktopUnauthenticated:
+                    renewals.append("refused")
+
+        host.start = start_and_renew  # type: ignore[method-assign]
+        async with sessionmaker() as earlier:
+            person_again = await earlier.get(User, user_id)
+            assert person_again is not None
+            second, _, _ = await desktop.issue_app_session(earlier, person_again)
+            second_id = second.id
+            await earlier.commit()
+        async with sessionmaker() as request_db:
+            caller = await request_db.get(DesktopSession, second_id)
+            assert caller is not None
+            await box_service.broker.ensure(request_db, caller, committed=sessionmaker)
+            await request_db.commit()
+        assert renewals == ["renewed"]
+        assert len(host.created) == 1
+    finally:
+        async with sessionmaker() as cleanup:
+            for table in ("sand_boxes", "desktop_sessions", "users"):
+                column = "id" if table == "users" else "user_id"
+                await cleanup.execute(
+                    text(f"DELETE FROM {table} WHERE {column} = :id"),
+                    {"id": user_id},
+                )
+            await cleanup.commit()
+        await engine.dispose()
+
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("committed_first", [False, True])

@@ -64,6 +64,41 @@ test("a new box keeps asking for its first credential at the base delay, then ba
   assert.deepEqual(attempts.slice(0, failuresBeforeSuccess), [1, 1, 1]);
 });
 
+test("a credential made good again is used at once, not after the backoff it was waiting out", async () => {
+  // 20 October 2026: a sign-out revoked the box's credential and the box backed off, up to five minutes a try; the next
+  // sign-in made the same credential good again (`revive_box_credential`), and the first model call asks for it at once.
+  const { SandInferenceCredentialRenewer } = await load();
+  let good = false;
+  let calls = 0;
+  let backingOff;
+  const backoff = new Promise((resolve) => { backingOff = resolve; });
+  const renewer = new SandInferenceCredentialRenewer({
+    getCredential: () => "simeon_db_x",
+    renew: async () => {
+      calls += 1;
+      if (!good) throw new Error("HTTP 401");
+      return { accessToken: "token", expiresAtMs: Date.now() + 60 * 60_000 };
+    },
+    setCredential: () => {},
+    retry: {
+      name: "test",
+      // Minutes, in effect: it ends only when cut short.
+      schedule(_attempt, signal) {
+        backingOff();
+        return { elapsed: new Promise((_resolve, reject) => signal.addEventListener("abort", () => reject(new Error("aborted")), { once: true })), dispose() {} };
+      },
+      runWithRetry: async () => { throw new Error("unused"); },
+    },
+    clock: { now: Date.now, monotonicNow: Date.now, schedule: () => ({ dispose() {} }) },
+  });
+  renewer.start();
+  await backoff;
+  good = true;
+  assert.equal(await renewer.requestImmediateRenewal(), true);
+  assert.equal(calls, 2);
+  renewer.close();
+});
+
 test("the backup waits for the box's credential instead of failing on every file", async () => {
   const { createBoxStoreSyncService } = await load();
   const root = await mkdtemp(path.join(os.tmpdir(), "box-store-wait-"));

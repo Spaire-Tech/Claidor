@@ -80,9 +80,12 @@ access token stays good for up to `SIMEON_DESKTOP_REFRESH_GRACE` (5 minutes),
 so a copy of it held elsewhere does not fail right after a refresh.
 
 **Sign-out.** The app posts `POST /desktop/api/auth/logout`. The server revokes
-the session, the box credentials that belong to it, and any access token of
-that person still inside its refresh grace. A box credential or a cloud job's
-token cannot sign anyone out.
+the session and any access token of that person still inside its refresh
+grace. The box credential that belongs to it moves to another app the person
+is still signed in on (the Mac, the iPhone or the web window), and is revoked
+only when the last one signs out (20 October 2026; before, signing out of the
+iPhone cut the box off from the Mac too). The Mac's local-exec credential is
+always revoked. A box credential or a cloud job's token cannot sign anyone out.
 
 **Rate limits** (`server/simeon/rate_limit.py`):
 
@@ -806,11 +809,20 @@ that name too for one release, for the apps and box hosts built before). Its met
 to Docker Engine over its HTTP API with TLS client certificates.
 
 `EnsureSandBox` finds the person's box, starts it if it is stopped, and
-creates it if it does not exist. It replaces the container, keeping the same
-volumes, in any of these cases:
+creates it if it does not exist. A box whose credential died with a sign-out
+is not rebuilt (20 October 2026): the credential it already holds is made
+good again for the app signing in (`revive_box_credential`, committed before
+the box wakes, `sand.box.credential_revived`), and the box is woken. Until
+then each sign-in after a sign-out rebuilt the computer and copied its backup
+in, almost a minute behind "Setting up Simeon's computer". The box's renewer
+asks again at once when a model call needs the credential, even in the middle
+of a backoff (`credential-renewer.ts`, from the engine published after that
+date). It replaces the container, keeping the same volumes, in any of these
+cases:
 
 - the container is gone,
-- its credential died with a sign-out,
+- its credential is gone and cannot be made good again (no credential on the
+  row, as after a failed move),
 - it runs a host program other than the current bundle,
 - it runs an image other than the pinned one.
 
@@ -1111,7 +1123,8 @@ settings is not read (`desktop/source/shared/box-runtime.ts`).
   - `sand.box.ensure` shows the box, server, `created` and `ready`.
   - `sand.box.ensure.refused` says what is missing.
   - `sand.box.ensure.recreate` gives the reason with `stale_host` or
-    `stale_image`.
+    `stale_image`. `credential_live=False` there is now rare: a sign-in after a
+    sign-out logs `sand.box.credential_revived` instead and keeps the box.
   - `sand.box.ensure.token_rejected` means the container at the row's address
     answered the health check with 401: it runs with another gateway token
     than the row's, so it is not the row's container (a recreate and an

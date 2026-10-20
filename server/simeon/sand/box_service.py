@@ -610,6 +610,42 @@ class BoxBrokerService:
         except DesktopUnauthenticated as error:
             raise BoxBrokerRefused("unauthenticated", error.message)
 
+    async def _revive_credential(
+        self,
+        db: AsyncSession,
+        parent: DesktopSession,
+        box: SandBox,
+        *,
+        committed: SessionOpener | None = None,
+    ) -> bool:
+        """The box's own credential made good again for the app signing in
+        (`DesktopService.revive_box_credential`), instead of a new box to
+        carry a new one (20 October 2026). Committed on a session of its
+        own where the app gives one, as `_mint_credential` writes a new
+        one: the box asks with it the moment it wakes, before `ensure`
+        ends. Whether it is good now."""
+        if box.credential_session_id is None:
+            return False
+        if committed is None:
+            revived = await desktop.revive_box_credential(
+                db, box.credential_session_id, parent
+            )
+        else:
+            async with committed() as fresh:
+                own = await fresh.get(DesktopSession, parent.id)
+                revived = own is not None and await desktop.revive_box_credential(
+                    fresh, box.credential_session_id, own
+                )
+                if revived:
+                    await fresh.commit()
+        if revived:
+            log.info(
+                "sand.box.credential_revived",
+                box=str(box.id),
+                user=str(parent.user_id),
+            )
+        return revived
+
     async def _parent_of(
         self, db: AsyncSession, caller: DesktopSession
     ) -> DesktopSession:
@@ -918,6 +954,10 @@ class BoxBrokerService:
         elif box is not None and host is not None:
             state = await host.run_state(box.provider_box_id)
             credential_live = await self._credential_is_live(db, box)
+            if state is not None and not credential_live:
+                credential_live = await self._revive_credential(
+                    db, parent, box, committed=committed
+                )
             current: ProvisionedBox | None = None
             stale = OutOfDate()
             if state is not None and credential_live:

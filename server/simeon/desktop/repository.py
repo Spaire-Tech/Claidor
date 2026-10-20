@@ -44,6 +44,10 @@ class DesktopSessionRepository(RepositoryBase[DesktopSession]):
         )
         return await self.get_one_or_none(statement)
 
+    async def get_by_id(self, session_id: UUID) -> DesktopSession | None:
+        statement = self.get_base_statement().where(DesktopSession.id == session_id)
+        return await self.get_one_or_none(statement)
+
     async def get_parent_of(self, child: DesktopSession) -> DesktopSession | None:
         """The signed-in desktop a box credential belongs to."""
         if child.box_of_session_id is None:
@@ -61,6 +65,29 @@ class DesktopSessionRepository(RepositoryBase[DesktopSession]):
             DesktopSession.box_of_session_id == parent_id
         )
         return await self.get_all(statement)
+
+    async def get_heir_of(
+        self, leaving: DesktopSession, now: datetime
+    ) -> DesktopSession | None:
+        """Another app the person is still signed in on (the Mac, the
+        iPhone or the web window, which all use the same box), the most
+        recent first: not the one signing out, not a job token, not a box
+        credential, its refresh token live. The box credential moves to it
+        on sign-out (`DesktopService.revoke`)."""
+        statement = (
+            self.get_base_statement()
+            .where(
+                DesktopSession.user_id == leaving.user_id,
+                DesktopSession.id != leaving.id,
+                DesktopSession.revoked_at.is_(None),
+                DesktopSession.refresh_expires_at > now,
+                DesktopSession.job_id.is_(None),
+                DesktopSession.box_of_session_id.is_(None),
+            )
+            .order_by(DesktopSession.created_at.desc())
+            .limit(1)
+        )
+        return await self.get_one_or_none(statement)
 
     async def list_in_grace_of_user(
         self, user_id: UUID, now: datetime

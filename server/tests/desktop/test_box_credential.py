@@ -139,6 +139,48 @@ class TestBoxCredential:
         assert refused.status_code == 401
         assert refused.json()["error"] == "invalid_grant"
 
+    async def test_it_moves_to_another_signed_in_app_on_sign_out(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        """20 October 2026: signing out of the iPhone cut the box off from
+        the Mac too. It goes only with the last app signed out."""
+        iphone, _ = await _signed_in(client, session, user)
+        mac, _ = await _signed_in(client, session, user)
+        credential = (await _box_credential(client, iphone))["credential"]
+        await client.post(
+            "/desktop/api/auth/logout", headers={"Authorization": f"Bearer {iphone}"}
+        )
+        still = await client.post(
+            "/sand-box/inference-credential", json={"credential": credential}
+        )
+        assert still.status_code == 200, still.text
+        await client.post(
+            "/desktop/api/auth/logout", headers={"Authorization": f"Bearer {mac}"}
+        )
+        gone = await client.post(
+            "/sand-box/inference-credential", json={"credential": credential}
+        )
+        assert gone.status_code == 401
+
+    async def test_another_person_signed_in_keeps_nothing(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        user_second: User,
+    ) -> None:
+        access, _ = await _signed_in(client, session, user)
+        await _signed_in(client, session, user_second)
+        credential = (await _box_credential(client, access))["credential"]
+        await client.post(
+            "/desktop/api/auth/logout", headers={"Authorization": f"Bearer {access}"}
+        )
+        assert (
+            await client.post(
+                "/sand-box/inference-credential", json={"credential": credential}
+            )
+        ).status_code == 401
+
     async def test_it_follows_the_desktop_through_a_refresh(
         self, client: httpx.AsyncClient, session: AsyncSession, user: User
     ) -> None:

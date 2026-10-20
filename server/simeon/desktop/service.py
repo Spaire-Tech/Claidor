@@ -583,11 +583,22 @@ class DesktopService:
         session.add(desktop_session)
         repository = DesktopSessionRepository.from_session(session)
         # Sign-out takes the box's credential with it: a box the person
-        # walked away from must not keep calling the model as them.
+        # walked away from must not keep calling the model as them. Not
+        # while they are still signed in on another app (20 October 2026):
+        # the box is the person's one computer, and signing out of the
+        # iPhone cut it off from the Mac too, then rebuilt it at the next
+        # sign-in. The credential moves to that app, as a refresh moves it.
+        # The local-exec daemon's runs on the Mac that signed out: it goes.
+        heir = await repository.get_heir_of(desktop_session, now)
         for child in await repository.list_box_credentials_of(desktop_session.id):
             if child.is_revoked:
                 continue
-            child.revoked_at = now
+            if heir is not None and not child.user_agent.startswith(
+                "simeon-local-exec/"
+            ):
+                child.box_of_session_id = heir.id
+            else:
+                child.revoked_at = now
             session.add(child)
         # And the access token a recent refresh replaced, still inside its
         # grace (`refresh`): a sign-out is the end of every token the person
@@ -655,6 +666,51 @@ class DesktopService:
         session.add(row)
         await session.flush()
         return row, credential
+
+    async def revive_box_credential(
+        self, session: AsyncSession, credential_id: UUID, parent: DesktopSession
+    ) -> bool:
+        """The credential already in the person's box, made good again for
+        the app signing in now (`BoxBrokerService.ensure`, 20 October
+        2026). A sign-out revoked it, and until now the next sign-in
+        rebuilt the whole computer to hand it a new one: almost a minute
+        behind "Setting up Simeon's computer". The box still holds this
+        one and keeps asking with it (`credential-renewer.ts`), so making
+        it good again is all a sign-in needs. Only the person's own box
+        credential, never a job token's or the local-exec daemon's; it
+        belongs to `parent` from now on, as a new one would, and lasts as
+        a new one does. Whether it is good now."""
+        if parent.is_job_token or parent.is_box_credential or parent.is_revoked:
+            return False
+        repository = DesktopSessionRepository.from_session(session)
+        found = await repository.get_by_id(credential_id)
+        if (
+            found is None
+            or not found.is_box_credential
+            or found.user_id != parent.user_id
+            or found.user_agent.startswith("simeon-local-exec/")
+            or not found.user.can_authenticate
+        ):
+            return False
+        now = utc_now()
+        # One live credential per desktop, as `issue_box_credential` keeps it.
+        for previous in await repository.list_box_credentials_of(parent.id):
+            if (
+                previous.id == found.id
+                or previous.is_revoked
+                or previous.user_agent.startswith("simeon-local-exec/")
+            ):
+                continue
+            previous.revoked_at = now
+            session.add(previous)
+        found.revoked_at = None
+        found.box_of_session_id = parent.id
+        found.refresh_expires_at = max(
+            found.refresh_expires_at, now + settings.DESKTOP_REFRESH_TOKEN_TTL
+        )
+        session.add(found)
+        await session.flush()
+        return True
 
     async def renew_box_access(
         self, session: AsyncSession, credential: str
