@@ -204,7 +204,7 @@ struct GitHubBanner: View {
           Notifications.shared.openAgent = id
         }
       } label: {
-        PluginPill(title: model.launchingFix ? "Opening…" : "Fix with agent", fill: Ink.pillButton, ink: Ink.primary)
+        PluginPill(title: model.launchingFix ? String(localized: "Opening…") : String(localized: "Fix with agent"), fill: Ink.pillButton, ink: Ink.primary)
       }
       .buttonStyle(.tactile)
       .disabled(model.launchingFix)
@@ -255,7 +255,7 @@ struct PrivateSkillsSection: View {
   @Environment(ConnectAppsModel.self) private var model
 
   var body: some View {
-    ConnectorsSectionTitle(title: "Private") {
+    ConnectorsSectionTitle(title: String(localized: "Private")) {
       if !model.skillAgents.isEmpty { agentMenu }
     }
     if model.agentId == nil || skills.isEmpty {
@@ -276,7 +276,7 @@ struct PrivateSkillsSection: View {
       }
     } label: {
       HStack(spacing: 4) {
-        Text(store.agent(model.agentId)?.name ?? "Agent").lineLimit(1)
+        Text(store.agent(model.agentId)?.name ?? String(localized: "Agent")).lineLimit(1)
         Image(systemName: "chevron.up.chevron.down").font(.system(size: 10, weight: .medium))
       }
       .contentShape(.rect)
@@ -436,7 +436,7 @@ struct PluginSetupSheet: View {
     let entry = model.entry(setup.entryId)
     let fields = entry?.fields ?? []
     let missing = Plugins.setupMissing(fields, values)
-    let name = entry?.displayName ?? "the plugin"
+    let name = entry?.displayName ?? String(localized: "the plugin")
     NavigationStack {
       Form {
         Section {
@@ -793,7 +793,7 @@ struct PluginPage: View {
         HStack {
           VStack(alignment: .leading, spacing: 2) {
             Text(account.accountName).font(.system(size: 17))
-            Text(account.status == "connected" ? Connecting.connected : "Not connected")
+            Text(account.status == "connected" ? Connecting.connected : String(localized: "Not connected"))
               .font(.system(size: 13)).foregroundStyle(account.status == "connected" ? Ink.success : Ink.danger)
           }
           Spacer()
@@ -871,25 +871,25 @@ struct PluginPage: View {
       .listRowBackground(Ink.groupedRow)
     }
     if !entry.connectorList.isEmpty {
-      PluginFoldSection(heading: "Connectors", summary: Plugins.count(entry.connectorList.count, "connector"),
-                        rows: entry.connectorList.map { ($0.name, $0.description.isEmpty ? "Connector" : $0.description) })
+      PluginFoldSection(heading: String(localized: "Connectors"), summary: Plugins.count(entry.connectorList.count, "connector"),
+                        rows: entry.connectorList.map { ($0.name, $0.description.isEmpty ? String(localized: "Connector") : $0.description) })
     }
     if let skills = entry.skills, !skills.isEmpty {
-      PluginFoldSection(heading: "Skills", summary: Plugins.count(skills.count, "skill"),
-                        rows: skills.map { ($0.name, $0.description.isEmpty ? "Skill" : $0.description) })
+      PluginFoldSection(heading: String(localized: "Skills"), summary: Plugins.count(skills.count, "skill"),
+                        rows: skills.map { ($0.name, $0.description.isEmpty ? String(localized: "Skill") : $0.description) })
     }
   }
 
   private func details(_ server: PluginServer) -> some View {
     Section("Details") {
-      PluginDetailRow(term: "Source", value: Plugins.sourceWord(isTeamServer: server.isTeamServer))
-      PluginDetailRow(term: "Transport", value: Plugins.transportWord(server.transport))
+      PluginDetailRow(term: String(localized: "Source"), value: Plugins.sourceWord(isTeamServer: server.isTeamServer))
+      PluginDetailRow(term: String(localized: "Transport"), value: Plugins.transportWord(server.transport))
       if let url = server.url {
         PluginDetailRow(term: "URL", value: Plugins.detailValue(url))
       } else {
-        PluginDetailRow(term: "Command", value: Plugins.detailValue(server.command))
+        PluginDetailRow(term: String(localized: "Command"), value: Plugins.detailValue(server.command))
       }
-      PluginDetailRow(term: "Tools", value: Plugins.toolsValue(enabled: tools.filter { !$0.isDisabled }.count, total: tools.count, count: server.toolCount))
+      PluginDetailRow(term: String(localized: "Tools"), value: Plugins.toolsValue(enabled: tools.filter { !$0.isDisabled }.count, total: tools.count, count: server.toolCount))
     }
     .listRowBackground(Ink.groupedRow)
   }
@@ -901,9 +901,9 @@ struct PluginPage: View {
   private func actionSection(_ shown: Shown) -> some View {
     switch shown.action {
     case .uninstall?:
-      removeSection("Uninstall", shown)
+      removeSection(String(localized: "Uninstall"), shown)
     case .remove?:
-      removeSection("Remove", shown)
+      removeSection(String(localized: "Remove"), shown)
     default:
       EmptyView()
     }

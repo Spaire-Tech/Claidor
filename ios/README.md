@@ -222,7 +222,10 @@ profile, not from the configuration.
   (Settings › Simeon › Language). The language goes to the server on every
   request (`Accept-Language`), and after every sign-in to the account and the
   person's computer (`userLanguage`), so the agents, calls and dictation use
-  it (`AppLanguage.swift`, `AppStore.tellLanguage`).
+  it (`AppLanguage.swift`, `AppStore.tellLanguage`). The screens' French is
+  in `Simeon/Localizable.xcstrings` and `InfoPlist.xcstrings` (the
+  permission prompts), and the pushes' in
+  `SimeonNotifications/Localizable.xcstrings`.
 - **Plans** are bought in the app with Apple's in-app purchase (StoreKit 2,
   `Simeon/Purchases.swift`, `Simeon/PlansSheet.swift`): monthly, no free
   week (the free month is the trial); the server checks Apple's signature

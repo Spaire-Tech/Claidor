@@ -91,7 +91,7 @@ struct PlansSheet: View {
           Button {
             Task { await restore() }
           } label: {
-            Text(purchases.restoring ? "Restoring…" : PlansCopy.restore).font(.system(size: 16, weight: .medium))
+            Text(purchases.restoring ? String(localized: "Restoring…") : PlansCopy.restore).font(.system(size: 16, weight: .medium))
           }
           .foregroundStyle(Ink.secondary)
           .disabled(purchases.restoring || purchases.buying != nil)

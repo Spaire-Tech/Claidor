@@ -19,7 +19,7 @@ final class ElevenLabsVoice: VoiceTransport, @unchecked Sendable {
   @MainActor private var endedEarly = false
 
   struct MicrophoneRefused: LocalizedError {
-    var errorDescription: String? { "Simeon can't use the microphone." }
+    var errorDescription: String? { String(localized: "Simeon can't use the microphone.") }
   }
 
   func start(token: String, prompt: String, firstMessage: String, voiceId: String?, language: String, events: @escaping @Sendable (VoiceEvent) -> Void) async throws {

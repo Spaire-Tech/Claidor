@@ -115,7 +115,7 @@ struct SectionHeaderRow: View {
     }
     .buttonStyle(.tactile)
     .accessibilityLabel(section.name)
-    .accessibilityValue(section.isCollapsed ? "Folded, \(section.agents.count) agents" : "Open")
+    .accessibilityValue(section.isCollapsed ? String(localized: "Folded, \(section.agents.count) agents") : String(localized: "section.open", defaultValue: "Open"))
     .accessibilityHint(section.isCollapsed ? "Opens the section" : "Folds the section")
   }
 }

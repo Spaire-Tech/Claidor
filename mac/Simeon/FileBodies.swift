@@ -26,14 +26,14 @@ struct PDFToolbar: View {
 
   var body: some View {
     HStack(spacing: 8) {
-      ToolButton(symbol: "minus.magnifyingglass", label: "Zoom out", look: look) { control.zoom(by: -PDFControl.step) }
+      ToolButton(symbol: "minus.magnifyingglass", label: String(localized: "Zoom out"), look: look) { control.zoom(by: -PDFControl.step) }
         .disabled(control.zoom <= 0.5)
       Text("\(control.page) / \(control.pages)")
         .font(.system(size: 11))
         .monospacedDigit()
         .foregroundStyle(look.inkSecondary)
         .frame(width: 78)
-      ToolButton(symbol: "plus.magnifyingglass", label: "Zoom in", look: look) { control.zoom(by: PDFControl.step) }
+      ToolButton(symbol: "plus.magnifyingglass", label: String(localized: "Zoom in"), look: look) { control.zoom(by: PDFControl.step) }
         .disabled(control.zoom >= 4)
     }
   }
@@ -342,7 +342,7 @@ struct JSONBody: View {
     Group {
       switch tree {
       case nil:
-        ViewerState(look: look, loading: "Loading file…")
+        ViewerState(look: look, loading: String(localized: "Loading file…"))
       case .some(nil):
         CodeBody(text: text, name: name, look: look)
       case .some(.some(let root)):
@@ -392,7 +392,7 @@ private struct JSONNode: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.hand)
-            .accessibilityLabel("\(open ? "Collapse" : "Expand") \(name ?? "root")")
+            .accessibilityLabel(open ? "Collapse \(name ?? "root")" : "Expand \(name ?? "root")")
           } else {
             Color.clear.frame(width: 16, height: 20)
           }
@@ -472,7 +472,7 @@ struct TableBody: View {
     let rows = Array(sheet.rows.dropFirst())
     Group {
       if sheet.rows.isEmpty {
-        ViewerState(look: look, symbol: "tablecells", title: "This sheet is empty")
+        ViewerState(look: look, symbol: "tablecells", title: String(localized: "This sheet is empty"))
       } else {
         ScrollView([.vertical, .horizontal]) {
           LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {

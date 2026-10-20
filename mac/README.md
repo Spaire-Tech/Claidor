@@ -73,6 +73,9 @@ code.
   - `Look.swift`: the Electron window's colours, light and dark.
   - `Fonts/`: Suravaram, the sign-in wordmark's face (SIL Open Font
     License).
+  - `Localizable.xcstrings`, `InfoPlist.xcstrings`: the app's words in
+    French (and each later language), English being the code's own; the
+    Language picker in Settings › General chooses (`docs/localization.md`).
 - `ios/SimeonCore`: the shared core, a Swift package. Its Mac-only library,
   `SimeonMacCore`, holds Mac rules with no screen.
 - `ios/Simeon/Voice.swift`: the call's voice (ElevenLabs' Swift kit, the

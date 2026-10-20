@@ -199,13 +199,13 @@ struct FindBar: View {
         .fill(look.ink.opacity(0.1))
         .frame(width: 1, height: 20)
         .padding(.horizontal, 2)
-      FindButton(symbol: "chevron.up", label: "Previous match", enabled: !matches.isEmpty, look: look) {
+      FindButton(symbol: "chevron.up", label: String(localized: "Previous match"), enabled: !matches.isEmpty, look: look) {
         control.stepFind(-1, in: matches)
       }
-      FindButton(symbol: "chevron.down", label: "Next match", enabled: !matches.isEmpty, look: look) {
+      FindButton(symbol: "chevron.down", label: String(localized: "Next match"), enabled: !matches.isEmpty, look: look) {
         control.stepFind(1, in: matches)
       }
-      FindButton(symbol: "xmark", label: "Close find", enabled: true, look: look) {
+      FindButton(symbol: "xmark", label: String(localized: "Close find"), enabled: true, look: look) {
         control.closeFind()
       }
     }
@@ -279,7 +279,7 @@ private struct FindField: NSViewRepresentable {
     field.cell?.wraps = false
     field.usesSingleLineMode = true
     field.delegate = context.coordinator
-    field.setAccessibilityLabel("Find in chat")
+    field.setAccessibilityLabel(String(localized: "Find in chat"))
     paint(field)
     return field
   }
@@ -299,7 +299,7 @@ private struct FindField: NSViewRepresentable {
 
   private func paint(_ field: NSTextField) {
     field.textColor = NSColor(look.ink)
-    field.placeholderAttributedString = NSAttributedString(string: "Find in chat", attributes: [
+    field.placeholderAttributedString = NSAttributedString(string: String(localized: "Find in chat"), attributes: [
       .font: NSFont.systemFont(ofSize: 13),
       .foregroundColor: NSColor(look.placeholder),
     ])

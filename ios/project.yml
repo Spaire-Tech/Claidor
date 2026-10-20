@@ -25,6 +25,12 @@ settings:
     # The Apple developer team Simeon publishes from: set it here, or in
     # Xcode under Signing & Capabilities, once (ios/README.md).
     DEVELOPMENT_TEAM: "496QXRMJXG"
+    # The String Catalogs (Localizable.xcstrings, InfoPlist.xcstrings beside the
+    # app's code): Xcode reads the code's strings into them on each build, and
+    # scripts/check_translations.py asks for every one in each language
+    # (docs/localization.md, 20 October 2026).
+    SWIFT_EMIT_LOC_STRINGS: YES
+    LOCALIZATION_PREFERS_STRING_CATALOGS: YES
 packages:
   SimeonCore:
     path: SimeonCore
@@ -134,6 +140,9 @@ targets:
       path: SimeonNotifications/Info.plist
       properties:
         CFBundleDisplayName: Simeon Notifications
+        # A push's words in the app's language (Localizable.xcstrings).
+        CFBundleDevelopmentRegion: en
+        CFBundleLocalizations: [en, fr]
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         NSExtension:

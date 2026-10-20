@@ -50,7 +50,7 @@ final class AppLock {
 
   /** On, once Face ID says it is the owner (the first time, iOS asks whether Simeon may use it). True when on. */
   func enable() async -> Bool {
-    guard await Self.authenticate(reason: "Unlock Simeon with \(Self.name)") else { return false }
+    guard await Self.authenticate(reason: String(localized: "Unlock Simeon with \(Self.name)")) else { return false }
     UserDefaults.standard.set(true, forKey: Self.key)
     return true
   }
@@ -111,7 +111,7 @@ final class AppLock {
     }
     asking = true
     defer { asking = false }
-    if await Self.authenticate(reason: "Unlock Simeon") { set(locked: false) }
+    if await Self.authenticate(reason: String(localized: "Unlock Simeon")) { set(locked: false) }
   }
 
   private func set(locked value: Bool) {

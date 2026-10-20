@@ -220,7 +220,7 @@ private struct ExchangeMessage: View {
   @ViewBuilder
   private var bar: some View {
     if hovered || barHovered || control.menuFor == id {
-      BarButton(symbol: "ellipsis", label: "More message actions", look: look) { spot in
+      BarButton(symbol: "ellipsis", label: String(localized: "More message actions"), look: look) { spot in
         MessageMenu.showCopy(text, id: id, control: control, under: spot)
       }
       .padding(.leading, 6)
@@ -286,7 +286,7 @@ struct ReadOnlyNotice: View {
 @MainActor
 enum ExchangeMenu {
   static func show(peers: [Party], store: AppStore, control: ChatControl, dark: Bool) {
-    let menu = NSMenu(title: "Agents in this exchange")
+    let menu = NSMenu(title: String(localized: "Agents in this exchange"))
     menu.autoenablesItems = false
     var handlers: [PeerHandler] = []
     for peer in Chat.menuOrder(peers) {

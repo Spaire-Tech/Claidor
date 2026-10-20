@@ -29,8 +29,8 @@ struct RosterCard: View {
         .font(.system(size: 17, weight: .semibold))
         .foregroundStyle(Ink.primary)
       Text(blocked
-           ? "Simeon can\u{2019}t set up a computer for this account yet. Setup starts automatically once this account has access."
-           : "Your agents are safe \u{2014} they just can\u{2019}t be loaded right now." + (canRecover ? " If it doesn\u{2019}t come back on its own, recover it \u{2014} your files and logins are kept." : ""))
+           ? String(localized: "Simeon can\u{2019}t set up a computer for this account yet. Setup starts automatically once this account has access.")
+           : String(localized: "Your agents are safe \u{2014} they just can\u{2019}t be loaded right now.") + (canRecover ? String(localized: " If it doesn\u{2019}t come back on its own, recover it \u{2014} your files and logins are kept.") : ""))
         .font(.system(size: 15))
         .foregroundStyle(Ink.secondary)
         .multilineTextAlignment(.center)

@@ -150,7 +150,7 @@ struct RenderedBlock: View {
   /** What VoiceOver reads: "Diagram", the TeX, or the paragraph with its TeX in place. */
   private var accessibleText: String {
     switch kind {
-    case .mermaid: return "Diagram"
+    case .mermaid: return String(localized: "Diagram")
     case .math(let tex, _): return "Maths: \(tex)"
     case .mathText(let text): return text.replacingOccurrences(of: "$$", with: " ")
     }
@@ -163,7 +163,7 @@ struct RenderedBlock: View {
       .frame(maxWidth: .infinity, alignment: .leading)
       .contentShape(.rect)
       .onTapGesture { if isDiagram { showsFull = true } }
-      .accessibilityLabel(isDiagram ? "Open diagram full screen" : accessibleText)
+      .accessibilityLabel(isDiagram ? String(localized: "Open diagram full screen") : accessibleText)
       .accessibilityAddTraits(isDiagram ? .isButton : [])
       .overlay(alignment: .topTrailing) {
         if isDiagram {

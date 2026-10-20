@@ -101,9 +101,9 @@ struct MediaViewer: View {
         media(fitted: fitted)
         if items.count > 1 {
           HStack {
-            NavButton(symbol: "chevron.left", label: "Previous media") { go(by: -1) }
+            NavButton(symbol: "chevron.left", label: String(localized: "Previous media")) { go(by: -1) }
             Spacer(minLength: 0)
-            NavButton(symbol: "chevron.right", label: "Next media") { go(by: 1) }
+            NavButton(symbol: "chevron.right", label: String(localized: "Next media")) { go(by: 1) }
           }
           .padding(.horizontal, 24)
         }
@@ -137,7 +137,7 @@ struct MediaViewer: View {
         .scaleEffect(scale)
         .offset(offset)
         .pointerStyle(scale > 1 ? (dragOrigin == nil ? .grabIdle : .grabActive) : .zoomOut)
-        .accessibilityLabel(item.caption ?? item.name ?? "Media preview")
+        .accessibilityLabel(item.caption ?? item.name ?? String(localized: "Media preview"))
     } else {
       status
     }

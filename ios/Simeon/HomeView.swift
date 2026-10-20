@@ -771,7 +771,7 @@ struct RowStatus {
   var cornerOnRow: Color? { isWorking && agent.activityLabel == nil ? Ink.live : nil }
   /** A pinned tile shows its marker at the corner, else the working dot. */
   var cornerOnPin: Color? { marker ?? cornerOnRow }
-  var label: String? { needsAttention ? "Needs attention" : agent.hasUnread ? "Unread activity" : isWorking ? "Working" : nil }
+  var label: String? { needsAttention ? String(localized: "Needs attention") : agent.hasUnread ? String(localized: "Unread activity") : isWorking ? String(localized: "Working") : nil }
 }
 
 /** The status dot, with a ring of the list's ground so it sits apart from the picture (the Mac cuts a hole for it). */
@@ -905,7 +905,7 @@ struct AgentRow: View, Equatable {
   /** The Mac sidebar's order: what it is doing while it works, else your unsent draft, else "Waiting for you: …" or the last line. */
   private var line: String {
     if agent.isBusy, let activity = agent.activityLabel { return activity }
-    if agent.isComposing { return "Typing…" }
+    if agent.isComposing { return String(localized: "Typing…") }
     if let draft { return "Draft: " + draft.split(whereSeparator: \.isWhitespace).joined(separator: " ") }
     return agent.previewLine
   }
@@ -1174,31 +1174,31 @@ struct SearchResults: View {
   private var actions: [SearchAction] {
     var list: [SearchAction] = []
     if let openOrgChart {
-      list.append(SearchAction(id: "view:org-chart", label: "Org Chart", detail: "Views", symbol: "point.3.connected.trianglepath.dotted", keywords: ["open", "organization", "network", "graph"], run: openOrgChart))
+      list.append(SearchAction(id: "view:org-chart", label: String(localized: "Org Chart"), detail: String(localized: "Views"), symbol: "point.3.connected.trianglepath.dotted", keywords: ["open", "organization", "network", "graph"], run: openOrgChart))
     }
     list += [
-      SearchAction(id: "new-agent", label: "New Agent", detail: "Agents", symbol: "person.crop.circle.badge.plus", keywords: ["create", "add", "hire"]) { openSheet(.newAgent) },
+      SearchAction(id: "new-agent", label: String(localized: "New Agent"), detail: String(localized: "Agents"), symbol: "person.crop.circle.badge.plus", keywords: ["create", "add", "hire"]) { openSheet(.newAgent) },
     ]
     if Features.groupChats {
-      list.append(SearchAction(id: "new-group", label: "New Group Chat", detail: "Agents", symbol: "person.2", keywords: ["create", "group", "team"]) { openSheet(.newGroup) })
+      list.append(SearchAction(id: "new-group", label: String(localized: "New Group Chat"), detail: String(localized: "Agents"), symbol: "person.2", keywords: ["create", "group", "team"]) { openSheet(.newGroup) })
     }
     if !store.hiddenAgents.isEmpty {
-      list.append(SearchAction(id: "hidden", label: "Open Hidden Agents", detail: "List", symbol: "eye.slash", keywords: ["hidden", "sidebar"], run: showHidden))
+      list.append(SearchAction(id: "hidden", label: String(localized: "Open Hidden Agents"), detail: String(localized: "List"), symbol: "eye.slash", keywords: ["hidden", "sidebar"], run: showHidden))
     }
     if let openChannels {
-      list.append(SearchAction(id: "info:channels", label: "Channels", detail: "Current chat", symbol: "bubble.left.and.bubble.right", keywords: ["messaging", "platforms", "connect"], run: openChannels))
+      list.append(SearchAction(id: "info:channels", label: String(localized: "Channels"), detail: String(localized: "Current chat"), symbol: "bubble.left.and.bubble.right", keywords: ["messaging", "platforms", "connect"], run: openChannels))
     }
-    list.append(SearchAction(id: "settings", label: "Settings", detail: "Settings", symbol: "gearshape", keywords: ["general", "account", "time zone", "auto-review", "notifications", "haptics", "preferences"]) { openSheet(.settings) })
+    list.append(SearchAction(id: "settings", label: String(localized: "Settings"), detail: String(localized: "Settings"), symbol: "gearshape", keywords: ["general", "account", "time zone", "auto-review", "notifications", "haptics", "preferences"]) { openSheet(.settings) })
     // The Mac's palette has these two on their own (`Jump.commands`).
     if store.usage.summary == nil || store.usage.showsSection {
-      list.append(SearchAction(id: "settings:usage", label: "Settings: Usage & Billing", detail: "Settings", symbol: "chart.bar", keywords: ["usage", "billing", "spend", "limit", "on-demand", "plan", "quota"]) { openSheet(.usage) })
+      list.append(SearchAction(id: "settings:usage", label: String(localized: "Settings: Usage & Billing"), detail: String(localized: "Settings"), symbol: "chart.bar", keywords: ["usage", "billing", "spend", "limit", "on-demand", "plan", "quota"]) { openSheet(.usage) })
     }
-    list.append(SearchAction(id: "overlay:plugins", label: "Connectors", detail: "Connect apps", symbol: "puzzlepiece.extension", keywords: ["plugins", "marketplace", "tools", "skills", "mcp", "connectors", "connect apps", "customize"]) { openSheet(.plugins) })
-    for (value, name, symbol) in [("system", "System", "circle.lefthalf.filled"), ("light", "Light", "sun.max"), ("dark", "Dark", "moon")] {
-      list.append(SearchAction(id: "theme-\(value)", label: "Theme: \(name)", detail: "Settings · Appearance", symbol: symbol, keywords: ["appearance", "mode", "theme"], current: theme == value) { theme = value })
+    list.append(SearchAction(id: "overlay:plugins", label: String(localized: "Connectors"), detail: String(localized: "Connect apps"), symbol: "puzzlepiece.extension", keywords: ["plugins", "marketplace", "tools", "skills", "mcp", "connectors", "connect apps", "customize"]) { openSheet(.plugins) })
+    for (value, name, symbol) in [("system", String(localized: "System"), "circle.lefthalf.filled"), ("light", String(localized: "Light"), "sun.max"), ("dark", String(localized: "Dark"), "moon")] {
+      list.append(SearchAction(id: "theme-\(value)", label: String(localized: "Theme: \(name)"), detail: String(localized: "Settings · Appearance"), symbol: symbol, keywords: ["appearance", "mode", "theme"], current: theme == value) { theme = value })
     }
     if let updateComputer, store.computerUpdateOffer != nil {
-      list.append(SearchAction(id: "update:computer", label: "Update Simeon's Computer", detail: "Updates", symbol: "desktopcomputer", keywords: ["box", "image", "machine", "recreate", "latest", "shared"], run: updateComputer))
+      list.append(SearchAction(id: "update:computer", label: String(localized: "Update Simeon's Computer"), detail: String(localized: "Updates"), symbol: "desktopcomputer", keywords: ["box", "image", "machine", "recreate", "latest", "shared"], run: updateComputer))
     }
     return list
   }
@@ -1321,7 +1321,7 @@ struct SearchResults: View {
   private func routineRow(_ found: Found<RoutineHit>) -> some View {
     let hit = found.item
     let agent = store.agent(hit.agentId)
-    let line = [hit.routine.isEnabled ? hit.routine.summary : "Paused", agent?.name].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · ")
+    let line = [hit.routine.isEnabled ? hit.routine.summary : String(localized: "Paused"), agent?.name].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · ")
     return SearchRow(title: SearchText.bold(hit.routine.name, found.hits), subtitle: line, trailing: Chat.listTime(ms: hit.date)) {
       SearchTile(symbol: "clock")
     } action: { openRoutine(hit) }

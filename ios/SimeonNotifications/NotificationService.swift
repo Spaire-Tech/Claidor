@@ -76,7 +76,7 @@ final class NotificationService: UNNotificationServiceExtension {
   /** The title said "needs you"; the message from the agent says it now. */
   static func needsYouLine(_ reason: String) -> String {
     let trimmed = reason.trimmingCharacters(in: .whitespacesAndNewlines)
-    if trimmed.isEmpty || trimmed == "Waiting for your input." { return "Needs your input." }
-    return "Needs you: \(trimmed)"
+    if trimmed.isEmpty || trimmed == "Waiting for your input." { return String(localized: "Needs your input.") }
+    return String(localized: "Needs you: \(trimmed)")
   }
 }

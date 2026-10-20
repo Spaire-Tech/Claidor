@@ -55,7 +55,7 @@ final class CallBannerWindow {
   private func show(_ store: AppStore) {
     height = Self.firstHeight
     let panel = BannerPanel(contentRect: frame(for: height, on: Self.screenUnderPointer()), styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
-    panel.title = "Simeon call"
+    panel.title = String(localized: "Simeon call")
     panel.isFloatingPanel = true
     panel.level = .floating
     panel.collectionBehavior = [.canJoinAllSpaces, .ignoresCycle]
@@ -308,21 +308,21 @@ struct CallBannerCard: View {
     case .failed:
       VStack(spacing: 0) {
         look.separator.frame(height: 1)
-        BannerButton(title: "Close", glyph: nil, colour: look.ink, tint: look.tint) { store.dismissCall() }
+        BannerButton(title: String(localized: "Close"), glyph: nil, colour: look.ink, tint: look.tint) { store.dismissCall() }
       }
     case .speaking, .listening, .working:
       VStack(spacing: 0) {
         look.separator.frame(height: 1)
         HStack(spacing: 0) {
-          BannerButton(title: call.isMuted ? "Unmute" : "Mute", glyph: .symbol(call.isMuted ? "mic.slash.fill" : "mic.fill"), colour: call.isMuted ? BannerLook.orange : look.ink, tint: look.tint) {
+          BannerButton(title: call.isMuted ? String(localized: "Unmute") : String(localized: "Mute"), glyph: .symbol(call.isMuted ? "mic.slash.fill" : "mic.fill"), colour: call.isMuted ? BannerLook.orange : look.ink, tint: look.tint) {
             store.mute(!call.isMuted)
           }
           .accessibilityAddTraits(call.isMuted ? .isSelected : [])
           look.separator.frame(width: 1)
-          BannerButton(title: "Transcript", glyph: .lines, colour: look.ink, tint: look.tint, on: showsTranscript) { showsTranscript.toggle() }
+          BannerButton(title: String(localized: "Transcript"), glyph: .lines, colour: look.ink, tint: look.tint, on: showsTranscript) { showsTranscript.toggle() }
             .accessibilityAddTraits(showsTranscript ? .isSelected : [])
           look.separator.frame(width: 1)
-          BannerButton(title: "End", glyph: .symbol("phone.down.fill"), colour: BannerLook.red, tint: look.tint) { store.hangUp() }
+          BannerButton(title: String(localized: "End"), glyph: .symbol("phone.down.fill"), colour: BannerLook.red, tint: look.tint) { store.hangUp() }
         }
         .frame(height: 48)
       }

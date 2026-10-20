@@ -181,13 +181,13 @@ struct HoverBar: View {
 
   var body: some View {
     let buttons = [
-      AnyView(BarButton(symbol: "face.smiling", label: "Add reaction", look: look) { spot in
+      AnyView(BarButton(symbol: "face.smiling", label: String(localized: "Add reaction"), look: look) { spot in
         MessageMenu.show(for: bubble, agentId: agentId, kind: .reactions, inThread: inThread, store: store, control: control, under: spot)
       }),
-      AnyView(BarButton(symbol: bubble.fromPerson ? "arrowshape.turn.up.right" : "arrowshape.turn.up.left", label: bubble.fromPerson ? "Reply to your message" : "Reply to Agent message", look: look) {
+      AnyView(BarButton(symbol: bubble.fromPerson ? "arrowshape.turn.up.right" : "arrowshape.turn.up.left", label: bubble.fromPerson ? String(localized: "Reply to your message") : String(localized: "Reply to Agent message"), look: look) {
         _ in control.startReply(bubble, entries: store.transcripts[agentId] ?? [])
       }),
-      AnyView(BarButton(symbol: "ellipsis", label: "More message actions", look: look) { spot in
+      AnyView(BarButton(symbol: "ellipsis", label: String(localized: "More message actions"), look: look) { spot in
         MessageMenu.show(for: bubble, agentId: agentId, kind: .more, inThread: inThread, store: store, control: control, under: spot)
       }),
     ]
@@ -276,13 +276,13 @@ enum MessageMenu {
     }
     if kind == .context {
       menu.addItem(.separator())
-      menu.addItem(handler.item("Reply", symbol: "arrowshape.turn.up.left", action: #selector(Handler.reply)))
+      menu.addItem(handler.item(String(localized: "Reply"), symbol: "arrowshape.turn.up.left", action: #selector(Handler.reply)))
     }
     if kind != .reactions {
       if !inThread {
-        menu.addItem(handler.item("Start a thread", symbol: "bubble.left.and.bubble.right", action: #selector(Handler.thread)))
+        menu.addItem(handler.item(String(localized: "Start a thread"), symbol: "bubble.left.and.bubble.right", action: #selector(Handler.thread)))
       }
-      menu.addItem(handler.item("Copy", symbol: "doc.on.doc", action: #selector(Handler.copyText)))
+      menu.addItem(handler.item(String(localized: "Copy"), symbol: "doc.on.doc", action: #selector(Handler.copyText)))
     }
     // The handler lives as long as the menu.
     objc_setAssociatedObject(menu, &Handler.key, handler, .OBJC_ASSOCIATION_RETAIN)
@@ -307,7 +307,7 @@ enum MessageMenu {
     let menu = NSMenu()
     menu.autoenablesItems = false
     let handler = CopyHandler(text: text)
-    let item = NSMenuItem(title: "Copy", action: #selector(CopyHandler.copyText), keyEquivalent: "")
+    let item = NSMenuItem(title: String(localized: "Copy"), action: #selector(CopyHandler.copyText), keyEquivalent: "")
     item.target = handler
     item.image = NSImage(systemSymbolName: "doc.on.doc", accessibilityDescription: nil)
     menu.addItem(item)
@@ -572,11 +572,11 @@ struct ThreadChin: View {
   @State private var hovered = false
 
   var body: some View {
-    let replies = count == 1 ? "1 reply" : "\(count) replies"
+    let replies = count == 1 ? "1 reply" : String(localized: "\(count) replies")
     Button(action: open) {
       ZStack(alignment: .leading) {
         label(replies).opacity(hovered ? 0 : 1)
-        label("View thread").opacity(hovered ? 1 : 0)
+        label(String(localized: "View thread")).opacity(hovered ? 1 : 0)
       }
       .font(.system(size: 13))
       .foregroundStyle(hovered ? look.inkSecondary : look.inkTertiary)
@@ -632,7 +632,7 @@ struct ThreadHeader: View {
       look.ground
       WindowDragArea()
       HStack(spacing: 0) {
-        Crumb(look: look, label: "Back to \(agent.name)", action: back) {
+        Crumb(look: look, label: String(localized: "Back to \(agent.name)"), action: back) {
           HStack(spacing: 4) {
             AgentMark(agent: agent, agents: store.agents, size: 20)
             Text(agent.name).lineLimit(1)
@@ -642,7 +642,7 @@ struct ThreadHeader: View {
           .font(.system(size: 8, weight: .semibold))
           .foregroundStyle(look.inkTertiary)
           .frame(width: 12, height: 12)
-        Crumb(look: look, label: "View conversation details", action: { pane.toggleDetails(layout: layout) }) {
+        Crumb(look: look, label: String(localized: "View conversation details"), action: { pane.toggleDetails(layout: layout) }) {
           Text(title).lineLimit(1).truncationMode(.tail)
         }
       }

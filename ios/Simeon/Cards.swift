@@ -240,7 +240,7 @@ struct QuestionCardView: View {
     HStack(alignment: .center, spacing: 8) {
       Text(card.prompt).font(.system(size: 17, weight: .medium)).foregroundStyle(Ink.secondary).lineLimit(2)
       Spacer(minLength: 0)
-      StatusPill(text: card.isSkipped && !card.isDismissed ? "Skipped" : "Dismissed")
+      StatusPill(text: card.isSkipped && !card.isDismissed ? String(localized: "Skipped") : String(localized: "Dismissed"))
     }
     .card()
   }
@@ -354,7 +354,7 @@ struct ConnectorCard: View {
       ConnectorTile(name: app?.title ?? name)
       VStack(alignment: .leading, spacing: 0) {
         Text(app?.title ?? name).font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.primary).lineLimit(1)
-        Text(waiting ? "Waiting for \(name) authorization…" : (reason ?? app?.summary ?? ""))
+        Text(waiting ? String(localized: "Waiting for \(name) authorization…") : (reason ?? app?.summary ?? ""))
           .font(.system(size: 13)).foregroundStyle(Ink.secondary).lineLimit(1)
         if store.isConnected(name) && tools > 0 {
           Text(tools == 1 ? "1 tool" : "\(tools) tools").font(.system(size: 12)).foregroundStyle(Ink.tertiary).lineLimit(1)
@@ -499,8 +499,8 @@ struct ListenerConnectCard: View {
 
   private var name: String { platform == "slack" ? "Slack" : "GitHub" }
   private var line: String {
-    if let reason, !reason.isEmpty { return "Connect \(name) \(reason)." }
-    return platform == "slack" ? "Link Slack so your agent can wake on messages, mentions, and reactions." : "Link GitHub so your agent can wake on PRs, comments, issues, and CI."
+    if let reason, !reason.isEmpty { return String(localized: "Connect \(name) \(reason).") }
+    return platform == "slack" ? String(localized: "Link Slack so your agent can wake on messages, mentions, and reactions.") : String(localized: "Link GitHub so your agent can wake on PRs, comments, issues, and CI.")
   }
 
   var body: some View {
@@ -840,7 +840,7 @@ struct FlightDetails: View {
         Spacer(minLength: 0)
         Text(offer.price).font(.system(size: 20, weight: .semibold)).foregroundStyle(Ink.fare)
       }
-      ForEach([offer.priceNote, test ? "Test results, not real fares" : ""].filter { !$0.isEmpty }, id: \.self) { line in
+      ForEach([offer.priceNote, test ? String(localized: "Test results, not real fares") : ""].filter { !$0.isEmpty }, id: \.self) { line in
         Text(line).font(.system(size: 13)).foregroundStyle(Ink.secondary).fixedSize(horizontal: false, vertical: true)
       }
     }
@@ -854,7 +854,7 @@ struct FlightLegCard: View {
   let logo: String
 
   var body: some View {
-    let details = (leg.flightLines + [leg.cabin, leg.duration.isEmpty ? "" : "\(leg.duration) in the air"]).filter { !$0.isEmpty }
+    let details = (leg.flightLines + [leg.cabin, leg.duration.isEmpty ? "" : String(localized: "\(leg.duration) in the air")]).filter { !$0.isEmpty }
     VStack(alignment: .leading, spacing: 0) {
       HStack(alignment: .center, spacing: 12) {
         Text([leg.from, leg.to].filter { !$0.isEmpty }.joined(separator: " to "))
@@ -863,8 +863,8 @@ struct FlightLegCard: View {
         AirlineMark(name: leg.carrier, logo: logo, size: 30)
       }
       VStack(alignment: .leading, spacing: 10) {
-        moment("arrow.up.right", "Departing", leg.departing)
-        moment("arrow.down.left", "Arriving", leg.arriving)
+        moment("arrow.up.right", String(localized: "Departing"), leg.departing)
+        moment("arrow.down.left", String(localized: "Arriving"), leg.arriving)
       }
       .padding(.top, 12)
       if !details.isEmpty {
@@ -932,15 +932,15 @@ struct DraftCardView: View {
       } else {
         VStack(spacing: 0) {
           if isEmail {
-            if !card.from.isEmpty { field("From") { Text(card.from).font(.system(size: 17)).foregroundStyle(Ink.secondary).lineLimit(1) }; line }
-            field("To", focus: { focused = 0 }) { TextField("name@company.com", text: $to).font(.system(size: 17)).emailField().autocorrectionDisabled().disabled(!editable).focused($focused, equals: 0) }
+            if !card.from.isEmpty { field(String(localized: "From")) { Text(card.from).font(.system(size: 17)).foregroundStyle(Ink.secondary).lineLimit(1) }; line }
+            field(String(localized: "To"), focus: { focused = 0 }) { TextField("name@company.com", text: $to).font(.system(size: 17)).emailField().autocorrectionDisabled().disabled(!editable).focused($focused, equals: 0) }
             line
-            field("Subject", focus: { focused = 1 }) { TextField("Subject", text: $subject).font(.system(size: 17)).disabled(!editable).focused($focused, equals: 1) }
+            field(String(localized: "Subject"), focus: { focused = 1 }) { TextField("Subject", text: $subject).font(.system(size: 17)).disabled(!editable).focused($focused, equals: 1) }
           } else {
-            if !card.workspace.isEmpty { field("Workspace") { Text(card.workspace).font(.system(size: 17)).foregroundStyle(Ink.secondary) }; line }
-            field("To") { Text(card.target).font(.system(size: 17)).foregroundStyle(Ink.secondary) }
+            if !card.workspace.isEmpty { field(String(localized: "Workspace")) { Text(card.workspace).font(.system(size: 17)).foregroundStyle(Ink.secondary) }; line }
+            field(String(localized: "To")) { Text(card.target).font(.system(size: 17)).foregroundStyle(Ink.secondary) }
             line
-            field("Thread") { Text(card.thread.isEmpty ? "New message" : card.thread).font(.system(size: 17)).foregroundStyle(Ink.secondary) }
+            field(String(localized: "Thread")) { Text(card.thread.isEmpty ? String(localized: "New message") : card.thread).font(.system(size: 17)).foregroundStyle(Ink.secondary) }
           }
           line
           TextField("Message", text: $bodyText, axis: .vertical)
@@ -1215,10 +1215,10 @@ struct FileCardView: View {
     Task {
       defer { loading = false }
       guard let data = await store.readFile(url, agentId: agentId) else {
-        store.problem = "Couldn't save this file: the computer didn't hand it over."
+        store.problem = String(localized: "Couldn't save this file: the computer didn't hand it over.")
         return
       }
-      if !(await MacFiles.save(data, suggestedName: name)) { store.problem = "Couldn't save this file." }
+      if !(await MacFiles.save(data, suggestedName: name)) { store.problem = String(localized: "Couldn't save this file.") }
     }
   }
   #endif
@@ -1229,7 +1229,7 @@ struct FileCardView: View {
     Task {
       defer { loading = false }
       guard let data = await store.readFile(url, agentId: agentId) else {
-        store.problem = "Couldn't open \(name): the computer didn't hand it over."
+        store.problem = String(localized: "Couldn't open \(name): the computer didn't hand it over.")
         return
       }
       let file = FileManager.default.temporaryDirectory.appendingPathComponent("simeon-files", isDirectory: true).appendingPathComponent(name)
@@ -1238,7 +1238,7 @@ struct FileCardView: View {
         try? FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
         return (try? data.write(to: file, options: .atomic)) != nil
       }.value
-      if written { preview = PreviewFile(url: file) } else { store.problem = "Couldn't open \(name)." }
+      if written { preview = PreviewFile(url: file) } else { store.problem = String(localized: "Couldn't open \(name).") }
     }
   }
 }
@@ -1292,7 +1292,7 @@ struct ApprovalDisclosure: View {
       } label: {
         HStack(spacing: 4) {
           Image(systemName: open ? "chevron.down" : "chevron.right").font(.system(size: 10, weight: .semibold)).frame(width: 14, height: 14)
-          Text("\(open ? "Hide" : "Show") the \(subject.rawValue)").font(.system(size: 13))
+          Text(open ? (subject == .command ? "Hide the command" : "Hide the details") : (subject == .command ? "Show the command" : "Show the details")).font(.system(size: 13))
         }
         .foregroundStyle(Ink.secondary)
         .contentShape(.rect)
@@ -1442,7 +1442,7 @@ struct RequestCardView: View {
         Image(systemName: "key.fill").font(.system(size: 13)).foregroundStyle(Ink.secondary)
         Text(label).font(.system(size: 17, weight: .medium)).foregroundStyle(Ink.primary)
         Spacer(minLength: 0)
-        if provided { StatusPill(text: "Saved", dot: Ink.live, size: 12) }
+        if provided { StatusPill(text: String(localized: "Saved"), dot: Ink.live, size: 12) }
       }
       if !description.isEmpty { Text(description).font(.system(size: 17)).foregroundStyle(Ink.secondary).fixedSize(horizontal: false, vertical: true) }
       if !provided {
@@ -1666,7 +1666,7 @@ struct TeammatesLine: View {
   private var chip: some View {
     HStack(spacing: 4) {
       PeerStack(peers: exchange.peers)
-      Text(exchange.peers.count == 1 ? exchange.peers[0].name : "\(exchange.peers.count) agents")
+      Text(exchange.peers.count == 1 ? exchange.peers[0].name : String(localized: "\(exchange.peers.count) agents"))
     }
     .padding(.vertical, 4).padding(.leading, 4).padding(.trailing, 6)
     .tapRoom(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
@@ -1926,7 +1926,7 @@ struct RoutinesLine: View {
           chip(Text("\(routines.count) routines"), trailing: true)
         }
       } else {
-        Text("\(verb) \(routines.count == 1 ? "routine" : "routines")")
+        Text(routines.count == 1 ? "\(verb) routine" : "\(verb) routines")
         ForEach(Array(routines.enumerated()), id: \.offset) { index, routine in
           if index > 0 { Text("and") }
           Button { openRoutine(routine.id) } label: { chip(Text(routine.name), trailing: false) }.buttonStyle(.tactile)
@@ -2046,7 +2046,7 @@ struct PurchaseCardView: View {
       VStack(alignment: .leading, spacing: 2) {
         HStack(spacing: 6) {
           Text(shown.heading).font(.system(size: 17, weight: .medium)).foregroundStyle(Ink.theirsText)
-          if shown.isTest { StatusPill(text: "Test", size: 12) }
+          if shown.isTest { StatusPill(text: String(localized: "Test"), size: 12) }
         }
         Text(shown.flight == nil ? PurchaseCard.headline(agent: store.agent(agentId)?.name ?? "", domain: shown.domain) : PurchaseCard.flightHeadline(agent: store.agent(agentId)?.name ?? "", airline: shown.flight?.airline ?? shown.merchant))
           .font(.system(size: 13)).foregroundStyle(Ink.fineGrey)
@@ -2075,7 +2075,7 @@ struct PurchaseCardView: View {
     let row = HStack(spacing: 12) {
       PaymentMark(brand: shown.needsCard ? nil : shown.cardBrand)
       VStack(alignment: .leading, spacing: 2) {
-        Text(shown.cardLine ?? (shown.needsCard ? PurchaseCard.chooseCard : shown.wallet == .shop ? "Your Shop card" : "Your Link card"))
+        Text(shown.cardLine ?? (shown.needsCard ? PurchaseCard.chooseCard : shown.wallet == .shop ? String(localized: "Your Shop card") : String(localized: "Your Link card")))
           .font(.system(size: 15, weight: .medium)).foregroundStyle(shown.needsCard ? Ink.blue : Ink.theirsText)
           .lineLimit(1).truncationMode(.middle)
         LinkByStripe(wallet: shown.wallet)
@@ -2088,7 +2088,7 @@ struct PurchaseCardView: View {
     if shown.canChooseCard {
       Button { Haptics.tap(); choosing = true } label: { row.contentShape(Rectangle()) }
         .buttonStyle(.tactile)
-        .accessibilityLabel(shown.cardLine.map { "Pays with \($0). Choose another card" } ?? PurchaseCard.chooseCard)
+        .accessibilityLabel(shown.cardLine.map { String(localized: "Pays with \($0). Choose another card") } ?? PurchaseCard.chooseCard)
     } else {
       row.accessibilityElement(children: .combine)
     }
@@ -2639,7 +2639,7 @@ private struct ProductPrice: View {
     .monospacedDigit()
     .lineLimit(1)
     .accessibilityElement(children: .ignore)
-    .accessibilityLabel(listPrice.map { "\(price), was \($0)" } ?? price)
+    .accessibilityLabel(listPrice.map { String(localized: "\(price), was \($0)") } ?? price)
   }
 }
 
@@ -2662,7 +2662,7 @@ private struct ProductStars: View {
     .font(.system(size: 16))
     .monospacedDigit()
     .accessibilityElement(children: .ignore)
-    .accessibilityLabel([product.ratingText.map { "\($0) out of 5 stars" }, product.reviewCount.map { "\($0) reviews" }].compactMap { $0 }.joined(separator: ", "))
+    .accessibilityLabel([product.ratingText.map { String(localized: "\($0) out of 5 stars") }, product.reviewCount.map { String(localized: "\($0) reviews") }].compactMap { $0 }.joined(separator: ", "))
   }
 }
 

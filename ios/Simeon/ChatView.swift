@@ -737,17 +737,17 @@ struct ChatComposer: View {
    */
   private var placeholder: String {
     #if os(macOS)
-    if dictation.isListening { return "Listening…" }
+    if dictation.isListening { return String(localized: "Listening…") }
     if thread == nil, let target = reply?.target { return Chat.replyPlaceholder(replyEntry(target)) }
     // The new chat's own (`$4n`), while its To: line is open.
     if let resting = hook?.placeholder { return resting }
-    if !attachments.isEmpty { return "Add a message, or hit send." }
+    if !attachments.isEmpty { return String(localized: "Add a message, or hit send.") }
     let named = name.trimmingCharacters(in: .whitespacesAndNewlines)
-    if !named.isEmpty { return "Message \(named)" }
-    return store.groupIds.contains(agentId) ? "Message group" : "Ask anything, or drop a file."
+    if !named.isEmpty { return String(localized: "Message \(named)") }
+    return store.groupIds.contains(agentId) ? String(localized: "Message group") : String(localized: "Ask anything, or drop a file.")
     #else
-    if reply?.target != nil { return "Reply" }
-    return "Message"
+    if reply?.target != nil { return String(localized: "Reply") }
+    return String(localized: "Message")
     #endif
   }
 
@@ -1525,7 +1525,7 @@ struct TypingRow: View {
       .padding(.leading, 8)
       .frame(height: 36)
       .accessibilityElement(children: .ignore)
-      .accessibilityLabel(line.map { "\(agent.name): \($0.text)" } ?? (agent.isComposing ? "\(agent.name) is typing" : "\(agent.name) is working"))
+      .accessibilityLabel(line.map { "\(agent.name): \($0.text)" } ?? (agent.isComposing ? String(localized: "\(agent.name) is typing") : String(localized: "\(agent.name) is working")))
     }
   }
 }
@@ -1670,18 +1670,18 @@ struct GroupActivityLine: View {
   static func line(members: [Agent], step: String?) -> String {
     let typing = members.filter(\.isComposing).map(\.name)
     let working = members.filter { !$0.isComposing && ($0.isRunning || $0.isRunningTurn) && !$0.awaitingUserResponse }.map(\.name)
-    if !typing.isEmpty { return names(typing) + (typing.count == 1 ? " is typing…" : " are typing…") }
+    if !typing.isEmpty { let who = names(typing); return typing.count == 1 ? String(localized: "\(who) is typing…") : String(localized: "\(who) are typing…") }
     if let step, !step.isEmpty { return step }
-    if !working.isEmpty { return names(working) + (working.count == 1 ? " is working…" : " are working…") }
-    return "Working…"
+    if !working.isEmpty { let who = names(working); return working.count == 1 ? String(localized: "\(who) is working…") : String(localized: "\(who) are working…") }
+    return String(localized: "Working…")
   }
 
   static func names(_ list: [String]) -> String {
     switch list.count {
     case 1: return list[0]
-    case 2: return "\(list[0]) and \(list[1])"
-    case 3: return "\(list[0]), \(list[1]) and \(list[2])"
-    default: return "\(list[0]), \(list[1]) and \(list.count - 2) others"
+    case 2: return String(localized: "\(list[0]) and \(list[1])")
+    case 3: return String(localized: "\(list[0]), \(list[1]) and \(list[2])")
+    default: return String(localized: "\(list[0]), \(list[1]) and \(list.count - 2) others")
     }
   }
 }
@@ -1992,8 +1992,8 @@ struct FailedSendRow: View {
       Spacer(minLength: 0)
       Image(systemName: "exclamationmark.circle.fill").font(.system(size: 12)).foregroundStyle(Ink.danger)
       Text("Failed to send").foregroundStyle(Ink.danger)
-      Button { Task { await store.resend(nonce, in: agentId) } } label: { action("Resend") }
-      Button { store.discardFailed(nonce, in: agentId) } label: { action("Delete") }
+      Button { Task { await store.resend(nonce, in: agentId) } } label: { action(String(localized: "Resend")) }
+      Button { store.discardFailed(nonce, in: agentId) } label: { action(String(localized: "Delete")) }
     }
     .buttonStyle(.tactile)
     .font(.system(size: 12, weight: .medium))
@@ -2122,12 +2122,12 @@ struct MessageActionsSheet: View {
           .accessibilityLabel("Another reaction")
         }
         // Inside a thread every message answers it: no Reply, no new thread.
-        group((thread == nil ? [Action(title: "Reply", symbol: "arrowshape.turn.up.left") { reply?.target = bubble; dismiss() }] : []) + startThread + [
-          Action(title: "Mark as Unread", symbol: "message.badge") { Task { await store.setUnread(agentId, true) }; dismiss() },
+        group((thread == nil ? [Action(title: String(localized: "Reply"), symbol: "arrowshape.turn.up.left") { reply?.target = bubble; dismiss() }] : []) + startThread + [
+          Action(title: String(localized: "Mark as Unread"), symbol: "message.badge") { Task { await store.setUnread(agentId, true) }; dismiss() },
         ])
         group([
-          Action(title: "Copy", symbol: "doc.on.doc") { UIPasteboard.general.string = bubble.text; Haptics.tap(); dismiss() },
-          Action(title: "Select Text", symbol: "character.cursor.ibeam") { selecting = true },
+          Action(title: String(localized: "Copy"), symbol: "doc.on.doc") { UIPasteboard.general.string = bubble.text; Haptics.tap(); dismiss() },
+          Action(title: String(localized: "Select Text"), symbol: "character.cursor.ibeam") { selecting = true },
         ])
       }
       .padding(.horizontal, 18).padding(.top, 26).padding(.bottom, 12)
@@ -2142,7 +2142,7 @@ struct MessageActionsSheet: View {
   /** "Start a Thread" in the chat (not in a thread, which has no actions to open one). */
   private var startThread: [Action] {
     guard thread == nil, let open = actions?.openThread else { return [] }
-    return [Action(title: "Start a Thread", symbol: "bubble.left.and.bubble.right") { dismiss(); open(bubble.id) }]
+    return [Action(title: String(localized: "Start a Thread"), symbol: "bubble.left.and.bubble.right") { dismiss(); open(bubble.id) }]
   }
 
   private func group(_ actions: [Action]) -> some View {

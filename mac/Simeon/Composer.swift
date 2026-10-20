@@ -190,9 +190,9 @@ struct Composer: View {
   /** The field's words while empty (`ve`): listening, transcribing, a reply's, files', or the chat's. */
   private func placeholder(reply: ChatControl.Reply?, hasFiles: Bool) -> String {
     switch dictation.phase {
-    case .asking, .recording: return "Listening…"
-    case .transcribing: return "Transcribing…"
-    case .idle: return reply?.placeholder ?? (hasFiles ? "Add a message, or hit send." : "Message \(name)")
+    case .asking, .recording: return String(localized: "Listening…")
+    case .transcribing: return String(localized: "Transcribing…")
+    case .idle: return reply?.placeholder ?? (hasFiles ? String(localized: "Add a message, or hit send.") : String(localized: "Message \(name)"))
     }
   }
 

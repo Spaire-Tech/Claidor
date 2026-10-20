@@ -186,8 +186,8 @@ enum SidebarActions {
     alert.alertStyle = .warning
     alert.messageText = AgentDeletion.title(agents)
     alert.informativeText = AgentDeletion.message(agents)
-    alert.addButton(withTitle: "Delete").hasDestructiveAction = true
-    alert.addButton(withTitle: "Cancel").keyEquivalent = "\u{1b}"
+    alert.addButton(withTitle: String(localized: "Delete")).hasDestructiveAction = true
+    alert.addButton(withTitle: String(localized: "Cancel")).keyEquivalent = "\u{1b}"
     present(alert) { response in
       guard response == .alertFirstButtonReturn else { return }
       Task {
@@ -211,8 +211,8 @@ enum SidebarActions {
     alert.alertStyle = .warning
     alert.messageText = SidebarSections.deleteTitle(name: name)
     alert.informativeText = SidebarSections.deleteMessage
-    alert.addButton(withTitle: "Delete").hasDestructiveAction = true
-    alert.addButton(withTitle: "Cancel").keyEquivalent = "\u{1b}"
+    alert.addButton(withTitle: String(localized: "Delete")).hasDestructiveAction = true
+    alert.addButton(withTitle: String(localized: "Cancel")).keyEquivalent = "\u{1b}"
     present(alert) { response in
       guard response == .alertFirstButtonReturn else { return }
       store.editSections { SidebarSections.remove($0, id: id) }

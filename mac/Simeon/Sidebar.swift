@@ -258,7 +258,7 @@ private struct SearchDisc: View {
   @Environment(\.colorScheme) private var scheme
 
   var body: some View {
-    Disc(size: 40, help: "Search", action: { search.open(store: store, window: window) }) {
+    Disc(size: 40, help: String(localized: "Search"), action: { search.open(store: store, window: window) }) {
       Image(systemName: "magnifyingglass")
         .font(.system(size: 16, weight: .regular))
         .foregroundStyle(discInk(scheme))
@@ -273,7 +273,7 @@ private struct NewChatDisc: View {
   @Environment(\.colorScheme) private var scheme
 
   var body: some View {
-    Disc(size: 40, help: "New chat", action: {
+    Disc(size: 40, help: String(localized: "New chat"), action: {
       if search.isOpen { search.close() }
       newChat.open()
     }) {

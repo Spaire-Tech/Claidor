@@ -182,11 +182,11 @@ struct LocalAskDock: View {
       }
       HStack(spacing: 8) {
         // The disabled button's words still show on hover, as the window wraps it in a span.
-        AskButton(title: "Always allow", primary: true, enabled: enabled && alwaysBlocked == nil, look: look) { answer(.always) }
+        AskButton(title: String(localized: "Always allow"), primary: true, enabled: enabled && alwaysBlocked == nil, look: look) { answer(.always) }
           .contentShape(Rectangle())
           .help(alwaysBlocked ?? "")
-        AskButton(title: "Allow once", primary: false, enabled: enabled, look: look) { answer(.allowOnce) }
-        AskButton(title: "Never", primary: false, enabled: enabled, look: look) { answer(.never) }
+        AskButton(title: String(localized: "Allow once"), primary: false, enabled: enabled, look: look) { answer(.allowOnce) }
+        AskButton(title: String(localized: "Never"), primary: false, enabled: enabled, look: look) { answer(.never) }
       }
     }
     .padding(12)
@@ -233,7 +233,7 @@ struct LocalAskDock: View {
         MacLocalPermission.approvals.record(LocalToolApproval(id: ask.requestId, action: ask.action, target: ask.target))
       }
       do {
-        guard let backend = store.backend else { throw GatewayError(message: "Not signed in.", refused: true) }
+        guard let backend = store.backend else { throw GatewayError(message: String(localized: "Not signed in."), refused: true) }
         _ = try await backend.command("resolveLocalToolPermission", ["entryId": .string(ask.entryId), "requestId": .string(ask.requestId),
                                                                     "resolution": .string(sent.rawValue), "agentId": .string(agentId)])
         WindowState.composerFocus += 1

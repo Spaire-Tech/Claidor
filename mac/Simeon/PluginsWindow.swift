@@ -289,8 +289,8 @@ private struct GlassSegments: View {
 
   var body: some View {
     HStack(spacing: 0) {
-      segment("Available", .marketplace)
-      segment("Yours", .yours)
+      segment(String(localized: "Available"), .marketplace)
+      segment(String(localized: "Yours"), .yours)
     }
     .padding(3)
     .frame(width: 280, height: 34)
@@ -360,7 +360,7 @@ private struct FilterButton: View {
 @MainActor
 private enum FilterMenu {
   static func show(model: PluginsModel, under frame: CGRect) {
-    let menu = NSMenu(title: "Filter connectors")
+    let menu = NSMenu(title: String(localized: "Filter connectors"))
     menu.autoenablesItems = false
     menu.minimumWidth = 180
     var types: [(PluginFilter.Kind, CheckMenuRow)] = []
@@ -369,7 +369,7 @@ private enum FilterMenu {
       for (kind, row) in types { row.isOn = model.filter.type == kind }
       for (owner, row) in owners { row.isOn = model.filter.ownership == owner }
     }
-    menu.addItem(.sectionHeader(title: "Type"))
+    menu.addItem(.sectionHeader(title: String(localized: "Type")))
     for kind in PluginFilter.Kind.allCases {
       let row = CheckMenuRow(title: PluginFilter.label(kind), on: model.filter.type == kind, width: 180, radio: true) { _ in
         model.filter.type = kind
@@ -379,7 +379,7 @@ private enum FilterMenu {
       menu.addItem(CheckMenuRow.item(row))
     }
     menu.addItem(.separator())
-    menu.addItem(.sectionHeader(title: "Ownership"))
+    menu.addItem(.sectionHeader(title: String(localized: "Ownership")))
     for owner in PluginFilter.Ownership.allCases {
       let row = CheckMenuRow(title: PluginFilter.label(owner), on: model.filter.ownership == owner, width: 180, radio: true) { _ in
         model.filter.ownership = owner
@@ -489,7 +489,7 @@ private struct MarketplaceList: View {
         .foregroundStyle(look.inkTertiary)
         .frame(maxWidth: .infinity, alignment: .leading)
     } else if searching {
-      MarketplaceSection(title: "Results", entries: entries, folds: false, look: look)
+      MarketplaceSection(title: String(localized: "Results"), entries: entries, folds: false, look: look)
     } else {
       ForEach(Plugins.sections(entries), id: \.key) { section in
         MarketplaceSection(title: section.title, entries: section.items, folds: true, look: look)
@@ -523,7 +523,7 @@ private struct MarketplaceSection: View {
             } else if model.installed(entry).isInstalled {
               let server = model.serverState(entry)
               if entry.connectorList.isEmpty || server == nil {
-                AddedMark(title: "Added", look: look)
+                AddedMark(title: String(localized: "Added"), look: look)
               } else if let server, server.status == "needsAuth" {
                 PluginPill(title: Plugins.signInButton(model.signInState(server, accountKey: server.accountKey)), kind: .secondary, disabled: model.isBusy, look: look) {
                   model.requestSignIn(server, accountKey: server.accountKey)
@@ -570,7 +570,7 @@ private struct YoursList: View {
     if !showsInstalled && !showsPrivate { YoursEmpty(text: Plugins.noFilterMatch, look: look) }
     if showsInstalled {
       VStack(alignment: .leading, spacing: 0) {
-        SectionHeading(title: "Installed", look: look)
+        SectionHeading(title: String(localized: "Installed"), look: look)
         if items.isEmpty {
           YoursEmpty(text: Plugins.installedEmpty(query: q), look: look)
         } else {
@@ -582,7 +582,7 @@ private struct YoursList: View {
     }
     if showsPrivate {
       VStack(alignment: .leading, spacing: 0) {
-        SectionHeading(title: "Private", look: look)
+        SectionHeading(title: String(localized: "Private"), look: look)
         if agentId == nil || skills.isEmpty {
           YoursEmpty(text: Plugins.privateEmpty(agentOpen: agentId != nil, query: q), look: look)
         } else {
@@ -592,7 +592,7 @@ private struct YoursList: View {
                         icon: { SkillTile(side: 40, look: look) },
                         open: { model.path.append(.skill(skill.id)) }) {
                 if skill.source == "workflow" {
-                  PluginSwitch(on: skill.isEnabledForAgent, label: "Enable \(skill.name)", look: look) {
+                  PluginSwitch(on: skill.isEnabledForAgent, label: String(localized: "Enable \(skill.name)"), look: look) {
                     Task { await model.setEnabled(skill, agentId: agentId) }
                   }
                 }
@@ -974,7 +974,7 @@ private struct GitHubBanner: View {
           .fixedSize(horizontal: false, vertical: true)
       }
       .frame(maxWidth: .infinity, alignment: .leading)
-      PluginPill(title: model.launchingFix ? "Opening…" : "Fix with agent", kind: .secondary, disabled: model.launchingFix, look: look) {
+      PluginPill(title: model.launchingFix ? String(localized: "Opening…") : String(localized: "Fix with agent"), kind: .secondary, disabled: model.launchingFix, look: look) {
         Task {
           guard let id = await model.fixWithAgent() else { return }
           window.choose(id, store: store)
@@ -1154,20 +1154,20 @@ private struct PluginPage: View {
           ToolsCard(serverId: server.id, look: look)
         }
         if installed.isInstalled && item != nil && entry.hasSetupFields {
-          PageCard(heading: "Setup", look: look) {
+          PageCard(heading: String(localized: "Setup"), look: look) {
             CardRow(look: look) {
               Text("Setup Values").font(.system(size: 13)).foregroundStyle(look.ink).frame(maxWidth: .infinity, alignment: .leading)
-              PluginPill(title: "Edit Values", kind: .secondary, disabled: model.isBusy, look: look) { model.editValues(entry) }
+              PluginPill(title: String(localized: "Edit Values"), kind: .secondary, disabled: model.isBusy, look: look) { model.editValues(entry) }
             }
           }
         }
         if !entry.connectorList.isEmpty {
-          FoldCard(heading: "Connectors", summary: Plugins.count(entry.connectorList.count, "connector"),
-                   rows: entry.connectorList.map { ($0.name, $0.description.isEmpty ? "Connector" : $0.description) }, look: look)
+          FoldCard(heading: String(localized: "Connectors"), summary: Plugins.count(entry.connectorList.count, "connector"),
+                   rows: entry.connectorList.map { ($0.name, $0.description.isEmpty ? String(localized: "Connector") : $0.description) }, look: look)
         }
         if let skills = entry.skills, !skills.isEmpty {
-          FoldCard(heading: "Skills", summary: Plugins.count(skills.count, "skill"),
-                   rows: skills.map { ($0.name, $0.description.isEmpty ? "Skill" : $0.description) }, look: look)
+          FoldCard(heading: String(localized: "Skills"), summary: Plugins.count(skills.count, "skill"),
+                   rows: skills.map { ($0.name, $0.description.isEmpty ? String(localized: "Skill") : $0.description) }, look: look)
         }
       }
     }
@@ -1198,15 +1198,15 @@ private struct ServerPage: View {
       VStack(alignment: .leading, spacing: 16) {
         AccountsCard(serverId: server.id, look: look)
         ToolsCard(serverId: server.id, look: look)
-        PageCard(heading: "Details", look: look) {
-          CardRow(look: look) { DetailPair(term: "Source", value: Plugins.sourceWord(isTeamServer: server.isTeamServer), look: look) }
-          CardRow(divided: true, look: look) { DetailPair(term: "Transport", value: Plugins.transportWord(server.transport), look: look) }
+        PageCard(heading: String(localized: "Details"), look: look) {
+          CardRow(look: look) { DetailPair(term: String(localized: "Source"), value: Plugins.sourceWord(isTeamServer: server.isTeamServer), look: look) }
+          CardRow(divided: true, look: look) { DetailPair(term: String(localized: "Transport"), value: Plugins.transportWord(server.transport), look: look) }
           if let url = server.url {
             CardRow(divided: true, look: look) { DetailPair(term: "URL", value: Plugins.detailValue(url), look: look) }
           } else {
-            CardRow(divided: true, look: look) { DetailPair(term: "Command", value: Plugins.detailValue(server.command), look: look) }
+            CardRow(divided: true, look: look) { DetailPair(term: String(localized: "Command"), value: Plugins.detailValue(server.command), look: look) }
           }
-          CardRow(divided: true, look: look) { DetailPair(term: "Tools", value: Plugins.toolsValue(model.tools[server.id], count: server.toolCount), look: look) }
+          CardRow(divided: true, look: look) { DetailPair(term: String(localized: "Tools"), value: Plugins.toolsValue(model.tools[server.id], count: server.toolCount), look: look) }
         }
       }
     }
@@ -1237,11 +1237,11 @@ private struct PageActionView: View {
         PluginPill(title: Connecting.connect, kind: .primary, disabled: busy, look: look, action: add).accessibilityLabel("Connect \(name)")
       }
     case .uninstall:
-      PluginPill(title: "Uninstall", kind: .secondary, disabled: busy, look: look, action: remove)
+      PluginPill(title: String(localized: "Uninstall"), kind: .secondary, disabled: busy, look: look, action: remove)
     case .remove(let label):
       HStack(spacing: 8) {
         PluginPill(title: label, kind: .label, look: look)
-        PluginPill(title: "Remove", kind: .secondary, disabled: busy, look: look, action: remove)
+        PluginPill(title: String(localized: "Remove"), kind: .secondary, disabled: busy, look: look, action: remove)
       }
     case .managed(let label):
       PluginPill(title: label, kind: .label, look: look)
@@ -1367,7 +1367,7 @@ private struct AccountsCard: View {
   var body: some View {
     let rows = Plugins.accounts(plugins.model.servers, of: serverId)
     if !rows.isEmpty {
-      PageCard(heading: "Accounts", look: look) {
+      PageCard(heading: String(localized: "Accounts"), look: look) {
         ForEach(Array(rows.enumerated()), id: \.offset) { index, row in
           CardRow(divided: index > 0, look: look) {
             VStack(alignment: .leading, spacing: 2) {
@@ -1399,13 +1399,13 @@ private struct ToolsCard: View {
     let tools = model.tools[serverId] ?? []
     if !tools.isEmpty {
       let names = Plugins.toolNames(tools)
-      FoldShell(heading: "Tools", summary: Plugins.enabledLine(tools), look: look) {
+      FoldShell(heading: String(localized: "Tools"), summary: Plugins.enabledLine(tools), look: look) {
         ForEach(tools) { tool in
           let name = names[tool.name] ?? tool.name
           CardRow(divided: true, look: look) {
             Text(name).font(.system(size: 13)).foregroundStyle(look.ink).lineLimit(1).help(tool.description)
               .frame(maxWidth: .infinity, alignment: .leading)
-            PluginSwitch(on: !tool.isDisabled, label: tool.isDisabled ? "Enable \(name)" : "Disable \(name)", look: look) {
+            PluginSwitch(on: !tool.isDisabled, label: tool.isDisabled ? String(localized: "Enable \(name)") : String(localized: "Disable \(name)"), look: look) {
               Task { await model.toggle(tool, of: serverId) }
             }
           }
@@ -1597,19 +1597,19 @@ private struct SkillPage: View {
         }
         if !skill.description.isEmpty { Description(text: skill.description, look: look) }
       }
-      SkillField(label: "Name", text: $name, placeholder: "", look: look).disabled(managed)
+      SkillField(label: String(localized: "Name"), text: $name, placeholder: "", look: look).disabled(managed)
       VStack(alignment: .leading, spacing: 0) {
-        SkillField(label: "Description", text: $details, placeholder: "Use when…", look: look).disabled(managed)
+        SkillField(label: String(localized: "Description"), text: $details, placeholder: String(localized: "Use when…"), look: look).disabled(managed)
         if details.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !managed {
           Text(Plugins.skillDescriptionHint).font(.system(size: 12)).foregroundStyle(look.inkTertiary).padding(.top, 4)
         }
       }
-      SkillField(label: "Instructions", text: $instructions, placeholder: "Markdown instructions the agent follows when it runs this skill", lines: true, look: look)
+      SkillField(label: String(localized: "Instructions"), text: $instructions, placeholder: String(localized: "Markdown instructions the agent follows when it runs this skill"), lines: true, look: look)
         .disabled(managed)
       if !managed {
         HStack {
           Spacer(minLength: 0)
-          PluginPill(title: "Save", kind: .primary, disabled: !ready, look: look) {
+          PluginPill(title: String(localized: "Save"), kind: .primary, disabled: !ready, look: look) {
             guard let agentId else { return }
             working = true
             Task { _ = await model.save(skill, name: name, description: details, body: instructions, agentId: agentId); working = false }

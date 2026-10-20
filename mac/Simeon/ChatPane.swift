@@ -747,7 +747,7 @@ private struct BubbleRow: View {
       // In a thread, a reply to its first message carries no quote (`x`).
       if let quote = bubble.quote, let target = bubble.replyTo, target != threadRoot {
         let shown = visibleIds.contains(target)
-        ReplyQuote(text: quote, look: look, label: shown ? "Jump to replied message" : "Open reply thread") {
+        ReplyQuote(text: quote, look: look, label: shown ? String(localized: "Jump to replied message") : String(localized: "Open reply thread")) {
           if shown {
             control.jump(to: target)
           } else if let root = store.threadRoot(of: target, in: agentId) {
@@ -1033,9 +1033,9 @@ private struct ExchangeEvent: View {
 
   var body: some View {
     let peers = exchange.peers
-    let title = peers.count == 1 ? peers[0].name : "\(peers.count) agents"
+    let title = peers.count == 1 ? peers[0].name : String(localized: "\(peers.count) agents")
     SystemEvent(label: exchange.label, look: look) {
-      EventChip(title: title, help: peers.count == 1 ? "Open \(title)'s messages" : "\(title), show list", look: look, action: {
+      EventChip(title: title, help: peers.count == 1 ? String(localized: "Open \(title)'s messages") : String(localized: "\(title), show list"), look: look, action: {
         if peers.count == 1 {
           control.openExchange(peers[0])
         } else if !peers.isEmpty {
@@ -1070,7 +1070,7 @@ private struct RoutinesLine: View {
     let verb = Chat.routineVerb(action)
     if routines.count >= 3 {
       SystemEvent(label: verb, look: look) {
-        EventChip(title: "\(routines.count) routines", help: "\(routines.count) routines, show list", look: look, spacing: 2, action: showList) { clock }
+        EventChip(title: String(localized: "\(routines.count) routines"), help: String(localized: "\(routines.count) routines, show list"), look: look, spacing: 2, action: showList) { clock }
       }
     } else {
       SystemEvent(label: "\(verb) \(routines.count == 1 ? "routine" : "routines")", look: look) {
@@ -1078,7 +1078,7 @@ private struct RoutinesLine: View {
           if index > 0 {
             Text("and").foregroundStyle(look.inkSecondary).fixedSize()
           }
-          EventChip(title: routine.name, help: "Open routine \(routine.name)", look: look, spacing: 2, action: { open(routine.id) }) { clock }
+          EventChip(title: routine.name, help: String(localized: "Open routine \(routine.name)"), look: look, spacing: 2, action: { open(routine.id) }) { clock }
         }
       }
     }

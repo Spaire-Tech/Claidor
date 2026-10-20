@@ -65,11 +65,11 @@ struct EmailSignInSheet: View {
     .scrollBounceBehavior(.basedOnSize)
     .background(Ink.ground)
     .overlay(alignment: .topTrailing) {
-      CornerButton(symbol: "xmark", label: "Close") { dismiss() }
+      CornerButton(symbol: "xmark", label: String(localized: "Close")) { dismiss() }
     }
     .overlay(alignment: .topLeading) {
       if step != .email {
-        CornerButton(symbol: "chevron.left", label: "Back") { back() }
+        CornerButton(symbol: "chevron.left", label: String(localized: "Back")) { back() }
       }
     }
     .animation(.snappy, value: step)
@@ -78,16 +78,16 @@ struct EmailSignInSheet: View {
 
   private var title: String {
     switch step {
-    case .email: return "Log in or sign up"
-    case .code: return "Check your inbox"
-    case .password: return "Enter your password"
+    case .email: return String(localized: "Log in or sign up")
+    case .code: return String(localized: "Check your inbox")
+    case .password: return String(localized: "Enter your password")
     }
   }
 
   private var subtitle: String {
     switch step {
-    case .email: return "Your agents and their computers, on your iPhone and your Mac."
-    case .code: return "Enter the verification code we just sent to \(email.trimmingCharacters(in: .whitespaces))."
+    case .email: return String(localized: "Your agents and their computers, on your iPhone and your Mac.")
+    case .code: return String(localized: "Enter the verification code we just sent to \(email.trimmingCharacters(in: .whitespaces)).")
     case .password: return email.trimmingCharacters(in: .whitespaces)
     }
   }
@@ -154,8 +154,8 @@ struct EmailSignInSheet: View {
       case .email:
         OrLine().padding(.vertical, 26)
         VStack(spacing: 12) {
-          OutlineButton(label: "Continue with Google", image: "SignIn/Google", imageSize: 18) { provider(.google) }
-          OutlineButton(label: "Continue with Apple", image: "SignIn/Apple", imageSize: 20, template: true) { provider(.apple) }
+          OutlineButton(label: String(localized: "Continue with Google"), image: "SignIn/Google", imageSize: 18) { provider(.google) }
+          OutlineButton(label: String(localized: "Continue with Apple"), image: "SignIn/Apple", imageSize: 20, template: true) { provider(.apple) }
         }
       case .code:
         Button("Resend email", action: resend)
@@ -165,7 +165,7 @@ struct EmailSignInSheet: View {
           .padding(.top, 14)
           .disabled(busy)
         OrLine().padding(.vertical, 22)
-        OutlineButton(label: "Continue with password") { go(.password) }
+        OutlineButton(label: String(localized: "Continue with password")) { go(.password) }
       case .password:
         Button("Use a code instead") { go(.code) }
           .font(.system(size: 17, weight: .medium))
@@ -246,7 +246,7 @@ struct EmailSignInSheet: View {
       let sent = await session.emailCode(email)
       busy = false
       switch sent {
-      case .sent: say("We sent a new code to \(email.trimmingCharacters(in: .whitespaces)).", error: false)
+      case .sent: say(String(localized: "We sent a new code to \(email.trimmingCharacters(in: .whitespaces))."), error: false)
       case .refused(let words): say(words, error: true)
       }
     }

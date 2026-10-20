@@ -99,8 +99,8 @@ struct SettingsSheet: View {
         .listRowBackground(Ink.groupedRow)
         Section {
           // The pages the web app's sign-in links to; they are written on simeonlabs.com, not in the app.
-          LegalLink(title: "Privacy Policy", url: Legal.privacy)
-          LegalLink(title: "Terms of Service", url: Legal.terms)
+          LegalLink(title: String(localized: "Privacy Policy"), url: Legal.privacy)
+          LegalLink(title: String(localized: "Terms of Service"), url: Legal.terms)
           NavigationLink { AboutPage() } label: { Text("About Simeon").foregroundStyle(Ink.primary) }
         }
         .listRowBackground(Ink.groupedRow)
@@ -332,7 +332,7 @@ struct PermissionsPage: View {
         NavigationLink {
           AutoReviewRules(settings: $settings)
         } label: {
-          LabeledContent("Auto-review Rules", value: rulesCount == 0 ? "None" : "\(rulesCount)")
+          LabeledContent("Auto-review Rules", value: rulesCount == 0 ? String(localized: "None") : "\(rulesCount)")
         }
       }
       .listRowBackground(Ink.groupedRow)
@@ -474,7 +474,7 @@ struct PasswordPage: View {
           .textContentType(.newPassword)
           .onSubmit(save)
       } footer: {
-        Text(problem ?? (mismatch ? "The two don't match." : "At least \(EmailSignIn.minimumPassword) characters. You'll sign in with \(store.account?.email ?? "your email") and this password."))
+        Text(problem ?? (mismatch ? String(localized: "The two don't match.") : String(localized: "At least \(EmailSignIn.minimumPassword) characters. You'll sign in with \(store.account?.email ?? "your email") and this password.")))
           .foregroundStyle(problem != nil || mismatch ? Ink.danger : Ink.secondary)
       }
       .listRowBackground(Ink.groupedRow)
@@ -832,7 +832,7 @@ struct AboutPage: View {
           }
         } label: {
           HStack {
-            Text(copied ? AboutSimeon.copied : "Copy Version Info").foregroundStyle(Ink.primary)
+            Text(copied ? AboutSimeon.copied : String(localized: "Copy Version Info")).foregroundStyle(Ink.primary)
             Spacer()
             Image(systemName: copied ? "checkmark" : "doc.on.doc").font(.system(size: 14)).foregroundStyle(Ink.secondary)
           }
@@ -853,7 +853,7 @@ struct AboutPage: View {
             }
           } label: {
             HStack {
-              Text(copiedFreezes ? AboutSimeon.copied : "Copy Freeze Report").foregroundStyle(Ink.primary)
+              Text(copiedFreezes ? AboutSimeon.copied : String(localized: "Copy Freeze Report")).foregroundStyle(Ink.primary)
               Spacer()
               Image(systemName: copiedFreezes ? "checkmark" : "doc.on.doc").font(.system(size: 14)).foregroundStyle(Ink.secondary)
             }
@@ -1164,7 +1164,7 @@ struct ConnectAppsSheet: View {
       HStack(spacing: 10) { ProgressView(); Text("Loading apps…").font(.system(size: 15)).foregroundStyle(Ink.secondary) }
         .padding(.top, 24)
     } else if sections.isEmpty {
-      Text(query.isEmpty ? Plugins.noFilterMatch : "No apps match \u{201C}\(query)\u{201D}.").font(.system(size: 15)).foregroundStyle(Ink.secondary)
+      Text(query.isEmpty ? Plugins.noFilterMatch : String(localized: "No apps match \u{201C}\(query)\u{201D}.")).font(.system(size: 15)).foregroundStyle(Ink.secondary)
         .padding(.top, 24)
     }
     ForEach(sections) { section in
@@ -1225,16 +1225,16 @@ enum ConnectorsTab: CaseIterable {
 
   var title: String {
     switch self {
-    case .available: "Available"
-    case .yours: "Yours"
+    case .available: String(localized: "Available")
+    case .yours: String(localized: "Yours")
     }
   }
 
   /** The bar's title for it. */
   var heading: String {
     switch self {
-    case .available: "Connectors"
-    case .yours: "Yours"
+    case .available: String(localized: "Connectors")
+    case .yours: String(localized: "Yours")
     }
   }
 }
@@ -1254,7 +1254,7 @@ enum AppSections {
     // The section's name finds its apps too ("finance" finds Finance & Money's), as the Mac's search weighs the category.
     for app in catalog where words.isEmpty || app.title.localizedCaseInsensitiveContains(words) || app.summary.localizedCaseInsensitiveContains(words)
       || app.category.localizedCaseInsensitiveContains(words) {
-      let title = app.category.isEmpty ? "Apps" : app.category
+      let title = app.category.isEmpty ? String(localized: "Apps") : app.category
       if apps[title] == nil { order.append(title) }
       apps[title, default: []].append(app)
     }
@@ -1297,7 +1297,7 @@ struct YoursList: View {
       Text(Plugins.noFilterMatch).font(.system(size: 15)).foregroundStyle(Ink.secondary).padding(.top, 24)
     }
     if showsInstalled {
-      ConnectorsSectionTitle(title: "Installed") { EmptyView() }
+      ConnectorsSectionTitle(title: String(localized: "Installed")) { EmptyView() }
       if apps.isEmpty && skillsOnly.isEmpty {
         Text(q.isEmpty || store.appsOnce.isEmpty ? "No apps yet. Add one from Available." : "No apps match \u{201C}\(q)\u{201D}.")
           .font(.system(size: 15)).foregroundStyle(Ink.secondary)
@@ -1354,7 +1354,7 @@ struct InstalledRow: View {
               if let team = teamLabel { TeamBadge(tip: team) }
               if app.status == "error" { Text("Error").font(.system(size: 13)).foregroundStyle(Ink.danger).fixedSize() }
             }
-            let line = connected ? (app.toolCount == 1 ? "1 tool" : app.toolCount > 0 ? "\(app.toolCount) tools" : Connecting.connected) : "Not connected"
+            let line = connected ? (app.toolCount == 1 ? "1 tool" : app.toolCount > 0 ? String(localized: "\(app.toolCount) tools") : Connecting.connected) : String(localized: "Not connected")
             Text(line)
               .font(.system(size: 15)).foregroundStyle(!connected ? Ink.danger : line == Connecting.connected ? Ink.success : Ink.secondary).lineLimit(1)
           }

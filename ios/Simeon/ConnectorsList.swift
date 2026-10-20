@@ -68,7 +68,7 @@ struct ConnectorsSectionTitle<Trailing: View>: View {
 /** The search, floating over the list at the bottom in glass, round (48 high, 17). */
 struct ConnectorsSearchPill: View {
   @Binding var text: String
-  var prompt = "Search connectors"
+  var prompt = String(localized: "Search connectors")
 
   var body: some View {
     HStack(spacing: 10) {
@@ -136,7 +136,7 @@ struct ConnectorCategoryPage: View {
     ScrollView {
       LazyVStack(alignment: .leading, spacing: 0) {
         if apps.isEmpty {
-          Text(query.isEmpty ? Plugins.noFilterMatch : "No apps match \u{201C}\(query)\u{201D}.")
+          Text(query.isEmpty ? Plugins.noFilterMatch : String(localized: "No apps match \u{201C}\(query)\u{201D}."))
             .font(.system(size: 15)).foregroundStyle(Ink.secondary)
             .padding(.top, 24)
         }
@@ -146,7 +146,7 @@ struct ConnectorCategoryPage: View {
       .padding(.top, 4)
     }
     .scrollDismissesKeyboard(.immediately)
-    .safeAreaInset(edge: .bottom) { ConnectorsSearchPill(text: $query, prompt: "Search \(title)") }
+    .safeAreaInset(edge: .bottom) { ConnectorsSearchPill(text: $query, prompt: String(localized: "Search \(title)")) }
     .background(Ink.ground.ignoresSafeArea())
     .toolbar(.visible, for: .navigationBar)
     .navigationTitle(title)

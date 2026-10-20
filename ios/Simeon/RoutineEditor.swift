@@ -517,19 +517,19 @@ private struct TriggerPage: View {
       LinearFields(event: event, statuses: statuses, cycles: cycles, projects: projects, teams: teams, edit: edit)
     case .sentry(let event, let projects):
       TriggerFlow {
-        TriggerChoice(label: "Sentry event", options: RoutineWords.sentryEvents, value: event) { edit.pick(.sentry(event: $0, projectIds: projects)) }
+        TriggerChoice(label: String(localized: "Sentry event"), options: RoutineWords.sentryEvents, value: event) { edit.pick(.sentry(event: $0, projectIds: projects)) }
       }
       TriggerFlow {
         TriggerWord("in")
-        TriggerField(label: "Project IDs", placeholder: "All projects", value: projects) { edit.change(.sentry(event: event, projectIds: $0)) } commit: { edit.commit() }
+        TriggerField(label: String(localized: "Project IDs"), placeholder: String(localized: "All projects"), value: projects) { edit.change(.sentry(event: event, projectIds: $0)) } commit: { edit.commit() }
       }
     case .pagerduty(let event, let services):
       TriggerFlow {
-        TriggerChoice(label: "PagerDuty event", options: RoutineWords.pagerdutyEvents, value: event) { edit.pick(.pagerduty(event: $0, serviceIds: services)) }
+        TriggerChoice(label: String(localized: "PagerDuty event"), options: RoutineWords.pagerdutyEvents, value: event) { edit.pick(.pagerduty(event: $0, serviceIds: services)) }
       }
       TriggerFlow {
         TriggerWord("on")
-        TriggerField(label: "Service IDs", placeholder: "All services", value: services) { edit.change(.pagerduty(event: event, serviceIds: $0)) } commit: { edit.commit() }
+        TriggerField(label: String(localized: "Service IDs"), placeholder: String(localized: "All services"), value: services) { edit.change(.pagerduty(event: event, serviceIds: $0)) } commit: { edit.commit() }
       }
     }
   }
@@ -562,7 +562,7 @@ private struct ScheduleFields: View {
     let shape = pending ?? RoutineSchedule.shape(text)
     let mode = Self.mode(chosen: chosen, pending: pending, shape: shape)
     TriggerFlow {
-      TriggerChoice(label: "Frequency", options: RoutineSchedule.frequencies, value: mode) { next in
+      TriggerChoice(label: String(localized: "Frequency"), options: RoutineSchedule.frequencies, value: mode) { next in
         pick(next, mode: mode, shape: shape)
       }
       if let shape, shape.mode == mode {
@@ -619,7 +619,7 @@ private struct ScheduleFields: View {
     switch shape {
     case .hourly(let minute):
       TriggerWord("at")
-      TriggerChoice(label: "Minute", options: RoutineSchedule.minuteChoices(minute).map { (value: $0, label: ":" + String(format: "%02d", $0)) }, value: minute) {
+      TriggerChoice(label: String(localized: "Minute"), options: RoutineSchedule.minuteChoices(minute).map { (value: $0, label: ":" + String(format: "%02d", $0)) }, value: minute) {
         save(.hourly(minute: $0))
       }
     case .daily(let time):
@@ -630,24 +630,24 @@ private struct ScheduleFields: View {
       TimeChoice(time: time) { save(.weekdays($0)) }
     case .weekly(let day, let time):
       TriggerWord("on")
-      TriggerChoice(label: "Day of week", options: RoutineWords.weekOrder.map { (value: $0, label: RoutineSchedule.weekdays[$0]) }, value: day) {
+      TriggerChoice(label: String(localized: "Day of week"), options: RoutineWords.weekOrder.map { (value: $0, label: RoutineSchedule.weekdays[$0]) }, value: day) {
         save(.weekly(dayOfWeek: $0, time))
       }
       TriggerWord("at")
       TimeChoice(time: time) { save(.weekly(dayOfWeek: day, $0)) }
     case .monthly(let day, let time):
-      TriggerWord("on the")
-      TriggerChoice(label: "Day of month", options: (1...31).map { (value: $0, label: RoutineSchedule.ordinal($0)) }, value: day) {
+      TriggerWord(String(localized: "on the"))
+      TriggerChoice(label: String(localized: "Day of month"), options: (1...31).map { (value: $0, label: RoutineSchedule.ordinal($0)) }, value: day) {
         save(.monthly(dayOfMonth: $0, time))
       }
       TriggerWord("at")
       TimeChoice(time: time) { save(.monthly(dayOfMonth: day, $0)) }
     case .interval(let amount, let unit):
       TriggerWord("every")
-      TriggerChoice(label: "Interval amount", options: RoutineSchedule.intervalChoices(unit, current: amount).map { (value: $0, label: String($0)) }, value: amount) {
+      TriggerChoice(label: String(localized: "Interval amount"), options: RoutineSchedule.intervalChoices(unit, current: amount).map { (value: $0, label: String($0)) }, value: amount) {
         save(.interval(amount: $0, unit: unit))
       }
-      TriggerChoice(label: "Interval unit", options: RoutineWords.units.map { (value: $0, label: $0) }, value: unit) { next in
+      TriggerChoice(label: String(localized: "Interval unit"), options: RoutineWords.units.map { (value: $0, label: $0) }, value: unit) { next in
         save(.interval(amount: Self.amount(amount, for: next), unit: next))
       }
     case .advanced:
@@ -674,9 +674,9 @@ private struct AdvancedGrid: View {
   var body: some View {
     if case .advanced(let months, let days, let time) = shape {
       VStack(alignment: .leading, spacing: 12) {
-        GridLine(label: "Months") {
-          TickPill(text: RoutineWords.monthsLabel(months), label: "Months") {
-            TickSheet(title: "Months", none: "Any month", sections: [TickSection(title: nil, items: RoutineSchedule.months.enumerated().map { (value: $0.offset + 1, label: $0.element) })], ticked: months ?? []) { tapped, current in
+        GridLine(label: String(localized: "Months")) {
+          TickPill(text: RoutineWords.monthsLabel(months), label: String(localized: "Months")) {
+            TickSheet(title: String(localized: "Months"), none: String(localized: "Any month"), sections: [TickSection(title: nil, items: RoutineSchedule.months.enumerated().map { (value: $0.offset + 1, label: $0.element) })], ticked: months ?? []) { tapped, current in
               guard let tapped else {
                 save(.advanced(months: nil, days: days, time: time))
                 return []
@@ -687,29 +687,29 @@ private struct AdvancedGrid: View {
             } enabled: { _, _ in true }
           }
         }
-        GridLine(label: "Days") {
-          TriggerChoice(label: "Days", options: RoutineWords.dayKinds, value: Self.kind(days)) { kind in
+        GridLine(label: String(localized: "Days")) {
+          TriggerChoice(label: String(localized: "Days"), options: RoutineWords.dayKinds, value: Self.kind(days)) { kind in
             guard kind != Self.kind(days) else { return }
             let next: RoutineSchedule.Days = kind == "every-day" ? .everyDay : kind == "days-of-week" ? .daysOfWeek([1]) : .daysOfMonth([1])
             save(.advanced(months: months, days: next, time: time))
           }
           if case .daysOfWeek(let list) = days {
-            TickPill(text: RoutineWords.weekdaysLabel(list), label: "Days of the week") {
-              dayTicks("Days of the week", RoutineWords.weekOrder.map { (value: $0, label: RoutineSchedule.weekdays[$0]) }, picked: list) {
+            TickPill(text: RoutineWords.weekdaysLabel(list), label: String(localized: "Days of the week")) {
+              dayTicks(String(localized: "Days of the week"), RoutineWords.weekOrder.map { (value: $0, label: RoutineSchedule.weekdays[$0]) }, picked: list) {
                 save(.advanced(months: months, days: .daysOfWeek($0), time: time))
               }
             }
           }
           if case .daysOfMonth(let list) = days {
-            TickPill(text: RoutineWords.monthDaysLabel(list), label: "Days of the month") {
-              dayTicks("Days of the month", (1...31).map { (value: $0, label: RoutineSchedule.ordinal($0)) }, picked: list) {
+            TickPill(text: RoutineWords.monthDaysLabel(list), label: String(localized: "Days of the month")) {
+              dayTicks(String(localized: "Days of the month"), (1...31).map { (value: $0, label: RoutineSchedule.ordinal($0)) }, picked: list) {
                 save(.advanced(months: months, days: .daysOfMonth($0), time: time))
               }
             }
           }
         }
-        GridLine(label: "Time") {
-          TriggerChoice(label: "Time mode", options: RoutineWords.timeKinds, value: Self.kind(time)) { kind in
+        GridLine(label: String(localized: "Time")) {
+          TriggerChoice(label: String(localized: "Time mode"), options: RoutineWords.timeKinds, value: Self.kind(time)) { kind in
             guard kind != Self.kind(time) else { return }
             let next: RoutineSchedule.TimeOfDay = kind == "at-times" ? .atTimes(minute: 0, hours: [8]) : .interval(unit: "minutes", amount: 30, fromHour: 0, toHour: 23)
             save(.advanced(months: months, days: days, time: next))
@@ -758,7 +758,7 @@ private struct AdvancedGrid: View {
       }
       ForEach(Array(rest.enumerated()), id: \.element) { offset, hour in
         HStack(spacing: 2) {
-          TriggerChoice(label: "Time \(offset + 2)", options: (0..<24).map { (value: $0, label: RoutineSchedule.clock($0, minute)) }, disabled: Set(hours.filter { $0 != hour }), value: hour) { next in
+          TriggerChoice(label: String(localized: "Time \(offset + 2)"), options: (0..<24).map { (value: $0, label: RoutineSchedule.clock($0, minute)) }, disabled: Set(hours.filter { $0 != hour }), value: hour) { next in
             var list = hours
             list[offset + 1] = next
             change(.atTimes(minute: minute, hours: list))
@@ -785,18 +785,18 @@ private struct AdvancedGrid: View {
       }
     case .interval(let unit, let amount, let from, let to):
       // `zgn`: so many minutes or hours, between two hours.
-      TriggerChoice(label: "Interval amount", options: RoutineSchedule.intervalChoices(unit, current: amount).map { (value: $0, label: String($0)) }, value: amount) {
+      TriggerChoice(label: String(localized: "Interval amount"), options: RoutineSchedule.intervalChoices(unit, current: amount).map { (value: $0, label: String($0)) }, value: amount) {
         change(.interval(unit: unit, amount: $0, fromHour: from, toHour: to))
       }
-      TriggerChoice(label: "Interval unit", options: RoutineWords.windowUnits.map { (value: $0, label: $0) }, value: unit) { next in
+      TriggerChoice(label: String(localized: "Interval unit"), options: RoutineWords.windowUnits.map { (value: $0, label: $0) }, value: unit) { next in
         change(.interval(unit: next, amount: ScheduleFields.amount(amount, for: next), fromHour: from, toHour: to))
       }
       TriggerWord("between")
-      TriggerChoice(label: "From hour", options: (0..<24).map { (value: $0, label: RoutineSchedule.clock($0, 0)) }, value: from) {
+      TriggerChoice(label: String(localized: "From hour"), options: (0..<24).map { (value: $0, label: RoutineSchedule.clock($0, 0)) }, value: from) {
         change(.interval(unit: unit, amount: amount, fromHour: $0, toHour: max(to, $0)))
       }
       TriggerWord("and")
-      TriggerChoice(label: "To hour", options: (from..<24).map { (value: $0, label: RoutineSchedule.clock($0, 0)) }, value: to) {
+      TriggerChoice(label: String(localized: "To hour"), options: (from..<24).map { (value: $0, label: RoutineSchedule.clock($0, 0)) }, value: to) {
         change(.interval(unit: unit, amount: amount, fromHour: from, toHour: $0))
       }
     }
@@ -866,33 +866,33 @@ private struct SlackFields: View {
     // A keyword match is still "New messages" in the menu (`n2n`).
     let event = match == "keyword" ? "message" : match
     TriggerFlow {
-      TriggerChoice(label: "Slack event", options: RoutineWords.slackEvents, value: event, text: RoutineWords.slackButton[event] ?? "New messages") { picked in
+      TriggerChoice(label: String(localized: "Slack event"), options: RoutineWords.slackEvents, value: event, text: RoutineWords.slackButton[event] ?? String(localized: "New messages")) { picked in
         guard picked != event, case .slack(let c, _, let k, let e, let b)? = edit.current else { return }
         edit.pick(.slack(channel: c, match: Self.match(picked, keyword: k), keyword: k, emoji: e, bySelf: b))
       }
       TriggerWord("in")
-      TriggerField(label: "Slack channel", placeholder: "#channel", value: channel, autofocus: channel.trimmingCharacters(in: .whitespaces).isEmpty) {
+      TriggerField(label: String(localized: "Slack channel"), placeholder: "#channel", value: channel, autofocus: channel.trimmingCharacters(in: .whitespaces).isEmpty) {
         edit.change(.slack(channel: $0, match: match, keyword: keyword, emoji: emoji, bySelf: bySelf))
       } commit: { edit.commit() }
     }
     if event == "message" {
       TriggerFlow {
         TriggerWord("containing")
-        TriggerField(label: "Message contains", placeholder: "Any text", value: keyword) {
+        TriggerField(label: String(localized: "Message contains"), placeholder: String(localized: "Any text"), value: keyword) {
           edit.change(.slack(channel: channel, match: Self.match("message", keyword: $0), keyword: $0, emoji: emoji, bySelf: bySelf))
         } commit: { edit.commit() }
       }
     }
     if event == "reaction" {
       TriggerFlow {
-        TriggerWord("with emoji")
-        TriggerField(label: "Reaction emoji", placeholder: "Any emoji", value: emoji) {
+        TriggerWord(String(localized: "with emoji"))
+        TriggerField(label: String(localized: "Reaction emoji"), placeholder: String(localized: "Any emoji"), value: emoji) {
           edit.change(.slack(channel: channel, match: match, keyword: keyword, emoji: $0, bySelf: bySelf))
         } commit: { edit.commit() }
       }
       TriggerFlow {
         TriggerWord("from")
-        TriggerChoice(label: "Reactor", options: RoutineWords.reactors, value: bySelf) {
+        TriggerChoice(label: String(localized: "Reactor"), options: RoutineWords.reactors, value: bySelf) {
           edit.pick(.slack(channel: channel, match: match, keyword: keyword, emoji: emoji, bySelf: $0))
         }
       }
@@ -918,30 +918,30 @@ private struct GitFields: View {
     let ci = events.contains { $0 == "ci-passed" || $0 == "ci-failed" }
     let other = events.contains { $0 != "ci-passed" && $0 != "ci-failed" }
     TriggerFlow {
-      TickPill(text: RoutineWords.gitButton(events), label: "Git events") {
-        TickSheet(title: "Git events", sections: TriggerRow.gitSections.map { TickSection(title: $0.title, items: $0.events.map { (value: $0.kind, label: $0.label) }) }, ticked: events) { tapped, current in
+      TickPill(text: RoutineWords.gitButton(events), label: String(localized: "Git events")) {
+        TickSheet(title: String(localized: "Git events"), sections: TriggerRow.gitSections.map { TickSection(title: $0.title, items: $0.events.map { (value: $0.kind, label: $0.label) }) }, ticked: events) { tapped, current in
           guard let tapped, case .github(let r, let list, let a, let b)? = edit.current else { return nil }
           edit.pick(.github(repo: r, events: TriggerRow.toggled(list, tapped), userAllowlist: a, ciBranch: b))
           return TriggerRow.toggled(current, tapped)
         } enabled: { _, _ in true }
       }
       TriggerWord("in")
-      TriggerField(label: "Repository", placeholder: "owner/repo", value: repo, autofocus: repo.trimmingCharacters(in: .whitespaces).isEmpty) {
+      TriggerField(label: String(localized: "Repository"), placeholder: "owner/repo", value: repo, autofocus: repo.trimmingCharacters(in: .whitespaces).isEmpty) {
         edit.change(.github(repo: $0, events: events, userAllowlist: allowlist, ciBranch: branch))
       } commit: { edit.commit() }
     }
     if other {
       TriggerFlow {
         TriggerWord("from")
-        TriggerField(label: "User allowlist", placeholder: "Anyone", value: allowlist) {
+        TriggerField(label: String(localized: "User allowlist"), placeholder: String(localized: "Anyone"), value: allowlist) {
           edit.change(.github(repo: repo, events: events, userAllowlist: $0, ciBranch: branch))
         } commit: { edit.commit() }
       }
     }
     if ci {
       TriggerFlow {
-        TriggerWord("on branch")
-        TriggerField(label: "CI branch", placeholder: "main", value: branch) {
+        TriggerWord(String(localized: "on branch"))
+        TriggerField(label: String(localized: "CI branch"), placeholder: "main", value: branch) {
           edit.change(.github(repo: repo, events: events, userAllowlist: allowlist, ciBranch: $0))
         } commit: { edit.commit() }
       }
@@ -961,28 +961,28 @@ private struct TeamsFields: View {
 
   var body: some View {
     TriggerFlow {
-      TriggerChoice(label: "Teams event", options: [(value: "message", label: "New message in channel")], value: "message", text: "New messages") { _ in }
+      TriggerChoice(label: String(localized: "Teams event"), options: [(value: "message", label: String(localized: "New message in channel"))], value: "message", text: String(localized: "New messages")) { _ in }
       TriggerWord("in")
-      TriggerField(label: "Team IDs", placeholder: "Team IDs", value: teams, autofocus: teams.trimmingCharacters(in: .whitespaces).isEmpty) {
+      TriggerField(label: String(localized: "Team IDs"), placeholder: String(localized: "Team IDs"), value: teams, autofocus: teams.trimmingCharacters(in: .whitespaces).isEmpty) {
         edit.change(row(teams: $0))
       } commit: { edit.commit() }
     }
     TriggerFlow {
       TriggerWord("tenant")
-      TriggerField(label: "Tenant ID", placeholder: "Tenant ID", value: tenant) { edit.change(row(tenant: $0)) } commit: { edit.commit() }
+      TriggerField(label: String(localized: "Tenant ID"), placeholder: String(localized: "Tenant ID"), value: tenant) { edit.change(row(tenant: $0)) } commit: { edit.commit() }
     }
     TriggerFlow {
       TriggerWord("channels")
-      TriggerField(label: "Channel IDs", placeholder: "Every channel", value: channels) { edit.change(row(channels: $0)) } commit: { edit.commit() }
+      TriggerField(label: String(localized: "Channel IDs"), placeholder: String(localized: "Every channel"), value: channels) { edit.change(row(channels: $0)) } commit: { edit.commit() }
     }
     TriggerFlow {
       TriggerWord("containing")
-      TriggerField(label: "Message contains", placeholder: "Any message", value: contains) { edit.change(row(contains: $0)) } commit: { edit.commit() }
-      TriggerChoice(label: "Message match", options: RoutineWords.teamsMatch, value: isRegex) { edit.pick(row(isRegex: $0)) }
+      TriggerField(label: String(localized: "Message contains"), placeholder: String(localized: "Any message"), value: contains) { edit.change(row(contains: $0)) } commit: { edit.commit() }
+      TriggerChoice(label: String(localized: "Message match"), options: RoutineWords.teamsMatch, value: isRegex) { edit.pick(row(isRegex: $0)) }
     }
     TriggerFlow {
       TriggerWord("from")
-      TriggerChoice(label: "Teams audience", options: RoutineWords.teamsAudience, value: linkedOnly) { edit.pick(row(linkedOnly: $0)) }
+      TriggerChoice(label: String(localized: "Teams audience"), options: RoutineWords.teamsAudience, value: linkedOnly) { edit.pick(row(linkedOnly: $0)) }
     }
   }
 
@@ -1003,27 +1003,27 @@ private struct LinearFields: View {
 
   var body: some View {
     TriggerFlow {
-      TriggerChoice(label: "Linear event", options: RoutineWords.linearEvents, value: event) { edit.pick(row(event: $0)) }
+      TriggerChoice(label: String(localized: "Linear event"), options: RoutineWords.linearEvents, value: event) { edit.pick(row(event: $0)) }
     }
     if event == "statusChanged" {
       TriggerFlow {
-        TriggerWord("with status")
-        TriggerField(label: "Status IDs", placeholder: "Any status", value: statuses) { edit.change(row(statuses: $0)) } commit: { edit.commit() }
+        TriggerWord(String(localized: "with status"))
+        TriggerField(label: String(localized: "Status IDs"), placeholder: String(localized: "Any status"), value: statuses) { edit.change(row(statuses: $0)) } commit: { edit.commit() }
       }
     }
     if event == "endOfCycle" {
       TriggerFlow {
         TriggerWord("cycles")
-        TriggerField(label: "Cycle IDs", placeholder: "Any cycle", value: cycles) { edit.change(row(cycles: $0)) } commit: { edit.commit() }
+        TriggerField(label: String(localized: "Cycle IDs"), placeholder: String(localized: "Any cycle"), value: cycles) { edit.change(row(cycles: $0)) } commit: { edit.commit() }
       }
     }
     TriggerFlow {
       TriggerWord("in")
-      TriggerField(label: "Project IDs", placeholder: "All projects", value: projects) { edit.change(row(projects: $0)) } commit: { edit.commit() }
+      TriggerField(label: String(localized: "Project IDs"), placeholder: String(localized: "All projects"), value: projects) { edit.change(row(projects: $0)) } commit: { edit.commit() }
     }
     TriggerFlow {
       TriggerWord("for")
-      TriggerField(label: "Team IDs", placeholder: "All teams", value: teams) { edit.change(row(teams: $0)) } commit: { edit.commit() }
+      TriggerField(label: String(localized: "Team IDs"), placeholder: String(localized: "All teams"), value: teams) { edit.change(row(teams: $0)) } commit: { edit.commit() }
     }
   }
 
@@ -1106,7 +1106,7 @@ private struct TimeChoice: View {
 
   var body: some View {
     let minutes = time.hour * 60 + time.minute
-    TriggerChoice(label: "Time", options: RoutineSchedule.timeChoices(minutes).map { (value: $0, label: RoutineSchedule.clock($0 / 60, $0 % 60)) }, value: minutes) {
+    TriggerChoice(label: String(localized: "Time"), options: RoutineSchedule.timeChoices(minutes).map { (value: $0, label: RoutineSchedule.clock($0 / 60, $0 % 60)) }, value: minutes) {
       change(RoutineSchedule.Time(hour: $0 / 60, minute: $0 % 60))
     }
   }

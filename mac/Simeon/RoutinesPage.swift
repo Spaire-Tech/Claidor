@@ -717,9 +717,9 @@ private struct RoutineTopBar: View {
         .foregroundStyle(look.ink)
         .allowsHitTesting(false)
       HStack(spacing: 8) {
-        PaneIconButton(systemImage: "chevron.left", label: "Back to Routines", help: "Back to Routines", look: look, action: back)
+        PaneIconButton(systemImage: "chevron.left", label: String(localized: "Back to Routines"), help: String(localized: "Back to Routines"), look: look, action: back)
         Spacer(minLength: 0)
-        PaneIconButton(systemImage: "xmark", label: "Close details", help: "Close", look: look, action: close)
+        PaneIconButton(systemImage: "xmark", label: String(localized: "Close details"), help: String(localized: "Close"), look: look, action: close)
       }
       .padding(.horizontal, 12)
     }
@@ -758,8 +758,8 @@ private struct RoutineControlBar: View {
       }
       Spacer(minLength: 0)
       HStack(spacing: 8) {
-        RoutineButton(title: "Delete", primary: false, disabled: false, look: look, action: delete)
-        RoutineButton(title: running ? "Running\u{2026}" : "Test run", primary: true, disabled: model.routineId == nil || running, look: look) {
+        RoutineButton(title: String(localized: "Delete"), primary: false, disabled: false, look: look, action: delete)
+        RoutineButton(title: running ? String(localized: "Running\u{2026}") : String(localized: "Test run"), primary: true, disabled: model.routineId == nil || running, look: look) {
           model.testRun(store: store, blocks: pane.runBlocks)
         }
       }
@@ -831,7 +831,7 @@ private struct RoutineEditorBody: View {
           .frame(height: 18)
           .padding(.horizontal, 8)
       }
-      RoutineSection(title: "Name", look: look) {
+      RoutineSection(title: String(localized: "Name"), look: look) {
         TextField("", text: $model.name, prompt: Text("Name this routine").foregroundStyle(look.inkTertiary))
           .textFieldStyle(.plain)
           .font(.system(size: 13))
@@ -846,7 +846,7 @@ private struct RoutineEditorBody: View {
           .background(RoutineFieldBox(look: look))
           .accessibilityLabel("Name")
       }
-      RoutineSection(title: "Instruction", look: look) {
+      RoutineSection(title: String(localized: "Instruction"), look: look) {
         // Padded 8 and 10 inside the text view itself, so the whole box takes the keys.
         PaneTextArea(text: $model.prompt, focused: $promptFocused, height: $promptHeight, ink: NSColor(look.ink), editable: true, fontSize: 14, lineHeight: 20, inset: CGSize(width: 10, height: 8)) {
           pane.close(layout: layout)
@@ -865,11 +865,11 @@ private struct RoutineEditorBody: View {
         .background(RoutineFieldBox(look: look))
         .accessibilityLabel("Instruction")
       }
-      RoutineSection(title: "When to run", look: look) {
+      RoutineSection(title: String(localized: "When to run"), look: look) {
         TriggerCard(model: model, look: look, width: width)
       }
       .zIndex(1)
-      RoutineSection(title: "Run history", look: look) {
+      RoutineSection(title: String(localized: "Run history"), look: look) {
         RunHistory(runs: model.stored(store)?.runs ?? [], look: look)
       }
       .id(Self.historyId)

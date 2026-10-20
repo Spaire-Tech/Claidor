@@ -447,7 +447,7 @@ private struct PaneTopBar: View {
       WindowDragArea()
       HStack(spacing: 8) {
         Spacer(minLength: 0)
-        PaneIconButton(systemImage: "xmark", label: "Close details", help: "Close", look: look, action: close)
+        PaneIconButton(systemImage: "xmark", label: String(localized: "Close details"), help: String(localized: "Close"), look: look, action: close)
       }
       .padding(.horizontal, 12)
     }
@@ -753,7 +753,7 @@ private struct PaneTabs: View {
   @Environment(PaneState.self) private var pane
 
   private let tabs: [(section: PaneState.Section, name: String, glyph: TabGlyph.Kind)] = [
-    (.profile, "Profile", .profile), (.routines, "Routines", .routines), (.computer, "Computer", .computer),
+    (.profile, String(localized: "Profile"), .profile), (.routines, String(localized: "Routines"), .routines), (.computer, String(localized: "Computer"), .computer),
   ]
 
   var body: some View {
@@ -859,11 +859,11 @@ private struct ProfileBody: View {
     let locked = Agent.chiefOfStaff(in: store.agents)?.id == agent.id
     VStack(alignment: .leading, spacing: 22) {
       VStack(alignment: .leading, spacing: 0) {
-        PaneLineField(label: "Name", placeholder: "Bob", stored: agent.name, first: true, readOnly: false, look: look, required: true) { name in
+        PaneLineField(label: String(localized: "Name"), placeholder: String(localized: "Bob"), stored: agent.name, first: true, readOnly: false, look: look, required: true) { name in
           save(name: name)
         }
         if !agent.isGroup {
-          PaneLineField(label: "Title", placeholder: "Describe what your agent does", stored: agent.title, first: false, readOnly: locked, look: look, required: false) { title in
+          PaneLineField(label: String(localized: "Title"), placeholder: String(localized: "Describe what your agent does"), stored: agent.title, first: false, readOnly: locked, look: look, required: false) { title in
             save(title: title)
           }
         }
@@ -995,7 +995,7 @@ private struct PaneDescriptionField: View {
 
   var body: some View {
     VStack(alignment: .leading, spacing: 0) {
-      PaneLabel(text: "Description", first: false, look: look)
+      PaneLabel(text: String(localized: "Description"), first: false, look: look)
       PaneTextArea(text: $draft, focused: $focused, height: $textHeight, ink: NSColor(look.paneInk), editable: !readOnly, onCancel: {
         draft = stored
       })

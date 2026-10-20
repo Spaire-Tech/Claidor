@@ -74,7 +74,7 @@ struct ImageGallery: View {
         if position == index && !ok { break }
       }
       let wanted = GalleryTile.fileName(images[index], position: index)
-      guard let start = written.first(where: { $0.lastPathComponent == wanted }) else { store.problem = "Couldn't load image"; return }
+      guard let start = written.first(where: { $0.lastPathComponent == wanted }) else { store.problem = String(localized: "Couldn't load image"); return }
       files = written
       opening = start
     }
@@ -272,7 +272,7 @@ struct ThreadLinkRow: View {
   @Environment(ChatActions.self) private var actions: ChatActions?
   @State private var hovering = false
 
-  private var label: String { count == 1 ? "1 reply" : "\(count) replies" }
+  private var label: String { count == 1 ? "1 reply" : String(localized: "\(count) replies") }
 
   var body: some View {
     let mine = side == .person
@@ -280,7 +280,7 @@ struct ThreadLinkRow: View {
       if mine { Spacer(minLength: 0) }
       Button { actions?.openThread(rootId) } label: {
         HStack(spacing: 3) {
-          Text(hovering ? "View thread" : label)
+          Text(hovering ? String(localized: "View thread") : label)
           Image(systemName: "chevron.right").font(.system(size: 9, weight: .semibold))
         }
         .font(.system(size: 12, weight: .medium))
@@ -408,7 +408,7 @@ struct CloudAgentCard: View {
     let pull = info.pullRequestURL.isEmpty ? nil : URL(string: info.pullRequestURL)
     VStack(alignment: .leading, spacing: 8) {
       HStack(alignment: .firstTextBaseline, spacing: 8) {
-        let title = Text(info.name.isEmpty ? "Cloud agent" : info.name)
+        let title = Text(info.name.isEmpty ? String(localized: "Cloud agent") : info.name)
           .font(.system(size: 14, weight: .semibold)).foregroundStyle(Ink.primary).lineLimit(2)
         if let pull {
           Button { openURL(pull) } label: { title }

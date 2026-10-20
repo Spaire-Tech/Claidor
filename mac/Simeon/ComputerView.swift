@@ -43,7 +43,7 @@ private struct ComputerFullView: View {
   var body: some View {
     let look = Look(scheme)
     let agentId = open.agentId
-    let name = store.agent(agentId).flatMap { $0.name.isEmpty ? nil : $0.name } ?? "This agent"
+    let name = store.agent(agentId).flatMap { $0.name.isEmpty ? nil : $0.name } ?? String(localized: "This agent")
     let status = store.computer.status(agentId)
     let helpers = store.computerHelpers(agentId)
     let focusedHelper = ComputerHelper.focused(helpers, asked: open.helper)
@@ -213,7 +213,7 @@ private struct HandoffBanner: View {
 
   var body: some View {
     let blank = instruction.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-    let text = blank ? "\(name) needs you" : instruction
+    let text = blank ? String(localized: "\(name) needs you") : instruction
     HStack(spacing: 16) {
       Text(text)
         .font(.system(size: 13))
@@ -224,8 +224,8 @@ private struct HandoffBanner: View {
         .help(text)
         .frame(maxWidth: .infinity, alignment: .leading)
       HStack(spacing: 8) {
-        HandoffBannerButton(title: "Skip this step", primary: false) { answer(skip: true) }
-        HandoffBannerButton(title: "I'm done, continue", primary: true) { answer(skip: false) }
+        HandoffBannerButton(title: String(localized: "Skip this step"), primary: false) { answer(skip: true) }
+        HandoffBannerButton(title: String(localized: "I'm done, continue"), primary: true) { answer(skip: false) }
       }
       .fixedSize()
     }
@@ -335,7 +335,7 @@ private struct HelperStrip: View {
 
   /** "More screens" (`fbn`): the rest, by title; the one chosen is switched to. */
   private func showMore(_ rest: [ComputerHelper]) {
-    let menu = NSMenu(title: "More screens")
+    let menu = NSMenu(title: String(localized: "More screens"))
     for helper in rest {
       menu.addItem(BlockMenuItem(helper.title) { pick(helper.subagentId) })
     }

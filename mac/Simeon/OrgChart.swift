@@ -615,7 +615,7 @@ private struct AgentCard: View {
     let about = agent.description.trimmingCharacters(in: .whitespacesAndNewlines)
     if !about.isEmpty {
       VStack(alignment: .leading, spacing: 6) {
-        sectionHeading("About", look: look)
+        sectionHeading(String(localized: "About"), look: look)
         Text(about)
           .font(.system(size: 12))
           .cssLineHeight(16, size: 12)
@@ -633,7 +633,7 @@ private struct AgentCard: View {
     }
     if let entry = agent.lastEntry, let line = Preview.line(entry), !line.isEmpty {
       VStack(alignment: .leading, spacing: 6) {
-        sectionHeading("Last activity", look: look)
+        sectionHeading(String(localized: "Last activity"), look: look)
         Text(line)
           .font(.system(size: 12))
           .cssLineHeight(16, size: 12)
@@ -646,7 +646,7 @@ private struct AgentCard: View {
         }
       }
     }
-    ChartButton(title: agent.isGroup ? "Open room" : "Open chat", look: look) {
+    ChartButton(title: agent.isGroup ? String(localized: "Open room") : String(localized: "Open chat"), look: look) {
       openChat(agent.id, window: window, sidebar: sidebar, store: store)
     }
   }
@@ -722,7 +722,7 @@ private struct MembershipCard: View {
       sectionHeading(AgentNetwork.members(group.memberIds.count), look: look)
       ChartMemberMarks(members: store.members(of: group), look: look)
     }
-    ChartButton(title: "Open room", look: look) {
+    ChartButton(title: String(localized: "Open room"), look: look) {
       openChat(group.id, window: window, sidebar: sidebar, store: store)
     }
   }
@@ -757,7 +757,7 @@ private struct ExchangeCard: View {
             Text(AgentNetwork.loading).font(.system(size: 11)).foregroundStyle(look.inkTertiary)
           } else if failed {
             Text(AgentNetwork.couldNotLoad).font(.system(size: 11)).foregroundStyle(look.inkTertiary)
-            ChartButton(title: "Retry", look: look) { attempt += 1 }
+            ChartButton(title: String(localized: "Retry"), look: look) { attempt += 1 }
           } else {
             Text(AgentNetwork.noMessages).font(.system(size: 11)).foregroundStyle(look.inkTertiary)
           }
@@ -796,7 +796,7 @@ private struct ExchangeCard: View {
       .frame(width: 22, height: 22)
       VStack(alignment: .leading, spacing: 2) {
         HStack(alignment: .firstTextBaseline, spacing: 6) {
-          Text(author?.name ?? line.authorName ?? "Unknown")
+          Text(author?.name ?? line.authorName ?? String(localized: "Unknown"))
             .font(.system(size: 11, weight: .medium))
             .foregroundStyle(look.ink)
           if let time = Chat.listTime(ms: line.timestampMs) {

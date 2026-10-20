@@ -366,7 +366,7 @@ private struct PinTile: View {
       return .sidebarItem(agent.id)
     }
     .id(agent.id)
-    .accessibilityLabel(agent.hasUnread ? "\(agent.name), Unread activity" : agent.name)
+    .accessibilityLabel(agent.hasUnread ? String(localized: "\(agent.name), Unread activity") : agent.name)
   }
 
   /** The picture's corner: unread (blue), else at work (green). */
@@ -477,7 +477,7 @@ private struct SectionHeader: View {
     .buttonStyle(.hand)
     .onHover { hovering = $0 }
     .accessibilityLabel(section.name)
-    .accessibilityValue(section.isCollapsed ? "Folded" : "Open")
+    .accessibilityValue(section.isCollapsed ? String(localized: "Folded") : String(localized: "section.open", defaultValue: "Open"))
   }
 }
 
@@ -598,7 +598,7 @@ struct AgentRow: View {
     .frame(maxWidth: .infinity)
     .onHover { hovering = $0 }
     .id(agent.id)
-    .accessibilityLabel(agent.hasUnread ? "\(agent.name), Unread activity" : agent.name)
+    .accessibilityLabel(agent.hasUnread ? String(localized: "\(agent.name), Unread activity") : agent.name)
   }
 
   /** The picture: 36 on the rail (the window's), 46 in a row (the iPhone's 56, scaled). */

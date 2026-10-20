@@ -63,7 +63,7 @@ struct AvatarEditor: View {
               preview(agent).frame(width: 110, height: 110)
             }
             Picker("Avatar source", selection: Binding(get: { model.tab }, set: { model.choose($0) })) {
-              ForEach(agent.isGroup ? [AvatarEditing.Tab.generate, .upload] : AvatarEditing.Tab.allCases) { Text($0.rawValue).tag($0) }
+              ForEach(agent.isGroup ? [AvatarEditing.Tab.generate, .upload] : AvatarEditing.Tab.allCases) { Text($0.title).tag($0) }
             }
             .pickerStyle(.segmented)
             switch model.tab {
@@ -122,7 +122,7 @@ struct AvatarEditor: View {
 
   /** "Reset face" while there is something to undo (the agent to be: a face or picture chosen). */
   private func resetWords(_ agent: Agent) -> String? {
-    if let draft { return draft.wrappedValue.resettable ? "Reset face" : nil }
+    if let draft { return draft.wrappedValue.resettable ? String(localized: "Reset face") : nil }
     return AvatarEditorWords.reset(agent)
   }
 
@@ -305,6 +305,14 @@ final class AvatarEditing {
   enum Tab: String, CaseIterable, Identifiable {
     case faces = "Faces", generate = "Generate", upload = "Upload"
     var id: String { rawValue }
+    /** The tab's name in the app's language. */
+    var title: String {
+      switch self {
+      case .faces: String(localized: "Faces")
+      case .generate: String(localized: "Generate")
+      case .upload: String(localized: "Upload")
+      }
+    }
   }
 
   /** A picture being cropped: drawn down to 1024 at most (one pixel a point), and its crop. */
@@ -522,7 +530,7 @@ final class AvatarEditing {
 
   /** The host's words, without the bridge's own (`h$n`). */
   static func words(_ error: Error) -> String {
-    PlainWords.problem((error as? GatewayError)?.message ?? error.localizedDescription, fallback: "Couldn’t change the avatar. Try again in a little while.")
+    PlainWords.problem((error as? GatewayError)?.message ?? error.localizedDescription, fallback: String(localized: "Couldn’t change the avatar. Try again in a little while."))
   }
 }
 
@@ -555,14 +563,14 @@ private struct CropView: View {
         stage(candidate)
         Text("Drag to reposition").font(.system(size: 13)).foregroundStyle(Ink.tertiary)
         HStack(spacing: 6) {
-          zoomButton("minus", label: "Zoom out", by: -AvatarCrop.zoomStep)
+          zoomButton("minus", label: String(localized: "Zoom out"), by: -AvatarCrop.zoomStep)
           Slider(value: Binding(get: { model.candidate?.crop.zoom ?? AvatarCrop.minZoom }, set: { value in
             guard let crop = model.candidate?.crop else { return }
             model.candidate?.crop = crop.zoomed(to: value)
           }), in: AvatarCrop.minZoom...AvatarCrop.maxZoom)
           .tint(Ink.blue)
           .accessibilityLabel("Zoom")
-          zoomButton("plus", label: "Zoom in", by: AvatarCrop.zoomStep)
+          zoomButton("plus", label: String(localized: "Zoom in"), by: AvatarCrop.zoomStep)
         }
         HStack(spacing: 10) {
           Button("Restart") { model.restart() }
