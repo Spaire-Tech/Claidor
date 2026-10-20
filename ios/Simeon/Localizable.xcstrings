@@ -1253,6 +1253,16 @@
         }
       }
     },
+    "Close and reopen Simeon to use it." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ferme Simeon et rouvre-le pour l’utiliser."
+          }
+        }
+      }
+    },
     "Close details" : {
       "localizations" : {
         "fr" : {

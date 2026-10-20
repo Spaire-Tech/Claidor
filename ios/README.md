@@ -218,8 +218,11 @@ profile, not from the configuration.
   of type iOS); until then the app uses the web sign-in.
 - **Language** (20 October 2026, `docs/localization.md`): the app follows the
   phone's language (English and French, `CFBundleLocalizations` in
-  `project.yml`), and Settings' Language row opens iOS's own page for it
-  (Settings › Simeon › Language). The language goes to the server on every
+  `project.yml`), or the Language menu in Settings: System, English,
+  Français (`AppLanguage.choose`, the same choice as iOS's Settings › Apps ›
+  Simeon › Language). iOS reads it when the app opens, and an app can't
+  reopen itself, so the person is asked to close and reopen Simeon. The
+  language goes to the server on every
   request (`Accept-Language`), and after every sign-in to the account and the
   person's computer (`userLanguage`), so the agents, calls and dictation use
   it (`AppLanguage.swift`, `AppStore.tellLanguage`). The screens' French is

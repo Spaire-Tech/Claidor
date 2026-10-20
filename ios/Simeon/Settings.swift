@@ -22,6 +22,10 @@ struct SettingsSheet: View {
   @State private var settings: JSON?
   @State private var showsApps = false
   @State private var askingSignOut = false
+  @State private var language = AppLanguage.chosen()
+  @State private var reopening = false
+  /** The language the app opened in: another one chosen waits for the app to be opened again. */
+  private static let languageAtLaunch = AppLanguage.chosen()
 
   var body: some View {
     NavigationStack {
@@ -77,24 +81,28 @@ struct SettingsSheet: View {
           .pickerStyle(.menu)
           .tint(Ink.secondary)
           .onChange(of: theme) { _, _ in Haptics.select() }
-          // The app's language in its own name (20 October 2026). The app follows the phone's language by itself; this
-          // opens iOS's own page for the app (Settings › Simeon › Language), where another is chosen. iOS then opens the
-          // app again in it, and the agents are told (`AppStore.tellLanguage`).
-          Button {
-            #if os(iOS)
-            if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
-            #endif
-          } label: {
-            HStack {
-              Text("Language").foregroundStyle(Ink.primary)
-              Spacer()
-              Text(verbatim: AppLanguage.ownName(AppLanguage.current)).foregroundStyle(Ink.secondary)
+          // The app's language (20 October 2026, the founder: "System, English or French"), a menu like Appearance. It is
+          // the same choice as iOS's Settings › Apps › Simeon › Language (`AppLanguage.choose`), which iOS reads only when
+          // the app opens, and an app can't reopen itself: the person is asked to. Opened again, the agents are told
+          // (`AppStore.tellLanguage`).
+          Picker("Language", selection: $language) {
+            ForEach(AppLanguage.choices(Bundle.main.localizations), id: \.value) { choice in
+              Text(verbatim: choice.label).tag(choice.value)
             }
+          }
+          .pickerStyle(.menu)
+          .tint(Ink.secondary)
+          .onChange(of: language) { _, value in
+            Haptics.select()
+            AppLanguage.choose(value)
+            reopening = value != Self.languageAtLaunch
           }
           Toggle("Haptics", isOn: $haptics)
             .tint(Ink.blue)
             // Turned on, it is felt at once: the way to tell it works.
             .onChange(of: haptics) { _, on in if on { Haptics.success() } }
+        } footer: {
+          if language != Self.languageAtLaunch { Text("Close and reopen Simeon to use it.") }
         }
         .listRowBackground(Ink.groupedRow)
         Section {
@@ -129,6 +137,9 @@ struct SettingsSheet: View {
       .inlineBarTitle()
       .toolbar { ToolbarItem(placement: .leadingBar) { CloseButton() } }
       .sheet(isPresented: $showsApps) { ConnectAppsSheet().problemAlert() }
+      .alert("Close and reopen Simeon to use it.", isPresented: $reopening) {
+        Button("OK", role: .cancel) {}
+      }
       .alert(AccountMenu.signOutTitle, isPresented: $askingSignOut) {
         Button(AccountMenu.signOutCancel, role: .cancel) {}
         Button(AccountMenu.signOutConfirm, role: .destructive) { Task { await session.signOut() } }

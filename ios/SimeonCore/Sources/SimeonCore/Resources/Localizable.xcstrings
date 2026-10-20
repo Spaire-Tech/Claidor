@@ -11524,6 +11524,17 @@
         }
       }
     },
+    "System" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Système"
+          }
+        }
+      }
+    },
     "Taking longer than expected" : {
       "extractionState" : "manual",
       "localizations" : {

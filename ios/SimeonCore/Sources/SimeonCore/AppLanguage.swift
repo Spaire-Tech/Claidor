@@ -78,7 +78,34 @@ public enum AppLanguage {
     return name.prefix(1).uppercased() + name.dropFirst()
   }
 
-  /** The languages the app is in, for the Mac's picker: its localizations ("Base" left out), English first, then by own name. */
+  // MARK: The Language picker (Settings on the iPhone and the Mac)
+
+  /** The picker's System: no language of the app's own, the device's order. */
+  public static let system = "system"
+  /** Where Apple keeps an app's own language, the same key iOS's Settings › Apps › Simeon › Language writes. */
+  static let preferredKey = "AppleLanguages"
+
+  /**
+   * What the picker shows chosen: the language picked for the app, in the app
+   * or in the device's own settings, else System. Read from the app's own
+   * defaults (`domain`), not the device's language list.
+   */
+  public static func chosen(_ defaults: UserDefaults = .standard, domain: String? = Bundle.main.bundleIdentifier) -> String {
+    let own = domain.flatMap { defaults.persistentDomain(forName: $0)?[preferredKey] as? [String] }
+    return own?.first.map(tag) ?? system
+  }
+
+  /** Picks the language the app opens in next time; System gives it back to the device. Apple reads it at launch only. */
+  public static func choose(_ value: String, _ defaults: UserDefaults = .standard) {
+    if value == system { defaults.removeObject(forKey: preferredKey) } else { defaults.set([value], forKey: preferredKey) }
+  }
+
+  /** The picker's choices: System, then each language the app is in, in its own name ("English", "Français"). */
+  public static func choices(_ localizations: [String]) -> [(value: String, label: String)] {
+    [(value: system, label: L10n.text("System"))] + available(localizations).map { (value: $0, label: ownName($0)) }
+  }
+
+  /** The languages the app is in, for the picker: its localizations ("Base" left out), English first, then by own name. */
   public static func available(_ localizations: [String]) -> [String] {
     var seen = Set<String>()
     let tags = localizations.map(tag).filter { seen.insert($0).inserted }
