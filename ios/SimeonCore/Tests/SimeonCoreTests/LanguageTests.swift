@@ -36,6 +36,21 @@ final class LanguageTests: XCTestCase {
     XCTAssertEqual(AppLanguage.available(["Base", "fr", "en", "de"]), ["en", "de", "fr"])
   }
 
+  func testThePickerKeepsTheAppsOwnLanguageApartFromTheDevices() {
+    let name = "simeon.tests.language.\(UUID().uuidString)"
+    let defaults = UserDefaults(suiteName: name)!
+    defer { defaults.removePersistentDomain(forName: name) }
+    XCTAssertEqual(AppLanguage.chosen(defaults, domain: name), AppLanguage.system, "nothing picked: the device's")
+    AppLanguage.choose("fr", defaults)
+    XCTAssertEqual(AppLanguage.chosen(defaults, domain: name), "fr")
+    XCTAssertEqual(defaults.stringArray(forKey: "AppleLanguages"), ["fr"], "the key iOS's own Settings › Apps › Simeon › Language writes")
+    AppLanguage.choose(AppLanguage.system, defaults)
+    XCTAssertEqual(AppLanguage.chosen(defaults, domain: name), AppLanguage.system)
+    // System, then English, then the others by their own name.
+    XCTAssertEqual(AppLanguage.choices(["Base", "fr", "en"]).map(\.value), [AppLanguage.system, "en", "fr"])
+    XCTAssertEqual(AppLanguage.choices(["en", "fr"]).map(\.label), ["System", "English", "Français"])
+  }
+
   func testTheLanguageHeaderReachesTheServer() async throws {
     let vault = MemoryVault(SessionTokens(accessToken: "t", refreshToken: "r", expiresAtMs: 9e15))
     let http = ScriptedHTTP([

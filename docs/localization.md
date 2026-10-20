@@ -11,9 +11,11 @@ place per platform.
 
 ## One language for the whole product
 
-The person's language is the app's: the iPhone follows the phone (Settings ›
-Simeon › Language changes it), the Mac follows the Mac or the Language picker
-in Settings › General (it relaunches). It travels everywhere text is written
+The person's language is the app's: each app follows its device, or the
+Language menu in Simeon's Settings (System, English, Français; on the iPhone
+also iOS's Settings › Apps › Simeon › Language, the same choice). A language
+picked takes over when the app opens again: the Mac relaunches itself, the
+iPhone asks the person to close and reopen Simeon. It travels everywhere text is written
 outside the apps:
 
 | Where | How it gets there | Code |

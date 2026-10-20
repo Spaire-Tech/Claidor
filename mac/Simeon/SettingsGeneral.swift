@@ -337,27 +337,16 @@ private struct LanguageRow: View {
 
 /** The app's language on the Mac: chosen in Settings › General, kept as the app's own `AppleLanguages`. */
 enum MacLanguage {
-  /** The picker's System: no language of the app's own, the Mac's order. */
-  static let system = "system"
-  private static let key = "AppleLanguages"
-
-  /** What the picker shows chosen: the app's own language, or System. */
-  static var chosen: String {
-    let own = UserDefaults.standard.persistentDomain(forName: Bundle.main.bundleIdentifier ?? "")?[key] as? [String]
-    return own?.first.map(AppLanguage.tag) ?? system
-  }
+  /** What the picker shows chosen: the app's own language, or System (`AppLanguage.chosen`, as the iPhone's). */
+  static var chosen: String { AppLanguage.chosen() }
 
   /** The choice the app was opened with: a different one waits for a relaunch. */
   static let atLaunch = chosen
 
   /** System, then each language the app is in, in its own name (English, Français, …). */
-  static var options: [(value: String, label: String)] {
-    [(value: system, label: String(localized: "System"))] + AppLanguage.available(Bundle.main.localizations).map { (value: $0, label: AppLanguage.ownName($0)) }
-  }
+  static var options: [(value: String, label: String)] { AppLanguage.choices(Bundle.main.localizations) }
 
-  static func choose(_ value: String) {
-    if value == system { UserDefaults.standard.removeObject(forKey: key) } else { UserDefaults.standard.set([value], forKey: key) }
-  }
+  static func choose(_ value: String) { AppLanguage.choose(value) }
 
   /** Opens Simeon again and quits this one, as Move to Applications does (`MacServices`). */
   static func relaunch() {
