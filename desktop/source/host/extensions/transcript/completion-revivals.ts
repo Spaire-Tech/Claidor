@@ -1,5 +1,6 @@
 import { sandErrorDetail } from "../../ports/telemetry.js";
 import { describeAgentRunError } from "./agent-run-error.js";
+import { say, type WordKey } from "../../../shared/say.js";
 import type { QuietWakeOrigin } from "./sand-pending-wake-store.js";
 import { classifyAgentError } from "./turn-runtime.js";
 import type { TranscriptManagerLike } from "./transcript-hub.js";
@@ -218,7 +219,7 @@ export class CompletionRevivals {
         } catch (error) {
           this.reportRevivalError(
             session,
-            "Background task follow-up failed",
+            "tray.backgroundTaskFollowUpFailed",
             error,
           );
           result = { outcome: "dropped", reason: "error" };
@@ -332,7 +333,7 @@ export class CompletionRevivals {
         } catch (error) {
           this.reportRevivalError(
             session,
-            "Background command follow-up failed",
+            "tray.backgroundCommandFollowUpFailed",
             error,
           );
           report("dropped", { reason: "error" });
@@ -346,7 +347,7 @@ export class CompletionRevivals {
 
   private reportRevivalError(
     session: any,
-    title: string,
+    title: WordKey,
     error: unknown,
   ): void {
     this.tm.telemetry.reportAgentError({
@@ -358,8 +359,8 @@ export class CompletionRevivals {
     });
     this.tm.trayErrors.pushError({
       agentId: session.id,
-      title,
-      ...describeAgentRunError(error),
+      title: say(this.tm.userLanguage?.(), title),
+      ...describeAgentRunError(error, this.tm.userLanguage?.()),
     });
   }
 }

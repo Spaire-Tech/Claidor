@@ -15,6 +15,7 @@ import { isVoiceAddress } from "../../../shared/voice-call/main-loop-voice.js";
 import { buildTimelineEventWakePrompt } from "../../../shared/sand-timeline-events.js";
 import { AgentToAgentMessaging } from "./agent-to-agent-messaging.js";
 import { describeAgentRunError } from "./agent-run-error.js";
+import { say } from "../../../shared/say.js";
 import { CompletionRevivals } from "./completion-revivals.js";
 import { AgentGoneError } from "./session-runtime.js";
 import { collectInboundImages } from "./send-message-shaping.js";
@@ -100,7 +101,7 @@ export class BackgroundWakes {
     // A voice call's address goes to the call (`voice-call-channel.ts`), never to a connector.
     if (isVoiceAddress(addressToken)) {
       if (!this.tm.voiceCalls.deliver(agentId, addressToken, outbound))
-        this.tm.trayErrors.pushError({ agentId, title: "Message not delivered", detail: "That call is not one of yours, so the message did not reach it." });
+        this.tm.trayErrors.pushError({ agentId, title: say(this.tm.userLanguage?.(), "tray.messageNotDelivered"), detail: say(this.tm.userLanguage?.(), "tray.callNotTheirs") });
       return;
     }
     void this.tm
@@ -109,10 +110,12 @@ export class BackgroundWakes {
         const rawDetail =
           error instanceof Error ? error.message : "Channel delivery failed";
         const reason = humanizeChannelDeliveryFailure(addressToken, rawDetail);
+        // The tray in the person's language; the agent's notice below stays English.
+        const language = this.tm.userLanguage?.();
         this.tm.trayErrors.pushError({
           agentId,
-          title: "Message not delivered",
-          detail: reason,
+          title: say(language, "tray.messageNotDelivered"),
+          detail: humanizeChannelDeliveryFailure(addressToken, rawDetail, language),
         });
         this.queueChannelDeliveryFailure(agentId, { addressToken, reason });
       });
@@ -174,7 +177,7 @@ export class BackgroundWakes {
           ...this.tm.widgetResponses.collectUnansweredQuestionPrompts(session),
         });
       },
-      "Delivery-failure follow-up failed",
+      say(this.tm.userLanguage?.(), "tray.deliveryFailureFollowUpFailed"),
       "channel_failure",
     );
     return true;
@@ -271,7 +274,7 @@ export class BackgroundWakes {
           this.reportWakeError(
             session,
             "connector",
-            "Channel message follow-up failed",
+            say(this.tm.userLanguage?.(), "tray.channelFollowUpFailed"),
             error,
           );
         } finally {
@@ -356,7 +359,7 @@ export class BackgroundWakes {
         if (!result.aborted && result.sentMessageCount === 0)
           await this.tm.automationRuntime.ensureHiddenTurnReply(runner);
       },
-      "Broadcast message failed",
+      say(this.tm.userLanguage?.(), "tray.broadcastFailed"),
     );
     return true;
   }
@@ -439,7 +442,7 @@ export class BackgroundWakes {
             callReason: "wake",
             isSilenceAllowed: true,
           }),
-        "Timeline event follow-up failed",
+        say(this.tm.userLanguage?.(), "tray.timelineFollowUpFailed"),
       );
   }
   hasRunningBackgroundShellWork(): boolean {
@@ -512,7 +515,7 @@ export class BackgroundWakes {
     this.tm.trayErrors.pushError({
       agentId: session.id,
       title,
-      ...describeAgentRunError(error),
+      ...describeAgentRunError(error, this.tm.userLanguage?.()),
     });
   }
 }

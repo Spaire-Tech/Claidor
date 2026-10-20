@@ -26,8 +26,8 @@ import { findSystemErrno } from "../../../shared/system-errno.js";
 import {
   describeAgentRunError,
   findBackendConnectError,
-  PROVIDER_OVERLOAD_ERROR_TITLE,
 } from "./agent-run-error.js";
+import { say } from "../../../shared/say.js";
 import {
   createSendMessageEntry,
   describeRepliedMessageQuote,
@@ -496,14 +496,15 @@ export class TurnRuntime {
         );
         markTurnTraceError(turnTrace, error);
         if (epoch === this.tm.sendPipeline.currentTurnEpoch(session)) {
-          const description = describeAgentRunError(error);
+          const language = this.tm.userLanguage?.();
+          const description = describeAgentRunError(error, language);
           const requestId = session.db.getRequestIds().at(-1)?.id;
           this.tm.trayErrors.pushError({
             agentId: session.id,
             title:
               description.errorKind === "provider_overloaded"
-                ? PROVIDER_OVERLOAD_ERROR_TITLE
-                : "Agent failed to respond",
+                ? say(language, "tray.providerOverloaded")
+                : say(language, "tray.agentFailed"),
             requestId,
             ...description,
           });

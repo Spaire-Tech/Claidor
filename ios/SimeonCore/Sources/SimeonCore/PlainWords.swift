@@ -62,7 +62,7 @@ public enum PlainWords {
     // (Not the apps a person connects, Stripe or Google among them: their names are the person's own words.)
     #"\b(open ?ai|anthropic|claude|gemini|google ai|vertex|x\.?ai|grok|eleven ?labs|composio|fal\.ai|duffel|render\.com|redis|postgres(ql)?|docker|novnc|websockify|livekit)\b"#,
     // Credits, keys and limits of those services.
-    #"\b(insufficient_quota|quota|api[ _-]?key|credit balance|rate[ _-]?limit(ed)?|overloaded|tokens?|max_tokens|context[ _-]?(length|window))\b"#,
+    #"\b(insufficient_quota|quota|api[ _-]?key|credit balance|rate[ _-]?limit(ed)?|overloaded|tokens?|jetons?|max_tokens|context[ _-]?(length|window))\b"#,
     // Codes: HTTP statuses said as such, refusal codes, exit codes.
     #"\b(status|code|http|error)\s*:?\s*\d{3,5}\b"#,
     #"\(\s*\d{3,5}\s*[:)]"#,

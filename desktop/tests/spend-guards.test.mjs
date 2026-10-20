@@ -173,7 +173,7 @@ test("the intro runs once: the lifecycle stops owing it after one attempt, deliv
   const kickstart = source.slice(source.indexOf("async kickstartAgent("), source.indexOf("async requestDiskSaverAudit("));
   assert.match(kickstart, /\} else if \(!result\.aborted\) \{\s*\n[\s\S]*?session\.db\.setIntroductionPending\(false\);\s*\n\s*if \(!delivered\)/);
   assert.doesNotMatch(kickstart, /else if \(!result\.aborted && delivered\)/);
-  assert.match(kickstart, /INTRODUCTION_UNDELIVERED_DETAIL/);
+  assert.match(kickstart, /"tray\.introductionUndelivered"/);
 });
 
 test("the box's credentials survive a burst of concurrent connects", async () => {

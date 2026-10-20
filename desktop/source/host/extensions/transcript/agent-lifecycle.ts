@@ -18,8 +18,6 @@ import {
   SAND_DISK_SAVER_REAUDIT_PROMPT,
 } from "../../../shared/agents/disk-saver.js";
 import {
-  INTRODUCTION_FAILED_TRAY_TITLE,
-  INTRODUCTION_UNDELIVERED_DETAIL,
   SAND_ONBOARDING_KICKSTART_PROMPT,
   introductionFailedTrayKey,
 } from "../../../shared/agents/onboarding.js";
@@ -28,6 +26,7 @@ import { SandAgentDb } from "../session/agent-db.js";
 import { checkpointSandAgentDb } from "../../storage/store-db.js";
 import { publishTranscriptMutation } from "../../transcript-mutation-events.js";
 import { describeAgentRunError } from "./agent-run-error.js";
+import { say } from "../../../shared/say.js";
 import { isUserMessageEntry } from "./send-message-shaping.js";
 import { getTranscript } from "./transcript-store.js";
 import { classifyAgentError } from "./turn-runtime.js";
@@ -219,8 +218,8 @@ export class AgentLifecycle {
             if (!delivered)
               this.tm.trayErrors.pushError({
                 agentId: session.id,
-                title: INTRODUCTION_FAILED_TRAY_TITLE,
-                detail: INTRODUCTION_UNDELIVERED_DETAIL,
+                title: say(this.tm.userLanguage?.(), "tray.introductionFailed"),
+                detail: say(this.tm.userLanguage?.(), "tray.introductionUndelivered"),
                 dedupeKey: introductionFailedTrayKey(session.id),
               });
           }
@@ -237,8 +236,8 @@ export class AgentLifecycle {
           });
           this.tm.trayErrors.pushError({
             agentId: session.id,
-            title: INTRODUCTION_FAILED_TRAY_TITLE,
-            ...describeAgentRunError(error),
+            title: say(this.tm.userLanguage?.(), "tray.introductionFailed"),
+            ...describeAgentRunError(error, this.tm.userLanguage?.()),
             dedupeKey: introductionFailedTrayKey(session.id),
           });
         } finally {
@@ -312,9 +311,9 @@ export class AgentLifecycle {
       (agent: any) => agent.id === sourceId,
     );
     if (summary == null)
-      throw new SandAgentLifecycleError("That agent no longer exists.");
+      throw new SandAgentLifecycleError(say(this.tm.userLanguage?.(), "agent.gone"));
     if (summary.isGroup)
-      throw new SandAgentLifecycleError("Groups can't be duplicated yet.");
+      throw new SandAgentLifecycleError(say(this.tm.userLanguage?.(), "agent.groupsCannotDuplicate"));
     const opened = await this.tm.sessionStore.mintAgent(
       async (agentId: string) => {
         cloneAgentDir(

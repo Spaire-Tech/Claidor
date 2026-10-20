@@ -9,6 +9,7 @@ import { sandErrorDetail } from "../../ports/telemetry.js";
 import { resolveAgentMessageHopCap } from "../../../shared/inference/turn-step-budget.js";
 import { entryRaisesUserActivitySignal } from "../../../shared/transcript.js";
 import { describeAgentRunError } from "./agent-run-error.js";
+import { say } from "../../../shared/say.js";
 import { loadAgentInboundImages } from "./send-message-shaping.js";
 import { nextEntryId } from "./transcript-entry-ids.js";
 import { getTranscript } from "./transcript-store.js";
@@ -354,8 +355,8 @@ export class AgentToAgentMessaging {
           });
           this.tm.trayErrors.pushError({
             agentId: session.id,
-            title: "Message from another agent failed",
-            ...describeAgentRunError(error),
+            title: say(this.tm.userLanguage?.(), "tray.agentMessageFailed"),
+            ...describeAgentRunError(error, this.tm.userLanguage?.()),
           });
         } finally {
           this.agentWakeHops.delete(agentId);

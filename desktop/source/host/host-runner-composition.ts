@@ -878,6 +878,8 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
   // And its first hello in the person's language (`shared/user-language.ts`, 20 October 2026).
   const userLanguage = (): string | undefined => { const value = method(extensions.api("settings"), "getUserLanguage")?.(); return typeof value === "string" ? value : undefined; };
   method(extensions.api("transcript"), "setUserLanguageResolver")?.(userLanguage);
+  // The computer's own trays in it too (forever-box-service.ts).
+  method(extensions.api("forever-box"), "setLanguageResolver")?.(userLanguage);
   // SearchFlights' searches per turn, so the same search is not run twice in one turn.
   const flightSearchesByTurn = new WeakMap<object, Set<string>>();
   // Simeon Labs' server as this computer's signed-in person (flight search and booking).

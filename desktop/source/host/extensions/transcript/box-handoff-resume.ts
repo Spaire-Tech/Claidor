@@ -5,6 +5,7 @@ import {
 import { formatMcpAccountDisplayName } from "../../../shared/mcp.js";
 import { sandErrorDetail } from "../../ports/telemetry.js";
 import { describeAgentRunError } from "./agent-run-error.js";
+import { say, type WordKey } from "../../../shared/say.js";
 import { classifyAgentError } from "./turn-runtime.js";
 import type { TranscriptManagerLike } from "./transcript-hub.js";
 
@@ -133,7 +134,7 @@ export class BoxHandoffResume {
     await this.resumeWithHiddenPrompt(
       agentId,
       prompt,
-      "Agent failed to resume after box handoff",
+      "tray.resumeAfterHandoffFailed",
     );
   }
 
@@ -146,7 +147,7 @@ export class BoxHandoffResume {
     await this.resumeWithHiddenPrompt(
       agentId,
       `[The "${displayName}" MCP server finished authorizing — it's connected and its tools are available now. Your first action is a SendMessage telling the user it's connected, then pick up whatever you paused to authorize it. If there was nothing else to do, just confirm it's ready and ask what they'd like to do with it. Remember: nothing reaches the user unless it's inside a SendMessage.]`,
-      "Agent failed to resume after MCP authentication",
+      "tray.resumeAfterMcpAuthFailed",
     );
   }
 
@@ -162,14 +163,14 @@ export class BoxHandoffResume {
     await this.resumeWithHiddenPrompt(
       agentId,
       `[${displayName} is now connected to the user's Simeon account — ${displayName} listener routines can fire. Your first action is a SendMessage telling the user it's connected, then pick up whatever you paused (e.g. finish or re-check the listener routine you were setting up).${reminder} Remember: nothing reaches the user unless it's inside a SendMessage.]`,
-      "Agent failed to resume after listener connect",
+      "tray.resumeAfterListenerFailed",
     );
   }
 
   async resumeWithHiddenPrompt(
     agentId: string,
     prompt: string,
-    errorTitle: string,
+    errorTitle: WordKey,
   ): Promise<void> {
     if (!this.tm.execution.canExecute) return;
     let session: any;
@@ -209,8 +210,8 @@ export class BoxHandoffResume {
           });
           this.tm.trayErrors.pushError({
             agentId: session.id,
-            title: errorTitle,
-            ...describeAgentRunError(error),
+            title: say(this.tm.userLanguage?.(), errorTitle),
+            ...describeAgentRunError(error, this.tm.userLanguage?.()),
           });
         } finally {
           this.tm.ackObligations.retireAckRunToken(session.id, ackToken);

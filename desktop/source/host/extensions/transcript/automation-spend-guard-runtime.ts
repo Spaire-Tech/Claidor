@@ -11,6 +11,7 @@ import {
   type SpendGuardAnswer,
   type SpendGuardWidget,
 } from "./sand-automation-spend-guard.js";
+import { say } from "../../../shared/say.js";
 import { nextEntryId } from "./transcript-entry-ids.js";
 import { getTranscript } from "./transcript-store.js";
 import type {
@@ -107,7 +108,7 @@ export class AutomationSpendGuardRuntime {
           ...CLEARED_GUARD_STATE,
           nudgedAtMs: nowMs,
           cardEntryIds: [
-            this.issueGuardCard(session, buildSpendGuardNudgeWidget()),
+            this.issueGuardCard(session, buildSpendGuardNudgeWidget(this.tm.userLanguage?.())),
           ],
         });
         return {
@@ -167,7 +168,7 @@ export class AutomationSpendGuardRuntime {
           ? current.cardEntryIds
           : [
               ...current.cardEntryIds,
-              this.issueGuardCard(session, buildSpendGuardPausedWidget()),
+              this.issueGuardCard(session, buildSpendGuardPausedWidget(this.tm.userLanguage?.())),
             ],
       });
     });
@@ -176,9 +177,8 @@ export class AutomationSpendGuardRuntime {
     this.host.emitAutomations(session);
     this.tm.trayErrors.pushError({
       agentId: session.id,
-      title: "Routines paused while you were away",
-      detail:
-        "This agent's routines kept running without anyone reading the results, so they were paused to avoid wasted spend. Re-enable them from the routine panel when you're back.",
+      title: say(this.tm.userLanguage?.(), "tray.routinesPaused"),
+      detail: say(this.tm.userLanguage?.(), "tray.routinesPausedDetail"),
       dedupeKey: `spend-guard-paused:${session.id}`,
     });
     return true;
@@ -238,7 +238,7 @@ export class AutomationSpendGuardRuntime {
     session.db.setAutomationSpendGuardState({
       ...current,
       cardEntryIds: [
-        this.issueGuardCard(session, buildSpendGuardNudgeWidget()),
+        this.issueGuardCard(session, buildSpendGuardNudgeWidget(this.tm.userLanguage?.())),
       ],
     });
   }

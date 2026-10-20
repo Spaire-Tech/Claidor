@@ -1,3 +1,4 @@
+import { say } from "./say.js";
 import { clampLine } from "./sand-text.js";
 import {
   findConnectorManifest,
@@ -197,9 +198,11 @@ export function buildChannelInboundWakePrompt(
   ].join("\n");
 }
 
+/** Why a channel message did not go, for the agent (English) or the person's tray (`language`, `userLanguage`). */
 export function humanizeChannelDeliveryFailure(
   addressToken: string,
   rawMessage: string,
+  language?: string,
 ): string {
   const address = parseChannelAddress(addressToken);
   const platformName =
@@ -208,15 +211,15 @@ export function humanizeChannelDeliveryFailure(
       : null;
   const trimmed = rawMessage.trim();
   if (address == null || /not a valid channel address/i.test(trimmed)) {
-    return `"${addressToken}" isn't a valid channel address, so that message wasn't delivered.`;
+    return say(language, "channel.invalidAddress", { address: addressToken });
   }
   if (trimmed === "No channel delivery mechanism is registered.") {
-    return "Channel messaging isn't available on this computer, so that message wasn't delivered.";
+    return say(language, "channel.unavailable");
   }
   if (/no live .* connection/i.test(trimmed)) {
-    return `${platformName} isn't connected on this computer, so that message wasn't delivered. Connect ${platformName} (add its token) to send there.`;
+    return say(language, "channel.notConnected", { platform: String(platformName) });
   }
-  return `Couldn't deliver that message to ${platformName}: ${trimmed}`;
+  return say(language, "channel.notDelivered", { platform: String(platformName), why: trimmed });
 }
 
 export interface ChannelDeliveryFailure {
