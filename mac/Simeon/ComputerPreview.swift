@@ -144,7 +144,7 @@ struct ComputerPreview: View {
     // While the full view shows this computer the preview draws nothing (`XOn`): one connection to it at a time.
     let covered = window.computer?.agentId == id
     let url = covered ? nil : status?.screenURL
-    let name = agent.name.isEmpty ? "This agent" : agent.name
+    let name = agent.name.isEmpty ? String(localized: "This agent") : agent.name
     VStack(spacing: 10) {
       if let handoff = status?.handoff {
         ComputerAttention(agentId: id, name: name, instruction: handoff.instruction, look: look)
@@ -176,7 +176,7 @@ struct ComputerPreview: View {
         .focusEffectDisabled()
         .onHover { hovering = $0 }
         .pointerStyle(.link)
-        .accessibilityLabel(first?.title ?? "Open computer")
+        .accessibilityLabel(first?.title ?? String(localized: "Open computer"))
         .help(first?.title ?? "")
         if !covered {
           if url != nil {
@@ -294,7 +294,7 @@ private struct ComputerAttention: View {
           .tracking(-0.08)
           .cssLineHeight(18, size: 13, weight: .medium)
           .foregroundStyle(look.attentionInk)
-        Text(blank ? "\(name) needs you" : instruction)
+        Text(blank ? String(localized: "\(name) needs you") : instruction)
           .font(.system(size: 13))
           .cssLineHeight(18, size: 13)
           .foregroundStyle(look.ink)
@@ -302,10 +302,10 @@ private struct ComputerAttention: View {
       }
       HStack(spacing: 4) {
         Spacer(minLength: 0)
-        AttentionButton(title: "Skip this step", fill: look.rowHover, ink: look.ink) {
+        AttentionButton(title: String(localized: "Skip this step"), fill: look.rowHover, ink: look.ink) {
           Task { await store.handBackComputer(agentId, skip: true) }
         }
-        AttentionButton(title: "I'm done, continue", fill: look.primaryFill, ink: look.onPrimary) {
+        AttentionButton(title: String(localized: "I'm done, continue"), fill: look.primaryFill, ink: look.onPrimary) {
           Task { await store.handBackComputer(agentId) }
         }
       }
@@ -477,7 +477,7 @@ struct ComputerBar: View {
     }
     .frame(width: 237)
     .accessibilityElement()
-    .accessibilityLabel(percent.map { "\(Int($0.rounded()))%" } ?? "Loading")
+    .accessibilityLabel(percent.map { "\(Int($0.rounded()))%" } ?? String(localized: "Loading"))
   }
 }
 

@@ -199,10 +199,10 @@ enum ComposerOpenList {
 
   var label: String {
     switch self {
-    case .mention: return "Mention"
-    case .slash: return "Reference a skill"
-    case .pulls: return "Pull request"
-    case .emoji: return "Emoji"
+    case .mention: return String(localized: "Mention")
+    case .slash: return String(localized: "Reference a skill")
+    case .pulls: return String(localized: "Pull request")
+    case .emoji: return String(localized: "Emoji")
     }
   }
 

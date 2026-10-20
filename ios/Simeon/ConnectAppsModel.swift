@@ -88,7 +88,7 @@ final class ConnectAppsModel {
   // MARK: Reading
 
   private func calls() throws -> PluginCalls {
-    guard let backend = store?.backend else { throw GatewayError(message: "Sign in to Simeon first.", refused: true) }
+    guard let backend = store?.backend else { throw GatewayError(message: String(localized: "Sign in to Simeon first."), refused: true) }
     return PluginCalls(backend)
   }
 
@@ -278,7 +278,7 @@ final class ConnectAppsModel {
   func submitSetup(_ values: [String: String]) async {
     guard let setup else { return }
     let entry = self.entry(setup.entryId)
-    let name = entry?.displayName ?? "the plugin"
+    let name = entry?.displayName ?? String(localized: "the plugin")
     show(nil)
     await reporting {
       if setup.editing {
@@ -294,7 +294,7 @@ final class ConnectAppsModel {
           let synced = await syncSkills(entry, agentId: agentId)
           show(Plugins.addedNotice(name, added: synced.added, failed: [], error: synced.error))
         } else {
-          show(Plugins.Notice(isError: false, text: "Added \(name)"))
+          show(Plugins.Notice(isError: false, text: String(localized: "Added \(name)")))
         }
       }
       if self.setup == setup { self.setup = nil }
@@ -324,7 +324,7 @@ final class ConnectAppsModel {
   /** Uninstall of a plugin (`Tt`); the page stays, now with Add. */
   func uninstall(pluginId: String) async {
     let entry = self.entry(pluginId)
-    let name = entry?.displayName ?? effective[pluginId]?.displayName ?? "the plugin"
+    let name = entry?.displayName ?? effective[pluginId]?.displayName ?? String(localized: "the plugin")
     show(nil)
     await reporting {
       let removal = try await calls().uninstallPlugin(pluginId)

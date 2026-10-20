@@ -144,7 +144,7 @@ final class AvatarEditorModel {
         guard ticket == generation else { return }
         generating = false
         guard let image = NSImage(data: bytes), let fitted = AvatarEditorModel.fitted(image) else {
-          error = "Image generation returned no picture."
+          error = String(localized: "Image generation returned no picture.")
           return
         }
         let candidate = Candidate(image: fitted, crop: AvatarCrop(width: Double(fitted.width), height: Double(fitted.height)), fileLine: nil)
@@ -219,7 +219,7 @@ final class AvatarEditorModel {
 
   /** The host's words, without Electron's "Error invoking remote method" (`h$n`). */
   static func words(_ error: Error) -> String {
-    PlainWords.problem((error as? GatewayError)?.message ?? error.localizedDescription, fallback: "Couldn’t change the avatar. Try again in a little while.")
+    PlainWords.problem((error as? GatewayError)?.message ?? error.localizedDescription, fallback: String(localized: "Couldn’t change the avatar. Try again in a little while."))
   }
 }
 
@@ -523,7 +523,7 @@ private struct VoicePicker: View {
     .buttonStyle(.hand)
     .disabled(sample == nil)
     .opacity(sample == nil ? 0.4 : 1)
-    .accessibilityLabel(voice.map { playing ? "Stop \($0.name)" : "Play \($0.name)" } ?? "Play")
+    .accessibilityLabel(voice.map { playing ? String(localized: "Stop \($0.name)") : String(localized: "Play \($0.name)") } ?? String(localized: "Play"))
   }
 
   /** The list as soon as it comes, on the agent's voice while it is listed; then the voice settled for it (one given by its name when it has none). */
@@ -672,7 +672,7 @@ private struct GenerateTab: View {
           .padding(.vertical, 16)
           .onAppear { pulse = true }
           .accessibilityLabel("Generating avatar")
-        EditorButton(title: "Generating…", primary: false, look: look) {}
+        EditorButton(title: String(localized: "Generating…"), primary: false, look: look) {}
           .disabled(true)
       } else {
         ZStack(alignment: .topLeading) {
@@ -700,7 +700,7 @@ private struct GenerateTab: View {
         .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(look.ground))
         .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(look.ink.opacity(0.15), lineWidth: 1))
         .accessibilityLabel("Describe your avatar")
-        EditorButton(title: "Generate", primary: true, look: look) { model.generate(store: store) }
+        EditorButton(title: String(localized: "Generate"), primary: true, look: look) { model.generate(store: store) }
           .disabled(model.prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
       }
     }
@@ -803,16 +803,16 @@ private struct CropView: View {
         }
         .font(.system(size: 13))
         HStack(spacing: 8) {
-          zoomButton("minus", label: "Zoom out", by: -AvatarCrop.zoomStep, candidate: candidate)
+          zoomButton("minus", label: String(localized: "Zoom out"), by: -AvatarCrop.zoomStep, candidate: candidate)
           Slider(value: Binding(get: { candidate.crop.zoom }, set: { value in model.candidate?.crop = candidate.crop.zoomed(to: value) }), in: AvatarCrop.minZoom...AvatarCrop.maxZoom)
             .controlSize(.small)
             .accessibilityLabel("Zoom")
-          zoomButton("plus", label: "Zoom in", by: AvatarCrop.zoomStep, candidate: candidate)
+          zoomButton("plus", label: String(localized: "Zoom in"), by: AvatarCrop.zoomStep, candidate: candidate)
         }
         .foregroundStyle(look.inkSecondary)
         HStack(spacing: 8) {
-          EditorButton(title: "Restart", primary: false, look: look) { model.restart() }
-          EditorButton(title: model.saving ? "Saving…" : "Set avatar", primary: true, look: look) {
+          EditorButton(title: String(localized: "Restart"), primary: false, look: look) { model.restart() }
+          EditorButton(title: model.saving ? String(localized: "Saving…") : String(localized: "Set avatar"), primary: true, look: look) {
             model.setPicture(store: store, close: close)
           }
         }

@@ -152,9 +152,9 @@ private struct SettingsNav: View {
 
   var body: some View {
     VStack(alignment: .leading, spacing: 2) {
-      SettingsNavEntry(title: "General", systemImage: "gearshape", current: settings.page == .general, look: look) { settings.page = .general }
+      SettingsNavEntry(title: String(localized: "General"), systemImage: "gearshape", current: settings.page == .general, look: look) { settings.page = .general }
       if store.usage.showsSection {
-        SettingsNavEntry(title: "Usage & Billing", systemImage: "chart.bar", current: settings.page == .usage, look: look) { settings.page = .usage }
+        SettingsNavEntry(title: String(localized: "Usage & Billing"), systemImage: "chart.bar", current: settings.page == .usage, look: look) { settings.page = .usage }
       }
       Spacer(minLength: 0)
     }

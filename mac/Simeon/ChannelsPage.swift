@@ -188,20 +188,20 @@ private struct ChannelRow: View {
 
   /** "Connection actions", the Mac's menu under "…": How to connect; Refresh and Disconnect (its icon red) while connected or connecting, waiting while a call runs. */
   private func openMenu(_ state: ChannelsView.RowState) {
-    let menu = NSMenu(title: "Connection actions")
+    let menu = NSMenu(title: String(localized: "Connection actions"))
     menu.autoenablesItems = false
     let busy = model.isBusy(manifest.platform)
-    let how = BlockMenuItem("How to connect") { guide = true }
+    let how = BlockMenuItem(String(localized: "How to connect")) { guide = true }
     how.image = NSImage(systemSymbolName: "questionmark.circle", accessibilityDescription: nil)
     menu.addItem(how)
     if state == .connected || state == .connecting {
-      let refresh = BlockMenuItem("Refresh") {
+      let refresh = BlockMenuItem(String(localized: "Refresh")) {
         Task { await model.run(manifest.platform, agentId: agentId, store: store) { await store.refreshChannel(agentId, platform: manifest.platform) } }
       }
       refresh.image = NSImage(systemSymbolName: "arrow.clockwise", accessibilityDescription: nil)
       refresh.isEnabled = !busy
       menu.addItem(refresh)
-      let disconnect = BlockMenuItem("Disconnect") {
+      let disconnect = BlockMenuItem(String(localized: "Disconnect")) {
         Task { await model.run(manifest.platform, agentId: agentId, store: store) { await store.disconnectChannel(agentId, platform: manifest.platform) } }
       }
       disconnect.image = NSImage(systemSymbolName: "powerplug", accessibilityDescription: nil)?
@@ -241,12 +241,12 @@ private struct ChannelRow: View {
   private func buttons(_ state: ChannelsView.RowState, busy: Bool) -> some View {
     switch state {
     case .available:
-      pill("Connect", disabled: busy) { toggleForm() }
+      pill(String(localized: "Connect"), disabled: busy) { toggleForm() }
         .padding(.leading, 6)
     case .error:
       HStack(spacing: 6) {
-        pill("Reconnect", disabled: busy) { toggleForm() }
-        pill("Disconnect", disabled: busy) {
+        pill(String(localized: "Reconnect"), disabled: busy) { toggleForm() }
+        pill(String(localized: "Disconnect"), disabled: busy) {
           Task { await model.run(manifest.platform, agentId: agentId, store: store) { await store.disconnectChannel(agentId, platform: manifest.platform) } }
         }
       }
@@ -301,11 +301,11 @@ private struct ChannelRow: View {
         .font(.system(size: 11))
         .foregroundStyle(look.inkTertiary)
         Spacer(minLength: 8)
-        pill("Cancel", disabled: false) {
+        pill(String(localized: "Cancel"), disabled: false) {
           token = ""
           formOpen = false
         }
-        pill("Store securely", disabled: blank || busy) { storeToken() }
+        pill(String(localized: "Store securely"), disabled: blank || busy) { storeToken() }
       }
     }
     .padding(.top, 10)

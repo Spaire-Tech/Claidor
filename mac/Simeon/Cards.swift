@@ -107,7 +107,7 @@ struct QuestionCardView: View {
           .font(.system(size: 14, weight: .medium))
           .foregroundStyle(look.inkSecondary)
           .cssLineHeight(20, size: 14, weight: .medium)
-        StatusPill(text: "Dismissed", look: look)
+        StatusPill(text: String(localized: "Dismissed"), look: look)
       }
     } else if let answer = card.answer ?? pending {
       CardShell(look: look) {
@@ -189,7 +189,7 @@ struct QuestionCardView: View {
             .onSubmit(submit)
             .accessibilityLabel("Custom answer")
           if !own.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            CardButton(title: "Submit", look: look, action: submit)
+            CardButton(title: String(localized: "Submit"), look: look, action: submit)
           }
         }
       }
@@ -286,13 +286,13 @@ struct DraftCardView: View {
       .frame(height: 22)
       VStack(spacing: 0) {
         if card.kind == .email {
-          field("From") { value(card.from) }
-          field("To") { input($to, placeholder: "name@example.com") }
-          field("Subject") { input($subject, placeholder: "Subject") }
+          field(String(localized: "From")) { value(card.from) }
+          field(String(localized: "To")) { input($to, placeholder: String(localized: "name@example.com")) }
+          field(String(localized: "Subject")) { input($subject, placeholder: String(localized: "Subject")) }
         } else {
-          field("Workspace") { value(card.workspace) }
-          field("To") { value(card.target) }
-          field("Thread") { value(card.thread.isEmpty ? "New message" : card.thread) }
+          field(String(localized: "Workspace")) { value(card.workspace) }
+          field(String(localized: "To")) { value(card.target) }
+          field(String(localized: "Thread")) { value(card.thread.isEmpty ? String(localized: "New message") : card.thread) }
         }
         TextField("", text: $words, prompt: Text("Write a message").foregroundStyle(look.placeholder), axis: .vertical)
           .textFieldStyle(.plain)
@@ -309,8 +309,8 @@ struct DraftCardView: View {
       .clipShape(RoundedRectangle(cornerRadius: 10))
       if editable {
         HStack(spacing: 8) {
-          CardButton(title: card.kind == .email ? "Send email" : "Send message", prominent: true, look: look, action: send)
-          CardButton(title: "Discard", look: look) {
+          CardButton(title: card.kind == .email ? String(localized: "Send email") : String(localized: "Send message"), prominent: true, look: look, action: send)
+          CardButton(title: String(localized: "Discard"), look: look) {
             Task { await store.discardDraft(entryId, in: agentId) }
           }
         }
@@ -578,7 +578,7 @@ struct ApprovalCardView: View {
               Image(systemName: unfolded ? "chevron.down" : "chevron.right")
                 .font(.system(size: 9, weight: .semibold))
                 .frame(width: 14, height: 14)
-              Text(unfolded ? (heading.subject == .command ? "Hide the command" : "Hide the details") : (heading.subject == .command ? "Show the command" : "Show the details"))
+              Text(unfolded ? (heading.subject == .command ? String(localized: "Hide the command") : String(localized: "Hide the details")) : (heading.subject == .command ? String(localized: "Show the command") : String(localized: "Show the details")))
                 .font(.system(size: 13))
             }
             .foregroundStyle(look.inkSecondary)
@@ -597,9 +597,9 @@ struct ApprovalCardView: View {
       }
       if settled == "pending" {
         HStack(spacing: 8) {
-          CardButton(title: "Allow once", prominent: true, look: look) { resolve("approved") }
-          CardButton(title: "Always allow", look: look) { resolve("always") }
-          CardButton(title: "Deny", look: look) { resolve("denied") }
+          CardButton(title: String(localized: "Allow once"), prominent: true, look: look) { resolve("approved") }
+          CardButton(title: String(localized: "Always allow"), look: look) { resolve("always") }
+          CardButton(title: String(localized: "Deny"), look: look) { resolve("denied") }
         }
         .disabled(answering)
       }
@@ -679,7 +679,7 @@ struct ListenerConnectCardView: View {
 
   var body: some View {
     let name = platform == "slack" ? "Slack" : "GitHub"
-    let words = reason.map { "Connect \(name) \($0)." } ?? "Connect \(name) so this routine can fire."
+    let words = reason.map { String(localized: "Connect \(name) \($0).") } ?? String(localized: "Connect \(name) so this routine can fire.")
     HStack(alignment: .top, spacing: 10) {
       Group {
         if let logo = NSImage(named: "Connectors/\(platform)") ?? NSImage(named: "Brands/\(platform)") {
@@ -768,7 +768,7 @@ struct SecretCardView: View {
             .tracking(-0.15)
             .foregroundStyle(look.ink)
             .cssLineHeight(22, size: 14, weight: .medium)
-          let line = provided || saved ? "Saved securely and kept private." : description
+          let line = provided || saved ? String(localized: "Saved securely and kept private.") : description
           if !line.isEmpty {
             Text(line)
               .font(.system(size: 14))
@@ -779,7 +779,7 @@ struct SecretCardView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         if provided || saved {
-          StatusPill(text: "Saved", look: look, dot: look.working)
+          StatusPill(text: String(localized: "Saved"), look: look, dot: look.working)
         }
       }
       if !(provided || saved) {
@@ -793,7 +793,7 @@ struct SecretCardView: View {
             .background(look.ground, in: RoundedRectangle(cornerRadius: 8))
             .overlay { RoundedRectangle(cornerRadius: 8).strokeBorder(look.ink.opacity(0.15), lineWidth: 1) }
             .onSubmit(save)
-          CardButton(title: "Save securely", prominent: true, look: look, action: save)
+          CardButton(title: String(localized: "Save securely"), prominent: true, look: look, action: save)
             .disabled(saving || value.isEmpty)
         }
         HStack(alignment: .top, spacing: 4) {
@@ -915,7 +915,7 @@ struct ChatPicture: View {
         Image(nsImage: picture).resizable().interpolation(.high).aspectRatio(contentMode: .fill)
       }
     }
-    .accessibilityLabel(image.alt.isEmpty ? "Picture" : image.alt)
+    .accessibilityLabel(image.alt.isEmpty ? String(localized: "Picture") : image.alt)
     .onHover { inside in control?.pictureHovered = inside }
     .onDisappear { control?.pictureHovered = false }
     .contextMenu {
@@ -1027,7 +1027,7 @@ struct ReplyQuote: View {
   let text: String
   let look: Look
   /** "Jump to replied message", or "Open reply thread" when the line is a reply in a thread. */
-  var label = "Jump to replied message"
+  var label = String(localized: "Jump to replied message")
   var action: () -> Void = {}
 
   var body: some View {
@@ -1208,7 +1208,7 @@ struct FlightsCardView: View {
     .fixedSize(horizontal: true, vertical: false)
     .frame(maxWidth: 420, alignment: .leading)
     .accessibilityElement(children: .contain)
-    .accessibilityLabel(card.title.isEmpty ? "Flights" : card.title)
+    .accessibilityLabel(card.title.isEmpty ? String(localized: "Flights") : card.title)
   }
 }
 
@@ -1397,8 +1397,8 @@ struct ComputerHandoffCard: View {
       if waiting {
         VStack(spacing: 8) {
           HStack(spacing: 8) {
-            pill("Take over", ground: blue, ink: .white) { takeOver() }
-            pill("I’m done", ground: fill, ink: ink) {
+            pill(String(localized: "Take over"), ground: blue, ink: .white) { takeOver() }
+            pill(String(localized: "I’m done"), ground: fill, ink: ink) {
               Task { await store.handBackComputer(agentId) }
             }
           }
@@ -1415,7 +1415,7 @@ struct ComputerHandoffCard: View {
           .help("Cancel this request without doing the step; the agent continues without it")
         }
       } else {
-        pill("Open computer", ground: fill, ink: ink) { takeOver() }
+        pill(String(localized: "Open computer"), ground: fill, ink: ink) { takeOver() }
           .fixedSize()
       }
     }
@@ -1545,7 +1545,7 @@ struct PurchaseCardView: View {
         VStack(alignment: .leading, spacing: 1) {
           HStack(spacing: 6) {
             Text(shown.heading).font(.system(size: 15, weight: .semibold)).foregroundStyle(ink)
-            if shown.isTest { StatusPill(text: "Test", look: look) }
+            if shown.isTest { StatusPill(text: String(localized: "Test"), look: look) }
           }
           Text(shown.flight == nil ? PurchaseCard.headline(agent: store.agent(agentId)?.name ?? "", domain: shown.domain) : PurchaseCard.flightHeadline(agent: store.agent(agentId)?.name ?? "", airline: shown.flight?.airline ?? shown.merchant))
             .font(.system(size: 13))
@@ -1611,7 +1611,7 @@ struct PurchaseCardView: View {
     let row = HStack(spacing: 12) {
       MacPaymentMark(brand: shown.needsCard ? nil : shown.cardBrand, edge: hairline)
       VStack(alignment: .leading, spacing: 2) {
-        Text(shown.cardLine ?? (shown.needsCard ? PurchaseCard.chooseCard : shown.wallet == .shop ? "Your Shop card" : "Your Link card"))
+        Text(shown.cardLine ?? (shown.needsCard ? PurchaseCard.chooseCard : shown.wallet == .shop ? String(localized: "Your Shop card") : String(localized: "Your Link card")))
           .font(.system(size: 14, weight: .medium)).foregroundStyle(shown.needsCard ? blue : ink)
           .lineLimit(1).truncationMode(.middle)
         MacLinkByStripe(grey: grey, wallet: shown.wallet)
@@ -1881,7 +1881,7 @@ struct CloudAgentCardView: View {
       VStack(alignment: .leading, spacing: 4) {
         HStack(spacing: 8) {
           Button { if let pull { NSWorkspace.shared.open(pull) } } label: {
-            Text(shown.name.isEmpty ? "Cloud agent" : shown.name)
+            Text(shown.name.isEmpty ? String(localized: "Cloud agent") : shown.name)
               .font(.system(size: 14, weight: .medium))
               .tracking(-0.15)
               .foregroundStyle(look.ink)
@@ -1949,10 +1949,10 @@ struct CloudAgentCardView: View {
       }
       HStack(spacing: 8) {
         if let pull {
-          CardButton(title: "View PR", prominent: true, look: look) { NSWorkspace.shared.open(pull) }
+          CardButton(title: String(localized: "View PR"), prominent: true, look: look) { NSWorkspace.shared.open(pull) }
             .help("Open the pull request")
         }
-        CardButton(title: "Open", look: look) {
+        CardButton(title: String(localized: "Open"), look: look) {
           if let page = CloudAgentInfo.webURL(bcId) { NSWorkspace.shared.open(page) }
         }
         .help("Open this cloud agent")

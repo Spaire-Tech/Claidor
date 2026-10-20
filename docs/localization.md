@@ -62,12 +62,39 @@ agents says "tu": warm and direct, like a capable friend at work, never stiff.
 
 | Platform | Place | Check |
 |---|---|---|
+| The iPhone app's screens | `ios/Simeon/Localizable.xcstrings`; its permission prompts in `ios/Simeon/InfoPlist.xcstrings` | `check_translations.py` |
+| The notification extension | `ios/SimeonNotifications/Localizable.xcstrings` | `check_translations.py` |
+| The Mac app's screens | `mac/Simeon/Localizable.xcstrings` (with the strings of `ios/Simeon/Voice.swift` and `Computer.swift`, which the Mac also builds); `mac/Simeon/InfoPlist.xcstrings` | `check_translations.py` |
 | The engine (the agents' prompts, voice calls) | `desktop/source/shared/user-language.ts`; the calls' greetings in `voice-call-prompt.ts` | `desktop/tests/user-language.test.mjs` |
 | The core (calls) | `ios/SimeonCore/Sources/SimeonCore/VoiceCall.swift` (`firstMessage`), word for word as the engine's | `LanguageTests.swift` |
 | The server's voice agent | `VOICE_LANGUAGES` in `server/simeon/desktop/voice.py` | `server/tests/desktop/test_language.py` |
 
 `scripts/check_translations.py` fails when any of these has an English
 sentence without its French.
+
+### Writing the apps' screens
+
+Xcode reads the code's strings into the String Catalogs on each build
+(`SWIFT_EMIT_LOC_STRINGS`), new ones marked untranslated, and
+`check_translations.py` then fails until they have their French.
+
+- A literal SwiftUI localizes by itself: `Text("…")`, `Button("…")`,
+  `Label`, `Toggle`, `Section`, `.navigationTitle`, `TextField`, `.help`,
+  `.accessibilityLabel("…")`, and a ternary of two literals.
+- Anything that reaches the screen as a `String` is not localized: a custom
+  view's `title: String`, an AppKit menu, an alert's button, a value built in
+  code, a ternary or `??` with a `String` on the other side. Write those
+  `String(localized: "…")` where the words are written.
+- A whole sentence per key, never fragments glued together: French puts its
+  words in another order (`"\(who) is typing…"`, not `who + " is typing…"`).
+- The same English with two meanings gets its own key, with the same English:
+  `String(localized: "section.open", defaultValue: "Open")` (a section's state,
+  "Ouverte", beside the button "Ouvrir"), `traveller.title` (Civilité, beside an
+  agent's Titre).
+- Counts: plural variations in the catalog (French "one" covers 0 and 1).
+- Words written by the shared core (`SimeonCore`) or the engine and shown as
+  they come are not in these catalogs: stages 3 and 4 of the plan translate
+  them where they are made.
 
 ## When it misbehaves
 
@@ -81,8 +108,9 @@ sentence without its French.
 
 ## Adding a language
 
-1. The apps: add it to `CFBundleLocalizations` in `ios/project.yml` and
-   `mac/project.yml`.
+1. The apps: add it to `CFBundleLocalizations` in `ios/project.yml` (the app
+   and the notification extension) and `mac/project.yml`, then fill its column
+   in each String Catalog (Xcode's catalog editor, or the JSON).
 2. The calls: add it to `VOICE_CALL_LANGUAGES` (engine), `VoiceCallText.languages`
    (core) and `VOICE_LANGUAGES` (server, with its first message), add its
    greetings beside the French ones (engine and core, word for word), then

@@ -119,7 +119,7 @@ private struct NameScreen: View {
         .accessibilityAddTraits(.isHeader)
       field
         .padding(.top, 36)
-      FlowButton(label: "Continue", look: look, action: { if ready { submit() } })
+      FlowButton(label: String(localized: "Continue"), look: look, action: { if ready { submit() } })
         .opacity(ready ? 1 : 0.45)
         .padding(.top, 32)
     }

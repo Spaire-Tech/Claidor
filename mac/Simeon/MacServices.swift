@@ -285,7 +285,7 @@ final class MacServices {
     // open): the app hands it to its computer (`AppReturnSignIn`).
     if url.scheme == SimeonConfig.macURLScheme, let answer = AppReturnSignIn.answer(url) {
       NSApp.activate()
-      if let store = session?.store { Task { await store.finishLoopbackSignIn(answer, name: "the app") } }
+      if let store = session?.store { Task { await store.finishLoopbackSignIn(answer, name: String(localized: "the app")) } }
       return
     }
     guard let link = DeepLink.parse(url.absoluteString, schemes: [SimeonConfig.macURLScheme]) else { return }
@@ -310,7 +310,7 @@ final class MacServices {
     guard let menu = NSApp.mainMenu else { return }
     if let help = NSApp.helpMenu, let item = menu.items.first(where: { $0.submenu === help }) {
       menu.removeItem(item)
-    } else if let item = menu.items.last(where: { $0.title == "Help" }) {
+    } else if let item = menu.items.last(where: { $0.title == String(localized: "Help") }) {
       menu.removeItem(item)
     }
   }
@@ -393,8 +393,8 @@ private struct DeepLinksDialog: View {
       }
       .padding(EdgeInsets(top: 12, leading: 16, bottom: 0, trailing: 16))
       VStack(alignment: .leading, spacing: 10) {
-        field("Route", "\(scheme)://app/v1/info?topic=deep-links")
-        field("Source", source == .https ? "HTTPS link" : "Custom protocol (\(scheme)://)")
+        field(String(localized: "Route"), "\(scheme)://app/v1/info?topic=deep-links")
+        field(String(localized: "Source"), source == .https ? String(localized: "HTTPS link") : String(localized: "Custom protocol (\(scheme)://)"))
       }
       .padding(EdgeInsets(top: 12, leading: 16, bottom: 16, trailing: 16))
       Rectangle().fill(look.ink.opacity(0.1)).frame(height: 1)
@@ -475,18 +475,18 @@ enum MacMoveToApplications {
     guard !isInApplications(here) else { return }
     let question = NSAlert()
     question.alertStyle = .informational
-    question.messageText = "Move Simeon to the Applications folder?"
-    question.informativeText = "Simeon runs from the Applications folder. It will reopen after moving."
-    question.addButton(withTitle: "Move to Applications")
-    question.addButton(withTitle: "Not Now")
+    question.messageText = String(localized: "Move Simeon to the Applications folder?")
+    question.informativeText = String(localized: "Simeon runs from the Applications folder. It will reopen after moving.")
+    question.addButton(withTitle: String(localized: "Move to Applications"))
+    question.addButton(withTitle: String(localized: "Not Now"))
     guard question.runModal() == .alertFirstButtonReturn else { return }
     do {
       try move(here)
     } catch {
       let failed = NSAlert()
       failed.alertStyle = .critical
-      failed.messageText = "Simeon couldn't move to Applications"
-      failed.informativeText = "Move Simeon to the Applications folder manually, then reopen Simeon"
+      failed.messageText = String(localized: "Simeon couldn't move to Applications")
+      failed.informativeText = String(localized: "Move Simeon to the Applications folder manually, then reopen Simeon")
       failed.addButton(withTitle: "OK")
       failed.runModal()
     }

@@ -270,13 +270,12 @@ struct SignInScreen: View {
 
   /** "By continuing, you agree to our Terms & Privacy Policy.", the two names links in the ink, semibold, not underlined (the dotted line ran through the letters on the phone; the founder: "makes no sense"). */
   static var legal: AttributedString {
-    func link(_ words: String, _ url: URL) -> AttributedString {
-      var text = AttributedString(words)
-      text.link = url
-      text.font = Font.system(size: 13, weight: .semibold)
-      return text
-    }
-    return AttributedString("By continuing, you agree to our ") + link("Terms", terms) + AttributedString(" & ") + link("Privacy Policy", privacy) + AttributedString(".")
+    // One sentence to translate, its two links written in Markdown (20 October 2026, docs/localization.md).
+    let sentence = String(localized: "By continuing, you agree to our [Terms](\(terms.absoluteString)) & [Privacy Policy](\(privacy.absoluteString)).")
+    var text = (try? AttributedString(markdown: sentence)) ?? AttributedString(sentence)
+    let links = text.runs.filter { $0.link != nil }.map(\.range)
+    for range in links { text[range].font = Font.system(size: 13, weight: .semibold) }
+    return text
   }
 }
 
@@ -357,7 +356,7 @@ struct EmailSignInButton: View {
  * Log in or sign up gave it (`SessionController.finishing`).
  */
 struct SettingUpScreen: View {
-  static let words = "Setting up Simeon\u{2019}s computer"
+  static let words = String(localized: "Setting up Simeon\u{2019}s computer")
 
   var body: some View {
     ShimmerText(text: Self.words, font: .system(size: 17, weight: .medium))

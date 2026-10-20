@@ -80,7 +80,7 @@ struct ComputerSheet: View {
    */
   @ViewBuilder
   private var computer: some View {
-    let name = store.agent(agentId)?.name ?? "The agent"
+    let name = store.agent(agentId)?.name ?? String(localized: "The agent")
     let live = screen?.socket != nil && phase == "connected"
     let helpers = store.computerHelpers(agentId)
     let focused = ComputerHelper.focused(helpers, asked: helper)
@@ -90,7 +90,7 @@ struct ComputerSheet: View {
         VStack(spacing: 2) {
           Text(control ? "You're in control" : "\(name)'s computer")
             .font(.system(size: 17, weight: .semibold)).foregroundStyle(.white)
-          Text(note ?? (control ? "Tap to click · pinch to zoom" : live ? "Pinch to zoom" : "Watching"))
+          Text(note ?? (control ? String(localized: "Tap to click · pinch to zoom") : live ? String(localized: "Pinch to zoom") : String(localized: "Watching")))
             .font(.system(size: 15)).foregroundStyle(.white.opacity(0.55))
             .contentTransition(.opacity)
         }
@@ -234,7 +234,7 @@ struct ComputerSheet: View {
     Haptics.press()
     control = true
     Task {
-      if await store.takeComputerControl(agentId) { show("\(store.agent(agentId)?.name ?? "The agent") is paused while you're in control.") }
+      if await store.takeComputerControl(agentId) { show(String(localized: "\(store.agent(agentId)?.name ?? "The agent") is paused while you're in control.")) }
     }
   }
 
@@ -244,7 +244,7 @@ struct ComputerSheet: View {
     Task {
       let stopped = await store.stopAgentTask(agentId)
       stopping = false
-      show(stopped ? "Stopped." : "Nothing was running.")
+      show(stopped ? String(localized: "Stopped.") : String(localized: "Nothing was running."))
     }
   }
 
@@ -282,11 +282,11 @@ struct ComputerSheet: View {
 
   /** The phone's clipboard onto the computer's, pasted where its cursor is. */
   private func pasteFromPhone() {
-    guard let text = UIPasteboard.general.string, !text.isEmpty else { Haptics.warning(); show("Your phone's clipboard is empty."); return }
+    guard let text = UIPasteboard.general.string, !text.isEmpty else { Haptics.warning(); show(String(localized: "Your phone's clipboard is empty.")); return }
     control = true
     Haptics.tap()
     link.paste(text)
-    show("Pasted from your phone.")
+    show(String(localized: "Pasted from your phone."))
   }
 
   /** What is selected on the computer, copied, onto the phone's clipboard. */
@@ -295,10 +295,10 @@ struct ComputerSheet: View {
     link.copy()
     Task {
       try? await Task.sleep(nanoseconds: 600_000_000)
-      if link.clipboard.isEmpty { show("Nothing was copied on the computer."); return }
+      if link.clipboard.isEmpty { show(String(localized: "Nothing was copied on the computer.")); return }
       UIPasteboard.general.string = link.clipboard
       Haptics.tap()
-      show("Copied to your phone.")
+      show(String(localized: "Copied to your phone."))
     }
   }
 
@@ -311,13 +311,13 @@ struct ComputerSheet: View {
   }
 
   private var status: String {
-    if screen == nil { return "Starting the computer…" }
+    if screen == nil { return String(localized: "Starting the computer…") }
     if screen?.socket == nil {
-      if screen?.state == "demo" { return "The demo has no computer." }
-      if let percent = screen?.percent, percent > 0 { return "Starting the computer… \(percent)%" }
-      return "Starting the computer…"
+      if screen?.state == "demo" { return String(localized: "The demo has no computer.") }
+      if let percent = screen?.percent, percent > 0 { return String(localized: "Starting the computer… \(percent)%") }
+      return String(localized: "Starting the computer…")
     }
-    return phase == "disconnected" ? "Reconnecting…" : "Connecting…"
+    return phase == "disconnected" ? String(localized: "Reconnecting…") : String(localized: "Connecting…")
   }
 
   private func load() async {
@@ -327,12 +327,12 @@ struct ComputerSheet: View {
         screen = next
         if next.socket != nil || next.state == "demo" { return }
       } catch {
-        problem = PlainWords.problem("The computer didn't answer: \(error.localizedDescription)")
+        problem = PlainWords.problem(String(localized: "The computer didn't answer: \(error.localizedDescription)"))
         return
       }
       try? await Task.sleep(nanoseconds: 3_000_000_000)
     }
-    problem = "The computer is taking too long to start."
+    problem = String(localized: "The computer is taking too long to start.")
   }
 }
 

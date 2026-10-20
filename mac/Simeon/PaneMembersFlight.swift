@@ -57,7 +57,7 @@ struct GroupMembersBody: View {
 
   /** Add Member's menu (at least 200 wide): each agent's picture at 28 and its name; a pick adds it at the end, and a refusal says nothing. */
   private func addMenu(_ candidates: [Agent], under frame: CGRect) {
-    let menu = NSMenu(title: "Add Member")
+    let menu = NSMenu(title: String(localized: "Add Member"))
     menu.autoenablesItems = false
     menu.minimumWidth = 200
     let groupId = group.id
@@ -194,9 +194,9 @@ enum MemberRemoval {
     alert.alertStyle = .warning
     alert.messageText = GroupMembers.removeTitle(member.name)
     alert.informativeText = ""
-    let remove = alert.addButton(withTitle: "Remove")
+    let remove = alert.addButton(withTitle: String(localized: "Remove"))
     remove.hasDestructiveAction = true
-    let cancel = alert.addButton(withTitle: "Cancel")
+    let cancel = alert.addButton(withTitle: String(localized: "Cancel"))
     cancel.keyEquivalent = "\u{1b}"
     let handler = Handler(alert: alert, memberId: member.id, groupId: groupId, store: store, pending: pending)
     remove.target = handler
@@ -239,7 +239,7 @@ enum MemberRemoval {
           end(alert)
         } catch {
           pending(false)
-          remove.title = "Remove"
+          remove.title = String(localized: "Remove")
           remove.isEnabled = true
           cancel.isEnabled = true
           alert.informativeText = GroupMembers.removeFailed

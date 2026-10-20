@@ -32,14 +32,14 @@ struct ActivitySlot: View {
     ZStack(alignment: .leading) {
       if let shown {
         let typing = line?.verb == "typing" || (line == nil && hold.shown == nil)
-        let words = typing ? "Typing…" : hold.shown?.text ?? "Working…"
+        let words = typing ? String(localized: "Typing…") : hold.shown?.text ?? String(localized: "Working…")
         // The agent as it is now (its state), the one shown while it goes out.
         ActivityRow(
           agent: agent ?? shown,
           words: words,
           wordsKey: typing ? "typing" : hold.shown?.key ?? "working",
           elapsed: typing ? nil : hold.elapsed(at: now),
-          spoken: typing ? "\(shown.name) is typing" : "\(shown.name): \(words)",
+          spoken: typing ? String(localized: "\(shown.name) is typing") : "\(shown.name): \(words)",
           exiting: exiting,
           look: look)
           .id(entrance)

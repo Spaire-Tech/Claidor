@@ -26,7 +26,7 @@ struct FlightPassengersCardView: View {
         VStack(alignment: .leading, spacing: 1) {
           HStack(spacing: 6) {
             Text(FlightPassengersCard.title).font(.system(size: 15, weight: .semibold)).foregroundStyle(ink)
-            if card.flight.isTest { StatusPill(text: "Test", look: look) }
+            if card.flight.isTest { StatusPill(text: String(localized: "Test"), look: look) }
           }
           Text(card.flight.route).font(.system(size: 13)).foregroundStyle(grey)
         }
@@ -153,7 +153,7 @@ struct MacTravellersSheet: View {
     sending = true
     let answer = await store.submitFlightPassengers(entryId, travellers: travellers, in: agentId)
     sending = false
-    if answer.ok { dismiss() } else { problem = (answer.index ?? 0, answer.message ?? "That didn't work.") }
+    if answer.ok { dismiss() } else { problem = (answer.index ?? 0, answer.message ?? String(localized: "That didn't work.")) }
   }
 }
 
@@ -168,7 +168,7 @@ private struct MacTravellerSection: View {
     Section(heading) {
       TextField("First name", text: $traveller.givenName)
       TextField("Last name", text: $traveller.familyName)
-      Picker("Title", selection: $traveller.title) {
+      Picker(String(localized: "traveller.title", defaultValue: "Title"), selection: $traveller.title) {
         Text("Choose").tag(Traveller.Title?.none)
         ForEach(Traveller.Title.allCases, id: \.self) { title in Text(title.label).tag(Traveller.Title?.some(title)) }
       }
@@ -176,7 +176,7 @@ private struct MacTravellerSection: View {
         Text("Choose").tag(Traveller.Gender?.none)
         ForEach(Traveller.Gender.allCases, id: \.self) { gender in Text(gender.label).tag(Traveller.Gender?.some(gender)) }
       }
-      MacDayField(label: "Date of birth", day: $traveller.bornOn, range: Calendar.current.date(byAdding: .year, value: -120, to: Date())!...Date(), start: Calendar.current.date(byAdding: .year, value: -30, to: Date())!)
+      MacDayField(label: String(localized: "Date of birth"), day: $traveller.bornOn, range: Calendar.current.date(byAdding: .year, value: -120, to: Date())!...Date(), start: Calendar.current.date(byAdding: .year, value: -30, to: Date())!)
       TextField("Email", text: $traveller.email)
       TextField("Phone, with country code", text: $traveller.phone)
       if passportNeeded || showsPassport {
@@ -185,7 +185,7 @@ private struct MacTravellerSection: View {
           Text("Choose").tag("")
           ForEach(MacCountryName.all) { country in Text(country.name).tag(country.code) }
         }
-        MacDayField(label: "Passport expires", day: $traveller.passportExpires, range: Date()...Calendar.current.date(byAdding: .year, value: 20, to: Date())!, start: Calendar.current.date(byAdding: .year, value: 1, to: Date())!)
+        MacDayField(label: String(localized: "Passport expires"), day: $traveller.passportExpires, range: Date()...Calendar.current.date(byAdding: .year, value: 20, to: Date())!, start: Calendar.current.date(byAdding: .year, value: 1, to: Date())!)
       } else {
         Button("Add passport") { showsPassport = true }
       }

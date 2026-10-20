@@ -193,7 +193,7 @@ final class MacBillingPage {
     guard session == nil else { return nil }
     let paymentFailed = store.usage.summary?.paymentFailed == true
     let answer = await store.billingPortal(flow: flow, tier: tier, back: SimeonConfig.macURLScheme)
-    guard let url = answer.url else { return answer.message ?? "Couldn’t open billing. Try again." }
+    guard let url = answer.url else { return answer.message ?? String(localized: "Couldn’t open billing. Try again.") }
     let finished = await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
       let once = BillingSheetEnd(continuation)
       let sheet = ASWebAuthenticationSession(url: url, callback: .customScheme(SimeonConfig.macURLScheme)) { callback, _ in

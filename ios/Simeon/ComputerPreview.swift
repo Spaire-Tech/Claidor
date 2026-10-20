@@ -119,7 +119,7 @@ struct ComputerTabPreview: View {
     let helpers = store.computerHelpers(id)
     let first = helpers.first
     let url = open ? nil : status?.screenURL
-    let name = agent.name.isEmpty ? "This agent" : agent.name
+    let name = agent.name.isEmpty ? String(localized: "This agent") : agent.name
     VStack(spacing: 10) {
       if let handoff = status?.handoff {
         ComputerAttention(agentId: id, name: name, instruction: handoff.instruction)
@@ -137,7 +137,7 @@ struct ComputerTabPreview: View {
           Color.clear.contentShape(.rect)
         }
         .buttonStyle(.tactile)
-        .accessibilityLabel(first?.title ?? "Open computer")
+        .accessibilityLabel(first?.title ?? String(localized: "Open computer"))
         if !open {
           if url != nil {
             if phase == "unavailable" {
@@ -240,7 +240,7 @@ private struct ComputerAttention: View {
         Text("Needs your attention")
           .font(.system(size: 14, weight: .semibold))
           .foregroundStyle(Ink.attentionInk)
-        Text(blank ? "\(name) needs you" : instruction)
+        Text(blank ? String(localized: "\(name) needs you") : instruction)
           .font(.system(size: 14))
           .foregroundStyle(Ink.primary)
           .fixedSize(horizontal: false, vertical: true)
@@ -379,7 +379,7 @@ struct ComputerBar: View {
     }
     .frame(width: 200)
     .accessibilityElement()
-    .accessibilityLabel(percent.map { "\(Int($0.rounded()))%" } ?? "Loading")
+    .accessibilityLabel(percent.map { "\(Int($0.rounded()))%" } ?? String(localized: "Loading"))
   }
 }
 
@@ -468,7 +468,7 @@ struct HelperStrip: View {
             Button(helper.title) { pick(helper.subagentId) }
           }
         } label: {
-          tile("and \(more) more")
+          tile(String(localized: "and \(more) more"))
         }
         .accessibilityLabel("Show \(more) more screens")
       }

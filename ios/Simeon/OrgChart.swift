@@ -503,7 +503,7 @@ private struct ChartAgentCard: View {
     let about = agent.description.trimmingCharacters(in: .whitespacesAndNewlines)
     if !about.isEmpty {
       VStack(alignment: .leading, spacing: 6) {
-        chartHeading("About")
+        chartHeading(String(localized: "About"))
         Text(about)
           .font(.system(size: 15))
           .foregroundStyle(Ink.secondary)
@@ -520,7 +520,7 @@ private struct ChartAgentCard: View {
     // Named with its module: SwiftUI brings a `Preview` of its own (the canvas's previews).
     if let entry = agent.lastEntry, let line = SimeonCore.Preview.line(entry), !line.isEmpty {
       VStack(alignment: .leading, spacing: 6) {
-        chartHeading("Last activity")
+        chartHeading(String(localized: "Last activity"))
         Text(line)
           .font(.system(size: 15))
           .foregroundStyle(Ink.secondary)
@@ -675,7 +675,7 @@ private struct ChartExchangeCard: View {
       .frame(width: 28, height: 28)
       VStack(alignment: .leading, spacing: 2) {
         HStack(alignment: .firstTextBaseline, spacing: 6) {
-          Text(author?.name ?? line.authorName ?? "Unknown")
+          Text(author?.name ?? line.authorName ?? String(localized: "Unknown"))
             .font(.system(size: 13, weight: .medium))
             .foregroundStyle(Ink.primary)
           if let time = Chat.listTime(ms: line.timestampMs) {

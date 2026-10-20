@@ -168,7 +168,7 @@ func downloadName(suggested: String, file: String) -> String {
 private func couldNotSave() {
   let alert = NSAlert()
   alert.alertStyle = .critical
-  alert.messageText = "Couldn't save this file"
+  alert.messageText = String(localized: "Couldn't save this file")
   alert.addButton(withTitle: "OK")
   if let window = MacServices.shared.mainWindow { alert.beginSheetModal(for: window) } else { alert.runModal() }
 }
@@ -254,10 +254,10 @@ struct FileViewer: View {
         PDFToolbar(control: pdf, look: look)
       }
       HStack(spacing: 8) {
-        HeadButton(symbol: "arrow.down.to.line", label: "Download file", look: look) {
+        HeadButton(symbol: "arrow.down.to.line", label: String(localized: "Download file"), look: look) {
           saveFile(name: item.name, url: item.url, agentId: item.agentId, store: store)
         }
-        HeadButton(symbol: "xmark", label: "Close preview", look: look) { viewers.close() }
+        HeadButton(symbol: "xmark", label: String(localized: "Close preview"), look: look) { viewers.close() }
       }
     }
     .padding(.top, 8)
@@ -273,7 +273,7 @@ struct FileViewer: View {
     case .pdf: return pdf.pages > 0 ? FilePreview.pagesLine(pdf.pages) : nil
     case .table: return sheet.map { FilePreview.rowsLine($0.totalRows) }
     case .text, .markdown:
-      return cut ? "Showing the start of this file" : nil
+      return cut ? String(localized: "Showing the start of this file") : nil
     default: return nil
     }
   }
@@ -286,7 +286,7 @@ struct FileViewer: View {
     case nil:
       ViewerState(look: look, loading: loadingWords)
     case .missing?:
-      ViewerState(look: look, symbol: symbol, title: "File unavailable")
+      ViewerState(look: look, symbol: symbol, title: String(localized: "File unavailable"))
     case .tooLarge?:
       ViewerState(look: look, symbol: symbol, title: tooLarge.title, detail: tooLarge.detail, action: downloadButton)
     case .ready(let data)?:
@@ -301,7 +301,7 @@ struct FileViewer: View {
       if let document {
         PDFBody(document: document, control: pdf, zoom: pdf.zoom, look: look)
       } else {
-        ViewerState(look: look, symbol: "doc.richtext", title: "Couldn't render this PDF", action: downloadButton)
+        ViewerState(look: look, symbol: "doc.richtext", title: String(localized: "Couldn't render this PDF"), action: downloadButton)
       }
     case .markdown:
       MarkdownPage(text: Self.text(data), look: look)
@@ -315,27 +315,27 @@ struct FileViewer: View {
       } else if FilePreview.fileExtension(item.name) == "xlsx" || FilePreview.fileExtension(item.name) == "xls" {
         QuickLookBody(data: data, name: item.name)
       } else {
-        ViewerState(look: look, symbol: "tablecells", title: "Couldn't read this spreadsheet")
+        ViewerState(look: look, symbol: "tablecells", title: String(localized: "Couldn't read this spreadsheet"))
       }
     case .docx, .audio:
       QuickLookBody(data: data, name: item.name)
     case .image, .video, .unknown:
-      ViewerState(look: look, symbol: "doc", title: "Preview not available", detail: "This file type can't be previewed. Download it to open it on your computer.", action: downloadButton)
+      ViewerState(look: look, symbol: "doc", title: String(localized: "Preview not available"), detail: String(localized: "This file type can't be previewed. Download it to open it on your computer."), action: downloadButton)
     }
   }
 
   private var downloadButton: AnyView {
-    AnyView(CardButton(title: "Download", prominent: false, look: look) {
+    AnyView(CardButton(title: String(localized: "Download"), prominent: false, look: look) {
       saveFile(name: item.name, url: item.url, agentId: item.agentId, store: store)
     })
   }
 
   private var loadingWords: String {
     switch kind {
-    case .pdf: return "Loading PDF…"
-    case .table: return "Loading spreadsheet…"
-    case .docx: return "Loading document…"
-    default: return "Loading file…"
+    case .pdf: return String(localized: "Loading PDF…")
+    case .table: return String(localized: "Loading spreadsheet…")
+    case .docx: return String(localized: "Loading document…")
+    default: return String(localized: "Loading file…")
     }
   }
 
@@ -350,10 +350,10 @@ struct FileViewer: View {
 
   private var tooLarge: (title: String, detail: String) {
     switch kind {
-    case .pdf: return ("PDF too large to preview", "This PDF is too large to preview here. Download it to open in your PDF reader.")
-    case .table: return ("Spreadsheet too large to preview", "This spreadsheet is too large to preview here. Download it to open it in full.")
-    case .docx: return ("Document too large to preview", "This document is too large to preview here. Download it to open it in Word.")
-    default: return ("File too large to preview", "This file is too large to preview here. Download it to open it in full.")
+    case .pdf: return (String(localized: "PDF too large to preview"), String(localized: "This PDF is too large to preview here. Download it to open in your PDF reader."))
+    case .table: return (String(localized: "Spreadsheet too large to preview"), String(localized: "This spreadsheet is too large to preview here. Download it to open it in full."))
+    case .docx: return (String(localized: "Document too large to preview"), String(localized: "This document is too large to preview here. Download it to open it in Word."))
+    default: return (String(localized: "File too large to preview"), String(localized: "This file is too large to preview here. Download it to open it in full."))
     }
   }
 

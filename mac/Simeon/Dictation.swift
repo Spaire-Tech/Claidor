@@ -38,10 +38,10 @@ final class Dictation {
   static let longest: TimeInterval = 300
   static let shortest: TimeInterval = 0.5
 
-  static let denied = "Microphone access denied. Please enable microphone permissions in your system settings."
-  static let noMicrophone = "No microphone found. Please connect a microphone and try again."
-  static let network = "Network connection failed. Please check your internet connection."
-  static let failed = "An error occurred with voice input. Please try again."
+  static let denied = String(localized: "Microphone access denied. Please enable microphone permissions in your system settings.")
+  static let noMicrophone = String(localized: "No microphone found. Please connect a microphone and try again.")
+  static let network = String(localized: "Network connection failed. Please check your internet connection.")
+  static let failed = String(localized: "An error occurred with voice input. Please try again.")
 
   var isListening: Bool { phase == .asking || phase == .recording }
 

@@ -153,10 +153,10 @@ struct SelectionBar: View {
         .help("Move \(movable.count) selected agents to section")
         .accessibilityLabel("Move \(movable.count) selected agents to section")
       }
-      PickedButton(symbol: "trash", label: "Delete \(count) selected agents") {
+      PickedButton(symbol: "trash", label: String(localized: "Delete \(count) selected agents")) {
         SidebarActions.confirmDelete(picked, store: store, sidebar: sidebar)
       }
-      PickedButton(symbol: "xmark", label: "Clear selection") {
+      PickedButton(symbol: "xmark", label: String(localized: "Clear selection")) {
         sidebar.selection.clear()
       }
     }

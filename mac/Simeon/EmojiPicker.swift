@@ -53,7 +53,7 @@ struct EmojiPicker: View {
                 .foregroundStyle(look.inkSecondary)
                 .padding(.top, 8)
             } else {
-              section("Results", found)
+              section(String(localized: "Results"), found)
             }
           } else {
             ForEach(EmojiCatalog.categories) { category in

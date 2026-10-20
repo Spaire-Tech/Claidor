@@ -153,7 +153,7 @@ final class Purchases {
 
   /** Signed transactions, with their renewal info where StoreKit has it, to the server; finished once it has them. Nil when applied, else what to say. */
   private func deliver(_ results: [VerificationResult<Transaction>]) async -> String? {
-    guard let store else { return "Sign in to Simeon to continue" }
+    guard let store else { return String(localized: "Sign in to Simeon to continue") }
     var signed: [String] = []
     var renewals: [String] = []
     for result in results {

@@ -1,0 +1,26 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Needs you: %@" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A besoin de toi : %@"
+          }
+        }
+      }
+    },
+    "Needs your input." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A besoin de ta réponse."
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

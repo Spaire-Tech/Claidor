@@ -128,12 +128,12 @@ private struct ComputerDialogCard: View {
             window.computerAsk = .recover(fromSidebar: false)
           }
           // Retry only waits two minutes more; the stream comes back by itself (`B$n` `retry`).
-          DialogButton(title: "Retry", style: .primary, look: look) { driver.keepWaiting() }
+          DialogButton(title: String(localized: "Retry"), style: .primary, look: look) { driver.keepWaiting() }
         }
       case .recoverConfirm(let fromSidebar):
         let can = fromSidebar ? driver.canReset : driver.canRecover
         SimpleDialog(title: RebuildWords.recoverTitle, message: RebuildWords.recoverBody, width: 440, look: look) {
-          DialogButton(title: "Cancel", style: .neutral, focused: true, look: look) { window.computerAsk = nil }
+          DialogButton(title: String(localized: "Cancel"), style: .neutral, focused: true, look: look) { window.computerAsk = nil }
           DialogButton(title: RebuildWords.recoverButton, style: .primary, disabled: driver.isBlocked || pending || !can, look: look) {
             window.computerAsk = nil
             // The sidebar's recovery is the window's reset (`forceRecreateComputer`, "Resetting Simeon's Computer").
@@ -143,7 +143,7 @@ private struct ComputerDialogCard: View {
       case .failed(let kind, _):
         let can = kind == .update ? driver.canUpdate : kind == .reset ? driver.canReset : driver.canRecover
         SimpleDialog(title: RebuildWords.failedTitle(kind), message: RebuildWords.failedBody(kind), width: 440, look: look) {
-          DialogButton(title: "Dismiss", style: .neutral, focused: true, look: look) { driver.dismissFailure() }
+          DialogButton(title: String(localized: "Dismiss"), style: .neutral, focused: true, look: look) { driver.dismissFailure() }
           DialogButton(title: RebuildWords.retry(kind), style: kind == .reset ? .destructive : .primary, disabled: driver.isBlocked || pending || !can, look: look) {
             switch kind {
             case .update: driver.update()
@@ -382,7 +382,7 @@ private struct RebuildDialog: View {
               }
               .frame(height: 18)
               .accessibilityElement(children: .ignore)
-              .accessibilityLabel(step.label + (step.state == .done ? ", completed" : step.state == .active ? ", in progress" : ", not started"))
+              .accessibilityLabel(step.label + (step.state == .done ? ", completed" : step.state == .active ? String(localized: ", in progress") : String(localized: ", not started")))
             }
           }
           HStack(spacing: 8) {
@@ -674,8 +674,8 @@ struct RosterCard: View {
       }
       .foregroundStyle(look.inkSecondary)
       Text(blocked
-           ? "Simeon can\u{2019}t set up a computer for this account yet. Setup starts automatically once this account has access."
-           : "Your agents are safe \u{2014} they just can\u{2019}t be loaded right now." + (canRecover ? " If it doesn\u{2019}t come back on its own, recover it \u{2014} your files and logins are kept." : ""))
+           ? String(localized: "Simeon can\u{2019}t set up a computer for this account yet. Setup starts automatically once this account has access.")
+           : String(localized: "Your agents are safe \u{2014} they just can\u{2019}t be loaded right now.") + (canRecover ? String(localized: " If it doesn\u{2019}t come back on its own, recover it \u{2014} your files and logins are kept.") : ""))
         .font(.system(size: 12))
         .cssLineHeight(16, size: 12)
         .foregroundStyle(look.inkSecondary)
@@ -690,11 +690,11 @@ struct RosterCard: View {
           }
           .frame(height: 26)
         } else {
-          SidebarPillButton(title: "Retry", look: look) { Task { await store.retryRoster() } }
+          SidebarPillButton(title: String(localized: "Retry"), look: look) { Task { await store.retryRoster() } }
         }
         if canRecover {
           let recovering = driver.pendingKind == .reset || driver.lock.kind == .reset
-          SidebarPillButton(title: recovering ? "Recovering\u{2026}" : "Recover computer", look: look) {
+          SidebarPillButton(title: recovering ? String(localized: "Recovering\u{2026}") : String(localized: "Recover computer"), look: look) {
             window.computerAsk = .recover(fromSidebar: true)
           }
           .disabled(recovering)
@@ -787,7 +787,7 @@ struct ComputerUpdatePill: View {
     let queued = driver.isUpdateQueued && driver.canUpdate && driver.pendingKind == nil && !driver.isBlocked
     let offered = !queued && store.computerUpdateAvailable && store.computerUpdateOffer != nil
     if queued || offered {
-      let label = queued ? "Update queued \u{2014} click to cancel" : "A new version of Simeon's computer is available"
+      let label = queued ? String(localized: "Update queued \u{2014} click to cancel") : String(localized: "A new version of Simeon's computer is available")
       Button {
         if queued { driver.cancelQueuedUpdate() } else { window.computerAsk = .update }
       } label: {

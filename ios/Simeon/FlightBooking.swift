@@ -26,7 +26,7 @@ struct FlightPassengersCardView: View {
         VStack(alignment: .leading, spacing: 2) {
           HStack(spacing: 6) {
             Text(FlightPassengersCard.title).font(.system(size: 17, weight: .medium)).foregroundStyle(Ink.theirsText)
-            if card.flight.isTest { StatusPill(text: "Test", size: 12) }
+            if card.flight.isTest { StatusPill(text: String(localized: "Test"), size: 12) }
           }
           Text(card.flight.route).font(.system(size: 13)).foregroundStyle(Ink.fineGrey).fixedSize(horizontal: false, vertical: true)
         }
@@ -176,7 +176,7 @@ struct TravellersSheet: View {
       Haptics.press()
       dismiss()
     } else {
-      problem = (answer.index ?? 0, answer.message ?? "That didn't work.")
+      problem = (answer.index ?? 0, answer.message ?? String(localized: "That didn't work."))
     }
   }
 }
@@ -193,7 +193,7 @@ private struct TravellerSection: View {
     Section {
       TextField("First name", text: $traveller.givenName).textContentType(.givenName)
       TextField("Last name", text: $traveller.familyName).textContentType(.familyName)
-      Picker("Title", selection: $traveller.title) {
+      Picker(String(localized: "traveller.title", defaultValue: "Title"), selection: $traveller.title) {
         Text("Choose").tag(Traveller.Title?.none)
         ForEach(Traveller.Title.allCases, id: \.self) { title in Text(title.label).tag(Traveller.Title?.some(title)) }
       }
@@ -201,7 +201,7 @@ private struct TravellerSection: View {
         Text("Choose").tag(Traveller.Gender?.none)
         ForEach(Traveller.Gender.allCases, id: \.self) { gender in Text(gender.label).tag(Traveller.Gender?.some(gender)) }
       }
-      DayField(label: "Date of birth", day: $traveller.bornOn, range: Calendar.current.date(byAdding: .year, value: -120, to: Date())!...Date(), start: Calendar.current.date(byAdding: .year, value: -30, to: Date())!)
+      DayField(label: String(localized: "Date of birth"), day: $traveller.bornOn, range: Calendar.current.date(byAdding: .year, value: -120, to: Date())!...Date(), start: Calendar.current.date(byAdding: .year, value: -30, to: Date())!)
       TextField("Email", text: $traveller.email).textContentType(.emailAddress).keyboardType(.emailAddress).typedAsIs()
       TextField("Phone, with country code", text: $traveller.phone).textContentType(.telephoneNumber).keyboardType(.phonePad)
       if passportNeeded || showsPassport {
@@ -210,7 +210,7 @@ private struct TravellerSection: View {
           Text("Choose").tag("")
           ForEach(CountryName.all) { country in Text(country.name).tag(country.code) }
         }
-        DayField(label: "Passport expires", day: $traveller.passportExpires, range: Date()...Calendar.current.date(byAdding: .year, value: 20, to: Date())!, start: Calendar.current.date(byAdding: .year, value: 1, to: Date())!)
+        DayField(label: String(localized: "Passport expires"), day: $traveller.passportExpires, range: Date()...Calendar.current.date(byAdding: .year, value: 20, to: Date())!, start: Calendar.current.date(byAdding: .year, value: 1, to: Date())!)
       } else {
         Button("Add passport") { showsPassport = true }
       }

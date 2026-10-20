@@ -30,14 +30,14 @@ struct DiagramViewer: View {
       DiagramWeb(html: DiagramViewer.html(source, look: look), page: page) { viewers.close() }
     }
     .overlay(alignment: .topTrailing) {
-      RoundIcon(symbol: "xmark", label: "Close diagram preview", ground: Color.black.opacity(0.4)) { viewers.close() }
+      RoundIcon(symbol: "xmark", label: String(localized: "Close diagram preview"), ground: Color.black.opacity(0.4)) { viewers.close() }
         .padding(16)
     }
     .overlay(alignment: .bottom) {
       HStack(spacing: 4) {
-        RoundIcon(symbol: "minus.magnifyingglass", label: "Zoom out") { page.run("zoomBy(\(1 / DiagramViewer.step))") }
-        RoundIcon(symbol: "plus.magnifyingglass", label: "Zoom in") { page.run("zoomBy(\(DiagramViewer.step))") }
-        RoundIcon(symbol: "arrow.up.left.and.arrow.down.right", label: "Fit to screen") { page.run("fit()") }
+        RoundIcon(symbol: "minus.magnifyingglass", label: String(localized: "Zoom out")) { page.run("zoomBy(\(1 / DiagramViewer.step))") }
+        RoundIcon(symbol: "plus.magnifyingglass", label: String(localized: "Zoom in")) { page.run("zoomBy(\(DiagramViewer.step))") }
+        RoundIcon(symbol: "arrow.up.left.and.arrow.down.right", label: String(localized: "Fit to screen")) { page.run("fit()") }
       }
       .padding(4)
       .background(Color.black.opacity(0.5), in: Capsule())

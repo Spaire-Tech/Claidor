@@ -138,15 +138,15 @@ final class Dictation {
     problem = nil
     Task {
       let speech = await withCheckedContinuation { continuation in SFSpeechRecognizer.requestAuthorization { continuation.resume(returning: $0) } }
-      guard speech == .authorized else { problem = "Simeon can't use speech recognition. Allow it in Settings."; return }
-      guard await AVAudioApplication.requestRecordPermission() else { problem = "Simeon can't use the microphone. Allow it in Settings."; return }
-      guard let recognizer = SFSpeechRecognizer(), recognizer.isAvailable else { problem = "Dictation isn't available right now."; return }
-      do { try begin(recognizer, write) } catch { problem = "Dictation didn't start: \(error.localizedDescription)"; stop() }
+      guard speech == .authorized else { problem = String(localized: "Simeon can't use speech recognition. Allow it in Settings."); return }
+      guard await AVAudioApplication.requestRecordPermission() else { problem = String(localized: "Simeon can't use the microphone. Allow it in Settings."); return }
+      guard let recognizer = SFSpeechRecognizer(), recognizer.isAvailable else { problem = String(localized: "Dictation isn't available right now."); return }
+      do { try begin(recognizer, write) } catch { problem = String(localized: "Dictation didn't start: \(error.localizedDescription)"); stop() }
     }
   }
 
   struct NoMicrophone: LocalizedError {
-    var errorDescription: String? { "no microphone is available" }
+    var errorDescription: String? { String(localized: "no microphone is available") }
   }
 
   private func begin(_ recognizer: SFSpeechRecognizer, _ write: @escaping (String) -> Void) throws {

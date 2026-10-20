@@ -331,7 +331,7 @@ final class SessionController {
     api = nil
     askedForNotifications = false
     forgetFirstRun()
-    phase = .signedOut(message: "Your Simeon sign-in ended. Sign in again.")
+    phase = .signedOut(message: String(localized: "Your Simeon sign-in ended. Sign in again."))
   }
 
   /**
@@ -385,9 +385,9 @@ final class SessionController {
     case .stopped:
       phase = .signedOut(message: nil)
     case .refused:
-      phase = .signedOut(message: "This account can't sign in to Simeon here.")
+      phase = .signedOut(message: String(localized: "This account can't sign in to Simeon here."))
     case .gaveUp:
-      phase = .signedOut(message: "Sign-in did not finish. Try again.")
+      phase = .signedOut(message: String(localized: "Sign-in did not finish. Try again."))
     }
   }
 
@@ -534,7 +534,7 @@ final class SessionController {
 
   /** Settings › Delete Account: nil once the account is gone (and the app signed out), else why not. */
   func deleteAccount() async -> String? {
-    guard let api else { return "Sign in to Simeon first." }
+    guard let api else { return String(localized: "Sign in to Simeon first.") }
     // When the answer never came but the account went (`SimeonAPI.deleteAccount`), the plan read before says whether Apple bills one.
     let applePlan = store.usage.summary?.billedByApple == true
     let appleRunsOn: Bool
@@ -662,7 +662,7 @@ final class AppConnector {
     session.prefersEphemeralWebBrowserSession = false
     self.session = session
     guard session.start() else {
-      store.problem = "The sign-in page didn't open. Try again."
+      store.problem = String(localized: "The sign-in page didn't open. Try again.")
       return .cancelled
     }
     for _ in 0..<150 {
@@ -697,7 +697,7 @@ final class BillingPage {
     guard session == nil else { return nil }
     let paymentFailed = store.usage.summary?.paymentFailed == true
     let answer = await store.billingPortal(flow: flow, tier: tier, back: AppPlatform.urlScheme)
-    guard let url = answer.url else { return answer.message ?? "Couldn’t open billing. Try again." }
+    guard let url = answer.url else { return answer.message ?? String(localized: "Couldn’t open billing. Try again.") }
     let finished: Bool
     do {
       _ = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<URL, Error>) in

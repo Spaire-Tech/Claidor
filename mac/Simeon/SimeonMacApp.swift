@@ -142,7 +142,7 @@ private struct CallItem: View {
 
   var body: some View {
     let callee = store.agents.first { $0.id == window.selected && !$0.isGroup }
-    Button(callee.map { "Call \($0.name)" } ?? "Call Agent") {
+    Button(callee.map { String(localized: "Call \($0.name)") } ?? String(localized: "Call Agent")) {
       if let callee { CallActions.call(callee, store: store) }
     }
     .disabled(callee == nil)

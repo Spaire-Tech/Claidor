@@ -129,13 +129,13 @@ struct ProfileTab: View {
   var body: some View {
     let locked = Agent.chiefOfStaff(in: store.agents)?.id == agent.id
     VStack(alignment: .leading, spacing: 0) {
-      ProfileField(label: "Name", placeholder: "Bob", stored: agent.name, readOnly: false, required: true) { save(name: $0) }
+      ProfileField(label: String(localized: "Name"), placeholder: String(localized: "Bob"), stored: agent.name, readOnly: false, required: true) { save(name: $0) }
       line
       if !agent.isGroup {
-        ProfileField(label: "Title", placeholder: "Describe what your agent does", stored: agent.title, readOnly: locked, required: false) { save(title: $0) }
+        ProfileField(label: String(localized: "Title"), placeholder: String(localized: "Describe what your agent does"), stored: agent.title, readOnly: locked, required: false) { save(title: $0) }
         line
       }
-      ProfileField(label: "Description", placeholder: "What this agent is for", stored: agent.description, readOnly: locked && !agent.isGroup, required: false, multiline: true) { save(description: $0) }
+      ProfileField(label: String(localized: "Description"), placeholder: String(localized: "What this agent is for"), stored: agent.description, readOnly: locked && !agent.isGroup, required: false, multiline: true) { save(description: $0) }
       line
       if !agent.isGroup {
         HStack(spacing: 14) {

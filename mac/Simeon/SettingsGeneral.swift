@@ -17,15 +17,15 @@ struct SettingsGeneralPage: View {
 
   var body: some View {
     VStack(alignment: .leading, spacing: 28) {
-      SettingsSection(title: "Account", look: look) {
+      SettingsSection(title: String(localized: "Account"), look: look) {
         AccountCard(look: look)
         DeleteAccountRow(look: look)
       }
-      SettingsSection(title: "Appearance", look: look) {
+      SettingsSection(title: String(localized: "Appearance"), look: look) {
         ThemeRow(look: look)
         LanguageRow(look: look)
       }
-      SettingsSection(title: "Agent", look: look) {
+      SettingsSection(title: String(localized: "Agent"), look: look) {
         TimezoneRow(model: model, look: look)
         ExecutionRow(model: model, look: look)
         AutoReviewRow(model: model, look: look)
@@ -33,7 +33,7 @@ struct SettingsGeneralPage: View {
           AutoReviewRules(model: model, look: look)
         }
       }
-      SettingsSection(title: "Security Key", look: look) {
+      SettingsSection(title: String(localized: "Security Key"), look: look) {
         SecurityKeyRow(look: look)
       }
     }
@@ -230,7 +230,7 @@ private struct AccountCard: View {
       }
       .frame(maxWidth: .infinity, alignment: .leading)
       .accessibilityElement(children: .combine)
-      SettingsButton(title: "Sign Out", look: look) { AccountActions.askToSignOut(session: session, settings: settings) }
+      SettingsButton(title: String(localized: "Sign Out"), look: look) { AccountActions.askToSignOut(session: session, settings: settings) }
     }
     .padding(.vertical, 14)
     .padding(.horizontal, 16)
@@ -305,8 +305,8 @@ private struct ThemeRow: View {
   @AppStorage(MacTheme.key) private var theme = "system"
 
   var body: some View {
-    SettingsRow(label: "Theme", look: look) {
-      SettingsSelect(label: "Theme", options: [(value: "system", label: "Follow System"), (value: "light", label: "Light"), (value: "dark", label: "Dark")],
+    SettingsRow(label: String(localized: "Theme"), look: look) {
+      SettingsSelect(label: String(localized: "Theme"), options: [(value: "system", label: String(localized: "Follow System")), (value: "light", label: String(localized: "Light")), (value: "dark", label: String(localized: "Dark"))],
                      value: ["light", "dark"].contains(theme) ? theme : "system", look: look) { MacTheme.set($0) }
     }
   }
@@ -323,10 +323,10 @@ private struct LanguageRow: View {
 
   var body: some View {
     let waiting = chosen != MacLanguage.atLaunch
-    SettingsRow(label: "Language", hints: waiting ? [String(localized: "Relaunch Simeon to use it.")] : [], look: look) {
+    SettingsRow(label: String(localized: "Language"), hints: waiting ? [String(localized: "Relaunch Simeon to use it.")] : [], look: look) {
       HStack(spacing: 8) {
         if waiting { SettingsButton(title: String(localized: "Relaunch"), kind: .primary, look: look) { MacLanguage.relaunch() } }
-        SettingsSelect(label: "Language", options: MacLanguage.options, value: chosen, look: look) { value in
+        SettingsSelect(label: String(localized: "Language"), options: MacLanguage.options, value: chosen, look: look) { value in
           MacLanguage.choose(value)
           chosen = value
         }
@@ -379,8 +379,8 @@ private struct TimezoneRow: View {
 
   var body: some View {
     let auto = TimeZoneChoices.automatic
-    SettingsRow(label: "Timezone", look: look) {
-      SettingsSelect(label: "Timezone", options: [(value: auto, label: TimeZoneChoices.automaticLabel(detected: model.detectedZone))],
+    SettingsRow(label: String(localized: "Timezone"), look: look) {
+      SettingsSelect(label: String(localized: "Timezone"), options: [(value: auto, label: TimeZoneChoices.automaticLabel(detected: model.detectedZone))],
                      value: model.zoneOverride ?? auto, pending: model.zonePending,
                      shown: TimeZoneChoices.triggerLabel(override: model.zoneOverride, detected: model.detectedZone), look: look,
                      menu: { frame in zoneMenu(under: frame) }) { _ in }
@@ -392,7 +392,7 @@ private struct TimezoneRow: View {
     let known = TimeZone.knownTimeZoneIdentifiers.sorted()
     let values = TimeZoneChoices.values(override: model.zoneOverride, known: known)
     let current = model.zoneOverride ?? TimeZoneChoices.automatic
-    let menu = NSMenu(title: "Timezone")
+    let menu = NSMenu(title: String(localized: "Timezone"))
     menu.autoenablesItems = false
     menu.minimumWidth = 424
     let grey = NSColor(look.inkTertiary)
@@ -442,7 +442,7 @@ private struct AutoReviewRow: View {
   @Environment(AppStore.self) private var store
 
   var body: some View {
-    SettingsRow(label: "Auto-review", hints: ["Simeon checks each action before it runs and asks you first when needed. Add rules to customize what it can do automatically."], divided: true, look: look) {
+    SettingsRow(label: String(localized: "Auto-review"), hints: [String(localized: "Simeon checks each action before it runs and asks you first when needed. Add rules to customize what it can do automatically.")], divided: true, look: look) {
       Toggle("", isOn: Binding(get: { model.rules.isEnabled }, set: { @MainActor on in model.setReviewing(on, store: store) }))
         .toggleStyle(.switch)
         .labelsHidden()
@@ -479,11 +479,11 @@ private struct AutoReviewRules: View {
           .fixedSize(horizontal: false, vertical: true)
       }
       VStack(alignment: .leading, spacing: 28) {
-        RuleComposer(text: $model.draft, behavior: $model.behavior, label: "Auto-review rule draft", focusOnAppear: false,
+        RuleComposer(text: $model.draft, behavior: $model.behavior, label: String(localized: "Auto-review rule draft"), focusOnAppear: false,
                      disabled: model.editing != nil || model.rulesPending,
                      showsLimit: AutoReviewInstructions.isFull(model.rules.list(model.behavior)), look: look,
                      submit: { model.add(store: store) }, cancel: { model.clearDraft() }) {
-          SettingsButton(title: "Add Rule", kind: .primary, disabled: !model.canAdd, look: look) { model.add(store: store) }
+          SettingsButton(title: String(localized: "Add Rule"), kind: .primary, disabled: !model.canAdd, look: look) { model.add(store: store) }
             .accessibilityLabel("Add rule")
         }
         if !model.rules.rules.isEmpty {
@@ -549,7 +549,7 @@ private struct RuleComposer<Buttons: View>: View {
           .font(.system(size: 13))
           .foregroundStyle(look.ink)
         HStack(spacing: 8) {
-          SettingsSelect(label: "Rule behavior", options: AutoReviewInstructions.Behavior.allCases.map { (value: $0, label: AutoReviewInstructions.label($0)) },
+          SettingsSelect(label: String(localized: "Rule behavior"), options: AutoReviewInstructions.Behavior.allCases.map { (value: $0, label: AutoReviewInstructions.label($0)) },
                          value: behavior, pending: disabled, look: look) { behavior = $0 }
           Spacer(minLength: 0)
           if showsLimit {
@@ -646,8 +646,8 @@ private struct RuleRow: View {
         .lineLimit(1)
         .frame(width: columns.behavior, alignment: .leading)
       HStack(spacing: 6) {
-        RuleIconButton(systemImage: "square.and.pencil", label: "Edit rule \(number)", disabled: model.editing != nil || model.rulesPending, look: look) { model.edit(rule) }
-        RuleIconButton(systemImage: "trash", label: "Delete rule \(number)", disabled: model.rulesPending, look: look) { model.delete(rule, store: store) }
+        RuleIconButton(systemImage: "square.and.pencil", label: String(localized: "Edit rule \(number)"), disabled: model.editing != nil || model.rulesPending, look: look) { model.edit(rule) }
+        RuleIconButton(systemImage: "trash", label: String(localized: "Delete rule \(number)"), disabled: model.rulesPending, look: look) { model.delete(rule, store: store) }
       }
       .frame(width: 52, alignment: .trailing)
     }
@@ -672,11 +672,11 @@ private struct RuleEditorRow: View {
       let moving = editing.behavior != editing.rule.behavior && AutoReviewInstructions.isFull(model.rules.list(editing.behavior))
       RuleComposer(text: Binding(get: { model.editing?.text ?? "" }, set: { @MainActor in model.editing?.text = $0 }),
                    behavior: Binding(get: { model.editing?.behavior ?? .allow }, set: { @MainActor in model.editing?.behavior = $0 }),
-                   label: "Edit action for rule \(number)", focusOnAppear: true, disabled: model.rulesPending, showsLimit: moving, look: look,
+                   label: String(localized: "Edit action for rule \(number)"), focusOnAppear: true, disabled: model.rulesPending, showsLimit: moving, look: look,
                    submit: { model.save(store: store) }, cancel: { model.editing = nil }) {
-        SettingsButton(title: "Cancel", look: look) { model.editing = nil }
+        SettingsButton(title: String(localized: "Cancel"), look: look) { model.editing = nil }
           .accessibilityLabel("Cancel editing rule")
-        SettingsButton(title: "Save Rule", kind: .primary, disabled: !model.canSave, look: look) { model.save(store: store) }
+        SettingsButton(title: String(localized: "Save Rule"), kind: .primary, disabled: !model.canSave, look: look) { model.save(store: store) }
           .accessibilityLabel("Save rule \(number)")
       }
       .padding(12)
@@ -732,8 +732,8 @@ private struct SecurityKeyRow: View {
   @State private var pending = false
 
   var body: some View {
-    SettingsRow(label: "Use hardware security keys",
-                hints: ["Allow Simeon to use a security key (such as a YubiKey) connected to your computer. You’ll be asked to approve each use."], look: look) {
+    SettingsRow(label: String(localized: "Use hardware security keys"),
+                hints: [String(localized: "Allow Simeon to use a security key (such as a YubiKey) connected to your computer. You’ll be asked to approve each use.")], look: look) {
       Toggle("", isOn: Binding(get: { enabled }, set: { set($0) }))
         .toggleStyle(.switch)
         .labelsHidden()

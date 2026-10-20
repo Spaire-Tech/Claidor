@@ -26,7 +26,7 @@ struct SettingsUsagePage: View {
               .font(.system(size: 12))
               .foregroundStyle(look.danger)
               .frame(maxWidth: .infinity, alignment: .leading)
-            SettingsButton(title: "Retry", small: true, disabled: store.usage.isLoading, look: look) {
+            SettingsButton(title: String(localized: "Retry"), small: true, disabled: store.usage.isLoading, look: look) {
               Task { await store.refreshUsage() }
             }
           }
@@ -52,7 +52,7 @@ private struct UsageSection: View {
 
   var body: some View {
     let meters = UsageMeters(summary, now: now)
-    SettingsSection(title: "Usage", look: look) {
+    SettingsSection(title: String(localized: "Usage"), look: look) {
       if let weekly = meters.weekly {
         UsageMeterRow(title: meters.includedUsageTitle, meter: weekly, look: look)
       } else {
@@ -144,10 +144,10 @@ private struct CancelTrialButton: View {
   @Environment(AppStore.self) private var store
 
   var body: some View {
-    SettingsButton(title: "Cancel Trial", kind: .tertiary, small: true, look: look) {
-      PendingAlert.ask(title: "Cancel your trial?",
-                       message: "This ends your Simeon trial now and removes your remaining trial credits. Your card won’t be charged either way — the trial never turns into a paid plan on its own.",
-                       confirm: "Cancel Trial", cancel: "Keep Trial", destructive: true, pendingTitle: "Canceling…") {
+    SettingsButton(title: String(localized: "Cancel Trial"), kind: .tertiary, small: true, look: look) {
+      PendingAlert.ask(title: String(localized: "Cancel your trial?"),
+                       message: String(localized: "This ends your Simeon trial now and removes your remaining trial credits. Your card won’t be charged either way — the trial never turns into a paid plan on its own."),
+                       confirm: String(localized: "Cancel Trial"), cancel: String(localized: "Keep Trial"), destructive: true, pendingTitle: String(localized: "Canceling…")) {
         await store.cancelTrial()
       }
     }
@@ -190,7 +190,7 @@ private struct ManagePlanCard: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             if let next = plan.nextTier {
-              PlanPill(title: opening == "upgrade" ? "Opening…" : "Upgrade to \(next.label)", strong: true, disabled: opening != nil, look: look) {
+              PlanPill(title: opening == "upgrade" ? String(localized: "Opening…") : String(localized: "Upgrade to \(next.label)"), strong: true, disabled: opening != nil, look: look) {
                 open("upgrade", flow: "update_confirm", tier: next.tier)
               }
             }
@@ -200,7 +200,7 @@ private struct ManagePlanCard: View {
               .font(.system(size: 13))
               .foregroundStyle(look.ink)
               .frame(maxWidth: .infinity, alignment: .leading)
-            PlanPill(title: opening == "billing" ? "Opening…" : "Manage Billing \u{2197}", strong: false, disabled: opening != nil, look: look) {
+            PlanPill(title: opening == "billing" ? String(localized: "Opening…") : String(localized: "Manage Billing \u{2197}"), strong: false, disabled: opening != nil, look: look) {
               open("billing", flow: nil, tier: nil)
             }
           }

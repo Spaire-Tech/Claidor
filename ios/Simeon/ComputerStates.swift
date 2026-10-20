@@ -409,7 +409,7 @@ private struct RebuildSheet: View {
               .foregroundStyle(Ink.primary)
           }
           .accessibilityElement(children: .ignore)
-          .accessibilityLabel(step.label + (step.state == .done ? ", completed" : step.state == .active ? ", in progress" : ", not started"))
+          .accessibilityLabel(step.label + (step.state == .done ? ", completed" : step.state == .active ? String(localized: ", in progress") : String(localized: ", not started")))
         }
       }
       .padding(.top, 20)

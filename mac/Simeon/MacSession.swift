@@ -118,9 +118,9 @@ final class MacSession {
       case .stopped:
         self.phase = .signedOut(message: nil)
       case .refused:
-        self.phase = .signedOut(message: "Sign-in on this device is restricted by your organization's device policy. Sign in with an allowed account to continue.")
+        self.phase = .signedOut(message: String(localized: "Sign-in on this device is restricted by your organization's device policy. Sign in with an allowed account to continue."))
       case .gaveUp:
-        self.phase = .signedOut(message: "Sign-in did not finish. Try again.")
+        self.phase = .signedOut(message: String(localized: "Sign-in did not finish. Try again."))
       }
     }
   }
@@ -210,7 +210,7 @@ final class MacSession {
     store.detach()
     Self.savedGateway.write(nil)
     api = nil
-    phase = .signedOut(message: "Your Simeon sign-in expired. Sign in again.")
+    phase = .signedOut(message: String(localized: "Your Simeon sign-in expired. Sign in again."))
   }
 
   /** The plan was bought in the iPhone app, so Apple bills it (the usage summary's `billedBy`): the delete question says so. */
@@ -223,7 +223,7 @@ final class MacSession {
    * sentence (nothing was deleted; try again later).
    */
   func deleteAccount() async -> String? {
-    guard let api else { return "Sign in to Simeon first." }
+    guard let api else { return String(localized: "Sign in to Simeon first.") }
     // When the answer never came but the account went (`SimeonAPI.deleteAccount`), the plan read before says whether Apple bills one.
     let applePlan = billedByApple
     let appleRunsOn: Bool

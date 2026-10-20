@@ -123,7 +123,7 @@ final class PluginsModel {
 
   /** The box's calls (SimeonCore's `PluginCalls`), or the overlay's words when no one is signed in. */
   private func calls() throws -> PluginCalls {
-    guard let backend = store?.backend else { throw GatewayError(message: "Sign in to Simeon first.", refused: true) }
+    guard let backend = store?.backend else { throw GatewayError(message: String(localized: "Sign in to Simeon first."), refused: true) }
     return PluginCalls(backend)
   }
 
@@ -366,7 +366,7 @@ final class PluginsModel {
   func submitSetup(_ values: [String: String], agentId: String?) async {
     guard let setup else { return }
     let entry = catalog.first { $0.id == setup.entryId }
-    let name = entry?.displayName ?? "the plugin"
+    let name = entry?.displayName ?? String(localized: "the plugin")
     show(nil)
     var installedNew = false
     await reporting {
@@ -386,7 +386,7 @@ final class PluginsModel {
     if let entry {
       await connectAfterInstall(entry, addedNow: false, agentId: agentId)
     } else {
-      show(Plugins.Notice(isError: false, text: "Added \(name)"))
+      show(Plugins.Notice(isError: false, text: String(localized: "Added \(name)")))
     }
   }
 
@@ -412,7 +412,7 @@ final class PluginsModel {
   /** Uninstall of a plugin (`Tt`); the page stays, now with Add. */
   func uninstall(pluginId: String, agentId: String?) async {
     let entry = catalog.first { $0.id == pluginId }
-    let name = entry?.displayName ?? effective[pluginId]?.displayName ?? "the plugin"
+    let name = entry?.displayName ?? effective[pluginId]?.displayName ?? String(localized: "the plugin")
     show(nil)
     await reporting {
       let removal = try await calls().uninstallPlugin(pluginId)

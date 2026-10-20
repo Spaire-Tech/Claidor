@@ -355,7 +355,7 @@ struct NewChatPane: View {
         let names = newChat.recipients.map(\.name).joined(separator: ", ")
         Color.clear
           .overlay(alignment: .bottom) {
-            Composer(agentId: NewChatState.draftKey, name: names.isEmpty ? "Agent" : names, threadRoot: nil, look: look, takesKeys: false) { text, files in
+            Composer(agentId: NewChatState.draftKey, name: names.isEmpty ? String(localized: "Agent") : names, threadRoot: nil, look: look, takesKeys: false) { text, files in
               newChat.submit(text: text, files: files, store: store, window: window)
             }
             .environment(newChat.draftControl)
@@ -552,8 +552,8 @@ private struct RecipientMenu: View {
       Rectangle().fill(look.ink.opacity(0.15)).frame(height: 0.5)
       HStack(spacing: 10) {
         Spacer(minLength: 0)
-        KeyHint(cap: "Tab", label: "add", look: look)
-        KeyHint(cap: "⏎", label: "open", look: look)
+        KeyHint(cap: "Tab", label: String(localized: "add"), look: look)
+        KeyHint(cap: "⏎", label: String(localized: "open"), look: look)
       }
       .padding(.horizontal, 12)
       .frame(height: 36)
@@ -688,7 +688,7 @@ struct ToField: NSViewRepresentable {
     field.usesSingleLineMode = true
     field.cell?.isScrollable = true
     field.delegate = context.coordinator
-    field.setAccessibilityLabel("Search or create Agents")
+    field.setAccessibilityLabel(String(localized: "Search or create Agents"))
     context.coordinator.field = field
     update(field, context: context)
     return field
