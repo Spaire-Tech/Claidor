@@ -72,7 +72,7 @@ extension AppStore {
 
   /** The face's picture to the host, and the face kept on the agent when it was not kept already (with the voice, when one is given with it). */
   private func send(_ face: AgentFace, to agent: Agent, voiceId: String? = nil, backend: AgentBackend) async throws {
-    guard let bytes = AgentFaces.data(face) else { throw GatewayError(message: "The face \(face.id) is missing from the app.", refused: true) }
+    guard let bytes = AgentFaces.data(face) else { throw GatewayError(message: L10n.text("The face \(face.id) is missing from the app."), refused: true) }
     _ = try await backend.command("setAgentAvatarBytes", ["id": .string(agent.id), "pngBase64": .string(bytes.base64EncodedString())])
     guard agent.avatarShape != face.id || voiceId != nil else { return }
     // `updateAgent` always carries the name and the description; the fields left out are kept.

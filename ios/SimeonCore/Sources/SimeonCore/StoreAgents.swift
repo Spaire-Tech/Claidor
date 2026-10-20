@@ -143,11 +143,11 @@ extension AppStore {
   /** A picture drawn from a description for the avatar editor (`images/generations`, as the Mac asks for one); its words on failure. */
   public func generateAvatarImage(_ description: String) async throws -> Data {
     let text = description.trimmingCharacters(in: .whitespacesAndNewlines)
-    guard !text.isEmpty else { throw GatewayError(message: "Describe the avatar to generate first.", refused: true) }
-    guard let backend else { throw GatewayError(message: "Image generation returned no picture.", refused: false) }
+    guard !text.isEmpty else { throw GatewayError(message: L10n.text("Describe the avatar to generate first."), refused: true) }
+    guard let backend else { throw GatewayError(message: L10n.text("Image generation returned no picture."), refused: false) }
     let answer = try await backend.server("proxy/v1/images/generations", method: "POST", body: ["prompt": .string(text), "size": "auto", "quality": "low"])
     guard let base64 = answer["data"]?[0]?["b64_json"]?.text, let bytes = Data(base64Encoded: base64) else {
-      throw GatewayError(message: "Image generation returned no picture.", refused: false)
+      throw GatewayError(message: L10n.text("Image generation returned no picture."), refused: false)
     }
     return bytes
   }
@@ -171,7 +171,7 @@ extension AppStore {
    * introduce itself; `quiet` keeps it from introducing itself at all.
    */
   public func makeAgent(name: String, description: String = "", kickstart: Bool? = nil, quiet: Bool = false) async throws -> String {
-    guard let backend else { throw GatewayError(message: "Can't reach your computer right now. Check your connection and try again.", refused: false) }
+    guard let backend else { throw GatewayError(message: L10n.text("Can't reach your computer right now. Check your connection and try again."), refused: false) }
     var args: JSON = ["name": .string(name), "description": .string(description), "origin": "user"]
     if let kickstart { args = args.setting("isKickstartRequested", .bool(kickstart)) }
     if quiet { args = args.setting("isIntroductionSuppressed", true) }
@@ -183,7 +183,7 @@ extension AppStore {
 
   /** A group of agents (`createGroup`); the host opens the one it already has for the same members. */
   public func makeGroup(name: String, memberIds: [String]) async throws -> String {
-    guard let backend else { throw GatewayError(message: "Can't reach your computer right now. Check your connection and try again.", refused: false) }
+    guard let backend else { throw GatewayError(message: L10n.text("Can't reach your computer right now. Check your connection and try again."), refused: false) }
     let answer = try await backend.command("createGroup", ["name": .string(name), "description": "", "memberAgentIds": JSON(memberIds)])
     guard let id = answer["agent"]?["id"]?.text ?? answer["id"]?.text else { throw GatewayError(message: "createGroup: no group in the answer", refused: true) }
     await reloadRoster()

@@ -31,7 +31,7 @@ public struct ConnectedApp: Identifiable, Hashable, Sendable {
   /** One account of one app. */
   public var id: String { "\(serverId)\u{1F}\(accountKey)" }
   /** The account's name as the Mac shows it: "Default" for the first. */
-  public var accountName: String { accountKey == "default" ? "Default" : accountKey }
+  public var accountName: String { accountKey == "default" ? L10n.text("Default") : accountKey }
 }
 
 /** One tool a connected app gives the agents, and whether the person switched it off (`listServerTools`). */
@@ -415,7 +415,7 @@ public final class AppStore {
       rosterFailed = true
       // The computer refused this account (`EnsureSandBox`'s permission_denied: no plan): the window's access cover, not a failure to report.
       accessBlocked = (error as? SimeonAPIError)?.status == 403
-      if reportsRosterFailure && !accessBlocked { problem = "Couldn't reach your agents: \(error.localizedDescription)" }
+      if reportsRosterFailure && !accessBlocked { problem = L10n.text("Couldn't reach your agents: \(error.localizedDescription)") }
     }
   }
 
@@ -568,7 +568,7 @@ public final class AppStore {
   public func setPinned(_ agentId: String, _ pinned: Bool) async {
     var next = pinnedIds.filter { $0 != agentId }
     if pinned { next.append(agentId) }
-    await writePins(next, failure: pinned ? "Couldn't pin it" : "Couldn't unpin it")
+    await writePins(next, failure: pinned ? L10n.text("Couldn't pin it") : L10n.text("Couldn't unpin it"))
   }
 
   /** Moves a pin to another pin's place (the Mac's drag in the pin grid). */
@@ -577,7 +577,7 @@ public final class AppStore {
     var next = pinnedIds
     next.remove(at: from)
     next.insert(agentId, at: min(max(index, 0), next.count))
-    await writePins(next, failure: "Couldn't move the pin")
+    await writePins(next, failure: L10n.text("Couldn't move the pin"))
   }
 
   /** Shown at once, then written; a refusal puts back what the host holds. */
@@ -597,13 +597,13 @@ public final class AppStore {
       agents[index].hasUnread = unread
       agents[index].unreadCount = unread ? max(agents[index].unreadCount, 1) : 0
     }
-    await command("setAgentUnread", ["id": .string(agentId), "isUnread": .bool(unread), "atMs": .number(Date().timeIntervalSince1970 * 1000)], failure: "Couldn't change it")
+    await command("setAgentUnread", ["id": .string(agentId), "isUnread": .bool(unread), "atMs": .number(Date().timeIntervalSince1970 * 1000)], failure: L10n.text("Couldn't change it"))
   }
 
   /** Hide from the list, or show again (`setAgentHiddenFromSidebar`). A hidden agent keeps working and keeps its history. */
   public func setHidden(_ agentId: String, _ hidden: Bool) async {
     if let index = agents.firstIndex(where: { $0.id == agentId }) { agents[index].isHidden = hidden }
-    if await command("setAgentHiddenFromSidebar", ["id": .string(agentId), "isHidden": .bool(hidden)], failure: hidden ? "Couldn't hide it" : "Couldn't show it again") == nil {
+    if await command("setAgentHiddenFromSidebar", ["id": .string(agentId), "isHidden": .bool(hidden)], failure: hidden ? L10n.text("Couldn't hide it") : L10n.text("Couldn't show it again")) == nil {
       await reloadRoster()
     }
   }
@@ -613,7 +613,7 @@ public final class AppStore {
   public func delete(_ agentIds: [String]) async -> Bool {
     guard let backend else { return false }
     do { _ = try await backend.command("deleteAgents", ["ids": JSON(agentIds)]) } catch {
-      problem = "Deleting failed. Check your connection and try again."
+      problem = L10n.text("Deleting failed. Check your connection and try again.")
       return false
     }
     forgetAgents(agentIds)
@@ -645,7 +645,7 @@ public final class AppStore {
   /** A copy of an agent (`duplicateAgent`); the copy's id, to open it. */
   @discardableResult
   public func duplicate(_ agentId: String) async -> String? {
-    guard let answer = await command("duplicateAgent", ["id": .string(agentId)], failure: "Couldn't duplicate it") else { return nil }
+    guard let answer = await command("duplicateAgent", ["id": .string(agentId)], failure: L10n.text("Couldn't duplicate it")) else { return nil }
     await reloadRoster()
     return answer["agent"]?["id"]?.text ?? answer["id"]?.text ?? answer["agentId"]?.text
   }
@@ -1021,7 +1021,7 @@ public final class AppStore {
   @discardableResult
   public func cancelQueued(_ id: String, in agentId: String) -> Bool {
     guard let item = outbox[agentId]?.first(where: { $0.id == id && $0.state == .queued }) else {
-      showComposerNotice("This message is already sending and can't be canceled.", in: agentId)
+      showComposerNotice(L10n.text("This message is already sending and can't be canceled."), in: agentId)
       return false
     }
     discardFailed(id, in: agentId)
@@ -1253,7 +1253,11 @@ public final class AppStore {
     pendingAnswers[entryId] = value
     do { try await backend.answer(agentId, entryId: entryId, value: value) } catch {
       pendingAnswers[entryId] = nil
-      problem = "Your answer didn't reach \(agent(agentId)?.name ?? "the agent"): \(error.localizedDescription)"
+      if let name = agent(agentId)?.name {
+        problem = L10n.text("Your answer didn't reach \(name): \(error.localizedDescription)")
+      } else {
+        problem = L10n.text("Your answer didn't reach the agent: \(error.localizedDescription)")
+      }
     }
   }
 
@@ -1264,7 +1268,7 @@ public final class AppStore {
   public func command(_ method: String, _ args: JSON, failure: String? = nil) async -> JSON? {
     guard let backend else { return nil }
     do { return try await backend.command(method, args) } catch {
-      problem = "\(failure ?? "That didn't work"): \(error.localizedDescription)"
+      problem = L10n.text("\(failure ?? L10n.text("That didn't work")): \(error.localizedDescription)")
       return nil
     }
   }
@@ -1282,7 +1286,7 @@ public final class AppStore {
     if allow, let picked = pickedPurchaseCards[entryId] { args = args.setting("paymentMethodId", .string(picked)) }
     // Allow confirmed on this device (Face ID): the computer hands it to Link as the approval, so no Link app is asked.
     if allow, let confirmed, let approval = purchaseApproval(confirmed) { args = args.setting("approval", approval.json) }
-    let reply = await command("answerPurchase", args, failure: allow ? "The purchase didn't go to Link" : "Couldn't deny the purchase")
+    let reply = await command("answerPurchase", args, failure: allow ? L10n.text("The purchase didn't go to Link") : L10n.text("Couldn't deny the purchase"))
     // Not taken (no answer, or the card still waits: Link refused the card picked, which its line says): the buttons are back.
     if reply == nil || (reply?.object != nil && (reply?["purchaseState"]?.text ?? "review") == "review") {
       answeredPurchases[entryId] = nil
@@ -1316,7 +1320,7 @@ public final class AppStore {
   public func buyProduct(_ entryId: String, index: Int, in agentId: String) async {
     guard pressedProducts[entryId] != index else { return }
     pressedProducts[entryId] = index
-    if await command("buyProduct", ["agentId": .string(agentId), "entryId": .string(entryId), "index": .number(Double(index))], failure: "Couldn't tell your agent to buy it") == nil {
+    if await command("buyProduct", ["agentId": .string(agentId), "entryId": .string(entryId), "index": .number(Double(index))], failure: L10n.text("Couldn't tell your agent to buy it")) == nil {
       pressedProducts[entryId] = nil
     }
   }
@@ -1336,7 +1340,7 @@ public final class AppStore {
 
   /** "Book with Simeon" on a flight (`startFlightBooking`): the traveller form in the chat, or why not. */
   public func startFlightBooking(entryId: String, offerIndex: Int, in agentId: String) async -> FlightBookingAnswer {
-    guard let backend else { return FlightBookingAnswer(message: "Your computer isn't connected.") }
+    guard let backend else { return FlightBookingAnswer(message: L10n.text("Your computer isn't connected.")) }
     do {
       return FlightBookingAnswer(reply: try await backend.command("startFlightBooking", ["agentId": .string(agentId), "entryId": .string(entryId), "offerIndex": .number(Double(offerIndex))]))
     } catch {
@@ -1346,7 +1350,7 @@ public final class AppStore {
 
   /** The traveller form's Continue (`submitFlightPassengers`): the flight's checkout card, or what to fix. */
   public func submitFlightPassengers(_ entryId: String, travellers: [Traveller], in agentId: String) async -> FlightBookingAnswer {
-    guard let backend else { return FlightBookingAnswer(message: "Your computer isn't connected.") }
+    guard let backend else { return FlightBookingAnswer(message: L10n.text("Your computer isn't connected.")) }
     do {
       return FlightBookingAnswer(reply: try await backend.command("submitFlightPassengers", ["agentId": .string(agentId), "entryId": .string(entryId), "passengers": .array(travellers.map(\.json))]))
     } catch {
@@ -1356,27 +1360,27 @@ public final class AppStore {
 
   /** The traveller form's Cancel. */
   public func cancelFlightPassengers(_ entryId: String, in agentId: String) async {
-    await command("submitFlightPassengers", ["agentId": .string(agentId), "entryId": .string(entryId), "cancel": .bool(true)], failure: "Couldn't cancel the booking")
+    await command("submitFlightPassengers", ["agentId": .string(agentId), "entryId": .string(entryId), "cancel": .bool(true)], failure: L10n.text("Couldn't cancel the booking"))
   }
 
   /** The question card's X (`dismissWidget`). */
   public func dismissQuestion(_ entryId: String, in agentId: String) async {
     pendingAnswers[entryId] = ""
-    if await command("dismissWidget", ["entryId": .string(entryId), "agentId": .string(agentId)], failure: "Couldn't dismiss the question") == nil { pendingAnswers[entryId] = nil }
+    if await command("dismissWidget", ["entryId": .string(entryId), "agentId": .string(agentId)], failure: L10n.text("Couldn't dismiss the question")) == nil { pendingAnswers[entryId] = nil }
   }
 
   /** Send on an email or Slack draft, with what the person changed in it (`sendDraft`). */
   public func sendDraft(_ entryId: String, in agentId: String, draft: JSON) async {
-    await command("sendDraft", ["agentId": .string(agentId), "entryId": .string(entryId), "draft": draft], failure: "The draft didn't send")
+    await command("sendDraft", ["agentId": .string(agentId), "entryId": .string(entryId), "draft": draft], failure: L10n.text("The draft didn't send"))
   }
 
   public func discardDraft(_ entryId: String, in agentId: String) async {
-    await command("discardDraft", ["agentId": .string(agentId), "entryId": .string(entryId)], failure: "Couldn't discard the draft")
+    await command("discardDraft", ["agentId": .string(agentId), "entryId": .string(entryId)], failure: L10n.text("Couldn't discard the draft"))
   }
 
   /** A reaction on a message (`reactToMessage`); the same emoji again takes it back. */
   public func react(_ emoji: String, to entryId: String, in agentId: String) async {
-    await command("reactToMessage", ["entryId": .string(entryId), "emoji": .string(emoji), "agentId": .string(agentId)], failure: "Couldn't react")
+    await command("reactToMessage", ["entryId": .string(entryId), "emoji": .string(emoji), "agentId": .string(agentId)], failure: L10n.text("Couldn't react"))
   }
 
   /**
@@ -1408,14 +1412,14 @@ public final class AppStore {
   }
 
   public func submitSecret(_ value: String, entryId: String, in agentId: String) async {
-    await command("submitSecret", ["entryId": .string(entryId), "value": .string(value), "agentId": .string(agentId)], failure: "The secret wasn't saved")
+    await command("submitSecret", ["entryId": .string(entryId), "value": .string(value), "agentId": .string(agentId)], failure: L10n.text("The secret wasn't saved"))
   }
 
   // MARK: The computer
 
   /** The agent's screen on the cloud computer (`ensureForeverBox`): starting, or live. */
   public func screen(_ agentId: String) async throws -> ScreenState {
-    guard let backend else { throw GatewayError(message: "Not signed in.", refused: true) }
+    guard let backend else { throw GatewayError(message: L10n.text("Not signed in."), refused: true) }
     return try await backend.screen(agentId)
   }
 
@@ -1600,11 +1604,11 @@ public final class AppStore {
           server = apps.first { $0.pluginId == plugin.id }
         }
       } catch {
-        problem = "Couldn't add \(name): \(error.localizedDescription)"
+        problem = L10n.text("Couldn't add \(name): \(error.localizedDescription)")
         return nil
       }
     }
-    guard let server else { problem = "\(name) isn't in Simeon's apps yet."; return nil }
+    guard let server else { problem = L10n.text("\(name) isn't in Simeon's apps yet."); return nil }
     if server.status == "connected" { return nil }
     do {
       let started = try await backend.command("desktopMcp", ["action": "authenticateServer", "args": [.string(server.serverId), .string(server.accountKey), "connector_card"]])
@@ -1650,7 +1654,7 @@ public final class AppStore {
   }
 
   public func removeApp(_ app: ConnectedApp) async {
-    await command("desktopMcp", ["action": "removeServer", "args": [.string(app.serverId)]], failure: "Couldn't remove \(app.name)")
+    await command("desktopMcp", ["action": "removeServer", "args": [.string(app.serverId)]], failure: L10n.text("Couldn't remove \(app.name)"))
     await loadApps()
   }
 
@@ -1666,7 +1670,7 @@ public final class AppStore {
       let answer = try await backend?.command("getListenerConnectUrl", ["platform": .string(platform)])
       return answer?["url"]?.text.flatMap(URL.init(string:))
     } catch {
-      problem = "Couldn't open the link: \(error.localizedDescription)"
+      problem = L10n.text("Couldn't open the link: \(error.localizedDescription)")
       return nil
     }
   }
@@ -1692,7 +1696,7 @@ public final class AppStore {
       Task { await loadApps() }
       return (list?.array ?? []).compactMap(AppTool.init)
     } catch {
-      problem = "Couldn't change \(toolName): \(error.localizedDescription)"
+      problem = L10n.text("Couldn't change \(toolName): \(error.localizedDescription)")
       return nil
     }
   }
@@ -1700,12 +1704,12 @@ public final class AppStore {
   public func renameAccount(_ app: ConnectedApp, to name: String) async {
     let next = name.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !next.isEmpty, next != app.accountKey else { return }
-    await command("desktopMcp", ["action": "renameAccount", "args": [["serverId": .string(app.serverId), "accountKey": .string(app.accountKey), "newAccountKey": .string(next)]]], failure: "Couldn't rename the account")
+    await command("desktopMcp", ["action": "renameAccount", "args": [["serverId": .string(app.serverId), "accountKey": .string(app.accountKey), "newAccountKey": .string(next)]]], failure: L10n.text("Couldn't rename the account"))
     await loadApps()
   }
 
   public func removeAccount(_ app: ConnectedApp) async {
-    await command("desktopMcp", ["action": "removeAccount", "args": [["serverId": .string(app.serverId), "accountKey": .string(app.accountKey)]]], failure: "Couldn't remove the account")
+    await command("desktopMcp", ["action": "removeAccount", "args": [["serverId": .string(app.serverId), "accountKey": .string(app.accountKey)]]], failure: L10n.text("Couldn't remove the account"))
     await loadApps()
   }
 
@@ -1715,7 +1719,7 @@ public final class AppStore {
       guard let started = try await backend?.command("desktopMcp", ["action": "authenticateServer", "args": [.string(app.serverId), .string(app.accountKey), "connector_card"]]) else { return nil }
       return await signInStarted(started, name: app.name)
     } catch {
-      problem = "Couldn't sign in to \(app.name): \(error.localizedDescription)"
+      problem = L10n.text("Couldn't sign in to \(app.name): \(error.localizedDescription)")
       return nil
     }
   }
@@ -1728,7 +1732,7 @@ public final class AppStore {
       await reloadRoster()
       return id
     } catch {
-      problem = "Couldn't create \(name): \(error.localizedDescription)"
+      problem = L10n.text("Couldn't create \(name): \(error.localizedDescription)")
       return nil
     }
   }
@@ -1763,7 +1767,7 @@ public final class AppStore {
       await reloadRoster()
       return id
     } catch {
-      problem = "Couldn't create \(name): \(error.localizedDescription)"
+      problem = L10n.text("Couldn't create \(name): \(error.localizedDescription)")
       return nil
     }
   }
@@ -1777,7 +1781,7 @@ public final class AppStore {
       await reloadRoster()
       return id
     } catch {
-      problem = "Couldn't start the group: \(error.localizedDescription)"
+      problem = L10n.text("Couldn't start the group: \(error.localizedDescription)")
       return nil
     }
   }
@@ -1804,7 +1808,7 @@ public final class AppStore {
       if let colour { agents[index].colour = colour }
       if let voiceId { agents[index].voiceId = voiceId }
     }
-    await command("updateAgent", ["id": .string(agentId), "profile": profile], failure: "Couldn't save \(agent.name)")
+    await command("updateAgent", ["id": .string(agentId), "profile": profile], failure: L10n.text("Couldn't save \(agent.name)"))
   }
 
   /** A voice in the Mac's picker: its name only (the founder, 1 October 2026), a sample to play when it has one, and its gender ("female", "male") to match an agent's name. */
@@ -1898,7 +1902,7 @@ public final class AppStore {
     do {
       let answer = try await backend.server("proxy/v1/images/generations", method: "POST", body: ["prompt": .string(text), "size": "1024x1024", "quality": "low"])
       guard let base64 = answer["data"]?[0]?["b64_json"]?.text, let bytes = Data(base64Encoded: base64) else {
-        problem = "The picture didn't come back. Try again."
+        problem = L10n.text("The picture didn't come back. Try again.")
         return nil
       }
       return bytes
@@ -1917,25 +1921,25 @@ public final class AppStore {
   static func drawingRefusal(_ error: Error) -> String {
     if let refused = error as? SimeonAPIError,
        refused.code == "moderation_blocked" || refused.message.localizedCaseInsensitiveContains("safety system") {
-      return "The picture maker won't draw that. It turns down characters from films, shows and games, real people, and some other subjects. Describe a picture of your own instead."
+      return L10n.text("The picture maker won't draw that. It turns down characters from films, shows and games, real people, and some other subjects. Describe a picture of your own instead.")
     }
-    return "Couldn't draw the picture: \(error.localizedDescription)"
+    return L10n.text("Couldn't draw the picture: \(error.localizedDescription)")
   }
 
   public func setNotify(_ agentId: String, _ on: Bool) async {
     if let index = agents.firstIndex(where: { $0.id == agentId }) { agents[index].notifyOnUpdates = on }
-    await command("setAgentNotifyOnUpdates", ["id": .string(agentId), "isEnabled": .bool(on)], failure: "Couldn't change notifications")
+    await command("setAgentNotifyOnUpdates", ["id": .string(agentId), "isEnabled": .bool(on)], failure: L10n.text("Couldn't change notifications"))
   }
 
   /** A picture for the agent (PNG), or nil for none (`setAgentAvatarBytes`; its face is then given back, StoreFaces.swift). */
   public func setAvatar(_ agentId: String, png: Data?) async {
-    await command("setAgentAvatarBytes", ["id": .string(agentId), "pngBase64": png.map { .string($0.base64EncodedString()) } ?? .null], failure: "Couldn't change the picture")
+    await command("setAgentAvatarBytes", ["id": .string(agentId), "pngBase64": png.map { .string($0.base64EncodedString()) } ?? .null], failure: L10n.text("Couldn't change the picture"))
     await reloadRoster()
   }
 
   public func setMembers(_ groupId: String, _ memberIds: [String]) async {
     if let index = agents.firstIndex(where: { $0.id == groupId }) { agents[index].memberIds = memberIds }
-    await command("setGroupMembers", ["id": .string(groupId), "memberAgentIds": JSON(memberIds)], failure: "Couldn't change the group")
+    await command("setGroupMembers", ["id": .string(groupId), "memberAgentIds": JSON(memberIds)], failure: L10n.text("Couldn't change the group"))
   }
 
   public func routineList(_ agentId: String) async -> [Routine] {
@@ -1945,35 +1949,35 @@ public final class AppStore {
   /** A new routine, or the same one changed; it saves itself, as on the Mac. */
   public func saveRoutine(_ routine: Routine, agentId: String, isNew: Bool) async {
     if isNew {
-      await command("createAgentAutomation", ["id": .string(agentId), "spec": routine.spec], failure: "Couldn't create the routine")
+      await command("createAgentAutomation", ["id": .string(agentId), "spec": routine.spec], failure: L10n.text("Couldn't create the routine"))
     } else {
-      await command("updateAgentAutomation", ["id": .string(agentId), "automationId": .string(routine.id), "spec": routine.spec], failure: "Couldn't save the routine")
+      await command("updateAgentAutomation", ["id": .string(agentId), "automationId": .string(routine.id), "spec": routine.spec], failure: L10n.text("Couldn't save the routine"))
     }
   }
 
   public func setRoutineEnabled(_ routineId: String, agentId: String, _ on: Bool) async {
-    await command("setAgentAutomationEnabled", ["id": .string(agentId), "automationId": .string(routineId), "isEnabled": .bool(on)], failure: "Couldn't change the routine")
+    await command("setAgentAutomationEnabled", ["id": .string(agentId), "automationId": .string(routineId), "isEnabled": .bool(on)], failure: L10n.text("Couldn't change the routine"))
   }
 
   public func deleteRoutine(_ routineId: String, agentId: String) async {
-    await command("deleteAgentAutomation", ["id": .string(agentId), "automationId": .string(routineId)], failure: "Couldn't delete the routine")
+    await command("deleteAgentAutomation", ["id": .string(agentId), "automationId": .string(routineId)], failure: L10n.text("Couldn't delete the routine"))
   }
 
   public func runRoutineNow(_ routineId: String, agentId: String) async {
-    await command("runAgentAutomationNow", ["id": .string(agentId), "automationId": .string(routineId)], failure: "Couldn't run the routine")
+    await command("runAgentAutomationNow", ["id": .string(agentId), "automationId": .string(routineId)], failure: L10n.text("Couldn't run the routine"))
   }
 
   // MARK: Settings
 
   /** The host's settings (`getHostSettings`): the time zone, Auto-review. */
-  public func hostSettings() async -> JSON? { await command("getHostSettings", [:], failure: "Couldn't load your settings") }
+  public func hostSettings() async -> JSON? { await command("getHostSettings", [:], failure: L10n.text("Couldn't load your settings")) }
 
   @discardableResult
-  public func setHostSettings(_ update: JSON) async -> JSON? { await command("setHostSettings", update, failure: "Couldn't save the setting") }
+  public func setHostSettings(_ update: JSON) async -> JSON? { await command("setHostSettings", update, failure: L10n.text("Couldn't save the setting")) }
 
   /** What was said in a recording (the field's dictation): its words, trimmed; empty when nothing was heard. */
   public func transcribe(_ audio: Data, mimeType: String) async throws -> String {
-    guard let backend else { throw SimeonAPIError(message: "Voice transcription source is unavailable.", status: 0) }
+    guard let backend else { throw SimeonAPIError(message: L10n.text("Voice transcription source is unavailable."), status: 0) }
     return try await backend.transcribe(audio: audio, mimeType: mimeType).trimmingCharacters(in: .whitespacesAndNewlines)
   }
 
@@ -1986,7 +1990,7 @@ public final class AppStore {
       let answer = try await backend?.server("billing/portal", method: "POST", body: [:])
       return answer?["portalUrl"]?.text.flatMap(URL.init(string:))
     } catch {
-      problem = "Couldn't open billing: \(error.localizedDescription)"
+      problem = L10n.text("Couldn't open billing: \(error.localizedDescription)")
       return nil
     }
   }

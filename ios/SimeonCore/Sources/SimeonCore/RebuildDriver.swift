@@ -229,6 +229,16 @@ public final class RebuildDriver {
     start(.update(force: force ?? again))
   }
 
+  /** A refused reset's words (`RecreateAnswer.read`), said of a recover: "Couldn't recover the computer (no box). It is unchanged." */
+  nonisolated static func saidOfRecover(_ reason: String) -> String {
+    if reason == L10n.text("Couldn't reset the computer. It is unchanged.") { return L10n.text("Couldn't recover the computer. It is unchanged.") }
+    let marker = "\u{1}"
+    let parts = L10n.text("Couldn't reset the computer (\(marker)). It is unchanged.").components(separatedBy: marker)
+    guard parts.count == 2, reason.count > parts[0].count + parts[1].count, reason.hasPrefix(parts[0]), reason.hasSuffix(parts[1]) else { return reason }
+    let why = String(reason.dropFirst(parts[0].count).dropLast(parts[1].count))
+    return L10n.text("Couldn't recover the computer (\(why)). It is unchanged.")
+  }
+
   /** The sidebar's "Recover computer" and "Retry Reset" (`resetComputer`). */
   public func resetComputer() { start(.reset) }
 
@@ -420,8 +430,13 @@ public final class RebuildDriver {
             }
             switch error {
             case let failure as RebuildFailure: self.error = failure.message
-            case is CallFailure: self.error = "Couldn't \(request.kind.rawValue) the computer. Check your connection and try again."
-            default: self.error = "Something went wrong with the computer. Try again."
+            case is CallFailure:
+              switch request {
+              case .update: self.error = L10n.text("Couldn't update the computer. Check your connection and try again.")
+              case .reset: self.error = L10n.text("Couldn't reset the computer. Check your connection and try again.")
+              case .recover: self.error = L10n.text("Couldn't recover the computer. Check your connection and try again.")
+              }
+            default: self.error = L10n.text("Something went wrong with the computer. Try again.")
             }
           }
           if held { self.dispatch(.error(at: self.clock.now())) }
@@ -440,9 +455,9 @@ public final class RebuildDriver {
     guard let calls else { return nil }
     let failureWords: String
     switch request {
-    case .update: failureWords = "The computer update failed. Try again."
-    case .reset: failureWords = "The computer reset failed. Try again."
-    case .recover: failureWords = "The computer recovery failed. Try again."
+    case .update: failureWords = L10n.text("The computer update failed. Try again.")
+    case .reset: failureWords = L10n.text("The computer reset failed. Try again.")
+    case .recover: failureWords = L10n.text("The computer recovery failed. Try again.")
     }
     let waiting = Waiter(failure: failureWords)
     waiter = waiting
@@ -456,7 +471,7 @@ public final class RebuildDriver {
       if stale() { return nil }
       cancelQueuedUpdate()
       switch answer {
-      case .untrackable, .rejected: return "The computer update started, but Simeon can't track its progress. Restart Simeon after the computer is available again."
+      case .untrackable, .rejected: return L10n.text("The computer update started, but Simeon can't track its progress. Restart Simeon after the computer is available again.")
       case .started(let operationId):
         dispatch(.acknowledged(at: clock.now()))
         try await wait(waiting, for: operationId)
@@ -465,13 +480,14 @@ public final class RebuildDriver {
     }
     do { answer = try await calls.reset() } catch { throw CallFailure() }
     if case .rejected(let reason) = answer {
-      let prefix = "Couldn't reset the computer"
-      throw RebuildFailure(message: request == .recover && reason.hasPrefix(prefix) ? "Couldn't recover the computer" + reason.dropFirst(prefix.count) : reason)
+      throw RebuildFailure(message: request == .recover ? Self.saidOfRecover(reason) : reason)
     }
     if stale() { return nil }
     cancelQueuedUpdate()
     guard case .started(let operationId) = answer else {
-      return "The computer \(request == .recover ? "recovery" : "reset") started, but Simeon can't track its progress. Restart Simeon after the computer is available again."
+      return request == .recover
+        ? L10n.text("The computer recovery started, but Simeon can't track its progress. Restart Simeon after the computer is available again.")
+        : L10n.text("The computer reset started, but Simeon can't track its progress. Restart Simeon after the computer is available again.")
     }
     resetOperationIdHeld = operationId
     if isActive {

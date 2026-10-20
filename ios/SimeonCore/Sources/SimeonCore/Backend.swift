@@ -166,7 +166,7 @@ public protocol AgentBackend: AnyObject, Sendable {
 extension AgentBackend {
   /** No dictation where nothing transcribes (the window's "Voice transcription source is unavailable."). */
   public func transcribe(audio: Data, mimeType: String) async throws -> String {
-    throw SimeonAPIError(message: "Voice transcription source is unavailable.", status: 0)
+    throw SimeonAPIError(message: L10n.text("Voice transcription source is unavailable."), status: 0)
   }
 }
 
@@ -184,7 +184,7 @@ extension AgentBackend {
 
 extension AgentBackend {
   public func dashboard(_ method: String, _ message: JSON) async throws -> JSON {
-    throw SimeonAPIError(message: "This isn’t available right now", status: 501)
+    throw SimeonAPIError(message: L10n.text("This isn’t available right now"), status: 501)
   }
 }
 
@@ -215,8 +215,8 @@ extension AgentBackend {
 
   /** A backend with no computer has no screens. */
   public func screenSocket(_ vncUrl: String) async -> URL? { nil }
-  public func updateComputer(force: Bool) async throws -> RecreateAnswer { .rejected("There is no computer to update.") }
-  public func resetComputer() async throws -> RecreateAnswer { .rejected("Couldn't reset the computer. It is unchanged.") }
+  public func updateComputer(force: Bool) async throws -> RecreateAnswer { .rejected(L10n.text("There is no computer to update.")) }
+  public func resetComputer() async throws -> RecreateAnswer { .rejected(L10n.text("Couldn't reset the computer. It is unchanged.")) }
   public func migrationStatus() async -> MigrationEvent? { nil }
 
   /** A backend that keeps whole chats reads its end. */
@@ -259,12 +259,12 @@ public final class LiveBackend: AgentBackend, @unchecked Sendable {
   }
 
   public func updateComputer(force: Bool) async throws -> RecreateAnswer {
-    guard let api else { throw SimeonAPIError(message: "Sign in to Simeon first.", status: 401) }
+    guard let api else { throw SimeonAPIError(message: L10n.text("Sign in to Simeon first."), status: 401) }
     return await accepted(.read(try await api.connect("RecreateSandBox", ["preserveData": true, "force": .bool(force)]), preserveData: true))
   }
 
   public func resetComputer() async throws -> RecreateAnswer {
-    guard let api else { throw SimeonAPIError(message: "Sign in to Simeon first.", status: 401) }
+    guard let api else { throw SimeonAPIError(message: L10n.text("Sign in to Simeon first."), status: 401) }
     return await accepted(.read(try await api.connect("ForceRecreateSandBox", [:]), preserveData: false))
   }
 
@@ -284,17 +284,17 @@ public final class LiveBackend: AgentBackend, @unchecked Sendable {
   public func command(_ method: String, _ args: JSON) async throws -> JSON { try await gateway.command(method, args) }
 
   public func dashboard(_ method: String, _ message: JSON) async throws -> JSON {
-    guard let api else { throw SimeonAPIError(message: "Sign in to Simeon to continue", status: 401) }
+    guard let api else { throw SimeonAPIError(message: L10n.text("Sign in to Simeon to continue"), status: 401) }
     return try await api.connect(method, message, service: "simeon.v1.DashboardService")
   }
 
   public func server(_ path: String, method: String?, body: JSON?) async throws -> JSON {
-    guard let api else { throw SimeonAPIError(message: "Sign in to Simeon first.", status: 401) }
+    guard let api else { throw SimeonAPIError(message: L10n.text("Sign in to Simeon first."), status: 401) }
     return try await api.data(path, method: method, json: body)
   }
 
   public func transcribe(audio: Data, mimeType: String) async throws -> String {
-    guard let api else { throw SimeonAPIError(message: "Sign in to Simeon first.", status: 401) }
+    guard let api else { throw SimeonAPIError(message: L10n.text("Sign in to Simeon first."), status: 401) }
     return try await api.transcribe(audio: audio, mimeType: mimeType)
   }
 

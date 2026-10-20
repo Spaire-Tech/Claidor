@@ -27,12 +27,12 @@ public enum VoiceCallText {
     return languages[tag] ?? languages[AppLanguage.code(tag)] ?? defaultLanguage
   }
 
-  public static let calling = "Calling…"
-  public static let ended = "Call ended"
-  public static let couldNotConnect = "Couldn't connect"
-  public static let notSwitchedOn = "Calls aren't switched on yet"
-  public static let noMicrophone = "Simeon can't use the microphone"
-  public static let noCredit = "Out of credit for calls"
+  public static let calling = L10n.text("Calling…")
+  public static let ended = L10n.text("Call ended")
+  public static let couldNotConnect = L10n.text("Couldn't connect")
+  public static let notSwitchedOn = L10n.text("Calls aren't switched on yet")
+  public static let noMicrophone = L10n.text("Simeon can't use the microphone")
+  public static let noCredit = L10n.text("Out of credit for calls")
 
   public static let sendTaskAccepted = "Sent. If you have not acknowledged it yet, do so in a few words, then carry on with them. What it turns up comes back to you here."
   public static let relaySoftFail = "That did not come back. Say you could not get to it, and offer to try again."
@@ -203,32 +203,34 @@ public enum VoiceCallText {
     guard kind == "tool", let tool else { return nil }
     let trimmed = collapse(rawDetail ?? "")
     let detail: String? = trimmed.isEmpty ? nil : clamp(trimmed, 40)
+    // An app whose identifier names nothing reads as no app named ("Using an app…").
+    let app = detail.flatMap(appName)
     switch tool {
-    case "Shell": return detail.map { "Editing \($0)…" } ?? "Running a command…"
-    case "ExternalShell": return detail.map { "Editing \($0)…" } ?? "Running a command on your Mac…"
-    case "Read": return detail.map { "Reading \($0)…" } ?? "Reading a file…"
-    case "ExternalRead": return detail.map { "Reading \($0)…" } ?? "Reading a file on your Mac…"
-    case "AwaitShell", "ExternalAwaitShell": return "Waiting on a command…"
-    case "WebSearch": return "Searching the web…"
-    case "WebFetch": return detail.map { "Reading \($0)…" } ?? "Reading a web page…"
-    case "GenerateImage": return "Making an image…"
-    case "CallMcpTool": return detail.map { "Using \(appName($0))…" } ?? "Using an app…"
-    case "GetMcpTools": return detail.map { "Opening \(appName($0))…" } ?? "Opening an app…"
-    case "McpAuth": return detail.map { "Signing in to \(appName($0))…" } ?? "Signing in to an app…"
-    case "Computer": return "Using its computer…"
-    case "Screenshot": return "Looking at the screen…"
-    case "Task": return "Working with a helper…"
-    default: return "Working on it…"
+    case "Shell": return detail.map { L10n.text("Editing \($0)…") } ?? L10n.text("Running a command…")
+    case "ExternalShell": return detail.map { L10n.text("Editing \($0)…") } ?? L10n.text("Running a command on your Mac…")
+    case "Read": return detail.map { L10n.text("Reading \($0)…") } ?? L10n.text("Reading a file…")
+    case "ExternalRead": return detail.map { L10n.text("Reading \($0)…") } ?? L10n.text("Reading a file on your Mac…")
+    case "AwaitShell", "ExternalAwaitShell": return L10n.text("Waiting on a command…")
+    case "WebSearch": return L10n.text("Searching the web…")
+    case "WebFetch": return detail.map { L10n.text("Reading \($0)…") } ?? L10n.text("Reading a web page…")
+    case "GenerateImage": return L10n.text("Making an image…")
+    case "CallMcpTool": return app.map { L10n.text("Using \($0)…") } ?? L10n.text("Using an app…")
+    case "GetMcpTools": return app.map { L10n.text("Opening \($0)…") } ?? L10n.text("Opening an app…")
+    case "McpAuth": return app.map { L10n.text("Signing in to \($0)…") } ?? L10n.text("Signing in to an app…")
+    case "Computer": return L10n.text("Using its computer…")
+    case "Screenshot": return L10n.text("Looking at the screen…")
+    case "Task": return L10n.text("Working with a helper…")
+    default: return L10n.text("Working on it…")
     }
   }
 
-  /** An app's name from its tool's identifier: "composio_google_calendar" reads "Google Calendar", "gh" "GH". */
-  static func appName(_ identifier: String) -> String {
+  /** An app's name from its tool's identifier: "composio_google_calendar" reads "Google Calendar", "gh" "GH"; nil when it names none. */
+  static func appName(_ identifier: String) -> String? {
     let cleaned = identifier
       .replacingOccurrences(of: #"^(composio[-_:]?|mcp[-_:]?)"#, with: "", options: [.regularExpression, .caseInsensitive])
       .replacingOccurrences(of: #"[-_]+"#, with: " ", options: .regularExpression)
       .trimmingCharacters(in: .whitespacesAndNewlines)
-    if cleaned.isEmpty { return "an app" }
+    if cleaned.isEmpty { return nil }
     return cleaned.split(separator: " ", omittingEmptySubsequences: false)
       .map { word in word.count <= 2 ? word.uppercased() : word.prefix(1).uppercased() + word.dropFirst() }
       .joined(separator: " ")
@@ -240,7 +242,7 @@ public enum VoiceCallText {
     if let range = text.range(of: #"^(please|can you|could you|would you)\s+"#, options: [.regularExpression, .caseInsensitive]) { text.removeSubrange(range) }
     while let last = text.last, ".!?".contains(last) { text.removeLast() }
     let words = text.split(separator: " ").map(String.init)
-    guard let first = words.first?.lowercased().filter({ $0.isLetter && $0.isASCII }), taskVerbs.contains(first) else { return "Working on it…" }
+    guard let first = words.first?.lowercased().filter({ $0.isLetter && $0.isASCII }), taskVerbs.contains(first) else { return L10n.text("Working on it…") }
     return ([gerund(first)] + words.dropFirst().prefix(7)).joined(separator: " ") + "…"
   }
 }

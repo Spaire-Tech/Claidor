@@ -40,26 +40,26 @@ extension AppStore {
 
   /** Set or change the account's password (`PUT`, signed in): nil once it is saved, else the sentence to show ("Use at least 8 characters."). */
   public func setPassword(_ password: String) async -> String? {
-    guard let backend else { return "Sign in to Simeon first." }
+    guard let backend else { return L10n.text("Sign in to Simeon first.") }
     do {
       _ = try await backend.server(EmailSignIn.accountPasswordPath, method: "PUT", body: ["password": .string(password)])
       return nil
     } catch let error as SimeonAPIError where !error.message.isEmpty {
       return error.message
     } catch {
-      return "The password wasn't saved. Try again."
+      return L10n.text("The password wasn't saved. Try again.")
     }
   }
 
   /** Cancel Trial (`CancelSandTrial`): nil once it is done and the usage read again, else what to say in the dialog. */
   public func cancelTrial() async -> String? {
-    guard let backend else { return "Sign in to Simeon to continue" }
+    guard let backend else { return L10n.text("Sign in to Simeon to continue") }
     do {
       _ = try await backend.dashboard("CancelSandTrial", [:])
     } catch let error as SimeonAPIError where (400..<500).contains(error.status) && !error.message.isEmpty {
       return error.message
     } catch {
-      return "Couldn’t cancel the trial. Try again."
+      return L10n.text("Couldn’t cancel the trial. Try again.")
     }
     // The trial's end changes what this account may do (`onTrialCanceled`).
     await refreshAccess()
@@ -91,14 +91,14 @@ extension AppStore {
    * read again once it has.
    */
   public func sendApplePurchases(_ signed: [String], renewals: [String]) async -> ApplePurchaseAnswer {
-    guard let backend else { return ApplePurchaseAnswer(message: "Sign in to Simeon to continue", finish: false) }
+    guard let backend else { return ApplePurchaseAnswer(message: L10n.text("Sign in to Simeon to continue"), finish: false) }
     let body: JSON = ["signedTransactions": .array(signed.map { .string($0) }), "signedRenewalInfo": .array(renewals.map { .string($0) })]
     do {
       _ = try await backend.server("billing/apple/transactions", method: "POST", body: body)
     } catch let error as SimeonAPIError where (400..<500).contains(error.status) && !error.message.isEmpty {
       return ApplePurchaseAnswer(message: error.message, finish: true)
     } catch {
-      return ApplePurchaseAnswer(message: "Couldn’t reach Simeon to confirm the purchase. It’s confirmed the next time the app opens.", finish: false)
+      return ApplePurchaseAnswer(message: L10n.text("Couldn’t reach Simeon to confirm the purchase. It’s confirmed the next time the app opens."), finish: false)
     }
     await refreshAccess()
     await refreshUsage()
@@ -182,8 +182,8 @@ extension AppStore {
    * in). The page's address, or the words to show.
    */
   public func billingPortal(flow: String?, tier: String?, back: String? = nil) async -> (url: URL?, message: String?) {
-    let fallback = "Couldn’t open billing. Try again."
-    guard let backend else { return (nil, "Sign in to Simeon to continue") }
+    let fallback = L10n.text("Couldn’t open billing. Try again.")
+    guard let backend else { return (nil, L10n.text("Sign in to Simeon to continue")) }
     var fields: [String: JSON] = [:]
     if flow == PhoneUpgrade.upgradeFlow, let tier {
       fields["flow"] = .string(PhoneUpgrade.upgradeFlow)

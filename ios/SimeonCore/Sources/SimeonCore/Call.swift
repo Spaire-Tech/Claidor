@@ -65,7 +65,7 @@ public enum CallBanner {
   public static let bars = 46
   static let speakingHeight = 16.0
   static let listeningHeight = 12.0
-  public static let emptyTranscript = "What you both say shows up here."
+  public static let emptyTranscript = L10n.text("What you both say shows up here.")
 
   public static func look(_ call: CallState) -> Look {
     if call.failed { return .failed }
@@ -82,7 +82,7 @@ public enum CallBanner {
     case .ringing: return VoiceCallText.calling
     case .working: return call.activity ?? ""
     case .speaking, .listening: return Chat.callClock(call.seconds(now: now))
-    case .ended: return call.connectedAt == nil ? VoiceCallText.ended : "\(VoiceCallText.ended) · \(Chat.callClock(call.seconds(now: now)))"
+    case .ended: return call.connectedAt == nil ? VoiceCallText.ended : L10n.text("Call ended · \(Chat.callClock(call.seconds(now: now)))")
     // The voice service's own words never show (PlainWords).
     case .failed: return call.status.isEmpty ? VoiceCallText.couldNotConnect : PlainWords.error(call.status, fallback: VoiceCallText.couldNotConnect)
     }
@@ -185,7 +185,7 @@ public final class DemoCall: CallEngine, @unchecked Sendable {
   public func start(agentId: String, agentName: String, colour: String) {
     lock.lock(); let busy = state != nil; lock.unlock()
     if busy { return }
-    set(CallState(phase: .ringing, status: "Calling…", agentId: agentId, agentName: agentName, agentColour: colour, isMuted: false, agentSpeaking: false, levels: [], lines: [], connectedAt: nil, endedAt: nil))
+    set(CallState(phase: .ringing, status: VoiceCallText.calling, agentId: agentId, agentName: agentName, agentColour: colour, isMuted: false, agentSpeaking: false, levels: [], lines: [], connectedAt: nil, endedAt: nil))
     var started: [Task<Void, Never>] = []
     for (at, beat) in Self.script {
       started.append(Task { [weak self] in
@@ -220,7 +220,7 @@ public final class DemoCall: CallEngine, @unchecked Sendable {
     lock.lock(); let current = state; let running = tasks; tasks = []; lock.unlock()
     guard let current, current.phase != .ended else { return }
     for task in running { task.cancel() }
-    update { $0.phase = .ended; $0.status = "Call ended"; $0.agentSpeaking = false; $0.levels = []; $0.endedAt = Date() }
+    update { $0.phase = .ended; $0.status = VoiceCallText.ended; $0.agentSpeaking = false; $0.levels = []; $0.endedAt = Date() }
     let leave = Task { [weak self] in
       try? await Task.sleep(nanoseconds: 1_200_000_000)
       guard !Task.isCancelled else { return }
