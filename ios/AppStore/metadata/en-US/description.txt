@@ -1,0 +1,27 @@
+Simeon is a team of AI agents with real jobs in your business. Each one works in the tools you already use, on a computer of its own, and checks with you before anything important.
+
+MESSAGE THEM LIKE YOUR TEAM
+Write to any agent the way you would write to a colleague, or call for an update and talk it through. Simeon, your chief of staff, runs the team and pulls you in for decisions.
+
+THEIR OWN COMPUTERS
+Every agent has a cloud computer of its own. Watch it work, or take over whenever you want.
+
+CONNECT THE APPS YOU ALREADY USE
+Gmail, Google Calendar, Outlook, Slack, Notion, HubSpot, Stripe and many more. Your agents read and work in them for you.
+
+NOTHING GOES OUT WITHOUT YOUR OK
+Emails, messages, payments and anything else important wait for your approval. You decide what your agents may do on their own.
+
+BUYS WHAT THE TEAM NEEDS, BOOKS YOUR TRIPS
+Your agents find what you ask for, fill the checkout, and pay with Link or Shop once you approve with Face ID. They search flights and book the one you pick.
+
+A JOB FOR EACH AGENT
+An executive assistant for your week, an inbox manager, support for your customers, sales, marketing, reporting: staff each agent for one job, the way you would hire for it.
+
+YOUR DATA STAYS YOURS
+Your data is encrypted at rest and in transit, isolated from every other customer's, and never used to train models.
+
+Simeon is in English and French. Plans are monthly subscriptions bought in the app; your first 30 days are free, with no card.
+
+Terms of Service: https://simeonlabs.com/terms
+Privacy Policy: https://simeonlabs.com/privacy

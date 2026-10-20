@@ -1,4 +1,4 @@
-# App Store screenshots
+# App Store listing and screenshots
 
 Eight screenshots for the iPhone app's App Store page, at the size App Store
 Connect asks for (iPhone 6.9", 1320 × 2868, flattened RGB, no transparency).
@@ -70,3 +70,38 @@ down for smaller iPhones.
   (`box/wallpapers/simeon-a.png`).
 - `fonts/`: Geist (the headlines) and Inter, both under the SIL Open Font
   License.
+
+## The listing's words, in English and French
+
+`metadata/` holds the App Store page's text for each language (20 October
+2026, docs/localization.md), one file per field as fastlane's `deliver`
+lays it out, so it can be pasted into App Store Connect or uploaded:
+
+| File | App Store Connect field | Limit |
+|---|---|---|
+| `name.txt` | App Information › Name | 30 |
+| `subtitle.txt` | App Information › Subtitle | 30 |
+| `promotional_text.txt` | the version › Promotional Text | 170 |
+| `description.txt` | the version › Description (it ends with the Terms and the Privacy Policy, which App Review asks of a subscription) | 4,000 |
+| `keywords.txt` | the version › Keywords, commas without spaces | 100 |
+| `release_notes.txt` | the version › What's New in This Version | 4,000 |
+| `marketing_url.txt`, `privacy_url.txt` | Marketing URL, Privacy Policy URL | |
+
+- `en-US/` is the English the French is translated from. The live English
+  listing was not in this repository: this one is written from the website
+  and the screenshots' headlines. Where the live one reads better, keep it
+  and bring the French in line.
+- `fr-FR/` is the French, in "tu" like the app. Simeon, Link, Shop, Face ID
+  and the connectors' names are not translated. In App Store Connect: the
+  language menu at the top of the app's page › French (France), then the
+  fields above. French (Canada) can take the same text.
+- The French name stays Simeon; the subtitle carries the French words.
+- The screenshots stay English for now: the French page shows the English
+  set until a French one is made (the artboards in `source/` and the app's
+  screens in French).
+
+The plans (the app › Monetization › Subscriptions › each product ›
+Localization › French): the display names stay "Simeon Standard", "Simeon
+Pro", "Simeon Max"; the descriptions are « 5 000 000 crédits par semaine »,
+« 17 500 000 crédits par semaine » and « 60 000 000 crédits par semaine »
+(a narrow no-break space between the thousands, as French writes them).

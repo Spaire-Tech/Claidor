@@ -75,6 +75,7 @@ agents says "tu": warm and direct, like a capable friend at work, never stiff.
 | The server's answers: refusals, the sign-in pages, the free month | `server/simeon/desktop/words/` (`_booking.py`, `_account.py`: `EN` and `FR`; `en.py`, `fr.py` gather them), read by `say(key, **values)` in the request's `Accept-Language` | `server/tests/desktop/test_words.py`, `check_translations.py` |
 | The sign-in code email | `server/emails/src/words.ts` | `check_translations.py` |
 | The website's pages Simeon owns: sign-in (`/login`, `/signup`, the code and password pages) and `/billing` | `clients/packages/i18n/src/locales/en.ts` and `fr.ts`, under `simeon`; the page's language from `pageLocale` (`clients/apps/web/src/utils/i18n.ts`: `?locale=`, else the browser's, else English) | `clients/packages/i18n/src/simeon.test.ts` |
+| The App Store page: name, subtitle, description, keywords, what's new, promotional text | `ios/AppStore/metadata/<language>/*.txt` (`en-US`, `fr-FR`), pasted into App Store Connect (`ios/AppStore/README.md`) | `check_translations.py` (every field in every language) |
 | The engine (the agents' prompts, voice calls) | `desktop/source/shared/user-language.ts`; the calls' greetings in `voice-call-prompt.ts` | `desktop/tests/user-language.test.mjs` |
 | The core (calls) | `ios/SimeonCore/Sources/SimeonCore/VoiceCall.swift` (`firstMessage`), word for word as the engine's | `LanguageTests.swift` |
 | The server's voice agent | `VOICE_LANGUAGES` in `server/simeon/desktop/voice.py` | `server/tests/desktop/test_language.py` |
@@ -197,5 +198,9 @@ say("email.login_code.subject", language="fr")
 4. The website: the language's `simeon` words in its file under
    `clients/packages/i18n/src/locales/` (the checkout's other languages,
    which have none, read English on Simeon's pages).
-5. Run `python3 scripts/check_translations.py`, the tests, and read every
+5. The App Store page: a folder beside `ios/AppStore/metadata/fr-FR` with
+   each field (App Store Connect's own language code, like `es-ES`,
+   `de-DE`, `pt-BR`, `ja`), and the plans' descriptions
+   (`ios/AppStore/README.md`).
+6. Run `python3 scripts/check_translations.py`, the tests, and read every
    screen in the new language on an iPhone and a Mac.
