@@ -24,6 +24,8 @@ final class PluginsModel {
     case installed(String)
     case setup(String)
     case skill(String)
+    /** A section of Available, every app in it (its name's ›; 21 October 2026), by the section's key. */
+    case category(String)
   }
 
   enum Tab: Hashable { case marketplace, yours }

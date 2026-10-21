@@ -150,6 +150,7 @@ struct MacTravellersSheet: View {
     .frame(width: 520, height: 660)
     .onAppear { if travellers.isEmpty { travellers = card.startingTravellers } }
     .interactiveDismissDisabled(sending)
+    .closesOnClickOutside { if !sending { dismiss() } }
   }
 
   private func send() async {

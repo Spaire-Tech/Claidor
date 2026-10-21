@@ -306,7 +306,6 @@ private struct ConnectConsentDialog: View {
   let look: Look
   let connect: () -> Void
   let cancel: () -> Void
-  @State private var hoveringClose = false
 
   var body: some View {
     let shape = RoundedRectangle(cornerRadius: 24, style: .continuous)
@@ -345,20 +344,10 @@ private struct ConnectConsentDialog: View {
     .accessibilityAddTraits(.isModal)
   }
 
-  /** × (28, round), at the top left as Muse's; darker on the grey under the pointer. */
+  /** ×, at the top left as Muse's: the window's round glass button (`GlassDiscButton`, 21 October 2026). */
   private var close: some View {
-    Button(action: cancel) {
-      Image(systemName: "xmark")
-        .font(.system(size: 12, weight: .semibold))
-        .foregroundStyle(hoveringClose ? look.ink : look.inkSecondary)
-        .frame(width: 28, height: 28)
-        .background(Circle().fill(look.ink.opacity(hoveringClose ? 0.1 : 0.06)))
-        .contentShape(Circle())
-    }
-    .buttonStyle(.hand)
-    .onHover { hoveringClose = $0 }
-    .padding(16)
-    .accessibilityLabel("Cancel")
+    GlassDiscButton(symbol: "xmark", help: String(localized: "Cancel"), size: 32, action: cancel)
+      .padding(16)
   }
 
   private var content: some View {

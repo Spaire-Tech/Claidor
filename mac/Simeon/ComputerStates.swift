@@ -71,8 +71,16 @@ struct ComputerDialogLayer: View {
       if let dialog {
         Color(hex: 0x141414).opacity(look.dark ? 0.698 : 0.5)
           .contentShape(Rectangle())
-          // A confirmation's scrim is its Cancel; the others' take the click and do nothing.
-          .onTapGesture { if dialog == .update || dialog == .recoverConfirm(fromSidebar: true) { window.computerAsk = nil } }
+          // A click outside closes what can be closed (21 October 2026): a confirmation's scrim is its Cancel (from
+          // the unreachable dialog, back to it), a failure's its Dismiss; a rebuild under way and the unreachable
+          // dialog take the click and do nothing.
+          .onTapGesture {
+            switch dialog {
+            case .update, .recoverConfirm: window.computerAsk = nil
+            case .failed: store.rebuild.dismissFailure()
+            case .rebuild, .unreachable: break
+            }
+          }
           .transition(.opacity)
         ComputerDialogCard(dialog: dialog, look: look)
           .transition(.opacity)

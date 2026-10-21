@@ -485,25 +485,41 @@ private struct ConnectorCard: View {
   }
 }
 
-/** An app's logo on its grey tile (`sand-tool-icon--logo`, 40, 11 round), or its first letter. */
+/**
+ * An app's icon: its own app icon, whole (`AppIcons`, shared with the
+ * iPhone; 21 October 2026, the founder: "the icons"); else its logo on its
+ * grey tile (`sand-tool-icon--logo`, 40, 11 round), or its first letter.
+ */
 struct AppLogoTile: View {
   let name: String
   let look: Look
   var side: CGFloat = 40
+  /** The catalogue's id, when the caller has it; the name finds the icon otherwise. */
+  var id: String? = nil
 
   var body: some View {
-    Group {
-      if let image = AppLogoTile.logo(name) {
-        Image(nsImage: image).resizable().interpolation(.high).aspectRatio(contentMode: .fit)
-      } else {
-        Text(String(name.prefix(1)).uppercased())
-          .font(.system(size: side * 0.42, weight: .semibold))
-          .foregroundStyle(look.inkSecondary)
+    if let icon = AppLogoTile.appIcon(id: id, name: name) {
+      AppIconImage(icon: icon, side: side, look: look)
+    } else {
+      Group {
+        if let image = AppLogoTile.logo(name) {
+          Image(nsImage: image).resizable().interpolation(.high).aspectRatio(contentMode: .fit)
+        } else {
+          Text(String(name.prefix(1)).uppercased())
+            .font(.system(size: side * 0.42, weight: .semibold))
+            .foregroundStyle(look.inkSecondary)
+        }
       }
+      .frame(width: side, height: side)
+      .background(look.logoTile)
+      .clipShape(RoundedRectangle(cornerRadius: side * 11 / 40))
     }
-    .frame(width: side, height: side)
-    .background(look.logoTile)
-    .clipShape(RoundedRectangle(cornerRadius: side * 11 / 40))
+  }
+
+  /** The app's own icon (`AppIcons/<id>`, from ios/scripts/app_icons.py), by the catalogue's id or any of the app's names (`ConnectorIcons`). */
+  static func appIcon(id: String? = nil, name: String) -> NSImage? {
+    guard let key = id.flatMap(ConnectorIcons.id(for:)) ?? ConnectorIcons.id(for: name) else { return nil }
+    return NSImage(named: "AppIcons/\(key)")
   }
 
   /** The app's mark (`Connectors/<slug>`, else by the connector's id: "monday.com" is `monday`, 14 October 2026), or the brand's. */
@@ -512,6 +528,25 @@ struct AppLogoTile: View {
     if let id = ConnectorIcons.id(for: name), let image = NSImage(named: "Connectors/\(id)") { return image }
     if let brand = Brands.mentions.first(where: { $0.name.lowercased() == name.lowercased() }) { return NSImage(named: "Brands/\(brand.key)") }
     return nil
+  }
+}
+
+/** An app's own icon, whole, with an app icon's corners (22.37% of its side, the iPhone's `ConnectorLogo.iconCorner`) and a hairline that keeps a black icon in view on the dark ground. */
+struct AppIconImage: View {
+  let icon: NSImage
+  let side: CGFloat
+  let look: Look
+
+  var body: some View {
+    let shape = RoundedRectangle(cornerRadius: side * 0.2237, style: .continuous)
+    Image(nsImage: icon)
+      .resizable()
+      .interpolation(.high)
+      .scaledToFill()
+      .frame(width: side, height: side)
+      .clipShape(shape)
+      .overlay(shape.strokeBorder(look.ink.opacity(look.dark ? 0.16 : 0.08), lineWidth: 0.5))
+      .accessibilityHidden(true)
   }
 }
 
@@ -2138,6 +2173,7 @@ struct ProductsCardView: View {
         open = nil
         Task { await store.buyProduct(entryId, index: chosen.index, in: agentId) }
       }
+      .closesOnClickOutside { open = nil }
     }
   }
 
@@ -2375,17 +2411,10 @@ private struct MacProductSheet: View {
     .frame(width: 780, height: 600)
     .background(look.dark ? Color(hex: 0x1e1e1e) : Color.white)
     .overlay(alignment: .topTrailing) {
-      Button { dismiss() } label: {
-        Image(systemName: "xmark").font(.system(size: 12, weight: .semibold)).foregroundStyle(ink)
-          .frame(width: 28, height: 28)
-          .background(look.dark ? Color(hex: 0x3a3a3c) : Color.white, in: Circle())
-          .shadow(color: .black.opacity(0.15), radius: 4, y: 1)
-          .contentShape(Circle())
-      }
-      .buttonStyle(.hand)
-      .keyboardShortcut(.cancelAction)
-      .padding(12)
-      .help("Close")
+      // The window's round glass button (`GlassDiscButton`, 21 October 2026).
+      GlassDiscButton(symbol: "xmark", help: String(localized: "Close"), size: 32) { dismiss() }
+        .keyboardShortcut(.cancelAction)
+        .padding(12)
     }
   }
 }

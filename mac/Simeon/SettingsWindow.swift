@@ -138,16 +138,20 @@ private struct SettingsPanel: View {
   var body: some View {
     HStack(spacing: 0) {
       SettingsNav(look: look)
-      ZStack(alignment: .topTrailing) {
-        VStack(alignment: .leading, spacing: 0) {
-          Text(settings.page.title)
-            .font(.system(size: 17, weight: .semibold))
-            .tracking(-0.2)
-            .foregroundStyle(look.ink)
-            .lineLimit(1)
-            .frame(height: 24)
-            .padding(EdgeInsets(top: 28, leading: 32, bottom: 4, trailing: 32))
-            .accessibilityAddTraits(.isHeader)
+      VStack(alignment: .leading, spacing: 0) {
+          // The page's name and ×, in one line, as Connectors' head.
+          HStack(spacing: 12) {
+            Text(settings.page.title)
+              .font(.system(size: 20, weight: .semibold))
+              .tracking(-0.3)
+              .foregroundStyle(look.ink)
+              .lineLimit(1)
+              .accessibilityAddTraits(.isHeader)
+            Spacer(minLength: 12)
+            SettingsClose(look: look) { settings.close() }
+          }
+          .frame(height: 36)
+          .padding(EdgeInsets(top: 20, leading: 32, bottom: 0, trailing: 20))
           ScrollView {
             Group {
               switch settings.page {
@@ -168,10 +172,6 @@ private struct SettingsPanel: View {
           .scrollIndicators(.automatic)
           // A page is drawn afresh, at its top, each time it is shown.
           .id(settings.page)
-        }
-        SettingsClose(look: look) { settings.close() }
-          .padding(.top, 10)
-          .padding(.trailing, 10)
       }
       .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -310,24 +310,14 @@ private struct SettingsNavEntry: View {
   }
 }
 
-/** Close (32, round): × at 40%, darker on a faint fill under the pointer (About's too). */
+/** Close (About's too): the window's round glass button (`GlassDiscButton`, 21 October 2026: one button for the app's panels). */
 struct SettingsClose: View {
   let look: Look
+  var size: CGFloat = 36
   let action: () -> Void
-  @State private var hovering = false
 
   var body: some View {
-    Button(action: action) {
-      Image(systemName: "xmark")
-        .font(.system(size: 12, weight: .medium))
-        .foregroundStyle(hovering ? look.inkSecondary : look.inkTertiary)
-        .frame(width: 32, height: 32)
-        .background(Circle().fill(hovering ? look.ink.opacity(0.11) : .clear))
-        .contentShape(Circle())
-    }
-    .buttonStyle(.hand)
-    .onHover { hovering = $0 }
-    .accessibilityLabel("Close")
+    GlassDiscButton(symbol: "xmark", help: String(localized: "Close"), size: size, action: action)
   }
 }
 

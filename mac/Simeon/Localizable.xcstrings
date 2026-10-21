@@ -5179,6 +5179,16 @@
         }
       }
     },
+    "Shows every app in %@" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Affiche toutes les apps de %@"
+          }
+        }
+      }
+    },
     "Shows the traveller form in the chat" : {
       "localizations" : {
         "fr" : {

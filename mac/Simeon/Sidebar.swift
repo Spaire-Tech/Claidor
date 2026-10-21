@@ -169,6 +169,7 @@ struct Sidebar: View {
         .environment(store)
         .environment(window)
         .environment(sidebar)
+        .closesOnClickOutside { sidebar.showsHidden = false }
     }
   }
 }
