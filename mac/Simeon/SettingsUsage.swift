@@ -18,7 +18,7 @@ struct SettingsUsagePage: View {
   @Environment(AppStore.self) private var store
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 28) {
+    VStack(alignment: .leading, spacing: 22) {
       if let summary = store.usage.summary {
         TimelineView(.periodic(from: .now, by: 30)) { context in
           UsageGroup(summary: summary, now: context.date, look: look)
@@ -82,7 +82,7 @@ private struct UsageGroup: View {
   }
 }
 
-/** A meter, the reference's: its title (15) with what is used at the right (15, grey), when it resets under it (13, grey), then its bar across (6, the blue; red past 90%). */
+/** A meter, the reference's: its title with what is used at the right (grey), when it resets under it (grey), then its bar across (5, the blue; red past 90%). */
 private struct UsageMeterLine: View {
   let title: String
   let meter: UsageMeters.Meter
@@ -90,21 +90,21 @@ private struct UsageMeterLine: View {
   let look: Look
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 12) {
+    VStack(alignment: .leading, spacing: 10) {
       HStack(alignment: .firstTextBaseline, spacing: 12) {
         VStack(alignment: .leading, spacing: 3) {
           Text(title)
-            .font(.system(size: 15))
+            .font(PanelType.row)
             .foregroundStyle(look.ink)
           if let reset = meter.resetLabel {
             Text(reset)
-              .font(.system(size: 13))
+              .font(PanelType.detail)
               .foregroundStyle(look.inkSecondary)
           }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         Text(meter.valueLabel)
-          .font(.system(size: 15))
+          .font(PanelType.row)
           .foregroundStyle(look.inkSecondary)
           .monospacedDigit()
       }
@@ -112,17 +112,17 @@ private struct UsageMeterLine: View {
         GeometryReader { box in
           ZStack(alignment: .leading) {
             Capsule().fill(look.ink.opacity(look.dark ? 0.14 : 0.08))
-            Capsule().fill(percent > 90 ? look.danger : look.settingsAction).frame(width: max(6, box.size.width * CGFloat(min(100, max(0, percent)) / 100)))
+            Capsule().fill(percent > 90 ? look.danger : look.settingsAction).frame(width: max(5, box.size.width * CGFloat(min(100, max(0, percent)) / 100)))
           }
         }
-        .frame(height: 6)
+        .frame(height: 5)
         .accessibilityElement()
         .accessibilityLabel("\(title): \(meter.valueLabel)")
         .accessibilityValue("\(Int(percent.rounded()))")
       }
     }
-    .padding(.horizontal, 18)
-    .padding(.vertical, 16)
+    .padding(.horizontal, 14)
+    .padding(.vertical, 12)
     .overlay(alignment: .top) { if divided { SettingsDivider(look: look) } }
   }
 }

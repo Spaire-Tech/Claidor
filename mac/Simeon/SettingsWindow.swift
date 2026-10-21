@@ -4,13 +4,14 @@ import SimeonCore
 
 /**
  * Settings (`overlay:settings`): over the whole window, not a window of its
- * own, the window dimmed under it. A panel of at most 1080 × 780 (the
- * window less 48 and 64), laid out as a Mac app's Settings (the founder, 21
- * October 2026, with a desktop app's for reference: "the proportions are
- * off… you're behaving it like a phone"): its pages listed on its left,
- * each with its symbol (15), the current one on a grey ground, Log out at
- * the foot; the page's name large at the top of the rest (26 bold), its
- * groups under it across the page, from its left. General, Usage & Billing
+ * own, the window dimmed under it. A panel of at most 960 × 720 (the
+ * window less 48 and 64; Connectors' size), laid out as a Mac app's Settings
+ * (the founder, 21 October 2026, with a desktop app's for reference: "the
+ * proportions are off… you're behaving it like a phone"), in the app's own
+ * type (`PanelType`; "I NEVER USED BOLD"): its pages listed on its left,
+ * each with its symbol, the current one on a grey ground, Log out at the
+ * foot; the page's name at the top of the rest, its groups under it across
+ * the page, from its left. General, Usage & Billing
  * once the account's usage is in hand, Wallet, Permissions, Computer (the
  * agents' computer and this Mac), Updates (a dot while one is waiting) and
  * Legal; the account is General's first row, its page under General with
@@ -124,7 +125,7 @@ struct SettingsLayer: View {
             .contentShape(Rectangle())
             .onTapGesture { settings.close() }
           SettingsPanel(look: look)
-            .frame(width: max(0, min(1080, box.size.width - 48)), height: max(0, min(780, box.size.height - 64)))
+            .frame(width: max(0, min(960, box.size.width - 48)), height: max(0, min(720, box.size.height - 64)))
             .id(settings.opening)
         }
         .frame(width: box.size.width, height: box.size.height)
@@ -147,22 +148,21 @@ private struct SettingsPanel: View {
     HStack(spacing: 0) {
       SettingsNav(look: look)
       VStack(alignment: .leading, spacing: 0) {
-        // The page's name, large, and × (Back before it on the account's page).
-        HStack(spacing: 12) {
+        // The page's name and × (Back before it on the account's page), as Connectors' head.
+        HStack(spacing: 10) {
           if let parent = settings.page.parent {
             GlassDiscButton(symbol: "chevron.left", help: String(localized: "Back")) { settings.page = parent }
           }
           Text(settings.page.title)
-            .font(.system(size: 26, weight: .bold))
-            .tracking(-0.4)
+            .font(PanelType.title)
             .foregroundStyle(look.ink)
             .lineLimit(1)
             .accessibilityAddTraits(.isHeader)
           Spacer(minLength: 12)
           SettingsClose(look: look) { settings.close() }
         }
-        .frame(height: 40)
-        .padding(EdgeInsets(top: 24, leading: 32, bottom: 0, trailing: 20))
+        .frame(height: 32)
+        .padding(EdgeInsets(top: 18, leading: 28, bottom: 0, trailing: 18))
         ScrollView {
           Group {
             switch settings.page {
@@ -177,7 +177,7 @@ private struct SettingsPanel: View {
             }
           }
           .frame(maxWidth: .infinity, alignment: .leading)
-          .padding(EdgeInsets(top: 20, leading: 32, bottom: 40, trailing: 32))
+          .padding(EdgeInsets(top: 16, leading: 28, bottom: 32, trailing: 28))
         }
         .scrollIndicators(.automatic)
         // A page is drawn afresh, at its top, each time it is shown.
@@ -199,9 +199,9 @@ private struct SettingsPanel: View {
 }
 
 /**
- * The pages ("Settings sections"), 240 wide, as the reference lists them:
- * each its symbol (17) and its name (15), 40 high, the current one (or the
- * one it sits under) on a grey ground, 10 round; Log out at the foot, asked
+ * The pages ("Settings sections"), 210 wide, as the reference lists them:
+ * each its symbol (14) and its name (13), 32 high, the current one (or the
+ * one it sits under) on a grey ground, 8 round; Log out at the foot, asked
  * first as the account menu's.
  */
 private struct SettingsNav: View {
@@ -213,7 +213,7 @@ private struct SettingsNav: View {
 
   var body: some View {
     let current = settings.page.parent ?? settings.page
-    VStack(alignment: .leading, spacing: 4) {
+    VStack(alignment: .leading, spacing: 2) {
       ForEach(pages, id: \.self) { page in
         SettingsNavEntry(title: page.title, symbol: page.symbol, current: current == page, dot: page == .updates && updates.found != nil, look: look) { settings.page = page }
       }
@@ -222,8 +222,8 @@ private struct SettingsNav: View {
         AccountActions.askToSignOut(session: session, settings: settings)
       }
     }
-    .padding(EdgeInsets(top: 24, leading: 14, bottom: 18, trailing: 14))
-    .frame(width: 240)
+    .padding(EdgeInsets(top: 18, leading: 10, bottom: 14, trailing: 10))
+    .frame(width: 210)
     .frame(maxHeight: .infinity)
     .overlay(alignment: .trailing) {
       Rectangle().fill(look.ink.opacity(0.08)).frame(width: 0.5)
@@ -255,13 +255,13 @@ private struct SettingsNavEntry: View {
 
   var body: some View {
     Button(action: action) {
-      HStack(spacing: 12) {
+      HStack(spacing: 10) {
         Image(systemName: symbol)
-          .font(.system(size: 16))
+          .font(.system(size: 14))
           .foregroundStyle(look.ink)
-          .frame(width: 22)
+          .frame(width: 20)
         Text(title)
-          .font(.system(size: 15))
+          .font(PanelType.row)
           .foregroundStyle(look.ink)
           .lineLimit(1)
         Spacer(minLength: 0)
@@ -270,10 +270,10 @@ private struct SettingsNavEntry: View {
             .accessibilityLabel("Update available")
         }
       }
-      .padding(.horizontal, 12)
-      .frame(height: 40)
+      .padding(.horizontal, 10)
+      .frame(height: 32)
       .frame(maxWidth: .infinity, alignment: .leading)
-      .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(current ? look.groupedRow : (hovering ? look.groupedRow.opacity(0.6) : .clear)))
+      .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(current ? look.groupedRow : (hovering ? look.groupedRow.opacity(0.6) : .clear)))
       .contentShape(Rectangle())
     }
     .buttonStyle(.hand)
@@ -285,7 +285,7 @@ private struct SettingsNavEntry: View {
 /** Close (About's too): the window's round glass button (`GlassDiscButton`, 21 October 2026: one button for the app's panels). */
 struct SettingsClose: View {
   let look: Look
-  var size: CGFloat = 36
+  var size: CGFloat = 32
   let action: () -> Void
 
   var body: some View {

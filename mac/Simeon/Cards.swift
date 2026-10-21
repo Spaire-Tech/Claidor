@@ -1186,7 +1186,7 @@ struct CallRecordView: View {
  * Flight results, Muse's layout as the iPhone draws it (ios/Simeon/Cards.swift
  * `FlightsCardView`), at a Mac's width (the founder, 21 October 2026: the
  * cards "match an iphone, and not a mac"): its own card, as wide as a card
- * may be (680 at most), the route and its date as one heading (16, 600)
+ * may be (680 at most), the route and its date as one heading (16, 500)
  * with what else the trip is under it (12, grey); then a row per offer. On
  * a wide chat a row reads across: the airline's mark (40), the airline over
  * its stops, the times on a dashed line with the time in the air between
@@ -1212,7 +1212,7 @@ struct FlightsCardView: View {
         VStack(alignment: .leading, spacing: 2) {
           if !card.heading.isEmpty {
             Text(card.heading)
-              .font(.system(size: 16, weight: .semibold))
+              .font(.system(size: 16, weight: .medium))
               .tracking(-0.2)
               .foregroundStyle(ink)
               .fixedSize(horizontal: false, vertical: true)
@@ -1305,7 +1305,7 @@ private struct FlightRow: View {
       }
       .frame(minWidth: 220, maxWidth: .infinity)
       Text(offer.price)
-        .font(.system(size: 15, weight: .semibold))
+        .font(.system(size: 15, weight: .medium))
         .tracking(-0.15)
         .foregroundStyle(ink)
         .fixedSize()
@@ -2261,7 +2261,7 @@ private struct MacProductCardTile: View {
           .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(hairline, lineWidth: 1))
         VStack(alignment: .leading, spacing: 2) {
           Text(product.title)
-            .font(.system(size: 13, weight: .semibold))
+            .font(.system(size: 13, weight: .medium))
             .foregroundStyle(ink)
             .lineLimit(2, reservesSpace: true)
             .multilineTextAlignment(.leading)
@@ -2375,7 +2375,7 @@ private struct MacProductSheet: View {
                 MacProductDescription(text: detail, ink: ink, grey: grey).padding(.top, 20).id("about-\(product.index)")
               }
               if !product.stars.isEmpty {
-                Text(ProductsCard.reviews).font(.system(size: 16, weight: .semibold)).foregroundStyle(ink).padding(.top, 26)
+                Text(ProductsCard.reviews).font(.system(size: 16, weight: .medium)).foregroundStyle(ink).padding(.top, 26)
                 Button { openURL(product.url) } label: { MacProductReviewsRow(product: product, agentId: agentId, look: look, ink: ink, grey: grey, hairline: hairline) }
                   .buttonStyle(.hand)
                   .padding(.top, 10)
@@ -2389,7 +2389,7 @@ private struct MacProductSheet: View {
           .padding(.top, 28)
           .id("top")
           if !others.isEmpty {
-            Text(ProductsCard.moreLikeThis).font(.system(size: 16, weight: .semibold)).foregroundStyle(ink)
+            Text(ProductsCard.moreLikeThis).font(.system(size: 16, weight: .medium)).foregroundStyle(ink)
               .padding(.horizontal, 28).padding(.top, 30)
             ScrollView(.horizontal, showsIndicators: false) {
               HStack(alignment: .top, spacing: 14) {

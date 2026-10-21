@@ -3,15 +3,28 @@ import SwiftUI
 import SimeonCore
 
 /**
- * Settings' parts at a Mac's proportions (the founder, 21 October 2026,
- * with a desktop app's Settings for reference: "the proportions are off…
- * you're behaving it like a phone"): each group's name (15 semibold, grey)
- * in line with its card; the card a step off the ground, 16 round; its rows
- * at least 56 high, padded 18, their words at 15 over a line at 13 in grey,
- * the lines between them inset 18 at both ends; a note under the card at
- * 13. At the row's end: Apple's switch in the blue, a menu reading "value ⌄",
- * an action in the link blue ("Add", "Upgrade", "Check Now"), a chevron or ↗.
+ * Settings' parts at a Mac's proportions and the app's own type (the
+ * founder, 21 October 2026, with a desktop app's Settings for reference:
+ * "the proportions are off… you're behaving it like a phone", then "I NEVER
+ * USED BOLD… we need consistency for everything to be the same size"):
+ * each group's name (`PanelType.section`) in line with its card; the card a
+ * step off the ground, 12 round; its rows at least 44 high, padded 14, their
+ * words (`PanelType.row`) over a line (`PanelType.detail`), the lines
+ * between them inset 14 at both ends; a note under the card. At the row's
+ * end: Apple's switch in the blue, a menu reading "value ⌄", an action in
+ * the link blue ("Add", "Upgrade", "Check Now"), a chevron or ↗.
  */
+enum PanelType {
+  /** A panel's title and a page's name: 17, medium, as the app's titles (never bold). */
+  static let title = Font.system(size: 17, weight: .medium)
+  /** A group's or a section's name: 13, medium. */
+  static let section = Font.system(size: 13, weight: .medium)
+  /** A row's words, its value, its action: 13. */
+  static let row = Font.system(size: 13)
+  /** The line under a row's words, a group's note, an app's line: 12. */
+  static let detail = Font.system(size: 12)
+}
+
 extension Look {
   /** A settings page's ground: white, or #141414 on dark. */
   var groupedGround: Color { dark ? Color(hex: 0x141414) : .white }
@@ -27,7 +40,7 @@ extension Look {
   var settingsGreen: Color { dark ? Color(hex: 0x38d591) : Color(hex: 0x009957) }
 }
 
-/** A group: its name (15 semibold, grey) over its card, in line with it; its note (13, grey) under it. */
+/** A group: its name (13 medium, grey) over its card, in line with it; its note (12, grey) under it. */
 struct SettingsGroup<Content: View>: View {
   var title: String? = nil
   var footer: String? = nil
@@ -36,38 +49,38 @@ struct SettingsGroup<Content: View>: View {
   @ViewBuilder let content: () -> Content
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 10) {
+    VStack(alignment: .leading, spacing: 8) {
       if let title {
         Text(title)
-          .font(.system(size: 15, weight: .semibold))
+          .font(PanelType.section)
           .foregroundStyle(look.inkSecondary)
           .accessibilityAddTraits(.isHeader)
       }
       VStack(alignment: .leading, spacing: 0) { content() }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(look.groupedRow))
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(look.groupedRow))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
       if let footer, !footer.isEmpty {
         Text(footer)
-          .font(.system(size: 13))
+          .font(PanelType.detail)
           .foregroundStyle(footerTint ?? look.inkSecondary)
           .fixedSize(horizontal: false, vertical: true)
-          .padding(.horizontal, 8)
+          .padding(.horizontal, 6)
       }
     }
   }
 }
 
-/** The line between two rows: inset 18 at both ends. */
+/** The line between two rows: inset 14 at both ends. */
 struct SettingsDivider: View {
   let look: Look
 
   var body: some View {
-    Rectangle().fill(look.ink.opacity(0.1)).frame(height: 0.5).padding(.horizontal, 18)
+    Rectangle().fill(look.ink.opacity(0.1)).frame(height: 0.5).padding(.horizontal, 14)
   }
 }
 
-/** A row: its symbol (when it has one), its words (15) over a line (13, grey), its control at the end; a line above it when it follows another. */
+/** A row: its symbol (when it has one), its words (13) over a line (12, grey), its control at the end; a line above it when it follows another. */
 struct SettingsLine<Trailing: View>: View {
   let label: String
   var detail: String? = nil
@@ -79,21 +92,21 @@ struct SettingsLine<Trailing: View>: View {
   @ViewBuilder let trailing: () -> Trailing
 
   var body: some View {
-    HStack(spacing: 14) {
+    HStack(spacing: 12) {
       if let symbol {
         Image(systemName: symbol)
-          .font(.system(size: 17))
+          .font(.system(size: 14))
           .foregroundStyle(look.ink)
-          .frame(width: 24)
+          .frame(width: 20)
       }
-      VStack(alignment: .leading, spacing: 3) {
+      VStack(alignment: .leading, spacing: 2) {
         Text(label)
-          .font(.system(size: 15))
+          .font(PanelType.row)
           .foregroundStyle(labelTint ?? look.ink)
           .fixedSize(horizontal: false, vertical: true)
         if let detail, !detail.isEmpty {
           Text(detail)
-            .font(.system(size: 13))
+            .font(PanelType.detail)
             .foregroundStyle(look.inkSecondary)
             .fixedSize(horizontal: false, vertical: true)
         }
@@ -102,9 +115,9 @@ struct SettingsLine<Trailing: View>: View {
       trailing()
         .fixedSize()
     }
-    .padding(.horizontal, 18)
-    .padding(.vertical, 14)
-    .frame(minHeight: 56)
+    .padding(.horizontal, 14)
+    .padding(.vertical, 10)
+    .frame(minHeight: 44)
     .overlay(alignment: .top) {
       if divided { SettingsDivider(look: look) }
     }
@@ -175,19 +188,19 @@ struct SettingsMenu<Value: Hashable>: View {
   private var current: String { options.first { $0.value == value }?.label ?? "" }
 }
 
-/** A menu's face: the choice (15, grey) and a chevron down. */
+/** A menu's face: the choice (13, grey) and a chevron down. */
 struct SettingsMenuLabel: View {
   let text: String
   let look: Look
 
   var body: some View {
-    HStack(spacing: 8) {
+    HStack(spacing: 6) {
       Text(text)
-        .font(.system(size: 15))
+        .font(PanelType.row)
         .foregroundStyle(look.inkSecondary)
         .lineLimit(1)
       Image(systemName: "chevron.down")
-        .font(.system(size: 11, weight: .semibold))
+        .font(.system(size: 9, weight: .medium))
         .foregroundStyle(look.inkTertiary)
     }
     .contentShape(Rectangle())
@@ -209,15 +222,15 @@ struct SettingsLinkRow: View {
   var body: some View {
     Button(action: action) {
       SettingsLine(label: label, detail: detail, divided: divided, symbol: symbol, look: look) {
-        HStack(spacing: 8) {
+        HStack(spacing: 6) {
           if let value, !value.isEmpty {
             Text(value)
-              .font(.system(size: 15))
+              .font(PanelType.row)
               .foregroundStyle(look.inkSecondary)
               .lineLimit(1)
           }
           Image(systemName: external ? "arrow.up.right" : "chevron.right")
-            .font(.system(size: 13, weight: .medium))
+            .font(.system(size: 10, weight: .medium))
             .foregroundStyle(look.inkTertiary)
         }
       }
@@ -244,14 +257,14 @@ struct SettingsActionRow: View {
     Button(action: action) {
       HStack(spacing: 8) {
         Text(title)
-          .font(.system(size: 15))
+          .font(PanelType.row)
           .foregroundStyle((destructive ? look.danger : look.settingsAction).opacity(disabled ? 0.4 : 1))
         Spacer(minLength: 8)
         if busy { ProgressView().controlSize(.small) }
       }
-      .padding(.horizontal, 18)
-      .padding(.vertical, 14)
-      .frame(minHeight: 56)
+      .padding(.horizontal, 14)
+      .padding(.vertical, 10)
+      .frame(minHeight: 44)
       .background(hovering && !disabled ? look.groupedRowHover : Color.clear)
       .overlay(alignment: .top) {
         if divided { SettingsDivider(look: look) }
@@ -264,7 +277,7 @@ struct SettingsActionRow: View {
   }
 }
 
-/** An action at a row's end, in words (the reference's "Add", "Open System Settings"): the link blue, medium when it is the main one, greyed while it can't be pressed. */
+/** An action at a row's end, in words (the reference's "Add", "Open System Settings"): the link blue, greyed while it can't be pressed. */
 struct SettingsPill: View {
   let title: String
   var primary = false
@@ -276,7 +289,7 @@ struct SettingsPill: View {
   var body: some View {
     Button(action: action) {
       Text(title)
-        .font(.system(size: 15, weight: primary ? .medium : .regular))
+        .font(PanelType.row)
         .foregroundStyle(disabled ? look.inkTertiary : look.settingsAction.opacity(hovering ? 0.8 : 1))
         .lineLimit(1)
         .contentShape(Rectangle())
@@ -300,9 +313,9 @@ struct SettingsSymbolPicker<Value: Hashable>: View {
         let chosen = option.value == value
         Button { if !chosen { pick(option.value) } } label: {
           Image(systemName: option.symbol)
-            .font(.system(size: 15))
+            .font(.system(size: 12))
             .foregroundStyle(chosen ? look.ink : look.inkSecondary)
-            .frame(width: 36, height: 30)
+            .frame(width: 30, height: 24)
             .background(Capsule().fill(chosen ? (look.dark ? Color.white.opacity(0.14) : Color.white) : .clear))
             .shadow(color: .black.opacity(chosen && !look.dark ? 0.1 : 0), radius: 1.5, x: 0, y: 1)
             .contentShape(Capsule())
@@ -313,7 +326,7 @@ struct SettingsSymbolPicker<Value: Hashable>: View {
         .accessibilityAddTraits(chosen ? [.isButton, .isSelected] : .isButton)
       }
     }
-    .padding(3)
+    .padding(2)
     .background(Capsule().fill(look.ink.opacity(look.dark ? 0.08 : 0.06)))
   }
 }

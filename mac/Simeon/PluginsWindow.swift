@@ -22,7 +22,9 @@ import SimeonCore
  * its apps, over its first six in two columns; each app's own icon, its
  * name over what it does, and + at the row's end (the green tick once it is
  * in, the spinner while it connects, "Coming soon" said quietly). Back and
- * × are the window's round glass buttons. A click outside closes it.
+ * × are the window's round glass buttons. A click outside closes it. Its
+ * size and its type are Settings' (`PanelType`; the founder: "we need
+ * consistency", and never bold).
  */
 @MainActor
 @Observable
@@ -109,7 +111,7 @@ struct PluginsLayer: View {
             .contentShape(Rectangle())
             .onTapGesture { plugins.close() }
           PluginsPanel(look: look)
-            .frame(width: max(0, min(1080, box.size.width - 48)), height: max(0, min(860, box.size.height - 64)))
+            .frame(width: max(0, min(960, box.size.width - 48)), height: max(0, min(720, box.size.height - 64)))
             .id(plugins.opening)
         }
         .frame(width: box.size.width, height: box.size.height)
@@ -178,9 +180,10 @@ private struct PluginsPanel: View {
 }
 
 /**
- * The panel's head (36 high, 20 from its top and sides): on a page, Back as
- * the window's round glass button and the page's name (15 semibold); on the
- * list, "Connectors" (20 semibold); × in the same glass at the right.
+ * The panel's head, Settings' (32 high, 18 from its top): on a page, Back
+ * as the window's round glass button before the page's name; on the list,
+ * "Connectors"; the name in `PanelType.title`; × in the same glass at the
+ * right.
  */
 private struct PanelHead: View {
   let page: PluginsModel.Page?
@@ -189,19 +192,18 @@ private struct PanelHead: View {
 
   var body: some View {
     let model = plugins.model
-    HStack(spacing: 12) {
+    HStack(spacing: 10) {
       if let page {
         GlassDiscButton(symbol: "chevron.left", help: String(localized: "Back")) { model.path.removeLast() }
         Text(PluginPages.title(page, model: model))
-          .font(.system(size: 15, weight: .semibold))
+          .font(PanelType.title)
           .foregroundStyle(look.ink)
           .lineLimit(1)
           .truncationMode(.tail)
           .accessibilityAddTraits(.isHeader)
       } else {
         Text("Connectors")
-          .font(.system(size: 20, weight: .semibold))
-          .tracking(-0.3)
+          .font(PanelType.title)
           .foregroundStyle(look.ink)
           .lineLimit(1)
           .accessibilityAddTraits(.isHeader)
@@ -209,8 +211,8 @@ private struct PanelHead: View {
       Spacer(minLength: 12)
       GlassDiscButton(symbol: "xmark", help: String(localized: "Close")) { plugins.close() }
     }
-    .frame(height: 36)
-    .padding(EdgeInsets(top: 20, leading: 20, bottom: 4, trailing: 20))
+    .frame(height: 32)
+    .padding(EdgeInsets(top: 18, leading: 24, bottom: 0, trailing: 18))
   }
 }
 
@@ -218,32 +220,33 @@ private struct PanelHead: View {
 
 /**
  * Under the head: the search across the panel with the filter beside it,
- * then Available | Yours (GlassSegments) in the middle; 16 under the head,
- * 24 at the sides, 8 under.
+ * then Available | Yours (GlassSegments) in the middle; 14 under the head,
+ * 24 at the sides, 4 under.
  */
 private struct PluginsBar: View {
   let look: Look
 
   var body: some View {
-    VStack(spacing: 16) {
-      HStack(spacing: 10) {
+    VStack(spacing: 14) {
+      HStack(spacing: 8) {
         PluginsSearch(look: look)
         FilterButton(look: look)
       }
       GlassSegments(look: look)
         .frame(maxWidth: .infinity)
     }
-    .padding(EdgeInsets(top: 16, leading: 24, bottom: 8, trailing: 24))
+    .padding(EdgeInsets(top: 14, leading: 24, bottom: 4, trailing: 24))
   }
 }
 
 /**
- * Available | Yours, as the founder's reference has two halves (21 October
- * 2026, "center available and yours and design it like sc 1"): in the
- * middle of the panel, a grey capsule 300 wide and 40 high; the chosen half
- * a white capsule with a hairline and a soft shadow (a lighter grey on
- * dark) that slides to it, its word in the ink at 15 medium, the other in
- * grey. Chosen on the click.
+ * Available | Yours, drawn as the founder's reference draws its two halves
+ * ("sc 2 is the design i gave you… look at the details"): in the middle of
+ * the panel, a pale grey capsule 220 wide and 32 high with no edge; the
+ * chosen half a white capsule as wide as the half, flush with the track's
+ * end and a point taller than it above and below, a hairline round it and
+ * the faintest shadow (a lighter grey on dark), sliding to the other half;
+ * both words regular (13), the chosen in the ink, the other in grey.
  */
 private struct GlassSegments: View {
   let look: Look
@@ -255,9 +258,9 @@ private struct GlassSegments: View {
       segment(String(localized: "Available"), .marketplace)
       segment(String(localized: "Yours"), .yours)
     }
-    .padding(3)
-    .frame(width: 300, height: 40)
-    .background(Capsule().fill(look.dark ? Color.white.opacity(0.08) : Color(hex: 0xf0f0f0)))
+    .frame(width: 220, height: 34)
+    // The track a point shorter than the chosen half, above and below.
+    .background(Capsule().fill(look.dark ? Color.white.opacity(0.08) : Color(hex: 0xf1f1f1)).padding(.vertical, 1))
     .accessibilityElement(children: .contain)
     .accessibilityLabel("Show")
   }
@@ -270,7 +273,7 @@ private struct GlassSegments: View {
       withAnimation(.snappy(duration: 0.22)) { model.tab = tab }
     } label: {
       Text(title)
-        .font(.system(size: 15, weight: chosen ? .medium : .regular))
+        .font(PanelType.row)
         .foregroundStyle(chosen ? look.ink : look.inkTertiary)
         .lineLimit(1)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -278,8 +281,8 @@ private struct GlassSegments: View {
           if chosen {
             Capsule()
               .fill(look.dark ? Color.white.opacity(0.16) : Color.white)
-              .overlay(Capsule().strokeBorder(look.ink.opacity(look.dark ? 0 : 0.08), lineWidth: 0.5))
-              .shadow(color: Color.black.opacity(look.dark ? 0 : 0.08), radius: 2, x: 0, y: 1)
+              .overlay(Capsule().strokeBorder(look.ink.opacity(look.dark ? 0 : 0.1), lineWidth: 0.5))
+              .shadow(color: Color.black.opacity(look.dark ? 0 : 0.04), radius: 1, x: 0, y: 0.5)
               .matchedGeometryEffect(id: "chosen", in: thumb)
           }
         }
@@ -293,7 +296,7 @@ private struct GlassSegments: View {
   }
 }
 
-/** Filter (40, the window's round glass button, as high as the search): its glyph in the discs' ink, in the blue while the tab's filter is set (the iPhone's); its menu stays open while choosing. */
+/** Filter (32, the window's round glass button, as high as the search): its glyph in the discs' ink, in the blue while the tab's filter is set (the iPhone's); its menu stays open while choosing. */
 private struct FilterButton: View {
   let look: Look
   @Environment(PluginsState.self) private var plugins
@@ -302,7 +305,7 @@ private struct FilterButton: View {
   var body: some View {
     let model = plugins.model
     let active = !model.filter.isAll
-    GlassDiscButton(symbol: "line.3.horizontal.decrease", help: String(localized: "Filter connectors"), size: 40, tinted: active) {
+    GlassDiscButton(symbol: "line.3.horizontal.decrease", help: String(localized: "Filter connectors"), size: 32, tinted: active) {
       FilterMenu.show(model: model, under: spot.frame)
     }
     .background(WindowSpotReader(spot: spot))
@@ -347,7 +350,7 @@ private enum FilterMenu {
 }
 
 /**
- * "Search connectors" (the bar's width, 40 high), the founder's reference: a
+ * "Search connectors" (the bar's width, 32 high), the founder's reference: a
  * white capsule with a hairline edge, the glass and the words in grey, ×
  * once something is typed; no blue ring when it has the keys (13 October
  * 2026: "what is that search bar? that has blue underline when you
@@ -362,14 +365,14 @@ private struct PluginsSearch: View {
 
   var body: some View {
     @Bindable var model = plugins.model
-    HStack(spacing: 8) {
+    HStack(spacing: 6) {
       Image(systemName: "magnifyingglass")
-        .font(.system(size: 15, weight: .regular))
+        .font(.system(size: 12, weight: .regular))
         .foregroundStyle(look.inkSecondary)
-        .frame(width: 18, height: 18)
+        .frame(width: 16, height: 16)
       TextField("", text: $model.query, prompt: Text("Search connectors").foregroundStyle(look.inkTertiary))
         .textFieldStyle(.plain)
-        .font(.system(size: 15))
+        .font(PanelType.row)
         .foregroundStyle(look.ink)
         .autocorrectionDisabled()
         .focused($focused)
@@ -377,7 +380,7 @@ private struct PluginsSearch: View {
       if !model.query.isEmpty {
         Button { model.query = "" } label: {
           Image(systemName: "xmark.circle.fill")
-            .font(.system(size: 13))
+            .font(.system(size: 12))
             .foregroundStyle(look.inkTertiary)
             .contentShape(Rectangle())
         }
@@ -385,9 +388,9 @@ private struct PluginsSearch: View {
         .accessibilityLabel("Clear search")
       }
     }
-    .padding(.horizontal, 16)
+    .padding(.horizontal, 12)
     .frame(maxWidth: .infinity)
-    .frame(height: 40)
+    .frame(height: 32)
     .background(Capsule().fill(look.dark ? Color.white.opacity(0.05) : Color.white))
     .overlay(Capsule().strokeBorder(look.ink.opacity(focused ? 0.22 : 0.12), lineWidth: 1))
     .contentShape(Capsule())
@@ -567,7 +570,7 @@ private struct YoursList: View {
           PluginsGrid(look: look) {
             ForEach(skills) { skill in
               PluginRow(title: skill.name, line: skill.subtitle, team: nil, look: look,
-                        icon: { SkillTile(side: 40, look: look) },
+                        icon: { SkillTile(side: 36, look: look) },
                         open: { model.path.append(.skill(skill.id)) }) {
                 if skill.source == "workflow" {
                   PluginSwitch(on: skill.isEnabledForAgent, label: String(localized: "Enable \(skill.name)"), look: look) {
@@ -644,7 +647,7 @@ private struct ServerMark: View {
 
 // MARK: - Rows and their parts
 
-/** A section's name (17 semibold, the ink), the founder's reference: with its › (opening all its apps) when it has a page; 28 over it and 10 under, in line with the rows' icons. */
+/** A section's name, as Settings' groups are named (`PanelType.section`, grey): with its › (opening all its apps) when it has a page; 20 over it and 6 under, in line with the rows' icons. */
 private struct SectionHeading: View {
   let title: String
   let look: Look
@@ -657,10 +660,10 @@ private struct SectionHeading: View {
         Button(action: open) {
           HStack(spacing: 6) {
             Text(title)
-              .font(.system(size: 17, weight: .semibold))
-              .foregroundStyle(look.ink)
+              .font(PanelType.section)
+              .foregroundStyle(hovering ? look.ink : look.inkSecondary)
             Image(systemName: "chevron.right")
-              .font(.system(size: 12, weight: .semibold))
+              .font(.system(size: 9, weight: .medium))
               .foregroundStyle(look.inkTertiary)
               .offset(x: hovering ? 2 : 0)
               .animation(.easeOut(duration: 0.15), value: hovering)
@@ -673,12 +676,12 @@ private struct SectionHeading: View {
         .accessibilityHint("Shows every app in \(title)")
       } else {
         Text(title)
-          .font(.system(size: 17, weight: .semibold))
-          .foregroundStyle(look.ink)
+          .font(PanelType.section)
+          .foregroundStyle(look.inkSecondary)
           .lineLimit(1)
       }
     }
-    .padding(EdgeInsets(top: 28, leading: 14, bottom: 10, trailing: 14))
+    .padding(EdgeInsets(top: 20, leading: 12, bottom: 6, trailing: 12))
     .accessibilityAddTraits(.isHeader)
   }
 }
@@ -695,17 +698,17 @@ private struct PluginsGrid<Content: View>: View {
   }
 }
 
-/** Yours' empty lines (the iPhone's: 13 in the grey, in line with the rows' icons). */
+/** Yours' empty lines (`PanelType.detail`, grey, in line with the rows' icons). */
 private struct YoursEmpty: View {
   let text: String
   let look: Look
 
   var body: some View {
     Text(text)
-      .font(.system(size: 13))
+      .font(PanelType.detail)
       .lineSpacing(2)
       .foregroundStyle(look.inkSecondary)
-      .padding(.horizontal, 14)
+      .padding(.horizontal, 12)
       .padding(.vertical, 6)
       .frame(maxWidth: .infinity, alignment: .leading)
   }
@@ -713,10 +716,10 @@ private struct YoursEmpty: View {
 
 /**
  * A row, the founder's reference (ChatGPT's Plugins) and the iPhone's
- * `AppRow` (at least 68, padded 14 and 12): the open part (the app's icon,
- * 40, then its name at 15 with its Team mark over what it does at 13 in
- * grey, each cut short) and its mark. No card and no line: the grey under
- * the pointer, 14 round.
+ * `AppRow` (at least 56, padded 12 and 10): the open part (the app's icon,
+ * 36, then its name with its Team mark over what it does in grey, in
+ * Settings' type, each cut short) and its mark. No card and no line: the
+ * grey under the pointer, 10 round.
  */
 private struct PluginRow<Icon: View, Trailing: View>: View {
   let title: String
@@ -733,12 +736,12 @@ private struct PluginRow<Icon: View, Trailing: View>: View {
   var body: some View {
     HStack(spacing: 12) {
       Button(action: open) {
-        HStack(spacing: 14) {
+        HStack(spacing: 12) {
           icon
           VStack(alignment: .leading, spacing: 2) {
             HStack(spacing: 6) {
               Text(title)
-                .font(.system(size: 15))
+                .font(PanelType.row)
                 .foregroundStyle(look.ink)
                 .lineLimit(1)
                 .truncationMode(.tail)
@@ -746,7 +749,7 @@ private struct PluginRow<Icon: View, Trailing: View>: View {
             }
             if !line.isEmpty {
               Text(line)
-                .font(.system(size: 13))
+                .font(PanelType.detail)
                 .foregroundStyle(look.inkSecondary)
                 .lineLimit(1)
                 .truncationMode(.tail)
@@ -761,10 +764,10 @@ private struct PluginRow<Icon: View, Trailing: View>: View {
       .accessibilityLabel("Open \(title)")
       trailing
     }
-    .padding(.horizontal, 14)
-    .padding(.vertical, 12)
-    .frame(minHeight: 68)
-    .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(hovering ? look.groupedRow : .clear))
+    .padding(.horizontal, 12)
+    .padding(.vertical, 10)
+    .frame(minHeight: 56)
+    .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(hovering ? look.groupedRow : .clear))
     .onHover { hovering = $0 }
   }
 }
@@ -793,13 +796,13 @@ private struct TeamBadge: View {
  * whole, with an app icon's corners and a hairline (`AppIcons`, shared with
  * the iPhone; 21 October 2026, the founder: "the icons"); else its logo at
  * 76% of a tile (13 October 2026: "bigger the logos"), white with a hairline
- * edge (light) or the raised grey (dark); else its first letter. 40 on a
- * row, 56 on a page.
+ * edge (light) or the raised grey (dark); else its first letter. 36 on a
+ * row, 48 on a page.
  */
 private struct PluginIcon: View {
   let name: String
   let iconUrl: String?
-  var side: CGFloat = 40
+  var side: CGFloat = 36
   /** The catalogue's id, when the caller has it; the name finds the icon otherwise. */
   var id: String? = nil
   let look: Look
@@ -840,7 +843,7 @@ private struct PluginIcon: View {
   }
 }
 
-/** A skill's tile: the list mark on a faint fill, an app icon's corners (a row's, 40, without its edge). */
+/** A skill's tile: the list mark on a faint fill, an app icon's corners (a row's, 36, without its edge). */
 private struct SkillTile: View {
   let side: CGFloat
   let look: Look
@@ -849,7 +852,7 @@ private struct SkillTile: View {
     let row = side < 50
     let shape = RoundedRectangle(cornerRadius: side * 11 / 40, style: .continuous)
     Image(systemName: "list.bullet.rectangle")
-      .font(.system(size: row ? 16 : 20))
+      .font(.system(size: row ? 14 : 18))
       .foregroundStyle(row ? look.inkSecondary : look.ink)
       .frame(width: side, height: side)
       .background(shape.fill(look.ink.opacity(row ? 0.06 : 0.03)))
@@ -861,7 +864,7 @@ private struct SkillTile: View {
 }
 
 /**
- * A pill, the iPhone's `PluginPill` (13 medium, 26 high, 12 either side,
+ * A pill, the iPhone's `PluginPill` (12 medium, 24 high, 10 either side,
  * round): secondary (the iPhone's grey, darker under the pointer), primary
  * (Connect's blue with white words), a team's label (the grey, grey words,
  * not a button) or Coming soon (the grey, fainter words, not a button).
@@ -879,11 +882,11 @@ private struct PluginPill: View {
   var body: some View {
     Button(action: action) {
       Text(title)
-        .font(.system(size: 13, weight: .medium))
+        .font(.system(size: 12, weight: .medium))
         .foregroundStyle(ink)
         .lineLimit(1)
-        .padding(.horizontal, 12)
-        .frame(height: 26)
+        .padding(.horizontal, 10)
+        .frame(height: 24)
         .background(Capsule().fill(fill))
         .contentShape(Capsule())
     }
@@ -913,7 +916,7 @@ private struct PluginPill: View {
   }
 }
 
-/** While its add runs (`dt`, in the marks' 32 square): a 17.5 ring turning every 0.7 s, its bottom quarter fainter. */
+/** While its add runs (`dt`, in the marks' 28 square): a 15 ring turning every 0.7 s, its bottom quarter fainter. */
 private struct AddingSpinner: View {
   let name: String
   let look: Look
@@ -925,32 +928,32 @@ private struct AddingSpinner: View {
       // Three quarters in the darker grey: all but the bottom side, as the window's ring has it.
       Circle().trim(from: 0, to: 0.75).stroke(look.inkSecondary, lineWidth: 2).rotationEffect(.degrees(135))
     }
-    .frame(width: 17.5, height: 17.5)
+    .frame(width: 15, height: 15)
     .rotationEffect(.degrees(turning ? 360 : 0))
-    .frame(width: 32, height: 32)
+    .frame(width: 28, height: 28)
     .onAppear { withAnimation(.linear(duration: 0.7).repeatForever(autoreverses: false)) { turning = true } }
     .accessibilityElement()
     .accessibilityLabel("Connecting \(name)")
   }
 }
 
-/** Connected (`di`; "Added" for a plugin of skills alone), the iPhone's `ConnectorMark.added`: the tick in green, in the marks' 32 square, its word for the ear and the pointer. Not a button. */
+/** Connected (`di`; "Added" for a plugin of skills alone), the iPhone's `ConnectorMark.added`: the tick in green, in the marks' 28 square, its word for the ear and the pointer. Not a button. */
 private struct AddedMark: View {
   var title = Connecting.connected
   let look: Look
 
   var body: some View {
     Image(systemName: "checkmark")
-      .font(.system(size: 15, weight: .medium))
+      .font(.system(size: 13, weight: .medium))
       .foregroundStyle(look.success)
-      .frame(width: 32, height: 32)
+      .frame(width: 28, height: 28)
       .help(title)
       .accessibilityElement()
       .accessibilityLabel(title)
   }
 }
 
-/** Connect, the iPhone's `ConnectorMark.plus`: + in the ink (18, light) in a 32 square, a faint disc under the pointer. */
+/** Connect, the iPhone's `ConnectorMark.plus`: + in the ink (16, light) in a 28 square, a faint disc under the pointer. */
 private struct PlusMark: View {
   var disabled = false
   let look: Look
@@ -960,9 +963,9 @@ private struct PlusMark: View {
   var body: some View {
     Button(action: action) {
       Image(systemName: "plus")
-        .font(.system(size: 18, weight: .light))
+        .font(.system(size: 16, weight: .light))
         .foregroundStyle(look.ink)
-        .frame(width: 32, height: 32)
+        .frame(width: 28, height: 28)
         .background(Circle().fill(hovering && !disabled ? look.groupedRowHover : .clear))
         .contentShape(Circle())
     }
@@ -994,7 +997,7 @@ private struct StatusWord: View {
 
   var body: some View {
     Text(Plugins.statusWord(status))
-      .font(.system(size: 13))
+      .font(PanelType.row)
       .foregroundStyle(look.tone(Plugins.tone(status)))
       .lineLimit(1)
       .fixedSize()
@@ -1129,7 +1132,7 @@ private struct PluginPages: View {
       }
       // A page's parts at a readable width, in the middle of the wide panel; a section's apps across it.
       .frame(maxWidth: isCategory ? CGFloat.infinity : 720, alignment: .leading)
-      .padding(EdgeInsets(top: isCategory ? 4 : 22, leading: isCategory ? 10 : 32, bottom: 32, trailing: isCategory ? 10 : 32))
+      .padding(EdgeInsets(top: isCategory ? 4 : 16, leading: isCategory ? 12 : 24, bottom: 32, trailing: isCategory ? 12 : 24))
       .frame(maxWidth: .infinity, alignment: isCategory ? .leading : .top)
     }
     .scrollIndicators(.automatic)
@@ -1169,7 +1172,7 @@ private struct PluginPages: View {
   }
 }
 
-/** A page's head (56), the iPhone's: the icon, the name (18 semibold) with its line under it, the action at the right. */
+/** A page's head (48), the iPhone's: the icon, the name (`PanelType.section`) with its line under it, the action at the right. */
 private struct PageHead<Icon: View, Meta: View, Action: View>: View {
   let name: String
   let look: Look
@@ -1182,8 +1185,7 @@ private struct PageHead<Icon: View, Meta: View, Action: View>: View {
       icon
       VStack(alignment: .leading, spacing: 2) {
         Text(name)
-          .font(.system(size: 18, weight: .semibold))
-          .tracking(-0.2)
+          .font(PanelType.section)
           .foregroundStyle(look.ink)
           .lineLimit(1)
         meta
@@ -1191,7 +1193,7 @@ private struct PageHead<Icon: View, Meta: View, Action: View>: View {
       .frame(maxWidth: .infinity, alignment: .leading)
       action
     }
-    .frame(minHeight: 56)
+    .frame(minHeight: 48)
   }
 }
 
@@ -1210,7 +1212,7 @@ private struct PluginPage: View {
     VStack(alignment: .leading, spacing: 24) {
       VStack(alignment: .leading, spacing: 12) {
         PageHead(name: entry.displayName, look: look) {
-          PluginIcon(name: entry.displayName, iconUrl: entry.iconUrl, side: 56, id: entry.id, look: look)
+          PluginIcon(name: entry.displayName, iconUrl: entry.iconUrl, side: 48, id: entry.id, look: look)
         } meta: {
           MetaLine(market: entry.marketplace?.displayName, homepage: entry.homepage, look: look)
         } action: {
@@ -1228,7 +1230,7 @@ private struct PluginPage: View {
         if installed.isInstalled && item != nil && entry.hasSetupFields {
           PageCard(heading: String(localized: "Setup"), look: look) {
             CardRow(look: look) {
-              Text("Setup Values").font(.system(size: 15)).foregroundStyle(look.ink).frame(maxWidth: .infinity, alignment: .leading)
+              Text("Setup Values").font(PanelType.row).foregroundStyle(look.ink).frame(maxWidth: .infinity, alignment: .leading)
               PluginPill(title: String(localized: "Edit Values"), kind: .secondary, disabled: model.isBusy, look: look) { model.editValues(entry) }
             }
           }
@@ -1264,10 +1266,10 @@ private struct ServerPage: View {
     let model = plugins.model
     VStack(alignment: .leading, spacing: 24) {
       PageHead(name: server.name, look: look) {
-        PluginIcon(name: server.name, iconUrl: nil, side: 56, look: look)
+        PluginIcon(name: server.name, iconUrl: nil, side: 48, look: look)
       } meta: {
         if let host = Plugins.hostLine(server.url) {
-          Text(host).font(.system(size: 13)).foregroundStyle(look.inkSecondary).lineLimit(1)
+          Text(host).font(PanelType.detail).foregroundStyle(look.inkSecondary).lineLimit(1)
         }
       } action: {
         PageActionView(action: Plugins.pageAction(installed: true, mode: server.installMode), adding: false, name: server.name, look: look, add: {})
@@ -1374,21 +1376,21 @@ private struct MetaLine: View {
           .onHover { hovering = $0 }
         }
       }
-      .font(.system(size: 13))
+      .font(PanelType.detail)
       .foregroundStyle(look.inkSecondary)
       .lineLimit(1)
     }
   }
 }
 
-/** A page's description: 14 on 20 in grey, wrapped. */
+/** A page's description: the row's type in grey, wrapped. */
 private struct Description: View {
   let text: String
   let look: Look
 
   var body: some View {
     Text(text)
-      .font(.system(size: 14))
+      .font(PanelType.row)
       .lineSpacing(3)
       .foregroundStyle(look.inkSecondary)
       .fixedSize(horizontal: false, vertical: true)
@@ -1407,7 +1409,7 @@ private struct PageCard<Content: View>: View {
   }
 }
 
-/** A group's row (padded 14 and 18, 8 apart, at least 56): Settings' line above it when it follows another. */
+/** A group's row (padded 10 and 14, 8 apart, at least 44, Settings' row): Settings' line above it when it follows another. */
 private struct CardRow<Content: View>: View {
   var divided = false
   let look: Look
@@ -1415,9 +1417,9 @@ private struct CardRow<Content: View>: View {
 
   var body: some View {
     HStack(spacing: 8) { content }
-      .padding(.vertical, 14)
-      .padding(.horizontal, 18)
-      .frame(minHeight: 56)
+      .padding(.vertical, 10)
+      .padding(.horizontal, 14)
+      .frame(minHeight: 44)
       .overlay(alignment: .top) {
         if divided { SettingsDivider(look: look) }
       }
@@ -1432,10 +1434,10 @@ private struct DetailPair: View {
 
   var body: some View {
     HStack(spacing: 8) {
-      Text(term).font(.system(size: 15)).foregroundStyle(look.ink).lineLimit(1).fixedSize()
+      Text(term).font(PanelType.row).foregroundStyle(look.ink).lineLimit(1).fixedSize()
       Spacer(minLength: 0)
       Text(value)
-        .font(.system(size: 15))
+        .font(PanelType.row)
         .foregroundStyle(look.inkTertiary)
         .lineLimit(1)
         .truncationMode(.middle)
@@ -1459,10 +1461,10 @@ private struct AccountsCard: View {
         ForEach(Array(rows.enumerated()), id: \.offset) { index, row in
           CardRow(divided: index > 0, look: look) {
             VStack(alignment: .leading, spacing: 2) {
-              Text(Plugins.accountLabel(row.accountKey)).font(.system(size: 15)).foregroundStyle(look.ink).lineLimit(1)
-              Text(Plugins.statusWord(row.status)).font(.system(size: 13)).foregroundStyle(look.tone(Plugins.tone(row.status))).lineLimit(1)
+              Text(Plugins.accountLabel(row.accountKey)).font(PanelType.row).foregroundStyle(look.ink).lineLimit(1)
+              Text(Plugins.statusWord(row.status)).font(PanelType.detail).foregroundStyle(look.tone(Plugins.tone(row.status))).lineLimit(1)
               if row.status == "error", let detail = row.statusDetail {
-                Text(detail).font(.system(size: 13)).foregroundStyle(look.inkSecondary)
+                Text(detail).font(PanelType.detail).foregroundStyle(look.inkSecondary)
                   .fixedSize(horizontal: false, vertical: true)
                   .textSelection(.enabled)
               }
@@ -1495,7 +1497,7 @@ private struct ToolsCard: View {
         ForEach(tools) { tool in
           let name = names[tool.name] ?? tool.name
           CardRow(divided: true, look: look) {
-            Text(name).font(.system(size: 15)).foregroundStyle(look.ink).lineLimit(1).help(tool.description)
+            Text(name).font(PanelType.row).foregroundStyle(look.ink).lineLimit(1).help(tool.description)
               .frame(maxWidth: .infinity, alignment: .leading)
             PluginSwitch(on: !tool.isDisabled, label: tool.isDisabled ? String(localized: "Enable \(name)") : String(localized: "Disable \(name)"), look: look) {
               Task { await model.toggle(tool, of: serverId) }
@@ -1505,7 +1507,7 @@ private struct ToolsCard: View {
       } footer: {
         if let failure = model.toolFailures[serverId] {
           CardRow(divided: true, look: look) {
-            Text(failure).font(.system(size: 15)).foregroundStyle(look.danger).frame(maxWidth: .infinity, alignment: .leading)
+            Text(failure).font(PanelType.row).foregroundStyle(look.danger).frame(maxWidth: .infinity, alignment: .leading)
           }
         }
       }
@@ -1524,9 +1526,9 @@ private struct FoldCard: View {
     FoldShell(heading: heading, summary: summary, look: look) {
       ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
         CardRow(divided: true, look: look) {
-          Text(row.0).font(.system(size: 15)).foregroundStyle(look.ink).lineLimit(1).fixedSize()
+          Text(row.0).font(PanelType.row).foregroundStyle(look.ink).lineLimit(1).fixedSize()
           Spacer(minLength: 8)
-          Text(row.1).font(.system(size: 15)).foregroundStyle(look.inkTertiary).lineLimit(1).truncationMode(.tail).padding(.trailing, 4).help(row.1)
+          Text(row.1).font(PanelType.row).foregroundStyle(look.inkTertiary).lineLimit(1).truncationMode(.tail).padding(.trailing, 4).help(row.1)
         }
       }
     } footer: { EmptyView() }
@@ -1547,7 +1549,7 @@ private struct FoldShell<Rows: View, Footer: View>: View {
     PageCard(heading: heading, look: look) {
       Button { open.toggle() } label: {
         HStack(spacing: 8) {
-          Text(summary).font(.system(size: 15)).foregroundStyle(look.ink).frame(maxWidth: .infinity, alignment: .leading)
+          Text(summary).font(PanelType.row).foregroundStyle(look.ink).frame(maxWidth: .infinity, alignment: .leading)
           Image(systemName: "chevron.down")
             .font(.system(size: 10, weight: .medium))
             .foregroundStyle(look.inkTertiary)
@@ -1555,9 +1557,9 @@ private struct FoldShell<Rows: View, Footer: View>: View {
             .animation(.easeOut(duration: 0.12), value: open)
             .padding(.trailing, 4)
         }
-        .padding(.vertical, 14)
-        .padding(.horizontal, 18)
-        .frame(minHeight: 56)
+        .padding(.vertical, 10)
+        .padding(.horizontal, 14)
+        .frame(minHeight: 44)
         .background(hovering ? look.groupedRowHover : .clear)
         .contentShape(Rectangle())
       }
@@ -1679,9 +1681,9 @@ private struct SkillPage: View {
     VStack(alignment: .leading, spacing: 16) {
       VStack(alignment: .leading, spacing: 12) {
         HStack(spacing: 12) {
-          SkillTile(side: 56, look: look)
+          SkillTile(side: 48, look: look)
           VStack(alignment: .leading, spacing: 2) {
-            Text(skill.name).font(.system(size: 18, weight: .semibold)).tracking(-0.2).foregroundStyle(look.ink).lineLimit(1)
+            Text(skill.name).font(PanelType.section).foregroundStyle(look.ink).lineLimit(1)
             Text(skill.kindLine).font(.system(size: 13)).foregroundStyle(look.inkSecondary)
           }
           Spacer(minLength: 0)
@@ -1720,7 +1722,7 @@ private struct SkillPage: View {
   }
 }
 
-/** A skill's field: its label (12, the faint grey, padded 8, 8 and 6) over a 14-round field (46, padded 12 and 16, 14). */
+/** A skill's field: its label (a group's name) over an 8-round field (at least 32, padded 7 and 10), the row's type. */
 private struct SkillField: View {
   let label: String
   @Binding var text: String
@@ -1731,9 +1733,9 @@ private struct SkillField: View {
   var body: some View {
     VStack(alignment: .leading, spacing: 0) {
       Text(label)
-        .font(.system(size: 12))
-        .foregroundStyle(look.inkTertiary)
-        .padding(EdgeInsets(top: 8, leading: 8, bottom: 6, trailing: 8))
+        .font(PanelType.section)
+        .foregroundStyle(look.inkSecondary)
+        .padding(.bottom, 8)
       Group {
         if lines {
           TextField("", text: $text, prompt: Text(placeholder).foregroundStyle(look.inkTertiary), axis: .vertical)
@@ -1744,16 +1746,16 @@ private struct SkillField: View {
         }
       }
       .textFieldStyle(.plain)
-      .font(.system(size: 14))
+      .font(PanelType.row)
       .foregroundStyle(look.ink)
       .autocorrectionDisabled()
-      .padding(.vertical, 12)
-      .padding(.horizontal, 16)
-      .frame(minHeight: 46)
-      .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(look.dark ? look.rowHover : Color.white))
+      .padding(.vertical, 7)
+      .padding(.horizontal, 10)
+      .frame(minHeight: 32)
+      .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(look.dark ? look.rowHover : Color.white))
       .overlay {
         if !look.dark {
-          RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Color(red: 20 / 255, green: 30 / 255, blue: 60 / 255).opacity(0.14), lineWidth: 0.5)
+          RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(Color(red: 20 / 255, green: 30 / 255, blue: 60 / 255).opacity(0.14), lineWidth: 0.5)
         }
       }
       .accessibilityLabel(label)

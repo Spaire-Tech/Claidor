@@ -38,7 +38,7 @@ extension View {
 struct GlassDiscButton: View {
   let symbol: String
   let help: String
-  var size: CGFloat = 36
+  var size: CGFloat = 32
   /** Its symbol in the blue (a filter that is set). */
   var tinted = false
   let action: () -> Void

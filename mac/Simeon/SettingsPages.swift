@@ -9,7 +9,7 @@ import SimeonMacCore
  * Wallet (the iPhone's WalletPage: "wallet is just another connectors page
  * basically. but link and shop"; laid out as the founder's reference, 21
  * October 2026): what it is for in a line, then "Payment methods", Link by
- * Stripe and Shop Pay, each its app's icon (32) and its name, as the
+ * Stripe and Shop Pay, each its app's icon (28) and its name, as the
  * purchase card names them. A row opens the app's page in Connectors, where
  * it is added and signed in as every app is; connected, the row says so in
  * green, else Add in the link blue.
@@ -23,9 +23,9 @@ struct SettingsWalletPage: View {
   static let wallets: [(id: String, name: String)] = [("link", "Link by Stripe"), ("shop", "Shop Pay")]
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 28) {
+    VStack(alignment: .leading, spacing: 22) {
       Text("Add a way to pay so your agents can make secure purchases for you. Each purchase waits for your approval.")
-        .font(.system(size: 15))
+        .font(PanelType.row)
         .foregroundStyle(look.ink)
         .fixedSize(horizontal: false, vertical: true)
       SettingsGroup(title: String(localized: "Payment methods"), look: look) {
@@ -53,31 +53,31 @@ private struct WalletLine: View {
     let title = store.catalog.first { $0.id == id }?.title ?? name
     let connected = store.isConnected(title)
     Button(action: open) {
-      HStack(spacing: 14) {
-        AppLogoTile(name: title, look: look, side: 32, id: id)
+      HStack(spacing: 12) {
+        AppLogoTile(name: title, look: look, side: 28, id: id)
         Text(name)
-          .font(.system(size: 15))
+          .font(PanelType.row)
           .foregroundStyle(look.ink)
           .lineLimit(1)
         Spacer(minLength: 8)
         if connected {
           HStack(spacing: 4) {
-            Image(systemName: "checkmark").font(.system(size: 12, weight: .semibold))
-            Text("Connected").font(.system(size: 15))
+            Image(systemName: "checkmark").font(.system(size: 10, weight: .medium))
+            Text("Connected").font(PanelType.row)
           }
           .foregroundStyle(look.settingsGreen)
           Image(systemName: "chevron.right")
-            .font(.system(size: 12, weight: .semibold))
+            .font(.system(size: 10, weight: .medium))
             .foregroundStyle(look.inkTertiary)
         } else {
           Text("Add")
-            .font(.system(size: 15))
+            .font(PanelType.row)
             .foregroundStyle(look.settingsAction)
         }
       }
-      .padding(.horizontal, 18)
-      .padding(.vertical, 12)
-      .frame(minHeight: 56)
+      .padding(.horizontal, 14)
+      .padding(.vertical, 8)
+      .frame(minHeight: 44)
       .background(hovering ? look.groupedRowHover : Color.clear)
       .overlay(alignment: .top) { if divided { SettingsDivider(look: look) } }
       .contentShape(Rectangle())
@@ -107,7 +107,7 @@ struct SettingsComputerPage: View {
   @State private var model = GeneralSettingsModel()
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 28) {
+    VStack(alignment: .leading, spacing: 22) {
       AgentsComputerGroup(look: look) { window.computerAsk = $0 }
       YourComputerGroup(model: model, look: look)
     }
@@ -139,11 +139,11 @@ private struct AgentsComputerGroup: View {
       } else {
         SettingsLine(label: String(localized: "Version"), divided: true, look: look) {
           if store.computerUpdateAvailable {
-            Text("A new version is available").font(.system(size: 15)).foregroundStyle(look.settingsAction)
+            Text("A new version is available").font(PanelType.row).foregroundStyle(look.settingsAction)
           } else {
             HStack(spacing: 4) {
-              Image(systemName: "checkmark").font(.system(size: 12, weight: .semibold))
-              Text("Up to date").font(.system(size: 15))
+              Image(systemName: "checkmark").font(.system(size: 10, weight: .medium))
+              Text("Up to date").font(PanelType.row)
             }
             .foregroundStyle(look.settingsGreen)
           }
@@ -159,19 +159,19 @@ private struct AgentsComputerGroup: View {
     if let kind = rebuild.lock.kind ?? rebuild.pendingKind {
       HStack(spacing: 6) {
         ProgressView().controlSize(.small)
-        Text(RebuildWords.title(kind)).font(.system(size: 15)).foregroundStyle(look.inkSecondary).lineLimit(1)
+        Text(RebuildWords.title(kind)).font(PanelType.row).foregroundStyle(look.inkSecondary).lineLimit(1)
       }
     } else if unreachable {
-      Text("Can't reach it").font(.system(size: 15)).foregroundStyle(look.danger)
+      Text("Can't reach it").font(PanelType.row).foregroundStyle(look.danger)
     } else if store.isLive {
       HStack(spacing: 6) {
         Circle().fill(look.working).frame(width: 8, height: 8)
-        Text("Connected").font(.system(size: 15)).foregroundStyle(look.inkSecondary)
+        Text("Connected").font(PanelType.row).foregroundStyle(look.inkSecondary)
       }
     } else {
       HStack(spacing: 6) {
         ProgressView().controlSize(.small)
-        Text("Connecting…").font(.system(size: 15)).foregroundStyle(look.inkSecondary)
+        Text("Connecting…").font(PanelType.row).foregroundStyle(look.inkSecondary)
       }
     }
   }
@@ -242,7 +242,7 @@ struct SettingsUpdatesPage: View {
 
   var body: some View {
     let version = SettingsVersion.current
-    VStack(alignment: .leading, spacing: 28) {
+    VStack(alignment: .leading, spacing: 22) {
       SettingsGroup(title: String(localized: "Simeon for Mac"),
                     footer: updates.available ? nil : String(localized: "This build doesn't update itself. Released builds of Simeon check for updates on their own."),
                     look: look) {
@@ -250,7 +250,7 @@ struct SettingsUpdatesPage: View {
           if updates.checking {
             HStack(spacing: 6) {
               ProgressView().controlSize(.small)
-              Text("Checking…").font(.system(size: 15)).foregroundStyle(look.inkSecondary)
+              Text("Checking…").font(PanelType.row).foregroundStyle(look.inkSecondary)
             }
           } else if updates.found == nil {
             SettingsPill(title: String(localized: "Check Now"), disabled: !updates.available, look: look) { updates.lookQuietly() }

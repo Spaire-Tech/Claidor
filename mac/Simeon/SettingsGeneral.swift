@@ -17,7 +17,7 @@ struct SettingsGeneralPage: View {
   @State private var model = GeneralSettingsModel()
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 28) {
+    VStack(alignment: .leading, spacing: 22) {
       SettingsGroup(look: look) {
         AccountRow(look: look) { settings.page = .account }
       }
@@ -52,25 +52,25 @@ private struct AccountRow: View {
     let display = AccountDisplay(displayName: account?.name, email: account?.email)
     Button(action: action) {
       HStack(spacing: 14) {
-        SettingsAccountFace(size: 40, look: look)
+        SettingsAccountFace(size: 32, look: look)
         VStack(alignment: .leading, spacing: 3) {
           Text(display.title)
-            .font(.system(size: 15))
+            .font(PanelType.row)
             .foregroundStyle(look.ink)
             .lineLimit(1)
           Text(display.secondary ?? String(localized: "Name, email and password"))
-            .font(.system(size: 13))
+            .font(PanelType.detail)
             .foregroundStyle(look.inkSecondary)
             .lineLimit(1)
             .truncationMode(.middle)
         }
         Spacer(minLength: 8)
         Image(systemName: "chevron.right")
-          .font(.system(size: 13, weight: .medium))
+          .font(.system(size: 10, weight: .medium))
           .foregroundStyle(look.inkTertiary)
       }
-      .padding(.horizontal, 18)
-      .padding(.vertical, 14)
+      .padding(.horizontal, 14)
+      .padding(.vertical, 10)
       .background(hovering ? look.groupedRowHover : Color.clear)
       .contentShape(Rectangle())
     }
@@ -100,7 +100,7 @@ private struct TimeZoneGroup: View {
       SettingsLine(label: String(localized: "Time Zone"), divided: true, look: look) {
         if automatic {
           Text(TimeZoneChoices.label(model.detectedZone))
-            .font(.system(size: 15))
+            .font(PanelType.row)
             .foregroundStyle(look.inkSecondary)
         } else {
           Button { zoneMenu(under: spot.frame) } label: {
@@ -221,17 +221,17 @@ struct SettingsAccountPage: View {
   var body: some View {
     let account = store.account
     let display = AccountDisplay(displayName: account?.name, email: account?.email)
-    VStack(alignment: .leading, spacing: 28) {
+    VStack(alignment: .leading, spacing: 22) {
       HStack(spacing: 16) {
-        SettingsAccountFace(size: 56, look: look)
+        SettingsAccountFace(size: 44, look: look)
         VStack(alignment: .leading, spacing: 3) {
           Text(display.title)
-            .font(.system(size: 18, weight: .semibold))
+            .font(PanelType.section)
             .foregroundStyle(look.ink)
             .lineLimit(1)
           if let mail = display.secondary {
             Text(mail)
-              .font(.system(size: 13))
+              .font(PanelType.detail)
               .foregroundStyle(look.inkSecondary)
               .lineLimit(1)
           }
@@ -240,7 +240,7 @@ struct SettingsAccountPage: View {
       SettingsGroup(look: look) {
         SettingsLine(label: String(localized: "Name"), look: look) {
           Text(account?.name ?? "")
-            .font(.system(size: 15))
+            .font(PanelType.row)
             .foregroundStyle(look.inkSecondary)
             .lineLimit(1)
         }
@@ -249,12 +249,12 @@ struct SettingsAccountPage: View {
             SettingsLine(label: String(localized: "Email"), divided: true, look: look) {
               HStack(spacing: 8) {
                 Text(mail)
-                  .font(.system(size: 15))
+                  .font(PanelType.row)
                   .foregroundStyle(look.inkSecondary)
                   .lineLimit(1)
                   .truncationMode(.middle)
                 Image(systemName: copied ? "checkmark" : "doc.on.doc")
-                  .font(.system(size: 12))
+                  .font(.system(size: 11))
                   .foregroundStyle(look.inkSecondary)
               }
             }
@@ -305,7 +305,7 @@ private struct PasswordForm: View {
       field(hasPassword == true ? String(localized: "New password") : String(localized: "Password"), text: $password)
       field(String(localized: "Type it again"), text: $again)
       Text(problem ?? (mismatch ? String(localized: "The two don't match.") : String(localized: "At least \(EmailSignIn.minimumPassword) characters. You'll sign in with \(store.account?.email ?? "your email") and this password.")))
-        .font(.system(size: 13))
+        .font(PanelType.detail)
         .foregroundStyle(problem != nil || mismatch ? look.danger : look.inkSecondary)
         .fixedSize(horizontal: false, vertical: true)
       HStack {
@@ -314,8 +314,8 @@ private struct PasswordForm: View {
         SettingsPill(title: hasPassword == true ? String(localized: "Change Password") : String(localized: "Set Password"), primary: true, disabled: !ready || saving, look: look, action: save)
       }
     }
-    .padding(.horizontal, 18)
-    .padding(.vertical, 14)
+    .padding(.horizontal, 14)
+    .padding(.vertical, 10)
     .overlay(alignment: .top) { SettingsDivider(look: look) }
     .task { hasPassword = await store.hasPassword() }
   }
@@ -323,9 +323,9 @@ private struct PasswordForm: View {
   private func field(_ prompt: String, text: Binding<String>) -> some View {
     SecureField(prompt, text: text)
       .textFieldStyle(.plain)
-      .font(.system(size: 14))
-      .padding(.horizontal, 12)
-      .frame(height: 34)
+      .font(PanelType.row)
+      .padding(.horizontal, 10)
+      .frame(height: 30)
       .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(look.groupedGround))
       .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(look.ink.opacity(0.1), lineWidth: 1))
       .onSubmit(save)
@@ -368,7 +368,7 @@ struct SettingsPermissionsPage: View {
       }
       if model.rules.isEnabled {
         Text("Write one short, natural-language rule for each action. \"Ask first\" takes priority if rules conflict.")
-          .font(.system(size: 13))
+          .font(PanelType.detail)
           .foregroundStyle(look.inkSecondary)
           .fixedSize(horizontal: false, vertical: true)
           .padding(.horizontal, 8)
@@ -413,8 +413,8 @@ private struct RuleLine: View {
           SettingsPill(title: String(localized: "Save Rule"), primary: true, disabled: !model.canSave, look: look) { model.save(store: store) }
         }
       }
-      .padding(.horizontal, 18)
-      .padding(.vertical, 14)
+      .padding(.horizontal, 14)
+      .padding(.vertical, 10)
       .overlay(alignment: .top) { if divided { SettingsDivider(look: look) } }
     } else {
       SettingsLine(label: rule.text, divided: divided, look: look) {
@@ -441,12 +441,12 @@ private struct NewRuleGroup: View {
                   footer: full ? String(localized: "\(AutoReviewInstructions.label(model.behavior)) is full (\(AutoReviewInstructions.limitNote)).") : String(localized: "These rules apply only to you. Built-in safety checks always apply."),
                   look: look) {
       VStack(alignment: .leading, spacing: 6) {
-        Text("When Simeon wants to:").font(.system(size: 13)).foregroundStyle(look.inkSecondary)
+        Text("When Simeon wants to:").font(PanelType.detail).foregroundStyle(look.inkSecondary)
         RuleField(text: Binding(get: { model.draft }, set: { @MainActor in model.draft = AutoReviewInstructions.clip($0) }),
                   prompt: String(localized: "e.g. reply to emails for me"), look: look, submit: { model.add(store: store) })
       }
-      .padding(.horizontal, 18)
-      .padding(.vertical, 14)
+      .padding(.horizontal, 14)
+      .padding(.vertical, 10)
       SettingsLine(label: String(localized: "It should:"), divided: true, look: look) {
         BehaviorMenu(value: model.behavior, look: look) { model.behavior = $0 }
       }
@@ -465,9 +465,9 @@ private struct RuleField: View {
   var body: some View {
     TextField(prompt, text: text, axis: .vertical)
       .textFieldStyle(.plain)
-      .font(.system(size: 14))
+      .font(PanelType.row)
       .lineLimit(1...4)
-      .padding(.horizontal, 12)
+      .padding(.horizontal, 10)
       .padding(.vertical, 8)
       .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(look.groupedGround))
       .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(look.ink.opacity(0.1), lineWidth: 1))
@@ -509,7 +509,7 @@ private struct RuleIcon: View {
   var body: some View {
     Button(action: action) {
       Image(systemName: systemImage)
-        .font(.system(size: 13))
+        .font(.system(size: 12))
         .foregroundStyle(hovering && !disabled ? look.ink : look.inkSecondary)
         .frame(width: 28, height: 28)
         .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(hovering && !disabled ? look.rowHover : .clear))
