@@ -5,6 +5,7 @@ import { CATALOG_FR, CATALOG_GROUPS_FR } from "../../words/areas/catalog.js";
 import { VENDOR_MCP_CONNECTORS, VENDOR_MCP_GROUP, type VendorMcpConnector } from "./catalog.js";
 import { isAppsServiceAvailable } from "./apps-availability.js";
 import { vendorPluginLogoUrl } from "./logos.js";
+import { VENDOR_MCP_SOURCES } from "./sources.js";
 
 export function vendorConnectorToPlugin(item: VendorMcpConnector): SandMarketplacePlugin {
   return {
@@ -14,8 +15,9 @@ export function vendorConnectorToPlugin(item: VendorMcpConnector): SandMarketpla
     description: item.description,
     category: item.category,
     logoUrl: vendorPluginLogoUrl(item.id),
-    // An app our server serves has no homepage of its own; its url is our MCP address.
-    homepage: item.appsToolkit == null ? item.url : undefined,
+    // View Source: where the vendor's server comes from (`sources.ts`), never the server's own address, which a
+    // browser cannot open; Link's and Shop's own pages; nothing for an app our server serves.
+    homepage: item.appsToolkit != null ? undefined : (VENDOR_MCP_SOURCES[item.id] ?? (item.boxCli == null ? undefined : item.url)),
     sourceUrls: [],
     connectors: [{ name: item.name, description: item.description }],
     skills: [],
