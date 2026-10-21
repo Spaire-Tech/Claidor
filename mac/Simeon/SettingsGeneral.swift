@@ -452,7 +452,7 @@ private struct RuleLine: View {
         RuleField(text: Binding(get: { model.editing?.text ?? "" }, set: { @MainActor in model.editing?.text = AutoReviewInstructions.clip($0) }),
                   prompt: String(localized: "Action"), look: look)
         HStack(spacing: 8) {
-          BehaviorMenu(value: editing.behavior, look: look) { @MainActor in model.editing?.behavior = $0 }
+          BehaviorMenu(value: editing.behavior, look: look) { model.editing?.behavior = $0 }
           Spacer(minLength: 0)
           if editing.behavior != rule.behavior && AutoReviewInstructions.isFull(model.rules.list(editing.behavior)) {
             Text(AutoReviewInstructions.limitNote).font(.system(size: 11)).foregroundStyle(look.link)

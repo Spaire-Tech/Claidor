@@ -120,7 +120,7 @@ private struct AgentsComputerGroup: View {
     let busy = rebuild.lock.isLocked || rebuild.pendingKind != nil
     SettingsGroup(title: String(localized: "Agents' Computer"), footer: rebuild.error ?? RebuildWords.recoverBody, footerTint: rebuild.error == nil ? nil : look.danger, look: look) {
       SettingsLine(label: String(localized: "Simeon's Computer"), detail: String(localized: "The computer in the cloud all your agents work on."), look: look) {
-        status(busy: busy)
+        status
       }
       if rebuild.isUpdateQueued {
         SettingsLine(label: String(localized: "Update queued"), detail: String(localized: "It updates once your agents are done."), divided: true, look: look) {
@@ -149,7 +149,7 @@ private struct AgentsComputerGroup: View {
   }
 
   @ViewBuilder
-  private func status(busy: Bool) -> some View {
+  private var status: some View {
     let rebuild = store.rebuild
     if let kind = rebuild.lock.kind ?? rebuild.pendingKind {
       HStack(spacing: 6) {
