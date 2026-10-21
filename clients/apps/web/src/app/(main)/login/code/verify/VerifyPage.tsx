@@ -1,5 +1,6 @@
 'use client'
 
+import { primary } from '@/components/Auth/parts'
 import { CONFIG } from '@/utils/config'
 import { useTranslations, type AcceptedLocale } from '@simeon/i18n'
 import {
@@ -99,11 +100,7 @@ const ClientPage = ({
             )
           }}
         />
-        <button
-          type="submit"
-          disabled={loading}
-          className="h-[50px] w-full rounded-full bg-black text-[16px] font-medium tracking-[-0.01em] text-white transition-colors hover:bg-[#1d1d1f] disabled:opacity-60 sm:h-[52px] sm:text-[17px]"
-        >
+        <button type="submit" disabled={loading} className={primary}>
           {loading ? t('simeon.signIn.signingIn') : t('simeon.signIn.signIn')}
         </button>
       </form>

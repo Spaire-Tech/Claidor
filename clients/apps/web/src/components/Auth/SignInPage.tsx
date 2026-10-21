@@ -1,7 +1,7 @@
 'use client'
 
 import AuthShell, { Legal } from '@/components/Auth/AuthShell'
-import { Or, provider } from '@/components/Auth/parts'
+import { Or, field, primary, provider } from '@/components/Auth/parts'
 import { LoginCodeError, useSendLoginCode } from '@/hooks/loginCode'
 import { usePostHog, type EventName } from '@/hooks/posthog'
 import { getAppleAuthorizeURL, getGoogleAuthorizeLoginURL } from '@/utils/auth'
@@ -177,13 +177,9 @@ const SignInPage = ({
             placeholder={t('simeon.signIn.enterEmail')}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="h-[50px] w-full rounded-full border border-[#d9d9de] bg-white px-5 text-[16px] text-[#1d1d1f] placeholder:text-[#a1a1a6] focus:border-[#1d1d1f] focus:outline-none sm:h-[52px] sm:text-[17px]"
+            className={field}
           />
-          <button
-            type="submit"
-            disabled={sending}
-            className="h-[50px] w-full rounded-full bg-black text-[16px] font-medium tracking-[-0.01em] text-white transition-colors hover:bg-[#1d1d1f] disabled:cursor-not-allowed disabled:opacity-60 sm:h-[52px] sm:text-[17px]"
-          >
+          <button type="submit" disabled={sending} className={primary}>
             {sending
               ? t('simeon.signIn.sendingCode')
               : t('simeon.signIn.continueWithEmail')}
@@ -192,12 +188,12 @@ const SignInPage = ({
         {problem ? (
           <p
             role="alert"
-            className="text-center text-[14px] leading-[1.45] text-[#c21d2e]"
+            className="text-center text-[13px] leading-[1.45] text-[#c21d2e]"
           >
             {problem}
           </p>
         ) : null}
-        <div className="pt-3">
+        <div className="pt-2">
           <Legal locale={locale} />
         </div>
       </div>

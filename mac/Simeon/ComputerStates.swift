@@ -844,11 +844,11 @@ struct AccessCover: View {
     ZStack {
       look.ground
       VStack(spacing: 0) {
-        HStack(spacing: 18) {
-          // The SimeonLabs mark, as the sign-in's (it was a blue butterfly until faces, 12 October 2026).
+        HStack(spacing: 14) {
+          // The SimeonLabs mark, as the sign-in's (it was a blue butterfly until faces, 12 October 2026), at its 46.
           Image("SignIn/Mark").resizable().renderingMode(.template).interpolation(.high).scaledToFit()
             .foregroundStyle(look.ink)
-            .frame(width: 64, height: 64)
+            .frame(width: 46, height: 46)
             .accessibilityHidden(true)
           Text("Simeon")
             .font(.custom(Faces.wordmark, size: 68))

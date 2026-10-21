@@ -202,10 +202,12 @@ def _page(
     """One page, in the design of the iPhone's sign-in screen (the founder,
     9 October 2026: "make sure everything match"): simeonlabs.com's mark and
     "SimeonLabs" wordmark in the middle, the page's words under them when it
-    has any (`heading`), and its buttons at the foot in the app's own: the
-    first in the ink (black on light, white on dark, as the app's Continue
-    with Apple), the next in the plain glass; light or dark as the
-    device is. It is served
+    has any (`heading`), and its buttons right under them, one block in the
+    middle of the page (21 October 2026: at the window's foot they had "no
+    business being this far from the simeon"), in the app's own: the first
+    in the ink (black on light, white on dark, as the app's Continue with
+    Apple), the next in the plain glass; no bold, as in the app; light or
+    dark as the device is. It is served
     from the API host, which has no front end of its own, so it carries
     everything it draws (`sign_in_brand`); no script but the one line that
     brings the app forward."""
@@ -214,7 +216,7 @@ def _page(
         if deep_link is None
         else f'<script>location.replace("{escape(deep_link, quote=True)}")</script>'
     )
-    foot = f'<footer class="actions">{actions}</footer>' if actions else ""
+    foot = f'<div class="actions">{actions}</div>' if actions else ""
     return HTMLResponse(
         headers={"Cache-Control": "no-store"},
         content="<!doctype html>"
@@ -239,43 +241,43 @@ def _page(
         "-webkit-font-smoothing:antialiased;"
         "padding:max(24px,env(safe-area-inset-top)) 21px"
         " max(14px,env(safe-area-inset-bottom))}"
-        "main{flex:1;width:100%;max-width:420px;display:flex;flex-direction:column;"
+        "main{flex:1;width:100%;max-width:380px;display:flex;flex-direction:column;"
         "align-items:center;justify-content:center;text-align:center;padding:24px 0}"
-        ".mark{display:block;width:46px;height:46px;fill:var(--ink)}"
-        ".wordmark{display:block;margin-top:28px;height:25px;"
+        ".mark{display:block;width:40px;height:40px;fill:var(--ink)}"
+        ".wordmark{display:block;margin-top:20px;height:22px;"
         f"aspect-ratio:{WORDMARK_WIDTH}/{WORDMARK_HEIGHT};background:var(--ink);"
         # The picture once, in a custom property both mask properties read.
         f"--wordmark:url(data:image/png;base64,{WORDMARK_PNG_BASE64});"
         "-webkit-mask:var(--wordmark) center/contain no-repeat;"
         "mask:var(--wordmark) center/contain no-repeat}"
-        "h1{margin:44px 0 0;font-size:22px;font-weight:600;letter-spacing:-.01em;"
+        "h1{margin:32px 0 0;font-size:20px;font-weight:500;letter-spacing:-.01em;"
         "line-height:1.25;text-wrap:balance}"
         "p{margin:10px 0 0;font-size:15px;color:var(--ink2);text-wrap:pretty}"
-        "strong{font-weight:600;color:var(--ink);word-break:break-word}"
-        ".actions{width:100%;max-width:420px;display:flex;flex-direction:column;"
-        "gap:12px;padding-bottom:8px}"
+        "strong{font-weight:500;color:var(--ink);word-break:break-word}"
+        ".actions{width:100%;display:flex;flex-direction:column;"
+        "gap:10px;margin-top:36px}"
         "form{margin:0}"
-        ".pill{display:flex;width:100%;height:50px;align-items:center;"
-        "justify-content:center;gap:9px;padding:0 20px;border-radius:999px;"
+        ".pill{display:flex;width:100%;height:44px;align-items:center;"
+        "justify-content:center;gap:8px;padding:0 18px;border-radius:999px;"
         "border:0;background:var(--ink);color:var(--ground);font:inherit;"
-        "font-size:17px;font-weight:600;text-decoration:none;cursor:pointer;"
+        "font-size:15px;font-weight:500;text-decoration:none;cursor:pointer;"
         "white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"
         "box-shadow:0 1px 2px rgba(0,0,0,.12);"
         "-webkit-tap-highlight-color:transparent}"
         ".pill.glass{background:var(--glass);color:var(--ink);"
         "box-shadow:inset 0 0 0 1px var(--glass-edge),0 1px 3px rgba(0,0,0,.06)}"
         ".pill:active{opacity:.7}"
-        ".legal{margin:16px 0 0;font-size:13px;line-height:1.35;text-align:center;"
+        ".legal{margin:6px 0 0;font-size:12px;line-height:1.35;text-align:center;"
         "color:var(--ink2)}"
-        ".legal a{color:var(--ink);font-weight:600;text-decoration:none}"
+        ".legal a{color:var(--ink);font-weight:500;text-decoration:none}"
         ".pill svg{flex:none;width:15px;height:15px}"
         "</style></head><body>"
         "<main>"
         f'<svg class="mark" viewBox="{MARK_VIEWBOX}" role="img" aria-label="{PRODUCT}">'
         f'<path d="{MARK_PATH}"/></svg>'
         '<span class="wordmark" role="img" aria-label="SimeonLabs"></span>'
-        f"{f'<h1>{escape(title)}</h1>' if heading else ''}{body}</main>"
-        f"{foot}{jump}</body></html>",
+        f"{f'<h1>{escape(title)}</h1>' if heading else ''}{body}{foot}</main>"
+        f"{jump}</body></html>",
     )
 
 

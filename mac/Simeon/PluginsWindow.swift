@@ -219,9 +219,9 @@ private struct PanelHead: View {
 // MARK: - The bar
 
 /**
- * Under the head: the search across the panel with the filter beside it,
- * then Available | Yours (GlassSegments) in the middle; 14 under the head,
- * 24 at the sides, 4 under.
+ * Under the head: the search across the panel with the categories beside
+ * it (on Available), then Available | Yours (GlassSegments) in the middle;
+ * 14 under the head, 24 at the sides, 4 under.
  */
 private struct PluginsBar: View {
   let look: Look
@@ -230,7 +230,7 @@ private struct PluginsBar: View {
     VStack(spacing: 14) {
       HStack(spacing: 8) {
         PluginsSearch(look: look)
-        FilterButton(look: look)
+        CategoryButton(look: look)
       }
       GlassSegments(look: look)
         .frame(maxWidth: .infinity)
@@ -296,56 +296,71 @@ private struct GlassSegments: View {
   }
 }
 
-/** Filter (32, the window's round glass button, as high as the search): its glyph in the discs' ink, in the blue while the tab's filter is set (the iPhone's); its menu stays open while choosing. */
-private struct FilterButton: View {
+/**
+ * The categories (the founder, 21 October 2026: "the filter should be the
+ * categories. like creativity etc."; the filter of Type and Ownership, a
+ * glyph, "makes no sense"): beside the search, as high as it, a capsule
+ * with the same edge reading "All Categories ⌄" or the one chosen, in the
+ * ink while one is; Apple's menu of them, All Categories then each of
+ * Available's sections (Featured first, the rest A to Z), the chosen one
+ * ticked. Only on Available: Yours is what the person has.
+ */
+private struct CategoryButton: View {
   let look: Look
   @Environment(PluginsState.self) private var plugins
   @State private var spot = WindowSpot()
+  @State private var hovering = false
 
   var body: some View {
     let model = plugins.model
-    let active = !model.filter.isAll
-    GlassDiscButton(symbol: "line.3.horizontal.decrease", help: String(localized: "Filter connectors"), size: 32, tinted: active) {
-      FilterMenu.show(model: model, under: spot.frame)
+    if model.tab == .marketplace {
+      let sections = Plugins.sections(model.catalog)
+      let chosen = sections.first { $0.key == model.category }
+      Button { CategoryMenu.show(model: model, sections: sections, under: spot.frame) } label: {
+        HStack(spacing: 6) {
+          Text(chosen?.title ?? String(localized: "All Categories"))
+            .font(PanelType.row)
+            .foregroundStyle(chosen == nil ? look.inkSecondary : look.ink)
+            .lineLimit(1)
+          Image(systemName: "chevron.down")
+            .font(.system(size: 9, weight: .medium))
+            .foregroundStyle(look.inkTertiary)
+        }
+        .padding(.horizontal, 14)
+        .frame(height: 32)
+        .background(Capsule().fill(hovering ? look.groupedRow : (look.dark ? Color.white.opacity(0.05) : Color.white)))
+        .overlay(Capsule().strokeBorder(look.ink.opacity(0.12), lineWidth: 1))
+        .contentShape(Capsule())
+      }
+      .buttonStyle(.hand)
+      .onHover { hovering = $0 }
+      .fixedSize()
+      .background(WindowSpotReader(spot: spot))
+      .accessibilityLabel("Category")
+      .accessibilityValue(chosen?.title ?? String(localized: "All Categories"))
     }
-    .background(WindowSpotReader(spot: spot))
-    .accessibilityAddTraits(active ? .isSelected : [])
   }
 }
 
-/** The Filter menu (`ii`, at least 180 wide): Type (All types, Connectors, Skills), a line, Ownership (All, Team, Public); one choice each, and a pick does not close it. */
+/** The categories' menu: All Categories, a line, each section; Apple's own items, the chosen one ticked and under the pointer. */
 @MainActor
-private enum FilterMenu {
-  static func show(model: PluginsModel, under frame: CGRect) {
-    let menu = NSMenu(title: String(localized: "Filter connectors"))
+private enum CategoryMenu {
+  static func show(model: PluginsModel, sections: [Plugins.Section], under frame: CGRect) {
+    let menu = NSMenu(title: String(localized: "Category"))
     menu.autoenablesItems = false
-    menu.minimumWidth = 180
-    var types: [(PluginFilter.Kind, CheckMenuRow)] = []
-    var owners: [(PluginFilter.Ownership, CheckMenuRow)] = []
-    func refresh() {
-      for (kind, row) in types { row.isOn = model.filter.type == kind }
-      for (owner, row) in owners { row.isOn = model.filter.ownership == owner }
-    }
-    menu.addItem(.sectionHeader(title: String(localized: "Type")))
-    for kind in PluginFilter.Kind.allCases {
-      let row = CheckMenuRow(title: PluginFilter.label(kind), on: model.filter.type == kind, width: 180, radio: true) { _ in
-        model.filter.type = kind
-        refresh()
-      }
-      types.append((kind, row))
-      menu.addItem(CheckMenuRow.item(row))
-    }
+    menu.minimumWidth = max(180, frame.width)
+    let all = BlockMenuItem(String(localized: "All Categories")) { model.category = nil }
+    all.state = model.category == nil ? .on : .off
+    menu.addItem(all)
     menu.addItem(.separator())
-    menu.addItem(.sectionHeader(title: String(localized: "Ownership")))
-    for owner in PluginFilter.Ownership.allCases {
-      let row = CheckMenuRow(title: PluginFilter.label(owner), on: model.filter.ownership == owner, width: 180, radio: true) { _ in
-        model.filter.ownership = owner
-        refresh()
-      }
-      owners.append((owner, row))
-      menu.addItem(CheckMenuRow.item(row))
+    var selected: NSMenuItem? = model.category == nil ? all : nil
+    for section in sections {
+      let item = BlockMenuItem(section.title) { model.category = section.key }
+      item.state = model.category == section.key ? .on : .off
+      if model.category == section.key { selected = item }
+      menu.addItem(item)
     }
-    RoutineMenus.popUp(menu, under: frame)
+    RoutineMenus.popUp(menu, under: frame, over: selected)
   }
 }
 
@@ -437,7 +452,7 @@ enum PluginsPreview {
   static let count = 6
 }
 
-/** Available (`ci`): the sections (Featured, then A–Z), each its first six under its name and ›, or "Results" while searching, every match. */
+/** Available (`ci`): the sections (Featured, then A–Z), each its first six under its name and ›, or "Results" while searching, every match; with a category chosen, that one alone, every app in it. */
 private struct MarketplaceList: View {
   let look: Look
   @Environment(PluginsState.self) private var plugins
@@ -447,10 +462,14 @@ private struct MarketplaceList: View {
     let entries = MarketplaceList.entries(model)
     let searching = !model.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     if entries.isEmpty {
-      YoursEmpty(text: Plugins.marketplaceEmpty(loaded: model.catalogLoaded, catalogEmpty: model.catalog.isEmpty, filterSet: !model.marketplaceFilter.isAll, query: model.query), look: look)
+      YoursEmpty(text: Plugins.marketplaceEmpty(loaded: model.catalogLoaded, catalogEmpty: model.catalog.isEmpty, filterSet: !model.marketplaceFilter.isAll || model.category != nil, query: model.query), look: look)
         .padding(.top, 18)
     } else if searching {
       MarketplaceSection(title: String(localized: "Results"), entries: entries, look: look)
+    } else if model.category != nil {
+      ForEach(Plugins.sections(entries), id: \.key) { section in
+        MarketplaceSection(title: section.title, entries: section.items, look: look)
+      }
     } else {
       ForEach(Plugins.sections(entries), id: \.key) { section in
         MarketplaceSection(title: section.title, entries: Array(section.items.prefix(PluginsPreview.count)), look: look) {
@@ -460,9 +479,12 @@ private struct MarketplaceList: View {
     }
   }
 
-  /** What Available lists: the catalog as the search and the filter keep it. */
+  /** What Available lists: the catalog as the search, the filter and the category keep it. */
   static func entries(_ model: PluginsModel) -> [PluginEntry] {
-    Plugins.search(model.catalog, model.query).filter { Plugins.keeps($0, model.marketplaceFilter) }
+    let kept = Plugins.search(model.catalog, model.query).filter { Plugins.keeps($0, model.marketplaceFilter) }
+    guard let category = model.category, let section = Plugins.sections(model.catalog).first(where: { $0.key == category }) else { return kept }
+    let ids = Set(section.items.map(\.id))
+    return kept.filter { ids.contains($0.id) }
   }
 }
 

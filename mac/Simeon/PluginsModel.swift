@@ -49,6 +49,8 @@ final class PluginsModel {
   var query = ""
   var marketplaceFilter = PluginFilter()
   var yoursFilter = PluginFilter()
+  /** Available's category, by its section's key (the founder, 21 October 2026: "the filter should be the categories. like creativity"); nil, every one. */
+  var category: String?
   var path: [Page] = [] {
     didSet { if path.count < oldValue.count { expanded = [] } }
   }
@@ -115,6 +117,7 @@ final class PluginsModel {
     query = ""
     marketplaceFilter = PluginFilter()
     yoursFilter = PluginFilter()
+    category = nil
     path = []
     setup = nil
     expanded = []

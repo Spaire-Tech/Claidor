@@ -679,6 +679,16 @@
         }
       }
     },
+    "All Categories" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toutes les catégories"
+          }
+        }
+      }
+    },
     "All projects" : {
       "localizations" : {
         "fr" : {
@@ -1150,6 +1160,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ton ordinateur est injoignable"
+          }
+        }
+      }
+    },
+    "Category" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Catégorie"
           }
         }
       }
