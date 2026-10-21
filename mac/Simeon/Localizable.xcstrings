@@ -12550,55 +12550,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Werte bearbeiten"
+            "value" : "Bearbeiten"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Editar valores"
+            "value" : "Editar"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Modifier les valeurs"
+            "value" : "Modifier"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Modifica valori"
+            "value" : "Modifica"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wijzig waarden"
+            "value" : "Wijzig"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edytuj wartości"
+            "value" : "Edytuj"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Editar valores"
+            "value" : "Editar"
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Redigera värden"
+            "value" : "Redigera"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Değerleri düzenle"
+            "value" : "Düzenle"
           }
         }
       }
@@ -26416,55 +26416,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Regel sichern"
+            "value" : "Sichern"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Guardar regla"
+            "value" : "Guardar"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Enregistrer la règle"
+            "value" : "Enregistrer"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Salva regola"
+            "value" : "Salva"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bewaar regel"
+            "value" : "Bewaar"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Zachowaj regułę"
+            "value" : "Zachowaj"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Salvar regra"
+            "value" : "Salvar"
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Spara regel"
+            "value" : "Spara"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kuralı kaydet"
+            "value" : "Kaydet"
           }
         }
       }
@@ -27768,13 +27768,13 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Valeurs de configuration"
+            "value" : "Valeurs"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Valori di configurazione"
+            "value" : "Valori"
           }
         },
         "nl" : {
@@ -27792,7 +27792,7 @@
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Valores de configuração"
+            "value" : "Valores"
           }
         },
         "sv" : {
