@@ -84,7 +84,7 @@ VOICE_AGENT_NAME = "Simeon voice"
 #: 2026 Jessica left the list and Michael became the default without a bump,
 #: the agent kept Jessica as its own voice, and every call that named no
 #: voice still spoke as Jessica (the founder, 9 October 2026).
-VOICE_AGENT_CONFIG_VERSION = 11
+VOICE_AGENT_CONFIG_VERSION = 12
 
 #: The model that thinks during the call. Fast over clever: the call's
 #: real work runs in the person's own agent behind the call (`send_task`), and a
@@ -139,6 +139,7 @@ VOICE_DEFAULT_FIRST_MESSAGE = "Hi, it's me. What's up?"
 #: ElevenLabs' multilingual model; English keeps `VOICE_TTS_MODEL`.
 VOICE_LANGUAGES: dict[str, str] = {
     "fr": "Salut, c’est moi. Quoi de neuf\u202f?",
+    "es": "Hola, soy yo. ¿Qué tal?",
 }
 
 #: The fallback prompt. The app overrides it on every call with the
@@ -255,7 +256,8 @@ VOICE_RECAP_DESCRIPTION = (
     "no greeting, no sign-off. Never write 'the user', 'the caller' or 'the "
     "customer', and never name the person. Write it in the language the call "
     "was in; in French, say 'tu' and start with 'Tu', unless they said 'vous' "
-    "on the call."
+    "on the call; in Spanish, say 'tú' and start with 'Tú', unless they said "
+    "'usted' on the call."
 )
 
 
@@ -857,9 +859,10 @@ def _transcript(conversation: dict[str, Any] | None) -> list[dict[str, str]]:
     return out[:VOICE_TRANSCRIPT_MAX_LINES]
 
 
-#: How a recap starts when it speaks to the person: English "You", and
-#: French "Tu" or "Vous" (a recap of a call in French, 20 October 2026).
-RECAP_OPENINGS = ("you", "tu", "vous")
+#: How a recap starts when it speaks to the person: English "You",
+#: French "Tu" or "Vous" (a recap of a call in French, 20 October 2026),
+#: Spanish "Tú" or "Usted" (21 October 2026).
+RECAP_OPENINGS = ("you", "tu", "vous", "tú", "usted")
 
 
 def recap_for(recap: str | None, name: str | None) -> str | None:

@@ -19,7 +19,7 @@ public enum VoiceCallText {
    * voice-call-prompt.ts). The server gives its platform agent the same (`VOICE_LANGUAGES` in voice.py): a language
    * it was not given is refused, so one is added in all three (docs/localization.md).
    */
-  static let languages: [String: String] = ["en": "en", "fr": "fr"]
+  static let languages: [String: String] = ["en": "en", "fr": "fr", "es": "es"]
 
   /** The call's language for the app's: "fr" for "fr-CA"; English for one the voice does not speak yet. */
   public static func language(for appLanguage: String) -> String {
@@ -126,18 +126,24 @@ public enum VoiceCallText {
     return self.language(for: language) == defaultLanguage ? base : "\(base)\n\n\(languageRule(language))"
   }
 
-  /** The call's language at the end of its prompt when it is not English (`voiceCallLanguageRule`): the app's, from the first word, "tu" in French. */
+  /** The call's language at the end of its prompt when it is not English (`voiceCallLanguageRule`): the app's, from the first word, "tu" in French, "tú" in Spanish. */
   static func languageRule(_ appLanguage: String) -> String {
     let tag = AppLanguage.tag(appLanguage)
     var lines = ["Language:", "- Speak \(AppLanguage.englishName(tag)) for the whole call. If they speak another language to you, answer in theirs."]
-    if AppLanguage.code(tag) == "fr" { lines.append("- Say \"tu\" to them, warm and direct, never stiff, unless they ask for \"vous\" or their messages above say \"vous\".") }
+    if let you = address[AppLanguage.code(tag)] {
+      lines.append("- Say \"\(you.familiar)\" to them, warm and direct, never stiff, unless they ask for \"\(you.formal)\" or their messages above say \"\(you.formal)\".")
+    }
     lines.append("- Names stay as they are: Simeon, your name and your teammates' names, and the names of apps (Gmail, Slack, Shop).")
     return lines.joined(separator: "\n")
   }
 
+  /** The languages with a familiar and a formal "you", as the engine's `ADDRESS` (user-language.ts): the familiar one first. */
+  static let address: [String: (familiar: String, formal: String)] = ["fr": ("tu", "vous"), "es": ("tú", "usted")]
+
   /**
    * A short greeting with the agent's name (`buildFirstMessage`); `pick` in [0, 1) chooses which. In the call's
-   * language: French says "tu", word for word as voice-call-prompt.ts; a language with none of its own opens in English.
+   * language: French says "tu", Spanish "tú", word for word as voice-call-prompt.ts; a language with none of its own
+   * opens in English.
    */
   public static func firstMessage(name rawName: String, pick: Double, personName: String?, language: String = defaultLanguage) -> String {
     let name = collapse(rawName).isEmpty ? "your agent" : collapse(rawName)
@@ -152,6 +158,14 @@ public enum VoiceCallText {
         "Salut\(p), ici \(name). De quoi as-tu besoin\u{202F}?",
         "Bonjour\(p), c’est \(name). Comment je peux t’aider\u{202F}?",
         "\(name) à l’appareil. Qu’est-ce que tu as en tête\u{202F}?",
+      ]
+    case "es":
+      greetings = [
+        "Hola\(p), soy \(name). ¿Qué tal?",
+        "Hola\(p), habla \(name). ¿Qué puedo hacer por ti?",
+        "Hola\(p), aquí \(name). ¿Qué necesitas?",
+        "Hola\(p), soy \(name). ¿En qué te ayudo?",
+        "\(name) al habla. ¿Qué tienes en mente?",
       ]
     default:
       greetings = [

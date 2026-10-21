@@ -80,7 +80,7 @@ targets:
         # the Mac's picker lists them. A language added here is asked for
         # everywhere by scripts/check_translations.py.
         CFBundleDevelopmentRegion: en
-        CFBundleLocalizations: [en, fr]
+        CFBundleLocalizations: [en, fr, es]
         # The phone's own scheme: the Mac app owns `simeon`, and the
         # server's confirm page opens `simeon-ios://app/v1/open`.
         CFBundleURLTypes:
@@ -142,7 +142,7 @@ targets:
         CFBundleDisplayName: Simeon Notifications
         # A push's words in the app's language (Localizable.xcstrings).
         CFBundleDevelopmentRegion: en
-        CFBundleLocalizations: [en, fr]
+        CFBundleLocalizations: [en, fr, es]
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         NSExtension:

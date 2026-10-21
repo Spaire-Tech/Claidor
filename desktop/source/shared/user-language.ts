@@ -8,7 +8,8 @@
  * What it changes: the agents write to the person in it (the `## Language`
  * section of every agent's instructions, and a closing line on the first-run
  * cues), and a voice call hears and speaks it (`voice-call-prompt.ts`).
- * French says "tu" unless the person asks for "vous" (docs/localization.md).
+ * French says "tu" unless the person asks for "vous", Spanish "tú" unless they
+ * ask for "usted" (`ADDRESS`, docs/localization.md).
  */
 
 /** The tag as kept ("fr", "pt-BR", "zh-Hant"), or undefined for anything that is not a language tag. */
@@ -75,14 +76,34 @@ export function renderUserLanguageSystemPrompt(raw: string | null | undefined): 
     `If the user writes to you in another language, answer in theirs. What you write to other agents and to tools can stay in English.`,
     "Never translate names: Simeon, SimeonLabs, the agents' names (yours too), and the names of apps, connectors and plans (Gmail, Slack, Link, Shop, Stripe) stay as they are.",
   ];
-  if (languageCode(tag) === "fr") {
+  const address = ADDRESS[languageCode(tag)];
+  if (address !== undefined) {
+    const { familiar, formal } = address;
     lines.push(
-      "In French, say \"tu\" to the user: warm and direct, like a capable friend at work, never stiff. If the user asks you to say \"vous\" (or writes to you with \"vous\" and asks for it), switch to \"vous\" and keep it from then on, and save it to the user's shared memory (update_state, target \"memory\", scope \"user\", action \"write\": \"Prefers to be addressed as vous in French\") so every agent follows it. When the user's memory says they prefer \"vous\", say \"vous\".",
-      "French typography: a non-breaking space before : ; ! ?, « » for quotes, the apostrophe ’, and money, dates and times the French way (12,50 €, 20 octobre, 14 h 30).",
+      `In ${english}, say "${familiar}" to the user: warm and direct, like a capable friend at work, never stiff. If the user asks you to say "${formal}" (or writes to you with "${formal}" and asks for it), switch to "${formal}" and keep it from then on, and save it to the user's shared memory (update_state, target "memory", scope "user", action "write": "Prefers to be addressed as ${formal} in ${english}") so every agent follows it. When the user's memory says they prefer "${formal}", say "${formal}".`,
+      address.writing,
     );
   }
   return lines.join("\n");
 }
+
+/**
+ * The languages with a familiar and a formal "you" (docs/localization.md):
+ * the agents say the familiar one, warm and direct, and the formal one once
+ * the person asks for it. With how each language is written.
+ */
+export const ADDRESS: Readonly<Record<string, { readonly familiar: string; readonly formal: string; readonly writing: string }>> = {
+  fr: {
+    familiar: "tu",
+    formal: "vous",
+    writing: "French typography: a non-breaking space before : ; ! ?, « » for quotes, the apostrophe ’, and money, dates and times the French way (12,50 €, 20 octobre, 14 h 30).",
+  },
+  es: {
+    familiar: "tú",
+    formal: "usted",
+    writing: "Spanish punctuation: ¿ and ¡ open every question and exclamation, “ ” for quotes, dates and times the Spanish way (20 de octubre, 14:30) and money as the user's country writes it. Write a neutral Spanish that reads naturally in Latin America and in Spain; if the user writes their own way (vos, vosotros, ordenador), follow theirs.",
+  },
+};
 
 /**
  * The line put after a first-run cue when the person's language is not
@@ -93,7 +114,8 @@ export function firstRunCueInLanguage(cue: string, raw: string | null | undefine
   const tag = normalizeUserLanguage(raw);
   if (tag == null || isEnglishOrUnset(tag)) return cue;
   const english = languageName(tag);
-  const address = languageCode(tag) === "fr" ? " Say \"tu\" to the user." : "";
+  const familiar = ADDRESS[languageCode(tag)]?.familiar;
+  const address = familiar === undefined ? "" : ` Say "${familiar}" to the user.`;
   return `${cue}\nThe user's apps are in ${english}: write every message of this turn to the user in ${english}, question widgets (question, options and helpText) included, and say any wording quoted above for the user in ${english}, in the same spirit.${address} Names of apps, connectors and agents stay as they are.`;
 }
 

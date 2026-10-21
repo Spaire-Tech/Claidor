@@ -96,7 +96,7 @@ targets:
         # the Mac's picker lists them. A language added here is asked for
         # everywhere by scripts/check_translations.py.
         CFBundleDevelopmentRegion: en
-        CFBundleLocalizations: [en, fr]
+        CFBundleLocalizations: [en, fr, es]
         # The Mac app's scheme, the Electron app's until it was retired (11
         # October 2026); the server's confirm page opens `simeon://app/v1/open`.
         CFBundleURLTypes:
