@@ -664,8 +664,8 @@ struct ApprovalCardView: View {
 // MARK: Routines that wake on Slack or GitHub
 
 /**
- * "Connect Slack" (`sand-listener-connect-card`, at most 420 wide, 14
- * round): the platform's logo on a faint tile (30, 8 round), its title (12
+ * "Connect Slack" (`sand-listener-connect-card`, at most 520 wide on a
+ * Mac, 14 round): the platform's logo on a faint tile (30, 8 round), its title (12
  * on 16, 600) and the reason under it (60%); at the right "Connected" with
  * a green tick, Connect, or a spinner while the computer is asked.
  */
@@ -729,7 +729,7 @@ struct ListenerConnectCardView: View {
       .fixedSize()
     }
     .padding(12)
-    .frame(maxWidth: 420, alignment: .leading)
+    .frame(maxWidth: 520, alignment: .leading)
     .background(look.theirs, in: RoundedRectangle(cornerRadius: 14))
     .shadow(color: look.theirsShadow, radius: 1, x: 0, y: 1)
     .task(id: platform) {
@@ -964,7 +964,7 @@ struct ChatPicture: View {
 
 /**
  * A message that is one link, drawn as a card (`sand-link-card-wrap`, at
- * most 76% of the chat, 420, or the chat less 82): the ground, a 10% edge,
+ * most 88% of the chat, 480 on a Mac, or the chat less 82): the ground, a 10% edge,
  * 18 round; the page's icon (or a globe) in a 60-point square, its title
  * or address (13 on 18, 600) and the address under it (12, 60%). It opens
  * in the browser.
@@ -1148,13 +1148,15 @@ struct CallRecordView: View {
 // MARK: Flights
 
 /**
- * Flight results (`simeon-flights`, in the agent's bubble, at most 420
- * wide): the route (15 on 20, 500) and the trip under it (13, grey); then
- * one row per offer, padded 10 and 12 round, reaching 10 past the words on
- * both sides: the airline's mark in a white circle (36, its logo or its
- * initials), the times (15) over the airline, time in the air and stops
- * (13, grey), the price (15) and a chevron; half-point hairlines between
- * rows from the times' edge. Apple's own greys, as the window sets them.
+ * Flight results, Muse's layout as the iPhone draws it (ios/Simeon/Cards.swift
+ * `FlightsCardView`), at a Mac's width (the founder, 21 October 2026: the
+ * cards "match an iphone, and not a mac"): its own card, as wide as a card
+ * may be (680 at most), the route and its date as one heading (16, 600)
+ * with what else the trip is under it (12, grey); then a row per offer. On
+ * a wide chat a row reads across: the airline's mark (40), the airline over
+ * its stops, the times on a dashed line with the time in the air between
+ * them (a round trip's way back under them), the price and a chevron. On a
+ * narrow one it is the iPhone's row: "Airline · price" over the times.
  * Opening an offer shows it in the agent pane (7d); again closes it.
  */
 struct FlightsCardView: View {
@@ -1167,25 +1169,29 @@ struct FlightsCardView: View {
   @Environment(SidebarLayout.self) private var layout
 
   private var grey: Color { look.dark ? Color(hex: 0x98989d) : Color(hex: 0x86868b) }
+  private var ink: Color { look.dark ? Color(hex: 0xf5f5f7) : Color(hex: 0x1d1d1f) }
 
   var body: some View {
     VStack(alignment: .leading, spacing: 0) {
-      if !card.title.isEmpty || !card.subtitle.isEmpty {
-        VStack(alignment: .leading, spacing: 1) {
-          if !card.title.isEmpty {
-            Text(card.title)
-              .font(.system(size: 15, weight: .medium))
-              .tracking(-0.15)
-              .foregroundStyle(look.dark ? Color(hex: 0xf5f5f7) : Color(hex: 0x1d1d1f))
+      if !card.heading.isEmpty || !card.aside.isEmpty {
+        VStack(alignment: .leading, spacing: 2) {
+          if !card.heading.isEmpty {
+            Text(card.heading)
+              .font(.system(size: 16, weight: .semibold))
+              .tracking(-0.2)
+              .foregroundStyle(ink)
+              .fixedSize(horizontal: false, vertical: true)
           }
-          if !card.subtitle.isEmpty {
-            Text(card.subtitle)
-              .font(.system(size: 13))
+          if !card.aside.isEmpty {
+            Text(card.aside)
+              .font(.system(size: 12))
               .foregroundStyle(grey)
+              .fixedSize(horizontal: false, vertical: true)
           }
         }
-        .padding(.top, 2)
-        .padding(.bottom, 8)
+        .padding(.horizontal, 16)
+        .padding(.top, 14)
+        .padding(.bottom, 6)
       }
       VStack(spacing: 0) {
         ForEach(Array(card.offers.enumerated()), id: \.offset) { index, offer in
@@ -1193,27 +1199,32 @@ struct FlightsCardView: View {
             Rectangle()
               .fill(look.dark ? Color(red: 84 / 255, green: 84 / 255, blue: 88 / 255).opacity(0.5) : Color(red: 60 / 255, green: 60 / 255, blue: 67 / 255).opacity(0.14))
               .frame(height: 0.5)
-              .padding(.leading, 58)
+              .padding(.leading, 64)
               .padding(.trailing, 10)
           }
           let key = FlightPane.key(row: rowId, index: index)
-          FlightRow(offer: offer, grey: grey, pressed: pane.isOpen && pane.flight?.key == key, look: look) {
+          FlightRow(offer: offer, ink: ink, grey: grey, pressed: pane.isOpen && pane.flight?.key == key, look: look) {
             pane.toggleFlight(key: key, offer: offer, agentId: agentId, layout: layout)
           }
         }
       }
-      .padding(.horizontal, -10)
+      .padding(.horizontal, 6)
+      .padding(.bottom, 6)
+      .padding(.top, card.heading.isEmpty && card.aside.isEmpty ? 6 : 0)
     }
     .monospacedDigit()
-    .fixedSize(horizontal: true, vertical: false)
-    .frame(maxWidth: 420, alignment: .leading)
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .background(look.theirs, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+    .overlay { RoundedRectangle(cornerRadius: 18, style: .continuous).inset(by: -0.25).stroke(look.theirsHairline, lineWidth: 0.5) }
+    .shadow(color: look.theirsShadow, radius: 1, x: 0, y: 1)
     .accessibilityElement(children: .contain)
-    .accessibilityLabel(card.title.isEmpty ? String(localized: "Flights") : card.title)
+    .accessibilityLabel(card.heading.isEmpty ? String(localized: "Flights") : card.heading)
   }
 }
 
 private struct FlightRow: View {
   let offer: FlightOffer
+  let ink: Color
   let grey: Color
   /** Its details are open in the pane (`aria-pressed`): the hover's fill stays. */
   let pressed: Bool
@@ -1222,48 +1233,141 @@ private struct FlightRow: View {
   @State private var hovering = false
 
   var body: some View {
-    let ink = look.dark ? Color(hex: 0xf5f5f7) : Color(hex: 0x1d1d1f)
-    let stops = offer.stops.components(separatedBy: " · ")
     Button(action: open) {
-      HStack(spacing: 12) {
-        AirlineMark(name: offer.airline, logo: offer.logo)
-        VStack(alignment: .leading, spacing: 1) {
-          Text([offer.depart, offer.arrive].filter { !$0.isEmpty }.joined(separator: " – "))
-            .font(.system(size: 15))
-            .tracking(-0.15)
-            .foregroundStyle(ink)
-            .lineLimit(1)
-          Text([offer.airline, offer.duration, stops.first ?? ""].filter { !$0.isEmpty }.joined(separator: " · "))
-            .font(.system(size: 13))
-            .foregroundStyle(grey)
-            .lineLimit(1)
-            .truncationMode(.tail)
-          if stops.count > 1 {
-            Text(stops.dropFirst().joined(separator: " · "))
-              .font(.system(size: 13))
-              .foregroundStyle(grey)
-              .lineLimit(1)
-              .truncationMode(.tail)
-          }
-        }
-        Spacer(minLength: 0)
-        Text(offer.price)
-          .font(.system(size: 15))
-          .tracking(-0.15)
-          .foregroundStyle(ink)
-          .lineLimit(1)
-        Image(systemName: "chevron.right")
-          .font(.system(size: 10, weight: .semibold))
-          .foregroundStyle(look.dark ? Color(hex: 0x48484a) : Color(hex: 0xc7c7cc))
-          .frame(width: 12, height: 12)
+      ViewThatFits(in: .horizontal) {
+        across
+        stacked
       }
-      .padding(10)
+      .padding(.horizontal, 10)
+      .padding(.vertical, 10)
       .background(hovering || pressed ? Color(red: 120 / 255, green: 120 / 255, blue: 128 / 255).opacity(look.dark ? 0.24 : 0.1) : Color.clear, in: RoundedRectangle(cornerRadius: 12))
       .contentShape(RoundedRectangle(cornerRadius: 12))
     }
     .buttonStyle(.hand)
     .onHover { hovering = $0 }
+    .accessibilityElement(children: .combine)
     .accessibilityAddTraits(pressed ? [.isSelected] : [])
+  }
+
+  /** A wide chat's row: the mark, the airline over its stops, the times, the price, the chevron. */
+  private var across: some View {
+    HStack(spacing: 14) {
+      AirlineMark(name: offer.airline, logo: offer.logo, side: 40)
+      VStack(alignment: .leading, spacing: 2) {
+        Text(offer.airline)
+          .font(.system(size: 14, weight: .medium))
+          .foregroundStyle(ink)
+          .lineLimit(1)
+        Text(FlightText.stops(offer.stops))
+          .font(.system(size: 12))
+          .foregroundStyle(grey)
+          .lineLimit(1)
+      }
+      .frame(width: 150, alignment: .leading)
+      VStack(alignment: .leading, spacing: 6) {
+        FlightTimesAcross(times: offer.outbound, ink: ink, grey: grey)
+        if let back = offer.inbound { FlightTimesAcross(times: back, ink: ink, grey: grey) }
+      }
+      .frame(minWidth: 220, maxWidth: .infinity)
+      Text(offer.price)
+        .font(.system(size: 15, weight: .semibold))
+        .tracking(-0.15)
+        .foregroundStyle(ink)
+        .fixedSize()
+      chevron
+    }
+  }
+
+  /** A narrow chat's row (the iPhone's): the mark, "Airline · price" over the times, the chevron. */
+  private var stacked: some View {
+    HStack(spacing: 12) {
+      AirlineMark(name: offer.airline, logo: offer.logo, side: 40)
+      VStack(alignment: .leading, spacing: 4) {
+        Text([offer.airline, offer.price].filter { !$0.isEmpty }.joined(separator: " · "))
+          .font(.system(size: 15))
+          .tracking(-0.15)
+          .foregroundStyle(ink)
+          .fixedSize(horizontal: false, vertical: true)
+        FlightTimesStacked(times: offer.outbound, grey: grey)
+        if let back = offer.inbound { FlightTimesStacked(times: back, grey: grey) }
+      }
+      .frame(maxWidth: .infinity, alignment: .leading)
+      chevron
+    }
+  }
+
+  private var chevron: some View {
+    Image(systemName: "chevron.right")
+      .font(.system(size: 10, weight: .semibold))
+      .foregroundStyle(look.dark ? Color(hex: 0x48484a) : Color(hex: 0xc7c7cc))
+      .frame(width: 12, height: 12)
+  }
+}
+
+/** "2:30pm ----- 2h40m ----- 5:10pm" across a wide row: the times in ink, the time in the air (and the stops) in grey between dashes. */
+private struct FlightTimesAcross: View {
+  let times: FlightTimes
+  let ink: Color
+  let grey: Color
+
+  var body: some View {
+    HStack(spacing: 8) {
+      Text(times.depart).font(.system(size: 14)).foregroundStyle(ink).fixedSize()
+      FlightDashes(grey: grey)
+      if !times.label.isEmpty {
+        Text(times.label).font(.system(size: 11)).foregroundStyle(grey).fixedSize()
+        FlightDashes(grey: grey)
+      }
+      Text(times.arrive).font(.system(size: 14)).foregroundStyle(ink).fixedSize()
+    }
+  }
+}
+
+/** The iPhone's line: the times on a dashed line, or, too long for the row, the time in the air under the times. */
+private struct FlightTimesStacked: View {
+  let times: FlightTimes
+  let grey: Color
+
+  var body: some View {
+    ViewThatFits(in: .horizontal) {
+      HStack(spacing: 6) {
+        Text(times.depart).fixedSize()
+        FlightDashes(grey: grey)
+        if !times.label.isEmpty {
+          Text(times.label).font(.system(size: 12)).fixedSize()
+          FlightDashes(grey: grey)
+        }
+        Text(times.arrive).fixedSize()
+      }
+      VStack(alignment: .leading, spacing: 1) {
+        Text([times.depart, times.arrive].filter { !$0.isEmpty }.joined(separator: " – ")).fixedSize(horizontal: false, vertical: true)
+        if !times.label.isEmpty { Text(times.label).font(.system(size: 12)).fixedSize(horizontal: false, vertical: true) }
+      }
+    }
+    .font(.system(size: 14))
+    .foregroundStyle(grey)
+  }
+}
+
+/** The dashed rule between a row's times; it takes what the line leaves, at least 12. */
+private struct FlightDashes: View {
+  let grey: Color
+
+  var body: some View {
+    FlightDashLine()
+      .stroke(grey.opacity(0.55), style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
+      .frame(minWidth: 12, maxWidth: .infinity)
+      .frame(height: 1)
+      .accessibilityHidden(true)
+  }
+}
+
+private struct FlightDashLine: Shape {
+  func path(in rect: CGRect) -> Path {
+    var path = Path()
+    path.move(to: CGPoint(x: rect.minX, y: rect.midY))
+    path.addLine(to: CGPoint(x: rect.maxX, y: rect.midY))
+    return path
   }
 }
 
@@ -1307,12 +1411,14 @@ struct AirlineMark: View {
 // MARK: The computer handed over
 
 /**
- * The agent hands the person its computer (`simeon-handoff`, at most 380
- * wide, 20 round, padded 16, its parts 14 apart): a white tile (44, 12
- * round) with a screen, "Your turn on the computer" (15, 600) over "Waiting
- * for you" beside a pulsing blue dot; the agent's instruction (15 on 21);
- * then Take over in the blue beside a grey I'm done, and Skip as a quiet
- * line under them. Once settled: "Computer" with what happened in a pill at
+ * The agent hands the person its computer (`simeon-handoff`, at most 520
+ * wide on a Mac, 20 round, padded 16, its parts 14 apart): a white tile (44,
+ * 12 round) with a screen, "Your turn on the computer" (15, 600) over
+ * "Waiting for you" beside a pulsing blue dot; the agent's instruction (15
+ * on 21); then a Mac's row of buttons (21 October 2026, the founder: the
+ * cards were an iPhone's, "and not a mac"): Skip quiet at the left, a grey
+ * I'm done and Take over in the blue at the right, each as wide as its
+ * words. Once settled: "Computer" with what happened in a pill at
  * its right, as the email card has its state (Done and Answered in green,
  * Skipped in blue, Canceled in red; the founder, 16 October 2026), the
  * instruction in grey, and Open computer. While it
@@ -1395,13 +1501,7 @@ struct ComputerHandoffCard: View {
         .accessibilityLabel("Take over the computer")
       }
       if waiting {
-        VStack(spacing: 8) {
-          HStack(spacing: 8) {
-            pill(String(localized: "Take over"), ground: blue, ink: .white) { takeOver() }
-            pill(String(localized: "I’m done"), ground: fill, ink: ink) {
-              Task { await store.handBackComputer(agentId) }
-            }
-          }
+        HStack(spacing: 8) {
           Button {
             Task { await store.handBackComputer(agentId, skip: true) }
           } label: {
@@ -1409,10 +1509,16 @@ struct ComputerHandoffCard: View {
               .font(.system(size: 13))
               .foregroundStyle(grey)
               .padding(.horizontal, 8)
-              .frame(height: 24)
+              .frame(height: 32)
+              .contentShape(Rectangle())
           }
           .buttonStyle(.hand)
           .help("Cancel this request without doing the step; the agent continues without it")
+          Spacer(minLength: 8)
+          pill(String(localized: "I’m done"), ground: fill, ink: ink) {
+            Task { await store.handBackComputer(agentId) }
+          }
+          pill(String(localized: "Take over"), ground: blue, ink: .white) { takeOver() }
         }
       } else {
         pill(String(localized: "Open computer"), ground: fill, ink: ink) { takeOver() }
@@ -1421,7 +1527,7 @@ struct ComputerHandoffCard: View {
     }
     .tracking(-0.15)
     .padding(16)
-    .frame(maxWidth: 380, alignment: .leading)
+    .frame(maxWidth: 520, alignment: .leading)
     .background(look.dark ? Color(hex: 0x2c2c2e) : look.theirs, in: RoundedRectangle(cornerRadius: 20))
     .accessibilityElement(children: .contain)
     .accessibilityLabel(waiting ? "Your turn on the computer" : "Computer, \(state.outcome)")
@@ -1448,18 +1554,21 @@ struct ComputerHandoffCard: View {
     return NSImage(data: data)
   }
 
+  /** A Mac's pill (21 October 2026): as wide as its words (at least 88), 32 high. */
   private func pill(_ title: String, ground: Color, ink: Color, action: @escaping () -> Void) -> some View {
     Button(action: action) {
       Text(title)
-        .font(.system(size: 15, weight: .medium))
+        .font(.system(size: 14, weight: .medium))
         .foregroundStyle(ink)
+        .lineLimit(1)
         .padding(.horizontal, 16)
-        .frame(maxWidth: .infinity)
-        .frame(height: 36)
+        .frame(minWidth: 88)
+        .frame(height: 32)
         .background(ground, in: Capsule())
         .contentShape(Capsule())
     }
     .buttonStyle(.hand)
+    .fixedSize()
   }
 }
 
@@ -1503,9 +1612,10 @@ private struct HandoffDot: View {
  * corner, wearing the shop's icon and opening the agent's computer on that
  * checkout (14 October 2026: the cart is in the computer's browser, not on
  * the shop's page here); the Link card that pays with "Link by Stripe" (with
- * several cards, a click picks another); the total; Deny and Allow in
- * 36-point pills. Allowed, it follows the purchase through Link (Get the
- * Link app, Open Link, while Link waits on the person) to the order.
+ * several cards, a click picks another); the total; Deny and Allow at the
+ * right, as a Mac's dialog has them (at most 520 wide, 21 October 2026).
+ * Allowed, it follows the purchase through Link (Get the Link app, Open
+ * Link, while Link waits on the person) to the order.
  */
 struct PurchaseCardView: View {
   let entryId: String
@@ -1588,7 +1698,7 @@ struct PurchaseCardView: View {
     }
     .tracking(-0.15)
     .padding(16)
-    .frame(maxWidth: 420, alignment: .leading)
+    .frame(maxWidth: 520, alignment: .leading)
     .background(look.dark ? Color(hex: 0x2c2c2e) : look.theirs, in: RoundedRectangle(cornerRadius: 20))
     .accessibilityElement(children: .contain)
     .accessibilityLabel("\(PurchaseCard.title) at \(shown.domain), \(shown.total)")
@@ -1694,6 +1804,7 @@ struct PurchaseCardView: View {
     if shown.waitsOnPerson {
       VStack(alignment: .leading, spacing: 8) {
         HStack(spacing: 8) {
+          Spacer(minLength: 0)
           pill(PurchaseCard.deny, ground: fill, ink: ink) { Task { await store.answerPurchase(entryId, allow: false, in: agentId) } }
           // Touch ID (or the Mac's password) first, 14 October 2026: this Allow is the approval Link is handed; cancelled, nothing is allowed.
           pill(PurchaseCard.allow, ground: blue, ink: .white) {
@@ -1724,6 +1835,7 @@ struct PurchaseCardView: View {
         }
         if shown.state == .approving {
           HStack(spacing: 8) {
+            Spacer(minLength: 0)
             if let app = shown.walletApp {
               pill(app.label, ground: shown.actionURL == nil ? blue : fill, ink: shown.actionURL == nil ? .white : ink) { openURL(app.url) }
             }
@@ -1733,7 +1845,10 @@ struct PurchaseCardView: View {
           }
         }
         if shown.waitsOnBank {
-          pill(PurchaseCard.openComputer, ground: blue, ink: .white) { window.openComputer(agentId, helper: nil, store: store) }
+          HStack {
+            Spacer(minLength: 0)
+            pill(PurchaseCard.openComputer, ground: blue, ink: .white) { window.openComputer(agentId, helper: nil, store: store) }
+          }
         }
       }
     }
@@ -1748,18 +1863,21 @@ struct PurchaseCardView: View {
     }
   }
 
+  /** A Mac's pill (21 October 2026): as wide as its words (at least 88), 32 high. */
   private func pill(_ title: String, ground: Color, ink: Color, action: @escaping () -> Void) -> some View {
     Button(action: action) {
       Text(title)
-        .font(.system(size: 15, weight: .medium))
+        .font(.system(size: 14, weight: .medium))
         .foregroundStyle(ink)
+        .lineLimit(1)
         .padding(.horizontal, 16)
-        .frame(maxWidth: .infinity)
-        .frame(height: 36)
+        .frame(minWidth: 88)
+        .frame(height: 32)
         .background(ground, in: Capsule())
         .contentShape(Capsule())
     }
     .buttonStyle(.hand)
+    .fixedSize()
   }
 }
 
@@ -1984,11 +2102,14 @@ struct CloudAgentCardView: View {
 // MARK: Products
 
 /**
- * The products card (14 October 2026; SimeonCore's `ProductsCard`), the
- * iPhone's in the Mac's own card: each product's picture, name, seller and
- * price in a row; a click opens it, with "Buy with <agent>" (the agent is
- * woken to buy exactly that one, through the checkout card) and "View
- * website".
+ * The products card (14 October 2026; SimeonCore's `ProductsCard`): each
+ * product's picture, name, seller and price; a click opens it, with "Buy
+ * with <agent>" (the agent is woken to buy exactly that one, through the
+ * checkout card) and "View website". On a Mac's chat (21 October 2026, the
+ * founder: the cards were an iPhone's, "and not a mac") the products stand
+ * side by side as a shop shows them, three to a line, each a square picture
+ * over its name, seller and price, Buying or Bought at the right of the
+ * price; a chat too narrow for them has the iPhone's rows.
  */
 struct ProductsCardView: View {
   let entryId: String
@@ -2005,6 +2126,40 @@ struct ProductsCardView: View {
 
   var body: some View {
     let shown = card.shown(pressed: store.pressedProducts[entryId])
+    ViewThatFits(in: .horizontal) {
+      tiles(shown)
+      rows(shown)
+    }
+    .tracking(-0.15)
+    .background(look.dark ? Color(hex: 0x2c2c2e) : look.theirs, in: RoundedRectangle(cornerRadius: 20))
+    .clipShape(RoundedRectangle(cornerRadius: 20))
+    .sheet(item: $open) { product in
+      MacProductSheet(entryId: entryId, agentId: agentId, agentName: store.agent(agentId)?.name ?? "", card: card, look: look, current: product) { chosen in
+        open = nil
+        Task { await store.buyProduct(entryId, index: chosen.index, in: agentId) }
+      }
+    }
+  }
+
+  /** Side by side, three to a line: as wide as its tiles. */
+  private func tiles(_ shown: ProductsCard) -> some View {
+    let across = min(3, max(1, shown.products.count))
+    let lines = stride(from: 0, to: shown.products.count, by: across).map { Array(shown.products[$0..<min($0 + across, shown.products.count)]) }
+    return Grid(alignment: .topLeading, horizontalSpacing: 4, verticalSpacing: 4) {
+      ForEach(lines.indices, id: \.self) { line in
+        GridRow {
+          ForEach(lines[line]) { product in
+            MacProductCardTile(product: product, status: shown.status(of: product), agentId: agentId, look: look, ink: ink, grey: grey, hairline: hairline) { open = product }
+          }
+        }
+      }
+    }
+    .padding(8)
+    .fixedSize()
+  }
+
+  /** The iPhone's rows, for a narrow chat: the picture, the name on two lines, the seller, the price and its pill. */
+  private func rows(_ shown: ProductsCard) -> some View {
     VStack(spacing: 0) {
       ForEach(shown.products) { product in
         Button { open = product } label: {
@@ -2036,16 +2191,7 @@ struct ProductsCardView: View {
         if product.index != shown.products.last?.index { Rectangle().fill(hairline).frame(height: 1).padding(.leading, 12) }
       }
     }
-    .tracking(-0.15)
-    .frame(maxWidth: 420, alignment: .leading)
-    .background(look.dark ? Color(hex: 0x2c2c2e) : look.theirs, in: RoundedRectangle(cornerRadius: 20))
-    .clipShape(RoundedRectangle(cornerRadius: 20))
-    .sheet(item: $open) { product in
-      MacProductSheet(entryId: entryId, agentId: agentId, agentName: store.agent(agentId)?.name ?? "", card: card, look: look, current: product) { chosen in
-        open = nil
-        Task { await store.buyProduct(entryId, index: chosen.index, in: agentId) }
-      }
-    }
+    .frame(maxWidth: .infinity, alignment: .leading)
   }
 
   /** Buying in blue, Bought in green: the computer card's Skipped and Done. */
@@ -2054,6 +2200,57 @@ struct ProductsCardView: View {
     case .buying: return look.link
     case .bought: return look.added
     }
+  }
+}
+
+/** A product side by side with the others: its square picture (168), its name on two lines, the seller, the price and, at its right, Buying or Bought. */
+private struct MacProductCardTile: View {
+  let product: ProductsCard.Product
+  let status: ProductsCard.Status?
+  let agentId: String
+  let look: Look
+  let ink: Color
+  let grey: Color
+  let hairline: Color
+  let open: () -> Void
+  @State private var hovering = false
+  static let side: CGFloat = 168
+
+  var body: some View {
+    Button(action: open) {
+      VStack(alignment: .leading, spacing: 8) {
+        MacProductPicture(url: product.imageURL, agentId: agentId, look: look)
+          .frame(width: Self.side, height: Self.side)
+          .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+          .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(hairline, lineWidth: 1))
+        VStack(alignment: .leading, spacing: 2) {
+          Text(product.title)
+            .font(.system(size: 13, weight: .semibold))
+            .foregroundStyle(ink)
+            .lineLimit(2, reservesSpace: true)
+            .multilineTextAlignment(.leading)
+          Text(product.byline).font(.system(size: 12)).foregroundStyle(grey).lineLimit(1)
+          HStack(spacing: 6) {
+            if let price = product.price { MacProductPrice(price: price, listPrice: product.listPrice, ink: ink, grey: grey) }
+            Spacer(minLength: 0)
+            if let status {
+              let tint = ProductsCardView.tint(status, look: look)
+              StatusPill(text: status.label, look: look, dot: tint, ink: tint, wash: tint.opacity(look.dark ? 0.2 : 0.1))
+            }
+          }
+          .frame(minHeight: 20)
+          .padding(.top, 2)
+        }
+        .padding(.horizontal, 2)
+      }
+      .frame(width: Self.side, alignment: .leading)
+      .padding(8)
+      .background(hovering ? hairline : Color.clear, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+      .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+    }
+    .buttonStyle(.hand)
+    .onHover { hovering = $0 }
+    .accessibilityElement(children: .combine)
   }
 }
 
@@ -2087,7 +2284,8 @@ private struct MacProductPicture: View {
 
 /**
  * One product, opened, as a store's page: the iPhone's (18 October 2026, the
- * founder's screenshots of Muse) in a sheet. Its picture large, "Sold by",
+ * founder's screenshots of Muse) in a Mac's sheet, the picture at the left
+ * and the rest at its right (21 October 2026). Its picture large, "Sold by",
  * its name and price, "Buy with <agent>" in a light blue capsule and View
  * website, what it is in three lines with See more, its stars under
  * Reviews, and the card's other products under More like this, each opening
@@ -2117,39 +2315,46 @@ private struct MacProductSheet: View {
     ScrollViewReader { reader in
       ScrollView {
         VStack(alignment: .leading, spacing: 0) {
-          MacProductPicture(url: product.imageURL, agentId: agentId, look: look, fit: true)
-            .frame(maxWidth: .infinity).frame(height: 280)
-            .id("top")
-          VStack(alignment: .leading, spacing: 0) {
-            Text(product.soldBy).font(.system(size: 13)).foregroundStyle(grey).lineLimit(1)
-            Text(product.title).font(.system(size: 22)).foregroundStyle(ink).fixedSize(horizontal: false, vertical: true).padding(.top, 4)
-            if let price = product.price {
-              MacProductPrice(price: price, listPrice: product.listPrice, ink: ink, grey: grey, size: 16).padding(.top, 6)
+          // A Mac's store page (21 October 2026): the picture at the left, what it is at its right.
+          HStack(alignment: .top, spacing: 28) {
+            MacProductPicture(url: product.imageURL, agentId: agentId, look: look, fit: true)
+              .frame(width: 340, height: 340)
+              .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+              .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(hairline, lineWidth: 1))
+            VStack(alignment: .leading, spacing: 0) {
+              Text(product.soldBy).font(.system(size: 13)).foregroundStyle(grey).lineLimit(1)
+              Text(product.title).font(.system(size: 22)).foregroundStyle(ink).fixedSize(horizontal: false, vertical: true).padding(.top, 4)
+              if let price = product.price {
+                MacProductPrice(price: price, listPrice: product.listPrice, ink: ink, grey: grey, size: 16).padding(.top, 6)
+              }
+              MacProductBuyButton(label: status?.label ?? ProductsCard.buyLabel(agent: agentName), status: status, look: look) { buy(product) }
+                .padding(.top, 18)
+              Button { openURL(product.url) } label: {
+                Text(ProductsCard.viewWebsite).font(.system(size: 15)).foregroundStyle(ink)
+                  .frame(maxWidth: .infinity).frame(height: 36).contentShape(Rectangle())
+              }
+              .buttonStyle(.hand)
+              .padding(.top, 4)
+              if let detail = product.detail {
+                MacProductDescription(text: detail, ink: ink, grey: grey).padding(.top, 20).id("about-\(product.index)")
+              }
+              if !product.stars.isEmpty {
+                Text(ProductsCard.reviews).font(.system(size: 16, weight: .semibold)).foregroundStyle(ink).padding(.top, 26)
+                Button { openURL(product.url) } label: { MacProductReviewsRow(product: product, agentId: agentId, look: look, ink: ink, grey: grey, hairline: hairline) }
+                  .buttonStyle(.hand)
+                  .padding(.top, 10)
+                  .help("Opens the reviews on the shop's page")
+              }
             }
-            MacProductBuyButton(label: status?.label ?? ProductsCard.buyLabel(agent: agentName), status: status, look: look) { buy(product) }
-              .padding(.top, 18)
-            Button { openURL(product.url) } label: {
-              Text(ProductsCard.viewWebsite).font(.system(size: 15)).foregroundStyle(ink)
-                .frame(maxWidth: .infinity).frame(height: 36).contentShape(Rectangle())
-            }
-            .buttonStyle(.hand)
-            .padding(.top, 4)
-            if let detail = product.detail {
-              MacProductDescription(text: detail, ink: ink, grey: grey).padding(.top, 20).id("about-\(product.index)")
-            }
-            if !product.stars.isEmpty {
-              Text(ProductsCard.reviews).font(.system(size: 16, weight: .semibold)).foregroundStyle(ink).padding(.top, 26)
-              Button { openURL(product.url) } label: { MacProductReviewsRow(product: product, agentId: agentId, look: look, ink: ink, grey: grey, hairline: hairline) }
-                .buttonStyle(.hand)
-                .padding(.top, 10)
-                .help("Opens the reviews on the shop's page")
-            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.top, 8)
           }
-          .padding(.horizontal, 20)
-          .padding(.top, 16)
+          .padding(.horizontal, 28)
+          .padding(.top, 28)
+          .id("top")
           if !others.isEmpty {
             Text(ProductsCard.moreLikeThis).font(.system(size: 16, weight: .semibold)).foregroundStyle(ink)
-              .padding(.horizontal, 20).padding(.top, 26)
+              .padding(.horizontal, 28).padding(.top, 30)
             ScrollView(.horizontal, showsIndicators: false) {
               HStack(alignment: .top, spacing: 14) {
                 ForEach(others) { other in
@@ -2157,17 +2362,17 @@ private struct MacProductSheet: View {
                     .buttonStyle(.hand)
                 }
               }
-              .padding(.horizontal, 20)
+              .padding(.horizontal, 28)
             }
             .padding(.top, 10)
           }
         }
-        .padding(.bottom, 24)
+        .padding(.bottom, 28)
       }
       .onChange(of: current.index) { withAnimation(.snappy) { reader.scrollTo("top", anchor: .top) } }
     }
     .tracking(-0.15)
-    .frame(width: 460, height: 680)
+    .frame(width: 780, height: 600)
     .background(look.dark ? Color(hex: 0x1e1e1e) : Color.white)
     .overlay(alignment: .topTrailing) {
       Button { dismiss() } label: {

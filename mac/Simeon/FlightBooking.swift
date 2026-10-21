@@ -6,7 +6,9 @@ import SimeonCore
  * Booking a flight on the Mac (13 October 2026; the path is in SimeonCore's
  * FlightBooking.swift): the traveller form as a card in the chat, its
  * details on a sheet in the system's grouped form, and the flight on its
- * checkout card. The colours are the checkout card's (Cards.swift).
+ * checkout card. The colours are the checkout card's (Cards.swift). The
+ * card is a Mac's (21 October 2026): at most 520 wide, Fill in at the right
+ * of the privacy line, as wide as its words.
  */
 struct FlightPassengersCardView: View {
   let entryId: String
@@ -38,17 +40,26 @@ struct FlightPassengersCardView: View {
           if let note = card.note {
             Text(note).font(.system(size: 12)).foregroundStyle(look.danger).fixedSize(horizontal: false, vertical: true)
           }
-          Button { filling = true } label: {
-            Text(FlightPassengersCard.fillIn)
-              .font(.system(size: 15, weight: .medium))
-              .foregroundStyle(.white)
-              .frame(maxWidth: .infinity)
-              .frame(height: 36)
-              .background(blue, in: Capsule())
-              .contentShape(Capsule())
+          HStack(spacing: 12) {
+            Text(FlightPassengersCard.privacy)
+              .font(.system(size: 12))
+              .foregroundStyle(grey)
+              .fixedSize(horizontal: false, vertical: true)
+              .frame(maxWidth: .infinity, alignment: .leading)
+            Button { filling = true } label: {
+              Text(FlightPassengersCard.fillIn)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(.white)
+                .lineLimit(1)
+                .padding(.horizontal, 16)
+                .frame(minWidth: 88)
+                .frame(height: 32)
+                .background(blue, in: Capsule())
+                .contentShape(Capsule())
+            }
+            .buttonStyle(.hand)
+            .fixedSize()
           }
-          .buttonStyle(.hand)
-          Text(FlightPassengersCard.privacy).font(.system(size: 12)).foregroundStyle(grey).fixedSize(horizontal: false, vertical: true)
         }
       case .saved, .canceled:
         HStack(alignment: .top, spacing: 10) {
@@ -62,7 +73,7 @@ struct FlightPassengersCardView: View {
     }
     .tracking(-0.15)
     .padding(16)
-    .frame(maxWidth: 420, alignment: .leading)
+    .frame(maxWidth: 520, alignment: .leading)
     .background(look.dark ? Color(hex: 0x2c2c2e) : look.theirs, in: RoundedRectangle(cornerRadius: 20))
     .accessibilityElement(children: .contain)
     .accessibilityLabel("\(FlightPassengersCard.title), \(card.flight.route)")
@@ -136,7 +147,7 @@ struct MacTravellersSheet: View {
       }
       .padding(16)
     }
-    .frame(width: 460, height: 620)
+    .frame(width: 520, height: 660)
     .onAppear { if travellers.isEmpty { travellers = card.startingTravellers } }
     .interactiveDismissDisabled(sending)
   }
