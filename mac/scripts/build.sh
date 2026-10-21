@@ -10,6 +10,14 @@ cd "$(dirname "$0")/.."
 
 say() { printf '\n\033[1m%s\033[0m\n' "$*"; }
 
+# Which code this builds: a checkout that failed (Xcode rewrites the string catalogs as it builds, which stops
+# `git checkout`) otherwise builds the last branch without a word.
+say "Building $(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo '?'), at: $(git log -1 --format='%h %s' 2>/dev/null || echo '?')"
+if [ -n "$(git status --porcelain -- . 2>/dev/null)" ]; then
+  echo "Changed here and not committed (Xcode's own rewrites of the string catalog are expected):"
+  git status --short -- . | head -10
+fi
+
 say "Checking Xcode and macOS"
 if ! xcodebuild -version >/dev/null 2>&1; then
   XCODE=$(ls -d /Applications/Xcode*.app 2>/dev/null | sort -V | tail -1 || true)
