@@ -19,10 +19,20 @@ from __future__ import annotations
 import re
 
 from ..language import current_language, translated
-from . import en, es, fr
+from . import de, en, es, fr, it, nl, pl, pt_BR, sv, tr
 
 #: Each translation by language; English is `en.WORDS`.
-TABLES: dict[str, dict[str, str]] = {"fr": fr.WORDS, "es": es.WORDS}
+TABLES: dict[str, dict[str, str]] = {
+    "fr": fr.WORDS,
+    "es": es.WORDS,
+    "de": de.WORDS,
+    "nl": nl.WORDS,
+    "it": it.WORDS,
+    "pt-BR": pt_BR.WORDS,
+    "sv": sv.WORDS,
+    "pl": pl.WORDS,
+    "tr": tr.WORDS,
+}
 
 _VALUE = re.compile(r"\{(\w+)\}")
 

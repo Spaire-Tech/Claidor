@@ -108,10 +108,26 @@ test("the prompt names the language, says tu in French, and keeps names as they 
     assert.match(spanish, /"Prefers to be addressed as usted in Spanish"/);
     assert.match(spanish, /¿ and ¡ open every question and exclamation/);
     assert.doesNotMatch(spanish, /"tu"|"vous"/);
+    // The later languages (21 October 2026): each its familiar you, its formal one when asked, remembered.
+    for (const [tag, english, familiar, formal] of [
+      ["de-AT", "German", "du", "Sie"],
+      ["nl", "Dutch", "je", "u"],
+      ["it", "Italian", "tu", "Lei"],
+      ["pt-BR", "Brazilian Portuguese", "você", "o senhor/a senhora"],
+      ["sv", "Swedish", "du", "ni"],
+      ["pl", "Polish", "ty", "Pan/Pani"],
+      ["tr", "Turkish", "sen", "siz"],
+    ]) {
+      const prompt = module.renderUserLanguageSystemPrompt(tag);
+      assert.match(prompt, new RegExp(`Write to the user in ${english}`), tag);
+      assert.ok(prompt.includes(`In ${english}, say "${familiar}" to the user`), tag);
+      assert.ok(prompt.includes(`switch to "${formal}" and keep it from then on`), tag);
+      assert.ok(prompt.includes(`"Prefers to be addressed as ${formal} in ${english}"`), tag);
+    }
     // Another language: named, but no rule of address.
-    const german = module.renderUserLanguageSystemPrompt("de");
-    assert.match(german, /Write to the user in German/);
-    assert.doesNotMatch(german, /"tu"|"vous"|"tú"|"usted"/);
+    const japanese = module.renderUserLanguageSystemPrompt("ja");
+    assert.match(japanese, /Write to the user in Japanese/);
+    assert.doesNotMatch(japanese, /say "/);
     // English or none: nothing at all.
     for (const english of [undefined, null, "", "en", "en-US", "nonsense!"]) assert.equal(module.renderUserLanguageSystemPrompt(english), "", String(english));
   } finally {
@@ -163,7 +179,8 @@ test("the first hello and Simeon's introduction are in the person's language", a
       assert.match(french, /Names of apps, connectors and agents stay as they are\./);
     }
     assert.match(firstRunCueInLanguage("cue", "es"), /The user's apps are in Spanish: .* Say "tú" to the user\./);
-    assert.doesNotMatch(firstRunCueInLanguage("cue", "de"), /"tu"|"tú"/, "only the languages with a familiar you");
+    assert.match(firstRunCueInLanguage("cue", "de"), /The user's apps are in German: .* Say "du" to the user\./);
+    assert.doesNotMatch(firstRunCueInLanguage("cue", "ja"), /Say "/, "only the languages with a familiar you");
   } finally {
     await Promise.all([language.dispose(), onboarding.dispose(), chief.dispose()]);
   }
@@ -209,7 +226,9 @@ test("a voice call hears and speaks the person's language, its first line too", 
     assert.equal(module.voiceCallLanguage(undefined), "en");
     assert.equal(module.voiceCallLanguage("fr-CA"), "fr");
     assert.equal(module.voiceCallLanguage("es-419"), "es");
-    assert.equal(module.voiceCallLanguage("de"), "en", "a language the server's voice agent was not given yet is English");
+    assert.equal(module.voiceCallLanguage("de-AT"), "de");
+    assert.equal(module.voiceCallLanguage("pt-BR"), "pt", "the voice agent's Portuguese has no region");
+    assert.equal(module.voiceCallLanguage("ja"), "en", "a language the server's voice agent was not given is English");
     assert.equal(module.voiceCallLanguage("tlh"), "en");
 
     const english = module.buildVoiceCallOverrides({ agent: { name: "Theo" }, transcript: [], pick: 0, personName: "Bass" });
@@ -247,8 +266,8 @@ test("a voice call hears and speaks the person's language, its first line too", 
       assert.doesNotMatch(greeting, / \?/, "a narrow no-break space before ?, never a plain one");
     }
     // A language the voice does not speak yet: the call is English, as before.
-    const german = module.buildVoiceCallOverrides({ agent: { name: "Theo" }, transcript: [], pick: 0, personName: "Bass", language: "de" });
-    assert.deepEqual(german, english);
+    const japanese = module.buildVoiceCallOverrides({ agent: { name: "Theo" }, transcript: [], pick: 0, personName: "Bass", language: "ja" });
+    assert.deepEqual(japanese, english);
     assert.match(module.voiceCallLanguageRule("pt-BR"), /Speak Brazilian Portuguese for the whole call\./, "the rule names the person's own language");
   } finally {
     await dispose();

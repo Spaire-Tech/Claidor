@@ -25,6 +25,21 @@ export function languageCode(tag: string): string {
   return (tag.split("-")[0] ?? tag).toLowerCase();
 }
 
+/** The region whose translation a language reads when Simeon has only that one: Portuguese is Brazil's. */
+const ONE_REGION: Readonly<Record<string, string>> = { pt: "pt-BR" };
+
+/**
+ * The translation in `tables` for the person's language: its own ("pt-BR"),
+ * its language's ("fr" for "fr-CA"), or the one region's ("pt-BR" for
+ * "pt-PT"); undefined for English, none, or one Simeon is not translated into.
+ */
+export function translationFor<T>(tables: Readonly<Record<string, T>>, language: string | null | undefined): T | undefined {
+  const tag = normalizeUserLanguage(language);
+  if (tag == null) return undefined;
+  const code = languageCode(tag);
+  return tables[tag] ?? tables[code] ?? tables[ONE_REGION[code] ?? ""];
+}
+
 /** True for English and for no language at all: the prompts stay as they were. */
 export function isEnglishOrUnset(tag: string | null | undefined): boolean {
   const normalized = normalizeUserLanguage(tag);
@@ -43,6 +58,9 @@ const LANGUAGE_NAMES: Readonly<Record<string, { readonly english: string; readon
   it: { english: "Italian", own: "italiano" },
   nl: { english: "Dutch", own: "Nederlands" },
   ko: { english: "Korean", own: "한국어" },
+  sv: { english: "Swedish", own: "svenska" },
+  pl: { english: "Polish", own: "polski" },
+  tr: { english: "Turkish", own: "Türkçe" },
   "zh-Hant": { english: "Traditional Chinese", own: "繁體中文" },
   zh: { english: "Chinese", own: "中文" },
   ar: { english: "Arabic", own: "العربية" },
@@ -102,6 +120,41 @@ export const ADDRESS: Readonly<Record<string, { readonly familiar: string; reado
     familiar: "tú",
     formal: "usted",
     writing: "Spanish punctuation: ¿ and ¡ open every question and exclamation, “ ” for quotes, dates and times the Spanish way (20 de octubre, 14:30) and money as the user's country writes it. Write a neutral Spanish that reads naturally in Latin America and in Spain; if the user writes their own way (vos, vosotros, ordenador), follow theirs.",
+  },
+  de: {
+    familiar: "du",
+    formal: "Sie",
+    writing: "German typography: „ “ for quotes, no space before ? ! : ;, and money, dates and times the German way (12,50 €, 20. Oktober, 14:30).",
+  },
+  nl: {
+    familiar: "je",
+    formal: "u",
+    writing: "Dutch typography: “ ” for quotes, no space before ? ! : ;, and money, dates and times the Dutch way (€ 12,50, 20 oktober, 14:30).",
+  },
+  it: {
+    familiar: "tu",
+    formal: "Lei",
+    writing: "Italian typography: “ ” for quotes, the apostrophe ’, no space before ? ! : ;, and money, dates and times the Italian way (12,50 €, 20 ottobre, 14:30).",
+  },
+  pt: {
+    familiar: "você",
+    formal: "o senhor/a senhora",
+    writing: "Write Portuguese as people in Brazil do: “ ” for quotes, and money, dates and times the Brazilian way (R$ 12,50, 20 de outubro, 14h30). If the user writes European Portuguese, follow theirs.",
+  },
+  sv: {
+    familiar: "du",
+    formal: "ni",
+    writing: "Swedish typography: ” ” for quotes, and money, dates and times the Swedish way (12,50 kr, 20 oktober, 14:30).",
+  },
+  pl: {
+    familiar: "ty",
+    formal: "Pan/Pani",
+    writing: "Polish typography: „ ” for quotes, and money, dates and times the Polish way (12,50 zł, 20 października, 14:30).",
+  },
+  tr: {
+    familiar: "sen",
+    formal: "siz",
+    writing: "Turkish typography: “ ” for quotes, the apostrophe ’ before a suffix on a name (Simeon’un), and money, dates and times the Turkish way (12,50 TL, 20 Ekim, 14:30).",
   },
 };
 

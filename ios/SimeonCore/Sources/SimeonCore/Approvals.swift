@@ -46,7 +46,7 @@ public enum AutoReviewCard {
 
   /**
    * A summary that only says "run this" says nothing the command does not (`ie`, `re`, `le`). The engine
-   * writes its two in the person's language (`approval.runOn…`, `desktop/source/shared/words/parts/previews.ts`).
+   * writes its two in the person's language (`approval.runOn…`, `desktop/source/shared/words/areas/previews.ts`).
    */
   public static func summarySaysNothing(_ summary: String) -> Bool {
     if summary == "Run a command on your local computer" || summary == "Run a command on Simeon's computer" || summary == "Run a command on the agent's VM" { return true }

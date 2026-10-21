@@ -1,10 +1,10 @@
 # Simeon in other languages
 
-Simeon is written in English and translated: French (20 October 2026), then
-Spanish (21 October 2026). Each later language (German, Portuguese (Brazil),
-Japanese, Italian, Dutch, Korean, Chinese (Traditional), Arabic) is a
-translation pass: add the language where this page says, fill in its words,
-and run `python3 scripts/check_translations.py`.
+Simeon is written in English and translated: French (20 October 2026),
+Spanish, then German, Dutch, Italian, Portuguese (Brazil), Swedish, Polish
+and Turkish (21 October 2026). Each later language is a translation pass:
+add the language where this page says (**Adding a language**), fill in its
+words, and run `python3 scripts/check_translations.py`.
 
 English stays the source language in the code. Every translation lives in one
 place per platform.
@@ -12,7 +12,8 @@ place per platform.
 ## One language for the whole product
 
 The person's language is the app's: each app follows its device, or the
-Language menu in Simeon's Settings (System, English, Español, Français; on
+Language menu in Simeon's Settings (System, then each language in its own
+name: English, Deutsch, Español, Français…; on
 the iPhone also iOS's Settings › Apps › Simeon › Language, the same choice).
 A language picked takes over when the app opens again: the Mac relaunches
 itself, the iPhone asks the person to close and reopen Simeon. It travels
@@ -33,26 +34,42 @@ English, or no language, leaves every prompt and every request exactly as it
 was. The shop's `customer.locale` and `checkout.locale` belong to the
 inherited checkout and are not this.
 
-## The voice: "tu", "tú"
+## The voice: the familiar "you"
 
-All French in the apps, the website pages Simeon owns, the emails and the
-agents says "tu", and all Spanish says "tú": warm and direct, like a capable
-friend at work, never stiff.
+Every language says the familiar "you" in the apps, the website pages Simeon
+owns, the emails and the agents: warm and direct, like a capable friend at
+work, never stiff.
+
+| Language | Familiar | Formal, when asked |
+|---|---|---|
+| French | tu | vous |
+| Spanish | tú | usted |
+| German | du | Sie |
+| Dutch | je | u |
+| Italian | tu | Lei |
+| Portuguese (Brazil) | você | o senhor / a senhora |
+| Swedish | du | ni |
+| Polish | ty | Pan / Pani |
+| Turkish | sen | siz |
+
 
 - The agents say the familiar "you" by default. When the person asks for the
-  formal one ("vous", "usted"), the agent switches, keeps it for that person
+  formal one ("vous", "Sie"…), the agent switches, keeps it for that person
   from then on, and saves it to the person's shared memory ("Prefers to be
   addressed as vous in French") so every agent follows it. A language with a
   familiar and a formal "you" is a line in `ADDRESS`
   (`desktop/source/shared/user-language.ts`) and `VoiceCallText.address`
   (the core).
-- The app's own screens always say "tu" and "tú".
+- The app's own screens always say the familiar one.
 - Spanish is one Spanish for everyone (the apps' `es`): a neutral Spanish
   that reads naturally in Latin America and in Spain ("computadora",
   "Configuración"). The agents follow the person's own way of writing
   (vos, vosotros) when they use it. The App Store page has a Mexican and a
   Spanish version (`es-MX`, `es-ES`).
-- The website's sign-in and billing pages say "tu" too; the inherited
+- Portuguese is Brazil's (the apps' `pt-BR`); Portugal's Portuguese reads
+  it everywhere (`translationFor` in the engine, `ONE_REGION` on the server,
+  the website's `pt-PT`). The voice agent's code for it is `pt`.
+- The website's sign-in and billing pages say the familiar one too; the inherited
   shop's dashboard and checkout are not Simeon's pages and are left as
   they are.
 - One exception: the inherited checkout page's legal payment text
@@ -72,10 +89,23 @@ friend at work, never stiff.
 - **Spanish punctuation**: ¿ and ¡ open every question and exclamation;
   “ ” for quotes; sentence case on buttons and titles ("Nuevo agente");
   months and weekdays in lower case; money and dates from the locale.
+- **The other languages**: no space before `:` `;` `!` `?`; the curly
+  apostrophe ’; quotes „ “ in German, „ ” in Polish, ” ” in Swedish, “ ”
+  elsewhere; sentence case on buttons (German nouns keep their capital).
+  Polish counts have four plural forms (one, few, many, other); the others
+  two. Turkish attaches suffixes to names: a sentence keeps a name or a value
+  free of a suffix ("%@ ile", "%@ hesabı") since its vowel is unknown.
+- Each language's terms, its "you" and its examples were written down
+  before it was translated: the same word for the same thing on every
+  screen, the engine's and the server's sentences included, and a sentence
+  that names a button uses the button's own words.
 - **Short words on buttons.** Check that nothing truncates at iPhone SE width
   and in the Mac's narrowest window.
-- Write the French yourself, then re-read each screen in context. Anything you
-  are unsure of goes in the PR for the founder.
+- Write the translation yourself, then re-read each screen in context.
+  Anything you are unsure of goes in the PR for the founder.
+- **Lengths**: a button or a chip is at most a little longer than the English
+  and the French (20 % and two letters); a longer one is kept only when the
+  language has no shorter natural word, and listed in the PR.
 
 ## Where each platform keeps its words
 
@@ -85,10 +115,10 @@ friend at work, never stiff.
 | The notification extension | `ios/SimeonNotifications/Localizable.xcstrings` | `check_translations.py` |
 | The Mac app's screens | `mac/Simeon/Localizable.xcstrings` (with the strings of `ios/Simeon/Voice.swift` and `Computer.swift`, which the Mac also builds); `mac/Simeon/InfoPlist.xcstrings` | `check_translations.py` |
 | The shared core's sentences (`SimeonCore`, `SimeonMacCore`): cards, consent, routines, calls, errors, plans | `ios/SimeonCore/Sources/SimeonCore/Resources/Localizable.xcstrings`, read by `L10n.text` | `check_translations.py` (each `L10n.text` is in it) |
-| The engine's sentences shown as they come: card notes, refusals, trays, previews, notifications, approvals, the connectors list | `desktop/source/shared/words/areas/*.ts` (an `EN` and an `FR` object in each), read by `say(language, key, values)` (`shared/say.ts`) | `desktop/tests/say.test.mjs`, `check_translations.py`, the type check |
-| The server's answers: refusals, the sign-in pages, the free month | `server/simeon/desktop/words/` (`_booking.py`, `_account.py`: `EN` and `FR`; `en.py`, `fr.py` gather them), read by `say(key, **values)` in the request's `Accept-Language` | `server/tests/desktop/test_words.py`, `check_translations.py` |
+| The engine's sentences shown as they come: card notes, refusals, trays, previews, notifications, approvals, the connectors list | `desktop/source/shared/words/areas/*.ts` (an `EN` object and one per language in each: `FR`, `ES`, `DE`…), read by `say(language, key, values)` (`shared/say.ts`) | `desktop/tests/say.test.mjs`, `check_translations.py`, the type check |
+| The server's answers: refusals, the sign-in pages, the free month | `server/simeon/desktop/words/` (`_booking.py`, `_account.py`: `EN` and one table per language; `en.py`, `fr.py`… gather them), read by `say(key, **values)` in the request's `Accept-Language` | `server/tests/desktop/test_words.py`, `check_translations.py` |
 | The sign-in code email | `server/emails/src/words.ts` | `check_translations.py` |
-| The website's pages Simeon owns: sign-in (`/login`, `/signup`, the code and password pages) and `/billing` | `clients/packages/i18n/src/locales/en.ts` and `fr.ts`, under `simeon`; the page's language from `pageLocale` (`clients/apps/web/src/utils/i18n.ts`: `?locale=`, else the browser's, else English) | `clients/packages/i18n/src/simeon.test.ts` |
+| The website's pages Simeon owns: sign-in (`/login`, `/signup`, the code and password pages) and `/billing` | `clients/packages/i18n/src/locales/en.ts` and each language's file, under `simeon`; the page's language from `pageLocale` (`clients/apps/web/src/utils/i18n.ts`: `?locale=`, else the browser's, else English) | `clients/packages/i18n/src/simeon.test.ts` |
 | The App Store page: name, subtitle, description, keywords, what's new, promotional text | `ios/AppStore/metadata/<language>/*.txt` (`en-US`, `fr-FR`), pasted into App Store Connect (`ios/AppStore/README.md`) | `check_translations.py` (every field in every language) |
 | The engine (the agents' prompts, voice calls) | `desktop/source/shared/user-language.ts`; the calls' greetings in `voice-call-prompt.ts` | `desktop/tests/user-language.test.mjs` |
 | The core (calls) | `ios/SimeonCore/Sources/SimeonCore/VoiceCall.swift` (`firstMessage`), word for word as the engine's | `LanguageTests.swift` |
@@ -214,11 +244,16 @@ say("email.login_code.subject", language="fr")
 3. The engine, the server and the emails: add the language's table beside
    each `FR` (`desktop/source/shared/words/areas/*.ts` and `TABLES` in
    `shared/say.ts`; `server/simeon/desktop/words/_*.py`, a `<language>.py`
-   and `TABLES` in `words/__init__.py`, and `TRANSLATED` in `language.py`;
-   `server/emails/src/words.ts`).
+   (`pt_BR.py` for `pt-BR`) and `TABLES` in `words/__init__.py`, and
+   `TRANSLATED` in `language.py`; `server/emails/src/words.ts`, keyed by the
+   language alone, `pt` for Portuguese). The engine's tables are named for
+   the language (`DE`, `PT_BR`, `CATALOG_DE`…; `words/<language>.ts`
+   gathers them).
 4. The website: the language's `simeon` words in its file under
    `clients/packages/i18n/src/locales/` (the checkout's other languages,
-   which have none, read English on Simeon's pages).
+   which have none, read English on Simeon's pages). A language the checkout
+   is not in (Polish, Turkish) has a file with `simeon` alone and goes in
+   `SIMEON_ONLY_LOCALES` (`config.ts`); its other keys read English.
 5. The App Store page: a folder beside `ios/AppStore/metadata/fr-FR` with
    each field (App Store Connect's own language code, like `es-ES`,
    `de-DE`, `pt-BR`, `ja`), and the plans' descriptions

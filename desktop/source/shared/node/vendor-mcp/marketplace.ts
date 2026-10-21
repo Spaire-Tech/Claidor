@@ -1,7 +1,17 @@
 import type { SandMarketplacePlugin } from "../mcp/mcp-marketplace.js";
 import { say } from "../../say.js";
-import { languageCode, normalizeUserLanguage } from "../../user-language.js";
-import { CATALOG_ES, CATALOG_FR, CATALOG_GROUPS_ES, CATALOG_GROUPS_FR } from "../../words/areas/catalog.js";
+import { translationFor } from "../../user-language.js";
+import {
+  CATALOG_FR, CATALOG_GROUPS_FR,
+  CATALOG_ES, CATALOG_GROUPS_ES,
+  CATALOG_DE, CATALOG_GROUPS_DE,
+  CATALOG_NL, CATALOG_GROUPS_NL,
+  CATALOG_IT, CATALOG_GROUPS_IT,
+  CATALOG_PT_BR, CATALOG_GROUPS_PT_BR,
+  CATALOG_SV, CATALOG_GROUPS_SV,
+  CATALOG_PL, CATALOG_GROUPS_PL,
+  CATALOG_TR, CATALOG_GROUPS_TR,
+} from "../../words/areas/catalog.js";
 import { VENDOR_MCP_CONNECTORS, VENDOR_MCP_GROUP, type VendorMcpConnector } from "./catalog.js";
 import { isAppsServiceAvailable } from "./apps-availability.js";
 import { vendorPluginLogoUrl } from "./logos.js";
@@ -34,6 +44,13 @@ export function appComingSoon(item: VendorMcpConnector): VendorMcpConnector {
 const CATALOG_WORDS: Readonly<Record<string, { readonly descriptions: Readonly<Record<string, string>>; readonly groups: Readonly<Record<string, string>> }>> = {
   fr: { descriptions: CATALOG_FR, groups: CATALOG_GROUPS_FR },
   es: { descriptions: CATALOG_ES, groups: CATALOG_GROUPS_ES },
+  de: { descriptions: CATALOG_DE, groups: CATALOG_GROUPS_DE },
+  nl: { descriptions: CATALOG_NL, groups: CATALOG_GROUPS_NL },
+  it: { descriptions: CATALOG_IT, groups: CATALOG_GROUPS_IT },
+  "pt-BR": { descriptions: CATALOG_PT_BR, groups: CATALOG_GROUPS_PT_BR },
+  sv: { descriptions: CATALOG_SV, groups: CATALOG_GROUPS_SV },
+  pl: { descriptions: CATALOG_PL, groups: CATALOG_GROUPS_PL },
+  tr: { descriptions: CATALOG_TR, groups: CATALOG_GROUPS_TR },
 };
 const GROUP_KEYS: ReadonlyMap<string, string> = new Map(Object.entries(VENDOR_MCP_GROUP).map(([key, name]) => [name, key]));
 const CONNECTORS_BY_ID: ReadonlyMap<string, VendorMcpConnector> = new Map(VENDOR_MCP_CONNECTORS.map((item) => [item.id, item]));
@@ -47,8 +64,7 @@ const CONNECTORS_BY_ID: ReadonlyMap<string, VendorMcpConnector> = new Map(VENDOR
  * not changed (the catalog keeps them cached).
  */
 export function vendorCatalogInLanguage<View extends { readonly id: string; readonly description?: string; readonly category?: string; readonly connectors?: unknown[] }>(views: readonly View[], language: string | null | undefined): View[] {
-  const tag = normalizeUserLanguage(language);
-  const words = tag == null ? undefined : (CATALOG_WORDS[tag] ?? CATALOG_WORDS[languageCode(tag)]);
+  const words = translationFor(CATALOG_WORDS, language);
   if (words == null) return [...views];
   return views.map((view) => {
     const item = CONNECTORS_BY_ID.get(view.id);
@@ -57,7 +73,7 @@ export function vendorCatalogInLanguage<View extends { readonly id: string; read
     const describe = (text: string): string => {
       if (translated == null) return text;
       if (text === item.description) return translated;
-      if (text === say(undefined, "catalog.comingSoon", { description: item.description })) return say(tag, "catalog.comingSoon", { description: translated });
+      if (text === say(undefined, "catalog.comingSoon", { description: item.description })) return say(language, "catalog.comingSoon", { description: translated });
       return text;
     };
     const groupKey = view.category == null ? undefined : GROUP_KEYS.get(view.category);

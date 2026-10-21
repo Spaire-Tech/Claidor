@@ -55,7 +55,7 @@ export const VOICE_CALL_LANGUAGE = "en";
  * (docs/localization.md; `scripts/check_translations.py` checks they match).
  */
 const VOICE_CALL_LANGUAGES: Readonly<Record<string, string>> = {
-  en: "en", fr: "fr", es: "es",
+  en: "en", fr: "fr", es: "es", de: "de", nl: "nl", it: "it", "pt-BR": "pt", pt: "pt", sv: "sv", pl: "pl", tr: "tr",
 };
 
 /** The call's language for the person's: "fr" for "fr-CA"; English for none, or one the voice does not speak yet. */
@@ -227,6 +227,55 @@ const GREETINGS_BY_LANGUAGE: Readonly<Record<string, readonly Greeting[]>> = {
     (name, person) => `Hola${person}, aquí ${name}. ¿Qué necesitas?`,
     (name, person) => `Hola${person}, soy ${name}. ¿En qué te ayudo?`,
     (name) => `${name} al habla. ¿Qué tienes en mente?`,
+  ],
+  de: [
+    (name, person) => `Hey${person}, hier ist ${name}. Was gibt’s?`,
+    (name, person) => `Hallo${person}, ${name} hier. Was kann ich für dich tun?`,
+    (name, person) => `Hey${person}, hier spricht ${name}. Was brauchst du?`,
+    (name, person) => `Hi${person}, hier ist ${name}. Wie kann ich helfen?`,
+    (name) => `${name} hier. Was beschäftigt dich?`,
+  ],
+  nl: [
+    (name, person) => `Hoi${person}, met ${name}. Zeg het maar.`,
+    (name, person) => `Hallo${person}, met ${name}. Wat kan ik voor je doen?`,
+    (name, person) => `Hé${person}, ${name} hier. Wat heb je nodig?`,
+    (name, person) => `Hoi${person}, met ${name}. Waarmee kan ik je helpen?`,
+    (name) => `${name} hier. Wat speelt er?`,
+  ],
+  it: [
+    (name, person) => `Ciao${person}, sono ${name}. Che mi racconti?`,
+    (name, person) => `Ciao${person}, qui ${name}. Cosa posso fare per te?`,
+    (name, person) => `Ehi${person}, sono ${name}. Di cosa hai bisogno?`,
+    (name, person) => `Ciao${person}, sono ${name}. Come posso aiutarti?`,
+    (name) => `Sono ${name}. Cosa hai in mente?`,
+  ],
+  pt: [
+    (name, person) => `Oi${person}, aqui é ${name}. O que manda?`,
+    (name, person) => `Olá${person}, aqui é ${name}. O que posso fazer por você?`,
+    (name, person) => `Oi${person}, ${name} falando. Do que você precisa?`,
+    (name, person) => `Olá${person}, ${name} na linha. Como posso ajudar?`,
+    (name) => `Aqui é ${name}. O que você tem em mente?`,
+  ],
+  sv: [
+    (name, person) => `Hallå${person}, det är ${name}. Hur är läget?`,
+    (name, person) => `Hej${person}, ${name} här. Vad kan jag göra för dig?`,
+    (name, person) => `Hej${person}, du pratar med ${name}. Vad behöver du?`,
+    (name, person) => `Hej${person}, det är ${name}. Hur kan jag hjälpa dig?`,
+    (name) => `${name} här. Vad har du på hjärtat?`,
+  ],
+  pl: [
+    (name, person) => `Cześć${person}, tu ${name}. Co słychać?`,
+    (name, person) => `Hej${person}, tu ${name}. Co mogę dla ciebie zrobić?`,
+    (name, person) => `Cześć${person}, mówi ${name}. Czego potrzebujesz?`,
+    (name, person) => `Hej${person}, tu ${name}. W czym mogę pomóc?`,
+    (name) => `Tu ${name}. O czym chcesz pogadać?`,
+  ],
+  tr: [
+    (name, person) => `Selam${person}, ben ${name}. Ne var ne yok?`,
+    (name, person) => `Merhaba${person}, ben ${name}. Senin için ne yapabilirim?`,
+    (name, person) => `Selam${person}, ${name} konuşuyor. Neye ihtiyacın var?`,
+    (name, person) => `Merhaba${person}, ben ${name}. Nasıl yardımcı olabilirim?`,
+    (name) => `Ben ${name}. Aklında ne var?`,
   ],
 };
 

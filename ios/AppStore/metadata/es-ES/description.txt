@@ -21,7 +21,7 @@ Un asistente ejecutivo para tu semana, un gestor de tu bandeja de entrada, atenc
 TUS DATOS SIGUEN SIENDO TUYOS
 Tus datos están cifrados en reposo y en tránsito, aislados de los de cualquier otro cliente, y nunca se usan para entrenar modelos.
 
-Simeon está en español, inglés y francés. Los planes son suscripciones mensuales que se compran en la app; tus primeros 30 días son gratis, sin tarjeta.
+Simeon está en español, inglés, francés, alemán, neerlandés, italiano, portugués (Brasil), sueco, polaco y turco. Los planes son suscripciones mensuales que se compran en la app; tus primeros 30 días son gratis, sin tarjeta.
 
 Términos del servicio: https://simeonlabs.com/terms
 Política de privacidad: https://simeonlabs.com/privacy

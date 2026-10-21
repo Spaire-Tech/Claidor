@@ -21,7 +21,7 @@ An executive assistant for your week, an inbox manager, support for your custome
 YOUR DATA STAYS YOURS
 Your data is encrypted at rest and in transit, isolated from every other customer's, and never used to train models.
 
-Simeon is in English, French and Spanish. Plans are monthly subscriptions bought in the app; your first 30 days are free, with no card.
+Simeon is in English, French, Spanish, German, Dutch, Italian, Portuguese (Brazil), Swedish, Polish and Turkish. Plans are monthly subscriptions bought in the app; your first 30 days are free, with no card.
 
 Terms of Service: https://simeonlabs.com/terms
 Privacy Policy: https://simeonlabs.com/privacy

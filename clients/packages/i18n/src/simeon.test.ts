@@ -7,13 +7,17 @@ import fr from './locales/fr'
 import hu from './locales/hu'
 import it_ from './locales/it'
 import nl from './locales/nl'
+import pl from './locales/pl'
 import pt from './locales/pt'
 import ptPT from './locales/pt-PT'
 import sv from './locales/sv'
+import tr from './locales/tr'
 
-// Simeon's own pages (`simeon`): English, French (20 October 2026) and
-// Spanish (21 October 2026), in "tu" and "tú"; the checkout's other
-// languages read English there.
+// Simeon's own pages (`simeon`): English, French (20 October 2026),
+// Spanish, German, Dutch, Italian, Portuguese (Brazil), Swedish, Polish and
+// Turkish (21 October 2026), each in its familiar "you"; the checkout's
+// other language (Hungarian) reads English there, Portugal's Portuguese
+// reads Brazil's.
 
 const leaves = (table: object, prefix = ''): [string, string][] =>
   Object.entries(table).flatMap(([key, value]) =>
@@ -27,7 +31,19 @@ const values = (text: string) =>
 
 /** Every locale that has Simeon's pages, besides English. */
 const translated: Record<string, object> = Object.fromEntries(
-  Object.entries({ de, es, fr, hu, it: it_, nl, pt, 'pt-PT': ptPT, sv })
+  Object.entries({
+    de,
+    es,
+    fr,
+    hu,
+    it: it_,
+    nl,
+    pl,
+    pt,
+    'pt-PT': ptPT,
+    sv,
+    tr,
+  })
     .filter(([, table]) => 'simeon' in table)
     .map(([language, table]) => [
       language,
@@ -35,8 +51,21 @@ const translated: Record<string, object> = Object.fromEntries(
     ]),
 )
 
+/** The later languages: no French spacing or quotes, the curly apostrophe. */
+const plain = (text: string, key: string) => {
+  expect(text, key).not.toMatch(/[\u202f«»']/)
+  expect(text, key).not.toMatch(/\s[:;!?](\s|$)/)
+}
+
 /** How each language is written, beyond its words. */
 const typography: Record<string, (text: string, key: string) => void> = {
+  de: plain,
+  nl: plain,
+  it: plain,
+  pt: plain,
+  sv: plain,
+  pl: plain,
+  tr: plain,
   fr: (text, key) => {
     expect(text, key).not.toMatch(/[  ][:;!?](\s|$)/)
     expect(text, key).not.toMatch(/'/)
@@ -50,8 +79,18 @@ const typography: Record<string, (text: string, key: string) => void> = {
 }
 
 describe('simeon', () => {
-  it('is in French and Spanish', () => {
-    expect(Object.keys(translated).sort()).toEqual(['es', 'fr'])
+  it('is in each language of the apps', () => {
+    expect(Object.keys(translated).sort()).toEqual([
+      'de',
+      'es',
+      'fr',
+      'it',
+      'nl',
+      'pl',
+      'pt',
+      'sv',
+      'tr',
+    ])
   })
 
   for (const [language, table] of Object.entries(translated)) {
@@ -84,9 +123,21 @@ describe('simeon', () => {
       'Iniciar sesión',
     )
     expect(getTranslator('en')('simeon.signIn.signIn')).toBe('Sign in')
-    expect(getTranslator('de')('simeon.signIn.signIn')).toBe('Sign in')
+    expect(getTranslator('de-AT')('simeon.signIn.signIn')).toBe(
+      de.simeon.signIn.signIn,
+    )
+    expect(getTranslator('tr-TR')('simeon.signIn.signIn')).toBe(
+      tr.simeon.signIn.signIn,
+    )
+    expect(getTranslator('pl')('simeon.signIn.signIn')).toBe(
+      pl.simeon.signIn.signIn,
+    )
+    expect(getTranslator('pt-PT')('simeon.signIn.signIn')).toBe(
+      pt.simeon.signIn.signIn,
+    )
+    expect(getTranslator('hu')('simeon.signIn.signIn')).toBe('Sign in')
     expect(
-      getTranslator('de')('simeon.signIn.codeSentTo', { email: 'a@b.co' }),
+      getTranslator('hu')('simeon.signIn.codeSentTo', { email: 'a@b.co' }),
     ).toBe('We sent a six-character code to a@b.co.')
   })
 
@@ -96,8 +147,11 @@ describe('simeon', () => {
     expect(simeonLocale('es')).toBe('es')
     expect(simeonLocale('es-MX')).toBe('es-MX')
     expect(simeonLocale('en-GB')).toBe('en-GB')
-    expect(simeonLocale('de')).toBe('en')
-    expect(simeonLocale('pt-PT')).toBe('en')
+    expect(simeonLocale('de')).toBe('de')
+    expect(simeonLocale('pt-PT')).toBe('pt-PT')
+    expect(simeonLocale('tr-TR')).toBe('tr-TR')
+    expect(simeonLocale('pl')).toBe('pl')
+    expect(simeonLocale('hu')).toBe('en')
   })
 
   it('keeps the checkout as it was', () => {
@@ -109,6 +163,13 @@ describe('simeon', () => {
     )
     expect(getTranslator('es')('checkout.form.email')).toBe(
       (es.checkout.form as { email: string }).email,
+    )
+    // Polish and Turkish have Simeon's pages only: the checkout reads English.
+    expect(getTranslator('tr')('checkout.form.email')).toBe(
+      (en.checkout.form as { email: string }).email,
+    )
+    expect(getTranslator('pl')('checkout.footer.poweredBy')).toBe(
+      en.checkout.footer.poweredBy,
     )
   })
 })

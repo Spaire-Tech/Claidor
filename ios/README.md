@@ -217,16 +217,17 @@ profile, not from the configuration.
   Google needs `SIMEON_GOOGLE_IOS_CLIENT_ID` on the server (an OAuth client
   of type iOS); until then the app uses the web sign-in.
 - **Language** (20 October 2026, `docs/localization.md`): the app follows the
-  phone's language (English, French and Spanish, `CFBundleLocalizations` in
-  `project.yml`), or the Language menu in Settings: System, English,
-  Español, Français (`AppLanguage.choose`, the same choice as iOS's Settings › Apps ›
+  phone's language (English, French, Spanish, German, Dutch, Italian,
+  Portuguese (Brazil), Swedish, Polish and Turkish, `CFBundleLocalizations`
+  in `project.yml`), or the Language menu in Settings: System, then each
+  language in its own name (`AppLanguage.choose`, the same choice as iOS's Settings › Apps ›
   Simeon › Language). iOS reads it when the app opens, and an app can't
   reopen itself, so the person is asked to close and reopen Simeon. The
   language goes to the server on every
   request (`Accept-Language`), and after every sign-in to the account and the
   person's computer (`userLanguage`), so the agents, calls and dictation use
-  it (`AppLanguage.swift`, `AppStore.tellLanguage`). The screens' French is
-  in `Simeon/Localizable.xcstrings` and `InfoPlist.xcstrings` (the
+  it (`AppLanguage.swift`, `AppStore.tellLanguage`). The screens' translations
+  are in `Simeon/Localizable.xcstrings` and `InfoPlist.xcstrings` (the
   permission prompts), and the pushes' in
   `SimeonNotifications/Localizable.xcstrings`. What the shared core writes
   (cards, consent, routines, errors, plans) is translated in the core's own

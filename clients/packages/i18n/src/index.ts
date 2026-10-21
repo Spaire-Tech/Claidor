@@ -1,11 +1,24 @@
 import { useCallback } from 'react'
 
-export { DEFAULT_LOCALE, LOCALE_NAMES, SUPPORTED_LOCALES } from './config'
+export {
+  DEFAULT_LOCALE,
+  LOCALE_NAMES,
+  SIMEON_ONLY_LOCALES,
+  SUPPORTED_LOCALES,
+} from './config'
 export type { AcceptedLocale, SupportedLocale } from './config'
 export type { TranslateFn, TranslationKey, Translations } from './types'
 
-import type { AcceptedLocale, SupportedLocale } from './config'
-import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from './config'
+import type {
+  AcceptedLocale,
+  SimeonOnlyLocale,
+  SupportedLocale,
+} from './config'
+import {
+  DEFAULT_LOCALE,
+  SIMEON_ONLY_LOCALES,
+  SUPPORTED_LOCALES,
+} from './config'
 import type { LocaleShape, TranslateFn, Translations } from './types'
 
 export function getTranslationLocale(locale: AcceptedLocale): SupportedLocale {
@@ -21,7 +34,10 @@ export function getTranslationLocale(locale: AcceptedLocale): SupportedLocale {
 
 export function isAcceptedLocale(value: string): value is AcceptedLocale {
   const language = value.split('-')[0].toLowerCase()
-  return SUPPORTED_LOCALES.includes(language as SupportedLocale)
+  return (
+    SUPPORTED_LOCALES.includes(language as SupportedLocale) ||
+    SIMEON_ONLY_LOCALES.includes(language as SimeonOnlyLocale)
+  )
 }
 
 export function isSupportedLocale(locale: string): locale is SupportedLocale {
@@ -35,14 +51,17 @@ import fr from './locales/fr'
 import hu from './locales/hu'
 import it from './locales/it'
 import nl from './locales/nl'
+import pl from './locales/pl'
 import pt from './locales/pt'
 import ptPT from './locales/pt-PT'
 import sv from './locales/sv'
+import tr from './locales/tr'
 
 /**
  * Simeon's own pages (`simeon`: the website's sign-in and billing, 20
- * October 2026) are in English and French. The checkout's other languages
- * have no words for them, and read English there (`lookup`).
+ * October 2026) are in each language of the apps (docs/localization.md).
+ * The checkout's other language (Hungarian) has no words for them and reads
+ * English there (`lookup`); Portugal's reads Brazil's, the apps' Portuguese.
  */
 type LocaleTable = Omit<LocaleShape<Translations>, 'simeon'> & {
   simeon?: LocaleShape<Translations>['simeon']
@@ -58,8 +77,19 @@ const translations: Record<SupportedLocale, LocaleTable> = {
   hu,
   it,
   pt,
-  'pt-PT': ptPT,
+  'pt-PT': { ...ptPT, simeon: pt.simeon },
 }
+
+/** Simeon's own pages in the languages the checkout is not in: their other keys read English. */
+const simeonOnly: Record<SimeonOnlyLocale, Pick<LocaleTable, 'simeon'>> = {
+  pl,
+  tr,
+}
+
+/** The table `locale` reads Simeon's words from. */
+const tableOf = (locale: AcceptedLocale): Partial<LocaleTable> =>
+  simeonOnly[locale.split('-')[0].toLowerCase() as SimeonOnlyLocale] ??
+  getTranslations(locale)
 
 export function getTranslations(
   locale: AcceptedLocale = DEFAULT_LOCALE,
@@ -71,9 +101,7 @@ export function getTranslations(
 
 /** `locale` where Simeon's own pages have its words, else English (the checkout's other languages). */
 export function simeonLocale(locale: AcceptedLocale): AcceptedLocale {
-  return translations[getTranslationLocale(locale)]?.simeon
-    ? locale
-    : DEFAULT_LOCALE
+  return tableOf(locale).simeon ? locale : DEFAULT_LOCALE
 }
 
 const at = (table: unknown, key: string): unknown =>
@@ -89,7 +117,7 @@ const at = (table: unknown, key: string): unknown =>
 
 /** The entry at `key` in `locale`, or the English one where that locale has none. */
 const lookup = (locale: AcceptedLocale, key: string): unknown =>
-  at(getTranslations(locale), key) ?? at(en, key)
+  at(tableOf(locale), key) ?? at(en, key)
 
 const fill = (template: string, interpolations?: Record<string, unknown>) =>
   interpolations

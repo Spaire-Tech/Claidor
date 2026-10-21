@@ -1,0 +1,1 @@
+agente IA,assistente,team,automazione,email,calendario,posta,fatture,CRM,produttività,segretaria,ops

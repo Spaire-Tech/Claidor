@@ -51,6 +51,24 @@ const TRANSLATIONS = [
       }
     },
   },
+  ...[
+    ["de", "de.ts", "GERMAN"],
+    ["nl", "nl.ts", "DUTCH"],
+    ["it", "it.ts", "ITALIAN"],
+    ["pt-BR", "pt-BR.ts", "PORTUGUESE"],
+    ["sv", "sv.ts", "SWEDISH"],
+    ["pl", "pl.ts", "POLISH"],
+    ["tr", "tr.ts", "TURKISH"],
+  ].map(([language, file, table]) => ({
+    language,
+    entry: `source/shared/words/${file}`,
+    table,
+    writing(key, text) {
+      assert.doesNotMatch(text, /[ «»]/, `${key}: no French spaces or quotes in ${language}`);
+      assert.doesNotMatch(text, /'/, `${key}: the apostrophe is ’`);
+      assert.doesNotMatch(text, /\s[:;!?](\s|$)/, `${key}: no space before : ; ! ?`);
+    },
+  })),
 ];
 
 for (const { language, entry, table, writing } of TRANSLATIONS) {
@@ -78,9 +96,10 @@ test("a sentence is the person's language, else English, with its values", async
   const en = await load("source/shared/words/en.ts", "say-en");
   const fr = await load("source/shared/words/fr.ts", "say-fr");
   const es = await load("source/shared/words/es.ts", "say-es");
+  const pt = await load("source/shared/words/pt-BR.ts", "say-pt");
   try {
     const { say, SAY_LANGUAGES } = loaded.module;
-    assert.deepEqual(SAY_LANGUAGES, ["en", "fr", "es"]);
+    assert.deepEqual(SAY_LANGUAGES, ["en", ...TRANSLATIONS.map(({ language }) => language)]);
     const fill = (text, vals) => text.replace(VALUE, (whole, name) => (name in vals ? String(vals[name]) : whole));
     for (const [key, text] of Object.entries(en.module.ENGLISH)) {
       const vals = Object.fromEntries(values(text).map((name) => [name, `<${name}>`]));
@@ -89,9 +108,9 @@ test("a sentence is the person's language, else English, with its values", async
       assert.equal(say("ja", key, vals), fill(text, vals), `${key}: not translated yet, English`);
       assert.equal(say("fr-CA", key, vals), fill(fr.module.FRENCH[key], vals), key);
       assert.equal(say("es-MX", key, vals), fill(es.module.SPANISH[key], vals), key);
-      for (const name of values(text)) {
-        assert.ok(say("fr", key, vals).includes(`<${name}>`), `${key}: {${name}}`);
-        assert.ok(say("es", key, vals).includes(`<${name}>`), `${key}: {${name}}`);
+      assert.equal(say("pt-PT", key, vals), fill(pt.module.PORTUGUESE[key], vals), `${key}: Portugal's Portuguese reads Brazil's`);
+      for (const { language } of TRANSLATIONS) {
+        for (const name of values(text)) assert.ok(say(language, key, vals).includes(`<${name}>`), `${key}: {${name}} in ${language}`);
       }
     }
   } finally {
@@ -99,5 +118,6 @@ test("a sentence is the person's language, else English, with its values", async
     await en.dispose();
     await fr.dispose();
     await es.dispose();
+    await pt.dispose();
   }
 });

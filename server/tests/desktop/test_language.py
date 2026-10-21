@@ -120,6 +120,18 @@ def test_the_voice_agent_speaks_french_too() -> None:
     assert overrides["conversation_config_override"]["agent"]["language"] is True
 
 
+def test_the_voice_agent_speaks_each_language_of_the_apps() -> None:
+    presets = agent_config(["tool"])["conversation_config"]["language_presets"]
+    # ElevenLabs has one Portuguese: the apps' pt-BR calls in "pt".
+    assert set(presets) == {"fr", "es", "de", "nl", "it", "pt", "sv", "pl", "tr"}
+    for language, preset in presets.items():
+        first = preset["overrides"]["agent"]["first_message"]
+        assert first == VOICE_LANGUAGES[language]
+        assert first.strip(), language
+        assert "!" not in first, language
+        assert first != "Hi, it's me. What's up?", language
+
+
 def test_a_french_recap_gets_the_name_in_front() -> None:
     assert recap_for("You asked me to book it.", "Bass") == (
         "Bass, you asked me to book it."
@@ -145,6 +157,33 @@ def test_a_spanish_recap_gets_the_name_in_front() -> None:
     )
     assert recap_for("Tuvimos una llamada.", "Bass") == "Tuvimos una llamada."
     assert VOICE_LANGUAGES["es"] == "Hola, soy yo. ¿Qué tal?"
+
+
+def test_a_recap_in_the_other_languages_gets_the_name_in_front() -> None:
+    assert recap_for("Du hast mich gebeten, es zu buchen.", "Bass") == (
+        "Bass, du hast mich gebeten, es zu buchen."
+    )
+    # The formal "you" keeps its capital: lower case it would read "she".
+    assert recap_for("Sie haben mich gebeten, es zu buchen.", "Bass") == (
+        "Bass, Sie haben mich gebeten, es zu buchen."
+    )
+    assert recap_for("Lei mi ha chiesto di prenotarlo.", "Bass") == (
+        "Bass, Lei mi ha chiesto di prenotarlo."
+    )
+    assert recap_for("Pan poprosił mnie o rezerwację.", "Bass") == (
+        "Bass, Pan poprosił mnie o rezerwację."
+    )
+    assert recap_for("Je vroeg me het te boeken.", "Bass") == (
+        "Bass, je vroeg me het te boeken."
+    )
+    assert recap_for("Você me pediu para reservar.", "Bass") == (
+        "Bass, você me pediu para reservar."
+    )
+    assert recap_for("Sen benden rezervasyon yapmamı istedin.", "Bass") == (
+        "Bass, sen benden rezervasyon yapmamı istedin."
+    )
+    # A word that only starts like one stays as it is.
+    assert recap_for("Suchen ergab nichts.", "Bass") == "Suchen ergab nichts."
 
 
 class RefusingLanguages(FakeElevenLabs):

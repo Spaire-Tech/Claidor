@@ -1,7 +1,14 @@
-import { languageCode, normalizeUserLanguage } from "./user-language.js";
+import { translationFor } from "./user-language.js";
 import { ENGLISH, type WordKey } from "./words/en.js";
 import { SPANISH } from "./words/es.js";
 import { FRENCH } from "./words/fr.js";
+import { GERMAN } from "./words/de.js";
+import { DUTCH } from "./words/nl.js";
+import { ITALIAN } from "./words/it.js";
+import { PORTUGUESE } from "./words/pt-BR.js";
+import { SWEDISH } from "./words/sv.js";
+import { POLISH } from "./words/pl.js";
+import { TURKISH } from "./words/tr.js";
 
 /**
  * The engine's sentences the person reads as they come (20 October 2026,
@@ -22,12 +29,10 @@ import { FRENCH } from "./words/fr.js";
 export type { WordKey } from "./words/en.js";
 
 /** Each translation by language; English is `ENGLISH`. */
-const TABLES: Readonly<Record<string, Readonly<Record<WordKey, string>>>> = { fr: FRENCH, es: SPANISH };
+const TABLES: Readonly<Record<string, Readonly<Record<WordKey, string>>>> = { fr: FRENCH, es: SPANISH, de: GERMAN, nl: DUTCH, it: ITALIAN, "pt-BR": PORTUGUESE, sv: SWEDISH, pl: POLISH, tr: TURKISH };
 
 export function say(language: string | null | undefined, key: WordKey, values: Readonly<Record<string, string | number>> = {}): string {
-  const tag = normalizeUserLanguage(language);
-  const table = tag == null ? undefined : (TABLES[tag] ?? TABLES[languageCode(tag)]);
-  const template = table?.[key] ?? ENGLISH[key];
+  const template = translationFor(TABLES, language)?.[key] ?? ENGLISH[key];
   return template.replace(/\{(\w+)\}/g, (whole, name: string) => (name in values ? String(values[name]) : whole));
 }
 

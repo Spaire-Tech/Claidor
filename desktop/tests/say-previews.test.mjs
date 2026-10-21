@@ -16,6 +16,9 @@ import { build } from "esbuild";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
+/** The languages after Spanish (21 October 2026) and their tables. */
+const LATER = [["de", "GERMAN"], ["nl", "DUTCH"], ["it", "ITALIAN"], ["pt-BR", "PORTUGUESE"], ["sv", "SWEDISH"], ["pl", "POLISH"], ["tr", "TURKISH"]];
+
 async function load() {
   const dir = await mkdtemp(path.join(os.tmpdir(), "simeon-say-previews-"));
   const outfile = path.join(dir, "say-previews.mjs");
@@ -28,6 +31,7 @@ async function load() {
     'export { connectorManifests, connectorManifestsForPerson } from "./source/shared/channels.ts";',
     'export { FRENCH } from "./source/shared/words/fr.ts";',
     'export { SPANISH } from "./source/shared/words/es.ts";',
+    ...LATER.map(([language, table]) => `export { ${table} } from "./source/shared/words/${language}.ts";`),
   ].join("\n");
   await build({ stdin: { contents, resolveDir: repoRoot, loader: "ts" }, outfile, bundle: true, format: "esm", platform: "node", target: "node22", logLevel: "silent", external: ["electron"], banner: { js: "import { createRequire as __cr } from 'node:module'; const require = __cr(import.meta.url);" } });
   const module = await import(`${pathToFileURL(outfile).href}?${Date.now()}`);
@@ -93,13 +97,28 @@ test("in Spanish: previews, notifications, summaries and the Channels tab", asyn
   }
 });
 
-test("where an app compares the engine's words, its French and its Spanish are the engine's", async () => {
+test("in each later language: the notification and a preview are its table's", async () => {
+  const { module, dispose } = await load();
+  try {
+    for (const [language, name] of LATER) {
+      const table = module[name];
+      module.pinUserLanguageReader(() => language);
+      assert.deepEqual(module.buildNotificationContent(needsYou), { title: table["notify.needsYou"].replace("{name}", "Ada"), body: table["notify.waiting"] }, language);
+      assert.equal(module.getLastMessageFromTranscript(card({ type: "widget", widget: {} })).preview, table["preview.hasQuestion"], language);
+    }
+  } finally {
+    module.pinUserLanguageReader(null);
+    await dispose();
+  }
+});
+
+test("where an app compares the engine's words, each translation is the engine's", async () => {
   const { module, dispose } = await load();
   try {
     const word = (catalog, key, language) => JSON.parse(catalog).strings[key]?.localizations?.[language]?.stringUnit?.value;
     const core = await readFile(path.join(repoRoot, "../ios/SimeonCore/Sources/SimeonCore/Resources/Localizable.xcstrings"), "utf8");
     const extension = await readFile(path.join(repoRoot, "../ios/SimeonNotifications/Localizable.xcstrings"), "utf8");
-    for (const [language, table] of [["fr", module.FRENCH], ["es", module.SPANISH]]) {
+    for (const [language, table] of [["fr", module.FRENCH], ["es", module.SPANISH], ...LATER.map(([code, name]) => [code, module[name]])]) {
       // Approvals.summarySaysNothing (ios/SimeonCore) hides the two summaries that only say "run a command".
       assert.equal(word(core, "Run a command on your local computer", language), table["approval.runOnLocalComputer"], language);
       assert.equal(word(core, "Run a command on Simeon's computer", language), table["approval.runOnSimeonComputer"], language);

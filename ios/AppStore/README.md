@@ -71,7 +71,7 @@ down for smaller iPhones.
 - `fonts/`: Geist (the headlines) and Inter, both under the SIL Open Font
   License.
 
-## The listing's words, in English, French and Spanish
+## The listing's words, in each language
 
 `metadata/` holds the App Store page's text for each language (20 October
 2026, docs/localization.md), one file per field as fastlane's `deliver`
@@ -100,7 +100,12 @@ lays it out, so it can be pasted into App Store Connect or uploaded:
   app: Spanish (Mexico) and Spanish (Spain) in App Store Connect's language
   menu. The same text, but Spain's own words where they differ (ordenador,
   Ajustes, rellenar, informes); Latin America's other stores take Mexico's.
-- The screenshots stay English for now: the French and Spanish pages show
+- `de-DE/`, `nl-NL/`, `it/`, `pt-BR/`, `sv/`, `pl/`, `tr/` are German, Dutch, Italian, Portuguese (Brazil), Swedish,
+  Polish and Turkish (21 October 2026), each in the familiar "you" like the
+  app; in App Store Connect's language menu: German, Dutch, Italian, Portuguese (Brazil), Swedish, Polish, Turkish.
+  Portuguese (Portugal) can take the Brazilian text; Austria's and
+  Switzerland's stores show the German.
+- The screenshots stay English for now: the other languages' pages show
   the English set until their own are made (the artboards in `source/` and
   the app's screens in each language).
 
@@ -116,3 +121,14 @@ display names; the descriptions are “5,000,000 créditos por semana”,
 Mexico's, and “5.000.000 créditos por semana”, “17.500.000 créditos por
 semana” and “60.000.000 créditos por semana” in Spain's (each writes its
 thousands its own way).
+
+In the other languages (Localization › each language), the same display
+names; the descriptions:
+
+- German: “5.000.000 Credits pro Woche”, “17.500.000 Credits pro Woche” and “60.000.000 Credits pro Woche”.
+- Dutch: “5.000.000 credits per week”, “17.500.000 credits per week” and “60.000.000 credits per week”.
+- Italian: “5.000.000 crediti a settimana”, “17.500.000 crediti a settimana” and “60.000.000 crediti a settimana”.
+- Portuguese (Brazil): “5.000.000 de créditos por semana”, “17.500.000 créditos por semana” and “60.000.000 de créditos por semana”.
+- Swedish: “5 000 000 krediter i veckan”, “17 500 000 krediter i veckan” and “60 000 000 krediter i veckan”.
+- Polish: “5 000 000 kredytów tygodniowo”, “17 500 000 kredytów tygodniowo” and “60 000 000 kredytów tygodniowo”.
+- Turkish: “Haftada 5.000.000 kredi”, “Haftada 17.500.000 kredi” and “Haftada 60.000.000 kredi”.
