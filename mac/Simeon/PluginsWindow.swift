@@ -218,31 +218,32 @@ private struct PanelHead: View {
 
 /**
  * Under the head: the search across the panel with the filter beside it,
- * then Available | Yours (GlassSegments) at the left; 16 under the head, 24
- * at the sides, 8 under.
+ * then Available | Yours (GlassSegments) in the middle; 16 under the head,
+ * 24 at the sides, 8 under.
  */
 private struct PluginsBar: View {
   let look: Look
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 14) {
+    VStack(spacing: 16) {
       HStack(spacing: 10) {
         PluginsSearch(look: look)
         FilterButton(look: look)
       }
       GlassSegments(look: look)
+        .frame(maxWidth: .infinity)
     }
     .padding(EdgeInsets(top: 16, leading: 24, bottom: 8, trailing: 24))
   }
 }
 
 /**
- * Available | Yours, as Apple's segmented control in our glass (the
- * founder, 13 October 2026: "use apple style picker", and of the Mac's own,
- * "whats that blue picker"): a capsule of glass (the material before macOS
- * 26), 34 high and 280 wide; the chosen half a lighter capsule that slides
- * to it (white and lifted on light, the grey on dark), its word in the ink
- * at 13 medium, the other at 60%. Chosen on the click.
+ * Available | Yours, as the founder's reference has two halves (21 October
+ * 2026, "center available and yours and design it like sc 1"): in the
+ * middle of the panel, a grey capsule 300 wide and 40 high; the chosen half
+ * a white capsule with a hairline and a soft shadow (a lighter grey on
+ * dark) that slides to it, its word in the ink at 15 medium, the other in
+ * grey. Chosen on the click.
  */
 private struct GlassSegments: View {
   let look: Look
@@ -255,8 +256,8 @@ private struct GlassSegments: View {
       segment(String(localized: "Yours"), .yours)
     }
     .padding(3)
-    .frame(width: 280, height: 34)
-    .liquidGlass(in: Capsule())
+    .frame(width: 300, height: 40)
+    .background(Capsule().fill(look.dark ? Color.white.opacity(0.08) : Color(hex: 0xf0f0f0)))
     .accessibilityElement(children: .contain)
     .accessibilityLabel("Show")
   }
@@ -269,15 +270,16 @@ private struct GlassSegments: View {
       withAnimation(.snappy(duration: 0.22)) { model.tab = tab }
     } label: {
       Text(title)
-        .font(.system(size: 13, weight: chosen ? .medium : .regular))
-        .foregroundStyle(chosen ? look.ink : look.inkSecondary)
+        .font(.system(size: 15, weight: chosen ? .medium : .regular))
+        .foregroundStyle(chosen ? look.ink : look.inkTertiary)
         .lineLimit(1)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background {
           if chosen {
             Capsule()
-              .fill(look.dark ? Color.white.opacity(0.14) : Color.white)
-              .shadow(color: Color(red: 20 / 255, green: 30 / 255, blue: 60 / 255).opacity(look.dark ? 0 : 0.12), radius: 1.5, x: 0, y: 1)
+              .fill(look.dark ? Color.white.opacity(0.16) : Color.white)
+              .overlay(Capsule().strokeBorder(look.ink.opacity(look.dark ? 0 : 0.08), lineWidth: 0.5))
+              .shadow(color: Color.black.opacity(look.dark ? 0 : 0.08), radius: 2, x: 0, y: 1)
               .matchedGeometryEffect(id: "chosen", in: thumb)
           }
         }
@@ -1226,7 +1228,7 @@ private struct PluginPage: View {
         if installed.isInstalled && item != nil && entry.hasSetupFields {
           PageCard(heading: String(localized: "Setup"), look: look) {
             CardRow(look: look) {
-              Text("Setup Values").font(.system(size: 13)).foregroundStyle(look.ink).frame(maxWidth: .infinity, alignment: .leading)
+              Text("Setup Values").font(.system(size: 15)).foregroundStyle(look.ink).frame(maxWidth: .infinity, alignment: .leading)
               PluginPill(title: String(localized: "Edit Values"), kind: .secondary, disabled: model.isBusy, look: look) { model.editValues(entry) }
             }
           }
@@ -1405,7 +1407,7 @@ private struct PageCard<Content: View>: View {
   }
 }
 
-/** A group's row (padded 10 and 14, 8 apart, at least 40): Settings' line above it when it follows another. */
+/** A group's row (padded 14 and 18, 8 apart, at least 56): Settings' line above it when it follows another. */
 private struct CardRow<Content: View>: View {
   var divided = false
   let look: Look
@@ -1413,9 +1415,9 @@ private struct CardRow<Content: View>: View {
 
   var body: some View {
     HStack(spacing: 8) { content }
-      .padding(.vertical, 10)
-      .padding(.horizontal, 14)
-      .frame(minHeight: 40)
+      .padding(.vertical, 14)
+      .padding(.horizontal, 18)
+      .frame(minHeight: 56)
       .overlay(alignment: .top) {
         if divided { SettingsDivider(look: look) }
       }
@@ -1430,10 +1432,10 @@ private struct DetailPair: View {
 
   var body: some View {
     HStack(spacing: 8) {
-      Text(term).font(.system(size: 13)).foregroundStyle(look.ink).lineLimit(1).fixedSize()
+      Text(term).font(.system(size: 15)).foregroundStyle(look.ink).lineLimit(1).fixedSize()
       Spacer(minLength: 0)
       Text(value)
-        .font(.system(size: 13))
+        .font(.system(size: 15))
         .foregroundStyle(look.inkTertiary)
         .lineLimit(1)
         .truncationMode(.middle)
@@ -1457,10 +1459,10 @@ private struct AccountsCard: View {
         ForEach(Array(rows.enumerated()), id: \.offset) { index, row in
           CardRow(divided: index > 0, look: look) {
             VStack(alignment: .leading, spacing: 2) {
-              Text(Plugins.accountLabel(row.accountKey)).font(.system(size: 13)).foregroundStyle(look.ink).lineLimit(1)
-              Text(Plugins.statusWord(row.status)).font(.system(size: 12)).foregroundStyle(look.tone(Plugins.tone(row.status))).lineLimit(1)
+              Text(Plugins.accountLabel(row.accountKey)).font(.system(size: 15)).foregroundStyle(look.ink).lineLimit(1)
+              Text(Plugins.statusWord(row.status)).font(.system(size: 13)).foregroundStyle(look.tone(Plugins.tone(row.status))).lineLimit(1)
               if row.status == "error", let detail = row.statusDetail {
-                Text(detail).font(.system(size: 12)).foregroundStyle(look.inkSecondary)
+                Text(detail).font(.system(size: 13)).foregroundStyle(look.inkSecondary)
                   .fixedSize(horizontal: false, vertical: true)
                   .textSelection(.enabled)
               }
@@ -1493,7 +1495,7 @@ private struct ToolsCard: View {
         ForEach(tools) { tool in
           let name = names[tool.name] ?? tool.name
           CardRow(divided: true, look: look) {
-            Text(name).font(.system(size: 13)).foregroundStyle(look.ink).lineLimit(1).help(tool.description)
+            Text(name).font(.system(size: 15)).foregroundStyle(look.ink).lineLimit(1).help(tool.description)
               .frame(maxWidth: .infinity, alignment: .leading)
             PluginSwitch(on: !tool.isDisabled, label: tool.isDisabled ? String(localized: "Enable \(name)") : String(localized: "Disable \(name)"), look: look) {
               Task { await model.toggle(tool, of: serverId) }
@@ -1503,7 +1505,7 @@ private struct ToolsCard: View {
       } footer: {
         if let failure = model.toolFailures[serverId] {
           CardRow(divided: true, look: look) {
-            Text(failure).font(.system(size: 13)).foregroundStyle(look.danger).frame(maxWidth: .infinity, alignment: .leading)
+            Text(failure).font(.system(size: 15)).foregroundStyle(look.danger).frame(maxWidth: .infinity, alignment: .leading)
           }
         }
       }
@@ -1522,9 +1524,9 @@ private struct FoldCard: View {
     FoldShell(heading: heading, summary: summary, look: look) {
       ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
         CardRow(divided: true, look: look) {
-          Text(row.0).font(.system(size: 13)).foregroundStyle(look.ink).lineLimit(1).fixedSize()
+          Text(row.0).font(.system(size: 15)).foregroundStyle(look.ink).lineLimit(1).fixedSize()
           Spacer(minLength: 8)
-          Text(row.1).font(.system(size: 13)).foregroundStyle(look.inkTertiary).lineLimit(1).truncationMode(.tail).padding(.trailing, 4).help(row.1)
+          Text(row.1).font(.system(size: 15)).foregroundStyle(look.inkTertiary).lineLimit(1).truncationMode(.tail).padding(.trailing, 4).help(row.1)
         }
       }
     } footer: { EmptyView() }
@@ -1545,7 +1547,7 @@ private struct FoldShell<Rows: View, Footer: View>: View {
     PageCard(heading: heading, look: look) {
       Button { open.toggle() } label: {
         HStack(spacing: 8) {
-          Text(summary).font(.system(size: 13)).foregroundStyle(look.ink).frame(maxWidth: .infinity, alignment: .leading)
+          Text(summary).font(.system(size: 15)).foregroundStyle(look.ink).frame(maxWidth: .infinity, alignment: .leading)
           Image(systemName: "chevron.down")
             .font(.system(size: 10, weight: .medium))
             .foregroundStyle(look.inkTertiary)
@@ -1553,9 +1555,9 @@ private struct FoldShell<Rows: View, Footer: View>: View {
             .animation(.easeOut(duration: 0.12), value: open)
             .padding(.trailing, 4)
         }
-        .padding(.vertical, 10)
-        .padding(.horizontal, 14)
-        .frame(minHeight: 40)
+        .padding(.vertical, 14)
+        .padding(.horizontal, 18)
+        .frame(minHeight: 56)
         .background(hovering ? look.groupedRowHover : .clear)
         .contentShape(Rectangle())
       }

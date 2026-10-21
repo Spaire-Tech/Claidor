@@ -479,6 +479,16 @@
         }
       }
     },
+    "Add a way to pay so your agents can make secure purchases for you. Each purchase waits for your approval." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajoute un moyen de paiement pour que tes agents puissent faire des achats sécurisés pour toi. Chaque achat attend ton accord."
+          }
+        }
+      }
+    },
     "Add Member" : {
       "localizations" : {
         "fr" : {
@@ -3049,6 +3059,16 @@
         }
       }
     },
+    "Legal" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mentions légales"
+          }
+        }
+      }
+    },
     "Light" : {
       "localizations" : {
         "fr" : {
@@ -3389,6 +3409,16 @@
         }
       }
     },
+    "Mode" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mode"
+          }
+        }
+      }
+    },
     "Months" : {
       "localizations" : {
         "fr" : {
@@ -3527,6 +3557,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nomme cette routine"
+          }
+        }
+      }
+    },
+    "Name, email and password" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nom, e-mail et mot de passe"
           }
         }
       }
@@ -4141,6 +4181,16 @@
         }
       }
     },
+    "Payment methods" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moyens de paiement"
+          }
+        }
+      }
+    },
     "PDF too large to preview" : {
       "localizations" : {
         "fr" : {
@@ -4217,6 +4267,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Agents épinglés"
+          }
+        }
+      }
+    },
+    "Plan" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forfait"
           }
         }
       }
@@ -6777,6 +6837,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tes agents sont en sécurité — ils ne peuvent simplement pas être chargés pour le moment."
+          }
+        }
+      }
+    },
+    "Your agents keep this time zone for routines and reminders." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents gardent ce fuseau horaire pour les routines et les rappels."
           }
         }
       }

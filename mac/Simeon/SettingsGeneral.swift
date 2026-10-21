@@ -4,37 +4,26 @@ import SimeonCore
 import SimeonMacCore
 
 /**
- * Settings › General, as the iPhone's Settings has it (ios/Simeon/Settings.swift,
- * the founder, 21 October 2026: "match the iphone in design"): Connect apps;
- * the time zone the agents keep, set automatically or chosen; Appearance and
- * Language; Privacy Policy, Terms of Service and About; Sign Out (asked
- * first); the mark and the version. The account, Wallet, Permissions, the
- * computer and updates have pages of their own in the list on the left.
+ * Settings › General, laid out as the founder's reference (21 October
+ * 2026): the account first (its face, its name and email; its page under
+ * General), Language, Appearance (Mode: the sun, the moon, the screen), and
+ * the time zone the agents keep. Connect apps and About are the sidebar's,
+ * not here again ("why do we have dup of stuff").
  */
 struct SettingsGeneralPage: View {
   let look: Look
   @Environment(AppStore.self) private var store
   @Environment(SettingsState.self) private var settings
-  @Environment(MacSession.self) private var session
   @State private var model = GeneralSettingsModel()
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 24) {
+    VStack(alignment: .leading, spacing: 28) {
       SettingsGroup(look: look) {
-        ConnectAppsSettingsRow(look: look) { settings.openConnectors() }
+        AccountRow(look: look) { settings.page = .account }
       }
-      TimeZoneGroup(model: model, look: look)
+      LanguageGroup(look: look)
       AppearanceGroup(look: look)
-      SettingsGroup(look: look) {
-        SettingsLinkRow(label: String(localized: "Privacy Policy"), external: true, look: look) { NSWorkspace.shared.open(SettingsLegal.privacy) }
-        SettingsLinkRow(label: String(localized: "Terms of Service"), divided: true, external: true, look: look) { NSWorkspace.shared.open(SettingsLegal.terms) }
-        SettingsLinkRow(label: String(localized: "About Simeon"), divided: true, look: look) { settings.page = .about }
-      }
-      SettingsGroup(look: look) {
-        // Asked first (`AccountMenu.signOut…`), as the menu's Log out. Delete Account is on the Account page.
-        SettingsActionRow(title: String(localized: "Sign Out"), destructive: true, look: look) { AccountActions.askToSignOut(session: session, settings: settings) }
-      }
-      SettingsMark(look: look)
+      TimeZoneGroup(model: model, look: look)
     }
     .task { await model.load(store: store) }
   }
@@ -51,64 +40,50 @@ enum SettingsVersion {
   static var current: String { Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "" }
 }
 
-/**
- * Connect apps as the sidebar has it (Sidebar.swift `ConnectApps`), and the
- * iPhone's Settings row after it: the words in the window's blue, medium,
- * then Gmail, Calendar and Drive on three white tiles, the first turned 7°
- * left, the last 7° right; the chevron at the end. Opens Connectors.
- */
-private struct ConnectAppsSettingsRow: View {
+/** The account's row (the reference's account row): its face (40), its name over its email, the chevron; its page under General. */
+private struct AccountRow: View {
   let look: Look
   let action: () -> Void
+  @Environment(AppStore.self) private var store
   @State private var hovering = false
 
   var body: some View {
+    let account = store.account
+    let display = AccountDisplay(displayName: account?.name, email: account?.email)
     Button(action: action) {
-      HStack(spacing: 12) {
-        Text("Connect apps")
-          .font(.system(size: 13, weight: .medium))
-          .foregroundStyle(hovering ? look.blueHover : look.blue)
-          .fixedSize()
-        HStack(spacing: -4) {
-          tile("Connectors/gmail", turn: -7)
-          tile("Connectors/google-calendar", turn: 0)
-          tile("Connectors/google-drive", turn: 7)
+      HStack(spacing: 14) {
+        SettingsAccountFace(size: 40, look: look)
+        VStack(alignment: .leading, spacing: 3) {
+          Text(display.title)
+            .font(.system(size: 15))
+            .foregroundStyle(look.ink)
+            .lineLimit(1)
+          Text(display.secondary ?? String(localized: "Name, email and password"))
+            .font(.system(size: 13))
+            .foregroundStyle(look.inkSecondary)
+            .lineLimit(1)
+            .truncationMode(.middle)
         }
-        Spacer(minLength: 0)
+        Spacer(minLength: 8)
         Image(systemName: "chevron.right")
-          .font(.system(size: 11, weight: .semibold))
+          .font(.system(size: 13, weight: .medium))
           .foregroundStyle(look.inkTertiary)
       }
-      .padding(.horizontal, 14)
-      .padding(.vertical, 9)
-      .frame(minHeight: 44)
+      .padding(.horizontal, 18)
+      .padding(.vertical, 14)
       .background(hovering ? look.groupedRowHover : Color.clear)
       .contentShape(Rectangle())
     }
     .buttonStyle(.hand)
     .onHover { hovering = $0 }
-    .accessibilityLabel("Connect apps")
-  }
-
-  private func tile(_ image: String, turn: Double) -> some View {
-    Image(image)
-      .resizable()
-      .interpolation(.high)
-      .aspectRatio(contentMode: .fit)
-      .frame(width: 16)
-      .frame(width: 26, height: 26)
-      .background(RoundedRectangle(cornerRadius: 7, style: .continuous).fill(look.tile))
-      .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous).inset(by: -0.5).stroke(look.tileHairline, lineWidth: 1))
-      .shadow(color: look.tileShadow, radius: 1, x: 0, y: 1)
-      .rotationEffect(.degrees(turn))
+    .accessibilityLabel("Account, \(display.title)")
   }
 }
 
 /**
- * The time zone the agents' computer keeps (the iPhone's: "Set Time Zone
- * Automatically", then the zone): automatic follows this Mac's; turned off,
- * it keeps this Mac's until another is chosen in the menu of every zone,
- * each with the time there now.
+ * The time zone the agents' computer keeps: "Set Automatically" follows
+ * this Mac's; turned off, it keeps this Mac's until another is chosen in the
+ * menu of every zone, each with the time there now.
  */
 private struct TimeZoneGroup: View {
   @Bindable var model: GeneralSettingsModel
@@ -118,27 +93,18 @@ private struct TimeZoneGroup: View {
 
   var body: some View {
     let automatic = model.zoneOverride == nil
-    SettingsGroup(look: look) {
+    SettingsGroup(title: String(localized: "Time Zone"), footer: String(localized: "Your agents keep this time zone for routines and reminders."), look: look) {
       SettingsSwitch(label: String(localized: "Set Time Zone Automatically"),
                      isOn: Binding(get: { automatic }, set: { on in model.setZone(on ? nil : model.detectedZone, store: store) }),
                      disabled: model.zonePending, look: look)
       SettingsLine(label: String(localized: "Time Zone"), divided: true, look: look) {
         if automatic {
           Text(TimeZoneChoices.label(model.detectedZone))
-            .font(.system(size: 13))
+            .font(.system(size: 15))
             .foregroundStyle(look.inkSecondary)
         } else {
           Button { zoneMenu(under: spot.frame) } label: {
-            HStack(spacing: 5) {
-              Text(TimeZoneChoices.label(model.zoneOverride ?? model.detectedZone))
-                .font(.system(size: 13))
-                .foregroundStyle(look.inkSecondary)
-                .lineLimit(1)
-              Image(systemName: "chevron.up.chevron.down")
-                .font(.system(size: 9, weight: .semibold))
-                .foregroundStyle(look.inkTertiary)
-            }
-            .contentShape(Rectangle())
+            SettingsMenuLabel(text: TimeZoneChoices.label(model.zoneOverride ?? model.detectedZone), look: look)
           }
           .buttonStyle(.hand)
           .disabled(model.zonePending)
@@ -179,23 +145,15 @@ private struct TimeZoneGroup: View {
   }
 }
 
-/**
- * Appearance (System, Light or Dark, the whole app at once: `MacTheme`, as
- * ⌘K's and "/"'s) and Language (System, or a language the app is in, each in
- * its own name; a change waits for a relaunch, with the row that does it).
- */
-private struct AppearanceGroup: View {
+/** Language (System, or a language the app is in, each in its own name); a change waits for a relaunch, with the row that does it. */
+private struct LanguageGroup: View {
   let look: Look
-  @AppStorage(MacTheme.key) private var theme = "system"
   @State private var chosen = MacLanguage.chosen
 
   var body: some View {
     let waiting = chosen != MacLanguage.atLaunch
     SettingsGroup(footer: waiting ? String(localized: "Relaunch Simeon to use it.") : nil, look: look) {
-      SettingsMenu(label: String(localized: "Appearance"),
-                   options: [(value: "system", label: String(localized: "System")), (value: "light", label: String(localized: "Light")), (value: "dark", label: String(localized: "Dark"))],
-                   value: ["light", "dark"].contains(theme) ? theme : "system", look: look) { MacTheme.set($0) }
-      SettingsMenu(label: String(localized: "Language"), divided: true, options: MacLanguage.options, value: chosen, look: look) { value in
+      SettingsMenu(label: String(localized: "Language"), options: MacLanguage.options, value: chosen, look: look) { value in
         MacLanguage.choose(value)
         chosen = value
       }
@@ -206,25 +164,20 @@ private struct AppearanceGroup: View {
   }
 }
 
-/** The SimeonLabs mark, "Simeon" and the version under the groups, as the foot of the iPhone's Settings. */
-private struct SettingsMark: View {
+/** Appearance, the reference's Mode: Light, Dark or System as the sun, the moon and the screen, the whole app at once (`MacTheme`, as ⌘K's and "/"'s). */
+private struct AppearanceGroup: View {
   let look: Look
+  @AppStorage(MacTheme.key) private var theme = "system"
 
   var body: some View {
-    VStack(spacing: 8) {
-      Image(nsImage: NSApp.applicationIconImage)
-        .resizable()
-        .interpolation(.high)
-        .frame(width: 36, height: 36)
-      Text(SettingsVersion.current)
-        .font(.system(size: 12))
-        .foregroundStyle(look.inkTertiary)
-        .monospacedDigit()
+    SettingsGroup(title: String(localized: "Appearance"), look: look) {
+      SettingsLine(label: String(localized: "Mode"), look: look) {
+        SettingsSymbolPicker(options: [(value: "light", symbol: "sun.max", label: String(localized: "Light")),
+                                       (value: "dark", symbol: "moon", label: String(localized: "Dark")),
+                                       (value: "system", symbol: "display", label: String(localized: "System"))],
+                             value: ["light", "dark"].contains(theme) ? theme : "system", look: look) { MacTheme.set($0) }
+      }
     }
-    .frame(maxWidth: .infinity)
-    .padding(.top, 4)
-    .accessibilityElement(children: .ignore)
-    .accessibilityLabel("Simeon, version \(SettingsVersion.current)")
   }
 }
 
@@ -254,33 +207,40 @@ enum MacLanguage {
 // MARK: - Account
 
 /**
- * The account (the iPhone's Account page): the face and the name over the
- * groups; Name, Email (copied with a click) and Password (set or changed
- * here, typed twice); Delete Account with its line under it; Sign Out.
+ * The account, under General: its face (56) beside its name and email, from
+ * the left; Name, Email (copied with a click) and Password (set or changed
+ * here, typed twice). No Delete Account on the Mac (the founder, 21 October
+ * 2026); Log out is at the foot of the list of pages.
  */
 struct SettingsAccountPage: View {
   let look: Look
   @Environment(AppStore.self) private var store
-  @Environment(MacSession.self) private var session
-  @Environment(SettingsState.self) private var settings
   @State private var copied = false
-  @State private var deleting = false
   @State private var changingPassword = false
 
   var body: some View {
     let account = store.account
     let display = AccountDisplay(displayName: account?.name, email: account?.email)
-    VStack(alignment: .leading, spacing: 24) {
-      SettingsHead {
-        SettingsAccountFace(size: 72, look: look)
-        Text(display.title)
-          .font(.system(size: 20, weight: .semibold))
-          .foregroundStyle(look.ink)
+    VStack(alignment: .leading, spacing: 28) {
+      HStack(spacing: 16) {
+        SettingsAccountFace(size: 56, look: look)
+        VStack(alignment: .leading, spacing: 3) {
+          Text(display.title)
+            .font(.system(size: 18, weight: .semibold))
+            .foregroundStyle(look.ink)
+            .lineLimit(1)
+          if let mail = display.secondary {
+            Text(mail)
+              .font(.system(size: 13))
+              .foregroundStyle(look.inkSecondary)
+              .lineLimit(1)
+          }
+        }
       }
       SettingsGroup(look: look) {
         SettingsLine(label: String(localized: "Name"), look: look) {
           Text(account?.name ?? "")
-            .font(.system(size: 13))
+            .font(.system(size: 15))
             .foregroundStyle(look.inkSecondary)
             .lineLimit(1)
         }
@@ -289,12 +249,12 @@ struct SettingsAccountPage: View {
             SettingsLine(label: String(localized: "Email"), divided: true, look: look) {
               HStack(spacing: 8) {
                 Text(mail)
-                  .font(.system(size: 13))
+                  .font(.system(size: 15))
                   .foregroundStyle(look.inkSecondary)
                   .lineLimit(1)
                   .truncationMode(.middle)
                 Image(systemName: copied ? "checkmark" : "doc.on.doc")
-                  .font(.system(size: 11))
+                  .font(.system(size: 12))
                   .foregroundStyle(look.inkSecondary)
               }
             }
@@ -307,14 +267,6 @@ struct SettingsAccountPage: View {
         if changingPassword {
           PasswordForm(look: look) { changingPassword = false }
         }
-      }
-      SettingsGroup(footer: AccountMenu.deleteFooter, look: look) {
-        SettingsActionRow(title: AccountMenu.deleteAccount, destructive: true, busy: deleting, look: look) {
-          AccountActions.askToDeleteAccount(session: session, settings: settings) { deleting = $0 }
-        }
-      }
-      SettingsGroup(look: look) {
-        SettingsActionRow(title: String(localized: "Sign Out"), destructive: true, look: look) { AccountActions.askToSignOut(session: session, settings: settings) }
       }
     }
   }
@@ -353,7 +305,7 @@ private struct PasswordForm: View {
       field(hasPassword == true ? String(localized: "New password") : String(localized: "Password"), text: $password)
       field(String(localized: "Type it again"), text: $again)
       Text(problem ?? (mismatch ? String(localized: "The two don't match.") : String(localized: "At least \(EmailSignIn.minimumPassword) characters. You'll sign in with \(store.account?.email ?? "your email") and this password.")))
-        .font(.system(size: 12))
+        .font(.system(size: 13))
         .foregroundStyle(problem != nil || mismatch ? look.danger : look.inkSecondary)
         .fixedSize(horizontal: false, vertical: true)
       HStack {
@@ -362,8 +314,8 @@ private struct PasswordForm: View {
         SettingsPill(title: hasPassword == true ? String(localized: "Change Password") : String(localized: "Set Password"), primary: true, disabled: !ready || saving, look: look, action: save)
       }
     }
-    .padding(.horizontal, 14)
-    .padding(.vertical, 12)
+    .padding(.horizontal, 18)
+    .padding(.vertical, 14)
     .overlay(alignment: .top) { SettingsDivider(look: look) }
     .task { hasPassword = await store.hasPassword() }
   }
@@ -371,9 +323,9 @@ private struct PasswordForm: View {
   private func field(_ prompt: String, text: Binding<String>) -> some View {
     SecureField(prompt, text: text)
       .textFieldStyle(.plain)
-      .font(.system(size: 13))
-      .padding(.horizontal, 10)
-      .frame(height: 30)
+      .font(.system(size: 14))
+      .padding(.horizontal, 12)
+      .frame(height: 34)
       .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(look.groupedGround))
       .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(look.ink.opacity(0.1), lineWidth: 1))
       .onSubmit(save)
@@ -416,10 +368,10 @@ struct SettingsPermissionsPage: View {
       }
       if model.rules.isEnabled {
         Text("Write one short, natural-language rule for each action. \"Ask first\" takes priority if rules conflict.")
-          .font(.system(size: 12))
+          .font(.system(size: 13))
           .foregroundStyle(look.inkSecondary)
           .fixedSize(horizontal: false, vertical: true)
-          .padding(.horizontal, 14)
+          .padding(.horizontal, 8)
         ForEach(AutoReviewInstructions.Behavior.allCases, id: \.self) { behavior in
           let listed = model.rules.rules.filter { $0.behavior == behavior }
           if !listed.isEmpty {
@@ -461,8 +413,8 @@ private struct RuleLine: View {
           SettingsPill(title: String(localized: "Save Rule"), primary: true, disabled: !model.canSave, look: look) { model.save(store: store) }
         }
       }
-      .padding(.horizontal, 14)
-      .padding(.vertical, 12)
+      .padding(.horizontal, 18)
+      .padding(.vertical, 14)
       .overlay(alignment: .top) { if divided { SettingsDivider(look: look) } }
     } else {
       SettingsLine(label: rule.text, divided: divided, look: look) {
@@ -489,12 +441,12 @@ private struct NewRuleGroup: View {
                   footer: full ? String(localized: "\(AutoReviewInstructions.label(model.behavior)) is full (\(AutoReviewInstructions.limitNote)).") : String(localized: "These rules apply only to you. Built-in safety checks always apply."),
                   look: look) {
       VStack(alignment: .leading, spacing: 6) {
-        Text("When Simeon wants to:").font(.system(size: 12)).foregroundStyle(look.inkSecondary)
+        Text("When Simeon wants to:").font(.system(size: 13)).foregroundStyle(look.inkSecondary)
         RuleField(text: Binding(get: { model.draft }, set: { @MainActor in model.draft = AutoReviewInstructions.clip($0) }),
                   prompt: String(localized: "e.g. reply to emails for me"), look: look, submit: { model.add(store: store) })
       }
-      .padding(.horizontal, 14)
-      .padding(.vertical, 12)
+      .padding(.horizontal, 18)
+      .padding(.vertical, 14)
       SettingsLine(label: String(localized: "It should:"), divided: true, look: look) {
         BehaviorMenu(value: model.behavior, look: look) { model.behavior = $0 }
       }
@@ -513,17 +465,17 @@ private struct RuleField: View {
   var body: some View {
     TextField(prompt, text: text, axis: .vertical)
       .textFieldStyle(.plain)
-      .font(.system(size: 13))
+      .font(.system(size: 14))
       .lineLimit(1...4)
-      .padding(.horizontal, 10)
-      .padding(.vertical, 7)
+      .padding(.horizontal, 12)
+      .padding(.vertical, 8)
       .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(look.groupedGround))
       .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(look.ink.opacity(0.1), lineWidth: 1))
       .onSubmit { submit?() }
   }
 }
 
-/** Allow automatically or Ask first, as a menu reading "value ⌃⌄". */
+/** Allow automatically or Ask first, as a menu reading "value ⌄". */
 private struct BehaviorMenu: View {
   let value: AutoReviewInstructions.Behavior
   let look: Look
@@ -535,11 +487,7 @@ private struct BehaviorMenu: View {
         Toggle(AutoReviewInstructions.label(behavior), isOn: Binding(get: { behavior == value }, set: { _ in pick(behavior) }))
       }
     } label: {
-      HStack(spacing: 5) {
-        Text(AutoReviewInstructions.label(value)).font(.system(size: 13)).foregroundStyle(look.inkSecondary)
-        Image(systemName: "chevron.up.chevron.down").font(.system(size: 9, weight: .semibold)).foregroundStyle(look.inkTertiary)
-      }
-      .contentShape(Rectangle())
+      SettingsMenuLabel(text: AutoReviewInstructions.label(value), look: look)
     }
     .menuStyle(.button)
     .buttonStyle(.borderless)
@@ -561,9 +509,9 @@ private struct RuleIcon: View {
   var body: some View {
     Button(action: action) {
       Image(systemName: systemImage)
-        .font(.system(size: 11))
+        .font(.system(size: 13))
         .foregroundStyle(hovering && !disabled ? look.ink : look.inkSecondary)
-        .frame(width: 24, height: 24)
+        .frame(width: 28, height: 28)
         .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(hovering && !disabled ? look.rowHover : .clear))
         .contentShape(Rectangle())
     }
@@ -574,52 +522,16 @@ private struct RuleIcon: View {
   }
 }
 
-// MARK: - About
+// MARK: - Legal
 
-/** About Simeon (the iPhone's About page): the icon, "Simeon", the version, the copyright; Copy Version Info ("Copied" for 1.2 s), the two legal pages. */
-struct SettingsAboutPage: View {
+/** Legal (the reference's "Legal info"): the Privacy Policy and the Terms of Service on the web, the company under them. */
+struct SettingsLegalPage: View {
   let look: Look
-  @State private var copied = false
 
   var body: some View {
-    let version = SettingsVersion.current
-    VStack(alignment: .leading, spacing: 24) {
-      SettingsHead {
-        Image(nsImage: NSApp.applicationIconImage)
-          .resizable()
-          .interpolation(.high)
-          .frame(width: 72, height: 72)
-          .accessibilityHidden(true)
-        VStack(spacing: 2) {
-          Text(AboutSimeon.name).font(.system(size: 22, weight: .semibold)).foregroundStyle(look.ink)
-          if !version.isEmpty {
-            Text(AboutSimeon.versionLine(version)).font(.system(size: 13)).foregroundStyle(look.inkSecondary).monospacedDigit()
-          }
-        }
-        Text(AboutSimeon.copyright).font(.system(size: 12)).foregroundStyle(look.inkTertiary)
-      }
-      SettingsGroup(look: look) {
-        Button {
-          NSPasteboard.general.clearContents()
-          NSPasteboard.general.setString(AboutSimeon.versionInfo(version: version), forType: .string)
-          copied = true
-          Task {
-            try? await Task.sleep(nanoseconds: UInt64(AboutSimeon.copiedSeconds * 1_000_000_000))
-            copied = false
-          }
-        } label: {
-          SettingsLine(label: copied ? AboutSimeon.copied : String(localized: "Copy Version Info"), look: look) {
-            Image(systemName: copied ? "checkmark" : "doc.on.doc").font(.system(size: 12)).foregroundStyle(look.inkSecondary)
-          }
-          .contentShape(Rectangle())
-        }
-        .buttonStyle(.hand)
-        .disabled(version.isEmpty)
-      }
-      SettingsGroup(look: look) {
-        SettingsLinkRow(label: String(localized: "Privacy Policy"), external: true, look: look) { NSWorkspace.shared.open(SettingsLegal.privacy) }
-        SettingsLinkRow(label: String(localized: "Terms of Service"), divided: true, external: true, look: look) { NSWorkspace.shared.open(SettingsLegal.terms) }
-      }
+    SettingsGroup(footer: AboutSimeon.copyright, look: look) {
+      SettingsLinkRow(label: String(localized: "Privacy Policy"), external: true, look: look) { NSWorkspace.shared.open(SettingsLegal.privacy) }
+      SettingsLinkRow(label: String(localized: "Terms of Service"), divided: true, external: true, look: look) { NSWorkspace.shared.open(SettingsLegal.terms) }
     }
   }
 }

@@ -4,13 +4,18 @@ import SimeonCore
 
 /**
  * Settings (`overlay:settings`): over the whole window, not a window of its
- * own, the window dimmed under it. A panel of at most 1000 × 702 (the window
- * less 40 and 94), its pages listed on its left as the iPhone's Settings
- * lists them (the founder, 21 October 2026: "match the iphone in design"):
- * the account first, its face, name and email, then General, Usage &
- * Billing once the account's usage is in hand, Wallet, Permissions,
- * Computer (the agents' computer and this Mac), Updates (a dot while one is
- * waiting) and About. Each opening starts afresh on the page asked for, at
+ * own, the window dimmed under it. A panel of at most 1080 × 780 (the
+ * window less 48 and 64), laid out as a Mac app's Settings (the founder, 21
+ * October 2026, with a desktop app's for reference: "the proportions are
+ * off… you're behaving it like a phone"): its pages listed on its left,
+ * each with its symbol (15), the current one on a grey ground, Log out at
+ * the foot; the page's name large at the top of the rest (26 bold), its
+ * groups under it across the page, from its left. General, Usage & Billing
+ * once the account's usage is in hand, Wallet, Permissions, Computer (the
+ * agents' computer and this Mac), Updates (a dot while one is waiting) and
+ * Legal; the account is General's first row, its page under General with
+ * Back. Nothing here that the window has elsewhere: Connect apps and About
+ * are the sidebar's. Each opening starts afresh on the page asked for, at
  * its top. ⌘, opens it on General (again while it is open, nothing); ⌘K and
  * "/" open the page picked; Escape, × or a click on the dim close it.
  */
@@ -18,33 +23,36 @@ import SimeonCore
 @Observable
 final class SettingsState {
   enum Page: Equatable, CaseIterable {
-    case account, general, usage, wallet, permissions, computer, updates, about
+    case general, usage, wallet, permissions, computer, updates, legal, account
 
     var title: String {
       switch self {
-      case .account: String(localized: "Account")
       case .general: String(localized: "General")
       case .usage: String(localized: "Usage & Billing")
       case .wallet: String(localized: "Wallet")
       case .permissions: String(localized: "Permissions")
       case .computer: String(localized: "Computer")
       case .updates: String(localized: "Updates")
-      case .about: String(localized: "About Simeon")
+      case .legal: String(localized: "Legal")
+      case .account: String(localized: "Account")
       }
     }
 
     var symbol: String {
       switch self {
-      case .account: "person.crop.circle"
       case .general: "gearshape"
       case .usage: "chart.bar"
       case .wallet: "wallet.bifold"
-      case .permissions: "checkmark.shield"
+      case .permissions: "hand.raised"
       case .computer: "desktopcomputer"
       case .updates: "arrow.down.circle"
-      case .about: "info.circle"
+      case .legal: "checkmark.shield"
+      case .account: "person.crop.circle"
       }
     }
+
+    /** The page it sits under, with Back to it: the account under General (its first row). */
+    var parent: Page? { self == .account ? .general : nil }
   }
 
   private(set) var isOpen = false {
@@ -81,7 +89,7 @@ final class SettingsState {
     isOpen = false
   }
 
-  /** Connectors (the iPhone's Connect apps row, and Wallet's apps): Settings gives way to the Plugins panel, on an app's page when one is named. */
+  /** Connectors (Wallet's apps): Settings gives way to the Plugins panel, on an app's page when one is named. */
   func openConnectors(plugin: String? = nil) {
     guard let plugins else { return }
     close()
@@ -116,7 +124,7 @@ struct SettingsLayer: View {
             .contentShape(Rectangle())
             .onTapGesture { settings.close() }
           SettingsPanel(look: look)
-            .frame(width: max(0, min(1000, box.size.width - 40)), height: max(0, min(702, box.size.height - 94)))
+            .frame(width: max(0, min(1080, box.size.width - 48)), height: max(0, min(780, box.size.height - 64)))
             .id(settings.opening)
         }
         .frame(width: box.size.width, height: box.size.height)
@@ -130,7 +138,7 @@ struct SettingsLayer: View {
   }
 }
 
-/** The panel: the iPhone's grouped ground, round 14, a line at 15%, a deep soft shadow on light. The page's groups at most 620 wide, centred. */
+/** The panel: the grouped ground, round 14, a line at 15%, a deep soft shadow on light; the list of pages, then the page's name and its groups across the rest. */
 private struct SettingsPanel: View {
   let look: Look
   @Environment(SettingsState.self) private var settings
@@ -139,39 +147,41 @@ private struct SettingsPanel: View {
     HStack(spacing: 0) {
       SettingsNav(look: look)
       VStack(alignment: .leading, spacing: 0) {
-          // The page's name and ×, in one line, as Connectors' head.
-          HStack(spacing: 12) {
-            Text(settings.page.title)
-              .font(.system(size: 20, weight: .semibold))
-              .tracking(-0.3)
-              .foregroundStyle(look.ink)
-              .lineLimit(1)
-              .accessibilityAddTraits(.isHeader)
-            Spacer(minLength: 12)
-            SettingsClose(look: look) { settings.close() }
+        // The page's name, large, and × (Back before it on the account's page).
+        HStack(spacing: 12) {
+          if let parent = settings.page.parent {
+            GlassDiscButton(symbol: "chevron.left", help: String(localized: "Back")) { settings.page = parent }
           }
-          .frame(height: 36)
-          .padding(EdgeInsets(top: 20, leading: 32, bottom: 0, trailing: 20))
-          ScrollView {
-            Group {
-              switch settings.page {
-              case .account: SettingsAccountPage(look: look)
-              case .general: SettingsGeneralPage(look: look)
-              case .usage: SettingsUsagePage(look: look)
-              case .wallet: SettingsWalletPage(look: look)
-              case .permissions: SettingsPermissionsPage(look: look)
-              case .computer: SettingsComputerPage(look: look)
-              case .updates: SettingsUpdatesPage(look: look)
-              case .about: SettingsAboutPage(look: look)
-              }
+          Text(settings.page.title)
+            .font(.system(size: 26, weight: .bold))
+            .tracking(-0.4)
+            .foregroundStyle(look.ink)
+            .lineLimit(1)
+            .accessibilityAddTraits(.isHeader)
+          Spacer(minLength: 12)
+          SettingsClose(look: look) { settings.close() }
+        }
+        .frame(height: 40)
+        .padding(EdgeInsets(top: 24, leading: 32, bottom: 0, trailing: 20))
+        ScrollView {
+          Group {
+            switch settings.page {
+            case .general: SettingsGeneralPage(look: look)
+            case .usage: SettingsUsagePage(look: look)
+            case .wallet: SettingsWalletPage(look: look)
+            case .permissions: SettingsPermissionsPage(look: look)
+            case .computer: SettingsComputerPage(look: look)
+            case .updates: SettingsUpdatesPage(look: look)
+            case .legal: SettingsLegalPage(look: look)
+            case .account: SettingsAccountPage(look: look)
             }
-            .frame(maxWidth: 620)
-            .padding(EdgeInsets(top: 18, leading: 32, bottom: 32, trailing: 32))
-            .frame(maxWidth: .infinity)
           }
-          .scrollIndicators(.automatic)
-          // A page is drawn afresh, at its top, each time it is shown.
-          .id(settings.page)
+          .frame(maxWidth: .infinity, alignment: .leading)
+          .padding(EdgeInsets(top: 20, leading: 32, bottom: 40, trailing: 32))
+        }
+        .scrollIndicators(.automatic)
+        // A page is drawn afresh, at its top, each time it is shown.
+        .id(settings.page)
       }
       .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -189,28 +199,31 @@ private struct SettingsPanel: View {
 }
 
 /**
- * The pages ("Settings sections"), 220 wide: the account at the top (its
- * face, name and email, as the iPhone's Settings and the Mac's System
- * Settings open), then the rest; the current one on the iPhone's row grey.
+ * The pages ("Settings sections"), 240 wide, as the reference lists them:
+ * each its symbol (17) and its name (15), 40 high, the current one (or the
+ * one it sits under) on a grey ground, 10 round; Log out at the foot, asked
+ * first as the account menu's.
  */
 private struct SettingsNav: View {
   let look: Look
   @Environment(SettingsState.self) private var settings
   @Environment(AppStore.self) private var store
+  @Environment(MacSession.self) private var session
   @State private var updates = MacUpdates.shared
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 2) {
-      SettingsNavAccount(current: settings.page == .account, look: look) { settings.page = .account }
-        .padding(.bottom, 10)
+    let current = settings.page.parent ?? settings.page
+    VStack(alignment: .leading, spacing: 4) {
       ForEach(pages, id: \.self) { page in
-        SettingsNavEntry(page: page, current: settings.page == page, dot: page == .updates && updates.found != nil, look: look) { settings.page = page }
+        SettingsNavEntry(title: page.title, symbol: page.symbol, current: current == page, dot: page == .updates && updates.found != nil, look: look) { settings.page = page }
       }
       Spacer(minLength: 0)
+      SettingsNavEntry(title: AccountMenu.logOut, symbol: "rectangle.portrait.and.arrow.right", current: false, look: look) {
+        AccountActions.askToSignOut(session: session, settings: settings)
+      }
     }
-    .padding(.vertical, 16)
-    .padding(.horizontal, 12)
-    .frame(width: 220)
+    .padding(EdgeInsets(top: 24, leading: 14, bottom: 18, trailing: 14))
+    .frame(width: 240)
     .frame(maxHeight: .infinity)
     .overlay(alignment: .trailing) {
       Rectangle().fill(look.ink.opacity(0.08)).frame(width: 0.5)
@@ -231,50 +244,9 @@ private struct SettingsNav: View {
   }
 }
 
-/** The account's row: its face (34), its name over its email. */
-private struct SettingsNavAccount: View {
-  let current: Bool
-  let look: Look
-  let action: () -> Void
-  @Environment(AppStore.self) private var store
-  @State private var hovering = false
-
-  var body: some View {
-    let account = store.account
-    let display = AccountDisplay(displayName: account?.name, email: account?.email)
-    Button(action: action) {
-      HStack(spacing: 10) {
-        SettingsAccountFace(size: 34, look: look)
-        VStack(alignment: .leading, spacing: 1) {
-          Text(display.title)
-            .font(.system(size: 13, weight: .semibold))
-            .foregroundStyle(look.ink)
-            .lineLimit(1)
-          if let mail = display.secondary {
-            Text(mail)
-              .font(.system(size: 11))
-              .foregroundStyle(look.inkSecondary)
-              .lineLimit(1)
-              .truncationMode(.middle)
-          }
-        }
-        Spacer(minLength: 0)
-      }
-      .padding(.vertical, 7)
-      .padding(.horizontal, 8)
-      .frame(width: 196, alignment: .leading)
-      .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(current ? look.groupedRow : (hovering ? look.rowHover : .clear)))
-      .contentShape(Rectangle())
-    }
-    .buttonStyle(.hand)
-    .onHover { hovering = $0 }
-    .accessibilityLabel("Account, \(display.title)")
-    .accessibilityAddTraits(current ? [.isSelected] : [])
-  }
-}
-
 private struct SettingsNavEntry: View {
-  let page: SettingsState.Page
+  let title: String
+  let symbol: String
   let current: Bool
   var dot = false
   let look: Look
@@ -283,13 +255,13 @@ private struct SettingsNavEntry: View {
 
   var body: some View {
     Button(action: action) {
-      HStack(spacing: 9) {
-        Image(systemName: page.symbol)
-          .font(.system(size: 13))
-          .foregroundStyle(look.inkSecondary)
-          .frame(width: 18, height: 15)
-        Text(page.title)
-          .font(.system(size: 13))
+      HStack(spacing: 12) {
+        Image(systemName: symbol)
+          .font(.system(size: 16))
+          .foregroundStyle(look.ink)
+          .frame(width: 22)
+        Text(title)
+          .font(.system(size: 15))
           .foregroundStyle(look.ink)
           .lineLimit(1)
         Spacer(minLength: 0)
@@ -298,10 +270,10 @@ private struct SettingsNavEntry: View {
             .accessibilityLabel("Update available")
         }
       }
-      .padding(.vertical, 7)
-      .padding(.horizontal, 9)
-      .frame(width: 196, alignment: .leading)
-      .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(current ? look.groupedRow : (hovering ? look.rowHover : .clear)))
+      .padding(.horizontal, 12)
+      .frame(height: 40)
+      .frame(maxWidth: .infinity, alignment: .leading)
+      .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(current ? look.groupedRow : (hovering ? look.groupedRow.opacity(0.6) : .clear)))
       .contentShape(Rectangle())
     }
     .buttonStyle(.hand)
