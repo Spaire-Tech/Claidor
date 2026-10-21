@@ -1803,6 +1803,7 @@ struct PurchaseCardView: View {
         .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .onHover { pictureHover = $0 }
         .onTapGesture { reviewOrder() }
+        .handCursor()
       reviewOrderPill.padding(10)
     }
     .accessibilityLabel("The checkout page")

@@ -136,13 +136,14 @@ struct MacTravellersSheet: View {
       HStack(spacing: 10) {
         Text(FlightPassengersCard.privacy).font(.system(size: 11)).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
         Spacer(minLength: 12)
-        Button(FlightPassengersCard.cancel) { dismiss() }.keyboardShortcut(.cancelAction)
+        Button(FlightPassengersCard.cancel) { dismiss() }.keyboardShortcut(.cancelAction).handCursor()
         Button {
           Task { await send() }
         } label: {
           if sending { ProgressView().controlSize(.small) } else { Text(FlightPassengersCard.next) }
         }
         .keyboardShortcut(.defaultAction)
+        .handCursor()
         .disabled(sending)
       }
       .padding(16)
@@ -184,10 +185,12 @@ private struct MacTravellerSection: View {
         Text("Choose").tag(Traveller.Title?.none)
         ForEach(Traveller.Title.allCases, id: \.self) { title in Text(title.label).tag(Traveller.Title?.some(title)) }
       }
+      .handCursor()
       Picker("Gender on ID", selection: $traveller.gender) {
         Text("Choose").tag(Traveller.Gender?.none)
         ForEach(Traveller.Gender.allCases, id: \.self) { gender in Text(gender.label).tag(Traveller.Gender?.some(gender)) }
       }
+      .handCursor()
       MacDayField(label: String(localized: "Date of birth"), day: $traveller.bornOn, range: Calendar.current.date(byAdding: .year, value: -120, to: Date())!...Date(), start: Calendar.current.date(byAdding: .year, value: -30, to: Date())!)
       TextField("Email", text: $traveller.email)
       TextField("Phone, with country code", text: $traveller.phone)
@@ -197,9 +200,11 @@ private struct MacTravellerSection: View {
           Text("Choose").tag("")
           ForEach(MacCountryName.all) { country in Text(country.name).tag(country.code) }
         }
+        .handCursor()
         MacDayField(label: String(localized: "Passport expires"), day: $traveller.passportExpires, range: Date()...Calendar.current.date(byAdding: .year, value: 20, to: Date())!, start: Calendar.current.date(byAdding: .year, value: 1, to: Date())!)
       } else {
         Button("Add passport") { showsPassport = true }
+          .handCursor()
       }
       if let problem {
         Text(problem).foregroundStyle(Color(hex: 0xc21d2e))
@@ -218,8 +223,9 @@ private struct MacDayField: View {
   var body: some View {
     if let date = Traveller.date(day) {
       DatePicker(label, selection: Binding(get: { date }, set: { day = Traveller.day($0) }), in: range, displayedComponents: .date)
+        .handCursor()
     } else {
-      LabeledContent(label) { Button("Choose") { day = Traveller.day(start) } }
+      LabeledContent(label) { Button("Choose") { day = Traveller.day(start) }.handCursor() }
     }
   }
 }

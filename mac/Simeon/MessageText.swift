@@ -73,13 +73,33 @@ struct MentionPill: TextAttribute {
   var agentId: String
 }
 
+/** A run of a link's words (`MessageLine.linked`): where it was drawn goes to `MentionSpots`, for the pointing hand over it. */
+struct LinkRun: TextAttribute {}
+
+/**
+ * An email's own page in its app (Gmail's, Outlook's on the web): the app's
+ * logo goes before the link's words, so a link to an email says where it
+ * goes (the founder, 21 October 2026, of an agent's "Email" links: "what is
+ * 'email'?").
+ */
+enum MailLink {
+  /** The app's key in `Brands` for a link to an email, or nil. */
+  static func brand(_ url: URL) -> String? {
+    guard let host = url.host()?.lowercased() else { return nil }
+    if host == "mail.google.com" { return "gmail" }
+    if host.hasPrefix("outlook.") && (host.hasSuffix(".office.com") || host.hasSuffix(".live.com") || host.hasSuffix(".office365.com")) { return "outlook" }
+    return nil
+  }
+}
+
 /**
  * Each mention of an agent in a glass pill (the founder, 12 October 2026:
  * "the pill, but water glass, and the name in our blue"): drawn behind the
  * mention's runs, a clear frosted fill, a bright rim, a soft shadow. Apple's
  * own Liquid Glass is a view's effect and cannot wrap a word inside a
  * paragraph, so the glass is drawn; the same on macOS 15 and 26. Where each
- * pill was drawn goes to `spots`, for a click to find (`MentionClicks`).
+ * pill was drawn goes to `spots`, for a click to find (`MentionClicks`), and
+ * where each link was, for the pointing hand over it.
  */
 struct MentionPills: TextRenderer {
   var dark: Bool
@@ -90,6 +110,10 @@ struct MentionPills: TextRenderer {
 
   func draw(layout: Text.Layout, in ctx: inout GraphicsContext) {
     var pills: [MentionSpots.Spot] = []
+    var links: [CGRect] = []
+    for line in layout {
+      for run in line where run[LinkRun.self] != nil { links.append(run.typographicBounds.rect) }
+    }
     for line in layout {
       var current: MentionSpots.Spot?
       for run in line {
@@ -108,7 +132,7 @@ struct MentionPills: TextRenderer {
       }
       if let done = current { pills.append(done) }
     }
-    spots?.record(pills)
+    spots?.record(pills, links: links)
     for pill in pills { glass(pill.rect, in: &ctx) }
     for line in layout { ctx.draw(line) }
   }
@@ -137,10 +161,18 @@ final class MentionSpots: @unchecked Sendable {
 
   private let lock = NSLock()
   private var spots: [Spot] = []
+  private var links: [CGRect] = []
 
-  func record(_ drawn: [Spot]) {
+  func record(_ drawn: [Spot], links drawnLinks: [CGRect]) {
     lock.lock(); defer { lock.unlock() }
     spots = drawn
+    links = drawnLinks
+  }
+
+  /** A link's words are under the pointer. */
+  func link(at point: CGPoint) -> Bool {
+    lock.lock(); defer { lock.unlock() }
+    return links.contains { $0.insetBy(dx: -1, dy: -1).contains(point) }
   }
 
   /** The agent whose pill is under the pointer. */
@@ -152,13 +184,16 @@ final class MentionSpots: @unchecked Sendable {
 
 /**
  * A line of words whose agents' pills open their chats (the founder, 12
- * October 2026), with the pointing hand over a pill: the pills drawn on
- * this line itself, so a click lands where they were drawn; a click
- * anywhere else, a link's, a selection's, goes on as before. The agent opens
- * as a click on its sidebar row opens it.
+ * October 2026), with the pointing hand over a pill and over a link (21
+ * October 2026: "everything that is clickable in the app to have the
+ * finger"): the pills drawn on this line itself, so a click lands where
+ * they were drawn; a click anywhere else, a link's, a selection's, goes on
+ * as before. The agent opens as a click on its sidebar row opens it.
  */
 struct MentionClicks: ViewModifier {
   let agents: [String]
+  /** The line has links: the hand over them. */
+  var links = false
   let line: MessageLine
   @Environment(WindowState.self) private var window: WindowState?
   @Environment(AppStore.self) private var store: AppStore?
@@ -167,7 +202,7 @@ struct MentionClicks: ViewModifier {
 
   @ViewBuilder
   func body(content: Content) -> some View {
-    if agents.isEmpty {
+    if agents.isEmpty && !links {
       content
     } else {
       content
@@ -177,9 +212,9 @@ struct MentionClicks: ViewModifier {
         })
         .onContinuousHover { phase in
           var over = false
-          if case .active(let point) = phase { over = spots.agent(at: point) != nil }
+          if case .active(let point) = phase { over = spots.agent(at: point) != nil || spots.link(at: point) }
           // The words are selectable, and their I-beam won over the pointer style below: no hand over a mention (the
-          // founder, 13 October 2026). The hand is put up by hand while over a pill and taken down as it leaves.
+          // founder, 13 October 2026). The hand is put up by hand while over a pill or a link and taken down as it leaves.
           if over && !overPill { NSCursor.pointingHand.push() }
           if !over && overPill { NSCursor.pop() }
           if over { NSCursor.pointingHand.set() }
@@ -261,19 +296,20 @@ struct MessageLine {
     return String(parsed.characters)
   }
 
-  /** The line's words, its agents' pills opening their chats on a click (`MentionClicks`). */
+  /** The line's words, its agents' pills opening their chats on a click, the hand over them and over its links (`MentionClicks`). */
   func clickable(_ markdown: String) -> some View {
     let made = made(markdown)
-    return made.text.modifier(MentionClicks(agents: made.agents, line: self))
+    return made.text.modifier(MentionClicks(agents: made.agents, links: made.links, line: self))
   }
 
-  /** The line's words, and the agents whose pills are in them (each once, in order). */
-  func made(_ markdown: String) -> (text: Text, agents: [String]) {
+  /** The line's words, the agents whose pills are in them (each once, in order), and whether it has links. */
+  func made(_ markdown: String) -> (text: Text, agents: [String], links: Bool) {
     let parsed = (try? AttributedString(markdown: markdown, options: MessageLine.parsing)) ?? AttributedString(markdown)
     let shown = String(parsed.characters)
     let marks = FindLine(find, text: shown)
     var named: [String] = []
     var pieces: [Text] = []
+    var links = false
     // Where each run starts in the words shown (UTF-16), so find's marks land on it.
     var offset = 0
     for run in parsed.runs {
@@ -283,6 +319,7 @@ struct MessageLine {
       let style = Style(bold: intent.contains(.stronglyEmphasized), italic: intent.contains(.emphasized), code: intent.contains(.code), struck: intent.contains(.strikethrough))
       if let link = run.link {
         pieces.append(linked(words, link, style: style, at: offset, marks: marks))
+        links = true
         continue
       }
       if style.code {
@@ -293,13 +330,14 @@ struct MessageLine {
       for part in MessageLine.autolinks(words) {
         if let url = part.url {
           pieces.append(linked(part.text, url, style: style, at: partOffset, marks: marks))
+          links = true
         } else {
           pieces += plain(part.text, style: style, at: partOffset, in: shown, marks: marks, named: &named)
         }
         partOffset += (part.text as NSString).length
       }
     }
-    return (MessageLine.joined(pieces), named)
+    return (MessageLine.joined(pieces), named, links)
   }
 
   /** Words with their app and agent names, read in the whole line (`shown`, these words at `offset` in it); each agent named goes to `named`. */
@@ -336,18 +374,21 @@ struct MessageLine {
     })
   }
 
-  /** A link: the link blue (the bubble's tint), no underline. */
+  /** A link: the link blue (the bubble's tint), no underline, marked for the hand (`LinkRun`); a link to an email after its app's logo (`MailLink`). */
   private func linked(_ words: String, _ url: URL, style: Style, at offset: Int, marks: FindLine?) -> Text {
     var container = AttributeContainer()
     container.link = url
-    guard let marks else { return style.apply(Text(AttributedString(words, attributes: container))) }
     var whole = AttributedString()
-    for part in marks.cut(words, at: offset) {
+    for part in marks?.cut(words, at: offset) ?? [(text: words, mark: nil)] {
       var piece = AttributedString(part.text, attributes: container)
       if let mark = part.mark { piece.backgroundColor = FindLine.paint(mark, look: look) }
       whole += piece
     }
-    return style.apply(Text(whole))
+    let link = style.apply(Text(whole)).customAttribute(LinkRun())
+    guard let key = MailLink.brand(url), let logo = InlineImages.logo(key, side: (1.05 * size).rounded()) else { return link }
+    // As an app's name has its logo before it (`mention`), kept on the line with the words.
+    let picture = Text(Image(nsImage: logo).renderingMode(.original)).baselineOffset(-0.18 * size)
+    return MessageLine.joined([picture, Text(verbatim: "\u{202F}"), link])
   }
 
   /** Inline code: 0.93 em monospaced, red on a grey wash (`code`, padded 0 4 and 4 round in the window). */
