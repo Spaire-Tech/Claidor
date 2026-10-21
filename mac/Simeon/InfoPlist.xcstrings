@@ -37,6 +37,12 @@
             "value" : "Simeon uses the microphone to take your dictation and for voice calls with your agents."
           }
         },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon te escucha cuando dictas un mensaje o llamas a un agente."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",

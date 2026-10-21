@@ -4,7 +4,7 @@
  * notifications, the approval cards' summaries, the Channels tab. The host
  * pins the person's language (`pinUserLanguageReader`); unpinned, or
  * English, every sentence reads as before. Where an app compares the
- * engine's words, its French is the engine's.
+ * engine's words, its French and its Spanish are the engine's.
  */
 import assert from "node:assert/strict";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
@@ -27,6 +27,7 @@ async function load() {
     'export { genericSandShellAutoReviewSummary, summarizeSandSubagentAction } from "./source/host/runner/sand-auto-review-summaries.ts";',
     'export { connectorManifests, connectorManifestsForPerson } from "./source/shared/channels.ts";',
     'export { FRENCH } from "./source/shared/words/fr.ts";',
+    'export { SPANISH } from "./source/shared/words/es.ts";',
   ].join("\n");
   await build({ stdin: { contents, resolveDir: repoRoot, loader: "ts" }, outfile, bundle: true, format: "esm", platform: "node", target: "node22", logLevel: "silent", external: ["electron"], banner: { js: "import { createRequire as __cr } from 'node:module'; const require = __cr(import.meta.url);" } });
   const module = await import(`${pathToFileURL(outfile).href}?${Date.now()}`);
@@ -75,17 +76,36 @@ test("in French: previews, notifications, summaries and the Channels tab", async
   }
 });
 
-test("where an app compares the engine's words, its French is the engine's", async () => {
+test("in Spanish: previews, notifications, summaries and the Channels tab", async () => {
   const { module, dispose } = await load();
   try {
-    const french = (catalog, key) => JSON.parse(catalog).strings[key]?.localizations?.fr?.stringUnit?.value;
+    module.pinUserLanguageReader(() => "es-MX");
+    assert.deepEqual(module.buildNotificationContent(needsYou), { title: "Ada te necesita", body: "Esperando tu respuesta." });
+    assert.equal(module.getLastMessageFromTranscript(card({ type: "widget", widget: {} })).preview, "Tiene una pregunta para ti");
+    assert.equal(module.getLastMessageFromTranscript(card({ type: "connectors", connectors: ["Gmail", "Notion"] })).preview, "Conectar Gmail, Notion");
+    assert.equal(module.voiceCallLineText({ type: "voice-call", status: "ended", seconds: 109 }), "Llamada de voz · 01:49");
+    assert.equal(module.summarizeSandSubagentAction({ action: "run", prompt: "Sort the inbox" }), "Ejecutar una tarea en la computadora de Simeon: “Sort the inbox”");
+    const slack = module.connectorManifestsForPerson("es").find((manifest) => manifest.platform === "slack");
+    assert.equal(slack.credentialLabel, "token de la app y token del bot");
+  } finally {
+    module.pinUserLanguageReader(null);
+    await dispose();
+  }
+});
+
+test("where an app compares the engine's words, its French and its Spanish are the engine's", async () => {
+  const { module, dispose } = await load();
+  try {
+    const word = (catalog, key, language) => JSON.parse(catalog).strings[key]?.localizations?.[language]?.stringUnit?.value;
     const core = await readFile(path.join(repoRoot, "../ios/SimeonCore/Sources/SimeonCore/Resources/Localizable.xcstrings"), "utf8");
-    // Approvals.summarySaysNothing (ios/SimeonCore) hides the two summaries that only say "run a command".
-    assert.equal(french(core, "Run a command on your local computer"), module.FRENCH["approval.runOnLocalComputer"]);
-    assert.equal(french(core, "Run a command on Simeon's computer"), module.FRENCH["approval.runOnSimeonComputer"]);
-    // The iPhone's notification extension swaps its own words in for "Waiting for your input.".
     const extension = await readFile(path.join(repoRoot, "../ios/SimeonNotifications/Localizable.xcstrings"), "utf8");
-    assert.equal(french(extension, "Waiting for your input."), module.FRENCH["notify.waiting"]);
+    for (const [language, table] of [["fr", module.FRENCH], ["es", module.SPANISH]]) {
+      // Approvals.summarySaysNothing (ios/SimeonCore) hides the two summaries that only say "run a command".
+      assert.equal(word(core, "Run a command on your local computer", language), table["approval.runOnLocalComputer"], language);
+      assert.equal(word(core, "Run a command on Simeon's computer", language), table["approval.runOnSimeonComputer"], language);
+      // The iPhone's notification extension swaps its own words in for "Waiting for your input.".
+      assert.equal(word(extension, "Waiting for your input.", language), table["notify.waiting"], language);
+    }
   } finally {
     await dispose();
   }

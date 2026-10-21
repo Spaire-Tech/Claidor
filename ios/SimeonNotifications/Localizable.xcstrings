@@ -3,6 +3,12 @@
   "strings" : {
     "Needs you: %@" : {
       "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Te necesita: %@"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -13,6 +19,12 @@
     },
     "Needs your input." : {
       "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Necesita tu respuesta."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -28,6 +40,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "En attente de ta réponse."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esperando tu respuesta."
           }
         }
       }

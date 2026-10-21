@@ -1,5 +1,5 @@
-"""The server's sentences, one part of `en.py` and `fr.py` (`say`): booking a
-flight (`flight_booking.py`), searching for one (`flights.py`), Link
+"""The server's sentences, one part of `en.py`, `fr.py` and `es.py` (`say`):
+booking a flight (`flight_booking.py`), searching for one (`flights.py`), Link
 (`link_wallet.py`) and the words of an older engine's push (`push.py`)."""
 
 EN: dict[str, str] = {
@@ -117,4 +117,59 @@ FR: dict[str, str] = {
     "push.card.email_draft": "A rédigé un e-mail",
     "push.card.slack_draft": "A rédigé un message Slack",
     "push.card.cloud_agent": "Agent cloud",
+}
+
+ES: dict[str, str] = {
+    "flight.not_switched_on": "La reserva de vuelos todavía no está activada.",
+    "flight.cannot_book_here": "Ese vuelo no se puede reservar aquí.",
+    "flight.price_gone": "El precio de ese vuelo ya no está disponible; vuelve a buscar para encontrar uno nuevo.",
+    "flight.offer_unreachable": "No se pudo acceder a la oferta del vuelo; vuelve a intentarlo en un momento.",
+    "flight.payment_form_unreachable": "No se pudo acceder al formulario de pago del vuelo; vuelve a intentarlo en un momento.",
+    "flight.too_many_payments": "Demasiados pagos de vuelos hoy; vuelve a intentarlo mañana.",
+    "flight.payment_form_failed": "No se pudo preparar el formulario de pago del vuelo.",
+    "flight.bank_check_missing": "Falta la verificación bancaria de la tarjeta.",
+    "flight.travellers_missing": "Envía los datos de cada pasajero.",
+    "flight.price_changed": "El precio cambió después de tu aprobación; no se reservó nada.",
+    "flight.every_traveller": "Cada pasajero de esta oferta necesita sus datos.",
+    "flight.too_many_bookings": "Demasiadas reservas de vuelos hoy; vuelve a intentarlo mañana.",
+    "flight.already_booking": "Ya se está reservando este vuelo. Revisa el correo de la aerolínea antes de volver a intentarlo.",
+    "flight.airline_busy": "El sistema de reservas de la aerolínea estaba ocupado y no se reservó nada. Vuelve a intentarlo en unos minutos.",
+    "flight.not_booked": "No se reservó el vuelo: {why}",
+    "flight.airline_refused": "La aerolínea no lo aceptó.",
+    "flight.uncertain": "La aerolínea no respondió, así que no es seguro que el vuelo se haya reservado. No lo vuelvas a reservar: Simeon sigue comprobándolo y, si se reservó, la aerolínea le envía un correo al pasajero.",
+    "flight.still_confirming": "La aerolínea todavía está confirmando la reserva. No la vuelvas a hacer: Simeon sigue comprobándolo y la aerolínea le envía un correo al pasajero.",
+    "flight.nothing_waiting": "No hay ninguna reserva de este vuelo pendiente de confirmación.",
+    "flight.too_many_checks": "Demasiadas comprobaciones; vuelve a intentarlo más tarde.",
+    "traveller.dob_format": "Cada fecha de nacimiento debe ser una fecha como 1990-04-21.",
+    "traveller.dob_wrong": "Una fecha de nacimiento no es correcta; revísala.",
+    "traveller.not_on_offer": "Un pasajero no pertenece a la oferta de este vuelo.",
+    "traveller.names": "El nombre y el apellido deben escribirse como en la identificación, solo con letras.",
+    "traveller.title": "El tratamiento debe ser Mr, Ms, Mrs, Miss o Dr.",
+    "traveller.gender": "El género debe ser m o f, como en la identificación.",
+    "traveller.email": "El correo electrónico no es correcto.",
+    "traveller.phone": "El número de teléfono necesita su código de país, como +52 55 1234 5678.",
+    "traveller.adult_age": "Cada adulto debe tener 18 años o más el día del último vuelo; revisa la fecha de nacimiento.",
+    "traveller.passport_expiry_format": "El vencimiento del pasaporte debe ser una fecha.",
+    "traveller.passport_number": "El número o el país del pasaporte no es correcto.",
+    "traveller.passport_expired": "Ese pasaporte está vencido.",
+    "traveller.passport_needed": "Esta aerolínea necesita el pasaporte de cada pasajero.",
+    "search.not_switched_on": "La búsqueda de vuelos todavía no está activada.",
+    "search.too_many": "Demasiadas búsquedas de vuelos en esta hora; vuelve a intentarlo más tarde.",
+    "search.places_missing": "Di de dónde sale el vuelo y a dónde va.",
+    "search.no_airport": "No encontré ningún aeropuerto para “{place}”.",
+    "search.return_before": "La fecha de regreso es anterior a la de salida.",
+    "search.date_passed": "Esa fecha ya pasó.",
+    "search.unreachable": "No se pudo acceder a la búsqueda de vuelos; vuelve a intentarlo en un momento.",
+    "search.no_answer": "La búsqueda de vuelos no respondió; vuelve a intentarlo en un momento.",
+    "link.not_configured": "Todavía no se puede conectar Link aquí.",
+    "link.unreachable": "No se pudo acceder a Link.",
+    "push.card.question": "Tiene una pregunta para ti",
+    "push.card.secret": "Necesita un secreto tuyo",
+    "push.card.permission": "Necesita tu permiso",
+    "push.card.approval": "Necesita tu aprobación",
+    "push.card.connect_app": "Conectar una app",
+    "push.card.connect_tools": "Conectar herramientas",
+    "push.card.email_draft": "Redactó un correo",
+    "push.card.slack_draft": "Redactó un mensaje de Slack",
+    "push.card.cloud_agent": "Agente en la nube",
 }

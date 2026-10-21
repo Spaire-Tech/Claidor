@@ -136,6 +136,17 @@ def test_a_french_recap_gets_the_name_in_front() -> None:
     assert recap_for("Tu m’as appelé.", None) == "Tu m’as appelé."
 
 
+def test_a_spanish_recap_gets_the_name_in_front() -> None:
+    assert recap_for("Tú me pediste reservarlo.", "Bass") == (
+        "Bass, tú me pediste reservarlo."
+    )
+    assert recap_for("Usted me pidió reservarlo.", "Bass") == (
+        "Bass, usted me pidió reservarlo."
+    )
+    assert recap_for("Tuvimos una llamada.", "Bass") == "Tuvimos una llamada."
+    assert VOICE_LANGUAGES["es"] == "Hola, soy yo. ¿Qué tal?"
+
+
 class RefusingLanguages(FakeElevenLabs):
     """ElevenLabs refusing an agent that has other languages."""
 

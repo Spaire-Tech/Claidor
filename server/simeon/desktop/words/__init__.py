@@ -7,10 +7,11 @@ the sign-in email show as they come.
     say("flight.not_booked", why=reason)             # "{why}" in the sentence
 
 English is the source (`en.py`); each translation is a table with the same
-keys (`fr.py`), in "tu". A request's language is its `Accept-Language`
-(`language.answer_in_request_language`, on the apps' routers); none, or one
-Simeon is not translated into, reads as English. A missing key or value is
-the English, and `tests/desktop/test_words.py` fails on it.
+keys (`fr.py` in "tu", `es.py` in "tú"). A request's language is its
+`Accept-Language` (`language.answer_in_request_language`, on the apps'
+routers); none, or one Simeon is not translated into, reads as English. A
+missing key or value is the English, and `tests/desktop/test_words.py`
+fails on it.
 """
 
 from __future__ import annotations
@@ -18,10 +19,10 @@ from __future__ import annotations
 import re
 
 from ..language import current_language, translated
-from . import en, fr
+from . import en, es, fr
 
 #: Each translation by language; English is `en.WORDS`.
-TABLES: dict[str, dict[str, str]] = {"fr": fr.WORDS}
+TABLES: dict[str, dict[str, str]] = {"fr": fr.WORDS, "es": es.WORDS}
 
 _VALUE = re.compile(r"\{(\w+)\}")
 

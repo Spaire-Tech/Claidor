@@ -1,7 +1,7 @@
 import type { SandMarketplacePlugin } from "../mcp/mcp-marketplace.js";
 import { say } from "../../say.js";
 import { languageCode, normalizeUserLanguage } from "../../user-language.js";
-import { CATALOG_FR, CATALOG_GROUPS_FR } from "../../words/areas/catalog.js";
+import { CATALOG_ES, CATALOG_FR, CATALOG_GROUPS_ES, CATALOG_GROUPS_FR } from "../../words/areas/catalog.js";
 import { VENDOR_MCP_CONNECTORS, VENDOR_MCP_GROUP, type VendorMcpConnector } from "./catalog.js";
 import { isAppsServiceAvailable } from "./apps-availability.js";
 import { vendorPluginLogoUrl } from "./logos.js";
@@ -33,6 +33,7 @@ export function appComingSoon(item: VendorMcpConnector): VendorMcpConnector {
 /** Each language's connector words, by connector id and group key; English is the catalog's own. */
 const CATALOG_WORDS: Readonly<Record<string, { readonly descriptions: Readonly<Record<string, string>>; readonly groups: Readonly<Record<string, string>> }>> = {
   fr: { descriptions: CATALOG_FR, groups: CATALOG_GROUPS_FR },
+  es: { descriptions: CATALOG_ES, groups: CATALOG_GROUPS_ES },
 };
 const GROUP_KEYS: ReadonlyMap<string, string> = new Map(Object.entries(VENDOR_MCP_GROUP).map(([key, name]) => [name, key]));
 const CONNECTORS_BY_ID: ReadonlyMap<string, VendorMcpConnector> = new Map(VENDOR_MCP_CONNECTORS.map((item) => [item.id, item]));

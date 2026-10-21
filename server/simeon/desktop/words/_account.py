@@ -1,5 +1,5 @@
-"""The server's sentences, one part of `en.py` and `fr.py` (`say`): signing
-in, the account, billing and the pages the browser shows on the way."""
+"""The server's sentences, one part of `en.py`, `fr.py` and `es.py` (`say`):
+signing in, the account, billing and the pages the browser shows on the way."""
 
 EN: dict[str, str] = {
     # The app's email sign-in (`email_sign_in.py`) and the web's password form.
@@ -134,5 +134,69 @@ FR: dict[str, str] = {
     "app_store.not_your_purchase": (
         "Cet achat appartient à un autre compte Simeon. Connecte-toi avec ce "
         "compte, ou utilise un autre identifiant Apple."
+    ),
+}
+
+ES: dict[str, str] = {
+    "sign_in.wrong_code": "Ese código es incorrecto o ya venció. Revisa el correo o pide uno nuevo.",
+    "sign_in.wrong_password": "Correo o contraseña incorrectos. Si nunca creaste una contraseña, usa el código que te enviamos por correo.",
+    "sign_in.too_many_codes": "Se pidieron demasiados códigos para este correo. Vuelve a intentarlo en unos minutos.",
+    "sign_in.too_many_tries": "Demasiados intentos para este correo. Vuelve a intentarlo en unos minutos.",
+    "sign_in.closed": "Esta cuenta no puede iniciar sesión en Simeon.",
+    "sign_in.bad_email": "Escribe un correo electrónico válido.",
+    "password.too_short": "Usa al menos {count} caracteres.",
+    "password.too_long": "Usa {count} caracteres como máximo.",
+    "password.is_email": "Elige una contraseña distinta de tu correo.",
+    "sign_in.google_unfinished": "El inicio de sesión con Google no terminó.",
+    "sign_in.apple_unfinished": "El inicio de sesión con Apple no terminó.",
+    "sign_in.page.incomplete": "Ese enlace está incompleto",
+    "sign_in.page.sign_in_there": "Abre {product} e inicia sesión desde ahí.",
+    "sign_in.page.apple_soon": "Iniciar sesión con Apple llegará pronto",
+    "sign_in.page.google_for_now": "Por ahora, continúa con Google.",
+    "sign_in.page.continue_with_google": "Continuar con Google",
+    "sign_in.page.signed_in": "Iniciaste sesión en {product}",
+    "sign_in.page.plan_on": "Tu plan está activo. Puedes cerrar esta pestaña y volver a {product}.",
+    "sign_in.page.close_tab": "Puedes cerrar esta pestaña y volver a {product}.",
+    "sign_in.page.title": "Inicia sesión en {product}",
+    "sign_in.page.continue_as": "Continuar como {email}",
+    "sign_in.page.other_account": "Usar otra cuenta",
+    "sign_in.page.failed": "No se pudo completar el inicio de sesión",
+    "sign_in.page.try_again": "Abre {product} y vuelve a intentarlo.",
+    "sign_in.page.legal": "Al continuar, aceptas nuestros {terms} y nuestra {privacy}.",
+    "sign_in.page.terms": "Términos",
+    "sign_in.page.privacy": "Política de privacidad",
+    "apps.page.connected": "Conectada",
+    "apps.page.failed": "No funcionó",
+    "apps.page.close_tab": "Puedes cerrar esta pestaña y volver a Simeon.",
+    "apps.page.try_again": "Vuelve a Simeon e inténtalo de nuevo.",
+    "apps.page.expired": "Ese enlace venció",
+    "apps.page.broken": "Ese enlace no funcionó",
+    "profile.not_a_language": "Eso no es un idioma.",
+    "profile.name_length": "Un nombre de 1 a 60 caracteres.",
+    "feedback.empty": "Escribe un mensaje para enviar tus comentarios.",
+    "account.delete.try_again": "{why} Vuelve a intentarlo en unos minutos.",
+    "account.delete.billing_unreachable": "No se puede acceder a la facturación en este momento.",
+    "account.delete.subscription_not_ended": "No se pudo cancelar tu suscripción en este momento.",
+    "account.delete.computer_unreachable": "No se puede acceder a la computadora de tus agentes en este momento.",
+    "account.delete.computer_not_deleted": "No se pudo eliminar la computadora de tus agentes en este momento.",
+    "account.delete.computer_starting": "La computadora de tus agentes se está iniciando.",
+    "billing.unknown_plan": "Ese plan no es uno de los nuestros.",
+    "billing.not_configured": "La facturación no está configurada en este servidor.",
+    "billing.already_subscribed": "Ya tienes un plan. Cámbialo o cancélalo desde la página de facturación.",
+    "billing.manage_on_iphone": (
+        "Tu plan se cobra a través de Apple. Cámbialo o cancélalo en tu iPhone, "
+        "en Configuración › tu nombre › Suscripciones."
+    ),
+    "billing.no_subscription": "Todavía no tienes un plan que administrar.",
+    "billing.bad_return_url": "Esa dirección de regreso no es una de las nuestras.",
+    "billing.checkout_not_yours": "Ese pago pertenece a otra cuenta.",
+    "app_store.unverified": "No se pudo verificar el recibo de Apple de esta compra.",
+    "app_store.not_configured": (
+        "Las compras en la app todavía no están configuradas en el servidor de "
+        "Simeon. Vuelve a intentarlo más tarde."
+    ),
+    "app_store.not_your_purchase": (
+        "Esta compra pertenece a otra cuenta de Simeon. Inicia sesión con esa "
+        "cuenta o usa otro Apple ID."
     ),
 }

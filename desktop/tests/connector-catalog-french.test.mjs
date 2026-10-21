@@ -82,3 +82,53 @@ test("the catalog answered in French: descriptions, groups and Coming soon; Engl
     await words.dispose();
   }
 });
+
+/** Spanish writing: no French spaces or quotes, no apostrophe, “ ” for quotes, ¿ and ¡ opening. */
+function assertSpanish(where, text) {
+  assert.ok(typeof text === "string" && text.trim().length > 0, `${where}: no Spanish`);
+  assert.doesNotMatch(text, /[ «»'"]/, `${where}: no French spaces or quotes, no apostrophe, quotes are “ ”`);
+  assert.doesNotMatch(text, /\s[:;!?]/, `${where}: no space before : ; ! ?`);
+  if (/\?/.test(text)) assert.match(text, /¿/, `${where}: ¿ opens the question`);
+}
+
+test("every connector and every group has its Spanish, and no Spanish is for a connector the catalog lacks", async () => {
+  const catalog = await load("source/shared/node/vendor-mcp/catalog.ts", "catalog-en-es");
+  const words = await load("source/shared/words/areas/catalog.ts", "catalog-es");
+  try {
+    const { VENDOR_MCP_CONNECTORS, VENDOR_MCP_GROUP } = catalog.module;
+    const { CATALOG_ES, CATALOG_GROUPS_ES } = words.module;
+    const ids = VENDOR_MCP_CONNECTORS.map((item) => item.id);
+    assert.deepEqual(Object.keys(CATALOG_ES).sort(), [...ids].sort());
+    assert.deepEqual(Object.keys(CATALOG_GROUPS_ES).sort(), Object.keys(VENDOR_MCP_GROUP).sort());
+    for (const [id, text] of Object.entries(CATALOG_ES)) assertSpanish(id, text);
+    for (const [key, text] of Object.entries(CATALOG_GROUPS_ES)) assertSpanish(key, text);
+  } finally {
+    await catalog.dispose();
+    await words.dispose();
+  }
+});
+
+test("the catalog answered in Spanish: descriptions, groups and Coming soon", async () => {
+  const loaded = await load("source/shared/node/vendor-mcp/marketplace.ts", "catalog-language-es-run");
+  const words = await load("source/shared/words/areas/catalog.ts", "catalog-language-es");
+  try {
+    const { vendorCatalogInLanguage, appComingSoon, vendorConnectorToPlugin } = loaded.module;
+    const { CATALOG_ES, CATALOG_GROUPS_ES } = words.module;
+    const gmail = { id: "gmail", name: "Gmail", category: "Mail & Calendar", description: "Search, read, draft, and manage email." };
+    const view = (item) => {
+      const plugin = vendorConnectorToPlugin(item);
+      return { id: plugin.pluginId, name: plugin.name, displayName: plugin.displayName, description: plugin.description, category: plugin.category, connectors: plugin.connectors, ...(plugin.comingSoon ? { comingSoon: true } : {}) };
+    };
+    const soon = appComingSoon({ ...gmail, appsToolkit: "gmail" });
+    const views = [view(gmail), view(soon)];
+    const spanish = vendorCatalogInLanguage(views, "es-419");
+    assert.equal(spanish[0].description, CATALOG_ES.gmail);
+    assert.equal(spanish[0].category, CATALOG_GROUPS_ES.MailCalendar);
+    assert.deepEqual(spanish[0].connectors, [{ name: "Gmail", description: CATALOG_ES.gmail }]);
+    assert.equal(spanish[0].displayName, "Gmail", "names stay");
+    assert.equal(spanish[1].description, `Próximamente. ${CATALOG_ES.gmail}`);
+  } finally {
+    await loaded.dispose();
+    await words.dispose();
+  }
+});

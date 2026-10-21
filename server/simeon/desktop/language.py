@@ -46,7 +46,7 @@ def normalize_language(raw: str | None) -> str | None:
 
 #: The languages the server answers in besides English: those with a table
 #: in `simeon/desktop/words/` (`say`).
-TRANSLATED = ("fr",)
+TRANSLATED = ("fr", "es")
 
 #: The language of the request being answered; None is English.
 _current: ContextVar[str | None] = ContextVar("simeon_language", default=None)

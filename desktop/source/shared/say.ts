@@ -1,5 +1,6 @@
 import { languageCode, normalizeUserLanguage } from "./user-language.js";
 import { ENGLISH, type WordKey } from "./words/en.js";
+import { SPANISH } from "./words/es.js";
 import { FRENCH } from "./words/fr.js";
 
 /**
@@ -15,12 +16,13 @@ import { FRENCH } from "./words/fr.js";
  * transcript extension `this.tm.userLanguage?.()`); none, or one Simeon is
  * not translated into, reads as English. English is the source
  * (`words/en.ts`); each translation is a table with the same keys
- * (`words/fr.ts`, in "tu"), which the type check holds to every key.
+ * (`words/fr.ts` in "tu", `words/es.ts` in "tú"), which the type check holds
+ * to every key.
  */
 export type { WordKey } from "./words/en.js";
 
 /** Each translation by language; English is `ENGLISH`. */
-const TABLES: Readonly<Record<string, Readonly<Record<WordKey, string>>>> = { fr: FRENCH };
+const TABLES: Readonly<Record<string, Readonly<Record<WordKey, string>>>> = { fr: FRENCH, es: SPANISH };
 
 export function say(language: string | null | undefined, key: WordKey, values: Readonly<Record<string, string | number>> = {}): string {
   const tag = normalizeUserLanguage(language);

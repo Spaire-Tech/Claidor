@@ -164,6 +164,11 @@ final class LanguageTests: XCTestCase {
     let greetings = Set([0, 0.2, 0.4, 0.6, 0.8].map { VoiceCallText.firstMessage(name: "Theo", pick: $0, personName: nil, language: "fr") })
     XCTAssertEqual(greetings.count, 5)
     for greeting in greetings { XCTAssertFalse(greeting.contains("!")); XCTAssertFalse(greeting.contains(" ?")) }
+    // Spanish, word for word as voice-call-prompt.ts: "tú", and "usted" when asked for.
+    XCTAssertEqual(VoiceCallText.language(for: "es-MX"), "es")
+    XCTAssertTrue(VoiceCallText.languageRule("es").contains("- Say \"tú\" to them, warm and direct, never stiff, unless they ask for \"usted\" or their messages above say \"usted\"."))
+    XCTAssertEqual(VoiceCallText.firstMessage(name: "Theo", pick: 0, personName: "Bass", language: "es"), "Hola Bass, soy Theo. ¿Qué tal?")
+    XCTAssertEqual(VoiceCallText.firstMessage(name: "Theo", pick: 0.99, personName: nil, language: "es"), "Theo al habla. ¿Qué tienes en mente?")
     XCTAssertTrue(VoiceCallText.languageRule("pt-BR").contains("- Speak Brazilian Portuguese for the whole call."), "the rule names the app's own language")
     XCTAssertEqual(VoiceCallText.prompt(name: "Theo", title: "", description: "", transcript: [], personName: "Bass", teammates: [], language: "de"), english, "no German call yet: English")
 

@@ -2,7 +2,7 @@
  * The emails' sentences in the person's language (20 October 2026,
  * docs/localization.md): the sign-in code, sent to people who use the
  * apps. English is the source; each translation has the same keys, in
- * "tu". The server passes the language (`language`, the request's
+ * "tu" and "tú". The server passes the language (`language`, the request's
  * `Accept-Language`); none, or one Simeon is not translated into, reads
  * as English. The other templates are the inherited shop's and stay
  * English.
@@ -35,7 +35,21 @@ const FRENCH: EmailWords = {
   sentToAfter: '.',
 }
 
-const TABLES: Record<string, EmailWords> = { fr: FRENCH }
+const SPANISH: EmailWords = {
+  hello: 'Hola:',
+  loginCodePreview:
+    'Tu código para iniciar sesión es {code}. Es válido durante los próximos {minutes}\u00a0minutos.',
+  loginCodeIntro:
+    'Usa el código de verificación de abajo para iniciar sesión en tu cuenta de Simeon.',
+  loginCodeValid:
+    'Este código solo es válido durante los próximos {minutes}\u00a0minutos.',
+  loginCodeIgnore:
+    'Si no pediste este inicio de sesión, puedes ignorar este correo sin problema.',
+  sentToBefore: 'Este correo se envió a',
+  sentToAfter: '.',
+}
+
+const TABLES: Record<string, EmailWords> = { fr: FRENCH, es: SPANISH }
 
 /** The language an email is written in: one of Simeon's, else English. */
 export function emailLanguage(language?: string | null): string {

@@ -100,10 +100,18 @@ test("the prompt names the language, says tu in French, and keeps names as they 
     assert.match(french, /say "tu" to the user/);
     assert.match(french, /switch to "vous" and keep it from then on/);
     assert.match(french, /update_state, target "memory", scope "user", action "write"/, "the vous preference is remembered for every agent");
-    // Another language: named, but no tu/vous rule.
-    const spanish = module.renderUserLanguageSystemPrompt("es");
+    // Spanish: "tú" by default, "usted" when asked for, remembered the same way; neutral Spanish, the person's own way followed.
+    const spanish = module.renderUserLanguageSystemPrompt("es-MX");
     assert.match(spanish, /Write to the user in Spanish/);
+    assert.match(spanish, /In Spanish, say "tú" to the user/);
+    assert.match(spanish, /switch to "usted" and keep it from then on/);
+    assert.match(spanish, /"Prefers to be addressed as usted in Spanish"/);
+    assert.match(spanish, /¿ and ¡ open every question and exclamation/);
     assert.doesNotMatch(spanish, /"tu"|"vous"/);
+    // Another language: named, but no rule of address.
+    const german = module.renderUserLanguageSystemPrompt("de");
+    assert.match(german, /Write to the user in German/);
+    assert.doesNotMatch(german, /"tu"|"vous"|"tú"|"usted"/);
     // English or none: nothing at all.
     for (const english of [undefined, null, "", "en", "en-US", "nonsense!"]) assert.equal(module.renderUserLanguageSystemPrompt(english), "", String(english));
   } finally {
@@ -154,7 +162,8 @@ test("the first hello and Simeon's introduction are in the person's language", a
       assert.match(french, /Say "tu" to the user\./);
       assert.match(french, /Names of apps, connectors and agents stay as they are\./);
     }
-    assert.doesNotMatch(firstRunCueInLanguage("cue", "de"), /"tu"/, "tu is French only");
+    assert.match(firstRunCueInLanguage("cue", "es"), /The user's apps are in Spanish: .* Say "tú" to the user\./);
+    assert.doesNotMatch(firstRunCueInLanguage("cue", "de"), /"tu"|"tú"/, "only the languages with a familiar you");
   } finally {
     await Promise.all([language.dispose(), onboarding.dispose(), chief.dispose()]);
   }
@@ -199,6 +208,7 @@ test("a voice call hears and speaks the person's language, its first line too", 
   try {
     assert.equal(module.voiceCallLanguage(undefined), "en");
     assert.equal(module.voiceCallLanguage("fr-CA"), "fr");
+    assert.equal(module.voiceCallLanguage("es-419"), "es");
     assert.equal(module.voiceCallLanguage("de"), "en", "a language the server's voice agent was not given yet is English");
     assert.equal(module.voiceCallLanguage("tlh"), "en");
 
@@ -215,6 +225,19 @@ test("a voice call hears and speaks the person's language, its first line too", 
     assert.match(french.agent.prompt.prompt, /Language:\n- Speak French for the whole call\./);
     assert.match(french.agent.prompt.prompt, /Say "tu" to them/);
     assert.match(french.agent.prompt.prompt, /Names stay as they are/);
+    const spanish = module.buildVoiceCallOverrides({ agent: { name: "Theo" }, transcript: [], pick: 0, personName: "Bass", language: "es" });
+    assert.equal(spanish.agent.language, "es");
+    assert.equal(spanish.agent.firstMessage, "Hola Bass, soy Theo. ¿Qué tal?");
+    assert.match(spanish.agent.prompt.prompt, /Language:\n- Speak Spanish for the whole call\./);
+    assert.match(spanish.agent.prompt.prompt, /Say "tú" to them, warm and direct, never stiff, unless they ask for "usted"/);
+    const spanishGreetings = new Set([0, 0.2, 0.4, 0.6, 0.8, 0.99].map((pick) => module.buildFirstMessage("Theo", pick, null, "es")));
+    assert.equal(spanishGreetings.size, 5, "five Spanish openings, as in English");
+    for (const greeting of spanishGreetings) {
+      assert.match(greeting, /Theo/);
+      assert.doesNotMatch(greeting, /!/, "calm, no exclamation mark");
+      assert.doesNotMatch(greeting, /\busted\b/, "tú, not usted");
+      assert.match(greeting, /¿[^?]+\?$/, "a question opens with ¿");
+    }
     const greetings = new Set([0, 0.2, 0.4, 0.6, 0.8, 0.99].map((pick) => module.buildFirstMessage("Theo", pick, null, "fr")));
     assert.equal(greetings.size, 5, "five French openings, as in English");
     for (const greeting of greetings) {

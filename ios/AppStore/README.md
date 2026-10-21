@@ -71,7 +71,7 @@ down for smaller iPhones.
 - `fonts/`: Geist (the headlines) and Inter, both under the SIL Open Font
   License.
 
-## The listing's words, in English and French
+## The listing's words, in English, French and Spanish
 
 `metadata/` holds the App Store page's text for each language (20 October
 2026, docs/localization.md), one file per field as fastlane's `deliver`
@@ -96,12 +96,23 @@ lays it out, so it can be pasted into App Store Connect or uploaded:
   language menu at the top of the app's page › French (France), then the
   fields above. French (Canada) can take the same text.
 - The French name stays Simeon; the subtitle carries the French words.
-- The screenshots stay English for now: the French page shows the English
-  set until a French one is made (the artboards in `source/` and the app's
-  screens in French).
+- `es-MX/` and `es-ES/` are the Spanish (21 October 2026), in "tú" like the
+  app: Spanish (Mexico) and Spanish (Spain) in App Store Connect's language
+  menu. The same text, but Spain's own words where they differ (ordenador,
+  Ajustes, rellenar, informes); Latin America's other stores take Mexico's.
+- The screenshots stay English for now: the French and Spanish pages show
+  the English set until their own are made (the artboards in `source/` and
+  the app's screens in each language).
 
 The plans (the app › Monetization › Subscriptions › each product ›
 Localization › French): the display names stay "Simeon Standard", "Simeon
 Pro", "Simeon Max"; the descriptions are « 5 000 000 crédits par semaine »,
 « 17 500 000 crédits par semaine » and « 60 000 000 crédits par semaine »
 (a narrow no-break space between the thousands, as French writes them).
+
+In Spanish (Localization › Spanish (Mexico), and Spanish (Spain)): the same
+display names; the descriptions are “5,000,000 créditos por semana”,
+“17,500,000 créditos por semana” and “60,000,000 créditos por semana” in
+Mexico's, and “5.000.000 créditos por semana”, “17.500.000 créditos por
+semana” and “60.000.000 créditos por semana” in Spain's (each writes its
+thousands its own way).
