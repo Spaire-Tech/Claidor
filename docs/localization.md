@@ -1,10 +1,10 @@
 # Simeon in other languages
 
-Simeon is written in English and translated, French first (20 October 2026).
-Each later language (Spanish, German, Portuguese (Brazil), Japanese, Italian,
-Dutch, Korean, Chinese (Traditional), Arabic) is a translation pass: add the
-language where this page says, fill in its words, and run
-`python3 scripts/check_translations.py`.
+Simeon is written in English and translated: French (20 October 2026), then
+Spanish (21 October 2026). Each later language (German, Portuguese (Brazil),
+Japanese, Italian, Dutch, Korean, Chinese (Traditional), Arabic) is a
+translation pass: add the language where this page says, fill in its words,
+and run `python3 scripts/check_translations.py`.
 
 English stays the source language in the code. Every translation lives in one
 place per platform.
@@ -12,11 +12,11 @@ place per platform.
 ## One language for the whole product
 
 The person's language is the app's: each app follows its device, or the
-Language menu in Simeon's Settings (System, English, Français; on the iPhone
-also iOS's Settings › Apps › Simeon › Language, the same choice). A language
-picked takes over when the app opens again: the Mac relaunches itself, the
-iPhone asks the person to close and reopen Simeon. It travels everywhere text is written
-outside the apps:
+Language menu in Simeon's Settings (System, English, Español, Français; on
+the iPhone also iOS's Settings › Apps › Simeon › Language, the same choice).
+A language picked takes over when the app opens again: the Mac relaunches
+itself, the iPhone asks the person to close and reopen Simeon. It travels
+everywhere text is written outside the apps:
 
 | Where | How it gets there | Code |
 |---|---|---|
@@ -33,16 +33,25 @@ English, or no language, leaves every prompt and every request exactly as it
 was. The shop's `customer.locale` and `checkout.locale` belong to the
 inherited checkout and are not this.
 
-## The voice: "tu"
+## The voice: "tu", "tú"
 
 All French in the apps, the website pages Simeon owns, the emails and the
-agents says "tu": warm and direct, like a capable friend at work, never stiff.
+agents says "tu", and all Spanish says "tú": warm and direct, like a capable
+friend at work, never stiff.
 
-- The agents say "tu" by default. When the person asks for "vous" (or writes
-  in "vous" and asks for it), the agent switches, keeps it for that person
+- The agents say the familiar "you" by default. When the person asks for the
+  formal one ("vous", "usted"), the agent switches, keeps it for that person
   from then on, and saves it to the person's shared memory ("Prefers to be
-  addressed as vous in French") so every agent follows it.
-- The app's own screens always say "tu".
+  addressed as vous in French") so every agent follows it. A language with a
+  familiar and a formal "you" is a line in `ADDRESS`
+  (`desktop/source/shared/user-language.ts`) and `VoiceCallText.address`
+  (the core).
+- The app's own screens always say "tu" and "tú".
+- Spanish is one Spanish for everyone (the apps' `es`): a neutral Spanish
+  that reads naturally in Latin America and in Spain ("computadora",
+  "Configuración"). The agents follow the person's own way of writing
+  (vos, vosotros) when they use it. The App Store page has a Mexican and a
+  Spanish version (`es-MX`, `es-ES`).
 - The website's sign-in and billing pages say "tu" too; the inherited
   shop's dashboard and checkout are not Simeon's pages and are left as
   they are.
@@ -60,6 +69,9 @@ agents says "tu": warm and direct, like a capable friend at work, never stiff.
   `?`; « » for quotes in sentences, with a narrow no-break space inside; the
   curly apostrophe ’; money and dates in the locale's format (12,50 €,
   20 octobre 2026, 14 h 30), from the locale, never written by hand.
+- **Spanish punctuation**: ¿ and ¡ open every question and exclamation;
+  “ ” for quotes; sentence case on buttons and titles ("Nuevo agente");
+  months and weekdays in lower case; money and dates from the locale.
 - **Short words on buttons.** Check that nothing truncates at iPhone SE width
   and in the Mac's narrowest window.
 - Write the French yourself, then re-read each screen in context. Anything you
@@ -187,14 +199,18 @@ say("email.login_code.subject", language="fr")
 1. The apps: add it to `CFBundleLocalizations` in `ios/project.yml` (the app
    and the notification extension) and `mac/project.yml`, then fill its column
    in each String Catalog, the core's included (Xcode's catalog editor, or the
-   JSON).
-2. The calls: add it to `VOICE_CALL_LANGUAGES` (engine), `VoiceCallText.languages`
-   (core) and `VOICE_LANGUAGES` (server, with its first message), add its
-   greetings beside the French ones (engine and core, word for word), then
-   raise `VOICE_AGENT_CONFIG_VERSION`. Use ElevenLabs' code as the iPhone's
-   kit names it (its `Language`): Brazilian Portuguese is `pt` (the kit has no
-   `pt-br`; the call's rule still says "Brazilian Portuguese"), Chinese
-   (Traditional) is `zh`.
+   JSON: a `"<language>": {"stringUnit": …}` beside `fr`, and nothing else in
+   the entry; never an `extractionState` of `manual`).
+2. The agents and the calls: a language with a familiar and a formal "you"
+   goes in `ADDRESS` (user-language.ts) and `VoiceCallText.address` (core),
+   and the call recap's opening words in `RECAP_OPENINGS` and
+   `VOICE_RECAP_DESCRIPTION` (voice.py). Add it to `VOICE_CALL_LANGUAGES`
+   (engine), `VoiceCallText.languages` (core) and `VOICE_LANGUAGES` (server,
+   with its first message), add its greetings beside the French ones (engine
+   and core, word for word), then raise `VOICE_AGENT_CONFIG_VERSION`. Use
+   ElevenLabs' code as the iPhone's kit names it (its `Language`): Brazilian
+   Portuguese is `pt` (the kit has no `pt-br`; the call's rule still says
+   "Brazilian Portuguese"), Chinese (Traditional) is `zh`.
 3. The engine, the server and the emails: add the language's table beside
    each `FR` (`desktop/source/shared/words/areas/*.ts` and `TABLES` in
    `shared/say.ts`; `server/simeon/desktop/words/_*.py`, a `<language>.py`

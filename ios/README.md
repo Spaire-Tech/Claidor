@@ -217,9 +217,9 @@ profile, not from the configuration.
   Google needs `SIMEON_GOOGLE_IOS_CLIENT_ID` on the server (an OAuth client
   of type iOS); until then the app uses the web sign-in.
 - **Language** (20 October 2026, `docs/localization.md`): the app follows the
-  phone's language (English and French, `CFBundleLocalizations` in
+  phone's language (English, French and Spanish, `CFBundleLocalizations` in
   `project.yml`), or the Language menu in Settings: System, English,
-  Français (`AppLanguage.choose`, the same choice as iOS's Settings › Apps ›
+  Español, Français (`AppLanguage.choose`, the same choice as iOS's Settings › Apps ›
   Simeon › Language). iOS reads it when the app opens, and an app can't
   reopen itself, so the person is asked to close and reopen Simeon. The
   language goes to the server on every
