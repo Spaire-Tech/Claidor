@@ -23,5 +23,5 @@ Twoje dane są szyfrowane w spoczynku i podczas przesyłania, odizolowane od dan
 
 Simeon jest dostępny po polsku, angielsku, francusku, hiszpańsku, niemiecku, niderlandzku, włosku, portugalsku (Brazylia), szwedzku i turecku. Plany to miesięczne subskrypcje kupowane w aplikacji; pierwsze 30 dni jest za darmo, bez karty.
 
-Warunki korzystania z usługi: https://simeonlabs.com/terms
+Regulamin: https://simeonlabs.com/terms
 Polityka prywatności: https://simeonlabs.com/privacy

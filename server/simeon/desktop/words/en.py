@@ -1,7 +1,7 @@
 """The server's sentences in English, the source language (`say`).
 
 A key names where the sentence is said; `{name}` is a value filled in.
-Each translation (`fr.py`, `es.py`) has the same keys and the same values.
+Each translation (`fr.py`, `es.py`, `de.py`…) has the same keys and the same values.
 """
 
 from . import _account, _booking

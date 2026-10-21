@@ -62,8 +62,8 @@ skills, connectors, avatars, approvals). Running the box servers:
   `Brands/<key>` logos and the `GeneratedBrands.swift` rows from the run.
   `desktop/tests/connector-chat-colours.test.mjs` fails otherwise.
 - **Languages.** English is the source language in the code; French (and each
-  later language) is a translation, in one place per platform, in "tu"
-  (`docs/localization.md`). The person's language travels to the server
+  later language) is a translation, in one place per platform, in the
+  familiar "you" ("tu", "du"…; `docs/localization.md`). The person's language travels to the server
   (`Accept-Language`, `users.language`) and the agents (`userLanguage`). Run
   `python3 scripts/check_translations.py` with `check_names.py`.
 - **Server code:** never call `session.commit()` in request code (the session

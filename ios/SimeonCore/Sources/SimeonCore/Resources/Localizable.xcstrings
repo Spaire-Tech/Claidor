@@ -12672,7 +12672,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "„Immer erlauben“ ist durch die Team-Richtlinie deaktiviert"
+            "value" : "„Immer“ ist durch die Team-Richtlinie deaktiviert"
           }
         },
         "es" : {
@@ -12690,25 +12690,25 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "“Consenti sempre” è disattivato dalle regole del team"
+            "value" : "“Sempre” è disattivato dalle regole del team"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Altijd toestaan is uitgeschakeld door het teambeleid"
+            "value" : "“Altijd” is uitgeschakeld door het teambeleid"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "„Zawsze zezwalaj” wyłączono w zasadach zespołu"
+            "value" : "„Zawsze” wyłączono w zasadach zespołu"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "“Sempre permitir” está desativado pela política da equipe"
+            "value" : "“Sempre” está desativado pela política da equipe"
           }
         },
         "sv" : {
@@ -12730,7 +12730,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "„Immer erlauben“ ist nicht verfügbar, solange die Team-Richtlinie lädt"
+            "value" : "„Immer“ ist nicht verfügbar, solange die Team-Richtlinie lädt"
           }
         },
         "es" : {
@@ -12748,25 +12748,25 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "“Consenti sempre” non è disponibile mentre si caricano le regole del team"
+            "value" : "“Sempre” non è disponibile mentre si caricano le regole del team"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Altijd toestaan is niet beschikbaar zolang het teambeleid laadt"
+            "value" : "“Altijd” is niet beschikbaar zolang het teambeleid laadt"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "„Zawsze zezwalaj” jest niedostępne, dopóki ładują się zasady zespołu"
+            "value" : "„Zawsze” jest niedostępne, dopóki ładują się zasady zespołu"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "“Sempre permitir” fica indisponível enquanto a política da equipe carrega"
+            "value" : "“Sempre” fica indisponível enquanto a política da equipe carrega"
           }
         },
         "sv" : {

@@ -4010,7 +4010,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Immer erlauben"
+            "value" : "Immer"
           }
         },
         "es" : {
@@ -4028,25 +4028,25 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Consenti sempre"
+            "value" : "Sempre"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Altijd toestaan"
+            "value" : "Altijd"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Zawsze zezwalaj"
+            "value" : "Zawsze"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sempre permitir"
+            "value" : "Sempre"
           }
         },
         "sv" : {

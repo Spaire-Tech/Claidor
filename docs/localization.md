@@ -69,8 +69,8 @@ work, never stiff.
 - Portuguese is Brazil's (the apps' `pt-BR`); Portugal's Portuguese reads
   it everywhere (`translationFor` in the engine, `ONE_REGION` on the server,
   the website's `pt-PT`). The voice agent's code for it is `pt`.
-- The website's sign-in and billing pages say the familiar one too; the inherited
-  shop's dashboard and checkout are not Simeon's pages and are left as
+- The website's sign-in and billing pages say the familiar one too; the
+  inherited shop's dashboard and checkout are not Simeon's pages and are left as
   they are.
 - One exception: the inherited checkout page's legal payment text
   (`clients/packages/i18n/src/locales/fr.ts`, `checkout.footer.mandate*`)
@@ -105,7 +105,10 @@ work, never stiff.
   Anything you are unsure of goes in the PR for the founder.
 - **Lengths**: a button or a chip is at most a little longer than the English
   and the French (20 % and two letters); a longer one is kept only when the
-  language has no shorter natural word, and listed in the PR.
+  language has no shorter natural word, and listed in the PR. Where the
+  French went shorter than the English to fit a tight row, every language
+  does: the approval card's three buttons on an iPhone SE (Autoriser ·
+  Toujours · Refuser; Erlauben · Immer · Ablehnen).
 
 ## Where each platform keeps its words
 
@@ -119,19 +122,20 @@ work, never stiff.
 | The server's answers: refusals, the sign-in pages, the free month | `server/simeon/desktop/words/` (`_booking.py`, `_account.py`: `EN` and one table per language; `en.py`, `fr.py`… gather them), read by `say(key, **values)` in the request's `Accept-Language` | `server/tests/desktop/test_words.py`, `check_translations.py` |
 | The sign-in code email | `server/emails/src/words.ts` | `check_translations.py` |
 | The website's pages Simeon owns: sign-in (`/login`, `/signup`, the code and password pages) and `/billing` | `clients/packages/i18n/src/locales/en.ts` and each language's file, under `simeon`; the page's language from `pageLocale` (`clients/apps/web/src/utils/i18n.ts`: `?locale=`, else the browser's, else English) | `clients/packages/i18n/src/simeon.test.ts` |
-| The App Store page: name, subtitle, description, keywords, what's new, promotional text | `ios/AppStore/metadata/<language>/*.txt` (`en-US`, `fr-FR`), pasted into App Store Connect (`ios/AppStore/README.md`) | `check_translations.py` (every field in every language) |
+| The App Store page: name, subtitle, description, keywords, what's new, promotional text | `ios/AppStore/metadata/<language>/*.txt` (`en-US`, `fr-FR`, `de-DE`…), pasted into App Store Connect (`ios/AppStore/README.md`) | `check_translations.py` (every field in every language) |
 | The engine (the agents' prompts, voice calls) | `desktop/source/shared/user-language.ts`; the calls' greetings in `voice-call-prompt.ts` | `desktop/tests/user-language.test.mjs` |
 | The core (calls) | `ios/SimeonCore/Sources/SimeonCore/VoiceCall.swift` (`firstMessage`), word for word as the engine's | `LanguageTests.swift` |
 | The server's voice agent | `VOICE_LANGUAGES` in `server/simeon/desktop/voice.py` | `server/tests/desktop/test_language.py` |
 
 `scripts/check_translations.py` fails when any of these has an English
-sentence without its French.
+sentence without its translation in every language (`CFBundleLocalizations`
+in `ios/project.yml` names them).
 
 ### Writing the apps' screens
 
 Xcode reads the code's strings into the String Catalogs on each build
 (`SWIFT_EMIT_LOC_STRINGS`), new ones marked untranslated, and
-`check_translations.py` then fails until they have their French.
+`check_translations.py` then fails until they have each language's words.
 
 - A literal SwiftUI localizes by itself: `Text("…")`, `Button("…")`,
   `Label`, `Toggle`, `Section`, `.navigationTitle`, `TextField`, `.help`,
@@ -146,7 +150,9 @@ Xcode reads the code's strings into the String Catalogs on each build
   `String(localized: "section.open", defaultValue: "Open")` (a section's state,
   "Ouverte", beside the button "Ouvrir"), `traveller.title` (Civilité, beside an
   agent's Titre).
-- Counts: plural variations in the catalog (French "one" covers 0 and 1).
+- Counts: plural variations in the catalog (French "one" covers 0 and 1;
+  Polish has one, few, many and other). A language whose "1" reads wrong
+  without one ("hace 1 meses") gets a plural even where French has none.
 - Words written by the shared core, the engine or the server and shown as
   they come are not in these catalogs: they are translated where they are
   made (below).
@@ -169,15 +175,15 @@ L10n.text("section.open", default: "Open")      // one English word, two meaning
   `String` is `%@`, an `Int` is `%lld`, a `%` is `%%`. Only those two types
   go in a sentence (a `Double` would read "2.500000": format it first), so
   what builds on Linux builds on the iPhone.
-- The English keeps its own `n == 1` branch; the French plural is a variation
-  of the count's key.
+- The English keeps its own `n == 1` branch; each language's plural is a
+  variation of the count's key.
 - Dates, times and money are shown in `L10n.locale()`: the English screens'
   own locale (`en_US`) while the app is in English, else the app's language
   in the person's region. Reading a date keeps `en_US_POSIX`.
 - Not translated: what a model reads (prompts, the call's instructions),
   what the server or the engine parses, logs, and anything stored or compared.
-- A new sentence: add its key and its French to the catalog (the JSON, or
-  Xcode's catalog editor); `check_translations.py` names any `L10n.text`
+- A new sentence: add its key and each language's words to the catalog (the
+  JSON, or Xcode's catalog editor); `check_translations.py` names any `L10n.text`
   whose key is missing. Never mark an entry `manual`: since Xcode 26 a
   manual entry gets a Swift symbol made from its key, and keys that differ
   only in case or punctuation ("Sign out", "Sign out?") then stop the build
@@ -198,9 +204,9 @@ say("sign_in.wrong_code")                    # the server: the request's languag
 say("email.login_code.subject", language="fr")
 ```
 
-- The English is in the `EN` table, the French in the `FR` table beside it,
-  with the same keys and the same `{values}`. The type check (engine) and
-  the tests (both) fail on a missing one.
+- The English is in the `EN` table, each language's in its table beside it
+  (`FR`, `ES`, `DE`…), with the same keys and the same `{values}`. The type
+  check (engine) and the tests (both) fail on a missing one.
 - The engine's language is the host setting `userLanguage`
   (`this.tm.userLanguage?.()` in the transcript extension,
   `currentUserLanguage()` where nothing passes it in; unset, as in the
