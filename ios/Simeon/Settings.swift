@@ -36,9 +36,10 @@ struct SettingsSheet: View {
           // are on that page.
           NavigationLink { AccountPage() } label: {
             HStack(spacing: 14) {
+              // As the reference's logo sits by its words: 20, in the line's grey (the founder: too big and too dark at 26 in black).
               Image("SignIn/Mark").resizable().renderingMode(.template).scaledToFit()
-                .frame(width: 26, height: 26)
-                .foregroundStyle(Ink.primary)
+                .frame(width: 20, height: 20)
+                .foregroundStyle(Ink.secondary)
                 .frame(width: 32)
                 .accessibilityHidden(true)
               VStack(alignment: .leading, spacing: 2) {

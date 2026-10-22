@@ -61,8 +61,8 @@ struct AgentList: View {
         .padding(EdgeInsets(top: 4, leading: 12, bottom: 24, trailing: 12))
       }
       .scrollIndicators(.automatic)
-      // The rows fade out over their last 24 into the foot's pill (the founder's reference, 22 October 2026); the list's
-      // own 24 under its last row lets that row clear the fade. Not on the rail, whose foot is its discs.
+      // The rows fade out over their last 24 above the foot instead of being cut off (the founder, 22 October 2026); the
+      // list's own 24 under its last row lets that row clear the fade. Not on the rail, whose foot is its discs.
       .mask {
         VStack(spacing: 0) {
           Rectangle()

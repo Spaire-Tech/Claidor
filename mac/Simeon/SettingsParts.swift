@@ -222,7 +222,7 @@ struct SettingsMenuLabel: View {
   }
 }
 
-/** A row that opens something: its words, its value in grey, and the chevron (or ↗ for a page on the web); a step darker under the pointer. */
+/** A row that opens something: its words, its value in grey, and the chevron (or ↗ for a page on the web, or a symbol of its own: Report an issue's bug); a step darker under the pointer. */
 struct SettingsLinkRow: View {
   let label: String
   var value: String? = nil
@@ -230,6 +230,8 @@ struct SettingsLinkRow: View {
   var divided = false
   var external = false
   var symbol: String? = nil
+  /** At the row's end in place of the chevron, 14 in grey. */
+  var trailingSymbol: String? = nil
   let look: Look
   let action: () -> Void
   @State private var hovering = false
@@ -244,9 +246,15 @@ struct SettingsLinkRow: View {
               .foregroundStyle(look.inkSecondary)
               .lineLimit(1)
           }
-          Image(systemName: external ? "arrow.up.right" : "chevron.right")
-            .font(.system(size: 10, weight: .medium))
-            .foregroundStyle(look.inkTertiary)
+          if let trailingSymbol {
+            Image(systemName: trailingSymbol)
+              .font(.system(size: 14))
+              .foregroundStyle(look.inkSecondary)
+          } else {
+            Image(systemName: external ? "arrow.up.right" : "chevron.right")
+              .font(.system(size: 10, weight: .medium))
+              .foregroundStyle(look.inkTertiary)
+          }
         }
       }
       .background(hovering ? look.groupedRowHover : Color.clear)
