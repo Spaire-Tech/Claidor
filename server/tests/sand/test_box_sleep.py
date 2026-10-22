@@ -36,9 +36,9 @@ from simeon.sand.box_service import (
     mark_attached,
 )
 from tests.desktop.test_endpoints import _signed_in
-from tests.sand.test_box_broker import RUN_STATE, FakeBoxHost, _ensure, host
+from tests.sand.test_box_broker import RUN_STATE, FakeBoxHost, _ensure, backups, host
 
-__all__ = ["host"]
+__all__ = ["backups", "host"]
 
 
 @pytest.fixture
@@ -322,6 +322,99 @@ class TestSleep:
         assert await broker.update_idle(session, user.id, committed=None) == "ensured"
         assert host.removed == []
         assert len(host.created) == 1
+
+    async def test_an_out_of_date_box_waits_for_ten_quiet_minutes(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        redis: Redis,
+        host: FakeBoxHost,
+        health: dict[str, BoxHealth],
+    ) -> None:
+        """22 October 2026: not swapped the minute a turn ends with no app
+        attached (a phone in a pocket), but once nothing has used it for
+        `UPDATE_QUIET`."""
+        _, box = await _awake_box(client, session, user)
+        host.expected_host_sha256 = "f2805435"
+        sent: list[Any] = []
+        await _age(session, box, 5)
+        assert await broker.hibernate_idle(session, redis, update=sent.append) == []
+        assert sent == []
+
+        # A turn that ended two minutes ago is use as well.
+        await _age(session, box, 45)
+        busy_ms = int((utc_now() - timedelta(minutes=2)).timestamp() * 1000)
+        health["now"] = BoxHealth(reachable=True, last_busy_at_ms=busy_ms)
+        assert await broker.hibernate_idle(session, redis, update=sent.append) == []
+        assert sent == []
+
+        health["now"] = BoxHealth(reachable=True)
+        await _age(session, box, 11)
+        assert await broker.hibernate_idle(session, redis, update=sent.append) == []
+        assert sent == [user.id]
+        assert host.boxes[box.provider_box_id]["running"] is True
+
+    async def test_a_server_that_sleeps_sooner_updates_before_it_sleeps(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        redis: Redis,
+        host: FakeBoxHost,
+        health: dict[str, BoxHealth],
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        # A server's own idle time under ten minutes: the update comes at
+        # that time, in place of the sleep, rather than never.
+        monkeypatch.setattr(host, "idle_after", timedelta(minutes=5), raising=False)
+        _, box = await _awake_box(client, session, user)
+        host.expected_host_sha256 = "f2805435"
+        sent: list[Any] = []
+        await _age(session, box, 6)
+        assert await broker.hibernate_idle(session, redis, update=sent.append) == []
+        assert sent == [user.id]
+
+    async def test_a_message_during_the_backup_keeps_the_old_program(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        host: FakeBoxHost,
+        health: dict[str, BoxHealth],
+        backups: Any,
+    ) -> None:
+        """21 October 2026: opening the app replaces an out-of-date computer
+        (its backup made first, then the old container removed), and what
+        is typed at once lands in the old one. A turn running once the
+        backup is made keeps the old container."""
+        _, box = await _awake_box(client, session, user)
+        old = box.provider_box_id
+        host.expected_host_sha256 = "f2805435"
+
+        async def a_message_arrives(url: str, token: str, **_: Any) -> bool:
+            health["now"] = BoxHealth(reachable=True, is_busy=True)
+            return True
+
+        box_service.set_flush_for_tests(a_message_arrives)
+        assert await broker.update_idle(session, user.id, committed=None) == "ensured"
+        assert host.removed == []
+        assert len(host.created) == 1
+        assert host.boxes[old]["running"] is True
+
+        # Idle again, it is replaced, its files with it.
+        health["now"] = BoxHealth(reachable=True)
+        flushes: list[str] = []
+
+        async def flush(url: str, token: str, **_: Any) -> bool:
+            flushes.append(url)
+            return True
+
+        box_service.set_flush_for_tests(flush)
+        assert await broker.update_idle(session, user.id, committed=None) == "ensured"
+        assert len(flushes) == 1
+        assert host.removed == [(old, [])]
+        assert len(host.created) == 2
 
     async def test_zero_means_never(
         self,
