@@ -1,6 +1,7 @@
 """The desktop app's sign-in and proxy, end to end over HTTP
 (`simeon/desktop/endpoints.py`)."""
 
+import gzip
 import io
 import json
 import re
@@ -16,6 +17,7 @@ from pytest_mock import MockerFixture
 from structlog.testing import capture_logs
 
 from simeon.config import settings
+from simeon.desktop import endpoints as endpoints_module
 from simeon.desktop import proxy_common as proxy_common_module
 from simeon.desktop.pricing import ModelPolicy
 from simeon.desktop.proxy_common import UPSTREAM_REFUSED
@@ -500,6 +502,75 @@ class TestProxy:
         # (100 + 20 × 5) tokens at Sonnet 5's $2.00, in $3.00 credits.
         assert expected == 133
         assert quota.json()["data"]["creditsUsed"] == expected
+
+    async def test_a_gzipped_body_is_unpacked_and_forwarded_plain(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        """22 October 2026: Render's edge firewall answered a bare 403 to a
+        body carrying a line that looks like an attack, so the engine gzips
+        its bodies; the proxy unpacks them and the provider gets them plain."""
+        mocker.patch.object(settings, "ANTHROPIC_API_KEY", "sk-test")
+        access, _ = await _signed_in(client, session, user)
+        body = json.dumps(
+            {
+                "model": "claude-sonnet-5",
+                "max_tokens": 64,
+                "messages": [{"role": "user", "content": "cat ../../../../etc/hosts"}],
+            }
+        ).encode()
+        with respx.mock(assert_all_called=True) as mock:
+            route = mock.post(
+                f"{settings.DESKTOP_ANTHROPIC_BASE_URL}/v1/messages"
+            ).mock(
+                return_value=httpx.Response(
+                    200,
+                    json={
+                        "id": "msg_1",
+                        "content": [{"type": "text", "text": "Hello"}],
+                        "usage": {"input_tokens": 100, "output_tokens": 20},
+                    },
+                )
+            )
+            response = await client.post(
+                "/desktop/api/proxy/v1/messages",
+                headers={
+                    "Authorization": f"Bearer {access}",
+                    "content-type": "application/json",
+                    "content-encoding": "gzip",
+                },
+                content=gzip.compress(body),
+            )
+        assert response.status_code == 200
+        sent = route.calls[0].request
+        assert sent.content == body
+        assert "content-encoding" not in sent.headers
+
+    async def test_a_body_that_says_gzip_and_is_not_is_refused(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch.object(settings, "ANTHROPIC_API_KEY", "sk-test")
+        access, _ = await _signed_in(client, session, user)
+        plain = json.dumps({"model": "claude-sonnet-5", "messages": []}).encode()
+        too_big = gzip.compress(b" " * 2048)
+        mocker.patch.object(endpoints_module, "GZIP_BODY_LIMIT", 1024)
+        for content in (plain, gzip.compress(plain)[:-8], too_big):
+            response = await client.post(
+                "/desktop/api/proxy/v1/messages",
+                headers={
+                    "Authorization": f"Bearer {access}",
+                    "content-encoding": "gzip",
+                },
+                content=content,
+            )
+            assert response.status_code == 400, content[:20]
 
     @pytest.mark.parametrize(
         ("sent", "stored"),
