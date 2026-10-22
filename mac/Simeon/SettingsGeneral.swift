@@ -5,8 +5,8 @@ import SimeonMacCore
 
 /**
  * Settings › General, laid out as the founder's reference (21 October
- * 2026): the account first (its face, its name and email; its page under
- * General), Language, Appearance (Mode: the sun, the moon, the screen), and
+ * 2026): the account first (Simeon Account; its page under General),
+ * Language, Appearance (Mode: the sun, the moon, the screen), and
  * the time zone the agents keep. Connect apps and About are the sidebar's,
  * not here again ("why do we have dup of stuff").
  */
@@ -40,43 +40,53 @@ enum SettingsVersion {
   static var current: String { Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "" }
 }
 
-/** The account's row (the reference's account row): its face (40), its name over its email, the chevron; its page under General. */
+/**
+ * The account's row, as the founder's reference names its maker's account
+ * (22 October 2026: "do like them for meta account instead of showing the
+ * email"): the Simeon mark, "Simeon Account" over what its page holds, the
+ * chevron; its page under General, where the name and email are.
+ */
 private struct AccountRow: View {
   let look: Look
   let action: () -> Void
-  @Environment(AppStore.self) private var store
   @State private var hovering = false
 
   var body: some View {
-    let account = store.account
-    let display = AccountDisplay(displayName: account?.name, email: account?.email)
     Button(action: action) {
       HStack(spacing: 14) {
-        SettingsAccountFace(size: 32, look: look)
+        Image("SignIn/Mark")
+          .resizable()
+          .renderingMode(.template)
+          .interpolation(.high)
+          .scaledToFit()
+          .frame(width: 22, height: 22)
+          .foregroundStyle(look.ink)
+          .frame(width: 28)
+          .accessibilityHidden(true)
         VStack(alignment: .leading, spacing: 3) {
-          Text(display.title)
+          Text("Simeon Account")
             .font(PanelType.row)
             .foregroundStyle(look.ink)
             .lineLimit(1)
-          Text(display.secondary ?? String(localized: "Name, email and password"))
+          Text("Name, email and password")
             .font(PanelType.detail)
             .foregroundStyle(look.inkSecondary)
             .lineLimit(1)
-            .truncationMode(.middle)
         }
         Spacer(minLength: 8)
         Image(systemName: "chevron.right")
           .font(.system(size: 10, weight: .medium))
           .foregroundStyle(look.inkTertiary)
       }
-      .padding(.horizontal, 14)
-      .padding(.vertical, 10)
+      .padding(.horizontal, SettingsRowSize.inset)
+      .padding(.vertical, SettingsRowSize.vertical)
+      .frame(minHeight: 64)
       .background(hovering ? look.groupedRowHover : Color.clear)
       .contentShape(Rectangle())
     }
     .buttonStyle(.hand)
     .onHover { hovering = $0 }
-    .accessibilityLabel("Account, \(display.title)")
+    .accessibilityElement(children: .combine)
   }
 }
 
@@ -314,8 +324,8 @@ private struct PasswordForm: View {
         SettingsPill(title: hasPassword == true ? String(localized: "Change Password") : String(localized: "Set Password"), primary: true, disabled: !ready || saving, look: look, action: save)
       }
     }
-    .padding(.horizontal, 14)
-    .padding(.vertical, 10)
+    .padding(.horizontal, SettingsRowSize.inset)
+    .padding(.vertical, SettingsRowSize.vertical)
     .overlay(alignment: .top) { SettingsDivider(look: look) }
     .task { hasPassword = await store.hasPassword() }
   }
@@ -347,10 +357,12 @@ private struct PasswordForm: View {
 
 /**
  * Permissions (the iPhone's: "bring auto review and auto review rules
- * there"): Auto-review, with the line saying what it does; its rules by
- * list, Allow automatically then Ask first, each editable in its row and
- * deletable at once; then a new rule, "When Simeon wants to:" and "It
- * should:", Add Rule. Twenty rules a list and a thousand characters a rule
+ * there"; the founder, 22 October 2026: "absolutely ugly and not easy to
+ * understand"). Auto-review and what it does; on, its two lists as two
+ * cards, each saying what it means under it: Allow automatically (done
+ * without asking) and Ask first (asked about first). A list's rules are
+ * its rows, edited in their row and deleted at once; its last row adds one
+ * to it, typed there. Twenty rules a list and a thousand characters a rule
  * (`AutoReviewInstructions`). A change is shown once the computer has it.
  */
 struct SettingsPermissionsPage: View {
@@ -363,29 +375,41 @@ struct SettingsPermissionsPage: View {
       SettingsGroup(look: look) {
         SettingsSwitch(label: String(localized: "Auto-review"),
                        detail: String(localized: "Simeon checks each action before it runs and asks you first when needed."),
+                       symbol: "checkmark.shield",
                        isOn: Binding(get: { model.rules.isEnabled }, set: { @MainActor on in model.setReviewing(on, store: store) }),
                        disabled: model.rulesPending, look: look)
       }
       if model.rules.isEnabled {
-        Text("Write one short, natural-language rule for each action. \"Ask first\" takes priority if rules conflict.")
+        RuleList(behavior: .allow, model: model, look: look)
+        RuleList(behavior: .ask, model: model, look: look)
+        Text("These rules apply only to you. Built-in safety checks always apply.")
           .font(PanelType.detail)
           .foregroundStyle(look.inkSecondary)
           .fixedSize(horizontal: false, vertical: true)
           .padding(.horizontal, 8)
-        ForEach(AutoReviewInstructions.Behavior.allCases, id: \.self) { behavior in
-          let listed = model.rules.rules.filter { $0.behavior == behavior }
-          if !listed.isEmpty {
-            SettingsGroup(title: AutoReviewInstructions.label(behavior), look: look) {
-              ForEach(Array(listed.enumerated()), id: \.element) { index, rule in
-                RuleLine(rule: rule, divided: index > 0, model: model, look: look)
-              }
-            }
-          }
-        }
-        NewRuleGroup(model: model, look: look)
       }
     }
     .task { await model.load(store: store) }
+  }
+}
+
+/** One list (Allow automatically, Ask first): its rules, then the row that adds one; what the list means under it. */
+private struct RuleList: View {
+  let behavior: AutoReviewInstructions.Behavior
+  @Bindable var model: GeneralSettingsModel
+  let look: Look
+
+  var body: some View {
+    let listed = model.rules.rules.filter { $0.behavior == behavior }
+    SettingsGroup(title: AutoReviewInstructions.label(behavior),
+                  footer: behavior == .allow ? String(localized: "Simeon does these without asking you.")
+                                             : String(localized: "Simeon asks you before doing these. When two rules disagree, it asks."),
+                  look: look) {
+      ForEach(Array(listed.enumerated()), id: \.element) { index, rule in
+        RuleLine(rule: rule, divided: index > 0, model: model, look: look)
+      }
+      NewRuleLine(behavior: behavior, divided: !listed.isEmpty, model: model, look: look)
+    }
   }
 }
 
@@ -413,8 +437,8 @@ private struct RuleLine: View {
           SettingsPill(title: String(localized: "Save Rule"), primary: true, disabled: !model.canSave, look: look) { model.save(store: store) }
         }
       }
-      .padding(.horizontal, 14)
-      .padding(.vertical, 10)
+      .padding(.horizontal, SettingsRowSize.inset)
+      .padding(.vertical, SettingsRowSize.vertical)
       .overlay(alignment: .top) { if divided { SettingsDivider(look: look) } }
     } else {
       SettingsLine(label: rule.text, divided: divided, look: look) {
@@ -429,29 +453,53 @@ private struct RuleLine: View {
   }
 }
 
-/** A new rule (the iPhone's): "When Simeon wants to:" one short line, "It should:" its list, Add Rule; the note under it. */
-private struct NewRuleGroup: View {
+/**
+ * A list's last row: a rule typed straight into it ("e.g. read my
+ * calendar"), the plus before it, Add at its end (or Return); a full list
+ * says so instead.
+ */
+private struct NewRuleLine: View {
+  let behavior: AutoReviewInstructions.Behavior
+  let divided: Bool
   @Bindable var model: GeneralSettingsModel
   let look: Look
   @Environment(AppStore.self) private var store
 
   var body: some View {
-    let full = AutoReviewInstructions.isFull(model.rules.list(model.behavior))
-    SettingsGroup(title: String(localized: "New Rule"),
-                  footer: full ? String(localized: "\(AutoReviewInstructions.label(model.behavior)) is full (\(AutoReviewInstructions.limitNote)).") : String(localized: "These rules apply only to you. Built-in safety checks always apply."),
-                  look: look) {
-      VStack(alignment: .leading, spacing: 6) {
-        Text("When Simeon wants to:").font(PanelType.detail).foregroundStyle(look.inkSecondary)
-        RuleField(text: Binding(get: { model.draft }, set: { @MainActor in model.draft = AutoReviewInstructions.clip($0) }),
-                  prompt: String(localized: "e.g. reply to emails for me"), look: look, submit: { model.add(store: store) })
+    let full = AutoReviewInstructions.isFull(model.rules.list(behavior))
+    HStack(spacing: 12) {
+      Image(systemName: "plus.circle.fill")
+        .font(.system(size: 15))
+        .foregroundStyle(full ? look.inkTertiary : look.settingsAction)
+        .frame(width: 20)
+        .accessibilityHidden(true)
+      if full {
+        Text(AutoReviewInstructions.limitNote)
+          .font(PanelType.row)
+          .foregroundStyle(look.inkSecondary)
+          .frame(maxWidth: .infinity, alignment: .leading)
+      } else {
+        TextField("", text: Binding(get: { model.drafts[behavior] ?? "" }, set: { @MainActor in model.drafts[behavior] = AutoReviewInstructions.clip($0) }),
+                  prompt: Text(behavior == .allow ? String(localized: "e.g. read my calendar") : String(localized: "e.g. reply to emails for me"))
+                    .foregroundStyle(look.inkTertiary),
+                  axis: .vertical)
+          .textFieldStyle(.plain)
+          .font(PanelType.row)
+          .foregroundStyle(look.ink)
+          .lineLimit(1...4)
+          .onSubmit { model.add(behavior, store: store) }
+          .accessibilityLabel(String(localized: "Add Rule"))
+          .frame(maxWidth: .infinity, alignment: .leading)
+        if model.rulesPending && !(model.drafts[behavior] ?? "").isEmpty {
+          ProgressView().controlSize(.small)
+        }
+        SettingsPill(title: String(localized: "Add"), disabled: !model.canAdd(behavior), look: look) { model.add(behavior, store: store) }
       }
-      .padding(.horizontal, 14)
-      .padding(.vertical, 10)
-      SettingsLine(label: String(localized: "It should:"), divided: true, look: look) {
-        BehaviorMenu(value: model.behavior, look: look) { model.behavior = $0 }
-      }
-      SettingsActionRow(title: String(localized: "Add Rule"), divided: true, busy: model.rulesPending, disabled: !model.canAdd, look: look) { model.add(store: store) }
     }
+    .padding(.horizontal, SettingsRowSize.inset)
+    .padding(.vertical, SettingsRowSize.vertical)
+    .frame(minHeight: SettingsRowSize.minHeight)
+    .overlay(alignment: .top) { if divided { SettingsDivider(look: look) } }
   }
 }
 
@@ -558,9 +606,8 @@ final class GeneralSettingsModel {
 
   var rules = AutoReviewInstructions()
   var rulesPending = false
-  /** The rule being written, and which list it goes to. */
-  var draft = ""
-  var behavior: AutoReviewInstructions.Behavior = .allow
+  /** The rule being written at the foot of each list. */
+  var drafts: [AutoReviewInstructions.Behavior: String] = [:]
 
   /** A rule being edited in its row: the rule as stored, and its words and list as changed. */
   struct Editing: Equatable {
@@ -633,18 +680,15 @@ final class GeneralSettingsModel {
     write(next, store: store)
   }
 
-  /** Add Rule may be pressed: words, room in the list, not there already, no edit under way, nothing on its way. */
-  var canAdd: Bool {
-    let text = draft.trimmingCharacters(in: .whitespacesAndNewlines)
+  /** A list's Add may be pressed: words, room in the list, not there already, no edit under way, nothing on its way. */
+  func canAdd(_ behavior: AutoReviewInstructions.Behavior) -> Bool {
+    let text = (drafts[behavior] ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
     return !text.isEmpty && editing == nil && !rulesPending && rules.saving(text, as: behavior, editing: nil) != nil
   }
 
-  func add(store: AppStore) {
-    guard canAdd, let next = rules.saving(draft.trimmingCharacters(in: .whitespacesAndNewlines), as: behavior, editing: nil) else { return }
-    write(next, store: store) { [weak self] in
-      self?.draft = ""
-      self?.behavior = .allow
-    }
+  func add(_ behavior: AutoReviewInstructions.Behavior, store: AppStore) {
+    guard canAdd(behavior), let next = rules.saving((drafts[behavior] ?? "").trimmingCharacters(in: .whitespacesAndNewlines), as: behavior, editing: nil) else { return }
+    write(next, store: store) { [weak self] in self?.drafts[behavior] = nil }
   }
 
   func delete(_ rule: AutoReviewInstructions.Rule, store: AppStore) {

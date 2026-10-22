@@ -31,12 +31,19 @@ struct SettingsSheet: View {
     NavigationStack {
       Form {
         Section {
+          // The account as another app's Settings names its maker's (the founder, 22 October 2026: "do like them for meta
+          // account instead of showing the email"): the mark, "Simeon Account" over what its page holds. The name and email
+          // are on that page.
           NavigationLink { AccountPage() } label: {
             HStack(spacing: 14) {
-              AccountFace(size: 44)
+              Image("SignIn/Mark").resizable().renderingMode(.template).scaledToFit()
+                .frame(width: 26, height: 26)
+                .foregroundStyle(Ink.primary)
+                .frame(width: 32)
+                .accessibilityHidden(true)
               VStack(alignment: .leading, spacing: 2) {
-                Text(store.account?.name ?? "").font(.system(size: 17)).foregroundStyle(Ink.primary)
-                Text(store.account?.email ?? "").font(.system(size: 13)).foregroundStyle(Ink.secondary)
+                Text("Simeon Account").font(.system(size: 17)).foregroundStyle(Ink.primary)
+                Text("Name, email and password").font(.system(size: 13)).foregroundStyle(Ink.secondary)
                   .lineLimit(1).minimumScaleFactor(0.75)
               }
             }

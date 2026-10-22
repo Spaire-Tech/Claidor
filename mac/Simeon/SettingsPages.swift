@@ -75,9 +75,9 @@ private struct WalletLine: View {
             .foregroundStyle(look.settingsAction)
         }
       }
-      .padding(.horizontal, 14)
-      .padding(.vertical, 8)
-      .frame(minHeight: 44)
+      .padding(.horizontal, SettingsRowSize.inset)
+      .padding(.vertical, 10)
+      .frame(minHeight: SettingsRowSize.minHeight)
       .background(hovering ? look.groupedRowHover : Color.clear)
       .overlay(alignment: .top) { if divided { SettingsDivider(look: look) } }
       .contentShape(Rectangle())
@@ -92,13 +92,15 @@ private struct WalletLine: View {
 
 /**
  * Computer (the founder, 21 October 2026: "a computer tab, your computer -
- * agent's computer"). The agents' computer: how it is now (connected,
- * being updated or recovered, out of reach), Update Simeon's Computer when
- * one is offered (or queued, with Cancel), and Recover Simeon's Computer;
- * each asks first with the computer's own dialog, over Settings. Your
- * computer: how the agents may use this Mac (Execution on Local Computer,
- * with the team's ceiling), hardware security keys, and forgetting the
- * commands allowed once.
+ * agent's computer"; 22 October: "bloated. filled with words", so each row
+ * is its name and its control, the dialogs saying the rest). The agents'
+ * computer: how it is now (connected, being updated or recovered, out of
+ * reach), Update Simeon's Computer when one is offered (or queued, with
+ * Cancel), and Recover Simeon's Computer; each asks first with the
+ * computer's own dialog, over Settings. Your computer: how the agents may
+ * use this Mac (Execution on Local Computer, with the team's ceiling when
+ * there is one), hardware security keys, and forgetting the commands
+ * allowed once.
  */
 struct SettingsComputerPage: View {
   let look: Look
@@ -123,17 +125,17 @@ private struct AgentsComputerGroup: View {
   var body: some View {
     let rebuild = store.rebuild
     let busy = rebuild.lock.isLocked || rebuild.pendingKind != nil
-    SettingsGroup(title: String(localized: "Agents' Computer"), footer: rebuild.error ?? RebuildWords.recoverBody, footerTint: rebuild.error == nil ? nil : look.danger, look: look) {
-      SettingsLine(label: String(localized: "Simeon's Computer"), detail: String(localized: "The computer in the cloud all your agents work on."), symbol: "cloud", look: look) {
+    SettingsGroup(title: String(localized: "Agents' Computer"), footer: rebuild.error, footerTint: look.danger, look: look) {
+      SettingsLine(label: String(localized: "Simeon's Computer"), look: look) {
         status
       }
       if rebuild.isUpdateQueued {
-        SettingsLine(label: String(localized: "Update queued"), detail: String(localized: "It updates once your agents are done."), divided: true, look: look) {
+        SettingsLine(label: String(localized: "Update queued"), divided: true, look: look) {
           SettingsPill(title: String(localized: "Cancel"), look: look) { rebuild.cancelQueuedUpdate() }
         }
       } else if store.computerUpdateOffer != nil {
         SettingsLine(label: store.computerUpdateAvailable ? String(localized: "A new version is available") : String(localized: "Update Simeon's Computer"),
-                     detail: String(localized: "Their files and logins are kept."), divided: true, look: look) {
+                     divided: true, look: look) {
           SettingsPill(title: String(localized: "Update"), primary: store.computerUpdateAvailable, disabled: busy, look: look) { ask(.update) }
         }
       } else {
@@ -193,17 +195,14 @@ private struct YourComputerGroup: View {
   @State private var forgot = false
 
   var body: some View {
-    var hints = [LocalToolPermission.explanation]
-    if let ceiling = model.ceiling { hints.append(LocalToolPermission.ceilingLine(ceiling)) }
-    return SettingsGroup(title: String(localized: "Your Computer"), look: look) {
-      SettingsMenu(label: LocalToolPermission.title, detail: hints.joined(separator: " "),
+    SettingsGroup(title: String(localized: "Your Computer"), look: look) {
+      SettingsMenu(label: LocalToolPermission.title, detail: model.ceiling.map { LocalToolPermission.ceilingLine($0) },
                    options: LocalToolPermission.choices.map { (value: $0, label: $0.label) },
                    disabled: Set(LocalToolPermission.choices.filter { $0.isAbove(model.ceiling) }),
                    value: model.permission, pending: model.permissionPending, look: look) { model.setPermission($0, store: store) }
       SettingsSwitch(label: String(localized: "Use hardware security keys"),
-                     detail: String(localized: "Allow Simeon to use a security key (such as a YubiKey) connected to your computer. You’ll be asked to approve each use."),
                      divided: true, isOn: Binding(get: { securityKeys }, set: { setKeys($0) }), disabled: keysPending, look: look)
-      SettingsLine(label: String(localized: "Commands Allowed Once"), detail: String(localized: "Forgotten, each is asked about again the next time an agent needs it."), divided: true, look: look) {
+      SettingsLine(label: String(localized: "Commands Allowed Once"), divided: true, look: look) {
         SettingsPill(title: forgot ? String(localized: "Forgotten") : String(localized: "Forget"), disabled: forgot, look: look) {
           MacLocalPermission.approvals.clear()
           forgot = true

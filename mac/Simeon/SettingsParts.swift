@@ -8,11 +8,12 @@ import SimeonCore
  * "the proportions are off… you're behaving it like a phone", then "I NEVER
  * USED BOLD… we need consistency for everything to be the same size"):
  * each group's name (`PanelType.section`) in line with its card; the card a
- * step off the ground, 12 round; its rows at least 44 high, padded 14, their
- * words (`PanelType.row`) over a line (`PanelType.detail`), the lines
- * between them inset 14 at both ends; a note under the card. At the row's
- * end: Apple's switch in the blue, a menu reading "value ⌄", an action in
- * the link blue ("Add", "Upgrade", "Check Now"), a chevron or ↗.
+ * step off the ground, 16 round; its rows at least 56 high, padded 18 and
+ * 14 (`SettingsRowSize`), their words (`PanelType.row`) over a line
+ * (`PanelType.detail`), the lines between them inset 18 at both ends; a
+ * note under the card. At the row's end: Apple's switch in the blue, a menu
+ * reading "value ⌄", an action in the link blue ("Add", "Upgrade", "Check
+ * Now"), a chevron or ↗.
  */
 enum PanelType {
   /** A panel's title and a page's name: 17, medium, as the app's titles (never bold). */
@@ -23,6 +24,19 @@ enum PanelType {
   static let row = Font.system(size: 13)
   /** The line under a row's words, a group's note, an app's line: 12. */
   static let detail = Font.system(size: 12)
+}
+
+/**
+ * The room in a card (the founder, 22 October 2026, with another app's
+ * Settings beside ours: "the boxes (not texts) are bigger"): 18 in from
+ * its sides, 14 above and below the words, at least 56 a row, 16 round.
+ * The words keep their sizes (`PanelType`).
+ */
+enum SettingsRowSize {
+  static let inset: CGFloat = 18
+  static let vertical: CGFloat = 14
+  static let minHeight: CGFloat = 56
+  static let radius: CGFloat = 16
 }
 
 extension Look {
@@ -58,25 +72,25 @@ struct SettingsGroup<Content: View>: View {
       }
       VStack(alignment: .leading, spacing: 0) { content() }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(look.groupedRow))
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background(RoundedRectangle(cornerRadius: SettingsRowSize.radius, style: .continuous).fill(look.groupedRow))
+        .clipShape(RoundedRectangle(cornerRadius: SettingsRowSize.radius, style: .continuous))
       if let footer, !footer.isEmpty {
         Text(footer)
           .font(PanelType.detail)
           .foregroundStyle(footerTint ?? look.inkSecondary)
           .fixedSize(horizontal: false, vertical: true)
-          .padding(.horizontal, 6)
+          .padding(.horizontal, 8)
       }
     }
   }
 }
 
-/** The line between two rows: inset 14 at both ends. */
+/** The line between two rows: inset 18 at both ends. */
 struct SettingsDivider: View {
   let look: Look
 
   var body: some View {
-    Rectangle().fill(look.ink.opacity(0.1)).frame(height: 0.5).padding(.horizontal, 14)
+    Rectangle().fill(look.ink.opacity(0.1)).frame(height: 0.5).padding(.horizontal, SettingsRowSize.inset)
   }
 }
 
@@ -115,9 +129,9 @@ struct SettingsLine<Trailing: View>: View {
       trailing()
         .fixedSize()
     }
-    .padding(.horizontal, 14)
-    .padding(.vertical, 10)
-    .frame(minHeight: 44)
+    .padding(.horizontal, SettingsRowSize.inset)
+    .padding(.vertical, SettingsRowSize.vertical)
+    .frame(minHeight: SettingsRowSize.minHeight)
     .overlay(alignment: .top) {
       if divided { SettingsDivider(look: look) }
     }
@@ -129,12 +143,13 @@ struct SettingsSwitch: View {
   let label: String
   var detail: String? = nil
   var divided = false
+  var symbol: String? = nil
   let isOn: Binding<Bool>
   var disabled = false
   let look: Look
 
   var body: some View {
-    SettingsLine(label: label, detail: detail, divided: divided, look: look) {
+    SettingsLine(label: label, detail: detail, divided: divided, symbol: symbol, look: look) {
       Toggle(label, isOn: isOn)
         .toggleStyle(.switch)
         .labelsHidden()
@@ -262,9 +277,9 @@ struct SettingsActionRow: View {
         Spacer(minLength: 8)
         if busy { ProgressView().controlSize(.small) }
       }
-      .padding(.horizontal, 14)
-      .padding(.vertical, 10)
-      .frame(minHeight: 44)
+      .padding(.horizontal, SettingsRowSize.inset)
+      .padding(.vertical, SettingsRowSize.vertical)
+      .frame(minHeight: SettingsRowSize.minHeight)
       .background(hovering && !disabled ? look.groupedRowHover : Color.clear)
       .overlay(alignment: .top) {
         if divided { SettingsDivider(look: look) }
@@ -313,9 +328,9 @@ struct SettingsSymbolPicker<Value: Hashable>: View {
         let chosen = option.value == value
         Button { if !chosen { pick(option.value) } } label: {
           Image(systemName: option.symbol)
-            .font(.system(size: 12))
+            .font(.system(size: 13))
             .foregroundStyle(chosen ? look.ink : look.inkSecondary)
-            .frame(width: 30, height: 24)
+            .frame(width: 34, height: 28)
             .background(Capsule().fill(chosen ? (look.dark ? Color.white.opacity(0.14) : Color.white) : .clear))
             .shadow(color: .black.opacity(chosen && !look.dark ? 0.1 : 0), radius: 1.5, x: 0, y: 1)
             .contentShape(Capsule())
