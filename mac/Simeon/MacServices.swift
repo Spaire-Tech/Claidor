@@ -342,8 +342,12 @@ struct DeepLinksLayer: View {
       ZStack {
         Color(hex: 0x141414).opacity(look.dark ? 0.698 : 0.5)
           .contentShape(Rectangle())
-          .onTapGesture {}
+          // A click outside closes it, as Done does (21 October 2026).
+          .onTapGesture { services.deepLinkInfo = nil }
         DeepLinksDialog(source: source, look: look) { services.deepLinkInfo = nil }
+          // A click on the dialog is the dialog's, not the dark's.
+          .contentShape(Rectangle())
+          .onTapGesture {}
       }
       .ignoresSafeArea()
     }

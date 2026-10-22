@@ -61,7 +61,7 @@ down for smaller iPhones.
 - `assets/face-*.webp`: the teammates' faces, from the same catalogue the
   apps use (`sites/simeonlabs.com/public/faces`).
 - `assets/icon-*.png`: the connector icons of the Connectors page
-  (`ios/Simeon/Assets.xcassets/AppIcons`); `assets/logo-hubspot.png` and
+  (`ios/Simeon/AppIcons.xcassets/AppIcons`); `assets/logo-hubspot.png` and
   `assets/logo-link.png`, the marks the chat draws beside those names. They
   are the apps' trademarks, shown to say Simeon connects to them.
 - `assets/airline-*.svg`: the airlines' marks as Duffel serves them

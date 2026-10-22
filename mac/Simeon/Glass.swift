@@ -27,3 +27,34 @@ extension View {
     }
   }
 }
+
+/**
+ * A round button in glass, the window's own (the sidebar's Search and New
+ * chat; the founder, 21 October 2026: "look at the whole mac app, and how
+ * the buttons are design"): its symbol at 40% of its side, regular, in the
+ * discs' ink (black at 78%, white at 86% on dark), in Apple's glass. Back,
+ * close and the like on the app's panels and sheets.
+ */
+struct GlassDiscButton: View {
+  let symbol: String
+  let help: String
+  var size: CGFloat = 32
+  /** Its symbol in the blue (a filter that is set). */
+  var tinted = false
+  let action: () -> Void
+  @Environment(\.colorScheme) private var scheme
+
+  var body: some View {
+    Button(action: action) {
+      Image(systemName: symbol)
+        .font(.system(size: size * 0.4, weight: .regular))
+        .foregroundStyle(tinted ? Look(scheme).settingsBlue : (scheme == .dark ? Color.white.opacity(0.86) : Color.black.opacity(0.78)))
+        .frame(width: size, height: size)
+        .contentShape(Circle())
+    }
+    .buttonStyle(.hand)
+    .liquidGlass(in: .circle)
+    .help(help)
+    .accessibilityLabel(help)
+  }
+}

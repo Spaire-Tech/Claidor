@@ -4,8 +4,10 @@ import SimeonCore
 /**
  * The Electron window's sign-in (`sand-onboarding__landing`, reference A01
  * and A02) and its "Setting up Simeon's computer" (A03), measured at
- * 1040 × 760: the logo (64) and "Simeon" in Suravaram (68) side by
- * side 18 apart, the line under them 48 lower (22, at most 336 wide), the
+ * 1040 × 760: the logo and "Simeon" in Suravaram (68) side by side 14
+ * apart, the logo 46, about the height of the word's capitals (the founder,
+ * 21 October 2026: at 64 "the logo is way too big for the simeon text"),
+ * the line under them 48 lower (22, at most 336 wide), the
  * button 39 below that; the whole block centred and moved 40 down. In the
  * butterfly's place, the SimeonLabs logo lighting up, as on the iPhone (the
  * founder, 11 October 2026: `LogoShimmer`).
@@ -37,9 +39,9 @@ private struct Landing: View {
 
   var body: some View {
     VStack(spacing: 0) {
-      HStack(spacing: 18) {
+      HStack(spacing: 14) {
         LogoShimmer(look: look)
-          .frame(width: 64, height: 64)
+          .frame(width: 46, height: 46)
         Text("Simeon")
           .font(.custom(Faces.wordmark, size: 68))
           .foregroundStyle(look.ink)

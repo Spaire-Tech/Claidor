@@ -7,10 +7,13 @@ import { Fragment, type ReactNode } from 'react'
 // sign-in: "make it like this"): the SimeonLabs wordmark top left; on a
 // wide screen the words and the card on the left and the founder's photo
 // of the room built round a boulder on the right, rounded; on a phone one
-// centred column, no photo. The Mac app's sign-in (`/loginDeepControl`)
-// sends a browser with no session here, so this is the page people see
-// between the app and "Continue as …". In the page's language
-// (`pageLocale`, 20 October 2026).
+// centred column, no photo. At Claude's proportions (21 October 2026: "the
+// sign in is way too big. compared to claude… the get it off your plate is
+// so high. so big"): the heading 52 on a wide screen, the card 440 wide,
+// the photo inset 48 from the window's edges. The Mac app's sign-in
+// (`/loginDeepControl`) sends a browser with no session here, so this is
+// the page people see between the app and "Continue as …". In the page's
+// language (`pageLocale`, 20 October 2026).
 const AuthShell = ({
   heading,
   line,
@@ -28,25 +31,25 @@ const AuthShell = ({
         <LogoType labs height={40} className="-ml-[7px] w-[138px]" />
       </div>
       <main className="flex w-full grow flex-col items-center justify-center pt-10 pb-6 sm:pt-12 lg:pt-6">
-        <div className="flex w-full max-w-[640px] flex-col items-center gap-8 sm:gap-10">
-          <div className="flex flex-col items-center gap-3 text-center sm:gap-4">
-            <h1 className="font-[family-name:var(--font-newsreader)] text-[38px] leading-[1.05] font-normal tracking-[-0.025em] text-balance sm:text-[56px] lg:text-[64px]">
+        <div className="flex w-full max-w-[560px] flex-col items-center gap-7 sm:gap-8">
+          <div className="flex flex-col items-center gap-2.5 text-center sm:gap-3">
+            <h1 className="font-[family-name:var(--font-newsreader)] text-[34px] leading-[1.05] font-normal tracking-[-0.02em] text-balance sm:text-[46px] lg:text-[52px]">
               {heading}
             </h1>
             {line ? (
-              <p className="font-[family-name:var(--font-newsreader)] text-[clamp(14px,3.9vw,17px)] leading-[1.4] text-balance text-[#3a3a3c] min-[360px]:whitespace-nowrap sm:text-[22px] sm:leading-[1.35]">
+              <p className="font-[family-name:var(--font-newsreader)] text-[clamp(14px,3.9vw,17px)] leading-[1.4] text-balance text-[#3a3a3c] min-[360px]:whitespace-nowrap sm:text-[19px] sm:leading-[1.35]">
                 {line}
               </p>
             ) : null}
           </div>
-          <div className="w-full max-w-[460px] rounded-[28px] border border-black/[0.06] bg-white p-6 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_12px_32px_-12px_rgba(0,0,0,0.08)] sm:p-9">
+          <div className="w-full max-w-[440px] rounded-[24px] border border-black/[0.06] bg-white p-6 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_12px_32px_-12px_rgba(0,0,0,0.08)] sm:p-7">
             {children}
           </div>
         </div>
       </main>
     </div>
-    <div className="hidden p-6 pl-0 lg:block lg:w-1/2">
-      <div className="sticky top-6 h-[calc(100vh-48px)] w-full overflow-hidden rounded-[28px] bg-[#e8e4de]">
+    <div className="hidden py-12 pr-12 lg:block lg:w-1/2">
+      <div className="sticky top-12 h-[calc(100vh-96px)] w-full overflow-hidden rounded-[24px] bg-[#e8e4de]">
         <Image
           src="/assets/sign-in/room.webp"
           alt={getTranslator(locale)('simeon.signIn.photo')}

@@ -78,6 +78,9 @@ targets:
       # screen's page, so they ship as files.
       - path: ../ios/Simeon/Computer
         buildPhase: resources
+      # The connectors' app icons (`AppIcons/<id>`), shared with the iPhone
+      # (ios/scripts/app_icons.py; 21 October 2026, the founder: "the icons").
+      - path: ../ios/Simeon/AppIcons.xcassets
     dependencies:
       - package: SimeonCore
         product: SimeonCore

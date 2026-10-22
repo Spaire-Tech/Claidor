@@ -3,18 +3,58 @@ import SwiftUI
 import SimeonCore
 
 /**
- * Settings (`overlay:settings`, J01–J07): over the whole window, not a
- * window of its own, the window dimmed under it. A panel of at most
- * 1000 × 702 (the window less 40 and 94), its pages listed on its left:
- * General, and Usage & Billing once the account's usage is in hand. Each
- * opening starts afresh on the page asked for, at its top. ⌘, opens it on
- * General (again while it is open, nothing); ⌘K and "/" open the page
- * picked; Escape, × or a click on the dim close it.
+ * Settings (`overlay:settings`): over the whole window, not a window of its
+ * own, the window dimmed under it. A panel of at most 960 × 720 (the
+ * window less 48 and 64; Connectors' size), laid out as a Mac app's Settings
+ * (the founder, 21 October 2026, with a desktop app's for reference: "the
+ * proportions are off… you're behaving it like a phone"), in the app's own
+ * type (`PanelType`; "I NEVER USED BOLD"): its pages listed on its left,
+ * each with its symbol, the current one on a grey ground, Log out at the
+ * foot; the page's name at the top of the rest, its groups under it across
+ * the page, from its left. General, Usage & Billing
+ * once the account's usage is in hand, Wallet, Permissions, Computer (the
+ * agents' computer and this Mac), Updates (a dot while one is waiting) and
+ * Legal; the account is General's first row, its page under General with
+ * Back. Nothing here that the window has elsewhere: Connect apps and About
+ * are the sidebar's. Each opening starts afresh on the page asked for, at
+ * its top. ⌘, opens it on General (again while it is open, nothing); ⌘K and
+ * "/" open the page picked; Escape, × or a click on the dim close it.
  */
 @MainActor
 @Observable
 final class SettingsState {
-  enum Page: Equatable { case general, usage }
+  enum Page: Equatable, CaseIterable {
+    case general, usage, wallet, permissions, computer, updates, legal, account
+
+    var title: String {
+      switch self {
+      case .general: String(localized: "General")
+      case .usage: String(localized: "Usage & Billing")
+      case .wallet: String(localized: "Wallet")
+      case .permissions: String(localized: "Permissions")
+      case .computer: String(localized: "Computer")
+      case .updates: String(localized: "Updates")
+      case .legal: String(localized: "Legal")
+      case .account: String(localized: "Account")
+      }
+    }
+
+    var symbol: String {
+      switch self {
+      case .general: "gearshape"
+      case .usage: "chart.bar"
+      case .wallet: "wallet.bifold"
+      case .permissions: "hand.raised"
+      case .computer: "desktopcomputer"
+      case .updates: "arrow.down.circle"
+      case .legal: "checkmark.shield"
+      case .account: "person.crop.circle"
+      }
+    }
+
+    /** The page it sits under, with Back to it: the account under General (its first row). */
+    var parent: Page? { self == .account ? .general : nil }
+  }
 
   private(set) var isOpen = false {
     didSet { SettingsState.showing = isOpen }
@@ -49,6 +89,13 @@ final class SettingsState {
     NSApp.keyWindow?.makeFirstResponder(nil)
     isOpen = false
   }
+
+  /** Connectors (Wallet's apps): Settings gives way to the Plugins panel, on an app's page when one is named. */
+  func openConnectors(plugin: String? = nil) {
+    guard let plugins else { return }
+    close()
+    if let plugin { plugins.open(.plugin(plugin)) } else { plugins.open() }
+  }
 }
 
 /**
@@ -78,7 +125,7 @@ struct SettingsLayer: View {
             .contentShape(Rectangle())
             .onTapGesture { settings.close() }
           SettingsPanel(look: look)
-            .frame(width: max(0, min(1000, box.size.width - 40)), height: max(0, min(702, box.size.height - 94)))
+            .frame(width: max(0, min(960, box.size.width - 48)), height: max(0, min(720, box.size.height - 64)))
             .id(settings.opening)
         }
         .frame(width: box.size.width, height: box.size.height)
@@ -92,46 +139,53 @@ struct SettingsLayer: View {
   }
 }
 
-/** The panel (`Ta`, `xxl`): 14 round, a line at 15%; #F5F5F7 with a deep soft shadow, or the raised ground on dark. */
+/** The panel: the grouped ground, round 14, a line at 15%, a deep soft shadow on light; the list of pages, then the page's name and its groups across the rest. */
 private struct SettingsPanel: View {
   let look: Look
   @Environment(SettingsState.self) private var settings
-  @Environment(AppStore.self) private var store
 
   var body: some View {
     HStack(spacing: 0) {
       SettingsNav(look: look)
-      ZStack(alignment: .topTrailing) {
-        VStack(alignment: .leading, spacing: 0) {
-          Text(settings.page == .general ? "General" : "Usage & Billing")
-            .font(.system(size: 17, weight: .medium))
-            .tracking(-0.136)
+      VStack(alignment: .leading, spacing: 0) {
+        // The page's name and × (Back before it on the account's page), as Connectors' head.
+        HStack(spacing: 10) {
+          if let parent = settings.page.parent {
+            GlassDiscButton(symbol: "chevron.left", help: String(localized: "Back")) { settings.page = parent }
+          }
+          Text(settings.page.title)
+            .font(PanelType.title)
             .foregroundStyle(look.ink)
             .lineLimit(1)
-            .frame(height: 24)
-            .padding(EdgeInsets(top: 32, leading: 32, bottom: 6, trailing: 32))
             .accessibilityAddTraits(.isHeader)
-          ScrollView {
-            Group {
-              switch settings.page {
-              case .general: SettingsGeneralPage(look: look)
-              case .usage: SettingsUsagePage(look: look)
-              }
-            }
-            .padding(EdgeInsets(top: 22, leading: 32, bottom: 28, trailing: 32))
-            .frame(maxWidth: .infinity, alignment: .topLeading)
-          }
-          .scrollIndicators(.automatic)
-          // A page is drawn afresh, at its top, each time it is shown.
-          .id(settings.page)
+          Spacer(minLength: 12)
+          SettingsClose(look: look) { settings.close() }
         }
-        SettingsClose(look: look) { settings.close() }
-          .padding(.top, 10)
-          .padding(.trailing, 10)
+        .frame(height: 32)
+        .padding(EdgeInsets(top: 18, leading: 28, bottom: 0, trailing: 18))
+        ScrollView {
+          Group {
+            switch settings.page {
+            case .general: SettingsGeneralPage(look: look)
+            case .usage: SettingsUsagePage(look: look)
+            case .wallet: SettingsWalletPage(look: look)
+            case .permissions: SettingsPermissionsPage(look: look)
+            case .computer: SettingsComputerPage(look: look)
+            case .updates: SettingsUpdatesPage(look: look)
+            case .legal: SettingsLegalPage(look: look)
+            case .account: SettingsAccountPage(look: look)
+            }
+          }
+          .frame(maxWidth: .infinity, alignment: .leading)
+          .padding(EdgeInsets(top: 16, leading: 28, bottom: 32, trailing: 28))
+        }
+        .scrollIndicators(.automatic)
+        // A page is drawn afresh, at its top, each time it is shown.
+        .id(settings.page)
       }
       .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
-    .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(look.settingsPanel))
+    .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(look.groupedGround))
     .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
     .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(look.ink.opacity(0.15), lineWidth: 1))
     .shadow(color: Color(red: 20 / 255, green: 30 / 255, blue: 60 / 255).opacity(look.dark ? 0 : 0.45), radius: 28, x: 0, y: 30)
@@ -144,285 +198,98 @@ private struct SettingsPanel: View {
   }
 }
 
-/** The pages (`nav`, "Settings sections"): 198 wide, padded 16 and 12, the current one on white (round 10) or the grey on dark. */
+/**
+ * The pages ("Settings sections"), 210 wide, as the reference lists them:
+ * each its symbol (14) and its name (13), 32 high, the current one (or the
+ * one it sits under) on a grey ground, 8 round; Log out at the foot, asked
+ * first as the account menu's.
+ */
 private struct SettingsNav: View {
   let look: Look
   @Environment(SettingsState.self) private var settings
   @Environment(AppStore.self) private var store
+  @Environment(MacSession.self) private var session
+  @State private var updates = MacUpdates.shared
 
   var body: some View {
+    let current = settings.page.parent ?? settings.page
     VStack(alignment: .leading, spacing: 2) {
-      SettingsNavEntry(title: String(localized: "General"), systemImage: "gearshape", current: settings.page == .general, look: look) { settings.page = .general }
-      if store.usage.showsSection {
-        SettingsNavEntry(title: String(localized: "Usage & Billing"), systemImage: "chart.bar", current: settings.page == .usage, look: look) { settings.page = .usage }
+      ForEach(pages, id: \.self) { page in
+        SettingsNavEntry(title: page.title, symbol: page.symbol, current: current == page, dot: page == .updates && updates.found != nil, look: look) { settings.page = page }
       }
       Spacer(minLength: 0)
+      SettingsNavEntry(title: AccountMenu.logOut, symbol: "rectangle.portrait.and.arrow.right", current: false, look: look) {
+        AccountActions.askToSignOut(session: session, settings: settings)
+      }
     }
-    .padding(.vertical, 16)
-    .padding(.horizontal, 12)
-    .frame(width: 198)
+    .padding(EdgeInsets(top: 18, leading: 10, bottom: 14, trailing: 10))
+    .frame(width: 210)
     .frame(maxHeight: .infinity)
-    .background(look.dark ? look.rowHover : Color.clear)
     .overlay(alignment: .trailing) {
-      Rectangle().fill(look.ink.opacity(0.10)).frame(width: 0.5)
+      Rectangle().fill(look.ink.opacity(0.08)).frame(width: 0.5)
     }
     .accessibilityElement(children: .contain)
     .accessibilityLabel("Settings sections")
+  }
+
+  private var pages: [SettingsState.Page] {
+    SettingsState.Page.allCases.filter { page in
+      switch page {
+      case .account: false
+      // Usage & Billing, as the iPhone lists it: not for an enterprise team.
+      case .usage: store.usage.summary == nil || store.usage.showsSection
+      default: true
+      }
+    }
   }
 }
 
 private struct SettingsNavEntry: View {
   let title: String
-  let systemImage: String
+  let symbol: String
   let current: Bool
+  var dot = false
   let look: Look
   let action: () -> Void
   @State private var hovering = false
 
   var body: some View {
     Button(action: action) {
-      HStack(spacing: 9) {
-        Image(systemName: systemImage)
-          .font(.system(size: 13))
-          .frame(width: 15, height: 15)
+      HStack(spacing: 10) {
+        Image(systemName: symbol)
+          .font(.system(size: 14))
+          .foregroundStyle(look.ink)
+          .frame(width: 20)
         Text(title)
-          .font(.system(size: 13))
+          .font(PanelType.row)
+          .foregroundStyle(look.ink)
           .lineLimit(1)
+        Spacer(minLength: 0)
+        if dot {
+          Circle().fill(look.unread).frame(width: 7, height: 7)
+            .accessibilityLabel("Update available")
+        }
       }
-      .foregroundStyle(look.ink)
-      .padding(.vertical, 7)
-      .padding(.horizontal, 9)
-      .frame(width: 173, alignment: .leading)
-      .background(background)
+      .padding(.horizontal, 10)
+      .frame(height: 32)
+      .frame(maxWidth: .infinity, alignment: .leading)
+      .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(current ? look.groupedRow : (hovering ? look.groupedRow.opacity(0.6) : .clear)))
       .contentShape(Rectangle())
     }
     .buttonStyle(.hand)
     .onHover { hovering = $0 }
     .accessibilityAddTraits(current ? [.isSelected] : [])
   }
-
-  @ViewBuilder
-  private var background: some View {
-    if current {
-      if look.dark {
-        RoundedRectangle(cornerRadius: 8, style: .continuous).fill(look.fillHover)
-      } else {
-        RoundedRectangle(cornerRadius: 10, style: .continuous)
-          .fill(Color.white)
-          .shadow(color: Color(red: 20 / 255, green: 30 / 255, blue: 60 / 255).opacity(0.07), radius: 0.5)
-          .shadow(color: Color(red: 20 / 255, green: 30 / 255, blue: 60 / 255).opacity(0.04), radius: 1, x: 0, y: 1)
-      }
-    } else {
-      RoundedRectangle(cornerRadius: 8, style: .continuous).fill(hovering ? look.rowHover : .clear)
-    }
-  }
 }
 
-/** Close (32, round): × at 40%, darker on a faint fill under the pointer (About's too). */
+/** Close (About's too): the window's round glass button (`GlassDiscButton`, 21 October 2026: one button for the app's panels). */
 struct SettingsClose: View {
   let look: Look
+  var size: CGFloat = 32
   let action: () -> Void
-  @State private var hovering = false
 
   var body: some View {
-    Button(action: action) {
-      Image(systemName: "xmark")
-        .font(.system(size: 12, weight: .medium))
-        .foregroundStyle(hovering ? look.inkSecondary : look.inkTertiary)
-        .frame(width: 32, height: 32)
-        .background(Circle().fill(hovering ? look.ink.opacity(0.11) : .clear))
-        .contentShape(Circle())
-    }
-    .buttonStyle(.hand)
-    .onHover { hovering = $0 }
-    .accessibilityLabel("Close")
-  }
-}
-
-// MARK: - The pages' parts
-
-/** A section (`h3` and its card, 8 apart): the heading 12/16 in grey, 8 in from the card. */
-struct SettingsSection<Content: View>: View {
-  let title: String
-  let look: Look
-  @ViewBuilder let content: () -> Content
-
-  var body: some View {
-    VStack(alignment: .leading, spacing: 8) {
-      Text(title)
-        .font(.system(size: 12))
-        .foregroundStyle(look.inkSecondary)
-        .padding(.leading, 8)
-        .padding(.trailing, 4)
-        .accessibilityAddTraits(.isHeader)
-      SettingsCard(look: look) { content() }
-    }
-  }
-}
-
-/** A card: round 14; white with a hairline shadow, or the grey on dark. */
-struct SettingsCard<Content: View>: View {
-  let look: Look
-  @ViewBuilder let content: () -> Content
-
-  var body: some View {
-    VStack(alignment: .leading, spacing: 0) { content() }
-      .frame(maxWidth: .infinity, alignment: .leading)
-      .background(
-        RoundedRectangle(cornerRadius: 14, style: .continuous)
-          .fill(look.settingsCard)
-          .shadow(color: Color(red: 20 / 255, green: 30 / 255, blue: 60 / 255).opacity(look.dark ? 0 : 0.07), radius: 0.5)
-          .shadow(color: Color(red: 20 / 255, green: 30 / 255, blue: 60 / 255).opacity(look.dark ? 0 : 0.04), radius: 1, x: 0, y: 1)
-      )
-      .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-  }
-}
-
-/** A row (`JWe`): its label and hint (13/18) on the left, its control on the right, 20 apart, padded 12 and 14; a hairline above it when divided, inset 12. */
-struct SettingsRow<Control: View>: View {
-  let label: String
-  var hints: [String] = []
-  var divided = false
-  let look: Look
-  @ViewBuilder let control: () -> Control
-
-  var body: some View {
-    HStack(spacing: 20) {
-      VStack(alignment: .leading, spacing: 0) {
-        Text(label)
-          .font(.system(size: 13))
-          .foregroundStyle(look.ink)
-          .lineLimit(1)
-          .truncationMode(.tail)
-          .frame(minHeight: 18)
-        ForEach(hints, id: \.self) { hint in
-          Text(hint)
-            .font(.system(size: 13))
-            .lineSpacing(LineBox.extra(size: 13, lineHeight: 18))
-            .foregroundStyle(look.inkSecondary)
-            .fixedSize(horizontal: false, vertical: true)
-        }
-      }
-      .frame(maxWidth: .infinity, alignment: .leading)
-      control()
-        .fixedSize()
-    }
-    .padding(.vertical, 12)
-    .padding(.horizontal, 14)
-    .frame(minHeight: 52)
-    .overlay(alignment: .top) {
-      if divided { SettingsHairline(look: look) }
-    }
-  }
-}
-
-/** The 0.5 line between rows, inset 12 on both sides. */
-struct SettingsHairline: View {
-  let look: Look
-
-  var body: some View {
-    Rectangle().fill(look.ink.opacity(0.15)).frame(height: 0.5).padding(.horizontal, 12)
-  }
-}
-
-/**
- * A select (`$in`, filled, lg): 28 high, round 8, the grey with a 5% line,
- * its words (13/18) and a chevron; the Mac's menu of its choices, the
- * current one ticked and over it, as the Mac's pop-up buttons open. Waits
- * while its change is on its way.
- */
-struct SettingsSelect<Value: Hashable>: View {
-  let label: String
-  let options: [(value: Value, label: String)]
-  var disabled: Set<Value> = []
-  let value: Value
-  var pending = false
-  var minWidth: CGFloat = 200
-  /** The trigger's words when they are not the choice's own (Timezone's "Auto-detect (…)"). */
-  var shown: String? = nil
-  let look: Look
-  /** Its own menu (Timezone's, with the time in each zone); else the choices. */
-  var menu: ((CGRect) -> Void)? = nil
-  let pick: (Value) -> Void
-  @State private var spot = WindowSpot()
-  @State private var hovering = false
-
-  var body: some View {
-    Button {
-      if let menu { menu(spot.frame); return }
-      RoutineMenus.choose(options, disabled: disabled, current: value, under: spot.frame, minWidth: minWidth, overSelected: true) { picked in
-        if picked != value { pick(picked) }
-      }
-    } label: {
-      HStack(spacing: 4) {
-        Text(shown ?? options.first { $0.value == value }?.label ?? "")
-          .font(.system(size: 13))
-          .tracking(-0.08)
-          .foregroundStyle(look.ink)
-          .lineLimit(1)
-        Image(systemName: "chevron.down")
-          .font(.system(size: 8, weight: .semibold))
-          .foregroundStyle(look.inkSecondary)
-          .frame(width: 10, height: 10)
-      }
-      .padding(EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 5))
-      .frame(height: 28)
-      .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(hovering ? look.fillHover : look.rowHover))
-      .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(look.ink.opacity(0.05), lineWidth: 1))
-      .contentShape(Rectangle())
-    }
-    .buttonStyle(.hand)
-    .disabled(pending)
-    .onHover { hovering = $0 }
-    .background(WindowSpotReader(spot: spot))
-    .accessibilityLabel(label)
-    .accessibilityValue(shown ?? options.first { $0.value == value }?.label ?? "")
-  }
-}
-
-/** A pill button (md 32 high, padded 12, 14/20; sm 24 high, padded 8, 12/16): secondary (the grey), tertiary (none), primary (the ink) or accent (the blue). */
-struct SettingsButton: View {
-  enum Kind { case secondary, tertiary, primary, accent }
-  let title: String
-  var kind: Kind = .secondary
-  var small = false
-  var disabled = false
-  let look: Look
-  let action: () -> Void
-  @State private var hovering = false
-
-  var body: some View {
-    Button(action: action) {
-      Text(title)
-        .font(.system(size: small ? 12 : 14))
-        .foregroundStyle(ink)
-        .lineLimit(1)
-        .padding(.horizontal, small ? 8 : 12)
-        .frame(height: small ? 24 : 32)
-        .background(Capsule().fill(fill))
-        .overlay(Capsule().strokeBorder(kind == .secondary ? look.ink.opacity(0.05) : .clear, lineWidth: 0.5))
-        .contentShape(Capsule())
-    }
-    .buttonStyle(.hand)
-    .disabled(disabled)
-    .onHover { hovering = $0 }
-  }
-
-  private var ink: Color {
-    switch kind {
-    case .secondary, .tertiary: return disabled ? look.ink.opacity(0.3) : look.ink
-    case .primary: return disabled ? look.ink.opacity(0.3) : look.onPrimary
-    case .accent: return disabled ? look.link.opacity(0.3) : Color(hex: 0xfcfcfc)
-    }
-  }
-
-  private var fill: Color {
-    switch kind {
-    case .secondary: return hovering && !disabled ? look.fillHover : look.rowHover
-    case .tertiary: return hovering && !disabled ? look.rowHover : .clear
-    case .primary: return disabled ? look.ink.opacity(0.15) : (hovering ? look.primaryFillHover : look.primaryFill)
-    case .accent: return disabled ? look.unread.opacity(0.3) : (hovering ? look.link : look.unread)
-    }
+    GlassDiscButton(symbol: "xmark", help: String(localized: "Close"), size: size, action: action)
   }
 }
 
@@ -492,10 +359,6 @@ enum PendingAlert {
 // MARK: - Colours
 
 extension Look {
-  /** The panel: #F5F5F7, or the raised ground on dark. */
-  var settingsPanel: Color { dark ? elevated : Color(hex: 0xf5f5f7) }
-  /** A card: white, or the grey (`fill-neutral-subtle`) on dark. */
-  var settingsCard: Color { dark ? rowHover : .white }
-  /** The rules' table and the draft field on dark (`fill-elevated`). */
-  var fillElevated: Color { dark ? Color(hex: 0x2f2f2f) : Color(hex: 0xfcfcfc) }
+  /** Settings' and Connectors' panel: the iPhone's grouped ground (white, or #141414 on dark; 21 October 2026, it was #F5F5F7). */
+  var settingsPanel: Color { groupedGround }
 }

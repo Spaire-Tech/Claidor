@@ -51,6 +51,16 @@
         }
       }
     },
+    "%@ is full (%@)." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ est plein (%2$@)."
+          }
+        }
+      }
+    },
     "%@ is paused while you're in control." : {
       "localizations" : {
         "fr" : {
@@ -339,6 +349,16 @@
         }
       }
     },
+    "A new version is available" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une nouvelle version est disponible"
+          }
+        }
+      }
+    },
     "A new version of Simeon's computer is available" : {
       "localizations" : {
         "fr" : {
@@ -389,6 +409,16 @@
         }
       }
     },
+    "Account, %@" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compte, %@"
+          }
+        }
+      }
+    },
     "Accounts" : {
       "localizations" : {
         "fr" : {
@@ -429,12 +459,32 @@
         }
       }
     },
+    "Add" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter"
+          }
+        }
+      }
+    },
     "Add a message, or hit send." : {
       "localizations" : {
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ajoute un message, ou envoie."
+          }
+        }
+      }
+    },
+    "Add a way to pay so your agents can make secure purchases for you. Each purchase waits for your approval." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajoute un moyen de paiement pour que tes agents puissent faire des achats sécurisés pour toi. Chaque achat attend ton accord."
           }
         }
       }
@@ -609,12 +659,32 @@
         }
       }
     },
+    "Agents' Computer" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ordinateur des agents"
+          }
+        }
+      }
+    },
     "All bots are hidden" : {
       "localizations" : {
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tous les agents sont masqués"
+          }
+        }
+      }
+    },
+    "All Categories" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toutes les catégories"
           }
         }
       }
@@ -814,6 +884,16 @@
         }
       }
     },
+    "At least %lld characters. You'll sign in with %@ and this password." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Au moins %1$lld caractères. Tu te connecteras avec %2$@ et ce mot de passe."
+          }
+        }
+      }
+    },
     "Attach file" : {
       "localizations" : {
         "fr" : {
@@ -994,6 +1074,16 @@
         }
       }
     },
+    "Can't reach it" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Injoignable"
+          }
+        }
+      }
+    },
     "Cancel" : {
       "localizations" : {
         "fr" : {
@@ -1074,12 +1164,52 @@
         }
       }
     },
+    "Category" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Catégorie"
+          }
+        }
+      }
+    },
+    "Change Limit" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modifier la limite"
+          }
+        }
+      }
+    },
+    "Change Password" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Changer le mot de passe"
+          }
+        }
+      }
+    },
     "Channel IDs" : {
       "localizations" : {
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "ID des canaux"
+          }
+        }
+      }
+    },
+    "Check for Updates Automatically" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rechercher les mises à jour automatiquement"
           }
         }
       }
@@ -1094,12 +1224,32 @@
         }
       }
     },
+    "Check Now" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vérifier"
+          }
+        }
+      }
+    },
     "Checking connection status" : {
       "localizations" : {
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Vérification de la connexion"
+          }
+        }
+      }
+    },
+    "Checking…" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vérification…"
           }
         }
       }
@@ -1314,6 +1464,16 @@
         }
       }
     },
+    "Commands Allowed Once" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Commandes autorisées une fois"
+          }
+        }
+      }
+    },
     "Complete GitHub auth to sync installed plugins" : {
       "localizations" : {
         "fr" : {
@@ -1504,6 +1664,16 @@
         }
       }
     },
+    "Copies the email" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copie l’e-mail"
+          }
+        }
+      }
+    },
     "Copy" : {
       "localizations" : {
         "fr" : {
@@ -1574,6 +1744,16 @@
         }
       }
     },
+    "Copy Version Info" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copier les infos de version"
+          }
+        }
+      }
+    },
     "Couldn't load media" : {
       "localizations" : {
         "fr" : {
@@ -1620,6 +1800,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Impossible de changer l’avatar. Réessaie dans un moment."
+          }
+        }
+      }
+    },
+    "Couldn’t load usage." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible de charger l’utilisation."
           }
         }
       }
@@ -1822,6 +2012,16 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Delete rule" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer la règle"
           }
         }
       }
@@ -2029,6 +2229,16 @@
         }
       }
     },
+    "Download Updates Automatically" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Télécharger les mises à jour automatiquement"
+          }
+        }
+      }
+    },
     "Drag here to pin" : {
       "localizations" : {
         "fr" : {
@@ -2115,6 +2325,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Modifier le profil"
+          }
+        }
+      }
+    },
+    "Edit rule" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modifier la règle"
           }
         }
       }
@@ -2395,6 +2615,36 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Comme le système"
+          }
+        }
+      }
+    },
+    "Forget" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oublier"
+          }
+        }
+      }
+    },
+    "Forgotten" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oubliées"
+          }
+        }
+      }
+    },
+    "Forgotten, each is asked about again the next time an agent needs it." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une fois oubliées, chacune te sera redemandée la prochaine fois qu’un agent en aura besoin."
           }
         }
       }
@@ -2739,6 +2989,16 @@
         }
       }
     },
+    "It updates once your agents are done." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il se met à jour dès que tes agents ont fini."
+          }
+        }
+      }
+    },
     "I’m done" : {
       "localizations" : {
         "fr" : {
@@ -2799,12 +3059,32 @@
         }
       }
     },
+    "Last checked %@." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dernière vérification %@."
+          }
+        }
+      }
+    },
     "Last name" : {
       "localizations" : {
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nom"
+          }
+        }
+      }
+    },
+    "Legal" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mentions légales"
           }
         }
       }
@@ -2899,6 +3179,16 @@
         }
       }
     },
+    "Loading usage…" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chargement de l’utilisation…"
+          }
+        }
+      }
+    },
     "Loading voices" : {
       "localizations" : {
         "fr" : {
@@ -2925,6 +3215,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Espace disque faible"
+          }
+        }
+      }
+    },
+    "Manage Billing" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gérer la facturation"
           }
         }
       }
@@ -3129,6 +3429,16 @@
         }
       }
     },
+    "Mode" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mode"
+          }
+        }
+      }
+    },
     "Months" : {
       "localizations" : {
         "fr" : {
@@ -3271,6 +3581,16 @@
         }
       }
     },
+    "Name, email and password" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nom, e-mail et mot de passe"
+          }
+        }
+      }
+    },
     "name@example.com" : {
       "localizations" : {
         "fr" : {
@@ -3381,12 +3701,32 @@
         }
       }
     },
+    "New password" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nouveau mot de passe"
+          }
+        }
+      }
+    },
     "New Routine" : {
       "localizations" : {
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nouvelle routine"
+          }
+        }
+      }
+    },
+    "New Rule" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nouvelle règle"
           }
         }
       }
@@ -3821,6 +4161,16 @@
         }
       }
     },
+    "Password" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mot de passe"
+          }
+        }
+      }
+    },
     "Paste from Phone" : {
       "localizations" : {
         "fr" : {
@@ -3851,12 +4201,32 @@
         }
       }
     },
+    "Payment methods" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moyens de paiement"
+          }
+        }
+      }
+    },
     "PDF too large to preview" : {
       "localizations" : {
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "PDF trop volumineux pour l’aperçu"
+          }
+        }
+      }
+    },
+    "Permissions" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autorisations"
           }
         }
       }
@@ -3917,6 +4287,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Agents épinglés"
+          }
+        }
+      }
+    },
+    "Plan" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forfait"
           }
         }
       }
@@ -3997,6 +4377,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Média précédent"
+          }
+        }
+      }
+    },
+    "Privacy Policy" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Politique de confidentialité"
           }
         }
       }
@@ -4717,6 +5107,26 @@
         }
       }
     },
+    "Set Password" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Définir un mot de passe"
+          }
+        }
+      }
+    },
+    "Set Time Zone Automatically" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fuseau horaire automatique"
+          }
+        }
+      }
+    },
     "Setting up Simeon's computer" : {
       "localizations" : {
         "fr" : {
@@ -4849,6 +5259,16 @@
         }
       }
     },
+    "Shows every app in %@" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Affiche toutes les apps de %@"
+          }
+        }
+      }
+    },
     "Shows the traveller form in the chat" : {
       "localizations" : {
         "fr" : {
@@ -4932,6 +5352,16 @@
     "Simeon" : {
       "shouldTranslate" : false
     },
+    "Simeon %@ is available" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon %@ est disponible"
+          }
+        }
+      }
+    },
     "Simeon call" : {
       "localizations" : {
         "fr" : {
@@ -4958,6 +5388,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Simeon ne peut pas encore préparer d’ordinateur pour ce compte. La préparation démarre toute seule dès que ce compte a accès."
+          }
+        }
+      }
+    },
+    "Simeon checks each action before it runs and asks you first when needed." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon vérifie chaque action avant de la lancer et te demande d’abord quand il le faut."
           }
         }
       }
@@ -4992,6 +5432,36 @@
         }
       }
     },
+    "Simeon for Mac" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon pour Mac"
+          }
+        }
+      }
+    },
+    "Simeon is up to date." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon est à jour."
+          }
+        }
+      }
+    },
+    "Simeon relaunches to finish installing it." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon redémarre pour terminer l’installation."
+          }
+        }
+      }
+    },
     "Simeon runs from the Applications folder. It will reopen after moving." : {
       "localizations" : {
         "fr" : {
@@ -5008,6 +5478,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Réglages de Simeon"
+          }
+        }
+      }
+    },
+    "Simeon's Computer" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ordinateur de Simeon"
+          }
+        }
+      }
+    },
+    "Simeon, version %@" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon, version %@"
           }
         }
       }
@@ -5352,6 +5842,16 @@
         }
       }
     },
+    "Terms of Service" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conditions d’utilisation"
+          }
+        }
+      }
+    },
     "Test" : {
       "localizations" : {
         "fr" : {
@@ -5422,6 +5922,16 @@
         }
       }
     },
+    "The computer in the cloud all your agents work on." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L’ordinateur dans le cloud sur lequel travaillent tous tes agents."
+          }
+        }
+      }
+    },
     "The computer is taking too long to start." : {
       "localizations" : {
         "fr" : {
@@ -5452,6 +5962,26 @@
         }
       }
     },
+    "The two don't match." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les deux ne correspondent pas."
+          }
+        }
+      }
+    },
+    "Their files and logins are kept." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leurs fichiers et leurs connexions sont conservés."
+          }
+        }
+      }
+    },
     "Theme" : {
       "localizations" : {
         "fr" : {
@@ -5478,6 +6008,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cet agent"
+          }
+        }
+      }
+    },
+    "This build doesn't update itself. Released builds of Simeon check for updates on their own." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cette version ne se met pas à jour toute seule. Les versions publiées de Simeon recherchent les mises à jour d’elles-mêmes."
           }
         }
       }
@@ -5608,6 +6148,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mode horaire"
+          }
+        }
+      }
+    },
+    "Time Zone" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fuseau horaire"
           }
         }
       }
@@ -5788,6 +6338,16 @@
         }
       }
     },
+    "Type it again" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saisis-le à nouveau"
+          }
+        }
+      }
+    },
     "Type your own answer" : {
       "localizations" : {
         "fr" : {
@@ -5858,12 +6418,82 @@
         }
       }
     },
+    "Up to date" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "À jour"
+          }
+        }
+      }
+    },
+    "Update" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mettre à jour"
+          }
+        }
+      }
+    },
+    "Update available" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mise à jour disponible"
+          }
+        }
+      }
+    },
+    "Update Now" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mettre à jour maintenant"
+          }
+        }
+      }
+    },
+    "Update queued" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mise à jour en attente"
+          }
+        }
+      }
+    },
     "Update queued — click to cancel" : {
       "localizations" : {
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mise à jour prévue — clique pour annuler"
+          }
+        }
+      }
+    },
+    "Update Simeon's Computer" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mettre à jour l’ordinateur de Simeon"
+          }
+        }
+      }
+    },
+    "Updates" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mises à jour"
           }
         }
       }
@@ -5924,6 +6554,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Utilisateurs autorisés"
+          }
+        }
+      }
+    },
+    "Version" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Version"
           }
         }
       }
@@ -6057,6 +6697,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "En attente d’envoi…"
+          }
+        }
+      }
+    },
+    "Wallet" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Portefeuille"
           }
         }
       }
@@ -6211,12 +6861,32 @@
         }
       }
     },
+    "Your agents keep this time zone for routines and reminders." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents gardent ce fuseau horaire pour les routines et les rappels."
+          }
+        }
+      }
+    },
     "Your answer: %@" : {
       "localizations" : {
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ta réponse : %@"
+          }
+        }
+      }
+    },
+    "Your Computer" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ton ordinateur"
           }
         }
       }

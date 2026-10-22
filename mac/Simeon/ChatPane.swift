@@ -560,21 +560,16 @@ private struct TranscriptRow: View {
         .padding(.top, startsGroup ? 12 : 0)
     case .listenerConnect(_, let platform, let reason):
       ListenerConnectCardView(platform: platform, reason: reason, look: look)
-        .frame(maxWidth: limit(420, share: 0.76), alignment: .leading)
+        .frame(maxWidth: limit(520), alignment: .leading)
         .padding(.top, startsGroup ? 12 : 0)
     case .request(let id, .approval(let requestId, let summary, let reason, let command, let status, let surface, let proposedRule)):
       ApprovalCardView(entryId: id, agentId: agentId, requestId: requestId, summary: summary, reason: reason, command: command, status: status, surface: surface, proposedRule: proposedRule, look: look)
         .frame(maxWidth: limit(520), alignment: .leading)
         .padding(.top, startsGroup ? 12 : 0)
     case .flights(let id, let card):
-      // An agent's message, drawn in its bubble (`__simeonFlights`).
-      let shape = UnevenRoundedRectangle(topLeadingRadius: run.continuesPrevious ? 6 : 18, bottomLeadingRadius: run.continuesNext ? 6 : 18, bottomTrailingRadius: 18, topTrailingRadius: 18)
+      // Its own card, as wide as a Mac's chat gives it (21 October 2026).
       FlightsCardView(card: card, rowId: id, agentId: agentId, look: look)
-        .padding(.vertical, 8)
-        .padding(.horizontal, 12)
-        .background(look.theirs, in: shape)
-        .overlay { shape.inset(by: -0.25).stroke(look.theirsHairline, lineWidth: 0.5) }
-        .shadow(color: look.theirsShadow, radius: 1, x: 0, y: 1)
+        .frame(maxWidth: limit(680), alignment: .leading)
         .padding(.top, startsGroup ? 12 : 0)
     case .cloudAgent(_, let bcId):
       CloudAgentCardView(bcId: bcId, look: look)
@@ -582,19 +577,19 @@ private struct TranscriptRow: View {
         .padding(.top, startsGroup ? 12 : 0)
     case .purchase(let id, let card):
       PurchaseCardView(entryId: id, agentId: agentId, card: card, look: look)
-        .frame(maxWidth: limit(420), alignment: .leading)
+        .frame(maxWidth: limit(520), alignment: .leading)
         .padding(.top, startsGroup ? 12 : 0)
     case .products(let id, let card):
       ProductsCardView(entryId: id, agentId: agentId, card: card, look: look)
-        .frame(maxWidth: limit(420), alignment: .leading)
+        .frame(maxWidth: limit(640), alignment: .leading)
         .padding(.top, startsGroup ? 12 : 0)
     case .flightPassengers(let id, let card):
       FlightPassengersCardView(entryId: id, agentId: agentId, card: card, look: look)
-        .frame(maxWidth: limit(420), alignment: .leading)
+        .frame(maxWidth: limit(520), alignment: .leading)
         .padding(.top, startsGroup ? 12 : 0)
     case .request(_, .computer(let requestId, let instruction, let resolution)):
       ComputerHandoffCard(agentId: agentId, requestId: requestId, instruction: instruction, resolution: resolution, look: look)
-        .frame(maxWidth: limit(380), alignment: .leading)
+        .frame(maxWidth: limit(520), alignment: .leading)
         .padding(.top, startsGroup ? 12 : 0)
     case .request(let id, .secret(let label, let description, let provided)):
       SecretCardView(entryId: id, agentId: agentId, label: label, description: description, provided: provided, look: look)
@@ -760,7 +755,7 @@ private struct BubbleRow: View {
         if let link = bubble.loneLink {
           // A message that is one link is drawn as its card (`xEn`).
           LinkCardView(url: link, look: look)
-            .frame(maxWidth: max(0, min(column * 0.76, 420, column - 82)))
+            .frame(maxWidth: max(0, min(column * 0.88, 480, column - 82)))
             .outside(trailing: !bubble.fromPerson) { bar }
             .onHover { hover($0) }
         } else if !words.isEmpty || bubble.images.isEmpty {

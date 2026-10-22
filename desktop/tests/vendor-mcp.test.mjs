@@ -149,6 +149,12 @@ test("the marketplace listing is our store, including Coming soon cards", async 
     assert.equal(signedIn.includesPrivateMarketplaces, true);
     assert.ok(signedIn.plugins.some((plugin) => plugin.pluginId === "gmail" && plugin.comingSoon == null && plugin.vendorMcpUrl.endsWith("/desktop/api/apps/mcp/gmail")));
     assert.equal(signedIn.plugins.find((plugin) => plugin.pluginId === "gmail").homepage, undefined);
+    // View Source is where the vendor's server comes from, never the server's address (21 October 2026).
+    assert.equal(signedIn.plugins.find((plugin) => plugin.pluginId === "notion").homepage, "https://developers.notion.com/guides/mcp/overview");
+    // Link and Shop run on the computer: their address is their own page, and that is their View Source.
+    assert.equal(signedIn.plugins.find((plugin) => plugin.pluginId === "link").homepage, "https://link.com/agents");
+    const vendors = signedIn.plugins.filter((plugin) => !["link", "shop"].includes(plugin.pluginId));
+    assert.ok(vendors.every((plugin) => plugin.homepage == null || (plugin.homepage !== plugin.vendorMcpUrl && plugin.homepage.startsWith("https://"))));
 
     const view = views.module.marketplacePluginToView(signedIn.plugins.find((plugin) => plugin.pluginId === "gmail"));
     assert.equal(view.id, "gmail");

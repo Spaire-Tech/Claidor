@@ -290,7 +290,7 @@ private struct AboutCard: View {
     .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(look.elevated))
     .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(look.ink.opacity(0.15), lineWidth: 1))
     .overlay(alignment: .topTrailing) {
-      SettingsClose(look: look, action: close)
+      SettingsClose(look: look, size: 32, action: close)
         .padding(.top, 11)
         .padding(.trailing, 11)
     }

@@ -17,7 +17,8 @@ each came from.
 
 `build` reads the catalogue (desktop/source/shared/node/vendor-mcp/catalog.ts)
 and writes:
-- ios/Simeon/Assets.xcassets/AppIcons/<id>.imageset, one per connector;
+- ios/Simeon/AppIcons.xcassets/AppIcons/<id>.imageset, one per connector, in a
+  catalogue of its own that the Mac app builds too (21 October 2026);
 - ios/SimeonCore/Sources/SimeonCore/GeneratedAppIcons.swift, every id with
   its name (ConnectorIcons.swift finds an icon by any of an app's names).
 It fails when a connector in the catalogue has no icon: add the app to
@@ -39,7 +40,7 @@ ROOT = Path(__file__).resolve().parents[2]
 CATALOG = ROOT / "desktop/source/shared/node/vendor-mcp/catalog.ts"
 ICONS = ROOT / "desktop/brand/app-icons"
 MARKS = ROOT / "desktop/brand/connector-logos"
-ASSETS = ROOT / "ios/Simeon/Assets.xcassets/AppIcons"
+ASSETS = ROOT / "ios/Simeon/AppIcons.xcassets/AppIcons"
 SWIFT = ROOT / "ios/SimeonCore/Sources/SimeonCore/GeneratedAppIcons.swift"
 SIDE = 192
 
@@ -243,6 +244,8 @@ def build() -> None:
             old.unlink() if old.is_file() else old.rmdir()
     ASSETS.mkdir(parents=True, exist_ok=True)
     meta = {"info": {"author": "xcode", "version": 1}}
+    if not (ASSETS.parent / "Contents.json").exists():
+        (ASSETS.parent / "Contents.json").write_text(json.dumps(meta, indent=2) + "\n")
     (ASSETS / "Contents.json").write_text(json.dumps({**meta, "properties": {"provides-namespace": True}}, indent=2) + "\n")
     for cid, _ in connectors:
         folder = ASSETS / f"{cid}.imageset"

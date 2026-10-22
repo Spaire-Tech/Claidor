@@ -523,6 +523,7 @@ struct TableBody: View {
           .onTapGesture {
             chosen = picked ? nil : (rowIndex, column)
           }
+          .handCursor()
       }
     }
   }
