@@ -13,18 +13,19 @@ import SimeonCore
  * foot; the page's name at the top of the rest, its groups under it across
  * the page, from its left. General, Usage & Billing
  * once the account's usage is in hand, Wallet, Permissions, Computer (the
- * agents' computer and this Mac), Updates (a dot while one is waiting) and
- * Legal; the account is General's first row, its page under General with
- * Back. Nothing here that the window has elsewhere: Connect apps and About
- * are the sidebar's. Each opening starts afresh on the page asked for, at
- * its top. ⌘, opens it on General (again while it is open, nothing); ⌘K and
- * "/" open the page picked; Escape, × or a click on the dim close it.
+ * agents' computer and this Mac), Updates (a dot while one is waiting),
+ * Help & support (22 October 2026) and Legal; the account is General's
+ * first row, its page under General with Back. Nothing here that the window
+ * has elsewhere: Connect apps and About are the sidebar's. Each opening
+ * starts afresh on the page asked for, at its top. ⌘, opens it on General
+ * (again while it is open, nothing); ⌘K and "/" open the page picked;
+ * Escape, × or a click on the dim close it.
  */
 @MainActor
 @Observable
 final class SettingsState {
   enum Page: Equatable, CaseIterable {
-    case general, usage, wallet, permissions, computer, updates, legal, account
+    case general, usage, wallet, permissions, computer, updates, help, legal, account
 
     var title: String {
       switch self {
@@ -34,6 +35,7 @@ final class SettingsState {
       case .permissions: String(localized: "Permissions")
       case .computer: String(localized: "Computer")
       case .updates: String(localized: "Updates")
+      case .help: String(localized: "Help & support")
       case .legal: String(localized: "Legal")
       case .account: String(localized: "Account")
       }
@@ -47,6 +49,7 @@ final class SettingsState {
       case .permissions: "hand.raised"
       case .computer: "desktopcomputer"
       case .updates: "arrow.down.circle"
+      case .help: "questionmark.circle"
       case .legal: "checkmark.shield"
       case .account: "person.crop.circle"
       }
@@ -172,6 +175,7 @@ private struct SettingsPanel: View {
             case .permissions: SettingsPermissionsPage(look: look)
             case .computer: SettingsComputerPage(look: look)
             case .updates: SettingsUpdatesPage(look: look)
+            case .help: SettingsHelpPage(look: look)
             case .legal: SettingsLegalPage(look: look)
             case .account: SettingsAccountPage(look: look)
             }

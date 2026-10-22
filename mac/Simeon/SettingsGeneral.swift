@@ -43,7 +43,7 @@ enum SettingsVersion {
 /**
  * The account's row, as the founder's reference names its maker's account
  * (22 October 2026: "do like them for meta account instead of showing the
- * email"): the Simeon mark, "Simeon Account" over what its page holds, the
+ * email"): the Simeon mark (16, grey), "Simeon Account" over what its page holds, the
  * chevron; its page under General, where the name and email are.
  */
 private struct AccountRow: View {
@@ -54,13 +54,14 @@ private struct AccountRow: View {
   var body: some View {
     Button(action: action) {
       HStack(spacing: 14) {
+        // As the reference's logo sits by its words: 16, in the line's grey (22 in the text colour was too big and too dark).
         Image("SignIn/Mark")
           .resizable()
           .renderingMode(.template)
           .interpolation(.high)
           .scaledToFit()
-          .frame(width: 22, height: 22)
-          .foregroundStyle(look.ink)
+          .frame(width: 16, height: 16)
+          .foregroundStyle(look.inkSecondary)
           .frame(width: 28)
           .accessibilityHidden(true)
         VStack(alignment: .leading, spacing: 3) {
@@ -382,11 +383,6 @@ struct SettingsPermissionsPage: View {
       if model.rules.isEnabled {
         RuleList(behavior: .allow, model: model, look: look)
         RuleList(behavior: .ask, model: model, look: look)
-        Text("These rules apply only to you. Built-in safety checks always apply.")
-          .font(PanelType.detail)
-          .foregroundStyle(look.inkSecondary)
-          .fixedSize(horizontal: false, vertical: true)
-          .padding(.horizontal, 8)
       }
     }
     .task { await model.load(store: store) }
@@ -568,6 +564,42 @@ private struct RuleIcon: View {
     .onHover { hovering = $0 }
     .accessibilityLabel(label)
   }
+}
+
+// MARK: - Help & support
+
+/**
+ * Help & support (the founder, 22 October 2026, with another app's for
+ * reference: "leave it there even tho it doesn't point to anything yet"):
+ * the Help Center on the web and Submit feedback in one card, Report an
+ * issue with its bug in the next. Each goes through `HelpSupport`, where
+ * they are to be pointed somewhere.
+ */
+struct SettingsHelpPage: View {
+  let look: Look
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 22) {
+      SettingsGroup(look: look) {
+        SettingsLinkRow(label: String(localized: "Simeon Help Center"), external: true, look: look) { HelpSupport.openHelpCenter() }
+        SettingsLinkRow(label: String(localized: "Submit feedback"), divided: true, look: look) { HelpSupport.submitFeedback() }
+      }
+      SettingsGroup(look: look) {
+        SettingsLinkRow(label: String(localized: "Report an issue"), trailingSymbol: "ladybug", look: look) { HelpSupport.reportIssue() }
+      }
+    }
+  }
+}
+
+/**
+ * Where Help & support's rows and the sidebar's Report an issue go. Not
+ * pointed anywhere yet (the founder, 22 October 2026: "i'll take care of
+ * it"): each does nothing until it is.
+ */
+enum HelpSupport {
+  static func openHelpCenter() {}
+  static func submitFeedback() {}
+  static func reportIssue() {}
 }
 
 // MARK: - Legal
