@@ -888,6 +888,30 @@ final class FieldTextView: NSTextView {
     pasteAsPlainText(sender)
   }
 
+  /**
+   * Paste stays on for a picture or a file with no words beside it (a
+   * screenshot copied with ⌃⇧⌘4, an image copied from a page): AppKit offers
+   * Paste only for the readable types, plain words here, so ⌘V did nothing
+   * and `paste` above never ran (the founder, 22 October 2026). Told by the
+   * pasteboard's types alone: reading what it holds, outside a paste, can ask
+   * the person on macOS 26.
+   */
+  override func validateUserInterfaceItem(_ item: any NSValidatedUserInterfaceItem) -> Bool {
+    if item.action == #selector(paste(_:)), NSPasteboard.general.availableType(from: [.fileURL, .png, .tiff]) != nil { return true }
+    return super.validateUserInterfaceItem(item)
+  }
+
+  /** The one message field on screen in `window`, none when there are two or more (the new chat over a chat). */
+  static func shown(in window: NSWindow) -> FieldTextView? {
+    var found: [FieldTextView] = []
+    func walk(_ view: NSView) {
+      if let field = view as? FieldTextView, field.isEditable, !field.isHiddenOrHasHiddenAncestor, !field.visibleRect.isEmpty { found.append(field) }
+      for child in view.subviews { walk(child) }
+    }
+    if let root = window.contentView { walk(root) }
+    return found.count == 1 ? found[0] : nil
+  }
+
   /** Files a pasteboard holds: paths, else a picture's bytes (as "image.png"). */
   static func files(on board: NSPasteboard) -> [IncomingFile]? {
     if let urls = board.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL], !urls.isEmpty {

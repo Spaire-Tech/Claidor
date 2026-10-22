@@ -517,6 +517,15 @@ private struct KeyWatcher: NSViewRepresentable {
           return true
         }
       }
+      // ⌘V with no field holding the keys (after a click in the chat, or words copied from a message): the message field
+      // takes the keys, then Edit › Paste pastes into it as ever (the founder, 22 October 2026: "can't copy and paste in
+      // the chat"). Not over anything else, nor into a field that is one of two.
+      if mods == .command, event.charactersIgnoringModifiers?.lowercased() == "v", let window, search?.isOpen != true, !WindowOverlay.showing,
+         !MacConnector.showing, MacServices.shared.deepLinkInfo == nil, viewers?.shown == nil, !ChatControl.exchangeShowing,
+         windowState?.orgChart != true, pane?.avatarEditor == nil, !screenHasKeys, (window.firstResponder as? NSTextView)?.isEditable != true, let field = FieldTextView.shown(in: window) {
+        window.makeFirstResponder(field)
+        return false
+      }
       // The agent's pane: ⌘⇧, (`sand.toggleAgentSettings`) and ⌘⇧I or ⌥⌘B (`sand.toggleInfo`); not behind Settings or Plugins.
       if let pane, let layout, search?.isOpen != true, !WindowOverlay.showing {
         let key = event.charactersIgnoringModifiers?.lowercased()
