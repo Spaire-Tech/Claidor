@@ -522,7 +522,7 @@ private struct ResultRow: View {
           HStack(spacing: 6) {
             title
             if case .agent(let agent, _) = row, !agent.isGroup, !agent.title.trimmingCharacters(in: .whitespaces).isEmpty {
-              Text(agent.title)
+              Text(agent.shownTitle)
                 .font(.system(size: 11))
                 .tracking(0.055)
                 .foregroundStyle(look.blue)

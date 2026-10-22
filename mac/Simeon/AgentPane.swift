@@ -639,7 +639,7 @@ private struct PaneHead: View {
         // 14 under the disc: the button's square reaches 3 below it.
         .padding(.top, 11)
       if !agent.isGroup, !agent.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-        Text(agent.title)
+        Text(agent.shownTitle)
           .font(.system(size: 15))
           .tracking(-0.16)
           .foregroundStyle(look.paneInk2)
@@ -863,11 +863,11 @@ private struct ProfileBody: View {
           save(name: name)
         }
         if !agent.isGroup {
-          PaneLineField(label: String(localized: "Title"), placeholder: String(localized: "Describe what your agent does"), stored: agent.title, first: false, readOnly: locked, look: look, required: false) { title in
+          PaneLineField(label: String(localized: "Title"), placeholder: String(localized: "Describe what your agent does"), stored: locked ? agent.shownTitle : agent.title, first: false, readOnly: locked, look: look, required: false) { title in
             save(title: title)
           }
         }
-        PaneDescriptionField(stored: agent.description, readOnly: locked && !agent.isGroup, look: look) { description in
+        PaneDescriptionField(stored: locked && !agent.isGroup ? agent.shownDescription : agent.description, readOnly: locked && !agent.isGroup, look: look) { description in
           save(description: description)
         }
       }

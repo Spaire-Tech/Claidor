@@ -528,8 +528,8 @@ private struct AgentList<Actions: View>: View {
       }
     } else {
       rows.shown = store.agents.filter { agent in
-        agent.name.localizedCaseInsensitiveContains(words) || agent.title.localizedCaseInsensitiveContains(words)
-          || agent.description.localizedCaseInsensitiveContains(words) || agent.previewLine.localizedCaseInsensitiveContains(words)
+        agent.name.localizedCaseInsensitiveContains(words) || agent.title.localizedCaseInsensitiveContains(words) || agent.shownTitle.localizedCaseInsensitiveContains(words)
+          || agent.shownDescription.localizedCaseInsensitiveContains(words) || agent.previewLine.localizedCaseInsensitiveContains(words)
       }
     }
     rows.pinnedIds = Set(store.pinnedIds)
@@ -732,7 +732,7 @@ struct PinTile: View, Equatable {
       VStack(spacing: 0) {
         Text(agent.name).font(.system(size: 13.2)).foregroundStyle(Ink.primary).lineLimit(1)
         if !agent.title.isEmpty {
-          Text(agent.title).font(.system(size: 13.2)).foregroundStyle(Ink.title).lineLimit(1)
+          Text(agent.shownTitle).font(.system(size: 13.2)).foregroundStyle(Ink.title).lineLimit(1)
         }
       }
       .frame(width: 86.4)
@@ -879,7 +879,7 @@ struct AgentRow: View, Equatable {
           ViewThatFits(in: .horizontal) {
             HStack(alignment: .firstTextBaseline, spacing: 13) {
               name
-              if !agent.title.isEmpty { TitleTag(title: agent.title) }
+              if !agent.title.isEmpty { TitleTag(title: agent.shownTitle) }
             }
             name
           }
@@ -1158,7 +1158,7 @@ struct SearchResults: View {
     let pool = store.agents
       .filter { $0.isGroup == groups && (!words.isEmpty || !$0.isHidden) }
       .sorted { (pins.firstIndex(of: $0.id) ?? Int.max) < (pins.firstIndex(of: $1.id) ?? Int.max) }
-    let found = ranked(pool, label: \.name, keywords: { agent in [agent.title] + (groups ? store.members(of: agent).map(\.name) : []) })
+    let found = ranked(pool, label: \.name, keywords: { agent in [agent.title, agent.shownTitle] + (groups ? store.members(of: agent).map(\.name) : []) })
     return found.filter { !$0.item.isHidden } + found.filter(\.item.isHidden)
   }
 
@@ -1286,8 +1286,8 @@ struct SearchResults: View {
 
   private func chatRow(_ found: Found<Agent>) -> some View {
     let agent = found.item
-    let line = agent.isGroup ? store.members(of: agent).map(\.name).joined(separator: ", ") : agent.description
-    return SearchRow(title: SearchText.bold(agent.name, found.hits), subtitle: line.isEmpty ? nil : line, tag: agent.isHidden ? "Hidden" : (agent.isGroup ? nil : (agent.title.isEmpty ? nil : agent.title))) {
+    let line = agent.isGroup ? store.members(of: agent).map(\.name).joined(separator: ", ") : agent.shownDescription
+    return SearchRow(title: SearchText.bold(agent.name, found.hits), subtitle: line.isEmpty ? nil : line, tag: agent.isHidden ? "Hidden" : (agent.isGroup ? nil : (agent.title.isEmpty ? nil : agent.shownTitle))) {
       AgentAvatar(agent: agent, members: store.members(of: agent))
     } action: { openChat(agent.id) }
   }

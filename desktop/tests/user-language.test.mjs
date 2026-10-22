@@ -95,6 +95,11 @@ test("the prompt names the language, says tu in French, and keeps names as they 
     assert.match(french, /starting with your very first hello/);
     assert.match(french, /question widget \(its question, options and helpText\)/);
     assert.match(french, /If the user writes to you in another language, answer in theirs\./);
+    // What the person can open in the apps is in their language too (22 October 2026): agents' messages to each other, briefs, and what they make.
+    assert.match(french, /write in French too what you send to other agents \(SendMessage to an agent, a group chat, the brief of an agent you create/);
+    assert.match(french, /the name, title and description of an agent, a routine's name and instructions, a skill, a memory note, a to-do list/);
+    assert.match(french, /Only what a program reads stays as the program needs it/);
+    assert.doesNotMatch(french, /can stay in English/);
     assert.match(french, /Never translate names: Simeon, SimeonLabs, the agents' names/);
     assert.match(french, /Gmail, Slack, Link, Shop, Stripe/);
     assert.match(french, /say "tu" to the user/);
@@ -177,6 +182,7 @@ test("the first hello and Simeon's introduction are in the person's language", a
       assert.match(french, /The user's apps are in French: write every message of this turn to the user in French, question widgets \(question, options and helpText\) included/);
       assert.match(french, /Say "tu" to the user\./);
       assert.match(french, /Names of apps, connectors and agents stay as they are\./);
+      assert.match(french, /What you write to an agent \(a brief, a message\) and the title and description of an agent you create are in French too/);
     }
     assert.match(firstRunCueInLanguage("cue", "es"), /The user's apps are in Spanish: .* Say "tú" to the user\./);
     assert.match(firstRunCueInLanguage("cue", "de"), /The user's apps are in German: .* Say "du" to the user\./);

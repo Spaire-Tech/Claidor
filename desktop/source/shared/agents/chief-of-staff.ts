@@ -24,8 +24,13 @@
  *
  * Every brief a chief of staff writes starts with "<first name> staffed you
  * to …" (the founder: "not x wants you to"); `staffingMessage` holds the
- * line even when the model forgets.
+ * line even when the model forgets. In the person's language when it is not
+ * English (22 October 2026): the brief is in it too, since the person reads
+ * it in the new agent's chat, and opens with their name.
  */
+
+import { say } from "../say.js";
+import { isEnglishOrUnset, languageName } from "../user-language.js";
 
 const CHIEF_OF_STAFF_TITLES = new Set(["chief of staff", "coo"]);
 
@@ -47,11 +52,19 @@ const STAFFED_PATTERN = /\bstaffed you\b/i;
  * The brief as the agent receives it: "Bass staffed you to run his inbox…".
  * A brief that already says so is sent as written; one that does not gets
  * the opening put in front, its first letter lowered so the sentence reads.
+ * In another language a brief that names the person in its first words is
+ * sent as written, and one that does not gets the opening as a sentence of
+ * its own ("Bass t’a confié ce travail."), never English glued to it.
  */
-export function staffingMessage(personName: string | null | undefined, brief: string): string {
+export function staffingMessage(personName: string | null | undefined, brief: string, language?: string | null): string {
   const text = brief.trim();
   if (text.length === 0) return text;
   if (STAFFED_PATTERN.test(text)) return text;
+  if (!isEnglishOrUnset(language)) {
+    const first = personFirstName(personName);
+    if (first == null || text.slice(0, 80).toLowerCase().includes(first.toLowerCase())) return text;
+    return `${say(language, "staffing.opening", { name: first })} ${text}`;
+  }
   const who = personFirstName(personName) ?? "Your user";
   const body = text.replace(/^(to\s+)/i, "");
   return `${who} staffed you to ${body.charAt(0).toLowerCase()}${body.slice(1)}`;
@@ -69,8 +82,11 @@ export const SAND_CHIEF_OF_STAFF_KICKSTART_PROMPT = [
 ].join("\n");
 
 /** `## Chief of staff`, in the system prompt of the agent titled so. */
-export function chiefOfStaffSection(personName: string | null | undefined): string {
+export function chiefOfStaffSection(personName: string | null | undefined, language?: string | null): string {
   const first = personFirstName(personName) ?? "the person";
+  const opening = isEnglishOrUnset(language)
+    ? `Every brief you write to an agent starts with "${first} staffed you to …".`
+    : `Every brief you write to an agent is in ${languageName(language!)}, as everything the person can read, and opens by saying ${first} staffed it for the job (in English, "${first} staffed you to …").`;
   return [
     "## Chief of staff",
     "",
@@ -80,7 +96,7 @@ export function chiefOfStaffSection(personName: string | null | undefined): stri
     "- A project that needs several roles gets a team: say in one line who you'd staff, then create each with its own brief. Keep a team small, three to five, and never duplicate a role that exists.",
     "- You do a thing yourself only when it is quicker than briefing someone: a question with a short answer, a decision, a summary of what the team did.",
     "- When the person is unsure, recommend and say why in one sentence. When their ask is vague, ask one sharp question (a question widget with concrete options). When an agent reports back, judge whether it needs the person and tell them only what matters.",
-    `Every brief you write to an agent starts with "${first} staffed you to …". Each new agent gets a human first name and a title that names its job. The person hears from a staffed agent in that agent's own chat; you report in yours.`,
+    `${opening} Each new agent gets a human first name and a title that names its job. The person hears from a staffed agent in that agent's own chat; you report in yours.`,
   ].join("\n");
 }
 

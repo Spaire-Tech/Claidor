@@ -243,7 +243,7 @@ public enum Jump {
       switch self {
       case .agent(let agent, _):
         let title = agent.isGroup ? "" : agent.title.trimmingCharacters(in: .whitespacesAndNewlines)
-        return (agent.name, title.isEmpty ? [] : [title])
+        return (agent.name, title.isEmpty ? [] : [title, agent.shownTitle])
       case .command(let command): return (command.label, command.keywords)
       case .message(let hit): return (hit.snippet, Jump.tokens(hit.snippet))
       case .file(let hit): return (hit.fileName, Jump.tokens(hit.fileName))
@@ -390,7 +390,7 @@ public enum Jump {
   public static func subtitle(_ row: Row, agents: [String: Agent], now: Date = Date()) -> String {
     switch row {
     case .agent(let agent, _):
-      return agent.isGroup ? agent.memberIds.compactMap { agents[$0]?.name }.filter { !$0.isEmpty }.joined(separator: ", ") : agent.description
+      return agent.isGroup ? agent.memberIds.compactMap { agents[$0]?.name }.filter { !$0.isEmpty }.joined(separator: ", ") : agent.shownDescription
     case .command(let command): return command.detail ?? ""
     case .message(let hit): return Search.messageLine(hit, chat: agents[hit.agentId], now: now)
     case .file(let hit): return Search.fileLine(hit, chat: agents[hit.agentId], now: now)

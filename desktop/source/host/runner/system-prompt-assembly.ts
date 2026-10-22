@@ -306,7 +306,7 @@ export function createSystemPromptAssembly(deps: SystemPromptAssemblyDependencie
     if (!deps.isSubagentRunner) add(getUserLanguageSection());
     if (deps.isSharedRoomRunner) return sections.join("\n\n");
     // The Chief of Staff's standing rule, by title (7 October 2026, `shared/agents/chief-of-staff.ts`).
-    if (!deps.isSubagentRunner && isChiefOfStaffTitle(deps.agentProfileProvider()?.title)) add(chiefOfStaffSection(deps.requestContext.resolve().userFullName));
+    if (!deps.isSubagentRunner && isChiefOfStaffTitle(deps.agentProfileProvider()?.title)) add(chiefOfStaffSection(deps.requestContext.resolve().userFullName, deps.userLanguage?.()));
     add(getUserIdentitySection());
     if (!deps.isSubagentRunner && !deps.isSystemPromptOverridden && deps.isMultitaskEnabled?.() === true) add(deps.multitaskSection);
     if (deps.isSystemPromptOverridden && !deps.isSubagentRunner && cloudDisabled) add(SAND_CLOUD_AGENTS_DISABLED_PROMPT_SECTION);

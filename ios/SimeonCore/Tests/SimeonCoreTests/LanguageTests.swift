@@ -144,6 +144,21 @@ final class LanguageTests: XCTestCase {
     XCTAssertEqual(accountEnglish, "en")
   }
 
+  func testTheChiefOfStaffIsShownInTheAppsLanguageAndSavedInEnglish() {
+    var simeon = Agent(id: "simeon", name: "Simeon")
+    simeon.title = "Chief of Staff"
+    simeon.description = Onboarding.chiefOfStaffDescription
+    XCTAssertEqual(Onboarding.chiefOfStaff(nonce: "n")["title"]?.string, "Chief of Staff", "saved in English: the engine knows him by it")
+    XCTAssertEqual(Onboarding.chiefOfStaff(nonce: "n")["description"]?.string, Onboarding.chiefOfStaffDescription)
+    XCTAssertEqual(simeon.shownTitle, L10n.text("Chief of Staff"))
+    XCTAssertEqual(simeon.shownDescription, L10n.text("Your Chief of Staff: manages your other Agents and pulls you in for decisions."))
+    var ada = Agent(id: "ada", name: "Ada")
+    ada.title = "Boîte mail"
+    ada.description = "Trie la boîte mail."
+    XCTAssertEqual(ada.shownTitle, "Boîte mail", "any other title as its agent wrote it")
+    XCTAssertEqual(ada.shownDescription, "Trie la boîte mail.")
+  }
+
   func testACallHearsAndSpeaksTheAppsLanguage() async throws {
     XCTAssertEqual(VoiceCallText.language(for: "en"), "en")
     XCTAssertEqual(VoiceCallText.language(for: "fr-CA"), "fr")

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { AGENT_COLOR_LABELS, agentColorIdFromName } from "../../../shared/agents/agent-colors.js";
 import { staffingMessage } from "../../../shared/agents/chief-of-staff.js";
+import { currentUserLanguage } from "../../../shared/user-language.js";
 import {
   SAND_CREATE_AGENT_TOOL_NAME,
   SAND_SEND_TO_AGENT_TOOL_NAME,
@@ -160,7 +161,7 @@ export function createCreateAgentTool(management: AgentManagementDependencies) {
         ...(args.title == null || args.title.length === 0 ? {} : { title: args.title }),
       }, { startIntroduction: !isStaffing });
       if (isStaffing) {
-        const message = staffingMessage(resolved.getPersonName?.() ?? null, brief);
+        const message = staffingMessage(resolved.getPersonName?.() ?? null, brief, currentUserLanguage());
         await resolved.brief!(created.id, message);
         return `Created agent "${created.name}" (id: ${created.id}) and delivered your brief as its first message: it introduces itself to the user in its own chat as the one now on the job and starts. Tell the user who you hired and where to find them; message it again with SendToAgent only when there is more to say.`;
       }

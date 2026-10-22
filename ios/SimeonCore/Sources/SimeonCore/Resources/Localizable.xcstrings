@@ -19053,6 +19053,65 @@
         }
       }
     },
+    "Chief of Staff" : {
+      "comment" : "Simeon's title (or his description) as the person reads it; saved in English, the engine knows him by it (Agent.shownTitle).",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chief of Staff"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mano derecha"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bras droit"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Braccio destro"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rechterhand"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prawa ręka"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Braço direito"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stabschef"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sağ kol"
+          }
+        }
+      }
+    },
     "Child" : {
       "localizations" : {
         "de" : {
@@ -75180,6 +75239,65 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "grafiklerini, panolarını, kohortlarını ve deneylerini"
+          }
+        }
+      }
+    },
+    "Your Chief of Staff: manages your other Agents and pulls you in for decisions." : {
+      "comment" : "Simeon's title (or his description) as the person reads it; saved in English, the engine knows him by it (Agent.shownTitle).",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Chief of Staff: führt deine anderen Agenten und holt dich für Entscheidungen dazu."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu mano derecha: gestiona a tus otros agentes y te consulta cuando hay que decidir."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ton bras droit : gère tes autres agents et te sollicite pour les décisions."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tuo braccio destro: gestisce gli altri tuoi agenti e ti coinvolge nelle decisioni."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je rechterhand: stuurt je andere agenten aan en betrekt je bij beslissingen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoja prawa ręka: zarządza twoimi pozostałymi agentami i angażuje cię w decyzje."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seu braço direito: gerencia seus outros agentes e chama você para as decisões."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din stabschef: leder dina andra agenter och tar in dig när något ska beslutas."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sağ kolun: diğer ajanlarını yönetir ve karar gerektiğinde seni dahil eder."
           }
         }
       }

@@ -46,7 +46,7 @@ struct AgentPageSheet: View {
               }
               .padding(.top, 8)
               Text(agent.name).font(.system(size: 22, weight: .semibold)).foregroundStyle(Ink.primary).padding(.top, 14)
-              if !agent.isGroup, !agent.title.isEmpty { Text(agent.title).font(.system(size: 15)).foregroundStyle(Ink.secondary).padding(.top, 2) }
+              if !agent.isGroup, !agent.title.isEmpty { Text(agent.shownTitle).font(.system(size: 15)).foregroundStyle(Ink.secondary).padding(.top, 2) }
               Picker("Page", selection: $tab) {
                 Image(systemName: "person").tag(0).accessibilityLabel("Profile")
                 Image(systemName: "clock").tag(1).accessibilityLabel("Routines")
@@ -132,10 +132,10 @@ struct ProfileTab: View {
       ProfileField(label: String(localized: "Name"), placeholder: String(localized: "Bob"), stored: agent.name, readOnly: false, required: true) { save(name: $0) }
       line
       if !agent.isGroup {
-        ProfileField(label: String(localized: "Title"), placeholder: String(localized: "Describe what your agent does"), stored: agent.title, readOnly: locked, required: false) { save(title: $0) }
+        ProfileField(label: String(localized: "Title"), placeholder: String(localized: "Describe what your agent does"), stored: locked ? agent.shownTitle : agent.title, readOnly: locked, required: false) { save(title: $0) }
         line
       }
-      ProfileField(label: String(localized: "Description"), placeholder: String(localized: "What this agent is for"), stored: agent.description, readOnly: locked && !agent.isGroup, required: false, multiline: true) { save(description: $0) }
+      ProfileField(label: String(localized: "Description"), placeholder: String(localized: "What this agent is for"), stored: locked && !agent.isGroup ? agent.shownDescription : agent.description, readOnly: locked && !agent.isGroup, required: false, multiline: true) { save(description: $0) }
       line
       if !agent.isGroup {
         HStack(spacing: 14) {
@@ -385,7 +385,7 @@ struct GroupMembers: View {
           AgentAvatar(agent: member).frame(width: 40, height: 40)
           VStack(alignment: .leading, spacing: 2) {
             Text(member.name).font(.system(size: 16)).foregroundStyle(Ink.primary)
-            if !member.title.isEmpty { Text(member.title).font(.system(size: 13)).foregroundStyle(Ink.secondary) }
+            if !member.title.isEmpty { Text(member.shownTitle).font(.system(size: 13)).foregroundStyle(Ink.secondary) }
           }
           Spacer()
         }

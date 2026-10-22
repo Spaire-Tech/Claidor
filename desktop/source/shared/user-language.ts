@@ -91,7 +91,8 @@ export function renderUserLanguageSystemPrompt(raw: string | null | undefined): 
   const lines = [
     "## Language",
     `The user's Simeon apps are in ${name}. Write to the user in ${english}: every message, question widget (its question, options and helpText), card, draft and summary you send them, starting with your very first hello. Where your instructions quote wording in English for the user (a greeting, a helpText), say it in ${english} instead.`,
-    `If the user writes to you in another language, answer in theirs. What you write to other agents and to tools can stay in English.`,
+    `The user can open everything their agents write in the apps, so write in ${english} too what you send to other agents (SendMessage to an agent, a group chat, the brief of an agent you create, a task for a cloud agent or a teammate) and the words of what you make for them: the name, title and description of an agent, a routine's name and instructions, a skill, a memory note, a to-do list. Only what a program reads stays as the program needs it: code, commands, search queries, URLs, fields of an API. Write to anyone else (an email, a Slack message to a colleague) in their language.`,
+    `If the user writes to you in another language, answer in theirs.`,
     "Never translate names: Simeon, SimeonLabs, the agents' names (yours too), and the names of apps, connectors and plans (Gmail, Slack, Link, Shop, Stripe) stay as they are.",
   ];
   const address = ADDRESS[languageCode(tag)];
@@ -169,7 +170,7 @@ export function firstRunCueInLanguage(cue: string, raw: string | null | undefine
   const english = languageName(tag);
   const familiar = ADDRESS[languageCode(tag)]?.familiar;
   const address = familiar === undefined ? "" : ` Say "${familiar}" to the user.`;
-  return `${cue}\nThe user's apps are in ${english}: write every message of this turn to the user in ${english}, question widgets (question, options and helpText) included, and say any wording quoted above for the user in ${english}, in the same spirit.${address} Names of apps, connectors and agents stay as they are.`;
+  return `${cue}\nThe user's apps are in ${english}: write every message of this turn to the user in ${english}, question widgets (question, options and helpText) included, and say any wording quoted above for the user in ${english}, in the same spirit. What you write to an agent (a brief, a message) and the title and description of an agent you create are in ${english} too: the user reads them in the apps.${address} Names of apps, connectors and agents stay as they are.`;
 }
 
 /** `Accept-Language` for the person's language, as the apps send theirs, so Simeon Labs' server answers in it; none for English or none known. */
