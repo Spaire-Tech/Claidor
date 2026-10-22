@@ -77,22 +77,6 @@ struct MentionPill: TextAttribute {
 struct LinkRun: TextAttribute {}
 
 /**
- * An email's own page in its app (Gmail's, Outlook's on the web): the app's
- * logo goes before the link's words, so a link to an email says where it
- * goes (the founder, 21 October 2026, of an agent's "Email" links: "what is
- * 'email'?").
- */
-enum MailLink {
-  /** The app's key in `Brands` for a link to an email, or nil. */
-  static func brand(_ url: URL) -> String? {
-    guard let host = url.host()?.lowercased() else { return nil }
-    if host == "mail.google.com" { return "gmail" }
-    if host.hasPrefix("outlook.") && (host.hasSuffix(".office.com") || host.hasSuffix(".live.com") || host.hasSuffix(".office365.com")) { return "outlook" }
-    return nil
-  }
-}
-
-/**
  * Each mention of an agent in a glass pill (the founder, 12 October 2026:
  * "the pill, but water glass, and the name in our blue"): drawn behind the
  * mention's runs, a clear frosted fill, a bright rim, a soft shadow. Apple's
@@ -374,7 +358,7 @@ struct MessageLine {
     })
   }
 
-  /** A link: the link blue (the bubble's tint), no underline, marked for the hand (`LinkRun`); a link to an email after its app's logo (`MailLink`). */
+  /** A link: the link blue (the bubble's tint), no underline, marked for the hand (`LinkRun`). No logo before a link to an email (the founder, 22 October 2026: "remove that gmail logo"). */
   private func linked(_ words: String, _ url: URL, style: Style, at offset: Int, marks: FindLine?) -> Text {
     var container = AttributeContainer()
     container.link = url
@@ -384,11 +368,7 @@ struct MessageLine {
       if let mark = part.mark { piece.backgroundColor = FindLine.paint(mark, look: look) }
       whole += piece
     }
-    let link = style.apply(Text(whole)).customAttribute(LinkRun())
-    guard let key = MailLink.brand(url), let logo = InlineImages.logo(key, side: (1.05 * size).rounded()) else { return link }
-    // As an app's name has its logo before it (`mention`), kept on the line with the words.
-    let picture = Text(Image(nsImage: logo).renderingMode(.original)).baselineOffset(-0.18 * size)
-    return MessageLine.joined([picture, Text(verbatim: "\u{202F}"), link])
+    return style.apply(Text(whole)).customAttribute(LinkRun())
   }
 
   /** Inline code: 0.93 em monospaced, red on a grey wash (`code`, padded 0 4 and 4 round in the window). */
