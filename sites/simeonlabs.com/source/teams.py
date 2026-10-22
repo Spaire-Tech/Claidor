@@ -311,8 +311,9 @@ PACK_CSS = """
 .add{display:flex;flex-direction:column;align-items:center;margin-top:clamp(26px,2.4vw,38px)}
 .add .btn{height:clamp(46px,3vw,54px);padding:0 clamp(22px,1.6vw,30px);font-size:clamp(16px,1.1vw,19px)}
 .add .btn svg{width:1em;height:1em;flex:none;margin-left:-.15em}
-.add-note{margin-top:12px}
+.add-note{margin:0}
 .add-note[hidden]{display:none}
+.add.noapp .add-btn{display:none}
 .add .btn .dl{margin:0 -.15em 0 0} /* Download for macOS, its arrow after the words, as on the home page */
 
 /* The agents: one card each, the face beside what it does on a computer, above it on a phone. */
@@ -348,19 +349,25 @@ PACK_CSS = """
 
 ADD_JS = """<script>
 // Add to Simeon: the app on this device opens on the pack and adds the team (simeon-ios:// on an iPhone or
-// iPad, simeon:// on a Mac). Still here 1.5 s later, or on any other computer or phone, the page shows
-// Download for macOS under it, the home page's button (the founder, 22 October 2026).
+// iPad, simeon:// on a Mac). With no app to open (still here 1.5 s later), and from the start on any other
+// computer or phone, every Add to Simeon on the page gives way to Download for macOS, the home page's
+// button (the founder, 22 October 2026: "the add to simeon must disappear when there's no app").
 (() => {
   const ua = navigator.userAgent;
   const ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
   const mac = !ios && /Macintosh|Mac OS X/.test(ua);
+  const noApp = () => {
+    for (const box of document.querySelectorAll('.add')) {
+      box.classList.add('noapp');
+      box.querySelector('.add-note').hidden = false;
+    }
+  };
+  if (!ios && !mac) { noApp(); return; }
   for (const box of document.querySelectorAll('.add')) {
-    const btn = box.querySelector('.add-btn'), note = box.querySelector('.add-note');
+    const btn = box.querySelector('.add-btn');
     const query = 'app/v1/pack/add?id=' + encodeURIComponent(btn.dataset.pack);
-    if (ios) btn.href = 'simeon-ios://' + query;
-    else if (mac) btn.href = 'simeon://' + query;
-    btn.addEventListener('click', (e) => {
-      if (!ios && !mac) { e.preventDefault(); note.hidden = false; return; }
+    btn.href = (ios ? 'simeon-ios://' : 'simeon://') + query;
+    btn.addEventListener('click', () => {
       let left = false;
       const away = () => { left = true; };
       const hide = () => { if (document.visibilityState === 'hidden') left = true; };
@@ -370,7 +377,7 @@ ADD_JS = """<script>
         document.removeEventListener('visibilitychange', hide);
         removeEventListener('pagehide', away); removeEventListener('blur', away);
         if (left || document.visibilityState !== 'visible') return;
-        note.hidden = false;
+        noApp();
       }, 1500);
     });
   }
