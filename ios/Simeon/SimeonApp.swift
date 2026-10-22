@@ -33,6 +33,10 @@ struct SimeonApp: App {
         // stood bigger than it. The phone's setting no longer changes the app; it never changed the chat.
         .dynamicTypeSize(.large)
         .task { await session.start() }
+        // The website's Add to Simeon (`simeon-ios://app/v1/pack/add?id=`): the pack's sheet once the list is up (StarterPackSheet.swift).
+        .onOpenURL { url in
+          if let id = StarterPack.linked(url, scheme: AppPlatform.urlScheme) { Notifications.shared.openPack = id }
+        }
         // After the first screen is up, never before it.
         .task { HangWatch.start() }
     }

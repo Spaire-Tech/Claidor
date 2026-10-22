@@ -1,4 +1,5 @@
 import Foundation
+import SimeonCore
 
 /**
  * A link that opens the Mac app, read by the Electron app's own rules
@@ -9,7 +10,9 @@ import Foundation
  *   brings the window forward (the app learns it is signed in by polling);
  * - `<scheme>://app/v1/info?topic=deep-links`: the Deep Links page;
  * - `<scheme>://app/v1/plugin/add?id=<1–19 digits>`: a connector to add;
- * - the same three under `https://app.simeonlabs.com/sand/link/v1/…`.
+ * - `<scheme>://app/v1/pack/add?id=<pack id>`: a starter pack to add, from
+ *   the website's Add to Simeon (`StarterPack`, 22 October 2026; Simeon's own);
+ * - the same four under `https://app.simeonlabs.com/sand/link/v1/…`.
  *
  * Anything else is refused: longer than 2,048 characters, not printable
  * ASCII, a `#` or a `\`, a broken `%` escape, a `%` or a `.`/`..` segment
@@ -21,6 +24,7 @@ public struct DeepLink: Equatable, Sendable {
     case open
     case info(topic: String)
     case pluginAdd(id: String)
+    case packAdd(id: String)
   }
 
   public enum Source: Equatable, Sendable {
@@ -45,6 +49,7 @@ public struct DeepLink: Equatable, Sendable {
   static let openPath = "/v1/open"
   static let infoPath = "/v1/info"
   static let pluginPath = "/v1/plugin/add"
+  static let packPath = "/v1/pack/add"
 
   /**
    * The link, or nil. `schemes` are the ones this app answers to: `simeon`
@@ -75,6 +80,9 @@ public struct DeepLink: Equatable, Sendable {
     case pluginPath:
       guard query.count == 1, let item = query.first, item.name == "id", let id = item.value, isPluginId(id) else { return nil }
       return DeepLink(route: .pluginAdd(id: id), source: source)
+    case packPath:
+      guard query.count == 1, let item = query.first, item.name == "id", let id = item.value, StarterPack.isId(id) else { return nil }
+      return DeepLink(route: .packAdd(id: id), source: source)
     case openPath:
       guard query.isEmpty else { return nil }
       return DeepLink(route: .open, source: source)
@@ -92,6 +100,7 @@ public struct DeepLink: Equatable, Sendable {
     case .open: return "\(scheme)://\(Self.authority)\(Self.openPath)"
     case .info(let topic): return "\(scheme)://\(Self.authority)\(Self.infoPath)?topic=\(topic)"
     case .pluginAdd(let id): return "\(scheme)://\(Self.authority)\(Self.pluginPath)?id=\(id)"
+    case .packAdd(let id): return "\(scheme)://\(Self.authority)\(Self.packPath)?id=\(id)"
     }
   }
 

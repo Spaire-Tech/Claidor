@@ -2311,3 +2311,47 @@ every row out again when it starts and the list shows the new lines at once.
 
 **Not yet verified.** Not seen on an iPhone or a Mac. The engine's test
 (`desktop/tests/session-projection-last-entry.test.mjs`) runs the lines through the function.
+
+## 17. Starter packs: a team of five from the website
+
+**For the person (22 October 2026).** The founder: "bundles … the bundles will have 5 agents
+each. already named, already given instructions and connectors to ask for. the marketplace will
+live in the website … you click add to simeon in the website, the app opens … once you add
+them the agents activate, each send a message in their chat, with their connectors ready to be
+connected … they live in a project folder based on the name." Fifteen packs ("Simeon for
+Coffee Shops", Founders, Agencies, Real Estate, Online Stores, Freelancers, Creators, Sales,
+Recruiters, Law Firms, Accountants, Landlords, Contractors, Salons and Spas, Busy
+Professionals), free for everyone. Each agent asks for three apps, and the fifteen apps of a
+pack are all different.
+
+**How it works.**
+
+- The packs are one file, `server/simeon/desktop/packs.json`: each pack's id, folder ("Coffee
+  Shop Team"), title and summary, and its five agents (name, title, face from the apps' own
+  faces, summary, quote, three app ids from `vendor-mcp/catalog.ts`, and the instructions kept
+  as the agent's description). `appNames` holds the catalogue's name for each app.
+- The website's Teams pages (`sites/simeonlabs.com/source/teams.py`, `/teams` and
+  `/teams/<id>`) are built from that file. Add to Simeon opens `simeon://app/v1/pack/add?id=<id>`
+  on a Mac and `simeon-ios://app/v1/pack/add?id=<id>` on an iPhone.
+- The server serves the file read-only, no sign-in needed (`server/simeon/desktop/packs.py`):
+  `GET /desktop/api/packs` (`data.packs`) and `GET /desktop/api/packs/{id}` (`data`, with that
+  pack's `appNames`), or a 404 "This team isn't available anymore."
+- The Mac (`DeepLink` `.packAdd`, `mac/Simeon/StarterPackSheet.swift`) and the iPhone
+  (`onOpenURL`, `ios/Simeon/StarterPackSheet.swift`) read the pack and show it: the five faces,
+  each agent with its job, what it does and its apps. Add (`AppStore.addPack`,
+  `SimeonCore/StarterPacks.swift`) makes the five agents with `createAgent` (name, title,
+  `avatarShape`, `description` = the instructions, `isKickstartRequested: true`), puts them in
+  a sidebar section `pack-<id>` named after the folder, and opens the first chat. A pack whose
+  section still holds its agents shows Open instead of Add.
+- Each agent speaks first at once (`kickstartCreatedAgent`): the first-run cue starts on a
+  concrete assignment, and every pack agent's instructions end "Starts by asking to connect A, B
+  and C (any already connected is just named), then asks …", so it proposes the apps it lacks
+  with `ProposeConnector` and names the ones already connected.
+
+**Switches.** None. Changing a pack is an edit of `packs.json` (the server test
+`server/tests/desktop/test_packs.py` checks five agents, real faces, fifteen different apps in
+the catalogue and their names) and a rebuild of the site (`python3 source/build.py`).
+
+**Not yet verified.** Not seen on an iPhone or a Mac: the link opening the app, the sheet, the
+five agents' first messages. The new connectors the packs ask for reach the agents only with
+the next host bundle, which is published from a Mac.

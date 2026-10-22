@@ -20,6 +20,8 @@ final class MacServices {
 
   /** The Deep Links dialog (`uLn`), while it shows: where the link came from. */
   var deepLinkInfo: DeepLink.Source?
+  /** A starter pack's sheet (`…/v1/pack/add?id=`, StarterPackSheet.swift), while it shows. */
+  var packAsk: PackAsk?
 
   @ObservationIgnored private weak var session: MacSession?
   @ObservationIgnored private weak var window: WindowState?
@@ -42,6 +44,8 @@ final class MacServices {
   @ObservationIgnored private var appWatch: [NSObjectProtocol] = []
   /** A plugin's link that came before the sign-in finished: opened once it has (decision 10; Electron queues it for the page). */
   @ObservationIgnored private var pendingPlugin: String?
+  /** A starter pack's link that came before the sign-in finished (or the first run): shown once signed in. */
+  @ObservationIgnored private var pendingPack: String?
   /** A notification's agent clicked before the agents were read (one that launched Simeon): opened with the first list. */
   @ObservationIgnored private var pendingAgent: String?
   /** The last link taken, and when: the same one again within 2 s is dropped (`deep-link-controller.ts`). */
@@ -134,6 +138,10 @@ final class MacServices {
         pendingPlugin = nil
         plugins?.open(.plugin(id))
       }
+      if let id = pendingPack {
+        pendingPack = nil
+        askPack(id)
+      }
     }
   }
 
@@ -219,6 +227,9 @@ final class MacServices {
     window.choose(agentId, store: session.store)
   }
 
+  /** The signed-in account's store (the starter pack's sheet). */
+  var currentStore: AppStore? { session?.store }
+
   /** The agents are read: a notification's agent clicked before then is opened, if it is there (decision 2: else nothing). */
   private func openPendingAgent() {
     guard let agentId = pendingAgent, let session, let window else { return }
@@ -277,8 +288,9 @@ final class MacServices {
    * A link to the app (`simeon://app/v1/…`): the window is brought
    * forward (made again if closed, by the scene); the same link again
    * within 2 s is dropped; `open` does nothing more, `info` shows the Deep
-   * Links dialog (signed out too), and a plugin's link opens Plugins on its
-   * page, after the sign-in when it came before.
+   * Links dialog (signed out too), a plugin's link opens Plugins on its
+   * page and a starter pack's shows its sheet, each after the sign-in when
+   * it came before.
    */
   func handle(_ url: URL) {
     // A connected app's sign-in the browser finished (the sheet could not
@@ -300,6 +312,8 @@ final class MacServices {
       deepLinkInfo = link.source
     case .pluginAdd(let id):
       if session?.phase == .signedIn { plugins?.open(.plugin(id)) } else { pendingPlugin = id }
+    case .packAdd(let id):
+      if session?.phase == .signedIn { askPack(id) } else { pendingPack = id }
     }
   }
 

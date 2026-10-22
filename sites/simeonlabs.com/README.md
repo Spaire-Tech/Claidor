@@ -22,6 +22,10 @@ python3 build.py ../../../desktop/dist/demo
 
 The script needs Playwright's Chromium (it captures the stills the hero shows
 while the app loads). It rewrites `public/` from scratch; commit what it writes.
+
+Teams pages: `python3 source/teams.py` rewrites `public/teams/` from
+`server/simeon/desktop/packs.json` (build.py runs it too); run it whenever a
+pack changes and commit what it writes.
 Edit `source/`, never `public/` by hand: a hand edit is lost at the next build
 (the Download and plan links, made in `public/` on 11 October 2026, are in
 `page.html` since 12 October).
@@ -73,7 +77,7 @@ edge shared by the wordmark, the headline and the demo.
 
 Download and Download for Mac fetch the Mac app (`api.simeonlabs.com/desktop/download/mac`),
 and each plan's button opens billing with that plan (`app.simeonlabs.com/billing?plan=…`).
-In the footer, Privacy and Terms open the legal pages, Contact writes to support@simeonlabs.com.
+In the footer, Teams opens the starter packs (`/teams`), Privacy and Terms open the legal pages, Contact writes to support@simeonlabs.com.
 
 ## The legal pages
 
