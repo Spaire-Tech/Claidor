@@ -51,6 +51,28 @@ extension AppStore {
     }
   }
 
+  /**
+   * The name changed in Settings › Account (the founder, 22 October 2026:
+   * "theres name there, but uneditable"): what the agents call the person,
+   * as the first run's name step saves it (`POST user/name`); they take it
+   * at their next turn after a few minutes at most. nil once saved, the
+   * account showing it; else why not, the server's sentence when it says
+   * one ("A name of 1 to 60 characters.").
+   */
+  public func changeName(_ typed: String) async -> String? {
+    guard let backend else { return L10n.text("Sign in to Simeon first.") }
+    let name = Onboarding.normalizedName(typed)
+    do {
+      _ = try await backend.server("user/name", method: "POST", body: ["name": .string(name)])
+    } catch let error as SimeonAPIError where !error.message.isEmpty {
+      return error.message
+    } catch {
+      return L10n.text("Couldn't change it")
+    }
+    if let account { self.account = Account(name: name, email: account.email, pictureURL: account.pictureURL, id: account.id) }
+    return nil
+  }
+
   /** Cancel Trial (`CancelSandTrial`): nil once it is done and the usage read again, else what to say in the dialog. */
   public func cancelTrial() async -> String? {
     guard let backend else { return L10n.text("Sign in to Simeon to continue") }

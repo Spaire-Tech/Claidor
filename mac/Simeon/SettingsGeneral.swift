@@ -219,15 +219,19 @@ enum MacLanguage {
 
 /**
  * The account, under General: its face (56) beside its name and email, from
- * the left; Name, Email (copied with a click) and Password (set or changed
- * here, typed twice). No Delete Account on the Mac (the founder, 21 October
- * 2026); Log out is at the foot of the list of pages.
+ * the left; Name, written in place (what the agents call the person, the
+ * name the first run asked for; 22 October 2026), then Email (copied with a
+ * click) and Password (set or changed here, typed twice). No Delete Account
+ * on the Mac (the founder, 21 October 2026); Log out is at the foot of the
+ * list of pages.
  */
 struct SettingsAccountPage: View {
   let look: Look
   @Environment(AppStore.self) private var store
   @State private var copied = false
   @State private var changingPassword = false
+  /** Why the name was not saved, under its card in red. */
+  @State private var nameProblem: String?
 
   var body: some View {
     let account = store.account
@@ -248,16 +252,14 @@ struct SettingsAccountPage: View {
           }
         }
       }
+      SettingsGroup(footer: nameProblem ?? String(localized: "Your agents call you by this name."),
+                    footerTint: nameProblem == nil ? nil : look.danger, look: look) {
+        NameLine(look: look) { nameProblem = $0 }
+      }
       SettingsGroup(look: look) {
-        SettingsLine(label: String(localized: "Name"), look: look) {
-          Text(account?.name ?? "")
-            .font(PanelType.row)
-            .foregroundStyle(look.inkSecondary)
-            .lineLimit(1)
-        }
         if let mail = account?.email, !mail.isEmpty {
           Button { copy(mail) } label: {
-            SettingsLine(label: String(localized: "Email"), divided: true, look: look) {
+            SettingsLine(label: String(localized: "Email"), look: look) {
               HStack(spacing: 8) {
                 Text(mail)
                   .font(PanelType.row)
@@ -274,7 +276,7 @@ struct SettingsAccountPage: View {
           .buttonStyle(.hand)
           .accessibilityHint("Copies the email")
         }
-        SettingsLinkRow(label: String(localized: "Password"), divided: true, look: look) { changingPassword.toggle() }
+        SettingsLinkRow(label: String(localized: "Password"), divided: !(account?.email ?? "").isEmpty, look: look) { changingPassword.toggle() }
         if changingPassword {
           PasswordForm(look: look) { changingPassword = false }
         }
@@ -289,6 +291,66 @@ struct SettingsAccountPage: View {
     Task {
       try? await Task.sleep(nanoseconds: 1_200_000_000)
       copied = false
+    }
+  }
+}
+
+/**
+ * Name, written in its row (the founder, 22 October 2026: "theres name
+ * there, but uneditable"): a field at the row's end, saved on Return or
+ * when it lets go of the keys, when it changed (`AppStore.changeName`); a
+ * spinner while it goes. Refused, the name comes back and why is said
+ * under the card.
+ */
+private struct NameLine: View {
+  let look: Look
+  let problem: (String?) -> Void
+  @Environment(AppStore.self) private var store
+  @State private var text = ""
+  @State private var saving = false
+  @FocusState private var focused: Bool
+
+  var body: some View {
+    let saved = store.account?.name ?? ""
+    SettingsLine(label: String(localized: "Name"), look: look) {
+      HStack(spacing: 8) {
+        if saving { ProgressView().controlSize(.small) }
+        TextField("", text: $text)
+          .textFieldStyle(.plain)
+          .font(PanelType.row)
+          .foregroundStyle(look.ink)
+          .lineLimit(1)
+          .focused($focused)
+          .onSubmit(save)
+          .disabled(saving)
+          .padding(.horizontal, 10)
+          .frame(width: 240, height: 30)
+          .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(look.groupedGround))
+          .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(look.ink.opacity(focused ? 0.25 : 0.1), lineWidth: 1))
+          .accessibilityLabel(String(localized: "Name"))
+      }
+    }
+    .onAppear { text = saved }
+    .onChange(of: saved) { _, now in if !focused && !saving { text = now } }
+    .onChange(of: focused) { _, now in if !now { save() } }
+  }
+
+  private func save() {
+    let saved = store.account?.name ?? ""
+    let typed = Onboarding.normalizedName(text)
+    guard !saving else { return }
+    // Nothing new, or nothing at all: the name stays as it was.
+    guard !typed.isEmpty, typed != saved else {
+      text = saved
+      return
+    }
+    saving = true
+    problem(nil)
+    Task {
+      let refused = await store.changeName(typed)
+      saving = false
+      text = store.account?.name ?? saved
+      problem(refused)
     }
   }
 }

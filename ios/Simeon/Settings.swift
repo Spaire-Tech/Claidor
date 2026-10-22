@@ -380,9 +380,10 @@ struct PermissionsPage: View {
 }
 
 /**
- * The account: the person's name and email, the email copied with a tap;
- * then Delete Account with one line under it, as the founder's reference
- * has it (12 October 2026). Apple asks every app that makes accounts to
+ * The account: the person's name, written in place (what their agents call
+ * them, the name the first run asked for; 22 October 2026), and their
+ * email, copied with a tap; then Delete Account with one line under it, as
+ * the founder's reference has it (12 October 2026). Apple asks every app that makes accounts to
  * delete them from inside the app (server/simeon/desktop/account_deletion.py
  * does the deleting; the question before it says what goes).
  */
@@ -393,6 +394,8 @@ struct AccountPage: View {
   @State private var askingDelete = false
   @State private var deleting = false
   @State private var deleteProblem: String?
+  /** Why the name was not saved, under it in red. */
+  @State private var nameProblem: String?
 
   var body: some View {
     Form {
@@ -405,7 +408,13 @@ struct AccountPage: View {
         .listRowBackground(Color.clear)
       }
       Section {
-        LabeledContent("Name", value: store.account?.name ?? "")
+        NameRow { nameProblem = $0 }
+      } footer: {
+        Text(nameProblem ?? String(localized: "Your agents call you by this name."))
+          .foregroundStyle(nameProblem == nil ? Ink.secondary : Ink.danger)
+      }
+      .listRowBackground(Ink.groupedRow)
+      Section {
         Button {
           UIPasteboard.general.string = store.account?.email
           copied = true
@@ -460,6 +469,60 @@ struct AccountPage: View {
       Button("OK", role: .cancel) {}
     } message: {
       Text(deleteProblem ?? "")
+    }
+  }
+}
+
+/**
+ * Name, written in its row (the founder, 22 October 2026: "theres name
+ * there, but uneditable"): the field at the row's end, as the phone's own
+ * Settings › About › Name, saved on Done or when it lets go of the keys,
+ * when it changed (`AppStore.changeName`). Refused, the name comes back and
+ * why is said under it.
+ */
+private struct NameRow: View {
+  let problem: (String?) -> Void
+  @Environment(SimeonCore.AppStore.self) private var store
+  @State private var text = ""
+  @State private var saving = false
+  @FocusState private var focused: Bool
+
+  var body: some View {
+    let saved = store.account?.name ?? ""
+    HStack(spacing: 12) {
+      Text("Name").foregroundStyle(Ink.primary)
+      Spacer(minLength: 12)
+      if saving { ProgressView() }
+      TextField("Name", text: $text)
+        .multilineTextAlignment(.trailing)
+        .foregroundStyle(Ink.secondary)
+        .submitLabel(.done)
+        .focused($focused)
+        .onSubmit(save)
+        .disabled(saving)
+    }
+    .onAppear { text = saved }
+    .onChange(of: saved) { _, now in if !focused && !saving { text = now } }
+    .onChange(of: focused) { _, now in if !now { save() } }
+  }
+
+  private func save() {
+    let saved = store.account?.name ?? ""
+    let typed = Onboarding.normalizedName(text)
+    guard !saving else { return }
+    // Nothing new, or nothing at all: the name stays as it was.
+    guard !typed.isEmpty, typed != saved else {
+      text = saved
+      return
+    }
+    saving = true
+    problem(nil)
+    Task {
+      let refused = await store.changeName(typed)
+      saving = false
+      text = store.account?.name ?? saved
+      problem(refused)
+      if refused == nil { Haptics.success() }
     }
   }
 }
