@@ -318,10 +318,12 @@ final class SearchState {
 // MARK: The panel
 
 /**
- * Search over the window (`sand-command-palette`, D01–D07): the window
+ * Search over the window (`sand-command-palette`, D01–D07), drawn as a Mac
+ * panel of this year rather than the Electron window's (the founder, 22
+ * October 2026: "too tight, not really using apple style"): the window
  * dimmed (the text colour at 50%, 70% on dark), and in its middle the
- * panel, 560 wide, 16 round, the raised ground with a hairline (15%) and a
- * deep shadow (none on dark). A click outside closes it.
+ * panel, 640 wide, 24 round, the raised ground with a hairline (10%) and a
+ * soft shadow (none on dark). A click outside closes it.
  */
 struct SearchLayer: View {
   @Environment(SearchState.self) private var search
@@ -336,7 +338,8 @@ struct SearchLayer: View {
             .contentShape(Rectangle())
             .onTapGesture { search.close() }
             .transition(.opacity)
-          SearchPanel(width: min(560, max(0, box.size.width - 32)))
+          // The list 420 high, less in a short window (at its smallest, 520) so the panel stays inside it.
+          SearchPanel(width: min(640, max(0, box.size.width - 32)), listHeight: min(420, max(240, box.size.height - 180)))
             .transition(.opacity.combined(with: .scale(scale: 0.98)))
         }
       }
@@ -350,6 +353,7 @@ struct SearchLayer: View {
 
 private struct SearchPanel: View {
   let width: CGFloat
+  let listHeight: CGFloat
   @Environment(SearchState.self) private var search
   @Environment(AppStore.self) private var store
   @Environment(WindowState.self) private var window
@@ -363,16 +367,15 @@ private struct SearchPanel: View {
     let listing = search.listing(store: store, window: window)
     let unavailable = listing.settled == .unavailable
     VStack(spacing: 0) {
-      // The field (`padding 14 10 14 14`), a hairline under it.
-      HStack(spacing: 4) {
+      // The field, 17 as the panels' titles, 56 high, a hairline under it.
+      HStack(spacing: 10) {
         Image(systemName: "magnifyingglass")
-          .font(.system(size: 12, weight: .medium))
-          .foregroundStyle(look.inkTertiary)
-          .frame(width: 18, height: 18)
+          .font(.system(size: 16))
+          .foregroundStyle(look.inkSecondary)
+          .frame(width: 22, height: 22)
         TextField("", text: $search.query, prompt: Text("Search").foregroundStyle(look.inkTertiary))
           .textFieldStyle(.plain)
-          .font(.system(size: 14))
-          .tracking(-0.15)
+          .font(.system(size: 17))
           .foregroundStyle(look.ink)
           .focused($typing)
           .onChange(of: search.query) { _, _ in search.typed(store: store) }
@@ -384,18 +387,18 @@ private struct SearchPanel: View {
             .fixedSize()
         }
       }
-      .frame(height: 22)
-      .padding(EdgeInsets(top: 14, leading: 14, bottom: 14, trailing: 10))
-      .overlay(alignment: .bottom) { Rectangle().fill(look.ink.opacity(0.1)).frame(height: 1) }
+      .frame(height: 24)
+      .padding(EdgeInsets(top: 16, leading: 20, bottom: 16, trailing: 20))
+      .overlay(alignment: .bottom) { Rectangle().fill(look.ink.opacity(0.08)).frame(height: 0.5) }
       TabRow(tabs: listing.tabs, current: listing.tabs.contains(search.tab) ? search.tab : .all, look: look) { search.choose($0) }
       results(listing, look: look, unavailable: unavailable)
-        .frame(height: 360)
+        .frame(height: listHeight)
     }
     .frame(width: width)
-    .background(look.elevated, in: RoundedRectangle(cornerRadius: 16))
-    .clipShape(RoundedRectangle(cornerRadius: 16))
-    .overlay { RoundedRectangle(cornerRadius: 16).strokeBorder(look.ink.opacity(0.15), lineWidth: 1) }
-    .shadow(color: .black.opacity(look.dark ? 0 : 0.56), radius: 35, x: 0, y: 22)
+    .background(look.elevated, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+    .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+    .overlay { RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(look.ink.opacity(0.1), lineWidth: 0.5) }
+    .shadow(color: .black.opacity(look.dark ? 0 : 0.3), radius: 40, x: 0, y: 20)
     .task(id: search.focus) {
       // The field takes the keys once it is in the window (a moment after it appears), and again when search is opened over itself.
       try? await Task.sleep(for: .milliseconds(30))
@@ -413,7 +416,7 @@ private struct SearchPanel: View {
       let lit = min(max(search.highlight, 0), listing.rows.count - 1)
       ScrollViewReader { scroller in
         ScrollView {
-          LazyVStack(spacing: 2) {
+          LazyVStack(spacing: 4) {
             ForEach(Array(listing.rows.enumerated()), id: \.element.id) { index, row in
               ResultRow(row: row, index: index, lit: index == lit, listing: listing, query: search.query,
                         tab: listing.tabs.contains(search.tab) ? search.tab : .all, shortcuts: search.modifierHeld, look: look) {
@@ -424,7 +427,7 @@ private struct SearchPanel: View {
               .id(row.id)
             }
           }
-          .padding(8)
+          .padding(EdgeInsets(top: 4, leading: 10, bottom: 10, trailing: 10))
         }
         .scrollIndicators(.automatic)
         .onChange(of: search.keyMoves) { _, _ in
@@ -441,10 +444,11 @@ private struct SearchPanel: View {
 }
 
 /**
- * The tabs (`Filter results`, padded 8 8 9, 2 apart): All, Messages,
+ * The tabs (`Filter results`, 12 from the field, 6 apart): All, Messages,
  * Agents, Groups, Files, Links, Routines, Actions (the computer's four only
- * while its search is on), each 13 on 18, padded 4 8, 8 round; the chosen
- * one in the text colour on grey, the rest at 60%, grey under the pointer.
+ * while its search is on), each 13 in a capsule 30 high, padded 12; the
+ * chosen one in the text colour on grey, the rest at 60%, grey under the
+ * pointer. Wider than the panel (a longer language), they scroll sideways.
  */
 private struct TabRow: View {
   let tabs: [SearchTab]
@@ -453,13 +457,15 @@ private struct TabRow: View {
   let choose: (SearchTab) -> Void
 
   var body: some View {
-    HStack(spacing: 2) {
-      ForEach(tabs, id: \.self) { tab in
-        TabButton(title: tab.title, chosen: tab == current, look: look) { choose(tab) }
+    ScrollView(.horizontal) {
+      HStack(spacing: 6) {
+        ForEach(tabs, id: \.self) { tab in
+          TabButton(title: tab.title, chosen: tab == current, look: look) { choose(tab) }
+        }
       }
-      Spacer(minLength: 0)
+      .padding(EdgeInsets(top: 12, leading: 14, bottom: 10, trailing: 14))
     }
-    .padding(EdgeInsets(top: 8, leading: 8, bottom: 9, trailing: 8))
+    .scrollIndicators(.never)
     .accessibilityElement(children: .contain)
     .accessibilityLabel("Filter results")
   }
@@ -476,13 +482,13 @@ private struct TabButton: View {
     Button(action: action) {
       Text(title)
         .font(.system(size: 13))
-        .tracking(-0.08)
         .foregroundStyle(chosen ? look.ink : look.inkSecondary)
-        .frame(height: 18)
-        .padding(.vertical, 4)
-        .padding(.horizontal, 8)
-        .background(chosen || hovering ? look.rowHover : .clear, in: RoundedRectangle(cornerRadius: 8))
-        .contentShape(RoundedRectangle(cornerRadius: 8))
+        .lineLimit(1)
+        .fixedSize()
+        .padding(.horizontal, 12)
+        .frame(height: 30)
+        .background(chosen ? look.rowHover : (hovering ? look.rowHover.opacity(0.6) : .clear), in: Capsule())
+        .contentShape(Capsule())
     }
     .buttonStyle(.hand)
     .focusable(false)
@@ -494,12 +500,12 @@ private struct TabButton: View {
 // MARK: A row
 
 /**
- * One result (`MFn`), 49 high, padded 6 10 6 8, 10 round, lit grey (17%,
- * 32% on dark) under the pointer or the arrows: its picture (24), then its
- * words (13 on 18, the query's letters in semibold; an agent's title in
- * blue beside them) over a line at 60%; a hidden agent's "Hidden" tag; the
- * theme in use ticked; at the right, with ⌘ held, ⌘1–⌘9, else on All what
- * it is ("Agent", "Action", …) and on a routine's tab its date, at 40%.
+ * One result (`MFn`), 60 high, padded 10 12, 14 round, lit grey under the
+ * pointer or the arrows: its picture (36), then its words (14, the query's
+ * letters in semibold; an agent's title in blue beside them) over a line
+ * (13 at 60%); a hidden agent's "Hidden" tag; the theme in use ticked; at
+ * the right, with ⌘ held, ⌘1–⌘9, else on All what it is ("Agent",
+ * "Action", …) and on a routine's tab its date, at 40%.
  */
 private struct ResultRow: View {
   let row: Jump.Row
@@ -515,19 +521,17 @@ private struct ResultRow: View {
 
   var body: some View {
     Button(action: action) {
-      HStack(spacing: 8) {
+      HStack(spacing: 12) {
         Leading(row: row, agents: listing.agentsById, look: look)
-          .frame(width: 24, height: 24)
-        VStack(alignment: .leading, spacing: 1) {
-          HStack(spacing: 6) {
+          .frame(width: 36, height: 36)
+        VStack(alignment: .leading, spacing: 2) {
+          HStack(alignment: .firstTextBaseline, spacing: 6) {
             title
             if case .agent(let agent, _) = row, !agent.isGroup, !agent.title.trimmingCharacters(in: .whitespaces).isEmpty {
               Text(agent.shownTitle)
-                .font(.system(size: 11))
-                .tracking(0.055)
+                .font(.system(size: 12))
                 .foregroundStyle(look.blue)
                 .lineLimit(1)
-                .padding(.vertical, 3)
                 .layoutPriority(-1)
             }
           }
@@ -535,11 +539,9 @@ private struct ResultRow: View {
           if !line.isEmpty {
             Text(line)
               .font(.system(size: 13))
-              .tracking(-0.08)
               .foregroundStyle(look.inkSecondary)
               .lineLimit(1)
               .truncationMode(.tail)
-              .frame(height: 18)
           }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -560,10 +562,10 @@ private struct ResultRow: View {
         }
         trailing
       }
-      .padding(EdgeInsets(top: 6, leading: 8, bottom: 6, trailing: 10))
-      .frame(height: 49)
-      .background(lit ? look.logoTile : .clear, in: RoundedRectangle(cornerRadius: 10))
-      .contentShape(RoundedRectangle(cornerRadius: 10))
+      .padding(.horizontal, 12)
+      .frame(height: 60)
+      .background(lit ? look.logoTile : .clear, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+      .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
     .buttonStyle(.hand)
     .focusable(false)
@@ -580,15 +582,13 @@ private struct ResultRow: View {
     var styled = AttributedString()
     for run in Jump.marks(words, query: query) {
       var part = AttributedString(run.text)
-      part.font = .system(size: 13, weight: run.isMatch ? .semibold : .regular)
+      part.font = .system(size: 14, weight: run.isMatch ? .semibold : .regular)
       styled += part
     }
     return Text(styled)
-    .tracking(-0.08)
     .foregroundStyle(look.ink)
     .lineLimit(1)
     .truncationMode(.tail)
-    .frame(height: 18)
   }
 
   private var subtitle: String {
@@ -617,18 +617,18 @@ private struct ResultRow: View {
   }
 }
 
-/** A key of a shortcut: 16 square, 3 round, 11 at 60% on grey. */
+/** A key of a shortcut: 20 square, 5 round, 12 at 60% on grey. */
 private struct Keycap: View {
   let text: String
   let look: Look
 
   var body: some View {
     Text(text)
-      .font(.system(size: 11))
+      .font(.system(size: 12))
       .foregroundStyle(look.inkSecondary)
-      .padding(.horizontal, text.count > 1 ? 3 : 0)
-      .frame(minWidth: 16, minHeight: 16)
-      .background(look.rowHover, in: RoundedRectangle(cornerRadius: 3))
+      .padding(.horizontal, text.count > 1 ? 4 : 0)
+      .frame(minWidth: 20, minHeight: 20)
+      .background(look.rowHover, in: RoundedRectangle(cornerRadius: 5))
   }
 }
 
@@ -641,10 +641,10 @@ private struct Leading: View {
   var body: some View {
     switch row {
     case .agent(let agent, _):
-      AgentMark(agent: agent, agents: Array(agents.values), size: 24)
+      AgentMark(agent: agent, agents: Array(agents.values), size: 36)
     case .message(let hit):
       if let agent = agents[hit.agentId] {
-        AgentMark(agent: agent, agents: Array(agents.values), size: 24)
+        AgentMark(agent: agent, agents: Array(agents.values), size: 36)
       } else {
         tile(symbol: "bubble.left", ink: look.inkSecondary, ground: look.rowHover)
       }
@@ -661,14 +661,14 @@ private struct Leading: View {
 
   private func tile(symbol: String, ink: Color, ground: Color) -> some View {
     Image(systemName: symbol)
-      .font(.system(size: 11, weight: .medium))
+      .font(.system(size: 15))
       .foregroundStyle(ink)
-      .frame(width: 24, height: 24)
-      .background(ground, in: RoundedRectangle(cornerRadius: 8))
+      .frame(width: 36, height: 36)
+      .background(ground, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
   }
 }
 
-/** A file's kind (`OCe`, 24): its icon (13) in its colour on that colour at 9% (17% on dark), 6 round, a half-point edge. */
+/** A file's kind (`OCe`, 36): its icon (15) in its colour on that colour at 9% (17% on dark), 10 round, a half-point edge. */
 private struct FileKindTile: View {
   let kind: String
   let look: Look
@@ -678,18 +678,18 @@ private struct FileKindTile: View {
     let tint = pick.1
     let colour = tint ?? Color(hex: 0x777777)
     Image(systemName: pick.0)
-      .font(.system(size: 11, weight: .medium))
+      .font(.system(size: 15))
       .foregroundStyle(colour)
-      .frame(width: 24, height: 24)
-      .background(colour.opacity(look.dark ? 0.173 : 0.09), in: RoundedRectangle(cornerRadius: 6))
+      .frame(width: 36, height: 36)
+      .background(colour.opacity(look.dark ? 0.173 : 0.09), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
       .overlay {
-        RoundedRectangle(cornerRadius: 6)
+        RoundedRectangle(cornerRadius: 10, style: .continuous)
           .strokeBorder(tint.map { $0.opacity(0.17) } ?? look.ink.opacity(0.15), lineWidth: 0.5)
       }
   }
 }
 
-/** A link's site icon (14) once read, else the link icon, on the raised ground with a half-point edge, 8 round. */
+/** A link's site icon (18) once read, else the link icon, on the raised ground with a half-point edge, 10 round. */
 private struct LinkTile: View {
   let url: String
   let look: Look
@@ -698,14 +698,14 @@ private struct LinkTile: View {
   var body: some View {
     Group {
       if let icon {
-        Image(nsImage: icon).resizable().interpolation(.high).frame(width: 14, height: 14)
+        Image(nsImage: icon).resizable().interpolation(.high).frame(width: 18, height: 18)
       } else {
-        Image(systemName: "link").font(.system(size: 11, weight: .medium)).foregroundStyle(look.inkSecondary)
+        Image(systemName: "link").font(.system(size: 15)).foregroundStyle(look.inkSecondary)
       }
     }
-    .frame(width: 24, height: 24)
-    .background(look.elevated, in: RoundedRectangle(cornerRadius: 8))
-    .overlay { RoundedRectangle(cornerRadius: 8).strokeBorder(look.ink.opacity(0.1), lineWidth: 0.5) }
+    .frame(width: 36, height: 36)
+    .background(look.elevated, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+    .overlay { RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(look.ink.opacity(0.1), lineWidth: 0.5) }
     .task(id: url) {
       let meta = await LinkMetadataReader.shared.metadata(for: url)
       let title = meta?.title.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
@@ -737,23 +737,23 @@ private struct Skeleton: View {
 
   var body: some View {
     GeometryReader { box in
-      VStack(spacing: 2) {
+      VStack(spacing: 4) {
         ForEach(0..<5, id: \.self) { index in
           let widths = Self.widths[index]
-          HStack(spacing: 8) {
-            RoundedRectangle(cornerRadius: 8).fill(bar).frame(width: 24, height: 24)
-            VStack(alignment: .leading, spacing: 4) {
-              RoundedRectangle(cornerRadius: 4).fill(bar).frame(width: (box.size.width - 66) * widths.0, height: 9)
-              RoundedRectangle(cornerRadius: 4).fill(bar).frame(width: (box.size.width - 66) * widths.1, height: 7)
+          HStack(spacing: 12) {
+            RoundedRectangle(cornerRadius: 10, style: .continuous).fill(bar).frame(width: 36, height: 36)
+            VStack(alignment: .leading, spacing: 6) {
+              RoundedRectangle(cornerRadius: 4).fill(bar).frame(width: (box.size.width - 92) * widths.0, height: 10)
+              RoundedRectangle(cornerRadius: 4).fill(bar).frame(width: (box.size.width - 92) * widths.1, height: 8)
             }
             Spacer(minLength: 0)
           }
-          .padding(EdgeInsets(top: 6, leading: 8, bottom: 6, trailing: 10))
-          .frame(height: 49)
+          .padding(.horizontal, 12)
+          .frame(height: 60)
         }
         Spacer(minLength: 0)
       }
-      .padding(8)
+      .padding(EdgeInsets(top: 4, leading: 10, bottom: 10, trailing: 10))
     }
     .opacity(shown ? (phase ? 0.6 : 1) : 0)
     .task {
@@ -789,9 +789,9 @@ private struct Empty: View {
       } else {
         let empty = Jump.empty(tab: tab, unavailable: unavailable)
         Image(systemName: empty.glass ? "magnifyingglass" : "person.2")
-          .font(.system(size: 20))
+          .font(.system(size: 26))
           .foregroundStyle(look.ink.opacity(0.3))
-          .frame(width: 24, height: 24)
+          .frame(width: 32, height: 32)
         Text(empty.label)
           .font(.system(size: 13, weight: .medium))
           .tracking(-0.08)

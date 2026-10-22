@@ -534,11 +534,14 @@ private struct TranscriptRow: View {
     case .voiceCall(let id, let seconds, let lines, let live):
       CallLineRow(id: id, seconds: seconds, lines: lines, live: live, agentId: agentId, look: look)
     case .notice(_, let text):
+      // Spaced as the chat's other events ("Messaged Sage", `SystemEvent`): it sat against the bubble above.
       FindLine.marked(text, marks: findMarks, look: look)
         .font(.system(size: 12))
         .foregroundStyle(look.inkSecondary)
         .multilineTextAlignment(.center)
         .cssLineHeight(16, size: 12)
+        .frame(minHeight: 24)
+        .padding(.top, 8)
     case .failedSend(_, let nonce):
       FailedSend(nonce: nonce, agentId: agentId, look: look)
     case .queuedSend(_, let nonce):

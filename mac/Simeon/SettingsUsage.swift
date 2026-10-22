@@ -121,8 +121,8 @@ private struct UsageMeterLine: View {
         .accessibilityValue("\(Int(percent.rounded()))")
       }
     }
-    .padding(.horizontal, 14)
-    .padding(.vertical, 12)
+    .padding(.horizontal, SettingsRowSize.inset)
+    .padding(.vertical, SettingsRowSize.vertical)
     .overlay(alignment: .top) { if divided { SettingsDivider(look: look) } }
   }
 }

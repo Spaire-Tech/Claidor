@@ -651,18 +651,7 @@ struct ApprovalCardView: View {
   @ViewBuilder
   private func badge(_ status: String) -> some View {
     if status == "pending" {
-      HStack(spacing: 4) {
-        Image(systemName: "hand.raised.fill")
-          .font(.system(size: 10))
-          .frame(width: 14, height: 14)
-        Text("Approval needed")
-          .font(.system(size: 13, weight: .medium))
-          .tracking(-0.08)
-      }
-      .foregroundStyle(look.blue)
-      .padding(EdgeInsets(top: 2, leading: 4, bottom: 2, trailing: 8))
-      .background(look.yours.opacity(0.12), in: Capsule())
-      .fixedSize()
+      ApprovalNeededBadge(look: look)
     } else if let shown = AutoReviewCard.badge(status: status) {
       let colours = badgeColours(shown.kind)
       HStack(spacing: 6) {
@@ -693,6 +682,26 @@ struct ApprovalCardView: View {
       await store.resolveApproval(requestId, resolution: resolution, proposedRule: proposedRule, entryId: entryId, in: agentId)
       answering = false
     }
+  }
+}
+
+/** "Approval needed" in the blue, with a raised hand: an approval card waiting (this one, and the ask to use this Mac). */
+struct ApprovalNeededBadge: View {
+  let look: Look
+
+  var body: some View {
+    HStack(spacing: 4) {
+      Image(systemName: "hand.raised.fill")
+        .font(.system(size: 10))
+        .frame(width: 14, height: 14)
+      Text("Approval needed")
+        .font(.system(size: 13, weight: .medium))
+        .tracking(-0.08)
+    }
+    .foregroundStyle(look.blue)
+    .padding(EdgeInsets(top: 2, leading: 4, bottom: 2, trailing: 8))
+    .background(look.yours.opacity(0.12), in: Capsule())
+    .fixedSize()
   }
 }
 

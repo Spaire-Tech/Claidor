@@ -1431,7 +1431,7 @@ private struct PageCard<Content: View>: View {
   }
 }
 
-/** A group's row (padded 10 and 14, 8 apart, at least 44, Settings' row): Settings' line above it when it follows another. */
+/** A group's row (Settings' row: `SettingsRowSize`, 8 apart): Settings' line above it when it follows another. */
 private struct CardRow<Content: View>: View {
   var divided = false
   let look: Look
@@ -1439,9 +1439,9 @@ private struct CardRow<Content: View>: View {
 
   var body: some View {
     HStack(spacing: 8) { content }
-      .padding(.vertical, 10)
-      .padding(.horizontal, 14)
-      .frame(minHeight: 44)
+      .padding(.vertical, SettingsRowSize.vertical)
+      .padding(.horizontal, SettingsRowSize.inset)
+      .frame(minHeight: SettingsRowSize.minHeight)
       .overlay(alignment: .top) {
         if divided { SettingsDivider(look: look) }
       }
@@ -1579,9 +1579,9 @@ private struct FoldShell<Rows: View, Footer: View>: View {
             .animation(.easeOut(duration: 0.12), value: open)
             .padding(.trailing, 4)
         }
-        .padding(.vertical, 10)
-        .padding(.horizontal, 14)
-        .frame(minHeight: 44)
+        .padding(.vertical, SettingsRowSize.vertical)
+        .padding(.horizontal, SettingsRowSize.inset)
+        .frame(minHeight: SettingsRowSize.minHeight)
         .background(hovering ? look.groupedRowHover : .clear)
         .contentShape(Rectangle())
       }

@@ -13415,6 +13415,64 @@
         }
       }
     },
+    "e.g. read my calendar" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "z. B. meinen Kalender lesen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "p. ej., leer mi calendario"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ex. : lire mon calendrier"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "es. leggere il mio calendario"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "bijv. mijn agenda lezen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "np. czytać mój kalendarz"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ex.: ler minha agenda"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "t.ex. läsa min kalender"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "örn. takvimimi oku"
+          }
+        }
+      }
+    },
     "e.g. reply to emails for me" : {
       "localizations" : {
         "de" : {
@@ -31354,6 +31412,122 @@
         }
       }
     },
+    "Simeon Account" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon-Konto"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cuenta de Simeon"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compte Simeon"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Account Simeon"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon-account"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Konto Simeon"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conta Simeon"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon-konto"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon Hesabı"
+          }
+        }
+      }
+    },
+    "Simeon asks you before doing these. When two rules disagree, it asks." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon fragt dich, bevor es das tut. Widersprechen sich zwei Regeln, fragt es."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon te pregunta antes de hacer esto. Si dos reglas se contradicen, pregunta."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon te demande avant de faire ces actions. Si deux règles se contredisent, il demande."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon ti chiede prima di farle. Se due regole sono in conflitto, chiede."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon vraagt het je voordat het dit doet. Spreken twee regels elkaar tegen, dan vraagt het."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon pyta cię, zanim to zrobi. Gdy dwie reguły są sprzeczne, pyta."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Simeon pergunta a você antes de fazer isso. Se duas regras se contradizem, ele pergunta."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon frågar dig innan det gör detta. Säger två regler emot varandra frågar det."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon bunları yapmadan önce sana sorar. İki kural çelişirse sorar."
+          }
+        }
+      }
+    },
     "Simeon call" : {
       "localizations" : {
         "de" : {
@@ -31756,6 +31930,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Simeon derin bağlantıları çalışıyor"
+          }
+        }
+      }
+    },
+    "Simeon does these without asking you." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon erledigt das, ohne dich zu fragen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon hace esto sin preguntarte."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon fait ces actions sans te demander."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon le fa senza chiedertelo."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon doet dit zonder het je te vragen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon robi to, nie pytając cię."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Simeon faz isso sem perguntar a você."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon gör detta utan att fråga dig."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon bunları sana sormadan yapar."
           }
         }
       }
