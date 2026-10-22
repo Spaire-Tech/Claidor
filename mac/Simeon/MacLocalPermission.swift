@@ -94,13 +94,15 @@ final class MacLocalPermission {
 
 /**
  * The card that asks to use this Mac (`LLn`), 8 over the message field and
- * as wide (`BLn`): the orange triangle, "Allow Simeon and all agents to run
- * commands on your local computer?" (one title for every ask, as the
- * window's: decision 1), its ✕ (Deny once, also Esc), the line under it,
- * then Always allow (black, white on dark), Allow once and Never. An answer
- * greys the buttons until the computer's own copy settles the ask; one that
- * fails says so in red and can be tried again. Always allow waits for the
- * team's policy and is off below "Always allow".
+ * as wide (`BLn`), drawn as the chat's approval card (`ApprovalCardView`,
+ * the founder, 22 October 2026: "not using our design"): "Allow Simeon and
+ * all agents to run commands on your local computer?" (one title for every
+ * ask, as the window's: decision 1) with "Approval needed" in blue, its ✕
+ * (Deny once, also Esc), the line under it, then Always allow in the blue,
+ * Allow once and Never (`CardButton`). An answer greys the buttons until the
+ * computer's own copy settles the ask; one that fails says so in red and can
+ * be tried again. Always allow waits for the team's policy and is off below
+ * "Always allow".
  */
 struct LocalAskDock: View {
   let ask: LocalAsk
@@ -130,25 +132,19 @@ struct LocalAskDock: View {
     VStack(alignment: .leading, spacing: 12) {
       VStack(alignment: .leading, spacing: 4) {
         HStack(alignment: .top, spacing: 8) {
-          Image(systemName: "exclamationmark.triangle")
-            .font(.system(size: 12, weight: .medium))
-            .foregroundStyle(look.jsonNumber)
-            .frame(width: 14, height: 14)
-            .padding(.top, 2)
-            .accessibilityHidden(true)
           Text(LocalToolAsk.title)
             .font(.system(size: 14, weight: .medium))
             .tracking(-0.15)
-            .cssLineHeight(22, size: 14, weight: .medium)
             .foregroundStyle(look.ink)
             .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(minHeight: 22)
             .fixedSize(horizontal: false, vertical: true)
+          ApprovalNeededBadge(look: look)
           Button { answer(.deny) } label: {
             Image(systemName: "xmark")
-              .font(.system(size: 9, weight: .semibold))
+              .font(.system(size: 11, weight: .medium))
               .foregroundStyle(closeHover ? look.ink : look.inkSecondary)
               .frame(width: 20, height: 20)
-              .background(closeHover ? look.wash : .clear, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
               .contentShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
           }
           .buttonStyle(.hand)
@@ -169,30 +165,36 @@ struct LocalAskDock: View {
         Text(LocalToolAsk.description)
           .font(.system(size: 13))
           .tracking(-0.08)
-          .cssLineHeight(18, size: 13)
           .foregroundStyle(look.inkSecondary)
           .fixedSize(horizontal: false, vertical: true)
         if failed {
           Text(LocalToolAsk.failure)
             .font(.system(size: 13))
-            .cssLineHeight(18, size: 13)
             .foregroundStyle(look.danger)
             .fixedSize(horizontal: false, vertical: true)
         }
       }
       HStack(spacing: 8) {
         // The disabled button's words still show on hover, as the window wraps it in a span.
-        AskButton(title: String(localized: "Always allow"), primary: true, enabled: enabled && alwaysBlocked == nil, look: look) { answer(.always) }
+        let always = enabled && alwaysBlocked == nil
+        CardButton(title: String(localized: "Always allow"), prominent: true, look: look) { answer(.always) }
+          .disabled(!always)
+          .opacity(always ? 1 : 0.56)
           .contentShape(Rectangle())
           .help(alwaysBlocked ?? "")
-        AskButton(title: String(localized: "Allow once"), primary: false, enabled: enabled, look: look) { answer(.allowOnce) }
-        AskButton(title: String(localized: "Never"), primary: false, enabled: enabled, look: look) { answer(.never) }
+        CardButton(title: String(localized: "Allow once"), look: look) { answer(.allowOnce) }
+          .disabled(!enabled)
+          .opacity(enabled ? 1 : 0.56)
+        CardButton(title: String(localized: "Never"), look: look) { answer(.never) }
+          .disabled(!enabled)
+          .opacity(enabled ? 1 : 0.56)
       }
     }
     .padding(12)
     .frame(maxWidth: .infinity, alignment: .leading)
-    .background(look.theirs, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-    .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(look.ink.opacity(0.1), lineWidth: 1))
+    .background(look.theirs, in: RoundedRectangle(cornerRadius: 16))
+    .overlay { RoundedRectangle(cornerRadius: 16).inset(by: -0.25).stroke(look.theirsHairline, lineWidth: 0.5) }
+    .shadow(color: look.theirsShadow, radius: 1, x: 0, y: 1)
     .accessibilityElement(children: .contain)
     .accessibilityLabel("Local tool permission")
     .background(ViewerKeys { event in
@@ -242,42 +244,5 @@ struct LocalAskDock: View {
         failed = true
       }
     }
-  }
-}
-
-/**
- * The card's buttons (32 high, 8 round, 14 on 22): Always allow in the
- * ink (its words in the ground), at 60% under the pointer; Allow once and
- * Never on a faint grey with a 15% edge, a little darker under the
- * pointer; .56 while they wait.
- */
-private struct AskButton: View {
-  let title: String
-  let primary: Bool
-  let enabled: Bool
-  let look: Look
-  let action: () -> Void
-  @State private var hovering = false
-
-  var body: some View {
-    let on = hovering && enabled
-    Button(action: action) {
-      Text(title)
-        .font(.system(size: 14))
-        .cssLineHeight(22, size: 14)
-        .foregroundStyle(primary ? (look.dark ? Color(hex: 0x070707) : Color(hex: 0xfcfcfc)) : look.ink)
-        .padding(.horizontal, 10)
-        .frame(height: 32)
-        .background(primary ? look.ink.opacity(on ? 0.6 : 1) : (on ? look.rowHover : look.wash), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .overlay {
-          if !primary { RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(look.ink.opacity(0.15), lineWidth: 1) }
-        }
-        .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .fixedSize()
-    }
-    .buttonStyle(.hand)
-    .disabled(!enabled)
-    .opacity(enabled ? 1 : 0.56)
-    .onHover { inside in withAnimation(.timingCurve(0.16, 1, 0.3, 1, duration: 0.14)) { hovering = inside } }
   }
 }
