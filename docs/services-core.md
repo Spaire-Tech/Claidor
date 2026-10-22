@@ -633,18 +633,29 @@ box and `SAND_KEEP_BOX_RUNNING_ON_QUIT=1` always keeps it running
 - `SIMEON_DESKTOP_CLAUDE_VIA`: `anthropic` (the default) or `bedrock`, Claude
   in Amazon Bedrock so AWS credits pay for it (14 October 2026,
   `server/simeon/desktop/bedrock.py`). With `bedrock`, a Claude call goes to
-  `bedrock-mantle.{region}.api.aws/anthropic/v1/messages`: the same request
-  and event stream, the model named `anthropic.claude-…`, signed with
-  `SIMEON_DESKTOP_BEDROCK_ACCESS_KEY_ID` and
+  Bedrock's runtime Anthropic route,
+  `bedrock-runtime.{region}.amazonaws.com/anthropic/v1/messages`: the same
+  request and event stream, the model named by its cross-Region inference
+  profile (`global.anthropic.claude-sonnet-5-5`), without the
+  thinking-binding beta Bedrock does not list, signed (SigV4, service
+  `bedrock`) with `SIMEON_DESKTOP_BEDROCK_ACCESS_KEY_ID` and
   `SIMEON_DESKTOP_BEDROCK_SECRET_ACCESS_KEY` (an AWS user allowed
-  `bedrock-mantle:CreateInference` and nothing else) in
-  `SIMEON_DESKTOP_BEDROCK_REGION` (default `us-west-2`, beside Render's
-  Oregon). Bedrock alone is enough to offer Claude. When Bedrock does not
-  answer with a 200 (refused, not enabled, overloaded, unreachable), the same
-  call is made once on `ANTHROPIC_API_KEY` if it is set, and
-  `desktop.proxy.bedrock_fallback` logs Bedrock's status and words. The
-  first use of each Claude model on the AWS account turns it on; AWS may ask
-  for the use case once. Not verified: no call has reached Bedrock yet.
+  `bedrock:InvokeModel` and `bedrock:InvokeModelWithResponseStream` and
+  nothing else) in `SIMEON_DESKTOP_BEDROCK_REGION` (default `us-west-2`,
+  beside Render's Oregon). `SIMEON_DESKTOP_BEDROCK_ROUTE` picks the profile:
+  `global` (the default, no premium, processed in any Region) or `us`, `eu`,
+  `au` (kept in that geography, at a premium). Until 22 October 2026 calls
+  went to `bedrock-mantle` as `anthropic.claude-…`, which answered 404 "The
+  model … does not exist": Bedrock's model cards list Claude 5.5 on
+  bedrock-mantle in GovCloud only. Bedrock alone is enough to offer Claude.
+  When Bedrock does not answer with a 200 (refused, not enabled, overloaded,
+  unreachable), the same call is made once on `ANTHROPIC_API_KEY` if it is
+  set, as the app sent it, and `desktop.proxy.bedrock_fallback` logs
+  Bedrock's status and words. The account's Claude models are subscribed
+  through AWS Marketplace once (the console's playground does it). Its quotas
+  are the bedrock-runtime ones: tokens per minute per model, where a
+  request's `max_tokens` is held while it runs. Not verified: no call has
+  been answered by Bedrock yet.
 - `SIMEON_DESKTOP_MODELS_BY_EMAIL`: the same choice for a few people first, as
   JSON: `{"you@example.com": "claude"}`. A value that is not a policy stops
   the deploy at boot rather than serving the wrong models.
