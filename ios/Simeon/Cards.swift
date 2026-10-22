@@ -1857,7 +1857,7 @@ struct CallRecordRow: View {
         .contentShape(.rect)
       }
       .buttonStyle(.tactile)
-      .accessibilityValue(recap == nil ? "" : open ? "expanded" : "collapsed")
+      .accessibilityValue(recap == nil ? "" : open ? String(localized: "expanded") : String(localized: "collapsed"))
       if open, let recap {
         Text(recap)
           .font(.system(size: MessageType.size))

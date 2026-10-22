@@ -182,7 +182,7 @@ struct SectionDialogs: ViewModifier {
         Button("Cancel", role: .cancel) { sections.renaming = nil }
         Button("Save") { sections.finishRename(store: store) }
       } message: {
-        Text(sections.isNew ? "Name the section. Its chats stay in it on your Mac too." : "")
+        Text(sections.isNew ? String(localized: "Name the section. Its chats stay in it on your Mac too.") : "")
       }
       .alert(sections.deleting.map { SidebarSections.deleteTitle(name: $0.name) } ?? "", isPresented: Binding(get: { sections.deleting != nil }, set: { if !$0 { sections.deleting = nil } })) {
         Button("Cancel", role: .cancel) { sections.deleting = nil }

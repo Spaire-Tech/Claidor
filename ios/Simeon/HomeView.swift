@@ -198,7 +198,7 @@ struct HomeView: View {
       }
       .presentationBackground(Ink.groupedGround)
     }
-    .alert(deleting.map { "Delete “\($0.name)”" } ?? "", isPresented: Binding(get: { deleting != nil }, set: { shown in if !shown && deleting != nil { deleting = nil } }), presenting: deleting) { agent in
+    .alert(deleting.map { String(localized: "Delete “\($0.name)”") } ?? "", isPresented: Binding(get: { deleting != nil }, set: { shown in if !shown && deleting != nil { deleting = nil } }), presenting: deleting) { agent in
       Button("Cancel", role: .cancel) {}
       Button("Delete", role: .destructive) {
         Task {

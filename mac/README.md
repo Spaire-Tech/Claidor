@@ -156,7 +156,10 @@ points `appcast.xml` and `latest.json` at them. The server reads only
 button serves the new disk image within five minutes, and installed apps
 find the update on their next daily check. It refuses uncommitted changes
 and a version already published (raise `MARKETING_VERSION` and commit;
-`--replace` publishes the same version again).
+`--replace` publishes the same version again). Translation catalogs that a
+build rewrote (Xcode writes the code's strings into them on every build)
+are not counted: their changes are kept in `mac/build/release/` and the
+files put back as committed, before the build and after it.
 
 Once per release Mac:
 
