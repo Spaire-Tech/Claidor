@@ -144,10 +144,35 @@ final class LanguageTests: XCTestCase {
     XCTAssertEqual(accountEnglish, "en")
   }
 
+  func testTheChiefOfStaffIsShownInTheAppsLanguageAndSavedInEnglish() {
+    var simeon = Agent(id: "simeon", name: "Simeon")
+    simeon.title = "Chief of Staff"
+    simeon.description = Onboarding.chiefOfStaffDescription
+    XCTAssertEqual(Onboarding.chiefOfStaff(nonce: "n")["title"]?.string, "Chief of Staff", "saved in English: the engine knows him by it")
+    XCTAssertEqual(Onboarding.chiefOfStaff(nonce: "n")["description"]?.string, Onboarding.chiefOfStaffDescription)
+    XCTAssertEqual(simeon.shownTitle, L10n.text("Chief of Staff"))
+    XCTAssertEqual(simeon.shownDescription, L10n.text("Your Chief of Staff: manages your other Agents and pulls you in for decisions."))
+    var ada = Agent(id: "ada", name: "Ada")
+    ada.title = "Boîte mail"
+    ada.description = "Trie la boîte mail."
+    XCTAssertEqual(ada.shownTitle, "Boîte mail", "any other title as its agent wrote it")
+    XCTAssertEqual(ada.shownDescription, "Trie la boîte mail.")
+  }
+
+  func testARoutinesLineIsTheAppsOwnInAnotherLanguage() {
+    let json: JSON = ["id": "r1", "name": "Weekly", "trigger": ["type": "cron", "schedule": "0 9 * * 1"], "triggerDescription": "the host's English"]
+    AppLanguage.override = "en"
+    XCTAssertEqual(Routine(json: json)?.summary, "the host's English", "English: the host's words, as before")
+    AppLanguage.override = "fr"
+    let row = TriggerRow.schedule("0 9 * * 1").words
+    XCTAssertEqual(Routine(json: json)?.summary, "\(row.lead) \(row.rest)", "another language: the editor's own sentence, not the host's English")
+    XCTAssertEqual(Routine.when(trigger: nil, host: "only words"), "only words", "no trigger: the host's words")
+  }
+
   func testACallHearsAndSpeaksTheAppsLanguage() async throws {
     XCTAssertEqual(VoiceCallText.language(for: "en"), "en")
     XCTAssertEqual(VoiceCallText.language(for: "fr-CA"), "fr")
-    XCTAssertEqual(VoiceCallText.language(for: "de"), "en", "a language the server's voice agent was not given yet is English")
+    XCTAssertEqual(VoiceCallText.language(for: "ja"), "en", "a language the server's voice agent was not given is English")
     XCTAssertEqual(VoiceCallText.language(for: "tlh"), "en")
 
     // English reads exactly as before.
@@ -164,8 +189,29 @@ final class LanguageTests: XCTestCase {
     let greetings = Set([0, 0.2, 0.4, 0.6, 0.8].map { VoiceCallText.firstMessage(name: "Theo", pick: $0, personName: nil, language: "fr") })
     XCTAssertEqual(greetings.count, 5)
     for greeting in greetings { XCTAssertFalse(greeting.contains("!")); XCTAssertFalse(greeting.contains(" ?")) }
+    // Spanish, word for word as voice-call-prompt.ts: "tú", and "usted" when asked for.
+    XCTAssertEqual(VoiceCallText.language(for: "es-MX"), "es")
+    XCTAssertTrue(VoiceCallText.languageRule("es").contains("- Say \"tú\" to them, warm and direct, never stiff, unless they ask for \"usted\" or their messages above say \"usted\"."))
+    XCTAssertEqual(VoiceCallText.firstMessage(name: "Theo", pick: 0, personName: "Bass", language: "es"), "Hola Bass, soy Theo. ¿Qué tal?")
+    XCTAssertEqual(VoiceCallText.firstMessage(name: "Theo", pick: 0.99, personName: nil, language: "es"), "Theo al habla. ¿Qué tienes en mente?")
     XCTAssertTrue(VoiceCallText.languageRule("pt-BR").contains("- Speak Brazilian Portuguese for the whole call."), "the rule names the app's own language")
-    XCTAssertEqual(VoiceCallText.prompt(name: "Theo", title: "", description: "", transcript: [], personName: "Bass", teammates: [], language: "de"), english, "no German call yet: English")
+    XCTAssertEqual(VoiceCallText.prompt(name: "Theo", title: "", description: "", transcript: [], personName: "Bass", teammates: [], language: "ja"), english, "no Japanese call: English")
+    // The later languages (21 October 2026): each its familiar "you", five calm greetings with the name.
+    let englishGreetings = Set([0, 0.2, 0.4, 0.6, 0.8].map { VoiceCallText.firstMessage(name: "Theo", pick: $0, personName: "Bass", language: "en") })
+    for (tag, code, familiar, formal) in [
+      ("de-AT", "de", "du", "Sie"), ("nl", "nl", "je", "u"), ("it", "it", "tu", "Lei"), ("pt-BR", "pt", "você", "o senhor/a senhora"),
+      ("sv", "sv", "du", "ni"), ("pl", "pl", "ty", "Pan/Pani"), ("tr", "tr", "sen", "siz"),
+    ] {
+      XCTAssertEqual(VoiceCallText.language(for: tag), code, tag)
+      XCTAssertTrue(VoiceCallText.languageRule(tag).contains("- Say \"\(familiar)\" to them, warm and direct, never stiff, unless they ask for \"\(formal)\""), tag)
+      let said = Set([0, 0.2, 0.4, 0.6, 0.8].map { VoiceCallText.firstMessage(name: "Theo", pick: $0, personName: "Bass", language: tag) })
+      XCTAssertEqual(said.count, 5, tag)
+      for greeting in said {
+        XCTAssertTrue(greeting.contains("Theo"), greeting)
+        XCTAssertFalse(greeting.contains("!"), greeting)
+        XCTAssertFalse(englishGreetings.contains(greeting), "\(tag) is not English: \(greeting)")
+      }
+    }
 
     // A call started in French speaks French from its first word.
     AppLanguage.override = "fr"

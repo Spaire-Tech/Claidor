@@ -691,6 +691,11 @@ class TestThePersonsLanguage:
             english = await client.post(
                 "/desktop/api/flights/order", headers=headers, json=_order_body()
             )
+            spanish = await client.post(
+                "/desktop/api/flights/order",
+                headers={**headers, "Accept-Language": "es-MX,es;q=0.9"},
+                json=_order_body(),
+            )
             phone = await client.post(
                 "/desktop/api/flights/order",
                 headers={**headers, "Accept-Language": "fr"},
@@ -713,6 +718,11 @@ class TestThePersonsLanguage:
         assert (
             english.json()["error"]["message"]
             == "The price changed since it was approved; nothing was booked."
+        )
+        assert spanish.status_code == 409
+        assert (
+            spanish.json()["error"]["message"]
+            == "El precio cambió después de tu aprobación; no se reservó nada."
         )
         assert phone.status_code == 400
         assert "indicatif pays" in phone.json()["error"]["message"]

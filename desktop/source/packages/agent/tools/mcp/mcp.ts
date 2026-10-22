@@ -61,11 +61,12 @@ import {
   createSmartModeMcpApprovalRequest,
 } from "./smart-mode-approval.js";
 import { smartModeMcpApprovalStoreResource } from "./smart-mode-approval-store.js";
+import { say } from "../../../../shared/say.js";
+import { currentUserLanguage } from "../../../../shared/user-language.js";
 
 const logger = createLogger("tools/mcp");
 const SMART_MODE_MCP_BLOCK_REASON = "Blocked by Auto-review";
 const SMART_MODE_MCP_CLASSIFIER_ERROR_REASON = "An error occured while classifying this action. Please review manually.";
-const SMART_MODE_MCP_PARENT_REQUESTED_APPROVAL_FALLBACK_REASON = SMART_MODE_MCP_CLASSIFIER_ERROR_REASON;
 const SMART_MODE_MCP_BLOCKED_AUTONOMOUS_REASON_SUFFIX = "\n\n<system_reminder>\nAuto-review blocked this autonomous tool call. Decide now between two paths: (1) if a genuinely safer, lower-privilege, authorized path satisfies the request, use it; (2) if this blocked action is still necessary and the user should approve it, immediately retry the exact same call_mcp_tool call with requestSmartModeApproval set to true AND smartModeBlockReason set to the exact block reason text above. That retry is what shows the native approval card; stopping here leaves the user with no approval UI. Do not change the tool arguments or use an escalated variant when retrying.\n</system_reminder>";
 const SMART_MODE_DYNAMIC_MCP_BLOCKED_AUTONOMOUS_REASON_SUFFIX = SMART_MODE_MCP_BLOCKED_AUTONOMOUS_REASON_SUFFIX.replace("call_mcp_tool", "CallDynamicTool");
 
@@ -356,7 +357,7 @@ async function runSmartModeMcpPreflight(
     if (options.smartModeApprovalProvider === undefined && args.requestSmartModeApproval) {
       const parentBlockReason = args.smartModeBlockReason !== undefined && args.smartModeBlockReason.trim().length > 0
         ? args.smartModeBlockReason.trim()
-        : SMART_MODE_MCP_PARENT_REQUESTED_APPROVAL_FALLBACK_REASON;
+        : say(currentUserLanguage(), "autoReview.reviewYourself");
       if (options.agentType === AgentType.BACKGROUND) throw new ToolCallRejectedError(parentBlockReason);
       const store = options.resourceAccessor.get(smartModeMcpApprovalStoreResource);
       const approvalRequest = await createSmartModeMcpApprovalRequest(ctx, store, { ...targetForApproval, blockReason: parentBlockReason });

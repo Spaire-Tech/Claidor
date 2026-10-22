@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { AGENT_COLOR_LABELS, agentColorIdFromName } from "../../../shared/agents/agent-colors.js";
 import { staffingMessage } from "../../../shared/agents/chief-of-staff.js";
+import { currentUserLanguage } from "../../../shared/user-language.js";
 import {
   SAND_CREATE_AGENT_TOOL_NAME,
   SAND_SEND_TO_AGENT_TOOL_NAME,
@@ -82,10 +83,10 @@ export const createAgentParameters = z.object({
     "The new agent's persona / instructions: what it is for and how it should behave. This becomes its profile and shapes its replies. Optional but strongly recommended.",
   ),
   title: z.string().trim().optional().describe(
-    "The job, in a word or two, shown under the name: Inbox, Calendar, Research, Bookkeeping. Give one when you are staffing.",
+    "The job, in a word or two, shown under the name: Inbox, Calendar, Research, Bookkeeping (in the user's language when it is not English). Give one when you are staffing.",
   ),
   brief: z.string().trim().optional().describe(
-    "The staffing brief: what the agent is to do first and how to report, written to the agent and delivered as its first message, which starts it. Begin it with \"<the user's first name> staffed you to …\". With a brief the agent does not run the generic introduction; it introduces itself to the user as the one now on the job and starts.",
+    "The staffing brief: what the agent is to do first and how to report, written to the agent and delivered as its first message, which starts it. Begin it with \"<the user's first name> staffed you to …\" (in the user's language when it is not English: the whole brief is in it, opening with their first name). With a brief the agent does not run the generic introduction; it introduces itself to the user as the one now on the job and starts.",
   ),
 });
 
@@ -160,7 +161,7 @@ export function createCreateAgentTool(management: AgentManagementDependencies) {
         ...(args.title == null || args.title.length === 0 ? {} : { title: args.title }),
       }, { startIntroduction: !isStaffing });
       if (isStaffing) {
-        const message = staffingMessage(resolved.getPersonName?.() ?? null, brief);
+        const message = staffingMessage(resolved.getPersonName?.() ?? null, brief, currentUserLanguage());
         await resolved.brief!(created.id, message);
         return `Created agent "${created.name}" (id: ${created.id}) and delivered your brief as its first message: it introduces itself to the user in its own chat as the one now on the job and starts. Tell the user who you hired and where to find them; message it again with SendToAgent only when there is more to say.`;
       }

@@ -11,6 +11,13 @@ export const SUPPORTED_LOCALES = [
   'pt-PT',
 ] as const
 export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number]
+
+/**
+ * Languages only Simeon's own pages are in (`simeon`, docs/localization.md):
+ * the checkout has no words in them and reads English there.
+ */
+export const SIMEON_ONLY_LOCALES = ['pl', 'tr'] as const
+export type SimeonOnlyLocale = (typeof SIMEON_ONLY_LOCALES)[number]
 export const DEFAULT_LOCALE = 'en' satisfies SupportedLocale
 
 export type TranslatedLocale = Exclude<SupportedLocale, typeof DEFAULT_LOCALE>
@@ -49,7 +56,7 @@ type ResolveBCP47<T extends string> = T extends `${string}-${string}`
   ? T
   : T | `${T}-${Alpha}${Alpha}`
 
-export type AcceptedLocale = ResolveBCP47<SupportedLocale>
+export type AcceptedLocale = ResolveBCP47<SupportedLocale | SimeonOnlyLocale>
 
 export const LOCALE_NAMES: Record<SupportedLocale, string> = {
   en: 'English',

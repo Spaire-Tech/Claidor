@@ -612,7 +612,7 @@ private struct AgentCard: View {
         .foregroundStyle(word.live ? look.added : look.inkTertiary)
     }
     .frame(maxWidth: .infinity)
-    let about = agent.description.trimmingCharacters(in: .whitespacesAndNewlines)
+    let about = agent.shownDescription.trimmingCharacters(in: .whitespacesAndNewlines)
     if !about.isEmpty {
       VStack(alignment: .leading, spacing: 6) {
         sectionHeading(String(localized: "About"), look: look)

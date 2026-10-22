@@ -35,7 +35,7 @@ import { renderAutomationListSystemPrompt, renderAutomationsPointerSystemPrompt,
 import { ROUTINES_GUIDE_REFERENCE_PATH } from "./box-reference-docs.js";
 import { renderTimeZoneSystemPrompt } from "../../shared/timezone.js";
 import { renderUserIdentitySystemPrompt } from "../sand-user-identity.js";
-import { renderUserLanguageSystemPrompt } from "../../shared/user-language.js";
+import { renderSubagentLanguageSystemPrompt, renderUserLanguageSystemPrompt } from "../../shared/user-language.js";
 import { renderWorkflowsSystemPrompt } from "../../shared/workflow-model.js";
 import { renderChannelsSystemPrompt, type ChannelConnectionSummary } from "../../shared/channel-messaging.js";
 import { renderAgentDirectorySystemPrompt, type AgentAddress, type AgentGroupAddress } from "../agents/agent-messaging.js";
@@ -232,7 +232,9 @@ export function createSystemPromptAssembly(deps: SystemPromptAssemblyDependencie
   }
 
   function getUserLanguageSection(): string | null {
-    const rendered = renderUserLanguageSystemPrompt(deps.userLanguage?.());
+    const rendered = deps.isSubagentRunner
+      ? renderSubagentLanguageSystemPrompt(deps.userLanguage?.())
+      : renderUserLanguageSystemPrompt(deps.userLanguage?.());
     return rendered.length > 0 ? rendered : null;
   }
 
@@ -302,11 +304,11 @@ export function createSystemPromptAssembly(deps: SystemPromptAssemblyDependencie
     const profile = deps.isSharedRoomRunner ? profileSection(resolveProfileForPrompt(), true) : snapshot?.profileSection ?? profileSection(resolveProfileForPrompt(), false);
     if (profile != null) sections.push(profile);
     const add = (value: string | null | undefined): void => { if (value != null && value.length > 0) sections.push(value); };
-    // The person's language, in a group chat too: they read it. A subagent writes to its agent, not to them.
-    if (!deps.isSubagentRunner) add(getUserLanguageSection());
+    // The person's language, in a group chat too: they read it. A subagent writes to its agent, but the person reads its descriptions on approval cards.
+    add(getUserLanguageSection());
     if (deps.isSharedRoomRunner) return sections.join("\n\n");
     // The Chief of Staff's standing rule, by title (7 October 2026, `shared/agents/chief-of-staff.ts`).
-    if (!deps.isSubagentRunner && isChiefOfStaffTitle(deps.agentProfileProvider()?.title)) add(chiefOfStaffSection(deps.requestContext.resolve().userFullName));
+    if (!deps.isSubagentRunner && isChiefOfStaffTitle(deps.agentProfileProvider()?.title)) add(chiefOfStaffSection(deps.requestContext.resolve().userFullName, deps.userLanguage?.()));
     add(getUserIdentitySection());
     if (!deps.isSubagentRunner && !deps.isSystemPromptOverridden && deps.isMultitaskEnabled?.() === true) add(deps.multitaskSection);
     if (deps.isSystemPromptOverridden && !deps.isSubagentRunner && cloudDisabled) add(SAND_CLOUD_AGENTS_DISABLED_PROMPT_SECTION);

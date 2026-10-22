@@ -338,7 +338,7 @@ private struct PinTile: View {
             .frame(maxWidth: 92)
             .frame(height: 16)
           if !agent.isGroup && !agent.title.isEmpty {
-            Text(agent.title)
+            Text(agent.shownTitle)
               .font(.system(size: 11))
               .tracking(0.055)
               .foregroundStyle(look.blue)
@@ -673,7 +673,7 @@ struct AgentRow: View {
         }
         if titled {
           // The iPhone's tag: a grey box, the words in our blue.
-          Text(agent.title)
+          Text(agent.shownTitle)
             .font(.system(size: 11.5, weight: .medium))
             .foregroundStyle(look.blue)
             .lineLimit(1)

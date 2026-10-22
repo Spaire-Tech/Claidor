@@ -18,16 +18,64 @@
       "comment" : "Privacy - Microphone Usage Description",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon hört zu, wenn du eine Nachricht diktierst oder einen Agenten anrufst."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Simeon listens when you dictate a message or call an agent."
           }
         },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon te escucha cuando dictas un mensaje o llamas a un agente."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Simeon t’écoute quand tu dictes un message ou que tu appelles un agent."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon ti ascolta quando detti un messaggio o chiami un agente."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon luistert als je een bericht dicteert of een agent belt."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon słucha, gdy dyktujesz wiadomość lub dzwonisz do agenta."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Simeon escuta quando você dita uma mensagem ou liga para um agente."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon lyssnar när du dikterar ett meddelande eller ringer en agent."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bir mesajı dikte ettiğinde veya bir ajanı aradığında Simeon seni dinler."
           }
         }
       }
@@ -36,16 +84,64 @@
       "comment" : "Privacy - Speech Recognition Usage Description",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon macht aus dem, was du sagst, den Text deiner Nachricht."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Simeon turns what you say into the message you are writing."
           }
         },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon convierte lo que dices en el mensaje que estás escribiendo."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Simeon transforme ce que tu dis en texte dans le message que tu écris."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon trasforma ciò che dici nel messaggio che stai scrivendo."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon zet wat je zegt om in het bericht dat je schrijft."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon zamienia twoje słowa na tekst wiadomości, którą piszesz."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Simeon transforma sua fala na mensagem que você está escrevendo."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon gör om det du säger till text i meddelandet du skriver."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon, söylediklerini yazdığın mesaja dönüştürür."
           }
         }
       }
@@ -54,16 +150,64 @@
       "comment" : "Privacy - Photo Library Usage Description",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon sendet die Fotos, die du auswählst, an deinen Agenten."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Simeon sends the photos you pick to your agent."
           }
         },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon envía a tu agente las fotos que eliges."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Simeon envoie à ton agent les photos que tu choisis."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon invia al tuo agente le foto che scegli."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon stuurt de foto’s die je kiest naar je agent."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon wysyła agentowi wybrane przez ciebie zdjęcia."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Simeon envia ao seu agente as fotos que você escolher."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon skickar bilderna du väljer till din agent."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon, seçtiğin fotoğrafları ajanına gönderir."
           }
         }
       }
@@ -72,16 +216,64 @@
       "comment" : "Privacy - Camera Usage Description",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeons Anrufe mit deinen Agenten sind reine Sprachanrufe und schalten nie die Kamera ein."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Simeon's calls with your agents are voice only and never turn on the camera."
           }
         },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las llamadas de Simeon con tus agentes son solo de voz y nunca encienden la cámara."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Les appels de Simeon avec tes agents sont uniquement vocaux et n’allument jamais la caméra."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le chiamate di Simeon con i tuoi agenti sono solo vocali e non accendono mai la fotocamera."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oproepen met je agenten in Simeon zijn alleen spraak en zetten nooit de camera aan."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Połączenia z agentami w Simeonie są tylko głosowe i nigdy nie włączają kamery."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "As chamadas do Simeon com seus agentes são só de voz e nunca ligam a câmera."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeons samtal med dina agenter är bara röstsamtal och slår aldrig på kameran."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon’un ajanlarınla yaptığı aramalar yalnızca seslidir ve kamerayı asla açmaz."
           }
         }
       }
@@ -90,16 +282,64 @@
       "comment" : "Privacy - Face ID Usage Description",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon nutzt Face ID, um die App zu entsperren, damit nur du deine Agenten sehen kannst."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Simeon uses Face ID to unlock the app, so only you can see your agents."
           }
         },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon usa Face ID para desbloquear la app, para que solo tú puedas ver a tus agentes."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Simeon utilise Face ID pour déverrouiller l’app, pour que tes agents ne soient visibles que par toi."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon usa Face ID per sbloccare l’app, così solo tu puoi vedere i tuoi agenti."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon gebruikt Face ID om de app te ontgrendelen, zodat alleen jij je agenten kunt zien."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon używa Face ID do odblokowania aplikacji, dzięki czemu twoi agenci są widoczni tylko dla ciebie."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Simeon usa o Face ID para desbloquear o app, para que só você veja seus agentes."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon använder Face ID för att låsa upp appen, så att bara du kan se dina agenter."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon, uygulamanın kilidini açmak için Face ID kullanır; böylece ajanlarını yalnızca sen görebilirsin."
           }
         }
       }

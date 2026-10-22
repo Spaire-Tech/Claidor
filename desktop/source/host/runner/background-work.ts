@@ -1,4 +1,6 @@
 import { decodeBackgroundWorkMetadata } from "../../packages/agent-exec/background-work-metadata.js";
+import { say } from "../../shared/say.js";
+import { currentUserLanguage } from "../../shared/user-language.js";
 
 export interface BackgroundWorkRecord { readonly id: string; readonly kind: string; readonly state: string; readonly ownerId?: string; readonly abort?: () => void; readonly metadata?: unknown }
 export interface BackgroundWakeup { readonly id?: string; readonly conversationId?: string; readonly payload: { readonly kind: string; readonly reason?: string; readonly taskId: string; readonly title?: string; readonly status?: string; readonly detail?: string; readonly outputPath?: string } }
@@ -31,7 +33,7 @@ export const SHELL_REWATCH_MAX_WAIT_MS = 5 * 60 * 60 * 1_000;
 export const SHELL_REWATCH_MISSING_FILE_GIVE_UP = 5;
 export function shellRewatchPollMs(env: NodeJS.ProcessEnv = process.env): number { const parsed = Number.parseInt(env.SAND_SHELL_REWATCH_POLL_MS?.trim() ?? "", 10); return Number.isFinite(parsed) && parsed > 0 ? parsed : SHELL_REWATCH_POLL_DEFAULT_MS; }
 export function parseShellTerminalFooter(content: string): { isComplete: boolean; exitCode?: number; isStreamFailure?: boolean } { const match = content.match(/\n---\n([\s\S]*?)\n---\s*$/); if (match == null) return { isComplete: false }; const footer = match[1] ?? "", exit = footer.match(/(?:^|\n)exit_code:\s*([^\n]*)/); if (exit != null) { const raw = (exit[1] ?? "").trim(), parsed = Number(raw); return { isComplete: true, ...(raw && Number.isInteger(parsed) ? { exitCode: parsed } : {}) }; } return /(?:^|\n)error:\s*([^\n]*)/.test(footer) && /(?:^|\n)ended_at:\s*\S/.test(footer) ? { isComplete: true, isStreamFailure: true } : { isComplete: false }; }
-export function deriveBackgroundSubagentTitle(prompt: string): string { const oneLine = prompt.replace(/\s+/g, " ").trim(); if (oneLine.length === 0) return "Background task"; const maxLength = 80; return oneLine.length <= maxLength ? oneLine : `${oneLine.slice(0, maxLength - 1)}\u2026`; }
+export function deriveBackgroundSubagentTitle(prompt: string): string { const oneLine = prompt.replace(/\s+/g, " ").trim(); if (oneLine.length === 0) return say(currentUserLanguage(), "subagent.backgroundTask"); const maxLength = 80; return oneLine.length <= maxLength ? oneLine : `${oneLine.slice(0, maxLength - 1)}\u2026`; }
 export function formatSteerPrompt(message: string): string { return ["[Steering message from the parent agent that dispatched you]", message.trim(), "Take this into account and continue your task from where you are — do not start over."].join("\n\n"); }
 export interface BackgroundWatchesHost {
   getConversationId(): string; emitAsyncTasksChanged(): void;

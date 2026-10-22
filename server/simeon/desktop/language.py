@@ -46,22 +46,29 @@ def normalize_language(raw: str | None) -> str | None:
 
 #: The languages the server answers in besides English: those with a table
 #: in `simeon/desktop/words/` (`say`).
-TRANSLATED = ("fr",)
+TRANSLATED = ("fr", "es", "de", "nl", "it", "pt-BR", "sv", "pl", "tr")
+
+#: The region a language reads when Simeon has only that one: Portuguese is
+#: Brazil's ("pt-PT" reads "pt-BR").
+ONE_REGION = {"pt": "pt-BR"}
 
 #: The language of the request being answered; None is English.
 _current: ContextVar[str | None] = ContextVar("simeon_language", default=None)
 
 
 def translated(raw: str | None) -> str | None:
-    """The language of Simeon's that a tag asks for ("fr" for "fr-CA"), or
-    None (English) when Simeon is not translated into it."""
+    """The language of Simeon's that a tag asks for ("fr" for "fr-CA",
+    "pt-BR" for "pt-PT"), or None (English) when Simeon is not translated
+    into it."""
     tag = normalize_language(raw)
     if tag is None:
         return None
     if tag in TRANSLATED:
         return tag
-    code = tag.split("-")[0]
-    return code if code in TRANSLATED else None
+    code = tag.split("-")[0].lower()
+    if code in TRANSLATED:
+        return code
+    return ONE_REGION.get(code)
 
 
 def accepted_language(header: str | None) -> str | None:

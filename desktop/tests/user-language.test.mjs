@@ -95,15 +95,44 @@ test("the prompt names the language, says tu in French, and keeps names as they 
     assert.match(french, /starting with your very first hello/);
     assert.match(french, /question widget \(its question, options and helpText\)/);
     assert.match(french, /If the user writes to you in another language, answer in theirs\./);
+    // What the person can open in the apps is in their language too (22 October 2026): agents' messages to each other, briefs, and what they make.
+    assert.match(french, /write in French too what you send to other agents \(SendMessage to an agent, a group chat, the brief of an agent you create/);
+    assert.match(french, /the name, title and description of an agent, a routine's name and instructions, a skill, a memory note, a to-do list/);
+    assert.match(french, /Only what a program reads stays as the program needs it/);
+    assert.doesNotMatch(french, /can stay in English/);
     assert.match(french, /Never translate names: Simeon, SimeonLabs, the agents' names/);
     assert.match(french, /Gmail, Slack, Link, Shop, Stripe/);
     assert.match(french, /say "tu" to the user/);
     assert.match(french, /switch to "vous" and keep it from then on/);
     assert.match(french, /update_state, target "memory", scope "user", action "write"/, "the vous preference is remembered for every agent");
-    // Another language: named, but no tu/vous rule.
-    const spanish = module.renderUserLanguageSystemPrompt("es");
+    // Spanish: "tú" by default, "usted" when asked for, remembered the same way; neutral Spanish, the person's own way followed.
+    const spanish = module.renderUserLanguageSystemPrompt("es-MX");
     assert.match(spanish, /Write to the user in Spanish/);
+    assert.match(spanish, /In Spanish, say "tú" to the user/);
+    assert.match(spanish, /switch to "usted" and keep it from then on/);
+    assert.match(spanish, /"Prefers to be addressed as usted in Spanish"/);
+    assert.match(spanish, /¿ and ¡ open every question and exclamation/);
     assert.doesNotMatch(spanish, /"tu"|"vous"/);
+    // The later languages (21 October 2026): each its familiar you, its formal one when asked, remembered.
+    for (const [tag, english, familiar, formal] of [
+      ["de-AT", "German", "du", "Sie"],
+      ["nl", "Dutch", "je", "u"],
+      ["it", "Italian", "tu", "Lei"],
+      ["pt-BR", "Brazilian Portuguese", "você", "o senhor/a senhora"],
+      ["sv", "Swedish", "du", "ni"],
+      ["pl", "Polish", "ty", "Pan/Pani"],
+      ["tr", "Turkish", "sen", "siz"],
+    ]) {
+      const prompt = module.renderUserLanguageSystemPrompt(tag);
+      assert.match(prompt, new RegExp(`Write to the user in ${english}`), tag);
+      assert.ok(prompt.includes(`In ${english}, say "${familiar}" to the user`), tag);
+      assert.ok(prompt.includes(`switch to "${formal}" and keep it from then on`), tag);
+      assert.ok(prompt.includes(`"Prefers to be addressed as ${formal} in ${english}"`), tag);
+    }
+    // Another language: named, but no rule of address.
+    const japanese = module.renderUserLanguageSystemPrompt("ja");
+    assert.match(japanese, /Write to the user in Japanese/);
+    assert.doesNotMatch(japanese, /say "/);
     // English or none: nothing at all.
     for (const english of [undefined, null, "", "en", "en-US", "nonsense!"]) assert.equal(module.renderUserLanguageSystemPrompt(english), "", String(english));
   } finally {
@@ -133,7 +162,11 @@ test("every agent's instructions carry the language; English reads exactly as be
     const room = module.createSystemPromptAssembly(assemblyDeps({ isSharedRoomRunner: true, userLanguage: () => "fr" })).getSystemPrompt();
     assert.match(room, /## Language/, "a group chat is in the person's language too");
     const child = module.createSystemPromptAssembly(assemblyDeps({ isSubagentRunner: true, userLanguage: () => "fr" })).getSystemPrompt();
-    assert.doesNotMatch(child, /## Language/, "a subagent writes to its agent, not to the person");
+    // A subagent writes to its agent, but the person reads its descriptions on approval cards (22 October 2026).
+    assert.match(child, /## Language\nThe user's Simeon apps are in French\. They read the description you give a click, a drag, a key press or a command/);
+    assert.doesNotMatch(child, /say "tu" to the user/, "not the agents' whole rule");
+    const englishChild = module.createSystemPromptAssembly(assemblyDeps({ isSubagentRunner: true, userLanguage: () => "en" })).getSystemPrompt();
+    assert.doesNotMatch(englishChild, /## Language/, "English: as before");
   } finally {
     await dispose();
   }
@@ -153,8 +186,11 @@ test("the first hello and Simeon's introduction are in the person's language", a
       assert.match(french, /The user's apps are in French: write every message of this turn to the user in French, question widgets \(question, options and helpText\) included/);
       assert.match(french, /Say "tu" to the user\./);
       assert.match(french, /Names of apps, connectors and agents stay as they are\./);
+      assert.match(french, /What you write to an agent \(a brief, a message\) and the title and description of an agent you create are in French too/);
     }
-    assert.doesNotMatch(firstRunCueInLanguage("cue", "de"), /"tu"/, "tu is French only");
+    assert.match(firstRunCueInLanguage("cue", "es"), /The user's apps are in Spanish: .* Say "tú" to the user\./);
+    assert.match(firstRunCueInLanguage("cue", "de"), /The user's apps are in German: .* Say "du" to the user\./);
+    assert.doesNotMatch(firstRunCueInLanguage("cue", "ja"), /Say "/, "only the languages with a familiar you");
   } finally {
     await Promise.all([language.dispose(), onboarding.dispose(), chief.dispose()]);
   }
@@ -199,7 +235,10 @@ test("a voice call hears and speaks the person's language, its first line too", 
   try {
     assert.equal(module.voiceCallLanguage(undefined), "en");
     assert.equal(module.voiceCallLanguage("fr-CA"), "fr");
-    assert.equal(module.voiceCallLanguage("de"), "en", "a language the server's voice agent was not given yet is English");
+    assert.equal(module.voiceCallLanguage("es-419"), "es");
+    assert.equal(module.voiceCallLanguage("de-AT"), "de");
+    assert.equal(module.voiceCallLanguage("pt-BR"), "pt", "the voice agent's Portuguese has no region");
+    assert.equal(module.voiceCallLanguage("ja"), "en", "a language the server's voice agent was not given is English");
     assert.equal(module.voiceCallLanguage("tlh"), "en");
 
     const english = module.buildVoiceCallOverrides({ agent: { name: "Theo" }, transcript: [], pick: 0, personName: "Bass" });
@@ -215,6 +254,19 @@ test("a voice call hears and speaks the person's language, its first line too", 
     assert.match(french.agent.prompt.prompt, /Language:\n- Speak French for the whole call\./);
     assert.match(french.agent.prompt.prompt, /Say "tu" to them/);
     assert.match(french.agent.prompt.prompt, /Names stay as they are/);
+    const spanish = module.buildVoiceCallOverrides({ agent: { name: "Theo" }, transcript: [], pick: 0, personName: "Bass", language: "es" });
+    assert.equal(spanish.agent.language, "es");
+    assert.equal(spanish.agent.firstMessage, "Hola Bass, soy Theo. ¿Qué tal?");
+    assert.match(spanish.agent.prompt.prompt, /Language:\n- Speak Spanish for the whole call\./);
+    assert.match(spanish.agent.prompt.prompt, /Say "tú" to them, warm and direct, never stiff, unless they ask for "usted"/);
+    const spanishGreetings = new Set([0, 0.2, 0.4, 0.6, 0.8, 0.99].map((pick) => module.buildFirstMessage("Theo", pick, null, "es")));
+    assert.equal(spanishGreetings.size, 5, "five Spanish openings, as in English");
+    for (const greeting of spanishGreetings) {
+      assert.match(greeting, /Theo/);
+      assert.doesNotMatch(greeting, /!/, "calm, no exclamation mark");
+      assert.doesNotMatch(greeting, /\busted\b/, "tú, not usted");
+      assert.match(greeting, /¿[^?]+\?$/, "a question opens with ¿");
+    }
     const greetings = new Set([0, 0.2, 0.4, 0.6, 0.8, 0.99].map((pick) => module.buildFirstMessage("Theo", pick, null, "fr")));
     assert.equal(greetings.size, 5, "five French openings, as in English");
     for (const greeting of greetings) {
@@ -224,8 +276,8 @@ test("a voice call hears and speaks the person's language, its first line too", 
       assert.doesNotMatch(greeting, / \?/, "a narrow no-break space before ?, never a plain one");
     }
     // A language the voice does not speak yet: the call is English, as before.
-    const german = module.buildVoiceCallOverrides({ agent: { name: "Theo" }, transcript: [], pick: 0, personName: "Bass", language: "de" });
-    assert.deepEqual(german, english);
+    const japanese = module.buildVoiceCallOverrides({ agent: { name: "Theo" }, transcript: [], pick: 0, personName: "Bass", language: "ja" });
+    assert.deepEqual(japanese, english);
     assert.match(module.voiceCallLanguageRule("pt-BR"), /Speak Brazilian Portuguese for the whole call\./, "the rule names the person's own language");
   } finally {
     await dispose();

@@ -261,7 +261,7 @@ export default {
       checkEmail: 'Regarde tes e-mails',
       codeSentTo: 'On a envoyé un code à six caractères à {email}.',
       codeSent: 'On t’a envoyé un code à six caractères.',
-      continueWithPassword: 'Continuer avec un mot de passe',
+      continueWithPassword: 'Utiliser un mot de passe',
       differentEmail: 'Utiliser une autre adresse e-mail',
       signingIn: 'Connexion…',
       signIn: 'Se connecter',

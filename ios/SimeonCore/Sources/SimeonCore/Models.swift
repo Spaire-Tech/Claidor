@@ -172,6 +172,20 @@ public struct Agent: Identifiable, Hashable, Sendable {
     return found
   }
 
+  /**
+   * The title as the person reads it (22 October 2026): the Chief of Staff's,
+   * saved in English since the engine knows him by it (`isChiefOfStaffTitle`),
+   * in the app's language; any other as its agent wrote it.
+   */
+  public var shownTitle: String {
+    title.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == "chief of staff" ? L10n.text("Chief of Staff") : title
+  }
+
+  /** The description as the person reads it: Simeon's own from onboarding in the app's language, any other as written. */
+  public var shownDescription: String {
+    description == Onboarding.chiefOfStaffDescription ? L10n.text("Your Chief of Staff: manages your other Agents and pulls you in for decisions.") : description
+  }
+
   /** The agent is working: the window's typing dots. */
   public var isBusy: Bool { isRunningTurn || isComposing }
 }

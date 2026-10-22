@@ -1,4 +1,4 @@
-import { languageCode, languageName, normalizeUserLanguage } from "../user-language.js";
+import { ADDRESS, languageCode, languageName, normalizeUserLanguage } from "../user-language.js";
 
 /**
  * Every sentence a voice call puts in front of the voice model or the
@@ -55,7 +55,7 @@ export const VOICE_CALL_LANGUAGE = "en";
  * (docs/localization.md; `scripts/check_translations.py` checks they match).
  */
 const VOICE_CALL_LANGUAGES: Readonly<Record<string, string>> = {
-  en: "en", fr: "fr",
+  en: "en", fr: "fr", es: "es", de: "de", nl: "nl", it: "it", "pt-BR": "pt", pt: "pt", sv: "sv", pl: "pl", tr: "tr",
 };
 
 /** The call's language for the person's: "fr" for "fr-CA"; English for none, or one the voice does not speak yet. */
@@ -180,15 +180,17 @@ export function buildVoiceCallPrompt(args: { readonly agent: VoiceCallAgentProfi
 /**
  * The call's language, at the end of its prompt when it is not English: the
  * voice speaks the person's language ("Brazilian Portuguese", by their own
- * tag) from its first word, and "tu" in French (docs/localization.md). Names
+ * tag) from its first word, "tu" in French and "tú" in Spanish (`ADDRESS`,
+ * docs/localization.md). Names
  * stay as they are.
  */
 export function voiceCallLanguageRule(userLanguage: string | null | undefined): string {
   const tag = normalizeUserLanguage(userLanguage) ?? VOICE_CALL_LANGUAGE;
+  const address = ADDRESS[languageCode(tag)];
   return [
     "Language:",
     `- Speak ${languageName(tag)} for the whole call. If they speak another language to you, answer in theirs.`,
-    ...(languageCode(tag) === "fr" ? ["- Say \"tu\" to them, warm and direct, never stiff, unless they ask for \"vous\" or their messages above say \"vous\"."] : []),
+    ...(address === undefined ? [] : [`- Say "${address.familiar}" to them, warm and direct, never stiff, unless they ask for "${address.formal}" or their messages above say "${address.formal}".`]),
     "- Names stay as they are: Simeon, your name and your teammates' names, and the names of apps (Gmail, Slack, Shop).",
   ].join("\n");
 }
@@ -205,7 +207,8 @@ const GREETINGS: readonly Greeting[] = [
 
 /**
  * The greetings in the call's other languages, as many as the English ones
- * and in the same spirit (calm, no exclamation mark); French says "tu". A
+ * and in the same spirit (calm, no exclamation mark); French says "tu",
+ * Spanish "tú". A
  * language with none here opens with the English one, which the voice then
  * follows in the person's language. Kept word for word in
  * `ios/SimeonCore/Sources/SimeonCore/VoiceCall.swift`.
@@ -217,6 +220,62 @@ const GREETINGS_BY_LANGUAGE: Readonly<Record<string, readonly Greeting[]>> = {
     (name, person) => `Salut${person}, ici ${name}. De quoi as-tu besoin\u202f?`,
     (name, person) => `Bonjour${person}, c’est ${name}. Comment je peux t’aider\u202f?`,
     (name) => `${name} à l’appareil. Qu’est-ce que tu as en tête\u202f?`,
+  ],
+  es: [
+    (name, person) => `Hola${person}, soy ${name}. ¿Qué tal?`,
+    (name, person) => `Hola${person}, habla ${name}. ¿Qué puedo hacer por ti?`,
+    (name, person) => `Hola${person}, aquí ${name}. ¿Qué necesitas?`,
+    (name, person) => `Hola${person}, soy ${name}. ¿En qué te ayudo?`,
+    (name) => `${name} al habla. ¿Qué tienes en mente?`,
+  ],
+  de: [
+    (name, person) => `Hey${person}, hier ist ${name}. Was gibt’s?`,
+    (name, person) => `Hallo${person}, ${name} hier. Was kann ich für dich tun?`,
+    (name, person) => `Hey${person}, hier spricht ${name}. Was brauchst du?`,
+    (name, person) => `Hi${person}, hier ist ${name}. Wie kann ich helfen?`,
+    (name) => `${name} hier. Was beschäftigt dich?`,
+  ],
+  nl: [
+    (name, person) => `Hoi${person}, met ${name}. Zeg het maar.`,
+    (name, person) => `Hallo${person}, met ${name}. Wat kan ik voor je doen?`,
+    (name, person) => `Hé${person}, ${name} hier. Wat heb je nodig?`,
+    (name, person) => `Hoi${person}, met ${name}. Waarmee kan ik je helpen?`,
+    (name) => `${name} hier. Wat speelt er?`,
+  ],
+  it: [
+    (name, person) => `Ciao${person}, sono ${name}. Che mi racconti?`,
+    (name, person) => `Ciao${person}, qui ${name}. Cosa posso fare per te?`,
+    (name, person) => `Ehi${person}, sono ${name}. Di cosa hai bisogno?`,
+    (name, person) => `Ciao${person}, sono ${name}. Come posso aiutarti?`,
+    (name) => `Sono ${name}. Cosa hai in mente?`,
+  ],
+  pt: [
+    (name, person) => `Oi${person}, aqui é ${name}. O que manda?`,
+    (name, person) => `Olá${person}, aqui é ${name}. O que posso fazer por você?`,
+    (name, person) => `Oi${person}, ${name} falando. Do que você precisa?`,
+    (name, person) => `Olá${person}, ${name} na linha. Como posso ajudar?`,
+    (name) => `Aqui é ${name}. O que você tem em mente?`,
+  ],
+  sv: [
+    (name, person) => `Hallå${person}, det är ${name}. Hur är läget?`,
+    (name, person) => `Hej${person}, ${name} här. Vad kan jag göra för dig?`,
+    (name, person) => `Hej${person}, du pratar med ${name}. Vad behöver du?`,
+    (name, person) => `Hej${person}, det är ${name}. Hur kan jag hjälpa dig?`,
+    (name) => `${name} här. Vad har du på hjärtat?`,
+  ],
+  pl: [
+    (name, person) => `Cześć${person}, tu ${name}. Co słychać?`,
+    (name, person) => `Hej${person}, tu ${name}. Co mogę dla ciebie zrobić?`,
+    (name, person) => `Cześć${person}, mówi ${name}. Czego potrzebujesz?`,
+    (name, person) => `Hej${person}, tu ${name}. W czym mogę pomóc?`,
+    (name) => `Tu ${name}. O czym chcesz pogadać?`,
+  ],
+  tr: [
+    (name, person) => `Selam${person}, ben ${name}. Ne var ne yok?`,
+    (name, person) => `Merhaba${person}, ben ${name}. Senin için ne yapabilirim?`,
+    (name, person) => `Selam${person}, ${name} konuşuyor. Neye ihtiyacın var?`,
+    (name, person) => `Merhaba${person}, ben ${name}. Nasıl yardımcı olabilirim?`,
+    (name) => `Ben ${name}. Aklında ne var?`,
   ],
 };
 

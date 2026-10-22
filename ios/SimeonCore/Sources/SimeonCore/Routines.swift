@@ -27,12 +27,24 @@ public struct Routine: Identifiable, Hashable, Sendable {
     trigger = json["trigger"]?.present ?? json["schedule"]?.text.map { ["type": "cron", "schedule": .string($0)] }
     let firstCron = TriggerRow.rows(trigger).lazy.compactMap { row -> String? in if case .schedule(let line) = row { return line } else { return nil } }.first
     schedule = json["schedule"]?.string ?? firstCron ?? ""
-    summary = json["triggerDescription"]?.text ?? Schedule(cron: schedule).summary
+    summary = Routine.when(trigger: trigger, host: json["triggerDescription"]?.text) ?? Schedule(cron: schedule).summary
     isEnabled = json["isEnabled"]?.bool ?? true
     createdAt = json["createdAt"]?.double
     lastRunAt = json["lastRunAt"]?.double
     nextRunAt = json["nextRunAt"]?.double
     runs = (json["runs"]?.array ?? []).compactMap(RoutineRun.init)
+  }
+
+  /**
+   * When it runs, as its row shows it: the host's own words in English
+   * ("Every Monday at 9:00 AM"); in another language the editor's sentence
+   * of each trigger (`TriggerRow.words`), since the host writes English
+   * (22 October 2026). Nil when there is neither.
+   */
+  public static func when(trigger: JSON?, host: String?) -> String? {
+    let rows = TriggerRow.rows(trigger)
+    guard !AppLanguage.isEnglish(AppLanguage.current), !rows.isEmpty else { return host }
+    return rows.map { row in let words = row.words; return words.rest.isEmpty ? words.lead : "\(words.lead) \(words.rest)" }.joined(separator: " · ")
   }
 
   public init(id: String, name: String, prompt: String, schedule: String, isEnabled: Bool = true) {

@@ -1,0 +1,27 @@
+Simeon, işinde gerçek görevleri olan yapay zekâ ajanlarından oluşan bir ekip. Her biri zaten kullandığın araçlarda, kendine ait bir bilgisayarda çalışır ve önemli olan her şeyden önce sana danışır.
+
+ONLARA EKİBİNE YAZAR GİBİ YAZ
+Herhangi bir ajana bir iş arkadaşına yazar gibi yaz ya da arayıp durumu sesli konuş. Sağ kolun Simeon ekibi yönetir ve karar gerektiğinde seni dahil eder.
+
+KENDİ BİLGİSAYARLARI
+Her ajanın kendine ait bir bulut bilgisayarı var. Çalışmasını izle ya da istediğin zaman kontrolü al.
+
+ZATEN KULLANDIĞIN UYGULAMALARI BAĞLA
+Gmail, Google Calendar, Outlook, Slack, Notion, HubSpot, Stripe ve çok daha fazlası. Ajanların bunları okur ve senin için onlarda çalışır.
+
+ONAYIN OLMADAN HİÇBİR ŞEY GİTMEZ
+E-postalar, mesajlar, ödemeler ve önemli olan diğer her şey onayını bekler. Ajanlarının kendi başına neler yapabileceğine sen karar verirsin.
+
+EKİBİN İHTİYAÇLARINI ALIR, SEYAHATLERİNİ AYARLAR
+Ajanların istediğin şeyi bulur, ödeme sayfasını doldurur ve sen Face ID ile onayladığında Link veya Shop ile öder. Uçuş arar ve seçtiğin uçuşun rezervasyonunu yapar.
+
+HER AJANA BİR GÖREV
+Haftan için bir yönetici asistanı, gelen kutusu yöneticisi, müşteri desteği, satış, pazarlama, raporlama: tıpkı birini işe alır gibi her ajanı tek bir işe ata.
+
+VERİLERİN SANA AİT KALIR
+Verilerin hem depolanırken hem aktarılırken şifrelenir, diğer müşterilerin verilerinden ayrı tutulur ve asla model eğitmek için kullanılmaz.
+
+Simeon; Türkçe, İngilizce, Fransızca, İspanyolca, Almanca, Felemenkçe, İtalyanca, Portekizce (Brezilya), İsveççe ve Lehçe olarak kullanılabilir. Planlar, uygulama içinden satın alınan aylık aboneliklerdir; ilk 30 günün ücretsiz ve kart gerekmez.
+
+Hizmet Koşulları: https://simeonlabs.com/terms
+Gizlilik Politikası: https://simeonlabs.com/privacy

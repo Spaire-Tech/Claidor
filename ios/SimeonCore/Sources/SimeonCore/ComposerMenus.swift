@@ -53,7 +53,7 @@ public enum ComposerMenus {
       guard item["isEnabledForAgent"]?.bool == true || item["source"]?.string == "automation" else { return nil }
       guard seen.insert(id).inserted else { return nil }
       // A routine's line is when it runs (`scheduleDescription`, else its schedule); a skill's is what it does.
-      let when = item["scheduleDescription"]?.text ?? item["trigger"]?["schedule"]?.text
+      let when = Routine.when(trigger: item["trigger"], host: item["scheduleDescription"]?.text) ?? item["trigger"]?["schedule"]?.text
       return Skill(id: id, name: name, subtitle: when, summary: item["description"]?.text, iconId: item["iconId"]?.text, iconURL: item["iconUrl"]?.text)
     }
   }
