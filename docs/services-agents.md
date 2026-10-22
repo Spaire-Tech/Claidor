@@ -574,9 +574,12 @@ fourteen of 7a), each read from its Composio toolkit page that day:
 Each has its mark (`brand/connector-logos`: Composio's logo service; Gem's, Loop Returns', Karbon's,
 CourtListener's, Ignition's, AppFolio's and Ignav's from their own sites; Upwork's, Uber's and Meta's
 from Wikimedia Commons), its colour and logo in the chat (TikTok's was in the Mac window's list
-already) and its words in the nine languages. Not done: their App Store tiles
-(`ios/scripts/app_icons.py`) and their lines on the consent sheet (`ConnectConsent.swift`, which
-falls back to "what's in your <App> account"). Not verified: no sign-in or tool call through any.
+already) and its words in the nine languages. Later that day: its app icon (`ios/scripts/app_icons.py`:
+26 from their iOS apps, 19 drawn from their marks), its lines on the consent sheet
+(`ConnectConsent.swift`: what the agents reach, and a note for the 20 that ask for the person's own
+key) and, for nine of the makers' servers, View Source (`vendor-mcp/sources.ts`; Upwork, Karbon,
+AppFolio, Uber and TaskRabbit have no page that could be checked). Not verified: no sign-in or tool
+call through any.
 
 Each new connector has, like the others: its mark in `desktop/brand/connector-logos` (Composio's
 logo service, except Dynamics 365, which it answers with Microsoft's four squares, cropped from
