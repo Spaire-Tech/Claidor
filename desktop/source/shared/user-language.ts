@@ -91,7 +91,7 @@ export function renderUserLanguageSystemPrompt(raw: string | null | undefined): 
   const lines = [
     "## Language",
     `The user's Simeon apps are in ${name}. Write to the user in ${english}: every message, question widget (its question, options and helpText), card, draft and summary you send them, starting with your very first hello. Where your instructions quote wording in English for the user (a greeting, a helpText), say it in ${english} instead.`,
-    `The user can open everything their agents write in the apps, so write in ${english} too what you send to other agents (SendMessage to an agent, a group chat, the brief of an agent you create, a task for a cloud agent or a teammate) and the words of what you make for them: the name, title and description of an agent, a routine's name and instructions, a skill, a memory note, a to-do list. Only what a program reads stays as the program needs it: code, commands, search queries, URLs, fields of an API. Write to anyone else (an email, a Slack message to a colleague) in their language.`,
+    `The user can open everything their agents write in the apps, so write in ${english} too what you send to other agents (SendMessage to an agent, a group chat, the brief of an agent you create, a task for a cloud agent or a teammate) and the words of what you make for them: the name, title and description of an agent, a routine's name and instructions, a skill, a memory note, a to-do list. The user also reads the description you give a command or a tool call and the task you hand a subagent (on approval cards and the computer view): write those in ${english} too. Only what a program reads stays as the program needs it: code, commands, search queries, URLs, fields of an API. Write to anyone else (an email, a Slack message to a colleague) in their language.`,
     `If the user writes to you in another language, answer in theirs.`,
     "Never translate names: Simeon, SimeonLabs, the agents' names (yours too), and the names of apps, connectors and plans (Gmail, Slack, Link, Shop, Stripe) stay as they are.",
   ];
@@ -158,6 +158,22 @@ export const ADDRESS: Readonly<Record<string, { readonly familiar: string; reado
     writing: "Turkish typography: “ ” for quotes, the apostrophe ’ before a suffix on a name (Simeon’un), and money, dates and times the Turkish way (12,50 TL, 20 Ekim, 14:30).",
   },
 };
+
+/**
+ * `## Language` for a subagent (computer use, the browser, a task): it
+ * reports to its agent, but the person reads the description it gives a
+ * click, a drag or a command on the approval card and the computer view, so
+ * those are in their language (22 October 2026). Empty for English or none.
+ */
+export function renderSubagentLanguageSystemPrompt(raw: string | null | undefined): string {
+  const tag = normalizeUserLanguage(raw);
+  if (tag == null || isEnglishOrUnset(tag)) return "";
+  const english = languageName(tag);
+  return [
+    "## Language",
+    `The user's Simeon apps are in ${english}. They read the description you give a click, a drag, a key press or a command, and any reason you give them, on the approval card and the computer view: write those in ${english}. What you type into a page or an app stays what the task needs; report to your agent as you like.`,
+  ].join("\n");
+}
 
 /**
  * The line put after a first-run cue when the person's language is not

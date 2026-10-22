@@ -162,7 +162,11 @@ test("every agent's instructions carry the language; English reads exactly as be
     const room = module.createSystemPromptAssembly(assemblyDeps({ isSharedRoomRunner: true, userLanguage: () => "fr" })).getSystemPrompt();
     assert.match(room, /## Language/, "a group chat is in the person's language too");
     const child = module.createSystemPromptAssembly(assemblyDeps({ isSubagentRunner: true, userLanguage: () => "fr" })).getSystemPrompt();
-    assert.doesNotMatch(child, /## Language/, "a subagent writes to its agent, not to the person");
+    // A subagent writes to its agent, but the person reads its descriptions on approval cards (22 October 2026).
+    assert.match(child, /## Language\nThe user's Simeon apps are in French\. They read the description you give a click, a drag, a key press or a command/);
+    assert.doesNotMatch(child, /say "tu" to the user/, "not the agents' whole rule");
+    const englishChild = module.createSystemPromptAssembly(assemblyDeps({ isSubagentRunner: true, userLanguage: () => "en" })).getSystemPrompt();
+    assert.doesNotMatch(englishChild, /## Language/, "English: as before");
   } finally {
     await dispose();
   }

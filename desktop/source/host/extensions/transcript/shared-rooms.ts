@@ -26,6 +26,7 @@ import type {
   TranscriptEntry,
   TranscriptManagerLike,
 } from "./transcript-hub.js";
+import { say } from "../../../shared/say.js";
 
 export function decodeAvatarDataUrl(dataUrl: string): Buffer | null {
   const marker = ";base64,";
@@ -79,7 +80,7 @@ export class SharedRooms {
       await this.tm.groupChat.resolveGroupMembers([fromAgentId])
     )[0] ?? {
       id: fromAgentId,
-      name: "An agent",
+      name: say(this.tm.userLanguage?.(), "agent.unnamed"),
       description: "",
     };
     this.tm.productAnalytics.trackEvent("sand.agent_message.sent", {
@@ -146,21 +147,15 @@ export class SharedRooms {
     const remote = readSandRemoteRoomConfig(dirname(session.dbPath));
     const delegate = this.tm.xuserDelegate;
     if (remote == null || delegate == null || !delegate.isEnabled()) {
-      appendNotice(
-        "This shared chat isn't connected right now, so the message wasn't delivered.",
-      );
+      appendNotice(say(this.tm.userLanguage?.(), "share.notConnected"));
       return;
     }
     if (remote.isRevoked === true) {
-      appendNotice(
-        "You no longer have access to this shared chat, so the message wasn't delivered.",
-      );
+      appendNotice(say(this.tm.userLanguage?.(), "share.noAccess"));
       return;
     }
     if (args.hasNonImageAttachments) {
-      appendNotice(
-        "Only text and images can be sent to shared chats for now; other attachments were not delivered.",
-      );
+      appendNotice(say(this.tm.userLanguage?.(), "share.textAndImagesOnly"));
     }
 
     const images: Array<{ base64: string; mediaType: string }> = [];
@@ -181,9 +176,7 @@ export class SharedRooms {
       });
     }
     if (args.selectedImages.length > 4 || omitted) {
-      appendNotice(
-        "Some images were too large for the shared chat and were not delivered.",
-      );
+      appendNotice(say(this.tm.userLanguage?.(), "share.imagesTooLarge"));
     }
     try {
       const result = await delegate.sendMirrorPost({
@@ -211,9 +204,7 @@ export class SharedRooms {
       console.warn(
         `[sand:sharing] mirror send failed room=${remote.roomId}: ${error instanceof Error ? error.message : String(error)}`,
       );
-      appendNotice(
-        "The message couldn't be delivered to the shared chat. You may have lost access, or the connection failed.",
-      );
+      appendNotice(say(this.tm.userLanguage?.(), "share.notDelivered"));
     }
   }
 

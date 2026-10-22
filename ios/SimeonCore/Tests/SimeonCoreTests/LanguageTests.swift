@@ -159,6 +159,16 @@ final class LanguageTests: XCTestCase {
     XCTAssertEqual(ada.shownDescription, "Trie la boîte mail.")
   }
 
+  func testARoutinesLineIsTheAppsOwnInAnotherLanguage() {
+    let json: JSON = ["id": "r1", "name": "Weekly", "trigger": ["type": "cron", "schedule": "0 9 * * 1"], "triggerDescription": "the host's English"]
+    AppLanguage.override = "en"
+    XCTAssertEqual(Routine(json: json)?.summary, "the host's English", "English: the host's words, as before")
+    AppLanguage.override = "fr"
+    let row = TriggerRow.schedule("0 9 * * 1").words
+    XCTAssertEqual(Routine(json: json)?.summary, "\(row.lead) \(row.rest)", "another language: the editor's own sentence, not the host's English")
+    XCTAssertEqual(Routine.when(trigger: nil, host: "only words"), "only words", "no trigger: the host's words")
+  }
+
   func testACallHearsAndSpeaksTheAppsLanguage() async throws {
     XCTAssertEqual(VoiceCallText.language(for: "en"), "en")
     XCTAssertEqual(VoiceCallText.language(for: "fr-CA"), "fr")

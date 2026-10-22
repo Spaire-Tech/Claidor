@@ -1,5 +1,5 @@
 import { say } from "../../shared/say.js";
-import { currentUserLanguage } from "../../shared/user-language.js";
+import { currentUserLanguage, isEnglishOrUnset } from "../../shared/user-language.js";
 
 // An approval card's summary is written in the person's language (`say`, 20 October 2026);
 // the MCP `command` line stays as the tool's own words.
@@ -89,6 +89,8 @@ export function summarizeSandMcpAutoReviewAction(args: {
   const safeTool = compact(args.toolName, 80);
   const payload = redactMcpValue(args.mcpArguments ?? {}, undefined);
   const details = compactHeadAndTail(JSON.stringify(payload), 300);
+  const language = currentUserLanguage();
+  if (!isEnglishOrUnset(language)) return say(language, "approval.mcpDetail", { service: safeServer || say(language, "approval.connectedService"), tool: safeTool || "?", details });
   return `Use ${safeServer || "a connected service"} tool ${safeTool || "action"} with ${details}`;
 }
 
@@ -147,8 +149,13 @@ export function fallbackSandMcpAutoReviewSummary(args: {
   const server = compact(args.serverDisplayName, 80);
   const action = humanizeMcpToolAction(args.toolName);
   const hint = safeMcpDestinationHint(args.mcpArguments);
-  if (action === undefined) return genericSandMcpAutoReviewSummary(server);
   const language = currentUserLanguage();
+  // The tool's name made into words is English ("send a message"): in another language the card says which service, and where.
+  if (!isEnglishOrUnset(language)) {
+    const generic = genericSandMcpAutoReviewSummary(server);
+    return hint === undefined ? generic : say(language, "approval.toward", { action: generic, destination: hint });
+  }
+  if (action === undefined) return genericSandMcpAutoReviewSummary(server);
   const base = say(language, "approval.useTo", { service: server.length > 0 ? server : say(language, "approval.connectedService"), action });
   if (hint === undefined || base.toLowerCase().includes(hint.toLowerCase())) return base;
   return say(language, "approval.toward", { action: base, destination: hint });

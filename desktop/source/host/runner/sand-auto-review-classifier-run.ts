@@ -10,6 +10,8 @@ import {
   type SmartModeClassifierConversationMessage,
   SmartModeRiskTarget,
 } from "../../packages/proto/generated/agent/v1/smart_mode_classifier_exec_pb.js";
+import { say } from "../../shared/say.js";
+import { currentUserLanguage } from "../../shared/user-language.js";
 
 export const SAND_AUTO_REVIEW_BLOCK_REASON = "Blocked by Auto-review";
 // Two attempts (25 September 2026, ledger F-347): a timeout in enforce is a
@@ -59,7 +61,7 @@ export async function runSandAutoReviewClassifier(args: {
       const proposedRule = proposedAllowRule?.trim();
       return {
         kind: "block",
-        reason: blockReason?.trim() || SAND_AUTO_REVIEW_BLOCK_REASON,
+        reason: blockReason?.trim() || say(currentUserLanguage(), "autoReview.blocked"),
         ...(proposedRule !== undefined && proposedRule.length > 0 ? { proposedRule } : {}),
       };
     }

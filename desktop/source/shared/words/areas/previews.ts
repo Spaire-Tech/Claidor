@@ -155,6 +155,19 @@ export const EN = {
   "channel.discordGatewayVersion": "Discord refused the gateway version.",
   "channel.discordInvalidIntents": "Discord refused the gateway intents (invalid intents).",
   "channel.discordPrivilegedIntent": "Discord refused a privileged intent: turn on Message Content Intent under the bot's Privileged Gateway Intents in the Developer Portal, then reconnect.",
+
+  // Auto-review's own words on an approval card when the reviewer gave none (`sand-auto-review-classifier-run.ts`, `simeon-smart-mode-classifier-exec.ts`, `mcp.ts`).
+  "autoReview.blocked": "Blocked by Auto-review",
+  "autoReview.reviewYourself": "Auto-review couldn't check this action. Review it yourself.",
+  "autoReview.allowCommand": "Allow {action}: {command}",
+  "autoReview.allowKind": "Allow {action} actions like this one",
+
+  // A connector's action in the card's details (`summarizeSandMcpAutoReviewAction`).
+  "approval.mcpDetail": "Use {service} tool {tool} with {details}",
+
+  // A sender with no name (`agent-to-agent-messaging.ts`, `shared-rooms.ts`), and a background task with no words (`deriveBackgroundSubagentTitle`).
+  "agent.unnamed": "An agent",
+  "subagent.backgroundTask": "Background task",
 } as const satisfies Readonly<Record<string, string>>;
 
 export const FR: Readonly<Record<keyof typeof EN, string>> = {
@@ -300,6 +313,14 @@ export const FR: Readonly<Record<keyof typeof EN, string>> = {
   "channel.discordGatewayVersion": "Discord a refusé la version de la gateway.",
   "channel.discordInvalidIntents": "Discord a refusé les intents de la gateway (intents invalides).",
   "channel.discordPrivilegedIntent": "Discord a refusé un intent privilégié : active Message Content Intent dans les Privileged Gateway Intents du bot, dans le Developer Portal, puis reconnecte-toi.",
+
+  "autoReview.blocked": "Bloqué par la vérification automatique",
+  "autoReview.reviewYourself": "La vérification automatique n’a pas pu examiner cette action. Vérifie-la toi-même.",
+  "autoReview.allowCommand": "Autoriser {action} : {command}",
+  "autoReview.allowKind": "Autoriser les actions {action} comme celle-ci",
+  "approval.mcpDetail": "Utiliser l’outil {tool} de {service} avec {details}",
+  "agent.unnamed": "Un agent",
+  "subagent.backgroundTask": "Tâche en arrière-plan",
 };
 
 export const ES: Readonly<Record<keyof typeof EN, string>> = {
@@ -445,6 +466,14 @@ export const ES: Readonly<Record<keyof typeof EN, string>> = {
   "channel.discordGatewayVersion": "Discord rechazó la versión del gateway.",
   "channel.discordInvalidIntents": "Discord rechazó los intents del gateway (intents no válidos).",
   "channel.discordPrivilegedIntent": "Discord rechazó un intent privilegiado: activa Message Content Intent en los Privileged Gateway Intents del bot, en el Developer Portal, y vuelve a conectarte.",
+
+  "autoReview.blocked": "Bloqueado por la revisión automática",
+  "autoReview.reviewYourself": "La revisión automática no pudo comprobar esta acción. Revísala tú.",
+  "autoReview.allowCommand": "Permitir {action}: {command}",
+  "autoReview.allowKind": "Permitir acciones {action} como esta",
+  "approval.mcpDetail": "Usar la herramienta {tool} de {service} con {details}",
+  "agent.unnamed": "Un agente",
+  "subagent.backgroundTask": "Tarea en segundo plano",
 };
 
 export const DE: Readonly<Record<keyof typeof EN, string>> = {
@@ -590,6 +619,14 @@ export const DE: Readonly<Record<keyof typeof EN, string>> = {
   "channel.discordGatewayVersion": "Discord hat die Gateway-Version abgelehnt.",
   "channel.discordInvalidIntents": "Discord hat die Gateway-Intents abgelehnt (ungültige Intents).",
   "channel.discordPrivilegedIntent": "Discord hat einen privilegierten Intent abgelehnt: Aktiviere Message Content Intent unter den Privileged Gateway Intents des Bots im Developer Portal und verbinde dich dann neu.",
+
+  "autoReview.blocked": "Von der automatischen Prüfung blockiert",
+  "autoReview.reviewYourself": "Die automatische Prüfung konnte diese Aktion nicht prüfen. Prüf sie selbst.",
+  "autoReview.allowCommand": "{action} erlauben: {command}",
+  "autoReview.allowKind": "{action}-Aktionen wie diese erlauben",
+  "approval.mcpDetail": "{service}-Tool {tool} mit {details} verwenden",
+  "agent.unnamed": "Ein Agent",
+  "subagent.backgroundTask": "Hintergrundaufgabe",
 };
 
 export const NL: Readonly<Record<keyof typeof EN, string>> = {
@@ -735,6 +772,14 @@ export const NL: Readonly<Record<keyof typeof EN, string>> = {
   "channel.discordGatewayVersion": "Discord heeft de gatewayversie geweigerd.",
   "channel.discordInvalidIntents": "Discord heeft de gateway-intents geweigerd (ongeldige intents).",
   "channel.discordPrivilegedIntent": "Discord heeft een geprivilegieerde intent geweigerd: zet Message Content Intent aan onder de Privileged Gateway Intents van de bot in de Developer Portal en koppel de bot dan opnieuw.",
+
+  "autoReview.blocked": "Geblokkeerd door de automatische controle",
+  "autoReview.reviewYourself": "De automatische controle kon deze actie niet beoordelen. Bekijk haar zelf.",
+  "autoReview.allowCommand": "{action} toestaan: {command}",
+  "autoReview.allowKind": "{action}-acties zoals deze toestaan",
+  "approval.mcpDetail": "Tool {tool} van {service} gebruiken met {details}",
+  "agent.unnamed": "Een agent",
+  "subagent.backgroundTask": "Achtergrondtaak",
 };
 
 export const IT: Readonly<Record<keyof typeof EN, string>> = {
@@ -880,6 +925,14 @@ export const IT: Readonly<Record<keyof typeof EN, string>> = {
   "channel.discordGatewayVersion": "Discord ha rifiutato la versione del gateway.",
   "channel.discordInvalidIntents": "Discord ha rifiutato gli intent del gateway (intent non validi).",
   "channel.discordPrivilegedIntent": "Discord ha rifiutato un intent privilegiato: attiva Message Content Intent nei Privileged Gateway Intents del bot, nel Developer Portal, poi riconnetti.",
+
+  "autoReview.blocked": "Bloccato dalla revisione automatica",
+  "autoReview.reviewYourself": "La revisione automatica non è riuscita a controllare questa azione. Controllala tu.",
+  "autoReview.allowCommand": "Consenti {action}: {command}",
+  "autoReview.allowKind": "Consenti azioni {action} come questa",
+  "approval.mcpDetail": "Usare lo strumento {tool} di {service} con {details}",
+  "agent.unnamed": "Un agente",
+  "subagent.backgroundTask": "Attività in background",
 };
 
 export const PT_BR: Readonly<Record<keyof typeof EN, string>> = {
@@ -1025,6 +1078,14 @@ export const PT_BR: Readonly<Record<keyof typeof EN, string>> = {
   "channel.discordGatewayVersion": "O Discord recusou a versão do gateway.",
   "channel.discordInvalidIntents": "O Discord recusou os intents do gateway (intents inválidos).",
   "channel.discordPrivilegedIntent": "O Discord recusou um intent privilegiado: ative Message Content Intent em Privileged Gateway Intents do bot, no Developer Portal, e reconecte.",
+
+  "autoReview.blocked": "Bloqueado pela revisão automática",
+  "autoReview.reviewYourself": "A revisão automática não conseguiu verificar esta ação. Confira por conta própria.",
+  "autoReview.allowCommand": "Permitir {action}: {command}",
+  "autoReview.allowKind": "Permitir ações {action} como esta",
+  "approval.mcpDetail": "Usar a ferramenta {tool} ({service}) com {details}",
+  "agent.unnamed": "Um agente",
+  "subagent.backgroundTask": "Tarefa em segundo plano",
 };
 
 export const SV: Readonly<Record<keyof typeof EN, string>> = {
@@ -1170,6 +1231,14 @@ export const SV: Readonly<Record<keyof typeof EN, string>> = {
   "channel.discordGatewayVersion": "Discord nekade gateway-versionen.",
   "channel.discordInvalidIntents": "Discord nekade gatewayns intents (ogiltiga intents).",
   "channel.discordPrivilegedIntent": "Discord nekade en privilegierad intent: slå på Message Content Intent under botens Privileged Gateway Intents i Developer Portal och anslut sedan igen.",
+
+  "autoReview.blocked": "Stoppat av autogranskningen",
+  "autoReview.reviewYourself": "Autogranskningen kunde inte kontrollera den här åtgärden. Granska den själv.",
+  "autoReview.allowCommand": "Tillåt {action}: {command}",
+  "autoReview.allowKind": "Tillåt {action}-åtgärder som den här",
+  "approval.mcpDetail": "Använd verktyget {tool} i {service} med {details}",
+  "agent.unnamed": "En agent",
+  "subagent.backgroundTask": "Bakgrundsuppgift",
 };
 
 export const PL: Readonly<Record<keyof typeof EN, string>> = {
@@ -1315,6 +1384,14 @@ export const PL: Readonly<Record<keyof typeof EN, string>> = {
   "channel.discordGatewayVersion": "Discord odrzucił wersję bramy (gateway).",
   "channel.discordInvalidIntents": "Discord odrzucił intencje bramy (invalid intents).",
   "channel.discordPrivilegedIntent": "Discord odrzucił uprzywilejowaną intencję: włącz Message Content Intent w sekcji Privileged Gateway Intents bota w Developer Portal, a potem połącz ponownie.",
+
+  "autoReview.blocked": "Zablokowane przez automatyczną weryfikację",
+  "autoReview.reviewYourself": "Automatyczna weryfikacja nie mogła sprawdzić tej czynności. Sprawdź ją samodzielnie.",
+  "autoReview.allowCommand": "Zezwalaj na {action}: {command}",
+  "autoReview.allowKind": "Zezwalaj na podobne działania typu {action}",
+  "approval.mcpDetail": "Użyj narzędzia {tool} ({service}) z {details}",
+  "agent.unnamed": "Agent",
+  "subagent.backgroundTask": "Zadanie w tle",
 };
 
 export const TR: Readonly<Record<keyof typeof EN, string>> = {
@@ -1460,4 +1537,12 @@ export const TR: Readonly<Record<keyof typeof EN, string>> = {
   "channel.discordGatewayVersion": "Discord gateway sürümünü reddetti.",
   "channel.discordInvalidIntents": "Discord gateway intent’lerini reddetti (invalid intents).",
   "channel.discordPrivilegedIntent": "Discord ayrıcalıklı bir intent’i reddetti: Developer Portal’da botun Privileged Gateway Intents bölümünden Message Content Intent’i aç, sonra yeniden bağlan.",
+
+  "autoReview.blocked": "Otomatik inceleme tarafından engellendi",
+  "autoReview.reviewYourself": "Otomatik inceleme bu işlemi kontrol edemedi. Kendin gözden geçir.",
+  "autoReview.allowCommand": "{action} için izin ver: {command}",
+  "autoReview.allowKind": "Bunun gibi {action} işlemlerine izin ver",
+  "approval.mcpDetail": "{service} içindeki {tool} aracını kullan: {details}",
+  "agent.unnamed": "Bir ajan",
+  "subagent.backgroundTask": "Arka plan görevi",
 };

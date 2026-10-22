@@ -156,7 +156,7 @@ export class AgentToAgentMessaging {
       images,
     );
     const inbound: AgentInboundMessage = {
-      from: { id: fromAgentId, name: sender?.name ?? "An agent" },
+      from: { id: fromAgentId, name: sender?.name ?? say(this.tm.userLanguage?.(), "agent.unnamed") },
       text: message,
       timestampMs: Date.now(),
       ...(images.length === 0 ? {} : { images }),

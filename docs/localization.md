@@ -24,7 +24,7 @@ everywhere text is written outside the apps:
 | Simeon Labs' server | `Accept-Language` on every request | `AppLanguage`, `SimeonAPI.clientHeaders`, `SimeonConfig.serverHeaders` (`ios/SimeonCore`) |
 | The account | `POST /desktop/api/user/profile {"language"}` after every sign-in; kept in `users.language` | `AppStore.tellLanguage`, `server/simeon/desktop/language.py` |
 | The person's computer | the host setting `userLanguage`, beside `userTimeZone`, after every sign-in and reconnect | `AppStore.tellLanguage`, `desktop/source/shared/node/settings/sand-settings-store.ts` |
-| The agents | `## Language` in every agent's instructions; a closing line on the first-run cues (each agent's hello, Simeon's introduction, a staffed agent's first turn) | `desktop/source/shared/user-language.ts` |
+| The agents | `## Language` in every agent's instructions; a closing line on the first-run cues (each agent's hello, Simeon's introduction, a staffed agent's first turn). Everything the person can open is in their language: messages to the person, and also what agents write to each other (a brief, SendToAgent, a group chat), the name, title and description of an agent, a routine, a skill, a memory note, a tool call's description; only what a program reads stays as it needs. A subagent (computer use, the browser) gets a shorter `## Language` for its descriptions on the approval card and the computer view; the approval reviewer gets a language line for its reason and rule | `desktop/source/shared/user-language.ts` (`renderUserLanguageSystemPrompt`, `renderSubagentLanguageSystemPrompt`), `chief-of-staff.ts` (`staffingMessage`), `reviewerLanguageLine` (`simeon-smart-mode-classifier-exec.ts`) |
 | Voice calls | the call's `language`, its first line and a `Language:` rule in its prompt | `voice-call-prompt.ts` (engine), `VoiceCallText` (core); the server's agent knows each language (`VOICE_LANGUAGES` in `server/simeon/desktop/voice.py`) |
 | Dictation | the iPhone's speech recognizer follows the phone; the server's transcription gets `language` when it is not English | `SimeonAPI.transcribe` |
 | The engine's calls to the server | `Accept-Language` (the person's) on the flight booking calls and the phone pushes, so the server's refusals and a push's card line come back in it; a flight search's fields stay English (the apps read them) | `acceptLanguageHeader` (`shared/user-language.ts`), `simeonApiData(…, { language })`, `mobile-push-notifier.ts` |
@@ -222,6 +222,12 @@ say("email.login_code.subject", language="fr")
 - The agents write English to a French person: read the host setting
   (`getHostSettings`, `userLanguage`). Empty means the app never told it:
   the app tells it after each sign-in and reconnect (`AppStore.tellLanguage`).
+- Simeon briefs an agent in English: the brief opens with the person's
+  first name in their language (`staffing.opening`, `staffingMessage`);
+  an English opening on a French brief means the model wrote it so. Read the
+  agent's `## Language` section in its instructions (the rule names what it
+  sends other agents). Simeon (the "Chief of Staff") is saved in English and
+  shown in the app's language (`Agent.shownTitle`, `shownDescription`).
 - A French call does not connect, or speaks English: the server logs
   `desktop.voice.languages_refused` when ElevenLabs refused the agent's other
   languages; the agent is then written without them, so English calls go on.

@@ -98,7 +98,7 @@ export class AutomationRunPath {
       : session.db.getTranscriptEntries();
     const seed = createUserMessage(
       nextEntryId(entries, "user-message"),
-      buildGroupAutomationSeed(automation, events),
+      buildGroupAutomationSeed(automation, events, this.tm.userLanguage?.()),
       {},
     );
     if (isActive) this.tm.appendEntry(seed);
@@ -224,7 +224,7 @@ export class AutomationRunPath {
             automationId: args.automation.id,
             trigger: args.trigger,
             ...(isEventFire
-              ? { eventSummary: describeTriggerEventBatch(eventBatch) }
+              ? { eventSummary: describeTriggerEventBatch(eventBatch, this.tm.userLanguage?.()) }
               : {}),
             ...(args.runUuid === undefined ? {} : { runUuid: args.runUuid }),
             ...(args.coalescedRunUuids?.length
