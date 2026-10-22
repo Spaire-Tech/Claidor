@@ -71,6 +71,22 @@ major=$(xcodebuild -version | head -1 | sed -E 's/Xcode ([0-9]+).*/\1/')
 [ "$major" -ge 26 ] || fail "Xcode 26 or later is needed (its SDK has Liquid Glass)."
 command -v xcodegen >/dev/null 2>&1 || fail "XcodeGen is needed: brew install xcodegen"
 
+# Xcode writes the code's strings into the String Catalogs on every build (SWIFT_EMIT_LOC_STRINGS), and the shared
+# core's catalog is built by both apps, so a build leaves .xcstrings files changed that nobody edited: the release
+# of 0.2.1 stopped on three (22 October 2026). When those are the only changes, they are kept in a file under
+# mac/build/release/ and put back as committed; the release uses the catalogs as they are in git.
+ROOT=$(git rev-parse --show-toplevel)
+put_back_catalogs() {
+  git -C "$ROOT" diff --name-only -- '*.xcstrings' | while IFS= read -r file; do git -C "$ROOT" checkout -- "$file"; done
+}
+CHANGED=$(git status --porcelain -- "$MAC" ../ios/SimeonCore ../ios/Simeon 2>/dev/null || true)
+if [ -n "$CHANGED" ] && ! grep -Ev '^( M|M |MM) .+\.xcstrings$' <<<"$CHANGED" | grep -q .; then
+  mkdir -p "$MAC/build/release"
+  KEPT="$MAC/build/release/catalogs-set-aside-$(date +%Y%m%d-%H%M%S).diff"
+  git -C "$ROOT" diff -- '*.xcstrings' > "$KEPT"
+  put_back_catalogs
+  echo "Translation catalogs changed by an earlier build were put back as committed; their changes are in ${KEPT#"$ROOT"/}."
+fi
 if [ -n "$(git status --porcelain -- "$MAC" ../ios/SimeonCore ../ios/Simeon 2>/dev/null)" ]; then
   git status --short -- "$MAC" ../ios/SimeonCore ../ios/Simeon
   fail "The app's files have changes that are not committed. A release is made from committed code: commit or undo them (git checkout -- <file>), then run this again."
@@ -145,6 +161,8 @@ xcodebuild -project SimeonMac.xcodeproj -scheme Simeon -configuration Release \
   cat "$WORK/errors.txt"
   fail "The release build failed. The errors are above, copied to the clipboard, and in mac/build/release/work/errors.txt."
 }
+# The build wrote the code's strings into the catalogs again: they go back as committed, so the checkout is left as found.
+put_back_catalogs
 
 # --- 2. Developer ID ----------------------------------------------------------
 

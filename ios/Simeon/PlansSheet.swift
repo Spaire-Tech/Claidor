@@ -207,7 +207,7 @@ private struct PlanRow: View {
           if let product {
             Text(PlansCopy.price(product.displayPrice)).font(.system(size: 15)).foregroundStyle(Ink.secondary)
           } else {
-            Text(" ").font(.system(size: 15))
+            Text(verbatim: " ").font(.system(size: 15))
           }
         }
         Spacer(minLength: 8)

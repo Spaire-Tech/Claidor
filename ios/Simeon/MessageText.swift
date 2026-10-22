@@ -491,7 +491,7 @@ struct MarkdownList: View {
         .foregroundStyle(Ink.secondary)
         .frame(minWidth: 14, alignment: .trailing)
     } else {
-      Text(["•", "◦", "▪︎"][min(depth, 2)])
+      Text(verbatim: ["•", "◦", "▪︎"][min(depth, 2)])
         .font(.system(size: MessageType.size))
         .foregroundStyle(Ink.secondary)
         .frame(width: 10, alignment: .center)
