@@ -65,6 +65,19 @@ final class EmailSignInTests: XCTestCase {
     XCTAssertEqual(body["password"]?.string, " Pass Phrase ")
   }
 
+  /** Settings › Account's Name: saved as the agents' name, tidied, the account keeping who it is. */
+  @MainActor
+  func testSettingsChangesTheNameTheAgentsUse() async {
+    let store = AppStore()
+    await store.attach(DemoBackend(seed: DemoData.seed(), pace: 0.01, call: nil))
+    store.account = Account(name: "Bass", email: "bass@simeonlabs.com", id: "8a6b0b0e-user")
+    let problem = await store.changeName("  Bassy   B ")
+    XCTAssertNil(problem)
+    XCTAssertEqual(store.account?.name, "Bassy B")
+    XCTAssertEqual(store.account?.email, "bass@simeonlabs.com")
+    XCTAssertEqual(store.account?.id, "8a6b0b0e-user")
+  }
+
   @MainActor
   func testSettingsSetsAPasswordAndSaysWhyNot() async {
     let store = AppStore()

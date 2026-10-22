@@ -36131,6 +36131,64 @@
         }
       }
     },
+    "Your agents call you by this name." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "So nennen dich deine Agenten."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Así te llaman tus agentes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "C’est ainsi que tes agents t’appellent."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "È così che ti chiamano i tuoi agenti."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zo noemen je agenten je."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tak zwracają się do ciebie twoi agenci."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "É assim que seus agentes chamam você."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Så kallar dina agenter dig."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların sana bu adla hitap eder."
+          }
+        }
+      }
+    },
     "Your computer isn’t set up" : {
       "localizations" : {
         "de" : {
