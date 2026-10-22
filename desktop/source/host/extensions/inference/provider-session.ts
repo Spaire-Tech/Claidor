@@ -1,5 +1,7 @@
 import { createHash } from "node:crypto";
 import { join } from "node:path";
+import { promisify } from "node:util";
+import { gzip } from "node:zlib";
 
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createOpenAI } from "@ai-sdk/openai";
@@ -372,6 +374,24 @@ export function withPromptCacheKey(body: unknown, promptCacheKey: string | undef
   }
 }
 
+// Render's edge firewall reads the start of every request body and answers a
+// bare 403 "Forbidden" page when it sees what looks like an attack (a path such
+// as ../../../../etc/hosts in a command an agent ran, an email's code), before
+// the request reaches Simeon Labs' server. An agent's every model call carries
+// its whole conversation, so one such line kept Sage from answering at all,
+// each turn "Forbidden", while the other agents answered (22 October 2026).
+// Such a refusal is the edge's (a page; the server answers JSON): the call goes
+// again gzipped, which the firewall does not read and the server unpacks
+// (`_proxy`), and so does every later call of this host.
+let simeonBodiesGzipped = false;
+export function resetSimeonBodyGzipForTest(): void { simeonBodiesGzipped = false; }
+const gzipAsync = promisify(gzip);
+
+/** The edge's refusal: a 403 page, where Simeon Labs' server answers a 403 in JSON. */
+export function isEdgeRefusal(answer: Response): boolean {
+  return answer.status === 403 && (answer.headers.get("content-type") ?? "").toLowerCase().includes("text/html");
+}
+
 function simeonAuthenticatedFetch(source: SimeonCredentialSource, promptCacheKey?: string, callReason?: SimeonCallReason): typeof fetch {
   const authenticated: typeof fetch = async (input, rawInit) => {
     const init = rawInit?.body == null ? rawInit : { ...rawInit, body: withRealModelName(rawInit.body) as BodyInit };
@@ -393,8 +413,27 @@ function simeonAuthenticatedFetch(source: SimeonCredentialSource, promptCacheKey
     const headersDeadline = new AbortController();
     const timer = setTimeout(() => headersDeadline.abort(new Error(`Simeon Labs' server did not answer within ${SIMEON_FETCH_TIMEOUT_MS / 1000} s.`)), SIMEON_FETCH_TIMEOUT_MS);
     const signal = init?.signal == null ? headersDeadline.signal : AbortSignal.any([init.signal, headersDeadline.signal]);
+    const body = init?.body;
+    const gzipped = async (text: string): Promise<Response> => {
+      const packed = new Headers(headers);
+      packed.set("content-encoding", "gzip");
+      return await fetch(input, { ...init, body: await gzipAsync(Buffer.from(text, "utf8")), headers: packed, signal });
+    };
     try {
-      return await fetch(input, { ...init, headers, signal });
+      if (typeof body !== "string" || body.length === 0) return await fetch(input, { ...init, headers, signal });
+      if (simeonBodiesGzipped) return await gzipped(body);
+      const answer = await fetch(input, { ...init, headers, signal });
+      if (!isEdgeRefusal(answer)) return answer;
+      const again = await gzipped(body);
+      if (again.status === 400 && (await again.clone().text().catch(() => "")).includes("The body is not JSON")) {
+        await again.body?.cancel().catch(() => undefined);
+        modelCallLog(`${HOST_LOG_PREFIX} the edge refused a model call's body (403), and Simeon Labs' server does not unpack gzip yet`);
+        return answer;
+      }
+      await answer.body?.cancel().catch(() => undefined);
+      simeonBodiesGzipped = true;
+      modelCallLog(`${HOST_LOG_PREFIX} the edge refused a model call's body (403): it and every later call go gzipped (answered ${again.status})`);
+      return again;
     } finally {
       clearTimeout(timer);
     }

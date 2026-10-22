@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import functools
 import json
+import zlib
 from collections.abc import AsyncIterator, Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -1231,6 +1232,30 @@ def call_reason(request: Request) -> str | None:
     return value
 
 
+#: Render's edge firewall reads the start of every request body and answers a
+#: bare 403 "Forbidden" when it sees what looks like an attack (a path such
+#: as `../../../../etc/hosts` in a command an agent ran, an email's code),
+#: before the request reaches this server. An agent's every model call
+#: carries its whole conversation, so one such line kept Sage from answering
+#: at all while the other agents did (22 October 2026). The engine sends the
+#: body gzipped (`Content-Encoding: gzip`, `provider-session.ts`), which the
+#: firewall does not read; it is unpacked here, up to this size.
+GZIP_BODY_LIMIT = 64 << 20
+
+
+def gunzipped_body(raw: bytes) -> bytes | None:
+    """The body unpacked, or None when it is not gzip or unpacks past
+    `GZIP_BODY_LIMIT`."""
+    unpacker = zlib.decompressobj(16 + zlib.MAX_WBITS)
+    try:
+        body = unpacker.decompress(raw, GZIP_BODY_LIMIT)
+    except zlib.error:
+        return None
+    if unpacker.unconsumed_tail or not unpacker.eof:
+        return None
+    return body
+
+
 async def _proxy(
     request: Request,
     caller: ProxyCaller,
@@ -1250,6 +1275,15 @@ async def _proxy(
     Anthropic wires carry it.
     """
     raw = await request.body()
+    if request.headers.get("content-encoding", "").strip().lower() == "gzip":
+        unpacked = gunzipped_body(raw)
+        if unpacked is None:
+            return _error(
+                "invalid_request_error",
+                f"The body is not gzip, or is over {GZIP_BODY_LIMIT // (1 << 20)} MB unpacked.",
+                400,
+            )
+        raw = unpacked
     try:
         payload = json.loads(raw or b"{}")
     except ValueError:
