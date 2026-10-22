@@ -5,9 +5,10 @@ import SimeonCore
 
 /**
  * The account (step 10, L01–L04): the menu on the initials at the sidebar's
- * foot (`Xln`: Weekly usage ›, Settings, About, Log out), the usage submenu
- * (`Qln`), About over the window (`AVn`; Simeon › About Simeon opens it too)
- * and the sign-out question (`qon`) Settings' Sign Out shares.
+ * foot (`Xln`: Weekly usage ›, Settings, About, Log out; Report an issue
+ * after About since 22 October 2026), the usage submenu (`Qln`), About over
+ * the window (`AVn`; Simeon › About Simeon opens it too) and the sign-out
+ * question (`qon`) Settings' Sign Out shares.
  */
 @MainActor
 @Observable
@@ -121,6 +122,10 @@ enum AccountActions {
     let aboutItem = BlockMenuItem(AccountMenu.about) { account.openAbout() }
     aboutItem.image = symbol("info.circle")
     menu.addItem(aboutItem)
+    // The founder, 22 October 2026: Report an issue here, not in the sidebar (`HelpSupport`, as Settings › Help & support's row).
+    let reportItem = BlockMenuItem(String(localized: "Report an issue")) { HelpSupport.reportIssue() }
+    reportItem.image = symbol("ladybug")
+    menu.addItem(reportItem)
     menu.addItem(.separator())
     let logOut = BlockMenuItem(AccountMenu.logOut) { askToSignOut(session: session, settings: settings) }
     logOut.image = symbol("rectangle.portrait.and.arrow.right")

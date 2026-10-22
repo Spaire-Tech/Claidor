@@ -592,7 +592,7 @@ struct SettingsHelpPage: View {
 }
 
 /**
- * Where Help & support's rows and the sidebar's Report an issue go. Not
+ * Where Help & support's rows and the account menu's Report an issue go. Not
  * pointed anywhere yet (the founder, 22 October 2026: "i'll take care of
  * it"): each does nothing until it is.
  */

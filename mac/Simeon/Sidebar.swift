@@ -190,55 +190,20 @@ private struct SidebarHead: View {
   }
 }
 
-/**
- * The account's initials (32) and Connect apps beside them (`sand-agents-sidebar__footer`); the computer's Update at the
- * right (step 13). Report an issue over them, 10 above (the founder, 22 October 2026).
- */
+/** The account's initials (32) and Connect apps beside them (`sand-agents-sidebar__footer`); the computer's Update at the right (step 13). */
 private struct SidebarFoot: View {
   @Environment(\.colorScheme) private var scheme
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 10) {
-      ReportIssuePill(look: Look(scheme))
-      HStack(spacing: 8) {
-        AccountDisc()
-        ConnectApps()
-        Spacer(minLength: 0)
-        ComputerUpdatePill(look: Look(scheme))
-      }
+    HStack(spacing: 8) {
+      AccountDisc()
+      ConnectApps()
+      Spacer(minLength: 0)
+      ComputerUpdatePill(look: Look(scheme))
     }
     .padding(.top, 2)
     .padding(.horizontal, 12)
     .padding(.bottom, 12)
-  }
-}
-
-/**
- * Report an issue (the founder's reference, 22 October 2026): the bug and
- * the words (13) in a grey capsule 30 high, a step darker under the
- * pointer; Settings › Help & support's row does the same (`HelpSupport`).
- */
-private struct ReportIssuePill: View {
-  let look: Look
-  @State private var hovering = false
-
-  var body: some View {
-    Button { HelpSupport.reportIssue() } label: {
-      HStack(spacing: 6) {
-        Image(systemName: "ladybug")
-          .font(.system(size: 13))
-        Text("Report an issue")
-          .font(.system(size: 13))
-          .lineLimit(1)
-      }
-      .foregroundStyle(look.ink)
-      .padding(.horizontal, 12)
-      .frame(height: 30)
-      .background(Capsule().fill(look.ink.opacity(look.dark ? (hovering ? 0.16 : 0.1) : (hovering ? 0.1 : 0.06))))
-      .contentShape(Capsule())
-    }
-    .buttonStyle(.hand)
-    .onHover { hovering = $0 }
   }
 }
 
