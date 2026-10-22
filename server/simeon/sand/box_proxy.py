@@ -25,6 +25,7 @@ the VNC webview's `beforeSendHeaders` in `vnc-trust.ts`) or the
 from __future__ import annotations
 
 import asyncio
+import time
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import AbstractAsyncContextManager
 from typing import Any
@@ -45,6 +46,7 @@ from simeon.openapi import APITag
 from simeon.postgres import AsyncSession
 from simeon.routing import APIRouter
 
+from .box_e2b import KIND as E2B_KIND
 from .box_hosts import BOX_PORTS
 from .box_service import (
     ATTACHED_REFRESH_SECONDS,
@@ -194,57 +196,167 @@ async def _resolve(
     return box, target[0], target[1]
 
 
+# --- a box replaced under a request ------------------------------------------------
+#
+# An update replaces an E2B box with a new sandbox on the same row (`ensure`:
+# its backup brought up to date, the old sandbox killed, the new one made and
+# answering, then the row written). A request that reaches E2B in between
+# finds the old sandbox gone, and E2B's proxy answers 502 "The sandbox was
+# not found" (`NewSandboxNotFoundError` in e2b-dev/infra); it answers the
+# same for a sandbox it froze (an hour awake on its free plan) until that
+# one is woken. The answer went straight to the app (Sage's computer, 21
+# October 2026: frozen at 18:09:36, woken and replaced by 18:10:00). Now,
+# while an ensure is under way, the request waits for it and goes once
+# more, to the new sandbox or the woken one. It never reached a box the
+# first time, so it cannot arrive twice.
+
+#: A body up to this size is kept so the request can go again (every command
+#: and poll the app sends); a larger upload streams through as before.
+REPLAY_LIMIT_BYTES = 1 << 20
+#: Under the 60 s the app gives a command (`Gateway.commandRequest`).
+REPLACED_WAIT_SECONDS = 40.0
+REPLACED_POLL_SECONDS = 1.0
+SANDBOX_GONE = ("the sandbox was not found", "sandbox not found")
+
+#: Whether an ensure holds the person's lock (`broker.ensure_in_progress`).
+EnsureCheck = Callable[[AsyncSession, UUID], Awaitable[bool]]
+_ensuring: EnsureCheck = broker.ensure_in_progress
+
+
+def sandbox_gone(box: SandBox, status: int, body: bytes) -> bool:
+    """E2B's proxy saying the sandbox the row names no longer exists."""
+    if (box.host_meta or {}).get("kind") != E2B_KIND or status != 502:
+        return False
+    words = body[:2000].decode("utf-8", "replace").lower()
+    return any(gone in words for gone in SANDBOX_GONE)
+
+
+async def kept_body(request: Request) -> bytes | None:
+    """The request's body read whole, when it is small enough to send again
+    (empty when it has none); None for a large or unsized one, which streams."""
+    if "transfer-encoding" in request.headers:
+        return None
+    length = request.headers.get("content-length")
+    if length is None:
+        return b""
+    try:
+        size = int(length)
+    except ValueError:
+        return None
+    if size > REPLAY_LIMIT_BYTES:
+        return None
+    return await request.body()
+
+
+async def _replacement(
+    sessions: LookupSessions, box: SandBox, port: int, token: str, request: Request
+) -> tuple[SandBox, str, dict[str, str]] | None:
+    """Where a request E2B turned away goes once more: while an ensure holds
+    the person's lock (the box being woken or replaced), waited for up to
+    `REPLACED_WAIT_SECONDS`, the box as that ensure left it, a new sandbox
+    or the same one awake again. None at once when nothing is under way (a
+    sleeping or lost sandbox, which the app's EnsureSandBox wakes or makes,
+    as before), and when the app hangs up."""
+    deadline = time.monotonic() + REPLACED_WAIT_SECONDS
+    waited = False
+    while True:
+        async with sessions() as db:
+            # The lock before the row: an ensure that ends in between has
+            # already written the row when it is read.
+            ensuring = await _ensuring(db, box.user_id)
+            current = await _lookup(db, box.id, token)
+        if current is None:
+            return None
+        if current.provider_box_id != box.provider_box_id or (waited and not ensuring):
+            target = upstream_target(current, port)
+            return None if target is None else (current, target[0], target[1])
+        if not ensuring or time.monotonic() >= deadline:
+            return None
+        if await request.is_disconnected():
+            return None
+        waited = True
+        await asyncio.sleep(REPLACED_POLL_SECONDS)
+
+
 # --- HTTP ------------------------------------------------------------------------
 
 
 async def _proxy_http(
     request: Request, box_id: UUID, port: int, path: str, sessions: LookupSessions
 ) -> Any:
-    resolved = await _resolve(
-        sessions,
-        box_id,
-        port,
-        read_network_token(request.headers, request.query_params),
-    )
+    token = read_network_token(request.headers, request.query_params)
+    resolved = await _resolve(sessions, box_id, port, token)
     if isinstance(resolved, JSONResponse):
         return resolved
     box, base, dial = resolved
     redis = _redis_of(request)
     if redis is not None:
         await mark_attached(redis, box.id)
-    query = request.url.query
-    url = f"{base}/{path}" + (f"?{query}" if query else "")
-    client = _client_factory()
-    upstream = client.build_request(
-        request.method,
-        url,
-        headers={**forwardable(request.headers), **dial},
-        content=request.stream(),
-    )
     try:
-        response = await client.send(upstream, stream=True)
+        kept = await kept_body(request)
     except ClientDisconnect:
-        # The app hung up before its request was forwarded (its health and
-        # event polls do this all the time). Nothing to answer; it used to
-        # land in the log as an unhandled exception, dozens a minute.
-        await client.aclose()
         return Response(status_code=499)
-    except httpx.HTTPError as error:
-        await client.aclose()
-        log.warning(
-            "sand.box.proxy.unreachable", box=str(box_id), port=port, error=str(error)
+    query = request.url.query
+    client = _client_factory()
+
+    async def send(base: str, dial: dict[str, str]) -> httpx.Response | Response:
+        upstream = client.build_request(
+            request.method,
+            f"{base}/{path}" + (f"?{query}" if query else ""),
+            headers={**forwardable(request.headers), **dial},
+            content=request.stream() if kept is None else kept,
         )
-        return JSONResponse(
-            {"error": f"the box did not answer on port {port}: {error}"},
-            status_code=502,
-        )
+        try:
+            return await client.send(upstream, stream=True)
+        except ClientDisconnect:
+            # The app hung up before its request was forwarded (its health
+            # and event polls do this all the time). Nothing to answer; it
+            # used to land in the log as an unhandled exception, dozens a
+            # minute.
+            await client.aclose()
+            return Response(status_code=499)
+        except httpx.HTTPError as error:
+            await client.aclose()
+            log.warning(
+                "sand.box.proxy.unreachable",
+                box=str(box_id),
+                port=port,
+                error=str(error),
+            )
+            return JSONResponse(
+                {"error": f"the box did not answer on port {port}: {error}"},
+                status_code=502,
+            )
+
+    response = await send(base, dial)
+    if isinstance(response, Response):
+        return response
+    content = b""
+    if response.status_code >= 400:
+        content = await response.aread()
+        await response.aclose()
+        if kept is not None and sandbox_gone(box, response.status_code, content):
+            replaced = await _replacement(sessions, box, port, token, request)
+            log.info(
+                "sand.box.proxy.sandbox_gone",
+                box=str(box.id),
+                port=port,
+                path=path[:120],
+                replaced=replaced is not None,
+            )
+            if replaced is not None:
+                box, base, dial = replaced
+                response = await send(base, dial)
+                if isinstance(response, Response):
+                    return response
+                if response.status_code >= 400:
+                    content = await response.aread()
+                    await response.aclose()
 
     if response.status_code >= 400:
         # The box's own refusal, read whole (a gateway error is a short
         # JSON sentence) so the log names it: the first real run showed
         # only "401" from the app's side (28 September 2026).
-        content = await response.aread()
-        await response.aclose()
         await client.aclose()
         log.warning(
             "sand.box.proxy.upstream_error",
@@ -260,11 +372,12 @@ async def _proxy_http(
             status_code=response.status_code,
             headers=forwardable(response.headers),
         )
+    answer = response
 
     async def body() -> AsyncIterator[bytes]:
         attached = asyncio.create_task(keep_attached(redis, box.id))
         try:
-            async for chunk in response.aiter_raw():
+            async for chunk in answer.aiter_raw():
                 yield chunk
         except httpx.HTTPError as error:
             # The box closed a long poll mid-answer (it restarts on a new
@@ -278,12 +391,12 @@ async def _proxy_http(
             )
         finally:
             attached.cancel()
-            await response.aclose()
+            await answer.aclose()
 
     return StreamingResponse(
         body(),
-        status_code=response.status_code,
-        headers=forwardable(response.headers),
+        status_code=answer.status_code,
+        headers=forwardable(answer.headers),
         background=BackgroundTask(client.aclose),
     )
 

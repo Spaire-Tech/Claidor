@@ -414,6 +414,14 @@ async def is_attached(redis: Redis, box_id: UUID) -> bool:
 # again after it.
 UPDATE_RETRY_SECONDS = 600
 
+# An out-of-date box is replaced by the sleeper only once nobody has used
+# it for this long, or for its server's idle time if that is shorter (22
+# October 2026). Before, it was replaced the minute a turn ended with no app
+# attached, and a phone in a pocket is not attached: someone who looked
+# away for two minutes came back to a computer being swapped, and what they
+# sent meanwhile reached a sandbox that no longer existed.
+UPDATE_QUIET = timedelta(minutes=10)
+
 
 def update_key(box_id: UUID) -> str:
     return f"sand:box:update:{box_id}"
@@ -1013,7 +1021,17 @@ class BoxBrokerService:
                 flushed = state == "running" and await self.flush_box_store(
                     box, current
                 )
-                if (
+                if flushed and credential_live and (await self.health_of(box)).is_busy:
+                    # Only out of date, and a message came while its backup
+                    # was made: the backup does not have it, and its turn
+                    # would die with the old container. Opening the app
+                    # starts this replacement (Sage's computer, 21 October
+                    # 2026: asked for at 18:31:33, the old sandbox gone at
+                    # 18:31:41), so the first thing typed can land in it. It
+                    # keeps its program until it is idle again.
+                    log.info("sand.box.update_deferred", box=str(box.id), reason="busy")
+                    mark_running(box)
+                elif (
                     not flushed
                     and state == "running"
                     and credential_live
@@ -1144,6 +1162,26 @@ class BoxBrokerService:
         )
         if not taken:
             raise BoxEnsureInProgress()
+
+    @staticmethod
+    async def ensure_in_progress(db: AsyncSession, user_id: UUID) -> bool:
+        """Whether an ensure holds the person's lock right now (an update or
+        a recreate replacing their box), read from `pg_locks` without taking
+        it, so an EnsureSandBox at the same moment is never refused for it.
+        A one-key advisory lock shows its key's high 32 bits as `classid`
+        and its low 32 bits as `objid`, with `objsubid` 1."""
+        held = await db.scalar(
+            text(
+                "SELECT EXISTS (SELECT 1 FROM pg_locks"
+                " WHERE locktype = 'advisory' AND granted AND objsubid = 1"
+                " AND database = (SELECT oid FROM pg_database"
+                " WHERE datname = current_database())"
+                " AND classid = ((hashtext(:key)::bigint >> 32) & 4294967295)::oid"
+                " AND objid = (hashtext(:key)::bigint & 4294967295)::oid)"
+            ),
+            {"key": f"sand-box-ensure:{user_id}"},
+        )
+        return bool(held)
 
     async def recreate(
         self,
@@ -1519,14 +1557,23 @@ class BoxBrokerService:
                 box.last_active_at = now
                 await repository.update(box, flush=True)
                 continue
-            if update is not None and health.reachable and not health.is_busy:
-                # Updated as soon as it is idle (19 October 2026). Until
-                # then a box was updated only when an app connected to it
-                # idle: published at 23:59:45 on 18 October, Rhea's box woke
-                # 12 s later on the old engine (the server reads the
-                # published version every 10 minutes) and kept it for
-                # hours. Nobody is on its screen now (not attached), so the
-                # swap interrupts no one.
+            idle_since = box.last_active_at or box.last_ensured_at or box.created_at
+            # A server's own idle time (`idle_minutes` in SIMEON_BOX_HOSTS):
+            # shorter where waking takes a second (E2B).
+            idle_after = getattr(host, "idle_after", None) or after
+            if (
+                update is not None
+                and health.reachable
+                and not health.is_busy
+                and now - idle_since >= min(UPDATE_QUIET, idle_after)
+            ):
+                # Updated once it is idle (19 October 2026). Until then a box
+                # was updated only when an app connected to it idle:
+                # published at 23:59:45 on 18 October, Rhea's box woke 12 s
+                # later on the old engine (the server reads the published
+                # version every 10 minutes) and kept it for hours. Nobody is
+                # on its screen now (not attached) and nothing has run on it
+                # for `UPDATE_QUIET`, so the swap interrupts no one.
                 _, stale = await self._out_of_date(db, host, box)
                 if stale:
                     try:
@@ -1547,10 +1594,7 @@ class BoxBrokerService:
                         continue
                     # Sent already: one the update could not replace still
                     # sleeps by the usual rule, rather than stay awake.
-            idle_since = box.last_active_at or box.last_ensured_at or box.created_at
-            # A server's own idle time (`idle_minutes` in SIMEON_BOX_HOSTS):
-            # shorter where waking takes a second (E2B).
-            if now - idle_since < (getattr(host, "idle_after", None) or after):
+            if now - idle_since < idle_after:
                 continue
             try:
                 outcome = await self.hibernate(
