@@ -57,12 +57,14 @@ public enum AppLanguage {
   static let ownNames: [String: String] = [
     "en": "English", "fr": "Français", "es": "Español", "de": "Deutsch", "pt-BR": "Português (Brasil)", "pt": "Português",
     "ja": "日本語", "it": "Italiano", "nl": "Nederlands", "ko": "한국어", "zh-Hant": "繁體中文", "ar": "العربية",
+    "sv": "Svenska", "pl": "Polski", "tr": "Türkçe",
   ]
 
   /** Each language's name in English, for instructions to a model ("Speak French"). */
   static let englishNames: [String: String] = [
     "en": "English", "fr": "French", "es": "Spanish", "de": "German", "pt-BR": "Brazilian Portuguese", "pt": "Portuguese",
     "ja": "Japanese", "it": "Italian", "nl": "Dutch", "ko": "Korean", "zh-Hant": "Traditional Chinese", "zh": "Chinese", "ar": "Arabic",
+    "sv": "Swedish", "pl": "Polish", "tr": "Turkish",
   ]
 
   /** "French", for instructions to a model; the tag itself when it is none of Simeon's languages. */

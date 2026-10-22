@@ -130,12 +130,16 @@ def same_words(engine: str, core: str) -> bool:
     return plain(engine) == plain(core)
 
 
+#: The voice agent's code for a language where it is not the apps' (ElevenLabs has one Portuguese).
+VOICE_CODES = {"pt-BR": "pt"}
+
+
 def check_greetings(wanted: list[str]) -> list[str]:
     problems: list[str] = []
     engine, core = engine_greetings(), core_greetings()
     if not engine.get("en") or not core.get("en"):
         return ["voice calls: the English greetings could not be read (voice-call-prompt.ts, VoiceCall.swift)"]
-    for language in wanted:
+    for language in (VOICE_CODES.get(language, language) for language in wanted):
         for where, table in (("voice-call-prompt.ts", engine), ("VoiceCall.swift", core)):
             if len(table.get(language, [])) != len(table["en"]):
                 problems.append(f"{where}: {len(table.get(language, []))} greetings in {language}, {len(table['en'])} in English")
@@ -152,7 +156,7 @@ def check_server_voice(wanted: list[str]) -> list[str]:
     text = (ROOT / "server/simeon/desktop/voice.py").read_text()
     table = re.search(r"VOICE_LANGUAGES: dict\[str, str\] = \{(.*?)\n\}", text, re.S)
     server = set(re.findall(r'\n    "([\w-]+)": ', table.group(1))) if table else set()
-    problems = [f"server/simeon/desktop/voice.py: VOICE_LANGUAGES has no {language}" for language in wanted if language not in server]
+    problems = [f"server/simeon/desktop/voice.py: VOICE_LANGUAGES has no {code}" for code in (VOICE_CODES.get(language, language) for language in wanted) if code not in server]
     engine_text = (ROOT / "desktop/source/shared/voice-call/voice-call-prompt.ts").read_text()
     engine_table = re.search(r"const VOICE_CALL_LANGUAGES[^=]*= \{(.*?)\};", engine_text, re.S)
     engine = set(re.findall(r':\s*"([\w-]+)"', engine_table.group(1))) if engine_table else set()
@@ -228,7 +232,10 @@ def table_keys(text: str, name: str) -> dict[str, str]:
 
 
 #: The emails' tables (`server/emails/src/words.ts`) are named for their language.
-EMAIL_TABLES = {"en": "ENGLISH", "fr": "FRENCH", "es": "SPANISH", "de": "GERMAN", "pt-BR": "BRAZILIAN_PORTUGUESE", "ja": "JAPANESE", "it": "ITALIAN", "nl": "DUTCH", "ko": "KOREAN", "zh-Hant": "TRADITIONAL_CHINESE", "ar": "ARABIC"}
+EMAIL_TABLES = {
+    "en": "ENGLISH", "fr": "FRENCH", "es": "SPANISH", "de": "GERMAN", "nl": "DUTCH", "it": "ITALIAN", "pt-BR": "PORTUGUESE",
+    "sv": "SWEDISH", "pl": "POLISH", "tr": "TURKISH", "ja": "JAPANESE", "ko": "KOREAN", "zh-Hant": "TRADITIONAL_CHINESE", "ar": "ARABIC",
+}
 
 
 def check_tables(wanted: list[str]) -> list[str]:
@@ -239,10 +246,11 @@ def check_tables(wanted: list[str]) -> list[str]:
         name = lambda language: language.upper().replace("-", "_")  # noqa: E731
         sets.append((str(part.relative_to(ROOT)), table_keys(text, "EN"), {language: table_keys(text, name(language)) for language in wanted}))
     words = ROOT / "server/simeon/desktop/words"
+    module = lambda language: words / f"{language.replace('-', '_')}.py"  # noqa: E731  (pt_BR.py)
     sets.append((
         "server/simeon/desktop/words/<language>.py",
         table_keys((words / "en.py").read_text(), "WORDS"),
-        {language: table_keys((words / f"{language}.py").read_text(), "WORDS") if (words / f"{language}.py").exists() else {} for language in wanted},
+        {language: table_keys(module(language).read_text(), "WORDS") if module(language).exists() else {} for language in wanted},
     ))
     emails = (ROOT / "server/emails/src/words.ts").read_text()
     sets.append(("server/emails/src/words.ts", table_keys(emails, "ENGLISH"), {language: table_keys(emails, EMAIL_TABLES.get(language, language.upper())) for language in wanted}))

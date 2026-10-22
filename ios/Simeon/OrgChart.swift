@@ -500,7 +500,7 @@ private struct ChartAgentCard: View {
         .foregroundStyle(word.live ? Ink.addedGreen : Ink.tertiary)
     }
     .frame(maxWidth: .infinity)
-    let about = agent.description.trimmingCharacters(in: .whitespacesAndNewlines)
+    let about = agent.shownDescription.trimmingCharacters(in: .whitespacesAndNewlines)
     if !about.isEmpty {
       VStack(alignment: .leading, spacing: 6) {
         chartHeading(String(localized: "About"))

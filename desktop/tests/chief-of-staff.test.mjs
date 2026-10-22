@@ -44,6 +44,13 @@ test("the Chief of Staff is known by title, and a brief opens with the person's 
   assert.equal(words.staffingMessage("Bass F", "to run his inbox."), "Bass staffed you to run his inbox.");
   assert.equal(words.staffingMessage("Bass F", "Bass staffed you to run his inbox."), "Bass staffed you to run his inbox.");
   assert.equal(words.staffingMessage(null, "Run the books."), "Your user staffed you to run the books.");
+  assert.equal(words.staffingMessage("Bass F", "Run his inbox.", "en-US"), "Bass staffed you to run his inbox.", "English as before");
+  // In the person's language (22 October 2026): never English glued to the brief.
+  assert.equal(words.staffingMessage("Bass F", "Bass t’a confié sa boîte mail : trie ce qui l’attend.", "fr"), "Bass t’a confié sa boîte mail : trie ce qui l’attend.");
+  assert.equal(words.staffingMessage("Bass F", "Trie la boîte mail de Bass.", "fr-CA"), "Trie la boîte mail de Bass.", "the name in its first words");
+  assert.equal(words.staffingMessage("Bass F", "Gère sa boîte mail.", "fr"), "Bass t’a confié ce travail. Gère sa boîte mail.");
+  assert.equal(words.staffingMessage("Bass F", "Kümmere dich um sein Postfach.", "de"), "Bass hat dir diese Aufgabe übertragen. Kümmere dich um sein Postfach.");
+  assert.equal(words.staffingMessage(null, "Gère la compta.", "fr"), "Gère la compta.", "no name: as written");
   assert.match(words.SAND_CHIEF_OF_STAFF_KICKSTART_PROMPT, /^\[first run\] This is your very first turn as the person's Chief of Staff\./);
   assert.match(words.SAND_CHIEF_OF_STAFF_KICKSTART_PROMPT, /What's the first thing you'd hand to a person if you hired one today\?/);
   assert.match(words.SAND_CHIEF_OF_STAFF_KICKSTART_PROMPT, /GetMcpServerStatus/);
@@ -53,6 +60,8 @@ test("the Chief of Staff is known by title, and a brief opens with the person's 
   assert.match(words.SAND_CHIEF_OF_STAFF_KICKSTART_PROMPT, /ask what you recommend, recommend/);
   assert.match(words.chiefOfStaffSection("Bass F"), /^## Chief of staff\n/);
   assert.match(words.chiefOfStaffSection("Bass F"), /"Bass staffed you to …"/);
+  assert.match(words.chiefOfStaffSection("Bass F", "en"), /Every brief you write to an agent starts with "Bass staffed you to …"\./);
+  assert.match(words.chiefOfStaffSection("Bass F", "fr"), /Every brief you write to an agent is in French, as everything the person can read, and opens by saying Bass staffed it for the job/);
   assert.match(words.staffedFirstRunCue({ fromName: "Simeon", personName: "Bass F" }), /^\[first run\] You were just created, and the message below from Simeon is your first/);
   assert.match(words.staffedFirstRunCue({ fromName: "Simeon", personName: "Bass F" }), /write to your user, Bass with SendMessage/);
 });
@@ -121,7 +130,7 @@ test("a brief that is an agent's first message carries the staffed cue, and the 
   assert.match(composition, /if \(options\?\.startIntroduction !== false\) void Promise\.resolve\(method\(transcript, "kickstartCreatedAgent"\)/);
   assert.match(composition, /brief: async \(agentId: string, message: string\) => String\(await sendToAgent\(agentId, message, undefined, false\)/);
   const assembly = await readFile(path.join(repoRoot, "source/host/runner/system-prompt-assembly.ts"), "utf8");
-  assert.match(assembly, /if \(!deps\.isSubagentRunner && isChiefOfStaffTitle\(deps\.agentProfileProvider\(\)\?\.title\)\) add\(chiefOfStaffSection\(deps\.requestContext\.resolve\(\)\.userFullName\)\);/);
+  assert.match(assembly, /if \(!deps\.isSubagentRunner && isChiefOfStaffTitle\(deps\.agentProfileProvider\(\)\?\.title\)\) add\(chiefOfStaffSection\(deps\.requestContext\.resolve\(\)\.userFullName, deps\.userLanguage\?\.\(\)\)\);/);
   const profileWatch = await readFile(path.join(repoRoot, "source/host/extensions/transcript/profile-watch.ts"), "utf8");
   assert.match(profileWatch, /title: profile\?\.title \?\? "",/);
 });

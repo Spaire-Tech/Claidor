@@ -25,32 +25,81 @@ async function load(entry, name) {
 const VALUE = /\{(\w+)\}/g;
 const values = (text) => [...text.matchAll(VALUE)].map((m) => m[1]).sort();
 
-test("each translation has every sentence, with the same values, in French typography", async () => {
-  const en = await load("source/shared/words/en.ts", "words-en");
-  const fr = await load("source/shared/words/fr.ts", "words-fr");
-  try {
-    const english = en.module.ENGLISH;
-    const french = fr.module.FRENCH;
-    assert.deepEqual(Object.keys(french).sort(), Object.keys(english).sort());
-    for (const [key, text] of Object.entries(english)) {
-      assert.ok(french[key].trim().length > 0, key);
-      assert.deepEqual(values(french[key]), values(text), key);
-      assert.doesNotMatch(french[key], /[  ][:;!?](\s|$)/, `${key}: a narrow no-break space before : ; ! ?`);
-      assert.doesNotMatch(french[key], /'/, `${key}: the apostrophe is ’`);
+/** Each translation's table and how its language is written. */
+const TRANSLATIONS = [
+  {
+    language: "fr",
+    entry: "source/shared/words/fr.ts",
+    table: "FRENCH",
+    writing(key, text) {
+      assert.doesNotMatch(text, /[  ][:;!?](\s|$)/, `${key}: a narrow no-break space before : ; ! ?`);
+      assert.doesNotMatch(text, /'/, `${key}: the apostrophe is ’`);
+    },
+  },
+  {
+    language: "es",
+    entry: "source/shared/words/es.ts",
+    table: "SPANISH",
+    writing(key, text) {
+      assert.doesNotMatch(text, /[ «»]/, `${key}: no French spaces or quotes in Spanish`);
+      assert.doesNotMatch(text, /'/, `${key}: no apostrophe in Spanish`);
+      assert.doesNotMatch(text, /\s[:;!?]/, `${key}: no space before : ; ! ?`);
+      // A question or an exclamation opens with ¿ or ¡ (a "?" inside a value, like a URL, is not one).
+      for (const sentence of text.split(/(?<=[.?!])\s+/)) {
+        if (/\?$/.test(sentence)) assert.match(sentence, /¿/, `${key}: ¿ opens the question`);
+        if (/!$/.test(sentence)) assert.match(sentence, /¡/, `${key}: ¡ opens the exclamation`);
+      }
+    },
+  },
+  ...[
+    ["de", "de.ts", "GERMAN"],
+    ["nl", "nl.ts", "DUTCH"],
+    ["it", "it.ts", "ITALIAN"],
+    ["pt-BR", "pt-BR.ts", "PORTUGUESE"],
+    ["sv", "sv.ts", "SWEDISH"],
+    ["pl", "pl.ts", "POLISH"],
+    ["tr", "tr.ts", "TURKISH"],
+  ].map(([language, file, table]) => ({
+    language,
+    entry: `source/shared/words/${file}`,
+    table,
+    writing(key, text) {
+      assert.doesNotMatch(text, /[ «»]/, `${key}: no French spaces or quotes in ${language}`);
+      assert.doesNotMatch(text, /'/, `${key}: the apostrophe is ’`);
+      assert.doesNotMatch(text, /\s[:;!?](\s|$)/, `${key}: no space before : ; ! ?`);
+    },
+  })),
+];
+
+for (const { language, entry, table, writing } of TRANSLATIONS) {
+  test(`${language}: every sentence of the English, with the same values, written the ${language} way`, async () => {
+    const en = await load("source/shared/words/en.ts", `words-en-${language}`);
+    const words = await load(entry, `words-${language}`);
+    try {
+      const english = en.module.ENGLISH;
+      const translated = words.module[table];
+      assert.deepEqual(Object.keys(translated).sort(), Object.keys(english).sort());
+      for (const [key, text] of Object.entries(english)) {
+        assert.ok(translated[key].trim().length > 0, key);
+        assert.deepEqual(values(translated[key]), values(text), key);
+        writing(key, translated[key]);
+      }
+    } finally {
+      await en.dispose();
+      await words.dispose();
     }
-  } finally {
-    await en.dispose();
-    await fr.dispose();
-  }
-});
+  });
+}
 
 test("a sentence is the person's language, else English, with its values", async () => {
   const loaded = await load("source/shared/say.ts", "say");
   const en = await load("source/shared/words/en.ts", "say-en");
   const fr = await load("source/shared/words/fr.ts", "say-fr");
+  const es = await load("source/shared/words/es.ts", "say-es");
+  const pt = await load("source/shared/words/pt-BR.ts", "say-pt");
   try {
     const { say, SAY_LANGUAGES } = loaded.module;
-    assert.deepEqual(SAY_LANGUAGES, ["en", "fr"]);
+    assert.deepEqual(SAY_LANGUAGES, ["en", ...TRANSLATIONS.map(({ language }) => language)]);
     const fill = (text, vals) => text.replace(VALUE, (whole, name) => (name in vals ? String(vals[name]) : whole));
     for (const [key, text] of Object.entries(en.module.ENGLISH)) {
       const vals = Object.fromEntries(values(text).map((name) => [name, `<${name}>`]));
@@ -58,11 +107,17 @@ test("a sentence is the person's language, else English, with its values", async
       assert.equal(say("en-GB", key, vals), fill(text, vals), key);
       assert.equal(say("ja", key, vals), fill(text, vals), `${key}: not translated yet, English`);
       assert.equal(say("fr-CA", key, vals), fill(fr.module.FRENCH[key], vals), key);
-      for (const name of values(text)) assert.ok(say("fr", key, vals).includes(`<${name}>`), `${key}: {${name}}`);
+      assert.equal(say("es-MX", key, vals), fill(es.module.SPANISH[key], vals), key);
+      assert.equal(say("pt-PT", key, vals), fill(pt.module.PORTUGUESE[key], vals), `${key}: Portugal's Portuguese reads Brazil's`);
+      for (const { language } of TRANSLATIONS) {
+        for (const name of values(text)) assert.ok(say(language, key, vals).includes(`<${name}>`), `${key}: {${name}} in ${language}`);
+      }
     }
   } finally {
     await loaded.dispose();
     await en.dispose();
     await fr.dispose();
+    await es.dispose();
+    await pt.dispose();
   }
 });

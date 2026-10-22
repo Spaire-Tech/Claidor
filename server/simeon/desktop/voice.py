@@ -84,7 +84,7 @@ VOICE_AGENT_NAME = "Simeon voice"
 #: 2026 Jessica left the list and Michael became the default without a bump,
 #: the agent kept Jessica as its own voice, and every call that named no
 #: voice still spoke as Jessica (the founder, 9 October 2026).
-VOICE_AGENT_CONFIG_VERSION = 11
+VOICE_AGENT_CONFIG_VERSION = 13
 
 #: The model that thinks during the call. Fast over clever: the call's
 #: real work runs in the person's own agent behind the call (`send_task`), and a
@@ -139,6 +139,14 @@ VOICE_DEFAULT_FIRST_MESSAGE = "Hi, it's me. What's up?"
 #: ElevenLabs' multilingual model; English keeps `VOICE_TTS_MODEL`.
 VOICE_LANGUAGES: dict[str, str] = {
     "fr": "Salut, c’est moi. Quoi de neuf\u202f?",
+    "es": "Hola, soy yo. ¿Qué tal?",
+    "de": "Hi, ich bin’s. Was gibt’s?",
+    "nl": "Hoi, met mij. Wat is er?",
+    "it": "Ciao, sono io. Che mi racconti?",
+    "pt": "Oi, sou eu. O que manda?",
+    "sv": "Hej, det är jag. Hur är läget?",
+    "pl": "Cześć, to ja. Co słychać?",
+    "tr": "Selam, benim. Ne var ne yok?",
 }
 
 #: The fallback prompt. The app overrides it on every call with the
@@ -254,8 +262,10 @@ VOICE_RECAP_DESCRIPTION = (
     "what they called about, and what the agent did or will do. Plain, warm, "
     "no greeting, no sign-off. Never write 'the user', 'the caller' or 'the "
     "customer', and never name the person. Write it in the language the call "
-    "was in; in French, say 'tu' and start with 'Tu', unless they said 'vous' "
-    "on the call."
+    "was in, with the familiar 'you' (French 'tu', Spanish 'tú', German 'du', "
+    "Dutch 'je', Italian 'tu', Portuguese 'você', Swedish 'du', Polish 'ty', "
+    "Turkish 'sen') unless they used the formal one on the call; where the "
+    "language says 'you' first, start with it ('Tu', 'Tú', 'Du')."
 )
 
 
@@ -858,13 +868,41 @@ def _transcript(conversation: dict[str, Any] | None) -> list[dict[str, str]]:
 
 
 #: How a recap starts when it speaks to the person: English "You", and
-#: French "Tu" or "Vous" (a recap of a call in French, 20 October 2026).
-RECAP_OPENINGS = ("you", "tu", "vous")
+#: each language's familiar and formal "you" (French "Tu" or "Vous", 20
+#: October 2026; Spanish, German, Dutch, Italian, Portuguese, Swedish,
+#: Polish and Turkish, 21 October 2026).
+RECAP_OPENINGS = (
+    "you",
+    "tu",
+    "vous",
+    "tú",
+    "usted",
+    "du",
+    "sie",
+    "je",
+    "jij",
+    "u",
+    "lei",
+    "você",
+    "o senhor",
+    "a senhora",
+    "ni",
+    "ty",
+    "pan",
+    "pani",
+    "sen",
+    "siz",
+)
+
+#: The formal "you" a language always writes with a capital (German "Sie",
+#: Italian "Lei", Polish "Pan" and "Pani"): after the name it keeps it, or it
+#: would read "she" or "they".
+RECAP_CAPITALS = ("sie", "lei", "pan", "pani")
 
 
 def recap_for(recap: str | None, name: str | None) -> str | None:
     """The recap with the person's name in front: "Bass, you asked me to…",
-    "Bass, tu m’as demandé…"."""
+    "Bass, tu m’as demandé…", "Bass, Sie haben mich gebeten…"."""
     if recap is None or not name:
         return recap
     for opening in RECAP_OPENINGS:
@@ -872,7 +910,8 @@ def recap_for(recap: str | None, name: str | None) -> str | None:
         if recap[:size].lower() == opening and (
             len(recap) == size or not recap[size].isalpha()
         ):
-            return f"{name}, {recap[:1].lower()}{recap[1:]}"
+            first = recap[:1] if opening in RECAP_CAPITALS else recap[:1].lower()
+            return f"{name}, {first}{recap[1:]}"
     return recap
 
 

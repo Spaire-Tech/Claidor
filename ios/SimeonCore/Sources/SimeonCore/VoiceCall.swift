@@ -19,7 +19,9 @@ public enum VoiceCallText {
    * voice-call-prompt.ts). The server gives its platform agent the same (`VOICE_LANGUAGES` in voice.py): a language
    * it was not given is refused, so one is added in all three (docs/localization.md).
    */
-  static let languages: [String: String] = ["en": "en", "fr": "fr"]
+  static let languages: [String: String] = [
+    "en": "en", "fr": "fr", "es": "es", "de": "de", "nl": "nl", "it": "it", "pt-BR": "pt", "pt": "pt", "sv": "sv", "pl": "pl", "tr": "tr",
+  ]
 
   /** The call's language for the app's: "fr" for "fr-CA"; English for one the voice does not speak yet. */
   public static func language(for appLanguage: String) -> String {
@@ -126,18 +128,27 @@ public enum VoiceCallText {
     return self.language(for: language) == defaultLanguage ? base : "\(base)\n\n\(languageRule(language))"
   }
 
-  /** The call's language at the end of its prompt when it is not English (`voiceCallLanguageRule`): the app's, from the first word, "tu" in French. */
+  /** The call's language at the end of its prompt when it is not English (`voiceCallLanguageRule`): the app's, from the first word, "tu" in French, "tú" in Spanish. */
   static func languageRule(_ appLanguage: String) -> String {
     let tag = AppLanguage.tag(appLanguage)
     var lines = ["Language:", "- Speak \(AppLanguage.englishName(tag)) for the whole call. If they speak another language to you, answer in theirs."]
-    if AppLanguage.code(tag) == "fr" { lines.append("- Say \"tu\" to them, warm and direct, never stiff, unless they ask for \"vous\" or their messages above say \"vous\".") }
+    if let you = address[AppLanguage.code(tag)] {
+      lines.append("- Say \"\(you.familiar)\" to them, warm and direct, never stiff, unless they ask for \"\(you.formal)\" or their messages above say \"\(you.formal)\".")
+    }
     lines.append("- Names stay as they are: Simeon, your name and your teammates' names, and the names of apps (Gmail, Slack, Shop).")
     return lines.joined(separator: "\n")
   }
 
+  /** The languages with a familiar and a formal "you", as the engine's `ADDRESS` (user-language.ts): the familiar one first. */
+  static let address: [String: (familiar: String, formal: String)] = [
+    "fr": ("tu", "vous"), "es": ("tú", "usted"), "de": ("du", "Sie"), "nl": ("je", "u"), "it": ("tu", "Lei"),
+    "pt": ("você", "o senhor/a senhora"), "sv": ("du", "ni"), "pl": ("ty", "Pan/Pani"), "tr": ("sen", "siz"),
+  ]
+
   /**
    * A short greeting with the agent's name (`buildFirstMessage`); `pick` in [0, 1) chooses which. In the call's
-   * language: French says "tu", word for word as voice-call-prompt.ts; a language with none of its own opens in English.
+   * language: French says "tu", Spanish "tú", word for word as voice-call-prompt.ts; a language with none of its own
+   * opens in English.
    */
   public static func firstMessage(name rawName: String, pick: Double, personName: String?, language: String = defaultLanguage) -> String {
     let name = collapse(rawName).isEmpty ? "your agent" : collapse(rawName)
@@ -152,6 +163,70 @@ public enum VoiceCallText {
         "Salut\(p), ici \(name). De quoi as-tu besoin\u{202F}?",
         "Bonjour\(p), c’est \(name). Comment je peux t’aider\u{202F}?",
         "\(name) à l’appareil. Qu’est-ce que tu as en tête\u{202F}?",
+      ]
+    case "es":
+      greetings = [
+        "Hola\(p), soy \(name). ¿Qué tal?",
+        "Hola\(p), habla \(name). ¿Qué puedo hacer por ti?",
+        "Hola\(p), aquí \(name). ¿Qué necesitas?",
+        "Hola\(p), soy \(name). ¿En qué te ayudo?",
+        "\(name) al habla. ¿Qué tienes en mente?",
+      ]
+    case "de":
+      greetings = [
+        "Hey\(p), hier ist \(name). Was gibt’s?",
+        "Hallo\(p), \(name) hier. Was kann ich für dich tun?",
+        "Hey\(p), hier spricht \(name). Was brauchst du?",
+        "Hi\(p), hier ist \(name). Wie kann ich helfen?",
+        "\(name) hier. Was beschäftigt dich?",
+      ]
+    case "nl":
+      greetings = [
+        "Hoi\(p), met \(name). Zeg het maar.",
+        "Hallo\(p), met \(name). Wat kan ik voor je doen?",
+        "Hé\(p), \(name) hier. Wat heb je nodig?",
+        "Hoi\(p), met \(name). Waarmee kan ik je helpen?",
+        "\(name) hier. Wat speelt er?",
+      ]
+    case "it":
+      greetings = [
+        "Ciao\(p), sono \(name). Che mi racconti?",
+        "Ciao\(p), qui \(name). Cosa posso fare per te?",
+        "Ehi\(p), sono \(name). Di cosa hai bisogno?",
+        "Ciao\(p), sono \(name). Come posso aiutarti?",
+        "Sono \(name). Cosa hai in mente?",
+      ]
+    case "pt":
+      greetings = [
+        "Oi\(p), aqui é \(name). O que manda?",
+        "Olá\(p), aqui é \(name). O que posso fazer por você?",
+        "Oi\(p), \(name) falando. Do que você precisa?",
+        "Olá\(p), \(name) na linha. Como posso ajudar?",
+        "Aqui é \(name). O que você tem em mente?",
+      ]
+    case "sv":
+      greetings = [
+        "Hallå\(p), det är \(name). Hur är läget?",
+        "Hej\(p), \(name) här. Vad kan jag göra för dig?",
+        "Hej\(p), du pratar med \(name). Vad behöver du?",
+        "Hej\(p), det är \(name). Hur kan jag hjälpa dig?",
+        "\(name) här. Vad har du på hjärtat?",
+      ]
+    case "pl":
+      greetings = [
+        "Cześć\(p), tu \(name). Co słychać?",
+        "Hej\(p), tu \(name). Co mogę dla ciebie zrobić?",
+        "Cześć\(p), mówi \(name). Czego potrzebujesz?",
+        "Hej\(p), tu \(name). W czym mogę pomóc?",
+        "Tu \(name). O czym chcesz pogadać?",
+      ]
+    case "tr":
+      greetings = [
+        "Selam\(p), ben \(name). Ne var ne yok?",
+        "Merhaba\(p), ben \(name). Senin için ne yapabilirim?",
+        "Selam\(p), \(name) konuşuyor. Neye ihtiyacın var?",
+        "Merhaba\(p), ben \(name). Nasıl yardımcı olabilirim?",
+        "Ben \(name). Aklında ne var?",
       ]
     default:
       greetings = [

@@ -2,7 +2,7 @@
  * The emails' sentences in the person's language (20 October 2026,
  * docs/localization.md): the sign-in code, sent to people who use the
  * apps. English is the source; each translation has the same keys, in
- * "tu". The server passes the language (`language`, the request's
+ * "tu" and "tú". The server passes the language (`language`, the request's
  * `Accept-Language`); none, or one Simeon is not translated into, reads
  * as English. The other templates are the inherited shop's and stay
  * English.
@@ -35,7 +35,124 @@ const FRENCH: EmailWords = {
   sentToAfter: '.',
 }
 
-const TABLES: Record<string, EmailWords> = { fr: FRENCH }
+const SPANISH: EmailWords = {
+  hello: 'Hola:',
+  loginCodePreview:
+    'Tu código para iniciar sesión es {code}. Es válido durante los próximos {minutes}\u00a0minutos.',
+  loginCodeIntro:
+    'Usa el código de verificación de abajo para iniciar sesión en tu cuenta de Simeon.',
+  loginCodeValid:
+    'Este código solo es válido durante los próximos {minutes}\u00a0minutos.',
+  loginCodeIgnore:
+    'Si no pediste este inicio de sesión, puedes ignorar este correo sin problema.',
+  sentToBefore: 'Este correo se envió a',
+  sentToAfter: '.',
+}
+
+const GERMAN: EmailWords = {
+  hello: 'Hallo,',
+  loginCodePreview:
+    'Dein Code zum Anmelden lautet {code}. Er gilt für die nächsten {minutes} Minuten.',
+  loginCodeIntro:
+    'Gib den Bestätigungscode unten ein, um dich bei deinem Simeon-Account anzumelden.',
+  loginCodeValid: 'Dieser Code gilt nur für die nächsten {minutes} Minuten.',
+  loginCodeIgnore:
+    'Wenn du diese Anmeldung nicht angefordert hast, kannst du diese E-Mail einfach ignorieren.',
+  sentToBefore: 'Diese E-Mail wurde an',
+  sentToAfter: ' gesendet.',
+}
+
+const DUTCH: EmailWords = {
+  hello: 'Hallo,',
+  loginCodePreview:
+    'Je code om in te loggen is {code}. Hij is de komende {minutes} minuten geldig.',
+  loginCodeIntro:
+    'Gebruik de verificatiecode hieronder om in te loggen bij je Simeon-account.',
+  loginCodeValid: 'Deze code is maar {minutes} minuten geldig.',
+  loginCodeIgnore:
+    'Heb je niet om deze inlogpoging gevraagd? Dan kun je deze e-mail gerust negeren.',
+  sentToBefore: 'Deze e-mail is gestuurd naar',
+  sentToAfter: '.',
+}
+
+const ITALIAN: EmailWords = {
+  hello: 'Ciao,',
+  loginCodePreview:
+    'Il tuo codice per accedere è {code}. È valido per i prossimi {minutes} minuti.',
+  loginCodeIntro:
+    'Usa il codice di verifica qui sotto per accedere al tuo account Simeon.',
+  loginCodeValid:
+    'Questo codice è valido solo per i prossimi {minutes} minuti.',
+  loginCodeIgnore:
+    'Se non hai richiesto questo accesso, puoi tranquillamente ignorare questa email.',
+  sentToBefore: 'Questa email è stata inviata a',
+  sentToAfter: '.',
+}
+
+const PORTUGUESE: EmailWords = {
+  hello: 'Olá,',
+  loginCodePreview:
+    'Seu código para entrar é {code}. Ele vale pelos próximos {minutes} minutos.',
+  loginCodeIntro:
+    'Use o código de verificação abaixo para entrar na sua conta Simeon.',
+  loginCodeValid: 'Este código só vale pelos próximos {minutes} minutos.',
+  loginCodeIgnore:
+    'Se você não pediu para entrar, pode ignorar este e-mail com segurança.',
+  sentToBefore: 'Este e-mail foi enviado para',
+  sentToAfter: '.',
+}
+
+const SWEDISH: EmailWords = {
+  hello: 'Hej,',
+  loginCodePreview:
+    'Din kod för att logga in är {code}. Den gäller i {minutes} minuter.',
+  loginCodeIntro:
+    'Använd verifieringskoden nedan för att logga in på ditt Simeon-konto.',
+  loginCodeValid: 'Koden gäller bara i {minutes} minuter.',
+  loginCodeIgnore:
+    'Om du inte har bett om den här inloggningen kan du lugnt ignorera det här mejlet.',
+  sentToBefore: 'Det här mejlet skickades till',
+  sentToAfter: '.',
+}
+
+const POLISH: EmailWords = {
+  hello: 'Cześć,',
+  loginCodePreview:
+    'Twój kod logowania to {code}. Jest ważny przez następne {minutes} min.',
+  loginCodeIntro:
+    'Użyj poniższego kodu weryfikacyjnego, aby zalogować się do konta Simeon.',
+  loginCodeValid: 'Ten kod jest ważny tylko przez następne {minutes} min.',
+  loginCodeIgnore:
+    'Jeśli to nie ty chcesz się zalogować, możesz spokojnie zignorować ten e-mail.',
+  sentToBefore: 'Ten e-mail został wysłany na adres',
+  sentToAfter: '.',
+}
+
+const TURKISH: EmailWords = {
+  hello: 'Merhaba,',
+  loginCodePreview:
+    'Giriş kodun: {code}. Önümüzdeki {minutes} dakika boyunca geçerli.',
+  loginCodeIntro:
+    'Simeon hesabına giriş yapmak için aşağıdaki doğrulama kodunu kullan.',
+  loginCodeValid:
+    'Bu kod yalnızca önümüzdeki {minutes} dakika boyunca geçerli.',
+  loginCodeIgnore:
+    'Bu girişi sen istemediysen bu e-postayı güvenle yok sayabilirsin.',
+  sentToBefore: 'Bu e-posta şu adrese gönderildi:',
+  sentToAfter: '.',
+}
+
+const TABLES: Record<string, EmailWords> = {
+  fr: FRENCH,
+  es: SPANISH,
+  de: GERMAN,
+  nl: DUTCH,
+  it: ITALIAN,
+  pt: PORTUGUESE,
+  sv: SWEDISH,
+  pl: POLISH,
+  tr: TURKISH,
+}
 
 /** The language an email is written in: one of Simeon's, else English. */
 export function emailLanguage(language?: string | null): string {

@@ -86,10 +86,13 @@ public enum Onboarding {
     String(typed.split(whereSeparator: \.isWhitespace).joined(separator: " ").prefix(60))
   }
 
+  /** Simeon's description as it is saved, in English like his title (the engine knows him by it); shown in the app's language (`Agent.shownDescription`). */
+  public static let chiefOfStaffDescription = "Your Chief of Staff: manages your other Agents and pulls you in for decisions."
+
   /** Simeon, the person's first agent: the Chief of Staff (`SIMEON_COO_PROFILE`), introduced at once. */
   public static func chiefOfStaff(nonce: String) -> JSON {
     [
-      "name": "Simeon", "title": "Chief of Staff", "description": "Your Chief of Staff: manages your other Agents and pulls you in for decisions.",
+      "name": "Simeon", "title": "Chief of Staff", "description": .string(chiefOfStaffDescription),
       "templateId": "chief-of-staff", "avatarShape": .string(AgentFaces.simeonId), "avatarColor": "blue", "avatarPngBase64": nil,
       "origin": "user", "isKickstartRequested": true, "clientNonce": .string(nonce),
     ]

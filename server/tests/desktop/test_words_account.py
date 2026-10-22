@@ -1,7 +1,8 @@
-"""Signing in and the account in the person's language (20 October 2026,
-docs/localization.md): the apps' refusals, the sign-in pages the browser
-shows and the sign-in code's email follow the request's `Accept-Language`;
-without one, or in English, they read as before."""
+"""Signing in and the account in the person's language (French 20 October
+2026, Spanish 21 October; docs/localization.md): the apps' refusals, the
+sign-in pages the browser shows and the sign-in code's email follow the
+request's `Accept-Language`; without one, or in English, they read as
+before."""
 
 from typing import Any
 
@@ -14,6 +15,7 @@ from simeon.desktop.words import say
 from simeon.login_code import service as login_code_module
 
 FRENCH = {"Accept-Language": "fr-FR,fr;q=0.9,en;q=0.8"}
+SPANISH = {"Accept-Language": "es-MX,es;q=0.9"}
 
 
 @pytest.mark.asyncio
@@ -34,6 +36,14 @@ class TestTheAppsRefusals:
         assert french.json() == {
             "error": "bad_email",
             "message": "Saisis une adresse e-mail valide.",
+        }
+        spanish = await client.post(
+            "/auth/email/code", json={"email": "not an email"}, headers=SPANISH
+        )
+        assert spanish.status_code == 400
+        assert spanish.json() == {
+            "error": "bad_email",
+            "message": "Escribe un correo electrónico válido.",
         }
 
     async def test_a_language_simeon_is_not_in_reads_english(
@@ -68,6 +78,10 @@ class TestTheSignInPages:
         assert "Ce lien est incomplet" in french.text
         assert "Ouvre Simeon et connecte-toi depuis l’app." in french.text
         assert "That link" not in french.text
+        spanish = await client.get("/loginDeepControl", headers=SPANISH)
+        assert '<html lang="es">' in spanish.text
+        assert "Ese enlace está incompleto" in spanish.text
+        assert "Abre Simeon e inicia sesión desde ahí." in spanish.text
 
     async def test_the_connectors_last_page_in_the_browsers_language(
         self, client: httpx.AsyncClient
@@ -106,6 +120,13 @@ class TestTheSignInCodesEmail:
         assert french.status_code == 202, french.text
         assert sent[-1]["subject"] == "Connecte-toi à Simeon"
         assert rendered[-1].props.language == "fr"
+
+        spanish = await client.post(
+            "/auth/email/code", json={"email": "eva@example.com"}, headers=SPANISH
+        )
+        assert spanish.status_code == 202, spanish.text
+        assert sent[-1]["subject"] == "Inicia sesión en Simeon"
+        assert rendered[-1].props.language == "es"
 
         english = await client.post(
             "/auth/email/code", json={"email": "bob@example.com"}

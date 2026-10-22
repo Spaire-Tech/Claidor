@@ -13,6 +13,8 @@ import {
 } from "../../../packages/proto/generated/agent/v1/smart_mode_classifier_exec_pb.js";
 import { smartModeClassifierModeKey } from "../../../packages/agent/utils/smart-mode-classifier-measurement.js";
 import { clipForHostLog, HOST_LOG_PREFIX, logHostLine } from "../../../shared/host-log.js";
+import { say } from "../../../shared/say.js";
+import { ADDRESS, currentUserLanguage, isEnglishOrUnset, languageCode, languageName } from "../../../shared/user-language.js";
 
 // Auto-review's risky-or-safe classifier, on Simeon's own model path.
 //
@@ -81,8 +83,9 @@ export function renderSmartModeClassifierUserPrompt(args: SmartModeClassifierArg
  * proposedAllowRule, so every block gets one: the command when there is one,
  * else the action's kind.
  */
-export function fallbackAllowRule(args: SmartModeClassifierArgs): string {
-  const action = (args.target?.action ?? "").trim() || "this kind of action";
+export function fallbackAllowRule(args: SmartModeClassifierArgs, language: string | null | undefined = currentUserLanguage()): string {
+  const kind = (args.target?.action ?? "").trim();
+  const action = kind || "this kind of action";
   let command = "";
   try {
     const json = (args.target?.arguments ?? new Struct()).toJson() as Record<string, unknown> | null;
@@ -94,7 +97,19 @@ export function fallbackAllowRule(args: SmartModeClassifierArgs): string {
     command = "";
   }
   if (command.length > 120) command = `${command.slice(0, 120)}…`;
-  return command.length > 0 ? `Allow ${action}: ${command}` : `Allow ${action} actions like this one`;
+  if (isEnglishOrUnset(language)) return command.length > 0 ? `Allow ${action}: ${command}` : `Allow ${action} actions like this one`;
+  return command.length > 0 ? say(language, "autoReview.allowCommand", { action: kind || "?", command }) : say(language, "autoReview.allowKind", { action: kind || "?" });
+}
+
+/**
+ * The line that has the reviewer write what the person reads (its reason,
+ * its rule) in their language (22 October 2026); empty for English or none.
+ */
+export function reviewerLanguageLine(language: string | null | undefined): string {
+  if (isEnglishOrUnset(language)) return "";
+  const english = languageName(language!);
+  const familiar = ADDRESS[languageCode(language!)]?.familiar;
+  return `The person reads reason and proposedAllowRule in ${english}: write both in ${english}${familiar === undefined ? "" : `, saying "${familiar}" to them`}. The decision word stays allow or block.`;
 }
 
 export function parseSmartModeClassifierAnswer(text: string, fallbackRule?: string): SmartModeClassifierSuccess | null {
@@ -147,14 +162,16 @@ export function createSimeonSmartModeClassifierExecutor(deps: SimeonSmartModeCla
       const mode = ctx.get(smartModeClassifierModeKey) ?? "enforce";
       const action = args.target?.action ?? "";
       try {
+        const language = currentUserLanguage();
+        const languageLine = reviewerLanguageLine(language);
         const text = await streamText(
           deps.createExecutor(),
-          SIMEON_AUTO_REVIEW_SYSTEM_PROMPT,
+          languageLine.length === 0 ? SIMEON_AUTO_REVIEW_SYSTEM_PROMPT : `${SIMEON_AUTO_REVIEW_SYSTEM_PROMPT}\n${languageLine}`,
           renderSmartModeClassifierUserPrompt(args),
           ctx.signal,
           deps.timeoutMs ?? SIMEON_AUTO_REVIEW_CLASSIFIER_TIMEOUT_MS,
         );
-        const success = parseSmartModeClassifierAnswer(text, fallbackAllowRule(args));
+        const success = parseSmartModeClassifierAnswer(text, fallbackAllowRule(args, language));
         if (success == null) {
           log(`${HOST_LOG_PREFIX} auto-review action=${action} mode=${mode} verdict=unparseable answer=${clipForHostLog(text, 200)}`);
           return new SmartModeClassifierResult({ result: { case: "error", value: new SmartModeClassifierError({ error: "The reviewer's answer could not be read." }) } });
