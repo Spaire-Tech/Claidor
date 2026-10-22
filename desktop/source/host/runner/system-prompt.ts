@@ -12,7 +12,8 @@ import {
 // catalogue is fixed for a build, so the brief stays the same from turn to
 // turn (about 330 tokens, read from the prompt cache; about 480 since 17
 // October 2026, when the catalogue went from 87 connectors to 135, and about
-// 650 since 52 makers' servers were added later that day, 187 in all).
+// 650 since 52 makers' servers were added later that day, 187 in all; about
+// 790 since 22 October 2026, 229 named of 232, the three Coming soon left out).
 export const SIMEON_CONNECTOR_NAMES = VENDOR_MCP_CONNECTORS
   .filter((item) => item.comingSoon !== true)
   .map((item) => item.name)
