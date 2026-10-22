@@ -265,8 +265,9 @@ the next plugin sync.
 
 ## 7. Connectors
 
-The Connect apps sheet lists 87 connectors (`shared/node/vendor-mcp/catalog.ts`, 15 October
-2026): 38 are the vendor's own MCP servers and 49 are apps served by Simeon Labs' server.
+The Connect apps sheet lists 232 connectors (`shared/node/vendor-mcp/catalog.ts`, 22 October
+2026): 121 are the vendor's own MCP servers (three of them Coming soon: AppFolio, Uber and
+Instacart) and 111 are apps served by Simeon Labs' server.
 People can also add their own MCP servers.
 
 Every agent's brief names all of them (`SIMEON_CONNECTOR_NAMES` in
@@ -467,6 +468,36 @@ takes the app back out, so nothing is left added and not signed in (`SimeonCore/
     is the Dropbox connector's.
   - Not yet verified: nobody has signed in to any of the 52 and no tool has been called; the
     loopback ones not on a device.
+- **Fourteen more on their makers' servers** (22 October 2026, the apps the teams in
+  `server/simeon/desktop/packs.json` ask for; server ids 900193 to 900237 with the 31 of 7c),
+  measured that day as above:
+  - Gem (`mcp.gem.com/mcp`), CourtListener (`mcp.courtlistener.com/`), Ignition
+    (`mcp.ignitionapp.com/mcp`), CompanyCam (`api.companycam.com/public_api/mcp`) and Midpage
+    (`app.midpage.ai/mcp`) registered Simeon with the hosted return address and sent the authorize
+    page on to their login.
+  - Loop Returns (`api.loopreturns.com/mcp`: "The provided redirect_uri is not allowed"), Upwork
+    (`mcp.upwork.com/mcp`), Karbon (`mcp.karbonhq.com/mcp`) and vidIQ (`mcp.vidiq.com/mcp`)
+    refused the hosted address and registered the loopback: `loopbackOnly`. Upwork's authorize page
+    answered the probe with its bot challenge, so it is checked only as far as registration.
+    Midpage and vidIQ are also Composio toolkits (`midpage_mcp`, `vidiq_mcp`), whose pages say
+    "Composio-managed OAuth available? No": the makers' own servers are used instead.
+  - Crunchbase (`mcp.crunchbase.com`) registers no clients but reads client documents, so it gets
+    Simeon's (`registered=by our document`); its authorize page (`www.crunchbase.com`) answered the
+    probe with Cloudflare's block, so whether it takes Simeon's document is not yet known.
+  - TaskRabbit (`mcp.taskrabbit.com/mcp`) answers its tools to anyone (`noSignIn`, as
+    Excalidraw): services in a place, their availability, and a link into its booking.
+  - Coming soon, listed with no Connect: **AppFolio** (its registration answers both return
+    addresses "Policy 'Trusted Hosts' rejected request … Host not trusted"); **Uber** (the only open
+    address is `mcp.uber.com/claude/rides-3p/mcp`, made for Claude: its tool and widget say so and
+    its booking links carry `utm_source=claude`; `/rides-3p/mcp` answers "Access denied");
+    **Instacart** (`mcp.instacart.com/mcp` lists its tools to anyone, but each call wants an
+    Instacart Developer Platform key: "Authorization header is required"). None of the three has
+    a Composio toolkit. The agents' brief leaves the three out.
+  - Meta Ads' own server (`mcp.facebook.com/ads`) now advertises registration but answers
+    "Dynamic registration is not available for this client", and Jobber's registers no clients:
+    both go through our apps service (7c), as does BambooHR (its server is one per company).
+  - Not yet verified: no sign-in and no tool call on any of them except TaskRabbit's (a
+    `list_supported_services` call answered); the loopback ones not on a device.
 - **Zendesk stays on our apps service.** `mcp.zendesk.com` advertises client documents, but
   its authorize page sends everyone to "Help Center Closed" (measured 13 October 2026): it
   behaves as a Zendesk account named "mcp" that nobody can sign in to. Zendesk's own server is
@@ -521,7 +552,34 @@ Zoho, and the Zoho Mail, Zoho Books and Zoho CRM added that morning are gone fro
 logos, the chat and the consent sheet. Each keeps its place in `catalog.ts` as `retired("…")`:
 a connector's server id is its place in the list, and connect cards in old chats carry those ids,
 so no other connector's id moves, and a retired id answers no connector. A Zoho app someone had
-added stays in their install file but is listed nowhere and reached by nothing.
+added stays in their install file but is listed nowhere and reached by nothing. Zoho Inventory
+came back alone on 22 October 2026 (below), asked for by the teams in `packs.json`.
+
+**31 more on 22 October 2026**, for the teams in `server/simeon/desktop/packs.json` (with the
+fourteen of 7a), each read from its Composio toolkit page that day:
+- One-tap sign-in ("Composio-managed OAuth available? Yes"): Zoho Inventory (`zoho_inventory`).
+- The person's own API key, asked on the provider's link page (the server keeps that page:
+  `desktop.apps.link_kept`, "the page asks something"): 7shifts, Veryfi, Toggl (`toggl_track`,
+  Toggl Track's own toolkit; `toggl` is the older one with unrelated tools), YouTube Transcript,
+  HypeAuditor, HeyReach, ContactOut, Hireflix, Draftable (one tool: list comparisons), Chaser,
+  Vaquill, TaxJar, MaintainX, Seam, Route4Me, GatherUp, OneUp, Mindbody, Ignav (`ignav_flights`)
+  and Tripadvisor. Yelp (`NO_AUTH, API_KEY`) and Aiwyn Tax (`aiwyn_tax_mcp`, `NO_AUTH`) need no
+  key; whether the provider's link opens a connection for a toolkit with no sign-in is not yet
+  seen, and the server answers every call only for a connected account.
+- An OAuth app of ours first ("Composio-managed OAuth available? No"), so in `OWN_APP_NEEDED` and
+  "Coming soon" until named in `SIMEON_COMPOSIO_AUTH_CONFIGS`: Meta Ads (`metaads`), Jobber,
+  BambooHR, TikTok, Follow Up Boss, Matterport, ZoomInfo and Clio (`clio_manage`). The apps match
+  the server's list by id or name, so Clio, whose toolkit is `clio_manage`, still shows Connect
+  there and its sign-in answers "Clio is coming soon in Simeon".
+Each has its mark (`brand/connector-logos`: Composio's logo service; Gem's, Loop Returns', Karbon's,
+CourtListener's, Ignition's, AppFolio's and Ignav's from their own sites; Upwork's, Uber's and Meta's
+from Wikimedia Commons), its colour and logo in the chat (TikTok's was in the Mac window's list
+already) and its words in the nine languages. Later that day: its app icon (`ios/scripts/app_icons.py`:
+26 from their iOS apps, 19 drawn from their marks), its lines on the consent sheet
+(`ConnectConsent.swift`: what the agents reach, and a note for the 20 that ask for the person's own
+key) and, for nine of the makers' servers, View Source (`vendor-mcp/sources.ts`; Upwork, Karbon,
+AppFolio, Uber and TaskRabbit have no page that could be checked). Not verified: no sign-in or tool
+call through any.
 
 Each new connector has, like the others: its mark in `desktop/brand/connector-logos` (Composio's
 logo service, except Dynamics 365, which it answers with Microsoft's four squares, cropped from
@@ -2311,3 +2369,52 @@ every row out again when it starts and the list shows the new lines at once.
 
 **Not yet verified.** Not seen on an iPhone or a Mac. The engine's test
 (`desktop/tests/session-projection-last-entry.test.mjs`) runs the lines through the function.
+
+## 17. Starter packs: a team of five from the website
+
+**For the person (22 October 2026).** The founder: "bundles … the bundles will have 5 agents
+each. already named, already given instructions and connectors to ask for. the marketplace will
+live in the website … you click add to simeon in the website, the app opens … once you add
+them the agents activate, each send a message in their chat, with their connectors ready to be
+connected … they live in a project folder based on the name." Fifteen packs ("Simeon for
+Coffee Shops", Founders, Agencies, Real Estate, Online Stores, Freelancers, Creators, Sales,
+Recruiters, Law Firms, Accountants, Landlords, Contractors, Salons and Spas, Busy
+Professionals), free for everyone. Each agent asks for three apps, and the fifteen apps of a
+pack are all different.
+
+**How it works.**
+
+- The packs are one file, `server/simeon/desktop/packs.json`: each pack's id, folder ("Coffee
+  Shop Team"), title and summary, and its five agents (name, title, face from the apps' own
+  faces, summary, quote, three app ids from `vendor-mcp/catalog.ts`, and the instructions kept
+  as the agent's description). `appNames` holds the catalogue's name for each app.
+- The website's Teams pages (`sites/simeonlabs.com/source/teams.py`, `/teams` and
+  `/teams/<id>`) are built from that file. Add to Simeon opens `simeon://app/v1/pack/add?id=<id>`
+  on a Mac and `simeon-ios://app/v1/pack/add?id=<id>` on an iPhone.
+- The server serves the file read-only, no sign-in needed (`server/simeon/desktop/packs.py`):
+  `GET /desktop/api/packs` (`data.packs`) and `GET /desktop/api/packs/{id}` (`data`, with that
+  pack's `appNames`), or a 404 "This team isn't available anymore."
+- The Mac (`DeepLink` `.packAdd`, `mac/Simeon/StarterPackSheet.swift`) and the iPhone
+  (`onOpenURL`, `ios/Simeon/StarterPackSheet.swift`) read the pack and show it: the five faces,
+  each agent with its job, what it does and its apps. Add (`AppStore.addPack`,
+  `SimeonCore/StarterPacks.swift`) makes the five agents with `createAgent` (name, title,
+  `avatarShape`, `description` = the instructions, `isKickstartRequested: true`), puts them in
+  a sidebar section `pack-<id>` named after the folder, and opens the first chat. A pack whose
+  section still holds its agents shows Open instead of Add.
+- Each agent speaks first at once (`kickstartCreatedAgent`): the first-run cue starts on a
+  concrete assignment, and every pack agent's instructions end "Starts by asking to connect A, B
+  and C (any already connected is just named), then asks …", so it proposes the apps it lacks
+  with `ProposeConnector` and names the ones already connected.
+
+**Switches.** None. Changing a pack is an edit of `packs.json` (the server test
+`server/tests/desktop/test_packs.py` checks five agents, real faces, fifteen different apps in
+the catalogue and their names) and a rebuild of the site (`python3 source/build.py`).
+
+**Not yet verified.** Not seen on an iPhone or a Mac: the link opening the app, the sheet, the
+five agents' first messages. The new connectors the packs ask for reach the agents only with
+the next host bundle, which is published from a Mac.
+
+**Apps a pack asks for that cannot be connected yet** (22 October 2026), so the agent's card
+says Coming soon: Gusto, Xero, Shopify, DocuSign, Microsoft To Do, Meta Ads, Jobber, BambooHR,
+TikTok, Follow Up Boss, Matterport, ZoomInfo and Clio wait for an OAuth app of Simeon Labs'
+own in Composio (`OWN_APP_NEEDED`, 7c); AppFolio, Uber and Instacart wait on their makers (7a).

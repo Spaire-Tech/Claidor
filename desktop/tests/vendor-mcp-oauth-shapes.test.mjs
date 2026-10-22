@@ -173,7 +173,9 @@ test("apps our server serves (Figma, Asana, Gmail…) sign in, list and disconne
     assert.equal(figma.comingSoon, undefined);
     assert.equal(figma.appsToolkit, "figma");
     assert.equal(catalog.module.appsMcpUrl("figma", "https://api.simeonlabs.com"), "https://api.simeonlabs.com/desktop/api/apps/mcp/figma");
-    assert.equal(catalog.module.VENDOR_MCP_CONNECTORS.some((item) => item.comingSoon === true), false, "nothing is coming soon any more");
+    // No app our server serves is Coming soon in the catalog; since 22 October 2026 three makers' own servers are (AppFolio, Uber, Instacart).
+    assert.deepEqual(catalog.module.VENDOR_MCP_CONNECTORS.filter((item) => item.comingSoon === true).map((item) => item.id), ["appfolio", "uber", "instacart"]);
+    assert.equal(catalog.module.VENDOR_MCP_CONNECTORS.some((item) => item.comingSoon === true && item.appsToolkit != null), false, "no app of our server is coming soon in the catalog");
     assert.equal(backend.module.appsRouteUrl("https://api.simeonlabs.com/desktop/api/apps/mcp/figma", "/connect"), "https://api.simeonlabs.com/desktop/api/apps/figma/connect");
     const url = "https://api.simeonlabs.com/desktop/api/apps/mcp/figma";
     installs.module.upsertVendorMcpInstall(root, { id: "figma", url, connected: false });

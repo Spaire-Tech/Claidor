@@ -191,6 +191,11 @@ struct HomeView: View {
       .problemAlert()
     }
     .sheet(item: $profile) { ref in AgentPageSheet(agentId: ref.id, routineId: ref.routineId).problemAlert().presentationBackground(Ink.ground) }
+    // A starter pack from the website's Add to Simeon (StarterPackSheet.swift), once nothing else is up.
+    .sheet(item: Binding(get: { sheet == nil && profile == nil && !showsHidden ? Notifications.shared.openPack.map(PackLink.init(id:)) : nil },
+                         set: { Notifications.shared.openPack = $0?.id })) { link in
+      StarterPackSheet(packId: link.id) { id in open(id) }.problemAlert().presentationBackground(Ink.ground)
+    }
     .sheet(isPresented: $showsHidden) {
       HiddenAgentsSheet { id in
         showsHidden = false

@@ -260,10 +260,39 @@ public struct ConnectConsent: Identifiable, Equatable, Sendable {
     "shortcut": L10n.text("stories, epics and iterations"),
     "razorpay": L10n.text("payments, orders, refunds and settlements"),
     "typefully": L10n.text("your drafts, scheduled posts and social accounts"),
+    // 22 October 2026: the 45 the teams in `server/simeon/desktop/packs.json` ask for (those that answer from their own data are in `reachSentence`).
+    "gem": L10n.text("candidates, jobs, your pipeline and outreach"),
+    "meta-ads": L10n.text("campaigns, ad sets, ads and results"),
+    "loop-returns": L10n.text("your store's returns, exchanges and refunds"),
+    "upwork": L10n.text("jobs, freelancers, proposals and contracts"),
+    "karbon": L10n.text("your clients, work items and deadlines"),
+    "ignition": L10n.text("proposals, clients, invoices and payments"),
+    "appfolio": L10n.text("properties, units, tenants and work orders"),
+    "jobber": L10n.text("clients, quotes, jobs and invoices"),
+    "companycam": L10n.text("your projects, job site photos and checklists"),
+    "bamboohr": L10n.text("employees, time off, job openings and applicants"),
+    "7shifts": L10n.text("your shifts, locations and team"),
+    "tiktok": L10n.text("your videos, posts and stats"),
+    "follow-up-boss": L10n.text("leads, people, deals and appointments"),
+    "matterport": L10n.text("your 3D tours and their spaces"),
+    "zoho-inventory": L10n.text("items, stock, sales orders and invoices"),
+    "toggl": L10n.text("time entries, projects, clients and reports"),
+    "heyreach": L10n.text("your LinkedIn campaigns, leads and conversations"),
+    "hireflix": L10n.text("your positions, interviews and candidates' answers"),
+    "clio": L10n.text("clients, matters, calendars, tasks and bills"),
+    "draftable": L10n.text("your document comparisons and their links"),
+    "chaser": L10n.text("customers, invoices and who owes what"),
+    "taxjar": L10n.text("sales tax rates, transactions and customers"),
+    "maintainx": L10n.text("work orders, requests, assets and locations"),
+    "seam": L10n.text("your smart locks, spaces and access codes"),
+    "route4me": L10n.text("your routes, stops and orders"),
+    "gatherup": L10n.text("your businesses, customers and feedback requests"),
+    "oneup": L10n.text("your scheduled posts, social accounts and their results"),
+    "mindbody": L10n.text("your studio's classes, appointments, clients and sales"),
   ]
 
   /** Apps the agents can only read (the catalog says so). */
-  static let readOnly: Set<String> = ["mercury", "figma", "otter", "plaid", "tldv"]
+  static let readOnly: Set<String> = ["mercury", "figma", "otter", "plaid", "tldv", "draftable"]
 
   /** Apps whose reach is said another way. */
   static let reachSentence: [String: String] = [
@@ -285,6 +314,24 @@ public struct ConnectConsent: Identifiable, Equatable, Sendable {
     "replicate": L10n.text("Your agents can run AI models on {App}."),
     "elevenlabs": L10n.text("Your agents can make speech, sound effects and music with {App}, and use your voices."),
     "coinbase": L10n.text("Your agents can use your {App} account through Coinbase for Agents, within what you allow when you sign in."),
+    // 22 October 2026, the same kind among the 45 of `packs.json`: data, search and estimates; Uber, Instacart and TaskRabbit hand the booking or the order to the person.
+    "crunchbase": L10n.text("Your agents can look up companies, funding rounds, investors and the people behind them in {App}."),
+    "courtlistener": L10n.text("Your agents can search case law, court dockets and judges in {App}, and set up alerts."),
+    "uber": L10n.text("Your agents can get ride estimates from {App}, and links to book a ride."),
+    "instacart": L10n.text("Your agents can turn recipes and shopping lists into {App} pages to order from."),
+    "taskrabbit": L10n.text("Your agents can check {App}'s services, prices and Taskers near you, and start a booking for you to finish."),
+    "veryfi": L10n.text("Your agents can turn receipts, invoices and bills into data with {App}."),
+    "yelp": L10n.text("Your agents can find businesses and events on {App}, and read their reviews and ratings."),
+    "vidiq": L10n.text("Your agents can research YouTube channels, videos, trends and keywords with {App}, and read your own channel's stats."),
+    "youtube-transcript": L10n.text("Your agents can get the transcripts of YouTube videos, playlists and channels with {App}."),
+    "hypeauditor": L10n.text("Your agents can find influencers and look up their audiences and reach with {App}."),
+    "zoominfo": L10n.text("Your agents can look up companies, contacts, buying intent and news with {App}."),
+    "contactout": L10n.text("Your agents can find emails and phone numbers for people and companies with {App}."),
+    "midpage": L10n.text("Your agents can search case law, court filings and statutes in {App}, with citations."),
+    "vaquill": L10n.text("Your agents can look up US statutes, session laws and citations with {App}."),
+    "aiwyn-tax": L10n.text("Your agents can estimate federal and state taxes with {App}."),
+    "ignav": L10n.text("Your agents can search flights and fares with {App}, and get links to book them."),
+    "tripadvisor": L10n.text("Your agents can look up hotels, restaurants and things to do on {App}, with their reviews and photos."),
   ]
 
   /** Apps whose sign-in is said another way. */
@@ -295,10 +342,12 @@ public struct ConnectConsent: Identifiable, Equatable, Sendable {
     "shop": L10n.text("You'll approve the connection on {App}'s own page with your {App} account; your cloud computer keeps it. Simeon never sees your password or your card numbers."),
     // Excalidraw's server answers anyone (`noSignIn` in the catalog): there is nothing to sign in to.
     "excalidraw": L10n.text("There's nothing to sign in to: your agents draw on {App}'s own server (mcp.excalidraw.com), and Simeon holds no account of yours there."),
+    // TaskRabbit's answers anyone too (`noSignIn`, 22 October 2026); the booking it starts is finished on TaskRabbit, by the person.
+    "taskrabbit": L10n.text("There's nothing to sign in to: your agents search on {App}'s own server (mcp.taskrabbit.com), and Simeon holds no account of yours there."),
   ]
 
   /** Apps where money moves for real. */
-  static let money: Set<String> = ["stripe", "paypal", "square", "ramp", "brex", "quickbooks", "xero", "gusto", "freshbooks", "razorpay", "coinbase"]
+  static let money: Set<String> = ["stripe", "paypal", "square", "ramp", "brex", "quickbooks", "xero", "gusto", "freshbooks", "razorpay", "coinbase", "loop-returns", "upwork", "ignition"]
 
   /** One more thing worth knowing about an app. */
   static let notes: [String: String] = [
@@ -371,5 +420,32 @@ public struct ConnectConsent: Identifiable, Equatable, Sendable {
     "tldv": L10n.text("Read only, on tl;dv's Pro plan."),
     "datadog": L10n.text("Works with Datadog's US1 site (app.datadoghq.com)."),
     "coinbase": L10n.text("Anything that moves money or crypto in Coinbase is real. Ask your agents to check with you before they move any. Coinbase may let only apps it has approved sign in; if its page refuses, Coinbase can't be connected yet."),
+    // 22 October 2026, the 45 of `packs.json`. Each app whose sign-in page asks for the person's own key says so, as Replicate's does.
+    "crunchbase": L10n.text("Needs a Crunchbase plan with MCP access, given by your workspace owner."),
+    "meta-ads": L10n.text("Changes to live campaigns and budgets can spend money."),
+    "7shifts": L10n.text("The sign-in page asks for an access token from your 7shifts account."),
+    "veryfi": L10n.text("The sign-in page asks for an API key from your Veryfi account. Each document read can be billed to that account."),
+    "tiktok": L10n.text("Videos and photos your agents post go out on your TikTok account."),
+    "zoho-inventory": L10n.text("Invoices and statements your agents email go out to your real customers."),
+    "toggl": L10n.text("The sign-in page asks for an API token from your Toggl account."),
+    "vidiq": L10n.text("Research uses your vidIQ credits."),
+    "youtube-transcript": L10n.text("The sign-in page asks for an API key from your YouTube Transcript account. Fetching new transcripts uses that account's credits."),
+    "hypeauditor": L10n.text("The sign-in page asks for an API key from your HypeAuditor account."),
+    "zoominfo": L10n.text("Enrichment uses your ZoomInfo credits."),
+    "heyreach": L10n.text("The sign-in page asks for an API key from your HeyReach account."),
+    "contactout": L10n.text("The sign-in page asks for an API token from your ContactOut account. Lookups use your ContactOut credits."),
+    "hireflix": L10n.text("The sign-in page asks for an API key from your Hireflix account. Invitations your agents send reach real candidates."),
+    "draftable": L10n.text("The sign-in page asks for an API key from your Draftable account."),
+    "chaser": L10n.text("The sign-in page asks for an API key from your Chaser account."),
+    "vaquill": L10n.text("The sign-in page asks for an API key from your Vaquill account. Lookups use your Vaquill credits."),
+    "taxjar": L10n.text("The sign-in page asks for an API token from your TaxJar account. Transactions your agents record count in your sales tax reports and filings."),
+    "maintainx": L10n.text("The sign-in page asks for an API key from your MaintainX account."),
+    "seam": L10n.text("The sign-in page asks for an API key from your Seam account. Access codes and keys your agents grant open real doors."),
+    "route4me": L10n.text("The sign-in page asks for an API key from your Route4Me account."),
+    "gatherup": L10n.text("The sign-in page asks for an API key from your GatherUp account. Feedback requests your agents send reach your real customers."),
+    "oneup": L10n.text("The sign-in page asks for an API key from your OneUp account. Posts your agents publish go out on your accounts."),
+    "mindbody": L10n.text("The sign-in page asks for an API key from your Mindbody account."),
+    "ignav": L10n.text("The sign-in page asks for an API key from your Ignav account."),
+    "tripadvisor": L10n.text("The sign-in page asks for an API key from your Tripadvisor account."),
   ]
 }

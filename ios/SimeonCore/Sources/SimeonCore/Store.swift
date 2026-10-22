@@ -1552,7 +1552,8 @@ public final class AppStore {
   public func isComingSoon(_ app: String) -> Bool {
     if AppsComingSoon.names(appsComingSoon, app) { return true }
     guard let found = catalogApp(named: app) else { return false }
-    return found.comingSoon || AppsComingSoon.names(appsComingSoon, found.id)
+    // Its toolkit too: Clio is `clio_manage` on the server's list (22 October 2026).
+    return found.comingSoon || AppsComingSoon.names(appsComingSoon, found.id) || found.composioToolkit.map { AppsComingSoon.names(appsComingSoon, $0) } == true
   }
 
   /** When the connected apps were last read, so Add does not read them again a moment later. */

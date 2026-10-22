@@ -125,7 +125,11 @@ NOT_CONFIGURED = "Apps are not switched on for this server yet."
 #: approved, so Shopify stays here until it approves Simeon. OneNote and
 #: Microsoft To Do joined the same day (Composio's toolkit pages: "requires
 #: connections to go through your own OAuth app"); Simeon Labs' Microsoft
-#: app, once registered, serves them with Teams and Outlook.
+#: app, once registered, serves them with Teams and Outlook. Meta Ads, Jobber,
+#: BambooHR, TikTok, Follow Up Boss, Matterport, ZoomInfo and Clio joined on
+#: 22 October 2026 (their toolkit pages: "Composio-managed OAuth available?
+#: No"; Meta's and Jobber's own MCP servers register no clients of ours, and
+#: BambooHR's is one per company).
 OWN_APP_NEEDED = frozenset(
     {
         "gusto",
@@ -136,6 +140,14 @@ OWN_APP_NEEDED = frozenset(
         "docusign",
         "onenote",
         "microsoft_todo",
+        "metaads",
+        "jobber",
+        "bamboohr",
+        "tiktok",
+        "follow_up_boss",
+        "matterport",
+        "zoominfo",
+        "clio_manage",
     }
 )
 

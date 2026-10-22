@@ -340,6 +340,68 @@ const VENDOR_MCP_PLACES: readonly (VendorMcpConnector | RetiredPlace)[] = [
   { id: "razorpay", name: "Razorpay", category: G.Finance, url: "https://mcp.razorpay.com/mcp", description: "Payments, orders, refunds, and settlements." },
   { id: "coinbase", name: "Coinbase", category: G.Finance, url: "https://agents.coinbase.com/mcp", loopbackOnly: true, description: "Your Coinbase account, through Coinbase for Agents." },
   { id: "typefully", name: "Typefully", category: G.Social, url: "https://mcp.typefully.com/mcp", description: "Draft, schedule, and publish posts to X, LinkedIn, and Threads." },
+  // 22 October 2026, the apps the teams in `server/simeon/desktop/packs.json` ask for. On their makers' own servers, each probed
+  // that day (an unsigned `initialize` answered 401 naming OAuth metadata with S256, Simeon registered once and its authorize
+  // page opened without a session): Gem, CourtListener, Ignition, CompanyCam and Midpage took the hosted return address; Loop
+  // Returns, Upwork, Karbon and vidIQ refused it and took the loopback. Crunchbase registers no clients but reads client
+  // documents (Simeon's, `oauth.ts`); its authorize page answered the probe with Cloudflare's block, so it is checked only as far
+  // as its metadata. TaskRabbit's server answers its tools to anyone (`noSignIn`). The rest through our apps service, read from
+  // Composio's toolkit pages that day: Zoho Inventory signs anyone in; Meta Ads, Jobber, BambooHR, TikTok, Follow Up Boss,
+  // Matterport, ZoomInfo and Clio need an OAuth app of ours first (`OWN_APP_NEEDED`: Meta's own server refuses registration,
+  // Jobber's registers none, BambooHR's is per company); the others take the person's own API key on the sign-in page, and Yelp
+  // and Aiwyn Tax need none.
+  { id: "crunchbase", name: "Crunchbase", category: G.Sales, url: "https://mcp.crunchbase.com", description: "Companies, funding rounds, investors, and the people behind them." },
+  { id: "gem", name: "Gem", category: G.Hiring, url: "https://mcp.gem.com/mcp", description: "Source candidates, and manage your talent pipeline and outreach." },
+  app({ id: "meta-ads", name: "Meta Ads", category: G.Marketing, description: "Campaigns, ad sets, ads, and results on Facebook and Instagram." }, "metaads"),
+  { id: "loop-returns", name: "Loop Returns", category: G.Sales, url: "https://api.loopreturns.com/mcp", loopbackOnly: true, description: "Returns, exchanges, and refunds for your Shopify store." },
+  { id: "upwork", name: "Upwork", category: G.Hiring, url: "https://mcp.upwork.com/mcp", loopbackOnly: true, description: "Jobs, freelancers, proposals, and contracts." },
+  { id: "courtlistener", name: "CourtListener", category: G.FilesDocs, url: "https://mcp.courtlistener.com/", description: "Case law, court dockets, and judges, from the Free Law Project." },
+  { id: "karbon", name: "Karbon", category: G.Finance, url: "https://mcp.karbonhq.com/mcp", loopbackOnly: true, description: "Your accounting practice's clients, work, and deadlines." },
+  { id: "ignition", name: "Ignition", category: G.Finance, url: "https://mcp.ignitionapp.com/mcp", description: "Proposals, engagement letters, billing, and payments for your firm." },
+  // AppFolio's registration (Keycloak, `account.appfolio.com`) answered both return addresses "Policy 'Trusted Hosts' rejected
+  // request … Host not trusted" (22 October 2026): it registers only the clients AppFolio lets in, and Composio has no AppFolio.
+  { id: "appfolio", name: "AppFolio", category: G.Productivity, url: "https://mcp.appfolio.com/mcp", comingSoon: true, description: "Properties, units, tenants, and work orders." },
+  app({ id: "jobber", name: "Jobber", category: G.Sales, description: "Clients, quotes, jobs, and invoices for your service business." }, "jobber"),
+  { id: "companycam", name: "CompanyCam", category: G.Productivity, url: "https://api.companycam.com/public_api/mcp", description: "Job site photos, projects, and checklists." },
+  // Uber's only open address is the one it made for Claude (22 October 2026): the path says so, its tool is
+  // `get_estimates_between_two_locations_claude` with Claude's widget, and its booking links carry `utm_source=claude`; the
+  // general `/rides-3p/mcp` answers "Access denied". Waits for an address Uber gives other apps; Composio has no Uber.
+  { id: "uber", name: "Uber", category: G.Productivity, url: "https://mcp.uber.com/claude/rides-3p/mcp", comingSoon: true, description: "Ride estimates and links to book a ride." },
+  // Instacart's server lists its tools to anyone but answers a call only with an Instacart Developer Platform key in the
+  // `Authorization` header ("Authorization header is required", 22 October 2026): no sign-in, and Composio has no Instacart.
+  { id: "instacart", name: "Instacart", category: G.Productivity, url: "https://mcp.instacart.com/mcp", comingSoon: true, description: "Turn recipes and shopping lists into Instacart pages to order from." },
+  { id: "taskrabbit", name: "TaskRabbit", category: G.Productivity, url: "https://mcp.taskrabbit.com/mcp", noSignIn: true, description: "Find Taskers near you for jobs around the home, and start a booking." },
+  app({ id: "bamboohr", name: "BambooHR", category: G.Hiring, description: "Employees, time off, job openings, and applicants." }, "bamboohr"),
+  app({ id: "7shifts", name: "7shifts", category: G.Hiring, description: "Shifts, locations, and your restaurant team." }, "7shifts"),
+  app({ id: "veryfi", name: "Veryfi", category: G.Finance, description: "Read receipts, invoices, and bills into data." }, "veryfi"),
+  app({ id: "yelp", name: "Yelp", category: G.Marketing, description: "Find businesses and events, and read reviews and ratings." }, "yelp"),
+  app({ id: "tiktok", name: "TikTok", category: G.Social, description: "Post videos and photos, and see your videos and stats." }, "tiktok"),
+  app({ id: "follow-up-boss", name: "Follow Up Boss", category: G.Sales, description: "Leads, people, deals, and appointments in your real estate CRM." }, "follow_up_boss"),
+  app({ id: "matterport", name: "Matterport", category: G.Creativity, description: "Your 3D tours and the spaces in them." }, "matterport"),
+  app({ id: "zoho-inventory", name: "Zoho Inventory", category: G.Finance, description: "Items, stock, sales orders, and invoices." }, "zoho_inventory"),
+  app({ id: "toggl", name: "Toggl", category: G.Productivity, description: "Time entries, projects, clients, and reports (Toggl Track)." }, "toggl_track"),
+  { id: "vidiq", name: "vidIQ", category: G.Marketing, url: "https://mcp.vidiq.com/mcp", loopbackOnly: true, description: "YouTube research: trends, keywords, channels, and your channel's stats." },
+  app({ id: "youtube-transcript", name: "YouTube Transcript", category: G.Marketing, description: "Transcripts of YouTube videos, playlists, and channels." }, "youtube_transcript"),
+  app({ id: "hypeauditor", name: "HypeAuditor", category: G.Marketing, description: "Find influencers, and read their audiences and reach." }, "hypeauditor"),
+  app({ id: "zoominfo", name: "ZoomInfo", category: G.Sales, description: "Company and contact data, intent, and news for prospecting." }, "zoominfo"),
+  app({ id: "heyreach", name: "HeyReach", category: G.Sales, description: "LinkedIn outreach campaigns, leads, and conversations." }, "heyreach"),
+  app({ id: "contactout", name: "ContactOut", category: G.Sales, description: "Find emails and phone numbers for people and companies." }, "contactout"),
+  app({ id: "hireflix", name: "Hireflix", category: G.Hiring, description: "One-way video interviews: positions, invites, and answers." }, "hireflix"),
+  app({ id: "clio", name: "Clio", category: G.Productivity, description: "Clients, matters, calendars, tasks, and billing for your law firm." }, "clio_manage"),
+  app({ id: "draftable", name: "Draftable", category: G.FilesDocs, description: "Your document comparisons and their links." }, "draftable"),
+  app({ id: "chaser", name: "Chaser", category: G.Finance, description: "Invoice reminders, customers, and who owes what." }, "chaser"),
+  { id: "midpage", name: "Midpage", category: G.FilesDocs, url: "https://app.midpage.ai/mcp", description: "Legal research: case law and statutes, with citations." },
+  app({ id: "vaquill", name: "Vaquill", category: G.FilesDocs, description: "US statutes, session laws, and citations for legal research." }, "vaquill"),
+  app({ id: "taxjar", name: "TaxJar", category: G.Finance, description: "Sales tax rates, calculations, and transactions." }, "taxjar"),
+  app({ id: "aiwyn-tax", name: "Aiwyn Tax", category: G.Finance, description: "Estimate federal and state taxes (formerly Column Tax)." }, "aiwyn_tax_mcp"),
+  app({ id: "maintainx", name: "MaintainX", category: G.Productivity, description: "Work orders, requests, assets, and locations." }, "maintainx"),
+  app({ id: "seam", name: "Seam", category: G.Productivity, description: "Smart locks and access codes for your spaces." }, "seam"),
+  app({ id: "route4me", name: "Route4Me", category: G.Productivity, description: "Plan and optimise routes, stops, and orders." }, "route4me"),
+  app({ id: "gatherup", name: "GatherUp", category: G.Marketing, description: "Ask customers for feedback and reviews." }, "gatherup"),
+  app({ id: "oneup", name: "OneUp", category: G.Social, description: "Schedule posts to your social accounts, and see their results." }, "oneup"),
+  app({ id: "mindbody", name: "Mindbody", category: G.Sales, description: "Classes, appointments, clients, and sales for your studio." }, "mindbody"),
+  app({ id: "ignav", name: "Ignav", category: G.Productivity, description: "Search flights and fares, and get links to book them." }, "ignav_flights"),
+  app({ id: "tripadvisor", name: "Tripadvisor", category: G.Productivity, description: "Hotels, restaurants, and things to do, with reviews and photos." }, "tripadvisor"),
 ];
 
 export const VENDOR_MCP_CONNECTORS: readonly VendorMcpConnector[] = VENDOR_MCP_PLACES.filter(isConnector);

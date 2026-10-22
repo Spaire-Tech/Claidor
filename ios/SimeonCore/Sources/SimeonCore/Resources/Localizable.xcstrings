@@ -16901,6 +16901,64 @@
         }
       }
     },
+    "campaigns, ad sets, ads and results" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kampagnen, Anzeigengruppen, Anzeigen und Ergebnisse"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "las campañas, conjuntos de anuncios, anuncios y resultados"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "les campagnes, ensembles de publicités, publicités et résultats"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "le campagne, i gruppi di inserzioni, le inserzioni e i risultati"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "campagnes, advertentiesets, advertenties en resultaten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "kampanie, zestawy reklam, reklamy i wyniki"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "campanhas, conjuntos de anúncios, anúncios e resultados"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "kampanjer, annonsuppsättningar, annonser och resultat"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "kampanyaları, reklam setlerini, reklamları ve sonuçları"
+          }
+        }
+      }
+    },
     "campaigns, ads, audiences and reports" : {
       "localizations" : {
         "de" : {
@@ -17361,6 +17419,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "adayları, mülakatları ve süreç görevlerini"
+          }
+        }
+      }
+    },
+    "candidates, jobs, your pipeline and outreach" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kandidaten, Stellen, deine Pipeline und deine Kandidatenansprache"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "los candidatos, vacantes, tu pipeline y tus campañas de contacto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "les candidats, offres, ton pipeline et tes prises de contact"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "i candidati, le offerte di lavoro, la tua pipeline e le campagne di contatto"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "kandidaten, vacatures, je pipeline en je outreach"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "kandydatów, oferty pracy, twój lejek rekrutacyjny i kampanie kontaktowe"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "candidatos, vagas, seu pipeline e suas abordagens"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "kandidater, jobb, din pipeline och dina utskick"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "adayları, iş ilanlarını, aday sürecini ve iletişim kampanyalarını"
           }
         }
       }
@@ -20210,6 +20326,122 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Temizleniyor"
+          }
+        }
+      }
+    },
+    "clients, matters, calendars, tasks and bills" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mandanten, Akten, Kalender, Aufgaben und Rechnungen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "los clientes, asuntos, calendarios, tareas y facturas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "les clients, dossiers, agendas, tâches et factures"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "i clienti, le pratiche, i calendari, le attività e le parcelle"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "cliënten, dossiers, agenda’s, taken en facturen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "klientów, sprawy, kalendarze, zadania i rachunki"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "clientes, processos, agendas, tarefas e faturas"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "klienter, ärenden, kalendrar, uppgifter och fakturor"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "müvekkilleri, dosyaları, takvimleri, görevleri ve faturaları"
+          }
+        }
+      }
+    },
+    "clients, quotes, jobs and invoices" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kunden, Angebote, Aufträge und Rechnungen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "los clientes, presupuestos, trabajos y facturas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "les clients, devis, interventions et factures"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "i clienti, i preventivi, i lavori e le fatture"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "klanten, offertes, klussen en facturen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "klientów, wyceny, zlecenia i faktury"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "clientes, orçamentos, serviços e faturas"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "kunder, offerter, uppdrag och fakturor"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "müşterileri, teklifleri, işleri ve faturaları"
           }
         }
       }
@@ -26710,6 +26942,64 @@
         }
       }
     },
+    "customers, invoices and who owes what" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kunden, Rechnungen und wer was schuldet"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "los clientes, facturas y quién debe qué"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "les clients, factures et qui doit quoi"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "i clienti, le fatture e chi deve cosa"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "klanten, facturen en wie wat verschuldigd is"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "klientów, faktury i to, kto ile jest winien"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "clientes, faturas e quem deve o quê"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "kunder, fakturor och vem som är skyldig vad"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "müşterileri, faturaları ve kimin ne kadar borçlu olduğunu"
+          }
+        }
+      }
+    },
     "customers, payments, subscriptions and invoices" : {
       "localizations" : {
         "de" : {
@@ -29790,6 +30080,64 @@
         }
       }
     },
+    "employees, time off, job openings and applicants" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mitarbeitende, Abwesenheiten, offene Stellen und Bewerbungen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "los empleados, ausencias, vacantes y postulantes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "les employés, congés, postes ouverts et candidats"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "i dipendenti, le ferie, le posizioni aperte e i candidati"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "medewerkers, verlof, vacatures en sollicitanten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "pracowników, urlopy, wakaty i kandydatów"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "funcionários, folgas, vagas abertas e candidatos"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "anställda, ledighet, lediga tjänster och sökande"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "çalışanları, izinleri, açık pozisyonları ve başvuranları"
+          }
+        }
+      }
+    },
     "Enabled routine" : {
       "localizations" : {
         "de" : {
@@ -30312,6 +30660,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Zenginleştirme Clay kredilerini kullanır."
+          }
+        }
+      }
+    },
+    "Enrichment uses your ZoomInfo credits." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Anreicherung verbraucht deine ZoomInfo-Credits."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El enriquecimiento usa tus créditos de ZoomInfo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L’enrichissement utilise tes crédits ZoomInfo."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L’arricchimento usa i tuoi crediti ZoomInfo."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verrijking gebruikt je ZoomInfo-credits."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wzbogacanie danych zużywa twoje kredyty ZoomInfo."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O enriquecimento usa seus créditos do ZoomInfo."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Berikning använder dina ZoomInfo-krediter."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zenginleştirme ZoomInfo kredilerini kullanır."
           }
         }
       }
@@ -35764,6 +36170,64 @@
         }
       }
     },
+    "Invoices and statements your agents email go out to your real customers." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rechnungen und Kontoauszüge, die deine Agenten per E-Mail senden, gehen an deine echten Kunden."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las facturas y estados de cuenta que tus agentes envían por correo llegan a tus clientes reales."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les factures et relevés envoyés par e-mail par tes agents partent vers tes vrais clients."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le fatture e gli estratti conto inviati via email dai tuoi agenti arrivano ai tuoi veri clienti."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Facturen en overzichten die je agenten e-mailen, gaan naar je echte klanten."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Faktury i zestawienia wysyłane e-mailem przez twoich agentów trafiają do prawdziwych klientów."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "As faturas e extratos que seus agentes enviam por e-mail chegam aos seus clientes reais."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fakturor och kontoutdrag som dina agenter mejlar går till dina riktiga kunder."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanlarının e-postayla gönderdiği faturalar ve hesap ekstreleri gerçek müşterilerine gider."
+          }
+        }
+      }
+    },
     "invoices, clients, expenses and time" : {
       "localizations" : {
         "de" : {
@@ -36954,6 +37418,64 @@
         }
       }
     },
+    "items, stock, sales orders and invoices" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Artikel, Lagerbestände, Kundenaufträge und Rechnungen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "los artículos, existencias, pedidos de venta y facturas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "les articles, stocks, commandes clients et factures"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "gli articoli, le scorte, gli ordini di vendita e le fatture"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "artikelen, voorraad, verkooporders en facturen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "produkty, stany magazynowe, zamówienia sprzedaży i faktury"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "itens, estoque, pedidos de venda e faturas"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "artiklar, lager, försäljningsorder och fakturor"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ürünleri, stokları, satış siparişlerini ve faturaları"
+          }
+        }
+      }
+    },
     "Its agents move to Unassigned. No agents are deleted." : {
       "localizations" : {
         "de" : {
@@ -37298,6 +37820,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "iş ilanlarını, adayları ve aday sürecini"
+          }
+        }
+      }
+    },
+    "jobs, freelancers, proposals and contracts" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aufträge, Freelancer, Bewerbungen und Verträge"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "los trabajos, freelancers, propuestas y contratos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "les missions, freelances, propositions et contrats"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "i lavori, i freelance, le proposte e i contratti"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "opdrachten, freelancers, voorstellen en contracten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "zlecenia, freelancerów, oferty i umowy"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "trabalhos, freelancers, propostas e contratos"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "uppdrag, frilansare, förslag och kontrakt"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iş ilanlarını, serbest çalışanları, teklifleri ve sözleşmeleri"
           }
         }
       }
@@ -38052,6 +38632,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "potansiyel müşterileri, kişileri, fırsatları ve aramaları"
+          }
+        }
+      }
+    },
+    "leads, people, deals and appointments" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leads, Personen, Deals und Termine"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "los leads, personas, negocios y citas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "les leads, contacts, affaires et rendez-vous"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "i lead, le persone, le trattative e gli appuntamenti"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "leads, personen, deals en afspraken"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "leady, osoby, transakcje i spotkania"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "leads, pessoas, negócios e compromissos"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "leads, personer, affärer och möten"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "potansiyel müşterileri, kişileri, anlaşmaları ve randevuları"
           }
         }
       }
@@ -42047,6 +42685,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Adlar, seyahatte kullanılacak kimlikte yazdığı gibi olmalı."
+          }
+        }
+      }
+    },
+    "Needs a Crunchbase plan with MCP access, given by your workspace owner." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erfordert einen Crunchbase-Tarif mit MCP-Zugang, den der Inhaber deines Workspace vergibt."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Requiere un plan de Crunchbase con acceso MCP, que asigna el propietario de tu espacio de trabajo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nécessite un forfait Crunchbase avec l’accès MCP, attribué par le propriétaire de ton espace de travail."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Richiede un piano Crunchbase con accesso MCP, assegnato dal proprietario del tuo spazio di lavoro."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vereist een Crunchbase-abonnement met MCP-toegang, toegekend door de eigenaar van je werkruimte."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wymaga planu Crunchbase z dostępem MCP, który przyznaje właściciel twojego obszaru roboczego."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Requer um plano do Crunchbase com acesso MCP, concedido pelo proprietário do seu workspace."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kräver ett Crunchbase-abonnemang med MCP-åtkomst, som ägaren av din arbetsyta delar ut."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MCP erişimi olan bir Crunchbase planı gerekir; bu erişimi çalışma alanının sahibi verir."
           }
         }
       }
@@ -49557,6 +50253,122 @@
         }
       }
     },
+    "properties, units, tenants and work orders" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Objekte, Einheiten, Mieter und Arbeitsaufträge"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "las propiedades, unidades, inquilinos y órdenes de trabajo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "les biens, lots, locataires et bons d’intervention"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "gli immobili, le unità, gli inquilini e gli ordini di lavoro"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "panden, units, huurders en werkorders"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "nieruchomości, lokale, najemców i zlecenia prac"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "imóveis, unidades, inquilinos e ordens de serviço"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "fastigheter, enheter, hyresgäster och arbetsordrar"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "mülkleri, birimleri, kiracıları ve iş emirlerini"
+          }
+        }
+      }
+    },
+    "proposals, clients, invoices and payments" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Angebote, Kunden, Rechnungen und Zahlungen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "las propuestas, clientes, facturas y pagos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "les propositions, clients, factures et paiements"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "le proposte, i clienti, le fatture e i pagamenti"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "voorstellen, klanten, facturen en betalingen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "oferty, klientów, faktury i płatności"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "propostas, clientes, faturas e pagamentos"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "förslag, kunder, fakturor och betalningar"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "teklifleri, müşterileri, faturaları ve ödemeleri"
+          }
+        }
+      }
+    },
     "Public" : {
       "localizations" : {
         "de" : {
@@ -52225,6 +53037,64 @@
         }
       }
     },
+    "Research uses your vidIQ credits." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recherchen verbrauchen deine vidIQ-Credits."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las investigaciones usan tus créditos de vidIQ."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les recherches utilisent tes crédits vidIQ."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le ricerche usano i tuoi crediti vidIQ."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Onderzoek gebruikt je vidIQ-credits."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyszukiwania zużywają twoje kredyty vidIQ."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "As pesquisas usam seus créditos do vidIQ."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sökningar använder dina vidIQ-krediter."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Araştırmalar vidIQ kredilerini kullanır."
+          }
+        }
+      }
+    },
     "Reset face" : {
       "localizations" : {
         "de" : {
@@ -54803,6 +55673,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Yerel bilgisayarında çalışır"
+          }
+        }
+      }
+    },
+    "sales tax rates, transactions and customers" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Umsatzsteuersätze, Transaktionen und Kunden"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "las tasas del impuesto sobre ventas, transacciones y clientes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "les taux de taxe de vente, transactions et clients"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "le aliquote dell’imposta sulle vendite, le transazioni e i clienti"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "omzetbelastingtarieven, transacties en klanten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "stawki podatku od sprzedaży, transakcje i klientów"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "alíquotas do imposto sobre vendas, transações e clientes"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "försäljningsskattesatser, transaktioner och kunder"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "satış vergisi oranlarını, işlemleri ve müşterileri"
           }
         }
       }
@@ -64257,6 +65185,1166 @@
         }
       }
     },
+    "The sign-in page asks for an access token from your 7shifts account." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Anmeldeseite fragt nach einem Zugriffstoken aus deinem 7shifts-Account."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La página de inicio de sesión pide un token de acceso de tu cuenta de 7shifts."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La page de connexion demande un jeton d’accès de ton compte 7shifts."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La pagina di accesso chiede un token di accesso del tuo account 7shifts."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De inlogpagina vraagt om een toegangstoken van je 7shifts-account."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Strona logowania prosi o token dostępu z twojego konta 7shifts."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A página de login pede um token de acesso da sua conta 7shifts."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inloggningssidan ber om en åtkomsttoken från ditt 7shifts-konto."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Giriş sayfası, 7shifts hesabından bir erişim belirteci ister."
+          }
+        }
+      }
+    },
+    "The sign-in page asks for an API key from your Chaser account." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Anmeldeseite fragt nach einem API-Schlüssel aus deinem Chaser-Account."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La página de inicio de sesión pide una clave de API de tu cuenta de Chaser."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La page de connexion demande une clé d’API de ton compte Chaser."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La pagina di accesso chiede una chiave API del tuo account Chaser."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De inlogpagina vraagt om een API-sleutel van je Chaser-account."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Strona logowania prosi o klucz API z twojego konta Chaser."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A página de login pede uma chave de API da sua conta Chaser."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inloggningssidan ber om en API-nyckel från ditt Chaser-konto."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Giriş sayfası, Chaser hesabından bir API anahtarı ister."
+          }
+        }
+      }
+    },
+    "The sign-in page asks for an API key from your Draftable account." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Anmeldeseite fragt nach einem API-Schlüssel aus deinem Draftable-Account."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La página de inicio de sesión pide una clave de API de tu cuenta de Draftable."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La page de connexion demande une clé d’API de ton compte Draftable."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La pagina di accesso chiede una chiave API del tuo account Draftable."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De inlogpagina vraagt om een API-sleutel van je Draftable-account."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Strona logowania prosi o klucz API z twojego konta Draftable."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A página de login pede uma chave de API da sua conta Draftable."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inloggningssidan ber om en API-nyckel från ditt Draftable-konto."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Giriş sayfası, Draftable hesabından bir API anahtarı ister."
+          }
+        }
+      }
+    },
+    "The sign-in page asks for an API key from your GatherUp account. Feedback requests your agents send reach your real customers." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Anmeldeseite fragt nach einem API-Schlüssel aus deinem GatherUp-Account. Feedback-Anfragen, die deine Agenten senden, erreichen deine echten Kunden."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La página de inicio de sesión pide una clave de API de tu cuenta de GatherUp. Las solicitudes de opinión que envían tus agentes llegan a tus clientes reales."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La page de connexion demande une clé d’API de ton compte GatherUp. Les demandes d’avis envoyées par tes agents atteignent tes vrais clients."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La pagina di accesso chiede una chiave API del tuo account GatherUp. Le richieste di feedback inviate dai tuoi agenti raggiungono i tuoi veri clienti."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De inlogpagina vraagt om een API-sleutel van je GatherUp-account. Feedbackverzoeken die je agenten versturen, bereiken je echte klanten."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Strona logowania prosi o klucz API z twojego konta GatherUp. Prośby o opinię wysyłane przez twoich agentów trafiają do prawdziwych klientów."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A página de login pede uma chave de API da sua conta GatherUp. Os pedidos de avaliação que seus agentes enviam chegam aos seus clientes reais."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inloggningssidan ber om en API-nyckel från ditt GatherUp-konto. Förfrågningar om omdömen som dina agenter skickar når dina riktiga kunder."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Giriş sayfası, GatherUp hesabından bir API anahtarı ister. Ajanlarının gönderdiği geri bildirim istekleri gerçek müşterilerine ulaşır."
+          }
+        }
+      }
+    },
+    "The sign-in page asks for an API key from your HeyReach account." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Anmeldeseite fragt nach einem API-Schlüssel aus deinem HeyReach-Account."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La página de inicio de sesión pide una clave de API de tu cuenta de HeyReach."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La page de connexion demande une clé d’API de ton compte HeyReach."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La pagina di accesso chiede una chiave API del tuo account HeyReach."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De inlogpagina vraagt om een API-sleutel van je HeyReach-account."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Strona logowania prosi o klucz API z twojego konta HeyReach."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A página de login pede uma chave de API da sua conta HeyReach."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inloggningssidan ber om en API-nyckel från ditt HeyReach-konto."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Giriş sayfası, HeyReach hesabından bir API anahtarı ister."
+          }
+        }
+      }
+    },
+    "The sign-in page asks for an API key from your Hireflix account. Invitations your agents send reach real candidates." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Anmeldeseite fragt nach einem API-Schlüssel aus deinem Hireflix-Account. Einladungen, die deine Agenten senden, erreichen echte Kandidaten."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La página de inicio de sesión pide una clave de API de tu cuenta de Hireflix. Las invitaciones que envían tus agentes llegan a candidatos reales."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La page de connexion demande une clé d’API de ton compte Hireflix. Les invitations envoyées par tes agents atteignent de vrais candidats."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La pagina di accesso chiede una chiave API del tuo account Hireflix. Gli inviti inviati dai tuoi agenti raggiungono candidati reali."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De inlogpagina vraagt om een API-sleutel van je Hireflix-account. Uitnodigingen die je agenten versturen, bereiken echte kandidaten."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Strona logowania prosi o klucz API z twojego konta Hireflix. Zaproszenia wysyłane przez twoich agentów trafiają do prawdziwych kandydatów."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A página de login pede uma chave de API da sua conta Hireflix. Os convites que seus agentes enviam chegam a candidatos reais."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inloggningssidan ber om en API-nyckel från ditt Hireflix-konto. Inbjudningar som dina agenter skickar når riktiga kandidater."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Giriş sayfası, Hireflix hesabından bir API anahtarı ister. Ajanlarının gönderdiği davetler gerçek adaylara ulaşır."
+          }
+        }
+      }
+    },
+    "The sign-in page asks for an API key from your HypeAuditor account." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Anmeldeseite fragt nach einem API-Schlüssel aus deinem HypeAuditor-Account."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La página de inicio de sesión pide una clave de API de tu cuenta de HypeAuditor."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La page de connexion demande une clé d’API de ton compte HypeAuditor."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La pagina di accesso chiede una chiave API del tuo account HypeAuditor."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De inlogpagina vraagt om een API-sleutel van je HypeAuditor-account."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Strona logowania prosi o klucz API z twojego konta HypeAuditor."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A página de login pede uma chave de API da sua conta HypeAuditor."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inloggningssidan ber om en API-nyckel från ditt HypeAuditor-konto."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Giriş sayfası, HypeAuditor hesabından bir API anahtarı ister."
+          }
+        }
+      }
+    },
+    "The sign-in page asks for an API key from your Ignav account." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Anmeldeseite fragt nach einem API-Schlüssel aus deinem Ignav-Account."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La página de inicio de sesión pide una clave de API de tu cuenta de Ignav."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La page de connexion demande une clé d’API de ton compte Ignav."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La pagina di accesso chiede una chiave API del tuo account Ignav."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De inlogpagina vraagt om een API-sleutel van je Ignav-account."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Strona logowania prosi o klucz API z twojego konta Ignav."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A página de login pede uma chave de API da sua conta Ignav."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inloggningssidan ber om en API-nyckel från ditt Ignav-konto."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Giriş sayfası, Ignav hesabından bir API anahtarı ister."
+          }
+        }
+      }
+    },
+    "The sign-in page asks for an API key from your MaintainX account." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Anmeldeseite fragt nach einem API-Schlüssel aus deinem MaintainX-Account."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La página de inicio de sesión pide una clave de API de tu cuenta de MaintainX."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La page de connexion demande une clé d’API de ton compte MaintainX."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La pagina di accesso chiede una chiave API del tuo account MaintainX."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De inlogpagina vraagt om een API-sleutel van je MaintainX-account."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Strona logowania prosi o klucz API z twojego konta MaintainX."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A página de login pede uma chave de API da sua conta MaintainX."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inloggningssidan ber om en API-nyckel från ditt MaintainX-konto."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Giriş sayfası, MaintainX hesabından bir API anahtarı ister."
+          }
+        }
+      }
+    },
+    "The sign-in page asks for an API key from your Mindbody account." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Anmeldeseite fragt nach einem API-Schlüssel aus deinem Mindbody-Account."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La página de inicio de sesión pide una clave de API de tu cuenta de Mindbody."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La page de connexion demande une clé d’API de ton compte Mindbody."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La pagina di accesso chiede una chiave API del tuo account Mindbody."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De inlogpagina vraagt om een API-sleutel van je Mindbody-account."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Strona logowania prosi o klucz API z twojego konta Mindbody."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A página de login pede uma chave de API da sua conta Mindbody."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inloggningssidan ber om en API-nyckel från ditt Mindbody-konto."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Giriş sayfası, Mindbody hesabından bir API anahtarı ister."
+          }
+        }
+      }
+    },
+    "The sign-in page asks for an API key from your OneUp account. Posts your agents publish go out on your accounts." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Anmeldeseite fragt nach einem API-Schlüssel aus deinem OneUp-Account. Posts, die deine Agenten veröffentlichen, erscheinen auf deinen Accounts."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La página de inicio de sesión pide una clave de API de tu cuenta de OneUp. Las publicaciones de tus agentes salen en tus cuentas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La page de connexion demande une clé d’API de ton compte OneUp. Les posts publiés par tes agents paraissent sur tes comptes."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La pagina di accesso chiede una chiave API del tuo account OneUp. I post pubblicati dai tuoi agenti escono sui tuoi account."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De inlogpagina vraagt om een API-sleutel van je OneUp-account. Posts die je agenten publiceren, verschijnen op je accounts."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Strona logowania prosi o klucz API z twojego konta OneUp. Posty publikowane przez twoich agentów pojawiają się na twoich kontach."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A página de login pede uma chave de API da sua conta OneUp. Os posts que seus agentes publicam saem nas suas contas."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inloggningssidan ber om en API-nyckel från ditt OneUp-konto. Inlägg som dina agenter publicerar går ut på dina konton."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Giriş sayfası, OneUp hesabından bir API anahtarı ister. Ajanlarının yayımladığı gönderiler hesaplarında paylaşılır."
+          }
+        }
+      }
+    },
+    "The sign-in page asks for an API key from your Route4Me account." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Anmeldeseite fragt nach einem API-Schlüssel aus deinem Route4Me-Account."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La página de inicio de sesión pide una clave de API de tu cuenta de Route4Me."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La page de connexion demande une clé d’API de ton compte Route4Me."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La pagina di accesso chiede una chiave API del tuo account Route4Me."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De inlogpagina vraagt om een API-sleutel van je Route4Me-account."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Strona logowania prosi o klucz API z twojego konta Route4Me."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A página de login pede uma chave de API da sua conta Route4Me."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inloggningssidan ber om en API-nyckel från ditt Route4Me-konto."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Giriş sayfası, Route4Me hesabından bir API anahtarı ister."
+          }
+        }
+      }
+    },
+    "The sign-in page asks for an API key from your Seam account. Access codes and keys your agents grant open real doors." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Anmeldeseite fragt nach einem API-Schlüssel aus deinem Seam-Account. Zugangscodes und Schlüssel, die deine Agenten vergeben, öffnen echte Türen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La página de inicio de sesión pide una clave de API de tu cuenta de Seam. Los códigos de acceso y llaves que otorgan tus agentes abren puertas reales."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La page de connexion demande une clé d’API de ton compte Seam. Les codes d’accès et clés accordés par tes agents ouvrent de vraies portes."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La pagina di accesso chiede una chiave API del tuo account Seam. I codici di accesso e le chiavi concessi dai tuoi agenti aprono porte reali."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De inlogpagina vraagt om een API-sleutel van je Seam-account. Toegangscodes en sleutels die je agenten uitgeven, openen echte deuren."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Strona logowania prosi o klucz API z twojego konta Seam. Kody dostępu i klucze nadawane przez twoich agentów otwierają prawdziwe drzwi."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A página de login pede uma chave de API da sua conta Seam. Os códigos de acesso e chaves que seus agentes concedem abrem portas reais."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inloggningssidan ber om en API-nyckel från ditt Seam-konto. Åtkomstkoder och nycklar som dina agenter delar ut öppnar riktiga dörrar."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Giriş sayfası, Seam hesabından bir API anahtarı ister. Ajanlarının verdiği erişim kodları ve anahtarlar gerçek kapıları açar."
+          }
+        }
+      }
+    },
+    "The sign-in page asks for an API key from your Tripadvisor account." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Anmeldeseite fragt nach einem API-Schlüssel aus deinem Tripadvisor-Account."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La página de inicio de sesión pide una clave de API de tu cuenta de Tripadvisor."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La page de connexion demande une clé d’API de ton compte Tripadvisor."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La pagina di accesso chiede una chiave API del tuo account Tripadvisor."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De inlogpagina vraagt om een API-sleutel van je Tripadvisor-account."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Strona logowania prosi o klucz API z twojego konta Tripadvisor."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A página de login pede uma chave de API da sua conta Tripadvisor."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inloggningssidan ber om en API-nyckel från ditt Tripadvisor-konto."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Giriş sayfası, Tripadvisor hesabından bir API anahtarı ister."
+          }
+        }
+      }
+    },
+    "The sign-in page asks for an API key from your Vaquill account. Lookups use your Vaquill credits." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Anmeldeseite fragt nach einem API-Schlüssel aus deinem Vaquill-Account. Abfragen verbrauchen deine Vaquill-Credits."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La página de inicio de sesión pide una clave de API de tu cuenta de Vaquill. Las consultas usan tus créditos de Vaquill."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La page de connexion demande une clé d’API de ton compte Vaquill. Les recherches utilisent tes crédits Vaquill."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La pagina di accesso chiede una chiave API del tuo account Vaquill. Le ricerche usano i tuoi crediti Vaquill."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De inlogpagina vraagt om een API-sleutel van je Vaquill-account. Zoekopdrachten gebruiken je Vaquill-credits."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Strona logowania prosi o klucz API z twojego konta Vaquill. Wyszukiwania zużywają twoje kredyty Vaquill."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A página de login pede uma chave de API da sua conta Vaquill. As consultas usam seus créditos do Vaquill."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inloggningssidan ber om en API-nyckel från ditt Vaquill-konto. Sökningar använder dina Vaquill-krediter."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Giriş sayfası, Vaquill hesabından bir API anahtarı ister. Sorgular Vaquill kredilerini kullanır."
+          }
+        }
+      }
+    },
+    "The sign-in page asks for an API key from your Veryfi account. Each document read can be billed to that account." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Anmeldeseite fragt nach einem API-Schlüssel aus deinem Veryfi-Account. Jedes gelesene Dokument kann diesem Account berechnet werden."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La página de inicio de sesión pide una clave de API de tu cuenta de Veryfi. Cada documento procesado puede facturarse a esa cuenta."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La page de connexion demande une clé d’API de ton compte Veryfi. Chaque document lu peut être facturé sur ce compte."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La pagina di accesso chiede una chiave API del tuo account Veryfi. Ogni documento letto può essere addebitato su quell’account."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De inlogpagina vraagt om een API-sleutel van je Veryfi-account. Elk gelezen document kan aan dat account gefactureerd worden."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Strona logowania prosi o klucz API z twojego konta Veryfi. Każdy odczytany dokument może być rozliczany na tym koncie."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A página de login pede uma chave de API da sua conta Veryfi. Cada documento lido pode ser cobrado nessa conta."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inloggningssidan ber om en API-nyckel från ditt Veryfi-konto. Varje läst dokument kan debiteras det kontot."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Giriş sayfası, Veryfi hesabından bir API anahtarı ister. Okunan her belge bu hesaba ücretlendirilebilir."
+          }
+        }
+      }
+    },
+    "The sign-in page asks for an API key from your YouTube Transcript account. Fetching new transcripts uses that account's credits." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Anmeldeseite fragt nach einem API-Schlüssel aus deinem YouTube Transcript-Account. Das Abrufen neuer Transkripte verbraucht die Credits dieses Accounts."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La página de inicio de sesión pide una clave de API de tu cuenta de YouTube Transcript. Obtener transcripciones nuevas usa los créditos de esa cuenta."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La page de connexion demande une clé d’API de ton compte YouTube Transcript. Récupérer de nouvelles transcriptions utilise les crédits de ce compte."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La pagina di accesso chiede una chiave API del tuo account YouTube Transcript. Ottenere nuove trascrizioni usa i crediti di quell’account."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De inlogpagina vraagt om een API-sleutel van je YouTube Transcript-account. Nieuwe transcripties ophalen gebruikt de credits van dat account."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Strona logowania prosi o klucz API z twojego konta YouTube Transcript. Pobieranie nowych transkrypcji zużywa kredyty z tego konta."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A página de login pede uma chave de API da sua conta YouTube Transcript. Obter novas transcrições usa os créditos dessa conta."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inloggningssidan ber om en API-nyckel från ditt YouTube Transcript-konto. Att hämta nya transkriptioner använder det kontots krediter."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Giriş sayfası, YouTube Transcript hesabından bir API anahtarı ister. Yeni dökümler almak bu hesabın kredilerini kullanır."
+          }
+        }
+      }
+    },
+    "The sign-in page asks for an API token from your ContactOut account. Lookups use your ContactOut credits." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Anmeldeseite fragt nach einem API-Token aus deinem ContactOut-Account. Abfragen verbrauchen deine ContactOut-Credits."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La página de inicio de sesión pide un token de API de tu cuenta de ContactOut. Las consultas usan tus créditos de ContactOut."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La page de connexion demande un jeton d’API de ton compte ContactOut. Les recherches utilisent tes crédits ContactOut."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La pagina di accesso chiede un token API del tuo account ContactOut. Le ricerche usano i tuoi crediti ContactOut."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De inlogpagina vraagt om een API-token van je ContactOut-account. Zoekopdrachten gebruiken je ContactOut-credits."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Strona logowania prosi o token API z twojego konta ContactOut. Wyszukiwania zużywają twoje kredyty ContactOut."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A página de login pede um token de API da sua conta ContactOut. As consultas usam seus créditos do ContactOut."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inloggningssidan ber om en API-token från ditt ContactOut-konto. Sökningar använder dina ContactOut-krediter."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Giriş sayfası, ContactOut hesabından bir API belirteci ister. Sorgular ContactOut kredilerini kullanır."
+          }
+        }
+      }
+    },
+    "The sign-in page asks for an API token from your TaxJar account. Transactions your agents record count in your sales tax reports and filings." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Anmeldeseite fragt nach einem API-Token aus deinem TaxJar-Account. Transaktionen, die deine Agenten erfassen, zählen in deinen Umsatzsteuerberichten und -erklärungen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La página de inicio de sesión pide un token de API de tu cuenta de TaxJar. Las transacciones que registran tus agentes cuentan en tus informes y declaraciones del impuesto sobre ventas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La page de connexion demande un jeton d’API de ton compte TaxJar. Les transactions enregistrées par tes agents comptent dans tes rapports et déclarations de taxe de vente."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La pagina di accesso chiede un token API del tuo account TaxJar. Le transazioni registrate dai tuoi agenti contano nei tuoi report e nelle tue dichiarazioni dell’imposta sulle vendite."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De inlogpagina vraagt om een API-token van je TaxJar-account. Transacties die je agenten vastleggen, tellen mee in je omzetbelastingrapporten en -aangiften."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Strona logowania prosi o token API z twojego konta TaxJar. Transakcje zapisywane przez twoich agentów trafiają do twoich raportów i deklaracji podatku od sprzedaży."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A página de login pede um token de API da sua conta TaxJar. As transações que seus agentes registram entram nos seus relatórios e declarações do imposto sobre vendas."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inloggningssidan ber om en API-token från ditt TaxJar-konto. Transaktioner som dina agenter registrerar räknas med i dina rapporter och deklarationer för försäljningsskatt."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Giriş sayfası, TaxJar hesabından bir API belirteci ister. Ajanlarının kaydettiği işlemler satış vergisi raporlarına ve beyannamelerine yansır."
+          }
+        }
+      }
+    },
+    "The sign-in page asks for an API token from your Toggl account." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Anmeldeseite fragt nach einem API-Token aus deinem Toggl-Account."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La página de inicio de sesión pide un token de API de tu cuenta de Toggl."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La page de connexion demande un jeton d’API de ton compte Toggl."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La pagina di accesso chiede un token API del tuo account Toggl."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De inlogpagina vraagt om een API-token van je Toggl-account."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Strona logowania prosi o token API z twojego konta Toggl."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A página de login pede um token de API da sua conta Toggl."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inloggningssidan ber om en API-token från ditt Toggl-konto."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Giriş sayfası, Toggl hesabından bir API belirteci ister."
+          }
+        }
+      }
+    },
     "The update couldn't finish, so Simeon's computer is still on its previous image. Your agents, files, and logins are safe." : {
       "localizations" : {
         "de" : {
@@ -64833,6 +66921,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Giriş yapılacak bir şey yok: ajanların {App} sunucusunda çizer (mcp.excalidraw.com) ve Simeon’un orada sana ait bir hesabı yok."
+          }
+        }
+      }
+    },
+    "There's nothing to sign in to: your agents search on {App}'s own server (mcp.taskrabbit.com), and Simeon holds no account of yours there." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keine Anmeldung nötig: Deine Agenten suchen auf dem eigenen Server von {App} (mcp.taskrabbit.com), und Simeon hat dort keinen Account von dir."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No necesitas iniciar sesión: tus agentes buscan en el servidor de {App} (mcp.taskrabbit.com), y Simeon no guarda ninguna cuenta tuya ahí."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune connexion n’est nécessaire : tes agents cherchent sur le serveur de {App} (mcp.taskrabbit.com), et Simeon n’y détient aucun compte à toi."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non serve accedere: i tuoi agenti cercano sul server di {App} (mcp.taskrabbit.com), e Simeon non ha alcun tuo account lì."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inloggen is niet nodig: je agenten zoeken op de eigen server van {App} (mcp.taskrabbit.com), en Simeon heeft daar geen account van je."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie trzeba się logować: twoi agenci wyszukują na własnym serwerze {App} (mcp.taskrabbit.com), a Simeon nie ma tam żadnego twojego konta."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não é preciso fazer login: seus agentes pesquisam no próprio servidor do {App} (mcp.taskrabbit.com), e o Simeon não tem nenhuma conta sua lá."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Det finns inget att logga in på: dina agenter söker på {App}s egen server (mcp.taskrabbit.com), och Simeon har inget konto åt dig där."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Giriş yapılacak bir şey yok: ajanların {App} sunucusunda arama yapar (mcp.taskrabbit.com) ve Simeon’un orada sana ait bir hesabı yok."
           }
         }
       }
@@ -65823,6 +67969,64 @@
         }
       }
     },
+    "This team isn't available anymore." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieses Team ist nicht mehr verfügbar."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este equipo ya no está disponible."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cette équipe n’est plus disponible."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questo team non è più disponibile."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dit team is niet meer beschikbaar."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ten zespół nie jest już dostępny."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este time não está mais disponível."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Det här teamet finns inte längre."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu ekip artık mevcut değil."
+          }
+        }
+      }
+    },
     "This updates the shared computer all your agents run on to the latest version. Their files and logins are kept." : {
       "localizations" : {
         "de" : {
@@ -66341,6 +68545,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "zaman kayıtlarını, projeleri, müşterileri ve faturaları"
+          }
+        }
+      }
+    },
+    "time entries, projects, clients and reports" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zeiteinträge, Projekte, Kunden und Berichte"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "los registros de tiempo, proyectos, clientes e informes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "les temps saisis, projets, clients et rapports"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "le registrazioni del tempo, i progetti, i clienti e i report"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "tijdregistraties, projecten, klanten en rapporten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "wpisy czasu pracy, projekty, klientów i raporty"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "registros de horas, projetos, clientes e relatórios"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "tidrapporter, projekt, kunder och rapporter"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "zaman kayıtlarını, projeleri, müşterileri ve raporları"
           }
         }
       }
@@ -69211,6 +71473,64 @@
         }
       }
     },
+    "Videos and photos your agents post go out on your TikTok account." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Videos und Fotos, die deine Agenten posten, erscheinen auf deinem TikTok-Account."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los videos y fotos que publican tus agentes salen en tu cuenta de TikTok."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les vidéos et photos publiées par tes agents paraissent sur ton compte TikTok."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I video e le foto pubblicati dai tuoi agenti escono sul tuo account TikTok."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Video’s en foto’s die je agenten posten, verschijnen op je TikTok-account."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filmy i zdjęcia publikowane przez twoich agentów pojawiają się na twoim koncie TikTok."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Os vídeos e fotos que seus agentes publicam saem na sua conta do TikTok."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Videor och foton som dina agenter publicerar går ut på ditt TikTok-konto."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanlarının paylaştığı videolar ve fotoğraflar TikTok hesabında yayımlanır."
+          }
+        }
+      }
+    },
     "View Simeon's Computer progress" : {
       "localizations" : {
         "de" : {
@@ -70773,6 +73093,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Kadın"
+          }
+        }
+      }
+    },
+    "work orders, requests, assets and locations" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arbeitsaufträge, Anfragen, Anlagen und Standorte"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "las órdenes de trabajo, solicitudes, activos y ubicaciones"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "les ordres de travail, demandes, équipements et sites"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "gli ordini di lavoro, le richieste, gli asset e le sedi"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "werkorders, aanvragen, assets en locaties"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "zlecenia prac, zgłoszenia, zasoby i lokalizacje"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ordens de serviço, solicitações, ativos e locais"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "arbetsordrar, förfrågningar, tillgångar och platser"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iş emirlerini, talepleri, varlıkları ve konumları"
           }
         }
       }
@@ -72343,6 +74721,64 @@
         }
       }
     },
+    "your 3D tours and their spaces" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "deine 3D-Touren und ihre Räume"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "tus recorridos 3D y sus espacios"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "tes visites 3D et leurs espaces"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "i tuoi tour 3D e i loro spazi"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "je 3D-tours en hun ruimtes"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "twoje wycieczki 3D i ich przestrzenie"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "seus tours 3D e os espaços deles"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "dina 3D-visningar och deras utrymmen"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3D turlarını ve mekânlarını"
+          }
+        }
+      }
+    },
     "Your account was deleted." : {
       "localizations" : {
         "de" : {
@@ -73097,6 +75533,122 @@
         }
       }
     },
+    "Your agents can check {App}'s services, prices and Taskers near you, and start a booking for you to finish." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten können die Dienste, Preise und Tasker von {App} in deiner Nähe abrufen und eine Buchung beginnen, die du abschließt."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes pueden consultar los servicios, precios y Taskers de {App} cerca de ti, y empezar una reserva para que tú la termines."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents peuvent consulter les services, prix et Taskers de {App} près de chez toi, et lancer une réservation que tu finaliseras."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi agenti possono consultare i servizi, i prezzi e i Tasker di {App} vicino a te, e avviare una prenotazione che completerai tu."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten kunnen de diensten, prijzen en Taskers van {App} bij jou in de buurt bekijken, en een boeking starten die jij afrondt."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci mogą sprawdzać usługi, ceny i Taskerów {App} w twojej okolicy oraz rozpocząć rezerwację, którą dokończysz."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes podem consultar os serviços, preços e Taskers do {App} perto de você e iniciar uma reserva para você concluir."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter kan kolla {App}s tjänster, priser och Taskers nära dig och påbörja en bokning som du slutför."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların yakınındaki {App} hizmetlerine, fiyatlarına ve Tasker’lara bakabilir ve senin tamamlayacağın bir rezervasyonu başlatabilir."
+          }
+        }
+      }
+    },
+    "Your agents can estimate federal and state taxes with {App}." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten können mit {App} Bundes- und Bundesstaatssteuern schätzen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes pueden estimar impuestos federales y estatales con {App}."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents peuvent estimer les impôts fédéraux et des États avec {App}."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi agenti possono stimare le imposte federali e statali con {App}."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten kunnen met {App} federale en staatsbelastingen schatten."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci mogą szacować podatki federalne i stanowe za pomocą {App}."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes podem estimar impostos federais e estaduais com o {App}."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter kan uppskatta federala och delstatliga skatter med {App}."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların {App} ile federal ve eyalet vergilerini tahmin edebilir."
+          }
+        }
+      }
+    },
     "Your agents can find and verify professional email addresses with {App}." : {
       "localizations" : {
         "de" : {
@@ -73151,6 +75703,180 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ajanların {App} ile profesyonel e-posta adreslerini bulabilir ve doğrulayabilir."
+          }
+        }
+      }
+    },
+    "Your agents can find businesses and events on {App}, and read their reviews and ratings." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten können auf {App} Unternehmen und Events finden und ihre Bewertungen lesen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes pueden encontrar negocios y eventos en {App}, y leer sus reseñas y calificaciones."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents peuvent trouver des commerces et des événements sur {App}, et lire leurs avis et notes."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi agenti possono trovare attività ed eventi su {App}, e leggerne recensioni e valutazioni."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten kunnen bedrijven en evenementen vinden op {App}, en hun reviews en beoordelingen lezen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci mogą znajdować firmy i wydarzenia w {App} oraz czytać ich recenzje i oceny."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes podem encontrar empresas e eventos no {App} e ler as avaliações e notas deles."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter kan hitta företag och evenemang på {App} och läsa deras recensioner och betyg."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların {App} üzerinde işletmeleri ve etkinlikleri bulabilir, yorumlarını ve puanlarını okuyabilir."
+          }
+        }
+      }
+    },
+    "Your agents can find emails and phone numbers for people and companies with {App}." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten können mit {App} E-Mail-Adressen und Telefonnummern von Personen und Unternehmen finden."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes pueden encontrar correos y números de teléfono de personas y empresas con {App}."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents peuvent trouver les e-mails et numéros de téléphone de personnes et d’entreprises avec {App}."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi agenti possono trovare email e numeri di telefono di persone e aziende con {App}."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten kunnen met {App} e-mailadressen en telefoonnummers van personen en bedrijven vinden."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci mogą znajdować adresy e-mail i numery telefonów osób i firm za pomocą {App}."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes podem encontrar e-mails e telefones de pessoas e empresas com o {App}."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter kan hitta e-postadresser och telefonnummer till personer och företag med {App}."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların {App} ile kişilerin ve şirketlerin e-posta adreslerini ve telefon numaralarını bulabilir."
+          }
+        }
+      }
+    },
+    "Your agents can find influencers and look up their audiences and reach with {App}." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten können mit {App} Influencer finden und ihre Zielgruppen und Reichweite abrufen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes pueden encontrar influencers y consultar su audiencia y alcance con {App}."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents peuvent trouver des influenceurs et consulter leur audience et leur portée avec {App}."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi agenti possono trovare influencer e consultarne pubblico e copertura con {App}."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten kunnen met {App} influencers vinden en hun publiek en bereik opzoeken."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci mogą znajdować influencerów i sprawdzać ich odbiorców i zasięgi za pomocą {App}."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes podem encontrar influenciadores e consultar o público e o alcance deles com o {App}."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter kan hitta influerare och slå upp deras målgrupper och räckvidd med {App}."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların {App} ile influencer bulabilir, kitlelerine ve erişimlerine bakabilir."
           }
         }
       }
@@ -73213,6 +75939,122 @@
         }
       }
     },
+    "Your agents can get ride estimates from {App}, and links to book a ride." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten können bei {App} Fahrpreisschätzungen und Links zum Buchen einer Fahrt abrufen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes pueden obtener estimaciones de viajes de {App} y enlaces para pedir un viaje."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents peuvent obtenir des estimations de course et des liens pour réserver avec {App}."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi agenti possono ottenere stime delle corse da {App} e link per prenotare una corsa."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten kunnen ritschattingen van {App} opvragen, en links om een rit te boeken."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci mogą pobierać z {App} szacunki przejazdów i linki do zamówienia przejazdu."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes podem obter estimativas de corridas do {App} e links para pedir uma corrida."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter kan hämta prisuppskattningar för resor från {App} och länkar för att boka en resa."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların {App} üzerinden yolculuk tahminleri ve yolculuk ayırtma bağlantıları alabilir."
+          }
+        }
+      }
+    },
+    "Your agents can get the transcripts of YouTube videos, playlists and channels with {App}." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten können mit {App} die Transkripte von YouTube-Videos, -Playlists und -Kanälen abrufen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes pueden obtener las transcripciones de videos, listas de reproducción y canales de YouTube con {App}."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents peuvent obtenir les transcriptions de vidéos, playlists et chaînes YouTube avec {App}."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi agenti possono ottenere le trascrizioni di video, playlist e canali YouTube con {App}."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten kunnen met {App} de transcripties van YouTube-video’s, -playlists en -kanalen ophalen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci mogą pobierać transkrypcje filmów, playlist i kanałów YouTube za pomocą {App}."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes podem obter as transcrições de vídeos, playlists e canais do YouTube com o {App}."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter kan hämta transkriptioner av YouTube-videor, spellistor och kanaler med {App}."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların {App} ile YouTube videolarının, oynatma listelerinin ve kanallarının dökümlerini alabilir."
+          }
+        }
+      }
+    },
     "Your agents can look up backlinks, keywords and site audits in {App}." : {
       "localizations" : {
         "de" : {
@@ -73267,6 +76109,122 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ajanların {App} içinde geri bağlantılara, anahtar kelimelere ve site denetimlerine bakabilir."
+          }
+        }
+      }
+    },
+    "Your agents can look up companies, contacts, buying intent and news with {App}." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten können mit {App} Unternehmen, Kontakte, Kaufabsichten und News abrufen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes pueden consultar empresas, contactos, intención de compra y noticias con {App}."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents peuvent consulter les entreprises, contacts, intentions d’achat et actualités avec {App}."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi agenti possono consultare aziende, contatti, intenzioni d’acquisto e notizie con {App}."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten kunnen met {App} bedrijven, contacten, koopintenties en nieuws opzoeken."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci mogą sprawdzać firmy, kontakty, intencje zakupowe i wiadomości za pomocą {App}."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes podem consultar empresas, contatos, intenção de compra e notícias com o {App}."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter kan slå upp företag, kontakter, köpintention och nyheter med {App}."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların {App} ile şirketlere, kişilere, satın alma niyetine ve haberlere bakabilir."
+          }
+        }
+      }
+    },
+    "Your agents can look up companies, funding rounds, investors and the people behind them in {App}." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten können in {App} Unternehmen, Finanzierungsrunden, Investoren und die Menschen dahinter abrufen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes pueden consultar empresas, rondas de financiación, inversores y las personas detrás de ellos en {App}."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents peuvent consulter les entreprises, levées de fonds, investisseurs et les personnes qui les dirigent dans {App}."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi agenti possono consultare aziende, round di finanziamento, investitori e le persone che li guidano in {App}."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten kunnen bedrijven, financieringsrondes, investeerders en de mensen erachter opzoeken in {App}."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci mogą sprawdzać firmy, rundy finansowania, inwestorów i stojących za nimi ludzi w {App}."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes podem consultar empresas, rodadas de investimento, investidores e as pessoas por trás deles no {App}."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter kan slå upp företag, finansieringsrundor, investerare och personerna bakom dem i {App}."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların {App} içinde şirketlere, yatırım turlarına, yatırımcılara ve bunların arkasındaki kişilere bakabilir."
           }
         }
       }
@@ -73387,6 +76345,64 @@
         }
       }
     },
+    "Your agents can look up hotels, restaurants and things to do on {App}, with their reviews and photos." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten können auf {App} Hotels, Restaurants und Aktivitäten mit ihren Bewertungen und Fotos abrufen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes pueden consultar hoteles, restaurantes y actividades en {App}, con sus reseñas y fotos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents peuvent consulter les hôtels, restaurants et activités sur {App}, avec leurs avis et leurs photos."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi agenti possono consultare hotel, ristoranti e attività su {App}, con recensioni e foto."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten kunnen hotels, restaurants en activiteiten opzoeken op {App}, met hun reviews en foto’s."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci mogą sprawdzać hotele, restauracje i atrakcje w {App} wraz z ich recenzjami i zdjęciami."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes podem consultar hotéis, restaurantes e atividades no {App}, com avaliações e fotos."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter kan slå upp hotell, restauranger och aktiviteter på {App}, med recensioner och foton."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların {App} üzerinde otellere, restoranlara ve gezilecek yerlere yorumları ve fotoğraflarıyla birlikte bakabilir."
+          }
+        }
+      }
+    },
     "Your agents can look up keywords, traffic and backlinks for any site in {App}." : {
       "localizations" : {
         "de" : {
@@ -73499,6 +76515,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ajanların {App} ile arama sonuçlarına, anahtar kelimelere ve geri bağlantılara bakabilir."
+          }
+        }
+      }
+    },
+    "Your agents can look up US statutes, session laws and citations with {App}." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten können mit {App} US-Gesetze, Sitzungsgesetze und Fundstellen abrufen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes pueden consultar leyes de EE. UU., leyes de sesión y citas legales con {App}."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents peuvent consulter les lois des États-Unis, les lois de session et les références juridiques avec {App}."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi agenti possono consultare leggi statunitensi, leggi di sessione e citazioni con {App}."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten kunnen met {App} Amerikaanse wetten, sessiewetten en bronvermeldingen opzoeken."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci mogą sprawdzać amerykańskie ustawy, ustawy sesyjne i cytowania przepisów za pomocą {App}."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes podem consultar leis dos EUA, leis de sessão e citações com o {App}."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter kan slå upp amerikanska lagar, sessionslagar och lagcitat med {App}."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların {App} ile ABD kanunlarına, oturum kanunlarına ve atıflara bakabilir."
           }
         }
       }
@@ -73909,6 +76983,64 @@
         }
       }
     },
+    "Your agents can research YouTube channels, videos, trends and keywords with {App}, and read your own channel's stats." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten können mit {App} YouTube-Kanäle, -Videos, -Trends und -Keywords recherchieren und die Statistiken deines eigenen Kanals lesen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes pueden investigar canales, videos, tendencias y palabras clave de YouTube con {App}, y leer las estadísticas de tu propio canal."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents peuvent étudier les chaînes, vidéos, tendances et mots-clés YouTube avec {App}, et lire les statistiques de ta propre chaîne."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi agenti possono analizzare canali, video, tendenze e parole chiave di YouTube con {App}, e leggere le statistiche del tuo canale."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten kunnen met {App} YouTube-kanalen, -video’s, -trends en -zoekwoorden onderzoeken, en de statistieken van je eigen kanaal lezen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci mogą badać kanały, filmy, trendy i słowa kluczowe YouTube za pomocą {App} oraz czytać statystyki twojego kanału."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes podem pesquisar canais, vídeos, tendências e palavras-chave do YouTube com o {App} e ler as estatísticas do seu próprio canal."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter kan undersöka YouTube-kanaler, videor, trender och sökord med {App} och läsa statistiken för din egen kanal."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların {App} ile YouTube kanallarını, videolarını, trendlerini ve anahtar kelimelerini araştırabilir, kendi kanalının istatistiklerini okuyabilir."
+          }
+        }
+      }
+    },
     "Your agents can run AI models on {App}." : {
       "localizations" : {
         "de" : {
@@ -74025,6 +77157,180 @@
         }
       }
     },
+    "Your agents can search case law, court dockets and judges in {App}, and set up alerts." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten können in {App} Rechtsprechung, Gerichtsakten und Richter durchsuchen und Benachrichtigungen einrichten."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes pueden buscar jurisprudencia, expedientes judiciales y jueces en {App}, y crear alertas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents peuvent rechercher la jurisprudence, les dossiers des tribunaux et les juges dans {App}, et créer des alertes."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi agenti possono cercare giurisprudenza, fascicoli giudiziari e giudici in {App}, e impostare avvisi."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten kunnen jurisprudentie, rechtbankdossiers en rechters doorzoeken in {App}, en meldingen instellen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci mogą przeszukiwać orzecznictwo, akta sądowe i sędziów w {App} oraz ustawiać alerty."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes podem pesquisar jurisprudência, processos judiciais e juízes no {App} e criar alertas."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter kan söka i rättspraxis, domstolsakter och domare i {App} och skapa bevakningar."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların {App} içinde içtihatları, mahkeme dosyalarını ve hâkimleri arayabilir, uyarılar kurabilir."
+          }
+        }
+      }
+    },
+    "Your agents can search case law, court filings and statutes in {App}, with citations." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten können in {App} Rechtsprechung, Gerichtsdokumente und Gesetze durchsuchen, mit Fundstellen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes pueden buscar jurisprudencia, escritos judiciales y leyes en {App}, con citas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents peuvent rechercher la jurisprudence, les actes de procédure et les lois dans {App}, avec les citations."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi agenti possono cercare giurisprudenza, atti giudiziari e leggi in {App}, con le citazioni."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten kunnen jurisprudentie, processtukken en wetten doorzoeken in {App}, met bronvermeldingen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci mogą przeszukiwać orzecznictwo, pisma procesowe i ustawy w {App}, z odwołaniami do źródeł."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes podem pesquisar jurisprudência, peças processuais e leis no {App}, com citações."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter kan söka i rättspraxis, domstolshandlingar och lagar i {App}, med källhänvisningar."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların {App} içinde içtihatları, dava belgelerini ve kanunları atıflarıyla birlikte arayabilir."
+          }
+        }
+      }
+    },
+    "Your agents can search flights and fares with {App}, and get links to book them." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten können mit {App} Flüge und Tarife suchen und Links zum Buchen abrufen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes pueden buscar vuelos y tarifas con {App}, y obtener enlaces para reservarlos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents peuvent chercher des vols et des tarifs avec {App}, et obtenir des liens pour les réserver."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi agenti possono cercare voli e tariffe con {App}, e ottenere i link per prenotarli."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten kunnen met {App} vluchten en tarieven zoeken, en links krijgen om ze te boeken."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci mogą wyszukiwać loty i taryfy za pomocą {App} oraz pobierać linki do ich rezerwacji."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes podem pesquisar voos e tarifas com o {App} e obter links para reservá-los."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter kan söka flyg och priser med {App} och få länkar för att boka dem."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların {App} ile uçuş ve ücret arayabilir, rezervasyon bağlantıları alabilir."
+          }
+        }
+      }
+    },
     "Your agents can search the web and read pages through {App}." : {
       "localizations" : {
         "de" : {
@@ -74079,6 +77385,122 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ajanların {App} üzerinden web’de arama yapabilir ve sayfaları okuyabilir."
+          }
+        }
+      }
+    },
+    "Your agents can turn receipts, invoices and bills into data with {App}." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten können mit {App} Belege, Rechnungen und Quittungen in Daten umwandeln."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes pueden convertir recibos, facturas y cuentas en datos con {App}."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents peuvent extraire les données de reçus, de factures et de notes avec {App}."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi agenti possono trasformare ricevute, fatture e conti in dati con {App}."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten kunnen met {App} bonnetjes, facturen en rekeningen omzetten in gegevens."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci mogą zamieniać paragony, faktury i rachunki na dane za pomocą {App}."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes podem transformar recibos, faturas e contas em dados com o {App}."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter kan göra om kvitton, fakturor och räkningar till data med {App}."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların {App} ile fişleri, faturaları ve hesap pusulalarını veriye dönüştürebilir."
+          }
+        }
+      }
+    },
+    "Your agents can turn recipes and shopping lists into {App} pages to order from." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten können Rezepte und Einkaufslisten in {App}-Seiten verwandeln, auf denen du bestellen kannst."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes pueden convertir recetas y listas de compras en páginas de {App} desde las que hacer tu pedido."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents peuvent transformer des recettes et des listes de courses en pages {App} où tu peux commander."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi agenti possono trasformare ricette e liste della spesa in pagine {App} da cui ordinare."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten kunnen recepten en boodschappenlijstjes omzetten in {App}-pagina’s om vanaf te bestellen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci mogą zamieniać przepisy i listy zakupów w strony {App}, z których możesz zamówić."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes podem transformar receitas e listas de compras em páginas do {App} para você fazer o pedido."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter kan göra om recept och inköpslistor till {App}-sidor att beställa från."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların tarifleri ve alışveriş listelerini sipariş verebileceğin {App} sayfalarına dönüştürebilir."
           }
         }
       }
@@ -74837,6 +78259,64 @@
         }
       }
     },
+    "your businesses, customers and feedback requests" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "deine Unternehmen, Kunden und Feedback-Anfragen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "tus negocios, clientes y solicitudes de opinión"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "tes établissements, clients et demandes d’avis"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "le tue attività, i clienti e le richieste di feedback"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "je bedrijven, klanten en feedbackverzoeken"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "twoje firmy, klientów i prośby o opinię"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "seus negócios, clientes e pedidos de avaliação"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "dina företag, kunder och förfrågningar om omdömen"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "işletmelerini, müşterilerini ve geri bildirim isteklerini"
+          }
+        }
+      }
+    },
     "your calendars, events and invitations" : {
       "localizations" : {
         "de" : {
@@ -75302,6 +78782,64 @@
         }
       }
     },
+    "your clients, work items and deadlines" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "deine Mandanten, Arbeitsaufträge und Fristen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "tus clientes, tareas y plazos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "tes clients, tâches et échéances"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "i tuoi clienti, le attività e le scadenze"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "je klanten, werkitems en deadlines"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "twoich klientów, zadania i terminy"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "seus clientes, itens de trabalho e prazos"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "dina kunder, arbetsuppgifter och deadlines"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "müşterilerini, iş kalemlerini ve son tarihlerini"
+          }
+        }
+      }
+    },
     "Your computer isn't connected." : {
       "localizations" : {
         "de" : {
@@ -75704,6 +79242,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "belgelerini, tablolarını ve sayfalarını"
+          }
+        }
+      }
+    },
+    "your document comparisons and their links" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "deine Dokumentvergleiche und ihre Links"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "tus comparaciones de documentos y sus enlaces"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "tes comparaisons de documents et leurs liens"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "i tuoi confronti tra documenti e i loro link"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "je documentvergelijkingen en hun links"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "twoje porównania dokumentów i linki do nich"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "suas comparações de documentos e os links delas"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "dina dokumentjämförelser och deras länkar"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "belge karşılaştırmalarını ve bağlantılarını"
           }
         }
       }
@@ -76632,6 +80228,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "görsellerini, videolarını ve klasörlerini"
+          }
+        }
+      }
+    },
+    "your LinkedIn campaigns, leads and conversations" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "deine LinkedIn-Kampagnen, Leads und Unterhaltungen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "tus campañas de LinkedIn, leads y conversaciones"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "tes campagnes LinkedIn, leads et conversations"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "le tue campagne LinkedIn, i lead e le conversazioni"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "je LinkedIn-campagnes, leads en gesprekken"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "twoje kampanie na LinkedIn, leady i rozmowy"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "suas campanhas no LinkedIn, leads e conversas"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "dina LinkedIn-kampanjer, leads och konversationer"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "LinkedIn kampanyalarını, potansiyel müşterilerini ve konuşmalarını"
           }
         }
       }
@@ -77738,6 +81392,64 @@
         }
       }
     },
+    "your positions, interviews and candidates' answers" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "deine Stellen, Interviews und die Antworten der Kandidaten"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "tus puestos, entrevistas y las respuestas de los candidatos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "tes postes, entretiens et les réponses des candidats"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "le tue posizioni, i colloqui e le risposte dei candidati"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "je functies, interviews en de antwoorden van kandidaten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "twoje stanowiska, rozmowy i odpowiedzi kandydatów"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "suas vagas, entrevistas e as respostas dos candidatos"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "dina tjänster, intervjuer och kandidaternas svar"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "pozisyonlarını, mülakatlarını ve adayların yanıtlarını"
+          }
+        }
+      }
+    },
     "your presentations" : {
       "localizations" : {
         "de" : {
@@ -78024,6 +81736,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "projelerini, belgelerini ve şemalarını"
+          }
+        }
+      }
+    },
+    "your projects, job site photos and checklists" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "deine Projekte, Baustellenfotos und Checklisten"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "tus proyectos, fotos de obra y listas de verificación"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "tes projets, photos de chantier et checklists"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "i tuoi progetti, le foto di cantiere e le checklist"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "je projecten, bouwplaatsfoto’s en checklists"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "twoje projekty, zdjęcia z budowy i listy kontrolne"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "seus projetos, fotos de obra e checklists"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "dina projekt, arbetsplatsfoton och checklistor"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "projelerini, şantiye fotoğraflarını ve kontrol listelerini"
           }
         }
       }
@@ -78434,6 +82204,64 @@
         }
       }
     },
+    "your routes, stops and orders" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "deine Routen, Stopps und Aufträge"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "tus rutas, paradas y pedidos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "tes itinéraires, arrêts et commandes"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "i tuoi percorsi, le fermate e gli ordini"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "je routes, stops en orders"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "twoje trasy, przystanki i zamówienia"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "suas rotas, paradas e pedidos"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "dina rutter, stopp och order"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "rotalarını, duraklarını ve siparişlerini"
+          }
+        }
+      }
+    },
     "your scenarios and their runs" : {
       "localizations" : {
         "de" : {
@@ -78488,6 +82316,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "senaryolarını ve çalıştırmalarını"
+          }
+        }
+      }
+    },
+    "your scheduled posts, social accounts and their results" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "deine geplanten Posts, Social-Media-Accounts und ihre Ergebnisse"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "tus publicaciones programadas, cuentas sociales y sus resultados"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "tes posts programmés, comptes sociaux et leurs résultats"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "i tuoi post programmati, gli account social e i loro risultati"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "je ingeplande posts, sociale accounts en hun resultaten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "twoje zaplanowane posty, konta społecznościowe i ich wyniki"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "seus posts agendados, contas de redes sociais e os resultados deles"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "dina schemalagda inlägg, sociala konton och deras resultat"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "zamanlanmış gönderilerini, sosyal medya hesaplarını ve sonuçlarını"
           }
         }
       }
@@ -78662,6 +82548,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ortak harcamalarını, gruplarını ve bakiyelerini"
+          }
+        }
+      }
+    },
+    "your shifts, locations and team" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "deine Schichten, Standorte und dein Team"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "tus turnos, locales y tu equipo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "tes plannings, établissements et ton équipe"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "i tuoi turni, le sedi e il tuo team"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "je diensten, locaties en je team"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "twoje zmiany, lokale i twój zespół"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "seus turnos, unidades e sua equipe"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "dina skift, platser och ditt team"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "vardiyalarını, şubelerini ve ekibini"
           }
         }
       }
@@ -78956,6 +82900,64 @@
         }
       }
     },
+    "your smart locks, spaces and access codes" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "deine smarten Schlösser, Räume und Zugangscodes"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "tus cerraduras inteligentes, espacios y códigos de acceso"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "tes serrures connectées, espaces et codes d’accès"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "le tue serrature smart, gli spazi e i codici di accesso"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "je slimme sloten, ruimtes en toegangscodes"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "twoje inteligentne zamki, przestrzenie i kody dostępu"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "suas fechaduras inteligentes, espaços e códigos de acesso"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "dina smarta lås, utrymmen och åtkomstkoder"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "akıllı kilitlerini, alanlarını ve erişim kodlarını"
+          }
+        }
+      }
+    },
     "your spaces and pages" : {
       "localizations" : {
         "de" : {
@@ -79184,6 +83186,122 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "e-tablolarını"
+          }
+        }
+      }
+    },
+    "your store's returns, exchanges and refunds" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "die Retouren, Umtausche und Erstattungen deines Shops"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "las devoluciones, cambios y reembolsos de tu tienda"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "les retours, échanges et remboursements de ta boutique"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "i resi, i cambi e i rimborsi del tuo negozio"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "de retouren, omruilingen en terugbetalingen van je winkel"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "zwroty, wymiany i zwroty pieniędzy w twoim sklepie"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "as devoluções, trocas e reembolsos da sua loja"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "din butiks returer, byten och återbetalningar"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "mağazanın iadelerini, değişimlerini ve geri ödemelerini"
+          }
+        }
+      }
+    },
+    "your studio's classes, appointments, clients and sales" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "die Kurse, Termine, Kunden und Verkäufe deines Studios"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "las clases, citas, clientes y ventas de tu estudio"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "les cours, rendez-vous, clients et ventes de ton studio"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "i corsi, gli appuntamenti, i clienti e le vendite del tuo studio"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "de lessen, afspraken, klanten en verkopen van je studio"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "zajęcia, wizyty, klientów i sprzedaż twojego studia"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "as aulas, agendamentos, clientes e vendas do seu estúdio"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "din studios pass, bokningar, kunder och försäljning"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "stüdyonun derslerini, randevularını, müşterilerini ve satışlarını"
           }
         }
       }
@@ -80460,6 +84578,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "videolarını, kanallarını ve istatistiklerini"
+          }
+        }
+      }
+    },
+    "your videos, posts and stats" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "deine Videos, Posts und Statistiken"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "tus videos, publicaciones y estadísticas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "tes vidéos, publications et statistiques"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "i tuoi video, i post e le statistiche"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "je video’s, posts en statistieken"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "twoje filmy, posty i statystyki"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "seus vídeos, posts e estatísticas"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "dina videor, inlägg och statistik"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "videolarını, gönderilerini ve istatistiklerini"
           }
         }
       }

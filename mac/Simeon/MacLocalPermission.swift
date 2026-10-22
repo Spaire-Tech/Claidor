@@ -204,7 +204,7 @@ struct LocalAskDock: View {
       let mods = event.modifierFlags.intersection([.command, .control, .option, .shift])
       guard event.keyCode == 53, !event.isARepeat, mods.isEmpty, enabled,
             event.window?.attachedSheet == nil, !(event.window?.firstResponder is NSText),
-            viewers.shown == nil, !ChatControl.exchangeShowing, !window.orgChart, MacServices.shared.deepLinkInfo == nil,
+            viewers.shown == nil, !ChatControl.exchangeShowing, !window.orgChart, MacServices.shared.deepLinkInfo == nil, MacServices.shared.packAsk == nil,
             !MacConnector.showing, pane.avatarEditor == nil, pane.routineEditor?.popover == nil else { return false }
       answer(.deny)
       return true

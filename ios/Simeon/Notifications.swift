@@ -20,6 +20,8 @@ final class Notifications {
 
   /** The agent a tapped notification asked for; the list opens its chat and clears this. */
   var openAgent: String?
+  /** A starter pack the website's Add to Simeon opened (`simeon-ios://app/v1/pack/add?id=`); the list shows its sheet and clears this. */
+  var openPack: String?
   /** The signed-in app's store: which chat is on screen (`openChat`). */
   @ObservationIgnored weak var store: AppStore?
   @ObservationIgnored private var api: SimeonAPI?

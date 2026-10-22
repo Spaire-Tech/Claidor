@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Simeon for Contractors | SimeonLabs</title>
+<meta name="description" content="Five agents for running a trade business: quotes, the schedule, supplies, invoices and reviews.">
+<link rel="canonical" href="https://simeonlabs.com/teams/trades">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://simeonlabs.com/teams/trades">
+<meta property="og:title" content="Simeon for Contractors | SimeonLabs">
+<meta property="og:description" content="Five agents for running a trade business: quotes, the schedule, supplies, invoices and reviews.">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400&display=swap">
+<style>
+/* The Teams pages (/teams, /teams/<pack>): the home page's bar, type and colours (source/page.html) around
+   the starter packs. Light only, every colour set here. Made by teams.py from server/simeon/desktop/packs.json. */
+:root{
+  --page:#fff; --soft:#f5f5f7; --ink:#1d1d1f; --ink2:#6e6e73; --ink3:#86868b; --line:#e5e5ea; --blue:#255a93;
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Inter","Helvetica Neue",Arial,sans-serif;
+  --serif:"Newsreader",Georgia,"Times New Roman",serif;
+  --gutter:max(20px,4.6vw);
+  --col:min(1260px,calc(100vw - 2 * var(--gutter)));
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--page);color:var(--ink);font-family:var(--font);font-size:17px;line-height:1.47;letter-spacing:-.022em;-webkit-font-smoothing:antialiased;overflow-x:clip}
+h1,h2,h3,p,ul,blockquote{margin:0}
+img{display:block;max-width:100%}
+a{color:inherit}
+.wrap{width:var(--col);margin-inline:auto}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.5em;border-radius:99px;background:#000;color:#fff;font-weight:400;letter-spacing:-.01em;white-space:nowrap;text-decoration:none;transition:background .2s}
+.btn:hover{background:#2b2b2d}
+.btn:focus-visible,a:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
+
+/* The bar, as on the home page; the name goes home. */
+.bar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.82);-webkit-backdrop-filter:saturate(1.8) blur(20px);backdrop-filter:saturate(1.8) blur(20px);padding-top:env(safe-area-inset-top,0px)}
+.bar .wrap{display:flex;justify-content:space-between;align-items:center;height:clamp(52px,3.8vw,76px)}
+.bar .wordmark{--wm:clamp(118px,10.8vw,217px);display:block;width:var(--wm);margin-left:calc(var(--wm) * -85 / 1585);background:var(--ink);-webkit-mask:url(/img/wordmark-labs.png) center/contain no-repeat;mask:url(/img/wordmark-labs.png) center/contain no-repeat;aspect-ratio:1585/460}
+.bar .acts{display:flex;align-items:center;gap:clamp(14px,1.2vw,22px);font-size:clamp(14px,1vw,20px)}
+.bar .acts>a:not(.btn){text-decoration:none;color:var(--ink2)}
+.bar .acts>a:not(.btn):hover,.bar .acts>a[aria-current]{color:var(--ink)}
+.bar .btn{height:clamp(28px,1.9vw,38px);padding:0 clamp(12px,.8vw,16px);font-size:clamp(14px,1vw,20px)}
+
+/* Faces in a row, each over the last, ringed in the ground they sit on. */
+.faces{display:flex;--fs:48px;--ring:var(--page)}
+.faces img,.faces .noface{width:var(--fs);height:var(--fs);border-radius:50%;object-fit:cover;flex:none;box-shadow:0 0 0 3px var(--ring);background:var(--soft)}
+.faces>*+*{margin-left:calc(var(--fs) * -.26)}
+.noface{display:grid;place-items:center;font-weight:600;color:var(--ink2);background:#e8e8ed}
+
+/* An app's tile: its own icon with an app icon's corners, else its mark on white, else its first letter. */
+.apps{display:flex;align-items:center;flex:none;--as:36px;--ring:var(--soft)}
+.app{position:relative;flex:none;display:grid;place-items:center;width:var(--as);height:var(--as);border-radius:calc(var(--as) * .2237);overflow:hidden;background:#fff;box-shadow:0 0 0 2.5px var(--ring)}
+.app::after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 0 .5px rgba(0,0,0,.16);pointer-events:none}
+.app+.app{margin-left:calc(var(--as) * -.14)}
+.app.icon img{width:100%;height:100%;object-fit:cover}
+.app.mark img{width:64%;height:64%;object-fit:contain}
+.app.mark i{display:block;width:64%;height:64%;-webkit-mask:var(--m) center/contain no-repeat;mask:var(--m) center/contain no-repeat}
+.app.letter{color:#3a3a3c;font-size:calc(var(--as) * .46);font-weight:600;letter-spacing:0;line-height:1}
+
+footer{margin-top:clamp(80px,8vw,140px);background:var(--soft);padding:20px 0 calc(40px + env(safe-area-inset-bottom,0px));font-size:12px;color:var(--ink2)}
+footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+footer nav{display:flex;gap:18px}
+footer a{color:var(--ink2);text-decoration:none}
+footer a:hover{color:var(--ink)}
+footer a[aria-current]{color:var(--ink)}
+
+.post{width:min(860px,var(--col));margin-inline:auto}
+.back{display:inline-block;margin-top:clamp(28px,3vw,48px);color:var(--ink2);text-decoration:none;font-size:15px}
+.back:hover{color:var(--ink)}
+.back::before{content:"\2039  "}
+.hero{display:flex;flex-direction:column;align-items:center;text-align:center;padding:clamp(28px,4vw,64px) 0 0}
+.hero .faces{--fs:clamp(52px,4.4vw,64px)}
+.kicker{margin-top:22px;font-size:clamp(15px,1.05vw,18px);font-weight:500;color:var(--ink2)}
+.hero h1{margin-top:clamp(18px,1.6vw,26px);max-width:14em;font-family:var(--serif);font-weight:400;font-size:clamp(38px,4.4vw,68px);line-height:1.03;letter-spacing:-.025em;text-wrap:balance}
+.kicker+h1{margin-top:10px}
+.hero .lede{margin-top:clamp(16px,1.4vw,24px);max-width:30em;font-size:clamp(17px,1.25vw,21px);line-height:1.42;letter-spacing:-.015em;color:var(--ink2);text-wrap:balance}
+.add{display:flex;flex-direction:column;align-items:center;margin-top:clamp(26px,2.4vw,38px)}
+.add .btn{height:clamp(46px,3vw,54px);padding:0 clamp(22px,1.6vw,30px);font-size:clamp(16px,1.1vw,19px)}
+.add .btn svg{width:1em;height:1em;flex:none;margin-left:-.15em}
+.add-note{margin-top:14px;font-size:15px;color:var(--ink2)}
+.add-note a{color:var(--blue);text-decoration:none;white-space:nowrap}
+.add-note a:hover{text-decoration:underline}
+.add-note[hidden]{display:none}
+
+/* The agents: one card each, the face beside what it does on a computer, above it on a phone. */
+.team{display:grid;gap:18px;margin:clamp(56px,6vw,96px) 0 0;padding:0;list-style:none}
+.agent{display:grid;grid-template-columns:clamp(96px,10vw,132px) minmax(0,1fr);column-gap:clamp(22px,2.4vw,34px);align-items:start;padding:clamp(24px,2.6vw,38px);border-radius:28px;background:var(--soft)}
+.agent>.face{grid-row:1 / span 3;width:100%;aspect-ratio:1;height:auto;border-radius:24px;object-fit:cover;background:#e8e8ed}
+.agent>.face.noface{display:grid;place-items:center;font-size:40px;font-weight:600;color:var(--ink2)}
+.agent .head{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:34px}
+.agent h2{font-size:clamp(21px,1.6vw,26px);font-weight:600;line-height:1.2;letter-spacing:-.022em}
+.agent h2 .nm{color:var(--blue)}
+.agent h2 .tt{color:var(--ink3);font-weight:500;white-space:nowrap}
+.agent .sum{margin-top:10px;font-size:clamp(16px,1.08vw,18px);line-height:1.5;color:var(--ink2)}
+.agent .q{position:relative;margin-top:clamp(18px,1.6vw,24px);padding:clamp(16px,1.4vw,20px) 0 0;border-top:1px solid #e3e3e8;font-family:var(--serif);font-size:clamp(21px,1.55vw,26px);line-height:1.3;letter-spacing:-.01em;color:var(--ink)}
+.agent .q .qm{font-size:2.2em;line-height:0;vertical-align:-.36em;color:var(--blue);opacity:.55}
+.agent .q .qm:first-child{margin-right:.06em}
+.agent .q .qm:last-child{margin-left:.04em}
+
+.end{display:flex;flex-direction:column;align-items:center;text-align:center;padding:clamp(72px,7vw,120px) 0 0}
+.end h2{max-width:14em;font-family:var(--serif);font-weight:400;font-size:clamp(30px,3vw,48px);line-height:1.06;letter-spacing:-.02em;text-wrap:balance}
+.end .add{margin-top:clamp(22px,2vw,32px)}
+.free{margin-top:16px;font-size:15px;color:var(--ink2)}
+
+@media (max-width:600px){
+  .agent{grid-template-columns:56px minmax(0,1fr);column-gap:14px;padding:20px 20px 22px;border-radius:24px}
+  .agent>.face{grid-row:1;width:56px;height:56px;border-radius:50%}
+  .agent>.face.noface{font-size:22px}
+  .agent .head{min-height:56px;gap:10px}
+  .agent .apps{--as:30px}
+  .agent .sum,.agent .q{grid-column:1 / -1}
+  .agent .sum{margin-top:14px}
+}
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="wrap">
+    <a class="wordmark" href="/" aria-label="SimeonLabs home"></a>
+    <div class="acts"><a href="/teams">Teams</a><a class="btn" href="https://api.simeonlabs.com/desktop/download/mac">Download</a></div>
+  </div>
+</header>
+
+<main>
+<div class="post">
+<a class="back" href="/teams">All teams</a>
+<section class="hero" aria-label="Simeon for Contractors">
+  <div class="faces" aria-hidden="true"><img src="/teams/faces/clay-30.webp?v=4f78c813" alt="" width="128" height="128"><img src="/teams/faces/clay-03.webp?v=ab2ac8f8" alt="" width="128" height="128"><img src="/teams/faces/clay-02.webp?v=31c9d286" alt="" width="128" height="128"><img src="/teams/faces/clay-04.webp?v=515ee960" alt="" width="128" height="128"><img src="/teams/faces/clay-05.webp?v=b86ef7a4" alt="" width="128" height="128"></div>
+  <h1>Simeon for Contractors</h1>
+  <p class="lede">Five agents for running a trade business: quotes, the schedule, supplies, invoices and reviews.</p>
+  <div class="add"><a class="btn add-btn" href="simeon://app/v1/pack/add?id=trades" data-pack="trades"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>Add to Simeon</a><p class="add-note" hidden aria-live="polite"></p></div>
+</section>
+
+<ul class="team" aria-label="The agents">
+<li class="agent"><img class="face" src="/teams/faces/clay-30.webp?v=4f78c813" alt="" width="264" height="264" loading="lazy"><div class="head"><h2><span class="nm">Wes</span> <span class="tt">Quotes</span></h2><span class="apps" role="img" aria-label="Works in Jobber, CompanyCam and Excel"><span class="app icon" title="Jobber"><img src="/teams/apps/jobber.png?v=1a5e7d0b" alt="" width="64" height="64" loading="lazy"></span><span class="app icon" title="CompanyCam"><img src="/teams/apps/companycam.png?v=fd78e17c" alt="" width="64" height="64" loading="lazy"></span><span class="app icon" title="Excel"><img src="/teams/apps/microsoft-excel.png?v=a26275ea" alt="" width="64" height="64" loading="lazy"></span></span></div><p class="sum">Turns calls into jobs. Prices the work from the photos and your rates, and follows up until the customer says yes.</p><blockquote class="q"><span class="qm" aria-hidden="true">“</span>The Patel bathroom quote is ready: $8,640 with materials, photos attached. Send it through Jobber?<span class="qm" aria-hidden="true">”</span></blockquote></li>
+<li class="agent"><img class="face" src="/teams/faces/clay-03.webp?v=ab2ac8f8" alt="" width="264" height="264" loading="lazy"><div class="head"><h2><span class="nm">Rita</span> <span class="tt">Schedule</span></h2><span class="apps" role="img" aria-label="Works in Google Calendar, Route4Me and WhatsApp"><span class="app icon" title="Google Calendar"><img src="/teams/apps/google-calendar.png?v=72fcf32e" alt="" width="64" height="64" loading="lazy"></span><span class="app icon" title="Route4Me"><img src="/teams/apps/route4me.png?v=61589fda" alt="" width="64" height="64" loading="lazy"></span><span class="app icon" title="WhatsApp"><img src="/teams/apps/whatsapp.png?v=9105ca3f" alt="" width="64" height="64" loading="lazy"></span></span></div><p class="sum">Runs the day. Plans who goes where and the shortest route between jobs, and keeps the crew in the loop.</p><blockquote class="q"><span class="qm" aria-hidden="true">“</span>Tomorrow: 7 jobs, 2 crews, and the routes save 50 minutes of driving. Send the plan to the crews?<span class="qm" aria-hidden="true">”</span></blockquote></li>
+<li class="agent"><img class="face" src="/teams/faces/clay-02.webp?v=31c9d286" alt="" width="264" height="264" loading="lazy"><div class="head"><h2><span class="nm">Hal</span> <span class="tt">Supplies</span></h2><span class="apps" role="img" aria-label="Works in Google Sheets, Gmail and Ramp"><span class="app icon" title="Google Sheets"><img src="/teams/apps/google-sheets.png?v=67140c16" alt="" width="64" height="64" loading="lazy"></span><span class="app icon" title="Gmail"><img src="/teams/apps/gmail.png?v=942e42d3" alt="" width="64" height="64" loading="lazy"></span><span class="app icon" title="Ramp"><img src="/teams/apps/ramp.png?v=57606885" alt="" width="64" height="64" loading="lazy"></span></span></div><p class="sum">Orders the materials. Gets the parts on site before the job starts and keeps spending in check.</p><blockquote class="q"><span class="qm" aria-hidden="true">“</span>The Elm St job needs 14 sheets of drywall. Best price is the yard on 3rd at $212. Order it?<span class="qm" aria-hidden="true">”</span></blockquote></li>
+<li class="agent"><img class="face" src="/teams/faces/clay-04.webp?v=515ee960" alt="" width="264" height="264" loading="lazy"><div class="head"><h2><span class="nm">Joan</span> <span class="tt">Invoices</span></h2><span class="apps" role="img" aria-label="Works in QuickBooks, Stripe and Square"><span class="app icon" title="QuickBooks"><img src="/teams/apps/quickbooks.png?v=0c7d1b46" alt="" width="64" height="64" loading="lazy"></span><span class="app icon" title="Stripe"><img src="/teams/apps/stripe.png?v=088d58ed" alt="" width="64" height="64" loading="lazy"></span><span class="app icon" title="Square"><img src="/teams/apps/square.png?v=30cf0aa5" alt="" width="64" height="64" loading="lazy"></span></span></div><p class="sum">Gets you paid. Invoices the day a job ends, takes card payments on site and chases what is late.</p><blockquote class="q"><span class="qm" aria-hidden="true">“</span>4 jobs finished this week, $11,250 to invoice. The Diaz invoice is 21 days late. Send them and a reminder?<span class="qm" aria-hidden="true">”</span></blockquote></li>
+<li class="agent"><img class="face" src="/teams/faces/clay-05.webp?v=b86ef7a4" alt="" width="264" height="264" loading="lazy"><div class="head"><h2><span class="nm">Max</span> <span class="tt">Reviews</span></h2><span class="apps" role="img" aria-label="Works in GatherUp, OneUp and Facebook Pages"><span class="app icon" title="GatherUp"><img src="/teams/apps/gatherup.png?v=729301b2" alt="" width="64" height="64" loading="lazy"></span><span class="app icon" title="OneUp"><img src="/teams/apps/oneup.png?v=280994d3" alt="" width="64" height="64" loading="lazy"></span><span class="app icon" title="Facebook Pages"><img src="/teams/apps/facebook.png?v=27c75d56" alt="" width="64" height="64" loading="lazy"></span></span></div><p class="sum">Builds your name. Asks happy customers for reviews, answers every one and shows off the finished work.</p><blockquote class="q"><span class="qm" aria-hidden="true">“</span>Six jobs finished this week. Review requests are ready, and two before-and-after posts. Send and post?<span class="qm" aria-hidden="true">”</span></blockquote></li>
+</ul>
+
+<section class="end" aria-label="Add the team">
+  <h2>Add the five of them to Simeon.</h2>
+  <div class="add"><a class="btn add-btn" href="simeon://app/v1/pack/add?id=trades" data-pack="trades"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>Add to Simeon</a><p class="add-note" hidden aria-live="polite"></p></div>
+  <p class="free">Free. The agents ask before they send, post or pay.</p>
+</section>
+</div>
+</main>
+
+<footer><div class="wrap"><span>Copyright © 2026 Spaire, Inc. All rights reserved.</span><nav><a href="/teams">Teams</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="mailto:support@simeonlabs.com">Contact</a></nav></div></footer>
+<script>
+// Add to Simeon: the app on this device opens on the pack and adds the team (simeon-ios:// on an iPhone or
+// iPad, simeon:// on a Mac). Still here 1.5 s later, the page offers the app; elsewhere it says where Simeon is.
+(() => {
+  const ua = navigator.userAgent;
+  const ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  const mac = !ios && /Macintosh|Mac OS X/.test(ua);
+  const say = (note, words, label, href) => {
+    note.textContent = words + ' ';
+    const a = document.createElement('a'); a.href = href; a.textContent = label;
+    note.appendChild(a); note.hidden = false;
+  };
+  for (const box of document.querySelectorAll('.add')) {
+    const btn = box.querySelector('.add-btn'), note = box.querySelector('.add-note');
+    const query = 'app/v1/pack/add?id=' + encodeURIComponent(btn.dataset.pack);
+    if (ios) btn.href = 'simeon-ios://' + query;
+    else if (mac) btn.href = 'simeon://' + query;
+    btn.addEventListener('click', (e) => {
+      if (!ios && !mac) { e.preventDefault(); say(note, 'Simeon is on Mac and iPhone.', 'Download for Mac', 'https://api.simeonlabs.com/desktop/download/mac'); return; }
+      let left = false;
+      const away = () => { left = true; };
+      const hide = () => { if (document.visibilityState === 'hidden') left = true; };
+      document.addEventListener('visibilitychange', hide);
+      addEventListener('pagehide', away); addEventListener('blur', away);
+      setTimeout(() => {
+        document.removeEventListener('visibilitychange', hide);
+        removeEventListener('pagehide', away); removeEventListener('blur', away);
+        if (left || document.visibilityState !== 'visible') return;
+        if (ios) say(note, 'Don\u2019t have Simeon?', 'Get Simeon for iPhone', '/');
+        else say(note, 'Don\u2019t have Simeon?', 'Download for Mac', 'https://api.simeonlabs.com/desktop/download/mac');
+      }, 1500);
+    });
+  }
+})();
+</script>
+</body>
+</html>

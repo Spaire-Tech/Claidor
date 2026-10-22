@@ -147,6 +147,8 @@ struct AppRoot: View {
     .overlay { AboutLayer() }
     // Deep Links (step 14), from a `…/v1/info?topic=deep-links` link, signed out too.
     .overlay { DeepLinksLayer() }
+    // A starter pack from the website's Add to Simeon (StarterPackSheet.swift), signed in.
+    .overlay { if session.phase == .signedIn { StarterPackLayer() } }
     // Connecting an app (the Apple design pass): the iPhone's consent, over everything.
     .overlay { ConnectConsentLayer() }
     // Links in messages open only on the web, in mail, Obsidian or the phone (`shell.openExternal`'s allowlist, decision 7);
@@ -521,7 +523,7 @@ private struct KeyWatcher: NSViewRepresentable {
       // takes the keys, then Edit › Paste pastes into it as ever (the founder, 22 October 2026: "can't copy and paste in
       // the chat"). Not over anything else, nor into a field that is one of two.
       if mods == .command, event.charactersIgnoringModifiers?.lowercased() == "v", let window, search?.isOpen != true, !WindowOverlay.showing,
-         !MacConnector.showing, MacServices.shared.deepLinkInfo == nil, viewers?.shown == nil, !ChatControl.exchangeShowing,
+         !MacConnector.showing, MacServices.shared.deepLinkInfo == nil, MacServices.shared.packAsk == nil, viewers?.shown == nil, !ChatControl.exchangeShowing,
          windowState?.orgChart != true, pane?.avatarEditor == nil, !screenHasKeys, (window.firstResponder as? NSTextView)?.isEditable != true, let field = FieldTextView.shown(in: window) {
         window.makeFirstResponder(field)
         return false

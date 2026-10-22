@@ -112,4 +112,16 @@ export const VENDOR_MCP_SOURCES: Readonly<Record<string, string>> = {
   razorpay: "https://github.com/razorpay/razorpay-mcp-server",
   coinbase: "https://docs.cdp.coinbase.com/ai-agents/coinbase-for-agents/coinbase-mcp",
   typefully: "https://support.typefully.com/en/articles/13128440-typefully-mcp-server",
+  // 22 October 2026, the makers' servers among the apps `packs.json` asks for: each page fetched that day, naming the
+  // server. None for Upwork (upwork.com/ai/mcp answers a bot check), Karbon (only its llms.txt names the server), AppFolio
+  // (its pages are about its Claude connector, with no server named), Uber and TaskRabbit (no page of their own found).
+  crunchbase: "https://data.crunchbase.com/docs/getting-started-with-mcp",
+  gem: "https://help.gem.com/databases/gem-help-center/gemcp-faq-and-troubleshooting",
+  "loop-returns": "https://docs.loopreturns.com/mcp/overview",
+  courtlistener: "https://www.courtlistener.com/help/mcp/",
+  ignition: "https://support.ignitionapp.com/en/articles/15516480-using-the-ignition-mcp-with-your-ai-assistant",
+  companycam: "https://help.companycam.com/en/articles/15928195-connecting-the-companycam-mcp-server-beta",
+  instacart: "https://docs.instacart.com/developer_platform_api/guide/tutorials/mcp",
+  vidiq: "https://support.vidiq.com/en/articles/15082430-vidiq-mcp",
+  midpage: "https://docs.midpage.ai/documentation/integration/mcp-tools",
 };

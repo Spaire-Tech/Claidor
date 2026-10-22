@@ -42,6 +42,20 @@ final class DeepLinkTests: XCTestCase {
     XCTAssertEqual(DeepLink(route: .open, source: .https).canonical(scheme: "simeon"), "simeon://app/v1/open")
     XCTAssertEqual(DeepLink(route: .pluginAdd(id: "42"), source: .scheme).canonical(scheme: "simeon-mac"), "simeon-mac://app/v1/plugin/add?id=42")
     XCTAssertEqual(DeepLink(route: .info(topic: "deep-links"), source: .scheme).canonical(scheme: "simeon"), "simeon://app/v1/info?topic=deep-links")
+    XCTAssertEqual(DeepLink(route: .packAdd(id: "coffee-shop"), source: .https).canonical(scheme: "simeon"), "simeon://app/v1/pack/add?id=coffee-shop")
+  }
+
+  /** The website's Add to Simeon (`sites/simeonlabs.com/source/teams.py`): a pack's id, and nothing else. */
+  func testAStarterPacksLink() {
+    XCTAssertEqual(route("simeon://app/v1/pack/add?id=coffee-shop"), .packAdd(id: "coffee-shop"))
+    XCTAssertEqual(route("https://app.simeonlabs.com/sand/link/v1/pack/add?id=law-firms"), .packAdd(id: "law-firms"))
+    for raw in [
+      "simeon://app/v1/pack/add", "simeon://app/v1/pack/add?id=", "simeon://app/v1/pack/add?id=Coffee",
+      "simeon://app/v1/pack/add?id=coffee_shop", "simeon://app/v1/pack/add?id=a&id=b", "simeon://app/v1/pack/add?id=a&x=1",
+      "simeon://app/v1/pack/add?id=" + String(repeating: "a", count: 65), "simeon://app/v1/pack?id=coffee-shop",
+    ] {
+      XCTAssertNil(DeepLink.parse(raw, schemes: schemes), raw)
+    }
   }
 }
 

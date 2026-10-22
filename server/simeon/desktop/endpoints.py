@@ -83,6 +83,7 @@ from .flights import router as flights_router
 from .language import answer_in_request_language, normalize_language
 from .link_wallet import router as link_wallet_router
 from .mcp_oauth_return import router as mcp_oauth_return_router
+from .packs import router as packs_router
 
 # Straight from the price list rather than through `service`, which
 # re-exports only what it uses itself — a name it merely passed through
@@ -1667,6 +1668,8 @@ router.include_router(link_wallet_router)
 router.include_router(flights_router)
 router.include_router(flight_booking_router)
 router.include_router(releases_router)
+# Starter packs (`packs.py`): the teams the website's "Add to Simeon" opens.
+router.include_router(packs_router)
 
 # Pushes to the person's iPhone (`push.py`): the phone registers at
 # `/desktop/push-devices`, the box's host posts `/desktop/push`.

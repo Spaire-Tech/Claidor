@@ -246,9 +246,14 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
   }
 
   public func createAgent(name: String, title: String, face: String?, voiceId: String?) async throws -> String {
+    try await createAgent(name: name, title: title, description: "", face: face, voiceId: voiceId)
+  }
+
+  public func createAgent(name: String, title: String, description: String, face: String?, voiceId: String?) async throws -> String {
     let id = "agent-\(UUID().uuidString.prefix(6).lowercased())"
     var agent = Agent(id: id, name: name, lastActivityAt: Date().timeIntervalSince1970 * 1000)
     agent.avatarShape = face
+    agent.description = description
     let role = title.trimmingCharacters(in: .whitespacesAndNewlines)
     if !role.isEmpty { agent.title = role }
     lock.withLock { agents.append(agent); transcripts[id] = [] }
@@ -577,6 +582,22 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
       return ["seconds": body?["seconds"] ?? 0, "summary": "Bass asked to move the review; it's done.", "transcript": [["speaker": "agent", "text": "Hey Bass."], ["speaker": "user", "text": "Move the review to Friday."]]]
     case "billing/portal":
       return ["portalUrl": "https://simeonlabs.com/billing"]
+    case "packs/coffee-shop":
+      // The website's first starter pack, shortened (server/simeon/desktop/packs.json).
+      let members: [(String, String, String, [String], String)] = [
+        ("Bruno", "Stock", "clay-02", ["square", "veryfi", "google-sheets"], "Keeps the shelves full and gets the reorder ready before you run out."),
+        ("Clara", "Shifts", "clay-01", ["7shifts", "whatsapp", "google-calendar"], "Builds the rota and covers sick days."),
+        ("Mae", "Socials", "clay-03", ["instagram", "tiktok", "canva"], "Posts the specials."),
+        ("Ines", "Customers", "clay-04", ["google-maps", "yelp", "gmail"], "Answers everyone and takes the catering requests."),
+        ("Hugo", "Money", "clay-05", ["quickbooks", "paypal", "gusto"], "Closes out the day and keeps the books tidy."),
+      ]
+      let names: JSON = ["square": "Square", "veryfi": "Veryfi", "google-sheets": "Google Sheets", "7shifts": "7shifts", "whatsapp": "WhatsApp",
+                         "google-calendar": "Google Calendar", "instagram": "Instagram", "tiktok": "TikTok", "canva": "Canva", "google-maps": "Google Maps",
+                         "yelp": "Yelp", "gmail": "Gmail", "quickbooks": "QuickBooks", "paypal": "PayPal", "gusto": "Gusto"]
+      return ["id": "coffee-shop", "folder": "Coffee Shop Team", "title": "Simeon for Coffee Shops",
+              "summary": "Five agents for the back of the shop: stock, shifts, socials, customers and money.", "appNames": names,
+              "agents": .array(members.map { ["name": .string($0.0), "title": .string($0.1), "face": .string($0.2), "apps": JSON($0.3),
+                                               "summary": .string($0.4), "description": .string("\($0.4) Starts by asking to connect its apps.")] })]
     case "user/name":
       return ["preferredName": body?["name"] ?? .null]
     case "user/profile":

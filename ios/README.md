@@ -182,8 +182,9 @@ profile, not from the configuration.
   opens all of them), + on each row, the search floating at the bottom
   (`Settings.swift` `ConnectAppsSheet`, `ConnectorsList.swift`). Every
   connector shows its own app icon (`AppIcons.xcassets/AppIcons`, which the
-  Mac app builds too): 74 from the apps' own App Store listings, 12 with no
-  iOS app drawn from their marks in `desktop/brand/connector-logos`. `python3 ios/scripts/app_icons.py` builds
+  Mac app builds too): 148 from the apps' own App Store listings, 84 with no
+  iOS app drawn from their marks in `desktop/brand/connector-logos` (232 on
+  22 October 2026). `python3 ios/scripts/app_icons.py` builds
   the icons and `GeneratedAppIcons.swift` from the catalogue, and fails when
   a connector has none; `… fetch` takes them again (where each came from:
   `desktop/brand/app-icons/sources.json`). `ConnectorIcons` finds an icon by

@@ -363,6 +363,9 @@ async def main():
     # The Privacy Policy and the Terms (legal.py, legal/), at /privacy and /terms.
     import legal
     legal.build(OUT)
+    # The starter packs' pages (teams.py, server/simeon/desktop/packs.json), at /teams.
+    import teams
+    teams.build(OUT)
     print("site written to", os.path.abspath(OUT))
 
 asyncio.run(main())

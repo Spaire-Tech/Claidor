@@ -650,10 +650,12 @@ public enum Plugins {
  * one whose own app is set up there can be added at once; until the server
  * answers, this list holds. Klaviyo and Ashby left it the same day: their
  * makers' own servers sign anyone in. OneNote and Microsoft To Do joined it
- * the same day too, until Simeon Labs' Microsoft app is set up.
+ * the same day too, until Simeon Labs' Microsoft app is set up. Meta Ads,
+ * Jobber, BambooHR, TikTok, Follow Up Boss, Matterport, ZoomInfo and Clio
+ * joined on 22 October 2026 (`OWN_APP_NEEDED` in `server/simeon/desktop/apps.py`).
  */
 public enum AppsComingSoon {
-  public static let builtIn: Set<String> = ["gusto", "xero", "shopify", "brex", "pipedrive", "docusign", "onenote", "microsoft_todo"]
+  public static let builtIn: Set<String> = ["gusto", "xero", "shopify", "brex", "pipedrive", "docusign", "onenote", "microsoft_todo", "metaads", "jobber", "bamboohr", "tiktok", "follow_up_boss", "matterport", "zoominfo", "clio_manage"]
   /** What the card says in place of Add. */
   public static let label = L10n.text("Coming soon")
 

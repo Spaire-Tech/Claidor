@@ -122,6 +122,24 @@ STORE_APPS = {
     "workable": "com.workable.ats", "breezy-hr": "com.breezyhr.Breezy",
     "railway": "com.railway.app", "datadog": "com.datadog.flagship",
     "razorpay": "com.razorpay.payments.app", "coinbase": "com.vilcsak.bitcoin2",
+    # 22 October 2026: the 45 the teams in server/simeon/desktop/packs.json ask
+    # for, checked the same way (iTunes search, by name and maker). Upwork's is
+    # Upwork's own app; Yelp's the one people know, not Yelp for Business;
+    # Mindbody's is Mindbody Business, for the studio; Follow Up Boss is listed
+    # by Zillow, which owns it; Jobber by Octopusapp Inc., Jobber's company.
+    "meta-ads": "com.facebook.MAdMan", "upwork": "com.upwork.ios.apps.bolt",
+    "karbon": "com.karbonhq.mobile.app", "appfolio": "com.appfolio.appfolio-property-manager",
+    "jobber": "com.getjobber.jobber", "companycam": "com.agilx.companycam",
+    "uber": "com.ubercab.UberClient", "instacart": "com.instacart",
+    "taskrabbit": "com.taskrabbit.site", "bamboohr": "com.bamboohr.bamboohrapp",
+    "7shifts": "com.sevenshifts.ios.sevenshifts", "veryfi": "com.infinitylabs.iqBoxy",
+    "yelp": "com.yelp.yelpiphone", "tiktok": "com.zhiliaoapp.musically",
+    "follow-up-boss": "com.followupboss.FUBApp", "matterport": "com.matterport.MatterScan",
+    "zoho-inventory": "com.zoho.zinventory", "toggl": "com.toggl.daneel",
+    "vidiq": "com.vidiq.app", "zoominfo": "com.zoominfo.enterprise",
+    "clio": "com.themis.clio", "maintainx": "com.letsroundup.application.MaintainX",
+    "route4me": "com.route4me.route4me", "oneup": "com.oneupappmobile",
+    "mindbody": "com.mindbodyonline.express", "tripadvisor": "com.tripadvisor.LocalPicks",
 }
 
 #: No iOS app of their own: the mark from connector-logos on its ground.
@@ -165,6 +183,18 @@ MADE = {
     "lusha": ("#ffffff", 0.78), "postman": ("#ffffff", 0.80),
     "tavily": ("#1f1e1e", "cover"), "exa": ("#1f40ed", "cover"),
     "shortcut": ("#494bcb", "cover"), "typefully": ("#34b4f6", "cover"),
+    # 22 October 2026: the 19 of the teams' 45 with no iOS app of their own
+    # (the App Store's matches were other makers' apps).
+    "crunchbase": ("#0061ff", "cover"), "gem": ("#0b0b0b", "cover"),
+    "loop-returns": ("#0472ff", "cover"), "courtlistener": ("#b53c2c", "cover"),
+    "ignition": ("#ffffff", 0.74), "youtube-transcript": ("#ffffff", "cover"),
+    "hypeauditor": ("#ffffff", 0.70), "heyreach": ("#8759ff", "cover"),
+    "contactout": ("#ffffff", 0.80), "hireflix": ("#5863ff", "cover"),
+    "draftable": ("#0a2b5c", "cover"), "chaser": ("#ffffff", "cover"),
+    "midpage": ("#ffffff", 0.70), "vaquill": ("#ffffff", 0.74),
+    "taxjar": ("#ffffff", 0.86), "aiwyn-tax": ("#0047bb", "cover"),
+    "seam": ("#090a0b", "cover"), "gatherup": ("#ffffff", 0.74),
+    "ignav": ("#ffffff", 0.66),
 }
 
 

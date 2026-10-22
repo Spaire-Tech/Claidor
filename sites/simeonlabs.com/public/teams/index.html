@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Teams | SimeonLabs</title>
+<meta name="description" content="Starter teams of five agents for one kind of business, ready to add to Simeon.">
+<link rel="canonical" href="https://simeonlabs.com/teams">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://simeonlabs.com/teams">
+<meta property="og:title" content="Teams | SimeonLabs">
+<meta property="og:description" content="Starter teams of five agents for one kind of business, ready to add to Simeon.">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400&display=swap">
+<style>
+/* The Teams pages (/teams, /teams/<pack>): the home page's bar, type and colours (source/page.html) around
+   the starter packs. Light only, every colour set here. Made by teams.py from server/simeon/desktop/packs.json. */
+:root{
+  --page:#fff; --soft:#f5f5f7; --ink:#1d1d1f; --ink2:#6e6e73; --ink3:#86868b; --line:#e5e5ea; --blue:#255a93;
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Inter","Helvetica Neue",Arial,sans-serif;
+  --serif:"Newsreader",Georgia,"Times New Roman",serif;
+  --gutter:max(20px,4.6vw);
+  --col:min(1260px,calc(100vw - 2 * var(--gutter)));
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--page);color:var(--ink);font-family:var(--font);font-size:17px;line-height:1.47;letter-spacing:-.022em;-webkit-font-smoothing:antialiased;overflow-x:clip}
+h1,h2,h3,p,ul,blockquote{margin:0}
+img{display:block;max-width:100%}
+a{color:inherit}
+.wrap{width:var(--col);margin-inline:auto}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.5em;border-radius:99px;background:#000;color:#fff;font-weight:400;letter-spacing:-.01em;white-space:nowrap;text-decoration:none;transition:background .2s}
+.btn:hover{background:#2b2b2d}
+.btn:focus-visible,a:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
+
+/* The bar, as on the home page; the name goes home. */
+.bar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.82);-webkit-backdrop-filter:saturate(1.8) blur(20px);backdrop-filter:saturate(1.8) blur(20px);padding-top:env(safe-area-inset-top,0px)}
+.bar .wrap{display:flex;justify-content:space-between;align-items:center;height:clamp(52px,3.8vw,76px)}
+.bar .wordmark{--wm:clamp(118px,10.8vw,217px);display:block;width:var(--wm);margin-left:calc(var(--wm) * -85 / 1585);background:var(--ink);-webkit-mask:url(/img/wordmark-labs.png) center/contain no-repeat;mask:url(/img/wordmark-labs.png) center/contain no-repeat;aspect-ratio:1585/460}
+.bar .acts{display:flex;align-items:center;gap:clamp(14px,1.2vw,22px);font-size:clamp(14px,1vw,20px)}
+.bar .acts>a:not(.btn){text-decoration:none;color:var(--ink2)}
+.bar .acts>a:not(.btn):hover,.bar .acts>a[aria-current]{color:var(--ink)}
+.bar .btn{height:clamp(28px,1.9vw,38px);padding:0 clamp(12px,.8vw,16px);font-size:clamp(14px,1vw,20px)}
+
+/* Faces in a row, each over the last, ringed in the ground they sit on. */
+.faces{display:flex;--fs:48px;--ring:var(--page)}
+.faces img,.faces .noface{width:var(--fs);height:var(--fs);border-radius:50%;object-fit:cover;flex:none;box-shadow:0 0 0 3px var(--ring);background:var(--soft)}
+.faces>*+*{margin-left:calc(var(--fs) * -.26)}
+.noface{display:grid;place-items:center;font-weight:600;color:var(--ink2);background:#e8e8ed}
+
+/* An app's tile: its own icon with an app icon's corners, else its mark on white, else its first letter. */
+.apps{display:flex;align-items:center;flex:none;--as:36px;--ring:var(--soft)}
+.app{position:relative;flex:none;display:grid;place-items:center;width:var(--as);height:var(--as);border-radius:calc(var(--as) * .2237);overflow:hidden;background:#fff;box-shadow:0 0 0 2.5px var(--ring)}
+.app::after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 0 .5px rgba(0,0,0,.16);pointer-events:none}
+.app+.app{margin-left:calc(var(--as) * -.14)}
+.app.icon img{width:100%;height:100%;object-fit:cover}
+.app.mark img{width:64%;height:64%;object-fit:contain}
+.app.mark i{display:block;width:64%;height:64%;-webkit-mask:var(--m) center/contain no-repeat;mask:var(--m) center/contain no-repeat}
+.app.letter{color:#3a3a3c;font-size:calc(var(--as) * .46);font-weight:600;letter-spacing:0;line-height:1}
+
+footer{margin-top:clamp(80px,8vw,140px);background:var(--soft);padding:20px 0 calc(40px + env(safe-area-inset-bottom,0px));font-size:12px;color:var(--ink2)}
+footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+footer nav{display:flex;gap:18px}
+footer a{color:var(--ink2);text-decoration:none}
+footer a:hover{color:var(--ink)}
+footer a[aria-current]{color:var(--ink)}
+
+.top{padding:clamp(56px,7vw,130px) 0 0}
+.top h1{font-family:var(--serif);font-weight:400;font-size:clamp(40px,4.4vw,72px);line-height:1.02;letter-spacing:-.025em}
+.top p{margin-top:clamp(14px,1.2vw,22px);max-width:34em;font-size:clamp(17px,1.25vw,22px);line-height:1.4;letter-spacing:-.015em;color:var(--ink2)}
+.packs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;margin:clamp(40px,4vw,72px) 0 0;padding:0;list-style:none}
+.pack{display:flex;flex-direction:column;height:100%;padding:clamp(26px,2.2vw,36px);border-radius:28px;background:var(--soft);text-decoration:none;transition:background .2s}
+.pack:hover{background:#efeff2}
+.pack .faces{--ring:var(--soft);--fs:clamp(46px,3.4vw,56px)}
+.pack:hover .faces{--ring:#efeff2}
+.pack h2{margin-top:clamp(22px,2vw,32px);font-size:clamp(21px,1.5vw,26px);font-weight:600;line-height:1.18;letter-spacing:-.022em}
+.pack p{margin-top:10px;flex:1;font-size:clamp(16px,1.05vw,18px);line-height:1.45;color:var(--ink2)}
+.pack .more{margin-top:20px;color:var(--blue);font-size:clamp(16px,1.05vw,18px)}
+.pack .more::after{content:" \203A"}
+@media (max-width:1068px){.packs{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:734px){.packs{grid-template-columns:1fr;gap:14px}.pack{border-radius:24px}.top{padding-top:44px}}
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="wrap">
+    <a class="wordmark" href="/" aria-label="SimeonLabs home"></a>
+    <div class="acts"><a href="/teams" aria-current="page">Teams</a><a class="btn" href="https://api.simeonlabs.com/desktop/download/mac">Download</a></div>
+  </div>
+</header>
+
+<main>
+<div class="wrap">
+<section class="top" aria-label="Teams">
+  <h1>Teams</h1>
+  <p>A team of five agents for your kind of business, ready to add to Simeon.</p>
+</section>
+<ul class="packs">
+<li><a class="pack" href="/teams/coffee-shop"><div class="faces" aria-hidden="true"><img src="/teams/faces/clay-02.webp?v=31c9d286" alt="" width="128" height="128"><img src="/teams/faces/clay-01.webp?v=69753ea5" alt="" width="128" height="128"><img src="/teams/faces/clay-03.webp?v=ab2ac8f8" alt="" width="128" height="128"><img src="/teams/faces/clay-04.webp?v=515ee960" alt="" width="128" height="128"><img src="/teams/faces/clay-05.webp?v=b86ef7a4" alt="" width="128" height="128"></div><h2>Simeon for Coffee Shops</h2><p>Five agents for the back of the shop: stock, shifts, socials, customers and money.</p><span class="more">Meet the team</span></a></li>
+<li><a class="pack" href="/teams/founders"><div class="faces" aria-hidden="true"><img src="/teams/faces/clay-07.webp?v=c5c27d78" alt="" width="128" height="128"><img src="/teams/faces/clay-06.webp?v=8b4ba6a5" alt="" width="128" height="128"><img src="/teams/faces/clay-10.webp?v=1f1c0f72" alt="" width="128" height="128"><img src="/teams/faces/clay-08.webp?v=e4f281c6" alt="" width="128" height="128"><img src="/teams/faces/clay-09.webp?v=f590ce02" alt="" width="128" height="128"></div><h2>Simeon for Founders</h2><p>Five agents for running a startup: investors, money, product, hiring and growth.</p><span class="more">Meet the team</span></a></li>
+<li><a class="pack" href="/teams/agencies"><div class="faces" aria-hidden="true"><img src="/teams/faces/clay-14.webp?v=8f3ff863" alt="" width="128" height="128"><img src="/teams/faces/clay-11.webp?v=879ed87b" alt="" width="128" height="128"><img src="/teams/faces/clay-16.webp?v=18ca1fdf" alt="" width="128" height="128"><img src="/teams/faces/clay-12.webp?v=2376ac0a" alt="" width="128" height="128"><img src="/teams/faces/clay-18.webp?v=05c4fc5b" alt="" width="128" height="128"></div><h2>Simeon for Agencies</h2><p>Five agents for running an agency: clients, projects, billing, new business and reports.</p><span class="more">Meet the team</span></a></li>
+<li><a class="pack" href="/teams/real-estate"><div class="faces" aria-hidden="true"><img src="/teams/faces/clay-19.webp?v=9903d8f3" alt="" width="128" height="128"><img src="/teams/faces/clay-13.webp?v=10c9a37b" alt="" width="128" height="128"><img src="/teams/faces/clay-20.webp?v=626182e0" alt="" width="128" height="128"><img src="/teams/faces/clay-15.webp?v=3fa321e2" alt="" width="128" height="128"><img src="/teams/faces/clay-22.webp?v=da9397f4" alt="" width="128" height="128"></div><h2>Simeon for Real Estate Agents</h2><p>Five agents for selling homes: leads, listings, showings, deals and the market.</p><span class="more">Meet the team</span></a></li>
+<li><a class="pack" href="/teams/online-stores"><div class="faces" aria-hidden="true"><img src="/teams/faces/clay-17.webp?v=0ebf69f9" alt="" width="128" height="128"><img src="/teams/faces/clay-23.webp?v=53ecc842" alt="" width="128" height="128"><img src="/teams/faces/clay-21.webp?v=e52648d4" alt="" width="128" height="128"><img src="/teams/faces/clay-24.webp?v=eef57308" alt="" width="128" height="128"><img src="/teams/faces/clay-25.webp?v=68a5eecb" alt="" width="128" height="128"></div><h2>Simeon for Online Stores</h2><p>Five agents for running an online store: orders, support, products, stock and marketing.</p><span class="more">Meet the team</span></a></li>
+<li><a class="pack" href="/teams/freelancers"><div class="faces" aria-hidden="true"><img src="/teams/faces/clay-26.webp?v=0f6a931f" alt="" width="128" height="128"><img src="/teams/faces/clay-27.webp?v=7474345e" alt="" width="128" height="128"><img src="/teams/faces/clay-29.webp?v=89941f1c" alt="" width="128" height="128"><img src="/teams/faces/clay-28.webp?v=fe9d6c65" alt="" width="128" height="128"><img src="/teams/faces/clay-01.webp?v=69753ea5" alt="" width="128" height="128"></div><h2>Simeon for Freelancers</h2><p>Five agents for working on your own: inbox, proposals, invoices, time and leads.</p><span class="more">Meet the team</span></a></li>
+<li><a class="pack" href="/teams/creators"><div class="faces" aria-hidden="true"><img src="/teams/faces/clay-30.webp?v=4f78c813" alt="" width="128" height="128"><img src="/teams/faces/clay-03.webp?v=ab2ac8f8" alt="" width="128" height="128"><img src="/teams/faces/clay-02.webp?v=31c9d286" alt="" width="128" height="128"><img src="/teams/faces/clay-04.webp?v=515ee960" alt="" width="128" height="128"><img src="/teams/faces/clay-05.webp?v=b86ef7a4" alt="" width="128" height="128"></div><h2>Simeon for Creators</h2><p>Five agents for making content: ideas, scripts, sponsors, community and stats.</p><span class="more">Meet the team</span></a></li>
+<li><a class="pack" href="/teams/sales"><div class="faces" aria-hidden="true"><img src="/teams/faces/clay-06.webp?v=8b4ba6a5" alt="" width="128" height="128"><img src="/teams/faces/clay-07.webp?v=c5c27d78" alt="" width="128" height="128"><img src="/teams/faces/clay-10.webp?v=1f1c0f72" alt="" width="128" height="128"><img src="/teams/faces/clay-08.webp?v=e4f281c6" alt="" width="128" height="128"><img src="/teams/faces/clay-14.webp?v=8f3ff863" alt="" width="128" height="128"></div><h2>Simeon for Salespeople</h2><p>Five agents for selling: research, outreach, the CRM, coaching and the pipeline.</p><span class="more">Meet the team</span></a></li>
+<li><a class="pack" href="/teams/recruiters"><div class="faces" aria-hidden="true"><img src="/teams/faces/clay-09.webp?v=f590ce02" alt="" width="128" height="128"><img src="/teams/faces/clay-16.webp?v=18ca1fdf" alt="" width="128" height="128"><img src="/teams/faces/clay-11.webp?v=879ed87b" alt="" width="128" height="128"><img src="/teams/faces/clay-18.webp?v=05c4fc5b" alt="" width="128" height="128"><img src="/teams/faces/clay-12.webp?v=2376ac0a" alt="" width="128" height="128"></div><h2>Simeon for Recruiters</h2><p>Five agents for hiring: sourcing, screening, interviews, candidates and offers.</p><span class="more">Meet the team</span></a></li>
+<li><a class="pack" href="/teams/law-firms"><div class="faces" aria-hidden="true"><img src="/teams/faces/clay-19.webp?v=9903d8f3" alt="" width="128" height="128"><img src="/teams/faces/clay-13.webp?v=10c9a37b" alt="" width="128" height="128"><img src="/teams/faces/clay-20.webp?v=626182e0" alt="" width="128" height="128"><img src="/teams/faces/clay-15.webp?v=3fa321e2" alt="" width="128" height="128"><img src="/teams/faces/clay-22.webp?v=da9397f4" alt="" width="128" height="128"></div><h2>Simeon for Law Firms</h2><p>Five agents for a law firm: intake, paralegal work, deadlines, billing and research.</p><span class="more">Meet the team</span></a></li>
+<li><a class="pack" href="/teams/accountants"><div class="faces" aria-hidden="true"><img src="/teams/faces/clay-17.webp?v=0ebf69f9" alt="" width="128" height="128"><img src="/teams/faces/clay-23.webp?v=53ecc842" alt="" width="128" height="128"><img src="/teams/faces/clay-21.webp?v=e52648d4" alt="" width="128" height="128"><img src="/teams/faces/clay-24.webp?v=eef57308" alt="" width="128" height="128"><img src="/teams/faces/clay-25.webp?v=68a5eecb" alt="" width="128" height="128"></div><h2>Simeon for Accountants</h2><p>Five agents for an accounting practice: documents, expenses, fees, deadlines and client updates.</p><span class="more">Meet the team</span></a></li>
+<li><a class="pack" href="/teams/property"><div class="faces" aria-hidden="true"><img src="/teams/faces/clay-26.webp?v=0f6a931f" alt="" width="128" height="128"><img src="/teams/faces/clay-27.webp?v=7474345e" alt="" width="128" height="128"><img src="/teams/faces/clay-29.webp?v=89941f1c" alt="" width="128" height="128"><img src="/teams/faces/clay-28.webp?v=fe9d6c65" alt="" width="128" height="128"><img src="/teams/faces/clay-01.webp?v=69753ea5" alt="" width="128" height="128"></div><h2>Simeon for Landlords</h2><p>Five agents for renting out homes: tenants, repairs, rent, leases and vacancies.</p><span class="more">Meet the team</span></a></li>
+<li><a class="pack" href="/teams/trades"><div class="faces" aria-hidden="true"><img src="/teams/faces/clay-30.webp?v=4f78c813" alt="" width="128" height="128"><img src="/teams/faces/clay-03.webp?v=ab2ac8f8" alt="" width="128" height="128"><img src="/teams/faces/clay-02.webp?v=31c9d286" alt="" width="128" height="128"><img src="/teams/faces/clay-04.webp?v=515ee960" alt="" width="128" height="128"><img src="/teams/faces/clay-05.webp?v=b86ef7a4" alt="" width="128" height="128"></div><h2>Simeon for Contractors</h2><p>Five agents for running a trade business: quotes, the schedule, supplies, invoices and reviews.</p><span class="more">Meet the team</span></a></li>
+<li><a class="pack" href="/teams/salons"><div class="faces" aria-hidden="true"><img src="/teams/faces/clay-06.webp?v=8b4ba6a5" alt="" width="128" height="128"><img src="/teams/faces/clay-10.webp?v=1f1c0f72" alt="" width="128" height="128"><img src="/teams/faces/clay-14.webp?v=8f3ff863" alt="" width="128" height="128"><img src="/teams/faces/clay-16.webp?v=18ca1fdf" alt="" width="128" height="128"><img src="/teams/faces/clay-18.webp?v=05c4fc5b" alt="" width="128" height="128"></div><h2>Simeon for Salons and Spas</h2><p>Five agents for a salon or spa: bookings, reminders, reviews, socials and win-back.</p><span class="more">Meet the team</span></a></li>
+<li><a class="pack" href="/teams/life"><div class="faces" aria-hidden="true"><img src="/teams/faces/clay-19.webp?v=9903d8f3" alt="" width="128" height="128"><img src="/teams/faces/clay-07.webp?v=c5c27d78" alt="" width="128" height="128"><img src="/teams/faces/clay-20.webp?v=626182e0" alt="" width="128" height="128"><img src="/teams/faces/clay-08.webp?v=e4f281c6" alt="" width="128" height="128"><img src="/teams/faces/clay-22.webp?v=da9397f4" alt="" width="128" height="128"></div><h2>Simeon for Busy Professionals</h2><p>Five agents for life outside work: inbox, travel, errands, money and family.</p><span class="more">Meet the team</span></a></li>
+</ul>
+</div>
+</main>
+
+<footer><div class="wrap"><span>Copyright © 2026 Spaire, Inc. All rights reserved.</span><nav><a href="/teams" aria-current="page">Teams</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="mailto:support@simeonlabs.com">Contact</a></nav></div></footer>
+
+</body>
+</html>

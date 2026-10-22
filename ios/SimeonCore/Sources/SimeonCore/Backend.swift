@@ -133,6 +133,8 @@ public protocol AgentBackend: AnyObject, Sendable {
   func createAgent(name: String, face: String?, voiceId: String?) async throws -> String
   /** The same, with its title ("Personal Shopper"; empty for none). */
   func createAgent(name: String, title: String, face: String?, voiceId: String?) async throws -> String
+  /** The same, with its instructions (`description`): a starter pack's agents (StarterPack), which start on them at once. */
+  func createAgent(name: String, title: String, description: String, face: String?, voiceId: String?) async throws -> String
   /** A new group of agents; its id. */
   func createGroup(name: String, memberIds: [String]) async throws -> String
   /** The answer to a question card. */
@@ -179,6 +181,11 @@ extension AgentBackend {
   /** A backend that keeps no titles (stand-ins) makes the agent without one. */
   public func createAgent(name: String, title: String, face: String?, voiceId: String?) async throws -> String {
     try await createAgent(name: name, face: face, voiceId: voiceId)
+  }
+
+  /** A backend that keeps no instructions (the demo, stand-ins) makes the agent without them. */
+  public func createAgent(name: String, title: String, description: String, face: String?, voiceId: String?) async throws -> String {
+    try await createAgent(name: name, title: title, face: face, voiceId: voiceId)
   }
 }
 
@@ -382,10 +389,15 @@ public final class LiveBackend: AgentBackend, @unchecked Sendable {
   }
 
   public func createAgent(name: String, title: String, face: String?, voiceId: String?) async throws -> String {
+    try await createAgent(name: name, title: title, description: "", face: face, voiceId: voiceId)
+  }
+
+  public func createAgent(name: String, title: String, description: String, face: String?, voiceId: String?) async throws -> String {
     // The window's New Agent (router-renderer-patch.mjs, phone-create-sheets), introduced at once. The face the sheet showed is
     // kept on it (`avatarShape`) and put on once it is listed (AgentFaces); its colour is the host's (no app shows it now).
+    // Its description is its instructions: a first message given a concrete assignment starts on it (onboarding.ts).
     var args: JSON = [
-      "name": .string(name), "description": "",
+      "name": .string(name), "description": .string(description),
       "isKickstartRequested": true, "origin": "user", "clientNonce": .string("ios-\(UUID().uuidString.lowercased())"),
     ]
     // Its title is its role in its own prompt and the tag under its name (`mintAgent` keeps it, host-gateway-api.ts).

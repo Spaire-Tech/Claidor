@@ -1,4 +1,10 @@
 {
+ "7shifts": {
+  "from": "App Store",
+  "bundleId": "com.sevenshifts.ios.sevenshifts",
+  "app": "7shifts: Employee Scheduling",
+  "seller": "7shifts, Inc."
+ },
  "ahrefs": {
   "from": "connector-logos/ahrefs.svg",
   "ground": "#3a57fc",
@@ -16,6 +22,11 @@
   "app": "Airtable",
   "seller": "Formagrid Inc."
  },
+ "aiwyn-tax": {
+  "from": "connector-logos/aiwyn-tax.svg",
+  "ground": "#0047bb",
+  "fit": "cover"
+ },
  "amplitude": {
   "from": "connector-logos/amplitude.svg",
   "ground": "#ffffff",
@@ -25,6 +36,12 @@
   "from": "connector-logos/apollo.svg",
   "ground": "#ebf212",
   "fit": "cover"
+ },
+ "appfolio": {
+  "from": "App Store",
+  "bundleId": "com.appfolio.appfolio-property-manager",
+  "app": "AppFolio Property Manager",
+  "seller": "AppFolio"
  },
  "asana": {
   "from": "App Store",
@@ -48,6 +65,12 @@
   "bundleId": "com.avoma.Avoma",
   "app": "Avoma",
   "seller": "Avoma Inc"
+ },
+ "bamboohr": {
+  "from": "App Store",
+  "bundleId": "com.bamboohr.bamboohrapp",
+  "app": "BambooHR",
+  "seller": "Bamboo HR LLC"
  },
  "bannerbear": {
   "from": "connector-logos/bannerbear.svg",
@@ -138,6 +161,11 @@
   "ground": "#1d1f20",
   "fit": "cover"
  },
+ "chaser": {
+  "from": "connector-logos/chaser.svg",
+  "ground": "#ffffff",
+  "fit": "cover"
+ },
  "clay": {
   "from": "connector-logos/clay.svg",
   "ground": "#ffffff",
@@ -148,6 +176,12 @@
   "bundleId": "com.clickup.mobile",
   "app": "ClickUp: Tasks, Chat, Docs, AI",
   "seller": "Mango Technologies, Inc."
+ },
+ "clio": {
+  "from": "App Store",
+  "bundleId": "com.themis.clio",
+  "app": "Clio for Law Firms and Lawyers",
+  "seller": "Themis Solutions Inc."
  },
  "close": {
   "from": "App Store",
@@ -176,21 +210,42 @@
   "app": "Coinbase: Buy Crypto & Stocks",
   "seller": "Coinbase, Inc."
  },
+ "companycam": {
+  "from": "App Store",
+  "bundleId": "com.agilx.companycam",
+  "app": "CompanyCam",
+  "seller": "CompanyCam, Inc"
+ },
  "confluence": {
   "from": "App Store",
   "bundleId": "com.atlassian.confluence.app",
   "app": "Confluence Cloud",
   "seller": "Atlassian Pty Ltd"
  },
+ "contactout": {
+  "from": "connector-logos/contactout.svg",
+  "ground": "#ffffff",
+  "fit": "0.8"
+ },
  "contentful": {
   "from": "connector-logos/contentful.svg",
   "ground": "#ffffff",
   "fit": "0.7"
  },
+ "courtlistener": {
+  "from": "connector-logos/courtlistener.svg",
+  "ground": "#b53c2c",
+  "fit": "cover"
+ },
  "creatomate": {
   "from": "connector-logos/creatomate.svg",
   "ground": "#ffffff",
   "fit": "0.78"
+ },
+ "crunchbase": {
+  "from": "connector-logos/crunchbase.svg",
+  "ground": "#0061ff",
+  "fit": "cover"
  },
  "customer-io": {
   "from": "connector-logos/customer-io.svg",
@@ -230,6 +285,11 @@
   "bundleId": "com.docusign.DocuSignIt",
   "app": "Docusign - Upload & Sign Docs",
   "seller": "Docusign"
+ },
+ "draftable": {
+  "from": "connector-logos/draftable.svg",
+  "ground": "#0a2b5c",
+  "fit": "cover"
  },
  "dropbox": {
   "from": "App Store",
@@ -309,6 +369,12 @@
   "app": "Fireflies: AI notetaker",
   "seller": "FIREFLIES.AI CORP."
  },
+ "follow-up-boss": {
+  "from": "App Store",
+  "bundleId": "com.followupboss.FUBApp",
+  "app": "Follow Up Boss",
+  "seller": "Zillow, Inc."
+ },
  "freshbooks": {
   "from": "App Store",
   "bundleId": "com.freshbooks.helios",
@@ -320,6 +386,16 @@
   "bundleId": "app.gamma.mobile",
   "app": "Gamma: AI Slides & Design",
   "seller": "Gamma Tech, Inc."
+ },
+ "gatherup": {
+  "from": "connector-logos/gatherup.svg",
+  "ground": "#ffffff",
+  "fit": "0.74"
+ },
+ "gem": {
+  "from": "connector-logos/gem.svg",
+  "ground": "#0b0b0b",
+  "fit": "cover"
  },
  "getresponse": {
   "from": "App Store",
@@ -474,9 +550,19 @@
   "app": "AI Avatar Generator - HeyGen",
   "seller": "HeyGen Technology Inc."
  },
+ "heyreach": {
+  "from": "connector-logos/heyreach.svg",
+  "ground": "#8759ff",
+  "fit": "cover"
+ },
  "higgsfield": {
   "from": "connector-logos/higgsfield.svg",
   "ground": "#d1fe17",
+  "fit": "cover"
+ },
+ "hireflix": {
+  "from": "connector-logos/hireflix.svg",
+  "ground": "#5863ff",
   "fit": "cover"
  },
  "hubspot": {
@@ -494,6 +580,27 @@
   "from": "connector-logos/hunter.svg",
   "ground": "#ffffff",
   "fit": "cover"
+ },
+ "hypeauditor": {
+  "from": "connector-logos/hypeauditor.svg",
+  "ground": "#ffffff",
+  "fit": "0.7"
+ },
+ "ignav": {
+  "from": "connector-logos/ignav.svg",
+  "ground": "#ffffff",
+  "fit": "0.66"
+ },
+ "ignition": {
+  "from": "connector-logos/ignition.png",
+  "ground": "#ffffff",
+  "fit": "0.74"
+ },
+ "instacart": {
+  "from": "App Store",
+  "bundleId": "com.instacart",
+  "app": "Instacart: Groceries & Food",
+  "seller": "Maplebear Inc"
  },
  "instagram": {
   "from": "App Store",
@@ -513,11 +620,23 @@
   "app": "Jira Cloud by Atlassian",
   "seller": "Atlassian Pty Ltd"
  },
+ "jobber": {
+  "from": "App Store",
+  "bundleId": "com.getjobber.jobber",
+  "app": "Jobber Field Service Software",
+  "seller": "Octopusapp Inc"
+ },
  "jotform": {
   "from": "App Store",
   "bundleId": "com.jotform.v2",
   "app": "Jotform - Form, Sign & Survey",
   "seller": "Jotform Inc"
+ },
+ "karbon": {
+  "from": "App Store",
+  "bundleId": "com.karbonhq.mobile.app",
+  "app": "Karbon Practice Management",
+  "seller": "Karbon Inc"
  },
  "kit": {
   "from": "connector-logos/kit.svg",
@@ -551,6 +670,11 @@
   "bundleId": "com.linkedin.LinkedIn",
   "app": "LinkedIn: Community & Network",
   "seller": "LinkedIn Corporation"
+ },
+ "loop-returns": {
+  "from": "connector-logos/loop-returns.svg",
+  "ground": "#0472ff",
+  "fit": "cover"
  },
  "lovable": {
   "from": "App Store",
@@ -586,17 +710,35 @@
   "app": "MailerLite Manager",
   "seller": "MailerLite, Inc."
  },
+ "maintainx": {
+  "from": "App Store",
+  "bundleId": "com.letsroundup.application.MaintainX",
+  "app": "MaintainX - CMMS & EAM",
+  "seller": "MAINTAINX INC."
+ },
  "make": {
   "from": "App Store",
   "bundleId": "com.Integromat.skoumal",
   "app": "Make for iOS",
   "seller": "Celonis s.r.o."
  },
+ "matterport": {
+  "from": "App Store",
+  "bundleId": "com.matterport.MatterScan",
+  "app": "Matterport",
+  "seller": "Matterport Inc"
+ },
  "mercury": {
   "from": "App Store",
   "bundleId": "com.mercury.iOSApp",
   "app": "Mercury | Bank Differently",
   "seller": "Mercury Technologies, Inc."
+ },
+ "meta-ads": {
+  "from": "App Store",
+  "bundleId": "com.facebook.MAdMan",
+  "app": "Meta Ads Manager",
+  "seller": "Meta Platforms, Inc."
  },
  "microsoft-excel": {
   "from": "App Store",
@@ -615,6 +757,17 @@
   "bundleId": "com.microsoft.to-do",
   "app": "Microsoft To Do",
   "seller": "Microsoft Corporation"
+ },
+ "midpage": {
+  "from": "connector-logos/midpage.svg",
+  "ground": "#ffffff",
+  "fit": "0.7"
+ },
+ "mindbody": {
+  "from": "App Store",
+  "bundleId": "com.mindbodyonline.express",
+  "app": "Mindbody Business",
+  "seller": "MINDBODY Inc."
  },
  "miro": {
   "from": "App Store",
@@ -698,6 +851,12 @@
   "bundleId": "com.microsoft.onenote",
   "app": "Microsoft OneNote",
   "seller": "Microsoft Corporation"
+ },
+ "oneup": {
+  "from": "App Store",
+  "bundleId": "com.oneupappmobile",
+  "app": "OneUp: Social Media Scheduler",
+  "seller": "OneUp App LLC"
  },
  "otter": {
   "from": "App Store",
@@ -819,6 +978,12 @@
   "ground": "#ffffff",
   "fit": "cover"
  },
+ "route4me": {
+  "from": "App Store",
+  "bundleId": "com.route4me.route4me",
+  "app": "Route4Me Route Planner",
+  "seller": "Route4Me Inc"
+ },
  "runway": {
   "from": "App Store",
   "bundleId": "com.runwayml.mobiletest",
@@ -834,6 +999,11 @@
  "sanity": {
   "from": "connector-logos/sanity.svg",
   "ground": "#0d0e12",
+  "fit": "cover"
+ },
+ "seam": {
+  "from": "connector-logos/seam.svg",
+  "ground": "#090a0b",
   "fit": "cover"
  },
  "semrush": {
@@ -925,16 +1095,33 @@
   "ground": "#ffffff",
   "fit": "cover"
  },
+ "taskrabbit": {
+  "from": "App Store",
+  "bundleId": "com.taskrabbit.site",
+  "app": "Taskrabbit - Handyman & more",
+  "seller": "TaskRabbit Inc"
+ },
  "tavily": {
   "from": "connector-logos/tavily.svg",
   "ground": "#1f1e1e",
   "fit": "cover"
+ },
+ "taxjar": {
+  "from": "connector-logos/taxjar.svg",
+  "ground": "#ffffff",
+  "fit": "0.86"
  },
  "ticktick": {
   "from": "App Store",
   "bundleId": "com.TickTick.task",
   "app": "TickTick:To-Do List & Calendar",
   "seller": "Appest Limited"
+ },
+ "tiktok": {
+  "from": "App Store",
+  "bundleId": "com.zhiliaoapp.musically",
+  "app": "TikTok - Videos, Shop & LIVE",
+  "seller": "TIKTOK PTE. LTD."
  },
  "tiktok-ads": {
   "from": "App Store",
@@ -954,11 +1141,23 @@
   "app": "Todoist: To Do List & Calendar",
   "seller": "Todoist Inc."
  },
+ "toggl": {
+  "from": "App Store",
+  "bundleId": "com.toggl.daneel",
+  "app": "Toggl Track: Hours & Time Log",
+  "seller": "Toggl OU"
+ },
  "trello": {
   "from": "App Store",
   "bundleId": "com.fogcreek.trello",
   "app": "Trello: Daily Task Tracker",
   "seller": "Trello, Inc."
+ },
+ "tripadvisor": {
+  "from": "App Store",
+  "bundleId": "com.tripadvisor.LocalPicks",
+  "app": "Tripadvisor: Plan & Book Trips",
+  "seller": "Tripadvisor"
  },
  "twitch": {
   "from": "App Store",
@@ -976,10 +1175,39 @@
   "ground": "#34b4f6",
   "fit": "cover"
  },
+ "uber": {
+  "from": "App Store",
+  "bundleId": "com.ubercab.UberClient",
+  "app": "Uber - Rides, Eats, Hotels",
+  "seller": "Uber Technologies, Inc."
+ },
+ "upwork": {
+  "from": "App Store",
+  "bundleId": "com.upwork.ios.apps.bolt",
+  "app": "Upwork",
+  "seller": "Upwork Global Inc."
+ },
+ "vaquill": {
+  "from": "connector-logos/vaquill.svg",
+  "ground": "#ffffff",
+  "fit": "0.74"
+ },
  "vercel": {
   "from": "connector-logos/vercel.svg",
   "ground": "#000000",
   "fit": "cover"
+ },
+ "veryfi": {
+  "from": "App Store",
+  "bundleId": "com.infinitylabs.iqBoxy",
+  "app": "Veryfi Receipts OCR & Expenses",
+  "seller": "Veryfi, Inc."
+ },
+ "vidiq": {
+  "from": "App Store",
+  "bundleId": "com.vidiq.app",
+  "app": "vidIQ for YouTube & Instagram",
+  "seller": "vidIQ, Inc"
  },
  "webex": {
   "from": "App Store",
@@ -1027,6 +1255,12 @@
   "app": "Xero Accounting for business",
   "seller": "Xero Ltd"
  },
+ "yelp": {
+  "from": "App Store",
+  "bundleId": "com.yelp.yelpiphone",
+  "app": "Yelp: Food, Services & Reviews",
+  "seller": "Yelp, Inc."
+ },
  "ynab": {
   "from": "App Store",
   "bundleId": "com.youneedabudget.evergreen.YNAB-Evergreen",
@@ -1039,6 +1273,11 @@
   "app": "YouTube",
   "seller": "Google LLC"
  },
+ "youtube-transcript": {
+  "from": "connector-logos/youtube-transcript.svg",
+  "ground": "#ffffff",
+  "fit": "cover"
+ },
  "zendesk": {
   "from": "App Store",
   "bundleId": "com.zendesk.agent.appstore",
@@ -1050,10 +1289,22 @@
   "ground": "#ffffff",
   "fit": "cover"
  },
+ "zoho-inventory": {
+  "from": "App Store",
+  "bundleId": "com.zoho.zinventory",
+  "app": "Zoho Inventory Management App",
+  "seller": "Zoho Corporation"
+ },
  "zoom": {
   "from": "App Store",
   "bundleId": "us.zoom.videomeetings",
   "app": "Zoom Workplace",
   "seller": "Zoom Communications, Inc."
+ },
+ "zoominfo": {
+  "from": "App Store",
+  "bundleId": "com.zoominfo.enterprise",
+  "app": "ZoomInfo",
+  "seller": "Zoom Information, Inc."
  }
 }
