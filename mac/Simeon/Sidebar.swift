@@ -190,22 +190,18 @@ private struct SidebarHead: View {
   }
 }
 
-/**
- * The account's initials (40) and Connect apps as a white pill as wide as
- * what is left, 40 high (`sand-agents-sidebar__footer`, the founder, 22
- * October 2026: "so thin in height"; the list fades out over it,
- * `AgentList`); the computer's Update at the right (step 13).
- */
+/** The account's initials (32) and Connect apps beside them (`sand-agents-sidebar__footer`); the computer's Update at the right (step 13). */
 private struct SidebarFoot: View {
   @Environment(\.colorScheme) private var scheme
 
   var body: some View {
     HStack(spacing: 8) {
-      AccountDisc(size: 40)
+      AccountDisc()
       ConnectApps()
+      Spacer(minLength: 0)
       ComputerUpdatePill(look: Look(scheme))
     }
-    .padding(.top, 4)
+    .padding(.top, 2)
     .padding(.horizontal, 12)
     .padding(.bottom, 12)
   }
@@ -292,10 +288,8 @@ private struct NewChatDisc: View {
 /**
  * The account's initials, or its picture (`Open account menu`): the account
  * menu above them (step 10). A touch larger under the pointer (1.04, 0.18 s).
- * 32 on the rail, 40 at the sidebar's foot.
  */
 private struct AccountDisc: View {
-  var size: CGFloat = 32
   @Environment(AppStore.self) private var store
   @Environment(MacSession.self) private var session
   @Environment(SettingsState.self) private var settings
@@ -306,14 +300,14 @@ private struct AccountDisc: View {
 
   var body: some View {
     let look = Look(scheme)
-    Disc(size: size, help: AccountMenu.opener, tooltip: false, action: {
+    Disc(size: 32, help: AccountMenu.opener, tooltip: false, action: {
       AccountActions.openMenu(above: spot.frame, store: store, session: session, settings: settings, account: account)
     }) {
       ZStack {
         initials(look)
         if let url = store.account?.pictureURL {
           AccountPicture(url: url)
-            .frame(width: size, height: size)
+            .frame(width: 32, height: 32)
             .clipShape(Circle())
         }
       }
@@ -326,7 +320,7 @@ private struct AccountDisc: View {
 
   private func initials(_ look: Look) -> some View {
     Text(store.account?.initials ?? "")
-      .font(.system(size: size >= 40 ? 14 : 12, weight: .medium))
+      .font(.system(size: 12, weight: .medium))
       .tracking(0.24)
       .foregroundStyle(look.initials)
   }
@@ -358,12 +352,10 @@ private struct AccountPicture: View {
 }
 
 /**
- * Connect apps (`sand-agents-sidebar__plugins`), as the founder's reference
- * (22 October 2026): a white pill 40 high as wide as there is room, its
- * words 15 in the text colour, then Gmail, Calendar and Drive on three
- * small tiles, overlapping; the tiles go when the words alone fit (a narrow
- * sidebar, a longer language). Grey under the pointer. It opens Plugins on
- * Marketplace (step 9).
+ * Connect apps (`sand-agents-sidebar__plugins`): 15, medium, the window's
+ * blue, then Gmail, Calendar and Drive on three white tiles, the first
+ * turned 7° left, the last 7° right. It opens Plugins on Marketplace
+ * (step 9).
  */
 private struct ConnectApps: View {
   @State private var hovering = false
@@ -373,46 +365,30 @@ private struct ConnectApps: View {
   var body: some View {
     let look = Look(scheme)
     Button { plugins.open() } label: {
-      ViewThatFits(in: .horizontal) {
-        HStack(spacing: 8) {
-          words(look)
-          HStack(spacing: -4) {
-            LogoTile(image: "Gmail", look: look)
-            LogoTile(image: "GoogleCalendar", look: look)
-            LogoTile(image: "GoogleDrive", look: look)
-          }
-        }
-        words(look)
-      }
-      .padding(.horizontal, 12)
-      .frame(maxWidth: .infinity)
-      .frame(height: 40)
-      .background {
-        ZStack {
-          Capsule().fill(look.tile)
-          if hovering { Capsule().fill(look.rowHover) }
+      HStack(spacing: 10) {
+        Text("Connect apps")
+          .font(.system(size: 15, weight: .medium))
+          .tracking(-0.075)
+          .foregroundStyle(hovering ? look.blueHover : look.blue)
+          .fixedSize()
+        HStack(spacing: -4) {
+          LogoTile(image: "Gmail", turn: -7, look: look)
+          LogoTile(image: "GoogleCalendar", turn: 0, look: look)
+          LogoTile(image: "GoogleDrive", turn: 7, look: look)
         }
       }
-      .overlay { Capsule().inset(by: -0.25).stroke(look.tileHairline, lineWidth: 0.5) }
-      .shadow(color: look.tileShadow, radius: 1, x: 0, y: 1)
-      .contentShape(Capsule())
+      .padding(.horizontal, 8)
+      .frame(height: 32)
+      .contentShape(Rectangle())
     }
     .buttonStyle(.hand)
     .onHover { hovering = $0 }
   }
-
-  private func words(_ look: Look) -> some View {
-    Text("Connect apps")
-      .font(.system(size: 15, weight: .medium))
-      .tracking(-0.075)
-      .foregroundStyle(look.ink)
-      .lineLimit(1)
-  }
 }
 
-/** An app's logo on a small white tile (18, 5 round), for Connect apps. */
 private struct LogoTile: View {
   let image: String
+  let turn: Double
   let look: Look
 
   var body: some View {
@@ -420,15 +396,16 @@ private struct LogoTile: View {
       .resizable()
       .interpolation(.high)
       .aspectRatio(contentMode: .fit)
-      .frame(width: 12)
-      .frame(width: 18, height: 18)
-      .background(look.tile, in: RoundedRectangle(cornerRadius: 5))
+      .frame(width: 17)
+      .frame(width: 26, height: 26)
+      .background(look.tile, in: RoundedRectangle(cornerRadius: 7))
       .overlay {
-        RoundedRectangle(cornerRadius: 5)
-          .inset(by: -0.25)
-          .stroke(look.tileHairline, lineWidth: 0.5)
+        RoundedRectangle(cornerRadius: 7)
+          .inset(by: -0.5)
+          .stroke(look.tileHairline, lineWidth: 1)
       }
-      .shadow(color: look.tileShadow, radius: 0.5, x: 0, y: 0.5)
+      .shadow(color: look.tileShadow, radius: 1, x: 0, y: 1)
+      .rotationEffect(.degrees(turn))
   }
 }
 
