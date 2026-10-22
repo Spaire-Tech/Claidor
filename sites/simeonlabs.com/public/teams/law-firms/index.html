@@ -84,10 +84,10 @@ footer a[aria-current]{color:var(--ink)}
 .add{display:flex;flex-direction:column;align-items:center;margin-top:clamp(26px,2.4vw,38px)}
 .add .btn{height:clamp(46px,3vw,54px);padding:0 clamp(22px,1.6vw,30px);font-size:clamp(16px,1.1vw,19px)}
 .add .btn svg{width:1em;height:1em;flex:none;margin-left:-.15em}
-.add-note{margin-top:14px;font-size:15px;color:var(--ink2)}
-.add-note a{color:var(--blue);text-decoration:none;white-space:nowrap}
-.add-note a:hover{text-decoration:underline}
+.add-note{margin:0}
 .add-note[hidden]{display:none}
+.add.noapp .add-btn{display:none}
+.add .btn .dl{margin:0 -.15em 0 0} /* Download for macOS, its arrow after the words, as on the home page */
 
 /* The agents: one card each, the face beside what it does on a computer, above it on a phone. */
 .team{display:grid;gap:18px;margin:clamp(56px,6vw,96px) 0 0;padding:0;list-style:none}
@@ -136,7 +136,7 @@ footer a[aria-current]{color:var(--ink)}
   <div class="faces" aria-hidden="true"><img src="/teams/faces/clay-19.webp?v=9903d8f3" alt="" width="128" height="128"><img src="/teams/faces/clay-13.webp?v=10c9a37b" alt="" width="128" height="128"><img src="/teams/faces/clay-20.webp?v=626182e0" alt="" width="128" height="128"><img src="/teams/faces/clay-15.webp?v=3fa321e2" alt="" width="128" height="128"><img src="/teams/faces/clay-22.webp?v=da9397f4" alt="" width="128" height="128"></div>
   <h1>Simeon for Law Firms</h1>
   <p class="lede">Five agents for a law firm: intake, paralegal work, deadlines, billing and research.</p>
-  <div class="add"><a class="btn add-btn" href="simeon://app/v1/pack/add?id=law-firms" data-pack="law-firms"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>Add to Simeon</a><p class="add-note" hidden aria-live="polite"></p></div>
+  <div class="add"><a class="btn add-btn" href="simeon://app/v1/pack/add?id=law-firms" data-pack="law-firms"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>Add to Simeon</a><p class="add-note" hidden aria-live="polite"><a class="btn" href="https://api.simeonlabs.com/desktop/download/mac">Download for macOS<svg class="dl" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m-5-5 5 5 5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a></p></div>
 </section>
 
 <ul class="team" aria-label="The agents">
@@ -149,7 +149,7 @@ footer a[aria-current]{color:var(--ink)}
 
 <section class="end" aria-label="Add the team">
   <h2>Add the five of them to Simeon.</h2>
-  <div class="add"><a class="btn add-btn" href="simeon://app/v1/pack/add?id=law-firms" data-pack="law-firms"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>Add to Simeon</a><p class="add-note" hidden aria-live="polite"></p></div>
+  <div class="add"><a class="btn add-btn" href="simeon://app/v1/pack/add?id=law-firms" data-pack="law-firms"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>Add to Simeon</a><p class="add-note" hidden aria-live="polite"><a class="btn" href="https://api.simeonlabs.com/desktop/download/mac">Download for macOS<svg class="dl" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m-5-5 5 5 5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a></p></div>
   <p class="free">Free. The agents ask before they send, post or pay.</p>
 </section>
 </div>
@@ -158,23 +158,25 @@ footer a[aria-current]{color:var(--ink)}
 <footer><div class="wrap"><span>Copyright © 2026 Spaire, Inc. All rights reserved.</span><nav><a href="/teams">Teams</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="mailto:support@simeonlabs.com">Contact</a></nav></div></footer>
 <script>
 // Add to Simeon: the app on this device opens on the pack and adds the team (simeon-ios:// on an iPhone or
-// iPad, simeon:// on a Mac). Still here 1.5 s later, the page offers the app; elsewhere it says where Simeon is.
+// iPad, simeon:// on a Mac). With no app to open (still here 1.5 s later), and from the start on any other
+// computer or phone, every Add to Simeon on the page gives way to Download for macOS, the home page's
+// button (the founder, 22 October 2026: "the add to simeon must disappear when there's no app").
 (() => {
   const ua = navigator.userAgent;
   const ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
   const mac = !ios && /Macintosh|Mac OS X/.test(ua);
-  const say = (note, words, label, href) => {
-    note.textContent = words + ' ';
-    const a = document.createElement('a'); a.href = href; a.textContent = label;
-    note.appendChild(a); note.hidden = false;
+  const noApp = () => {
+    for (const box of document.querySelectorAll('.add')) {
+      box.classList.add('noapp');
+      box.querySelector('.add-note').hidden = false;
+    }
   };
+  if (!ios && !mac) { noApp(); return; }
   for (const box of document.querySelectorAll('.add')) {
-    const btn = box.querySelector('.add-btn'), note = box.querySelector('.add-note');
+    const btn = box.querySelector('.add-btn');
     const query = 'app/v1/pack/add?id=' + encodeURIComponent(btn.dataset.pack);
-    if (ios) btn.href = 'simeon-ios://' + query;
-    else if (mac) btn.href = 'simeon://' + query;
-    btn.addEventListener('click', (e) => {
-      if (!ios && !mac) { e.preventDefault(); say(note, 'Simeon is on Mac and iPhone.', 'Download for Mac', 'https://api.simeonlabs.com/desktop/download/mac'); return; }
+    btn.href = (ios ? 'simeon-ios://' : 'simeon://') + query;
+    btn.addEventListener('click', () => {
       let left = false;
       const away = () => { left = true; };
       const hide = () => { if (document.visibilityState === 'hidden') left = true; };
@@ -184,8 +186,7 @@ footer a[aria-current]{color:var(--ink)}
         document.removeEventListener('visibilitychange', hide);
         removeEventListener('pagehide', away); removeEventListener('blur', away);
         if (left || document.visibilityState !== 'visible') return;
-        if (ios) say(note, 'Don\u2019t have Simeon?', 'Get Simeon for iPhone', '/');
-        else say(note, 'Don\u2019t have Simeon?', 'Download for Mac', 'https://api.simeonlabs.com/desktop/download/mac');
+        noApp();
       }, 1500);
     });
   }

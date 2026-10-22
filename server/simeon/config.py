@@ -264,11 +264,16 @@ class Settings(BaseSettings):
     # Where Claude is reached (`simeon.desktop.bedrock`, 14 October 2026):
     # "anthropic" (api.anthropic.com on ANTHROPIC_API_KEY) or "bedrock"
     # (Claude in Amazon Bedrock, so AWS credits pay for it), signed with the
-    # access key below, which should be allowed bedrock-mantle:CreateInference
-    # and nothing else. A Bedrock call that is not answered with a 200 is
-    # made once more on ANTHROPIC_API_KEY when it is set.
+    # access key below, which should be allowed bedrock:InvokeModel and
+    # bedrock:InvokeModelWithResponseStream and nothing else (22 October
+    # 2026; bedrock-mantle:CreateInference before). A Bedrock call that is
+    # not answered with a 200 is made once more on ANTHROPIC_API_KEY when it
+    # is set. The route is the inference profile Claude is named by from
+    # the Region: "global" (no premium) or "us", "eu", "au" (data kept in
+    # that geography).
     DESKTOP_CLAUDE_VIA: Literal["anthropic", "bedrock"] = "anthropic"
     DESKTOP_BEDROCK_REGION: str = "us-west-2"
+    DESKTOP_BEDROCK_ROUTE: Literal["global", "us", "eu", "au"] = "global"
     DESKTOP_BEDROCK_ACCESS_KEY_ID: str = ""
     DESKTOP_BEDROCK_SECRET_ACCESS_KEY: str = ""
     # Sharing (simeon/sand/sharing.py, 25 September 2026): how long an

@@ -1,7 +1,8 @@
 """Claude through Amazon Bedrock (`simeon.desktop.bedrock`): with
-`DESKTOP_CLAUDE_VIA=bedrock` and an AWS key, a Claude call goes to
-bedrock-mantle, signed, with the model renamed; when Bedrock does not
-answer with a 200 the same call goes to the Anthropic key; with the
+`DESKTOP_CLAUDE_VIA=bedrock` and an AWS key, a Claude call goes to Bedrock's
+runtime Anthropic route, signed, with the model named by its inference
+profile and the thinking-binding beta left out; when Bedrock does not answer
+with a 200 the same call goes to the Anthropic key, as it was sent; with the
 setting left alone nothing changes."""
 
 import json
@@ -20,7 +21,7 @@ from simeon.postgres import AsyncSession
 from tests.desktop.test_endpoints import STREAM, _signed_in
 
 ANTHROPIC = f"{settings.DESKTOP_ANTHROPIC_BASE_URL}/v1/messages"
-BEDROCK = "https://bedrock-mantle.us-west-2.api.aws/anthropic/v1/messages"
+BEDROCK = "https://bedrock-runtime.us-west-2.amazonaws.com/anthropic/v1/messages"
 REQUEST = {
     "model": "claude-sonnet-5-5",
     "max_tokens": 64,
@@ -33,6 +34,7 @@ def _bedrock(mocker: MockerFixture, *, anthropic_key: str = "sk-anthropic") -> N
     mocker.patch.object(settings, "ANTHROPIC_API_KEY", anthropic_key)
     mocker.patch.object(settings, "DESKTOP_CLAUDE_VIA", "bedrock")
     mocker.patch.object(settings, "DESKTOP_BEDROCK_REGION", "us-west-2")
+    mocker.patch.object(settings, "DESKTOP_BEDROCK_ROUTE", "global")
     mocker.patch.object(settings, "DESKTOP_BEDROCK_ACCESS_KEY_ID", "AKIDEXAMPLE")
     mocker.patch.object(
         settings, "DESKTOP_BEDROCK_SECRET_ACCESS_KEY", "wJalrXUtnFEMI/EXAMPLEKEY"
@@ -45,19 +47,37 @@ def _sse() -> httpx.Response:
     )
 
 
-def test_the_body_is_the_same_with_the_model_renamed() -> None:
-    body = json.loads(bedrock_body({**REQUEST, "output_config": {"effort": "high"}}))
-    assert body["model"] == "anthropic.claude-sonnet-5-5"
+def test_the_body_is_the_same_with_the_model_named_by_its_profile(
+    mocker: MockerFixture,
+) -> None:
+    mocker.patch.object(settings, "DESKTOP_BEDROCK_ROUTE", "global")
+    thinking = {
+        "type": "adaptive",
+        "block_binding": {"prefix_mismatch_behavior": "drop_block"},
+    }
+    body = json.loads(
+        bedrock_body(
+            {**REQUEST, "output_config": {"effort": "high"}, "thinking": thinking}
+        )
+    )
+    assert body["model"] == "global.anthropic.claude-sonnet-5-5"
     assert body["output_config"] == {"effort": "high"}
+    assert body["thinking"] == {"type": "adaptive"}
     assert body["messages"] == REQUEST["messages"]
-    assert json.loads(bedrock_body(body))["model"] == "anthropic.claude-sonnet-5-5"
+    assert (
+        json.loads(bedrock_body(body))["model"] == "global.anthropic.claude-sonnet-5-5"
+    )
+    mocker.patch.object(settings, "DESKTOP_BEDROCK_ROUTE", "us")
+    assert (
+        json.loads(bedrock_body(REQUEST))["model"] == "us.anthropic.claude-sonnet-5-5"
+    )
 
 
 def test_the_address_follows_the_region(mocker: MockerFixture) -> None:
     mocker.patch.object(settings, "DESKTOP_BEDROCK_REGION", "us-east-1")
     assert (
         bedrock_messages_url()
-        == "https://bedrock-mantle.us-east-1.api.aws/anthropic/v1/messages"
+        == "https://bedrock-runtime.us-east-1.amazonaws.com/anthropic/v1/messages"
     )
 
 
@@ -89,11 +109,11 @@ class TestClaudeThroughBedrock:
         assert received == STREAM
         assert not anthropic.called
         sent = bedrock.calls[0].request
-        assert json.loads(sent.content)["model"] == "anthropic.claude-sonnet-5-5"
+        assert json.loads(sent.content)["model"] == "global.anthropic.claude-sonnet-5-5"
         assert sent.headers["authorization"].startswith("AWS4-HMAC-SHA256 ")
-        assert "/us-west-2/bedrock-mantle/aws4_request" in sent.headers["authorization"]
+        assert "/us-west-2/bedrock/aws4_request" in sent.headers["authorization"]
         assert "x-api-key" not in sent.headers, "no Anthropic key goes to AWS"
-        assert sent.headers["anthropic-beta"] == "thinking-binding-controls-2026-08-01"
+        assert "anthropic-beta" not in sent.headers, "Bedrock names no binding beta"
         assert sent.headers["anthropic-version"]
         rows = (await session.execute(DesktopUsage.__table__.select())).all()
         assert [(row.model, row.input_tokens, row.upstream_status) for row in rows] == [
@@ -121,7 +141,10 @@ class TestClaudeThroughBedrock:
             async with client.stream(
                 "POST",
                 "/desktop/api/proxy/v1/messages",
-                headers={"Authorization": f"Bearer {access}"},
+                headers={
+                    "Authorization": f"Bearer {access}",
+                    "anthropic-beta": "thinking-binding-controls-2026-08-01",
+                },
                 json=REQUEST,
             ) as response:
                 assert response.status_code == 200
@@ -130,6 +153,7 @@ class TestClaudeThroughBedrock:
         sent = anthropic.calls[0].request
         assert sent.headers["x-api-key"] == "sk-anthropic"
         assert json.loads(sent.content)["model"] == "claude-sonnet-5-5"
+        assert sent.headers["anthropic-beta"] == "thinking-binding-controls-2026-08-01"
         fallbacks = [
             one for one in logs if one["event"] == "desktop.proxy.bedrock_fallback"
         ]

@@ -44,8 +44,6 @@ MENTIONS = f"{REPO}/ios/scripts/connector-mentions.json"
 
 SITE = "https://simeonlabs.com"
 MAC_DOWNLOAD = "https://api.simeonlabs.com/desktop/download/mac"
-# No iPhone app to link yet: the home page's Download for iOS is unlinked until there is one (page.html).
-IPHONE = "/"
 BLUE = "#255a93"
 WORDS = {1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six", 7: "seven", 8: "eight", 9: "nine", 10: "ten"}
 PICTURES = (".png", ".jpg", ".jpeg", ".webp", ".svg")
@@ -313,10 +311,10 @@ PACK_CSS = """
 .add{display:flex;flex-direction:column;align-items:center;margin-top:clamp(26px,2.4vw,38px)}
 .add .btn{height:clamp(46px,3vw,54px);padding:0 clamp(22px,1.6vw,30px);font-size:clamp(16px,1.1vw,19px)}
 .add .btn svg{width:1em;height:1em;flex:none;margin-left:-.15em}
-.add-note{margin-top:14px;font-size:15px;color:var(--ink2)}
-.add-note a{color:var(--blue);text-decoration:none;white-space:nowrap}
-.add-note a:hover{text-decoration:underline}
+.add-note{margin:0}
 .add-note[hidden]{display:none}
+.add.noapp .add-btn{display:none}
+.add .btn .dl{margin:0 -.15em 0 0} /* Download for macOS, its arrow after the words, as on the home page */
 
 /* The agents: one card each, the face beside what it does on a computer, above it on a phone. */
 .team{display:grid;gap:18px;margin:clamp(56px,6vw,96px) 0 0;padding:0;list-style:none}
@@ -351,23 +349,25 @@ PACK_CSS = """
 
 ADD_JS = """<script>
 // Add to Simeon: the app on this device opens on the pack and adds the team (simeon-ios:// on an iPhone or
-// iPad, simeon:// on a Mac). Still here 1.5 s later, the page offers the app; elsewhere it says where Simeon is.
+// iPad, simeon:// on a Mac). With no app to open (still here 1.5 s later), and from the start on any other
+// computer or phone, every Add to Simeon on the page gives way to Download for macOS, the home page's
+// button (the founder, 22 October 2026: "the add to simeon must disappear when there's no app").
 (() => {
   const ua = navigator.userAgent;
   const ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
   const mac = !ios && /Macintosh|Mac OS X/.test(ua);
-  const say = (note, words, label, href) => {
-    note.textContent = words + ' ';
-    const a = document.createElement('a'); a.href = href; a.textContent = label;
-    note.appendChild(a); note.hidden = false;
+  const noApp = () => {
+    for (const box of document.querySelectorAll('.add')) {
+      box.classList.add('noapp');
+      box.querySelector('.add-note').hidden = false;
+    }
   };
+  if (!ios && !mac) { noApp(); return; }
   for (const box of document.querySelectorAll('.add')) {
-    const btn = box.querySelector('.add-btn'), note = box.querySelector('.add-note');
+    const btn = box.querySelector('.add-btn');
     const query = 'app/v1/pack/add?id=' + encodeURIComponent(btn.dataset.pack);
-    if (ios) btn.href = 'simeon-ios://' + query;
-    else if (mac) btn.href = 'simeon://' + query;
-    btn.addEventListener('click', (e) => {
-      if (!ios && !mac) { e.preventDefault(); say(note, 'Simeon is on Mac and iPhone.', 'Download for Mac', '%MAC%'); return; }
+    btn.href = (ios ? 'simeon-ios://' : 'simeon://') + query;
+    btn.addEventListener('click', () => {
       let left = false;
       const away = () => { left = true; };
       const hide = () => { if (document.visibilityState === 'hidden') left = true; };
@@ -377,15 +377,16 @@ ADD_JS = """<script>
         document.removeEventListener('visibilitychange', hide);
         removeEventListener('pagehide', away); removeEventListener('blur', away);
         if (left || document.visibilityState !== 'visible') return;
-        if (ios) say(note, 'Don\\u2019t have Simeon?', 'Get Simeon for iPhone', '%IPHONE%');
-        else say(note, 'Don\\u2019t have Simeon?', 'Download for Mac', '%MAC%');
+        noApp();
       }, 1500);
     });
   }
 })();
-</script>""".replace("%MAC%", MAC_DOWNLOAD).replace("%IPHONE%", IPHONE)
+</script>"""
 
 PLUS = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>'
+# The home page's download arrow (page.html, `.btn .dl`).
+DOWNLOAD = '<svg class="dl" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m-5-5 5 5 5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
 
 
 def frame(title, description, path, body, css, current=False, script=""):
@@ -452,7 +453,7 @@ def and_list(words):
 def add_button(pack):
     pid = pack["id"]
     return (f'<div class="add"><a class="btn add-btn" href="simeon://app/v1/pack/add?id={pid}" data-pack="{pid}">{PLUS}Add to Simeon</a>'
-            '<p class="add-note" hidden aria-live="polite"></p></div>')
+            f'<p class="add-note" hidden aria-live="polite"><a class="btn" href="{MAC_DOWNLOAD}">Download for macOS{DOWNLOAD}</a></p></div>')
 
 
 def pack_page(pack, assets):

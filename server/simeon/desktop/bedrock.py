@@ -1,15 +1,31 @@
 """Claude through Amazon Bedrock, so AWS credits pay for it.
 
-Claude in Amazon Bedrock (`bedrock-mantle.{region}.api.aws/anthropic`)
-takes the same Messages request as api.anthropic.com and answers with the
-same server-sent events, so the proxy relays it the same way. Three
-things differ: the address, the model name (`anthropic.` in front), and
-the credential, an AWS access key whose requests are signed (SigV4,
-service `bedrock-mantle`). Chosen by `SIMEON_DESKTOP_CLAUDE_VIA=bedrock`
-(`simeon.config`); the proxy falls back to the Anthropic key when Bedrock
-does not answer (`desktop.proxy.bedrock_fallback`).
+Bedrock's runtime endpoint has an Anthropic route
+(`bedrock-runtime.{region}.amazonaws.com/anthropic/v1/messages`) that takes
+the same Messages request as api.anthropic.com and answers with the same
+server-sent events, so the proxy relays it the same way. What differs:
 
-https://platform.claude.com/docs/en/build-with-claude/claude-in-amazon-bedrock
+- the address;
+- the model, named by a cross-Region inference profile
+  (`global.anthropic.claude-sonnet-5-5`): in the commercial Regions Claude
+  5.5 is served only that way. Until 22 October 2026 calls went to
+  `bedrock-mantle` as `anthropic.claude-…`, which Bedrock answered with
+  404 "does not exist": its model cards list Claude 5.5 on bedrock-mantle in
+  GovCloud only;
+- the credential, an AWS access key whose requests are signed (SigV4,
+  service `bedrock`), allowed `bedrock:InvokeModel` and
+  `bedrock:InvokeModelWithResponseStream`;
+- the thinking-binding beta, which Bedrock's list of Claude betas does not
+  name: left out, with its `block_binding`. A call Bedrock refuses for a
+  thinking block the beta would have dropped goes to the Anthropic key with
+  the beta, as any refused call does.
+
+Chosen by `SIMEON_DESKTOP_CLAUDE_VIA=bedrock` (`simeon.config`); the proxy
+falls back to the Anthropic key when Bedrock does not answer
+(`desktop.proxy.bedrock_fallback`).
+
+https://docs.aws.amazon.com/bedrock/latest/userguide/inference-messages-api.html
+https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-anthropic-claude-sonnet-5-5.html
 """
 
 import json
@@ -21,8 +37,9 @@ from botocore.credentials import Credentials
 
 from simeon.config import settings
 
-BEDROCK_SERVICE = "bedrock-mantle"
+BEDROCK_SERVICE = "bedrock"
 BEDROCK_MODEL_PREFIX = "anthropic."
+THINKING_BINDING_BETA = "thinking-binding-controls-2026-08-01"
 
 
 def bedrock_configured() -> bool:
@@ -36,26 +53,42 @@ def bedrock_configured() -> bool:
 
 def bedrock_messages_url() -> str:
     region = settings.DESKTOP_BEDROCK_REGION
-    return f"https://{BEDROCK_SERVICE}.{region}.api.aws/anthropic/v1/messages"
+    return f"https://bedrock-runtime.{region}.amazonaws.com/anthropic/v1/messages"
 
 
 def bedrock_model_id(model_id: str) -> str:
-    return f"{BEDROCK_MODEL_PREFIX}{model_id}"
+    """`claude-sonnet-5-5` as Bedrock names it from this Region: its
+    inference profile, `global.` (anywhere, no premium) unless
+    `DESKTOP_BEDROCK_ROUTE` says `us`, `eu` or `au`."""
+    return f"{settings.DESKTOP_BEDROCK_ROUTE}.{BEDROCK_MODEL_PREFIX}{model_id}"
 
 
 def bedrock_body(payload: dict[str, Any]) -> bytes:
-    """The request as Bedrock takes it: the same body, the model renamed."""
+    """The request as Bedrock takes it: the model renamed, and thinking
+    without the binding Bedrock does not know."""
     model = str(payload.get("model", ""))
-    if not model.startswith(BEDROCK_MODEL_PREFIX):
+    if BEDROCK_MODEL_PREFIX not in model:
         model = bedrock_model_id(model)
-    return json.dumps({**payload, "model": model}).encode()
+    body = {**payload, "model": model}
+    thinking = body.get("thinking")
+    if isinstance(thinking, dict) and "block_binding" in thinking:
+        body["thinking"] = {k: v for k, v in thinking.items() if k != "block_binding"}
+    return json.dumps(body).encode()
 
 
 def bedrock_headers(url: str, body: bytes, forwarded: dict[str, str]) -> dict[str, str]:
-    """`forwarded` (content type, accept, Anthropic version and betas)
-    with the SigV4 signature over them and the body. No Anthropic key
-    goes to AWS."""
-    request = AWSRequest(method="POST", url=url, data=body, headers=forwarded)
+    """`forwarded` (content type, accept, Anthropic version and betas, the
+    thinking-binding one taken out) with the SigV4 signature over them and
+    the body. No Anthropic key goes to AWS."""
+    headers = dict(forwarded)
+    betas = [
+        beta.strip()
+        for beta in headers.pop("anthropic-beta", "").split(",")
+        if beta.strip() and beta.strip() != THINKING_BINDING_BETA
+    ]
+    if betas:
+        headers["anthropic-beta"] = ",".join(betas)
+    request = AWSRequest(method="POST", url=url, data=body, headers=headers)
     SigV4Auth(
         Credentials(
             settings.DESKTOP_BEDROCK_ACCESS_KEY_ID,
