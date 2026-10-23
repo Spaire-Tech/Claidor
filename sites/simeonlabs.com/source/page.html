@@ -15,7 +15,8 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap">
+<link rel="stylesheet" href="site.css">
 <script>if (matchMedia('(min-width:600px)').matches) for (const [rel, as, href] of [['modulepreload', '', '%APP%/assets/%APP_JS%'], ['preload', 'style', '%APP%/assets/%APP_CSS%']]) { const l = document.createElement('link'); l.rel = rel; if (as) l.as = as; l.crossOrigin = ''; l.href = href; document.head.appendChild(l); }</script>
 <style>
 /* Simeon's site, laid out by the rules of Apple's product pages (apple.com/apple-creator-studio,
@@ -26,7 +27,6 @@
   --page:#fff; --soft:#f5f5f7; --ink:#1d1d1f; --ink2:#6e6e73; --ink3:#86868b; --line:#d2d2d7;
   --night:#000; --blue:#255a93; --blue-hover:#2b66a6; --app-blue:#255a93; /* the person's own chat bubble in the app (USER_BUBBLE_LIGHT, router-renderer-patch.mjs) */ --green:#34c759; --red:#ff3b30;
   --c-cos:#2c6bb3; --c-inbox:#2b8a80; --c-money:#cc6526; --c-growth:#6a58cf; --c-content:#c7457f; --c-sales:#36894a;
-  --font:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Inter","Helvetica Neue",Arial,sans-serif;
   --gutter:max(20px,4.6vw); /* the margin: 4.6% of the screen each side (the founder's screenshots, 3 October 2026) */
   --col:min(1840px,calc(100vw - 2 * var(--gutter)));
   --edge:max(var(--gutter),calc((100% - 1260px) / 2));
@@ -57,19 +57,22 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .bar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.82);-webkit-backdrop-filter:saturate(1.8) blur(20px);backdrop-filter:saturate(1.8) blur(20px);padding-top:env(safe-area-inset-top,0px)}
 .bar .wrap{display:flex;justify-content:space-between;align-items:center;height:clamp(52px,3.8vw,76px)}
 .bar .wordmark{--wm:clamp(118px,10.8vw,217px);width:var(--wm);margin-left:calc(var(--wm) * -85 / 1585);color:var(--ink);-webkit-mask-image:url(img/wordmark-labs.png);mask-image:url(img/wordmark-labs.png);aspect-ratio:1585/460} /* the bar says SimeonLabs (4 October 2026), the same letters at the same height; the image has 85/1585 of empty space on its left; the letters start on the column edge */
-.bar .acts{display:flex;align-items:center;justify-content:flex-end;gap:clamp(12px,.9vw,18px);font-size:clamp(14px,1vw,20px)}
-.bar .btn{height:clamp(28px,1.9vw,38px);padding:0 clamp(12px,.8vw,16px);font-size:clamp(14px,1vw,20px)}
+.bar .acts{display:flex;align-items:center;justify-content:flex-end;gap:clamp(12px,.9vw,18px);font-size:var(--t-nav)}
+.bar .btn{height:clamp(28px,1.9vw,38px);padding:0 clamp(12px,.8vw,16px);font-size:var(--t-nav)}
 
 
 /* Hero: one sentence on the left edge, two buttons under it, nothing else. */
 .hero{padding:clamp(40px,8.1vw,162px) 0 0;color:#000}
-.hero h1{max-width:13em;font-family:"Newsreader",Georgia,"Times New Roman",serif;font-size:clamp(30px,2.2vw,44px);line-height:1.08;font-weight:400;letter-spacing:-.02em;text-wrap:balance}
+.hero h1{max-width:var(--title-max);font-size:var(--t-display);line-height:1.1;font-weight:var(--w-display);letter-spacing:-.025em;text-wrap:pretty}
+.hero h1.set{text-wrap:wrap} /* the home page's headline: its lines are set, "Create a team of agents for any part" on the first,
+   "of your business." whole on the second; no single word left alone on a title's last line elsewhere (pretty) */
+.hero h1 .nw{white-space:nowrap}
 .hero .ctas{display:flex;gap:clamp(10px,.7vw,14px);flex-wrap:wrap;margin-top:clamp(18px,1.6vw,32px)}
 /* The headline and its buttons a size down (18 October 2026); the section titles, their lines, the statement and the closing title went down with them. */
-.hero .btn{height:clamp(40px,2.5vw,50px);padding:0 clamp(18px,1.3vw,26px);font-size:clamp(15px,.95vw,19px)}
+.hero .btn{height:var(--btn-h);padding:0 var(--btn-pad);font-size:var(--btn-font)}
 /* On a phone the hero breathes (4 October 2026): a long pause under the bar, a headline that leaves air on the right, and room before the app. */
 .hero .btn.go{display:none} /* the phone's one button: Download for iOS, no link until there is an app (6 October 2026) */
-@media (max-width:734px){.hero{padding-top:88px}.hero h1{font-size:28px;line-height:1.12;max-width:11.5em}.hero .ctas{margin-top:26px}.hero .ctas .btn{display:none}.hero .btn.go{display:inline-flex}}
+@media (max-width:734px){.hero{padding-top:88px}.hero h1{font-size:var(--t-display);line-height:1.1;font-weight:var(--w-display);letter-spacing:-.025em}.hero .ctas{margin-top:26px}.hero .ctas .btn{display:none}.hero .btn.go{display:inline-flex}}
 .btn .apl{width:1.05em;height:1.05em;margin:-.18em .45em 0 -.1em;flex:none}
 .btn .dl{width:1em;height:1em;margin:0 -.15em 0 .4em;flex:none} /* Download for macOS, its arrow after the words (18 October 2026) */
 
@@ -81,7 +84,7 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 /* The statement between the app and the gallery, in the middle of its own white space: Apple's
    intro-statement setting, large and centred, the point in black and the rest in grey. */
 .statement{padding-block:clamp(96px,10vw,200px)}
-.statement p{max-width:30em;margin:0 auto;text-align:center;font-size:clamp(22px,1.5vw,30px);line-height:1.21;font-weight:400;letter-spacing:-.022em;color:var(--ink3);text-wrap:balance} /* the hero headline's size, weight and spacing */
+.statement p{max-width:30em;margin:0 auto;text-align:center;font-size:var(--t-title);line-height:1.21;font-weight:400;letter-spacing:-.022em;color:var(--ink3);text-wrap:balance} /* the hero headline's size, weight and spacing */
 .statement b{font-weight:400;color:#000}
 @supports (-webkit-background-clip:text) or (background-clip:text){
   .statement p,.statement b{color:transparent;background:linear-gradient(100deg,var(--ink3) 0 38%,#000 46% 54%,var(--ink3) 62% 100%) 0 0/250% 100%;-webkit-background-clip:text;background-clip:text;animation:stmt-light 6s linear infinite}
@@ -177,7 +180,7 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .slide{position:relative;flex:none;width:var(--cw);aspect-ratio:1260/760;border-radius:28px;overflow:hidden;scroll-snap-align:start;container:slide/inline-size;isolation:isolate}
 .slide.dark{background:var(--night);color:#f5f5f7}
 .slide.light{background:#fff;color:var(--ink)}
-.cap{position:absolute;z-index:6;font-size:2.5cqw;line-height:1.24;font-weight:600;letter-spacing:-.02em;text-wrap:balance}
+.cap{position:absolute;z-index:6;font-size:2.5cqw;line-height:1.24;font-weight:var(--w-title);letter-spacing:-.02em;text-wrap:balance}
 .cap.top{left:50%;top:7.5%;transform:translateX(-50%);width:min(64%,46ch);text-align:center}
 .cap.side{left:7%;top:50%;transform:translateY(-50%);width:36%}
 .cap .who{display:flex;align-items:center;gap:.5em;margin-bottom:.7em;font-size:.56em;font-weight:600;letter-spacing:0;opacity:.92}
@@ -435,9 +438,9 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .exc{position:relative;display:block;flex:none;box-sizing:border-box;width:var(--cw);aspect-ratio:1260/760;border-radius:28px;overflow:hidden;scroll-snap-align:start;container-type:size;background:#000;color:#fff;text-align:left;padding:0;border:0;cursor:pointer;font:inherit;letter-spacing:inherit}
 .exc.lt{background:#f5f5f7;color:var(--ink)}
 .exc:focus-visible{outline:3px solid var(--blue);outline-offset:3px}
-.exc-t{position:absolute;z-index:2;left:4cqw;right:4cqw;top:3.6cqw;margin:0;font-size:1.75cqw;line-height:1.4;font-weight:600;letter-spacing:-.01em;color:rgba(255,255,255,.62)}
+.exc-t{position:absolute;z-index:2;left:4cqw;right:4cqw;top:3.6cqw;margin:0;font-size:1.75cqw;line-height:1.4;font-weight:var(--w-title);letter-spacing:-.01em;color:rgba(255,255,255,.62)}
 .exc.lt .exc-t{color:var(--ink2)}
-.exc-t b{display:block;margin-top:.3cqw;font-size:2.9cqw;line-height:1.14;font-weight:600;letter-spacing:-.02em;color:#fff;text-wrap:balance}
+.exc-t b{display:block;margin-top:.3cqw;font-size:2.9cqw;line-height:1.14;font-weight:var(--w-title);letter-spacing:-.02em;color:#fff;text-wrap:balance}
 .exc.lt .exc-t b{color:var(--ink)}
 
 /* The conversation in glass over a card's photo, in the ads' bubbles (the founder, 12 October 2026: no blue):
@@ -623,7 +626,7 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .exctl button:disabled{background:#e8e8ed;color:#bcbcc0;cursor:default}
 .exctl svg{width:24px;height:24px}
 .exctl button:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
-@media (max-width:809.98px){.exrail{gap:12px}.exc{aspect-ratio:4/5.4;border-radius:24px}.exc-t{left:7cqw;right:7cqw;top:7cqw;font-size:3.6cqw}.exc-t b{font-size:6.2cqw;margin-top:.8cqw}
+@media (max-width:809.98px){.exrail{gap:12px}.exc{aspect-ratio:4/5.4;border-radius:24px}.exc-t{left:7cqw;right:7cqw;top:7cqw;font-size:3.6cqw;font-weight:var(--w-title)}.exc-t b{font-size:6.2cqw;margin-top:.8cqw;font-weight:var(--w-title)}
   .cv,.cv.l,.cv.l.low{left:7cqw;right:7cqw;width:auto;top:27cqw;bottom:auto;transform:none;font-size:2.7cqw;gap:1.5cqw}.cv p,.cv.l p{padding:1.9cqw 2.6cqw;border-radius:1.25cqw 3.4cqw 3.4cqw 3.4cqw;max-width:88%}.cv p.me,.cv.l p.me{border-radius:3.4cqw 3.4cqw 1.25cqw 3.4cqw}.cv .who img{width:4cqw;height:4cqw}.cv .step i{width:3cqw;height:3cqw}.cv .step svg{width:1.8cqw;height:1.8cqw}}
 @media (max-width:734px){
   .exrail{gap:14px}
@@ -631,17 +634,16 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 }
 
 /* Pricing, questions and the closing call: the same serif headline and pale panels as the trust section. */
-/* Pricing: Trial, Standard, Pro and Max on the pale panels (the founder, 4 October 2026), laid out simpler (18 October 2026): the name, the price in Switzer, how it is billed, a full-width button, then what the plan includes in a few words. */
-@font-face{font-family:"Switzer";src:url(fonts/switzer-400.woff2) format("woff2");font-weight:400;font-style:normal;font-display:swap}
+/* Pricing: Trial, Standard, Pro and Max on the pale panels (the founder, 4 October 2026), laid out simpler (18 October 2026): the name, the price at the display size, how it is billed, a full-width button, then what the plan includes in a few words. */
 .plans3{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:22px;margin-top:clamp(40px,4vw,80px)}
 .plan3{display:flex;flex-direction:column;padding:clamp(28px,2.4vw,44px) clamp(24px,2.1vw,40px);border-radius:28px;background:#fafafb}
-.plan3 h3{margin:0;font-size:clamp(16px,1.05vw,20px);font-weight:400;letter-spacing:-.01em;color:var(--ink2)}
-.plan3 .pr{margin-top:clamp(16px,1.4vw,26px);font-family:"Switzer",var(--font);font-weight:400;font-size:clamp(34px,2.4vw,48px);line-height:1;letter-spacing:-.03em;color:var(--ink)}
-.plan3 .pr small{font-family:var(--font);font-weight:400;font-size:clamp(15px,1vw,19px);letter-spacing:-.01em;color:var(--ink2);margin-left:6px}
-.plan3 .billed{margin:10px 0 0;font-size:clamp(15px,1vw,18px);letter-spacing:-.01em;color:var(--ink2)}
-.plan3 .btn{display:flex;align-items:center;justify-content:center;width:100%;margin-top:clamp(22px,2vw,36px);height:clamp(46px,2.9vw,54px);padding:0 20px;font-size:clamp(15px,1.05vw,18px)}
-.plan3 .inc{margin:clamp(26px,2.2vw,40px) 0 0;font-size:clamp(15px,1vw,18px);letter-spacing:-.01em;color:var(--ink)}
-.plan3 ul{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:12px;align-content:start;font-size:clamp(15px,1vw,18px);line-height:1.4;letter-spacing:-.01em;color:var(--ink2)}
+.plan3 h3{margin:0;font-size:var(--t-body);font-weight:400;letter-spacing:-.01em;color:var(--ink2)}
+.plan3 .pr{margin-top:clamp(16px,1.4vw,26px);font-weight:var(--w-display);font-size:var(--t-display);line-height:1;letter-spacing:-.025em;color:var(--ink)}
+.plan3 .pr small{font-family:var(--font);font-weight:400;font-size:var(--t-body);letter-spacing:-.01em;color:var(--ink2);margin-left:6px}
+.plan3 .billed{margin:10px 0 0;font-size:var(--t-body);letter-spacing:-.01em;color:var(--ink2)}
+.plan3 .btn{display:flex;align-items:center;justify-content:center;width:100%;margin-top:clamp(22px,2vw,36px);height:var(--btn-h);padding:0 20px;font-size:var(--btn-font)}
+.plan3 .inc{margin:clamp(26px,2.2vw,40px) 0 0;font-size:var(--t-body);letter-spacing:-.01em;color:var(--ink)}
+.plan3 ul{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:12px;align-content:start;font-size:var(--t-body);line-height:1.4;letter-spacing:-.01em;color:var(--ink2)}
 .plan3 li{display:flex;gap:12px;align-items:flex-start}
 .plan3 li::before{content:"";flex:none;width:.95em;height:.95em;margin-top:.24em;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236e6e73' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12.5 4.5 4.5L19 7'/%3E%3C/svg%3E") center/contain no-repeat}
 @supports (grid-template-rows:subgrid){.plans3{grid-template-rows:repeat(6,auto)}.plan3{display:grid;grid-template-rows:subgrid;row-gap:0;grid-row:span 6;align-content:start}}
@@ -650,16 +652,16 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .qa3{margin-top:clamp(40px,4vw,80px);padding:clamp(12px,1.2vw,24px) clamp(28px,3vw,56px);border-radius:28px;background:#fafafb}
 .qa3 details{border-top:1px solid #ececef}
 .qa3 details:first-child{border-top:0}
-.qa3 summary{list-style:none;display:flex;justify-content:space-between;align-items:center;gap:24px;padding:clamp(20px,1.7vw,30px) 0;cursor:pointer;font-size:clamp(18px,1.2vw,23px);letter-spacing:-.015em;color:#1d1d1f}
+.qa3 summary{list-style:none;display:flex;justify-content:space-between;align-items:center;gap:24px;padding:clamp(20px,1.7vw,30px) 0;cursor:pointer;font-size:var(--t-head);letter-spacing:-.015em;color:#1d1d1f}
 .qa3 summary::-webkit-details-marker{display:none}
 .qa3 summary::after{content:"";flex:none;width:clamp(28px,1.8vw,34px);height:clamp(28px,1.8vw,34px);border-radius:50%;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231d1d1f' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M12 6v12M6 12h12'/%3E%3C/svg%3E") center/50% no-repeat;box-shadow:0 0 0 1px rgba(0,0,0,.05);transition:transform .25s}
 .qa3 details[open] summary::after{transform:rotate(45deg)}
 .qa3 summary:focus-visible{outline:2px solid var(--blue);outline-offset:4px;border-radius:6px}
-.qa3 details p{margin:0;padding:0 0 clamp(22px,1.8vw,32px);max-width:46em;font-size:clamp(16px,1.02vw,19.5px);line-height:1.6;color:var(--ink2)}
+.qa3 details p{margin:0;padding:0 0 clamp(22px,1.8vw,32px);max-width:46em;font-size:var(--t-body);line-height:1.6;color:var(--ink2)}
 .close3{padding:clamp(120px,10vw,200px) 0 clamp(120px,10vw,200px);text-align:center}
-.close3 h2{margin:0 auto;font-family:"Newsreader",Georgia,"Times New Roman",serif;font-weight:400;font-size:clamp(34px,3.2vw,64px);line-height:1.02;letter-spacing:-.02em}
+.close3 h2{margin:0 auto;max-width:var(--title-max);font-weight:var(--w-display);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em;text-wrap:pretty}
 .close3 .ctas{display:flex;justify-content:center;gap:clamp(10px,.7vw,14px);flex-wrap:wrap;margin-top:clamp(28px,2.4vw,44px)}
-.close3 .btn{height:clamp(40px,2.5vw,50px);padding:0 clamp(18px,1.3vw,26px);font-size:clamp(15px,.95vw,19px)}
+.close3 .btn{height:var(--btn-h);padding:0 var(--btn-pad);font-size:var(--btn-font)}
 .close3 .btn.go{display:none} /* on a phone the close offers Download for iOS, as the top does, and Request a demo beside it (the founder, 12 October 2026) */
 @media (max-width:734px){.close3 .ctas .btn:not(.ghost):not(.go){display:none}.close3 .btn.go{display:inline-flex;order:-1}}
 
@@ -667,13 +669,13 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .trust{padding:clamp(100px,9vw,170px) 0 clamp(40px,4vw,80px)}
 #team+.trust{padding-top:clamp(56px,4.4vw,88px)}
 .trust-top{display:grid;grid-template-columns:1fr 1fr;gap:clamp(24px,5vw,96px);align-items:start}
-.trust h2{margin:0;font-family:"Newsreader",Georgia,"Times New Roman",serif;font-weight:400;font-size:clamp(28px,2.2vw,44px);line-height:1.08;letter-spacing:-.02em;max-width:11em;text-wrap:balance}
-.trust-top p{margin:clamp(4px,.45vw,9px) 0 0;max-width:30em;font-size:clamp(16px,1vw,19px);line-height:1.5;letter-spacing:-.01em;color:var(--ink2)}
+.trust h2{margin:0;font-weight:var(--w-display);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em;max-width:var(--title-max);text-wrap:pretty} /* every section's title is the headline's size (the founder, 23 October 2026) */
+.trust-top p{justify-self:end;margin:clamp(4px,.45vw,9px) 0 0;max-width:30em;font-size:var(--t-lead);line-height:1.5;letter-spacing:-.01em;color:var(--ink2)} /* on the far right, as the title is on the far left */
 .tpanel{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,3.6fr);gap:24px;margin-top:clamp(40px,4vw,80px);padding:clamp(28px,3vw,56px);border-radius:28px;background:#fafafb}
 .tpanel+.tpanel{margin-top:22px}
-.tpanel h3{margin:0;font-size:clamp(20px,1.35vw,26px);font-weight:500;color:#3a3a3c;letter-spacing:-.02em;line-height:1.3}
+.tpanel h3{margin:0;font-size:var(--t-head);font-weight:500;color:#3a3a3c;letter-spacing:-.02em;line-height:1.3}
 .tgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(18px,1.7vw,30px) 24px;margin:0;padding:0;list-style:none}
-.tgrid li{display:flex;align-items:center;gap:clamp(12px,.9vw,18px);font-size:clamp(16px,1.02vw,19.5px);letter-spacing:-.01em;min-width:0;color:#3a3a3c}
+.tgrid li{display:flex;align-items:center;gap:clamp(12px,.9vw,18px);font-size:var(--t-body);letter-spacing:-.01em;min-width:0;color:#3a3a3c}
 .tgrid .ti{flex:none;width:clamp(40px,2.45vw,48px);height:clamp(40px,2.45vw,48px);border-radius:12px;background:#fff;display:grid;place-items:center;box-shadow:0 0 0 1px rgba(0,0,0,.04),0 1px 2px rgba(0,0,0,.04)}
 .tgrid .ti svg{width:46%;height:46%;color:#48484a}
 .tgrid .ti svg.gd{width:72%;height:72%}
@@ -682,7 +684,16 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .tdot::before{content:"";position:absolute;inset:-8px}
 .tdot::after{content:"In progress";position:absolute;left:50%;bottom:calc(100% + 10px);transform:translate(-50%,4px);padding:6px 11px;border-radius:9px;background:#1d1d1f;color:#fff;font-size:13px;line-height:1.2;letter-spacing:0;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s,transform .15s;box-shadow:0 6px 18px rgba(0,0,0,.18)}
 .tdot:hover::after,.tdot:focus-visible::after{opacity:1;transform:translate(-50%,0)}
-@media (max-width:860px){.trust-top{grid-template-columns:1fr}.tpanel{grid-template-columns:1fr}.tgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* On a computer the two panels share their columns (subgrid): Security's and Integrations' line up, and the last column
+   ends on the panels' right edge, under the end of the promise (the founder, 23 October 2026). */
+@media (min-width:861px){
+  .tpanels{display:grid;grid-template-columns:minmax(max-content,1fr) auto minmax(16px,.6fr) auto minmax(16px,.6fr) auto}
+  .tpanel{grid-column:1/-1;grid-template-columns:subgrid;column-gap:0}
+  .tpanel h3{padding-right:24px} /* the panel's name keeps its room before the first column */
+  .tgrid{grid-column:2/-1;grid-template-columns:subgrid;column-gap:0}
+  .tgrid li:nth-child(3n+1){grid-column:1}.tgrid li:nth-child(3n+2){grid-column:3}.tgrid li:nth-child(3n){grid-column:5}
+}
+@media (max-width:860px){.trust-top{grid-template-columns:1fr}.trust-top p{justify-self:start}.tpanel{grid-template-columns:1fr}.tgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:480px){.tgrid{grid-template-columns:1fr}}
 
 
@@ -812,8 +823,8 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .msg-plus{display:grid;place-items:center;width:5.4cqw;height:5.4cqw;border-radius:50%;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.1),0 .4cqw 1cqw rgba(0,0,0,.06);font-size:3.2cqw;font-weight:300;line-height:1}
 .msg-field{flex:1;display:flex;align-items:center;justify-content:space-between;height:5.4cqw;padding:0 1.8cqw 0 2.2cqw;border-radius:99px;box-shadow:0 0 0 1px rgba(0,0,0,.12);color:#b0b0b5}
 .msg-field svg{width:2.3cqw;height:2.3cqw;color:#8e8e93}
-.msg-cap{position:absolute;left:50%;bottom:7%;transform:translateX(-50%);width:min(64%,30em);margin:0;text-align:center;font-size:2.35cqw;line-height:1.2;font-weight:600;letter-spacing:-.015em;color:#1d1d1f;text-wrap:balance}
-@container slide (max-width:700px){.msg-phone{width:88cqw;height:66%;border-width:1.8cqw;border-radius:0 0 13cqw 13cqw}.msg-screen{font-size:4cqw;gap:2.2cqw;padding:0 4cqw 4cqw}.msg-bubble{max-width:58cqw;border-radius:4.4cqw;padding:2cqw 3cqw}.msg-out{max-width:50cqw;border-radius:4.4cqw;padding:2cqw 3cqw}.msg-av{width:8cqw;height:8cqw}.msg-name{margin-left:11cqw}.msg-chips{margin-left:10cqw;gap:1.6cqw}.msg-chips span{padding:1.2cqw 2cqw}.msg-chips img{width:3cqw;height:3cqw}.msg-plus,.msg-field{height:9cqw}.msg-plus{width:9cqw;font-size:5cqw}.msg-field svg{width:4cqw;height:4cqw}.msg-cap{font-size:4.2cqw;width:84%;bottom:6%}}
+.msg-cap{position:absolute;left:50%;bottom:7%;transform:translateX(-50%);width:min(64%,30em);margin:0;text-align:center;font-size:2.5cqw;line-height:1.24;font-weight:var(--w-title);letter-spacing:-.02em;color:#1d1d1f;text-wrap:balance} /* as the other slides' captions (.cap), not bold */
+@container slide (max-width:700px){.msg-phone{width:88cqw;height:66%;border-width:1.8cqw;border-radius:0 0 13cqw 13cqw}.msg-screen{font-size:4cqw;gap:2.2cqw;padding:0 4cqw 4cqw}.msg-bubble{max-width:58cqw;border-radius:4.4cqw;padding:2cqw 3cqw}.msg-out{max-width:50cqw;border-radius:4.4cqw;padding:2cqw 3cqw}.msg-av{width:8cqw;height:8cqw}.msg-name{margin-left:11cqw}.msg-chips{margin-left:10cqw;gap:1.6cqw}.msg-chips span{padding:1.2cqw 2cqw}.msg-chips img{width:3cqw;height:3cqw}.msg-plus,.msg-field{height:9cqw}.msg-plus{width:9cqw;font-size:5cqw}.msg-field svg{width:4cqw;height:4cqw}.msg-cap{font-size:4.6cqw;width:84%;bottom:6%}}
 
 /* The app itself: the real window on white, as a Mac app is shown (the founder, 3 October 2026), on plain white. */
 .moment{padding-top:clamp(32px,3.95vw,79px)}
@@ -885,7 +896,7 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .end .wordmark{width:120px;margin:0 auto;color:var(--ink)}
 .end h2{margin-top:16px;font-size:clamp(36px,4.6vw,56px);line-height:1.07;letter-spacing:-.035em}
 .end .btn{margin-top:30px}
-footer{background:var(--soft);padding:20px 0 calc(40px + env(safe-area-inset-bottom,0px));font-size:12px;color:var(--ink2)}
+footer{background:var(--soft);padding:20px 0 calc(40px + env(safe-area-inset-bottom,0px));font-size:var(--t-tiny);color:var(--ink2)}
 footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
 footer nav{display:flex;gap:18px}
 footer a{color:inherit;text-decoration:none}
@@ -904,8 +915,8 @@ footer a:hover{color:var(--ink)}
 <main>
 <section class="hero">
   <div class="wrap">
-    <h1>Create a team of agents for any part of your business.</h1>
-    <div class="ctas"><a class="btn" href="https://api.simeonlabs.com/desktop/download/mac">Download for macOS<svg class="dl" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m-5-5 5 5 5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a><a class="btn ghost" href="#app">Request a demo&nbsp;→</a><span class="btn go"><svg class="apl" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></svg>Download for iOS</span></div>
+    <h1 class="set">Create a team of agents for <span class="nw">any part</span> <span class="nw">of your business.</span></h1>
+    <div class="ctas"><a class="btn" href="https://api.simeonlabs.com/desktop/download/mac">Download for macOS<svg class="dl" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m-5-5 5 5 5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a><a class="btn ghost" href="#app">Request a demo&nbsp;→</a><span class="btn go"><svg class="apl" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></svg>Download for iOS<svg class="dl" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m-5-5 5 5 5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div>
   </div>
 </section>
 
@@ -999,16 +1010,18 @@ footer a:hover{color:var(--ink)}
       <h2>Security and integrations you can trust</h2>
       <p>Your data is stored and encrypted at rest and in transit. Each customer’s data is isolated, and is never used to train models.</p>
     </div>
+    <div class="tpanels">
     <div class="tpanel"><h3>Security</h3><ul class="tgrid"><li><span class="ti"><svg class="gd" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 4.5 5.5v6c0 4.9 3.2 8.8 7.5 10 4.3-1.2 7.5-5.1 7.5-10v-6z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><text x="12" y="14" text-anchor="middle" font-size="4.6" font-weight="700" fill="currentColor" font-family="Arial,sans-serif">CCPA</text></svg></span><span>CCPA</span></li><li><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.1-7-11.5a7 7 0 0 1 14 0C19 14.9 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg></span><span>US data residency</span></li><li><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span><span>Encrypted</span></li><li><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/></svg></span><span>No training on your data</span></li><li><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3"/></svg></span><span>Tenant isolation</span></li><li><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="15.5" cy="8.5" r="4.5"/><path d="M12.3 11.7 4 20M7 17l2 2M5.5 18.5l1.5 1.5"/></svg></span><span>SAML SSO</span></li><li><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 5 6v6c0 4.4 3 7.9 7 9 4-1.1 7-4.6 7-9V6z"/><path d="m9 12 2 2 4-4"/></svg></span><span>SOC 2 Type II<span class="tdot" tabindex="0" role="note" aria-label="In progress" title="In progress"></span></span></li><li><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 5 6v6c0 4.4 3 7.9 7 9 4-1.1 7-4.6 7-9V6z"/><path d="m9 12 2 2 4-4"/></svg></span><span>ISO 27001<span class="tdot" tabindex="0" role="note" aria-label="In progress" title="In progress"></span></span></li><li><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M3 20a6 6 0 0 1 10-4.5"/><circle cx="17.5" cy="16.5" r="2.2"/><path d="M17.5 12.8v1.5M17.5 18.7v1.5M21.2 16.5h-1.5M15.3 16.5h-1.5M20.1 13.9l-1 1M15.9 18.1l-1 1M20.1 19.1l-1-1M15.9 14.9l-1-1"/></svg></span><span>Custom user roles</span></li></ul></div>
     <div class="tpanel"><h3>Integrations</h3><ul class="tgrid"><li><span class="ti"><img src="logos/google-drive.svg" alt=""></span><span>Google Drive</span></li><li><span class="ti"><img src="logos/gmail.webp" alt=""></span><span>Gmail</span></li><li><span class="ti"><img src="logos/google-calendar.webp" alt=""></span><span>Google Calendar</span></li><li><span class="ti"><img src="logos/outlook.webp" alt=""></span><span>Outlook</span></li><li><span class="ti"><img src="logos/slack.webp" alt=""></span><span>Slack</span></li><li><span class="ti"><img src="logos/notion.svg" alt=""></span><span>Notion</span></li><li><span class="ti"><img src="logos/hubspot.svg" alt=""></span><span>HubSpot</span></li><li><span class="ti"><img src="logos/salesforce.svg" alt=""></span><span>Salesforce</span></li><li><span class="ti"><img src="logos/stripe.svg" alt=""></span><span>Stripe</span></li><li><span class="ti"><img src="logos/quickbooks.svg" alt=""></span><span>QuickBooks</span></li><li><span class="ti"><img src="logos/shopify.svg" alt=""></span><span>Shopify</span></li><li><span class="ti"><img src="logos/zoom.webp" alt=""></span><span>Zoom</span></li><li><span class="ti"><img src="logos/dropbox.svg" alt=""></span><span>Dropbox</span></li><li><span class="ti"><img src="logos/linkedin.svg" alt=""></span><span>LinkedIn</span></li><li><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="3.2"/><circle cx="16" cy="8" r="3.2"/><circle cx="8" cy="16" r="3.2"/><circle cx="16" cy="16" r="3.2"/></svg></span><span>100+ more</span></li></ul></div>
+    </div>
   </div>
 </section>
 
-<section class="trust ex" aria-label="Equip each agent with a specific task">
+<section class="trust ex" aria-label="Give every agent a clear purpose">
   <div class="wrap">
     <div class="trust-top">
-      <h2>Equip each agent with a<br>specific task.</h2>
-      <p>Every agent is built for one job, the way you would hire for it. These are the roles people staff first, as a starting point rather than a list.</p>
+      <h2>Give every agent a clear purpose.</h2>
+      <p>Each agent is designed around a specific responsibility, with the focus and capabilities to do it well. Start with the roles that matter most to your workflow, then build your team as your needs grow.</p>
     </div>
   </div>
   <div class="exrail">
@@ -1066,7 +1079,7 @@ footer a:hover{color:var(--ink)}
 <section class="close3" aria-label="Get started">
   <div class="wrap">
     <h2>Your team is ready<br>when you are.</h2>
-    <div class="ctas"><a class="btn" href="https://api.simeonlabs.com/desktop/download/mac">Download for macOS<svg class="dl" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m-5-5 5 5 5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a><a class="btn ghost" href="#app">Request a demo&nbsp;&#8594;</a><span class="btn go"><svg class="apl" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></svg>Download for iOS</span></div>
+    <div class="ctas"><a class="btn" href="https://api.simeonlabs.com/desktop/download/mac">Download for macOS<svg class="dl" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m-5-5 5 5 5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a><a class="btn ghost" href="#app">Request a demo&nbsp;&#8594;</a><span class="btn go"><svg class="apl" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></svg>Download for iOS<svg class="dl" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m-5-5 5 5 5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div>
   </div>
 </section>
 
@@ -1074,7 +1087,7 @@ footer a:hover{color:var(--ink)}
 
 </main>
 
-<footer><div class="wrap"><span>Copyright © 2026 Spaire, Inc. All rights reserved.</span><nav><a href="/teams">Teams</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="mailto:support@simeonlabs.com">Contact</a></nav></div></footer>
+<footer><div class="wrap"><span>Copyright © 2026 Spaire, Inc. All rights reserved.</span><nav><a href="/teams">Teams</a><a href="/connectors">Connectors</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="mailto:support@simeonlabs.com">Contact</a></nav></div></footer>
 
 %FIT%
 <script>

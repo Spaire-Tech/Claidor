@@ -40,7 +40,7 @@ final class StarterPacksTests: XCTestCase {
     let team = made.compactMap { id in store.agents.first { $0.id == id } }
     XCTAssertEqual(team.map(\.name), ["Bruno", "Clara", "Mae", "Ines", "Hugo"])
     XCTAssertEqual(team.map(\.title), ["Stock", "Shifts", "Socials", "Customers", "Money"])
-    XCTAssertEqual(team.map(\.avatarShape), ["clay-02", "clay-01", "clay-03", "clay-04", "clay-05"])
+    XCTAssertEqual(team.map(\.avatarShape), ["clay-07", "clay-06", "clay-16", "clay-24", "clay-28"])
     XCTAssertTrue(team.allSatisfy { $0.description.contains("Starts by asking to connect") })
     let section = try XCTUnwrap(store.sidebarSections?.first)
     XCTAssertEqual(section.id, "pack-coffee-shop")

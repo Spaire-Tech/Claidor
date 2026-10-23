@@ -585,11 +585,11 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
     case "packs/coffee-shop":
       // The website's first starter pack, shortened (server/simeon/desktop/packs.json).
       let members: [(String, String, String, [String], String)] = [
-        ("Bruno", "Stock", "clay-02", ["square", "veryfi", "google-sheets"], "Keeps the shelves full and gets the reorder ready before you run out."),
-        ("Clara", "Shifts", "clay-01", ["7shifts", "whatsapp", "google-calendar"], "Builds the rota and covers sick days."),
-        ("Mae", "Socials", "clay-03", ["instagram", "tiktok", "canva"], "Posts the specials."),
-        ("Ines", "Customers", "clay-04", ["google-maps", "yelp", "gmail"], "Answers everyone and takes the catering requests."),
-        ("Hugo", "Money", "clay-05", ["quickbooks", "paypal", "gusto"], "Closes out the day and keeps the books tidy."),
+        ("Bruno", "Stock", "clay-07", ["square", "veryfi", "google-sheets"], "Keeps the shelves full and gets the reorder ready before you run out."),
+        ("Clara", "Shifts", "clay-06", ["7shifts", "whatsapp", "google-calendar"], "Builds the rota and covers sick days."),
+        ("Mae", "Socials", "clay-16", ["instagram", "tiktok", "canva"], "Posts the specials."),
+        ("Ines", "Customers", "clay-24", ["google-maps", "yelp", "gmail"], "Answers everyone and takes the catering requests."),
+        ("Hugo", "Money", "clay-28", ["quickbooks", "paypal", "gusto"], "Closes out the day and keeps the books tidy."),
       ]
       let names: JSON = ["square": "Square", "veryfi": "Veryfi", "google-sheets": "Google Sheets", "7shifts": "7shifts", "whatsapp": "WhatsApp",
                          "google-calendar": "Google Calendar", "instagram": "Instagram", "tiktok": "TikTok", "canva": "Canva", "google-maps": "Google Maps",

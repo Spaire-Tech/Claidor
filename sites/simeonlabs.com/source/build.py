@@ -366,6 +366,9 @@ async def main():
     # The starter packs' pages (teams.py, server/simeon/desktop/packs.json), at /teams.
     import teams
     teams.build(OUT)
+    # The Connectors page (connectors.py, the apps' connector catalogue), at /connectors.
+    import connectors
+    connectors.build(OUT)
     print("site written to", os.path.abspath(OUT))
 
 asyncio.run(main())
