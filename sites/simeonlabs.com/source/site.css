@@ -23,4 +23,25 @@
   --btn-pad:clamp(18px,1.3vw,24px);
   --btn-font:clamp(15px,.95vw,17px);
 }
+/* A computer (a mouse or a trackpad, wider than a phone): the sizes keep shrinking with the window below the
+   floors above, down to three quarters of them. Windows enlarges everything by 125 or 150% and gives the page a
+   window only 1280 to 1536 wide, where those floors held and every word and button stood a quarter larger than
+   on a Mac (the founder, 23 October 2026: "i get the real app when i size it down to 75%"). With the floors at
+   75% a 1280-wide window shows what the founder's Mac shows, scaled to fit. Phones and tablets (a finger) keep
+   the floors. */
+@media (min-width:735px) and (hover:hover) and (pointer:fine){
+  :root{
+    --t-display:clamp(21px,2vw,40px);
+    --t-title:clamp(16.5px,1.6vw,30px);
+    --t-head:clamp(12.75px,1.15vw,20px);
+    --t-lead:clamp(12px,1.05vw,19px);
+    --t-body:clamp(11.25px,1vw,17px);
+    --t-small:clamp(10px,.9vw,13px);
+    --t-tiny:clamp(9.5px,.83vw,12px);
+    --t-nav:clamp(10.5px,1vw,18px);
+    --btn-h:clamp(30px,2.5vw,48px);
+    --btn-pad:clamp(13.5px,1.3vw,24px);
+    --btn-font:clamp(11.25px,.95vw,17px);
+  }
+}
 body{font-family:var(--font)}
