@@ -192,6 +192,7 @@ CONN_CSS = """
 
 @media (max-width:1068px){.list{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:734px){
+  .find-head h2,.how h2{max-width:none;text-wrap:wrap} /* a phone keeps its titles as they were */
   .open{min-height:0;overflow:visible} /* the icons' shadows are not cut */
   .floats{display:flex;flex-wrap:wrap;gap:12px;width:var(--col);margin:40px auto 0} /* on the left, under the button */
   .float{position:static;transform:none}
