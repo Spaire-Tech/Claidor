@@ -83,6 +83,10 @@ struct HomeView: View {
   // Nothing here reads the roster: an agent's every step changes it, and this body holds the whole screen (the bar, the
   // sheets, the chat pushed over the list). The rows read it (AgentList), and only while they are on screen.
   var body: some View {
+    // Read here, in the body, so the list is drawn again when the website's Add to Simeon arrives while the app is open:
+    // read only inside the sheet's binding it was never watched, and the sheet came up only on a cold start (the founder,
+    // 23 October 2026: "takes us to the app, but nothing happens").
+    let pendingPack = Notifications.shared.openPack
     NavigationStack(path: $path) {
       // Search covers the list and finds on its own (SearchResults): the list holds its rows meanwhile. It was given the
       // words too and filtered and laid out every row again on each letter, under the results, animated (the founder,
@@ -192,7 +196,7 @@ struct HomeView: View {
     }
     .sheet(item: $profile) { ref in AgentPageSheet(agentId: ref.id, routineId: ref.routineId).problemAlert().presentationBackground(Ink.ground) }
     // A starter pack from the website's Add to Simeon (StarterPackSheet.swift), once nothing else is up.
-    .sheet(item: Binding(get: { sheet == nil && profile == nil && !showsHidden ? Notifications.shared.openPack.map(PackLink.init(id:)) : nil },
+    .sheet(item: Binding(get: { sheet == nil && profile == nil && !showsHidden ? pendingPack.map(PackLink.init(id:)) : nil },
                          set: { Notifications.shared.openPack = $0?.id })) { link in
       StarterPackSheet(packId: link.id) { id in open(id) }.problemAlert().presentationBackground(Ink.ground)
     }
