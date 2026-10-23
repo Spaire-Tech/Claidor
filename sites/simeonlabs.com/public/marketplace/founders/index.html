@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SimeonLabs | Simeon for Founders</title>
+<meta name="description" content="Five agents for running a startup: design, marketing, engineering, inboxes and finance.">
+<link rel="canonical" href="https://simeonlabs.com/marketplace/founders">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://simeonlabs.com/marketplace/founders">
+<meta property="og:title" content="SimeonLabs | Simeon for Founders">
+<meta property="og:description" content="Five agents for running a startup: design, marketing, engineering, inboxes and finance.">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap">
+<link rel="stylesheet" href="/site.css?v=9b4b8235">
+<script>if (!/Macintosh|Mac OS X/.test(navigator.userAgent)) document.documentElement.classList.add('pc')</script>
+<style>
+/* The Marketplace pages (/marketplace, /marketplace/<pack>): the home page's bar, type and colours (source/page.html) around
+   the starter packs. Light only, every colour set here. Made by teams.py from server/simeon/desktop/packs.json. */
+:root{
+  --page:#fff; --soft:#f5f5f7; --ink:#1d1d1f; --ink2:#6e6e73; --ink3:#86868b; --line:#e5e5ea; --blue:#255a93;
+  --gutter:max(20px,4.6*var(--vw,1vw));
+  --col:min(1840px,calc(100*var(--vw,1vw) - 2 * var(--gutter))); /* the home page's column */
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--page);color:var(--ink);font-family:var(--font);font-size:17px;line-height:1.47;letter-spacing:-.022em;-webkit-font-smoothing:antialiased;overflow-x:clip}
+h1,h2,h3,p,ul,blockquote{margin:0}
+img{display:block;max-width:100%}
+a{color:inherit}
+.wrap{width:var(--col);margin-inline:auto}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.5em;border-radius:99px;background:#000;color:#fff;font-weight:400;letter-spacing:-.01em;white-space:nowrap;text-decoration:none;transition:background .2s}
+.btn:hover{background:#2b2b2d}
+.btn:focus-visible,a:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
+
+
+/* Faces in a row, each over the last, ringed in the ground they sit on. */
+.faces{display:flex;--fs:48px;--ring:var(--page)}
+.faces img,.faces .noface{width:var(--fs);height:var(--fs);border-radius:50%;object-fit:cover;flex:none;box-shadow:0 0 0 3px var(--ring);background:var(--soft)}
+.faces>*+*{margin-left:calc(var(--fs) * -.26)}
+.noface{display:grid;place-items:center;font-weight:500;color:var(--ink2);background:#e8e8ed}
+
+/* An app's tile: its own icon with an app icon's corners, else its mark on white, else its first letter. */
+.apps{display:flex;align-items:center;flex:none;--as:36px;--ring:var(--soft)}
+.app{position:relative;flex:none;display:grid;place-items:center;width:var(--as);height:var(--as);border-radius:calc(var(--as) * .2237);overflow:hidden;background:#fff;box-shadow:0 0 0 2.5px var(--ring)}
+.app::after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 0 .5px rgba(0,0,0,.16);pointer-events:none}
+.app+.app{margin-left:calc(var(--as) * -.14)}
+.app.icon img{width:100%;height:100%;object-fit:cover}
+.app.mark img{width:64%;height:64%;object-fit:contain}
+.app.mark i{display:block;width:64%;height:64%;-webkit-mask:var(--m) center/contain no-repeat;mask:var(--m) center/contain no-repeat}
+.app.letter{color:#3a3a3c;font-size:calc(var(--as) * .46);font-weight:600;letter-spacing:0;line-height:1}
+
+/* Add to Simeon, on a team's page and in its window on /marketplace. */
+.add{display:flex;flex-direction:column;align-items:center;margin-top:clamp(18px,1.6*var(--vw,1vw),32px)}
+.add .btn{height:var(--btn-h);padding:0 var(--btn-pad);font-size:var(--btn-font)} /* the home page's buttons */
+.add .btn svg{width:1em;height:1em;flex:none;margin-left:-.15em}
+.add-note{margin:0}
+.add-note[hidden]{display:none}
+.add.noapp .add-btn{display:none}
+.add .btn .dl{margin:0 -.15em 0 0} /* Download for macOS, its arrow after the words, as on the home page */
+.add .btn .apl{width:1.05em;height:1.05em;margin:-.18em .45em 0 -.1em;flex:none}
+.add-note .go{display:none}
+@media (max-width:734px){.add-note .btn:not(.go){display:none}.add-note .go{display:inline-flex}} /* a phone: Download for iOS, as on the home page */
+footer{margin-top:clamp(80px,8*var(--vw,1vw),140px);background:var(--soft);padding:20px 0 calc(40px + env(safe-area-inset-bottom,0px));font-size:var(--t-tiny);color:var(--ink2)}
+footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+footer nav{display:flex;gap:18px}
+footer a{color:var(--ink2);text-decoration:none}
+footer a:hover{color:var(--ink)}
+footer a[aria-current]{color:var(--ink)}
+
+.team-title{font-weight:var(--w-display);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em;text-wrap:pretty} /* the pages' headline */
+.team .intro{margin-top:10px;max-width:40em;font-size:var(--t-lead);line-height:1.47;letter-spacing:-.01em;color:#515154}
+.team .acts{display:flex;margin-top:clamp(18px,1.6*var(--vw,1vw),26px)} /* as under the pages' headline */
+.team .add{margin-top:0;align-items:flex-start}
+.team .add .btn{height:var(--btn-h);padding:0 var(--btn-pad);font-size:var(--btn-font)}
+.roster{margin:clamp(28px,2.4*var(--vw,1vw),40px) 0 0;padding:0;list-style:none;border-top:1px solid #e8e8ed}
+.roster li{display:grid;grid-template-columns:44px 140px minmax(0,1fr) auto;align-items:center;column-gap:24px;padding:16px 0;border-bottom:1px solid #e8e8ed}
+.roster img,.roster .noface{width:44px;height:44px;border-radius:50%;object-fit:cover}
+.roster .noface{font-size:15px}
+.roster b{display:block;font-size:var(--t-lead);font-weight:var(--w-title);letter-spacing:-.01em}
+.roster small{display:block;margin-top:1px;font-size:var(--t-small);color:var(--ink2)}
+.roster p{font-size:var(--t-body);line-height:1.47;letter-spacing:-.005em;color:#515154}
+.roster .apps{--as:28px;--ring:var(--page)}
+@media (max-width:734px){
+  .team-title{max-width:13em;text-wrap:balance} /* a phone's titles as they were */
+  .roster li{grid-template-columns:40px minmax(0,1fr) auto;column-gap:14px;row-gap:6px;padding:14px 0}
+  .roster .apps{grid-column:3;grid-row:1}
+  .roster img,.roster .noface{width:40px;height:40px}
+  .roster .apps{--as:24px}
+  .roster p{grid-column:2 / -1;grid-row:2}
+}
+
+.team-page{padding:28px 0 clamp(72px,7*var(--vw,1vw),120px)}
+.team-page .back{display:inline-flex;align-items:center;gap:4px;margin:0 0 30px -2px;font-size:var(--t-body);color:var(--ink2);text-decoration:none}
+.team-page .back:hover{color:var(--ink)}
+.team-page .back svg{width:16px;height:16px}
+.team-page .roster{margin-top:32px}
+footer{margin-top:0;font-size:var(--t-tiny)}
+</style><script>if (matchMedia('(min-width:735px)').matches) location.replace('/marketplace#founders');</script>
+</head>
+<body>
+
+<header class="bar">
+  <div class="wrap">
+    <a class="wordmark" href="/" aria-label="SimeonLabs home"></a>
+    <nav class="acts" aria-label="Pages"><a href="/marketplace" aria-current="page">Marketplace</a><a href="/connectors">Connectors</a><a href="/pricing">Pricing</a><a class="btn" href="https://api.simeonlabs.com/desktop/download/mac">Download</a></nav>
+    <details class="menu">
+      <summary aria-label="Menu"><i></i><i></i></summary>
+      <div class="menu-in"><nav aria-label="Pages"><a href="/marketplace" aria-current="page">Marketplace</a><a href="/connectors">Connectors</a><a href="/pricing">Pricing</a></nav><a class="btn" href="https://api.simeonlabs.com/desktop/download/mac">Download</a></div>
+    </details>
+  </div>
+</header>
+
+<main>
+<section class="team team-page" aria-labelledby="founders-title"><div class="wrap">
+  <a class="back" href="/marketplace#all"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>All teams</a>
+  <h1 class="team-title" id="founders-title">Simeon for Founders</h1>
+  <p class="intro">Five agents for running a startup: design, marketing, engineering, inboxes and finance.</p>
+  <div class="acts"><div class="add"><a class="btn add-btn" href="simeon://app/v1/pack/add?id=founders" data-pack="founders"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>Add to Simeon</a><p class="add-note" hidden aria-live="polite"><a class="btn" href="https://api.simeonlabs.com/desktop/download/mac">Download for macOS<svg class="dl" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m-5-5 5 5 5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a><span class="btn go"><svg class="apl" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></svg>Download for iOS<svg class="dl" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m-5-5 5 5 5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></p></div></div>
+  <ul class="roster" aria-label="The agents"><li><img src="/marketplace/faces/clay-05.webp?v=b86ef7a4" alt="" width="128" height="128" loading="lazy"><span><b>Rafael</b><small>Design</small></span><p>Designs with you. Gathers references, mocks up the screens and makes the assets for every launch.</p><span class="apps" role="img" aria-label="Connects Figma, Mobbin and Canva"><span class="app icon" title="Figma"><img src="/marketplace/apps/figma.png?v=aab84ff0" alt="" width="64" height="64" loading="lazy"></span><span class="app icon" title="Mobbin"><img src="/marketplace/apps/mobbin.png?v=66af63b4" alt="" width="64" height="64" loading="lazy"></span><span class="app icon" title="Canva"><img src="/marketplace/apps/canva.png?v=21035930" alt="" width="64" height="64" loading="lazy"></span></span></li><li><img src="/marketplace/faces/clay-23.webp?v=53ecc842" alt="" width="128" height="128" loading="lazy"><span><b>Tess</b><small>Marketing</small></span><p>Runs your socials. Turns what you ship into posts, writes the captions and schedules them for when your people are online.</p><span class="apps" role="img" aria-label="Connects Instagram, YouTube and Typefully"><span class="app icon" title="Instagram"><img src="/marketplace/apps/instagram.png?v=0cc29951" alt="" width="64" height="64" loading="lazy"></span><span class="app icon" title="YouTube"><img src="/marketplace/apps/youtube.png?v=4edf590d" alt="" width="64" height="64" loading="lazy"></span><span class="app icon" title="Typefully"><img src="/marketplace/apps/typefully.png?v=34c6954e" alt="" width="64" height="64" loading="lazy"></span></span></li><li><img src="/marketplace/faces/clay-27.webp?v=7474345e" alt="" width="128" height="128" loading="lazy"><span><b>Otis</b><small>Engineering</small></span><p>Keeps the code moving. Reads every new error, fixes the small ones and opens a pull request for you to review.</p><span class="apps" role="img" aria-label="Connects GitHub, Vercel and Sentry"><span class="app icon" title="GitHub"><img src="/marketplace/apps/github.png?v=c82ed74d" alt="" width="64" height="64" loading="lazy"></span><span class="app icon" title="Vercel"><img src="/marketplace/apps/vercel.png?v=542c7a5d" alt="" width="64" height="64" loading="lazy"></span><span class="app icon" title="Sentry"><img src="/marketplace/apps/sentry.png?v=7f0443e0" alt="" width="64" height="64" loading="lazy"></span></span></li><li><img src="/marketplace/faces/clay-29.webp?v=89941f1c" alt="" width="128" height="128" loading="lazy"><span><b>Margot</b><small>Inboxes</small></span><p>Clears your inboxes. Answers what she can, flags what needs you and turns every “let’s find a time” into a meeting.</p><span class="apps" role="img" aria-label="Connects Gmail, Slack and WhatsApp"><span class="app icon" title="Gmail"><img src="/marketplace/apps/gmail.png?v=942e42d3" alt="" width="64" height="64" loading="lazy"></span><span class="app icon" title="Slack"><img src="/marketplace/apps/slack.png?v=592c37da" alt="" width="64" height="64" loading="lazy"></span><span class="app icon" title="WhatsApp"><img src="/marketplace/apps/whatsapp.png?v=9105ca3f" alt="" width="64" height="64" loading="lazy"></span></span></li><li><img src="/marketplace/faces/clay-25.webp?v=68a5eecb" alt="" width="128" height="128" loading="lazy"><span><b>Arlo</b><small>Finance</small></span><p>Keeps an eye on the money. Tracks what comes in, chases unpaid invoices and tells you how long the cash lasts.</p><span class="apps" role="img" aria-label="Connects Stripe, Mercury and Ramp"><span class="app icon" title="Stripe"><img src="/marketplace/apps/stripe.png?v=088d58ed" alt="" width="64" height="64" loading="lazy"></span><span class="app icon" title="Mercury"><img src="/marketplace/apps/mercury.png?v=fa15c67c" alt="" width="64" height="64" loading="lazy"></span><span class="app icon" title="Ramp"><img src="/marketplace/apps/ramp.png?v=57606885" alt="" width="64" height="64" loading="lazy"></span></span></li></ul>
+</div></section>
+</main>
+
+<footer><div class="wrap"><span>Copyright © 2026 Spaire, Inc. All rights reserved.</span><nav><a href="/marketplace" aria-current="page">Marketplace</a><a href="/connectors">Connectors</a><a href="/pricing">Pricing</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="mailto:support@simeonlabs.com">Contact</a></nav></div></footer>
+<script>
+// Add to Simeon: the app on this device opens on the pack and adds the team (simeon-ios:// on an iPhone or
+// iPad, simeon:// on a Mac). With no app to open (still here 1.5 s later), and from the start on any other
+// computer or phone, every Add to Simeon on the page gives way to Download for macOS, the home page's
+// button (the founder, 22 October 2026: "the add to simeon must disappear when there's no app").
+(() => {
+  const ua = navigator.userAgent;
+  const ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  const mac = !ios && /Macintosh|Mac OS X/.test(ua);
+  const noApp = () => {
+    for (const box of document.querySelectorAll('.add')) {
+      box.classList.add('noapp');
+      box.querySelector('.add-note').hidden = false;
+    }
+  };
+  if (!ios && !mac) { noApp(); return; }
+  for (const box of document.querySelectorAll('.add')) {
+    const btn = box.querySelector('.add-btn');
+    const query = 'app/v1/pack/add?id=' + encodeURIComponent(btn.dataset.pack);
+    btn.href = (ios ? 'simeon-ios://' : 'simeon://') + query;
+    btn.addEventListener('click', () => {
+      let left = false;
+      const away = () => { left = true; };
+      const hide = () => { if (document.visibilityState === 'hidden') left = true; };
+      document.addEventListener('visibilitychange', hide);
+      addEventListener('pagehide', away); addEventListener('blur', away);
+      setTimeout(() => {
+        document.removeEventListener('visibilitychange', hide);
+        removeEventListener('pagehide', away); removeEventListener('blur', away);
+        if (left || document.visibilityState !== 'visible') return;
+        noApp();
+      }, 1500);
+    });
+  }
+})();
+</script>
+</body>
+</html>

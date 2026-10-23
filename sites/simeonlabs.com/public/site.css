@@ -1,9 +1,9 @@
 /* The website's type, one for every page (the founder, 23 October 2026: "re-use the app's font",
    "keep the size small"): the apps' own font, Apple's system font (SF Pro on a Mac or an iPhone,
    as the Mac app and its web window draw it; Inter elsewhere), one small scale of sizes, and medium
-   for titles, never bold. Every page (the home page, Teams, Connectors, the legal pages) loads this
-   before its own styles and sizes its words only with these. The illustrations of the app inside a
-   page keep their own measures. */
+   for titles, never bold. Every page (the home page, the Marketplace, Connectors, Pricing, the legal
+   pages) loads this before its own styles and sizes its words only with these. The illustrations of
+   the app inside a page keep their own measures. The bar every page shares is here too (below). */
 :root{
   --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Inter","Helvetica Neue",Arial,sans-serif;
   --t-display:clamp(28px,2*var(--vw),40px);  /* a page's headline and every section's title (Pricing, Questions…), the closing call, a price */
@@ -37,3 +37,35 @@
   html.pc{zoom:.75;--vw:calc(1vw / .75);--vh:calc(1vh / .75);--dvh:calc(1dvh / .75)}
 }
 body{font-family:var(--font)}
+
+/* The bar at the top of every page (nav.py writes it). The wordmark goes home and says SimeonLabs (4 October
+   2026); its image has 85/1585 of empty space on its left, so the letters start on the column's edge. On the
+   right: Marketplace, Connectors, Pricing and Download. On a phone a menu button takes their place and drops
+   the three over the whole page, Download under them (the founder, 23 October 2026). */
+.bar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.82);-webkit-backdrop-filter:saturate(1.8) blur(20px);backdrop-filter:saturate(1.8) blur(20px);padding-top:env(safe-area-inset-top,0px)}
+.bar .wrap{display:flex;justify-content:space-between;align-items:center;height:clamp(52px,3.8*var(--vw),76px)}
+.bar .wordmark{--wm:clamp(118px,10.8*var(--vw),217px);display:block;width:var(--wm);margin-left:calc(var(--wm) * -85 / 1585);background:var(--ink);-webkit-mask:url(/img/wordmark-labs.png) center/contain no-repeat;mask:url(/img/wordmark-labs.png) center/contain no-repeat;aspect-ratio:1585/460}
+.bar .acts{display:flex;align-items:center;gap:clamp(14px,1.2*var(--vw),22px);font-size:var(--t-nav)}
+.bar .acts>a:not(.btn){text-decoration:none;color:var(--ink2)}
+.bar .acts>a:not(.btn):hover,.bar .acts>a[aria-current]{color:var(--ink)}
+.bar .btn{height:clamp(28px,1.9*var(--vw),38px);padding:0 clamp(12px,.8*var(--vw),16px);font-size:var(--t-nav)}
+.menu{display:none}
+@media (max-width:734px){
+  .bar .acts{display:none}
+  .menu{display:block}
+  .menu summary{display:grid;place-items:center;width:44px;height:44px;margin-right:-13px;list-style:none;cursor:pointer;-webkit-tap-highlight-color:transparent}
+  .menu summary::-webkit-details-marker{display:none}
+  .menu summary:focus-visible{outline:2px solid var(--ink);outline-offset:-6px;border-radius:12px}
+  .menu summary i{grid-area:1/1;display:block;width:18px;height:1.5px;border-radius:1px;background:var(--ink);transform:translateY(-3.5px);transition:transform .25s ease}
+  .menu summary i+i{transform:translateY(3.5px)}
+  .menu[open] summary i{transform:rotate(45deg)}
+  .menu[open] summary i+i{transform:rotate(-45deg)}
+  .menu-in{position:absolute;top:100%;left:0;right:0;height:100dvh;padding:16px var(--gutter,20px) 0;background:var(--page,#fff);animation:menu-in .25s ease both}
+  .menu-in nav{display:flex;flex-direction:column;align-items:flex-start}
+  .menu-in nav a{padding:9px 0;font-size:28px;line-height:1.2;font-weight:var(--w-display);letter-spacing:-.02em;color:var(--ink);text-decoration:none}
+  .menu-in .btn{margin-top:32px;height:48px;padding:0 28px;font-size:17px}
+  .bar:has(.menu[open]){background:var(--page,#fff)} /* the open menu and the bar are one white page */
+  html:has(.menu[open]){overflow:hidden}
+}
+@keyframes menu-in{from{opacity:0;transform:translateY(-8px)}}
+@media (prefers-reduced-motion:reduce){.menu-in{animation:none}.menu summary i{transition:none}}

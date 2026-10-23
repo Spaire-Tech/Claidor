@@ -5,6 +5,18 @@
   "buildCommand": "",
   "outputDirectory": "public",
   "ignoreCommand": "git diff --quiet HEAD^ HEAD -- .",
+  "redirects": [
+    {
+      "source": "/teams",
+      "destination": "/marketplace",
+      "permanent": true
+    },
+    {
+      "source": "/teams/:path*",
+      "destination": "/marketplace/:path*",
+      "permanent": true
+    }
+  ],
   "headers": [
     {
       "source": "/app/:version/(.*)",

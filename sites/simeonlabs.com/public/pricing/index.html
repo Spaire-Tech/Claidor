@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SimeonLabs | Pricing</title>
+<meta name="description" content="Simeon's plans: Standard at $30, Pro at $100 and Max at $200 a month. Every plan starts with a free month.">
+<link rel="canonical" href="https://simeonlabs.com/pricing">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://simeonlabs.com/pricing">
+<meta property="og:title" content="SimeonLabs | Pricing">
+<meta property="og:description" content="Simeon's plans: Standard at $30, Pro at $100 and Max at $200 a month. Every plan starts with a free month.">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap">
+<link rel="stylesheet" href="/site.css?v=9b4b8235">
+<script>if (!/Macintosh|Mac OS X/.test(navigator.userAgent)) document.documentElement.classList.add('pc')</script>
+<style>
+/* The Marketplace pages (/marketplace, /marketplace/<pack>): the home page's bar, type and colours (source/page.html) around
+   the starter packs. Light only, every colour set here. Made by teams.py from server/simeon/desktop/packs.json. */
+:root{
+  --page:#fff; --soft:#f5f5f7; --ink:#1d1d1f; --ink2:#6e6e73; --ink3:#86868b; --line:#e5e5ea; --blue:#255a93;
+  --gutter:max(20px,4.6*var(--vw,1vw));
+  --col:min(1840px,calc(100*var(--vw,1vw) - 2 * var(--gutter))); /* the home page's column */
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--page);color:var(--ink);font-family:var(--font);font-size:17px;line-height:1.47;letter-spacing:-.022em;-webkit-font-smoothing:antialiased;overflow-x:clip}
+h1,h2,h3,p,ul,blockquote{margin:0}
+img{display:block;max-width:100%}
+a{color:inherit}
+.wrap{width:var(--col);margin-inline:auto}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.5em;border-radius:99px;background:#000;color:#fff;font-weight:400;letter-spacing:-.01em;white-space:nowrap;text-decoration:none;transition:background .2s}
+.btn:hover{background:#2b2b2d}
+.btn:focus-visible,a:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
+
+
+/* Faces in a row, each over the last, ringed in the ground they sit on. */
+.faces{display:flex;--fs:48px;--ring:var(--page)}
+.faces img,.faces .noface{width:var(--fs);height:var(--fs);border-radius:50%;object-fit:cover;flex:none;box-shadow:0 0 0 3px var(--ring);background:var(--soft)}
+.faces>*+*{margin-left:calc(var(--fs) * -.26)}
+.noface{display:grid;place-items:center;font-weight:500;color:var(--ink2);background:#e8e8ed}
+
+/* An app's tile: its own icon with an app icon's corners, else its mark on white, else its first letter. */
+.apps{display:flex;align-items:center;flex:none;--as:36px;--ring:var(--soft)}
+.app{position:relative;flex:none;display:grid;place-items:center;width:var(--as);height:var(--as);border-radius:calc(var(--as) * .2237);overflow:hidden;background:#fff;box-shadow:0 0 0 2.5px var(--ring)}
+.app::after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 0 .5px rgba(0,0,0,.16);pointer-events:none}
+.app+.app{margin-left:calc(var(--as) * -.14)}
+.app.icon img{width:100%;height:100%;object-fit:cover}
+.app.mark img{width:64%;height:64%;object-fit:contain}
+.app.mark i{display:block;width:64%;height:64%;-webkit-mask:var(--m) center/contain no-repeat;mask:var(--m) center/contain no-repeat}
+.app.letter{color:#3a3a3c;font-size:calc(var(--as) * .46);font-weight:600;letter-spacing:0;line-height:1}
+
+/* Add to Simeon, on a team's page and in its window on /marketplace. */
+.add{display:flex;flex-direction:column;align-items:center;margin-top:clamp(18px,1.6*var(--vw,1vw),32px)}
+.add .btn{height:var(--btn-h);padding:0 var(--btn-pad);font-size:var(--btn-font)} /* the home page's buttons */
+.add .btn svg{width:1em;height:1em;flex:none;margin-left:-.15em}
+.add-note{margin:0}
+.add-note[hidden]{display:none}
+.add.noapp .add-btn{display:none}
+.add .btn .dl{margin:0 -.15em 0 0} /* Download for macOS, its arrow after the words, as on the home page */
+.add .btn .apl{width:1.05em;height:1.05em;margin:-.18em .45em 0 -.1em;flex:none}
+.add-note .go{display:none}
+@media (max-width:734px){.add-note .btn:not(.go){display:none}.add-note .go{display:inline-flex}} /* a phone: Download for iOS, as on the home page */
+footer{margin-top:clamp(80px,8*var(--vw,1vw),140px);background:var(--soft);padding:20px 0 calc(40px + env(safe-area-inset-bottom,0px));font-size:var(--t-tiny);color:var(--ink2)}
+footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+footer nav{display:flex;gap:18px}
+footer a{color:var(--ink2);text-decoration:none}
+footer a:hover{color:var(--ink)}
+footer a[aria-current]{color:var(--ink)}
+
+/* The opening, from the home page (source/page.html). */
+.btn.ghost{background:#f2f2f2;color:#000}
+.btn.ghost:hover{background:#e8e8e8}
+.btn .apl{width:1.05em;height:1.05em;margin:-.18em .45em 0 -.1em;flex:none}
+.btn .dl{width:1em;height:1em;margin:0 -.15em 0 .4em;flex:none} /* Download for macOS, its arrow after the words (18 October 2026) */
+/* Hero: one sentence on the left edge, two buttons under it, nothing else. */
+.hero{padding:clamp(40px,8.1*var(--vw,1vw),162px) 0 0;color:#000}
+.hero h1{max-width:var(--title-max);font-size:var(--t-display);line-height:1.1;font-weight:var(--w-display);letter-spacing:-.025em;text-wrap:pretty}
+.hero h1.set{text-wrap:wrap} /* the home page's headline: its lines are set, "Create a team of agents for any part" on the first,
+   "of your business." whole on the second; no single word left alone on a title's last line elsewhere (pretty) */
+.hero h1 .nw{white-space:nowrap}
+.hero .ctas{display:flex;gap:clamp(10px,.7*var(--vw,1vw),14px);flex-wrap:wrap;margin-top:clamp(18px,1.6*var(--vw,1vw),32px)}
+/* The headline and its buttons a size down (18 October 2026); the section titles, their lines, the statement and the closing title went down with them. */
+.hero .btn{height:var(--btn-h);padding:0 var(--btn-pad);font-size:var(--btn-font)}
+/* On a phone the hero breathes (4 October 2026): a long pause under the bar, a headline that leaves air on the right, and room before the app. */
+.hero .btn.go{display:none} /* the phone's one button: Download for iOS, no link until there is an app (6 October 2026) */
+@media (max-width:734px){.hero{padding-top:88px}.hero h1{font-size:var(--t-display);line-height:1.1;font-weight:var(--w-display);letter-spacing:-.025em;max-width:11.5em;text-wrap:balance}.hero h1.set{text-wrap:balance}.hero h1 .nw{white-space:normal}.hero .ctas{margin-top:26px}.hero .ctas .btn{display:none}.hero .btn.go{display:inline-flex}}
+
+/* From the home page (source/page.html): the section titles, the pricing, the questions and the closing call. */
+.btn.ghost{background:#f2f2f2;color:#000}
+.btn.ghost:hover{background:#e8e8e8}
+.btn .apl{width:1.05em;height:1.05em;margin:-.18em .45em 0 -.1em;flex:none}
+.btn .dl{width:1em;height:1em;margin:0 -.15em 0 .4em;flex:none} /* Download for macOS, its arrow after the words (18 October 2026) */
+.trust{padding:clamp(72px,6.2*var(--vw,1vw),118px) 0 clamp(32px,3*var(--vw,1vw),56px)}
+.trust-top{display:grid;grid-template-columns:1fr 1fr;gap:clamp(24px,5*var(--vw,1vw),96px);align-items:start}
+.trust h2{margin:0;font-weight:var(--w-display);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em;max-width:var(--title-max);text-wrap:pretty} /* every section's title is the headline's size (the founder, 23 October 2026) */
+@media (max-width:734px){.trust h2{max-width:13em;text-wrap:balance}.close3 h2{max-width:none;text-wrap:balance}} /* the shared title width is for a computer's screen; a phone keeps its titles as they were (the founder, 23 October 2026) */
+.trust-top p{justify-self:end;margin:clamp(4px,.45*var(--vw,1vw),9px) 0 0;max-width:30em;font-size:var(--t-lead);line-height:1.5;letter-spacing:-.01em;color:var(--ink2)} /* on the far right, as the title is on the far left */
+@media (max-width:860px){.trust-top{grid-template-columns:1fr}.trust-top p{justify-self:start}}
+/* Pricing: Trial, Standard, Pro and Max on the pale panels (the founder, 4 October 2026), laid out simpler (18 October 2026): the name, the price at the display size, how it is billed, a full-width button, then what the plan includes in a few words. */
+.plans3{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:22px;margin-top:clamp(40px,4*var(--vw,1vw),80px)}
+.plan3{display:flex;flex-direction:column;padding:clamp(28px,2.4*var(--vw,1vw),44px) clamp(24px,2.1*var(--vw,1vw),40px);border-radius:28px;background:#fafafb}
+.plan3 h3{margin:0;font-size:var(--t-body);font-weight:400;letter-spacing:-.01em;color:var(--ink2)}
+.plan3 .pr{margin-top:clamp(16px,1.4*var(--vw,1vw),26px);font-weight:var(--w-display);font-size:var(--t-display);line-height:1;letter-spacing:-.025em;color:var(--ink)}
+.plan3 .pr small{font-family:var(--font);font-weight:400;font-size:var(--t-body);letter-spacing:-.01em;color:var(--ink2);margin-left:6px}
+.plan3 .billed{margin:10px 0 0;font-size:var(--t-body);letter-spacing:-.01em;color:var(--ink2)}
+.plan3 .btn{display:flex;align-items:center;justify-content:center;width:100%;margin-top:clamp(22px,2*var(--vw,1vw),36px);height:var(--btn-h);padding:0 20px;font-size:var(--btn-font)}
+.plan3 .inc{margin:clamp(26px,2.2*var(--vw,1vw),40px) 0 0;font-size:var(--t-body);letter-spacing:-.01em;color:var(--ink)}
+.plan3 ul{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:12px;align-content:start;font-size:var(--t-body);line-height:1.4;letter-spacing:-.01em;color:var(--ink2)}
+.plan3 li{display:flex;gap:12px;align-items:flex-start}
+.plan3 li::before{content:"";flex:none;width:.95em;height:.95em;margin-top:.24em;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236e6e73' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12.5 4.5 4.5L19 7'/%3E%3C/svg%3E") center/contain no-repeat}
+@supports (grid-template-rows:subgrid){.plans3{grid-template-rows:repeat(6,auto)}.plan3{display:grid;grid-template-rows:subgrid;row-gap:0;grid-row:span 6;align-content:start}}
+@media (max-width:1068px){.plans3{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:734px){.plans3{grid-template-columns:1fr;gap:14px}.plan3{border-radius:24px}}
+.qa3{margin-top:clamp(40px,4*var(--vw,1vw),80px);padding:clamp(12px,1.2*var(--vw,1vw),24px) clamp(28px,3*var(--vw,1vw),56px);border-radius:28px;background:#fafafb}
+.qa3 details{border-top:1px solid #ececef}
+.qa3 details:first-child{border-top:0}
+.qa3 summary{list-style:none;display:flex;justify-content:space-between;align-items:center;gap:24px;padding:clamp(20px,1.7*var(--vw,1vw),30px) 0;cursor:pointer;font-size:var(--t-head);letter-spacing:-.015em;color:#1d1d1f}
+.qa3 summary::-webkit-details-marker{display:none}
+.qa3 summary::after{content:"";flex:none;width:clamp(28px,1.8*var(--vw,1vw),34px);height:clamp(28px,1.8*var(--vw,1vw),34px);border-radius:50%;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231d1d1f' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M12 6v12M6 12h12'/%3E%3C/svg%3E") center/50% no-repeat;box-shadow:0 0 0 1px rgba(0,0,0,.05);transition:transform .25s}
+.qa3 details[open] summary::after{transform:rotate(45deg)}
+.qa3 summary:focus-visible{outline:2px solid var(--blue);outline-offset:4px;border-radius:6px}
+.qa3 details p{margin:0;padding:0 0 clamp(22px,1.8*var(--vw,1vw),32px);max-width:46em;font-size:var(--t-body);line-height:1.6;color:var(--ink2)}
+.close3{padding:clamp(88px,7*var(--vw,1vw),140px) 0 clamp(88px,7*var(--vw,1vw),140px);text-align:center}
+.close3 h2{margin:0 auto;max-width:var(--title-max);font-weight:var(--w-display);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em;text-wrap:pretty}
+.close3 .ctas{display:flex;justify-content:center;gap:clamp(10px,.7*var(--vw,1vw),14px);flex-wrap:wrap;margin-top:clamp(28px,2.4*var(--vw,1vw),44px)}
+.close3 .btn{height:var(--btn-h);padding:0 var(--btn-pad);font-size:var(--btn-font)}
+.close3 .btn.go{display:none} /* on a phone the close offers Download for iOS, as the top does, and Request a demo beside it (the founder, 12 October 2026) */
+@media (max-width:734px){.close3 .ctas .btn:not(.ghost):not(.go){display:none}.close3 .btn.go{display:inline-flex;order:-1}}
+
+/* Pricing: the plans right under the headline, closer than a section's usual room. */
+.hero+.trust{padding-top:clamp(40px,3.2*var(--vw,1vw),64px)}
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="wrap">
+    <a class="wordmark" href="/" aria-label="SimeonLabs home"></a>
+    <nav class="acts" aria-label="Pages"><a href="/marketplace">Marketplace</a><a href="/connectors">Connectors</a><a href="/pricing" aria-current="page">Pricing</a><a class="btn" href="https://api.simeonlabs.com/desktop/download/mac">Download</a></nav>
+    <details class="menu">
+      <summary aria-label="Menu"><i></i><i></i></summary>
+      <div class="menu-in"><nav aria-label="Pages"><a href="/marketplace">Marketplace</a><a href="/connectors">Connectors</a><a href="/pricing" aria-current="page">Pricing</a></nav><a class="btn" href="https://api.simeonlabs.com/desktop/download/mac">Download</a></div>
+    </details>
+  </div>
+</header>
+
+<main>
+<section class="hero" aria-label="Pricing">
+  <div class="wrap">
+    <h1>Every plan starts with <span class="nw">a free month.</span></h1>
+  </div>
+</section>
+
+<section class="trust" id="pricing" aria-label="Pricing">
+  <div class="wrap">
+    <div class="plans3"><div class="plan3"><h3>Trial</h3><div class="pr">Free<small>/ 30 days</small></div><p class="billed">Then $30 a month</p><a class="btn" href="https://app.simeonlabs.com/billing?plan=standard">Try it free</a><p class="inc">Includes:</p><ul><li>Each agent&#8217;s own computer</li><li>Signs into your tools</li><li>Routines on a schedule</li><li>Slack, Discord and voice calls</li><li>Work anywhere: Mac and iPhone</li></ul></div><div class="plan3"><h3>Standard</h3><div class="pr">$30<small>/ month</small></div><p class="billed">Billed monthly</p><a class="btn" href="https://app.simeonlabs.com/billing?plan=standard">Get Standard</a><p class="inc">Everything in the trial, plus:</p><ul><li>Weekly usage included</li><li>More usage on demand</li></ul></div><div class="plan3"><h3>Pro</h3><div class="pr">$100<small>/ month</small></div><p class="billed">Billed monthly</p><a class="btn" href="https://app.simeonlabs.com/billing?plan=pro">Get Pro</a><p class="inc">Everything in Standard, plus:</p><ul><li>3.5x Standard usage</li><li>For agents busy every day</li></ul></div><div class="plan3"><h3>Max</h3><div class="pr">$200<small>/ month</small></div><p class="billed">Billed monthly</p><a class="btn" href="https://app.simeonlabs.com/billing?plan=max">Get Max</a><p class="inc">Everything in Pro, plus:</p><ul><li>12x Standard usage</li><li>Earliest access to all products</li></ul></div></div>
+  </div>
+</section>
+
+<section class="trust" id="questions" aria-label="Questions">
+  <div class="wrap">
+    <div class="trust-top">
+      <h2>Questions and answers</h2>
+    </div>
+    <div class="qa3"><details><summary>How does the free month work?</summary><p>Choose a plan and add a card. The first 30 days are free, then the plan’s monthly price begins. Cancel before then and you pay nothing. There is one free month per person.</p></details><details><summary>What is usage?</summary><p>The work your agents do for you. Each plan includes an amount for the week, which resets every Monday and doesn’t carry over. Pro includes 3.5 times Standard’s, and Max 12 times.</p></details><details><summary>What happens if I use it all?</summary><p>Your agents wait until Monday, when it resets. The app tells you as you get close, and you can move to a bigger plan at any time.</p></details><details><summary>Can I change or cancel my plan?</summary><p>Yes, at any time, from Settings in the app or from your billing page. Cancel during the free month and you are never charged.</p></details><details><summary>Do the computers, apps or teams cost extra?</summary><p>No. Each agent’s computer in the cloud, every app you connect and every team you add from the Marketplace come with every plan, the free month too. Their work counts toward your plan’s usage.</p></details><details><summary>How do I pay?</summary><p>By card, through Stripe, in US dollars, billed monthly.</p></details><details><summary>What do I need?</summary><p>A Mac with Apple silicon on macOS 15 or later.</p></details></div>
+  </div>
+</section>
+
+<section class="close3" aria-label="Get started">
+  <div class="wrap">
+    <h2>Your team is ready<br>when you are.</h2>
+    <div class="ctas"><a class="btn" href="https://api.simeonlabs.com/desktop/download/mac">Download for macOS<svg class="dl" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m-5-5 5 5 5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a><a class="btn ghost" href="/#app">Request a demo&nbsp;&#8594;</a><span class="btn go"><svg class="apl" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></svg>Download for iOS<svg class="dl" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m-5-5 5 5 5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div>
+  </div>
+</section>
+</main>
+
+<footer><div class="wrap"><span>Copyright © 2026 Spaire, Inc. All rights reserved.</span><nav><a href="/marketplace">Marketplace</a><a href="/connectors">Connectors</a><a href="/pricing" aria-current="page">Pricing</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="mailto:support@simeonlabs.com">Contact</a></nav></div></footer>
+
+</body>
+</html>
