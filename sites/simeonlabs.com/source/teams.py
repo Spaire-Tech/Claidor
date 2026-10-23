@@ -31,6 +31,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(HERE, "..", "..", ".."))
 OUT = os.path.join(HERE, "..", "public")
 PACKS = os.path.join(HERE, "..", "..", "..", "server", "simeon", "desktop", "packs.json")
+HOME_PAGE = os.path.join(HERE, "page.html")
 
 FACES = f"{REPO}/ios/SimeonCore/Sources/SimeonCore/Resources/Faces"
 APP_ICONS = f"{REPO}/ios/Simeon/AppIcons.xcassets/AppIcons"
@@ -325,7 +326,8 @@ html{scroll-behavior:smooth;scroll-padding-top:clamp(72px,4.6vw,96px)} /* See al
 /* The marketplace ("more Apple style", 23 October 2026): a light grey band as on the Apple Store, white chips
    and a white search field on it (no blue ring), and the teams as the Store's white cards, which rise a little
    under the pointer: the faces, the kind of work, the name, what it is for, then five of its apps. */
-.market{padding:clamp(96px,8vw,160px) 0 clamp(72px,6vw,120px);background:linear-gradient(180deg,var(--page) 0,var(--soft) clamp(200px,17vw,340px))} /* white fading into the grey */
+.market{padding:clamp(96px,8vw,160px) 0 clamp(150px,12vw,230px);background:linear-gradient(180deg,var(--page) 0,var(--soft) clamp(200px,17vw,340px),var(--soft) calc(100% - clamp(150px,12vw,230px)),var(--page) 100%)} /* white fading into the grey and back */
+.market+.trust{padding-top:clamp(24px,2.4vw,48px)}
 .list-title{font-family:var(--serif);font-weight:400;font-size:clamp(28px,2.2vw,44px);line-height:1.08;letter-spacing:-.02em} /* the home page's section titles */
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:clamp(18px,1.5vw,28px)}
 .chip{flex:none;height:36px;padding:0 16px;border:0;border-radius:99px;background:#fff;color:var(--ink);font:inherit;font-size:14px;letter-spacing:-.01em;cursor:pointer;box-shadow:0 0 0 1px rgba(0,0,0,.06);transition:background .2s,color .2s,box-shadow .2s}
@@ -399,8 +401,7 @@ html:has(dialog[open]){overflow:hidden}
 }
 @media (max-height:760px) and (min-width:735px){.sheet-in{padding-top:38px;padding-bottom:34px}.roster li{padding:13px 0}} /* a short laptop screen: still one screen */
 @media (prefers-reduced-motion:reduce){.sheet[open],.sheet[open]::backdrop{animation:none}}
-footer{margin-top:0;padding-top:0}
-footer .wrap{padding-top:20px;border-top:1px solid #d2d2d7}
+footer{margin-top:0} /* the closing call above leaves the room, as on the home page */
 @media (max-width:1068px){.packs{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:734px){.packs{grid-template-columns:1fr;gap:14px}.lead{padding-top:48px}.lead h1{font-size:30px;line-height:1.16}.fan{--w:clamp(150px,44vw,240px)}.shot{border-width:4px;border-radius:18px}
   .chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-inline:calc(-1 * var(--gutter));padding:2px var(--gutter)}.chips::-webkit-scrollbar{display:none}}
@@ -739,6 +740,46 @@ def team_sheet(pack, assets, kind):
 </dialog>"""
 
 
+# The Teams page's own questions: about adding and owning a team, none of the home page's again.
+TEAM_QA = [
+    ("How do I add a team?", "Open it here and choose Add to Simeon on the Mac or iPhone where Simeon is installed. The app opens and adds all five agents to a folder in your sidebar."),
+    ("Does a team cost extra?", "No. Adding one is free, and its agents use your plan like any agent you create. A team that works every day may suit Pro."),
+    ("What if I already use some of their apps?", "Each agent names the apps you have already connected and asks only for the ones it is missing."),
+    ("Can I change them once they are added?", "Yes, they are yours. Rename them, rewrite what they do, give them other apps, or remove the ones you don't need. The rest keep working."),
+    ("Can I add more than one team?", "Yes. Each goes in its own folder. Adding a team you already have simply opens it."),
+    ("What if my kind of work isn't here?", "Start from the closest team and reshape it, or create your own agents from scratch in the app."),
+]
+
+
+def from_home():
+    """The home page's pricing, its closing call and their styles, read from source/page.html so the Teams
+    page always shows the same plans, prices and buttons."""
+    page = _text(HOME_PAGE)
+    pricing = re.search(r'<section class="trust" id="pricing".*?</section>', page, re.S)
+    close = re.search(r'<section class="close3".*?</section>', page, re.S)
+    start, stop = page.find("/* Pricing: Trial, Standard"), page.find("@media (max-width:734px){.close3")
+    if not (pricing and close and 0 <= start < stop):
+        sys.exit("teams.py: source/page.html has no pricing or closing section to show on /teams")
+    rules = [line for line in page.splitlines()
+             if line.startswith((".btn.ghost", ".btn .apl{", ".btn .dl{", ".trust{", ".trust-top{", ".trust h2{", ".trust-top p{"))]
+    css = ("\n/* From the home page (source/page.html): the section titles, the pricing, the questions and the closing call. */\n"
+           + "\n".join(rules) + "\n@media (max-width:860px){.trust-top{grid-template-columns:1fr}}\n"
+           + page[start:page.index("\n", stop) + 1]).replace("url(fonts/", "url(/fonts/")
+    return pricing.group(0), close.group(0).replace('href="#app"', 'href="/#app"'), css
+
+
+def questions():
+    rows = "".join(f"<details><summary>{esc(q)}</summary><p>{esc(a)}</p></details>" for q, a in TEAM_QA)
+    return f"""<section class="trust" id="questions" aria-label="Questions">
+  <div class="wrap">
+    <div class="trust-top">
+      <h2>Questions and answers</h2>
+    </div>
+    <div class="qa3">{rows}</div>
+  </div>
+</section>"""
+
+
 def index_page(packs, assets):
     groups = {pid: [slug for slug, (_, ids) in GROUPS.items() if pid in ids] for pid in (p["id"] for p in packs)}
     cards = "\n".join(
@@ -747,6 +788,7 @@ def index_page(packs, assets):
         + f'<h2>{esc(p["title"])}</h2><p>{esc(p["summary"])}</p>'
         f'<span class="foot">{some_apps(p, assets)}<span class="open" aria-hidden="true">{PLUS_SMALL}</span></span></a></li>'
         for p in packs)
+    pricing, close, home_css = from_home()
     chips = '<button class="chip" type="button" data-group="all" aria-pressed="true">All</button>' + "".join(
         f'<button class="chip" type="button" data-group="{slug}" aria-pressed="false">{esc(label)}</button>' for slug, (label, _) in GROUPS.items())
     body = f"""<section class="lead" aria-label="Teams">
@@ -768,8 +810,14 @@ def index_page(packs, assets):
 </ul>
 <p class="none" hidden>No team matches that yet. <button type="button">Show every team</button></p>
 </div></section>
+
+{pricing}
+
+{questions()}
+
+{close}
 {chr(10).join(team_sheet(p, assets, GROUPS[groups[p["id"]][0]][0] if groups[p["id"]] else "") for p in packs)}"""
-    return frame("Teams", "Starter teams of five agents for one kind of business, ready to add to Simeon.", "/teams", body, INDEX_CSS, current=True, script=MARKET_JS + SHEET_JS + ADD_JS)
+    return frame("Teams", "Starter teams of five agents for one kind of business, ready to add to Simeon.", "/teams", body, INDEX_CSS + home_css, current=True, script=MARKET_JS + SHEET_JS + ADD_JS)
 
 
 def build(out=OUT):
