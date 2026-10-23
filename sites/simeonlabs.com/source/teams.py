@@ -359,47 +359,45 @@ html{scroll-behavior:smooth;scroll-padding-top:clamp(72px,4.6vw,96px)} /* See al
 .pack:hover .open{transform:scale(1.08)}
 /* A team's window (23 October 2026, after Apple's AppleCare window): over the dimmed page, on one screen
    without scrolling (the founder: "too big... not proportionate"). The team, then its five agents as rows
-   between hairlines (face, name and job, what it does, the apps it connects), then Add to Simeon. The long
+   between hairlines (face, name and job, what it does, the apps it connects), then Add to Simeon alone. The long
    instructions and the quotes stay on the team's page. A click beside it, Escape or the close button closes it. */
 html:has(dialog[open]){overflow:hidden}
-.sheet{width:min(860px,calc(100vw - 48px));max-width:none;max-height:calc(100dvh - 48px);margin:auto;padding:0;border:0;border-radius:22px;background:var(--page);color:var(--ink);overflow:hidden;box-shadow:0 30px 80px -20px rgba(0,0,0,.35)}
+.sheet{width:min(920px,calc(100vw - 48px));max-width:none;max-height:calc(100dvh - 48px);margin:auto;padding:0;border:0;border-radius:22px;background:var(--page);color:var(--ink);overflow:hidden;box-shadow:0 30px 80px -20px rgba(0,0,0,.35)}
 .sheet::backdrop{background:rgba(0,0,0,.4)}
 .sheet[open]{animation:sheet-in .26s cubic-bezier(.2,.7,.2,1)}
 .sheet[open]::backdrop{animation:fade-in .26s ease}
 @keyframes sheet-in{from{opacity:0;transform:translateY(10px) scale(.985)}}
 @keyframes fade-in{from{opacity:0}}
-.sheet-in{max-height:calc(100dvh - 48px);overflow:auto;overscroll-behavior:contain;padding:36px 40px 28px}
-.sheet .close{position:absolute;top:14px;right:14px;z-index:2;display:grid;place-items:center;width:30px;height:30px;padding:0;border:0;border-radius:50%;background:#e8e8ed;color:#1d1d1f;cursor:pointer;transition:background .2s}
+.sheet-in{max-height:calc(100dvh - 48px);overflow:auto;overscroll-behavior:contain;padding:48px 56px 44px}
+.sheet .close{position:absolute;top:18px;right:18px;z-index:2;display:grid;place-items:center;width:30px;height:30px;padding:0;border:0;border-radius:50%;background:#e8e8ed;color:#1d1d1f;cursor:pointer;transition:background .2s}
 .sheet .close:hover{background:#dcdce1}
 .sheet .close svg{width:12px;height:12px}
 .sheet .close:focus-visible{outline:2px solid #1d1d1f;outline-offset:2px}
 .sheet .eyebrow{font-size:13px;font-weight:500;color:var(--ink2)}
-.sheet h2{margin-top:4px;font-family:var(--serif);font-weight:400;font-size:32px;line-height:1.1;letter-spacing:-.02em}
-.sheet .intro{margin-top:8px;max-width:40em;font-size:15px;line-height:1.47;letter-spacing:-.01em;color:#515154}
-.roster{margin:22px 0 0;padding:0;list-style:none;border-top:1px solid #e8e8ed}
-.roster li{display:grid;grid-template-columns:36px 128px minmax(0,1fr) auto;align-items:center;column-gap:18px;padding:12px 0;border-bottom:1px solid #e8e8ed}
-.roster img,.roster .noface{width:36px;height:36px;border-radius:50%;object-fit:cover}
+.sheet h2{margin-top:6px;font-family:var(--serif);font-weight:400;font-size:36px;line-height:1.1;letter-spacing:-.02em}
+.sheet .intro{margin-top:10px;max-width:40em;font-size:16px;line-height:1.47;letter-spacing:-.01em;color:#515154}
+.roster{margin:30px 0 0;padding:0;list-style:none;border-top:1px solid #e8e8ed}
+.roster li{display:grid;grid-template-columns:44px 140px minmax(0,1fr) auto;align-items:center;column-gap:24px;padding:16px 0;border-bottom:1px solid #e8e8ed}
+.roster img,.roster .noface{width:44px;height:44px;border-radius:50%;object-fit:cover}
 .roster .noface{font-size:15px}
-.roster b{display:block;font-size:15px;font-weight:500;letter-spacing:-.01em}
-.roster small{display:block;font-size:13px;color:var(--ink2)}
-.roster p{font-size:14px;line-height:1.45;letter-spacing:-.005em;color:#515154}
-.roster .apps{--as:24px;--ring:var(--page)}
-.sheet .acts{display:flex;align-items:center;flex-wrap:wrap;gap:10px 22px;margin-top:22px}
+.roster b{display:block;font-size:16px;font-weight:500;letter-spacing:-.01em}
+.roster small{display:block;margin-top:1px;font-size:14px;color:var(--ink2)}
+.roster p{font-size:15px;line-height:1.47;letter-spacing:-.005em;color:#515154}
+.roster .apps{--as:28px;--ring:var(--page)}
+.sheet .acts{display:flex;margin-top:32px}
 .sheet .add{margin-top:0;align-items:flex-start}
-.sheet .add .btn{height:38px;padding:0 18px;font-size:14px}
-.sheet .page{color:var(--blue);text-decoration:none;font-size:14px}
-.sheet .page::after{content:" \\203A"}
-.sheet .page:hover{text-decoration:underline}
-.sheet .fine{margin-left:auto;font-size:12px;color:var(--ink2)}
+.sheet .add .btn{height:42px;padding:0 20px;font-size:15px}
 @media (max-width:734px){
   .sheet{width:100vw;max-height:92dvh;margin:auto 0 0;border-radius:20px 20px 0 0}
-  .sheet-in{max-height:92dvh;padding:28px 20px 22px}
+  .sheet-in{max-height:92dvh;padding:32px 22px 26px}
   .sheet h2{font-size:28px}
-  .roster li{grid-template-columns:36px minmax(0,1fr) auto;row-gap:4px;padding:12px 0}
+  .roster li{grid-template-columns:40px minmax(0,1fr) auto;column-gap:14px;row-gap:6px;padding:14px 0}
   .roster .apps{grid-column:3;grid-row:1}
-  .roster p{grid-column:2 / -1;grid-row:2;font-size:13.5px}
-  .sheet .fine{margin-left:0}
+  .roster img,.roster .noface{width:40px;height:40px}
+  .roster .apps{--as:24px}
+  .roster p{grid-column:2 / -1;grid-row:2;font-size:14px}
 }
+@media (max-height:760px) and (min-width:735px){.sheet-in{padding-top:38px;padding-bottom:34px}.roster li{padding:13px 0}} /* a short laptop screen: still one screen */
 @media (prefers-reduced-motion:reduce){.sheet[open],.sheet[open]::backdrop{animation:none}}
 footer{margin-top:0;padding-top:0}
 footer .wrap{padding-top:20px;border-top:1px solid #d2d2d7}
@@ -736,7 +734,7 @@ def team_sheet(pack, assets, kind):
   <h2 id="{pid}-title">{esc(pack["title"])}</h2>
   <p class="intro">{esc(pack["summary"])}</p>
   <ul class="roster" aria-label="The agents">{"".join(rows)}</ul>
-  <div class="acts">{add_button(pack)}<a class="page" href="/teams/{pid}">See the team's page</a><p class="fine">Free. Each one asks before it sends, posts or pays.</p></div>
+  <div class="acts">{add_button(pack)}</div>
 </div>
 </dialog>"""
 
