@@ -6,42 +6,33 @@
    page keep their own measures. */
 :root{
   --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Inter","Helvetica Neue",Arial,sans-serif;
-  --t-display:clamp(28px,2vw,40px);  /* a page's headline and every section's title (Pricing, Questions…), the closing call, a price */
-  --t-title:clamp(22px,1.6vw,30px);  /* a statement, a legal page's heading, a photo's label */
-  --t-head:clamp(17px,1.15vw,20px);  /* a card's, a step's or a question's title */
-  --t-lead:clamp(16px,1.05vw,19px);  /* the line under a title */
-  --t-body:clamp(15px,1vw,17px);     /* running text, a card's line, a tab */
+  --t-display:clamp(28px,2*var(--vw),40px);  /* a page's headline and every section's title (Pricing, Questions…), the closing call, a price */
+  --t-title:clamp(22px,1.6*var(--vw),30px);  /* a statement, a legal page's heading, a photo's label */
+  --t-head:clamp(17px,1.15*var(--vw),20px);  /* a card's, a step's or a question's title */
+  --t-lead:clamp(16px,1.05*var(--vw),19px);  /* the line under a title */
+  --t-body:clamp(15px,var(--vw),17px);     /* running text, a card's line, a tab */
   --t-small:13px;                    /* a label over a title, a note */
   --t-tiny:12px;                     /* the footer, fine print */
-  --t-nav:clamp(14px,1vw,18px);      /* the bar's links and button */
+  --t-nav:clamp(14px,var(--vw),18px);      /* the bar's links and button */
   --t-field:16px;                    /* a text field: 16 px, so an iPhone does not zoom into it */
   --title-max:16.5em;                /* a title's widest line, on every page: the home page's headline holds
                                         "Create a team of agents for any part" (the founder, 23 October 2026) */
   --w-display:400;                   /* headlines, section titles, prices: regular, never bold (the founder) */
   --w-title:500;                     /* a card's small title: medium, as the apps' */
-  --btn-h:clamp(40px,2.5vw,48px);
-  --btn-pad:clamp(18px,1.3vw,24px);
-  --btn-font:clamp(15px,.95vw,17px);
+  --btn-h:clamp(40px,2.5*var(--vw),48px);
+  --btn-pad:clamp(18px,1.3*var(--vw),24px);
+  --btn-font:clamp(15px,.95*var(--vw),17px);
+  --vw:1vw; --vh:1vh; --dvh:1dvh;    /* a hundredth of the window, the unit every page's sizes use in place of vw, vh and dvh
+                                        (a zoomed page's own vw would shrink with it; see html.pc below) */
 }
-/* A computer (a mouse or a trackpad, wider than a phone): the sizes keep shrinking with the window below the
-   floors above, down to three quarters of them. Windows enlarges everything by 125 or 150% and gives the page a
-   window only 1280 to 1536 wide, where those floors held and every word and button stood a quarter larger than
-   on a Mac (the founder, 23 October 2026: "i get the real app when i size it down to 75%"). With the floors at
-   75% a 1280-wide window shows what the founder's Mac shows, scaled to fit. Phones and tablets (a finger) keep
-   the floors. */
+/* A computer other than a Mac (each page's first script marks it `pc`) is drawn at three quarters, as a Mac
+   draws it. Windows counts 96 pixels to an inch of screen and then enlarges them by its display scaling, where
+   a Mac laptop counts about 127, so every fixed size (a panel, a card, a row, a button, a word) stood a third
+   larger than on the founder's Mac while the headline, the column and the demo, measured from the window, did
+   not (the founder, 23 October 2026: "i get the real app when i size it down to 75%"). The page is zoomed to
+   75% and --vw, --vh and --dvh still measure the whole window, as the browser's own 75% does. Phones, tablets
+   and windows as narrow as a phone keep their own sizes. */
 @media (min-width:735px) and (hover:hover) and (pointer:fine){
-  :root{
-    --t-display:clamp(21px,2vw,40px);
-    --t-title:clamp(16.5px,1.6vw,30px);
-    --t-head:clamp(12.75px,1.15vw,20px);
-    --t-lead:clamp(12px,1.05vw,19px);
-    --t-body:clamp(11.25px,1vw,17px);
-    --t-small:clamp(10px,.9vw,13px);
-    --t-tiny:clamp(9.5px,.83vw,12px);
-    --t-nav:clamp(10.5px,1vw,18px);
-    --btn-h:clamp(30px,2.5vw,48px);
-    --btn-pad:clamp(13.5px,1.3vw,24px);
-    --btn-font:clamp(11.25px,.95vw,17px);
-  }
+  html.pc{zoom:.75;--vw:calc(1vw / .75);--vh:calc(1vh / .75);--dvh:calc(1dvh / .75)}
 }
 body{font-family:var(--font)}

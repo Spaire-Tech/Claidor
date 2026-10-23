@@ -78,14 +78,14 @@ SEARCH = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5
 CONN_CSS = """
 /* The opening: the home page's (its styles come from page.html), the headline and the buttons on the left;
    famous apps' icons drifting in the room on its right. On a phone they line up on the left, under the button. */
-.open{position:relative;min-height:clamp(380px,31vw,600px);overflow:hidden}
+.open{position:relative;min-height:clamp(380px,31*var(--vw),600px);overflow:hidden}
 .open .wrap{position:relative;z-index:1}
 .float{position:absolute;left:var(--x);top:var(--y);transform:translate(-50%,-50%);animation:drift var(--t) ease-in-out infinite alternate}
-.float .app{--as:clamp(52px,4.8vw,92px);--ring:transparent;box-shadow:0 0 0 1px rgba(0,0,0,.05),0 18px 40px -16px rgba(0,0,0,.22)}
+.float .app{--as:clamp(52px,4.8*var(--vw),92px);--ring:transparent;box-shadow:0 0 0 1px rgba(0,0,0,.05),0 18px 40px -16px rgba(0,0,0,.22)}
 @keyframes drift{from{translate:0 -7px}to{translate:0 7px}}
 
 /* Find an app: the title and the search, the kinds as words (the chosen one black), the apps as cards. */
-.find{padding:clamp(48px,5vw,100px) 0 0}
+.find{padding:clamp(48px,5*var(--vw),100px) 0 0}
 .find-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:20px 40px}
 .find-head h2{max-width:var(--title-max);font-weight:var(--w-display);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em;text-wrap:pretty} /* the home page's section titles: the headline's size */
 .search{position:relative;flex:1;max-width:620px;min-width:min(100%,280px)}
@@ -94,13 +94,13 @@ CONN_CSS = """
 .search input::placeholder{color:#86868b;opacity:1}
 .search input::-webkit-search-decoration,.search input::-webkit-search-cancel-button{-webkit-appearance:none}
 .search svg{position:absolute;right:20px;top:50%;width:18px;height:18px;transform:translateY(-50%);color:#1d1d1f;pointer-events:none}
-.kinds{display:flex;gap:clamp(20px,2vw,34px);margin-top:clamp(24px,2.4vw,40px);overflow-x:auto;scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 56px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 56px),transparent)}
+.kinds{display:flex;gap:clamp(20px,2*var(--vw),34px);margin-top:clamp(24px,2.4*var(--vw),40px);overflow-x:auto;scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 56px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 56px),transparent)}
 .kinds::-webkit-scrollbar{display:none}
 .kinds button{flex:none;padding:6px 0;border:0;background:none;color:#86868b;font:inherit;font-size:var(--t-body);letter-spacing:-.01em;white-space:nowrap;cursor:pointer;transition:color .15s}
 .kinds button:hover,.kinds button[aria-pressed="true"]{color:var(--ink)}
 .kinds button:last-child{margin-right:56px}
 .kinds button:focus-visible,.more-apps:focus-visible,.step:focus-visible{outline:2px solid #1d1d1f;outline-offset:3px;border-radius:6px}
-.list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;margin:clamp(28px,2.8vw,52px) 0 0;padding:0;list-style:none}
+.list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;margin:clamp(28px,2.8*var(--vw),52px) 0 0;padding:0;list-style:none}
 .list li{display:flex;align-items:center;gap:18px;min-width:0;padding:16px 18px;border-radius:24px;background:#f9f9fa}
 .list li[hidden]{display:none}
 .list .app{--as:60px;--ring:transparent}
@@ -108,7 +108,7 @@ CONN_CSS = """
 .list b{display:block;font-size:var(--t-head);font-weight:var(--w-title);letter-spacing:-.015em}
 .list b small{margin-left:8px;font-size:var(--t-tiny);font-weight:var(--w-title);letter-spacing:0;color:#86868b}
 .list .tx>span{display:block;margin-top:3px;font-size:var(--t-body);letter-spacing:-.01em;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.more-wrap{display:flex;justify-content:center;margin-top:clamp(36px,3.6vw,60px)}
+.more-wrap{display:flex;justify-content:center;margin-top:clamp(36px,3.6*var(--vw),60px)}
 .more-wrap[hidden],.none-apps[hidden]{display:none}
 .more-apps{height:var(--btn-h);padding:0 26px;border:0;font:inherit;font-size:var(--btn-font);cursor:pointer}
 .none-apps{margin-top:28px;font-size:var(--t-body);color:var(--ink2)}
