@@ -3,8 +3,8 @@
 A starter pack is a team of five named agents for one kind of business
 (server/simeon/desktop/packs.json, which the apps read too). /teams opens as
 the home page does (its styles and buttons come from page.html), with photos of
-people at work under it, each a team's (img/teams/<id>.jpg, in the order of
-LEAD); then the Marketplace (kinds of work as chips, a search, every team as a
+people at work under it, across the page's column, each a team's
+(img/teams/<id>.jpg, in the order of LEAD); then the Marketplace (kinds of work as chips, a search, every team as a
 card); then the home page's pricing, the page's own questions and the home
 page's closing call. A team's card or photo opens its window (/teams#<id>): the
 team's title, its line and Add to Simeon, then its agents. Add to Simeon opens
@@ -52,8 +52,9 @@ MAC_DOWNLOAD = "https://api.simeonlabs.com/desktop/download/mac"
 BLUE = "#255a93"
 WORDS = {1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six", 7: "seven", 8: "eight", 9: "nine", 10: "ten"}
 PICTURES = (".png", ".jpg", ".jpeg", ".webp", ".svg")
-# The teams whose photos open /teams, left to right (source/img/teams/<id>.jpg).
-LEAD = ["creators", "founders", "agencies", "coffee-shop", "freelancers"]
+# The teams whose photos open /teams, left to right (source/img/teams/<id>.jpg); six fill the column at a size
+# the founder asked for (23 October 2026: "bigger", from under the headline, with an online shop).
+LEAD = ["creators", "founders", "agencies", "coffee-shop", "online-stores", "freelancers"]
 # The marketplace's chips: the most common kinds of work, each the teams it shows (a team can be in two).
 GROUPS = {
     "local": ("Local business", ["coffee-shop", "salons", "trades"]),
@@ -312,16 +313,18 @@ footer a[aria-current]{color:var(--ink)}
 INDEX_CSS = """
 /* The opening: the home page's (its styles come from page.html), the headline in plain words, set as the home
    page's ("A team of agents for your kind" on the first line, "of work" on the second); then photos of
-   people at work in a fan, each one a team's, the middle one in front. */
+   people at work in a fan across the column, each one a team's, the middle ones in front. The first photo
+   starts under the headline's first letter and the last ends at the column's right edge: --n photos, each
+   overlapping the next by .3 of its width, make the column ((--n - 1) × .7 + 1 widths). */
 html{scroll-behavior:smooth;scroll-padding-top:clamp(72px,4.6vw,96px)} /* See all teams lands below the bar */
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
-.fan{--w:clamp(150px,18vw,360px);--step:calc(var(--w) * .84);position:relative;height:calc(var(--w) * 1.42 + 84px);margin-top:clamp(36px,3.4vw,64px);overflow:hidden}
-.shot{position:absolute;top:calc(var(--w) * .08 + 30px);left:calc(50% - var(--w) / 2 + var(--o) * var(--step));z-index:var(--z);width:var(--w);aspect-ratio:4 / 5;border:6px solid #fff;border-radius:24px;overflow:hidden;background:var(--soft);
+.fan{--w:calc(var(--col) / ((var(--n) - 1) * .7 + 1));--step:calc(var(--w) * .7);position:relative;height:calc(var(--w) * 1.36 + 100px);margin-top:clamp(36px,3.4vw,64px);overflow:hidden}
+.shot{position:absolute;top:calc(var(--w) * .05 + 30px);left:calc(50% - var(--w) / 2 + var(--o) * var(--step));z-index:var(--z);width:var(--w);aspect-ratio:4 / 5;border:6px solid #fff;border-radius:24px;overflow:hidden;background:var(--soft);
   box-shadow:0 0 0 1px rgba(0,0,0,.06),0 14px 34px -12px rgba(0,0,0,.28);transform:translateY(calc(var(--y) + var(--lift,0px))) rotate(var(--r)) scale(var(--s));transition:transform .35s cubic-bezier(.2,.7,.2,1)}
 .shot:hover,.shot:focus-visible{--lift:-10px}
 .shot img{width:100%;height:100%;object-fit:cover}
 .shot::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.06),rgba(0,0,0,.26))}
-.shot span{position:absolute;inset:0;z-index:1;display:grid;place-items:center;padding:0 12px;color:#fff;font-size:var(--t-title);font-weight:var(--w-display);letter-spacing:-.02em;text-shadow:0 1px 18px rgba(0,0,0,.4)}
+.shot span{position:absolute;inset:0;z-index:1;display:grid;place-items:center;padding:0 calc(var(--cr,0) * 100% + 12px) 0 calc(var(--cl,0) * 100% + 12px);text-align:center;white-space:nowrap;color:#fff;font-size:var(--t-title);font-weight:var(--w-display);letter-spacing:-.02em;text-shadow:0 1px 18px rgba(0,0,0,.4)}
 /* The marketplace ("more Apple style", 23 October 2026): a light grey band as on the Apple Store, white chips
    and a white search field on it (no blue ring), and the teams as the Store's white cards, which rise a little
    under the pointer: the faces, the kind of work, the name, what it is for, then five of its apps. */
@@ -593,25 +596,34 @@ def forward_page(pack):
 
 
 def fan(packs, assets):
-    """The opening's photos, left to right, each a link to its team: the middle one larger and in front, the
-    ones beside it tilted in, the outer ones tilted out (source/img/teams/<pack>.jpg; a missing one is left out)."""
+    """The opening's photos, left to right, each a link to its team: the middle one (or the middle two) larger
+    and in front, the ones beside them tilted in, the outer ones tilted out (source/img/teams/<pack>.jpg; a
+    missing one is left out). Each photo's name sits in the middle of the part its neighbours leave showing:
+    a neighbour in front covers .3 of it (--cl on the left, --cr on the right)."""
     by_id = {p["id"]: p for p in packs}
     shots = [(by_id[pid], f"{HERE}/img/teams/{pid}.jpg") for pid in LEAD if pid in by_id and os.path.isfile(f"{HERE}/img/teams/{pid}.jpg")]
-    out = []
-    for i, (pack, src) in enumerate(shots):
+    poses = []
+    for i in range(len(shots)):
         o = i - (len(shots) - 1) / 2
         side = -1 if o < 0 else 1
         if o == 0:
-            r, y, s, z = 0, 0, 1.12, 5
-        elif abs(o) <= 1:
-            r, y, s, z = -side * 2.5, 34, 1, 4
+            poses.append((o, 0, 0, 1.12, 5))
+        elif abs(o) < 1:  # the middle two, tilted a little apart
+            poses.append((o, side * 1.5, 0, 1.06, 5))
+        elif abs(o) < 2:
+            poses.append((o, -side * 2.5, 34, 1, 4))
         else:
-            r, y, s, z = side * 5, 20, 1, 3
+            poses.append((o, side * 5, 20, 1, 3))
+    out = []
+    for i, ((pack, src), (o, r, y, s, z)) in enumerate(zip(shots, poses)):
+        # in front: a higher layer, or the same layer later in the page
+        cl = .3 if i > 0 and poses[i - 1][4] > z else 0
+        cr = .3 if i + 1 < len(poses) and poses[i + 1][4] >= z else 0
         url = assets._copy(src, "photos", f"{pack['id']}.jpg")
         name = re.sub(r"^Simeon for ", "", pack["title"])
-        out.append(f'<a class="shot" href="#{pack["id"]}" style="--o:{o:g};--r:{r:g}deg;--y:{y}px;--s:{s:g};--z:{z}" aria-label="{esc(pack["title"])}">'
+        out.append(f'<a class="shot" href="#{pack["id"]}" style="--o:{o:g};--r:{r:g}deg;--y:{y}px;--s:{s:g};--z:{z};--cl:{cl:g};--cr:{cr:g}" aria-label="{esc(pack["title"])}">'
                    f'<img src="{url}" alt="" width="736" height="920"><span aria-hidden="true">{esc(name)}</span></a>')
-    return f'<div class="fan">{"".join(out)}</div>' if out else ""
+    return f'<div class="fan" style="--n:{len(out)}">{"".join(out)}</div>' if out else ""
 
 
 def search_words(pack):
