@@ -314,35 +314,45 @@ html{scroll-behavior:smooth;scroll-padding-top:clamp(72px,4.6vw,96px)} /* See al
 .shot img{width:100%;height:100%;object-fit:cover}
 .shot::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.06),rgba(0,0,0,.26))}
 .shot span{position:absolute;inset:0;z-index:1;display:grid;place-items:center;padding:0 12px;color:#fff;font-size:clamp(18px,1.55vw,30px);font-weight:600;letter-spacing:-.02em;text-shadow:0 1px 18px rgba(0,0,0,.4)}
-.list-title{margin-top:clamp(40px,4vw,80px);font-family:var(--serif);font-weight:400;font-size:clamp(28px,2.2vw,44px);line-height:1.08;letter-spacing:-.02em} /* the home page's section titles */
-/* The marketplace's chips (the most common kinds of work, All first) and its search, as in the founder's
-   reference: grey pills, the chosen one black; a grey rounded field with a magnifier. Both filter the list. */
-.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:clamp(16px,1.4vw,26px)}
-.chip{flex:none;height:40px;padding:0 18px;border:0;border-radius:99px;background:#f0f0f2;color:var(--ink);font:inherit;font-size:15px;letter-spacing:-.01em;cursor:pointer;transition:background .15s,color .15s}
-.chip:hover{background:#e6e6e9}
-.chip[aria-pressed="true"]{background:#000;color:#fff}
-.chip:focus-visible,.find input:focus-visible,.none button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
-.find{position:relative;margin-top:clamp(20px,1.8vw,32px)}
-.find svg{position:absolute;left:18px;top:50%;width:18px;height:18px;transform:translateY(-50%);color:#8e8e93;pointer-events:none}
-.find input{display:block;width:100%;height:48px;padding:0 20px 0 46px;border:0;border-radius:99px;background:#f0f0f2;color:var(--ink);font:inherit;font-size:16px;letter-spacing:-.01em;-webkit-appearance:none;appearance:none}
-.find input::placeholder{color:#8e8e93;opacity:1}
+/* The marketplace ("more Apple style", 23 October 2026): a light grey band as on the Apple Store, white chips
+   and a white search field on it (no blue ring), and the teams as the Store's white cards, which rise a little
+   under the pointer: the faces, the kind of work, the name, what it is for, then five of its apps. */
+.market{margin-top:clamp(24px,2.4vw,48px);padding:clamp(56px,5vw,100px) 0 clamp(72px,6vw,120px);background:var(--soft)}
+.list-title{font-family:var(--serif);font-weight:400;font-size:clamp(28px,2.2vw,44px);line-height:1.08;letter-spacing:-.02em} /* the home page's section titles */
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:clamp(18px,1.5vw,28px)}
+.chip{flex:none;height:36px;padding:0 16px;border:0;border-radius:99px;background:#fff;color:var(--ink);font:inherit;font-size:14px;letter-spacing:-.01em;cursor:pointer;box-shadow:0 0 0 1px rgba(0,0,0,.06);transition:background .2s,color .2s,box-shadow .2s}
+.chip:hover{box-shadow:0 0 0 1px rgba(0,0,0,.16)}
+.chip[aria-pressed="true"]{background:#1d1d1f;color:#fff;box-shadow:none}
+.chip:focus-visible,.none button:focus-visible,.pack:focus-visible{outline:2px solid #1d1d1f;outline-offset:3px}
+.find{position:relative;margin-top:clamp(14px,1.2vw,22px)}
+.find svg{position:absolute;left:16px;top:50%;width:17px;height:17px;transform:translateY(-50%);color:#86868b;pointer-events:none}
+.find input{display:block;width:100%;height:44px;padding:0 16px 0 42px;border:0;border-radius:12px;background:#fff;color:var(--ink);font:inherit;font-size:16px;letter-spacing:-.01em;outline:none;box-shadow:0 0 0 1px rgba(0,0,0,.06);-webkit-appearance:none;appearance:none;transition:box-shadow .2s}
+.find input:focus{box-shadow:0 0 0 1px rgba(0,0,0,.22),0 4px 14px rgba(0,0,0,.06)}
+.find input::placeholder{color:#86868b;opacity:1}
 .find input::-webkit-search-decoration{-webkit-appearance:none}
+.find input::-webkit-search-cancel-button{-webkit-appearance:none;width:16px;height:16px;cursor:pointer;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='11' fill='%23b0b0b5'/%3E%3Cpath d='m8 8 8 8m0-8-8 8' stroke='%23fff' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E") center/contain no-repeat}
 .none{margin-top:28px;font-size:16px;color:var(--ink2)}
 .none button{padding:0;border:0;background:none;font:inherit;color:var(--blue);cursor:pointer}
 .packs>li[hidden]{display:none}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-.packs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;margin:clamp(24px,2.4vw,44px) 0 0;padding:0;list-style:none}
-.pack{display:flex;flex-direction:column;height:100%;padding:clamp(24px,2.1vw,40px);border-radius:28px;background:var(--soft);text-decoration:none;transition:background .2s}
-.pack:hover{background:#efeff2}
-.pack .faces{--ring:var(--soft);--fs:clamp(38px,2.6vw,48px)}
-.pack:hover .faces{--ring:#efeff2}
-.pack h2{margin-top:clamp(18px,1.5vw,28px);font-size:clamp(18px,1.2vw,23px);font-weight:600;line-height:1.2;letter-spacing:-.018em}
-.pack p{margin-top:8px;flex:1;font-size:clamp(15px,1vw,18px);line-height:1.45;letter-spacing:-.01em;color:var(--ink2)}
-.pack .more{margin-top:16px;color:var(--blue);font-size:clamp(15px,1vw,18px)}
+.packs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;margin:clamp(24px,2.2vw,40px) 0 0;padding:0;list-style:none}
+.pack{display:flex;flex-direction:column;height:100%;padding:clamp(24px,2vw,36px) clamp(24px,2vw,36px) clamp(20px,1.6vw,28px);border-radius:18px;background:#fff;text-decoration:none;
+  box-shadow:2px 4px 12px rgba(0,0,0,.08);transition:box-shadow .3s cubic-bezier(0,0,.5,1),transform .3s cubic-bezier(0,0,.5,1)} /* the Apple Store's cards */
+.pack:hover{box-shadow:2px 4px 16px rgba(0,0,0,.16);transform:scale3d(1.01,1.01,1.01)}
+.pack .faces{--ring:#fff;--fs:clamp(40px,2.8vw,52px)}
+.pack .kind{display:block;margin-top:clamp(18px,1.5vw,26px);font-size:12px;font-weight:600;letter-spacing:.01em;color:#86868b}
+.pack h2{margin-top:4px;font-size:clamp(19px,1.3vw,24px);font-weight:600;line-height:1.17;letter-spacing:-.02em;color:var(--ink)}
+.pack p{margin-top:8px;flex:1;font-size:clamp(15px,1vw,17px);line-height:1.47;letter-spacing:-.01em;color:var(--ink2)}
+.pack .foot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:clamp(20px,1.7vw,28px);padding-top:clamp(14px,1.2vw,18px);border-top:1px solid #ececef}
+.pack .apps{--as:24px;--ring:#fff}
+.pack .apps .plus{margin-left:8px;font-size:13px;letter-spacing:0;color:#86868b}
+.pack .more{flex:none;color:var(--blue);font-size:clamp(14px,.95vw,17px)}
 .pack .more::after{content:" \\203A"}
+footer{margin-top:0;padding-top:0}
+footer .wrap{padding-top:20px;border-top:1px solid #d2d2d7}
 @media (max-width:1068px){.packs{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media (max-width:734px){.packs{grid-template-columns:1fr;gap:14px}.pack{border-radius:24px}.lead{padding-top:48px}.lead h1{font-size:30px;line-height:1.16}.fan{--w:clamp(150px,44vw,240px)}.shot{border-width:4px;border-radius:18px}
-  .chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-inline:calc(-1 * var(--gutter));padding-inline:var(--gutter)}.chips::-webkit-scrollbar{display:none}}
+@media (max-width:734px){.packs{grid-template-columns:1fr;gap:14px}.lead{padding-top:48px}.lead h1{font-size:30px;line-height:1.16}.fan{--w:clamp(150px,44vw,240px)}.shot{border-width:4px;border-radius:18px}
+  .chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-inline:calc(-1 * var(--gutter));padding:2px var(--gutter)}.chips::-webkit-scrollbar{display:none}}
 @media (prefers-reduced-motion:reduce){.shot{transition:none}}
 """
 
@@ -613,11 +623,24 @@ def search_words(pack):
     return esc("".join(c for c in text if not unicodedata.combining(c)))
 
 
+def some_apps(pack, assets):
+    """A card's apps: each agent's first app (five tiles), then how many more the team works in."""
+    first = list(dict.fromkeys(a["apps"][0] for a in pack["agents"] if a["apps"]))
+    every = {app for a in pack["agents"] for app in a["apps"] if app}
+    more = len(every) - len(first)
+    names = [esc(app_name(a)) for a in first]
+    label = f"Works in {', '.join(names)}" + (f" and {more} more apps" if more else "")
+    return (f'<span class="apps" role="img" aria-label="{label}">' + "".join(assets.tile(a) for a in first)
+            + (f'<span class="plus">+{more}</span>' if more else "") + "</span>")
+
+
 def index_page(packs, assets):
     groups = {pid: [slug for slug, (_, ids) in GROUPS.items() if pid in ids] for pid in (p["id"] for p in packs)}
     cards = "\n".join(
-        f'<li data-groups="{" ".join(groups[p["id"]])}" data-q="{search_words(p)}"><a class="pack" href="/teams/{p["id"]}">{faces_row(p, assets)}<h2>{esc(p["title"])}</h2>'
-        f'<p>{esc(p["summary"])}</p><span class="more">Meet the team</span></a></li>'
+        f'<li data-groups="{" ".join(groups[p["id"]])}" data-q="{search_words(p)}"><a class="pack" href="/teams/{p["id"]}">{faces_row(p, assets)}'
+        + (f'<span class="kind">{esc(GROUPS[groups[p["id"]][0]][0])}</span>' if groups[p["id"]] else "")
+        + f'<h2>{esc(p["title"])}</h2><p>{esc(p["summary"])}</p>'
+        f'<span class="foot">{some_apps(p, assets)}<span class="more">Meet the team</span></span></a></li>'
         for p in packs)
     chips = '<button class="chip" type="button" data-group="all" aria-pressed="true">All</button>' + "".join(
         f'<button class="chip" type="button" data-group="{slug}" aria-pressed="false">{esc(label)}</button>' for slug, (label, _) in GROUPS.items())
@@ -628,7 +651,7 @@ def index_page(packs, assets):
   </div>
   {fan(packs, assets)}
 </section>
-<section class="wrap" aria-labelledby="all">
+<section class="market" aria-labelledby="all"><div class="wrap">
 <h2 class="list-title" id="all">Marketplace</h2>
 <div class="tools" hidden>
   <div class="chips" role="group" aria-label="Kinds of work">{chips}</div>
@@ -639,7 +662,7 @@ def index_page(packs, assets):
 {cards}
 </ul>
 <p class="none" hidden>No team matches that yet. <button type="button">Show every team</button></p>
-</section>"""
+</div></section>"""
     return frame("Teams", "Starter teams of five agents for one kind of business, ready to add to Simeon.", "/teams", body, INDEX_CSS, current=True, script=MARKET_JS)
 
 
