@@ -273,7 +273,7 @@ a{color:inherit}
 .faces{display:flex;--fs:48px;--ring:var(--page)}
 .faces img,.faces .noface{width:var(--fs);height:var(--fs);border-radius:50%;object-fit:cover;flex:none;box-shadow:0 0 0 3px var(--ring);background:var(--soft)}
 .faces>*+*{margin-left:calc(var(--fs) * -.26)}
-.noface{display:grid;place-items:center;font-weight:600;color:var(--ink2);background:#e8e8ed}
+.noface{display:grid;place-items:center;font-weight:500;color:var(--ink2);background:#e8e8ed}
 
 /* An app's tile: its own icon with an app icon's corners, else its mark on white, else its first letter. */
 .apps{display:flex;align-items:center;flex:none;--as:36px;--ring:var(--soft)}
@@ -285,6 +285,14 @@ a{color:inherit}
 .app.mark i{display:block;width:64%;height:64%;-webkit-mask:var(--m) center/contain no-repeat;mask:var(--m) center/contain no-repeat}
 .app.letter{color:#3a3a3c;font-size:calc(var(--as) * .46);font-weight:600;letter-spacing:0;line-height:1}
 
+/* Add to Simeon, on a team's page and in its window on /teams. */
+.add{display:flex;flex-direction:column;align-items:center;margin-top:clamp(18px,1.6vw,32px)}
+.add .btn{height:clamp(40px,2.5vw,50px);padding:0 clamp(18px,1.3vw,26px);font-size:clamp(15px,.95vw,19px)} /* the home page's buttons */
+.add .btn svg{width:1em;height:1em;flex:none;margin-left:-.15em}
+.add-note{margin:0}
+.add-note[hidden]{display:none}
+.add.noapp .add-btn{display:none}
+.add .btn .dl{margin:0 -.15em 0 0} /* Download for macOS, its arrow after the words, as on the home page */
 footer{margin-top:clamp(80px,8vw,140px);background:var(--soft);padding:20px 0 calc(40px + env(safe-area-inset-bottom,0px));font-size:12px;color:var(--ink2)}
 footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
 footer nav{display:flex;gap:18px}
@@ -313,11 +321,11 @@ html{scroll-behavior:smooth;scroll-padding-top:clamp(72px,4.6vw,96px)} /* See al
 .shot:hover,.shot:focus-visible{--lift:-10px}
 .shot img{width:100%;height:100%;object-fit:cover}
 .shot::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.06),rgba(0,0,0,.26))}
-.shot span{position:absolute;inset:0;z-index:1;display:grid;place-items:center;padding:0 12px;color:#fff;font-size:clamp(18px,1.55vw,30px);font-weight:600;letter-spacing:-.02em;text-shadow:0 1px 18px rgba(0,0,0,.4)}
+.shot span{position:absolute;inset:0;z-index:1;display:grid;place-items:center;padding:0 12px;color:#fff;font-size:clamp(18px,1.55vw,30px);font-weight:500;letter-spacing:-.02em;text-shadow:0 1px 18px rgba(0,0,0,.4)}
 /* The marketplace ("more Apple style", 23 October 2026): a light grey band as on the Apple Store, white chips
    and a white search field on it (no blue ring), and the teams as the Store's white cards, which rise a little
    under the pointer: the faces, the kind of work, the name, what it is for, then five of its apps. */
-.market{margin-top:clamp(24px,2.4vw,48px);padding:clamp(56px,5vw,100px) 0 clamp(72px,6vw,120px);background:var(--soft)}
+.market{padding:clamp(96px,8vw,160px) 0 clamp(72px,6vw,120px);background:linear-gradient(180deg,var(--page) 0,var(--soft) clamp(200px,17vw,340px))} /* white fading into the grey */
 .list-title{font-family:var(--serif);font-weight:400;font-size:clamp(28px,2.2vw,44px);line-height:1.08;letter-spacing:-.02em} /* the home page's section titles */
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:clamp(18px,1.5vw,28px)}
 .chip{flex:none;height:36px;padding:0 16px;border:0;border-radius:99px;background:#fff;color:var(--ink);font:inherit;font-size:14px;letter-spacing:-.01em;cursor:pointer;box-shadow:0 0 0 1px rgba(0,0,0,.06);transition:background .2s,color .2s,box-shadow .2s}
@@ -340,14 +348,72 @@ html{scroll-behavior:smooth;scroll-padding-top:clamp(72px,4.6vw,96px)} /* See al
   box-shadow:2px 4px 12px rgba(0,0,0,.08);transition:box-shadow .3s cubic-bezier(0,0,.5,1),transform .3s cubic-bezier(0,0,.5,1)} /* the Apple Store's cards */
 .pack:hover{box-shadow:2px 4px 16px rgba(0,0,0,.16);transform:scale3d(1.01,1.01,1.01)}
 .pack .faces{--ring:#fff;--fs:clamp(40px,2.8vw,52px)}
-.pack .kind{display:block;margin-top:clamp(18px,1.5vw,26px);font-size:12px;font-weight:600;letter-spacing:.01em;color:#86868b}
-.pack h2{margin-top:4px;font-size:clamp(19px,1.3vw,24px);font-weight:600;line-height:1.17;letter-spacing:-.02em;color:var(--ink)}
+.pack .kind{display:block;margin-top:clamp(18px,1.5vw,26px);font-size:12px;font-weight:500;letter-spacing:.01em;color:#86868b}
+.pack h2{margin-top:4px;font-size:clamp(19px,1.3vw,24px);font-weight:500;line-height:1.2;letter-spacing:-.015em;color:var(--ink)}
 .pack p{margin-top:8px;flex:1;font-size:clamp(15px,1vw,17px);line-height:1.47;letter-spacing:-.01em;color:var(--ink2)}
 .pack .foot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:clamp(20px,1.7vw,28px);padding-top:clamp(14px,1.2vw,18px);border-top:1px solid #ececef}
 .pack .apps{--as:24px;--ring:#fff}
 .pack .apps .plus{margin-left:8px;font-size:13px;letter-spacing:0;color:#86868b}
-.pack .more{flex:none;color:var(--blue);font-size:clamp(14px,.95vw,17px)}
-.pack .more::after{content:" \\203A"}
+.pack .open{flex:none;display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#1d1d1f;color:#fff;transition:transform .3s}
+.pack .open svg{width:14px;height:14px}
+.pack:hover .open{transform:scale(1.08)}
+/* A team's window (23 October 2026, after Apple's AppleCare window and the founder's bot page reference): over the dimmed
+   page, the team (faces, kind of work, name, what it is for, Add to Simeon), then its agents listed on the
+   left and the chosen one's whole card on the right: what it does, the apps it connects, how it works,
+   and a line it would say. A click beside it, Escape or the close button closes it. */
+html:has(dialog[open]){overflow:hidden}
+.sheet{width:min(1040px,calc(100vw - 48px));max-width:none;max-height:calc(100dvh - 48px);margin:auto;padding:0;border:0;border-radius:24px;background:var(--page);color:var(--ink);overflow:hidden;box-shadow:0 30px 80px -20px rgba(0,0,0,.35)}
+.sheet::backdrop{background:rgba(0,0,0,.45)}
+.sheet[open]{animation:sheet-in .28s cubic-bezier(.2,.7,.2,1)}
+.sheet[open]::backdrop{animation:fade-in .28s ease}
+@keyframes sheet-in{from{opacity:0;transform:translateY(12px) scale(.98)}}
+@keyframes fade-in{from{opacity:0}}
+.sheet-in{max-height:calc(100dvh - 48px);overflow:auto;overscroll-behavior:contain;padding:clamp(28px,3.6vw,60px) clamp(24px,3.6vw,60px) clamp(24px,2.6vw,40px)}
+.sheet .close{position:absolute;top:16px;right:16px;z-index:2;display:grid;place-items:center;width:36px;height:36px;padding:0;border:0;border-radius:50%;background:#e8e8ed;color:#1d1d1f;cursor:pointer;transition:background .2s}
+.sheet .close:hover{background:#dcdce1}
+.sheet .close svg{width:14px;height:14px}
+.sheet .close:focus-visible,.who button:focus-visible{outline:2px solid #1d1d1f;outline-offset:2px}
+.sheet .faces{--fs:clamp(40px,3vw,52px)}
+.sheet .eyebrow{margin-top:clamp(18px,1.6vw,26px);font-size:clamp(14px,1vw,17px);font-weight:500;color:var(--ink)}
+.sheet h2{margin-top:6px;font-family:var(--serif);font-weight:400;font-size:clamp(30px,2.6vw,50px);line-height:1.06;letter-spacing:-.02em}
+.sheet .intro{margin-top:clamp(12px,1vw,18px);max-width:36em;font-size:clamp(16px,1.1vw,19px);line-height:1.5;letter-spacing:-.01em;color:#424245}
+.sheet .acts{display:flex;align-items:center;flex-wrap:wrap;gap:12px 24px;margin-top:clamp(20px,1.8vw,30px)}
+.sheet .add{margin-top:0;align-items:flex-start}
+.sheet .page{color:var(--blue);text-decoration:none;font-size:clamp(15px,.95vw,18px)}
+.sheet .page::after{content:" \\203A"}
+.sheet .page:hover{text-decoration:underline}
+.crew{display:grid;grid-template-columns:minmax(200px,260px) minmax(0,1fr);gap:clamp(16px,1.6vw,28px);margin-top:clamp(32px,3vw,52px)}
+.who{display:flex;flex-direction:column;gap:4px}
+.who button{display:flex;align-items:center;gap:12px;width:100%;padding:10px 12px;border:0;border-radius:14px;background:none;color:var(--ink);font:inherit;text-align:left;cursor:pointer;transition:background .15s}
+.who button:hover{background:#fafafa}
+.who button[aria-selected="true"]{background:var(--soft)}
+.who img,.who .noface{flex:none;width:36px;height:36px;border-radius:50%;object-fit:cover}
+.who b{display:block;font-size:15px;font-weight:500;letter-spacing:-.01em}
+.who small{display:block;margin-top:1px;font-size:13px;color:var(--ink2)}
+.one{padding:clamp(22px,2.2vw,36px);border-radius:20px;background:var(--soft)}
+.one[hidden]{display:none}
+.one .who-is{display:flex;align-items:center;gap:16px}
+.one .who-is img,.one .who-is .noface{flex:none;width:64px;height:64px;border-radius:18px;object-fit:cover}
+.one h3{font-size:clamp(19px,1.35vw,24px);font-weight:500;letter-spacing:-.015em}
+.one h3 .nm{color:var(--blue)}
+.one h3 .tt{color:var(--ink3)}
+.one .sum{margin-top:4px;font-size:clamp(15px,1vw,17px);line-height:1.47;color:#424245}
+.one h4{margin-top:clamp(22px,2vw,30px);font-size:13px;font-weight:500;letter-spacing:.01em;color:var(--ink2)}
+.conn{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;margin:10px 0 0;padding:0;list-style:none}
+.conn li{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:14px;background:var(--page);font-size:15px;--as:30px;--ring:var(--page)}
+.one .how{margin-top:10px;max-width:42em;font-size:clamp(15px,1vw,17px);line-height:1.6;color:#424245}
+.one .q{margin-top:clamp(20px,1.8vw,28px);padding-top:clamp(16px,1.4vw,20px);border-top:1px solid #e3e3e8;font-family:var(--serif);font-size:clamp(18px,1.25vw,23px);line-height:1.32;letter-spacing:-.01em}
+.one .q .qm{font-size:2.2em;line-height:0;vertical-align:-.36em;color:var(--blue);opacity:.55}
+.sheet .fine{margin-top:clamp(24px,2.2vw,36px);font-size:12px;line-height:1.5;color:var(--ink2)}
+@media (max-width:734px){
+  .sheet{width:100vw;max-height:92dvh;margin:auto 0 0;border-radius:22px 22px 0 0}
+  .sheet-in{max-height:92dvh;padding:28px 20px 24px}
+  .crew{grid-template-columns:minmax(0,1fr)}
+  .who{flex-direction:row;overflow-x:auto;scrollbar-width:none;margin-inline:-20px;padding:0 20px}
+  .who::-webkit-scrollbar{display:none}
+  .who button{flex:none;width:auto;padding:8px 14px 8px 8px;border-radius:99px}
+}
+@media (prefers-reduced-motion:reduce){.sheet[open],.sheet[open]::backdrop{animation:none}}
 footer{margin-top:0;padding-top:0}
 footer .wrap{padding-top:20px;border-top:1px solid #d2d2d7}
 @media (max-width:1068px){.packs{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -367,22 +433,15 @@ PACK_CSS = """
 .hero h1{margin-top:clamp(16px,1.3vw,24px);max-width:14em;font-family:var(--serif);font-weight:400;font-size:clamp(30px,2.2vw,44px);line-height:1.08;letter-spacing:-.02em;text-wrap:balance} /* the home page's headline */
 .kicker+h1{margin-top:10px}
 .hero .lede{margin-top:clamp(10px,.9vw,16px);max-width:30em;font-size:clamp(16px,1vw,19px);line-height:1.5;letter-spacing:-.01em;color:var(--ink2);text-wrap:balance}
-.add{display:flex;flex-direction:column;align-items:center;margin-top:clamp(18px,1.6vw,32px)}
-.add .btn{height:clamp(40px,2.5vw,50px);padding:0 clamp(18px,1.3vw,26px);font-size:clamp(15px,.95vw,19px)} /* the home page's buttons */
-.add .btn svg{width:1em;height:1em;flex:none;margin-left:-.15em}
-.add-note{margin:0}
-.add-note[hidden]{display:none}
-.add.noapp .add-btn{display:none}
-.add .btn .dl{margin:0 -.15em 0 0} /* Download for macOS, its arrow after the words, as on the home page */
 
 /* The agents: one card each, the face beside what it does on a computer, above it on a phone. */
 .team{display:grid;gap:16px;margin:clamp(44px,4vw,80px) 0 0;padding:0;list-style:none}
 .agent{display:grid;grid-template-columns:clamp(72px,6vw,104px) minmax(0,1fr);column-gap:clamp(18px,1.8vw,30px);align-items:start;padding:clamp(22px,2.1vw,36px);border-radius:28px;background:var(--soft)}
 .agent>.face{grid-row:1 / span 3;width:100%;aspect-ratio:1;height:auto;border-radius:20px;object-fit:cover;background:#e8e8ed}
-.agent>.face.noface{display:grid;place-items:center;font-size:32px;font-weight:600;color:var(--ink2)}
+.agent>.face.noface{display:grid;place-items:center;font-size:32px;font-weight:500;color:var(--ink2)}
 .agent .head{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:30px}
 .agent .apps{--as:30px}
-.agent h2{font-size:clamp(18px,1.2vw,23px);font-weight:600;line-height:1.2;letter-spacing:-.018em}
+.agent h2{font-size:clamp(18px,1.2vw,23px);font-weight:500;line-height:1.2;letter-spacing:-.018em}
 .agent h2 .nm{color:var(--blue)}
 .agent h2 .tt{color:var(--ink3);font-weight:500;white-space:nowrap}
 .agent .sum{margin-top:8px;font-size:clamp(15px,1vw,18px);line-height:1.5;letter-spacing:-.01em;color:var(--ink2)}
@@ -449,6 +508,58 @@ PLUS = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" f
 # The home page's download arrow (page.html, `.btn .dl`).
 DOWNLOAD = '<svg class="dl" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m-5-5 5 5 5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
 MAGNIFIER = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m15.5 15.5 5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>'
+
+PLUS_SMALL = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>'
+CROSS = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>'
+
+SHEET_JS = """<script>
+// A team's window: its card opens it (a click with a modifier key still opens the team's page), and so does
+// /teams#<team>; a click beside it, Escape or the close button closes it. In it, the agents are tabs: a
+// click or the arrow keys show one agent's card.
+(() => {
+  const open = (id) => {
+    const d = document.getElementById('team-' + id);
+    if (!d || d.open) return;
+    d.showModal();
+    d.querySelector('.sheet-in').scrollTop = 0;
+    history.replaceState(null, '', '#' + id);
+  };
+  for (const a of document.querySelectorAll('.pack[data-team]')) {
+    a.addEventListener('click', (e) => {
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button) return;
+      e.preventDefault();
+      open(a.dataset.team);
+    });
+  }
+  for (const d of document.querySelectorAll('dialog.sheet')) {
+    d.querySelector('.close').addEventListener('click', () => d.close());
+    d.addEventListener('click', (e) => { if (e.target === d) d.close(); });
+    d.addEventListener('close', () => history.replaceState(null, '', location.pathname + location.search));
+    const tabs = [...d.querySelectorAll('[role=tab]')];
+    const pick = (t, focus) => {
+      for (const x of tabs) {
+        const on = x === t;
+        x.setAttribute('aria-selected', String(on));
+        x.tabIndex = on ? 0 : -1;
+        document.getElementById(x.getAttribute('aria-controls')).hidden = !on;
+      }
+      if (focus) t.focus();
+    };
+    tabs.forEach((t, i) => {
+      t.addEventListener('click', () => pick(t));
+      t.addEventListener('keydown', (e) => {
+        const step = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }[e.key];
+        if (!step) return;
+        e.preventDefault();
+        pick(tabs[(i + step + tabs.length) % tabs.length], true);
+      });
+    });
+  }
+  const fromHash = () => { const id = decodeURIComponent(location.hash.slice(1)); if (id && id !== 'all') open(id); };
+  addEventListener('hashchange', fromHash);
+  fromHash();
+})();
+</script>"""
 
 MARKET_JS = """<script>
 // The marketplace: a chip shows its kind of work (All, or the chosen chip again, shows every team), and the
@@ -634,13 +745,53 @@ def some_apps(pack, assets):
             + (f'<span class="plus">+{more}</span>' if more else "") + "</span>")
 
 
+def team_sheet(pack, assets, kind):
+    """A team's window on /teams: the team, then its agents (a list on the left as in the founder's reference, the chosen
+    one's whole card on the right). It opens over the page from the team's card; without the script the
+    card goes to the team's page instead."""
+    pid = pack["id"]
+    tabs, cards = [], []
+    for i, agent in enumerate(pack["agents"]):
+        url = assets.face(agent["face"])
+        face = (f'<img src="{url}" alt="" width="128" height="128" loading="lazy">' if url
+                else f'<span class="noface">{esc(agent["name"][:1].upper())}</span>')
+        on = i == 0
+        tabs.append(f'<button type="button" role="tab" id="{pid}-tab-{i}" aria-controls="{pid}-agent-{i}" aria-selected="{str(on).lower()}" tabindex="{0 if on else -1}">'
+                    f'{face}<span><b>{esc(agent["name"])}</b><small>{esc(agent["title"])}</small></span></button>')
+        apps = [a for a in agent["apps"] if a]
+        conn = "".join(f'<li>{assets.tile(a)}<span>{esc(app_name(a))}</span></li>' for a in apps)
+        quote = esc(str(agent["quote"]).strip().strip('"“”'))
+        cards.append(
+            f'<section class="one" role="tabpanel" id="{pid}-agent-{i}" aria-labelledby="{pid}-tab-{i}"{"" if on else " hidden"}>'
+            f'<div class="who-is">{face}<div><h3><span class="nm">{esc(agent["name"])}</span> <span class="tt">{esc(agent["title"])}</span></h3>'
+            f'<p class="sum">{esc(agent["summary"])}</p></div></div>'
+            + (f'<h4>Apps it connects</h4><ul class="conn">{conn}</ul>' if apps else "")
+            + f'<h4>How it works</h4><p class="how">{esc(agent["description"])}</p>'
+            f'<blockquote class="q"><span class="qm" aria-hidden="true">“</span>{quote}<span class="qm" aria-hidden="true">”</span></blockquote></section>')
+    return f"""<dialog class="sheet" id="team-{pid}" aria-labelledby="{pid}-title">
+<button class="close" type="button" aria-label="Close">{CROSS}</button>
+<div class="sheet-in">
+  {faces_row(pack, assets)}
+  {f'<p class="eyebrow">{esc(kind)}</p>' if kind else ""}
+  <h2 id="{pid}-title">{esc(pack["title"])}</h2>
+  <p class="intro">{esc(pack["summary"])}</p>
+  <div class="acts">{add_button(pack)}<a class="page" href="/teams/{pid}">See the team's page</a></div>
+  <div class="crew">
+    <div class="who" role="tablist" aria-label="The agents" aria-orientation="vertical">{"".join(tabs)}</div>
+    <div>{"".join(cards)}</div>
+  </div>
+  <p class="fine">Free. They go in a “{esc(pack.get("folder") or pack["title"])}” folder in your sidebar; each one says hello in its own chat and asks to connect its apps, and asks before it sends, posts or pays. You can change anything later.</p>
+</div>
+</dialog>"""
+
+
 def index_page(packs, assets):
     groups = {pid: [slug for slug, (_, ids) in GROUPS.items() if pid in ids] for pid in (p["id"] for p in packs)}
     cards = "\n".join(
-        f'<li data-groups="{" ".join(groups[p["id"]])}" data-q="{search_words(p)}"><a class="pack" href="/teams/{p["id"]}">{faces_row(p, assets)}'
+        f'<li data-groups="{" ".join(groups[p["id"]])}" data-q="{search_words(p)}"><a class="pack" href="/teams/{p["id"]}" data-team="{p["id"]}">{faces_row(p, assets)}'
         + (f'<span class="kind">{esc(GROUPS[groups[p["id"]][0]][0])}</span>' if groups[p["id"]] else "")
         + f'<h2>{esc(p["title"])}</h2><p>{esc(p["summary"])}</p>'
-        f'<span class="foot">{some_apps(p, assets)}<span class="more">Meet the team</span></span></a></li>'
+        f'<span class="foot">{some_apps(p, assets)}<span class="open" aria-hidden="true">{PLUS_SMALL}</span></span></a></li>'
         for p in packs)
     chips = '<button class="chip" type="button" data-group="all" aria-pressed="true">All</button>' + "".join(
         f'<button class="chip" type="button" data-group="{slug}" aria-pressed="false">{esc(label)}</button>' for slug, (label, _) in GROUPS.items())
@@ -662,8 +813,9 @@ def index_page(packs, assets):
 {cards}
 </ul>
 <p class="none" hidden>No team matches that yet. <button type="button">Show every team</button></p>
-</div></section>"""
-    return frame("Teams", "Starter teams of five agents for one kind of business, ready to add to Simeon.", "/teams", body, INDEX_CSS, current=True, script=MARKET_JS)
+</div></section>
+{chr(10).join(team_sheet(p, assets, GROUPS[groups[p["id"]][0]][0] if groups[p["id"]] else "") for p in packs)}"""
+    return frame("Teams", "Starter teams of five agents for one kind of business, ready to add to Simeon.", "/teams", body, INDEX_CSS, current=True, script=MARKET_JS + SHEET_JS + ADD_JS)
 
 
 def build(out=OUT):

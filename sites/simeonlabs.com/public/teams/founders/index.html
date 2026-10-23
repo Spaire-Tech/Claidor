@@ -52,7 +52,7 @@ a{color:inherit}
 .faces{display:flex;--fs:48px;--ring:var(--page)}
 .faces img,.faces .noface{width:var(--fs);height:var(--fs);border-radius:50%;object-fit:cover;flex:none;box-shadow:0 0 0 3px var(--ring);background:var(--soft)}
 .faces>*+*{margin-left:calc(var(--fs) * -.26)}
-.noface{display:grid;place-items:center;font-weight:600;color:var(--ink2);background:#e8e8ed}
+.noface{display:grid;place-items:center;font-weight:500;color:var(--ink2);background:#e8e8ed}
 
 /* An app's tile: its own icon with an app icon's corners, else its mark on white, else its first letter. */
 .apps{display:flex;align-items:center;flex:none;--as:36px;--ring:var(--soft)}
@@ -64,6 +64,14 @@ a{color:inherit}
 .app.mark i{display:block;width:64%;height:64%;-webkit-mask:var(--m) center/contain no-repeat;mask:var(--m) center/contain no-repeat}
 .app.letter{color:#3a3a3c;font-size:calc(var(--as) * .46);font-weight:600;letter-spacing:0;line-height:1}
 
+/* Add to Simeon, on a team's page and in its window on /teams. */
+.add{display:flex;flex-direction:column;align-items:center;margin-top:clamp(18px,1.6vw,32px)}
+.add .btn{height:clamp(40px,2.5vw,50px);padding:0 clamp(18px,1.3vw,26px);font-size:clamp(15px,.95vw,19px)} /* the home page's buttons */
+.add .btn svg{width:1em;height:1em;flex:none;margin-left:-.15em}
+.add-note{margin:0}
+.add-note[hidden]{display:none}
+.add.noapp .add-btn{display:none}
+.add .btn .dl{margin:0 -.15em 0 0} /* Download for macOS, its arrow after the words, as on the home page */
 footer{margin-top:clamp(80px,8vw,140px);background:var(--soft);padding:20px 0 calc(40px + env(safe-area-inset-bottom,0px));font-size:12px;color:var(--ink2)}
 footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
 footer nav{display:flex;gap:18px}
@@ -81,22 +89,15 @@ footer a[aria-current]{color:var(--ink)}
 .hero h1{margin-top:clamp(16px,1.3vw,24px);max-width:14em;font-family:var(--serif);font-weight:400;font-size:clamp(30px,2.2vw,44px);line-height:1.08;letter-spacing:-.02em;text-wrap:balance} /* the home page's headline */
 .kicker+h1{margin-top:10px}
 .hero .lede{margin-top:clamp(10px,.9vw,16px);max-width:30em;font-size:clamp(16px,1vw,19px);line-height:1.5;letter-spacing:-.01em;color:var(--ink2);text-wrap:balance}
-.add{display:flex;flex-direction:column;align-items:center;margin-top:clamp(18px,1.6vw,32px)}
-.add .btn{height:clamp(40px,2.5vw,50px);padding:0 clamp(18px,1.3vw,26px);font-size:clamp(15px,.95vw,19px)} /* the home page's buttons */
-.add .btn svg{width:1em;height:1em;flex:none;margin-left:-.15em}
-.add-note{margin:0}
-.add-note[hidden]{display:none}
-.add.noapp .add-btn{display:none}
-.add .btn .dl{margin:0 -.15em 0 0} /* Download for macOS, its arrow after the words, as on the home page */
 
 /* The agents: one card each, the face beside what it does on a computer, above it on a phone. */
 .team{display:grid;gap:16px;margin:clamp(44px,4vw,80px) 0 0;padding:0;list-style:none}
 .agent{display:grid;grid-template-columns:clamp(72px,6vw,104px) minmax(0,1fr);column-gap:clamp(18px,1.8vw,30px);align-items:start;padding:clamp(22px,2.1vw,36px);border-radius:28px;background:var(--soft)}
 .agent>.face{grid-row:1 / span 3;width:100%;aspect-ratio:1;height:auto;border-radius:20px;object-fit:cover;background:#e8e8ed}
-.agent>.face.noface{display:grid;place-items:center;font-size:32px;font-weight:600;color:var(--ink2)}
+.agent>.face.noface{display:grid;place-items:center;font-size:32px;font-weight:500;color:var(--ink2)}
 .agent .head{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:30px}
 .agent .apps{--as:30px}
-.agent h2{font-size:clamp(18px,1.2vw,23px);font-weight:600;line-height:1.2;letter-spacing:-.018em}
+.agent h2{font-size:clamp(18px,1.2vw,23px);font-weight:500;line-height:1.2;letter-spacing:-.018em}
 .agent h2 .nm{color:var(--blue)}
 .agent h2 .tt{color:var(--ink3);font-weight:500;white-space:nowrap}
 .agent .sum{margin-top:8px;font-size:clamp(15px,1vw,18px);line-height:1.5;letter-spacing:-.01em;color:var(--ink2)}
