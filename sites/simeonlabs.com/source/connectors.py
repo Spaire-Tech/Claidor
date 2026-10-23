@@ -80,7 +80,7 @@ SEARCH = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5
 
 CONN_CSS = """
 /* The opening: the home page's (its styles come from page.html), the headline and the buttons on the left;
-   famous apps' icons drifting in the room on its right. On a phone they line up under the button. */
+   famous apps' icons drifting in the room on its right. On a phone they line up on the left, under the button. */
 .open{position:relative;min-height:clamp(380px,31vw,600px);overflow:hidden}
 .open .wrap{position:relative;z-index:1}
 .float{position:absolute;left:var(--x);top:var(--y);transform:translate(-50%,-50%);animation:drift var(--t) ease-in-out infinite alternate}
@@ -192,8 +192,8 @@ CONN_CSS = """
 
 @media (max-width:1068px){.list{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:734px){
-  .open{min-height:0}
-  .floats{display:flex;justify-content:center;flex-wrap:wrap;gap:12px;margin-top:40px}
+  .open{min-height:0;overflow:visible} /* the icons' shadows are not cut */
+  .floats{display:flex;flex-wrap:wrap;gap:12px;width:var(--col);margin:40px auto 0} /* on the left, under the button */
   .float{position:static;transform:none}
   .float.side{display:none}
   .float .app{--as:44px}
