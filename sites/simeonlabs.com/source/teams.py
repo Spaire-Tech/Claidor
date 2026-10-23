@@ -135,10 +135,12 @@ def _readable(hex_):
 
 
 class Assets:
-    """Copies the faces and app logos the pages use into public/teams/ and says how each app was drawn."""
+    """Copies the faces and app logos a page uses into its folder (public/teams/, public/connectors/) and says
+    how each app was drawn."""
 
-    def __init__(self, root):
+    def __init__(self, root, base="/teams"):
         self.root = root
+        self.base = base
         self.tiles = {}
         self.faces = {f["id"]: f["file"] for f in _json(f"{FACES}/faces.json", {}).get("faces", []) if f.get("id") and f.get("file")}
         self.drawn = {}
@@ -146,7 +148,7 @@ class Assets:
     def _copy(self, src, folder, name):
         os.makedirs(f"{self.root}/{folder}", exist_ok=True)
         shutil.copy(src, f"{self.root}/{folder}/{name}")
-        return f"/teams/{folder}/{name}?v={_version(src)}"
+        return f"{self.base}/{folder}/{name}?v={_version(src)}"
 
     def face(self, face_id):
         """The face's address, or None when the catalogue has no such face."""
@@ -183,7 +185,7 @@ class Assets:
                 os.makedirs(f"{self.root}/apps", exist_ok=True)
                 svg = open(src, encoding="utf-8").read().replace("<svg ", f'<svg fill="{app["color"]}" ', 1)
                 open(f"{self.root}/apps/{safe}.svg", "w", encoding="utf-8").write(svg)
-                url = f"/teams/apps/{safe}.svg?v={_version(f'{self.root}/apps/{safe}.svg')}"
+                url = f"{self.base}/apps/{safe}.svg?v={_version(f'{self.root}/apps/{safe}.svg')}"
             else:
                 url = self._copy(src, "apps", safe + ext)
             made, how = f'<span class="app mark" title="{name}"><img src="{url}" alt="" loading="lazy"></span>', "mark"
@@ -269,6 +271,7 @@ a{color:inherit}
 .bar .acts>a:not(.btn){text-decoration:none;color:var(--ink2)}
 .bar .acts>a:not(.btn):hover,.bar .acts>a[aria-current]{color:var(--ink)}
 .bar .btn{height:clamp(28px,1.9vw,38px);padding:0 clamp(12px,.8vw,16px);font-size:clamp(14px,1vw,20px)}
+@media (max-width:480px){.bar .acts{gap:16px}.bar .acts .btn{display:none}} /* a phone has room for Teams and Connectors, and no Mac to download to */
 
 /* Faces in a row, each over the last, ringed in the ground they sit on. */
 .faces{display:flex;--fs:48px;--ring:var(--page)}
@@ -558,9 +561,9 @@ MARKET_JS = """<script>
 </script>"""
 
 
-def frame(title, description, path, body, css, current=False, script=""):
+def frame(title, description, path, body, css, current="", script=""):
     url = f"{SITE}{path}"
-    teams_current = ' aria-current="page"' if current else ""
+    here = lambda page: ' aria-current="page"' if current == page else ""
     return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -589,7 +592,7 @@ def frame(title, description, path, body, css, current=False, script=""):
 <header class="bar">
   <div class="wrap">
     <a class="wordmark" href="/" aria-label="SimeonLabs home"></a>
-    <div class="acts"><a href="/teams"{teams_current}>Teams</a><a class="btn" href="{MAC_DOWNLOAD}">Download</a></div>
+    <div class="acts"><a href="/teams"{here("teams")}>Teams</a><a href="/connectors"{here("connectors")}>Connectors</a><a class="btn" href="{MAC_DOWNLOAD}">Download</a></div>
   </div>
 </header>
 
@@ -597,7 +600,7 @@ def frame(title, description, path, body, css, current=False, script=""):
 {body}
 </main>
 
-<footer><div class="wrap"><span>Copyright © 2026 Spaire, Inc. All rights reserved.</span><nav><a href="/teams"{teams_current}>Teams</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="mailto:support@simeonlabs.com">Contact</a></nav></div></footer>
+<footer><div class="wrap"><span>Copyright © 2026 Spaire, Inc. All rights reserved.</span><nav><a href="/teams"{here("teams")}>Teams</a><a href="/connectors"{here("connectors")}>Connectors</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="mailto:support@simeonlabs.com">Contact</a></nav></div></footer>
 {script}
 </body>
 </html>
@@ -817,7 +820,7 @@ def index_page(packs, assets):
 
 {close}
 {chr(10).join(team_sheet(p, assets, GROUPS[groups[p["id"]][0]][0] if groups[p["id"]] else "") for p in packs)}"""
-    return frame("Teams", "Starter teams of five agents for one kind of business, ready to add to Simeon.", "/teams", body, INDEX_CSS + home_css, current=True, script=MARKET_JS + SHEET_JS + ADD_JS)
+    return frame("Teams", "Starter teams of five agents for one kind of business, ready to add to Simeon.", "/teams", body, INDEX_CSS + home_css, current="teams", script=MARKET_JS + SHEET_JS + ADD_JS)
 
 
 def build(out=OUT):

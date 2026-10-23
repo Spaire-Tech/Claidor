@@ -47,6 +47,7 @@ a{color:inherit}
 .bar .acts>a:not(.btn){text-decoration:none;color:var(--ink2)}
 .bar .acts>a:not(.btn):hover,.bar .acts>a[aria-current]{color:var(--ink)}
 .bar .btn{height:clamp(28px,1.9vw,38px);padding:0 clamp(12px,.8vw,16px);font-size:clamp(14px,1vw,20px)}
+@media (max-width:480px){.bar .acts{gap:16px}.bar .acts .btn{display:none}} /* a phone has room for Teams and Connectors, and no Mac to download to */
 
 /* Faces in a row, each over the last, ringed in the ground they sit on. */
 .faces{display:flex;--fs:48px;--ring:var(--page)}
@@ -128,7 +129,7 @@ footer a[aria-current]{color:var(--ink)}
 <header class="bar">
   <div class="wrap">
     <a class="wordmark" href="/" aria-label="SimeonLabs home"></a>
-    <div class="acts"><a href="/teams">Teams</a><a class="btn" href="https://api.simeonlabs.com/desktop/download/mac">Download</a></div>
+    <div class="acts"><a href="/teams">Teams</a><a href="/connectors">Connectors</a><a class="btn" href="https://api.simeonlabs.com/desktop/download/mac">Download</a></div>
   </div>
 </header>
 
@@ -158,7 +159,7 @@ footer a[aria-current]{color:var(--ink)}
 </div>
 </main>
 
-<footer><div class="wrap"><span>Copyright © 2026 Spaire, Inc. All rights reserved.</span><nav><a href="/teams">Teams</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="mailto:support@simeonlabs.com">Contact</a></nav></div></footer>
+<footer><div class="wrap"><span>Copyright © 2026 Spaire, Inc. All rights reserved.</span><nav><a href="/teams">Teams</a><a href="/connectors">Connectors</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="mailto:support@simeonlabs.com">Contact</a></nav></div></footer>
 <script>
 // Add to Simeon: the app on this device opens on the pack and adds the team (simeon-ios:// on an iPhone or
 // iPad, simeon:// on a Mac). With no app to open (still here 1.5 s later), and from the start on any other
