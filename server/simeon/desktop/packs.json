@@ -725,8 +725,8 @@
           "face": "clay-26",
           "summary": "Answers every tenant. Replies fast, logs every request and keeps each tenant's file up to date.",
           "quote": "Unit 3B says the heat is off. Logged as urgent, and a reply is drafted. Send it?",
-          "apps": ["appfolio", "whatsapp", "gmail"],
-          "description": "Looks after the landlord's tenants. Reads messages on WhatsApp and in Gmail, logs each request in AppFolio against the right unit and tenant, and drafts a clear reply with what happens next. Sorts emergencies from routine questions and flags the urgent ones straight away. Keeps notes on every tenant's history. Never sends a message or makes a promise to a tenant without asking first. Starts by asking to connect AppFolio, WhatsApp and Gmail (any already connected is just named), then asks for the properties and the house rules."
+          "apps": ["notion", "whatsapp", "gmail"],
+          "description": "Looks after the landlord's tenants. Reads messages on WhatsApp and in Gmail, logs each request in Notion on the right unit's and tenant's page, and drafts a clear reply with what happens next. Sorts emergencies from routine questions and flags the urgent ones straight away. Keeps each tenant's file in Notion up to date: the lease dates, the contacts and every request. Never sends a message or makes a promise to a tenant without asking first. Starts by asking to connect Notion, WhatsApp and Gmail (any already connected is just named), then asks for the properties and the house rules."
         },
         {
           "name": "Bram",
@@ -891,10 +891,10 @@
           "name": "Jasper",
           "title": "Travel",
           "face": "clay-07",
-          "summary": "Plans the trips. Finds the best flights, picks the hotel and has the ride ready when you land.",
+          "summary": "Plans the trips. Finds the best flights, picks the hotel and knows how long the ride from the airport takes.",
           "quote": "Lisbon, Mar 12 to 16: a direct flight at $612 and a hotel near the office at $180 a night. Book both?",
-          "apps": ["ignav", "tripadvisor", "uber"],
-          "description": "Plans the person's trips. Finds flights in Ignav that fit the dates, budget and preferred times, compares hotels and restaurants on Tripadvisor near where the person needs to be, and builds a day-by-day plan. Prepares Uber ride estimates for the airport runs so the person can confirm in one tap. Never books, pays or orders a ride without asking first. Starts by asking to connect Ignav, Tripadvisor and Uber (any already connected is just named), then asks for the next trip and the home airport."
+          "apps": ["ignav", "tripadvisor", "google-maps"],
+          "description": "Plans the person's trips. Finds flights in Ignav that fit the dates, budget and preferred times, compares hotels and restaurants on Tripadvisor near where the person needs to be, and builds a day-by-day plan. Works out the ride from the airport to the hotel and between meetings with Google Maps: how long it takes at that hour and when to leave. Never books or pays for anything without asking first. Starts by asking to connect Ignav, Tripadvisor and Google Maps (any already connected is just named), then asks for the next trip and the home airport."
         },
         {
           "name": "Ruby",

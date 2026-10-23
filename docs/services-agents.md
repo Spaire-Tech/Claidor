@@ -2418,4 +2418,6 @@ the next host bundle, which is published from a Mac.
 **Apps a pack asks for that cannot be connected yet** (22 October 2026), so the agent's card
 says Coming soon: Gusto, Xero, Shopify, DocuSign, Microsoft To Do, Meta Ads, Jobber, BambooHR,
 TikTok, Follow Up Boss, Matterport, ZoomInfo and Clio wait for an OAuth app of Simeon Labs'
-own in Composio (`OWN_APP_NEEDED`, 7c); AppFolio, Uber and Instacart wait on their makers (7a).
+own in Composio (`OWN_APP_NEEDED`, 7c); Instacart waits on its maker (7a). AppFolio and Uber
+left the packs on 23 October 2026: Dalia (Landlords) keeps her tenants' files in Notion and
+Jasper (Busy Professionals) times the airport rides with Google Maps.
