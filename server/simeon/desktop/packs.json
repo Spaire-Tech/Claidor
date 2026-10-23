@@ -139,7 +139,7 @@
         {
           "name": "Bruno",
           "title": "Stock",
-          "face": "clay-02",
+          "face": "clay-07",
           "summary": "Keeps the shelves full. Watches what sells, gets the reorder ready before you run out and checks every delivery against the invoice.",
           "quote": "Oat milk runs out Thursday at this pace. The order for six cases is ready. Send it?",
           "apps": ["square", "veryfi", "google-sheets"],
@@ -148,7 +148,7 @@
         {
           "name": "Clara",
           "title": "Shifts",
-          "face": "clay-01",
+          "face": "clay-06",
           "summary": "Builds the rota. Plans around everyone's week, covers sick days and has the hours ready for payroll.",
           "quote": "Mia's off sick tomorrow. Leo can open instead. Want me to confirm?",
           "apps": ["7shifts", "whatsapp", "google-calendar"],
@@ -157,7 +157,7 @@
         {
           "name": "Mae",
           "title": "Socials",
-          "face": "clay-03",
+          "face": "clay-16",
           "summary": "Posts the specials. The seasonal drink, the weekend hours, the pastry that sold out by nine.",
           "quote": "The pumpkin spice post is ready for 8am, when your regulars are scrolling.",
           "apps": ["instagram", "tiktok", "canva"],
@@ -166,7 +166,7 @@
         {
           "name": "Ines",
           "title": "Customers",
-          "face": "clay-04",
+          "face": "clay-24",
           "summary": "Answers everyone. Replies to every message, takes the catering requests and makes sure nobody waits until tomorrow.",
           "quote": "An office down the road wants coffee for 40 on Friday. The quote is ready to send.",
           "apps": ["google-maps", "yelp", "gmail"],
@@ -175,7 +175,7 @@
         {
           "name": "Hugo",
           "title": "Money",
-          "face": "clay-05",
+          "face": "clay-28",
           "summary": "Closes out the day. Matches the sales to the bank, keeps the books tidy and tells you which drinks actually make money.",
           "quote": "Saturday was your best day this month. Iced drinks made the most, even in October.",
           "apps": ["quickbooks", "paypal", "gusto"],
