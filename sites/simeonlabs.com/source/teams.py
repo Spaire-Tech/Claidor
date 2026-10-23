@@ -295,6 +295,9 @@ a{color:inherit}
 .add-note[hidden]{display:none}
 .add.noapp .add-btn{display:none}
 .add .btn .dl{margin:0 -.15em 0 0} /* Download for macOS, its arrow after the words, as on the home page */
+.add .btn .apl{width:1.05em;height:1.05em;margin:-.18em .45em 0 -.1em;flex:none}
+.add-note .go{display:none}
+@media (max-width:734px){.add-note .btn:not(.go){display:none}.add-note .go{display:inline-flex}} /* a phone: Download for iOS, as on the home page */
 footer{margin-top:clamp(80px,8vw,140px);background:var(--soft);padding:20px 0 calc(40px + env(safe-area-inset-bottom,0px));font-size:var(--t-tiny);color:var(--ink2)}
 footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
 footer nav{display:flex;gap:18px}
@@ -304,17 +307,9 @@ footer a[aria-current]{color:var(--ink)}
 """.replace("%BLUE%", BLUE)
 
 INDEX_CSS = """
-/* The opening (23 October 2026, after the founder's reference): a centred headline, its first words in a
-   box, the buttons, then photos of people at work in a fan, each one a team's; the middle one in front. */
-.lead{padding:clamp(56px,6.4vw,128px) 0 0;text-align:center}
-.lead h1{font-weight:var(--w-display);font-size:var(--t-display);line-height:1.2;letter-spacing:-.025em} /* the home page's closing title */
-.lead h1 .box{display:inline-block;margin-bottom:.14em;padding:.02em .3em .08em;border:1px solid #d2d2d7;border-radius:.24em;background:var(--page);box-shadow:0 1px 2px rgba(0,0,0,.04),0 8px 20px -10px rgba(0,0,0,.14)}
-.lead .ctas{display:flex;justify-content:center;align-items:center;gap:clamp(18px,1.5vw,28px);flex-wrap:wrap;margin-top:clamp(22px,2vw,36px)}
-.lead .btn{height:var(--btn-h);padding:0 var(--btn-pad);font-size:var(--btn-font)} /* the home page's buttons */
-.lead .btn .dl{width:1em;height:1em;margin:0 -.15em 0 0}
-.lead .see{font-size:var(--btn-font);text-decoration:none;color:var(--ink)}
-.lead .see::after{content:" \\203A"}
-.lead .see:hover{text-decoration:underline}
+/* The opening: the home page's (its styles come from page.html), the first words in a box; then photos of
+   people at work in a fan, each one a team's, the middle one in front. */
+.hero h1 .box{display:inline-block;margin-bottom:.14em;padding:.02em .3em .08em;border:1px solid #d2d2d7;border-radius:.24em;background:var(--page);box-shadow:0 1px 2px rgba(0,0,0,.04),0 8px 20px -10px rgba(0,0,0,.14)} /* the first words in a box, as in the founder's reference */
 html{scroll-behavior:smooth;scroll-padding-top:clamp(72px,4.6vw,96px)} /* See all teams lands below the bar */
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 .fan{--w:clamp(150px,18vw,360px);--step:calc(var(--w) * .84);position:relative;height:calc(var(--w) * 1.42 + 84px);margin-top:clamp(36px,3.4vw,64px);overflow:hidden}
@@ -403,7 +398,7 @@ html:has(dialog[open]){overflow:hidden}
 @media (prefers-reduced-motion:reduce){.sheet[open],.sheet[open]::backdrop{animation:none}}
 footer{margin-top:0;font-size:var(--t-tiny)} /* the closing call above leaves the room, as on the home page */
 @media (max-width:1068px){.packs{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media (max-width:734px){.packs{grid-template-columns:1fr;gap:14px}.lead{padding-top:48px}.lead h1{font-size:var(--t-display);line-height:1.2;font-weight:var(--w-display);letter-spacing:-.025em}.fan{--w:clamp(150px,44vw,240px)}.shot{border-width:4px;border-radius:18px}
+@media (max-width:734px){.packs{grid-template-columns:1fr;gap:14px}.lead h1{font-size:var(--t-display);line-height:1.2;font-weight:var(--w-display);letter-spacing:-.025em}.fan{--w:clamp(150px,44vw,240px)}.shot{border-width:4px;border-radius:18px}
   .chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-inline:calc(-1 * var(--gutter));padding:2px var(--gutter)}.chips::-webkit-scrollbar{display:none}}
 @media (prefers-reduced-motion:reduce){.shot{transition:none}}
 """
@@ -620,7 +615,7 @@ def and_list(words):
 def add_button(pack):
     pid = pack["id"]
     return (f'<div class="add"><a class="btn add-btn" href="simeon://app/v1/pack/add?id={pid}" data-pack="{pid}">{PLUS}Add to Simeon</a>'
-            f'<p class="add-note" hidden aria-live="polite"><a class="btn" href="{MAC_DOWNLOAD}">Download for macOS{DOWNLOAD}</a></p></div>')
+            f'<p class="add-note" hidden aria-live="polite"><a class="btn" href="{MAC_DOWNLOAD}">Download for macOS{DOWNLOAD}</a>{ios_button()}</p></div>')
 
 
 def pack_page(pack, assets):
@@ -766,6 +761,26 @@ def from_home():
     return pricing.group(0), close.group(0).replace('href="#app"', 'href="/#app"'), css
 
 
+def home_hero():
+    """The home page's opening (source/page.html): its styles (the headline on the left, the buttons under
+    it, Download for iOS alone on a phone) and its buttons, so Teams and Connectors open the same way."""
+    page = _text(HOME_PAGE)
+    start, stop = page.find("/* Hero: one sentence on the left edge"), page.find("@media (max-width:734px){.hero{")
+    ctas = re.search(r'<section class="hero">.*?(<div class="ctas">.*?</div>)', page, re.S)
+    if not (0 <= start < stop and ctas):
+        sys.exit("teams.py: source/page.html has no opening to share")
+    rules = [line for line in page.splitlines() if line.startswith((".btn.ghost", ".btn .apl{", ".btn .dl{"))]
+    css = ("\n/* The opening, from the home page (source/page.html). */\n" + "\n".join(rules) + "\n"
+           + page[start:page.index("\n", stop) + 1])
+    return css, ctas.group(1).replace('href="#app"', 'href="/#app"')
+
+
+def ios_button():
+    """The home page's Download for iOS (no link until there is an app), for a phone."""
+    found = re.search(r'<span class="btn go">.*?</span>', _text(HOME_PAGE), re.S)
+    return found.group(0) if found else ""
+
+
 def questions():
     rows = "".join(f"<details><summary>{esc(q)}</summary><p>{esc(a)}</p></details>" for q, a in TEAM_QA)
     return f"""<section class="trust" id="questions" aria-label="Questions">
@@ -789,10 +804,11 @@ def index_page(packs, assets):
     pricing, close, home_css = from_home()
     chips = '<button class="chip" type="button" data-group="all" aria-pressed="true">All</button>' + "".join(
         f'<button class="chip" type="button" data-group="{slug}" aria-pressed="false">{esc(label)}</button>' for slug, (label, _) in GROUPS.items())
-    body = f"""<section class="lead" aria-label="Teams">
+    hero_css, ctas = home_hero()
+    body = f"""<section class="hero" aria-label="Teams">
   <div class="wrap">
     <h1><span class="box">A team of agents</span><br>for your kind of work</h1>
-    <div class="ctas"><a class="btn" href="{MAC_DOWNLOAD}">Download for macOS{DOWNLOAD}</a><a class="see" href="#all">See all teams</a></div>
+    {ctas}
   </div>
   {fan(packs, assets)}
 </section>
@@ -815,7 +831,7 @@ def index_page(packs, assets):
 
 {close}
 {chr(10).join(team_sheet(p, assets, GROUPS[groups[p["id"]][0]][0] if groups[p["id"]] else "") for p in packs)}"""
-    return frame("Teams", "Starter teams of five agents for one kind of business, ready to add to Simeon.", "/teams", body, INDEX_CSS + home_css, current="teams", script=MARKET_JS + SHEET_JS + ADD_JS)
+    return frame("Teams", "Starter teams of five agents for one kind of business, ready to add to Simeon.", "/teams", body, hero_css + INDEX_CSS + home_css, current="teams", script=MARKET_JS + SHEET_JS + ADD_JS)
 
 
 def copy_site_css(out=OUT):

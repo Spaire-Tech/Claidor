@@ -72,6 +72,9 @@ a{color:inherit}
 .add-note[hidden]{display:none}
 .add.noapp .add-btn{display:none}
 .add .btn .dl{margin:0 -.15em 0 0} /* Download for macOS, its arrow after the words, as on the home page */
+.add .btn .apl{width:1.05em;height:1.05em;margin:-.18em .45em 0 -.1em;flex:none}
+.add-note .go{display:none}
+@media (max-width:734px){.add-note .btn:not(.go){display:none}.add-note .go{display:inline-flex}} /* a phone: Download for iOS, as on the home page */
 footer{margin-top:clamp(80px,8vw,140px);background:var(--soft);padding:20px 0 calc(40px + env(safe-area-inset-bottom,0px));font-size:var(--t-tiny);color:var(--ink2)}
 footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
 footer nav{display:flex;gap:18px}
@@ -79,19 +82,27 @@ footer a{color:var(--ink2);text-decoration:none}
 footer a:hover{color:var(--ink)}
 footer a[aria-current]{color:var(--ink)}
 
-/* The opening: famous apps' icons drifting around a centred headline, as in the founder's reference. */
-.open{position:relative;height:clamp(520px,42vw,800px);overflow:hidden}
-.open .words{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 var(--gutter);text-align:center}
-.open .eyebrow{font-size:var(--t-body);font-weight:var(--w-title);color:var(--ink)}
-.open h1{margin-top:14px;max-width:13em;font-weight:var(--w-display);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em;text-wrap:balance} /* the home page's closing title */
-.open p{margin-top:16px;max-width:27em;font-size:var(--t-lead);line-height:1.5;letter-spacing:-.01em;color:#424245;text-wrap:balance}
-.open .ctas{display:flex;justify-content:center;flex-wrap:wrap;gap:12px;margin-top:clamp(22px,2vw,34px)}
-.open .btn{height:var(--btn-h);padding:0 var(--btn-pad);font-size:var(--btn-font)} /* the home page's buttons */
-.open .btn .dl{width:1em;height:1em;margin:0 -.15em 0 .4em;flex:none}
+/* The opening, from the home page (source/page.html). */
 .btn.ghost{background:#f2f2f2;color:#000}
 .btn.ghost:hover{background:#e8e8e8}
+.btn .apl{width:1.05em;height:1.05em;margin:-.18em .45em 0 -.1em;flex:none}
+.btn .dl{width:1em;height:1em;margin:0 -.15em 0 .4em;flex:none} /* Download for macOS, its arrow after the words (18 October 2026) */
+/* Hero: one sentence on the left edge, two buttons under it, nothing else. */
+.hero{padding:clamp(40px,8.1vw,162px) 0 0;color:#000}
+.hero h1{max-width:13em;font-size:var(--t-display);line-height:1.1;font-weight:var(--w-display);letter-spacing:-.025em;text-wrap:balance}
+.hero .ctas{display:flex;gap:clamp(10px,.7vw,14px);flex-wrap:wrap;margin-top:clamp(18px,1.6vw,32px)}
+/* The headline and its buttons a size down (18 October 2026); the section titles, their lines, the statement and the closing title went down with them. */
+.hero .btn{height:var(--btn-h);padding:0 var(--btn-pad);font-size:var(--btn-font)}
+/* On a phone the hero breathes (4 October 2026): a long pause under the bar, a headline that leaves air on the right, and room before the app. */
+.hero .btn.go{display:none} /* the phone's one button: Download for iOS, no link until there is an app (6 October 2026) */
+@media (max-width:734px){.hero{padding-top:88px}.hero h1{font-size:var(--t-display);line-height:1.1;max-width:11.5em;font-weight:var(--w-display);letter-spacing:-.025em}.hero .ctas{margin-top:26px}.hero .ctas .btn{display:none}.hero .btn.go{display:inline-flex}}
+
+/* The opening: the home page's (its styles come from page.html), the headline and the buttons on the left;
+   famous apps' icons drifting in the room on its right. On a phone they line up under the button. */
+.open{position:relative;min-height:clamp(380px,31vw,600px);overflow:hidden}
+.open .wrap{position:relative;z-index:1}
 .float{position:absolute;left:var(--x);top:var(--y);transform:translate(-50%,-50%);animation:drift var(--t) ease-in-out infinite alternate}
-.float .app{--as:clamp(56px,5.2vw,100px);--ring:transparent;box-shadow:0 0 0 1px rgba(0,0,0,.05),0 18px 40px -16px rgba(0,0,0,.22)}
+.float .app{--as:clamp(52px,4.8vw,92px);--ring:transparent;box-shadow:0 0 0 1px rgba(0,0,0,.05),0 18px 40px -16px rgba(0,0,0,.22)}
 @keyframes drift{from{translate:0 -7px}to{translate:0 7px}}
 
 /* Find an app: the title and the search, the kinds as words (the chosen one black), the apps as cards. */
@@ -199,9 +210,11 @@ footer a[aria-current]{color:var(--ink)}
 
 @media (max-width:1068px){.list{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:734px){
-  .open{height:600px}
+  .open{min-height:0}
+  .floats{display:flex;justify-content:center;flex-wrap:wrap;gap:12px;margin-top:40px}
+  .float{position:static;transform:none}
   .float.side{display:none}
-  .float .app{--as:52px}
+  .float .app{--as:44px}
   .list{grid-template-columns:minmax(0,1fr);gap:12px}
   .how-grid{grid-template-columns:minmax(0,1fr)}
   .scene{order:-1} /* the app above the steps, so a tap shows its step */
@@ -219,14 +232,12 @@ footer a[aria-current]{color:var(--ink)}
 </header>
 
 <main>
-<section class="open" aria-label="Connectors">
-  <span class="float" style="--x:32%;--y:13%;--t:7.0s" aria-hidden="true"><span class="app icon" title="Canva"><img src="/connectors/apps/canva.png?v=21035930" alt="" width="64" height="64" loading="lazy"></span></span><span class="float" style="--x:11%;--y:24%;--t:8.5s" aria-hidden="true"><span class="app icon" title="Slack"><img src="/connectors/apps/slack.png?v=592c37da" alt="" width="64" height="64" loading="lazy"></span></span><span class="float side" style="--x:-1%;--y:41%;--t:7.5s" aria-hidden="true"><span class="app icon" title="Notion"><img src="/connectors/apps/notion.png?v=d7c39e7e" alt="" width="64" height="64" loading="lazy"></span></span><span class="float side" style="--x:10%;--y:59%;--t:9.0s" aria-hidden="true"><span class="app icon" title="Figma"><img src="/connectors/apps/figma.png?v=aab84ff0" alt="" width="64" height="64" loading="lazy"></span></span><span class="float" style="--x:20%;--y:82%;--t:7.8s" aria-hidden="true"><span class="app icon" title="Gmail"><img src="/connectors/apps/gmail.png?v=942e42d3" alt="" width="64" height="64" loading="lazy"></span></span><span class="float" style="--x:40%;--y:89%;--t:8.2s" aria-hidden="true"><span class="app icon" title="Google Drive"><img src="/connectors/apps/google-drive.png?v=11e890a2" alt="" width="64" height="64" loading="lazy"></span></span><span class="float" style="--x:70%;--y:85%;--t:7.2s" aria-hidden="true"><span class="app icon" title="HubSpot"><img src="/connectors/apps/hubspot.png?v=20720da0" alt="" width="64" height="64" loading="lazy"></span></span><span class="float side" style="--x:89%;--y:57%;--t:8.8s" aria-hidden="true"><span class="app icon" title="Outlook"><img src="/connectors/apps/outlook.png?v=50f2a8a4" alt="" width="64" height="64" loading="lazy"></span></span><span class="float side" style="--x:98%;--y:33%;--t:7.6s" aria-hidden="true"><span class="app icon" title="Salesforce"><img src="/connectors/apps/salesforce.png?v=cb8118da" alt="" width="64" height="64" loading="lazy"></span></span><span class="float side" style="--x:98%;--y:70%;--t:8.4s" aria-hidden="true"><span class="app icon" title="Zoom"><img src="/connectors/apps/zoom.png?v=5cb3a51c" alt="" width="64" height="64" loading="lazy"></span></span><span class="float" style="--x:82%;--y:17%;--t:9.4s" aria-hidden="true"><span class="app icon" title="GitHub"><img src="/connectors/apps/github.png?v=c82ed74d" alt="" width="64" height="64" loading="lazy"></span></span>
-  <div class="words">
-    <p class="eyebrow">Simeon Connectors</p>
+<section class="hero open" aria-label="Connectors">
+  <div class="wrap">
     <h1>Connect your favorite tools to your agents</h1>
-    <p>Connect the apps you already use, and your agents do the work right inside them.</p>
-    <div class="ctas"><a class="btn" href="#apps">Explore connectors<svg class="dl" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14m-6-6 6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a><a class="btn ghost" href="/#app">Request a demo</a></div>
+    <div class="ctas"><a class="btn" href="https://api.simeonlabs.com/desktop/download/mac">Download for macOS<svg class="dl" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m-5-5 5 5 5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a><a class="btn ghost" href="/#app">Request a demo&nbsp;→</a><span class="btn go"><svg class="apl" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></svg>Download for iOS</span></div>
   </div>
+  <div class="floats"><span class="float" style="--x:55%;--y:30%;--t:7.0s" aria-hidden="true"><span class="app icon" title="Canva"><img src="/connectors/apps/canva.png?v=21035930" alt="" width="64" height="64" loading="lazy"></span></span><span class="float" style="--x:66%;--y:13%;--t:8.5s" aria-hidden="true"><span class="app icon" title="Slack"><img src="/connectors/apps/slack.png?v=592c37da" alt="" width="64" height="64" loading="lazy"></span></span><span class="float" style="--x:80%;--y:27%;--t:9.4s" aria-hidden="true"><span class="app icon" title="GitHub"><img src="/connectors/apps/github.png?v=c82ed74d" alt="" width="64" height="64" loading="lazy"></span></span><span class="float side" style="--x:94%;--y:12%;--t:7.6s" aria-hidden="true"><span class="app icon" title="Salesforce"><img src="/connectors/apps/salesforce.png?v=cb8118da" alt="" width="64" height="64" loading="lazy"></span></span><span class="float" style="--x:61%;--y:66%;--t:7.8s" aria-hidden="true"><span class="app icon" title="Gmail"><img src="/connectors/apps/gmail.png?v=942e42d3" alt="" width="64" height="64" loading="lazy"></span></span><span class="float side" style="--x:74%;--y:55%;--t:9.0s" aria-hidden="true"><span class="app icon" title="Figma"><img src="/connectors/apps/figma.png?v=aab84ff0" alt="" width="64" height="64" loading="lazy"></span></span><span class="float" style="--x:89%;--y:50%;--t:7.2s" aria-hidden="true"><span class="app icon" title="HubSpot"><img src="/connectors/apps/hubspot.png?v=20720da0" alt="" width="64" height="64" loading="lazy"></span></span><span class="float" style="--x:71%;--y:82%;--t:8.2s" aria-hidden="true"><span class="app icon" title="Google Drive"><img src="/connectors/apps/google-drive.png?v=11e890a2" alt="" width="64" height="64" loading="lazy"></span></span><span class="float side" style="--x:86%;--y:78%;--t:8.8s" aria-hidden="true"><span class="app icon" title="Outlook"><img src="/connectors/apps/outlook.png?v=50f2a8a4" alt="" width="64" height="64" loading="lazy"></span></span><span class="float side" style="--x:99%;--y:75%;--t:7.5s" aria-hidden="true"><span class="app icon" title="Notion"><img src="/connectors/apps/notion.png?v=d7c39e7e" alt="" width="64" height="64" loading="lazy"></span></span></div>
 </section>
 <section class="find" id="apps" aria-labelledby="apps-title">
   <div class="wrap">

@@ -33,13 +33,13 @@ FAMOUS = [
     "facebook", "tiktok", "discord", "google-meet", "google-analytics", "miro", "webflow", "wix", "gitlab",
     "vercel", "pipedrive", "typeform", "reddit", "pinterest", "eventbrite", "uber", "yelp", "google-maps",
 ]
-# The icons around the opening's headline, where the reference has its own: (connector, centre across %,
-# centre down %, seconds of its slow drift). `side` ones sit beside the words and stay off a phone.
+# The icons in the room right of the opening's headline: (connector, centre across %, centre down %, seconds
+# of its slow drift). `side` ones stay off a phone, where the rest line up under the button.
 FLOAT = [
-    ("canva", 32, 13, 7.0, False), ("slack", 11, 24, 8.5, False), ("notion", -1, 41, 7.5, True),
-    ("figma", 10, 59, 9.0, True), ("gmail", 20, 82, 7.8, False), ("google-drive", 40, 89, 8.2, False),
-    ("hubspot", 70, 85, 7.2, False), ("outlook", 89, 57, 8.8, True), ("salesforce", 98, 33, 7.6, True),
-    ("zoom", 98, 70, 8.4, True), ("github", 82, 17, 9.4, False),
+    ("canva", 55, 30, 7.0, False), ("slack", 66, 13, 8.5, False), ("github", 80, 27, 9.4, False),
+    ("salesforce", 94, 12, 7.6, True), ("gmail", 61, 66, 7.8, False), ("figma", 74, 55, 9.0, True),
+    ("hubspot", 89, 50, 7.2, False), ("google-drive", 71, 82, 8.2, False), ("outlook", 86, 78, 8.8, True),
+    ("notion", 99, 75, 7.5, True),
 ]
 # The Mac app drawn beside the steps: the home page's agents in its sidebar.
 AGENTS = [("clay-simeon", "Simeon", "Chief of Staff"), ("clay-30", "Theo", "Bookkeeping"),
@@ -74,25 +74,17 @@ def catalogue():
     return found, list(groups.values())
 
 
-DOWN = '<svg class="dl" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14m-6-6 6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
 CHECK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>'
 PLUS = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v12M6 12h12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>'
 SEARCH = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m15.5 15.5 5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>'
 
 CONN_CSS = """
-/* The opening: famous apps' icons drifting around a centred headline, as in the founder's reference. */
-.open{position:relative;height:clamp(520px,42vw,800px);overflow:hidden}
-.open .words{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 var(--gutter);text-align:center}
-.open .eyebrow{font-size:var(--t-body);font-weight:var(--w-title);color:var(--ink)}
-.open h1{margin-top:14px;max-width:13em;font-weight:var(--w-display);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em;text-wrap:balance} /* the home page's closing title */
-.open p{margin-top:16px;max-width:27em;font-size:var(--t-lead);line-height:1.5;letter-spacing:-.01em;color:#424245;text-wrap:balance}
-.open .ctas{display:flex;justify-content:center;flex-wrap:wrap;gap:12px;margin-top:clamp(22px,2vw,34px)}
-.open .btn{height:var(--btn-h);padding:0 var(--btn-pad);font-size:var(--btn-font)} /* the home page's buttons */
-.open .btn .dl{width:1em;height:1em;margin:0 -.15em 0 .4em;flex:none}
-.btn.ghost{background:#f2f2f2;color:#000}
-.btn.ghost:hover{background:#e8e8e8}
+/* The opening: the home page's (its styles come from page.html), the headline and the buttons on the left;
+   famous apps' icons drifting in the room on its right. On a phone they line up under the button. */
+.open{position:relative;min-height:clamp(380px,31vw,600px);overflow:hidden}
+.open .wrap{position:relative;z-index:1}
 .float{position:absolute;left:var(--x);top:var(--y);transform:translate(-50%,-50%);animation:drift var(--t) ease-in-out infinite alternate}
-.float .app{--as:clamp(56px,5.2vw,100px);--ring:transparent;box-shadow:0 0 0 1px rgba(0,0,0,.05),0 18px 40px -16px rgba(0,0,0,.22)}
+.float .app{--as:clamp(52px,4.8vw,92px);--ring:transparent;box-shadow:0 0 0 1px rgba(0,0,0,.05),0 18px 40px -16px rgba(0,0,0,.22)}
 @keyframes drift{from{translate:0 -7px}to{translate:0 7px}}
 
 /* Find an app: the title and the search, the kinds as words (the chosen one black), the apps as cards. */
@@ -200,9 +192,11 @@ CONN_CSS = """
 
 @media (max-width:1068px){.list{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:734px){
-  .open{height:600px}
+  .open{min-height:0}
+  .floats{display:flex;justify-content:center;flex-wrap:wrap;gap:12px;margin-top:40px}
+  .float{position:static;transform:none}
   .float.side{display:none}
-  .float .app{--as:52px}
+  .float .app{--as:44px}
   .list{grid-template-columns:minmax(0,1fr);gap:12px}
   .how-grid{grid-template-columns:minmax(0,1fr)}
   .scene{order:-1} /* the app above the steps, so a tap shows its step */
@@ -256,18 +250,16 @@ STEPS_JS = """<script>
 </script>"""
 
 
-def opening(assets):
+def opening(assets, ctas):
     floats = "".join(
         f'<span class="float{" side" if side else ""}" style="--x:{x}%;--y:{y}%;--t:{t}s" aria-hidden="true">{assets.tile(cid)}</span>'
         for cid, x, y, t, side in FLOAT)
-    return f"""<section class="open" aria-label="Connectors">
-  {floats}
-  <div class="words">
-    <p class="eyebrow">Simeon Connectors</p>
+    return f"""<section class="hero open" aria-label="Connectors">
+  <div class="wrap">
     <h1>Connect your favorite tools to your agents</h1>
-    <p>Connect the apps you already use, and your agents do the work right inside them.</p>
-    <div class="ctas"><a class="btn" href="#apps">Explore connectors{DOWN}</a><a class="btn ghost" href="/#app">Request a demo</a></div>
+    {ctas}
   </div>
+  <div class="floats">{floats}</div>
 </section>"""
 
 
@@ -340,9 +332,10 @@ def build(out=OUT):
     shutil.rmtree(root, ignore_errors=True)
     os.makedirs(root)
     assets = Assets(root, "/connectors")
-    body = opening(assets) + "\n" + finder(apps, kinds, assets) + "\n" + steps(assets)
+    hero_css, ctas = teams.home_hero()
+    body = opening(assets, ctas) + "\n" + finder(apps, kinds, assets) + "\n" + steps(assets)
     page = frame("Connectors", f"Connect Gmail, Slack, Notion and {len(apps) - 3} more apps to your Simeon agents.", "/connectors",
-                 body, CONN_CSS, current="connectors", script=LIST_JS.replace("%PAGE%", str(PAGE)) + STEPS_JS)
+                 body, hero_css + CONN_CSS, current="connectors", script=LIST_JS.replace("%PAGE%", str(PAGE)) + STEPS_JS)
     open(f"{root}/index.html", "w", encoding="utf-8").write(page)
     letters = sorted(k for k, how in assets.drawn.items() if how == "letter")
     print(f"connectors page written to {os.path.abspath(root)}: {len(apps)} app(s)")
