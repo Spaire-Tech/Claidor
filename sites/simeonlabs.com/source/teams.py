@@ -357,61 +357,48 @@ html{scroll-behavior:smooth;scroll-padding-top:clamp(72px,4.6vw,96px)} /* See al
 .pack .open{flex:none;display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#1d1d1f;color:#fff;transition:transform .3s}
 .pack .open svg{width:14px;height:14px}
 .pack:hover .open{transform:scale(1.08)}
-/* A team's window (23 October 2026, after Apple's AppleCare window and the founder's bot page reference): over the dimmed
-   page, the team (faces, kind of work, name, what it is for, Add to Simeon), then its agents listed on the
-   left and the chosen one's whole card on the right: what it does, the apps it connects, how it works,
-   and a line it would say. A click beside it, Escape or the close button closes it. */
+/* A team's window (23 October 2026, after Apple's AppleCare window): over the dimmed page, on one screen
+   without scrolling (the founder: "too big... not proportionate"). The team, then its five agents as rows
+   between hairlines (face, name and job, what it does, the apps it connects), then Add to Simeon. The long
+   instructions and the quotes stay on the team's page. A click beside it, Escape or the close button closes it. */
 html:has(dialog[open]){overflow:hidden}
-.sheet{width:min(1040px,calc(100vw - 48px));max-width:none;max-height:calc(100dvh - 48px);margin:auto;padding:0;border:0;border-radius:24px;background:var(--page);color:var(--ink);overflow:hidden;box-shadow:0 30px 80px -20px rgba(0,0,0,.35)}
-.sheet::backdrop{background:rgba(0,0,0,.45)}
-.sheet[open]{animation:sheet-in .28s cubic-bezier(.2,.7,.2,1)}
-.sheet[open]::backdrop{animation:fade-in .28s ease}
-@keyframes sheet-in{from{opacity:0;transform:translateY(12px) scale(.98)}}
+.sheet{width:min(860px,calc(100vw - 48px));max-width:none;max-height:calc(100dvh - 48px);margin:auto;padding:0;border:0;border-radius:22px;background:var(--page);color:var(--ink);overflow:hidden;box-shadow:0 30px 80px -20px rgba(0,0,0,.35)}
+.sheet::backdrop{background:rgba(0,0,0,.4)}
+.sheet[open]{animation:sheet-in .26s cubic-bezier(.2,.7,.2,1)}
+.sheet[open]::backdrop{animation:fade-in .26s ease}
+@keyframes sheet-in{from{opacity:0;transform:translateY(10px) scale(.985)}}
 @keyframes fade-in{from{opacity:0}}
-.sheet-in{max-height:calc(100dvh - 48px);overflow:auto;overscroll-behavior:contain;padding:clamp(28px,3.6vw,60px) clamp(24px,3.6vw,60px) clamp(24px,2.6vw,40px)}
-.sheet .close{position:absolute;top:16px;right:16px;z-index:2;display:grid;place-items:center;width:36px;height:36px;padding:0;border:0;border-radius:50%;background:#e8e8ed;color:#1d1d1f;cursor:pointer;transition:background .2s}
+.sheet-in{max-height:calc(100dvh - 48px);overflow:auto;overscroll-behavior:contain;padding:36px 40px 28px}
+.sheet .close{position:absolute;top:14px;right:14px;z-index:2;display:grid;place-items:center;width:30px;height:30px;padding:0;border:0;border-radius:50%;background:#e8e8ed;color:#1d1d1f;cursor:pointer;transition:background .2s}
 .sheet .close:hover{background:#dcdce1}
-.sheet .close svg{width:14px;height:14px}
-.sheet .close:focus-visible,.who button:focus-visible{outline:2px solid #1d1d1f;outline-offset:2px}
-.sheet .faces{--fs:clamp(40px,3vw,52px)}
-.sheet .eyebrow{margin-top:clamp(18px,1.6vw,26px);font-size:clamp(14px,1vw,17px);font-weight:500;color:var(--ink)}
-.sheet h2{margin-top:6px;font-family:var(--serif);font-weight:400;font-size:clamp(30px,2.6vw,50px);line-height:1.06;letter-spacing:-.02em}
-.sheet .intro{margin-top:clamp(12px,1vw,18px);max-width:36em;font-size:clamp(16px,1.1vw,19px);line-height:1.5;letter-spacing:-.01em;color:#424245}
-.sheet .acts{display:flex;align-items:center;flex-wrap:wrap;gap:12px 24px;margin-top:clamp(20px,1.8vw,30px)}
+.sheet .close svg{width:12px;height:12px}
+.sheet .close:focus-visible{outline:2px solid #1d1d1f;outline-offset:2px}
+.sheet .eyebrow{font-size:13px;font-weight:500;color:var(--ink2)}
+.sheet h2{margin-top:4px;font-family:var(--serif);font-weight:400;font-size:32px;line-height:1.1;letter-spacing:-.02em}
+.sheet .intro{margin-top:8px;max-width:40em;font-size:15px;line-height:1.47;letter-spacing:-.01em;color:#515154}
+.roster{margin:22px 0 0;padding:0;list-style:none;border-top:1px solid #e8e8ed}
+.roster li{display:grid;grid-template-columns:36px 128px minmax(0,1fr) auto;align-items:center;column-gap:18px;padding:12px 0;border-bottom:1px solid #e8e8ed}
+.roster img,.roster .noface{width:36px;height:36px;border-radius:50%;object-fit:cover}
+.roster .noface{font-size:15px}
+.roster b{display:block;font-size:15px;font-weight:500;letter-spacing:-.01em}
+.roster small{display:block;font-size:13px;color:var(--ink2)}
+.roster p{font-size:14px;line-height:1.45;letter-spacing:-.005em;color:#515154}
+.roster .apps{--as:24px;--ring:var(--page)}
+.sheet .acts{display:flex;align-items:center;flex-wrap:wrap;gap:10px 22px;margin-top:22px}
 .sheet .add{margin-top:0;align-items:flex-start}
-.sheet .page{color:var(--blue);text-decoration:none;font-size:clamp(15px,.95vw,18px)}
+.sheet .add .btn{height:38px;padding:0 18px;font-size:14px}
+.sheet .page{color:var(--blue);text-decoration:none;font-size:14px}
 .sheet .page::after{content:" \\203A"}
 .sheet .page:hover{text-decoration:underline}
-.crew{display:grid;grid-template-columns:minmax(200px,260px) minmax(0,1fr);gap:clamp(16px,1.6vw,28px);margin-top:clamp(32px,3vw,52px)}
-.who{display:flex;flex-direction:column;gap:4px}
-.who button{display:flex;align-items:center;gap:12px;width:100%;padding:10px 12px;border:0;border-radius:14px;background:none;color:var(--ink);font:inherit;text-align:left;cursor:pointer;transition:background .15s}
-.who button:hover{background:#fafafa}
-.who button[aria-selected="true"]{background:var(--soft)}
-.who img,.who .noface{flex:none;width:36px;height:36px;border-radius:50%;object-fit:cover}
-.who b{display:block;font-size:15px;font-weight:500;letter-spacing:-.01em}
-.who small{display:block;margin-top:1px;font-size:13px;color:var(--ink2)}
-.one{padding:clamp(22px,2.2vw,36px);border-radius:20px;background:var(--soft)}
-.one[hidden]{display:none}
-.one .who-is{display:flex;align-items:center;gap:16px}
-.one .who-is img,.one .who-is .noface{flex:none;width:64px;height:64px;border-radius:18px;object-fit:cover}
-.one h3{font-size:clamp(19px,1.35vw,24px);font-weight:500;letter-spacing:-.015em}
-.one h3 .nm{color:var(--blue)}
-.one h3 .tt{color:var(--ink3)}
-.one .sum{margin-top:4px;font-size:clamp(15px,1vw,17px);line-height:1.47;color:#424245}
-.one h4{margin-top:clamp(22px,2vw,30px);font-size:13px;font-weight:500;letter-spacing:.01em;color:var(--ink2)}
-.conn{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;margin:10px 0 0;padding:0;list-style:none}
-.conn li{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:14px;background:var(--page);font-size:15px;--as:30px;--ring:var(--page)}
-.one .how{margin-top:10px;max-width:42em;font-size:clamp(15px,1vw,17px);line-height:1.6;color:#424245}
-.one .q{margin-top:clamp(20px,1.8vw,28px);padding-top:clamp(16px,1.4vw,20px);border-top:1px solid #e3e3e8;font-family:var(--serif);font-size:clamp(18px,1.25vw,23px);line-height:1.32;letter-spacing:-.01em}
-.one .q .qm{font-size:2.2em;line-height:0;vertical-align:-.36em;color:var(--blue);opacity:.55}
-.sheet .fine{margin-top:clamp(24px,2.2vw,36px);font-size:12px;line-height:1.5;color:var(--ink2)}
+.sheet .fine{margin-left:auto;font-size:12px;color:var(--ink2)}
 @media (max-width:734px){
-  .sheet{width:100vw;max-height:92dvh;margin:auto 0 0;border-radius:22px 22px 0 0}
-  .sheet-in{max-height:92dvh;padding:28px 20px 24px}
-  .crew{grid-template-columns:minmax(0,1fr)}
-  .who{flex-direction:row;overflow-x:auto;scrollbar-width:none;margin-inline:-20px;padding:0 20px}
-  .who::-webkit-scrollbar{display:none}
-  .who button{flex:none;width:auto;padding:8px 14px 8px 8px;border-radius:99px}
+  .sheet{width:100vw;max-height:92dvh;margin:auto 0 0;border-radius:20px 20px 0 0}
+  .sheet-in{max-height:92dvh;padding:28px 20px 22px}
+  .sheet h2{font-size:28px}
+  .roster li{grid-template-columns:36px minmax(0,1fr) auto;row-gap:4px;padding:12px 0}
+  .roster .apps{grid-column:3;grid-row:1}
+  .roster p{grid-column:2 / -1;grid-row:2;font-size:13.5px}
+  .sheet .fine{margin-left:0}
 }
 @media (prefers-reduced-motion:reduce){.sheet[open],.sheet[open]::backdrop{animation:none}}
 footer{margin-top:0;padding-top:0}
@@ -514,8 +501,7 @@ CROSS = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 
 
 SHEET_JS = """<script>
 // A team's window: its card opens it (a click with a modifier key still opens the team's page), and so does
-// /teams#<team>; a click beside it, Escape or the close button closes it. In it, the agents are tabs: a
-// click or the arrow keys show one agent's card.
+// /teams#<team>; a click beside it, Escape or the close button closes it.
 (() => {
   const open = (id) => {
     const d = document.getElementById('team-' + id);
@@ -535,25 +521,6 @@ SHEET_JS = """<script>
     d.querySelector('.close').addEventListener('click', () => d.close());
     d.addEventListener('click', (e) => { if (e.target === d) d.close(); });
     d.addEventListener('close', () => history.replaceState(null, '', location.pathname + location.search));
-    const tabs = [...d.querySelectorAll('[role=tab]')];
-    const pick = (t, focus) => {
-      for (const x of tabs) {
-        const on = x === t;
-        x.setAttribute('aria-selected', String(on));
-        x.tabIndex = on ? 0 : -1;
-        document.getElementById(x.getAttribute('aria-controls')).hidden = !on;
-      }
-      if (focus) t.focus();
-    };
-    tabs.forEach((t, i) => {
-      t.addEventListener('click', () => pick(t));
-      t.addEventListener('keydown', (e) => {
-        const step = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }[e.key];
-        if (!step) return;
-        e.preventDefault();
-        pick(tabs[(i + step + tabs.length) % tabs.length], true);
-      });
-    });
   }
   const fromHash = () => { const id = decodeURIComponent(location.hash.slice(1)); if (id && id !== 'all') open(id); };
   addEventListener('hashchange', fromHash);
@@ -746,41 +713,30 @@ def some_apps(pack, assets):
 
 
 def team_sheet(pack, assets, kind):
-    """A team's window on /teams: the team, then its agents (a list on the left as in the founder's reference, the chosen
-    one's whole card on the right). It opens over the page from the team's card; without the script the
+    """A team's window on /teams: the team, its five agents as rows (face, name and job, what it does, the
+    apps it connects) and Add to Simeon. It opens over the page from the team's card; without the script the
     card goes to the team's page instead."""
     pid = pack["id"]
-    tabs, cards = [], []
-    for i, agent in enumerate(pack["agents"]):
+    rows = []
+    for agent in pack["agents"]:
         url = assets.face(agent["face"])
         face = (f'<img src="{url}" alt="" width="128" height="128" loading="lazy">' if url
-                else f'<span class="noface">{esc(agent["name"][:1].upper())}</span>')
-        on = i == 0
-        tabs.append(f'<button type="button" role="tab" id="{pid}-tab-{i}" aria-controls="{pid}-agent-{i}" aria-selected="{str(on).lower()}" tabindex="{0 if on else -1}">'
-                    f'{face}<span><b>{esc(agent["name"])}</b><small>{esc(agent["title"])}</small></span></button>')
+                else f'<span class="noface" aria-hidden="true">{esc(agent["name"][:1].upper())}</span>')
         apps = [a for a in agent["apps"] if a]
-        conn = "".join(f'<li>{assets.tile(a)}<span>{esc(app_name(a))}</span></li>' for a in apps)
-        quote = esc(str(agent["quote"]).strip().strip('"“”'))
-        cards.append(
-            f'<section class="one" role="tabpanel" id="{pid}-agent-{i}" aria-labelledby="{pid}-tab-{i}"{"" if on else " hidden"}>'
-            f'<div class="who-is">{face}<div><h3><span class="nm">{esc(agent["name"])}</span> <span class="tt">{esc(agent["title"])}</span></h3>'
-            f'<p class="sum">{esc(agent["summary"])}</p></div></div>'
-            + (f'<h4>Apps it connects</h4><ul class="conn">{conn}</ul>' if apps else "")
-            + f'<h4>How it works</h4><p class="how">{esc(agent["description"])}</p>'
-            f'<blockquote class="q"><span class="qm" aria-hidden="true">“</span>{quote}<span class="qm" aria-hidden="true">”</span></blockquote></section>')
+        names = [esc(app_name(a)) for a in apps]
+        tiles = "".join(assets.tile(a) for a in apps)
+        rows.append(f'<li>{face}<span><b>{esc(agent["name"])}</b><small>{esc(agent["title"])}</small></span>'
+                    f'<p>{esc(agent["summary"])}</p>'
+                    + (f'<span class="apps" role="img" aria-label="Connects {and_list(names)}">{tiles}</span>' if apps else "<span></span>")
+                    + "</li>")
     return f"""<dialog class="sheet" id="team-{pid}" aria-labelledby="{pid}-title">
 <button class="close" type="button" aria-label="Close">{CROSS}</button>
 <div class="sheet-in">
-  {faces_row(pack, assets)}
   {f'<p class="eyebrow">{esc(kind)}</p>' if kind else ""}
   <h2 id="{pid}-title">{esc(pack["title"])}</h2>
   <p class="intro">{esc(pack["summary"])}</p>
-  <div class="acts">{add_button(pack)}<a class="page" href="/teams/{pid}">See the team's page</a></div>
-  <div class="crew">
-    <div class="who" role="tablist" aria-label="The agents" aria-orientation="vertical">{"".join(tabs)}</div>
-    <div>{"".join(cards)}</div>
-  </div>
-  <p class="fine">Free. They go in a “{esc(pack.get("folder") or pack["title"])}” folder in your sidebar; each one says hello in its own chat and asks to connect its apps, and asks before it sends, posts or pays. You can change anything later.</p>
+  <ul class="roster" aria-label="The agents">{"".join(rows)}</ul>
+  <div class="acts">{add_button(pack)}<a class="page" href="/teams/{pid}">See the team's page</a><p class="fine">Free. Each one asks before it sends, posts or pays.</p></div>
 </div>
 </dialog>"""
 
