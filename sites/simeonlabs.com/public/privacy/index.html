@@ -57,6 +57,7 @@ a{color:inherit}
 .pages a:hover,.pages a[aria-current]{color:var(--ink)}
 article{grid-column:2;min-width:0}
 h1{max-width:var(--title-max);font-size:var(--t-display);font-weight:var(--w-display);line-height:1.15;letter-spacing:-.025em;text-wrap:pretty}
+@media (max-width:734px){h1{max-width:none;text-wrap:wrap}} /* a phone keeps its title as it was */
 .updated{margin-top:12px;color:var(--ink2)}
 
 /* The contents, in a box that folds. */

@@ -72,7 +72,7 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .hero .btn{height:var(--btn-h);padding:0 var(--btn-pad);font-size:var(--btn-font)}
 /* On a phone the hero breathes (4 October 2026): a long pause under the bar, a headline that leaves air on the right, and room before the app. */
 .hero .btn.go{display:none} /* the phone's one button: Download for iOS, no link until there is an app (6 October 2026) */
-@media (max-width:734px){.hero{padding-top:88px}.hero h1{font-size:var(--t-display);line-height:1.1;font-weight:var(--w-display);letter-spacing:-.025em}.hero .ctas{margin-top:26px}.hero .ctas .btn{display:none}.hero .btn.go{display:inline-flex}}
+@media (max-width:734px){.hero{padding-top:88px}.hero h1{font-size:var(--t-display);line-height:1.1;font-weight:var(--w-display);letter-spacing:-.025em;max-width:11.5em;text-wrap:balance}.hero h1.set{text-wrap:balance}.hero h1 .nw{white-space:normal}.hero .ctas{margin-top:26px}.hero .ctas .btn{display:none}.hero .btn.go{display:inline-flex}}
 .btn .apl{width:1.05em;height:1.05em;margin:-.18em .45em 0 -.1em;flex:none}
 .btn .dl{width:1em;height:1em;margin:0 -.15em 0 .4em;flex:none} /* Download for macOS, its arrow after the words (18 October 2026) */
 
@@ -670,6 +670,7 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 #team+.trust{padding-top:clamp(56px,4.4vw,88px)}
 .trust-top{display:grid;grid-template-columns:1fr 1fr;gap:clamp(24px,5vw,96px);align-items:start}
 .trust h2{margin:0;font-weight:var(--w-display);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em;max-width:var(--title-max);text-wrap:pretty} /* every section's title is the headline's size (the founder, 23 October 2026) */
+@media (max-width:734px){.trust h2{max-width:13em;text-wrap:balance}.close3 h2{max-width:none;text-wrap:balance}} /* the shared title width is for a computer's screen; a phone keeps its titles as they were (the founder, 23 October 2026) */
 .trust-top p{justify-self:end;margin:clamp(4px,.45vw,9px) 0 0;max-width:30em;font-size:var(--t-lead);line-height:1.5;letter-spacing:-.01em;color:var(--ink2)} /* on the far right, as the title is on the far left */
 .tpanel{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,3.6fr);gap:24px;margin-top:clamp(40px,4vw,80px);padding:clamp(28px,3vw,56px);border-radius:28px;background:#fafafb}
 .tpanel+.tpanel{margin-top:22px}

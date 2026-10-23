@@ -316,6 +316,7 @@ INDEX_CSS = """
    people at work in a fan across the column, each one a team's, the middle ones in front. The first photo
    starts under the headline's first letter and the last ends at the column's right edge: --n photos, each
    overlapping the next by .3 of its width, make the column ((--n - 1) × .7 + 1 widths). */
+.hero h1 br.ph{display:none} /* a phone keeps the headline's first line, "A team of agents", as it was */
 html{scroll-behavior:smooth;scroll-padding-top:clamp(72px,4.6vw,96px)} /* See all teams lands below the bar */
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 .fan{--w:calc(var(--col) / ((var(--n) - 1) * .7 + 1));--step:calc(var(--w) * .7);position:relative;height:calc(var(--w) * 1.36 + 100px);margin-top:clamp(36px,3.4vw,64px);overflow:hidden}
@@ -404,7 +405,7 @@ html:has(dialog[open]){overflow:hidden}
 @media (prefers-reduced-motion:reduce){.sheet[open],.sheet[open]::backdrop{animation:none}}
 footer{margin-top:0;font-size:var(--t-tiny)} /* the closing call above leaves the room, as on the home page */
 @media (max-width:1068px){.packs{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media (max-width:734px){.packs{grid-template-columns:1fr;gap:14px}.fan{--w:clamp(150px,44vw,240px)}.shot{border-width:4px;border-radius:18px}
+@media (max-width:734px){.hero h1 br.ph{display:inline}.list-title{max-width:none;text-wrap:wrap}.sheet h2{max-width:13em;text-wrap:balance}.packs{grid-template-columns:1fr;gap:14px}.fan{--w:clamp(150px,44vw,240px)}.shot{border-width:4px;border-radius:18px}
   .chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-inline:calc(-1 * var(--gutter));padding:2px var(--gutter)}.chips::-webkit-scrollbar{display:none}}
 @media (prefers-reduced-motion:reduce){.shot{transition:none}}
 """
@@ -698,7 +699,7 @@ def from_home():
     if not (pricing and close and 0 <= start < stop):
         sys.exit("teams.py: source/page.html has no pricing or closing section to show on /teams")
     rules = [line for line in page.splitlines()
-             if line.startswith((".btn.ghost", ".btn .apl{", ".btn .dl{", ".trust{", ".trust-top{", ".trust h2{", ".trust-top p{"))]
+             if line.startswith((".btn.ghost", ".btn .apl{", ".btn .dl{", ".trust{", ".trust-top{", ".trust h2{", ".trust-top p{", "@media (max-width:734px){.trust h2{"))]
     css = ("\n/* From the home page (source/page.html): the section titles, the pricing, the questions and the closing call. */\n"
            + "\n".join(rules) + "\n@media (max-width:860px){.trust-top{grid-template-columns:1fr}.trust-top p{justify-self:start}}\n"
            + page[start:page.index("\n", stop) + 1]).replace("url(fonts/", "url(/fonts/")
@@ -751,7 +752,7 @@ def index_page(packs, assets):
     hero_css, ctas = home_hero()
     body = f"""<section class="hero" aria-label="Teams">
   <div class="wrap">
-    <h1 class="set">A team of agents for your kind <span class="nw">of work</span></h1>
+    <h1 class="set">A team of agents<br class="ph"> for your kind <span class="nw">of work</span></h1>
     {ctas}
   </div>
   {fan(packs, assets)}
