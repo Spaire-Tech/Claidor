@@ -335,13 +335,12 @@ html{scroll-behavior:smooth;scroll-padding-top:clamp(72px,4.6*var(--vw,1vw),96px
 .chip:hover{box-shadow:0 0 0 1px rgba(0,0,0,.16)}
 .chip[aria-pressed="true"]{background:#1d1d1f;color:#fff;box-shadow:none}
 .chip:focus-visible,.none button:focus-visible,.pack:focus-visible{outline:2px solid #1d1d1f;outline-offset:3px}
-.find{position:relative;margin-top:clamp(14px,1.2*var(--vw,1vw),22px)}
-.find svg{position:absolute;left:16px;top:50%;width:17px;height:17px;transform:translateY(-50%);color:#86868b;pointer-events:none}
-.find input{display:block;width:100%;height:44px;padding:0 16px 0 42px;border:0;border-radius:12px;background:#fff;color:var(--ink);font:inherit;font-size:var(--t-field);letter-spacing:-.01em;outline:none;box-shadow:0 0 0 1px rgba(0,0,0,.06);-webkit-appearance:none;appearance:none;transition:box-shadow .2s}
-.find input:focus{box-shadow:0 0 0 1px rgba(0,0,0,.22),0 4px 14px rgba(0,0,0,.06)}
+.find{position:relative;max-width:620px;margin-top:clamp(14px,1.2*var(--vw,1vw),22px)} /* Connectors' search, its shape and size (the founder, 23 October 2026: "we take connectors as the right one") */
+.find svg{position:absolute;right:20px;top:50%;width:18px;height:18px;transform:translateY(-50%);color:#1d1d1f;pointer-events:none}
+.find input{display:block;width:100%;height:48px;padding:0 50px 0 22px;border:1px solid #e3e3e8;border-radius:99px;background:#fff;color:var(--ink);font:inherit;font-size:var(--t-field);letter-spacing:-.01em;outline:none;-webkit-appearance:none;appearance:none;transition:border-color .2s,box-shadow .2s}
+.find input:focus{border-color:#c7c7cc;box-shadow:0 4px 14px rgba(0,0,0,.05)} /* no blue ring */
 .find input::placeholder{color:#86868b;opacity:1}
-.find input::-webkit-search-decoration{-webkit-appearance:none}
-.find input::-webkit-search-cancel-button{-webkit-appearance:none;width:16px;height:16px;cursor:pointer;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='11' fill='%23b0b0b5'/%3E%3Cpath d='m8 8 8 8m0-8-8 8' stroke='%23fff' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E") center/contain no-repeat}
+.find input::-webkit-search-decoration,.find input::-webkit-search-cancel-button{-webkit-appearance:none}
 .none{margin-top:28px;font-size:var(--t-body);color:var(--ink2)}
 .none button{padding:0;border:0;background:none;font:inherit;color:var(--blue);cursor:pointer}
 .packs>li[hidden]{display:none}
