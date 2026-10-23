@@ -15,7 +15,8 @@
   --t-tiny:12px;                     /* the footer, fine print */
   --t-nav:clamp(14px,1vw,18px);      /* the bar's links and button */
   --t-field:16px;                    /* a text field: 16 px, so an iPhone does not zoom into it */
-  --w-title:500;                     /* titles: medium, as the apps' */
+  --w-display:400;                   /* headlines, section titles, prices: regular, never bold (the founder) */
+  --w-title:500;                     /* a card's small title: medium, as the apps' */
   --btn-h:clamp(40px,2.5vw,48px);
   --btn-pad:clamp(18px,1.3vw,24px);
   --btn-font:clamp(15px,.95vw,17px);

@@ -307,7 +307,7 @@ INDEX_CSS = """
 /* The opening (23 October 2026, after the founder's reference): a centred headline, its first words in a
    box, the buttons, then photos of people at work in a fan, each one a team's; the middle one in front. */
 .lead{padding:clamp(56px,6.4vw,128px) 0 0;text-align:center}
-.lead h1{font-weight:var(--w-title);font-size:var(--t-display);line-height:1.2;letter-spacing:-.025em} /* the home page's closing title */
+.lead h1{font-weight:var(--w-display);font-size:var(--t-display);line-height:1.2;letter-spacing:-.025em} /* the home page's closing title */
 .lead h1 .box{display:inline-block;margin-bottom:.14em;padding:.02em .3em .08em;border:1px solid #d2d2d7;border-radius:.24em;background:var(--page);box-shadow:0 1px 2px rgba(0,0,0,.04),0 8px 20px -10px rgba(0,0,0,.14)}
 .lead .ctas{display:flex;justify-content:center;align-items:center;gap:clamp(18px,1.5vw,28px);flex-wrap:wrap;margin-top:clamp(22px,2vw,36px)}
 .lead .btn{height:var(--btn-h);padding:0 var(--btn-pad);font-size:var(--btn-font)} /* the home page's buttons */
@@ -323,13 +323,13 @@ html{scroll-behavior:smooth;scroll-padding-top:clamp(72px,4.6vw,96px)} /* See al
 .shot:hover,.shot:focus-visible{--lift:-10px}
 .shot img{width:100%;height:100%;object-fit:cover}
 .shot::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.06),rgba(0,0,0,.26))}
-.shot span{position:absolute;inset:0;z-index:1;display:grid;place-items:center;padding:0 12px;color:#fff;font-size:var(--t-title);font-weight:var(--w-title);letter-spacing:-.02em;text-shadow:0 1px 18px rgba(0,0,0,.4)}
+.shot span{position:absolute;inset:0;z-index:1;display:grid;place-items:center;padding:0 12px;color:#fff;font-size:var(--t-title);font-weight:var(--w-display);letter-spacing:-.02em;text-shadow:0 1px 18px rgba(0,0,0,.4)}
 /* The marketplace ("more Apple style", 23 October 2026): a light grey band as on the Apple Store, white chips
    and a white search field on it (no blue ring), and the teams as the Store's white cards, which rise a little
    under the pointer: the faces, the kind of work, the name, what it is for, then five of its apps. */
 .market{padding:clamp(96px,8vw,160px) 0 clamp(150px,12vw,230px);background:linear-gradient(180deg,var(--page) 0,var(--soft) clamp(200px,17vw,340px),var(--soft) calc(100% - clamp(150px,12vw,230px)),var(--page) 100%)} /* white fading into the grey and back */
 .market+.trust{padding-top:clamp(24px,2.4vw,48px)}
-.list-title{font-weight:var(--w-title);font-size:var(--t-title);line-height:1.15;letter-spacing:-.02em} /* the home page's section titles */
+.list-title{font-weight:var(--w-display);font-size:var(--t-title);line-height:1.15;letter-spacing:-.02em} /* the home page's section titles */
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:clamp(18px,1.5vw,28px)}
 .chip{flex:none;height:36px;padding:0 16px;border:0;border-radius:99px;background:#fff;color:var(--ink);font:inherit;font-size:var(--t-body);letter-spacing:-.01em;cursor:pointer;box-shadow:0 0 0 1px rgba(0,0,0,.06);transition:background .2s,color .2s,box-shadow .2s}
 .chip:hover{box-shadow:0 0 0 1px rgba(0,0,0,.16)}
@@ -377,7 +377,7 @@ html:has(dialog[open]){overflow:hidden}
 .sheet .close svg{width:12px;height:12px}
 .sheet .close:focus-visible{outline:2px solid #1d1d1f;outline-offset:2px}
 .sheet .eyebrow{font-size:var(--t-small);font-weight:var(--w-title);color:var(--ink2)}
-.sheet h2{margin-top:6px;font-weight:var(--w-title);font-size:var(--t-title);line-height:1.15;letter-spacing:-.02em}
+.sheet h2{margin-top:6px;font-weight:var(--w-display);font-size:var(--t-title);line-height:1.15;letter-spacing:-.02em}
 .sheet .intro{margin-top:10px;max-width:40em;font-size:var(--t-lead);line-height:1.47;letter-spacing:-.01em;color:#515154}
 .roster{margin:30px 0 0;padding:0;list-style:none;border-top:1px solid #e8e8ed}
 .roster li{display:grid;grid-template-columns:44px 140px minmax(0,1fr) auto;align-items:center;column-gap:24px;padding:16px 0;border-bottom:1px solid #e8e8ed}
@@ -403,7 +403,7 @@ html:has(dialog[open]){overflow:hidden}
 @media (prefers-reduced-motion:reduce){.sheet[open],.sheet[open]::backdrop{animation:none}}
 footer{margin-top:0;font-size:var(--t-tiny)} /* the closing call above leaves the room, as on the home page */
 @media (max-width:1068px){.packs{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media (max-width:734px){.packs{grid-template-columns:1fr;gap:14px}.lead{padding-top:48px}.lead h1{font-size:var(--t-display);line-height:1.2;font-weight:var(--w-title);letter-spacing:-.025em}.fan{--w:clamp(150px,44vw,240px)}.shot{border-width:4px;border-radius:18px}
+@media (max-width:734px){.packs{grid-template-columns:1fr;gap:14px}.lead{padding-top:48px}.lead h1{font-size:var(--t-display);line-height:1.2;font-weight:var(--w-display);letter-spacing:-.025em}.fan{--w:clamp(150px,44vw,240px)}.shot{border-width:4px;border-radius:18px}
   .chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-inline:calc(-1 * var(--gutter));padding:2px var(--gutter)}.chips::-webkit-scrollbar{display:none}}
 @media (prefers-reduced-motion:reduce){.shot{transition:none}}
 """
@@ -416,7 +416,7 @@ PACK_CSS = """
 .hero{display:flex;flex-direction:column;align-items:center;text-align:center;padding:clamp(28px,4vw,64px) 0 0}
 .hero .faces{--fs:clamp(44px,3.2vw,56px)}
 .kicker{margin-top:18px;font-size:var(--t-small);font-weight:var(--w-title);color:var(--ink2)}
-.hero h1{margin-top:clamp(16px,1.3vw,24px);max-width:14em;font-weight:var(--w-title);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em;text-wrap:balance} /* the home page's headline */
+.hero h1{margin-top:clamp(16px,1.3vw,24px);max-width:14em;font-weight:var(--w-display);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em;text-wrap:balance} /* the home page's headline */
 .kicker+h1{margin-top:10px}
 .hero .lede{margin-top:clamp(10px,.9vw,16px);max-width:30em;font-size:var(--t-lead);line-height:1.5;letter-spacing:-.01em;color:var(--ink2);text-wrap:balance}
 
@@ -435,7 +435,7 @@ PACK_CSS = """
 .agent .q .qm{color:var(--ink2)} /* plain quotation marks, in the text's own size */
 
 .end{display:flex;flex-direction:column;align-items:center;text-align:center;padding:clamp(72px,7vw,120px) 0 0}
-.end h2{max-width:14em;font-weight:var(--w-title);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em;text-wrap:balance}
+.end h2{max-width:14em;font-weight:var(--w-display);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em;text-wrap:balance}
 .end .add{margin-top:clamp(22px,2vw,32px)}
 .free{margin-top:14px;font-size:var(--t-small);color:var(--ink2)}
 
