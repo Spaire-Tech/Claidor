@@ -1,8 +1,9 @@
 """Builds the website's Teams pages (/teams and /teams/<pack>) from the starter packs.
 
 A starter pack is a team of five named agents for one kind of business
-(server/simeon/desktop/packs.json, which the apps read too). /teams lists
-every pack; /teams/<id> shows one the way the founder's posts show a team: a
+(server/simeon/desktop/packs.json, which the apps read too). /teams opens with
+a headline and photos of people at work, each a team's (img/teams/<id>.jpg,
+in the order of LEAD), then lists every pack; /teams/<id> shows one the way the founder's posts show a team: a
 big serif headline, "Add to Simeon", then each agent as a card (its clay face,
 its name in the apps' blue and its job in grey, what it does, the apps it works
 in, and a line it would say), and "Add to Simeon" again at the end. The button
@@ -24,12 +25,13 @@ public/; it also runs alone, needing nothing but Python:
 
     python3 teams.py
 """
-import hashlib, html, json, os, re, shutil, sys
+import hashlib, html, json, os, re, shutil, sys, unicodedata
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(HERE, "..", "..", ".."))
 OUT = os.path.join(HERE, "..", "public")
 PACKS = os.path.join(HERE, "..", "..", "..", "server", "simeon", "desktop", "packs.json")
+HOME_PAGE = os.path.join(HERE, "page.html")
 
 FACES = f"{REPO}/ios/SimeonCore/Sources/SimeonCore/Resources/Faces"
 APP_ICONS = f"{REPO}/ios/Simeon/AppIcons.xcassets/AppIcons"
@@ -47,6 +49,18 @@ MAC_DOWNLOAD = "https://api.simeonlabs.com/desktop/download/mac"
 BLUE = "#255a93"
 WORDS = {1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six", 7: "seven", 8: "eight", 9: "nine", 10: "ten"}
 PICTURES = (".png", ".jpg", ".jpeg", ".webp", ".svg")
+# The teams whose photos open /teams, left to right (source/img/teams/<id>.jpg).
+LEAD = ["creators", "founders", "agencies", "coffee-shop", "freelancers"]
+# The marketplace's chips: the most common kinds of work, each the teams it shows (a team can be in two).
+GROUPS = {
+    "local": ("Local business", ["coffee-shop", "salons", "trades"]),
+    "startups": ("Startups", ["founders", "sales", "recruiters"]),
+    "online": ("Selling online", ["online-stores", "creators"]),
+    "solo": ("On your own", ["freelancers", "creators"]),
+    "firms": ("Firms and agencies", ["agencies", "law-firms", "accountants"]),
+    "property": ("Real estate", ["real-estate", "property"]),
+    "personal": ("Personal", ["life"]),
+}
 
 
 def _text(path):
@@ -233,7 +247,7 @@ CSS = """
   --font:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Inter","Helvetica Neue",Arial,sans-serif;
   --serif:"Newsreader",Georgia,"Times New Roman",serif;
   --gutter:max(20px,4.6vw);
-  --col:min(1260px,calc(100vw - 2 * var(--gutter)));
+  --col:min(1840px,calc(100vw - 2 * var(--gutter))); /* the home page's column */
   color-scheme:light;
 }
 *{box-sizing:border-box}
@@ -260,7 +274,7 @@ a{color:inherit}
 .faces{display:flex;--fs:48px;--ring:var(--page)}
 .faces img,.faces .noface{width:var(--fs);height:var(--fs);border-radius:50%;object-fit:cover;flex:none;box-shadow:0 0 0 3px var(--ring);background:var(--soft)}
 .faces>*+*{margin-left:calc(var(--fs) * -.26)}
-.noface{display:grid;place-items:center;font-weight:600;color:var(--ink2);background:#e8e8ed}
+.noface{display:grid;place-items:center;font-weight:500;color:var(--ink2);background:#e8e8ed}
 
 /* An app's tile: its own icon with an app icon's corners, else its mark on white, else its first letter. */
 .apps{display:flex;align-items:center;flex:none;--as:36px;--ring:var(--soft)}
@@ -272,6 +286,14 @@ a{color:inherit}
 .app.mark i{display:block;width:64%;height:64%;-webkit-mask:var(--m) center/contain no-repeat;mask:var(--m) center/contain no-repeat}
 .app.letter{color:#3a3a3c;font-size:calc(var(--as) * .46);font-weight:600;letter-spacing:0;line-height:1}
 
+/* Add to Simeon, on a team's page and in its window on /teams. */
+.add{display:flex;flex-direction:column;align-items:center;margin-top:clamp(18px,1.6vw,32px)}
+.add .btn{height:clamp(40px,2.5vw,50px);padding:0 clamp(18px,1.3vw,26px);font-size:clamp(15px,.95vw,19px)} /* the home page's buttons */
+.add .btn svg{width:1em;height:1em;flex:none;margin-left:-.15em}
+.add-note{margin:0}
+.add-note[hidden]{display:none}
+.add.noapp .add-btn{display:none}
+.add .btn .dl{margin:0 -.15em 0 0} /* Download for macOS, its arrow after the words, as on the home page */
 footer{margin-top:clamp(80px,8vw,140px);background:var(--soft);padding:20px 0 calc(40px + env(safe-area-inset-bottom,0px));font-size:12px;color:var(--ink2)}
 footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
 footer nav{display:flex;gap:18px}
@@ -281,20 +303,109 @@ footer a[aria-current]{color:var(--ink)}
 """.replace("%BLUE%", BLUE)
 
 INDEX_CSS = """
-.top{padding:clamp(56px,7vw,130px) 0 0}
-.top h1{font-family:var(--serif);font-weight:400;font-size:clamp(40px,4.4vw,72px);line-height:1.02;letter-spacing:-.025em}
-.top p{margin-top:clamp(14px,1.2vw,22px);max-width:34em;font-size:clamp(17px,1.25vw,22px);line-height:1.4;letter-spacing:-.015em;color:var(--ink2)}
-.packs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;margin:clamp(40px,4vw,72px) 0 0;padding:0;list-style:none}
-.pack{display:flex;flex-direction:column;height:100%;padding:clamp(26px,2.2vw,36px);border-radius:28px;background:var(--soft);text-decoration:none;transition:background .2s}
-.pack:hover{background:#efeff2}
-.pack .faces{--ring:var(--soft);--fs:clamp(46px,3.4vw,56px)}
-.pack:hover .faces{--ring:#efeff2}
-.pack h2{margin-top:clamp(22px,2vw,32px);font-size:clamp(21px,1.5vw,26px);font-weight:600;line-height:1.18;letter-spacing:-.022em}
-.pack p{margin-top:10px;flex:1;font-size:clamp(16px,1.05vw,18px);line-height:1.45;color:var(--ink2)}
-.pack .more{margin-top:20px;color:var(--blue);font-size:clamp(16px,1.05vw,18px)}
-.pack .more::after{content:" \\203A"}
+/* The opening (23 October 2026, after the founder's reference): a centred headline, its first words in a
+   box, the buttons, then photos of people at work in a fan, each one a team's; the middle one in front. */
+.lead{padding:clamp(56px,6.4vw,128px) 0 0;text-align:center}
+.lead h1{font-family:var(--serif);font-weight:400;font-size:clamp(34px,3.2vw,64px);line-height:1.12;letter-spacing:-.02em} /* the home page's closing title */
+.lead h1 .box{display:inline-block;margin-bottom:.14em;padding:.02em .3em .08em;border:1px solid #d2d2d7;border-radius:.24em;background:var(--page);box-shadow:0 1px 2px rgba(0,0,0,.04),0 8px 20px -10px rgba(0,0,0,.14)}
+.lead .ctas{display:flex;justify-content:center;align-items:center;gap:clamp(18px,1.5vw,28px);flex-wrap:wrap;margin-top:clamp(22px,2vw,36px)}
+.lead .btn{height:clamp(40px,2.5vw,50px);padding:0 clamp(18px,1.3vw,26px);font-size:clamp(15px,.95vw,19px)} /* the home page's buttons */
+.lead .btn .dl{width:1em;height:1em;margin:0 -.15em 0 0}
+.lead .see{font-size:clamp(15px,.95vw,19px);text-decoration:none;color:var(--ink)}
+.lead .see::after{content:" \\203A"}
+.lead .see:hover{text-decoration:underline}
+html{scroll-behavior:smooth;scroll-padding-top:clamp(72px,4.6vw,96px)} /* See all teams lands below the bar */
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+.fan{--w:clamp(160px,21vw,400px);--step:calc(var(--w) * .84);position:relative;height:calc(var(--w) * 1.42 + 84px);margin-top:clamp(36px,3.4vw,64px);overflow:hidden}
+.shot{position:absolute;top:calc(var(--w) * .08 + 30px);left:calc(50% - var(--w) / 2 + var(--o) * var(--step));z-index:var(--z);width:var(--w);aspect-ratio:4 / 5;border:6px solid #fff;border-radius:24px;overflow:hidden;background:var(--soft);
+  box-shadow:0 0 0 1px rgba(0,0,0,.06),0 14px 34px -12px rgba(0,0,0,.28);transform:translateY(calc(var(--y) + var(--lift,0px))) rotate(var(--r)) scale(var(--s));transition:transform .35s cubic-bezier(.2,.7,.2,1)}
+.shot:hover,.shot:focus-visible{--lift:-10px}
+.shot img{width:100%;height:100%;object-fit:cover}
+.shot::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.06),rgba(0,0,0,.26))}
+.shot span{position:absolute;inset:0;z-index:1;display:grid;place-items:center;padding:0 12px;color:#fff;font-size:clamp(18px,1.55vw,30px);font-weight:500;letter-spacing:-.02em;text-shadow:0 1px 18px rgba(0,0,0,.4)}
+/* The marketplace ("more Apple style", 23 October 2026): a light grey band as on the Apple Store, white chips
+   and a white search field on it (no blue ring), and the teams as the Store's white cards, which rise a little
+   under the pointer: the faces, the kind of work, the name, what it is for, then five of its apps. */
+.market{padding:clamp(96px,8vw,160px) 0 clamp(150px,12vw,230px);background:linear-gradient(180deg,var(--page) 0,var(--soft) clamp(200px,17vw,340px),var(--soft) calc(100% - clamp(150px,12vw,230px)),var(--page) 100%)} /* white fading into the grey and back */
+.market+.trust{padding-top:clamp(24px,2.4vw,48px)}
+.list-title{font-family:var(--serif);font-weight:400;font-size:clamp(28px,2.2vw,44px);line-height:1.08;letter-spacing:-.02em} /* the home page's section titles */
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:clamp(18px,1.5vw,28px)}
+.chip{flex:none;height:36px;padding:0 16px;border:0;border-radius:99px;background:#fff;color:var(--ink);font:inherit;font-size:14px;letter-spacing:-.01em;cursor:pointer;box-shadow:0 0 0 1px rgba(0,0,0,.06);transition:background .2s,color .2s,box-shadow .2s}
+.chip:hover{box-shadow:0 0 0 1px rgba(0,0,0,.16)}
+.chip[aria-pressed="true"]{background:#1d1d1f;color:#fff;box-shadow:none}
+.chip:focus-visible,.none button:focus-visible,.pack:focus-visible{outline:2px solid #1d1d1f;outline-offset:3px}
+.find{position:relative;margin-top:clamp(14px,1.2vw,22px)}
+.find svg{position:absolute;left:16px;top:50%;width:17px;height:17px;transform:translateY(-50%);color:#86868b;pointer-events:none}
+.find input{display:block;width:100%;height:44px;padding:0 16px 0 42px;border:0;border-radius:12px;background:#fff;color:var(--ink);font:inherit;font-size:16px;letter-spacing:-.01em;outline:none;box-shadow:0 0 0 1px rgba(0,0,0,.06);-webkit-appearance:none;appearance:none;transition:box-shadow .2s}
+.find input:focus{box-shadow:0 0 0 1px rgba(0,0,0,.22),0 4px 14px rgba(0,0,0,.06)}
+.find input::placeholder{color:#86868b;opacity:1}
+.find input::-webkit-search-decoration{-webkit-appearance:none}
+.find input::-webkit-search-cancel-button{-webkit-appearance:none;width:16px;height:16px;cursor:pointer;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='11' fill='%23b0b0b5'/%3E%3Cpath d='m8 8 8 8m0-8-8 8' stroke='%23fff' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E") center/contain no-repeat}
+.none{margin-top:28px;font-size:16px;color:var(--ink2)}
+.none button{padding:0;border:0;background:none;font:inherit;color:var(--blue);cursor:pointer}
+.packs>li[hidden]{display:none}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.packs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;margin:clamp(24px,2.2vw,40px) 0 0;padding:0;list-style:none}
+.pack{display:flex;flex-direction:column;height:100%;padding:clamp(24px,2vw,36px) clamp(24px,2vw,36px) clamp(20px,1.6vw,28px);border-radius:18px;background:#fff;text-decoration:none;
+  box-shadow:2px 4px 12px rgba(0,0,0,.08);transition:box-shadow .3s cubic-bezier(0,0,.5,1),transform .3s cubic-bezier(0,0,.5,1)} /* the Apple Store's cards */
+.pack:hover{box-shadow:2px 4px 16px rgba(0,0,0,.16);transform:scale3d(1.01,1.01,1.01)}
+.pack .faces{--ring:#fff;--fs:clamp(40px,2.8vw,52px)}
+.pack .kind{display:block;margin-top:clamp(18px,1.5vw,26px);font-size:12px;font-weight:500;letter-spacing:.01em;color:#86868b}
+.pack h2{margin-top:4px;font-size:clamp(19px,1.3vw,24px);font-weight:500;line-height:1.2;letter-spacing:-.015em;color:var(--ink)}
+.pack p{margin-top:8px;flex:1;font-size:clamp(15px,1vw,17px);line-height:1.47;letter-spacing:-.01em;color:var(--ink2)}
+.pack .foot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:clamp(20px,1.7vw,28px);padding-top:clamp(14px,1.2vw,18px);border-top:1px solid #ececef}
+.pack .apps{--as:24px;--ring:#fff}
+.pack .apps .plus{margin-left:8px;font-size:13px;letter-spacing:0;color:#86868b}
+.pack .open{flex:none;display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#1d1d1f;color:#fff;transition:transform .3s}
+.pack .open svg{width:14px;height:14px}
+.pack:hover .open{transform:scale(1.08)}
+/* A team's window (23 October 2026, after Apple's AppleCare window): over the dimmed page, on one screen
+   without scrolling (the founder: "too big... not proportionate"). The team, then its five agents as rows
+   between hairlines (face, name and job, what it does, the apps it connects), then Add to Simeon alone. The long
+   instructions and the quotes stay on the team's page. A click beside it, Escape or the close button closes it. */
+html:has(dialog[open]){overflow:hidden}
+.sheet{width:min(920px,calc(100vw - 48px));max-width:none;max-height:calc(100dvh - 48px);margin:auto;padding:0;border:0;border-radius:22px;background:var(--page);color:var(--ink);overflow:hidden;box-shadow:0 30px 80px -20px rgba(0,0,0,.35)}
+.sheet::backdrop{background:rgba(0,0,0,.4)}
+.sheet[open]{animation:sheet-in .26s cubic-bezier(.2,.7,.2,1)}
+.sheet[open]::backdrop{animation:fade-in .26s ease}
+@keyframes sheet-in{from{opacity:0;transform:translateY(10px) scale(.985)}}
+@keyframes fade-in{from{opacity:0}}
+.sheet-in{max-height:calc(100dvh - 48px);overflow:auto;overscroll-behavior:contain;padding:48px 56px 44px}
+.sheet .close{position:absolute;top:18px;right:18px;z-index:2;display:grid;place-items:center;width:30px;height:30px;padding:0;border:0;border-radius:50%;background:#e8e8ed;color:#1d1d1f;cursor:pointer;transition:background .2s}
+.sheet .close:hover{background:#dcdce1}
+.sheet .close svg{width:12px;height:12px}
+.sheet .close:focus-visible{outline:2px solid #1d1d1f;outline-offset:2px}
+.sheet .eyebrow{font-size:13px;font-weight:500;color:var(--ink2)}
+.sheet h2{margin-top:6px;font-family:var(--serif);font-weight:400;font-size:36px;line-height:1.1;letter-spacing:-.02em}
+.sheet .intro{margin-top:10px;max-width:40em;font-size:16px;line-height:1.47;letter-spacing:-.01em;color:#515154}
+.roster{margin:30px 0 0;padding:0;list-style:none;border-top:1px solid #e8e8ed}
+.roster li{display:grid;grid-template-columns:44px 140px minmax(0,1fr) auto;align-items:center;column-gap:24px;padding:16px 0;border-bottom:1px solid #e8e8ed}
+.roster img,.roster .noface{width:44px;height:44px;border-radius:50%;object-fit:cover}
+.roster .noface{font-size:15px}
+.roster b{display:block;font-size:16px;font-weight:500;letter-spacing:-.01em}
+.roster small{display:block;margin-top:1px;font-size:14px;color:var(--ink2)}
+.roster p{font-size:15px;line-height:1.47;letter-spacing:-.005em;color:#515154}
+.roster .apps{--as:28px;--ring:var(--page)}
+.sheet .acts{display:flex;margin-top:32px}
+.sheet .add{margin-top:0;align-items:flex-start}
+.sheet .add .btn{height:42px;padding:0 20px;font-size:15px}
+@media (max-width:734px){
+  .sheet{width:100vw;max-height:92dvh;margin:auto 0 0;border-radius:20px 20px 0 0}
+  .sheet-in{max-height:92dvh;padding:32px 22px 26px}
+  .sheet h2{font-size:28px}
+  .roster li{grid-template-columns:40px minmax(0,1fr) auto;column-gap:14px;row-gap:6px;padding:14px 0}
+  .roster .apps{grid-column:3;grid-row:1}
+  .roster img,.roster .noface{width:40px;height:40px}
+  .roster .apps{--as:24px}
+  .roster p{grid-column:2 / -1;grid-row:2;font-size:14px}
+}
+@media (max-height:760px) and (min-width:735px){.sheet-in{padding-top:38px;padding-bottom:34px}.roster li{padding:13px 0}} /* a short laptop screen: still one screen */
+@media (prefers-reduced-motion:reduce){.sheet[open],.sheet[open]::backdrop{animation:none}}
+footer{margin-top:0} /* the closing call above leaves the room, as on the home page */
 @media (max-width:1068px){.packs{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media (max-width:734px){.packs{grid-template-columns:1fr;gap:14px}.pack{border-radius:24px}.top{padding-top:44px}}
+@media (max-width:734px){.packs{grid-template-columns:1fr;gap:14px}.lead{padding-top:48px}.lead h1{font-size:30px;line-height:1.16}.fan{--w:clamp(150px,44vw,240px)}.shot{border-width:4px;border-radius:18px}
+  .chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-inline:calc(-1 * var(--gutter));padding:2px var(--gutter)}.chips::-webkit-scrollbar{display:none}}
+@media (prefers-reduced-motion:reduce){.shot{transition:none}}
 """
 
 PACK_CSS = """
@@ -303,45 +414,40 @@ PACK_CSS = """
 .back:hover{color:var(--ink)}
 .back::before{content:"\\2039  "}
 .hero{display:flex;flex-direction:column;align-items:center;text-align:center;padding:clamp(28px,4vw,64px) 0 0}
-.hero .faces{--fs:clamp(52px,4.4vw,64px)}
-.kicker{margin-top:22px;font-size:clamp(15px,1.05vw,18px);font-weight:500;color:var(--ink2)}
-.hero h1{margin-top:clamp(18px,1.6vw,26px);max-width:14em;font-family:var(--serif);font-weight:400;font-size:clamp(38px,4.4vw,68px);line-height:1.03;letter-spacing:-.025em;text-wrap:balance}
+.hero .faces{--fs:clamp(44px,3.2vw,56px)}
+.kicker{margin-top:18px;font-size:clamp(14px,.95vw,17px);font-weight:500;color:var(--ink2)}
+.hero h1{margin-top:clamp(16px,1.3vw,24px);max-width:14em;font-family:var(--serif);font-weight:400;font-size:clamp(30px,2.2vw,44px);line-height:1.08;letter-spacing:-.02em;text-wrap:balance} /* the home page's headline */
 .kicker+h1{margin-top:10px}
-.hero .lede{margin-top:clamp(16px,1.4vw,24px);max-width:30em;font-size:clamp(17px,1.25vw,21px);line-height:1.42;letter-spacing:-.015em;color:var(--ink2);text-wrap:balance}
-.add{display:flex;flex-direction:column;align-items:center;margin-top:clamp(26px,2.4vw,38px)}
-.add .btn{height:clamp(46px,3vw,54px);padding:0 clamp(22px,1.6vw,30px);font-size:clamp(16px,1.1vw,19px)}
-.add .btn svg{width:1em;height:1em;flex:none;margin-left:-.15em}
-.add-note{margin:0}
-.add-note[hidden]{display:none}
-.add.noapp .add-btn{display:none}
-.add .btn .dl{margin:0 -.15em 0 0} /* Download for macOS, its arrow after the words, as on the home page */
+.hero .lede{margin-top:clamp(10px,.9vw,16px);max-width:30em;font-size:clamp(16px,1vw,19px);line-height:1.5;letter-spacing:-.01em;color:var(--ink2);text-wrap:balance}
 
 /* The agents: one card each, the face beside what it does on a computer, above it on a phone. */
-.team{display:grid;gap:18px;margin:clamp(56px,6vw,96px) 0 0;padding:0;list-style:none}
-.agent{display:grid;grid-template-columns:clamp(96px,10vw,132px) minmax(0,1fr);column-gap:clamp(22px,2.4vw,34px);align-items:start;padding:clamp(24px,2.6vw,38px);border-radius:28px;background:var(--soft)}
-.agent>.face{grid-row:1 / span 3;width:100%;aspect-ratio:1;height:auto;border-radius:24px;object-fit:cover;background:#e8e8ed}
-.agent>.face.noface{display:grid;place-items:center;font-size:40px;font-weight:600;color:var(--ink2)}
-.agent .head{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:34px}
-.agent h2{font-size:clamp(21px,1.6vw,26px);font-weight:600;line-height:1.2;letter-spacing:-.022em}
+.team{display:grid;gap:16px;margin:clamp(44px,4vw,80px) 0 0;padding:0;list-style:none}
+.agent{display:grid;grid-template-columns:clamp(72px,6vw,104px) minmax(0,1fr);column-gap:clamp(18px,1.8vw,30px);align-items:start;padding:clamp(22px,2.1vw,36px);border-radius:28px;background:var(--soft)}
+.agent>.face{grid-row:1 / span 3;width:100%;aspect-ratio:1;height:auto;border-radius:20px;object-fit:cover;background:#e8e8ed}
+.agent>.face.noface{display:grid;place-items:center;font-size:32px;font-weight:500;color:var(--ink2)}
+.agent .head{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:30px}
+.agent .apps{--as:30px}
+.agent h2{font-size:clamp(18px,1.2vw,23px);font-weight:500;line-height:1.2;letter-spacing:-.018em}
 .agent h2 .nm{color:var(--blue)}
 .agent h2 .tt{color:var(--ink3);font-weight:500;white-space:nowrap}
-.agent .sum{margin-top:10px;font-size:clamp(16px,1.08vw,18px);line-height:1.5;color:var(--ink2)}
-.agent .q{position:relative;margin-top:clamp(18px,1.6vw,24px);padding:clamp(16px,1.4vw,20px) 0 0;border-top:1px solid #e3e3e8;font-family:var(--serif);font-size:clamp(21px,1.55vw,26px);line-height:1.3;letter-spacing:-.01em;color:var(--ink)}
+.agent .sum{margin-top:8px;font-size:clamp(15px,1vw,18px);line-height:1.5;letter-spacing:-.01em;color:var(--ink2)}
+.agent .q{position:relative;margin-top:clamp(18px,1.6vw,24px);padding:clamp(16px,1.4vw,20px) 0 0;border-top:1px solid #e3e3e8;font-family:var(--serif);font-size:clamp(18px,1.2vw,23px);line-height:1.32;letter-spacing:-.01em;color:var(--ink)}
 .agent .q .qm{font-size:2.2em;line-height:0;vertical-align:-.36em;color:var(--blue);opacity:.55}
 .agent .q .qm:first-child{margin-right:.06em}
 .agent .q .qm:last-child{margin-left:.04em}
 
 .end{display:flex;flex-direction:column;align-items:center;text-align:center;padding:clamp(72px,7vw,120px) 0 0}
-.end h2{max-width:14em;font-family:var(--serif);font-weight:400;font-size:clamp(30px,3vw,48px);line-height:1.06;letter-spacing:-.02em;text-wrap:balance}
+.end h2{max-width:14em;font-family:var(--serif);font-weight:400;font-size:clamp(30px,2.2vw,44px);line-height:1.08;letter-spacing:-.02em;text-wrap:balance}
 .end .add{margin-top:clamp(22px,2vw,32px)}
-.free{margin-top:16px;font-size:15px;color:var(--ink2)}
+.free{margin-top:14px;font-size:14px;color:var(--ink2)}
 
+@media (max-width:734px){.hero h1,.end h2{font-size:28px;line-height:1.12}}
 @media (max-width:600px){
   .agent{grid-template-columns:56px minmax(0,1fr);column-gap:14px;padding:20px 20px 22px;border-radius:24px}
   .agent>.face{grid-row:1;width:56px;height:56px;border-radius:50%}
   .agent>.face.noface{font-size:22px}
   .agent .head{min-height:56px;gap:10px}
-  .agent .apps{--as:30px}
+  .agent .apps{--as:26px}
   .agent .sum,.agent .q{grid-column:1 / -1}
   .agent .sum{margin-top:14px}
 }
@@ -387,6 +493,69 @@ ADD_JS = """<script>
 PLUS = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>'
 # The home page's download arrow (page.html, `.btn .dl`).
 DOWNLOAD = '<svg class="dl" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m-5-5 5 5 5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+MAGNIFIER = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m15.5 15.5 5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>'
+
+PLUS_SMALL = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>'
+CROSS = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>'
+
+SHEET_JS = """<script>
+// A team's window: its card opens it (a click with a modifier key still opens the team's page), and so does
+// /teams#<team>; a click beside it, Escape or the close button closes it.
+(() => {
+  const open = (id) => {
+    const d = document.getElementById('team-' + id);
+    if (!d || d.open) return;
+    d.showModal();
+    d.querySelector('.sheet-in').scrollTop = 0;
+    history.replaceState(null, '', '#' + id);
+  };
+  for (const a of document.querySelectorAll('.pack[data-team]')) {
+    a.addEventListener('click', (e) => {
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button) return;
+      e.preventDefault();
+      open(a.dataset.team);
+    });
+  }
+  for (const d of document.querySelectorAll('dialog.sheet')) {
+    d.querySelector('.close').addEventListener('click', () => d.close());
+    d.addEventListener('click', (e) => { if (e.target === d) d.close(); });
+    d.addEventListener('close', () => history.replaceState(null, '', location.pathname + location.search));
+  }
+  const fromHash = () => { const id = decodeURIComponent(location.hash.slice(1)); if (id && id !== 'all') open(id); };
+  addEventListener('hashchange', fromHash);
+  fromHash();
+})();
+</script>"""
+
+MARKET_JS = """<script>
+// The marketplace: a chip shows its kind of work (All, or the chosen chip again, shows every team), and the
+// search keeps the teams whose name, job, agents or apps hold every word typed. Without this script the
+// chips and the search stay hidden and every team shows.
+(() => {
+  const tools = document.querySelector('.tools'), input = document.getElementById('team-search');
+  const chips = [...tools.querySelectorAll('.chip')], cards = [...document.querySelectorAll('.packs > li')];
+  const none = document.querySelector('.none'), said = document.querySelector('.sr');
+  const fold = (s) => s.toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '');
+  let group = 'all';
+  const choose = (g) => { group = g; for (const c of chips) c.setAttribute('aria-pressed', String(c.dataset.group === g)); };
+  const show = () => {
+    const words = fold(input.value).split(/\\s+/).filter(Boolean);
+    let shown = 0;
+    for (const li of cards) {
+      const fits = (group === 'all' || li.dataset.groups.split(' ').includes(group)) && words.every((w) => li.dataset.q.includes(w));
+      li.hidden = !fits;
+      if (fits) shown++;
+    }
+    none.hidden = shown > 0;
+    said.textContent = shown === 1 ? '1 team' : shown + ' teams';
+  };
+  for (const c of chips) c.addEventListener('click', () => { choose(c.dataset.group === group ? 'all' : c.dataset.group); show(); });
+  input.addEventListener('input', show);
+  none.querySelector('button').addEventListener('click', () => { input.value = ''; choose('all'); show(); input.focus(); });
+  tools.hidden = false;
+  if (input.value) show();
+})();
+</script>"""
 
 
 def frame(title, description, path, body, css, current=False, script=""):
@@ -498,21 +667,157 @@ def pack_page(pack, assets):
     return frame(title, esc(pack["summary"]), f"/teams/{pack['id']}", body, PACK_CSS, script=ADD_JS)
 
 
+def fan(packs, assets):
+    """The opening's photos, left to right, each a link to its team: the middle one larger and in front, the
+    ones beside it tilted in, the outer ones tilted out (source/img/teams/<pack>.jpg; a missing one is left out)."""
+    by_id = {p["id"]: p for p in packs}
+    shots = [(by_id[pid], f"{HERE}/img/teams/{pid}.jpg") for pid in LEAD if pid in by_id and os.path.isfile(f"{HERE}/img/teams/{pid}.jpg")]
+    out = []
+    for i, (pack, src) in enumerate(shots):
+        o = i - (len(shots) - 1) / 2
+        side = -1 if o < 0 else 1
+        if o == 0:
+            r, y, s, z = 0, 0, 1.12, 5
+        elif abs(o) <= 1:
+            r, y, s, z = -side * 2.5, 34, 1, 4
+        else:
+            r, y, s, z = side * 5, 20, 1, 3
+        url = assets._copy(src, "photos", f"{pack['id']}.jpg")
+        name = re.sub(r"^Simeon for ", "", pack["title"])
+        out.append(f'<a class="shot" href="/teams/{pack["id"]}" style="--o:{o:g};--r:{r:g}deg;--y:{y}px;--s:{s:g};--z:{z}" aria-label="{esc(pack["title"])}">'
+                   f'<img src="{url}" alt="" width="736" height="920"><span aria-hidden="true">{esc(name)}</span></a>')
+    return f'<div class="fan">{"".join(out)}</div>' if out else ""
+
+
+def search_words(pack):
+    """What the marketplace's search looks through for a team: its name and folder, what it is for, and each
+    agent's name, job and apps; lower case, without accents (the page folds what is typed the same way)."""
+    agents = pack["agents"]
+    words = [pack["title"], pack.get("folder", ""), pack["summary"]]
+    words += [a["name"] for a in agents] + [a["title"] for a in agents]
+    words += [app_name(app) for a in agents for app in a["apps"] if app]
+    text = unicodedata.normalize("NFD", " ".join(words).lower())
+    return esc("".join(c for c in text if not unicodedata.combining(c)))
+
+
+def some_apps(pack, assets):
+    """A card's apps: each agent's first app (five tiles), then how many more the team works in."""
+    first = list(dict.fromkeys(a["apps"][0] for a in pack["agents"] if a["apps"]))
+    every = {app for a in pack["agents"] for app in a["apps"] if app}
+    more = len(every) - len(first)
+    names = [esc(app_name(a)) for a in first]
+    label = f"Works in {', '.join(names)}" + (f" and {more} more apps" if more else "")
+    return (f'<span class="apps" role="img" aria-label="{label}">' + "".join(assets.tile(a) for a in first)
+            + (f'<span class="plus">+{more}</span>' if more else "") + "</span>")
+
+
+def team_sheet(pack, assets, kind):
+    """A team's window on /teams: the team, its five agents as rows (face, name and job, what it does, the
+    apps it connects) and Add to Simeon. It opens over the page from the team's card; without the script the
+    card goes to the team's page instead."""
+    pid = pack["id"]
+    rows = []
+    for agent in pack["agents"]:
+        url = assets.face(agent["face"])
+        face = (f'<img src="{url}" alt="" width="128" height="128" loading="lazy">' if url
+                else f'<span class="noface" aria-hidden="true">{esc(agent["name"][:1].upper())}</span>')
+        apps = [a for a in agent["apps"] if a]
+        names = [esc(app_name(a)) for a in apps]
+        tiles = "".join(assets.tile(a) for a in apps)
+        rows.append(f'<li>{face}<span><b>{esc(agent["name"])}</b><small>{esc(agent["title"])}</small></span>'
+                    f'<p>{esc(agent["summary"])}</p>'
+                    + (f'<span class="apps" role="img" aria-label="Connects {and_list(names)}">{tiles}</span>' if apps else "<span></span>")
+                    + "</li>")
+    return f"""<dialog class="sheet" id="team-{pid}" aria-labelledby="{pid}-title">
+<button class="close" type="button" aria-label="Close">{CROSS}</button>
+<div class="sheet-in">
+  {f'<p class="eyebrow">{esc(kind)}</p>' if kind else ""}
+  <h2 id="{pid}-title">{esc(pack["title"])}</h2>
+  <p class="intro">{esc(pack["summary"])}</p>
+  <ul class="roster" aria-label="The agents">{"".join(rows)}</ul>
+  <div class="acts">{add_button(pack)}</div>
+</div>
+</dialog>"""
+
+
+# The Teams page's own questions: about adding and owning a team, none of the home page's again.
+TEAM_QA = [
+    ("How do I add a team?", "Open it here and choose Add to Simeon on the Mac or iPhone where Simeon is installed. The app opens and adds all five agents to a folder in your sidebar."),
+    ("Does a team cost extra?", "No. Adding one is free, and its agents use your plan like any agent you create. A team that works every day may suit Pro."),
+    ("What if I already use some of their apps?", "Each agent names the apps you have already connected and asks only for the ones it is missing."),
+    ("Can I change them once they are added?", "Yes, they are yours. Rename them, rewrite what they do, give them other apps, or remove the ones you don't need. The rest keep working."),
+    ("Can I add more than one team?", "Yes. Each goes in its own folder. Adding a team you already have simply opens it."),
+    ("What if my kind of work isn't here?", "Start from the closest team and reshape it, or create your own agents from scratch in the app."),
+]
+
+
+def from_home():
+    """The home page's pricing, its closing call and their styles, read from source/page.html so the Teams
+    page always shows the same plans, prices and buttons."""
+    page = _text(HOME_PAGE)
+    pricing = re.search(r'<section class="trust" id="pricing".*?</section>', page, re.S)
+    close = re.search(r'<section class="close3".*?</section>', page, re.S)
+    start, stop = page.find("/* Pricing: Trial, Standard"), page.find("@media (max-width:734px){.close3")
+    if not (pricing and close and 0 <= start < stop):
+        sys.exit("teams.py: source/page.html has no pricing or closing section to show on /teams")
+    rules = [line for line in page.splitlines()
+             if line.startswith((".btn.ghost", ".btn .apl{", ".btn .dl{", ".trust{", ".trust-top{", ".trust h2{", ".trust-top p{"))]
+    css = ("\n/* From the home page (source/page.html): the section titles, the pricing, the questions and the closing call. */\n"
+           + "\n".join(rules) + "\n@media (max-width:860px){.trust-top{grid-template-columns:1fr}}\n"
+           + page[start:page.index("\n", stop) + 1]).replace("url(fonts/", "url(/fonts/")
+    return pricing.group(0), close.group(0).replace('href="#app"', 'href="/#app"'), css
+
+
+def questions():
+    rows = "".join(f"<details><summary>{esc(q)}</summary><p>{esc(a)}</p></details>" for q, a in TEAM_QA)
+    return f"""<section class="trust" id="questions" aria-label="Questions">
+  <div class="wrap">
+    <div class="trust-top">
+      <h2>Questions and answers</h2>
+    </div>
+    <div class="qa3">{rows}</div>
+  </div>
+</section>"""
+
+
 def index_page(packs, assets):
+    groups = {pid: [slug for slug, (_, ids) in GROUPS.items() if pid in ids] for pid in (p["id"] for p in packs)}
     cards = "\n".join(
-        f'<li><a class="pack" href="/teams/{p["id"]}">{faces_row(p, assets)}<h2>{esc(p["title"])}</h2>'
-        f'<p>{esc(p["summary"])}</p><span class="more">Meet the team</span></a></li>'
+        f'<li data-groups="{" ".join(groups[p["id"]])}" data-q="{search_words(p)}"><a class="pack" href="/teams/{p["id"]}" data-team="{p["id"]}">{faces_row(p, assets)}'
+        + (f'<span class="kind">{esc(GROUPS[groups[p["id"]][0]][0])}</span>' if groups[p["id"]] else "")
+        + f'<h2>{esc(p["title"])}</h2><p>{esc(p["summary"])}</p>'
+        f'<span class="foot">{some_apps(p, assets)}<span class="open" aria-hidden="true">{PLUS_SMALL}</span></span></a></li>'
         for p in packs)
-    body = f"""<div class="wrap">
-<section class="top" aria-label="Teams">
-  <h1>Teams</h1>
-  <p>A team of five agents for your kind of business, ready to add to Simeon.</p>
+    pricing, close, home_css = from_home()
+    chips = '<button class="chip" type="button" data-group="all" aria-pressed="true">All</button>' + "".join(
+        f'<button class="chip" type="button" data-group="{slug}" aria-pressed="false">{esc(label)}</button>' for slug, (label, _) in GROUPS.items())
+    body = f"""<section class="lead" aria-label="Teams">
+  <div class="wrap">
+    <h1><span class="box">A team of agents</span><br>for your kind of work</h1>
+    <div class="ctas"><a class="btn" href="{MAC_DOWNLOAD}">Download for macOS{DOWNLOAD}</a><a class="see" href="#all">See all teams</a></div>
+  </div>
+  {fan(packs, assets)}
 </section>
+<section class="market" aria-labelledby="all"><div class="wrap">
+<h2 class="list-title" id="all">Marketplace</h2>
+<div class="tools" hidden>
+  <div class="chips" role="group" aria-label="Kinds of work">{chips}</div>
+  <div class="find" role="search">{MAGNIFIER}<input type="search" id="team-search" placeholder="Search by team, job or app" aria-label="Search the teams" autocomplete="off" spellcheck="false"></div>
+</div>
+<p class="sr" aria-live="polite"></p>
 <ul class="packs">
 {cards}
 </ul>
-</div>"""
-    return frame("Teams", "Starter teams of five agents for one kind of business, ready to add to Simeon.", "/teams", body, INDEX_CSS, current=True)
+<p class="none" hidden>No team matches that yet. <button type="button">Show every team</button></p>
+</div></section>
+
+{pricing}
+
+{questions()}
+
+{close}
+{chr(10).join(team_sheet(p, assets, GROUPS[groups[p["id"]][0]][0] if groups[p["id"]] else "") for p in packs)}"""
+    return frame("Teams", "Starter teams of five agents for one kind of business, ready to add to Simeon.", "/teams", body, INDEX_CSS + home_css, current=True, script=MARKET_JS + SHEET_JS + ADD_JS)
 
 
 def build(out=OUT):
