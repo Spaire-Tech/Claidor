@@ -310,9 +310,9 @@ footer a[aria-current]{color:var(--ink)}
 """.replace("%BLUE%", BLUE)
 
 INDEX_CSS = """
-/* The opening: the home page's (its styles come from page.html), the first words in a box; then photos of
+/* The opening: the home page's (its styles come from page.html), the headline in plain words, set as the home
+   page's ("A team of agents for your kind" on the first line, "of work" on the second); then photos of
    people at work in a fan, each one a team's, the middle one in front. */
-.hero h1 .box{display:inline-block;margin-bottom:.14em;padding:.02em .3em .08em;border:1px solid #d2d2d7;border-radius:.24em;background:var(--page);box-shadow:0 1px 2px rgba(0,0,0,.04),0 8px 20px -10px rgba(0,0,0,.14)} /* the first words in a box, as in the founder's reference */
 html{scroll-behavior:smooth;scroll-padding-top:clamp(72px,4.6vw,96px)} /* See all teams lands below the bar */
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 .fan{--w:clamp(150px,18vw,360px);--step:calc(var(--w) * .84);position:relative;height:calc(var(--w) * 1.42 + 84px);margin-top:clamp(36px,3.4vw,64px);overflow:hidden}
@@ -739,7 +739,7 @@ def index_page(packs, assets):
     hero_css, ctas = home_hero()
     body = f"""<section class="hero" aria-label="Teams">
   <div class="wrap">
-    <h1><span class="box">A team of agents</span><br>for your kind of work</h1>
+    <h1 class="set">A team of agents for your kind <span class="nw">of work</span></h1>
     {ctas}
   </div>
   {fan(packs, assets)}
