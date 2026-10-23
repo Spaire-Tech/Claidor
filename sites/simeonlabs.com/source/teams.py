@@ -327,7 +327,7 @@ html{scroll-behavior:smooth;scroll-padding-top:clamp(72px,4.6vw,96px)} /* See al
    under the pointer: the faces, the kind of work, the name, what it is for, then five of its apps. */
 .market{padding:clamp(96px,8vw,160px) 0 clamp(150px,12vw,230px);background:linear-gradient(180deg,var(--page) 0,var(--soft) clamp(200px,17vw,340px),var(--soft) calc(100% - clamp(150px,12vw,230px)),var(--page) 100%)} /* white fading into the grey and back */
 .market+.trust{padding-top:clamp(24px,2.4vw,48px)}
-.list-title{font-weight:var(--w-display);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em} /* the home page's section titles: the headline's size */
+.list-title{max-width:var(--title-max);font-weight:var(--w-display);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em;text-wrap:pretty} /* the home page's section titles: the headline's size */
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:clamp(18px,1.5vw,28px)}
 .chip{flex:none;height:36px;padding:0 16px;border:0;border-radius:99px;background:#fff;color:var(--ink);font:inherit;font-size:var(--t-body);letter-spacing:-.01em;cursor:pointer;box-shadow:0 0 0 1px rgba(0,0,0,.06);transition:background .2s,color .2s,box-shadow .2s}
 .chip:hover{box-shadow:0 0 0 1px rgba(0,0,0,.16)}
@@ -374,7 +374,7 @@ html:has(dialog[open]){overflow:hidden}
 .sheet .close:hover{background:#dcdce1}
 .sheet .close svg{width:12px;height:12px}
 .sheet .close:focus-visible{outline:2px solid #1d1d1f;outline-offset:2px}
-.sheet h2{max-width:13em;font-weight:var(--w-display);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em;text-wrap:balance} /* the pages' headline */
+.sheet h2{max-width:var(--title-max);font-weight:var(--w-display);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em;text-wrap:pretty} /* the pages' headline */
 .sheet .intro{margin-top:10px;max-width:40em;font-size:var(--t-lead);line-height:1.47;letter-spacing:-.01em;color:#515154}
 .roster{margin:clamp(28px,2.4vw,40px) 0 0;padding:0;list-style:none;border-top:1px solid #e8e8ed}
 .roster li{display:grid;grid-template-columns:44px 140px minmax(0,1fr) auto;align-items:center;column-gap:24px;padding:16px 0;border-bottom:1px solid #e8e8ed}

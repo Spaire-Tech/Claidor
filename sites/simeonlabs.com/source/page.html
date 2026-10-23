@@ -63,13 +63,16 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 
 /* Hero: one sentence on the left edge, two buttons under it, nothing else. */
 .hero{padding:clamp(40px,8.1vw,162px) 0 0;color:#000}
-.hero h1{max-width:13em;font-size:var(--t-display);line-height:1.1;font-weight:var(--w-display);letter-spacing:-.025em;text-wrap:balance}
+.hero h1{max-width:var(--title-max);font-size:var(--t-display);line-height:1.1;font-weight:var(--w-display);letter-spacing:-.025em;text-wrap:pretty}
+.hero h1.set{text-wrap:wrap} /* the home page's headline: its lines are set, "Create a team of agents for any part" on the first,
+   "of your business." whole on the second; no single word left alone on a title's last line elsewhere (pretty) */
+.hero h1 .nw{white-space:nowrap}
 .hero .ctas{display:flex;gap:clamp(10px,.7vw,14px);flex-wrap:wrap;margin-top:clamp(18px,1.6vw,32px)}
 /* The headline and its buttons a size down (18 October 2026); the section titles, their lines, the statement and the closing title went down with them. */
 .hero .btn{height:var(--btn-h);padding:0 var(--btn-pad);font-size:var(--btn-font)}
 /* On a phone the hero breathes (4 October 2026): a long pause under the bar, a headline that leaves air on the right, and room before the app. */
 .hero .btn.go{display:none} /* the phone's one button: Download for iOS, no link until there is an app (6 October 2026) */
-@media (max-width:734px){.hero{padding-top:88px}.hero h1{font-size:var(--t-display);line-height:1.1;max-width:11.5em;font-weight:var(--w-display);letter-spacing:-.025em}.hero .ctas{margin-top:26px}.hero .ctas .btn{display:none}.hero .btn.go{display:inline-flex}}
+@media (max-width:734px){.hero{padding-top:88px}.hero h1{font-size:var(--t-display);line-height:1.1;font-weight:var(--w-display);letter-spacing:-.025em}.hero .ctas{margin-top:26px}.hero .ctas .btn{display:none}.hero .btn.go{display:inline-flex}}
 .btn .apl{width:1.05em;height:1.05em;margin:-.18em .45em 0 -.1em;flex:none}
 .btn .dl{width:1em;height:1em;margin:0 -.15em 0 .4em;flex:none} /* Download for macOS, its arrow after the words (18 October 2026) */
 
@@ -656,7 +659,7 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .qa3 summary:focus-visible{outline:2px solid var(--blue);outline-offset:4px;border-radius:6px}
 .qa3 details p{margin:0;padding:0 0 clamp(22px,1.8vw,32px);max-width:46em;font-size:var(--t-body);line-height:1.6;color:var(--ink2)}
 .close3{padding:clamp(120px,10vw,200px) 0 clamp(120px,10vw,200px);text-align:center}
-.close3 h2{margin:0 auto;font-weight:var(--w-display);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em}
+.close3 h2{margin:0 auto;max-width:var(--title-max);font-weight:var(--w-display);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em;text-wrap:pretty}
 .close3 .ctas{display:flex;justify-content:center;gap:clamp(10px,.7vw,14px);flex-wrap:wrap;margin-top:clamp(28px,2.4vw,44px)}
 .close3 .btn{height:var(--btn-h);padding:0 var(--btn-pad);font-size:var(--btn-font)}
 .close3 .btn.go{display:none} /* on a phone the close offers Download for iOS, as the top does, and Request a demo beside it (the founder, 12 October 2026) */
@@ -666,7 +669,7 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .trust{padding:clamp(100px,9vw,170px) 0 clamp(40px,4vw,80px)}
 #team+.trust{padding-top:clamp(56px,4.4vw,88px)}
 .trust-top{display:grid;grid-template-columns:1fr 1fr;gap:clamp(24px,5vw,96px);align-items:start}
-.trust h2{margin:0;font-weight:var(--w-display);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em;max-width:13em;text-wrap:balance} /* every section's title is the headline's size (the founder, 23 October 2026) */
+.trust h2{margin:0;font-weight:var(--w-display);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em;max-width:var(--title-max);text-wrap:pretty} /* every section's title is the headline's size (the founder, 23 October 2026) */
 .trust-top p{margin:clamp(4px,.45vw,9px) 0 0;max-width:30em;font-size:var(--t-lead);line-height:1.5;letter-spacing:-.01em;color:var(--ink2)}
 .tpanel{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,3.6fr);gap:24px;margin-top:clamp(40px,4vw,80px);padding:clamp(28px,3vw,56px);border-radius:28px;background:#fafafb}
 .tpanel+.tpanel{margin-top:22px}
@@ -903,7 +906,7 @@ footer a:hover{color:var(--ink)}
 <main>
 <section class="hero">
   <div class="wrap">
-    <h1>Create a team of agents for any part of your business.</h1>
+    <h1 class="set">Create a team of agents for <span class="nw">any part</span> <span class="nw">of your business.</span></h1>
     <div class="ctas"><a class="btn" href="https://api.simeonlabs.com/desktop/download/mac">Download for macOS<svg class="dl" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m-5-5 5 5 5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a><a class="btn ghost" href="#app">Request a demo&nbsp;→</a><span class="btn go"><svg class="apl" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></svg>Download for iOS<svg class="dl" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m-5-5 5 5 5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div>
   </div>
 </section>

@@ -89,13 +89,16 @@ footer a[aria-current]{color:var(--ink)}
 .btn .dl{width:1em;height:1em;margin:0 -.15em 0 .4em;flex:none} /* Download for macOS, its arrow after the words (18 October 2026) */
 /* Hero: one sentence on the left edge, two buttons under it, nothing else. */
 .hero{padding:clamp(40px,8.1vw,162px) 0 0;color:#000}
-.hero h1{max-width:13em;font-size:var(--t-display);line-height:1.1;font-weight:var(--w-display);letter-spacing:-.025em;text-wrap:balance}
+.hero h1{max-width:var(--title-max);font-size:var(--t-display);line-height:1.1;font-weight:var(--w-display);letter-spacing:-.025em;text-wrap:pretty}
+.hero h1.set{text-wrap:wrap} /* the home page's headline: its lines are set, "Create a team of agents for any part" on the first,
+   "of your business." whole on the second; no single word left alone on a title's last line elsewhere (pretty) */
+.hero h1 .nw{white-space:nowrap}
 .hero .ctas{display:flex;gap:clamp(10px,.7vw,14px);flex-wrap:wrap;margin-top:clamp(18px,1.6vw,32px)}
 /* The headline and its buttons a size down (18 October 2026); the section titles, their lines, the statement and the closing title went down with them. */
 .hero .btn{height:var(--btn-h);padding:0 var(--btn-pad);font-size:var(--btn-font)}
 /* On a phone the hero breathes (4 October 2026): a long pause under the bar, a headline that leaves air on the right, and room before the app. */
 .hero .btn.go{display:none} /* the phone's one button: Download for iOS, no link until there is an app (6 October 2026) */
-@media (max-width:734px){.hero{padding-top:88px}.hero h1{font-size:var(--t-display);line-height:1.1;max-width:11.5em;font-weight:var(--w-display);letter-spacing:-.025em}.hero .ctas{margin-top:26px}.hero .ctas .btn{display:none}.hero .btn.go{display:inline-flex}}
+@media (max-width:734px){.hero{padding-top:88px}.hero h1{font-size:var(--t-display);line-height:1.1;font-weight:var(--w-display);letter-spacing:-.025em}.hero .ctas{margin-top:26px}.hero .ctas .btn{display:none}.hero .btn.go{display:inline-flex}}
 
 /* The opening: the home page's (its styles come from page.html), the first words in a box; then photos of
    people at work in a fan, each one a team's, the middle one in front. */
@@ -114,7 +117,7 @@ html{scroll-behavior:smooth;scroll-padding-top:clamp(72px,4.6vw,96px)} /* See al
    under the pointer: the faces, the kind of work, the name, what it is for, then five of its apps. */
 .market{padding:clamp(96px,8vw,160px) 0 clamp(150px,12vw,230px);background:linear-gradient(180deg,var(--page) 0,var(--soft) clamp(200px,17vw,340px),var(--soft) calc(100% - clamp(150px,12vw,230px)),var(--page) 100%)} /* white fading into the grey and back */
 .market+.trust{padding-top:clamp(24px,2.4vw,48px)}
-.list-title{font-weight:var(--w-display);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em} /* the home page's section titles: the headline's size */
+.list-title{max-width:var(--title-max);font-weight:var(--w-display);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em;text-wrap:pretty} /* the home page's section titles: the headline's size */
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:clamp(18px,1.5vw,28px)}
 .chip{flex:none;height:36px;padding:0 16px;border:0;border-radius:99px;background:#fff;color:var(--ink);font:inherit;font-size:var(--t-body);letter-spacing:-.01em;cursor:pointer;box-shadow:0 0 0 1px rgba(0,0,0,.06);transition:background .2s,color .2s,box-shadow .2s}
 .chip:hover{box-shadow:0 0 0 1px rgba(0,0,0,.16)}
@@ -161,7 +164,7 @@ html:has(dialog[open]){overflow:hidden}
 .sheet .close:hover{background:#dcdce1}
 .sheet .close svg{width:12px;height:12px}
 .sheet .close:focus-visible{outline:2px solid #1d1d1f;outline-offset:2px}
-.sheet h2{max-width:13em;font-weight:var(--w-display);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em;text-wrap:balance} /* the pages' headline */
+.sheet h2{max-width:var(--title-max);font-weight:var(--w-display);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em;text-wrap:pretty} /* the pages' headline */
 .sheet .intro{margin-top:10px;max-width:40em;font-size:var(--t-lead);line-height:1.47;letter-spacing:-.01em;color:#515154}
 .roster{margin:clamp(28px,2.4vw,40px) 0 0;padding:0;list-style:none;border-top:1px solid #e8e8ed}
 .roster li{display:grid;grid-template-columns:44px 140px minmax(0,1fr) auto;align-items:center;column-gap:24px;padding:16px 0;border-bottom:1px solid #e8e8ed}
@@ -199,7 +202,7 @@ footer{margin-top:0;font-size:var(--t-tiny)} /* the closing call above leaves th
 .btn .dl{width:1em;height:1em;margin:0 -.15em 0 .4em;flex:none} /* Download for macOS, its arrow after the words (18 October 2026) */
 .trust{padding:clamp(100px,9vw,170px) 0 clamp(40px,4vw,80px)}
 .trust-top{display:grid;grid-template-columns:1fr 1fr;gap:clamp(24px,5vw,96px);align-items:start}
-.trust h2{margin:0;font-weight:var(--w-display);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em;max-width:13em;text-wrap:balance} /* every section's title is the headline's size (the founder, 23 October 2026) */
+.trust h2{margin:0;font-weight:var(--w-display);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em;max-width:var(--title-max);text-wrap:pretty} /* every section's title is the headline's size (the founder, 23 October 2026) */
 .trust-top p{margin:clamp(4px,.45vw,9px) 0 0;max-width:30em;font-size:var(--t-lead);line-height:1.5;letter-spacing:-.01em;color:var(--ink2)}
 @media (max-width:860px){.trust-top{grid-template-columns:1fr}}
 /* Pricing: Trial, Standard, Pro and Max on the pale panels (the founder, 4 October 2026), laid out simpler (18 October 2026): the name, the price at the display size, how it is billed, a full-width button, then what the plan includes in a few words. */
@@ -227,7 +230,7 @@ footer{margin-top:0;font-size:var(--t-tiny)} /* the closing call above leaves th
 .qa3 summary:focus-visible{outline:2px solid var(--blue);outline-offset:4px;border-radius:6px}
 .qa3 details p{margin:0;padding:0 0 clamp(22px,1.8vw,32px);max-width:46em;font-size:var(--t-body);line-height:1.6;color:var(--ink2)}
 .close3{padding:clamp(120px,10vw,200px) 0 clamp(120px,10vw,200px);text-align:center}
-.close3 h2{margin:0 auto;font-weight:var(--w-display);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em}
+.close3 h2{margin:0 auto;max-width:var(--title-max);font-weight:var(--w-display);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em;text-wrap:pretty}
 .close3 .ctas{display:flex;justify-content:center;gap:clamp(10px,.7vw,14px);flex-wrap:wrap;margin-top:clamp(28px,2.4vw,44px)}
 .close3 .btn{height:var(--btn-h);padding:0 var(--btn-pad);font-size:var(--btn-font)}
 .close3 .btn.go{display:none} /* on a phone the close offers Download for iOS, as the top does, and Request a demo beside it (the founder, 12 October 2026) */

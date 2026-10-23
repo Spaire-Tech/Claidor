@@ -89,13 +89,16 @@ footer a[aria-current]{color:var(--ink)}
 .btn .dl{width:1em;height:1em;margin:0 -.15em 0 .4em;flex:none} /* Download for macOS, its arrow after the words (18 October 2026) */
 /* Hero: one sentence on the left edge, two buttons under it, nothing else. */
 .hero{padding:clamp(40px,8.1vw,162px) 0 0;color:#000}
-.hero h1{max-width:13em;font-size:var(--t-display);line-height:1.1;font-weight:var(--w-display);letter-spacing:-.025em;text-wrap:balance}
+.hero h1{max-width:var(--title-max);font-size:var(--t-display);line-height:1.1;font-weight:var(--w-display);letter-spacing:-.025em;text-wrap:pretty}
+.hero h1.set{text-wrap:wrap} /* the home page's headline: its lines are set, "Create a team of agents for any part" on the first,
+   "of your business." whole on the second; no single word left alone on a title's last line elsewhere (pretty) */
+.hero h1 .nw{white-space:nowrap}
 .hero .ctas{display:flex;gap:clamp(10px,.7vw,14px);flex-wrap:wrap;margin-top:clamp(18px,1.6vw,32px)}
 /* The headline and its buttons a size down (18 October 2026); the section titles, their lines, the statement and the closing title went down with them. */
 .hero .btn{height:var(--btn-h);padding:0 var(--btn-pad);font-size:var(--btn-font)}
 /* On a phone the hero breathes (4 October 2026): a long pause under the bar, a headline that leaves air on the right, and room before the app. */
 .hero .btn.go{display:none} /* the phone's one button: Download for iOS, no link until there is an app (6 October 2026) */
-@media (max-width:734px){.hero{padding-top:88px}.hero h1{font-size:var(--t-display);line-height:1.1;max-width:11.5em;font-weight:var(--w-display);letter-spacing:-.025em}.hero .ctas{margin-top:26px}.hero .ctas .btn{display:none}.hero .btn.go{display:inline-flex}}
+@media (max-width:734px){.hero{padding-top:88px}.hero h1{font-size:var(--t-display);line-height:1.1;font-weight:var(--w-display);letter-spacing:-.025em}.hero .ctas{margin-top:26px}.hero .ctas .btn{display:none}.hero .btn.go{display:inline-flex}}
 
 /* The opening: the home page's (its styles come from page.html), the headline and the buttons on the left;
    famous apps' icons drifting in the room on its right. On a phone they line up on the left, under the button. */
@@ -108,7 +111,7 @@ footer a[aria-current]{color:var(--ink)}
 /* Find an app: the title and the search, the kinds as words (the chosen one black), the apps as cards. */
 .find{padding:clamp(48px,5vw,100px) 0 0}
 .find-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:20px 40px}
-.find-head h2{font-weight:var(--w-display);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em} /* the home page's section titles: the headline's size */
+.find-head h2{max-width:var(--title-max);font-weight:var(--w-display);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em;text-wrap:pretty} /* the home page's section titles: the headline's size */
 .search{position:relative;flex:1;max-width:620px;min-width:min(100%,280px)}
 .search input{display:block;width:100%;height:48px;padding:0 50px 0 22px;border:1px solid #e3e3e8;border-radius:99px;background:var(--page);color:var(--ink);font:inherit;font-size:var(--t-field);letter-spacing:-.01em;outline:none;-webkit-appearance:none;appearance:none;transition:border-color .2s,box-shadow .2s}
 .search input:focus{border-color:#c7c7cc;box-shadow:0 4px 14px rgba(0,0,0,.05)} /* no blue ring */
@@ -138,7 +141,7 @@ footer a[aria-current]{color:var(--ink)}
 /* Connect an app in a few clicks: three steps, the chosen one black with a line filling under it, beside the
    Mac app at that step (a painting behind it, as on the home page's cards). */
 .how{padding:clamp(110px,10vw,190px) 0 clamp(90px,8vw,150px)}
-.how h2{text-align:center;font-weight:var(--w-display);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em}
+.how h2{max-width:var(--title-max);margin-inline:auto;text-align:center;font-weight:var(--w-display);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em;text-wrap:pretty}
 .how-grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:clamp(32px,5vw,96px);align-items:center;margin-top:clamp(40px,4vw,72px)}
 .steps{margin:0;padding:0;list-style:none}
 .step{position:relative;display:block;width:100%;padding:26px 0 24px;border:0;border-bottom:1px solid #e5e5ea;background:none;color:var(--ink2);font:inherit;text-align:left;cursor:pointer}
