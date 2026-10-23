@@ -233,7 +233,7 @@ CSS = """
   --font:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Inter","Helvetica Neue",Arial,sans-serif;
   --serif:"Newsreader",Georgia,"Times New Roman",serif;
   --gutter:max(20px,4.6vw);
-  --col:min(1260px,calc(100vw - 2 * var(--gutter)));
+  --col:min(1840px,calc(100vw - 2 * var(--gutter))); /* the home page's column */
   color-scheme:light;
 }
 *{box-sizing:border-box}
@@ -281,20 +281,20 @@ footer a[aria-current]{color:var(--ink)}
 """.replace("%BLUE%", BLUE)
 
 INDEX_CSS = """
-.top{padding:clamp(56px,7vw,130px) 0 0}
-.top h1{font-family:var(--serif);font-weight:400;font-size:clamp(40px,4.4vw,72px);line-height:1.02;letter-spacing:-.025em}
-.top p{margin-top:clamp(14px,1.2vw,22px);max-width:34em;font-size:clamp(17px,1.25vw,22px);line-height:1.4;letter-spacing:-.015em;color:var(--ink2)}
-.packs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;margin:clamp(40px,4vw,72px) 0 0;padding:0;list-style:none}
-.pack{display:flex;flex-direction:column;height:100%;padding:clamp(26px,2.2vw,36px);border-radius:28px;background:var(--soft);text-decoration:none;transition:background .2s}
+.top{padding:clamp(40px,6vw,120px) 0 0}
+.top h1{font-family:var(--serif);font-weight:400;font-size:clamp(30px,2.2vw,44px);line-height:1.08;letter-spacing:-.02em} /* the home page's headline */
+.top p{margin-top:clamp(8px,.7vw,14px);max-width:34em;font-size:clamp(16px,1vw,19px);line-height:1.5;letter-spacing:-.01em;color:var(--ink2)} /* the line under its section titles */
+.packs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;margin:clamp(32px,3vw,60px) 0 0;padding:0;list-style:none}
+.pack{display:flex;flex-direction:column;height:100%;padding:clamp(24px,2.1vw,40px);border-radius:28px;background:var(--soft);text-decoration:none;transition:background .2s}
 .pack:hover{background:#efeff2}
-.pack .faces{--ring:var(--soft);--fs:clamp(46px,3.4vw,56px)}
+.pack .faces{--ring:var(--soft);--fs:clamp(38px,2.6vw,48px)}
 .pack:hover .faces{--ring:#efeff2}
-.pack h2{margin-top:clamp(22px,2vw,32px);font-size:clamp(21px,1.5vw,26px);font-weight:600;line-height:1.18;letter-spacing:-.022em}
-.pack p{margin-top:10px;flex:1;font-size:clamp(16px,1.05vw,18px);line-height:1.45;color:var(--ink2)}
-.pack .more{margin-top:20px;color:var(--blue);font-size:clamp(16px,1.05vw,18px)}
+.pack h2{margin-top:clamp(18px,1.5vw,28px);font-size:clamp(18px,1.2vw,23px);font-weight:600;line-height:1.2;letter-spacing:-.018em}
+.pack p{margin-top:8px;flex:1;font-size:clamp(15px,1vw,18px);line-height:1.45;letter-spacing:-.01em;color:var(--ink2)}
+.pack .more{margin-top:16px;color:var(--blue);font-size:clamp(15px,1vw,18px)}
 .pack .more::after{content:" \\203A"}
 @media (max-width:1068px){.packs{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media (max-width:734px){.packs{grid-template-columns:1fr;gap:14px}.pack{border-radius:24px}.top{padding-top:44px}}
+@media (max-width:734px){.packs{grid-template-columns:1fr;gap:14px}.pack{border-radius:24px}.top{padding-top:44px}.top h1{font-size:28px;line-height:1.12}}
 """
 
 PACK_CSS = """
@@ -303,13 +303,13 @@ PACK_CSS = """
 .back:hover{color:var(--ink)}
 .back::before{content:"\\2039  "}
 .hero{display:flex;flex-direction:column;align-items:center;text-align:center;padding:clamp(28px,4vw,64px) 0 0}
-.hero .faces{--fs:clamp(52px,4.4vw,64px)}
-.kicker{margin-top:22px;font-size:clamp(15px,1.05vw,18px);font-weight:500;color:var(--ink2)}
-.hero h1{margin-top:clamp(18px,1.6vw,26px);max-width:14em;font-family:var(--serif);font-weight:400;font-size:clamp(38px,4.4vw,68px);line-height:1.03;letter-spacing:-.025em;text-wrap:balance}
+.hero .faces{--fs:clamp(44px,3.2vw,56px)}
+.kicker{margin-top:18px;font-size:clamp(14px,.95vw,17px);font-weight:500;color:var(--ink2)}
+.hero h1{margin-top:clamp(16px,1.3vw,24px);max-width:14em;font-family:var(--serif);font-weight:400;font-size:clamp(30px,2.2vw,44px);line-height:1.08;letter-spacing:-.02em;text-wrap:balance} /* the home page's headline */
 .kicker+h1{margin-top:10px}
-.hero .lede{margin-top:clamp(16px,1.4vw,24px);max-width:30em;font-size:clamp(17px,1.25vw,21px);line-height:1.42;letter-spacing:-.015em;color:var(--ink2);text-wrap:balance}
-.add{display:flex;flex-direction:column;align-items:center;margin-top:clamp(26px,2.4vw,38px)}
-.add .btn{height:clamp(46px,3vw,54px);padding:0 clamp(22px,1.6vw,30px);font-size:clamp(16px,1.1vw,19px)}
+.hero .lede{margin-top:clamp(10px,.9vw,16px);max-width:30em;font-size:clamp(16px,1vw,19px);line-height:1.5;letter-spacing:-.01em;color:var(--ink2);text-wrap:balance}
+.add{display:flex;flex-direction:column;align-items:center;margin-top:clamp(18px,1.6vw,32px)}
+.add .btn{height:clamp(40px,2.5vw,50px);padding:0 clamp(18px,1.3vw,26px);font-size:clamp(15px,.95vw,19px)} /* the home page's buttons */
 .add .btn svg{width:1em;height:1em;flex:none;margin-left:-.15em}
 .add-note{margin:0}
 .add-note[hidden]{display:none}
@@ -317,31 +317,33 @@ PACK_CSS = """
 .add .btn .dl{margin:0 -.15em 0 0} /* Download for macOS, its arrow after the words, as on the home page */
 
 /* The agents: one card each, the face beside what it does on a computer, above it on a phone. */
-.team{display:grid;gap:18px;margin:clamp(56px,6vw,96px) 0 0;padding:0;list-style:none}
-.agent{display:grid;grid-template-columns:clamp(96px,10vw,132px) minmax(0,1fr);column-gap:clamp(22px,2.4vw,34px);align-items:start;padding:clamp(24px,2.6vw,38px);border-radius:28px;background:var(--soft)}
-.agent>.face{grid-row:1 / span 3;width:100%;aspect-ratio:1;height:auto;border-radius:24px;object-fit:cover;background:#e8e8ed}
-.agent>.face.noface{display:grid;place-items:center;font-size:40px;font-weight:600;color:var(--ink2)}
-.agent .head{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:34px}
-.agent h2{font-size:clamp(21px,1.6vw,26px);font-weight:600;line-height:1.2;letter-spacing:-.022em}
+.team{display:grid;gap:16px;margin:clamp(44px,4vw,80px) 0 0;padding:0;list-style:none}
+.agent{display:grid;grid-template-columns:clamp(72px,6vw,104px) minmax(0,1fr);column-gap:clamp(18px,1.8vw,30px);align-items:start;padding:clamp(22px,2.1vw,36px);border-radius:28px;background:var(--soft)}
+.agent>.face{grid-row:1 / span 3;width:100%;aspect-ratio:1;height:auto;border-radius:20px;object-fit:cover;background:#e8e8ed}
+.agent>.face.noface{display:grid;place-items:center;font-size:32px;font-weight:600;color:var(--ink2)}
+.agent .head{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:30px}
+.agent .apps{--as:30px}
+.agent h2{font-size:clamp(18px,1.2vw,23px);font-weight:600;line-height:1.2;letter-spacing:-.018em}
 .agent h2 .nm{color:var(--blue)}
 .agent h2 .tt{color:var(--ink3);font-weight:500;white-space:nowrap}
-.agent .sum{margin-top:10px;font-size:clamp(16px,1.08vw,18px);line-height:1.5;color:var(--ink2)}
-.agent .q{position:relative;margin-top:clamp(18px,1.6vw,24px);padding:clamp(16px,1.4vw,20px) 0 0;border-top:1px solid #e3e3e8;font-family:var(--serif);font-size:clamp(21px,1.55vw,26px);line-height:1.3;letter-spacing:-.01em;color:var(--ink)}
+.agent .sum{margin-top:8px;font-size:clamp(15px,1vw,18px);line-height:1.5;letter-spacing:-.01em;color:var(--ink2)}
+.agent .q{position:relative;margin-top:clamp(18px,1.6vw,24px);padding:clamp(16px,1.4vw,20px) 0 0;border-top:1px solid #e3e3e8;font-family:var(--serif);font-size:clamp(18px,1.2vw,23px);line-height:1.32;letter-spacing:-.01em;color:var(--ink)}
 .agent .q .qm{font-size:2.2em;line-height:0;vertical-align:-.36em;color:var(--blue);opacity:.55}
 .agent .q .qm:first-child{margin-right:.06em}
 .agent .q .qm:last-child{margin-left:.04em}
 
 .end{display:flex;flex-direction:column;align-items:center;text-align:center;padding:clamp(72px,7vw,120px) 0 0}
-.end h2{max-width:14em;font-family:var(--serif);font-weight:400;font-size:clamp(30px,3vw,48px);line-height:1.06;letter-spacing:-.02em;text-wrap:balance}
+.end h2{max-width:14em;font-family:var(--serif);font-weight:400;font-size:clamp(30px,2.2vw,44px);line-height:1.08;letter-spacing:-.02em;text-wrap:balance}
 .end .add{margin-top:clamp(22px,2vw,32px)}
-.free{margin-top:16px;font-size:15px;color:var(--ink2)}
+.free{margin-top:14px;font-size:14px;color:var(--ink2)}
 
+@media (max-width:734px){.hero h1,.end h2{font-size:28px;line-height:1.12}}
 @media (max-width:600px){
   .agent{grid-template-columns:56px minmax(0,1fr);column-gap:14px;padding:20px 20px 22px;border-radius:24px}
   .agent>.face{grid-row:1;width:56px;height:56px;border-radius:50%}
   .agent>.face.noface{font-size:22px}
   .agent .head{min-height:56px;gap:10px}
-  .agent .apps{--as:30px}
+  .agent .apps{--as:26px}
   .agent .sum,.agent .q{grid-column:1 / -1}
   .agent .sum{margin-top:14px}
 }
