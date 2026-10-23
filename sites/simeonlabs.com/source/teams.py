@@ -246,8 +246,6 @@ def check(packs):
 CSS = """
 :root{
   --page:#fff; --soft:#f5f5f7; --ink:#1d1d1f; --ink2:#6e6e73; --ink3:#86868b; --line:#e5e5ea; --blue:%BLUE%;
-  --font:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Inter","Helvetica Neue",Arial,sans-serif;
-  --serif:"Newsreader",Georgia,"Times New Roman",serif;
   --gutter:max(20px,4.6vw);
   --col:min(1840px,calc(100vw - 2 * var(--gutter))); /* the home page's column */
   color-scheme:light;
@@ -267,11 +265,11 @@ a{color:inherit}
 .bar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.82);-webkit-backdrop-filter:saturate(1.8) blur(20px);backdrop-filter:saturate(1.8) blur(20px);padding-top:env(safe-area-inset-top,0px)}
 .bar .wrap{display:flex;justify-content:space-between;align-items:center;height:clamp(52px,3.8vw,76px)}
 .bar .wordmark{--wm:clamp(118px,10.8vw,217px);display:block;width:var(--wm);margin-left:calc(var(--wm) * -85 / 1585);background:var(--ink);-webkit-mask:url(/img/wordmark-labs.png) center/contain no-repeat;mask:url(/img/wordmark-labs.png) center/contain no-repeat;aspect-ratio:1585/460}
-.bar .acts{display:flex;align-items:center;gap:clamp(14px,1.2vw,22px);font-size:clamp(14px,1vw,20px)}
+.bar .acts{display:flex;align-items:center;gap:clamp(14px,1.2vw,22px);font-size:var(--t-nav)}
 .bar .acts>a:not(.btn){text-decoration:none;color:var(--ink2)}
 .bar .acts>a:not(.btn):hover,.bar .acts>a[aria-current]{color:var(--ink)}
-.bar .btn{height:clamp(28px,1.9vw,38px);padding:0 clamp(12px,.8vw,16px);font-size:clamp(14px,1vw,20px)}
-@media (max-width:480px){.bar .acts{gap:16px}.bar .acts .btn{display:none}} /* a phone has room for Teams and Connectors, and no Mac to download to */
+.bar .btn{height:clamp(28px,1.9vw,38px);padding:0 clamp(12px,.8vw,16px);font-size:var(--t-nav)}
+@media (max-width:480px){.bar .acts{gap:16px;font-size:var(--t-nav)}.bar .acts .btn{display:none}} /* a phone has room for Teams and Connectors, and no Mac to download to */
 
 /* Faces in a row, each over the last, ringed in the ground they sit on. */
 .faces{display:flex;--fs:48px;--ring:var(--page)}
@@ -291,13 +289,13 @@ a{color:inherit}
 
 /* Add to Simeon, on a team's page and in its window on /teams. */
 .add{display:flex;flex-direction:column;align-items:center;margin-top:clamp(18px,1.6vw,32px)}
-.add .btn{height:clamp(40px,2.5vw,50px);padding:0 clamp(18px,1.3vw,26px);font-size:clamp(15px,.95vw,19px)} /* the home page's buttons */
+.add .btn{height:var(--btn-h);padding:0 var(--btn-pad);font-size:var(--btn-font)} /* the home page's buttons */
 .add .btn svg{width:1em;height:1em;flex:none;margin-left:-.15em}
 .add-note{margin:0}
 .add-note[hidden]{display:none}
 .add.noapp .add-btn{display:none}
 .add .btn .dl{margin:0 -.15em 0 0} /* Download for macOS, its arrow after the words, as on the home page */
-footer{margin-top:clamp(80px,8vw,140px);background:var(--soft);padding:20px 0 calc(40px + env(safe-area-inset-bottom,0px));font-size:12px;color:var(--ink2)}
+footer{margin-top:clamp(80px,8vw,140px);background:var(--soft);padding:20px 0 calc(40px + env(safe-area-inset-bottom,0px));font-size:var(--t-tiny);color:var(--ink2)}
 footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
 footer nav{display:flex;gap:18px}
 footer a{color:var(--ink2);text-decoration:none}
@@ -309,42 +307,42 @@ INDEX_CSS = """
 /* The opening (23 October 2026, after the founder's reference): a centred headline, its first words in a
    box, the buttons, then photos of people at work in a fan, each one a team's; the middle one in front. */
 .lead{padding:clamp(56px,6.4vw,128px) 0 0;text-align:center}
-.lead h1{font-family:var(--serif);font-weight:400;font-size:clamp(34px,3.2vw,64px);line-height:1.12;letter-spacing:-.02em} /* the home page's closing title */
+.lead h1{font-weight:var(--w-title);font-size:var(--t-display);line-height:1.2;letter-spacing:-.025em} /* the home page's closing title */
 .lead h1 .box{display:inline-block;margin-bottom:.14em;padding:.02em .3em .08em;border:1px solid #d2d2d7;border-radius:.24em;background:var(--page);box-shadow:0 1px 2px rgba(0,0,0,.04),0 8px 20px -10px rgba(0,0,0,.14)}
 .lead .ctas{display:flex;justify-content:center;align-items:center;gap:clamp(18px,1.5vw,28px);flex-wrap:wrap;margin-top:clamp(22px,2vw,36px)}
-.lead .btn{height:clamp(40px,2.5vw,50px);padding:0 clamp(18px,1.3vw,26px);font-size:clamp(15px,.95vw,19px)} /* the home page's buttons */
+.lead .btn{height:var(--btn-h);padding:0 var(--btn-pad);font-size:var(--btn-font)} /* the home page's buttons */
 .lead .btn .dl{width:1em;height:1em;margin:0 -.15em 0 0}
-.lead .see{font-size:clamp(15px,.95vw,19px);text-decoration:none;color:var(--ink)}
+.lead .see{font-size:var(--btn-font);text-decoration:none;color:var(--ink)}
 .lead .see::after{content:" \\203A"}
 .lead .see:hover{text-decoration:underline}
 html{scroll-behavior:smooth;scroll-padding-top:clamp(72px,4.6vw,96px)} /* See all teams lands below the bar */
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
-.fan{--w:clamp(160px,21vw,400px);--step:calc(var(--w) * .84);position:relative;height:calc(var(--w) * 1.42 + 84px);margin-top:clamp(36px,3.4vw,64px);overflow:hidden}
+.fan{--w:clamp(150px,18vw,360px);--step:calc(var(--w) * .84);position:relative;height:calc(var(--w) * 1.42 + 84px);margin-top:clamp(36px,3.4vw,64px);overflow:hidden}
 .shot{position:absolute;top:calc(var(--w) * .08 + 30px);left:calc(50% - var(--w) / 2 + var(--o) * var(--step));z-index:var(--z);width:var(--w);aspect-ratio:4 / 5;border:6px solid #fff;border-radius:24px;overflow:hidden;background:var(--soft);
   box-shadow:0 0 0 1px rgba(0,0,0,.06),0 14px 34px -12px rgba(0,0,0,.28);transform:translateY(calc(var(--y) + var(--lift,0px))) rotate(var(--r)) scale(var(--s));transition:transform .35s cubic-bezier(.2,.7,.2,1)}
 .shot:hover,.shot:focus-visible{--lift:-10px}
 .shot img{width:100%;height:100%;object-fit:cover}
 .shot::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.06),rgba(0,0,0,.26))}
-.shot span{position:absolute;inset:0;z-index:1;display:grid;place-items:center;padding:0 12px;color:#fff;font-size:clamp(18px,1.55vw,30px);font-weight:500;letter-spacing:-.02em;text-shadow:0 1px 18px rgba(0,0,0,.4)}
+.shot span{position:absolute;inset:0;z-index:1;display:grid;place-items:center;padding:0 12px;color:#fff;font-size:var(--t-title);font-weight:var(--w-title);letter-spacing:-.02em;text-shadow:0 1px 18px rgba(0,0,0,.4)}
 /* The marketplace ("more Apple style", 23 October 2026): a light grey band as on the Apple Store, white chips
    and a white search field on it (no blue ring), and the teams as the Store's white cards, which rise a little
    under the pointer: the faces, the kind of work, the name, what it is for, then five of its apps. */
 .market{padding:clamp(96px,8vw,160px) 0 clamp(150px,12vw,230px);background:linear-gradient(180deg,var(--page) 0,var(--soft) clamp(200px,17vw,340px),var(--soft) calc(100% - clamp(150px,12vw,230px)),var(--page) 100%)} /* white fading into the grey and back */
 .market+.trust{padding-top:clamp(24px,2.4vw,48px)}
-.list-title{font-family:var(--serif);font-weight:400;font-size:clamp(28px,2.2vw,44px);line-height:1.08;letter-spacing:-.02em} /* the home page's section titles */
+.list-title{font-weight:var(--w-title);font-size:var(--t-title);line-height:1.15;letter-spacing:-.02em} /* the home page's section titles */
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:clamp(18px,1.5vw,28px)}
-.chip{flex:none;height:36px;padding:0 16px;border:0;border-radius:99px;background:#fff;color:var(--ink);font:inherit;font-size:14px;letter-spacing:-.01em;cursor:pointer;box-shadow:0 0 0 1px rgba(0,0,0,.06);transition:background .2s,color .2s,box-shadow .2s}
+.chip{flex:none;height:36px;padding:0 16px;border:0;border-radius:99px;background:#fff;color:var(--ink);font:inherit;font-size:var(--t-body);letter-spacing:-.01em;cursor:pointer;box-shadow:0 0 0 1px rgba(0,0,0,.06);transition:background .2s,color .2s,box-shadow .2s}
 .chip:hover{box-shadow:0 0 0 1px rgba(0,0,0,.16)}
 .chip[aria-pressed="true"]{background:#1d1d1f;color:#fff;box-shadow:none}
 .chip:focus-visible,.none button:focus-visible,.pack:focus-visible{outline:2px solid #1d1d1f;outline-offset:3px}
 .find{position:relative;margin-top:clamp(14px,1.2vw,22px)}
 .find svg{position:absolute;left:16px;top:50%;width:17px;height:17px;transform:translateY(-50%);color:#86868b;pointer-events:none}
-.find input{display:block;width:100%;height:44px;padding:0 16px 0 42px;border:0;border-radius:12px;background:#fff;color:var(--ink);font:inherit;font-size:16px;letter-spacing:-.01em;outline:none;box-shadow:0 0 0 1px rgba(0,0,0,.06);-webkit-appearance:none;appearance:none;transition:box-shadow .2s}
+.find input{display:block;width:100%;height:44px;padding:0 16px 0 42px;border:0;border-radius:12px;background:#fff;color:var(--ink);font:inherit;font-size:var(--t-field);letter-spacing:-.01em;outline:none;box-shadow:0 0 0 1px rgba(0,0,0,.06);-webkit-appearance:none;appearance:none;transition:box-shadow .2s}
 .find input:focus{box-shadow:0 0 0 1px rgba(0,0,0,.22),0 4px 14px rgba(0,0,0,.06)}
 .find input::placeholder{color:#86868b;opacity:1}
 .find input::-webkit-search-decoration{-webkit-appearance:none}
 .find input::-webkit-search-cancel-button{-webkit-appearance:none;width:16px;height:16px;cursor:pointer;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='11' fill='%23b0b0b5'/%3E%3Cpath d='m8 8 8 8m0-8-8 8' stroke='%23fff' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E") center/contain no-repeat}
-.none{margin-top:28px;font-size:16px;color:var(--ink2)}
+.none{margin-top:28px;font-size:var(--t-body);color:var(--ink2)}
 .none button{padding:0;border:0;background:none;font:inherit;color:var(--blue);cursor:pointer}
 .packs>li[hidden]{display:none}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
@@ -353,12 +351,12 @@ html{scroll-behavior:smooth;scroll-padding-top:clamp(72px,4.6vw,96px)} /* See al
   box-shadow:2px 4px 12px rgba(0,0,0,.08);transition:box-shadow .3s cubic-bezier(0,0,.5,1),transform .3s cubic-bezier(0,0,.5,1)} /* the Apple Store's cards */
 .pack:hover{box-shadow:2px 4px 16px rgba(0,0,0,.16);transform:scale3d(1.01,1.01,1.01)}
 .pack .faces{--ring:#fff;--fs:clamp(40px,2.8vw,52px)}
-.pack .kind{display:block;margin-top:clamp(18px,1.5vw,26px);font-size:12px;font-weight:500;letter-spacing:.01em;color:#86868b}
-.pack h2{margin-top:4px;font-size:clamp(19px,1.3vw,24px);font-weight:500;line-height:1.2;letter-spacing:-.015em;color:var(--ink)}
-.pack p{margin-top:8px;flex:1;font-size:clamp(15px,1vw,17px);line-height:1.47;letter-spacing:-.01em;color:var(--ink2)}
+.pack .kind{display:block;margin-top:clamp(18px,1.5vw,26px);font-size:var(--t-small);font-weight:var(--w-title);letter-spacing:.01em;color:#86868b}
+.pack h2{margin-top:4px;font-size:var(--t-head);font-weight:var(--w-title);line-height:1.2;letter-spacing:-.015em;color:var(--ink)}
+.pack p{margin-top:8px;flex:1;font-size:var(--t-body);line-height:1.47;letter-spacing:-.01em;color:var(--ink2)}
 .pack .foot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:clamp(20px,1.7vw,28px);padding-top:clamp(14px,1.2vw,18px);border-top:1px solid #ececef}
 .pack .apps{--as:24px;--ring:#fff}
-.pack .apps .plus{margin-left:8px;font-size:13px;letter-spacing:0;color:#86868b}
+.pack .apps .plus{margin-left:8px;font-size:var(--t-small);letter-spacing:0;color:#86868b}
 .pack .open{flex:none;display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#1d1d1f;color:#fff;transition:transform .3s}
 .pack .open svg{width:14px;height:14px}
 .pack:hover .open{transform:scale(1.08)}
@@ -378,50 +376,49 @@ html:has(dialog[open]){overflow:hidden}
 .sheet .close:hover{background:#dcdce1}
 .sheet .close svg{width:12px;height:12px}
 .sheet .close:focus-visible{outline:2px solid #1d1d1f;outline-offset:2px}
-.sheet .eyebrow{font-size:13px;font-weight:500;color:var(--ink2)}
-.sheet h2{margin-top:6px;font-family:var(--serif);font-weight:400;font-size:36px;line-height:1.1;letter-spacing:-.02em}
-.sheet .intro{margin-top:10px;max-width:40em;font-size:16px;line-height:1.47;letter-spacing:-.01em;color:#515154}
+.sheet .eyebrow{font-size:var(--t-small);font-weight:var(--w-title);color:var(--ink2)}
+.sheet h2{margin-top:6px;font-weight:var(--w-title);font-size:var(--t-title);line-height:1.15;letter-spacing:-.02em}
+.sheet .intro{margin-top:10px;max-width:40em;font-size:var(--t-lead);line-height:1.47;letter-spacing:-.01em;color:#515154}
 .roster{margin:30px 0 0;padding:0;list-style:none;border-top:1px solid #e8e8ed}
 .roster li{display:grid;grid-template-columns:44px 140px minmax(0,1fr) auto;align-items:center;column-gap:24px;padding:16px 0;border-bottom:1px solid #e8e8ed}
 .roster img,.roster .noface{width:44px;height:44px;border-radius:50%;object-fit:cover}
 .roster .noface{font-size:15px}
-.roster b{display:block;font-size:16px;font-weight:500;letter-spacing:-.01em}
-.roster small{display:block;margin-top:1px;font-size:14px;color:var(--ink2)}
-.roster p{font-size:15px;line-height:1.47;letter-spacing:-.005em;color:#515154}
+.roster b{display:block;font-size:var(--t-lead);font-weight:var(--w-title);letter-spacing:-.01em}
+.roster small{display:block;margin-top:1px;font-size:var(--t-small);color:var(--ink2)}
+.roster p{font-size:var(--t-body);line-height:1.47;letter-spacing:-.005em;color:#515154}
 .roster .apps{--as:28px;--ring:var(--page)}
 .sheet .acts{display:flex;margin-top:32px}
 .sheet .add{margin-top:0;align-items:flex-start}
-.sheet .add .btn{height:42px;padding:0 20px;font-size:15px}
+.sheet .add .btn{height:var(--btn-h);padding:0 20px;font-size:var(--btn-font)}
 @media (max-width:734px){
   .sheet{width:100vw;max-height:92dvh;margin:auto 0 0;border-radius:20px 20px 0 0}
   .sheet-in{max-height:92dvh;padding:32px 22px 26px}
-  .sheet h2{font-size:28px}
   .roster li{grid-template-columns:40px minmax(0,1fr) auto;column-gap:14px;row-gap:6px;padding:14px 0}
   .roster .apps{grid-column:3;grid-row:1}
   .roster img,.roster .noface{width:40px;height:40px}
   .roster .apps{--as:24px}
-  .roster p{grid-column:2 / -1;grid-row:2;font-size:14px}
+  .roster p{grid-column:2 / -1;grid-row:2}
 }
 @media (max-height:760px) and (min-width:735px){.sheet-in{padding-top:38px;padding-bottom:34px}.roster li{padding:13px 0}} /* a short laptop screen: still one screen */
 @media (prefers-reduced-motion:reduce){.sheet[open],.sheet[open]::backdrop{animation:none}}
-footer{margin-top:0} /* the closing call above leaves the room, as on the home page */
+footer{margin-top:0;font-size:var(--t-tiny)} /* the closing call above leaves the room, as on the home page */
 @media (max-width:1068px){.packs{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media (max-width:734px){.packs{grid-template-columns:1fr;gap:14px}.lead{padding-top:48px}.lead h1{font-size:30px;line-height:1.16}.fan{--w:clamp(150px,44vw,240px)}.shot{border-width:4px;border-radius:18px}
+@media (max-width:734px){.packs{grid-template-columns:1fr;gap:14px}.lead{padding-top:48px}.lead h1{font-size:var(--t-display);line-height:1.2;font-weight:var(--w-title);letter-spacing:-.025em}.fan{--w:clamp(150px,44vw,240px)}.shot{border-width:4px;border-radius:18px}
   .chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-inline:calc(-1 * var(--gutter));padding:2px var(--gutter)}.chips::-webkit-scrollbar{display:none}}
 @media (prefers-reduced-motion:reduce){.shot{transition:none}}
 """
 
 PACK_CSS = """
 .post{width:min(860px,var(--col));margin-inline:auto}
-.back{display:inline-block;margin-top:clamp(28px,3vw,48px);color:var(--ink2);text-decoration:none;font-size:15px}
+.back{display:inline-block;margin-top:clamp(28px,3vw,48px);color:var(--ink2);text-decoration:none;font-size:var(--t-body)}
 .back:hover{color:var(--ink)}
 .back::before{content:"\\2039  "}
 .hero{display:flex;flex-direction:column;align-items:center;text-align:center;padding:clamp(28px,4vw,64px) 0 0}
 .hero .faces{--fs:clamp(44px,3.2vw,56px)}
-.kicker{margin-top:18px;font-size:clamp(14px,.95vw,17px);font-weight:500;color:var(--ink2)}
-.hero h1{margin-top:clamp(16px,1.3vw,24px);max-width:14em;font-family:var(--serif);font-weight:400;font-size:clamp(30px,2.2vw,44px);line-height:1.08;letter-spacing:-.02em;text-wrap:balance} /* the home page's headline */
+.kicker{margin-top:18px;font-size:var(--t-small);font-weight:var(--w-title);color:var(--ink2)}
+.hero h1{margin-top:clamp(16px,1.3vw,24px);max-width:14em;font-weight:var(--w-title);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em;text-wrap:balance} /* the home page's headline */
 .kicker+h1{margin-top:10px}
-.hero .lede{margin-top:clamp(10px,.9vw,16px);max-width:30em;font-size:clamp(16px,1vw,19px);line-height:1.5;letter-spacing:-.01em;color:var(--ink2);text-wrap:balance}
+.hero .lede{margin-top:clamp(10px,.9vw,16px);max-width:30em;font-size:var(--t-lead);line-height:1.5;letter-spacing:-.01em;color:var(--ink2);text-wrap:balance}
 
 /* The agents: one card each, the face beside what it does on a computer, above it on a phone. */
 .team{display:grid;gap:16px;margin:clamp(44px,4vw,80px) 0 0;padding:0;list-style:none}
@@ -430,21 +427,18 @@ PACK_CSS = """
 .agent>.face.noface{display:grid;place-items:center;font-size:32px;font-weight:500;color:var(--ink2)}
 .agent .head{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:30px}
 .agent .apps{--as:30px}
-.agent h2{font-size:clamp(18px,1.2vw,23px);font-weight:500;line-height:1.2;letter-spacing:-.018em}
+.agent h2{font-size:var(--t-head);font-weight:var(--w-title);line-height:1.2;letter-spacing:-.018em}
 .agent h2 .nm{color:var(--blue)}
 .agent h2 .tt{color:var(--ink3);font-weight:500;white-space:nowrap}
-.agent .sum{margin-top:8px;font-size:clamp(15px,1vw,18px);line-height:1.5;letter-spacing:-.01em;color:var(--ink2)}
-.agent .q{position:relative;margin-top:clamp(18px,1.6vw,24px);padding:clamp(16px,1.4vw,20px) 0 0;border-top:1px solid #e3e3e8;font-family:var(--serif);font-size:clamp(18px,1.2vw,23px);line-height:1.32;letter-spacing:-.01em;color:var(--ink)}
-.agent .q .qm{font-size:2.2em;line-height:0;vertical-align:-.36em;color:var(--blue);opacity:.55}
-.agent .q .qm:first-child{margin-right:.06em}
-.agent .q .qm:last-child{margin-left:.04em}
+.agent .sum{margin-top:8px;font-size:var(--t-body);line-height:1.5;letter-spacing:-.01em;color:var(--ink2)}
+.agent .q{position:relative;margin-top:clamp(18px,1.6vw,24px);padding:clamp(16px,1.4vw,20px) 0 0;border-top:1px solid #e3e3e8;font-size:var(--t-lead);line-height:1.32;letter-spacing:-.01em;color:var(--ink)}
+.agent .q .qm{color:var(--ink2)} /* plain quotation marks, in the text's own size */
 
 .end{display:flex;flex-direction:column;align-items:center;text-align:center;padding:clamp(72px,7vw,120px) 0 0}
-.end h2{max-width:14em;font-family:var(--serif);font-weight:400;font-size:clamp(30px,2.2vw,44px);line-height:1.08;letter-spacing:-.02em;text-wrap:balance}
+.end h2{max-width:14em;font-weight:var(--w-title);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em;text-wrap:balance}
 .end .add{margin-top:clamp(22px,2vw,32px)}
-.free{margin-top:14px;font-size:14px;color:var(--ink2)}
+.free{margin-top:14px;font-size:var(--t-small);color:var(--ink2)}
 
-@media (max-width:734px){.hero h1,.end h2{font-size:28px;line-height:1.12}}
 @media (max-width:600px){
   .agent{grid-template-columns:56px minmax(0,1fr);column-gap:14px;padding:20px 20px 22px;border-radius:24px}
   .agent>.face{grid-row:1;width:56px;height:56px;border-radius:50%}
@@ -582,7 +576,8 @@ def frame(title, description, path, body, css, current="", script=""):
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap">
+<link rel="stylesheet" href="/site.css">
 <style>
 /* The Teams pages (/teams, /teams/<pack>): the home page's bar, type and colours (source/page.html) around
    the starter packs. Light only, every colour set here. Made by teams.py from server/simeon/desktop/packs.json. */{CSS}{css}</style>
@@ -823,7 +818,13 @@ def index_page(packs, assets):
     return frame("Teams", "Starter teams of five agents for one kind of business, ready to add to Simeon.", "/teams", body, INDEX_CSS + home_css, current="teams", script=MARKET_JS + SHEET_JS + ADD_JS)
 
 
+def copy_site_css(out=OUT):
+    """site.css, every page's one type (the apps' font and one scale of sizes), at /site.css."""
+    shutil.copy(os.path.join(HERE, "site.css"), os.path.join(out, "site.css"))
+
+
 def build(out=OUT):
+    copy_site_css(out)
     data = _json(PACKS, None)
     if not isinstance(data, dict) or not isinstance(data.get("packs"), list):
         sys.exit(f"teams.py: {os.path.relpath(PACKS)} is missing or not a {{\"packs\": [...]}} file")

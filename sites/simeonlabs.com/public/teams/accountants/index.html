@@ -16,14 +16,13 @@
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap">
+<link rel="stylesheet" href="/site.css">
 <style>
 /* The Teams pages (/teams, /teams/<pack>): the home page's bar, type and colours (source/page.html) around
    the starter packs. Light only, every colour set here. Made by teams.py from server/simeon/desktop/packs.json. */
 :root{
   --page:#fff; --soft:#f5f5f7; --ink:#1d1d1f; --ink2:#6e6e73; --ink3:#86868b; --line:#e5e5ea; --blue:#255a93;
-  --font:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Inter","Helvetica Neue",Arial,sans-serif;
-  --serif:"Newsreader",Georgia,"Times New Roman",serif;
   --gutter:max(20px,4.6vw);
   --col:min(1840px,calc(100vw - 2 * var(--gutter))); /* the home page's column */
   color-scheme:light;
@@ -43,11 +42,11 @@ a{color:inherit}
 .bar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.82);-webkit-backdrop-filter:saturate(1.8) blur(20px);backdrop-filter:saturate(1.8) blur(20px);padding-top:env(safe-area-inset-top,0px)}
 .bar .wrap{display:flex;justify-content:space-between;align-items:center;height:clamp(52px,3.8vw,76px)}
 .bar .wordmark{--wm:clamp(118px,10.8vw,217px);display:block;width:var(--wm);margin-left:calc(var(--wm) * -85 / 1585);background:var(--ink);-webkit-mask:url(/img/wordmark-labs.png) center/contain no-repeat;mask:url(/img/wordmark-labs.png) center/contain no-repeat;aspect-ratio:1585/460}
-.bar .acts{display:flex;align-items:center;gap:clamp(14px,1.2vw,22px);font-size:clamp(14px,1vw,20px)}
+.bar .acts{display:flex;align-items:center;gap:clamp(14px,1.2vw,22px);font-size:var(--t-nav)}
 .bar .acts>a:not(.btn){text-decoration:none;color:var(--ink2)}
 .bar .acts>a:not(.btn):hover,.bar .acts>a[aria-current]{color:var(--ink)}
-.bar .btn{height:clamp(28px,1.9vw,38px);padding:0 clamp(12px,.8vw,16px);font-size:clamp(14px,1vw,20px)}
-@media (max-width:480px){.bar .acts{gap:16px}.bar .acts .btn{display:none}} /* a phone has room for Teams and Connectors, and no Mac to download to */
+.bar .btn{height:clamp(28px,1.9vw,38px);padding:0 clamp(12px,.8vw,16px);font-size:var(--t-nav)}
+@media (max-width:480px){.bar .acts{gap:16px;font-size:var(--t-nav)}.bar .acts .btn{display:none}} /* a phone has room for Teams and Connectors, and no Mac to download to */
 
 /* Faces in a row, each over the last, ringed in the ground they sit on. */
 .faces{display:flex;--fs:48px;--ring:var(--page)}
@@ -67,13 +66,13 @@ a{color:inherit}
 
 /* Add to Simeon, on a team's page and in its window on /teams. */
 .add{display:flex;flex-direction:column;align-items:center;margin-top:clamp(18px,1.6vw,32px)}
-.add .btn{height:clamp(40px,2.5vw,50px);padding:0 clamp(18px,1.3vw,26px);font-size:clamp(15px,.95vw,19px)} /* the home page's buttons */
+.add .btn{height:var(--btn-h);padding:0 var(--btn-pad);font-size:var(--btn-font)} /* the home page's buttons */
 .add .btn svg{width:1em;height:1em;flex:none;margin-left:-.15em}
 .add-note{margin:0}
 .add-note[hidden]{display:none}
 .add.noapp .add-btn{display:none}
 .add .btn .dl{margin:0 -.15em 0 0} /* Download for macOS, its arrow after the words, as on the home page */
-footer{margin-top:clamp(80px,8vw,140px);background:var(--soft);padding:20px 0 calc(40px + env(safe-area-inset-bottom,0px));font-size:12px;color:var(--ink2)}
+footer{margin-top:clamp(80px,8vw,140px);background:var(--soft);padding:20px 0 calc(40px + env(safe-area-inset-bottom,0px));font-size:var(--t-tiny);color:var(--ink2)}
 footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
 footer nav{display:flex;gap:18px}
 footer a{color:var(--ink2);text-decoration:none}
@@ -81,15 +80,15 @@ footer a:hover{color:var(--ink)}
 footer a[aria-current]{color:var(--ink)}
 
 .post{width:min(860px,var(--col));margin-inline:auto}
-.back{display:inline-block;margin-top:clamp(28px,3vw,48px);color:var(--ink2);text-decoration:none;font-size:15px}
+.back{display:inline-block;margin-top:clamp(28px,3vw,48px);color:var(--ink2);text-decoration:none;font-size:var(--t-body)}
 .back:hover{color:var(--ink)}
 .back::before{content:"\2039  "}
 .hero{display:flex;flex-direction:column;align-items:center;text-align:center;padding:clamp(28px,4vw,64px) 0 0}
 .hero .faces{--fs:clamp(44px,3.2vw,56px)}
-.kicker{margin-top:18px;font-size:clamp(14px,.95vw,17px);font-weight:500;color:var(--ink2)}
-.hero h1{margin-top:clamp(16px,1.3vw,24px);max-width:14em;font-family:var(--serif);font-weight:400;font-size:clamp(30px,2.2vw,44px);line-height:1.08;letter-spacing:-.02em;text-wrap:balance} /* the home page's headline */
+.kicker{margin-top:18px;font-size:var(--t-small);font-weight:var(--w-title);color:var(--ink2)}
+.hero h1{margin-top:clamp(16px,1.3vw,24px);max-width:14em;font-weight:var(--w-title);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em;text-wrap:balance} /* the home page's headline */
 .kicker+h1{margin-top:10px}
-.hero .lede{margin-top:clamp(10px,.9vw,16px);max-width:30em;font-size:clamp(16px,1vw,19px);line-height:1.5;letter-spacing:-.01em;color:var(--ink2);text-wrap:balance}
+.hero .lede{margin-top:clamp(10px,.9vw,16px);max-width:30em;font-size:var(--t-lead);line-height:1.5;letter-spacing:-.01em;color:var(--ink2);text-wrap:balance}
 
 /* The agents: one card each, the face beside what it does on a computer, above it on a phone. */
 .team{display:grid;gap:16px;margin:clamp(44px,4vw,80px) 0 0;padding:0;list-style:none}
@@ -98,21 +97,18 @@ footer a[aria-current]{color:var(--ink)}
 .agent>.face.noface{display:grid;place-items:center;font-size:32px;font-weight:500;color:var(--ink2)}
 .agent .head{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:30px}
 .agent .apps{--as:30px}
-.agent h2{font-size:clamp(18px,1.2vw,23px);font-weight:500;line-height:1.2;letter-spacing:-.018em}
+.agent h2{font-size:var(--t-head);font-weight:var(--w-title);line-height:1.2;letter-spacing:-.018em}
 .agent h2 .nm{color:var(--blue)}
 .agent h2 .tt{color:var(--ink3);font-weight:500;white-space:nowrap}
-.agent .sum{margin-top:8px;font-size:clamp(15px,1vw,18px);line-height:1.5;letter-spacing:-.01em;color:var(--ink2)}
-.agent .q{position:relative;margin-top:clamp(18px,1.6vw,24px);padding:clamp(16px,1.4vw,20px) 0 0;border-top:1px solid #e3e3e8;font-family:var(--serif);font-size:clamp(18px,1.2vw,23px);line-height:1.32;letter-spacing:-.01em;color:var(--ink)}
-.agent .q .qm{font-size:2.2em;line-height:0;vertical-align:-.36em;color:var(--blue);opacity:.55}
-.agent .q .qm:first-child{margin-right:.06em}
-.agent .q .qm:last-child{margin-left:.04em}
+.agent .sum{margin-top:8px;font-size:var(--t-body);line-height:1.5;letter-spacing:-.01em;color:var(--ink2)}
+.agent .q{position:relative;margin-top:clamp(18px,1.6vw,24px);padding:clamp(16px,1.4vw,20px) 0 0;border-top:1px solid #e3e3e8;font-size:var(--t-lead);line-height:1.32;letter-spacing:-.01em;color:var(--ink)}
+.agent .q .qm{color:var(--ink2)} /* plain quotation marks, in the text's own size */
 
 .end{display:flex;flex-direction:column;align-items:center;text-align:center;padding:clamp(72px,7vw,120px) 0 0}
-.end h2{max-width:14em;font-family:var(--serif);font-weight:400;font-size:clamp(30px,2.2vw,44px);line-height:1.08;letter-spacing:-.02em;text-wrap:balance}
+.end h2{max-width:14em;font-weight:var(--w-title);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em;text-wrap:balance}
 .end .add{margin-top:clamp(22px,2vw,32px)}
-.free{margin-top:14px;font-size:14px;color:var(--ink2)}
+.free{margin-top:14px;font-size:var(--t-small);color:var(--ink2)}
 
-@media (max-width:734px){.hero h1,.end h2{font-size:28px;line-height:1.12}}
 @media (max-width:600px){
   .agent{grid-template-columns:56px minmax(0,1fr);column-gap:14px;padding:20px 20px 22px;border-radius:24px}
   .agent>.face{grid-row:1;width:56px;height:56px;border-radius:50%}

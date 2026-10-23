@@ -15,7 +15,8 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap">
+<link rel="stylesheet" href="site.css">
 <script>if (matchMedia('(min-width:600px)').matches) for (const [rel, as, href] of [['modulepreload', '', '%APP%/assets/%APP_JS%'], ['preload', 'style', '%APP%/assets/%APP_CSS%']]) { const l = document.createElement('link'); l.rel = rel; if (as) l.as = as; l.crossOrigin = ''; l.href = href; document.head.appendChild(l); }</script>
 <style>
 /* Simeon's site, laid out by the rules of Apple's product pages (apple.com/apple-creator-studio,
@@ -26,7 +27,6 @@
   --page:#fff; --soft:#f5f5f7; --ink:#1d1d1f; --ink2:#6e6e73; --ink3:#86868b; --line:#d2d2d7;
   --night:#000; --blue:#255a93; --blue-hover:#2b66a6; --app-blue:#255a93; /* the person's own chat bubble in the app (USER_BUBBLE_LIGHT, router-renderer-patch.mjs) */ --green:#34c759; --red:#ff3b30;
   --c-cos:#2c6bb3; --c-inbox:#2b8a80; --c-money:#cc6526; --c-growth:#6a58cf; --c-content:#c7457f; --c-sales:#36894a;
-  --font:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Inter","Helvetica Neue",Arial,sans-serif;
   --gutter:max(20px,4.6vw); /* the margin: 4.6% of the screen each side (the founder's screenshots, 3 October 2026) */
   --col:min(1840px,calc(100vw - 2 * var(--gutter)));
   --edge:max(var(--gutter),calc((100% - 1260px) / 2));
@@ -57,19 +57,19 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .bar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.82);-webkit-backdrop-filter:saturate(1.8) blur(20px);backdrop-filter:saturate(1.8) blur(20px);padding-top:env(safe-area-inset-top,0px)}
 .bar .wrap{display:flex;justify-content:space-between;align-items:center;height:clamp(52px,3.8vw,76px)}
 .bar .wordmark{--wm:clamp(118px,10.8vw,217px);width:var(--wm);margin-left:calc(var(--wm) * -85 / 1585);color:var(--ink);-webkit-mask-image:url(img/wordmark-labs.png);mask-image:url(img/wordmark-labs.png);aspect-ratio:1585/460} /* the bar says SimeonLabs (4 October 2026), the same letters at the same height; the image has 85/1585 of empty space on its left; the letters start on the column edge */
-.bar .acts{display:flex;align-items:center;justify-content:flex-end;gap:clamp(12px,.9vw,18px);font-size:clamp(14px,1vw,20px)}
-.bar .btn{height:clamp(28px,1.9vw,38px);padding:0 clamp(12px,.8vw,16px);font-size:clamp(14px,1vw,20px)}
+.bar .acts{display:flex;align-items:center;justify-content:flex-end;gap:clamp(12px,.9vw,18px);font-size:var(--t-nav)}
+.bar .btn{height:clamp(28px,1.9vw,38px);padding:0 clamp(12px,.8vw,16px);font-size:var(--t-nav)}
 
 
 /* Hero: one sentence on the left edge, two buttons under it, nothing else. */
 .hero{padding:clamp(40px,8.1vw,162px) 0 0;color:#000}
-.hero h1{max-width:13em;font-family:"Newsreader",Georgia,"Times New Roman",serif;font-size:clamp(30px,2.2vw,44px);line-height:1.08;font-weight:400;letter-spacing:-.02em;text-wrap:balance}
+.hero h1{max-width:13em;font-size:var(--t-display);line-height:1.1;font-weight:var(--w-title);letter-spacing:-.025em;text-wrap:balance}
 .hero .ctas{display:flex;gap:clamp(10px,.7vw,14px);flex-wrap:wrap;margin-top:clamp(18px,1.6vw,32px)}
 /* The headline and its buttons a size down (18 October 2026); the section titles, their lines, the statement and the closing title went down with them. */
-.hero .btn{height:clamp(40px,2.5vw,50px);padding:0 clamp(18px,1.3vw,26px);font-size:clamp(15px,.95vw,19px)}
+.hero .btn{height:var(--btn-h);padding:0 var(--btn-pad);font-size:var(--btn-font)}
 /* On a phone the hero breathes (4 October 2026): a long pause under the bar, a headline that leaves air on the right, and room before the app. */
 .hero .btn.go{display:none} /* the phone's one button: Download for iOS, no link until there is an app (6 October 2026) */
-@media (max-width:734px){.hero{padding-top:88px}.hero h1{font-size:28px;line-height:1.12;max-width:11.5em}.hero .ctas{margin-top:26px}.hero .ctas .btn{display:none}.hero .btn.go{display:inline-flex}}
+@media (max-width:734px){.hero{padding-top:88px}.hero h1{font-size:var(--t-display);line-height:1.1;max-width:11.5em;font-weight:var(--w-title);letter-spacing:-.025em}.hero .ctas{margin-top:26px}.hero .ctas .btn{display:none}.hero .btn.go{display:inline-flex}}
 .btn .apl{width:1.05em;height:1.05em;margin:-.18em .45em 0 -.1em;flex:none}
 .btn .dl{width:1em;height:1em;margin:0 -.15em 0 .4em;flex:none} /* Download for macOS, its arrow after the words (18 October 2026) */
 
@@ -81,7 +81,7 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 /* The statement between the app and the gallery, in the middle of its own white space: Apple's
    intro-statement setting, large and centred, the point in black and the rest in grey. */
 .statement{padding-block:clamp(96px,10vw,200px)}
-.statement p{max-width:30em;margin:0 auto;text-align:center;font-size:clamp(22px,1.5vw,30px);line-height:1.21;font-weight:400;letter-spacing:-.022em;color:var(--ink3);text-wrap:balance} /* the hero headline's size, weight and spacing */
+.statement p{max-width:30em;margin:0 auto;text-align:center;font-size:var(--t-title);line-height:1.21;font-weight:400;letter-spacing:-.022em;color:var(--ink3);text-wrap:balance} /* the hero headline's size, weight and spacing */
 .statement b{font-weight:400;color:#000}
 @supports (-webkit-background-clip:text) or (background-clip:text){
   .statement p,.statement b{color:transparent;background:linear-gradient(100deg,var(--ink3) 0 38%,#000 46% 54%,var(--ink3) 62% 100%) 0 0/250% 100%;-webkit-background-clip:text;background-clip:text;animation:stmt-light 6s linear infinite}
@@ -177,7 +177,7 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .slide{position:relative;flex:none;width:var(--cw);aspect-ratio:1260/760;border-radius:28px;overflow:hidden;scroll-snap-align:start;container:slide/inline-size;isolation:isolate}
 .slide.dark{background:var(--night);color:#f5f5f7}
 .slide.light{background:#fff;color:var(--ink)}
-.cap{position:absolute;z-index:6;font-size:2.5cqw;line-height:1.24;font-weight:600;letter-spacing:-.02em;text-wrap:balance}
+.cap{position:absolute;z-index:6;font-size:2.5cqw;line-height:1.24;font-weight:var(--w-title);letter-spacing:-.02em;text-wrap:balance}
 .cap.top{left:50%;top:7.5%;transform:translateX(-50%);width:min(64%,46ch);text-align:center}
 .cap.side{left:7%;top:50%;transform:translateY(-50%);width:36%}
 .cap .who{display:flex;align-items:center;gap:.5em;margin-bottom:.7em;font-size:.56em;font-weight:600;letter-spacing:0;opacity:.92}
@@ -435,9 +435,9 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .exc{position:relative;display:block;flex:none;box-sizing:border-box;width:var(--cw);aspect-ratio:1260/760;border-radius:28px;overflow:hidden;scroll-snap-align:start;container-type:size;background:#000;color:#fff;text-align:left;padding:0;border:0;cursor:pointer;font:inherit;letter-spacing:inherit}
 .exc.lt{background:#f5f5f7;color:var(--ink)}
 .exc:focus-visible{outline:3px solid var(--blue);outline-offset:3px}
-.exc-t{position:absolute;z-index:2;left:4cqw;right:4cqw;top:3.6cqw;margin:0;font-size:1.75cqw;line-height:1.4;font-weight:600;letter-spacing:-.01em;color:rgba(255,255,255,.62)}
+.exc-t{position:absolute;z-index:2;left:4cqw;right:4cqw;top:3.6cqw;margin:0;font-size:1.75cqw;line-height:1.4;font-weight:var(--w-title);letter-spacing:-.01em;color:rgba(255,255,255,.62)}
 .exc.lt .exc-t{color:var(--ink2)}
-.exc-t b{display:block;margin-top:.3cqw;font-size:2.9cqw;line-height:1.14;font-weight:600;letter-spacing:-.02em;color:#fff;text-wrap:balance}
+.exc-t b{display:block;margin-top:.3cqw;font-size:2.9cqw;line-height:1.14;font-weight:var(--w-title);letter-spacing:-.02em;color:#fff;text-wrap:balance}
 .exc.lt .exc-t b{color:var(--ink)}
 
 /* The conversation in glass over a card's photo, in the ads' bubbles (the founder, 12 October 2026: no blue):
@@ -623,7 +623,7 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .exctl button:disabled{background:#e8e8ed;color:#bcbcc0;cursor:default}
 .exctl svg{width:24px;height:24px}
 .exctl button:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
-@media (max-width:809.98px){.exrail{gap:12px}.exc{aspect-ratio:4/5.4;border-radius:24px}.exc-t{left:7cqw;right:7cqw;top:7cqw;font-size:3.6cqw}.exc-t b{font-size:6.2cqw;margin-top:.8cqw}
+@media (max-width:809.98px){.exrail{gap:12px}.exc{aspect-ratio:4/5.4;border-radius:24px}.exc-t{left:7cqw;right:7cqw;top:7cqw;font-size:3.6cqw;font-weight:var(--w-title)}.exc-t b{font-size:6.2cqw;margin-top:.8cqw;font-weight:var(--w-title)}
   .cv,.cv.l,.cv.l.low{left:7cqw;right:7cqw;width:auto;top:27cqw;bottom:auto;transform:none;font-size:2.7cqw;gap:1.5cqw}.cv p,.cv.l p{padding:1.9cqw 2.6cqw;border-radius:1.25cqw 3.4cqw 3.4cqw 3.4cqw;max-width:88%}.cv p.me,.cv.l p.me{border-radius:3.4cqw 3.4cqw 1.25cqw 3.4cqw}.cv .who img{width:4cqw;height:4cqw}.cv .step i{width:3cqw;height:3cqw}.cv .step svg{width:1.8cqw;height:1.8cqw}}
 @media (max-width:734px){
   .exrail{gap:14px}
@@ -631,17 +631,16 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 }
 
 /* Pricing, questions and the closing call: the same serif headline and pale panels as the trust section. */
-/* Pricing: Trial, Standard, Pro and Max on the pale panels (the founder, 4 October 2026), laid out simpler (18 October 2026): the name, the price in Switzer, how it is billed, a full-width button, then what the plan includes in a few words. */
-@font-face{font-family:"Switzer";src:url(fonts/switzer-400.woff2) format("woff2");font-weight:400;font-style:normal;font-display:swap}
+/* Pricing: Trial, Standard, Pro and Max on the pale panels (the founder, 4 October 2026), laid out simpler (18 October 2026): the name, the price at the display size, how it is billed, a full-width button, then what the plan includes in a few words. */
 .plans3{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:22px;margin-top:clamp(40px,4vw,80px)}
 .plan3{display:flex;flex-direction:column;padding:clamp(28px,2.4vw,44px) clamp(24px,2.1vw,40px);border-radius:28px;background:#fafafb}
-.plan3 h3{margin:0;font-size:clamp(16px,1.05vw,20px);font-weight:400;letter-spacing:-.01em;color:var(--ink2)}
-.plan3 .pr{margin-top:clamp(16px,1.4vw,26px);font-family:"Switzer",var(--font);font-weight:400;font-size:clamp(34px,2.4vw,48px);line-height:1;letter-spacing:-.03em;color:var(--ink)}
-.plan3 .pr small{font-family:var(--font);font-weight:400;font-size:clamp(15px,1vw,19px);letter-spacing:-.01em;color:var(--ink2);margin-left:6px}
-.plan3 .billed{margin:10px 0 0;font-size:clamp(15px,1vw,18px);letter-spacing:-.01em;color:var(--ink2)}
-.plan3 .btn{display:flex;align-items:center;justify-content:center;width:100%;margin-top:clamp(22px,2vw,36px);height:clamp(46px,2.9vw,54px);padding:0 20px;font-size:clamp(15px,1.05vw,18px)}
-.plan3 .inc{margin:clamp(26px,2.2vw,40px) 0 0;font-size:clamp(15px,1vw,18px);letter-spacing:-.01em;color:var(--ink)}
-.plan3 ul{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:12px;align-content:start;font-size:clamp(15px,1vw,18px);line-height:1.4;letter-spacing:-.01em;color:var(--ink2)}
+.plan3 h3{margin:0;font-size:var(--t-body);font-weight:400;letter-spacing:-.01em;color:var(--ink2)}
+.plan3 .pr{margin-top:clamp(16px,1.4vw,26px);font-weight:var(--w-title);font-size:var(--t-display);line-height:1;letter-spacing:-.025em;color:var(--ink)}
+.plan3 .pr small{font-family:var(--font);font-weight:400;font-size:var(--t-body);letter-spacing:-.01em;color:var(--ink2);margin-left:6px}
+.plan3 .billed{margin:10px 0 0;font-size:var(--t-body);letter-spacing:-.01em;color:var(--ink2)}
+.plan3 .btn{display:flex;align-items:center;justify-content:center;width:100%;margin-top:clamp(22px,2vw,36px);height:var(--btn-h);padding:0 20px;font-size:var(--btn-font)}
+.plan3 .inc{margin:clamp(26px,2.2vw,40px) 0 0;font-size:var(--t-body);letter-spacing:-.01em;color:var(--ink)}
+.plan3 ul{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:12px;align-content:start;font-size:var(--t-body);line-height:1.4;letter-spacing:-.01em;color:var(--ink2)}
 .plan3 li{display:flex;gap:12px;align-items:flex-start}
 .plan3 li::before{content:"";flex:none;width:.95em;height:.95em;margin-top:.24em;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236e6e73' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12.5 4.5 4.5L19 7'/%3E%3C/svg%3E") center/contain no-repeat}
 @supports (grid-template-rows:subgrid){.plans3{grid-template-rows:repeat(6,auto)}.plan3{display:grid;grid-template-rows:subgrid;row-gap:0;grid-row:span 6;align-content:start}}
@@ -650,16 +649,16 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .qa3{margin-top:clamp(40px,4vw,80px);padding:clamp(12px,1.2vw,24px) clamp(28px,3vw,56px);border-radius:28px;background:#fafafb}
 .qa3 details{border-top:1px solid #ececef}
 .qa3 details:first-child{border-top:0}
-.qa3 summary{list-style:none;display:flex;justify-content:space-between;align-items:center;gap:24px;padding:clamp(20px,1.7vw,30px) 0;cursor:pointer;font-size:clamp(18px,1.2vw,23px);letter-spacing:-.015em;color:#1d1d1f}
+.qa3 summary{list-style:none;display:flex;justify-content:space-between;align-items:center;gap:24px;padding:clamp(20px,1.7vw,30px) 0;cursor:pointer;font-size:var(--t-head);letter-spacing:-.015em;color:#1d1d1f}
 .qa3 summary::-webkit-details-marker{display:none}
 .qa3 summary::after{content:"";flex:none;width:clamp(28px,1.8vw,34px);height:clamp(28px,1.8vw,34px);border-radius:50%;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231d1d1f' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M12 6v12M6 12h12'/%3E%3C/svg%3E") center/50% no-repeat;box-shadow:0 0 0 1px rgba(0,0,0,.05);transition:transform .25s}
 .qa3 details[open] summary::after{transform:rotate(45deg)}
 .qa3 summary:focus-visible{outline:2px solid var(--blue);outline-offset:4px;border-radius:6px}
-.qa3 details p{margin:0;padding:0 0 clamp(22px,1.8vw,32px);max-width:46em;font-size:clamp(16px,1.02vw,19.5px);line-height:1.6;color:var(--ink2)}
+.qa3 details p{margin:0;padding:0 0 clamp(22px,1.8vw,32px);max-width:46em;font-size:var(--t-body);line-height:1.6;color:var(--ink2)}
 .close3{padding:clamp(120px,10vw,200px) 0 clamp(120px,10vw,200px);text-align:center}
-.close3 h2{margin:0 auto;font-family:"Newsreader",Georgia,"Times New Roman",serif;font-weight:400;font-size:clamp(34px,3.2vw,64px);line-height:1.02;letter-spacing:-.02em}
+.close3 h2{margin:0 auto;font-weight:var(--w-title);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em}
 .close3 .ctas{display:flex;justify-content:center;gap:clamp(10px,.7vw,14px);flex-wrap:wrap;margin-top:clamp(28px,2.4vw,44px)}
-.close3 .btn{height:clamp(40px,2.5vw,50px);padding:0 clamp(18px,1.3vw,26px);font-size:clamp(15px,.95vw,19px)}
+.close3 .btn{height:var(--btn-h);padding:0 var(--btn-pad);font-size:var(--btn-font)}
 .close3 .btn.go{display:none} /* on a phone the close offers Download for iOS, as the top does, and Request a demo beside it (the founder, 12 October 2026) */
 @media (max-width:734px){.close3 .ctas .btn:not(.ghost):not(.go){display:none}.close3 .btn.go{display:inline-flex;order:-1}}
 
@@ -667,13 +666,13 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .trust{padding:clamp(100px,9vw,170px) 0 clamp(40px,4vw,80px)}
 #team+.trust{padding-top:clamp(56px,4.4vw,88px)}
 .trust-top{display:grid;grid-template-columns:1fr 1fr;gap:clamp(24px,5vw,96px);align-items:start}
-.trust h2{margin:0;font-family:"Newsreader",Georgia,"Times New Roman",serif;font-weight:400;font-size:clamp(28px,2.2vw,44px);line-height:1.08;letter-spacing:-.02em;max-width:11em;text-wrap:balance}
-.trust-top p{margin:clamp(4px,.45vw,9px) 0 0;max-width:30em;font-size:clamp(16px,1vw,19px);line-height:1.5;letter-spacing:-.01em;color:var(--ink2)}
+.trust h2{margin:0;font-weight:var(--w-title);font-size:var(--t-title);line-height:1.15;letter-spacing:-.02em;max-width:11em;text-wrap:balance}
+.trust-top p{margin:clamp(4px,.45vw,9px) 0 0;max-width:30em;font-size:var(--t-lead);line-height:1.5;letter-spacing:-.01em;color:var(--ink2)}
 .tpanel{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,3.6fr);gap:24px;margin-top:clamp(40px,4vw,80px);padding:clamp(28px,3vw,56px);border-radius:28px;background:#fafafb}
 .tpanel+.tpanel{margin-top:22px}
-.tpanel h3{margin:0;font-size:clamp(20px,1.35vw,26px);font-weight:500;color:#3a3a3c;letter-spacing:-.02em;line-height:1.3}
+.tpanel h3{margin:0;font-size:var(--t-head);font-weight:500;color:#3a3a3c;letter-spacing:-.02em;line-height:1.3}
 .tgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(18px,1.7vw,30px) 24px;margin:0;padding:0;list-style:none}
-.tgrid li{display:flex;align-items:center;gap:clamp(12px,.9vw,18px);font-size:clamp(16px,1.02vw,19.5px);letter-spacing:-.01em;min-width:0;color:#3a3a3c}
+.tgrid li{display:flex;align-items:center;gap:clamp(12px,.9vw,18px);font-size:var(--t-body);letter-spacing:-.01em;min-width:0;color:#3a3a3c}
 .tgrid .ti{flex:none;width:clamp(40px,2.45vw,48px);height:clamp(40px,2.45vw,48px);border-radius:12px;background:#fff;display:grid;place-items:center;box-shadow:0 0 0 1px rgba(0,0,0,.04),0 1px 2px rgba(0,0,0,.04)}
 .tgrid .ti svg{width:46%;height:46%;color:#48484a}
 .tgrid .ti svg.gd{width:72%;height:72%}
@@ -885,7 +884,7 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .end .wordmark{width:120px;margin:0 auto;color:var(--ink)}
 .end h2{margin-top:16px;font-size:clamp(36px,4.6vw,56px);line-height:1.07;letter-spacing:-.035em}
 .end .btn{margin-top:30px}
-footer{background:var(--soft);padding:20px 0 calc(40px + env(safe-area-inset-bottom,0px));font-size:12px;color:var(--ink2)}
+footer{background:var(--soft);padding:20px 0 calc(40px + env(safe-area-inset-bottom,0px));font-size:var(--t-tiny);color:var(--ink2)}
 footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
 footer nav{display:flex;gap:18px}
 footer a{color:inherit;text-decoration:none}

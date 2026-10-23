@@ -81,33 +81,33 @@ SEARCH = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5
 
 CONN_CSS = """
 /* The opening: famous apps' icons drifting around a centred headline, as in the founder's reference. */
-.open{position:relative;height:clamp(600px,50vw,960px);overflow:hidden}
+.open{position:relative;height:clamp(520px,42vw,800px);overflow:hidden}
 .open .words{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 var(--gutter);text-align:center}
-.open .eyebrow{font-size:clamp(15px,1vw,18px);font-weight:500;color:var(--ink)}
-.open h1{margin-top:14px;max-width:13em;font-family:var(--serif);font-weight:400;font-size:clamp(34px,3.2vw,64px);line-height:1.08;letter-spacing:-.02em;text-wrap:balance} /* the home page's closing title */
-.open p{margin-top:16px;max-width:27em;font-size:clamp(16px,1.1vw,20px);line-height:1.5;letter-spacing:-.01em;color:#424245;text-wrap:balance}
+.open .eyebrow{font-size:var(--t-body);font-weight:var(--w-title);color:var(--ink)}
+.open h1{margin-top:14px;max-width:13em;font-weight:var(--w-title);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em;text-wrap:balance} /* the home page's closing title */
+.open p{margin-top:16px;max-width:27em;font-size:var(--t-lead);line-height:1.5;letter-spacing:-.01em;color:#424245;text-wrap:balance}
 .open .ctas{display:flex;justify-content:center;flex-wrap:wrap;gap:12px;margin-top:clamp(22px,2vw,34px)}
-.open .btn{height:clamp(40px,2.5vw,50px);padding:0 clamp(18px,1.3vw,26px);font-size:clamp(15px,.95vw,19px)} /* the home page's buttons */
+.open .btn{height:var(--btn-h);padding:0 var(--btn-pad);font-size:var(--btn-font)} /* the home page's buttons */
 .open .btn .dl{width:1em;height:1em;margin:0 -.15em 0 .4em;flex:none}
 .btn.ghost{background:#f2f2f2;color:#000}
 .btn.ghost:hover{background:#e8e8e8}
 .float{position:absolute;left:var(--x);top:var(--y);transform:translate(-50%,-50%);animation:drift var(--t) ease-in-out infinite alternate}
-.float .app{--as:clamp(64px,6.6vw,124px);--ring:transparent;box-shadow:0 0 0 1px rgba(0,0,0,.05),0 18px 40px -16px rgba(0,0,0,.22)}
+.float .app{--as:clamp(56px,5.2vw,100px);--ring:transparent;box-shadow:0 0 0 1px rgba(0,0,0,.05),0 18px 40px -16px rgba(0,0,0,.22)}
 @keyframes drift{from{translate:0 -7px}to{translate:0 7px}}
 
 /* Find an app: the title and the search, the kinds as words (the chosen one black), the apps as cards. */
 .find{padding:clamp(48px,5vw,100px) 0 0}
 .find-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:20px 40px}
-.find-head h2{font-family:var(--serif);font-weight:400;font-size:clamp(28px,2.2vw,44px);line-height:1.08;letter-spacing:-.02em} /* the home page's section titles */
+.find-head h2{font-weight:var(--w-title);font-size:var(--t-title);line-height:1.15;letter-spacing:-.02em} /* the home page's section titles */
 .search{position:relative;flex:1;max-width:620px;min-width:min(100%,280px)}
-.search input{display:block;width:100%;height:48px;padding:0 50px 0 22px;border:1px solid #e3e3e8;border-radius:99px;background:var(--page);color:var(--ink);font:inherit;font-size:16px;letter-spacing:-.01em;outline:none;-webkit-appearance:none;appearance:none;transition:border-color .2s,box-shadow .2s}
+.search input{display:block;width:100%;height:48px;padding:0 50px 0 22px;border:1px solid #e3e3e8;border-radius:99px;background:var(--page);color:var(--ink);font:inherit;font-size:var(--t-field);letter-spacing:-.01em;outline:none;-webkit-appearance:none;appearance:none;transition:border-color .2s,box-shadow .2s}
 .search input:focus{border-color:#c7c7cc;box-shadow:0 4px 14px rgba(0,0,0,.05)} /* no blue ring */
 .search input::placeholder{color:#86868b;opacity:1}
 .search input::-webkit-search-decoration,.search input::-webkit-search-cancel-button{-webkit-appearance:none}
 .search svg{position:absolute;right:20px;top:50%;width:18px;height:18px;transform:translateY(-50%);color:#1d1d1f;pointer-events:none}
 .kinds{display:flex;gap:clamp(20px,2vw,34px);margin-top:clamp(24px,2.4vw,40px);overflow-x:auto;scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 56px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 56px),transparent)}
 .kinds::-webkit-scrollbar{display:none}
-.kinds button{flex:none;padding:6px 0;border:0;background:none;color:#86868b;font:inherit;font-size:clamp(16px,1.1vw,20px);letter-spacing:-.01em;white-space:nowrap;cursor:pointer;transition:color .15s}
+.kinds button{flex:none;padding:6px 0;border:0;background:none;color:#86868b;font:inherit;font-size:var(--t-body);letter-spacing:-.01em;white-space:nowrap;cursor:pointer;transition:color .15s}
 .kinds button:hover,.kinds button[aria-pressed="true"]{color:var(--ink)}
 .kinds button:last-child{margin-right:56px}
 .kinds button:focus-visible,.more-apps:focus-visible,.step:focus-visible{outline:2px solid #1d1d1f;outline-offset:3px;border-radius:6px}
@@ -116,25 +116,25 @@ CONN_CSS = """
 .list li[hidden]{display:none}
 .list .app{--as:60px;--ring:transparent}
 .list .tx{min-width:0}
-.list b{display:block;font-size:clamp(17px,1.15vw,21px);font-weight:500;letter-spacing:-.015em}
-.list b small{margin-left:8px;font-size:12px;font-weight:500;letter-spacing:0;color:#86868b}
-.list .tx>span{display:block;margin-top:3px;font-size:clamp(14px,.95vw,17px);letter-spacing:-.01em;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.list b{display:block;font-size:var(--t-head);font-weight:var(--w-title);letter-spacing:-.015em}
+.list b small{margin-left:8px;font-size:var(--t-tiny);font-weight:var(--w-title);letter-spacing:0;color:#86868b}
+.list .tx>span{display:block;margin-top:3px;font-size:var(--t-body);letter-spacing:-.01em;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .more-wrap{display:flex;justify-content:center;margin-top:clamp(36px,3.6vw,60px)}
 .more-wrap[hidden],.none-apps[hidden]{display:none}
-.more-apps{height:46px;padding:0 26px;border:0;font:inherit;font-size:15px;cursor:pointer}
-.none-apps{margin-top:28px;font-size:16px;color:var(--ink2)}
+.more-apps{height:var(--btn-h);padding:0 26px;border:0;font:inherit;font-size:var(--btn-font);cursor:pointer}
+.none-apps{margin-top:28px;font-size:var(--t-body);color:var(--ink2)}
 .said{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 
 /* Connect an app in a few clicks: three steps, the chosen one black with a line filling under it, beside the
    Mac app at that step (a painting behind it, as on the home page's cards). */
 .how{padding:clamp(110px,10vw,190px) 0 clamp(90px,8vw,150px)}
-.how h2{text-align:center;font-family:var(--serif);font-weight:400;font-size:clamp(34px,3.2vw,64px);line-height:1.08;letter-spacing:-.02em}
+.how h2{text-align:center;font-weight:var(--w-title);font-size:var(--t-title);line-height:1.15;letter-spacing:-.02em}
 .how-grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:clamp(32px,5vw,96px);align-items:center;margin-top:clamp(40px,4vw,72px)}
 .steps{margin:0;padding:0;list-style:none}
 .step{position:relative;display:block;width:100%;padding:26px 0 24px;border:0;border-bottom:1px solid #e5e5ea;background:none;color:var(--ink2);font:inherit;text-align:left;cursor:pointer}
-.step .n{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:#aeaeb2;color:#fff;font-size:14px;transition:background .3s}
-.step b{display:block;margin-top:14px;font-size:clamp(18px,1.3vw,23px);font-weight:500;letter-spacing:-.015em;transition:color .3s}
-.step .d{display:block;margin-top:8px;max-width:32em;font-size:clamp(15px,1vw,18px);line-height:1.5;letter-spacing:-.01em}
+.step .n{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:#aeaeb2;color:#fff;font-size:var(--t-small);transition:background .3s}
+.step b{display:block;margin-top:14px;font-size:var(--t-head);font-weight:var(--w-title);letter-spacing:-.015em;transition:color .3s}
+.step .d{display:block;margin-top:8px;max-width:32em;font-size:var(--t-body);line-height:1.5;letter-spacing:-.01em}
 .step[aria-current="step"] .n{background:#1d1d1f}
 .step[aria-current="step"] b{color:var(--ink)}
 .step[aria-current="step"] .d{color:#424245}
@@ -200,9 +200,9 @@ CONN_CSS = """
 
 @media (max-width:1068px){.list{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:734px){
-  .open{height:640px}
+  .open{height:600px}
   .float.side{display:none}
-  .float .app{--as:58px}
+  .float .app{--as:52px}
   .list{grid-template-columns:minmax(0,1fr);gap:12px}
   .how-grid{grid-template-columns:minmax(0,1fr)}
   .scene{order:-1} /* the app above the steps, so a tap shows its step */
@@ -334,6 +334,7 @@ def steps(assets):
 
 
 def build(out=OUT):
+    teams.copy_site_css(out)
     apps, kinds = catalogue()
     root = os.path.join(out, "connectors")
     shutil.rmtree(root, ignore_errors=True)

@@ -1,0 +1,23 @@
+/* The website's type, one for every page (the founder, 23 October 2026: "re-use the app's font",
+   "keep the size small"): the apps' own font, Apple's system font (SF Pro on a Mac or an iPhone,
+   as the Mac app and its web window draw it; Inter elsewhere), one small scale of sizes, and medium
+   for titles, never bold. Every page (the home page, Teams, Connectors, the legal pages) loads this
+   before its own styles and sizes its words only with these. The illustrations of the app inside a
+   page keep their own measures. */
+:root{
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Inter","Helvetica Neue",Arial,sans-serif;
+  --t-display:clamp(28px,2vw,40px);  /* a page's headline, the closing call, a price */
+  --t-title:clamp(22px,1.6vw,30px);  /* a section's title, a statement */
+  --t-head:clamp(17px,1.15vw,20px);  /* a card's, a step's or a question's title */
+  --t-lead:clamp(16px,1.05vw,19px);  /* the line under a title */
+  --t-body:clamp(15px,1vw,17px);     /* running text, a card's line, a tab */
+  --t-small:13px;                    /* a label over a title, a note */
+  --t-tiny:12px;                     /* the footer, fine print */
+  --t-nav:clamp(14px,1vw,18px);      /* the bar's links and button */
+  --t-field:16px;                    /* a text field: 16 px, so an iPhone does not zoom into it */
+  --w-title:500;                     /* titles: medium, as the apps' */
+  --btn-h:clamp(40px,2.5vw,48px);
+  --btn-pad:clamp(18px,1.3vw,24px);
+  --btn-font:clamp(15px,.95vw,17px);
+}
+body{font-family:var(--font)}
