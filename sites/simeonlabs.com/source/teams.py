@@ -32,6 +32,8 @@ public/; it also runs alone, needing nothing but Python:
 """
 import hashlib, html, json, os, re, shutil, sys, unicodedata
 
+from versioning import version_style
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(HERE, "..", "..", ".."))
 OUT = os.path.join(HERE, "..", "public")
@@ -252,8 +254,8 @@ def check(packs):
 CSS = """
 :root{
   --page:#fff; --soft:#f5f5f7; --ink:#1d1d1f; --ink2:#6e6e73; --ink3:#86868b; --line:#e5e5ea; --blue:%BLUE%;
-  --gutter:max(20px,4.6*var(--vw));
-  --col:min(1840px,calc(100*var(--vw) - 2 * var(--gutter))); /* the home page's column */
+  --gutter:max(20px,4.6*var(--vw,1vw));
+  --col:min(1840px,calc(100*var(--vw,1vw) - 2 * var(--gutter))); /* the home page's column */
   color-scheme:light;
 }
 *{box-sizing:border-box}
@@ -269,12 +271,12 @@ a{color:inherit}
 
 /* The bar, as on the home page; the name goes home. */
 .bar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.82);-webkit-backdrop-filter:saturate(1.8) blur(20px);backdrop-filter:saturate(1.8) blur(20px);padding-top:env(safe-area-inset-top,0px)}
-.bar .wrap{display:flex;justify-content:space-between;align-items:center;height:clamp(52px,3.8*var(--vw),76px)}
-.bar .wordmark{--wm:clamp(118px,10.8*var(--vw),217px);display:block;width:var(--wm);margin-left:calc(var(--wm) * -85 / 1585);background:var(--ink);-webkit-mask:url(/img/wordmark-labs.png) center/contain no-repeat;mask:url(/img/wordmark-labs.png) center/contain no-repeat;aspect-ratio:1585/460}
-.bar .acts{display:flex;align-items:center;gap:clamp(14px,1.2*var(--vw),22px);font-size:var(--t-nav)}
+.bar .wrap{display:flex;justify-content:space-between;align-items:center;height:clamp(52px,3.8*var(--vw,1vw),76px)}
+.bar .wordmark{--wm:clamp(118px,10.8*var(--vw,1vw),217px);display:block;width:var(--wm);margin-left:calc(var(--wm) * -85 / 1585);background:var(--ink);-webkit-mask:url(/img/wordmark-labs.png) center/contain no-repeat;mask:url(/img/wordmark-labs.png) center/contain no-repeat;aspect-ratio:1585/460}
+.bar .acts{display:flex;align-items:center;gap:clamp(14px,1.2*var(--vw,1vw),22px);font-size:var(--t-nav)}
 .bar .acts>a:not(.btn){text-decoration:none;color:var(--ink2)}
 .bar .acts>a:not(.btn):hover,.bar .acts>a[aria-current]{color:var(--ink)}
-.bar .btn{height:clamp(28px,1.9*var(--vw),38px);padding:0 clamp(12px,.8*var(--vw),16px);font-size:var(--t-nav)}
+.bar .btn{height:clamp(28px,1.9*var(--vw,1vw),38px);padding:0 clamp(12px,.8*var(--vw,1vw),16px);font-size:var(--t-nav)}
 @media (max-width:480px){.bar .acts{gap:16px;font-size:var(--t-nav)}.bar .acts .btn{display:none}} /* a phone has room for Teams and Connectors, and no Mac to download to */
 
 /* Faces in a row, each over the last, ringed in the ground they sit on. */
@@ -294,7 +296,7 @@ a{color:inherit}
 .app.letter{color:#3a3a3c;font-size:calc(var(--as) * .46);font-weight:600;letter-spacing:0;line-height:1}
 
 /* Add to Simeon, on a team's page and in its window on /teams. */
-.add{display:flex;flex-direction:column;align-items:center;margin-top:clamp(18px,1.6*var(--vw),32px)}
+.add{display:flex;flex-direction:column;align-items:center;margin-top:clamp(18px,1.6*var(--vw,1vw),32px)}
 .add .btn{height:var(--btn-h);padding:0 var(--btn-pad);font-size:var(--btn-font)} /* the home page's buttons */
 .add .btn svg{width:1em;height:1em;flex:none;margin-left:-.15em}
 .add-note{margin:0}
@@ -304,7 +306,7 @@ a{color:inherit}
 .add .btn .apl{width:1.05em;height:1.05em;margin:-.18em .45em 0 -.1em;flex:none}
 .add-note .go{display:none}
 @media (max-width:734px){.add-note .btn:not(.go){display:none}.add-note .go{display:inline-flex}} /* a phone: Download for iOS, as on the home page */
-footer{margin-top:clamp(80px,8*var(--vw),140px);background:var(--soft);padding:20px 0 calc(40px + env(safe-area-inset-bottom,0px));font-size:var(--t-tiny);color:var(--ink2)}
+footer{margin-top:clamp(80px,8*var(--vw,1vw),140px);background:var(--soft);padding:20px 0 calc(40px + env(safe-area-inset-bottom,0px));font-size:var(--t-tiny);color:var(--ink2)}
 footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
 footer nav{display:flex;gap:18px}
 footer a{color:var(--ink2);text-decoration:none}
@@ -319,9 +321,9 @@ INDEX_CSS = """
    starts under the headline's first letter and the last ends at the column's right edge: --n photos, each
    overlapping the next by .3 of its width, make the column ((--n - 1) × .7 + 1 widths). */
 .hero h1 br.ph{display:none} /* a phone keeps the headline's first line, "A team of agents", as it was */
-html{scroll-behavior:smooth;scroll-padding-top:clamp(72px,4.6*var(--vw),96px)} /* See all teams lands below the bar */
+html{scroll-behavior:smooth;scroll-padding-top:clamp(72px,4.6*var(--vw,1vw),96px)} /* See all teams lands below the bar */
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
-.fan{--w:calc(var(--col) / ((var(--n) - 1) * .7 + 1));--step:calc(var(--w) * .7);position:relative;height:calc(var(--w) * 1.36 + 100px);margin-top:clamp(36px,3.4*var(--vw),64px);overflow:hidden}
+.fan{--w:calc(var(--col) / ((var(--n) - 1) * .7 + 1));--step:calc(var(--w) * .7);position:relative;height:calc(var(--w) * 1.36 + 100px);margin-top:clamp(36px,3.4*var(--vw,1vw),64px);overflow:hidden}
 .shot{position:absolute;top:calc(var(--w) * .05 + 30px);left:calc(50% - var(--w) / 2 + var(--o) * var(--step));z-index:var(--z);width:var(--w);aspect-ratio:4 / 5;border:6px solid #fff;border-radius:24px;overflow:hidden;background:var(--soft);
   box-shadow:0 0 0 1px rgba(0,0,0,.06),0 14px 34px -12px rgba(0,0,0,.28);transform:translateY(calc(var(--y) + var(--lift,0px))) rotate(var(--r)) scale(var(--s));transition:transform .35s cubic-bezier(.2,.7,.2,1)}
 .shot:hover,.shot:focus-visible{--lift:-10px}
@@ -331,15 +333,15 @@ html{scroll-behavior:smooth;scroll-padding-top:clamp(72px,4.6*var(--vw),96px)} /
 /* The marketplace ("more Apple style", 23 October 2026): a light grey band as on the Apple Store, white chips
    and a white search field on it (no blue ring), and the teams as the Store's white cards, which rise a little
    under the pointer: the faces, the kind of work, the name, what it is for, then five of its apps. */
-.market{padding:clamp(72px,6*var(--vw),120px) 0 clamp(110px,9*var(--vw),170px);background:linear-gradient(180deg,var(--page) 0,var(--soft) clamp(170px,14*var(--vw),280px),var(--soft) calc(100% - clamp(110px,9*var(--vw),170px)),var(--page) 100%)} /* white fading into the grey and back */
-.market+.trust{padding-top:clamp(24px,2.4*var(--vw),48px)}
+.market{padding:clamp(72px,6*var(--vw,1vw),120px) 0 clamp(110px,9*var(--vw,1vw),170px);background:linear-gradient(180deg,var(--page) 0,var(--soft) clamp(170px,14*var(--vw,1vw),280px),var(--soft) calc(100% - clamp(110px,9*var(--vw,1vw),170px)),var(--page) 100%)} /* white fading into the grey and back */
+.market+.trust{padding-top:clamp(24px,2.4*var(--vw,1vw),48px)}
 .list-title{max-width:var(--title-max);font-weight:var(--w-display);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em;text-wrap:pretty} /* the home page's section titles: the headline's size */
-.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:clamp(18px,1.5*var(--vw),28px)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:clamp(18px,1.5*var(--vw,1vw),28px)}
 .chip{flex:none;height:36px;padding:0 16px;border:0;border-radius:99px;background:#fff;color:var(--ink);font:inherit;font-size:var(--t-body);letter-spacing:-.01em;cursor:pointer;box-shadow:0 0 0 1px rgba(0,0,0,.06);transition:background .2s,color .2s,box-shadow .2s}
 .chip:hover{box-shadow:0 0 0 1px rgba(0,0,0,.16)}
 .chip[aria-pressed="true"]{background:#1d1d1f;color:#fff;box-shadow:none}
 .chip:focus-visible,.none button:focus-visible,.pack:focus-visible{outline:2px solid #1d1d1f;outline-offset:3px}
-.find{position:relative;margin-top:clamp(14px,1.2*var(--vw),22px)}
+.find{position:relative;margin-top:clamp(14px,1.2*var(--vw,1vw),22px)}
 .find svg{position:absolute;left:16px;top:50%;width:17px;height:17px;transform:translateY(-50%);color:#86868b;pointer-events:none}
 .find input{display:block;width:100%;height:44px;padding:0 16px 0 42px;border:0;border-radius:12px;background:#fff;color:var(--ink);font:inherit;font-size:var(--t-field);letter-spacing:-.01em;outline:none;box-shadow:0 0 0 1px rgba(0,0,0,.06);-webkit-appearance:none;appearance:none;transition:box-shadow .2s}
 .find input:focus{box-shadow:0 0 0 1px rgba(0,0,0,.22),0 4px 14px rgba(0,0,0,.06)}
@@ -350,15 +352,15 @@ html{scroll-behavior:smooth;scroll-padding-top:clamp(72px,4.6*var(--vw),96px)} /
 .none button{padding:0;border:0;background:none;font:inherit;color:var(--blue);cursor:pointer}
 .packs>li[hidden]{display:none}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-.packs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;margin:clamp(24px,2.2*var(--vw),40px) 0 0;padding:0;list-style:none}
-.pack{display:flex;flex-direction:column;height:100%;padding:clamp(24px,2*var(--vw),36px) clamp(24px,2*var(--vw),36px) clamp(20px,1.6*var(--vw),28px);border-radius:18px;background:#fff;text-decoration:none;
+.packs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;margin:clamp(24px,2.2*var(--vw,1vw),40px) 0 0;padding:0;list-style:none}
+.pack{display:flex;flex-direction:column;height:100%;padding:clamp(24px,2*var(--vw,1vw),36px) clamp(24px,2*var(--vw,1vw),36px) clamp(20px,1.6*var(--vw,1vw),28px);border-radius:18px;background:#fff;text-decoration:none;
   box-shadow:2px 4px 12px rgba(0,0,0,.08);transition:box-shadow .3s cubic-bezier(0,0,.5,1),transform .3s cubic-bezier(0,0,.5,1)} /* the Apple Store's cards */
 .pack:hover{box-shadow:2px 4px 16px rgba(0,0,0,.16);transform:scale3d(1.01,1.01,1.01)}
-.pack .faces{--ring:#fff;--fs:clamp(40px,2.8*var(--vw),52px)}
-.pack .kind{display:block;margin-top:clamp(18px,1.5*var(--vw),26px);font-size:var(--t-small);font-weight:var(--w-title);letter-spacing:.01em;color:#86868b}
+.pack .faces{--ring:#fff;--fs:clamp(40px,2.8*var(--vw,1vw),52px)}
+.pack .kind{display:block;margin-top:clamp(18px,1.5*var(--vw,1vw),26px);font-size:var(--t-small);font-weight:var(--w-title);letter-spacing:.01em;color:#86868b}
 .pack h2{margin-top:4px;font-size:var(--t-head);font-weight:var(--w-title);line-height:1.2;letter-spacing:-.015em;color:var(--ink)}
 .pack p{margin-top:8px;flex:1;font-size:var(--t-body);line-height:1.47;letter-spacing:-.01em;color:var(--ink2)}
-.pack .foot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:clamp(20px,1.7*var(--vw),28px);padding-top:clamp(14px,1.2*var(--vw),18px);border-top:1px solid #ececef}
+.pack .foot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:clamp(20px,1.7*var(--vw,1vw),28px);padding-top:clamp(14px,1.2*var(--vw,1vw),18px);border-top:1px solid #ececef}
 .pack .apps{--as:24px;--ring:#fff}
 .pack .apps .plus{margin-left:8px;font-size:var(--t-small);letter-spacing:0;color:#86868b}
 .pack .open{flex:none;display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#1d1d1f;color:#fff;transition:transform .3s}
@@ -369,20 +371,20 @@ html{scroll-behavior:smooth;scroll-padding-top:clamp(72px,4.6*var(--vw),96px)} /
    between hairlines (face, name and job, what it does, the apps it connects), then Add to Simeon alone. The long
    instructions and the quotes stay on the team's page. A click beside it, Escape or the close button closes it. */
 html:has(dialog[open]){overflow:hidden}
-.sheet{width:min(920px,calc(100*var(--vw) - 48px));max-width:none;max-height:calc(100*var(--dvh) - 48px);margin:auto;padding:0;border:0;border-radius:22px;background:var(--page);color:var(--ink);overflow:hidden;box-shadow:0 30px 80px -20px rgba(0,0,0,.35)}
+.sheet{width:min(920px,calc(100*var(--vw,1vw) - 48px));max-width:none;max-height:calc(100*var(--dvh,1dvh) - 48px);margin:auto;padding:0;border:0;border-radius:22px;background:var(--page);color:var(--ink);overflow:hidden;box-shadow:0 30px 80px -20px rgba(0,0,0,.35)}
 .sheet::backdrop{background:rgba(0,0,0,.4)}
 .sheet[open]{animation:sheet-in .26s cubic-bezier(.2,.7,.2,1)}
 .sheet[open]::backdrop{animation:fade-in .26s ease}
 @keyframes sheet-in{from{opacity:0;transform:translateY(10px) scale(.985)}}
 @keyframes fade-in{from{opacity:0}}
-.sheet-in{max-height:calc(100*var(--dvh) - 48px);overflow:auto;overscroll-behavior:contain;outline:none;padding:48px 56px 44px}
+.sheet-in{max-height:calc(100*var(--dvh,1dvh) - 48px);overflow:auto;overscroll-behavior:contain;outline:none;padding:48px 56px 44px}
 .sheet .close{position:absolute;top:18px;right:18px;z-index:2;display:grid;place-items:center;width:30px;height:30px;padding:0;border:0;border-radius:50%;background:#e8e8ed;color:#1d1d1f;cursor:pointer;transition:background .2s}
 .sheet .close:hover{background:#dcdce1}
 .sheet .close svg{width:12px;height:12px}
 .sheet .close:focus-visible{outline:2px solid #1d1d1f;outline-offset:2px}
 .sheet .team-title{max-width:var(--title-max)}
 @media (max-width:734px){
-  .sheet{width:calc(100*var(--vw));height:100dvh;max-height:100dvh;margin:0;border-radius:0;box-shadow:none} /* a phone that opens one anyway: the whole screen */
+  .sheet{width:calc(100*var(--vw,1vw));height:100dvh;max-height:100dvh;margin:0;border-radius:0;box-shadow:none} /* a phone that opens one anyway: the whole screen */
   .sheet-in{height:100dvh;max-height:100dvh;padding:calc(env(safe-area-inset-top,0px) + 72px) 20px calc(env(safe-area-inset-bottom,0px) + 32px)}
   .sheet .close{top:calc(env(safe-area-inset-top,0px) + 16px);right:16px;width:34px;height:34px}
 }
@@ -390,7 +392,7 @@ html:has(dialog[open]){overflow:hidden}
 @media (prefers-reduced-motion:reduce){.sheet[open],.sheet[open]::backdrop{animation:none}}
 footer{margin-top:0;font-size:var(--t-tiny)} /* the closing call above leaves the room, as on the home page */
 @media (max-width:1068px){.packs{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media (max-width:734px){.hero h1 br.ph{display:inline}.list-title{max-width:none;text-wrap:wrap}.packs{grid-template-columns:1fr;gap:14px}.fan{--w:clamp(150px,44*var(--vw),240px)}.shot{border-width:4px;border-radius:18px}
+@media (max-width:734px){.hero h1 br.ph{display:inline}.list-title{max-width:none;text-wrap:wrap}.packs{grid-template-columns:1fr;gap:14px}.fan{--w:clamp(150px,44*var(--vw,1vw),240px)}.shot{border-width:4px;border-radius:18px}
   .chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-inline:calc(-1 * var(--gutter));padding:2px var(--gutter)}.chips::-webkit-scrollbar{display:none}}
 @media (prefers-reduced-motion:reduce){.shot{transition:none}}
 """
@@ -401,10 +403,10 @@ footer{margin-top:0;font-size:var(--t-tiny)} /* the closing call above leaves th
 TEAM_CSS = """
 .team-title{font-weight:var(--w-display);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em;text-wrap:pretty} /* the pages' headline */
 .team .intro{margin-top:10px;max-width:40em;font-size:var(--t-lead);line-height:1.47;letter-spacing:-.01em;color:#515154}
-.team .acts{display:flex;margin-top:clamp(18px,1.6*var(--vw),26px)} /* as under the pages' headline */
+.team .acts{display:flex;margin-top:clamp(18px,1.6*var(--vw,1vw),26px)} /* as under the pages' headline */
 .team .add{margin-top:0;align-items:flex-start}
 .team .add .btn{height:var(--btn-h);padding:0 var(--btn-pad);font-size:var(--btn-font)}
-.roster{margin:clamp(28px,2.4*var(--vw),40px) 0 0;padding:0;list-style:none;border-top:1px solid #e8e8ed}
+.roster{margin:clamp(28px,2.4*var(--vw,1vw),40px) 0 0;padding:0;list-style:none;border-top:1px solid #e8e8ed}
 .roster li{display:grid;grid-template-columns:44px 140px minmax(0,1fr) auto;align-items:center;column-gap:24px;padding:16px 0;border-bottom:1px solid #e8e8ed}
 .roster img,.roster .noface{width:44px;height:44px;border-radius:50%;object-fit:cover}
 .roster .noface{font-size:15px}
@@ -425,7 +427,7 @@ TEAM_CSS = """
 # A team's own page, for a phone (the founder, 23 October 2026: "for iphone it needs to be a full page... not an
 # iframe"): the site's bar, All teams to go back, then the team as in its window, and the footer.
 TEAM_PAGE_CSS = """
-.team-page{padding:28px 0 clamp(72px,7*var(--vw),120px)}
+.team-page{padding:28px 0 clamp(72px,7*var(--vw,1vw),120px)}
 .team-page .back{display:inline-flex;align-items:center;gap:4px;margin:0 0 30px -2px;font-size:var(--t-body);color:var(--ink2);text-decoration:none}
 .team-page .back:hover{color:var(--ink)}
 .team-page .back svg{width:16px;height:16px}
@@ -841,8 +843,8 @@ def build(out=OUT):
     assets = Assets(root)
     for pack in packs:
         os.makedirs(f"{root}/{pack['id']}")
-        open(f"{root}/{pack['id']}/index.html", "w", encoding="utf-8").write(team_page(pack, assets))
-    open(f"{root}/index.html", "w", encoding="utf-8").write(index_page(packs, assets))
+        open(f"{root}/{pack['id']}/index.html", "w", encoding="utf-8").write(version_style(team_page(pack, assets), out))
+    open(f"{root}/index.html", "w", encoding="utf-8").write(version_style(index_page(packs, assets), out))
     letters = sorted(k for k, how in assets.drawn.items() if how == "letter")
     marks = sorted(k for k, how in assets.drawn.items() if how == "mark")
     print(f"teams pages written to {os.path.abspath(root)}: {len(packs)} pack(s)")

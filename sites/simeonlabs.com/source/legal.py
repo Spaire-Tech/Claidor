@@ -12,6 +12,8 @@ after it rewrites public/; it also runs alone, needing nothing but Python:
 """
 import os, re
 
+from versioning import version_style
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "..", "public")
 PAGES = ("privacy", "terms")
@@ -84,7 +86,7 @@ def build(out: str = OUT) -> None:
     template = open(f"{HERE}/legal/template.html", encoding="utf-8").read()
     for slug in PAGES:
         os.makedirs(f"{out}/{slug}", exist_ok=True)
-        open(f"{out}/{slug}/index.html", "w", encoding="utf-8").write(page(slug, template))
+        open(f"{out}/{slug}/index.html", "w", encoding="utf-8").write(version_style(page(slug, template), out))
     for path, target in FORWARDS.items():
         os.makedirs(f"{out}/{path}", exist_ok=True)
         open(f"{out}/{path}/index.html", "w", encoding="utf-8").write(forward(target))

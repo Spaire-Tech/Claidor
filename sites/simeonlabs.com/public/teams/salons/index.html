@@ -17,15 +17,15 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap">
-<link rel="stylesheet" href="/site.css">
+<link rel="stylesheet" href="/site.css?v=6ccbe093">
 <script>if (!/Macintosh|Mac OS X/.test(navigator.userAgent)) document.documentElement.classList.add('pc')</script>
 <style>
 /* The Teams pages (/teams, /teams/<pack>): the home page's bar, type and colours (source/page.html) around
    the starter packs. Light only, every colour set here. Made by teams.py from server/simeon/desktop/packs.json. */
 :root{
   --page:#fff; --soft:#f5f5f7; --ink:#1d1d1f; --ink2:#6e6e73; --ink3:#86868b; --line:#e5e5ea; --blue:#255a93;
-  --gutter:max(20px,4.6*var(--vw));
-  --col:min(1840px,calc(100*var(--vw) - 2 * var(--gutter))); /* the home page's column */
+  --gutter:max(20px,4.6*var(--vw,1vw));
+  --col:min(1840px,calc(100*var(--vw,1vw) - 2 * var(--gutter))); /* the home page's column */
   color-scheme:light;
 }
 *{box-sizing:border-box}
@@ -41,12 +41,12 @@ a{color:inherit}
 
 /* The bar, as on the home page; the name goes home. */
 .bar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.82);-webkit-backdrop-filter:saturate(1.8) blur(20px);backdrop-filter:saturate(1.8) blur(20px);padding-top:env(safe-area-inset-top,0px)}
-.bar .wrap{display:flex;justify-content:space-between;align-items:center;height:clamp(52px,3.8*var(--vw),76px)}
-.bar .wordmark{--wm:clamp(118px,10.8*var(--vw),217px);display:block;width:var(--wm);margin-left:calc(var(--wm) * -85 / 1585);background:var(--ink);-webkit-mask:url(/img/wordmark-labs.png) center/contain no-repeat;mask:url(/img/wordmark-labs.png) center/contain no-repeat;aspect-ratio:1585/460}
-.bar .acts{display:flex;align-items:center;gap:clamp(14px,1.2*var(--vw),22px);font-size:var(--t-nav)}
+.bar .wrap{display:flex;justify-content:space-between;align-items:center;height:clamp(52px,3.8*var(--vw,1vw),76px)}
+.bar .wordmark{--wm:clamp(118px,10.8*var(--vw,1vw),217px);display:block;width:var(--wm);margin-left:calc(var(--wm) * -85 / 1585);background:var(--ink);-webkit-mask:url(/img/wordmark-labs.png) center/contain no-repeat;mask:url(/img/wordmark-labs.png) center/contain no-repeat;aspect-ratio:1585/460}
+.bar .acts{display:flex;align-items:center;gap:clamp(14px,1.2*var(--vw,1vw),22px);font-size:var(--t-nav)}
 .bar .acts>a:not(.btn){text-decoration:none;color:var(--ink2)}
 .bar .acts>a:not(.btn):hover,.bar .acts>a[aria-current]{color:var(--ink)}
-.bar .btn{height:clamp(28px,1.9*var(--vw),38px);padding:0 clamp(12px,.8*var(--vw),16px);font-size:var(--t-nav)}
+.bar .btn{height:clamp(28px,1.9*var(--vw,1vw),38px);padding:0 clamp(12px,.8*var(--vw,1vw),16px);font-size:var(--t-nav)}
 @media (max-width:480px){.bar .acts{gap:16px;font-size:var(--t-nav)}.bar .acts .btn{display:none}} /* a phone has room for Teams and Connectors, and no Mac to download to */
 
 /* Faces in a row, each over the last, ringed in the ground they sit on. */
@@ -66,7 +66,7 @@ a{color:inherit}
 .app.letter{color:#3a3a3c;font-size:calc(var(--as) * .46);font-weight:600;letter-spacing:0;line-height:1}
 
 /* Add to Simeon, on a team's page and in its window on /teams. */
-.add{display:flex;flex-direction:column;align-items:center;margin-top:clamp(18px,1.6*var(--vw),32px)}
+.add{display:flex;flex-direction:column;align-items:center;margin-top:clamp(18px,1.6*var(--vw,1vw),32px)}
 .add .btn{height:var(--btn-h);padding:0 var(--btn-pad);font-size:var(--btn-font)} /* the home page's buttons */
 .add .btn svg{width:1em;height:1em;flex:none;margin-left:-.15em}
 .add-note{margin:0}
@@ -76,7 +76,7 @@ a{color:inherit}
 .add .btn .apl{width:1.05em;height:1.05em;margin:-.18em .45em 0 -.1em;flex:none}
 .add-note .go{display:none}
 @media (max-width:734px){.add-note .btn:not(.go){display:none}.add-note .go{display:inline-flex}} /* a phone: Download for iOS, as on the home page */
-footer{margin-top:clamp(80px,8*var(--vw),140px);background:var(--soft);padding:20px 0 calc(40px + env(safe-area-inset-bottom,0px));font-size:var(--t-tiny);color:var(--ink2)}
+footer{margin-top:clamp(80px,8*var(--vw,1vw),140px);background:var(--soft);padding:20px 0 calc(40px + env(safe-area-inset-bottom,0px));font-size:var(--t-tiny);color:var(--ink2)}
 footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
 footer nav{display:flex;gap:18px}
 footer a{color:var(--ink2);text-decoration:none}
@@ -85,10 +85,10 @@ footer a[aria-current]{color:var(--ink)}
 
 .team-title{font-weight:var(--w-display);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em;text-wrap:pretty} /* the pages' headline */
 .team .intro{margin-top:10px;max-width:40em;font-size:var(--t-lead);line-height:1.47;letter-spacing:-.01em;color:#515154}
-.team .acts{display:flex;margin-top:clamp(18px,1.6*var(--vw),26px)} /* as under the pages' headline */
+.team .acts{display:flex;margin-top:clamp(18px,1.6*var(--vw,1vw),26px)} /* as under the pages' headline */
 .team .add{margin-top:0;align-items:flex-start}
 .team .add .btn{height:var(--btn-h);padding:0 var(--btn-pad);font-size:var(--btn-font)}
-.roster{margin:clamp(28px,2.4*var(--vw),40px) 0 0;padding:0;list-style:none;border-top:1px solid #e8e8ed}
+.roster{margin:clamp(28px,2.4*var(--vw,1vw),40px) 0 0;padding:0;list-style:none;border-top:1px solid #e8e8ed}
 .roster li{display:grid;grid-template-columns:44px 140px minmax(0,1fr) auto;align-items:center;column-gap:24px;padding:16px 0;border-bottom:1px solid #e8e8ed}
 .roster img,.roster .noface{width:44px;height:44px;border-radius:50%;object-fit:cover}
 .roster .noface{font-size:15px}
@@ -105,7 +105,7 @@ footer a[aria-current]{color:var(--ink)}
   .roster p{grid-column:2 / -1;grid-row:2}
 }
 
-.team-page{padding:28px 0 clamp(72px,7*var(--vw),120px)}
+.team-page{padding:28px 0 clamp(72px,7*var(--vw,1vw),120px)}
 .team-page .back{display:inline-flex;align-items:center;gap:4px;margin:0 0 30px -2px;font-size:var(--t-body);color:var(--ink2);text-decoration:none}
 .team-page .back:hover{color:var(--ink)}
 .team-page .back svg{width:16px;height:16px}
