@@ -1,14 +1,17 @@
-"""Builds the website's Teams pages (/teams and /teams/<pack>) from the starter packs.
+"""Builds the website's Teams page (/teams) from the starter packs.
 
 A starter pack is a team of five named agents for one kind of business
-(server/simeon/desktop/packs.json, which the apps read too). /teams opens with
-a headline and photos of people at work, each a team's (img/teams/<id>.jpg,
-in the order of LEAD), then lists every pack; /teams/<id> shows one the way the founder's posts show a team: a
-big serif headline, "Add to Simeon", then each agent as a card (its clay face,
-its name in the apps' blue and its job in grey, what it does, the apps it works
-in, and a line it would say), and "Add to Simeon" again at the end. The button
-opens the app on the device (simeon-ios:// on an iPhone or iPad, simeon:// on a
-Mac) at app/v1/pack/add?id=<id>, and the app adds the team.
+(server/simeon/desktop/packs.json, which the apps read too). /teams opens as
+the home page does (its styles and buttons come from page.html), with photos of
+people at work under it, each a team's (img/teams/<id>.jpg, in the order of
+LEAD); then the Marketplace (kinds of work as chips, a search, every team as a
+card); then the home page's pricing, the page's own questions and the home
+page's closing call. A team's card or photo opens its window (/teams#<id>): the
+team's title, its line and Add to Simeon, then its agents. Add to Simeon opens
+the app on the device (simeon-ios:// on an iPhone or iPad, simeon:// on a Mac)
+at app/v1/pack/add?id=<id>, and the app adds the team; without the app it gives
+way to Download. A team has no page of its own: /teams/<id> forwards to its
+window.
 
 The faces are the apps' own catalogue (ios/SimeonCore/.../Resources/Faces).
 An app's logo is found the way the iPhone app finds a connector's tile
@@ -366,15 +369,14 @@ html:has(dialog[open]){overflow:hidden}
 .sheet[open]::backdrop{animation:fade-in .26s ease}
 @keyframes sheet-in{from{opacity:0;transform:translateY(10px) scale(.985)}}
 @keyframes fade-in{from{opacity:0}}
-.sheet-in{max-height:calc(100dvh - 48px);overflow:auto;overscroll-behavior:contain;padding:48px 56px 44px}
+.sheet-in{max-height:calc(100dvh - 48px);overflow:auto;overscroll-behavior:contain;outline:none;padding:48px 56px 44px}
 .sheet .close{position:absolute;top:18px;right:18px;z-index:2;display:grid;place-items:center;width:30px;height:30px;padding:0;border:0;border-radius:50%;background:#e8e8ed;color:#1d1d1f;cursor:pointer;transition:background .2s}
 .sheet .close:hover{background:#dcdce1}
 .sheet .close svg{width:12px;height:12px}
 .sheet .close:focus-visible{outline:2px solid #1d1d1f;outline-offset:2px}
-.sheet .eyebrow{font-size:var(--t-small);font-weight:var(--w-title);color:var(--ink2)}
-.sheet h2{margin-top:6px;font-weight:var(--w-display);font-size:var(--t-title);line-height:1.15;letter-spacing:-.02em}
+.sheet h2{max-width:13em;font-weight:var(--w-display);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em;text-wrap:balance} /* the pages' headline */
 .sheet .intro{margin-top:10px;max-width:40em;font-size:var(--t-lead);line-height:1.47;letter-spacing:-.01em;color:#515154}
-.roster{margin:30px 0 0;padding:0;list-style:none;border-top:1px solid #e8e8ed}
+.roster{margin:clamp(28px,2.4vw,40px) 0 0;padding:0;list-style:none;border-top:1px solid #e8e8ed}
 .roster li{display:grid;grid-template-columns:44px 140px minmax(0,1fr) auto;align-items:center;column-gap:24px;padding:16px 0;border-bottom:1px solid #e8e8ed}
 .roster img,.roster .noface{width:44px;height:44px;border-radius:50%;object-fit:cover}
 .roster .noface{font-size:15px}
@@ -382,12 +384,13 @@ html:has(dialog[open]){overflow:hidden}
 .roster small{display:block;margin-top:1px;font-size:var(--t-small);color:var(--ink2)}
 .roster p{font-size:var(--t-body);line-height:1.47;letter-spacing:-.005em;color:#515154}
 .roster .apps{--as:28px;--ring:var(--page)}
-.sheet .acts{display:flex;margin-top:32px}
+.sheet .acts{display:flex;margin-top:clamp(18px,1.6vw,26px)} /* as under the pages' headline */
 .sheet .add{margin-top:0;align-items:flex-start}
-.sheet .add .btn{height:var(--btn-h);padding:0 20px;font-size:var(--btn-font)}
+.sheet .add .btn{height:var(--btn-h);padding:0 var(--btn-pad);font-size:var(--btn-font)}
 @media (max-width:734px){
-  .sheet{width:100vw;max-height:92dvh;margin:auto 0 0;border-radius:20px 20px 0 0}
-  .sheet-in{max-height:92dvh;padding:32px 22px 26px}
+  .sheet{width:100vw;height:100dvh;max-height:100dvh;margin:0;border-radius:0;box-shadow:none} /* a phone: the whole screen */
+  .sheet-in{height:100dvh;max-height:100dvh;padding:calc(env(safe-area-inset-top,0px) + 72px) 20px calc(env(safe-area-inset-bottom,0px) + 32px)}
+  .sheet .close{top:calc(env(safe-area-inset-top,0px) + 16px);right:16px;width:34px;height:34px}
   .roster li{grid-template-columns:40px minmax(0,1fr) auto;column-gap:14px;row-gap:6px;padding:14px 0}
   .roster .apps{grid-column:3;grid-row:1}
   .roster img,.roster .noface{width:40px;height:40px}
@@ -398,52 +401,11 @@ html:has(dialog[open]){overflow:hidden}
 @media (prefers-reduced-motion:reduce){.sheet[open],.sheet[open]::backdrop{animation:none}}
 footer{margin-top:0;font-size:var(--t-tiny)} /* the closing call above leaves the room, as on the home page */
 @media (max-width:1068px){.packs{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media (max-width:734px){.packs{grid-template-columns:1fr;gap:14px}.lead h1{font-size:var(--t-display);line-height:1.2;font-weight:var(--w-display);letter-spacing:-.025em}.fan{--w:clamp(150px,44vw,240px)}.shot{border-width:4px;border-radius:18px}
+@media (max-width:734px){.packs{grid-template-columns:1fr;gap:14px}.fan{--w:clamp(150px,44vw,240px)}.shot{border-width:4px;border-radius:18px}
   .chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-inline:calc(-1 * var(--gutter));padding:2px var(--gutter)}.chips::-webkit-scrollbar{display:none}}
 @media (prefers-reduced-motion:reduce){.shot{transition:none}}
 """
 
-PACK_CSS = """
-.post{width:min(860px,var(--col));margin-inline:auto}
-.back{display:inline-block;margin-top:clamp(28px,3vw,48px);color:var(--ink2);text-decoration:none;font-size:var(--t-body)}
-.back:hover{color:var(--ink)}
-.back::before{content:"\\2039  "}
-.hero{display:flex;flex-direction:column;align-items:center;text-align:center;padding:clamp(28px,4vw,64px) 0 0}
-.hero .faces{--fs:clamp(44px,3.2vw,56px)}
-.kicker{margin-top:18px;font-size:var(--t-small);font-weight:var(--w-title);color:var(--ink2)}
-.hero h1{margin-top:clamp(16px,1.3vw,24px);max-width:14em;font-weight:var(--w-display);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em;text-wrap:balance} /* the home page's headline */
-.kicker+h1{margin-top:10px}
-.hero .lede{margin-top:clamp(10px,.9vw,16px);max-width:30em;font-size:var(--t-lead);line-height:1.5;letter-spacing:-.01em;color:var(--ink2);text-wrap:balance}
-
-/* The agents: one card each, the face beside what it does on a computer, above it on a phone. */
-.team{display:grid;gap:16px;margin:clamp(44px,4vw,80px) 0 0;padding:0;list-style:none}
-.agent{display:grid;grid-template-columns:clamp(72px,6vw,104px) minmax(0,1fr);column-gap:clamp(18px,1.8vw,30px);align-items:start;padding:clamp(22px,2.1vw,36px);border-radius:28px;background:var(--soft)}
-.agent>.face{grid-row:1 / span 3;width:100%;aspect-ratio:1;height:auto;border-radius:20px;object-fit:cover;background:#e8e8ed}
-.agent>.face.noface{display:grid;place-items:center;font-size:32px;font-weight:500;color:var(--ink2)}
-.agent .head{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:30px}
-.agent .apps{--as:30px}
-.agent h2{font-size:var(--t-head);font-weight:var(--w-title);line-height:1.2;letter-spacing:-.018em}
-.agent h2 .nm{color:var(--blue)}
-.agent h2 .tt{color:var(--ink3);font-weight:500;white-space:nowrap}
-.agent .sum{margin-top:8px;font-size:var(--t-body);line-height:1.5;letter-spacing:-.01em;color:var(--ink2)}
-.agent .q{position:relative;margin-top:clamp(18px,1.6vw,24px);padding:clamp(16px,1.4vw,20px) 0 0;border-top:1px solid #e3e3e8;font-size:var(--t-lead);line-height:1.32;letter-spacing:-.01em;color:var(--ink)}
-.agent .q .qm{color:var(--ink2)} /* plain quotation marks, in the text's own size */
-
-.end{display:flex;flex-direction:column;align-items:center;text-align:center;padding:clamp(72px,7vw,120px) 0 0}
-.end h2{max-width:14em;font-weight:var(--w-display);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em;text-wrap:balance}
-.end .add{margin-top:clamp(22px,2vw,32px)}
-.free{margin-top:14px;font-size:var(--t-small);color:var(--ink2)}
-
-@media (max-width:600px){
-  .agent{grid-template-columns:56px minmax(0,1fr);column-gap:14px;padding:20px 20px 22px;border-radius:24px}
-  .agent>.face{grid-row:1;width:56px;height:56px;border-radius:50%}
-  .agent>.face.noface{font-size:22px}
-  .agent .head{min-height:56px;gap:10px}
-  .agent .apps{--as:26px}
-  .agent .sum,.agent .q{grid-column:1 / -1}
-  .agent .sum{margin-top:14px}
-}
-"""
 
 ADD_JS = """<script>
 // Add to Simeon: the app on this device opens on the pack and adds the team (simeon-ios:// on an iPhone or
@@ -498,7 +460,9 @@ SHEET_JS = """<script>
     const d = document.getElementById('team-' + id);
     if (!d || d.open) return;
     d.showModal();
-    d.querySelector('.sheet-in').scrollTop = 0;
+    const inside = d.querySelector('.sheet-in');
+    inside.scrollTop = 0;
+    inside.focus({ preventScroll: true }); // the window, not its close button, takes the focus: no ring on opening
     history.replaceState(null, '', '#' + id);
   };
   for (const a of document.querySelectorAll('.pack[data-team]')) {
@@ -618,46 +582,14 @@ def add_button(pack):
             f'<p class="add-note" hidden aria-live="polite"><a class="btn" href="{MAC_DOWNLOAD}">Download for macOS{DOWNLOAD}</a>{ios_button()}</p></div>')
 
 
-def pack_page(pack, assets):
-    title = esc(pack["title"])
-    headline = esc(pack.get("headline") or pack["title"])
-    count = len(pack["agents"])
-    cards = []
-    for agent in pack["agents"]:
-        url = assets.face(agent["face"])
-        face = (f'<img class="face" src="{url}" alt="" width="264" height="264" loading="lazy">' if url
-                else f'<span class="face noface" aria-hidden="true">{esc(agent["name"][:1].upper())}</span>')
-        apps = [a for a in agent["apps"] if a]
-        names = [esc(app_name(a)) for a in apps]
-        tiles = "".join(assets.tile(a) for a in apps)
-        quote = esc(str(agent["quote"]).strip().strip('"“”'))
-        cards.append(
-            f'<li class="agent">{face}'
-            f'<div class="head"><h2><span class="nm">{esc(agent["name"])}</span> <span class="tt">{esc(agent["title"])}</span></h2>'
-            + (f'<span class="apps" role="img" aria-label="Works in {and_list(names)}">{tiles}</span>' if apps else "")
-            + f'</div><p class="sum">{esc(agent["summary"])}</p>'
-            f'<blockquote class="q"><span class="qm" aria-hidden="true">“</span>{quote}<span class="qm" aria-hidden="true">”</span></blockquote></li>')
-    kicker = f'<p class="kicker">{title}</p>' if headline != title else ""
-    body = f"""<div class="post">
-<a class="back" href="/teams">All teams</a>
-<section class="hero" aria-label="{title}">
-  {faces_row(pack, assets)}
-  {kicker}<h1>{headline}</h1>
-  <p class="lede">{esc(pack["summary"])}</p>
-  {add_button(pack)}
-</section>
-
-<ul class="team" aria-label="The agents">
-{chr(10).join(cards)}
-</ul>
-
-<section class="end" aria-label="Add the team">
-  <h2>Add the {WORDS.get(count, str(count))} of them to Simeon.</h2>
-  {add_button(pack)}
-  <p class="free">Free. The agents ask before they send, post or pay.</p>
-</section>
-</div>"""
-    return frame(title, esc(pack["summary"]), f"/teams/{pack['id']}", body, PACK_CSS, script=ADD_JS)
+def forward_page(pack):
+    """/teams/<id>: a team has no page of its own any more (the founder, 23 October 2026: "remove that
+    page"); its old address opens its window on /teams."""
+    to, title = f"/teams#{pack['id']}", esc(pack["title"])
+    return (f'<!doctype html>\n<html lang="en"><head><meta charset="utf-8"><title>{title} | SimeonLabs</title>'
+            f'<meta name="robots" content="noindex"><link rel="canonical" href="{SITE}{to}">'
+            f'<meta http-equiv="refresh" content="0; url={to}"></head>'
+            f'<body><p><a href="{to}">{title}</a></p></body></html>\n')
 
 
 def fan(packs, assets):
@@ -677,7 +609,7 @@ def fan(packs, assets):
             r, y, s, z = side * 5, 20, 1, 3
         url = assets._copy(src, "photos", f"{pack['id']}.jpg")
         name = re.sub(r"^Simeon for ", "", pack["title"])
-        out.append(f'<a class="shot" href="/teams/{pack["id"]}" style="--o:{o:g};--r:{r:g}deg;--y:{y}px;--s:{s:g};--z:{z}" aria-label="{esc(pack["title"])}">'
+        out.append(f'<a class="shot" href="#{pack["id"]}" style="--o:{o:g};--r:{r:g}deg;--y:{y}px;--s:{s:g};--z:{z}" aria-label="{esc(pack["title"])}">'
                    f'<img src="{url}" alt="" width="736" height="920"><span aria-hidden="true">{esc(name)}</span></a>')
     return f'<div class="fan">{"".join(out)}</div>' if out else ""
 
@@ -704,10 +636,11 @@ def some_apps(pack, assets):
             + (f'<span class="plus">+{more}</span>' if more else "") + "</span>")
 
 
-def team_sheet(pack, assets, kind):
-    """A team's window on /teams: the team, its five agents as rows (face, name and job, what it does, the
-    apps it connects) and Add to Simeon. It opens over the page from the team's card; without the script the
-    card goes to the team's page instead."""
+def team_sheet(pack, assets):
+    """A team's window on /teams: its opening as every page's (the title, its line, Add to Simeon or
+    Download under it), then its five agents as rows (face, name and job, what it does, the apps it
+    connects). It opens over the page from the team's card or photo, or from /teams#<id>; a phone shows it
+    full screen."""
     pid = pack["id"]
     rows = []
     for agent in pack["agents"]:
@@ -723,12 +656,11 @@ def team_sheet(pack, assets, kind):
                     + "</li>")
     return f"""<dialog class="sheet" id="team-{pid}" aria-labelledby="{pid}-title">
 <button class="close" type="button" aria-label="Close">{CROSS}</button>
-<div class="sheet-in">
-  {f'<p class="eyebrow">{esc(kind)}</p>' if kind else ""}
+<div class="sheet-in" tabindex="-1">
   <h2 id="{pid}-title">{esc(pack["title"])}</h2>
   <p class="intro">{esc(pack["summary"])}</p>
-  <ul class="roster" aria-label="The agents">{"".join(rows)}</ul>
   <div class="acts">{add_button(pack)}</div>
+  <ul class="roster" aria-label="The agents">{"".join(rows)}</ul>
 </div>
 </dialog>"""
 
@@ -796,7 +728,7 @@ def questions():
 def index_page(packs, assets):
     groups = {pid: [slug for slug, (_, ids) in GROUPS.items() if pid in ids] for pid in (p["id"] for p in packs)}
     cards = "\n".join(
-        f'<li data-groups="{" ".join(groups[p["id"]])}" data-q="{search_words(p)}"><a class="pack" href="/teams/{p["id"]}" data-team="{p["id"]}">{faces_row(p, assets)}'
+        f'<li data-groups="{" ".join(groups[p["id"]])}" data-q="{search_words(p)}"><a class="pack" href="#{p["id"]}" data-team="{p["id"]}">{faces_row(p, assets)}'
         + (f'<span class="kind">{esc(GROUPS[groups[p["id"]][0]][0])}</span>' if groups[p["id"]] else "")
         + f'<h2>{esc(p["title"])}</h2><p>{esc(p["summary"])}</p>'
         f'<span class="foot">{some_apps(p, assets)}<span class="open" aria-hidden="true">{PLUS_SMALL}</span></span></a></li>'
@@ -830,7 +762,7 @@ def index_page(packs, assets):
 {questions()}
 
 {close}
-{chr(10).join(team_sheet(p, assets, GROUPS[groups[p["id"]][0]][0] if groups[p["id"]] else "") for p in packs)}"""
+{chr(10).join(team_sheet(p, assets) for p in packs)}"""
     return frame("Teams", "Starter teams of five agents for one kind of business, ready to add to Simeon.", "/teams", body, hero_css + INDEX_CSS + home_css, current="teams", script=MARKET_JS + SHEET_JS + ADD_JS)
 
 
@@ -854,7 +786,7 @@ def build(out=OUT):
     assets = Assets(root)
     for pack in packs:
         os.makedirs(f"{root}/{pack['id']}")
-        open(f"{root}/{pack['id']}/index.html", "w", encoding="utf-8").write(pack_page(pack, assets))
+        open(f"{root}/{pack['id']}/index.html", "w", encoding="utf-8").write(forward_page(pack))
     open(f"{root}/index.html", "w", encoding="utf-8").write(index_page(packs, assets))
     letters = sorted(k for k, how in assets.drawn.items() if how == "letter")
     marks = sorted(k for k, how in assets.drawn.items() if how == "mark")
