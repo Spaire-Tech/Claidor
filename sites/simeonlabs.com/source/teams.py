@@ -10,8 +10,10 @@ page's closing call. A team's card or photo opens its window (/teams#<id>): the
 team's title, its line and Add to Simeon, then its agents. Add to Simeon opens
 the app on the device (simeon-ios:// on an iPhone or iPad, simeon:// on a Mac)
 at app/v1/pack/add?id=<id>, and the app adds the team; without the app it gives
-way to Download. A team has no page of its own: /teams/<id> forwards to its
-window.
+way to Download. On a phone a team is a page of its own instead (/teams/<id>, the
+founder, 23 October 2026: "a literal full page"): the bar, a way back to every team,
+then the same title, line, Add to Simeon and agents; a computer that lands there is
+sent to the team's window.
 
 The faces are the apps' own catalogue (ios/SimeonCore/.../Resources/Faces).
 An app's logo is found the way the iPhone app finds a connector's tile
@@ -378,8 +380,30 @@ html:has(dialog[open]){overflow:hidden}
 .sheet .close:hover{background:#dcdce1}
 .sheet .close svg{width:12px;height:12px}
 .sheet .close:focus-visible{outline:2px solid #1d1d1f;outline-offset:2px}
-.sheet h2{max-width:var(--title-max);font-weight:var(--w-display);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em;text-wrap:pretty} /* the pages' headline */
-.sheet .intro{margin-top:10px;max-width:40em;font-size:var(--t-lead);line-height:1.47;letter-spacing:-.01em;color:#515154}
+.sheet .team-title{max-width:var(--title-max)}
+@media (max-width:734px){
+  .sheet{width:100vw;height:100dvh;max-height:100dvh;margin:0;border-radius:0;box-shadow:none} /* a phone that opens one anyway: the whole screen */
+  .sheet-in{height:100dvh;max-height:100dvh;padding:calc(env(safe-area-inset-top,0px) + 72px) 20px calc(env(safe-area-inset-bottom,0px) + 32px)}
+  .sheet .close{top:calc(env(safe-area-inset-top,0px) + 16px);right:16px;width:34px;height:34px}
+}
+@media (max-height:760px) and (min-width:735px){.sheet-in{padding-top:38px;padding-bottom:34px}.sheet .roster li{padding:13px 0}} /* a short laptop screen: still one screen */
+@media (prefers-reduced-motion:reduce){.sheet[open],.sheet[open]::backdrop{animation:none}}
+footer{margin-top:0;font-size:var(--t-tiny)} /* the closing call above leaves the room, as on the home page */
+@media (max-width:1068px){.packs{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:734px){.hero h1 br.ph{display:inline}.list-title{max-width:none;text-wrap:wrap}.packs{grid-template-columns:1fr;gap:14px}.fan{--w:clamp(150px,44vw,240px)}.shot{border-width:4px;border-radius:18px}
+  .chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-inline:calc(-1 * var(--gutter));padding:2px var(--gutter)}.chips::-webkit-scrollbar{display:none}}
+@media (prefers-reduced-motion:reduce){.shot{transition:none}}
+"""
+
+
+# A team, in its window on /teams or on its own page on a phone: the title, its line and Add to Simeon, then its
+# five agents as rows between hairlines (face, name and job, what it does, the apps it connects).
+TEAM_CSS = """
+.team-title{font-weight:var(--w-display);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em;text-wrap:pretty} /* the pages' headline */
+.team .intro{margin-top:10px;max-width:40em;font-size:var(--t-lead);line-height:1.47;letter-spacing:-.01em;color:#515154}
+.team .acts{display:flex;margin-top:clamp(18px,1.6vw,26px)} /* as under the pages' headline */
+.team .add{margin-top:0;align-items:flex-start}
+.team .add .btn{height:var(--btn-h);padding:0 var(--btn-pad);font-size:var(--btn-font)}
 .roster{margin:clamp(28px,2.4vw,40px) 0 0;padding:0;list-style:none;border-top:1px solid #e8e8ed}
 .roster li{display:grid;grid-template-columns:44px 140px minmax(0,1fr) auto;align-items:center;column-gap:24px;padding:16px 0;border-bottom:1px solid #e8e8ed}
 .roster img,.roster .noface{width:44px;height:44px;border-radius:50%;object-fit:cover}
@@ -388,28 +412,26 @@ html:has(dialog[open]){overflow:hidden}
 .roster small{display:block;margin-top:1px;font-size:var(--t-small);color:var(--ink2)}
 .roster p{font-size:var(--t-body);line-height:1.47;letter-spacing:-.005em;color:#515154}
 .roster .apps{--as:28px;--ring:var(--page)}
-.sheet .acts{display:flex;margin-top:clamp(18px,1.6vw,26px)} /* as under the pages' headline */
-.sheet .add{margin-top:0;align-items:flex-start}
-.sheet .add .btn{height:var(--btn-h);padding:0 var(--btn-pad);font-size:var(--btn-font)}
 @media (max-width:734px){
-  .sheet{width:100vw;height:100dvh;max-height:100dvh;margin:0;border-radius:0;box-shadow:none} /* a phone: the whole screen */
-  .sheet-in{height:100dvh;max-height:100dvh;padding:calc(env(safe-area-inset-top,0px) + 72px) 20px calc(env(safe-area-inset-bottom,0px) + 32px)}
-  .sheet .close{top:calc(env(safe-area-inset-top,0px) + 16px);right:16px;width:34px;height:34px}
+  .team-title{max-width:13em;text-wrap:balance} /* a phone's titles as they were */
   .roster li{grid-template-columns:40px minmax(0,1fr) auto;column-gap:14px;row-gap:6px;padding:14px 0}
   .roster .apps{grid-column:3;grid-row:1}
   .roster img,.roster .noface{width:40px;height:40px}
   .roster .apps{--as:24px}
   .roster p{grid-column:2 / -1;grid-row:2}
 }
-@media (max-height:760px) and (min-width:735px){.sheet-in{padding-top:38px;padding-bottom:34px}.roster li{padding:13px 0}} /* a short laptop screen: still one screen */
-@media (prefers-reduced-motion:reduce){.sheet[open],.sheet[open]::backdrop{animation:none}}
-footer{margin-top:0;font-size:var(--t-tiny)} /* the closing call above leaves the room, as on the home page */
-@media (max-width:1068px){.packs{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media (max-width:734px){.hero h1 br.ph{display:inline}.list-title{max-width:none;text-wrap:wrap}.sheet h2{max-width:13em;text-wrap:balance}.packs{grid-template-columns:1fr;gap:14px}.fan{--w:clamp(150px,44vw,240px)}.shot{border-width:4px;border-radius:18px}
-  .chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-inline:calc(-1 * var(--gutter));padding:2px var(--gutter)}.chips::-webkit-scrollbar{display:none}}
-@media (prefers-reduced-motion:reduce){.shot{transition:none}}
 """
 
+# A team's own page, for a phone (the founder, 23 October 2026: "for iphone it needs to be a full page... not an
+# iframe"): the site's bar, All teams to go back, then the team as in its window, and the footer.
+TEAM_PAGE_CSS = """
+.team-page{padding:28px 0 clamp(72px,7vw,120px)}
+.team-page .back{display:inline-flex;align-items:center;gap:4px;margin:0 0 30px -2px;font-size:var(--t-body);color:var(--ink2);text-decoration:none}
+.team-page .back:hover{color:var(--ink)}
+.team-page .back svg{width:16px;height:16px}
+.team-page .roster{margin-top:32px}
+footer{margin-top:0;font-size:var(--t-tiny)}
+"""
 
 ADD_JS = """<script>
 // Add to Simeon: the app on this device opens on the pack and adds the team (simeon-ios:// on an iPhone or
@@ -454,12 +476,16 @@ DOWNLOAD = '<svg class="dl" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 
 MAGNIFIER = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m15.5 15.5 5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>'
 
 PLUS_SMALL = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>'
+CHEVRON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
 CROSS = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>'
 
 SHEET_JS = """<script>
-// A team's window: its card opens it (a click with a modifier key still opens the team's page), and so does
-// /teams#<team>; a click beside it, Escape or the close button closes it.
+// A team's window, on a computer: its card or photo opens it (a click with a modifier key still opens the team's
+// page), and so does /teams#<team>; a click beside it, Escape or the close button closes it. A phone follows the
+// card's link to the team's own page instead, and /teams#<team> goes there too.
 (() => {
+  const wide = matchMedia('(min-width:735px)');
+  const page = (id) => '/teams/' + encodeURIComponent(id) + '/';
   const open = (id) => {
     const d = document.getElementById('team-' + id);
     if (!d || d.open) return;
@@ -469,9 +495,9 @@ SHEET_JS = """<script>
     inside.focus({ preventScroll: true }); // the window, not its close button, takes the focus: no ring on opening
     history.replaceState(null, '', '#' + id);
   };
-  for (const a of document.querySelectorAll('.pack[data-team]')) {
+  for (const a of document.querySelectorAll('a[data-team]')) {
     a.addEventListener('click', (e) => {
-      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button) return;
+      if (!wide.matches || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button) return;
       e.preventDefault();
       open(a.dataset.team);
     });
@@ -481,7 +507,11 @@ SHEET_JS = """<script>
     d.addEventListener('click', (e) => { if (e.target === d) d.close(); });
     d.addEventListener('close', () => history.replaceState(null, '', location.pathname + location.search));
   }
-  const fromHash = () => { const id = decodeURIComponent(location.hash.slice(1)); if (id && id !== 'all') open(id); };
+  const fromHash = () => {
+    const id = decodeURIComponent(location.hash.slice(1));
+    if (!id || id === 'all' || !document.getElementById('team-' + id)) return;
+    if (wide.matches) open(id); else location.replace(page(id));
+  };
   addEventListener('hashchange', fromHash);
   fromHash();
 })();
@@ -518,7 +548,7 @@ MARKET_JS = """<script>
 </script>"""
 
 
-def frame(title, description, path, body, css, current="", script=""):
+def frame(title, description, path, body, css, current="", script="", head=""):
     url = f"{SITE}{path}"
     here = lambda page: ' aria-current="page"' if current == page else ""
     return f"""<!doctype html>
@@ -543,7 +573,7 @@ def frame(title, description, path, body, css, current="", script=""):
 <link rel="stylesheet" href="/site.css">
 <style>
 /* The Teams pages (/teams, /teams/<pack>): the home page's bar, type and colours (source/page.html) around
-   the starter packs. Light only, every colour set here. Made by teams.py from server/simeon/desktop/packs.json. */{CSS}{css}</style>
+   the starter packs. Light only, every colour set here. Made by teams.py from server/simeon/desktop/packs.json. */{CSS}{css}</style>{head}
 </head>
 <body>
 
@@ -586,16 +616,6 @@ def add_button(pack):
             f'<p class="add-note" hidden aria-live="polite"><a class="btn" href="{MAC_DOWNLOAD}">Download for macOS{DOWNLOAD}</a>{ios_button()}</p></div>')
 
 
-def forward_page(pack):
-    """/teams/<id>: a team has no page of its own any more (the founder, 23 October 2026: "remove that
-    page"); its old address opens its window on /teams."""
-    to, title = f"/teams#{pack['id']}", esc(pack["title"])
-    return (f'<!doctype html>\n<html lang="en"><head><meta charset="utf-8"><title>{title} | SimeonLabs</title>'
-            f'<meta name="robots" content="noindex"><link rel="canonical" href="{SITE}{to}">'
-            f'<meta http-equiv="refresh" content="0; url={to}"></head>'
-            f'<body><p><a href="{to}">{title}</a></p></body></html>\n')
-
-
 def fan(packs, assets):
     """The opening's photos, left to right, each a link to its team: the middle one (or the middle two) larger
     and in front, the ones beside them tilted in, the outer ones tilted out (source/img/teams/<pack>.jpg; a
@@ -622,7 +642,7 @@ def fan(packs, assets):
         cr = .3 if i + 1 < len(poses) and poses[i + 1][4] >= z else 0
         url = assets._copy(src, "photos", f"{pack['id']}.jpg")
         name = re.sub(r"^Simeon for ", "", pack["title"])
-        out.append(f'<a class="shot" href="#{pack["id"]}" style="--o:{o:g};--r:{r:g}deg;--y:{y}px;--s:{s:g};--z:{z};--cl:{cl:g};--cr:{cr:g}" aria-label="{esc(pack["title"])}">'
+        out.append(f'<a class="shot" href="/teams/{pack["id"]}/" data-team="{pack["id"]}" style="--o:{o:g};--r:{r:g}deg;--y:{y}px;--s:{s:g};--z:{z};--cl:{cl:g};--cr:{cr:g}" aria-label="{esc(pack["title"])}">'
                    f'<img src="{url}" alt="" width="736" height="920"><span aria-hidden="true">{esc(name)}</span></a>')
     return f'<div class="fan" style="--n:{len(out)}">{"".join(out)}</div>' if out else ""
 
@@ -649,12 +669,8 @@ def some_apps(pack, assets):
             + (f'<span class="plus">+{more}</span>' if more else "") + "</span>")
 
 
-def team_sheet(pack, assets):
-    """A team's window on /teams: its opening as every page's (the title, its line, Add to Simeon or
-    Download under it), then its five agents as rows (face, name and job, what it does, the apps it
-    connects). It opens over the page from the team's card or photo, or from /teams#<id>; a phone shows it
-    full screen."""
-    pid = pack["id"]
+def roster(pack, assets):
+    """The team's five agents as rows: face, name and job, what it does, the apps it connects."""
     rows = []
     for agent in pack["agents"]:
         url = assets.face(agent["face"])
@@ -667,15 +683,39 @@ def team_sheet(pack, assets):
                     f'<p>{esc(agent["summary"])}</p>'
                     + (f'<span class="apps" role="img" aria-label="Connects {and_list(names)}">{tiles}</span>' if apps else "<span></span>")
                     + "</li>")
+    return f'<ul class="roster" aria-label="The agents">{"".join(rows)}</ul>'
+
+
+def team_sheet(pack, assets):
+    """A team's window on /teams, for a computer: its opening as every page's (the title, its line, Add to
+    Simeon or Download under it), then its agents. It opens over the page from the team's card or photo, or
+    from /teams#<id>."""
+    pid = pack["id"]
     return f"""<dialog class="sheet" id="team-{pid}" aria-labelledby="{pid}-title">
 <button class="close" type="button" aria-label="Close">{CROSS}</button>
-<div class="sheet-in" tabindex="-1">
-  <h2 id="{pid}-title">{esc(pack["title"])}</h2>
+<div class="sheet-in team" tabindex="-1">
+  <h2 class="team-title" id="{pid}-title">{esc(pack["title"])}</h2>
   <p class="intro">{esc(pack["summary"])}</p>
   <div class="acts">{add_button(pack)}</div>
-  <ul class="roster" aria-label="The agents">{"".join(rows)}</ul>
+  {roster(pack, assets)}
 </div>
 </dialog>"""
+
+
+def team_page(pack, assets):
+    """/teams/<id>: the team's own page, for a phone (the founder, 23 October 2026: "a literal full page"),
+    the same title, line, Add to Simeon and agents as its window. A computer that lands here (a shared link)
+    is sent to the window on /teams before the page shows."""
+    pid = pack["id"]
+    body = f"""<section class="team team-page" aria-labelledby="{pid}-title"><div class="wrap">
+  <a class="back" href="/teams#all">{CHEVRON}All teams</a>
+  <h1 class="team-title" id="{pid}-title">{esc(pack["title"])}</h1>
+  <p class="intro">{esc(pack["summary"])}</p>
+  <div class="acts">{add_button(pack)}</div>
+  {roster(pack, assets)}
+</div></section>"""
+    head = f"<script>if (matchMedia('(min-width:735px)').matches) location.replace('/teams#{pid}');</script>"
+    return frame(pack["title"], pack["summary"], f"/teams/{pid}", body, TEAM_CSS + TEAM_PAGE_CSS, current="teams", script=ADD_JS, head=head)
 
 
 # The Teams page's own questions: about adding and owning a team, none of the home page's again.
@@ -741,7 +781,7 @@ def questions():
 def index_page(packs, assets):
     groups = {pid: [slug for slug, (_, ids) in GROUPS.items() if pid in ids] for pid in (p["id"] for p in packs)}
     cards = "\n".join(
-        f'<li data-groups="{" ".join(groups[p["id"]])}" data-q="{search_words(p)}"><a class="pack" href="#{p["id"]}" data-team="{p["id"]}">{faces_row(p, assets)}'
+        f'<li data-groups="{" ".join(groups[p["id"]])}" data-q="{search_words(p)}"><a class="pack" href="/teams/{p["id"]}/" data-team="{p["id"]}">{faces_row(p, assets)}'
         + (f'<span class="kind">{esc(GROUPS[groups[p["id"]][0]][0])}</span>' if groups[p["id"]] else "")
         + f'<h2>{esc(p["title"])}</h2><p>{esc(p["summary"])}</p>'
         f'<span class="foot">{some_apps(p, assets)}<span class="open" aria-hidden="true">{PLUS_SMALL}</span></span></a></li>'
@@ -776,7 +816,7 @@ def index_page(packs, assets):
 
 {close}
 {chr(10).join(team_sheet(p, assets) for p in packs)}"""
-    return frame("Teams", "Starter teams of five agents for one kind of business, ready to add to Simeon.", "/teams", body, hero_css + INDEX_CSS + home_css, current="teams", script=MARKET_JS + SHEET_JS + ADD_JS)
+    return frame("Teams", "Starter teams of five agents for one kind of business, ready to add to Simeon.", "/teams", body, hero_css + INDEX_CSS + TEAM_CSS + home_css, current="teams", script=MARKET_JS + SHEET_JS + ADD_JS)
 
 
 def copy_site_css(out=OUT):
@@ -799,7 +839,7 @@ def build(out=OUT):
     assets = Assets(root)
     for pack in packs:
         os.makedirs(f"{root}/{pack['id']}")
-        open(f"{root}/{pack['id']}/index.html", "w", encoding="utf-8").write(forward_page(pack))
+        open(f"{root}/{pack['id']}/index.html", "w", encoding="utf-8").write(team_page(pack, assets))
     open(f"{root}/index.html", "w", encoding="utf-8").write(index_page(packs, assets))
     letters = sorted(k for k, how in assets.drawn.items() if how == "letter")
     marks = sorted(k for k, how in assets.drawn.items() if how == "mark")

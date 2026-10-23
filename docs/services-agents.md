@@ -2389,7 +2389,8 @@ pack are all different.
   faces, summary, quote, three app ids from `vendor-mcp/catalog.ts`, and the instructions kept
   as the agent's description). `appNames` holds the catalogue's name for each app.
 - The website's Teams page (`sites/simeonlabs.com/source/teams.py`, `/teams`) is built from
-  that file: each team opens in a window there (`/teams#<id>`; `/teams/<id>` forwards to it).
+  that file: on a computer each team opens in a window there (`/teams#<id>`); on a phone it is a page of its
+  own, `/teams/<id>` (a computer that lands on that page is sent to the window).
   Add to Simeon opens `simeon://app/v1/pack/add?id=<id>` on a Mac and
   `simeon-ios://app/v1/pack/add?id=<id>` on an iPhone.
 - The server serves the file read-only, no sign-in needed (`server/simeon/desktop/packs.py`):
