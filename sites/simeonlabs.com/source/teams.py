@@ -331,7 +331,7 @@ html{scroll-behavior:smooth;scroll-padding-top:clamp(72px,4.6vw,96px)} /* See al
 /* The marketplace ("more Apple style", 23 October 2026): a light grey band as on the Apple Store, white chips
    and a white search field on it (no blue ring), and the teams as the Store's white cards, which rise a little
    under the pointer: the faces, the kind of work, the name, what it is for, then five of its apps. */
-.market{padding:clamp(96px,8vw,160px) 0 clamp(150px,12vw,230px);background:linear-gradient(180deg,var(--page) 0,var(--soft) clamp(200px,17vw,340px),var(--soft) calc(100% - clamp(150px,12vw,230px)),var(--page) 100%)} /* white fading into the grey and back */
+.market{padding:clamp(72px,6vw,120px) 0 clamp(110px,9vw,170px);background:linear-gradient(180deg,var(--page) 0,var(--soft) clamp(170px,14vw,280px),var(--soft) calc(100% - clamp(110px,9vw,170px)),var(--page) 100%)} /* white fading into the grey and back */
 .market+.trust{padding-top:clamp(24px,2.4vw,48px)}
 .list-title{max-width:var(--title-max);font-weight:var(--w-display);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em;text-wrap:pretty} /* the home page's section titles: the headline's size */
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:clamp(18px,1.5vw,28px)}
@@ -766,8 +766,9 @@ def ios_button():
     return found.group(0) if found else ""
 
 
-def questions():
-    rows = "".join(f"<details><summary>{esc(q)}</summary><p>{esc(a)}</p></details>" for q, a in TEAM_QA)
+def questions(qa=TEAM_QA):
+    """A page's questions and answers, the home page's look (the Teams page's own; Connectors' too)."""
+    rows = "".join(f"<details><summary>{esc(q)}</summary><p>{esc(a)}</p></details>" for q, a in qa)
     return f"""<section class="trust" id="questions" aria-label="Questions">
   <div class="wrap">
     <div class="trust-top">

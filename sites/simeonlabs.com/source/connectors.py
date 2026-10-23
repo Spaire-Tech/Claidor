@@ -3,9 +3,11 @@
 Laid out after the founder's reference (23 October 2026): an opening with famous
 apps' icons around a centred headline; "Find an app for your next task", every
 connector as a card (its icon, its name, what it does), the most famous first,
-with the catalogue's kinds as tabs, a search and Load more; then "Connect an app
-in a few clicks", three steps beside the Mac app drawn at each one. A card does
-nothing yet (the founder: "this will need a lot more of designing").
+with the catalogue's kinds as tabs, a search and Load more; then questions and
+answers on connecting, each one what the apps really do (the founder, 23 October
+2026: "remove the Connect an app in a few clicks section. only have an faq there
+based logically on whats real"). A card does nothing yet (the founder: "this will
+need a lot more of designing").
 
 The connectors are the apps' own list (desktop/source/shared/node/vendor-mcp/
 catalog.ts): their names, kinds and lines, the retired places left out. The
@@ -41,9 +43,6 @@ FLOAT = [
     ("hubspot", 89, 50, 7.2, False), ("google-drive", 71, 82, 8.2, False), ("outlook", 86, 78, 8.8, True),
     ("notion", 99, 75, 7.5, True),
 ]
-# The Mac app drawn beside the steps: the home page's agents in its sidebar.
-AGENTS = [("clay-simeon", "Simeon", "Chief of Staff"), ("clay-30", "Theo", "Bookkeeping"),
-          ("clay-01", "Iris", "Customer support"), ("clay-05", "Scout", "Customer research")]
 PAGE = 24
 
 
@@ -74,8 +73,6 @@ def catalogue():
     return found, list(groups.values())
 
 
-CHECK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>'
-PLUS = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v12M6 12h12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>'
 SEARCH = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m15.5 15.5 5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>'
 
 CONN_CSS = """
@@ -117,92 +114,18 @@ CONN_CSS = """
 .none-apps{margin-top:28px;font-size:var(--t-body);color:var(--ink2)}
 .said{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 
-/* Connect an app in a few clicks: three steps, the chosen one black with a line filling under it, beside the
-   Mac app at that step (a painting behind it, as on the home page's cards). */
-.how{padding:clamp(110px,10vw,190px) 0 clamp(90px,8vw,150px)}
-.how h2{max-width:var(--title-max);margin-inline:auto;text-align:center;font-weight:var(--w-display);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em;text-wrap:pretty}
-.how-grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:clamp(32px,5vw,96px);align-items:center;margin-top:clamp(40px,4vw,72px)}
-.steps{margin:0;padding:0;list-style:none}
-.step{position:relative;display:block;width:100%;padding:26px 0 24px;border:0;border-bottom:1px solid #e5e5ea;background:none;color:var(--ink2);font:inherit;text-align:left;cursor:pointer}
-.step .n{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:#aeaeb2;color:#fff;font-size:var(--t-small);transition:background .3s}
-.step b{display:block;margin-top:14px;font-size:var(--t-head);font-weight:var(--w-title);letter-spacing:-.015em;transition:color .3s}
-.step .d{display:block;margin-top:8px;max-width:32em;font-size:var(--t-body);line-height:1.5;letter-spacing:-.01em}
-.step[aria-current="step"] .n{background:#1d1d1f}
-.step[aria-current="step"] b{color:var(--ink)}
-.step[aria-current="step"] .d{color:#424245}
-.step .fill{position:absolute;left:0;right:0;bottom:-1px;height:2px;overflow:hidden}
-.step .fill i{display:block;width:0;height:100%;background:#1d1d1f}
-.step[aria-current="step"] .fill i{animation:fill 6s linear forwards}
-.how.paused .step .fill i{animation-play-state:paused}
-@keyframes fill{to{width:100%}}
-.scene{position:relative;aspect-ratio:760 / 640;max-width:100%;border-radius:28px;overflow:hidden;background:#c9dcf0 url(/img/paint-blue.jpg) center/cover;container-type:inline-size}
-.win{position:absolute;left:10%;top:8%;width:104%;height:100%;display:grid;grid-template-columns:32cqw minmax(0,1fr);border-radius:2.4cqw;background:#fff;box-shadow:0 2cqw 6cqw -2cqw rgba(0,0,0,.4);overflow:hidden;font-size:2cqw;letter-spacing:-.01em;color:#1d1d1f}
-.win .side{display:flex;flex-direction:column;gap:.6cqw;padding:2.4cqw 1.8cqw;background:#f5f5f7;border-right:.12cqw solid #e5e5ea}
-.win .lights{display:flex;gap:.9cqw;margin:0 0 2.2cqw .6cqw}
-.win .lights i{width:1.5cqw;height:1.5cqw;border-radius:50%;background:#ff5f57}
-.win .lights i+i{background:#febc2e}
-.win .lights i+i+i{background:#28c840}
-.win .ag{display:flex;align-items:center;gap:1.4cqw;padding:1.1cqw 1.2cqw;border-radius:1.6cqw;transition:background .4s}
-.win .ag img{width:4.4cqw;height:4.4cqw;border-radius:50%;object-fit:cover}
-.win .ag b{display:block;font-size:1.9cqw;font-weight:500}
-.win .ag small{display:block;font-size:1.5cqw;color:#86868b}
-.win .apps-row{display:flex;align-items:center;gap:1cqw;margin-top:auto;margin-bottom:9cqw;padding:1.2cqw;border-radius:1.6cqw;font-size:1.7cqw;color:#255a93;transition:background .4s}
-.win .apps-row .app{--as:2.4cqw;--ring:#f5f5f7}
-.win .main{position:relative;overflow:hidden}
-.win .v1{padding:4cqw 4.4cqw}
-.win h3{font-size:4.2cqw;font-weight:500;letter-spacing:-.02em}
-.win .v1>p{margin-top:.8cqw;font-size:1.9cqw;color:#6e6e73}
-.win .field{display:flex;align-items:center;gap:1.2cqw;height:5cqw;margin-top:2.6cqw;padding:0 1.6cqw;border:.15cqw solid #e5e5ea;border-radius:1.6cqw;font-size:1.8cqw;color:#86868b}
-.win .field svg{width:2cqw;height:2cqw}
-.win .label{margin-top:3.4cqw;font-size:1.9cqw;font-weight:500}
-.win .row{display:flex;align-items:center;gap:1.8cqw;padding:1.6cqw 0;border-bottom:.12cqw solid #f0f0f2}
-.win .row .app{--as:5.4cqw;--ring:transparent}
-.win .row b{display:block;font-size:2cqw;font-weight:500}
-.win .row small{display:block;margin-top:.2cqw;font-size:1.6cqw;color:#86868b}
-.win .row .plus{display:grid;place-items:center;flex:none;width:3.6cqw;height:3.6cqw;margin-left:auto;margin-right:6cqw;border-radius:50%;background:#f2f2f4;transition:background .4s,color .4s}
-.win .row .plus svg{width:1.8cqw;height:1.8cqw}
-.win .v2,.win .v3{position:absolute;inset:0;opacity:0;visibility:hidden;transition:opacity .45s,visibility .45s}
-.win .v2{display:grid;place-items:center;padding-right:14cqw;background:rgba(0,0,0,.28)}
-.win .card{width:34cqw;padding:3.2cqw;border-radius:2.4cqw;background:#fff;box-shadow:0 2cqw 5cqw -1.6cqw rgba(0,0,0,.4)}
-.win .card .app{--as:6cqw;--ring:transparent}
-.win .card h4{margin-top:1.8cqw;font-size:2.6cqw;font-weight:500;letter-spacing:-.02em}
-.win .card ul{margin:1.6cqw 0 0;padding:0;list-style:none;display:grid;gap:1cqw;font-size:1.7cqw;color:#424245}
-.win .card li{display:flex;gap:1cqw;align-items:flex-start}
-.win .card li svg{flex:none;width:1.9cqw;height:1.9cqw;margin-top:.1cqw;color:#1d1d1f}
-.win .card .go{display:flex;gap:1.2cqw;margin-top:2.6cqw}
-.win .card .go span{display:grid;place-items:center;height:4.4cqw;padding:0 2.4cqw;border-radius:99px;background:#f2f2f4;font-size:1.7cqw}
-.win .card .go span+span{background:#1d1d1f;color:#fff}
-.win .v3{display:flex;flex-direction:column;padding:3.4cqw 4.4cqw 3.4cqw 4.4cqw;background:#fff}
-.win .who{display:flex;align-items:center;gap:1.4cqw;padding-bottom:2.2cqw;border-bottom:.12cqw solid #f0f0f2}
-.win .who img{width:4.6cqw;height:4.6cqw;border-radius:50%;object-fit:cover}
-.win .who b{display:block;font-size:2cqw;font-weight:500}
-.win .who small{display:block;font-size:1.6cqw;color:#86868b}
-.win .msg{max-width:62%;margin-top:2.4cqw;padding:1.6cqw 2.2cqw;border-radius:2.6cqw;font-size:1.85cqw;line-height:1.4}
-.win .msg.me{align-self:flex-end;margin-right:15cqw;background:#255a93;color:#fff}
-.win .msg.it{align-self:flex-start;background:#e9e9eb}
-.win .chip{display:inline-flex;align-items:center;gap:.6cqw;padding:.1cqw .8cqw .1cqw .3cqw;border-radius:99px;background:#fff;vertical-align:-.3cqw;font-weight:500}
-.win .chip .app{--as:2.2cqw;--ring:transparent}
-.win .ask{display:flex;align-items:center;gap:1.2cqw;align-self:flex-start;margin-top:1.8cqw;padding:1.4cqw 1.6cqw 1.4cqw 2.2cqw;border:.15cqw solid #e5e5ea;border-radius:2.4cqw;font-size:1.8cqw}
-.win .ask span{display:grid;place-items:center;height:3.8cqw;padding:0 2cqw;border-radius:99px;background:#f2f2f4;font-size:1.6cqw}
-.win .ask span:last-child{background:#1d1d1f;color:#fff}
-.scene[data-step="0"] .apps-row,.scene[data-step="1"] .apps-row{background:#e8e8ed}
-.scene[data-step="0"] .row:first-of-type .plus{background:#1d1d1f;color:#fff}
-.scene[data-step="1"] .v2,.scene[data-step="2"] .v3{opacity:1;visibility:visible}
-.scene[data-step="2"] .ag.on{background:#e8e8ed}
 
 @media (max-width:1068px){.list{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:734px){
-  .find-head h2,.how h2{max-width:none;text-wrap:wrap} /* a phone keeps its titles as they were */
+  .find-head h2{max-width:none;text-wrap:wrap} /* a phone keeps its titles as they were */
   .open{min-height:0;overflow:visible} /* the icons' shadows are not cut */
   .floats{display:flex;flex-wrap:wrap;gap:12px;width:var(--col);margin:40px auto 0} /* on the left, under the button */
   .float{position:static;transform:none}
   .float.side{display:none}
   .float .app{--as:44px}
   .list{grid-template-columns:minmax(0,1fr);gap:12px}
-  .how-grid{grid-template-columns:minmax(0,1fr)}
-  .scene{order:-1} /* the app above the steps, so a tap shows its step */
 }
-@media (prefers-reduced-motion:reduce){.float{animation:none}.step .fill i{animation:none!important}.win .v2,.win .v3,.win .ag,.win .apps-row{transition:none}}
+@media (prefers-reduced-motion:reduce){.float{animation:none}}
 """
 
 LIST_JS = """<script>
@@ -236,19 +159,6 @@ LIST_JS = """<script>
 })();
 </script>"""
 
-STEPS_JS = """<script>
-// The steps: each shows the Mac app at that step and hands on to the next when its line has filled (6 s,
-// paused while the section is out of sight); a click shows a step at once.
-(() => {
-  const how = document.querySelector('.how'), scene = how.querySelector('.scene'), steps = [...how.querySelectorAll('.step')];
-  const pick = (i) => { steps.forEach((s, j) => s.setAttribute('aria-current', j === i ? 'step' : 'false')); scene.dataset.step = String(i); };
-  steps.forEach((s, i) => {
-    s.addEventListener('click', () => pick(i));
-    s.querySelector('.fill i').addEventListener('animationend', () => pick((i + 1) % steps.length));
-  });
-  new IntersectionObserver(([e]) => how.classList.toggle('paused', !e.isIntersecting)).observe(how);
-})();
-</script>"""
 
 
 def opening(assets, ctas):
@@ -290,40 +200,19 @@ def finder(apps, kinds, assets):
 </section>"""
 
 
-def steps(assets):
-    face = lambda f: f'<img src="/faces/{f}.webp" alt="" width="96" height="96">'
-    agents = "".join(f'<div class="ag{" on" if name == "Iris" else ""}">{face(f)}<span><b>{name}</b><small>{job}</small></span></div>'
-                     for f, name, job in AGENTS)
-    rows = "".join(f'<div class="row">{assets.tile(cid)}<span><b>{name}</b><small>{line}</small></span><span class="plus">{PLUS}</span></div>'
-                   for cid, name, line in (("gmail", "Gmail", "Search, read and draft email"), ("slack", "Slack", "Read and send messages"),
-                                           ("google-calendar", "Google Calendar", "Find time and book meetings"), ("notion", "Notion", "Read and write pages")))
-    told = [("Find an app", "Browse the apps your agents can work in, or search for one by name."),
-            ("Connect it", "See what the agents can do there, then sign in once, on the app's own page."),
-            ("Put it to work", "Ask an agent in plain words. It works in the app and asks before it sends, posts or pays.")]
-    items = "".join(f'<li><button class="step" type="button" aria-current="{"step" if i == 0 else "false"}"><span class="n">{i + 1}</span>'
-                    f'<b>{esc(t)}</b><span class="d">{esc(d)}</span><span class="fill"><i></i></span></button></li>' for i, (t, d) in enumerate(told))
-    gmail = assets.tile("gmail")
-    return f"""<section class="how" aria-labelledby="how-title">
-  <div class="wrap">
-    <h2 id="how-title">Connect an app in a few clicks</h2>
-    <div class="how-grid">
-      <ol class="steps">{items}</ol>
-      <div class="scene" data-step="0" aria-hidden="true">
-        <div class="win">
-          <div class="side"><div class="lights"><i></i><i></i><i></i></div>{agents}<div class="apps-row">{"".join(assets.tile(a) for a in ("gmail", "slack", "notion"))}Connect apps</div></div>
-          <div class="main">
-            <div class="v1"><h3>Connectors</h3><p>Your agents work in the apps you connect.</p><div class="field">{SEARCH}Search apps</div><p class="label">Popular</p>{rows}</div>
-            <div class="v2"><div class="card">{gmail}<h4>Connect Gmail</h4><ul><li>{CHECK}Search and read your email</li><li>{CHECK}Draft replies for you to check</li><li>{CHECK}Send only when you say so</li></ul><div class="go"><span>Not now</span><span>Continue</span></div></div></div>
-            <div class="v3"><div class="who">{face("clay-01")}<span><b>Iris</b><small>Customer support</small></span></div>
-              <p class="msg me">Answer this morning's customer emails.</p>
-              <p class="msg it">Done. Four replies are drafted in <span class="chip">{gmail}Gmail</span></p>
-              <div class="ask">Send the four replies?<span>Not now</span><span>Allow</span></div></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>"""
+
+
+# Questions on connecting an app, each one what the apps do today (ConnectConsent.swift, the sign-in sheet;
+# docs/services-agents.md, 7): how to connect, what agents reach, staying in charge, where it goes, Coming soon.
+CONN_QA = [
+    ("How do I connect an app?", "In Simeon on your Mac or iPhone, open Connect apps and choose the app, or say yes when an agent asks for one in the chat. You sign in once, and Simeon never sees your password. A few apps ask for a key from your account with them instead."),
+    ("What can my agents do in an app?", "What your account there allows: your email in Gmail, your deals in HubSpot or your books in QuickBooks, for example. Before you sign in, Simeon shows what your agents will be able to read and use."),
+    ("Will they act without asking me?", "Auto-review asks for your OK before steps it judges risky, and you can turn off any of an app's tools, or remove the app, in Settings › Connect apps. Agents can still get things wrong, so look over their work, especially at first."),
+    ("Where does my information go?", "What your agents read in an app becomes part of your chats with them and is sent to the AI models that do the work. The app's own terms and privacy policy apply to what it shares with Simeon."),
+    ("Does connecting apps cost extra?", "No. Connecting apps is part of every plan, the free month included. Some apps need an account of a certain kind, such as WhatsApp Business or an Instagram business or creator account."),
+    ("What does Coming soon mean?", "The app can't be connected yet: its maker hasn't opened it to apps like Simeon, or Simeon is still setting up its sign-in with them. It changes to Connect once it can, with nothing for you to do."),
+    ("What if my app isn't listed?", "Your agents can still use it on the web, in the browser on their own computer, once you sign in there by taking over. To ask for an app, write to support@simeonlabs.com."),
+]
 
 
 def build(out=OUT):
@@ -334,9 +223,10 @@ def build(out=OUT):
     os.makedirs(root)
     assets = Assets(root, "/connectors")
     hero_css, ctas = teams.home_hero()
-    body = opening(assets, ctas) + "\n" + finder(apps, kinds, assets) + "\n" + steps(assets)
+    _, _, home_css = teams.from_home()
+    body = opening(assets, ctas) + "\n" + finder(apps, kinds, assets) + "\n" + teams.questions(CONN_QA)
     page = frame("Connectors", f"Connect Gmail, Slack, Notion and {len(apps) - 3} more apps to your Simeon agents.", "/connectors",
-                 body, hero_css + CONN_CSS, current="connectors", script=LIST_JS.replace("%PAGE%", str(PAGE)) + STEPS_JS)
+                 body, hero_css + CONN_CSS + home_css, current="connectors", script=LIST_JS.replace("%PAGE%", str(PAGE)))
     open(f"{root}/index.html", "w", encoding="utf-8").write(page)
     letters = sorted(k for k, how in assets.drawn.items() if how == "letter")
     print(f"connectors page written to {os.path.abspath(root)}: {len(apps)} app(s)")
