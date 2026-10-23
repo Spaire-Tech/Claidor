@@ -25,7 +25,7 @@ public/; it also runs alone, needing nothing but Python:
 
     python3 teams.py
 """
-import hashlib, html, json, os, re, shutil, sys
+import hashlib, html, json, os, re, shutil, sys, unicodedata
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(HERE, "..", "..", ".."))
@@ -50,6 +50,16 @@ WORDS = {1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six", 7: "sev
 PICTURES = (".png", ".jpg", ".jpeg", ".webp", ".svg")
 # The teams whose photos open /teams, left to right (source/img/teams/<id>.jpg).
 LEAD = ["creators", "founders", "agencies", "coffee-shop", "freelancers"]
+# The marketplace's chips: the most common kinds of work, each the teams it shows (a team can be in two).
+GROUPS = {
+    "local": ("Local business", ["coffee-shop", "salons", "trades"]),
+    "startups": ("Startups", ["founders", "sales", "recruiters"]),
+    "online": ("Selling online", ["online-stores", "creators"]),
+    "solo": ("On your own", ["freelancers", "creators"]),
+    "firms": ("Firms and agencies", ["agencies", "law-firms", "accountants"]),
+    "property": ("Real estate", ["real-estate", "property"]),
+    "personal": ("Personal", ["life"]),
+}
 
 
 def _text(path):
@@ -295,7 +305,9 @@ INDEX_CSS = """
 .lead .see{font-size:clamp(15px,.95vw,19px);text-decoration:none;color:var(--ink)}
 .lead .see::after{content:" \\203A"}
 .lead .see:hover{text-decoration:underline}
-.fan{--w:clamp(160px,21vw,400px);--step:calc(var(--w) * .84);position:relative;height:calc(var(--w) * 1.52 + 110px);margin-top:clamp(36px,3.4vw,64px);overflow:hidden}
+html{scroll-behavior:smooth;scroll-padding-top:clamp(72px,4.6vw,96px)} /* See all teams lands below the bar */
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+.fan{--w:clamp(160px,21vw,400px);--step:calc(var(--w) * .84);position:relative;height:calc(var(--w) * 1.42 + 84px);margin-top:clamp(36px,3.4vw,64px);overflow:hidden}
 .shot{position:absolute;top:calc(var(--w) * .08 + 30px);left:calc(50% - var(--w) / 2 + var(--o) * var(--step));z-index:var(--z);width:var(--w);aspect-ratio:4 / 5;border:6px solid #fff;border-radius:24px;overflow:hidden;background:var(--soft);
   box-shadow:0 0 0 1px rgba(0,0,0,.06),0 14px 34px -12px rgba(0,0,0,.28);transform:translateY(calc(var(--y) + var(--lift,0px))) rotate(var(--r)) scale(var(--s));transition:transform .35s cubic-bezier(.2,.7,.2,1)}
 .shot:hover,.shot:focus-visible{--lift:-10px}
@@ -303,6 +315,22 @@ INDEX_CSS = """
 .shot::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.06),rgba(0,0,0,.26))}
 .shot span{position:absolute;inset:0;z-index:1;display:grid;place-items:center;padding:0 12px;color:#fff;font-size:clamp(18px,1.55vw,30px);font-weight:600;letter-spacing:-.02em;text-shadow:0 1px 18px rgba(0,0,0,.4)}
 .list-title{margin-top:clamp(40px,4vw,80px);font-family:var(--serif);font-weight:400;font-size:clamp(28px,2.2vw,44px);line-height:1.08;letter-spacing:-.02em} /* the home page's section titles */
+/* The marketplace's chips (the most common kinds of work, All first) and its search, as in the founder's
+   reference: grey pills, the chosen one black; a grey rounded field with a magnifier. Both filter the list. */
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:clamp(16px,1.4vw,26px)}
+.chip{flex:none;height:40px;padding:0 18px;border:0;border-radius:99px;background:#f0f0f2;color:var(--ink);font:inherit;font-size:15px;letter-spacing:-.01em;cursor:pointer;transition:background .15s,color .15s}
+.chip:hover{background:#e6e6e9}
+.chip[aria-pressed="true"]{background:#000;color:#fff}
+.chip:focus-visible,.find input:focus-visible,.none button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.find{position:relative;margin-top:clamp(20px,1.8vw,32px)}
+.find svg{position:absolute;left:18px;top:50%;width:18px;height:18px;transform:translateY(-50%);color:#8e8e93;pointer-events:none}
+.find input{display:block;width:100%;height:48px;padding:0 20px 0 46px;border:0;border-radius:99px;background:#f0f0f2;color:var(--ink);font:inherit;font-size:16px;letter-spacing:-.01em;-webkit-appearance:none;appearance:none}
+.find input::placeholder{color:#8e8e93;opacity:1}
+.find input::-webkit-search-decoration{-webkit-appearance:none}
+.none{margin-top:28px;font-size:16px;color:var(--ink2)}
+.none button{padding:0;border:0;background:none;font:inherit;color:var(--blue);cursor:pointer}
+.packs>li[hidden]{display:none}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .packs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;margin:clamp(24px,2.4vw,44px) 0 0;padding:0;list-style:none}
 .pack{display:flex;flex-direction:column;height:100%;padding:clamp(24px,2.1vw,40px);border-radius:28px;background:var(--soft);text-decoration:none;transition:background .2s}
 .pack:hover{background:#efeff2}
@@ -313,7 +341,8 @@ INDEX_CSS = """
 .pack .more{margin-top:16px;color:var(--blue);font-size:clamp(15px,1vw,18px)}
 .pack .more::after{content:" \\203A"}
 @media (max-width:1068px){.packs{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media (max-width:734px){.packs{grid-template-columns:1fr;gap:14px}.pack{border-radius:24px}.lead{padding-top:48px}.lead h1{font-size:30px;line-height:1.16}.fan{--w:clamp(150px,44vw,240px)}.shot{border-width:4px;border-radius:18px}}
+@media (max-width:734px){.packs{grid-template-columns:1fr;gap:14px}.pack{border-radius:24px}.lead{padding-top:48px}.lead h1{font-size:30px;line-height:1.16}.fan{--w:clamp(150px,44vw,240px)}.shot{border-width:4px;border-radius:18px}
+  .chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-inline:calc(-1 * var(--gutter));padding-inline:var(--gutter)}.chips::-webkit-scrollbar{display:none}}
 @media (prefers-reduced-motion:reduce){.shot{transition:none}}
 """
 
@@ -409,6 +438,37 @@ ADD_JS = """<script>
 PLUS = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>'
 # The home page's download arrow (page.html, `.btn .dl`).
 DOWNLOAD = '<svg class="dl" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m-5-5 5 5 5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+MAGNIFIER = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m15.5 15.5 5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>'
+
+MARKET_JS = """<script>
+// The marketplace: a chip shows its kind of work (All, or the chosen chip again, shows every team), and the
+// search keeps the teams whose name, job, agents or apps hold every word typed. Without this script the
+// chips and the search stay hidden and every team shows.
+(() => {
+  const tools = document.querySelector('.tools'), input = document.getElementById('team-search');
+  const chips = [...tools.querySelectorAll('.chip')], cards = [...document.querySelectorAll('.packs > li')];
+  const none = document.querySelector('.none'), said = document.querySelector('.sr');
+  const fold = (s) => s.toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '');
+  let group = 'all';
+  const choose = (g) => { group = g; for (const c of chips) c.setAttribute('aria-pressed', String(c.dataset.group === g)); };
+  const show = () => {
+    const words = fold(input.value).split(/\\s+/).filter(Boolean);
+    let shown = 0;
+    for (const li of cards) {
+      const fits = (group === 'all' || li.dataset.groups.split(' ').includes(group)) && words.every((w) => li.dataset.q.includes(w));
+      li.hidden = !fits;
+      if (fits) shown++;
+    }
+    none.hidden = shown > 0;
+    said.textContent = shown === 1 ? '1 team' : shown + ' teams';
+  };
+  for (const c of chips) c.addEventListener('click', () => { choose(c.dataset.group === group ? 'all' : c.dataset.group); show(); });
+  input.addEventListener('input', show);
+  none.querySelector('button').addEventListener('click', () => { input.value = ''; choose('all'); show(); input.focus(); });
+  tools.hidden = false;
+  if (input.value) show();
+})();
+</script>"""
 
 
 def frame(title, description, path, body, css, current=False, script=""):
@@ -542,11 +602,25 @@ def fan(packs, assets):
     return f'<div class="fan">{"".join(out)}</div>' if out else ""
 
 
+def search_words(pack):
+    """What the marketplace's search looks through for a team: its name and folder, what it is for, and each
+    agent's name, job and apps; lower case, without accents (the page folds what is typed the same way)."""
+    agents = pack["agents"]
+    words = [pack["title"], pack.get("folder", ""), pack["summary"]]
+    words += [a["name"] for a in agents] + [a["title"] for a in agents]
+    words += [app_name(app) for a in agents for app in a["apps"] if app]
+    text = unicodedata.normalize("NFD", " ".join(words).lower())
+    return esc("".join(c for c in text if not unicodedata.combining(c)))
+
+
 def index_page(packs, assets):
+    groups = {pid: [slug for slug, (_, ids) in GROUPS.items() if pid in ids] for pid in (p["id"] for p in packs)}
     cards = "\n".join(
-        f'<li><a class="pack" href="/teams/{p["id"]}">{faces_row(p, assets)}<h2>{esc(p["title"])}</h2>'
+        f'<li data-groups="{" ".join(groups[p["id"]])}" data-q="{search_words(p)}"><a class="pack" href="/teams/{p["id"]}">{faces_row(p, assets)}<h2>{esc(p["title"])}</h2>'
         f'<p>{esc(p["summary"])}</p><span class="more">Meet the team</span></a></li>'
         for p in packs)
+    chips = '<button class="chip" type="button" data-group="all" aria-pressed="true">All</button>' + "".join(
+        f'<button class="chip" type="button" data-group="{slug}" aria-pressed="false">{esc(label)}</button>' for slug, (label, _) in GROUPS.items())
     body = f"""<section class="lead" aria-label="Teams">
   <div class="wrap">
     <h1><span class="box">A team of agents</span><br>for your kind of work</h1>
@@ -554,13 +628,19 @@ def index_page(packs, assets):
   </div>
   {fan(packs, assets)}
 </section>
-<div class="wrap">
-<h2 class="list-title" id="all">All teams</h2>
+<section class="wrap" aria-labelledby="all">
+<h2 class="list-title" id="all">Marketplace</h2>
+<div class="tools" hidden>
+  <div class="chips" role="group" aria-label="Kinds of work">{chips}</div>
+  <div class="find" role="search">{MAGNIFIER}<input type="search" id="team-search" placeholder="Search by team, job or app" aria-label="Search the teams" autocomplete="off" spellcheck="false"></div>
+</div>
+<p class="sr" aria-live="polite"></p>
 <ul class="packs">
 {cards}
 </ul>
-</div>"""
-    return frame("Teams", "Starter teams of five agents for one kind of business, ready to add to Simeon.", "/teams", body, INDEX_CSS, current=True)
+<p class="none" hidden>No team matches that yet. <button type="button">Show every team</button></p>
+</section>"""
+    return frame("Teams", "Starter teams of five agents for one kind of business, ready to add to Simeon.", "/teams", body, INDEX_CSS, current=True, script=MARKET_JS)
 
 
 def build(out=OUT):
