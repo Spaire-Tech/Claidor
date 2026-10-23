@@ -71,10 +71,26 @@ footer a{color:var(--ink2);text-decoration:none}
 footer a:hover{color:var(--ink)}
 footer a[aria-current]{color:var(--ink)}
 
-.top{padding:clamp(40px,6vw,120px) 0 0}
-.top h1{font-family:var(--serif);font-weight:400;font-size:clamp(30px,2.2vw,44px);line-height:1.08;letter-spacing:-.02em} /* the home page's headline */
-.top p{margin-top:clamp(8px,.7vw,14px);max-width:34em;font-size:clamp(16px,1vw,19px);line-height:1.5;letter-spacing:-.01em;color:var(--ink2)} /* the line under its section titles */
-.packs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;margin:clamp(32px,3vw,60px) 0 0;padding:0;list-style:none}
+/* The opening (23 October 2026, after the founder's reference): a centred headline, its first words in a
+   box, the buttons, then photos of people at work in a fan, each one a team's; the middle one in front. */
+.lead{padding:clamp(56px,6.4vw,128px) 0 0;text-align:center}
+.lead h1{font-family:var(--serif);font-weight:400;font-size:clamp(34px,3.2vw,64px);line-height:1.12;letter-spacing:-.02em} /* the home page's closing title */
+.lead h1 .box{display:inline-block;margin-bottom:.14em;padding:.02em .3em .08em;border:1px solid #d2d2d7;border-radius:.24em;background:var(--page);box-shadow:0 1px 2px rgba(0,0,0,.04),0 8px 20px -10px rgba(0,0,0,.14)}
+.lead .ctas{display:flex;justify-content:center;align-items:center;gap:clamp(18px,1.5vw,28px);flex-wrap:wrap;margin-top:clamp(22px,2vw,36px)}
+.lead .btn{height:clamp(40px,2.5vw,50px);padding:0 clamp(18px,1.3vw,26px);font-size:clamp(15px,.95vw,19px)} /* the home page's buttons */
+.lead .btn .dl{width:1em;height:1em;margin:0 -.15em 0 0}
+.lead .see{font-size:clamp(15px,.95vw,19px);text-decoration:none;color:var(--ink)}
+.lead .see::after{content:" \203A"}
+.lead .see:hover{text-decoration:underline}
+.fan{--w:clamp(160px,21vw,400px);--step:calc(var(--w) * .84);position:relative;height:calc(var(--w) * 1.52 + 110px);margin-top:clamp(36px,3.4vw,64px);overflow:hidden}
+.shot{position:absolute;top:calc(var(--w) * .08 + 30px);left:calc(50% - var(--w) / 2 + var(--o) * var(--step));z-index:var(--z);width:var(--w);aspect-ratio:4 / 5;border:6px solid #fff;border-radius:24px;overflow:hidden;background:var(--soft);
+  box-shadow:0 0 0 1px rgba(0,0,0,.06),0 14px 34px -12px rgba(0,0,0,.28);transform:translateY(calc(var(--y) + var(--lift,0px))) rotate(var(--r)) scale(var(--s));transition:transform .35s cubic-bezier(.2,.7,.2,1)}
+.shot:hover,.shot:focus-visible{--lift:-10px}
+.shot img{width:100%;height:100%;object-fit:cover}
+.shot::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.06),rgba(0,0,0,.26))}
+.shot span{position:absolute;inset:0;z-index:1;display:grid;place-items:center;padding:0 12px;color:#fff;font-size:clamp(18px,1.55vw,30px);font-weight:600;letter-spacing:-.02em;text-shadow:0 1px 18px rgba(0,0,0,.4)}
+.list-title{margin-top:clamp(40px,4vw,80px);font-family:var(--serif);font-weight:400;font-size:clamp(28px,2.2vw,44px);line-height:1.08;letter-spacing:-.02em} /* the home page's section titles */
+.packs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;margin:clamp(24px,2.4vw,44px) 0 0;padding:0;list-style:none}
 .pack{display:flex;flex-direction:column;height:100%;padding:clamp(24px,2.1vw,40px);border-radius:28px;background:var(--soft);text-decoration:none;transition:background .2s}
 .pack:hover{background:#efeff2}
 .pack .faces{--ring:var(--soft);--fs:clamp(38px,2.6vw,48px)}
@@ -84,7 +100,8 @@ footer a[aria-current]{color:var(--ink)}
 .pack .more{margin-top:16px;color:var(--blue);font-size:clamp(15px,1vw,18px)}
 .pack .more::after{content:" \203A"}
 @media (max-width:1068px){.packs{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media (max-width:734px){.packs{grid-template-columns:1fr;gap:14px}.pack{border-radius:24px}.top{padding-top:44px}.top h1{font-size:28px;line-height:1.12}}
+@media (max-width:734px){.packs{grid-template-columns:1fr;gap:14px}.pack{border-radius:24px}.lead{padding-top:48px}.lead h1{font-size:30px;line-height:1.16}.fan{--w:clamp(150px,44vw,240px)}.shot{border-width:4px;border-radius:18px}}
+@media (prefers-reduced-motion:reduce){.shot{transition:none}}
 </style>
 </head>
 <body>
@@ -97,11 +114,15 @@ footer a[aria-current]{color:var(--ink)}
 </header>
 
 <main>
-<div class="wrap">
-<section class="top" aria-label="Teams">
-  <h1>Teams</h1>
-  <p>A team of five agents for your kind of business, ready to add to Simeon.</p>
+<section class="lead" aria-label="Teams">
+  <div class="wrap">
+    <h1><span class="box">A team of agents</span><br>for your kind of work</h1>
+    <div class="ctas"><a class="btn" href="https://api.simeonlabs.com/desktop/download/mac">Download for macOS<svg class="dl" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m-5-5 5 5 5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a><a class="see" href="#all">See all teams</a></div>
+  </div>
+  <div class="fan"><a class="shot" href="/teams/creators" style="--o:-2;--r:-5deg;--y:20px;--s:1;--z:3" aria-label="Simeon for Creators"><img src="/teams/photos/creators.jpg?v=41e961e7" alt="" width="736" height="920"><span aria-hidden="true">Creators</span></a><a class="shot" href="/teams/founders" style="--o:-1;--r:2.5deg;--y:34px;--s:1;--z:4" aria-label="Simeon for Founders"><img src="/teams/photos/founders.jpg?v=c2221fa4" alt="" width="736" height="920"><span aria-hidden="true">Founders</span></a><a class="shot" href="/teams/agencies" style="--o:0;--r:0deg;--y:0px;--s:1.12;--z:5" aria-label="Simeon for Agencies"><img src="/teams/photos/agencies.jpg?v=a68dce9e" alt="" width="736" height="920"><span aria-hidden="true">Agencies</span></a><a class="shot" href="/teams/coffee-shop" style="--o:1;--r:-2.5deg;--y:34px;--s:1;--z:4" aria-label="Simeon for Coffee Shops"><img src="/teams/photos/coffee-shop.jpg?v=b57d2ce5" alt="" width="736" height="920"><span aria-hidden="true">Coffee Shops</span></a><a class="shot" href="/teams/freelancers" style="--o:2;--r:5deg;--y:20px;--s:1;--z:3" aria-label="Simeon for Freelancers"><img src="/teams/photos/freelancers.jpg?v=410d70a9" alt="" width="736" height="920"><span aria-hidden="true">Freelancers</span></a></div>
 </section>
+<div class="wrap">
+<h2 class="list-title" id="all">All teams</h2>
 <ul class="packs">
 <li><a class="pack" href="/teams/coffee-shop"><div class="faces" aria-hidden="true"><img src="/teams/faces/clay-02.webp?v=31c9d286" alt="" width="128" height="128"><img src="/teams/faces/clay-01.webp?v=69753ea5" alt="" width="128" height="128"><img src="/teams/faces/clay-03.webp?v=ab2ac8f8" alt="" width="128" height="128"><img src="/teams/faces/clay-04.webp?v=515ee960" alt="" width="128" height="128"><img src="/teams/faces/clay-05.webp?v=b86ef7a4" alt="" width="128" height="128"></div><h2>Simeon for Coffee Shops</h2><p>Five agents for the back of the shop: stock, shifts, socials, customers and money.</p><span class="more">Meet the team</span></a></li>
 <li><a class="pack" href="/teams/founders"><div class="faces" aria-hidden="true"><img src="/teams/faces/clay-07.webp?v=c5c27d78" alt="" width="128" height="128"><img src="/teams/faces/clay-06.webp?v=8b4ba6a5" alt="" width="128" height="128"><img src="/teams/faces/clay-10.webp?v=1f1c0f72" alt="" width="128" height="128"><img src="/teams/faces/clay-08.webp?v=e4f281c6" alt="" width="128" height="128"><img src="/teams/faces/clay-09.webp?v=f590ce02" alt="" width="128" height="128"></div><h2>Simeon for Founders</h2><p>Five agents for running a startup: investors, money, product, hiring and growth.</p><span class="more">Meet the team</span></a></li>

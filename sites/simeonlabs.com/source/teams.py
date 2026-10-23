@@ -1,8 +1,9 @@
 """Builds the website's Teams pages (/teams and /teams/<pack>) from the starter packs.
 
 A starter pack is a team of five named agents for one kind of business
-(server/simeon/desktop/packs.json, which the apps read too). /teams lists
-every pack; /teams/<id> shows one the way the founder's posts show a team: a
+(server/simeon/desktop/packs.json, which the apps read too). /teams opens with
+a headline and photos of people at work, each a team's (img/teams/<id>.jpg,
+in the order of LEAD), then lists every pack; /teams/<id> shows one the way the founder's posts show a team: a
 big serif headline, "Add to Simeon", then each agent as a card (its clay face,
 its name in the apps' blue and its job in grey, what it does, the apps it works
 in, and a line it would say), and "Add to Simeon" again at the end. The button
@@ -47,6 +48,8 @@ MAC_DOWNLOAD = "https://api.simeonlabs.com/desktop/download/mac"
 BLUE = "#255a93"
 WORDS = {1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six", 7: "seven", 8: "eight", 9: "nine", 10: "ten"}
 PICTURES = (".png", ".jpg", ".jpeg", ".webp", ".svg")
+# The teams whose photos open /teams, left to right (source/img/teams/<id>.jpg).
+LEAD = ["creators", "founders", "agencies", "coffee-shop", "freelancers"]
 
 
 def _text(path):
@@ -281,10 +284,26 @@ footer a[aria-current]{color:var(--ink)}
 """.replace("%BLUE%", BLUE)
 
 INDEX_CSS = """
-.top{padding:clamp(40px,6vw,120px) 0 0}
-.top h1{font-family:var(--serif);font-weight:400;font-size:clamp(30px,2.2vw,44px);line-height:1.08;letter-spacing:-.02em} /* the home page's headline */
-.top p{margin-top:clamp(8px,.7vw,14px);max-width:34em;font-size:clamp(16px,1vw,19px);line-height:1.5;letter-spacing:-.01em;color:var(--ink2)} /* the line under its section titles */
-.packs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;margin:clamp(32px,3vw,60px) 0 0;padding:0;list-style:none}
+/* The opening (23 October 2026, after the founder's reference): a centred headline, its first words in a
+   box, the buttons, then photos of people at work in a fan, each one a team's; the middle one in front. */
+.lead{padding:clamp(56px,6.4vw,128px) 0 0;text-align:center}
+.lead h1{font-family:var(--serif);font-weight:400;font-size:clamp(34px,3.2vw,64px);line-height:1.12;letter-spacing:-.02em} /* the home page's closing title */
+.lead h1 .box{display:inline-block;margin-bottom:.14em;padding:.02em .3em .08em;border:1px solid #d2d2d7;border-radius:.24em;background:var(--page);box-shadow:0 1px 2px rgba(0,0,0,.04),0 8px 20px -10px rgba(0,0,0,.14)}
+.lead .ctas{display:flex;justify-content:center;align-items:center;gap:clamp(18px,1.5vw,28px);flex-wrap:wrap;margin-top:clamp(22px,2vw,36px)}
+.lead .btn{height:clamp(40px,2.5vw,50px);padding:0 clamp(18px,1.3vw,26px);font-size:clamp(15px,.95vw,19px)} /* the home page's buttons */
+.lead .btn .dl{width:1em;height:1em;margin:0 -.15em 0 0}
+.lead .see{font-size:clamp(15px,.95vw,19px);text-decoration:none;color:var(--ink)}
+.lead .see::after{content:" \\203A"}
+.lead .see:hover{text-decoration:underline}
+.fan{--w:clamp(160px,21vw,400px);--step:calc(var(--w) * .84);position:relative;height:calc(var(--w) * 1.52 + 110px);margin-top:clamp(36px,3.4vw,64px);overflow:hidden}
+.shot{position:absolute;top:calc(var(--w) * .08 + 30px);left:calc(50% - var(--w) / 2 + var(--o) * var(--step));z-index:var(--z);width:var(--w);aspect-ratio:4 / 5;border:6px solid #fff;border-radius:24px;overflow:hidden;background:var(--soft);
+  box-shadow:0 0 0 1px rgba(0,0,0,.06),0 14px 34px -12px rgba(0,0,0,.28);transform:translateY(calc(var(--y) + var(--lift,0px))) rotate(var(--r)) scale(var(--s));transition:transform .35s cubic-bezier(.2,.7,.2,1)}
+.shot:hover,.shot:focus-visible{--lift:-10px}
+.shot img{width:100%;height:100%;object-fit:cover}
+.shot::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.06),rgba(0,0,0,.26))}
+.shot span{position:absolute;inset:0;z-index:1;display:grid;place-items:center;padding:0 12px;color:#fff;font-size:clamp(18px,1.55vw,30px);font-weight:600;letter-spacing:-.02em;text-shadow:0 1px 18px rgba(0,0,0,.4)}
+.list-title{margin-top:clamp(40px,4vw,80px);font-family:var(--serif);font-weight:400;font-size:clamp(28px,2.2vw,44px);line-height:1.08;letter-spacing:-.02em} /* the home page's section titles */
+.packs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;margin:clamp(24px,2.4vw,44px) 0 0;padding:0;list-style:none}
 .pack{display:flex;flex-direction:column;height:100%;padding:clamp(24px,2.1vw,40px);border-radius:28px;background:var(--soft);text-decoration:none;transition:background .2s}
 .pack:hover{background:#efeff2}
 .pack .faces{--ring:var(--soft);--fs:clamp(38px,2.6vw,48px)}
@@ -294,7 +313,8 @@ INDEX_CSS = """
 .pack .more{margin-top:16px;color:var(--blue);font-size:clamp(15px,1vw,18px)}
 .pack .more::after{content:" \\203A"}
 @media (max-width:1068px){.packs{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media (max-width:734px){.packs{grid-template-columns:1fr;gap:14px}.pack{border-radius:24px}.top{padding-top:44px}.top h1{font-size:28px;line-height:1.12}}
+@media (max-width:734px){.packs{grid-template-columns:1fr;gap:14px}.pack{border-radius:24px}.lead{padding-top:48px}.lead h1{font-size:30px;line-height:1.16}.fan{--w:clamp(150px,44vw,240px)}.shot{border-width:4px;border-radius:18px}}
+@media (prefers-reduced-motion:reduce){.shot{transition:none}}
 """
 
 PACK_CSS = """
@@ -500,16 +520,42 @@ def pack_page(pack, assets):
     return frame(title, esc(pack["summary"]), f"/teams/{pack['id']}", body, PACK_CSS, script=ADD_JS)
 
 
+def fan(packs, assets):
+    """The opening's photos, left to right, each a link to its team: the middle one larger and in front, the
+    ones beside it tilted in, the outer ones tilted out (source/img/teams/<pack>.jpg; a missing one is left out)."""
+    by_id = {p["id"]: p for p in packs}
+    shots = [(by_id[pid], f"{HERE}/img/teams/{pid}.jpg") for pid in LEAD if pid in by_id and os.path.isfile(f"{HERE}/img/teams/{pid}.jpg")]
+    out = []
+    for i, (pack, src) in enumerate(shots):
+        o = i - (len(shots) - 1) / 2
+        side = -1 if o < 0 else 1
+        if o == 0:
+            r, y, s, z = 0, 0, 1.12, 5
+        elif abs(o) <= 1:
+            r, y, s, z = -side * 2.5, 34, 1, 4
+        else:
+            r, y, s, z = side * 5, 20, 1, 3
+        url = assets._copy(src, "photos", f"{pack['id']}.jpg")
+        name = re.sub(r"^Simeon for ", "", pack["title"])
+        out.append(f'<a class="shot" href="/teams/{pack["id"]}" style="--o:{o:g};--r:{r:g}deg;--y:{y}px;--s:{s:g};--z:{z}" aria-label="{esc(pack["title"])}">'
+                   f'<img src="{url}" alt="" width="736" height="920"><span aria-hidden="true">{esc(name)}</span></a>')
+    return f'<div class="fan">{"".join(out)}</div>' if out else ""
+
+
 def index_page(packs, assets):
     cards = "\n".join(
         f'<li><a class="pack" href="/teams/{p["id"]}">{faces_row(p, assets)}<h2>{esc(p["title"])}</h2>'
         f'<p>{esc(p["summary"])}</p><span class="more">Meet the team</span></a></li>'
         for p in packs)
-    body = f"""<div class="wrap">
-<section class="top" aria-label="Teams">
-  <h1>Teams</h1>
-  <p>A team of five agents for your kind of business, ready to add to Simeon.</p>
+    body = f"""<section class="lead" aria-label="Teams">
+  <div class="wrap">
+    <h1><span class="box">A team of agents</span><br>for your kind of work</h1>
+    <div class="ctas"><a class="btn" href="{MAC_DOWNLOAD}">Download for macOS{DOWNLOAD}</a><a class="see" href="#all">See all teams</a></div>
+  </div>
+  {fan(packs, assets)}
 </section>
+<div class="wrap">
+<h2 class="list-title" id="all">All teams</h2>
 <ul class="packs">
 {cards}
 </ul>
