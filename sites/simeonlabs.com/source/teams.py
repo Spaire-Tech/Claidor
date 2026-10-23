@@ -688,7 +688,7 @@ def from_home():
     rules = [line for line in page.splitlines()
              if line.startswith((".btn.ghost", ".btn .apl{", ".btn .dl{", ".trust{", ".trust-top{", ".trust h2{", ".trust-top p{"))]
     css = ("\n/* From the home page (source/page.html): the section titles, the pricing, the questions and the closing call. */\n"
-           + "\n".join(rules) + "\n@media (max-width:860px){.trust-top{grid-template-columns:1fr}}\n"
+           + "\n".join(rules) + "\n@media (max-width:860px){.trust-top{grid-template-columns:1fr}.trust-top p{justify-self:start}}\n"
            + page[start:page.index("\n", stop) + 1]).replace("url(fonts/", "url(/fonts/")
     return pricing.group(0), close.group(0).replace('href="#app"', 'href="/#app"'), css
 
