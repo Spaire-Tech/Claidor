@@ -12,8 +12,7 @@ struct PackLink: Identifiable, Equatable {
  * (`simeon-ios://app/v1/pack/add?id=<id>`, 22 October 2026), as a
  * sheet: the five faces side by side, the pack's name and what it is
  * for; each agent with its face, name and job, what it does and the apps it
- * asks for; where they go and how they start; Add to Simeon at the foot in
- * the blue (Open "Coffee Shop Team" once added). Add makes the five agents
+ * asks for; Add to Simeon at the foot in the blue (Open "Coffee Shop Team" once added). Add makes the five agents
  * in their folder (`AppStore.addPack`) and opens the first one's chat.
  */
 struct StarterPackSheet: View {
@@ -124,16 +123,7 @@ struct StarterPackSheet: View {
       }
       .frame(maxWidth: .infinity, alignment: .leading)
       .padding(.top, 28)
-      Rectangle()
-        .fill(Ink.hairline)
-        .frame(height: 0.5)
-        .padding(.top, 24)
-      Text("They go in a “\(pack.folder)” folder in your chats. Each one says hello in its own chat and asks to connect its apps; the ones you already use are just named. You can change anything later.")
-        .font(.system(size: 13))
-        .foregroundStyle(Ink.secondary)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.top, 14)
-        .padding(.bottom, 12)
+      .padding(.bottom, 20)
     }
     .padding(.horizontal, 24)
   }

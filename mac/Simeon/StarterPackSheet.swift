@@ -79,12 +79,12 @@ struct StarterPackLayer: View {
 }
 
 /**
- * The pack, as the connect consent beside it (600 wide, ×
- * at the top left): the five faces side by side, the pack's name and what
- * it is for; each agent with its face, name and job, what it does and the
- * apps it asks for; where they go and how they start; Add to Simeon across
- * the foot in the blue (Open "Coffee Shop Team" once added). Return adds;
- * Escape, × or a click beside it closes.
+ * The pack, in the connect consent's look (720 wide, the founder's "wider",
+ * 23 October 2026; × at the top left): the five faces side by side, the
+ * pack's name and what it is for; each agent with its face, name and job,
+ * what it does and the apps it asks for; Add to Simeon across the foot in the
+ * blue (Open "Coffee Shop Team" once added). Return adds; Escape, × or a
+ * click beside it closes.
  */
 private struct StarterPackDialog: View {
   let ask: PackAsk
@@ -126,7 +126,7 @@ private struct StarterPackDialog: View {
           .frame(maxWidth: .infinity, minHeight: 220)
       }
     }
-    .frame(width: 600)
+    .frame(width: 720)
     .overlay(alignment: .topLeading) {
       GlassDiscButton(symbol: "xmark", help: String(localized: "Close"), size: 32, action: close)
         .padding(16)
@@ -216,19 +216,7 @@ private struct StarterPackDialog: View {
       .frame(maxWidth: .infinity, alignment: .leading)
       .padding(.horizontal, 48)
       .padding(.top, 26)
-      Rectangle()
-        .fill(look.ink.opacity(0.1))
-        .frame(height: 0.5)
-        .padding(.horizontal, 48)
-        .padding(.top, 22)
-      Text("They go in a “\(pack.folder)” folder in your sidebar. Each one says hello in its own chat and asks to connect its apps; the ones you already use are just named. You can change anything later.")
-        .font(.system(size: 12))
-        .foregroundStyle(look.inkSecondary)
-        .fixedSize(horizontal: false, vertical: true)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 48)
-        .padding(.top, 14)
-        .padding(.bottom, 8)
+      .padding(.bottom, 14)
     }
   }
 
