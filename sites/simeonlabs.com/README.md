@@ -9,6 +9,12 @@ The public website, with the Simeon app-window demo playing in the hero.
   scroll guard.
 - `vercel.json` tells Vercel there is no install or build step, to serve
   `public/`, and to skip a deploy when nothing under this folder changed.
+  On 23 October 2026 its rules were seen not to apply: the `simeon-website`
+  project builds from the repository's root (Vercel's pull-request comment
+  gives it no root directory), so redirects added here answered 404 and the
+  `/app/` files came back with a four-hour cache, not a year. A moved page
+  forwards the reader itself instead (`teams.py`'s `/teams`, `legal.py`'s
+  `/legal/...`).
 
 ## Rebuild
 

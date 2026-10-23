@@ -25,9 +25,10 @@ Brands/<id>), else its first letter on a tile, so an app added to a pack before
 its logo never shows a broken picture. The script prints which apps drew a
 letter.
 
-The page was called Teams, at /teams, until 23 October 2026 (vercel.json sends
-those addresses here). It rewrites public/marketplace/ from scratch. build.py
-calls it after it rewrites
+The page was called Teams, at /teams, until 23 October 2026; a page at each old
+address (public/teams/) sends the reader on, a team's #<id> kept. It rewrites
+public/marketplace/ and public/teams/ from scratch. build.py calls it after it
+rewrites
 public/; it also runs alone, needing nothing but Python:
 
     python3 teams.py
@@ -816,6 +817,18 @@ def copy_site_css(out=OUT):
     shutil.copy(os.path.join(HERE, "site.css"), os.path.join(out, "site.css"))
 
 
+def forward(target):
+    """A page at one of the Teams page's addresses that sends the reader to `target`, keeping a team's #<id>
+    (/teams#founders opens the Founders window). The site's own redirect: Vercel does not read
+    sites/simeonlabs.com/vercel.json (its redirects answered 404 on 23 October 2026), and legal.py
+    forwards its moved pages the same way."""
+    return ('<!doctype html>\n<html lang="en"><head><meta charset="utf-8">'
+            f'<script>location.replace("{target}" + location.hash)</script>'
+            f'<meta http-equiv="refresh" content="0; url={target}"><link rel="canonical" href="{SITE}{target}">'
+            f'<meta name="robots" content="noindex"><title>Moved</title></head>'
+            f'<body><p>This page is now at <a href="{target}">simeonlabs.com{target}</a>.</p></body></html>\n')
+
+
 def build(out=OUT):
     copy_site_css(out)
     data = _json(PACKS, None)
@@ -833,6 +846,13 @@ def build(out=OUT):
         os.makedirs(f"{root}/{pack['id']}")
         open(f"{root}/{pack['id']}/index.html", "w", encoding="utf-8").write(version_style(team_page(pack, assets), out))
     open(f"{root}/index.html", "w", encoding="utf-8").write(version_style(index_page(packs, assets), out))
+    old = os.path.join(out, "teams")
+    shutil.rmtree(old, ignore_errors=True)
+    os.makedirs(old)
+    open(f"{old}/index.html", "w", encoding="utf-8").write(forward("/marketplace/"))
+    for pack in packs:
+        os.makedirs(f"{old}/{pack['id']}")
+        open(f"{old}/{pack['id']}/index.html", "w", encoding="utf-8").write(forward(f"/marketplace/{pack['id']}/"))
     letters = sorted(k for k, how in assets.drawn.items() if how == "letter")
     marks = sorted(k for k, how in assets.drawn.items() if how == "mark")
     print(f"teams pages written to {os.path.abspath(root)}: {len(packs)} pack(s)")
