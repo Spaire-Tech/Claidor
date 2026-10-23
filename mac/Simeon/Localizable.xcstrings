@@ -35878,64 +35878,6 @@
         }
       }
     },
-    "They go in a “%@” folder in your sidebar. Each one says hello in its own chat and asks to connect its apps; the ones you already use are just named. You can change anything later." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sie kommen in einen Ordner „%@“ in deiner Seitenleiste. Jeder sagt in seinem eigenen Chat Hallo und bittet dich, seine Apps zu verbinden; die, die du schon nutzt, werden nur genannt. Du kannst später alles ändern."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Van a una carpeta “%@” de tu barra lateral. Cada uno te saluda en su propio chat y te pide conectar sus apps; las que ya usas solo se mencionan. Puedes cambiarlo todo más tarde."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ils vont dans un dossier « %@ » de ta barre latérale. Chacun te dit bonjour dans son propre chat et te demande de connecter ses apps ; celles que tu utilises déjà sont juste nommées. Tu peux tout changer plus tard."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Finiscono in una cartella “%@” nella barra laterale. Ognuno ti saluta nella sua chat e ti chiede di collegare le sue app; quelle che usi già vengono solo nominate. Puoi cambiare tutto più tardi."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ze komen in een map “%@” in je zijbalk. Elk zegt hallo in een eigen chat en vraagt je zijn apps te koppelen; de apps die je al gebruikt worden alleen genoemd. Je kunt later alles aanpassen."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Trafią do folderu „%@” na pasku bocznym. Każdy przywita się na swoim czacie i poprosi o połączenie swoich aplikacji; te, których już używasz, zostaną tylko wymienione. Wszystko możesz później zmienić."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Eles ficam numa pasta “%@” na sua barra lateral. Cada um diz oi no próprio chat e pede para conectar os apps dele; os que você já usa são só mencionados. Você pode mudar tudo depois."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "De hamnar i en mapp ”%@” i sidofältet. Var och en säger hej i sin egen chatt och ber dig ansluta sina appar; de du redan använder nämns bara. Du kan ändra allt senare."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kenar çubuğunda “%@” klasörüne girerler. Her biri kendi sohbetinde merhaba der ve uygulamalarını bağlamanı ister; zaten kullandıkların sadece anılır. Her şeyi sonra değiştirebilirsin."
-          }
-        }
-      }
-    },
     "This agent" : {
       "localizations" : {
         "de" : {
