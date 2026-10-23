@@ -2,7 +2,8 @@
 
 The founder, 23 October 2026: "add an actual pricing page taken from main, with
 a logical q and a and cta". It opens as the other pages do (the home page's
-opening, its headline on the left), then the home page's plans, read from
+opening: a plain headline on the left, Download for macOS and Request a demo
+under it, Download for iOS on a phone), then the home page's plans, read from
 source/page.html so the prices are written once (teams.from_home); then
 questions on paying, each one what the server really does
 (docs/services-billing.md); then the home page's closing call.
@@ -41,14 +42,15 @@ PRICING_CSS = """
 
 def build(out=OUT):
     teams.copy_site_css(out)
-    hero_css, _ = teams.home_hero()
+    hero_css, ctas = teams.home_hero()
     plans, close, home_css = teams.from_home()
     # The page's headline names it, so the plans lose the home page's "Pricing" title over them.
     plans, found = re.subn(r'\s*<div class="trust-top">\s*<h2>Pricing</h2>\s*</div>', "", plans, count=1)
     assert found == 1, "pricing.py: the home page's pricing has no Pricing title to take off"
     body = f"""<section class="hero" aria-label="Pricing">
   <div class="wrap">
-    <h1>Every plan starts with <span class="nw">a free month.</span></h1>
+    <h1>Pricing and plans</h1>
+    {ctas}
   </div>
 </section>
 
