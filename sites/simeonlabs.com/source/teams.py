@@ -327,7 +327,7 @@ html{scroll-behavior:smooth;scroll-padding-top:clamp(72px,4.6vw,96px)} /* See al
    under the pointer: the faces, the kind of work, the name, what it is for, then five of its apps. */
 .market{padding:clamp(96px,8vw,160px) 0 clamp(150px,12vw,230px);background:linear-gradient(180deg,var(--page) 0,var(--soft) clamp(200px,17vw,340px),var(--soft) calc(100% - clamp(150px,12vw,230px)),var(--page) 100%)} /* white fading into the grey and back */
 .market+.trust{padding-top:clamp(24px,2.4vw,48px)}
-.list-title{font-weight:var(--w-display);font-size:var(--t-title);line-height:1.15;letter-spacing:-.02em} /* the home page's section titles */
+.list-title{font-weight:var(--w-display);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em} /* the home page's section titles: the headline's size */
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:clamp(18px,1.5vw,28px)}
 .chip{flex:none;height:36px;padding:0 16px;border:0;border-radius:99px;background:#fff;color:var(--ink);font:inherit;font-size:var(--t-body);letter-spacing:-.01em;cursor:pointer;box-shadow:0 0 0 1px rgba(0,0,0,.06);transition:background .2s,color .2s,box-shadow .2s}
 .chip:hover{box-shadow:0 0 0 1px rgba(0,0,0,.16)}

@@ -6,8 +6,8 @@
    page keep their own measures. */
 :root{
   --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Inter","Helvetica Neue",Arial,sans-serif;
-  --t-display:clamp(28px,2vw,40px);  /* a page's headline, the closing call, a price */
-  --t-title:clamp(22px,1.6vw,30px);  /* a section's title, a statement */
+  --t-display:clamp(28px,2vw,40px);  /* a page's headline and every section's title (Pricing, Questions…), the closing call, a price */
+  --t-title:clamp(22px,1.6vw,30px);  /* a statement, a legal page's heading, a photo's label */
   --t-head:clamp(17px,1.15vw,20px);  /* a card's, a step's or a question's title */
   --t-lead:clamp(16px,1.05vw,19px);  /* the line under a title */
   --t-body:clamp(15px,1vw,17px);     /* running text, a card's line, a tab */
