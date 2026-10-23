@@ -23,9 +23,12 @@ python3 build.py ../../../desktop/dist/demo
 The script needs Playwright's Chromium (it captures the stills the hero shows
 while the app loads). It rewrites `public/` from scratch; commit what it writes.
 
-Teams pages: `python3 source/teams.py` rewrites `public/teams/` from
-`server/simeon/desktop/packs.json` (build.py runs it too); run it whenever a
-pack changes and commit what it writes.
+Marketplace pages: `python3 source/teams.py` rewrites `public/marketplace/`
+from `server/simeon/desktop/packs.json` (build.py runs it too); run it whenever
+a pack changes and commit what it writes. `source/connectors.py` writes
+`public/connectors/` and `source/pricing.py` writes `public/pricing/` the same
+way. The bar every page shares (Marketplace, Connectors, Pricing, Download; a
+menu on a phone) is `source/nav.py`, its styles in `source/site.css`.
 Edit `source/`, never `public/` by hand: a hand edit is lost at the next build
 (the Download and plan links, made in `public/` on 11 October 2026, are in
 `page.html` since 12 October).

@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Privacy Policy | SimeonLabs</title>
+<title>SimeonLabs | Privacy Policy</title>
 <meta name="description" content="What Spaire collects when you use Simeon, why, who helps us process it, and the choices you have.">
 <link rel="canonical" href="https://simeonlabs.com/privacy">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://simeonlabs.com/privacy">
-<meta property="og:title" content="Privacy Policy | SimeonLabs">
+<meta property="og:title" content="SimeonLabs | Privacy Policy">
 <meta property="og:description" content="What Spaire collects when you use Simeon, why, who helps us process it, and the choices you have.">
 <link rel="icon" href="/favicon.ico" sizes="48x48">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -16,7 +16,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap">
-<link rel="stylesheet" href="/site.css?v=6ccbe093">
+<link rel="stylesheet" href="/site.css?v=9b4b8235">
 <script>if (!/Macintosh|Mac OS X/.test(navigator.userAgent)) document.documentElement.classList.add('pc')</script>
 <style>
 /* The legal pages: the home page's bar and footer (source/page.html) around a plain reading
@@ -40,16 +40,6 @@ a{color:inherit}
 .btn{display:inline-flex;align-items:center;justify-content:center;border-radius:99px;background:#000;color:#fff;font-weight:400;letter-spacing:-.01em;white-space:nowrap;text-decoration:none}
 .btn:hover{background:#2b2b2d}
 
-/* The bar, as on the home page; the name goes home. */
-.bar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.82);-webkit-backdrop-filter:saturate(1.8) blur(20px);backdrop-filter:saturate(1.8) blur(20px);padding-top:env(safe-area-inset-top,0px)}
-.bar .wrap{display:flex;justify-content:space-between;align-items:center;height:clamp(52px,3.8*var(--vw,1vw),76px)}
-.bar .wordmark{--wm:clamp(118px,10.8*var(--vw,1vw),217px);display:block;width:var(--wm);margin-left:calc(var(--wm) * -85 / 1585);background:var(--ink);-webkit-mask:url(/img/wordmark-labs.png) center/contain no-repeat;mask:url(/img/wordmark-labs.png) center/contain no-repeat;aspect-ratio:1585/460}
-.bar .btn{height:clamp(28px,1.9*var(--vw,1vw),38px);padding:0 clamp(12px,.8*var(--vw,1vw),16px);font-size:var(--t-nav)}
-
-.bar .acts{display:flex;align-items:center;gap:clamp(14px,1.2*var(--vw,1vw),22px);font-size:var(--t-nav)}
-.bar .acts>a:not(.btn){text-decoration:none;color:var(--ink2)}
-.bar .acts>a:not(.btn):hover{color:var(--ink)}
-@media (max-width:480px){.bar .acts{gap:16px}.bar .acts .btn{display:none}} /* as on Teams and Connectors */
 
 /* The page: the two pages' links on the left, the text in a column at the middle. */
 .legal{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,720px) minmax(0,1fr);column-gap:48px;padding:clamp(56px,6*var(--vw,1vw),120px) 0 clamp(80px,8*var(--vw,1vw),160px)}
@@ -110,7 +100,11 @@ footer a[aria-current]{color:var(--ink)}
 <header class="bar">
   <div class="wrap">
     <a class="wordmark" href="/" aria-label="SimeonLabs home"></a>
-    <div class="acts"><a href="/teams">Teams</a><a href="/connectors">Connectors</a><a class="btn" href="https://api.simeonlabs.com/desktop/download/mac">Download</a></div>
+    <nav class="acts" aria-label="Pages"><a href="/marketplace">Marketplace</a><a href="/connectors">Connectors</a><a href="/pricing">Pricing</a><a class="btn" href="https://api.simeonlabs.com/desktop/download/mac">Download</a></nav>
+    <details class="menu">
+      <summary aria-label="Menu"><i></i><i></i></summary>
+      <div class="menu-in"><nav aria-label="Pages"><a href="/marketplace">Marketplace</a><a href="/connectors">Connectors</a><a href="/pricing">Pricing</a></nav><a class="btn" href="https://api.simeonlabs.com/desktop/download/mac">Download</a></div>
+    </details>
   </div>
 </header>
 
@@ -288,7 +282,7 @@ footer a[aria-current]{color:var(--ink)}
   </article>
 </main>
 
-<footer><div class="wrap"><span>Copyright © 2026 Spaire, Inc. All rights reserved.</span><nav><a href="/teams">Teams</a><a href="/connectors">Connectors</a><a href="/privacy" aria-current="page">Privacy</a><a href="/terms">Terms</a><a href="mailto:support@simeonlabs.com">Contact</a></nav></div></footer>
+<footer><div class="wrap"><span>Copyright © 2026 Spaire, Inc. All rights reserved.</span><nav><a href="/marketplace">Marketplace</a><a href="/connectors">Connectors</a><a href="/pricing">Pricing</a><a href="/privacy" aria-current="page">Privacy</a><a href="/terms">Terms</a><a href="mailto:support@simeonlabs.com">Contact</a></nav></div></footer>
 
 </body>
 </html>

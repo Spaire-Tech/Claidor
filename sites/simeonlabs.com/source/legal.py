@@ -12,6 +12,7 @@ after it rewrites public/; it also runs alone, needing nothing but Python:
 """
 import os, re
 
+import nav
 from versioning import version_style
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -56,6 +57,7 @@ def page(slug: str, template: str) -> str:
             else ""
         ),
         "%BODY%": body.strip("\n"),
+        "%BAR%": nav.bar(),
         "%CONTACT%": CONTACT,
         "%PRIVACY_CURRENT%": ' aria-current="page"' if slug == "privacy" else "",
         "%TERMS_CURRENT%": ' aria-current="page"' if slug == "terms" else "",

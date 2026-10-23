@@ -1,16 +1,16 @@
-"""Builds the website's Teams page (/teams) from the starter packs.
+"""Builds the website's Marketplace page (/marketplace) from the starter packs.
 
 A starter pack is a team of five named agents for one kind of business
-(server/simeon/desktop/packs.json, which the apps read too). /teams opens as
+(server/simeon/desktop/packs.json, which the apps read too). /marketplace opens as
 the home page does (its styles and buttons come from page.html), with photos of
 people at work under it, across the page's column, each a team's
 (img/teams/<id>.jpg, in the order of LEAD); then the Marketplace (kinds of work as chips, a search, every team as a
 card); then the home page's pricing, the page's own questions and the home
-page's closing call. A team's card or photo opens its window (/teams#<id>): the
+page's closing call. A team's card or photo opens its window (/marketplace#<id>): the
 team's title, its line and Add to Simeon, then its agents. Add to Simeon opens
 the app on the device (simeon-ios:// on an iPhone or iPad, simeon:// on a Mac)
 at app/v1/pack/add?id=<id>, and the app adds the team; without the app it gives
-way to Download. On a phone a team is a page of its own instead (/teams/<id>, the
+way to Download. On a phone a team is a page of its own instead (/marketplace/<id>, the
 founder, 23 October 2026: "a literal full page"): the bar, a way back to every team,
 then the same title, line, Add to Simeon and agents; a computer that lands there is
 sent to the team's window.
@@ -25,13 +25,16 @@ Brands/<id>), else its first letter on a tile, so an app added to a pack before
 its logo never shows a broken picture. The script prints which apps drew a
 letter.
 
-It rewrites public/teams/ from scratch. build.py calls it after it rewrites
+The page was called Teams, at /teams, until 23 October 2026 (vercel.json sends
+those addresses here). It rewrites public/marketplace/ from scratch. build.py
+calls it after it rewrites
 public/; it also runs alone, needing nothing but Python:
 
     python3 teams.py
 """
 import hashlib, html, json, os, re, shutil, sys, unicodedata
 
+from nav import MAC_DOWNLOAD, bar
 from versioning import version_style
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -52,11 +55,10 @@ BRANDS = f"{REPO}/ios/SimeonCore/Sources/SimeonCore/GeneratedBrands.swift"
 MENTIONS = f"{REPO}/ios/scripts/connector-mentions.json"
 
 SITE = "https://simeonlabs.com"
-MAC_DOWNLOAD = "https://api.simeonlabs.com/desktop/download/mac"
 BLUE = "#255a93"
 WORDS = {1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six", 7: "seven", 8: "eight", 9: "nine", 10: "ten"}
 PICTURES = (".png", ".jpg", ".jpeg", ".webp", ".svg")
-# The teams whose photos open /teams, left to right (source/img/teams/<id>.jpg); six fill the column at a size
+# The teams whose photos open /marketplace, left to right (source/img/teams/<id>.jpg); six fill the column at a size
 # the founder asked for (23 October 2026: "bigger", from under the headline, with an online shop).
 LEAD = ["creators", "founders", "agencies", "coffee-shop", "online-stores", "freelancers"]
 # The marketplace's chips: the most common kinds of work, each the teams it shows (a team can be in two).
@@ -143,10 +145,10 @@ def _readable(hex_):
 
 
 class Assets:
-    """Copies the faces and app logos a page uses into its folder (public/teams/, public/connectors/) and says
+    """Copies the faces and app logos a page uses into its folder (public/marketplace/, public/connectors/) and says
     how each app was drawn."""
 
-    def __init__(self, root, base="/teams"):
+    def __init__(self, root, base="/marketplace"):
         self.root = root
         self.base = base
         self.tiles = {}
@@ -269,15 +271,6 @@ a{color:inherit}
 .btn:hover{background:#2b2b2d}
 .btn:focus-visible,a:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
 
-/* The bar, as on the home page; the name goes home. */
-.bar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.82);-webkit-backdrop-filter:saturate(1.8) blur(20px);backdrop-filter:saturate(1.8) blur(20px);padding-top:env(safe-area-inset-top,0px)}
-.bar .wrap{display:flex;justify-content:space-between;align-items:center;height:clamp(52px,3.8*var(--vw,1vw),76px)}
-.bar .wordmark{--wm:clamp(118px,10.8*var(--vw,1vw),217px);display:block;width:var(--wm);margin-left:calc(var(--wm) * -85 / 1585);background:var(--ink);-webkit-mask:url(/img/wordmark-labs.png) center/contain no-repeat;mask:url(/img/wordmark-labs.png) center/contain no-repeat;aspect-ratio:1585/460}
-.bar .acts{display:flex;align-items:center;gap:clamp(14px,1.2*var(--vw,1vw),22px);font-size:var(--t-nav)}
-.bar .acts>a:not(.btn){text-decoration:none;color:var(--ink2)}
-.bar .acts>a:not(.btn):hover,.bar .acts>a[aria-current]{color:var(--ink)}
-.bar .btn{height:clamp(28px,1.9*var(--vw,1vw),38px);padding:0 clamp(12px,.8*var(--vw,1vw),16px);font-size:var(--t-nav)}
-@media (max-width:480px){.bar .acts{gap:16px;font-size:var(--t-nav)}.bar .acts .btn{display:none}} /* a phone has room for Teams and Connectors, and no Mac to download to */
 
 /* Faces in a row, each over the last, ringed in the ground they sit on. */
 .faces{display:flex;--fs:48px;--ring:var(--page)}
@@ -295,7 +288,7 @@ a{color:inherit}
 .app.mark i{display:block;width:64%;height:64%;-webkit-mask:var(--m) center/contain no-repeat;mask:var(--m) center/contain no-repeat}
 .app.letter{color:#3a3a3c;font-size:calc(var(--as) * .46);font-weight:600;letter-spacing:0;line-height:1}
 
-/* Add to Simeon, on a team's page and in its window on /teams. */
+/* Add to Simeon, on a team's page and in its window on /marketplace. */
 .add{display:flex;flex-direction:column;align-items:center;margin-top:clamp(18px,1.6*var(--vw,1vw),32px)}
 .add .btn{height:var(--btn-h);padding:0 var(--btn-pad);font-size:var(--btn-font)} /* the home page's buttons */
 .add .btn svg{width:1em;height:1em;flex:none;margin-left:-.15em}
@@ -398,7 +391,7 @@ footer{margin-top:0;font-size:var(--t-tiny)} /* the closing call above leaves th
 """
 
 
-# A team, in its window on /teams or on its own page on a phone: the title, its line and Add to Simeon, then its
+# A team, in its window on /marketplace or on its own page on a phone: the title, its line and Add to Simeon, then its
 # five agents as rows between hairlines (face, name and job, what it does, the apps it connects).
 TEAM_CSS = """
 .team-title{font-weight:var(--w-display);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em;text-wrap:pretty} /* the pages' headline */
@@ -483,11 +476,11 @@ CROSS = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 
 
 SHEET_JS = """<script>
 // A team's window, on a computer: its card or photo opens it (a click with a modifier key still opens the team's
-// page), and so does /teams#<team>; a click beside it, Escape or the close button closes it. A phone follows the
-// card's link to the team's own page instead, and /teams#<team> goes there too.
+// page), and so does /marketplace#<team>; a click beside it, Escape or the close button closes it. A phone follows the
+// card's link to the team's own page instead, and /marketplace#<team> goes there too.
 (() => {
   const wide = matchMedia('(min-width:735px)');
-  const page = (id) => '/teams/' + encodeURIComponent(id) + '/';
+  const page = (id) => '/marketplace/' + encodeURIComponent(id) + '/';
   const open = (id) => {
     const d = document.getElementById('team-' + id);
     if (!d || d.open) return;
@@ -558,12 +551,12 @@ def frame(title, description, path, body, css, current="", script="", head=""):
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>{title} | SimeonLabs</title>
+<title>SimeonLabs | {title}</title>
 <meta name="description" content="{description}">
 <link rel="canonical" href="{url}">
 <meta property="og:type" content="website">
 <meta property="og:url" content="{url}">
-<meta property="og:title" content="{title} | SimeonLabs">
+<meta property="og:title" content="SimeonLabs | {title}">
 <meta property="og:description" content="{description}">
 <meta name="twitter:card" content="summary">
 <link rel="icon" href="/favicon.ico" sizes="48x48">
@@ -575,23 +568,18 @@ def frame(title, description, path, body, css, current="", script="", head=""):
 <link rel="stylesheet" href="/site.css">
 <script>if (!/Macintosh|Mac OS X/.test(navigator.userAgent)) document.documentElement.classList.add('pc')</script>
 <style>
-/* The Teams pages (/teams, /teams/<pack>): the home page's bar, type and colours (source/page.html) around
+/* The Marketplace pages (/marketplace, /marketplace/<pack>): the home page's bar, type and colours (source/page.html) around
    the starter packs. Light only, every colour set here. Made by teams.py from server/simeon/desktop/packs.json. */{CSS}{css}</style>{head}
 </head>
 <body>
 
-<header class="bar">
-  <div class="wrap">
-    <a class="wordmark" href="/" aria-label="SimeonLabs home"></a>
-    <div class="acts"><a href="/teams"{here("teams")}>Teams</a><a href="/connectors"{here("connectors")}>Connectors</a><a class="btn" href="{MAC_DOWNLOAD}">Download</a></div>
-  </div>
-</header>
+{bar(current)}
 
 <main>
 {body}
 </main>
 
-<footer><div class="wrap"><span>Copyright © 2026 Spaire, Inc. All rights reserved.</span><nav><a href="/teams"{here("teams")}>Teams</a><a href="/connectors"{here("connectors")}>Connectors</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="mailto:support@simeonlabs.com">Contact</a></nav></div></footer>
+<footer><div class="wrap"><span>Copyright © 2026 Spaire, Inc. All rights reserved.</span><nav><a href="/marketplace"{here("marketplace")}>Marketplace</a><a href="/connectors"{here("connectors")}>Connectors</a><a href="/pricing"{here("pricing")}>Pricing</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="mailto:support@simeonlabs.com">Contact</a></nav></div></footer>
 {script}
 </body>
 </html>
@@ -645,7 +633,7 @@ def fan(packs, assets):
         cr = .3 if i + 1 < len(poses) and poses[i + 1][4] >= z else 0
         url = assets._copy(src, "photos", f"{pack['id']}.jpg")
         name = re.sub(r"^Simeon for ", "", pack["title"])
-        out.append(f'<a class="shot" href="/teams/{pack["id"]}/" data-team="{pack["id"]}" style="--o:{o:g};--r:{r:g}deg;--y:{y}px;--s:{s:g};--z:{z};--cl:{cl:g};--cr:{cr:g}" aria-label="{esc(pack["title"])}">'
+        out.append(f'<a class="shot" href="/marketplace/{pack["id"]}/" data-team="{pack["id"]}" style="--o:{o:g};--r:{r:g}deg;--y:{y}px;--s:{s:g};--z:{z};--cl:{cl:g};--cr:{cr:g}" aria-label="{esc(pack["title"])}">'
                    f'<img src="{url}" alt="" width="736" height="920"><span aria-hidden="true">{esc(name)}</span></a>')
     return f'<div class="fan" style="--n:{len(out)}">{"".join(out)}</div>' if out else ""
 
@@ -690,9 +678,9 @@ def roster(pack, assets):
 
 
 def team_sheet(pack, assets):
-    """A team's window on /teams, for a computer: its opening as every page's (the title, its line, Add to
+    """A team's window on /marketplace, for a computer: its opening as every page's (the title, its line, Add to
     Simeon or Download under it), then its agents. It opens over the page from the team's card or photo, or
-    from /teams#<id>."""
+    from /marketplace#<id>."""
     pid = pack["id"]
     return f"""<dialog class="sheet" id="team-{pid}" aria-labelledby="{pid}-title">
 <button class="close" type="button" aria-label="Close">{CROSS}</button>
@@ -706,22 +694,22 @@ def team_sheet(pack, assets):
 
 
 def team_page(pack, assets):
-    """/teams/<id>: the team's own page, for a phone (the founder, 23 October 2026: "a literal full page"),
+    """/marketplace/<id>: the team's own page, for a phone (the founder, 23 October 2026: "a literal full page"),
     the same title, line, Add to Simeon and agents as its window. A computer that lands here (a shared link)
-    is sent to the window on /teams before the page shows."""
+    is sent to the window on /marketplace before the page shows."""
     pid = pack["id"]
     body = f"""<section class="team team-page" aria-labelledby="{pid}-title"><div class="wrap">
-  <a class="back" href="/teams#all">{CHEVRON}All teams</a>
+  <a class="back" href="/marketplace#all">{CHEVRON}All teams</a>
   <h1 class="team-title" id="{pid}-title">{esc(pack["title"])}</h1>
   <p class="intro">{esc(pack["summary"])}</p>
   <div class="acts">{add_button(pack)}</div>
   {roster(pack, assets)}
 </div></section>"""
-    head = f"<script>if (matchMedia('(min-width:735px)').matches) location.replace('/teams#{pid}');</script>"
-    return frame(pack["title"], pack["summary"], f"/teams/{pid}", body, TEAM_CSS + TEAM_PAGE_CSS, current="teams", script=ADD_JS, head=head)
+    head = f"<script>if (matchMedia('(min-width:735px)').matches) location.replace('/marketplace#{pid}');</script>"
+    return frame(pack["title"], pack["summary"], f"/marketplace/{pid}", body, TEAM_CSS + TEAM_PAGE_CSS, current="marketplace", script=ADD_JS, head=head)
 
 
-# The Teams page's own questions: about adding and owning a team, none of the home page's again.
+# The Marketplace's own questions: about adding and owning a team, none of the home page's again.
 TEAM_QA = [
     ("How do I add a team?", "Open it here and choose Add to Simeon on the Mac or iPhone where Simeon is installed. The app opens and adds all five agents to a folder in your sidebar."),
     ("Does a team cost extra?", "No. Adding one is free, and its agents use your plan like any agent you create. A team that works every day may suit Pro."),
@@ -733,14 +721,14 @@ TEAM_QA = [
 
 
 def from_home():
-    """The home page's pricing, its closing call and their styles, read from source/page.html so the Teams
-    page always shows the same plans, prices and buttons."""
+    """The home page's pricing, its closing call and their styles, read from source/page.html so the Marketplace
+    always shows the same plans, prices and buttons."""
     page = _text(HOME_PAGE)
     pricing = re.search(r'<section class="trust" id="pricing".*?</section>', page, re.S)
     close = re.search(r'<section class="close3".*?</section>', page, re.S)
     start, stop = page.find("/* Pricing: Trial, Standard"), page.find("@media (max-width:734px){.close3")
     if not (pricing and close and 0 <= start < stop):
-        sys.exit("teams.py: source/page.html has no pricing or closing section to show on /teams")
+        sys.exit("teams.py: source/page.html has no pricing or closing section to show")
     rules = [line for line in page.splitlines()
              if line.startswith((".btn.ghost", ".btn .apl{", ".btn .dl{", ".trust{", ".trust-top{", ".trust h2{", ".trust-top p{", "@media (max-width:734px){.trust h2{"))]
     css = ("\n/* From the home page (source/page.html): the section titles, the pricing, the questions and the closing call. */\n"
@@ -751,7 +739,7 @@ def from_home():
 
 def home_hero():
     """The home page's opening (source/page.html): its styles (the headline on the left, the buttons under
-    it, Download for iOS alone on a phone) and its buttons, so Teams and Connectors open the same way."""
+    it, Download for iOS alone on a phone) and its buttons, so the Marketplace, Connectors and Pricing open the same way."""
     page = _text(HOME_PAGE)
     start, stop = page.find("/* Hero: one sentence on the left edge"), page.find("@media (max-width:734px){.hero{")
     ctas = re.search(r'<section class="hero">.*?(<div class="ctas">.*?</div>)', page, re.S)
@@ -770,7 +758,7 @@ def ios_button():
 
 
 def questions(qa=TEAM_QA):
-    """A page's questions and answers, the home page's look (the Teams page's own; Connectors' too)."""
+    """A page's questions and answers, the home page's look (the Marketplace's own; Connectors' and Pricing's too)."""
     rows = "".join(f"<details><summary>{esc(q)}</summary><p>{esc(a)}</p></details>" for q, a in qa)
     return f"""<section class="trust" id="questions" aria-label="Questions">
   <div class="wrap">
@@ -785,7 +773,7 @@ def questions(qa=TEAM_QA):
 def index_page(packs, assets):
     groups = {pid: [slug for slug, (_, ids) in GROUPS.items() if pid in ids] for pid in (p["id"] for p in packs)}
     cards = "\n".join(
-        f'<li data-groups="{" ".join(groups[p["id"]])}" data-q="{search_words(p)}"><a class="pack" href="/teams/{p["id"]}/" data-team="{p["id"]}">{faces_row(p, assets)}'
+        f'<li data-groups="{" ".join(groups[p["id"]])}" data-q="{search_words(p)}"><a class="pack" href="/marketplace/{p["id"]}/" data-team="{p["id"]}">{faces_row(p, assets)}'
         + (f'<span class="kind">{esc(GROUPS[groups[p["id"]][0]][0])}</span>' if groups[p["id"]] else "")
         + f'<h2>{esc(p["title"])}</h2><p>{esc(p["summary"])}</p>'
         f'<span class="foot">{some_apps(p, assets)}<span class="open" aria-hidden="true">{PLUS_SMALL}</span></span></a></li>'
@@ -794,7 +782,7 @@ def index_page(packs, assets):
     chips = '<button class="chip" type="button" data-group="all" aria-pressed="true">All</button>' + "".join(
         f'<button class="chip" type="button" data-group="{slug}" aria-pressed="false">{esc(label)}</button>' for slug, (label, _) in GROUPS.items())
     hero_css, ctas = home_hero()
-    body = f"""<section class="hero" aria-label="Teams">
+    body = f"""<section class="hero" aria-label="Marketplace">
   <div class="wrap">
     <h1 class="set">A team of agents<br class="ph"> for your kind <span class="nw">of work</span></h1>
     {ctas}
@@ -820,7 +808,7 @@ def index_page(packs, assets):
 
 {close}
 {chr(10).join(team_sheet(p, assets) for p in packs)}"""
-    return frame("Teams", "Starter teams of five agents for one kind of business, ready to add to Simeon.", "/teams", body, hero_css + INDEX_CSS + TEAM_CSS + home_css, current="teams", script=MARKET_JS + SHEET_JS + ADD_JS)
+    return frame("Marketplace", "Ready-made teams of five AI agents for your kind of work, from coffee shops to agencies, to add to Simeon.", "/marketplace", body, hero_css + INDEX_CSS + TEAM_CSS + home_css, current="marketplace", script=MARKET_JS + SHEET_JS + ADD_JS)
 
 
 def copy_site_css(out=OUT):
@@ -837,7 +825,7 @@ def build(out=OUT):
     problems = check(packs)
     if problems:
         sys.exit("teams.py: packs.json is not complete:\n  " + "\n  ".join(problems))
-    root = os.path.join(out, "teams")
+    root = os.path.join(out, "marketplace")
     shutil.rmtree(root, ignore_errors=True)
     os.makedirs(root)
     assets = Assets(root)

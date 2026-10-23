@@ -2388,9 +2388,10 @@ pack are all different.
   Shop Team"), title and summary, and its five agents (name, title, face from the apps' own
   faces, summary, quote, three app ids from `vendor-mcp/catalog.ts`, and the instructions kept
   as the agent's description). `appNames` holds the catalogue's name for each app.
-- The website's Teams page (`sites/simeonlabs.com/source/teams.py`, `/teams`) is built from
-  that file: on a computer each team opens in a window there (`/teams#<id>`); on a phone it is a page of its
-  own, `/teams/<id>` (a computer that lands on that page is sent to the window).
+- The website's Marketplace (`sites/simeonlabs.com/source/teams.py`, `/marketplace`; called Teams, at
+  `/teams`, until 23 October 2026, and `vercel.json` sends those addresses on) is built from
+  that file: on a computer each team opens in a window there (`/marketplace#<id>`); on a phone it is a
+  page of its own, `/marketplace/<id>` (a computer that lands on that page is sent to the window).
   Add to Simeon opens `simeon://app/v1/pack/add?id=<id>` on a Mac and
   `simeon-ios://app/v1/pack/add?id=<id>` on an iPhone.
 - The server serves the file read-only, no sign-in needed (`server/simeon/desktop/packs.py`):

@@ -297,8 +297,9 @@ async def main():
     app_idx = open(f"{APP}/index.html").read()
     js = re.search(r'src="\./assets/(index-[^"]+\.js)"', app_idx).group(1)
     css = re.search(r'href="\./assets/(index-[^"]+\.css)"', app_idx).group(1)
+    import nav
     for key, value in (("%MOBILE_CSS%", MOBILE_CSS), ("%MOBILE_HTML%", MOBILE_HTML), ("%FIT%", FIT),
-                       ("%APP_JS%", js), ("%APP_CSS%", css)):
+                       ("%APP_JS%", js), ("%APP_CSS%", css), ("%BAR%", nav.bar())):
         assert page.count(key) == 1, key
         page = page.replace(key, value)
     page = re.sub(r"%FACE:([a-z-]+)%", lambda m: f"faces/{faces.face(m.group(1))}.webp", page)
@@ -363,12 +364,15 @@ async def main():
     # The Privacy Policy and the Terms (legal.py, legal/), at /privacy and /terms.
     import legal
     legal.build(OUT)
-    # The starter packs' pages (teams.py, server/simeon/desktop/packs.json), at /teams.
+    # The starter packs' pages (teams.py, server/simeon/desktop/packs.json), at /marketplace.
     import teams
     teams.build(OUT)
     # The Connectors page (connectors.py, the apps' connector catalogue), at /connectors.
     import connectors
     connectors.build(OUT)
+    # The Pricing page (pricing.py, the home page's plans), at /pricing.
+    import pricing
+    pricing.build(OUT)
     print("site written to", os.path.abspath(OUT))
 
 asyncio.run(main())

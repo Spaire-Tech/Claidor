@@ -6,12 +6,13 @@ connector as a card (its icon, its name, what it does), the most famous first,
 with the catalogue's kinds as tabs, a search and Load more; then questions and
 answers on connecting, each one what the apps really do (the founder, 23 October
 2026: "remove the Connect an app in a few clicks section. only have an faq there
-based logically on whats real"). A card does nothing yet (the founder: "this will
-need a lot more of designing").
+based logically on whats real"); then the home page's closing call (the founder, 23
+October 2026: "add a cta in the connectors page"). A card does nothing yet (the
+founder: "this will need a lot more of designing").
 
 The connectors are the apps' own list (desktop/source/shared/node/vendor-mcp/
 catalog.ts): their names, kinds and lines, the retired places left out. The
-icons are the Teams pages' (teams.py's `Assets`), copied to public/connectors/apps/.
+icons are the Marketplace's (teams.py's `Assets`), copied to public/connectors/apps/.
 It rewrites public/connectors/ from scratch; build.py calls it after teams.py,
 and it runs alone too, needing nothing but Python:
 
@@ -224,8 +225,8 @@ def build(out=OUT):
     os.makedirs(root)
     assets = Assets(root, "/connectors")
     hero_css, ctas = teams.home_hero()
-    _, _, home_css = teams.from_home()
-    body = opening(assets, ctas) + "\n" + finder(apps, kinds, assets) + "\n" + teams.questions(CONN_QA)
+    _, close, home_css = teams.from_home()
+    body = opening(assets, ctas) + "\n" + finder(apps, kinds, assets) + "\n" + teams.questions(CONN_QA) + "\n" + close
     page = frame("Connectors", f"Connect Gmail, Slack, Notion and {len(apps) - 3} more apps to your Simeon agents.", "/connectors",
                  body, hero_css + CONN_CSS + home_css, current="connectors", script=LIST_JS.replace("%PAGE%", str(PAGE)))
     open(f"{root}/index.html", "w", encoding="utf-8").write(version_style(page, out))

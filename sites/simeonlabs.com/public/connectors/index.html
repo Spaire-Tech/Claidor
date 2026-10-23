@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Connectors | SimeonLabs</title>
+<title>SimeonLabs | Connectors</title>
 <meta name="description" content="Connect Gmail, Slack, Notion and 229 more apps to your Simeon agents.">
 <link rel="canonical" href="https://simeonlabs.com/connectors">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://simeonlabs.com/connectors">
-<meta property="og:title" content="Connectors | SimeonLabs">
+<meta property="og:title" content="SimeonLabs | Connectors">
 <meta property="og:description" content="Connect Gmail, Slack, Notion and 229 more apps to your Simeon agents.">
 <meta name="twitter:card" content="summary">
 <link rel="icon" href="/favicon.ico" sizes="48x48">
@@ -17,10 +17,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap">
-<link rel="stylesheet" href="/site.css?v=6ccbe093">
+<link rel="stylesheet" href="/site.css?v=9b4b8235">
 <script>if (!/Macintosh|Mac OS X/.test(navigator.userAgent)) document.documentElement.classList.add('pc')</script>
 <style>
-/* The Teams pages (/teams, /teams/<pack>): the home page's bar, type and colours (source/page.html) around
+/* The Marketplace pages (/marketplace, /marketplace/<pack>): the home page's bar, type and colours (source/page.html) around
    the starter packs. Light only, every colour set here. Made by teams.py from server/simeon/desktop/packs.json. */
 :root{
   --page:#fff; --soft:#f5f5f7; --ink:#1d1d1f; --ink2:#6e6e73; --ink3:#86868b; --line:#e5e5ea; --blue:#255a93;
@@ -39,15 +39,6 @@ a{color:inherit}
 .btn:hover{background:#2b2b2d}
 .btn:focus-visible,a:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
 
-/* The bar, as on the home page; the name goes home. */
-.bar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.82);-webkit-backdrop-filter:saturate(1.8) blur(20px);backdrop-filter:saturate(1.8) blur(20px);padding-top:env(safe-area-inset-top,0px)}
-.bar .wrap{display:flex;justify-content:space-between;align-items:center;height:clamp(52px,3.8*var(--vw,1vw),76px)}
-.bar .wordmark{--wm:clamp(118px,10.8*var(--vw,1vw),217px);display:block;width:var(--wm);margin-left:calc(var(--wm) * -85 / 1585);background:var(--ink);-webkit-mask:url(/img/wordmark-labs.png) center/contain no-repeat;mask:url(/img/wordmark-labs.png) center/contain no-repeat;aspect-ratio:1585/460}
-.bar .acts{display:flex;align-items:center;gap:clamp(14px,1.2*var(--vw,1vw),22px);font-size:var(--t-nav)}
-.bar .acts>a:not(.btn){text-decoration:none;color:var(--ink2)}
-.bar .acts>a:not(.btn):hover,.bar .acts>a[aria-current]{color:var(--ink)}
-.bar .btn{height:clamp(28px,1.9*var(--vw,1vw),38px);padding:0 clamp(12px,.8*var(--vw,1vw),16px);font-size:var(--t-nav)}
-@media (max-width:480px){.bar .acts{gap:16px;font-size:var(--t-nav)}.bar .acts .btn{display:none}} /* a phone has room for Teams and Connectors, and no Mac to download to */
 
 /* Faces in a row, each over the last, ringed in the ground they sit on. */
 .faces{display:flex;--fs:48px;--ring:var(--page)}
@@ -65,7 +56,7 @@ a{color:inherit}
 .app.mark i{display:block;width:64%;height:64%;-webkit-mask:var(--m) center/contain no-repeat;mask:var(--m) center/contain no-repeat}
 .app.letter{color:#3a3a3c;font-size:calc(var(--as) * .46);font-weight:600;letter-spacing:0;line-height:1}
 
-/* Add to Simeon, on a team's page and in its window on /teams. */
+/* Add to Simeon, on a team's page and in its window on /marketplace. */
 .add{display:flex;flex-direction:column;align-items:center;margin-top:clamp(18px,1.6*var(--vw,1vw),32px)}
 .add .btn{height:var(--btn-h);padding:0 var(--btn-pad);font-size:var(--btn-font)} /* the home page's buttons */
 .add .btn svg{width:1em;height:1em;flex:none;margin-left:-.15em}
@@ -200,7 +191,11 @@ footer a[aria-current]{color:var(--ink)}
 <header class="bar">
   <div class="wrap">
     <a class="wordmark" href="/" aria-label="SimeonLabs home"></a>
-    <div class="acts"><a href="/teams">Teams</a><a href="/connectors" aria-current="page">Connectors</a><a class="btn" href="https://api.simeonlabs.com/desktop/download/mac">Download</a></div>
+    <nav class="acts" aria-label="Pages"><a href="/marketplace">Marketplace</a><a href="/connectors" aria-current="page">Connectors</a><a href="/pricing">Pricing</a><a class="btn" href="https://api.simeonlabs.com/desktop/download/mac">Download</a></nav>
+    <details class="menu">
+      <summary aria-label="Menu"><i></i><i></i></summary>
+      <div class="menu-in"><nav aria-label="Pages"><a href="/marketplace">Marketplace</a><a href="/connectors" aria-current="page">Connectors</a><a href="/pricing">Pricing</a></nav><a class="btn" href="https://api.simeonlabs.com/desktop/download/mac">Download</a></div>
+    </details>
   </div>
 </header>
 
@@ -466,9 +461,15 @@ footer a[aria-current]{color:var(--ink)}
     <div class="qa3"><details><summary>How do I connect an app?</summary><p>In Simeon on your Mac or iPhone, open Connect apps and choose the app, or say yes when an agent asks for one in the chat. You sign in once, and Simeon never sees your password. A few apps ask for a key from your account with them instead.</p></details><details><summary>What can my agents do in an app?</summary><p>What your account there allows: your email in Gmail, your deals in HubSpot or your books in QuickBooks, for example. Before you sign in, Simeon shows what your agents will be able to read and use.</p></details><details><summary>Will they act without asking me?</summary><p>Auto-review asks for your OK before steps it judges risky, and you can turn off any of an app’s tools, or remove the app, in Settings › Connect apps. Agents can still get things wrong, so look over their work, especially at first.</p></details><details><summary>Where does my information go?</summary><p>What your agents read in an app becomes part of your chats with them and is sent to the AI models that do the work. The app’s own terms and privacy policy apply to what it shares with Simeon.</p></details><details><summary>Does connecting apps cost extra?</summary><p>No. Connecting apps is part of every plan, the free month included. Some apps need an account of a certain kind, such as WhatsApp Business or an Instagram business or creator account.</p></details><details><summary>What does Coming soon mean?</summary><p>The app can’t be connected yet: its maker hasn’t opened it to apps like Simeon, or Simeon is still setting up its sign-in with them. It changes to Connect once it can, with nothing for you to do.</p></details><details><summary>What if my app isn’t listed?</summary><p>Your agents can still use it on the web, in the browser on their own computer, once you sign in there by taking over. To ask for an app, write to support@simeonlabs.com.</p></details></div>
   </div>
 </section>
+<section class="close3" aria-label="Get started">
+  <div class="wrap">
+    <h2>Your team is ready<br>when you are.</h2>
+    <div class="ctas"><a class="btn" href="https://api.simeonlabs.com/desktop/download/mac">Download for macOS<svg class="dl" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m-5-5 5 5 5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a><a class="btn ghost" href="/#app">Request a demo&nbsp;&#8594;</a><span class="btn go"><svg class="apl" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></svg>Download for iOS<svg class="dl" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m-5-5 5 5 5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div>
+  </div>
+</section>
 </main>
 
-<footer><div class="wrap"><span>Copyright © 2026 Spaire, Inc. All rights reserved.</span><nav><a href="/teams">Teams</a><a href="/connectors" aria-current="page">Connectors</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="mailto:support@simeonlabs.com">Contact</a></nav></div></footer>
+<footer><div class="wrap"><span>Copyright © 2026 Spaire, Inc. All rights reserved.</span><nav><a href="/marketplace">Marketplace</a><a href="/connectors" aria-current="page">Connectors</a><a href="/pricing">Pricing</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="mailto:support@simeonlabs.com">Contact</a></nav></div></footer>
 <script>
 // Find an app: a kind shows its apps (All, every app), the search keeps the apps whose name, kind or line
 // hold every word typed, and Load more shows the next 24. A card does nothing yet.

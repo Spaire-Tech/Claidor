@@ -52,14 +52,6 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .face{object-fit:contain;flex:none}
 .f-growth{filter:hue-rotate(90deg)}.f-content{filter:hue-rotate(300deg)}.f-sales{filter:hue-rotate(60deg)}
 
-/* The bar (the founder, 3 October 2026, with a screenshot): the name on
-   the left, the download on the right. Sign in left on 6 October 2026: the
-   web app is paused for now, so the page does not point at it. */
-.bar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.82);-webkit-backdrop-filter:saturate(1.8) blur(20px);backdrop-filter:saturate(1.8) blur(20px);padding-top:env(safe-area-inset-top,0px)}
-.bar .wrap{display:flex;justify-content:space-between;align-items:center;height:clamp(52px,3.8*var(--vw,1vw),76px)}
-.bar .wordmark{--wm:clamp(118px,10.8*var(--vw,1vw),217px);width:var(--wm);margin-left:calc(var(--wm) * -85 / 1585);color:var(--ink);-webkit-mask-image:url(img/wordmark-labs.png);mask-image:url(img/wordmark-labs.png);aspect-ratio:1585/460} /* the bar says SimeonLabs (4 October 2026), the same letters at the same height; the image has 85/1585 of empty space on its left; the letters start on the column edge */
-.bar .acts{display:flex;align-items:center;justify-content:flex-end;gap:clamp(12px,.9*var(--vw,1vw),18px);font-size:var(--t-nav)}
-.bar .btn{height:clamp(28px,1.9*var(--vw,1vw),38px);padding:0 clamp(12px,.8*var(--vw,1vw),16px);font-size:var(--t-nav)}
 
 
 /* Hero: one sentence on the left edge, two buttons under it, nothing else. */
@@ -907,12 +899,7 @@ footer a:hover{color:var(--ink)}
 </head>
 <body>
 
-<header class="bar">
-  <div class="wrap">
-    <span class="wordmark" role="img" aria-label="SimeonLabs"></span>
-    <div class="acts"><a class="btn" href="https://api.simeonlabs.com/desktop/download/mac">Download</a></div>
-  </div>
-</header>
+%BAR%
 
 <main>
 <section class="hero">
@@ -1089,7 +1076,7 @@ footer a:hover{color:var(--ink)}
 
 </main>
 
-<footer><div class="wrap"><span>Copyright © 2026 Spaire, Inc. All rights reserved.</span><nav><a href="/teams">Teams</a><a href="/connectors">Connectors</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="mailto:support@simeonlabs.com">Contact</a></nav></div></footer>
+<footer><div class="wrap"><span>Copyright © 2026 Spaire, Inc. All rights reserved.</span><nav><a href="/marketplace">Marketplace</a><a href="/connectors">Connectors</a><a href="/pricing">Pricing</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="mailto:support@simeonlabs.com">Contact</a></nav></div></footer>
 
 %FIT%
 <script>
