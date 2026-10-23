@@ -138,92 +138,60 @@ footer a[aria-current]{color:var(--ink)}
 .none-apps{margin-top:28px;font-size:var(--t-body);color:var(--ink2)}
 .said{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 
-/* Connect an app in a few clicks: three steps, the chosen one black with a line filling under it, beside the
-   Mac app at that step (a painting behind it, as on the home page's cards). */
-.how{padding:clamp(110px,10vw,190px) 0 clamp(90px,8vw,150px)}
-.how h2{max-width:var(--title-max);margin-inline:auto;text-align:center;font-weight:var(--w-display);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em;text-wrap:pretty}
-.how-grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:clamp(32px,5vw,96px);align-items:center;margin-top:clamp(40px,4vw,72px)}
-.steps{margin:0;padding:0;list-style:none}
-.step{position:relative;display:block;width:100%;padding:26px 0 24px;border:0;border-bottom:1px solid #e5e5ea;background:none;color:var(--ink2);font:inherit;text-align:left;cursor:pointer}
-.step .n{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:#aeaeb2;color:#fff;font-size:var(--t-small);transition:background .3s}
-.step b{display:block;margin-top:14px;font-size:var(--t-head);font-weight:var(--w-title);letter-spacing:-.015em;transition:color .3s}
-.step .d{display:block;margin-top:8px;max-width:32em;font-size:var(--t-body);line-height:1.5;letter-spacing:-.01em}
-.step[aria-current="step"] .n{background:#1d1d1f}
-.step[aria-current="step"] b{color:var(--ink)}
-.step[aria-current="step"] .d{color:#424245}
-.step .fill{position:absolute;left:0;right:0;bottom:-1px;height:2px;overflow:hidden}
-.step .fill i{display:block;width:0;height:100%;background:#1d1d1f}
-.step[aria-current="step"] .fill i{animation:fill 6s linear forwards}
-.how.paused .step .fill i{animation-play-state:paused}
-@keyframes fill{to{width:100%}}
-.scene{position:relative;aspect-ratio:760 / 640;max-width:100%;border-radius:28px;overflow:hidden;background:#c9dcf0 url(/img/paint-blue.jpg) center/cover;container-type:inline-size}
-.win{position:absolute;left:10%;top:8%;width:104%;height:100%;display:grid;grid-template-columns:32cqw minmax(0,1fr);border-radius:2.4cqw;background:#fff;box-shadow:0 2cqw 6cqw -2cqw rgba(0,0,0,.4);overflow:hidden;font-size:2cqw;letter-spacing:-.01em;color:#1d1d1f}
-.win .side{display:flex;flex-direction:column;gap:.6cqw;padding:2.4cqw 1.8cqw;background:#f5f5f7;border-right:.12cqw solid #e5e5ea}
-.win .lights{display:flex;gap:.9cqw;margin:0 0 2.2cqw .6cqw}
-.win .lights i{width:1.5cqw;height:1.5cqw;border-radius:50%;background:#ff5f57}
-.win .lights i+i{background:#febc2e}
-.win .lights i+i+i{background:#28c840}
-.win .ag{display:flex;align-items:center;gap:1.4cqw;padding:1.1cqw 1.2cqw;border-radius:1.6cqw;transition:background .4s}
-.win .ag img{width:4.4cqw;height:4.4cqw;border-radius:50%;object-fit:cover}
-.win .ag b{display:block;font-size:1.9cqw;font-weight:500}
-.win .ag small{display:block;font-size:1.5cqw;color:#86868b}
-.win .apps-row{display:flex;align-items:center;gap:1cqw;margin-top:auto;margin-bottom:9cqw;padding:1.2cqw;border-radius:1.6cqw;font-size:1.7cqw;color:#255a93;transition:background .4s}
-.win .apps-row .app{--as:2.4cqw;--ring:#f5f5f7}
-.win .main{position:relative;overflow:hidden}
-.win .v1{padding:4cqw 4.4cqw}
-.win h3{font-size:4.2cqw;font-weight:500;letter-spacing:-.02em}
-.win .v1>p{margin-top:.8cqw;font-size:1.9cqw;color:#6e6e73}
-.win .field{display:flex;align-items:center;gap:1.2cqw;height:5cqw;margin-top:2.6cqw;padding:0 1.6cqw;border:.15cqw solid #e5e5ea;border-radius:1.6cqw;font-size:1.8cqw;color:#86868b}
-.win .field svg{width:2cqw;height:2cqw}
-.win .label{margin-top:3.4cqw;font-size:1.9cqw;font-weight:500}
-.win .row{display:flex;align-items:center;gap:1.8cqw;padding:1.6cqw 0;border-bottom:.12cqw solid #f0f0f2}
-.win .row .app{--as:5.4cqw;--ring:transparent}
-.win .row b{display:block;font-size:2cqw;font-weight:500}
-.win .row small{display:block;margin-top:.2cqw;font-size:1.6cqw;color:#86868b}
-.win .row .plus{display:grid;place-items:center;flex:none;width:3.6cqw;height:3.6cqw;margin-left:auto;margin-right:6cqw;border-radius:50%;background:#f2f2f4;transition:background .4s,color .4s}
-.win .row .plus svg{width:1.8cqw;height:1.8cqw}
-.win .v2,.win .v3{position:absolute;inset:0;opacity:0;visibility:hidden;transition:opacity .45s,visibility .45s}
-.win .v2{display:grid;place-items:center;padding-right:14cqw;background:rgba(0,0,0,.28)}
-.win .card{width:34cqw;padding:3.2cqw;border-radius:2.4cqw;background:#fff;box-shadow:0 2cqw 5cqw -1.6cqw rgba(0,0,0,.4)}
-.win .card .app{--as:6cqw;--ring:transparent}
-.win .card h4{margin-top:1.8cqw;font-size:2.6cqw;font-weight:500;letter-spacing:-.02em}
-.win .card ul{margin:1.6cqw 0 0;padding:0;list-style:none;display:grid;gap:1cqw;font-size:1.7cqw;color:#424245}
-.win .card li{display:flex;gap:1cqw;align-items:flex-start}
-.win .card li svg{flex:none;width:1.9cqw;height:1.9cqw;margin-top:.1cqw;color:#1d1d1f}
-.win .card .go{display:flex;gap:1.2cqw;margin-top:2.6cqw}
-.win .card .go span{display:grid;place-items:center;height:4.4cqw;padding:0 2.4cqw;border-radius:99px;background:#f2f2f4;font-size:1.7cqw}
-.win .card .go span+span{background:#1d1d1f;color:#fff}
-.win .v3{display:flex;flex-direction:column;padding:3.4cqw 4.4cqw 3.4cqw 4.4cqw;background:#fff}
-.win .who{display:flex;align-items:center;gap:1.4cqw;padding-bottom:2.2cqw;border-bottom:.12cqw solid #f0f0f2}
-.win .who img{width:4.6cqw;height:4.6cqw;border-radius:50%;object-fit:cover}
-.win .who b{display:block;font-size:2cqw;font-weight:500}
-.win .who small{display:block;font-size:1.6cqw;color:#86868b}
-.win .msg{max-width:62%;margin-top:2.4cqw;padding:1.6cqw 2.2cqw;border-radius:2.6cqw;font-size:1.85cqw;line-height:1.4}
-.win .msg.me{align-self:flex-end;margin-right:15cqw;background:#255a93;color:#fff}
-.win .msg.it{align-self:flex-start;background:#e9e9eb}
-.win .chip{display:inline-flex;align-items:center;gap:.6cqw;padding:.1cqw .8cqw .1cqw .3cqw;border-radius:99px;background:#fff;vertical-align:-.3cqw;font-weight:500}
-.win .chip .app{--as:2.2cqw;--ring:transparent}
-.win .ask{display:flex;align-items:center;gap:1.2cqw;align-self:flex-start;margin-top:1.8cqw;padding:1.4cqw 1.6cqw 1.4cqw 2.2cqw;border:.15cqw solid #e5e5ea;border-radius:2.4cqw;font-size:1.8cqw}
-.win .ask span{display:grid;place-items:center;height:3.8cqw;padding:0 2cqw;border-radius:99px;background:#f2f2f4;font-size:1.6cqw}
-.win .ask span:last-child{background:#1d1d1f;color:#fff}
-.scene[data-step="0"] .apps-row,.scene[data-step="1"] .apps-row{background:#e8e8ed}
-.scene[data-step="0"] .row:first-of-type .plus{background:#1d1d1f;color:#fff}
-.scene[data-step="1"] .v2,.scene[data-step="2"] .v3{opacity:1;visibility:visible}
-.scene[data-step="2"] .ag.on{background:#e8e8ed}
 
 @media (max-width:1068px){.list{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:734px){
-  .find-head h2,.how h2{max-width:none;text-wrap:wrap} /* a phone keeps its titles as they were */
+  .find-head h2{max-width:none;text-wrap:wrap} /* a phone keeps its titles as they were */
   .open{min-height:0;overflow:visible} /* the icons' shadows are not cut */
   .floats{display:flex;flex-wrap:wrap;gap:12px;width:var(--col);margin:40px auto 0} /* on the left, under the button */
   .float{position:static;transform:none}
   .float.side{display:none}
   .float .app{--as:44px}
   .list{grid-template-columns:minmax(0,1fr);gap:12px}
-  .how-grid{grid-template-columns:minmax(0,1fr)}
-  .scene{order:-1} /* the app above the steps, so a tap shows its step */
 }
-@media (prefers-reduced-motion:reduce){.float{animation:none}.step .fill i{animation:none!important}.win .v2,.win .v3,.win .ag,.win .apps-row{transition:none}}
+@media (prefers-reduced-motion:reduce){.float{animation:none}}
+
+/* From the home page (source/page.html): the section titles, the pricing, the questions and the closing call. */
+.btn.ghost{background:#f2f2f2;color:#000}
+.btn.ghost:hover{background:#e8e8e8}
+.btn .apl{width:1.05em;height:1.05em;margin:-.18em .45em 0 -.1em;flex:none}
+.btn .dl{width:1em;height:1em;margin:0 -.15em 0 .4em;flex:none} /* Download for macOS, its arrow after the words (18 October 2026) */
+.trust{padding:clamp(100px,9vw,170px) 0 clamp(40px,4vw,80px)}
+.trust-top{display:grid;grid-template-columns:1fr 1fr;gap:clamp(24px,5vw,96px);align-items:start}
+.trust h2{margin:0;font-weight:var(--w-display);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em;max-width:var(--title-max);text-wrap:pretty} /* every section's title is the headline's size (the founder, 23 October 2026) */
+@media (max-width:734px){.trust h2{max-width:13em;text-wrap:balance}.close3 h2{max-width:none;text-wrap:balance}} /* the shared title width is for a computer's screen; a phone keeps its titles as they were (the founder, 23 October 2026) */
+.trust-top p{justify-self:end;margin:clamp(4px,.45vw,9px) 0 0;max-width:30em;font-size:var(--t-lead);line-height:1.5;letter-spacing:-.01em;color:var(--ink2)} /* on the far right, as the title is on the far left */
+@media (max-width:860px){.trust-top{grid-template-columns:1fr}.trust-top p{justify-self:start}}
+/* Pricing: Trial, Standard, Pro and Max on the pale panels (the founder, 4 October 2026), laid out simpler (18 October 2026): the name, the price at the display size, how it is billed, a full-width button, then what the plan includes in a few words. */
+.plans3{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:22px;margin-top:clamp(40px,4vw,80px)}
+.plan3{display:flex;flex-direction:column;padding:clamp(28px,2.4vw,44px) clamp(24px,2.1vw,40px);border-radius:28px;background:#fafafb}
+.plan3 h3{margin:0;font-size:var(--t-body);font-weight:400;letter-spacing:-.01em;color:var(--ink2)}
+.plan3 .pr{margin-top:clamp(16px,1.4vw,26px);font-weight:var(--w-display);font-size:var(--t-display);line-height:1;letter-spacing:-.025em;color:var(--ink)}
+.plan3 .pr small{font-family:var(--font);font-weight:400;font-size:var(--t-body);letter-spacing:-.01em;color:var(--ink2);margin-left:6px}
+.plan3 .billed{margin:10px 0 0;font-size:var(--t-body);letter-spacing:-.01em;color:var(--ink2)}
+.plan3 .btn{display:flex;align-items:center;justify-content:center;width:100%;margin-top:clamp(22px,2vw,36px);height:var(--btn-h);padding:0 20px;font-size:var(--btn-font)}
+.plan3 .inc{margin:clamp(26px,2.2vw,40px) 0 0;font-size:var(--t-body);letter-spacing:-.01em;color:var(--ink)}
+.plan3 ul{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:12px;align-content:start;font-size:var(--t-body);line-height:1.4;letter-spacing:-.01em;color:var(--ink2)}
+.plan3 li{display:flex;gap:12px;align-items:flex-start}
+.plan3 li::before{content:"";flex:none;width:.95em;height:.95em;margin-top:.24em;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236e6e73' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12.5 4.5 4.5L19 7'/%3E%3C/svg%3E") center/contain no-repeat}
+@supports (grid-template-rows:subgrid){.plans3{grid-template-rows:repeat(6,auto)}.plan3{display:grid;grid-template-rows:subgrid;row-gap:0;grid-row:span 6;align-content:start}}
+@media (max-width:1068px){.plans3{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:734px){.plans3{grid-template-columns:1fr;gap:14px}.plan3{border-radius:24px}}
+.qa3{margin-top:clamp(40px,4vw,80px);padding:clamp(12px,1.2vw,24px) clamp(28px,3vw,56px);border-radius:28px;background:#fafafb}
+.qa3 details{border-top:1px solid #ececef}
+.qa3 details:first-child{border-top:0}
+.qa3 summary{list-style:none;display:flex;justify-content:space-between;align-items:center;gap:24px;padding:clamp(20px,1.7vw,30px) 0;cursor:pointer;font-size:var(--t-head);letter-spacing:-.015em;color:#1d1d1f}
+.qa3 summary::-webkit-details-marker{display:none}
+.qa3 summary::after{content:"";flex:none;width:clamp(28px,1.8vw,34px);height:clamp(28px,1.8vw,34px);border-radius:50%;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231d1d1f' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M12 6v12M6 12h12'/%3E%3C/svg%3E") center/50% no-repeat;box-shadow:0 0 0 1px rgba(0,0,0,.05);transition:transform .25s}
+.qa3 details[open] summary::after{transform:rotate(45deg)}
+.qa3 summary:focus-visible{outline:2px solid var(--blue);outline-offset:4px;border-radius:6px}
+.qa3 details p{margin:0;padding:0 0 clamp(22px,1.8vw,32px);max-width:46em;font-size:var(--t-body);line-height:1.6;color:var(--ink2)}
+.close3{padding:clamp(120px,10vw,200px) 0 clamp(120px,10vw,200px);text-align:center}
+.close3 h2{margin:0 auto;max-width:var(--title-max);font-weight:var(--w-display);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em;text-wrap:pretty}
+.close3 .ctas{display:flex;justify-content:center;gap:clamp(10px,.7vw,14px);flex-wrap:wrap;margin-top:clamp(28px,2.4vw,44px)}
+.close3 .btn{height:var(--btn-h);padding:0 var(--btn-pad);font-size:var(--btn-font)}
+.close3 .btn.go{display:none} /* on a phone the close offers Download for iOS, as the top does, and Request a demo beside it (the founder, 12 October 2026) */
+@media (max-width:734px){.close3 .ctas .btn:not(.ghost):not(.go){display:none}.close3 .btn.go{display:inline-flex;order:-1}}
 </style>
 </head>
 <body>
@@ -489,25 +457,12 @@ footer a[aria-current]{color:var(--ink)}
     <div class="more-wrap" hidden><button class="btn more-apps" type="button">Load more</button></div>
   </div>
 </section>
-<section class="how" aria-labelledby="how-title">
+<section class="trust" id="questions" aria-label="Questions">
   <div class="wrap">
-    <h2 id="how-title">Connect an app in a few clicks</h2>
-    <div class="how-grid">
-      <ol class="steps"><li><button class="step" type="button" aria-current="step"><span class="n">1</span><b>Find an app</b><span class="d">Browse the apps your agents can work in, or search for one by name.</span><span class="fill"><i></i></span></button></li><li><button class="step" type="button" aria-current="false"><span class="n">2</span><b>Connect it</b><span class="d">See what the agents can do there, then sign in once, on the app’s own page.</span><span class="fill"><i></i></span></button></li><li><button class="step" type="button" aria-current="false"><span class="n">3</span><b>Put it to work</b><span class="d">Ask an agent in plain words. It works in the app and asks before it sends, posts or pays.</span><span class="fill"><i></i></span></button></li></ol>
-      <div class="scene" data-step="0" aria-hidden="true">
-        <div class="win">
-          <div class="side"><div class="lights"><i></i><i></i><i></i></div><div class="ag"><img src="/faces/clay-simeon.webp" alt="" width="96" height="96"><span><b>Simeon</b><small>Chief of Staff</small></span></div><div class="ag"><img src="/faces/clay-30.webp" alt="" width="96" height="96"><span><b>Theo</b><small>Bookkeeping</small></span></div><div class="ag on"><img src="/faces/clay-01.webp" alt="" width="96" height="96"><span><b>Iris</b><small>Customer support</small></span></div><div class="ag"><img src="/faces/clay-05.webp" alt="" width="96" height="96"><span><b>Scout</b><small>Customer research</small></span></div><div class="apps-row"><span class="app icon" title="Gmail"><img src="/connectors/apps/gmail.png?v=942e42d3" alt="" width="64" height="64" loading="lazy"></span><span class="app icon" title="Slack"><img src="/connectors/apps/slack.png?v=592c37da" alt="" width="64" height="64" loading="lazy"></span><span class="app icon" title="Notion"><img src="/connectors/apps/notion.png?v=d7c39e7e" alt="" width="64" height="64" loading="lazy"></span>Connect apps</div></div>
-          <div class="main">
-            <div class="v1"><h3>Connectors</h3><p>Your agents work in the apps you connect.</p><div class="field"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m15.5 15.5 5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Search apps</div><p class="label">Popular</p><div class="row"><span class="app icon" title="Gmail"><img src="/connectors/apps/gmail.png?v=942e42d3" alt="" width="64" height="64" loading="lazy"></span><span><b>Gmail</b><small>Search, read and draft email</small></span><span class="plus"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v12M6 12h12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></span></div><div class="row"><span class="app icon" title="Slack"><img src="/connectors/apps/slack.png?v=592c37da" alt="" width="64" height="64" loading="lazy"></span><span><b>Slack</b><small>Read and send messages</small></span><span class="plus"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v12M6 12h12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></span></div><div class="row"><span class="app icon" title="Google Calendar"><img src="/connectors/apps/google-calendar.png?v=72fcf32e" alt="" width="64" height="64" loading="lazy"></span><span><b>Google Calendar</b><small>Find time and book meetings</small></span><span class="plus"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v12M6 12h12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></span></div><div class="row"><span class="app icon" title="Notion"><img src="/connectors/apps/notion.png?v=d7c39e7e" alt="" width="64" height="64" loading="lazy"></span><span><b>Notion</b><small>Read and write pages</small></span><span class="plus"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v12M6 12h12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></span></div></div>
-            <div class="v2"><div class="card"><span class="app icon" title="Gmail"><img src="/connectors/apps/gmail.png?v=942e42d3" alt="" width="64" height="64" loading="lazy"></span><h4>Connect Gmail</h4><ul><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Search and read your email</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Draft replies for you to check</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Send only when you say so</li></ul><div class="go"><span>Not now</span><span>Continue</span></div></div></div>
-            <div class="v3"><div class="who"><img src="/faces/clay-01.webp" alt="" width="96" height="96"><span><b>Iris</b><small>Customer support</small></span></div>
-              <p class="msg me">Answer this morning's customer emails.</p>
-              <p class="msg it">Done. Four replies are drafted in <span class="chip"><span class="app icon" title="Gmail"><img src="/connectors/apps/gmail.png?v=942e42d3" alt="" width="64" height="64" loading="lazy"></span>Gmail</span></p>
-              <div class="ask">Send the four replies?<span>Not now</span><span>Allow</span></div></div>
-          </div>
-        </div>
-      </div>
+    <div class="trust-top">
+      <h2>Questions and answers</h2>
     </div>
+    <div class="qa3"><details><summary>How do I connect an app?</summary><p>In Simeon on your Mac or iPhone, open Connect apps and choose the app, or say yes when an agent asks for one in the chat. You sign in once, and Simeon never sees your password. A few apps ask for a key from your account with them instead.</p></details><details><summary>What can my agents do in an app?</summary><p>What your account there allows: your email in Gmail, your deals in HubSpot or your books in QuickBooks, for example. Before you sign in, Simeon shows what your agents will be able to read and use.</p></details><details><summary>Will they act without asking me?</summary><p>Auto-review asks for your OK before steps it judges risky, and you can turn off any of an app’s tools, or remove the app, in Settings › Connect apps. Agents can still get things wrong, so look over their work, especially at first.</p></details><details><summary>Where does my information go?</summary><p>What your agents read in an app becomes part of your chats with them and is sent to the AI models that do the work. The app’s own terms and privacy policy apply to what it shares with Simeon.</p></details><details><summary>Does connecting apps cost extra?</summary><p>No. Connecting apps is part of every plan, the free month included. Some apps need an account of a certain kind, such as WhatsApp Business or an Instagram business or creator account.</p></details><details><summary>What does Coming soon mean?</summary><p>The app can’t be connected yet: its maker hasn’t opened it to apps like Simeon, or Simeon is still setting up its sign-in with them. It changes to Connect once it can, with nothing for you to do.</p></details><details><summary>What if my app isn’t listed?</summary><p>Your agents can still use it on the web, in the browser on their own computer, once you sign in there by taking over. To ask for an app, write to support@simeonlabs.com.</p></details></div>
   </div>
 </section>
 </main>
@@ -541,18 +496,6 @@ footer a[aria-current]{color:var(--ink)}
   more.querySelector('button').addEventListener('click', () => { shown += PAGE; show(); });
   tools.hidden = false;
   show();
-})();
-</script><script>
-// The steps: each shows the Mac app at that step and hands on to the next when its line has filled (6 s,
-// paused while the section is out of sight); a click shows a step at once.
-(() => {
-  const how = document.querySelector('.how'), scene = how.querySelector('.scene'), steps = [...how.querySelectorAll('.step')];
-  const pick = (i) => { steps.forEach((s, j) => s.setAttribute('aria-current', j === i ? 'step' : 'false')); scene.dataset.step = String(i); };
-  steps.forEach((s, i) => {
-    s.addEventListener('click', () => pick(i));
-    s.querySelector('.fill i').addEventListener('animationend', () => pick((i + 1) % steps.length));
-  });
-  new IntersectionObserver(([e]) => how.classList.toggle('paused', !e.isIntersecting)).observe(how);
 })();
 </script>
 </body>

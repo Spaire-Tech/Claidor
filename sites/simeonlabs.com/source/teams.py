@@ -766,8 +766,9 @@ def ios_button():
     return found.group(0) if found else ""
 
 
-def questions():
-    rows = "".join(f"<details><summary>{esc(q)}</summary><p>{esc(a)}</p></details>" for q, a in TEAM_QA)
+def questions(qa=TEAM_QA):
+    """A page's questions and answers, the home page's look (the Teams page's own; Connectors' too)."""
+    rows = "".join(f"<details><summary>{esc(q)}</summary><p>{esc(a)}</p></details>" for q, a in qa)
     return f"""<section class="trust" id="questions" aria-label="Questions">
   <div class="wrap">
     <div class="trust-top">
