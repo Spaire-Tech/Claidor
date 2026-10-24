@@ -139,6 +139,13 @@ their Google name in `user.meta` (`server/simeon/integrations/google/service.py`
   their `CLAIDOR_` names). With the default `logger` the code is only written to the
   worker's log and no e-mail goes out: the worker's `email.send.actor_start` line says
   `sender_class=ResendEmailSender` when it sends.
+- The website's contact form (simeonlabs.com/contact, 24 October 2026) goes out the same
+  way: `POST /desktop/api/contact` (no sign-in, `server/simeon/desktop/contact.py`) queues
+  one e-mail to `SIMEON_CONTACT_EMAIL` (bass@simeonlabs.com unless set) with the person
+  as its reply-to, so it needs the same Resend settings. Nothing is stored. The log says
+  `desktop.contact.received` for each message and `desktop.contact.dropped` for a form
+  whose hidden field a bot filled; `rate_limit.py` allows 5 a minute and 20 an hour from
+  one address.
 - For Apple's review: `SIMEON_APP_REVIEW_EMAIL` (the review account's e-mail) and
   `SIMEON_APP_REVIEW_OTP_CODE` (six digits), in `simeon-shared` (only the API reads
   them). That e-mail then signs in with that code and no inbox; the reviewer can also be

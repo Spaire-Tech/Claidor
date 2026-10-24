@@ -59,6 +59,11 @@ _BASE_RULES: dict[str, Sequence[Rule]] = {
     "^/desktop/api/feedback": [
         Rule(minute=10, hour=40, block_time=300, zone="desktop-feedback")
     ],
+    # The website's contact form (`desktop/contact.py`): anonymous, so by address;
+    # a person sends one message, a script many.
+    "^/desktop/api/contact": [
+        Rule(minute=5, hour=20, block_time=900, zone="website-contact")
+    ],
 }
 
 _SANDBOX_RULES: dict[str, Sequence[Rule]] = {

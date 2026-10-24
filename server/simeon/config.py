@@ -600,6 +600,9 @@ class Settings(BaseSettings):
     EMAIL_FROM_LOCAL: str = "mail"
     EMAIL_DEFAULT_REPLY_TO_NAME: str = "Simeon Support"
     EMAIL_DEFAULT_REPLY_TO_EMAIL_ADDRESS: str = "support@simeonlabs.com"
+    # Where the website's contact form sends each message (`desktop/contact.py`,
+    # the founder, 24 October 2026). `SIMEON_CONTACT_EMAIL` on Render to change it.
+    CONTACT_EMAIL: str = "bass@simeonlabs.com"
 
     # Github App
     GITHUB_CLIENT_ID: str = ""

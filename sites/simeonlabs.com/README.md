@@ -32,8 +32,10 @@ while the app loads). It rewrites `public/` from scratch; commit what it writes.
 Marketplace pages: `python3 source/teams.py` rewrites `public/marketplace/`
 from `server/simeon/desktop/packs.json` (build.py runs it too); run it whenever
 a pack changes and commit what it writes. `source/connectors.py` writes
-`public/connectors/` and `source/pricing.py` writes `public/pricing/` the same
-way. The bar every page shares (Marketplace, Connectors, Pricing, Download; a
+`public/connectors/`, `source/pricing.py` writes `public/pricing/` and
+`source/contact.py` writes `public/contact/` the same way (its form posts to the
+API, `server/simeon/desktop/contact.py`, which e-mails each message to the
+founder). The bar every page shares (Marketplace, Connectors, Pricing, Download; a
 menu on a phone) is `source/nav.py`, its styles in `source/site.css`.
 Edit `source/`, never `public/` by hand: a hand edit is lost at the next build
 (the Download and plan links, made in `public/` on 11 October 2026, are in
