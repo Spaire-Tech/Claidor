@@ -526,9 +526,76 @@ class TestShortlist:
         card = flights.offer_for_card(offer, adults=1, cabin="economy")
         assert card is not None
         assert card["legs"][0]["flight"] == "AS 1068 · operated by Horizon Air"
+        assert card["airline"] == "Horizon Air", "the airline that flies it"
+        assert card["logo"] == "https://assets.duffel.com/AS.svg", (
+            "Horizon has no logo here: its marketer's"
+        )
+        assert card["soldBy"] == "", "Alaska sells it and markets the flight"
         assert card["legs"][0]["cabin"] == "Economy · Saver"
         assert card["bags"] == "No bags included"
         segment["passengers"][0].pop("baggages")
         unlisted = flights.offer_for_card(offer, adults=1, cabin="economy")
         assert unlisted is not None
         assert unlisted["bags"] == "Not stated"
+
+    def test_the_card_names_the_airline_flown_and_a_ticket_seller_apart(
+        self,
+    ) -> None:
+        """Hahn Air sells tickets for other airlines: the card said "Hahn Air"
+        for an Air Senegal flight (the founder, 24 October 2026)."""
+        dss, cmn, lis = ("DSS", "Dakar"), ("CMN", "Casablanca"), ("LIS", "Lisbon")
+        hahn = ("HR", "Hahn Air")
+        senegal = _segment(
+            dss, cmn, "05:00", "08:20", ("HC", "Air Senegal"), "331", "PT3H20M"
+        )
+        card = flights.offer_for_card(
+            _offer("581.40", hahn, [senegal], "PT3H20M", refund=None),
+            adults=1,
+            cabin="economy",
+        )
+        assert card is not None
+        assert (card["airline"], card["logo"], card["soldBy"]) == (
+            "Air Senegal",
+            "https://assets.duffel.com/HC.svg",
+            "Hahn Air",
+        )
+        two = flights.offer_for_card(
+            _offer(
+                "597.40",
+                ("TP", "TAP Air Portugal"),
+                [
+                    _segment(
+                        dss,
+                        lis,
+                        "02:00",
+                        "07:00",
+                        ("TP", "TAP Air Portugal"),
+                        "1484",
+                        "PT5H",
+                    ),
+                    _segment(
+                        lis,
+                        cmn,
+                        "13:00",
+                        "15:00",
+                        ("AT", "Royal Air Maroc"),
+                        "971",
+                        "PT2H",
+                    ),
+                ],
+                "PT13H",
+                refund=None,
+            ),
+            adults=1,
+            cabin="economy",
+        )
+        assert two is not None
+        assert (two["airline"], two["soldBy"]) == (
+            "TAP Air Portugal, Royal Air Maroc",
+            "",
+        )
+        # An order with no flights keeps its seller's name.
+        assert flights.flown_by({"owner": {"name": "Duffel Airways"}}) == (
+            "Duffel Airways",
+            "",
+        )

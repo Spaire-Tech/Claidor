@@ -188,7 +188,8 @@ def offer_for_booking(offer: dict[str, Any], *, test: bool) -> dict[str, Any]:
         "priceGuaranteedUntil": _text(requirements.get("price_guarantee_expires_at")),
         "documentsRequired": offer.get("passenger_identity_documents_required") is True,
         "passengers": passengers,
-        "airline": _text(owner.get("name")),
+        # The airline flown, as on the card; the code and the conditions stay the seller's (Duffel's `owner`).
+        "airline": card["airline"] if card else _text(owner.get("name")),
         "airlineCode": _text(owner.get("iata_code")),
         "conditionsUrl": _text(owner.get("conditions_of_carriage_url")),
         "route": route,
@@ -313,7 +314,7 @@ def _booked(order: dict[str, Any], *, test: bool) -> dict[str, Any]:
         "orderId": _text(order.get("id")),
         "bookingReference": _text(order.get("booking_reference")),
         "total": flights.money(order.get("total_amount"), order.get("total_currency")),
-        "airline": _text(_dict(order.get("owner")).get("name")),
+        "airline": flights.flown_by(order)[0],
         "test": test,
     }
 

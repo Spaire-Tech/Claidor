@@ -75,6 +75,8 @@ public struct FlightOffer: Hashable, Sendable {
   public let legs: [FlightLeg]
   /** Duffel's offer id: what "Book with Simeon" books (13 October 2026); empty on a card from before booking. */
   public var offerId = ""
+  /** Who sells the ticket when it is not the airline flown ("Hahn Air" on an Air Senegal flight, 24 October 2026); empty otherwise. */
+  public var soldBy = ""
 }
 
 public struct FlightLeg: Hashable, Sendable {
@@ -101,6 +103,7 @@ public struct FlightsCard: Hashable, Sendable {
       }
       var offer = FlightOffer(airline: s(o["airline"]), logo: s(o["logo"]), price: s(o["price"]), priceNote: s(o["priceNote"]), date: s(o["date"]), from: s(o["from"]), fromCity: s(o["fromCity"]), to: s(o["to"]), toCity: s(o["toCity"]), depart: s(o["depart"]), arrive: s(o["arrive"]), duration: s(o["duration"]), stops: s(o["stops"]), refundable: s(o["refundable"]), changeable: s(o["changeable"]), bags: s(o["bags"]), returnTimes: s(o["returnTimes"]), legs: legs)
       offer.offerId = s(o["offerId"])
+      offer.soldBy = s(o["soldBy"])
       return offer
     }
     guard !offers.isEmpty else { return nil }
