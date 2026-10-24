@@ -302,7 +302,7 @@ a{color:inherit}
 @media (max-width:734px){.add-note .btn:not(.go){display:none}.add-note .go{display:inline-flex}} /* a phone: Download for iOS, as on the home page */
 footer{margin-top:clamp(80px,8*var(--vw,1vw),140px);background:var(--soft);padding:20px 0 calc(40px + env(safe-area-inset-bottom,0px));font-size:var(--t-tiny);color:var(--ink2)}
 footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
-footer nav{display:flex;gap:18px}
+footer nav{display:flex;flex-wrap:wrap;gap:8px 18px} /* six links: a phone takes them on two lines */
 footer a{color:var(--ink2);text-decoration:none}
 footer a:hover{color:var(--ink)}
 footer a[aria-current]{color:var(--ink)}
@@ -579,7 +579,7 @@ def frame(title, description, path, body, css, current="", script="", head=""):
 {body}
 </main>
 
-<footer><div class="wrap"><span>Copyright © 2026 Spaire, Inc. All rights reserved.</span><nav><a href="/marketplace"{here("marketplace")}>Marketplace</a><a href="/connectors"{here("connectors")}>Connectors</a><a href="/pricing"{here("pricing")}>Pricing</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="mailto:support@simeonlabs.com">Contact</a></nav></div></footer>
+<footer><div class="wrap"><span>Copyright © 2026 Spaire, Inc. All rights reserved.</span><nav><a href="/marketplace"{here("marketplace")}>Marketplace</a><a href="/connectors"{here("connectors")}>Connectors</a><a href="/pricing"{here("pricing")}>Pricing</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/contact"{here("contact")}>Contact</a></nav></div></footer>
 {script}
 </body>
 </html>
@@ -734,7 +734,7 @@ def from_home():
     css = ("\n/* From the home page (source/page.html): the section titles, the pricing, the questions and the closing call. */\n"
            + "\n".join(rules) + "\n@media (max-width:860px){.trust-top{grid-template-columns:1fr}.trust-top p{justify-self:start}}\n"
            + page[start:page.index("\n", stop) + 1]).replace("url(fonts/", "url(/fonts/")
-    return pricing.group(0), close.group(0).replace('href="#app"', 'href="/#app"'), css
+    return pricing.group(0), close.group(0), css
 
 
 def home_hero():
@@ -748,7 +748,7 @@ def home_hero():
     rules = [line for line in page.splitlines() if line.startswith((".btn.ghost", ".btn .apl{", ".btn .dl{"))]
     css = ("\n/* The opening, from the home page (source/page.html). */\n" + "\n".join(rules) + "\n"
            + page[start:page.index("\n", stop) + 1])
-    return css, ctas.group(1).replace('href="#app"', 'href="/#app"')
+    return css, ctas.group(1)
 
 
 def ios_button():

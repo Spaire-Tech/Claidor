@@ -69,7 +69,7 @@ a{color:inherit}
 @media (max-width:734px){.add-note .btn:not(.go){display:none}.add-note .go{display:inline-flex}} /* a phone: Download for iOS, as on the home page */
 footer{margin-top:clamp(80px,8*var(--vw,1vw),140px);background:var(--soft);padding:20px 0 calc(40px + env(safe-area-inset-bottom,0px));font-size:var(--t-tiny);color:var(--ink2)}
 footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
-footer nav{display:flex;gap:18px}
+footer nav{display:flex;flex-wrap:wrap;gap:8px 18px} /* six links: a phone takes them on two lines */
 footer a{color:var(--ink2);text-decoration:none}
 footer a:hover{color:var(--ink)}
 footer a[aria-current]{color:var(--ink)}
@@ -127,7 +127,7 @@ footer{margin-top:0;font-size:var(--t-tiny)}
 </div></section>
 </main>
 
-<footer><div class="wrap"><span>Copyright © 2026 Spaire, Inc. All rights reserved.</span><nav><a href="/marketplace" aria-current="page">Marketplace</a><a href="/connectors">Connectors</a><a href="/pricing">Pricing</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="mailto:support@simeonlabs.com">Contact</a></nav></div></footer>
+<footer><div class="wrap"><span>Copyright © 2026 Spaire, Inc. All rights reserved.</span><nav><a href="/marketplace" aria-current="page">Marketplace</a><a href="/connectors">Connectors</a><a href="/pricing">Pricing</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/contact">Contact</a></nav></div></footer>
 <script>
 // Add to Simeon: the app on this device opens on the pack and adds the team (simeon-ios:// on an iPhone or
 // iPad, simeon:// on a Mac). With no app to open (still here 1.5 s later), and from the start on any other

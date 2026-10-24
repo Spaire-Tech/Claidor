@@ -78,6 +78,7 @@ from .bedrock import (
 )
 from .capabilities import router as capabilities_router
 from .composio import forward as composio_forward
+from .contact import router as contact_router
 from .flight_booking import router as flight_booking_router
 from .flights import router as flights_router
 from .language import answer_in_request_language, normalize_language
@@ -1670,6 +1671,8 @@ router.include_router(flight_booking_router)
 router.include_router(releases_router)
 # Starter packs (`packs.py`): the teams the website's "Add to Simeon" opens.
 router.include_router(packs_router)
+# The website's contact form (`contact.py`): each message e-mailed to the founder.
+router.include_router(contact_router)
 
 # Pushes to the person's iPhone (`push.py`): the phone registers at
 # `/desktop/push-devices`, the box's host posts `/desktop/push`.

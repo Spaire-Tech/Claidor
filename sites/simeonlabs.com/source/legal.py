@@ -20,7 +20,6 @@ OUT = os.path.join(HERE, "..", "public")
 PAGES = ("privacy", "terms")
 # As on the reference pages: the policy opens with its contents in a box that folds; the terms read straight on.
 CONTENTS = {"privacy"}
-CONTACT = "support@simeonlabs.com"
 
 
 def page(slug: str, template: str) -> str:
@@ -58,7 +57,6 @@ def page(slug: str, template: str) -> str:
         ),
         "%BODY%": body.strip("\n"),
         "%BAR%": nav.bar(),
-        "%CONTACT%": CONTACT,
         "%PRIVACY_CURRENT%": ' aria-current="page"' if slug == "privacy" else "",
         "%TERMS_CURRENT%": ' aria-current="page"' if slug == "terms" else "",
     }

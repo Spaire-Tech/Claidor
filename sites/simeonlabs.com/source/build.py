@@ -373,6 +373,9 @@ async def main():
     # The Pricing page (pricing.py, the home page's plans), at /pricing.
     import pricing
     pricing.build(OUT)
+    # The Contact page (contact.py), at /contact; its form posts to the API, which e-mails the founder.
+    import contact
+    contact.build(OUT)
     print("site written to", os.path.abspath(OUT))
 
 asyncio.run(main())

@@ -345,7 +345,8 @@
         "sites/simeonlabs.com/source/teams.py",
         "sites/simeonlabs.com/public/marketplace/**",
         "sites/simeonlabs.com/public/connectors/**",
-        "sites/simeonlabs.com/public/pricing/**"
+        "sites/simeonlabs.com/public/pricing/**",
+        "sites/simeonlabs.com/public/contact/**"
       ],
       "match": "Spaire, Inc",
       "reason": "The company that makes Simeon is Spaire, Inc. until it is renamed (the founder, 11 October 2026): the copyright and About lines (the Mac's Info.plist copyright is also in its String Catalog, which Xcode fills from the Info.plist), the NOTICE, the Windows signer, the invoices' issuer and the App Store's seller name it."
