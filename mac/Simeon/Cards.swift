@@ -1313,11 +1313,11 @@ private struct FlightRow: View {
         if let back = offer.inbound { FlightTimesAcross(times: back, ink: ink, grey: grey) }
       }
       .frame(minWidth: 220, maxWidth: .infinity)
-      // The price in our blue, as on the iPhone's card (the founder, 24 October 2026).
+      // The price in Apple's lighter blue, as on the iPhone's card (the founder, 24 October 2026).
       Text(offer.price)
         .font(.system(size: 15, weight: .medium))
         .tracking(-0.15)
-        .foregroundStyle(look.settingsBlue)
+        .foregroundStyle(look.appleBlue)
         .fixedSize()
       chevron
     }
@@ -1340,12 +1340,12 @@ private struct FlightRow: View {
     }
   }
 
-  /** "Airline · price", the price in our blue. */
+  /** "Airline · price", the price in Apple's lighter blue. */
   private var priceLine: AttributedString {
     var line = AttributedString(offer.airline.isEmpty || offer.price.isEmpty ? offer.airline : offer.airline + " · ")
     line.foregroundColor = ink
     var cost = AttributedString(offer.price)
-    cost.foregroundColor = look.settingsBlue
+    cost.foregroundColor = look.appleBlue
     return line + cost
   }
 

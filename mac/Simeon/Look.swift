@@ -77,6 +77,8 @@ struct Look {
   /** The person's bubbles and the send button: the window's blue (`#1f5087` on dark). */
   var yours: Color { dark ? Color(hex: 0x1f5087) : Color(hex: 0x255a93) }
   let yoursText = Color(hex: 0xfcfcfc)
+  /** Apple's own blue, lighter than ours: a flight's price on its card, the calendar's chosen day (the founder, 24 October 2026). */
+  var appleBlue: Color { dark ? Color(hex: 0x0a84ff) : Color(hex: 0x007aff) }
   /** An agent's bubbles, files and cards: light grey with a hairline and a soft shadow (dark: `#262626`, no shadow). */
   var theirs: Color { dark ? Color(hex: 0x262626) : Color(hex: 0xe9e9eb) }
   var theirsText: Color { dark ? Color(hex: 0xfcfcfc) : Color(hex: 0x1d1d1f) }

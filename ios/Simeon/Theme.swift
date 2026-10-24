@@ -91,6 +91,8 @@ enum Ink {
   static let control = Color.dynamic(light: "#ffffff", dark: "#212121")
   /** The chat's blue on buttons and checks; one step brighter on dark (`SWITCH_BLUE_DARK`). */
   static let blue = Color.dynamic(light: "#255a93", dark: "#2f6db0")
+  /** Apple's own blue, lighter than ours: a flight's price on its card (the founder, 24 October 2026). */
+  static let appleBlue = Color.dynamic(light: "#007aff", dark: "#0a84ff")
   /** The call button's glyph (`.simeon-call-button`). */
   static let callGlyph = Color.dynamic(light: "#255a93", dark: "#8cb8e8")
   static let link = Color.dynamic(light: "#0c64c1", dark: "#459ffe")

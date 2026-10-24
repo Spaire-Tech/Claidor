@@ -52,73 +52,10 @@ public enum GroupMembers {
 }
 
 /**
- A flight's details in the agent pane (`__simeonFlightDetails`), worded as
- the shipped window words them: the server's words kept, empty rows left
- out. (The phone's sheet words them its own way, in `Flights.swift`.)
+ The flight open in the agent pane (`__simeonFlightDetails`). The pane draws
+ it as the iPhone's sheet does, from `Flights.swift` (24 October 2026).
  */
 public enum FlightPane {
-  public struct Row: Hashable, Sendable {
-    public let label: String
-    public let value: String
-    public let sub: String?
-  }
-
-  public struct Section: Hashable, Sendable {
-    public let heading: String
-    public let rows: [Row]
-    /** A layover, after a leg that is not the last. */
-    public let note: String?
-  }
-
   /** The open flight's key: the card's row and the offer's place in it (the window keys on the message's words). */
   public static func key(row: String, index: Int) -> String { "\(row):\(index)" }
-
-  /** "SFO → MSP": the offer's ends, else its first and last legs'. */
-  public static func name(_ offer: FlightOffer) -> String {
-    let from = offer.from.isEmpty ? offer.legs.first?.from ?? "" : offer.from
-    let to = offer.to.isEmpty ? offer.legs.last?.to ?? "" : offer.to
-    return "\(from) \u{2192} \(to)"
-  }
-
-  /** "Thu, Oct 16 · 7h 55m · 1 stop": the date, the time and the stops' first part. */
-  public static func title(_ offer: FlightOffer) -> String {
-    let stops = offer.stops.components(separatedBy: " · ").first ?? ""
-    return [offer.date, offer.duration, stops].filter { !$0.isEmpty }.joined(separator: " · ")
-  }
-
-  /** Price, a section per leg, Fare; each only with something in it. */
-  /// `price`: false for a pane that shows the total on its own, as the iPhone's sheet does (the Mac's, 24 October 2026).
-  public static func sections(_ offer: FlightOffer, price: Bool = true) -> [Section] {
-    func rows(_ list: [(String, String, String?)]) -> [Row] {
-      list.filter { !$0.1.isEmpty }.map { Row(label: $0.0, value: $0.1, sub: ($0.2 ?? "").isEmpty ? nil : $0.2) }
-    }
-    func joined(_ parts: [String]) -> String { parts.filter { !$0.isEmpty }.joined(separator: " · ") }
-    var out: [Section] = []
-    if price, !offer.price.isEmpty {
-      out.append(Section(heading: L10n.text("Price"), rows: rows([(L10n.text("Total"), offer.price, offer.priceNote)]), note: nil))
-    }
-    for (index, leg) in offer.legs.enumerated() {
-      let carrier = !leg.carrier.isEmpty && leg.carrier != offer.airline ? leg.carrier : ""
-      let last = index == offer.legs.count - 1
-      var note: String?
-      if !last && !leg.layover.isEmpty {
-        if let range = leg.layover.range(of: " in ") {
-          note = L10n.text("\(String(leg.layover[..<range.lowerBound])) layover in \(String(leg.layover[range.upperBound...]))")
-        } else {
-          note = leg.layover
-        }
-      }
-      out.append(Section(heading: joined([leg.heading, "\(leg.from) \u{2192} \(leg.to)"]), rows: rows([
-        (L10n.text("Departs"), joined([leg.departDay, leg.depart]), nil),
-        (L10n.text("Arrives"), joined([leg.arriveDay, leg.arrive]), nil),
-        (L10n.text("Flight"), joined([leg.flight, carrier]), nil),
-        (L10n.text("Cabin"), leg.cabin, nil),
-        (L10n.text("Time in the air"), leg.duration, nil),
-      ]), note: note))
-    }
-    if !offer.refundable.isEmpty || !offer.changeable.isEmpty || !offer.bags.isEmpty || !offer.soldBy.isEmpty {
-      out.append(Section(heading: L10n.text("Fare"), rows: rows([(L10n.text("Cancellation"), offer.refundable, nil), (L10n.text("Changes"), offer.changeable, nil), (L10n.text("Bags"), offer.bags, nil), (L10n.text("Sold by"), offer.soldBy, nil)]), note: nil))
-    }
-    return out
-  }
 }

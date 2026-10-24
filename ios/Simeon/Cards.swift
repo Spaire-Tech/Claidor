@@ -631,8 +631,8 @@ struct FlightRow: View {
     HStack(alignment: .center, spacing: 12) {
       AirlineMark(name: offer.airline, logo: offer.logo, size: 40)
       VStack(alignment: .leading, spacing: 4) {
-        // The price in our blue, as on the Mac's card (the founder, 24 October 2026).
-        Text(FlightPrice.line(offer, ink: Ink.theirsText, price: Ink.blue))
+        // The price in Apple's lighter blue, as on the Mac's card (the founder, 24 October 2026).
+        Text(FlightPrice.line(offer, ink: Ink.theirsText, price: Ink.appleBlue))
           .font(.system(size: 17))
           .fixedSize(horizontal: false, vertical: true)
         FlightTimesLine(times: offer.outbound)

@@ -31,7 +31,7 @@ final class PaneMembersFlightTests: XCTestCase {
     XCTAssertFalse(Agent(json: ["id": "a", "name": "Theo"])!.showsMembers)
   }
 
-  func testTheFlightIsWordedAsTheWindowWordsIt() throws {
+  func testTheFlightIsWordedAsTheIPhonesSheetWordsIt() throws {
     let text = """
     ```simeon-flights
     {"title":"SFO to JFK","offers":[{"airline":"Alaska","price":"$412","priceNote":"round trip","date":"Thu, Oct 16","duration":"7h 55m","stops":"1 stop · SEA","refundable":"Not refundable","legs":[
@@ -40,22 +40,17 @@ final class PaneMembersFlightTests: XCTestCase {
     ```
     """
     let offer = try XCTUnwrap(FlightsCard.parse(text)?.offers.first)
-    XCTAssertEqual(FlightPane.name(offer), "SFO \u{2192} JFK")
-    XCTAssertEqual(FlightPane.title(offer), "Thu, Oct 16 · 7h 55m · 1 stop")
-    let sections = FlightPane.sections(offer)
-    XCTAssertEqual(sections.map(\.heading), ["Price", "Outbound · SFO \u{2192} SEA", "SEA \u{2192} JFK", "Fare"])
-    XCTAssertEqual(sections[0].rows, [FlightPane.Row(label: "Total", value: "$412", sub: "round trip")])
-    XCTAssertEqual(sections[1].rows.map(\.value), ["Thu, Oct 16 · 6:15 AM", "8:20 AM", "AS 24 · operated by Horizon Air · Horizon Air"])
-    XCTAssertEqual(sections[1].note, "1h 05m layover in Seattle")
-    XCTAssertEqual(sections[2].rows.map(\.label), ["Departs", "Arrives", "Flight"])
-    XCTAssertNil(sections[2].note)
-    XCTAssertEqual(sections[3].rows.map(\.label), ["Cancellation"])
-    // The Mac's pane shows the total on its own, in green, as the iPhone's sheet does.
-    XCTAssertEqual(FlightPane.sections(offer, price: false).map(\.heading), ["Outbound · SFO \u{2192} SEA", "SEA \u{2192} JFK", "Fare"])
+    // The Mac's pane draws the flight as the iPhone's sheet (24 October 2026), from the same words.
+    XCTAssertEqual(offer.ways.map(\.legs.count), [2])
+    XCTAssertEqual(offer.legs[0].departing, "Thu, Oct 16 at 6:15am")
+    XCTAssertEqual(offer.legs[0].flightLines, ["AS 24 · Horizon Air", "Operated by Horizon Air"])
+    XCTAssertEqual(offer.legs[0].layoverLine, "1h 05m layover in Seattle")
+    XCTAssertEqual(offer.legs[1].arriving, "5:55pm")
+    XCTAssertEqual(offer.terms, ["Cancellation: Not refundable"])
     XCTAssertEqual(FlightPane.key(row: "e1", index: 2), "e1:2")
   }
 
-  func testATicketSoldByAnotherCompanySaysSoUnderTheFare() throws {
+  func testATicketSoldByAnotherCompanySaysSoAfterTheTerms() throws {
     let text = """
     ```simeon-flights
     {"title":"Dakar to Casablanca","offers":[{"airline":"Air Senegal","soldBy":"Hahn Air","price":"$380","bags":"1 carry-on","legs":[{"from":"DSS","to":"CMN","flight":"HC 403","carrier":"Air Senegal"}]}]}
@@ -65,7 +60,6 @@ final class PaneMembersFlightTests: XCTestCase {
     XCTAssertEqual(offer.airline, "Air Senegal")
     XCTAssertEqual(offer.soldBy, "Hahn Air")
     XCTAssertEqual(offer.terms, ["1 carry-on", "Sold by: Hahn Air"])
-    XCTAssertEqual(FlightPane.sections(offer, price: false).last?.rows.map(\.value), ["1 carry-on", "Hahn Air"])
     // An airline that sells its own seats says nothing more.
     let own = try XCTUnwrap(FlightsCard.parse(text.replacingOccurrences(of: "\"soldBy\":\"Hahn Air\",", with: ""))?.offers.first)
     XCTAssertEqual(own.terms, ["1 carry-on"])

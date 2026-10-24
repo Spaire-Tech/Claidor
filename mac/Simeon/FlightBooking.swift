@@ -317,9 +317,9 @@ private struct MacTextRow: View {
 /**
  * A day ("YYYY-MM-DD") as the iPhone's: "Choose" until there is one, then
  * the date in a grey pill ("Oct 23, 1996"); either opens the calendar under
- * it, with the date as a field over it to type a year at once (the founder,
- * 24 October 2026: the three menus looked nothing like the iPhone's).
- * Opened empty, it starts at `start`, as the iPhone's Choose does.
+ * it (the founder, 24 October 2026: the three menus looked nothing like the
+ * iPhone's, and AppKit's calendar "opens really weirdly. small"). Opened
+ * empty, it starts at `start`, as the iPhone's Choose does.
  */
 private struct MacDayRow: View {
   let label: String
@@ -345,17 +345,275 @@ private struct MacDayRow: View {
       .accessibilityLabel(label)
       .popover(isPresented: $open, arrowEdge: .bottom) {
         let picked = Binding(get: { Traveller.date(day) ?? start }, set: { day = Traveller.day($0) })
-        VStack(alignment: .leading, spacing: 12) {
-          DatePicker(label, selection: picked, in: range, displayedComponents: .date)
-            .datePickerStyle(.field)
-            .labelsHidden()
-          DatePicker(label, selection: picked, in: range, displayedComponents: .date)
-            .datePickerStyle(.graphical)
-            .labelsHidden()
-        }
-        .padding(16)
-        .onAppear { if Traveller.date(day) == nil { day = Traveller.day(start) } }
+        MacCalendar(day: picked, range: range, look: look)
+          .padding(.horizontal, 14)
+          .padding(.vertical, 16)
+          .onAppear { if Traveller.date(day) == nil { day = Traveller.day(start) } }
       }
+    }
+  }
+}
+
+/**
+ * The calendar a day row opens, drawn as the iPhone's: the month and year
+ * with a blue chevron that turns them into a month list and a year list (a
+ * birthday is decades back), ‹ › for the months either side, then the days;
+ * the chosen one blue on a pale blue disc (white on a blue one when it is
+ * today), today in blue, a day outside the range grey and still. Six weeks
+ * tall whatever the month, so it never jumps.
+ */
+private struct MacCalendar: View {
+  @Binding var day: Date
+  let range: ClosedRange<Date>
+  let look: Look
+  /** The month shown: its first day, at noon. */
+  @State private var month: Date
+  @State private var choosing = false
+
+  private static let cell = CGSize(width: 42, height: 40)
+  /** The weekdays' line and the gap under it, over the six weeks. */
+  private static let height = 20 + 6 * cell.height
+  /** The traveller's days are Gregorian, in the Mac's time zone (`Traveller.day`); the week starts as the Mac's region starts it. */
+  private static let calendar: Calendar = {
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.locale = .current
+    calendar.timeZone = .current
+    return calendar
+  }()
+
+  init(day: Binding<Date>, range: ClosedRange<Date>, look: Look) {
+    _day = day
+    self.range = range
+    self.look = look
+    _month = State(initialValue: Self.first(of: day.wrappedValue))
+  }
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 10) {
+      head
+      if choosing { lists } else { days }
+    }
+    .frame(width: Self.cell.width * 7)
+  }
+
+  private var head: some View {
+    HStack(spacing: 0) {
+      Button {
+        withAnimation(.easeInOut(duration: 0.2)) { choosing.toggle() }
+      } label: {
+        HStack(spacing: 6) {
+          Text(Self.title(month))
+            .font(.system(size: 17, weight: .semibold))
+            .foregroundStyle(look.ink)
+          Image(systemName: "chevron.right")
+            .font(.system(size: 14, weight: .semibold))
+            .foregroundStyle(look.appleBlue)
+            .rotationEffect(.degrees(choosing ? 90 : 0))
+        }
+        .contentShape(Rectangle())
+      }
+      .buttonStyle(.hand)
+      Spacer(minLength: 0)
+      if !choosing {
+        step("chevron.left", by: -1, label: String(localized: "Previous month"))
+        step("chevron.right", by: 1, label: String(localized: "Next month"))
+      }
+    }
+    .padding(.leading, 10)
+    .frame(height: 32)
+  }
+
+  private func step(_ symbol: String, by months: Int, label: String) -> some View {
+    let target = Self.calendar.date(byAdding: .month, value: months, to: month) ?? month
+    let allowed = Self.meets(Self.calendar.dateInterval(of: .month, for: target), range)
+    return Button { month = target } label: {
+      Image(systemName: symbol)
+        .font(.system(size: 17, weight: .semibold))
+        .foregroundStyle(allowed ? look.appleBlue : look.inkTertiary)
+        .frame(width: 36, height: 32)
+        .contentShape(Rectangle())
+    }
+    .buttonStyle(.hand)
+    .disabled(!allowed)
+    .accessibilityLabel(label)
+  }
+
+  private var days: some View {
+    let calendar = Self.calendar
+    let symbols = calendar.shortStandaloneWeekdaySymbols
+    let shift = calendar.firstWeekday - 1
+    let weekdays = Array(symbols[shift...]) + Array(symbols[..<shift])
+    let lead = (calendar.component(.weekday, from: month) - calendar.firstWeekday + 7) % 7
+    let count = calendar.range(of: .day, in: .month, for: month)?.count ?? 30
+    var cells: [Int?] = Array(repeating: nil, count: lead)
+    cells += (1...count).map { Optional($0) }
+    cells += Array(repeating: nil, count: max(0, 42 - cells.count))
+    return VStack(spacing: 4) {
+      HStack(spacing: 0) {
+        ForEach(Array(weekdays.enumerated()), id: \.offset) { _, name in
+          Text(name.uppercased())
+            .font(.system(size: 12, weight: .semibold))
+            .foregroundStyle(look.inkTertiary)
+            .frame(width: Self.cell.width, height: 16)
+        }
+      }
+      LazyVGrid(columns: Array(repeating: GridItem(.fixed(Self.cell.width), spacing: 0), count: 7), spacing: 0) {
+        ForEach(Array(cells.enumerated()), id: \.offset) { _, number in
+          if let number, let date = Self.date(in: month, day: number) {
+            MacCalendarDay(
+              number: number,
+              chosen: calendar.isDate(date, inSameDayAs: day),
+              today: calendar.isDateInToday(date),
+              allowed: Self.meets(calendar.dateInterval(of: .day, for: date), range),
+              label: date.formatted(date: .complete, time: .omitted),
+              size: Self.cell,
+              look: look
+            ) { day = date }
+          } else {
+            Color.clear.frame(width: Self.cell.width, height: Self.cell.height)
+          }
+        }
+      }
+    }
+    .frame(height: Self.height, alignment: .top)
+  }
+
+  /** The months and the years in the range, side by side, each scrolled to the one shown. */
+  private var lists: some View {
+    let calendar = Self.calendar
+    let shown = calendar.dateComponents([.year, .month], from: month)
+    let year = shown.year ?? 2000
+    let years = Array(calendar.component(.year, from: range.lowerBound)...calendar.component(.year, from: range.upperBound))
+    return HStack(spacing: 8) {
+      MacCalendarList(
+        values: Array(1...12),
+        chosen: shown.month ?? 1,
+        name: { calendar.standaloneMonthSymbols[$0 - 1] },
+        allowed: { number in Self.meets(Self.date(year: year, month: number, day: 1).flatMap { calendar.dateInterval(of: .month, for: $0) }, range) },
+        look: look
+      ) { pick(year: year, month: $0) }
+      MacCalendarList(values: years, chosen: year, name: { String($0) }, allowed: { _ in true }, look: look) {
+        pick(year: $0, month: shown.month ?? 1)
+      }
+      .frame(width: 96)
+    }
+    .frame(height: Self.height)
+  }
+
+  /** A month or a year from the lists: the calendar shows it, and the chosen day moves there (its day of the month kept where the month has it), within the range. */
+  private func pick(year: Int, month number: Int) {
+    let calendar = Self.calendar
+    guard let first = Self.date(year: year, month: number, day: 1) else { return }
+    month = first
+    let length = calendar.range(of: .day, in: .month, for: first)?.count ?? 28
+    if let moved = Self.date(year: year, month: number, day: min(calendar.component(.day, from: day), length)) {
+      day = min(max(moved, range.lowerBound), range.upperBound)
+    }
+  }
+
+  private static func date(year: Int, month: Int, day: Int) -> Date? {
+    calendar.date(from: DateComponents(year: year, month: month, day: day, hour: 12))
+  }
+
+  private static func date(in month: Date, day: Int) -> Date? {
+    let parts = calendar.dateComponents([.year, .month], from: month)
+    return date(year: parts.year ?? 2000, month: parts.month ?? 1, day: day)
+  }
+
+  private static func first(of date: Date) -> Date {
+    Self.date(in: date, day: 1) ?? date
+  }
+
+  /** Whether a day or a month has any of the range in it. */
+  private static func meets(_ span: DateInterval?, _ range: ClosedRange<Date>) -> Bool {
+    guard let span else { return false }
+    return span.end > range.lowerBound && span.start <= range.upperBound
+  }
+
+  /** "October 1996", in the Mac's language. */
+  private static func title(_ month: Date) -> String {
+    let format = DateFormatter()
+    format.calendar = calendar
+    format.locale = .current
+    format.setLocalizedDateFormatFromTemplate("LLLLyyyy")
+    return format.string(from: month)
+  }
+}
+
+/** A day in the calendar: 17, a faint disc under the pointer. */
+private struct MacCalendarDay: View {
+  let number: Int
+  let chosen: Bool
+  let today: Bool
+  let allowed: Bool
+  let label: String
+  let size: CGSize
+  let look: Look
+  let action: () -> Void
+  @State private var hovering = false
+
+  var body: some View {
+    Button(action: action) {
+      ZStack {
+        Circle().fill(disc).frame(width: 36, height: 36)
+        Text(number.formatted())
+          .font(.system(size: 17, weight: chosen || today ? .semibold : .regular))
+          .foregroundStyle(ink)
+      }
+      .frame(width: size.width, height: size.height)
+      .contentShape(Rectangle())
+    }
+    .buttonStyle(.hand)
+    .disabled(!allowed)
+    .onHover { hovering = $0 }
+    .accessibilityLabel(label)
+    .accessibilityAddTraits(chosen ? .isSelected : [])
+  }
+
+  private var disc: Color {
+    if chosen { return today ? look.appleBlue : look.appleBlue.opacity(look.dark ? 0.24 : 0.14) }
+    return hovering && allowed ? look.ink.opacity(0.07) : .clear
+  }
+
+  private var ink: Color {
+    if !allowed { return look.inkTertiary }
+    if chosen && today { return .white }
+    return chosen || today ? look.appleBlue : look.ink
+  }
+}
+
+/** The month or the year list: 17 each, the one shown blue on a pale blue band, scrolled to the middle when it opens. */
+private struct MacCalendarList: View {
+  let values: [Int]
+  let chosen: Int
+  let name: (Int) -> String
+  let allowed: (Int) -> Bool
+  let look: Look
+  let pick: (Int) -> Void
+
+  var body: some View {
+    ScrollViewReader { reader in
+      ScrollView {
+        VStack(spacing: 2) {
+          ForEach(values, id: \.self) { value in
+            let shown = value == chosen
+            Button { pick(value) } label: {
+              Text(name(value))
+                .font(.system(size: 17, weight: shown ? .semibold : .regular))
+                .foregroundStyle(shown ? look.appleBlue : allowed(value) ? look.ink : look.inkTertiary)
+                .frame(maxWidth: .infinity, minHeight: 36)
+                .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(shown ? look.appleBlue.opacity(look.dark ? 0.24 : 0.14) : .clear))
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.hand)
+            .disabled(!allowed(value))
+            .id(value)
+            .accessibilityAddTraits(shown ? .isSelected : [])
+          }
+        }
+      }
+      .scrollIndicators(.never)
+      .onAppear { reader.scrollTo(chosen, anchor: .center) }
     }
   }
 }
