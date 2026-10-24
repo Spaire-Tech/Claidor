@@ -1158,9 +1158,7 @@ struct FileCardView: View {
   }
 
   private var card: some View {
-    let ext = (name as NSString).pathExtension
-    let base = ext.isEmpty ? name : String(name.dropLast(ext.count + 1))
-    return HStack(spacing: 8) {
+    HStack(spacing: 8) {
       Group {
         if let art = FileKind.artwork(name), let artwork = UIImage(named: art) {
           Image(uiImage: artwork).resizable().scaledToFit()
@@ -1171,8 +1169,9 @@ struct FileCardView: View {
       }
       .frame(width: 36, height: 36)
       VStack(alignment: .leading, spacing: 1) {
-        Text("\(base)\(ext.isEmpty ? "" : ".\(ext)")").font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.primary)
-          .lineLimit(1).truncationMode(.middle)
+        // Its name as a title ("Dakar trip budget"): the icon says the kind; saving keeps the real name.
+        Text(fileTitle(name)).font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.primary)
+          .lineLimit(1).truncationMode(.tail)
         // Hidden while empty (patch 1670).
         if !line.isEmpty { Text(line).font(.system(size: 12)).foregroundStyle(Ink.secondary).lineLimit(1) }
       }

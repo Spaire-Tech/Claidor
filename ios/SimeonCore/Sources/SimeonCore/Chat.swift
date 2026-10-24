@@ -597,7 +597,7 @@ public enum Chat {
       while let last = head.last, last.isWhitespace || ":;,.!?\u{2013}\u{2014}-".contains(last) { head.removeLast() }
       return head + "…"
     case .image: return L10n.text("Photo")
-    case .file(let url, let name): return name.flatMap { $0.isEmpty ? nil : $0 } ?? fileBaseName(url)
+    case .file(let url, let name): return fileTitle(name.flatMap { $0.isEmpty ? nil : $0 } ?? fileBaseName(url))
     case .link(let url): return URL(string: url)?.host ?? url
     case .missing: return L10n.text("Thread")
     }
@@ -926,7 +926,7 @@ public enum Chat {
       let text = plainPreview(raw)
       return text.isEmpty ? L10n.text("(empty)") : clippedLine(text, limit)
     case .image: return L10n.text("Photo")
-    case .file(let url, let name): return clippedLine((name?.isEmpty == false ? name! : fileBaseName(url)), limit)
+    case .file(let url, let name): return clippedLine(fileTitle(name?.isEmpty == false ? name! : fileBaseName(url)), limit)
     case .link(let url): return clippedLine(URL(string: url)?.host ?? url, limit)
     case .missing: return L10n.text("(deleted)")
     }
@@ -1044,7 +1044,8 @@ public enum Chat {
         return .bubble(Bubble(id: entry.id, text: text, fromPerson: false, author: entry.author, showsName: false, showsAvatar: false, reactions: reactions, isStreaming: streaming, replyTo: entry["replyTo"]?.text, timestampMs: entry.timestampMs, images: images, loneLink: link, myReactions: mine, channel: ChannelTag(channel: message["channel"]?.string, inbound: false)))
       case "attachment":
         guard let url = message["url"]?.text else { return nil }
-        return .file(id: entry.id, name: fileName(ofURL: url), url: url, fromPerson: false)
+        // The agent's own name for it (`file_name`); the computer keeps the file under one made from its contents.
+        return .file(id: entry.id, name: message["file_name"]?.text ?? fileName(ofURL: url), url: url, fromPerson: false)
       case "widget":
         guard let widget = message["widget"], let prompt = widget["prompt"]?.text else { return nil }
         let options = (widget["options"]?.array ?? []).compactMap { option -> QuestionOption? in
