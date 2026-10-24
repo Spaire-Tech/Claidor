@@ -1232,6 +1232,8 @@ struct FileCardView: View {
   @Environment(\.chatWidth) private var width
   @State private var image: UIImage?
   @State private var preview: PreviewFile?
+  /** A Markdown file, opened as a page (Quick Look shows it as raw text). */
+  @State private var document: MarkdownDocument?
   @State private var loading = false
 
   /** The picture could not be read: the file card, so it can still be opened. */
@@ -1295,6 +1297,7 @@ struct FileCardView: View {
     // The Mac's Quick Look panel, as Finder opens it.
     .quickLookPreview(Binding(get: { preview?.url }, set: { preview = $0.map(PreviewFile.init(url:)) }))
     #endif
+    .sheet(item: $document) { document in MarkdownFileSheet(document: document) }
   }
 
   private var card: some View {
@@ -1385,12 +1388,71 @@ struct FileCardView: View {
         try? FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
         return (try? data.write(to: file, options: .atomic)) != nil
       }.value
-      if written { preview = PreviewFile(url: file) } else { store.problem = String(localized: "Couldn't open \(name).") }
+      guard written else {
+        store.problem = String(localized: "Couldn't open \(name).")
+        return
+      }
+      // Markdown as a page: Quick Look shows it as raw text.
+      if FilePreview.kind(name) == .markdown {
+        document = MarkdownDocument(title: fileTitle(name), text: String(decoding: data, as: UTF8.self), file: file)
+      } else {
+        preview = PreviewFile(url: file)
+      }
     }
   }
 }
 
 struct PreviewFile: Identifiable { let url: URL; var id: URL { url } }
+
+/** A Markdown file to show as a page: its title, its words, and its copy on the phone (what Share sends). */
+struct MarkdownDocument: Identifiable {
+  let title: String
+  let text: String
+  let file: URL
+  var id: URL { file }
+}
+
+/**
+ * A Markdown file, opened (the founder, 24 October 2026: on the iPhone it was
+ * "just a list of raw text", where the Mac draws it): its title over the
+ * page, Share at the left and Close at the right in the sheet's glass discs,
+ * then the document drawn as the chat draws an agent's message (headings,
+ * lists, quotes, code, tables), its words selectable.
+ */
+struct MarkdownFileSheet: View {
+  let document: MarkdownDocument
+  @Environment(\.dismiss) private var dismiss
+
+  var body: some View {
+    VStack(spacing: 0) {
+      ZStack {
+        Text(document.title)
+          .font(.system(size: 17, weight: .semibold)).foregroundStyle(Ink.primary)
+          .lineLimit(1)
+          .padding(.horizontal, 56)
+          .accessibilityAddTraits(.isHeader)
+        HStack {
+          ShareLink(item: document.file) {
+            Image(systemName: "square.and.arrow.up").font(.system(size: 15, weight: .semibold)).foregroundStyle(Ink.primary)
+              .frame(width: 40, height: 40)
+          }
+          .buttonStyle(GlassDisc())
+          .accessibilityLabel("Share")
+          Spacer(minLength: 0)
+          CloseDisc { dismiss() }
+        }
+      }
+      .padding(.horizontal, 16).padding(.top, 16).padding(.bottom, 8)
+      ScrollView {
+        MarkdownView(blocks: Markdown.blocks(document.text), mentioning: nil)
+          .textSelection(.enabled)
+          .frame(maxWidth: .infinity, alignment: .leading)
+          .padding(.horizontal, 20).padding(.top, 8).padding(.bottom, 32)
+      }
+    }
+    .presentationDragIndicator(.visible)
+  }
+}
 
 #if os(iOS)
 /** The system's preview (Quick Look): images, PDFs, text, and Word, Excel and PowerPoint files, with Share to save. */
