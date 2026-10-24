@@ -1323,43 +1323,26 @@ editable).
   read `/tmp/sand-host.log` for `tool=CallMcpTool` and `tool=MarkDraftDelivered`.
 * **Not yet verified.** Not run on a Mac.
 
-### List cards and files in the chat
+### Files and lists in the chat
 
-**For the person** (24 October 2026). Three or more things of one kind come as a card, a row
-each, instead of a paragraph that strings them together: dishes and their cost, a menu,
-options, places, people, what's done and what's left. A row has its name, one grey line, a
-figure at the right (money in Apple's lighter blue, its currency too; anything else in the
-text's colour), a short tag ("à valider": orange waiting, green done, red a problem, grey),
-a picture of what it is, and its page, which a tap opens. A caveat or what's missing comes in
-the agent's own message after the card. A file the agent sends shows its name as a title
-("Dakar trip budget"), the icon saying its kind.
+**For the person** (24 October 2026). A file the agent sends shows its name as a title
+("Dakar trip budget"), the icon saying its kind; Save keeps the real name. On the iPhone a
+Markdown file opens as a page, drawn as the chat draws a message. Three or more things of one
+kind (dishes and their cost, options, places) come as a list, an item a line, never one long
+paragraph, and a paragraph is at most about four short lines.
 
 **How it works.**
 
-- `ShowList` (`host/runner/tools/list-card-tool.ts`, every main agent) posts a `send-message`
-  of type `list` (`shared/list-card.ts`): `title`, `subtitle`, `items` (3 to 8: `title`,
-  `detail`, `amount` for money or `value` for another figure, `tag` and `tone`, `imageUrl`,
-  `url`, https only), and `content`, the card in words for an app from before it. A picture
-  from the web is kept on the computer (`keepWebPicture` in `host-runner-composition.ts`, as
-  a product's); one that can't be kept stays at its address.
-- The brief's "Reply length and shape" says when: three or more things of one kind with
-  their own figure or status go in the card, even when the person asked for a list; one
-  bubble is at most about four short lines.
-- The rule alone was not enough (24 October 2026: four restaurants and four dishes came as
-  lists in text, no card). SendMessage now holds a text that lists 3 to 8 things, "Name: …"
-  a line (`host/runner/list-card-guard.ts`), and tells the agent to send them with
-  ShowList; the same words sent again go through, for a list that truly isn't one (steps
-  to follow), so nothing is ever stuck.
-- The apps draw it from SimeonCore's `ListCard.swift` (`ListCardView` on the iPhone,
-  `MacListCardView` on the Mac). An app from before it shows `content` as a message.
 - A file's card reads the agent's own name for it (`file_name` on the attachment; the
   computer stores it under a name made from its contents) through `fileTitle` in
   SimeonCore's `Models.swift`. The brief tells agents to name a file for what it is.
-- The brief and the tool reach agents only with a new engine (`npm run package` and
-  `npm run publish:host-bundle` on a Mac).
-
-**When it misbehaves.** Box log: `tool=ShowList`. A card that shows as a plain message means
-the app is older than the card, or the message lacked a title or rows.
+- The iPhone's `FileCardView` opens a Markdown file in `MarkdownFileSheet` (`MarkdownView`)
+  instead of Quick Look, which showed it as raw text.
+- The list and paragraph rules are the brief's "Reply length and shape"
+  (`host/runner/system-prompt.ts`); they reach agents only with a new engine.
+- A list card (`ShowList`, a `list` message) was tried on 24 October 2026 and taken back
+  the same day: the founder preferred lists. Its messages already in a chat read as their
+  words (`content`), as any message an app doesn't know.
 
 * **Not yet verified.** Not run on a Mac or an iPhone.
 

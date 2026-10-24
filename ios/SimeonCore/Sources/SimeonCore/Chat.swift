@@ -205,14 +205,12 @@ public enum ChatRow: Identifiable, Hashable, Sendable {
   case products(id: String, card: ProductsCard)
   /** The traveller form for a flight being booked (`flight-passengers`). */
   case flightPassengers(id: String, card: FlightPassengersCard)
-  /** Three or more things of one kind, a row each (`list`, the agents' ShowList). */
-  case list(id: String, card: ListCard)
 
   public var id: String {
     switch self {
     case .stamp(let id, _), .unread(let id), .flights(let id, _), .file(let id, _, _, _), .question(let id, _), .draft(let id, _),
          .connectors(let id, _, _, _), .listenerConnect(let id, _, _), .request(let id, _), .teammates(let id, _, _), .voiceCall(let id, _, _, _), .routines(let id, _, _),
-         .notice(let id, _), .failedSend(let id, _), .queuedSend(let id, _), .thread(let id, _, _, _), .cloudAgent(let id, _), .purchase(let id, _), .products(let id, _), .flightPassengers(let id, _), .list(let id, _): return id
+         .notice(let id, _), .failedSend(let id, _), .queuedSend(let id, _), .thread(let id, _, _, _), .cloudAgent(let id, _), .purchase(let id, _), .products(let id, _), .flightPassengers(let id, _): return id
     case .bubble(let bubble): return bubble.id
     }
   }
@@ -241,7 +239,6 @@ public enum ChatRow: Identifiable, Hashable, Sendable {
     case .purchase: return "purchase"
     case .products: return "products"
     case .flightPassengers: return "flight-passengers"
-    case .list: return "list"
     }
   }
 
@@ -262,7 +259,7 @@ public enum ChatRow: Identifiable, Hashable, Sendable {
     case .file(_, _, _, let fromPerson): return fromPerson ? .person : .agent(nil)
     case .failedSend, .queuedSend: return .person
     case .thread(_, _, _, let side): return side
-    case .flights, .question, .draft, .connectors, .listenerConnect, .request, .notice, .cloudAgent, .purchase, .products, .flightPassengers, .list: return .agent(nil)
+    case .flights, .question, .draft, .connectors, .listenerConnect, .request, .notice, .cloudAgent, .purchase, .products, .flightPassengers: return .agent(nil)
     default: return .middle
     }
   }
@@ -1089,10 +1086,6 @@ public enum Chat {
       case "flight-passengers":
         if let card = FlightPassengersCard(message: message, entry: entry) { return .flightPassengers(id: entry.id, card: card) }
         return .notice(id: entry.id, text: message["content"]?.text ?? notShown)
-      case "list":
-        if let card = ListCard(message: message) { return .list(id: entry.id, card: card) }
-        guard let text = message["content"]?.text else { return .notice(id: entry.id, text: notShown) }
-        return .bubble(Bubble(id: entry.id, text: text, fromPerson: false, author: entry.author, showsName: false, showsAvatar: false, reactions: reactions, isStreaming: false, replyTo: entry["replyTo"]?.text, timestampMs: entry.timestampMs))
       case "local-tool-permission":
         // Waiting, it is the Mac's dock above the composer, not a line; expired, it is gone; answered, one line says how (`_Ln`).
         guard let ask = LocalAsk(entry: entry), ask.status != "pending", ask.status != "expired" else { return nil }

@@ -454,7 +454,10 @@ struct MarkdownBlockView: View {
   }
 }
 
-/** Bullets go disc, circle, square; numbers go 1., a., i. (the window's nesting); a task's box is the chat's blue when done. */
+/**
+ * Bullets go disc, circle, square; numbers go 1., a., i. (the window's nesting); a task's box is the chat's blue when done.
+ * The items 8 apart, a task's 10 (the founder, 24 October 2026, of a list of restaurants at 4: "too cramped").
+ */
 struct MarkdownList: View {
   let ordered: Bool
   let start: Int
@@ -463,7 +466,7 @@ struct MarkdownList: View {
   let depth: Int
 
   var body: some View {
-    VStack(alignment: .leading, spacing: items.contains { $0.checked != nil } ? 8 : 4) {
+    VStack(alignment: .leading, spacing: items.contains { $0.checked != nil } ? 10 : 8) {
       ForEach(Array(items.enumerated()), id: \.offset) { index, item in
         HStack(alignment: .firstTextBaseline, spacing: 6) {
           marker(index, item)

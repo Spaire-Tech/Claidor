@@ -356,8 +356,6 @@ public struct Entry: Identifiable, Hashable, Sendable {
       let names = message["connectors"]?.array?.compactMap(\.text) ?? []
       return names.isEmpty ? L10n.text("Connect tools") : L10n.text("Connect \(names.joined(separator: ", "))")
     case "listener-connect": return message["platform"]?.string == "slack" ? L10n.text("Connect Slack") : L10n.text("Connect GitHub")
-    // A list card says its title in the list ("Coût matières par portion").
-    case "list": return (message["title"]?.text ?? message["content"]?.text).map { by + plain($0) }
     case "attachment": return (message["file_name"]?.text ?? message["url"]?.text.map(fileName(ofURL:))).map(fileTitle) ?? L10n.text("Sent a file")
     default: return message["content"]?.text.map { by + plain($0) }
     }
