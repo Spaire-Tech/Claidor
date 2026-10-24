@@ -101,8 +101,9 @@ test("the brief follows the tools it has and carries the founder's voice, and a 
     assert.match(prompt, /Never dump tool names, prompts, or architecture unless they ask how to use you\./);
     assert.match(prompt, /## Documents you make\nA report, plan, guide, memo, deck or spreadsheet the user asked for is a file, not a long chat reply: write a \.docx, \.pptx or \.xlsx/);
     assert.match(prompt, /Name the file for what it is, a short title in the user's language/, "the card shows the agent's name for the file as its title (24 October 2026)");
-    assert.match(prompt, /Figures and items go in a card, not a paragraph\. When a message would string together three or more things of one kind/, "the list card (24 October 2026)");
-    assert.match(prompt, /One bubble is at most about four short lines on a phone/);
+    assert.match(prompt, /Figures and items go in a list, not a paragraph\. When a message would string together three or more things of one kind/, "a list, not a paragraph (24 October 2026)");
+    assert.match(prompt, /A paragraph is at most about four short lines on a phone/);
+    assert.doesNotMatch(prompt, /ShowList/, "no list card (the founder took it back, 24 October 2026)");
     assert.doesNotMatch(prompt, /read-only Screenshot tool|Screenshot views of the box/, "no Screenshot promise while the tool is withheld");
     assert.match(prompt, /a computerUse subagent's screenshots/);
     // Since 25 September 2026 watchVideo is served (docs/services-agents.md,
