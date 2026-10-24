@@ -87,13 +87,14 @@ public enum FlightPane {
   }
 
   /** Price, a section per leg, Fare; each only with something in it. */
-  public static func sections(_ offer: FlightOffer) -> [Section] {
+  /// `price`: false for a pane that shows the total on its own, as the iPhone's sheet does (the Mac's, 24 October 2026).
+  public static func sections(_ offer: FlightOffer, price: Bool = true) -> [Section] {
     func rows(_ list: [(String, String, String?)]) -> [Row] {
       list.filter { !$0.1.isEmpty }.map { Row(label: $0.0, value: $0.1, sub: ($0.2 ?? "").isEmpty ? nil : $0.2) }
     }
     func joined(_ parts: [String]) -> String { parts.filter { !$0.isEmpty }.joined(separator: " · ") }
     var out: [Section] = []
-    if !offer.price.isEmpty {
+    if price, !offer.price.isEmpty {
       out.append(Section(heading: L10n.text("Price"), rows: rows([(L10n.text("Total"), offer.price, offer.priceNote)]), note: nil))
     }
     for (index, leg) in offer.legs.enumerated() {

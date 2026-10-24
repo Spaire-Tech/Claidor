@@ -1313,10 +1313,11 @@ private struct FlightRow: View {
         if let back = offer.inbound { FlightTimesAcross(times: back, ink: ink, grey: grey) }
       }
       .frame(minWidth: 220, maxWidth: .infinity)
+      // The price in our blue, as on the iPhone's card (the founder, 24 October 2026).
       Text(offer.price)
         .font(.system(size: 15, weight: .medium))
         .tracking(-0.15)
-        .foregroundStyle(ink)
+        .foregroundStyle(look.settingsBlue)
         .fixedSize()
       chevron
     }
@@ -1327,10 +1328,9 @@ private struct FlightRow: View {
     HStack(spacing: 12) {
       AirlineMark(name: offer.airline, logo: offer.logo, side: 40)
       VStack(alignment: .leading, spacing: 4) {
-        Text([offer.airline, offer.price].filter { !$0.isEmpty }.joined(separator: " · "))
+        Text(priceLine)
           .font(.system(size: 15))
           .tracking(-0.15)
-          .foregroundStyle(ink)
           .fixedSize(horizontal: false, vertical: true)
         FlightTimesStacked(times: offer.outbound, grey: grey)
         if let back = offer.inbound { FlightTimesStacked(times: back, grey: grey) }
@@ -1338,6 +1338,15 @@ private struct FlightRow: View {
       .frame(maxWidth: .infinity, alignment: .leading)
       chevron
     }
+  }
+
+  /** "Airline · price", the price in our blue. */
+  private var priceLine: AttributedString {
+    var line = AttributedString(offer.airline.isEmpty || offer.price.isEmpty ? offer.airline : offer.airline + " · ")
+    line.foregroundColor = ink
+    var cost = AttributedString(offer.price)
+    cost.foregroundColor = look.settingsBlue
+    return line + cost
   }
 
   private var chevron: some View {

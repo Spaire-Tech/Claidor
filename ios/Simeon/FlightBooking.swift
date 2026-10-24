@@ -98,8 +98,12 @@ struct FlightChangedLine: View {
  * The travellers' details, in the system's own form: one section per seat
  * (first and last name as on the ID, title, gender, date of birth, email,
  * phone; the passport when the airline needs it), the first filled from
- * Link. Continue checks each field first, as the computer will, and says
- * the first thing to fix under its traveller.
+ * Link. Every row keeps its label on the left once it is filled (the
+ * founder, 24 October 2026: "its so confusing … add passport is a button
+ * but looks like an option"): Add passport is the blue plus and its words,
+ * and Continue the sheet's blue button. Continue checks each field first,
+ * as the computer will, and says the first thing to fix under its
+ * traveller.
  */
 struct TravellersSheet: View {
   let entryId: String
@@ -134,17 +138,16 @@ struct TravellersSheet: View {
           Button {
             Task { await send() }
           } label: {
-            HStack {
-              Spacer(minLength: 0)
-              if sending { ProgressView() } else { Text(FlightPassengersCard.next).font(.system(size: 17, weight: .semibold)) }
-              Spacer(minLength: 0)
-            }
+            if sending { ProgressView().tint(.white) } else { Text(FlightPassengersCard.next) }
           }
+          .buttonStyle(Tactile(look: PillButtonStyle(primary: true)))
           .disabled(sending)
+          .listRowInsets(EdgeInsets())
         } footer: {
           Text("\(FlightPassengersCard.asOnID) \(FlightPassengersCard.privacy)")
+            .padding(.top, 8)
         }
-        .listRowBackground(Ink.groupedRow)
+        .listRowBackground(Color.clear)
       }
       .groupedGround()
       .scrollDismissesKeyboard(.interactively)
@@ -191,8 +194,8 @@ private struct TravellerSection: View {
 
   var body: some View {
     Section {
-      TextField("First name", text: $traveller.givenName).textContentType(.givenName)
-      TextField("Last name", text: $traveller.familyName).textContentType(.familyName)
+      FieldRow(label: String(localized: "First name"), text: $traveller.givenName).textContentType(.givenName)
+      FieldRow(label: String(localized: "Last name"), text: $traveller.familyName).textContentType(.familyName)
       Picker(String(localized: "traveller.title", defaultValue: "Title"), selection: $traveller.title) {
         Text("Choose").tag(Traveller.Title?.none)
         ForEach(Traveller.Title.allCases, id: \.self) { title in Text(title.label).tag(Traveller.Title?.some(title)) }
@@ -202,17 +205,22 @@ private struct TravellerSection: View {
         ForEach(Traveller.Gender.allCases, id: \.self) { gender in Text(gender.label).tag(Traveller.Gender?.some(gender)) }
       }
       DayField(label: String(localized: "Date of birth"), day: $traveller.bornOn, range: Calendar.current.date(byAdding: .year, value: -120, to: Date())!...Date(), start: Calendar.current.date(byAdding: .year, value: -30, to: Date())!)
-      TextField("Email", text: $traveller.email).textContentType(.emailAddress).keyboardType(.emailAddress).typedAsIs()
-      TextField("Phone, with country code", text: $traveller.phone).textContentType(.telephoneNumber).keyboardType(.phonePad)
+      FieldRow(label: String(localized: "Email"), text: $traveller.email).textContentType(.emailAddress).keyboardType(.emailAddress).typedAsIs()
+      FieldRow(label: String(localized: "Phone, with country code"), text: $traveller.phone).textContentType(.telephoneNumber).keyboardType(.phonePad)
       if passportNeeded || showsPassport {
-        TextField("Passport number", text: $traveller.passportNumber).typedAsIs()
+        FieldRow(label: String(localized: "Passport number"), text: $traveller.passportNumber).typedAsIs()
         Picker("Issued by", selection: $traveller.passportCountry) {
           Text("Choose").tag("")
           ForEach(CountryName.all) { country in Text(country.name).tag(country.code) }
         }
         DayField(label: String(localized: "Passport expires"), day: $traveller.passportExpires, range: Date()...Calendar.current.date(byAdding: .year, value: 20, to: Date())!, start: Calendar.current.date(byAdding: .year, value: 1, to: Date())!)
       } else {
-        Button("Add passport") { showsPassport = true }
+        Button { showsPassport = true } label: {
+          HStack(spacing: 10) {
+            Image(systemName: "plus.circle.fill").font(.system(size: 20)).foregroundStyle(Ink.blue)
+            Text("Add passport").foregroundStyle(Ink.blue)
+          }
+        }
       }
       if let problem {
         Text(problem).font(.system(size: 15)).foregroundStyle(Ink.danger)
@@ -222,6 +230,19 @@ private struct TravellerSection: View {
     }
     .listRowBackground(Ink.groupedRow)
     .font(.system(size: 17))
+  }
+}
+
+/** A row with a field: its label on the left, kept once it is filled, and what is typed on the right ("Required" until then). */
+private struct FieldRow: View {
+  let label: String
+  @Binding var text: String
+
+  var body: some View {
+    LabeledContent(label) {
+      TextField(label, text: $text, prompt: Text("Required"))
+        .multilineTextAlignment(.trailing)
+    }
   }
 }
 

@@ -265,9 +265,11 @@ enum MemberRemoval {
  * A flight in the pane (`__simeonFlightDetails`), in place of the agent's
  * page: the airline's mark (72, white in both themes, its logo at 42 or its
  * initials), "FROM → TO" (22/28, medium), date · time · stops (15/20, grey);
- * 30 under it the sections 22 apart: Price, each leg, Fare, their rows a
- * label and the server's words (a hairline under each), a layover after a
- * leg that is not the last. Nothing to press: × is the pane's.
+ * 30 under it the sections 22 apart: the total, its price in green, as the
+ * iPhone's sheet has it (the founder, 24 October 2026), then each leg and
+ * Fare, their rows a label and the server's words (a hairline under each),
+ * a layover after a leg that is not the last. Nothing to press: × is the
+ * pane's.
  */
 struct FlightPage: View {
   let offer: FlightOffer
@@ -299,7 +301,8 @@ struct FlightPage: View {
       .padding(.top, 12)
       .frame(maxWidth: .infinity)
       VStack(alignment: .leading, spacing: 22) {
-        ForEach(FlightPane.sections(offer), id: \.self) { section in
+        if !offer.price.isEmpty { total }
+        ForEach(FlightPane.sections(offer, price: false), id: \.self) { section in
           VStack(alignment: .leading, spacing: 0) {
             Text(section.heading)
               .font(.system(size: 13))
@@ -325,6 +328,28 @@ struct FlightPage: View {
     .textSelection(.enabled)
     .accessibilityElement(children: .contain)
     .accessibilityLabel(FlightPane.name(offer))
+  }
+
+  /** "Total Price" and the price in green (the iPhone's `Ink.fare`), what it covers under it. */
+  private var total: some View {
+    VStack(alignment: .leading, spacing: 2) {
+      HStack(alignment: .firstTextBaseline, spacing: 12) {
+        Text("Total Price")
+          .font(.system(size: 17, weight: .medium))
+          .foregroundStyle(look.paneInk)
+        Spacer(minLength: 0)
+        Text(offer.price)
+          .font(.system(size: 20, weight: .semibold))
+          .foregroundStyle(look.dark ? Color(hex: 0x30d158) : Color(hex: 0x248a3d))
+      }
+      if !offer.priceNote.isEmpty {
+        Text(offer.priceNote)
+          .font(.system(size: 13))
+          .foregroundStyle(look.paneInk2)
+          .fixedSize(horizontal: false, vertical: true)
+      }
+    }
+    .accessibilityElement(children: .combine)
   }
 }
 

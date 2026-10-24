@@ -50,6 +50,8 @@ final class PaneMembersFlightTests: XCTestCase {
     XCTAssertEqual(sections[2].rows.map(\.label), ["Departs", "Arrives", "Flight"])
     XCTAssertNil(sections[2].note)
     XCTAssertEqual(sections[3].rows.map(\.label), ["Cancellation"])
+    // The Mac's pane shows the total on its own, in green, as the iPhone's sheet does.
+    XCTAssertEqual(FlightPane.sections(offer, price: false).map(\.heading), ["Outbound · SFO \u{2192} SEA", "SEA \u{2192} JFK", "Fare"])
     XCTAssertEqual(FlightPane.key(row: "e1", index: 2), "e1:2")
   }
 }
