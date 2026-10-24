@@ -61,7 +61,6 @@ public struct FlightPassengersCard: Hashable, Sendable {
   public static let title = L10n.text("Travellers")
   public static let fillIn = L10n.text("Add traveller details")
   public static let asOnID = L10n.text("Names exactly as on the ID used to travel.")
-  public static let privacy = L10n.text("Used only for this booking. Simeon keeps it on your computer until the flight is booked.")
   public static let next = L10n.text("Continue")
   public static let cancel = L10n.text("Cancel")
 

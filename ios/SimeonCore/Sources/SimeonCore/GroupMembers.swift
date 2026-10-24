@@ -116,8 +116,8 @@ public enum FlightPane {
         (L10n.text("Time in the air"), leg.duration, nil),
       ]), note: note))
     }
-    if !offer.refundable.isEmpty || !offer.changeable.isEmpty || !offer.bags.isEmpty {
-      out.append(Section(heading: L10n.text("Fare"), rows: rows([(L10n.text("Cancellation"), offer.refundable, nil), (L10n.text("Changes"), offer.changeable, nil), (L10n.text("Bags"), offer.bags, nil)]), note: nil))
+    if !offer.refundable.isEmpty || !offer.changeable.isEmpty || !offer.bags.isEmpty || !offer.soldBy.isEmpty {
+      out.append(Section(heading: L10n.text("Fare"), rows: rows([(L10n.text("Cancellation"), offer.refundable, nil), (L10n.text("Changes"), offer.changeable, nil), (L10n.text("Bags"), offer.bags, nil), (L10n.text("Sold by"), offer.soldBy, nil)]), note: nil))
     }
     return out
   }

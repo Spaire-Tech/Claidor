@@ -54,6 +54,22 @@ final class PaneMembersFlightTests: XCTestCase {
     XCTAssertEqual(FlightPane.sections(offer, price: false).map(\.heading), ["Outbound · SFO \u{2192} SEA", "SEA \u{2192} JFK", "Fare"])
     XCTAssertEqual(FlightPane.key(row: "e1", index: 2), "e1:2")
   }
+
+  func testATicketSoldByAnotherCompanySaysSoUnderTheFare() throws {
+    let text = """
+    ```simeon-flights
+    {"title":"Dakar to Casablanca","offers":[{"airline":"Air Senegal","soldBy":"Hahn Air","price":"$380","bags":"1 carry-on","legs":[{"from":"DSS","to":"CMN","flight":"HC 403","carrier":"Air Senegal"}]}]}
+    ```
+    """
+    let offer = try XCTUnwrap(FlightsCard.parse(text)?.offers.first)
+    XCTAssertEqual(offer.airline, "Air Senegal")
+    XCTAssertEqual(offer.soldBy, "Hahn Air")
+    XCTAssertEqual(offer.terms, ["1 carry-on", "Sold by: Hahn Air"])
+    XCTAssertEqual(FlightPane.sections(offer, price: false).last?.rows.map(\.value), ["1 carry-on", "Hahn Air"])
+    // An airline that sells its own seats says nothing more.
+    let own = try XCTUnwrap(FlightsCard.parse(text.replacingOccurrences(of: "\"soldBy\":\"Hahn Air\",", with: ""))?.offers.first)
+    XCTAssertEqual(own.terms, ["1 carry-on"])
+  }
 }
 
 /** Settings › General's rules (step 8), against the window's. */

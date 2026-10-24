@@ -546,6 +546,52 @@ def _itinerary_key(offer: dict[str, Any]) -> tuple[str, ...]:
     )
 
 
+def flown_by(offer: dict[str, Any]) -> tuple[str, str]:
+    """The airline the person flies, and its logo: each flight's operating
+    carrier (its marketing carrier when Duffel names none), in the order
+    flown, each name once, and the first one's logo. Duffel's `owner` is who
+    sells the ticket, and can be a company that flies nothing: Hahn Air
+    issues tickets for other airlines, and the cards said "Hahn Air" for an
+    Air Senegal flight (the founder, 24 October 2026: "it definitely should
+    say the airline you fly"). An offer or order with no flights keeps its
+    owner. Works on an order too, which has the same slices."""
+    names: list[str] = []
+    logo = ""
+    for slice_ in _slices(offer):
+        for segment in _segments(slice_):
+            marketer = _dict(segment.get("marketing_carrier"))
+            operator = _dict(segment.get("operating_carrier"))
+            carrier = operator if _text(operator.get("name")) else marketer
+            name = _text(carrier.get("name"))
+            if name and name not in names:
+                names.append(name)
+            logo = (
+                logo
+                or _text(carrier.get("logo_symbol_url"))
+                or _text(marketer.get("logo_symbol_url"))
+            )
+    owner = _dict(offer.get("owner"))
+    return (
+        ", ".join(names) or _text(owner.get("name")),
+        logo or _text(owner.get("logo_symbol_url")),
+    )
+
+
+def sold_by(offer: dict[str, Any]) -> str:
+    """Who sells the ticket (Duffel's `owner`), when it is not an airline the
+    person flies: "Hahn Air" on an Air Senegal flight; empty otherwise."""
+    owner = _dict(offer.get("owner"))
+    code, name = _text(owner.get("iata_code")).upper(), _text(owner.get("name"))
+    flown = set()
+    for slice_ in _slices(offer):
+        for segment in _segments(slice_):
+            for side in ("marketing_carrier", "operating_carrier"):
+                flown.add(_text(_dict(segment.get(side)).get("iata_code")).upper())
+    if not name or not code or code in flown:
+        return ""
+    return name
+
+
 def offer_for_card(
     offer: dict[str, Any], *, adults: int, cabin: str
 ) -> dict[str, Any] | None:
@@ -558,7 +604,7 @@ def offer_for_card(
         _local(first.get("departing_at")),
         _local(last.get("arriving_at")),
     )
-    owner = _dict(offer.get("owner"))
+    airline, logo = flown_by(offer)
     conditions = _dict(offer.get("conditions"))
 
     legs: list[dict[str, str]] = []
@@ -586,8 +632,10 @@ def offer_for_card(
         # What "Book with Simeon" books (flight_booking.py); Duffel's offers
         # last minutes, so the booking asks for it again before anything.
         "offerId": _text(offer.get("id")),
-        "airline": _text(owner.get("name")),
-        "logo": _text(owner.get("logo_symbol_url")),
+        "airline": airline,
+        "logo": logo,
+        # The ticket's seller, when it is not the airline flown (shown in the flight's details).
+        "soldBy": sold_by(offer),
         "price": money(offer.get("total_amount"), offer.get("total_currency")),
         "priceNote": " · ".join(
             part

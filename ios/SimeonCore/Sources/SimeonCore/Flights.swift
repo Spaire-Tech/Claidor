@@ -186,6 +186,7 @@ extension FlightOffer {
     case "Not stated": lines.append(L10n.text("Bags not stated"))
     default: lines.append(bags)
     }
+    if !soldBy.isEmpty { lines.append(L10n.text("Sold by: \(soldBy)")) }
     return lines
   }
 }

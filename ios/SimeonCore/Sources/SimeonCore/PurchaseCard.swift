@@ -275,8 +275,9 @@ public struct PurchaseCard: Hashable, Sendable {
     if flight != nil, let flightStatus { return flightStatus }
     switch state {
     case .review: return nil
-    case .sending: return (wallet == .link ? L10n.text("Asking Link…") : isShopCheckout ? L10n.text("Placing your order with Shop…") : L10n.text("Asking Shop…"), .working)
-    case .approving: return (wallet == .link ? L10n.text("Approve it in the Link app") : isShopCheckout ? L10n.text("Finish on the store's page") : L10n.text("Approve it in the Shop app"), .working)
+    // Link's in short (the founder, 24 October 2026: "no more Asking Link - say In progress … let it be Approve with link").
+    case .sending: return (wallet == .link ? L10n.text("In progress") : isShopCheckout ? L10n.text("Placing your order with Shop…") : L10n.text("Asking Shop…"), .working)
+    case .approving: return (wallet == .link ? L10n.text("Approve with Link") : isShopCheckout ? L10n.text("Finish on the store's page") : L10n.text("Approve it in the Shop app"), .working)
     case .approved: return (L10n.text("Approved · placing your order"), .working)
     case .ordered: return (L10n.text("Ordered"), .success)
     case .failed: return (L10n.text("Didn't go through"), .danger)
@@ -319,7 +320,8 @@ public struct PurchaseCard: Hashable, Sendable {
     }
     switch state {
     case .approving:
-      return note ?? (wallet == .link ? Self.approvingDetail : Self.shopApprovingDetail)
+      // Link's wait says nothing more than its status (the founder, 24 October 2026: "we speak way too much").
+      return note ?? (wallet == .link ? nil : Self.shopApprovingDetail)
     case .ordered:
       let number = order.map { order in
         let numbered = order.hasPrefix("#") ? order : "#\(order)"
@@ -334,14 +336,6 @@ public struct PurchaseCard: Hashable, Sendable {
       return nil
     }
   }
-
-  /**
-   * While Link waits for the person (14 October 2026): Link approves every
-   * agent purchase in its own app, or on link.com with a passkey, never by a
-   * sign-in alone; the founder was sent to sign in and then told to get the
-   * app, with nothing here having said so.
-   */
-  public static let approvingDetail = L10n.text("Link sent it to the Link app on your phone. No Link app yet? Get it and sign in once; every purchase after that is one tap. Or open it on link.com with a passkey. It waits 30 minutes.")
 
   /** The same for Shop: it asks in the Shop app, with the account the person connected. */
   public static let shopApprovingDetail = L10n.text("Shop sent it to the Shop app on your phone. Approve it there; nothing is paid until you do. No Shop app yet? Get it and sign in with the account you connected.")

@@ -263,7 +263,7 @@ enum MemberRemoval {
 
 /**
  * A flight in the pane (`__simeonFlightDetails`), in place of the agent's
- * page: the airline's mark (72, white in both themes, its logo at 42 or its
+ * page: the airline's mark (72, white, or the dark disc on dark, its logo at 42 or its
  * initials), "FROM → TO" (22/28, medium), date · time · stops (15/20, grey);
  * 30 under it the sections 22 apart: the total, its price in green, as the
  * iPhone's sheet has it (the founder, 24 October 2026), then each leg and

@@ -1,14 +1,21 @@
 import SwiftUI
 #if os(iOS)
 import UIKit
+/** A logo's picture: UIKit's on the iPhone, AppKit's on the Mac, which builds this file too (mac/project.yml). */
+typealias LogoImage = UIImage
+#else
+import AppKit
+typealias LogoImage = NSImage
 #endif
 import WebKit
 import SimeonCore
 
 /**
- * Pictures from the web that iOS can't draw by itself: the airlines' logos
- * on a flight card come as SVG files (Duffel's `logo_symbol_url`, the same
- * address the Mac's card shows), and `UIImage` reads no SVG. A PNG or JPEG
+ * Pictures from the web that the apps can't draw by themselves: the
+ * airlines' logos on a flight card come as SVG files (Duffel's
+ * `logo_symbol_url`), and neither `UIImage` nor `NSImage` reads them (the
+ * Mac's card showed the airlines' initials until it drew them here too; the
+ * founder, 24 October 2026: "it has letters"). A PNG or JPEG
  * is read directly; an SVG is drawn once by WebKit, kept as a picture in
  * memory and on disk, and shown from then on.
  *
@@ -26,9 +33,9 @@ import SimeonCore
 final class RemoteLogos: NSObject, WKNavigationDelegate {
   static let shared = RemoteLogos()
 
-  private var memory: [String: UIImage] = [:]
+  private var memory: [String: LogoImage] = [:]
   private var failed: Set<String> = []
-  private var inFlight: [String: Task<UIImage?, Never>] = [:]
+  private var inFlight: [String: Task<LogoImage?, Never>] = [:]
   private var web: WKWebView?
   #if os(macOS)
   /** The Mac's window for the hidden web view: its own, unseen, so no window the person closes takes it away. */
@@ -48,7 +55,7 @@ final class RemoteLogos: NSObject, WKNavigationDelegate {
    * 2026), so the parts too dark to read on the disc are lightened
    * (`forDarkDisc`), each kept apart from the light picture.
    */
-  func image(for url: URL, dark: Bool) async -> UIImage? {
+  func image(for url: URL, dark: Bool) async -> LogoImage? {
     guard dark else { return await image(for: url) }
     let key = url.absoluteString + "#dark"
     if let image = memory[key] { return image }
@@ -58,7 +65,7 @@ final class RemoteLogos: NSObject, WKNavigationDelegate {
     return image
   }
 
-  func image(for url: URL) async -> UIImage? {
+  func image(for url: URL) async -> LogoImage? {
     let key = url.absoluteString
     if let image = memory[key] { return image }
     if failed.contains(key) { return nil }
@@ -71,22 +78,22 @@ final class RemoteLogos: NSObject, WKNavigationDelegate {
     return image
   }
 
-  private func load(_ url: URL, key: String) async -> UIImage? {
+  private func load(_ url: URL, key: String) async -> LogoImage? {
     let file = Self.cacheFile(key)
-    if let data = try? Data(contentsOf: file), let image = UIImage(data: data) { return image }
+    if let data = try? Data(contentsOf: file), let image = LogoImage(data: data) { return image }
     guard let (data, response) = try? await URLSession.shared.data(from: url), ((response as? HTTPURLResponse)?.statusCode ?? 200) < 400 else { return nil }
-    var picture = UIImage(data: data)
+    var picture = LogoImage(data: data)
     if picture == nil, let text = String(data: data, encoding: .utf8), text.contains("<svg") { picture = await draw(svg: text) }
     guard let picture, let image = Self.trimmed(picture) else {
       Trace.mark("an airline's logo drew nothing: \(url.lastPathComponent)")
       return nil
     }
-    if let png = image.pngData() { try? png.write(to: file) }
+    if let png = Self.png(image) { try? png.write(to: file) }
     return image
   }
 
   /** One SVG drawn at a time in the one hidden web view: painted onto a canvas, else photographed. */
-  private func draw(svg: String) async -> UIImage? {
+  private func draw(svg: String) async -> LogoImage? {
     Trace.mark("drawing an airline's logo")
     while drawing { try? await Task.sleep(nanoseconds: 30_000_000) }
     drawing = true
@@ -130,7 +137,7 @@ final class RemoteLogos: NSObject, WKNavigationDelegate {
   return canvas.toDataURL("image/png");
   """
 
-  private func paint(_ svg: String, in web: WKWebView) async -> UIImage? {
+  private func paint(_ svg: String, in web: WKWebView) async -> LogoImage? {
     let url: String? = await withCheckedContinuation { continuation in
       web.callAsyncJavaScript(Self.paintScript, arguments: ["svg": svg, "long": Self.long], in: nil, in: .defaultClient) { result in
         switch result {
@@ -142,11 +149,11 @@ final class RemoteLogos: NSObject, WKNavigationDelegate {
       }
     }
     guard let url, let comma = url.firstIndex(of: ","), let data = Data(base64Encoded: String(url[url.index(after: comma)...])) else { return nil }
-    return UIImage(data: data)
+    return LogoImage(data: data)
   }
 
   /** The first way: the SVG shown in the web view, which is then photographed. */
-  private func photograph(_ svg: String, in web: WKWebView) async -> UIImage? {
+  private func photograph(_ svg: String, in web: WKWebView) async -> LogoImage? {
     let side = Int(Self.side)
     let html = """
     <html><head><meta name="viewport" content="width=\(side),initial-scale=1"><style>html,body{margin:0;padding:0;background:transparent}img{display:block;width:\(side)px;height:\(side)px;object-fit:contain}</style></head>
@@ -215,7 +222,7 @@ final class RemoteLogos: NSObject, WKNavigationDelegate {
   }
 
   /** The picture's pixels: UIKit's `cgImage`, which AppKit gives when asked. */
-  private static func pixels(_ image: UIImage) -> CGImage? {
+  private static func pixels(_ image: LogoImage) -> CGImage? {
     #if os(iOS)
     return image.cgImage
     #else
@@ -223,8 +230,28 @@ final class RemoteLogos: NSObject, WKNavigationDelegate {
     #endif
   }
 
+  /** A picture of these pixels, at the scale of the one they came from. */
+  private static func picture(_ pixels: CGImage, like image: LogoImage) -> LogoImage {
+    #if os(iOS)
+    return UIImage(cgImage: pixels, scale: image.scale, orientation: .up)
+    #else
+    let scale = image.size.width > 0 ? CGFloat(Self.pixels(image)?.width ?? pixels.width) / image.size.width : 1
+    return NSImage(cgImage: pixels, size: NSSize(width: CGFloat(pixels.width) / scale, height: CGFloat(pixels.height) / scale))
+    #endif
+  }
+
+  /** The picture as a PNG, to keep on disk. */
+  private static func png(_ image: LogoImage) -> Data? {
+    #if os(iOS)
+    return image.pngData()
+    #else
+    guard let pixels = Self.pixels(image) else { return nil }
+    return NSBitmapImageRep(cgImage: pixels).representation(using: .png, properties: [:])
+    #endif
+  }
+
   /** The picture cut to what is drawn on it (alpha above 12 of 255); nil when nothing is. */
-  static func trimmed(_ image: UIImage) -> UIImage? {
+  static func trimmed(_ image: LogoImage) -> LogoImage? {
     guard let cg = Self.pixels(image) else { return image }
     let width = cg.width, height = cg.height
     guard width > 0, height > 0, width * height <= 4_000_000 else { return image }
@@ -249,7 +276,7 @@ final class RemoteLogos: NSObject, WKNavigationDelegate {
     guard maxX >= minX, maxY >= minY else { return nil }
     if minX == 0, minY == 0, maxX == width - 1, maxY == height - 1 { return image }
     guard let cut = cg.cropping(to: CGRect(x: minX, y: minY, width: maxX - minX + 1, height: maxY - minY + 1)) else { return image }
-    return UIImage(cgImage: cut, scale: image.scale, orientation: .up)
+    return Self.picture(cut, like: image)
   }
 
   /** The dark disc behind a logo in dark mode (`Ink.tile`'s dark value, #232325). */
@@ -261,7 +288,7 @@ final class RemoteLogos: NSObject, WKNavigationDelegate {
    * Lufthansa's) lightened to a light tint of its own hue, a grey made near
    * white; the colours that already read are left as they are.
    */
-  static func forDarkDisc(_ image: UIImage) -> UIImage {
+  static func forDarkDisc(_ image: LogoImage) -> LogoImage {
     guard let cg = Self.pixels(image) else { return image }
     let width = cg.width, height = cg.height
     guard width > 0, height > 0, width * height <= 4_000_000 else { return image }
@@ -289,7 +316,7 @@ final class RemoteLogos: NSObject, WKNavigationDelegate {
       return context.makeImage()
     }
     guard let made else { return image }
-    return UIImage(cgImage: made, scale: image.scale, orientation: .up)
+    return Self.picture(made, like: image)
   }
 
   /** Hue, saturation and lightness, each 0 to 1, of a colour given 0 to 255. */

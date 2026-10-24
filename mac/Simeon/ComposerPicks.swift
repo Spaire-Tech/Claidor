@@ -451,7 +451,28 @@ enum MacTheme {
 
   static func set(_ preference: String) {
     UserDefaults.standard.set(preference, forKey: key)
+    fadeWindows()
     apply()
+  }
+
+  /**
+   * The old look fading into the new over every window, as the iPhone's
+   * switch does (`applyToWindows(fading:)`; the founder, 24 October 2026:
+   * "iphone got a smooth transition … mac doesn't"): a fade that Core
+   * Animation draws from what is on the screen, the glass and the window's
+   * own bar included, so the whole window changes at once, never in
+   * pieces. None when the person asked for less motion.
+   */
+  private static func fadeWindows() {
+    guard !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion else { return }
+    for window in NSApplication.shared.windows where window.isVisible {
+      guard let layer = (window.contentView?.superview ?? window.contentView)?.layer else { continue }
+      let fade = CATransition()
+      fade.type = .fade
+      fade.duration = 0.3
+      fade.timingFunction = CAMediaTimingFunction(name: .easeOut)
+      layer.add(fade, forKey: "simeon.theme")
+    }
   }
 
   static func apply() {

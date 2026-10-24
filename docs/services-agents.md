@@ -1621,6 +1621,10 @@ Each flight can be booked from there ("Book with Simeon", §10a).
 - The card shows every connection airport with its layover (`1 stop · PHX 1h 38m`), the
   operating airline when another flies it, the fare brand, and "One way" or "Round trip"
   with the price. A fact the airline does not give reads "Not stated", never "none".
+- The card names the airline flown (each flight's operating carrier), with its logo, not
+  Duffel's `owner`, the ticket's seller: Hahn Air sells tickets for airlines it does not fly,
+  and an Air Senegal flight read "Hahn Air" (24 October 2026). A seller that is not an
+  airline flown is the flight's last detail, "Sold by: Hahn Air" (`soldBy`).
 - The agent is told (tool description and brief) to learn the traveller from memory, past
   trips, email and calendar before asking, to assume one adult one way and say so, to ask
   only what would change the route, to run one targeted `airlines` search when an expected

@@ -1424,7 +1424,15 @@ private struct FlightDashLine: Shape {
   }
 }
 
-/** An airline's mark (`simeon-flight-mark--row`): its logo (22) or its initials (12, 500, grey) in a white circle with a faint ring. */
+/**
+ * An airline's mark (`simeon-flight-mark--row`), as the iPhone's: its logo,
+ * sized by its own shape in the circle (`AirlineLogo.box`), or its initials
+ * (12, 500, grey). White in light; in dark the iPhone's dark disc, the
+ * logo's too-dark parts lightened (24 October 2026, the founder: the Mac
+ * showed the airlines' initials and had no dark logos). The logos are SVG
+ * files, which `NSImage` can't read: the iPhone's `RemoteLogos` draws them
+ * (ios/Simeon/Logos.swift, built into the Mac too).
+ */
 struct AirlineMark: View {
   let name: String
   let logo: String
@@ -1432,31 +1440,36 @@ struct AirlineMark: View {
   /** The pane's mark (`--hero`, 72): its logo at 42, its initials at 20, a hairline ring. */
   var logoSide: CGFloat? = nil
   var initialsSize: CGFloat? = nil
-  var ring: Color = Color.black.opacity(0.12)
+  /** The ring; by default a faint one, black in light and white in dark. */
+  var ring: Color? = nil
   var ringWidth: CGFloat = 0.5
+  @Environment(\.colorScheme) private var scheme
   @State private var picture: NSImage?
 
   var body: some View {
-    let logoSide = logoSide ?? side * 22 / 36
+    let dark = scheme == .dark
+    // The circle a logo is fitted to: the mark, or a smaller one for the pane's (its logo at 42 of 72).
+    let diameter = logoSide.map { $0 / 0.65 } ?? side
     ZStack {
-      Circle().fill(Color.white)
+      Circle().fill(dark ? Color(hex: 0x232325) : Color.white)
       if let picture {
-        Image(nsImage: picture).resizable().interpolation(.high).aspectRatio(contentMode: .fit).frame(width: logoSide, height: logoSide)
+        let box = AirlineLogo.box(width: Double(picture.size.width), height: Double(picture.size.height), diameter: Double(diameter))
+        Image(nsImage: picture).resizable().interpolation(.high).frame(width: CGFloat(box.width), height: CGFloat(box.height))
       } else {
         Text(FlightsCard.initials(name))
           .font(.system(size: initialsSize ?? side / 3, weight: .medium))
-          .foregroundStyle(Color(hex: 0x6e6e73))
+          .foregroundStyle(dark ? Color(hex: 0xb4b4b8) : Color(hex: 0x6e6e73))
       }
     }
     .clipShape(Circle())
-    .overlay { Circle().strokeBorder(ring, lineWidth: ringWidth) }
+    .overlay { Circle().strokeBorder(ring ?? (dark ? Color.white.opacity(0.12) : Color.black.opacity(0.12)), lineWidth: ringWidth) }
     .frame(width: side, height: side)
-    .task(id: logo) {
+    .task(id: "\(logo)|\(dark)") {
       // Another flight in the same place: its own logo or its initials, never the last one's.
       picture = nil
       // An https logo, or one written into the card (`data:`); else, or when it fails, the initials.
-      guard logo.hasPrefix("https://") || logo.hasPrefix("data:image/"), let url = URL(string: logo), let (data, _) = try? await URLSession.shared.data(from: url) else { return }
-      picture = NSImage(data: data)
+      guard logo.hasPrefix("https://") || logo.hasPrefix("data:image/"), let url = URL(string: logo) else { return }
+      picture = await RemoteLogos.shared.image(for: url, dark: dark)
     }
   }
 }
@@ -2014,7 +2027,8 @@ private struct MacCardChooser: View {
               Text(card.last4.isEmpty ? card.brand : "\(card.brand) •••• \(card.last4)").font(.system(size: 11)).foregroundStyle(grey)
             }
             Spacer(minLength: 12)
-            if card.id == selected { Image(systemName: "checkmark").font(.system(size: 12, weight: .semibold)).foregroundStyle(ink) }
+            // Ticked in our blue, as on the iPhone (the founder, 24 October 2026).
+            if card.id == selected { Image(systemName: "checkmark").font(.system(size: 12, weight: .semibold)).foregroundStyle(look.settingsBlue) }
           }
           .padding(.horizontal, 10).padding(.vertical, 6)
           .background(hovered == card.id ? edge : Color.clear, in: RoundedRectangle(cornerRadius: 8))
