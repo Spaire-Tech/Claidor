@@ -1343,7 +1343,13 @@ the agent's own message after the card. A file the agent sends shows its name as
   from the web is kept on the computer (`keepWebPicture` in `host-runner-composition.ts`, as
   a product's); one that can't be kept stays at its address.
 - The brief's "Reply length and shape" says when: three or more things of one kind with
-  their own figure or status go in the card; one bubble is at most about four short lines.
+  their own figure or status go in the card, even when the person asked for a list; one
+  bubble is at most about four short lines.
+- The rule alone was not enough (24 October 2026: four restaurants and four dishes came as
+  lists in text, no card). SendMessage now holds a text that lists 3 to 8 things, "Name: …"
+  a line (`host/runner/list-card-guard.ts`), and tells the agent to send them with
+  ShowList; the same words sent again go through, for a list that truly isn't one (steps
+  to follow), so nothing is ever stuck.
 - The apps draw it from SimeonCore's `ListCard.swift` (`ListCardView` on the iPhone,
   `MacListCardView` on the Mac). An app from before it shows `content` as a message.
 - A file's card reads the agent's own name for it (`file_name` on the attachment; the
