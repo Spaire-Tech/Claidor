@@ -80,9 +80,9 @@ final class PurchaseCardTests: XCTestCase {
 
   func testEachStateSaysWhereItStands() throws {
     let approving = try card(["purchaseState": "approving", "purchaseActionUrl": "https://app.link.com/activity/approve/lsrq_1"])
-    XCTAssertEqual(approving.status?.label, "Approve it in the Link app")
-    XCTAssertEqual(approving.detail, PurchaseCard.approvingDetail)
-    XCTAssertTrue(approving.detail?.contains("Get it and sign in once") == true, "says the Link app is needed, before Link's own page does")
+    XCTAssertEqual(approving.status?.label, "Approve with Link")
+    XCTAssertNil(approving.detail, "Link's wait says no more than its status")
+    XCTAssertEqual(try card(["purchaseState": "sending"]).status?.label, "In progress")
     XCTAssertEqual(PurchaseCard.linkAppURL.absoluteString, "https://link.com/download")
     XCTAssertEqual(approving.actionURL?.absoluteString, "https://app.link.com/activity/approve/lsrq_1")
     XCTAssertFalse(approving.waitsOnPerson)
@@ -117,7 +117,7 @@ final class PurchaseCardTests: XCTestCase {
     XCTAssertEqual(approving.openWalletLabel, "Open Shop")
     XCTAssertEqual(approving.walletApp?.label, "Get the Shop app")
     XCTAssertEqual(approving.actionURL?.absoluteString, "https://shop.app/approvals/abc")
-    XCTAssertEqual(try card(["purchaseState": "sending"]).status?.label, "Asking Link…", "a Link card is as it was")
+    XCTAssertEqual(try card(["purchaseState": "sending"]).status?.label, "In progress", "a Link card is as it was")
     XCTAssertEqual(try card().walletLabel, "Link by Stripe")
 
     let checkout = withShop.setting("purchase", withShop["purchase"]!.setting("shopCheckout", ["handle": "chk_0123456789ab"]))

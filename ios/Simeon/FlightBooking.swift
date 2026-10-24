@@ -44,7 +44,6 @@ struct FlightPassengersCardView: View {
             filling = true
           }
           .buttonStyle(Tactile(look: PillButtonStyle(primary: true)))
-          Text(FlightPassengersCard.privacy).font(.system(size: 12)).foregroundStyle(Ink.fineGrey).fixedSize(horizontal: false, vertical: true)
         }
       case .saved, .canceled:
         HStack(alignment: .top, spacing: 10) {
@@ -144,7 +143,7 @@ struct TravellersSheet: View {
           .disabled(sending)
           .listRowInsets(EdgeInsets())
         } footer: {
-          Text("\(FlightPassengersCard.asOnID) \(FlightPassengersCard.privacy)")
+          Text(FlightPassengersCard.asOnID)
             .padding(.top, 8)
         }
         .listRowBackground(Color.clear)

@@ -13943,64 +13943,6 @@
         }
       }
     },
-    "Approve it in the Link app" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Genehmige es in der Link-App"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Apruébalo en la app de Link"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Approuve-le dans l’app Link"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Approvalo nell’app Link"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Keur het goed in de Link-app"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zatwierdź w aplikacji Link"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aprove no app Link"
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Godkänn i Link-appen"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Link uygulamasında onayla"
-          }
-        }
-      }
-    },
     "Approve it in the Shop app" : {
       "localizations" : {
         "de" : {
@@ -14055,6 +13997,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Shop uygulamasında onayla"
+          }
+        }
+      }
+    },
+    "Approve with Link" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Genehmige mit Link"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aprueba con Link"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Approuve avec Link"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Approva con Link"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keur goed met Link"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zatwierdź przez Link"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aprove com Link"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Godkänn med Link"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Link ile onayla"
           }
         }
       }
@@ -14635,64 +14635,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ekibinin yöneticisinden bunu açmasını iste."
-          }
-        }
-      }
-    },
-    "Asking Link…" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Link wird gefragt…"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Consultando a Link…"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Demande à Link…"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Richiesta a Link…"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vragen aan Link…"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Wysyłanie do Link…"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Consultando o Link…"
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Frågar Link…"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Link’e soruluyor…"
           }
         }
       }
@@ -35334,6 +35276,64 @@
         }
       }
     },
+    "In progress" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In Bearbeitung"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En curso"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En cours"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In corso"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bezig"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "W toku"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Em andamento"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pågår"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Devam ediyor"
+          }
+        }
+      }
+    },
     "Incident %@ on %@" : {
       "localizations" : {
         "de" : {
@@ -38922,64 +38922,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Bağlantı"
-          }
-        }
-      }
-    },
-    "Link sent it to the Link app on your phone. No Link app yet? Get it and sign in once; every purchase after that is one tap. Or open it on link.com with a passkey. It waits 30 minutes." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Link hat es an die Link-App auf deinem Handy geschickt. Noch keine Link-App? Hol sie dir und melde dich einmal an; danach ist jeder Kauf nur ein Tippen. Oder öffne es auf link.com mit einem Passkey. Es wartet 30 Minuten."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Link lo envió a la app de Link en tu teléfono. ¿Aún no tienes la app de Link? Descárgala e inicia sesión una vez; después, cada compra es un toque. O ábrelo en link.com con una llave de acceso. Espera 30 minutos."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Link l’a envoyé à l’app Link sur ton téléphone. Pas encore l’app Link ? Installe-la et connecte-toi une fois ; chaque achat suivant se fait d’un geste. Ou ouvre-le sur link.com avec une clé d’accès. Il attend 30 minutes."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Link l’ha inviato all’app Link sul tuo telefono. Non hai ancora l’app Link? Scaricala e accedi una volta; dopo, ogni acquisto richiede un solo tocco. Oppure aprilo su link.com con una passkey. Resta in attesa 30 minuti."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Link heeft het naar de Link-app op je telefoon gestuurd. Nog geen Link-app? Installeer hem en log één keer in; daarna is elke aankoop één tik. Of open het op link.com met een toegangssleutel. Het blijft 30 minuten wachten."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Link wysłał prośbę do aplikacji Link na twoim telefonie. Nie masz jeszcze aplikacji Link? Pobierz ją i zaloguj się raz; każdy kolejny zakup to jedno stuknięcie. Możesz też otworzyć prośbę na link.com za pomocą klucza dostępu. Prośba czeka 30 minut."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "O Link enviou para o app Link no seu celular. Ainda não tem o app Link? Baixe e entre uma vez; depois disso, cada compra é um toque. Ou abra em link.com com uma chave-senha. Ele espera 30 minutos."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Link skickade det till Link-appen i din telefon. Har du inte Link-appen än? Hämta den och logga in en gång; varje köp efter det tar ett tryck. Eller öppna det på link.com med en lösennyckel. Det väntar i 30 minuter."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Link bunu telefonundaki Link uygulamasına gönderdi. Link uygulaman yok mu? İndir ve bir kez giriş yap; sonraki her alışveriş tek dokunuşla olur. Ya da link.com’da bir geçiş anahtarıyla aç. 30 dakika bekler."
           }
         }
       }
@@ -71179,64 +71121,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Parolayı kullan"
-          }
-        }
-      }
-    },
-    "Used only for this booking. Simeon keeps it on your computer until the flight is booked." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Wird nur für diese Buchung verwendet. Simeon bewahrt es auf deinem Computer auf, bis der Flug gebucht ist."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Solo se usa para esta reserva. Simeon lo guarda en tu computadora hasta que se reserve el vuelo."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Utilisé uniquement pour cette réservation. Simeon le garde sur ton ordinateur jusqu’à ce que le vol soit réservé."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Usato solo per questa prenotazione. Simeon lo conserva sul tuo computer finché il volo non è prenotato."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Alleen gebruikt voor deze boeking. Simeon bewaart het op je computer totdat de vlucht is geboekt."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Używane tylko do tej rezerwacji. Simeon przechowuje to na twoim komputerze, dopóki lot nie zostanie zarezerwowany."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Usado apenas para esta reserva. O Simeon guarda no seu computador até o voo ser reservado."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Används bara för den här bokningen. Simeon sparar uppgifterna på din dator tills flyget är bokat."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Yalnızca bu rezervasyon için kullanılır. Simeon, uçuş rezervasyonu yapılana kadar bunu bilgisayarında saklar."
           }
         }
       }

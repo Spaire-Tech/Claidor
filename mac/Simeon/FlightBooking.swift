@@ -6,9 +6,11 @@ import SimeonCore
  * Booking a flight on the Mac (13 October 2026; the path is in SimeonCore's
  * FlightBooking.swift): the traveller form as a card in the chat, its
  * details on a sheet in the app's own parts (Settings' cards and rows, 24
- * October 2026), and the flight on its checkout card. The colours are the checkout card's (Cards.swift). The
- * card is a Mac's (21 October 2026): at most 520 wide, Fill in at the right
- * of the privacy line, as wide as its words.
+ * October 2026), and the flight on its checkout card. The colours are the
+ * checkout card's (Cards.swift). The card is a Mac's (21 October 2026): at
+ * most 520 wide, Fill in at its right, as wide as its words; no privacy
+ * line under the flight (the founder, 24 October 2026: "we speak way too
+ * much").
  */
 struct FlightPassengersCardView: View {
   let entryId: String
@@ -41,11 +43,7 @@ struct FlightPassengersCardView: View {
             Text(note).font(.system(size: 12)).foregroundStyle(look.danger).fixedSize(horizontal: false, vertical: true)
           }
           HStack(spacing: 12) {
-            Text(FlightPassengersCard.privacy)
-              .font(.system(size: 12))
-              .foregroundStyle(grey)
-              .fixedSize(horizontal: false, vertical: true)
-              .frame(maxWidth: .infinity, alignment: .leading)
+            Spacer(minLength: 0)
             Button { filling = true } label: {
               Text(FlightPassengersCard.fillIn)
                 .font(.system(size: 14, weight: .medium))
@@ -113,9 +111,9 @@ struct MacFlightLines: View {
  * the glass disc that closes it and the title at its top; the flight on a
  * card; each traveller a group of 56-high rows, the label on the left and
  * the field or the menu ("Choose ⌄") on the right, as Settings' rows are;
- * a day as three menus (month, day, year); Add passport an action in the
- * link blue; Continue the sheet's one wide button in the blue, the privacy
- * line under it. The first thing to fix shows in red under its traveller.
+ * a day as the iPhone's, its date in a grey pill opening a calendar; Add
+ * passport an action in the link blue; Continue the sheet's one wide button in the blue. The first
+ * thing to fix shows in red under its traveller.
  */
 struct MacTravellersSheet: View {
   let entryId: String
@@ -164,7 +162,7 @@ struct MacTravellersSheet: View {
         .padding(.top, 8)
         .padding(.bottom, 24)
       }
-      VStack(spacing: 10) {
+      VStack(spacing: 0) {
         Button {
           Task { await send() }
         } label: {
@@ -183,11 +181,6 @@ struct MacTravellersSheet: View {
         .keyboardShortcut(.defaultAction)
         .handCursor()
         .disabled(sending)
-        Text(FlightPassengersCard.privacy)
-          .font(PanelType.detail)
-          .foregroundStyle(look.inkSecondary)
-          .multilineTextAlignment(.center)
-          .fixedSize(horizontal: false, vertical: true)
       }
       .padding(.horizontal, 32)
       .padding(.top, 12)
@@ -278,7 +271,7 @@ private struct MacTravellerGroup: View {
         shown: traveller.gender == nil ? String(localized: "Choose") : nil,
         look: look
       ) { traveller.gender = $0 }
-      MacDayRow(label: String(localized: "Date of birth"), day: $traveller.bornOn, years: Array((MacDayRow.thisYear - 120...MacDayRow.thisYear).reversed()), look: look)
+      MacDayRow(label: String(localized: "Date of birth"), day: $traveller.bornOn, range: Calendar.current.date(byAdding: .year, value: -120, to: Date())!...Date(), start: Calendar.current.date(byAdding: .year, value: -30, to: Date())!, look: look)
       MacTextRow(label: String(localized: "Email"), text: $traveller.email, content: .emailAddress, look: look)
       MacTextRow(label: String(localized: "Phone, with country code"), text: $traveller.phone, content: .telephoneNumber, look: look)
       if passportNeeded || showsPassport {
@@ -291,7 +284,7 @@ private struct MacTravellerGroup: View {
           shown: traveller.passportCountry.isEmpty ? String(localized: "Choose") : nil,
           look: look
         ) { traveller.passportCountry = $0 }
-        MacDayRow(label: String(localized: "Passport expires"), day: $traveller.passportExpires, years: Array(MacDayRow.thisYear...MacDayRow.thisYear + 20), look: look)
+        MacDayRow(label: String(localized: "Passport expires"), day: $traveller.passportExpires, range: Date()...Calendar.current.date(byAdding: .year, value: 20, to: Date())!, start: Calendar.current.date(byAdding: .year, value: 1, to: Date())!, look: look)
       } else {
         MacAddRow(title: String(localized: "Add passport"), look: look) { showsPassport = true }
       }
@@ -322,68 +315,48 @@ private struct MacTextRow: View {
 }
 
 /**
- * A day ("YYYY-MM-DD") as three menus, as Apple's own forms ask for a
- * birthday: the month, the day, the year, each "Month ⌄" in grey until it
- * is chosen. The day is written once all three are; a day past the month's
- * end becomes its last.
+ * A day ("YYYY-MM-DD") as the iPhone's: "Choose" until there is one, then
+ * the date in a grey pill ("Oct 23, 1996"); either opens the calendar under
+ * it, with the date as a field over it to type a year at once (the founder,
+ * 24 October 2026: the three menus looked nothing like the iPhone's).
+ * Opened empty, it starts at `start`, as the iPhone's Choose does.
  */
 private struct MacDayRow: View {
   let label: String
   @Binding var day: String
-  let years: [Int]
+  let range: ClosedRange<Date>
+  let start: Date
   let look: Look
-  @State private var month: Int? = nil
-  @State private var dayOfMonth: Int? = nil
-  @State private var year: Int? = nil
-
-  static let thisYear = Calendar(identifier: .gregorian).component(.year, from: Date())
+  @State private var open = false
 
   var body: some View {
+    let date = Traveller.date(day)
     SettingsLine(label: label, divided: true, look: look) {
-      HStack(spacing: 16) {
-        menu(String(localized: "Month"), value: month, options: Array(1...12)) { Calendar.current.monthSymbols[$0 - 1] } pick: { month = $0 }
-        menu(String(localized: "Day"), value: dayOfMonth, options: Array(1...31)) { String($0) } pick: { dayOfMonth = $0 }
-        menu(String(localized: "Year"), value: year, options: years) { String($0) } pick: { year = $0 }
+      Button { open = true } label: {
+        Text(date.map { $0.formatted(date: .abbreviated, time: .omitted) } ?? String(localized: "Choose"))
+          .font(PanelType.row)
+          .foregroundStyle(look.ink)
+          .padding(.horizontal, 12)
+          .frame(height: 30)
+          .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(look.ink.opacity(look.dark ? 0.1 : 0.06)))
+          .contentShape(Rectangle())
+      }
+      .buttonStyle(.hand)
+      .accessibilityLabel(label)
+      .popover(isPresented: $open, arrowEdge: .bottom) {
+        let picked = Binding(get: { Traveller.date(day) ?? start }, set: { day = Traveller.day($0) })
+        VStack(alignment: .leading, spacing: 12) {
+          DatePicker(label, selection: picked, in: range, displayedComponents: .date)
+            .datePickerStyle(.field)
+            .labelsHidden()
+          DatePicker(label, selection: picked, in: range, displayedComponents: .date)
+            .datePickerStyle(.graphical)
+            .labelsHidden()
+        }
+        .padding(16)
+        .onAppear { if Traveller.date(day) == nil { day = Traveller.day(start) } }
       }
     }
-    .onAppear { read() }
-    .onChange(of: day) { read() }
-  }
-
-  private func menu(_ name: String, value: Int?, options: [Int], text: @escaping (Int) -> String, pick: @escaping (Int) -> Void) -> some View {
-    let spoken = [label, name].joined(separator: ", ")
-    return Menu {
-      ForEach(options, id: \.self) { option in
-        Toggle(text(option), isOn: Binding(get: { option == value }, set: { _ in pick(option); write() }))
-      }
-    } label: {
-      SettingsMenuLabel(text: value.map(text) ?? name, look: look)
-    }
-    .menuStyle(.button)
-    .buttonStyle(.borderless)
-    .menuIndicator(.hidden)
-    .fixedSize()
-    .handCursor()
-    .accessibilityLabel(spoken)
-    .accessibilityValue(value.map(text) ?? "")
-  }
-
-  /** The three parts from the day already given (Link's, or one picked before). */
-  private func read() {
-    guard Traveller.date(day) != nil else { return }
-    let parts = day.split(separator: "-").compactMap { Int($0) }
-    year = parts[0]
-    month = parts[1]
-    dayOfMonth = parts[2]
-  }
-
-  private func write() {
-    guard let month, let dayOfMonth, let year else { return }
-    var calendar = Calendar(identifier: .gregorian)
-    calendar.timeZone = TimeZone(identifier: "UTC")!
-    guard let first = calendar.date(from: DateComponents(year: year, month: month, day: 1)),
-          let length = calendar.range(of: .day, in: .month, for: first)?.count else { return }
-    day = String(format: "%04d-%02d-%02d", year, month, min(dayOfMonth, length))
   }
 }
 
