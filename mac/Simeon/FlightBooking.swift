@@ -5,8 +5,8 @@ import SimeonCore
 /**
  * Booking a flight on the Mac (13 October 2026; the path is in SimeonCore's
  * FlightBooking.swift): the traveller form as a card in the chat, its
- * details on a sheet in the system's grouped form, and the flight on its
- * checkout card. The colours are the checkout card's (Cards.swift). The
+ * details on a sheet in the app's own parts (Settings' cards and rows, 24
+ * October 2026), and the flight on its checkout card. The colours are the checkout card's (Cards.swift). The
  * card is a Mac's (21 October 2026): at most 520 wide, Fill in at the right
  * of the privacy line, as wide as its words.
  */
@@ -106,52 +106,131 @@ struct MacFlightLines: View {
   }
 }
 
-/** The travellers' details on a sheet: the grouped form, one section per seat, Continue and Cancel at its foot. */
+/**
+ * The travellers' details on a sheet, in the app's own parts (the founder,
+ * 24 October 2026: "this isnt the apple style at all … the buttons are
+ * squared nothing matches … bigger and apple style. the pickers as well"):
+ * the glass disc that closes it and the title at its top; the flight on a
+ * card; each traveller a group of 56-high rows, the label on the left and
+ * the field or the menu ("Choose ⌄") on the right, as Settings' rows are;
+ * a day as three menus (month, day, year); Add passport an action in the
+ * link blue; Continue the sheet's one wide button in the blue, the privacy
+ * line under it. The first thing to fix shows in red under its traveller.
+ */
 struct MacTravellersSheet: View {
   let entryId: String
   let agentId: String
   let card: FlightPassengersCard
   @Environment(AppStore.self) private var store
   @Environment(\.dismiss) private var dismiss
+  @Environment(\.colorScheme) private var scheme
   @State private var travellers: [Traveller] = []
   @State private var problem: (index: Int, message: String)?
   @State private var sending = false
 
+  private var look: Look { Look(scheme) }
+
   var body: some View {
     VStack(spacing: 0) {
-      Form {
-        Section {
-          VStack(alignment: .leading, spacing: 2) {
-            Text(card.flight.route).font(.system(size: 15, weight: .semibold))
-            Text([card.flight.whenLine, card.flight.total].filter { !$0.isEmpty }.joined(separator: " · ")).font(.system(size: 12)).foregroundStyle(.secondary)
-          }
-        } footer: {
-          Text(FlightPassengersCard.asOnID).font(.system(size: 11)).foregroundStyle(.secondary)
-        }
-        ForEach(travellers.indices, id: \.self) { index in
-          MacTravellerSection(traveller: $travellers[index], heading: card.seatLabel(index), passportNeeded: card.flight.documentsRequired, problem: problem?.index == index ? problem?.message : nil)
+      ZStack {
+        Text(FlightPassengersCard.title)
+          .font(PanelType.title)
+          .foregroundStyle(look.ink)
+          .accessibilityAddTraits(.isHeader)
+        HStack {
+          GlassDiscButton(symbol: "xmark", help: FlightPassengersCard.cancel, size: 32) { dismiss() }
+            .keyboardShortcut(.cancelAction)
+            .disabled(sending)
+          Spacer(minLength: 0)
         }
       }
-      .formStyle(.grouped)
-      HStack(spacing: 10) {
-        Text(FlightPassengersCard.privacy).font(.system(size: 11)).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-        Spacer(minLength: 12)
-        Button(FlightPassengersCard.cancel) { dismiss() }.keyboardShortcut(.cancelAction).handCursor()
+      .padding(.horizontal, 16)
+      .padding(.top, 16)
+      .padding(.bottom, 8)
+      ScrollView {
+        VStack(alignment: .leading, spacing: 24) {
+          flight
+          ForEach(travellers.indices, id: \.self) { index in
+            MacTravellerGroup(
+              traveller: $travellers[index],
+              heading: card.seatLabel(index),
+              passportNeeded: card.flight.documentsRequired,
+              problem: problem?.index == index ? problem?.message : nil,
+              look: look
+            )
+          }
+        }
+        .padding(.horizontal, 32)
+        .padding(.top, 8)
+        .padding(.bottom, 24)
+      }
+      VStack(spacing: 10) {
         Button {
           Task { await send() }
         } label: {
-          if sending { ProgressView().controlSize(.small) } else { Text(FlightPassengersCard.next) }
+          HStack(spacing: 8) {
+            if sending { ProgressView().controlSize(.small).tint(.white) }
+            Text(FlightPassengersCard.next)
+          }
+          .font(.system(size: 14, weight: .semibold))
+          .foregroundStyle(Color.white)
+          .frame(maxWidth: .infinity)
+          .frame(height: 36)
         }
+        .prominentGlassButton()
+        .controlSize(.large)
+        .tint(look.yours)
         .keyboardShortcut(.defaultAction)
         .handCursor()
         .disabled(sending)
+        Text(FlightPassengersCard.privacy)
+          .font(PanelType.detail)
+          .foregroundStyle(look.inkSecondary)
+          .multilineTextAlignment(.center)
+          .fixedSize(horizontal: false, vertical: true)
       }
-      .padding(16)
+      .padding(.horizontal, 32)
+      .padding(.top, 12)
+      .padding(.bottom, 24)
     }
-    .frame(width: 520, height: 660)
+    .frame(width: 640, height: 720)
+    .background(look.groupedGround)
     .onAppear { if travellers.isEmpty { travellers = card.startingTravellers } }
     .interactiveDismissDisabled(sending)
     .closesOnClickOutside { if !sending { dismiss() } }
+  }
+
+  /** The flight on a card: the airline's mark, the route, the day and times, the fare and its total; under it, names as on the ID. */
+  private var flight: some View {
+    VStack(alignment: .leading, spacing: 8) {
+      HStack(spacing: 14) {
+        AirlineMark(name: card.flight.airline, logo: card.flight.logo, side: 44)
+        VStack(alignment: .leading, spacing: 3) {
+          HStack(spacing: 6) {
+            Text(card.flight.route).font(.system(size: 15, weight: .medium)).foregroundStyle(look.ink)
+            if card.flight.isTest { StatusPill(text: String(localized: "Test"), look: look) }
+          }
+          if !card.flight.whenLine.isEmpty {
+            Text(card.flight.whenLine).font(PanelType.row).foregroundStyle(look.inkSecondary)
+          }
+          let fare = [card.flight.priceNote, card.flight.total].filter { !$0.isEmpty }.joined(separator: " · ")
+          if !fare.isEmpty {
+            Text(fare).font(PanelType.detail).foregroundStyle(look.inkSecondary)
+          }
+          if !card.flight.changed.isEmpty {
+            Text(card.flight.changed).font(.system(size: 12, weight: .medium)).foregroundStyle(look.danger).fixedSize(horizontal: false, vertical: true)
+          }
+        }
+        Spacer(minLength: 0)
+      }
+      .padding(.horizontal, SettingsRowSize.inset)
+      .padding(.vertical, 16)
+      .background(RoundedRectangle(cornerRadius: SettingsRowSize.radius, style: .continuous).fill(look.groupedRow))
+      Text(FlightPassengersCard.asOnID)
+        .font(PanelType.detail)
+        .foregroundStyle(look.inkSecondary)
+        .padding(.horizontal, 8)
+    }
   }
 
   private func send() async {
@@ -170,63 +249,171 @@ struct MacTravellersSheet: View {
   }
 }
 
-private struct MacTravellerSection: View {
+/** One traveller: their seat's name over a card of rows; the first thing to fix in red under it. */
+private struct MacTravellerGroup: View {
   @Binding var traveller: Traveller
   let heading: String
   let passportNeeded: Bool
   let problem: String?
+  let look: Look
   @State private var showsPassport = false
 
   var body: some View {
-    Section(heading) {
-      TextField("First name", text: $traveller.givenName)
-      TextField("Last name", text: $traveller.familyName)
-      Picker(String(localized: "traveller.title", defaultValue: "Title"), selection: $traveller.title) {
-        Text("Choose").tag(Traveller.Title?.none)
-        ForEach(Traveller.Title.allCases, id: \.self) { title in Text(title.label).tag(Traveller.Title?.some(title)) }
-      }
-      .handCursor()
-      Picker("Gender on ID", selection: $traveller.gender) {
-        Text("Choose").tag(Traveller.Gender?.none)
-        ForEach(Traveller.Gender.allCases, id: \.self) { gender in Text(gender.label).tag(Traveller.Gender?.some(gender)) }
-      }
-      .handCursor()
-      MacDayField(label: String(localized: "Date of birth"), day: $traveller.bornOn, range: Calendar.current.date(byAdding: .year, value: -120, to: Date())!...Date(), start: Calendar.current.date(byAdding: .year, value: -30, to: Date())!)
-      TextField("Email", text: $traveller.email)
-      TextField("Phone, with country code", text: $traveller.phone)
+    SettingsGroup(title: heading, footer: problem, footerTint: look.danger, look: look) {
+      MacTextRow(label: String(localized: "First name"), text: $traveller.givenName, content: .givenName, divided: false, look: look)
+      MacTextRow(label: String(localized: "Last name"), text: $traveller.familyName, content: .familyName, look: look)
+      SettingsMenu(
+        label: String(localized: "traveller.title", defaultValue: "Title"),
+        divided: true,
+        options: Traveller.Title.allCases.map { (value: Traveller.Title?.some($0), label: $0.label) },
+        value: traveller.title,
+        shown: traveller.title == nil ? String(localized: "Choose") : nil,
+        look: look
+      ) { traveller.title = $0 }
+      SettingsMenu(
+        label: String(localized: "Gender on ID"),
+        divided: true,
+        options: Traveller.Gender.allCases.map { (value: Traveller.Gender?.some($0), label: $0.label) },
+        value: traveller.gender,
+        shown: traveller.gender == nil ? String(localized: "Choose") : nil,
+        look: look
+      ) { traveller.gender = $0 }
+      MacDayRow(label: String(localized: "Date of birth"), day: $traveller.bornOn, years: Array((MacDayRow.thisYear - 120...MacDayRow.thisYear).reversed()), look: look)
+      MacTextRow(label: String(localized: "Email"), text: $traveller.email, content: .emailAddress, look: look)
+      MacTextRow(label: String(localized: "Phone, with country code"), text: $traveller.phone, content: .telephoneNumber, look: look)
       if passportNeeded || showsPassport {
-        TextField("Passport number", text: $traveller.passportNumber)
-        Picker("Issued by", selection: $traveller.passportCountry) {
-          Text("Choose").tag("")
-          ForEach(MacCountryName.all) { country in Text(country.name).tag(country.code) }
-        }
-        .handCursor()
-        MacDayField(label: String(localized: "Passport expires"), day: $traveller.passportExpires, range: Date()...Calendar.current.date(byAdding: .year, value: 20, to: Date())!, start: Calendar.current.date(byAdding: .year, value: 1, to: Date())!)
+        MacTextRow(label: String(localized: "Passport number"), text: $traveller.passportNumber, look: look)
+        SettingsMenu(
+          label: String(localized: "Issued by"),
+          divided: true,
+          options: MacCountryName.all.map { (value: $0.code, label: $0.name) },
+          value: traveller.passportCountry,
+          shown: traveller.passportCountry.isEmpty ? String(localized: "Choose") : nil,
+          look: look
+        ) { traveller.passportCountry = $0 }
+        MacDayRow(label: String(localized: "Passport expires"), day: $traveller.passportExpires, years: Array(MacDayRow.thisYear...MacDayRow.thisYear + 20), look: look)
       } else {
-        Button("Add passport") { showsPassport = true }
-          .handCursor()
-      }
-      if let problem {
-        Text(problem).foregroundStyle(Color(hex: 0xc21d2e))
+        MacAddRow(title: String(localized: "Add passport"), look: look) { showsPassport = true }
       }
     }
   }
 }
 
-/** A day as "YYYY-MM-DD": empty until picked, then the system's date field. */
-private struct MacDayField: View {
+/** A row with a field: the label on the left, what is typed on the right ("Required" until then), in the row's own type. */
+private struct MacTextRow: View {
   let label: String
-  @Binding var day: String
-  let range: ClosedRange<Date>
-  let start: Date
+  @Binding var text: String
+  var content: NSTextContentType? = nil
+  var divided = true
+  let look: Look
 
   var body: some View {
-    if let date = Traveller.date(day) {
-      DatePicker(label, selection: Binding(get: { date }, set: { day = Traveller.day($0) }), in: range, displayedComponents: .date)
-        .handCursor()
-    } else {
-      LabeledContent(label) { Button("Choose") { day = Traveller.day(start) }.handCursor() }
+    SettingsLine(label: label, divided: divided, look: look) {
+      TextField(label, text: $text, prompt: Text("Required").foregroundStyle(look.inkTertiary))
+        .textFieldStyle(.plain)
+        .labelsHidden()
+        .multilineTextAlignment(.trailing)
+        .font(PanelType.row)
+        .foregroundStyle(look.ink)
+        .textContentType(content)
+        .frame(width: 300)
     }
+  }
+}
+
+/**
+ * A day ("YYYY-MM-DD") as three menus, as Apple's own forms ask for a
+ * birthday: the month, the day, the year, each "Month ⌄" in grey until it
+ * is chosen. The day is written once all three are; a day past the month's
+ * end becomes its last.
+ */
+private struct MacDayRow: View {
+  let label: String
+  @Binding var day: String
+  let years: [Int]
+  let look: Look
+  @State private var month: Int? = nil
+  @State private var dayOfMonth: Int? = nil
+  @State private var year: Int? = nil
+
+  static let thisYear = Calendar(identifier: .gregorian).component(.year, from: Date())
+
+  var body: some View {
+    SettingsLine(label: label, divided: true, look: look) {
+      HStack(spacing: 16) {
+        menu(String(localized: "Month"), value: month, options: Array(1...12)) { Calendar.current.monthSymbols[$0 - 1] } pick: { month = $0 }
+        menu(String(localized: "Day"), value: dayOfMonth, options: Array(1...31)) { String($0) } pick: { dayOfMonth = $0 }
+        menu(String(localized: "Year"), value: year, options: years) { String($0) } pick: { year = $0 }
+      }
+    }
+    .onAppear { read() }
+    .onChange(of: day) { read() }
+  }
+
+  private func menu(_ name: String, value: Int?, options: [Int], text: @escaping (Int) -> String, pick: @escaping (Int) -> Void) -> some View {
+    let spoken = [label, name].joined(separator: ", ")
+    return Menu {
+      ForEach(options, id: \.self) { option in
+        Toggle(text(option), isOn: Binding(get: { option == value }, set: { _ in pick(option); write() }))
+      }
+    } label: {
+      SettingsMenuLabel(text: value.map(text) ?? name, look: look)
+    }
+    .menuStyle(.button)
+    .buttonStyle(.borderless)
+    .menuIndicator(.hidden)
+    .fixedSize()
+    .handCursor()
+    .accessibilityLabel(spoken)
+    .accessibilityValue(value.map(text) ?? "")
+  }
+
+  /** The three parts from the day already given (Link's, or one picked before). */
+  private func read() {
+    guard Traveller.date(day) != nil else { return }
+    let parts = day.split(separator: "-").compactMap { Int($0) }
+    year = parts[0]
+    month = parts[1]
+    dayOfMonth = parts[2]
+  }
+
+  private func write() {
+    guard let month, let dayOfMonth, let year else { return }
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.timeZone = TimeZone(identifier: "UTC")!
+    guard let first = calendar.date(from: DateComponents(year: year, month: month, day: 1)),
+          let length = calendar.range(of: .day, in: .month, for: first)?.count else { return }
+    day = String(format: "%04d-%02d-%02d", year, month, min(dayOfMonth, length))
+  }
+}
+
+/** An action as a row (Add passport): the blue plus and the words in the link blue; a step darker under the pointer. */
+private struct MacAddRow: View {
+  let title: String
+  let look: Look
+  let action: () -> Void
+  @State private var hovering = false
+
+  var body: some View {
+    Button(action: action) {
+      HStack(spacing: 10) {
+        Image(systemName: "plus.circle.fill")
+          .font(.system(size: 16))
+          .foregroundStyle(look.settingsAction)
+        Text(title)
+          .font(PanelType.row)
+          .foregroundStyle(look.settingsAction)
+        Spacer(minLength: 0)
+      }
+      .padding(.horizontal, SettingsRowSize.inset)
+      .padding(.vertical, SettingsRowSize.vertical)
+      .frame(minHeight: SettingsRowSize.minHeight)
+      .background(hovering ? look.groupedRowHover : Color.clear)
+      .overlay(alignment: .top) { SettingsDivider(look: look) }
+      .contentShape(Rectangle())
+    }
+    .buttonStyle(.hand)
+    .onHover { hovering = $0 }
   }
 }
 
