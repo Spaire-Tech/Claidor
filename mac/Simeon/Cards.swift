@@ -1313,40 +1313,38 @@ private struct FlightRow: View {
         if let back = offer.inbound { FlightTimesAcross(times: back, ink: ink, grey: grey) }
       }
       .frame(minWidth: 220, maxWidth: .infinity)
-      // The price in our blue, as on the iPhone's card (the founder, 24 October 2026).
+      // The price in Apple's lighter blue, as on the iPhone's card (the founder, 24 October 2026).
       Text(offer.price)
         .font(.system(size: 15, weight: .medium))
         .tracking(-0.15)
-        .foregroundStyle(look.settingsBlue)
+        .foregroundStyle(look.appleBlue)
         .fixedSize()
       chevron
     }
   }
 
-  /** A narrow chat's row (the iPhone's): the mark, "Airline · price" over the times, the chevron. */
+  /** A narrow chat's row (the iPhone's): the mark, the airline with its price at the far right over the times, the chevron. */
   private var stacked: some View {
     HStack(spacing: 12) {
       AirlineMark(name: offer.airline, logo: offer.logo, side: 40)
       VStack(alignment: .leading, spacing: 4) {
-        Text(priceLine)
-          .font(.system(size: 15))
-          .tracking(-0.15)
-          .fixedSize(horizontal: false, vertical: true)
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+          Text(offer.airline)
+            .foregroundStyle(ink)
+            .fixedSize(horizontal: false, vertical: true)
+          Spacer(minLength: 0)
+          Text(offer.price)
+            .foregroundStyle(look.appleBlue)
+            .fixedSize()
+        }
+        .font(.system(size: 15))
+        .tracking(-0.15)
         FlightTimesStacked(times: offer.outbound, grey: grey)
         if let back = offer.inbound { FlightTimesStacked(times: back, grey: grey) }
       }
       .frame(maxWidth: .infinity, alignment: .leading)
       chevron
     }
-  }
-
-  /** "Airline · price", the price in our blue. */
-  private var priceLine: AttributedString {
-    var line = AttributedString(offer.airline.isEmpty || offer.price.isEmpty ? offer.airline : offer.airline + " · ")
-    line.foregroundColor = ink
-    var cost = AttributedString(offer.price)
-    cost.foregroundColor = look.settingsBlue
-    return line + cost
   }
 
   private var chevron: some View {

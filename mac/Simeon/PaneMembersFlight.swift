@@ -263,71 +263,76 @@ enum MemberRemoval {
 
 /**
  * A flight in the pane (`__simeonFlightDetails`), in place of the agent's
- * page: the airline's mark (72, white, or the dark disc on dark, its logo at 42 or its
- * initials), "FROM → TO" (22/28, medium), date · time · stops (15/20, grey);
- * 30 under it the sections 22 apart: the total, its price in green, as the
- * iPhone's sheet has it (the founder, 24 October 2026), then each leg and
- * Fare, their rows a label and the server's words (a hairline under each),
- * a layover after a leg that is not the last. Nothing to press: × is the
- * pane's.
+ * page, laid out as the iPhone's sheet (the founder, 24 October 2026: "mac
+ * flight info have to be like iphone"): the route over its stops and time;
+ * the total, its price in green; a card per flight (from and to with the
+ * airline's logo, departing and arriving, then the flight, the cabin and the
+ * time in the air), the layover between two, a round trip's two ways under
+ * their own titles; then the fare's terms in a card of their own. Nothing to
+ * press: × is the pane's.
  */
 struct FlightPage: View {
   let offer: FlightOffer
   let look: Look
 
   var body: some View {
-    VStack(spacing: 0) {
-      VStack(spacing: 0) {
-        AirlineMark(name: offer.airline, logo: offer.logo, side: 72, logoSide: 42, initialsSize: 20, ring: look.paneHairline, ringWidth: 1)
-        Text(FlightPane.name(offer))
-          .font(.system(size: 22, weight: .medium))
+    let from = offer.from.isEmpty ? (offer.legs.first?.from ?? "") : offer.from
+    let to = offer.to.isEmpty ? (offer.legs.last?.to ?? "") : offer.to
+    let route = [from, to].filter { !$0.isEmpty }.joined(separator: " to ")
+    VStack(alignment: .leading, spacing: 16) {
+      VStack(spacing: 2) {
+        Text(route)
+          .font(.system(size: 22, weight: .semibold))
           .tracking(-0.484)
           .foregroundStyle(look.paneInk)
           .lineLimit(1)
-          .truncationMode(.tail)
-          .frame(height: 28)
-          .padding(.top, 14)
-        let title = FlightPane.title(offer)
-        if !title.isEmpty {
-          Text(title)
+          .accessibilityAddTraits(.isHeader)
+        if !offer.shape.isEmpty {
+          Text(offer.shape)
             .font(.system(size: 15))
-            .tracking(-0.16)
             .foregroundStyle(look.paneInk2)
-            .multilineTextAlignment(.center)
-            .frame(minHeight: 20)
-            .padding(.top, 1)
         }
       }
-      .padding(.top, 12)
+      .multilineTextAlignment(.center)
       .frame(maxWidth: .infinity)
-      VStack(alignment: .leading, spacing: 22) {
-        if !offer.price.isEmpty { total }
-        ForEach(FlightPane.sections(offer, price: false), id: \.self) { section in
-          VStack(alignment: .leading, spacing: 0) {
-            Text(section.heading)
+      .padding(.top, 8)
+      .padding(.bottom, 8)
+      if !offer.price.isEmpty { total }
+      ForEach(Array(offer.ways.enumerated()), id: \.offset) { _, way in
+        VStack(alignment: .leading, spacing: 10) {
+          if !way.title.isEmpty {
+            Text(way.title)
               .font(.system(size: 13))
               .foregroundStyle(look.paneInk2)
-              .frame(minHeight: 16, alignment: .leading)
-              .padding(.bottom, 2)
-            ForEach(section.rows, id: \.self) { row in
-              FlightDetailRow(row: row, look: look)
-            }
-            if let note = section.note {
-              Text(note)
-                .font(.system(size: 13))
-                .lineSpacing(LineBox.extra(size: 13, lineHeight: 18))
+              .padding(.horizontal, 4)
+          }
+          ForEach(Array(way.legs.enumerated()), id: \.offset) { index, leg in
+            FlightLegCard(leg: leg, logo: leg.logo.isEmpty ? offer.logo : leg.logo, look: look)
+            if index < way.legs.count - 1, !leg.layoverLine.isEmpty {
+              Label(leg.layoverLine, systemImage: "clock")
+                .font(.system(size: 15))
                 .foregroundStyle(look.paneInk2)
-                .padding(.top, 10)
+                .padding(.horizontal, 6)
             }
           }
         }
       }
-      .frame(maxWidth: .infinity, alignment: .leading)
-      .padding(.top, 30)
+      if !offer.terms.isEmpty {
+        VStack(alignment: .leading, spacing: 4) {
+          ForEach(offer.terms, id: \.self) { line in
+            Text(line).fixedSize(horizontal: false, vertical: true)
+          }
+        }
+        .font(.system(size: 15))
+        .foregroundStyle(look.paneInk2)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .background(look.theirs, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+      }
     }
     .textSelection(.enabled)
     .accessibilityElement(children: .contain)
-    .accessibilityLabel(FlightPane.name(offer))
+    .accessibilityLabel(route)
   }
 
   /** "Total Price" and the price in green (the iPhone's `Ink.fare`), what it covers under it. */
@@ -349,43 +354,70 @@ struct FlightPage: View {
           .fixedSize(horizontal: false, vertical: true)
       }
     }
+    .padding(.horizontal, 4)
     .accessibilityElement(children: .combine)
   }
 }
 
-/** A row (`__simeonFlightRow`): the label (15/20) and, at the right, its words in grey (wrapping, never cut) with a smaller line under them; padded 11, a hairline under it. */
-private struct FlightDetailRow: View {
-  let row: FlightPane.Row
+/**
+ * One flight, as the iPhone's card (`FlightLegCard` in ios/Simeon/Cards.swift):
+ * from and to with the airline's logo, departing and arriving, then under a
+ * hairline the flight, the cabin and the time in the air, in grey.
+ */
+private struct FlightLegCard: View {
+  let leg: FlightLeg
+  let logo: String
   let look: Look
 
   var body: some View {
-    HStack(alignment: .firstTextBaseline, spacing: 16) {
-      Text(row.label)
-        .font(.system(size: 15))
-        .tracking(-0.16)
-        .foregroundStyle(look.paneInk)
-        .fixedSize()
-      Spacer(minLength: 0)
-      VStack(alignment: .trailing, spacing: 0) {
-        Text(row.value)
-          .font(.system(size: 15))
-          .tracking(-0.16)
-          .lineSpacing(LineBox.extra(size: 15, lineHeight: 20))
-          .foregroundStyle(look.paneInk2)
-          .multilineTextAlignment(.trailing)
-          .fixedSize(horizontal: false, vertical: true)
-        if let sub = row.sub {
-          Text(sub)
-            .font(.system(size: 13))
-            .foregroundStyle(look.paneInk2)
-            .multilineTextAlignment(.trailing)
-            .frame(minHeight: 18)
+    let details = (leg.flightLines + [leg.cabin, leg.duration.isEmpty ? "" : String(localized: "\(leg.duration) in the air")]).filter { !$0.isEmpty }
+    VStack(alignment: .leading, spacing: 0) {
+      HStack(alignment: .center, spacing: 12) {
+        Text([leg.from, leg.to].filter { !$0.isEmpty }.joined(separator: " to "))
+          .font(.system(size: 17, weight: .medium))
+          .foregroundStyle(look.paneInk)
+        Spacer(minLength: 0)
+        AirlineMark(name: leg.carrier, logo: logo, side: 30)
+      }
+      VStack(alignment: .leading, spacing: 8) {
+        moment("arrow.up.right", String(localized: "Departing"), leg.departing)
+        moment("arrow.down.left", String(localized: "Arriving"), leg.arriving)
+      }
+      .padding(.top, 12)
+      if !details.isEmpty {
+        Rectangle().fill(look.paneHairline).frame(height: 0.5).padding(.vertical, 12)
+        VStack(alignment: .leading, spacing: 3) {
+          ForEach(details, id: \.self) { line in Text(line).fixedSize(horizontal: false, vertical: true) }
         }
+        .font(.system(size: 13))
+        .foregroundStyle(look.paneInk2)
       }
     }
-    .padding(.vertical, 11)
-    .overlay(alignment: .bottom) {
-      Rectangle().fill(look.paneHairline).frame(height: 0.5)
+    .padding(16)
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .background(look.theirs, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+  }
+
+  @ViewBuilder
+  private func moment(_ symbol: String, _ label: String, _ value: String) -> some View {
+    if !value.isEmpty {
+      HStack(alignment: .firstTextBaseline, spacing: 10) {
+        Image(systemName: symbol)
+          .font(.system(size: 13, weight: .medium))
+          .foregroundStyle(look.paneInk2)
+          .frame(width: 16)
+        Text(label)
+          .font(.system(size: 15))
+          .foregroundStyle(look.paneInk)
+          .frame(minWidth: 76, alignment: .leading)
+          .fixedSize()
+        Text(value)
+          .font(.system(size: 15))
+          .foregroundStyle(look.paneInk)
+          .frame(maxWidth: .infinity, alignment: .leading)
+          .fixedSize(horizontal: false, vertical: true)
+      }
+      .accessibilityElement(children: .combine)
     }
   }
 }

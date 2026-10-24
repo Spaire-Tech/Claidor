@@ -1329,10 +1329,13 @@ round trip with a logo), light and dark. Pushed:
 - **Members** in search and in "/" opens the pane on Computer, for a group
   whose members can change.
 - **A flight**: a row of a flights card opens its details in the pane, in
-  place of the agent's page (only the ×): the airline's mark (72, white in
-  both themes), "FROM → TO", date · time · stops; Price, each leg (Departs,
-  Arrives, Flight, Cabin, Time in the air, a layover after a leg that is not
-  the last), Fare; the server's words as they come. The open row shows
+  place of the agent's page (only the ×), laid out as the iPhone's sheet
+  since 24 October 2026 (the founder: "mac flight info have to be like
+  iphone"): "FROM to TO" over its stops and time; the total in green; a
+  card per flight (from and to with the airline's logo, departing and
+  arriving, the flight, cabin and time in the air), the layover between
+  two, a round trip's ways under their titles; the fare's terms in a card
+  of their own. The open row shows
   pressed; pressing it again closes the pane. It opens without growing the
   window and on no page; another row swaps the flight and keeps the scroll.
   It belongs to the chat it came from: another agent's pane shows that

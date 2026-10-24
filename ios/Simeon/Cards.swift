@@ -631,10 +631,17 @@ struct FlightRow: View {
     HStack(alignment: .center, spacing: 12) {
       AirlineMark(name: offer.airline, logo: offer.logo, size: 40)
       VStack(alignment: .leading, spacing: 4) {
-        // The price in our blue, as on the Mac's card (the founder, 24 October 2026).
-        Text(FlightPrice.line(offer, ink: Ink.theirsText, price: Ink.blue))
-          .font(.system(size: 17))
-          .fixedSize(horizontal: false, vertical: true)
+        // The airline, and at the far right its price in Apple's lighter blue (the founder, 24 October 2026).
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+          Text(offer.airline)
+            .foregroundStyle(Ink.theirsText)
+            .fixedSize(horizontal: false, vertical: true)
+          Spacer(minLength: 0)
+          Text(offer.price)
+            .foregroundStyle(Ink.appleBlue)
+            .fixedSize()
+        }
+        .font(.system(size: 17))
         FlightTimesLine(times: offer.outbound)
         if let back = offer.inbound { FlightTimesLine(times: back) }
       }
@@ -643,17 +650,6 @@ struct FlightRow: View {
     .padding(.horizontal, 10).padding(.vertical, 9)
     .contentShape(.rect)
     .accessibilityElement(children: .combine)
-  }
-}
-
-/** "Airline · price", the price in its own colour. */
-enum FlightPrice {
-  static func line(_ offer: FlightOffer, ink: Color, price: Color) -> AttributedString {
-    var line = AttributedString(offer.airline.isEmpty || offer.price.isEmpty ? offer.airline : offer.airline + " · ")
-    line.foregroundColor = ink
-    var cost = AttributedString(offer.price)
-    cost.foregroundColor = price
-    return line + cost
   }
 }
 
