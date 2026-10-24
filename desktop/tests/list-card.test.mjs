@@ -82,3 +82,67 @@ test("ShowList posts the list card: money apart from other figures, https only, 
     await tool.dispose();
   }
 });
+
+// The founder's two messages after the card shipped (24 October 2026): lists in text, no card.
+const RESTAURANTS = `Here are four that came up on Tripadvisor's October 2026 Dakar listings:
+
+1. Restaurant Lagon 1: French and African, top price tier, 4.2 from about 1,000 reviews. It's the safest pick if you want to impress.
+2. Au Comptoir De La Fourchette: very French and formal, with velvet banquettes. Good for a quiet, serious conversation.
+3. Noliane Ristorante: Italian and Mediterranean, 4.5 from 67 reviews. A solid middle option.
+4. Le Ngor: African and seafood, open to the ocean, 4.0 from 465 reviews. It's more relaxed, and it's listed as good for groups.
+
+These come from review rankings, not business-dining guides. Want me to narrow it down?`;
+const COSTS = `Planchers sourcés par portion (une personne), sans les ingrédients dont je n'ai pas de prix fiable :
+
+- Thiéboudiène : 717 à 805 FCFA
+- Yassa poulet : 1 078 FCFA
+- Mafé : 966 FCFA
+- Soupou kandja : 528 à 588 FCFA
+
+Le vrai coût sera plus haut (tomate, ail, piment, pâte d'arachide, gombo, etc. manquent, plus les pertes).`;
+
+test("a list of things of one kind in a message is held once for the card; steps, short lists and code are not", async () => {
+  const guard = await load("source/host/runner/list-card-guard.ts", "list-card-guard");
+  try {
+    const { listedThings, holdForCard, listCardNudge } = guard.module;
+    assert.equal(listedThings(RESTAURANTS), 4);
+    assert.equal(listedThings(COSTS), 4);
+    assert.equal(listedThings("**Notion**: $10\n**Slack**: $8.75\n**Linear**: $10"), 0, "not a list without its marks");
+    assert.equal(listedThings("- **Notion**: $10\n- **Slack**: $8.75\n- **Linear**: $10"), 3, "bold names count");
+    assert.equal(listedThings("- Notion: $10\n- Slack: $8.75"), 0, "two things stay in a sentence");
+    assert.equal(listedThings("1. Open Settings\n2. Tap Wallet\n3. Add a card"), 0, "steps without names");
+    assert.equal(listedThings("1. Step 1: open Settings\n2. Step 2: tap Wallet\n3. Step 3: add a card"), 0, "steps to follow keep their numbers");
+    assert.equal(listedThings("```\n- a: 1\n- b: 2\n- c: 3\n```"), 0, "code is code");
+    assert.equal(listedThings(Array.from({ length: 9 }, (_, i) => `- Item ${i}: ${i}`).join("\n")), 0, "more than a card holds");
+    assert.equal(listedThings("- Docs: https://a.example\n- Site: https://b.example\n- Blog: https://c.example"), 3);
+    assert.equal(listedThings("- https://a.example/x\n- https://b.example/y\n- https://c.example/z"), 0, "bare links have no names");
+
+    assert.equal(holdForCard(COSTS, 1_000), true, "held the first time");
+    assert.equal(holdForCard(COSTS, 2_000), false, "the same words again go through");
+    assert.equal(holdForCard(COSTS, 3_000), true, "and are held again the next time");
+    assert.equal(holdForCard(RESTAURANTS, 0), true);
+    assert.equal(holdForCard(RESTAURANTS, 31 * 60_000), true, "too long after, held anew");
+    assert.match(listCardNudge(4), /lists 4 things of one kind.*call ShowList/);
+  } finally {
+    await guard.dispose();
+  }
+});
+
+test("SendMessage holds a listed message once, with the word to use the card, and lets the same words through after", async () => {
+  const tool = await load("source/host/runner/tools/send-message-tool.ts", "send-message-list");
+  try {
+    const sent = [];
+    const send = tool.module.createSendMessageTool({ getIngestAttachment: () => undefined, onSendMessage: (message) => { sent.push(message); return `t9s${sent.length}`; } });
+    const words = COSTS.replace("Planchers", "Planchers (test)");
+    const first = await run(send, { type: "text", content: words });
+    assert.match(first, /lists 4 things of one kind/);
+    assert.equal(sent.length, 0, "nothing reached the chat");
+    const again = await run(send, { type: "text", content: words });
+    assert.doesNotMatch(again, /lists 4 things/);
+    assert.equal(sent.length, 1, "sent the second time");
+    await run(send, { type: "text", content: "Modèle mis à jour avec les premiers prix de Cheikh." });
+    assert.equal(sent.length, 2, "a plain message goes at once");
+  } finally {
+    await tool.dispose();
+  }
+});
