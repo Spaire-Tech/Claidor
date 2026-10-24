@@ -71,6 +71,7 @@ import { createDraftExternalMessageTool, createMarkDraftDeliveredTool, type Draf
 import { createSearchFlightsTool, type FlightSearchDependencies } from "./flight-search-tool.js";
 import { createBookFlightTool, type BookFlightDependencies } from "./book-flight-tool.js";
 import { createMarkPurchaseDoneTool, createRequestPurchaseTool, createShowProductsTool, type PurchaseToolDependencies } from "./purchase-tool.js";
+import { createShowListTool, type ListToolDependencies } from "./list-card-tool.js";
 import {
   createGenerateImageTool,
   type GenerateImageToolDependencies,
@@ -564,6 +565,7 @@ export interface TurnToolFactories {
   drafts?(): readonly TurnTool[];
   purchases?(): readonly TurnTool[];
   flights?(): readonly TurnTool[];
+  lists?(): TurnTool;
   mcpMeta?(dynamicToolRegistry?: DynamicToolRegistry): readonly TurnTool[];
   mcpManagement?(): readonly TurnTool[];
   subagentManagement?(): readonly TurnTool[];
@@ -700,6 +702,7 @@ export interface TurnToolsetFactoryInputs {
   readonly drafts?: TurnDraftToolFactoryInput;
   readonly purchases?: TurnPurchaseToolFactoryInput;
   readonly flights?: TurnFlightToolFactoryInput;
+  readonly lists?: TurnListToolFactoryInput;
   readonly generateImage?: TurnGenerateImageToolFactoryInput;
   readonly webSearch?: TurnWebSearchToolFactoryInput;
   readonly webFetch?: TurnWebFetchToolFactoryInput;
@@ -765,6 +768,10 @@ export interface TurnToolsetHostFactoryProvider {
     turn: TurnToolsetTurnInput,
     props: TurnToolsetBuildProps,
   ) => TurnFlightToolFactoryInput;
+  readonly createListToolInputs?: (
+    turn: TurnToolsetTurnInput,
+    props: TurnToolsetBuildProps,
+  ) => TurnListToolFactoryInput;
   readonly createGenerateImageToolInputs?: (
     turn: TurnToolsetTurnInput,
     props: TurnToolsetBuildProps,
@@ -1005,6 +1012,17 @@ export function createTurnPurchaseToolFactory(
   return () => [asTurnTool(createShowProductsTool(input.dependencies)), asTurnTool(createRequestPurchaseTool(input.dependencies)), asTurnTool(createMarkPurchaseDoneTool(input.dependencies))];
 }
 
+export interface TurnListToolFactoryInput {
+  readonly dependencies: ListToolDependencies;
+}
+
+/** ShowList (24 October 2026): three or more things of one kind as the list card. */
+export function createTurnListToolFactory(
+  input: TurnListToolFactoryInput,
+): () => TurnTool {
+  return () => asTurnTool(createShowListTool(input.dependencies));
+}
+
 export interface TurnFlightToolFactoryInput {
   readonly dependencies: FlightSearchDependencies;
   /** BookFlight (13 October 2026); absent where flights can't be booked. */
@@ -1153,7 +1171,7 @@ export function createTurnToolsetFactories(
 ): Pick<
   TurnToolFactories,
   "task" | "mcpMeta" | "computer" | "browser" | "openPage" | "screenshot"
-  | "fileTransfer" | "requestBoxHelp" | "drafts" | "purchases" | "flights" | "generateImage" | "webSearch" | "webFetch" | "externalAwait"
+  | "fileTransfer" | "requestBoxHelp" | "drafts" | "purchases" | "flights" | "lists" | "generateImage" | "webSearch" | "webFetch" | "externalAwait"
   | "boxAwait" | "externalShell" | "externalRead" | "boxShell" | "boxRead"
   | "sendMessage" | "sendToAgent" | "reaction" | "createAgent" | "updateAgent" | "updateState"
   | "subagentManagement"
@@ -1196,6 +1214,9 @@ export function createTurnToolsetFactories(
     ...(input.flights === undefined
       ? {}
       : { flights: createTurnFlightToolFactory(input.flights) }),
+    ...(input.lists === undefined
+      ? {}
+      : { lists: createTurnListToolFactory(input.lists) }),
     ...(input.generateImage === undefined
       ? {}
       : { generateImage: createTurnGenerateImageToolFactory(input.generateImage) }),
@@ -1302,6 +1323,9 @@ export function createTurnToolsetFactoriesForTurn(
     ...(provider.createFlightToolInputs === undefined
       ? {}
       : { flights: provider.createFlightToolInputs(turn, props) }),
+    ...(provider.createListToolInputs === undefined
+      ? {}
+      : { lists: provider.createListToolInputs(turn, props) }),
     ...(provider.createGenerateImageToolInputs === undefined
       ? (() => {
         // Composition builds createSandGenerateImageService into runnerOptions
@@ -1562,6 +1586,8 @@ export function buildTurnTools(
     if (generateImage !== undefined) tools.push(generateImage);
     const flights = factories.flights?.();
     if (flights !== undefined) tools.push(...flights);
+    const lists = factories.lists?.();
+    if (lists !== undefined) tools.push(lists);
   }
 
   if (

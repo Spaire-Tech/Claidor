@@ -356,7 +356,9 @@ public struct Entry: Identifiable, Hashable, Sendable {
       let names = message["connectors"]?.array?.compactMap(\.text) ?? []
       return names.isEmpty ? L10n.text("Connect tools") : L10n.text("Connect \(names.joined(separator: ", "))")
     case "listener-connect": return message["platform"]?.string == "slack" ? L10n.text("Connect Slack") : L10n.text("Connect GitHub")
-    case "attachment": return message["url"]?.text.map(fileName(ofURL:)) ?? L10n.text("Sent a file")
+    // A list card says its title in the list ("Coût matières par portion").
+    case "list": return (message["title"]?.text ?? message["content"]?.text).map { by + plain($0) }
+    case "attachment": return (message["file_name"]?.text ?? message["url"]?.text.map(fileName(ofURL:))).map(fileTitle) ?? L10n.text("Sent a file")
     default: return message["content"]?.text.map { by + plain($0) }
     }
   }
@@ -372,4 +374,37 @@ public func plain(_ markdown: String) -> String {
 public func fileName(ofURL url: String) -> String {
   let last = url.split(separator: "/").last.map(String.init) ?? url
   return last.removingPercentEncoding ?? last
+}
+
+/**
+ A file's name read as a title, as the chat's file card shows it (the
+ founder, 24 October 2026, of "53cd913a…d6.xlsx": "it should be a title"):
+ "dakar_trip_budget.xlsx" reads "Dakar trip budget". The extension goes (the
+ card's icon says the kind), "_" reads as a space, and "-" too in a name
+ with no spaces. A name the computer made from the file's contents (a long
+ run of hex digits) reads as its kind. Saving keeps the real name.
+ */
+public func fileTitle(_ name: String) -> String {
+  var base = name, ext = ""
+  if let dot = name.lastIndex(of: "."), dot > name.startIndex {
+    let tail = name[name.index(after: dot)...]
+    if (2...5).contains(tail.count), tail.allSatisfy({ $0.isLetter || $0.isNumber }), tail.contains(where: \.isLetter) {
+      base = String(name[..<dot])
+      ext = tail.lowercased()
+    }
+  }
+  if base.count >= 32, base.allSatisfy(\.isHexDigit) {
+    switch ext {
+    case "xls", "xlsx", "csv", "tsv", "numbers": return L10n.text("Spreadsheet")
+    case "doc", "docx", "rtf", "pages", "odt", "md", "txt": return L10n.text("Document")
+    case "ppt", "pptx", "key": return L10n.text("Presentation")
+    case "pdf": return "PDF"
+    default: return L10n.text("File")
+    }
+  }
+  var words = base.replacingOccurrences(of: "_", with: " ")
+  if !words.contains(" ") { words = words.replacingOccurrences(of: "-", with: " ") }
+  words = words.split(separator: " ").joined(separator: " ")
+  guard let first = words.first else { return name }
+  return first.uppercased() + words.dropFirst()
 }

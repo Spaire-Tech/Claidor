@@ -903,6 +903,146 @@ struct FlightLegCard: View {
   }
 }
 
+// MARK: - Lists
+
+/**
+ * A list card (`list`, the agents' ShowList; 24 October 2026, the founder:
+ * "I'm thinking to have things like that come in cards"): the flights card's
+ * grey, width and title, then a row for each thing: its picture (56, 12
+ * round) when the card has pictures, its name with its tag, a grey line
+ * under it, the figure at the right (money in Apple's lighter blue, its
+ * currency too; anything else in the text's colour) and › when it has a
+ * page, which a tap opens. Hairlines between the rows.
+ */
+struct ListCardView: View {
+  let card: ListCard
+  var agentId = ""
+  @Environment(\.chatWidth) private var width
+  @Environment(\.openURL) private var openURL
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 0) {
+      VStack(alignment: .leading, spacing: 2) {
+        Text(card.title).font(.system(size: 17, weight: .medium)).foregroundStyle(Ink.theirsText)
+          .fixedSize(horizontal: false, vertical: true)
+          .accessibilityAddTraits(.isHeader)
+        if let subtitle = card.subtitle {
+          Text(subtitle).font(.system(size: 13)).foregroundStyle(Ink.fineGrey).fixedSize(horizontal: false, vertical: true)
+        }
+      }
+      .padding(.horizontal, 16).padding(.top, 14).padding(.bottom, 4)
+      VStack(spacing: 0) {
+        ForEach(card.rows) { row in
+          if row.index != card.rows.first?.index {
+            Rectangle().fill(Ink.hairline).frame(height: 0.5)
+              .padding(.leading, card.hasPictures ? 78 : 10).padding(.trailing, 10)
+          }
+          if let url = row.url {
+            Button { openURL(url) } label: { ListCardRow(row: row, pictures: card.hasPictures, agentId: agentId) }
+              .buttonStyle(Tactile(look: FlightRowStyle()))
+          } else {
+            ListCardRow(row: row, pictures: card.hasPictures, agentId: agentId)
+          }
+        }
+      }
+      .padding(.horizontal, 6).padding(.bottom, 6)
+    }
+    .frame(width: FlightsCardView.cardWidth(width), alignment: .leading)
+    .background(Ink.bubbleTheirs, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+    .modifier(CardEdge(radius: 22))
+  }
+}
+
+private struct ListCardRow: View {
+  let row: ListCard.Row
+  let pictures: Bool
+  let agentId: String
+
+  var body: some View {
+    HStack(alignment: .center, spacing: 12) {
+      if pictures {
+        ListPicture(url: row.pictureURL, agentId: agentId)
+          .frame(width: 56, height: 56)
+          .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+      }
+      VStack(alignment: .leading, spacing: 2) {
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
+          Text(row.title).font(.system(size: 17)).foregroundStyle(Ink.theirsText)
+            .fixedSize(horizontal: false, vertical: true)
+          if let tag = row.tag { ListTag(tag: tag) }
+        }
+        if let detail = row.detail {
+          Text(detail).font(.system(size: 15)).foregroundStyle(Ink.fineGrey)
+            .fixedSize(horizontal: false, vertical: true)
+        }
+      }
+      .frame(maxWidth: .infinity, alignment: .leading)
+      if let value = row.value {
+        Text(value).font(.system(size: 17)).foregroundStyle(row.isMoney ? Ink.appleBlue : Ink.theirsText)
+          .fixedSize()
+      }
+      if row.url != nil {
+        Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(Ink.chevron)
+      }
+    }
+    .padding(.horizontal, 10).padding(.vertical, pictures ? 8 : 10)
+    .contentShape(.rect)
+    .accessibilityElement(children: .combine)
+  }
+}
+
+/** A row's tag ("à valider"): its words small, on a pale fill of its tone. */
+private struct ListTag: View {
+  let tag: ListCard.Tag
+
+  var body: some View {
+    Text(tag.text).font(.system(size: 12, weight: .medium)).foregroundStyle(ink)
+      .padding(.horizontal, 6).padding(.vertical, 1)
+      .background(ink.opacity(0.14), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+      .fixedSize()
+  }
+
+  private var ink: Color {
+    switch tag.tone {
+    case .pending: return Color.dynamic(light: "#b25f00", dark: "#ffb340")
+    case .done: return Ink.fare
+    case .problem: return Ink.danger
+    case .neutral: return Ink.fineGrey
+    }
+  }
+}
+
+/** A row's picture, filling its tile; a quiet photo mark while it loads or when the row has none. */
+private struct ListPicture: View {
+  let url: URL?
+  let agentId: String
+  @Environment(AppStore.self) private var store
+  @State private var loaded: UIImage?
+
+  var body: some View {
+    ZStack {
+      Rectangle().fill(Ink.field)
+      if let loaded {
+        Image(uiImage: loaded).resizable().scaledToFill()
+      } else {
+        Image(systemName: "photo").font(.system(size: 18)).foregroundStyle(Ink.tertiary)
+      }
+    }
+    .clipped()
+    .accessibilityHidden(true)
+    .task(id: url) {
+      guard let url else { return }
+      let key = url.absoluteString
+      if let kept = ChatImages.image(for: [key]) { loaded = kept; return }
+      guard let data = await GalleryTile.bytes(ChatImage(url: key), agentId: agentId, store: store), let full = UIImage(data: data) else { return }
+      let scale = min(1, 300 / max(full.size.width, full.size.height, 1))
+      let picture = await full.byPreparingThumbnail(ofSize: CGSize(width: full.size.width * scale, height: full.size.height * scale)) ?? full
+      ChatImages.keep(picture, under: [key])
+      loaded = picture
+    }
+  }
+}
+
 // MARK: - Drafts
 
 /** An email or a Slack message the agent drafted (`email-draft`, `slack-draft`): edit it, Send, or Discard. */
@@ -1092,6 +1232,8 @@ struct FileCardView: View {
   @Environment(\.chatWidth) private var width
   @State private var image: UIImage?
   @State private var preview: PreviewFile?
+  /** A Markdown file, opened as a page (Quick Look shows it as raw text). */
+  @State private var document: MarkdownDocument?
   @State private var loading = false
 
   /** The picture could not be read: the file card, so it can still be opened. */
@@ -1155,12 +1297,11 @@ struct FileCardView: View {
     // The Mac's Quick Look panel, as Finder opens it.
     .quickLookPreview(Binding(get: { preview?.url }, set: { preview = $0.map(PreviewFile.init(url:)) }))
     #endif
+    .sheet(item: $document) { document in MarkdownFileSheet(document: document) }
   }
 
   private var card: some View {
-    let ext = (name as NSString).pathExtension
-    let base = ext.isEmpty ? name : String(name.dropLast(ext.count + 1))
-    return HStack(spacing: 8) {
+    HStack(spacing: 8) {
       Group {
         if let art = FileKind.artwork(name), let artwork = UIImage(named: art) {
           Image(uiImage: artwork).resizable().scaledToFit()
@@ -1171,8 +1312,9 @@ struct FileCardView: View {
       }
       .frame(width: 36, height: 36)
       VStack(alignment: .leading, spacing: 1) {
-        Text("\(base)\(ext.isEmpty ? "" : ".\(ext)")").font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.primary)
-          .lineLimit(1).truncationMode(.middle)
+        // Its name as a title ("Dakar trip budget"): the icon says the kind; saving keeps the real name.
+        Text(fileTitle(name)).font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.primary)
+          .lineLimit(1).truncationMode(.tail)
         // Hidden while empty (patch 1670).
         if !line.isEmpty { Text(line).font(.system(size: 12)).foregroundStyle(Ink.secondary).lineLimit(1) }
       }
@@ -1246,12 +1388,71 @@ struct FileCardView: View {
         try? FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
         return (try? data.write(to: file, options: .atomic)) != nil
       }.value
-      if written { preview = PreviewFile(url: file) } else { store.problem = String(localized: "Couldn't open \(name).") }
+      guard written else {
+        store.problem = String(localized: "Couldn't open \(name).")
+        return
+      }
+      // Markdown as a page: Quick Look shows it as raw text.
+      if FilePreview.kind(name) == .markdown {
+        document = MarkdownDocument(title: fileTitle(name), text: String(decoding: data, as: UTF8.self), file: file)
+      } else {
+        preview = PreviewFile(url: file)
+      }
     }
   }
 }
 
 struct PreviewFile: Identifiable { let url: URL; var id: URL { url } }
+
+/** A Markdown file to show as a page: its title, its words, and its copy on the phone (what Share sends). */
+struct MarkdownDocument: Identifiable {
+  let title: String
+  let text: String
+  let file: URL
+  var id: URL { file }
+}
+
+/**
+ * A Markdown file, opened (the founder, 24 October 2026: on the iPhone it was
+ * "just a list of raw text", where the Mac draws it): its title over the
+ * page, Share at the left and Close at the right in the sheet's glass discs,
+ * then the document drawn as the chat draws an agent's message (headings,
+ * lists, quotes, code, tables), its words selectable.
+ */
+struct MarkdownFileSheet: View {
+  let document: MarkdownDocument
+  @Environment(\.dismiss) private var dismiss
+
+  var body: some View {
+    VStack(spacing: 0) {
+      ZStack {
+        Text(document.title)
+          .font(.system(size: 17, weight: .semibold)).foregroundStyle(Ink.primary)
+          .lineLimit(1)
+          .padding(.horizontal, 56)
+          .accessibilityAddTraits(.isHeader)
+        HStack {
+          ShareLink(item: document.file) {
+            Image(systemName: "square.and.arrow.up").font(.system(size: 15, weight: .semibold)).foregroundStyle(Ink.primary)
+              .frame(width: 40, height: 40)
+          }
+          .buttonStyle(GlassDisc())
+          .accessibilityLabel("Share")
+          Spacer(minLength: 0)
+          CloseDisc { dismiss() }
+        }
+      }
+      .padding(.horizontal, 16).padding(.top, 16).padding(.bottom, 8)
+      ScrollView {
+        MarkdownView(blocks: Markdown.blocks(document.text), mentioning: nil)
+          .textSelection(.enabled)
+          .frame(maxWidth: .infinity, alignment: .leading)
+          .padding(.horizontal, 20).padding(.top, 8).padding(.bottom, 32)
+      }
+    }
+    .presentationDragIndicator(.visible)
+  }
+}
 
 #if os(iOS)
 /** The system's preview (Quick Look): images, PDFs, text, and Word, Excel and PowerPoint files, with Share to save. */

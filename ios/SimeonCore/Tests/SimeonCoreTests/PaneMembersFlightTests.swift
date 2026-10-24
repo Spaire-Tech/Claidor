@@ -66,6 +66,26 @@ final class PaneMembersFlightTests: XCTestCase {
   }
 }
 
+/** A file in the chat, named as a title (24 October 2026). */
+final class FileTitleTests: XCTestCase {
+  func testAFileReadsAsATitle() {
+    XCTAssertEqual(fileTitle("dakar_trip_budget.xlsx"), "Dakar trip budget")
+    XCTAssertEqual(fileTitle("dakar-trip-budget.docx"), "Dakar trip budget")
+    XCTAssertEqual(fileTitle("Saint-Louis_menu.pdf"), "Saint-Louis menu", "a dash inside a name with spaces stays")
+    XCTAssertEqual(fileTitle("Modele_couts_v0.3.xlsx"), "Modele couts v0.3")
+    XCTAssertEqual(fileTitle("Q3 plan.pdf"), "Q3 plan")
+    XCTAssertEqual(fileTitle("notes"), "Notes")
+    XCTAssertEqual(fileTitle("53cd913a74a0bf1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d52237da92d6.xlsx"), "Spreadsheet", "a name made from the contents says the kind")
+    XCTAssertEqual(fileTitle("5a710c2ebcc56d00112233445566778899aabbccddeeff00112233bbf6ddfaaceb.bin"), "File")
+  }
+
+  func testTheCardTakesTheAgentsNameForTheFile() {
+    let entry = Entry(["kind": "send-message", "id": "s", "message": ["type": "attachment", "url": "file:///Users/a/.simeon/attachments/53cd913a74a0bf.xlsx", "file_name": "dakar_trip_budget.xlsx"]])!
+    XCTAssertEqual(Chat.threadTitle(entry), "Dakar trip budget")
+    XCTAssertEqual(entry.preview, "Dakar trip budget")
+  }
+}
+
 /** Settings › General's rules (step 8), against the window's. */
 final class SettingsGeneralTests: XCTestCase {
   func testAutoReviewIsKeptAsTheHostKeepsIt() {

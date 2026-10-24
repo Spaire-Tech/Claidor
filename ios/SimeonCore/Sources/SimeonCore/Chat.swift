@@ -205,12 +205,14 @@ public enum ChatRow: Identifiable, Hashable, Sendable {
   case products(id: String, card: ProductsCard)
   /** The traveller form for a flight being booked (`flight-passengers`). */
   case flightPassengers(id: String, card: FlightPassengersCard)
+  /** Three or more things of one kind, a row each (`list`, the agents' ShowList). */
+  case list(id: String, card: ListCard)
 
   public var id: String {
     switch self {
     case .stamp(let id, _), .unread(let id), .flights(let id, _), .file(let id, _, _, _), .question(let id, _), .draft(let id, _),
          .connectors(let id, _, _, _), .listenerConnect(let id, _, _), .request(let id, _), .teammates(let id, _, _), .voiceCall(let id, _, _, _), .routines(let id, _, _),
-         .notice(let id, _), .failedSend(let id, _), .queuedSend(let id, _), .thread(let id, _, _, _), .cloudAgent(let id, _), .purchase(let id, _), .products(let id, _), .flightPassengers(let id, _): return id
+         .notice(let id, _), .failedSend(let id, _), .queuedSend(let id, _), .thread(let id, _, _, _), .cloudAgent(let id, _), .purchase(let id, _), .products(let id, _), .flightPassengers(let id, _), .list(let id, _): return id
     case .bubble(let bubble): return bubble.id
     }
   }
@@ -239,6 +241,7 @@ public enum ChatRow: Identifiable, Hashable, Sendable {
     case .purchase: return "purchase"
     case .products: return "products"
     case .flightPassengers: return "flight-passengers"
+    case .list: return "list"
     }
   }
 
@@ -259,7 +262,7 @@ public enum ChatRow: Identifiable, Hashable, Sendable {
     case .file(_, _, _, let fromPerson): return fromPerson ? .person : .agent(nil)
     case .failedSend, .queuedSend: return .person
     case .thread(_, _, _, let side): return side
-    case .flights, .question, .draft, .connectors, .listenerConnect, .request, .notice, .cloudAgent, .purchase, .products, .flightPassengers: return .agent(nil)
+    case .flights, .question, .draft, .connectors, .listenerConnect, .request, .notice, .cloudAgent, .purchase, .products, .flightPassengers, .list: return .agent(nil)
     default: return .middle
     }
   }
@@ -597,7 +600,7 @@ public enum Chat {
       while let last = head.last, last.isWhitespace || ":;,.!?\u{2013}\u{2014}-".contains(last) { head.removeLast() }
       return head + "…"
     case .image: return L10n.text("Photo")
-    case .file(let url, let name): return name.flatMap { $0.isEmpty ? nil : $0 } ?? fileBaseName(url)
+    case .file(let url, let name): return fileTitle(name.flatMap { $0.isEmpty ? nil : $0 } ?? fileBaseName(url))
     case .link(let url): return URL(string: url)?.host ?? url
     case .missing: return L10n.text("Thread")
     }
@@ -926,7 +929,7 @@ public enum Chat {
       let text = plainPreview(raw)
       return text.isEmpty ? L10n.text("(empty)") : clippedLine(text, limit)
     case .image: return L10n.text("Photo")
-    case .file(let url, let name): return clippedLine((name?.isEmpty == false ? name! : fileBaseName(url)), limit)
+    case .file(let url, let name): return clippedLine(fileTitle(name?.isEmpty == false ? name! : fileBaseName(url)), limit)
     case .link(let url): return clippedLine(URL(string: url)?.host ?? url, limit)
     case .missing: return L10n.text("(deleted)")
     }
@@ -1044,7 +1047,8 @@ public enum Chat {
         return .bubble(Bubble(id: entry.id, text: text, fromPerson: false, author: entry.author, showsName: false, showsAvatar: false, reactions: reactions, isStreaming: streaming, replyTo: entry["replyTo"]?.text, timestampMs: entry.timestampMs, images: images, loneLink: link, myReactions: mine, channel: ChannelTag(channel: message["channel"]?.string, inbound: false)))
       case "attachment":
         guard let url = message["url"]?.text else { return nil }
-        return .file(id: entry.id, name: fileName(ofURL: url), url: url, fromPerson: false)
+        // The agent's own name for it (`file_name`); the computer keeps the file under one made from its contents.
+        return .file(id: entry.id, name: message["file_name"]?.text ?? fileName(ofURL: url), url: url, fromPerson: false)
       case "widget":
         guard let widget = message["widget"], let prompt = widget["prompt"]?.text else { return nil }
         let options = (widget["options"]?.array ?? []).compactMap { option -> QuestionOption? in
@@ -1085,6 +1089,10 @@ public enum Chat {
       case "flight-passengers":
         if let card = FlightPassengersCard(message: message, entry: entry) { return .flightPassengers(id: entry.id, card: card) }
         return .notice(id: entry.id, text: message["content"]?.text ?? notShown)
+      case "list":
+        if let card = ListCard(message: message) { return .list(id: entry.id, card: card) }
+        guard let text = message["content"]?.text else { return .notice(id: entry.id, text: notShown) }
+        return .bubble(Bubble(id: entry.id, text: text, fromPerson: false, author: entry.author, showsName: false, showsAvatar: false, reactions: reactions, isStreaming: false, replyTo: entry["replyTo"]?.text, timestampMs: entry.timestampMs))
       case "local-tool-permission":
         // Waiting, it is the Mac's dock above the composer, not a line; expired, it is gone; answered, one line says how (`_Ln`).
         guard let ask = LocalAsk(entry: entry), ask.status != "pending", ask.status != "expired" else { return nil }
