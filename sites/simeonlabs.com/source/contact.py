@@ -10,7 +10,10 @@ message. Every "Request a demo" on the site and the footers' Contact open it.
 The form posts to the API (`POST https://api.simeonlabs.com/desktop/api/contact`,
 server/simeon/desktop/contact.py), which e-mails the message to the founder
 with the person as the reply-to; the page then thanks the person by name. A
-hidden field (`address`) catches the bots that fill every field.
+hidden field (`address`) catches the bots that fill every field. The country
+shows its flag, round, as ElevenLabs' form does (the founder, 24 October 2026):
+the square flags of flag-icons 7.2.3 (MIT, img/flags/LICENSE), copied to
+public/contact/flags/; an emoji flag is two letters on Windows.
 
 It rewrites public/contact/ from scratch; build.py calls it after pricing.py,
 and it runs alone too, needing nothing but Python:
@@ -18,6 +21,8 @@ and it runs alone too, needing nothing but Python:
     python3 contact.py
 """
 import os, shutil
+
+HERE = os.path.dirname(os.path.abspath(__file__))
 
 import teams
 from teams import frame
@@ -58,11 +63,13 @@ CONTACT_CSS = """
 .field select{padding-right:44px;cursor:pointer;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231d1d1f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") right 16px center/16px no-repeat}
 .field input:focus,.field select:focus,.field textarea:focus{border-color:#c7c7cc;box-shadow:0 4px 14px rgba(0,0,0,.05)} /* no blue ring */
 .field input::placeholder,.field textarea::placeholder{color:#86868b;opacity:1}
+.pick{position:relative}
+.pick .flag{position:absolute;left:16px;top:50%;width:20px;height:20px;border-radius:50%;transform:translateY(-50%);box-shadow:0 0 0 1px rgba(0,0,0,.08);pointer-events:none}
+.pick .flag[hidden]{display:none}
+.pick .flag:not([hidden])+select{padding-left:46px}
 .trap{position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden} /* the field only a bot fills */
 .form .send{grid-column:1/-1;width:100%;height:48px;margin-top:8px;border:0;font:inherit;font-size:var(--t-field);cursor:pointer}
 .form .send:disabled{opacity:.5;cursor:default}
-.form .note{grid-column:1/-1;font-size:var(--t-small);line-height:1.5;color:#86868b}
-.form .note a{color:inherit}
 .form .error{grid-column:1/-1;font-size:var(--t-body);color:#c4362c}
 .form .error a{color:inherit}
 .thanks h2{font-size:var(--t-title);line-height:1.2;font-weight:var(--w-display);letter-spacing:-.02em}
@@ -86,7 +93,12 @@ CONTACT_JS = """<script>
 // The countries, named by the browser, the person's own chosen first; then the form, posted to the API,
 // which e-mails the message on (server/simeon/desktop/contact.py). Thanks by name once it is sent.
 (() => {
-  const form = document.querySelector('.form'), select = form.elements.country;
+  const form = document.querySelector('.form'), select = form.elements.country, flag = form.querySelector('.flag');
+  const showFlag = () => {
+    const code = select.selectedOptions[0] && select.selectedOptions[0].dataset.code;
+    flag.hidden = !code;
+    if (code) flag.src = '/contact/flags/' + code.toLowerCase() + '.svg';
+  };
   try {
     const names = new Intl.DisplayNames(['en'], { type: 'region' });
     const list = '%COUNTRIES%'.split(' ').map((code) => [code, names.of(code)]).sort((a, b) => a[1].localeCompare(b[1]));
@@ -94,10 +106,13 @@ CONTACT_JS = """<script>
     try { mine = new Intl.Locale(navigator.language).maximize().region || ''; } catch (e) {}
     for (const [code, name] of list) {
       const option = new Option(name, name);
+      option.dataset.code = code;
       if (code === mine) option.selected = true;
       select.add(option);
     }
   } catch (e) {}
+  select.addEventListener('change', showFlag);
+  showFlag();
   const button = form.querySelector('.send'), error = form.querySelector('.error'), thanks = document.querySelector('.thanks');
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -133,12 +148,11 @@ def page():
         <div class="field"><label for="last">Last name</label><input id="last" name="lastName" autocomplete="family-name" required maxlength="100"></div>
         <div class="field wide"><label for="email">E-mail</label><input id="email" name="email" type="email" autocomplete="email" required maxlength="254"></div>
         <div class="field wide"><label for="website">Company website<small>Optional</small></label><input id="website" name="website" type="text" inputmode="url" autocomplete="url" placeholder="example.com" maxlength="300"></div>
-        <div class="field wide"><label for="country">Country<small>Optional</small></label><select id="country" name="country"><option value="">Choose a country</option></select></div>
+        <div class="field wide"><label for="country">Country<small>Optional</small></label><div class="pick"><img class="flag" alt="" width="20" height="20" hidden><select id="country" name="country"><option value="">Choose a country</option></select></div></div>
         <div class="field wide"><label for="message">How can we help?</label><textarea id="message" name="message" required maxlength="5000" placeholder="A demo for my team, a question about plans, anything else"></textarea></div>
         <div class="trap" aria-hidden="true"><label for="address">Leave this empty</label><input id="address" name="address" tabindex="-1" autocomplete="off"></div>
         <p class="error" hidden role="alert">That didn't send. Try again in a moment, or write to <a href="mailto:{INBOX}">{INBOX}</a>.</p>
         <button class="btn send" type="submit">Send message</button>
-        <p class="note">We use what you send only to answer you. <a href="/privacy">Privacy Policy</a></p>
       </form>
       <div class="thanks" hidden tabindex="-1" aria-live="polite"><h2>Thanks.</h2><p>We have your message and will reply to <span class="to"></span>.</p></div>
       <noscript><p class="lead">Write to us at <a href="mailto:{INBOX}">{INBOX}</a>.</p></noscript>
@@ -156,6 +170,7 @@ def build(out=OUT):
     shutil.rmtree(root, ignore_errors=True)
     os.makedirs(root)
     open(f"{root}/index.html", "w", encoding="utf-8").write(version_style(page(), out))
+    shutil.copytree(os.path.join(HERE, "img", "flags"), os.path.join(root, "flags"))
     print(f"contact page written to {os.path.abspath(root)}")
 
 
