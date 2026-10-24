@@ -1058,6 +1058,24 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
       }
       : undefined;
 
+    // A picture from the web (a product's, a list card row's), kept on this
+    // computer like the checkout's: images only, at most 4 MB.
+    const keepWebPicture = async (address: string): Promise<{ url: string; width?: number; height?: number } | undefined> => {
+      if (!/^https:\/\//i.test(address) || typeof hooks.persistImage !== "function") return undefined;
+      try {
+        const response = await fetch(address, { signal: AbortSignal.timeout(8000), redirect: "follow" });
+        const type = (response.headers.get("content-type") ?? "").split(";")[0]?.trim().toLowerCase() ?? "";
+        if (!response.ok || !/^image\/(png|jpeg|gif|webp)$/.test(type)) return undefined;
+        const bytes = new Uint8Array(await response.arrayBuffer());
+        if (bytes.byteLength === 0 || bytes.byteLength > 4 * 1024 * 1024) return undefined;
+        const saved = await hooks.persistImage(bytes, type) as { fileUrl?: unknown; width?: unknown; height?: unknown } | null | undefined;
+        if (saved == null || typeof saved.fileUrl !== "string") return undefined;
+        return { url: saved.fileUrl, ...(typeof saved.width === "number" ? { width: saved.width } : {}), ...(typeof saved.height === "number" ? { height: saved.height } : {}) };
+      } catch {
+        return undefined;
+      }
+    };
+
     const createTurnToolProjections =
       autoReviewGate == null
         ? undefined
@@ -2420,22 +2438,8 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
                 const next = await from(second);
                 return notConnected(next) ? neither : next;
               };
-              // A picture from the web (a Shop product's), kept like the checkout's: images only, at most 4 MB.
-              const persistPicture = async (address: string): Promise<{ url: string; width?: number; height?: number } | undefined> => {
-                if (!/^https:\/\//i.test(address) || typeof hooks.persistImage !== "function") return undefined;
-                try {
-                  const response = await fetch(address, { signal: AbortSignal.timeout(8000), redirect: "follow" });
-                  const type = (response.headers.get("content-type") ?? "").split(";")[0]?.trim().toLowerCase() ?? "";
-                  if (!response.ok || !/^image\/(png|jpeg|gif|webp)$/.test(type)) return undefined;
-                  const bytes = new Uint8Array(await response.arrayBuffer());
-                  if (bytes.byteLength === 0 || bytes.byteLength > 4 * 1024 * 1024) return undefined;
-                  const saved = await hooks.persistImage(bytes, type) as { fileUrl?: unknown; width?: unknown; height?: unknown } | null | undefined;
-                  if (saved == null || typeof saved.fileUrl !== "string") return undefined;
-                  return { url: saved.fileUrl, ...(typeof saved.width === "number" ? { width: saved.width } : {}), ...(typeof saved.height === "number" ? { height: saved.height } : {}) };
-                } catch {
-                  return undefined;
-                }
-              };
+              // A picture from the web (a Shop product's), kept like the checkout's.
+              const persistPicture = keepWebPicture;
               return {
                 dependencies: {
                   // The cards' own text (the chat list's preview) in the person's language.
@@ -2485,6 +2489,19 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
               };
             },
           }),
+      // ShowList (24 October 2026, tools/list-card-tool.ts): three or more
+      // things of one kind as the list card, its pictures kept here.
+      createListToolInputs: turn => ({
+        dependencies: {
+          persistPicture: keepWebPicture,
+          emitCard: (message, timestampMs) => {
+            const update = { type: "send-message" as const, message: message as unknown as Record<string, unknown> & { type: string }, timestampMs, ...(turn.ackToken === undefined ? {} : { ackToken: turn.ackToken }) };
+            if (turn.emitUpdate === undefined) hooks.transport.onUpdate(update);
+            else turn.emitUpdate(update);
+            return hooks.transport.lastSentMessageId?.();
+          },
+        },
+      }),
       // SearchFlights (2 October 2026): flights through Simeon Labs' server and
       // Duffel, the results posted as the flight card. Not for a child or a
       // shared room.
