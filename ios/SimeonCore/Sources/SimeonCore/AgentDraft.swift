@@ -15,6 +15,8 @@ public struct AgentDraft: Equatable, Sendable {
   public var title = ""
   /** A face the person picked (a tap, Shuffle); nil follows the name. */
   public private(set) var face: AgentFace?
+  /** The face its name gets, kept while the name is typed (`settleFace`). */
+  public private(set) var given: AgentFace?
   /** A picture drawn or uploaded, cropped: the 256-pixel PNG the editor makes. */
   public private(set) var picture: Data?
   /** The voice: picked, or settled for the editor to show. */
@@ -27,9 +29,22 @@ public struct AgentDraft: Equatable, Sendable {
   /** Whether the person chose anything; otherwise the agent is made as before (its name's face, a voice given later). */
   public var chosen: Bool { face != nil || picture != nil || voiceId != nil }
 
-  /** The face shown and kept on the agent: the one picked, else its name's. */
+  /** The face shown and kept on the agent: the one picked, else its name's (settled, else as the name is now). */
   public func shownFace(agents: [Agent]) -> AgentFace? {
-    face ?? AgentFaces.preview(name: name, agents: agents)
+    face ?? given ?? AgentFaces.preview(name: name, agents: agents)
+  }
+
+  /**
+   * Settles the face its name gets, as the sheet opens and at each change of
+   * the name (the founder, 25 October 2026: "with every word you write
+   * change the avatar"): given once, it stays while the name is typed, and
+   * changes only when the name becomes one of the other gender ("Sarah"
+   * under a man's face).
+   */
+  public mutating func settleFace(agents: [Agent]) {
+    let gender = AgentVoices.nameGender(name)
+    if let given, gender == nil || gender == given.gender { return }
+    given = AgentFaces.preview(name: name, agents: agents)
   }
 
   /** The agent as the editor draws it: no id yet, wearing the face (or the picture) and the voice chosen. */
