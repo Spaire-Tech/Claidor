@@ -63,26 +63,6 @@ struct PluginNoticeBar: View {
   }
 }
 
-// MARK: - The filter
-
-/** The Mac's Filter menu (`ii`): Type (All types, Connectors, Skills), then Ownership (All, Team, Public); one choice each. */
-struct PluginFilterPickers: View {
-  @Binding var filter: PluginFilter
-
-  var body: some View {
-    Section("Type") {
-      Picker("Type", selection: $filter.type) {
-        ForEach(PluginFilter.Kind.allCases, id: \.self) { kind in Text(PluginFilter.label(kind)).tag(kind) }
-      }
-    }
-    Section("Ownership") {
-      Picker("Ownership", selection: $filter.ownership) {
-        ForEach(PluginFilter.Ownership.allCases, id: \.self) { owner in Text(PluginFilter.label(owner)).tag(owner) }
-      }
-    }
-  }
-}
-
 // MARK: - Rows' parts
 
 /** Team (the Mac's `TeamBadge`, `it`): people and "Team" at 11 in the faint grey on the quiet fill, 18 high; what the Mac's tooltip says is read out with it. */

@@ -1213,8 +1213,9 @@ private struct RuleEditor: View {
  * ChatGPT's Plugins: "this is how i need you to design connectors in
  * mobile. full logo"), on the app's ground. Apple's bar: the round Back,
  * the title in the middle with its menu (Available or Yours, which was
- * Apple's segmented control under the search until then), and the filter
- * (the Mac's Type and Ownership). Available is the catalog by category,
+ * Apple's segmented control under the search until then), and on
+ * Available the categories (as the Mac's bar has them; the Mac's Type and
+ * Ownership until 25 October 2026). Available is the catalog by category,
  * Featured first and the rest A to Z: each category's name with › over its
  * first four apps, the name opening all of them (ConnectorCategoryPage);
  * a search shows every match. Each app has its own icon (AppIcons), its
@@ -1231,6 +1232,8 @@ struct ConnectAppsSheet: View {
   @Environment(\.dismiss) private var dismiss
   @State private var query = ""
   @State private var tab: ConnectorsTab = .available
+  /** The category Available shows alone; nil for all of them. */
+  @State private var category: String?
   /** What the Mac's Plugins window knows and does, for this opening (ConnectAppsModel). */
   @State private var model = ConnectAppsModel()
 
@@ -1260,7 +1263,7 @@ struct ConnectAppsSheet: View {
             .accessibilityLabel("Back")
         }
         ToolbarItem(placement: .principal) { titleMenu }
-        ToolbarItem(placement: .topBarTrailing) { filterMenu }
+        ToolbarItem(placement: .topBarTrailing) { categoryMenu }
       }
       .task { await store.loadApps() }
       .task {
@@ -1281,10 +1284,10 @@ struct ConnectAppsSheet: View {
     .presentationBackground(Ink.ground)
   }
 
-  /** Available: each category's name and its first apps (Featured first), or every app the search and the filter keep. */
+  /** Available: each category's name and its first apps (Featured first), or every app the search keeps; one category alone, all its apps, when one is chosen. */
   @ViewBuilder
   private var available: some View {
-    let sections = connectorSections(store.catalog, query: query, model: model)
+    let sections = connectorSections(store.catalog, query: query, model: model).filter { category == nil || $0.title == category }
     let searching = !query.trimmingCharacters(in: .whitespaces).isEmpty
     if store.catalog.isEmpty {
       HStack(spacing: 10) { ProgressView(); Text("Loading apps…").font(.system(size: 15)).foregroundStyle(Ink.secondary) }
@@ -1294,8 +1297,13 @@ struct ConnectAppsSheet: View {
         .padding(.top, 24)
     }
     ForEach(sections) { section in
-      ConnectorsSectionLink(title: section.title)
-      ForEach(searching ? section.apps : Array(section.apps.prefix(ConnectorsPreview.count))) { app in AppRow(app: app) }
+      if category == nil {
+        ConnectorsSectionLink(title: section.title)
+        ForEach(searching ? section.apps : Array(section.apps.prefix(ConnectorsPreview.count))) { app in AppRow(app: app) }
+      } else {
+        ConnectorsSectionTitle(title: section.title) { EmptyView() }
+        ForEach(section.apps) { app in AppRow(app: app) }
+      }
     }
   }
 
@@ -1317,18 +1325,32 @@ struct ConnectAppsSheet: View {
     .accessibilityValue(tab.title)
   }
 
-  /** The filter, in Apple's bar: the Mac's Type and Ownership, for what is shown; its glyph in blue while something is chosen. */
-  private var filterMenu: some View {
-    Menu {
-      switch tab {
-      case .available: PluginFilterPickers(filter: $model.marketplaceFilter)
-      case .yours: PluginFilterPickers(filter: $model.yoursFilter)
+  /**
+   * The categories, in Apple's bar (the founder, 25 October 2026: "those
+   * filters should be the connectors categories", as the Mac's bar has had
+   * since 21 October): All Categories, then each of Available's sections,
+   * Featured first and the rest A to Z, the chosen one ticked; the glyph in
+   * our blue while one is chosen. Only on Available: Yours is what the
+   * person has.
+   */
+  @ViewBuilder
+  private var categoryMenu: some View {
+    if tab == .available {
+      let titles = AppSections.make(store.catalog, query: "").map(\.title)
+      Menu {
+        Picker("Category", selection: $category) {
+          Section { Text("All Categories").tag(String?.none) }
+          Section {
+            ForEach(titles, id: \.self) { title in Text(title).tag(String?.some(title)) }
+          }
+        }
+      } label: {
+        Image(systemName: "line.3.horizontal.decrease")
+          .foregroundStyle(category == nil ? Ink.primary : Ink.blue)
       }
-    } label: {
-      Image(systemName: "line.3.horizontal.decrease")
-        .foregroundStyle((tab == .available ? model.marketplaceFilter.isAll : model.yoursFilter.isAll) ? Ink.primary : Ink.blue)
+      .accessibilityLabel("Category")
+      .accessibilityValue(category ?? String(localized: "All Categories"))
     }
-    .accessibilityLabel("Filter connectors")
   }
 }
 
