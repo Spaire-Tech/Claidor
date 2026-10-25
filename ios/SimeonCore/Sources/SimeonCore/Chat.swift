@@ -1211,3 +1211,33 @@ public enum Chat {
     return h > 0 ? String(format: "%d:%02d:%02d", h, m, s) : String(format: "%d:%02d", m, s)
   }
 }
+
+extension Chat {
+  /**
+   * What a long press on a chat in the list shows of it, as the founder's
+   * reference does (25 October 2026): the first paragraph of its newest
+   * message, its Markdown taken out, and whether it is the person's.
+   */
+  public static func peek(_ rows: [ChatRow]) -> (text: String, fromPerson: Bool)? {
+    for row in rows.reversed() {
+      guard case .bubble(let bubble) = row, let first = firstParagraph(bubble.text) else { continue }
+      return (first, bubble.fromPerson)
+    }
+    return nil
+  }
+
+  /** A message's first paragraph (up to its first blank line) with something in it, as plain words. */
+  public static func firstParagraph(_ text: String) -> String? {
+    var paragraph: [Substring] = []
+    for line in text.split(separator: "\n", omittingEmptySubsequences: false) + [Substring("")] {
+      if line.trimmingCharacters(in: .whitespaces).isEmpty {
+        let plain = Preview.plain(paragraph.joined(separator: "\n"))
+        if !plain.isEmpty { return plain }
+        paragraph = []
+      } else {
+        paragraph.append(line)
+      }
+    }
+    return nil
+  }
+}
