@@ -80,8 +80,8 @@ public enum PlansCopy {
   public static let nothingToRestore = L10n.text("There's no Simeon subscription on this Apple ID to restore.")
   /** Apple's rule for an auto-renewing subscription, in one sentence. */
   public static let renewal = L10n.text("Auto-renews monthly. Your Apple ID is charged each month until you cancel in Settings › Apple Account › Subscriptions.")
-  public static let termsURL = URL(string: "https://simeonlabs.com/terms")!
-  public static let privacyURL = URL(string: "https://simeonlabs.com/privacy")!
+  public static let termsURL = URL(string: "https://www.simeonlabs.com/terms")!
+  public static let privacyURL = URL(string: "https://www.simeonlabs.com/privacy")!
   /** Where an Apple plan is changed or cancelled (also the server's words, `MANAGE_ON_IPHONE`). */
   public static let manageInSettings = L10n.text("Your plan is billed through Apple. Change or cancel it in Settings › your name › Subscriptions.")
 

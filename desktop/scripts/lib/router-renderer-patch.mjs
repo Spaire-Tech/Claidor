@@ -1567,7 +1567,7 @@ export const LOGO_REPLACEMENTS = Object.freeze([
   // address go, there is no such app.
   ["upstream-link-spending", 'const Yln="https://cursor.com/dashboard/spending"', 'const Yln="https://app.simeonlabs.com/app"'],
   ["upstream-link-onboarding", 'const pft="https://cursor.com/bot/onboarding"', 'const pft="https://simeonlabs.com"'],
-  ["upstream-link-privacy", 'const LOn="https://cursor.com/dashboard/settings?openPrivacy=true"', 'const LOn="https://www.simeonlabs.com/legal/privacy-policy"'],
+  ["upstream-link-privacy", 'const LOn="https://cursor.com/dashboard/settings?openPrivacy=true"', 'const LOn="https://www.simeonlabs.com/privacy"'],
   ["upstream-link-review", 'const QPt="https://review.cursor.com"', 'const QPt="https://review.simeonlabs.com"'],
   ["upstream-host-review", 't==="review.cursor.com"&&(s=C_n)', 't==="review.simeonlabs.com"&&(s=C_n)'],
   ["upstream-account-fallback", 'name:e.name??"Cursor"', 'name:e.name??"Simeon"'],

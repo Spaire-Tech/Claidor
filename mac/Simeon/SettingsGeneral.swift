@@ -31,8 +31,8 @@ struct SettingsGeneralPage: View {
 
 /** Where the legal pages are: the iPhone's and the web app's sign-in link to the same two. */
 enum SettingsLegal {
-  static let privacy = URL(string: "https://www.simeonlabs.com/legal/privacy-policy")!
-  static let terms = URL(string: "https://www.simeonlabs.com/legal/terms-of-service")!
+  static let privacy = URL(string: "https://www.simeonlabs.com/privacy")!
+  static let terms = URL(string: "https://www.simeonlabs.com/terms")!
 }
 
 /** The app's version, as the About card reads it. */

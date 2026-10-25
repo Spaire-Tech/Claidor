@@ -23,5 +23,5 @@ Verilerin hem depolanırken hem aktarılırken şifrelenir, diğer müşterileri
 
 Simeon; Türkçe, İngilizce, Fransızca, İspanyolca, Almanca, Felemenkçe, İtalyanca, Portekizce (Brezilya), İsveççe ve Lehçe olarak kullanılabilir. Planlar, uygulama içinden satın alınan aylık aboneliklerdir; ilk 30 günün ücretsiz ve kart gerekmez.
 
-Hizmet Koşulları: https://simeonlabs.com/terms
-Gizlilik Politikası: https://simeonlabs.com/privacy
+Hizmet Koşulları: https://www.simeonlabs.com/terms
+Gizlilik Politikası: https://www.simeonlabs.com/privacy

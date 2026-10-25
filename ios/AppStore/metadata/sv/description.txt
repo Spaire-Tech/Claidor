@@ -23,5 +23,5 @@ Din data krypteras både lagrad och under överföring, hålls åtskild från al
 
 Simeon finns på svenska, engelska, franska, spanska, tyska, nederländska, italienska, portugisiska (Brasilien), polska och turkiska. Abonnemangen är månadsprenumerationer som köps i appen; dina första 30 dagar är gratis, utan kort.
 
-Användarvillkor: https://simeonlabs.com/terms
-Integritetspolicy: https://simeonlabs.com/privacy
+Användarvillkor: https://www.simeonlabs.com/terms
+Integritetspolicy: https://www.simeonlabs.com/privacy

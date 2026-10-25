@@ -23,5 +23,5 @@ Your data is encrypted at rest and in transit, isolated from every other custome
 
 Simeon is in English, French, Spanish, German, Dutch, Italian, Portuguese (Brazil), Swedish, Polish and Turkish. Plans are monthly subscriptions bought in the app; your first 30 days are free, with no card.
 
-Terms of Service: https://simeonlabs.com/terms
-Privacy Policy: https://simeonlabs.com/privacy
+Terms of Service: https://www.simeonlabs.com/terms
+Privacy Policy: https://www.simeonlabs.com/privacy
