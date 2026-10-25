@@ -380,12 +380,14 @@ struct PermissionsPage: View {
 }
 
 /**
- * The account: the person's name, written in place (what their agents call
- * them, the name the first run asked for; 22 October 2026), and their
- * email, copied with a tap; then Delete Account with one line under it, as
- * the founder's reference has it (12 October 2026). Apple asks every app that makes accounts to
- * delete them from inside the app (server/simeon/desktop/account_deletion.py
- * does the deleting; the question before it says what goes).
+ * The account: Name, Email and Password in one group, as the phone's own
+ * Settings rows (the founder, 25 October 2026: the field written in the row
+ * "has an interactive issue"): Name opens its page (NamePage), the email is
+ * copied with a tap, Password opens its page (PasswordPage); then Delete
+ * Account with one line under it, as the founder's reference has it (12
+ * October 2026). Apple asks every app that makes accounts to delete them
+ * from inside the app (server/simeon/desktop/account_deletion.py does the
+ * deleting; the question before it says what goes).
  */
 struct AccountPage: View {
   @Environment(SimeonCore.AppStore.self) private var store
@@ -394,8 +396,6 @@ struct AccountPage: View {
   @State private var askingDelete = false
   @State private var deleting = false
   @State private var deleteProblem: String?
-  /** Why the name was not saved, under it in red. */
-  @State private var nameProblem: String?
 
   var body: some View {
     Form {
@@ -408,13 +408,13 @@ struct AccountPage: View {
         .listRowBackground(Color.clear)
       }
       Section {
-        NameRow { nameProblem = $0 }
-      } footer: {
-        Text(nameProblem ?? String(localized: "Your agents call you by this name."))
-          .foregroundStyle(nameProblem == nil ? Ink.secondary : Ink.danger)
-      }
-      .listRowBackground(Ink.groupedRow)
-      Section {
+        NavigationLink { NamePage() } label: {
+          HStack {
+            Text("Name").foregroundStyle(Ink.primary)
+            Spacer()
+            Text(store.account?.name ?? "").foregroundStyle(Ink.secondary).lineLimit(1)
+          }
+        }
         Button {
           UIPasteboard.general.string = store.account?.email
           copied = true
@@ -474,55 +474,78 @@ struct AccountPage: View {
 }
 
 /**
- * Name, written in its row (the founder, 22 October 2026: "theres name
- * there, but uneditable"): the field at the row's end, as the phone's own
- * Settings › About › Name, saved on Done or when it lets go of the keys,
- * when it changed (`AppStore.changeName`). Refused, the name comes back and
- * why is said under it.
+ * Account › Name, as the phone's own Settings › General › About › Name (the
+ * founder, 25 October 2026: the field written in the row put the cursor at
+ * its start and kept a selection when tapped away): the name in a field of
+ * its own, the keyboard up with the cursor at its end, ⓧ to clear it. Done,
+ * in the bar or on the keyboard, saves a changed name
+ * (`AppStore.changeName`) and goes back; Back leaves it as it was. Refused,
+ * the name stays typed and why is said under it in red.
  */
-private struct NameRow: View {
-  let problem: (String?) -> Void
+struct NamePage: View {
   @Environment(SimeonCore.AppStore.self) private var store
+  @Environment(\.dismiss) private var dismiss
   @State private var text = ""
   @State private var saving = false
+  @State private var problem: String?
   @FocusState private var focused: Bool
 
+  private var typed: String { Onboarding.normalizedName(text) }
+  private var changed: Bool { !typed.isEmpty && typed != (store.account?.name ?? "") }
+
   var body: some View {
-    let saved = store.account?.name ?? ""
-    HStack(spacing: 12) {
-      Text("Name").foregroundStyle(Ink.primary)
-      Spacer(minLength: 12)
-      if saving { ProgressView() }
-      TextField("Name", text: $text)
-        .multilineTextAlignment(.trailing)
-        .foregroundStyle(Ink.secondary)
-        .submitLabel(.done)
-        .focused($focused)
-        .onSubmit(save)
-        .disabled(saving)
+    Form {
+      Section {
+        HStack(spacing: 8) {
+          TextField("Name", text: $text)
+            .foregroundStyle(Ink.primary)
+            .textContentType(.name)
+            .textInputAutocapitalization(.words)
+            .autocorrectionDisabled()
+            .submitLabel(.done)
+            .focused($focused)
+            .onSubmit { changed ? save() : dismiss() }
+            .onChange(of: text) { _, value in if value.count > 60 { text = String(value.prefix(60)) } }
+          if focused && !text.isEmpty {
+            Button { text = "" } label: {
+              Image(systemName: "xmark.circle.fill").font(.system(size: 17)).foregroundStyle(Ink.tertiary)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Clear")
+          }
+        }
+      } footer: {
+        Text(problem ?? String(localized: "Your agents call you by this name."))
+          .foregroundStyle(problem == nil ? Ink.secondary : Ink.danger)
+      }
+      .listRowBackground(Ink.groupedRow)
     }
-    .onAppear { text = saved }
-    .onChange(of: saved) { _, now in if !focused && !saving { text = now } }
-    .onChange(of: focused) { _, now in if !now { save() } }
+    .groupedGround()
+    .navigationTitle("Name")
+    .inlineBarTitle()
+    .toolbar {
+      ToolbarItem(placement: .confirmationAction) {
+        if saving { ProgressView() } else { Button("Done", action: save).disabled(!changed) }
+      }
+    }
+    .onAppear { if text.isEmpty { text = store.account?.name ?? "" } }
+    .task { focused = true }
   }
 
   private func save() {
-    let saved = store.account?.name ?? ""
-    let typed = Onboarding.normalizedName(text)
-    guard !saving else { return }
-    // Nothing new, or nothing at all: the name stays as it was.
-    guard !typed.isEmpty, typed != saved else {
-      text = saved
-      return
-    }
+    guard changed, !saving else { return }
     saving = true
-    problem(nil)
+    problem = nil
     Task {
       let refused = await store.changeName(typed)
       saving = false
-      text = store.account?.name ?? saved
-      problem(refused)
-      if refused == nil { Haptics.success() }
+      if let refused {
+        Haptics.warning()
+        problem = refused
+      } else {
+        Haptics.success()
+        dismiss()
+      }
     }
   }
 }
@@ -531,7 +554,9 @@ private struct NameRow: View {
  * Account › Password (19 October 2026): a password to sign in with the
  * email (Log in or sign up › Continue with password), set or changed while
  * signed in, typed twice. Forgotten, it is replaced here after signing in
- * with a code.
+ * with a code. Done is in the bar, as Apple's own Change Password has its
+ * action (the founder, 25 October 2026: Set Password in a row of its own
+ * "is designed like a writing field").
  */
 struct PasswordPage: View {
   @Environment(SimeonCore.AppStore.self) private var store
@@ -541,44 +566,51 @@ struct PasswordPage: View {
   @State private var again = ""
   @State private var saving = false
   @State private var problem: String?
-  @FocusState private var first: Bool
+  @FocusState private var focus: Field?
+
+  private enum Field { case password, again }
 
   private var mismatch: Bool { !again.isEmpty && again != password }
   private var ready: Bool { password.count >= EmailSignIn.minimumPassword && again == password }
+
+  /** Password until the server has said whether there is one, so the bar does not change under the eye from Set to Change. */
+  private var title: LocalizedStringKey {
+    switch hasPassword {
+    case true?: return "Change Password"
+    case false?: return "Set Password"
+    case nil: return "Password"
+    }
+  }
 
   var body: some View {
     Form {
       Section {
         SecureField(hasPassword == true ? "New password" : "Password", text: $password)
           .textContentType(.newPassword)
-          .focused($first)
+          .submitLabel(.next)
+          .focused($focus, equals: .password)
+          .onSubmit { focus = .again }
         SecureField("Type it again", text: $again)
           .textContentType(.newPassword)
+          .submitLabel(.done)
+          .focused($focus, equals: .again)
           .onSubmit(save)
       } footer: {
         Text(problem ?? (mismatch ? String(localized: "The two don't match.") : String(localized: "At least \(EmailSignIn.minimumPassword) characters. You'll sign in with \(store.account?.email ?? "your email") and this password.")))
           .foregroundStyle(problem != nil || mismatch ? Ink.danger : Ink.secondary)
       }
       .listRowBackground(Ink.groupedRow)
-      Section {
-        Button(action: save) {
-          HStack {
-            Text(hasPassword == true ? "Change Password" : "Set Password")
-            if saving {
-              Spacer()
-              ProgressView()
-            }
-          }
-        }
-        .disabled(!ready || saving)
-      }
-      .listRowBackground(Ink.groupedRow)
     }
     .groupedGround()
-    .navigationTitle("Password")
+    .navigationTitle(title)
     .inlineBarTitle()
+    .toolbar {
+      ToolbarItem(placement: .confirmationAction) {
+        if saving { ProgressView() } else { Button("Done", action: save).disabled(!ready) }
+      }
+    }
     .task {
-      first = true
+      focus = .password
       hasPassword = await store.hasPassword()
     }
   }
