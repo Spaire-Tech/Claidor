@@ -1041,40 +1041,42 @@ struct TimeZonePicker: View {
 }
 
 /**
- * Auto-review's rules, the Mac's table on the phone (mac/Simeon/SettingsGeneral.swift):
- * the allowed ones, then the ask-first ones; a tap edits a rule (its words and
- * its list, Save Rule), a swipe deletes it. Below, "When Simeon wants to:" one
- * short line, "It should:" Allow automatically or Ask first, Add Rule. Twenty
- * rules a list and a thousand characters a rule, a rule already listed not
- * twice (`AutoReviewInstructions`). Stored in the box as `autoReviewInstructions`.
+ * Auto-review's rules (the founder, 25 October 2026: "so not clear … add
+ * rule again behave like a writing field"): a line saying what they are for,
+ * the allowed rules and the ask-first ones each under its name, then Add
+ * Rule in our blue with its plus. Add Rule, or a tap on a rule, opens the
+ * rule's sheet (RuleEditor); a swipe deletes a rule. Twenty rules a list and
+ * a thousand characters a rule, a rule already listed not twice
+ * (`AutoReviewInstructions`). Stored in the box as `autoReviewInstructions`,
+ * as the Mac's table keeps them (mac/Simeon/SettingsGeneral.swift).
  */
 struct AutoReviewRules: View {
   @Binding var settings: JSON?
   @Environment(SimeonCore.AppStore.self) private var store
-  @State private var wants = ""
-  @State private var should = AutoReviewInstructions.Behavior.allow
   @State private var editing: EditingRule?
 
+  /** The sheet: a rule to edit, or none for a new one. */
   struct EditingRule: Identifiable {
-    let rule: AutoReviewInstructions.Rule
-    var id: String { "\(rule.behavior.rawValue)/\(rule.listIndex)/\(rule.text)" }
+    let rule: AutoReviewInstructions.Rule?
+    var id: String { rule.map { "\($0.behavior.rawValue)/\($0.listIndex)/\($0.text)" } ?? "new" }
   }
 
   private var rules: AutoReviewInstructions { AutoReviewInstructions.normalized(json: settings?["autoReviewInstructions"]) }
 
   var body: some View {
     let rules = self.rules
-    let draft = wants.trimmingCharacters(in: .whitespacesAndNewlines)
     Form {
       Section {
-        Text("Write one short, natural-language rule for each action. \"Ask first\" takes priority if rules conflict.")
-          .font(.system(size: 13)).foregroundStyle(Ink.secondary)
+        Text("Tell Simeon what it can do on its own and what it should ask you about first.")
+          .font(.system(size: 15))
+          .foregroundStyle(Ink.secondary)
+          .listRowBackground(Color.clear)
+          .listRowInsets(EdgeInsets(top: 0, leading: 4, bottom: 0, trailing: 4))
       }
-      .listRowBackground(Ink.groupedRow)
       ForEach(AutoReviewInstructions.Behavior.allCases, id: \.self) { behavior in
         let listed = rules.rules.filter { $0.behavior == behavior }
         if !listed.isEmpty {
-          Section(AutoReviewInstructions.label(behavior)) {
+          Section {
             ForEach(listed, id: \.self) { rule in
               Button { editing = EditingRule(rule: rule) } label: {
                 HStack {
@@ -1091,32 +1093,20 @@ struct AutoReviewRules: View {
               for rule in offsets.map({ listed[$0] }).sorted(by: { $0.listIndex > $1.listIndex }) { next = next.removing(rule) }
               save(next)
             }
+          } header: {
+            Text(AutoReviewInstructions.label(behavior))
+          } footer: {
+            if behavior == .ask { Text("Ask first wins when two rules disagree.") }
           }
           .listRowBackground(Ink.groupedRow)
         }
       }
       Section {
-        VStack(alignment: .leading, spacing: 8) {
-          Text("When Simeon wants to:").font(.system(size: 13)).foregroundStyle(Ink.secondary)
-          TextField("e.g. reply to emails for me", text: $wants, axis: .vertical)
-            .lineLimit(1...4)
-            .onChange(of: wants) { _, text in if text.count > AutoReviewInstructions.maxCharacters { wants = AutoReviewInstructions.clip(text) } }
+        Button { editing = EditingRule(rule: nil) } label: {
+          Label("Add Rule", systemImage: "plus.circle.fill").foregroundStyle(Ink.blue)
         }
-        Picker("It should:", selection: $should) {
-          ForEach(AutoReviewInstructions.Behavior.allCases, id: \.self) { Text(AutoReviewInstructions.label($0)).tag($0) }
-        }
-        Button("Add Rule") {
-          guard let next = rules.saving(draft, as: should, editing: nil) else { return }
-          wants = ""
-          save(next)
-        }
-        .disabled(draft.isEmpty || rules.saving(draft, as: should, editing: nil) == nil)
       } footer: {
-        if AutoReviewInstructions.isFull(rules.list(should)) {
-          Text("\(AutoReviewInstructions.label(should)) is full (\(AutoReviewInstructions.limitNote)).")
-        } else {
-          Text("These rules apply only to you. Built-in safety checks always apply.")
-        }
+        Text("These rules apply only to you. Built-in safety checks always apply.")
       }
       .listRowBackground(Ink.groupedRow)
     }
@@ -1125,7 +1115,6 @@ struct AutoReviewRules: View {
     .inlineBarTitle()
     .sheet(item: $editing) { item in
       RuleEditor(rule: item.rule, rules: rules) { next in save(next) }
-        .presentationDetents([.medium])
         .presentationBackground(Ink.groupedGround)
     }
   }
@@ -1139,21 +1128,29 @@ struct AutoReviewRules: View {
   }
 }
 
-/** One rule being edited, as the Mac's row turns into its composer: its words, its list, Cancel and Save Rule (greyed while it may not be saved). */
+/**
+ * A rule, new or being edited, read as a sentence: "When Simeon wants to:"
+ * and the action in a field (the keyboard up for a new one), "It should:"
+ * and two choices, each saying what it means, the chosen one ticked in our
+ * blue. Cancel, and Add or Save in our blue (greyed while it may not be
+ * saved: empty, already listed, or its list full). An edited rule has
+ * Delete Rule.
+ */
 private struct RuleEditor: View {
-  let rule: AutoReviewInstructions.Rule
+  let rule: AutoReviewInstructions.Rule?
   let rules: AutoReviewInstructions
   let save: (AutoReviewInstructions) -> Void
   @State private var text: String
   @State private var behavior: AutoReviewInstructions.Behavior
+  @FocusState private var focused: Bool
   @Environment(\.dismiss) private var dismiss
 
-  init(rule: AutoReviewInstructions.Rule, rules: AutoReviewInstructions, save: @escaping (AutoReviewInstructions) -> Void) {
+  init(rule: AutoReviewInstructions.Rule?, rules: AutoReviewInstructions, save: @escaping (AutoReviewInstructions) -> Void) {
     self.rule = rule
     self.rules = rules
     self.save = save
-    _text = State(initialValue: rule.text)
-    _behavior = State(initialValue: rule.behavior)
+    _text = State(initialValue: rule?.text ?? "")
+    _behavior = State(initialValue: rule?.behavior ?? .allow)
   }
 
   private var saved: AutoReviewInstructions? {
@@ -1164,34 +1161,66 @@ private struct RuleEditor: View {
   var body: some View {
     NavigationStack {
       Form {
-        Section {
-          TextField("Action", text: $text, axis: .vertical)
-            .lineLimit(1...6)
+        Section("When Simeon wants to:") {
+          TextField("e.g. reply to emails for me", text: $text, axis: .vertical)
+            .lineLimit(2...6)
+            .focused($focused)
             .onChange(of: text) { _, words in if words.count > AutoReviewInstructions.maxCharacters { text = AutoReviewInstructions.clip(words) } }
-          Picker("It should:", selection: $behavior) {
-            ForEach(AutoReviewInstructions.Behavior.allCases, id: \.self) { Text(AutoReviewInstructions.label($0)).tag($0) }
+        }
+        .listRowBackground(Ink.groupedRow)
+        Section {
+          ForEach(AutoReviewInstructions.Behavior.allCases, id: \.self) { choice in
+            Button { behavior = choice } label: {
+              HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 2) {
+                  Text(AutoReviewInstructions.label(choice)).foregroundStyle(Ink.primary)
+                  Text(choice == .allow ? "Simeon does it without asking you." : "Simeon asks you before doing it.")
+                    .font(.system(size: 13))
+                    .foregroundStyle(Ink.secondary)
+                }
+                Spacer(minLength: 8)
+                if behavior == choice {
+                  Image(systemName: "checkmark").font(.system(size: 15, weight: .semibold)).foregroundStyle(Ink.blue)
+                }
+              }
+              .contentShape(.rect)
+            }
+            .accessibilityAddTraits(behavior == choice ? .isSelected : [])
           }
+        } header: {
+          Text("It should:")
         } footer: {
-          // Moving it to a full list: the Mac's limit note.
-          if behavior != rule.behavior && AutoReviewInstructions.isFull(rules.list(behavior)) {
+          // Into a full list: the Mac's limit note.
+          if behavior != rule?.behavior && AutoReviewInstructions.isFull(rules.list(behavior)) {
             Text(AutoReviewInstructions.limitNote)
           }
         }
         .listRowBackground(Ink.groupedRow)
+        if let rule {
+          Section {
+            Button("Delete Rule", role: .destructive) {
+              save(rules.removing(rule))
+              dismiss()
+            }
+          }
+          .listRowBackground(Ink.groupedRow)
+        }
       }
       .groupedGround()
-      .navigationTitle("Edit Rule")
+      .navigationTitle(rule == nil ? "New Rule" : "Edit Rule")
       .inlineBarTitle()
       .toolbar {
         ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
         ToolbarItem(placement: .confirmationAction) {
-          Button("Save Rule") {
+          Button(rule == nil ? "Add" : "Save") {
             if let saved { save(saved) }
             dismiss()
           }
+          .tint(Ink.blue)
           .disabled(saved == nil)
         }
       }
+      .task { if rule == nil { focused = true } }
     }
   }
 }

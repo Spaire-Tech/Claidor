@@ -3368,64 +3368,6 @@
         }
       }
     },
-    "Action" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aktion"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Acción"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Action"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Azione"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Actie"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Akcja"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ação"
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Åtgärd"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Eylem"
-          }
-        }
-      }
-    },
     "Active" : {
       "localizations" : {
         "de" : {
@@ -5575,6 +5517,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Bir şey sor ya da dosya bırak."
+          }
+        }
+      }
+    },
+    "Ask first wins when two rules disagree." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wenn sich zwei Regeln widersprechen, gilt „Erst fragen“."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Si dos reglas se contradicen, gana «Preguntar antes»."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Si deux règles se contredisent, « Demander d’abord » l’emporte."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se due regole sono in conflitto, vale «Chiedi prima»."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Als twee regels elkaar tegenspreken, geldt ‘Eerst vragen’."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gdy dwie reguły są sprzeczne, wygrywa „Najpierw zapytaj”."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se duas regras se contradisserem, vale “Perguntar antes”."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Om två regler säger emot varandra gäller ”Fråga först”."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İki kural çeliştiğinde “Önce sor” geçerli olur."
           }
         }
       }
@@ -11785,6 +11785,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sil"
+          }
+        }
+      }
+    },
+    "Delete Rule" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Regel löschen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar regla"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer la règle"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elimina regola"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verwijder regel"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usuń regułę"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apagar regra"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Radera regel"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kuralı sil"
           }
         }
       }
@@ -20210,6 +20268,64 @@
         }
       }
     },
+    "New Rule" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neue Regel"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nueva regla"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nouvelle règle"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuova regola"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nieuwe regel"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nowa reguła"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nova regra"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ny regel"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yeni kural"
+          }
+        }
+      }
+    },
     "New Section" : {
       "localizations" : {
         "de" : {
@@ -26249,64 +26365,6 @@
         }
       }
     },
-    "Save Rule" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sichern"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Guardar"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Enregistrer"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Salva"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bewaar"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zachowaj"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Salvar"
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Spara"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kaydet"
-          }
-        }
-      }
-    },
     "Save securely" : {
       "localizations" : {
         "de" : {
@@ -29275,6 +29333,64 @@
         }
       }
     },
+    "Simeon asks you before doing it." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon fragt dich, bevor er es tut."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon te pregunta antes de hacerlo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon te demande avant de le faire."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon te lo chiede prima di farlo."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon vraagt het je voordat hij het doet."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon pyta cię, zanim to zrobi."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Simeon pergunta a você antes de fazer."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon frågar dig innan han gör det."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon yapmadan önce sana sorar."
+          }
+        }
+      }
+    },
     "Simeon can't use speech recognition. Allow it in Settings." : {
       "localizations" : {
         "de" : {
@@ -29561,6 +29677,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Simeon her eylemi çalıştırmadan önce kontrol eder ve gerektiğinde önce sana sorar."
+          }
+        }
+      }
+    },
+    "Simeon does it without asking you." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon erledigt es, ohne dich zu fragen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon lo hace sin preguntarte."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon le fait sans te demander."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon lo fa senza chiedertelo."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon doet het zonder het je te vragen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon robi to bez pytania cię."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Simeon faz sem perguntar a você."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon gör det utan att fråga dig."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon sana sormadan yapar."
           }
         }
       }
@@ -31536,6 +31710,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Teams olayı"
+          }
+        }
+      }
+    },
+    "Tell Simeon what it can do on its own and what it should ask you about first." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sag Simeon, was er allein tun darf und wann er dich zuerst fragen soll."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dile a Simeon qué puede hacer por su cuenta y qué debe preguntarte antes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dis à Simeon ce qu’il peut faire seul et ce qu’il doit te demander d’abord."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Di’ a Simeon cosa può fare da solo e per cosa deve prima chiederti."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vertel Simeon wat hij zelf mag doen en waarover hij je eerst moet vragen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Powiedz Simeonowi, co może robić sam, a o co ma cię najpierw zapytać."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diga ao Simeon o que ele pode fazer sozinho e o que deve perguntar a você antes."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Berätta för Simeon vad han får göra på egen hand och vad han ska fråga dig om först."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon’a neyi kendi başına yapabileceğini ve neyi önce sana sorması gerektiğini söyle."
           }
         }
       }
@@ -36823,64 +37055,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Çalışma alanı"
-          }
-        }
-      }
-    },
-    "Write one short, natural-language rule for each action. \"Ask first\" takes priority if rules conflict." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Schreib für jede Aktion eine kurze Regel in normaler Sprache. „Erst fragen“ hat Vorrang, wenn sich Regeln widersprechen."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Escribe una regla corta, en lenguaje natural, para cada acción. “Preguntar antes” tiene prioridad si hay reglas en conflicto."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Écris une règle courte, en langage naturel, pour chaque action. « Demander d’abord » l’emporte si des règles se contredisent."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Scrivi una regola breve, in linguaggio naturale, per ogni azione. “Chiedi prima” ha la precedenza se le regole sono in conflitto."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Schrijf voor elke actie één korte regel in gewone taal. “Eerst vragen” gaat voor als regels botsen."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Napisz jedną krótką regułę w języku naturalnym dla każdej akcji. „Najpierw zapytaj” ma pierwszeństwo, gdy reguły są sprzeczne."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Escreva uma regra curta, em linguagem natural, para cada ação. “Perguntar antes” tem prioridade se as regras entrarem em conflito."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Skriv en kort regel med vanliga ord för varje åtgärd. ”Fråga först” går före om regler krockar."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Her eylem için kısa, doğal dilde bir kural yaz. Kurallar çelişirse “Önce sor” önceliklidir."
           }
         }
       }
