@@ -525,7 +525,7 @@ struct NamePage: View {
     .inlineBarTitle()
     .toolbar {
       ToolbarItem(placement: .confirmationAction) {
-        if saving { ProgressView() } else { Button("Done", action: save).disabled(!changed) }
+        if saving { ProgressView() } else { Button("Done", action: save).tint(Ink.blue).disabled(!changed) }
       }
     }
     .onAppear { if text.isEmpty { text = store.account?.name ?? "" } }
@@ -606,7 +606,7 @@ struct PasswordPage: View {
     .inlineBarTitle()
     .toolbar {
       ToolbarItem(placement: .confirmationAction) {
-        if saving { ProgressView() } else { Button("Done", action: save).disabled(!ready) }
+        if saving { ProgressView() } else { Button("Done", action: save).tint(Ink.blue).disabled(!ready) }
       }
     }
     .task {
