@@ -120,22 +120,36 @@ extension View {
 
 /**
  * The composer's mic: the phone's own speech recognition, on the device
- * where it can, writing into the message as you speak; tap again to stop.
+ * where it can, writing into the message as you speak, after what was
+ * already typed (`DictatedText`: a pause or Stop never takes words away);
+ * ✓ stops and keeps them, Cancel goes back to what was typed. The voice's
+ * level, for the bars that move while it listens (`DictationBar`).
  */
 @MainActor
 @Observable
 final class Dictation {
   private(set) var isListening = false
   var problem: String?
+  /** The last levels heard, 0 to 1, oldest first: the bars. */
+  private(set) var levels = Array(repeating: Float(0), count: Dictation.kept)
+  /** When it started listening: the time beside the bars. */
+  private(set) var startedAt: Date?
+  /** What the field held when it started: Cancel puts it back. */
+  var before: String { text.before }
+  @ObservationIgnored private var text = DictatedText()
   @ObservationIgnored private var engine: AVAudioEngine?
   @ObservationIgnored private var request: SFSpeechAudioBufferRecognitionRequest?
   @ObservationIgnored private var task: SFSpeechRecognitionTask?
   /** Each listening's number: what arrives for an earlier one, after `cancel`, writes nothing. */
   @ObservationIgnored private var listening = 0
 
-  func start(_ write: @escaping (String) -> Void) {
+  static let kept = 80
+
+  /** Listens, writing what is heard after `before` (the field's words). */
+  func start(after before: String, _ write: @escaping (String) -> Void) {
     guard !isListening else { return }
     problem = nil
+    text = DictatedText(before: before)
     Task {
       let speech = await withCheckedContinuation { continuation in SFSpeechRecognizer.requestAuthorization { continuation.resume(returning: $0) } }
       guard speech == .authorized else { problem = String(localized: "Simeon can't use speech recognition. Allow it in Settings."); return }
@@ -164,23 +178,48 @@ final class Dictation {
     // With no microphone input the format is empty, and installing a tap on it would end the app.
     let format = input.outputFormat(forBus: 0)
     guard format.sampleRate > 0, format.channelCount > 0 else { throw NoMicrophone() }
-    input.installTap(onBus: 0, bufferSize: 1024, format: format) { buffer, _ in request.append(buffer) }
+    listening += 1
+    let mine = listening
+    input.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak self] buffer, _ in
+      request.append(buffer)
+      let level = Dictation.level(buffer)
+      Task { @MainActor in
+        guard let self, self.listening == mine, self.isListening else { return }
+        self.levels.removeFirst()
+        self.levels.append(level)
+      }
+    }
     engine.prepare()
     try engine.start()
     self.engine = engine
     self.request = request
+    levels = Array(repeating: 0, count: Self.kept)
+    startedAt = Date()
     isListening = true
-    listening += 1
-    let mine = listening
     task = recognizer.recognitionTask(with: request) { [weak self] result, error in
-      let text = result?.bestTranscription.formattedString
+      let heard = result?.bestTranscription.formattedString
+      // A stretch ends at a pause: the result is final, or carries the metadata a stretch ends with.
+      let ended = result.map { $0.isFinal || $0.speechRecognitionMetadata != nil } ?? false
       let final = result?.isFinal ?? false
       Task { @MainActor in
         guard let self, self.listening == mine else { return }
-        if let text { write(text) }
+        if let heard {
+          self.text.heard(heard, ended: ended)
+          write(self.text.draft)
+        }
         if error != nil || final { self.stop() }
       }
     }
+  }
+
+  /** A buffer's loudness, 0 (silence, below -50 dB) to 1. */
+  nonisolated static func level(_ buffer: AVAudioPCMBuffer) -> Float {
+    guard let samples = buffer.floatChannelData?[0], buffer.frameLength > 0 else { return 0 }
+    let count = Int(buffer.frameLength)
+    var sum: Float = 0
+    for index in 0..<count { sum += samples[index] * samples[index] }
+    let decibels = 20 * log10(max((sum / Float(count)).squareRoot(), 0.000_01))
+    return max(0, min(1, (decibels + 50) / 50))
   }
 
   /** Stopped, and what is still on its way dropped: the message it was writing was sent. (Stop keeps the last words, which come after it.) */
@@ -197,8 +236,60 @@ final class Dictation {
     task?.finish()
     engine = nil; request = nil; task = nil
     isListening = false
+    startedAt = nil
     #if os(iOS)
     try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     #endif
+  }
+}
+
+/**
+ * Dictation as it listens, under the words in the field (the founder, 25
+ * October 2026: "it feels too bland"): the voice's level as bars in our
+ * blue, the newest at the right, the time since it started, and ✓ in our
+ * blue, which stops and keeps the words.
+ */
+struct DictationBar: View {
+  let dictation: Dictation
+  let done: () -> Void
+
+  var body: some View {
+    HStack(spacing: 10) {
+      DictationLevels(levels: dictation.levels)
+        .frame(height: 24)
+        .accessibilityHidden(true)
+      TimelineView(.periodic(from: .now, by: 1)) { context in
+        Text(Chat.callClock(Int(context.date.timeIntervalSince(dictation.startedAt ?? context.date))))
+          .font(.system(size: 15, weight: .medium))
+          .monospacedDigit()
+          .foregroundStyle(Ink.secondary)
+      }
+      Button(action: done) {
+        Image(systemName: "checkmark").font(.system(size: 14, weight: .bold)).foregroundStyle(.white)
+          .frame(width: 30, height: 30).background(Ink.bubbleMine, in: Circle())
+          .frame(width: 36, height: 36).contentShape(.circle)
+      }
+      .buttonStyle(.tactile)
+      .accessibilityLabel("Stop dictation")
+    }
+  }
+}
+
+/** The bars: 3 points wide and 3 apart, a dot in silence, up to the bar's height at full voice; the newest at the right. */
+private struct DictationLevels: View {
+  let levels: [Float]
+
+  var body: some View {
+    Canvas { context, size in
+      let step: CGFloat = 6
+      let shown = levels.suffix(max(0, Int((size.width + 3) / step)))
+      var x = size.width - CGFloat(shown.count) * step + 3
+      for level in shown {
+        let height = max(3, CGFloat(level) * size.height)
+        let bar = CGRect(x: x, y: (size.height - height) / 2, width: 3, height: height)
+        context.fill(Path(roundedRect: bar, cornerRadius: 1.5), with: .color(Ink.bubbleMine))
+        x += step
+      }
+    }
   }
 }

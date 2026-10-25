@@ -746,6 +746,7 @@ struct ChatComposer: View {
     if !named.isEmpty { return String(localized: "Message \(named)") }
     return store.groupIds.contains(agentId) ? String(localized: "Message group") : String(localized: "Ask anything, or drop a file.")
     #else
+    if dictation.isListening { return String(localized: "Listening…") }
     if reply?.target != nil { return String(localized: "Reply") }
     return String(localized: "Message")
     #endif
@@ -817,69 +818,86 @@ struct ChatComposer: View {
       // Messages' composer: + in a glass circle, then the field in glass, the mic inside it at the right while it is
       // empty and the blue send once there is something to send. Nothing opaque: the chat shows through as it scrolls under.
       HStack(alignment: .bottom, spacing: 8) {
-        Button { picking = true } label: {
-          Image(systemName: "plus").font(.system(size: 19, weight: .regular)).foregroundStyle(Ink.primary)
-            .frame(width: 40, height: 40)
+        if dictation.isListening {
+          // While it listens, + gives way to Cancel: the words heard go, what was typed before stays.
+          Button(action: cancelDictation) {
+            Image(systemName: "xmark").font(.system(size: 16, weight: .semibold)).foregroundStyle(Ink.primary)
+              .frame(width: 40, height: 40)
+          }
+          .buttonStyle(Tactile(look: GlassDisc()))
+          .accessibilityLabel("Cancel dictation")
+          .transition(.scale(scale: 0.6).combined(with: .opacity))
+        } else {
+          Button { picking = true } label: {
+            Image(systemName: "plus").font(.system(size: 19, weight: .regular)).foregroundStyle(Ink.primary)
+              .frame(width: 40, height: 40)
+          }
+          .buttonStyle(Tactile(look: GlassDisc()))
+          .accessibilityLabel("Attach")
+          .transition(.scale(scale: 0.6).combined(with: .opacity))
         }
-        .buttonStyle(Tactile(look: GlassDisc()))
-        .accessibilityLabel("Attach")
-        HStack(alignment: .bottom, spacing: 4) {
-          TextField(placeholder, text: $draft, axis: .vertical)
-            .font(.system(size: 17))
-            .lineLimit(1...6)
-            .focused($typing)
-            // The open list's keys first (arrows, Return or Tab to pick, Esc to put it away); Esc with none leaves the field.
-            .onKeyPress(phases: .down) { press in key(press) }
-            #if os(macOS)
-            // Return sends, as the Mac's window does; Option-Return starts a new line.
-            .onSubmit {
-              if let list = openList, list.count > 0 { pick(min(highlighted, list.count - 1), in: list); return }
-              if mode == .send { send() }
-            }
-            #endif
-            .padding(.leading, 16)
-            .padding(.vertical, 9)
-            .frame(maxWidth: .infinity, alignment: .leading)
-          ZStack {
-            switch mode {
-            case .stop:
-              Button { dictation.stop() } label: {
-                Image(systemName: "stop.fill").font(.system(size: 11, weight: .bold)).foregroundStyle(.white)
-                  .frame(width: 30, height: 30).background(Ink.danger, in: Circle())
-                  .frame(width: 36, height: 36).contentShape(.circle)
+        VStack(spacing: 0) {
+          HStack(alignment: .bottom, spacing: 4) {
+            TextField(placeholder, text: $draft, axis: .vertical)
+              .font(.system(size: 17))
+              .lineLimit(1...6)
+              .focused($typing)
+              // The open list's keys first (arrows, Return or Tab to pick, Esc to put it away); Esc with none leaves the field.
+              .onKeyPress(phases: .down) { press in key(press) }
+              #if os(macOS)
+              // Return sends, as the Mac's window does; Option-Return starts a new line.
+              .onSubmit {
+                if let list = openList, list.count > 0 { pick(min(highlighted, list.count - 1), in: list); return }
+                if mode == .send { send() }
               }
-              .accessibilityLabel("Stop dictation")
-              .transition(.scale(scale: 0.6).combined(with: .opacity))
-            case .mic:
-              Button { dictation.start { text in draft = text } } label: {
-                Image(systemName: "mic").font(.system(size: 18, weight: .regular)).foregroundStyle(Ink.secondary)
-                  .frame(width: 36, height: 36).contentShape(.circle)
+              #endif
+              .padding(.leading, 16)
+              .padding(.vertical, 9)
+              .frame(maxWidth: .infinity, alignment: .leading)
+            // While it listens, the bar under the words has the ✓ (DictationBar).
+            if mode != .stop {
+              ZStack {
+                switch mode {
+                case .stop:
+                  EmptyView()
+                case .mic:
+                  Button { dictation.start(after: draft) { text in draft = text } } label: {
+                    Image(systemName: "mic").font(.system(size: 18, weight: .regular)).foregroundStyle(Ink.secondary)
+                      .frame(width: 36, height: 36).contentShape(.circle)
+                  }
+                  .accessibilityLabel("Dictate")
+                  .transition(.scale(scale: 0.6).combined(with: .opacity))
+                case .send:
+                  Button(action: send) {
+                    Image(systemName: "arrow.up").font(.system(size: 15, weight: .bold)).foregroundStyle(.white)
+                      .frame(width: 30, height: 30).background(Ink.bubbleMine, in: Circle())
+                      .frame(width: 36, height: 36).contentShape(.circle)
+                  }
+                  .accessibilityLabel("Send")
+                  .disabled(hook?.sendDisabled == true || store.isSendingPaused)
+                  .transition(.scale(scale: 0.6).combined(with: .opacity))
+                }
               }
-              .accessibilityLabel("Dictate")
-              .transition(.scale(scale: 0.6).combined(with: .opacity))
-            case .send:
-              Button(action: send) {
-                Image(systemName: "arrow.up").font(.system(size: 15, weight: .bold)).foregroundStyle(.white)
-                  .frame(width: 30, height: 30).background(Ink.bubbleMine, in: Circle())
-                  .frame(width: 36, height: 36).contentShape(.circle)
-              }
-              .accessibilityLabel("Send")
-              .disabled(hook?.sendDisabled == true || store.isSendingPaused)
-              .transition(.scale(scale: 0.6).combined(with: .opacity))
+              .buttonStyle(.tactile)
+              .frame(width: 36, height: 36)
+              .padding(.trailing, 2).padding(.bottom, 2)
+              .animation(.easeOut(duration: 0.2), value: mode)
             }
           }
-          .buttonStyle(.tactile)
-          .frame(width: 36, height: 36)
-          .padding(.trailing, 2).padding(.bottom, 2)
-          .animation(.easeOut(duration: 0.2), value: mode)
+          if dictation.isListening {
+            DictationBar(dictation: dictation) { dictation.stop() }
+              .padding(.leading, 16).padding(.trailing, 2).padding(.bottom, 2)
+              .transition(.opacity.combined(with: .move(edge: .bottom)))
+          }
         }
         .frame(minHeight: 40)
         // A tap anywhere on the field that is not its button goes to the text, as in Messages.
         .background { Color.clear.contentShape(.rect(cornerRadius: 20, style: .continuous)).onTapGesture { typing = true } }
         .glassEffect(.regular, in: .rect(cornerRadius: 20, style: .continuous))
       }
-      // A new line or a quote above eases in.
+      // A new line or a quote above eases in; so does dictation's bar.
       .animation(.spring(response: 0.3, dampingFraction: 0.9), value: lineCount)
+      .animation(.spring(response: 0.3, dampingFraction: 0.9), value: dictation.isListening)
       .animation(.spring(response: 0.3, dampingFraction: 0.9), value: reply?.target?.id)
     }
     .padding(.horizontal, 12)
@@ -1071,6 +1089,13 @@ struct ChatComposer: View {
       recentEmoji = EmojiCatalog.remembering(emoji.id, in: recentEmoji.split(separator: " ").map(String.init)).joined(separator: " ")
     }
     highlighted = 0
+  }
+
+  /** Cancel while dictating: the words heard go, and the field is what was typed before. */
+  private func cancelDictation() {
+    let typed = dictation.before
+    dictation.cancel()
+    draft = typed
   }
 
   private func send() {

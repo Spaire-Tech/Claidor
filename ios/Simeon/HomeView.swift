@@ -622,7 +622,7 @@ struct ListBottomBar: View {
           .buttonStyle(.tactile)
           .accessibilityLabel("Clear search")
         } else {
-          Button { dictation.isListening ? dictation.stop() : dictation.start { text in query = text } } label: {
+          Button { dictation.isListening ? dictation.stop() : dictation.start(after: query) { text in query = text } } label: {
             Image(systemName: dictation.isListening ? "stop.circle.fill" : "mic").font(.system(size: 18))
               .foregroundStyle(dictation.isListening ? Ink.danger : Ink.secondary)
               .frame(width: 30, height: 30).tapRoom(7)
