@@ -6391,6 +6391,64 @@
         }
       }
     },
+    "By tapping “Continue”, you agree to our [Terms](%@) and have read our [Privacy Policy](%@)." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wenn du auf „Weiter“ tippst, stimmst du unseren [Nutzungsbedingungen](%1$@) zu und bestätigst, dass du unsere [Datenschutzerklärung](%2$@) gelesen hast."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Al tocar «Continuar», aceptas nuestros [Términos](%1$@) y confirmas que has leído nuestra [Política de privacidad](%2$@)."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En touchant « Continuer », tu acceptes nos [Conditions](%1$@) et confirmes avoir lu notre [Politique de confidentialité](%2$@)."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toccando «Continua», accetti i nostri [Termini](%1$@) e confermi di aver letto l’[Informativa sulla privacy](%2$@)."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Door op ‘Ga door’ te tikken, ga je akkoord met onze [voorwaarden](%1$@) en bevestig je dat je ons [privacybeleid](%2$@) hebt gelezen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dotykając „Kontynuuj”, akceptujesz nasz [Regulamin](%1$@) i potwierdzasz zapoznanie się z naszą [Polityką prywatności](%2$@)."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ao tocar em “Continuar”, você concorda com nossos [Termos](%1$@) e confirma que leu nossa [Política de privacidade](%2$@)."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Genom att trycka på ”Fortsätt” godkänner du våra [villkor](%1$@) och bekräftar att du har läst vår [integritetspolicy](%2$@)."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“Devam et” seçeneğine dokunarak [Koşullar](%1$@) metnini kabul etmiş ve [Gizlilik Politikası](%2$@) metnini okumuş olursun."
+          }
+        }
+      }
+    },
     "Call %@" : {
       "localizations" : {
         "de" : {
@@ -36711,64 +36769,6 @@
         }
       }
     },
-    "Your agents and their computers, on your iPhone and your Mac." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Deine Agenten und ihre Computer, auf deinem iPhone und deinem Mac."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tus agentes y sus computadoras, en tu iPhone y tu Mac."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tes agents et leurs ordinateurs, sur ton iPhone et ton Mac."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "I tuoi agenti e i loro computer, sul tuo iPhone e sul tuo Mac."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Je agenten en hun computers, op je iPhone en je Mac."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Twoi agenci i ich komputery na twoim iPhonie i Macu."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Seus agentes e os computadores deles, no seu iPhone e no seu Mac."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dina agenter och deras datorer, på din iPhone och din Mac."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajanların ve bilgisayarları, iPhone’unda ve Mac’inde."
-          }
-        }
-      }
-    },
     "Your agents are safe — they just can’t be loaded right now." : {
       "localizations" : {
         "de" : {
@@ -36997,6 +36997,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Link kartın"
+          }
+        }
+      }
+    },
+    "Your personal team of agents for whatever needs doing." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein persönliches Team aus Agenten für alles, was zu tun ist."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu propio equipo de agentes para todo lo que haya que hacer."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ta propre équipe d'agents pour tout ce qu'il y a à faire."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tuo team personale di agenti per tutto ciò che c'è da fare."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je eigen team van agenten voor alles wat er gedaan moet worden."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twój osobisty zespół agentów do wszystkiego, co trzeba zrobić."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sua equipe pessoal de agentes para tudo o que precisar ser feito."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ditt personliga team av agenter för allt som behöver göras."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yapılması gereken her şey için kişisel ajan ekibin."
           }
         }
       }

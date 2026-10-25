@@ -20,7 +20,7 @@ public enum OnboardingStep: Int, CaseIterable, Sendable {
     switch self {
     case .name: return L10n.text("What should we call you?")
     case .faceID: return L10n.text("Unlock Simeon with Face ID")
-    case .notifications: return L10n.text("Let Simeon tell you when work is done")
+    case .notifications: return L10n.text("Allow notifications")
     }
   }
 

@@ -40,13 +40,14 @@ struct EmailSignInSheet: View {
   var body: some View {
     ScrollView {
       VStack(spacing: 0) {
+        // The mark at 34 and the title at 22 on every step, as the founder's ChatGPT reference (25 October 2026).
         Image("SignIn/Mark").resizable().renderingMode(.template).scaledToFit()
-          .frame(width: 40, height: 40)
+          .frame(width: 34, height: 34)
           .foregroundStyle(Ink.primary)
           .accessibilityHidden(true)
           .padding(.top, 72)
         Text(title)
-          .font(.system(size: 26))
+          .font(.system(size: 22))
           .foregroundStyle(Ink.primary)
           .multilineTextAlignment(.center)
           .padding(.top, 22)
@@ -86,7 +87,7 @@ struct EmailSignInSheet: View {
 
   private var subtitle: String {
     switch step {
-    case .email: return String(localized: "Your agents and their computers, on your iPhone and your Mac.")
+    case .email: return String(localized: "Your personal team of agents for whatever needs doing.")
     case .code: return String(localized: "Enter the verification code we just sent to \(email.trimmingCharacters(in: .whitespaces)).")
     case .password: return email.trimmingCharacters(in: .whitespaces)
     }

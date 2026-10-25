@@ -534,8 +534,9 @@ struct OnboardingFlow: View {
   private func header(_ step: OnboardingStep, @ViewBuilder icon: () -> some View) -> some View {
     VStack(spacing: 18) {
       icon()
+      // At 22, as the sign-in sheet's titles (the founder, 25 October 2026, with ChatGPT's as the reference).
       Text(step.title(unlockingWith: AppLock.name))
-        .font(.system(size: 26, weight: .regular))
+        .font(.system(size: 22, weight: .regular))
         .foregroundStyle(Ink.primary)
         .multilineTextAlignment(.center)
         .fixedSize(horizontal: false, vertical: true)
@@ -553,12 +554,12 @@ struct OnboardingFlow: View {
     .padding(.top, 72)
   }
 
-  /** "What should we call you?": one field, the name from Apple or Google already in it; Continue under it. */
+  /** "What should we call you?": one field, the name from Apple or Google already in it; the agreement and Continue under it. */
   private var nameScreen: some View {
     let typed = Onboarding.normalizedName(name)
     return VStack(spacing: 0) {
       header(.name) {
-        Image("SignIn/Mark").resizable().renderingMode(.template).scaledToFit().frame(width: 40, height: 40)
+        Image("SignIn/Mark").resizable().renderingMode(.template).scaledToFit().frame(width: 34, height: 34)
           .foregroundStyle(Ink.primary)
           .accessibilityHidden(true)
       }
@@ -585,6 +586,13 @@ struct OnboardingFlow: View {
       .contentShape(.rect)
       .onTapGesture { nameFocused = true }
       .padding(.top, 40)
+      Text(Self.agreement)
+        .font(.system(size: 15))
+        .foregroundStyle(Ink.secondary)
+        .tint(Ink.secondary)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .fixedSize(horizontal: false, vertical: true)
+        .padding(.top, 14)
       continueButton(enabled: !typed.isEmpty, action: leaveName)
         .padding(.top, 24)
       Spacer()
@@ -606,12 +614,24 @@ struct OnboardingFlow: View {
     }
   }
 
+  /**
+   * Under the name, as ChatGPT's first-run screen has it (the founder, 25
+   * October 2026): "By tapping “Continue”, you agree to our Terms and have
+   * read our Privacy Policy.", the two names links, underlined, in the grey.
+   */
+  static var agreement: AttributedString {
+    let sentence = String(localized: "By tapping “Continue”, you agree to our [Terms](\(Legal.terms.absoluteString)) and have read our [Privacy Policy](\(Legal.privacy.absoluteString)).")
+    var text = (try? AttributedString(markdown: sentence)) ?? AttributedString(sentence)
+    for range in text.runs.filter({ $0.link != nil }).map(\.range) { text[range].underlineStyle = Text.LineStyle.single }
+    return text
+  }
+
   /** "Unlock Simeon with Face ID": Continue turns it on (iOS asks once whether Simeon may use it), Skip leaves it off. */
   private var faceIDScreen: some View {
     VStack(spacing: 0) {
       header(.faceID) {
         Image(systemName: AppLock.biometry == .touchID ? "touchid" : "faceid")
-          .font(.system(size: 52, weight: .light))
+          .font(.system(size: 44, weight: .light))
           .foregroundStyle(Ink.primary)
           .accessibilityHidden(true)
       }
@@ -637,7 +657,7 @@ struct OnboardingFlow: View {
   }
 
   /**
-   * "Let Simeon tell you when work is done", with a switch in a card (the
+   * "Allow notifications", with a switch in a card (the
    * founder, 12 October 2026: "the notification thing. toggle", as the
    * reference's Data Sharing card has it), on to start with. Continue with
    * it on brings Apple's prompt (when the phone has not asked yet) and
@@ -646,12 +666,10 @@ struct OnboardingFlow: View {
   private var notificationsScreen: some View {
     VStack(spacing: 0) {
       header(.notifications) {
+        // A plain bell drawn as Face ID's glyph (the founder, 25 October 2026: "a simple icon. like face id icon").
         Image(systemName: "bell")
-          .font(.system(size: 28, weight: .regular))
+          .font(.system(size: 44, weight: .light))
           .foregroundStyle(Ink.primary)
-          .frame(width: 72, height: 72)
-          .background(Ink.tile, in: Circle())
-          .overlay(Circle().stroke(Ink.tileEdge, lineWidth: 0.5))
           .accessibilityHidden(true)
       }
       Toggle(isOn: notificationsSwitch) {
