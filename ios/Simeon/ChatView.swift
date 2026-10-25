@@ -287,9 +287,10 @@ final class JumpGlow {
 /**
  * The conversation itself: redrawn when its rows change, and only then.
  * As the Mac's: a new line comes in with a short rise; older lines load as
- * you near the top; scrolled up, what arrives below is counted on a pill
- * ("2 new messages") that takes you down, and a "New" line out of sight
- * above has its own pill.
+ * you near the top; a "New" line out of sight above has its pill. Scrolled
+ * up, ⌄ at the bottom right takes you to the end, what arrived meanwhile
+ * counted on it (ToEndButton); a message of yours going out takes you there
+ * too, as Messages does (the founder, 25 October 2026).
  */
 struct ChatMessages: View {
   let agentId: String
@@ -432,6 +433,15 @@ struct ChatMessages: View {
         guard let from = now.lastIndex(where: { $0.id == old }) else { return }
         let added = now[(from + 1)...]
         window += added.count
+        // A message of the person's own just went out: to the end, wherever the chat was, once the row has its place.
+        if added.contains(where: { row in if case .bubble(let b) = row { return b.fromPerson }; return false }) {
+          unseen = 0
+          Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 50_000_000)
+            withAnimation(.snappy) { reader.scrollTo(Self.bottomId, anchor: .bottom) }
+          }
+          return
+        }
         guard !atBottom else { return }
         unseen += added.filter { row in if case .bubble(let b) = row { return !b.fromPerson }; return false }.count
       }
@@ -445,16 +455,17 @@ struct ChatMessages: View {
           .transition(.move(edge: .top).combined(with: .opacity))
         }
       }
-      .overlay(alignment: .bottom) {
-        if unseen > 0 && !atBottom {
-          NewMessagesPill(count: unseen, up: false) {
+      .overlay(alignment: .bottomTrailing) {
+        if settled && !atBottom {
+          ToEndButton(count: unseen) {
             withAnimation(.snappy) { reader.scrollTo(Self.bottomId, anchor: .bottom) }
-          } dismiss: { unseen = 0 }
+          }
+          .padding(.trailing, 16)
           .padding(.bottom, 10)
-          .transition(.move(edge: .bottom).combined(with: .opacity))
+          .transition(.scale(scale: 0.6).combined(with: .opacity))
         }
       }
-      .animation(.snappy, value: unseen > 0 && !atBottom)
+      .animation(.snappy, value: settled && !atBottom)
       .animation(.snappy, value: dividerSeen || dividerDismissed)
     }
     .overlay {
@@ -2003,6 +2014,41 @@ struct NewMessagesPill: View {
     }
     .padding(.trailing, 4)
     .glassEffect(.regular, in: .capsule)
+  }
+}
+
+/**
+ * Scrolled up in a chat: ⌄ in a glass circle at the bottom right, as
+ * Messages has it (the founder, 25 October 2026), taking the chat to its
+ * end; how many of the agents' messages came meanwhile on it, in our blue.
+ */
+struct ToEndButton: View {
+  let count: Int
+  let action: () -> Void
+
+  var body: some View {
+    Button(action: action) {
+      Image(systemName: "chevron.down")
+        .font(.system(size: 17, weight: .semibold))
+        .foregroundStyle(Ink.primary)
+        .frame(width: 44, height: 44)
+        .glassEffect(.regular.interactive(), in: .circle)
+        .overlay(alignment: .topTrailing) {
+          if count > 0 {
+            Text(count, format: .number)
+              .font(.system(size: 12, weight: .semibold))
+              .foregroundStyle(.white)
+              .padding(.horizontal, 6)
+              .frame(minWidth: 20, minHeight: 20)
+              .background(Ink.bubbleMine, in: Capsule())
+              .offset(x: 4, y: -4)
+          }
+        }
+        .contentShape(.circle)
+    }
+    .buttonStyle(.tactile)
+    .accessibilityLabel("Jump to latest")
+    .accessibilityValue(count == 0 ? "" : count == 1 ? String(localized: "1 new message") : String(localized: "\(count) new messages"))
   }
 }
 
