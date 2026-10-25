@@ -29,15 +29,16 @@ struct PhonePrimaryStyle: ButtonStyle {
 }
 
 /**
- * New Agent (round 3, `__simeonNewAgentSheet`): the face it will wear at
- * 150, changing with the name as it is typed (a woman's name gets a woman's
- * face; AgentFaces.preview), "Name your agent" in a 52 pt field, its title
- * under it (the founder, 19 October 2026; may stay empty), Create. The
- * agent keeps that face, is asked to introduce itself, and its chat opens.
- * No colours to pick (the founder, 12 October 2026). The pencil on the face
- * opens the avatar editor for the agent to be (the founder, 13 October
- * 2026): another face, a picture generated or uploaded, its voice; kept here
- * (AgentDraft) and sent with the agent at Create.
+ * New Agent, as Apple's New Contact (the founder, 25 October 2026: "design
+ * creating an agent better"): the X at the top left and Create in our blue
+ * at the right; the face it will wear at 120 with Edit under it, both
+ * opening the avatar editor (another face, a picture generated or uploaded,
+ * its voice; kept here in AgentDraft and sent with the agent at Create);
+ * then Name and Title in one group, the keyboard up on Name. The face is
+ * given once and stays while the name is typed, changing only for a name of
+ * the other gender (`AgentDraft.settleFace`; it changed at every letter
+ * until then). The agent keeps that face, is asked to introduce itself, and
+ * its chat opens.
  */
 struct NewAgentSheet: View {
   let created: (String) -> Void
@@ -48,8 +49,9 @@ struct NewAgentSheet: View {
   @State private var editingAvatar = false
   @State private var busy = false
   @State private var failed = false
-  @FocusState private var naming: Bool
-  @FocusState private var titling: Bool
+  @FocusState private var field: Field?
+
+  private enum Field { case name, title }
 
   private var trimmed: String { name.split(whereSeparator: \.isWhitespace).joined(separator: " ") }
 
@@ -61,64 +63,81 @@ struct NewAgentSheet: View {
 
   var body: some View {
     NavigationStack {
-      VStack(spacing: 0) {
-        ZStack(alignment: .bottomTrailing) {
-          PictureCircle(image: picture)
-            .frame(width: 150, height: 150)
-          // The agent page's pencil, at the sheet's larger face.
-          Button { naming = false; titling = false; editingAvatar = true } label: {
-            Image(systemName: "pencil").font(.system(size: 15, weight: .medium)).foregroundStyle(Ink.primary)
-              .frame(width: 36, height: 36)
-              .background(Ink.bubbleTheirs, in: Circle())
-              .frame(width: 44, height: 44)
-              .contentShape(.circle)
+      Form {
+        Section {
+          VStack(spacing: 12) {
+            Button(action: editAvatar) {
+              PictureCircle(image: picture).frame(width: 120, height: 120)
+            }
+            .buttonStyle(.tactile)
+            .accessibilityLabel("Edit agent avatar")
+            Button(action: editAvatar) {
+              Text("Edit")
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(Ink.primary)
+                .padding(.horizontal, 16)
+                .frame(height: 32)
+                .background(Ink.groupedRow, in: Capsule())
+                .contentShape(Capsule())
+            }
+            .buttonStyle(.tactile)
           }
-          .buttonStyle(.tactile)
-          .accessibilityLabel("Edit agent avatar")
-          .offset(x: 2, y: 2)
+          .frame(maxWidth: .infinity)
+          .listRowBackground(Color.clear)
         }
-        .frame(maxWidth: .infinity, minHeight: 170, maxHeight: .infinity)
-        TextField("Name your agent", text: $name)
-          .font(.system(size: 17))
-          .multilineTextAlignment(.center)
-          .focused($naming)
-          .submitLabel(.next)
-          .onSubmit { titling = true }
-          .onChange(of: name) { _, value in
-            if value.count > 60 { name = String(value.prefix(60)) }
-            draft.name = trimmed
+        Section {
+          TextField("Name", text: $name)
+            .textInputAutocapitalization(.words)
+            .autocorrectionDisabled()
+            .focused($field, equals: .name)
+            .submitLabel(.next)
+            .onSubmit { field = .title }
+            .onChange(of: name) { _, value in
+              if value.count > 60 { name = String(value.prefix(60)) }
+              draft.name = trimmed
+              draft.settleFace(agents: store.agents)
+            }
+          // Its job, not just a name (the founder, 19 October 2026): the tag under its name and its role in its own prompt; may stay empty.
+          TextField("Title", text: $title)
+            .textInputAutocapitalization(.words)
+            .focused($field, equals: .title)
+            .submitLabel(.done)
+            .onSubmit(create)
+            .onChange(of: title) { _, value in
+              if value.count > 60 { title = String(value.prefix(60)) }
+              draft.title = title.split(whereSeparator: \.isWhitespace).joined(separator: " ")
+            }
+        } footer: {
+          if failed {
+            Text("Couldn’t create the agent. Try again.").foregroundStyle(Ink.danger)
           }
-          .modifier(NewAgentField())
-          .padding(.bottom, 10)
-        // Its job, not just a name (the founder, 19 October 2026): the tag under its name and its role in its own prompt.
-        TextField("Title, like Personal Shopper", text: $title)
-          .font(.system(size: 17))
-          .multilineTextAlignment(.center)
-          .focused($titling)
-          .submitLabel(.done)
-          .onSubmit(create)
-          .onChange(of: title) { _, value in
-            if value.count > 60 { title = String(value.prefix(60)) }
-            draft.title = title.split(whereSeparator: \.isWhitespace).joined(separator: " ")
-          }
-          .modifier(NewAgentField())
-          .padding(.bottom, 22)
-        if failed {
-          Text("Couldn’t create the agent. Try again.").font(.system(size: 14)).foregroundStyle(Ink.danger).multilineTextAlignment(.center).padding(.horizontal, 16).padding(.bottom, 8)
         }
-        Button(busy ? "Creating…" : "Create", action: create)
-          .buttonStyle(Tactile(look: PhonePrimaryStyle()))
-          .disabled(trimmed.isEmpty || busy)
-          .padding(.horizontal, 16).padding(.bottom, 16)
+        .listRowBackground(Ink.groupedRow)
       }
-      .background(Ink.ground)
+      .groupedGround()
       .navigationTitle("New Agent")
       .inlineBarTitle()
-      .toolbar { ToolbarItem(placement: .leadingBar) { CloseButton() } }
+      .toolbar {
+        ToolbarItem(placement: .leadingBar) { CloseButton() }
+        ToolbarItem(placement: .confirmationAction) {
+          if busy { ProgressView() } else {
+            Button("Create", action: create).tint(Ink.blue).disabled(trimmed.isEmpty)
+          }
+        }
+      }
       .sheet(isPresented: $editingAvatar) {
         AvatarEditor(draft: $draft).problemAlert()
       }
+      .task {
+        draft.settleFace(agents: store.agents)
+        field = .name
+      }
     }
+  }
+
+  private func editAvatar() {
+    field = nil
+    editingAvatar = true
   }
 
   private func create() {
@@ -132,18 +151,6 @@ struct NewAgentSheet: View {
       busy = false
       if let id { Haptics.success(); created(id) } else { Haptics.warning(); failed = true }
     }
-  }
-}
-
-/** A New Agent field: 52 high, the ground with a hairline, 22 round, 16 in from the sheet's sides. */
-private struct NewAgentField: ViewModifier {
-  func body(content: Content) -> some View {
-    content
-      .padding(.horizontal, 16)
-      .frame(height: 52)
-      .background(Ink.ground, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-      .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).stroke(Ink.edge, lineWidth: 1))
-      .padding(.horizontal, 16)
   }
 }
 

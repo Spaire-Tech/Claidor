@@ -142,6 +142,34 @@ final class AgentFaceTests: XCTestCase {
     XCTAssertEqual(AgentFaces.plan(agents: roster + [agent("new", "Nora", face: nora?.id)]).first?.face, nora)
   }
 
+  func testTheNewAgentsFaceStaysWhileItsNameIsTyped() {
+    let roster = [agent("w", "Maya", wearing: women()[0].id)]
+    var draft = AgentDraft()
+    draft.settleFace(agents: roster)
+    let first = draft.shownFace(agents: roster)
+    XCTAssertNotNil(first)
+    // Letter by letter, a name of no known gender keeps the face.
+    for typed in ["Q", "Qu", "Qui", "Quill", "Quill Bot"] {
+      draft.name = typed
+      draft.settleFace(agents: roster)
+      XCTAssertEqual(draft.shownFace(agents: roster), first, typed)
+    }
+    // A name of the other gender changes it once, then it stays.
+    let other = first?.gender == "female" ? ("Leo", "male") : ("Nora", "female")
+    draft.name = other.0
+    draft.settleFace(agents: roster)
+    let changed = draft.shownFace(agents: roster)
+    XCTAssertEqual(changed?.gender, other.1)
+    draft.name = other.0 + " Smith"
+    draft.settleFace(agents: roster)
+    XCTAssertEqual(draft.shownFace(agents: roster), changed)
+    // A face picked wins over the name's.
+    draft.wear(women()[3], agents: roster, voices: [])
+    draft.name = "Leo"
+    draft.settleFace(agents: roster)
+    XCTAssertEqual(draft.shownFace(agents: roster), women()[3])
+  }
+
   func testShuffleGoesToTheNextFaceNoOneWears() {
     let women = women()
     // Maya wears the first; the second is worn by Nina: Shuffle skips to the third.

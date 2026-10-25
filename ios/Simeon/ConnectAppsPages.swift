@@ -63,26 +63,6 @@ struct PluginNoticeBar: View {
   }
 }
 
-// MARK: - The filter
-
-/** The Mac's Filter menu (`ii`): Type (All types, Connectors, Skills), then Ownership (All, Team, Public); one choice each. */
-struct PluginFilterPickers: View {
-  @Binding var filter: PluginFilter
-
-  var body: some View {
-    Section("Type") {
-      Picker("Type", selection: $filter.type) {
-        ForEach(PluginFilter.Kind.allCases, id: \.self) { kind in Text(PluginFilter.label(kind)).tag(kind) }
-      }
-    }
-    Section("Ownership") {
-      Picker("Ownership", selection: $filter.ownership) {
-        ForEach(PluginFilter.Ownership.allCases, id: \.self) { owner in Text(PluginFilter.label(owner)).tag(owner) }
-      }
-    }
-  }
-}
-
 // MARK: - Rows' parts
 
 /** Team (the Mac's `TeamBadge`, `it`): people and "Team" at 11 in the faint grey on the quiet fill, 18 high; what the Mac's tooltip says is read out with it. */
@@ -605,14 +585,82 @@ struct PluginDetailRow: View {
 }
 
 /**
+ * A tool's switch, its name alone (the founder, 25 October 2026: the box's
+ * long descriptions made each row three lines). It turns the tool off for
+ * every agent; the switch moves at once and holds until the box answers, so
+ * a second tap cannot undo the first.
+ */
+private struct ToolSwitch: View {
+  let tool: AppTool
+  let serverId: String?
+  @Binding var tools: [AppTool]
+  @Binding var switching: Set<String>
+  @Environment(AppStore.self) private var store
+
+  var body: some View {
+    Toggle(tool.title ?? tool.name, isOn: Binding(get: { !tool.isDisabled }, set: { on in
+      guard let serverId, !switching.contains(tool.name), let index = tools.firstIndex(where: { $0.name == tool.name }) else { return }
+      tools[index].isDisabled = !on
+      switching.insert(tool.name)
+      Task {
+        if let next = await store.toggleTool(serverId, tool.name) { tools = next }
+        else if let now = tools.firstIndex(where: { $0.name == tool.name }) { tools[now].isDisabled = on }
+        switching.remove(tool.name)
+      }
+    }))
+    .tint(Ink.blue)
+    .disabled(switching.contains(tool.name))
+  }
+}
+
+/**
+ * Every tool of a connector, from See more under its first five: the
+ * switches, and the connectors list's search pill at the bottom, matching a
+ * tool's name (the founder, 25 October 2026).
+ */
+private struct ConnectorToolsPage: View {
+  let name: String
+  let serverId: String?
+  @Binding var tools: [AppTool]
+  @Binding var switching: Set<String>
+  @State private var query = ""
+
+  private var shown: [AppTool] {
+    let words = query.trimmingCharacters(in: .whitespaces)
+    guard !words.isEmpty else { return tools }
+    return tools.filter { ($0.title ?? $0.name).localizedCaseInsensitiveContains(words) || $0.name.localizedCaseInsensitiveContains(words) }
+  }
+
+  var body: some View {
+    Form {
+      Section {
+        ForEach(shown) { tool in
+          ToolSwitch(tool: tool, serverId: serverId, tools: $tools, switching: $switching)
+        }
+        if shown.isEmpty {
+          Text("No results").foregroundStyle(Ink.secondary)
+        }
+      }
+      .listRowBackground(Ink.groupedRow)
+    }
+    .groupedGround()
+    .scrollDismissesKeyboard(.immediately)
+    .safeAreaInset(edge: .bottom) { ConnectorsSearchPill(text: $query, prompt: String(localized: "Search tools")) }
+    .navigationTitle(name)
+    .inlineBarTitle()
+  }
+}
+
+/**
  * A plugin's page (the Mac's `PluginPage`, `Ri`, and its `ServerPage`,
  * `_i`), from a Marketplace row (its entry) or from Your plugins (its app's
  * server). The head: the logo, the name, how it is connected, where it
  * comes from (the marketplace and View Source ↗, or a server's host), the
  * team's label, and Add while it is not added. Then what it does; its
  * accounts, each with its state, sign-in, rename and remove, and its tools,
- * each with a switch that turns it off for every agent (the phone's own
- * since 9 October 2026); Setup with Edit Values; its connectors and skills,
+ * by name, each with a switch that turns it off for every agent (the
+ * phone's own since 9 October 2026), five of them and See more for the rest
+ * (ConnectorToolsPage); Setup with Edit Values; its connectors and skills,
  * folded; for a server no entry claims, its Details (Source, Transport, URL
  * or Command, Tools); and Uninstall, or Remove for what the team added.
  */
@@ -689,7 +737,7 @@ struct PluginPage: View {
       }
       if !shown.accounts.isEmpty {
         accountsSection(shown.accounts)
-        toolsSection(serverId: shown.serverId, connected: connected)
+        toolsSection(serverId: shown.serverId, connected: connected, name: shown.name)
       }
       if let entry = shown.entry { contributions(entry, installed: shown.installed) }
       if let server = shown.server { details(server) }
@@ -821,34 +869,29 @@ struct PluginPage: View {
     .listRowBackground(Ink.groupedRow)
   }
 
-  private func toolsSection(serverId: String?, connected: Bool) -> some View {
+  /** How many tools the page lists before See more (the founder, 25 October 2026: "otherwise its too long"). */
+  private static let toolsShown = 5
+
+  private func toolsSection(serverId: String?, connected: Bool, name: String) -> some View {
     Section("Tools") {
       if loadingTools && tools.isEmpty {
         HStack { ProgressView(); Text("Loading tools…").foregroundStyle(Ink.secondary) }
       } else if tools.isEmpty {
         Text(connected ? "No tools listed." : "Connect it to see its tools.").foregroundStyle(Ink.secondary)
       }
-      ForEach(tools) { tool in
-        // The switch moves at once and holds until the box answers, so a second tap cannot undo the first.
-        Toggle(isOn: Binding(get: { !tool.isDisabled }, set: { on in
-          guard let serverId, !switching.contains(tool.name), let index = tools.firstIndex(where: { $0.name == tool.name }) else { return }
-          tools[index].isDisabled = !on
-          switching.insert(tool.name)
-          Task {
-            if let next = await store.toggleTool(serverId, tool.name) { tools = next }
-            else if let now = tools.firstIndex(where: { $0.name == tool.name }) { tools[now].isDisabled = on }
-            switching.remove(tool.name)
-          }
-        })) {
-          VStack(alignment: .leading, spacing: 2) {
-            Text(tool.title ?? tool.name).font(.system(size: 17))
-            if let summary = tool.summary, !summary.isEmpty {
-              Text(summary).font(.system(size: 13)).foregroundStyle(Ink.secondary).lineLimit(2)
-            }
+      ForEach(Array(tools.prefix(Self.toolsShown))) { tool in
+        ToolSwitch(tool: tool, serverId: serverId, tools: $tools, switching: $switching)
+      }
+      if tools.count > Self.toolsShown {
+        NavigationLink {
+          ConnectorToolsPage(name: name, serverId: serverId, tools: $tools, switching: $switching)
+        } label: {
+          HStack {
+            Text("See more").foregroundStyle(Ink.primary)
+            Spacer()
+            Text(tools.count, format: .number).foregroundStyle(Ink.secondary)
           }
         }
-        .tint(Ink.blue)
-        .disabled(switching.contains(tool.name))
       }
     }
     .listRowBackground(Ink.groupedRow)

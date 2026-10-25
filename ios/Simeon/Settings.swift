@@ -380,12 +380,14 @@ struct PermissionsPage: View {
 }
 
 /**
- * The account: the person's name, written in place (what their agents call
- * them, the name the first run asked for; 22 October 2026), and their
- * email, copied with a tap; then Delete Account with one line under it, as
- * the founder's reference has it (12 October 2026). Apple asks every app that makes accounts to
- * delete them from inside the app (server/simeon/desktop/account_deletion.py
- * does the deleting; the question before it says what goes).
+ * The account: Name, Email and Password in one group, as the phone's own
+ * Settings rows (the founder, 25 October 2026: the field written in the row
+ * "has an interactive issue"): Name opens its page (NamePage), the email is
+ * copied with a tap, Password opens its page (PasswordPage); then Delete
+ * Account with one line under it, as the founder's reference has it (12
+ * October 2026). Apple asks every app that makes accounts to delete them
+ * from inside the app (server/simeon/desktop/account_deletion.py does the
+ * deleting; the question before it says what goes).
  */
 struct AccountPage: View {
   @Environment(SimeonCore.AppStore.self) private var store
@@ -394,8 +396,6 @@ struct AccountPage: View {
   @State private var askingDelete = false
   @State private var deleting = false
   @State private var deleteProblem: String?
-  /** Why the name was not saved, under it in red. */
-  @State private var nameProblem: String?
 
   var body: some View {
     Form {
@@ -408,13 +408,13 @@ struct AccountPage: View {
         .listRowBackground(Color.clear)
       }
       Section {
-        NameRow { nameProblem = $0 }
-      } footer: {
-        Text(nameProblem ?? String(localized: "Your agents call you by this name."))
-          .foregroundStyle(nameProblem == nil ? Ink.secondary : Ink.danger)
-      }
-      .listRowBackground(Ink.groupedRow)
-      Section {
+        NavigationLink { NamePage() } label: {
+          HStack {
+            Text("Name").foregroundStyle(Ink.primary)
+            Spacer()
+            Text(store.account?.name ?? "").foregroundStyle(Ink.secondary).lineLimit(1)
+          }
+        }
         Button {
           UIPasteboard.general.string = store.account?.email
           copied = true
@@ -474,55 +474,78 @@ struct AccountPage: View {
 }
 
 /**
- * Name, written in its row (the founder, 22 October 2026: "theres name
- * there, but uneditable"): the field at the row's end, as the phone's own
- * Settings › About › Name, saved on Done or when it lets go of the keys,
- * when it changed (`AppStore.changeName`). Refused, the name comes back and
- * why is said under it.
+ * Account › Name, as the phone's own Settings › General › About › Name (the
+ * founder, 25 October 2026: the field written in the row put the cursor at
+ * its start and kept a selection when tapped away): the name in a field of
+ * its own, the keyboard up with the cursor at its end, ⓧ to clear it. Done,
+ * in the bar or on the keyboard, saves a changed name
+ * (`AppStore.changeName`) and goes back; Back leaves it as it was. Refused,
+ * the name stays typed and why is said under it in red.
  */
-private struct NameRow: View {
-  let problem: (String?) -> Void
+struct NamePage: View {
   @Environment(SimeonCore.AppStore.self) private var store
+  @Environment(\.dismiss) private var dismiss
   @State private var text = ""
   @State private var saving = false
+  @State private var problem: String?
   @FocusState private var focused: Bool
 
+  private var typed: String { Onboarding.normalizedName(text) }
+  private var changed: Bool { !typed.isEmpty && typed != (store.account?.name ?? "") }
+
   var body: some View {
-    let saved = store.account?.name ?? ""
-    HStack(spacing: 12) {
-      Text("Name").foregroundStyle(Ink.primary)
-      Spacer(minLength: 12)
-      if saving { ProgressView() }
-      TextField("Name", text: $text)
-        .multilineTextAlignment(.trailing)
-        .foregroundStyle(Ink.secondary)
-        .submitLabel(.done)
-        .focused($focused)
-        .onSubmit(save)
-        .disabled(saving)
+    Form {
+      Section {
+        HStack(spacing: 8) {
+          TextField("Name", text: $text)
+            .foregroundStyle(Ink.primary)
+            .textContentType(.name)
+            .textInputAutocapitalization(.words)
+            .autocorrectionDisabled()
+            .submitLabel(.done)
+            .focused($focused)
+            .onSubmit { changed ? save() : dismiss() }
+            .onChange(of: text) { _, value in if value.count > 60 { text = String(value.prefix(60)) } }
+          if focused && !text.isEmpty {
+            Button { text = "" } label: {
+              Image(systemName: "xmark.circle.fill").font(.system(size: 17)).foregroundStyle(Ink.tertiary)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Clear")
+          }
+        }
+      } footer: {
+        Text(problem ?? String(localized: "Your agents call you by this name."))
+          .foregroundStyle(problem == nil ? Ink.secondary : Ink.danger)
+      }
+      .listRowBackground(Ink.groupedRow)
     }
-    .onAppear { text = saved }
-    .onChange(of: saved) { _, now in if !focused && !saving { text = now } }
-    .onChange(of: focused) { _, now in if !now { save() } }
+    .groupedGround()
+    .navigationTitle("Name")
+    .inlineBarTitle()
+    .toolbar {
+      ToolbarItem(placement: .confirmationAction) {
+        if saving { ProgressView() } else { Button("Done", action: save).tint(Ink.blue).disabled(!changed) }
+      }
+    }
+    .onAppear { if text.isEmpty { text = store.account?.name ?? "" } }
+    .task { focused = true }
   }
 
   private func save() {
-    let saved = store.account?.name ?? ""
-    let typed = Onboarding.normalizedName(text)
-    guard !saving else { return }
-    // Nothing new, or nothing at all: the name stays as it was.
-    guard !typed.isEmpty, typed != saved else {
-      text = saved
-      return
-    }
+    guard changed, !saving else { return }
     saving = true
-    problem(nil)
+    problem = nil
     Task {
       let refused = await store.changeName(typed)
       saving = false
-      text = store.account?.name ?? saved
-      problem(refused)
-      if refused == nil { Haptics.success() }
+      if let refused {
+        Haptics.warning()
+        problem = refused
+      } else {
+        Haptics.success()
+        dismiss()
+      }
     }
   }
 }
@@ -531,7 +554,9 @@ private struct NameRow: View {
  * Account › Password (19 October 2026): a password to sign in with the
  * email (Log in or sign up › Continue with password), set or changed while
  * signed in, typed twice. Forgotten, it is replaced here after signing in
- * with a code.
+ * with a code. Done is in the bar, as Apple's own Change Password has its
+ * action (the founder, 25 October 2026: Set Password in a row of its own
+ * "is designed like a writing field").
  */
 struct PasswordPage: View {
   @Environment(SimeonCore.AppStore.self) private var store
@@ -541,44 +566,51 @@ struct PasswordPage: View {
   @State private var again = ""
   @State private var saving = false
   @State private var problem: String?
-  @FocusState private var first: Bool
+  @FocusState private var focus: Field?
+
+  private enum Field { case password, again }
 
   private var mismatch: Bool { !again.isEmpty && again != password }
   private var ready: Bool { password.count >= EmailSignIn.minimumPassword && again == password }
+
+  /** Password until the server has said whether there is one, so the bar does not change under the eye from Set to Change. */
+  private var title: LocalizedStringKey {
+    switch hasPassword {
+    case true?: return "Change Password"
+    case false?: return "Set Password"
+    case nil: return "Password"
+    }
+  }
 
   var body: some View {
     Form {
       Section {
         SecureField(hasPassword == true ? "New password" : "Password", text: $password)
           .textContentType(.newPassword)
-          .focused($first)
+          .submitLabel(.next)
+          .focused($focus, equals: .password)
+          .onSubmit { focus = .again }
         SecureField("Type it again", text: $again)
           .textContentType(.newPassword)
+          .submitLabel(.done)
+          .focused($focus, equals: .again)
           .onSubmit(save)
       } footer: {
         Text(problem ?? (mismatch ? String(localized: "The two don't match.") : String(localized: "At least \(EmailSignIn.minimumPassword) characters. You'll sign in with \(store.account?.email ?? "your email") and this password.")))
           .foregroundStyle(problem != nil || mismatch ? Ink.danger : Ink.secondary)
       }
       .listRowBackground(Ink.groupedRow)
-      Section {
-        Button(action: save) {
-          HStack {
-            Text(hasPassword == true ? "Change Password" : "Set Password")
-            if saving {
-              Spacer()
-              ProgressView()
-            }
-          }
-        }
-        .disabled(!ready || saving)
-      }
-      .listRowBackground(Ink.groupedRow)
     }
     .groupedGround()
-    .navigationTitle("Password")
+    .navigationTitle(title)
     .inlineBarTitle()
+    .toolbar {
+      ToolbarItem(placement: .confirmationAction) {
+        if saving { ProgressView() } else { Button("Done", action: save).tint(Ink.blue).disabled(!ready) }
+      }
+    }
     .task {
-      first = true
+      focus = .password
       hasPassword = await store.hasPassword()
     }
   }
@@ -1009,40 +1041,35 @@ struct TimeZonePicker: View {
 }
 
 /**
- * Auto-review's rules, the Mac's table on the phone (mac/Simeon/SettingsGeneral.swift):
- * the allowed ones, then the ask-first ones; a tap edits a rule (its words and
- * its list, Save Rule), a swipe deletes it. Below, "When Simeon wants to:" one
- * short line, "It should:" Allow automatically or Ask first, Add Rule. Twenty
- * rules a list and a thousand characters a rule, a rule already listed not
- * twice (`AutoReviewInstructions`). Stored in the box as `autoReviewInstructions`.
+ * Auto-review's rules (the founder, 25 October 2026: "so not clear … add
+ * rule again behave like a writing field", then "too much text"): the
+ * allowed rules and the ask-first ones each under its name, then Add Rule
+ * in our blue with its plus, and no line of explanation. Add Rule, or a tap on a rule, opens the
+ * rule's sheet (RuleEditor); a swipe deletes a rule. Twenty rules a list and
+ * a thousand characters a rule, a rule already listed not twice
+ * (`AutoReviewInstructions`). Stored in the box as `autoReviewInstructions`,
+ * as the Mac's table keeps them (mac/Simeon/SettingsGeneral.swift).
  */
 struct AutoReviewRules: View {
   @Binding var settings: JSON?
   @Environment(SimeonCore.AppStore.self) private var store
-  @State private var wants = ""
-  @State private var should = AutoReviewInstructions.Behavior.allow
   @State private var editing: EditingRule?
 
+  /** The sheet: a rule to edit, or none for a new one. */
   struct EditingRule: Identifiable {
-    let rule: AutoReviewInstructions.Rule
-    var id: String { "\(rule.behavior.rawValue)/\(rule.listIndex)/\(rule.text)" }
+    let rule: AutoReviewInstructions.Rule?
+    var id: String { rule.map { "\($0.behavior.rawValue)/\($0.listIndex)/\($0.text)" } ?? "new" }
   }
 
   private var rules: AutoReviewInstructions { AutoReviewInstructions.normalized(json: settings?["autoReviewInstructions"]) }
 
   var body: some View {
     let rules = self.rules
-    let draft = wants.trimmingCharacters(in: .whitespacesAndNewlines)
     Form {
-      Section {
-        Text("Write one short, natural-language rule for each action. \"Ask first\" takes priority if rules conflict.")
-          .font(.system(size: 13)).foregroundStyle(Ink.secondary)
-      }
-      .listRowBackground(Ink.groupedRow)
       ForEach(AutoReviewInstructions.Behavior.allCases, id: \.self) { behavior in
         let listed = rules.rules.filter { $0.behavior == behavior }
         if !listed.isEmpty {
-          Section(AutoReviewInstructions.label(behavior)) {
+          Section {
             ForEach(listed, id: \.self) { rule in
               Button { editing = EditingRule(rule: rule) } label: {
                 HStack {
@@ -1059,31 +1086,15 @@ struct AutoReviewRules: View {
               for rule in offsets.map({ listed[$0] }).sorted(by: { $0.listIndex > $1.listIndex }) { next = next.removing(rule) }
               save(next)
             }
+          } header: {
+            Text(AutoReviewInstructions.label(behavior))
           }
           .listRowBackground(Ink.groupedRow)
         }
       }
       Section {
-        VStack(alignment: .leading, spacing: 8) {
-          Text("When Simeon wants to:").font(.system(size: 13)).foregroundStyle(Ink.secondary)
-          TextField("e.g. reply to emails for me", text: $wants, axis: .vertical)
-            .lineLimit(1...4)
-            .onChange(of: wants) { _, text in if text.count > AutoReviewInstructions.maxCharacters { wants = AutoReviewInstructions.clip(text) } }
-        }
-        Picker("It should:", selection: $should) {
-          ForEach(AutoReviewInstructions.Behavior.allCases, id: \.self) { Text(AutoReviewInstructions.label($0)).tag($0) }
-        }
-        Button("Add Rule") {
-          guard let next = rules.saving(draft, as: should, editing: nil) else { return }
-          wants = ""
-          save(next)
-        }
-        .disabled(draft.isEmpty || rules.saving(draft, as: should, editing: nil) == nil)
-      } footer: {
-        if AutoReviewInstructions.isFull(rules.list(should)) {
-          Text("\(AutoReviewInstructions.label(should)) is full (\(AutoReviewInstructions.limitNote)).")
-        } else {
-          Text("These rules apply only to you. Built-in safety checks always apply.")
+        Button { editing = EditingRule(rule: nil) } label: {
+          Label("Add Rule", systemImage: "plus.circle.fill").foregroundStyle(Ink.blue)
         }
       }
       .listRowBackground(Ink.groupedRow)
@@ -1093,7 +1104,6 @@ struct AutoReviewRules: View {
     .inlineBarTitle()
     .sheet(item: $editing) { item in
       RuleEditor(rule: item.rule, rules: rules) { next in save(next) }
-        .presentationDetents([.medium])
         .presentationBackground(Ink.groupedGround)
     }
   }
@@ -1107,21 +1117,28 @@ struct AutoReviewRules: View {
   }
 }
 
-/** One rule being edited, as the Mac's row turns into its composer: its words, its list, Cancel and Save Rule (greyed while it may not be saved). */
+/**
+ * A rule, new or being edited, read as a sentence: "When Simeon wants to:"
+ * and the action in a field (the keyboard up for a new one), "It should:"
+ * and its two choices, the chosen one ticked in our blue. Cancel, and Add
+ * or Save in our blue (greyed while it may not be saved: empty, already
+ * listed, or its list full). An edited rule has Delete Rule.
+ */
 private struct RuleEditor: View {
-  let rule: AutoReviewInstructions.Rule
+  let rule: AutoReviewInstructions.Rule?
   let rules: AutoReviewInstructions
   let save: (AutoReviewInstructions) -> Void
   @State private var text: String
   @State private var behavior: AutoReviewInstructions.Behavior
+  @FocusState private var focused: Bool
   @Environment(\.dismiss) private var dismiss
 
-  init(rule: AutoReviewInstructions.Rule, rules: AutoReviewInstructions, save: @escaping (AutoReviewInstructions) -> Void) {
+  init(rule: AutoReviewInstructions.Rule?, rules: AutoReviewInstructions, save: @escaping (AutoReviewInstructions) -> Void) {
     self.rule = rule
     self.rules = rules
     self.save = save
-    _text = State(initialValue: rule.text)
-    _behavior = State(initialValue: rule.behavior)
+    _text = State(initialValue: rule?.text ?? "")
+    _behavior = State(initialValue: rule?.behavior ?? .allow)
   }
 
   private var saved: AutoReviewInstructions? {
@@ -1132,34 +1149,61 @@ private struct RuleEditor: View {
   var body: some View {
     NavigationStack {
       Form {
-        Section {
-          TextField("Action", text: $text, axis: .vertical)
-            .lineLimit(1...6)
+        Section("When Simeon wants to:") {
+          TextField("e.g. reply to emails for me", text: $text, axis: .vertical)
+            .lineLimit(2...6)
+            .focused($focused)
             .onChange(of: text) { _, words in if words.count > AutoReviewInstructions.maxCharacters { text = AutoReviewInstructions.clip(words) } }
-          Picker("It should:", selection: $behavior) {
-            ForEach(AutoReviewInstructions.Behavior.allCases, id: \.self) { Text(AutoReviewInstructions.label($0)).tag($0) }
+        }
+        .listRowBackground(Ink.groupedRow)
+        Section {
+          ForEach(AutoReviewInstructions.Behavior.allCases, id: \.self) { choice in
+            Button { behavior = choice } label: {
+              HStack {
+                Text(AutoReviewInstructions.label(choice)).foregroundStyle(Ink.primary)
+                Spacer(minLength: 8)
+                if behavior == choice {
+                  Image(systemName: "checkmark").font(.system(size: 15, weight: .semibold)).foregroundStyle(Ink.blue)
+                }
+              }
+              .contentShape(.rect)
+            }
+            .accessibilityAddTraits(behavior == choice ? .isSelected : [])
           }
+        } header: {
+          Text("It should:")
         } footer: {
-          // Moving it to a full list: the Mac's limit note.
-          if behavior != rule.behavior && AutoReviewInstructions.isFull(rules.list(behavior)) {
+          // Into a full list: the Mac's limit note.
+          if behavior != rule?.behavior && AutoReviewInstructions.isFull(rules.list(behavior)) {
             Text(AutoReviewInstructions.limitNote)
           }
         }
         .listRowBackground(Ink.groupedRow)
+        if let rule {
+          Section {
+            Button("Delete Rule", role: .destructive) {
+              save(rules.removing(rule))
+              dismiss()
+            }
+          }
+          .listRowBackground(Ink.groupedRow)
+        }
       }
       .groupedGround()
-      .navigationTitle("Edit Rule")
+      .navigationTitle(rule == nil ? "New Rule" : "Edit Rule")
       .inlineBarTitle()
       .toolbar {
         ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
         ToolbarItem(placement: .confirmationAction) {
-          Button("Save Rule") {
+          Button(rule == nil ? "Add" : "Save") {
             if let saved { save(saved) }
             dismiss()
           }
+          .tint(Ink.blue)
           .disabled(saved == nil)
         }
       }
+      .task { if rule == nil { focused = true } }
     }
   }
 }
@@ -1169,8 +1213,9 @@ private struct RuleEditor: View {
  * ChatGPT's Plugins: "this is how i need you to design connectors in
  * mobile. full logo"), on the app's ground. Apple's bar: the round Back,
  * the title in the middle with its menu (Available or Yours, which was
- * Apple's segmented control under the search until then), and the filter
- * (the Mac's Type and Ownership). Available is the catalog by category,
+ * Apple's segmented control under the search until then), and on
+ * Available the categories (as the Mac's bar has them; the Mac's Type and
+ * Ownership until 25 October 2026). Available is the catalog by category,
  * Featured first and the rest A to Z: each category's name with › over its
  * first four apps, the name opening all of them (ConnectorCategoryPage);
  * a search shows every match. Each app has its own icon (AppIcons), its
@@ -1187,6 +1232,8 @@ struct ConnectAppsSheet: View {
   @Environment(\.dismiss) private var dismiss
   @State private var query = ""
   @State private var tab: ConnectorsTab = .available
+  /** The category Available shows alone; nil for all of them. */
+  @State private var category: String?
   /** What the Mac's Plugins window knows and does, for this opening (ConnectAppsModel). */
   @State private var model = ConnectAppsModel()
 
@@ -1216,7 +1263,7 @@ struct ConnectAppsSheet: View {
             .accessibilityLabel("Back")
         }
         ToolbarItem(placement: .principal) { titleMenu }
-        ToolbarItem(placement: .topBarTrailing) { filterMenu }
+        ToolbarItem(placement: .topBarTrailing) { categoryMenu }
       }
       .task { await store.loadApps() }
       .task {
@@ -1237,10 +1284,10 @@ struct ConnectAppsSheet: View {
     .presentationBackground(Ink.ground)
   }
 
-  /** Available: each category's name and its first apps (Featured first), or every app the search and the filter keep. */
+  /** Available: each category's name and its first apps (Featured first), or every app the search keeps; one category alone, all its apps, when one is chosen. */
   @ViewBuilder
   private var available: some View {
-    let sections = connectorSections(store.catalog, query: query, model: model)
+    let sections = connectorSections(store.catalog, query: query, model: model).filter { category == nil || $0.title == category }
     let searching = !query.trimmingCharacters(in: .whitespaces).isEmpty
     if store.catalog.isEmpty {
       HStack(spacing: 10) { ProgressView(); Text("Loading apps…").font(.system(size: 15)).foregroundStyle(Ink.secondary) }
@@ -1250,8 +1297,13 @@ struct ConnectAppsSheet: View {
         .padding(.top, 24)
     }
     ForEach(sections) { section in
-      ConnectorsSectionLink(title: section.title)
-      ForEach(searching ? section.apps : Array(section.apps.prefix(ConnectorsPreview.count))) { app in AppRow(app: app) }
+      if category == nil {
+        ConnectorsSectionLink(title: section.title)
+        ForEach(searching ? section.apps : Array(section.apps.prefix(ConnectorsPreview.count))) { app in AppRow(app: app) }
+      } else {
+        ConnectorsSectionTitle(title: section.title) { EmptyView() }
+        ForEach(section.apps) { app in AppRow(app: app) }
+      }
     }
   }
 
@@ -1273,18 +1325,32 @@ struct ConnectAppsSheet: View {
     .accessibilityValue(tab.title)
   }
 
-  /** The filter, in Apple's bar: the Mac's Type and Ownership, for what is shown; its glyph in blue while something is chosen. */
-  private var filterMenu: some View {
-    Menu {
-      switch tab {
-      case .available: PluginFilterPickers(filter: $model.marketplaceFilter)
-      case .yours: PluginFilterPickers(filter: $model.yoursFilter)
+  /**
+   * The categories, in Apple's bar (the founder, 25 October 2026: "those
+   * filters should be the connectors categories", as the Mac's bar has had
+   * since 21 October): All Categories, then each of Available's sections,
+   * Featured first and the rest A to Z, the chosen one ticked; the glyph in
+   * our blue while one is chosen. Only on Available: Yours is what the
+   * person has.
+   */
+  @ViewBuilder
+  private var categoryMenu: some View {
+    if tab == .available {
+      let titles = AppSections.make(store.catalog, query: "").map(\.title)
+      Menu {
+        Picker("Category", selection: $category) {
+          Section { Text("All Categories").tag(String?.none) }
+          Section {
+            ForEach(titles, id: \.self) { title in Text(title).tag(String?.some(title)) }
+          }
+        }
+      } label: {
+        Image(systemName: "line.3.horizontal.decrease")
+          .foregroundStyle(category == nil ? Ink.primary : Ink.blue)
       }
-    } label: {
-      Image(systemName: "line.3.horizontal.decrease")
-        .foregroundStyle((tab == .available ? model.marketplaceFilter.isAll : model.yoursFilter.isAll) ? Ink.primary : Ink.blue)
+      .accessibilityLabel("Category")
+      .accessibilityValue(category ?? String(localized: "All Categories"))
     }
-    .accessibilityLabel("Filter connectors")
   }
 }
 

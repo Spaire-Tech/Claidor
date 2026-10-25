@@ -20,9 +20,11 @@ enum HomeSheet: String, Identifiable {
  * the person's name with a menu (Settings, Appearance, Hidden Agents) in
  * place of the account button.
  *
- * A long press on a row or a pinned agent shows the chat itself above its
- * menu, as Messages does (Pin, Mark as Read, Hide Alerts, Delete; then the
- * Mac's Edit Profile, Duplicate, Hide from List). A swipe does the row's
+ * A long press on a row or a pinned agent shows the agent and the first
+ * paragraph of its newest message above its menu, as the founder's
+ * reference does (ChatPeek; Mark as Read, Pin, Move to, Hide Alerts,
+ * Delete, and More with the Mac's Edit Profile, Duplicate, Hide from List,
+ * Copy ID). A swipe does the row's
  * most used two each way. Pinned agents sit in a grid above the rows,
  * shared with the Mac through the host's `pinnedAgentIds`; under them the
  * Mac's sections, when the person has made any (ListSections.swift).
@@ -254,23 +256,28 @@ struct HomeView: View {
     }
   }
 
-  /** A chat's menu on a long press, Messages' four first (Pin, Mark as Read, Hide Alerts, Delete) with the Mac's Move to after Pin, then the Mac's own (Edit Profile, Duplicate, Hide from List, Copy conversation ID). */
+  /**
+   * A chat's menu on a long press, as the founder's reference has it (25
+   * October 2026: the whole list was too long): Mark as Read, Pin, Move to,
+   * Hide Alerts and Delete; then More, folding Edit Profile, Duplicate, Hide
+   * from List and Copy ID.
+   */
   @ViewBuilder
   private func menu(_ agent: Agent) -> some View {
     let isPinned = store.pinnedIds.contains(agent.id)
+    Button { Task { await store.setUnread(agent.id, !agent.hasUnread) } } label: {
+      Label(agent.hasUnread ? "Mark as Read" : "Mark as Unread", systemImage: agent.hasUnread ? "checkmark.circle" : "message.badge")
+    }
     Button { Task { await store.setPinned(agent.id, !isPinned) } } label: {
       Label(isPinned ? "Unpin" : "Pin", systemImage: isPinned ? "pin.slash" : "pin")
     }
     // Pinned chats stay with the pins, as on the Mac: only the rest go into sections.
     if !isPinned { MoveToSectionMenu(agentId: agent.id, sections: listSections) }
-    Button { Task { await store.setUnread(agent.id, !agent.hasUnread) } } label: {
-      Label(agent.hasUnread ? "Mark as Read" : "Mark as Unread", systemImage: agent.hasUnread ? "checkmark.message" : "message.badge")
-    }
     Button { Task { await store.setNotify(agent.id, !agent.notifyOnUpdates) } } label: {
       Label(agent.notifyOnUpdates ? "Hide Alerts" : "Show Alerts", systemImage: agent.notifyOnUpdates ? "bell.slash" : "bell")
     }
     Button(role: .destructive) { deleting = agent } label: { Label("Delete", systemImage: "trash") }
-    Section {
+    Menu {
       // A group has its own page too (its name, description, routines and picture), as on the Mac; no Duplicate for a
       // group or a chat shared from another account (C05).
       Button { profile = AgentRef(id: agent.id) } label: { Label("Edit Profile", systemImage: "pencil") }
@@ -278,7 +285,9 @@ struct HomeView: View {
         Button { Task { await store.duplicate(agent.id) } } label: { Label("Duplicate", systemImage: "plus.square.on.square") }
       }
       Button { Task { await store.setHidden(agent.id, true) } } label: { Label("Hide from List", systemImage: "eye.slash") }
-      Button { UIPasteboard.general.string = agent.id } label: { Label("Copy Conversation ID", systemImage: "doc.on.doc") }
+      Button { UIPasteboard.general.string = agent.id } label: { Label("Copy ID", systemImage: "doc.on.doc") }
+    } label: {
+      Label("More", systemImage: "ellipsis")
     }
   }
 
@@ -613,7 +622,7 @@ struct ListBottomBar: View {
           .buttonStyle(.tactile)
           .accessibilityLabel("Clear search")
         } else {
-          Button { dictation.isListening ? dictation.stop() : dictation.start { text in query = text } } label: {
+          Button { dictation.isListening ? dictation.stop() : dictation.start(after: query) { text in query = text } } label: {
             Image(systemName: dictation.isListening ? "stop.circle.fill" : "mic").font(.system(size: 18))
               .foregroundStyle(dictation.isListening ? Ink.danger : Ink.secondary)
               .frame(width: 30, height: 30).tapRoom(7)
@@ -938,36 +947,46 @@ struct TitleTag: View {
 }
 
 /**
- * A chat as a long press shows it above its menu (Messages' preview): its
- * newest lines, read for the preview without opening the chat (so it stays
- * unread), at the bottom of a card the size of most of the screen.
+ * A chat as a long press shows it above its menu, as the founder's
+ * reference does (25 October 2026): the agent's picture and name, a hairline, then
+ * the first paragraph of the newest message in its bubble (`Chat.peek`).
+ * Read for the preview without opening the chat, so it stays unread; until
+ * it is read, the list's own line.
  */
 struct ChatPeek: View {
   let agentId: String
   @Environment(AppStore.self) private var store
-  private static let width: CGFloat = 360
+  private static let width: CGFloat = 300
 
   var body: some View {
-    let rows = Array(store.rows(for: agentId).suffix(16))
-    Group {
-      if rows.isEmpty {
-        ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
-      } else {
-        ScrollView {
-          VStack(alignment: .leading, spacing: 0) {
-            ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
-              ChatRowView(row: row, agentId: agentId).equatable()
-                .padding(.top, ChatMessages.gap(index > 0 ? rows[index - 1] : nil, row))
-            }
-          }
-          .padding(.horizontal, 16).padding(.vertical, 14)
-          .environment(\.chatWidth, Self.width - 32)
+    let agent = store.agent(agentId)
+    let line = Chat.peek(store.rows(for: agentId)) ?? Chat.firstParagraph(agent?.lastMessagePreview ?? "").map { (text: $0, fromPerson: false) }
+    VStack(alignment: .leading, spacing: 0) {
+      HStack(spacing: 12) {
+        if let agent {
+          AgentAvatar(agent: agent, members: store.members(of: agent)).frame(width: 28, height: 28)
         }
-        .defaultScrollAnchor(.bottom)
-        .scrollDisabled(true)
+        Text(agent?.name ?? "").font(.system(size: 17, weight: .semibold)).foregroundStyle(Ink.primary).lineLimit(1)
+        Spacer(minLength: 0)
+      }
+      .padding(.horizontal, 16)
+      .frame(height: 54)
+      Rectangle().fill(Ink.hairline).frame(height: 1)
+      if let line {
+        Text(line.text)
+          .font(.system(size: 17))
+          .foregroundStyle(line.fromPerson ? Ink.mineText : Ink.primary)
+          .lineLimit(10)
+          .padding(.horizontal, 14)
+          .padding(.vertical, 10)
+          .background(line.fromPerson ? Ink.bubbleMine : Ink.bubbleTheirs, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+          .frame(maxWidth: 250, alignment: line.fromPerson ? .trailing : .leading)
+          .frame(maxWidth: .infinity, alignment: line.fromPerson ? .trailing : .leading)
+          .padding(14)
       }
     }
-    .frame(width: Self.width, height: 440)
+    .frame(width: Self.width)
+    .fixedSize(horizontal: false, vertical: true)
     .background(Ink.ground)
     .task { await store.peek(agentId) }
   }

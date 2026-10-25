@@ -287,9 +287,10 @@ final class JumpGlow {
 /**
  * The conversation itself: redrawn when its rows change, and only then.
  * As the Mac's: a new line comes in with a short rise; older lines load as
- * you near the top; scrolled up, what arrives below is counted on a pill
- * ("2 new messages") that takes you down, and a "New" line out of sight
- * above has its own pill.
+ * you near the top; a "New" line out of sight above has its pill. Scrolled
+ * up, ⌄ at the bottom right takes you to the end, what arrived meanwhile
+ * counted on it (ToEndButton); a message of yours going out takes you there
+ * too, as Messages does (the founder, 25 October 2026).
  */
 struct ChatMessages: View {
   let agentId: String
@@ -432,6 +433,15 @@ struct ChatMessages: View {
         guard let from = now.lastIndex(where: { $0.id == old }) else { return }
         let added = now[(from + 1)...]
         window += added.count
+        // A message of the person's own just went out: to the end, wherever the chat was, once the row has its place.
+        if added.contains(where: { row in if case .bubble(let b) = row { return b.fromPerson }; return false }) {
+          unseen = 0
+          Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 50_000_000)
+            withAnimation(.snappy) { reader.scrollTo(Self.bottomId, anchor: .bottom) }
+          }
+          return
+        }
         guard !atBottom else { return }
         unseen += added.filter { row in if case .bubble(let b) = row { return !b.fromPerson }; return false }.count
       }
@@ -445,16 +455,17 @@ struct ChatMessages: View {
           .transition(.move(edge: .top).combined(with: .opacity))
         }
       }
-      .overlay(alignment: .bottom) {
-        if unseen > 0 && !atBottom {
-          NewMessagesPill(count: unseen, up: false) {
+      .overlay(alignment: .bottomTrailing) {
+        if settled && !atBottom {
+          ToEndButton(count: unseen) {
             withAnimation(.snappy) { reader.scrollTo(Self.bottomId, anchor: .bottom) }
-          } dismiss: { unseen = 0 }
+          }
+          .padding(.trailing, 16)
           .padding(.bottom, 10)
-          .transition(.move(edge: .bottom).combined(with: .opacity))
+          .transition(.scale(scale: 0.6).combined(with: .opacity))
         }
       }
-      .animation(.snappy, value: unseen > 0 && !atBottom)
+      .animation(.snappy, value: settled && !atBottom)
       .animation(.snappy, value: dividerSeen || dividerDismissed)
     }
     .overlay {
@@ -746,6 +757,7 @@ struct ChatComposer: View {
     if !named.isEmpty { return String(localized: "Message \(named)") }
     return store.groupIds.contains(agentId) ? String(localized: "Message group") : String(localized: "Ask anything, or drop a file.")
     #else
+    if dictation.isListening { return String(localized: "Listening…") }
     if reply?.target != nil { return String(localized: "Reply") }
     return String(localized: "Message")
     #endif
@@ -817,69 +829,86 @@ struct ChatComposer: View {
       // Messages' composer: + in a glass circle, then the field in glass, the mic inside it at the right while it is
       // empty and the blue send once there is something to send. Nothing opaque: the chat shows through as it scrolls under.
       HStack(alignment: .bottom, spacing: 8) {
-        Button { picking = true } label: {
-          Image(systemName: "plus").font(.system(size: 19, weight: .regular)).foregroundStyle(Ink.primary)
-            .frame(width: 40, height: 40)
+        if dictation.isListening {
+          // While it listens, + gives way to Cancel: the words heard go, what was typed before stays.
+          Button(action: cancelDictation) {
+            Image(systemName: "xmark").font(.system(size: 16, weight: .semibold)).foregroundStyle(Ink.primary)
+              .frame(width: 40, height: 40)
+          }
+          .buttonStyle(Tactile(look: GlassDisc()))
+          .accessibilityLabel("Cancel dictation")
+          .transition(.scale(scale: 0.6).combined(with: .opacity))
+        } else {
+          Button { picking = true } label: {
+            Image(systemName: "plus").font(.system(size: 19, weight: .regular)).foregroundStyle(Ink.primary)
+              .frame(width: 40, height: 40)
+          }
+          .buttonStyle(Tactile(look: GlassDisc()))
+          .accessibilityLabel("Attach")
+          .transition(.scale(scale: 0.6).combined(with: .opacity))
         }
-        .buttonStyle(Tactile(look: GlassDisc()))
-        .accessibilityLabel("Attach")
-        HStack(alignment: .bottom, spacing: 4) {
-          TextField(placeholder, text: $draft, axis: .vertical)
-            .font(.system(size: 17))
-            .lineLimit(1...6)
-            .focused($typing)
-            // The open list's keys first (arrows, Return or Tab to pick, Esc to put it away); Esc with none leaves the field.
-            .onKeyPress(phases: .down) { press in key(press) }
-            #if os(macOS)
-            // Return sends, as the Mac's window does; Option-Return starts a new line.
-            .onSubmit {
-              if let list = openList, list.count > 0 { pick(min(highlighted, list.count - 1), in: list); return }
-              if mode == .send { send() }
-            }
-            #endif
-            .padding(.leading, 16)
-            .padding(.vertical, 9)
-            .frame(maxWidth: .infinity, alignment: .leading)
-          ZStack {
-            switch mode {
-            case .stop:
-              Button { dictation.stop() } label: {
-                Image(systemName: "stop.fill").font(.system(size: 11, weight: .bold)).foregroundStyle(.white)
-                  .frame(width: 30, height: 30).background(Ink.danger, in: Circle())
-                  .frame(width: 36, height: 36).contentShape(.circle)
+        VStack(spacing: 0) {
+          HStack(alignment: .bottom, spacing: 4) {
+            TextField(placeholder, text: $draft, axis: .vertical)
+              .font(.system(size: 17))
+              .lineLimit(1...6)
+              .focused($typing)
+              // The open list's keys first (arrows, Return or Tab to pick, Esc to put it away); Esc with none leaves the field.
+              .onKeyPress(phases: .down) { press in key(press) }
+              #if os(macOS)
+              // Return sends, as the Mac's window does; Option-Return starts a new line.
+              .onSubmit {
+                if let list = openList, list.count > 0 { pick(min(highlighted, list.count - 1), in: list); return }
+                if mode == .send { send() }
               }
-              .accessibilityLabel("Stop dictation")
-              .transition(.scale(scale: 0.6).combined(with: .opacity))
-            case .mic:
-              Button { dictation.start { text in draft = text } } label: {
-                Image(systemName: "mic").font(.system(size: 18, weight: .regular)).foregroundStyle(Ink.secondary)
-                  .frame(width: 36, height: 36).contentShape(.circle)
+              #endif
+              .padding(.leading, 16)
+              .padding(.vertical, 9)
+              .frame(maxWidth: .infinity, alignment: .leading)
+            // While it listens, the bar under the words has the ✓ (DictationBar).
+            if mode != .stop {
+              ZStack {
+                switch mode {
+                case .stop:
+                  EmptyView()
+                case .mic:
+                  Button { dictation.start(after: draft) { text in draft = text } } label: {
+                    Image(systemName: "mic").font(.system(size: 18, weight: .regular)).foregroundStyle(Ink.secondary)
+                      .frame(width: 36, height: 36).contentShape(.circle)
+                  }
+                  .accessibilityLabel("Dictate")
+                  .transition(.scale(scale: 0.6).combined(with: .opacity))
+                case .send:
+                  Button(action: send) {
+                    Image(systemName: "arrow.up").font(.system(size: 15, weight: .bold)).foregroundStyle(.white)
+                      .frame(width: 30, height: 30).background(Ink.bubbleMine, in: Circle())
+                      .frame(width: 36, height: 36).contentShape(.circle)
+                  }
+                  .accessibilityLabel("Send")
+                  .disabled(hook?.sendDisabled == true || store.isSendingPaused)
+                  .transition(.scale(scale: 0.6).combined(with: .opacity))
+                }
               }
-              .accessibilityLabel("Dictate")
-              .transition(.scale(scale: 0.6).combined(with: .opacity))
-            case .send:
-              Button(action: send) {
-                Image(systemName: "arrow.up").font(.system(size: 15, weight: .bold)).foregroundStyle(.white)
-                  .frame(width: 30, height: 30).background(Ink.bubbleMine, in: Circle())
-                  .frame(width: 36, height: 36).contentShape(.circle)
-              }
-              .accessibilityLabel("Send")
-              .disabled(hook?.sendDisabled == true || store.isSendingPaused)
-              .transition(.scale(scale: 0.6).combined(with: .opacity))
+              .buttonStyle(.tactile)
+              .frame(width: 36, height: 36)
+              .padding(.trailing, 2).padding(.bottom, 2)
+              .animation(.easeOut(duration: 0.2), value: mode)
             }
           }
-          .buttonStyle(.tactile)
-          .frame(width: 36, height: 36)
-          .padding(.trailing, 2).padding(.bottom, 2)
-          .animation(.easeOut(duration: 0.2), value: mode)
+          if dictation.isListening {
+            DictationBar(dictation: dictation) { dictation.stop() }
+              .padding(.leading, 16).padding(.trailing, 2).padding(.bottom, 2)
+              .transition(.opacity.combined(with: .move(edge: .bottom)))
+          }
         }
         .frame(minHeight: 40)
         // A tap anywhere on the field that is not its button goes to the text, as in Messages.
         .background { Color.clear.contentShape(.rect(cornerRadius: 20, style: .continuous)).onTapGesture { typing = true } }
         .glassEffect(.regular, in: .rect(cornerRadius: 20, style: .continuous))
       }
-      // A new line or a quote above eases in.
+      // A new line or a quote above eases in; so does dictation's bar.
       .animation(.spring(response: 0.3, dampingFraction: 0.9), value: lineCount)
+      .animation(.spring(response: 0.3, dampingFraction: 0.9), value: dictation.isListening)
       .animation(.spring(response: 0.3, dampingFraction: 0.9), value: reply?.target?.id)
     }
     .padding(.horizontal, 12)
@@ -1071,6 +1100,13 @@ struct ChatComposer: View {
       recentEmoji = EmojiCatalog.remembering(emoji.id, in: recentEmoji.split(separator: " ").map(String.init)).joined(separator: " ")
     }
     highlighted = 0
+  }
+
+  /** Cancel while dictating: the words heard go, and the field is what was typed before. */
+  private func cancelDictation() {
+    let typed = dictation.before
+    dictation.cancel()
+    draft = typed
   }
 
   private func send() {
@@ -1978,6 +2014,41 @@ struct NewMessagesPill: View {
     }
     .padding(.trailing, 4)
     .glassEffect(.regular, in: .capsule)
+  }
+}
+
+/**
+ * Scrolled up in a chat: ⌄ in a glass circle at the bottom right, as
+ * Messages has it (the founder, 25 October 2026), taking the chat to its
+ * end; how many of the agents' messages came meanwhile on it, in our blue.
+ */
+struct ToEndButton: View {
+  let count: Int
+  let action: () -> Void
+
+  var body: some View {
+    Button(action: action) {
+      Image(systemName: "chevron.down")
+        .font(.system(size: 17, weight: .semibold))
+        .foregroundStyle(Ink.primary)
+        .frame(width: 44, height: 44)
+        .glassEffect(.regular.interactive(), in: .circle)
+        .overlay(alignment: .topTrailing) {
+          if count > 0 {
+            Text(count, format: .number)
+              .font(.system(size: 12, weight: .semibold))
+              .foregroundStyle(.white)
+              .padding(.horizontal, 6)
+              .frame(minWidth: 20, minHeight: 20)
+              .background(Ink.bubbleMine, in: Capsule())
+              .offset(x: 4, y: -4)
+          }
+        }
+        .contentShape(.circle)
+    }
+    .buttonStyle(.tactile)
+    .accessibilityLabel("Jump to latest")
+    .accessibilityValue(count == 0 ? "" : count == 1 ? String(localized: "1 new message") : String(localized: "\(count) new messages"))
   }
 }
 
