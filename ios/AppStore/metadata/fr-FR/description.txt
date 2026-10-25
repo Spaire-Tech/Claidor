@@ -23,5 +23,5 @@ Tes données sont chiffrées au repos et en transit, isolées de celles des autr
 
 Simeon est en français, anglais, espagnol, allemand, néerlandais, italien, portugais (Brésil), suédois, polonais et turc. Les forfaits sont des abonnements mensuels achetés dans l’app ; tes 30 premiers jours sont offerts, sans carte.
 
-Conditions d’utilisation : https://simeonlabs.com/terms
-Politique de confidentialité : https://simeonlabs.com/privacy
+Conditions d’utilisation : https://www.simeonlabs.com/terms
+Politique de confidentialité : https://www.simeonlabs.com/privacy

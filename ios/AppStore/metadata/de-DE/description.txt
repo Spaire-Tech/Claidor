@@ -23,5 +23,5 @@ Deine Daten werden bei Speicherung und Übertragung verschlüsselt, getrennt von
 
 Simeon gibt es auf Deutsch, Englisch, Französisch, Spanisch, Niederländisch, Italienisch, Portugiesisch (Brasilien), Schwedisch, Polnisch und Türkisch. Die Tarife sind Monatsabos, die du in der App kaufst; deine ersten 30 Tage sind gratis, ohne Karte.
 
-Nutzungsbedingungen: https://simeonlabs.com/terms
-Datenschutzerklärung: https://simeonlabs.com/privacy
+Nutzungsbedingungen: https://www.simeonlabs.com/terms
+Datenschutzerklärung: https://www.simeonlabs.com/privacy

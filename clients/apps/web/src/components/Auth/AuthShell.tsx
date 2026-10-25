@@ -89,7 +89,7 @@ export const Legal = ({ locale }: { locale: AcceptedLocale }) => {
         {
           terms: (
             <a
-              href="https://www.simeonlabs.com/legal/terms-of-service"
+              href="https://www.simeonlabs.com/terms"
               className={legalLink}
             >
               {t('simeon.signIn.terms')}
@@ -97,7 +97,7 @@ export const Legal = ({ locale }: { locale: AcceptedLocale }) => {
           ),
           privacy: (
             <a
-              href="https://www.simeonlabs.com/legal/privacy-policy"
+              href="https://www.simeonlabs.com/privacy"
               className={legalLink}
             >
               {t('simeon.signIn.privacy')}

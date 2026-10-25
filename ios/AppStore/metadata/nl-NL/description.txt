@@ -23,5 +23,5 @@ Je data wordt versleuteld opgeslagen en verstuurd, gescheiden van die van elke a
 
 Simeon is er in het Nederlands, Engels, Frans, Spaans, Duits, Italiaans, Portugees (Brazilië), Zweeds, Pools en Turks. Je koopt een maandabonnement in de app; je eerste 30 dagen zijn gratis, zonder kaart.
 
-Gebruiksvoorwaarden: https://simeonlabs.com/terms
-Privacybeleid: https://simeonlabs.com/privacy
+Gebruiksvoorwaarden: https://www.simeonlabs.com/terms
+Privacybeleid: https://www.simeonlabs.com/privacy

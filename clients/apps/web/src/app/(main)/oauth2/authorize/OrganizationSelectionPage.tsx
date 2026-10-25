@@ -235,7 +235,7 @@ const OrganizationSelectionPage = ({
                           </li>
                           <li>
                             <a
-                              href="https://www.simeonlabs.com/legal/terms-of-service"
+                              href="https://www.simeonlabs.com/terms"
                               className="text-blue-600 hover:underline"
                               target="_blank"
                               rel="noreferrer"
@@ -245,7 +245,7 @@ const OrganizationSelectionPage = ({
                           </li>
                           <li>
                             <a
-                              href="https://www.simeonlabs.com/legal/privacy-policy"
+                              href="https://www.simeonlabs.com/privacy"
                               className="text-blue-600 hover:underline"
                               target="_blank"
                               rel="noreferrer"

@@ -839,10 +839,10 @@ then "the apple button make it white/black. not blue" and the Terms line
   line about the device. The tap stays: without it,
   whoever got a signed-in person to open a sign-in link of their own making
   would be signed in as that person.
-- **Not yet:** the Terms and Privacy links go to
-  `simeonlabs.com/legal/terms-of-service` and `/legal/privacy-policy`, the
-  addresses the Mac's window and the web app already use; both answer 404
-  until those pages are written.
+- The Terms and Privacy links go to `www.simeonlabs.com/terms` and
+  `/privacy`, the pages themselves (25 October 2026, the founder: the old
+  `/legal/…` addresses showed "This page is now at…" before forwarding), in
+  every app, the web app and the server's sign-in page.
 
 ## 28. The call: rings, hang-up, one avatar, calm, and its turn (9 October 2026)
 

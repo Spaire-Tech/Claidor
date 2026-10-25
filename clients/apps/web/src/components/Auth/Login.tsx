@@ -91,14 +91,14 @@ const Login = ({
         By using Simeon you agree to our{' '}
         <a
           className="text-gray-600"
-          href="https://www.simeonlabs.com/legal/terms-of-service"
+          href="https://www.simeonlabs.com/terms"
         >
           Terms of Service
         </a>{' '}
         and{' '}
         <a
           className="text-gray-600"
-          href="https://www.simeonlabs.com/legal/privacy-policy"
+          href="https://www.simeonlabs.com/privacy"
         >
           Privacy Policy
         </a>

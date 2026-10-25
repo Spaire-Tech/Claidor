@@ -179,11 +179,11 @@ def _deep_link(redirect_target: str | None) -> str | None:
 def _legal() -> str:
     """The line, in the request's language, with its two links."""
     terms = (
-        '<a href="https://www.simeonlabs.com/legal/terms-of-service">'
+        '<a href="https://www.simeonlabs.com/terms">'
         f"{escape(say('sign_in.page.terms'))}</a>"
     )
     privacy = (
-        '<a href="https://www.simeonlabs.com/legal/privacy-policy">'
+        '<a href="https://www.simeonlabs.com/privacy">'
         f"{escape(say('sign_in.page.privacy'))}</a>"
     )
     line = escape(say("sign_in.page.legal"), quote=False)
@@ -640,8 +640,8 @@ def mcp_oauth_client_document() -> dict[str, Any]:
         "client_name": "Simeon",
         "client_uri": "https://simeonlabs.com",
         "logo_uri": "https://www.simeonlabs.com/apple-touch-icon.png",
-        "policy_uri": "https://simeonlabs.com/privacy",
-        "tos_uri": "https://simeonlabs.com/terms",
+        "policy_uri": "https://www.simeonlabs.com/privacy",
+        "tos_uri": "https://www.simeonlabs.com/terms",
         # The box's return address, and the Mac's loopback for a vendor
         # that sends sign-ins only there (`loopbackOnly` in the catalogue).
         "redirect_uris": [

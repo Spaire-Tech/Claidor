@@ -205,8 +205,8 @@ struct SettingsSheet: View {
 
 /** Where the legal pages are: the web app's sign-in links to the same two. */
 enum Legal {
-  static let privacy = URL(string: "https://www.simeonlabs.com/legal/privacy-policy")!
-  static let terms = URL(string: "https://www.simeonlabs.com/legal/terms-of-service")!
+  static let privacy = URL(string: "https://www.simeonlabs.com/privacy")!
+  static let terms = URL(string: "https://www.simeonlabs.com/terms")!
 }
 
 /** A page on the web from Settings: its name, and the arrow out at the right, as the reference has them. */

@@ -491,7 +491,7 @@ class TestLoginDeepControl:
             assert "asking to sign in" not in page.text, target
             # The line under the buttons, as under the iPhone's.
             assert "By continuing, you agree to our" in page.text, target
-            assert "/legal/privacy-policy" in page.text, target
+            assert "https://www.simeonlabs.com/privacy" in page.text, target
 
     @pytest.mark.auth
     async def test_a_redirect_target_that_is_not_a_scheme_builds_no_link(

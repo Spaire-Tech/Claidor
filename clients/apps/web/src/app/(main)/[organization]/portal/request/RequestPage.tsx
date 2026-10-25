@@ -200,7 +200,7 @@ const ClientPage = ({
       <p className="spauth-footnote">
         By continuing you agree to the{' '}
         <a
-          href="https://www.simeonlabs.com/legal/terms-of-service"
+          href="https://www.simeonlabs.com/terms"
           target="_blank"
           rel="noopener noreferrer"
         >
@@ -208,7 +208,7 @@ const ClientPage = ({
         </a>{' '}
         &amp;{' '}
         <a
-          href="https://www.simeonlabs.com/legal/privacy-policy"
+          href="https://www.simeonlabs.com/privacy"
           target="_blank"
           rel="noopener noreferrer"
         >

@@ -194,8 +194,8 @@ struct SignInScreen: View {
   @Environment(SessionController.self) private var session
 
   /** The addresses the Mac's window and the web app link (they answer 404 until the pages are written). */
-  static let terms = URL(string: "https://www.simeonlabs.com/legal/terms-of-service")!
-  static let privacy = URL(string: "https://www.simeonlabs.com/legal/privacy-policy")!
+  static let terms = URL(string: "https://www.simeonlabs.com/terms")!
+  static let privacy = URL(string: "https://www.simeonlabs.com/privacy")!
 
   /** What the screen says above the buttons: a sign-in that went wrong. While Apple's or Google's sheet is open, the pressed button's spinner says it alone (the founder, 12 October 2026: "if the google icon is already loading, we dont need the text"); once the account is in, `SettingUpScreen` takes the screen. */
   private var message: String? {

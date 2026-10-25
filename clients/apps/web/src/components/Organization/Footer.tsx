@@ -65,10 +65,10 @@ const Footer = () => {
               <FooterLink href="https://simeonlabs.com/assets/brand/simeon_brand.zip">
                 Brand Assets
               </FooterLink>
-              <FooterLink href="https://www.simeonlabs.com/legal/terms-of-service">
+              <FooterLink href="https://www.simeonlabs.com/terms">
                 Terms of Service
               </FooterLink>
-              <FooterLink href="https://www.simeonlabs.com/legal/privacy-policy">
+              <FooterLink href="https://www.simeonlabs.com/privacy">
                 Privacy Policy
               </FooterLink>
             </div>

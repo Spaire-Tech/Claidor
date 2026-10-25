@@ -600,8 +600,8 @@ The migration `desktop_app_store_1012` adds `desktop_app_store_subscriptions`.
    `plans.app_store.notification type=TEST`.
 5. **The app's Apple ID** on Render as `SIMEON_APPLE_APP_ID`.
 6. **The listing**: the App Store description ends with links to the Terms
-   (`https://simeonlabs.com/terms`, as the licence agreement) and the
-   Privacy Policy (`https://simeonlabs.com/privacy`); App Review rejects
+   (`https://www.simeonlabs.com/terms`, as the licence agreement) and the
+   Privacy Policy (`https://www.simeonlabs.com/privacy`); App Review rejects
    subscriptions without them.
 7. **Testing**: a sandbox Apple account (Users and Access › Sandbox), then
    a TestFlight build: buy, see the plan start, Restore Purchases, cancel
