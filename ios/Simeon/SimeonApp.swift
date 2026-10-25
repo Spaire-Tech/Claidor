@@ -554,7 +554,7 @@ struct OnboardingFlow: View {
     .padding(.top, 72)
   }
 
-  /** "What should we call you?": one field, the name from Apple or Google already in it; Continue under it. */
+  /** "What should we call you?": one field, the name from Apple or Google already in it; the agreement and Continue under it. */
   private var nameScreen: some View {
     let typed = Onboarding.normalizedName(name)
     return VStack(spacing: 0) {
@@ -586,6 +586,13 @@ struct OnboardingFlow: View {
       .contentShape(.rect)
       .onTapGesture { nameFocused = true }
       .padding(.top, 40)
+      Text(Self.agreement)
+        .font(.system(size: 15))
+        .foregroundStyle(Ink.secondary)
+        .tint(Ink.secondary)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .fixedSize(horizontal: false, vertical: true)
+        .padding(.top, 14)
       continueButton(enabled: !typed.isEmpty, action: leaveName)
         .padding(.top, 24)
       Spacer()
@@ -605,6 +612,18 @@ struct OnboardingFlow: View {
     .onChange(of: store.accessCoverShown) { _, shown in
       if shown { nameFocused = false } else { nameFocused = true }
     }
+  }
+
+  /**
+   * Under the name, as ChatGPT's first-run screen has it (the founder, 25
+   * October 2026): "By tapping “Continue”, you agree to our Terms and have
+   * read our Privacy Policy.", the two names links, underlined, in the grey.
+   */
+  static var agreement: AttributedString {
+    let sentence = String(localized: "By tapping “Continue”, you agree to our [Terms](\(Legal.terms.absoluteString)) and have read our [Privacy Policy](\(Legal.privacy.absoluteString)).")
+    var text = (try? AttributedString(markdown: sentence)) ?? AttributedString(sentence)
+    for range in text.runs.filter({ $0.link != nil }).map(\.range) { text[range].underlineStyle = Text.LineStyle.single }
+    return text
   }
 
   /** "Unlock Simeon with Face ID": Continue turns it on (iOS asks once whether Simeon may use it), Skip leaves it off. */
