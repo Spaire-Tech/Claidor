@@ -638,7 +638,7 @@ struct OnboardingFlow: View {
   }
 
   /**
-   * "Let Simeon tell you when work is done", with a switch in a card (the
+   * "Allow notifications", with a switch in a card (the
    * founder, 12 October 2026: "the notification thing. toggle", as the
    * reference's Data Sharing card has it), on to start with. Continue with
    * it on brings Apple's prompt (when the phone has not asked yet) and
@@ -647,14 +647,10 @@ struct OnboardingFlow: View {
   private var notificationsScreen: some View {
     VStack(spacing: 0) {
       header(.notifications) {
-        // Apple's own bell, as Settings' Notifications draws it: white on the system red, in an icon's rounded square
-        // (the founder, 25 October 2026: "can we get a more apple bell?").
-        Image(systemName: "bell.badge.fill")
-          .symbolRenderingMode(.monochrome)
-          .font(.system(size: 28, weight: .medium))
-          .foregroundStyle(.white)
-          .frame(width: 60, height: 60)
-          .background(Color(.systemRed).gradient, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        // A plain bell drawn as Face ID's glyph (the founder, 25 October 2026: "a simple icon. like face id icon").
+        Image(systemName: "bell")
+          .font(.system(size: 44, weight: .light))
+          .foregroundStyle(Ink.primary)
           .accessibilityHidden(true)
       }
       Toggle(isOn: notificationsSwitch) {

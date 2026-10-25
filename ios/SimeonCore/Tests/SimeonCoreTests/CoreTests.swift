@@ -1393,7 +1393,7 @@ final class OnboardingTests: XCTestCase {
 
   func testTheStepsInOrder() {
     XCTAssertEqual(OnboardingStep.allCases.map(\.title), [
-      "What should we call you?", "Unlock Simeon with Face ID", "Let Simeon tell you when work is done",
+      "What should we call you?", "Unlock Simeon with Face ID", "Allow notifications",
     ])
     XCTAssertEqual(Onboarding.handOffLine(ready: false), "Setting up your Simeon…")
     XCTAssertEqual(Onboarding.handOffLine(ready: true), "Getting your team ready…")
