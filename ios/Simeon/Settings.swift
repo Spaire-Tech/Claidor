@@ -1042,9 +1042,9 @@ struct TimeZonePicker: View {
 
 /**
  * Auto-review's rules (the founder, 25 October 2026: "so not clear … add
- * rule again behave like a writing field"): a line saying what they are for,
- * the allowed rules and the ask-first ones each under its name, then Add
- * Rule in our blue with its plus. Add Rule, or a tap on a rule, opens the
+ * rule again behave like a writing field", then "too much text"): the
+ * allowed rules and the ask-first ones each under its name, then Add Rule
+ * in our blue with its plus, and no line of explanation. Add Rule, or a tap on a rule, opens the
  * rule's sheet (RuleEditor); a swipe deletes a rule. Twenty rules a list and
  * a thousand characters a rule, a rule already listed not twice
  * (`AutoReviewInstructions`). Stored in the box as `autoReviewInstructions`,
@@ -1066,13 +1066,6 @@ struct AutoReviewRules: View {
   var body: some View {
     let rules = self.rules
     Form {
-      Section {
-        Text("Tell Simeon what it can do on its own and what it should ask you about first.")
-          .font(.system(size: 15))
-          .foregroundStyle(Ink.secondary)
-          .listRowBackground(Color.clear)
-          .listRowInsets(EdgeInsets(top: 0, leading: 4, bottom: 0, trailing: 4))
-      }
       ForEach(AutoReviewInstructions.Behavior.allCases, id: \.self) { behavior in
         let listed = rules.rules.filter { $0.behavior == behavior }
         if !listed.isEmpty {
@@ -1095,8 +1088,6 @@ struct AutoReviewRules: View {
             }
           } header: {
             Text(AutoReviewInstructions.label(behavior))
-          } footer: {
-            if behavior == .ask { Text("Ask first wins when two rules disagree.") }
           }
           .listRowBackground(Ink.groupedRow)
         }
@@ -1105,8 +1096,6 @@ struct AutoReviewRules: View {
         Button { editing = EditingRule(rule: nil) } label: {
           Label("Add Rule", systemImage: "plus.circle.fill").foregroundStyle(Ink.blue)
         }
-      } footer: {
-        Text("These rules apply only to you. Built-in safety checks always apply.")
       }
       .listRowBackground(Ink.groupedRow)
     }
@@ -1131,10 +1120,9 @@ struct AutoReviewRules: View {
 /**
  * A rule, new or being edited, read as a sentence: "When Simeon wants to:"
  * and the action in a field (the keyboard up for a new one), "It should:"
- * and two choices, each saying what it means, the chosen one ticked in our
- * blue. Cancel, and Add or Save in our blue (greyed while it may not be
- * saved: empty, already listed, or its list full). An edited rule has
- * Delete Rule.
+ * and its two choices, the chosen one ticked in our blue. Cancel, and Add
+ * or Save in our blue (greyed while it may not be saved: empty, already
+ * listed, or its list full). An edited rule has Delete Rule.
  */
 private struct RuleEditor: View {
   let rule: AutoReviewInstructions.Rule?
@@ -1171,13 +1159,8 @@ private struct RuleEditor: View {
         Section {
           ForEach(AutoReviewInstructions.Behavior.allCases, id: \.self) { choice in
             Button { behavior = choice } label: {
-              HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 2) {
-                  Text(AutoReviewInstructions.label(choice)).foregroundStyle(Ink.primary)
-                  Text(choice == .allow ? "Simeon does it without asking you." : "Simeon asks you before doing it.")
-                    .font(.system(size: 13))
-                    .foregroundStyle(Ink.secondary)
-                }
+              HStack {
+                Text(AutoReviewInstructions.label(choice)).foregroundStyle(Ink.primary)
                 Spacer(minLength: 8)
                 if behavior == choice {
                   Image(systemName: "checkmark").font(.system(size: 15, weight: .semibold)).foregroundStyle(Ink.blue)

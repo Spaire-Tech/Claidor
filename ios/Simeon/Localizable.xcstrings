@@ -5521,64 +5521,6 @@
         }
       }
     },
-    "Ask first wins when two rules disagree." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Wenn sich zwei Regeln widersprechen, gilt „Erst fragen“."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Si dos reglas se contradicen, gana «Preguntar antes»."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Si deux règles se contredisent, « Demander d’abord » l’emporte."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Se due regole sono in conflitto, vale «Chiedi prima»."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Als twee regels elkaar tegenspreken, geldt ‘Eerst vragen’."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gdy dwie reguły są sprzeczne, wygrywa „Najpierw zapytaj”."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Se duas regras se contradisserem, vale “Perguntar antes”."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Om två regler säger emot varandra gäller ”Fråga först”."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "İki kural çeliştiğinde “Önce sor” geçerli olur."
-          }
-        }
-      }
-    },
     "At least %lld characters. You'll sign in with %@ and this password." : {
       "localizations" : {
         "de" : {
@@ -29333,64 +29275,6 @@
         }
       }
     },
-    "Simeon asks you before doing it." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Simeon fragt dich, bevor er es tut."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Simeon te pregunta antes de hacerlo."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Simeon te demande avant de le faire."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Simeon te lo chiede prima di farlo."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Simeon vraagt het je voordat hij het doet."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Simeon pyta cię, zanim to zrobi."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "O Simeon pergunta a você antes de fazer."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Simeon frågar dig innan han gör det."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Simeon yapmadan önce sana sorar."
-          }
-        }
-      }
-    },
     "Simeon can't use speech recognition. Allow it in Settings." : {
       "localizations" : {
         "de" : {
@@ -29677,64 +29561,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Simeon her eylemi çalıştırmadan önce kontrol eder ve gerektiğinde önce sana sorar."
-          }
-        }
-      }
-    },
-    "Simeon does it without asking you." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Simeon erledigt es, ohne dich zu fragen."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Simeon lo hace sin preguntarte."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Simeon le fait sans te demander."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Simeon lo fa senza chiedertelo."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Simeon doet het zonder het je te vragen."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Simeon robi to bez pytania cię."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "O Simeon faz sem perguntar a você."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Simeon gör det utan att fråga dig."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Simeon sana sormadan yapar."
           }
         }
       }
@@ -31714,64 +31540,6 @@
         }
       }
     },
-    "Tell Simeon what it can do on its own and what it should ask you about first." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sag Simeon, was er allein tun darf und wann er dich zuerst fragen soll."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dile a Simeon qué puede hacer por su cuenta y qué debe preguntarte antes."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dis à Simeon ce qu’il peut faire seul et ce qu’il doit te demander d’abord."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Di’ a Simeon cosa può fare da solo e per cosa deve prima chiederti."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vertel Simeon wat hij zelf mag doen en waarover hij je eerst moet vragen."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Powiedz Simeonowi, co może robić sam, a o co ma cię najpierw zapytać."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Diga ao Simeon o que ele pode fazer sozinho e o que deve perguntar a você antes."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Berätta för Simeon vad han får göra på egen hand och vad han ska fråga dig om först."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Simeon’a neyi kendi başına yapabileceğini ve neyi önce sana sorması gerektiğini söyle."
-          }
-        }
-      }
-    },
     "Tenant ID" : {
       "localizations" : {
         "de" : {
@@ -32638,64 +32406,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tema: %@"
-          }
-        }
-      }
-    },
-    "These rules apply only to you. Built-in safety checks always apply." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Diese Regeln gelten nur für dich. Integrierte Sicherheitsprüfungen gelten immer."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Estas reglas solo se aplican a ti. Los controles de seguridad integrados siempre se aplican."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ces règles ne s’appliquent qu’à toi. Les contrôles de sécurité intégrés s’appliquent toujours."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Queste regole valgono solo per te. I controlli di sicurezza integrati valgono sempre."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Deze regels gelden alleen voor jou. Ingebouwde veiligheidscontroles gelden altijd."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Te reguły dotyczą tylko ciebie. Wbudowane zabezpieczenia obowiązują zawsze."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Estas regras valem só para você. As verificações de segurança integradas sempre valem."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reglerna gäller bara dig. Inbyggda säkerhetskontroller gäller alltid."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bu kurallar yalnızca senin için geçerli. Yerleşik güvenlik kontrolleri her zaman uygulanır."
           }
         }
       }
