@@ -36711,64 +36711,6 @@
         }
       }
     },
-    "Your agents and their computers, on your iPhone and your Mac." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Deine Agenten und ihre Computer, auf deinem iPhone und deinem Mac."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tus agentes y sus computadoras, en tu iPhone y tu Mac."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tes agents et leurs ordinateurs, sur ton iPhone et ton Mac."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "I tuoi agenti e i loro computer, sul tuo iPhone e sul tuo Mac."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Je agenten en hun computers, op je iPhone en je Mac."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Twoi agenci i ich komputery na twoim iPhonie i Macu."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Seus agentes e os computadores deles, no seu iPhone e no seu Mac."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dina agenter och deras datorer, på din iPhone och din Mac."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajanların ve bilgisayarları, iPhone’unda ve Mac’inde."
-          }
-        }
-      }
-    },
     "Your agents are safe — they just can’t be loaded right now." : {
       "localizations" : {
         "de" : {
@@ -36997,6 +36939,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Link kartın"
+          }
+        }
+      }
+    },
+    "Your personal team of agents for whatever needs doing." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein persönliches Team aus Agenten für alles, was zu tun ist."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu propio equipo de agentes para todo lo que haya que hacer."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ta propre équipe d'agents pour tout ce qu'il y a à faire."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tuo team personale di agenti per tutto ciò che c'è da fare."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je eigen team van agenten voor alles wat er gedaan moet worden."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twój osobisty zespół agentów do wszystkiego, co trzeba zrobić."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sua equipe pessoal de agentes para tudo o que precisar ser feito."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ditt personliga team av agenter för allt som behöver göras."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yapılması gereken her şey için kişisel ajan ekibin."
           }
         }
       }
