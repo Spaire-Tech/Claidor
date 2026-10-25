@@ -534,8 +534,9 @@ struct OnboardingFlow: View {
   private func header(_ step: OnboardingStep, @ViewBuilder icon: () -> some View) -> some View {
     VStack(spacing: 18) {
       icon()
+      // At 22, as the sign-in sheet's titles (the founder, 25 October 2026, with ChatGPT's as the reference).
       Text(step.title(unlockingWith: AppLock.name))
-        .font(.system(size: 26, weight: .regular))
+        .font(.system(size: 22, weight: .regular))
         .foregroundStyle(Ink.primary)
         .multilineTextAlignment(.center)
         .fixedSize(horizontal: false, vertical: true)
@@ -558,7 +559,7 @@ struct OnboardingFlow: View {
     let typed = Onboarding.normalizedName(name)
     return VStack(spacing: 0) {
       header(.name) {
-        Image("SignIn/Mark").resizable().renderingMode(.template).scaledToFit().frame(width: 40, height: 40)
+        Image("SignIn/Mark").resizable().renderingMode(.template).scaledToFit().frame(width: 34, height: 34)
           .foregroundStyle(Ink.primary)
           .accessibilityHidden(true)
       }
@@ -611,7 +612,7 @@ struct OnboardingFlow: View {
     VStack(spacing: 0) {
       header(.faceID) {
         Image(systemName: AppLock.biometry == .touchID ? "touchid" : "faceid")
-          .font(.system(size: 52, weight: .light))
+          .font(.system(size: 44, weight: .light))
           .foregroundStyle(Ink.primary)
           .accessibilityHidden(true)
       }
@@ -646,12 +647,14 @@ struct OnboardingFlow: View {
   private var notificationsScreen: some View {
     VStack(spacing: 0) {
       header(.notifications) {
-        Image(systemName: "bell")
-          .font(.system(size: 28, weight: .regular))
-          .foregroundStyle(Ink.primary)
-          .frame(width: 72, height: 72)
-          .background(Ink.tile, in: Circle())
-          .overlay(Circle().stroke(Ink.tileEdge, lineWidth: 0.5))
+        // Apple's own bell, as Settings' Notifications draws it: white on the system red, in an icon's rounded square
+        // (the founder, 25 October 2026: "can we get a more apple bell?").
+        Image(systemName: "bell.badge.fill")
+          .symbolRenderingMode(.monochrome)
+          .font(.system(size: 28, weight: .medium))
+          .foregroundStyle(.white)
+          .frame(width: 60, height: 60)
+          .background(Color(.systemRed).gradient, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
           .accessibilityHidden(true)
       }
       Toggle(isOn: notificationsSwitch) {
