@@ -27,6 +27,12 @@ export interface RunnerSettings {
   heartbeatIntervalMs: number;
   /** The longest a single job may take before it is given up on. */
   jobTimeoutMs: number;
+  /**
+   * Whether the agents' own Discord and Slack bots are listened to here (26
+   * October 2026, `channels/holder.ts`). On unless `SIMEON_RUNNER_CHANNELS`
+   * is `0`, `off`, `false` or `no`.
+   */
+  channels: boolean;
 }
 
 export class MissingSetting extends Error {
@@ -75,4 +81,5 @@ export const readSettings = (env: NodeJS.ProcessEnv = process.env): RunnerSettin
   pollIntervalMs: number(env, 'MATY_POLL_INTERVAL_MS', 5_000),
   heartbeatIntervalMs: number(env, 'MATY_HEARTBEAT_INTERVAL_MS', 15_000),
   jobTimeoutMs: number(env, 'MATY_JOB_TIMEOUT_MS', 15 * 60_000),
+  channels: !['0', 'off', 'false', 'no'].includes(read(env, 'RUNNER_CHANNELS').toLowerCase()),
 });
