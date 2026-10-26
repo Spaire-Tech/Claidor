@@ -166,6 +166,8 @@ final class SessionController {
   private func enter(holding: Bool = false) async {
     let api = makeAPI()
     self.api = api
+    // The agents and chats kept on this phone, shown by `attach` while the computer is asked (SavedChats).
+    store.saved = SavedChats.onDevice()
     // Signed in from here: the lock may close when the app comes back (AppLock.swift), never on this sign-in itself.
     AppLock.shared.markSignedIn()
     // A push for the chat on screen is not shown (Notifications.presentation).
@@ -322,6 +324,7 @@ final class SessionController {
     // does not replace what the sign-in screen says (14 October 2026: "Your account was deleted" became "sign-in ended").
     guard api != nil else { return }
     store.detach()
+    store.forgetSaved()
     Purchases.shared.stop()
     Notifications.shared.forget()
     FreeMonthAsk.forget()
@@ -546,6 +549,7 @@ final class SessionController {
     // First, before anything waits: a late refusal of a call made before the delete is not a sign-out (`ended`).
     self.api = nil
     store.detach()
+    store.forgetSaved()
     Purchases.shared.stop()
     await Notifications.shared.stop()
     FreeMonthAsk.forget()
@@ -561,6 +565,7 @@ final class SessionController {
 
   func signOut() async {
     store.detach()
+    store.forgetSaved()
     Purchases.shared.stop()
     await Notifications.shared.stop()
     await api?.signOut()

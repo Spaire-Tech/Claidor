@@ -202,8 +202,10 @@ struct ZoomScreen: UIViewRepresentable {
 
 /**
  * The scroll view holding the screen's picture: the picture fitted inside
- * it at zoom 1 and kept in the middle while smaller than it, and room to
- * move it above the keyboard while the keyboard is up.
+ * it at zoom 1 and kept in the middle of the part the keyboard leaves free
+ * (the keyboard is up all along in control, 26 October 2026: the middle of
+ * the whole view put the picture low, its foot behind the keyboard, an
+ * empty band over it), and room to move it above the keyboard.
  */
 final class ScreenScroller: UIScrollView {
   let web: WKWebView
@@ -274,10 +276,11 @@ final class ScreenScroller: UIScrollView {
     setContentOffset(CGPoint(x: contentOffset.x, y: min(max(spot.y - free * 0.4, lowest), highest)), animated: true)
   }
 
-  /** The picture in the middle while it is smaller than the view; the keyboard's height more below it. */
+  /** The picture in the middle of the part above the keyboard while it is smaller than that; the keyboard's height more below it. */
   func center() {
+    let free = max(0, bounds.height - keyboardOverlap)
     let dx = max(0, (bounds.width - screen.frame.width) / 2)
-    let dy = max(0, (bounds.height - screen.frame.height) / 2)
+    let dy = max(0, (free - screen.frame.height) / 2)
     let inset = UIEdgeInsets(top: dy, left: dx, bottom: dy + keyboardOverlap, right: dx)
     if contentInset != inset { contentInset = inset }
   }
@@ -287,7 +290,8 @@ final class ScreenScroller: UIScrollView {
     let mine = convert(bounds, to: window)
     keyboardOverlap = max(0, mine.maxY - end.minY)
     center()
-    if keyboardOverlap > 0, let lastTap { reveal(lastTap) }
+    // Not zoomed: the whole picture moves into the free part. Zoomed: the spot last tapped is kept in sight.
+    if zoomScale <= 1.01 { recenter(animated: true) } else if keyboardOverlap > 0, let lastTap { reveal(lastTap) }
   }
 
   @objc private func keyboardHidden(_ notification: Notification) {

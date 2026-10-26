@@ -453,12 +453,15 @@ struct ComputerPills: View {
     VStack(spacing: 8) {
       if let kind = driver.lock.kind {
         if kind == .reconnecting {
-          let words = RebuildWords.reconnecting(stage: driver.lock.stage, connected: store.isLive)
-          ProgressPill(title: words.title, subtitle: words.subtitle, progress: nil, look: look)
-            .allowsHitTesting(false)
-            .accessibilityElement(children: .combine)
-            .accessibilityLabel(words.title)
-            .accessibilityAddTraits(.updatesFrequently)
+          // Only while a message waits on the computer (26 October 2026): the list and the chats read from what this Mac kept.
+          if store.waitingToSend {
+            let words = RebuildWords.reconnecting(stage: driver.lock.stage, connected: store.isLive)
+            ProgressPill(title: words.title, subtitle: words.subtitle, progress: nil, look: look)
+              .allowsHitTesting(false)
+              .accessibilityElement(children: .combine)
+              .accessibilityLabel(words.title)
+              .accessibilityAddTraits(.updatesFrequently)
+          }
         } else if driver.surface.surface == .background, driver.lock.stage != nil {
           let steps = store.rebuildSteps(kind)
           Button { driver.restoreForeground() } label: {

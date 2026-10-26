@@ -116,13 +116,13 @@ public struct Account: Sendable, Equatable {
 @MainActor
 @Observable
 public final class AppStore {
-  public private(set) var agents: [Agent] = [] {
-    didSet { noteNames(); rebuild.selectionChanged(rebuildInputs); queueFaces() }
+  public internal(set) var agents: [Agent] = [] {
+    didSet { noteNames(); rebuild.selectionChanged(rebuildInputs); queueFaces(); rosterChanged() }
   }
   /** The agents' names and pictures for the chat's text, changed only when one of them does, so a roster update (an agent's status) does not redraw every message. */
   public private(set) var mentionNames: [Mentions.AgentName] = []
   /** Each chat's entries; the screens draw `chatRows`, so a change here alone redraws nothing. */
-  @ObservationIgnored public private(set) var transcripts: [String: [Entry]] = [:] {
+  @ObservationIgnored public internal(set) var transcripts: [String: [Entry]] = [:] {
     didSet { transcriptsVersion &+= 1 }
   }
   /** Bumped by every change to `transcripts`: what is worked out from all of them (search's links) is kept until it moves. */
@@ -134,7 +134,7 @@ public final class AppStore {
     didSet { if openChat != oldValue { rebuild.selectionChanged(rebuildInputs) } }
   }
   /** Each open chat laid out (Chat.rows), kept with its entries so a redraw does not lay it out again. */
-  public private(set) var chatRows: [String: [ChatRow]] = [:]
+  public internal(set) var chatRows: [String: [ChatRow]] = [:]
   /** Each chat's runs (`Chat.runFlags`), the messages still sending among them, by row id: where the Mac sets a row 12 lower and where it rounds a bubble's corner to 6. */
   public private(set) var runFlags: [String: [String: RunFlags]] = [:]
   /** The step an agent is on right now ("Checking Linear"), by agent. */
@@ -144,7 +144,9 @@ public final class AppStore {
     didSet { if isLive != oldValue { rebuild.transportChanged(rebuildInputs) } }
   }
   public private(set) var isLoading = false
-  public var account: Account?
+  public var account: Account? {
+    didSet { if account != oldValue { savedOwnerKnown() } }
+  }
   /** Whether this account may use Simeon (`GetSandAccessStatus`): the composer's notice and its paused Send. */
   public internal(set) var access: SandAccess = .checking
   /** The computer refused this account before the agents were ever read (`sand-access-blocked`). */
@@ -269,7 +271,20 @@ public final class AppStore {
   /** A streamed answer's newest copy, when it is the only change waiting: just the last row is redrawn, not the whole chat laid out again. */
   @ObservationIgnored private var streamingOnly: [String: Entry] = [:]
   /** Messages on their way, by chat (see `send`). */
-  @ObservationIgnored private var outbox: [String: [Outgoing]] = [:]
+  @ObservationIgnored private var outbox: [String: [Outgoing]] = [:] {
+    didSet {
+      let waiting = outbox.values.contains { $0.contains { $0.state == .queued } }
+      if waiting != waitingToSend { waitingToSend = waiting }
+    }
+  }
+  /**
+   * A message is held until the computer is back ("Will send when
+   * reconnected"): only then does "Reconnecting" show at the top (26 October
+   * 2026). The list and the chats read from what this device kept meanwhile
+   * (SavedChats), so the computer being away is not news until something
+   * waits on it.
+   */
+  public private(set) var waitingToSend = false
   /**
    * The messages this app held while the computer was out of reach, then
    * sent, by the line that became of them: when each was written. Only
@@ -318,6 +333,21 @@ public final class AppStore {
   /** Simeon, once the first run's hand-off made him: a second try does not make another (Onboarding.swift). */
   @ObservationIgnored var firstRunAgentId: String?
 
+  /** The agents and chats kept on this device (SavedChats, StoreSaved.swift): set by the app once signed in; none in the demo and the tests. */
+  @ObservationIgnored public var saved: SavedChats?
+  /** The list is the one kept on this device, not yet the computer's: nothing is asked of the computer for it (faces), nor kept again. */
+  public internal(set) var showingSaved = false
+  /** Chats showing the lines kept on this device, not yet fetched again: the ids of those lines, which the computer's copy replaces. */
+  @ObservationIgnored var savedLines: [String: Set<String>] = [:]
+  /** Chats kept with older lines before theirs: a reply whose first message is among those waits for them, as with the computer's own pages. */
+  @ObservationIgnored var savedOlder: Set<String> = []
+  /** What changed since the last save: the list, and which chats. */
+  @ObservationIgnored var rosterToSave = false
+  @ObservationIgnored var chatsToSave: Set<String> = []
+  /** The save a moment after a change (`saveSoon`), and this sign-in's number, so a save begun before a sign-out never writes after it. */
+  @ObservationIgnored var saving: Task<Void, Never>?
+  @ObservationIgnored var saveEpoch = 0
+
   /** A message the person sent, shown at once and kept until the host's own copy arrives (the Mac's outbox). */
   struct Outgoing {
     /** Held while the computer is out of reach, on its way, with the host, or refused. */
@@ -340,16 +370,26 @@ public final class AppStore {
 
   public init() {}
 
-  /** Starts on a backend: the roster, then the live events. */
-  public func attach(_ backend: AgentBackend) async {
+  /**
+   * Starts on a backend: the roster, then the live events. `shown` is told
+   * as soon as the list is on screen, before the computer answers: the list
+   * kept on this device, when there is one (`showingSaved`; the Mac shows
+   * its window then).
+   */
+  public func attach(_ backend: AgentBackend, shown: (@MainActor () -> Void)? = nil) async {
     // The same computer again (Reload) keeps a call that is on, as the Electron app's reload does; another one ends it.
     let same = self.backend === backend
     // The account is this sign-in's, often read before the agents are attached (the profile is asked first, and the iPhone
     // asks about the free month before attaching): kept, or Settings shows "?" until the next launch (12 October 2026).
     let signedIn = account
+    // What changed since the last save is kept before it goes (View › Reload), and shown again at once below.
+    saveNow()
     detach(endingCall: !same)
     account = signedIn
     self.backend = backend
+    // The list kept on this device, until the computer answers (SavedChats).
+    showSaved()
+    shown?()
     isLoading = true
     defer { isLoading = false }
     let events = backend.events()
@@ -400,6 +440,8 @@ public final class AppStore {
     voiceList = nil
     givingFaces?.cancel(); givingFaces = nil; pendingFaces = [:]; facesSent = []
     sentFiles = []
+    // Last: wiping the list above asked for a save, which must not happen.
+    stopSaving()
   }
 
   public func reloadRoster() async {
@@ -407,6 +449,7 @@ public final class AppStore {
     do {
       let list = try await backend.listAgents()
       rosterNews?(.seed(list))
+      showingSaved = false
       agents = wearingFaces(readingOpenChat(sortRoster(list)))
       rosterFailed = false
       accessBlocked = false
@@ -443,6 +486,7 @@ public final class AppStore {
       // The agents' list holds still while the computer is rebuilt, and is read again after (`roster.setFrozen`).
       rosterHeld = true
     case .agents(let list):
+      showingSaved = false
       let sorted = wearingFaces(readingOpenChat(sortRoster(list)))
       if sorted != agents { agents = sorted }
       catchUpOpenChat()
@@ -470,6 +514,7 @@ public final class AppStore {
       let next = change.applied(to: current)
       if streamingOnly[change.agentId] != nil {
         transcripts[change.agentId] = next
+        chatChanged(change.agentId)
         scheduleLayout(change.agentId)
       } else {
         setTranscript(change.agentId, next, soon: streaming)
@@ -689,8 +734,9 @@ public final class AppStore {
 
   public func rows(for agentId: String) -> [ChatRow] { chatRows[agentId] ?? [] }
 
-  private func setTranscript(_ agentId: String, _ entries: [Entry], soon: Bool = false) {
+  func setTranscript(_ agentId: String, _ entries: [Entry], soon: Bool = false) {
     transcripts[agentId] = entries
+    chatChanged(agentId)
     streamingOnly[agentId] = nil
     let ask = LocalAsk.waiting(in: entries)
     if localAsks[agentId] != ask { localAsks[agentId] = ask }
@@ -717,7 +763,7 @@ public final class AppStore {
     let isGroup = agent(agentId)?.isGroup ?? false
     let after = unreadAfter[agentId]
     // Older lines still to load may hold a reply's first message: such a reply waits for them (the window's `mayHoldOlderHistory`).
-    let older = olderBefore[agentId] != nil
+    let older = olderBefore[agentId] != nil || savedOlder.contains(agentId)
     var rows = Trace.timed("laying out \(agentId), \(entries.count) lines") { Chat.rows(entries, isGroup: isGroup, unreadAfter: after, mayHoldOlderHistory: older) }
     rows = Self.withSendStates(rows, waiting)
     let split = Chat.threadSplit(entries, mayHoldOlderHistory: older)
@@ -845,6 +891,8 @@ public final class AppStore {
     Trace.mark("opening \(agentId)")
     openChat = agentId
     let unread = agent(agentId).map { $0.hasUnread ? max($0.unreadCount, 1) : 0 } ?? 0
+    // Its lines kept on this device, while the computer's are on their way (SavedChats).
+    showSavedLines(agentId)
     if let cached = transcripts[agentId] {
       unreadAfter[agentId] = Self.unreadBoundary(cached, unread: unread)
       setTranscript(agentId, cached)
@@ -860,11 +908,19 @@ public final class AppStore {
    * opens with them at once and fetches the rest.
    */
   public func peek(_ agentId: String) async {
-    guard let backend, transcripts[agentId] == nil, !peeking.contains(agentId) else { return }
+    guard let backend else { return }
+    // The lines kept on this device show at once; the computer is asked only when they lack the chat's newest line.
+    showSavedLines(agentId)
+    guard transcripts[agentId] == nil || savedLinesLackNewest(agentId), !peeking.contains(agentId) else { return }
     peeking.insert(agentId)
     defer { peeking.remove(agentId) }
-    guard let entries = try? await backend.tail(agentId, limit: 40), transcripts[agentId] == nil else { return }
-    setTranscript(agentId, entries)
+    guard let entries = try? await backend.tail(agentId, limit: 40), transcripts[agentId] == nil || savedLines[agentId] != nil else { return }
+    // Kept lines older than the newest forty stay under them, and all of it is replaced when the chat is fetched.
+    let known = Set(entries.map(\.id))
+    let oldest = entries.first?.timestampMs ?? .infinity
+    let lines = (transcripts[agentId] ?? []).filter { !known.contains($0.id) && ($0.timestampMs ?? 0) < oldest } + entries
+    if savedLines[agentId] != nil { savedLines[agentId] = Set(lines.map(\.id)) }
+    setTranscript(agentId, lines)
   }
 
   /** The chat left the screen: all of it was read, whatever came while it was open. */
@@ -877,7 +933,10 @@ public final class AppStore {
    * Whether the app is in front (the app sets it from its scene): a chat left
    * open behind a locked phone is not being read.
    */
-  @ObservationIgnored public var isForeground = true
+  @ObservationIgnored public var isForeground = true {
+    // Going behind: what changed is kept now, before the system may end the app.
+    didSet { if oldValue && !isForeground { saveNow() } }
+  }
 
   /** The chat on screen is read: here at once, and on the host. */
   public func markChatRead(_ agentId: String) {
@@ -929,7 +988,10 @@ public final class AppStore {
     do {
       let page = try await backend.transcriptPage(agentId, before: nil)
       let fresh = page.entries
-      var merged = Self.merge(fresh, live: transcripts[agentId] ?? [])
+      // The lines kept on this device go: the computer's copy is the chat's. Only what streamed in since stays.
+      let kept = savedLines.removeValue(forKey: agentId) ?? []
+      savedOlder.remove(agentId)
+      var merged = Self.merge(fresh, live: (transcripts[agentId] ?? []).filter { !kept.contains($0.id) })
       if paged.contains(agentId), let oldest = fresh.first?.timestampMs {
         // Older pages scrolled in stay: the fetch carries only the newest lines.
         let known = Set(merged.map(\.id))

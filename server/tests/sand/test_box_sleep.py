@@ -17,6 +17,7 @@ from typing import Any
 import httpx
 import pytest
 from pytest_mock import MockerFixture
+from structlog.testing import capture_logs
 
 from simeon.config import settings
 from simeon.kit.utils import utc_now
@@ -112,6 +113,36 @@ class TestSleep:
         session.expunge_all()
         woken = await _box_of(session, user)
         assert (woken.state, woken.hibernated_at) == ("running", None)
+
+    async def test_a_woken_box_says_how_long_it_took(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        host: FakeBoxHost,
+        health: dict[str, BoxHealth],
+    ) -> None:
+        """26 October 2026: how long a sleeping box took to start and to
+        answer, on the ensure's line, so what waking costs is measured."""
+        access, box = await _awake_box(client, session, user)
+        await broker.hibernate(session, host, box, force=True)
+
+        with capture_logs() as logs:
+            again = await _ensure(client, access)
+        assert again.status_code == 200, again.text
+        line = next(entry for entry in logs if entry["event"] == "sand.box.ensure")
+        assert line["woke"] is True
+        assert isinstance(line["start_ms"], int)
+        assert line["start_ms"] >= 0
+        assert isinstance(line["wake_ms"], int)
+        assert line["wake_ms"] >= line["start_ms"]
+
+        with capture_logs() as logs:
+            await _ensure(client, access)
+        line = next(entry for entry in logs if entry["event"] == "sand.box.ensure")
+        # An awake box was not woken.
+        assert "woke" not in line
+        assert "wake_ms" not in line
 
     async def test_a_recent_box_stays_awake(
         self,
@@ -483,6 +514,23 @@ class TestWake:
         assert box.state == "running"
         assert box.hibernated_at is None
         assert await broker.wake(session, user.id) == "awake"
+
+    async def test_the_wake_says_how_long_the_start_took(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        host: FakeBoxHost,
+        health: dict[str, BoxHealth],
+    ) -> None:
+        _, box = await _awake_box(client, session, user)
+        await broker.hibernate(session, host, box, force=True)
+
+        with capture_logs() as logs:
+            assert await broker.wake(session, user.id) == "woken"
+        line = next(entry for entry in logs if entry["event"] == "sand.box.woken")
+        assert isinstance(line["start_ms"], int)
+        assert line["start_ms"] >= 0
 
     async def test_the_meter_skips_the_sleep_after_a_wake(
         self,

@@ -142,6 +142,7 @@ final class MacSession {
 
   /** Reaches the person's computer with the pair in the Keychain: "Setting up Simeon's computer" until the agents are in. */
   private func enter() async {
+    store.saved = SavedChats.onDevice()
     phase = .settingUp
     let api = SimeonAPI(base: server, clientVersion: Self.clientVersion, vault: vault)
     self.api = api
@@ -161,7 +162,11 @@ final class MacSession {
       backend.call = LiveCall(backend: backend, transport: ElevenLabsVoice(), personName: { names.value }, voiceFor: { agentId in await store.ensureVoice(agentId) },
                               tones: CallTonePlayer(), failedStays: nil, log: { VoiceCallLog.shared.write($0) })
     }
-    await store.attach(backend)
+    // The agents and chats kept on this Mac (SavedChats): with them, the window shows at once, while the computer is asked.
+    await store.attach(backend) { [weak self] in
+      guard let self, self.api === api, self.store.showingSaved else { return }
+      self.phase = .signedIn
+    }
     guard self.api === api else { return }
     // The window's start-up gate (`hUn`): an account never onboarded and with no agents gets the first run. A computer that does not
     // answer yet (a new account's, still being made) is asked once more after 2.5 s; then the first run shows, and its hand-off
@@ -208,6 +213,7 @@ final class MacSession {
     // Already signed out (Delete Account, Log Out): a late refusal of an earlier call does not replace what the sign-in screen says.
     guard api != nil else { return }
     store.detach()
+    store.forgetSaved()
     Self.savedGateway.write(nil)
     api = nil
     phase = .signedOut(message: String(localized: "Your Simeon sign-in expired. Sign in again."))
@@ -234,6 +240,7 @@ final class MacSession {
     }
     self.api = nil
     store.detach()
+    store.forgetSaved()
     Self.savedGateway.write(nil)
     // A plan bought in the iPhone app keeps charging until the person cancels it with Apple.
     phase = .signedOut(message: appleRunsOn ? AccountMenu.deletedApple : AccountMenu.deleted)
@@ -243,6 +250,7 @@ final class MacSession {
   /** Log out (the account menu's and Settings' Sign Out, after their question): the pair forgotten, the sign-in screen. */
   func signOut() async {
     store.detach()
+    store.forgetSaved()
     Self.savedGateway.write(nil)
     await api?.signOut()
     api = nil
