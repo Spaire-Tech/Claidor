@@ -445,6 +445,119 @@ final class SavedChatsTests: XCTestCase {
       XCTAssertEqual(backend.sent, ["Later"])
     }
   }
+  /** The messages held while the computer is out of reach and handed to the server, as the server read them. */
+  @MainActor
+  private func handed(_ backend: AwayBackend) -> [JSON] {
+    backend.serverBodies.filter { $0.path == "chats/send" }.map(\.body)
+  }
+
+  /**
+   * A message held while the computer is out of reach goes to the server
+   * (26 October 2026): as it would go to the computer, its nonce the
+   * message's id; "Reconnecting" does not show for it; and it goes to the
+   * computer again, the same nonce, when it is back.
+   */
+  func testAHeldMessageGoesToTheServerAndToTheComputerOnceItIsBack() async throws {
+    try await onMain {
+      let backend = AwayBackend()
+      let store = AppStore()
+      store.readsServerCopy = true
+      await store.attach(backend)
+      await store.open("theo")
+      backend.away = true
+      store.apply(.connection(live: false))
+      await store.send("Book the table", to: "theo", replyTo: "u1", id: "ios-m1")
+      await store.send("Then call Iris", to: "theo", id: "ios-m2")
+      let handed = self.handed(backend)
+      XCTAssertEqual(handed.map { $0["clientNonce"]?.string }, ["ios-m1", "ios-m2"], "in the order written")
+      let first = try XCTUnwrap(handed.first)
+      XCTAssertEqual(first["agentId"]?.string, "theo")
+      XCTAssertEqual(first["prompt"]?.string, "Book the table")
+      XCTAssertEqual(first["replyToId"]?.string, "u1")
+      XCTAssertEqual(first["attachmentPaths"]?.array?.count, 0)
+      XCTAssertNotNil(first["composedAtMs"]?.double, "the computer is told when it was written")
+      XCTAssertEqual(first, LiveBackend.sendArguments("theo", text: "Book the table", attachments: [], options: SendOptions(replyTo: "u1", composedAtMs: first["composedAtMs"]?.double), nonce: "ios-m1"), "exactly what the computer would have been sent")
+      XCTAssertFalse(store.waitingToSend, "no \"Reconnecting\" for a message the server has")
+      XCTAssertFalse(store.rows(for: "theo").contains { if case .queuedSend = $0 { return true }; return false }, "no \"Waiting to send…\" under it")
+      XCTAssertEqual(Self.texts(store.rows(for: "theo")).suffix(2), ["Book the table", "Then call Iris"], "shown as sent")
+      XCTAssertEqual(backend.sent, [])
+
+      // The computer is back: both go to it too, in order, the same nonces (it takes each once).
+      backend.away = false
+      store.apply(.connection(live: true))
+      for _ in 0..<100 where backend.sent.count < 2 { try await Task.sleep(nanoseconds: 10_000_000) }
+      XCTAssertEqual(backend.sent, ["Book the table", "Then call Iris"])
+      XCTAssertEqual(backend.sentAs.map(\.nonce), ["ios-m1", "ios-m2"])
+      XCTAssertEqual(backend.sentAs.first?.options.replyTo, "u1")
+    }
+  }
+
+  /** One with files waits on the device (they go to the computer itself), and those after it with it; one the server refuses waits too. */
+  func testAMessageWithFilesOrRefusedWaitsOnTheDeviceAndThoseAfterIt() async throws {
+    try await onMain {
+      let backend = AwayBackend()
+      let store = AppStore()
+      store.readsServerCopy = true
+      await store.attach(backend)
+      await store.open("theo")
+      backend.away = true
+      store.apply(.connection(live: false))
+      await store.send("The plan", to: "theo", attachments: [(name: "plan.pdf", data: Data("pdf".utf8))], id: "ios-f1")
+      await store.send("Read it", to: "theo", id: "ios-f2")
+      XCTAssertEqual(self.handed(backend).count, 0, "behind a message with files, nothing goes")
+      XCTAssertTrue(store.waitingToSend)
+
+      let refused = AwayBackend()
+      refused.serverRefuses = ["chats/send"]
+      let other = AppStore()
+      other.readsServerCopy = true
+      await other.attach(refused)
+      await other.open("theo")
+      other.apply(.connection(live: false))
+      await other.send("Too long", to: "theo", id: "ios-r1")
+      XCTAssertEqual(self.handed(refused).count, 1, "asked")
+      XCTAssertTrue(other.waitingToSend, "refused, it waits here as before")
+      XCTAssertTrue(other.rows(for: "theo").contains { if case .queuedSend = $0 { return true }; return false })
+    }
+  }
+
+  /** Held while the computer was in reach (behind one on its way), it goes to the server once the computer is out of reach and the one before has failed. */
+  func testAMessageHeldBehindOneThatFailsGoesToTheServer() async throws {
+    try await onMain {
+      let backend = AwayBackend()
+      let store = AppStore()
+      store.readsServerCopy = true
+      await store.attach(backend)
+      await store.open("theo")
+      backend.sendDelayNs = 200_000_000
+      let first = Task { await store.send("First", to: "theo", id: "ios-a") }
+      for _ in 0..<100 where !Self.texts(store.rows(for: "theo")).contains("First") { try await Task.sleep(nanoseconds: 2_000_000) }
+      await store.send("Second", to: "theo", id: "ios-b")
+      backend.away = true
+      store.apply(.connection(live: false))
+      XCTAssertEqual(self.handed(backend).count, 0, "not while the one before is on its way")
+      await first.value
+      for _ in 0..<100 where self.handed(backend).isEmpty { try await Task.sleep(nanoseconds: 10_000_000) }
+      XCTAssertEqual(self.handed(backend).map { $0["clientNonce"]?.string }, ["ios-b"])
+      XCTAssertFalse(store.waitingToSend)
+      XCTAssertTrue(store.rows(for: "theo").contains { if case .failedSend = $0 { return true }; return false }, "the first says it failed, with Resend")
+    }
+  }
+
+  /** An app that reads no server copy (the demo, the tests) hands nothing to it. */
+  func testNothingGoesToTheServerUnlessTheAppReadsItsCopy() async throws {
+    try await onMain {
+      let backend = AwayBackend()
+      let store = AppStore()
+      await store.attach(backend)
+      await store.open("theo")
+      backend.away = true
+      store.apply(.connection(live: false))
+      await store.send("Held", to: "theo", id: "ios-h1")
+      XCTAssertEqual(self.handed(backend).count, 0)
+      XCTAssertTrue(store.waitingToSend)
+    }
+  }
 }
 
 /** A computer that can be away: its list, its chats and its commands refused while `away`, as the gateway refuses them while it sleeps. */
@@ -453,6 +566,8 @@ final class AwayBackend: AgentBackend, @unchecked Sendable {
   var agents = [Agent(id: "theo", name: "Theo")]
   var lines: [JSON] = [["kind": "message", "id": "u1", "role": "user", "content": "Hi Theo", "timestampMs": 1_000]]
   var sent: [String] = []
+  /** Each message's nonce and what went with it, as the computer took it. */
+  var sentAs: [(nonce: String?, options: SendOptions)] = []
   private var continuation: AsyncStream<BackendEvent>.Continuation?
   func push(_ event: BackendEvent) { continuation?.yield(event) }
   private func reach() throws { if away { throw GatewayError(message: "asleep", refused: false) } }
@@ -460,7 +575,12 @@ final class AwayBackend: AgentBackend, @unchecked Sendable {
   func transcript(_ agentId: String) async throws -> [Entry] { try reach(); return lines.compactMap(Entry.init) }
   var tailed: [String] = []
   func tail(_ agentId: String, limit: Int) async throws -> [Entry] { try reach(); tailed.append(agentId); return Array(lines.compactMap(Entry.init).suffix(limit)) }
-  func send(_ agentId: String, text: String, attachments: [AttachmentRef], options: SendOptions, nonce: String?) async throws { try reach(); sent.append(text) }
+  /** How long a message takes to reach the computer (one on its way). */
+  var sendDelayNs: UInt64 = 0
+  func send(_ agentId: String, text: String, attachments: [AttachmentRef], options: SendOptions, nonce: String?) async throws {
+    if sendDelayNs > 0 { try? await Task.sleep(nanoseconds: sendDelayNs) }
+    try reach(); sent.append(text); sentAs.append((nonce, options))
+  }
   func markRead(_ agentId: String) async {}
   func createAgent(name: String, face: String?) async throws -> String { "x" }
   func createGroup(name: String, memberIds: [String]) async throws -> String { "g" }
@@ -473,11 +593,17 @@ final class AwayBackend: AgentBackend, @unchecked Sendable {
   /** Simeon Labs' server's answers by path (the copy of the agents and chats); any other path answers nothing, as before. */
   var serverAnswers: [String: JSON] = [:]
   var serverDelayNs: UInt64 = 0
+  /** Paths the server refuses (a message it can't keep). */
+  var serverRefuses: Set<String> = []
   private let asked = LockedPaths()
   var serverPaths: [String] { asked.paths }
+  /** What was sent to the server, by path, in order. */
+  var serverBodies: [(path: String, body: JSON)] = []
   func server(_ path: String, method: String?, body: JSON?) async throws -> JSON {
     asked.add(path)
+    if let body { serverBodies.append((path, body)) }
     if serverDelayNs > 0 { try? await Task.sleep(nanoseconds: serverDelayNs) }
+    if serverRefuses.contains(path) { throw SimeonAPIError(message: "This message can't wait on the server.", status: 422) }
     return serverAnswers[path] ?? [:]
   }
   func screen(_ agentId: String) async throws -> ScreenState { ScreenState(socket: nil, state: "starting") }

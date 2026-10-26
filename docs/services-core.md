@@ -1153,8 +1153,10 @@ empty:
   (or the sign-in ending, or Delete Account) removes them, and a copy kept
   for another account is never shown.
 - "Reconnecting" shows only while a message waits to be sent ("Will send
-  when reconnected"). "Reconnecting to your computer…" under the list and
-  "Couldn't Reach Simeon's Computer" after two minutes are as before.
+  when reconnected"); since the server takes such messages (below), only
+  one with files or one the server refused. "Reconnecting to your
+  computer…" under the list and "Couldn't Reach Simeon's Computer" after
+  two minutes are as before.
 
 **The server's copy (26 October 2026).** The computer also sends the agents
 and their chats to Simeon Labs' server as they change, and the apps read
@@ -1190,15 +1192,56 @@ are `[simeon] chat-copy on: …`, `sent …`, `failed …; again in N s` and
 `left out N line(s) over 256 KB`; they carry counts only, never a chat's
 words. On the API the line is `desktop.chats.copy`, with the counts.
 
-This is the first part of step 3 of the computer as a worker (the founder,
-26 October 2026). Not done yet:
+**Messages while the computer is away (26 October 2026).** A message
+written in an app while the computer is out of reach (asleep, being
+updated, or the network down) no longer waits on the device: the app hands
+it to the server, the server wakes the computer, and the computer hands it
+to the agent. It reaches the agent even if the app is closed, and
+"Reconnecting" does not show for it.
 
-- messages to an agent landing on the server when the computer is asleep;
+- The app (`handToServer` in `Store.swift`) sends what it would have sent
+  the computer (`LiveBackend.sendArguments`, the message's id as its nonce)
+  to `POST /desktop/api/chats/send`. Messages go in the order written; one
+  with files waits on the device (files go to the computer itself), and
+  those after it wait with it. One the server refuses (too long, too many
+  waiting) waits on the device as before. Once the server has it, it shows
+  as sent, marked "Sent while offline".
+- The server (`server/simeon/desktop/chats.py`, table
+  `desktop_chat_inbox`) keeps it exactly as written, at most 200 per person
+  and 512 KB each, and wakes the computer (`simeon.sand.notify.publish`,
+  topic `chat-inbox`, which also queues `sand.box.wake`). The sleeper keeps
+  a computer awake while a message written in the last hour waits for it
+  (`sand.box.sleep.deferred reason=inbox`). One no computer took in seven
+  days is removed.
+- The computer (`desktop/source/host/extensions/chat-copy/chat-inbox.ts`)
+  asks for the waiting messages (`GET /desktop/api/chats/inbox`) at start,
+  when the notify bus says `chat-inbox` and again 4 s later (the message is
+  saved when the server's request ends), every 30 s while that stream is
+  down, and every 2 minutes anyway. It waits until a turn can run, hands
+  each to its agent with `sendPrompt` and the app's nonce, in order, then
+  confirms them (`POST /desktop/api/chats/inbox/ack`). One that fails
+  waits, with those after it, and is left out after 5 tries; one for an
+  agent no longer there is left out at once.
+- When the computer is back, the app sends the same messages to it too,
+  with the same nonce: the computer's acceptance ledger takes a nonce once,
+  so each lands once however it comes, and a later message never overtakes
+  an earlier one.
+
+`SAND_CHAT_COPY=0` switches this off with the copy. Log lines: on the API
+`desktop.chats.inbox.queued` (with `added` and `waiting`),
+`desktop.chats.inbox.delivered`, `desktop.chats.inbox.expired`; in the box
+`[simeon] chat-inbox on`, `handed N message(s) to their agents`,
+`left out a message for agent=…` with the reason, and `failed, …; again in
+N s`. None carries a message's words.
+
+This is step 3 of the computer as a worker (the founder, 26 October 2026).
+Not done yet:
+
 - an agent's own Discord or Slack bot running from the server;
 - the computer used only for runs (step 4).
 
-**Not yet verified:** the copy has not run on a real computer, and the
-apps have not read it on an iPhone or a Mac.
+**Not yet verified:** the copy and the messages have not run on a real
+computer, and the apps have not used them on an iPhone or a Mac.
 
 ### When it misbehaves
 
@@ -1246,7 +1289,8 @@ apps have not read it on an iPhone or a Mac.
   (`[box-copy-in] result outcome=hydrated`).
 - On the worker: `sand.box.hibernated`, `sand.box.sleeper`,
   `sand.box.sleep.failed`, `sand.box.woken` (with `start_ms`, the server
-  starting it), `sand.box.wake.deferred`.
+  starting it), `sand.box.wake.deferred`, and `sand.box.sleep.deferred`
+  with `reason=inbox` (a message written in an app waits for the box).
 - In the box, `/tmp/sand-host.log`:
   - `[simeon] box-stream guarded on …` shows the stream guard is up.
   - `inference credential renewed with the box's own credential` shows the
