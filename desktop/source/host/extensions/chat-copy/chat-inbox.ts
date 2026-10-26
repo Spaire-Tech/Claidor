@@ -19,6 +19,9 @@ import { NONCE_DIGEST_MISMATCH, PromptAcceptanceRejectedError } from "../transcr
  *   it, and is left out after 5 tries. One for an agent no longer here, or
  *   whose nonce went with other words, is left out at once.
  * - Its log lines carry counts and agent ids, never a message's words.
+ * - Other kinds go to whoever takes them (`handle`): `channel`, what an
+ *   agent's own bot heard while the cloud runner listened to it, goes to
+ *   the channels runtime. A kind nothing here takes stays on the server.
  */
 export const CHAT_INBOX_PATH = "/desktop/api/chats/inbox";
 export const CHAT_INBOX_ACK_PATH = "/desktop/api/chats/inbox/ack";
@@ -110,6 +113,8 @@ export class ChatInbox {
   private readonly tries = new Map<string, number>();
   /** Handed to their agents, not yet confirmed to the server: told again, never handed again. */
   private readonly handed = new Set<string>();
+  /** Who takes each kind besides `prompt` (`channel`: what an agent's bot heard, the channels runtime). */
+  private readonly handlers = new Map<string, (message: WaitingMessage) => Promise<boolean> | boolean>();
 
   constructor(private readonly options: ChatInboxOptions) {
     this.log = options.log ?? logHostLine;
@@ -130,6 +135,19 @@ export class ChatInbox {
     this.stopped = true;
     if (this.timer != null) clearInterval(this.timer);
     this.timer = null;
+  }
+
+  /**
+   * Another part of this computer takes a kind of waiting message (the
+   * channels runtime takes `channel`): its handler answers false for one
+   * it can't read, which is left out; a throw is a failure, tried again as
+   * a message is. The waiting ones are looked at now.
+   */
+  handle(kind: string, handler: (message: WaitingMessage) => Promise<boolean> | boolean): () => void {
+    this.handlers.set(kind, handler);
+    this.owed = true;
+    void this.drainNow();
+    return () => { if (this.handlers.get(kind) === handler) this.handlers.delete(kind); };
   }
 
   /** The server says a message waits: taken now (the look returned), and looked for again a moment later. */
@@ -189,15 +207,26 @@ export class ChatInbox {
     let handedNow = 0;
     for (const message of waiting) {
       if (this.handed.has(message.id)) { done.push(message.id); continue; }
-      if (message.kind !== "prompt") continue;
-      const options = promptOptions(message);
-      if (options == null || !known.has(message.agentId)) {
-        leftOut.push(`agent=${message.agentId} (${options == null ? "no words" : "no such agent"})`);
+      // A kind no part of this computer takes (yet) stays for one that does.
+      const handler = message.kind === "prompt" ? null : this.handlers.get(message.kind);
+      if (message.kind !== "prompt" && handler == null) continue;
+      const options = message.kind === "prompt" ? promptOptions(message) : null;
+      const unreadable = message.kind === "prompt" ? options == null : false;
+      if (unreadable || !known.has(message.agentId)) {
+        leftOut.push(`agent=${message.agentId} (${unreadable ? "no words" : "no such agent"})`);
         done.push(message.id);
         continue;
       }
       try {
-        await this.options.transcript.sendPrompt(message.message.prompt as string, options);
+        if (handler != null) {
+          if (!(await handler(message))) {
+            leftOut.push(`agent=${message.agentId} (not a ${message.kind} message this computer reads)`);
+            done.push(message.id);
+            continue;
+          }
+        } else {
+          await this.options.transcript.sendPrompt(message.message.prompt as string, options as Record<string, unknown>);
+        }
       } catch (error) {
         if (isFinalRefusal(error)) {
           leftOut.push(`agent=${message.agentId} (${errorText(error)})`);

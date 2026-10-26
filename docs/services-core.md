@@ -1234,11 +1234,10 @@ to the agent. It reaches the agent even if the app is closed, and
 `left out a message for agent=…` with the reason, and `failed, …; again in
 N s`. None carries a message's words.
 
-This is step 3 of the computer as a worker (the founder, 26 October 2026).
-Not done yet:
-
-- an agent's own Discord or Slack bot running from the server;
-- the computer used only for runs (step 4).
+This is step 3 of the computer as a worker (the founder, 26 October 2026),
+with an agent's own Discord or Slack bot now listened to from the server
+(`docs/services-agents.md` §4). Not done yet: the computer used only for
+runs (step 4).
 
 **Not yet verified:** the copy and the messages have not run on a real
 computer, and the apps have not used them on an iPhone or a Mac.

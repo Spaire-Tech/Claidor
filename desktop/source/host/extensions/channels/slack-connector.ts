@@ -57,6 +57,10 @@ export function isInboundSlackMessage(event: { type?: string; subtype?: string; 
   return !(selfUserId != null && event.user === selfUserId);
 }
 
+/** A message's id and a reaction's, the same ones the cloud runner gives them (`runner/src/channels/slack.ts`). */
+export function slackMessageId(chat: string, ts: string): string { return `${chat}:${ts}`; }
+export function slackReactionId(chat: string, ts: string, userId: string, reaction: string): string { return `react:${chat}:${ts}:${userId}:${reaction}`; }
+
 export class SlackConnector implements ChannelConnector {
   readonly platform = SLACK_PLATFORM;
   private socket: ChannelSocket | null = null;
@@ -176,12 +180,14 @@ export class SlackConnector implements ChannelConnector {
       if (chat == null) return;
       const text = slackInboundText(event);
       if (text.length === 0) return;
-      if (typeof event.thread_ts === "string") this.threads.set(chat, event.thread_ts); else this.threads.delete(chat);
+      const thread = typeof event.thread_ts === "string" ? event.thread_ts : undefined;
+      this.noteThread(chat, thread);
       const ts = Number.parseFloat(typeof event.ts === "string" ? event.ts : "");
       const userId = typeof event.user === "string" ? event.user : "someone";
+      const messageId = typeof event.ts === "string" ? slackMessageId(chat, event.ts) : undefined;
       void this.senderName(userId).then((sender) => {
-        this.log("inbound", { chat, sender, chars: text.length, thread: typeof event.thread_ts === "string" });
-        this.options.callbacks.onInbound({ address: { platform: SLACK_PLATFORM, chat }, sender, text, timestampMs: Number.isFinite(ts) ? Math.round(ts * 1000) : Date.now() });
+        this.log("inbound", { chat, sender, chars: text.length, thread: thread != null });
+        this.options.callbacks.onInbound({ address: { platform: SLACK_PLATFORM, chat }, sender, text, timestampMs: Number.isFinite(ts) ? Math.round(ts * 1000) : Date.now(), ...(messageId == null ? {} : { messageId }), ...(thread == null ? {} : { thread }) });
       });
       return;
     }
@@ -191,11 +197,21 @@ export class SlackConnector implements ChannelConnector {
       if (chat == null) return;
       const emoji = typeof event.reaction === "string" ? `:${event.reaction}:` : "reaction";
       const userId = typeof event.user === "string" ? event.user : "someone";
+      const messageId = typeof event.item?.ts === "string" ? slackReactionId(chat, event.item.ts, userId, typeof event.reaction === "string" ? event.reaction : "reaction") : undefined;
       void this.senderName(userId).then((sender) => {
         this.log("inbound", { chat, sender, reaction: emoji });
-        this.options.callbacks.onInbound({ address: { platform: SLACK_PLATFORM, chat }, sender, text: "", timestampMs: Date.now(), reaction: { emoji } });
+        this.options.callbacks.onInbound({ address: { platform: SLACK_PLATFORM, chat }, sender, text: "", timestampMs: Date.now(), reaction: { emoji }, ...(messageId == null ? {} : { messageId }) });
       });
     }
+  }
+
+  /**
+   * The thread a chat's reply goes to: the last message heard in it, here
+   * or by the cloud runner while it listens for this bot (26 October 2026;
+   * the runtime passes the runner's on, `receiveFromServer`).
+   */
+  noteThread(chat: string, thread: string | undefined): void {
+    if (thread != null) this.threads.set(chat, thread); else this.threads.delete(chat);
   }
 
   /** users.info once per user, cached; the id itself when the bot lacks users:read. */

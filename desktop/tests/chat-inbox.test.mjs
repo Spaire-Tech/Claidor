@@ -238,6 +238,30 @@ test("a confirmation that fails is sent again, and the message is not handed twi
   } finally { await dispose(); }
 });
 
+test("another kind goes to whoever takes it; one nothing takes stays on the server", async () => {
+  const { module, dispose } = await load("chat-inbox-kinds");
+  try {
+    const transcript = fakeTranscript(["theo"]);
+    const heard = { address: { platform: "discord", chat: "c1" }, sender: "Iris", text: "Hi", timestampMs: 1, messageId: "m1" };
+    const server = fakeServer([
+      { id: "c1", agentId: "theo", nonce: "channel:discord:b:m1", kind: "channel", message: heard },
+      { id: "c2", agentId: "theo", nonce: "channel:discord:b:m2", kind: "channel", message: { odd: true } },
+      { id: "x1", agentId: "theo", nonce: "x", kind: "later", message: {} },
+    ]);
+    const logs = [];
+    const inbox = inboxOf(module, { transcript, server, logs });
+    await inbox.drainNow();
+    assert.deepEqual(server.acks, [], "nothing takes a channel message yet: it stays");
+    const taken = [];
+    const stop = inbox.handle("channel", (waiting) => { if (waiting.message.address == null) return false; taken.push([waiting.agentId, waiting.message]); return true; });
+    await inbox.drainNow();
+    assert.deepEqual(taken, [["theo", heard]]);
+    assert.deepEqual(server.acks.flat(), ["c1", "c2"], "the one it can't read is left out; the kind nothing takes stays");
+    assert.ok(logs.some((text) => /left out a message for agent=theo \(not a channel message this computer reads\)/.test(text)), logs.join("\n"));
+    stop();
+  } finally { await dispose(); }
+});
+
 test("the client sends the box's token and reads the apps' envelope; the extension hears the notify bus", async () => {
   const { module, dispose } = await load("chat-inbox-client");
   const seen = [];

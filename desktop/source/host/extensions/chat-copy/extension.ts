@@ -20,7 +20,7 @@ import { HOST_LOG_PREFIX, logHostLine } from "../../../shared/host-log.js";
 import { getConfiguredBackendUrl } from "../../../shared/node/simeon-token.js";
 import { HostExtensions } from "../extension-ids.generated.js";
 import { ChatCopy, createChatCopyServer, type ChatCopyServer, type ChatCopyTranscript } from "./chat-copy.js";
-import { ChatInbox, createChatInboxServer, type ChatInboxServer, type ChatInboxTranscript } from "./chat-inbox.js";
+import { ChatInbox, createChatInboxServer, type ChatInboxServer, type ChatInboxTranscript, type WaitingMessage } from "./chat-inbox.js";
 
 export const CHAT_COPY_ENV = "SAND_CHAT_COPY";
 
@@ -52,6 +52,8 @@ export interface ChatCopyApi {
   flushNow(): Promise<void>;
   /** The messages waiting on the server, taken now. */
   drainInboxNow(): Promise<void>;
+  /** Another extension takes a kind of waiting message (`ChatInbox.handle`); nothing while this is off. */
+  onInboxKind(kind: string, handler: (message: WaitingMessage) => Promise<boolean> | boolean): () => void;
   /** Resolves once the start (the list read, the server's state asked) is done. */
   readonly whenStarted: Promise<void>;
 }
@@ -64,7 +66,7 @@ export const chatCopyExtension = defineHostExtension<ChatCopyApi, ChatCopyHost>(
     const log = context.log ?? logHostLine;
     if (!isChatCopyEnabled(env)) {
       log(`${HOST_LOG_PREFIX} chat-copy off (${CHAT_COPY_ENV}=${env[CHAT_COPY_ENV] ?? ""})`);
-      return { isEnabled: () => false, flushNow: async () => {}, drainInboxNow: async () => {}, whenStarted: Promise.resolve() };
+      return { isEnabled: () => false, flushNow: async () => {}, drainInboxNow: async () => {}, onInboxKind: () => () => {}, whenStarted: Promise.resolve() };
     }
     const auth = context.deps[HostExtensions.Auth] as AuthApi;
     const transcript = context.deps[HostExtensions.Transcript] as unknown as ChatCopyTranscript;
@@ -97,6 +99,6 @@ export const chatCopyExtension = defineHostExtension<ChatCopyApi, ChatCopyHost>(
       void inbox.start();
       await copy.start();
     });
-    return { isEnabled: () => true, flushNow: () => copy.flushNow(), drainInboxNow: () => inbox.drainNow(), whenStarted };
+    return { isEnabled: () => true, flushNow: () => copy.flushNow(), drainInboxNow: () => inbox.drainNow(), onInboxKind: (kind, handler) => inbox.handle(kind, handler), whenStarted };
   }
 });

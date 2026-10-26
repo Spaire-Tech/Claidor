@@ -166,7 +166,8 @@ test("Discord: connect with the stored token, an inbound DM wakes the agent with
     discord.dispatch("MESSAGE_CREATE", { id: "m0b", channel_id: "C1", author: { id: "OTHERBOT", username: "other", bot: true }, content: "bot noise", timestamp: "2026-09-25T10:00:00.000Z" });
     discord.dispatch("MESSAGE_CREATE", { id: "m1", channel_id: "C1", author: { id: "U1", username: "bass", global_name: "Bass" }, content: "hey simeon, what's the plan?", attachments: [{ url: "https://cdn.discordapp.com/a.png", filename: "a.png" }], timestamp: "2026-09-25T10:00:01.000Z" });
     await waitFor(() => fake.wakes.length === 1, { label: "one inbound wake" });
-    assert.deepEqual(fake.wakes[0], { agentId: "a1", envelope: { address: { platform: "discord", chat: "C1" }, sender: "Bass", text: "hey simeon, what's the plan?\n[attachment a.png: https://cdn.discordapp.com/a.png]", timestampMs: Date.parse("2026-09-25T10:00:01.000Z") } });
+    // The message's own id (26 October 2026): the cloud runner gives it the same one, so heard both ways it lands once.
+    assert.deepEqual(fake.wakes[0], { agentId: "a1", envelope: { address: { platform: "discord", chat: "C1" }, sender: "Bass", text: "hey simeon, what's the plan?\n[attachment a.png: https://cdn.discordapp.com/a.png]", timestampMs: Date.parse("2026-09-25T10:00:01.000Z"), messageId: "m1" } });
     assert.ok(lines.some((l) => /channel=discord agent=a1 event=inbound chat=C1 sender=Bass chars=\d+ guild=dm/.test(l)), "inbound line");
 
     // A reaction to the bot's own message wakes too; one to someone else's does not.
@@ -263,7 +264,8 @@ test("Slack: Socket Mode with the app token, the bot token for the Web API, the 
     slack.event({ type: "message", channel: "C7", bot_id: "B9", text: "another bot", ts: "1700000000.000003" });
     const envelopeId = slack.event({ type: "message", channel: "C7", user: "U1", text: "can you &amp; the team ship &lt;this&gt; today?", ts: "1700000001.000100", thread_ts: "1700000000.000100", channel_type: "channel" });
     await waitFor(() => fake.wakes.length === 1, { label: "one inbound wake" });
-    assert.deepEqual(fake.wakes[0], { agentId: "a2", envelope: { address: { platform: "slack", chat: "C7" }, sender: "Bass", text: "can you & the team ship <this> today?", timestampMs: 1700000001000 } });
+    // Its id and its thread (26 October 2026), as the cloud runner gives them.
+    assert.deepEqual(fake.wakes[0], { agentId: "a2", envelope: { address: { platform: "slack", chat: "C7" }, sender: "Bass", text: "can you & the team ship <this> today?", timestampMs: 1700000001000, messageId: "C7:1700000001.000100", thread: "1700000000.000100" } });
     await waitFor(() => slack.acks.includes(envelopeId), { label: "envelope acked" });
     slack.event({ type: "message", channel: "C7", user: "U1", text: "a redelivery", ts: "1700000001.000200", thread_ts: "1700000000.000100" }, "Ev99");
     slack.event({ type: "message", channel: "C7", user: "U1", text: "a redelivery", ts: "1700000001.000200", thread_ts: "1700000000.000100" }, "Ev99");
@@ -400,7 +402,8 @@ test("the extension is in the host's table, the brief and the SendMessage tool o
   const production = await src("host/host-production-extensions.ts");
   assert.match(production, /\[HostExtensions\.Channels\]: bind\(channelsExtension\)/);
   const extension = await src("host/extensions/channels/extension.ts");
-  assert.match(extension, /dependencies: \[HostExtensions\.Transcript\]/);
+  // The bots are handed to the server (26 October 2026): the box's credential, and the inbox what they hear comes back through.
+  assert.match(extension, /dependencies: \[HostExtensions\.Transcript, HostExtensions\.Auth, HostExtensions\.ChatCopy\]/);
   const connector = await src("electron-main/box/local-docker-host-connector.ts");
   assert.match(connector, /"SAND_CHANNELS_SERVED"[,\]]/, "the Mac forwards the switch into the box");
   const schema = await load("source/host/runner/tools/send-message-schema.ts", "send-message-schema-channels");
