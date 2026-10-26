@@ -321,7 +321,7 @@ public final class AppStore {
   /** Each chat's thread replies and the first message of their thread, made with its layout (a quote asks on every draw). */
   @ObservationIgnored private var threadRoots: [String: [String: String]] = [:]
   /** Chats that could not be fetched and have nothing to show: "Couldn't load this conversation" and Retry. */
-  public private(set) var loadFailed: Set<String> = []
+  public internal(set) var loadFailed: Set<String> = []
   /**
    * The computer out of reach: the event stream dropped and has not come
    * back (the Mac's coordinator says "down" the moment it drops, and the
@@ -347,6 +347,18 @@ public final class AppStore {
   /** The save a moment after a change (`saveSoon`), and this sign-in's number, so a save begun before a sign-out never writes after it. */
   @ObservationIgnored var saving: Task<Void, Never>?
   @ObservationIgnored var saveEpoch = 0
+  /**
+   * The copy of the agents and chats on Simeon Labs' server is read while the
+   * computer has not answered (StoreSaved.swift, `server/simeon/desktop/chats.py`):
+   * set by the apps; the demo and the tests read none.
+   */
+  @ObservationIgnored public var readsServerCopy = false
+  /** The list shown is the server's copy (not this device's): another account's device copy going does not take it. */
+  @ObservationIgnored var listFromServer = false
+  /** Chats whose server copy is being asked for. */
+  @ObservationIgnored var serverLinesAsked: Set<String> = []
+  /** Told when the list is on screen before the computer answered (`attach`'s `shown`), until `attach` ends. */
+  @ObservationIgnored var onListShown: (@MainActor () -> Void)?
 
   /** A message the person sent, shown at once and kept until the host's own copy arrives (the Mac's outbox). */
   struct Outgoing {
@@ -387,11 +399,13 @@ public final class AppStore {
     detach(endingCall: !same)
     account = signedIn
     self.backend = backend
-    // The list kept on this device, until the computer answers (SavedChats).
+    // The list kept on this device, until the computer answers (SavedChats); the server's copy, when it comes first.
     showSaved()
     shown?()
+    onListShown = shown
+    if readsServerCopy { Task { await self.showServerList(from: backend) } }
     isLoading = true
-    defer { isLoading = false }
+    defer { isLoading = false; onListShown = nil }
     let events = backend.events()
     listening = Task { [weak self] in
       for await event in events {
@@ -891,8 +905,9 @@ public final class AppStore {
     Trace.mark("opening \(agentId)")
     openChat = agentId
     let unread = agent(agentId).map { $0.hasUnread ? max($0.unreadCount, 1) : 0 } ?? 0
-    // Its lines kept on this device, while the computer's are on their way (SavedChats).
+    // Its lines kept on this device, while the computer's are on their way (SavedChats); the server's copy too.
     showSavedLines(agentId)
+    if readsServerCopy { Task { await self.showServerLines(agentId) } }
     if let cached = transcripts[agentId] {
       unreadAfter[agentId] = Self.unreadBoundary(cached, unread: unread)
       setTranscript(agentId, cached)
@@ -909,8 +924,9 @@ public final class AppStore {
    */
   public func peek(_ agentId: String) async {
     guard let backend else { return }
-    // The lines kept on this device show at once; the computer is asked only when they lack the chat's newest line.
+    // The lines kept on this device show at once, else the server's copy; the computer is asked only when they lack the chat's newest line.
     showSavedLines(agentId)
+    if transcripts[agentId] == nil { await showServerLines(agentId) }
     guard transcripts[agentId] == nil || savedLinesLackNewest(agentId), !peeking.contains(agentId) else { return }
     peeking.insert(agentId)
     defer { peeking.remove(agentId) }

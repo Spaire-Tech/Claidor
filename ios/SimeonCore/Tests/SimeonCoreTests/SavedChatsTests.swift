@@ -307,6 +307,125 @@ final class SavedChatsTests: XCTestCase {
     }
   }
 
+  // MARK: The server's copy
+
+  private static let serverAgents: JSON = ["agents": [
+    ["id": "theo", "name": "Theo", "lastActivityAt": 3_000, "lastMessageId": "a1"],
+    ["id": "iris", "name": "Iris", "lastActivityAt": 1_000],
+  ]]
+  private static let theoLinesPath = "chats/lines?agentId=theo&limit=\(SavedChats.linesKept)"
+  private static let serverLines: JSON = ["entries": [
+    ["kind": "message", "id": "u1", "role": "user", "content": "Hi Theo", "timestampMs": 1_000],
+    ["kind": "message", "id": "a1", "role": "assistant", "content": "On it", "timestampMs": 2_000],
+  ], "hasOlder": false]
+
+  /** Waits for a condition the store meets a moment later (the server's copy is asked beside the computer). */
+  @MainActor
+  private func eventually(_ what: String, _ condition: @MainActor () -> Bool) async throws {
+    for _ in 0..<200 where !condition() { try await Task.sleep(nanoseconds: 5_000_000) }
+    XCTAssertTrue(condition(), what)
+  }
+
+  /** A device that kept nothing, the computer asleep: the server's list and lines show, and the computer's replace them when it wakes. */
+  func testTheServersCopyShowsWhileTheComputerIsAway() async throws {
+    try await onMain {
+      let backend = AwayBackend()
+      backend.away = true
+      backend.serverAnswers = ["chats/agents": Self.serverAgents, Self.theoLinesPath: Self.serverLines]
+      let store = AppStore()
+      store.saved = SavedChats(directory: self.folder())
+      store.readsServerCopy = true
+      store.account = Self.bass
+      await store.attach(backend)
+      try await self.eventually("the server's list shows") { store.agents.map(\.id) == ["theo", "iris"] }
+      XCTAssertTrue(store.showingSaved)
+      await store.open("theo")
+      try await self.eventually("the server's lines show") { Self.texts(store.rows(for: "theo")) == ["Hi Theo", "On it"] }
+      XCTAssertFalse(store.loadFailed.contains("theo"), "no \"Couldn't load this conversation\" over the server's lines")
+      XCTAssertTrue(backend.serverPaths.contains(Self.theoLinesPath))
+
+      // The computer wakes: its list and its chat replace the server's.
+      backend.away = false
+      backend.agents = [Agent(id: "theo", name: "Theo")]
+      backend.lines = [["kind": "message", "id": "u2", "role": "user", "content": "Book it", "timestampMs": 4_000]]
+      await store.reloadRoster()
+      XCTAssertFalse(store.showingSaved)
+      XCTAssertEqual(store.agents.map(\.id), ["theo"])
+      await store.refresh("theo")
+      XCTAssertEqual(Self.texts(store.rows(for: "theo")), ["Book it"])
+      // Nothing of the server's copy is kept on the device as the computer's.
+      store.saveNow()
+      store.saved?.waitForWrites()
+    }
+  }
+
+  /** The computer answering first: its list stays, the server's coming after is not shown over it. */
+  func testTheComputersListWinsWhenItAnswersFirst() async throws {
+    try await onMain {
+      let backend = AwayBackend()
+      backend.serverDelayNs = 50_000_000
+      backend.serverAnswers = ["chats/agents": Self.serverAgents]
+      let store = AppStore()
+      store.readsServerCopy = true
+      await store.attach(backend)
+      XCTAssertEqual(store.agents.map(\.id), ["theo"])
+      // Watched all along: the server's older list never shows over the computer's, not even for a moment.
+      var flashed = false
+      for _ in 0..<150 {
+        if store.agents.contains(where: { $0.id == "iris" }) || store.showingSaved { flashed = true }
+        try await Task.sleep(nanoseconds: 1_000_000)
+      }
+      XCTAssertTrue(backend.serverPaths.contains("chats/agents"))
+      XCTAssertFalse(flashed, "the computer's list, not the server's")
+      XCTAssertEqual(store.agents.map(\.id), ["theo"])
+    }
+  }
+
+  /** The demo and the tests (and an app that does not ask) read nothing of the server's copy. */
+  func testNoServerCopyIsReadUnlessTheAppAsks() async throws {
+    try await onMain {
+      let backend = AwayBackend()
+      backend.away = true
+      backend.serverAnswers = ["chats/agents": Self.serverAgents, Self.theoLinesPath: Self.serverLines]
+      let store = AppStore()
+      await store.attach(backend)
+      await store.open("theo")
+      await store.peek("iris")
+      try await Task.sleep(nanoseconds: 50_000_000)
+      XCTAssertEqual(backend.serverPaths.filter { $0.hasPrefix("chats/") }, [])
+      XCTAssertTrue(store.agents.isEmpty)
+    }
+  }
+
+  /** The Mac reads the account after the agents: a device copy of another account goes, the server's list (this account's own) stays. */
+  func testTheServersListStaysWhenAnotherAccountsDeviceCopyGoes() async throws {
+    let dir = folder()
+    try await onMain {
+      let first = AppStore()
+      first.saved = SavedChats(directory: dir)
+      first.account = Self.other
+      let elsewhere = AwayBackend()
+      elsewhere.agents = [Agent(id: "rhea-agent", name: "Rhea's")]
+      await first.attach(elsewhere)
+      first.saveNow()
+      first.saved?.waitForWrites()
+      first.detach()
+
+      let backend = AwayBackend()
+      backend.away = true
+      backend.serverAnswers = ["chats/agents": Self.serverAgents]
+      let mac = AppStore()
+      mac.saved = SavedChats(directory: dir)
+      mac.readsServerCopy = true
+      await mac.attach(backend)
+      try await self.eventually("the server's list replaces the device's") { mac.agents.map(\.id) == ["theo", "iris"] }
+      mac.account = Self.bass
+      XCTAssertEqual(mac.agents.map(\.id), ["theo", "iris"])
+      mac.saved?.waitForWrites()
+      XCTAssertNil(SavedChats(directory: dir).readRoster(), "the other account's device copy went")
+    }
+  }
+
   /** "Reconnecting" waits on a held message: the computer away alone is not news. */
   func testReconnectingShowsOnlyWhileAMessageWaits() async throws {
     try await onMain {
@@ -351,6 +470,23 @@ final class AwayBackend: AgentBackend, @unchecked Sendable {
   func events() -> AsyncStream<BackendEvent> { AsyncStream { self.continuation = $0 } }
   var call: CallEngine? { nil }
   func command(_ method: String, _ args: JSON) async throws -> JSON { try reach(); return [:] }
-  func server(_ path: String, method: String?, body: JSON?) async throws -> JSON { [:] }
+  /** Simeon Labs' server's answers by path (the copy of the agents and chats); any other path answers nothing, as before. */
+  var serverAnswers: [String: JSON] = [:]
+  var serverDelayNs: UInt64 = 0
+  private let asked = LockedPaths()
+  var serverPaths: [String] { asked.paths }
+  func server(_ path: String, method: String?, body: JSON?) async throws -> JSON {
+    asked.add(path)
+    if serverDelayNs > 0 { try? await Task.sleep(nanoseconds: serverDelayNs) }
+    return serverAnswers[path] ?? [:]
+  }
   func screen(_ agentId: String) async throws -> ScreenState { ScreenState(socket: nil, state: "starting") }
+}
+
+/** The paths asked of the server, from whatever thread asks. */
+final class LockedPaths: @unchecked Sendable {
+  private let lock = NSLock()
+  private var list: [String] = []
+  func add(_ path: String) { lock.lock(); list.append(path); lock.unlock() }
+  var paths: [String] { lock.lock(); defer { lock.unlock() }; return list }
 }

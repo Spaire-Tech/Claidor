@@ -166,8 +166,9 @@ final class SessionController {
   private func enter(holding: Bool = false) async {
     let api = makeAPI()
     self.api = api
-    // The agents and chats kept on this phone, shown by `attach` while the computer is asked (SavedChats).
+    // The agents and chats kept on this phone, shown by `attach` while the computer is asked (SavedChats), and the server's copy.
     store.saved = SavedChats.onDevice()
+    store.readsServerCopy = true
     // Signed in from here: the lock may close when the app comes back (AppLock.swift), never on this sign-in itself.
     AppLock.shared.markSignedIn()
     // A push for the chat on screen is not shown (Notifications.presentation).

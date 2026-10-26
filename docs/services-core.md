@@ -1156,8 +1156,49 @@ empty:
   when reconnected"). "Reconnecting to your computer…" under the list and
   "Couldn't Reach Simeon's Computer" after two minutes are as before.
 
-This is the first step of the computer as a worker (the founder, 26 October
-2026); the server holding the chats and the agents is not done yet.
+**The server's copy (26 October 2026).** The computer also sends the agents
+and their chats to Simeon Labs' server as they change, and the apps read
+that copy while the computer is away, so a phone or Mac that kept nothing
+(a new device, the caches cleared) shows them too:
+
+- The engine's `chat-copy` extension (`desktop/source/host/extensions/chat-copy/`)
+  sends the whole list when it changes, without inline pictures or what
+  each agent is doing at that moment. Chat events come for the chat on
+  screen only, so it reads a chat's newest 60 lines again whenever the
+  list says that chat moved: a new line, its time, or a turn ending. A line
+  still streaming waits until it is whole, and a line already sent goes
+  again only if it changed. At start it sends every chat whose newest line
+  the server lacks, 300 lines back. A refused copy is tried again after 5 s,
+  then longer, up to 5 minutes. The computer's own chats never wait on it.
+- The server (`server/simeon/desktop/chats.py`, tables `desktop_chat_agents`
+  and `desktop_chat_lines`) keeps each agent's row and its chat's newest 500
+  lines. It skips a line over 256 KB (the computer still has it), and an
+  agent no longer in the list takes its chat with it.
+  - `POST /desktop/api/chats/copy` and `GET /desktop/api/chats/state` are
+    for the computer, with its own credential.
+  - `GET /desktop/api/chats/agents` and `GET /desktop/api/chats/lines` are
+    for the apps.
+  - Delete Account removes both tables.
+- The apps (`showServerList`, `showServerLines` in `StoreSaved.swift`) ask
+  for the list beside the computer. It shows if it comes before the
+  computer's list, never after. A chat opened shows the server's lines
+  while it has only the device's lines or none. The computer's copy
+  replaces both, as with the device's copy.
+
+In the box, `SAND_CHAT_COPY=0` switches the extension off. Its log lines
+are `[simeon] chat-copy on: …`, `sent …`, `failed …; again in N s` and
+`left out N line(s) over 256 KB`; they carry counts only, never a chat's
+words. On the API the line is `desktop.chats.copy`, with the counts.
+
+This is the first part of step 3 of the computer as a worker (the founder,
+26 October 2026). Not done yet:
+
+- messages to an agent landing on the server when the computer is asleep;
+- an agent's own Discord or Slack bot running from the server;
+- the computer used only for runs (step 4).
+
+**Not yet verified:** the copy has not run on a real computer, and the
+apps have not read it on an iPhone or a Mac.
 
 ### When it misbehaves
 

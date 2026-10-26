@@ -109,7 +109,7 @@ name is not set (`simeon/config.py`). Route groups:
 | Group | Where | What |
 | --- | --- | --- |
 | Sign-in | root: `/loginDeepControl`, `/auth/poll`, `/oauth/token` | The app's sign-in (`simeon/desktop/app_sign_in.py`). At the root because the app builds each path with a leading slash. |
-| Desktop API | `/desktop/api/*` | Model proxy (`/proxy/v1/responses` and others), models, profile, quota, feedback, memory sync, apps, box renewal credential (`simeon/desktop/endpoints.py`, `capabilities.py`, `apps.py`, `video.py`). |
+| Desktop API | `/desktop/api/*` | Model proxy (`/proxy/v1/responses` and others), models, profile, quota, feedback, memory sync, the copy of the agents and their chats, apps, box renewal credential (`simeon/desktop/endpoints.py`, `chats.py`, `capabilities.py`, `apps.py`, `video.py`). |
 | Sand routes | `/sand/*` | Notifications, listener relay and ingress, sharing (`simeon/sand/`). |
 | Connect RPC | `/simeon.v1.*` | Box broker (`ComputerService`), cloud agents (`CloudAgentService`), `AiService/AvailableModels`, `DashboardService`, `AutomationsService`. The upstream's names (`/aiserver.v1.GrokBotService` and the others) are answered too for one release (5 October 2026). Anything else answers `unimplemented`. |
 | Box proxy | `/sand-box/*` | The box port proxy, local-exec credentials, the box's token renewal. |

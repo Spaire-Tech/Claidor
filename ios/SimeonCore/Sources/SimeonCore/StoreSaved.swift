@@ -20,7 +20,57 @@ extension AppStore {
       return
     }
     showingSaved = true
+    listFromServer = false
     agents = sortRoster(roster.agents)
+  }
+
+  /**
+   * The server's copy of the list (`GET /desktop/api/chats/agents`), shown
+   * when it comes before the computer answers: newer than this device's,
+   * and there on a device that kept none. The computer's list replaces it.
+   */
+  func showServerList(from asked: AgentBackend) async {
+    guard let answer = try? await asked.server("chats/agents", method: nil, body: nil) else { return }
+    guard asked === backend, !hasReachedBox else { return }
+    let list = (answer["agents"]?.array ?? []).compactMap(Agent.init(json:))
+    guard !list.isEmpty else { return }
+    showingSaved = true
+    listFromServer = true
+    agents = sortRoster(list)
+    onListShown?()
+  }
+
+  /**
+   * A chat's lines from the server's copy (`GET /desktop/api/chats/lines`),
+   * shown while the chat has only kept lines or none (the computer away):
+   * replaced by the computer's when it answers, as kept lines are.
+   */
+  func showServerLines(_ agentId: String) async {
+    guard readsServerCopy, let asked = backend, !serverLinesAsked.contains(agentId), Self.showsKeptOrNothing(self, agentId) else { return }
+    serverLinesAsked.insert(agentId)
+    defer { serverLinesAsked.remove(agentId) }
+    guard let answer = try? await asked.server("chats/lines?agentId=\(Self.queryValue(agentId))&limit=\(SavedChats.linesKept)", method: nil, body: nil) else { return }
+    guard asked === backend, Self.showsKeptOrNothing(self, agentId) else { return }
+    let entries = (answer["entries"]?.array ?? []).compactMap(Entry.init)
+    guard !entries.isEmpty else { return }
+    let kept = savedLines[agentId] ?? []
+    let lines = Self.merge(entries, live: (transcripts[agentId] ?? []).filter { !kept.contains($0.id) })
+    savedLines[agentId] = Set(lines.map(\.id))
+    if answer["hasOlder"]?.bool == true { savedOlder.insert(agentId) } else { savedOlder.remove(agentId) }
+    loadFailed.remove(agentId)
+    setTranscript(agentId, lines)
+  }
+
+  /** The chat shows only kept lines, or nothing yet (or "Couldn't load"): the computer's copy has not come. */
+  static func showsKeptOrNothing(_ store: AppStore, _ agentId: String) -> Bool {
+    store.savedLines[agentId] != nil || (store.transcripts[agentId]?.isEmpty ?? true)
+  }
+
+  /** An id as a query's value: letters, digits and `-._~` as they are, the rest escaped. */
+  static func queryValue(_ text: String) -> String {
+    var allowed = CharacterSet.alphanumerics
+    allowed.insert(charactersIn: "-._~")
+    return text.addingPercentEncoding(withAllowedCharacters: allowed) ?? text
   }
 
   /** A chat's kept lines, when it has none here yet. */
@@ -90,8 +140,11 @@ extension AppStore {
     rosterToSave = false
     chatsToSave = []
     showingSaved = false
+    listFromServer = false
     savedLines = [:]
     savedOlder = []
+    serverLinesAsked = []
+    onListShown = nil
   }
 
   /** Signing out, or the account deleted: everything kept on this device goes. */
@@ -112,7 +165,8 @@ extension AppStore {
       for agentId in savedLines.keys { transcripts[agentId] = nil; chatRows[agentId] = nil }
       savedLines = [:]
       savedOlder = []
-      if showingSaved {
+      // The server's copy is this account's own: it stays.
+      if showingSaved && !listFromServer {
         showingSaved = false
         agents = []
       }
