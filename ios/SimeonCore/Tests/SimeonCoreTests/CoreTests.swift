@@ -300,6 +300,11 @@ final class GatewayTests: XCTestCase {
   func testCommandsAskTheBrokerOnceAndRetryOnAMovedBox() async throws {
     let vault = MemoryVault(SessionTokens(accessToken: "t", refreshToken: "r", expiresAtMs: 9e15))
     let http = ScriptedHTTP([
+      // The launch's one question, with nothing kept (step 4): the record, which says the server keeps it awake.
+      { request in
+        XCTAssertEqual(request.url?.path, "/simeon.v1.ComputerService/GetSandBoxRunState")
+        return HTTPAnswer(status: 200, body: json(#"{"state":3,"letsSleep":false}"#))
+      },
       { request in
         XCTAssertEqual(request.url?.path, "/simeon.v1.ComputerService/EnsureSandBox")
         return HTTPAnswer(status: 200, body: json(#"{"gatewayUrl":"https://box-1","gatewayToken":"g1"}"#))
@@ -315,7 +320,7 @@ final class GatewayTests: XCTestCase {
     let backend = LiveBackend(gateway: Gateway(api: api, http: http))
     let agents = try await backend.listAgents()
     XCTAssertEqual(agents.map(\.name), ["Simeon"])
-    XCTAssertEqual(http.sent.count, 4)
+    XCTAssertEqual(http.sent.count, 5)
   }
 
   func testAHostRefusalIsNotRetried() async {

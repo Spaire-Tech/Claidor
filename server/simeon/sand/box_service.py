@@ -1344,15 +1344,16 @@ class BoxBrokerService:
     async def recorded_run_state(self, db: AsyncSession, user_id: UUID) -> int:
         """The person's box as the broker last recorded it (running, asleep,
         none), without asking its server: what an app that lets the box sleep
-        asks every few seconds while it waits for it to wake."""
+        asks every few seconds while it waits for it to wake. None is an
+        account whose box was never made (the app's first run makes it); one
+        made and since removed reads as asleep, as its next task makes it
+        again and the account is not new."""
         box = await SandBoxRepository.from_session(db).get_by_user(user_id)
         if box is None:
             return RUN_STATE_ABSENT
         if box.state == "running":
             return RUN_STATE_RUNNING
-        if box.state == "hibernated":
-            return RUN_STATE_HIBERNATED
-        return RUN_STATE_ABSENT
+        return RUN_STATE_HIBERNATED
 
     async def run_state(
         self, db: AsyncSession, caller: DesktopSession

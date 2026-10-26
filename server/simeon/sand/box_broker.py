@@ -348,8 +348,14 @@ async def get_sand_box_run_state(call: ConnectCall) -> dict[str, Any]:
     if call.message.get("fromRecord") is True and not call.caller.is_box_credential:
         # An app waiting for a sleeping box to wake asks every few seconds:
         # the broker's record answers, the box's server is not asked.
+        # With the switch the app needs before its first EnsureSandBox (a new
+        # account's computer is made at its first task, not by a launch).
         state = await broker.recorded_run_state(call.db, call.caller.user_id)
-        return {"state": state, "imageUpdateAvailable": False}
+        return {
+            "state": state,
+            "imageUpdateAvailable": False,
+            "letsSleep": settings.BOX_SLEEPS_WITH_APP_OPEN,
+        }
     state, update_available = await broker.run_state(call.db, call.caller)
     return {"state": state, "imageUpdateAvailable": update_available}
 

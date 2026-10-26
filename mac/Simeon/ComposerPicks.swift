@@ -74,17 +74,18 @@ final class ComposerPicks {
     UserDefaults.standard.set(emojiRecents, forKey: "simeon.emojiRecents")
   }
 
+  /** As the chat opens: a computer that rests is waited for, not woken (step 4); "/" opening reads the gates again, waking it. */
   func load(_ agentId: String, store: AppStore) async {
-    let answer = await store.workflows(agentId)
+    let answer = await store.workflows(agentId, wakes: false)
     skills = ComposerMenus.skills(from: answer)
     routines = ComposerMenus.skills(from: answer, scheduled: true)
-    await readGates(agentId, store: store)
+    await readGates(agentId, store: store, wakes: false)
   }
 
   /** Whether "/" offers Org Chart and Channels: read when the chat opens and again each time "/" opens (as ⌘K reads them on opening). */
-  func readGates(_ agentId: String, store: AppStore) async {
-    orgChartOn = await store.agentNetworkEnabled() && !store.agents.isEmpty
-    channelsOn = await store.channelsAvailable(agentId)
+  func readGates(_ agentId: String, store: AppStore, wakes: Bool = true) async {
+    orgChartOn = await store.agentNetworkEnabled(wakes: wakes) && !store.agents.isEmpty
+    channelsOn = await store.channelsAvailable(agentId, wakes: wakes)
   }
 }
 

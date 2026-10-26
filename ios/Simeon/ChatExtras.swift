@@ -140,7 +140,7 @@ struct GalleryTile: View {
     #endif
     .task(id: image.url) {
       if let kept = ChatImages.image(for: [image.url]) { loaded = kept; state = .ready; measured(kept.size); return }
-      guard let data = await Self.bytes(image, agentId: agentId, store: store) else { state = .unavailable; return }
+      guard let data = await Self.bytes(image, agentId: agentId, store: store, wakes: false) else { state = .unavailable; return }
       guard let full = UIImage(data: data) else { state = .failed; return }
       measured(full.size)
       let scale = min(1, 900 / max(full.size.width, full.size.height, 1))
@@ -151,14 +151,14 @@ struct GalleryTile: View {
     }
   }
 
-  /** The picture's bytes: from the agent's computer for a path, from the web for an address. */
-  static func bytes(_ image: ChatImage, agentId: String, store: AppStore) async -> Data? {
+  /** The picture's bytes: from the agent's computer for a path, from the web for an address. With `wakes` false (shown as the chat opens), a computer that rests is waited for, not woken (step 4). */
+  static func bytes(_ image: ChatImage, agentId: String, store: AppStore, wakes: Bool = true) async -> Data? {
     if image.url.hasPrefix("https://") || image.url.hasPrefix("http://") {
       guard let url = URL(string: image.url), let answer = try? await URLSession.shared.data(from: url),
             ((answer.1 as? HTTPURLResponse)?.statusCode ?? 200) < 400 else { return nil }
       return answer.0
     }
-    return await store.readFile(image.url, agentId: agentId, limit: 24 << 20)
+    return await store.readFile(image.url, agentId: agentId, limit: 24 << 20, wakes: wakes)
   }
 
   /** The name Quick Look shows for it: its words (the window's caption), else its own name. */

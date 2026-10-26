@@ -108,6 +108,9 @@ actor LocalHandsProvider {
     var attempt = 1
     var failures = 0
     while !Task.isCancelled {
+      // Resting where the server lets it, as the launch's question found (asleep, or a new account's not made yet): not
+      // dialled, which would wake it, until it runs (step 4, as the events wait).
+      _ = await gateway.waitWhileAsleep({ _ in }, ask: false)
       do {
         try await stream { attempt = 1; failures = 0 }
       } catch {

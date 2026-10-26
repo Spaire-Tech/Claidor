@@ -160,9 +160,22 @@ public struct GatewayError: Error, LocalizedError, Sendable {
   public let status: Int?
   public var errorDescription: String? { message }
 
+  /** The box rests where the server lets it sleep, and this read did not wake it (`Gateway.command(_:_:wakes:)`). */
+  public var resting = false
+
   public init(message: String, refused: Bool, status: Int? = nil) {
     self.message = message; self.refused = refused; self.status = status
   }
+
+  /** A read that did not wake the resting box: the app shows what it kept instead, and says nothing went wrong. */
+  public static var resting: GatewayError {
+    var error = GatewayError(message: "Simeon's computer is asleep.", refused: false)
+    error.resting = true
+    return error
+  }
+
+  /** Whether an error is a read that let the box rest. */
+  public static func isResting(_ error: Error) -> Bool { (error as? GatewayError)?.resting == true }
 
   /**
    * Whether the call surely never reached the host: no connection, or the
@@ -223,6 +236,8 @@ public actor Gateway {
   public static let asleepRecheck: TimeInterval = 15
   /** `GetSandBoxRunState`'s asleep (`SAND_BOX_RUN_STATE_HIBERNATED`). */
   static let runStateHibernated = 2
+  /** `GetSandBoxRunState`'s none (`SAND_BOX_RUN_STATE_ABSENT`). */
+  static let runStateAbsent = 1
 
   /** The wait before the event stream dials again after `failures` failures in a row: 1, 2, 4, 8, then 10 s. */
   public static func reconnectDelay(failures: Int) -> TimeInterval {
@@ -246,8 +261,12 @@ public actor Gateway {
   private var keptUsed = false
   private var deniedScopes: Set<String> = []
   private var blocked: (error: Error, until: TimeInterval)?
-  /** The broker's live answers so far: one while the box sleeps means something here woke it. */
-  private var answers = 0
+  /** The box rests where the server lets it (`waitWhileAsleep`, `checkedAtLaunch`); nil once it is known awake. */
+  public private(set) var rest: Rest?
+  /** The server's latest word this launch on whether the box may sleep (EnsureSandBox's, or the record's): nil until it says. */
+  private var serverLetsSleep: Bool?
+  /** The launch's question, asked once (`checkedAtLaunch`). */
+  private var launchCheck: Task<Void, Never>?
   /** A second's wait (the tests' is at once). */
   private let pause: @Sendable (TimeInterval) async -> Void
 
@@ -255,17 +274,26 @@ public actor Gateway {
     self.api = api; self.http = http; self.saved = saved; self.clock = clock; self.now = now; self.pause = pause
   }
 
-  /** Where the box is now: the known address while it answers, else the broker's (`ensureConnection`). */
-  public func currentConnection() async throws -> GatewayConnection {
+  /**
+   * Where the box is now: the known address while it answers, else the
+   * broker's (`ensureConnection`). Not for a read that lets the box rest
+   * (`wakes` false): where the server lets it sleep, a box the record says
+   * rests is not asked for, which would wake it (or make it).
+   */
+  public func currentConnection(wakes: Bool = true) async throws -> GatewayConnection {
     if let cached = connection {
       if streamLive { return cached }
       if clock() - lastHealthyAt < Self.healthTrusted { return cached }
       let epoch = healthEpoch
       if await answersHealth(cached) {
         if epoch == healthEpoch { lastHealthyAt = clock() }
+        // It answers: awake (woken for its work since the record was read).
+        rest = nil
         return cached
       }
     }
+    // A read waits for a wake already under way (an action's); otherwise it lets a resting box rest.
+    if !wakes, resolving == nil { try await holdWhileResting(ask: true) }
     if !hasLiveConnection, !keptUsed, let kept = keptConnection() {
       // The Electron app's fast path: the kept address now, the broker asked meanwhile (its answer replaces it when it comes).
       keptUsed = true
@@ -288,7 +316,7 @@ public actor Gateway {
   var isAskingBroker: Bool { resolving != nil }
 
   /** The stream is up: its address needs no `/health` while it lasts. */
-  func streamConnected() { streamLive = true }
+  func streamConnected() { streamLive = true; rest = nil }
 
   /** The stream dropped (the Electron app's `transport-down`): the next call asks `/health` before it trusts the address. */
   func streamDropped() {
@@ -329,11 +357,13 @@ public actor Gateway {
   private func answered(_ fresh: GatewayConnection, scope: String?) {
     resolving = nil
     blocked = nil
-    answers += 1
+    // The broker answered: the box is awake (woken for an action here, or made).
+    rest = nil
     // Signed out, or into another account, while the broker answered: nothing is kept (`scopeAtDispatch`).
     guard api.accountScope == scope else { return }
     hasLiveConnection = true
     connection = fresh
+    serverLetsSleep = fresh.letsSleep
     lastHealthyAt = -.infinity
     if let scope {
       deniedScopes.remove(scope)
@@ -359,41 +389,94 @@ public actor Gateway {
 
   /**
    * After the stream dropped, a box the server lets sleep (`letsSleep`) and
-   * records as asleep is not dialled: dialling would wake it (26 October
-   * 2026, the computer used only for runs). This waits, telling `onAsleep`,
-   * until the record says it runs (woken for its work: a message, a
-   * routine), or until something here needed it and the broker woke it (a
-   * command, `answers`). True when it waited; false when the box is not
-   * known to be asleep, and the stream dials as before. A record that says
+   * records as asleep, or not made yet, is not dialled: dialling would wake
+   * it, or make it (26 October 2026, the computer used only for runs). This
+   * waits, telling `onAsleep`, until the record says it runs (woken for its
+   * work: a message, a routine), or until something here needed it and the
+   * broker woke it (an action, which clears `rest`). True when it waited;
+   * false when the box is not known to rest, and the stream dials as before.
+   * With `ask` false it waits only for a rest already known (the launch's
+   * question, `checkedAtLaunch`), without asking again. A record that says
    * it runs ends the asleep state (`onAsleep(false)`): a box that runs and
    * does not answer is a failure the app shows.
    */
-  public func waitWhileAsleep(_ onAsleep: @Sendable (Bool) -> Void) async -> Bool {
-    guard connection?.letsSleep == true else { return false }
-    let first = await recordedAsleep()
-    guard first == true else {
-      if first == false { onAsleep(false) }
-      return false
+  public func waitWhileAsleep(_ onAsleep: @Sendable (Bool) -> Void, ask: Bool = true) async -> Bool {
+    await checkedAtLaunch()
+    guard letsSleep else { return false }
+    if rest == nil {
+      guard ask, let record = await recordNow() else { return false }
+      // Running, or the server no longer lets it sleep: dialled, and a failure to reach it shows.
+      guard letsSleep, let resting = record.rest else {
+        onAsleep(false)
+        return false
+      }
+      rest = resting
     }
     onAsleep(true)
-    let mark = answers
     var waited: TimeInterval = 0
     while !Task.isCancelled {
       await pause(1)
-      if answers != mark { return true }
+      if rest == nil { return true }
       waited += 1
       if waited >= Self.asleepRecheck {
         waited = 0
-        if await recordedAsleep() != true { return true }
+        guard let record = await recordNow() else { continue }
+        rest = letsSleep ? record.rest : nil
+        if rest == nil { return true }
       }
     }
     return true
   }
 
-  /** The broker's record of the box (`GetSandBoxRunState` with `fromRecord`): asleep, or not; nil when it could not be asked. */
-  private func recordedAsleep() async -> Bool? {
+  /** A box that rests where the server lets it (step 4): asleep, or not made yet (a new account, before its first task). */
+  public enum Rest: Sendable, Equatable { case asleep, absent }
+
+  /** The broker's record of the box (`GetSandBoxRunState` with `fromRecord`): resting or not; nil when it could not be asked. Its word on sleep is kept (`letsSleep`). */
+  struct Record: Equatable { let rest: Rest? }
+
+  private func recordNow() async -> Record? {
     guard let answer = try? await api.connect("GetSandBoxRunState", ["fromRecord": true]) else { return nil }
-    return answer["state"]?.int == Self.runStateHibernated || answer["state"]?.text == "SAND_BOX_RUN_STATE_HIBERNATED"
+    let state = answer["state"]?.int
+    let named = answer["state"]?.text
+    let rest: Rest? = state == Self.runStateHibernated || named == "SAND_BOX_RUN_STATE_HIBERNATED" ? .asleep
+      : state == Self.runStateAbsent || named == "SAND_BOX_RUN_STATE_ABSENT" ? .absent : nil
+    if let says = answer["letsSleep"]?.bool { serverLetsSleep = says }
+    return Record(rest: rest)
+  }
+
+  /**
+   * Whether the server lets the box sleep while the app is open, by its
+   * latest word this launch (EnsureSandBox's answer, or the record's), else
+   * the answer kept from the last launch: a switch turned off is heard at
+   * once. False wherever it never said so: nothing here changes then.
+   */
+  var letsSleep: Bool { serverLetsSleep ?? keptConnection()?.letsSleep ?? false }
+
+  /**
+   * The launch's one question (step 4): before anything here would wake the
+   * box (or make a new account's), the record is asked, where the server let
+   * it sleep at the last launch or nothing was kept (a new device, a new
+   * account). Asleep or not made, `rest` says so, and reads wait for it
+   * (`command(_:_:wakes:)`). Once, and not after the broker has answered.
+   */
+  func checkedAtLaunch() async {
+    if let launchCheck { return await launchCheck.value }
+    let task = Task { await self.checkAtLaunch() }
+    launchCheck = task
+    await task.value
+  }
+
+  private func checkAtLaunch() async {
+    guard !hasLiveConnection else { return }
+    if let kept = keptConnection(), !kept.letsSleep { return }
+    guard let record = await recordNow(), letsSleep, !hasLiveConnection else { return }
+    rest = record.rest
+  }
+
+  /** Where the box rests, once the launch's question is answered (the first run's gate). */
+  public func restAtLaunch() async -> Rest? {
+    await checkedAtLaunch()
+    return letsSleep ? rest : nil
   }
 
   /** Whether the box answers `/health` within 1.5 s with `ok` (`fetchHealth`). */
@@ -406,23 +489,65 @@ public actor Gateway {
     return answer.json?["ok"]?.bool == true
   }
 
-  /** One command. A call that never reached the box (no connection, a moved box) asks the broker once more and is sent once more; any other failure is the caller's. */
-  public func command(_ method: String, _ args: JSON = [:]) async throws -> JSON {
+  /**
+   * One command. A call that never reached the box (no connection, a moved
+   * box) asks the broker once more and is sent once more; any other failure
+   * is the caller's. A read that lets the box rest (`wakes` false: the list,
+   * a chat's lines, what the app reads as it opens; 26 October 2026) does
+   * not wake a box the server lets sleep, nor make a new account's: while it
+   * rests, it fails at once (`GatewayError.resting`), and the app shows
+   * what it kept and the server's copy. Everything else wakes it, as before.
+   */
+  public func command(_ method: String, _ args: JSON = [:], wakes: Bool = true) async throws -> JSON {
+    if !wakes { try await holdWhileResting(ask: false) }
     do {
-      return try await send(method, args)
+      return try await send(method, args, wakes: wakes)
     } catch where GatewayError.neverArrived(error) {
+      // A read that found the box gone where it may sleep: asleep now, and not woken for it.
+      if !wakes { try await holdWhileResting(ask: true) }
       invalidate()
-      return try await send(method, args)
+      return try await send(method, args, wakes: wakes)
     }
   }
 
-  private func send(_ method: String, _ args: JSON) async throws -> JSON {
-    let connection = try await currentConnection()
+  /**
+   * A read that waits for the box, without waking it (step 4): what a screen
+   * reads once and keeps nothing of (a chat's "/" and "@", its pictures and
+   * file cards). While the box rests where the server lets it, it waits until
+   * the box is awake (woken for its work, or by an action here), then reads;
+   * elsewhere it is the command itself. Ended with the screen (cancelled).
+   */
+  public func commandWhenAwake(_ method: String, _ args: JSON = [:]) async throws -> JSON {
+    while true {
+      do {
+        return try await command(method, args, wakes: false)
+      } catch where GatewayError.isResting(error) {
+        while letsSleep, rest != nil {
+          try Task.checkCancellation()
+          await pause(1)
+        }
+        try Task.checkCancellation()
+      }
+    }
+  }
+
+  /** Throws `resting` while the box rests where the server lets it: as known (the launch's question), or, with `ask`, as the record says now. */
+  private func holdWhileResting(ask: Bool) async throws {
+    await checkedAtLaunch()
+    guard letsSleep else { return }
+    if rest == nil, ask, let record = await recordNow(), letsSleep { rest = record.rest }
+    if rest != nil { throw GatewayError.resting }
+  }
+
+  private func send(_ method: String, _ args: JSON, wakes: Bool = true) async throws -> JSON {
+    let connection = try await currentConnection(wakes: wakes)
     let answer = try await http.send(connection.commandRequest(method, args))
     guard answer.ok else {
       let detail = answer.json?["error"]?.text ?? answer.json?["message"]?.text ?? String(decoding: answer.body.prefix(300), as: UTF8.self)
       throw GatewayError(message: "\(method): \(detail)", refused: answer.status < 500, status: answer.status)
     }
+    // The box answered: awake, and the stream need not wait for the record to say so.
+    rest = nil
     return answer.json ?? .null
   }
 
@@ -439,6 +564,8 @@ public actor Gateway {
       let task = Task {
         var failures = 0
         while !Task.isCancelled {
+          // Resting where the server lets it, as the launch's question found (asleep, or a new account's not made yet): not dialled.
+          if await self.waitWhileAsleep(onAsleep, ask: false) { failures = 0 }
           var connected = false
           do {
             let connection = try await self.currentConnection()

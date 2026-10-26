@@ -1263,10 +1263,28 @@ the worker, an open app no longer keeps the computer awake:
   "Reconnecting" does not start for it, a message goes to the server
   (above), and the stream coming back ends it. A box the record says runs,
   and that does not answer, is a failure the app shows as before.
-- Not changed: launching the app still wakes the computer once (the app
-  reads its list and chats there), opening a chat while it sleeps wakes it,
-  and a new account's computer is still made at sign-in (the first run makes
-  Simeon at once, which needs it).
+- The launch asks the record first (`Gateway.checkedAtLaunch`), where the
+  last launch's answer let the box sleep or nothing was kept (a new device,
+  a new account). The record answers with the server's word (`letsSleep`),
+  which wins over the one kept, so a switch turned off is heard at once.
+- While the box rests, reads let it rest. The list, a chat's lines, read
+  marks, the trays, the pins and sections, the language and the Mac's window
+  focus fail at once (`command(_:_:wakes: false)`, `GatewayError.resting`):
+  the app shows what it kept and the server's copy, with no error, and reads
+  them again when the stream comes back. What a chat reads as it opens and
+  keeps nothing of ("/" and "@", the Org Chart's switch, pictures, file
+  cards) waits for the box instead (`commandWhenAwake`), and is read once it
+  wakes for its work. Anything the person does (a message, a call, a screen,
+  older lines scrolled up to, "/", Settings) wakes it through EnsureSandBox,
+  as before.
+- A new account (no box in the record) gets the first run without its
+  computer being made at sign-in: the hand-off makes it, tells it the
+  language, then makes Simeon (its first task). A box made and since removed
+  reads as asleep, so an account that used Simeon never sees the first run
+  again. Asleep with no agents kept or in the server's copy, the first run's
+  question is asked of the computer, waking it, as before.
+- The first launch after the switch goes on still wakes it once: the address
+  kept from before says nothing about sleep.
 
 Switch it on only once the apps built with this have been tried on an
 iPhone and a Mac. Off, nothing above changes.

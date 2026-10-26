@@ -176,9 +176,10 @@ struct ChatView: View {
         if phase == .active { Task { await store.refresh(agentId); store.markChatRead(agentId) } }
       }
       // "/"'s Org Chart and Channels, as the Mac's composer reads them on opening (`readGates`); apart, so the chat's own opening never waits on them.
+      // A computer that rests is waited for, not woken (step 4).
       .task {
-        orgChartOn = await store.agentNetworkEnabled() && !store.agents.isEmpty
-        channelsOn = await store.channelsAvailable(agentId)
+        orgChartOn = await store.agentNetworkEnabled(wakes: false) && !store.agents.isEmpty
+        channelsOn = await store.channelsAvailable(agentId, wakes: false)
       }
       .task {
         // Its notifications are read with it.
@@ -938,12 +939,13 @@ struct ChatComposer: View {
       let named = store.agent(agentId)?.name ?? ""
       if name != named { name = named }
     }
-    // "/" and "@" offer the agent's skills and routines, read once per chat; "@" the connected apps too.
+    // "/" and "@" offer the agent's skills and routines, read once per chat; "@" the connected apps too. A computer that rests
+    // is waited for, not woken (step 4).
     .task(id: agentId) {
-      let answer = await store.workflows(agentId)
+      let answer = await store.workflows(agentId, wakes: false)
       skills = ComposerMenus.skills(from: answer)
       routines = ComposerMenus.skills(from: answer, scheduled: true)
-      if store.apps.isEmpty { await store.loadApps() }
+      if store.apps.isEmpty { await store.loadApps(wakes: false) }
     }
     .composerPicker(isPresented: $picking) { picked in stage(picked) }
     .onChange(of: dictation.problem) { _, problem in if let problem { store.problem = problem } }
