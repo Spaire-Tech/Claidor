@@ -1120,6 +1120,8 @@ because the worker runs the sleeper and the wake. Full steps are in
 | `SIMEON_BOX_IMAGE`, `SIMEON_BOX_IMAGE_DIGEST` | defaults; change only with a checked image |
 | `SIMEON_BOX_IMAGE_TRIAL`, `SIMEON_BOX_IMAGE_TRIAL_USERS` | empty; another image for the accounts listed only (above) |
 | `SIMEON_BOX_IDLE_HIBERNATE_AFTER` | `PT30M`; `PT0S` never sleeps |
+| `SIMEON_BOX_SLEEPS_WITH_APP_OPEN` | `false`; `true` lets an open app's computer sleep (step 4, above) |
+| `SIMEON_BOX_IDLE_AFTER_RUN` | `PT10M`; how soon after its last run a box sleeps, with the line above on |
 | `SIMEON_BOX_MEMORY_LIMIT_MB`, `SIMEON_BOX_CPU_LIMIT` | `4096`, `2.0`; `0` means no limit |
 | `SIMEON_BOX_MAX_RUNNING` | `3`; `0` means no limit |
 | `SIMEON_BOX_STORE_BUCKET` | the backup bucket's name; empty: no backups |
@@ -1236,11 +1238,42 @@ N s`. None carries a message's words.
 
 This is step 3 of the computer as a worker (the founder, 26 October 2026),
 with an agent's own Discord or Slack bot now listened to from the server
-(`docs/services-agents.md` §4). Not done yet: the computer used only for
-runs (step 4).
+(`docs/services-agents.md` §4).
 
-**Not yet verified:** the copy and the messages have not run on a real
-computer, and the apps have not used them on an iPhone or a Mac.
+**The computer used only for runs (26 October 2026, step 4; off until
+switched on).** With `SIMEON_BOX_SLEEPS_WITH_APP_OPEN=true` on the API and
+the worker, an open app no longer keeps the computer awake:
+
+- EnsureSandBox's answer says so (`letsSleep`), and an app built since
+  then says it on each request to the computer (`x-simeon-lets-sleep: 1`):
+  the proxy does not mark the box in use for those (`box_service.lets_sleep`).
+  An app built before keeps it awake as always, and so does a screen being
+  watched (its stream carries no such word).
+- The sleeper puts a box to sleep `SIMEON_BOX_IDLE_AFTER_RUN` (10 minutes)
+  after its last run, or after `SIMEON_BOX_IDLE_HIBERNATE_AFTER` if that is
+  shorter; a message waiting for it still holds it awake.
+- When the stream drops, the app (`Gateway.waitWhileAsleep`) asks the
+  broker's record of the box (`GetSandBoxRunState` with `fromRecord`, which
+  does not ask the box's server) instead of dialling, which would wake it.
+  Asleep, it waits, reading the record every 15 s, until the box runs again
+  (woken for a message, a routine, a bot) or something in the app needs it
+  (a command wakes it through EnsureSandBox, as before). The Mac's local
+  hands wait the same way (`MacLocalHands.run`).
+- Meanwhile the store says the computer is asleep (`isAsleep`):
+  "Reconnecting" does not start for it, a message goes to the server
+  (above), and the stream coming back ends it. A box the record says runs,
+  and that does not answer, is a failure the app shows as before.
+- Not changed: launching the app still wakes the computer once (the app
+  reads its list and chats there), opening a chat while it sleeps wakes it,
+  and a new account's computer is still made at sign-in (the first run makes
+  Simeon at once, which needs it).
+
+Switch it on only once the apps built with this have been tried on an
+iPhone and a Mac. Off, nothing above changes.
+
+**Not yet verified:** the copy, the messages and the computer used only
+for runs have not run on a real computer, and the apps have not used them
+on an iPhone or a Mac.
 
 ### When it misbehaves
 

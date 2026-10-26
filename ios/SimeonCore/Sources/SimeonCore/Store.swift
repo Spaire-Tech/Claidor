@@ -143,6 +143,17 @@ public final class AppStore {
   public private(set) var isLive = false {
     didSet { if isLive != oldValue { rebuild.transportChanged(rebuildInputs) } }
   }
+  /**
+   * The computer sleeps and the app waits for it without waking it (26
+   * October 2026, the computer used only for runs; `Gateway.waitWhileAsleep`,
+   * only where the server lets it sleep while the app is open). Not a
+   * computer out of reach: "Reconnecting" does not start for it
+   * (`rebuildInputs`), while messages still go to the server (`isDown`).
+   * Ends when the stream is back, or when the computer runs again.
+   */
+  public private(set) var isAsleep = false {
+    didSet { if isAsleep != oldValue { rebuild.transportChanged(rebuildInputs) } }
+  }
   public private(set) var isLoading = false
   public var account: Account? {
     didSet { if account != oldValue { savedOwnerKnown() } }
@@ -455,7 +466,7 @@ public final class AppStore {
     layoutTask?.cancel(); layoutTask = nil; pendingLayout = []; refreshing = []; caughtUp = [:]
     pendingAnswers = [:]; answeredApprovals = [:]; answeredPurchases = [:]; watchedPurchases = []; pickedPurchaseCards = [:]; pressedProducts = [:]; localAsks = [:]; trayList = TrayList(); fileLines = [:]; fileReadsAsText = [:]; unreadAfter = [:]; apps = []; catalog = []; appsComingSoon = AppsComingSoon.builtIn; pinnedIds = []; routinesByAgent = [:]; sidebarSections = nil
     streamingOnly = [:]; outbox = [:]; sentOffline = [:]; arrived = []; olderBefore = [:]; loadingOlder = []; paged = []; firstRunAgentId = nil; revealing = [:]
-    openThreads = [:]; threadRows = [:]; threadRoots = [:]; loadFailed = []; isDown = false
+    openThreads = [:]; threadRows = [:]; threadRoots = [:]; loadFailed = []; isDown = false; isAsleep = false
     computer = ComputerBook(); subagentsByAgent = [:]; pointers = [:]; lastComputerCatchUp = .distantPast
     rebuild.reset(); rosterHeld = false; diskSaverCreation = nil; diskAuditDone = false; rosterFailed = false; windowSelection = nil
     voiceList = nil
@@ -543,9 +554,12 @@ public final class AppStore {
     case .step(let agentId, let id, let summary, let isRunning):
       if isRunning { running[agentId] = id; steps[agentId] = summary }
       else if running[agentId] == id { running[agentId] = nil; steps[agentId] = nil }
+    case .computerAsleep(let asleep):
+      isAsleep = asleep
     case .connection(let live):
       // Back after a drop (the phone slept, the network changed): what was said meanwhile never streamed, so fetch it.
       let recovered = live && !isLive
+      if live { isAsleep = false }
       isLive = live
       if isDown == live { setDown(!live) }
       if recovered, let backend {

@@ -16,6 +16,8 @@ public enum BackendEvent: Sendable {
   /** A step the agent is on ("Checking Linear"), or done with. */
   case step(agentId: String, id: String, summary: String, running: Bool)
   case connection(live: Bool)
+  /** The box sleeps, and the app waits for it without waking it (`Gateway.waitWhileAsleep`); false once it runs again. */
+  case computerAsleep(Bool)
   /** A connected app changed: a sign-in finished, one was added or removed (`mcp-auth`, `mcp-servers`). */
   case appsChanged
   /** The host's settings changed on some device (`host-settings`: the names of the fields), e.g. the pins. */
@@ -43,6 +45,7 @@ public enum BackendEvent: Sendable {
     case .transcript(let change): return "a line in \(change.agentId)"
     case .step(let agentId, _, _, _): return "a step of \(agentId)"
     case .connection(let live): return live ? "the connection back" : "the connection lost"
+    case .computerAsleep(let asleep): return asleep ? "the computer asleep" : "the computer awake"
     case .appsChanged: return "an apps change"
     case .settingsChanged: return "a settings change"
     case .automations(let agentId, _): return "the routines of \(agentId)"
@@ -433,7 +436,7 @@ public final class LiveBackend: AgentBackend, @unchecked Sendable {
   public func events() -> AsyncStream<BackendEvent> {
     #if canImport(Darwin)
     let (stream, continuation) = AsyncStream<BackendEvent>.makeStream()
-    let source = gateway.events(onState: { live in continuation.yield(.connection(live: live)) })
+    let source = gateway.events(onState: { live in continuation.yield(.connection(live: live)) }, onAsleep: { asleep in continuation.yield(.computerAsleep(asleep)) })
     let task = Task {
       for await event in source {
         for mapped in LiveBackend.map(event) { continuation.yield(mapped) }

@@ -21,7 +21,8 @@ extension AppStore {
     let box = rebuildBox
     return RebuildDriver.Inputs(boxId: box, isCurrentGroup: agent(computerSelection)?.isGroup ?? false, phase: computer.phase(box),
                                 imageUpdateAvailable: computer.status(box)?.raw["imageUpdateAvailable"]?.bool,
-                                anyRunning: agents.contains { $0.isRunning }, transportConnected: isLive)
+                                // A computer asleep on purpose is not one the stream lost (`isAsleep`).
+                                anyRunning: agents.contains { $0.isRunning }, transportConnected: isLive || isAsleep)
   }
 
   /** The window starts with an account: the driver gets its calls, and the server's last rebuild step is read back. */

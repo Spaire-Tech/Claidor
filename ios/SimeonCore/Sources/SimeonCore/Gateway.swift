@@ -58,6 +58,8 @@ public struct GatewayConnection: Sendable, Equatable {
   public static let apiPrefix = "/api"
   public static let eventsPath = "/events"
   public static let networkTokenHeader = "x-anyrun-network-token"
+  /** Said on every request when the server lets the box sleep while the app is open (`letsSleep`). */
+  public static let letsSleepHeader = "x-simeon-lets-sleep"
 
   public let baseURL: String
   public let token: String?
@@ -66,16 +68,25 @@ public struct GatewayConnection: Sendable, Equatable {
   public let screenURL: String?
   /** Where each agent's own screen answers through the proxy (`forkVncBaseUrl`, the box's port 6081). */
   public let forkScreenBase: String?
+  /**
+   * The server lets the box sleep while the app is open (26 October 2026,
+   * `SIMEON_BOX_SLEEPS_WITH_APP_OPEN`, the computer used only for runs): the
+   * app says so on its requests (`letsSleepHeader`), so being open does not
+   * keep the box awake, and does not wake a sleeping box until something
+   * needs it (`Gateway.waitWhileAsleep`). An address kept from an earlier
+   * launch does not say it: the broker's next answer does.
+   */
+  public let letsSleep: Bool
 
-  public init(baseURL: String, token: String?, networkToken: String?, screenURL: String? = nil, forkScreenBase: String? = nil) {
-    self.baseURL = baseURL; self.token = token; self.networkToken = networkToken; self.screenURL = screenURL; self.forkScreenBase = forkScreenBase
+  public init(baseURL: String, token: String?, networkToken: String?, screenURL: String? = nil, forkScreenBase: String? = nil, letsSleep: Bool = false) {
+    self.baseURL = baseURL; self.token = token; self.networkToken = networkToken; self.screenURL = screenURL; self.forkScreenBase = forkScreenBase; self.letsSleep = letsSleep
   }
 
   public init(box: JSON) throws {
     guard let base = box["gatewayUrl"]?.text else {
       throw SimeonAPIError(message: L10n.text("Simeon's cloud computer has no gateway address yet. Try again in a moment."), status: 0)
     }
-    self.init(baseURL: base.trimmingTrailingSlashes, token: box["gatewayToken"]?.text, networkToken: box["networkToken"]?.text, screenURL: box["vncUrl"]?.text, forkScreenBase: box["forkVncBaseUrl"]?.text?.trimmingTrailingSlashes)
+    self.init(baseURL: base.trimmingTrailingSlashes, token: box["gatewayToken"]?.text, networkToken: box["networkToken"]?.text, screenURL: box["vncUrl"]?.text, forkScreenBase: box["forkVncBaseUrl"]?.text?.trimmingTrailingSlashes, letsSleep: box["letsSleep"]?.bool == true)
   }
 
   /**
@@ -121,6 +132,7 @@ public struct GatewayConnection: Sendable, Equatable {
     var headers = extra
     if let networkToken { headers[Self.networkTokenHeader] = networkToken }
     if let token { headers["authorization"] = "Bearer \(token)" }
+    if letsSleep { headers[Self.letsSleepHeader] = "1" }
     return headers
   }
 
@@ -207,6 +219,11 @@ public actor Gateway {
   static let blockedHint = "SAND_BOX_BLOCKED"
   static let noStorageHint = "CLOUD_AGENT_STORAGE_DISABLED"
 
+  /** While the box sleeps, the broker's record of it is read again this often (`waitWhileAsleep`). */
+  public static let asleepRecheck: TimeInterval = 15
+  /** `GetSandBoxRunState`'s asleep (`SAND_BOX_RUN_STATE_HIBERNATED`). */
+  static let runStateHibernated = 2
+
   /** The wait before the event stream dials again after `failures` failures in a row: 1, 2, 4, 8, then 10 s. */
   public static func reconnectDelay(failures: Int) -> TimeInterval {
     min(10, pow(2, Double(max(failures, 1) - 1)))
@@ -229,9 +246,13 @@ public actor Gateway {
   private var keptUsed = false
   private var deniedScopes: Set<String> = []
   private var blocked: (error: Error, until: TimeInterval)?
+  /** The broker's live answers so far: one while the box sleeps means something here woke it. */
+  private var answers = 0
+  /** A second's wait (the tests' is at once). */
+  private let pause: @Sendable (TimeInterval) async -> Void
 
-  public init(api: SimeonAPI, http: HTTPClient = URLSessionClient(), saved: SavedGatewayStore? = nil, clock: @escaping @Sendable () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }, now: @escaping @Sendable () -> Date = { Date() }) {
-    self.api = api; self.http = http; self.saved = saved; self.clock = clock; self.now = now
+  public init(api: SimeonAPI, http: HTTPClient = URLSessionClient(), saved: SavedGatewayStore? = nil, clock: @escaping @Sendable () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }, now: @escaping @Sendable () -> Date = { Date() }, pause: @escaping @Sendable (TimeInterval) async -> Void = { try? await Task.sleep(nanoseconds: UInt64($0 * 1_000_000_000)) }) {
+    self.api = api; self.http = http; self.saved = saved; self.clock = clock; self.now = now; self.pause = pause
   }
 
   /** Where the box is now: the known address while it answers, else the broker's (`ensureConnection`). */
@@ -308,6 +329,7 @@ public actor Gateway {
   private func answered(_ fresh: GatewayConnection, scope: String?) {
     resolving = nil
     blocked = nil
+    answers += 1
     // Signed out, or into another account, while the broker answered: nothing is kept (`scopeAtDispatch`).
     guard api.accountScope == scope else { return }
     hasLiveConnection = true
@@ -333,6 +355,45 @@ public actor Gateway {
       deniedScopes.insert(scope)
       saved?.write(nil)
     }
+  }
+
+  /**
+   * After the stream dropped, a box the server lets sleep (`letsSleep`) and
+   * records as asleep is not dialled: dialling would wake it (26 October
+   * 2026, the computer used only for runs). This waits, telling `onAsleep`,
+   * until the record says it runs (woken for its work: a message, a
+   * routine), or until something here needed it and the broker woke it (a
+   * command, `answers`). True when it waited; false when the box is not
+   * known to be asleep, and the stream dials as before. A record that says
+   * it runs ends the asleep state (`onAsleep(false)`): a box that runs and
+   * does not answer is a failure the app shows.
+   */
+  public func waitWhileAsleep(_ onAsleep: @Sendable (Bool) -> Void) async -> Bool {
+    guard connection?.letsSleep == true else { return false }
+    let first = await recordedAsleep()
+    guard first == true else {
+      if first == false { onAsleep(false) }
+      return false
+    }
+    onAsleep(true)
+    let mark = answers
+    var waited: TimeInterval = 0
+    while !Task.isCancelled {
+      await pause(1)
+      if answers != mark { return true }
+      waited += 1
+      if waited >= Self.asleepRecheck {
+        waited = 0
+        if await recordedAsleep() != true { return true }
+      }
+    }
+    return true
+  }
+
+  /** The broker's record of the box (`GetSandBoxRunState` with `fromRecord`): asleep, or not; nil when it could not be asked. */
+  private func recordedAsleep() async -> Bool? {
+    guard let answer = try? await api.connect("GetSandBoxRunState", ["fromRecord": true]) else { return nil }
+    return answer["state"]?.int == Self.runStateHibernated || answer["state"]?.text == "SAND_BOX_RUN_STATE_HIBERNATED"
   }
 
   /** Whether the box answers `/health` within 1.5 s with `ok` (`fetchHealth`). */
@@ -373,7 +434,7 @@ public actor Gateway {
    * `/health` first, and the broker only when that does not answer
    * (`currentConnection`). `onState` hears "connected" and "down".
    */
-  public nonisolated func events(onState: @escaping @Sendable (Bool) -> Void = { _ in }) -> AsyncStream<GatewayEvent> {
+  public nonisolated func events(onState: @escaping @Sendable (Bool) -> Void = { _ in }, onAsleep: @escaping @Sendable (Bool) -> Void = { _ in }) -> AsyncStream<GatewayEvent> {
     AsyncStream { continuation in
       let task = Task {
         var failures = 0
@@ -408,6 +469,11 @@ public actor Gateway {
           if connected { await self.streamDropped() }
           onState(false)
           failures += 1
+          // A box the server lets sleep, asleep: not dialled until it wakes for its work or something here needs it.
+          if await self.waitWhileAsleep(onAsleep) {
+            failures = 0
+            continue
+          }
           try? await Task.sleep(nanoseconds: UInt64(Gateway.reconnectDelay(failures: failures) * 1_000_000_000))
         }
         continuation.finish()
