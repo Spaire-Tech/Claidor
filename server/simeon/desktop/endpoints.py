@@ -75,6 +75,8 @@ from .bedrock import (
     bedrock_configured,
     bedrock_headers,
     bedrock_messages_url,
+    refuses_thinking,
+    without_thinking,
 )
 from .capabilities import router as capabilities_router
 from .channel_bots import router as channel_bots_router
@@ -1336,20 +1338,65 @@ async def _proxy(
     # is chosen (`simeon.desktop.bedrock`), the provider itself otherwise or
     # after it. A later address is tried only when an earlier one did not
     # answer with a 200.
-    attempts: list[tuple[str, dict[str, str], bytes]] = [(url, headers, body)]
+    attempts: list[_Attempt] = [_Attempt(model.provider.value, url, headers, body)]
+    bedrock_retry: Callable[[], _Attempt | None] | None = None
     if spoken is SpokenApi.anthropic_messages and bedrock_configured():
         bedrock_url = bedrock_messages_url()
-        bedrock_request_body = bedrock_body(payload)
         forwarded = {key: value for key, value in headers.items() if key != "x-api-key"}
-        attempts = [
-            (
+
+        def to_bedrock(sent: dict[str, Any], via: str) -> _Attempt:
+            sent_body = bedrock_body(sent)
+            return _Attempt(
+                via,
                 bedrock_url,
-                bedrock_headers(bedrock_url, bedrock_request_body, forwarded),
-                bedrock_request_body,
+                bedrock_headers(bedrock_url, sent_body, forwarded),
+                sent_body,
             )
-        ]
+
+        def bedrock_retry() -> _Attempt | None:
+            stripped = without_thinking(payload)
+            if stripped is None:
+                return None
+            return to_bedrock(stripped, "bedrock_without_thinking")
+
+        attempts = [to_bedrock(payload, "bedrock")]
         if provider_api_key(DesktopProvider.anthropic):
-            attempts.append((url, headers, body))
+            attempts.append(_Attempt(model.provider.value, url, headers, body))
+
+    def on_refusal(index: int, status: int | None, content: bytes) -> None:
+        """Bedrock did not answer `attempts[index]`. Refused over its thinking
+        blocks (bound to an earlier form of the conversation), the call goes
+        to Bedrock again without them, once, rather than to the Anthropic
+        key (27 October 2026: Anthropic credits paid for those calls). Any
+        other refusal goes on to the next address, when there is one."""
+        if (
+            bedrock_retry is not None
+            and attempts[index].via == "bedrock"
+            and refuses_thinking(status, content)
+        ):
+            retry = bedrock_retry()
+            if retry is not None:
+                log.info(
+                    "desktop.proxy.bedrock_without_thinking",
+                    model=model.model_id,
+                    preview=content[:500].decode(errors="replace"),
+                )
+                attempts.insert(index + 1, retry)
+                return
+        if index < len(attempts) - 1:
+            _log_bedrock_fallback(model, status, content)
+
+    def served(attempt: _Attempt, status: int) -> None:
+        """One line for each call Bedrock served, beside the fallbacks: how
+        much of Claude AWS paid for."""
+        if attempt.via.startswith("bedrock") and status == 200:
+            log.info(
+                "desktop.proxy.bedrock_served",
+                model=model.model_id,
+                via=attempt.via,
+                stream=stream,
+            )
+
     user_id, session_id = user.id, caller.session_id
     reason = call_reason(request)
     if spoken is SpokenApi.gemini_generate_content:
@@ -1401,22 +1448,26 @@ async def _proxy(
 
     if not stream:
         async with httpx.AsyncClient(timeout=_timeout()) as client:
-            for attempt_url, attempt_headers, attempt_body in attempts[:-1]:
+            index = 0
+            while True:
+                attempt = attempts[index]
                 try:
                     upstream = await client.post(
-                        attempt_url, headers=attempt_headers, content=attempt_body
+                        attempt.url, headers=attempt.headers, content=attempt.body
                     )
                 except httpx.HTTPError as error:
-                    _log_bedrock_fallback(model, None, str(error).encode())
+                    if index == len(attempts) - 1:
+                        raise
+                    on_refusal(index, None, str(error).encode())
+                    index += 1
                     continue
                 if upstream.status_code == 200:
                     break
-                _log_bedrock_fallback(model, upstream.status_code, upstream.content)
-            else:
-                last_url, last_headers, last_body = attempts[-1]
-                upstream = await client.post(
-                    last_url, headers=last_headers, content=last_body
-                )
+                on_refusal(index, upstream.status_code, upstream.content)
+                if index == len(attempts) - 1:
+                    break
+                index += 1
+        served(attempt, upstream.status_code)
         usage = Usage()
         try:
             answer = upstream.json()
@@ -1435,16 +1486,18 @@ async def _proxy(
         return JSONResponse(answer, status_code=upstream.status_code)
 
     client = httpx.AsyncClient(timeout=_timeout())
-    for index, (attempt_url, attempt_headers, attempt_body) in enumerate(attempts):
-        last = index == len(attempts) - 1
+    index = 0
+    while True:
+        attempt = attempts[index]
         upstream_request = client.build_request(
-            "POST", attempt_url, headers=attempt_headers, content=attempt_body
+            "POST", attempt.url, headers=attempt.headers, content=attempt.body
         )
         try:
             upstream = await client.send(upstream_request, stream=True)
         except httpx.HTTPError as error:
-            if not last:
-                _log_bedrock_fallback(model, None, str(error).encode())
+            if index < len(attempts) - 1:
+                on_refusal(index, None, str(error).encode())
+                index += 1
                 continue
             await client.aclose()
             log.warning(
@@ -1453,11 +1506,17 @@ async def _proxy(
                 error=str(error),
             )
             return _error("api_error", "The model service could not be reached.", 502)
-        if upstream.status_code == 200 or last:
+        if upstream.status_code == 200:
             break
+        # A refusal is small: read here, so a refusal over thinking blocks can
+        # be told from the rest (it stays read for the answer below).
         refusal_body = await upstream.aread()
+        on_refusal(index, upstream.status_code, refusal_body)
+        if index == len(attempts) - 1:
+            break
         await upstream.aclose()
-        _log_bedrock_fallback(model, upstream.status_code, refusal_body)
+        index += 1
+    served(attempt, upstream.status_code)
 
     if upstream.status_code != 200:
         # An error is small and not an event stream: read it, meter
@@ -1498,6 +1557,17 @@ async def _proxy(
         media_type=upstream.headers.get("content-type", "text/event-stream"),
         headers={"cache-control": "no-store"},
     )
+
+
+@dataclass(frozen=True)
+class _Attempt:
+    """One address a model call is sent to: `via` names it in the logs
+    (`bedrock`, `bedrock_without_thinking`, or the provider)."""
+
+    via: str
+    url: str
+    headers: dict[str, str]
+    body: bytes
 
 
 def _log_bedrock_fallback(

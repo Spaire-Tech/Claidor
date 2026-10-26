@@ -655,14 +655,24 @@ box and `SAND_KEEP_BOX_RUNNING_ON_QUIT=1` always keeps it running
   went to `bedrock-mantle` as `anthropic.claude-…`, which answered 404 "The
   model … does not exist": Bedrock's model cards list Claude 5.5 on
   bedrock-mantle in GovCloud only. Bedrock alone is enough to offer Claude.
-  When Bedrock does not answer with a 200 (refused, not enabled, overloaded,
-  unreachable), the same call is made once on `ANTHROPIC_API_KEY` if it is
-  set, as the app sent it, and `desktop.proxy.bedrock_fallback` logs
-  Bedrock's status and words. The account's Claude models are subscribed
-  through AWS Marketplace once (the console's playground does it). Its quotas
-  are the bedrock-runtime ones: tokens per minute per model, where a
-  request's `max_tokens` is held while it runs. Not verified: no call has
-  been answered by Bedrock yet.
+  A call Bedrock refuses over its thinking blocks (a 400 naming them: blocks
+  bound to an earlier form of the conversation, whose instructions changed
+  since) goes to Bedrock once more with every thinking block taken out of
+  its history, each turn's text and tool calls kept, and logs
+  `desktop.proxy.bedrock_without_thinking`. Until 27 October 2026 those calls
+  went to `ANTHROPIC_API_KEY`, so Anthropic credits paid for them (105 in
+  the 48 hours before). When Bedrock does not answer with a 200 otherwise
+  (refused, not enabled, overloaded, unreachable), the same call is made once
+  on `ANTHROPIC_API_KEY` if it is set, as the app sent it, and
+  `desktop.proxy.bedrock_fallback` logs Bedrock's status and words. Each
+  call Bedrock serves logs `desktop.proxy.bedrock_served` (the model, and
+  `via` `bedrock` or `bedrock_without_thinking`): counted against the
+  fallbacks, it says how much of Claude AWS paid for. The account's Claude
+  models are subscribed through AWS Marketplace once (the console's
+  playground does it). Its quotas are the bedrock-runtime ones: tokens per
+  minute per model, where a request's `max_tokens` is held while it runs.
+  Not verified: the retry without thinking has been tested against a stand-in,
+  not yet against Bedrock itself.
 - `SIMEON_DESKTOP_MODELS_BY_EMAIL`: the same choice for a few people first, as
   JSON: `{"you@example.com": "claude"}`. A value that is not a policy stops
   the deploy at boot rather than serving the wrong models.

@@ -16,13 +16,17 @@ server-sent events, so the proxy relays it the same way. What differs:
   service `bedrock`), allowed `bedrock:InvokeModel` and
   `bedrock:InvokeModelWithResponseStream`;
 - the thinking-binding beta, which Bedrock's list of Claude betas does not
-  name: left out, with its `block_binding`. A call Bedrock refuses for a
-  thinking block the beta would have dropped goes to the Anthropic key with
-  the beta, as any refused call does.
+  name: left out, with its `block_binding`. Without it, a thinking block
+  bound to an earlier form of the conversation (its instructions changed
+  since) is refused with a 400. Until 27 October 2026 such a call went to
+  the Anthropic key, which drops the block itself, so Anthropic credits paid
+  for it; now it goes to Bedrock again without the earlier thinking blocks
+  (`without_thinking`), as Anthropic's own guide recovers without the beta.
 
 Chosen by `SIMEON_DESKTOP_CLAUDE_VIA=bedrock` (`simeon.config`); the proxy
 falls back to the Anthropic key when Bedrock does not answer
-(`desktop.proxy.bedrock_fallback`).
+(`desktop.proxy.bedrock_fallback`), and logs each call Bedrock answers
+(`desktop.proxy.bedrock_served`).
 
 https://docs.aws.amazon.com/bedrock/latest/userguide/inference-messages-api.html
 https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-anthropic-claude-sonnet-5-5.html
@@ -40,6 +44,7 @@ from simeon.config import settings
 BEDROCK_SERVICE = "bedrock"
 BEDROCK_MODEL_PREFIX = "anthropic."
 THINKING_BINDING_BETA = "thinking-binding-controls-2026-08-01"
+THINKING_BLOCKS = frozenset({"thinking", "redacted_thinking"})
 
 
 def bedrock_configured() -> bool:
@@ -98,3 +103,40 @@ def bedrock_headers(url: str, body: bytes, forwarded: dict[str, str]) -> dict[st
         settings.DESKTOP_BEDROCK_REGION,
     ).add_auth(request)
     return dict(request.headers.items())
+
+
+def refuses_thinking(status: int | None, content: bytes) -> bool:
+    """Whether Bedrock refused a call over its thinking blocks: a 400 that
+    names them (a block bound to an earlier form of the conversation, or a
+    signature it cannot read)."""
+    return status == 400 and b"thinking" in content.lower()
+
+
+def without_thinking(payload: dict[str, Any]) -> dict[str, Any] | None:
+    """The request with every thinking block taken out of its history, each
+    turn's text and tool calls kept: Anthropic's recovery for a refused
+    block when the binding beta is not there to drop it. A turn left with
+    nothing goes too; the API joins the turns on either side of it. None when
+    the request carries no thinking block, and so nothing to retry."""
+    messages = payload.get("messages")
+    if not isinstance(messages, list):
+        return None
+    kept: list[Any] = []
+    removed = False
+    for message in messages:
+        content = message.get("content") if isinstance(message, dict) else None
+        if not isinstance(content, list):
+            kept.append(message)
+            continue
+        blocks = [
+            block
+            for block in content
+            if not (isinstance(block, dict) and block.get("type") in THINKING_BLOCKS)
+        ]
+        if len(blocks) == len(content):
+            kept.append(message)
+            continue
+        removed = True
+        if blocks:
+            kept.append({**message, "content": blocks})
+    return {**payload, "messages": kept} if removed else None
