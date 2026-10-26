@@ -21,12 +21,14 @@ from simeon.redis import Redis
 from simeon.sand import box_proxy, box_service
 from simeon.sand.box_repository import SandBoxRepository
 from simeon.sand.box_service import (
+    RUN_STATE_ABSENT,
     RUN_STATE_HIBERNATED,
     RUN_STATE_RUNNING,
     BoxHealth,
     broker,
     mark_attached,
 )
+from tests.desktop.test_endpoints import _signed_in
 from tests.sand.test_box_broker import ENSURE, RUN_STATE, FakeBoxHost, backups, host
 from tests.sand.test_box_proxy_replaced import BOX, PROMPT, _box, _sessions, world
 from tests.sand.test_box_sleep import _age, _awake_box, health
@@ -140,5 +142,35 @@ class TestLetsSleep:
             RUN_STATE, json={"fromRecord": True}, headers=headers
         )
         assert recorded.json()["state"] == RUN_STATE_HIBERNATED
+        assert recorded.json()["letsSleep"] is True
+        # Removed since: asleep too, as its next task makes it again (the account is not new).
+        current.state = "absent"
+        await session.flush()
+        removed = await client.post(
+            RUN_STATE, json={"fromRecord": True}, headers=headers
+        )
+        assert removed.json()["state"] == RUN_STATE_HIBERNATED
         asked = await client.post(RUN_STATE, json={}, headers=headers)
         assert asked.json()["state"] == RUN_STATE_RUNNING
+
+    async def test_a_new_account_has_no_computer_until_its_first_task(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        host: FakeBoxHost,
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch.object(settings, "BOX_SLEEPS_WITH_APP_OPEN", True)
+        access, _ = await _signed_in(client, session, user)
+        headers = {"Authorization": f"Bearer {access}"}
+        recorded = await client.post(
+            RUN_STATE, json={"fromRecord": True}, headers=headers
+        )
+        assert recorded.json() == {
+            "state": RUN_STATE_ABSENT,
+            "imageUpdateAvailable": False,
+            "letsSleep": True,
+        }
+        # Asking made nothing: the app's first task does (EnsureSandBox).
+        assert host.created == []

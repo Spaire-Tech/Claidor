@@ -158,7 +158,8 @@ extension AppStore {
    */
   public func tellLanguage(_ language: String = AppLanguage.current) async {
     guard let backend else { return }
-    _ = try? await backend.command("setHostSettings", ["userLanguage": .string(language)])
+    // Told when the computer is awake (step 4): a resting one is told when it is back (`recovered`).
+    _ = try? await backend.commandIfAwake("setHostSettings", ["userLanguage": .string(language)])
     _ = try? await backend.server("user/profile", method: "POST", body: ["language": .string(language)])
   }
 

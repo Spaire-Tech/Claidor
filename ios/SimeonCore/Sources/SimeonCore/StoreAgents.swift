@@ -74,7 +74,7 @@ extension AppStore {
   /** The host's sections (`getHostSettings` → `sidebarSections`, an empty list when none). */
   public func loadSections() async {
     let started = sectionWrites
-    guard let settings = try? await backend?.command("getHostSettings", [:]), started == sectionWrites else { return }
+    guard let settings = try? await backend?.commandIfAwake("getHostSettings", [:]), started == sectionWrites else { return }
     let next = SidebarSections.parse(settings["sidebarSections"] ?? .array([]))
     if next != sidebarSections { sidebarSections = next }
   }

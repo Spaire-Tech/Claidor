@@ -23,6 +23,8 @@ public enum SavedGateway {
     if let networkToken = connection.networkToken { box["networkToken"] = .string(networkToken) }
     if let screen = connection.screenURL { box["vncUrl"] = .string(screen) }
     if let fork = connection.forkScreenBase { box["forkVncBaseUrl"] = .string(fork) }
+    // Whether the server let the box sleep: the next launch asks the record before it wakes the box (step 4).
+    if connection.letsSleep { box["letsSleep"] = true }
     let record: JSON = ["version": .number(Double(version)), "accountScope": .string(accountScope), "savedAtMs": .number(savedAt.timeIntervalSince1970 * 1000), "box": .object(box)]
     return try? record.data()
   }

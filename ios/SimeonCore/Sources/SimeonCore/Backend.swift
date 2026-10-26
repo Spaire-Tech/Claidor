@@ -166,6 +166,43 @@ public protocol AgentBackend: AnyObject, Sendable {
   func dashboard(_ method: String, _ message: JSON) async throws -> JSON
   /** What was said in a recording (dictation, `transcribeAudio`). */
   func transcribe(audio: Data, mimeType: String) async throws -> String
+  /** A command that lets the computer rest where the server lets it sleep (step 4); the command itself elsewhere. */
+  func commandIfAwake(_ method: String, _ args: JSON) async throws -> JSON
+  /** A command that waits for a resting computer without waking it (step 4); the command itself elsewhere. */
+  func commandWhenAwake(_ method: String, _ args: JSON) async throws -> JSON
+  /** Where the computer rests, as the launch found it (step 4); nil elsewhere. */
+  func computerRest() async -> Gateway.Rest?
+}
+
+extension AgentBackend {
+  /**
+   * A command that lets the computer rest (26 October 2026, step 4): where
+   * the server lets it sleep, it fails at once while the computer is asleep
+   * (`GatewayError.resting`) rather than wake it. For what can wait for it
+   * to wake: the notices, the pins and sections, the language. Elsewhere,
+   * the command itself.
+   */
+  public func commandIfAwake(_ method: String, _ args: JSON) async throws -> JSON {
+    try await command(method, args)
+  }
+
+  /**
+   * A command that waits for a resting computer without waking it (step 4,
+   * `Gateway.commandWhenAwake`): for what a screen reads once as it opens
+   * and has nothing kept for. Elsewhere, the command itself.
+   */
+  public func commandWhenAwake(_ method: String, _ args: JSON) async throws -> JSON {
+    try await command(method, args)
+  }
+
+  /** Where the computer rests, as the launch found it (`Gateway.restAtLaunch`): asleep, not made yet, or nil (awake, or a server that keeps it awake). */
+  public func computerRest() async -> Gateway.Rest? { nil }
+
+  /** The command, or with `wakes` false the one that waits for a resting computer without waking it (`commandWhenAwake`). */
+  public func command(_ method: String, _ args: JSON, wakes: Bool) async throws -> JSON {
+    if wakes { return try await command(method, args) }
+    return try await commandWhenAwake(method, args)
+  }
 }
 
 extension AgentBackend {
@@ -293,6 +330,12 @@ public final class LiveBackend: AgentBackend, @unchecked Sendable {
 
   public func command(_ method: String, _ args: JSON) async throws -> JSON { try await gateway.command(method, args) }
 
+  public func commandIfAwake(_ method: String, _ args: JSON) async throws -> JSON { try await gateway.command(method, args, wakes: false) }
+
+  public func commandWhenAwake(_ method: String, _ args: JSON) async throws -> JSON { try await gateway.commandWhenAwake(method, args) }
+
+  public func computerRest() async -> Gateway.Rest? { await gateway.restAtLaunch() }
+
   public func dashboard(_ method: String, _ message: JSON) async throws -> JSON {
     guard let api else { throw SimeonAPIError(message: L10n.text("Sign in to Simeon to continue"), status: 401) }
     return try await api.connect(method, message, service: "simeon.v1.DashboardService")
@@ -322,8 +365,9 @@ public final class LiveBackend: AgentBackend, @unchecked Sendable {
     return connection.screenSocket(for: vncUrl)
   }
 
+  /** The list (`listAgents`): read without waking a computer that rests (step 4); the server's copy shows meanwhile. */
   public func listAgents() async throws -> [Agent] {
-    let answer = try await gateway.command("listAgents")
+    let answer = try await gateway.command("listAgents", wakes: false)
     return (answer.array ?? answer["agents"]?.array ?? []).compactMap(Agent.init(json:))
   }
 
@@ -340,16 +384,18 @@ public final class LiveBackend: AgentBackend, @unchecked Sendable {
   public func transcriptPage(_ agentId: String, before: Int?) async throws -> TranscriptPage {
     let page: JSON
     if let before {
+      // Older lines, scrolled up to: asked for, so it wakes a computer that rests.
       page = try await gateway.command("getAgentTranscriptTail", ["id": .string(agentId), "limit": 100, "beforeSeq": .number(Double(before))])
     } else {
-      do { page = try await gateway.command("openAgentTail", ["id": .string(agentId), "limit": 500]) }
-      catch { page = try await gateway.command("getAgentTranscriptTail", ["id": .string(agentId), "limit": 500]) }
+      // The newest, as the chat opens: read without waking a computer that rests (step 4); the lines kept and the server's copy show meanwhile.
+      do { page = try await gateway.command("openAgentTail", ["id": .string(agentId), "limit": 500], wakes: false) }
+      catch where !GatewayError.isResting(error) { page = try await gateway.command("getAgentTranscriptTail", ["id": .string(agentId), "limit": 500], wakes: false) }
     }
     return TranscriptPage(entries: (page["entries"]?.array ?? page.array ?? []).compactMap(Entry.init), olderBefore: page["nextBeforeSeq"]?.int)
   }
 
   public func tail(_ agentId: String, limit: Int) async throws -> [Entry] {
-    let page = try await gateway.command("getAgentTranscriptTail", ["id": .string(agentId), "limit": .number(Double(limit))])
+    let page = try await gateway.command("getAgentTranscriptTail", ["id": .string(agentId), "limit": .number(Double(limit))], wakes: false)
     return (page["entries"]?.array ?? page.array ?? []).compactMap(Entry.init)
   }
 
@@ -380,7 +426,7 @@ public final class LiveBackend: AgentBackend, @unchecked Sendable {
   }
 
   public func markRead(_ agentId: String) async {
-    _ = try? await gateway.command("setAgentUnread", ["id": .string(agentId), "isUnread": false, "atMs": .number(Date().timeIntervalSince1970 * 1000)])
+    _ = try? await gateway.command("setAgentUnread", ["id": .string(agentId), "isUnread": false, "atMs": .number(Date().timeIntervalSince1970 * 1000)], wakes: false)
   }
 
   public func createAgent(name: String, face: String?) async throws -> String {

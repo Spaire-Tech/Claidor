@@ -86,7 +86,9 @@ private struct OrgChartPresenter: ViewModifier {
     content
       .task(id: "\(reached)|\(scenePhase == .active)") {
         guard reached, scenePhase == .active else { return }
-        isOn = await store.agentNetworkEnabled()
+        // A computer that rests is waited for, not woken (step 4); a wait ended by leaving keeps what was known.
+        let on = await store.agentNetworkEnabled(wakes: false)
+        if !Task.isCancelled { isOn = on }
       }
       // Full screen, not a sheet: a sheet's pull down to close would fight the chart's own drag.
       .fullScreenCover(isPresented: $isPresented) {

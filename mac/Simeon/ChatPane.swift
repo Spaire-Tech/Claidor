@@ -1235,7 +1235,8 @@ private struct FileCard: View {
     .shadow(color: look.theirsShadow, radius: 1, x: 0, y: 1)
     .padding(.vertical, 4)
     .task(id: url) {
-      let facts = await store.fileFacts(url)
+      // A computer that rests is waited for, not woken (step 4).
+      let facts = await store.fileFacts(url, wakes: false)
       meta = facts.line
       readsAsText = facts.readsAsText
     }

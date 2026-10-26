@@ -1141,7 +1141,8 @@ struct FileCardView: View {
         return
       }
       // The phone's own copy of a picture sent from here (`readFile` answers from it), else the computer's.
-      guard let data = await store.readFile(url, agentId: agentId, limit: 12 << 20), let full = UIImage(data: data) else {
+      // A computer that rests is waited for, not woken (step 4).
+      guard let data = await store.readFile(url, agentId: agentId, limit: 12 << 20, wakes: false), let full = UIImage(data: data) else {
         if ChatImages.image(for: keys) == nil { unreadable = true }
         return
       }
@@ -1208,8 +1209,8 @@ struct FileCardView: View {
     #if os(macOS)
     .contextMenu { MessageContextMenu(bubble: asMessage, agentId: agentId) }
     #endif
-    // Read for every file card, as the window reads it (`skn`).
-    .task(id: url) { line = await store.fileLine(url) }
+    // Read for every file card, as the window reads it (`skn`); a computer that rests is waited for, not woken (step 4).
+    .task(id: url) { line = await store.fileLine(url, wakes: false) }
   }
 
   /** This line as the message menu takes it. */

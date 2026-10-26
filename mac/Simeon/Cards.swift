@@ -977,10 +977,11 @@ struct ChatPicture: View {
         }
       }
     }
+    // A computer that rests is waited for, not woken (step 4).
     .task(id: image.url) {
       if image.url.hasPrefix("https://"), let url = URL(string: image.url) {
         if let (data, _) = try? await URLSession.shared.data(from: url) { bytes = data; picture = NSImage(data: data) }
-      } else if let data = await store.readFile(image.url, agentId: agentId) {
+      } else if let data = await store.readFile(image.url, agentId: agentId, wakes: false) {
         bytes = data
         picture = NSImage(data: data)
       }
@@ -1772,11 +1773,12 @@ struct PurchaseCardView: View {
     }
     .task(id: card.preview?.url) {
       guard let image = card.preview else { return }
-      if let data = await store.readFile(image.url, agentId: agentId, limit: 24 << 20), let read = NSImage(data: data) { picture = read } else { pictureMissing = true }
+      // A computer that rests is waited for, not woken (step 4).
+      if let data = await store.readFile(image.url, agentId: agentId, limit: 24 << 20, wakes: false), let read = NSImage(data: data) { picture = read } else { pictureMissing = true }
     }
     .task(id: card.icon?.url) {
       guard let icon = card.icon else { return }
-      if let data = await store.readFile(icon.url, agentId: agentId, limit: 1 << 20), let read = NSImage(data: data) { shopIcon = read }
+      if let data = await store.readFile(icon.url, agentId: agentId, limit: 1 << 20, wakes: false), let read = NSImage(data: data) { shopIcon = read }
     }
   }
 

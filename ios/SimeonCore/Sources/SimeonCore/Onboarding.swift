@@ -121,6 +121,16 @@ extension AppStore {
    */
   public func firstRun() async -> FirstRun {
     guard let backend else { return .unknown }
+    // Where the server lets the computer rest (step 4): none made yet and no agents is a new account, which the first run's
+    // hand-off gives its computer (its first task); asleep with agents listed, here or in the server's copy, is one that has
+    // used Simeon. Neither wakes it.
+    switch await backend.computerRest() {
+    case .absent?: return agents.isEmpty ? .needed : .seen
+    case .asleep?:
+      if agents.isEmpty, readsServerCopy { await showServerList(from: backend) }
+      if !agents.isEmpty { return .seen }
+    case nil: break
+    }
     if let settings = try? await backend.command("getHostSettings", [:]), settings["hasSeenOnboarding"]?.bool == true { return .seen }
     do {
       if try await countAgents(backend) > 0 {
@@ -165,6 +175,8 @@ extension AppStore {
         await reloadRoster()
         return nil
       }
+      // The language first: a computer made for this first task was not told it at launch (step 4), and Simeon introduces himself in it.
+      _ = try? await backend.command("setHostSettings", ["userLanguage": .string(AppLanguage.current)])
       let made = try await backend.command("createAgent", Onboarding.chiefOfStaff(nonce: "\(client)-onboarding-\(UUID().uuidString.lowercased())"))
       guard let id = made["agent"]?["id"]?.text ?? made["id"]?.text else { throw GatewayError(message: "createAgent: no agent in the answer", refused: true) }
       firstRunAgentId = id

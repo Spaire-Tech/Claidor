@@ -462,15 +462,15 @@ public enum Jump {
 }
 
 extension AppStore {
-  /** Whether the agent network is on for this account (`isAgentNetworkEnabled`): the Org Chart's gate. */
-  public func agentNetworkEnabled() async -> Bool {
-    guard let backend, let answer = try? await backend.command("isAgentNetworkEnabled", [:]) else { return false }
+  /** Whether the agent network is on for this account (`isAgentNetworkEnabled`): the Org Chart's gate. With `wakes` false, it waits for a resting computer without waking it (step 4). */
+  public func agentNetworkEnabled(wakes: Bool = true) async -> Bool {
+    guard let backend, let answer = try? await backend.command("isAgentNetworkEnabled", [:], wakes: wakes) else { return false }
     return answer.bool ?? answer["enabled"]?.bool ?? false
   }
 
-  /** Whether a chat can have channels (`getAgentChannels`, `mmt`): any platform available, or any connected. */
-  public func channelsAvailable(_ agentId: String) async -> Bool {
-    guard let backend, let answer = try? await backend.command("getAgentChannels", ["id": .string(agentId)]) else { return false }
+  /** Whether a chat can have channels (`getAgentChannels`, `mmt`): any platform available, or any connected. With `wakes` false, it waits for a resting computer without waking it (step 4). */
+  public func channelsAvailable(_ agentId: String, wakes: Bool = true) async -> Bool {
+    guard let backend, let answer = try? await backend.command("getAgentChannels", ["id": .string(agentId)], wakes: wakes) else { return false }
     let manifests = answer["manifests"]?.array ?? []
     let connections = answer["connections"]?.array ?? []
     return manifests.contains { $0["availability"]?.string == "available" } || !connections.isEmpty

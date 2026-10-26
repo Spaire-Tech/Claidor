@@ -448,7 +448,9 @@ public final class AppStore {
     await loadPins()
     await loadSections()
     // Every agent its own face and voice from the start, not at its first call (the Mac does the same on opening); the face first, for a voice to follow it.
+    // Not while the computer rests (step 4): they are written to it, and are given once its own list comes, or at a call.
     Task {
+      if await backend.computerRest() != nil { return }
       await assignMissingFaces()
       await assignMissingVoices()
     }
@@ -487,6 +489,8 @@ public final class AppStore {
       accessBlocked = false
       hasReachedBox = true
     } catch {
+      // The computer rests where the server lets it sleep (step 4): the list kept and the server's copy stand, and nothing failed.
+      if GatewayError.isResting(error) { return }
       rosterFailed = true
       // The computer refused this account (`EnsureSandBox`'s permission_denied: no plan): the window's access cover, not a failure to report.
       accessBlocked = (error as? SimeonAPIError)?.status == 403
@@ -559,6 +563,8 @@ public final class AppStore {
     case .connection(let live):
       // Back after a drop (the phone slept, the network changed): what was said meanwhile never streamed, so fetch it.
       let recovered = live && !isLive
+      // Back from resting (step 4): what waited for it is read now (the pins and sections, read once at launch).
+      let wasAsleep = isAsleep
       if live { isAsleep = false }
       isLive = live
       if isDown == live { setDown(!live) }
@@ -571,6 +577,10 @@ public final class AppStore {
         Task {
           await reloadRoster()
           if let chat = openChat { await refresh(chat) }
+          if wasAsleep {
+            await loadPins()
+            await loadSections()
+          }
         }
       }
     case .appsChanged:
@@ -596,7 +606,8 @@ public final class AppStore {
   public func loadTrays() async {
     guard let backend else { return }
     let seq = trayList.beginRead()
-    let answer = try? await backend.command("getTrays", [:])
+    // Read when the computer is awake (step 4): a resting one tells them when it is back (`recovered`).
+    let answer = try? await backend.commandIfAwake("getTrays", [:])
     guard backend === self.backend else { return }
     trayList.finishRead(seq, answer: answer)
   }
@@ -639,7 +650,7 @@ public final class AppStore {
   public func loadPins() async {
     guard pinWritesInFlight == 0 else { return }
     let started = pinWrites
-    guard let settings = try? await backend?.command("getHostSettings", [:]), started == pinWrites, pinWritesInFlight == 0 else { return }
+    guard let settings = try? await backend?.commandIfAwake("getHostSettings", [:]), started == pinWrites, pinWritesInFlight == 0 else { return }
     let ids = settings["pinnedAgentIds"]?.array?.compactMap(\.text) ?? []
     if ids != pinnedIds { pinnedIds = ids }
   }
@@ -1040,6 +1051,8 @@ public final class AppStore {
       loadFailed.remove(agentId)
       setTranscript(agentId, merged)
     } catch {
+      // The computer rests (step 4): the lines kept and the server's copy stand, and nothing failed.
+      if GatewayError.isResting(error) { return }
       // Nothing to show: the chat says it could not load, with Retry (the window's "Couldn't load this conversation").
       guard transcripts[agentId] == nil || transcripts[agentId]?.isEmpty == true else { return }
       loadFailed.insert(agentId)
@@ -1259,10 +1272,10 @@ public final class AppStore {
 
   // MARK: The composer's lists
 
-  /** The agent's skills and routines (`getAgentWorkflows`), for "/" and "@"; empty, quietly, when they can't be read. */
-  public func workflows(_ agentId: String) async -> JSON {
+  /** The agent's skills and routines (`getAgentWorkflows`), for "/" and "@"; empty, quietly, when they can't be read. With `wakes` false (a chat opening), it waits for a resting computer without waking it (step 4). */
+  public func workflows(_ agentId: String, wakes: Bool = true) async -> JSON {
     guard let backend else { return [] }
-    return (try? await backend.command("getAgentWorkflows", ["id": .string(agentId)])) ?? []
+    return (try? await backend.command("getAgentWorkflows", ["id": .string(agentId)], wakes: wakes)) ?? []
   }
 
   /** A cloud agent's state (`getCloudAgentInfo`): what it is, nothing (final), or that it couldn't be asked. */
@@ -1585,19 +1598,20 @@ public final class AppStore {
    * pieces (`readAttachmentChunk`), as the Mac's preview reads it; nil when
    * the box will not hand it over.
    */
-  public func readFile(_ url: String, agentId: String, limit: Int = 60 << 20) async -> Data? {
+  /** With `wakes` false (a picture shown as a chat opens), it waits for a resting computer without waking it (step 4). */
+  public func readFile(_ url: String, agentId: String, limit: Int = 60 << 20, wakes: Bool = true) async -> Data? {
     if let sent = sentFile(url) { return sent.data }
     guard let backend else { return nil }
     let path = url.hasPrefix("file://") ? (URL(string: url)?.path ?? String(url.dropFirst(7))) : url
     var data = Data()
     var total = Int.max
     while data.count < min(total, limit) {
-      guard let piece = try? await backend.command("readAttachmentChunk", ["path": .string(path), "agentId": .string(agentId), "offset": .number(Double(data.count)), "length": .number(Double(4 << 20))]) else { return data.isEmpty ? nil : data }
+      guard let piece = try? await backend.command("readAttachmentChunk", ["path": .string(path), "agentId": .string(agentId), "offset": .number(Double(data.count)), "length": .number(Double(4 << 20))], wakes: wakes) else { return data.isEmpty ? nil : data }
       total = piece["totalSize"]?.int ?? data.count
       guard let base64 = piece["bytesBase64"]?.string, let bytes = Data(base64Encoded: base64), !bytes.isEmpty else { break }
       data.append(bytes)
     }
-    if data.isEmpty, let image = try? await backend.command("readAttachmentImage", ["path": .string(path)]) {
+    if data.isEmpty, let image = try? await backend.command("readAttachmentImage", ["path": .string(path)], wakes: wakes) {
       let url = image["dataUrl"]?.string ?? image["url"]?.string ?? image.string ?? ""
       if let comma = url.firstIndex(of: ","), let bytes = Data(base64Encoded: String(url[url.index(after: comma)...])) { return bytes }
     }
@@ -1609,8 +1623,8 @@ public final class AppStore {
    * "Couldn't read file"; "" until the computer answers, and again after a
    * failed read, which is tried next time.
    */
-  public func fileLine(_ url: String) async -> String {
-    await fileFacts(url).line
+  public func fileLine(_ url: String, wakes: Bool = true) async -> String {
+    await fileFacts(url, wakes: wakes).line
   }
 
   /** A file card's line, and whether the computer read the file as text (nil until it answers): text, Markdown and JSON open only then (`skn`). */
@@ -1619,12 +1633,13 @@ public final class AppStore {
     public let readsAsText: Bool?
   }
 
-  public func fileFacts(_ url: String) async -> FileFacts {
+  /** With `wakes` false (a file card shown as a chat opens), it waits for a resting computer without waking it (step 4). */
+  public func fileFacts(_ url: String, wakes: Bool = true) async -> FileFacts {
     if let known = fileLines[url] { return FileFacts(line: known, readsAsText: fileReadsAsText[url]) }
     if let sent = sentFile(url) { return FileFacts(line: FileLine.size(sent.data.count), readsAsText: String(data: sent.data, encoding: .utf8) != nil) }
     guard let backend else { return FileFacts(line: "", readsAsText: nil) }
     let path = url.hasPrefix("file://") ? (URL(string: url)?.path ?? String(url.dropFirst(7))) : url
-    guard let answer = try? await backend.command("readAttachmentText", ["path": .string(path)]) else { return FileFacts(line: "", readsAsText: nil) }
+    guard let answer = try? await backend.command("readAttachmentText", ["path": .string(path)], wakes: wakes) else { return FileFacts(line: "", readsAsText: nil) }
     let line = FileLine.line(answer)
     let text = answer["kind"]?.string == "text"
     fileLines[url] = line
@@ -1661,9 +1676,9 @@ public final class AppStore {
    * apps sheet, an app event and the sign-in's poll often ask together, and
    * an older answer landing last turned an Added card back into Add.
    */
-  public func loadApps() async {
+  public func loadApps(wakes: Bool = true) async {
     if let running = appsLoad { return await running.value }
-    let load = Task { await readApps() }
+    let load = Task { await readApps(wakes: wakes) }
     appsLoad = load
     await load.value
     appsLoad = nil
@@ -1671,13 +1686,22 @@ public final class AppStore {
 
   @ObservationIgnored private var appsLoad: Task<Void, Never>?
 
-  private func readApps() async {
+  /**
+   * With `wakes` false (a chat opening), nothing is read while the computer
+   * rests (step 4), and it is not waited for: Settings' own read may join
+   * this one (`appsLoad`), and must not wait with it.
+   */
+  private func readApps(wakes: Bool = true) async {
     guard let backend else { return }
+    @Sendable func mcp(_ args: JSON) async throws -> JSON {
+      if wakes { return try await backend.command("desktopMcp", args) }
+      return try await backend.commandIfAwake("desktopMcp", args)
+    }
     // Both at once: each is a round trip to the person's computer.
     let needsCatalog = catalog.isEmpty
-    async let servers = try? backend.command("desktopMcp", ["action": "listServers", "args": []])
+    async let servers = try? mcp(["action": "listServers", "args": []])
     // The connectors' descriptions and groups in the app's language (`vendorCatalogInLanguage`, 20 October 2026).
-    async let list = needsCatalog ? try? backend.command("desktopMcp", ["action": "getCatalog", "args": [["language": .string(AppLanguage.current)]]]) : nil
+    async let list = needsCatalog ? try? mcp(["action": "getCatalog", "args": [["language": .string(AppLanguage.current)]]]) : nil
     // Which apps can't be added yet, from Simeon Labs' server (`AppsComingSoon`).
     async let soon: Void = needsCatalog ? loadAppsComingSoon() : ()
     if let state = await servers {

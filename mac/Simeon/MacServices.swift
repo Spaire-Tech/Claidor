@@ -284,7 +284,8 @@ final class MacServices {
     focusChain = Task { [weak self] in
       await previous?.value
       guard let self, let backend = self.session?.store.backend else { return }
-      _ = try? await backend.command("setWindowFocused", ["isFocused": .bool(self.isMainWindowFocused)])
+      // Not to a computer that rests (step 4): it is told again when it is back (`connected`).
+      _ = try? await backend.commandIfAwake("setWindowFocused", ["isFocused": .bool(self.isMainWindowFocused)])
     }
   }
 
