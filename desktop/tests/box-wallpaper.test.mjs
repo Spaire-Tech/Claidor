@@ -1,5 +1,7 @@
 // The cloud computer's wallpaper (9 October 2026): the host writes Simeon's
-// picture to a folder and points the computer's own `sand-wallpaper` at it.
+// picture to a folder and points the computer's own `sand-wallpaper` at it;
+// and its dock's folder icon (26 October 2026), with the watch that paints a
+// screen that comes up later.
 // Checked here: the embedded copy is box/wallpapers' file; the folder holds
 // the picture under both images' names; every paint carries the folder and
 // the fallback; a folder that can't be written leaves the image's own
@@ -16,6 +18,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { build } from "esbuild";
 
+import { ICON_SIZES, OUT_FILE as ICONS_OUT_FILE, readIcons, renderIconsModule } from "../scripts/make-box-icons.mjs";
 import { OUT_FILE, WALLPAPER_FILE, renderWallpaperModule } from "../scripts/make-box-wallpaper.mjs";
 
 const desktopRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -92,6 +95,83 @@ test("a folder that can't be written leaves the image's own wallpaper, said once
   const plain = createBoxWallpaperCommands({ settingsPath: "/x", log: () => {}, wallpaperDir: null, readDisplays: async () => [{ display: ":1", uid: 0, gid: 0 }], runCommand: async (file, args, options) => { runs.push(options); return { stdout: "" }; } });
   await plain.paint();
   assert.equal(runs.at(-1).env, undefined);
+});
+
+async function loadFolderIcon() {
+  const dir = await mkdtemp(path.join(os.tmpdir(), "simeon-folder-icon-test-"));
+  const outfile = path.join(dir, "icon.mjs");
+  await build({ entryPoints: [path.join(desktopRoot, "source/host/extensions/wallpaper/box-folder-icon.ts")], outfile, bundle: true, format: "esm", platform: "node", target: "node22", logLevel: "silent" });
+  return import(pathToFileURL(outfile).href);
+}
+
+test("the host's copy of the folder icon is box/icons' files", async () => {
+  const { svg, pictures } = await readIcons();
+  assert.equal(await readFile(ICONS_OUT_FILE, "utf8"), renderIconsModule(svg, pictures), "run: node scripts/make-box-icons.mjs");
+  for (const size of ICON_SIZES) {
+    const png = pictures[size];
+    assert.deepEqual([...png.subarray(1, 4)], [0x50, 0x4e, 0x47], `files-${size}.png is a PNG`);
+    assert.deepEqual([png.readUInt32BE(16), png.readUInt32BE(20)], [size, size], `files-${size}.png is ${size} square`);
+  }
+});
+
+test("the folder icon goes under the file manager's name at every size, once", async () => {
+  const { writeFolderIcon, folderIconFiles, FILE_MANAGER_ICON } = await loadFolderIcon();
+  const dir = path.join(await mkdtemp(path.join(os.tmpdir(), "simeon-folder-icon-")), "hicolor");
+  const files = folderIconFiles();
+  assert.equal(FILE_MANAGER_ICON, "org.xfce.thunar");
+  assert.deepEqual(files.map((file) => file.path).sort(), [...ICON_SIZES.map((size) => `${size}x${size}/apps/org.xfce.thunar.png`), "scalable/apps/org.xfce.thunar.svg"].sort());
+  assert.equal(writeFolderIcon(dir), files.length);
+  for (const file of files) assert.ok(readFileSync(path.join(dir, file.path)).equals(file.bytes), file.path);
+  // Already there: nothing written again; one changed: that one alone.
+  assert.equal(writeFolderIcon(dir), 0);
+  await writeFile(path.join(dir, files[0].path), "old");
+  assert.equal(writeFolderIcon(dir), 1);
+  // A link in the way: not followed.
+  const base = await mkdtemp(path.join(os.tmpdir(), "simeon-folder-icon-link-"));
+  mkdirSync(path.join(base, "hicolor", "16x16", "apps"), { recursive: true });
+  symlinkSync("/etc/hostname", path.join(base, "hicolor", "16x16", "apps", "org.xfce.thunar.png"));
+  assert.equal(writeFolderIcon(path.join(base, "hicolor"), files.filter((file) => file.path.startsWith("16x16"))), false);
+});
+
+test("a running dock is shown the icon by an item there for a moment, then taken back", async () => {
+  const { refreshDocks, removeRefreshItems, dockLauncherDirs, REFRESH_ITEM } = await loadFolderIcon();
+  const root = await mkdtemp(path.join(os.tmpdir(), "simeon-docks-"));
+  for (const dock of ["dock1", "dock2"]) mkdirSync(path.join(root, dock, "launchers"), { recursive: true });
+  mkdirSync(path.join(root, "not-a-dock"));
+  const dirs = dockLauncherDirs(root);
+  assert.deepEqual(dirs.map((dir) => path.relative(root, dir)).sort(), ["dock1/launchers", "dock2/launchers"]);
+  const launcher = path.join(root, "thunar-settings.desktop");
+  await writeFile(launcher, "[Desktop Entry]\n");
+  let shown = [];
+  const count = await refreshDocks(dirs, async () => { shown = dirs.map((dir) => readFileSync(path.join(dir, REFRESH_ITEM), "utf8")); }, launcher);
+  assert.equal(count, 2);
+  for (const item of shown) assert.equal(item, `[PlankDockItemPreferences]\nLauncher=file://${launcher}\n`);
+  for (const dir of dirs) assert.equal(existsSync(path.join(dir, REFRESH_ITEM)), false);
+  // No launcher on this computer: nothing shown. A leftover item goes.
+  assert.equal(await refreshDocks(dirs, async () => {}, path.join(root, "missing.desktop")), 0);
+  await writeFile(path.join(dirs[0], REFRESH_ITEM), "x");
+  removeRefreshItems(dirs);
+  assert.equal(existsSync(path.join(dirs[0], REFRESH_ITEM)), false);
+  assert.deepEqual(dockLauncherDirs(path.join(root, "nowhere")), []);
+});
+
+test("a screen that comes up later is seen as new, once", async () => {
+  const { createDisplayWatch } = await loadFolderIcon();
+  let displays = [{ display: ":1" }];
+  const watch = createDisplayWatch(async () => displays);
+  // The first look only learns what is there.
+  assert.deepEqual(await watch.newDisplays(), []);
+  assert.deepEqual(await watch.newDisplays(), []);
+  displays = [{ display: ":1" }, { display: ":2" }, { display: ":3" }];
+  assert.deepEqual(await watch.newDisplays(), [":2", ":3"]);
+  assert.deepEqual(await watch.newDisplays(), []);
+  // A screen that went and came back is new again; a failed look changes nothing.
+  displays = [{ display: ":1" }];
+  assert.deepEqual(await watch.newDisplays(), []);
+  displays = [{ display: ":1" }, { display: ":2" }];
+  assert.deepEqual(await watch.newDisplays(), [":2"]);
+  const failing = createDisplayWatch(async () => { throw new Error("no X"); });
+  assert.deepEqual(await failing.newDisplays(), []);
 });
 
 function has(tool) {

@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1200" width="1200" height="1200">
+  <defs>
+    <linearGradient id="back" x1="0" y1="0" x2="0.15" y2="1">
+      <stop offset="0" stop-color="#7ae6ff"/>
+      <stop offset="1" stop-color="#009cff"/>
+    </linearGradient>
+    <linearGradient id="front" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5c9bff"/>
+      <stop offset="1" stop-color="#8aa2ff"/>
+    </linearGradient>
+    <linearGradient id="edge" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#a9a8ff"/>
+      <stop offset="1" stop-color="#ecd2ff"/>
+    </linearGradient>
+    <linearGradient id="sheen" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.18"/>
+      <stop offset="0.55" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="16"/></filter>
+  </defs>
+  <!-- The back, with its tab -->
+  <path fill="url(#back)" d="M150 200 H405 Q425 200 439 214 L511 286 Q525 300 545 300 H875 Q925 300 925 350 V1000 Q925 1050 875 1050 H150 Q100 1050 100 1000 V250 Q100 200 150 200 Z"/>
+  <!-- The front's shadow on the back -->
+  <rect x="240" y="445" width="700" height="605" rx="60" fill="#0b7fdc" opacity="0.35" filter="url(#soft)"/>
+  <!-- The front: its paler edge to the right, then the glass -->
+  <rect x="275" y="475" width="825" height="575" rx="52" fill="url(#edge)" opacity="0.95"/>
+  <rect x="275" y="475" width="760" height="575" rx="52" fill="url(#front)" opacity="0.96"/>
+  <rect x="275" y="475" width="760" height="575" rx="52" fill="url(#sheen)"/>
+  <rect x="285" y="485" width="740" height="555" rx="44" fill="none" stroke="#ffffff" stroke-opacity="0.28" stroke-width="8"/>
+</svg>
