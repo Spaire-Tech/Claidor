@@ -20,6 +20,7 @@ from simeon.desktop import voice as voice_module
 from simeon.kit.db.postgres import create_async_engine
 from simeon.kit.utils import utc_now
 from simeon.models import (
+    DesktopChannelBot,
     DesktopChatAgent,
     DesktopChatInbox,
     DesktopChatLine,
@@ -98,6 +99,15 @@ class TestDeleteAccount:
                 message={"prompt": "Call me"},
             )
         )
+        session.add(
+            DesktopChannelBot(
+                user_id=user.id,
+                agent_id="theo",
+                platform="discord",
+                fingerprint="f1",
+                secrets="sealed",
+            )
+        )
         await session.commit()
         voice = FakeVoice()
         mocker.patch.object(voice_module, "client", return_value=voice)
@@ -124,6 +134,7 @@ class TestDeleteAccount:
             DesktopChatAgent,
             DesktopChatLine,
             DesktopChatInbox,
+            DesktopChannelBot,
             SandBox,
             DesktopSession,
         ):

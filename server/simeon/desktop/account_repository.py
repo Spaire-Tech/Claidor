@@ -16,6 +16,7 @@ from sqlalchemy import delete, select
 
 from simeon.models import (
     DesktopAuthCode,
+    DesktopChannelBot,
     DesktopChatAgent,
     DesktopChatInbox,
     DesktopChatLine,
@@ -101,6 +102,9 @@ class AccountDeletionRepository:
             ),
             "chat_inbox": delete(DesktopChatInbox).where(
                 DesktopChatInbox.user_id == user_id
+            ),
+            "channel_bots": delete(DesktopChannelBot).where(
+                DesktopChannelBot.user_id == user_id
             ),
             "voice_calls": delete(DesktopVoiceCall).where(
                 DesktopVoiceCall.user_id == user_id

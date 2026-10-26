@@ -513,6 +513,12 @@ class Settings(BaseSettings):
     # routes refuse everyone — a missing secret must never mean that
     # everybody is a runner.
     MATY_RUNNER_TOKEN: str = ""
+    # An agent's own Discord or Slack bot is listened to from the server by
+    # the cloud runner, so it hears its messages while the person's computer
+    # sleeps (26 October 2026, simeon/desktop/channel_bots.py). It needs the
+    # runner (MATY_RUNNER_TOKEN). False keeps no bot token on the server:
+    # each computer listens to its own bots, as before.
+    CHANNELS_ON_SERVER: bool = True
     # How long a claim holds a job before the queue takes it back, and
     # therefore how long the job's token lives. Long enough for a
     # briefing, short enough that a dead runner is not missed for long;

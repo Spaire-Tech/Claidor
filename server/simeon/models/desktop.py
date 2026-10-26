@@ -337,6 +337,34 @@ class DesktopChatInbox(RecordModel):
     message: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
 
 
+class DesktopChannelBot(RecordModel):
+    """An agent's own Discord or Slack bot, listened to from the server (26
+    October 2026, `simeon.desktop.channel_bots`): the person's computer
+    hands its tokens here and the cloud runner holds the bot's connection,
+    so the bot hears its messages while the computer sleeps. `secrets` is
+    the tokens sealed (`simeon.kit.sealed`), never the tokens themselves;
+    `fingerprint` is the computer's own mark of them, which says whether
+    they changed without opening them. `status`, `detail` and `status_at`
+    are what the runner last reported of the connection.
+    """
+
+    __tablename__ = "desktop_channel_bots"
+    __table_args__ = (UniqueConstraint("user_id", "agent_id", "platform"),)
+
+    user_id: Mapped[UUID] = mapped_column(
+        Uuid, ForeignKey("users.id", ondelete="cascade"), nullable=False, index=True
+    )
+    agent_id: Mapped[str] = mapped_column(String(200), nullable=False)
+    platform: Mapped[str] = mapped_column(String(20), nullable=False)
+    fingerprint: Mapped[str] = mapped_column(String(128), nullable=False)
+    secrets: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    detail: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    status_at: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=True), nullable=True
+    )
+
+
 class DesktopVoiceCall(RecordModel):
     """One voice call the app placed to an agent, once it was billed.
 

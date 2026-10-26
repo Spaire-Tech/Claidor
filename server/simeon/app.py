@@ -15,6 +15,7 @@ from simeon.checkout import ip_geolocation
 from simeon.checkout_link.app import app as checkout_link_redirect_app
 from simeon.config import settings
 from simeon.desktop.app_sign_in import router as desktop_app_sign_in_router
+from simeon.desktop.channel_bots import runner_router as channel_bots_runner_router
 from simeon.desktop.email_sign_in import router as desktop_email_sign_in_router
 from simeon.desktop.endpoints import router as desktop_router
 from simeon.exception_handlers import add_exception_handlers
@@ -287,8 +288,10 @@ def create_app() -> FastAPI:
     # password sign-in (19 October 2026).
     app.include_router(desktop_email_sign_in_router)
 
-    # /maty/runner: the queue the cloud engine takes its work from
+    # /maty/runner: the queue the cloud engine takes its work from, and the
+    # agents' own Discord and Slack bots it listens to (/maty/runner/channels)
     app.include_router(maty_router)
+    app.include_router(channel_bots_runner_router)
 
     # /sand/*, /simeon.v1.* (and the upstream's /aiserver.v1.*, /agent.v1.* names for one release): the half of the upstream's server the
     # app expects, root-level for the same reason as sign-in
