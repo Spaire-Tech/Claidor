@@ -211,6 +211,7 @@ test("the extension is registered after the transcript, and SAND_CHAT_COPY=0 swi
   try {
     assert.equal(module.isChatCopyEnabled({}), true);
     for (const value of ["0", "off", "false", "no", " OFF "]) assert.equal(module.isChatCopyEnabled({ SAND_CHAT_COPY: value }), false, value);
-    assert.deepEqual(module.chatCopyExtension.dependencies, ["auth", "transcript"]);
+    // The inbox (chat-inbox.ts) waits for a turn to be able to run, and hears the server through the notify bus.
+    assert.deepEqual(module.chatCopyExtension.dependencies, ["auth", "transcript", "turn-execution", "notify-bus"]);
   } finally { await dispose(); }
 });

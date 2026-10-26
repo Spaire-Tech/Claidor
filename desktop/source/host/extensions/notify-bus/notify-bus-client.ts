@@ -1,7 +1,8 @@
 import type { IdleWatchdogPolicy, RetryPolicy } from "../../../internal/scheduling.js";
 import { getSandBackendClientHeaders } from "../../../shared/node/sand-client-metadata.js";
 
-export const SAND_NOTIFY_TOPIC_FLAGS = { "automation-fires": true, "listener-events": true, "xuser-events": true } as const;
+// `chat-inbox` (26 October 2026): a message written in an app waits on the server for this computer (chat-copy/chat-inbox.ts).
+export const SAND_NOTIFY_TOPIC_FLAGS = { "automation-fires": true, "listener-events": true, "xuser-events": true, "chat-inbox": true } as const;
 export type SandNotifyTopic = keyof typeof SAND_NOTIFY_TOPIC_FLAGS;
 export const SAND_NOTIFY_TOPICS = Object.keys(SAND_NOTIFY_TOPIC_FLAGS) as SandNotifyTopic[];
 export const HEALTHY_CONNECTION_MIN_LIFETIME_MS = 30_000;
