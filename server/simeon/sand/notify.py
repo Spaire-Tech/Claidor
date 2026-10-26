@@ -5,8 +5,10 @@ The box's host opens one server-sent-events stream per box
 reads frames of the form `data: {"kind":"connected"}` then
 `data: {"kind":"notify","topic":"automation-fires"}`; a topic tells it
 to drain the matching relay queue now instead of at the next poll. The
-three topics are the client's own table: `automation-fires`,
-`listener-events`, `xuser-events`. Its stall watchdog aborts a stream
+topics are the client's own table: `automation-fires`, `listener-events`,
+`xuser-events`, and `chat-inbox` (26 October 2026: a message written in an
+app is waiting, `simeon.desktop.chats`). A host built before ignores a
+topic it does not know. Its stall watchdog aborts a stream
 that goes silent, so this one writes a comment line every twenty
 seconds; any bytes kick the watchdog.
 
@@ -32,11 +34,14 @@ from simeon.redis import Redis, get_redis
 from simeon.routing import APIRouter
 from simeon.worker import enqueue_job
 
-NotifyTopic = Literal["automation-fires", "listener-events", "xuser-events"]
+NotifyTopic = Literal[
+    "automation-fires", "listener-events", "xuser-events", "chat-inbox"
+]
 NOTIFY_TOPICS: tuple[NotifyTopic, ...] = (
     "automation-fires",
     "listener-events",
     "xuser-events",
+    "chat-inbox",
 )
 
 HEARTBEAT_SECONDS = 20.0

@@ -112,6 +112,14 @@ actor LocalHandsProvider {
         try await stream { attempt = 1; failures = 0 }
       } catch {
         if Task.isCancelled { break }
+        // The box asleep where the server lets it sleep while the app is open: waited for without waking it, and
+        // dialled again once it runs (26 October 2026, the computer used only for runs; `Gateway.waitWhileAsleep`).
+        if await gateway.waitWhileAsleep({ _ in }) {
+          providerId = nil
+          attempt = 1
+          failures = 0
+          continue
+        }
         failures += 1
         if failures >= 3 {
           await gateway.invalidate()

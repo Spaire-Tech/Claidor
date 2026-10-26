@@ -23,23 +23,34 @@ One more table carries the shared memory (`docs/maties/cloud.md`):
   the app on a computer, and later the cloud runner — read it before
   they work and write it after, so a person with two machines has one
   assistant instead of two strangers.
+
+And two the copy of the agents and their chats (26 October 2026, the
+computer as a worker; `simeon.desktop.chats`):
+
+- `DesktopChatAgent`: one row per person per agent, as their computer
+  last listed it.
+- `DesktopChatLine`: one row per line of an agent's chat, its newest
+  lines only, as the computer wrote it.
 """
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 from sqlalchemy import (
     CHAR,
     TIMESTAMP,
+    BigInteger,
     Boolean,
     ForeignKey,
+    Index,
     Integer,
     String,
     Text,
     UniqueConstraint,
     Uuid,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, declared_attr, mapped_column, relationship
 
 from simeon.kit.db.models import RecordModel
@@ -248,6 +259,110 @@ class DesktopMemoryFile(RecordModel):
     name: Mapped[str] = mapped_column(Text, nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False, default="")
     version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+
+
+class DesktopChatAgent(RecordModel):
+    """One agent of one person, as their computer last listed it (26
+    October 2026, the computer as a worker).
+
+    The apps read the agents' list from the computer, so with the
+    computer asleep or being updated they had nothing to show. The
+    computer now sends its list here (`host/extensions/chat-copy/`) and
+    the apps read it while the computer is away (`simeon.desktop.chats`).
+    The row is the computer's own (`listAgents`), without its inline
+    picture and without what the agent was doing at that moment, which
+    a list read later would show as still going.
+    """
+
+    __tablename__ = "desktop_chat_agents"
+    __table_args__ = (UniqueConstraint("user_id", "agent_id"),)
+
+    user_id: Mapped[UUID] = mapped_column(
+        Uuid, ForeignKey("users.id", ondelete="cascade"), nullable=False, index=True
+    )
+    agent_id: Mapped[str] = mapped_column(String(200), nullable=False)
+    row: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+
+
+class DesktopChatLine(RecordModel):
+    """One line of one agent's chat, as the computer wrote it (26 October
+    2026): a message, a card, a file, a notice, in the shape the apps read
+    from the computer (`entry`). Only an agent's newest lines are kept
+    (`simeon.desktop.chats.LINES_KEPT`); older ones stay on the computer.
+    `at_ms` orders them: the line's own time (`timestampMs`), or when it
+    first came for a line without one.
+    """
+
+    __tablename__ = "desktop_chat_lines"
+    __table_args__ = (
+        UniqueConstraint("user_id", "agent_id", "entry_id"),
+        Index(
+            "ix_desktop_chat_lines_user_id_agent_id_at_ms",
+            "user_id",
+            "agent_id",
+            "at_ms",
+        ),
+    )
+
+    user_id: Mapped[UUID] = mapped_column(
+        Uuid, ForeignKey("users.id", ondelete="cascade"), nullable=False, index=True
+    )
+    agent_id: Mapped[str] = mapped_column(String(200), nullable=False)
+    entry_id: Mapped[str] = mapped_column(String(300), nullable=False)
+    at_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    entry: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+
+
+class DesktopChatInbox(RecordModel):
+    """A message for one of a person's agents, waiting for their computer
+    (26 October 2026, the computer as a worker): written in an app while the
+    computer was asleep or out of reach. The computer is woken, takes it
+    (`simeon.desktop.chats`, `host/extensions/chat-copy/chat-inbox.ts`) and
+    hands it to the agent as if the app had sent it; the row goes once it
+    has. `nonce` is the app's own id for the message, which the computer
+    keeps on the line it writes, so a message sent both ways lands once.
+    `kind` is `prompt` (a message written in an app); `message` is what the
+    app would have sent the computer (`sendPrompt`).
+    """
+
+    __tablename__ = "desktop_chat_inbox"
+    __table_args__ = (UniqueConstraint("user_id", "nonce"),)
+
+    user_id: Mapped[UUID] = mapped_column(
+        Uuid, ForeignKey("users.id", ondelete="cascade"), nullable=False, index=True
+    )
+    agent_id: Mapped[str] = mapped_column(String(200), nullable=False)
+    nonce: Mapped[str] = mapped_column(String(200), nullable=False)
+    kind: Mapped[str] = mapped_column(String(20), nullable=False)
+    message: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+
+
+class DesktopChannelBot(RecordModel):
+    """An agent's own Discord or Slack bot, listened to from the server (26
+    October 2026, `simeon.desktop.channel_bots`): the person's computer
+    hands its tokens here and the cloud runner holds the bot's connection,
+    so the bot hears its messages while the computer sleeps. `secrets` is
+    the tokens sealed (`simeon.kit.sealed`), never the tokens themselves;
+    `fingerprint` is the computer's own mark of them, which says whether
+    they changed without opening them. `status`, `detail` and `status_at`
+    are what the runner last reported of the connection.
+    """
+
+    __tablename__ = "desktop_channel_bots"
+    __table_args__ = (UniqueConstraint("user_id", "agent_id", "platform"),)
+
+    user_id: Mapped[UUID] = mapped_column(
+        Uuid, ForeignKey("users.id", ondelete="cascade"), nullable=False, index=True
+    )
+    agent_id: Mapped[str] = mapped_column(String(200), nullable=False)
+    platform: Mapped[str] = mapped_column(String(20), nullable=False)
+    fingerprint: Mapped[str] = mapped_column(String(128), nullable=False)
+    secrets: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    detail: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    status_at: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=True), nullable=True
+    )
 
 
 class DesktopVoiceCall(RecordModel):

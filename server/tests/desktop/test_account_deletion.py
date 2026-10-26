@@ -20,6 +20,10 @@ from simeon.desktop import voice as voice_module
 from simeon.kit.db.postgres import create_async_engine
 from simeon.kit.utils import utc_now
 from simeon.models import (
+    DesktopChannelBot,
+    DesktopChatAgent,
+    DesktopChatInbox,
+    DesktopChatLine,
     DesktopMemoryFile,
     DesktopSession,
     DesktopSubscription,
@@ -74,6 +78,36 @@ class TestDeleteAccount:
         session.add(
             DesktopVoiceCall(user_id=user.id, conversation_id="conv_1", seconds=30)
         )
+        session.add(
+            DesktopChatAgent(user_id=user.id, agent_id="theo", row={"id": "theo"})
+        )
+        session.add(
+            DesktopChatLine(
+                user_id=user.id,
+                agent_id="theo",
+                entry_id="u1",
+                at_ms=1_000,
+                entry={"id": "u1", "kind": "message", "content": "Book it"},
+            )
+        )
+        session.add(
+            DesktopChatInbox(
+                user_id=user.id,
+                agent_id="theo",
+                nonce="ios-1",
+                kind="prompt",
+                message={"prompt": "Call me"},
+            )
+        )
+        session.add(
+            DesktopChannelBot(
+                user_id=user.id,
+                agent_id="theo",
+                platform="discord",
+                fingerprint="f1",
+                secrets="sealed",
+            )
+        )
         await session.commit()
         voice = FakeVoice()
         mocker.patch.object(voice_module, "client", return_value=voice)
@@ -94,7 +128,16 @@ class TestDeleteAccount:
         assert sorted(removed[1]) == sorted(BoxBrokerService.volumes(UUID(box_id)))
         assert voice.deleted == ["conv_1"]
         session.expire_all()
-        for model in (DesktopMemoryFile, DesktopVoiceCall, SandBox, DesktopSession):
+        for model in (
+            DesktopMemoryFile,
+            DesktopVoiceCall,
+            DesktopChatAgent,
+            DesktopChatLine,
+            DesktopChatInbox,
+            DesktopChannelBot,
+            SandBox,
+            DesktopSession,
+        ):
             assert await _count(session, model, user) == 0, model.__name__
         refreshed = await session.get(User, user.id)
         assert refreshed is not None

@@ -7,6 +7,16 @@ person's own job token, and reports the answer back.
 
 Nobody talks to this service. It talks to the API.
 
+It also listens to the agents' own Discord and Slack bots (26 October 2026,
+`src/channels/`), so a bot hears its messages while the person's computer
+sleeps. Every 15 seconds it asks the API which bots to hold
+(`POST /maty/runner/channels`, the tokens only for a bot it does not hold as
+it is now), keeps one connection per bot (Discord's Gateway, Slack's Socket
+Mode), and reports each bot's state and what it heard
+(`POST /maty/runner/channels/report`). It never replies: the person's
+computer, woken by the API, does. Its log lines name a bot by its id, never
+a token nor what was said.
+
 ## What one job looks like
 
 1. It asks the API for work. When there is none it waits a few seconds and
@@ -89,6 +99,7 @@ still read when the `SIMEON_` one is not set.
 | `SIMEON_MATY_POLL_INTERVAL_MS` | The wait when there is no work. Default five seconds. |
 | `SIMEON_MATY_HEARTBEAT_INTERVAL_MS` | How often a running job says it is still going. Default fifteen seconds. |
 | `SIMEON_MATY_JOB_TIMEOUT_MS` | The longest one job may take. Default fifteen minutes. |
+| `SIMEON_RUNNER_CHANNELS` | `0` (or `off`, `false`, `no`) and it listens to no bot. On by default. |
 
 In production it is the runner worker in the repository's `render.yaml`,
 which Render builds from `runner/Dockerfile` (context: the repository

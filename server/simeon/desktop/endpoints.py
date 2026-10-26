@@ -77,6 +77,8 @@ from .bedrock import (
     bedrock_messages_url,
 )
 from .capabilities import router as capabilities_router
+from .channel_bots import router as channel_bots_router
+from .chats import router as chats_router
 from .composio import forward as composio_forward
 from .contact import router as contact_router
 from .flight_booking import router as flight_booking_router
@@ -1671,6 +1673,9 @@ router.include_router(flight_booking_router)
 router.include_router(releases_router)
 # Starter packs (`packs.py`): the teams the website's "Add to Simeon" opens.
 router.include_router(packs_router)
+# The copy of the agents and their chats the apps read while the computer is away (26 October 2026).
+router.include_router(chats_router)
+router.include_router(channel_bots_router)
 # The website's contact form (`contact.py`): each message e-mailed to the founder.
 router.include_router(contact_router)
 

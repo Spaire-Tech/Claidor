@@ -143,6 +143,7 @@ final class MacSession {
   /** Reaches the person's computer with the pair in the Keychain: "Setting up Simeon's computer" until the agents are in. */
   private func enter() async {
     store.saved = SavedChats.onDevice()
+    store.readsServerCopy = true
     phase = .settingUp
     let api = SimeonAPI(base: server, clientVersion: Self.clientVersion, vault: vault)
     self.api = api

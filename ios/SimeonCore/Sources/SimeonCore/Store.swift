@@ -143,6 +143,17 @@ public final class AppStore {
   public private(set) var isLive = false {
     didSet { if isLive != oldValue { rebuild.transportChanged(rebuildInputs) } }
   }
+  /**
+   * The computer sleeps and the app waits for it without waking it (26
+   * October 2026, the computer used only for runs; `Gateway.waitWhileAsleep`,
+   * only where the server lets it sleep while the app is open). Not a
+   * computer out of reach: "Reconnecting" does not start for it
+   * (`rebuildInputs`), while messages still go to the server (`isDown`).
+   * Ends when the stream is back, or when the computer runs again.
+   */
+  public private(set) var isAsleep = false {
+    didSet { if isAsleep != oldValue { rebuild.transportChanged(rebuildInputs) } }
+  }
   public private(set) var isLoading = false
   public var account: Account? {
     didSet { if account != oldValue { savedOwnerKnown() } }
@@ -321,7 +332,7 @@ public final class AppStore {
   /** Each chat's thread replies and the first message of their thread, made with its layout (a quote asks on every draw). */
   @ObservationIgnored private var threadRoots: [String: [String: String]] = [:]
   /** Chats that could not be fetched and have nothing to show: "Couldn't load this conversation" and Retry. */
-  public private(set) var loadFailed: Set<String> = []
+  public internal(set) var loadFailed: Set<String> = []
   /**
    * The computer out of reach: the event stream dropped and has not come
    * back (the Mac's coordinator says "down" the moment it drops, and the
@@ -347,11 +358,30 @@ public final class AppStore {
   /** The save a moment after a change (`saveSoon`), and this sign-in's number, so a save begun before a sign-out never writes after it. */
   @ObservationIgnored var saving: Task<Void, Never>?
   @ObservationIgnored var saveEpoch = 0
+  /**
+   * The copy of the agents and chats on Simeon Labs' server is read while the
+   * computer has not answered (StoreSaved.swift, `server/simeon/desktop/chats.py`):
+   * set by the apps; the demo and the tests read none.
+   */
+  @ObservationIgnored public var readsServerCopy = false
+  /** The list shown is the server's copy (not this device's): another account's device copy going does not take it. */
+  @ObservationIgnored var listFromServer = false
+  /** Chats whose server copy is being asked for. */
+  @ObservationIgnored var serverLinesAsked: Set<String> = []
+  /** Chats whose held messages are being handed to the server (`handToServer`). */
+  @ObservationIgnored private var handingToServer: Set<String> = []
+  /** Told when the list is on screen before the computer answered (`attach`'s `shown`), until `attach` ends. */
+  @ObservationIgnored var onListShown: (@MainActor () -> Void)?
 
   /** A message the person sent, shown at once and kept until the host's own copy arrives (the Mac's outbox). */
   struct Outgoing {
-    /** Held while the computer is out of reach, on its way, with the host, or refused. */
-    enum State { case queued, sending, sent, failed }
+    /**
+     * Held while the computer is out of reach, on its way, with the host, or
+     * refused; or with Simeon Labs' server, which wakes the computer and
+     * hands it over (`handToServer`): shown as sent, and sent again (the
+     * same nonce, so it lands once) when the computer is back.
+     */
+    enum State { case queued, sending, sent, failed, withServer }
     let id: String
     let text: String
     let files: [(name: String, data: Data)]
@@ -387,11 +417,13 @@ public final class AppStore {
     detach(endingCall: !same)
     account = signedIn
     self.backend = backend
-    // The list kept on this device, until the computer answers (SavedChats).
+    // The list kept on this device, until the computer answers (SavedChats); the server's copy, when it comes first.
     showSaved()
     shown?()
+    onListShown = shown
+    if readsServerCopy { Task { await self.showServerList(from: backend) } }
     isLoading = true
-    defer { isLoading = false }
+    defer { isLoading = false; onListShown = nil }
     let events = backend.events()
     listening = Task { [weak self] in
       for await event in events {
@@ -434,7 +466,7 @@ public final class AppStore {
     layoutTask?.cancel(); layoutTask = nil; pendingLayout = []; refreshing = []; caughtUp = [:]
     pendingAnswers = [:]; answeredApprovals = [:]; answeredPurchases = [:]; watchedPurchases = []; pickedPurchaseCards = [:]; pressedProducts = [:]; localAsks = [:]; trayList = TrayList(); fileLines = [:]; fileReadsAsText = [:]; unreadAfter = [:]; apps = []; catalog = []; appsComingSoon = AppsComingSoon.builtIn; pinnedIds = []; routinesByAgent = [:]; sidebarSections = nil
     streamingOnly = [:]; outbox = [:]; sentOffline = [:]; arrived = []; olderBefore = [:]; loadingOlder = []; paged = []; firstRunAgentId = nil; revealing = [:]
-    openThreads = [:]; threadRows = [:]; threadRoots = [:]; loadFailed = []; isDown = false
+    openThreads = [:]; threadRows = [:]; threadRoots = [:]; loadFailed = []; isDown = false; isAsleep = false
     computer = ComputerBook(); subagentsByAgent = [:]; pointers = [:]; lastComputerCatchUp = .distantPast
     rebuild.reset(); rosterHeld = false; diskSaverCreation = nil; diskAuditDone = false; rosterFailed = false; windowSelection = nil
     voiceList = nil
@@ -522,9 +554,12 @@ public final class AppStore {
     case .step(let agentId, let id, let summary, let isRunning):
       if isRunning { running[agentId] = id; steps[agentId] = summary }
       else if running[agentId] == id { running[agentId] = nil; steps[agentId] = nil }
+    case .computerAsleep(let asleep):
+      isAsleep = asleep
     case .connection(let live):
       // Back after a drop (the phone slept, the network changed): what was said meanwhile never streamed, so fetch it.
       let recovered = live && !isLive
+      if live { isAsleep = false }
       isLive = live
       if isDown == live { setDown(!live) }
       if recovered, let backend {
@@ -788,7 +823,7 @@ public final class AppStore {
 
   /** The waiting messages held while offline and now on their way or with the host: their own lines say so already. */
   nonisolated static func sentOffline(_ waiting: [Outgoing]) -> [String: Double] {
-    Dictionary(waiting.filter { $0.composedOffline && ($0.state == .sending || $0.state == .sent) }.map { ($0.id, $0.at) }, uniquingKeysWith: { first, _ in first })
+    Dictionary(waiting.filter { $0.composedOffline && ($0.state == .sending || $0.state == .sent || $0.state == .withServer) }.map { ($0.id, $0.at) }, uniquingKeysWith: { first, _ in first })
   }
 
   /** "Sent while offline" on the lines this app held and sent (`marks`), and on no other: the host's own mark is taken off. */
@@ -891,8 +926,9 @@ public final class AppStore {
     Trace.mark("opening \(agentId)")
     openChat = agentId
     let unread = agent(agentId).map { $0.hasUnread ? max($0.unreadCount, 1) : 0 } ?? 0
-    // Its lines kept on this device, while the computer's are on their way (SavedChats).
+    // Its lines kept on this device, while the computer's are on their way (SavedChats); the server's copy too.
     showSavedLines(agentId)
+    if readsServerCopy { Task { await self.showServerLines(agentId) } }
     if let cached = transcripts[agentId] {
       unreadAfter[agentId] = Self.unreadBoundary(cached, unread: unread)
       setTranscript(agentId, cached)
@@ -909,8 +945,9 @@ public final class AppStore {
    */
   public func peek(_ agentId: String) async {
     guard let backend else { return }
-    // The lines kept on this device show at once; the computer is asked only when they lack the chat's newest line.
+    // The lines kept on this device show at once, else the server's copy; the computer is asked only when they lack the chat's newest line.
     showSavedLines(agentId)
+    if transcripts[agentId] == nil { await showServerLines(agentId) }
     guard transcripts[agentId] == nil || savedLinesLackNewest(agentId), !peeking.contains(agentId) else { return }
     peeking.insert(agentId)
     defer { peeking.remove(agentId) }
@@ -1069,9 +1106,54 @@ public final class AppStore {
     arrived.insert(item.id)
     for index in files.indices { arrived.insert("\(item.id)-file\(index)") }
     layOut(agentId)
-    // Held: it goes when the computer is back (`flushQueued`), or when the one before it has gone (`sendNextQueued`).
-    guard !waits else { return }
+    // Held: it goes when the computer is back (`flushQueued`), or when the one before it has gone (`sendNextQueued`);
+    // held while the computer is out of reach, it goes to the server meanwhile (`handToServer`).
+    guard !waits else {
+      if isDown { await handToServer(agentId) }
+      return
+    }
     await deliver(item.id, in: agentId)
+  }
+
+  /**
+   * The chat's held messages handed to Simeon Labs' server while the
+   * computer is out of reach (26 October 2026, the computer as a worker):
+   * the server keeps each, wakes the computer and hands it over
+   * (`POST /desktop/api/chats/send`, `server/simeon/desktop/chats.py`), so it
+   * no longer waits on this device, nor on this app staying open, and
+   * "Reconnecting" does not show for it. In the order written: one with
+   * files (they go to the computer itself) waits here, and those after it
+   * with it. What the server refuses waits here, as before. Each is sent as
+   * it would be to the computer (`LiveBackend.sendArguments`, its nonce
+   * the message's id), and goes to the computer again when it is back
+   * (`sendNextQueued`): the computer takes a nonce once.
+   */
+  func handToServer(_ agentId: String) async {
+    guard readsServerCopy, let backend, !handingToServer.contains(agentId) else { return }
+    handingToServer.insert(agentId)
+    defer { handingToServer.remove(agentId) }
+    while isDown, self.backend === backend, let item = nextToHand(agentId) {
+      let options = SendOptions(replyTo: item.replyTo, isFork: item.thread, richText: item.richText, composedAtMs: item.at)
+      let args = LiveBackend.sendArguments(agentId, text: item.text, attachments: [], options: options, nonce: item.id)
+      do { _ = try await backend.server("chats/send", method: "POST", body: args) } catch { return }
+      // Sent to the computer meanwhile (it came back), or canceled: left as it is.
+      guard self.backend === backend, let index = outbox[agentId]?.firstIndex(where: { $0.id == item.id }), outbox[agentId]?[index].state == .queued else { return }
+      // Written to wait: the computer is told when (`composedAtMs`), and the chat says "Sent while offline", either way it goes.
+      outbox[agentId]?[index].composedOffline = true
+      mark(item.id, in: agentId, .withServer)
+    }
+  }
+
+  /** The chat's first held message, when every one before it is with the host or the server; nil at one on its way, or with files. */
+  private func nextToHand(_ agentId: String) -> Outgoing? {
+    for item in outbox[agentId] ?? [] {
+      switch item.state {
+      case .sent, .withServer, .failed: continue
+      case .sending: return nil
+      case .queued: return item.files.isEmpty ? item : nil
+      }
+    }
+    return nil
   }
 
   /**
@@ -1145,11 +1227,15 @@ public final class AppStore {
     }
   }
 
-  /** Out of reach, or back: held messages say which; back, they go. */
+  /** Out of reach, or back: held messages say which, and go to the server meanwhile; back, they go. */
   private func setDown(_ down: Bool) {
     isDown = down
     for chat in outbox.keys where outbox[chat]?.contains(where: { $0.state == .queued }) == true { layOut(chat) }
-    if !down { flushQueued() }
+    if down {
+      for chat in outbox.keys where outbox[chat]?.contains(where: { $0.state == .queued }) == true { Task { await handToServer(chat) } }
+    } else {
+      flushQueued()
+    }
   }
 
   /** The computer is back: each chat's held messages go, one after another, in the order they were written. */
@@ -1157,10 +1243,17 @@ public final class AppStore {
     for chat in outbox.keys { Task { await sendNextQueued(chat) } }
   }
 
-  /** The chat's next held message, when none of its messages is on its way and the computer is in reach (the window's `flushAgent`). */
+  /**
+   * The chat's next held message, when none of its messages is on its way
+   * and the computer is in reach (the window's `flushAgent`). One with the
+   * server goes too, in its place: the computer takes it once, however it
+   * comes, and a message after it never overtakes it.
+   */
   private func sendNextQueued(_ agentId: String) async {
-    guard !isDown, outbox[agentId]?.contains(where: { $0.state == .sending }) != true,
-          let next = outbox[agentId]?.first(where: { $0.state == .queued }) else { return }
+    // Out of reach meanwhile (the one before failed as it went): the server takes them.
+    if isDown { await handToServer(agentId); return }
+    guard outbox[agentId]?.contains(where: { $0.state == .sending }) != true,
+          let next = outbox[agentId]?.first(where: { $0.state == .queued || $0.state == .withServer }) else { return }
     await deliver(next.id, in: agentId)
   }
 

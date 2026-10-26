@@ -15,6 +15,14 @@ export interface ChannelInbound {
   readonly text: string;
   readonly timestampMs: number;
   readonly reaction?: { readonly emoji: string; readonly messageQuote?: string | null } | null;
+  /**
+   * The platform's own id of what was heard (26 October 2026): the same
+   * one the cloud runner gives it (`runner/src/channels/`), so a message
+   * heard both here and there while both listened lands once.
+   */
+  readonly messageId?: string;
+  /** Slack: the thread the message was in, which the reply goes to. */
+  readonly thread?: string;
 }
 
 export interface ConnectorCallbacks {

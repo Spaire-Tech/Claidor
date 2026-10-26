@@ -1,7 +1,9 @@
 """The queue the cloud runner takes from.
 
 Four verbs, exactly as `docs/maties/cloud.md` section 4 spells them, and
-nothing else lives at `/maty/runner`:
+nothing else lives at `/maty/runner` but the agents' own bots the runner
+listens to (`/maty/runner/channels`, `simeon.desktop.channel_bots`, 26
+October 2026):
 
 ```
 POST /maty/runner/claim                 { "runner": "<name>" }

@@ -52,6 +52,7 @@ from .box_service import (
     ATTACHED_REFRESH_SECONDS,
     broker,
     dial_headers,
+    lets_sleep,
     mark_attached,
 )
 
@@ -145,10 +146,11 @@ def _redis_of(connection: Request | WebSocket) -> Any:
     return getattr(connection.state, "redis", None)
 
 
-async def keep_attached(redis: Any, box_id: UUID) -> None:
+async def keep_attached(redis: Any, box_id: UUID, *, sleeps: bool = False) -> None:
     """While a request or stream to the box is open, the box counts as in
-    use and the sleeper leaves it (`box_service.attached_key`)."""
-    if redis is None:
+    use and the sleeper leaves it (`box_service.attached_key`); not for an
+    app that lets it sleep (`box_service.lets_sleep`)."""
+    if redis is None or sleeps:
         return
     while True:
         await mark_attached(redis, box_id)
@@ -290,7 +292,8 @@ async def _proxy_http(
         return resolved
     box, base, dial = resolved
     redis = _redis_of(request)
-    if redis is not None:
+    sleeps = lets_sleep(request.headers)
+    if redis is not None and not sleeps:
         await mark_attached(redis, box.id)
     try:
         kept = await kept_body(request)
@@ -375,7 +378,7 @@ async def _proxy_http(
     answer = response
 
     async def body() -> AsyncIterator[bytes]:
-        attached = asyncio.create_task(keep_attached(redis, box.id))
+        attached = asyncio.create_task(keep_attached(redis, box.id, sleeps=sleeps))
         try:
             async for chunk in answer.aiter_raw():
                 yield chunk
@@ -525,7 +528,11 @@ async def _proxy_ws(
         )
         return
     await websocket.accept(subprotocol=upstream.subprotocol)
-    attached = asyncio.create_task(keep_attached(_redis_of(websocket), box.id))
+    attached = asyncio.create_task(
+        keep_attached(
+            _redis_of(websocket), box.id, sleeps=lets_sleep(websocket.headers)
+        )
+    )
     try:
         await pump(websocket, upstream)
     except Exception as error:

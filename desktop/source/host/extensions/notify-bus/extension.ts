@@ -25,7 +25,7 @@ export const notifyBusExtension = defineHostExtension<{
     const auth = context.deps[HostExtensions.Auth] as AuthApi;
     const experiments = context.deps[HostExtensions.Experiments] as ExperimentsApi;
     const handlersByTopic: Record<SandNotifyTopic, Set<() => void>> = {
-      "automation-fires": new Set(), "listener-events": new Set(), "xuser-events": new Set()
+      "automation-fires": new Set(), "listener-events": new Set(), "xuser-events": new Set(), "chat-inbox": new Set()
     };
     let isStopped = false;
     const fire = (topic: SandNotifyTopic) => {

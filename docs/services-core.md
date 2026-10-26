@@ -1120,6 +1120,8 @@ because the worker runs the sleeper and the wake. Full steps are in
 | `SIMEON_BOX_IMAGE`, `SIMEON_BOX_IMAGE_DIGEST` | defaults; change only with a checked image |
 | `SIMEON_BOX_IMAGE_TRIAL`, `SIMEON_BOX_IMAGE_TRIAL_USERS` | empty; another image for the accounts listed only (above) |
 | `SIMEON_BOX_IDLE_HIBERNATE_AFTER` | `PT30M`; `PT0S` never sleeps |
+| `SIMEON_BOX_SLEEPS_WITH_APP_OPEN` | `false`; `true` lets an open app's computer sleep (step 4, above) |
+| `SIMEON_BOX_IDLE_AFTER_RUN` | `PT10M`; how soon after its last run a box sleeps, with the line above on |
 | `SIMEON_BOX_MEMORY_LIMIT_MB`, `SIMEON_BOX_CPU_LIMIT` | `4096`, `2.0`; `0` means no limit |
 | `SIMEON_BOX_MAX_RUNNING` | `3`; `0` means no limit |
 | `SIMEON_BOX_STORE_BUCKET` | the backup bucket's name; empty: no backups |
@@ -1153,11 +1155,125 @@ empty:
   (or the sign-in ending, or Delete Account) removes them, and a copy kept
   for another account is never shown.
 - "Reconnecting" shows only while a message waits to be sent ("Will send
-  when reconnected"). "Reconnecting to your computer…" under the list and
-  "Couldn't Reach Simeon's Computer" after two minutes are as before.
+  when reconnected"); since the server takes such messages (below), only
+  one with files or one the server refused. "Reconnecting to your
+  computer…" under the list and "Couldn't Reach Simeon's Computer" after
+  two minutes are as before.
 
-This is the first step of the computer as a worker (the founder, 26 October
-2026); the server holding the chats and the agents is not done yet.
+**The server's copy (26 October 2026).** The computer also sends the agents
+and their chats to Simeon Labs' server as they change, and the apps read
+that copy while the computer is away, so a phone or Mac that kept nothing
+(a new device, the caches cleared) shows them too:
+
+- The engine's `chat-copy` extension (`desktop/source/host/extensions/chat-copy/`)
+  sends the whole list when it changes, without inline pictures or what
+  each agent is doing at that moment. Chat events come for the chat on
+  screen only, so it reads a chat's newest 60 lines again whenever the
+  list says that chat moved: a new line, its time, or a turn ending. A line
+  still streaming waits until it is whole, and a line already sent goes
+  again only if it changed. At start it sends every chat whose newest line
+  the server lacks, 300 lines back. A refused copy is tried again after 5 s,
+  then longer, up to 5 minutes. The computer's own chats never wait on it.
+- The server (`server/simeon/desktop/chats.py`, tables `desktop_chat_agents`
+  and `desktop_chat_lines`) keeps each agent's row and its chat's newest 500
+  lines. It skips a line over 256 KB (the computer still has it), and an
+  agent no longer in the list takes its chat with it.
+  - `POST /desktop/api/chats/copy` and `GET /desktop/api/chats/state` are
+    for the computer, with its own credential.
+  - `GET /desktop/api/chats/agents` and `GET /desktop/api/chats/lines` are
+    for the apps.
+  - Delete Account removes both tables.
+- The apps (`showServerList`, `showServerLines` in `StoreSaved.swift`) ask
+  for the list beside the computer. It shows if it comes before the
+  computer's list, never after. A chat opened shows the server's lines
+  while it has only the device's lines or none. The computer's copy
+  replaces both, as with the device's copy.
+
+In the box, `SAND_CHAT_COPY=0` switches the extension off. Its log lines
+are `[simeon] chat-copy on: …`, `sent …`, `failed …; again in N s` and
+`left out N line(s) over 256 KB`; they carry counts only, never a chat's
+words. On the API the line is `desktop.chats.copy`, with the counts.
+
+**Messages while the computer is away (26 October 2026).** A message
+written in an app while the computer is out of reach (asleep, being
+updated, or the network down) no longer waits on the device: the app hands
+it to the server, the server wakes the computer, and the computer hands it
+to the agent. It reaches the agent even if the app is closed, and
+"Reconnecting" does not show for it.
+
+- The app (`handToServer` in `Store.swift`) sends what it would have sent
+  the computer (`LiveBackend.sendArguments`, the message's id as its nonce)
+  to `POST /desktop/api/chats/send`. Messages go in the order written; one
+  with files waits on the device (files go to the computer itself), and
+  those after it wait with it. One the server refuses (too long, too many
+  waiting) waits on the device as before. Once the server has it, it shows
+  as sent, marked "Sent while offline".
+- The server (`server/simeon/desktop/chats.py`, table
+  `desktop_chat_inbox`) keeps it exactly as written, at most 200 per person
+  and 512 KB each, and wakes the computer (`simeon.sand.notify.publish`,
+  topic `chat-inbox`, which also queues `sand.box.wake`). The sleeper keeps
+  a computer awake while a message written in the last hour waits for it
+  (`sand.box.sleep.deferred reason=inbox`). One no computer took in seven
+  days is removed.
+- The computer (`desktop/source/host/extensions/chat-copy/chat-inbox.ts`)
+  asks for the waiting messages (`GET /desktop/api/chats/inbox`) at start,
+  when the notify bus says `chat-inbox` and again 4 s later (the message is
+  saved when the server's request ends), every 30 s while that stream is
+  down, and every 2 minutes anyway. It waits until a turn can run, hands
+  each to its agent with `sendPrompt` and the app's nonce, in order, then
+  confirms them (`POST /desktop/api/chats/inbox/ack`). One that fails
+  waits, with those after it, and is left out after 5 tries; one for an
+  agent no longer there is left out at once.
+- When the computer is back, the app sends the same messages to it too,
+  with the same nonce: the computer's acceptance ledger takes a nonce once,
+  so each lands once however it comes, and a later message never overtakes
+  an earlier one.
+
+`SAND_CHAT_COPY=0` switches this off with the copy. Log lines: on the API
+`desktop.chats.inbox.queued` (with `added` and `waiting`),
+`desktop.chats.inbox.delivered`, `desktop.chats.inbox.expired`; in the box
+`[simeon] chat-inbox on`, `handed N message(s) to their agents`,
+`left out a message for agent=…` with the reason, and `failed, …; again in
+N s`. None carries a message's words.
+
+This is step 3 of the computer as a worker (the founder, 26 October 2026),
+with an agent's own Discord or Slack bot now listened to from the server
+(`docs/services-agents.md` §4).
+
+**The computer used only for runs (26 October 2026, step 4; off until
+switched on).** With `SIMEON_BOX_SLEEPS_WITH_APP_OPEN=true` on the API and
+the worker, an open app no longer keeps the computer awake:
+
+- EnsureSandBox's answer says so (`letsSleep`), and an app built since
+  then says it on each request to the computer (`x-simeon-lets-sleep: 1`):
+  the proxy does not mark the box in use for those (`box_service.lets_sleep`).
+  An app built before keeps it awake as always, and so does a screen being
+  watched (its stream carries no such word).
+- The sleeper puts a box to sleep `SIMEON_BOX_IDLE_AFTER_RUN` (10 minutes)
+  after its last run, or after `SIMEON_BOX_IDLE_HIBERNATE_AFTER` if that is
+  shorter; a message waiting for it still holds it awake.
+- When the stream drops, the app (`Gateway.waitWhileAsleep`) asks the
+  broker's record of the box (`GetSandBoxRunState` with `fromRecord`, which
+  does not ask the box's server) instead of dialling, which would wake it.
+  Asleep, it waits, reading the record every 15 s, until the box runs again
+  (woken for a message, a routine, a bot) or something in the app needs it
+  (a command wakes it through EnsureSandBox, as before). The Mac's local
+  hands wait the same way (`MacLocalHands.run`).
+- Meanwhile the store says the computer is asleep (`isAsleep`):
+  "Reconnecting" does not start for it, a message goes to the server
+  (above), and the stream coming back ends it. A box the record says runs,
+  and that does not answer, is a failure the app shows as before.
+- Not changed: launching the app still wakes the computer once (the app
+  reads its list and chats there), opening a chat while it sleeps wakes it,
+  and a new account's computer is still made at sign-in (the first run makes
+  Simeon at once, which needs it).
+
+Switch it on only once the apps built with this have been tried on an
+iPhone and a Mac. Off, nothing above changes.
+
+**Not yet verified:** the copy, the messages and the computer used only
+for runs have not run on a real computer, and the apps have not used them
+on an iPhone or a Mac.
 
 ### When it misbehaves
 
@@ -1205,7 +1321,8 @@ This is the first step of the computer as a worker (the founder, 26 October
   (`[box-copy-in] result outcome=hydrated`).
 - On the worker: `sand.box.hibernated`, `sand.box.sleeper`,
   `sand.box.sleep.failed`, `sand.box.woken` (with `start_ms`, the server
-  starting it), `sand.box.wake.deferred`.
+  starting it), `sand.box.wake.deferred`, and `sand.box.sleep.deferred`
+  with `reason=inbox` (a message written in an app waits for the box).
 - In the box, `/tmp/sand-host.log`:
   - `[simeon] box-stream guarded on …` shows the stream guard is up.
   - `inference credential renewed with the box's own credential` shows the

@@ -32,6 +32,7 @@ import structlog
 from sqlalchemy import text
 
 from simeon.config import settings
+from simeon.desktop.chat_repository import DesktopChatInboxRepository
 from simeon.desktop.repository import DesktopSessionRepository
 from simeon.desktop.service import DesktopUnauthenticated, desktop
 from simeon.desktop.tokens import (
@@ -400,6 +401,18 @@ async def mark_attached(redis: Redis, box_id: UUID) -> None:
         return
 
 
+#: An app built since 26 October 2026 says on its requests that it lets the
+#: box sleep while it is open (`lets_sleep`); with BOX_SLEEPS_WITH_APP_OPEN
+#: on, its requests do not mark the box attached.
+LETS_SLEEP_HEADER = "x-simeon-lets-sleep"
+
+
+def lets_sleep(headers: Any) -> bool:
+    """Whether a request through the proxy comes from an app that lets the
+    box sleep while it is open, and the server lets it (`BOX_SLEEPS_WITH_APP_OPEN`)."""
+    return settings.BOX_SLEEPS_WITH_APP_OPEN and headers.get(LETS_SLEEP_HEADER) == "1"
+
+
 async def is_attached(redis: Redis, box_id: UUID) -> bool:
     try:
         return bool(await redis.exists(attached_key(box_id)))
@@ -421,6 +434,11 @@ UPDATE_RETRY_SECONDS = 600
 # away for two minutes came back to a computer being swapped, and what they
 # sent meanwhile reached a sandbox that no longer existed.
 UPDATE_QUIET = timedelta(minutes=10)
+
+# A message written in an app and waiting on the server for the box keeps
+# it awake for this long after it was written (26 October 2026): long enough
+# for a box that is still starting its agents to take it.
+INBOX_HOLDS_AWAKE = timedelta(hours=1)
 
 
 def update_key(box_id: UUID) -> str:
@@ -1323,6 +1341,19 @@ class BoxBrokerService:
         )
         return RecreateOutcome(started=True, operation_id=operation_id)
 
+    async def recorded_run_state(self, db: AsyncSession, user_id: UUID) -> int:
+        """The person's box as the broker last recorded it (running, asleep,
+        none), without asking its server: what an app that lets the box sleep
+        asks every few seconds while it waits for it to wake."""
+        box = await SandBoxRepository.from_session(db).get_by_user(user_id)
+        if box is None:
+            return RUN_STATE_ABSENT
+        if box.state == "running":
+            return RUN_STATE_RUNNING
+        if box.state == "hibernated":
+            return RUN_STATE_HIBERNATED
+        return RUN_STATE_ABSENT
+
     async def run_state(
         self, db: AsyncSession, caller: DesktopSession
     ) -> tuple[int, bool]:
@@ -1580,6 +1611,10 @@ class BoxBrokerService:
             # A server's own idle time (`idle_minutes` in SIMEON_BOX_HOSTS):
             # shorter where waking takes a second (E2B).
             idle_after = getattr(host, "idle_after", None) or after
+            if settings.BOX_SLEEPS_WITH_APP_OPEN:
+                # The computer used only for runs (26 October 2026): asleep
+                # soon after its last run, woken for the next.
+                idle_after = min(idle_after, settings.BOX_IDLE_AFTER_RUN)
             if (
                 update is not None
                 and health.reachable
@@ -1614,6 +1649,16 @@ class BoxBrokerService:
                     # Sent already: one the update could not replace still
                     # sleeps by the usual rule, rather than stay awake.
             if now - idle_since < idle_after:
+                continue
+            waiting = await DesktopChatInboxRepository.from_session(db).users_waiting(
+                [box.user_id], now - INBOX_HOLDS_AWAKE
+            )
+            if waiting:
+                # A message written in an app waits for this box (26 October
+                # 2026, `simeon.desktop.chats`): it stays awake to take it.
+                # One older than INBOX_HOLDS_AWAKE no longer holds it, so a
+                # message the box can't take never keeps it awake for good.
+                log.info("sand.box.sleep.deferred", box=str(box.id), reason="inbox")
                 continue
             try:
                 outcome = await self.hibernate(
@@ -1826,6 +1871,7 @@ __all__ = [
     "MigrationLog",
     "RecreateOutcome",
     "broker",
+    "lets_sleep",
     "mark_attached",
     "migrations",
     "set_health_check_for_tests",

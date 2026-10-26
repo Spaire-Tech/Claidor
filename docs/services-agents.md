@@ -175,8 +175,9 @@ there, and it answers there. The person makes the bot and gives Simeon its token
 
 **How it works.**
 
-- No server is in the path. The computer connects to Discord and Slack directly with the
-  person's own tokens.
+- Since 26 October 2026 the bot is listened to from Simeon Labs' server, so it hears its
+  messages while the computer sleeps (below, "Listened to from the server"). Without that, the
+  computer connects to Discord and Slack directly with the person's own tokens, as before.
 - App: `host/extensions/channels/`. `channel-runtime.ts` keeps one connector per agent and
   platform, and reconciles on every credential change and every 5 s. `discord-connector.ts`
   uses the Discord Gateway (v10) and REST; `slack-connector.ts` uses Socket Mode and the Web
@@ -188,18 +189,51 @@ there, and it answers there. The person makes the bot and gives Simeon its token
   token, `xoxb-…` bot token; `shared/channel-credential.ts`). In chat the agent asks for them
   as two secret requests.
 
-* **Settings on Render.** None.
+**Listened to from the server (26 October 2026).**
+
+- The computer hands its bots to the server (`channel-server.ts`, `POST /desktop/api/channels/sync`,
+  `server/simeon/desktop/channel_bots.py`): the whole list every 30 s and when it changes, each
+  bot with a fingerprint of its tokens. The tokens go only once the server has said it holds
+  bots, and only when it lacks them as they are. The server keeps them sealed
+  (`simeon.kit.sealed`, table `desktop_channel_bots`) and never logs them.
+- The cloud runner (`runner/src/channels/`) asks the API every 15 s which bots to hold
+  (`POST /maty/runner/channels`, behind its own token), keeps one connection per bot, and
+  reports each bot's state, and what it heard, at once (`POST /maty/runner/channels/report`).
+  What a bot heard goes to the inbox (`desktop_chat_inbox`, kind `channel`) and wakes the
+  computer (topic `chat-inbox`), at most 200 waiting per person.
+- The computer takes it from the inbox (`chat-copy/chat-inbox.ts`) and hands it to the agent
+  through the channels runtime (`receiveFromServer`), as its own connector would; a Slack reply
+  goes to the thread of the message heard. The reply goes out from the computer, over the
+  platform's API, with the same tokens.
+- Who listens, bot by bot: the runner, when the server holds the bot and the runner reported
+  on it in the last three minutes; else the computer, as before. So a runner that is down, or
+  a server that does not answer for three minutes, leaves each bot to the computer again.
+  While both listen (a hand-over), a message is known by its platform id on both sides and
+  reaches the agent once.
+- The Channels tab shows the runner's state for a bot it listens to, in the person's language.
+
+* **Settings on Render.** `SIMEON_CHANNELS_ON_SERVER` on the API (default `true`; `false` keeps
+  no bot token on the server, and each computer listens itself). It also needs the runner and
+  its token (`SIMEON_MATY_RUNNER_TOKEN`, §1). On the runner, `SIMEON_RUNNER_CHANNELS=0` stops it
+  listening. The runner's token can now read every bot's tokens through
+  `/maty/runner/channels`: keep it as secret as the API's own keys.
 * **App switch.** `SAND_CHANNELS_SERVED` (off marks every channel coming soon and removes the
-  `channel` target and the secret-request type).
+  `channel` target and the secret-request type). `SAND_CHANNELS_ON_SERVER=0` (or
+  `SAND_CHAT_COPY=0`) keeps every bot on the computer.
 * **Log lines.** Box:
-  `[simeon] channel=<discord|slack> agent=<id> event=connect|ready|inbound|delivery|delivery-failed|pending|error …`.
+  `[simeon] channel=<discord|slack> agent=<id> event=connect|ready|inbound|delivery|delivery-failed|pending|error …`,
+  and since 26 October 2026 `event=listened-by-server`, `event=stop reason=listened-by-server`
+  or `reason=listened-here`, `event=inbound … via=server`, `event=inbound-duplicate`, and
+  `channel=runtime … event=error detail="server sync failed: …"`.
   Tokens appear only as prefix and length. A Discord bot without the Message Content intent
-  closes with code 4014.
+  closes with code 4014. Server: `desktop.channels.synced`, `desktop.channels.dropped`,
+  `desktop.channels.inbound` (with `queued` and `dropped`). Runner: `channels: holding <id>`,
+  `let go of <id>`, `reported N heard`, and each bot's `discord …` or `slack …` lines.
 * **Known limits.** A Slack reply goes to the thread of the last inbound message in that chat.
   Discord has no thread routing. An https attachment is sent as a link; only a local file is
   uploaded. There is no hosted Simeon bot.
-* **Not yet verified.** No real Discord or Slack token has been used. Whether the Channels tab
-  shows the live status is not measured.
+* **Not yet verified.** No real Discord or Slack token has been used, by the computer or the
+  runner. Whether the Channels tab shows the live status is not measured.
 
 ## 5. Watching a video
 

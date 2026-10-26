@@ -57,6 +57,11 @@ export function discordInboundText(message: { content?: string; attachments?: { 
   return lines.filter((line) => line.length > 0).join("\n");
 }
 
+/** A reaction's id, the same one the cloud runner gives it (`runner/src/channels/discord.ts`). */
+export function discordReactionId(messageId: string, userId: string, emoji: string): string {
+  return `react:${messageId}:${userId}:${emoji}`;
+}
+
 export class DiscordConnector implements ChannelConnector {
   readonly platform = DISCORD_PLATFORM;
   private socket: ChannelSocket | null = null;
@@ -180,7 +185,7 @@ export class DiscordConnector implements ChannelConnector {
       const text = discordInboundText(data);
       if (text.length === 0) return;
       const timestampMs = typeof data.timestamp === "string" ? Date.parse(data.timestamp) : NaN;
-      const envelope = { address: { platform: DISCORD_PLATFORM, chat }, sender: discordSenderName(author, author?.id ?? "someone"), text, timestampMs: Number.isFinite(timestampMs) ? timestampMs : Date.now() };
+      const envelope = { address: { platform: DISCORD_PLATFORM, chat }, sender: discordSenderName(author, author?.id ?? "someone"), text, timestampMs: Number.isFinite(timestampMs) ? timestampMs : Date.now(), ...(typeof data.id === "string" ? { messageId: data.id } : {}) };
       this.log("inbound", { chat, sender: envelope.sender, chars: text.length, guild: typeof data.guild_id === "string" ? data.guild_id : "dm" });
       this.options.callbacks.onInbound(envelope);
       return;
@@ -192,9 +197,10 @@ export class DiscordConnector implements ChannelConnector {
       const chat = typeof data.channel_id === "string" ? data.channel_id : null;
       if (chat == null) return;
       const emoji = data.emoji?.name ?? "reaction";
-      const sender = discordSenderName(data.member?.user, typeof data.user_id === "string" ? data.user_id : "someone");
+      const userId = typeof data.user_id === "string" ? data.user_id : "someone";
+      const sender = discordSenderName(data.member?.user, userId);
       this.log("inbound", { chat, sender, reaction: emoji });
-      this.options.callbacks.onInbound({ address: { platform: DISCORD_PLATFORM, chat }, sender, text: "", timestampMs: Date.now(), reaction: { emoji } });
+      this.options.callbacks.onInbound({ address: { platform: DISCORD_PLATFORM, chat }, sender, text: "", timestampMs: Date.now(), reaction: { emoji }, ...(typeof data.message_id === "string" ? { messageId: discordReactionId(data.message_id, userId, emoji) } : {}) });
     }
   }
 

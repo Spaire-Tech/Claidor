@@ -39,6 +39,12 @@ describe('the settings', () => {
     expect(settings.pollIntervalMs).toBe(1234);
   });
 
+  test('listen to the agents\' bots unless switched off', () => {
+    expect(readSettings(enough).channels).toBe(true);
+    for (const off of ['0', 'off', 'false', 'no', 'OFF']) expect(readSettings({ ...enough, SIMEON_RUNNER_CHANNELS: off }).channels).toBe(false);
+    expect(readSettings({ ...enough, SIMEON_RUNNER_CHANNELS: '1' }).channels).toBe(true);
+  });
+
   test('refuse an interval that is not a positive number', () => {
     expect(() => readSettings({ ...enough, SIMEON_MATY_POLL_INTERVAL_MS: 'soon' })).toThrow(/positive number/);
     expect(() => readSettings({ ...enough, SIMEON_MATY_POLL_INTERVAL_MS: '-1' })).toThrow(/positive number/);

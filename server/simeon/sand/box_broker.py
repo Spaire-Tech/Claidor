@@ -270,6 +270,9 @@ async def ensure_sand_box(call: ConnectCall) -> dict[str, Any]:
         "imageUpdateAvailable": False,
         "gatewayUrl": box.gateway_url,
         "gatewayToken": box.gateway_token,
+        # An app built since 26 October 2026 lets the box sleep while it is
+        # open, and does not wake it until something needs it, when this says so.
+        "letsSleep": settings.BOX_SLEEPS_WITH_APP_OPEN,
     }
 
 
@@ -342,6 +345,11 @@ async def watch_sand_box_migration(call: ConnectCall) -> AsyncIterator[dict[str,
 
 @service.unary("GetSandBoxRunState", auth="desktop-or-box")
 async def get_sand_box_run_state(call: ConnectCall) -> dict[str, Any]:
+    if call.message.get("fromRecord") is True and not call.caller.is_box_credential:
+        # An app waiting for a sleeping box to wake asks every few seconds:
+        # the broker's record answers, the box's server is not asked.
+        state = await broker.recorded_run_state(call.db, call.caller.user_id)
+        return {"state": state, "imageUpdateAvailable": False}
     state, update_available = await broker.run_state(call.db, call.caller)
     return {"state": state, "imageUpdateAvailable": update_available}
 
