@@ -12,6 +12,7 @@ import { boxLifecycleExtension } from "./extensions/box-lifecycle/extension.js";
 import { boxStoreSyncExtension } from "./extensions/box-store-sync/extension.js";
 import { browserUaExtension } from "./extensions/browser-ua/extension.js";
 import { channelsExtension } from "./extensions/channels/extension.js";
+import { chatCopyExtension } from "./extensions/chat-copy/extension.js";
 import { cloudAgentsExtension } from "./extensions/cloud-agents/extension.js";
 import { codebaseTelemetryExtension } from "./extensions/codebase-telemetry/extension.js";
 import { contentSearchExtension } from "./extensions/content-search/extension.js";
@@ -129,7 +130,10 @@ export function createRecoveredProductionExtensionRegistry<Host extends { log(me
     [HostExtensions.MemorySync]: bind(memorySyncExtension),
     // The 36th slot, ours (25 September 2026): the Discord and Slack
     // connectors the transcript manager's channel hooks were waiting for.
-    [HostExtensions.Channels]: bind(channelsExtension)
+    [HostExtensions.Channels]: bind(channelsExtension),
+    // The 37th (26 October 2026): the agents and their chats copied to the
+    // server, where the apps read them while the computer is away.
+    [HostExtensions.ChatCopy]: bind(chatCopyExtension)
   };
 }
 
