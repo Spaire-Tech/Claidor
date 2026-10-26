@@ -24,6 +24,8 @@ from .customer_session import CustomerSession
 from .customer_session_code import CustomerSessionCode
 from .desktop import (
     DesktopAuthCode,
+    DesktopChatAgent,
+    DesktopChatLine,
     DesktopMemoryFile,
     DesktopSession,
     DesktopUsage,
@@ -166,6 +168,8 @@ __all__ = [
     "DesktopAppStoreSubscription",
     "DesktopFreeTrial",
     "DesktopAuthCode",
+    "DesktopChatAgent",
+    "DesktopChatLine",
     "DesktopLinkWallet",
     "DesktopMemoryFile",
     "DesktopSession",

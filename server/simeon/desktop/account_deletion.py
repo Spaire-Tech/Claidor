@@ -15,9 +15,10 @@ in this order:
    Link's grant is revoked at Link (`link_wallet.disconnect`), each voice call's transcript is deleted at the voice provider, and a
    Sign in with Apple is revoked at Apple (Apple asks this of every app
    that offers it, 12 October 2026).
-4. The rows: memory, call records, routines, listeners, sharing, cloud
-   agents, the person's own skills (and their archives in file storage),
-   the computers' rows, and every session, so every device is signed out.
+4. The rows: memory, the copy of the agents and their chats, call records,
+   routines, listeners, sharing, cloud agents, the person's own skills (and
+   their archives in file storage), the computers' rows, and every session,
+   so every device is signed out.
 5. The user is anonymised by the inherited `soft_delete_user` (email,
    picture, name gone; sign-in accounts and push devices deleted).
 

@@ -23,23 +23,34 @@ One more table carries the shared memory (`docs/maties/cloud.md`):
   the app on a computer, and later the cloud runner — read it before
   they work and write it after, so a person with two machines has one
   assistant instead of two strangers.
+
+And two the copy of the agents and their chats (26 October 2026, the
+computer as a worker; `simeon.desktop.chats`):
+
+- `DesktopChatAgent`: one row per person per agent, as their computer
+  last listed it.
+- `DesktopChatLine`: one row per line of an agent's chat, its newest
+  lines only, as the computer wrote it.
 """
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 from sqlalchemy import (
     CHAR,
     TIMESTAMP,
+    BigInteger,
     Boolean,
     ForeignKey,
+    Index,
     Integer,
     String,
     Text,
     UniqueConstraint,
     Uuid,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, declared_attr, mapped_column, relationship
 
 from simeon.kit.db.models import RecordModel
@@ -248,6 +259,58 @@ class DesktopMemoryFile(RecordModel):
     name: Mapped[str] = mapped_column(Text, nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False, default="")
     version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+
+
+class DesktopChatAgent(RecordModel):
+    """One agent of one person, as their computer last listed it (26
+    October 2026, the computer as a worker).
+
+    The apps read the agents' list from the computer, so with the
+    computer asleep or being updated they had nothing to show. The
+    computer now sends its list here (`host/extensions/chat-copy/`) and
+    the apps read it while the computer is away (`simeon.desktop.chats`).
+    The row is the computer's own (`listAgents`), without its inline
+    picture and without what the agent was doing at that moment, which
+    a list read later would show as still going.
+    """
+
+    __tablename__ = "desktop_chat_agents"
+    __table_args__ = (UniqueConstraint("user_id", "agent_id"),)
+
+    user_id: Mapped[UUID] = mapped_column(
+        Uuid, ForeignKey("users.id", ondelete="cascade"), nullable=False, index=True
+    )
+    agent_id: Mapped[str] = mapped_column(String(200), nullable=False)
+    row: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+
+
+class DesktopChatLine(RecordModel):
+    """One line of one agent's chat, as the computer wrote it (26 October
+    2026): a message, a card, a file, a notice, in the shape the apps read
+    from the computer (`entry`). Only an agent's newest lines are kept
+    (`simeon.desktop.chats.LINES_KEPT`); older ones stay on the computer.
+    `at_ms` orders them: the line's own time (`timestampMs`), or when it
+    first came for a line without one.
+    """
+
+    __tablename__ = "desktop_chat_lines"
+    __table_args__ = (
+        UniqueConstraint("user_id", "agent_id", "entry_id"),
+        Index(
+            "ix_desktop_chat_lines_user_id_agent_id_at_ms",
+            "user_id",
+            "agent_id",
+            "at_ms",
+        ),
+    )
+
+    user_id: Mapped[UUID] = mapped_column(
+        Uuid, ForeignKey("users.id", ondelete="cascade"), nullable=False, index=True
+    )
+    agent_id: Mapped[str] = mapped_column(String(200), nullable=False)
+    entry_id: Mapped[str] = mapped_column(String(300), nullable=False)
+    at_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    entry: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
 
 
 class DesktopVoiceCall(RecordModel):
