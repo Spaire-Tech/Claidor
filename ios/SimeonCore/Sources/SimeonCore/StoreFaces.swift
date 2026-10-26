@@ -30,7 +30,8 @@ extension AppStore {
 
   /** On a roster change: a pass when an agent lacks a face and none has been sent for it. */
   func queueFaces() {
-    guard givingFaces == nil, backend != nil else { return }
+    // Not on the list kept on this device: it may hold an agent deleted since, and the computer's own list follows.
+    guard givingFaces == nil, backend != nil, !showingSaved else { return }
     guard agents.contains(where: { !$0.isGroup && !$0.isRemoteRoom && !$0.hasPicture && !facesSent.contains($0.id) }) else { return }
     givingFaces = Task { [weak self] in
       await self?.giveMissingFaces()

@@ -1135,10 +1135,37 @@ The runtime is the cloud (`remote`) unless `SAND_BOX_RUNTIME=local-docker`,
 which selects the Docker box on the Mac for testing only. A value saved in
 settings is not read (`desktop/source/shared/box-runtime.ts`).
 
+**What the apps keep (26 October 2026).** The iPhone and Mac apps keep the
+agents' list and each chat opened on the device, as the computer sent them
+(`ios/SimeonCore/Sources/SimeonCore/SavedChats.swift`, `StoreSaved.swift`),
+so the computer asleep, updated or out of reach no longer leaves the app
+empty:
+
+- At launch the list shows at once from the kept copy, and a chat its kept
+  lines when opened; the computer's copy replaces them when it answers. The
+  Mac shows its window at once instead of "Setting up Simeon's computer".
+- Kept: what the computer sent in this sign-in, a moment after each change
+  and when the app goes behind (or quits, on the Mac). A chat keeps its
+  newest 300 lines, 100 when those pass 2 MB. Not kept: what was going on at
+  that moment (a turn running, typing).
+- Under the app's caches, in `saved-chats/`; the system may clear them, and
+  the app then waits for the computer as before. One account's: signing out
+  (or the sign-in ending, or Delete Account) removes them, and a copy kept
+  for another account is never shown.
+- "Reconnecting" shows only while a message waits to be sent ("Will send
+  when reconnected"). "Reconnecting to your computer…" under the list and
+  "Couldn't Reach Simeon's Computer" after two minutes are as before.
+
+This is the first step of the computer as a worker (the founder, 26 October
+2026); the server holding the chats and the agents is not done yet.
+
 ### When it misbehaves
 
 - On the API:
-  - `sand.box.ensure` shows the box, server, `created` and `ready`.
+  - `sand.box.ensure` shows the box, server, `created` and `ready`. When it
+    woke a sleeping box, also `woke=True`, `start_ms` (the server starting
+    it: E2B's resume, Docker's start) and `wake_ms` (until the box answered
+    its health check): what waking costs, measured (26 October 2026).
   - `sand.box.ensure.refused` says what is missing.
   - `sand.box.ensure.recreate` gives the reason with `stale_host` or
     `stale_image`. `credential_live=False` there is now rare: a sign-in after a
@@ -1177,7 +1204,8 @@ settings is not read (`desktop/source/shared/box-runtime.ts`).
   lines in `/tmp/sand-host.log`, and the copy itself in `/tmp/sand-copy-in.log`
   (`[box-copy-in] result outcome=hydrated`).
 - On the worker: `sand.box.hibernated`, `sand.box.sleeper`,
-  `sand.box.sleep.failed`, `sand.box.woken`, `sand.box.wake.deferred`.
+  `sand.box.sleep.failed`, `sand.box.woken` (with `start_ms`, the server
+  starting it), `sand.box.wake.deferred`.
 - In the box, `/tmp/sand-host.log`:
   - `[simeon] box-stream guarded on …` shows the stream guard is up.
   - `inference credential renewed with the box's own credential` shows the

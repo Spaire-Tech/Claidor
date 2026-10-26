@@ -80,8 +80,14 @@ final class MacServices {
         }
       })
       DispatchQueue.main.async { MacServices.shared.removeHelpMenu() }
-      // Quitting stops the hands (decision 3: they live in the app, where the Electron daemon kept serving).
-      appWatch.append(NotificationCenter.default.addObserver(forName: NSApplication.willTerminateNotification, object: nil, queue: .main) { _ in
+      // Quitting stops the hands (decision 3: they live in the app, where the Electron daemon kept serving), and keeps on this Mac
+      // what changed in the agents and chats (SavedChats), written before the app goes.
+      appWatch.append(NotificationCenter.default.addObserver(forName: NSApplication.willTerminateNotification, object: nil, queue: .main) { [weak self] _ in
+        MainActor.assumeIsolated {
+          guard let store = self?.session?.store else { return }
+          store.saveNow()
+          store.saved?.waitForWrites()
+        }
         let done = DispatchSemaphore(value: 0)
         Task.detached {
           await MacLocalHands.shared.stopAndWait()
