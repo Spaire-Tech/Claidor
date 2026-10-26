@@ -20,6 +20,7 @@ from pytest_mock import MockerFixture
 from structlog.testing import capture_logs
 
 from simeon.config import settings
+from simeon.desktop.chat_repository import DesktopChatInboxRepository
 from simeon.kit.utils import utc_now
 from simeon.models import SandBox, User
 from simeon.postgres import AsyncSession
@@ -251,6 +252,40 @@ class TestSleep:
         assert await broker.hibernate_idle(session, redis) == []
         assert host.boxes[box.provider_box_id]["running"] is True
         await _age(session, box, 31)
+        assert await broker.hibernate_idle(session, redis) == [box.id]
+
+    async def test_a_message_waiting_for_the_box_keeps_it_awake_an_hour(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        redis: Redis,
+        host: FakeBoxHost,
+        health: dict[str, BoxHealth],
+    ) -> None:
+        _, box = await _awake_box(client, session, user)
+        await _age(session, box, 31)
+        inbox = DesktopChatInboxRepository.from_session(session)
+        await inbox.add(
+            user.id,
+            agent_id="theo",
+            nonce="m1",
+            kind="prompt",
+            message={"prompt": "Hi"},
+        )
+        await session.flush()
+
+        with capture_logs() as logs:
+            assert await broker.hibernate_idle(session, redis) == []
+        assert host.boxes[box.provider_box_id]["running"] is True
+        assert {"event": "sand.box.sleep.deferred", "reason": "inbox"}.items() <= next(
+            line for line in logs if line["event"] == "sand.box.sleep.deferred"
+        ).items()
+
+        # One written over an hour ago no longer holds it.
+        (waiting,) = await inbox.waiting(user.id, 10)
+        waiting.created_at = utc_now() - timedelta(minutes=61)
+        await session.flush()
         assert await broker.hibernate_idle(session, redis) == [box.id]
 
     async def test_an_unreachable_idle_box_sleeps(
@@ -610,6 +645,10 @@ class TestWake:
         await redis.delete(f"sand:box:wake-asked:{user.id}")
         await notify.publish(redis, user.id, "xuser-events")
         assert enqueued.call_count == 2
+        # A message waiting for the box (26 October 2026) wakes it too.
+        await redis.delete(f"sand:box:wake-asked:{user.id}")
+        await notify.publish(redis, user.id, "chat-inbox")
+        assert enqueued.call_count == 3
 
 
 @pytest.mark.asyncio

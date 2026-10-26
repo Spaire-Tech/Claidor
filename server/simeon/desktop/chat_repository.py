@@ -1,10 +1,11 @@
-"""The queries behind the copy of the agents and their chats
-(`chats.py`, 26 October 2026)."""
+"""The queries behind the copy of the agents and their chats, and the
+messages waiting for the computer (`chats.py`, 26 October 2026)."""
 
 from __future__ import annotations
 
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any
 from uuid import UUID
 
@@ -13,7 +14,7 @@ from sqlalchemy.dialects.postgresql import insert
 
 from simeon.kit.repository import RepositoryBase
 from simeon.kit.utils import generate_uuid, utc_now
-from simeon.models import DesktopChatAgent, DesktopChatLine
+from simeon.models import DesktopChatAgent, DesktopChatInbox, DesktopChatLine
 
 
 @dataclass(frozen=True)
@@ -190,3 +191,97 @@ class DesktopChatLineRepository(RepositoryBase[DesktopChatLine]):
             DesktopChatLine.user_id == user_id, DesktopChatLine.agent_id == agent_id
         )
         return int((await self.session.execute(statement)).scalar_one())
+
+
+class DesktopChatInboxRepository(RepositoryBase[DesktopChatInbox]):
+    model = DesktopChatInbox
+
+    async def add(
+        self,
+        user_id: UUID,
+        *,
+        agent_id: str,
+        nonce: str,
+        kind: str,
+        message: dict[str, Any],
+    ) -> bool:
+        """The message kept until the computer takes it. A nonce already
+        waiting is left as it is (the app sent it twice): answers whether
+        this one is new."""
+        statement = (
+            insert(DesktopChatInbox)
+            .values(
+                id=generate_uuid(),
+                created_at=utc_now(),
+                user_id=user_id,
+                agent_id=agent_id,
+                nonce=nonce,
+                kind=kind,
+                message=message,
+            )
+            .on_conflict_do_nothing(
+                index_elements=[DesktopChatInbox.user_id, DesktopChatInbox.nonce]
+            )
+            .returning(DesktopChatInbox.id)
+        )
+        added = (await self.session.execute(statement)).scalar_one_or_none()
+        return added is not None
+
+    async def count_waiting(self, user_id: UUID) -> int:
+        statement = select(func.count()).where(DesktopChatInbox.user_id == user_id)
+        return int((await self.session.execute(statement)).scalar_one())
+
+    async def waiting(self, user_id: UUID, limit: int) -> list[DesktopChatInbox]:
+        """The person's waiting messages, oldest first: the order they were
+        written in."""
+        statement = (
+            self.get_base_statement()
+            .where(DesktopChatInbox.user_id == user_id)
+            .order_by(DesktopChatInbox.created_at, DesktopChatInbox.id)
+            .limit(limit)
+        )
+        return list(await self.get_all(statement))
+
+    async def remove(self, user_id: UUID, ids: Iterable[UUID]) -> int:
+        """The messages the computer took; another person's ids are not
+        touched. Answers how many went."""
+        wanted = list(ids)
+        if not wanted:
+            return 0
+        statement = (
+            delete(DesktopChatInbox)
+            .where(DesktopChatInbox.user_id == user_id, DesktopChatInbox.id.in_(wanted))
+            .returning(DesktopChatInbox.id)
+        )
+        return len((await self.session.execute(statement)).all())
+
+    async def remove_older_than(self, user_id: UUID, before: datetime) -> int:
+        """The person's messages written before `before`: no computer took
+        them (an agent deleted meanwhile, an engine too old to know them)."""
+        statement = (
+            delete(DesktopChatInbox)
+            .where(
+                DesktopChatInbox.user_id == user_id,
+                DesktopChatInbox.created_at < before,
+            )
+            .returning(DesktopChatInbox.id)
+        )
+        return len((await self.session.execute(statement)).all())
+
+    async def users_waiting(
+        self, user_ids: Iterable[UUID], since: datetime
+    ) -> set[UUID]:
+        """Which of these people have a message waiting, written after
+        `since`: their computer stays awake to take it."""
+        wanted = list(user_ids)
+        if not wanted:
+            return set()
+        statement = (
+            select(DesktopChatInbox.user_id)
+            .where(
+                DesktopChatInbox.user_id.in_(wanted),
+                DesktopChatInbox.created_at >= since,
+            )
+            .distinct()
+        )
+        return set((await self.session.execute(statement)).scalars().all())

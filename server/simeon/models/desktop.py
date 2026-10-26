@@ -313,6 +313,30 @@ class DesktopChatLine(RecordModel):
     entry: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
 
 
+class DesktopChatInbox(RecordModel):
+    """A message for one of a person's agents, waiting for their computer
+    (26 October 2026, the computer as a worker): written in an app while the
+    computer was asleep or out of reach. The computer is woken, takes it
+    (`simeon.desktop.chats`, `host/extensions/chat-copy/chat-inbox.ts`) and
+    hands it to the agent as if the app had sent it; the row goes once it
+    has. `nonce` is the app's own id for the message, which the computer
+    keeps on the line it writes, so a message sent both ways lands once.
+    `kind` is `prompt` (a message written in an app); `message` is what the
+    app would have sent the computer (`sendPrompt`).
+    """
+
+    __tablename__ = "desktop_chat_inbox"
+    __table_args__ = (UniqueConstraint("user_id", "nonce"),)
+
+    user_id: Mapped[UUID] = mapped_column(
+        Uuid, ForeignKey("users.id", ondelete="cascade"), nullable=False, index=True
+    )
+    agent_id: Mapped[str] = mapped_column(String(200), nullable=False)
+    nonce: Mapped[str] = mapped_column(String(200), nullable=False)
+    kind: Mapped[str] = mapped_column(String(20), nullable=False)
+    message: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+
+
 class DesktopVoiceCall(RecordModel):
     """One voice call the app placed to an agent, once it was billed.
 

@@ -32,6 +32,7 @@ import structlog
 from sqlalchemy import text
 
 from simeon.config import settings
+from simeon.desktop.chat_repository import DesktopChatInboxRepository
 from simeon.desktop.repository import DesktopSessionRepository
 from simeon.desktop.service import DesktopUnauthenticated, desktop
 from simeon.desktop.tokens import (
@@ -421,6 +422,11 @@ UPDATE_RETRY_SECONDS = 600
 # away for two minutes came back to a computer being swapped, and what they
 # sent meanwhile reached a sandbox that no longer existed.
 UPDATE_QUIET = timedelta(minutes=10)
+
+# A message written in an app and waiting on the server for the box keeps
+# it awake for this long after it was written (26 October 2026): long enough
+# for a box that is still starting its agents to take it.
+INBOX_HOLDS_AWAKE = timedelta(hours=1)
 
 
 def update_key(box_id: UUID) -> str:
@@ -1614,6 +1620,16 @@ class BoxBrokerService:
                     # Sent already: one the update could not replace still
                     # sleeps by the usual rule, rather than stay awake.
             if now - idle_since < idle_after:
+                continue
+            waiting = await DesktopChatInboxRepository.from_session(db).users_waiting(
+                [box.user_id], now - INBOX_HOLDS_AWAKE
+            )
+            if waiting:
+                # A message written in an app waits for this box (26 October
+                # 2026, `simeon.desktop.chats`): it stays awake to take it.
+                # One older than INBOX_HOLDS_AWAKE no longer holds it, so a
+                # message the box can't take never keeps it awake for good.
+                log.info("sand.box.sleep.deferred", box=str(box.id), reason="inbox")
                 continue
             try:
                 outcome = await self.hibernate(

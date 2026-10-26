@@ -22,6 +22,16 @@ computer wrote them (a line still being written, as finished). A line larger
 than `LINE_MAX_BYTES` is not kept; the computer still has it. An agent no
 longer in the list takes its chat with it. Nothing of a chat goes to the
 log. Delete Account removes all of it (`account_repository.py`).
+
+Messages written while the computer is away land here too (the inbox):
+
+- `POST /desktop/api/chats/send`, from the apps: a message for an agent,
+  with what `sendPrompt` would have taken. It is kept, and the computer is
+  woken to take it (`simeon.sand.notify.publish`, topic `chat-inbox`).
+- `GET /desktop/api/chats/inbox`, from the computer: the messages waiting,
+  oldest first.
+- `POST /desktop/api/chats/inbox/ack`, from the computer: the ones it handed
+  to their agents, which go.
 """
 
 from __future__ import annotations
@@ -29,20 +39,26 @@ from __future__ import annotations
 import json
 import math
 from collections import defaultdict
+from datetime import timedelta
 from typing import Any
+from uuid import UUID
 
 import structlog
 from fastapi import Depends, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 
+from simeon.kit.utils import utc_now
 from simeon.models import DesktopSession, User
 from simeon.postgres import AsyncSession, get_db_session
+from simeon.redis import Redis, get_redis
 from simeon.routing import APIRouter
+from simeon.sand.notify import publish
 
 from .auth import get_desktop_or_box_session, get_desktop_session
 from .chat_repository import (
     DesktopChatAgentRepository,
+    DesktopChatInboxRepository,
     DesktopChatLineRepository,
     IncomingLine,
 )
@@ -71,6 +87,16 @@ ENTRY_ID_MAX = 300
 MOMENT_FIELDS = frozenset(
     {"isRunningTurn", "isRunning", "isComposingMessage", "currentActivity"}
 )
+
+#: A waiting message larger than this stays on the device that wrote it.
+MESSAGE_MAX_BYTES = 512 * 1024
+#: At most this many messages wait for one person's computer.
+WAITING_MAX = 200
+#: At most this many waiting messages in one read, and ids in one ack.
+INBOX_READ_MAX = 50
+#: A message no computer took in this long goes (an agent deleted meanwhile).
+INBOX_KEPT = timedelta(days=7)
+NONCE_MAX = 200
 
 
 class ChatLine(BaseModel):
@@ -254,3 +280,152 @@ async def chats_lines(
             "data": {"entries": [row.entry for row in rows], "hasOlder": has_older},
         }
     )
+
+
+class InboxSendBody(BaseModel):
+    """A message for an agent, in `sendPrompt`'s own names (the apps send
+    what they would have sent the computer, `LiveBackend.sendArguments`),
+    so the computer hands it on exactly as written."""
+
+    model_config = ConfigDict(extra="ignore")
+    agentId: str = Field(min_length=1, max_length=AGENT_ID_MAX)
+    clientNonce: str = Field(min_length=1, max_length=NONCE_MAX)
+    prompt: str
+    richText: str | None = None
+    replyToId: str | None = Field(default=None, min_length=1, max_length=ENTRY_ID_MAX)
+    isFork: bool = False
+    composedAtMs: float | None = None
+    attachmentPaths: list[str] = Field(default_factory=list)
+
+
+class InboxAckBody(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    ids: list[str] = Field(default_factory=list, max_length=INBOX_READ_MAX)
+
+
+def _refuse(message: str, status: int) -> JSONResponse:
+    """A refusal in the app's envelope (`SimeonAPI.data` reads `message`):
+    the app keeps the message on the device, as before."""
+    return JSONResponse({"code": status, "message": message}, status_code=status)
+
+
+def waiting_message(body: InboxSendBody) -> dict[str, Any] | JSONResponse:
+    """What is kept of a message, exactly as written (the computer knows a
+    message sent both ways by its words as well as its nonce); or the
+    refusal, for one that can't wait here."""
+    if body.attachmentPaths:
+        return _refuse("A message with files waits for your computer.", 422)
+    if not body.prompt.strip():
+        return _refuse("There is nothing to send.", 422)
+    message: dict[str, Any] = {"prompt": body.prompt}
+    if body.richText:
+        message["richText"] = body.richText
+    if body.replyToId is not None:
+        message["replyToId"] = body.replyToId
+    if body.isFork:
+        message["isFork"] = True
+    stamp = body.composedAtMs
+    if stamp is not None and math.isfinite(stamp) and 0 < stamp < 1e15:
+        message["composedAtMs"] = stamp
+    # PostgreSQL's JSONB refuses a NUL, and taking it out would change the
+    # words: such a message stays on the device.
+    if any(
+        "\x00" in text for text in (body.agentId, body.clientNonce, *_texts(message))
+    ):
+        return _refuse("This message can't wait on the server.", 422)
+    if _size(message) > MESSAGE_MAX_BYTES:
+        return _refuse("This message is too long to wait on the server.", 413)
+    return message
+
+
+def _texts(message: dict[str, Any]) -> list[str]:
+    return [value for value in message.values() if isinstance(value, str)]
+
+
+@router.post("/api/chats/send", name="desktop:chats_send")
+async def chats_send(
+    body: InboxSendBody,
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+    session: AsyncSession = Depends(get_db_session),
+    redis: Redis = Depends(get_redis),
+) -> JSONResponse:
+    message = waiting_message(body)
+    if isinstance(message, JSONResponse):
+        return message
+    user_id = desktop_session.user_id
+    inbox = DesktopChatInboxRepository.from_session(session)
+    waiting = await inbox.count_waiting(user_id)
+    if waiting >= WAITING_MAX:
+        return _refuse("Too many messages are waiting for your computer.", 429)
+    added = await inbox.add(
+        user_id,
+        agent_id=body.agentId,
+        nonce=body.clientNonce,
+        kind="prompt",
+        message=message,
+    )
+    # The computer, awake, takes it now; asleep, it is woken and takes it
+    # as it starts. The row lands when this request commits: a computer
+    # woken first looks again a moment later (`chat-inbox.ts`).
+    await publish(redis, user_id, "chat-inbox")
+    log.info(
+        "desktop.chats.inbox.queued",
+        user_id=str(user_id),
+        added=added,
+        waiting=waiting + (1 if added else 0),
+    )
+    return JSONResponse({"code": 0, "data": {"queued": True}})
+
+
+@router.get("/api/chats/inbox", name="desktop:chats_inbox")
+async def chats_inbox(
+    limit: int = Query(default=INBOX_READ_MAX, ge=1, le=INBOX_READ_MAX),
+    desktop_session: DesktopSession = Depends(get_desktop_or_box_session),
+    session: AsyncSession = Depends(get_db_session),
+) -> JSONResponse:
+    inbox = DesktopChatInboxRepository.from_session(session)
+    expired = await inbox.remove_older_than(
+        desktop_session.user_id, utc_now() - INBOX_KEPT
+    )
+    if expired:
+        log.info(
+            "desktop.chats.inbox.expired",
+            user_id=str(desktop_session.user_id),
+            removed=expired,
+        )
+    rows = await inbox.waiting(desktop_session.user_id, limit)
+    messages = [
+        {
+            "id": str(row.id),
+            "agentId": row.agent_id,
+            "nonce": row.nonce,
+            "kind": row.kind,
+            "message": row.message,
+            "atMs": int(row.created_at.timestamp() * 1000),
+        }
+        for row in rows
+    ]
+    return JSONResponse({"code": 0, "data": {"messages": messages}})
+
+
+@router.post("/api/chats/inbox/ack", name="desktop:chats_inbox_ack")
+async def chats_inbox_ack(
+    body: InboxAckBody,
+    desktop_session: DesktopSession = Depends(get_desktop_or_box_session),
+    session: AsyncSession = Depends(get_db_session),
+) -> JSONResponse:
+    ids: list[UUID] = []
+    for raw in body.ids:
+        try:
+            ids.append(UUID(raw))
+        except ValueError:
+            continue
+    removed = await DesktopChatInboxRepository.from_session(session).remove(
+        desktop_session.user_id, ids
+    )
+    log.info(
+        "desktop.chats.inbox.delivered",
+        user_id=str(desktop_session.user_id),
+        removed=removed,
+    )
+    return JSONResponse({"code": 0, "data": {"removed": removed}})

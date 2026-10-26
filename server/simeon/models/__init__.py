@@ -25,6 +25,7 @@ from .customer_session_code import CustomerSessionCode
 from .desktop import (
     DesktopAuthCode,
     DesktopChatAgent,
+    DesktopChatInbox,
     DesktopChatLine,
     DesktopMemoryFile,
     DesktopSession,
@@ -169,6 +170,7 @@ __all__ = [
     "DesktopFreeTrial",
     "DesktopAuthCode",
     "DesktopChatAgent",
+    "DesktopChatInbox",
     "DesktopChatLine",
     "DesktopLinkWallet",
     "DesktopMemoryFile",

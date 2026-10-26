@@ -4,6 +4,7 @@ away; each person's own, the newest lines only, nothing of the moment."""
 
 from __future__ import annotations
 
+from datetime import timedelta
 from typing import Any
 
 import httpx
@@ -11,6 +12,8 @@ import pytest
 from pytest_mock import MockerFixture
 
 from simeon.desktop import chats
+from simeon.desktop.chat_repository import DesktopChatInboxRepository
+from simeon.kit.utils import utc_now
 from simeon.models import User
 from simeon.postgres import AsyncSession
 
@@ -300,3 +303,156 @@ class TestChatCopy:
         assert (
             await client.get(LINES, params={"agentId": "theo"}, headers=box)
         ).status_code == 401
+
+
+SEND = "/desktop/api/chats/send"
+INBOX = "/desktop/api/chats/inbox"
+ACK = "/desktop/api/chats/inbox/ack"
+
+
+def _send_args(nonce: str, prompt: str, **more: Any) -> dict[str, Any]:
+    """What the apps send: `sendPrompt`'s own arguments
+    (`LiveBackend.sendArguments`)."""
+    return {
+        "agentId": "theo",
+        "prompt": prompt,
+        "attachmentPaths": [],
+        "attachmentNames": [],
+        "clientNonce": nonce,
+        "directAddressedAcceptance": True,
+        **more,
+    }
+
+
+@pytest.fixture
+def published(mocker: MockerFixture) -> Any:
+    return mocker.patch.object(chats, "publish", new=mocker.AsyncMock())
+
+
+async def _waiting(client: httpx.AsyncClient, box: dict[str, str]) -> list[Any]:
+    response = await client.get(INBOX, headers=box)
+    assert response.status_code == 200, response.text
+    return response.json()["data"]["messages"]
+
+
+@pytest.mark.asyncio
+class TestChatInbox:
+    async def test_a_message_waits_as_written_and_the_computer_takes_it(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        published: Any,
+    ) -> None:
+        app, box = await _signed_in_with_box(client, session, user)
+        args = _send_args(
+            "ios-1",
+            "  Book the table \n",
+            richText='{"type":"doc"}',
+            replyToId="e7",
+            isFork=True,
+            composedAtMs=1_750_000_000_000,
+        )
+        answer = await client.post(SEND, json=args, headers=app)
+        assert answer.status_code == 200, answer.text
+        assert answer.json() == {"code": 0, "data": {"queued": True}}
+        published.assert_awaited_once()
+        assert published.await_args.args[1:] == (user.id, "chat-inbox")
+        # Sent again (a retry): it waits once.
+        assert (await client.post(SEND, json=args, headers=app)).status_code == 200
+        await client.post(SEND, json=_send_args("ios-2", "Then call Iris"), headers=app)
+
+        (first, second) = await _waiting(client, box)
+        # Exactly as written: the computer knows a message sent both ways by
+        # its words as well as its nonce.
+        assert first["agentId"] == "theo"
+        assert first["nonce"] == "ios-1"
+        assert first["kind"] == "prompt"
+        assert first["message"] == {
+            "prompt": "  Book the table \n",
+            "richText": '{"type":"doc"}',
+            "replyToId": "e7",
+            "isFork": True,
+            "composedAtMs": 1_750_000_000_000,
+        }
+        assert second["message"] == {"prompt": "Then call Iris"}
+
+        taken = await client.post(ACK, json={"ids": [first["id"]]}, headers=box)
+        assert taken.json() == {"code": 0, "data": {"removed": 1}}
+        assert [message["nonce"] for message in await _waiting(client, box)] == [
+            "ios-2"
+        ]
+        # One no computer took in a week goes.
+        (row,) = await DesktopChatInboxRepository.from_session(session).waiting(
+            user.id, 10
+        )
+        row.created_at = utc_now() - timedelta(days=8)
+        await session.flush()
+        assert await _waiting(client, box) == []
+
+    async def test_what_cannot_wait_is_refused_and_stays_on_the_device(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        published: Any,
+        mocker: MockerFixture,
+    ) -> None:
+        app, box = await _signed_in_with_box(client, session, user)
+
+        async def refused(body: dict[str, Any]) -> int:
+            response = await client.post(SEND, json=body, headers=app)
+            assert response.json()["message"], response.text
+            return response.status_code
+
+        assert (
+            await refused(_send_args("f", "A file", attachmentPaths=["/a.png"])) == 422
+        )
+        assert await refused(_send_args("e", "   ")) == 422
+        assert await refused(_send_args("n", "Hi\x00there")) == 422
+        mocker.patch.object(chats, "MESSAGE_MAX_BYTES", 100)
+        assert await refused(_send_args("l", "x" * 200)) == 413
+        mocker.patch.object(chats, "WAITING_MAX", 1)
+        assert (
+            await client.post(SEND, json=_send_args("a", "One"), headers=app)
+        ).status_code == 200
+        assert await refused(_send_args("b", "Two")) == 429
+        assert [message["nonce"] for message in await _waiting(client, box)] == ["a"]
+
+    async def test_each_persons_messages_are_their_own(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        user_second: User,
+        published: Any,
+    ) -> None:
+        app, _ = await _signed_in_with_box(client, session, user)
+        _, other_box = await _signed_in_with_box(client, session, user_second)
+        await client.post(SEND, json=_send_args("ios-1", "Private"), headers=app)
+        assert await _waiting(client, other_box) == []
+        _, box = await _signed_in_with_box(client, session, user)
+        (mine,) = await _waiting(client, box)
+        # Another person's computer can't take it away.
+        gone = await client.post(
+            ACK, json={"ids": [mine["id"], "not-an-id"]}, headers=other_box
+        )
+        assert gone.json()["data"]["removed"] == 0
+        assert len(await _waiting(client, box)) == 1
+
+    async def test_sending_is_the_apps_and_needs_a_sign_in(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        published: Any,
+    ) -> None:
+        _, box = await _signed_in_with_box(client, session, user)
+        assert (await client.post(SEND, json=_send_args("a", "Hi"))).status_code == 401
+        assert (await client.get(INBOX)).status_code == 401
+        assert (await client.post(ACK, json={"ids": []})).status_code == 401
+        # The computer takes messages; it does not write them.
+        assert (
+            await client.post(SEND, json=_send_args("a", "Hi"), headers=box)
+        ).status_code == 401
+        published.assert_not_awaited()

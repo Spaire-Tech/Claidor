@@ -21,6 +21,7 @@ from simeon.kit.db.postgres import create_async_engine
 from simeon.kit.utils import utc_now
 from simeon.models import (
     DesktopChatAgent,
+    DesktopChatInbox,
     DesktopChatLine,
     DesktopMemoryFile,
     DesktopSession,
@@ -88,6 +89,15 @@ class TestDeleteAccount:
                 entry={"id": "u1", "kind": "message", "content": "Book it"},
             )
         )
+        session.add(
+            DesktopChatInbox(
+                user_id=user.id,
+                agent_id="theo",
+                nonce="ios-1",
+                kind="prompt",
+                message={"prompt": "Call me"},
+            )
+        )
         await session.commit()
         voice = FakeVoice()
         mocker.patch.object(voice_module, "client", return_value=voice)
@@ -113,6 +123,7 @@ class TestDeleteAccount:
             DesktopVoiceCall,
             DesktopChatAgent,
             DesktopChatLine,
+            DesktopChatInbox,
             SandBox,
             DesktopSession,
         ):
