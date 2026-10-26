@@ -488,6 +488,11 @@ _move_held: dict[UUID, float] = {}
 # were not sent yet; a box that was found stopped records when.
 
 
+def _ms_since(started: float) -> int:
+    """Milliseconds since `started`, a `time.monotonic()` reading."""
+    return round((time.monotonic() - started) * 1000)
+
+
 def mark_running(box: SandBox, now: datetime | None = None) -> None:
     """The box runs from `now` (a wake, a start, a new container)."""
     now = now or utc_now()
@@ -949,6 +954,10 @@ class BoxBrokerService:
             # Raises the app's one sentence when no server is configured.
             await resolve_box_hosts()
         created = False
+        # A sleeping box started here: when, and how long its server took to
+        # start it (E2B's resume).
+        woke: float | None = None
+        start_ms: int | None = None
         if box is not None and host is not None:
             moved_to = await self._move_if_listed(
                 db, repository, parent, box, host, committed=committed
@@ -1058,7 +1067,9 @@ class BoxBrokerService:
                     created = True
             elif state == "stopped":
                 await self.check_capacity(repository, host, box)
+                woke = time.monotonic()
                 await host.start(box.provider_box_id)
+                start_ms = _ms_since(woke)
                 inspected = await host.inspect(box.provider_box_id)
                 if inspected is not None:
                     self._apply(box, inspected)
@@ -1130,6 +1141,13 @@ class BoxBrokerService:
         # same person then blocked on that lock until the database's
         # statement timeout killed it, and the window could not connect.
         ready = await self.wait_ready(box)
+        # How long a woken box took to answer, from the start asked (26
+        # October 2026): what waking costs the person, measured.
+        wake = (
+            {"woke": True, "start_ms": start_ms, "wake_ms": _ms_since(woke)}
+            if woke is not None
+            else {}
+        )
         if not ready:
             log.warning(
                 "sand.box.ensure.not_ready",
@@ -1149,6 +1167,7 @@ class BoxBrokerService:
             created=created,
             ready=ready,
             gateway_url=box.gateway_url,
+            **wake,
         )
         return box
 
@@ -1637,7 +1656,9 @@ class BoxBrokerService:
             await self.check_capacity(repository, host, box)
         except BoxBlocked:
             return "deferred"
+        started = time.monotonic()
         await host.start(box.provider_box_id)
+        start_ms = _ms_since(started)
         inspected = await host.inspect(box.provider_box_id)
         if inspected is not None:
             self._apply(box, inspected)
@@ -1646,7 +1667,9 @@ class BoxBrokerService:
         box.last_active_at = utc_now()
         box.hibernated_at = None
         await repository.update(box, flush=True)
-        log.info("sand.box.woken", box=str(box.id), user=str(user_id))
+        log.info(
+            "sand.box.woken", box=str(box.id), user=str(user_id), start_ms=start_ms
+        )
         return "woken"
 
     async def update_idle(
