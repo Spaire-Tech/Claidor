@@ -18,10 +18,13 @@ import SimeonCore
  * layout, with the hand among three icons: "that hand icon should be the
  * main thing, not an option." Taking control while the agent works stops
  * it; handing back resumes it. It opens in control while the agent waits on
- * the person. In control a tap is a click, and the keyboard follows it: a
- * tap on a text field brings the phone's keyboard up, of that field's kind,
- * and a tap anywhere else puts it away (`typingFocus`, 15 October 2026).
- * The clipboard pastes from the phone or copies to it. The sheet is always
+ * the person. In control a tap is a click, and the phone's keyboard is up
+ * all along (the founder, 26 October 2026: "doesnt matter where i tap, it
+ * doesnt work … have the keyboard always up"), the picture above it; a tap
+ * on a field the computer can name sets the keyboard's kind (`typingFocus`).
+ * The clipboard, at the top left facing the checkmark, pastes from the
+ * phone or copies to it; Skip step, while the agent waits on the person,
+ * sits under the title. The sheet is always
  * dark, as a screen's surround is. The computer's own screen stays 1280 by
  * 800: the agents click by that size (`host/box/box-monitor-layout.ts`).
  * Closing it closes the stream. While helpers work on the computer, the one
@@ -51,6 +54,8 @@ struct ComputerSheet: View {
   @State private var field: TypingField = .text
   /** Which tap the focus was last asked for: an answer for an earlier tap is not acted on. */
   @State private var focusAsked = 0
+  /** Handing the computer back: the keyboard goes and stays down while the sheet closes. */
+  @State private var leaving = false
 
   var body: some View {
     computer
@@ -98,9 +103,24 @@ struct ComputerSheet: View {
         .padding(.horizontal, 64)
         .animation(.easeOut(duration: 0.2), value: note)
         HStack {
+          if control {
+            // The clipboard, facing the checkmark: the keyboard is up below, all along.
+            Menu {
+              Button { pasteFromPhone() } label: { Label("Paste from Phone", systemImage: "doc.on.clipboard") }
+              Button { copyToPhone() } label: { Label("Copy to Phone", systemImage: "doc.on.doc") }
+            } label: {
+              Image(systemName: "doc.on.clipboard").font(.system(size: 18, weight: .medium)).foregroundStyle(.white)
+                .frame(width: 48, height: 48)
+                .contentShape(.circle)
+                .glassEffect(.regular, in: .circle)
+            }
+            .disabled(!live)
+            .opacity(live ? 1 : 0.4)
+            .accessibilityLabel("Clipboard")
+          }
           Spacer(minLength: 0)
           if control {
-            Button { typing = false; Haptics.success(); Task { await store.handBackComputer(agentId); dismiss() } } label: {
+            Button { leave(); Haptics.success(); Task { await store.handBackComputer(agentId); dismiss() } } label: {
               Image(systemName: "checkmark").font(.system(size: 19, weight: .semibold)).foregroundStyle(.white)
                 .frame(width: 48, height: 48)
             }
@@ -118,6 +138,19 @@ struct ComputerSheet: View {
       }
       .padding(.horizontal, 16).padding(.top, 22).padding(.bottom, 12)
       .background(Color(white: 0.11))
+      if control && waitingOnPerson {
+        // Skip step, under the title: the foot of the sheet is the keyboard's.
+        Button { leave(); Haptics.tap(); Task { await store.handBackComputer(agentId, skip: true); dismiss() } } label: {
+          Text("Skip step").font(.system(size: 15, weight: .medium)).foregroundStyle(.white)
+            .padding(.horizontal, 18).frame(height: 36)
+            .background(Color(white: 0.2), in: Capsule())
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity)
+        .padding(.bottom, 12)
+        .background(Color(white: 0.11))
+      }
       ZStack {
         Color.black
         if let socket = screen?.socket {
@@ -172,7 +205,16 @@ struct ComputerSheet: View {
     // In control the sheet stays until the checkmark hands the computer back.
     .interactiveDismissDisabled(control)
     .task(id: attempt) { await load() }
-    // In control: the computer's Chrome is made ready to see the taps, so the first one opens the keyboard too.
+    // In control the keyboard is up all along: it comes up with control, and again if something else took it a moment.
+    .onChange(of: control, initial: true) { _, now in typing = now }
+    .onChange(of: typing) { _, up in
+      guard !up, control, !leaving else { return }
+      Task {
+        try? await Task.sleep(nanoseconds: 300_000_000)
+        if control && !leaving { typing = true }
+      }
+    }
+    // In control: the computer's Chrome is made ready to see the taps, so the first one's field is known too.
     .task(id: control) { if control { await store.prepareTypingFocus(agentId) } }
     // The agent waits on the person: the computer opens theirs to use.
     .onAppear { if waitingOnPerson { control = true } }
@@ -181,43 +223,12 @@ struct ComputerSheet: View {
     .onChange(of: focused) { _, _ in phase = "starting" }
   }
 
-  /** Watching: Stop task (while the agent works) and Take control. In control: Skip step (while the agent waits on the person), the clipboard and the keyboard. */
+  /** Watching: Stop task (while the agent works) and Take control. In control: nothing, the keyboard is there. */
   @ViewBuilder
   private func controls(live: Bool) -> some View {
     if control {
-      HStack(spacing: 12) {
-        if waitingOnPerson {
-          Button { typing = false; Haptics.tap(); Task { await store.handBackComputer(agentId, skip: true); dismiss() } } label: {
-            Text("Skip step").font(.system(size: 17, weight: .medium)).foregroundStyle(.white)
-              .padding(.horizontal, 26).frame(height: 54)
-              .background(Color(white: 0.17), in: Capsule())
-              .contentShape(Capsule())
-          }
-          .buttonStyle(.plain)
-        }
-        Spacer(minLength: 0)
-        HStack(spacing: 0) {
-          Menu {
-            Button { pasteFromPhone() } label: { Label("Paste from Phone", systemImage: "doc.on.clipboard") }
-            Button { copyToPhone() } label: { Label("Copy to Phone", systemImage: "doc.on.doc") }
-          } label: {
-            Image(systemName: "doc.on.clipboard").font(.system(size: 19, weight: .medium)).foregroundStyle(.white)
-              .frame(width: 58, height: 54).contentShape(.rect)
-          }
-          .accessibilityLabel("Clipboard")
-          Button { Haptics.tap(); typing.toggle() } label: {
-            Image(systemName: typing ? "keyboard.chevron.compact.down" : "keyboard").font(.system(size: 19, weight: .medium)).foregroundStyle(.white)
-              .frame(width: 58, height: 54).contentShape(.rect)
-          }
-          .buttonStyle(.plain)
-          .accessibilityLabel(typing ? "Hide keyboard" : "Keyboard")
-        }
-        .padding(.horizontal, 6)
-        .background(Color(white: 0.17), in: Capsule())
-        .disabled(!live)
-        .opacity(live ? 1 : 0.45)
-      }
-      .padding(.horizontal, 16)
+      // The keyboard's place: the clipboard and Skip step are at the top.
+      EmptyView()
     } else {
       HStack(spacing: 12) {
         if store.agent(agentId)?.isRunning == true {
@@ -250,26 +261,25 @@ struct ComputerSheet: View {
 
   /**
    * After a click in control (or Return), the computer says what has the
-   * keyboard's focus (`typingFocus`): a text field brings the phone's
-   * keyboard up, of its kind; anything else puts it away. The founder: "when
-   * you click on somewhere that you should type, the keyboard to open too.
-   * and when you click elsewhere, the keyboard goes away." Only the last
-   * tap's answer counts. An engine without the question answers nothing,
-   * and the keyboard stays as it was (its button still works).
+   * keyboard's focus (`typingFocus`): a field it can name sets the
+   * keyboard's kind (an email's @, a password's plain letters); anything
+   * else, the ordinary keyboard. The keyboard itself stays up (26 October
+   * 2026: the answer did not come wherever the founder tapped). Only the
+   * last tap's answer counts.
    */
   private func focusAfterTap() {
     focusAsked += 1
     let asked = focusAsked
     Task {
       guard let focused = await store.typingFocus(agentId), asked == focusAsked, control else { return }
-      if focused.takesTyping {
-        field = focused
-        if !typing { Haptics.select() }
-        typing = true
-      } else {
-        typing = false
-      }
+      field = focused.takesTyping ? focused : .text
     }
+  }
+
+  /** The computer handed back: the keyboard down for good. */
+  private func leave() {
+    leaving = true
+    typing = false
   }
 
   /** The agent has handed the computer over and waits ("Your turn on the computer" not yet answered). */
