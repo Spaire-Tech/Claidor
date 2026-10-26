@@ -401,6 +401,18 @@ async def mark_attached(redis: Redis, box_id: UUID) -> None:
         return
 
 
+#: An app built since 26 October 2026 says on its requests that it lets the
+#: box sleep while it is open (`lets_sleep`); with BOX_SLEEPS_WITH_APP_OPEN
+#: on, its requests do not mark the box attached.
+LETS_SLEEP_HEADER = "x-simeon-lets-sleep"
+
+
+def lets_sleep(headers: Any) -> bool:
+    """Whether a request through the proxy comes from an app that lets the
+    box sleep while it is open, and the server lets it (`BOX_SLEEPS_WITH_APP_OPEN`)."""
+    return settings.BOX_SLEEPS_WITH_APP_OPEN and headers.get(LETS_SLEEP_HEADER) == "1"
+
+
 async def is_attached(redis: Redis, box_id: UUID) -> bool:
     try:
         return bool(await redis.exists(attached_key(box_id)))
@@ -1329,6 +1341,19 @@ class BoxBrokerService:
         )
         return RecreateOutcome(started=True, operation_id=operation_id)
 
+    async def recorded_run_state(self, db: AsyncSession, user_id: UUID) -> int:
+        """The person's box as the broker last recorded it (running, asleep,
+        none), without asking its server: what an app that lets the box sleep
+        asks every few seconds while it waits for it to wake."""
+        box = await SandBoxRepository.from_session(db).get_by_user(user_id)
+        if box is None:
+            return RUN_STATE_ABSENT
+        if box.state == "running":
+            return RUN_STATE_RUNNING
+        if box.state == "hibernated":
+            return RUN_STATE_HIBERNATED
+        return RUN_STATE_ABSENT
+
     async def run_state(
         self, db: AsyncSession, caller: DesktopSession
     ) -> tuple[int, bool]:
@@ -1586,6 +1611,10 @@ class BoxBrokerService:
             # A server's own idle time (`idle_minutes` in SIMEON_BOX_HOSTS):
             # shorter where waking takes a second (E2B).
             idle_after = getattr(host, "idle_after", None) or after
+            if settings.BOX_SLEEPS_WITH_APP_OPEN:
+                # The computer used only for runs (26 October 2026): asleep
+                # soon after its last run, woken for the next.
+                idle_after = min(idle_after, settings.BOX_IDLE_AFTER_RUN)
             if (
                 update is not None
                 and health.reachable
@@ -1842,6 +1871,7 @@ __all__ = [
     "MigrationLog",
     "RecreateOutcome",
     "broker",
+    "lets_sleep",
     "mark_attached",
     "migrations",
     "set_health_check_for_tests",

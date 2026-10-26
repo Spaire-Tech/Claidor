@@ -440,6 +440,16 @@ class Settings(BaseSettings):
     # its volumes kept, which the app draws as "sleeping"; EnsureSandBox or
     # a routine's fire wakes it. Zero: never.
     BOX_IDLE_HIBERNATE_AFTER: timedelta = timedelta(minutes=30)
+    # The computer used only for runs (26 October 2026, step 4 of the
+    # computer as a worker). On, an app built since then no longer keeps the
+    # box awake by being open (it says so with `x-simeon-lets-sleep: 1` on
+    # its requests, and does not wake a sleeping box until something needs
+    # it), and a box sleeps BOX_IDLE_AFTER_RUN after its last run (or after
+    # BOX_IDLE_HIBERNATE_AFTER, if that is shorter). Off (the default), the
+    # apps keep it awake while open, as before. An app built before keeps it
+    # awake either way. Turn it on once the apps are tested against it.
+    BOX_SLEEPS_WITH_APP_OPEN: bool = False
+    BOX_IDLE_AFTER_RUN: timedelta = timedelta(minutes=10)
     # Per-box limits (Docker `--memory`, no swap beyond it, and `--cpus`).
     # Zero: no limit.
     BOX_MEMORY_LIMIT_MB: int = 4096
