@@ -85,11 +85,12 @@ struct CardButton: View {
 /**
  * A question (`sand-widget--choices`): the question (14 on 20, 500) and its
  * help under it (60%), the X that dismisses it at the right; the choices in
- * one box, each with its letter in a ring (A, B…), its label and its line
- * under it, a hairline between; then "Type your own answer" when the agent
- * allows one, with Submit once something is written. Answered, the card
- * keeps the question and the answer with a tick; dismissed, the question at
- * 60% and a "Dismissed" pill.
+ * one box, each with an empty ring, its label and its line under it, a
+ * hairline between; then "Type your own answer" when the agent allows one,
+ * with Submit once something is written. Answered, the card keeps the
+ * question and the answer with a blue tick; dismissed, the question at 60%
+ * and a "Dismissed" pill. The iPhone's card, at the Mac's sizes (the founder,
+ * 27 October 2026: the lettered rings and the grey tick were the window's).
  */
 struct QuestionCardView: View {
   let entryId: String
@@ -117,8 +118,8 @@ struct QuestionCardView: View {
           .cssLineHeight(20, size: 14, weight: .medium)
         HStack(spacing: 8) {
           Image(systemName: "checkmark")
-            .font(.system(size: 10, weight: .semibold))
-            .foregroundStyle(look.inkTertiary)
+            .font(.system(size: 12, weight: .semibold))
+            .foregroundStyle(look.blue)
             .frame(width: 18, height: 18)
           Text(answer)
             .font(.system(size: 14))
@@ -168,7 +169,7 @@ struct QuestionCardView: View {
         VStack(spacing: 0) {
           ForEach(Array(card.options.enumerated()), id: \.offset) { index, option in
             if index > 0 { Rectangle().fill(look.ink.opacity(0.1)).frame(height: 1) }
-            OptionRow(letter: String(Character(UnicodeScalar(UInt8(65 + index % 26)))), option: option, look: look) {
+            OptionRow(option: option, look: look) {
               Task { await store.answer(option.label, card: entryId, in: agentId) }
             }
           }
@@ -204,9 +205,8 @@ struct QuestionCardView: View {
   }
 }
 
-/** One choice (`sand-widget-option`): padded 8, its letter in an 18-point ring at 40%, its label (14 on 20) and line under it (60%). */
+/** One choice (`sand-widget-option`): padded 8, an empty 18-point ring at 30% as the iPhone's, its label (14 on 20) and line under it (60%). */
 private struct OptionRow: View {
-  let letter: String
   let option: QuestionOption
   let look: Look
   let action: () -> Void
@@ -215,11 +215,9 @@ private struct OptionRow: View {
   var body: some View {
     Button(action: action) {
       HStack(spacing: 8) {
-        Text(letter)
-          .font(.system(size: 11, weight: .medium))
-          .foregroundStyle(look.inkTertiary)
-          .frame(minWidth: 18, minHeight: 18)
-          .overlay { Capsule().strokeBorder(look.ink.opacity(0.3), lineWidth: 1) }
+        Circle()
+          .strokeBorder(look.ink.opacity(0.3), lineWidth: 1)
+          .frame(width: 18, height: 18)
         VStack(alignment: .leading, spacing: 0) {
           Text(option.label)
             .font(.system(size: 14))
