@@ -1,9 +1,11 @@
 # What the server does for the app, part 3: plans and billing
 
 Simeon sells three plans to the person who signs in from the Mac: Standard
-($30 a month), Pro ($100) and Max ($200), each with a 30-day free trial on a
-card (seven days until 12 October 2026), and each with a number of credits
-a week. Stripe Billing owns the
+($30 a month), Pro ($100) and Max ($200), each with a 7-day free trial on a
+card (thirty days from 12 to 27 October 2026, seven before), and each with a
+number of credits a week. Since 27 October 2026 Simeon changes plans itself
+(an upgrade starts today, less the old plan's unused time; a downgrade at
+the renewal) and sells extra credits (section 11). Stripe Billing owns the
 products, the prices, the trial, the subscription, the invoices and the
 usage meters. The server creates the Stripe customer, opens Stripe Checkout
 and Stripe's Customer Portal, keeps one copy of each person's subscription
@@ -14,9 +16,9 @@ covers what a credit is and how the proxy meters one.
 
 The iPhone app sells the same three plans through Apple's in-app purchase
 (12 October 2026): Apple takes the payment and the server keeps a copy of
-what Apple signed. Section 9 says how. Its trial is the free month: 30
-days with no card, started by the app at the first sign-in, one per
-person, never by device (section 10).
+what Apple signed. Section 9 says how. Its trial is the free trial: 7
+days with no card (30 until 27 October 2026), started by the app at the
+first sign-in, one per person, never by device (section 10).
 
 Nothing here gates anyone until `SIMEON_DESKTOP_BILLING_REQUIRED` is
 `true`. Without it, every person has the free monthly allowance
@@ -29,13 +31,20 @@ unset. The code stays with the inherited shop
 
 ## 1. The plans
 
-| Plan | Monthly (web and iPhone) | Yearly (web) | Credits a week | Trial |
-|---|---|---|---|---|
-| Standard | $30 | $288 | 5,000,000 | 30 days, 5,000,000 credits once |
-| Pro | $100 | $960 | 17,500,000 (3.5 × Standard) | same |
-| Max | $200 | $1,920 | 60,000,000 (12 × Standard) | same |
+| Plan | Monthly (web and iPhone) | Yearly (web) | Credits a week | In an hour | Trial |
+|---|---|---|---|---|---|
+| Standard | $30 | $288 | 10,000,000 | 2,000,000 | 7 days, 10,000,000 credits once |
+| Pro | $100 | $960 | 35,000,000 (3.5 × Standard) | 7,000,000 | same |
+| Max | $200 | $1,920 | 90,000,000 (9 × Standard) | 18,000,000 | same |
 
-The prices and allowances changed on 17 October 2026 (from $20, $60 and
+The allowances changed again on 27 October 2026 (the founder: "we probably
+need to up the usage for all plans. its too low. the free trial as well"),
+from 5,000,000, 17,500,000 and 60,000,000 a week and a 30-day trial with
+5,000,000 credits. A trial is one Standard week, whichever plan was chosen.
+Per dollar each plan gives at least the one below (333,333, 350,000 and
+450,000 credits a dollar), and extra credits give less than any plan
+(300,000 a dollar, section 11), so a person who keeps buying is better off
+moving up. The prices and allowances changed on 17 October 2026 (from $20, $60 and
 $200, with 3,750,000, 12,500,000 and 40,000,000 credits a week). Before that,
 every allowance was five times what it was until 8 October 2026 (the founder:
 "a simple onboarding run eats it all. multiply all by 5. at least for now").
@@ -55,10 +64,18 @@ A credit is one input token on the middle model at $3 per million
 job on the computer (a form, a site driven by screenshots) is 300,000 to
 800,000, measured from the call sizes of the insurance log of 6 October 2026
 (the cost test set has not been run yet).
-Weekly credits count from Monday 00:00 UTC to the next Monday and do not
+Weekly credits count from the person's own plan start (27 October 2026,
+as Claude's do; Monday 00:00 UTC for everyone before): seven-day weeks from
+the subscription's `current_period_start`, the last stretch of a monthly
+period joining the fourth week so a renewal always starts a fresh one
+(`allowance.plan_week`). An upgrade moves the period's start to the day of
+the upgrade (section 11), so it starts a fresh week too. Credits do not
 carry over; Stripe cannot reset a meter weekly, so the week is counted by
-the server from `desktop_usage`. The hourly brake, 1,000,000 credits in a
-sliding hour, applies on every plan.
+the server from `desktop_usage`. The hourly brake, about a fifth of the
+week in a sliding hour (`hourly_credits` in `tiers.py`, the table's "In an
+hour"; a trial has Standard's), stops a runaway loop; refused with code
+`40201`. `SIMEON_DESKTOP_HOURLY_CREDITS` (1,000,000) applies only without a
+plan (billing off, exempt e-mails).
 
 ## 2. What is on Stripe
 
@@ -72,15 +89,19 @@ test key first, then the live key.
 | Product × 3 | `metadata.simeon_tier` = `standard`, `pro`, `max` | "Simeon Standard", "Simeon Pro", "Simeon Max", with the weekly and trial credits in metadata, and the app's icon as their picture (`https://www.simeonlabs.com/img/simeon-icon.png`, so Checkout shows it beside the plan's name, not a grey square). |
 | Price × 6 | `lookup_key` = `simeon_<tier>_<month\|year>` | Recurring, USD, tax inclusive. Monthly at the list price, yearly at twenty percent off. A changed amount archives the old price and moves the lookup key to the new one. |
 | Billing Meter × 2 | `event_name` = `simeon_credits`, `simeon_box_seconds` | Sum of `payload.value`, by `stripe_customer_id`. What a person used, for Stripe's dashboard and, later, for on-demand prices. |
+| Product "Simeon extra credits" | `metadata.simeon_kind` = `credits` | Extra credits (27 October 2026, section 11), with the pack's credits in metadata. |
+| Price `simeon_credits_pack` | `lookup_key` | One-time, USD, tax inclusive: $10 for 3,000,000 credits. |
 
 The four creator-era meters the seed script made (storage, e-mails, video,
 subscribers) are not recreated: Simeon meters credits and cloud-computer
 time, nothing else.
 
 The one thing the script cannot do is the Customer Portal's configuration:
-in Stripe, Settings → Billing → Customer portal, allow cancelling,
-switching between the six prices, and updating the card, and set the
-business name people see. The legal name on the account can stay what it
+in Stripe, Settings → Billing → Customer portal, allow cancelling (at the
+end of the billing period), updating the card and the invoice history, and
+set the business name people see. Switching plans is off since 27 October
+2026: the portal's own switch had no credit for the old plan's unused time
+and moved a downgrade at once, so Simeon changes plans itself (section 11). The legal name on the account can stay what it
 was; the public name and statement descriptor are what a person sees.
 
 **E-mails about payments** (16 October 2026). Simeon sends none of its own
@@ -112,7 +133,7 @@ checkout):
    tier and an interval. The server makes
    the Stripe customer on first use (kept on `users.stripe_customer_id`),
    finds the price by its lookup key, and opens a Stripe Checkout session:
-   `mode=subscription`, the card always collected, a 30-day trial for a
+   `mode=subscription`, the card always collected, a 7-day trial for a
    person who never had one (no card trial, no Apple free week, no free
    month on the iPhone: `free_month.had_trial`), the charge at once for
    anyone who did,
@@ -140,11 +161,13 @@ checkout):
    (`trial_end=now`), so the card is charged today; otherwise the trial is
    recorded. A person who had a trial gets none on a later checkout
    either.
-4. **Changing and ending.** The page's buttons post `POST /v1/plans/portal`
-   and open Stripe's Customer
-   Portal, optionally on one step (`flow`: `cancel`, `update`,
-   `payment_method`). Cards, invoices, receipts, a plan switch and a
-   cancellation all happen there; Stripe sends the resulting
+4. **Changing and ending.** A plan change, "Start my plan now" and extra
+   credits are Simeon's own since 27 October 2026 (section 11). The page's
+   other buttons post `POST /v1/plans/portal` and open Stripe's Customer
+   Portal, optionally on one step (`flow`: `cancel`, `payment_method`).
+   Cards, invoices, receipts and a cancellation happen there (a waiting
+   downgrade is let go first: the portal cannot cancel a subscription a
+   schedule holds); Stripe sends the resulting
    `customer.subscription.updated` and the copy follows. The Mac app's
    Settings page has a Cancel trial button; it calls Connect
    `DashboardService/CancelSandTrial` (`server/simeon/sand/dashboard.py`),
@@ -211,7 +234,7 @@ counts: a live plan (the bigger if two are live), else the Stripe row.
 |---|---|---|---|
 | Billing not required, or an exempt e-mail | calendar month | `SIMEON_DESKTOP_MONTHLY_CREDITS` | `free` |
 | Trialing | `trial_start` to `trial_end` | the plan's `trial_credits` | `trialing` |
-| Active, or past due after a paid period | Monday to Monday | the plan's `weekly_credits` | `active`, `past_due` |
+| Active, or past due after a paid period | the person's week (section 1) | the plan's `weekly_credits` | `active`, `past_due` |
 | No plan (none, cancelled, unpaid, incomplete) | the week | 0 | `none` |
 | The first charge after the trial failed | the week | 0 | `none`, with `paymentFailed: true` |
 
@@ -246,7 +269,7 @@ should be for paid-to-paid renewals only.
 Every metered route reads it before calling a provider (`budget_refusal`,
 `server/simeon/desktop/proxy_common.py`) and refuses with `402`, code
 `40200`, and a sentence that says which: "This week's credits are used …
-They reset on Monday …", "Your trial credits are used up …", "Your payment
+They reset on <the person's day> …", "Your trial credits are used up …", "Your payment
 didn't go through …", "No active plan …", each naming
 `app.simeonlabs.com/billing` (but Apple's failed payment).
 
@@ -255,7 +278,8 @@ grey, never red; `ios/SimeonCore/Sources/SimeonCore/Upgrade.swift`):
 spent ("This week’s credits are used", "You’ve used your free credits",
 with Upgrade), and since 13 October 2026 **near the limit**: "You’re
 approaching your usage limit / You’ve used 81% of this week’s credits. They
-reset on Monday." from 80% of `creditsLimit`, again from 95%
+reset on Thursday." (the person's own day) from 80% of `creditsLimit`, again
+from 95%
 (`PhoneUpgrade.approaching`). The person can close it; it stays closed for
 that step of that period (`ApproachingClosed`, kept in the app's settings).
 The Electron window never had this line. The apps read the quota as a chat
@@ -273,12 +297,15 @@ and the line over the composer, grey like the credits' line, says why
 |---|---|---|---|
 | Card failed, plan bought on the web | "Your payment didn’t go through" / "You can’t send messages until your card is updated." | Update card: Stripe's card form (where Apple allows the link; else no button) | Update card: Stripe's card form |
 | Payment failed, plan bought on the iPhone | "… / You can’t send messages until your Apple payment method is updated." | See plans: the plans, with a line over them and Update payment (Apple's page) | Update payment: Apple's page |
-| Free month over | "Your free month has ended" / "Choose a plan to send messages again." | See plans | See plans: the web's plans page |
+| Free trial over | "Your free trial has ended" / "Choose a plan to send messages again." | See plans | See plans: the web's plans page |
 | Never had a plan | "Choose a plan to start" (iPhone), "Start your free trial to send messages" or "Simeon needs a plan" (Mac) | See plans | the web's plans page |
 
 Stripe's page opens **in the app**, not the web: the app asks
 `POST /desktop/api/billing/portal` with `flow` (`payment_method` for the
-card form, `update_confirm` and the plan above for an upgrade) and `back`
+card form, `update_confirm` and the plan above for an upgrade, `start_now`
+for a card trial, `credits` for extra credits; the last three are
+Simeon's own confirm page or Stripe's checkout since 27 October 2026,
+section 11) and `back`
 (its URL scheme, `simeon-ios` or `simeon`), and shows the link in Apple's
 sign-in sheet (`BillingPage` on the iPhone, `MacBillingPage` on the Mac).
 The link already carries the person, so there is no sign-in on the way;
@@ -299,10 +326,10 @@ Upgrade for a plan bought on the web open the same page the same way.
 month itself at first sign-in; the Mac does not. An account with no plan
 gets the cover over the Mac's window (`AccessCover`, `MacUpgrade` in
 `ios/SimeonCore/Sources/SimeonCore/Upgrade.swift`): one that never had a
-trial reads "Start your free trial to send messages / 30 days free, then
+trial reads "Start your free trial to send messages / 7 days free, then
 your plan. Add a card on the web; cancel anytime." and Start Free Trial
 opens the plans page (`upgradeUrl`, `app.simeonlabs.com/billing?from=app`),
-where Stripe's checkout takes a card and starts the 30-day trial (the
+where Stripe's checkout takes a card and starts the 7-day trial (the
 founder's choice that day); one that had its trial reads "Simeon needs a
 plan" with See plans to the same page; a failed payment reads "Your payment
 didn't go through" with Update card. The cover names the account it is
@@ -327,9 +354,10 @@ keys are what every shipped app reads and keep their meaning (`creditsLimit`,
 added on 5 October 2026 feed the app's usage summary
 (`desktop/source/electron-main/account/account-profile.ts`,
 `usageSummaryFromSimeonQuota`): `tier`, `trialEndsAt`, `trialCancelable`,
-`onDemand` (null until the server meters it), `upgradeUrl`; and since 12
+`onDemand` (null until the server meters it), `upgradeUrl`; since 12
 October 2026 `billedBy` (`stripe`, `apple`, or null without a plan), which
-the iPhone and Mac apps read to send an Apple plan's changes to Apple.
+the iPhone and Mac apps read to send an Apple plan's changes to Apple; and
+since 27 October 2026 `extraCredits`, the extra credits left (section 11).
 
 **The Manage plan card** (Settings → Usage & Billing, 6 October 2026). The
 window's own page had one, filled from the upstream's dashboard calls;
@@ -384,7 +412,7 @@ spend (section 8).
 | `SIMEON_DESKTOP_BILLING_EXEMPT_EMAILS` | API | Staff and friends, as a JSON list of e-mails; they stay on the free month. |
 | `SIMEON_DESKTOP_COMPUTER_WITHOUT_PLAN` | API | `true` (the default): an account with no plan still reaches its cloud computer, so the apps stay open with Send held (section 3, item 6). `false`: the computer is refused and the apps show the full-screen cover, as before 14 October 2026. Every metered call is refused either way. |
 | `SIMEON_STRIPE_SECRET_KEY`, `SIMEON_STRIPE_PUBLISHABLE_KEY` | API, worker | Stripe keys. |
-| `SIMEON_STRIPE_WEBHOOK_SECRET` | API | The Stripe webhook for `https://api.simeonlabs.com/v1/integrations/stripe/webhook`. Besides the `payment_intent.*`, `setup_intent.*`, `charge.*` and `refund.*` events it already carries, add `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`. |
+| `SIMEON_STRIPE_WEBHOOK_SECRET` | API | The Stripe webhook for `https://api.simeonlabs.com/v1/integrations/stripe/webhook`. Besides the `payment_intent.*`, `setup_intent.*`, `charge.*` and `refund.*` events it already carries, add `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `charge.refunded`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`. |
 | `SIMEON_STRIPE_CREDITS_METER_EVENT`, `SIMEON_STRIPE_BOX_SECONDS_METER_EVENT` | API, worker | Only to rename the meters; the defaults are `simeon_credits` and `simeon_box_seconds`. |
 | `SIMEON_DESKTOP_MONTHLY_CREDITS` | API | The free month, for a server with no billing and for exempt e-mails. |
 
@@ -590,7 +618,7 @@ The migration `desktop_app_store_1012` adds `desktop_app_store_subscriptions`.
 3. **The subscription group and products**: in the app › Monetization ›
    Subscriptions, create the group "Simeon" and the three monthly products
    of the table, each with its price, a display name ("Simeon Pro") and a
-   description ("17,500,000 credits a week"), no introductory offer (the
+   description ("35,000,000 credits a week" since 27 October 2026), no introductory offer (the
    free week was removed on 12 October 2026: the free month replaces it,
    section 10), and a review screenshot of the plans sheet.
 4. **Server notifications**: in the app › App Information › App Store
@@ -638,11 +666,13 @@ The migration `desktop_app_store_1012` adds `desktop_app_store_subscriptions`.
   Purchases sends it again); a row with `tier` null means a product id the
   server does not know.
 
-## 10. The free month on the iPhone (12 October 2026)
+## 10. The free trial on the iPhone (12 October 2026)
 
 The founder dropped Apple's free week ("the whole free trial makes it
-complicated"): a person who signs in on the iPhone has 30 days and the
-trial's 5,000,000 credits, with no checkout and no card. When the days or
+complicated"): a person who signs in on the iPhone has 7 days (30 until
+27 October 2026, "a month is too long") and the trial's 10,000,000 credits,
+with no checkout and no card. A trial already running keeps the end it was
+given. When the days or
 the credits run out the app offers the plans sheet. On the web and the Mac
 the trial still takes a card: a browser or a Mac cannot be told apart, an
 iPhone can.
@@ -692,3 +722,70 @@ are no longer read and can go from `simeon-shared`.
   `[simeon] free month: …`).
 - **`free_month.started`**: a month began, with its end and whether it was
   a test e-mail.
+
+## 11. Changing plans, starting now, and extra credits (27 October 2026)
+
+The founder asked for upgrades that reset and cost less while on a plan,
+and for extra usage ("are there anything out there we can take eg from").
+What other products do, and what Simeon does:
+
+- **An upgrade starts today** (Apple's way, and Claude's): the new plan's
+  full price, less a credit for the old plan's unused time, charged now on
+  the card on file; a new billing period from today and so a fresh week
+  (`PlansService.change_plan`: `Subscription.modify` with the new price,
+  `billing_cycle_anchor=now`, `proration_behavior=always_invoice`,
+  `payment_behavior=error_if_incomplete`). A card that is refused changes
+  nothing (`CardDeclined`, `plans.change.declined`). The preview
+  (`change_preview`, Stripe's `Invoice.create_preview`) says the amount
+  first; confirming within the hour passes its `proration_date`, so the
+  charge is what was shown.
+- **A downgrade waits for the renewal** (Apple's way): a
+  Stripe subscription schedule of two phases, the plan as it is until the
+  period ends, then the smaller plan, after which the schedule lets the
+  subscription go on by itself (`end_behavior=release`).
+  `desktop_subscriptions.scheduled_tier` and `scheduled_at` say what waits;
+  "Keep <plan>" lets the schedule go. Any later change, and a cancellation
+  through the portal, lets it go first.
+- **During a card trial** a change switches the plan's price and the trial
+  goes on (`proration_behavior=none`); a trial is one Standard week
+  whichever plan.
+- **Start my plan now** ends a card trial today (`trial_end=now`): the
+  plan is charged now and starts with a fresh week (`PlansService.start_now`).
+- **Extra credits** (Claude's prepaid usage credits; Lovable's top-ups last
+  12 months; Manus uses add-on credits last): packs of 3,000,000 credits
+  for $10, bought on the web by a person on a paid plan (not during a
+  trial), up to ten a checkout (`simeon.plans.credits`). They are used only
+  after the week's credits, the pack that expires first first, and last 12
+  months. Each call's row says how much came from them
+  (`desktop_usage.extra_credits`), so the week counts only its own part; a
+  week spent with packs left is not "exhausted". The pack is granted once
+  per paid checkout (`desktop_credit_packs`, unique by checkout), by the
+  webhook (`checkout.session.completed`, or
+  `checkout.session.async_payment_succeeded` for a payment that clears
+  later) or by the page the checkout returns to, whichever is first. A
+  refund (`charge.refunded`) takes back the refunded share of what is left.
+  The iPhone never sells them in the app (Apple would take the sale): a
+  plan billed by Apple adds them on the web.
+
+| Route | What |
+|---|---|
+| `POST /v1/plans/change/preview`, `POST /v1/plans/change` | The web's confirm screen and its Confirm (`{tier, proration_date}`). |
+| `POST /v1/plans/start-now/preview`, `POST /v1/plans/start-now` | "Start my plan now". |
+| `GET /v1/plans/credits` | The balance, the packs, the pack's size and price, and whether the person can buy. |
+| `POST /v1/plans/credits/checkout`, `POST /v1/plans/credits/sync` | A Stripe Checkout (`mode=payment`, quantity adjustable 1 to 10) and its return. |
+| `POST /desktop/api/billing/portal` | The apps: `update_confirm` and `start_now` answer a link to `/desktop/billing/change` (below); `credits` answers Stripe's checkout, which returns to `/desktop/billing/credits/done`; the key stays `portalUrl`. |
+| `GET`/`POST /desktop/billing/change` | The confirm page the apps open (`simeon/desktop/billing_pages.py`), in the sign-in page's design: what the change does and costs, Confirm and Not now, then back to the app. The link carries a signed half-hour token naming the person, the change and the app. |
+
+**In the apps.** Settings › Usage & Billing has Start Plan Now (a card
+trial on the web), Upgrade to the plan above, and Add Credits (a paid plan
+on the web), each in the app's sign-in sheet; an "Extra credits" line shows
+the balance. The line over the composer says the person's own reset day,
+and its button starts a card trial now, upgrades, or (Max) adds credits
+(`PhoneUpgrade.action`, `route`).
+
+**When it misbehaves:** `plans.change` (kind, from, to, amount),
+`plans.change.declined`, `plans.start_now`, `plans.start_now.declined`,
+`plans.credits.checkout`, `plans.credits.granted`, `plans.credits.refunded`,
+`plans.credits.nobody` (a paid checkout with no known person: look up its
+`client_reference_id`), `plans.credits.return_not_granted` (the return page
+could not read the checkout; the webhook grants it).

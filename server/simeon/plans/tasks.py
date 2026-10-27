@@ -13,6 +13,7 @@ from apscheduler.triggers.cron import CronTrigger
 from simeon.external_event.service import external_event as external_event_service
 from simeon.worker import AsyncSessionMaker, TaskPriority, actor
 
+from . import credits
 from .service import plans as plans_service
 from .stripe_billing import stripe_billing
 
@@ -57,10 +58,14 @@ async def customer_subscription_deleted(event_id: uuid.UUID) -> None:
 async def checkout_session_completed(event_id: uuid.UUID) -> None:
     """The checkout finished. Its subscription usually arrives through
     `customer.subscription.created` too; copying it in here as well
-    means the person's plan is known even if that event is late."""
+    means the person's plan is known even if that event is late. A
+    checkout for extra credits grants its pack, once it is paid."""
     async with AsyncSessionMaker() as session:
         async with external_event_service.handle_stripe(session, event_id) as event:
             checkout = cast(stripe_lib.checkout.Session, event.stripe_data.data.object)
+            if checkout.get("mode") == "payment":
+                await credits.grant(session, checkout)
+                return
             subscription_id = checkout.get("subscription")
             if isinstance(subscription_id, str) and subscription_id:
                 subscription = await stripe_billing.retrieve_subscription(
@@ -69,6 +74,29 @@ async def checkout_session_completed(event_id: uuid.UUID) -> None:
                 await plans_service.apply_stripe_subscription(session, subscription)
             elif subscription_id is not None and hasattr(subscription_id, "get"):
                 await plans_service.apply_stripe_subscription(session, subscription_id)
+
+
+@actor(
+    actor_name="stripe.webhook.checkout.session.async_payment_succeeded",
+    priority=TaskPriority.HIGH,
+)
+async def checkout_session_async_payment_succeeded(event_id: uuid.UUID) -> None:
+    """A credits checkout paid by a method that clears later (a bank
+    debit): the pack is granted now that the money is in."""
+    async with AsyncSessionMaker() as session:
+        async with external_event_service.handle_stripe(session, event_id) as event:
+            checkout = cast(stripe_lib.checkout.Session, event.stripe_data.data.object)
+            await credits.grant(session, checkout)
+
+
+@actor(actor_name="stripe.webhook.charge.refunded", priority=TaskPriority.HIGH)
+async def charge_refunded(event_id: uuid.UUID) -> None:
+    """A refunded payment for extra credits takes back the refunded share
+    of what is left (`simeon.plans.credits.refund`)."""
+    async with AsyncSessionMaker() as session:
+        async with external_event_service.handle_stripe(session, event_id) as event:
+            charge = cast(stripe_lib.Charge, event.stripe_data.data.object)
+            await credits.refund(session, charge)
 
 
 @actor(

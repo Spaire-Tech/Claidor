@@ -320,10 +320,10 @@ export default {
       allSet: "You're all set!",
       takingYouBack: 'Taking you back to Simeon to finish signing in',
       goBack: 'Go back to Simeon',
-      goBackStarted: 'Your free month has started. Go back to Simeon',
+      goBackStarted: 'Your free trial has started. Go back to Simeon',
       download: 'Download Simeon to get started',
       downloadStarted:
-        'Your free month has started. Download Simeon to get started',
+        'Your free trial has started. Download Simeon to get started',
       continueSigningIn: 'Continue signing in to Simeon',
       openSimeon: 'Open Simeon',
       downloadMac: 'Download Simeon for macOS',
@@ -344,7 +344,7 @@ export default {
       proUsage: '3.5x Standard usage',
       proBusy: 'For agents busy every day',
       maxIncludes: 'Everything in Pro, plus:',
-      maxUsage: '12x Standard usage',
+      maxUsage: '9x Standard usage',
       maxAccess: 'Earliest access to all products',
       startTrial: 'Start your {plan} Trial',
       upgradeTo: 'Upgrade to {plan}',
@@ -359,6 +359,29 @@ export default {
       billedMonthly: 'Billed monthly',
       yourCurrentPlan: 'Your current plan',
       oneMoment: 'One moment…',
+      confirm: 'Confirm',
+      notNow: 'Not now',
+      upgradeBody:
+        '{plan} starts today with a fresh week of credits. You pay {amount} now, with your unused {current} time taken off. Then {price}.',
+      downgradeBody:
+        'You keep {current} until {date}. Then {plan} starts, at {price}.',
+      trialBody:
+        'Your trial goes on. {plan} starts when it ends, on {date}, at {price}.',
+      keepTitle: 'Keep {plan}',
+      keepBody: 'You stay on {plan}. The switch to {next} is cancelled.',
+      startNow: 'Start my plan now',
+      startNowTitle: 'Start {plan} now',
+      startNowBody:
+        'Your trial ends now and {plan} starts, with a fresh week of credits. You pay {amount} today.',
+      priceMonth: '{amount} a month',
+      priceYear: '{amount} a year',
+      changeFailed: "Your plan didn't change",
+      switchesOn: 'Switches to {plan} on {date} · ',
+      keepPlan: 'Keep {plan}',
+      extraCredits: 'Extra credits: {credits} · ',
+      addCredits: 'Add credits',
+      creditsNote:
+        '{price} for {credits} credits, used after your weekly credits run out. Valid for 12 months.',
     },
   },
 } as const

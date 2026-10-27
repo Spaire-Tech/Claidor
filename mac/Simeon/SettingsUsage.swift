@@ -58,6 +58,12 @@ private struct UsageGroup: View {
       if let onDemand = meters.onDemand {
         UsageMeterLine(title: UsageMeters.onDemandTitle, meter: onDemand, divided: true, look: look)
       }
+      // Extra credits bought on the web, used after the week's (27 October 2026).
+      if let extra = meters.extraCredits {
+        SettingsLine(label: UsageMeters.extraCreditsTitle, detail: nil, divided: true, look: look) {
+          Text(extra).font(PanelType.row).foregroundStyle(look.inkSecondary).monospacedDigit()
+        }
+      }
       if let upgrade = meters.upgrade {
         SettingsActionRow(title: upgrade.label, divided: true, look: look) { NSWorkspace.shared.open(upgrade.url) }
       }
@@ -144,9 +150,21 @@ private struct ManagePlanGroup: View {
       SettingsGroup(title: String(localized: "Plan"), footer: failure, footerTint: look.danger, look: look) {
         let line = plan.line()
         SettingsLine(label: String(localized: "Current plan: \(plan.planName)"), detail: line.isEmpty ? nil : line, look: look) { EmptyView() }
+        let web = store.usage.summary?.billedByApple != true
+        // A card trial starts its plan today; a paid plan adds extra credits (27 October 2026).
+        if web && plan.status == "trialing" {
+          SettingsActionRow(title: opening == "start" ? String(localized: "Opening…") : String(localized: "Start Plan Now"), divided: true, disabled: opening != nil, look: look) {
+            open("start", flow: PhoneUpgrade.startNowFlow, tier: nil)
+          }
+        }
         if let next = plan.nextTier {
           SettingsActionRow(title: opening == "upgrade" ? String(localized: "Opening…") : String(localized: "Upgrade to \(next.label)"), divided: true, disabled: opening != nil, look: look) {
             open("upgrade", flow: "update_confirm", tier: next.tier)
+          }
+        }
+        if web && plan.status != "trialing" {
+          SettingsActionRow(title: opening == "credits" ? String(localized: "Opening…") : String(localized: "Add Credits"), divided: true, disabled: opening != nil, look: look) {
+            open("credits", flow: PhoneUpgrade.creditsFlow, tier: nil)
           }
         }
         SettingsLinkRow(label: opening == "billing" ? String(localized: "Opening…") : String(localized: "Manage Billing"), divided: true, external: true, look: look) {

@@ -211,7 +211,7 @@ CONN_QA = [
     ("What can my agents do in an app?", "What your account there allows: your email in Gmail, your deals in HubSpot or your books in QuickBooks, for example. Before you sign in, Simeon shows what your agents will be able to read and use."),
     ("Will they act without asking me?", "Auto-review asks for your OK before steps it judges risky, and you can turn off any of an app's tools, or remove the app, in Settings › Connect apps. Agents can still get things wrong, so look over their work, especially at first."),
     ("Where does my information go?", "What your agents read in an app becomes part of your chats with them and is sent to the AI models that do the work. The app's own terms and privacy policy apply to what it shares with Simeon."),
-    ("Does connecting apps cost extra?", "No. Connecting apps is part of every plan, the free month included. Some apps need an account of a certain kind, such as WhatsApp Business or an Instagram business or creator account."),
+    ("Does connecting apps cost extra?", "No. Connecting apps is part of every plan, the free trial included. Some apps need an account of a certain kind, such as WhatsApp Business or an Instagram business or creator account."),
     ("What does Coming soon mean?", "The app can't be connected yet: its maker hasn't opened it to apps like Simeon, or Simeon is still setting up its sign-in with them. It changes to Connect once it can, with nothing for you to do."),
     ("What if my app isn't listed?", "Your agents can still use it on the web, in the browser on their own computer, once you sign in there by taking over. To ask for an app, write to support@simeonlabs.com."),
 ]

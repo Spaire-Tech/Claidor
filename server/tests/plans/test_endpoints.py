@@ -31,8 +31,8 @@ class TestPlans:
         assert [item["tier"] for item in items] == ["standard", "pro", "max"]
         assert items[0]["monthly_price_cents"] == 3000
         assert items[0]["annual_price_cents"] == 28800
-        assert items[0]["weekly_credits"] == 5_000_000
-        assert items[0]["trial_days"] == 30
+        assert items[0]["weekly_credits"] == 10_000_000
+        assert items[0]["trial_days"] == 7
         assert items[2]["monthly_lookup_key"] == "simeon_max_month"
 
     @pytest.mark.auth

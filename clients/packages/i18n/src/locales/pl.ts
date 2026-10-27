@@ -49,10 +49,10 @@ export default {
       allSet: 'Wszystko gotowe!',
       takingYouBack: 'Wracamy do Simeona, aby dokończyć logowanie',
       goBack: 'Wróć do Simeona',
-      goBackStarted: 'Twój darmowy miesiąc się zaczął. Wróć do Simeona',
+      goBackStarted: 'Twój darmowy okres próbny się zaczął. Wróć do Simeona',
       download: 'Pobierz Simeona, aby zacząć',
       downloadStarted:
-        'Twój darmowy miesiąc się zaczął. Pobierz Simeona, aby zacząć',
+        'Twój darmowy okres próbny się zaczął. Pobierz Simeona, aby zacząć',
       continueSigningIn: 'Dokończ logowanie do Simeona',
       openSimeon: 'Otwórz Simeona',
       downloadMac: 'Pobierz Simeona na macOS',
@@ -73,7 +73,7 @@ export default {
       proUsage: '3,5 raza więcej użycia niż w Standard',
       proBusy: 'Dla agentów pracujących codziennie',
       maxIncludes: 'Wszystko z planu Pro oraz:',
-      maxUsage: '12 razy więcej użycia niż w Standard',
+      maxUsage: '9 razy więcej użycia niż w Standard',
       maxAccess: 'Najwcześniejszy dostęp do wszystkich produktów',
       startTrial: 'Zacznij okres próbny planu {plan}',
       upgradeTo: 'Przejdź na plan {plan}',
@@ -88,6 +88,30 @@ export default {
       billedMonthly: 'Rozliczane co miesiąc',
       yourCurrentPlan: 'Twój obecny plan',
       oneMoment: 'Chwileczkę…',
+      confirm: 'Potwierdź',
+      notNow: 'Nie teraz',
+      upgradeBody:
+        '{plan} zaczyna się dziś z nowym tygodniem kredytów. Płacisz teraz {amount}, po odliczeniu niewykorzystanego czasu planu {current}. Potem {price}.',
+      downgradeBody:
+        'Zachowujesz {current} do {date}. Potem zaczyna się {plan}, za {price}.',
+      trialBody:
+        'Twój okres próbny trwa dalej. {plan} zaczyna się, gdy się skończy, {date}, za {price}.',
+      keepTitle: 'Zachowaj {plan}',
+      keepBody:
+        'Zostajesz na planie {plan}. Przejście na {next} zostało anulowane.',
+      startNow: 'Zacznij mój plan teraz',
+      startNowTitle: 'Zacznij {plan} teraz',
+      startNowBody:
+        'Twój okres próbny kończy się teraz i zaczyna się {plan}, z nowym tygodniem kredytów. Płacisz dziś {amount}.',
+      priceMonth: '{amount} miesięcznie',
+      priceYear: '{amount} rocznie',
+      changeFailed: 'Twój plan się nie zmienił',
+      switchesOn: 'Zmiana na {plan} {date} · ',
+      keepPlan: 'Zachowaj {plan}',
+      extraCredits: 'Dodatkowe kredyty: {credits} · ',
+      addCredits: 'Dodaj kredyty',
+      creditsNote:
+        '{price} za {credits} kredytów, używanych, gdy skończą się kredyty na ten tydzień. Ważne 12 miesięcy.',
     },
   },
 } as const

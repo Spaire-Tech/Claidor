@@ -17,6 +17,7 @@ from simeon.desktop.allowance import (
     FREE_TRIAL_PLAN_NAME,
     STATUS_NONE,
     STATUS_TRIALING,
+    TRIAL_HOURLY_CREDITS,
     resolve_allowance,
 )
 from simeon.entitlements.tiers import TRIAL_CREDITS
@@ -40,7 +41,7 @@ TOKEN = "ZGV2aWNlLXRva2Vu"
 
 @pytest.mark.asyncio
 class TestStart:
-    async def test_a_new_person_gets_thirty_days(
+    async def test_a_new_person_gets_seven_days(
         self, mocker: MockerFixture, session: AsyncSession, user: User
     ) -> None:
         billing_on(mocker)
@@ -52,7 +53,8 @@ class TestStart:
         assert outcome.trial.ends_at - outcome.trial.starts_at == timedelta(
             days=catalog.TRIAL_DAYS
         )
-        assert catalog.TRIAL_DAYS == 30
+        # A week since 27 October 2026 (a month before).
+        assert catalog.TRIAL_DAYS == 7
 
         allowance = await resolve_allowance(session, user)
         assert allowance.status == STATUS_TRIALING
@@ -60,6 +62,7 @@ class TestStart:
         assert allowance.tier is None
         assert allowance.provider is None
         assert allowance.credits_limit == TRIAL_CREDITS
+        assert allowance.hourly_credits == TRIAL_HOURLY_CREDITS
         assert allowance.trial_end == outcome.trial.ends_at
         assert not allowance.trial_cancelable
         access = await sand_access_of(session, user)

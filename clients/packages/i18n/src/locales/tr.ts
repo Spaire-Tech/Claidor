@@ -50,9 +50,9 @@ export default {
       allSet: 'Her şey hazır!',
       takingYouBack: 'Girişi tamamlamak için Simeon’a dönüyorsun',
       goBack: 'Simeon’a geri dön',
-      goBackStarted: 'Ücretsiz ayın başladı. Simeon’a geri dön',
+      goBackStarted: 'Ücretsiz denemen başladı. Simeon’a geri dön',
       download: 'Başlamak için Simeon’u indir',
-      downloadStarted: 'Ücretsiz ayın başladı. Başlamak için Simeon’u indir',
+      downloadStarted: 'Ücretsiz denemen başladı. Başlamak için Simeon’u indir',
       continueSigningIn: 'Simeon’a giriş yapmaya devam et',
       openSimeon: 'Simeon’u aç',
       downloadMac: 'macOS için Simeon’u indir',
@@ -73,7 +73,7 @@ export default {
       proUsage: 'Standard planının 3,5 katı kullanım',
       proBusy: 'Her gün yoğun çalışan ajanlar için',
       maxIncludes: 'Pro planındaki her şey, artı:',
-      maxUsage: 'Standard planının 12 katı kullanım',
+      maxUsage: 'Standard planının 9 katı kullanım',
       maxAccess: 'Tüm ürünlere herkesten önce erişim',
       startTrial: '{plan} denemeni başlat',
       upgradeTo: '{plan} planına yükselt',
@@ -88,6 +88,30 @@ export default {
       billedMonthly: 'Aylık faturalandırılır',
       yourCurrentPlan: 'Mevcut planın',
       oneMoment: 'Bir saniye…',
+      confirm: 'Onayla',
+      notNow: 'Şimdi değil',
+      upgradeBody:
+        '{plan} bugün yeni bir haftalık krediyle başlar. Şimdi {amount} ödersin; {current} planının kullanılmayan süresi düşülür. Sonra {price}.',
+      downgradeBody:
+        '{current} planın {date} tarihine kadar sürer. Sonra {plan} başlar, {price}.',
+      trialBody:
+        'Denemen devam ediyor. {plan} deneme bitince, {date} tarihinde başlar, {price}.',
+      keepTitle: '{plan} planında kal',
+      keepBody:
+        '{plan} planında kalıyorsun. {next} planına geçiş iptal edildi.',
+      startNow: 'Planımı şimdi başlat',
+      startNowTitle: '{plan} planını şimdi başlat',
+      startNowBody:
+        'Denemen şimdi biter ve {plan} yeni bir haftalık krediyle başlar. Bugün {amount} ödersin.',
+      priceMonth: 'Aylık {amount}',
+      priceYear: 'Yıllık {amount}',
+      changeFailed: 'Planın değişmedi',
+      switchesOn: '{date} tarihinde {plan} planına geçer · ',
+      keepPlan: '{plan} planında kal',
+      extraCredits: 'Ek krediler: {credits} · ',
+      addCredits: 'Kredi ekle',
+      creditsNote:
+        '{credits} kredi {price}; haftalık kredilerin bitince kullanılır. 12 ay geçerlidir.',
     },
   },
 } as const

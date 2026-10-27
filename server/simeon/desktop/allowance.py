@@ -15,13 +15,18 @@ Three windows, one shape:
   `DESKTOP_MONTHLY_CREDITS`. Nothing changes for an installation that
   has not switched billing on.
 - **Trial**: `trial_start` to `trial_end` of the trialing subscription,
-  the plan's `trial_credits`, once. The free month the iPhone app starts
+  the plan's `trial_credits`, once. The free trial the iPhone app starts
   with no card (`simeon.plans.free_month`, 12 October 2026) is a trial
-  too: its thirty days, its credits, once.
-- **A plan** (active, or past due while the card is retried): Monday
-  00:00 UTC to the next Monday, the plan's `weekly_credits`. Stripe
-  cannot reset a meter weekly, so the week is counted here, from
-  `desktop_usage`.
+  too: its seven days, its credits, once.
+- **A plan** (active, or past due while the card is retried): the plan's
+  own week (`plan_week`, 27 October 2026), seven days at a time from the
+  start of its current period, so a renewal, an upgrade (which starts a
+  new period, as Apple's does) and the end of a trial each start a fresh
+  week; the plan's `weekly_credits`. Monday to Monday UTC for everyone
+  until then, which counted a trial's last days against the first paid
+  week. Stripe cannot reset a meter weekly, so the week is counted here,
+  from `desktop_usage`. Past the week, a paid plan spends its prepaid
+  extra credits (`simeon.plans.credits`).
 - **No plan** (never subscribed, trial lapsed, cancelled, dunning over,
   or the first charge after the trial failed): the week, with a limit of
   0, so every metered call is refused with a sentence that says where to
@@ -65,8 +70,12 @@ STATUS_PAST_DUE = "past_due"
 #: Where a person goes to choose, change or cancel a plan.
 BILLING_PATH = "/billing"
 
-#: The plan name of the free month (`simeon.plans.free_month`).
+#: The plan name of the free trial (`simeon.plans.free_month`).
 FREE_TRIAL_PLAN_NAME = "Free trial"
+
+#: A trial's hourly brake, whichever plan: Standard's, as its credits are
+#: a week of Standard (`tiers.TRIAL_CREDITS`).
+TRIAL_HOURLY_CREDITS = get_definition(TierKey.standard).hourly_credits
 
 
 def billing_required() -> bool:
@@ -102,16 +111,46 @@ def month_bounds(now: datetime | None = None) -> tuple[datetime, datetime]:
     return start, end
 
 
+WEEK = timedelta(days=7)
+
+
 def week_bounds(now: datetime | None = None) -> tuple[datetime, datetime]:
-    """Monday 00:00 UTC to the next Monday: the week a plan's credits
-    are counted over. Monday rather than the subscription's own day so
-    every person's meter resets at the same moment and "resets Monday"
-    is true for everyone."""
+    """Monday 00:00 UTC to the next Monday: the week of a person with no
+    plan, and of a plan whose period is not known (`plan_week`)."""
     moment = now or utc_now()
     start = (moment - timedelta(days=moment.weekday())).replace(
         hour=0, minute=0, second=0, microsecond=0
     )
-    return start, start + timedelta(days=7)
+    return start, start + WEEK
+
+
+def plan_week(
+    period_start: datetime | None,
+    period_end: datetime | None,
+    now: datetime | None = None,
+) -> tuple[datetime, datetime]:
+    """The plan's own week around `now` (27 October 2026): seven days at a
+    time from the start of its current period, as Claude gives each account
+    its own weekly reset. A renewal, an upgrade and the end of a trial each
+    start a period, so each starts a fresh week. The period's last stretch
+    shorter than a week joins the week before it (a 30-day month is three
+    weeks and one of nine days), so no week crosses a renewal. Past the
+    period's end (a renewal not yet copied in), seven days at a time from
+    that end. Without a period, Monday to Monday (`week_bounds`)."""
+    moment = now or utc_now()
+    if period_start is None or period_start > moment:
+        return week_bounds(moment)
+    if period_end is not None and moment >= period_end:
+        start = period_end + ((moment - period_end) // WEEK) * WEEK
+        return start, start + WEEK
+    index = (moment - period_start) // WEEK
+    if period_end is None:
+        start = period_start + index * WEEK
+        return start, start + WEEK
+    last = max((period_end - period_start) // WEEK - 1, 0)
+    index = min(index, last)
+    start = period_start + index * WEEK
+    return start, (period_end if index == last else start + WEEK)
 
 
 @dataclass(frozen=True)
@@ -142,6 +181,14 @@ class Allowance:
     #: subscription is still there and the card is being retried, so the
     #: person updates the card rather than choosing a plan.
     payment_failed: bool = False
+    #: Credits in any sliding hour (27 October 2026): the plan's
+    #: `hourly_credits`, Standard's on a trial; 0 reads
+    #: `DESKTOP_HOURLY_CREDITS`.
+    hourly_limit: int = 0
+
+    @property
+    def hourly_credits(self) -> int:
+        return self.hourly_limit or settings.DESKTOP_HOURLY_CREDITS
 
     @property
     def paid(self) -> bool:
@@ -217,6 +264,7 @@ def free_month_allowance(trial: DesktopFreeTrial, *, now: datetime) -> Allowance
         period_start=trial.starts_at,
         period_end=trial.ends_at,
         trial_end=trial.ends_at,
+        hourly_limit=TRIAL_HOURLY_CREDITS,
     )
 
 
@@ -253,9 +301,12 @@ def allowance_of(
             trial_end=subscription.trial_end,
             trial_cancelable=not subscription.cancel_at_period_end,
             provider=subscription.provider,
+            hourly_limit=TRIAL_HOURLY_CREDITS,
         )
 
-    start, end = week_bounds(moment)
+    start, end = plan_week(
+        subscription.current_period_start, subscription.current_period_end, moment
+    )
     return Allowance(
         plan_name=TIER_NAMES[tier],
         status=subscription.status,
@@ -264,6 +315,7 @@ def allowance_of(
         period_start=start,
         period_end=end,
         provider=subscription.provider,
+        hourly_limit=definition.hourly_credits,
     )
 
 
@@ -305,6 +357,7 @@ __all__ = [
     "billing_url",
     "free_month_allowance",
     "month_bounds",
+    "plan_week",
     "resolve_allowance",
     "week_bounds",
 ]

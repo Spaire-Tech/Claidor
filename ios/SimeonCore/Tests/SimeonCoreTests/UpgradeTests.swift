@@ -12,7 +12,7 @@ final class UpgradeTests: XCTestCase {
 
   func testTheCoverSaysTheFreeMonthIsOverOrThatAPlanIsNeeded() {
     let over = usage(["subscriptionStatus": "none", "creditsLimit": 0, "creditsUsed": 0, "creditsRemaining": 0, "trialEndsAt": "2026-10-01T00:00:00+00:00"])
-    XCTAssertEqual(PhoneUpgrade.cover(access: paymentRequired, usage: over).title, "Your free month has ended")
+    XCTAssertEqual(PhoneUpgrade.cover(access: paymentRequired, usage: over).title, "Your free trial has ended")
     XCTAssertEqual(PhoneUpgrade.cover(access: paymentRequired, usage: over).action, "See plans")
     let never = usage(["subscriptionStatus": "none", "creditsLimit": 0, "creditsUsed": 0, "creditsRemaining": 0])
     XCTAssertEqual(PhoneUpgrade.cover(access: paymentRequired, usage: never).title, "Choose a plan to start")
@@ -39,7 +39,7 @@ final class UpgradeTests: XCTestCase {
     XCTAssertEqual(PhoneUpgrade.banner(access: paymentRequired, usage: nil)?.action, "See plans")
   }
 
-  func testTheButtonGoesWhereThePlanWasBought() {
+  func testTheButtonGoesWhereThePlanWasBought() throws {
     let unavailable = SandAccess(state: .unavailable, reason: .unspecified)
     XCTAssertEqual(PhoneUpgrade.route(access: unavailable, usage: nil, webLinkAllowed: false), .web(SandAccess.page))
     // No plan: the App Store's plans.
@@ -54,13 +54,34 @@ final class UpgradeTests: XCTestCase {
     let web = usage(["subscriptionStatus": "active", "tier": "pro", "billedBy": "stripe", "creditsLimit": 1, "creditsUsed": 1, "creditsRemaining": 0, "upgradeUrl": "https://app.simeonlabs.com/billing?from=app"])
     XCTAssertEqual(PhoneUpgrade.route(access: granted, usage: web, webLinkAllowed: true), .portal(flow: "update_confirm", tier: "max"))
     XCTAssertEqual(PhoneUpgrade.route(access: granted, usage: web, webLinkAllowed: false), .none)
-    // The top plan has none above: Stripe's front page.
+    // The top plan has none above: extra credits, on Stripe's checkout (27 October 2026).
     let top = usage(["subscriptionStatus": "active", "tier": "max", "billedBy": "stripe", "creditsLimit": 1, "creditsUsed": 1, "creditsRemaining": 0])
-    XCTAssertEqual(PhoneUpgrade.route(access: granted, usage: top, webLinkAllowed: true), .portal(flow: nil, tier: nil))
-    let words = PhoneUpgrade.withoutUpgrade(PhoneUpgrade.banner(access: granted, usage: web)!)
+    XCTAssertEqual(PhoneUpgrade.route(access: granted, usage: top, webLinkAllowed: true), .portal(flow: "credits", tier: nil))
+    XCTAssertEqual(PhoneUpgrade.banner(access: granted, usage: top)?.action, "Add Credits")
+    // A card trial on the web starts its plan now, with a fresh week.
+    let trial = usage(["subscriptionStatus": "trialing", "tier": "pro", "billedBy": "stripe", "creditsLimit": 1, "creditsUsed": 1, "creditsRemaining": 0])
+    XCTAssertEqual(PhoneUpgrade.route(access: granted, usage: trial, webLinkAllowed: true), .portal(flow: "start_now", tier: nil))
+    XCTAssertEqual(PhoneUpgrade.banner(access: granted, usage: trial)?.action, "Start Plan Now")
+    // Without a link, the line says only when the week comes back: the person's own day, not Monday.
+    let utc = TimeZone(identifier: "UTC")!
+    let reset = now.addingTimeInterval(3 * 86_400)
+    let dated = usage(["subscriptionStatus": "active", "tier": "pro", "billedBy": "stripe", "creditsLimit": 1, "creditsUsed": 1, "creditsRemaining": 0, "periodEnd": .string(ISO8601DateFormatter().string(from: reset))])
+    let banner = try XCTUnwrap(PhoneUpgrade.banner(access: granted, usage: dated, now: now, timeZone: utc))
+    XCTAssertEqual(banner.body, "They reset \(PhoneUpgrade.day(reset, now: now, timeZone: utc)). Upgrade to keep going now.")
+    let words = PhoneUpgrade.withoutUpgrade(banner, usage: dated, now: now, timeZone: utc)
     XCTAssertEqual(words.title, "This week’s credits are used")
-    XCTAssertEqual(words.body, "They reset on Monday.")
+    XCTAssertEqual(words.body, "They reset \(PhoneUpgrade.day(reset, now: now, timeZone: utc)).")
     XCTAssertNil(words.action)
+  }
+
+  /** Extra credits (27 October 2026): a paid week spent with credits bought on the web is not the end of the work. */
+  func testExtraCreditsKeepThePaidWeekGoing() {
+    let extra = usage(["subscriptionStatus": "active", "tier": "standard", "creditsLimit": 10, "creditsUsed": 10, "creditsRemaining": 0, "hasPaidCredits": true, "extraCredits": 2_950_000])
+    XCTAssertTrue(extra.hasAvailableUsage)
+    XCTAssertNil(PhoneUpgrade.banner(access: granted, usage: extra))
+    XCTAssertEqual(UsageMeters(extra, now: now).extraCredits, "2,950,000")
+    let trial = usage(["subscriptionStatus": "trialing", "tier": "standard", "creditsLimit": 10, "creditsUsed": 10, "creditsRemaining": 0, "hasPaidCredits": false, "extraCredits": 100])
+    XCTAssertFalse(trial.hasAvailableUsage, "a trial does not use them")
   }
 
   /**
@@ -114,7 +135,7 @@ final class UpgradeTests: XCTestCase {
     let hadOne = SandAccess(state: .paymentRequired, reason: .none)
     XCTAssertEqual(MacUpgrade.cover(access: hadOne, usage: none).title, "Simeon needs a plan")
     let over = usage(["subscriptionStatus": "none", "creditsLimit": 0, "trialEndsAt": "2026-10-01T00:00:00+00:00"])
-    XCTAssertEqual(MacUpgrade.cover(access: hadOne, usage: over).title, "Your free month has ended")
+    XCTAssertEqual(MacUpgrade.cover(access: hadOne, usage: over).title, "Your free trial has ended")
 
     let failed = usage(["subscriptionStatus": "none", "creditsLimit": 0, "paymentFailed": true, "billedBy": "stripe", "upgradeUrl": "https://app.simeonlabs.com/billing?from=app"])
     XCTAssertEqual(MacUpgrade.cover(access: hadOne, usage: failed).action, "Update card")
@@ -142,6 +163,10 @@ final class UpgradeTests: XCTestCase {
     XCTAssertEqual(box.sent("server:billing/portal"), ["flow": "payment_method", "back": "simeon-ios"])
     _ = await store.billingPortal(flow: PhoneUpgrade.upgradeFlow, tier: "max", back: "simeon")
     XCTAssertEqual(box.sent("server:billing/portal"), ["flow": "update_confirm", "tier": "max", "back": "simeon"])
+    _ = await store.billingPortal(flow: PhoneUpgrade.startNowFlow, tier: nil, back: "simeon")
+    XCTAssertEqual(box.sent("server:billing/portal"), ["flow": "start_now", "back": "simeon"])
+    _ = await store.billingPortal(flow: PhoneUpgrade.creditsFlow, tier: nil, back: "simeon-ios")
+    XCTAssertEqual(box.sent("server:billing/portal"), ["flow": "credits", "back": "simeon-ios"])
     // Settings' Manage Plan front page, as before: nothing sent.
     _ = await store.billingPortal(flow: nil, tier: nil)
     XCTAssertEqual(box.sent("server:billing/portal"), [:])

@@ -391,6 +391,12 @@
   color: var(--ink3);
 }
 
+.confirmLede {
+  max-width: 460px;
+  color: var(--ink2);
+  line-height: 1.45;
+}
+
 .setActions {
   margin-top: 28px;
   display: flex;

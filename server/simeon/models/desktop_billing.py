@@ -1,6 +1,6 @@
 """What Stripe says about a person's plan, copied here by webhook.
 
-Stripe Billing owns the products, the prices, the 30-day trial, the
+Stripe Billing owns the products, the prices, the 7-day trial, the
 subscription and the invoices (`docs/services-billing.md`). The server
 keeps one row per person with the subscription's status and dates, written
 by the `customer.subscription.*` and `checkout.session.completed` webhooks
@@ -19,10 +19,14 @@ a purchase and by Apple's server notifications (`simeon.plans.app_store`).
 It has the same fields the allowance reads as `DesktopSubscription`, so
 credits, the trial and access work alike whoever bills the plan.
 
-`DesktopFreeTrial` is the free month (12 October 2026): started by the
-iPhone app at a person's first sign-in, no card and no checkout, with the
-trial's credits (`simeon.plans.free_month`). One per person and one per
-iPhone; it counts as the person's one trial everywhere.
+`DesktopFreeTrial` is the free trial (12 October 2026, seven days since 27
+October 2026): started by the iPhone app at a person's first sign-in, no card
+and no checkout, with the trial's credits (`simeon.plans.free_month`). One per
+person; it counts as the person's one trial everywhere.
+
+`DesktopCreditPack` is extra credits bought on the web (27 October 2026):
+used only once the week's credits are spent, on a paid plan, oldest first,
+for twelve months (`simeon.plans.credits`).
 """
 
 from datetime import UTC, datetime, timedelta
@@ -94,6 +98,16 @@ class DesktopSubscription(RecordModel):
     #: When the trial's card was checked against earlier trials; None
     #: until the first `trialing` snapshot has been through the check.
     trial_checked_at: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=True), nullable=True, default=None
+    )
+    #: A move to a smaller plan waiting for the renewal (27 October 2026,
+    #: `PlansService.change_plan`): the plan it moves to and when. Stripe
+    #: holds it as a subscription schedule; cleared once the move is made
+    #: or the schedule is let go.
+    scheduled_tier: Mapped[str | None] = mapped_column(
+        String(32), nullable=True, default=None
+    )
+    scheduled_at: Mapped[datetime | None] = mapped_column(
         TIMESTAMP(timezone=True), nullable=True, default=None
     )
     #: When Stripe's subscription object was last copied in.
@@ -274,8 +288,8 @@ class DesktopTrialRedemption(RecordModel):
 
 
 class DesktopFreeTrial(RecordModel):
-    """The free month: 30 days and the trial's credits, started from the
-    iPhone app with no card (12 October 2026). One row per person, ever.
+    """The free trial: seven days (thirty until 27 October 2026) and the
+    trial's credits, started from the iPhone app with no card (12 October 2026). One row per person, ever.
     The row outlives a deleted account (whose user row stays, anonymised:
     `soft_delete_user`) and carries a hash of the e-mail, not the e-mail,
     so deleting the account and signing up again with the same address
@@ -304,3 +318,40 @@ class DesktopFreeTrial(RecordModel):
 
     def live_at(self, now: datetime) -> bool:
         return self.starts_at <= now < self.ends_at
+
+
+class DesktopCreditPack(RecordModel):
+    """Extra credits bought on the web, one row per paid checkout (27
+    October 2026). Used only after the week's credits run out, and only on
+    a paid plan; the pack that expires first is drawn first
+    (`simeon.plans.credits`)."""
+
+    __tablename__ = "desktop_credit_packs"
+
+    user_id: Mapped[UUID] = mapped_column(
+        Uuid, ForeignKey("users.id", ondelete="cascade"), nullable=False, index=True
+    )
+    #: What was bought, and what is left of it.
+    credits: Mapped[int] = mapped_column(Integer, nullable=False)
+    remaining: Mapped[int] = mapped_column(Integer, nullable=False)
+    #: Twelve months after the purchase.
+    expires_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True), nullable=False, index=True
+    )
+    amount_cents: Mapped[int] = mapped_column(Integer, nullable=False)
+    currency: Mapped[str] = mapped_column(String(3), nullable=False)
+    #: The checkout that paid for it: one pack per checkout, whichever of
+    #: the webhook and the return page gets there first.
+    stripe_checkout_session_id: Mapped[str] = mapped_column(
+        String(128), nullable=False, unique=True
+    )
+    #: The payment, to find the pack again when it is refunded.
+    stripe_payment_intent_id: Mapped[str | None] = mapped_column(
+        String(128), nullable=True, index=True, default=None
+    )
+    refunded_at: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=True), nullable=True, default=None
+    )
+
+    def live_at(self, now: datetime) -> bool:
+        return self.remaining > 0 and self.refunded_at is None and now < self.expires_at

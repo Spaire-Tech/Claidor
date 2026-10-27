@@ -70,6 +70,7 @@ export default async function Page(props: {
       returnTo={returnToOf(searchParams.return_to)}
       fromApp={first(searchParams.from) === 'app'}
       upgraded={searchParams.upgraded === '1'}
+      credits={searchParams.credits === '1'}
       checkoutSessionId={checkoutSessionOf(searchParams.checkout_session_id)}
       locale={await pageLocale(first(searchParams.locale))}
     />

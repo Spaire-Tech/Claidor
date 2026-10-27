@@ -141,8 +141,9 @@ class TierEntitlements:
     # The monthly fee Simeon charges for this tier itself (informational —
     # the actual billing is driven by the platform-org subscription).
     monthly_price_cents: int
-    # Credits included each week, Monday to Monday UTC, while the plan is
-    # active or past due (`simeon.desktop.service.DesktopService.allowance`).
+    # Credits included each week while the plan is active or past due, the
+    # week counted from the plan's own start (Monday to Monday UTC until 27
+    # October 2026; `simeon.desktop.allowance.plan_week`).
     # One credit is one input token on the middle model at $3 per million
     # (`simeon.desktop.pricing.CREDIT_USD_PER_MILLION_INPUT`). 0 on the
     # fallbacks: `unmanaged` meters against `DESKTOP_MONTHLY_CREDITS`
@@ -159,6 +160,12 @@ class TierEntitlements:
     # prices; shipping overage billing is a deliberate pricing decision,
     # and these events would be its input).
     overage_grace_pct: int
+    # The short brake (27 October 2026): credits in any sliding hour, about
+    # a fifth of the week, so a runaway loop stops within the hour and a
+    # busy hour of real work does not (`DesktopService.hourly_exhausted`).
+    # 0 on the fallbacks, which read `DESKTOP_HOURLY_CREDITS`. As Claude's
+    # five-hour limit, it grows with the plan.
+    hourly_credits: int = 0
 
 
 # `unmanaged` keeps unlimited features/quotas (no enforcement) and bills at
@@ -246,17 +253,17 @@ _INACTIVE = TierEntitlements(
 )
 
 
-#: What every trial includes: 5,000,000 credits, once, for the whole trial
-#: (1,000,000 until 8 October 2026, when the founder found "a simple
-#: onboarding run eats it all": every allowance is five times what it was,
-#: "at least for now"). The trial was seven days until 12 October 2026 and
-#: is thirty since (`simeon.plans.catalog.TRIAL_DAYS`), with the same
-#: credits: the founder chose them over a month of Standard's weeks. The
-#: iPhone app's free month gives the same (`simeon.plans.free_month`).
-TRIAL_CREDITS = 5_000_000
+#: What every trial includes: one week of Standard, 10,000,000 credits,
+#: once, for the whole trial, whichever plan was chosen, so a trial is never
+#: a free heavy week (27 October 2026; 5,000,000 before, 1,000,000 until 8
+#: October 2026). The trial is seven days again (thirty from 12 to 27
+#: October 2026, `simeon.plans.catalog.TRIAL_DAYS`): exactly one week. The
+#: iPhone app's free trial gives the same (`simeon.plans.free_month`).
+TRIAL_CREDITS = 10_000_000
 
-# Standard, $30 a month on the web and the iPhone: 5,000,000 credits a
-# week (3,750,000 until 17 October 2026, 750,000 until 8 October 2026).
+# Standard, $30 a month on the web and the iPhone: 10,000,000 credits a
+# week (27 October 2026; 5,000,000 until then, 3,750,000 until 17 October
+# 2026, 750,000 until 8 October 2026), 2,000,000 in any hour.
 # Model cost at list is more than the price when the week is used up; the
 # plan is priced for the person who comes back, not the heaviest week.
 _STANDARD = TierEntitlements(
@@ -316,15 +323,17 @@ _STANDARD = TierEntitlements(
     ),
     rate_limit_group="elevated",
     monthly_price_cents=3000,
-    weekly_credits=5_000_000,
+    weekly_credits=10_000_000,
     trial_credits=TRIAL_CREDITS,
     overage_grace_pct=10,
+    hourly_credits=2_000_000,
 )
 
 
-# Pro, $100 a month on the web and the iPhone: 17,500,000 credits a
-# week (12,500,000 until 17 October 2026), 3.5 times Standard. Room for
-# routines that run every day.
+# Pro, $100 a month on the web and the iPhone: 35,000,000 credits a week
+# (27 October 2026; 17,500,000 until then, 12,500,000 until 17 October
+# 2026), 3.5 times Standard for 3.3 times its price, 7,000,000 in any hour.
+# Room for routines that run every day.
 _PRO = TierEntitlements(
     tier=TierKey.pro,
     transaction_fee=TransactionFee(percent_basis_points=500, fixed_cents=30),
@@ -363,15 +372,17 @@ _PRO = TierEntitlements(
     ),
     rate_limit_group="elevated",
     monthly_price_cents=10000,
-    weekly_credits=17_500_000,
+    weekly_credits=35_000_000,
     trial_credits=TRIAL_CREDITS,
     overage_grace_pct=10,
+    hourly_credits=7_000_000,
 )
 
 
-# Max, $200 a month on the web and the iPhone: 60,000,000 credits a
-# week (40,000,000 until 17 October 2026), twelve times Standard. Agents on
-# routines all week long.
+# Max, $200 a month on the web and the iPhone: 90,000,000 credits a week
+# (27 October 2026; 60,000,000 until then, 40,000,000 until 17 October
+# 2026), nine times Standard for 6.7 times its price, 18,000,000 in any
+# hour. Agents on routines all week long; past it, extra credits.
 _MAX = TierEntitlements(
     tier=TierKey.max,
     # 3% base is at/under the true MoR cost floor (~3.5%); it stays profitable
@@ -414,9 +425,10 @@ _MAX = TierEntitlements(
     ),
     rate_limit_group="elevated",
     monthly_price_cents=20000,
-    weekly_credits=60_000_000,
+    weekly_credits=90_000_000,
     trial_credits=TRIAL_CREDITS,
     overage_grace_pct=10,
+    hourly_credits=18_000_000,
 )
 
 

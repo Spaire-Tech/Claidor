@@ -11,10 +11,12 @@ from simeon.desktop.allowance import (
     STATUS_FREE,
     STATUS_NONE,
     STATUS_TRIALING,
+    TRIAL_HOURLY_CREDITS,
+    plan_week,
     resolve_allowance,
     week_bounds,
 )
-from simeon.desktop.proxy_common import quota_exhausted_response
+from simeon.desktop.proxy_common import budget_refusal, quota_exhausted_response
 from simeon.desktop.service import desktop
 from simeon.entitlements.tiers import TierKey, tier_from_value
 from simeon.kit.utils import utc_now
@@ -106,6 +108,59 @@ async def _after_the_trial(
     return row
 
 
+class TestPlanWeek:
+    """Each person's week runs from their plan's start (27 October 2026),
+    as Claude's does, so a plan bought on a Thursday resets on Thursdays."""
+
+    start = datetime(2026, 10, 1, 9, 30, tzinfo=UTC)
+    end = datetime(2026, 10, 31, 9, 30, tzinfo=UTC)
+
+    def test_the_first_week_starts_with_the_plan(self) -> None:
+        moment = datetime(2026, 10, 3, tzinfo=UTC)
+        assert plan_week(self.start, self.end, moment) == (
+            self.start,
+            self.start + timedelta(days=7),
+        )
+
+    def test_later_weeks_follow_on(self) -> None:
+        moment = datetime(2026, 10, 16, tzinfo=UTC)
+        assert plan_week(self.start, self.end, moment) == (
+            datetime(2026, 10, 15, 9, 30, tzinfo=UTC),
+            datetime(2026, 10, 22, 9, 30, tzinfo=UTC),
+        )
+
+    def test_the_last_stretch_of_a_month_joins_the_fourth_week(self) -> None:
+        """A 30-day period holds four weeks and two days; the two days join
+        the fourth week, so the week ends with the period and the renewal
+        starts a fresh one, never a two-day week."""
+        moment = datetime(2026, 10, 30, tzinfo=UTC)
+        assert plan_week(self.start, self.end, moment) == (
+            datetime(2026, 10, 22, 9, 30, tzinfo=UTC),
+            self.end,
+        )
+
+    def test_past_the_period_end_the_weeks_carry_on_from_it(self) -> None:
+        """The renewal's webhook can lag: until it lands, the weeks carry on
+        from the old period's end, which is where the new one starts."""
+        moment = datetime(2026, 11, 2, tzinfo=UTC)
+        assert plan_week(self.start, self.end, moment) == (
+            self.end,
+            self.end + timedelta(days=7),
+        )
+
+    def test_without_a_period_it_is_the_monday_week(self) -> None:
+        moment = datetime(2026, 10, 8, 15, 42, tzinfo=UTC)
+        assert plan_week(None, None, moment) == week_bounds(moment)
+
+    def test_a_yearly_plan_has_weeks_all_year(self) -> None:
+        end = self.start + timedelta(days=365)
+        moment = self.start + timedelta(days=200)
+        week_start, week_end = plan_week(self.start, end, moment)
+        assert week_end - week_start == timedelta(days=7)
+        assert week_start <= moment < week_end
+        assert (week_start - self.start) % timedelta(days=7) == timedelta(0)
+
+
 class TestWeekBounds:
     def test_monday_to_monday_in_utc(self) -> None:
         # Thursday 8 October 2026, 15:42 UTC.
@@ -152,14 +207,20 @@ class TestResolveAllowance:
         user: User,
         mocker: MockerFixture,
     ) -> None:
-        await _person_with_plan(save_fixture, mocker, user, tier="pro", status="active")
+        row = await _person_with_plan(
+            save_fixture, mocker, user, tier="pro", status="active"
+        )
         allowance = await resolve_allowance(session, user)
         assert allowance.status == "active"
         assert allowance.plan_name == "Pro"
         assert allowance.tier == "pro"
-        assert allowance.credits_limit == 17_500_000
-        start, end = week_bounds()
-        assert (allowance.period_start, allowance.period_end) == (start, end)
+        assert allowance.credits_limit == 35_000_000
+        assert allowance.hourly_credits == 7_000_000
+        # The person's own week, from the day the plan's period began (three
+        # days ago in the fixture), not Monday's.
+        assert row.current_period_start is not None
+        assert allowance.period_start == row.current_period_start
+        assert allowance.period_end == row.current_period_start + timedelta(days=7)
         assert allowance.paid
 
     async def test_past_due_keeps_the_week_while_the_card_is_retried(
@@ -178,7 +239,7 @@ class TestResolveAllowance:
         )
         allowance = await resolve_allowance(session, user)
         assert allowance.status == "past_due"
-        assert allowance.credits_limit == 5_000_000
+        assert allowance.credits_limit == 10_000_000
         assert allowance.paid
 
     async def test_a_failed_first_charge_after_the_trial_is_no_plan(
@@ -217,7 +278,7 @@ class TestResolveAllowance:
         )
         allowance = await resolve_allowance(session, user)
         assert allowance.status == "active"
-        assert allowance.credits_limit == 17_500_000
+        assert allowance.credits_limit == 35_000_000
         assert not allowance.payment_failed
 
     async def test_a_failed_renewal_after_a_paid_month_keeps_the_week(
@@ -233,7 +294,7 @@ class TestResolveAllowance:
         assert not row.unpaid_after_trial
         allowance = await resolve_allowance(session, user)
         assert allowance.status == "past_due"
-        assert allowance.credits_limit == 17_500_000
+        assert allowance.credits_limit == 35_000_000
         assert not allowance.payment_failed
 
     async def test_a_trial_gets_its_own_window_and_credits(
@@ -254,7 +315,9 @@ class TestResolveAllowance:
         allowance = await resolve_allowance(session, user)
         assert allowance.status == STATUS_TRIALING
         assert allowance.plan_name == "Max"
-        assert allowance.credits_limit == 5_000_000
+        # A trial is one Standard week, whichever plan was chosen.
+        assert allowance.credits_limit == 10_000_000
+        assert allowance.hourly_credits == TRIAL_HOURLY_CREDITS == 2_000_000
         assert allowance.trial_end is not None
         assert allowance.period_end == allowance.trial_end
         assert allowance.trial_cancelable
@@ -332,7 +395,7 @@ class TestQuotaAndRefusal:
         quota = await desktop.quota(session, user)
         assert quota["planName"] == "Standard"
         assert quota["subscriptionStatus"] == "trialing"
-        assert quota["creditsLimit"] == 5_000_000
+        assert quota["creditsLimit"] == 10_000_000
         assert quota["tier"] == "standard"
         assert quota["trialEndsAt"] == quota["periodEnd"]
         assert quota["trialCancelable"] is True
@@ -358,7 +421,7 @@ class TestQuotaAndRefusal:
             tier="standard",
             status="active",
         )
-        start, _ = week_bounds()
+        start = (await desktop.allowance(session, user)).period_start
         old = DesktopUsage(
             user_id=user.id, model="gpt-6-sol", credits=700_000, upstream_status=200
         )
@@ -371,8 +434,8 @@ class TestQuotaAndRefusal:
         )
         quota = await desktop.quota(session, user)
         assert quota["creditsUsed"] == 100_000
-        # Standard's week (5,000,000 since 17 October 2026) less this week's 100,000.
-        assert quota["creditsRemaining"] == 4_900_000
+        # Standard's week (10,000,000 since 27 October 2026) less this week's 100,000.
+        assert quota["creditsRemaining"] == 9_900_000
         assert not await desktop.exhausted(session, user)
 
     async def test_no_plan_is_exhausted_before_the_first_call(
@@ -403,7 +466,8 @@ class TestQuotaAndRefusal:
         allowance = await desktop.allowance(session, user)
         body = quota_exhausted_response(allowance).body.decode()
         assert "This week's credits are used (code 40200)" in body
-        assert "Monday" in body
+        # The person's own reset day, not every account's Monday.
+        assert allowance.period_end.strftime("%A") in body
 
     async def test_a_failed_card_is_told_to_update_it(
         self,
@@ -434,6 +498,43 @@ class TestQuotaAndRefusal:
         quota = await desktop.quota(session, user)
         assert quota["paymentFailed"] is False
         assert quota["billedBy"] is None
+
+    async def test_each_plan_has_its_own_hourly_brake(
+        self,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        """About a fifth of the week (27 October 2026): an hour on Max may
+        spend what would stop Standard, and the refusal names Max's limit."""
+        await _person_with_plan(save_fixture, mocker, user, tier="max", status="active")
+        await save_fixture(
+            DesktopUsage(
+                user_id=user.id,
+                model="gpt-6-sol",
+                credits=5_000_000,
+                upstream_status=200,
+            )
+        )
+        allowance = await desktop.allowance(session, user)
+        assert allowance.hourly_credits == 18_000_000
+        assert not await desktop.hourly_exhausted(session, user, allowance=allowance)
+        assert await budget_refusal(session, user) is None
+        await save_fixture(
+            DesktopUsage(
+                user_id=user.id,
+                model="gpt-6-sol",
+                credits=13_000_000,
+                upstream_status=200,
+            )
+        )
+        assert await desktop.hourly_exhausted(session, user)
+        refusal = await budget_refusal(session, user)
+        assert refusal is not None
+        body = bytes(refusal.body).decode()
+        assert "40201" in body
+        assert "18,000,000 of 18,000,000" in body
 
     async def test_the_free_refusal_still_says_the_month(self) -> None:
         body = quota_exhausted_response(None).body.decode()

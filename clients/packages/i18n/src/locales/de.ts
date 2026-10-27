@@ -284,10 +284,10 @@ export default {
       allSet: 'Alles bereit!',
       takingYouBack: 'Zurück zu Simeon, um die Anmeldung abzuschließen',
       goBack: 'Zurück zu Simeon',
-      goBackStarted: 'Dein Gratismonat hat begonnen. Zurück zu Simeon',
+      goBackStarted: 'Dein kostenloser Test hat begonnen. Zurück zu Simeon',
       download: 'Lade Simeon herunter, um loszulegen',
       downloadStarted:
-        'Dein Gratismonat hat begonnen. Lade Simeon herunter, um loszulegen',
+        'Dein kostenloser Test hat begonnen. Lade Simeon herunter, um loszulegen',
       continueSigningIn: 'Anmeldung bei Simeon fortsetzen',
       openSimeon: 'Simeon öffnen',
       downloadMac: 'Simeon für macOS herunterladen',
@@ -308,7 +308,7 @@ export default {
       proUsage: '3,5-fache Nutzung von Standard',
       proBusy: 'Für Agenten, die jeden Tag zu tun haben',
       maxIncludes: 'Alles aus Pro, dazu:',
-      maxUsage: '12-fache Nutzung von Standard',
+      maxUsage: '9-fache Nutzung von Standard',
       maxAccess: 'Frühester Zugang zu allen Produkten',
       startTrial: 'Testphase für {plan} starten',
       upgradeTo: 'Auf {plan} upgraden',
@@ -323,6 +323,29 @@ export default {
       billedMonthly: 'Monatliche Abrechnung',
       yourCurrentPlan: 'Dein aktueller Tarif',
       oneMoment: 'Einen Moment…',
+      confirm: 'Bestätigen',
+      notNow: 'Nicht jetzt',
+      upgradeBody:
+        '{plan} beginnt heute mit einer neuen Woche Credits. Du zahlst jetzt {amount}, abzüglich der ungenutzten Zeit von {current}. Danach {price}.',
+      downgradeBody:
+        'Du behältst {current} bis zum {date}. Danach beginnt {plan}, für {price}.',
+      trialBody:
+        'Dein Testzeitraum läuft weiter. {plan} beginnt, wenn er endet, am {date}, für {price}.',
+      keepTitle: '{plan} behalten',
+      keepBody: 'Du bleibst bei {plan}. Der Wechsel zu {next} ist storniert.',
+      startNow: 'Meinen Tarif jetzt starten',
+      startNowTitle: '{plan} jetzt starten',
+      startNowBody:
+        'Dein Testzeitraum endet jetzt und {plan} beginnt, mit einer neuen Woche Credits. Du zahlst heute {amount}.',
+      priceMonth: '{amount} im Monat',
+      priceYear: '{amount} im Jahr',
+      changeFailed: 'Dein Tarif wurde nicht geändert',
+      switchesOn: 'Wechselt am {date} zu {plan} · ',
+      keepPlan: '{plan} behalten',
+      extraCredits: 'Zusätzliche Credits: {credits} · ',
+      addCredits: 'Credits hinzufügen',
+      creditsNote:
+        '{price} für {credits} Credits, genutzt, wenn die Credits der Woche aufgebraucht sind. 12 Monate gültig.',
     },
   },
 } as const
