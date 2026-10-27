@@ -278,10 +278,10 @@ export default {
       allSet: 'Alles staat klaar!',
       takingYouBack: 'Je gaat terug naar Simeon om het inloggen af te ronden',
       goBack: 'Ga terug naar Simeon',
-      goBackStarted: 'Je gratis maand is begonnen. Ga terug naar Simeon',
+      goBackStarted: 'Je gratis proefperiode is begonnen. Ga terug naar Simeon',
       download: 'Download Simeon om te beginnen',
       downloadStarted:
-        'Je gratis maand is begonnen. Download Simeon om te beginnen',
+        'Je gratis proefperiode is begonnen. Download Simeon om te beginnen',
       continueSigningIn: 'Rond het inloggen bij Simeon af',
       openSimeon: 'Open Simeon',
       downloadMac: 'Download Simeon voor macOS',
@@ -302,7 +302,7 @@ export default {
       proUsage: '3,5x het gebruik van Standard',
       proBusy: 'Voor agenten die elke dag bezig zijn',
       maxIncludes: 'Alles van Pro, plus:',
-      maxUsage: '12x het gebruik van Standard',
+      maxUsage: '9x het gebruik van Standard',
       maxAccess: 'Als eerste toegang tot alle producten',
       startTrial: 'Start je proefperiode van {plan}',
       upgradeTo: 'Upgraden naar {plan}',
@@ -317,6 +317,29 @@ export default {
       billedMonthly: 'Maandelijks gefactureerd',
       yourCurrentPlan: 'Je huidige abonnement',
       oneMoment: 'Een moment…',
+      confirm: 'Bevestigen',
+      notNow: 'Niet nu',
+      upgradeBody:
+        '{plan} begint vandaag met een nieuwe week credits. Je betaalt nu {amount}, met de ongebruikte tijd van {current} eraf. Daarna {price}.',
+      downgradeBody:
+        'Je houdt {current} tot {date}. Daarna begint {plan}, voor {price}.',
+      trialBody:
+        'Je proefperiode loopt door. {plan} begint als die afloopt, op {date}, voor {price}.',
+      keepTitle: '{plan} houden',
+      keepBody: 'Je blijft op {plan}. De overstap naar {next} is geannuleerd.',
+      startNow: 'Mijn abonnement nu starten',
+      startNowTitle: '{plan} nu starten',
+      startNowBody:
+        'Je proefperiode stopt nu en {plan} begint, met een nieuwe week credits. Je betaalt vandaag {amount}.',
+      priceMonth: '{amount} per maand',
+      priceYear: '{amount} per jaar',
+      changeFailed: 'Je abonnement is niet gewijzigd',
+      switchesOn: 'Gaat op {date} over naar {plan} · ',
+      keepPlan: '{plan} houden',
+      extraCredits: 'Extra credits: {credits} · ',
+      addCredits: 'Credits toevoegen',
+      creditsNote:
+        '{price} voor {credits} credits, gebruikt als de credits van de week op zijn. 12 maanden geldig.',
     },
   },
 } as const

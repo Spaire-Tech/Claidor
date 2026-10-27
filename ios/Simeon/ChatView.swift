@@ -2398,7 +2398,7 @@ struct AccessNotice: View {
 
   var body: some View {
     let route = PhoneUpgrade.route(access: store.access, usage: store.usage.summary, webLinkAllowed: purchases.webLinkAllowed)
-    let words = route == .none ? PhoneUpgrade.withoutUpgrade(self.words) : self.words
+    let words = route == .none ? PhoneUpgrade.withoutUpgrade(self.words, usage: store.usage.summary) : self.words
     HStack(spacing: 12) {
       VStack(alignment: .leading, spacing: 2) {
         Text(words.title).font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.primary)

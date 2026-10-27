@@ -199,7 +199,8 @@ extension AppStore {
    * Stripe's portal for the Manage Plan card and the banner over the
    * composer: the confirmation of the next plan up (`flow` "update_confirm"
    * with its `tier`), the card form for a payment that failed
-   * (`payment_method`), or its front page. `back` is the app's URL scheme:
+   * (`payment_method`), "Start Plan Now" for a card trial (`start_now`),
+   * extra credits (`credits`), or its front page. `back` is the app's URL scheme:
    * the page then ends on the app's own link, so the app's sheet closes
    * (14 October 2026; it ended on the web's billing page, which asks to sign
    * in). The page's address, or the words to show.
@@ -211,8 +212,8 @@ extension AppStore {
     if flow == PhoneUpgrade.upgradeFlow, let tier {
       fields["flow"] = .string(PhoneUpgrade.upgradeFlow)
       fields["tier"] = .string(tier)
-    } else if flow == PhoneUpgrade.paymentMethodFlow {
-      fields["flow"] = .string(PhoneUpgrade.paymentMethodFlow)
+    } else if let flow, [PhoneUpgrade.paymentMethodFlow, PhoneUpgrade.startNowFlow, PhoneUpgrade.creditsFlow].contains(flow) {
+      fields["flow"] = .string(flow)
     }
     if let back { fields["back"] = .string(back) }
     let body = JSON.object(fields)

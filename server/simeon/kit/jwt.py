@@ -34,6 +34,10 @@ TYPE = Literal[
     # A sharing invite link (`simeon/sand/sharing.py`, 25 September 2026):
     # the room id and the host, signed, with the link's expiry as `exp`.
     "desktop_share_invite",
+    # The page an app opens to confirm a plan change or start the plan now
+    # (`simeon/desktop/billing_pages.py`, 27 October 2026): the person, the
+    # change and the app to go back to, signed, for half an hour.
+    "desktop_billing_change",
 ]
 
 

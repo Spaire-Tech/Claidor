@@ -81,9 +81,9 @@ export interface Entitlements {
   features: TierFeatures
   rate_limit_group: string
   monthly_price_cents: number
-  /** Credits included each week, Monday to Monday UTC. */
+  /** Credits included each week, counted from the plan's own start. */
   weekly_credits: number
-  /** Credits the 30-day trial includes, once. */
+  /** Credits the 7-day trial includes, once. */
   trial_credits: number
 }
 
@@ -98,7 +98,7 @@ export interface TierPlan {
   annual_savings_percent: number
   currency: string
   trial_days: number | null
-  /** Credits included each week, Monday to Monday UTC. */
+  /** Credits included each week, counted from the plan's own start. */
   weekly_credits: number
   /** Credits the trial includes, once. */
   trial_credits: number

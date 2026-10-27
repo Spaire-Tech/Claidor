@@ -7,8 +7,8 @@ import Foundation
  * Store's plans, or Stripe's own page for a plan bought on the web
  * (`route`).
  *
- * - The banner over the composer: the free month's credits used, a paid
- *   week's credits used, or no plan: the free month over, or never had, or
+ * - The banner over the composer: the free trial's credits used, a paid
+ *   week's credits used, or no plan: the free trial over, or never had, or
  *   the first charge after the trial failed (`banner`). Since 14 October
  *   2026 (the founder: "still access to the app. just cant send message.
  *   and explain the reason below") the app stays open with no plan: the
@@ -26,6 +26,10 @@ import Foundation
 public enum PhoneUpgrade {
   public static let seePlans = L10n.text("See plans")
   public static let upgrade = L10n.text("Upgrade")
+  /** A card trial on the web: end it now and start the plan, with a fresh week (27 October 2026). */
+  public static let startPlanNow = L10n.text("Start Plan Now")
+  /** Max on the web, the week spent: extra credits, used until the week resets (27 October 2026). */
+  public static let addCredits = L10n.text("Add Credits")
   public static let paymentFailedTitle = L10n.text("Your payment didn’t go through")
   public static let updateCard = L10n.text("Update card")
   public static let updatePayment = L10n.text("Update payment")
@@ -47,7 +51,7 @@ public enum PhoneUpgrade {
       return SandAccess.Words(title: paymentFailedTitle, body: paymentFailedCard, action: updateCard)
     }
     if usage?.hasEndedTrial == true {
-      return SandAccess.Words(title: L10n.text("Your free month has ended"), body: L10n.text("Choose a plan to send messages again."), action: seePlans)
+      return SandAccess.Words(title: L10n.text("Your free trial has ended"), body: L10n.text("Choose a plan to send messages again."), action: seePlans)
     }
     return SandAccess.Words(title: L10n.text("Choose a plan to start"), body: L10n.text("You can send messages once this account has a plan."), action: seePlans)
   }
@@ -59,7 +63,7 @@ public enum PhoneUpgrade {
    * again as they close, so a card left from before a purchase stops
    * counting); before that, from the 402 in a chat's card (`outOfCredits`).
    */
-  public static func banner(access: SandAccess, usage: UsageSummary?, outOfCredits: Bool = false) -> SandAccess.Words? {
+  public static func banner(access: SandAccess, usage: UsageSummary?, outOfCredits: Bool = false, now: Date = Date(), timeZone: TimeZone = .current) -> SandAccess.Words? {
     switch access.state {
     case .paymentRequired:
       return cover(access: access, usage: usage)
@@ -71,10 +75,17 @@ public enum PhoneUpgrade {
     let spent = usage.map { !$0.hasAvailableUsage && ($0.hasNonZeroIncludedLimit || outOfCredits) } ?? outOfCredits
     guard spent else { return nil }
     if usage?.isTrial == true {
-      return SandAccess.Words(title: L10n.text("You’ve used your free credits"), body: L10n.text("Choose a plan to keep your agents working."), action: upgrade)
+      return SandAccess.Words(title: L10n.text("You’ve used your free credits"), body: L10n.text("Choose a plan to keep your agents working."), action: action(for: usage))
     }
     if let usage, usage.hasNonZeroIncludedLimit, !usage.isTrial {
-      return SandAccess.Words(title: weekUsedTitle, body: L10n.text("They reset on Monday. Upgrade to keep going now."), action: upgrade)
+      // Each person's week resets on its own day (27 October 2026), not every account's Monday.
+      guard let reset = resetDay(usage, now: now, timeZone: timeZone) else {
+        return SandAccess.Words(title: weekUsedTitle, body: L10n.text("Your agents wait until your plan has credits again."), action: action(for: usage))
+      }
+      let body = action(for: usage) == addCredits
+        ? L10n.text("They reset \(reset). Add credits to keep going now.")
+        : L10n.text("They reset \(reset). Upgrade to keep going now.")
+      return SandAccess.Words(title: weekUsedTitle, body: body, action: action(for: usage))
     }
     return SandAccess.Words(title: L10n.text("You’re out of credits"), body: L10n.text("Choose a plan to keep your agents working."), action: upgrade)
   }
@@ -112,7 +123,25 @@ public enum PhoneUpgrade {
     } else {
       body = L10n.text("You’ve used \(used)% of this week’s credits.")
     }
-    return Approaching(words: SandAccess.Words(title: approachingTitle, body: body, action: upgrade), step: step, key: "\(Int(usage.resetMs ?? 0))|\(step)")
+    return Approaching(words: SandAccess.Words(title: approachingTitle, body: body, action: action(for: usage)), step: step, key: "\(Int(usage.resetMs ?? 0))|\(step)")
+  }
+
+  /**
+   * The button's words, as `route` sends it (27 October 2026): a card trial
+   * on the web starts its plan now, Max on the web adds credits, anything
+   * else upgrades.
+   */
+  public static func action(for usage: UsageSummary?) -> String {
+    guard let usage, !usage.billedByApple, !usage.paymentFailed, let plan = usage.managePlan else { return upgrade }
+    if plan.status == "trialing" { return startPlanNow }
+    return plan.nextTier == nil ? addCredits : upgrade
+  }
+
+  /** When this week's credits come back, "tomorrow", "on Thursday" (`day`); nil without a reset. */
+  static func resetDay(_ usage: UsageSummary, now: Date, timeZone: TimeZone) -> String? {
+    guard let ms = usage.resetMs else { return nil }
+    let reset = Date(timeIntervalSince1970: ms / 1000)
+    return reset > now ? day(reset, now: now, timeZone: timeZone) : nil
   }
 
   /** "today", "tomorrow", else "on Monday", in the person's time zone (French "aujourd'hui", "demain", "lundi"). */
@@ -139,7 +168,10 @@ public enum PhoneUpgrade {
      * back in it when done (14 October 2026): the web's billing page asked
      * the person to sign in again first, which the founder found confusing.
      * `payment_method` for a card that failed, `update_confirm` with the
-     * plan above for an upgrade, else its front page.
+     * plan above for an upgrade (Simeon's own confirm page since 27 October
+     * 2026: the new plan today, less the old one's unused time),
+     * `start_now` for a card trial, `credits` for extra credits (Stripe's
+     * checkout), else its front page.
      */
     case portal(flow: String?, tier: String?)
     /** simeonlabs.com for an account no plan can help; Apple's payment page; the web's plans page (the Mac). */
@@ -150,6 +182,8 @@ public enum PhoneUpgrade {
 
   public static let paymentMethodFlow = "payment_method"
   public static let upgradeFlow = "update_confirm"
+  public static let startNowFlow = "start_now"
+  public static let creditsFlow = "credits"
 
   public static func route(access: SandAccess, usage: UsageSummary?, webLinkAllowed: Bool) -> Route {
     if access.state == .unavailable { return .web(SandAccess.page) }
@@ -162,9 +196,10 @@ public enum PhoneUpgrade {
     guard let usage, let plan = usage.managePlan else { return .plans(tier: nil) }
     if usage.billedByApple { return .plans(tier: plan.nextTier?.tier) }
     guard webLinkAllowed else { return .none }
-    // A plan bought on the web: Stripe's confirmation of the plan above, else its front page.
+    // A plan bought on the web: a card trial starts now; the plan above, confirmed; Max adds credits.
+    if plan.status == "trialing" { return .portal(flow: startNowFlow, tier: nil) }
     if let next = plan.nextTier { return .portal(flow: upgradeFlow, tier: next.tier) }
-    return .portal(flow: nil, tier: nil)
+    return .portal(flow: creditsFlow, tier: nil)
   }
 
   /** The plans say this above the plans when an Apple plan's payment failed (`appleBilling`). */
@@ -177,11 +212,12 @@ public enum PhoneUpgrade {
    * "Upgrade", and nothing pointing to another way to pay (outside the
    * United States Apple allows no such line).
    */
-  public static func withoutUpgrade(_ words: SandAccess.Words) -> SandAccess.Words {
+  public static func withoutUpgrade(_ words: SandAccess.Words, usage: UsageSummary? = nil, now: Date = Date(), timeZone: TimeZone = .current) -> SandAccess.Words {
     guard words.action != nil else { return words }
     // Near the limit, the line says only how much is used; a failed payment, only that the card needs updating.
     if words.title == approachingTitle || words.title == paymentFailedTitle { return SandAccess.Words(title: words.title, body: words.body, action: nil) }
-    let body = words.title == weekUsedTitle ? L10n.text("They reset on Monday.") : L10n.text("Your agents wait until your plan has credits again.")
+    let reset = usage.flatMap { resetDay($0, now: now, timeZone: timeZone) }
+    let body = words.title == weekUsedTitle && reset != nil ? L10n.text("They reset \(reset!).") : L10n.text("Your agents wait until your plan has credits again.")
     return SandAccess.Words(title: words.title, body: body, action: nil)
   }
 
@@ -195,8 +231,8 @@ public enum PhoneUpgrade {
  * What the Mac says when this account has no plan (the line over the
  * composer, and the cover over the window when the computer refuses the
  * account), and where its button goes (14 October 2026). The founder chose
- * the web for the Mac: the plans page, where the 30-day trial starts with
- * a card (the iPhone starts its free month itself, no card). Until then the
+ * the web for the Mac: the plans page, where the 7-day trial starts with
+ * a card (the iPhone starts its free trial itself, no card). Until then the
  * Mac showed the window's own "Start your free month" and its button opened
  * simeonlabs.com, where nothing starts a trial. A card that failed goes to
  * Stripe's card page in the app (`PhoneUpgrade.Route.portal`), not the
@@ -215,10 +251,10 @@ public enum MacUpgrade {
       return SandAccess.Words(title: PhoneUpgrade.paymentFailedTitle, body: PhoneUpgrade.paymentFailedCard, action: PhoneUpgrade.updateCard)
     }
     if access.reason == .freeTrialAvailable {
-      return SandAccess.Words(title: L10n.text("Start your free trial to send messages"), body: L10n.text("30 days free, then your plan. Add a card on the web; cancel anytime."), action: L10n.text("Start Free Trial"))
+      return SandAccess.Words(title: L10n.text("Start your free trial to send messages"), body: L10n.text("7 days free, then your plan. Add a card on the web; cancel anytime."), action: L10n.text("Start Free Trial"))
     }
     if usage?.hasEndedTrial == true {
-      return SandAccess.Words(title: L10n.text("Your free month has ended"), body: L10n.text("Choose a plan to send messages again."), action: PhoneUpgrade.seePlans)
+      return SandAccess.Words(title: L10n.text("Your free trial has ended"), body: L10n.text("Choose a plan to send messages again."), action: PhoneUpgrade.seePlans)
     }
     return SandAccess.Words(title: L10n.text("Simeon needs a plan"), body: L10n.text("Choose a plan on the web to send messages."), action: PhoneUpgrade.seePlans)
   }

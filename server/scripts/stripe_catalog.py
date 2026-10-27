@@ -1,8 +1,10 @@
 """Create or update Simeon's plans on Stripe: three products, six prices and
-two meters, from `simeon.plans.catalog`.
+two meters, and the extra credits (one product, one one-time price), from
+`simeon.plans.catalog`.
 
-Idempotent. A product is found by `metadata.simeon_tier`, a price by its
-`lookup_key`, a meter by its `event_name`. A price whose amount changed is
+Idempotent. A product is found by `metadata.simeon_tier` (the credits' by
+`metadata.simeon_kind`), a price by its `lookup_key`, a meter by its
+`event_name`. A price whose amount changed is
 archived and replaced, the lookup key moving to the new one; Stripe prices
 are immutable. Run it against test mode first (a test secret key in
 `SIMEON_STRIPE_SECRET_KEY`), then live.
@@ -63,6 +65,12 @@ def list() -> None:
             f"  {price.lookup_key:<24} {_dollars(price.unit_amount):>8} / {price.interval}"
             f"   ({price.nickname})"
         )
+    typer.echo("Extra credits")
+    typer.echo(
+        f"  {catalog.CREDITS_LOOKUP_KEY:<24} {_dollars(catalog.CREDITS_PACK_CENTS):>8}"
+        f" once  {catalog.CREDITS_PACK:,} credits, up to"
+        f" {catalog.CREDITS_MAX_PACKS} a checkout  ({catalog.CREDITS_PRODUCT_NAME})"
+    )
     typer.echo("Meters")
     for meter in catalog.meters():
         typer.echo(
@@ -75,6 +83,74 @@ def _find_product(tier: str) -> stripe.Product | None:
         query=f"metadata['simeon_tier']:'{tier}' AND active:'true'"
     )
     return found.data[0] if found.data else None
+
+
+def _find_credits_product() -> stripe.Product | None:
+    found = stripe.Product.search(
+        query=f"metadata['simeon_kind']:'{catalog.CREDITS_KIND}' AND active:'true'"
+    )
+    return found.data[0] if found.data else None
+
+
+def _credits(dry_run: bool) -> None:
+    """The extra credits: one product and its one-time price."""
+    metadata = {
+        "simeon_kind": catalog.CREDITS_KIND,
+        "credits": str(catalog.CREDITS_PACK),
+    }
+    existing = _find_credits_product()
+    product_id: str | None = None
+    if existing is None:
+        typer.echo(f"  product  {catalog.CREDITS_PRODUCT_NAME}: create")
+        if not dry_run:
+            product_id = stripe.Product.create(
+                name=catalog.CREDITS_PRODUCT_NAME,
+                description=catalog.CREDITS_PRODUCT_DESCRIPTION,
+                metadata=metadata,
+                images=[PRODUCT_IMAGE],
+                statement_descriptor=settings.STRIPE_STATEMENT_DESCRIPTOR[:22],
+            ).id
+    else:
+        product_id = existing.id
+        changed = (
+            existing.name != catalog.CREDITS_PRODUCT_NAME
+            or (existing.description or "") != catalog.CREDITS_PRODUCT_DESCRIPTION
+            or any(existing.metadata.get(k) != v for k, v in metadata.items())
+        )
+        typer.echo(
+            f"  product  {catalog.CREDITS_PRODUCT_NAME}: "
+            f"{'update' if changed else 'unchanged'} ({existing.id})"
+        )
+        if changed and not dry_run:
+            stripe.Product.modify(
+                existing.id,
+                name=catalog.CREDITS_PRODUCT_NAME,
+                description=catalog.CREDITS_PRODUCT_DESCRIPTION,
+                metadata=metadata,
+                images=[PRODUCT_IMAGE],
+            )
+    price = _find_price(catalog.CREDITS_LOOKUP_KEY)
+    if price is not None and price.unit_amount == catalog.CREDITS_PACK_CENTS:
+        typer.echo(f"  price    {catalog.CREDITS_LOOKUP_KEY}: unchanged ({price.id})")
+        return
+    typer.echo(
+        f"  price    {catalog.CREDITS_LOOKUP_KEY}: "
+        f"{'create' if price is None else f'replace {price.id}'}"
+    )
+    if dry_run or product_id is None:
+        return
+    stripe.Price.create(
+        product=product_id,
+        currency="usd",
+        unit_amount=catalog.CREDITS_PACK_CENTS,
+        lookup_key=catalog.CREDITS_LOOKUP_KEY,
+        transfer_lookup_key=True,
+        nickname=catalog.CREDITS_PRODUCT_NAME,
+        tax_behavior="inclusive",
+        metadata=metadata,
+    )
+    if price is not None:
+        stripe.Price.modify(price.id, active=False)
 
 
 def _find_price(lookup_key: str) -> stripe.Price | None:
@@ -178,6 +254,8 @@ def run(dry_run: bool = typer.Option(False, "--dry-run")) -> None:
         if existing_price is not None:
             stripe.Price.modify(existing_price.id, active=False)
 
+    _credits(dry_run)
+
     for meter_spec in catalog.meters():
         existing_meter = _find_meter(meter_spec.event_name)
         if existing_meter is not None:
@@ -200,9 +278,10 @@ def run(dry_run: bool = typer.Option(False, "--dry-run")) -> None:
 
     typer.echo("Done." if not dry_run else "Dry run: nothing written.")
     typer.echo(
-        "Next: in Stripe, Settings → Billing → Customer portal: allow cancelling, "
-        "switching between the six prices, and updating the card. "
-        f"Plan names: {', '.join(TIER_NAMES[t] for t in PAID_TIERS)}."
+        "Next: in Stripe, Settings → Billing → Customer portal: allow cancelling "
+        "at the end of the period and updating the card; turn switching plans "
+        "off (Simeon changes plans itself: upgrades today, downgrades at "
+        f"renewal). Plan names: {', '.join(TIER_NAMES[t] for t in PAID_TIERS)}."
     )
 
 

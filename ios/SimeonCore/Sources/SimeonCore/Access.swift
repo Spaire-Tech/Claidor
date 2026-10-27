@@ -50,7 +50,7 @@ public struct SandAccess: Equatable, Sendable {
     .teamSetupRequired: Words(title: L10n.text("Simeon isn’t set up for your team yet"), body: L10n.text("Ask your team’s admin to finish setting it up."), action: L10n.text("Check Access")),
     .teamAccessRequired: Words(title: L10n.text("Simeon isn’t available on this account"), body: L10n.text("Ask your team’s admin to turn it on."), action: L10n.text("Check Access")),
     .notOffered: Words(title: L10n.text("Simeon isn’t available on this account"), body: L10n.text("There's nothing to set up or purchase here."), action: nil),
-    .freeTrialAvailable: Words(title: L10n.text("Start your free month to send messages"), body: L10n.text("This account can try Simeon now."), action: L10n.text("Start Trial")),
+    .freeTrialAvailable: Words(title: L10n.text("Start your free trial to send messages"), body: L10n.text("This account can try Simeon now."), action: L10n.text("Start Trial")),
     .paywallIndividual: Words(title: L10n.text("Simeon needs a plan"), body: L10n.text("Choose a plan to send messages."), action: L10n.text("See plans")),
     .paywallTeamMember: Words(title: L10n.text("Simeon needs a plan"), body: L10n.text("Ask your team’s admin to add this account."), action: L10n.text("Check Access")),
     .paywallTeamAdmin: Words(title: L10n.text("Simeon needs a plan"), body: L10n.text("Choose a plan for this account to send messages."), action: L10n.text("See plans")),

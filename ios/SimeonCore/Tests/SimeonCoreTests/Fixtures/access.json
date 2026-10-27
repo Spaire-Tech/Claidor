@@ -423,12 +423,12 @@
   "state": "unavailable",
   "reason": "freeTrialAvailable",
   "notice": {
-   "title": "Start your free month to send messages",
+   "title": "Start your free trial to send messages",
    "body": "This account can try Simeon now.",
    "action": "Start Trial"
   },
   "cover": {
-   "title": "Start your free month to send messages",
+   "title": "Start your free trial to send messages",
    "body": "This account can try Simeon now.",
    "action": "Start Trial"
   },
@@ -573,12 +573,12 @@
   "state": "paymentRequired",
   "reason": "freeTrialAvailable",
   "notice": {
-   "title": "Start your free month to send messages",
+   "title": "Start your free trial to send messages",
    "body": "This account can try Simeon now.",
    "action": "Start Trial"
   },
   "cover": {
-   "title": "Start your free month to send messages",
+   "title": "Start your free trial to send messages",
    "body": "This account can try Simeon now.",
    "action": "Start Trial"
   },

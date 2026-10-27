@@ -280,10 +280,10 @@ export default {
       allSet: 'Tout est prêt !',
       takingYouBack: 'Retour à Simeon pour terminer la connexion',
       goBack: 'Retourne sur Simeon',
-      goBackStarted: 'Ton mois offert a commencé. Retourne sur Simeon',
+      goBackStarted: 'Ton essai gratuit a commencé. Retourne sur Simeon',
       download: 'Télécharge Simeon pour commencer',
       downloadStarted:
-        'Ton mois offert a commencé. Télécharge Simeon pour commencer',
+        'Ton essai gratuit a commencé. Télécharge Simeon pour commencer',
       continueSigningIn: 'Terminer la connexion à Simeon',
       openSimeon: 'Ouvrir Simeon',
       downloadMac: 'Télécharger Simeon pour macOS',
@@ -304,7 +304,7 @@ export default {
       proUsage: '3,5 fois l’utilisation de Standard',
       proBusy: 'Pour des agents occupés tous les jours',
       maxIncludes: 'Tout Pro, plus :',
-      maxUsage: '12 fois l’utilisation de Standard',
+      maxUsage: '9 fois l’utilisation de Standard',
       maxAccess: 'Accès en avant-première à tous les produits',
       startTrial: 'Commencer l’essai {plan}',
       upgradeTo: 'Passer à {plan}',
@@ -319,6 +319,29 @@ export default {
       billedMonthly: 'Facturé chaque mois',
       yourCurrentPlan: 'Ton forfait actuel',
       oneMoment: 'Un instant…',
+      confirm: 'Confirmer',
+      notNow: 'Pas maintenant',
+      upgradeBody:
+        '{plan} commence aujourd’hui avec une nouvelle semaine de crédits. Tu paies {amount} maintenant, le temps non utilisé de {current} déduit. Ensuite {price}.',
+      downgradeBody:
+        'Tu gardes {current} jusqu’au {date}. Ensuite {plan} commence, à {price}.',
+      trialBody:
+        'Ton essai continue. {plan} commence à sa fin, le {date}, à {price}.',
+      keepTitle: 'Garder {plan}',
+      keepBody: 'Tu restes sur {plan}. Le passage à {next} est annulé.',
+      startNow: 'Commencer mon forfait maintenant',
+      startNowTitle: 'Commencer {plan} maintenant',
+      startNowBody:
+        'Ton essai se termine maintenant et {plan} commence, avec une nouvelle semaine de crédits. Tu paies {amount} aujourd’hui.',
+      priceMonth: '{amount} par mois',
+      priceYear: '{amount} par an',
+      changeFailed: 'Ton forfait n’a pas changé',
+      switchesOn: 'Passe à {plan} le {date} · ',
+      keepPlan: 'Garder {plan}',
+      extraCredits: 'Crédits supplémentaires : {credits} · ',
+      addCredits: 'Ajouter des crédits',
+      creditsNote:
+        '{price} pour {credits} crédits, utilisés une fois tes crédits de la semaine épuisés. Valables 12 mois.',
     },
   },
 } as const

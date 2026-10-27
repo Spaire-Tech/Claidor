@@ -178,7 +178,7 @@ class TestApplyStripeSubscription:
         allowance = await resolve_allowance(session, user)
         assert allowance.trialing
         assert allowance.plan_name == "Pro"
-        assert allowance.credits_limit == 5_000_000
+        assert allowance.credits_limit == 10_000_000
         assert allowance.period_end == row.trial_end
 
     async def test_the_first_trial_records_the_card(
@@ -339,7 +339,7 @@ class TestCheckout:
         assert params["client_reference_id"] == str(user.id)
         assert params["line_items"] == [{"price": "price_1", "quantity": 1}]
         assert params["payment_method_collection"] == "always"
-        assert params["subscription_data"]["trial_period_days"] == 30
+        assert params["subscription_data"]["trial_period_days"] == 7
         assert params["subscription_data"]["metadata"]["simeon_tier"] == "pro"
         assert params["success_url"].startswith(
             settings.generate_frontend_url("/billing?x=1")

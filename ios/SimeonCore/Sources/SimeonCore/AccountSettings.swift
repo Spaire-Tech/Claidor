@@ -222,6 +222,12 @@ public struct UsageSummary: Equatable, Sendable {
    * bills it (`billedByApple`) rather than choosing a plan.
    */
   public let paymentFailed: Bool
+  /**
+   * Extra credits bought on the web (`extraCredits` in the quota, 27 October
+   * 2026): used once the week's are spent, on a paid plan, so the week spent
+   * is not the end of the agents' work while there are some.
+   */
+  public let extraCredits: Double
 
   private static let nextTiers: [String: ManagePlan.NextTier?] = ["standard": .init(tier: "pro", label: "Pro"), "pro": .init(tier: "max", label: "Max"), "max": nil]
 
@@ -246,7 +252,10 @@ public struct UsageSummary: Equatable, Sendable {
     isEnterprise = false
     usagePercent = percent
     resetMs = percent == nil ? nil : periodEnd
-    hasAvailableUsage = remaining.map { $0 > 0 } ?? (percent.map { $0 < 100 } ?? false)
+    let extra = Self.finite(quota["extraCredits"]) ?? 0
+    let weekLeft = remaining.map { $0 > 0 } ?? (percent.map { $0 < 100 } ?? false)
+    hasAvailableUsage = weekLeft || (quota["hasPaidCredits"]?.bool == true && extra > 0)
+    extraCredits = extra
     isTrial = trialing
     hasEndedTrial = !trialing && trialEnd != nil && trialEnd! <= now.timeIntervalSince1970 * 1000
     hasNonZeroIncludedLimit = included
@@ -309,6 +318,8 @@ public struct UsageMeters: Equatable, Sendable {
   public let upgrade: UsageSummary.UpgradeButton?
   public let upgradeSupportingText: String?
   public let canCancelTrial: Bool
+  /** "2,950,000": the extra credits left, when there are any. */
+  public let extraCredits: String?
 
   public init(_ summary: UsageSummary, now: Date = Date()) {
     let nowMs = now.timeIntervalSince1970 * 1000
@@ -334,6 +345,18 @@ public struct UsageMeters: Equatable, Sendable {
     upgrade = summary.upgrade
     upgradeSupportingText = Self.supportingText(summary)
     canCancelTrial = summary.isTrial && summary.canCancelTrial
+    extraCredits = summary.extraCredits > 0 ? Self.count(summary.extraCredits) : nil
+  }
+
+  public static let extraCreditsTitle = L10n.text("Extra credits")
+
+  /** "2,950,000", in the person's language. */
+  static func count(_ value: Double) -> String {
+    let format = NumberFormatter()
+    format.locale = L10n.locale(english: Locale(identifier: "en_US"))
+    format.numberStyle = .decimal
+    format.maximumFractionDigits = 0
+    return format.string(from: NSNumber(value: value.rounded())) ?? String(Int(value))
   }
 
   private static func supportingText(_ summary: UsageSummary) -> String? {

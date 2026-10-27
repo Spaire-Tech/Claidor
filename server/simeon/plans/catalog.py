@@ -18,11 +18,13 @@ from simeon.entitlements.tiers import PAID_TIERS, TIER_NAMES, TierKey, get_defin
 
 BillingInterval = Literal["month", "year"]
 
-#: Every trial's length: thirty days (seven until 12 October 2026, when the
-#: founder made it a free month). On the web and the Mac the card is on
-#: file and charged on day thirty-one; the iPhone app's free month asks
-#: for no card (`simeon.plans.free_month`).
-TRIAL_DAYS = 30
+#: Every trial's length: seven days, exactly one week (27 October 2026; thirty
+#: from 12 October 2026, seven before). On the web and the Mac the card is
+#: on file and charged on day eight, or at once with "Start my plan now"
+#: (`PlansService.start_now`); the iPhone app's free trial asks for no card
+#: (`simeon.plans.free_month`). A trial running on 27 October 2026 keeps
+#: its thirty days: Stripe and the free trial's row hold their own end.
+TRIAL_DAYS = 7
 
 #: Yearly is 20% off twelve months, in whole dollars: $288, $960, $1,920.
 YEARLY_DISCOUNT = 0.8
@@ -32,19 +34,38 @@ LOOKUP_KEY_PREFIX = "simeon"
 #: What each product says on Stripe's checkout page and invoices.
 PRODUCT_DESCRIPTIONS: dict[TierKey, str] = {
     TierKey.standard: (
-        "For a light week of work. 5,000,000 credits a week, about fifty tasks. "
-        "Every agent and every feature, a cloud computer for each agent, "
-        "routines that run while your Mac is closed."
+        "For a steady week of work. 10,000,000 credits a week, about a hundred "
+        "tasks. Every agent and every feature, a cloud computer for each "
+        "agent, routines that run while your Mac is closed."
     ),
     TierKey.pro: (
-        "For agents working every day. 17,500,000 credits a week, 3.5 times "
+        "For agents working every day. 35,000,000 credits a week, 3.5 times "
         "Standard, with room for routines that run every day."
     ),
     TierKey.max: (
-        "For a team of agents that never stops. 60,000,000 credits a week, "
-        "twelve times Standard: agents on routines all week long."
+        "For a team of agents that never stops. 90,000,000 credits a week, "
+        "nine times Standard: agents on routines all week long."
     ),
 }
+
+
+#: Extra credits (27 October 2026): one pack is 3,000,000 credits for $10,
+#: bought on the web by a person on a paid plan, used only once the week's
+#: credits are spent, for twelve months (`simeon.plans.credits`). Per dollar
+#: a pack gives less than any plan (Standard: 333,333 a dollar, a pack
+#: 300,000), so a person who keeps buying is better off moving up.
+CREDITS_PACK = 3_000_000
+CREDITS_PACK_CENTS = 1000
+CREDITS_LOOKUP_KEY = f"{LOOKUP_KEY_PREFIX}_credits_pack"
+#: The most packs one checkout sells.
+CREDITS_MAX_PACKS = 10
+CREDITS_PRODUCT_NAME = "Simeon extra credits"
+CREDITS_PRODUCT_DESCRIPTION = (
+    "3,000,000 credits for when the week's run out. Used only after your "
+    "plan's weekly credits, and valid for twelve months."
+)
+#: How the credits product is found on Stripe (`metadata.simeon_kind`).
+CREDITS_KIND = "credits"
 
 
 def lookup_key(tier: TierKey, interval: BillingInterval) -> str:
@@ -146,6 +167,13 @@ def meters() -> list[MeterSpec]:
 
 
 __all__ = [
+    "CREDITS_KIND",
+    "CREDITS_LOOKUP_KEY",
+    "CREDITS_MAX_PACKS",
+    "CREDITS_PACK",
+    "CREDITS_PACK_CENTS",
+    "CREDITS_PRODUCT_DESCRIPTION",
+    "CREDITS_PRODUCT_NAME",
     "TRIAL_DAYS",
     "BillingInterval",
     "MeterSpec",

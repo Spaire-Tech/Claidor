@@ -21,15 +21,17 @@ from versioning import version_style
 
 OUT = teams.OUT
 
-# Each answer is what docs/services-billing.md says the server does: a card and 30 free days on the web, one
-# trial per person, the week's credits reset on Monday and never carried over, the app's line from 80% of
-# them, Stripe's portal to change or cancel, connections on every plan and the trial.
+# Each answer is what docs/services-billing.md says the server does (27 October 2026): a card and 7 free days
+# on the web, one trial per person, each person's week counted from their plan's start and never carried
+# over, the app's line from 80% of it, upgrades at once less the unused time and downgrades at renewal,
+# extra credits used after the week for 12 months, connections on every plan and the trial.
 PRICING_QA = [
-    ("How does the free month work?", "Choose a plan and add a card. The first 30 days are free, then the plan's monthly price begins. Cancel before then and you pay nothing. There is one free month per person."),
-    ("What is usage?", "The work your agents do for you. Each plan includes an amount for the week, which resets every Monday and doesn't carry over. Pro includes 3.5 times Standard's, and Max 12 times."),
-    ("What happens if I use it all?", "Your agents wait until Monday, when it resets. The app tells you as you get close, and you can move to a bigger plan at any time."),
-    ("Can I change or cancel my plan?", "Yes, at any time, from Settings in the app or from your billing page. Cancel during the free month and you are never charged."),
-    ("Do the computers, apps or teams cost extra?", "No. Each agent's computer in the cloud, every app you connect and every team you add from the Marketplace come with every plan, the free month too. Their work counts toward your plan's usage."),
+    ("How does the free trial work?", "Choose a plan and add a card. The first 7 days are free, with 10,000,000 credits to use. Then the plan's monthly price begins, or at once if you start it early. Cancel before then and you pay nothing. There is one free trial per person."),
+    ("What is usage?", "The work your agents do for you, counted in credits. Each plan includes credits for the week, which start again every seven days from the day your plan began and don't carry over. Pro includes 3.5 times Standard's, and Max 9 times."),
+    ("What happens if I use it all?", "Your agents wait until your week starts again. The app tells you as you get close. You can move to a bigger plan, which starts at once with a fresh week, or buy extra credits on the web."),
+    ("Can I change or cancel my plan?", "Yes, at any time, from Settings in the app or from your billing page. A bigger plan starts at once, and you pay its price less what's left of your current one. A smaller plan starts when your current one renews. Cancel during the free trial and you are never charged."),
+    ("What are extra credits?", "Credits for when your week runs out: 3,000,000 for $10, bought on the web on any paid plan. They're used only after your plan's weekly credits, and last 12 months."),
+    ("Do the computers, apps or teams cost extra?", "No. Each agent's computer in the cloud, every app you connect and every team you add from the Marketplace come with every plan, the free trial too. Their work counts toward your plan's usage."),
     ("How do I pay?", "By card, through Stripe, in US dollars, billed monthly."),
     ("What do I need?", "A Mac with Apple silicon on macOS 15 or later."),
 ]
@@ -59,7 +61,7 @@ def build(out=OUT):
 {teams.questions(PRICING_QA)}
 
 {close}"""
-    page = frame("Pricing", "Simeon's plans: Standard at $30, Pro at $100 and Max at $200 a month. Every plan starts with a free month.",
+    page = frame("Pricing", "Simeon's plans: Standard at $30, Pro at $100 and Max at $200 a month. Every plan starts with a 7-day free trial.",
                  "/pricing", body, hero_css + home_css + PRICING_CSS, current="pricing")
     root = os.path.join(out, "pricing")
     shutil.rmtree(root, ignore_errors=True)

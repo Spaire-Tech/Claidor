@@ -1,10 +1,13 @@
-"""The free month (12 October 2026): the iPhone app's free trial, no card.
+"""The free trial on the iPhone (12 October 2026, a free month until 27
+October 2026, a week since), no card.
 
 The founder dropped Apple's free week ("the whole free trial makes it
-complicated"): a person signs in on the iPhone and has thirty days with
+complicated"): a person signs in on the iPhone and has seven days with
 the trial's credits (`catalog.TRIAL_DAYS`, `tiers.TRIAL_CREDITS`), no
 checkout; when the days or the credits run out, the app offers the plans.
-On the web and the Mac the trial still takes a card, one per card.
+On the web and the Mac the trial still takes a card, one per card. The
+module, its route and its log lines keep the month's name (`free_month`):
+they are what shipped apps and the logs already read.
 
 One per person, by account and by e-mail (a hash of it, kept after the
 account is deleted), and none after a card trial or Apple's free week.

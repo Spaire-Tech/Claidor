@@ -277,9 +277,10 @@ export default {
       allSet: '¡Todo listo!',
       takingYouBack: 'Volviendo a Simeon para terminar de iniciar sesión',
       goBack: 'Vuelve a Simeon',
-      goBackStarted: 'Tu mes gratis ya empezó. Vuelve a Simeon',
+      goBackStarted: 'Tu prueba gratis ya empezó. Vuelve a Simeon',
       download: 'Descarga Simeon para empezar',
-      downloadStarted: 'Tu mes gratis ya empezó. Descarga Simeon para empezar',
+      downloadStarted:
+        'Tu prueba gratis ya empezó. Descarga Simeon para empezar',
       continueSigningIn: 'Terminar de iniciar sesión en Simeon',
       openSimeon: 'Abrir Simeon',
       downloadMac: 'Descargar Simeon para macOS',
@@ -300,7 +301,7 @@ export default {
       proUsage: '3,5 veces el uso de Standard',
       proBusy: 'Para agentes ocupados todos los días',
       maxIncludes: 'Todo lo de Pro, más:',
-      maxUsage: '12 veces el uso de Standard',
+      maxUsage: '9 veces el uso de Standard',
       maxAccess: 'Acceso anticipado a todos los productos',
       startTrial: 'Empezar la prueba de {plan}',
       upgradeTo: 'Cambiar a {plan}',
@@ -315,6 +316,29 @@ export default {
       billedMonthly: 'Facturación mensual',
       yourCurrentPlan: 'Tu plan actual',
       oneMoment: 'Un momento…',
+      confirm: 'Confirmar',
+      notNow: 'Ahora no',
+      upgradeBody:
+        '{plan} empieza hoy con una semana nueva de créditos. Pagas {amount} ahora, con el tiempo no usado de {current} descontado. Después, {price}.',
+      downgradeBody:
+        'Mantienes {current} hasta el {date}. Después empieza {plan}, a {price}.',
+      trialBody:
+        'Tu prueba sigue. {plan} empieza cuando termine, el {date}, a {price}.',
+      keepTitle: 'Mantener {plan}',
+      keepBody: 'Sigues en {plan}. El cambio a {next} se canceló.',
+      startNow: 'Empezar mi plan ahora',
+      startNowTitle: 'Empezar {plan} ahora',
+      startNowBody:
+        'Tu prueba termina ahora y empieza {plan}, con una semana nueva de créditos. Pagas {amount} hoy.',
+      priceMonth: '{amount} al mes',
+      priceYear: '{amount} al año',
+      changeFailed: 'Tu plan no cambió',
+      switchesOn: 'Cambia a {plan} el {date} · ',
+      keepPlan: 'Mantener {plan}',
+      extraCredits: 'Créditos extra: {credits} · ',
+      addCredits: 'Añadir créditos',
+      creditsNote:
+        '{price} por {credits} créditos, que se usan cuando se acaban los de la semana. Válidos 12 meses.',
     },
   },
 } as const

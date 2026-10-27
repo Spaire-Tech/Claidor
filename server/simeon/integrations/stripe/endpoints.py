@@ -48,6 +48,10 @@ DIRECT_IMPLEMENTED_WEBHOOKS = {
     "customer.subscription.updated",
     "customer.subscription.deleted",
     "checkout.session.completed",
+    # Extra credits (`simeon.plans.credits`): a payment that clears later,
+    # and a refund.
+    "checkout.session.async_payment_succeeded",
+    "charge.refunded",
 }
 CONNECT_IMPLEMENTED_WEBHOOKS = {"account.updated", "payout.updated", "payout.paid"}
 

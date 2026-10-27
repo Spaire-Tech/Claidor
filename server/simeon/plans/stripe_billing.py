@@ -94,6 +94,36 @@ class StripeBilling:
         """Ends the subscription now, with no proration (an account deleted from the app)."""
         return await stripe_lib.Subscription.cancel_async(subscription_id)
 
+    async def preview_invoice(self, **params: Any) -> stripe_lib.Invoice:
+        """What a change would charge, without making it."""
+        return await stripe_lib.Invoice.create_preview_async(**params)
+
+    async def create_schedule_from(
+        self, subscription_id: str
+    ) -> stripe_lib.SubscriptionSchedule:
+        return await stripe_lib.SubscriptionSchedule.create_async(
+            from_subscription=subscription_id
+        )
+
+    async def modify_schedule(
+        self, schedule_id: str, **params: Any
+    ) -> stripe_lib.SubscriptionSchedule:
+        return await stripe_lib.SubscriptionSchedule.modify_async(schedule_id, **params)
+
+    async def release_schedule(
+        self, schedule_id: str
+    ) -> stripe_lib.SubscriptionSchedule:
+        """Lets the subscription go on by itself, on the price it has now."""
+        return await stripe_lib.SubscriptionSchedule.release_async(schedule_id)
+
+    async def retrieve_paid_checkout(
+        self, session_id: str
+    ) -> stripe_lib.checkout.Session:
+        """A one-time checkout (extra credits), with what it sold."""
+        return await stripe_lib.checkout.Session.retrieve_async(
+            session_id, expand=["line_items"]
+        )
+
     async def retrieve_payment_method(
         self, payment_method_id: str
     ) -> stripe_lib.PaymentMethod:

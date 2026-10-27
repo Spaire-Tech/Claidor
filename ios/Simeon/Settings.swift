@@ -679,6 +679,14 @@ struct UsagePage: View {
           if let onDemand = meters.onDemand {
             UsageMeterRow(title: UsageMeters.onDemandTitle, meter: onDemand)
           }
+          // Extra credits bought on the web, used after the week's (27 October 2026).
+          if let extra = meters.extraCredits {
+            HStack {
+              Text(UsageMeters.extraCreditsTitle).foregroundStyle(Ink.primary)
+              Spacer()
+              Text(extra).foregroundStyle(Ink.secondary).monospacedDigit()
+            }
+          }
           // The founder's reference's Change Limit (9 October 2026): the plans page when there is one to move to, else Stripe's.
           if apple || web {
             Button {
@@ -752,9 +760,22 @@ struct UsagePage: View {
                 .contentShape(.rect)
               }
             } else if web {
+              // A card trial starts its plan today; a paid plan adds extra credits (27 October 2026).
+              if plan.status == "trialing" {
+                Button { open("start", flow: PhoneUpgrade.startNowFlow, tier: nil) } label: {
+                  Text(opening == "start" ? "Opening…" : "Start Plan Now").foregroundStyle(Ink.link)
+                }
+                .disabled(opening != nil)
+              }
               if let next = plan.nextTier {
                 Button { open("upgrade", flow: "update_confirm", tier: next.tier) } label: {
                   Text(opening == "upgrade" ? "Opening…" : "Upgrade to \(next.label)").foregroundStyle(Ink.link)
+                }
+                .disabled(opening != nil)
+              }
+              if plan.status != "trialing" {
+                Button { open("credits", flow: PhoneUpgrade.creditsFlow, tier: nil) } label: {
+                  Text(opening == "credits" ? "Opening…" : "Add Credits").foregroundStyle(Ink.link)
                 }
                 .disabled(opening != nil)
               }

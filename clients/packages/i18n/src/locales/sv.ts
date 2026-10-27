@@ -275,10 +275,11 @@ export default {
       takingYouBack:
         'Tar dig tillbaka till Simeon för att slutföra inloggningen',
       goBack: 'Gå tillbaka till Simeon',
-      goBackStarted: 'Din gratis månad har börjat. Gå tillbaka till Simeon',
+      goBackStarted:
+        'Din gratis provperiod har börjat. Gå tillbaka till Simeon',
       download: 'Ladda ned Simeon för att komma igång',
       downloadStarted:
-        'Din gratis månad har börjat. Ladda ned Simeon för att komma igång',
+        'Din gratis provperiod har börjat. Ladda ner Simeon för att komma igång',
       continueSigningIn: 'Fortsätt logga in på Simeon',
       openSimeon: 'Öppna Simeon',
       downloadMac: 'Ladda ned Simeon för macOS',
@@ -299,7 +300,7 @@ export default {
       proUsage: '3,5 gånger användningen i Standard',
       proBusy: 'För agenter som jobbar varje dag',
       maxIncludes: 'Allt i Pro, plus:',
-      maxUsage: '12 gånger användningen i Standard',
+      maxUsage: '9 gånger användningen i Standard',
       maxAccess: 'Först med tillgång till alla produkter',
       startTrial: 'Starta din provperiod för {plan}',
       upgradeTo: 'Uppgradera till {plan}',
@@ -314,6 +315,29 @@ export default {
       billedMonthly: 'Faktureras månadsvis',
       yourCurrentPlan: 'Ditt nuvarande abonnemang',
       oneMoment: 'Ett ögonblick…',
+      confirm: 'Bekräfta',
+      notNow: 'Inte nu',
+      upgradeBody:
+        '{plan} börjar i dag med en ny vecka krediter. Du betalar {amount} nu, med den oanvända tiden på {current} avdragen. Sedan {price}.',
+      downgradeBody:
+        'Du behåller {current} till {date}. Sedan börjar {plan}, för {price}.',
+      trialBody:
+        'Din provperiod fortsätter. {plan} börjar när den tar slut, den {date}, för {price}.',
+      keepTitle: 'Behåll {plan}',
+      keepBody: 'Du stannar på {plan}. Bytet till {next} är avbrutet.',
+      startNow: 'Starta mitt abonnemang nu',
+      startNowTitle: 'Starta {plan} nu',
+      startNowBody:
+        'Din provperiod slutar nu och {plan} börjar, med en ny vecka krediter. Du betalar {amount} i dag.',
+      priceMonth: '{amount} i månaden',
+      priceYear: '{amount} om året',
+      changeFailed: 'Ditt abonnemang ändrades inte',
+      switchesOn: 'Byter till {plan} den {date} · ',
+      keepPlan: 'Behåll {plan}',
+      extraCredits: 'Extra krediter: {credits} · ',
+      addCredits: 'Lägg till krediter',
+      creditsNote:
+        '{price} för {credits} krediter, som används när veckans krediter är slut. Giltiga i 12 månader.',
     },
   },
 } as const

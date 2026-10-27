@@ -214,6 +214,11 @@ class DesktopUsage(RecordModel):
     #: What the call cost the person's monthly allowance; see
     #: `simeon.desktop.service.credits_for` for the weights.
     credits: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    #: The part of `credits` drawn from extra credits rather than the week
+    #: (27 October 2026, `simeon.plans.credits`): the week counts the rest.
+    extra_credits: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
     stream: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     #: The status the provider answered with; a failed call costs nothing.
     upstream_status: Mapped[int] = mapped_column(Integer, nullable=False, default=0)

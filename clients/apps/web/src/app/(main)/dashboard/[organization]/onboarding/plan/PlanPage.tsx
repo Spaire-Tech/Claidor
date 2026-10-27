@@ -49,7 +49,7 @@ const TIERS: DesignTier[] = [
     recommended: false,
     includes: 'Includes',
     features: [
-      { label: <>5,000,000 credits a week, about fifty tasks</> },
+      { label: <>10,000,000 credits a week, about a hundred tasks</> },
       { label: <>Every agent and every feature</> },
       { label: <>A cloud computer for each agent</> },
       { label: <>Routines that run while your Mac is closed</> },
@@ -69,7 +69,7 @@ const TIERS: DesignTier[] = [
       </>
     ),
     features: [
-      { label: <>17,500,000 credits a week</> },
+      { label: <>35,000,000 credits a week</> },
       { label: <>3.5 times the weekly work of Standard</> },
       { label: <>Room for routines that run every day</> },
     ],
@@ -86,8 +86,8 @@ const TIERS: DesignTier[] = [
       </>
     ),
     features: [
-      { label: <>60,000,000 credits a week</> },
-      { label: <>Twelve times the weekly work of Standard</> },
+      { label: <>90,000,000 credits a week</> },
+      { label: <>Nine times the weekly work of Standard</> },
       { label: <>Agents on routines all week long</> },
       { label: <>Our highest allowance</> },
     ],

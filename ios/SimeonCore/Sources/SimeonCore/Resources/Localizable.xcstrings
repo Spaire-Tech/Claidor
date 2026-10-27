@@ -9119,64 +9119,6 @@
         }
       }
     },
-    "30 days free, then your plan. Add a card on the web; cancel anytime." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "30 Tage gratis, danach dein Tarif. Füge im Web eine Karte hinzu; kündigen kannst du jederzeit."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "30 días gratis y luego tu plan. Agrega una tarjeta en la web; cancela cuando quieras."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "30 jours gratuits, puis ton forfait. Ajoute une carte sur le web ; résilie quand tu veux."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "30 giorni gratis, poi il tuo piano. Aggiungi una carta sul web; disdici quando vuoi."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "30 dagen gratis, daarna je abonnement. Voeg een kaart toe op het web; opzeggen kan altijd."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "30 dni za darmo, potem twój plan. Dodaj kartę na stronie; zrezygnuj w każdej chwili."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "30 dias grátis, depois o seu plano. Adicione um cartão na web; cancele quando quiser."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "30 dagar gratis, sedan ditt abonnemang. Lägg till ett kort på webben; säg upp när du vill."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "30 gün ücretsiz, sonra planın başlar. Web’de bir kart ekle; istediğin zaman iptal et."
-          }
-        }
-      }
-    },
     "50 is the maximum" : {
       "localizations" : {
         "de" : {
@@ -9231,6 +9173,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "En fazla 50"
+          }
+        }
+      }
+    },
+    "7 days free, then your plan. Add a card on the web; cancel anytime." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "7 Tage gratis, danach dein Tarif. Füge im Web eine Karte hinzu; kündigen kannst du jederzeit."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "7 días gratis y luego tu plan. Agrega una tarjeta en la web; cancela cuando quieras."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "7 jours gratuits, puis ton forfait. Ajoute une carte sur le web ; résilie quand tu veux."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "7 giorni gratis, poi il tuo piano. Aggiungi una carta sul web; disdici quando vuoi."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "7 dagen gratis, daarna je abonnement. Voeg een kaart toe op het web; opzeggen kan altijd."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "7 dni za darmo, potem twój plan. Dodaj kartę na stronie; zrezygnuj w każdej chwili."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "7 dias grátis, depois o seu plano. Adicione um cartão na web; cancele quando quiser."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "7 dagar gratis, sedan ditt abonnemang. Lägg till ett kort på webben; säg upp när du vill."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "7 gün ücretsiz, sonra planın başlar. Web’de bir kart ekle; istediğin zaman iptal et."
           }
         }
       }
@@ -10743,6 +10743,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Bir tane daha ekle"
+          }
+        }
+      }
+    },
+    "Add Credits" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Credits hinzufügen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir créditos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter des crédits"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi crediti"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Credits toevoegen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj kredyty"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar créditos"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lägg till krediter"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kredi ekle"
           }
         }
       }
@@ -31994,6 +32052,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Süresi doldu"
+          }
+        }
+      }
+    },
+    "Extra credits" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zusätzliche Credits"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Créditos extra"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crédits supplémentaires"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crediti extra"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Extra credits"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodatkowe kredyty"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Créditos extras"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Extra krediter"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ek krediler"
           }
         }
       }
@@ -60893,6 +61009,64 @@
         }
       }
     },
+    "Start Plan Now" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tarif jetzt starten"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Empezar plan ahora"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Commencer le forfait maintenant"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inizia il piano ora"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abonnement nu starten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zacznij plan teraz"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Começar o plano agora"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Starta abonnemanget nu"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Planı şimdi başlat"
+          }
+        }
+      }
+    },
     "Start Trial" : {
       "localizations" : {
         "de" : {
@@ -60947,64 +61121,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Denemeyi başlat"
-          }
-        }
-      }
-    },
-    "Start your free month to send messages" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Starte deinen Gratismonat, um Nachrichten zu senden"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Empieza tu mes gratis para enviar mensajes"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Commence ton mois gratuit pour envoyer des messages"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Inizia il tuo mese gratuito per inviare messaggi"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Start je gratis maand om berichten te sturen"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zacznij darmowy miesiąc, aby wysyłać wiadomości"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Comece seu mês grátis para enviar mensagens"
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Starta din gratis månad för att skicka meddelanden"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mesaj göndermek için ücretsiz ayını başlat"
           }
         }
       }
@@ -66635,118 +66751,176 @@
         }
       }
     },
-    "They reset on Monday." : {
+    "They reset %@." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sie werden am Montag erneuert."
+            "value" : "Sie werden %@ erneuert."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Se renuevan el lunes."
+            "value" : "Se renuevan %@."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ils se renouvellent lundi."
+            "value" : "Ils se renouvellent %@."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Si rinnovano lunedì."
+            "value" : "Si rinnovano %@."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ze worden maandag gereset."
+            "value" : "Ze worden %@ gereset."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Odnowią się w poniedziałek."
+            "value" : "Odnowienie: %@."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Eles voltam na segunda-feira."
+            "value" : "Eles voltam %@."
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "De återställs på måndag."
+            "value" : "De återställs %@."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Krediler Pazartesi yenilenir."
+            "value" : "Krediler %@ yenilenir."
           }
         }
       }
     },
-    "They reset on Monday. Upgrade to keep going now." : {
+    "They reset %@. Add credits to keep going now." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sie werden am Montag erneuert. Mit einem Upgrade kannst du sofort weitermachen."
+            "value" : "Sie werden %@ erneuert. Mit zusätzlichen Credits kannst du sofort weitermachen."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Se renuevan el lunes. Mejora tu plan para seguir ahora."
+            "value" : "Se renuevan %@. Añade créditos para seguir ahora."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ils se renouvellent lundi. Passe au forfait supérieur pour continuer dès maintenant."
+            "value" : "Ils se renouvellent %@. Ajoute des crédits pour continuer dès maintenant."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Si rinnovano lunedì. Passa a un piano superiore per continuare subito."
+            "value" : "Si rinnovano %@. Aggiungi crediti per continuare subito."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ze worden maandag gereset. Upgrade om nu door te gaan."
+            "value" : "Ze worden %@ gereset. Voeg credits toe om nu door te gaan."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Odnowią się w poniedziałek. Ulepsz plan, aby kontynuować już teraz."
+            "value" : "Odnowienie: %@. Dodaj kredyty, aby kontynuować już teraz."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Eles voltam na segunda-feira. Faça upgrade para continuar agora."
+            "value" : "Eles voltam %@. Adicione créditos para continuar agora."
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "De återställs på måndag. Uppgradera för att fortsätta direkt."
+            "value" : "De återställs %@. Lägg till krediter för att fortsätta direkt."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Krediler Pazartesi yenilenir. Hemen devam etmek için planını yükselt."
+            "value" : "Krediler %@ yenilenir. Hemen devam etmek için kredi ekle."
+          }
+        }
+      }
+    },
+    "They reset %@. Upgrade to keep going now." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sie werden %@ erneuert. Mit einem Upgrade kannst du sofort weitermachen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se renuevan %@. Mejora tu plan para seguir ahora."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ils se renouvellent %@. Passe au forfait supérieur pour continuer dès maintenant."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Si rinnovano %@. Passa a un piano superiore per continuare subito."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ze worden %@ gereset. Upgrade om nu door te gaan."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Odnowienie: %@. Ulepsz plan, aby kontynuować już teraz."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eles voltam %@. Faça upgrade para continuar agora."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De återställs %@. Uppgradera för att fortsätta direkt."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Krediler %@ yenilenir. Hemen devam etmek için planını yükselt."
           }
         }
       }
@@ -79594,60 +79768,60 @@
         }
       }
     },
-    "Your free month has ended" : {
+    "Your free trial has ended" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dein Gratismonat ist abgelaufen"
+            "value" : "Dein kostenloser Test ist abgelaufen"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tu mes gratis terminó"
+            "value" : "Tu prueba gratis terminó"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ton mois gratuit est terminé"
+            "value" : "Ton essai gratuit est terminé"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Il tuo mese gratuito è terminato"
+            "value" : "La tua prova gratuita è terminata"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Je gratis maand is voorbij"
+            "value" : "Je gratis proefperiode is voorbij"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Twój darmowy miesiąc się skończył"
+            "value" : "Twój darmowy okres próbny się skończył"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Seu mês grátis terminou"
+            "value" : "Seu teste grátis terminou"
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Din gratis månad har tagit slut"
+            "value" : "Din gratis provperiod har tagit slut"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ücretsiz ayın sona erdi"
+            "value" : "Ücretsiz denemen sona erdi"
           }
         }
       }

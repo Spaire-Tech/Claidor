@@ -6,11 +6,12 @@ from collections.abc import Sequence
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import func, or_, select, update
+from sqlalchemy import Select, func, or_, select, update
 
 from simeon.kit.repository import RepositoryBase
 from simeon.models import (
     DesktopAppStoreSubscription,
+    DesktopCreditPack,
     DesktopFreeTrial,
     DesktopSubscription,
     DesktopTrialRedemption,
@@ -140,6 +141,62 @@ class DesktopFreeTrialRepository(RepositoryBase[DesktopFreeTrial]):
             .limit(1)
         )
         return await self.get_one_or_none(statement)
+
+
+class DesktopCreditPackRepository(RepositoryBase[DesktopCreditPack]):
+    """Extra credits (`simeon.plans.credits`)."""
+
+    model = DesktopCreditPack
+
+    def _live(self, user_id: UUID, now: datetime) -> Select[tuple[DesktopCreditPack]]:
+        return self.get_base_statement().where(
+            DesktopCreditPack.user_id == user_id,
+            DesktopCreditPack.remaining > 0,
+            DesktopCreditPack.refunded_at.is_(None),
+            DesktopCreditPack.expires_at > now,
+        )
+
+    async def get_by_checkout_session(
+        self, checkout_session_id: str
+    ) -> DesktopCreditPack | None:
+        statement = self.get_base_statement().where(
+            DesktopCreditPack.stripe_checkout_session_id == checkout_session_id
+        )
+        return await self.get_one_or_none(statement)
+
+    async def list_by_payment_intent(
+        self, payment_intent_id: str
+    ) -> Sequence[DesktopCreditPack]:
+        statement = self.get_base_statement().where(
+            DesktopCreditPack.stripe_payment_intent_id == payment_intent_id
+        )
+        return await self.get_all(statement)
+
+    async def list_live(
+        self, user_id: UUID, now: datetime, *, for_update: bool = False
+    ) -> Sequence[DesktopCreditPack]:
+        """The packs that still hold credits, the first to expire first;
+        locked when they are about to be drawn from, so two calls ending at
+        once cannot spend the same credits."""
+        statement = self._live(user_id, now).order_by(
+            DesktopCreditPack.expires_at, DesktopCreditPack.created_at
+        )
+        if for_update:
+            statement = statement.with_for_update()
+        return await self.get_all(statement)
+
+    async def balance(self, user_id: UUID, now: datetime) -> int:
+        statement = select(
+            func.coalesce(func.sum(DesktopCreditPack.remaining), 0)
+        ).where(
+            DesktopCreditPack.user_id == user_id,
+            DesktopCreditPack.deleted_at.is_(None),
+            DesktopCreditPack.remaining > 0,
+            DesktopCreditPack.refunded_at.is_(None),
+            DesktopCreditPack.expires_at > now,
+        )
+        result = await self.session.execute(statement)
+        return int(result.scalar_one())
 
 
 class UsageReportRepository:

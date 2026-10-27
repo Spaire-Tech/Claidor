@@ -13,7 +13,6 @@ import structlog
 from fastapi import Request
 from fastapi.responses import JSONResponse
 
-from simeon.config import settings
 from simeon.kit.db.postgres import AsyncSessionMaker
 from simeon.models import User
 from simeon.postgres import AsyncSession
@@ -129,9 +128,9 @@ async def budget_refusal(session: AsyncSession, user: User) -> JSONResponse | No
     allowance = await desktop.allowance(session, user)
     if await desktop.exhausted(session, user, allowance=allowance):
         return quota_exhausted_response(allowance)
-    if await desktop.hourly_exhausted(session, user):
+    if await desktop.hourly_exhausted(session, user, allowance=allowance):
         used = await desktop.credits_used_last_hour(session, user.id)
-        return hourly_budget_response(used, settings.DESKTOP_HOURLY_CREDITS)
+        return hourly_budget_response(used, allowance.hourly_credits)
     return None
 
 

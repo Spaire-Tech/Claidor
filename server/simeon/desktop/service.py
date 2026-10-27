@@ -38,7 +38,9 @@ from simeon.models import (
     DesktopUsage,
     User,
 )
+from simeon.plans import credits as extra_credits
 from simeon.postgres import AsyncSession
+from simeon.user.repository import UserRepository
 
 from .allowance import (
     Allowance,
@@ -888,14 +890,15 @@ class DesktopService:
         now: datetime | None = None,
         period: tuple[datetime, datetime] | None = None,
     ) -> int:
-        """Credits spent in `period`. Without one: the free month when no
-        billing is configured, else the plan week. A caller holding an
-        `Allowance` passes its own window, which for a trial is the trial."""
+        """Credits the plan's own window spent in `period`, leaving out
+        what extra credits paid for. Without one: the free month when no
+        billing is configured, else the Monday week. A caller holding an
+        `Allowance` passes its own window: the person's week, or the trial."""
         if period is None:
             period = week_bounds(now) if billing_required() else month_bounds(now)
         start, end = period
         return await DesktopUsageRepository.from_session(session).credits_between(
-            user_id, start, end
+            user_id, start, end, without_extra=True
         )
 
     async def credits_used_last_hour(
@@ -907,13 +910,20 @@ class DesktopService:
         )
 
     async def hourly_exhausted(
-        self, session: AsyncSession, user: User, *, now: datetime | None = None
+        self,
+        session: AsyncSession,
+        user: User,
+        *,
+        now: datetime | None = None,
+        allowance: Allowance | None = None,
     ) -> bool:
-        """True when the last sliding hour already holds the hourly
-        budget. A runaway loop is stopped within the hour it starts,
-        whatever the week still allows."""
+        """True when the last sliding hour already holds the plan's hourly
+        budget (`Allowance.hourly_credits`). A runaway loop is stopped
+        within the hour it starts, whatever the week still allows."""
+        if allowance is None:
+            allowance = await self.allowance(session, user, now=now)
         used = await self.credits_used_last_hour(session, user.id, now=now)
-        return used >= settings.DESKTOP_HOURLY_CREDITS
+        return used >= allowance.hourly_credits
 
     async def quota(
         self, session: AsyncSession, user: User, *, now: datetime | None = None
@@ -937,6 +947,7 @@ class DesktopService:
             now=now,
             period=(allowance.period_start, allowance.period_end),
         )
+        extra = await extra_credits.balance(session, user.id, now=now)
         return {
             "planName": allowance.plan_name,
             "subscriptionStatus": allowance.status,
@@ -968,6 +979,9 @@ class DesktopService:
             # October 2026): the app asks for the card to be updated, with
             # whoever bills it (`billedBy`), instead of offering a plan.
             "paymentFailed": allowance.payment_failed,
+            # Extra credits bought on the web (27 October 2026), used once
+            # the week's are spent, on a paid plan only (`hasPaidCredits`).
+            "extraCredits": extra,
         }
 
     async def profile_summary(
@@ -999,14 +1013,19 @@ class DesktopService:
         *,
         allowance: Allowance | None = None,
     ) -> bool:
-        """True when the window's credits are spent. With no plan the
-        limit is 0, so this is true before the first call."""
+        """True when the window's credits are spent, and, on a paid plan,
+        the extra credits too. With no plan the limit is 0, so this is true
+        before the first call."""
         if allowance is None:
             allowance = await self.allowance(session, user)
         used = await self.credits_used(
             session, user.id, period=(allowance.period_start, allowance.period_end)
         )
-        return used >= allowance.credits_limit
+        if used < allowance.credits_limit:
+            return False
+        return not (
+            allowance.paid and await extra_credits.balance(session, user.id) > 0
+        )
 
     # the shared memory
 
@@ -1201,6 +1220,8 @@ class DesktopService:
         upstream_status: int,
         reason: str | None = None,
     ) -> DesktopUsage:
+        credits = credits_for(model, usage) if upstream_status == 200 else 0
+        extra = await self._draw_extra_credits(session, user_id, credits)
         row = DesktopUsage(
             user_id=user_id,
             session_id=session_id,
@@ -1214,7 +1235,8 @@ class DesktopService:
             output_tokens=usage.output_tokens,
             cache_creation_tokens=usage.cache_creation_tokens,
             cache_read_tokens=usage.cache_read_tokens,
-            credits=credits_for(model, usage) if upstream_status == 200 else 0,
+            credits=credits,
+            extra_credits=extra,
             stream=stream,
             upstream_status=upstream_status,
             reason=reason,
@@ -1222,6 +1244,31 @@ class DesktopService:
         session.add(row)
         await session.flush()
         return row
+
+    async def _draw_extra_credits(
+        self, session: AsyncSession, user_id: UUID, credits: int
+    ) -> int:
+        """The part of a call's `credits` past the week's allowance, taken
+        from the person's extra credits (`simeon.plans.credits`); 0 without
+        packs, off a paid plan, or while the week still covers it."""
+        if credits <= 0:
+            return 0
+        now = utc_now()
+        if await extra_credits.balance(session, user_id, now=now) <= 0:
+            return 0
+        user = await UserRepository.from_session(session).get_by_id(user_id)
+        if user is None:
+            return 0
+        allowance = await self.allowance(session, user, now=now)
+        if not allowance.paid:
+            return 0
+        used = await self.credits_used(
+            session, user_id, period=(allowance.period_start, allowance.period_end)
+        )
+        past = min(credits, used + credits - allowance.credits_limit)
+        if past <= 0:
+            return 0
+        return await extra_credits.draw(session, user_id, past, now=now)
 
 
 desktop = DesktopService()

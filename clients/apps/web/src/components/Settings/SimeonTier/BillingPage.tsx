@@ -4,17 +4,24 @@ import LogoType from '@/components/Brand/LogoType'
 import { toast } from '@/components/Toast/use-toast'
 import {
   CurrentSubscription,
+  formatCredits,
   formatDollarAmount,
   hasPlan,
   PAID_TIERS,
   PaidTierKey,
   Plan,
+  PlanChange,
   tierDisplayName,
+  useBuyCredits,
+  useChangePlan,
+  useCredits,
   useMySubscription,
   useOpenPortal,
   usePlans,
+  usePreviewChange,
   useStartCheckout,
   useSyncCheckout,
+  useSyncCredits,
 } from '@/hooks/queries/plans'
 import { CONFIG } from '@/utils/config'
 import {
@@ -70,6 +77,8 @@ interface BillingPageProps {
   fromApp: boolean
   /** `?upgraded=1`: the checkout just came back here. */
   upgraded: boolean
+  /** `?credits=1`: a checkout for extra credits just came back here. */
+  credits: boolean
   /** `?checkout_session_id=`: the checkout that just came back, to copy in. */
   checkoutSessionId: string | null
   /** The page's language (`pageLocale`, 20 October 2026). */
@@ -88,12 +97,19 @@ const monthlyPrice = (cents: number, locale: AcceptedLocale): string =>
         maximumFractionDigits: 2,
       }).format(cents / 100)
 
+/** "November 3": the day a change starts, in the page's language. */
+const dayOf = (iso: string, locale: AcceptedLocale): string =>
+  new Date(iso).toLocaleDateString(locale, { month: 'long', day: 'numeric' })
+
 /**
  * app.simeonlabs.com/billing, the one page the web app is for, in the
- * site's own clothes. Two screens, the way the upstream app does it:
- * "Adjust your plan" (the three cards; Choose plan opens Stripe
- * Checkout, or the Customer Portal once there is a plan) and "You're all
- * set" (the Download button, for a person who has a plan). The Mac app's
+ * site's own clothes. Three screens: "Adjust your plan" (the three cards;
+ * Choose plan opens Stripe Checkout, or, once there is a plan, the
+ * confirm screen), the confirm screen (what a change does and costs, as
+ * the server previews it: an upgrade starts today less the old plan's
+ * unused time, a downgrade at the renewal, 27 October 2026), and "You're
+ * all set" (the Download button, for a person who has a plan, with "Start
+ * my plan now" in a trial, a waiting downgrade and extra credits). The Mac app's
  * upgrade button, the window's access cover, the site's "Try it free"
  * buttons and the Mac sign-in gate all land here
  * (docs/services-billing.md, section 3). A plan bought in the iPhone app
@@ -105,24 +121,30 @@ const BillingPage = ({
   returnTo,
   fromApp,
   upgraded,
+  credits,
   checkoutSessionId,
   locale,
 }: BillingPageProps) => {
   const t = useTranslations(locale)
   const subscription = useMySubscription()
   const sync = useSyncCheckout()
+  const syncCredits = useSyncCredits()
   const synced = useRef<string | null>(null)
   // A link that names a plan (the Mac app's upgrade button, the site's
   // buttons) is a wish to change plan: open on the cards.
   const [adjusting, setAdjusting] = useState(plan !== null)
+  // A change the person is looking at before making it.
+  const [confirming, setConfirming] = useState<PlanChange | null>(null)
 
-  // The checkout came back: copy its subscription in before Stripe's
-  // webhook does, so the page says so at once. Once per id.
+  // The checkout came back: copy its subscription in (or grant the extra
+  // credits it bought) before Stripe's webhook does, so the page says so
+  // at once. Once per id.
   useEffect(() => {
     if (!checkoutSessionId || synced.current === checkoutSessionId) return
     synced.current = checkoutSessionId
-    sync.mutate(checkoutSessionId)
-  }, [checkoutSessionId, sync])
+    if (credits) syncCredits.mutate(checkoutSessionId)
+    else sync.mutate(checkoutSessionId)
+  }, [checkoutSessionId, credits, sync, syncCredits])
 
   const sub = subscription.data
   const subscribed = hasPlan(sub)
@@ -130,7 +152,8 @@ const BillingPage = ({
   // only says so (the checkout and the portal would refuse).
   const billedByApple = subscribed && sub?.provider === 'app_store'
   const waiting =
-    subscription.isLoading || (checkoutSessionId !== null && sync.isPending)
+    subscription.isLoading ||
+    (checkoutSessionId !== null && (sync.isPending || syncCredits.isPending))
 
   return (
     <div className={styles.page}>
@@ -156,15 +179,28 @@ const BillingPage = ({
         )}
       </header>
 
-      {waiting ? null : subscribed && (!adjusting || billedByApple) ? (
+      {waiting ? null : confirming ? (
+        <ConfirmChange
+          change={confirming}
+          fromApp={fromApp}
+          onClose={(changed) => {
+            setConfirming(null)
+            if (changed) setAdjusting(false)
+          }}
+          t={t}
+          locale={locale}
+        />
+      ) : subscribed && (!adjusting || billedByApple) ? (
         <AllSet
           sub={sub}
           returnTo={returnTo}
           fromApp={fromApp}
-          justPaid={upgraded || checkoutSessionId !== null}
+          justPaid={upgraded || (checkoutSessionId !== null && !credits)}
           billedByApple={billedByApple}
           onAdjust={() => setAdjusting(true)}
+          onPreview={setConfirming}
           t={t}
+          locale={locale}
         />
       ) : (
         <AdjustPlan
@@ -173,6 +209,7 @@ const BillingPage = ({
           highlight={plan}
           returnTo={returnTo}
           fromApp={fromApp}
+          onPreview={setConfirming}
           t={t}
           locale={locale}
         />
@@ -190,7 +227,9 @@ const AllSet = ({
   justPaid,
   billedByApple,
   onAdjust,
+  onPreview,
   t,
+  locale,
 }: {
   sub: CurrentSubscription | undefined
   returnTo: string | null
@@ -198,9 +237,50 @@ const AllSet = ({
   justPaid: boolean
   billedByApple: boolean
   onAdjust: () => void
+  onPreview: (change: PlanChange) => void
   t: TranslateFn
+  locale: AcceptedLocale
 }) => {
   const trialing = sub?.status === 'trialing'
+  const preview = usePreviewChange()
+  const buyCredits = useBuyCredits()
+  const credits = useCredits(Boolean(sub) && hasPlan(sub))
+  const [busy, setBusy] = useState(false)
+
+  const ask = useCallback(
+    async (input: { tier: PaidTierKey } | { startNow: true }) => {
+      setBusy(true)
+      try {
+        onPreview(await preview.mutateAsync(input))
+      } catch (error) {
+        toast({
+          title: t('simeon.billing.changeFailed'),
+          description: errorText(error) ?? t('simeon.billing.tryAgain'),
+        })
+      } finally {
+        setBusy(false)
+      }
+    },
+    [onPreview, preview, t],
+  )
+
+  const addCredits = useCallback(async () => {
+    setBusy(true)
+    try {
+      const { checkout_url } = await buyCredits.mutateAsync({
+        packs: 1,
+        success_url: `${BILLING_PATH}?credits=1${fromApp ? '&from=app' : ''}`,
+        cancel_url: `${BILLING_PATH}${fromApp ? '?from=app' : ''}`,
+      })
+      window.location.assign(checkout_url)
+    } catch (error) {
+      toast({
+        title: t('simeon.billing.checkoutFailed'),
+        description: errorText(error) ?? t('simeon.billing.tryAgain'),
+      })
+      setBusy(false)
+    }
+  }, [buyCredits, fromApp, t])
 
   // Came from the app: go back to it, do not stand here. The Mac
   // sign-in's way back finishes the sign-in (the API confirms it from
@@ -260,7 +340,55 @@ const AllSet = ({
               {t('simeon.billing.adjustPlan')}
             </button>
           )}
+          {trialing && !billedByApple && !sub?.cancel_at_period_end && (
+            <>
+              {' · '}
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => ask({ startNow: true })}
+              >
+                {t('simeon.billing.startNow')}
+              </button>
+            </>
+          )}
         </span>
+        {sub?.scheduled_tier && sub.scheduled_at && !billedByApple && (
+          <span>
+            {t('simeon.billing.switchesOn', {
+              plan: tierDisplayName(sub.scheduled_tier),
+              date: dayOf(sub.scheduled_at, locale),
+            })}
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => ask({ tier: sub.tier as PaidTierKey })}
+            >
+              {t('simeon.billing.keepPlan', {
+                plan: tierDisplayName(sub.tier),
+              })}
+            </button>
+          </span>
+        )}
+        {credits.data && (credits.data.can_buy || credits.data.balance > 0) && (
+          <span>
+            {t('simeon.billing.extraCredits', {
+              credits: formatCredits(credits.data.balance),
+            })}
+            {credits.data.can_buy && (
+              <button type="button" disabled={busy} onClick={addCredits}>
+                {t('simeon.billing.addCredits')}
+              </button>
+            )}
+            <br />
+            <span className={styles.muted}>
+              {t('simeon.billing.creditsNote', {
+                price: monthlyPrice(credits.data.pack_price_cents, locale),
+                credits: formatCredits(credits.data.pack_credits),
+              })}
+            </span>
+          </span>
+        )}
       </footer>
     </>
   )
@@ -270,7 +398,7 @@ const AllSet = ({
 
 /**
  * The site's pricing cards (sites/simeonlabs.com, #pricing). The site's
- * Trial card is not here, every plan starts with its free month, so
+ * Trial card is not here, every plan starts with its free trial, so
  * Standard lists the trial's lines and its own together.
  */
 const CARD_COPY: Record<PaidTierKey, { includes: CardKey; lines: CardKey[] }> =
@@ -316,6 +444,7 @@ const AdjustPlan = ({
   subscribed,
   returnTo,
   fromApp,
+  onPreview,
   t,
   locale,
 }: {
@@ -324,12 +453,14 @@ const AdjustPlan = ({
   highlight: PaidTierKey | null
   returnTo: string | null
   fromApp: boolean
+  onPreview: (change: PlanChange) => void
   t: TranslateFn
   locale: AcceptedLocale
 }) => {
   const plans = usePlans()
   const startCheckout = useStartCheckout()
   const openPortal = useOpenPortal()
+  const preview = usePreviewChange()
   const [pending, setPending] = useState<PaidTierKey | 'portal' | null>(null)
   const ordered = useMemo<Plan[]>(() => {
     if (!plans.data?.items) return []
@@ -348,13 +479,9 @@ const AdjustPlan = ({
       setPending(tier)
       try {
         if (subscribed) {
-          // Straight to Stripe's confirmation of the plan just chosen.
-          const { portal_url } = await openPortal.mutateAsync({
-            flow: 'update_confirm',
-            tier,
-            return_url: back,
-          })
-          window.location.assign(portal_url)
+          // What the change does and costs, then the person confirms it.
+          onPreview(await preview.mutateAsync({ tier }))
+          setPending(null)
           return
         }
         const { checkout_url } = await startCheckout.mutateAsync({
@@ -365,15 +492,17 @@ const AdjustPlan = ({
             (fromApp ? `${BILLING_PATH}?upgraded=1&from=app` : undefined),
         })
         window.location.assign(checkout_url)
-      } catch {
+      } catch (error) {
         toast({
-          title: t('simeon.billing.checkoutFailed'),
-          description: t('simeon.billing.tryAgain'),
+          title: subscribed
+            ? t('simeon.billing.changeFailed')
+            : t('simeon.billing.checkoutFailed'),
+          description: errorText(error) ?? t('simeon.billing.tryAgain'),
         })
         setPending(null)
       }
     },
-    [back, fromApp, openPortal, returnTo, startCheckout, subscribed, t],
+    [fromApp, onPreview, preview, returnTo, startCheckout, subscribed, t],
   )
 
   const portal = useCallback(async () => {
@@ -440,6 +569,111 @@ const AdjustPlan = ({
   )
 }
 
+// --- The confirm screen -------------------------------------------------------
+
+/** The server's sentence for a refusal (`detail`), when it gave one. */
+const errorText = (error: unknown): string | null => {
+  const detail = (error as { detail?: unknown } | null)?.detail
+  return typeof detail === 'string' ? detail : null
+}
+
+const ConfirmChange = ({
+  change,
+  fromApp,
+  onClose,
+  t,
+  locale,
+}: {
+  change: PlanChange
+  fromApp: boolean
+  /** `changed`: the change was made, and the page goes back to "All set". */
+  onClose: (changed: boolean) => void
+  t: TranslateFn
+  locale: AcceptedLocale
+}) => {
+  const changePlan = useChangePlan()
+  const plan = tierDisplayName(change.tier)
+  const current = tierDisplayName(change.current)
+  const amount = monthlyPrice(change.amount_due, locale)
+  const price = t(
+    change.billing_interval === 'year'
+      ? 'simeon.billing.priceYear'
+      : 'simeon.billing.priceMonth',
+    { amount: monthlyPrice(change.price, locale) },
+  )
+  const date = dayOf(change.starts_at, locale)
+  const [title, sentence] =
+    change.kind === 'upgrade'
+      ? [
+          t('simeon.billing.upgradeTo', { plan }),
+          t('simeon.billing.upgradeBody', { plan, amount, current, price }),
+        ]
+      : change.kind === 'downgrade'
+        ? [
+            t('simeon.billing.switchTo', { plan }),
+            t('simeon.billing.downgradeBody', { plan, current, date, price }),
+          ]
+        : change.kind === 'trial'
+          ? [
+              t('simeon.billing.switchTo', { plan }),
+              t('simeon.billing.trialBody', { plan, date, price }),
+            ]
+          : change.kind === 'keep'
+            ? [
+                t('simeon.billing.keepTitle', { plan: current }),
+                t('simeon.billing.keepBody', {
+                  plan: current,
+                  next: change.scheduled_tier
+                    ? tierDisplayName(change.scheduled_tier)
+                    : '',
+                }),
+              ]
+            : [
+                t('simeon.billing.startNowTitle', { plan }),
+                t('simeon.billing.startNowBody', { plan, amount }),
+              ]
+
+  const confirm = async () => {
+    try {
+      await changePlan.mutateAsync(change)
+      if (fromApp) window.location.replace(OPEN_APP_URL)
+      onClose(true)
+    } catch (error) {
+      toast({
+        title: t('simeon.billing.changeFailed'),
+        description: errorText(error) ?? t('simeon.billing.tryAgain'),
+      })
+    }
+  }
+
+  return (
+    <section className={styles.set}>
+      <h1 className={styles.setTitle}>{title}</h1>
+      <p className={`${styles.setLede} ${styles.confirmLede}`}>{sentence}</p>
+      <div className={styles.setActions}>
+        <button
+          type="button"
+          className={styles.btn}
+          disabled={changePlan.isPending}
+          onClick={confirm}
+        >
+          {changePlan.isPending
+            ? t('simeon.billing.oneMoment')
+            : t('simeon.billing.confirm')}
+        </button>
+        <button
+          type="button"
+          className={`${styles.btn} ${styles.ghost}`}
+          disabled={changePlan.isPending}
+          onClick={() => onClose(false)}
+        >
+          {t('simeon.billing.notNow')}
+        </button>
+      </div>
+    </section>
+  )
+}
+
 const PlanCard = ({
   plan,
   current,
@@ -453,7 +687,7 @@ const PlanCard = ({
 }: {
   plan: Plan
   current: boolean
-  /** No plan yet: choosing one starts its free month. */
+  /** No plan yet: choosing one starts its free trial. */
   trial: boolean
   label: string
   busy: boolean

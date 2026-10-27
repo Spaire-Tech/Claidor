@@ -55,6 +55,8 @@ from simeon.kit.utils import utc_now
 from simeon.maty.desktop_endpoints import router as maty_jobs_router
 from simeon.models import DesktopSession
 from simeon.openapi import APITag
+from simeon.plans import credits as credits_service
+from simeon.plans.credits import CreditsError
 from simeon.plans.service import PlansError
 from simeon.plans.service import plans as plans_service
 from simeon.postgres import AsyncSession, get_db_session
@@ -425,14 +427,18 @@ APP_SCHEMES = ("simeon", "simeon-ios")
 
 class PortalBody(BaseModel):
     """The app's Manage plan card: `flow` `update_confirm` with a `tier`
-    for an upgrade, nothing for the portal's front page; `payment_method`
-    for a card that failed (the banner over the composer). `back` names
-    the app that asks (its URL scheme): Stripe's page then ends on
+    for a plan change, nothing for the portal's front page; `payment_method`
+    for a card that failed (the banner over the composer); `start_now` to
+    end a card trial today; `credits` to buy extra credits. `back` names the
+    app that asks (its URL scheme): the page then ends on
     `/desktop/billing/back`, which hands the person to the app, instead of
     the web's billing page, which asks them to sign in (14 October 2026)."""
 
     model_config = ConfigDict(extra="ignore")
-    flow: Literal["update_confirm", "cancel", "payment_method"] | None = None
+    flow: (
+        Literal["update_confirm", "cancel", "payment_method", "start_now", "credits"]
+        | None
+    ) = None
     tier: str | None = None
     back: Literal["simeon", "simeon-ios"] | None = None
 
@@ -443,13 +449,41 @@ async def billing_portal(
     desktop_session: DesktopSession = Depends(get_desktop_session),
     session: AsyncSession = Depends(get_db_session),
 ) -> JSONResponse:
-    """A Stripe Customer Portal link for the app's Manage plan card
-    (Settings → Usage & Billing): the portal's front page for cards and
-    invoices, or the confirmation of one plan change. The app opens the
-    link in the browser (`docs/services-billing.md`, section 4)."""
+    """A link for the app's Manage plan card (Settings → Usage & Billing),
+    which the app opens in the browser (`docs/services-billing.md`, section
+    4): Stripe's Customer Portal for cards, invoices and cancelling; the
+    server's own confirm page for a plan change or "Start my plan now"
+    (`simeon.desktop.billing_pages`, 27 October 2026); Stripe's Checkout for
+    extra credits. The key stays `portalUrl`, which shipped apps read."""
     tier = tier_from_value(body.tier) if body.tier else None
     if body.flow == "update_confirm" and (tier is None or tier not in PAID_TIERS):
         return _fail(400, say("billing.unknown_plan"), status=400)
+    # Imported here: the pages are drawn by `app_sign_in`, which imports this module.
+    from . import billing_pages
+
+    user = desktop_session.user
+    if body.flow in ("update_confirm", "start_now"):
+        return _ok(
+            {
+                "portalUrl": billing_pages.page_url(
+                    user,
+                    action="change" if body.flow == "update_confirm" else "start_now",
+                    tier=tier,
+                    back=body.back,
+                )
+            }
+        )
+    if body.flow == "credits":
+        try:
+            url = await credits_service.create_checkout(
+                session,
+                user,
+                success_url=billing_pages.credits_done_url(body.back),
+                cancel_url=billing_pages.back_url(body.back),
+            )
+        except (PlansError, CreditsError) as error:
+            return _fail(error.status_code, error.message, status=error.status_code)
+        return _ok({"portalUrl": url})
     back = (
         settings.generate_external_url(
             f"/desktop/billing/back?{urlencode({'to': body.back})}"

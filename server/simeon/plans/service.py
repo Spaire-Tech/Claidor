@@ -11,8 +11,9 @@ allowance reads that copy (`simeon.desktop.allowance`).
 from __future__ import annotations
 
 import logging
-from datetime import datetime
-from typing import Any
+from dataclasses import dataclass
+from datetime import datetime, timedelta
+from typing import Any, Literal
 from urllib.parse import urlparse
 from uuid import UUID
 
@@ -21,7 +22,7 @@ import structlog
 
 from simeon.config import settings
 from simeon.desktop.words import say
-from simeon.entitlements.tiers import TierKey
+from simeon.entitlements.tiers import PAID_TIERS, TierKey
 from simeon.exceptions import PolarError
 from simeon.kit.utils import utc_now
 from simeon.models import DesktopSubscription, DesktopTrialRedemption, User
@@ -88,6 +89,67 @@ class BadReturnUrl(PlansError):
 class CheckoutNotYours(PlansError):
     def __init__(self) -> None:
         super().__init__(say("billing.checkout_not_yours"), 403)
+
+
+class SamePlan(PlansError):
+    def __init__(self) -> None:
+        super().__init__(say("billing.same_plan"), 409)
+
+
+class PaymentDue(PlansError):
+    """The last charge failed: the card is fixed first, then the plan changes."""
+
+    def __init__(self) -> None:
+        super().__init__(say("billing.payment_due"), 409)
+
+
+class NotTrialing(PlansError):
+    def __init__(self) -> None:
+        super().__init__(say("billing.not_trialing"), 409)
+
+
+class CardDeclined(PlansError):
+    """Stripe could not take the payment a change needs; nothing changed."""
+
+    def __init__(self) -> None:
+        super().__init__(say("billing.card_declined"), 402)
+
+
+#: Where each plan stands: a move to a higher one is an upgrade.
+RANK: dict[TierKey, int] = {tier: index for index, tier in enumerate(PAID_TIERS)}
+
+ChangeKind = Literal["upgrade", "downgrade", "trial", "keep", "start_now"]
+
+
+@dataclass(frozen=True)
+class PlanChange:
+    """What a plan change does, said before it is made (the confirm step)
+    and after (27 October 2026). Like Apple's: an upgrade starts today with
+    a fresh week, and the person pays the new price less the old plan's
+    unused time; a downgrade starts at the renewal; during a trial the plan
+    is switched and the trial goes on; `keep` lets go of a waiting
+    downgrade; `start_now` ends a card trial and starts the plan today."""
+
+    kind: ChangeKind
+    #: The plan now, and the one after the change.
+    current: TierKey
+    tier: TierKey
+    interval: catalog.BillingInterval
+    #: Charged today, in the currency's smallest unit (0 for a downgrade, a
+    #: trial switch or `keep`).
+    amount_due: int
+    #: The old plan's unused time taken off `amount_due` (an upgrade).
+    credit: int
+    #: The new plan's price each `interval`.
+    price: int
+    currency: str
+    #: When the new plan starts: now, the renewal, or the trial's end.
+    starts_at: datetime
+    #: The moment an upgrade was priced at; confirming with it charges
+    #: exactly what was shown.
+    proration_date: int | None = None
+    #: The smaller plan that was waiting for the renewal (`keep`).
+    scheduled_tier: TierKey | None = None
 
 
 def _str(value: Any) -> str | None:
@@ -157,6 +219,21 @@ def _id_of(value: Any) -> str | None:
     return found if isinstance(found, str) else None
 
 
+def _tier_of(value: str | None) -> TierKey | None:
+    try:
+        return TierKey(value) if value else None
+    except ValueError:
+        return None
+
+
+def _interval_of(row: DesktopSubscription) -> catalog.BillingInterval:
+    return "year" if row.billing_interval == "year" else "month"
+
+
+def _from_epoch(value: int) -> datetime:
+    return epoch_to_datetime(value) or utc_now()
+
+
 def _raw(subscription: Any) -> dict[str, Any]:
     try:
         return dict(subscription.to_dict_recursive())
@@ -211,9 +288,9 @@ class PlansService:
         cancel_url: str | None = None,
     ) -> str:
         """A Stripe Checkout URL that starts the plan: card required, a
-        30-day trial for a first plan, the charge at once for anyone who
+        7-day trial for a first plan, the charge at once for anyone who
         had one (a card trial, Apple's free week, or the iPhone app's free
-        month). Returns the URL to send the browser to."""
+        trial). Returns the URL to send the browser to."""
         if not settings.STRIPE_SECRET_KEY:
             raise BillingNotConfigured()
         if billed_by_apple(await self.plan_of(session, user)):
@@ -255,7 +332,7 @@ class PlansService:
             line_items=[{"price": price.id, "quantity": 1}],
             subscription_data=subscription_data,
             # The card is taken even for the trial; it is charged on day
-            # thirty-one.
+            # eight, or at once with "Start my plan now" (`start_now`).
             payment_method_collection="always",
             allow_promotion_codes=True,
             success_url=success,
@@ -307,6 +384,20 @@ class PlansService:
         }
         if flow and subscription is not None:
             if flow == "cancel":
+                # A waiting downgrade is a schedule, and Stripe's portal
+                # cannot cancel a subscription a schedule holds: cancelling
+                # supersedes the downgrade anyway.
+                schedule_id = _id_of((subscription.raw or {}).get("schedule"))
+                if schedule_id is not None or subscription.scheduled_tier:
+                    fresh = await stripe_billing.retrieve_subscription(
+                        subscription.stripe_subscription_id
+                    )
+                    schedule_id = _id_of(fresh.get("schedule"))
+                    if schedule_id is not None:
+                        await stripe_billing.release_schedule(schedule_id)
+                    subscription.scheduled_tier = None
+                    subscription.scheduled_at = None
+                    session.add(subscription)
                 params["flow_data"] = {
                     "type": "subscription_cancel",
                     "subscription_cancel": {
@@ -406,6 +497,300 @@ class PlansService:
             raise UnknownPrice(plan_price.lookup_key)
         return {"id": item["id"], "price": price.id, "quantity": 1}
 
+    # --- changing the plan --------------------------------------------------
+
+    async def _changeable(
+        self, session: AsyncSession, user: User
+    ) -> DesktopSubscription:
+        """The person's Stripe plan, if it can be changed from here."""
+        if not settings.STRIPE_SECRET_KEY:
+            raise BillingNotConfigured()
+        if billed_by_apple(await self.plan_of(session, user)):
+            raise BilledByApple()
+        row = await self.subscription_of(session, user)
+        if row is None or not row.billable or row.tier is None:
+            raise NoSubscription()
+        if row.status == "past_due":
+            raise PaymentDue()
+        return row
+
+    async def _kind(
+        self, row: DesktopSubscription, tier: TierKey
+    ) -> tuple[ChangeKind, TierKey]:
+        current = TierKey(row.tier) if row.tier else tier
+        if tier == current:
+            if row.scheduled_tier is None:
+                raise SamePlan()
+            return "keep", current
+        if row.trialing:
+            return "trial", current
+        if RANK.get(tier, 0) > RANK.get(current, 0):
+            return "upgrade", current
+        return "downgrade", current
+
+    async def change_preview(
+        self, session: AsyncSession, user: User, tier: TierKey
+    ) -> PlanChange:
+        """What moving to `tier` would do and cost, before it is done."""
+        row = await self._changeable(session, user)
+        kind, current = await self._kind(row, tier)
+        interval = _interval_of(row)
+        plan_price = catalog.price_for(tier, interval)
+        now = utc_now()
+        if kind != "upgrade":
+            starts_at = {
+                "keep": now,
+                "trial": row.trial_end or now,
+                "downgrade": row.current_period_end or now,
+            }[kind]
+            return PlanChange(
+                kind=kind,
+                current=current,
+                tier=tier,
+                interval=interval,
+                amount_due=0,
+                credit=0,
+                price=plan_price.unit_amount,
+                currency="usd",
+                starts_at=starts_at,
+                scheduled_tier=_tier_of(row.scheduled_tier),
+            )
+        item = await self._plan_change_item(row, tier)
+        at = int(now.timestamp())
+        invoice = await stripe_billing.preview_invoice(
+            customer=row.stripe_customer_id,
+            subscription=row.stripe_subscription_id,
+            subscription_details={
+                "items": [item],
+                "billing_cycle_anchor": "now",
+                "proration_behavior": "always_invoice",
+                "proration_date": at,
+            },
+        )
+        lines = (invoice.get("lines") or {}).get("data") or []
+        credit = -sum(
+            int(line.get("amount") or 0)
+            for line in lines
+            if int(line.get("amount") or 0) < 0
+        )
+        return PlanChange(
+            kind=kind,
+            current=current,
+            tier=tier,
+            interval=interval,
+            amount_due=int(invoice.get("amount_due") or 0),
+            credit=credit,
+            price=plan_price.unit_amount,
+            currency=str(invoice.get("currency") or "usd"),
+            starts_at=now,
+            proration_date=at,
+        )
+
+    async def change_plan(
+        self,
+        session: AsyncSession,
+        user: User,
+        tier: TierKey,
+        *,
+        proration_date: int | None = None,
+    ) -> PlanChange:
+        """Move the person to `tier` (27 October 2026, in place of the
+        Customer Portal's own switch, which had no proration and changed a
+        downgrade at once). An upgrade is charged now, on the card on file,
+        or nothing changes (`CardDeclined`); a downgrade waits for the
+        renewal as a Stripe subscription schedule."""
+        row = await self._changeable(session, user)
+        kind, current = await self._kind(row, tier)
+        interval = _interval_of(row)
+        plan_price = catalog.price_for(tier, interval)
+        now = utc_now()
+        subscription = await stripe_billing.retrieve_subscription(
+            row.stripe_subscription_id
+        )
+        # Whatever was waiting (a downgrade) gives way to what is asked now.
+        schedule_id = _id_of(subscription.get("schedule"))
+        if schedule_id is not None:
+            await stripe_billing.release_schedule(schedule_id)
+            subscription = await stripe_billing.retrieve_subscription(
+                row.stripe_subscription_id
+            )
+        row.scheduled_tier = None
+        row.scheduled_at = None
+        metadata = {"simeon_user_id": str(user.id), "simeon_tier": tier.value}
+        amount_due = 0
+        starts_at = now
+        try:
+            if kind == "trial":
+                item = await self._plan_change_item(row, tier)
+                subscription = await stripe_billing.modify_subscription(
+                    row.stripe_subscription_id,
+                    items=[item],
+                    proration_behavior="none",
+                    metadata=metadata,
+                )
+                starts_at = row.trial_end or now
+            elif kind == "upgrade":
+                item = await self._plan_change_item(row, tier)
+                at = (
+                    proration_date
+                    if proration_date is not None
+                    and now - timedelta(hours=1) <= _from_epoch(proration_date) <= now
+                    else int(now.timestamp())
+                )
+                subscription = await stripe_billing.modify_subscription(
+                    row.stripe_subscription_id,
+                    items=[item],
+                    billing_cycle_anchor="now",
+                    proration_behavior="always_invoice",
+                    proration_date=at,
+                    payment_behavior="error_if_incomplete",
+                    cancel_at_period_end=False,
+                    metadata=metadata,
+                )
+                invoice_id = _id_of(subscription.get("latest_invoice"))
+                if invoice_id is not None:
+                    invoice = await stripe_billing.retrieve_invoice(invoice_id)
+                    amount_due = int(invoice.get("amount_paid") or 0)
+            elif kind == "downgrade":
+                if row.cancel_at_period_end:
+                    subscription = await stripe_billing.modify_subscription(
+                        row.stripe_subscription_id, cancel_at_period_end=False
+                    )
+                await self._downgrade_at_renewal(row, tier, interval)
+                row.scheduled_tier = tier.value
+                row.scheduled_at = row.current_period_end
+                starts_at = row.current_period_end or now
+                subscription = await stripe_billing.retrieve_subscription(
+                    row.stripe_subscription_id
+                )
+        except stripe_lib.CardError as error:
+            log.info(
+                "plans.change.declined",
+                user_id=str(user.id),
+                tier=tier.value,
+                error=getattr(error, "code", None) or type(error).__name__,
+            )
+            raise CardDeclined() from error
+        await self.apply_stripe_subscription(session, subscription)
+        log.info(
+            "plans.change",
+            user_id=str(user.id),
+            kind=kind,
+            current=current.value,
+            tier=tier.value,
+            amount_due=amount_due,
+        )
+        return PlanChange(
+            kind=kind,
+            current=current,
+            tier=tier if kind != "keep" else current,
+            interval=interval,
+            amount_due=amount_due,
+            credit=0,
+            price=plan_price.unit_amount,
+            currency="usd",
+            starts_at=starts_at,
+        )
+
+    async def _downgrade_at_renewal(
+        self,
+        row: DesktopSubscription,
+        tier: TierKey,
+        interval: catalog.BillingInterval,
+    ) -> None:
+        """A schedule of two phases: the plan as it is until the period
+        ends, then `tier` for one period, after which the schedule lets the
+        subscription go on by itself on `tier`."""
+        plan_price = catalog.price_for(tier, interval)
+        price = await stripe_billing.price_by_lookup_key(plan_price.lookup_key)
+        if price is None:
+            raise UnknownPrice(plan_price.lookup_key)
+        schedule = await stripe_billing.create_schedule_from(row.stripe_subscription_id)
+        phase = (schedule.get("phases") or [{}])[0]
+        current_items = [
+            {"price": _id_of(item.get("price")), "quantity": item.get("quantity") or 1}
+            for item in phase.get("items") or []
+        ]
+        await stripe_billing.modify_schedule(
+            schedule["id"],
+            end_behavior="release",
+            phases=[
+                {
+                    "items": current_items,
+                    "start_date": phase.get("start_date"),
+                    "end_date": phase.get("end_date"),
+                },
+                {
+                    "items": [{"price": price.id, "quantity": 1}],
+                    "duration": {"interval": interval, "interval_count": 1},
+                    "proration_behavior": "none",
+                    "metadata": {"simeon_tier": tier.value},
+                },
+            ],
+        )
+
+    async def start_now(self, session: AsyncSession, user: User) -> PlanChange:
+        """ "Start my plan now": a card trial ends today and the plan starts,
+        charged now, with a fresh week (27 October 2026). The card on file
+        is charged or nothing changes (`CardDeclined`)."""
+        row = await self._changeable(session, user)
+        if not row.trialing or row.tier is None:
+            raise NotTrialing()
+        tier = TierKey(row.tier)
+        interval = _interval_of(row)
+        try:
+            subscription = await stripe_billing.modify_subscription(
+                row.stripe_subscription_id,
+                trial_end="now",
+                cancel_at_period_end=False,
+                payment_behavior="error_if_incomplete",
+            )
+        except stripe_lib.CardError as error:
+            log.info(
+                "plans.start_now.declined",
+                user_id=str(user.id),
+                error=getattr(error, "code", None) or type(error).__name__,
+            )
+            raise CardDeclined() from error
+        await self.apply_stripe_subscription(session, subscription)
+        log.info("plans.start_now", user_id=str(user.id), tier=tier.value)
+        price = catalog.price_for(tier, interval).unit_amount
+        return PlanChange(
+            kind="start_now",
+            current=tier,
+            tier=tier,
+            interval=interval,
+            amount_due=price,
+            credit=0,
+            price=price,
+            currency="usd",
+            starts_at=utc_now(),
+        )
+
+    async def start_now_preview(self, session: AsyncSession, user: User) -> PlanChange:
+        row = await self._changeable(session, user)
+        if not row.trialing or row.tier is None:
+            raise NotTrialing()
+        tier = TierKey(row.tier)
+        interval = _interval_of(row)
+        invoice = await stripe_billing.preview_invoice(
+            customer=row.stripe_customer_id,
+            subscription=row.stripe_subscription_id,
+            subscription_details={"trial_end": "now"},
+        )
+        price = catalog.price_for(tier, interval).unit_amount
+        return PlanChange(
+            kind="start_now",
+            current=tier,
+            tier=tier,
+            interval=interval,
+            amount_due=int(invoice.get("amount_due") or price),
+            credit=0,
+            price=price,
+            currency=str(invoice.get("currency") or "usd"),
+            starts_at=utc_now(),
+        )
+
     # --- knowing what the person has ----------------------------------------
 
     async def sync_checkout_session(
@@ -471,6 +856,12 @@ class PlansService:
                 setattr(row, key, value)
             row.synced_at = now
             row.raw = _raw(subscription)
+            if _id_of(subscription.get("schedule")) is None or (
+                row.scheduled_tier is not None and row.scheduled_tier == row.tier
+            ):
+                # The downgrade happened, or nothing is waiting any more.
+                row.scheduled_tier = None
+                row.scheduled_at = None
             session.add(row)
         if not user.stripe_customer_id and snapshot["stripe_customer_id"]:
             user.stripe_customer_id = snapshot["stripe_customer_id"]
@@ -694,10 +1085,15 @@ __all__ = [
     "BadReturnUrl",
     "BilledByApple",
     "BillingNotConfigured",
+    "CardDeclined",
     "CheckoutNotYours",
     "NoSubscription",
+    "NotTrialing",
+    "PaymentDue",
+    "PlanChange",
     "PlansError",
     "PlansService",
+    "SamePlan",
     "UnknownPrice",
     "allowed_return_url",
     "plans",

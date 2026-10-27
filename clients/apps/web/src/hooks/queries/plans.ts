@@ -12,8 +12,10 @@ import { defaultRetry } from './retry'
  * docs/services-billing.md). Stripe owns the products, the prices, the
  * trial and the subscription; the server keeps a copy of the
  * subscription, written by webhook, and these hooks read it. Starting a
- * plan is a Stripe Checkout page; changing or ending one, or a card or
- * an invoice, is Stripe's Customer Portal.
+ * plan, or buying extra credits, is a Stripe Checkout page; changing a
+ * plan is the server's own (upgrades today, downgrades at renewal, 27
+ * October 2026); ending one, a card or an invoice is Stripe's Customer
+ * Portal.
  *
  * The generated client does not know these paths until `pnpm generate`
  * runs against a deployed API, so the calls are untyped here, as the
@@ -56,6 +58,9 @@ export interface CurrentSubscription {
    * iPhone app, changed and cancelled on the iPhone), or null without one.
    */
   provider?: 'stripe' | 'app_store' | null
+  /** A smaller plan the subscription moves to at the renewal, and when. */
+  scheduled_tier?: PaidTierKey | null
+  scheduled_at?: string | null
   entitlements: {
     tier: TierKey
     weekly_credits: number
@@ -127,6 +132,130 @@ export const useOpenPortal = () =>
       return data as { portal_url: string }
     },
   })
+
+/**
+ * What a plan change does (`PlansService.change_plan`): an upgrade starts
+ * today and costs the new price less the old plan's unused time; a
+ * downgrade starts at the renewal; during a trial the plan switches and
+ * the trial goes on; `keep` lets go of a waiting downgrade; `start_now`
+ * ends a card trial and starts the plan today.
+ */
+export interface PlanChange {
+  kind: 'upgrade' | 'downgrade' | 'trial' | 'keep' | 'start_now'
+  current: PaidTierKey
+  tier: PaidTierKey
+  billing_interval: BillingInterval
+  /** Charged today, in cents. */
+  amount_due: number
+  /** The old plan's unused time taken off, in cents. */
+  credit: number
+  /** The new plan's price each interval, in cents. */
+  price: number
+  currency: string
+  starts_at: string
+  proration_date: number | null
+  scheduled_tier: PaidTierKey | null
+}
+
+/** What a change would do, or what ending the trial now would charge. */
+export const usePreviewChange = () =>
+  useMutation({
+    mutationFn: async (
+      input: { tier: PaidTierKey } | { startNow: true },
+    ): Promise<PlanChange> => {
+      const { data, error } =
+        'tier' in input
+          ? await plansApi.POST('/v1/plans/change/preview', {
+              body: { tier: input.tier },
+            })
+          : await plansApi.POST('/v1/plans/start-now/preview', {})
+      if (error) throw error
+      return data as PlanChange
+    },
+  })
+
+/** Make the change the preview showed. */
+export const useChangePlan = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (change: PlanChange): Promise<PlanChange> => {
+      const { data, error } =
+        change.kind === 'start_now'
+          ? await plansApi.POST('/v1/plans/start-now', {})
+          : await plansApi.POST('/v1/plans/change', {
+              body: {
+                tier: change.kind === 'keep' ? change.current : change.tier,
+                proration_date: change.proration_date,
+              },
+            })
+      if (error) throw error
+      return data as PlanChange
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: SUBSCRIPTION_KEY })
+      queryClient.invalidateQueries({ queryKey: CREDITS_KEY })
+    },
+  })
+}
+
+/** Extra credits: used once the week's run out, on a paid plan, for a year. */
+export interface CreditsSummary {
+  balance: number
+  packs: { credits: number; remaining: number; expires_at: string }[]
+  pack_credits: number
+  pack_price_cents: number
+  max_packs: number
+  can_buy: boolean
+}
+
+export const CREDITS_KEY = ['plans', 'credits'] as const
+
+export const useCredits = (enabled: boolean): UseQueryResult<CreditsSummary> =>
+  useQuery({
+    queryKey: CREDITS_KEY,
+    queryFn: async () => {
+      const { data, error } = await plansApi.GET('/v1/plans/credits')
+      if (error) throw error
+      return data as CreditsSummary
+    },
+    enabled,
+    retry: defaultRetry,
+  })
+
+export const useBuyCredits = () =>
+  useMutation({
+    mutationFn: async (input: {
+      packs?: number
+      success_url?: string
+      cancel_url?: string
+    }): Promise<{ checkout_url: string }> => {
+      const { data, error } = await plansApi.POST(
+        '/v1/plans/credits/checkout',
+        {
+          body: input,
+        },
+      )
+      if (error) throw error
+      return data as { checkout_url: string }
+    },
+  })
+
+/** The credits checkout came back: grant the pack now, before the webhook. */
+export const useSyncCredits = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (checkoutSessionId: string): Promise<CreditsSummary> => {
+      const { data, error } = await plansApi.POST('/v1/plans/credits/sync', {
+        body: { checkout_session_id: checkoutSessionId },
+      })
+      if (error) throw error
+      return data as CreditsSummary
+    },
+    onSuccess: (summary) => {
+      queryClient.setQueryData(CREDITS_KEY, summary)
+    },
+  })
+}
 
 /**
  * The checkout came back before Stripe's webhook did: ask the server to

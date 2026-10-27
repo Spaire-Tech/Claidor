@@ -497,13 +497,19 @@ line. This means the server and the app can be deployed in either order.
 On the server, every metered route checks two limits before calling a provider
 (`budget_refusal` in `server/simeon/desktop/proxy_common.py`):
 
-- **The allowance:** the plan's week (Monday to Monday UTC), the trial's
-  credits while trialing, or `SIMEON_DESKTOP_MONTHLY_CREDITS` (15,000,000 a
-  calendar month) where no billing is configured
-  (`server/simeon/desktop/allowance.py`, `services-billing.md`). Over it, or
-  with no plan at all, the route answers `402` with code `40200` and a
-  sentence that says which allowance and where to change plan.
-- **Hourly cap:** `SIMEON_DESKTOP_HOURLY_CREDITS` (1,000,000 over a sliding hour; 200,000 until 8 October 2026, when it stopped every real job halfway).
+- **The allowance:** the plan's week (seven days from the person's own plan
+  start since 27 October 2026; Monday to Monday UTC before), then any extra
+  credits bought on the web, the trial's credits while trialing, or
+  `SIMEON_DESKTOP_MONTHLY_CREDITS` (15,000,000 a calendar month) where no
+  billing is configured (`server/simeon/desktop/allowance.py`,
+  `services-billing.md`). Over it, or with no plan at all, the route answers
+  `402` with code `40200` and a sentence that says which allowance and where
+  to change plan.
+- **Hourly cap:** the plan's own since 27 October 2026, about a fifth of its
+  week (2,000,000 on Standard and on a trial, 7,000,000 on Pro, 18,000,000
+  on Max); `SIMEON_DESKTOP_HOURLY_CREDITS` (1,000,000 over a sliding hour;
+  200,000 until 8 October 2026, when it stopped every real job halfway)
+  where there is no plan.
   Over it, the route answers `402` with code `40201`: "Hourly spending budget
   reached … The agent stops here; it can continue as the hour passes."
 

@@ -110,11 +110,23 @@ class DesktopUsageRepository(RepositoryBase[DesktopUsage]):
     model = DesktopUsage
 
     async def credits_between(
-        self, user_id: UUID, start: datetime, end: datetime
+        self,
+        user_id: UUID,
+        start: datetime,
+        end: datetime,
+        *,
+        without_extra: bool = False,
     ) -> int:
         """The credits a person spent in a window, from the rows that
-        were actually served."""
-        statement = select(func.coalesce(func.sum(DesktopUsage.credits), 0)).where(
+        were actually served. `without_extra` leaves out what was drawn
+        from extra credits (`DesktopUsage.extra_credits`): what the plan's
+        own week counts."""
+        spent = (
+            DesktopUsage.credits - DesktopUsage.extra_credits
+            if without_extra
+            else DesktopUsage.credits
+        )
+        statement = select(func.coalesce(func.sum(spent), 0)).where(
             DesktopUsage.user_id == user_id,
             DesktopUsage.created_at >= start,
             DesktopUsage.created_at < end,
