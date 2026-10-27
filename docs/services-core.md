@@ -1162,6 +1162,12 @@ empty:
 - At launch the list shows at once from the kept copy, and a chat its kept
   lines when opened; the computer's copy replaces them when it answers. The
   Mac shows its window at once instead of "Setting up Simeon's computer".
+- The pins and the folders (sections) are kept with the list (27 October
+  2026, `layout.json`): before, every chat showed in one list at launch
+  until the computer's settings came, seconds later or when it woke. A pin
+  or folder change made before the computer has answered is made on the
+  computer's own copy, read first (waking it), so a change made on another
+  device meanwhile is not undone.
 - Kept: what the computer sent in this sign-in, a moment after each change
   and when the app goes behind (or quits, on the Mac). A chat keeps its
   newest 300 lines, 100 when those pass 2 MB. Not kept: what was going on at

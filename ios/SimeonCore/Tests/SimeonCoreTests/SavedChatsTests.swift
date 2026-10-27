@@ -204,6 +204,117 @@ final class SavedChatsTests: XCTestCase {
     }
   }
 
+  // MARK: Pins and folders
+
+  private static let travel: JSON = ["id": "s1", "name": "Travel", "agentIds": ["iris"]]
+  private static let work: JSON = ["id": "s2", "name": "Work", "agentIds": ["theo"]]
+
+  /** A first launch keeps the computer's pins and folders with the list (stays answering), for the next launch to show at once. */
+  @MainActor
+  private func keptOnce(_ dir: URL, pins: [String], sections: JSON) async {
+    let first = AppStore()
+    first.saved = SavedChats(directory: dir)
+    first.account = Self.bass
+    let up = AwayBackend()
+    up.agents = [Agent(id: "theo", name: "Theo"), Agent(id: "iris", name: "Iris")]
+    up.hostSettings = ["pinnedAgentIds": JSON(pins), "sidebarSections": sections]
+    await first.attach(up)
+    first.saveNow()
+    first.saved?.waitForWrites()
+    first.detach()
+  }
+
+  /** Waits for what the store started on its own (a change written after it reads the computer's copy). */
+  @MainActor
+  private func settle(_ until: @MainActor () -> Bool) async {
+    for _ in 0..<200 where !until() { try? await Task.sleep(nanoseconds: 5_000_000) }
+  }
+
+  /**
+   * The founder, 27 October 2026: at launch every chat showed in one list,
+   * then went to its folder seconds later (longer with the computer asleep).
+   * The pins and folders now come with the list kept on this device; the
+   * computer's replace them when it answers.
+   */
+  func testPinsAndFoldersShowWithTheKeptListAtLaunch() async throws {
+    let dir = folder()
+    try await onMain {
+      await self.keptOnce(dir, pins: ["theo"], sections: [Self.travel])
+      XCTAssertEqual(SavedChats(directory: dir).readLayout()?.pinnedIds, ["theo"])
+
+      let store = AppStore()
+      store.saved = SavedChats(directory: dir)
+      store.account = Self.bass
+      let asleep = AwayBackend()
+      asleep.away = true
+      var shown: (pins: [String], folders: [String])?
+      await store.attach(asleep) { shown = (store.pinnedIds, (store.sidebarSections ?? []).map(\.id)) }
+      XCTAssertEqual(shown?.pins, ["theo"], "the pins are there as the list first shows")
+      XCTAssertEqual(shown?.folders, ["s1", SidebarSections.unassignedId])
+      XCTAssertEqual(store.sidebarSections?.first?.agentIds, ["iris"])
+      XCTAssertTrue(store.pinsKept)
+      XCTAssertTrue(store.sectionsKept)
+
+      // The computer wakes with changes made elsewhere: its own replace the device's, and are kept in turn.
+      asleep.away = false
+      asleep.hostSettings = ["pinnedAgentIds": ["iris"], "sidebarSections": [Self.work]]
+      await store.loadPins()
+      await store.loadSections()
+      XCTAssertEqual(store.pinnedIds, ["iris"])
+      XCTAssertEqual(store.sidebarSections?.first?.id, "s2")
+      XCTAssertFalse(store.pinsKept)
+      XCTAssertFalse(store.sectionsKept)
+      await store.reloadRoster()
+      store.saveNow()
+      store.saved?.waitForWrites()
+      XCTAssertEqual(SavedChats(directory: dir).readLayout()?.pinnedIds, ["iris"])
+      XCTAssertEqual(SavedChats(directory: dir).readLayout()?.sections?.first?.id, "s2")
+
+      // Another account never sees them.
+      let other = AppStore()
+      other.saved = SavedChats(directory: dir)
+      other.account = Self.other
+      let away = AwayBackend()
+      away.away = true
+      await other.attach(away)
+      XCTAssertTrue(other.pinnedIds.isEmpty)
+      XCTAssertNil(other.sidebarSections)
+    }
+  }
+
+  /** A change made while the folders and pins are the device's copy is made on the computer's own, so another device's changes stay. */
+  func testAChangeToTheKeptCopyIsMadeOnTheComputersOwn() async throws {
+    let dir = folder()
+    try await onMain {
+      await self.keptOnce(dir, pins: ["theo"], sections: [Self.travel])
+      let store = AppStore()
+      store.saved = SavedChats(directory: dir)
+      store.account = Self.bass
+      let backend = AwayBackend()
+      backend.away = true
+      backend.agents = [Agent(id: "theo", name: "Theo"), Agent(id: "iris", name: "Iris")]
+      await store.attach(backend)
+      XCTAssertTrue(store.sectionsKept)
+
+      // Meanwhile, on another device: a folder "Work" and Iris pinned too.
+      backend.away = false
+      backend.hostSettings = ["pinnedAgentIds": ["theo", "iris"], "sidebarSections": [Self.travel, Self.work]]
+
+      // Theo moved into Travel here: Work stays.
+      XCTAssertTrue(store.editSections { SidebarSections.assign($0, agentIds: ["theo"], to: "s1") })
+      await self.settle { !backend.settingsWrites.isEmpty }
+      let written = SidebarSections.parse(backend.settingsWrites.last?["sidebarSections"])
+      XCTAssertEqual(written.map(\.id), ["s1", "s2", SidebarSections.unassignedId])
+      XCTAssertEqual(written.first?.agentIds, ["iris", "theo"])
+      XCTAssertFalse(store.sectionsKept)
+
+      // Theo unpinned here: Iris, pinned elsewhere, stays.
+      await store.setPinned("theo", false)
+      XCTAssertEqual(backend.settingsWrites.last?["pinnedAgentIds"], ["iris"])
+      XCTAssertEqual(store.pinnedIds, ["iris"])
+    }
+  }
+
   /** A list kept for one account is never shown to another, and goes; one shown before the account was known goes when it is. */
   func testAnotherAccountsKeptListIsNeverShown() async throws {
     let dir = folder()
@@ -589,7 +700,20 @@ final class AwayBackend: AgentBackend, @unchecked Sendable {
   func routines(_ agentId: String) async throws -> [JSON] { [] }
   func events() -> AsyncStream<BackendEvent> { AsyncStream { self.continuation = $0 } }
   var call: CallEngine? { nil }
-  func command(_ method: String, _ args: JSON) async throws -> JSON { try reach(); return [:] }
+  /** The computer's settings (`getHostSettings`): the pins and the sections; each write merged in, and kept in order. */
+  var hostSettings: JSON = [:]
+  var settingsWrites: [JSON] = []
+  func command(_ method: String, _ args: JSON) async throws -> JSON {
+    try reach()
+    switch method {
+    case "getHostSettings": return hostSettings
+    case "setHostSettings":
+      settingsWrites.append(args)
+      for (key, value) in args.object ?? [:] { hostSettings = hostSettings.setting(key, value) }
+      return [:]
+    default: return [:]
+    }
+  }
   /** Simeon Labs' server's answers by path (the copy of the agents and chats); any other path answers nothing, as before. */
   var serverAnswers: [String: JSON] = [:]
   var serverDelayNs: UInt64 = 0

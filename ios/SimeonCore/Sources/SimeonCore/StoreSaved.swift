@@ -25,6 +25,30 @@ extension AppStore {
   }
 
   /**
+   * The pins and folders kept with the list, shown with it until the
+   * computer's come (`loadPins`, `loadSections`): without them every chat
+   * showed in one list for seconds at each launch, longer while the computer
+   * slept. Another account's are never shown.
+   */
+  func showSavedLayout() {
+    guard let saved, let layout = saved.readLayout() else { return }
+    if let owner = SavedChats.Owner(account), !owner.isSame(as: layout.owner) { return }
+    if pinnedIds.isEmpty && !layout.pinnedIds.isEmpty {
+      pinnedIds = layout.pinnedIds
+      pinsKept = true
+    }
+    if sidebarSections == nil, let sections = layout.sections {
+      sidebarSections = sections
+      sectionsKept = true
+    }
+  }
+
+  func layoutChanged() {
+    layoutToSave = true
+    saveSoon()
+  }
+
+  /**
    * The server's copy of the list (`GET /desktop/api/chats/agents`), shown
    * when it comes before the computer answers: newer than this device's,
    * and there on a device that kept none. The computer's list replaces it.
@@ -125,6 +149,11 @@ extension AppStore {
       saved.removeChats(keeping: Set(agents.map(\.id)))
       rosterToSave = false
     }
+    // Only once the computer has said: a copy shown from this device is not kept again as if it were its.
+    if layoutToSave && !pinsKept && !sectionsKept {
+      saved.writeLayout(pinnedIds: pinnedIds, sections: sidebarSections, owner: owner)
+      layoutToSave = false
+    }
     let listed = Set(agents.map(\.id))
     for agentId in chatsToSave where savedLines[agentId] == nil && !loadFailed.contains(agentId) && listed.contains(agentId) {
       if let entries = transcripts[agentId] { saved.writeChat(agentId, entries, hasOlder: olderBefore[agentId] != nil) }
@@ -139,6 +168,9 @@ extension AppStore {
     saveEpoch &+= 1
     rosterToSave = false
     chatsToSave = []
+    layoutToSave = false
+    pinsKept = false
+    sectionsKept = false
     showingSaved = false
     listFromServer = false
     savedLines = [:]
@@ -160,7 +192,9 @@ extension AppStore {
    */
   func savedOwnerKnown() {
     guard let saved, let owner = SavedChats.Owner(account) else { return }
-    if let roster = saved.readRoster(), !owner.isSame(as: roster.owner) {
+    let otherList = saved.readRoster().map { !owner.isSame(as: $0.owner) } ?? false
+    let otherLayout = saved.readLayout().map { !owner.isSame(as: $0.owner) } ?? false
+    if otherList || otherLayout {
       saved.forget()
       for agentId in savedLines.keys { transcripts[agentId] = nil; chatRows[agentId] = nil }
       savedLines = [:]
@@ -170,7 +204,9 @@ extension AppStore {
         showingSaved = false
         agents = []
       }
+      if pinsKept { pinnedIds = []; pinsKept = false }
+      if sectionsKept { sidebarSections = nil; sectionsKept = false }
     }
-    if rosterToSave || !chatsToSave.isEmpty { saveSoon() }
+    if rosterToSave || layoutToSave || !chatsToSave.isEmpty { saveSoon() }
   }
 }

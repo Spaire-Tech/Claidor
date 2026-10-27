@@ -7,7 +7,10 @@ import Foundation
  * list shows them at once, and a chat its lines at once when it opens; the
  * computer's own copy replaces them when it answers (`AppStore.showSaved`,
  * `refresh`). The Electron window kept the list the same way
- * (`roster.last-roster`); the chats are new.
+ * (`roster.last-roster`); the chats are new. The pins and the sections
+ * (folders) are kept too (27 October 2026, the founder: at launch every chat
+ * showed in one list "until a few seconds, sometimes more", then went to its
+ * folder): the computer holds them, and a sleeping one answers late.
  *
  * Under the app's caches: the system may clear them, and the app then waits
  * for the computer as it did before. One account's: signing out forgets
@@ -50,6 +53,13 @@ public final class SavedChats: @unchecked Sendable {
     public let agents: [Agent]
   }
 
+  /** The pins, in their order, and the sidebar's sections (nil when the computer had not said). */
+  public struct Layout: Equatable, Sendable {
+    public let owner: Owner
+    public let pinnedIds: [String]
+    public let sections: [SidebarSection]?
+  }
+
   public struct Lines: Equatable, Sendable {
     public let entries: [Entry]
     /** The chat has older lines than these (the computer had more, or some were left out here). */
@@ -61,6 +71,7 @@ public final class SavedChats: @unchecked Sendable {
   private let queue = DispatchQueue(label: "com.simeonlabs.saved-chats")
   /** What was last written or read (on `queue`). Nil inside: known to be absent. */
   private var roster: Roster??
+  private var layout: Layout??
   private var chats: [String: Lines?] = [:]
 
   public init(directory: URL) {
@@ -85,6 +96,16 @@ public final class SavedChats: @unchecked Sendable {
     }
   }
 
+  /** The pins and sections kept, nil when there are none. */
+  public func readLayout() -> Layout? {
+    queue.sync {
+      if let known = layout { return known }
+      let read = Self.decodeLayout(try? Data(contentsOf: layoutFile))
+      layout = .some(read)
+      return read
+    }
+  }
+
   /** A chat's lines kept, nil when there are none. */
   public func readChat(_ agentId: String) -> Lines? {
     queue.sync {
@@ -102,6 +123,17 @@ public final class SavedChats: @unchecked Sendable {
       roster = .some(Roster(owner: owner, agents: agents))
       guard let data = Self.encodeRoster(agents, owner: owner) else { return }
       Self.write(data, to: rosterFile)
+    }
+  }
+
+  /** The pins and sections; nothing is written when they are what is kept already. */
+  public func writeLayout(pinnedIds: [String], sections: [SidebarSection]?, owner: Owner) {
+    queue.async { [self] in
+      let next = Layout(owner: owner, pinnedIds: pinnedIds, sections: sections)
+      if case .some(.some(let known)) = layout, known == next { return }
+      layout = .some(next)
+      guard let data = Self.encodeLayout(next) else { return }
+      Self.write(data, to: layoutFile)
     }
   }
 
@@ -135,6 +167,7 @@ public final class SavedChats: @unchecked Sendable {
   public func forget() {
     queue.async { [self] in
       roster = .some(nil)
+      layout = .some(nil)
       chats = [:]
       try? FileManager.default.removeItem(at: directory)
     }
@@ -148,6 +181,7 @@ public final class SavedChats: @unchecked Sendable {
   // MARK: The files
 
   private var rosterFile: URL { directory.appendingPathComponent("roster.json") }
+  private var layoutFile: URL { directory.appendingPathComponent("layout.json") }
   private var chatsDirectory: URL { directory.appendingPathComponent("chats", isDirectory: true) }
   private func chatFile(_ agentId: String) -> URL { chatsDirectory.appendingPathComponent(Self.fileName(agentId)) }
 
@@ -173,6 +207,20 @@ public final class SavedChats: @unchecked Sendable {
     guard let data, let record = try? JSON.parse(data), record["version"]?.double == Double(version),
           let email = record["email"]?.string, let rows = record["agents"]?.array else { return nil }
     return Roster(owner: Owner(id: record["accountId"]?.text, email: email), agents: rows.compactMap(Agent.init(json:)))
+  }
+
+  static func encodeLayout(_ layout: Layout) -> Data? {
+    var record: [String: JSON] = ["version": .number(Double(version)), "email": .string(layout.owner.email), "pinnedAgentIds": JSON(layout.pinnedIds)]
+    if let id = layout.owner.id { record["accountId"] = .string(id) }
+    if let sections = layout.sections { record["sidebarSections"] = SidebarSections.json(sections) }
+    return try? JSON.object(record).data()
+  }
+
+  static func decodeLayout(_ data: Data?) -> Layout? {
+    guard let data, let record = try? JSON.parse(data), record["version"]?.double == Double(version), let email = record["email"]?.string else { return nil }
+    let pins = record["pinnedAgentIds"]?.array?.compactMap(\.text) ?? []
+    let sections = record["sidebarSections"].map { SidebarSections.parse($0) }
+    return Layout(owner: Owner(id: record["accountId"]?.text, email: email), pinnedIds: pins, sections: sections)
   }
 
   static func encodeChat(_ agentId: String, _ entries: [Entry], hasOlder: Bool) -> Data? {
