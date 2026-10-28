@@ -522,6 +522,7 @@ const TELEMETRY_DOMAIN_BY_METHOD: Record<CoordinatorMethod, string> = {
   searchPlugins: "plugins", getPlugin: "plugins", installPlugin: "plugins",
   respondToWidget: "widgets", dismissWidget: "widgets", submitSecret: "widgets",
   answerPurchase: "widgets", buyProduct: "widgets", startFlightBooking: "widgets", submitFlightPassengers: "widgets",
+  submitUserForm: "widgets", dismissUserForm: "widgets", answerCredentialRequest: "widgets", connectOnePassword: "widgets", dismissOnePasswordConnect: "widgets",
   resolveAutoReviewApproval: "approvals", resolveLocalToolPermission: "approvals",
   listAgents: "roster", countAgents: "roster", searchAgents: "roster", createAgent: "roster",
   createGroup: "roster", setGroupMembers: "roster", updateAgent: "roster", deleteAgents: "roster",
