@@ -453,6 +453,7 @@ struct LiveScreen: NSViewRepresentable {
     configuration.userContentController.add(context.coordinator, name: "simeon")
     let view = ScreenWebView(frame: .zero, configuration: configuration)
     view.passive = viewOnly
+    view.interactive = interactive
     view.events = events
     view.setValue(false, forKey: "drawsBackground")
     view.underPageBackgroundColor = .black
@@ -482,12 +483,39 @@ struct LiveScreen: NSViewRepresentable {
   /** A screen only watched takes no click: the click goes to what holds it (the agent's page opens the computer's window). */
   final class ScreenWebView: WKWebView {
     var passive = false
+    var interactive = false
     weak var events: ScreenEvents?
     override func hitTest(_ point: NSPoint) -> NSView? { passive ? nil : super.hitTest(point) }
     /** A click on the screen sends this Mac's clipboard first (`mousedown`, capture). */
     override func mouseDown(with event: NSEvent) {
       events?.pointerDown()
       super.mouseDown(with: event)
+    }
+
+    /**
+     * ⌘V (and ⌘⇧V) with the computer's window holding the keys, by the key's
+     * place as the page maps it: the window sends this Mac's words and Ctrl+V
+     * together (`ScreenEvents.pasteAndPress`). The page alone sent Ctrl+V,
+     * which pasted whatever the computer last had: text copied on the Mac
+     * reached it only on a click or the window coming forward (the founder,
+     * 28 October 2026: "I cannot paste").
+     */
+    override func performKeyEquivalent(with event: NSEvent) -> Bool {
+      let mods = event.modifierFlags.intersection([.command, .shift, .option, .control])
+      if interactive, !passive, event.keyCode == 9, mods == .command || mods == [.command, .shift], let events, holdsKeys {
+        events.pasteKey(shift: mods.contains(.shift))
+        return true
+      }
+      return super.performKeyEquivalent(with: event)
+    }
+
+    private var holdsKeys: Bool {
+      var view = window?.firstResponder as? NSView
+      while let current = view {
+        if current === self { return true }
+        view = current.superview
+      }
+      return false
     }
   }
 }
@@ -505,13 +533,22 @@ final class ScreenEvents {
   var onHostKey: (String) -> Void = { _ in }
   var onClipboard: (String) -> Void = { _ in }
   var onPointerDown: () -> Void = {}
+  /** ⌘V (true with ⇧) on the screen holding the keys. */
+  var onPasteKey: (Bool) -> Void = { _ in }
 
   func log(_ line: String) { onLog(line) }
   func pointerDown() { onPointerDown() }
+  func pasteKey(shift: Bool) { onPasteKey(shift) }
 
   /** This Mac's text onto the computer's clipboard, as noVNC pastes it (`rfb.clipboardPasteFrom`); no key is pressed. */
   func paste(_ text: String) {
     view?.evaluateJavaScript("window.simeonClipboardIn && window.simeonClipboardIn(\(ScreenLink.quoted(text)))")
+  }
+
+  /** `text` (when there is one) onto the computer's clipboard, then Ctrl+V (Ctrl+Shift+V with `shift`), in one go. */
+  func pasteAndPress(_ text: String?, shift: Bool) {
+    let words = text.map { ScreenLink.quoted($0) } ?? "null"
+    view?.evaluateJavaScript("window.simeonPasteKeys && window.simeonPasteKeys(\(words),\(shift ? "true" : "false"))")
   }
 }
 
@@ -615,16 +652,21 @@ extension LiveScreen {
         // ⌘A ⌘C ⌘V ⌘X ⌘Z (with ⇧ or not), by the key's place, sent as Ctrl after letting go of ⌘, ⌥ and the Super keys (`buildVncMacKeyMappingScript`).
         var SHORTCUTS={KeyA:0x61,KeyC:0x63,KeyV:0x76,KeyX:0x78,KeyZ:0x7a};
         var HELD=[[0xffe7,"MetaLeft"],[0xffe8,"MetaRight"],[0xffe9,"AltLeft"],[0xffea,"AltRight"],[0xffeb,"SuperLeft"],[0xffec,"SuperRight"]];
+        function ctrl(code,shift){
+          for(var i=0;i<HELD.length;i++){try{rfb.sendKey(HELD[i][0],HELD[i][1],false)}catch(_){}}
+          rfb.sendKey(0xffe3,"ControlLeft",true);
+          if(shift)rfb.sendKey(0xffe1,"ShiftLeft",true);
+          rfb.sendKey(SHORTCUTS[code],code,true);rfb.sendKey(SHORTCUTS[code],code,false);
+          if(shift)rfb.sendKey(0xffe1,"ShiftLeft",false);
+          rfb.sendKey(0xffe3,"ControlLeft",false);
+        }
         document.addEventListener("keydown",function(e){
           if(!e.metaKey||!(e.code in SHORTCUTS)||!rfb||!rfb.sendKey)return;
           e.preventDefault();e.stopImmediatePropagation();
-          for(var i=0;i<HELD.length;i++){try{rfb.sendKey(HELD[i][0],HELD[i][1],false)}catch(_){}}
-          rfb.sendKey(0xffe3,"ControlLeft",true);
-          if(e.shiftKey)rfb.sendKey(0xffe1,"ShiftLeft",true);
-          rfb.sendKey(SHORTCUTS[e.code],e.code,true);rfb.sendKey(SHORTCUTS[e.code],e.code,false);
-          if(e.shiftKey)rfb.sendKey(0xffe1,"ShiftLeft",false);
-          rfb.sendKey(0xffe3,"ControlLeft",false);
+          ctrl(e.code,e.shiftKey);
         },true);
+        // ⌘V from the window (`ScreenWebView`): this Mac's words onto the computer's clipboard when they changed, then Ctrl+V, in that order.
+        window.simeonPasteKeys=function(t,shift){if(!rfb||!rfb.sendKey)return;if(t)rfb.clipboardPasteFrom(t);ctrl("KeyV",shift)};
         // The arrows are told to the window too, which switches between helpers' screens; they still reach the computer (`installVncHostKeyForwarder`).
         document.addEventListener("keydown",function(e){
           if(e.key==="ArrowUp"||e.key==="ArrowDown"||e.key==="ArrowLeft"||e.key==="ArrowRight")post({hostKey:e.key});
