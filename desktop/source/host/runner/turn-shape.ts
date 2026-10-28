@@ -54,31 +54,24 @@ export function hasDeliveryToolCall(names: readonly string[]): boolean {
   return names.some((name) => DELIVERY_TOOL_NAMES.has(name));
 }
 
-function deliveryToolCallIds(message: CoreMessage): string[] {
+/** The arguments of the delivery calls in `message` that did not fail (one with no id counts). */
+function deliveredArgs(message: CoreMessage, erroredIds: ReadonlySet<string>): unknown[] {
   if (message.role !== "assistant" || typeof message.content === "string") {
     return [];
   }
   return message.content.flatMap((part) =>
     part.type === "tool-call"
-      && part.toolName != null
-      && DELIVERY_TOOL_NAMES.has(part.toolName)
-      && part.toolCallId != null
-      ? [part.toolCallId]
+    && part.toolName != null
+    && DELIVERY_TOOL_NAMES.has(part.toolName)
+    && (part.toolCallId == null || !erroredIds.has(part.toolCallId))
+      ? [(part as { readonly args?: unknown }).args]
       : []
   );
 }
 
-/** A delivery call in `message` that did not fail (one with no id counts). */
+/** A delivery call in `message` that did not fail. */
 function deliveredIn(message: CoreMessage, erroredIds: ReadonlySet<string>): boolean {
-  if (message.role !== "assistant" || typeof message.content === "string") {
-    return false;
-  }
-  return message.content.some((part) =>
-    part.type === "tool-call"
-    && part.toolName != null
-    && DELIVERY_TOOL_NAMES.has(part.toolName)
-    && (part.toolCallId == null || !erroredIds.has(part.toolCallId))
-  );
+  return deliveredArgs(message, erroredIds).length > 0;
 }
 
 function erroredToolResultIds(
@@ -121,6 +114,7 @@ export function isBlankAssistantMessage(message: CoreMessage): boolean {
 
 export function turnEndedOnSilentToolCalls(
   rawMessages: readonly unknown[],
+  endsTurn: (args: unknown) => boolean,
 ): boolean {
   const messages = rawMessages.map(asCoreMessage);
   let tailIndex = messages.length - 1;
@@ -158,22 +152,34 @@ export function turnEndedOnSilentToolCalls(
     }
   }
 
-  let ackedFirst = false;
+  let opening: CoreMessage | undefined;
+  let workedAfter = false;
   for (let index = boundary + 1; index <= tailIndex; index += 1) {
     const message = messages[index];
     if (message === undefined || message.role !== "assistant") continue;
     const names = toolCallNames(message);
     if (names.length === 0) continue;
-    if (!ackedFirst) {
+    if (opening === undefined) {
       if (!hasDeliveryToolCall(names)) return false;
-      ackedFirst = true;
-    } else if (
-      deliveryToolCallIds(message).some((id) => !erroredIds.has(id))
-    ) {
+      // The opening message was the answer, by the agent's own word
+      // (`final`): there is nothing to ask for again.
+      if (deliveredArgs(message, erroredIds).some(endsTurn)) return false;
+      opening = message;
+      // Tools called beside it run after it.
+      workedAfter = names.some((name) => !DELIVERY_TOOL_NAMES.has(name));
+    } else if (deliveredIn(message, erroredIds)) {
       return false;
+    } else {
+      workedAfter = true;
     }
   }
-  return ackedFirst;
+  if (opening === undefined) return false;
+  if (toolCallNames(tail).length > 0) return true;
+  // Ended in words: they are the result the person never saw only when work
+  // came after the opening message, or when it said more was coming
+  // (`final: false`). An answer sent first and followed by words was nudged,
+  // and the agent sent it again (Iris, 28 October 2026, 8:53).
+  return workedAfter || deliveredArgs(opening, erroredIds).every((args) => parsedArgs(args)?.final === false);
 }
 
 // Handing the box to the person: the turn waits for them to hand it back.

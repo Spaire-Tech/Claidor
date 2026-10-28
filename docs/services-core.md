@@ -564,8 +564,12 @@ back everything"); each switch still sets a limit on purpose:
   Until 28 October that held only for a turn that had sent nothing: after an
   opening message ("Checking now"), an answer written as text was lost with
   no nudge (Iris's mail check). The closing nudge (`turnEndedOnSilentToolCalls`,
-  `host/runner/turn-shape.ts`) now runs once for a turn that opened with a
-  message and ended in words, in tool calls, or on a SendMessage that failed.
+  `host/runner/turn-shape.ts`) runs once for a turn that opened with a message
+  and ended in tool calls, on a SendMessage that failed, or in words after work
+  (or after an opening marked `final: false`). Never when a message the agent
+  marked `final` went out, nor for words after an answer sent first: from 28
+  October morning to afternoon it did, and Iris sent her answer twice. The
+  nudge asks for the result only if no message already gave it.
 
 How a turn stays short (3 October 2026, from the OpenAI log of a Gmail
 question that took about twenty calls; replayed offline in
