@@ -591,10 +591,14 @@ struct DiskBanner: View {
 // MARK: - The access notice
 
 /**
- * Whether this account may use Simeon (`Qvn`), 8 over the message field
- * and as wide: the title (12/16) over what to do (12/16, at 60%) and the
- * button in the blue (24 high, a capsule) that opens Simeon Labs' page; on
- * the raised ground, 10 round, a one-point edge. Sending waits under it.
+ * The line 8 over the message field and as wide: why this account can't
+ * send (no plan, a failed payment), or that its credits are spent or near
+ * their end. The iPhone's (`AccessNotice`, ios/Simeon/ChatView.swift) at the
+ * Mac's sizes (the founder, 28 October 2026: the bordered box and its bright
+ * blue button were "a random design"): the title (13, 500) over what to do
+ * (12, at 60%) on the soft grey, no edge, 14 round; the button in the app's
+ * ink, a capsule, its words the ground's; the X on the line that closes.
+ * Sending waits under it.
  */
 struct AccessNotice: View {
   let words: SandAccess.Words
@@ -609,12 +613,10 @@ struct AccessNotice: View {
     HStack(spacing: 12) {
       VStack(alignment: .leading, spacing: 2) {
         Text(words.title)
-          .font(.system(size: 12))
-          .cssLineHeight(16, size: 12)
+          .font(.system(size: 13, weight: .medium))
           .foregroundStyle(look.ink)
         Text(words.body)
           .font(.system(size: 12))
-          .cssLineHeight(16, size: 12)
           .foregroundStyle(look.inkSecondary)
           .fixedSize(horizontal: false, vertical: true)
       }
@@ -622,12 +624,11 @@ struct AccessNotice: View {
       if let action = words.action {
         Button { if let open = self.action { open() } else { NSWorkspace.shared.open(SandAccess.page) } } label: {
           Text(action)
-            .font(.system(size: 12))
-            .cssLineHeight(16, size: 12)
-            .foregroundStyle(Color(hex: 0xfcfcfc))
-            .padding(.horizontal, 8)
-            .frame(height: 24)
-            .background(hovering ? look.link : look.unread, in: Capsule())
+            .font(.system(size: 12, weight: .medium))
+            .foregroundStyle(look.ground)
+            .padding(.horizontal, 12)
+            .frame(height: 26)
+            .background(look.ink.opacity(hovering ? 0.82 : 1), in: Capsule())
             .contentShape(Capsule())
             .fixedSize()
         }
@@ -637,9 +638,9 @@ struct AccessNotice: View {
       if let close {
         Button(action: close) {
           Image(systemName: "xmark")
-            .font(.system(size: 9, weight: .semibold))
+            .font(.system(size: 10, weight: .semibold))
             .foregroundStyle(look.inkSecondary)
-            .frame(width: 20, height: 20)
+            .frame(width: 22, height: 22)
             .contentShape(Rectangle())
         }
         .buttonStyle(.hand)
@@ -647,10 +648,9 @@ struct AccessNotice: View {
         .accessibilityLabel("Close")
       }
     }
-    .padding(.horizontal, 12)
+    .padding(.horizontal, 14)
     .padding(.vertical, 10)
-    .background(look.elevated, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-    .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(look.ink.opacity(0.15), lineWidth: 1))
+    .background(look.notice, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     .accessibilityElement(children: .contain)
     .accessibilityLabel(words.title)
   }
