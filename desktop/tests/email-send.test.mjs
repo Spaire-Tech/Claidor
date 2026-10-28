@@ -12,7 +12,7 @@
  *   the provider's reference before the call.
  */
 import assert from "node:assert/strict";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -189,4 +189,123 @@ test("an app tool given a file path reads it on the agent's computer, uploads it
     await backend.dispose();
     await installs.dispose();
   }
+});
+
+async function draftState() {
+  const dir = await mkdtemp(path.join(os.tmpdir(), "simeon-email-card-"));
+  const outfile = path.join(dir, "draft-state.mjs");
+  const entry = path.join(dir, "entry.ts");
+  const { writeFile } = await import("node:fs/promises");
+  await writeFile(entry, `export * from ${JSON.stringify(path.join(repoRoot, "source/host/extensions/transcript/transcript-store.ts"))};\nexport { DraftCards, emailSendCalls } from ${JSON.stringify(path.join(repoRoot, "source/host/extensions/transcript/draft-cards.ts"))};\n`);
+  await build({ entryPoints: [entry], outfile, bundle: true, format: "esm", platform: "node", target: "node22", logLevel: "silent", external: ["electron"] });
+  const module = await import(`${pathToFileURL(outfile).href}?${Date.now()}`);
+  return { module, dispose: () => rm(dir, { recursive: true, force: true }) };
+}
+
+const settled = () => new Promise((resolve) => setTimeout(resolve, 5));
+
+function setup(module, draft, apps) {
+  const wakes = [];
+  const lines = [];
+  const tm = {
+    roster: { emit: () => {} },
+    sessions: { activeSession: { db: { updateTranscriptEntry: () => null } } },
+    log: (line) => lines.push(line),
+    backgroundWakes: { runHiddenPromptWake: async (agentId, source, prompt, title, options) => { wakes.push({ agentId, source, prompt, options }); } },
+  };
+  module.setTranscript([{ kind: "send-message", id: "e1", timestampMs: 1, message: { type: "email-draft", draft } }]);
+  return { cards: new module.DraftCards(tm), wakes, lines, state: () => module.getTranscript()[0].draftSendState };
+}
+
+const OUTLOOK_REPLY = { ...REPLY, via: "outlook", replyTo: { messageId: "AAMkAD" }, attachments: ["/home/user/attachments/Certificate.pdf"] };
+const replySchema = { type: "object", properties: { message_id: {}, comment: {}, is_html: {}, cc_emails: {}, attachment: {}, user_id: {} } };
+const sendSchema = { type: "object", properties: { to: {}, cc_emails: {}, subject: {}, body: {}, is_html: {}, attachment: {}, bcc_emails: {} } };
+
+test("Send on the card sends: one call to the mailbox it names, the card shows Sent, and the agent hears it after", async () => {
+  const { module, dispose } = await draftState();
+  try {
+    const called = [];
+    const apps = { inputSchema: async (server, tool) => (tool === "OUTLOOK_REPLY_EMAIL" ? replySchema : sendSchema), call: async (server, tool, args, agentId) => { called.push({ server, tool, args, agentId }); return { ok: true, text: "{}" }; } };
+    const { cards, wakes, state } = setup(module, OUTLOOK_REPLY, apps);
+    const answer = await cards.sendDraft({ agentId: "iris", entryId: "e1", draft: { body: REPLY.body } }, apps);
+    assert.equal(answer.draftSendState, "sending", "the app has its answer before anything is sent");
+    await settled();
+    assert.deepEqual(called, [{ server: "outlook", tool: "OUTLOOK_REPLY_EMAIL", args: module.emailSendCalls(OUTLOOK_REPLY).call.args, agentId: "iris" }]);
+    assert.equal(state(), "sent");
+    assert.equal(wakes.length, 1);
+    assert.equal(wakes[0].source, "draft-sent");
+    assert.deepEqual(wakes[0].options, { isSilenceAllowed: true });
+    assert.match(wakes[0].prompt, /it was sent from Outlook to sam@example\.com, Cc startups@example\.com, with 1 file attached, subject "Re: Your application"\. It has gone: never send it again/);
+    assert.match(wakes[0].prompt, /if nothing was, end your turn without a message/);
+    assert.equal((await cards.sendDraft({ agentId: "iris", entryId: "e1" }, apps)).draftSendState, "sent", "never twice");
+    await settled();
+    assert.equal(called.length, 1);
+  } finally {
+    await dispose();
+  }
+});
+
+test("a person who changes who it goes to gets a new email to those people, not a reply to the first sender", async () => {
+  const { module, dispose } = await draftState();
+  try {
+    const called = [];
+    const apps = { inputSchema: async (server, tool) => (tool === "OUTLOOK_REPLY_EMAIL" ? replySchema : sendSchema), call: async (server, tool, args) => { called.push({ tool, args }); return { ok: true, text: "" }; } };
+    const { cards } = setup(module, OUTLOOK_REPLY, apps);
+    await cards.sendDraft({ agentId: "iris", entryId: "e1", draft: { to: ["maria@example.com"] } }, apps);
+    await settled();
+    assert.equal(called[0].tool, "OUTLOOK_SEND_EMAIL");
+    assert.equal(called[0].args.to, "maria@example.com");
+    assert.deepEqual(called[0].args.cc_emails, ["startups@example.com"]);
+  } finally {
+    await dispose();
+  }
+});
+
+test("a mailbox not connected, or a refusal, hands the card back and the agent says why once", async () => {
+  const { module, dispose } = await draftState();
+  try {
+    const offline = { inputSchema: async () => undefined, call: async () => { throw new Error("never called"); } };
+    const first = setup(module, OUTLOOK_REPLY, offline);
+    await first.cards.sendDraft({ agentId: "iris", entryId: "e1" }, offline);
+    await settled();
+    assert.equal(first.state(), "editable");
+    assert.equal(first.wakes[0].source, "draft-sent");
+    assert.match(first.wakes[0].prompt, /Outlook did not send it: Outlook isn't connected\. The card is editable again\. Tell the user in one plain sentence/);
+    assert.equal(first.wakes[0].options, undefined, "a failure is said");
+
+    const refusing = { inputSchema: async () => replySchema, call: async () => ({ ok: false, text: "ErrorInvalidRecipients:\n  the message has no valid recipient" }) };
+    const second = setup(module, OUTLOOK_REPLY, refusing);
+    await second.cards.sendDraft({ agentId: "iris", entryId: "e1" }, refusing);
+    await settled();
+    assert.equal(second.state(), "editable");
+    assert.match(second.wakes[0].prompt, /did not send it: ErrorInvalidRecipients: the message has no valid recipient\. The card is editable again/);
+  } finally {
+    await dispose();
+  }
+});
+
+test("a name the tool no longer takes is left to the agent with the exact call; nothing is sent from the card", async () => {
+  const { module, dispose } = await draftState();
+  try {
+    const called = [];
+    const renamed = { inputSchema: async () => ({ type: "object", properties: { message_id: {}, body: {}, is_html: {}, cc_emails: {}, attachment: {} } }), call: async (...args) => { called.push(args); return { ok: true, text: "" }; } };
+    const { cards, wakes, lines, state } = setup(module, OUTLOOK_REPLY, renamed);
+    await cards.sendDraft({ agentId: "iris", entryId: "e1" }, renamed);
+    await settled();
+    assert.equal(called.length, 0);
+    assert.equal(state(), "editable", "the agent's turn (here at once) ended without a report: the card is handed back");
+    assert.equal(wakes[0].source, "draft-send");
+    assert.match(wakes[0].prompt, /Send it with one CallMcpTool call: server "outlook", toolName "OUTLOOK_REPLY_EMAIL"/);
+    assert.ok(lines.some((line) => /OUTLOOK_REPLY_EMAIL takes no comment; the agent sends iris\/e1/.test(line)));
+  } finally {
+    await dispose();
+  }
+});
+
+test("a draft waits on Send or Discard, as a question does: the turn ends on it", async () => {
+  const runner = await readFile(path.join(repoRoot, "source/host/runner/sand-agent-runner.ts"), "utf8");
+  assert.match(runner, /\|\| update\.message\.type === "email-draft"\n\s*\|\| update\.message\.type === "slack-draft"\n\s*\) \{\n\s*active\.awaitingUserSelection = true;/);
+  const brief = await readFile(path.join(repoRoot, "source/host/runner/system-prompt.ts"), "utf8");
+  assert.match(brief, /Drafting sends nothing and ends your turn: the card waits on Send or Discard/);
+  assert.match(brief, /Send on the card sends it through the mailbox it names and you are woken with what happened/);
 });

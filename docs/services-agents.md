@@ -1371,15 +1371,26 @@ A reply with a company document attached went to the wrong people, read
   read and written in its own agent's chat, so opening another chat meanwhile no longer leaves
   it stuck.
 * **The wrong people.** The card had no conversation to answer and the iPhone card showed no
-  Cc, so the agent rebuilt the email and chose Outlook's reply tool, which answers the sender
-  only. `DraftExternalMessage` now takes `via` (the mailbox, `gmail` or `outlook`), `reply_to`
-  (Gmail's thread id, Outlook's message id) and `attachments` (paths on the computer). For a
-  card that names its mailbox, Send writes the one call to make (`emailSendCalls` in
-  `draft-cards.ts`) with the card's recipients: Gmail's `GMAIL_REPLY_TO_THREAD` or
-  `GMAIL_SEND_EMAIL`; Outlook's `OUTLOOK_REPLY_EMAIL` with the rest of To and the Cc copied, or
-  `OUTLOOK_SEND_EMAIL` when the person changed who it goes to. The agent makes that call and may
-  correct only an argument's name, never the recipients, the words or the files. The iPhone and
-  Mac cards show and send Cc, show the files, and say Reply for a reply.
+  Cc, so the agent rebuilt the email at Send and chose Outlook's reply tool, which answers the
+  sender only. The card now works as the upstream app's does (its card rules, in
+  `docs/product/sources/` until 29 September and in the history):
+  routing is settled when drafting, the person edits what is shown but not the routing, "Send
+  on the card sends", and the card waits on Send or Discard, the agent carrying on from a short
+  summary.
+  * `DraftExternalMessage` takes `via` (the mailbox, `gmail` or `outlook`), `reply_to` (Gmail's
+    thread id, Outlook's message id) and `attachments` (paths on the computer).
+  * The draft ends the agent's turn, as a question does (`sand-agent-runner.ts`).
+  * Send on a card that names its mailbox sends from the computer itself (`sendFromCard` in
+    `draft-cards.ts`, through the box's app tools, `appTools` in `mcp-service.ts`), one call
+    written from the card (`emailSendCalls`): Gmail's `GMAIL_REPLY_TO_THREAD` or
+    `GMAIL_SEND_EMAIL`; Outlook's `OUTLOOK_REPLY_EMAIL` with the rest of To and the Cc copied, or
+    `OUTLOOK_SEND_EMAIL` when the person changed who it goes to. Its argument names are checked
+    against the tool as the app serves it first. The card shows Sent, or is editable again, and
+    the agent is woken with what happened (`draft-sent`): after a send it may end without a
+    word; after a failure it says why once.
+  * A name the tool no longer takes, a card with no mailbox, and a Slack card still wake the
+    agent to deliver it, with the exact call when it can be written.
+  * The iPhone and Mac cards show and send Cc, show the files, and say Reply for a reply.
 * **No paragraphs.** Plain text sent into an HTML reply runs its lines together. The body now
   goes as HTML with `is_html` on, a `<div>` per line and an empty one per blank line
   (`emailBodyHtml`).
@@ -1395,7 +1406,8 @@ A reply with a company document attached went to the wrong people, read
 **What to read when an email misbehaves.** On Render: `desktop.apps.tool_called` and
 `desktop.apps.tool_failed` (which tool ran and the app's refusal, never the arguments), and
 `desktop.apps.file_uploaded`, `file_refused` or `file_unreachable` for an attachment. In the
-host log: `[drafts]` lines and `apps file for … refused`. **Not yet verified:** no email has
+host log: `[drafts] … sent by OUTLOOK_REPLY_EMAIL`, `[drafts] … not sent by …: <reason>`,
+`[drafts] … takes no …; the agent sends …`, and `apps file for … refused`. **Not yet verified:** no email has
 been sent through this path from an iPhone or a Mac; the tools' argument names are from the
 provider's reference (read 28 October 2026), not from a live call.
 

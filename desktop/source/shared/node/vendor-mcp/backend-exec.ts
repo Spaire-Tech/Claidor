@@ -157,6 +157,15 @@ export function errorResult(message: string): McpResult {
   return new McpResult({ result: { case: "error", value: new McpError({ error: message }) } });
 }
 
+/** A tool's answer as one line of text and whether the app took the call (a host-made call, `appToolInputSchema`). */
+export function describeAppToolResult(result: unknown): { readonly ok: boolean; readonly text: string } {
+  if (!(result instanceof McpResult)) return { ok: false, text: "The app gave no answer." };
+  if (result.result.case === "error") return { ok: false, text: result.result.value.error || "The app refused the call." };
+  if (result.result.case !== "success") return { ok: false, text: "The app gave no answer." };
+  const text = result.result.value.content.map((item) => (item.content.case === "text" ? item.content.value.text : "")).filter((line) => line.length > 0).join("\n");
+  return { ok: result.result.value.isError !== true, text };
+}
+
 export function contentItem(item: Record<string, unknown>): McpToolResultContentItem {
   const text = item.type === "text" && typeof item.text === "string" ? item.text : JSON.stringify(item);
   return new McpToolResultContentItem({ content: { case: "text", value: new McpTextContent({ text }) } });
@@ -435,6 +444,20 @@ export function createVendorMcpBackendExec(options: VendorMcpBackendExecOptions)
         try { rest = await fallback.listTools(others); } catch (error) { if (vendor.length === 0) throw error; log(`backend list-tools degraded: ${errorLabel(error)}`); }
       }
       return [...listed, ...rest];
+    },
+
+    /**
+     * An app tool's input schema as Simeon's server serves it, for a call the
+     * host makes itself (an email card's Send, `draft-cards.ts`); undefined
+     * when the app is not installed here or not signed in.
+     */
+    async appToolInputSchema(serverIdentifier: string, toolName: string): Promise<unknown> {
+      await synced();
+      const install = installFor(serverIdentifier);
+      if (install == null || !isApp(install)) return undefined;
+      const credential = await usableCredential(install);
+      if (credential == null) return undefined;
+      return await appToolSchema(install, credential.accessToken, toolName);
     },
 
     async executeTool(args: { serverIdentifier: string; toolName: string; args: unknown; toolCallId: string; agentId?: string }): Promise<McpResult | unknown> {

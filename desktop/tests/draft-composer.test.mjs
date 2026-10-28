@@ -52,10 +52,10 @@ test("DraftExternalMessage appends the card the renderer draws, validates routin
     const draft = tools.module.createDraftExternalMessageTool(deps);
     const mark = tools.module.createMarkDraftDeliveredTool(deps);
     assert.equal(draft.name, "DraftExternalMessage");
-    assert.match(draft.descriptionGenerator(), /Drafting sends nothing and does not end your turn; Send on the card is what sends/);
+    assert.match(draft.descriptionGenerator(), /Drafting sends nothing and ends your turn: the card waits on Send or Discard\. Send on the card is what sends/);
 
     const email = await run(createContext, draft, { kind: "email", to: ["sam@example.com"], subject: "Friday", body: "See you at 3." });
-    assert.match(email, /Draft shown to the user as an editable email card \(entry t1s1\)\. Nothing was sent\./);
+    assert.match(email, /Draft shown to the user as an editable email card \(entry t1s1\)\. Nothing was sent\. The card waits on the user's Send or Discard, so your turn ends here/);
     assert.deepEqual(cards[0], { message: { type: "email-draft", draft: { to: ["sam@example.com"], subject: "Friday", body: "See you at 3." } }, timestampMs: 1_000 });
 
     const slack = await run(createContext, draft, { kind: "slack", target: "#eng", body: "Deploy is done." });
@@ -219,7 +219,7 @@ test("the wiring: gateway commands, coordinator RPC rows, the toolset factory, t
   assert.match(protocol, /sendDraft: \(api: GatewayApi, body: string\) => api\.sendDraft\(parseCommandArgs\(body\)\),/);
   assert.match(protocol, /discardDraft: \(api: GatewayApi, body: string\) => api\.discardDraft\(parseCommandArgs\(body\)\),/);
   const api = await src("host/host-gateway-api.ts");
-  assert.match(api, /sendDraft: \(args: any\) => \{\n\s*markActive\("user_action"\);\n\s*return method\(manager, "sendDraft"\)/);
+  assert.match(api, /sendDraft: \(args: any\) => \{\n\s*markActive\("user_action"\);\n\s*const mcp = deps\.extensions\.api\("mcp"\);\n\s*return method\(manager, "sendDraft"\)\([^\n]*, mcp\?\.appTools\);/);
   const rpc = await src("shared/rpc/coordinator.ts");
   assert.match(rpc, /sendDraft: \{ args: "object", reply: "record-or-null" \},\n\s*discardDraft: \{ args: "object", reply: "record-or-null" \},/);
   const manager = await src("host/extensions/transcript/transcript-manager.ts");

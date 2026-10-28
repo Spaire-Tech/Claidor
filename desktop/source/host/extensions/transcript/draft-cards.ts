@@ -27,12 +27,20 @@
  * - The card is read and written in its own agent's transcript, not the one
  *   on screen, so a person who opens another chat meanwhile no longer
  *   leaves it `sending` for good (MarkDraftDelivered found no card).
- * - An email that names its mailbox (`via`) is sent with one exact call the
- *   host writes from the card (`emailSendCalls`): the recipients as they
- *   are on the card, a reply in its own thread, the body as HTML with its
- *   lines kept, and the files to attach. The agent makes that call instead
- *   of rebuilding the send, which is how it chose Outlook's plain-text
- *   reply and the wrong recipients.
+ * - Send on the card sends, as the upstream app's card does (its card rules,
+ *   in `docs/product/sources/` until 29 September, in the history: "Resolve
+ *   routing before draft: provider id … User can edit displayed fields;
+ *   cannot edit routing after the fact … Send on the card sends … Card
+ *   waits on user Send/discard; I continue only after resume/summary"). An
+ *   email that names its mailbox (`via`) goes out from here with one call
+ *   written from the card (`emailSendCalls`): the recipients as they are on
+ *   the card, a reply in its own thread, the body as HTML with its lines
+ *   kept, the files attached. The agent no longer rebuilds the send, which
+ *   is how it chose Outlook's plain-text reply and the wrong recipients; it
+ *   is woken after with what happened. The draft ends its turn
+ *   (`sand-agent-runner.ts`), as a question does.
+ * - A card that names no mailbox (or a Slack card) still wakes the agent to
+ *   deliver it, now with the same exact call when it can be written.
  */
 import { getTranscript, updateEntry } from "./transcript-store.js";
 import { say } from "../../../shared/say.js";
@@ -92,6 +100,12 @@ export function emailBodyHtml(body: string): string {
 }
 
 export interface EmailSendCall { readonly server: EmailMailbox; readonly tool: string; readonly args: Readonly<Record<string, unknown>> }
+
+/** The box's app tools, called by the host itself (`mcp-service.ts`): a tool's input schema, undefined when the app is not connected, and a call. */
+export interface DraftAppTools {
+  inputSchema(server: string, tool: string): Promise<unknown>;
+  call(server: string, tool: string, args: Readonly<Record<string, unknown>>, agentId?: string): Promise<{ readonly ok: boolean; readonly text: string }>;
+}
 
 /**
  * The exact call that sends an email draft through the mailbox it names
@@ -181,8 +195,35 @@ export function buildDraftSendWakePrompt(entryId: string, message: { readonly ty
   ].join("\n");
 }
 
+const MAILBOX_NAMES: Readonly<Record<EmailMailbox, string>> = { gmail: "Gmail", outlook: "Outlook" };
+
+/** Who got it, as one line: To, then Cc, then how many files went with it. */
+function sentLine(draft: Record<string, unknown>): string {
+  const cc = strings(draft.cc);
+  const files = strings(draft.attachments);
+  return `to ${strings(draft.to).join(", ")}${cc.length > 0 ? `, Cc ${cc.join(", ")}` : ""}${files.length > 0 ? `, with ${files.length === 1 ? "1 file" : `${files.length} files`} attached` : ""}`;
+}
+
+/** What the agent is woken with once the card sent it: it has gone, and the task goes on. */
+export function buildDraftSentWakePrompt(entryId: string, draft: Record<string, unknown>, via: EmailMailbox): string {
+  return `[The user pressed Send on your email draft (entry ${entryId}) and it was sent from ${MAILBOX_NAMES[via]} ${sentLine(draft)}, subject "${text(draft.subject)}". It has gone: never send it again by any route. The card already shows Sent, so do not announce it. Carry on with whatever was left of the task; if nothing was, end your turn without a message.]`;
+}
+
+/** What the agent is woken with when the card could not send it: say so once, plainly. */
+export function buildDraftFailedWakePrompt(entryId: string, via: EmailMailbox, reason: string): string {
+  return `[The user pressed Send on your email draft (entry ${entryId}) and ${MAILBOX_NAMES[via]} did not send it: ${reason} The card is editable again. Tell the user in one plain sentence what went wrong and what would fix it (for example connecting ${MAILBOX_NAMES[via]}). Do not send it another way unless they ask.]`;
+}
+
 export function buildDraftDiscardWakePrompt(entryId: string, message: { readonly type: string }): string {
   return `[The user discarded your ${message.type === "email-draft" ? "email" : "Slack"} draft (entry ${entryId}). Treat it as declined: do not send it by any route, and do not draft it again unless they ask. Continue the task without it, or wait; a one-line acknowledgement at most.]`;
+}
+
+/** A tool's refusal, short enough for one sentence. */
+function plainReason(raw: string): string {
+  const line = raw.replace(/\s+/g, " ").trim();
+  if (line.length === 0) return "The app refused it without saying why.";
+  const cut = line.length > 300 ? `${line.slice(0, 297)}…` : line;
+  return /[.!?…]$/.test(cut) ? cut : `${cut}.`;
 }
 
 /** What the person changed on the card, as the card's own fields: never its state, its route or its reply. */
@@ -276,12 +317,13 @@ export class DraftCards {
 
   /**
    * The agent's hidden turn, started without the app waiting on it. A Send
-   * whose turn ends with the card still `sending` (the run failed, or the
-   * agent never reported) hands the card back, so it never stays `sending`.
+   * the agent delivers (`draft-send`) whose turn ends with the card still
+   * `sending` (the run failed, or the agent never reported) hands the card
+   * back, so it never stays `sending`.
    */
-  private wake(agentId: string, entryId: string, source: "draft-send" | "draft-discard", prompt: string, trayTitle: string): void {
+  private wake(agentId: string, entryId: string, source: "draft-send" | "draft-sent" | "draft-discard", prompt: string, trayTitle: string, options: { readonly silenceAllowed?: boolean } = {}): void {
     void Promise.resolve()
-      .then(() => this.tm.backgroundWakes.runHiddenPromptWake(agentId, source, prompt, trayTitle))
+      .then(() => this.tm.backgroundWakes.runHiddenPromptWake(agentId, source, prompt, trayTitle, options.silenceAllowed === true ? { isSilenceAllowed: true } : undefined))
       .catch((error: unknown) => this.log(`[drafts] ${source} wake for ${agentId}/${entryId} failed: ${error instanceof Error ? error.message : String(error)}`))
       .then(async () => {
         if (source !== "draft-send") return;
@@ -296,8 +338,12 @@ export class DraftCards {
       .catch((error: unknown) => this.log(`[drafts] settling ${agentId}/${entryId} failed: ${error instanceof Error ? error.message : String(error)}`));
   }
 
-  /** The person pressed Send: the edited fields are kept, the card shows `sending`, the app has its answer, and the agent is woken to deliver. */
-  async sendDraft(args: { readonly agentId: string; readonly entryId: string; readonly draft?: Record<string, unknown> }): Promise<TranscriptEntry | null> {
+  /**
+   * The person pressed Send: the edited fields are kept, the card shows
+   * `sending` and the app has its answer. An email that names its mailbox is
+   * sent from here (`sendFromCard`); anything else wakes the agent to deliver.
+   */
+  async sendDraft(args: { readonly agentId: string; readonly entryId: string; readonly draft?: Record<string, unknown> }, apps?: DraftAppTools): Promise<TranscriptEntry | null> {
     // The card lives in its agent's transcript, which is the one in memory
     // only once that agent is the action target (as for a widget answer).
     await this.tm.sessions.ensureActionTarget?.(args.agentId);
@@ -307,8 +353,47 @@ export class DraftCards {
     const merged = { ...current.message.draft, ...personEdits(args.draft) };
     const updated = await this.stamp(args.agentId, args.entryId, (entry) => ({ ...entry, message: { ...(entry.message as object), draft: merged }, draftSendState: "sending" as DraftSendState, widgetDismissed: false } as TranscriptEntry));
     if (updated == null) return null;
+    const calls = current.message.type === "email-draft" ? emailSendCalls(merged) : null;
+    if (calls != null && apps != null) {
+      // The person changed who it goes to: a reply tool would still answer the original sender, so it goes out as a new email to them.
+      const recipientsChanged = strings(current.message.draft.to).map((one) => one.toLowerCase()).join(",") !== strings(merged.to).map((one) => one.toLowerCase()).join(",");
+      const call = recipientsChanged && calls.instead != null ? calls.instead : calls.call;
+      void this.sendFromCard(args.agentId, args.entryId, merged, call, apps).catch((error: unknown) => this.log(`[drafts] send of ${args.agentId}/${args.entryId} failed: ${error instanceof Error ? error.message : String(error)}`));
+      return updated;
+    }
     this.wake(args.agentId, args.entryId, "draft-send", buildDraftSendWakePrompt(args.entryId, { type: current.message.type, draft: merged }), say(this.tm.userLanguage?.(), "tray.draftSendFailed"));
     return updated;
+  }
+
+  /**
+   * Send on the card sends: one call to the mailbox the card names, its
+   * arguments checked against the tool as the app serves it. A name the tool
+   * no longer takes leaves the call to the agent, which reads the tool and
+   * corrects only that; nothing is sent twice. Then the card shows Sent, or
+   * is editable again, and the agent is woken with what happened.
+   */
+  private async sendFromCard(agentId: string, entryId: string, draft: Record<string, unknown>, call: EmailSendCall, apps: DraftAppTools): Promise<void> {
+    const failed = async (reason: string): Promise<void> => {
+      this.log(`[drafts] ${agentId}/${entryId} not sent by ${call.tool}: ${reason}`);
+      await this.stamp(agentId, entryId, (entry) => ({ ...entry, draftSendState: "editable" as DraftSendState } as TranscriptEntry));
+      this.wake(agentId, entryId, "draft-sent", buildDraftFailedWakePrompt(entryId, call.server, reason), say(this.tm.userLanguage?.(), "tray.draftSendFailed"));
+    };
+    let schema: unknown;
+    try { schema = await apps.inputSchema(call.server, call.tool); } catch (error) { schema = undefined; this.log(`[drafts] ${call.server} tools not read: ${error instanceof Error ? error.message : String(error)}`); }
+    if (schema === undefined) { await failed(`${MAILBOX_NAMES[call.server]} isn't connected.`); return; }
+    const properties = typeof schema === "object" && schema != null && typeof (schema as { properties?: unknown }).properties === "object" && (schema as { properties?: unknown }).properties != null ? (schema as { properties: Record<string, unknown> }).properties : null;
+    const unknown = properties == null ? [] : Object.keys(call.args).filter((name) => !(name in properties));
+    if (unknown.length > 0) {
+      this.log(`[drafts] ${call.tool} takes no ${unknown.join(", ")}; the agent sends ${agentId}/${entryId}`);
+      this.wake(agentId, entryId, "draft-send", buildDraftSendWakePrompt(entryId, { type: "email-draft", draft }), say(this.tm.userLanguage?.(), "tray.draftSendFailed"));
+      return;
+    }
+    let result: { readonly ok: boolean; readonly text: string };
+    try { result = await apps.call(call.server, call.tool, call.args, agentId); } catch (error) { result = { ok: false, text: error instanceof Error ? error.message : String(error) }; }
+    if (!result.ok) { await failed(plainReason(result.text)); return; }
+    this.log(`[drafts] ${agentId}/${entryId} sent by ${call.tool}`);
+    await this.stamp(agentId, entryId, (entry) => ({ ...entry, draftSendState: "sent" as DraftSendState } as TranscriptEntry));
+    this.wake(agentId, entryId, "draft-sent", buildDraftSentWakePrompt(entryId, draft, call.server), say(this.tm.userLanguage?.(), "tray.draftSendFailed"), { silenceAllowed: true });
   }
 
   /** The person discarded the draft: the card is dismissed and the agent is told once. */

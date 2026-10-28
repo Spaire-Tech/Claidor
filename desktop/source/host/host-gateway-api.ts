@@ -261,10 +261,11 @@ export function createHostGatewayApi(
         args.value,
         args.agentId
       ),
-    // The draft card's Send and Discard (draft-cards.ts).
+    // The draft card's Send and Discard (draft-cards.ts). Send on an email card sends through the mailbox it names, with the box's app tools.
     sendDraft: (args: any) => {
       markActive("user_action");
-      return method(manager, "sendDraft")({ agentId: args.agentId, entryId: args.entryId, ...(args.draft == null ? {} : { draft: args.draft }) });
+      const mcp = deps.extensions.api("mcp");
+      return method(manager, "sendDraft")({ agentId: args.agentId, entryId: args.entryId, ...(args.draft == null ? {} : { draft: args.draft }) }, mcp?.appTools);
     },
     discardDraft: (args: any) => {
       markActive("user_action");

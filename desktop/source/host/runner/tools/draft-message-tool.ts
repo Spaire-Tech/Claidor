@@ -92,13 +92,13 @@ export function draftCardMessageFromArgs(args: z.infer<typeof draftExternalMessa
   return { type: "slack-draft", draft: { ...(args.workspace == null || args.workspace.length === 0 ? {} : { workspace: args.workspace }), target: args.target, ...(args.thread == null || args.thread.length === 0 ? {} : { thread: args.thread }), body: args.body } };
 }
 
-export const DRAFT_SHOWN_NOTE = "Nothing was sent. The user can edit the fields and press Send, or discard it; you will be woken when they do. Do not send this message by any other route, and do not redraft it unless they ask.";
+export const DRAFT_SHOWN_NOTE = "Nothing was sent. The card waits on the user's Send or Discard, so your turn ends here: send nothing more about it now. When they press Send the card sends it, and you are woken with what happened. Do not send this message by any other route, and do not redraft it unless they ask.";
 
 export function createDraftExternalMessageTool(deps: DraftToolDependencies) {
   return defineCommunicateTool(deps, {
     id: "DRAFT_EXTERNAL_MESSAGE",
     name: "DraftExternalMessage",
-    description: "Show the user an editable draft card for an email or a Slack message that would go out under their name. This is the default for anything sent as them: they asked for a draft, the message is how you'd complete a task they didn't literally say \"send\" for, or you're unsure they meant send. Resolve the routing first (real addresses, the channel or person as they named it); the user edits the text on the card, not the routing. Drafting sends nothing and does not end your turn; Send on the card is what sends, and you are woken to deliver it. Send without a card only when they explicitly asked in this conversation to send that message to those recipients.",
+    description: "Show the user an editable draft card for an email or a Slack message that would go out under their name. This is the default for anything sent as them: they asked for a draft, the message is how you'd complete a task they didn't literally say \"send\" for, or you're unsure they meant send. Resolve the routing first (real addresses, the mailbox it goes from, the conversation it answers, the channel or person as they named it); the user edits the text on the card, not the routing. Drafting sends nothing and ends your turn: the card waits on Send or Discard. Send on the card is what sends, and you are woken with what happened. Send without a card only when they explicitly asked in this conversation to send that message to those recipients.",
     parameters: draftExternalMessageParameters,
     describeActivity: (args: z.infer<typeof draftExternalMessageParameters>) => ({ detail: `Drafting ${args.kind === "email" ? "an email" : "a Slack message"}` }),
     execute: async (_ctx, args: z.infer<typeof draftExternalMessageParameters>, resolved) => {
