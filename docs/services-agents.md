@@ -1539,6 +1539,23 @@ username, a password or a code.
 * **Not yet verified.** Not run with a real 1Password account, on the cloud computer, a Mac or
   an iPhone. No way yet to disconnect from the apps (the key can be deleted in 1Password).
 
+### Two of the upstream app's cards we do not build, on purpose (28 October 2026)
+
+The audit ("audit the other cards and make sure they each work exactly like" the upstream
+app's) left two of its fourteen cards unbuilt, each by a deliberate decision, not an oversight:
+
+* **The cookie-origin import** (its card 11: read the person's Chrome cookies for a site and
+  import the session into the computer's browser). Simeon's reconstruction forbids touching
+  `Library/Application Support/Google/Chrome` and `Library/Keychains` on the Mac, whatever the
+  local-computer setting says (`SensitivePaths.swift`, `shared/sensitive-local-paths.ts`: "they
+  hold keys or sign-ins"). The import would have to read and decrypt that store and send live
+  sessions to the cloud computer, against that guard. The founder kept the guard (28 October):
+  1Password, the in-chat form and the box handoff cover sign-ins instead.
+* **The SCM / repo connect card** (its card 8: connect GitHub so a cloud agent can open a
+  repository). Simeon's cloud agents can't open a repository yet — the runner has no step that
+  clones one (`runner/src/executor.ts`, "GetEnvironment … no repositories configured"). The
+  founder left the card until they can (28 October); there is nothing for it to unblock today.
+
 ### Files and lists in the chat
 
 **For the person** (24 October 2026). A file the agent sends shows its name as a title
