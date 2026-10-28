@@ -156,6 +156,25 @@ class DesktopSession(RecordModel):
         index=True,
     )
 
+    #: The session a refresh traded this one for (28 October 2026). A
+    #: refresh whose answer never reached the app (the Mac asleep, the phone
+    #: leaving the app, the network dropping) left it holding this row's
+    #: spent refresh token, and the next refresh signed the person out.
+    #: While that successor has never been used, the spent token may be
+    #: traded again (`DesktopService.refresh`).
+    replaced_by_id: Mapped[UUID | None] = mapped_column(
+        Uuid,
+        ForeignKey("desktop_sessions.id", ondelete="set null"),
+        nullable=True,
+        default=None,
+    )
+    #: When this row's tokens were first used: its access token presented,
+    #: or its refresh token traded. None for a pair its app may never have
+    #: received.
+    first_used_at: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=True), nullable=True, default=None
+    )
+
     @declared_attr
     def user(cls) -> Mapped["User"]:
         return relationship("User", lazy="joined")

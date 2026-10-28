@@ -198,6 +198,23 @@ class TestBoxCredential:
         )
         assert still.status_code == 200, still.text
 
+    async def test_it_follows_the_desktop_through_a_lost_refresh_answer(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        """The refresh's answer never reached the app, which asks again with
+        the old token (28 October 2026): the pair it never got is revoked,
+        and the box credential, which had moved to it, moves on."""
+        access, refresh = await _signed_in(client, session, user)
+        credential = (await _box_credential(client, access))["credential"]
+        body = {"grant_type": "refresh_token", "refresh_token": refresh}
+        assert (await client.post("/oauth/token", json=body)).status_code == 200
+        again = await client.post("/oauth/token", json=body)
+        assert "shouldLogout" not in again.json(), again.text
+        still = await client.post(
+            "/sand-box/inference-credential", json={"credential": credential}
+        )
+        assert still.status_code == 200, still.text
+
     async def test_asking_again_revokes_the_last_one(
         self, client: httpx.AsyncClient, session: AsyncSession, user: User
     ) -> None:

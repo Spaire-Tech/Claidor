@@ -149,17 +149,17 @@ async def _record(
 
 
 def _refusal(model: DesktopModel, upstream: httpx.Response) -> Response:
-    """The provider's refusal, handed back as it came and written down."""
+    """The provider's refusal, handed back as it came and written down. A
+    provider's 401 refuses our key, not the caller: it goes back as 502,
+    because a 401 from this server means the caller's sign-in is over and
+    the apps sign out on it (28 October 2026)."""
     log_upstream_refusal(model, upstream.status_code, upstream.content)
+    status = 502 if upstream.status_code == 401 else upstream.status_code
     try:
-        return JSONResponse(
-            json.loads(upstream.content), status_code=upstream.status_code
-        )
+        return JSONResponse(json.loads(upstream.content), status_code=status)
     except ValueError:
         return error_response(
-            "api_error",
-            upstream.content.decode(errors="replace")[:500],
-            upstream.status_code,
+            "api_error", upstream.content.decode(errors="replace")[:500], status
         )
 
 
