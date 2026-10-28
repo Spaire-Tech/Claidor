@@ -557,8 +557,8 @@ private struct TranscriptRow: View {
       DraftCardView(entryId: id, agentId: agentId, card: card, look: look)
         .frame(maxWidth: limit(640), alignment: .leading)
         .padding(.top, startsGroup ? 12 : 0)
-    case .connectors(_, let names, _, let reason):
-      ConnectorCards(names: names, reason: reason, look: look)
+    case .connectors(_, let names, let connected, let reason):
+      ConnectorCards(names: names, connected: connected, reason: reason, look: look)
         .frame(maxWidth: limit(640), alignment: .leading)
         .padding(.top, startsGroup ? 12 : 0)
     case .listenerConnect(_, let platform, let reason):
