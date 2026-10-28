@@ -100,11 +100,12 @@ struct ActivitySlot: View {
 }
 
 /**
- * The agent at work (`sand-activity-mark`, 36 high): the grey three dots,
- * still, as the window shows an agent with a picture (`SJn`, decision 26;
- * since faces, 12 October 2026, every agent has one), and what it is
- * doing, 14 on 22 at 500 under the window's sweep of light, the time after
- * a minute at 12 in the tertiary grey. It comes in over 0.18 s, scaled from
+ * The agent at work (`sand-activity-mark`, 36 high), as the iPhone's
+ * (the founder, 28 October 2026: "the iphone show the agent avatar"): its
+ * picture at 28, still (a group's: the member at work, at 22), 8 from what
+ * it is doing, 14 on 22 at 500 under the window's sweep of light, the time
+ * after a minute at 12 in the tertiary grey. Until then the grey three
+ * dots stood in the picture's place. It comes in over 0.18 s, scaled from
  * 0.92 at its left (`sand-11nrck8`); new words rise 4 points as they come
  * (`sand-gcq4cg`).
  */
@@ -126,9 +127,8 @@ private struct ActivityRow: View {
 
   var body: some View {
     let shown = entered && !exiting
-    // Every agent works as the grey three dots, still (`SJn`, decision 26): an agent with a picture never showed it here.
-    HStack(spacing: 10) {
-      WorkingBadge(look: look)
+    HStack(spacing: 8) {
+      picture
       ActivityWords(words: words, elapsed: elapsed, look: look)
         .id(wordsKey)
         .offset(y: -1)
@@ -143,47 +143,19 @@ private struct ActivityRow: View {
     .accessibilityElement(children: .ignore)
     .accessibilityLabel(spoken)
   }
-}
 
-/**
- * The working badge (`ANe`, large): a 43 by 28 pill, #777 at 12 % inside a
- * half-point edge at 5 % of the ink, three dots of 5.25 in #777, 3.5
- * apart, each brightening from .35 to full at 30 % of a 1.4-second beat and
- * back, the second and third ahead by 1.2 and 1 seconds. With Reduce
- * motion they stand at .35, .65 and full.
- */
-struct WorkingBadge: View {
-  let look: Look
-  @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-  private static let leads: [Double] = [0, 1.2, 1.0]
-  private static let still: [Double] = [0.35, 0.65, 1]
-
-  var body: some View {
-    TimelineView(.animation(paused: reduceMotion)) { timeline in
-      let now = timeline.date.timeIntervalSinceReferenceDate
-      HStack(spacing: 3.5) {
-        ForEach(0..<3, id: \.self) { index in
-          Circle()
-            .fill(Color(hex: 0x777777))
-            .frame(width: 5.25, height: 5.25)
-            .opacity(reduceMotion ? WorkingBadge.still[index] : WorkingBadge.pulse((now + WorkingBadge.leads[index]) / 1.4))
-        }
+  /** The agent's picture at 28; in a group, the member at work (else the first) at 22, as the iPhone's `GroupActivityLine`. */
+  @ViewBuilder private var picture: some View {
+    if agent.isGroup {
+      let members = store.members(of: agent)
+      if let member = members.first(where: { $0.isBusy || $0.isRunning }) ?? members.first {
+        AgentMark(agent: member, agents: store.agents, size: 22)
+      } else {
+        AgentMark(agent: agent, agents: store.agents, size: 22)
       }
-      .frame(width: 43, height: 28)
-      .background(Capsule().fill(Color(hex: 0x777777).opacity(0.12)))
-      .overlay(Capsule().strokeBorder(look.ink.opacity(0.05), lineWidth: 0.5))
+    } else {
+      AgentMark(agent: agent, agents: store.agents, size: 28)
     }
-    .accessibilityHidden(true)
-  }
-
-  /** One dot's brightness at this part of its beat: .35 up to 1 at 30 %, back to .35, eased in and out (`sand-kit-working-badge`). */
-  static func pulse(_ beat: Double) -> Double {
-    let at = beat - beat.rounded(.down)
-    let rising = at < 0.3
-    let part = rising ? at / 0.3 : (at - 0.3) / 0.7
-    let eased = part < 0.5 ? 2 * part * part : 1 - pow(-2 * part + 2, 2) / 2
-    return rising ? 0.35 + 0.65 * eased : 1 - 0.65 * eased
   }
 }
 
