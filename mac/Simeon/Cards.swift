@@ -262,8 +262,13 @@ struct DraftCardView: View {
   @State private var subject = ""
   @State private var words = ""
   @State private var started = false
+  @State private var wordsFocused = false
+  /** The words' height, as the text view measures it. */
+  @State private var wordsHeight: CGFloat = 0
 
   private var editable: Bool { card.state == "editable" && !card.isDismissed }
+  /** The words' box: 3 lines of 22 at least, 12 at most (then it scrolls), and its 10 above and below. */
+  private var wordsBox: CGFloat { min(12 * 22, max(3 * 22, wordsHeight)) + 20 }
 
   var body: some View {
     CardShell(look: look) {
@@ -292,15 +297,24 @@ struct DraftCardView: View {
           field(String(localized: "To")) { value(card.target) }
           field(String(localized: "Thread")) { value(card.thread.isEmpty ? String(localized: "New message") : card.thread) }
         }
-        TextField("", text: $words, prompt: Text("Write a message").foregroundStyle(look.placeholder), axis: .vertical)
-          .textFieldStyle(.plain)
-          .font(.system(size: 14))
-          .foregroundStyle(look.ink)
-          .lineSpacing(LineBox.extra(size: 14, lineHeight: 22))
-          .lineLimit(3...12)
-          .disabled(!editable)
-          .padding(10)
-          .frame(maxWidth: .infinity, alignment: .leading)
+        // The Mac's own text view (`PaneTextArea`): Return is a new line, and a long draft scrolls in its box. A text
+        // field that grew had neither: Return ended it and the keys went on to the next field, its words all chosen,
+        // and past 12 lines it would not scroll (the founder, 28 October 2026).
+        PaneTextArea(text: $words, focused: $wordsFocused, height: $wordsHeight, ink: NSColor(look.ink), editable: editable,
+                     fontSize: 14, lineHeight: 22, inset: CGSize(width: 10, height: 10)) {}
+          .frame(maxWidth: .infinity)
+          .frame(height: wordsBox)
+          .overlay(alignment: .topLeading) {
+            if words.isEmpty {
+              Text("Write a message")
+                .font(.system(size: 14))
+                .foregroundStyle(look.placeholder)
+                .cssLineHeight(22, size: 14)
+                .padding(.horizontal, 10)
+                .padding(.top, 10)
+                .allowsHitTesting(false)
+            }
+          }
           .accessibilityLabel("Message")
       }
       .background(look.ground, in: RoundedRectangle(cornerRadius: 10))
