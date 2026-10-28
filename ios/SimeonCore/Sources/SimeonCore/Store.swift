@@ -1156,7 +1156,8 @@ public final class AppStore {
     var item = Outgoing(id: id ?? Self.newMessageId(), text: trimmed, files: files, replyTo: replyTo, at: Date().timeIntervalSince1970 * 1000, known: Set((transcripts[agentId] ?? []).map(\.id)), state: waits ? .queued : .sending)
     item.thread = inThread && replyTo != nil
     item.richText = richText
-    item.composedOffline = waits && isDown
+    // A computer that is only asleep is not offline: the agent is not told the message was written offline (28 October 2026).
+    item.composedOffline = waits && isDown && !isAsleep
     for (index, file) in files.enumerated() { keepSent(file.data, under: Self.outboxFileURL(item.id, index)) }
     outbox[agentId, default: []].append(item)
     arrived.insert(item.id)
@@ -1188,14 +1189,18 @@ public final class AppStore {
     guard readsServerCopy, let backend, !handingToServer.contains(agentId) else { return }
     handingToServer.insert(agentId)
     defer { handingToServer.remove(agentId) }
+    var handed = false
+    defer {
+      // The server wakes the computer for it: the chat reaches it now, so the answer streams as it is written.
+      if handed { Task { await backend.computerWaking() } }
+    }
     while isDown, self.backend === backend, let item = nextToHand(agentId) {
-      let options = SendOptions(replyTo: item.replyTo, isFork: item.thread, richText: item.richText, composedAtMs: item.at)
+      let options = SendOptions(replyTo: item.replyTo, isFork: item.thread, richText: item.richText, composedAtMs: item.composedOffline ? item.at : nil)
       let args = LiveBackend.sendArguments(agentId, text: item.text, attachments: [], options: options, nonce: item.id)
       do { _ = try await backend.server("chats/send", method: "POST", body: args) } catch { return }
+      handed = true
       // Sent to the computer meanwhile (it came back), or canceled: left as it is.
       guard self.backend === backend, let index = outbox[agentId]?.firstIndex(where: { $0.id == item.id }), outbox[agentId]?[index].state == .queued else { return }
-      // Written to wait: the computer is told when (`composedAtMs`), and the chat says "Sent while offline", either way it goes.
-      outbox[agentId]?[index].composedOffline = true
       mark(item.id, in: agentId, .withServer)
     }
   }

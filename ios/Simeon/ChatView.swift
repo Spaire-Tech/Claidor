@@ -1370,7 +1370,6 @@ struct BubbleView: View {
           #endif
           .overlay(alignment: bubble.fromPerson ? .bottomTrailing : .bottomLeading) { reactions }
           .padding(.bottom, bubble.reactions.isEmpty ? 0 : 16)
-        if let offline = bubble.sentOfflineAtMs { SentOfflineLine(ms: offline) }
       }
       .overlay(alignment: .leading) {
         if replyPull > 0 {

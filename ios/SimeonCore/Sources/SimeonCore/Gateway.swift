@@ -428,6 +428,18 @@ public actor Gateway {
     return true
   }
 
+  /**
+   * The server is waking the box (28 October 2026): a message handed to it
+   * (`Store.handToServer`) wakes the box from the server's side, and the
+   * event stream, resting, looked again only every `asleepRecheck` seconds,
+   * so the answer showed up to fifteen seconds late. Resting no more, the
+   * stream dials now: the broker is asked for the box, which waits for the
+   * wake under way, and the answer streams as it is written.
+   */
+  public func waking() {
+    rest = nil
+  }
+
   /** A box that rests where the server lets it (step 4): asleep, or not made yet (a new account, before its first task). */
   public enum Rest: Sendable, Equatable { case asleep, absent }
 

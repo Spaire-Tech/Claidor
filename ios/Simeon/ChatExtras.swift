@@ -522,18 +522,6 @@ struct QueuedSendRow: View {
   }
 }
 
-/** Under a message that went once the computer was back: "Sent while offline · Oct 9, 3:12 PM" (`sand-sent-while-offline-notice`). */
-struct SentOfflineLine: View {
-  let ms: Double
-
-  var body: some View {
-    let date = Date(timeIntervalSince1970: ms / 1000)
-    Text("Sent while offline · \(date.formatted(.dateTime.month(.abbreviated).day().hour().minute()))")
-      .font(.system(size: 11)).foregroundStyle(Ink.tertiary)
-      .padding(.trailing, 4)
-  }
-}
-
 // MARK: - A chat that could not load
 
 /** The window's "Couldn't load conversation", its sentence and Retry, in place of an empty chat. */

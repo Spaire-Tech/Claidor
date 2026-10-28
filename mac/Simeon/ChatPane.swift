@@ -785,13 +785,6 @@ private struct BubbleRow: View {
         PictureStrip(images: bubble.images, agentId: agentId, limit: max(0, min(column * 0.86, 560, column - 82)), alone: words.isEmpty, look: look)
           .padding(.top, words.isEmpty ? 0 : 8)
       }
-      if let held = bubble.sentOfflineAtMs {
-        Text("Sent while offline · \(BubbleRow.offlineTime.string(from: Date(timeIntervalSince1970: held / 1000)))")
-          .font(.system(size: 11))
-          .foregroundStyle(look.inkTertiary)
-          .padding(.top, 4)
-          .padding(.trailing, 4)
-      }
     }
     .frame(maxWidth: limit, alignment: bubble.fromPerson ? .trailing : .leading)
     .onDisappear { gone() }
@@ -831,13 +824,6 @@ private struct BubbleRow: View {
   private func openThread() {
     store.openThread(bubble.id, in: agentId)
   }
-
-  /** "Oct 9, 3:12 PM". */
-  static let offlineTime: DateFormatter = {
-    let format = DateFormatter()
-    format.setLocalizedDateFormatFromTemplate("MMMd jmm")
-    return format
-  }()
 
   @ViewBuilder
   private var shaped: some View {

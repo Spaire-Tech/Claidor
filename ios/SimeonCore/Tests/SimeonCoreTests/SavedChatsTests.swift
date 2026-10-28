@@ -662,6 +662,30 @@ final class SavedChatsTests: XCTestCase {
     }
   }
 
+  /**
+   * A message to a computer that is only asleep (28 October 2026): it goes to
+   * the server, which wakes the computer, but the agent is not told it was
+   * written offline, and the computer is reached at once rather than at the
+   * next look 15 s later (the founder: "it will answer but with a lag").
+   */
+  func testAMessageToASleepingComputerIsNotOfflineAndTheComputerIsReachedAtOnce() async throws {
+    try await onMain {
+      let backend = AwayBackend()
+      let store = AppStore()
+      store.readsServerCopy = true
+      await store.attach(backend)
+      await store.open("theo")
+      backend.away = true
+      store.apply(.connection(live: false))
+      store.apply(.computerAsleep(true))
+      await store.send("Book the table", to: "theo", id: "ios-m1")
+      let handed = try XCTUnwrap(self.handed(backend).first)
+      XCTAssertEqual(handed["clientNonce"]?.string, "ios-m1")
+      XCTAssertNil(handed["composedAtMs"], "asleep is not offline: no \"[Composed offline at …]\" for the agent")
+      try await self.eventually("the computer reached for at once") { backend.wakings == 1 }
+    }
+  }
+
   /** One with files waits on the device (they go to the computer itself), and those after it with it; one the server refuses waits too. */
   func testAMessageWithFilesOrRefusedWaitsOnTheDeviceAndThoseAfterIt() async throws {
     try await onMain {
@@ -797,6 +821,9 @@ final class AwayBackend: AgentBackend, @unchecked Sendable {
     return serverAnswers[path] ?? [:]
   }
   func screen(_ agentId: String) async throws -> ScreenState { ScreenState(socket: nil, state: "starting") }
+  /** How often the app was told the server is waking the computer. */
+  var wakings = 0
+  func computerWaking() async { wakings += 1 }
 }
 
 /** The paths asked of the server, from whatever thread asks. */
