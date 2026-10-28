@@ -302,9 +302,9 @@ test("a name the tool no longer takes is left to the agent with the exact call; 
   }
 });
 
-test("a draft waits on Send or Discard, as a question does: the turn ends on it", async () => {
-  const runner = await readFile(path.join(repoRoot, "source/host/runner/sand-agent-runner.ts"), "utf8");
-  assert.match(runner, /\|\| update\.message\.type === "email-draft"\n\s*\|\| update\.message\.type === "slack-draft"\n\s*\) \{\n\s*active\.awaitingUserSelection = true;/);
+test("a draft waits on Send or Discard: the turn ends on it in the app's own run path", async () => {
+  const shape = await readFile(path.join(repoRoot, "source/host/runner/turn-shape.ts"), "utf8");
+  assert.match(shape, /\["DraftExternalMessage", \/\^Draft shown to the user as an editable \/\]/);
   const brief = await readFile(path.join(repoRoot, "source/host/runner/system-prompt.ts"), "utf8");
   assert.match(brief, /Drafting sends nothing and ends your turn: the card waits on Send or Discard/);
   assert.match(brief, /Send on the card sends it through the mailbox it names and you are woken with what happened/);

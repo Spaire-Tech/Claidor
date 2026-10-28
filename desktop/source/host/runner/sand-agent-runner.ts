@@ -1130,11 +1130,6 @@ export class SandAgentRunner<T = unknown> {
           || update.message.type === "auto-review-approval"
           // The checkout card waits on the person's Allow, as a question does (purchase-tool.ts).
           || update.message.type === "purchase"
-          // A draft waits on Send or Discard (28 October 2026), as the upstream app's does: "Card waits on
-          // user Send/discard; I continue only after resume/summary" (its card rules, in docs/product/sources/
-          // until 29 September, in the history). The agent is woken with what happened (draft-cards.ts).
-          || update.message.type === "email-draft"
-          || update.message.type === "slack-draft"
         ) {
           active.awaitingUserSelection = true;
           this.#awaitingUserSelection = true;
