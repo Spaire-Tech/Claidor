@@ -168,7 +168,13 @@ checkout):
    Cards, invoices, receipts and a cancellation happen there (a waiting
    downgrade is let go first: the portal cannot cancel a subscription a
    schedule holds); Stripe sends the resulting
-   `customer.subscription.updated` and the copy follows. The Mac app's
+   `customer.subscription.updated` and the copy follows. On flexible
+   billing (Stripe's default for subscriptions made on API versions from
+   2025-09-30.clover) the portal cancels with a `cancel_at` date and leaves
+   `cancel_at_period_end` false; the copy's `cancel_at_period_end` is true
+   for either. An upgrade, a downgrade and "Start my plan now", and their
+   previews, lift whichever one is set (`_lift_cancellation`:
+   `cancel_at_period_end=false` or `cancel_at=""`). The Mac app's
    Settings page has a Cancel trial button; it calls Connect
    `DashboardService/CancelSandTrial` (`server/simeon/sand/dashboard.py`),
    which sets `cancel_at_period_end` on Stripe, so the person keeps the
@@ -388,7 +394,11 @@ events (`server/simeon/plans/service.py`, `report_usage`):
   yet stamped `stripe_reported_at`, as one `simeon_credits` event per
   person, then the rows are stamped. A failed call leaves them unstamped
   for the next run; the event's `identifier`
-  (`credits:<user>:<run>`) makes a retried run idempotent on Stripe's side.
+  (`credits:<user>:<run>`, the run named by its five minutes, not its
+  second) makes a retried run idempotent on Stripe's side, and so two
+  workers overlapping in a deploy: Stripe keeps the first event and
+  answers the second "An event already exists with identifier", logged as
+  `plans.usage.*_not_sent`.
 - **Cloud-computer seconds.** For each box running, or hibernated since
   its last report, the seconds between `sand_boxes.usage_metered_at` (or
   when it was last started) and now (or when it hibernated), as one

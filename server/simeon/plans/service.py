@@ -226,9 +226,27 @@ def snapshot_of(subscription: Any) -> dict[str, Any]:
         "current_period_end": end,
         "trial_start": epoch_to_datetime(subscription.get("trial_start")),
         "trial_end": epoch_to_datetime(subscription.get("trial_end")),
-        "cancel_at_period_end": bool(subscription.get("cancel_at_period_end")),
+        # Ends instead of renewing, either way Stripe says so (`_lift_cancellation`).
+        "cancel_at_period_end": bool(
+            subscription.get("cancel_at_period_end") or subscription.get("cancel_at")
+        ),
         "canceled_at": epoch_to_datetime(subscription.get("canceled_at")),
     }
+
+
+def _lift_cancellation(subscription: Any) -> dict[str, Any]:
+    """What undoes a cancellation waiting on the subscription, for an update
+    or its preview (28 October 2026). This code and classic billing set
+    `cancel_at_period_end`; Stripe's portal sets a `cancel_at` date instead
+    on flexible billing, the default for subscriptions made on API versions
+    from 2025-09-30.clover, and `cancel_at_period_end=false` leaves that date
+    in place: an upgrade would have charged a new month and still ended at
+    the old date. Only the one that is set is sent; nothing when neither is."""
+    if subscription.get("cancel_at_period_end"):
+        return {"cancel_at_period_end": False}
+    if subscription.get("cancel_at"):
+        return {"cancel_at": ""}
+    return {}
 
 
 def _id_of(value: Any) -> str | None:
@@ -585,6 +603,7 @@ class PlansService:
                     "items": [item],
                     "billing_cycle_anchor": "now",
                     "proration_behavior": "always_invoice",
+                    **_lift_cancellation(row.raw or {}),
                 },
             )
         except stripe_lib.StripeError as error:
@@ -658,17 +677,18 @@ class PlansService:
                     billing_cycle_anchor="now",
                     proration_behavior="always_invoice",
                     payment_behavior="error_if_incomplete",
-                    cancel_at_period_end=False,
                     metadata=metadata,
+                    **_lift_cancellation(subscription),
                 )
                 invoice_id = _id_of(subscription.get("latest_invoice"))
                 if invoice_id is not None:
                     invoice = await stripe_billing.retrieve_invoice(invoice_id)
                     amount_due = int(invoice.get("amount_paid") or 0)
             elif kind == "downgrade":
-                if row.cancel_at_period_end:
+                lift = _lift_cancellation(subscription)
+                if lift:
                     subscription = await stripe_billing.modify_subscription(
-                        row.stripe_subscription_id, cancel_at_period_end=False
+                        row.stripe_subscription_id, **lift
                     )
                 await self._downgrade_at_renewal(row, tier, interval)
                 row.scheduled_tier = tier.value
@@ -760,8 +780,8 @@ class PlansService:
             subscription = await stripe_billing.modify_subscription(
                 row.stripe_subscription_id,
                 trial_end="now",
-                cancel_at_period_end=False,
                 payment_behavior="error_if_incomplete",
+                **_lift_cancellation(row.raw or {}),
             )
         except stripe_lib.CardError as error:
             log.info(
@@ -799,7 +819,10 @@ class PlansService:
             invoice = await stripe_billing.preview_invoice(
                 customer=row.stripe_customer_id,
                 subscription=row.stripe_subscription_id,
-                subscription_details={"trial_end": "now"},
+                subscription_details={
+                    "trial_end": "now",
+                    **_lift_cancellation(row.raw or {}),
+                },
             )
         except stripe_lib.StripeError as error:
             raise _stripe_failed(
@@ -1046,7 +1069,13 @@ class PlansService:
 
         totals = await usage.unreported_credits_by_user(until=moment)
         customers = await subscriptions.customer_ids_by_user([u for u, _ in totals])
-        batch = moment.strftime("%Y%m%dT%H%M%S")
+        # Named by the run's five minutes, not its second (28 October 2026): two
+        # workers overlapping in a deploy both ran at 03:40 and sent the same
+        # usage; Stripe kept the first only because both landed in one second.
+        slot = moment.replace(
+            minute=moment.minute - moment.minute % 5, second=0, microsecond=0
+        )
+        batch = slot.strftime("%Y%m%dT%H%M%S")
         for user_id, credits in totals:
             customer_id = customers.get(user_id)
             if customer_id is None:
