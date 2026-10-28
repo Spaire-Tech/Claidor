@@ -114,7 +114,9 @@ test("the brief follows the tools it has and carries the founder's voice, and a 
     assert.match(module.buildSandBaseSystemPrompt({ cloudAgentsEnabled: false, videoSubagentOffered: false }), /You can't watch videos yet, and there is no subagent that can/);
     assert.match(prompt, /The first action there asks the user once, with a card; once they choose Always allow it runs without a card, except a risky command or a sensitive path/);
     assert.doesNotMatch(prompt, /every action needs the user's permission and raises an approval card/);
-    assert.match(prompt, /that it needs their OK and why/);
+    // The approval card is the ask: no question in chat in front of it, as upstream (28 October 2026).
+    assert.match(prompt, /the approval card is how you ask: escalate with the honest same-tool retry described below, and don't also ask in chat or put a question widget in front of it/);
+    assert.match(prompt, /the permission card ExternalShell raises is that go-ahead, so don't also ask in chat/);
     assert.doesNotMatch(prompt, /that Auto-review blocked it/);
     const withTool = module.buildSandBaseSystemPrompt({ cloudAgentsEnabled: false, screenshotToolOffered: true });
     assert.match(withTool, /use your read-only Screenshot tool to show the desktop/);

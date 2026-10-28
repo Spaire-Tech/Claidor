@@ -100,3 +100,40 @@ test("the agent is told declines in plain words; the person writing closes moot 
     assert.match(cards, /option\.value/, file);
   }
 });
+
+test("a secret request can be dismissed, which the agent hears as a decline; a given one cannot", async () => {
+  const { module, dispose } = await load();
+  try {
+    const secret = (id, extra = {}) => ({ kind: "send-message", id, timestampMs: 1, message: { type: "secret-request", secretRequest: { label: "Stripe API key", target: { kind: "box-secret", name: "STRIPE_SECRET_KEY" } } }, ...extra });
+    module.setTranscript([secret("s1"), secret("s2", { secretProvided: true })]);
+    const wakes = [];
+    const widgets = new module.WidgetResponses({
+      sessions: { activeSession: { id: "iris", db: { updateTranscriptEntry() {} } }, ensureActionTarget: async () => {} },
+      roster: { emit() {} },
+      backgroundWakes: { runHiddenPromptWake: async (agentId, source, prompt, title, options) => { wakes.push({ source, prompt, options }); } },
+    });
+    assert.deepEqual(await widgets.dismissWidget({ entryId: "s1", agentId: "iris" }), { accepted: true });
+    assert.deepEqual(await widgets.dismissWidget({ entryId: "s2", agentId: "iris" }), { accepted: false }, "already given");
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    assert.equal(wakes.length, 1);
+    assert.match(wakes[0].prompt, /dismissed your request for "Stripe API key" without giving it\. Take it as declined and don't ask for it again/);
+    assert.equal(module.getTranscript()[0].widgetDismissed, true);
+  } finally {
+    await dispose();
+  }
+});
+
+test("a secret can be kept under the name the agent gives", async () => {
+  const dir = await mkdtemp(path.join(os.tmpdir(), "simeon-secret-target-"));
+  const outfile = path.join(dir, "send.mjs");
+  await build({ entryPoints: [path.join(repoRoot, "source/host/runner/tools/send-message-tool.ts")], outfile, bundle: true, format: "esm", platform: "node", target: "node22", logLevel: "silent", external: ["electron"], banner: { js: "import { createRequire as __cr } from 'node:module'; const require = __cr(import.meta.url);" } });
+  const { secretTarget } = await import(`${pathToFileURL(outfile).href}?${Date.now()}`);
+  try {
+    assert.deepEqual(secretTarget(undefined, undefined, "STRIPE_SECRET_KEY"), { kind: "box-secret", name: "STRIPE_SECRET_KEY" });
+    assert.deepEqual(secretTarget("render", "api_key"), { kind: "box-secret", name: "RENDER_API_KEY" }, "as before without a name");
+    assert.deepEqual(secretTarget(undefined, undefined, "PATH"), { kind: "box-secret", name: "USER_PATH" }, "never one the computer runs on");
+    assert.deepEqual(secretTarget("slack", "botToken", "SLACK_X"), { kind: "channel-credential", platform: "slack", field: "botToken" }, "a channel's credential stays the channel's");
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});

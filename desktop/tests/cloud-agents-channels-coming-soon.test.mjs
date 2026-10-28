@@ -69,7 +69,8 @@ test("SendMessage: cloud-agent served by default, a dropped channel, a refused s
     assert.match(description, /Cloud agents are coming soon in Simeon/);
     assert.doesNotMatch(description, /"type":"cloud-agent"/);
     assert.match(description, /"type":"secret-request"/, "the masked input asks for any service's key");
-    assert.match(description, /the value becomes an environment variable on your computer named for both \(RENDER_API_KEY\)/);
+    assert.match(description, /the value becomes an environment variable on your computer \(RENDER_API_KEY\)/);
+    assert.match(description, /set name to the environment variable it should be/, "the agent may name it, as upstream (28 October 2026)");
     assert.doesNotMatch(description, /for a messaging connector \(discord, slack\) the value goes straight/, "no messaging connector to write to with channels off");
     assert.match(tool.module.SAND_SEND_MESSAGE_TOOL_DESCRIPTION, /"type":"cloud-agent"/, "the upstream app's full text is kept");
   } finally {

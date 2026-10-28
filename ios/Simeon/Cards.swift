@@ -1464,8 +1464,8 @@ struct RequestCardView: View {
       switch card {
       case .approval(let requestId, let summary, let reason, let command, let status, let surface, let proposedRule):
         approval(requestId: requestId, summary: summary, reason: reason, command: command, status: status, surface: surface, proposedRule: proposedRule)
-      case .secret(let label, let description, let provided):
-        secretCard(label: label, description: description, provided: provided)
+      case .secret(let label, let description, let provided, let dismissed):
+        secretCard(label: label, description: description, provided: provided, dismissed: dismissed)
       case .computer(let requestId, let instruction, let resolution):
         computer(requestId: requestId, instruction: instruction, resolution: resolution)
       }
@@ -1542,17 +1542,27 @@ struct RequestCardView: View {
     Task { await work(); busy = false }
   }
 
-  private func secretCard(label: String, description: String, provided: Bool) -> some View {
+  private func secretCard(label: String, description: String, provided: Bool, dismissed: Bool) -> some View {
     VStack(alignment: .leading, spacing: 10) {
       HStack(spacing: 8) {
         Image(systemName: "key.fill").font(.system(size: 13)).foregroundStyle(Ink.secondary)
-        Text(label).font(.system(size: 17, weight: .medium)).foregroundStyle(Ink.primary)
+        Text(label).font(.system(size: 17, weight: .medium)).foregroundStyle(dismissed ? Ink.secondary : Ink.primary)
         Spacer(minLength: 0)
         if provided { StatusPill(text: String(localized: "Saved"), dot: Ink.live, size: 12) }
+        else if dismissed { StatusPill(text: String(localized: "Dismissed")) }
+        else {
+          // Not giving it is an answer too: the agent is told it was declined.
+          Button { run { await store.dismissQuestion(entryId, in: agentId) } } label: {
+            Image(systemName: "xmark").font(.system(size: 11, weight: .semibold)).foregroundStyle(Ink.secondary)
+              .frame(width: 32, height: 32).contentShape(Rectangle())
+          }
+          .buttonStyle(.tactile)
+          .accessibilityLabel("Dismiss")
+        }
       }
-      if !description.isEmpty { Text(description).font(.system(size: 17)).foregroundStyle(Ink.secondary).fixedSize(horizontal: false, vertical: true) }
-      if !provided {
-        SecureField("Paste it here", text: $secret)
+      if !description.isEmpty && !dismissed { Text(description).font(.system(size: 17)).foregroundStyle(Ink.secondary).fixedSize(horizontal: false, vertical: true) }
+      if !provided && !dismissed {
+        SecureField("Paste your \(label)", text: $secret)
           .font(.system(size: 17))
           .typedAsIs().autocorrectionDisabled()
           .padding(.horizontal, 10).frame(height: 34)

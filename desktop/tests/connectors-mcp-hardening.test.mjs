@@ -95,7 +95,9 @@ test("a refresh the vendor refuses for good drops the refresh token, and the too
   assert.match(exec, /if \(\/invalid_grant\/i\.test\(errorLabel\(error\)\)\) \{ const \{ refreshToken: _spent, \.\.\.kept \} = credential; setVendorMcpCredential/);
   const tools = await src("host/runner/tools/sand-mcp-management-tools.ts");
   assert.doesNotMatch(tools, /Ask the user for any secret|ask the user for secrets|Ask the user for the token|ask the user, never guess|any secrets rather than guessing/);
-  assert.ok((tools.match(/Settings → MCP/g) ?? []).length >= 5, "every secret sentence points at Settings");
+  // There is no Settings → MCP in Simeon's apps (28 October 2026): no sentence sends anyone there.
+  assert.doesNotMatch(tools, /Settings → MCP/);
+  assert.ok((tools.match(/Simeon's apps have no place to type|they have no place to type it/g) ?? []).length >= 5, "every secret sentence says so plainly");
   assert.doesNotMatch(await src("shared/node/mcp/mcp-catalog-flow.ts"), /Ask the user for it and pass it/);
   assert.match(await src("shared/node/account-mcp/backend-exec.ts"), /const clientId = server\.config\.auth\?\.CLIENT_ID;/);
   assert.match(await src("shared/node/vendor-mcp/box-pull.ts"), /holdUntilMs = now\(\) \+ BOX_STORE_PULL_FAILURE_HOLD_MS/);

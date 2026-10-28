@@ -336,10 +336,13 @@ export class WidgetResponses {
   }): Promise<{ accepted: boolean }> {
     await this.tm.sessions.ensureActionTarget(args.agentId);
     const existing = getTranscript().find((entry) => entry.id === args.entryId);
+    // A question, or a secret request not yet given (28 October 2026: it had no way to be dismissed).
+    const kind = (existing?.message as any)?.type;
     if (
       existing == null ||
       existing.kind !== "send-message" ||
-      (existing.message as any)?.type !== "widget" ||
+      (kind !== "widget" && kind !== "secret-request") ||
+      (kind === "secret-request" && existing.secretProvided === true) ||
       existing.respondedValue != null ||
       existing.widgetDismissed === true
     )
@@ -366,7 +369,9 @@ export class WidgetResponses {
       // A dismissed question is a decline, and the agent hears it now, as the
       // upstream app's does ("dismiss / skip → decline"), not at whatever
       // turn comes next (28 October 2026). It may end without a word.
-      const prompt = `[The user dismissed your question "${String((existing.message as any)?.widget?.prompt ?? "")}" without answering. Take it as declined and don't ask it again. Carry on without it if the task allows; if the task waited on it, end your turn without a message.]`;
+      const prompt = kind === "secret-request"
+        ? `[The user dismissed your request for "${String((existing.message as any)?.secretRequest?.label ?? "")}" without giving it. Take it as declined and don't ask for it again. Carry on without it if the task allows; if the task waited on it, end your turn without a message.]`
+        : `[The user dismissed your question "${String((existing.message as any)?.widget?.prompt ?? "")}" without answering. Take it as declined and don't ask it again. Carry on without it if the task allows; if the task waited on it, end your turn without a message.]`;
       void Promise.resolve()
         .then(() => this.tm.backgroundWakes.runHiddenPromptWake(args.agentId, "question-dismissed", prompt, say(this.tm.userLanguage?.(), "tray.resumeAfterDismissFailed"), { isSilenceAllowed: true }))
         .catch((error: unknown) => console.warn(`[widgets] decline wake for ${args.agentId} failed: ${error instanceof Error ? error.message : String(error)}`));

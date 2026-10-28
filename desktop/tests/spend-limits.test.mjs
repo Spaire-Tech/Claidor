@@ -93,11 +93,19 @@ test("agents may pass messages without a cap since 8 October 2026; a cap set in 
   }
 });
 
-test("a routine due every minute runs every minute on the Mac since 8 October 2026 (no 15-minute hold)", async () => {
+test("a routine runs at most every five minutes, as the upstream app's rules say (28 October 2026)", async () => {
   const loaded = await bundle("source/host/extensions/automations/sand-trigger-hub.ts", "trigger-hub");
   try {
     const { SandTriggerHub, ROUTINE_MIN_INTERVAL_MS } = loaded.module;
-    assert.equal(ROUTINE_MIN_INTERVAL_MS, 0);
+    assert.equal(ROUTINE_MIN_INTERVAL_MS, 5 * 60_000);
+    {
+      const now = Date.now();
+      const fired = [];
+      const automation = { id: "tick", isEnabled: true, trigger: { type: "cron", schedule: "* * * * *" }, createdAt: now - 3_600_000, lastRunAt: now - 2 * 60_000 };
+      const hub = new SandTriggerHub({ polling: { start: () => ({ dispose() {} }) }, sources: [], listAutomations: async () => [{ agentId: "a", automation }], fire: async () => undefined, fireCron: async (agentId, routine) => { fired.push(routine.id); }, isReady: () => true });
+      await hub.reconcileNow();
+      assert.deepEqual(fired, [], "two minutes after its last run: it waits");
+    }
     const now = Date.now();
     const fired = [];
     const automation = { id: "tick", isEnabled: true, trigger: { type: "cron", schedule: "* * * * *" }, createdAt: now - 3_600_000, lastRunAt: now - 5 * 60_000 };

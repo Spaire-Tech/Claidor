@@ -189,8 +189,8 @@ public struct RoutineRef: Hashable, Sendable {
 public enum RequestCard: Hashable, Sendable {
   /** `auto-review-approval`: Allow once, Always allow, Deny (`resolveAutoReviewApproval`); what it is about (`surface`) and the rule Always allow would add (`proposedRule`). */
   case approval(requestId: String, summary: String, reason: String, command: String?, status: String, surface: String?, proposedRule: String?)
-  /** `secret-request`: a password field and Save securely (`submitSecret`). */
-  case secret(label: String, description: String, provided: Bool)
+  /** `secret-request`: a password field and Save securely (`submitSecret`), or the X (`dismissWidget`), a decline. */
+  case secret(label: String, description: String, provided: Bool, dismissed: Bool)
   /** A message with `boxRequestId`: "Your turn on the computer" (`handBackForeverBox`). */
   case computer(requestId: String, instruction: String, resolution: String?)
 }
@@ -1131,7 +1131,7 @@ public enum Chat {
         return .request(id: entry.id, card: .approval(requestId: approval["requestId"]?.string ?? "", summary: approval["summary"]?.string ?? "", reason: approval["reason"]?.string ?? "", command: approval["command"]?.string, status: approval["status"]?.string ?? "pending", surface: approval["surface"]?.string, proposedRule: approval["proposedRule"]?.string))
       case "secret-request":
         guard let secret = message["secretRequest"] else { return nil }
-        return .request(id: entry.id, card: .secret(label: secret["label"]?.string ?? L10n.text("A secret"), description: secret["description"]?.string ?? "", provided: entry["secretProvided"]?.bool ?? false))
+        return .request(id: entry.id, card: .secret(label: secret["label"]?.string ?? L10n.text("A secret"), description: secret["description"]?.string ?? "", provided: entry["secretProvided"]?.bool ?? false, dismissed: entry["widgetDismissed"]?.bool ?? false))
       case "cloud-agent":
         guard let bcId = message["bcId"]?.text, !bcId.isEmpty else { return nil }
         return .cloudAgent(id: entry.id, bcId: bcId)

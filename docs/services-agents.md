@@ -1432,6 +1432,24 @@ history). What changed to match them:
     question used to close at the next turn of any kind.
   * Dismissing one tells the agent at once that it was declined (a hidden turn that may end
     without a word); the next turn's note says "take each as declined".
+* **The secret request.**
+  * It can be dismissed (the X on both apps), and the agent hears at once that it was declined,
+    as for a question. It could not be dismissed before.
+  * The agent may name the variable it wants (`name`, as `RENDER_API_KEY`) instead of a
+    connector and a field.
+* **The box handoff is the ask** for a sign-in, a one-time code, 3-D Secure or a QR code: the
+  agent never asks for a password or a code in the chat. With no email connector to read a
+  store's code, it hands over the computer at the code field.
+* **A "press and hold" bot check** is pressed by a helper (`browser_click` with
+  `holdDurationMs`), not handed to the person. Anything else that asks to prove you are human
+  is still handed over, never solved.
+* **The approval card is the ask.** The brief no longer has the agent ask in the chat, or put a
+  question in front of a card, for something the approval or permission card already asks.
+* **No "Settings → MCP".** The connector tools pointed people to a place neither app has; they
+  now say the apps have no place to type it yet.
+* **Routines run at most every 5 minutes**, on the computer (`ROUTINE_MIN_INTERVAL_MS`,
+  `sand-trigger-hub.ts`) and on the server (`ROUTINE_MIN_INTERVAL`, `listeners_service.py`),
+  as the upstream app's rules say. There was no gap since 8 October.
 
 ### Files and lists in the chat
 

@@ -862,6 +862,8 @@ struct SecretCardView: View {
   let label: String
   let description: String
   let provided: Bool
+  /** Dismissed with its X: a decline the agent is told (`dismissWidget`). */
+  var dismissed = false
   let look: Look
   @Environment(AppStore.self) private var store
   @State private var value = ""
@@ -877,7 +879,7 @@ struct SecretCardView: View {
             .tracking(-0.15)
             .foregroundStyle(look.ink)
             .cssLineHeight(22, size: 14, weight: .medium)
-          let line = provided || saved ? String(localized: "Saved securely and kept private.") : description
+          let line = provided || saved ? String(localized: "Saved securely and kept private.") : dismissed ? "" : description
           if !line.isEmpty {
             Text(line)
               .font(.system(size: 14))
@@ -889,9 +891,24 @@ struct SecretCardView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         if provided || saved {
           StatusPill(text: String(localized: "Saved"), look: look, dot: look.working)
+        } else if dismissed {
+          StatusPill(text: String(localized: "Dismissed"), look: look)
+        } else {
+          Button {
+            Task { await store.dismissQuestion(entryId, in: agentId) }
+          } label: {
+            Image(systemName: "xmark")
+              .font(.system(size: 11, weight: .medium))
+              .foregroundStyle(look.inkSecondary)
+              .frame(width: 20, height: 20)
+              .contentShape(RoundedRectangle(cornerRadius: 6))
+          }
+          .buttonStyle(.hand)
+          .help("Dismiss without giving it")
+          .accessibilityLabel("Dismiss request")
         }
       }
-      if !(provided || saved) {
+      if !(provided || saved || dismissed) {
         HStack(alignment: .top, spacing: 8) {
           SecureField("", text: $value, prompt: Text("Paste your \(label)").foregroundStyle(look.placeholder))
             .textFieldStyle(.plain)

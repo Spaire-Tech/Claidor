@@ -22,7 +22,7 @@ export interface SendMessageInput {
   readonly type: SendMessageType; readonly content?: string | undefined; readonly url?: string | undefined;
   readonly images?: readonly { readonly url: string; readonly alt?: string | undefined }[] | undefined; readonly alt?: string | undefined;
   readonly reply_to?: string | undefined; readonly channel?: string | undefined; readonly widget?: unknown; readonly bcId?: string | undefined;
-  readonly secret?: { readonly label: string; readonly description?: string | undefined; readonly connector: string; readonly field: string } | null | undefined;
+  readonly secret?: { readonly label: string; readonly description?: string | undefined; readonly name?: string | undefined; readonly connector?: string | undefined; readonly field?: string | undefined } | null | undefined;
   readonly final?: boolean | undefined;
 }
 export interface SendMessageIssue { readonly path: readonly (string | number)[]; readonly message: string }
@@ -163,8 +163,9 @@ const objectSchema = z.object({
   secret: z.preprocess(secretOrUndefined, z.object({
     label: z.string().trim().min(1).describe('What credential to ask for, shown as the card title and echoed in the field placeholder ("Paste your \u2026"), e.g. "Slack bot token".'),
     description: z.string().trim().optional().describe("Optional short help shown under the label."),
-    connector: z.string().trim().min(1).describe("The connector/platform the secret is for. The value is written to that connector's per-agent credential file."),
-    field: z.string().trim().min(1).describe('The credential field name to store the value under, e.g. "token".'),
-  }).nullable().optional()).describe("Required when type is secret-request; null for every other type. Asks the user for a credential through a masked secure input; the value goes straight to the connector's credential file and never reaches you or the chat. You only learn that it was provided."),
+    name: z.string().trim().min(1).optional().describe('The environment variable to keep it in on your computer, exactly as your commands will use it, e.g. "STRIPE_SECRET_KEY" (capitals, digits and underscores). Give this, or connector and field.'),
+    connector: z.string().trim().min(1).optional().describe("The connector/platform the secret is for. For a messaging channel (discord, slack) the value goes to that connector's credential file; for any other service it names the environment variable with field, unless name is given."),
+    field: z.string().trim().min(1).optional().describe('The credential field name to store the value under, e.g. "token".'),
+  }).nullable().optional()).describe("Required when type is secret-request; null for every other type. Asks the user for a credential through a masked secure input; the value goes straight to where it is kept (an environment variable on your computer, or a messaging connector's credential file) and never reaches you or the chat. You only learn that it was provided, or that they dismissed it, which is a decline."),
 });
 export const sendMessageParameters = z.preprocess(stripFieldsOfOtherTypes, objectSchema).superRefine((value, ctx) => { for (const issue of refineSendMessage(value)) ctx.addIssue({ code: "custom", path: [...issue.path], message: issue.message }); });

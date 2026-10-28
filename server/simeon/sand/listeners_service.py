@@ -57,9 +57,9 @@ NEXT_POLL_AFTER_MS = 15_000
 #: says (2 October 2026): each run is a whole agent turn on the expensive
 #: model, and a schedule of "every minute" is almost always a mistake. The
 #: app holds the same gap on the Mac (`ROUTINE_MIN_INTERVAL_MS`).
-#: No gap since 8 October 2026, as the upstream app has none; the hold stays
-#: for a gap set on purpose.
-ROUTINE_MIN_INTERVAL = timedelta(0)
+#: No gap from 8 October 2026; five minutes since 28 October 2026, as the
+#: upstream app's own routine rules say ("fastest accepted is @every 5m").
+ROUTINE_MIN_INTERVAL = timedelta(minutes=5)
 WEBHOOK_PLATFORMS = ("linear", "sentry", "pagerduty")
 
 GITHUB_KINDS = (
