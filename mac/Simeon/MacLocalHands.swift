@@ -445,34 +445,58 @@ actor LocalHandsProvider {
     Task { await self.flush() }
   }
 
+  /** A batch the box did not take is kept and sent again, with what was queued since, after each of `LocalExec.answerRetrySeconds`; then dropped. */
   private func flush() async {
+    var retries = 0
     while !outbox.isEmpty {
       let batch = outbox
       outbox = []
-      await post(batch, deadline: LocalExec.dataPostSeconds)
+      if await post(batch, deadline: LocalExec.dataPostSeconds) {
+        retries = 0
+        continue
+      }
+      guard retries < LocalExec.answerRetrySeconds.count else {
+        LocalHandsLog.write("[local-exec-provider] dropping \(batch.count)-frame response batch after \(retries) retries")
+        retries = 0
+        continue
+      }
+      outbox = batch + outbox
+      try? await Task.sleep(nanoseconds: UInt64(LocalExec.answerRetrySeconds[retries] * 1_000_000_000))
+      retries += 1
     }
     flushing = false
   }
 
-  /** Three tries, 200 ms apart; a batch that still fails is dropped and said so in the log. */
-  private func post(_ frames: [JSON], deadline: Double) async {
-    guard let connection = try? await gateway.currentConnection(), let url = URL(string: connection.baseURL + LocalExecWire.responsesPath) else { return }
+  /** Three tries, 200 ms apart: false when the box did not take it and it may go again (`LocalExec.answerRetried`); one refused for good is dropped. Either is said in the log. */
+  @discardableResult
+  private func post(_ frames: [JSON], deadline: Double) async -> Bool {
+    guard let connection = try? await gateway.currentConnection(), let url = URL(string: connection.baseURL + LocalExecWire.responsesPath) else {
+      LocalHandsLog.write("[local-exec-provider] \(frames.count)-frame response batch not sent: no address for the computer")
+      return false
+    }
     let body = LocalExecWire.batch(providerId: providerId, frames: frames)
     var request = URLRequest.post(url, json: body, headers: connection.headers())
     request.timeoutInterval = deadline
     var last = ""
+    var status = 0
     for attempt in 0..<3 {
       do {
         let (_, response) = try await session.data(for: request)
-        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
-        if (200..<300).contains(status) { return }
+        status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        if (200..<300).contains(status) { return true }
         last = "Error (http_\(status))"
       } catch {
+        status = 0
         last = String(describing: type(of: error))
       }
       if attempt < 2 { try? await Task.sleep(nanoseconds: 200_000_000) }
     }
+    if LocalExec.answerRetried(status: status) {
+      LocalHandsLog.write("[local-exec-provider] \(frames.count)-frame response batch failed 3 POSTs: \(last)")
+      return false
+    }
     LocalHandsLog.write("[local-exec-provider] dropping \(frames.count)-frame response batch after 3 failed POSTs: \(last)")
+    return true
   }
 }
 

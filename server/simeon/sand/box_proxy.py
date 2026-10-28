@@ -47,7 +47,7 @@ from simeon.postgres import AsyncSession
 from simeon.routing import APIRouter
 
 from .box_e2b import KIND as E2B_KIND
-from .box_hosts import BOX_PORTS
+from .box_hosts import BOX_PORTS, BoxHostError
 from .box_service import (
     ATTACHED_REFRESH_SECONDS,
     broker,
@@ -209,8 +209,9 @@ async def _resolve(
 # one is woken. The answer went straight to the app (Sage's computer, 21
 # October 2026: frozen at 18:09:36, woken and replaced by 18:10:00). Now,
 # while an ensure is under way, the request waits for it and goes once
-# more, to the new sandbox or the woken one. It never reached a box the
-# first time, so it cannot arrive twice.
+# more, to the new sandbox or the woken one; an answer to the box's own
+# request wakes it (below). It never reached a box the first time, so it
+# cannot arrive twice.
 
 #: A body up to this size is kept so the request can go again (every command
 #: and poll the app sends); a larger upload streams through as before.
@@ -251,16 +252,23 @@ async def kept_body(request: Request) -> bytes | None:
 
 
 async def _replacement(
-    sessions: LookupSessions, box: SandBox, port: int, token: str, request: Request
+    sessions: LookupSessions,
+    box: SandBox,
+    port: int,
+    token: str,
+    request: Request,
+    *,
+    ensured: bool = False,
 ) -> tuple[SandBox, str, dict[str, str]] | None:
     """Where a request E2B turned away goes once more: while an ensure holds
     the person's lock (the box being woken or replaced), waited for up to
     `REPLACED_WAIT_SECONDS`, the box as that ensure left it, a new sandbox
     or the same one awake again. None at once when nothing is under way (a
     sleeping or lost sandbox, which the app's EnsureSandBox wakes or makes,
-    as before), and when the app hangs up."""
+    as before), and when the app hangs up. `ensured`: an ensure was seen
+    holding the lock just now, so one that has already ended counts."""
     deadline = time.monotonic() + REPLACED_WAIT_SECONDS
-    waited = False
+    waited = ensured
     while True:
         async with sessions() as db:
             # The lock before the row: an ensure that ends in between has
@@ -278,6 +286,60 @@ async def _replacement(
             return None
         waited = True
         await asyncio.sleep(REPLACED_POLL_SECONDS)
+
+
+# --- a box asleep under a run's answer --------------------------------------------
+#
+# A run on the box can wait on an answer from an app: a command's output from
+# the person's Mac (`local-exec/responses`) or a passkey (`webauthn/responses`).
+# When the box slept or E2B froze it in between, E2B said "The sandbox was not
+# found" and the answer went nowhere (Nora's Stripe check, 27 October 2026:
+# the Mac's three tries at 18:38:01 refused, the box put to sleep a second
+# later, the run left waiting for good). Such an answer now wakes the box and
+# goes once more; the run, frozen with the box, takes it where it stopped.
+# Nothing else the app sends wakes the box: the app wakes it when it needs it
+# (EnsureSandBox), and reading never does.
+
+#: The paths that answer the box's own requests.
+ANSWERS = ("local-exec/responses", "webauthn/responses")
+
+#: Wakes the person's box under their ensure lock (`broker.wake_locked`).
+BoxWake = Callable[[AsyncSession, UUID], Awaitable[str]]
+_wake: BoxWake = broker.wake_locked
+
+
+def answers_the_box(method: str, path: str) -> bool:
+    return method == "POST" and path.strip("/") in ANSWERS
+
+
+async def _woken(
+    sessions: LookupSessions, box: SandBox, port: int, token: str, request: Request
+) -> tuple[str, tuple[SandBox, str, dict[str, str]] | None]:
+    """The box woken for an answer, and where the answer goes now: what the
+    wake did (`broker.wake`'s word, `ensuring` when an ensure had the lock
+    and was waited for, `failed`), and the box's address, None when there
+    is no box to wake or the host is full. The wake runs in a session of its
+    own, committed here: the box's new state is kept, and the person's lock
+    released, before the answer is sent."""
+    try:
+        async with sessions() as db:
+            outcome = await _wake(db, box.user_id)
+            await db.commit()
+    except BoxHostError as error:
+        log.warning("sand.box.proxy.wake_failed", box=str(box.id), error=str(error))
+        return "failed", None
+    log.info("sand.box.proxy.woke", box=str(box.id), outcome=outcome)
+    if outcome == "ensuring":
+        replaced = await _replacement(sessions, box, port, token, request, ensured=True)
+        return outcome, replaced
+    if outcome not in ("woken", "awake"):
+        return outcome, None
+    async with sessions() as db:
+        current = await _lookup(db, box.id, token)
+    if current is None:
+        return outcome, None
+    target = upstream_target(current, port)
+    return outcome, None if target is None else (current, target[0], target[1])
 
 
 # --- HTTP ------------------------------------------------------------------------
@@ -338,23 +400,40 @@ async def _proxy_http(
     if response.status_code >= 400:
         content = await response.aread()
         await response.aclose()
-        if kept is not None and sandbox_gone(box, response.status_code, content):
+        answers = answers_the_box(request.method, path)
+        deadline = time.monotonic() + REPLACED_WAIT_SECONDS
+        while kept is not None and sandbox_gone(box, response.status_code, content):
             replaced = await _replacement(sessions, box, port, token, request)
+            woke = None
+            if replaced is None and answers:
+                woke, replaced = await _woken(sessions, box, port, token, request)
             log.info(
                 "sand.box.proxy.sandbox_gone",
                 box=str(box.id),
                 port=port,
                 path=path[:120],
                 replaced=replaced is not None,
+                woke=woke,
             )
-            if replaced is not None:
-                box, base, dial = replaced
-                response = await send(base, dial)
-                if isinstance(response, Response):
-                    return response
-                if response.status_code >= 400:
-                    content = await response.aread()
-                    await response.aclose()
+            if replaced is None:
+                break
+            box, base, dial = replaced
+            response = await send(base, dial)
+            if isinstance(response, Response):
+                return response
+            content = b""
+            if response.status_code >= 400:
+                content = await response.aread()
+                await response.aclose()
+            # An answer goes again until the box takes it: E2B may still be
+            # freezing the box, its API saying running while its proxy has
+            # lost it, and the next wake starts it once frozen.
+            if not answers or time.monotonic() >= deadline:
+                break
+            if await request.is_disconnected():
+                break
+            if sandbox_gone(box, response.status_code, content):
+                await asyncio.sleep(REPLACED_POLL_SECONDS)
 
     if response.status_code >= 400:
         # The box's own refusal, read whole (a gateway error is a short

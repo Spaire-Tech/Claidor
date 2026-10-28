@@ -1220,6 +1220,17 @@ class BoxBrokerService:
         )
         return bool(held)
 
+    async def wake_locked(self, db: AsyncSession, user_id: UUID) -> str:
+        """`wake` under the person's ensure lock, for the proxy
+        (`box_proxy._woken`), so it never races an EnsureSandBox: `ensuring`
+        at once when an ensure holds the lock, which wakes or replaces the
+        box itself. The lock is released with `db`'s commit."""
+        try:
+            await self._take_ensure_lock(db, user_id)
+        except BoxEnsureInProgress:
+            return "ensuring"
+        return await self.wake(db, user_id)
+
     async def recreate(
         self,
         db: AsyncSession,
@@ -1650,6 +1661,16 @@ class BoxBrokerService:
                     # Sent already: one the update could not replace still
                     # sleeps by the usual rule, rather than stay awake.
             if now - idle_since < idle_after:
+                continue
+            if not health.reachable and now - idle_since < max(idle_after, after):
+                # A box that did not answer may be busy: E2B's proxy lost it
+                # for a moment while its API said running, and the sleeper
+                # took the silence for idle (Nora's Stripe check, 27 October
+                # 2026: a run waiting on the Mac, put to sleep at 18:38:02).
+                # Unheard, it sleeps only after the longer idle time.
+                log.info(
+                    "sand.box.sleep.deferred", box=str(box.id), reason="unreachable"
+                )
                 continue
             waiting = await DesktopChatInboxRepository.from_session(db).users_waiting(
                 [box.user_id], now - INBOX_HOLDS_AWAKE

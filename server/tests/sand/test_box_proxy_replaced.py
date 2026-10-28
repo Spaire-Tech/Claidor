@@ -4,7 +4,9 @@ awake on E2B's free plan, then woken and replaced by 18:10:00). E2B answers
 502 "The sandbox was not found" for the old sandbox; while an ensure holds
 the person's lock, the proxy waits for it and sends the request once more,
 to the new sandbox or the woken one. With nothing under way, the answer goes
-to the app at once, as before, and the app's EnsureSandBox wakes the box.
+to the app at once, as before, and the app's EnsureSandBox wakes the box;
+an answer to the box's own request (a command's output from the Mac) wakes
+it and goes again.
 """
 
 import uuid
@@ -22,7 +24,7 @@ from starlette.responses import StreamingResponse
 from simeon.models import SandBox
 from simeon.postgres import AsyncSession
 from simeon.sand import box_proxy
-from simeon.sand.box_service import broker
+from simeon.sand.box_service import BoxEnsureInProgress, broker
 
 GONE = b'{"sandboxId":"old","message":"The sandbox was not found","code":502}'
 USER = uuid.UUID(int=5)
@@ -70,9 +72,16 @@ def _request(
     )
 
 
+class _Db:
+    commits = 0
+
+    async def commit(self) -> None:
+        _Db.commits += 1
+
+
 @asynccontextmanager
 async def _sessions() -> AsyncIterator[Any]:
-    yield None
+    yield _Db()
 
 
 class _Chunks(httpx.AsyncByteStream):
@@ -86,11 +95,20 @@ class _Chunks(httpx.AsyncByteStream):
 @pytest.fixture
 def world(monkeypatch: pytest.MonkeyPatch) -> Any:
     """The row the proxy reads, the person's ensure lock (`ensuring`, one
-    answer per check, then free), the sandboxes that answer (`live`), and
-    each request E2B saw (`seen`: sandbox, body, traffic token)."""
+    answer per check, then free), the sandboxes that answer (`live`), each
+    request E2B saw (`seen`: sandbox, body, traffic token), and what each
+    wake does (`wakes`: its word, and the sandbox it brings back, if any;
+    `woke`: the wakes asked for)."""
     state = SimpleNamespace(
-        row=_box("old"), ensuring=[], live={"new"}, seen=[], on_check=None
+        row=_box("old"),
+        ensuring=[],
+        live={"new"},
+        seen=[],
+        on_check=None,
+        wakes=[],
+        woke=0,
     )
+    _Db.commits = 0
 
     async def lookup(db: Any, box_id: uuid.UUID, token: str) -> SandBox | None:
         return state.row if box_id == BOX and token == "n" else None
@@ -114,8 +132,19 @@ def world(monkeypatch: pytest.MonkeyPatch) -> Any:
             )
         return httpx.Response(502, content=GONE)
 
+    async def wake(db: Any, user_id: uuid.UUID) -> str:
+        assert user_id == USER
+        state.woke += 1
+        outcome, sandbox = state.wakes.pop(0) if state.wakes else ("awake", None)
+        if outcome == "ensuring":
+            state.ensuring = [True]
+        if sandbox is not None:
+            state.live = {sandbox}
+        return str(outcome)
+
     box_proxy.set_lookup_for_tests(lookup)
     monkeypatch.setattr(box_proxy, "_ensuring", ensuring)
+    monkeypatch.setattr(box_proxy, "_wake", wake)
     monkeypatch.setattr(box_proxy, "REPLACED_POLL_SECONDS", 0)
     box_proxy.set_client_factory_for_tests(
         lambda: httpx.AsyncClient(transport=httpx.MockTransport(e2b))
@@ -125,10 +154,8 @@ def world(monkeypatch: pytest.MonkeyPatch) -> Any:
     box_proxy.set_client_factory_for_tests(None)
 
 
-async def _proxied(request: Request) -> tuple[int, bytes]:
-    response = await box_proxy._proxy_http(
-        request, BOX, 1340, "api/sendPrompt", _sessions
-    )
+async def _proxied(request: Request, path: str = "api/sendPrompt") -> tuple[int, bytes]:
+    response = await box_proxy._proxy_http(request, BOX, 1340, path, _sessions)
     if isinstance(response, StreamingResponse):
         chunks = [chunk async for chunk in response.body_iterator]
         assert all(isinstance(chunk, bytes) for chunk in chunks)
@@ -179,6 +206,7 @@ class TestReplaced:
         status, body = await _proxied(_request())
         assert (status, body) == (502, GONE)
         assert len(world.seen) == 1
+        assert world.woke == 0
 
     async def test_the_wait_ends_and_the_answer_goes_to_the_app(
         self, world: Any, monkeypatch: pytest.MonkeyPatch
@@ -205,6 +233,93 @@ class TestReplaced:
         status, body = await _proxied(request)
         assert (status, body) == (502, GONE)
         assert len(world.seen) == 1
+
+
+ANSWER = b'{"providerId":"p","frames":[{"requestId":"r","kind":"exit"}]}'
+
+
+@pytest.mark.asyncio
+class TestAnswerWakes:
+    """An answer to the box's own request (Nora's Stripe check, 27 October
+    2026: the Mac's answer refused three times while the box slept)."""
+
+    async def test_an_answer_to_a_sleeping_box_wakes_it_and_arrives(
+        self, world: Any
+    ) -> None:
+        world.live = set()
+        world.wakes = [("woken", "old")]
+        status, body = await _proxied(_request(body=ANSWER), "local-exec/responses")
+        assert (status, body) == (200, b'{"sandbox":"old"}')
+        assert world.seen == [
+            ("old", ANSWER, "traffic-old"),
+            ("old", ANSWER, "traffic-old"),
+        ]
+        assert world.woke == 1
+        # The wake is kept, and the person's lock let go, before it goes.
+        assert _Db.commits == 1
+
+    async def test_an_answer_goes_again_while_e2b_is_still_freezing_the_box(
+        self, world: Any
+    ) -> None:
+        # E2B's API says running while its proxy has lost the box; the wake
+        # that finds it frozen starts it.
+        world.live = set()
+        world.wakes = [("awake", None), ("awake", None), ("woken", "old")]
+        status, body = await _proxied(_request(body=ANSWER), "local-exec/responses")
+        assert (status, body) == (200, b'{"sandbox":"old"}')
+        assert world.woke == 3
+        assert len(world.seen) == 4
+
+    async def test_an_ensure_under_way_is_waited_for(self, world: Any) -> None:
+        world.live = set()
+        world.wakes = [("ensuring", "old")]
+        status, body = await _proxied(_request(body=ANSWER), "local-exec/responses")
+        assert (status, body) == (200, b'{"sandbox":"old"}')
+        assert world.woke == 1
+
+    async def test_a_lost_box_is_not_woken(self, world: Any) -> None:
+        world.live = set()
+        world.wakes = [("no-box", None)]
+        status, body = await _proxied(_request(body=ANSWER), "local-exec/responses")
+        assert (status, body) == (502, GONE)
+        assert len(world.seen) == 1
+
+    async def test_the_tries_end_and_the_answer_goes_to_the_app(
+        self, world: Any, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr(box_proxy, "REPLACED_WAIT_SECONDS", 0)
+        world.live = set()
+        status, body = await _proxied(_request(body=ANSWER), "local-exec/responses")
+        assert (status, body) == (502, GONE)
+        assert world.woke == 1
+        assert len(world.seen) == 2
+
+
+def test_only_an_answer_to_the_box_wakes_it() -> None:
+    assert box_proxy.answers_the_box("POST", "local-exec/responses")
+    assert box_proxy.answers_the_box("POST", "/webauthn/responses")
+    assert not box_proxy.answers_the_box("GET", "local-exec/requests")
+    assert not box_proxy.answers_the_box("GET", "local-exec/responses")
+    assert not box_proxy.answers_the_box("POST", "api/sendPrompt")
+
+
+@pytest.mark.asyncio
+async def test_a_wake_never_races_an_ensure(monkeypatch: pytest.MonkeyPatch) -> None:
+    async def held(db: Any, user_id: uuid.UUID) -> None:
+        raise BoxEnsureInProgress()
+
+    async def wake(db: Any, user_id: uuid.UUID) -> str:
+        return "woken"
+
+    monkeypatch.setattr(broker, "wake", wake)
+    monkeypatch.setattr(broker, "_take_ensure_lock", held)
+    assert await broker.wake_locked(cast(AsyncSession, None), USER) == "ensuring"
+
+    async def free(db: Any, user_id: uuid.UUID) -> None:
+        return None
+
+    monkeypatch.setattr(broker, "_take_ensure_lock", free)
+    assert await broker.wake_locked(cast(AsyncSession, None), USER) == "woken"
 
 
 def test_only_e2b_saying_the_sandbox_is_gone_counts() -> None:
