@@ -2318,6 +2318,238 @@
         }
       }
     },
+    "1Password didn't answer." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1Password hat nicht geantwortet."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1Password no respondió."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1Password n’a pas répondu."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1Password non ha risposto."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1Password gaf geen antwoord."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1Password nie odpowiedział."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O 1Password não respondeu."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1Password svarade inte."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1Password yanıt vermedi."
+          }
+        }
+      }
+    },
+    "1Password didn't give a key." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1Password hat keinen Schlüssel ausgegeben."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1Password no dio ninguna clave."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1Password n’a pas donné de clé."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1Password non ha fornito una chiave."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1Password gaf geen sleutel."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1Password nie wydał klucza."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O 1Password não forneceu uma chave."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1Password gav ingen nyckel."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1Password bir anahtar vermedi."
+          }
+        }
+      }
+    },
+    "1Password didn't make the vault." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1Password hat den Tresor nicht angelegt."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1Password no creó la bóveda."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1Password n’a pas créé le coffre."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1Password non ha creato la cassaforte."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1Password heeft de kluis niet gemaakt."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1Password nie utworzył sejfu."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O 1Password não criou o cofre."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1Password skapade inte valvet."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1Password kasayı oluşturmadı."
+          }
+        }
+      }
+    },
+    "1Password lists no accounts. Sign in to the 1Password app, then try again." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1Password zeigt keine Konten. Melde dich in der 1Password-App an und versuch es dann noch einmal."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1Password no muestra ninguna cuenta. Inicia sesión en la app 1Password y vuelve a intentarlo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1Password n’indique aucun compte. Connecte-toi à l’app 1Password, puis réessaie."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1Password non mostra alcun account. Accedi all’app 1Password, poi riprova."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1Password toont geen accounts. Log in bij de 1Password-app en probeer het opnieuw."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1Password nie pokazuje żadnych kont. Zaloguj się w aplikacji 1Password i spróbuj ponownie."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O 1Password não mostra nenhuma conta. Entre no app 1Password e tente de novo."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1Password visar inga konton. Logga in i 1Password-appen och försök igen."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1Password hiç hesap göstermiyor. 1Password uygulamasında oturum aç, sonra tekrar dene."
+          }
+        }
+      }
+    },
     ": " : {
       "shouldTranslate" : false
     },
@@ -9700,6 +9932,64 @@
         }
       }
     },
+    "Connect 1Password" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1Password verbinden"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conectar 1Password"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connecter 1Password"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collega 1Password"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1Password koppelen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Połącz 1Password"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conectar o 1Password"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anslut 1Password"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1Password’ü bağla"
+          }
+        }
+      }
+    },
     "Connect apps" : {
       "localizations" : {
         "de" : {
@@ -13767,6 +14057,64 @@
         }
       }
     },
+    "Dismiss without connecting" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ignorieren, ohne zu verbinden"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Descartar sin conectar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ignorer sans connecter"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ignora senza collegare"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Negeren zonder te koppelen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Odrzuć bez łączenia"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ignorar sem conectar"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avfärda utan att ansluta"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bağlamadan kapat"
+          }
+        }
+      }
+    },
     "Dismiss without filling it in" : {
       "localizations" : {
         "de" : {
@@ -16087,6 +16435,64 @@
         }
       }
     },
+    "Fill with 1Password" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mit 1Password ausfüllen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rellenar con 1Password"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remplir avec 1Password"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compila con 1Password"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invullen met 1Password"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wypełnij z 1Password"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preencher com o 1Password"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fyll i med 1Password"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1Password ile doldur"
+          }
+        }
+      }
+    },
     "Filter connectors" : {
       "localizations" : {
         "de" : {
@@ -16953,6 +17359,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Başlangıç"
+          }
+        }
+      }
+    },
+    "From your vault shared with Simeon. Your agent never sees it." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aus deinem mit Simeon geteilten Tresor. Dein Agent sieht es nie."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De tu bóveda compartida con Simeon. Tu agente nunca lo ve."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Depuis ton coffre partagé avec Simeon. Ton agent ne le voit jamais."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dalla tua cassaforte condivisa con Simeon. Il tuo agente non la vede mai."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uit je kluis die met Simeon is gedeeld. Je agent ziet het nooit."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Z twojego sejfu udostępnionego Simeonowi. Twój agent nigdy go nie widzi."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Do seu cofre compartilhado com o Simeon. Seu agente nunca vê."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Från ditt valv som delas med Simeon. Din agent ser det aldrig."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon ile paylaşılan kasandan. Ajanın onu asla görmez."
           }
         }
       }
@@ -18117,6 +18581,64 @@
         }
       }
     },
+    "How to set it up" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "So richtest du es ein"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cómo configurarlo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comment le configurer"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Come configurarlo"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zo stel je het in"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jak to skonfigurować"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Como configurar"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Så ställer du in det"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nasıl kurulur"
+          }
+        }
+      }
+    },
     "HTTPS link" : {
       "localizations" : {
         "de" : {
@@ -18345,6 +18867,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Görsel oluşturma hiç görsel döndürmedi."
+          }
+        }
+      }
+    },
+    "Install 1Password's command-line tool, then turn on Integrate with 1Password CLI in the 1Password app (Settings → Developer)." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Installiere das Befehlszeilentool von 1Password und schalte dann „Mit 1Password CLI integrieren“ in der 1Password-App ein (Einstellungen → Entwickler)."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Instala la herramienta de línea de comandos de 1Password y activa «Integrar con 1Password CLI» en la app 1Password (Ajustes → Desarrollador)."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Installe l’outil en ligne de commande de 1Password, puis active « Intégrer avec 1Password CLI » dans l’app 1Password (Réglages → Développeur)."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Installa lo strumento da riga di comando di 1Password, poi attiva «Integra con 1Password CLI» nell’app 1Password (Impostazioni → Sviluppatore)."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Installeer de opdrachtregeltool van 1Password en zet daarna ‘Integreren met 1Password CLI’ aan in de 1Password-app (Instellingen → Ontwikkelaar)."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zainstaluj narzędzie wiersza poleceń 1Password, a potem włącz „Integracja z 1Password CLI” w aplikacji 1Password (Ustawienia → Programista)."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Instale a ferramenta de linha de comando do 1Password e ative “Integrar com o 1Password CLI” no app 1Password (Ajustes → Desenvolvedor)."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Installera 1Passwords kommandoradsverktyg och slå sedan på ”Integrera med 1Password CLI” i 1Password-appen (Inställningar → Utvecklare)."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1Password’ün komut satırı aracını kur, ardından 1Password uygulamasında “1Password CLI ile entegre et” seçeneğini aç (Ayarlar → Geliştirici)."
           }
         }
       }
@@ -24055,6 +24635,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Plus tard"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non ora"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Niet nu"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie teraz"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agora não"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inte nu"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Şimdi değil"
+          }
+        }
+      }
+    },
+    "Not now" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nicht jetzt"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ahora no"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pas maintenant"
           }
         },
         "it" : {
@@ -39305,7 +39943,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Simeon'un bilgisayarındaki sayfaya yazılır, ajanına asla gösterilmez."
+            "value" : "Simeon’un bilgisayarındaki sayfaya yazılır, ajanına asla gösterilmez."
           }
         }
       }
@@ -42151,6 +42789,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Kontrol sende"
+          }
+        }
+      }
+    },
+    "Your 1Password app makes a vault named “Shared with Simeon” and a key that can only read it. Put in it the logins your agents may use; they fill them with your OK and never see them." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine 1Password-App legt einen Tresor namens „Shared with Simeon“ und einen Schlüssel an, der ihn nur lesen kann. Leg dort die Anmeldungen ab, die deine Agenten nutzen dürfen; sie füllen sie mit deinem OK aus und sehen sie nie."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu app 1Password crea una bóveda llamada «Shared with Simeon» y una clave que solo puede leerla. Pon en ella los inicios de sesión que tus agentes pueden usar; los rellenan con tu permiso y nunca los ven."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ton app 1Password crée un coffre nommé « Shared with Simeon » et une clé qui peut seulement le lire. Mets-y les identifiants que tes agents peuvent utiliser ; ils les remplissent avec ton accord et ne les voient jamais."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La tua app 1Password crea una cassaforte chiamata «Shared with Simeon» e una chiave che può solo leggerla. Mettici gli accessi che i tuoi agenti possono usare; li compilano con il tuo consenso e non li vedono mai."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je 1Password-app maakt een kluis met de naam ‘Shared with Simeon’ en een sleutel die hem alleen kan lezen. Zet er de logins in die je agents mogen gebruiken; ze vullen ze in met jouw goedkeuring en zien ze nooit."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aplikacja 1Password tworzy sejf o nazwie „Shared with Simeon” i klucz, który może go tylko odczytać. Umieść w nim loginy, których twoi agenci mogą używać; wypełniają je za twoją zgodą i nigdy ich nie widzą."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seu app 1Password cria um cofre chamado “Shared with Simeon” e uma chave que só pode lê-lo. Coloque nele os logins que seus agentes podem usar; eles os preenchem com a sua aprovação e nunca os veem."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din 1Password-app skapar ett valv som heter ”Shared with Simeon” och en nyckel som bara kan läsa det. Lägg där de inloggningar dina agenter får använda; de fyller i dem med ditt godkännande och ser dem aldrig."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1Password uygulaman “Shared with Simeon” adlı bir kasa ve onu yalnızca okuyabilen bir anahtar oluşturur. Ajanlarının kullanabileceği girişleri oraya koy; onayınla doldururlar ve onları asla görmezler."
           }
         }
       }

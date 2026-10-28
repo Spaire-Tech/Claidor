@@ -400,6 +400,16 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
       }
     case "dismissUserForm":
       stamp(agentId, entryId) { $0.setting("formState", "dismissed") }
+    case "answerCredentialRequest":
+      let allow = args["allow"]?.bool ?? false
+      stamp(agentId, entryId) { entry in
+        allow ? entry.setting("credentialState", "filled").setting("credentialOutcomes", ["username": "filled", "password": "filled"]) : entry.setting("credentialState", "declined")
+      }
+    case "connectOnePassword":
+      if !entryId.isEmpty { stamp(agentId, entryId) { $0.setting("connectState", "connected") } }
+      return ["ok": true, "vaultName": "Shared with Simeon"]
+    case "dismissOnePasswordConnect":
+      stamp(agentId, entryId) { $0.setting("connectState", "dismissed") }
     case "startFlightBooking":
       // As the box would: the traveller form for that flight, in the chat (the one already open, if any).
       let open = lock.withLock { transcripts[agentId]?.first { $0["message"]?["type"]?.text == "flight-passengers" && ($0["passengersState"]?.text ?? "open") == "open" }?.id }

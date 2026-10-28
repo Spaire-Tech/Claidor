@@ -8827,6 +8827,64 @@
         }
       }
     },
+    "Connect 1Password" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1Password verbinden"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conectar 1Password"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connecter 1Password"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collega 1Password"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1Password koppelen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Połącz 1Password"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conectar o 1Password"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anslut 1Password"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1Password’ü bağla"
+          }
+        }
+      }
+    },
     "Connect apps" : {
       "localizations" : {
         "de" : {
@@ -14576,6 +14634,64 @@
         }
       }
     },
+    "Fill with 1Password" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mit 1Password ausfüllen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rellenar con 1Password"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remplir avec 1Password"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compila con 1Password"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invullen met 1Password"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wypełnij z 1Password"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preencher com o 1Password"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fyll i med 1Password"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1Password ile doldur"
+          }
+        }
+      }
+    },
     "Filter" : {
       "localizations" : {
         "de" : {
@@ -15330,6 +15446,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Başlangıç"
+          }
+        }
+      }
+    },
+    "From your vault shared with Simeon. Your agent never sees it." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aus deinem mit Simeon geteilten Tresor. Dein Agent sieht es nie."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De tu bóveda compartida con Simeon. Tu agente nunca lo ve."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Depuis ton coffre partagé avec Simeon. Ton agent ne le voit jamais."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dalla tua cassaforte condivisa con Simeon. Il tuo agente non la vede mai."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uit je kluis die met Simeon is gedeeld. Je agent ziet het nooit."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Z twojego sejfu udostępnionego Simeonowi. Twój agent nigdy go nie widzi."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Do seu cofre compartilhado com o Simeon. Seu agente nunca vê."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Från ditt valv som delas med Simeon. Din agent ser det aldrig."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon ile paylaşılan kasandan. Ajanın onu asla görmez."
           }
         }
       }
@@ -21370,6 +21544,64 @@
         }
       }
     },
+    "Not now" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nicht jetzt"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ahora no"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pas maintenant"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non ora"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Niet nu"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie teraz"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agora não"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inte nu"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Şimdi değil"
+          }
+        }
+      }
+    },
     "Nothing was copied on the computer." : {
       "localizations" : {
         "de" : {
@@ -22239,6 +22471,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Odayı aç"
+          }
+        }
+      }
+    },
+    "Open Simeon on your Mac to connect it: your 1Password app makes a vault shared with Simeon, and your agent fills sign-ins from it with your OK." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Öffne Simeon auf deinem Mac, um es zu verbinden: Deine 1Password-App legt einen mit Simeon geteilten Tresor an, und dein Agent füllt Anmeldungen daraus mit deinem OK aus."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre Simeon en tu Mac para conectarlo: tu app 1Password crea una bóveda compartida con Simeon y tu agente rellena los inicios de sesión desde ella con tu permiso."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvre Simeon sur ton Mac pour le connecter : ton app 1Password crée un coffre partagé avec Simeon, et ton agent remplit les connexions à partir de celui-ci avec ton accord."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri Simeon sul tuo Mac per collegarlo: la tua app 1Password crea una cassaforte condivisa con Simeon e il tuo agente compila gli accessi da lì con il tuo consenso."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Simeon op je Mac om het te koppelen: je 1Password-app maakt een kluis die met Simeon wordt gedeeld, en je agent vult daarmee aanmeldingen in met jouw goedkeuring."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otwórz Simeona na Macu, aby to połączyć: aplikacja 1Password tworzy sejf udostępniony Simeonowi, a twój agent wypełnia z niego logowania za twoją zgodą."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abra o Simeon no seu Mac para conectar: seu app 1Password cria um cofre compartilhado com o Simeon, e seu agente preenche logins a partir dele com a sua aprovação."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Öppna Simeon på din Mac för att ansluta: din 1Password-app skapar ett valv som delas med Simeon, och din agent fyller i inloggningar därifrån med ditt godkännande."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bağlamak için Mac’inde Simeon’u aç: 1Password uygulaman Simeon ile paylaşılan bir kasa oluşturur ve ajanın onayınla girişleri oradan doldurur."
           }
         }
       }

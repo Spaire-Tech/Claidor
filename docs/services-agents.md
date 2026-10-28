@@ -1495,6 +1495,50 @@ decline. A password or a code is masked, and nothing they typed is ever shown to
   a selector, a snapshot ref, a field in a frame, a menu, a checkbox, Enter for a code).
 * **Not yet verified.** Not run on the cloud computer, a Mac or an iPhone.
 
+### 1Password (28 October 2026)
+
+**For the person.** At a sign-in on a page the agent has open, the agent looks in their
+1Password first. If the login is there, a card asks to fill it: Fill with 1Password, confirmed
+with Face ID or Touch ID, and the computer types the username, the password and, when the login
+has one, its one-time code. The card then says what went in. Not now is a decline. If
+1Password isn't connected, a card asks them to connect it from Simeon on their Mac: Connect asks
+their 1Password app (Touch ID) for a vault named "Shared with Simeon" and a key that can only
+read it. They put in that vault the logins their agents may use. The agent never sees a
+username, a password or a code.
+
+**How it works.**
+
+- **Connect (the Mac).** `mac/Simeon/MacOnePassword.swift` runs 1Password's own command-line
+  tool (`op`, which the 1Password app unlocks with Touch ID): the accounts, the vault "Shared
+  with Simeon" (made when missing), then `op service-account create Simeon --vault
+  <id>:read_items --expires-in 52w --raw`. The key goes to the agent's computer
+  (`connectOnePassword`), which checks it with 1Password (`op vault get`) and keeps it in the
+  engine's own folder (`<data>/onepassword/connection.json`, 0600), never in the agent's
+  environment. Nothing is kept on the Mac. Whether an account may make service accounts is
+  1Password's setting; its refusal is shown as it says it. This was the upstream app's way
+  (`desktop/source/electron-main/onepassword/`), chosen by the founder over pasting a key.
+- **The tool on the computer.** The computer's image has no `op`, so the engine fetches
+  version 2.40.0 from 1Password's server the first time, checks the archive's SHA-256 against
+  the pinned value (`shared/node/onepassword/op-cli.ts`; both archives' `op` carry a good
+  signature from 1Password's code-signing key), and runs it itself with the key in its
+  environment. Never through the agent's shell.
+- **The agent's tools** (`host/runner/tools/onepassword-tools.ts`): `ListCredentials` (the
+  logins saved for the site: names and ids, never a username), `request_credential_fill`
+  (checks the page shows a sign-in field, then the card), `request_1password_connect`. Both
+  cards end the turn. A login is read only for the site it is saved for, or a subdomain of it.
+- **Fill** (`answerCredentialRequest`, `host/extensions/transcript/onepassword-cards.ts`) reads
+  the login and types it in with the in-chat form's fill (`fillUserForm`, the usual sign-in
+  field marks). One Fill covers the same login on the same site for ten minutes, so the
+  password page after the email page fills without a second card.
+
+* **Log lines.** Host: `[1password] connected, vault "…"`, `[1password] not connected: <1Password's sentence>`,
+  `[1password] filled <agent>/<entry> on <site>: username filled, password filled`,
+  `[1password] not filled …: <reason>`. Never a value or the key.
+* **Tested.** The engine's side with a stand-in for `op` (`desktop/tests/onepassword.test.mjs`);
+  the real `op` 2.40.0 installed through the engine's own code here and run once.
+* **Not yet verified.** Not run with a real 1Password account, on the cloud computer, a Mac or
+  an iPhone. No way yet to disconnect from the apps (the key can be deleted in 1Password).
+
 ### Files and lists in the chat
 
 **For the person** (24 October 2026). A file the agent sends shows its name as a title

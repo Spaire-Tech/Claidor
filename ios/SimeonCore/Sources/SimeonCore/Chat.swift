@@ -195,6 +195,10 @@ public enum RequestCard: Hashable, Sendable {
   case computer(requestId: String, instruction: String, resolution: String?)
   /** `user-form`: fields the page needs the person to type, typed in by the computer (`submitUserForm`), or the X (`dismissUserForm`), a decline. */
   case form(UserFormCard)
+  /** `credential-request`: a login from the person's 1Password, filled into the page once they allow it (`answerCredentialRequest`). */
+  case credential(CredentialRequestCard)
+  /** `onepassword-connect`: connect 1Password from the Mac (`connectOnePassword`), or the X (`dismissOnePasswordConnect`). */
+  case onePasswordConnect(OnePasswordConnectCard)
 }
 
 /** The call a chat line stands for: how long, and what was said. */
@@ -684,6 +688,8 @@ public enum Chat {
       return title.isEmpty ? L10n.text("Cloud agent") : L10n.text("Cloud agent: \(title)")
     case "secret-request": return message["secretRequest"]?["label"]?.string ?? ""
     case "user-form": return message["form"]?["title"]?.string ?? ""
+    case "credential-request": return message["credential"]?["title"]?.string ?? ""
+    case "onepassword-connect": return L10n.text("Connect 1Password")
     case "email-draft":
       let subject = message["draft"]?["subject"]?.string ?? ""
       return subject.isEmpty ? (message["draft"]?["body"]?.string ?? "") : subject
@@ -1138,6 +1144,11 @@ public enum Chat {
       case "user-form":
         if let card = UserFormCard(message: message, entry: entry) { return .request(id: entry.id, card: .form(card)) }
         return .notice(id: entry.id, text: notShown)
+      case "credential-request":
+        if let card = CredentialRequestCard(message: message, entry: entry) { return .request(id: entry.id, card: .credential(card)) }
+        return .notice(id: entry.id, text: notShown)
+      case "onepassword-connect":
+        return .request(id: entry.id, card: .onePasswordConnect(OnePasswordConnectCard(message: message, entry: entry)))
       case "cloud-agent":
         guard let bcId = message["bcId"]?.text, !bcId.isEmpty else { return nil }
         return .cloudAgent(id: entry.id, bcId: bcId)

@@ -30,8 +30,12 @@ export interface UserFormFieldSpec {
   readonly target: UserFormTarget;
 }
 
-/** How one field went: typed in, could not be typed in, or left empty by the person. */
-export type UserFormFieldOutcome = "filled" | "fillFailed" | "notFilled";
+/**
+ * How one field went: typed in, could not be typed in, or left empty by the
+ * person. A 1Password fill also says when a field isn't on this step of a
+ * sign-in (`notFound`: the password page comes after the email page).
+ */
+export type UserFormFieldOutcome = "filled" | "fillFailed" | "notFilled" | "notFound";
 
 export type UserFormCheck =
   | { readonly ok: true; readonly page: string }
@@ -100,6 +104,8 @@ export interface UserFormFillOptions extends UserFormPageOptions {
   readonly submitAfterFill?: boolean;
   /** Pause between typed keys, so fields that format as you type keep up. */
   readonly keyDelayMs?: number;
+  /** A field the page doesn't show: "fillFailed" (a form pointed at it), or "notFound" (a sign-in's later step). */
+  readonly missingAs?: "fillFailed" | "notFound";
 }
 
 const TAG = "data-simeon-form";
@@ -261,6 +267,11 @@ export async function checkUserForm(options: UserFormPageOptions): Promise<UserF
   }, (message) => ({ ok: false, message }));
 }
 
+/** Which of the fields are on the page now (a sign-in shows its email first, its password next). */
+export async function locateFields(options: UserFormPageOptions): Promise<{ readonly ok: true; readonly page: string; readonly found: readonly string[] } | { readonly ok: false; readonly message: string }> {
+  return await withFormPage<{ readonly ok: true; readonly page: string; readonly found: readonly string[] } | { readonly ok: false; readonly message: string }>(options, async (page, located) => ({ ok: true as const, page: hostOfAddress(page.url()), found: options.fields.map((field) => field.id).filter((id) => located.has(id)) }), (message) => ({ ok: false as const, message }));
+}
+
 async function fillOne(field: FormLocator, type: UserFormFieldType, value: string, delay: number): Promise<boolean> {
   if (type === "checkbox") {
     const wanted = /^(true|yes|on|1|checked)$/i.test(value.trim());
@@ -299,7 +310,7 @@ export async function fillUserForm(options: UserFormFillOptions): Promise<UserFo
       const value = options.values[field.id] ?? "";
       const where = located.get(field.id);
       if (value.length === 0) { outcomes[field.id] = "notFilled"; continue; }
-      if (where == null) { outcomes[field.id] = "fillFailed"; continue; }
+      if (where == null) { outcomes[field.id] = options.missingAs ?? "fillFailed"; continue; }
       outcomes[field.id] = (await fillOne(where, field.type, value, delay).catch(() => false)) ? "filled" : "fillFailed";
     }
     let submitted = false;

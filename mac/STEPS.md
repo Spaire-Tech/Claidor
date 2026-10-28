@@ -2692,3 +2692,16 @@ same on the iPhone (`docs/services-agents.md`, "The in-chat form").
 
 Not yet built or run on a Mac (Linux here: the files parse, and SimeonCore and
 its tests build).
+
+### 1Password (28 October 2026)
+
+`MacOnePassword.swift` and `OnePasswordCards.swift`. The connect card's Connect
+runs 1Password's command-line tool, which the 1Password app unlocks with Touch
+ID: the accounts (a picker when there are several), the vault "Shared with
+Simeon" (made when missing) and a read-only key for it, sent to the agent's
+computer. Without the tool or its app integration, the card says how to set it
+up. The fill card's Fill with 1Password asks for Touch ID first. The same cards
+on the iPhone, whose connect card points here (`docs/services-agents.md`,
+"1Password").
+
+Not yet built or run on a Mac, and not with a real 1Password account.

@@ -1470,6 +1470,10 @@ struct RequestCardView: View {
         computer(requestId: requestId, instruction: instruction, resolution: resolution)
       case .form(let form):
         UserFormCardView(entryId: entryId, agentId: agentId, card: form)
+      case .credential(let credential):
+        CredentialCardView(entryId: entryId, agentId: agentId, card: credential)
+      case .onePasswordConnect(let connect):
+        OnePasswordConnectCardView(entryId: entryId, agentId: agentId, card: connect)
       }
     }
     .frame(maxWidth: ChatMetrics.bubbleMax(width), alignment: .leading)

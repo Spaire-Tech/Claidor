@@ -45,6 +45,7 @@ the phone design. None of the screens has been compiled yet (see
 | Voice call line (§3.7) | "Voice chat · 01:11"; a tap opens the call's lines. |
 | Routines line (§3.8) | "Created routine", folded runs, a tap opens the routine. |
 | Approvals, secrets, the computer hand-back (§3.10) | Allow once / Always allow / Deny; the password field and Save securely; Take over / I'm done / Skip. |
+| 1Password (28 October 2026) | The fill card: the login's name and site, Fill with 1Password (Face ID) and Not now, then what went in. The connect card says to connect from the Mac. |
 | The in-chat form (28 October 2026) | The fields a page needs typed, masked for a password or a code; Fill in, the X; then each field's "Typed in", "Couldn't type it in" or "Left empty". |
 | Settings (§5) | Account, Theme, Timezone, Auto-review with its rules, Connect apps, Usage & Billing with Manage Billing. |
 | Connect apps (§5) | Marketplace and Yours, Add with the sign-in sheet; an app's page with its accounts (sign in, rename, remove) and its tools, each with a switch. Not yet: Setup values and Details. |

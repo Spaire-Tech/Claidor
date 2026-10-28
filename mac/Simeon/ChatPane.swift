@@ -677,6 +677,14 @@ private struct TranscriptRow: View {
       UserFormCardView(entryId: id, agentId: agentId, card: form, look: look)
         .frame(maxWidth: limit(520), alignment: .leading)
         .padding(.top, startsGroup ? 12 : 0)
+    case .request(let id, .credential(let credential)):
+      CredentialCardView(entryId: id, agentId: agentId, card: credential, look: look)
+        .frame(maxWidth: limit(520), alignment: .leading)
+        .padding(.top, startsGroup ? 12 : 0)
+    case .request(let id, .onePasswordConnect(let connect)):
+      OnePasswordConnectCardView(entryId: id, agentId: agentId, card: connect, look: look)
+        .frame(maxWidth: limit(520), alignment: .leading)
+        .padding(.top, startsGroup ? 12 : 0)
     default:
       LaterCard(kind: row.kind, look: look)
         .padding(.top, startsGroup ? 12 : 0)

@@ -26,7 +26,7 @@ import {
   type UserFormEntryFields,
   type UserFormMessage,
 } from "../../../shared/node/user-form/user-form.js";
-import { getTranscript, updateEntry } from "./transcript-store.js";
+import { readCard, stampCard } from "./card-entries.js";
 import type { TranscriptEntry, TranscriptManagerLike } from "./transcript-hub.js";
 
 export interface UserFormServices {
@@ -113,67 +113,12 @@ export class UserForms {
       .catch((error: unknown) => this.log(`[forms] ${source} wake for ${agentId}/${entryId} failed: ${error instanceof Error ? error.message : String(error)}`));
   }
 
-  private liveSession(agentId: string): any {
-    return this.tm.sessions?.activeSession?.id === agentId ? this.tm.sessions.activeSession : (this.tm.sessions?.liveSessions?.get?.(agentId) ?? null);
-  }
-
-  private async entries(agentId: string): Promise<TranscriptEntry[]> {
-    if (this.tm.sessions?.isAgentGone?.(agentId) === true) return [];
-    const live = this.liveSession(agentId);
-    if (live != null) return live.db.getTranscriptEntries() as TranscriptEntry[];
-    return await Promise.resolve(this.tm.sessionStore?.readAgentTranscriptEntries?.(agentId) ?? []) as TranscriptEntry[];
-  }
-
   private async readForm(agentId: string, entryId: string): Promise<FormEntry | null> {
-    const found = (await this.entries(agentId)).find((entry) => entry.id === entryId);
-    return isUserFormEntry(found) ? found : null;
+    return await readCard(this.tm, agentId, entryId, isUserFormEntry);
   }
 
   /** Writes a change to the card in its agent's transcript and sends it to the apps; null from `change` leaves it as it is. */
   private async stampForm(agentId: string, entryId: string, change: (entry: FormEntry) => FormPatch | null): Promise<TranscriptEntry | null> {
-    const applyTo = (entry: TranscriptEntry): TranscriptEntry => {
-      if (!isUserFormEntry(entry)) return entry;
-      const patch = change(entry);
-      if (patch == null) return entry;
-      const next = { ...entry } as Record<string, unknown>;
-      for (const [field, value] of Object.entries(patch)) {
-        if (value === undefined) delete next[field];
-        else next[field] = value;
-      }
-      return next as TranscriptEntry;
-    };
-    let result: TranscriptEntry | null;
-    const live = this.liveSession(agentId);
-    if (live != null) {
-      const current = (live.db.getTranscriptEntries() as TranscriptEntry[]).find((entry) => entry.id === entryId);
-      if (current == null) return null;
-      const next = applyTo(current);
-      if (next === current) return null;
-      live.db.updateTranscriptEntry(entryId, () => next);
-      const sessions = this.tm.sessions;
-      const inMemory = sessions?.activeSession?.id === agentId && (sessions.inMemoryTranscriptAgentId == null || sessions.inMemoryTranscriptAgentId === agentId) ? updateEntry(entryId, () => next) : null;
-      result = inMemory ?? next;
-    } else {
-      const withDb = this.tm.sessionStore?.withAgentDb;
-      if (typeof withDb === "function") {
-        result = await withDb.call(this.tm.sessionStore, agentId, (db: { getTranscriptEntries(): TranscriptEntry[]; updateTranscriptEntry(id: string, update: (entry: TranscriptEntry) => TranscriptEntry): void }) => {
-          const current = db.getTranscriptEntries().find((entry) => entry.id === entryId);
-          if (current == null) return null;
-          const next = applyTo(current);
-          if (next === current) return null;
-          db.updateTranscriptEntry(entryId, () => next);
-          return next;
-        });
-      } else {
-        const current = getTranscript().find((entry) => entry.id === entryId);
-        if (current == null) return null;
-        const next = applyTo(current);
-        result = next === current ? null : updateEntry(entryId, () => next);
-      }
-      if (result == null) return null;
-    }
-    this.tm.roster.emit({ type: "updated", entry: result }, agentId);
-    void this.tm.roster.emitAgentUpdate?.(agentId);
-    return result;
+    return await stampCard(this.tm, agentId, entryId, isUserFormEntry, change);
   }
 }

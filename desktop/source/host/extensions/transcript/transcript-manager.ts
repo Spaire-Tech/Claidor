@@ -27,6 +27,7 @@ import { BoxHandoffResume } from "./box-handoff-resume.js";
 import { DraftCards } from "./draft-cards.js";
 import { FlightBookings } from "./flight-bookings.js";
 import { UserForms } from "./user-forms.js";
+import { OnePasswordCards } from "./onepassword-cards.js";
 import { PurchaseCards } from "./purchase-cards.js";
 import { SandChannelDeliveryUnregisteredError } from "./channel-delivery-unregistered-error.js";
 import { GroupChatGlue } from "./group-chat-glue.js";
@@ -164,6 +165,7 @@ export class TranscriptManager {
   readonly purchaseCards = new PurchaseCards(this);
   readonly flightBookings = new FlightBookings(this);
   readonly userForms = new UserForms(this);
+  readonly onePasswordCards = new OnePasswordCards(this);
   readonly pendingWakes = new PendingWakeRearm(this);
   readonly ackObligations = new AckObligations(this);
   readonly upgradeResume = new UpgradeRecreateResume(this);
@@ -654,6 +656,11 @@ const delegations: ReadonlyArray<[string, keyof TranscriptManager]> = [
   ["setUserFormServices", "userForms"],
   ["submitUserForm", "userForms"],
   ["dismissUserForm", "userForms"],
+  ["setOnePasswordServices", "onePasswordCards"],
+  ["answerCredentialRequest", "onePasswordCards"],
+  ["connectOnePassword", "onePasswordCards"],
+  ["dismissOnePasswordConnect", "onePasswordCards"],
+  ["fillAllowedCredential", "onePasswordCards"],
 ];
 
 for (const [method, domain] of delegations) {

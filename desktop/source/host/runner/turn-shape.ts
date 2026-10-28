@@ -204,6 +204,9 @@ const WAITING_CARDS: ReadonlyMap<string, RegExp> = new Map([
   ["InstallPlugin", /Its connect card is now in the chat\./],
   // The in-chat form (28 October 2026, `formShownNote`); a form the page refused is not shown and waits on nothing.
   ["request_user_form", /^The form ".+" is in the chat/s],
+  // The 1Password cards (28 October 2026, `onepassword-tools.ts`); a fill the person already allowed shows no card.
+  ["request_credential_fill", /^The 1Password card for ".+" is in the chat/s],
+  ["request_1password_connect", /^The 1Password connect card is in the chat/],
 ]);
 
 /** A card call whose answer says its card is in front of the person. */

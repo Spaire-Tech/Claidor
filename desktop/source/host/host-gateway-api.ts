@@ -308,6 +308,20 @@ export function createHostGatewayApi(
       markActive("user_action");
       return method(manager, "dismissUserForm")({ agentId: args?.agentId, entryId: args?.entryId });
     },
+    // The 1Password cards (28 October 2026, transcript/onepassword-cards.ts): Fill or Not now on the fill card;
+    // the Mac's Connect with the key its 1Password app made (kept by the engine, never shown to an agent); the connect card's X.
+    answerCredentialRequest: (args: any) => {
+      markActive("user_action");
+      return method(manager, "answerCredentialRequest")({ agentId: args?.agentId, entryId: args?.entryId, allow: args?.allow === true });
+    },
+    connectOnePassword: (args: any) => {
+      markActive("user_action");
+      return method(manager, "connectOnePassword")({ agentId: args?.agentId, entryId: args?.entryId, token: args?.token, vaultId: args?.vaultId, vaultName: args?.vaultName, accountEmail: args?.accountEmail });
+    },
+    dismissOnePasswordConnect: (args: any) => {
+      markActive("user_action");
+      return method(manager, "dismissOnePasswordConnect")({ agentId: args?.agentId, entryId: args?.entryId });
+    },
     reactToMessage: (args: any) => {
       markActive("user_action");
       method(telemetry.analytics, "trackEvent")("sand.reaction.added", {
