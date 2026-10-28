@@ -108,7 +108,10 @@ test("the key is kept only once 1Password opens the vault with it, privately, an
     assert.match((await vault.connect({ token: "not a key", vaultId: "vvvvvvvvvvvvvvvvvvvvvvvvvv" })).message, /isn't a 1Password service-account key/);
     assert.match((await vault.connect({ token: `ops_${"y".repeat(40)}`, vaultId: "vvvvvvvvvvvvvvvvvvvvvvvvvv" })).message, /refused the key: invalid service account token/);
     assert.equal(existsSync(path.join(dir, "connection.json")), false, "a key 1Password refuses is not kept");
+    vault.decline();
+    assert.equal(vault.declined(), true, "a closed connect card is remembered on the computer");
     assert.deepEqual(await vault.connect({ token: TOKEN, vaultId: "vvvvvvvvvvvvvvvvvvvvvvvvvv", accountEmail: "ada@example.com" }), { ok: true, vaultName: "Shared with Simeon" });
+    assert.equal(vault.declined(), false, "connecting 1Password clears an earlier no");
     assert.equal(statSync(path.join(dir, "connection.json")).mode & 0o777, 0o600, "only the engine reads it");
     assert.equal(vault.connection().vaultName, "Shared with Simeon");
 
@@ -147,10 +150,12 @@ test("ListCredentials, request_credential_fill and request_1password_connect: na
     const login = { credentialId: "aaaaaaaaaaaaaaaaaaaaaaaaaa", title: "Acme", site: "acme.example", revision: 3, vaultId: "vvvvvvvvvvvvvvvvvvvvvvvvvv" };
     const cards = [];
     let connected = true;
+    let declined = false;
     let allowed;
     let found = ["username"];
     const deps = {
       connection: () => connected ? { vaultName: "Shared with Simeon" } : undefined,
+      declined: () => declined,
       listLogins: async () => connected ? { ok: true, logins: [login] } : { ok: false, notConnected: true, message: "1Password isn't connected." },
       fillAllowed: async () => allowed,
       locateFields: async () => ({ ok: true, found }),
@@ -177,12 +182,24 @@ test("ListCredentials, request_credential_fill and request_1password_connect: na
     assert.equal(cards.length, 1, "the second step asks nothing");
     assert.equal(shape.module.cardCallWaits("request_credential_fill", "Filled again with \"Acme\""), false);
 
-    assert.match(await call(connect, {}), /already connected/);
+    assert.match(await call(connect, { user_asked: true }), /already connected/);
     connected = false;
-    assert.match(await call(list, { site: "acme.example" }), /1Password isn't connected\. Ask the user once to connect it with request_1password_connect/);
-    assert.match(await call(connect, { reason: "To sign in to Acme." }), /The 1Password connect card is in the chat \(entry t4s1\)/);
+    assert.match(await call(list, { site: "acme.example" }), /1Password isn't connected\. Don't bring it up: ask for the sign-in with request_user_form/);
+
+    // Not everyone uses 1Password: without a connection the agent never looks there, and the card needs the user's word.
+    assert.deepEqual(tools.module.createOnePasswordTools(deps).map((tool) => tool.name), ["request_1password_connect"]);
+    assert.match(await call(connect, { user_asked: false, reason: "To sign in to Acme." }), /offer 1Password only to a user who said they use it or asked you to use it/);
+    assert.equal(cards.length, 1, "no card for a user who never mentioned 1Password");
+    assert.match(await call(connect, { user_asked: true, reason: "To sign in to Acme." }), /The 1Password connect card is in the chat \(entry t4s1\)/);
     assert.deepEqual(cards[1], { type: "onepassword-connect", reason: "To sign in to Acme." });
     assert.equal(shape.module.cardCallWaits("request_1password_connect", "The 1Password connect card is in the chat (entry t4s1)."), true);
+
+    // A closed card is remembered: no offer again, unless the user asks.
+    declined = true;
+    assert.match(await call(connect, { user_asked: false }), /The user said no to connecting 1Password\. Don't mention it again unless they ask for it/);
+    assert.match(await call(fill, { credential_id: login.credentialId, site: "acme.example", purpose: "To sign in." }), /said no to connecting 1Password/);
+    assert.equal(cards.length, 2);
+    assert.match(await call(connect, { user_asked: true }), /The 1Password connect card is in the chat/, "the user asking brings it back");
   } finally {
     await tools.dispose();
     await shape.dispose();
@@ -294,6 +311,26 @@ test("a fill that finds no sign-in field says so, and nothing read is kept", asy
   }
 });
 
+test("closing the connect card is a no the computer remembers", async () => {
+  const cardsModule = await load("source/host/extensions/transcript/onepassword-cards.ts", "onepassword-cards3");
+  try {
+    const entries = [{ id: "t4s3", kind: "send-message", message: { type: "onepassword-connect", reason: "To sign in." } }];
+    const { tm, wakes } = fakeManager(entries);
+    let declined = 0;
+    const cards = new cardsModule.module.OnePasswordCards(tm, { log: () => undefined });
+    cards.setOnePasswordServices({ onePassword: { decline: () => { declined += 1; } }, browserPort: () => 9223 });
+    assert.deepEqual(await cards.dismissOnePasswordConnect({ agentId: "a1", entryId: "t4s3" }), { accepted: true });
+    await settle();
+    assert.equal(entries[0].connectState, "dismissed");
+    assert.equal(declined, 1);
+    assert.match(wakes[0].prompt, /they don't want it\. Don't mention 1Password again unless they ask for it/);
+    assert.deepEqual(await cards.dismissOnePasswordConnect({ agentId: "a1", entryId: "t4s3" }), { accepted: false });
+    assert.equal(declined, 1);
+  } finally {
+    await cardsModule.dispose();
+  }
+});
+
 test("the 1Password cards are on the gateway, in the agent's tools and brief, and their words are in every language", async () => {
   const gateway = await src("host/host-gateway-api.ts");
   for (const name of ["answerCredentialRequest", "connectOnePassword", "dismissOnePasswordConnect"]) {
@@ -306,7 +343,8 @@ test("the 1Password cards are on the gateway, in the agent's tools and brief, an
   assert.match(composition, /createOnePasswordToolInputs: turn =>/);
   assert.match(composition, /connection: \(\) => \{ const held = onePassword\.connection\(\); return held == null \? undefined : \{ vaultName: held\.vaultName \}; \}/, "the tools never hold the key");
   assert.match(await src("host/runner/tools/turn-toolset.ts"), /const onePassword = factories\.onePassword\?\.\(\);/);
-  assert.match(await src("host/runner/system-prompt.ts"), /first call ListCredentials with the page's site/);
+  assert.match(await src("host/runner/system-prompt.ts"), /when you have ListCredentials \(they connected 1Password\), call it first/);
+  assert.match(await src("host/runner/system-prompt.ts"), /Without it, don't bring up 1Password: many people don't use it/);
   const words = await src("shared/words/areas/trays.ts");
   for (const key of ["tray.resumeAfterOnePasswordFailed", "onepassword.cardGone", "onepassword.answered", "onepassword.unavailable", "onepassword.notFilled"]) assert.equal(words.split(`"${key}"`).length - 1, 10, `${key} in all ten languages`);
   // The pinned archives' checksums are the ones 1Password signed (checked on 28 October 2026).

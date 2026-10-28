@@ -116,5 +116,5 @@ export function buildOnePasswordConnectedWakePrompt(entryId: string, vaultName: 
 }
 
 export function buildOnePasswordDismissedWakePrompt(entryId: string): string {
-  return `[The user dismissed connecting 1Password (entry ${entryId}). Don't ask again. For the sign-in, ask with request_user_form or hand them the screen (request_box_help); if the task waited on it, end your turn without a message.]`;
+  return `[The user dismissed connecting 1Password (entry ${entryId}): they don't want it. Don't mention 1Password again unless they ask for it. For the sign-in, ask with request_user_form or hand them the screen (request_box_help); if the task waited on it, end your turn without a message.]`;
 }

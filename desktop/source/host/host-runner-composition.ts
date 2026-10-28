@@ -2421,6 +2421,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
             createOnePasswordToolInputs: turn => ({
               dependencies: {
                 connection: () => { const held = onePassword.connection(); return held == null ? undefined : { vaultName: held.vaultName }; },
+                declined: () => onePassword.declined(),
                 listLogins: (site, options) => onePassword.listLogins(site, options),
                 fillAllowed: async (args) => await method(extensions.api("transcript"), "fillAllowedCredential")?.({ agentId: session.id, ...args }),
                 locateFields: async (request) => {
