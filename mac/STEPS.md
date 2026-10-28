@@ -2670,3 +2670,13 @@ titled Reply. Sending itself changed on the computer
 (`docs/services-agents.md`, "Sending an email").
 
 Not yet built or run on a Mac (Linux here: the file parses).
+
+### The question card, as the upstream app's (28 October 2026)
+
+A pick sends the option's own reply (`value`), not its label. The option the
+agent recommends is blue and a destructive one red. When the agent allows
+several (`multiSelect`), each pick ticks its ring and Submit sends them
+together. The same on the iPhone (`docs/services-agents.md`, "The cards, as
+the upstream app's").
+
+Not yet built or run on a Mac (Linux here: the file parses).

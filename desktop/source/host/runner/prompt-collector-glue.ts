@@ -388,7 +388,7 @@ export function createPromptCollectorGlue<Context = unknown>(host: PromptCollect
     const richText = options.richText?.trim();
     const prepended = [...await host.collectPrependUserMessages?.(options.recentUserMessages ?? [], options.messageId) ?? []];
     const unanswered = [...(options.skippedQuestionPrompts ?? []), ...(options.dismissedQuestionPrompts ?? [])];
-    if (unanswered.length > 0) prepended.push({ text: `Unanswered questions:\n${unanswered.map((question) => `- ${question}`).join("\n")}` });
+    if (unanswered.length > 0) prepended.push({ text: `Questions the user dismissed or moved past without answering; take each as declined and don't ask it again:\n${unanswered.map((question) => `- ${question}`).join("\n")}` });
     const userMessage = {
       text, messageId: options.messageId ?? "",
       ...(richText == null || richText.length === 0 ? {} : { richText }),
@@ -441,7 +441,7 @@ export function createPromptCollectorGlue<Context = unknown>(host: PromptCollect
       ? collect()
       : host.traceSendPhase(args.runCtx, "collectPrependUserMessages", collect));
     const unanswered = [...(options.skippedQuestionPrompts ?? []), ...(options.dismissedQuestionPrompts ?? [])];
-    if (unanswered.length > 0) prepended.push(new UserMessage({ text: `Unanswered questions:\n${unanswered.map((question) => `- ${question}`).join("\n")}` }));
+    if (unanswered.length > 0) prepended.push(new UserMessage({ text: `Questions the user dismissed or moved past without answering; take each as declined and don't ask it again:\n${unanswered.map((question) => `- ${question}`).join("\n")}` }));
     const userMessage = new UserMessage({
       text,
       messageId: options.messageId ?? "",

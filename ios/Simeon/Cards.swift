@@ -144,6 +144,8 @@ struct QuestionCardView: View {
   @Environment(\.chatWidth) private var width
   @State private var own = ""
   @FocusState private var typingOwn: Bool
+  /** Several picked at once (`multiSelect`), sent together with Submit. */
+  @State private var picked: Set<Int> = []
 
   var body: some View {
     let pending = store.pendingAnswers[entryId]
@@ -184,11 +186,14 @@ struct QuestionCardView: View {
       VStack(spacing: 0) {
         ForEach(Array(card.options.enumerated()), id: \.offset) { index, option in
           if index > 0 { Rectangle().fill(Ink.hairline).frame(height: 1) }
-          Button { give(option.label) } label: {
+          // Picking sends the option's own reply (`value`); several picked go together with Submit.
+          Button { if card.multiSelect { toggle(index) } else { give(option.value) } } label: {
             HStack(spacing: 8) {
-              Circle().stroke(Ink.primary.opacity(0.3), lineWidth: 1).frame(width: 18, height: 18)
+              mark(picked.contains(index))
               VStack(alignment: .leading, spacing: 0) {
-                Text(option.label).font(.system(size: 17)).foregroundStyle(Ink.primary).multilineTextAlignment(.leading)
+                Text(option.label).font(.system(size: 17, weight: option.style == .primary ? .medium : .regular))
+                  .foregroundStyle(option.style == .danger ? Ink.danger : option.style == .primary ? Ink.blue : Ink.primary)
+                  .multilineTextAlignment(.leading)
                 if let description = option.description {
                   Text(description).font(.system(size: 17)).foregroundStyle(Ink.secondary).multilineTextAlignment(.leading)
                 }
@@ -200,6 +205,10 @@ struct QuestionCardView: View {
           }
           .buttonStyle(.tactile)
         }
+      }
+      if card.multiSelect && !picked.isEmpty {
+        Button("Submit") { give(picked.sorted().map { card.options[$0].value }.joined(separator: "\n")) }
+          .buttonStyle(Tactile(look: BlueButtonStyle()))
       }
       if card.allowsOwnAnswer {
         HStack(alignment: .bottom, spacing: 8) {
@@ -228,7 +237,7 @@ struct QuestionCardView: View {
         .fixedSize(horizontal: false, vertical: true)
       HStack(spacing: 8) {
         Image(systemName: "checkmark").font(.system(size: 13, weight: .semibold)).foregroundStyle(Ink.blue).frame(width: 18)
-        Text(answer).font(.system(size: 17)).foregroundStyle(Ink.primary).fixedSize(horizontal: false, vertical: true)
+        Text(card.shown(answer)).font(.system(size: 17)).foregroundStyle(Ink.primary).fixedSize(horizontal: false, vertical: true)
         Spacer(minLength: 0)
       }
       .padding(8)
@@ -250,6 +259,19 @@ struct QuestionCardView: View {
     guard !trimmed.isEmpty else { return }
     own = ""
     Task { await store.answer(trimmed, card: entryId, in: agentId) }
+  }
+
+  private func toggle(_ index: Int) {
+    if picked.contains(index) { picked.remove(index) } else { picked.insert(index) }
+  }
+
+  /** The ring before an option: empty, or filled with a tick once picked for a several-at-once answer. */
+  @ViewBuilder private func mark(_ on: Bool) -> some View {
+    if on {
+      Image(systemName: "checkmark.circle.fill").font(.system(size: 18)).foregroundStyle(Ink.blue).frame(width: 18, height: 18)
+    } else {
+      Circle().stroke(Ink.primary.opacity(0.3), lineWidth: 1).frame(width: 18, height: 18)
+    }
   }
 }
 

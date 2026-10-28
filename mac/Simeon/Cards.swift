@@ -99,6 +99,8 @@ struct QuestionCardView: View {
   let look: Look
   @Environment(AppStore.self) private var store
   @State private var own = ""
+  /** Several picked at once (`multiSelect`), sent together with Submit. */
+  @State private var picked: Set<Int> = []
 
   var body: some View {
     let pending = store.pendingAnswers[entryId]
@@ -121,7 +123,7 @@ struct QuestionCardView: View {
             .font(.system(size: 12, weight: .semibold))
             .foregroundStyle(look.blue)
             .frame(width: 18, height: 18)
-          Text(answer)
+          Text(card.shown(answer))
             .font(.system(size: 14))
             .foregroundStyle(look.ink)
             .cssLineHeight(20, size: 14)
@@ -129,7 +131,7 @@ struct QuestionCardView: View {
         .padding(8)
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Your answer: \(answer)")
+        .accessibilityLabel("Your answer: \(card.shown(answer))")
       }
     } else {
       open
@@ -169,12 +171,23 @@ struct QuestionCardView: View {
         VStack(spacing: 0) {
           ForEach(Array(card.options.enumerated()), id: \.offset) { index, option in
             if index > 0 { Rectangle().fill(look.ink.opacity(0.1)).frame(height: 1) }
-            OptionRow(option: option, look: look) {
-              Task { await store.answer(option.label, card: entryId, in: agentId) }
+            // Picking sends the option's own reply (`value`); several picked go together with Submit.
+            OptionRow(option: option, look: look, picked: picked.contains(index)) {
+              if card.multiSelect {
+                if picked.contains(index) { picked.remove(index) } else { picked.insert(index) }
+              } else {
+                Task { await store.answer(option.value, card: entryId, in: agentId) }
+              }
             }
           }
         }
         .clipShape(RoundedRectangle(cornerRadius: 8))
+      }
+      if card.multiSelect && !picked.isEmpty {
+        CardButton(title: String(localized: "Submit"), prominent: true, look: look) {
+          let values = picked.sorted().map { card.options[$0].value }.joined(separator: "\n")
+          Task { await store.answer(values, card: entryId, in: agentId) }
+        }
       }
       if card.allowsOwnAnswer {
         HStack(alignment: .top, spacing: 8) {
@@ -205,23 +218,35 @@ struct QuestionCardView: View {
   }
 }
 
-/** One choice (`sand-widget-option`): padded 8, an empty 18-point ring at 30% as the iPhone's, its label (14 on 20) and line under it (60%). */
+/**
+ * One choice (`sand-widget-option`): padded 8, an empty 18-point ring at 30% as the iPhone's (a blue tick once picked
+ * for a several-at-once answer), its label (14 on 20; blue for the recommended path, red for a destructive one) and
+ * line under it (60%).
+ */
 private struct OptionRow: View {
   let option: QuestionOption
   let look: Look
+  var picked = false
   let action: () -> Void
   @State private var hovering = false
 
   var body: some View {
     Button(action: action) {
       HStack(spacing: 8) {
-        Circle()
-          .strokeBorder(look.ink.opacity(0.3), lineWidth: 1)
-          .frame(width: 18, height: 18)
+        if picked {
+          Image(systemName: "checkmark.circle.fill")
+            .font(.system(size: 16))
+            .foregroundStyle(look.blue)
+            .frame(width: 18, height: 18)
+        } else {
+          Circle()
+            .strokeBorder(look.ink.opacity(0.3), lineWidth: 1)
+            .frame(width: 18, height: 18)
+        }
         VStack(alignment: .leading, spacing: 0) {
           Text(option.label)
-            .font(.system(size: 14))
-            .foregroundStyle(look.ink)
+            .font(.system(size: 14, weight: option.style == .primary ? .medium : .regular))
+            .foregroundStyle(option.style == .danger ? look.danger : option.style == .primary ? look.blue : look.ink)
             .cssLineHeight(20, size: 14)
           if let line = option.description, !line.isEmpty {
             Text(line)

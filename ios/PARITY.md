@@ -27,7 +27,7 @@ the phone design. None of the screens has been compiled yet (see
 | Flight card (§1, §3.3) | In Muse's layout since 9 October (§22): the route and date, rows with the airline's round logo, "airline · price" and the times on a dashed line; a row opens the flight (total, a card per flight, the fare's terms). |
 | Brand names in text (§2) | All 75 names, anywhere in a message, with their logos and the readable light and dark colours. |
 | Agent names in text (§2) | The agent's butterfly before the name, in the Mac's colours. |
-| Question card (§3.1) | Rings, help text, "Type your own answer" with Submit, the X; answered and dismissed states. |
+| Question card (§3.1) | Rings, help text, "Type your own answer" with Submit, the X; answered and dismissed states. Since 28 October 2026 a pick sends the option's own reply (`value`), the recommended option is blue and a destructive one red, and several can be picked and sent with Submit (`multiSelect`). |
 | "N messages with" (§3.6) | The Mac's wording ("Messaged", "Message from", "N messages with", "N agents"); a tap opens the exchange read-only. |
 | Call button and calls (§1, §6) | The call button by the name; real calls through ElevenLabs' iPhone kit and the Mac's call protocol. Needs a device to try. |
 | The top bar (§1) | Solid, as the Mac's. |

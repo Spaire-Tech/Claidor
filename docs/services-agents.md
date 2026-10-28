@@ -1411,6 +1411,28 @@ host log: `[drafts] … sent by OUTLOOK_REPLY_EMAIL`, `[drafts] … not sent by 
 been sent through this path from an iPhone or a Mac; the tools' argument names are from the
 provider's reference (read 28 October 2026), not from a live call.
 
+### The cards, as the upstream app's (28 October 2026)
+
+The founder: "audit the other cards and make sure they each work exactly like" the upstream
+app's. Its own rules for its cards were in `docs/product/sources/` until 29 September (in the
+history). What changed to match them:
+
+* **Cards that wait end the turn** in the run path the app uses (`stepEndsTurn` in
+  `host/runner/turn-shape.ts`): a draft until Send or Discard, the checkout card until Allow or
+  Deny, a connect card until it is tapped, once the call's answer says the card is in the chat.
+  The list that did this sat on the runner's older path, which the app no longer runs. A turn
+  ending on such a card is not taken as silent, so the closing nudge asks for nothing more.
+* **The question card.**
+  * Picking sends the option's own reply (`value`; its label when it has none). Both apps sent
+    the label.
+  * `primary` (the path the agent recommends) is drawn in blue, `danger` in red.
+  * `multiSelect`: several picked go together with Submit, one value per line.
+  * A question stays open until it is answered or dismissed. Only one marked `dismissOnMoveOn`
+    closes, and only when the person writes (`collectUnansweredQuestionPrompts`); every open
+    question used to close at the next turn of any kind.
+  * Dismissing one tells the agent at once that it was declined (a hidden turn that may end
+    without a word); the next turn's note says "take each as declined".
+
 ### Files and lists in the chat
 
 **For the person** (24 October 2026). A file the agent sends shows its name as a title

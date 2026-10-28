@@ -1,11 +1,22 @@
 import Foundation
 
-/** One choice on a question card: its label and, when the agent gave one, a line under it. */
+/**
+ * One choice on a question card: its label and, when the agent gave one, a
+ * line under it. Picking it sends `value`, the reply the agent wrote for it
+ * (the label when it wrote none), as the upstream app's card does; until 28
+ * October 2026 both apps sent the label. `style` marks the recommended path
+ * (`primary`) or a destructive one (`danger`).
+ */
 public struct QuestionOption: Hashable, Sendable {
+  public enum Style: String, Sendable { case plain = "default", primary, danger }
   public let label: String
   public let description: String?
+  public let value: String
+  public let style: Style
 
-  public init(label: String, description: String? = nil) { self.label = label; self.description = description }
+  public init(label: String, description: String? = nil, value: String? = nil, style: Style = .plain) {
+    self.label = label; self.description = description; self.value = value ?? label; self.style = style
+  }
 }
 
 /** A question card (`send-message` of type `widget`), with the answer once given. */
@@ -14,6 +25,8 @@ public struct QuestionCard: Hashable, Sendable {
   public let help: String?
   public let options: [QuestionOption]
   public let allowsOwnAnswer: Bool
+  /** Several options may be picked (`multiSelect`); their values go back one per line. */
+  public let multiSelect: Bool
   /** What the person answered (`respondedValue`); nil while it waits. */
   public let answer: String?
   public let isDismissed: Bool
@@ -22,6 +35,18 @@ public struct QuestionCard: Hashable, Sendable {
 
   public var labels: [String] { options.map(\.label) }
   public var isOpen: Bool { answer == nil && !isDismissed && !isSkipped }
+
+  public init(prompt: String, help: String?, options: [QuestionOption], allowsOwnAnswer: Bool, multiSelect: Bool = false, answer: String?, isDismissed: Bool, isSkipped: Bool) {
+    self.prompt = prompt; self.help = help; self.options = options; self.allowsOwnAnswer = allowsOwnAnswer
+    self.multiSelect = multiSelect; self.answer = answer; self.isDismissed = isDismissed; self.isSkipped = isSkipped
+  }
+
+  /** An answer as the person reads it: each picked option by its label (one per line for several), else the words they typed. */
+  public func shown(_ answer: String) -> String {
+    let lines = answer.split(separator: "\n", omittingEmptySubsequences: true).map(String.init)
+    let named = lines.map { line in options.first(where: { $0.value == line })?.label ?? line }
+    return named.joined(separator: ", ")
+  }
 }
 
 /** An email or a Slack message the agent drafted, for the person to send or discard (host/extensions/transcript/draft-cards.ts). */
@@ -1081,11 +1106,13 @@ public enum Chat {
         guard let widget = message["widget"], let prompt = widget["prompt"]?.text else { return nil }
         let options = (widget["options"]?.array ?? []).compactMap { option -> QuestionOption? in
           guard let label = option["label"]?.text ?? option.text else { return nil }
-          return QuestionOption(label: label, description: option["description"]?.text)
+          return QuestionOption(label: label, description: option["description"]?.text, value: option["value"]?.text,
+                                style: option["style"]?.string.flatMap(QuestionOption.Style.init(rawValue:)) ?? .plain)
         }
         return .question(id: entry.id, card: QuestionCard(
           prompt: prompt, help: widget["helpText"]?.text, options: options,
           allowsOwnAnswer: widget["allowCustom"]?.bool ?? false,
+          multiSelect: widget["multiSelect"]?.bool ?? false,
           answer: entry["respondedValue"]?.text, isDismissed: entry["widgetDismissed"]?.bool ?? false,
           isSkipped: entry["widgetSkipped"]?.bool ?? false))
       case "email-draft", "slack-draft":

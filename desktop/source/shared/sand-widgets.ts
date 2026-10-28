@@ -20,6 +20,12 @@ export const sandWidgetSchema = z.object({
   prompt: z.string().trim().min(1),
   helpText: z.string().trim().min(1).optional(),
   options: z.array(choiceOptionSchema).min(1).max(6),
+  multiSelect: z
+    .boolean()
+    .optional()
+    .describe(
+      "When true, the user can pick several options and send them together; their values come back to you one per line.",
+    ),
   allowCustom: z
     .boolean()
     .optional()
