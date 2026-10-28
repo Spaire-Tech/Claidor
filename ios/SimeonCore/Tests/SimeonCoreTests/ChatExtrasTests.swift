@@ -125,6 +125,29 @@ final class ChatThreadTests: XCTestCase {
     XCTAssertEqual(about.quote, "Shorter please")
   }
 
+  /** 28 October 2026, the founder: "the whole reply to makes sense when there's many messages, not when its only one". */
+  func testAnAgentsAnswerToTheOnlyLineSinceQuotesNothing() {
+    let one = [
+      line("m1", "Create a finance agent", at: 1_000),
+      line("a1", "On it", role: "assistant", replyTo: "m1", at: 2_000),
+      line("a2", "Hired Nora", role: "assistant", replyTo: "m1", at: 3_000),
+    ]
+    let bubbles = Chat.rows(one).compactMap { row -> Bubble? in if case .bubble(let b) = row { return b }; return nil }
+    XCTAssertEqual(bubbles.map(\.id), ["m1", "a1", "a2"])
+    XCTAssertNil(bubbles[1].quote, "it can only be answering that line")
+    XCTAssertNil(bubbles[2].quote, "nor after its own lines")
+    // Two lines from the person: an answer to the first says which.
+    let two = [
+      line("m1", "Create a finance agent", at: 1_000),
+      line("m2", "And a marketing one", at: 1_500),
+      line("a1", "On it", role: "assistant", replyTo: "m1", at: 2_000),
+      line("a2", "On it too", role: "assistant", replyTo: "m2", at: 3_000),
+    ]
+    let answers = Chat.rows(two).compactMap { row -> Bubble? in if case .bubble(let b) = row { return b }; return nil }
+    XCTAssertEqual(answers.first { $0.id == "a1" }?.quote, "Create a finance agent")
+    XCTAssertNil(answers.first { $0.id == "a2" }?.quote)
+  }
+
   func testAReplyWhoseFirstMessageIsNotLoadedStaysInTheChatUnlessOlderLinesMayHoldIt() {
     let orphan = [line("r9", "A reply to something older", replyTo: "gone", branched: true, at: 1_000)]
     XCTAssertTrue(Chat.rows(orphan).contains { $0.id == "r9" }, "the window shows it when nothing older is left to load")

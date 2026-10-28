@@ -903,14 +903,34 @@ public enum Chat {
     return rows.filter { seen.insert($0.id).inserted }
   }
 
-  /** A reply's quote over its bubble (`pCn`): the answered line, one line, cut at 96 characters; "(deleted)" when it is gone. */
+  /**
+   * A reply's quote over its bubble (`pCn`): the answered line, one line,
+   * cut at 96 characters; "(deleted)" when it is gone. An agent's answer to
+   * a line whose writer has said nothing since has none (28 October 2026,
+   * the founder: "the whole reply to makes sense when there's many
+   * messages, not when its only one"): it can only be answering that line.
+   * The person's own replies keep theirs, as they chose them.
+   */
   static func quoted(_ rows: [ChatRow], _ entries: [Entry]) -> [ChatRow] {
     guard rows.contains(where: { if case .bubble(let b) = $0 { return b.replyTo != nil }; return false }) else { return rows }
     let byId = Dictionary(entries.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
-    return rows.map { row in
+    var bubbleAt: [String: Int] = [:]
+    for (index, row) in rows.enumerated() {
+      if case .bubble(let bubble) = row, bubbleAt[bubble.id] == nil { bubbleAt[bubble.id] = index }
+    }
+    return rows.enumerated().map { index, row in
       guard case .bubble(let bubble) = row, let target = bubble.replyTo else { return row }
+      if !bubble.fromPerson, let at = bubbleAt[target], at < index, case .bubble(let answered) = rows[at],
+         !rows[(at + 1)..<index].contains(where: { if case .bubble(let between) = $0 { return speaker(between) == speaker(answered) }; return false }) {
+        return row
+      }
       return .bubble(bubble.with(quote: .some(quoteLine(byId[target], limit: 96))))
     }
+  }
+
+  /** Who said a line, for `quoted`: the person, or the agent by its id. */
+  private static func speaker(_ bubble: Bubble) -> String {
+    bubble.fromPerson ? "" : "agent:" + (bubble.author?.id ?? "")
   }
 
   /**
