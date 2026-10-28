@@ -2648,3 +2648,14 @@ Open the computer while the bank checks the card.
 
 Not yet built or run on a Mac (Linux here: the files parse, the core's
 tests pass).
+
+### The agent at work, as the iPhone's (28 October 2026)
+
+The founder: "the mac shows a three-dot thing. the iphone show the agent
+avatar. can we do like iphone." The working line under the messages shows
+the agent's picture at 28 points, still, 8 points from what it is doing
+("Typing…", "Searching the web"), in place of the grey three dots (item 26
+above). In a group, the member at work (else the first) at 22, as the
+iPhone's group line.
+
+Not yet built or run on a Mac (Linux here: the file parses).
