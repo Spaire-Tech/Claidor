@@ -267,16 +267,16 @@ private struct SearchDisc: View {
   }
 }
 
-/** New chat (⌘N): the To: line (step 5). */
+/** New chat (⌘N): New Agent's sheet while group chats are off, the To: line otherwise (`NewChatState.start`). */
 private struct NewChatDisc: View {
   @Environment(NewChatState.self) private var newChat
   @Environment(SearchState.self) private var search
   @Environment(\.colorScheme) private var scheme
 
   var body: some View {
-    Disc(size: 40, help: String(localized: "New chat"), action: {
+    Disc(size: 40, help: Features.groupChats ? String(localized: "New chat") : String(localized: "New Agent"), action: {
       if search.isOpen { search.close() }
-      newChat.open()
+      newChat.start()
     }) {
       Image(systemName: "square.and.pencil")
         .font(.system(size: 16, weight: .regular))

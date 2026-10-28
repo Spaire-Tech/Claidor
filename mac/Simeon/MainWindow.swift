@@ -189,9 +189,17 @@ struct MainWindow: View {
 
   // The window in four parts, so the compiler checks each on its own (one chain of all of them was too long for it).
   var body: some View {
+    @Bindable var newChat = newChat
     let look = Look(scheme)
     followingNewChat(followingComputer(closingFloaters(layered(columns(look: look), look: look))))
       .background(KeyWatcher())
+      // New Agent (the iPhone's sheet): made, its chat opens.
+      .sheet(isPresented: $newChat.newAgent) {
+        MacNewAgentSheet { id in
+          pane.close(layout: layout)
+          window.choose(id, store: store)
+        }
+      }
   }
 
   /** The sidebar, the chat (or what stands in its place) and the agent's pane, side by side. */
@@ -552,10 +560,10 @@ private struct KeyWatcher: NSViewRepresentable {
           if !search.isOpen { search.open(store: store, window: windowState) }
           return true
         }
-        // ⌘N (`sand.newAgent`, `mod+n`): the new chat, search closing for it.
+        // ⌘N (`sand.newAgent`, `mod+n`): New Agent (the new chat while group chats are on), search closing for it.
         if mods == .command, key == "n", let newChat {
           if search.isOpen { search.close() }
-          newChat.open()
+          newChat.start()
           return true
         }
         if search.isOpen {
