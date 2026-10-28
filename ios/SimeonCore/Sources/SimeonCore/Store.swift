@@ -275,6 +275,10 @@ public final class AppStore {
   /** Connected apps, as the box's manager lists them (`desktopMcp listServers`), and the catalog to add more from. */
   public private(set) var apps: [ConnectedApp] = []
   public private(set) var catalog: [CatalogApp] = []
+  /** The same catalog as the Plugins window and Connect apps read it (`PluginEntry`), from the same answer. */
+  public private(set) var catalogEntries: [PluginEntry] = []
+  /** The catalog was read from the computer in this sign-in: a kept one is read again once. */
+  @ObservationIgnored var catalogFresh = false
   /** The apps that can't be added yet (`AppsComingSoon`): the server's list once read. */
   public private(set) var appsComingSoon: Set<String> = AppsComingSoon.builtIn
 
@@ -430,6 +434,8 @@ public final class AppStore {
     showSaved()
     // Its pins and folders with it: the computer's come only once it answers, seconds later or when it wakes.
     showSavedLayout()
+    // The connectors' catalog kept with them: Connectors opens on it at once.
+    showSavedCatalog()
     shown?()
     onListShown = shown
     if readsServerCopy { Task { await self.showServerList(from: backend) } }
@@ -458,6 +464,9 @@ public final class AppStore {
     await reloadRoster()
     await loadPins()
     await loadSections()
+    // The connected apps and the catalog read behind the list, never waking a resting computer (step 4): Connectors and a
+    // chat's cards find them there (28 October 2026, the founder: "i hate the loading connectors").
+    Task { await self.loadApps(wakes: false) }
     // Every agent its own face and voice from the start, not at its first call (the Mac does the same on opening); the face first, for a voice to follow it.
     // Not while the computer rests (step 4): they are written to it, and are given once its own list comes, or at a call.
     Task {
@@ -477,7 +486,7 @@ public final class AppStore {
     backend = nil
     agents = []; transcripts = [:]; chatRows = [:]; runFlags = [:]; steps = [:]; call = nil; callLevels = []; isLive = false; account = nil; usage = .empty; usageReadAt = nil; access = .checking; accessBlocked = false; hasReachedBox = false; openChat = nil
     layoutTask?.cancel(); layoutTask = nil; pendingLayout = []; refreshing = []; caughtUp = [:]
-    pendingAnswers = [:]; answeredApprovals = [:]; answeredPurchases = [:]; watchedPurchases = []; pickedPurchaseCards = [:]; pressedProducts = [:]; localAsks = [:]; trayList = TrayList(); fileLines = [:]; fileReadsAsText = [:]; unreadAfter = [:]; apps = []; catalog = []; appsComingSoon = AppsComingSoon.builtIn; pinnedIds = []; routinesByAgent = [:]; sidebarSections = nil
+    pendingAnswers = [:]; answeredApprovals = [:]; answeredPurchases = [:]; watchedPurchases = []; pickedPurchaseCards = [:]; pressedProducts = [:]; localAsks = [:]; trayList = TrayList(); fileLines = [:]; fileReadsAsText = [:]; unreadAfter = [:]; apps = []; catalog = []; appsComingSoon = AppsComingSoon.builtIn; catalogEntries = []; catalogFresh = false; pinnedIds = []; routinesByAgent = [:]; sidebarSections = nil
     streamingOnly = [:]; outbox = [:]; sentOffline = [:]; arrived = []; olderBefore = [:]; loadingOlder = []; paged = []; firstRunAgentId = nil; revealing = [:]
     openThreads = [:]; threadRows = [:]; threadRoots = [:]; loadFailed = []; isDown = false; isAsleep = false
     computer = ComputerBook(); subagentsByAgent = [:]; pointers = [:]; lastComputerCatchUp = .distantPast
@@ -1731,11 +1740,11 @@ public final class AppStore {
       if wakes { return try await backend.command("desktopMcp", args) }
       return try await backend.commandIfAwake("desktopMcp", args)
     }
-    // Both at once: each is a round trip to the person's computer.
-    let needsCatalog = catalog.isEmpty
+    // Both at once: each is a round trip to the person's computer. The catalog once a sign-in, a kept one too (it is shown meanwhile).
+    let needsCatalog = !catalogFresh
     async let servers = try? mcp(["action": "listServers", "args": []])
     // The connectors' descriptions and groups in the app's language (`vendorCatalogInLanguage`, 20 October 2026).
-    async let list = needsCatalog ? try? mcp(["action": "getCatalog", "args": [["language": .string(AppLanguage.current)]]]) : nil
+    let catalogRead = needsCatalog ? Task { _ = await self.readCatalog(wakes: wakes) } : nil
     // Which apps can't be added yet, from Simeon Labs' server (`AppsComingSoon`).
     async let soon: Void = needsCatalog ? loadAppsComingSoon() : ()
     if let state = await servers {
@@ -1743,11 +1752,50 @@ public final class AppStore {
       if next != apps { apps = next }
       appsLoadedAt = Date()
     }
-    if let list = await list {
-      let next = (list.array ?? list["plugins"]?.array ?? []).compactMap(CatalogApp.init)
-      if next != catalog { catalog = next }
-    }
+    await catalogRead?.value
     await soon
+  }
+
+  /**
+   * The catalog read from the computer (`getCatalog`, in the app's language),
+   * shown and kept on this device; the entries, or nil when it did not
+   * answer (what was shown stays). The Plugins window and Connect apps read
+   * it this way, so a kept one shows at once and is replaced behind it.
+   */
+  public func readCatalog(wakes: Bool = true) async -> [PluginEntry]? {
+    // One read at a time: the launch's, Connectors' and a card's often ask together. One that may wake the computer
+    // reads again when it joined the launch's, which does not (`commandIfAwake`) and found it resting.
+    if let running = catalogRead {
+      let entries = await running.value
+      if entries != nil || !wakes { return entries }
+    }
+    let read = Task { await self.fetchCatalog(wakes: wakes) }
+    catalogRead = read
+    let entries = await read.value
+    if catalogRead == read { catalogRead = nil }
+    return entries
+  }
+
+  @ObservationIgnored private var catalogRead: Task<[PluginEntry]?, Never>?
+
+  private func fetchCatalog(wakes: Bool) async -> [PluginEntry]? {
+    guard let backend else { return nil }
+    let args: JSON = ["action": "getCatalog", "args": [["language": .string(AppLanguage.current)]]]
+    let answer = try? await (wakes ? backend.command("desktopMcp", args) : backend.commandIfAwake("desktopMcp", args))
+    guard let answer else { return nil }
+    takeCatalog(answer, keep: true)
+    catalogFresh = true
+    return catalogEntries
+  }
+
+  /** A `getCatalog` answer: the apps (`catalog`) and the Plugins window's entries (`catalogEntries`); kept on this device when the computer gave it. */
+  func takeCatalog(_ answer: JSON, keep: Bool = false) {
+    let rows = answer.array ?? answer["plugins"]?.array ?? []
+    let apps = rows.compactMap(CatalogApp.init)
+    if apps != catalog { catalog = apps }
+    let entries = rows.compactMap(PluginEntry.init(json:))
+    if entries != catalogEntries { catalogEntries = entries }
+    if keep, !rows.isEmpty { saved?.writeCatalog(answer, language: AppLanguage.current) }
   }
 
   /** Which apps can't be added yet, read from Simeon Labs' server (`AppsComingSoon`); an older server's answer, or none, keeps the list as it is. */

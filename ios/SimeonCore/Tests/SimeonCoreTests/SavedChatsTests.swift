@@ -282,6 +282,65 @@ final class SavedChatsTests: XCTestCase {
     }
   }
 
+  static let gmail: JSON = ["id": "gmail", "name": "gmail", "displayName": "Gmail", "description": "Mail", "category": "Communication"]
+  static let slack: JSON = ["id": "slack", "name": "slack", "displayName": "Slack", "description": "Chat", "category": "Communication"]
+
+  /**
+   * The connectors' catalog kept on this device (28 October 2026, the
+   * founder: "i hate the loading connectors"): there as the list first
+   * shows, kept while the computer rests, replaced by the computer's once it
+   * answers, and kept again. Another language's is not shown.
+   */
+  func testTheConnectorsCatalogIsThereAtLaunch() async throws {
+    let dir = folder()
+    try await onMain {
+      let first = AppStore()
+      first.saved = SavedChats(directory: dir)
+      first.account = Self.bass
+      let up = AwayBackend()
+      up.catalog = [Self.gmail]
+      await first.attach(up)
+      let read = await first.readCatalog()
+      XCTAssertEqual(read?.map(\.id), ["gmail"])
+      XCTAssertEqual(first.catalog.map(\.title), ["Gmail"])
+      first.saved?.waitForWrites()
+      XCTAssertNotNil(SavedChats(directory: dir).readCatalog(language: AppLanguage.current))
+      XCTAssertNil(SavedChats(directory: dir).readCatalog(language: "xx"))
+
+      let store = AppStore()
+      store.saved = SavedChats(directory: dir)
+      store.account = Self.bass
+      let asleep = AwayBackend()
+      asleep.away = true
+      var shown: [String] = []
+      await store.attach(asleep) { shown = store.catalogEntries.map(\.id) }
+      XCTAssertEqual(shown, ["gmail"], "the catalog is there as the list first shows")
+      XCTAssertEqual(store.catalog.map(\.title), ["Gmail"])
+      // Resting: not woken for it, and what was shown stays.
+      let resting = await store.readCatalog(wakes: false)
+      XCTAssertNil(resting)
+      XCTAssertEqual(store.catalogEntries.map(\.id), ["gmail"])
+      // Awake with a new app: the computer's replaces it, and is kept.
+      asleep.away = false
+      asleep.catalog = [Self.gmail, Self.slack]
+      let fresh = await store.readCatalog()
+      XCTAssertEqual(fresh?.map(\.id), ["gmail", "slack"])
+      XCTAssertEqual(store.catalog.map(\.title), ["Gmail", "Slack"])
+      store.saved?.waitForWrites()
+      let kept = SavedChats(directory: dir).readCatalog(language: AppLanguage.current)
+      XCTAssertEqual(kept?.array?.count, 2)
+      // Read once a sign-in: the apps read again do not ask for it again.
+      let reads = asleep.catalogReads
+      await store.loadApps()
+      XCTAssertEqual(asleep.catalogReads, reads)
+
+      // Signed out: it goes with the rest.
+      store.saved?.forget()
+      store.saved?.waitForWrites()
+      XCTAssertNil(SavedChats(directory: dir).readCatalog(language: AppLanguage.current))
+    }
+  }
+
   /** A change made while the folders and pins are the device's copy is made on the computer's own, so another device's changes stay. */
   func testAChangeToTheKeptCopyIsMadeOnTheComputersOwn() async throws {
     let dir = folder()
@@ -703,10 +762,17 @@ final class AwayBackend: AgentBackend, @unchecked Sendable {
   /** The computer's settings (`getHostSettings`): the pins and the sections; each write merged in, and kept in order. */
   var hostSettings: JSON = [:]
   var settingsWrites: [JSON] = []
+  /** The connectors' catalog (`desktopMcp` `getCatalog`), and how often it was read. */
+  var catalog: [JSON] = []
+  var catalogReads = 0
   func command(_ method: String, _ args: JSON) async throws -> JSON {
     try reach()
     switch method {
     case "getHostSettings": return hostSettings
+    case "desktopMcp" where args["action"]?.string == "getCatalog":
+      catalogReads += 1
+      return .array(catalog)
+    case "desktopMcp" where args["action"]?.string == "listServers": return ["servers": []]
     case "setHostSettings":
       settingsWrites.append(args)
       for (key, value) in args.object ?? [:] { hostSettings = hostSettings.setting(key, value) }

@@ -1168,6 +1168,12 @@ empty:
   or folder change made before the computer has answered is made on the
   computer's own copy, read first (waking it), so a change made on another
   device meanwhile is not undone.
+- The connectors' catalog is kept too (28 October 2026, `catalog.json`, in
+  the app's language): Connectors (Mac and iPhone) opens on it at once
+  instead of "Loading connectors…". At launch the connected apps and the
+  catalog are read behind the list only while the computer is awake (never
+  waking it); Connectors reads the catalog again behind what it shows, once
+  a sign-in.
 - Kept: what the computer sent in this sign-in, a moment after each change
   and when the app goes behind (or quits, on the Mac). A chat keeps its
   newest 300 lines, 100 when those pass 2 MB. Not kept: what was going on at

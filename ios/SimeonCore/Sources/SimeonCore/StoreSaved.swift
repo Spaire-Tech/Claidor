@@ -43,6 +43,12 @@ extension AppStore {
     }
   }
 
+  /** The connectors' catalog kept on this device, until the computer's comes (`readApps`, `readCatalog`): Connectors opens on it, not on "Loading connectors…". */
+  func showSavedCatalog() {
+    guard catalog.isEmpty, catalogEntries.isEmpty, let answer = saved?.readCatalog(language: AppLanguage.current) else { return }
+    takeCatalog(answer)
+  }
+
   func layoutChanged() {
     layoutToSave = true
     saveSoon()

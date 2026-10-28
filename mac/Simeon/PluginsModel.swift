@@ -132,12 +132,24 @@ final class PluginsModel {
     return PluginCalls(backend)
   }
 
-  /** Opening (`getMcpState`, `getEffectivePlugins`, the sync status, a sync, the agent's skills); the catalog once it is in. */
+  /**
+   * Opening (`getMcpState`, `getEffectivePlugins`, the sync status, a sync,
+   * the agent's skills). The catalog the store holds (read behind the list
+   * at launch, or kept on this Mac) shows at once and is read again behind
+   * it (28 October 2026, the founder: "i hate the loading connectors");
+   * with none, "Loading connectors…" until it is in.
+   */
   func load(agentId: String?) async {
-    // This opening's catalog: a page asked for by a link waits for it, not for the last opening's.
-    catalogLoaded = false
+    if let kept = store?.catalogEntries, !kept.isEmpty {
+      catalog = kept
+      catalogLoaded = true
+    } else {
+      // This opening's catalog: a page asked for by a link waits for it, not for the last opening's.
+      catalogLoaded = false
+    }
     let reader = try? calls()
-    async let catalogAnswer = try? reader?.catalog()
+    let store = store
+    async let catalogAnswer = store?.readCatalog()
     async let pluginsAnswer = try? reader?.effectivePlugins()
     await refreshServers()
     if let entries = await catalogAnswer { catalog = entries }
