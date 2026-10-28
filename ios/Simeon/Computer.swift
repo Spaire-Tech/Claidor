@@ -190,11 +190,7 @@ struct ComputerSheet: View {
       KeyCatcher(isActive: $typing, field: field, type: { text in
         link.type(text)
         if text == "\n" { focusAfterTap() }
-      }, delete: { link.key(0xff08) }, key: { keysym in
-        link.key(keysym)
-        // Tab moves the focus on, to a field of another kind perhaps.
-        if keysym == KeyCatcher.tab { focusAfterTap() }
-      })
+      }, delete: { link.key(0xff08) })
       .frame(width: 0, height: 0)
     }
     // In control the sheet stays until the checkmark hands the computer back.
@@ -692,9 +688,8 @@ final class ScreenLink {
 /**
  * The phone's keyboard for the computer: a view no one sees that takes the
  * keyboard while `isActive`, and hands each letter (and return) and each
- * delete to the screen; above the keyboard, the keys a computer needs that
- * the phone's has not (26 October 2026, with the keyboard up all along):
- * esc, tab and the four arrows, as X keysyms.
+ * delete to the screen. Nothing above it: the row of esc, tab and arrows
+ * (26 October 2026) said nothing to the founder and is gone (28 October).
  */
 struct KeyCatcher: UIViewRepresentable {
   @Binding var isActive: Bool
@@ -702,21 +697,6 @@ struct KeyCatcher: UIViewRepresentable {
   var field: TypingField = .text
   let type: (String) -> Void
   let delete: () -> Void
-  /** One of the keys above the keyboard, by its X keysym. */
-  var key: (Int) -> Void = { _ in }
-
-  static let escape = 0xff1b
-  static let tab = 0xff09
-
-  /** The keys above the keyboard: what each shows (its name or an arrow), what it is read as, and its keysym. */
-  static let extraKeys: [(title: String?, symbol: String?, name: String, keysym: Int)] = [
-    ("esc", nil, String(localized: "Escape"), escape),
-    ("tab", nil, String(localized: "Tab"), tab),
-    (nil, "arrow.left", String(localized: "Left arrow"), 0xff51),
-    (nil, "arrow.up", String(localized: "Up arrow"), 0xff52),
-    (nil, "arrow.down", String(localized: "Down arrow"), 0xff54),
-    (nil, "arrow.right", String(localized: "Right arrow"), 0xff53),
-  ]
 
   /** The phone's keyboard for a field. Numbers and phone numbers keep a Return key (the phone pad has none), to send the form. */
   static func keyboard(for field: TypingField) -> UIKeyboardType {
@@ -734,7 +714,6 @@ struct KeyCatcher: UIViewRepresentable {
     let view = Catcher()
     view.onType = type
     view.onDelete = delete
-    view.onKey = key
     view.onEnd = { isActive = false }
     return view
   }
@@ -742,7 +721,6 @@ struct KeyCatcher: UIViewRepresentable {
   func updateUIView(_ view: Catcher, context: Context) {
     view.onType = type
     view.onDelete = delete
-    view.onKey = key
     let keyboard = Self.keyboard(for: field)
     if view.keyboardType != keyboard {
       view.keyboardType = keyboard
@@ -756,50 +734,7 @@ struct KeyCatcher: UIViewRepresentable {
   final class Catcher: UIView, UIKeyInput {
     var onType: (String) -> Void = { _ in }
     var onDelete: () -> Void = {}
-    var onKey: (Int) -> Void = { _ in }
     var onEnd: () -> Void = {}
-
-    /** The row of keys above the keyboard, on the keyboard's own ground, its keys drawn as the keyboard's are. */
-    private lazy var keyRow: UIView = {
-      let row = UIInputView(frame: CGRect(x: 0, y: 0, width: 0, height: 48), inputViewStyle: .keyboard)
-      row.autoresizingMask = .flexibleWidth
-      let stack = UIStackView()
-      stack.axis = .horizontal
-      stack.distribution = .fillEqually
-      stack.spacing = 6
-      stack.translatesAutoresizingMaskIntoConstraints = false
-      for extra in KeyCatcher.extraKeys {
-        var look = UIButton.Configuration.filled()
-        look.baseBackgroundColor = UIColor { $0.userInterfaceStyle == .dark ? UIColor(white: 0.42, alpha: 1) : .white }
-        look.baseForegroundColor = .label
-        look.background.cornerRadius = 6
-        look.cornerStyle = .fixed
-        if let symbol = extra.symbol {
-          look.image = UIImage(systemName: symbol, withConfiguration: UIImage.SymbolConfiguration(pointSize: 15, weight: .medium))
-        } else if let title = extra.title {
-          var words = AttributedString(title)
-          words.font = .systemFont(ofSize: 15, weight: .medium)
-          look.attributedTitle = words
-        }
-        let keysym = extra.keysym
-        let button = UIButton(configuration: look, primaryAction: UIAction { [weak self] _ in
-          Haptics.tap()
-          self?.onKey(keysym)
-        })
-        button.accessibilityLabel = extra.name
-        stack.addArrangedSubview(button)
-      }
-      row.addSubview(stack)
-      NSLayoutConstraint.activate([
-        stack.leadingAnchor.constraint(equalTo: row.leadingAnchor, constant: 6),
-        stack.trailingAnchor.constraint(equalTo: row.trailingAnchor, constant: -6),
-        stack.topAnchor.constraint(equalTo: row.topAnchor, constant: 6),
-        stack.bottomAnchor.constraint(equalTo: row.bottomAnchor, constant: -4),
-      ])
-      return row
-    }()
-
-    override var inputAccessoryView: UIView? { keyRow }
 
     override var canBecomeFirstResponder: Bool { true }
     var hasText: Bool { true }

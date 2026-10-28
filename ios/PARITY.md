@@ -575,7 +575,11 @@ etc. agents." The phone's search only filtered the list by name. It is now
 the Mac's search (its palette, `QFn`), drawn as Messages draws its own:
 the field at the bottom of the list takes over the screen while in use,
 with tabs along the top in the Mac's order (All, Messages, Agents, Groups,
-Files, Links, Routines, Actions) and, on All, a few of each with See All.
+Files, Links, Routines, Actions). Since 28 October 2026 the results are one
+list as the Mac's are (the founder's reference): no headers, no lines
+between rows, each row its picture, its name and title ("Chief of Staff ·
+Fleet & decisions"), and on All what it is at the right ("Agent",
+"Group", "Action"…); with words, the best first, as the Mac ranks them.
 
 - Agents and groups by name and title (the Mac's fuzzy match: each word's
   letters in order, near together, word starts first; the matched letters
