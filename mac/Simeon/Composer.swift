@@ -891,25 +891,111 @@ final class FieldTextView: NSTextView {
   /** Plain words only, pasted or dropped (files are taken before this, in `paste` and the drag). */
   override var readablePasteboardTypes: [NSPasteboard.PasteboardType] { [.string] }
 
+  /**
+   * Edit › Paste (and Paste and Match Style): what the clipboard holds, put
+   * in by the field itself (`pasteFromClipboard`), not by AppKit's paste.
+   */
   override func paste(_ sender: Any?) {
-    if let files = FieldTextView.files(on: NSPasteboard.general), !files.isEmpty {
+    pasteArrived = true
+    if !pasteFromClipboard() { NSSound.beep() }
+  }
+
+  /** Edit › Paste reached the field (`editKey`). */
+  private var pasteArrived = false
+
+  override func pasteAsPlainText(_ sender: Any?) { paste(sender) }
+
+  /**
+   * Files and pictures to the files waiting to go; else the words, plain,
+   * at the caret, through the same path as typing (undo, the draft, the
+   * lists). False when nothing was read.
+   */
+  @discardableResult
+  func pasteFromClipboard() -> Bool {
+    let board = NSPasteboard.general
+    if let files = FieldTextView.files(on: board), !files.isEmpty {
       onFiles?(files)
-      return
+      return true
     }
-    pasteAsPlainText(sender)
+    guard let words = board.string(forType: .string), !words.isEmpty else { return false }
+    insertText(words, replacementRange: selectedRange())
+    return true
+  }
+
+  /** The words chosen, a pick as its words ("@Nora"), plain. */
+  override func copy(_ sender: Any?) {
+    let range = selectedRange()
+    guard range.length > 0, let storage = textStorage, NSMaxRange(range) <= storage.length else { return }
+    let words = MessageField.document(storage.attributedSubstring(from: range)).draft
+    let board = NSPasteboard.general
+    board.clearContents()
+    board.setString(words, forType: .string)
+  }
+
+  override func cut(_ sender: Any?) {
+    let range = selectedRange()
+    guard range.length > 0 else { return }
+    copy(sender)
+    insertText("", replacementRange: range)
   }
 
   /**
-   * Paste stays on for a picture or a file with no words beside it (a
-   * screenshot copied with ⌃⇧⌘4, an image copied from a page): AppKit offers
-   * Paste only for the readable types, plain words here, so ⌘V did nothing
-   * and `paste` above never ran (the founder, 22 October 2026). Told by the
-   * pasteboard's types alone: reading what it holds, outside a paste, can ask
-   * the person on macOS 26.
+   * Paste always on while the words can be changed: told without asking
+   * the clipboard, which outside a paste can ask the person on macOS 26.
+   * Until 28 October 2026 it was AppKit's, which offered Paste only for the
+   * types it reads.
    */
   override func validateUserInterfaceItem(_ item: any NSValidatedUserInterfaceItem) -> Bool {
-    if item.action == #selector(paste(_:)), NSPasteboard.general.availableType(from: [.fileURL, .png, .tiff]) != nil { return true }
+    let action = item.action
+    if action == #selector(paste(_:)) || action == #selector(pasteAsPlainText(_:)) { return isEditable }
+    if action == #selector(copy(_:)) { return selectedRange().length > 0 }
+    if action == #selector(cut(_:)) { return isEditable && selectedRange().length > 0 }
     return super.validateUserInterfaceItem(item)
+  }
+
+  /**
+   * ⌘V, ⌘C, ⌘X and ⌘A while the field has the keys, done by the field
+   * itself before the Edit menu: by the menu, paste never reached it (the
+   * founder, 22 and 28 October 2026: "I cannot paste anything in the
+   * composer", while the search field took it). The window's key watcher
+   * asks first (`MainWindow`); `performKeyEquivalent` is the way in any
+   * other window. Letters still being composed keep their keys.
+   */
+  func editKey(_ event: NSEvent) -> Bool {
+    guard window?.firstResponder === self, !hasMarkedText() else { return false }
+    let mods = event.modifierFlags.intersection([.command, .shift, .option, .control])
+    let key = event.charactersIgnoringModifiers?.lowercased() ?? ""
+    if key == "v", mods == .command || mods == [.command, .option, .shift] {
+      // Through the Edit menu's own Paste, sent here: a paste macOS takes as the person's, which it never asks about.
+      // Should it not come here (the item turned off, or sent elsewhere), the field reads the clipboard itself.
+      pasteArrived = false
+      if let item = FieldTextView.pasteMenuItem(), let menu = item.menu { menu.performActionForItem(at: menu.index(of: item)) }
+      return pasteArrived || pasteFromClipboard()
+    }
+    guard mods == .command else { return false }
+    switch key {
+    case "c": copy(nil)
+    case "x": cut(nil)
+    case "a": selectAll(nil)
+    default: return false
+    }
+    return true
+  }
+
+  override func performKeyEquivalent(with event: NSEvent) -> Bool {
+    editKey(event) || super.performKeyEquivalent(with: event)
+  }
+
+  /** The menu bar's Paste, found by its action. */
+  static func pasteMenuItem() -> NSMenuItem? {
+    func find(_ menu: NSMenu) -> NSMenuItem? {
+      for item in menu.items {
+        if item.action == #selector(NSText.paste(_:)) { return item }
+        if let submenu = item.submenu, let found = find(submenu) { return found }
+      }
+      return nil
+    }
+    return NSApp.mainMenu.flatMap(find)
   }
 
   /** The one message field on screen in `window`, none when there are two or more (the new chat over a chat). */

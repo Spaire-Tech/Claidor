@@ -527,14 +527,17 @@ private struct KeyWatcher: NSViewRepresentable {
           return true
         }
       }
+      // The message field's ⌘V ⌘C ⌘X ⌘A, done by the field before the Edit menu, which never brought it a paste (the
+      // founder, 28 October 2026: "absolutely nothing in the composer"; `FieldTextView.editKey`).
+      if let field = window?.firstResponder as? FieldTextView, field.editKey(event) { return true }
       // ⌘V with no field holding the keys (after a click in the chat, or words copied from a message): the message field
-      // takes the keys, then Edit › Paste pastes into it as ever (the founder, 22 October 2026: "can't copy and paste in
-      // the chat"). Not over anything else, nor into a field that is one of two.
+      // takes the keys and pastes (the founder, 22 October 2026: "can't copy and paste in the chat"). Not over anything
+      // else, nor into a field that is one of two.
       if mods == .command, event.charactersIgnoringModifiers?.lowercased() == "v", let window, search?.isOpen != true, !WindowOverlay.showing,
          !MacConnector.showing, MacServices.shared.deepLinkInfo == nil, MacServices.shared.packAsk == nil, viewers?.shown == nil, !ChatControl.exchangeShowing,
          windowState?.orgChart != true, pane?.avatarEditor == nil, !screenHasKeys, (window.firstResponder as? NSTextView)?.isEditable != true, let field = FieldTextView.shown(in: window) {
         window.makeFirstResponder(field)
-        return false
+        return field.editKey(event)
       }
       // The agent's pane: ⌘⇧, (`sand.toggleAgentSettings`) and ⌘⇧I or ⌥⌘B (`sand.toggleInfo`); not behind Settings or Plugins.
       if let pane, let layout, search?.isOpen != true, !WindowOverlay.showing {
