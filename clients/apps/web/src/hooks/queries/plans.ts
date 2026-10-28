@@ -153,7 +153,6 @@ export interface PlanChange {
   price: number
   currency: string
   starts_at: string
-  proration_date: number | null
   scheduled_tier: PaidTierKey | null
 }
 
@@ -185,7 +184,6 @@ export const useChangePlan = () => {
           : await plansApi.POST('/v1/plans/change', {
               body: {
                 tier: change.kind === 'keep' ? change.current : change.tier,
-                proration_date: change.proration_date,
               },
             })
       if (error) throw error

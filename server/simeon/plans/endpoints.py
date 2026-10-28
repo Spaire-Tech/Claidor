@@ -142,7 +142,6 @@ def plan_change(change: PlanChangeResult) -> PlanChange:
         price=change.price,
         currency=change.currency,
         starts_at=change.starts_at,
-        proration_date=change.proration_date,
         scheduled_tier=change.scheduled_tier,
     )
 
@@ -273,12 +272,7 @@ async def change_plan(
     session: AsyncSession = Depends(get_db_session),
 ) -> PlanChange:
     return plan_change(
-        await plans_service.change_plan(
-            session,
-            auth_subject.subject,
-            body.tier,
-            proration_date=body.proration_date,
-        )
+        await plans_service.change_plan(session, auth_subject.subject, body.tier)
     )
 
 

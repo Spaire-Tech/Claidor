@@ -81,10 +81,11 @@ class TestUpgrade:
         assert change.amount_due == 7700
         assert change.credit == 2300
         assert change.price == 10000
-        assert change.proration_date is not None
         details = preview.await_args.kwargs["subscription_details"]
         assert details["billing_cycle_anchor"] == "now"
         assert details["proration_behavior"] == "always_invoice"
+        # Stripe refuses a `proration_date` with `billing_cycle_anchor=now`.
+        assert "proration_date" not in details
         assert details["items"] == [
             {"id": "si_test", "price": "price_pro", "quantity": 1}
         ]
@@ -114,15 +115,14 @@ class TestUpgrade:
                 )
             ),
         )
-        at = int(utc_now().timestamp()) - 60
-        change = await plans.change_plan(session, user, TierKey.pro, proration_date=at)
+        change = await plans.change_plan(session, user, TierKey.pro)
         assert change.kind == "upgrade"
         assert change.amount_due == 7700
         params = modify.await_args.kwargs
         assert params["billing_cycle_anchor"] == "now"
         assert params["proration_behavior"] == "always_invoice"
         assert params["payment_behavior"] == "error_if_incomplete"
-        assert params["proration_date"] == at
+        assert "proration_date" not in params
         assert params["items"][0]["price"] == "price_pro"
         row = await plans.subscription_of(session, user)
         assert row is not None

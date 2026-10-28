@@ -255,11 +255,6 @@ async def change_page(
         return _failed(say("apps.page.try_again"), back)
     title, sentence = describe(change)
     fields = f'<input type="hidden" name="t" value="{escape(t, quote=True)}">'
-    if change.proration_date is not None:
-        fields += (
-            '<input type="hidden" name="proration_date" '
-            f'value="{change.proration_date}">'
-        )
     return _page(
         title,
         f"<p>{escape(sentence)}</p>",
@@ -276,7 +271,6 @@ async def change_page(
 async def confirm_change(
     request: Request,
     t: str = Form(default=""),
-    proration_date: int | None = Form(default=None),
     session: AsyncSession = Depends(get_db_session),
 ) -> HTMLResponse:
     found = await _claims(session, t)
@@ -288,9 +282,7 @@ async def confirm_change(
             change = await plans_service.start_now(session, user)
         else:
             assert tier is not None
-            change = await plans_service.change_plan(
-                session, user, tier, proration_date=proration_date
-            )
+            change = await plans_service.change_plan(session, user, tier)
     except PlansError as error:
         return _failed(error.message, back)
     except Exception:
