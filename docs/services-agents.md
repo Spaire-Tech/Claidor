@@ -1327,9 +1327,11 @@ The person can allow it once or always.
 for an allow-or-block decision (`host/extensions/auto-review/simeon-smart-mode-classifier-exec.ts`,
 30 s deadline). A block always carries a `proposedAllowRule`, so "Always allow" saves a rule;
 when the model leaves it out, `fallbackAllowRule` builds one from the command. Review is
-enforced because the `sand_auto_review` gate is on in `simeon-gate-defaults.ts` (on from 25
-September to 7 October 2026, off after the insurance log of 6 October, on again since 28
-October; `SAND_FEATURE_GATE_OVERRIDES=sand_auto_review=0` turns it off). A new
+off by default: the `sand_auto_review` gate is off in `simeon-gate-defaults.ts`, so every
+action is only shadowed (reviewed, verdict logged, no card). It was on from 25 September to
+7 October 2026 (off after the insurance log of 6 October, where the card came over and over),
+and on again for a day on 28 October before the founder switched it off for the same reason.
+`SAND_FEATURE_GATE_OVERRIDES=sand_auto_review=1` turns it on. A new
 message from the person retires the previous approvals (`beginAutoReviewUserMessageEpoch`).
 
 * **Log line.** Box: `[simeon] auto-review action=… mode=… verdict=allow|block|unparseable|error …`.
@@ -1453,9 +1455,10 @@ history). What changed to match them:
 * **Routines run at most every 5 minutes**, on the computer (`ROUTINE_MIN_INTERVAL_MS`,
   `sand-trigger-hub.ts`) and on the server (`ROUTINE_MIN_INTERVAL`, `listeners_service.py`),
   as the upstream app's rules say. There was no gap since 8 October.
-* **The approval card and the routine confirm card** show again: the review of risky actions
-  enforces, as the upstream app's card rules describe ("Auto-review approvals" above). It was
-  off since 8 October, when the founder's first real job met the card over and over.
+* **The approval card and the routine confirm card** stay off by default (the review only
+  shadows). They were turned on on 28 October to match the upstream app, and off again the same
+  day on the founder's word, for the reason they were off since 8 October: the card came over
+  and over ("Auto-review approvals" above).
 
 ### The in-chat form (28 October 2026)
 
@@ -1718,7 +1721,7 @@ the background while the call goes on, and says how it is going when asked.
     pending for the agent ("Another action is waiting…"), the box is not ready, or the turn was
     cancelled. Since 7 October 2026 the message carries the shell's own reason, and a
     cancellation stays a cancellation; before, every case read the same. Since 8 October,
-    when the review only shadows (the default from 8 to 28 October), a failed probe
+    when the review only shadows (the default since 8 October), a failed probe
     no longer stops the action: the host logs `auto-review probe failed in shadow, action
     allowed: <reason>` and the action runs. In enforce it still refuses, with the reason.
   - **"Not run: this is the third time you have sent exactly this action to exactly this
