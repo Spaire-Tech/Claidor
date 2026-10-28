@@ -523,6 +523,33 @@ final class ChatTests: XCTestCase {
     XCTAssertEqual(rows.count, 2)
   }
 
+  func testAQuestionSendsEachOptionsOwnReplyAndKnowsItsStyleAndSeveralAtOnce() {
+    let entries = [
+      Entry(["kind": "send-message", "id": "q", "message": ["type": "widget", "widget": ["prompt": "Which ones?", "multiSelect": true, "options": [
+        ["label": "Refund", "value": "Yes, refund it", "style": "primary"], ["label": "Delete", "style": "danger"], ["label": "Keep"]]]], "respondedValue": "Yes, refund it\nDelete"])!,
+    ]
+    guard case .question(_, let card) = Chat.rows(entries)[0] else { return XCTFail() }
+    XCTAssertTrue(card.multiSelect)
+    XCTAssertEqual(card.options.map(\.value), ["Yes, refund it", "Delete", "Keep"])
+    XCTAssertEqual(card.options.map(\.style), [.primary, .danger, .plain])
+    XCTAssertEqual(card.shown(card.answer ?? ""), "Refund, Delete")
+    XCTAssertEqual(card.shown("my own words"), "my own words")
+  }
+
+  func testAnEmailReplyCardKnowsItIsAReplyAndNamesItsFiles() {
+    let entries = [
+      Entry(["kind": "send-message", "id": "r", "message": ["type": "email-draft", "draft": ["to": ["sam@example.com"], "cc": ["startups@example.com"], "subject": "Re: Your application", "body": "Hello", "via": "outlook", "replyTo": ["messageId": "AAMk"], "attachments": ["/home/user/attachments/Certificate.pdf"]]]])!,
+      Entry(["kind": "send-message", "id": "n", "message": ["type": "email-draft", "draft": ["to": ["sam@example.com"], "subject": "Friday", "body": "Hi"]]])!,
+    ]
+    let rows = Chat.rows(entries)
+    guard case .draft(_, let reply) = rows[0], case .draft(_, let fresh) = rows[1] else { return XCTFail() }
+    XCTAssertTrue(reply.isReply)
+    XCTAssertEqual(reply.cc, ["startups@example.com"])
+    XCTAssertEqual(reply.attachmentNames, ["Certificate.pdf"])
+    XCTAssertFalse(fresh.isReply)
+    XCTAssertEqual(fresh.attachments, [])
+  }
+
   func testEveryCardTheMacDraws() {
     let rows = Chat.rows(DemoData.seed(now: now, gallery: true).transcripts["cards"]!)
     let kinds = rows.compactMap { row -> String? in
@@ -537,8 +564,11 @@ final class ChatTests: XCTestCase {
       case .request(_, let card):
         switch card {
         case .approval(_, let summary, _, _, let status, _, _): return "approval:\(summary):\(status)"
-        case .secret(let label, _, _): return "secret:\(label)"
+        case .secret(let label, _, _, _): return "secret:\(label)"
         case .computer(_, _, let resolution): return "computer:\(resolution ?? "waiting")"
+        case .form(let form): return "form:\(form.title)"
+        case .credential(let card): return "credential:\(card.title)"
+        case .onePasswordConnect: return "onepassword-connect"
         }
       case .notice(_, let text): return text == Chat.notShown ? "notice" : text
       case .cloudAgent(_, let bcId): return "cloud-agent:\(bcId)"

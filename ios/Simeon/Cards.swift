@@ -144,6 +144,8 @@ struct QuestionCardView: View {
   @Environment(\.chatWidth) private var width
   @State private var own = ""
   @FocusState private var typingOwn: Bool
+  /** Several picked at once (`multiSelect`), sent together with Submit. */
+  @State private var picked: Set<Int> = []
 
   var body: some View {
     let pending = store.pendingAnswers[entryId]
@@ -184,11 +186,14 @@ struct QuestionCardView: View {
       VStack(spacing: 0) {
         ForEach(Array(card.options.enumerated()), id: \.offset) { index, option in
           if index > 0 { Rectangle().fill(Ink.hairline).frame(height: 1) }
-          Button { give(option.label) } label: {
+          // Picking sends the option's own reply (`value`); several picked go together with Submit.
+          Button { if card.multiSelect { toggle(index) } else { give(option.value) } } label: {
             HStack(spacing: 8) {
-              Circle().stroke(Ink.primary.opacity(0.3), lineWidth: 1).frame(width: 18, height: 18)
+              mark(picked.contains(index))
               VStack(alignment: .leading, spacing: 0) {
-                Text(option.label).font(.system(size: 17)).foregroundStyle(Ink.primary).multilineTextAlignment(.leading)
+                Text(option.label).font(.system(size: 17, weight: option.style == .primary ? .medium : .regular))
+                  .foregroundStyle(option.style == .danger ? Ink.danger : option.style == .primary ? Ink.blue : Ink.primary)
+                  .multilineTextAlignment(.leading)
                 if let description = option.description {
                   Text(description).font(.system(size: 17)).foregroundStyle(Ink.secondary).multilineTextAlignment(.leading)
                 }
@@ -200,6 +205,10 @@ struct QuestionCardView: View {
           }
           .buttonStyle(.tactile)
         }
+      }
+      if card.multiSelect && !picked.isEmpty {
+        Button("Submit") { give(picked.sorted().map { card.options[$0].value }.joined(separator: "\n")) }
+          .buttonStyle(Tactile(look: BlueButtonStyle()))
       }
       if card.allowsOwnAnswer {
         HStack(alignment: .bottom, spacing: 8) {
@@ -228,7 +237,7 @@ struct QuestionCardView: View {
         .fixedSize(horizontal: false, vertical: true)
       HStack(spacing: 8) {
         Image(systemName: "checkmark").font(.system(size: 13, weight: .semibold)).foregroundStyle(Ink.blue).frame(width: 18)
-        Text(answer).font(.system(size: 17)).foregroundStyle(Ink.primary).fixedSize(horizontal: false, vertical: true)
+        Text(card.shown(answer)).font(.system(size: 17)).foregroundStyle(Ink.primary).fixedSize(horizontal: false, vertical: true)
         Spacer(minLength: 0)
       }
       .padding(8)
@@ -250,6 +259,19 @@ struct QuestionCardView: View {
     guard !trimmed.isEmpty else { return }
     own = ""
     Task { await store.answer(trimmed, card: entryId, in: agentId) }
+  }
+
+  private func toggle(_ index: Int) {
+    if picked.contains(index) { picked.remove(index) } else { picked.insert(index) }
+  }
+
+  /** The ring before an option: empty, or filled with a tick once picked for a several-at-once answer. */
+  @ViewBuilder private func mark(_ on: Bool) -> some View {
+    if on {
+      Image(systemName: "checkmark.circle.fill").font(.system(size: 18)).foregroundStyle(Ink.blue).frame(width: 18, height: 18)
+    } else {
+      Circle().stroke(Ink.primary.opacity(0.3), lineWidth: 1).frame(width: 18, height: 18)
+    }
   }
 }
 
@@ -913,6 +935,7 @@ struct DraftCardView: View {
   @Environment(AppStore.self) private var store
   @Environment(\.chatWidth) private var width
   @State private var to = ""
+  @State private var cc = ""
   @State private var subject = ""
   @State private var bodyText = ""
   @State private var loaded = false
@@ -930,7 +953,7 @@ struct DraftCardView: View {
         if !isEmail, let slack = UIImage(named: "Brands/slack") {
           Image(uiImage: slack).resizable().scaledToFit().frame(width: 16, height: 16)
         }
-        Text(isEmail ? "New email" : "Slack message").font(.system(size: 17, weight: .medium)).foregroundStyle(Ink.primary)
+        Text(isEmail ? (card.isReply ? "Reply" : "New email") : "Slack message").font(.system(size: 17, weight: .medium)).foregroundStyle(Ink.primary)
         Spacer(minLength: 0)
         StatusPill(text: card.status, dot: card.state == "sent" ? Ink.live : card.state == "sending" ? Ink.blue : Ink.tertiary, size: 12)
       }
@@ -942,6 +965,9 @@ struct DraftCardView: View {
           if isEmail {
             if !card.from.isEmpty { field(String(localized: "From")) { Text(card.from).font(.system(size: 17)).foregroundStyle(Ink.secondary).lineLimit(1) }; line }
             field(String(localized: "To"), focus: { focused = 0 }) { TextField("name@company.com", text: $to).font(.system(size: 17)).emailField().autocorrectionDisabled().disabled(!editable).focused($focused, equals: 0) }
+            line
+            // Cc, always there to add to (28 October 2026: a reply's Cc was on the card and nobody could see it).
+            field(String(localized: "Cc"), focus: { focused = 3 }) { TextField(text: $cc) { EmptyView() }.font(.system(size: 17)).emailField().autocorrectionDisabled().disabled(!editable).focused($focused, equals: 3) }
             line
             field(String(localized: "Subject"), focus: { focused = 1 }) { TextField("Subject", text: $subject).font(.system(size: 17)).disabled(!editable).focused($focused, equals: 1) }
           } else {
@@ -961,6 +987,16 @@ struct DraftCardView: View {
             .background { Color.clear.contentShape(.rect).onTapGesture { if editable { focused = 2 } } }
           if bodyText.count > 500 && !expanded {
             Button("Show more") { expanded = true }.font(.system(size: 13)).foregroundStyle(Ink.link).padding(.horizontal, 10).padding(.bottom, 8)
+          }
+          // The files that go with it, by name.
+          ForEach(Array(card.attachmentNames.enumerated()), id: \.offset) { _, name in
+            line
+            HStack(spacing: 8) {
+              Image(systemName: "paperclip").font(.system(size: 14)).foregroundStyle(Ink.tertiary)
+              Text(verbatim: name).font(.system(size: 15)).foregroundStyle(Ink.secondary).lineLimit(1).truncationMode(.middle)
+              Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 10).padding(.vertical, 9)
           }
         }
         .background(Ink.field, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
@@ -986,17 +1022,17 @@ struct DraftCardView: View {
     .onAppear {
       guard !loaded else { return }
       loaded = true
-      to = card.to.joined(separator: ", "); subject = card.subject; bodyText = card.body
+      to = card.to.joined(separator: ", "); cc = card.cc.joined(separator: ", "); subject = card.subject; bodyText = card.body
     }
   }
 
   private var validAddresses: Bool {
-    let list = addresses
-    return !list.isEmpty && list.allSatisfy { $0.contains("@") && $0.contains(".") && !$0.contains(" ") }
+    let list = addresses(to)
+    return !list.isEmpty && (list + addresses(cc)).allSatisfy { $0.contains("@") && $0.contains(".") && !$0.contains(" ") }
   }
 
-  private var addresses: [String] {
-    to.split(whereSeparator: { $0 == "," || $0 == ";" }).map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+  private func addresses(_ text: String) -> [String] {
+    text.split(whereSeparator: { $0 == "," || $0 == ";" }).map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
   }
 
   private var line: some View { Rectangle().fill(Ink.hairline).frame(height: 1) }
@@ -1015,7 +1051,7 @@ struct DraftCardView: View {
 
   private func send() {
     let draft: JSON = isEmail
-      ? ["to": JSON(addresses), "subject": .string(subject), "body": .string(bodyText)]
+      ? ["to": JSON(addresses(to)), "cc": JSON(addresses(cc)), "subject": .string(subject), "body": .string(bodyText)]
       : ["body": .string(bodyText)]
     busy = true
     Task { await store.sendDraft(entryId, in: agentId, draft: draft); busy = false }
@@ -1428,10 +1464,16 @@ struct RequestCardView: View {
       switch card {
       case .approval(let requestId, let summary, let reason, let command, let status, let surface, let proposedRule):
         approval(requestId: requestId, summary: summary, reason: reason, command: command, status: status, surface: surface, proposedRule: proposedRule)
-      case .secret(let label, let description, let provided):
-        secretCard(label: label, description: description, provided: provided)
+      case .secret(let label, let description, let provided, let dismissed):
+        secretCard(label: label, description: description, provided: provided, dismissed: dismissed)
       case .computer(let requestId, let instruction, let resolution):
         computer(requestId: requestId, instruction: instruction, resolution: resolution)
+      case .form(let form):
+        UserFormCardView(entryId: entryId, agentId: agentId, card: form)
+      case .credential(let credential):
+        CredentialCardView(entryId: entryId, agentId: agentId, card: credential)
+      case .onePasswordConnect(let connect):
+        OnePasswordConnectCardView(entryId: entryId, agentId: agentId, card: connect)
       }
     }
     .frame(maxWidth: ChatMetrics.bubbleMax(width), alignment: .leading)
@@ -1506,17 +1548,27 @@ struct RequestCardView: View {
     Task { await work(); busy = false }
   }
 
-  private func secretCard(label: String, description: String, provided: Bool) -> some View {
+  private func secretCard(label: String, description: String, provided: Bool, dismissed: Bool) -> some View {
     VStack(alignment: .leading, spacing: 10) {
       HStack(spacing: 8) {
         Image(systemName: "key.fill").font(.system(size: 13)).foregroundStyle(Ink.secondary)
-        Text(label).font(.system(size: 17, weight: .medium)).foregroundStyle(Ink.primary)
+        Text(label).font(.system(size: 17, weight: .medium)).foregroundStyle(dismissed ? Ink.secondary : Ink.primary)
         Spacer(minLength: 0)
         if provided { StatusPill(text: String(localized: "Saved"), dot: Ink.live, size: 12) }
+        else if dismissed { StatusPill(text: String(localized: "Dismissed")) }
+        else {
+          // Not giving it is an answer too: the agent is told it was declined.
+          Button { run { await store.dismissQuestion(entryId, in: agentId) } } label: {
+            Image(systemName: "xmark").font(.system(size: 11, weight: .semibold)).foregroundStyle(Ink.secondary)
+              .frame(width: 32, height: 32).contentShape(Rectangle())
+          }
+          .buttonStyle(.tactile)
+          .accessibilityLabel("Dismiss")
+        }
       }
-      if !description.isEmpty { Text(description).font(.system(size: 17)).foregroundStyle(Ink.secondary).fixedSize(horizontal: false, vertical: true) }
-      if !provided {
-        SecureField("Paste it here", text: $secret)
+      if !description.isEmpty && !dismissed { Text(description).font(.system(size: 17)).foregroundStyle(Ink.secondary).fixedSize(horizontal: false, vertical: true) }
+      if !provided && !dismissed {
+        SecureField("Paste your \(label)", text: $secret)
           .font(.system(size: 17))
           .typedAsIs().autocorrectionDisabled()
           .padding(.horizontal, 10).frame(height: 34)

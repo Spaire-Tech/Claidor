@@ -141,6 +141,9 @@ export function turnEndedOnSilentToolCalls(
   // ran. So is a tail whose every SendMessage failed.
   const erroredIds = erroredToolResultIds(messages);
   if (deliveredIn(tail, erroredIds)) return false;
+  // A card that waits on the person is what they see: a turn ending on a
+  // draft or a checkout card is not one that forgot to tell them.
+  if (tailShowsWaitingCard(tail, messages, erroredIds)) return false;
 
   let boundary = -1;
   for (let index = tailIndex - 1; index >= 0; index -= 1) {
@@ -184,6 +187,57 @@ export function turnEndedOnSilentToolCalls(
 
 // Handing the box to the person: the turn waits for them to hand it back.
 export const SAND_REQUEST_BOX_HELP_TOOL_NAME = "request_box_help";
+
+/**
+ * Cards that wait on the person (28 October 2026), as the upstream app's do
+ * (its card rules: a draft "waits on user Send/discard", the checkout "ends
+ * turn until they approve/deny", a connect card "waits on user tap"). Each
+ * call ends the turn once its answer says the card is in the chat; a refused
+ * call (a draft with no recipient, a total the page doesn't show) leaves the
+ * model the floor to put it right. These were only on the runner's older
+ * path (`sand-agent-runner.ts`), which the app no longer runs.
+ */
+const WAITING_CARDS: ReadonlyMap<string, RegExp> = new Map([
+  ["DraftExternalMessage", /^Draft shown to the user as an editable /],
+  ["RequestPurchase", /^The checkout card for .+ is in the chat/s],
+  ["AuthenticateMcpServer", /Its connect card is now in the chat\./],
+  ["InstallPlugin", /Its connect card is now in the chat\./],
+  // The in-chat form (28 October 2026, `formShownNote`); a form the page refused is not shown and waits on nothing.
+  ["request_user_form", /^The form ".+" is in the chat/s],
+  // The 1Password cards (28 October 2026, `onepassword-tools.ts`); a fill the person already allowed shows no card.
+  ["request_credential_fill", /^The 1Password card for ".+" is in the chat/s],
+  ["request_1password_connect", /^The 1Password connect card is in the chat/],
+]);
+
+/** A card call whose answer says its card is in front of the person. */
+export function cardCallWaits(toolName: string | undefined, result: unknown): boolean {
+  const shown = toolName === undefined ? undefined : WAITING_CARDS.get(toolName);
+  return shown !== undefined && typeof result === "string" && shown.test(result);
+}
+
+/** Each answered call's result, by its id. */
+function toolResults(messages: readonly (CoreMessage | undefined)[]): Map<string, unknown> {
+  const results = new Map<string, unknown>();
+  for (const message of messages) {
+    if (message === undefined || message.role !== "tool" || typeof message.content === "string") continue;
+    for (const part of message.content) {
+      if (part.type === "tool-result" && part.toolCallId != null) results.set(part.toolCallId, (part as { readonly result?: unknown }).result);
+    }
+  }
+  return results;
+}
+
+/** The tail put a card in front of the person that waits on them (a handoff, a draft, a checkout, a connect card): it is not silent. */
+function tailShowsWaitingCard(tail: CoreMessage, messages: readonly (CoreMessage | undefined)[], erroredIds: ReadonlySet<string>): boolean {
+  if (typeof tail.content === "string") return false;
+  const results = toolResults(messages);
+  return tail.content.some((part) =>
+    part.type === "tool-call"
+    && part.toolCallId != null
+    && !erroredIds.has(part.toolCallId)
+    && results.has(part.toolCallId)
+    && (part.toolName === SAND_REQUEST_BOX_HELP_TOOL_NAME || cardCallWaits(part.toolName, results.get(part.toolCallId))));
+}
 // The subagent launcher under its three names (`getTaskToolName`).
 export const TASK_TOOL_NAMES = new Set(["Task", "Subagent", "mcp_task"]);
 
@@ -217,6 +271,7 @@ export function stepEndsTurn(
   endsTurn: (args: unknown) => boolean,
 ): boolean {
   const messages = responseMessages.map(asCoreMessage);
+  const results = toolResults(messages);
   const calls: { readonly id: string; readonly args: unknown; readonly waiting: boolean }[] = [];
   for (const message of messages) {
     if (message === undefined || message.role !== "assistant" || typeof message.content === "string") continue;
@@ -224,7 +279,7 @@ export function stepEndsTurn(
       if (part.type !== "tool-call") continue;
       if (part.toolCallId == null) return false;
       const args = (part as { readonly args?: unknown }).args;
-      if (waitingToolCallEndsTurn(part.toolName, args)) { calls.push({ id: part.toolCallId, args, waiting: true }); continue; }
+      if (waitingToolCallEndsTurn(part.toolName, args) || cardCallWaits(part.toolName, results.get(part.toolCallId))) { calls.push({ id: part.toolCallId, args, waiting: true }); continue; }
       if (part.toolName !== SAND_SEND_MESSAGE_TOOL_NAME) return false;
       calls.push({ id: part.toolCallId, args, waiting: false });
     }

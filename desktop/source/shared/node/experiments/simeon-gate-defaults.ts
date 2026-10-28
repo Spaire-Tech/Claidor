@@ -22,7 +22,12 @@ import { envGateOverride } from "./simeon-experiments.js";
 // Luna call per action, verdict discarded, no card. On from 25 September
 // 2026 (design-audit-ledger.md F-340) to 8 October, when the founder's first
 // real job (the insurance log of 6 October) met the card over and over;
-// off again, as the upstream ships it.
+// off again, as the upstream ships it. On again since 28 October 2026 (the
+// founder: "Turn it on"), so the approval card and the routine confirm card
+// appear as the upstream app's own card rules describe them. A failed page
+// probe before a browser or computer action now says why, and the Computer
+// tool's loop guard stops the repeats that log showed.
+// `SAND_FEATURE_GATE_OVERRIDES=sand_auto_review=0` turns it off again.
 //
 // `sand_product_analytics` — the upstream app's event stream to the upstream's
 // AnalyticsService, which nothing serves here; off (F-378).
@@ -71,7 +76,7 @@ import { envGateOverride } from "./simeon-experiments.js";
 // want literally everything", 22 September).
 export const SIMEON_FEATURE_GATE_DEFAULTS: Readonly<Record<string, boolean>> = Object.freeze({
   sand_usage_page: true,
-  sand_auto_review: false,
+  sand_auto_review: true,
   sand_product_analytics: false,
   sand_multiplayer: true,
   sand_notify_bus: true,

@@ -2659,3 +2659,49 @@ above). In a group, the member at work (else the first) at 22, as the
 iPhone's group line.
 
 Not yet built or run on a Mac (Linux here: the file parses).
+
+### An email's Cc and files (28 October 2026)
+
+The founder: "im very mad at the experience of sending emails." A reply's Cc
+was on the card and could not be seen or changed. The email card has a Cc
+row under To, always there to add to, and Send sends it; the files the agent
+attaches are listed by name, with a paperclip, under the words; a reply is
+titled Reply. Sending itself changed on the computer
+(`docs/services-agents.md`, "Sending an email").
+
+Not yet built or run on a Mac (Linux here: the file parses).
+
+### The question card, as the upstream app's (28 October 2026)
+
+A pick sends the option's own reply (`value`), not its label. The option the
+agent recommends is blue and a destructive one red. When the agent allows
+several (`multiSelect`), each pick ticks its ring and Submit sends them
+together. The same on the iPhone (`docs/services-agents.md`, "The cards, as
+the upstream app's").
+
+Not yet built or run on a Mac (Linux here: the file parses).
+
+### The in-chat form (28 October 2026)
+
+`UserFormCard.swift`: the fields a page on the agent's computer needs typed
+(a sign-in, a code, an address), each with its name above it, masked for a
+password or a code; Fill in sends them to the computer, which types them into
+the page (`submitUserForm`), and the card forgets them. Once answered, each
+field says whether it went in. The X is a decline (`dismissUserForm`). The
+same on the iPhone (`docs/services-agents.md`, "The in-chat form").
+
+Not yet built or run on a Mac (Linux here: the files parse, and SimeonCore and
+its tests build).
+
+### 1Password (28 October 2026)
+
+`MacOnePassword.swift` and `OnePasswordCards.swift`. The connect card's Connect
+runs 1Password's command-line tool, which the 1Password app unlocks with Touch
+ID: the accounts (a picker when there are several), the vault "Shared with
+Simeon" (made when missing) and a read-only key for it, sent to the agent's
+computer. Without the tool or its app integration, the card says how to set it
+up. The fill card's Fill with 1Password asks for Touch ID first. The same cards
+on the iPhone, whose connect card points here (`docs/services-agents.md`,
+"1Password").
+
+Not yet built or run on a Mac, and not with a real 1Password account.

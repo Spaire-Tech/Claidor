@@ -261,10 +261,11 @@ export function createHostGatewayApi(
         args.value,
         args.agentId
       ),
-    // The draft card's Send and Discard (draft-cards.ts).
+    // The draft card's Send and Discard (draft-cards.ts). Send on an email card sends through the mailbox it names, with the box's app tools.
     sendDraft: (args: any) => {
       markActive("user_action");
-      return method(manager, "sendDraft")({ agentId: args.agentId, entryId: args.entryId, ...(args.draft == null ? {} : { draft: args.draft }) });
+      const mcp = deps.extensions.api("mcp");
+      return method(manager, "sendDraft")({ agentId: args.agentId, entryId: args.entryId, ...(args.draft == null ? {} : { draft: args.draft }) }, mcp?.appTools);
     },
     discardDraft: (args: any) => {
       markActive("user_action");
@@ -297,6 +298,29 @@ export function createHostGatewayApi(
     submitFlightPassengers: (args: any) => {
       markActive("user_action");
       return method(manager, "submitFlightPassengers")({ agentId: args?.agentId, entryId: args?.entryId, passengers: args?.passengers, cancel: args?.cancel === true });
+    },
+    // The in-chat form's Fill and X (28 October 2026, transcript/user-forms.ts). The values go to the page, never further.
+    submitUserForm: (args: any) => {
+      markActive("user_action");
+      return method(manager, "submitUserForm")({ agentId: args?.agentId, entryId: args?.entryId, values: args?.values });
+    },
+    dismissUserForm: (args: any) => {
+      markActive("user_action");
+      return method(manager, "dismissUserForm")({ agentId: args?.agentId, entryId: args?.entryId });
+    },
+    // The 1Password cards (28 October 2026, transcript/onepassword-cards.ts): Fill or Not now on the fill card;
+    // the Mac's Connect with the key its 1Password app made (kept by the engine, never shown to an agent); the connect card's X.
+    answerCredentialRequest: (args: any) => {
+      markActive("user_action");
+      return method(manager, "answerCredentialRequest")({ agentId: args?.agentId, entryId: args?.entryId, allow: args?.allow === true });
+    },
+    connectOnePassword: (args: any) => {
+      markActive("user_action");
+      return method(manager, "connectOnePassword")({ agentId: args?.agentId, entryId: args?.entryId, token: args?.token, vaultId: args?.vaultId, vaultName: args?.vaultName, accountEmail: args?.accountEmail });
+    },
+    dismissOnePasswordConnect: (args: any) => {
+      markActive("user_action");
+      return method(manager, "dismissOnePasswordConnect")({ agentId: args?.agentId, entryId: args?.entryId });
     },
     reactToMessage: (args: any) => {
       markActive("user_action");

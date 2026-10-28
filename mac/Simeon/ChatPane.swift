@@ -669,9 +669,21 @@ private struct TranscriptRow: View {
       ComputerHandoffCard(agentId: agentId, requestId: requestId, instruction: instruction, resolution: resolution, look: look)
         .frame(maxWidth: limit(520), alignment: .leading)
         .padding(.top, startsGroup ? 12 : 0)
-    case .request(let id, .secret(let label, let description, let provided)):
-      SecretCardView(entryId: id, agentId: agentId, label: label, description: description, provided: provided, look: look)
+    case .request(let id, .secret(let label, let description, let provided, let dismissed)):
+      SecretCardView(entryId: id, agentId: agentId, label: label, description: description, provided: provided, dismissed: dismissed, look: look)
         .frame(maxWidth: limit(640), alignment: .leading)
+        .padding(.top, startsGroup ? 12 : 0)
+    case .request(let id, .form(let form)):
+      UserFormCardView(entryId: id, agentId: agentId, card: form, look: look)
+        .frame(maxWidth: limit(520), alignment: .leading)
+        .padding(.top, startsGroup ? 12 : 0)
+    case .request(let id, .credential(let credential)):
+      CredentialCardView(entryId: id, agentId: agentId, card: credential, look: look)
+        .frame(maxWidth: limit(520), alignment: .leading)
+        .padding(.top, startsGroup ? 12 : 0)
+    case .request(let id, .onePasswordConnect(let connect)):
+      OnePasswordConnectCardView(entryId: id, agentId: agentId, card: connect, look: look)
+        .frame(maxWidth: limit(520), alignment: .leading)
         .padding(.top, startsGroup ? 12 : 0)
     default:
       LaterCard(kind: row.kind, look: look)

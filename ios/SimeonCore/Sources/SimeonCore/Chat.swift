@@ -1,11 +1,22 @@
 import Foundation
 
-/** One choice on a question card: its label and, when the agent gave one, a line under it. */
+/**
+ * One choice on a question card: its label and, when the agent gave one, a
+ * line under it. Picking it sends `value`, the reply the agent wrote for it
+ * (the label when it wrote none), as the upstream app's card does; until 28
+ * October 2026 both apps sent the label. `style` marks the recommended path
+ * (`primary`) or a destructive one (`danger`).
+ */
 public struct QuestionOption: Hashable, Sendable {
+  public enum Style: String, Sendable { case plain = "default", primary, danger }
   public let label: String
   public let description: String?
+  public let value: String
+  public let style: Style
 
-  public init(label: String, description: String? = nil) { self.label = label; self.description = description }
+  public init(label: String, description: String? = nil, value: String? = nil, style: Style = .plain) {
+    self.label = label; self.description = description; self.value = value ?? label; self.style = style
+  }
 }
 
 /** A question card (`send-message` of type `widget`), with the answer once given. */
@@ -14,6 +25,8 @@ public struct QuestionCard: Hashable, Sendable {
   public let help: String?
   public let options: [QuestionOption]
   public let allowsOwnAnswer: Bool
+  /** Several options may be picked (`multiSelect`); their values go back one per line. */
+  public let multiSelect: Bool
   /** What the person answered (`respondedValue`); nil while it waits. */
   public let answer: String?
   public let isDismissed: Bool
@@ -22,6 +35,18 @@ public struct QuestionCard: Hashable, Sendable {
 
   public var labels: [String] { options.map(\.label) }
   public var isOpen: Bool { answer == nil && !isDismissed && !isSkipped }
+
+  public init(prompt: String, help: String?, options: [QuestionOption], allowsOwnAnswer: Bool, multiSelect: Bool = false, answer: String?, isDismissed: Bool, isSkipped: Bool) {
+    self.prompt = prompt; self.help = help; self.options = options; self.allowsOwnAnswer = allowsOwnAnswer
+    self.multiSelect = multiSelect; self.answer = answer; self.isDismissed = isDismissed; self.isSkipped = isSkipped
+  }
+
+  /** An answer as the person reads it: each picked option by its label (one per line for several), else the words they typed. */
+  public func shown(_ answer: String) -> String {
+    let lines = answer.split(separator: "\n", omittingEmptySubsequences: true).map(String.init)
+    let named = lines.map { line in options.first(where: { $0.value == line })?.label ?? line }
+    return named.joined(separator: ", ")
+  }
 }
 
 /** An email or a Slack message the agent drafted, for the person to send or discard (host/extensions/transcript/draft-cards.ts). */
@@ -36,6 +61,10 @@ public struct DraftCard: Hashable, Sendable {
   public let workspace: String
   public let target: String
   public let thread: String
+  /** Files attached on Send: paths on the computer (`attachments`). */
+  public let attachments: [String]
+  /** It answers an email the person received (`replyTo`): the card says Reply. */
+  public let isReply: Bool
   /** `editable`, `sending` or `sent` (`draftSendState`). */
   public let state: String
   public let isDismissed: Bool
@@ -52,8 +81,15 @@ public struct DraftCard: Hashable, Sendable {
     workspace = draft["workspace"]?.string ?? ""
     target = draft["target"]?.string ?? ""
     thread = draft["thread"]?.string ?? ""
+    attachments = list(draft["attachments"])
+    isReply = !(draft["replyTo"]?.object?.isEmpty ?? true)
     state = entry["draftSendState"]?.string ?? "editable"
     isDismissed = entry["widgetDismissed"]?.bool ?? false
+  }
+
+  /** The attached files' own names, the last part of each path. */
+  public var attachmentNames: [String] {
+    attachments.map { path in path.split(separator: "/").last.map(String.init) ?? path }
   }
 
   /** What the card says beside its title ("Ready to send", "Sending…", "Sent", "Discarded"). */
@@ -153,10 +189,16 @@ public struct RoutineRef: Hashable, Sendable {
 public enum RequestCard: Hashable, Sendable {
   /** `auto-review-approval`: Allow once, Always allow, Deny (`resolveAutoReviewApproval`); what it is about (`surface`) and the rule Always allow would add (`proposedRule`). */
   case approval(requestId: String, summary: String, reason: String, command: String?, status: String, surface: String?, proposedRule: String?)
-  /** `secret-request`: a password field and Save securely (`submitSecret`). */
-  case secret(label: String, description: String, provided: Bool)
+  /** `secret-request`: a password field and Save securely (`submitSecret`), or the X (`dismissWidget`), a decline. */
+  case secret(label: String, description: String, provided: Bool, dismissed: Bool)
   /** A message with `boxRequestId`: "Your turn on the computer" (`handBackForeverBox`). */
   case computer(requestId: String, instruction: String, resolution: String?)
+  /** `user-form`: fields the page needs the person to type, typed in by the computer (`submitUserForm`), or the X (`dismissUserForm`), a decline. */
+  case form(UserFormCard)
+  /** `credential-request`: a login from the person's 1Password, filled into the page once they allow it (`answerCredentialRequest`). */
+  case credential(CredentialRequestCard)
+  /** `onepassword-connect`: connect 1Password from the Mac (`connectOnePassword`), or the X (`dismissOnePasswordConnect`). */
+  case onePasswordConnect(OnePasswordConnectCard)
 }
 
 /** The call a chat line stands for: how long, and what was said. */
@@ -645,6 +687,9 @@ public enum Chat {
       let title = message["title"]?.string?.trimmingCharacters(in: .whitespaces) ?? ""
       return title.isEmpty ? L10n.text("Cloud agent") : L10n.text("Cloud agent: \(title)")
     case "secret-request": return message["secretRequest"]?["label"]?.string ?? ""
+    case "user-form": return message["form"]?["title"]?.string ?? ""
+    case "credential-request": return message["credential"]?["title"]?.string ?? ""
+    case "onepassword-connect": return L10n.text("Connect 1Password")
     case "email-draft":
       let subject = message["draft"]?["subject"]?.string ?? ""
       return subject.isEmpty ? (message["draft"]?["body"]?.string ?? "") : subject
@@ -1070,11 +1115,13 @@ public enum Chat {
         guard let widget = message["widget"], let prompt = widget["prompt"]?.text else { return nil }
         let options = (widget["options"]?.array ?? []).compactMap { option -> QuestionOption? in
           guard let label = option["label"]?.text ?? option.text else { return nil }
-          return QuestionOption(label: label, description: option["description"]?.text)
+          return QuestionOption(label: label, description: option["description"]?.text, value: option["value"]?.text,
+                                style: option["style"]?.string.flatMap(QuestionOption.Style.init(rawValue:)) ?? .plain)
         }
         return .question(id: entry.id, card: QuestionCard(
           prompt: prompt, help: widget["helpText"]?.text, options: options,
           allowsOwnAnswer: widget["allowCustom"]?.bool ?? false,
+          multiSelect: widget["multiSelect"]?.bool ?? false,
           answer: entry["respondedValue"]?.text, isDismissed: entry["widgetDismissed"]?.bool ?? false,
           isSkipped: entry["widgetSkipped"]?.bool ?? false))
       case "email-draft", "slack-draft":
@@ -1093,7 +1140,15 @@ public enum Chat {
         return .request(id: entry.id, card: .approval(requestId: approval["requestId"]?.string ?? "", summary: approval["summary"]?.string ?? "", reason: approval["reason"]?.string ?? "", command: approval["command"]?.string, status: approval["status"]?.string ?? "pending", surface: approval["surface"]?.string, proposedRule: approval["proposedRule"]?.string))
       case "secret-request":
         guard let secret = message["secretRequest"] else { return nil }
-        return .request(id: entry.id, card: .secret(label: secret["label"]?.string ?? L10n.text("A secret"), description: secret["description"]?.string ?? "", provided: entry["secretProvided"]?.bool ?? false))
+        return .request(id: entry.id, card: .secret(label: secret["label"]?.string ?? L10n.text("A secret"), description: secret["description"]?.string ?? "", provided: entry["secretProvided"]?.bool ?? false, dismissed: entry["widgetDismissed"]?.bool ?? false))
+      case "user-form":
+        if let card = UserFormCard(message: message, entry: entry) { return .request(id: entry.id, card: .form(card)) }
+        return .notice(id: entry.id, text: notShown)
+      case "credential-request":
+        if let card = CredentialRequestCard(message: message, entry: entry) { return .request(id: entry.id, card: .credential(card)) }
+        return .notice(id: entry.id, text: notShown)
+      case "onepassword-connect":
+        return .request(id: entry.id, card: .onePasswordConnect(OnePasswordConnectCard(message: message, entry: entry)))
       case "cloud-agent":
         guard let bcId = message["bcId"]?.text, !bcId.isEmpty else { return nil }
         return .cloudAgent(id: entry.id, bcId: bcId)

@@ -27,7 +27,7 @@ the phone design. None of the screens has been compiled yet (see
 | Flight card (§1, §3.3) | In Muse's layout since 9 October (§22): the route and date, rows with the airline's round logo, "airline · price" and the times on a dashed line; a row opens the flight (total, a card per flight, the fare's terms). |
 | Brand names in text (§2) | All 75 names, anywhere in a message, with their logos and the readable light and dark colours. |
 | Agent names in text (§2) | The agent's butterfly before the name, in the Mac's colours. |
-| Question card (§3.1) | Rings, help text, "Type your own answer" with Submit, the X; answered and dismissed states. |
+| Question card (§3.1) | Rings, help text, "Type your own answer" with Submit, the X; answered and dismissed states. Since 28 October 2026 a pick sends the option's own reply (`value`), the recommended option is blue and a destructive one red, and several can be picked and sent with Submit (`multiSelect`). |
 | "N messages with" (§3.6) | The Mac's wording ("Messaged", "Message from", "N messages with", "N agents"); a tap opens the exchange read-only. |
 | Call button and calls (§1, §6) | The call button by the name; real calls through ElevenLabs' iPhone kit and the Mac's call protocol. Needs a device to try. |
 | The top bar (§1) | Solid, as the Mac's. |
@@ -45,6 +45,8 @@ the phone design. None of the screens has been compiled yet (see
 | Voice call line (§3.7) | "Voice chat · 01:11"; a tap opens the call's lines. |
 | Routines line (§3.8) | "Created routine", folded runs, a tap opens the routine. |
 | Approvals, secrets, the computer hand-back (§3.10) | Allow once / Always allow / Deny; the password field and Save securely; Take over / I'm done / Skip. |
+| 1Password (28 October 2026) | The fill card: the login's name and site, Fill with 1Password (Face ID) and Not now, then what went in. The connect card says to connect from the Mac. |
+| The in-chat form (28 October 2026) | The fields a page needs typed, masked for a password or a code; Fill in, the X; then each field's "Typed in", "Couldn't type it in" or "Left empty". |
 | Settings (§5) | Account, Theme, Timezone, Auto-review with its rules, Connect apps, Usage & Billing with Manage Billing. |
 | Connect apps (§5) | Marketplace and Yours, Add with the sign-in sheet; an app's page with its accounts (sign in, rename, remove) and its tools, each with a switch. Not yet: Setup values and Details. |
 | The agent's page (§7) | Profile saved on leaving a field, Notifications, the avatar editor (Agent with the voice picker, Generate, Upload), the routine editor with every schedule, Test run, Delete and runs, group members. Upload and Generate keep the picture's middle square rather than offering a crop. |
@@ -168,7 +170,8 @@ Every card uses the Messages grey `#e9e9eb` (light), with no border. Buttons use
 3. **Flights**: see §1. Each flight's sheet ends with "Book with Simeon" (13 October 2026, docs/services-agents.md §10a): the traveller form in the chat, then the flight's checkout card.
 4. **Email and Slack drafts** (`email-draft`, `slack-draft`; `view-ClhdNXKM.js`, `view-DyaeCHiE.js`)
    - Email: "New email" with a status pill. From is read-only; To, Subject and Body can be edited. A long body shows "Show more".
-   - Send email (enabled only when the addresses are valid) sends `sendDraft {agentId, entryId, draft}`. Discard sends `discardDraft`.
+   - Send email (enabled only when the addresses are valid) sends `sendDraft {agentId, entryId, draft}` with To, Cc, the subject and the words. Discard sends `discardDraft`.
+   - Cc is a row of its own, always there to add to. A reply (`replyTo`) is titled Reply; attached files are listed by name under the words (28 October 2026).
    - States: "Ready to send", "Sending…", then "Sent to … — "subject"".
    - The Slack card has the same states, with only the body editable.
    - **The phone drops these cards: a draft never appears.**

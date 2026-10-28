@@ -1627,6 +1627,49 @@ public final class AppStore {
     return "always"
   }
 
+  /**
+   * The in-chat form's Fill (`submitUserForm`): the values go to the computer,
+   * which types them into the page; nothing is kept here. Nil once it is
+   * taken, else the computer's sentence (a field left empty, a form already
+   * answered).
+   */
+  public func submitUserForm(_ values: JSON, entryId: String, in agentId: String) async -> String? {
+    guard let reply = await command("submitUserForm", ["agentId": .string(agentId), "entryId": .string(entryId), "values": values], failure: L10n.text("The form wasn't sent")) else { return L10n.text("The form wasn't sent") }
+    return reply["ok"]?.bool == false ? (reply["message"]?.text ?? L10n.text("The form wasn't sent")) : nil
+  }
+
+  /**
+   * The 1Password fill card's Fill (`allow`), once Face ID or Touch ID
+   * confirmed it on this device, or Not now. Nil once taken, else why not.
+   */
+  public func answerCredentialRequest(_ entryId: String, allow: Bool, in agentId: String) async -> String? {
+    guard let reply = await command("answerCredentialRequest", ["agentId": .string(agentId), "entryId": .string(entryId), "allow": .bool(allow)], failure: L10n.text("1Password didn't get your answer")) else { return L10n.text("1Password didn't get your answer") }
+    return reply["ok"]?.bool == false ? (reply["message"]?.text ?? L10n.text("1Password didn't get your answer")) : nil
+  }
+
+  /**
+   * The key the Mac's 1Password app made, sent to the agent's computer
+   * (`connectOnePassword`), which checks it with 1Password and keeps it. With
+   * the card that asked, the card says Connected. Nil once kept, else why not.
+   */
+  public func connectOnePassword(token: String, vaultId: String, vaultName: String, accountEmail: String?, entryId: String?, in agentId: String?) async -> String? {
+    var args: JSON = ["token": .string(token), "vaultId": .string(vaultId), "vaultName": .string(vaultName)]
+    if let accountEmail { args = args.setting("accountEmail", .string(accountEmail)) }
+    if let entryId, let agentId { args = args.setting("entryId", .string(entryId)).setting("agentId", .string(agentId)) }
+    guard let reply = await command("connectOnePassword", args, failure: L10n.text("1Password wasn't connected")) else { return L10n.text("1Password wasn't connected") }
+    return reply["ok"]?.bool == false ? (reply["message"]?.text ?? L10n.text("1Password wasn't connected")) : nil
+  }
+
+  /** The 1Password connect card's X: a decline. */
+  public func dismissOnePasswordConnect(_ entryId: String, in agentId: String) async {
+    await command("dismissOnePasswordConnect", ["agentId": .string(agentId), "entryId": .string(entryId)], failure: L10n.text("Couldn't dismiss the card"))
+  }
+
+  /** The in-chat form's X (`dismissUserForm`): a decline. */
+  public func dismissUserForm(_ entryId: String, in agentId: String) async {
+    await command("dismissUserForm", ["agentId": .string(agentId), "entryId": .string(entryId)], failure: L10n.text("Couldn't dismiss the form"))
+  }
+
   public func submitSecret(_ value: String, entryId: String, in agentId: String) async {
     await command("submitSecret", ["entryId": .string(entryId), "value": .string(value), "agentId": .string(agentId)], failure: L10n.text("The secret wasn't saved"))
   }

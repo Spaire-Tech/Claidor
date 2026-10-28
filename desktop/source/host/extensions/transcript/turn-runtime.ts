@@ -426,8 +426,9 @@ export class TurnRuntime {
       this.activeTurns.set(session.id, turn);
       this.activeRequestSources.set(session.id, "turn");
       try {
+        // The person wrote: a question marked dismissOnMoveOn closes now.
         const unansweredPrompts =
-          this.tm.widgetResponses.collectUnansweredQuestionPrompts(session);
+          this.tm.widgetResponses.collectUnansweredQuestionPrompts(session, { movedOn: true });
         const result = await runner.run(prompt, {
           ...options,
           ...unansweredPrompts,

@@ -1327,13 +1327,16 @@ The person can allow it once or always.
 for an allow-or-block decision (`host/extensions/auto-review/simeon-smart-mode-classifier-exec.ts`,
 30 s deadline). A block always carries a `proposedAllowRule`, so "Always allow" saves a rule;
 when the model leaves it out, `fallbackAllowRule` builds one from the command. Review is
-enforced because the `sand_auto_review` gate is on in `simeon-gate-defaults.ts`. A new
+enforced because the `sand_auto_review` gate is on in `simeon-gate-defaults.ts` (on from 25
+September to 7 October 2026, off after the insurance log of 6 October, on again since 28
+October; `SAND_FEATURE_GATE_OVERRIDES=sand_auto_review=0` turns it off). A new
 message from the person retires the previous approvals (`beginAutoReviewUserMessageEpoch`).
 
 * **Log line.** Box: `[simeon] auto-review action=… mode=… verdict=allow|block|unparseable|error …`.
-* **Known limits.** MCP tool calls are not classified (their approval provider is absent;
-  `desktop/scripts/host-production-activation.mjs`).
-* **Not yet verified.** A blocked command's card has not been seen on a Mac.
+* **Known limits.** Connector (MCP) calls are not classified: the turn's `CallMcpTool` is built
+  with no approval provider or classifier (`callOptions: {}` in `host-runner-composition.ts`),
+  where the upstream app reviews them too.
+* **Not yet verified.** A blocked command's card has not been seen on a Mac or an iPhone.
 
 ### Draft composer cards
 
@@ -1356,6 +1359,202 @@ editable).
   approval cards do. A card that stays on "sending" means the agent's wake never finished:
   read `/tmp/sand-host.log` for `tool=CallMcpTool` and `tool=MarkDraftDelivered`.
 * **Not yet verified.** Not run on a Mac.
+
+#### Sending an email (28 October 2026)
+
+A reply with a company document attached went to the wrong people, read
+"The draft didn't send", and arrived as one block of text. Each cause and what changed:
+
+* **"Didn't send".** `sendDraft` waited for the agent's whole delivery turn before answering,
+  and the apps give a command 60 s (`Gateway.swift`): the server logged `POST 499 …/sendDraft
+  responseTimeMS=60420` while Outlook was still answering. Send now answers at once with the
+  card `sending`; the agent's turn runs on its own, and the card follows to `sent` or back to
+  editable through the transcript. A turn that ends without `MarkDraftDelivered` hands the card
+  back (`[drafts] … handed back` in the host log), so it never stays on "Sending". The card is
+  read and written in its own agent's chat, so opening another chat meanwhile no longer leaves
+  it stuck.
+* **The wrong people.** The card had no conversation to answer and the iPhone card showed no
+  Cc, so the agent rebuilt the email at Send and chose Outlook's reply tool, which answers the
+  sender only. The card now works as the upstream app's does (its card rules, in
+  `docs/product/sources/` until 29 September and in the history):
+  routing is settled when drafting, the person edits what is shown but not the routing, "Send
+  on the card sends", and the card waits on Send or Discard, the agent carrying on from a short
+  summary.
+  * `DraftExternalMessage` takes `via` (the mailbox, `gmail` or `outlook`), `reply_to` (Gmail's
+    thread id, Outlook's message id) and `attachments` (paths on the computer).
+  * The draft ends the agent's turn, as a question does (`sand-agent-runner.ts`).
+  * Send on a card that names its mailbox sends from the computer itself (`sendFromCard` in
+    `draft-cards.ts`, through the box's app tools, `appTools` in `mcp-service.ts`), one call
+    written from the card (`emailSendCalls`): Gmail's `GMAIL_REPLY_TO_THREAD` or
+    `GMAIL_SEND_EMAIL`; Outlook's `OUTLOOK_REPLY_EMAIL` with the rest of To and the Cc copied, or
+    `OUTLOOK_SEND_EMAIL` when the person changed who it goes to. Its argument names are checked
+    against the tool as the app serves it first. The card shows Sent, or is editable again, and
+    the agent is woken with what happened (`draft-sent`): after a send it may end without a
+    word; after a failure it says why once.
+  * A name the tool no longer takes, a card with no mailbox, and a Slack card still wake the
+    agent to deliver it, with the exact call when it can be written.
+  * The iPhone and Mac cards show and send Cc, show the files, and say Reply for a reply.
+* **No paragraphs.** Plain text sent into an HTML reply runs its lines together. The body now
+  goes as HTML with `is_html` on, a `<div>` per line and an empty one per blank line
+  (`emailBodyHtml`).
+* **The attachment.** A tool that takes a file wants the provider's own reference to one it
+  holds (`{name, mimetype, s3key}`), which the agent could never write, so no file could be
+  attached. The server lists such a field as the path of a file on the computer
+  (`files_as_paths` in `server/simeon/desktop/apps.py`). Before the call the box reads that
+  file from the agent's computer, sends it to `POST /desktop/api/apps/{toolkit}/files`, which
+  uploads it to the provider, and calls with the reference that comes back
+  (`shared/node/vendor-mcp/app-files.ts`, `backend-exec.ts`). Up to 25 MB. This serves every
+  app tool that takes a file, not only email.
+
+**What to read when an email misbehaves.** On Render: `desktop.apps.tool_called` and
+`desktop.apps.tool_failed` (which tool ran and the app's refusal, never the arguments), and
+`desktop.apps.file_uploaded`, `file_refused` or `file_unreachable` for an attachment. In the
+host log: `[drafts] … sent by OUTLOOK_REPLY_EMAIL`, `[drafts] … not sent by …: <reason>`,
+`[drafts] … takes no …; the agent sends …`, and `apps file for … refused`. **Not yet verified:** no email has
+been sent through this path from an iPhone or a Mac; the tools' argument names are from the
+provider's reference (read 28 October 2026), not from a live call.
+
+### The cards, as the upstream app's (28 October 2026)
+
+The founder: "audit the other cards and make sure they each work exactly like" the upstream
+app's. Its own rules for its cards were in `docs/product/sources/` until 29 September (in the
+history). What changed to match them:
+
+* **Cards that wait end the turn** in the run path the app uses (`stepEndsTurn` in
+  `host/runner/turn-shape.ts`): a draft until Send or Discard, the checkout card until Allow or
+  Deny, a connect card until it is tapped, once the call's answer says the card is in the chat.
+  The list that did this sat on the runner's older path, which the app no longer runs. A turn
+  ending on such a card is not taken as silent, so the closing nudge asks for nothing more.
+* **The question card.**
+  * Picking sends the option's own reply (`value`; its label when it has none). Both apps sent
+    the label.
+  * `primary` (the path the agent recommends) is drawn in blue, `danger` in red.
+  * `multiSelect`: several picked go together with Submit, one value per line.
+  * A question stays open until it is answered or dismissed. Only one marked `dismissOnMoveOn`
+    closes, and only when the person writes (`collectUnansweredQuestionPrompts`); every open
+    question used to close at the next turn of any kind.
+  * Dismissing one tells the agent at once that it was declined (a hidden turn that may end
+    without a word); the next turn's note says "take each as declined".
+* **The secret request.**
+  * It can be dismissed (the X on both apps), and the agent hears at once that it was declined,
+    as for a question. It could not be dismissed before.
+  * The agent may name the variable it wants (`name`, as `RENDER_API_KEY`) instead of a
+    connector and a field.
+* **The box handoff is the ask** for a sign-in, a one-time code, 3-D Secure or a QR code: the
+  agent never asks for a password or a code in the chat. With no email connector to read a
+  store's code, it hands over the computer at the code field.
+* **A "press and hold" bot check** is pressed by a helper (`browser_click` with
+  `holdDurationMs`), not handed to the person. Anything else that asks to prove you are human
+  is still handed over, never solved.
+* **The approval card is the ask.** The brief no longer has the agent ask in the chat, or put a
+  question in front of a card, for something the approval or permission card already asks.
+* **No "Settings → MCP".** The connector tools pointed people to a place neither app has; they
+  now say the apps have no place to type it yet.
+* **Routines run at most every 5 minutes**, on the computer (`ROUTINE_MIN_INTERVAL_MS`,
+  `sand-trigger-hub.ts`) and on the server (`ROUTINE_MIN_INTERVAL`, `listeners_service.py`),
+  as the upstream app's rules say. There was no gap since 8 October.
+* **The approval card and the routine confirm card** show again: the review of risky actions
+  enforces, as the upstream app's card rules describe ("Auto-review approvals" above). It was
+  off since 8 October, when the founder's first real job met the card over and over.
+
+### The in-chat form (28 October 2026)
+
+**For the person.** When a page on the agent's computer needs them to type something (a
+sign-in, a one-time code, an address, a phone), the agent asks with a form in the chat
+instead of handing over the computer. They type in the card and press Fill in; the computer
+types it into the page. The card then says, field by field, whether it went in. The X is a
+decline. A password or a code is masked, and nothing they typed is ever shown to the agent.
+
+**How it works.**
+
+- The agent's `request_user_form` (`host/runner/tools/user-form-tool.ts`) takes a title, an
+  instruction, the site (`domain`) and one to eight fields, each pointed at its place on the
+  page: a ref from the browser helper's latest snapshot, a selector, or the page's label for
+  it. The rules are the upstream app's own for its card (`shared/node/user-form/user-form.ts`):
+  every field needs a target, a password or a code is always masked, and only a lone
+  one-time code may press Enter (`submit_after_fill`).
+- Before the card is shown, the host checks that a tab on that site is open and that every
+  field can be found there (`checkUserForm`, `shared/node/user-form/form-fill.ts`). A form
+  that can't be filled is refused to the agent and never shown.
+- Fill in sends `submitUserForm` with the values. The host types them into the page over the
+  computer's Chrome DevTools port (the agent's own window first), as the checkout card types
+  Link's card in, and only on that exact site ("www." aside). The values stay in that one
+  call: never in the transcript, the log, a shell command or a file. The card shows
+  `filling`, then `filled` with each field's outcome (`filled`, `fillFailed`, `notFilled`),
+  or `failed` with a note.
+- The agent is woken with which fields went in (never a value) and has the helper press the
+  site's own button. The form ends the agent's turn (`turn-shape.ts`). The X sends
+  `dismissUserForm`, and the agent hears the decline at once.
+- The brief and the browser helper know it: the helper reports each field's label and ref,
+  and the agent uses the form for plain typed fields, the computer handoff for SSO, a
+  passkey, a captcha or a page the form can't reach.
+
+* **Log line.** Host: `[forms] typed in <agent>/<entry> on <site>: email filled, password filled`
+  or `[forms] not typed in … : <reason>`. Field ids and outcomes only.
+* **Tested.** The fill against a real Chromium (`desktop/tests/user-form.test.mjs`: a label,
+  a selector, a snapshot ref, a field in a frame, a menu, a checkbox, Enter for a code).
+* **Not yet verified.** Not run on the cloud computer, a Mac or an iPhone.
+
+### 1Password (28 October 2026)
+
+**For the person.** At a sign-in on a page the agent has open, the agent looks in their
+1Password first. If the login is there, a card asks to fill it: Fill with 1Password, confirmed
+with Face ID or Touch ID, and the computer types the username, the password and, when the login
+has one, its one-time code. The card then says what went in. Not now is a decline. If
+1Password isn't connected, a card asks them to connect it from Simeon on their Mac: Connect asks
+their 1Password app (Touch ID) for a vault named "Shared with Simeon" and a key that can only
+read it. They put in that vault the logins their agents may use. The agent never sees a
+username, a password or a code.
+
+**How it works.**
+
+- **Connect (the Mac).** `mac/Simeon/MacOnePassword.swift` runs 1Password's own command-line
+  tool (`op`, which the 1Password app unlocks with Touch ID): the accounts, the vault "Shared
+  with Simeon" (made when missing), then `op service-account create Simeon --vault
+  <id>:read_items --expires-in 52w --raw`. The key goes to the agent's computer
+  (`connectOnePassword`), which checks it with 1Password (`op vault get`) and keeps it in the
+  engine's own folder (`<data>/onepassword/connection.json`, 0600), never in the agent's
+  environment. Nothing is kept on the Mac. Whether an account may make service accounts is
+  1Password's setting; its refusal is shown as it says it. This was the upstream app's way
+  (`desktop/source/electron-main/onepassword/`), chosen by the founder over pasting a key.
+- **The tool on the computer.** The computer's image has no `op`, so the engine fetches
+  version 2.40.0 from 1Password's server the first time, checks the archive's SHA-256 against
+  the pinned value (`shared/node/onepassword/op-cli.ts`; both archives' `op` carry a good
+  signature from 1Password's code-signing key), and runs it itself with the key in its
+  environment. Never through the agent's shell.
+- **The agent's tools** (`host/runner/tools/onepassword-tools.ts`): `ListCredentials` (the
+  logins saved for the site: names and ids, never a username), `request_credential_fill`
+  (checks the page shows a sign-in field, then the card), `request_1password_connect`. Both
+  cards end the turn. A login is read only for the site it is saved for, or a subdomain of it.
+- **Fill** (`answerCredentialRequest`, `host/extensions/transcript/onepassword-cards.ts`) reads
+  the login and types it in with the in-chat form's fill (`fillUserForm`, the usual sign-in
+  field marks). One Fill covers the same login on the same site for ten minutes, so the
+  password page after the email page fills without a second card.
+
+* **Log lines.** Host: `[1password] connected, vault "…"`, `[1password] not connected: <1Password's sentence>`,
+  `[1password] filled <agent>/<entry> on <site>: username filled, password filled`,
+  `[1password] not filled …: <reason>`. Never a value or the key.
+* **Tested.** The engine's side with a stand-in for `op` (`desktop/tests/onepassword.test.mjs`);
+  the real `op` 2.40.0 installed through the engine's own code here and run once.
+* **Not yet verified.** Not run with a real 1Password account, on the cloud computer, a Mac or
+  an iPhone. No way yet to disconnect from the apps (the key can be deleted in 1Password).
+
+### Two of the upstream app's cards we do not build, on purpose (28 October 2026)
+
+The audit ("audit the other cards and make sure they each work exactly like" the upstream
+app's) left two of its fourteen cards unbuilt, each by a deliberate decision, not an oversight:
+
+* **The cookie-origin import** (its card 11: read the person's Chrome cookies for a site and
+  import the session into the computer's browser). Simeon's reconstruction forbids touching
+  `Library/Application Support/Google/Chrome` and `Library/Keychains` on the Mac, whatever the
+  local-computer setting says (`SensitivePaths.swift`, `shared/sensitive-local-paths.ts`: "they
+  hold keys or sign-ins"). The import would have to read and decrypt that store and send live
+  sessions to the cloud computer, against that guard. The founder kept the guard (28 October):
+  1Password, the in-chat form and the box handoff cover sign-ins instead.
+* **The SCM / repo connect card** (its card 8: connect GitHub so a cloud agent can open a
+  repository). Simeon's cloud agents can't open a repository yet — the runner has no step that
+  clones one (`runner/src/executor.ts`, "GetEnvironment … no repositories configured"). The
+  founder left the card until they can (28 October); there is nothing for it to unblock today.
 
 ### Files and lists in the chat
 
@@ -1510,7 +1709,7 @@ the background while the call goes on, and says how it is going when asked.
     pending for the agent ("Another action is waiting…"), the box is not ready, or the turn was
     cancelled. Since 7 October 2026 the message carries the shell's own reason, and a
     cancellation stays a cancellation; before, every case read the same. Since 8 October,
-    when the review only shadows (the default again, `sand_auto_review` off), a failed probe
+    when the review only shadows (the default from 8 to 28 October), a failed probe
     no longer stops the action: the host logs `auto-review probe failed in shadow, action
     allowed: <reason>` and the action runs. In enforce it still refuses, with the reason.
   - **"Not run: this is the third time you have sent exactly this action to exactly this

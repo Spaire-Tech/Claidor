@@ -24,6 +24,12 @@ made through it is kept):
   since Simeon on the web (4 October 2026), the box: the window on the web
   starts a sign-in through the manager in the box.
 - `DELETE /api/apps/{toolkit}` — disconnect. Desktop and box, likewise.
+- `POST /api/apps/{toolkit}/files` — a file a tool takes (an email's
+  attachment), uploaded to the provider for the box (28 October 2026). The
+  tool lists such a field as the path of a file on the computer
+  (`files_as_paths`); the box reads the file there, sends it here, and
+  calls the tool with the reference this answers
+  (`desktop/source/shared/node/vendor-mcp/app-files.ts`).
 - `GET  /apps/connected` — the page a finished sign-in lands on, ours.
 - `GET  /apps/oauth/callback` — the redirect URI to register in a
   provider's console when Simeon Labs brings its own OAuth app, so the
@@ -78,6 +84,20 @@ _TIMEOUT = httpx.Timeout(60.0, connect=10.0)
 # signed in, which each agent turn waited for, left no line at all.
 _SLOW_CALL_MS = 1_000
 _PROTOCOL_VERSION = "2025-06-18"
+#: The most a file may weigh: Gmail's and Outlook's limit for a whole message.
+_MAX_FILE_BYTES = 25 * 1024 * 1024
+_TOOL_SLUG = re.compile(r"^[A-Z0-9_]{1,128}$")
+_MIMETYPE = re.compile(r"^[\w.+-]+/[\w.+-]+$")
+#: The provider's own upload: asked for a presigned address, then the bytes
+#: go there (its SDKs, read 28 October 2026: `{md5, filename, mimetype,
+#: tool_slug, toolkit_slug}` → `{key, new_presigned_url}`; a tool then
+#: takes `{name, mimetype, s3key}`).
+_FILE_UPLOAD = "api/v3/files/upload/request"
+#: What a file field says once it takes a path (`files_as_paths`).
+_FILE_FIELD = (
+    "The absolute path of a file on the computer "
+    "(for example /home/user/Downloads/report.pdf); Simeon uploads it."
+)
 _TOOLS_TTL_S = 600.0
 # Every app is served its whole tool list, featured ("important") tools
 # first: the agent reads a tool's schema only when it needs it (GetMcpTools),
@@ -315,6 +335,59 @@ def scope_guidance(toolkit: str, error: str) -> str:
     )
 
 
+def _path_field(schema: dict[str, Any]) -> dict[str, Any]:
+    description = schema.get("description")
+    return {
+        "type": "string",
+        "description": f"{_FILE_FIELD} {description}"
+        if isinstance(description, str) and description
+        else _FILE_FIELD,
+        "file_uploadable": True,
+        **({"title": schema["title"]} if isinstance(schema.get("title"), str) else {}),
+    }
+
+
+def _mentions_file(schema: Any) -> bool:
+    return '"file_uploadable": true' in json.dumps(schema)
+
+
+def _paths(schema: Any, defs: dict[str, Any], depth: int) -> Any:
+    if depth > 32:
+        return schema
+    if isinstance(schema, list):
+        return [_paths(item, defs, depth + 1) for item in schema]
+    if not isinstance(schema, dict):
+        return schema
+    if schema.get("file_uploadable") is True:
+        return _path_field(schema)
+    ref = schema.get("$ref")
+    if isinstance(ref, str) and ref in defs and _mentions_file(defs[ref]):
+        # A file behind a reference is brought in place, so the box finds it
+        # without resolving references; the field's own words are kept.
+        target = _paths(defs[ref], defs, depth + 1)
+        rest = {key: value for key, value in schema.items() if key != "$ref"}
+        if isinstance(target, dict) and target.get("file_uploadable") is True:
+            return _path_field(
+                {**target, **rest, "description": rest.get("description")}
+            )
+        return {**target, **rest} if isinstance(target, dict) else target
+    return {key: _paths(value, defs, depth + 1) for key, value in schema.items()}
+
+
+def files_as_paths(schema: Any) -> Any:
+    """A tool's input schema with each file it takes (`file_uploadable`, the
+    provider's `{name, mimetype, s3key}`, which nothing the agent can write)
+    asked for as the path of a file on the computer, as the provider's own
+    SDKs present it. The box uploads that file before the call (`apps_file`)."""
+    defs: dict[str, Any] = {}
+    if isinstance(schema, dict):
+        for key in ("$defs", "definitions"):
+            named = schema.get(key)
+            if isinstance(named, dict):
+                defs.update({f"#/{key}/{name}": value for name, value in named.items()})
+    return _paths(schema, defs, 0)
+
+
 class AppsUpstreamError(Exception):
     def __init__(self, message: str, status: int) -> None:
         super().__init__(message)
@@ -378,7 +451,7 @@ async def toolkit_tools(toolkit: str) -> list[dict[str, Any]]:
             "description": scrub(
                 str(item.get("description") or item.get("name") or item["slug"])
             ),
-            "inputSchema": item.get("input_parameters")
+            "inputSchema": files_as_paths(item["input_parameters"])
             if isinstance(item.get("input_parameters"), dict)
             else {"type": "object", "properties": {}},
         }
@@ -646,6 +719,9 @@ async def _handle(
             },
         )
         if status >= 400 or not isinstance(payload, dict):
+            log.warning(
+                "desktop.apps.tool_failed", toolkit=toolkit, tool=name, status=status
+            )
             return _rpc_result(
                 request_id,
                 {
@@ -661,6 +737,14 @@ async def _handle(
                 toolkit, scrub(str(payload.get("error") or "The app refused the call."))
             )
         )
+        # Which tool ran and whether the app took it, never its arguments: a
+        # send that "failed" (28 October 2026) left five 200s and no answer.
+        if ok:
+            log.info("desktop.apps.tool_called", toolkit=toolkit, tool=name)
+        else:
+            log.warning(
+                "desktop.apps.tool_failed", toolkit=toolkit, tool=name, error=text[:300]
+            )
         return _rpc_result(
             request_id, {"content": [{"type": "text", "text": text}], "isError": not ok}
         )
@@ -715,6 +799,84 @@ async def apps_mcp(
     if isinstance(answer, Response):
         return answer
     return JSONResponse(answer)
+
+
+@router.post("/api/apps/{toolkit}/files", name="desktop:apps_file")
+async def apps_file(
+    toolkit: str,
+    request: Request,
+    desktop_session: DesktopSession = Depends(get_desktop_or_box_session),
+) -> JSONResponse:
+    """One file for one tool, uploaded to the provider: the bytes are the
+    body, `tool`, `name` and `mimetype` the query. Answers the reference the
+    tool takes in place of the path (`{name, mimetype, s3key}`)."""
+    refused = _guard(toolkit)
+    if refused is not None:
+        return refused
+    tool = str(request.query_params.get("tool", ""))
+    name = str(request.query_params.get("name", "")).strip()
+    mimetype = (
+        str(request.query_params.get("mimetype", "")).strip()
+        or "application/octet-stream"
+    )
+    if _TOOL_SLUG.match(tool) is None or not tool.startswith(f"{toolkit.upper()}_"):
+        return _error("Name the tool of this app the file is for.", 400)
+    if not name or len(name) > 255 or "/" in name:
+        return _error("Give the file's name.", 400)
+    if _MIMETYPE.match(mimetype) is None:
+        return _error("Give the file's type, such as application/pdf.", 400)
+    content = await request.body()
+    if not content:
+        return _error("The file is empty.", 400)
+    if len(content) > _MAX_FILE_BYTES:
+        return _error("The file is over 25 MB.", 413)
+    try:
+        status, payload = await _call(
+            "POST",
+            _FILE_UPLOAD,
+            body={
+                "md5": hashlib.md5(content, usedforsecurity=False).hexdigest(),
+                "filename": name,
+                "mimetype": mimetype,
+                "tool_slug": tool,
+                "toolkit_slug": toolkit,
+            },
+        )
+        key = payload.get("key") if isinstance(payload, dict) else None
+        address = (
+            payload.get("new_presigned_url") if isinstance(payload, dict) else None
+        )
+        if status >= 400 or not isinstance(key, str) or not isinstance(address, str):
+            return _error(_upstream_message(payload), 502)
+        # The provider's storage, signed for this file's type: the same type goes with the bytes.
+        async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
+            put = await client.put(
+                address, content=content, headers={"content-type": mimetype}
+            )
+    except httpx.HTTPError as error:
+        log.warning(
+            "desktop.apps.file_unreachable",
+            toolkit=toolkit,
+            tool=tool,
+            error=type(error).__name__,
+        )
+        return _error("The file could not be uploaded.", 502)
+    if put.status_code >= 300:
+        log.warning(
+            "desktop.apps.file_refused",
+            toolkit=toolkit,
+            tool=tool,
+            status=put.status_code,
+        )
+        return _error("The file could not be uploaded.", 502)
+    log.info(
+        "desktop.apps.file_uploaded",
+        toolkit=toolkit,
+        tool=tool,
+        bytes=len(content),
+        mimetype=mimetype,
+    )
+    return JSONResponse({"name": name, "mimetype": mimetype, "s3key": key})
 
 
 # --- sign-in -----------------------------------------------------------------
@@ -895,4 +1057,4 @@ async def apps_oauth_callback(request: Request) -> RedirectResponse:
     )
 
 
-__all__ = ["active_account_ids", "router", "scrub", "toolkit_tools"]
+__all__ = ["active_account_ids", "files_as_paths", "router", "scrub", "toolkit_tools"]

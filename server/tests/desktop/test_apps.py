@@ -3,6 +3,7 @@ HTTP with the provider mocked: the MCP server per app, sign-in, status,
 disconnect, and that the provider's name never comes back."""
 
 import base64
+import hashlib
 import json
 import time
 from urllib.parse import parse_qs, urlencode, urlparse
@@ -382,6 +383,285 @@ class TestTheAppsMcpServer:
         )
         assert response.status_code == 503
         assert "composio" not in response.text.lower()
+
+
+FILE = {
+    "file_uploadable": True,
+    "type": "object",
+    "description": "File to attach.",
+    "properties": {
+        "name": {"type": "string"},
+        "mimetype": {"type": "string"},
+        "s3key": {"type": "string"},
+    },
+    "required": ["name", "mimetype", "s3key"],
+}
+
+
+class TestFilesAsPaths:
+    def test_a_file_field_takes_a_path_on_the_computer(self) -> None:
+        schema = {
+            "type": "object",
+            "properties": {
+                "to": {"type": "string"},
+                "attachment": {
+                    "anyOf": [FILE, {"type": "array", "items": FILE}, {"type": "null"}]
+                },
+            },
+        }
+        served = apps_module.files_as_paths(schema)
+        assert served["properties"]["to"] == {"type": "string"}
+        one, many, none = served["properties"]["attachment"]["anyOf"]
+        assert one["type"] == "string"
+        assert one["file_uploadable"] is True
+        assert one["description"].startswith("The absolute path of a file")
+        assert one["description"].endswith("File to attach.")
+        assert many["items"]["type"] == "string"
+        assert many["items"]["file_uploadable"] is True
+        assert none == {"type": "null"}
+        assert schema["properties"]["attachment"]["anyOf"][0] is FILE
+
+    def test_a_file_behind_a_reference_is_brought_in_place(self) -> None:
+        schema = {
+            "type": "object",
+            "properties": {
+                "attachment": {
+                    "$ref": "#/$defs/FileUploadable",
+                    "description": "The file.",
+                },
+                "other": {"$ref": "#/$defs/Plain"},
+            },
+            "$defs": {"FileUploadable": FILE, "Plain": {"type": "string"}},
+        }
+        served = apps_module.files_as_paths(schema)
+        attachment = served["properties"]["attachment"]
+        assert "$ref" not in attachment
+        assert attachment["type"] == "string"
+        assert attachment["file_uploadable"] is True
+        assert attachment["description"].endswith("The file.")
+        assert served["properties"]["other"] == {"$ref": "#/$defs/Plain"}
+
+
+@pytest.mark.asyncio
+class TestFilesForTools:
+    async def test_a_file_field_is_listed_as_a_path(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _signed_in(client, session, user)
+        tools = {
+            "items": [
+                {
+                    "slug": "GMAIL_SEND_EMAIL",
+                    "name": "Send email",
+                    "description": "Sends an email.",
+                    "input_parameters": {
+                        "type": "object",
+                        "properties": {"attachment": FILE},
+                    },
+                    "is_deprecated": False,
+                }
+            ],
+            "total_pages": 1,
+            "current_page": 1,
+            "total_items": 1,
+        }
+        with respx.mock() as mock:
+            mock.get(f"{API}/api/v3.1/connected_accounts").mock(
+                return_value=_accounts("ca_1")
+            )
+            mock.get(f"{API}/api/v3.1/tools").mock(
+                return_value=httpx.Response(200, json=tools)
+            )
+            listed = await client.post(
+                "/desktop/api/apps/mcp/gmail", headers=headers, json=_rpc("tools/list")
+            )
+        attachment = listed.json()["result"]["tools"][0]["inputSchema"]["properties"][
+            "attachment"
+        ]
+        assert attachment["type"] == "string"
+        assert attachment["file_uploadable"] is True
+
+    async def test_a_file_is_uploaded_and_its_reference_comes_back(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _signed_in(client, session, user)
+        content = b"%PDF-1.7 certificate"
+        with respx.mock(assert_all_called=True) as mock, capture_logs() as logs:
+            presign = mock.post(f"{API}/api/v3/files/upload/request").mock(
+                return_value=httpx.Response(
+                    200,
+                    json={
+                        "id": "f1",
+                        "key": "uploads/gmail/cert.pdf",
+                        "type": "new",
+                        "new_presigned_url": "https://storage.example/put?sig=1",
+                    },
+                )
+            )
+            put = mock.put("https://storage.example/put?sig=1").mock(
+                return_value=httpx.Response(200)
+            )
+            response = await client.post(
+                "/desktop/api/apps/gmail/files",
+                headers={**headers, "content-type": "application/octet-stream"},
+                params={
+                    "tool": "GMAIL_REPLY_TO_THREAD",
+                    "name": "Certificate.pdf",
+                    "mimetype": "application/pdf",
+                },
+                content=content,
+            )
+        assert response.status_code == 200, response.text
+        assert response.json() == {
+            "name": "Certificate.pdf",
+            "mimetype": "application/pdf",
+            "s3key": "uploads/gmail/cert.pdf",
+        }
+        asked = json.loads(presign.calls[0].request.content)
+        assert asked == {
+            "md5": hashlib.md5(content).hexdigest(),
+            "filename": "Certificate.pdf",
+            "mimetype": "application/pdf",
+            "tool_slug": "GMAIL_REPLY_TO_THREAD",
+            "toolkit_slug": "gmail",
+        }
+        assert presign.calls[0].request.headers["x-api-key"] == "ck-test"
+        assert put.calls[0].request.content == content
+        assert put.calls[0].request.headers["content-type"] == "application/pdf"
+        uploaded = [
+            line for line in logs if line["event"] == "desktop.apps.file_uploaded"
+        ]
+        assert uploaded[0]["bytes"] == len(content)
+        assert "Certificate" not in json.dumps(uploaded[0])
+
+    async def test_a_file_is_refused_without_its_tool_or_when_too_big(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        headers = await _signed_in(client, session, user)
+        upload = {"content-type": "application/octet-stream", **headers}
+        another_app = await client.post(
+            "/desktop/api/apps/gmail/files",
+            headers=upload,
+            params={
+                "tool": "GITHUB_UPLOAD",
+                "name": "a.pdf",
+                "mimetype": "application/pdf",
+            },
+            content=b"x",
+        )
+        assert another_app.status_code == 400
+        bare_type = await client.post(
+            "/desktop/api/apps/gmail/files",
+            headers=upload,
+            params={"tool": "GMAIL_SEND_EMAIL", "name": "a.pdf", "mimetype": "pdf"},
+            content=b"x",
+        )
+        assert bare_type.status_code == 400
+        empty = await client.post(
+            "/desktop/api/apps/gmail/files",
+            headers=upload,
+            params={
+                "tool": "GMAIL_SEND_EMAIL",
+                "name": "a.pdf",
+                "mimetype": "application/pdf",
+            },
+            content=b"",
+        )
+        assert empty.status_code == 400
+        mocker.patch.object(apps_module, "_MAX_FILE_BYTES", 4)
+        too_big = await client.post(
+            "/desktop/api/apps/gmail/files",
+            headers=upload,
+            params={
+                "tool": "GMAIL_SEND_EMAIL",
+                "name": "a.pdf",
+                "mimetype": "application/pdf",
+            },
+            content=b"12345",
+        )
+        assert too_big.status_code == 413
+        unsigned = await client.post(
+            "/desktop/api/apps/gmail/files",
+            params={
+                "tool": "GMAIL_SEND_EMAIL",
+                "name": "a.pdf",
+                "mimetype": "application/pdf",
+            },
+            content=b"x",
+        )
+        assert unsigned.status_code == 401
+
+    async def test_a_refused_upload_says_so(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _signed_in(client, session, user)
+        with respx.mock() as mock:
+            mock.post(f"{API}/api/v3/files/upload/request").mock(
+                return_value=httpx.Response(
+                    200,
+                    json={"key": "k", "new_presigned_url": "https://storage.example/p"},
+                )
+            )
+            mock.put("https://storage.example/p").mock(return_value=httpx.Response(403))
+            response = await client.post(
+                "/desktop/api/apps/outlook/files",
+                headers={**headers, "content-type": "application/octet-stream"},
+                params={
+                    "tool": "OUTLOOK_SEND_EMAIL",
+                    "name": "a.pdf",
+                    "mimetype": "application/pdf",
+                },
+                content=b"x",
+            )
+        assert response.status_code == 502
+        assert "composio" not in response.text.lower()
+
+    async def test_each_call_logs_its_tool_and_whether_the_app_took_it(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _signed_in(client, session, user)
+        with respx.mock() as mock, capture_logs() as logs:
+            mock.get(f"{API}/api/v3.1/connected_accounts").mock(
+                return_value=_accounts("ca_1")
+            )
+            mock.get(f"{API}/api/v3.1/tools").mock(
+                return_value=httpx.Response(200, json=TOOLS)
+            )
+            mock.post(f"{API}/api/v3.1/tools/execute/GMAIL_TOOL_1").mock(
+                side_effect=[
+                    httpx.Response(
+                        200, json={"data": {"id": "m1"}, "successful": True}
+                    ),
+                    httpx.Response(
+                        200,
+                        json={
+                            "data": {},
+                            "successful": False,
+                            "error": "Invalid thread",
+                        },
+                    ),
+                ]
+            )
+            for n in range(2):
+                await client.post(
+                    "/desktop/api/apps/mcp/gmail",
+                    headers=headers,
+                    json=_rpc(
+                        "tools/call",
+                        {"name": "GMAIL_TOOL_1", "arguments": {"to": "secret@x.y"}},
+                        id=n,
+                    ),
+                )
+        called = [line for line in logs if line["event"] == "desktop.apps.tool_called"]
+        failed = [line for line in logs if line["event"] == "desktop.apps.tool_failed"]
+        assert [line["tool"] for line in called] == ["GMAIL_TOOL_1"]
+        assert failed[0]["tool"] == "GMAIL_TOOL_1"
+        assert failed[0]["error"] == "Invalid thread"
+        assert "secret@x.y" not in json.dumps(logs)
 
 
 @pytest.mark.asyncio

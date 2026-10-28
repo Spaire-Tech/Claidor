@@ -451,8 +451,13 @@ export class BackgroundWakes {
     return false;
   }
 
-  /** A hidden turn for one agent with a prompt the host wrote (the draft card's Send and Discard, 25 September 2026). */
-  async runHiddenPromptWake(agentId: string, requestSource: string, prompt: string, trayTitle: string): Promise<void> {
+  /**
+   * A hidden turn for one agent with a prompt the host wrote (the draft card's
+   * Send and Discard, 25 September 2026). `isSilenceAllowed` for a wake that
+   * only tells the agent what happened (an email the card sent, 28 October
+   * 2026): it may end without a message.
+   */
+  async runHiddenPromptWake(agentId: string, requestSource: string, prompt: string, trayTitle: string, options?: { readonly isSilenceAllowed?: boolean }): Promise<void> {
     if (!this.tm.execution.canExecute) return;
     let session: any;
     try {
@@ -466,7 +471,7 @@ export class BackgroundWakes {
       requestSource,
       requestSource,
       async (runner) => {
-        await runner.run(prompt, { hidden: true, callReason: "wake", ...this.tm.widgetResponses.collectUnansweredQuestionPrompts(session) });
+        await runner.run(prompt, { hidden: true, callReason: "wake", ...(options?.isSilenceAllowed === true ? { isSilenceAllowed: true } : {}), ...this.tm.widgetResponses.collectUnansweredQuestionPrompts(session) });
       },
       trayTitle,
       requestSource,

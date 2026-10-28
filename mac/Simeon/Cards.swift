@@ -99,6 +99,8 @@ struct QuestionCardView: View {
   let look: Look
   @Environment(AppStore.self) private var store
   @State private var own = ""
+  /** Several picked at once (`multiSelect`), sent together with Submit. */
+  @State private var picked: Set<Int> = []
 
   var body: some View {
     let pending = store.pendingAnswers[entryId]
@@ -121,7 +123,7 @@ struct QuestionCardView: View {
             .font(.system(size: 12, weight: .semibold))
             .foregroundStyle(look.blue)
             .frame(width: 18, height: 18)
-          Text(answer)
+          Text(card.shown(answer))
             .font(.system(size: 14))
             .foregroundStyle(look.ink)
             .cssLineHeight(20, size: 14)
@@ -129,7 +131,7 @@ struct QuestionCardView: View {
         .padding(8)
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Your answer: \(answer)")
+        .accessibilityLabel("Your answer: \(card.shown(answer))")
       }
     } else {
       open
@@ -169,12 +171,23 @@ struct QuestionCardView: View {
         VStack(spacing: 0) {
           ForEach(Array(card.options.enumerated()), id: \.offset) { index, option in
             if index > 0 { Rectangle().fill(look.ink.opacity(0.1)).frame(height: 1) }
-            OptionRow(option: option, look: look) {
-              Task { await store.answer(option.label, card: entryId, in: agentId) }
+            // Picking sends the option's own reply (`value`); several picked go together with Submit.
+            OptionRow(option: option, look: look, picked: picked.contains(index)) {
+              if card.multiSelect {
+                if picked.contains(index) { picked.remove(index) } else { picked.insert(index) }
+              } else {
+                Task { await store.answer(option.value, card: entryId, in: agentId) }
+              }
             }
           }
         }
         .clipShape(RoundedRectangle(cornerRadius: 8))
+      }
+      if card.multiSelect && !picked.isEmpty {
+        CardButton(title: String(localized: "Submit"), prominent: true, look: look) {
+          let values = picked.sorted().map { card.options[$0].value }.joined(separator: "\n")
+          Task { await store.answer(values, card: entryId, in: agentId) }
+        }
       }
       if card.allowsOwnAnswer {
         HStack(alignment: .top, spacing: 8) {
@@ -205,23 +218,35 @@ struct QuestionCardView: View {
   }
 }
 
-/** One choice (`sand-widget-option`): padded 8, an empty 18-point ring at 30% as the iPhone's, its label (14 on 20) and line under it (60%). */
+/**
+ * One choice (`sand-widget-option`): padded 8, an empty 18-point ring at 30% as the iPhone's (a blue tick once picked
+ * for a several-at-once answer), its label (14 on 20; blue for the recommended path, red for a destructive one) and
+ * line under it (60%).
+ */
 private struct OptionRow: View {
   let option: QuestionOption
   let look: Look
+  var picked = false
   let action: () -> Void
   @State private var hovering = false
 
   var body: some View {
     Button(action: action) {
       HStack(spacing: 8) {
-        Circle()
-          .strokeBorder(look.ink.opacity(0.3), lineWidth: 1)
-          .frame(width: 18, height: 18)
+        if picked {
+          Image(systemName: "checkmark.circle.fill")
+            .font(.system(size: 16))
+            .foregroundStyle(look.blue)
+            .frame(width: 18, height: 18)
+        } else {
+          Circle()
+            .strokeBorder(look.ink.opacity(0.3), lineWidth: 1)
+            .frame(width: 18, height: 18)
+        }
         VStack(alignment: .leading, spacing: 0) {
           Text(option.label)
-            .font(.system(size: 14))
-            .foregroundStyle(look.ink)
+            .font(.system(size: 14, weight: option.style == .primary ? .medium : .regular))
+            .foregroundStyle(option.style == .danger ? look.danger : option.style == .primary ? look.blue : look.ink)
             .cssLineHeight(20, size: 14)
           if let line = option.description, !line.isEmpty {
             Text(line)
@@ -259,6 +284,7 @@ struct DraftCardView: View {
   let look: Look
   @Environment(AppStore.self) private var store
   @State private var to = ""
+  @State private var cc = ""
   @State private var subject = ""
   @State private var words = ""
   @State private var started = false
@@ -277,7 +303,7 @@ struct DraftCardView: View {
           if card.kind == .slack, let logo = NSImage(named: "Connectors/slack") ?? NSImage(named: "Brands/slack") {
             Image(nsImage: logo).resizable().interpolation(.high).frame(width: 20, height: 20)
           }
-          Text(card.kind == .email ? "New email" : "Slack message")
+          Text(card.kind == .email ? (card.isReply ? "Reply" : "New email") : "Slack message")
             .font(.system(size: 14, weight: .medium))
             .tracking(-0.15)
             .foregroundStyle(look.ink)
@@ -291,6 +317,8 @@ struct DraftCardView: View {
         if card.kind == .email {
           field(String(localized: "From")) { value(card.from) }
           field(String(localized: "To")) { input($to, placeholder: String(localized: "name@example.com")) }
+          // Cc, always there to add to (28 October 2026: a reply's Cc was on the card and nobody could see it).
+          field(String(localized: "Cc")) { input($cc, placeholder: "") }
           field(String(localized: "Subject")) { input($subject, placeholder: String(localized: "Subject")) }
         } else {
           field(String(localized: "Workspace")) { value(card.workspace) }
@@ -316,6 +344,22 @@ struct DraftCardView: View {
             }
           }
           .accessibilityLabel("Message")
+        // The files that go with it, by name.
+        ForEach(Array(card.attachmentNames.enumerated()), id: \.offset) { _, name in
+          Rectangle().fill(look.ink.opacity(0.1)).frame(height: 1)
+          HStack(spacing: 8) {
+            Image(systemName: "paperclip").font(.system(size: 12)).foregroundStyle(look.inkTertiary)
+            Text(verbatim: name)
+              .font(.system(size: 13))
+              .tracking(-0.15)
+              .foregroundStyle(look.inkSecondary)
+              .lineLimit(1)
+              .truncationMode(.middle)
+          }
+          .padding(.vertical, 8)
+          .padding(.horizontal, 10)
+          .frame(maxWidth: .infinity, alignment: .leading)
+        }
       }
       .background(look.ground, in: RoundedRectangle(cornerRadius: 10))
       .clipShape(RoundedRectangle(cornerRadius: 10))
@@ -332,6 +376,7 @@ struct DraftCardView: View {
       guard !started else { return }
       started = true
       to = card.to.joined(separator: ", ")
+      cc = card.cc.joined(separator: ", ")
       subject = card.subject
       words = card.body
     }
@@ -375,10 +420,10 @@ struct DraftCardView: View {
   private func send() {
     var draft: [String: JSON] = ["body": .string(words)]
     if card.kind == .email {
-      let people = to.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+      let people: (String) -> [String] = { text in text.split(whereSeparator: { $0 == "," || $0 == ";" }).map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty } }
       draft["from"] = .string(card.from)
-      draft["to"] = .array(people.map { .string($0) })
-      draft["cc"] = .array(card.cc.map { .string($0) })
+      draft["to"] = .array(people(to).map { .string($0) })
+      draft["cc"] = .array(people(cc).map { .string($0) })
       draft["subject"] = .string(subject)
     } else {
       draft["workspace"] = .string(card.workspace)
@@ -817,6 +862,8 @@ struct SecretCardView: View {
   let label: String
   let description: String
   let provided: Bool
+  /** Dismissed with its X: a decline the agent is told (`dismissWidget`). */
+  var dismissed = false
   let look: Look
   @Environment(AppStore.self) private var store
   @State private var value = ""
@@ -832,7 +879,7 @@ struct SecretCardView: View {
             .tracking(-0.15)
             .foregroundStyle(look.ink)
             .cssLineHeight(22, size: 14, weight: .medium)
-          let line = provided || saved ? String(localized: "Saved securely and kept private.") : description
+          let line = provided || saved ? String(localized: "Saved securely and kept private.") : dismissed ? "" : description
           if !line.isEmpty {
             Text(line)
               .font(.system(size: 14))
@@ -844,9 +891,24 @@ struct SecretCardView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         if provided || saved {
           StatusPill(text: String(localized: "Saved"), look: look, dot: look.working)
+        } else if dismissed {
+          StatusPill(text: String(localized: "Dismissed"), look: look)
+        } else {
+          Button {
+            Task { await store.dismissQuestion(entryId, in: agentId) }
+          } label: {
+            Image(systemName: "xmark")
+              .font(.system(size: 11, weight: .medium))
+              .foregroundStyle(look.inkSecondary)
+              .frame(width: 20, height: 20)
+              .contentShape(RoundedRectangle(cornerRadius: 6))
+          }
+          .buttonStyle(.hand)
+          .help("Dismiss without giving it")
+          .accessibilityLabel("Dismiss request")
         }
       }
-      if !(provided || saved) {
+      if !(provided || saved || dismissed) {
         HStack(alignment: .top, spacing: 8) {
           SecureField("", text: $value, prompt: Text("Paste your \(label)").foregroundStyle(look.placeholder))
             .textFieldStyle(.plain)

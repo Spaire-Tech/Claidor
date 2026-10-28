@@ -52,10 +52,10 @@ test("DraftExternalMessage appends the card the renderer draws, validates routin
     const draft = tools.module.createDraftExternalMessageTool(deps);
     const mark = tools.module.createMarkDraftDeliveredTool(deps);
     assert.equal(draft.name, "DraftExternalMessage");
-    assert.match(draft.descriptionGenerator(), /Drafting sends nothing and does not end your turn; Send on the card is what sends/);
+    assert.match(draft.descriptionGenerator(), /Drafting sends nothing and ends your turn: the card waits on Send or Discard\. Send on the card is what sends/);
 
     const email = await run(createContext, draft, { kind: "email", to: ["sam@example.com"], subject: "Friday", body: "See you at 3." });
-    assert.match(email, /Draft shown to the user as an editable email card \(entry t1s1\)\. Nothing was sent\./);
+    assert.match(email, /Draft shown to the user as an editable email card \(entry t1s1\)\. Nothing was sent\. The card waits on the user's Send or Discard, so your turn ends here/);
     assert.deepEqual(cards[0], { message: { type: "email-draft", draft: { to: ["sam@example.com"], subject: "Friday", body: "See you at 3." } }, timestampMs: 1_000 });
 
     const slack = await run(createContext, draft, { kind: "slack", target: "#eng", body: "Deploy is done." });
@@ -67,6 +67,16 @@ test("DraftExternalMessage appends the card the renderer draws, validates routin
     assert.match(await run(createContext, draft, { kind: "slack", body: "y" }), /needs a `target`/);
     assert.equal(cards.length, 2, "a refused draft draws no card");
 
+    // A reply names its mailbox and conversation; files are paths on the computer (28 October 2026).
+    assert.match(await run(createContext, draft, { kind: "email", to: ["p@example.com"], subject: "Re: x", body: "y", reply_to: { thread_id: "t1" } }), /A reply needs `via`/);
+    assert.match(await run(createContext, draft, { kind: "email", to: ["p@example.com"], subject: "Re: x", body: "y", via: "gmail", reply_to: { message_id: "m1" } }), /A Gmail reply needs `reply_to\.thread_id`/);
+    assert.match(await run(createContext, draft, { kind: "email", to: ["p@example.com"], subject: "Re: x", body: "y", via: "outlook", reply_to: { thread_id: "t1" } }), /An Outlook reply needs `reply_to\.message_id`/);
+    assert.match(await run(createContext, draft, { kind: "email", to: ["p@example.com"], subject: "x", body: "y", attachments: ["Certificate.pdf"] }), /\\"Certificate\.pdf\\" is not the absolute path of a file on the computer/);
+    assert.equal(cards.length, 2);
+    await run(createContext, draft, { kind: "email", to: ["p@example.com"], cc: ["s@example.com"], subject: "Re: Your application", body: "Hello.", via: "outlook", reply_to: { message_id: "AAMk", thread_id: "ignored" }, attachments: ["/home/user/attachments/Certificate.pdf"] });
+    assert.deepEqual(cards[2].message, { type: "email-draft", draft: { to: ["p@example.com"], cc: ["s@example.com"], subject: "Re: Your application", body: "Hello.", via: "outlook", replyTo: { messageId: "AAMk" }, attachments: ["/home/user/attachments/Certificate.pdf"] } });
+
+    deps.markDraftDelivered = async (entryId, outcome) => { delivered.push({ entryId, outcome }); return entryId !== "missing"; };
     assert.match(await run(createContext, mark, { entry_id: "t1s1", outcome: "sent" }), /The card shows Sent/);
     assert.match(await run(createContext, mark, { entry_id: "t1s2", outcome: "failed", detail: "Slack isn't connected." }), /editable again and the user has been told why/);
     assert.deepEqual(said, ["I couldn't send that draft. Slack isn't connected."]);
@@ -111,7 +121,7 @@ test("Send marks the card sending and wakes the agent to deliver; Discard is a d
   }
 });
 
-test("the card's state machine, on a real entry", async () => {
+test("the card's state machine, on a real entry: Send answers at once while the agent's turn runs", async () => {
   const dir = await mkdtemp(path.join(os.tmpdir(), "simeon-draft-state-"));
   const outfile = path.join(dir, "draft-state.mjs");
   // One bundle that exposes both the store and the class, so they share the transcript cache.
@@ -126,27 +136,79 @@ test("the card's state machine, on a real entry", async () => {
     const tm = {
       roster: { emit: (event) => emitted.push(event) },
       sessions: { activeSession: { db: { updateTranscriptEntry: () => null } } },
-      backgroundWakes: { runHiddenPromptWake: async (agentId, source, prompt) => { wakes.push({ agentId, source, prompt }); } },
+      log: () => {},
+      // The agent's turn: it runs until the test lets it end.
+      backgroundWakes: { runHiddenPromptWake: (agentId, source, prompt) => new Promise((resolve) => { wakes.push({ agentId, source, prompt, end: resolve }); }) },
     };
-    module.setTranscript([{ kind: "send-message", id: "t3s1", timestampMs: 1, message: { type: "email-draft", draft: { to: ["sam@example.com"], subject: "Friday", body: "See you at 3." } } }]);
+    const settled = () => new Promise((resolve) => setTimeout(resolve, 0));
+    module.setTranscript([{ kind: "send-message", id: "t3s1", timestampMs: 1, message: { type: "email-draft", draft: { to: ["sam@example.com"], subject: "Friday", body: "See you at 3.", via: "gmail" } } }]);
     const cards = new module.DraftCards(tm);
-    const sending = await cards.sendDraft({ agentId: "a1", entryId: "t3s1", draft: { body: "See you at 4." } });
+    // The app's answer comes before the agent's turn ends: it once waited for the whole turn and the app gave up at 60 s.
+    const sending = await cards.sendDraft({ agentId: "a1", entryId: "t3s1", draft: { body: "See you at 4.", via: "outlook", draftSendState: "sent" } });
     assert.equal(sending.draftSendState, "sending");
     assert.equal(sending.message.draft.body, "See you at 4.", "the person's edit is what goes out");
+    assert.equal(sending.message.draft.via, "gmail", "the app edits the card's words, never its route");
+    await settled();
     assert.equal(wakes.length, 1);
     assert.equal(wakes[0].source, "draft-send");
-    assert.match(wakes[0].prompt, /See you at 4\./);
+    assert.match(wakes[0].prompt, /<div>See you at 4\.<\/div>/);
     assert.equal(emitted[0].type, "updated");
     assert.equal((await cards.sendDraft({ agentId: "a1", entryId: "t3s1" })).draftSendState, "sending", "a second Send while sending is a no-op");
+    await settled();
     assert.equal(wakes.length, 1);
-    assert.equal(cards.markDraftDelivered({ entryId: "t3s1", outcome: "failed" }).draftSendState, "editable");
-    assert.equal(cards.markDraftDelivered({ entryId: "t3s1", outcome: "sent" }).draftSendState, "sent");
+    assert.equal((await cards.markDraftDelivered({ entryId: "t3s1", outcome: "sent" })).draftSendState, "sent");
+    wakes[0].end();
+    await settled();
+    assert.equal(module.getTranscript()[0].draftSendState, "sent", "a reported send stays sent when the turn ends");
     assert.equal((await cards.discardDraft({ agentId: "a1", entryId: "t3s1" })).draftSendState, "sent", "a sent draft cannot be discarded");
+
+    // A turn that ends without a report hands the card back: it never stays Sending.
+    module.setTranscript([{ kind: "send-message", id: "t3s3", timestampMs: 3, message: { type: "email-draft", draft: { to: ["sam@example.com"], subject: "Friday", body: "Hi." } } }]);
+    await cards.sendDraft({ agentId: "a1", entryId: "t3s3" });
+    await settled();
+    assert.equal(module.getTranscript()[0].draftSendState, "sending");
+    wakes[1].end();
+    await settled();
+    assert.equal(module.getTranscript()[0].draftSendState, "editable");
+    assert.equal((await cards.markDraftDelivered({ entryId: "t3s3", outcome: "failed" })).draftSendState, "editable");
+
     module.setTranscript([{ kind: "send-message", id: "t3s2", timestampMs: 2, message: { type: "slack-draft", draft: { target: "#eng", body: "Done." } } }]);
     const discarded = await cards.discardDraft({ agentId: "a1", entryId: "t3s2" });
     assert.equal(discarded.widgetDismissed, true);
-    assert.equal(wakes[1].source, "draft-discard");
-    assert.equal(cards.markDraftDelivered({ entryId: "t3s2", outcome: "sent" }).draftSendState, "sent");
+    await settled();
+    assert.equal(wakes[2].source, "draft-discard");
+    assert.equal((await cards.markDraftDelivered({ entryId: "t3s2", outcome: "sent" })).draftSendState, "sent");
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("the report lands on the card in its own agent's chat, while the person reads another", async () => {
+  const dir = await mkdtemp(path.join(os.tmpdir(), "simeon-draft-agent-"));
+  const outfile = path.join(dir, "draft-agent.mjs");
+  const entry = path.join(dir, "entry.ts");
+  const { writeFile } = await import("node:fs/promises");
+  await writeFile(entry, `export * from ${JSON.stringify(path.join(repoRoot, "source/host/extensions/transcript/transcript-store.ts"))};\nexport { DraftCards } from ${JSON.stringify(path.join(repoRoot, "source/host/extensions/transcript/draft-cards.ts"))};\n`);
+  await build({ entryPoints: [entry], outfile, bundle: true, format: "esm", platform: "node", target: "node22", logLevel: "silent", external: ["electron"] });
+  const module = await import(`${pathToFileURL(outfile).href}?${Date.now()}`);
+  try {
+    // Iris's chat is open in the background; the person reads Nora's, which is the one in memory.
+    const iris = [{ kind: "send-message", id: "i1", timestampMs: 1, message: { type: "email-draft", draft: { to: ["p@example.com"], subject: "Re: x", body: "Hi." } }, draftSendState: "sending" }];
+    const irisDb = { getTranscriptEntries: () => iris, updateTranscriptEntry: (id, update) => { const at = iris.findIndex((one) => one.id === id); iris[at] = update(iris[at]); } };
+    module.setTranscript([{ kind: "send-message", id: "n1", timestampMs: 1, message: { type: "text", content: "Nora's" } }]);
+    const emitted = [];
+    const tm = {
+      roster: { emit: (event, agentId) => emitted.push({ event, agentId }), emitAgentUpdate: async () => {} },
+      sessions: { activeSession: { id: "nora", db: { getTranscriptEntries: () => module.getTranscript() } }, inMemoryTranscriptAgentId: "nora", liveSessions: new Map([["iris", { id: "iris", db: irisDb }]]) },
+      backgroundWakes: { runHiddenPromptWake: async () => {} },
+    };
+    const cards = new module.DraftCards(tm);
+    const stamped = await cards.markDraftDelivered({ entryId: "i1", outcome: "sent", agentId: "iris" });
+    assert.equal(stamped.draftSendState, "sent");
+    assert.equal(iris[0].draftSendState, "sent", "written to Iris's chat");
+    assert.deepEqual(emitted.map((one) => [one.event.type, one.agentId]), [["updated", "iris"]]);
+    assert.equal(module.getTranscript()[0].id, "n1", "Nora's chat on screen is untouched");
+    assert.equal(await cards.markDraftDelivered({ entryId: "i1", outcome: "sent", agentId: "nora" }), null, "not a card of Nora's");
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
@@ -157,7 +219,7 @@ test("the wiring: gateway commands, coordinator RPC rows, the toolset factory, t
   assert.match(protocol, /sendDraft: \(api: GatewayApi, body: string\) => api\.sendDraft\(parseCommandArgs\(body\)\),/);
   assert.match(protocol, /discardDraft: \(api: GatewayApi, body: string\) => api\.discardDraft\(parseCommandArgs\(body\)\),/);
   const api = await src("host/host-gateway-api.ts");
-  assert.match(api, /sendDraft: \(args: any\) => \{\n\s*markActive\("user_action"\);\n\s*return method\(manager, "sendDraft"\)/);
+  assert.match(api, /sendDraft: \(args: any\) => \{\n\s*markActive\("user_action"\);\n\s*const mcp = deps\.extensions\.api\("mcp"\);\n\s*return method\(manager, "sendDraft"\)\([^\n]*, mcp\?\.appTools\);/);
   const rpc = await src("shared/rpc/coordinator.ts");
   assert.match(rpc, /sendDraft: \{ args: "object", reply: "record-or-null" \},\n\s*discardDraft: \{ args: "object", reply: "record-or-null" \},/);
   const manager = await src("host/extensions/transcript/transcript-manager.ts");
@@ -166,7 +228,7 @@ test("the wiring: gateway commands, coordinator RPC rows, the toolset factory, t
   assert.match(toolset, /const drafts = factories\.drafts\?\.\(\);\n\s*if \(drafts !== undefined\) tools\.push\(\.\.\.drafts\);/);
   const composition = await src("host/host-runner-composition.ts");
   assert.match(composition, /createDraftToolInputs: turn => \{/);
-  assert.match(composition, /markDraftDelivered: \(entryId, outcome\) => method\(extensions\.api\("transcript"\), "markDraftDelivered"\)\?\.\(\{ entryId, outcome \}\) != null,/);
+  assert.match(composition, /markDraftDelivered: async \(entryId, outcome\) => \(await method\(extensions\.api\("transcript"\), "markDraftDelivered"\)\?\.\(\{ entryId, outcome, agentId: session\.id \}\)\) != null,/);
   const { module, dispose } = await load("source/host/runner/system-prompt.ts", "system-prompt-drafts");
   try {
     assert.match(module.DEFAULT_SAND_SYSTEM_PROMPT, /## Messages you write for the user to send\nAn email or a Slack message that would go out under the user's name is a draft card by default: call DraftExternalMessage/);

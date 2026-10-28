@@ -111,6 +111,13 @@ export const COORDINATOR_METHOD_TABLE = {
   // Booking a flight (13 October 2026, `flight-bookings.ts`): `{ ok, entryId }` or `{ ok: false, message }`.
   startFlightBooking: { args: "object", reply: "record" },
   submitFlightPassengers: { args: "object", reply: "record" },
+  // The in-chat form (28 October 2026, `user-forms.ts`): `{ ok }` or `{ ok: false, message, field? }`; `{ accepted }`.
+  submitUserForm: { args: "object", reply: "record" },
+  dismissUserForm: { args: "object", reply: "record" },
+  // The 1Password cards (28 October 2026, `onepassword-cards.ts`).
+  answerCredentialRequest: { args: "object", reply: "record" },
+  connectOnePassword: { args: "object", reply: "record" },
+  dismissOnePasswordConnect: { args: "object", reply: "record" },
   appendConnectorCard: { args: "object", reply: "void" },
   appendSendMessage: { args: "object", reply: "record" },
   // The voice channel (1 October 2026): a call opens, relays to, reads and ends here.

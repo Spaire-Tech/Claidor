@@ -76,7 +76,9 @@ test("helpers stop at a form that needs the person's own details, and the agents
   const glue = await readFile(path.join(repoRoot, "source/host/runner/prompt-collector-glue.ts"), "utf8");
   // "your brief doesn't give" since 18 October 2026: a guest checkout's contact and delivery details come in the brief.
   assert.equal((glue.match(/or a form that asks for the user's own details your brief doesn't give \(name, address, date of birth, licence, card\) — stop at that form with it on screen/g) ?? []).length, 2, "the computer and browser helpers");
-  assert.match(glue, /or a form that asks for their own details: a quote, a booking, an application\), hand them the box with request_box_help directly/);
+  // Since 28 October 2026 a page that only needs typing is asked with the in-chat form; anything more hands the box over.
+  assert.match(glue, /When a page only needs the user to type \(an email and password, a one-time code, an address, a phone, a few details of their own\), ask with request_user_form/);
+  assert.match(glue, /When a step needs more \(SSO, a passkey, a captcha, a payment, a long application, or a page the form can't reach\), hand them the box with request_box_help directly/);
   const { computerUseSubagentDescription } = await loadModule("source/host/runner/tools/sand-computer-use-subagent.ts", "computer-description");
   assert.match(computerUseSubagentDescription(true), /a form asking for the user's own details\) it stops at that step and reports back/);
   assert.match(computerUseSubagentDescription(true), /never swap the job for a safer one on your own/);
