@@ -115,6 +115,31 @@ class CardDeclined(PlansError):
         super().__init__(say("billing.card_declined"), 402)
 
 
+class StripeFailed(PlansError):
+    """Stripe refused a change, or its preview, for a reason that is not the
+    card (28 October 2026: Upgrade to Pro answered the app's page with a
+    bare "Internal Server Error"). Nothing changed; the page says so, and
+    the log line (`plans.*.stripe_failed`) says what Stripe said."""
+
+    def __init__(self) -> None:
+        super().__init__(say("billing.stripe_failed"), 502)
+
+
+def _stripe_failed(
+    event: str, user: User, error: stripe_lib.StripeError, **fields: Any
+) -> StripeFailed:
+    log.warning(
+        event,
+        user_id=str(user.id),
+        error=type(error).__name__,
+        code=getattr(error, "code", None),
+        param=getattr(getattr(error, "error", None), "param", None),
+        message=str(getattr(error, "user_message", None) or error)[:500],
+        **fields,
+    )
+    return StripeFailed()
+
+
 #: Where each plan stands: a move to a higher one is an upgrade.
 RANK: dict[TierKey, int] = {tier: index for index, tier in enumerate(PAID_TIERS)}
 
@@ -555,18 +580,23 @@ class PlansService:
                 starts_at=starts_at,
                 scheduled_tier=_tier_of(row.scheduled_tier),
             )
-        item = await self._plan_change_item(row, tier)
         at = int(now.timestamp())
-        invoice = await stripe_billing.preview_invoice(
-            customer=row.stripe_customer_id,
-            subscription=row.stripe_subscription_id,
-            subscription_details={
-                "items": [item],
-                "billing_cycle_anchor": "now",
-                "proration_behavior": "always_invoice",
-                "proration_date": at,
-            },
-        )
+        try:
+            item = await self._plan_change_item(row, tier)
+            invoice = await stripe_billing.preview_invoice(
+                customer=row.stripe_customer_id,
+                subscription=row.stripe_subscription_id,
+                subscription_details={
+                    "items": [item],
+                    "billing_cycle_anchor": "now",
+                    "proration_behavior": "always_invoice",
+                    "proration_date": at,
+                },
+            )
+        except stripe_lib.StripeError as error:
+            raise _stripe_failed(
+                "plans.change.preview_stripe_failed", user, error, tier=tier.value
+            ) from error
         lines = (invoice.get("lines") or {}).get("data") or []
         credit = -sum(
             int(line.get("amount") or 0)
@@ -604,22 +634,22 @@ class PlansService:
         interval = _interval_of(row)
         plan_price = catalog.price_for(tier, interval)
         now = utc_now()
-        subscription = await stripe_billing.retrieve_subscription(
-            row.stripe_subscription_id
-        )
-        # Whatever was waiting (a downgrade) gives way to what is asked now.
-        schedule_id = _id_of(subscription.get("schedule"))
-        if schedule_id is not None:
-            await stripe_billing.release_schedule(schedule_id)
-            subscription = await stripe_billing.retrieve_subscription(
-                row.stripe_subscription_id
-            )
-        row.scheduled_tier = None
-        row.scheduled_at = None
         metadata = {"simeon_user_id": str(user.id), "simeon_tier": tier.value}
         amount_due = 0
         starts_at = now
         try:
+            subscription = await stripe_billing.retrieve_subscription(
+                row.stripe_subscription_id
+            )
+            # Whatever was waiting (a downgrade) gives way to what is asked now.
+            schedule_id = _id_of(subscription.get("schedule"))
+            if schedule_id is not None:
+                await stripe_billing.release_schedule(schedule_id)
+                subscription = await stripe_billing.retrieve_subscription(
+                    row.stripe_subscription_id
+                )
+            row.scheduled_tier = None
+            row.scheduled_at = None
             if kind == "trial":
                 item = await self._plan_change_item(row, tier)
                 subscription = await stripe_billing.modify_subscription(
@@ -671,6 +701,10 @@ class PlansService:
                 error=getattr(error, "code", None) or type(error).__name__,
             )
             raise CardDeclined() from error
+        except stripe_lib.StripeError as error:
+            raise _stripe_failed(
+                "plans.change.stripe_failed", user, error, tier=tier.value
+            ) from error
         await self.apply_stripe_subscription(session, subscription)
         log.info(
             "plans.change",
@@ -752,6 +786,10 @@ class PlansService:
                 error=getattr(error, "code", None) or type(error).__name__,
             )
             raise CardDeclined() from error
+        except stripe_lib.StripeError as error:
+            raise _stripe_failed(
+                "plans.start_now.stripe_failed", user, error
+            ) from error
         await self.apply_stripe_subscription(session, subscription)
         log.info("plans.start_now", user_id=str(user.id), tier=tier.value)
         price = catalog.price_for(tier, interval).unit_amount
@@ -773,11 +811,16 @@ class PlansService:
             raise NotTrialing()
         tier = TierKey(row.tier)
         interval = _interval_of(row)
-        invoice = await stripe_billing.preview_invoice(
-            customer=row.stripe_customer_id,
-            subscription=row.stripe_subscription_id,
-            subscription_details={"trial_end": "now"},
-        )
+        try:
+            invoice = await stripe_billing.preview_invoice(
+                customer=row.stripe_customer_id,
+                subscription=row.stripe_subscription_id,
+                subscription_details={"trial_end": "now"},
+            )
+        except stripe_lib.StripeError as error:
+            raise _stripe_failed(
+                "plans.start_now.preview_stripe_failed", user, error
+            ) from error
         price = catalog.price_for(tier, interval).unit_amount
         return PlanChange(
             kind="start_now",

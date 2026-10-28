@@ -45,9 +45,9 @@ from simeon.user.repository import UserRepository
 from .allowance import (
     Allowance,
     billing_required,
-    billing_url,
     month_bounds,
     resolve_allowance,
+    upgrade_url,
     week_bounds,
 )
 from .bedrock import bedrock_configured
@@ -968,7 +968,7 @@ class DesktopService:
             ),
             "trialCancelable": allowance.trial_cancelable,
             "onDemand": None,
-            "upgradeUrl": None if allowance.free else billing_url(from_app=True),
+            "upgradeUrl": upgrade_url(allowance),
             # Who bills the plan (12 October 2026): `apple` for one bought in
             # the iPhone app (changed and cancelled with Apple), `stripe` for
             # the web's, None without a plan.

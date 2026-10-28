@@ -687,28 +687,13 @@ struct UsagePage: View {
               Text(extra).foregroundStyle(Ink.secondary).monospacedDigit()
             }
           }
-          // The founder's reference's Change Limit (9 October 2026): the plans page when there is one to move to, else Stripe's.
-          if apple || web {
-            Button {
-              if apple { choosePlan(summary.managePlan?.nextTier?.tier) } else if let upgrade = meters.upgrade { openURL(upgrade.url) } else { open("billing", flow: nil, tier: nil) }
-            } label: {
-              HStack {
-                Text("Change Limit").foregroundStyle(Ink.primary)
-                Spacer()
-                if opening == "billing" { ProgressView() } else {
-                  Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(Ink.tertiary)
-                }
-              }
-              .contentShape(.rect)
-            }
-            .disabled(opening != nil)
-          }
-          if let upgrade = meters.upgrade, let line = meters.upgradeSupportingText, apple || web {
+          // Choose a plan, for a person with none (28 October 2026: Change Limit and Get more usage went, the founder: "whats
+          // the dif between the two?"); with a plan, Manage Plan below says what each change does.
+          if summary.managePlan == nil {
             VStack(alignment: .leading, spacing: 10) {
-              Text(line).font(.system(size: 13)).foregroundStyle(Ink.secondary)
-              Button(upgrade.label) {
-                if apple { choosePlan(summary.managePlan?.nextTier?.tier) } else { openURL(upgrade.url) }
-              }
+              if let line = meters.upgradeSupportingText { Text(line).font(.system(size: 13)).foregroundStyle(Ink.secondary) }
+              // The App Store's plans (PlansSheet); the free month's too, which has no upgrade link.
+              Button(meters.upgrade?.label ?? L10n.text("Choose a plan")) { choosePlan(nil) }
               .buttonStyle(Tactile(look: PillButtonStyle(primary: true)))
             }
             .padding(.vertical, 4)

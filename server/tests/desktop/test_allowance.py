@@ -400,8 +400,9 @@ class TestQuotaAndRefusal:
         assert quota["trialEndsAt"] == quota["periodEnd"]
         assert quota["trialCancelable"] is True
         assert quota["onDemand"] is None
+        # The plans, the next one picked (28 October 2026): not "You're all set".
         assert quota["upgradeUrl"] == settings.generate_frontend_url(
-            "/billing?from=app"
+            "/billing?from=app&plan=pro"
         )
         summary = await desktop.profile_summary(session, user)
         assert summary["creditItems"][0]["label"] == "Trial credits"

@@ -249,6 +249,10 @@ async def change_page(
             change = await plans_service.change_preview(session, user, tier)
     except PlansError as error:
         return _failed(error.message, back)
+    except Exception:
+        # A page in a browser, never a bare error (28 October 2026): what went wrong is in the log.
+        log.exception("desktop.billing.change_page_failed", user_id=str(user.id))
+        return _failed(say("apps.page.try_again"), back)
     title, sentence = describe(change)
     fields = f'<input type="hidden" name="t" value="{escape(t, quote=True)}">'
     if change.proration_date is not None:
@@ -289,6 +293,9 @@ async def confirm_change(
             )
     except PlansError as error:
         return _failed(error.message, back)
+    except Exception:
+        log.exception("desktop.billing.change_failed", user_id=str(user.id))
+        return _failed(say("apps.page.try_again"), back)
     return _page(
         _done_title(change),
         f"<p>{escape(say('sign_in.page.close_tab', product=PRODUCT))}</p>",

@@ -6,12 +6,17 @@ import SimeonCore
  * Settings › Usage & Billing, as the founder's reference has its usage
  * (21 October 2026): "Usage", the week's usage (or the trial's) with what
  * is used at the right, when it resets under it and its bar across the
- * card, the on-demand spend the same way, then the upgrade in the link blue
- * (its line under the card), Change Limit ↗, Cancel Trial when it applies,
- * the refresh failure with Retry; then "Plan", the plan and its line,
- * Upgrade to the plan above, and Manage Billing ↗ (Stripe's page,
- * `MacBillingPage`). Read when the page shows unless it was read in the
- * last 30 seconds.
+ * card, the on-demand spend the same way, then Choose a plan in the link
+ * blue for a person with no plan (its line under the card), Cancel Trial
+ * when it applies, the refresh failure with Retry; then "Plan", the plan
+ * and its line, Upgrade to the plan above, Add Credits and Manage Billing ↗
+ * (Stripe's page, `MacBillingPage`). Read when the page shows unless it
+ * was read in the last 30 seconds.
+ *
+ * Get more usage and Change Limit went (28 October 2026, the founder:
+ * "whats the dif between the two?"): both opened the web's billing page,
+ * which told a person with a plan they were all set. With a plan, the
+ * Plan group's rows say what each does.
  */
 struct SettingsUsagePage: View {
   let look: Look
@@ -40,7 +45,7 @@ struct SettingsUsagePage: View {
   }
 }
 
-/** "Usage": the meters, the upgrade, Change Limit, Cancel Trial, and the refresh failure. */
+/** "Usage": the meters, Choose a plan (no plan), Cancel Trial, and the refresh failure. */
 private struct UsageGroup: View {
   let summary: UsageSummary
   let now: Date
@@ -49,7 +54,9 @@ private struct UsageGroup: View {
 
   var body: some View {
     let meters = UsageMeters(summary, now: now)
-    SettingsGroup(title: String(localized: "Usage"), footer: meters.upgrade == nil ? nil : meters.upgradeSupportingText, look: look) {
+    // With a plan, the Plan group below holds the upgrade, the credits and billing; with none (the free month too), Choose a plan.
+    let upgrade = summary.managePlan == nil ? meters.upgrade ?? UsageSummary.UpgradeButton(label: L10n.text("Choose a plan"), url: MacUpgrade.billing) : nil
+    SettingsGroup(title: String(localized: "Usage"), footer: upgrade == nil ? nil : meters.upgradeSupportingText, look: look) {
       if let weekly = meters.weekly {
         UsageMeterLine(title: meters.includedUsageTitle, meter: weekly, look: look)
       } else {
@@ -64,11 +71,8 @@ private struct UsageGroup: View {
           Text(extra).font(PanelType.row).foregroundStyle(look.inkSecondary).monospacedDigit()
         }
       }
-      if let upgrade = meters.upgrade {
+      if let upgrade {
         SettingsActionRow(title: upgrade.label, divided: true, look: look) { NSWorkspace.shared.open(upgrade.url) }
-      }
-      SettingsLinkRow(label: String(localized: "Change Limit"), divided: true, external: true, look: look) {
-        NSWorkspace.shared.open(meters.upgrade?.url ?? AccountMenu.changeLimitURL)
       }
       if meters.canCancelTrial {
         SettingsActionRow(title: String(localized: "Cancel Trial"), destructive: true, divided: true, look: look) {

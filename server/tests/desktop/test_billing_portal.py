@@ -11,6 +11,7 @@ import httpx
 import pytest
 import stripe as stripe_lib
 from pytest_mock import MockerFixture
+from structlog.testing import capture_logs
 
 from simeon.config import settings
 from simeon.models import User
@@ -128,6 +129,53 @@ class TestBillingPortal:
         assert "You're on Pro" in html.unescape(done.text)
         assert "simeon://app/v1/open" in done.text
         assert modify.await_args.kwargs["billing_cycle_anchor"] == "now"
+
+    async def test_stripe_refusing_the_preview_says_so_on_the_page(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        """28 October 2026: Upgrade to Pro opened a bare "Internal Server
+        Error". Stripe refusing the preview is now a page that says nothing
+        changed, and the log says what Stripe said."""
+        mocker.patch("simeon.plans.service.settings.STRIPE_SECRET_KEY", "sk_test_x")
+        await plans.apply_stripe_subscription(
+            session, stripe_subscription(user, status="active")
+        )
+        mocker.patch(
+            "simeon.plans.service.stripe_billing.price_by_lookup_key",
+            new=AsyncMock(
+                return_value=stripe_lib.Price.construct_from({"id": "price_pro"}, None)
+            ),
+        )
+        mocker.patch(
+            "simeon.plans.service.stripe_billing.preview_invoice",
+            new=AsyncMock(
+                side_effect=stripe_lib.InvalidRequestError(
+                    "This customer has no address.", "customer"
+                )
+            ),
+        )
+        access, _ = await _signed_in(client, session, user)
+        response = await client.post(
+            "/desktop/api/billing/portal",
+            json={"flow": "update_confirm", "tier": "pro", "back": "simeon"},
+            headers={"Authorization": f"Bearer {access}"},
+        )
+        url = response.json()["data"]["portalUrl"]
+        with capture_logs() as logs:
+            page = await client.get(url)
+        assert page.status_code == 200
+        assert "nothing changed" in html.unescape(page.text)
+        line = next(
+            entry
+            for entry in logs
+            if entry["event"] == "plans.change.preview_stripe_failed"
+        )
+        assert line["error"] == "InvalidRequestError"
+        assert "no address" in line["message"]
 
     async def test_an_expired_page_changes_nothing(
         self, client: httpx.AsyncClient
