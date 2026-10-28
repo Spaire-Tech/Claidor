@@ -172,6 +172,8 @@ export class OnePasswordCards {
   async dismissOnePasswordConnect(args: { readonly agentId: string; readonly entryId: string }): Promise<{ readonly accepted: boolean }> {
     const stamped = await stampCard(this.tm, args.agentId, args.entryId, isConnectEntry, (entry) => (entry.connectState ?? "open") === "open" ? { connectState: "dismissed" } : null);
     if (stamped == null) return { accepted: false };
+    // Remembered on this computer: no agent offers 1Password again unless the person asks.
+    this.services?.onePassword.decline();
     this.wake(args.agentId, args.entryId, "onepassword-dismissed", buildOnePasswordDismissedWakePrompt(args.entryId), { silenceAllowed: true });
     return { accepted: true };
   }

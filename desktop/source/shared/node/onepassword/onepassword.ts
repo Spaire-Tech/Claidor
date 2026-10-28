@@ -76,6 +76,8 @@ export class OnePassword {
   constructor(private readonly options: OnePasswordOptions) {}
 
   private get file(): string { return join(this.options.dir, "connection.json"); }
+  /** Written when the person closes the connect card: Simeon doesn't offer 1Password again unless they ask. */
+  private get declinedFile(): string { return join(this.options.dir, "declined.json"); }
   private now(): number { return (this.options.now ?? Date.now)(); }
 
   connection(): OnePasswordConnection | undefined {
@@ -111,8 +113,19 @@ export class OnePassword {
     mkdirSync(this.options.dir, { recursive: true, mode: 0o700 });
     const email = text(input.accountEmail);
     writeFileSync(this.file, JSON.stringify({ token, vaultId, vaultName, ...(email.length > 0 ? { accountEmail: email } : {}), connectedAtMs: this.now() }), { mode: 0o600 });
+    rmSync(this.declinedFile, { force: true });
     this.cache = undefined;
     return { ok: true, vaultName };
+  }
+
+  /** The person closed the connect card: remembered on this computer until they connect 1Password. */
+  decline(): void {
+    mkdirSync(this.options.dir, { recursive: true, mode: 0o700 });
+    writeFileSync(this.declinedFile, JSON.stringify({ declinedAtMs: this.now() }), { mode: 0o600 });
+  }
+
+  declined(): boolean {
+    return existsSync(this.declinedFile);
   }
 
   disconnect(): void {

@@ -1497,14 +1497,19 @@ decline. A password or a code is masked, and nothing they typed is ever shown to
 
 ### 1Password (28 October 2026)
 
-**For the person.** At a sign-in on a page the agent has open, the agent looks in their
-1Password first. If the login is there, a card asks to fill it: Fill with 1Password, confirmed
-with Face ID or Touch ID, and the computer types the username, the password and, when the login
-has one, its one-time code. The card then says what went in. Not now is a decline. If
-1Password isn't connected, a card asks them to connect it from Simeon on their Mac: Connect asks
-their 1Password app (Touch ID) for a vault named "Shared with Simeon" and a key that can only
-read it. They put in that vault the logins their agents may use. The agent never sees a
-username, a password or a code.
+**For the person.** For someone who connected 1Password: at a sign-in on a page the agent has
+open, the agent looks in their 1Password first. If the login is there, a card asks to fill it:
+Fill with 1Password, confirmed with Face ID or Touch ID, and the computer types the username,
+the password and, when the login has one, its one-time code. The card then says what went in.
+Not now is a decline. The agent never sees a username, a password or a code.
+
+Someone who hasn't connected it never hears of it, unless they said they use 1Password or ask
+for it (28 October 2026, the founder: offering it to everyone at every sign-in was "genuinely not
+smart"). Then a card asks them to connect it from Simeon on their Mac: Connect asks their
+1Password app (Touch ID) for a vault named "Shared with Simeon" and a key that can only read it,
+and they put in that vault the logins their agents may use. Closing that card is remembered on
+the computer: no agent offers it again unless they ask. Everyone else gets the in-chat form or
+the computer handed over at a sign-in.
 
 **How it works.**
 
@@ -1526,6 +1531,10 @@ username, a password or a code.
   logins saved for the site: names and ids, never a username), `request_credential_fill`
   (checks the page shows a sign-in field, then the card), `request_1password_connect`. Both
   cards end the turn. A login is read only for the site it is saved for, or a subdomain of it.
+- **When it is offered.** Without a connection the agent is given only `request_1password_connect`,
+  and that card shows only with `user_asked` (the person said they use 1Password or asked for
+  it). Closing the card writes `<data>/onepassword/declined.json`; after that the tool answers
+  that they said no, unless they ask again. Connecting clears it.
 - **Fill** (`answerCredentialRequest`, `host/extensions/transcript/onepassword-cards.ts`) reads
   the login and types it in with the in-chat form's fill (`fillUserForm`, the usual sign-in
   field marks). One Fill covers the same login on the same site for ten minutes, so the

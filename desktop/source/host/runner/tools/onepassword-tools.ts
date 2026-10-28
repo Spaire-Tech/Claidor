@@ -27,6 +27,8 @@ type Filled = { readonly ok: true; readonly outcomes: Partial<Record<"username" 
 
 export interface OnePasswordToolDependencies {
   connection(): { readonly vaultName: string } | undefined;
+  /** The person closed the connect card before. */
+  declined(): boolean;
   listLogins(site: string, options: { readonly forceRefresh?: boolean }): Promise<Listed>;
   /** Filled now when the person allowed this login on this site in the last ten minutes; undefined when the card must ask. */
   fillAllowed(args: { readonly credentialId: string; readonly site: string }): Promise<Filled | undefined>;
@@ -36,7 +38,13 @@ export interface OnePasswordToolDependencies {
   now?: () => number;
 }
 
-const NOT_CONNECTED = "1Password isn't connected. Ask the user once to connect it with request_1password_connect; meanwhile, or if they decline, ask for the sign-in with request_user_form or hand them the screen (request_box_help).";
+// Not everyone uses 1Password (28 October 2026, the founder: offering it to
+// everyone at every sign-in was "genuinely not smart"): it is offered only to
+// someone who said they use it or asked for it, and never again once they
+// closed its card.
+const NOT_CONNECTED = "1Password isn't connected. Don't bring it up: ask for the sign-in with request_user_form, or hand the user the screen (request_box_help). Offer 1Password (request_1password_connect, once) only if the user said they use it or asked for it.";
+const DECLINED = "The user said no to connecting 1Password. Don't mention it again unless they ask for it: ask for the sign-in with request_user_form, or hand them the screen (request_box_help).";
+const NOT_ASKED = "Not shown: offer 1Password only to a user who said they use it or asked you to use it. Ask for the sign-in with request_user_form, or hand them the screen (request_box_help).";
 
 export const listCredentialsParameters = z.object({
   site: z.string().trim().min(1).describe('The page\'s address or domain, as the browser bar shows it ("https://accounts.example.com/login" or "accounts.example.com").'),
@@ -50,6 +58,7 @@ export const requestCredentialFillParameters = z.object({
 });
 
 export const requestOnePasswordConnectParameters = z.object({
+  user_asked: z.boolean().describe("True only when the user said they use 1Password (in this conversation or in what you remember of them) or asked you to use it. Otherwise the card isn't shown."),
   reason: z.string().trim().optional().describe('One short sentence: what it is for ("To sign in to Acme with the login you keep in 1Password.").'),
 });
 
@@ -57,14 +66,14 @@ export function createOnePasswordTools(deps: OnePasswordToolDependencies) {
   const listCredentials = defineCommunicateTool(deps, {
     id: "LIST_CREDENTIALS",
     name: "ListCredentials",
-    description: "List the logins the user keeps for a site in their 1Password vault shared with Simeon: each one's name and credential_id, never a username or a password. At a username-and-password sign-in on a page open on your computer, call this first, before asking for anything. A match: fill it with request_credential_fill. No match: tell the user it isn't in the shared vault (they can add it there), and next time call this with force_refresh before saying it's missing again; meanwhile ask with request_user_form or hand them the screen. Not for SSO, a passkey, a captcha or a payment.",
+    description: "List the logins the user keeps for a site in their 1Password vault shared with Simeon (they connected it): each one's name and credential_id, never a username or a password. At a username-and-password sign-in on a page open on your computer, call this first, before asking for anything. A match: fill it with request_credential_fill. No match: tell the user it isn't in the shared vault (they can add it there), and next time call this with force_refresh before saying it's missing again; meanwhile ask with request_user_form or hand them the screen. Not for SSO, a passkey, a captcha or a payment.",
     parameters: listCredentialsParameters,
     describeActivity: () => ({ detail: "Looking in 1Password" }),
     execute: async (_ctx, args: z.infer<typeof listCredentialsParameters>, resolved) => {
       const site = siteOf(args.site);
       if (site.length === 0) return "Give the page's address or its domain.";
       const listed = await resolved.listLogins(site, { forceRefresh: args.force_refresh === true });
-      if (!listed.ok) return listed.notConnected === true ? NOT_CONNECTED : `1Password couldn't be read: ${listed.message}`;
+      if (!listed.ok) return listed.notConnected === true ? (resolved.declined() ? DECLINED : NOT_CONNECTED) : `1Password couldn't be read: ${listed.message}`;
       const vault = resolved.connection()?.vaultName ?? "Shared with Simeon";
       if (listed.logins.length === 0) return `No login for ${site} is in the 1Password vault "${vault}". Tell the user in one line it isn't there (they can add it to that vault); next time call ListCredentials with force_refresh before saying it's missing again. Meanwhile ask with request_user_form or hand them the screen (request_box_help).`;
       const lines = listed.logins.map((login) => `- credential_id ${login.credentialId}: "${login.title}" (saved for ${login.site})`);
@@ -82,9 +91,9 @@ export function createOnePasswordTools(deps: OnePasswordToolDependencies) {
       const site = siteOf(args.site);
       if (site.length === 0) return "Give the page's address or its domain.";
       const connection = resolved.connection();
-      if (connection == null) return NOT_CONNECTED;
+      if (connection == null) return resolved.declined() ? DECLINED : NOT_CONNECTED;
       const listed = await resolved.listLogins(site, {});
-      if (!listed.ok) return listed.notConnected === true ? NOT_CONNECTED : `1Password couldn't be read: ${listed.message}`;
+      if (!listed.ok) return listed.notConnected === true ? (resolved.declined() ? DECLINED : NOT_CONNECTED) : `1Password couldn't be read: ${listed.message}`;
       const login = listed.logins.find((item) => item.credentialId === args.credential_id);
       if (login == null) return `credential_id ${args.credential_id} isn't a login saved for ${site} in the vault "${connection.vaultName}". Call ListCredentials for the page and use one it gives.`;
       const allowed = await resolved.fillAllowed({ credentialId: login.credentialId, site });
@@ -108,12 +117,13 @@ export function createOnePasswordTools(deps: OnePasswordToolDependencies) {
   const requestConnect = defineCommunicateTool(deps, {
     id: "REQUEST_1PASSWORD_CONNECT",
     name: "request_1password_connect",
-    description: "Ask the user to connect 1Password, when ListCredentials says it isn't connected and a sign-in needs it. They connect it from Simeon on their Mac, which asks their 1Password app for a vault shared with Simeon and a read-only key. Ask once per blockage, never again after a dismissal. Sending the card ends your turn; you are woken when they connect it or dismiss it.",
+    description: "Ask the user to connect 1Password, only when they said they use 1Password or asked you to use it (user_asked), and a sign-in needs it. Many people don't use 1Password: never offer it otherwise; ask for the sign-in with request_user_form or hand them the screen. They connect it from Simeon on their Mac, which asks their 1Password app for a vault shared with Simeon and a read-only key. Once they close the card, it isn't offered again unless they ask. Sending the card ends your turn; you are woken when they connect it or dismiss it.",
     parameters: requestOnePasswordConnectParameters,
     describeActivity: () => ({ detail: "Asking to connect 1Password" }),
     execute: async (_ctx, args: z.infer<typeof requestOnePasswordConnectParameters>, resolved) => {
       const connection = resolved.connection();
       if (connection != null) return `1Password is already connected (vault "${connection.vaultName}"). Call ListCredentials with force_refresh for the page.`;
+      if (args.user_asked !== true) return resolved.declined() ? DECLINED : NOT_ASKED;
       const reason = (args.reason ?? "").trim();
       const message: OnePasswordConnectMessage = { type: ONEPASSWORD_CONNECT_MESSAGE_TYPE, ...(reason.length > 0 ? { reason: reason.slice(0, 300) } : {}) };
       const entryId = resolved.emitCard(message, (resolved.now ?? Date.now)());
@@ -121,5 +131,6 @@ export function createOnePasswordTools(deps: OnePasswordToolDependencies) {
     },
   });
 
-  return [listCredentials, requestFill, requestConnect] as const;
+  // Without a connection the agent never looks in 1Password: only the connect card is offered, for a user who asks.
+  return deps.connection() == null ? [requestConnect] : [listCredentials, requestFill, requestConnect];
 }
