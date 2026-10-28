@@ -465,32 +465,43 @@ struct Composer: View {
     store.setDraft("", for: from)
   }
 
+  /**
+   * The field emptied once its message has gone, and kept empty: dictation
+   * still on its way writes nothing more (the message it was writing has
+   * gone), the chat's kept draft goes now, and the sent words coming back
+   * into the field after are taken out (`FieldHandle.emptyAfterSend`), as
+   * the iPhone's composer does.
+   */
+  private func emptyAfterSend(_ words: String) {
+    if dictation.phase != .idle { dictation.cancel() }
+    text = ""
+    chips = []
+    control.staged = []
+    picks.update(nil)
+    store.setDraft("", for: agentId)
+    handle.emptyAfterSend(sent: words)
+  }
+
   private func send() {
     // While the computer is rebuilt or this account has no Simeon, Send is off and Return keeps the words (decision 3; the window
     // empties the field under the access notice and sends nothing).
     guard !store.isSendingPaused else { return }
+    // Letters still being composed are set down first; they are part of the message (`FieldHandle.settle`).
+    handle.settle()
     let words = ComposerDocument.prompt(text)
     let files = control.staged.map { (name: $0.name, data: $0.data) }
     guard !words.isEmpty || !files.isEmpty else { return }
     if let onSubmit {
       // The new chat's field: the line's people get it, or nothing goes and the words stay.
       guard onSubmit(words, control.staged) else { return }
-      text = ""
-      chips = []
-      control.staged = []
-      picks.update(nil)
-      store.setDraft("", for: agentId)
+      emptyAfterSend(words)
       return
     }
     // The editor's document goes with the words when they hold a pick (`richText`).
     let richText = chips.isEmpty ? nil : ComposerDocument.richText(text, chips: chips)
     let answering = control.reply?.id ?? threadRoot
-    text = ""
-    chips = []
-    control.staged = []
     control.reply = nil
-    picks.update(nil)
-    store.setDraft("", for: agentId)
+    emptyAfterSend(words)
     let inThread = threadRoot != nil
     Task { await store.send(words, to: agentId, attachments: files, replyTo: answering, inThread: inThread, richText: richText) }
     // Sent from the chat shown under the To: line: the new chat closes on it.

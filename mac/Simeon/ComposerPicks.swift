@@ -438,6 +438,40 @@ final class FieldHandle {
     guard let view else { return }
     view.window?.makeFirstResponder(view)
   }
+
+  /**
+   * Letters still being composed (a suggestion shown inline, an accent, a
+   * Japanese word) set down before Send empties the field: a field holding
+   * them brought the sent words back (the iPhone's fix of 19 October 2026;
+   * the founder saw it on the Mac too, 28 October).
+   */
+  func settle() {
+    guard let view, view.hasMarkedText() else { return }
+    view.unmarkText()
+    view.inputContext?.discardMarkedText()
+  }
+
+  /**
+   * After Send, at 50 and 300 ms: words of the message just sent that came
+   * back into the field (set down by the input method once it was emptied)
+   * are taken out through the field's own path, so the draft goes with them:
+   * the whole message, or its end (two letters or more). Words typed since stay.
+   */
+  func emptyAfterSend(sent: String) {
+    let sent = sent.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !sent.isEmpty else { return }
+    Task { @MainActor [weak self] in
+      for pause: UInt64 in [50_000_000, 300_000_000] {
+        try? await Task.sleep(nanoseconds: pause)
+        guard let view = self?.view, let storage = view.textStorage else { continue }
+        let shown = MessageField.document(storage).draft.trimmingCharacters(in: .whitespacesAndNewlines)
+        // The whole message, or its end (what was being composed); a letter typed since, of the next message, stays.
+        guard shown == sent || (shown.count >= 2 && sent.hasSuffix(shown)) else { continue }
+        view.inputContext?.discardMarkedText()
+        view.insertText("", replacementRange: NSRange(location: 0, length: (view.string as NSString).length))
+      }
+    }
+  }
 }
 
 // MARK: The theme
