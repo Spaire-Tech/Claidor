@@ -38,6 +38,8 @@ private struct ComputerFullView: View {
   @State private var bridge = ClipboardBridge()
   /** The clipboard's `changeCount` last read or written here. */
   @State private var pasteboardSeen = -1
+  /** The clipboard's `changeCount` whose words the computer has (sent, or copied from it). */
+  @State private var pasteboardSent = -1
   @State private var fullScreen = false
 
   var body: some View {
@@ -112,16 +114,22 @@ private struct ComputerFullView: View {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(fresh, forType: .string)
         pasteboardSeen = NSPasteboard.general.changeCount
+        pasteboardSent = pasteboardSeen
       }
-      // This Mac's clipboard to the computer on a click in it, the window coming forward, or the view opening; 0.2 s apart at most.
+      // This Mac's clipboard to the computer on a click in it, the window coming forward, or the screen coming up; 0.2 s apart at most.
       events.onPointerDown = { sendClipboard() }
-      sendClipboard()
+      // ⌘V: the words the computer does not have yet go with the keys, read on the key itself.
+      events.onPasteKey = { shift in
+        guard phase == "connected" else { return }
+        events.pasteAndPress(readClipboard(), shift: shift)
+      }
     }
     .onDisappear {
       // The closures hold this view's state; let them go with it.
       events.onHostKey = { _ in }
       events.onClipboard = { _ in }
       events.onPointerDown = {}
+      events.onPasteKey = { _ in }
     }
     .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { _ in sendClipboard() }
     .onReceive(NotificationCenter.default.publisher(for: NSWindow.didEnterFullScreenNotification)) { _ in fullScreen = true }
@@ -140,14 +148,32 @@ private struct ComputerFullView: View {
    * This Mac's clipboard to the computer. Read only when it changed since
    * it was last read or written here: the same text sent again changes
    * nothing on the computer, and each read can ask the person on macOS 26.
+   * Not before the screen is up: the page had no connection to send it on
+   * and dropped it, and the change counted as sent, so what was copied
+   * before the computer opened never reached it.
    */
   private func sendClipboard() {
+    guard phase == "connected" else { return }
     let pasteboard = NSPasteboard.general
     guard pasteboard.changeCount != pasteboardSeen, bridge.mayRead() else { return }
-    pasteboardSeen = pasteboard.changeCount
-    guard let text = pasteboard.string(forType: .string), !text.isEmpty else { return }
+    guard let text = readClipboard() else { return }
     events.paste(text)
+  }
+
+  /**
+   * This Mac's words when the computer does not have them yet, else nil. A
+   * read that came back with nothing while words are there (macOS can
+   * refuse one outside a paste) is tried again on the next ⌘V.
+   */
+  private func readClipboard() -> String? {
+    let pasteboard = NSPasteboard.general
+    let count = pasteboard.changeCount
+    guard count != pasteboardSent else { return nil }
+    pasteboardSeen = count
+    guard let text = pasteboard.string(forType: .string), !text.isEmpty else { return nil }
+    pasteboardSent = count
     bridge.sent(text)
+    return text
   }
 }
 
