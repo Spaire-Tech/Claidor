@@ -97,8 +97,12 @@ struct Look {
   var codeWash: Color { Color(red: 119 / 255, green: 119 / 255, blue: 119 / 255).opacity(dark ? 0.173 : 0.09) }
   // MARK: Cards (step 2c)
 
-  /** The line over the message field (`AccessNotice`): the iPhone's soft grey (`Ink.pill`), no edge. */
-  var notice: Color { dark ? Color.white.opacity(0.078) : Color(hex: 0x777777, opacity: 0.063) }
+  /**
+   * The line over the message field (`AccessNotice`): the iPhone's soft grey (`Ink.pill`) laid on the chat's ground,
+   * solid: it stands over the messages, which showed through the iPhone's own see-through grey (the founder, 28
+   * October 2026: "why is it transparant? not good").
+   */
+  var notice: Color { dark ? Color(hex: 0x1a1a1a) : Color(hex: 0xf3f3f3) }
   /** A plain button's and a status pill's grey (`rgba(119,119,119,.063)`). */
   var wash: Color { Color(red: 119 / 255, green: 119 / 255, blue: 119 / 255).opacity(dark ? 0.14 : 0.063) }
   /** "Connected" on an app's card: green on a green wash. */
