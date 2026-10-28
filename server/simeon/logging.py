@@ -98,6 +98,15 @@ class Logging[RendererType]:
                         "level": level,
                         "propagate": False,
                     },
+                    # Ours, every one, to the root's handler (28 October 2026). A module
+                    # that asked for its logger as it was imported (the plans service's
+                    # `logging.getLogger(__name__)`, and six others) had it switched off
+                    # by `disable_existing_loggers`, so none of its lines ever reached
+                    # the log: Upgrade to Pro's Stripe refusal said nothing.
+                    "simeon": {
+                        "handlers": [],
+                        "propagate": True,
+                    },
                     # Propagate third-party loggers to the root one
                     **{
                         logger: {
