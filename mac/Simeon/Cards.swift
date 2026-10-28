@@ -389,27 +389,35 @@ struct DraftCardView: View {
  */
 struct ConnectorCards: View {
   let names: [String]
+  /** The card says the apps are connected already (the agent wrote it after they were). */
+  var connected = false
   let reason: String?
   let look: Look
+  @Environment(AppStore.self) private var store
 
   var body: some View {
     VStack(alignment: .leading, spacing: 8) {
       ForEach(names, id: \.self) { name in
-        ConnectorCard(name: name, reason: reason, look: look)
+        ConnectorCard(name: name, reason: reason, markedConnected: connected, look: look)
       }
     }
+    // The person's connected apps read as the card shows, as the iPhone's card does (the founder, 28 October 2026:
+    // Stripe and Mercury, connected and in Connectors' own list, read Connect here, as the Mac had read them only when
+    // Settings' Connectors opened).
+    .task { await store.loadApps() }
   }
 }
 
 private struct ConnectorCard: View {
   let name: String
   let reason: String?
+  var markedConnected = false
   let look: Look
   @Environment(AppStore.self) private var store
 
   var body: some View {
     let catalog = store.catalogApp(named: name)
-    let connected = store.isConnected(name)
+    let connected = markedConnected || store.isConnected(name)
     // Its sign-in open in the window, or its page being asked for.
     let adding = MacConnector.shared.connecting == name
     let tools = store.apps.first { $0.name.lowercased() == name.lowercased() && $0.status == "connected" }?.toolCount ?? 0
