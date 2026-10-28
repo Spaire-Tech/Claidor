@@ -75,25 +75,48 @@ extension AppStore {
   public func loadSections() async {
     let started = sectionWrites
     guard let settings = try? await backend?.commandIfAwake("getHostSettings", [:]), started == sectionWrites else { return }
+    takeSections(settings)
+  }
+
+  /** The computer's sections, in place of this device's copy. */
+  func takeSections(_ settings: JSON) {
     let next = SidebarSections.parse(settings["sidebarSections"] ?? .array([]))
+    sectionsKept = false
     if next != sidebarSections { sidebarSections = next }
+    layoutChanged()
   }
 
   /**
    * One change to the sections, shown at once and written whole
    * (`setHostSettings({sidebarSections})`), as the window's store edits
    * them; a refusal puts back what the host holds. Nothing changes before
-   * the computer has answered once.
+   * there are sections to show. While they are this device's copy
+   * (`sectionsKept`), the change is made on the computer's own, read first
+   * (waking it if it sleeps): another device may have changed them since.
    */
   @discardableResult
-  public func editSections(_ change: ([SidebarSection]) -> [SidebarSection]) -> Bool {
+  public func editSections(_ change: @escaping ([SidebarSection]) -> [SidebarSection]) -> Bool {
     guard let current = sidebarSections else { return false }
     let next = SidebarSections.normalize(change(current))
     guard next != current else { return true }
     sectionWrites += 1
     sidebarSections = next
+    layoutChanged()
+    let kept = sectionsKept
     Task {
-      let written = try? await backend?.command("setHostSettings", ["sidebarSections": SidebarSections.json(next)])
+      var toWrite = next
+      if kept {
+        guard let settings = try? await backend?.command("getHostSettings", [:]) else {
+          // The computer can't be reached: what it holds is unknown, so the change is not shown as made.
+          if sidebarSections == next { sidebarSections = current }
+          return
+        }
+        toWrite = SidebarSections.normalize(change(SidebarSections.parse(settings["sidebarSections"] ?? .array([]))))
+        sectionsKept = false
+        if toWrite != sidebarSections { sidebarSections = toWrite }
+        layoutChanged()
+      }
+      let written = try? await backend?.command("setHostSettings", ["sidebarSections": SidebarSections.json(toWrite)])
       if written == nil { await loadSections() }
     }
     return true

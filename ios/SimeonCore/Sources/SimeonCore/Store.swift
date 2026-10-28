@@ -205,8 +205,17 @@ public final class AppStore {
 
   /** Each agent's routines as the host lists them (`getAgentAutomations`, and its `agents-automation` pushes); absent until read. */
   public internal(set) var routinesByAgent: [String: [Routine]] = [:]
-  /** The sidebar's sections as the host keeps them (`sidebarSections`); nil until the computer has answered, when nothing can be moved. */
+  /**
+   * The sidebar's sections as the host keeps them (`sidebarSections`): this
+   * device's copy at launch (`sectionsKept`), the computer's once it answers;
+   * nil when neither has any, and nothing can be moved.
+   */
   public internal(set) var sidebarSections: [SidebarSection]?
+  /** The pins and sections shown are this device's copy (SavedChats), not yet the computer's: a change is made on the computer's own. */
+  @ObservationIgnored var pinsKept = false
+  @ObservationIgnored var sectionsKept = false
+  /** The pins or sections changed since they were last kept on this device. */
+  @ObservationIgnored var layoutToSave = false
   /** Bumped by each sections write, so a read begun before it is dropped (as the pins do). */
   @ObservationIgnored var sectionWrites = 0
   /** Counts the sections made here, for their ids (the window's `idSeed`). */
@@ -419,6 +428,8 @@ public final class AppStore {
     self.backend = backend
     // The list kept on this device, until the computer answers (SavedChats); the server's copy, when it comes first.
     showSaved()
+    // Its pins and folders with it: the computer's come only once it answers, seconds later or when it wakes.
+    showSavedLayout()
     shown?()
     onListShown = shown
     if readsServerCopy { Task { await self.showServerList(from: backend) } }
@@ -629,7 +640,7 @@ public final class AppStore {
   // MARK: The list, as the Mac's sidebar (pins, read, hidden, delete, duplicate)
 
   /** The pinned agents, in their order (the host's `pinnedAgentIds`, shared with the Mac). */
-  public private(set) var pinnedIds: [String] = []
+  public internal(set) var pinnedIds: [String] = []
 
   /** The pinned agents that still exist and are not hidden, in pin order. */
   public var pinned: [Agent] { pinnedIds.compactMap { id in agents.first { $0.id == id && !$0.isHidden } } }
@@ -651,12 +662,30 @@ public final class AppStore {
     guard pinWritesInFlight == 0 else { return }
     let started = pinWrites
     guard let settings = try? await backend?.commandIfAwake("getHostSettings", [:]), started == pinWrites, pinWritesInFlight == 0 else { return }
+    takePins(settings)
+  }
+
+  /** The computer's pins, in place of this device's copy. */
+  private func takePins(_ settings: JSON) {
     let ids = settings["pinnedAgentIds"]?.array?.compactMap(\.text) ?? []
+    pinsKept = false
     if ids != pinnedIds { pinnedIds = ids }
+    layoutChanged()
+  }
+
+  /**
+   * The pins shown are this device's copy: the computer's own are read first
+   * (waking it if it sleeps), so a pin made now does not undo one made on
+   * another device meanwhile.
+   */
+  private func freshPinsIfKept() async {
+    guard pinsKept, let settings = try? await backend?.command("getHostSettings", [:]) else { return }
+    takePins(settings)
   }
 
   /** Pin or unpin: the whole ordered list is written, as the Mac writes it (`setHostSettings({pinnedAgentIds})`); a new pin goes last. */
   public func setPinned(_ agentId: String, _ pinned: Bool) async {
+    await freshPinsIfKept()
     var next = pinnedIds.filter { $0 != agentId }
     if pinned { next.append(agentId) }
     await writePins(next, failure: pinned ? L10n.text("Couldn't pin it") : L10n.text("Couldn't unpin it"))
@@ -664,6 +693,7 @@ public final class AppStore {
 
   /** Moves a pin to another pin's place (the Mac's drag in the pin grid). */
   public func movePin(_ agentId: String, to index: Int) async {
+    await freshPinsIfKept()
     guard let from = pinnedIds.firstIndex(of: agentId) else { return }
     var next = pinnedIds
     next.remove(at: from)
@@ -676,6 +706,7 @@ public final class AppStore {
     guard next != pinnedIds else { return }
     pinWrites += 1
     pinnedIds = next
+    layoutChanged()
     pinWritesInFlight += 1
     let written = await command("setHostSettings", ["pinnedAgentIds": JSON(next)], failure: failure)
     pinWritesInFlight -= 1
@@ -715,7 +746,10 @@ public final class AppStore {
   func forgetAgents(_ agentIds: [String]) {
     let gone = Set(agentIds)
     agents.removeAll { gone.contains($0.id) }
-    if pinnedIds.contains(where: gone.contains) { pinnedIds.removeAll(where: gone.contains) }
+    if pinnedIds.contains(where: gone.contains) {
+      pinnedIds.removeAll(where: gone.contains)
+      layoutChanged()
+    }
     for id in agentIds { transcripts[id] = nil; chatRows[id] = nil; runFlags[id] = nil; routinesByAgent[id] = nil; localAsks[id] = nil }
   }
 
