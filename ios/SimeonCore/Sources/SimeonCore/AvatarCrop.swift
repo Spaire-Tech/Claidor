@@ -131,6 +131,11 @@ public enum AvatarEditorWords {
     return L10n.text("Reset face")
   }
 
+  /** A new agent's Reset (the New Agent sheet's editor): shown once a face or a picture was chosen. */
+  public static func reset(draft: AgentDraft) -> String? {
+    draft.resettable ? L10n.text("Reset face") : nil
+  }
+
   /** The gender the Faces tab opens on: the face the agent wears or was given, else the one it would be given. */
   public static func gender(_ agent: Agent) -> String {
     AgentFaces.own(agent)?.gender ?? AgentFaces.gender(for: agent)

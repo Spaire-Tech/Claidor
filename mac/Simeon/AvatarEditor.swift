@@ -9,6 +9,8 @@ import SimeonCore
  * avatar opens. Its state lives here so the window's keys can reach it
  * (Escape closes it; ⌘V pastes a picture into Upload). Closing it during
  * Generate still saves the picture when it arrives, cropped in its middle.
+ * For a new agent (the New Agent sheet, as the iPhone's) it changes an
+ * `AgentDraft` instead, and nothing reaches the computer until Create.
  */
 @MainActor
 @Observable
@@ -37,11 +39,25 @@ final class AvatarEditorModel {
   private var generation = 0
   /** Closed while generating: the picture is saved when it arrives. */
   private(set) var closed = false
+  /** A new agent's look (the New Agent sheet): what the editor changes when there is no agent yet. */
+  var draft: AgentDraft?
 
   init(agentId: String, isGroup: Bool) {
     self.agentId = agentId
     self.isGroup = isGroup
     tab = isGroup ? .upload : .faces
+  }
+
+  init(draft: AgentDraft) {
+    agentId = ""
+    isGroup = false
+    tab = .faces
+    self.draft = draft
+  }
+
+  /** The agent as the editor draws it: the draft wearing its face or picture, else the agent. */
+  func shown(_ agent: Agent?, store: AppStore) -> Agent {
+    draft?.agent(agents: store.agents) ?? agent ?? Agent(id: agentId, name: "")
   }
 
   /** A tab (`X`): the picture, the generating and the error go; the prompt stays. */
@@ -58,16 +74,23 @@ final class AvatarEditorModel {
     closed = true
   }
 
+  /** Opened again (the New Agent sheet keeps its editor): a picture generated from now shows in it. */
+  func reopen() {
+    closed = false
+  }
+
   // MARK: Faces
 
   /** A face put on at once (`AppStore.wearFace`: the picture, the face kept, a voice of its gender when it changes). */
   func wear(_ face: AgentFace, store: AppStore) {
+    if draft != nil { return changeDraft(store) { $0.wear(face, agents: store.agents, voices: $1) } }
     let agentId = agentId
     run { try await store.wearFace(agentId, face) }
   }
 
   /** Shuffle: the next face of `gender` no other agent wears. */
   func shuffle(gender: String, store: AppStore) {
+    if draft != nil { return changeDraft(store) { $0.shuffle(gender: gender, agents: store.agents, voices: $1) } }
     let agentId = agentId
     run { _ = try await store.shuffleFace(agentId, gender: gender) }
   }
@@ -75,8 +98,19 @@ final class AvatarEditorModel {
   /** Reset face: back to the face the agent was given. */
   func reset(store: AppStore) {
     gender = nil
+    if draft != nil { return changeDraft(store) { $0.reset(agents: store.agents, voices: $1) } }
     let agentId = agentId
     run { _ = try await store.resetFace(agentId) }
+  }
+
+  /** The draft changed with the voices listed (a face of the other gender brings a voice of its own). */
+  private func changeDraft(_ store: AppStore, _ edit: @escaping @MainActor (inout AgentDraft, [AppStore.VoiceChoice]) -> Void) {
+    Task {
+      let voices = await store.voices()
+      guard var next = draft else { return }
+      edit(&next, voices)
+      draft = next
+    }
   }
 
   private func run(_ change: @escaping @MainActor () async throws -> Void) {
@@ -149,7 +183,9 @@ final class AvatarEditorModel {
         }
         let candidate = Candidate(image: fitted, crop: AvatarCrop(width: Double(fitted.width), height: Double(fitted.height)), fileLine: nil)
         if closed {
-          if let png = AvatarEditorModel.export(candidate) { try? await store.setAvatarImage(agentId, png: png) }
+          if let png = AvatarEditorModel.export(candidate) {
+            if draft != nil { draft?.setPicture(png) } else { try? await store.setAvatarImage(agentId, png: png) }
+          }
         } else {
           self.candidate = candidate
         }
@@ -173,6 +209,12 @@ final class AvatarEditorModel {
     guard let candidate, !saving else { return }
     guard let png = AvatarEditorModel.export(candidate) else {
       error = AvatarEditorWords.exportFailed
+      return
+    }
+    if draft != nil {
+      draft?.setPicture(png)
+      self.candidate = nil
+      close()
       return
     }
     saving = true
@@ -238,17 +280,20 @@ struct AvatarEditorPopover: View {
   let model: AvatarEditorModel
   let width: CGFloat
   let look: Look
+  /** Its own card, edge and shadow: off inside the Mac's popover (the New Agent sheet), which draws its own. */
+  var chrome = true
   let close: () -> Void
   @Environment(AppStore.self) private var store
 
   var body: some View {
     let shape = RoundedRectangle(cornerRadius: 16, style: .continuous)
+    let card = chrome
     VStack(spacing: 0) {
       header
       Rectangle().fill(look.ink.opacity(0.10)).frame(height: 0.5)
       VStack(spacing: 12) {
         switch model.tab {
-        case .faces: FacesTab(agent: agent, model: model, look: look)
+        case .faces: FacesTab(agent: model.shown(agent, store: store), model: model, look: look)
         case .generate: GenerateTab(model: model, look: look, close: close)
         case .upload: UploadTab(model: model, look: look, close: close)
         }
@@ -265,16 +310,16 @@ struct AvatarEditorPopover: View {
       .frame(minHeight: 240, alignment: .top)
     }
     .frame(width: width)
-    .background(shape.fill(look.elevated))
-    .overlay(shape.strokeBorder(look.ink.opacity(0.10), lineWidth: 0.5))
+    .background(shape.fill(card ? look.elevated : .clear))
+    .overlay(shape.strokeBorder(look.ink.opacity(card ? 0.10 : 0), lineWidth: 0.5))
     .clipShape(shape)
-    .shadow(color: Color(red: 20 / 255, green: 20 / 255, blue: 20 / 255).opacity(0.09), radius: 12, x: 0, y: 8)
-    .shadow(color: Color(red: 20 / 255, green: 20 / 255, blue: 20 / 255).opacity(0.09), radius: 1.5, x: 0, y: 1)
+    .shadow(color: Color(red: 20 / 255, green: 20 / 255, blue: 20 / 255).opacity(card ? 0.09 : 0), radius: 12, x: 0, y: 8)
+    .shadow(color: Color(red: 20 / 255, green: 20 / 255, blue: 20 / 255).opacity(card ? 0.09 : 0), radius: 1.5, x: 0, y: 1)
   }
 
   /** The tabs (26 high, round 8, 13/18; the chosen one on the grey) and Reset (22 high) at the right, 8 apart, padded 8. */
   private var header: some View {
-    let reset = AvatarEditorWords.reset(agent)
+    let reset = model.draft.map { AvatarEditorWords.reset(draft: $0) } ?? AvatarEditorWords.reset(agent)
     return HStack(spacing: 8) {
       HStack(spacing: 2) {
         if !agent.isGroup { EditorTabButton(title: AvatarEditorWords.faces, chosen: model.tab == .faces, look: look) { model.choose(.faces) } }
@@ -418,7 +463,7 @@ private struct FacesTab: View {
       .frame(maxWidth: .infinity)
       .accessibilityElement(children: .contain)
       .accessibilityLabel("Faces")
-      VoicePicker(agent: agent, look: look)
+      VoicePicker(agent: agent, editor: model, look: look)
         .padding(.top, 6)
     }
   }
@@ -462,6 +507,8 @@ private struct FaceCell: View {
  */
 private struct VoicePicker: View {
   let agent: Agent
+  /** The editor, for a new agent's draft: its voice is the draft's, and a pick changes only the draft. */
+  var editor: AvatarEditorModel? = nil
   let look: Look
   @Environment(AppStore.self) private var store
   @State private var voices: [AppStore.VoiceChoice] = []
@@ -469,6 +516,12 @@ private struct VoicePicker: View {
   @State private var chosen: String?
   @State private var note: String?
   @State private var player = SamplePlayer()
+
+  /** The voice shown: a new agent's follows its face until one is picked (`AgentDraft.voice`). */
+  private var current: String? {
+    if let draft = editor?.draft, !voices.isEmpty { return draft.voice(agents: store.agents, voices: voices) ?? chosen }
+    return chosen
+  }
 
   var body: some View {
     VStack(alignment: .leading, spacing: 6) {
@@ -491,7 +544,7 @@ private struct VoicePicker: View {
             .accessibilityLabel("Loading voices")
         } else {
           HStack(spacing: 8) {
-            VoiceMenu(voices: voices, chosen: chosen, look: look, pick: pick)
+            VoiceMenu(voices: voices, chosen: current, look: look, pick: pick)
             playButton
           }
         }
@@ -506,7 +559,7 @@ private struct VoicePicker: View {
   }
 
   private var playButton: some View {
-    let voice = voices.first { $0.id == chosen }
+    let voice = voices.first { $0.id == current }
     let sample = voice?.sample.flatMap { $0.scheme == "https" ? $0 : nil }
     let playing = player.playing != nil && player.playing == voice?.id
     return Button {
@@ -530,6 +583,11 @@ private struct VoicePicker: View {
   private func load() async {
     let list = await store.voices()
     guard !list.isEmpty else { voices = []; return }
+    if let draft = editor?.draft {
+      chosen = draft.voice(agents: store.agents, voices: list) ?? list.first?.id
+      voices = list
+      return
+    }
     let kept = AgentVoices.kept(agent.voiceId, listed: list) ?? AppStore.defaultVoiceId
     chosen = list.contains { $0.id == kept } ? kept : list.first?.id
     voices = list
@@ -538,6 +596,11 @@ private struct VoicePicker: View {
   }
 
   private func pick(_ id: String) {
+    if let editor, editor.draft != nil {
+      editor.draft?.pickVoice(id)
+      chosen = id
+      return
+    }
     guard id != chosen else { return }
     let was = chosen
     chosen = id

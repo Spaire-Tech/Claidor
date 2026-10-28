@@ -25,10 +25,27 @@ final class NewChatState {
   var focus = 0
   /** An agent or group being made, its name, until its chat opens (`creationScreen`). */
   var creating: String?
+  /** New Agent's sheet, while it shows (MacNewAgentSheet). */
+  var newAgent = false
   /** The message field under the line: its files and the rest of a chat's own state. */
   let draftControl = ChatControl()
 
-  /** ⌘N, the sidebar's New chat: the line empty, its menu open, the keys in it. */
+  /**
+   * ⌘N and the sidebar's compose button: New Agent at once while group chats
+   * are off, as the iPhone's compose button (`Features.groupChats`; the
+   * founder, 28 October 2026: "create a new agent in mac is behaving
+   * completely different from iphone"); the To: line otherwise.
+   */
+  func start() {
+    if Features.groupChats {
+      open()
+    } else {
+      if isOpen { close() }
+      newAgent = true
+    }
+  }
+
+  /** The To: line: empty, its menu open, the keys in it. */
   func open() {
     guard !isOpen else {
       focus += 1
