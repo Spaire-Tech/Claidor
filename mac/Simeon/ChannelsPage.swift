@@ -47,9 +47,9 @@ final class ChannelsModel {
 
 /**
  * The Channels page of the agent's pane (O01, `_0n`; "Channels" in ⌘K and
- * "/", no tab of its own): the line saying what it is for, then Discord and
- * Slack, each with its logo, name and line, its chip or Connect, the "…"
- * menu under the pointer, and the token's field under the row.
+ * "/", no tab of its own), in Settings' parts (the founder, 28 October
+ * 2026: "this isn't our Apple design… too many words"): one card, a row per
+ * platform, as the Connectors list draws an app.
  */
 struct ChannelsBody: View {
   let agent: Agent
@@ -58,22 +58,16 @@ struct ChannelsBody: View {
   @State private var model = ChannelsModel()
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 10) {
-      Text(ChannelsView.intro)
-        .font(.system(size: 13))
-        .cssLineHeight(18, size: 13)
-        .foregroundStyle(look.paneInk2)
-        .fixedSize(horizontal: false, vertical: true)
-        .padding(.bottom, 2)
+    VStack(alignment: .leading, spacing: 0) {
       if let view = model.view {
         if view.manifests.isEmpty {
           Text(ChannelsView.none)
-            .font(.system(size: 13))
+            .font(PanelType.row)
             .foregroundStyle(look.inkTertiary)
         } else {
-          VStack(alignment: .leading, spacing: 16) {
-            ForEach(view.manifests, id: \.platform) { manifest in
-              ChannelRow(agentId: agent.id, manifest: manifest, view: view, model: model, look: look)
+          SettingsGroup(look: look) {
+            ForEach(Array(view.manifests.enumerated()), id: \.element.platform) { index, manifest in
+              ChannelRow(agentId: agent.id, manifest: manifest, view: view, model: model, divided: index > 0, look: look)
             }
           }
         }
@@ -93,24 +87,25 @@ struct ChannelsBody: View {
 }
 
 /**
- * A platform (`B0n`): its logo on a 40 tile (round 11), its name (15, 500)
- * over its line (13, at most two lines), then the chip ("Connected",
- * "Needs attention", "Connecting", "Soon") or Connect; Reconnect and
- * Disconnect when it went wrong. Under the pointer the chip gives way to
- * "…" (How to connect, Refresh, Disconnect). A coming-soon row is faded.
+ * A platform, as a Connectors row: its app icon (36), its name over a few
+ * words in grey (red when it went wrong), and its mark: + to connect, the
+ * green tick, the spinner while it connects, Coming soon said quietly,
+ * Reconnect when it went wrong. A connection's "…" (Refresh, Disconnect)
+ * shows under the pointer. + opens the token's field in the card, with
+ * Cancel and Save.
  */
 private struct ChannelRow: View {
   let agentId: String
   let manifest: ChannelsView.Manifest
   let view: ChannelsView
   let model: ChannelsModel
+  let divided: Bool
   let look: Look
   @Environment(AppStore.self) private var store
   @State private var formOpen = false
   @State private var token = ""
   @State private var hovering = false
-  @State private var guide = false
-  /** "…"'s menu is open: "…" stays, the chip stays hidden. */
+  /** "…"'s menu is open: "…" stays. */
   @State private var menuOpen = false
   @State private var menuSpot = WindowSpot()
   @FocusState private var fieldFocused: Bool
@@ -119,81 +114,89 @@ private struct ChannelRow: View {
     let state = view.state(manifest)
     let busy = model.isBusy(manifest.platform)
     VStack(alignment: .leading, spacing: 0) {
-      HStack(alignment: .center, spacing: 0) {
-        HStack(alignment: .center, spacing: 14) {
-          logo
-          VStack(alignment: .leading, spacing: 1) {
-            Text(manifest.displayName)
-              .font(.system(size: 15, weight: .medium))
-              .cssLineHeight(20, size: 15)
-              .foregroundStyle(look.paneInk)
-            Text(view.subtitle(manifest))
-              .font(.system(size: 13))
-              .cssLineHeight(17, size: 13)
-              .foregroundStyle(look.paneInk2)
-              .lineLimit(2)
-              .fixedSize(horizontal: false, vertical: true)
-          }
-          .frame(maxWidth: .infinity, alignment: .leading)
-          status(state)
+      HStack(spacing: 12) {
+        AppLogoTile(name: manifest.displayName, look: look, side: 36, id: manifest.platform)
+        VStack(alignment: .leading, spacing: 2) {
+          Text(manifest.displayName)
+            .font(PanelType.row)
+            .foregroundStyle(look.ink)
+          Text(view.subtitle(manifest))
+            .font(PanelType.detail)
+            .foregroundStyle(isError(state) ? look.danger : look.inkSecondary)
+            .lineLimit(2)
+            .fixedSize(horizontal: false, vertical: true)
         }
-        buttons(state, busy: busy)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .opacity(state == .comingSoon ? 0.6 : 1)
+        if hasMenu(state) {
+          more(state, busy: busy)
+        }
+        mark(state, busy: busy)
       }
+      .padding(.horizontal, SettingsRowSize.inset)
+      .padding(.vertical, 10)
+      .frame(minHeight: SettingsRowSize.minHeight)
       if formOpen && state != .comingSoon {
         form(busy: busy)
       }
     }
-    .opacity(state == .comingSoon ? 0.6 : 1)
+    .overlay(alignment: .top) {
+      if divided { SettingsDivider(look: look) }
+    }
     .contentShape(Rectangle())
     .onHover { inside in withAnimation(.easeInOut(duration: 0.15)) { hovering = inside } }
-    .alert(ChannelsView.guide(manifest).title, isPresented: $guide) {
-      Button("Got it", role: .cancel) {}
-    } message: {
-      Text("\(ChannelsView.guide(manifest).description)\n\nComing soon\n\(ChannelsView.guide(manifest).blurb)")
-    }
   }
 
-  private var logo: some View {
-    Image("Connectors/\(manifest.platform)")
-      .resizable()
-      .aspectRatio(contentMode: .fit)
-      .frame(width: 20, height: 20)
-      .frame(width: 40, height: 40)
-      .background(RoundedRectangle(cornerRadius: 11, style: .continuous).fill(look.paneFill))
-      .accessibilityHidden(true)
+  private func isError(_ state: ChannelsView.RowState) -> Bool {
+    if case .error = state { return true }
+    return false
   }
 
-  /** The chip, and "…" in its place under the pointer or while its menu is open (.15 s). */
+  private func hasMenu(_ state: ChannelsView.RowState) -> Bool {
+    state == .connected || state == .connecting || isError(state)
+  }
+
+  /** The row's end: +, the tick, the spinner, Coming soon, or Reconnect. */
   @ViewBuilder
-  private func status(_ state: ChannelsView.RowState) -> some View {
-    let showsMore = hovering || menuOpen
-    ZStack(alignment: .trailing) {
-      if let chip = ChannelsView.chip(state) {
-        chipView(chip, state: state)
-          .opacity(showsMore ? 0 : 1)
+  private func mark(_ state: ChannelsView.RowState, busy: Bool) -> some View {
+    switch state {
+    case .available:
+      if busy {
+        AddingSpinner(name: manifest.displayName, look: look)
+      } else {
+        PlusMark(disabled: formOpen, look: look) { openForm() }
+          .accessibilityLabel("Connect \(manifest.displayName)")
       }
-      Button { openMenu(state) } label: {
-        Image(systemName: "ellipsis")
-          .font(.system(size: 12))
-          .foregroundStyle(look.inkSecondary)
-          .frame(width: 16, height: 16)
-          .contentShape(Rectangle())
-      }
-      .buttonStyle(.hand)
-      .background(WindowSpotReader(spot: menuSpot))
-      .opacity(showsMore ? 1 : 0)
-      .accessibilityLabel("Connection actions")
+    case .connected:
+      AddedMark(look: look)
+    case .connecting:
+      AddingSpinner(name: manifest.displayName, look: look)
+    case .error:
+      SettingsPill(title: String(localized: "Reconnect"), disabled: busy || formOpen, look: look) { openForm() }
+    case .comingSoon:
+      SoonWord(look: look)
     }
   }
 
-  /** "Connection actions", the Mac's menu under "…": How to connect; Refresh and Disconnect (its icon red) while connected or connecting, waiting while a call runs. */
+  /** "…" under the pointer or while its menu is open: Refresh and Disconnect (its icon red), waiting while a call runs. */
+  private func more(_ state: ChannelsView.RowState, busy: Bool) -> some View {
+    Button { openMenu(state) } label: {
+      Image(systemName: "ellipsis")
+        .font(.system(size: 12))
+        .foregroundStyle(look.inkSecondary)
+        .frame(width: 28, height: 28)
+        .contentShape(Rectangle())
+    }
+    .buttonStyle(.hand)
+    .background(WindowSpotReader(spot: menuSpot))
+    .opacity(hovering || menuOpen ? 1 : 0)
+    .accessibilityLabel("Connection actions")
+  }
+
   private func openMenu(_ state: ChannelsView.RowState) {
     let menu = NSMenu(title: String(localized: "Connection actions"))
     menu.autoenablesItems = false
     let busy = model.isBusy(manifest.platform)
-    let how = BlockMenuItem(String(localized: "How to connect")) { guide = true }
-    how.image = NSImage(systemSymbolName: "questionmark.circle", accessibilityDescription: nil)
-    menu.addItem(how)
     if state == .connected || state == .connecting {
       let refresh = BlockMenuItem(String(localized: "Refresh")) {
         Task { await model.run(manifest.platform, agentId: agentId, store: store) { await store.refreshChannel(agentId, platform: manifest.platform) } }
@@ -201,117 +204,49 @@ private struct ChannelRow: View {
       refresh.image = NSImage(systemSymbolName: "arrow.clockwise", accessibilityDescription: nil)
       refresh.isEnabled = !busy
       menu.addItem(refresh)
-      let disconnect = BlockMenuItem(String(localized: "Disconnect")) {
-        Task { await model.run(manifest.platform, agentId: agentId, store: store) { await store.disconnectChannel(agentId, platform: manifest.platform) } }
-      }
-      disconnect.image = NSImage(systemSymbolName: "powerplug", accessibilityDescription: nil)?
-        .withSymbolConfiguration(NSImage.SymbolConfiguration(paletteColors: [look.dark ? NSColor(red: 1, green: 0x56 / 255, blue: 0x67 / 255, alpha: 1) : NSColor(red: 0xc2 / 255, green: 0x1d / 255, blue: 0x2e / 255, alpha: 1)]))
-      disconnect.isEnabled = !busy
-      menu.addItem(disconnect)
     }
-    menu.minimumWidth = 220
+    let disconnect = BlockMenuItem(String(localized: "Disconnect")) {
+      Task { await model.run(manifest.platform, agentId: agentId, store: store) { await store.disconnectChannel(agentId, platform: manifest.platform) } }
+    }
+    disconnect.image = NSImage(systemSymbolName: "powerplug", accessibilityDescription: nil)?
+      .withSymbolConfiguration(NSImage.SymbolConfiguration(paletteColors: [look.dark ? NSColor(red: 1, green: 0x56 / 255, blue: 0x67 / 255, alpha: 1) : NSColor(red: 0xc2 / 255, green: 0x1d / 255, blue: 0x2e / 255, alpha: 1)]))
+    disconnect.isEnabled = !busy
+    menu.addItem(disconnect)
+    menu.minimumWidth = 200
     menuOpen = true
     RoutineMenus.popUp(menu, under: menuSpot.frame)
     menuOpen = false
   }
 
-  /** The chip (`O0n`): 26 high, round, a 6-point dot of its colour; "Soon" has none. */
-  private func chipView(_ text: String, state: ChannelsView.RowState) -> some View {
-    let tint: Color?
-    switch state {
-    case .connected: tint = look.added
-    case .error: tint = look.danger
-    default: tint = nil
-    }
-    return HStack(spacing: 5) {
-      if state != .comingSoon {
-        Circle().fill(tint ?? look.inkSecondary).frame(width: 6, height: 6)
-      }
-      Text(text)
-        .font(.system(size: 12, weight: .medium))
-        .foregroundStyle(tint ?? look.inkSecondary)
-    }
-    .padding(.horizontal, 9)
-    .frame(height: 26)
-    .background(Capsule().fill((tint ?? look.ink).opacity(tint == nil ? 0.06 : 0.16)))
+  /** + and Reconnect open the field (it takes the keys as it appears: the window leaves them on Connect; decision 6). */
+  private func openForm() {
+    token = ""
+    formOpen = true
   }
 
-  /** Connect (no connection), or Reconnect and Disconnect (it went wrong): 28-point pills on the pane's grey. */
-  @ViewBuilder
-  private func buttons(_ state: ChannelsView.RowState, busy: Bool) -> some View {
-    switch state {
-    case .available:
-      pill(String(localized: "Connect"), disabled: busy) { toggleForm() }
-        .padding(.leading, 6)
-    case .error:
-      HStack(spacing: 6) {
-        pill(String(localized: "Reconnect"), disabled: busy) { toggleForm() }
-        pill(String(localized: "Disconnect"), disabled: busy) {
-          Task { await model.run(manifest.platform, agentId: agentId, store: store) { await store.disconnectChannel(agentId, platform: manifest.platform) } }
-        }
-      }
-      .padding(.leading, 6)
-    default:
-      EmptyView()
-    }
-  }
-
-  private func pill(_ title: String, disabled: Bool, action: @escaping () -> Void) -> some View {
-    Button(action: action) {
-      Text(title)
-        .font(.system(size: 13, weight: .medium))
-        .foregroundStyle(look.paneInk)
-        .padding(.horizontal, 13)
-        .frame(height: 28)
-        .background(Capsule().fill(look.paneFill))
-        .contentShape(Capsule())
-    }
-    .buttonStyle(.hand)
-    .disabled(disabled)
-    .opacity(disabled ? 0.56 : 1)
-  }
-
-  /** Connect toggles the field (it takes the keys as it appears: the window leaves them on Connect; decision 6). */
-  private func toggleForm() {
-    formOpen.toggle()
-    if !formOpen { token = "" }
-  }
-
-  /** The token's field (secret), "Stored securely, never shown to your agent.", Cancel and Store securely. */
+  /** The token's field (secret, Settings' field) under the name, then Cancel and Save. */
   private func form(busy: Bool) -> some View {
     let blank = token.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-    return VStack(alignment: .leading, spacing: 8) {
+    return HStack(spacing: 8) {
       SecureField(ChannelsView.placeholder(manifest), text: $token)
         .textFieldStyle(.plain)
-        .font(.system(size: 12))
-        .padding(EdgeInsets(top: 9, leading: 10, bottom: 9, trailing: 10))
-        .frame(height: 36)
-        .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(look.ground))
-        .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).strokeBorder(look.ink.opacity(fieldFocused ? 0.20 : 0.10), lineWidth: 1))
+        .font(PanelType.row)
+        .padding(.horizontal, 10)
+        .frame(height: 30)
+        .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(look.groupedGround))
+        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(look.ink.opacity(fieldFocused ? 0.2 : 0.1), lineWidth: 1))
         .focused($fieldFocused)
         .onAppear { fieldFocused = true }
         .onSubmit { storeToken() }
-      HStack(alignment: .center, spacing: 8) {
-        Label {
-          Text(ChannelsView.storedSecurely)
-        } icon: {
-          Image(systemName: "checkmark.shield")
-            .font(.system(size: 11))
-        }
-        .font(.system(size: 11))
-        .foregroundStyle(look.inkTertiary)
-        Spacer(minLength: 8)
-        pill(String(localized: "Cancel"), disabled: false) {
-          token = ""
-          formOpen = false
-        }
-        pill(String(localized: "Store securely"), disabled: blank || busy) { storeToken() }
+      SettingsPill(title: String(localized: "Cancel"), look: look) {
+        token = ""
+        formOpen = false
       }
+      SettingsPill(title: String(localized: "Save"), primary: true, disabled: blank || busy, look: look) { storeToken() }
     }
-    .padding(.top, 10)
-    .overlay(alignment: .top) {
-      Rectangle().fill(look.ink.opacity(0.10)).frame(height: 1)
-    }
+    .padding(.leading, SettingsRowSize.inset + 36 + 12)
+    .padding(.trailing, SettingsRowSize.inset)
+    .padding(.bottom, 12)
   }
 
   /** The value goes once, the field emptied and shut; the row changes with the computer's answer. */

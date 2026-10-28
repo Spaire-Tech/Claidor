@@ -939,7 +939,7 @@ private struct PluginPill: View {
 }
 
 /** While its add runs (`dt`, in the marks' 28 square): a 15 ring turning every 0.7 s, its bottom quarter fainter. */
-private struct AddingSpinner: View {
+struct AddingSpinner: View {
   let name: String
   let look: Look
   @State private var turning = false
@@ -960,7 +960,7 @@ private struct AddingSpinner: View {
 }
 
 /** Connected (`di`; "Added" for a plugin of skills alone), the iPhone's `ConnectorMark.added`: the tick in green, in the marks' 28 square, its word for the ear and the pointer. Not a button. */
-private struct AddedMark: View {
+struct AddedMark: View {
   var title = Connecting.connected
   let look: Look
 
@@ -976,7 +976,7 @@ private struct AddedMark: View {
 }
 
 /** Connect, the iPhone's `ConnectorMark.plus`: + in the ink (16, light) in a 28 square, a faint disc under the pointer. */
-private struct PlusMark: View {
+struct PlusMark: View {
   var disabled = false
   let look: Look
   let action: () -> Void
@@ -1000,7 +1000,7 @@ private struct PlusMark: View {
 }
 
 /** An app that can't be added yet (`AppsComingSoon`), the iPhone's `ConnectorMark.soon`: said quietly, no +. */
-private struct SoonWord: View {
+struct SoonWord: View {
   let look: Look
 
   var body: some View {

@@ -134,22 +134,25 @@ final class ChannelsTests: XCTestCase {
     let discord = view.manifests[0], slack = view.manifests[1]
     XCTAssertEqual(view.state(discord), .available)
     XCTAssertNil(ChannelsView.chip(.available))
-    XCTAssertEqual(view.subtitle(discord), discord.blurb)
+    // A few words, not the box's sentence (28 October 2026).
+    XCTAssertEqual(view.subtitle(discord), "Servers and DMs")
     // Pending reads as Connecting, its "Waiting for…" never shown.
     XCTAssertEqual(view.state(slack), .connecting)
     XCTAssertEqual(ChannelsView.chip(view.state(slack)), "Connecting")
-    XCTAssertEqual(view.subtitle(slack), slack.blurb)
-    XCTAssertEqual(ChannelsView.placeholder(slack), "Paste your app token and bot token")
+    XCTAssertEqual(view.subtitle(slack), "Channels and DMs")
+    XCTAssertEqual(ChannelsView.placeholder(discord), "Bot token")
+    XCTAssertEqual(ChannelsView.placeholder(slack), "App token and bot token")
+    let other = ChannelsView.Manifest(platform: "teams", displayName: "Teams", blurb: "Message in Teams.", credentialLabel: "app password", availability: "available")
+    XCTAssertEqual(ChannelsView.reach(other), "Message in Teams.")
+    XCTAssertEqual(ChannelsView.placeholder(other), "App password")
     var connected = view
-    connected.connections = [ChannelsView.Connection(platform: "slack", label: "Slack", status: "connected", detail: nil)]
-    XCTAssertEqual(connected.subtitle(slack), "Connected as Slack")
+    connected.connections = [ChannelsView.Connection(platform: "slack", label: "Nora Bot", status: "connected", detail: nil)]
+    XCTAssertEqual(connected.subtitle(slack), "Nora Bot")
     XCTAssertEqual(ChannelsView.chip(connected.state(slack)), "Connected")
     connected.connections = [ChannelsView.Connection(platform: "slack", label: "Slack", status: "error", detail: nil)]
-    XCTAssertEqual(connected.subtitle(slack), "The platform rejected this connection.")
+    XCTAssertEqual(connected.subtitle(slack), "Couldn't connect")
     XCTAssertEqual(ChannelsView.chip(connected.state(slack)), "Needs attention")
-    // The guide still says coming soon (the window's own table).
-    XCTAssertEqual(ChannelsView.guide(discord).description, "Connecting Discord is not available yet.")
-    XCTAssertEqual(ChannelsView.guide(discord).blurb, "Message in Discord servers and DMs (coming soon).")
+    XCTAssertEqual(ChannelsView.chip(.comingSoon), "Coming soon")
     XCTAssertFalse(ChannelsView(manifests: [ChannelsView.Manifest(platform: "slack", displayName: "Slack", blurb: "", credentialLabel: "", availability: "coming-soon")], connections: []).hasChannels)
     XCTAssertNil(ChannelsView(json: ["manifests": []]))
   }
