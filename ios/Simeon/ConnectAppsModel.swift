@@ -95,8 +95,14 @@ final class ConnectAppsModel {
   /** Opening, as the Mac's overlay opens: the catalog, the servers, the plugins, the agent's skills, the banner; then the one sync it starts, and the banner again. */
   func load() async {
     if agentId == nil { agentId = Self.recentAgent(skillAgents) }
+    // The catalog the store holds (read behind the list at launch, or kept on this phone) at once, read again behind it.
+    if entries.isEmpty, let kept = store?.catalogEntries, !kept.isEmpty {
+      entries = kept
+      catalogLoaded = true
+    }
     let reader = try? calls()
-    async let catalogAnswer = try? reader?.catalog()
+    let store = store
+    async let catalogAnswer = store?.readCatalog()
     async let pluginsAnswer = try? reader?.effectivePlugins()
     await refreshServers()
     if let list = await catalogAnswer { entries = list }

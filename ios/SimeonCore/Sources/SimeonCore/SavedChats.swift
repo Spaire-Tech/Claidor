@@ -173,6 +173,31 @@ public final class SavedChats: @unchecked Sendable {
     }
   }
 
+  // MARK: The connectors' catalog
+
+  /**
+   * The connectors' catalog as the computer last gave it (`getCatalog`'s
+   * answer), when it was in `language` (28 October 2026, the founder: "i
+   * hate the loading connectors"): Connectors opens on it at once, and the
+   * computer's is read again behind it. Not the person's own; it goes with
+   * the rest at sign-out.
+   */
+  public func readCatalog(language: String) -> JSON? {
+    queue.sync {
+      guard let data = try? Data(contentsOf: catalogFile), let record = try? JSON.parse(data),
+            record["version"]?.double == Double(Self.version), record["language"]?.string == language,
+            let answer = record["catalog"] else { return nil }
+      return answer
+    }
+  }
+
+  public func writeCatalog(_ answer: JSON, language: String) {
+    queue.async { [self] in
+      guard let data = try? JSON.object(["version": .number(Double(Self.version)), "language": .string(language), "catalog": answer]).data() else { return }
+      Self.write(data, to: catalogFile)
+    }
+  }
+
   /** Waits for the writes on their way (the Mac quitting). */
   public func waitForWrites() {
     queue.sync {}
@@ -182,6 +207,7 @@ public final class SavedChats: @unchecked Sendable {
 
   private var rosterFile: URL { directory.appendingPathComponent("roster.json") }
   private var layoutFile: URL { directory.appendingPathComponent("layout.json") }
+  private var catalogFile: URL { directory.appendingPathComponent("catalog.json") }
   private var chatsDirectory: URL { directory.appendingPathComponent("chats", isDirectory: true) }
   private func chatFile(_ agentId: String) -> URL { chatsDirectory.appendingPathComponent(Self.fileName(agentId)) }
 
