@@ -5,6 +5,7 @@ my plan now" ends a card trial. Stripe is one object, replaced here."""
 
 from __future__ import annotations
 
+from datetime import timedelta
 from typing import Any
 from unittest.mock import AsyncMock
 
@@ -123,12 +124,75 @@ class TestUpgrade:
         assert params["proration_behavior"] == "always_invoice"
         assert params["payment_behavior"] == "error_if_incomplete"
         assert "proration_date" not in params
+        # Nothing was cancelled, so nothing is lifted.
+        assert "cancel_at" not in params
+        assert "cancel_at_period_end" not in params
         assert params["items"][0]["price"] == "price_pro"
         row = await plans.subscription_of(session, user)
         assert row is not None
         assert row.tier == "pro"
         allowance = await resolve_allowance(session, user)
         assert allowance.credits_limit == 35_000_000
+
+    @pytest.mark.parametrize("billing_mode", ["classic", "flexible"])
+    async def test_an_upgrade_lifts_a_waiting_cancellation(
+        self,
+        billing_mode: str,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        # Classic billing sets `cancel_at_period_end` and the date; the portal
+        # on flexible billing sets the date alone (28 October 2026).
+        ends = int((utc_now() + timedelta(days=29)).timestamp())
+        cancelled = {"cancel_at": ends} | (
+            {"cancel_at_period_end": True} if billing_mode == "classic" else {}
+        )
+        lifted = (
+            {"cancel_at_period_end": False}
+            if billing_mode == "classic"
+            else {"cancel_at": ""}
+        )
+        current = _with(
+            stripe_subscription(user, status="active", tier="standard"), **cancelled
+        )
+        await plans.apply_stripe_subscription(session, current)
+        row = await plans.subscription_of(session, user)
+        assert row is not None
+        assert row.cancel_at_period_end
+        _prices(mocker)
+        preview = mocker.patch(
+            "simeon.plans.service.stripe_billing.preview_invoice",
+            new=AsyncMock(
+                return_value=stripe_lib.Invoice.construct_from(
+                    {"amount_due": 7700, "currency": "usd", "lines": {"data": []}},
+                    None,
+                )
+            ),
+        )
+        await plans.change_preview(session, user, TierKey.pro)
+        details = preview.await_args.kwargs["subscription_details"]
+        assert {key: details[key] for key in lifted} == lifted
+        assert not ({"cancel_at", "cancel_at_period_end"} - lifted.keys()) & set(
+            details
+        )
+
+        mocker.patch(
+            "simeon.plans.service.stripe_billing.retrieve_subscription",
+            new=AsyncMock(return_value=current),
+        )
+        modify = mocker.patch(
+            "simeon.plans.service.stripe_billing.modify_subscription",
+            new=AsyncMock(
+                return_value=stripe_subscription(user, status="active", tier="pro")
+            ),
+        )
+        await plans.change_plan(session, user, TierKey.pro)
+        params = modify.await_args.kwargs
+        assert {key: params[key] for key in lifted} == lifted
+        assert not ({"cancel_at", "cancel_at_period_end"} - lifted.keys()) & set(params)
+        assert row.tier == "pro"
+        assert not row.cancel_at_period_end
 
     async def test_a_declined_card_changes_nothing(
         self, session: AsyncSession, user: User, mocker: MockerFixture
@@ -310,6 +374,39 @@ class TestTrial:
         allowance = await resolve_allowance(session, user)
         assert allowance.paid
         assert allowance.credits_limit == 35_000_000
+
+    async def test_start_now_lifts_a_cancellation_made_in_the_portal(
+        self, session: AsyncSession, user: User, mocker: MockerFixture
+    ) -> None:
+        ends = int((utc_now() + timedelta(days=6)).timestamp())
+        await plans.apply_stripe_subscription(
+            session,
+            _with(
+                stripe_subscription(user, status="trialing", tier="pro"),
+                cancel_at=ends,
+            ),
+        )
+        preview = mocker.patch(
+            "simeon.plans.service.stripe_billing.preview_invoice",
+            new=AsyncMock(
+                return_value=stripe_lib.Invoice.construct_from(
+                    {"amount_due": 10000, "currency": "usd"}, None
+                )
+            ),
+        )
+        await plans.start_now_preview(session, user)
+        details = preview.await_args.kwargs["subscription_details"]
+        assert details == {"trial_end": "now", "cancel_at": ""}
+        modify = mocker.patch(
+            "simeon.plans.service.stripe_billing.modify_subscription",
+            new=AsyncMock(
+                return_value=stripe_subscription(user, status="active", tier="pro")
+            ),
+        )
+        await plans.start_now(session, user)
+        params = modify.await_args.kwargs
+        assert params["cancel_at"] == ""
+        assert "cancel_at_period_end" not in params
 
     async def test_start_now_needs_a_trial(
         self, session: AsyncSession, user: User

@@ -622,6 +622,39 @@ class TestReportUsage:
         assert counts["credit_events"] == 1
         assert meter.await_count == 2
 
+    async def test_runs_in_the_same_five_minutes_name_their_events_alike(
+        self,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+        billing: None,
+        mocker: MockerFixture,
+    ) -> None:
+        # Two workers overlapping in a deploy: Stripe keeps the first event
+        # only when both carry the same identifier (28 October 2026).
+        await plans.apply_stripe_subscription(
+            session, stripe_subscription(user, status="active")
+        )
+        await save_fixture(
+            DesktopUsage(
+                user_id=user.id, model="gpt-6-sol", credits=10, upstream_status=200
+            )
+        )
+        meter = mocker.patch(
+            "simeon.plans.service.stripe_billing.create_meter_event",
+            new=AsyncMock(side_effect=RuntimeError("the other worker sent it")),
+        )
+        later = utc_now() + timedelta(minutes=5)
+        slot = later.replace(
+            minute=later.minute - later.minute % 5, second=0, microsecond=0
+        )
+        await plans.report_usage(session, now=slot + timedelta(seconds=1))
+        first = meter.await_args.kwargs["identifier"]
+        await plans.report_usage(session, now=slot + timedelta(seconds=61))
+        assert meter.await_args.kwargs["identifier"] == first
+        await plans.report_usage(session, now=slot + timedelta(minutes=5))
+        assert meter.await_args.kwargs["identifier"] != first
+
     async def test_a_person_without_a_customer_is_skipped(
         self,
         session: AsyncSession,
