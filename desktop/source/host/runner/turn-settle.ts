@@ -1,4 +1,5 @@
 import { turnEndedOnSilentToolCalls } from "./turn-shape.js";
+import { sendMessageEndsTurn } from "./tools/send-message-schema.js";
 import { StepTiming } from "../../packages/proto/generated/agent/v1/agent_pb.js";
 import {
   runTurnMemory,
@@ -311,6 +312,7 @@ export function createTurnSettle(
     if (!host.isSubagentRunner && !args.hidden) {
       endedOnSilentToolCalls = turnEndedOnSilentToolCalls(
         host.latestPromptMessages(),
+        sendMessageEndsTurn,
       );
     }
 
