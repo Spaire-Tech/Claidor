@@ -1327,13 +1327,16 @@ The person can allow it once or always.
 for an allow-or-block decision (`host/extensions/auto-review/simeon-smart-mode-classifier-exec.ts`,
 30 s deadline). A block always carries a `proposedAllowRule`, so "Always allow" saves a rule;
 when the model leaves it out, `fallbackAllowRule` builds one from the command. Review is
-enforced because the `sand_auto_review` gate is on in `simeon-gate-defaults.ts`. A new
+enforced because the `sand_auto_review` gate is on in `simeon-gate-defaults.ts` (on from 25
+September to 7 October 2026, off after the insurance log of 6 October, on again since 28
+October; `SAND_FEATURE_GATE_OVERRIDES=sand_auto_review=0` turns it off). A new
 message from the person retires the previous approvals (`beginAutoReviewUserMessageEpoch`).
 
 * **Log line.** Box: `[simeon] auto-review action=… mode=… verdict=allow|block|unparseable|error …`.
-* **Known limits.** MCP tool calls are not classified (their approval provider is absent;
-  `desktop/scripts/host-production-activation.mjs`).
-* **Not yet verified.** A blocked command's card has not been seen on a Mac.
+* **Known limits.** Connector (MCP) calls are not classified: the turn's `CallMcpTool` is built
+  with no approval provider or classifier (`callOptions: {}` in `host-runner-composition.ts`),
+  where the upstream app reviews them too.
+* **Not yet verified.** A blocked command's card has not been seen on a Mac or an iPhone.
 
 ### Draft composer cards
 
@@ -1450,6 +1453,9 @@ history). What changed to match them:
 * **Routines run at most every 5 minutes**, on the computer (`ROUTINE_MIN_INTERVAL_MS`,
   `sand-trigger-hub.ts`) and on the server (`ROUTINE_MIN_INTERVAL`, `listeners_service.py`),
   as the upstream app's rules say. There was no gap since 8 October.
+* **The approval card and the routine confirm card** show again: the review of risky actions
+  enforces, as the upstream app's card rules describe ("Auto-review approvals" above). It was
+  off since 8 October, when the founder's first real job met the card over and over.
 
 ### Files and lists in the chat
 
@@ -1604,7 +1610,7 @@ the background while the call goes on, and says how it is going when asked.
     pending for the agent ("Another action is waiting…"), the box is not ready, or the turn was
     cancelled. Since 7 October 2026 the message carries the shell's own reason, and a
     cancellation stays a cancellation; before, every case read the same. Since 8 October,
-    when the review only shadows (the default again, `sand_auto_review` off), a failed probe
+    when the review only shadows (the default from 8 to 28 October), a failed probe
     no longer stops the action: the host logs `auto-review probe failed in shadow, action
     allowed: <reason>` and the action runs. In enforce it still refuses, with the reason.
   - **"Not run: this is the third time you have sent exactly this action to exactly this
