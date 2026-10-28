@@ -13,6 +13,7 @@ import httpx
 import pytest
 from pytest_mock import MockerFixture
 from starlette.requests import Request
+from structlog.testing import capture_logs
 
 from simeon.config import settings
 from simeon.models import User
@@ -113,6 +114,33 @@ class TestLetsSleep:
         await _age(session, box, 9)
         assert await broker.hibernate_idle(session, redis) == []
         await _age(session, box, 11)
+        assert await broker.hibernate_idle(session, redis) == [box.id]
+
+    async def test_a_box_that_does_not_answer_is_not_taken_for_idle(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        redis: Redis,
+        host: FakeBoxHost,
+        health: dict[str, BoxHealth],
+        mocker: MockerFixture,
+    ) -> None:
+        # Nora's Stripe check, 27 October 2026: a run began between two of
+        # the sleeper's passes, E2B lost the box for a moment, and the
+        # silence was taken for an idle box.
+        mocker.patch.object(settings, "BOX_SLEEPS_WITH_APP_OPEN", True)
+        _, box = await _awake_box(client, session, user)
+        await _age(session, box, 11)
+        health["now"] = BoxHealth(reachable=False)
+        with capture_logs() as logs:
+            assert await broker.hibernate_idle(session, redis) == []
+        assert host.boxes[box.provider_box_id]["running"] is True
+        assert {"reason": "unreachable"}.items() <= next(
+            line for line in logs if line["event"] == "sand.box.sleep.deferred"
+        ).items()
+        # Unheard past the longer idle time, it sleeps.
+        await _age(session, box, 31)
         assert await broker.hibernate_idle(session, redis) == [box.id]
 
     async def test_the_app_is_told_and_waits_on_the_record(

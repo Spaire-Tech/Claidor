@@ -51,6 +51,19 @@ public enum LocalExec {
     min(10, pow(2, Double(max(attempt, 1) - 1)))
   }
 
+  /**
+   * An answer the box did not take is sent again after each of these, about two minutes in all, with what was queued
+   * since; then it is dropped and said so in the log. A run waits on its answer, and the box may be asleep or out of
+   * reach for a moment: the server wakes it for the answer (Nora's Stripe check, 27 October 2026, an answer dropped
+   * after three tries in under a second, the run left waiting).
+   */
+  public static let answerRetrySeconds: [Double] = [2, 4, 8, 16, 30, 60]
+
+  /** Whether an answer refused with this status goes again: not reached (0), the box asleep or out of reach (5xx), its address out of date (401), or too soon (408, 429). */
+  public static func answerRetried(status: Int) -> Bool {
+    status == 0 || status >= 500 || [401, 408, 429].contains(status)
+  }
+
   /** How long a command may hold the stream before it goes to the background (`resolveShellTimeoutMs`). */
   public static func blockMs(timeout: Int, isBackground: Bool, timeoutBehaviorBackground: Bool, hardTimeout: Int?) -> Int {
     if timeout != 0 { return timeout }

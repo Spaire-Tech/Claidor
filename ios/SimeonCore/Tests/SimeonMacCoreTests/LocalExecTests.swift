@@ -127,6 +127,8 @@ final class LocalExecTests: XCTestCase {
     XCTAssertEqual(LocalExec.describe(bytes: 200 * 1024 * 1024), "200.0 MiB")
     XCTAssertTrue(LocalExec.fileTooLarge(200 * 1024 * 1024).hasPrefix("File is 200.0 MiB, which exceeds Simeon's 100.0 MiB limit"))
     XCTAssertEqual((1...7).map { LocalExec.backoffSeconds(attempt: $0) }, [1, 2, 4, 8, 10, 10, 10])
+    XCTAssertEqual(LocalExec.answerRetrySeconds.reduce(0, +), 120)
+    XCTAssertEqual([0, 502, 503, 401, 429, 400, 404, 413].map { LocalExec.answerRetried(status: $0) }, [true, true, true, true, true, false, false, false])
     XCTAssertEqual(LocalExec.blockMs(timeout: 0, isBackground: false, timeoutBehaviorBackground: true, hardTimeout: 86_400_000), 0)
     XCTAssertEqual(LocalExec.blockMs(timeout: 0, isBackground: false, timeoutBehaviorBackground: false, hardTimeout: nil), 30_000)
     XCTAssertEqual(LocalExec.blockMs(timeout: 5_000, isBackground: true, timeoutBehaviorBackground: true, hardTimeout: nil), 5_000)

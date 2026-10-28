@@ -1350,6 +1350,18 @@ on an iPhone or a Mac.
     (tried again after 10 minutes).
   - `sand.box.capacity.refused` and `sand.box.placed` cover placement.
   - `sand.box.proxy.refused` and `sand.box.proxy.unreachable` cover the proxy.
+  - `sand.box.proxy.sandbox_gone` means E2B said "The sandbox was not found"
+    (the box asleep, frozen, or being replaced). With `replaced=true` the
+    request went again to the box an ensure left. An answer to the box's own
+    request (a command's output from the Mac on `local-exec/responses`, or a
+    passkey on `webauthn/responses`) also wakes it (28 October 2026, after
+    Nora's Stripe check was left waiting on an answer refused while her box
+    slept): `sand.box.proxy.woke` gives what the wake did (`woken`, `awake`,
+    `ensuring`, `no-box`, `deferred`), and the answer is sent again for up to
+    40 s until the box takes it. `sand.box.proxy.wake_failed` gives E2B's
+    refusal. On the Mac, a batch the box did not take is kept and sent again
+    for about two minutes; `[local-exec-provider] dropping … after 6 retries`
+    in the Mac's log means it never got through.
 - For the bundle: `sand.box.bundle.version` shows a new version was read, and
   `sand.box.bundle.pointer_unread` shows the version file could not be read.
 - For backups: `sand.box.store` (with `restore=always|fresh|none`) for every
@@ -1362,7 +1374,9 @@ on an iPhone or a Mac.
 - On the worker: `sand.box.hibernated`, `sand.box.sleeper`,
   `sand.box.sleep.failed`, `sand.box.woken` (with `start_ms`, the server
   starting it), `sand.box.wake.deferred`, and `sand.box.sleep.deferred`
-  with `reason=inbox` (a message written in an app waits for the box).
+  with `reason=inbox` (a message written in an app waits for the box) or
+  `reason=unreachable` (the box did not answer its health check, so it may be
+  busy: it sleeps only once idle for `SIMEON_BOX_IDLE_HIBERNATE_AFTER`).
 - In the box, `/tmp/sand-host.log`:
   - `[simeon] box-stream guarded on …` shows the stream guard is up.
   - `inference credential renewed with the box's own credential` shows the
