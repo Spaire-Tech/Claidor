@@ -266,6 +266,59 @@ final class TokenTests: XCTestCase {
     XCTAssertNil(vault.read())
     XCTAssertTrue(ended.value)
   }
+
+  /** A 401 that is not the sign-in's (a provider refusing our key, passed on): one refresh asks, the sign-in is good, the person stays in (28 October 2026). */
+  func testAStray401LeavesAGoodSignInAlone() async {
+    let vault = MemoryVault(SessionTokens(accessToken: "t", refreshToken: "r1", expiresAtMs: 9e15))
+    let http = ScriptedHTTP([
+      { _ in HTTPAnswer(status: 401, body: json(#"{"error":{"message":"Incorrect API key provided."}}"#)) },
+      { request in
+        XCTAssertEqual(request.url?.path, "/oauth/token")
+        return HTTPAnswer(status: 200, body: json(#"{"access_token":"t2","refresh_token":"r2"}"#))
+      },
+    ])
+    let api = SimeonAPI(base: URL(string: "https://x")!, clientVersion: "1", vault: vault, http: http)
+    let ended = Flag()
+    await api.onSessionEnded { ended.set() }
+    do {
+      _ = try await api.data("proxy/v1/images/generations", json: [:])
+      XCTFail("the call itself still failed")
+    } catch {
+      XCTAssertEqual((error as? SimeonAPIError)?.status, 401)
+    }
+    XCTAssertEqual(vault.read()?.refreshToken, "r2")
+    XCTAssertFalse(ended.value)
+  }
+
+  /** A 401 whose refresh is refused too: the sign-in is over, as before. */
+  func testA401WhoseRefreshIsRefusedSignsOut() async {
+    let vault = MemoryVault(SessionTokens(accessToken: "t", refreshToken: "r1", expiresAtMs: 9e15))
+    let http = ScriptedHTTP([
+      { _ in HTTPAnswer(status: 401, body: json(#"{"code":40100,"message":"This desktop session has expired."}"#)) },
+      { _ in HTTPAnswer(status: 200, body: json(#"{"shouldLogout":true,"error":"invalid_grant"}"#)) },
+    ])
+    let api = SimeonAPI(base: URL(string: "https://x")!, clientVersion: "1", vault: vault, http: http)
+    let ended = Flag()
+    await api.onSessionEnded { ended.set() }
+    _ = try? await api.data("user/profile")
+    XCTAssertNil(vault.read())
+    XCTAssertTrue(ended.value)
+  }
+
+  /** A 401 while the refresh gets no answer (offline): kept, to ask again later. */
+  func testA401WithTheServerUnreachableKeepsTheSignIn() async {
+    let vault = MemoryVault(SessionTokens(accessToken: "t", refreshToken: "r1", expiresAtMs: 9e15))
+    let http = ScriptedHTTP([
+      { _ in HTTPAnswer(status: 401) },
+      { _ in HTTPAnswer(status: 503) },
+    ])
+    let api = SimeonAPI(base: URL(string: "https://x")!, clientVersion: "1", vault: vault, http: http)
+    let ended = Flag()
+    await api.onSessionEnded { ended.set() }
+    _ = try? await api.connect("EnsureSandBox")
+    XCTAssertEqual(vault.read()?.refreshToken, "r1")
+    XCTAssertFalse(ended.value)
+  }
 }
 
 final class Flag: @unchecked Sendable {

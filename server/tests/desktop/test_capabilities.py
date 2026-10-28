@@ -737,6 +737,32 @@ class TestTranscriptions:
         rows = await _rows(session)
         assert [(row.upstream_status, row.credits) for row in rows] == [(400, 0)]
 
+    async def test_the_provider_refusing_our_key_is_not_a_sign_in_ending(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        """OpenAI's 401 is about our key; passed on as 401 it signed the
+        person out of the app (28 October 2026). It goes back as 502."""
+        mocker.patch.object(settings, "OPENAI_API_KEY", "sk-openai")
+        headers = await _signed_in(client, session, user)
+        refusal = {"error": {"message": "Incorrect API key provided."}}
+        with respx.mock(assert_all_called=True) as mock:
+            mock.post(f"{OPENAI}/v1/audio/transcriptions").mock(
+                return_value=httpx.Response(401, json=refusal)
+            )
+            response = await client.post(
+                "/desktop/api/proxy/v1/audio/transcriptions",
+                headers=headers,
+                files={"file": ("a.webm", b"audio", "audio/webm")},
+            )
+        assert response.status_code == 502
+        assert response.json() == refusal
+        rows = await _rows(session)
+        assert [row.upstream_status for row in rows] == [401]
+
 
 @pytest.mark.asyncio
 class TestSpeechAddress:

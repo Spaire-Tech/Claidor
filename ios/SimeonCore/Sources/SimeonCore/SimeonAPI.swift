@@ -102,6 +102,22 @@ public actor SimeonAPI {
     return refreshed?.accessToken
   }
 
+  /**
+   * A call answered 401. Only the server refusing the sign-in itself ends
+   * it, so one refresh asks first (28 October 2026: "I keep getting logged
+   * out after a while"): a provider's 401 passed on, or a token that died
+   * a moment early, left the person signed out. A refused refresh signs
+   * out (`refresh`); a new pair, or no answer, keeps them in.
+   */
+  private func refused() async {
+    guard let current = vault.read() else { return }
+    if refreshing == nil {
+      refreshing = Task { await self.refresh(current) }
+    }
+    _ = await refreshing?.value
+    refreshing = nil
+  }
+
   private func refresh(_ current: SessionTokens) async -> SessionTokens? {
     let request = URLRequest.post(url(Tokens.refreshPath), json: ["grant_type": "refresh_token", "refresh_token": .string(current.refreshToken)], headers: [SimeonConfig.languageHeader: language])
     let answer = try? await http.send(request)
@@ -135,7 +151,7 @@ public actor SimeonAPI {
     }
     try await authorized(&request)
     let answer = try await http.send(request)
-    if answer.status == 401 { sessionEnded() }
+    if answer.status == 401 { await refused() }
     guard answer.ok else {
       // The refusal's own sentence and code when it has them: the server's proxy and the providers it passes on answer
       // `{"error": {"message", "code"}}` (server/simeon/desktop/proxy_common.py), meant to be shown as they are.
@@ -164,7 +180,7 @@ public actor SimeonAPI {
     request.setValue("application/json", forHTTPHeaderField: "content-type")
     try await authorized(&request)
     let answer = try await http.send(request)
-    if answer.status == 401 { sessionEnded() }
+    if answer.status == 401 { await refused() }
     guard answer.ok else { throw SimeonAPIError(message: "Simeon Labs' server answered push-devices with \(answer.status).", status: answer.status) }
   }
 
@@ -186,7 +202,7 @@ public actor SimeonAPI {
     try await authorized(&request)
     request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "content-type")
     let answer = try await http.send(request)
-    if answer.status == 401 { sessionEnded() }
+    if answer.status == 401 { await refused() }
     guard answer.ok else {
       throw SimeonAPIError(message: answer.json?["error"]?["message"]?.text ?? "Simeon Labs' server answered dictation with \(answer.status).", status: answer.status)
     }
@@ -221,7 +237,7 @@ public actor SimeonAPI {
     var request = URLRequest.post(url("/\(service)/\(method)"), json: message, headers: ["connect-protocol-version": "1"])
     try await authorized(&request)
     let answer = try await http.send(request)
-    if answer.status == 401 { sessionEnded() }
+    if answer.status == 401 { await refused() }
     guard answer.ok else {
       throw SimeonAPIError(message: answer.json?["message"]?.text ?? "Simeon's cloud computer answered \(method) with \(answer.status).", status: answer.status, headers: answer.headers)
     }

@@ -839,7 +839,14 @@ class TestOAuthToken:
         ).json()["refreshToken"]
         body = {"grant_type": "refresh_token", "refresh_token": refresh}
 
-        assert (await client.post("/oauth/token", json=body)).status_code == 200
+        first = await client.post("/oauth/token", json=body)
+        assert first.status_code == 200
+        # The new pair reaches the app and is used: the exchange is final.
+        used = await client.get(
+            "/desktop/api/user/profile",
+            headers={"Authorization": f"Bearer {first.json()['access_token']}"},
+        )
+        assert used.status_code == 200
         second = await client.post("/oauth/token", json=body)
         # 200 and not 4xx on purpose: a non-2xx makes the app show
         # « we couldn't confirm your sign-in » and throw the credentials

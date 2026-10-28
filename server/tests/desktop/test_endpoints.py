@@ -341,12 +341,6 @@ class TestSession:
         assert body["data"]["accessToken"] != access
         assert body["data"]["refreshToken"] != refresh
 
-        again = await client.post(
-            "/desktop/api/auth/refresh", json={"refreshToken": refresh}
-        )
-        assert again.status_code == 401
-        assert again.json()["code"] == 40102
-
         # The old access token is inside its grace (the box holds a copy
         # of it until the Mac's next rewrite); the new one works too.
         old = await client.get(
@@ -358,6 +352,61 @@ class TestSession:
             headers={"Authorization": f"Bearer {body['data']['accessToken']}"},
         )
         assert new.status_code == 200
+
+        # The new pair was used: the old refresh token is dead for good.
+        again = await client.post(
+            "/desktop/api/auth/refresh", json={"refreshToken": refresh}
+        )
+        assert again.status_code == 401
+        assert again.json()["code"] == 40102
+
+    async def test_a_refresh_whose_answer_was_lost_is_answered_again(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        """The exchange happened but its answer never reached the app (28
+        October 2026: "I keep getting logged out after a while"): the app
+        asks again with the token it still has, and is not signed out."""
+        _, refresh = await _signed_in(client, session, user)
+        lost = (
+            await client.post(
+                "/desktop/api/auth/refresh", json={"refreshToken": refresh}
+            )
+        ).json()["data"]
+        again = await client.post(
+            "/desktop/api/auth/refresh", json={"refreshToken": refresh}
+        )
+        assert again.json()["code"] == 0, again.text
+        kept = again.json()["data"]
+        assert kept["accessToken"] != lost["accessToken"]
+
+        # The pair that never arrived is no good to anyone; the new one is.
+        unused = await client.get(
+            "/desktop/api/user/profile",
+            headers={"Authorization": f"Bearer {lost['accessToken']}"},
+        )
+        assert unused.status_code == 401
+        used = await client.get(
+            "/desktop/api/user/profile",
+            headers={"Authorization": f"Bearer {kept['accessToken']}"},
+        )
+        assert used.status_code == 200
+        assert (
+            await client.post(
+                "/desktop/api/auth/refresh", json={"refreshToken": lost["refreshToken"]}
+            )
+        ).status_code == 401
+
+        # Used once, the new pair is final: the old token is dead now.
+        assert (
+            await client.post(
+                "/desktop/api/auth/refresh", json={"refreshToken": refresh}
+            )
+        ).status_code == 401
+        # And the new refresh token goes on as any other.
+        onward = await client.post(
+            "/desktop/api/auth/refresh", json={"refreshToken": kept["refreshToken"]}
+        )
+        assert onward.json()["code"] == 0
 
     async def test_the_replaced_access_token_dies_at_the_grace_and_at_sign_out(
         self,

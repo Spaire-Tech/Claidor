@@ -18,6 +18,8 @@ from datetime import datetime, timedelta
 from typing import Any
 from uuid import UUID
 
+import structlog
+
 from simeon.config import settings
 from simeon.desktop.tokens import (
     ACCESS_TOKEN_PREFIX,
@@ -87,6 +89,8 @@ QUOTA_EXHAUSTED_CODE = 40200
 #: The hourly brake, distinct so the app's log says which limit it was.
 HOURLY_BUDGET_CODE = 40201
 #: A bad auth code, a bad refresh token, a missing bearer.
+log = structlog.get_logger()
+
 AUTH_CODE_INVALID = 40101
 REFRESH_INVALID = 40102
 UNAUTHENTICATED = 40100
@@ -509,21 +513,37 @@ class DesktopService:
         found = await DesktopSessionRepository.from_session(
             session
         ).get_by_access_token_hash(get_token_hash(token, secret=settings.SECRET))
+        now = utc_now()
         if (
             found is None
             or found.is_revoked
-            or found.access_expires_at < utc_now()
+            or found.access_expires_at < now
             or not found.user.can_authenticate
         ):
             return None
+        # The pair reached its app: a refresh that traded for it is final
+        # from now on (`refresh`). Written once in the row's life.
+        if found.first_used_at is None:
+            found.first_used_at = now
+            session.add(found)
+            await session.flush()
         return found
 
     async def refresh(
         self, session: AsyncSession, refresh_token: str
     ) -> tuple[DesktopSession, str, str]:
         """A new pair of tokens for a live refresh token; the old refresh
-        token dies with the exchange. Anything else raises
-        `DesktopUnauthenticated`, which the app reads as « sign in again ».
+        token dies with the exchange, for good once the new pair is used.
+        Anything else raises `DesktopUnauthenticated`, which the app reads
+        as « sign in again », and is logged (`desktop.refresh.refused`)
+        with why.
+
+        A spent refresh token whose new pair was never used is traded
+        again (28 October 2026: "I keep getting logged out after a
+        while"): the answer to the exchange never reached the app (the Mac
+        asleep, the phone leaving the app, the network dropping), so the
+        app kept the old token and its next refresh signed the person
+        out. The unused pair is revoked and a new one takes its place.
 
         A session minted for a cloud job (`simeon.maty`) is refused here
         whatever its state. Its refresh token is generated and thrown
@@ -533,19 +553,61 @@ class DesktopService:
         """
         token = refresh_token.strip()
         if not token or not token.isascii():
-            raise DesktopUnauthenticated("The refresh token is invalid.")
-        found = await DesktopSessionRepository.from_session(
-            session
-        ).get_by_refresh_token_hash(get_token_hash(token, secret=settings.SECRET))
-        if (
-            found is None
-            or found.is_job_token
-            or found.is_box_credential
-            or found.is_revoked
-            or found.refresh_expires_at < utc_now()
-            or not found.user.can_authenticate
-        ):
-            raise DesktopUnauthenticated("The refresh token is invalid or has expired.")
+            raise self._refused("malformed", None)
+        repository = DesktopSessionRepository.from_session(session)
+        found = await repository.get_by_refresh_token_hash(
+            get_token_hash(token, secret=settings.SECRET)
+        )
+        now = utc_now()
+        if found is None:
+            raise self._refused("unknown", None)
+        if found.is_job_token or found.is_box_credential:
+            raise self._refused("not_a_device", found)
+        if found.is_revoked:
+            raise self._refused("revoked", found)
+        if not found.user.can_authenticate:
+            raise self._refused("account", found)
+        if found.refresh_expires_at < now:
+            # Spent by an exchange whose answer may never have arrived, or
+            # past its thirty days.
+            successor = (
+                await repository.get_by_id(found.replaced_by_id)
+                if found.replaced_by_id is not None
+                else None
+            )
+            if (
+                successor is None
+                or successor.first_used_at is not None
+                or successor.is_revoked
+                or successor.refresh_expires_at < now
+            ):
+                raise self._refused(
+                    "spent" if found.replaced_by_id is not None else "expired", found
+                )
+            successor.revoked_at = now
+            session.add(successor)
+            issued = await self._issue_session(
+                session,
+                found.user,
+                user_agent=found.user_agent,
+                client_version=found.client_version,
+                client_kind=found.client_kind,
+            )
+            found.replaced_by_id = issued[0].id
+            session.add(found)
+            # The box credential moved to the unused pair; it moves on.
+            for child in await repository.list_box_credentials_of(successor.id):
+                if child.is_revoked:
+                    continue
+                child.box_of_session_id = issued[0].id
+                session.add(child)
+            log.info(
+                "desktop.refresh.answer_lost",
+                user_id=str(found.user_id),
+                client_kind=found.client_kind,
+                spent_seconds_ago=int((now - found.refresh_expires_at).total_seconds()),
+            )
+            return issued
         # The old refresh token dies with the exchange. The old access token
         # does not, not at once: the person's box holds a copy of it
         # (`local-docker-host-connector.ts` writes the Mac's token into the
@@ -553,12 +615,12 @@ class DesktopService:
         # 2026 the exchange revoked the row outright, so every model call
         # from the box answered 401 until that rewrite. It now stays good
         # for `DESKTOP_REFRESH_GRACE` at most; sign-out sweeps it (`revoke`).
-        now = utc_now()
         found.refresh_expires_at = now - timedelta(seconds=1)
         found.access_expires_at = min(
             found.access_expires_at, now + settings.DESKTOP_REFRESH_GRACE
         )
-        session.add(found)
+        if found.first_used_at is None:
+            found.first_used_at = now
         issued = await self._issue_session(
             session,
             found.user,
@@ -566,16 +628,31 @@ class DesktopService:
             client_version=found.client_version,
             client_kind=found.client_kind,
         )
+        found.replaced_by_id = issued[0].id
+        session.add(found)
         # The box credential follows the desktop it belongs to: the app
         # refreshes every hour, and a box that died with each refresh would
         # be no box at all.
-        repository = DesktopSessionRepository.from_session(session)
         for child in await repository.list_box_credentials_of(found.id):
             if child.is_revoked:
                 continue
             child.box_of_session_id = issued[0].id
             session.add(child)
         return issued
+
+    @staticmethod
+    def _refused(reason: str, found: DesktopSession | None) -> DesktopUnauthenticated:
+        """A refresh refused, written down with why (28 October 2026: the
+        person was signed out and nothing said which refusal it was)."""
+        log.info(
+            "desktop.refresh.refused",
+            reason=reason,
+            user_id=str(found.user_id) if found is not None else None,
+            client_kind=found.client_kind if found is not None else None,
+        )
+        if reason == "malformed":
+            return DesktopUnauthenticated("The refresh token is invalid.")
+        return DesktopUnauthenticated("The refresh token is invalid or has expired.")
 
     async def revoke(
         self, session: AsyncSession, desktop_session: DesktopSession

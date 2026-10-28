@@ -72,12 +72,31 @@ string.
 **Lifetimes** (`server/simeon/config.py`):
 
 - Access token: 1 hour (`SIMEON_DESKTOP_ACCESS_TOKEN_TTL`).
-- Refresh token: 30 days (`SIMEON_DESKTOP_REFRESH_TOKEN_TTL`).
+- Refresh token: 30 days (`SIMEON_DESKTOP_REFRESH_TOKEN_TTL`), from the last
+  refresh: the apps refresh every hour they are used, so only 30 days
+  without opening one signs the person out.
 - Sign-in code: 5 minutes (`SIMEON_DESKTOP_AUTH_CODE_TTL`).
 
-**Refresh grace.** A refresh kills the old refresh token at once. The old
-access token stays good for up to `SIMEON_DESKTOP_REFRESH_GRACE` (5 minutes),
-so a copy of it held elsewhere does not fail right after a refresh.
+**Refresh grace.** A refresh spends the old refresh token. The old access
+token stays good for up to `SIMEON_DESKTOP_REFRESH_GRACE` (5 minutes), so a
+copy of it held elsewhere does not fail right after a refresh.
+
+**A lost refresh answer** (28 October 2026). When the answer to a refresh never
+reached the app (the Mac asleep, the phone leaving the app, the network
+dropping), the app still held the spent token and its next refresh signed the
+person out. Now `desktop_sessions.replaced_by_id` names the session a refresh
+traded a row for, and `first_used_at` is set the first time a row's access
+token is presented or its refresh token traded. A spent token whose successor
+was never used is traded again: the unused successor is revoked, a new pair is
+issued and the box credential moves to it (`desktop.refresh.answer_lost`). Once
+the successor has been used, the spent token is refused as before.
+
+**A 401 in the apps** (28 October 2026). Any 401 from a call used to sign the
+apps out. A provider's 401 passed on (OpenAI refusing our key on dictation or
+a picture) did so too. Now the apps first ask with one refresh
+(`SimeonAPI.refused`): a new pair, or no answer, keeps the person signed in;
+only a refused refresh signs out. The server also passes a provider's 401 on
+as `502` (`capabilities._refusal`).
 
 **Sign-out.** The app posts `POST /desktop/api/auth/logout`. The server revokes
 the session and any access token of that person still inside its refresh
@@ -181,8 +200,12 @@ the login and poll URLs come from the first two.
 
 - A sign-in that never completes: the app keeps getting `404` from
   `/auth/poll`. Check that the confirm form was posted from the same origin.
-- A person signed out without asking: `/oauth/token` answered `shouldLogout`
-  (the refresh token was spent, expired or revoked).
+- A person signed out without asking: `/oauth/token` answered `shouldLogout`.
+  Search the API's log for `desktop.refresh.refused`: its `reason` says which
+  (`spent`: traded before and its new pair used since; `expired`: 30 days;
+  `revoked`: signed out elsewhere or the account deleted; `unknown`: a token
+  this server never issued; `account`: the account can't sign in).
+  `desktop.refresh.answer_lost` is a lost answer that was mended.
 
 **Not yet verified:** a full sign-in round trip from the packaged app against
 `api.simeonlabs.com`, and the refresh grace in use on a Mac.
