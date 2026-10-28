@@ -307,6 +307,11 @@ private struct Transcript: View {
   @State private var resizedUntil = Date.distantPast
   /** Rows that arrived while pinned, coming in. */
   @State private var arrivals = Arrivals()
+  /** The agents' messages that came while the chat was read further up: the count on ⌄. */
+  @State private var unseen = 0
+
+  /** The chat's rows, or the open thread's. */
+  private var allRows: [ChatRow] { threadRoot == nil ? store.rows(for: agentId) : store.threadRows[agentId] ?? [] }
 
   /** How the window measures the bottom: the gap under what shows, the content's height, the view's height and width. */
   struct Bottom: Equatable {
@@ -393,6 +398,76 @@ private struct Transcript: View {
       } action: { old, new in
         follow(old, new)
       }
+      .onChange(of: pinned) { _, now in if now && unseen != 0 { unseen = 0 } }
+      // New rows at the bottom. A message of the person's own just went out: to the newest, wherever the chat was, as the
+      // iPhone's (the founder, 28 October 2026). Read further up, the agents' new messages are counted on ⌄.
+      .onChange(of: rows.last?.id) { old, _ in
+        let now = allRows
+        guard let old, let from = now.lastIndex(where: { $0.id == old }) else { return }
+        let added = now[(from + 1)...]
+        if added.contains(where: { row in if case .bubble(let bubble) = row { return bubble.fromPerson }; return false }) {
+          toNewest()
+          return
+        }
+        guard !pinned else { return }
+        unseen += added.filter { row in if case .bubble(let bubble) = row { return !bubble.fromPerson }; return false }.count
+      }
+      // Read further up: ⌄ over the message field's right, as the iPhone's, with what came meanwhile.
+      .overlay(alignment: .bottomTrailing) {
+        if !pinned {
+          ToEndButton(count: unseen, look: look) { toNewest() }
+            .padding(.trailing, 16)
+            // 10 over the field's top (its height, and its 16 under it).
+            .padding(.bottom, control.composerHeight + 26)
+            .transition(.scale(scale: 0.6).combined(with: .opacity))
+        }
+      }
+      .animation(.snappy, value: pinned)
+    }
+  }
+
+  /** To the newest, held there again. */
+  private func toNewest() {
+    unseen = 0
+    pinned = true
+    withAnimation(.smooth(duration: 0.3)) { position.scrollTo(edge: .bottom) }
+  }
+
+  /**
+   * ⌄ to the newest, as the iPhone's (`ToEndButton`): a glass disc, 36 on
+   * the Mac, the chevron in the discs' ink; what came meanwhile counted in
+   * the person's blue at its top right.
+   */
+  private struct ToEndButton: View {
+    let count: Int
+    let look: Look
+    let action: () -> Void
+
+    var body: some View {
+      Button(action: action) {
+        Image(systemName: "chevron.down")
+          .font(.system(size: 14, weight: .semibold))
+          .foregroundStyle(look.dark ? Color.white.opacity(0.86) : Color.black.opacity(0.78))
+          .frame(width: 36, height: 36)
+          .contentShape(Circle())
+      }
+      .buttonStyle(.hand)
+      .liquidGlass(in: .circle, interactive: true)
+      .overlay(alignment: .topTrailing) {
+        if count > 0 {
+          Text(count, format: .number)
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundStyle(look.yoursText)
+            .padding(.horizontal, 5)
+            .frame(minWidth: 18, minHeight: 18)
+            .background(look.yours, in: Capsule())
+            .offset(x: 4, y: -4)
+            .allowsHitTesting(false)
+        }
+      }
+      .help("Jump to latest")
+      .accessibilityLabel("Jump to latest")
+      .accessibilityValue(count == 0 ? "" : count == 1 ? String(localized: "1 new message") : String(localized: "\(count) new messages"))
     }
   }
 
