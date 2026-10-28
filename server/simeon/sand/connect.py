@@ -207,8 +207,31 @@ def decode_stream_frames(body: bytes) -> tuple[list[dict[str, Any]], dict[str, A
     return messages, end
 
 
-async def _read_message(request: Request) -> dict[str, Any]:
+async def _read_stream_message(request: Request) -> dict[str, Any]:
+    """A server stream's request: one envelope, as every Connect client
+    sends it (`application/connect+json`). Until 28 October 2026 it was
+    read as bare JSON, so the apps' `WatchSandBoxMigration` was refused
+    with 400 and asked again every 3 s for as long as they were open. A
+    bare JSON body is still taken: told apart by its first byte, as an
+    envelope's flags (0 or 1) never begin JSON."""
     raw = await request.body()
+    if not raw or raw[0] not in (0x00, 0x01):
+        return _decoded(raw)
+    if len(raw) < 5:
+        raise ConnectError("invalid_argument", "The request envelope is cut short.")
+    flags, length = struct.unpack(">BI", raw[:5])
+    if flags & 0x01:
+        raise ConnectError("unimplemented", "Compressed requests are not taken.")
+    if len(raw) < 5 + length:
+        raise ConnectError("invalid_argument", "The request envelope is cut short.")
+    return _decoded(raw[5 : 5 + length])
+
+
+async def _read_message(request: Request) -> dict[str, Any]:
+    return _decoded(await request.body())
+
+
+def _decoded(raw: bytes) -> dict[str, Any]:
     if not raw:
         return {}
     try:
@@ -307,7 +330,7 @@ class ConnectService:
             ) -> StreamingResponse | JSONResponse:
                 try:
                     session = await _caller(auth, request, db)
-                    message = await _read_message(request)
+                    message = await _read_stream_message(request)
                 except ConnectError as error:
                     # Before the first frame a stream error is still a JSON error.
                     return error.response()

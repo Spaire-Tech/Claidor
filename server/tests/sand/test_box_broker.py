@@ -895,6 +895,40 @@ class TestRecreate:
         assert messages[0]["offsetKey"] == "1" and messages[1]["offsetKey"] == "2"
         assert messages[0]["atMs"].isdigit()
 
+    async def test_the_migration_stream_reads_the_apps_envelope(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        host: FakeBoxHost,
+    ) -> None:
+        # The apps send a stream's request as Connect does, one envelope
+        # (`ConnectEnvelopes.envelope`); read as bare JSON it was refused
+        # with 400, every 3 s while they were open (28 October 2026).
+        access, _ = await _signed_in(client, session, user)
+        auth = {"Authorization": f"Bearer {access}"}
+        await _ensure(client, access)
+        await client.post(RECREATE, json={"preserveData": True}, headers=auth)
+        body = b'{"fromOffsetKey":"1","includeFinished":true}'
+        box_service.migrations.idle = 0.05
+        try:
+            response = await client.post(
+                WATCH,
+                content=bytes([0]) + len(body).to_bytes(4, "big") + body,
+                headers={
+                    **auth,
+                    "content-type": "application/connect+json",
+                    "connect-protocol-version": "1",
+                },
+            )
+        finally:
+            box_service.migrations.idle = 25.0
+        assert response.status_code == 200
+        messages, end = decode_stream_frames(response.content)
+        assert end == {}
+        # From the offset it asked for: the message was read.
+        assert [m["phase"] for m in messages] == [PHASE_DONE]
+
 
 @pytest.fixture
 def backups(mocker: MockerFixture) -> Any:

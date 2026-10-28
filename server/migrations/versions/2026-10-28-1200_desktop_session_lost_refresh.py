@@ -1,6 +1,6 @@
 """a refresh whose answer was lost no longer signs the person out
 
-Revision ID: desktop_session_lost_refresh_1028
+Revision ID: desktop_session_lost_1028
 Revises: desktop_credit_packs_1027
 Create Date: 2026-10-28 12:00:00.000000
 
@@ -11,13 +11,18 @@ refresh signed the person out (28 October 2026: "I keep getting logged
 out after a while"). `replaced_by_id` names the session a refresh traded a
 row for, and `first_used_at` says whether that session was ever used: a
 spent token whose successor never was may be traded again.
+
+Its first name, `desktop_session_lost_refresh_1028`, was 33 characters:
+`alembic_version.version_num` holds 32, so writing it failed, the upgrade
+rolled back and the deploy that carried it never started (28 October
+2026). `tests/test_migration_names.py` keeps every name within 32.
 """
 
 import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "desktop_session_lost_refresh_1028"
+revision = "desktop_session_lost_1028"
 down_revision = "desktop_credit_packs_1027"
 branch_labels: tuple[str] | None = None
 depends_on: tuple[str] | None = None
