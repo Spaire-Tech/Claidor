@@ -94,13 +94,6 @@ class CheckoutSync(Schema):
 
 class PlanChangeCreate(Schema):
     tier: TierKey
-    proration_date: int | None = Field(
-        default=None,
-        description=(
-            "The preview's `proration_date`: an upgrade confirmed within the "
-            "hour is charged exactly what the preview showed."
-        ),
-    )
 
 
 class PlanChange(Schema):
@@ -115,7 +108,6 @@ class PlanChange(Schema):
     price: int = Field(description="The new plan's price each interval, in cents.")
     currency: str
     starts_at: datetime
-    proration_date: int | None = None
     scheduled_tier: TierKey | None = None
 
 

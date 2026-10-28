@@ -739,8 +739,9 @@ What other products do, and what Simeon does:
   `payment_behavior=error_if_incomplete`). A card that is refused changes
   nothing (`CardDeclined`, `plans.change.declined`). The preview
   (`change_preview`, Stripe's `Invoice.create_preview`) says the amount
-  first; confirming within the hour passes its `proration_date`, so the
-  charge is what was shown.
+  first. Neither call sends a `proration_date`: Stripe refuses one with
+  `billing_cycle_anchor=now`, so the charge is priced as it is made, a few
+  seconds' worth of the old plan apart from what was shown.
 - **A downgrade waits for the renewal** (Apple's way): a
   Stripe subscription schedule of two phases, the plan as it is until the
   period ends, then the smaller plan, after which the schedule lets the
@@ -771,7 +772,7 @@ What other products do, and what Simeon does:
 
 | Route | What |
 |---|---|
-| `POST /v1/plans/change/preview`, `POST /v1/plans/change` | The web's confirm screen and its Confirm (`{tier, proration_date}`). |
+| `POST /v1/plans/change/preview`, `POST /v1/plans/change` | The web's confirm screen and its Confirm (`{tier}`). |
 | `POST /v1/plans/start-now/preview`, `POST /v1/plans/start-now` | "Start my plan now". |
 | `GET /v1/plans/credits` | The balance, the packs, the pack's size and price, and whether the person can buy. |
 | `POST /v1/plans/credits/checkout`, `POST /v1/plans/credits/sync` | A Stripe Checkout (`mode=payment`, quantity adjustable 1 to 10) and its return. |

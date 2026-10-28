@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Any, Literal
 from urllib.parse import urlparse
 from uuid import UUID
@@ -170,9 +170,6 @@ class PlanChange:
     currency: str
     #: When the new plan starts: now, the renewal, or the trial's end.
     starts_at: datetime
-    #: The moment an upgrade was priced at; confirming with it charges
-    #: exactly what was shown.
-    proration_date: int | None = None
     #: The smaller plan that was waiting for the renewal (`keep`).
     scheduled_tier: TierKey | None = None
 
@@ -253,10 +250,6 @@ def _tier_of(value: str | None) -> TierKey | None:
 
 def _interval_of(row: DesktopSubscription) -> catalog.BillingInterval:
     return "year" if row.billing_interval == "year" else "month"
-
-
-def _from_epoch(value: int) -> datetime:
-    return epoch_to_datetime(value) or utc_now()
 
 
 def _raw(subscription: Any) -> dict[str, Any]:
@@ -580,9 +573,11 @@ class PlansService:
                 starts_at=starts_at,
                 scheduled_tier=_tier_of(row.scheduled_tier),
             )
-        at = int(now.timestamp())
         try:
             item = await self._plan_change_item(row, tier)
+            # No `proration_date`: Stripe refuses it with `billing_cycle_anchor=now`
+            # (28 October 2026, every upgrade); the charge is priced as it is made,
+            # a few seconds' worth of the old plan apart from what this shows.
             invoice = await stripe_billing.preview_invoice(
                 customer=row.stripe_customer_id,
                 subscription=row.stripe_subscription_id,
@@ -590,7 +585,6 @@ class PlansService:
                     "items": [item],
                     "billing_cycle_anchor": "now",
                     "proration_behavior": "always_invoice",
-                    "proration_date": at,
                 },
             )
         except stripe_lib.StripeError as error:
@@ -613,7 +607,6 @@ class PlansService:
             price=plan_price.unit_amount,
             currency=str(invoice.get("currency") or "usd"),
             starts_at=now,
-            proration_date=at,
         )
 
     async def change_plan(
@@ -621,8 +614,6 @@ class PlansService:
         session: AsyncSession,
         user: User,
         tier: TierKey,
-        *,
-        proration_date: int | None = None,
     ) -> PlanChange:
         """Move the person to `tier` (27 October 2026, in place of the
         Customer Portal's own switch, which had no proration and changed a
@@ -661,18 +652,11 @@ class PlansService:
                 starts_at = row.trial_end or now
             elif kind == "upgrade":
                 item = await self._plan_change_item(row, tier)
-                at = (
-                    proration_date
-                    if proration_date is not None
-                    and now - timedelta(hours=1) <= _from_epoch(proration_date) <= now
-                    else int(now.timestamp())
-                )
                 subscription = await stripe_billing.modify_subscription(
                     row.stripe_subscription_id,
                     items=[item],
                     billing_cycle_anchor="now",
                     proration_behavior="always_invoice",
-                    proration_date=at,
                     payment_behavior="error_if_incomplete",
                     cancel_at_period_end=False,
                     metadata=metadata,
