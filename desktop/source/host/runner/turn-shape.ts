@@ -68,6 +68,19 @@ function deliveryToolCallIds(message: CoreMessage): string[] {
   );
 }
 
+/** A delivery call in `message` that did not fail (one with no id counts). */
+function deliveredIn(message: CoreMessage, erroredIds: ReadonlySet<string>): boolean {
+  if (message.role !== "assistant" || typeof message.content === "string") {
+    return false;
+  }
+  return message.content.some((part) =>
+    part.type === "tool-call"
+    && part.toolName != null
+    && DELIVERY_TOOL_NAMES.has(part.toolName)
+    && (part.toolCallId == null || !erroredIds.has(part.toolCallId))
+  );
+}
+
 function erroredToolResultIds(
   messages: readonly (CoreMessage | undefined)[],
 ): Set<string> {
@@ -127,8 +140,13 @@ export function turnEndedOnSilentToolCalls(
 
   const tail = tailIndex >= 0 ? messages[tailIndex] : undefined;
   if (tail === undefined || tail.role !== "assistant") return false;
-  const tailNames = toolCallNames(tail);
-  if (tailNames.length === 0 || hasDeliveryToolCall(tailNames)) return false;
+  // A tail of plain words is as silent as one of tool calls: only SendMessage
+  // reaches the person. Iris said she was checking, ran her mail tools and
+  // ended with nothing more the person saw, every call answered (28 October
+  // 2026); a turn ending in words was not counted as silent, so no nudge
+  // ran. So is a tail whose every SendMessage failed.
+  const erroredIds = erroredToolResultIds(messages);
+  if (deliveredIn(tail, erroredIds)) return false;
 
   let boundary = -1;
   for (let index = tailIndex - 1; index >= 0; index -= 1) {
@@ -140,7 +158,6 @@ export function turnEndedOnSilentToolCalls(
     }
   }
 
-  const erroredIds = erroredToolResultIds(messages);
   let ackedFirst = false;
   for (let index = boundary + 1; index <= tailIndex; index += 1) {
     const message = messages[index];

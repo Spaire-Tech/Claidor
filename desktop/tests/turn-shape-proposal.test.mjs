@@ -54,3 +54,58 @@ test("a turn that ends on a tool the person never hears about still is", async (
     await dispose();
   }
 });
+
+// Iris, 28 October 2026: "Checking now", her mail tools, then nothing the
+// person saw, every call answered. A turn ending in plain words was not
+// counted as silent, so no closing nudge ran.
+function iris(...tail) {
+  return [
+    { role: "user", content: "anything from the bank?" },
+    { role: "assistant", content: [call("c1", "SendMessage", { type: "text", content: "Checking your mail now." })] },
+    result("c1", "SendMessage"),
+    { role: "assistant", content: [call("c2", "gmail_search", { query: "bank" })] },
+    result("c2", "gmail_search"),
+    ...tail,
+  ];
+}
+const failed = (id) => ({ role: "tool", content: [{ type: "tool-result", toolCallId: id, toolName: "SendMessage", result: "error" }], providerOptions: { simeon: { highLevelToolCallResult: { isError: true } } } });
+
+test("a turn that ends in plain words after its opening message is silent: the closing nudge runs", async () => {
+  const { module, dispose } = await load();
+  try {
+    assert.equal(module.turnEndedOnSilentToolCalls(iris({ role: "assistant", content: [{ type: "text", text: "Two emails from the bank: a statement and a card renewal." }] })), true);
+    assert.equal(module.turnEndedOnSilentToolCalls(iris({ role: "assistant", content: "Two emails from the bank." })), true);
+  } finally {
+    await dispose();
+  }
+});
+
+test("a turn whose last SendMessage failed is silent", async () => {
+  const { module, dispose } = await load();
+  try {
+    assert.equal(module.turnEndedOnSilentToolCalls(iris({ role: "assistant", content: [call("c3", "SendMessage", { type: "text", content: "Two emails." })] }, failed("c3"))), true);
+  } finally {
+    await dispose();
+  }
+});
+
+test("a turn that sent its answer is not silent, whatever words follow", async () => {
+  const { module, dispose } = await load();
+  try {
+    const answered = [{ role: "assistant", content: [call("c3", "SendMessage", { type: "text", content: "Two emails from the bank." })] }, result("c3", "SendMessage")];
+    assert.equal(module.turnEndedOnSilentToolCalls(iris(...answered)), false);
+    assert.equal(module.turnEndedOnSilentToolCalls(iris(...answered, { role: "assistant", content: [{ type: "text", text: "Done." }] })), false);
+    assert.equal(module.turnEndedOnSilentToolCalls(iris(...answered, { role: "assistant", content: [{ type: "text", text: "  " }] })), false);
+  } finally {
+    await dispose();
+  }
+});
+
+test("a turn with no opening message is left to the reply nudge", async () => {
+  const { module, dispose } = await load();
+  try {
+    assert.equal(module.turnEndedOnSilentToolCalls([{ role: "user", content: "hi" }, { role: "assistant", content: "Hello!" }]), false);
+  } finally {
+    await dispose();
+  }
+});

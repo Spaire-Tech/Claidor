@@ -561,6 +561,11 @@ back everything"); each switch still sets a limit on purpose:
   started ends without a reply (`MAX_REPLY_NUDGES`; one from 2 to 8 October).
 - **Plain-text replies** are not delivered by the host any more (3 to 8
   October they were): a turn that writes its answer as bare text is nudged.
+  Until 28 October that held only for a turn that had sent nothing: after an
+  opening message ("Checking now"), an answer written as text was lost with
+  no nudge (Iris's mail check). The closing nudge (`turnEndedOnSilentToolCalls`,
+  `host/runner/turn-shape.ts`) now runs once for a turn that opened with a
+  message and ended in words, in tool calls, or on a SendMessage that failed.
 
 How a turn stays short (3 October 2026, from the OpenAI log of a Gmail
 question that took about twenty calls; replayed offline in
