@@ -64,21 +64,34 @@ public struct ChannelsView: Equatable, Sendable {
     }
   }
 
-  /** The line under the name (`P0n`). */
+  /**
+   * The line under the name, a few words (the founder, 28 October 2026: "too
+   * many words"): what it reaches, the account once connected, what went
+   * wrong.
+   */
   public func subtitle(_ manifest: Manifest) -> String {
     switch state(manifest) {
     case .connected:
-      if let connection = connection(manifest) { return L10n.text("Connected as \(connection.label)") }
-      return manifest.blurb
-    case .error(let detail): return detail ?? L10n.text("The platform rejected this connection.")
-    default: return manifest.blurb
+      if let label = connection(manifest)?.label, !label.isEmpty { return label }
+      return Self.reach(manifest)
+    case .error(let detail): return detail ?? L10n.text("Couldn't connect")
+    default: return Self.reach(manifest)
     }
   }
 
-  /** The chip beside it (`O0n`); none to connect. */
+  /** What a platform reaches; the box's own line for one the app does not know. */
+  public static func reach(_ manifest: Manifest) -> String {
+    switch manifest.platform {
+    case "discord": L10n.text("Servers and DMs")
+    case "slack": L10n.text("Channels and DMs")
+    default: manifest.blurb
+    }
+  }
+
+  /** The row's state in a word, for the ear and the pointer (the mark says it to the eye); none to connect. */
   public static func chip(_ state: RowState) -> String? {
     switch state {
-    case .comingSoon: L10n.text("Soon")
+    case .comingSoon: AppsComingSoon.label
     case .connected: L10n.text("Connected")
     case .error: L10n.text("Needs attention")
     case .connecting: L10n.text("channel.connecting", default: "Connecting")
@@ -86,20 +99,15 @@ public struct ChannelsView: Equatable, Sendable {
     }
   }
 
-  public static let intro = L10n.text("Connect this agent to a messaging platform so it can talk to people there. You can also just ask it in chat, like \"connect me to a messaging platform\".")
   public static let none = L10n.text("No connectors available.")
-  public static let storedSecurely = L10n.text("Stored securely, never shown to your agent.")
 
-  public static func placeholder(_ manifest: Manifest) -> String { L10n.text("Paste your \(manifest.credentialLabel)") }
-
-  /**
-   * "How to connect" (`C0n`): it reads the window's own table, which still
-   * calls both platforms coming soon, so it always says so, whatever the
-   * row offers.
-   */
-  public static func guide(_ manifest: Manifest) -> (title: String, description: String, blurb: String) {
-    let blurb = manifest.platform == "slack" ? L10n.text("Message in Slack channels and DMs (coming soon).") : manifest.platform == "discord" ? L10n.text("Message in Discord servers and DMs (coming soon).") : manifest.blurb
-    return (L10n.text("Connect \(manifest.displayName)"), L10n.text("Connecting \(manifest.displayName) is not available yet."), blurb)
+  /** The field's words: the token it takes. */
+  public static func placeholder(_ manifest: Manifest) -> String {
+    switch manifest.platform {
+    case "discord": L10n.text("Bot token")
+    case "slack": L10n.text("App token and bot token")
+    default: manifest.credentialLabel.prefix(1).uppercased() + manifest.credentialLabel.dropFirst()
+    }
   }
 }
 

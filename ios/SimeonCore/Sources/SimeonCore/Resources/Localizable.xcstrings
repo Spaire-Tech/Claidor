@@ -13885,6 +13885,64 @@
         }
       }
     },
+    "App token and bot token" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App-Token und Bot-Token"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Token de la app y token del bot"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jeton d’app et jeton du bot"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Token dell’app e token del bot"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App-token en bottoken"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Token aplikacji i token bota"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Token do app e token do bot"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apptoken och bottoken"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uygulama token’ı ve bot token’ı"
+          }
+        }
+      }
+    },
     "Approval required: %@" : {
       "localizations" : {
         "de" : {
@@ -15911,6 +15969,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Bilgisayar başlatılıyor"
+          }
+        }
+      }
+    },
+    "Bot token" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bot-Token"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Token del bot"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jeton du bot"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Token del bot"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bottoken"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Token bota"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Token do bot"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bottoken"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bot token’ı"
           }
         }
       }
@@ -18237,6 +18353,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Kanallar"
+          }
+        }
+      }
+    },
+    "Channels and DMs" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Channels und Direktnachrichten"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Canales y mensajes directos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Canaux et messages directs"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Canali e messaggi diretti"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kanalen en directe berichten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kanały i wiadomości bezpośrednie"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Canais e mensagens diretas"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kanaler och direktmeddelanden"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kanallar ve doğrudan mesajlar"
           }
         }
       }
@@ -20968,64 +21142,6 @@
         }
       }
     },
-    "Connect this agent to a messaging platform so it can talk to people there. You can also just ask it in chat, like \"connect me to a messaging platform\"." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Verbinde diesen Agenten mit einer Messaging-Plattform, damit er dort mit Leuten sprechen kann. Du kannst ihn auch einfach im Chat darum bitten, etwa „verbinde mich mit einer Messaging-Plattform“."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Conecta este agente a una plataforma de mensajería para que pueda hablar con personas allí. También puedes pedírselo en el chat, por ejemplo: “conéctame a una plataforma de mensajería”."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Connecte cet agent à une plateforme de messagerie pour qu’il puisse y parler avec des gens. Tu peux aussi simplement le lui demander dans la discussion, comme « connecte-moi à une plateforme de messagerie »."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Connetti questo agente a una piattaforma di messaggistica perché possa parlare con le persone lì. Puoi anche chiederglielo in chat, ad esempio “connettimi a una piattaforma di messaggistica”."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Koppel deze agent aan een berichtenplatform zodat hij daar met mensen kan praten. Je kunt het ook gewoon in de chat vragen, zoals “koppel me aan een berichtenplatform”."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Połącz tego agenta z platformą komunikacyjną, by mógł tam rozmawiać z ludźmi. Możesz też po prostu poprosić go o to na czacie, np. „połącz mnie z platformą komunikacyjną”."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Conecte este agente a uma plataforma de mensagens para ele poder conversar com pessoas lá. Você também pode simplesmente pedir na conversa, como “me conecte a uma plataforma de mensagens”."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Anslut den här agenten till en meddelandeplattform så att den kan prata med folk där. Du kan också bara be den i chatten, till exempel ”anslut mig till en meddelandeplattform”."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bu ajanı bir mesajlaşma platformuna bağla, böylece oradaki kişilerle konuşabilsin. Sohbette de isteyebilirsin, örneğin “beni bir mesajlaşma platformuna bağla”."
-          }
-        }
-      }
-    },
     "Connect tools" : {
       "localizations" : {
         "de" : {
@@ -21486,64 +21602,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Bağlı: %@"
-          }
-        }
-      }
-    },
-    "Connecting %@ is not available yet." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ kann noch nicht verbunden werden."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aún no se puede conectar %@."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La connexion de %@ n’est pas encore disponible."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La connessione di %@ non è ancora disponibile."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ koppelen is nog niet beschikbaar."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Połączenie z %@ nie jest jeszcze dostępne."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ainda não é possível conectar %@."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Det går inte att ansluta %@ än."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ bağlantısı henüz kullanılamıyor."
           }
         }
       }
@@ -40880,122 +40938,6 @@
         }
       }
     },
-    "Message in Discord servers and DMs (coming soon)." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Schreib in Discord-Servern und DMs (demnächst)."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Escribe en servidores y mensajes directos de Discord (próximamente)."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Échange dans les serveurs et les messages privés Discord (bientôt)."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Scrivi nei server e nei messaggi diretti di Discord (prossimamente)."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Berichten in Discord-servers en privéberichten (binnenkort)."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pisz na serwerach Discord i w wiadomościach prywatnych (wkrótce)."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Converse em servidores e mensagens diretas do Discord (em breve)."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Skriv i Discord-servrar och direktmeddelanden (kommer snart)."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Discord sunucularında ve özel mesajlarda mesajlaşma (yakında)."
-          }
-        }
-      }
-    },
-    "Message in Slack channels and DMs (coming soon)." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Schreib in Slack-Kanälen und DMs (demnächst)."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Escribe en canales y mensajes directos de Slack (próximamente)."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Échange dans les canaux et les messages privés Slack (bientôt)."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Scrivi nei canali e nei messaggi diretti di Slack (prossimamente)."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Berichten in Slack-kanalen en privéberichten (binnenkort)."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pisz na kanałach Slack i w wiadomościach prywatnych (wkrótce)."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Converse em canais e mensagens diretas do Slack (em breve)."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Skriv i Slack-kanaler och direktmeddelanden (kommer snart)."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Slack kanallarında ve özel mesajlarda mesajlaşma (yakında)."
-          }
-        }
-      }
-    },
     "Messaged" : {
       "localizations" : {
         "de" : {
@@ -47853,64 +47795,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "PagerDuty olayı"
-          }
-        }
-      }
-    },
-    "Paste your %@" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ hier einsetzen"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pega tu %@"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ à coller ici"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ da incollare qui"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Plak je %@"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Wklej tutaj: %@"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cole aqui: %@"
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Klistra in %@"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ değerini yapıştır"
           }
         }
       }
@@ -57993,6 +57877,64 @@
         }
       }
     },
+    "Servers and DMs" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Server und Direktnachrichten"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Servidores y mensajes directos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Serveurs et messages privés"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Server e messaggi diretti"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Servers en privéberichten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Serwery i wiadomości prywatne"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Servidores e mensagens diretas"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Servrar och direktmeddelanden"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sunucular ve doğrudan mesajlar"
+          }
+        }
+      }
+    },
     "Setting up the computer" : {
       "localizations" : {
         "de" : {
@@ -61357,64 +61299,6 @@
         }
       }
     },
-    "Stored securely, never shown to your agent." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sicher gespeichert, nie für deinen Agenten sichtbar."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Guardado de forma segura, nunca se muestra a tu agente."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Stocké en sécurité, jamais montré à ton agent."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Conservato in sicurezza, mai mostrato al tuo agente."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Veilig bewaard, nooit aan je agent getoond."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Przechowywane bezpiecznie, nigdy niepokazywane agentowi."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Guardado com segurança, nunca mostrado ao seu agente."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lagras säkert och visas aldrig för din agent."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Güvenle saklanır, ajanına asla gösterilmez."
-          }
-        }
-      }
-    },
     "Stories your agents publish go live on your site." : {
       "localizations" : {
         "de" : {
@@ -64311,64 +64195,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Görsel oluşturucu bunu çizmiyor. Film, dizi ve oyun karakterlerini, gerçek kişileri ve bazı başka konuları reddeder. Bunun yerine kendi hayal ettiğin bir görseli tarif et."
-          }
-        }
-      }
-    },
-    "The platform rejected this connection." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Die Plattform hat diese Verbindung abgelehnt."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La plataforma rechazó esta conexión."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La plateforme a refusé cette connexion."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La piattaforma ha rifiutato questa connessione."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Het platform heeft deze koppeling geweigerd."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Platforma odrzuciła to połączenie."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A plataforma rejeitou esta conexão."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Plattformen avvisade den här anslutningen."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Platform bu bağlantıyı reddetti."
           }
         }
       }
