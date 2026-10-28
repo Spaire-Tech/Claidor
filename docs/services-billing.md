@@ -354,7 +354,9 @@ keys are what every shipped app reads and keep their meaning (`creditsLimit`,
 added on 5 October 2026 feed the app's usage summary
 (`desktop/source/electron-main/account/account-profile.ts`,
 `usageSummaryFromSimeonQuota`): `tier`, `trialEndsAt`, `trialCancelable`,
-`onDemand` (null until the server meters it), `upgradeUrl`; since 12
+`onDemand` (null until the server meters it), `upgradeUrl` (since 28
+October 2026 with `&plan=` the next plan up for a person with a plan, so
+the page opens on the plans, not on "You're all set"); since 12
 October 2026 `billedBy` (`stripe`, `apple`, or null without a plan), which
 the iPhone and Mac apps read to send an Apple plan's changes to Apple; and
 since 27 October 2026 `extraCredits`, the extra credits left (section 11).
@@ -548,7 +550,7 @@ changed price needs no server change.
 
 ### How a purchase reaches the server
 
-1. **Choosing.** Settings › Usage & Billing (Change Limit, Upgrade) and
+1. **Choosing.** Settings › Usage & Billing (Choose a plan, Upgrade) and
    the access cover open the plans sheet (`ios/Simeon/PlansSheet.swift`):
    monthly or yearly, the three plans with the App Store's price in the
    person's currency, "Start Free Week" while Apple still offers it to

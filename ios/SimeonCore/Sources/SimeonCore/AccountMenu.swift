@@ -3,7 +3,7 @@ import Foundation
 /**
  * The account menu at the sidebar's foot (`Xln`, its Weekly usage submenu
  * `Qln`), as the window words it: Weekly usage with its share, Settings,
- * About, Log out; the submenu's two figures and Change limit; the sign-out
+ * About, Log out; the submenu's two figures and Usage & Billing; the sign-out
  * question it shares with Settings (`qon`). Step 10's spec.
  */
 public enum AccountMenu {
@@ -16,9 +16,6 @@ public enum AccountMenu {
   public static let logOut = L10n.text("Log out")
   public static let onDemand = L10n.text("On-demand")
   public static let spendThisCycle = L10n.text("Spend this cycle")
-  public static let changeLimit = L10n.text("Change limit")
-  /** Change limit's page (`Yln`, as the patch sets it): the web app, in the browser. */
-  public static let changeLimitURL = URL(string: "https://app.simeonlabs.com/app")!
 
   /** The sign-out question (`qon`): the menu's Log out and Settings' Sign Out ask the same. */
   public static let signOutTitle = L10n.text("Sign out?")

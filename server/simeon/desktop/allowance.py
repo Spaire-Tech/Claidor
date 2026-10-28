@@ -44,6 +44,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from urllib.parse import urlencode
 
 from simeon.config import settings
 from simeon.entitlements.tiers import (
@@ -90,14 +91,35 @@ def billing_exempt(user: User) -> bool:
     }
 
 
-def billing_url(*, from_app: bool = False) -> str:
+def billing_url(*, from_app: bool = False, plan: str | None = None) -> str:
     """The billing page on the web app (`clients/`), the one thing the web
     app is for: a plan and a card, then Stripe's portal. A link the app
     itself opens says so (`from=app`), so the page afterwards sends the
-    person back to the app instead of offering the download."""
-    return settings.generate_frontend_url(
-        f"{BILLING_PATH}?from=app" if from_app else BILLING_PATH
+    person back to the app instead of offering the download. `plan` opens
+    it on the plans, that one picked."""
+    query = urlencode(
+        {**({"from": "app"} if from_app else {}), **({"plan": plan} if plan else {})}
     )
+    return settings.generate_frontend_url(
+        f"{BILLING_PATH}?{query}" if query else BILLING_PATH
+    )
+
+
+def upgrade_url(allowance: Allowance) -> str | None:
+    """Where the apps' "Get more usage" and "See plans" go (28 October
+    2026): with a plan below the top one, the plans with the next one
+    picked, not the page that says the person is all set; otherwise the
+    billing page; none on the free allowance."""
+    if allowance.free:
+        return None
+    tier = tier_from_value(allowance.tier) if allowance.tier else None
+    ladder = list(PAID_TIERS)
+    above = (
+        ladder[ladder.index(tier) + 1].value
+        if tier in ladder and ladder.index(tier) + 1 < len(ladder)
+        else None
+    )
+    return billing_url(from_app=True, plan=above)
 
 
 def month_bounds(now: datetime | None = None) -> tuple[datetime, datetime]:
@@ -359,5 +381,6 @@ __all__ = [
     "month_bounds",
     "plan_week",
     "resolve_allowance",
+    "upgrade_url",
     "week_bounds",
 ]

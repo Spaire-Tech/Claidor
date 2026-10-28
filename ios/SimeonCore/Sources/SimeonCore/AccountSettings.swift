@@ -177,6 +177,11 @@ public struct UsageSummary: Equatable, Sendable {
   public struct UpgradeButton: Equatable, Sendable {
     public let label: String
     public let url: URL
+
+    public init(label: String, url: URL) {
+      self.label = label
+      self.url = url
+    }
   }
 
   /** The plan on Stripe, for the Manage Plan card (`managePlanOfQuota`). */

@@ -111,7 +111,7 @@ enum AccountActions {
       if reading == shown, weekly.menu != nil { return }
       shown = reading
       weekly.badge = NSMenuItemBadge(string: reading.percent)
-      weekly.submenu = usageMenu(reading)
+      weekly.submenu = usageMenu(reading, settings: settings)
       if weekly.menu == nil { menu.insertItem(weekly, at: 0) }
     }
     show(AccountMenu.reading(store.usage, readAt: store.usageReadAt))
@@ -148,10 +148,11 @@ enum AccountActions {
 
   /**
    * Weekly usage's submenu: the share and when it resets, the on-demand
-   * spend when it is metered (rows that do nothing, `bze`), then Change
-   * limit, which opens the web app in the browser.
+   * spend when it is metered (rows that do nothing, `bze`), then Usage &
+   * Billing, Settings' page with the plan's own changes (28 October 2026: it
+   * was Change limit, which opened a web page that meant nothing here).
    */
-  private static func usageMenu(_ reading: AccountMenu.Reading) -> NSMenu {
+  private static func usageMenu(_ reading: AccountMenu.Reading, settings: SettingsState) -> NSMenu {
     let menu = NSMenu(title: AccountMenu.weeklyUsage)
     menu.autoenablesItems = false
     menu.minimumWidth = 228
@@ -162,7 +163,7 @@ enum AccountActions {
       menu.addItem(figure(title: AccountMenu.onDemand, subtitle: AccountMenu.spendThisCycle, value: spend))
       menu.addItem(.separator())
     }
-    menu.addItem(BlockMenuItem(AccountMenu.changeLimit) { NSWorkspace.shared.open(AccountMenu.changeLimitURL) })
+    menu.addItem(BlockMenuItem(String(localized: "Usage & Billing")) { settings.open(.usage) })
     return menu
   }
 
