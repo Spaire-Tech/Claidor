@@ -71,13 +71,14 @@ struct MacNewAgentSheet: View {
       }
       .padding(.horizontal, 32)
       .padding(.top, 8)
+      // White on the blue; with no name yet, grey words on the grey (the iPhone's): white on the light grey could not be read (the founder, 28 October 2026).
       Button(action: create) {
         HStack(spacing: 8) {
           if busy { ProgressView().controlSize(.small).tint(.white) }
           Text("Create")
         }
         .font(.system(size: 14, weight: .semibold))
-        .foregroundStyle(Color.white)
+        .foregroundStyle(trimmed.isEmpty ? look.inkSecondary : Color.white)
         .frame(maxWidth: .infinity)
         .frame(height: 36)
       }
@@ -86,7 +87,8 @@ struct MacNewAgentSheet: View {
       .tint(look.yours)
       .keyboardShortcut(.defaultAction)
       .handCursor()
-      .disabled(trimmed.isEmpty || busy)
+      // Not greyed while it makes the agent: the blue stays under the spinner (`create` ignores a second press).
+      .disabled(trimmed.isEmpty)
       .padding(.horizontal, 32)
       .padding(.top, 28)
       .padding(.bottom, 24)
