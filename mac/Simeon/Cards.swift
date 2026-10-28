@@ -259,6 +259,7 @@ struct DraftCardView: View {
   let look: Look
   @Environment(AppStore.self) private var store
   @State private var to = ""
+  @State private var cc = ""
   @State private var subject = ""
   @State private var words = ""
   @State private var started = false
@@ -277,7 +278,7 @@ struct DraftCardView: View {
           if card.kind == .slack, let logo = NSImage(named: "Connectors/slack") ?? NSImage(named: "Brands/slack") {
             Image(nsImage: logo).resizable().interpolation(.high).frame(width: 20, height: 20)
           }
-          Text(card.kind == .email ? "New email" : "Slack message")
+          Text(card.kind == .email ? (card.isReply ? "Reply" : "New email") : "Slack message")
             .font(.system(size: 14, weight: .medium))
             .tracking(-0.15)
             .foregroundStyle(look.ink)
@@ -291,6 +292,8 @@ struct DraftCardView: View {
         if card.kind == .email {
           field(String(localized: "From")) { value(card.from) }
           field(String(localized: "To")) { input($to, placeholder: String(localized: "name@example.com")) }
+          // Cc, always there to add to (28 October 2026: a reply's Cc was on the card and nobody could see it).
+          field(String(localized: "Cc")) { input($cc, placeholder: "") }
           field(String(localized: "Subject")) { input($subject, placeholder: String(localized: "Subject")) }
         } else {
           field(String(localized: "Workspace")) { value(card.workspace) }
@@ -316,6 +319,22 @@ struct DraftCardView: View {
             }
           }
           .accessibilityLabel("Message")
+        // The files that go with it, by name.
+        ForEach(Array(card.attachmentNames.enumerated()), id: \.offset) { _, name in
+          Rectangle().fill(look.ink.opacity(0.1)).frame(height: 1)
+          HStack(spacing: 8) {
+            Image(systemName: "paperclip").font(.system(size: 12)).foregroundStyle(look.inkTertiary)
+            Text(verbatim: name)
+              .font(.system(size: 13))
+              .tracking(-0.15)
+              .foregroundStyle(look.inkSecondary)
+              .lineLimit(1)
+              .truncationMode(.middle)
+          }
+          .padding(.vertical, 8)
+          .padding(.horizontal, 10)
+          .frame(maxWidth: .infinity, alignment: .leading)
+        }
       }
       .background(look.ground, in: RoundedRectangle(cornerRadius: 10))
       .clipShape(RoundedRectangle(cornerRadius: 10))
@@ -332,6 +351,7 @@ struct DraftCardView: View {
       guard !started else { return }
       started = true
       to = card.to.joined(separator: ", ")
+      cc = card.cc.joined(separator: ", ")
       subject = card.subject
       words = card.body
     }
@@ -375,10 +395,10 @@ struct DraftCardView: View {
   private func send() {
     var draft: [String: JSON] = ["body": .string(words)]
     if card.kind == .email {
-      let people = to.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+      let people: (String) -> [String] = { text in text.split(whereSeparator: { $0 == "," || $0 == ";" }).map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty } }
       draft["from"] = .string(card.from)
-      draft["to"] = .array(people.map { .string($0) })
-      draft["cc"] = .array(card.cc.map { .string($0) })
+      draft["to"] = .array(people(to).map { .string($0) })
+      draft["cc"] = .array(people(cc).map { .string($0) })
       draft["subject"] = .string(subject)
     } else {
       draft["workspace"] = .string(card.workspace)

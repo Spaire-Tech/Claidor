@@ -39,6 +39,7 @@ import {
   uninstallClearedInstallRecord,
 } from "../../../shared/mcp.js";
 import type { CapableBox } from "../../box/box-capabilities.js";
+import { createContext } from "../../../packages/context/core.js";
 import { createSandMcpStateExecutor } from "../../ports/mcp-state-executor.js";
 import { createBoxSandMcpExec } from "./box-mcp-exec.js";
 import { join } from "node:path";
@@ -300,7 +301,13 @@ export class McpHostService {
     const shopWallet = createShopTools({ client: createShopClient({ rootDir: getSandRootDir, log: deps.log }), rootDir: getSandRootDir, fillCheckout, linkConnected: () => linkWallet.isConnected(), linkAddresses: () => linkWallet.deliveryAddresses(), log: deps.log });
     // Started sign-ins survive a host restart (`pending-sign-ins-file.ts`).
     persistPendingSignInsAt(join(getSandRootDir(), "mcp-pending-sign-ins.json"));
-    const backendMcpExec = createVendorMcpBackendExec({ rootDir: getSandRootDir, fallback: accountBackendMcpExec, canStartAuth: true, linkWallet, shopWallet, clientMetadataUrl: hostedMcpOAuthClientUrl(), getServerAccessToken: serverAccessToken, log: deps.log });
+    // A file an app tool takes (an email's attachment) is read from the agent's own box (`vendor-mcp/app-files.ts`).
+    const agentBox = deps.foreverBox.box as CapableBox & { downloadFile?(ctx: unknown, agentId: string, path: string): Promise<Uint8Array> };
+    const readAgentFile = async (agentId: string | undefined, path: string): Promise<Uint8Array> => {
+      if (agentId == null || typeof agentBox.downloadFile !== "function") throw new Error("no agent computer to read it from");
+      return await agentBox.downloadFile(createContext().withName("appsAttachment"), agentId, path);
+    };
+    const backendMcpExec = createVendorMcpBackendExec({ rootDir: getSandRootDir, fallback: accountBackendMcpExec, canStartAuth: true, linkWallet, shopWallet, clientMetadataUrl: hostedMcpOAuthClientUrl(), getServerAccessToken: serverAccessToken, readAgentFile, log: deps.log });
     this.backendMcpExec = backendMcpExec;
     this.accountBackendMcpExec = accountBackendMcpExec;
     this.hostMcp = createHostMcp({

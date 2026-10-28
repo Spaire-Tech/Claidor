@@ -101,6 +101,6 @@ test("the pinned renderer carries every draft anchor once, and the patched files
 test("the box looks the card up in its own agent's transcript before Send and Discard", async () => {
   const source = await readFile(path.join(repoRoot, "source/host/extensions/transcript/draft-cards.ts"), "utf8");
   const send = source.slice(source.indexOf("async sendDraft("), source.indexOf("async discardDraft("));
-  const discard = source.slice(source.indexOf("async discardDraft("), source.indexOf("markDraftDelivered("));
-  for (const body of [send, discard]) assert.ok(body.indexOf("ensureActionTarget") >= 0 && body.indexOf("ensureActionTarget") < body.indexOf("this.find("));
+  const discard = source.slice(source.indexOf("async discardDraft("), source.indexOf("async markDraftDelivered("));
+  for (const body of [send, discard]) assert.ok(body.indexOf("ensureActionTarget") >= 0 && body.indexOf("ensureActionTarget") < body.indexOf("this.read("));
 });

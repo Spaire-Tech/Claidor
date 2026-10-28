@@ -523,6 +523,20 @@ final class ChatTests: XCTestCase {
     XCTAssertEqual(rows.count, 2)
   }
 
+  func testAnEmailReplyCardKnowsItIsAReplyAndNamesItsFiles() {
+    let entries = [
+      Entry(["kind": "send-message", "id": "r", "message": ["type": "email-draft", "draft": ["to": ["sam@example.com"], "cc": ["startups@example.com"], "subject": "Re: Your application", "body": "Hello", "via": "outlook", "replyTo": ["messageId": "AAMk"], "attachments": ["/home/user/attachments/Certificate.pdf"]]]])!,
+      Entry(["kind": "send-message", "id": "n", "message": ["type": "email-draft", "draft": ["to": ["sam@example.com"], "subject": "Friday", "body": "Hi"]]])!,
+    ]
+    let rows = Chat.rows(entries)
+    guard case .draft(_, let reply) = rows[0], case .draft(_, let fresh) = rows[1] else { return XCTFail() }
+    XCTAssertTrue(reply.isReply)
+    XCTAssertEqual(reply.cc, ["startups@example.com"])
+    XCTAssertEqual(reply.attachmentNames, ["Certificate.pdf"])
+    XCTAssertFalse(fresh.isReply)
+    XCTAssertEqual(fresh.attachments, [])
+  }
+
   func testEveryCardTheMacDraws() {
     let rows = Chat.rows(DemoData.seed(now: now, gallery: true).transcripts["cards"]!)
     let kinds = rows.compactMap { row -> String? in

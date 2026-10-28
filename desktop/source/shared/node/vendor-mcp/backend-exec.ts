@@ -44,6 +44,7 @@ import {
   takeVendorMcpPendingAuth,
 } from "./oauth.js";
 import { VendorMcpAuthRequiredError, forgetVendorMcpSession, vendorMcpCallTool, vendorMcpListTools } from "./http-mcp-client.js";
+import { APP_FILE_MAX_BYTES, appFileMimeType, appFileName, carriesPath, withAppFiles } from "./app-files.js";
 
 export interface VendorMcpListedServer {
   readonly serverIdentifier: string;
@@ -118,6 +119,12 @@ export interface VendorMcpBackendExecOptions {
    * no clients but reads such documents (`oauth.ts`).
    */
   readonly clientMetadataUrl?: string;
+  /**
+   * Reads a file on an agent's computer, for an app tool that takes a file
+   * (an email's attachment, `app-files.ts`): the path the agent gave, in that
+   * agent's box. Only the box has it; elsewhere such a call is refused.
+   */
+  readonly readAgentFile?: (agentId: string | undefined, path: string) => Promise<Uint8Array>;
 }
 
 /** The credential row Link carries once connected: a marker, never a token (the CLI keeps its own sign-in on the data volume). */
@@ -241,6 +248,39 @@ export function createVendorMcpBackendExec(options: VendorMcpBackendExecOptions)
   const installForUrl = (serverUrl: string): VendorMcpInstall | undefined =>
     loadVendorMcpInstalls(options.rootDir()).find((item) => item.url === serverUrl.trim() && vendorMcpConnectorById(item.id) != null);
 
+  // An app tool's input schema from its latest listing, for the fields it marks as a file.
+  const appToolSchemas = new Map<string, unknown>();
+  const noteAppTools = (install: VendorMcpInstall, tools: readonly { readonly name: string; readonly inputSchema?: unknown }[]): void => {
+    for (const tool of tools) appToolSchemas.set(`${install.id}:${tool.name}`, tool.inputSchema);
+  };
+  const appToolSchema = async (install: VendorMcpInstall, token: string, toolName: string): Promise<unknown> => {
+    const key = `${install.id}:${toolName}`;
+    if (!appToolSchemas.has(key)) {
+      try { noteAppTools(install, await vendorMcpListTools({ url: install.url, accessToken: token, fetch: fetchImpl })); } catch (error) { log(`apps tools for ${install.id} not read for files: ${errorLabel(error)}`); }
+    }
+    return appToolSchemas.get(key);
+  };
+  // One file on the agent's computer, uploaded through our server; what comes back is the provider's own reference to it.
+  const uploadAppFile = async (install: VendorMcpInstall, token: string, toolName: string, agentId: string | undefined, path: string): Promise<unknown> => {
+    const name = appFileName(path);
+    if (!path.startsWith("/")) throw new Error(`"${path}" is not the absolute path of a file on the computer.`);
+    if (options.readAgentFile == null) throw new Error(`${name} can only be attached from Simeon's computer.`);
+    let bytes: Uint8Array;
+    try { bytes = await options.readAgentFile(agentId, path); } catch (error) { throw new Error(`${path} could not be read on the computer (${errorLabel(error)}).`); }
+    if (bytes.byteLength === 0) throw new Error(`${name} is empty.`);
+    if (bytes.byteLength > APP_FILE_MAX_BYTES) throw new Error(`${name} is ${Math.ceil(bytes.byteLength / (1024 * 1024))} MB; a file sent this way can be at most 25 MB.`);
+    const mimetype = appFileMimeType(name);
+    const query = new URLSearchParams({ tool: toolName, name, mimetype }).toString();
+    const response = await fetchImpl(`${appsRouteUrl(install.url, "/files")}?${query}`, { method: "POST", headers: { authorization: `Bearer ${token}`, "content-type": "application/octet-stream", accept: "application/json" }, body: Buffer.from(bytes) });
+    const body = await response.json().catch(() => ({})) as { name?: unknown; mimetype?: unknown; s3key?: unknown; error?: { message?: unknown } };
+    if (!response.ok || typeof body.s3key !== "string" || body.s3key.length === 0) {
+      const reason = typeof body.error?.message === "string" ? body.error.message : `answered ${response.status}`;
+      log(`apps file for ${install.id} ${toolName} refused: ${reason}`);
+      throw new Error(`${name} could not be attached: ${reason}`);
+    }
+    return { name: typeof body.name === "string" ? body.name : name, mimetype: typeof body.mimetype === "string" ? body.mimetype : mimetype, s3key: body.s3key };
+  };
+
   // A credential that is fresh, or refreshed here when this side holds its
   // refresh token (it finished the sign-in). A copy from the other side has
   // none: expired, it reads as needsAuth until the owner refreshes and the
@@ -294,7 +334,7 @@ export function createVendorMcpBackendExec(options: VendorMcpBackendExecOptions)
     }
     try {
       const tools = await vendorMcpListTools({ url: install.url, accessToken: credential.accessToken, fetch: fetchImpl });
-      if (isApp(install)) markApp(install, true);
+      if (isApp(install)) { markApp(install, true); noteAppTools(install, tools); }
       return {
         ...base,
         status: "connected",
@@ -420,8 +460,17 @@ export function createVendorMcpBackendExec(options: VendorMcpBackendExecOptions)
           return errorResult(`"${args.toolName}" on ${boxName(install)} failed: ${errorLabel(error)}`);
         }
       }
+      let callArguments: unknown = plain;
+      if (isApp(install) && carriesPath(plain)) {
+        try {
+          const schema = await appToolSchema(install, credential.accessToken, args.toolName);
+          callArguments = await withAppFiles(schema, plain, (path) => uploadAppFile(install, credential.accessToken, args.toolName, args.agentId, path));
+        } catch (error) {
+          return errorResult(`"${args.toolName}" was not called: ${errorLabel(error)}`);
+        }
+      }
       try {
-        const result = await vendorMcpCallTool({ url: install.url, accessToken: credential.accessToken, fetch: fetchImpl, name: args.toolName, arguments: plain });
+        const result = await vendorMcpCallTool({ url: install.url, accessToken: credential.accessToken, fetch: fetchImpl, name: args.toolName, arguments: callArguments });
         return new McpResult({
           result: {
             case: "success",

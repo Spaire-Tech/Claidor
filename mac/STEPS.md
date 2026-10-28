@@ -2659,3 +2659,14 @@ above). In a group, the member at work (else the first) at 22, as the
 iPhone's group line.
 
 Not yet built or run on a Mac (Linux here: the file parses).
+
+### An email's Cc and files (28 October 2026)
+
+The founder: "im very mad at the experience of sending emails." A reply's Cc
+was on the card and could not be seen or changed. The email card has a Cc
+row under To, always there to add to, and Send sends it; the files the agent
+attaches are listed by name, with a paperclip, under the words; a reply is
+titled Reply. Sending itself changed on the computer
+(`docs/services-agents.md`, "Sending an email").
+
+Not yet built or run on a Mac (Linux here: the file parses).

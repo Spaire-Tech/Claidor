@@ -36,6 +36,10 @@ public struct DraftCard: Hashable, Sendable {
   public let workspace: String
   public let target: String
   public let thread: String
+  /** Files attached on Send: paths on the computer (`attachments`). */
+  public let attachments: [String]
+  /** It answers an email the person received (`replyTo`): the card says Reply. */
+  public let isReply: Bool
   /** `editable`, `sending` or `sent` (`draftSendState`). */
   public let state: String
   public let isDismissed: Bool
@@ -52,8 +56,15 @@ public struct DraftCard: Hashable, Sendable {
     workspace = draft["workspace"]?.string ?? ""
     target = draft["target"]?.string ?? ""
     thread = draft["thread"]?.string ?? ""
+    attachments = list(draft["attachments"])
+    isReply = !(draft["replyTo"]?.object?.isEmpty ?? true)
     state = entry["draftSendState"]?.string ?? "editable"
     isDismissed = entry["widgetDismissed"]?.bool ?? false
+  }
+
+  /** The attached files' own names, the last part of each path. */
+  public var attachmentNames: [String] {
+    attachments.map { path in path.split(separator: "/").last.map(String.init) ?? path }
   }
 
   /** What the card says beside its title ("Ready to send", "Sending…", "Sent", "Discarded"). */

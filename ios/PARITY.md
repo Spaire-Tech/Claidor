@@ -168,7 +168,8 @@ Every card uses the Messages grey `#e9e9eb` (light), with no border. Buttons use
 3. **Flights**: see §1. Each flight's sheet ends with "Book with Simeon" (13 October 2026, docs/services-agents.md §10a): the traveller form in the chat, then the flight's checkout card.
 4. **Email and Slack drafts** (`email-draft`, `slack-draft`; `view-ClhdNXKM.js`, `view-DyaeCHiE.js`)
    - Email: "New email" with a status pill. From is read-only; To, Subject and Body can be edited. A long body shows "Show more".
-   - Send email (enabled only when the addresses are valid) sends `sendDraft {agentId, entryId, draft}`. Discard sends `discardDraft`.
+   - Send email (enabled only when the addresses are valid) sends `sendDraft {agentId, entryId, draft}` with To, Cc, the subject and the words. Discard sends `discardDraft`.
+   - Cc is a row of its own, always there to add to. A reply (`replyTo`) is titled Reply; attached files are listed by name under the words (28 October 2026).
    - States: "Ready to send", "Sending…", then "Sent to … — "subject"".
    - The Slack card has the same states, with only the body editable.
    - **The phone drops these cards: a draft never appears.**

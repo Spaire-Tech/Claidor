@@ -2378,7 +2378,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
               return {
                 dependencies: {
                   emitDraftCard: (message, timestampMs) => post(message as unknown as Record<string, unknown>, timestampMs),
-                  markDraftDelivered: (entryId, outcome) => method(extensions.api("transcript"), "markDraftDelivered")?.({ entryId, outcome }) != null,
+                  markDraftDelivered: async (entryId, outcome) => (await method(extensions.api("transcript"), "markDraftDelivered")?.({ entryId, outcome, agentId: session.id })) != null,
                   sayInChat: (content, timestampMs) => { post({ type: "text", content }, timestampMs); },
                 },
               };

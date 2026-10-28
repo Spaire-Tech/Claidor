@@ -9,6 +9,11 @@
  * tool that emits it did not. `MarkDraftDelivered` is the other half: the
  * Send wake (host/extensions/transcript/draft-cards.ts) asks the agent to
  * deliver by whatever route the person has, then report.
+ *
+ * 28 October 2026: an email names the mailbox it goes out from (`via`), the
+ * conversation it answers (`reply_to`) and the files it carries
+ * (`attachments`), so Send can make one exact call (`emailSendCalls` in
+ * draft-cards.ts) instead of the agent rebuilding the email.
  */
 import { z } from "zod";
 import { defineCommunicateTool } from "./communicate-tool.js";
@@ -24,7 +29,13 @@ export const draftExternalMessageParameters = z.object({
   target: z.string().trim().optional().describe('Slack: the channel or person, as the user names it ("#eng", "@sam"). Required for Slack. Never guess a conversation id.'),
   workspace: z.string().trim().optional().describe("Slack: the workspace name when the user has more than one."),
   thread: z.string().trim().optional().describe("Slack: the thread to reply in, when replying in one."),
-  body: z.string().trim().min(1).describe("The message itself, exactly as it should be sent. Plain text. The user edits it on the card before sending."),
+  via: z.enum(["gmail", "outlook"]).optional().describe('Email: the connected mailbox it goes out from, "gmail" or "outlook". Set it whenever the user has one connected; for a reply, the mailbox the message came in to.'),
+  reply_to: z.object({
+    thread_id: z.string().trim().min(1).optional().describe("Gmail: the thread id of the conversation being answered (a thread id, not a message id)."),
+    message_id: z.string().trim().min(1).optional().describe("Outlook: the id of the message being answered, as Outlook's tools return it."),
+  }).optional().describe("Email: when it answers an email the user received, the conversation it answers, from the mailbox tools you read it with. It then goes out as a reply in that conversation. Put on To and Cc everyone who should get the reply."),
+  attachments: z.array(z.string().trim().min(1)).optional().describe("Email: files to attach, each the absolute path of a file on the computer (a file the user sent in this chat is there too). Shown on the card and attached on Send."),
+  body: z.string().trim().min(1).describe("The message itself, exactly as it should be sent. Plain text, with a blank line between paragraphs. The user edits it on the card before sending."),
 });
 
 export const markDraftDeliveredParameters = z.object({
@@ -34,13 +45,13 @@ export const markDraftDeliveredParameters = z.object({
 });
 
 export type DraftCardMessage =
-  | { readonly type: "email-draft"; readonly draft: { readonly from?: string; readonly to: readonly string[]; readonly cc?: readonly string[]; readonly subject: string; readonly body: string } }
+  | { readonly type: "email-draft"; readonly draft: { readonly from?: string; readonly to: readonly string[]; readonly cc?: readonly string[]; readonly subject: string; readonly body: string; readonly via?: "gmail" | "outlook"; readonly replyTo?: { readonly threadId?: string; readonly messageId?: string }; readonly attachments?: readonly string[] } }
   | { readonly type: "slack-draft"; readonly draft: { readonly workspace?: string; readonly target: string; readonly thread?: string; readonly body: string } };
 
 export interface DraftToolDependencies {
   /** Appends the card to the transcript; returns the entry id when the transport reports one. */
   emitDraftCard(message: DraftCardMessage, timestampMs: number): string | undefined;
-  markDraftDelivered(entryId: string, outcome: "sent" | "failed"): boolean;
+  markDraftDelivered(entryId: string, outcome: "sent" | "failed"): boolean | Promise<boolean>;
   /** Tells the user, in chat, why a Send failed (a plain text SendMessage). */
   sayInChat(content: string, timestampMs: number): void;
   now?: () => number;
@@ -53,7 +64,29 @@ export function draftCardMessageFromArgs(args: z.infer<typeof draftExternalMessa
     if (args.subject == null || args.subject.length === 0) return "An email draft needs a `subject`.";
     const bad = to.concat(args.cc ?? []).find((value) => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value));
     if (bad != null) return `"${bad}" is not an email address. Use real addresses; ask the user if you do not have one.`;
-    return { type: "email-draft", draft: { ...(args.from == null || args.from.length === 0 ? {} : { from: args.from }), to, ...(args.cc == null || args.cc.length === 0 ? {} : { cc: args.cc }), subject: args.subject, body: args.body } };
+    const threadId = args.reply_to?.thread_id ?? "";
+    const messageId = args.reply_to?.message_id ?? "";
+    const replying = threadId.length > 0 || messageId.length > 0;
+    if (replying && args.via == null) return "A reply needs `via`: the mailbox the message came in to.";
+    if (replying && args.via === "gmail" && threadId.length === 0) return "A Gmail reply needs `reply_to.thread_id` (the thread id, not a message id).";
+    if (replying && args.via === "outlook" && messageId.length === 0) return "An Outlook reply needs `reply_to.message_id`.";
+    const files = (args.attachments ?? []).map((value) => value.trim()).filter((value) => value.length > 0);
+    const relative = files.find((value) => !value.startsWith("/"));
+    if (relative != null) return `"${relative}" is not the absolute path of a file on the computer.`;
+    const replyTo = args.via === "gmail" ? (threadId.length > 0 ? { threadId } : undefined) : args.via === "outlook" ? (messageId.length > 0 ? { messageId } : undefined) : undefined;
+    return {
+      type: "email-draft",
+      draft: {
+        ...(args.from == null || args.from.length === 0 ? {} : { from: args.from }),
+        to,
+        ...(args.cc == null || args.cc.length === 0 ? {} : { cc: args.cc }),
+        subject: args.subject,
+        body: args.body,
+        ...(args.via == null ? {} : { via: args.via }),
+        ...(replyTo == null ? {} : { replyTo }),
+        ...(files.length === 0 ? {} : { attachments: files }),
+      },
+    };
   }
   if (args.target == null || args.target.length === 0) return "A Slack draft needs a `target` (the channel or person, as the user names it).";
   return { type: "slack-draft", draft: { ...(args.workspace == null || args.workspace.length === 0 ? {} : { workspace: args.workspace }), target: args.target, ...(args.thread == null || args.thread.length === 0 ? {} : { thread: args.thread }), body: args.body } };
@@ -84,7 +117,7 @@ export function createMarkDraftDeliveredTool(deps: DraftToolDependencies) {
     description: "After the user pressed Send on a draft card and you delivered it (or could not), report the outcome so the card shows Sent or goes back to editable. Call it exactly once per Send.",
     parameters: markDraftDeliveredParameters,
     execute: async (_ctx, args: z.infer<typeof markDraftDeliveredParameters>, resolved) => {
-      const stamped = resolved.markDraftDelivered(args.entry_id, args.outcome);
+      const stamped = await resolved.markDraftDelivered(args.entry_id, args.outcome);
       if (!stamped) return `No draft card with entry id "${args.entry_id}".`;
       if (args.outcome === "failed") {
         const detail = args.detail == null || args.detail.length === 0 ? "It could not be sent." : args.detail;

@@ -1357,6 +1357,48 @@ editable).
   read `/tmp/sand-host.log` for `tool=CallMcpTool` and `tool=MarkDraftDelivered`.
 * **Not yet verified.** Not run on a Mac.
 
+#### Sending an email (28 October 2026)
+
+A reply with a company document attached went to the wrong people, read
+"The draft didn't send", and arrived as one block of text. Each cause and what changed:
+
+* **"Didn't send".** `sendDraft` waited for the agent's whole delivery turn before answering,
+  and the apps give a command 60 s (`Gateway.swift`): the server logged `POST 499 …/sendDraft
+  responseTimeMS=60420` while Outlook was still answering. Send now answers at once with the
+  card `sending`; the agent's turn runs on its own, and the card follows to `sent` or back to
+  editable through the transcript. A turn that ends without `MarkDraftDelivered` hands the card
+  back (`[drafts] … handed back` in the host log), so it never stays on "Sending". The card is
+  read and written in its own agent's chat, so opening another chat meanwhile no longer leaves
+  it stuck.
+* **The wrong people.** The card had no conversation to answer and the iPhone card showed no
+  Cc, so the agent rebuilt the email and chose Outlook's reply tool, which answers the sender
+  only. `DraftExternalMessage` now takes `via` (the mailbox, `gmail` or `outlook`), `reply_to`
+  (Gmail's thread id, Outlook's message id) and `attachments` (paths on the computer). For a
+  card that names its mailbox, Send writes the one call to make (`emailSendCalls` in
+  `draft-cards.ts`) with the card's recipients: Gmail's `GMAIL_REPLY_TO_THREAD` or
+  `GMAIL_SEND_EMAIL`; Outlook's `OUTLOOK_REPLY_EMAIL` with the rest of To and the Cc copied, or
+  `OUTLOOK_SEND_EMAIL` when the person changed who it goes to. The agent makes that call and may
+  correct only an argument's name, never the recipients, the words or the files. The iPhone and
+  Mac cards show and send Cc, show the files, and say Reply for a reply.
+* **No paragraphs.** Plain text sent into an HTML reply runs its lines together. The body now
+  goes as HTML with `is_html` on, a `<div>` per line and an empty one per blank line
+  (`emailBodyHtml`).
+* **The attachment.** A tool that takes a file wants the provider's own reference to one it
+  holds (`{name, mimetype, s3key}`), which the agent could never write, so no file could be
+  attached. The server lists such a field as the path of a file on the computer
+  (`files_as_paths` in `server/simeon/desktop/apps.py`). Before the call the box reads that
+  file from the agent's computer, sends it to `POST /desktop/api/apps/{toolkit}/files`, which
+  uploads it to the provider, and calls with the reference that comes back
+  (`shared/node/vendor-mcp/app-files.ts`, `backend-exec.ts`). Up to 25 MB. This serves every
+  app tool that takes a file, not only email.
+
+**What to read when an email misbehaves.** On Render: `desktop.apps.tool_called` and
+`desktop.apps.tool_failed` (which tool ran and the app's refusal, never the arguments), and
+`desktop.apps.file_uploaded`, `file_refused` or `file_unreachable` for an attachment. In the
+host log: `[drafts]` lines and `apps file for … refused`. **Not yet verified:** no email has
+been sent through this path from an iPhone or a Mac; the tools' argument names are from the
+provider's reference (read 28 October 2026), not from a live call.
+
 ### Files and lists in the chat
 
 **For the person** (24 October 2026). A file the agent sends shows its name as a title
