@@ -1085,9 +1085,12 @@ private struct PullDownToClose: ViewModifier {
 
 /**
  * Search, with everything the Mac's search has (its palette, `QFn`), drawn
- * as Messages draws its own: tabs along the top (All, Messages, Agents,
- * Groups, Files, Links, Routines, Actions, the Mac's order), then results
- * in sections, the matched letters in bold.
+ * as the Mac draws it and as the founder's reference has it (28 October
+ * 2026): tabs along the top (All, Messages, Agents, Groups, Files, Links,
+ * Routines, Actions, the Mac's order), the chosen one black; then one list,
+ * no headers or lines between rows, each row its picture (40), its name
+ * with the matched letters in bold and its title after a dot, and at the
+ * right, on All, what it is ("Agent", "Group", "Action"…).
  *
  * - Agents and groups by name and title, the pinned first; hidden ones too
  *   once something is typed, tagged Hidden.
@@ -1138,7 +1141,7 @@ struct SearchResults: View {
           ForEach(tabs, id: \.self) { item in
             Button { withAnimation(.snappy(duration: 0.2)) { tab = item } } label: {
               Text(item.title)
-                .font(.system(size: 15, weight: tab == item ? .semibold : .regular))
+                .font(.system(size: 15))
                 .foregroundStyle(tab == item ? Ink.ground : Ink.primary)
                 .padding(.horizontal, 14)
                 .frame(height: 34)
@@ -1233,6 +1236,46 @@ struct SearchResults: View {
 
   // MARK: Drawn
 
+  /** One result of the one list: what it is, with its score for the words (0: the computer found it). */
+  private enum Hit {
+    case chat(Found<Agent>)
+    case message(Found<MessageHit>)
+    case file(Found<FileHit>)
+    case link(Found<LinkHit>)
+    case routine(Found<RoutineHit>)
+    case action(Found<SearchAction>)
+
+    var score: Int {
+      switch self {
+      case .chat(let found): return found.score
+      case .message(let found): return found.score
+      case .file(let found): return found.score
+      case .link(let found): return found.score
+      case .routine(let found): return found.score
+      case .action(let found): return found.score
+      }
+    }
+  }
+
+  /**
+   * The results in one list, in the Mac's order (`Jump.results`): with
+   * nothing typed, All is the agents, the groups and the actions, and a tab
+   * all it has; with words, the best first, then what the computer found,
+   * then the hidden agents.
+   */
+  private func listed(chats: [Found<Agent>], messages: [Found<MessageHit>], files: [Found<FileHit>], links: [Found<LinkHit>], routines: [Found<RoutineHit>], actions: [Found<SearchAction>]) -> [Hit] {
+    let shown = chats.filter { !$0.item.isHidden }.map(Hit.chat)
+    let hidden = chats.filter(\.item.isHidden).map(Hit.chat)
+    guard !words.isEmpty else {
+      return shown + files.map(Hit.file) + links.map(Hit.link) + routines.map(Hit.routine) + actions.map(Hit.action) + hidden
+    }
+    let ranked = (shown + actions.map(Hit.action) + links.map(Hit.link) + routines.map(Hit.routine))
+      .enumerated()
+      .sorted { $0.element.score != $1.element.score ? $0.element.score > $1.element.score : $0.offset < $1.offset }
+      .map(\.element)
+    return ranked + messages.map(Hit.message) + files.map(Hit.file) + hidden
+  }
+
   @ViewBuilder
   private var results: some View {
     let agents = tab == .all || tab == .agents ? chats(groups: false) : []
@@ -1245,7 +1288,8 @@ struct SearchResults: View {
     let linkRows = indexed && (tab == .links || (tab == .all && !words.isEmpty)) ? foundLinks : []
     let routineRows = indexed && (tab == .routines || (tab == .all && !words.isEmpty)) ? foundRoutines : []
     let actionRows = tab == .all || tab == .actions ? foundActions : []
-    let nothing = agents.isEmpty && groups.isEmpty && messageRows.isEmpty && fileRows.isEmpty && linkRows.isEmpty && routineRows.isEmpty && actionRows.isEmpty
+    let hits = listed(chats: agents + groups, messages: messageRows, files: fileRows, links: linkRows, routines: routineRows, actions: actionRows)
+    let nothing = hits.isEmpty
     let waiting = loading && ((tab == .messages && !words.isEmpty) || tab == .files) && messageRows.isEmpty && fileRows.isEmpty
 
     if waiting || (failed && nothing && (tab == .messages || tab == .files)) || nothing {
@@ -1270,13 +1314,12 @@ struct SearchResults: View {
       #endif
     } else {
       List {
-        section(.agents, agents, limit: words.isEmpty ? 6 : 4) { found in chatRow(found) }
-        section(.groups, groups, limit: 3) { found in chatRow(found) }
-        section(.messages, messageRows, limit: 4) { found in messageRow(found) }
-        section(.files, fileRows, limit: 3) { found in fileRow(found) }
-        section(.links, linkRows, limit: 3) { found in linkRow(found) }
-        section(.routines, routineRows, limit: 3) { found in routineRow(found) }
-        section(.actions, actionRows, limit: words.isEmpty ? 3 : 4) { found in actionRow(found) }
+        ForEach(Array(hits.enumerated()), id: \.offset) { _, hit in
+          row(hit)
+            .listRowInsets(EdgeInsets(top: 0, leading: 18, bottom: 0, trailing: 20))
+            .listRowSeparator(.hidden)
+            .listRowBackground(Ink.listGround)
+        }
       }
       .listStyle(.plain)
       .scrollContentBackground(.hidden)
@@ -1287,35 +1330,29 @@ struct SearchResults: View {
     }
   }
 
-  /** On All, a few of each with See All (to that tab), as Messages' search; on a tab, all of them. */
   @ViewBuilder
-  private func section<Item, Row: View>(_ kind: SearchTab, _ found: [Found<Item>], limit: Int, @ViewBuilder row: @escaping (Found<Item>) -> Row) -> some View {
-    if !found.isEmpty {
-      let shown = tab == .all ? Array(found.prefix(limit)) : found
-      Section {
-        ForEach(Array(shown.enumerated()), id: \.offset) { _, item in row(item) }
-      } header: {
-        if tab == .all {
-          HStack {
-            Text(kind.title).font(.system(size: 20, weight: .bold)).foregroundStyle(Ink.primary)
-            Spacer()
-            if found.count > limit {
-              Button("See All") { withAnimation(.snappy(duration: 0.2)) { tab = kind } }
-                .font(.system(size: 15))
-                .foregroundStyle(Ink.link)
-            }
-          }
-          .textCase(nil)
-        }
-      }
-      .listRowBackground(Ink.listGround)
+  private func row(_ hit: Hit) -> some View {
+    switch hit {
+    case .chat(let found): chatRow(found)
+    case .message(let found): messageRow(found)
+    case .file(let found): fileRow(found)
+    case .link(let found): linkRow(found)
+    case .routine(let found): routineRow(found)
+    case .action(let found): actionRow(found)
     }
   }
 
+  /** What a row is, at its right on All (the Mac's words, `Jump.Row.kind`). */
+  private func kind(_ word: String) -> String? { tab == .all ? word : nil }
+
   private func chatRow(_ found: Found<Agent>) -> some View {
     let agent = found.item
-    let line = agent.isGroup ? store.members(of: agent).map(\.name).joined(separator: ", ") : agent.shownDescription
-    return SearchRow(title: SearchText.bold(agent.name, found.hits), subtitle: line.isEmpty ? nil : line, tag: agent.isHidden ? "Hidden" : (agent.isGroup ? nil : (agent.title.isEmpty ? nil : agent.shownTitle))) {
+    let name = SearchText.bold(agent.name, found.hits)
+    // The title after the name and a dot, in the same ink (the reference's "Chief of Staff · Fleet & decisions").
+    let title = agent.isGroup || agent.title.isEmpty ? name : Text("\(name)\(Text(verbatim: " · \(agent.shownTitle)"))")
+    let members = agent.isGroup ? store.members(of: agent).map(\.name).joined(separator: ", ") : ""
+    let what = agent.isHidden ? String(localized: "Hidden") : kind(agent.isGroup ? L10n.text("Group") : L10n.text("Agent"))
+    return SearchRow(title: title, subtitle: members.isEmpty ? nil : members, trailing: what) {
       AgentAvatar(agent: agent, members: store.members(of: agent))
     } action: { openChat(agent.id) }
   }
@@ -1323,14 +1360,14 @@ struct SearchResults: View {
   private func messageRow(_ found: Found<MessageHit>) -> some View {
     let hit = found.item
     let chat = store.agent(hit.agentId)
-    return SearchRow(title: SearchText.bold(hit.snippet, found.hits), subtitle: Search.messageLine(hit, chat: chat), titleLines: 2) {
+    return SearchRow(title: SearchText.bold(hit.snippet, found.hits), subtitle: Search.messageLine(hit, chat: chat), trailing: kind(L10n.text("Message")), titleLines: 2) {
       if let chat { AgentAvatar(agent: chat, members: store.members(of: chat)) } else { SearchTile(symbol: "bubble.left") }
     } action: { openEntry(hit.agentId, hit.entryId) }
   }
 
   private func fileRow(_ found: Found<FileHit>) -> some View {
     let hit = found.item
-    return SearchRow(title: SearchText.bold(hit.fileName, found.hits), subtitle: Search.fileLine(hit, chat: store.agent(hit.agentId))) {
+    return SearchRow(title: SearchText.bold(hit.fileName, found.hits), subtitle: Search.fileLine(hit, chat: store.agent(hit.agentId)), trailing: kind(L10n.text("File"))) {
       if let artwork = FileKind.artwork(hit.fileName) {
         Image(artwork).resizable().scaledToFit().padding(4)
       } else {
@@ -1341,7 +1378,7 @@ struct SearchResults: View {
 
   private func linkRow(_ found: Found<LinkHit>) -> some View {
     let link = found.item
-    return SearchRow(title: SearchText.bold(link.title, found.hits), subtitle: link.label == nil ? store.agent(link.agentId)?.name : link.shortAddress) {
+    return SearchRow(title: SearchText.bold(link.title, found.hits), subtitle: link.label == nil ? store.agent(link.agentId)?.name : link.shortAddress, trailing: kind(L10n.text("Link"))) {
       SearchTile(symbol: "link")
     } action: { if let url = URL(string: link.url) { openURL(url) } }
   }
@@ -1350,14 +1387,15 @@ struct SearchResults: View {
     let hit = found.item
     let agent = store.agent(hit.agentId)
     let line = [hit.routine.isEnabled ? hit.routine.summary : String(localized: "Paused"), agent?.name].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · ")
-    return SearchRow(title: SearchText.bold(hit.routine.name, found.hits), subtitle: line, trailing: Chat.listTime(ms: hit.date)) {
+    // On All what it is; on Routines its date, as the Mac's.
+    return SearchRow(title: SearchText.bold(hit.routine.name, found.hits), subtitle: line, trailing: kind(L10n.text("Routine")) ?? Chat.listTime(ms: hit.date)) {
       SearchTile(symbol: "clock")
     } action: { openRoutine(hit) }
   }
 
   private func actionRow(_ found: Found<SearchAction>) -> some View {
     let action = found.item
-    return SearchRow(title: SearchText.bold(action.label, found.hits), subtitle: action.detail, checked: action.current) {
+    return SearchRow(title: SearchText.bold(action.label, found.hits), subtitle: action.detail, trailing: kind(L10n.text("Action")), checked: action.current) {
       SearchTile(symbol: action.symbol)
     } action: { action.run() }
   }
@@ -1402,11 +1440,15 @@ struct SearchAction: Identifiable {
   let run: () -> Void
 }
 
-/** A search result: its picture (40 pt), its name with the matched letters bold, a line under it, and the time or a check at the right. */
+/**
+ * A search result, as the reference draws one: its picture (40), its words
+ * (17) with a line under them when it has one (15, grey), and at the right
+ * what it is or its time (15, light grey), a check before it for the choice
+ * in use; 72 high, no line between rows.
+ */
 struct SearchRow<Leading: View>: View {
   let title: Text
   var subtitle: String? = nil
-  var tag: String? = nil
   var trailing: String? = nil
   var checked = false
   var titleLines = 1
@@ -1415,20 +1457,17 @@ struct SearchRow<Leading: View>: View {
 
   var body: some View {
     Button(action: action) {
-      HStack(spacing: 12) {
+      HStack(spacing: 15) {
         leading.frame(width: 40, height: 40)
         VStack(alignment: .leading, spacing: 2) {
-          HStack(alignment: .firstTextBaseline, spacing: 7) {
-            title.font(.system(size: 17)).foregroundStyle(Ink.primary).lineLimit(titleLines)
-            if let tag { TitleTag(title: tag) }
-          }
-          if let subtitle { Text(subtitle).font(.system(size: 14)).foregroundStyle(Ink.secondary).lineLimit(1) }
+          title.font(.system(size: 17)).foregroundStyle(Ink.primary).lineLimit(titleLines)
+          if let subtitle { Text(subtitle).font(.system(size: 15)).foregroundStyle(Ink.secondary).lineLimit(1) }
         }
         Spacer(minLength: 8)
-        if let trailing { Text(trailing).font(.system(size: 14)).foregroundStyle(Ink.tertiary).fixedSize() }
         if checked { Image(systemName: "checkmark").font(.system(size: 15, weight: .semibold)).foregroundStyle(Ink.link) }
+        if let trailing { Text(trailing).font(.system(size: 15)).foregroundStyle(Ink.tertiary).lineLimit(1).fixedSize() }
       }
-      .padding(.vertical, 4)
+      .frame(minHeight: 72)
       .contentShape(.rect)
     }
     .buttonStyle(.tactile)
