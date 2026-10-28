@@ -172,6 +172,8 @@ public protocol AgentBackend: AnyObject, Sendable {
   func commandWhenAwake(_ method: String, _ args: JSON) async throws -> JSON
   /** Where the computer rests, as the launch found it (step 4); nil elsewhere. */
   func computerRest() async -> Gateway.Rest?
+  /** The server is waking the computer (a message handed to it): reach it now, not at the next look. */
+  func computerWaking() async
 }
 
 extension AgentBackend {
@@ -197,6 +199,8 @@ extension AgentBackend {
 
   /** Where the computer rests, as the launch found it (`Gateway.restAtLaunch`): asleep, not made yet, or nil (awake, or a server that keeps it awake). */
   public func computerRest() async -> Gateway.Rest? { nil }
+
+  public func computerWaking() async {}
 
   /** The command, or with `wakes` false the one that waits for a resting computer without waking it (`commandWhenAwake`). */
   public func command(_ method: String, _ args: JSON, wakes: Bool) async throws -> JSON {
@@ -335,6 +339,8 @@ public final class LiveBackend: AgentBackend, @unchecked Sendable {
   public func commandWhenAwake(_ method: String, _ args: JSON) async throws -> JSON { try await gateway.commandWhenAwake(method, args) }
 
   public func computerRest() async -> Gateway.Rest? { await gateway.restAtLaunch() }
+
+  public func computerWaking() async { await gateway.waking() }
 
   public func dashboard(_ method: String, _ message: JSON) async throws -> JSON {
     guard let api else { throw SimeonAPIError(message: L10n.text("Sign in to Simeon to continue"), status: 401) }

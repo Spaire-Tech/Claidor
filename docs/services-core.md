@@ -1258,7 +1258,12 @@ to the agent. It reaches the agent even if the app is closed, and
   with files waits on the device (files go to the computer itself), and
   those after it wait with it. One the server refuses (too long, too many
   waiting) waits on the device as before. Once the server has it, it shows
-  as sent, marked "Sent while offline".
+  as sent. Nothing marks it (28 October 2026: "Sent while offline" under it
+  is gone from both apps), and the agent is told it was "composed offline"
+  (`composedAtMs`) only when the computer was out of reach, not when it was
+  only asleep. The app then reaches for the computer at once
+  (`Gateway.waking`), so the answer streams as it is written; it used to
+  wait for the record's next read, up to 15 s late.
 - The server (`server/simeon/desktop/chats.py`, table
   `desktop_chat_inbox`) keeps it exactly as written, at most 200 per person
   and 512 KB each, and wakes the computer (`simeon.sand.notify.publish`,

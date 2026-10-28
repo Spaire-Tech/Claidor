@@ -105,6 +105,23 @@ final class SleepingComputerTests: XCTestCase {
     XCTAssertEqual(http.count(GatewayConnectTests.ensure), 2)
   }
 
+  /** A message handed to the server wakes the box from there (28 October 2026): told so, the wait ends now, not at the record's next read 15 s on. */
+  func testToldTheServerIsWakingItTheWaitEndsAtOnce() async throws {
+    let http = Routes()
+    http.on(GatewayConnectTests.ensure) { _ in HTTPAnswer(status: 200, body: Self.box(letsSleep: true)) }
+    http.on(Self.runState) { _ in HTTPAnswer(status: 200, body: Data(#"{"state":2}"#.utf8)) }
+    let gateway = makeGateway(http, pause: { _ in try? await Task.sleep(nanoseconds: 20_000_000) })
+    _ = try await gateway.currentConnection()
+    let told = Told()
+    let waiting = Task { await gateway.waitWhileAsleep { told.add($0) } }
+    for _ in 0..<200 where told.values.isEmpty { try await Task.sleep(nanoseconds: 2_000_000) }
+    XCTAssertEqual(told.values, [true])
+    await gateway.waking()
+    let waited = await waiting.value
+    XCTAssertTrue(waited)
+    XCTAssertEqual(http.count(Self.runState), 1, "not left to the record's next read")
+  }
+
   func testWhereTheServerKeepsItAwakeOrItRunsNothingWaits() async throws {
     let http = Routes()
     http.on(GatewayConnectTests.ensure) { _ in HTTPAnswer(status: 200, body: Self.box(letsSleep: false)) }
