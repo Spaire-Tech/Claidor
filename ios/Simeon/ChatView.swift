@@ -233,6 +233,11 @@ final class ChatActions {
   @ObservationIgnored var runSlashAction: (String) -> Void = { _ in }
 }
 
+extension Notification.Name {
+  /** The composer took the keys; the object is its chat's scope (`ChatMessages.scope`), whose messages go to their end. */
+  static let simeonComposerFocused = Notification.Name("simeon.composerFocused")
+}
+
 /**
  * The Mac's new chat speaking to a composer (mac/Simeon/MacNewChat.swift):
  * its placeholder ("Message Nora, New Agent"), Send held while no one is on
@@ -468,6 +473,17 @@ struct ChatMessages: View {
       }
       .animation(.snappy, value: settled && !atBottom)
       .animation(.snappy, value: dividerSeen || dividerDismissed)
+      // A tap on the composer while reading further up: to the end, as Messages does (the founder, 28 October 2026), and
+      // again once the keyboard is up. At the end already, the keyboard pushes the messages up by itself (`.sizeChanges`).
+      .onReceive(NotificationCenter.default.publisher(for: .simeonComposerFocused)) { note in
+        guard (note.object as? String) == Self.scope(agentId, thread), !atBottom else { return }
+        unseen = 0
+        withAnimation(.snappy) { reader.scrollTo(Self.bottomId, anchor: .bottom) }
+        Task { @MainActor in
+          try? await Task.sleep(nanoseconds: 350_000_000)
+          withAnimation(.snappy) { reader.scrollTo(Self.bottomId, anchor: .bottom) }
+        }
+      }
     }
     .overlay {
       // Its lines on their way from the computer (a chat the host had closed takes a moment to open): say so.
@@ -502,6 +518,9 @@ struct ChatMessages: View {
       reader.scrollTo(Self.bottomId, anchor: .bottom)
     }
   }
+
+  /** A chat, or one of its threads, as the composer names it when it takes the keys. */
+  static func scope(_ agentId: String, _ thread: String?) -> String { "\(agentId)#\(thread ?? "")" }
 
   /** A row above the drawn ones is drawn first, then scrolled to. */
   private func reveal(_ id: String, then scroll: @escaping () -> Void) {
@@ -950,6 +969,10 @@ struct ChatComposer: View {
     .composerPicker(isPresented: $picking) { picked in stage(picked) }
     .onChange(of: dictation.problem) { _, problem in if let problem { store.problem = problem } }
     .onChange(of: reply?.target?.id) { _, id in if id != nil { typing = true } }
+    // Taking the keys: the messages go to their end when read further up (`ChatMessages`).
+    .onChange(of: typing) { _, now in
+      if now { NotificationCenter.default.post(name: .simeonComposerFocused, object: ChatMessages.scope(agentId, thread)) }
+    }
     // The server's 402 just reached this chat: the usage read again (the banner trusts it), at once; a card already there
     // when the chat opens, read again only when the last read is old (it may be from before a purchase).
     .onChange(of: outOfCredits, initial: true) { was, now in
