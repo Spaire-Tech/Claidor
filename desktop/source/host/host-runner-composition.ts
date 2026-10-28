@@ -197,6 +197,7 @@ import type { AgentRule } from "../packages/proto/generated/agent/v1/agent_rules
 import { HOST_LOG_PREFIX, logHostLine } from "../shared/host-log.js";
 import { configuredSimeonModel } from "./extensions/inference/provider-session.js";
 import { BOX_CHROME_PORTS, captureCheckout, fetchCheckoutIcon, readCheckoutText } from "../shared/node/link-wallet/checkout-fill.js";
+import { checkUserForm } from "../shared/node/user-form/form-fill.js";
 import type { LinkTools } from "../shared/node/link-wallet/link-tools.js";
 import type { ShopTools } from "../shared/node/shop-wallet/shop-tools.js";
 import type { WalletCheckoutFacts } from "./runner/tools/purchase-tool.js";
@@ -899,6 +900,12 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
     browserPort: (agentId: string) => 9222 + (boxAgentWindowIndex(extensions.api("forever-box").box as any, agentId) ?? 1),
     backendUrl: () => getConfiguredBackendUrl(),
     dataDir: () => getSandRootDir(),
+  });
+  // The in-chat form (28 October 2026, transcript/user-forms.ts): typed into
+  // the agent's own Chrome on the box, else a tab on the site in another window.
+  method(extensions.api("transcript"), "setUserFormServices")?.({
+    browserPort: (agentId: string) => 9222 + (boxAgentWindowIndex(extensions.api("forever-box").box as any, agentId) ?? 1),
+    otherPorts: BOX_CHROME_PORTS,
   });
   const localToolPermission = extensions.api("local-tool-permission");
   const localToolPermissionSurfaces = new Map<string, () => void>();
@@ -2383,6 +2390,22 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
                 },
               };
             },
+            // request_user_form: the in-chat form (28 October 2026, shared/node/user-form/).
+            // The page is checked in the agent's own Chrome first, as the fill types into it.
+            createUserFormToolInputs: turn => ({
+              dependencies: {
+                checkForm: async (request) => {
+                  const own = 9222 + (boxAgentWindowIndex(extensions.api("forever-box").box as any, session.id) ?? 1);
+                  return await checkUserForm({ ...request, ports: [own, ...BOX_CHROME_PORTS.filter((port) => port !== own)] });
+                },
+                emitFormCard: (message, timestampMs) => {
+                  const update = { type: "send-message" as const, message: message as unknown as Record<string, unknown>, timestampMs, ...(turn.ackToken === undefined ? {} : { ackToken: turn.ackToken }) };
+                  if (turn.emitUpdate === undefined) hooks.transport.onUpdate(update);
+                  else turn.emitUpdate(update);
+                  return hooks.transport.lastSentMessageId?.();
+                },
+              },
+            }),
           }),
       // RequestPurchase and MarkPurchaseDone: the checkout card (13 October
       // 2026, shared/node/link-wallet/purchase-card.ts). The person's Link is

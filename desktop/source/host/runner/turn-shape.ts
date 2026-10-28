@@ -202,6 +202,8 @@ const WAITING_CARDS: ReadonlyMap<string, RegExp> = new Map([
   ["RequestPurchase", /^The checkout card for .+ is in the chat/s],
   ["AuthenticateMcpServer", /Its connect card is now in the chat\./],
   ["InstallPlugin", /Its connect card is now in the chat\./],
+  // The in-chat form (28 October 2026, `formShownNote`); a form the page refused is not shown and waits on nothing.
+  ["request_user_form", /^The form ".+" is in the chat/s],
 ]);
 
 /** A card call whose answer says its card is in front of the person. */

@@ -392,6 +392,14 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
       }
     case "submitSecret":
       stamp(agentId, entryId) { $0.setting("secretProvided", true) }
+    case "submitUserForm":
+      // As the computer would once the page took it: every field typed in, and nothing of what was typed kept.
+      let ids = (args["values"]?.object ?? [:]).keys
+      stamp(agentId, entryId) { entry in
+        entry.setting("formState", "filled").setting("formOutcomes", .object(Dictionary(uniqueKeysWithValues: ids.map { ($0, JSON.string("filled")) })))
+      }
+    case "dismissUserForm":
+      stamp(agentId, entryId) { $0.setting("formState", "dismissed") }
     case "startFlightBooking":
       // As the box would: the traveller form for that flight, in the chat (the one already open, if any).
       let open = lock.withLock { transcripts[agentId]?.first { $0["message"]?["type"]?.text == "flight-passengers" && ($0["passengersState"]?.text ?? "open") == "open" }?.id }

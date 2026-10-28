@@ -299,6 +299,15 @@ export function createHostGatewayApi(
       markActive("user_action");
       return method(manager, "submitFlightPassengers")({ agentId: args?.agentId, entryId: args?.entryId, passengers: args?.passengers, cancel: args?.cancel === true });
     },
+    // The in-chat form's Fill and X (28 October 2026, transcript/user-forms.ts). The values go to the page, never further.
+    submitUserForm: (args: any) => {
+      markActive("user_action");
+      return method(manager, "submitUserForm")({ agentId: args?.agentId, entryId: args?.entryId, values: args?.values });
+    },
+    dismissUserForm: (args: any) => {
+      markActive("user_action");
+      return method(manager, "dismissUserForm")({ agentId: args?.agentId, entryId: args?.entryId });
+    },
     reactToMessage: (args: any) => {
       markActive("user_action");
       method(telemetry.analytics, "trackEvent")("sand.reaction.added", {

@@ -2680,3 +2680,15 @@ together. The same on the iPhone (`docs/services-agents.md`, "The cards, as
 the upstream app's").
 
 Not yet built or run on a Mac (Linux here: the file parses).
+
+### The in-chat form (28 October 2026)
+
+`UserFormCard.swift`: the fields a page on the agent's computer needs typed
+(a sign-in, a code, an address), each with its name above it, masked for a
+password or a code; Fill in sends them to the computer, which types them into
+the page (`submitUserForm`), and the card forgets them. Once answered, each
+field says whether it went in. The X is a decline (`dismissUserForm`). The
+same on the iPhone (`docs/services-agents.md`, "The in-chat form").
+
+Not yet built or run on a Mac (Linux here: the files parse, and SimeonCore and
+its tests build).

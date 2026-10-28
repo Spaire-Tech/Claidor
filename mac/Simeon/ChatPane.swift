@@ -673,6 +673,10 @@ private struct TranscriptRow: View {
       SecretCardView(entryId: id, agentId: agentId, label: label, description: description, provided: provided, dismissed: dismissed, look: look)
         .frame(maxWidth: limit(640), alignment: .leading)
         .padding(.top, startsGroup ? 12 : 0)
+    case .request(let id, .form(let form)):
+      UserFormCardView(entryId: id, agentId: agentId, card: form, look: look)
+        .frame(maxWidth: limit(520), alignment: .leading)
+        .padding(.top, startsGroup ? 12 : 0)
     default:
       LaterCard(kind: row.kind, look: look)
         .padding(.top, startsGroup ? 12 : 0)

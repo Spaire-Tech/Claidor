@@ -1468,6 +1468,8 @@ struct RequestCardView: View {
         secretCard(label: label, description: description, provided: provided, dismissed: dismissed)
       case .computer(let requestId, let instruction, let resolution):
         computer(requestId: requestId, instruction: instruction, resolution: resolution)
+      case .form(let form):
+        UserFormCardView(entryId: entryId, agentId: agentId, card: form)
       }
     }
     .frame(maxWidth: ChatMetrics.bubbleMax(width), alignment: .leading)

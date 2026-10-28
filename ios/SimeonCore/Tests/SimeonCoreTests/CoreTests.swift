@@ -566,6 +566,7 @@ final class ChatTests: XCTestCase {
         case .approval(_, let summary, _, _, let status, _, _): return "approval:\(summary):\(status)"
         case .secret(let label, _, _, _): return "secret:\(label)"
         case .computer(_, _, let resolution): return "computer:\(resolution ?? "waiting")"
+        case .form(let form): return "form:\(form.title)"
         }
       case .notice(_, let text): return text == Chat.notShown ? "notice" : text
       case .cloudAgent(_, let bcId): return "cloud-agent:\(bcId)"

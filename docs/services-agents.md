@@ -1457,6 +1457,44 @@ history). What changed to match them:
   enforces, as the upstream app's card rules describe ("Auto-review approvals" above). It was
   off since 8 October, when the founder's first real job met the card over and over.
 
+### The in-chat form (28 October 2026)
+
+**For the person.** When a page on the agent's computer needs them to type something (a
+sign-in, a one-time code, an address, a phone), the agent asks with a form in the chat
+instead of handing over the computer. They type in the card and press Fill in; the computer
+types it into the page. The card then says, field by field, whether it went in. The X is a
+decline. A password or a code is masked, and nothing they typed is ever shown to the agent.
+
+**How it works.**
+
+- The agent's `request_user_form` (`host/runner/tools/user-form-tool.ts`) takes a title, an
+  instruction, the site (`domain`) and one to eight fields, each pointed at its place on the
+  page: a ref from the browser helper's latest snapshot, a selector, or the page's label for
+  it. The rules are the upstream app's own for its card (`shared/node/user-form/user-form.ts`):
+  every field needs a target, a password or a code is always masked, and only a lone
+  one-time code may press Enter (`submit_after_fill`).
+- Before the card is shown, the host checks that a tab on that site is open and that every
+  field can be found there (`checkUserForm`, `shared/node/user-form/form-fill.ts`). A form
+  that can't be filled is refused to the agent and never shown.
+- Fill in sends `submitUserForm` with the values. The host types them into the page over the
+  computer's Chrome DevTools port (the agent's own window first), as the checkout card types
+  Link's card in, and only on that exact site ("www." aside). The values stay in that one
+  call: never in the transcript, the log, a shell command or a file. The card shows
+  `filling`, then `filled` with each field's outcome (`filled`, `fillFailed`, `notFilled`),
+  or `failed` with a note.
+- The agent is woken with which fields went in (never a value) and has the helper press the
+  site's own button. The form ends the agent's turn (`turn-shape.ts`). The X sends
+  `dismissUserForm`, and the agent hears the decline at once.
+- The brief and the browser helper know it: the helper reports each field's label and ref,
+  and the agent uses the form for plain typed fields, the computer handoff for SSO, a
+  passkey, a captcha or a page the form can't reach.
+
+* **Log line.** Host: `[forms] typed in <agent>/<entry> on <site>: email filled, password filled`
+  or `[forms] not typed in … : <reason>`. Field ids and outcomes only.
+* **Tested.** The fill against a real Chromium (`desktop/tests/user-form.test.mjs`: a label,
+  a selector, a snapshot ref, a field in a frame, a menu, a checkbox, Enter for a code).
+* **Not yet verified.** Not run on the cloud computer, a Mac or an iPhone.
+
 ### Files and lists in the chat
 
 **For the person** (24 October 2026). A file the agent sends shows its name as a title

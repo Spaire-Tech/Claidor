@@ -669,7 +669,7 @@ test("the agents' instructions: one way to buy, Shop only when asked for by name
   // A press-and-hold is the helper's (upstream: "subagent mouse hold"); any other bot check is handed to the person at once, at that store.
   assert.match(prompt, /A bot check on the store's page is not a dead end\. A \\?"press and hold\\?" button: the subagent presses it once with browser_click holdDurationMs 5000\./);
   assert.match(prompt, /neither you nor the subagent ever solves one, so hand them the screen at once, in the same turn \(OpenPage on that page, then request_box_help with reason captcha\), and carry on at that store/);
-  assert.match(prompt, /with no email connector hand them the screen at the code field \(request_box_help, reason auth\) so they type it: never ask for a code in the chat/);
+  assert.match(prompt, /with no email connector ask them for it with request_user_form \(one otp field pointed at the code field, submit_after_fill\) or, when the form can't reach it, hand them the screen there \(request_box_help, reason auth\): never ask for a code in the chat/);
   assert.match(prompt, /A store that can't sell it .* go on to the next comparable item you found .* at the same price or lower/);
   assert.match(prompt, /A store that wants an account before checkout: take the email route, never \\"Continue with Shop\\"/);
   assert.match(prompt, /never a password, and never a code from their bank, Link, Shop, Apple or Google/);
