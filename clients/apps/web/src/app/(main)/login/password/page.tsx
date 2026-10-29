@@ -41,7 +41,6 @@ export default async function Page(props: {
     <AuthShell
       heading={t('simeon.signIn.passwordTitle')}
       line={email || undefined}
-      locale={locale}
     >
       <div className="flex flex-col gap-5">
         <PasswordForm

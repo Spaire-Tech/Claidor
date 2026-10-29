@@ -235,17 +235,19 @@ export default {
     signIn: {
       loginTitle: 'Log in bij Simeon',
       signupTitle: 'Meld je aan bij Simeon',
-      heading: 'Haal het van je bord',
-      line: 'Partners die het werk doen, voor elk deel van je bedrijf.',
+      heading: 'Inloggen of registreren',
+      line: 'Je eigen team van agenten voor alles wat er gedaan moet worden.',
       continueWithGoogle: 'Ga door met Google',
       continueWithApple: 'Ga door met Apple',
+      continueWithMicrosoft: 'Ga door met Microsoft',
       or: 'OF',
       email: 'E-mail',
-      enterEmail: 'Vul je e-mailadres in',
+      enterEmail: 'E-mailadres',
       sendingCode: 'Code versturen…',
-      continueWithEmail: 'Ga door met e-mail',
       appleUnavailable:
         'Inloggen met Apple komt binnenkort. Ga voorlopig door met Google of je e-mail.',
+      microsoftUnavailable:
+        'Inloggen met Microsoft komt binnenkort. Ga voorlopig door met Google, Apple of je e-mail.',
       didNotGoThrough: 'Inloggen is niet gelukt. Probeer het opnieuw.',
       invalidEmail: 'Vul een geldig e-mailadres in.',
       couldNotSend: 'We konden de code niet versturen. Probeer het opnieuw.',
@@ -253,8 +255,6 @@ export default {
         'Door verder te gaan ga je akkoord met de {terms} en het {privacy} van Simeon.',
       terms: 'Gebruiksvoorwaarden',
       privacy: 'Privacybeleid',
-      photo:
-        'Een woonkamer gebouwd rond een rotsblok, met witte banken en een wereldbol die aan een touwtje hangt',
       codeTitle: 'Vul de verificatiecode in',
       checkEmail: 'Kijk in je e-mail',
       codeSentTo: 'We hebben een code van zes tekens gestuurd naar {email}.',

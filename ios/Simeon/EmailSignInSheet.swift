@@ -7,7 +7,8 @@ import SimeonCore
  * mark, a title and a line under it, then
  *
  * 1. "Log in or sign up": Email, Continue (a code is sent at once), OR, and
- *    Continue with Google and with Apple (the sign-in screen's own);
+ *    Continue with Google, with Apple (the sign-in screen's own) and with
+ *    Microsoft (coming soon, 29 October 2026);
  * 2. "Check your inbox": the code sent to the email (the keyboard offers it
  *    from Mail), Continue, Resend email, OR, Continue with password;
  * 3. "Enter your password": the account's password, Continue, and Use a
@@ -157,6 +158,10 @@ struct EmailSignInSheet: View {
         VStack(spacing: 12) {
           OutlineButton(label: String(localized: "Continue with Google"), image: "SignIn/Google", imageSize: 18) { provider(.google) }
           OutlineButton(label: String(localized: "Continue with Apple"), image: "SignIn/Apple", imageSize: 20, template: true) { provider(.apple) }
+          OutlineButton(label: String(localized: "Continue with Microsoft"), image: "SignIn/Microsoft", imageSize: 17) {
+            note = SessionController.microsoftSoon
+            noteIsError = false
+          }
         }
       case .code:
         Button("Resend email", action: resend)

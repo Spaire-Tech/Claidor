@@ -338,6 +338,14 @@ final class SessionController {
     phase = .signedOut(message: String(localized: "Your Simeon sign-in ended. Sign in again."))
   }
 
+  /** Continue with Microsoft, before Microsoft's sign-in is set up: the sign-in screen says it is coming soon. */
+  func microsoftNotYet() {
+    guard phase != .signingIn else { return }
+    phase = .signedOut(message: Self.microsoftSoon)
+  }
+
+  static let microsoftSoon = String(localized: "Sign in with Microsoft is coming soon.")
+
   /**
    * The sign-in screen's Continue with Apple or Google. Apple: Apple's own
    * sheet (Face ID), then the pair straight from the server

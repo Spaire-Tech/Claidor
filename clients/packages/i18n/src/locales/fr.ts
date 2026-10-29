@@ -237,17 +237,19 @@ export default {
     signIn: {
       loginTitle: 'Connecte-toi à Simeon',
       signupTitle: 'Inscris-toi sur Simeon',
-      heading: 'Libère-toi l’esprit',
-      line: 'Des partenaires qui agissent, pour chaque partie de ton entreprise.',
+      heading: 'Connexion ou inscription',
+      line: 'Ta propre équipe d’agents pour tout ce qu’il y a à faire.',
       continueWithGoogle: 'Continuer avec Google',
       continueWithApple: 'Continuer avec Apple',
+      continueWithMicrosoft: 'Continuer avec Microsoft',
       or: 'OU',
       email: 'E-mail',
-      enterEmail: 'Saisis ton e-mail',
+      enterEmail: 'Adresse e-mail',
       sendingCode: 'Envoi du code…',
-      continueWithEmail: 'Continuer avec l’e-mail',
       appleUnavailable:
         'Se connecter avec Apple arrive bientôt. Pour l’instant, continue avec Google ou ton e-mail.',
+      microsoftUnavailable:
+        'Se connecter avec Microsoft arrive bientôt. Pour l’instant, continue avec Google, Apple ou ton e-mail.',
       didNotGoThrough: 'La connexion n’a pas abouti. Réessaie.',
       invalidEmail: 'Saisis une adresse e-mail valide.',
       couldNotSend: 'Impossible d’envoyer le code. Réessaie.',
@@ -255,8 +257,6 @@ export default {
         'En continuant, tu acceptes les {terms} et la {privacy} de Simeon.',
       terms: 'Conditions d’utilisation',
       privacy: 'Politique de confidentialité',
-      photo:
-        'Un salon construit autour d’un rocher, avec des canapés blancs et un globe suspendu à une ficelle',
       codeTitle: 'Saisis le code de vérification',
       checkEmail: 'Regarde tes e-mails',
       codeSentTo: 'On a envoyé un code à six caractères à {email}.',

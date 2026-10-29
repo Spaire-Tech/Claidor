@@ -227,6 +227,7 @@ struct SignInScreen: View {
       VStack(spacing: 12) {
         SignInButton(provider: .apple, busy: session.signingInWith == .apple) { start(.apple) }
         SignInButton(provider: .google, busy: session.signingInWith == .google) { start(.google) }
+        MicrosoftSignInButton { session.microsoftNotYet() }
         // The founder's ChatGPT reference (19 October 2026): an email, then a code or a password (EmailSignInSheet).
         EmailSignInButton(busy: session.signingInWithEmail) { showsEmail = true }
       }
@@ -325,6 +326,28 @@ struct SignInButton: View {
     .foregroundStyle(ink)
     .frame(maxWidth: .infinity)
     .frame(height: 50)
+  }
+}
+
+/**
+ * Continue with Microsoft, under Google's, in the same glass, with
+ * Microsoft's four squares (the founder, 29 October 2026, before Microsoft's
+ * sign-in is set up): until it is, the screen says it is coming soon.
+ */
+struct MicrosoftSignInButton: View {
+  let action: () -> Void
+
+  var body: some View {
+    Button(action: action) {
+      HStack(spacing: 8) {
+        Image("SignIn/Microsoft").resizable().scaledToFit().frame(width: 15, height: 15)
+        Text("Continue with Microsoft").font(.system(size: 17, weight: .semibold))
+      }
+      .foregroundStyle(Ink.primary)
+      .frame(maxWidth: .infinity)
+      .frame(height: 50)
+    }
+    .buttonStyle(.glass)
   }
 }
 
