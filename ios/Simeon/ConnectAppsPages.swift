@@ -722,28 +722,44 @@ struct PluginPage: View {
   var body: some View {
     let shown = resolved
     let connected = shown.accounts.contains { $0.status == "connected" }
+    let page = ConnectorPage.page(for: shown.entry?.id ?? shown.catalogApp?.id ?? "")
     Form {
-      Section { head(shown, connected: connected) }
-        .listRowBackground(Ink.groupedRow)
-      if let about = shown.entry?.description ?? shown.catalogApp?.summary, !about.isEmpty {
-        Section {
-          Text(about)
-            .font(.system(size: 15))
-            .foregroundStyle(Ink.secondary)
-            .fixedSize(horizontal: false, vertical: true)
-            .textSelection(.enabled)
+      // The reference's top on the page's own ground: the logo, the name, its maker; the card of messages naming it; a few lines on it.
+      Section {
+        VStack(alignment: .leading, spacing: 22) {
+          head(shown, page: page)
+          if let page { ExamplesCard(examples: page.examples) }
+          if let about = page?.about ?? shown.entry?.description ?? shown.catalogApp?.summary, !about.isEmpty {
+            Text(about)
+              .font(.system(size: 17))
+              .foregroundStyle(Ink.secondary)
+              .fixedSize(horizontal: false, vertical: true)
+              .textSelection(.enabled)
+          }
         }
-        .listRowBackground(Ink.groupedRow)
+        .padding(.top, 4)
+        .padding(.bottom, 8)
       }
+      .listRowBackground(Color.clear)
+      .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
       if !shown.accounts.isEmpty {
         accountsSection(shown.accounts)
         toolsSection(serverId: shown.serverId, connected: connected, name: shown.name)
       }
       if let entry = shown.entry { contributions(entry, installed: shown.installed) }
       if let server = shown.server { details(server) }
+      information(shown, page: page)
       actionSection(shown)
     }
     .groupedGround()
+    // Connect, the reference's Install plugin: the black button floating at the foot while the app is not added.
+    .safeAreaInset(edge: .bottom) {
+      if let id = connectId(shown) {
+        bottomConnect(id)
+          .padding(.horizontal, 24)
+          .padding(.bottom, 8)
+      }
+    }
     .navigationTitle(shown.name)
     .inlineBarTitle()
     .task(id: "\(shown.serverId ?? "")\u{1F}\(connected)") {
@@ -778,33 +794,24 @@ struct PluginPage: View {
 
   // MARK: The head
 
-  private func head(_ shown: Shown, connected: Bool) -> some View {
-    HStack(spacing: 14) {
-      ConnectorTile(name: shown.name, size: 56, logo: ConnectorLogo.fill, id: shown.entry?.id ?? shown.catalogApp?.id)
-      VStack(alignment: .leading, spacing: 3) {
-        Text(shown.name).font(.system(size: 20, weight: .semibold)).foregroundStyle(Ink.primary)
-        if let first = shown.accounts.first {
-          Text(connected ? "Connected · \(tools.isEmpty ? first.toolCount : tools.filter { !$0.isDisabled }.count) tools" : "Not connected")
-            .font(.system(size: 13)).foregroundStyle(connected ? Ink.secondary : Ink.danger)
-        }
-        if let entry = shown.entry {
+  /** The logo (64), the name (30), and its maker ("By Google"), or its marketplace and View Source, or a server's host; the team's label. */
+  private func head(_ shown: Shown, page: ConnectorPage?) -> some View {
+    VStack(alignment: .leading, spacing: 14) {
+      ConnectorTile(name: shown.name, size: 64, logo: ConnectorLogo.fill, id: shown.entry?.id ?? shown.catalogApp?.id)
+      VStack(alignment: .leading, spacing: 4) {
+        Text(shown.name).font(.system(size: 30)).foregroundStyle(Ink.primary)
+        if let page {
+          Text(page.byline).font(.system(size: 17)).foregroundStyle(Ink.secondary)
+        } else if let entry = shown.entry {
           PluginMetaLine(market: entry.marketplace?.displayName, homepage: entry.homepage)
         } else if let host = Plugins.hostLine(shown.server?.url) {
-          Text(host).font(.system(size: 13)).foregroundStyle(Ink.secondary).lineLimit(1)
+          Text(host).font(.system(size: 15)).foregroundStyle(Ink.secondary).lineLimit(1)
         }
         if let label = teamLabel(shown.action) {
           PluginPill(title: label, fill: Ink.pillButton, ink: Ink.secondary).padding(.top, 3)
         }
       }
-      Spacer(minLength: 8)
-      if case .add = shown.action, let entry = shown.entry {
-        addButton(entry.id)
-      } else if shown.entry == nil, let catalogApp = shown.catalogApp, !store.isConnected(catalogApp.title) {
-        // Not in the box's catalog (yet): the row's own Add.
-        addButton(catalogApp.id)
-      }
     }
-    .padding(.vertical, 6)
   }
 
   /** The team's words beside what it added or requires. */
@@ -815,19 +822,40 @@ struct PluginPage: View {
     }
   }
 
-  /** Connect (the blue, as the Mac's page has it; Add until 13 October 2026, `Connecting`), the spinner while it connects, or Coming soon (`AppsComingSoon`). */
+  /** The entry Connect adds, while the app is not added: the page's entry, or the store's row when the box's catalog has not got it (yet). */
+  private func connectId(_ shown: Shown) -> String? {
+    if case .add = shown.action, let entry = shown.entry { return entry.id }
+    if shown.entry == nil, let catalogApp = shown.catalogApp, !store.isConnected(catalogApp.title) { return catalogApp.id }
+    return nil
+  }
+
+  /** Connect at the foot (`Connecting`): black with the ground's words, 56 high; the spinner while it connects; Coming soon (`AppsComingSoon`) in grey. */
   @ViewBuilder
-  private func addButton(_ entryId: String) -> some View {
+  private func bottomConnect(_ entryId: String) -> some View {
     let app = store.catalog.first { $0.id == entryId }
     let name = app?.title ?? model.entry(entryId)?.displayName ?? entryId
     if app?.comingSoon == true || store.isComingSoon(entryId) {
-      PluginPill(title: AppsComingSoon.label, fill: Ink.pillButton, ink: Ink.tertiary)
+      Text(AppsComingSoon.label)
+        .font(.system(size: 17, weight: .medium))
+        .foregroundStyle(Ink.tertiary)
+        .frame(maxWidth: .infinity)
+        .frame(height: 56)
+        .background(Ink.pillButton, in: Capsule())
         .accessibilityLabel("\(name) is coming soon")
     } else if model.adding == entryId || connector.connecting == name {
-      ProgressView().controlSize(.small).frame(width: 44)
+      ProgressView().tint(Ink.ground)
+        .frame(maxWidth: .infinity)
+        .frame(height: 56)
+        .background(Ink.primary, in: Capsule())
     } else {
       PluginAddButton(name: name, catalogApp: app, entryId: entryId) {
-        PluginPill(title: Connecting.connect, fill: Ink.authenticate, ink: .white)
+        Text(Connecting.connect)
+          .font(.system(size: 17, weight: .medium))
+          .foregroundStyle(Ink.ground)
+          .frame(maxWidth: .infinity)
+          .frame(height: 56)
+          .background(Ink.primary, in: Capsule())
+          .contentShape(Capsule())
       }
       .accessibilityLabel("Connect \(name)")
     }
@@ -937,6 +965,35 @@ struct PluginPage: View {
     .listRowBackground(Ink.groupedRow)
   }
 
+  /** Information (the reference's): Category, Developer, and the maker's website, privacy policy and terms, their hosts in the link blue, opened in the browser. */
+  @ViewBuilder
+  private func information(_ shown: Shown, page: ConnectorPage?) -> some View {
+    let category = shown.entry?.category ?? shown.catalogApp?.category ?? ""
+    let website = page?.website ?? shown.entry?.homepage.flatMap(URL.init(string:))
+    let links: [(String, URL)] = [
+      website.map { (ConnectorPage.websiteWord, $0) },
+      page?.privacy.map { (ConnectorPage.privacyWord, $0) },
+      page?.terms.map { (ConnectorPage.termsWord, $0) },
+    ].compactMap { $0 }
+    if !category.isEmpty || page != nil || !links.isEmpty {
+      Section(ConnectorPage.information) {
+        if !category.isEmpty { PluginDetailRow(term: ConnectorPage.category, value: category) }
+        if let page { PluginDetailRow(term: ConnectorPage.developer, value: page.maker) }
+        ForEach(Array(links.enumerated()), id: \.offset) { _, link in
+          HStack {
+            Text(link.0).foregroundStyle(Ink.primary)
+            Spacer(minLength: 12)
+            Link(destination: link.1) {
+              Text(ConnectorPage.shown(link.1)).lineLimit(1).truncationMode(.middle)
+            }
+            .foregroundStyle(Ink.link)
+          }
+        }
+      }
+      .listRowBackground(Ink.groupedRow)
+    }
+  }
+
   // MARK: Uninstall, Remove
 
   /** Uninstall for what the person added, Remove for what the team added; nothing for what the team requires (its label is in the head). No question asked, as on the Mac. */
@@ -980,5 +1037,39 @@ struct PluginPage: View {
       }
       removing = false
     }
+  }
+}
+
+/**
+ * The card of three messages a person might send their agent naming the
+ * connector (the Mac's `ExamplesCard`), on the founder's blue picture
+ * (`ConnectorHero`, the same for every connector): each in a light card,
+ * the name in its colour with its logo as in a chat (`InlineText`). They
+ * show what to ask; a tap does nothing (the founder, 29 October 2026). On
+ * dark, the picture dimmed and the cards dark.
+ */
+private struct ExamplesCard: View {
+  let examples: [String]
+  @Environment(\.colorScheme) private var scheme
+
+  var body: some View {
+    let dark = scheme == .dark
+    VStack(spacing: 12) {
+      ForEach(examples, id: \.self) { example in
+        InlineText.made(example, size: 17, colour: Ink.primary, mentioning: Mentioning(names: [], personName: nil, dark: dark)).text
+          .fixedSize(horizontal: false, vertical: true)
+          .frame(maxWidth: .infinity, alignment: .leading)
+          .padding(.horizontal, 18)
+          .padding(.vertical, 16)
+          .background(dark ? Color.black.opacity(0.5) : Color.white.opacity(0.78), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+      }
+    }
+    .padding(18)
+    .background {
+      Image("ConnectorHero").resizable().scaledToFill()
+        .overlay(Color.black.opacity(dark ? 0.35 : 0))
+    }
+    .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
+    .accessibilityElement(children: .combine)
   }
 }

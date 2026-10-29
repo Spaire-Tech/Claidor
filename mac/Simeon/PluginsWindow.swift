@@ -1219,7 +1219,14 @@ private struct PageHead<Icon: View, Meta: View, Action: View>: View {
   }
 }
 
-/** A plugin's page (`Ri`): its head and description; its accounts and tools when added; Setup; its connectors and skills. */
+/**
+ * A plugin's page (`Ri`), in the design of the founder's reference (29
+ * October 2026, ChatGPT's plugin pages), in the panel: its head (the logo,
+ * the name, "By its maker · what it does", Connect at the right); for a
+ * connector with its own page (`ConnectorPage`), the card of three messages
+ * naming it, then a few lines on it; its accounts and tools when added;
+ * Setup; its connectors and skills; Information; Uninstall at the foot.
+ */
 private struct PluginPage: View {
   let entry: PluginEntry
   let look: Look
@@ -1231,18 +1238,36 @@ private struct PluginPage: View {
     let installed = model.installed(entry)
     let item = model.yoursItems.first { if case .plugin(let e, _, _) = $0 { return e.id == entry.id }; return false }
     let mode = installed.plugin?.installMode ?? installed.server?.installMode ?? item?.installMode
+    let page = ConnectorPage.page(for: entry.id)
     VStack(alignment: .leading, spacing: 24) {
-      VStack(alignment: .leading, spacing: 12) {
-        PageHead(name: entry.displayName, look: look) {
-          PluginIcon(name: entry.displayName, iconUrl: entry.iconUrl, side: 48, id: entry.id, look: look)
-        } meta: {
-          MetaLine(market: entry.marketplace?.displayName, homepage: entry.homepage, look: look)
-        } action: {
+      VStack(alignment: .leading, spacing: 20) {
+        HStack(alignment: .center, spacing: 16) {
+          PluginIcon(name: entry.displayName, iconUrl: entry.iconUrl, side: 64, id: entry.id, look: look)
+          VStack(alignment: .leading, spacing: 4) {
+            Text(entry.displayName)
+              .font(.system(size: 20, weight: .medium))
+              .foregroundStyle(look.ink)
+              .lineLimit(1)
+            if let page {
+              Text(verbatim: entry.description.isEmpty ? page.byline : "\(page.byline) · \(entry.description)")
+                .font(PanelType.row)
+                .foregroundStyle(look.inkSecondary)
+                .lineLimit(2)
+            } else {
+              MetaLine(market: entry.marketplace?.displayName, homepage: entry.homepage, look: look)
+            }
+          }
+          .frame(maxWidth: .infinity, alignment: .leading)
           PageActionView(action: Plugins.pageAction(installed: installed.isInstalled, mode: mode), adding: model.adding == entry.id, name: entry.displayName, look: look,
-                         comingSoon: !installed.isInstalled && model.comingSoon(entry),
+                         comingSoon: !installed.isInstalled && model.comingSoon(entry), large: true,
                          add: { model.requestAdd(entry, agentId: window.selected) })
         }
-        if !entry.description.isEmpty { Description(text: entry.description, look: look) }
+        if let page {
+          ExamplesCard(examples: page.examples, look: look)
+          Description(text: page.about, look: look)
+        } else if !entry.description.isEmpty {
+          Description(text: entry.description, look: look)
+        }
       }
       VStack(alignment: .leading, spacing: 16) {
         if let server = installed.server {
@@ -1265,6 +1290,7 @@ private struct PluginPage: View {
           FoldCard(heading: String(localized: "Skills"), summary: Plugins.count(skills.count, "skill"),
                    rows: skills.map { ($0.name, $0.description.isEmpty ? String(localized: "Skill") : $0.description) }, look: look)
         }
+        InformationCard(entry: entry, page: page, look: look)
         RemoveGroup(action: Plugins.pageAction(installed: installed.isInstalled, mode: mode), look: look) {
           Task {
             if installed.plugin != nil { await model.uninstall(pluginId: entry.id, agentId: window.selected) }
@@ -1274,6 +1300,102 @@ private struct PluginPage: View {
       }
     }
     .task { if let server = installed.server { await model.loadTools(server.id) } }
+  }
+}
+
+/**
+ * The card of three messages a person might send their agent naming the
+ * connector, on the founder's blue picture (`ConnectorHero`, the same for
+ * every connector): each in a light pill, the name in its colour with its
+ * logo as in a chat (`MessageLine`). They show what to ask; a click does
+ * nothing (the founder, 29 October 2026). On dark, the picture dimmed and
+ * the pills dark.
+ */
+private struct ExamplesCard: View {
+  let examples: [String]
+  let look: Look
+
+  var body: some View {
+    VStack(spacing: 10) {
+      ForEach(examples, id: \.self) { example in
+        MessageLine(size: 13, lineHeight: 18, colour: look.ink, look: look, agents: [], personName: nil).made(example).text
+          .multilineTextAlignment(.center)
+          .fixedSize(horizontal: false, vertical: true)
+          .padding(.horizontal, 16)
+          .padding(.vertical, 9)
+          .background(RoundedRectangle(cornerRadius: 17, style: .continuous).fill(look.dark ? Color.black.opacity(0.5) : Color.white.opacity(0.82)))
+          .frame(maxWidth: 520)
+      }
+    }
+    .padding(.vertical, 30)
+    .padding(.horizontal, 24)
+    .frame(maxWidth: .infinity)
+    .background {
+      Image("ConnectorHero").resizable().scaledToFill()
+        .overlay(Color.black.opacity(look.dark ? 0.35 : 0))
+    }
+    .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+    .accessibilityElement(children: .combine)
+  }
+}
+
+/** Information (the reference's): Category, Developer, and the maker's website, privacy policy and terms, each opened in the browser. */
+private struct InformationCard: View {
+  let entry: PluginEntry
+  let page: ConnectorPage?
+  let look: Look
+
+  var body: some View {
+    let website = page?.website ?? entry.homepage.flatMap(URL.init(string:))
+    let links: [(String, URL)] = [
+      website.map { (ConnectorPage.websiteWord, $0) },
+      page?.privacy.map { (ConnectorPage.privacyWord, $0) },
+      page?.terms.map { (ConnectorPage.termsWord, $0) },
+    ].compactMap { $0 }
+    if !entry.category.isEmpty || page != nil || !links.isEmpty {
+      PageCard(heading: ConnectorPage.information, look: look) {
+        if !entry.category.isEmpty {
+          CardRow(look: look) { DetailPair(term: ConnectorPage.category, value: entry.category, look: look) }
+        }
+        if let page {
+          CardRow(divided: !entry.category.isEmpty, look: look) { DetailPair(term: ConnectorPage.developer, value: page.maker, look: look) }
+        }
+        ForEach(Array(links.enumerated()), id: \.offset) { index, link in
+          CardRow(divided: index > 0 || !entry.category.isEmpty || page != nil, look: look) {
+            InformationLink(term: link.0, url: link.1, look: look)
+          }
+        }
+      }
+    }
+  }
+}
+
+/** A link's line: the term, then the address's host in the link blue with ↗, opened in the browser. */
+private struct InformationLink: View {
+  let term: String
+  let url: URL
+  let look: Look
+  @State private var hovering = false
+
+  var body: some View {
+    HStack(spacing: 8) {
+      Text(term).font(PanelType.row).foregroundStyle(look.ink).lineLimit(1).fixedSize()
+      Spacer(minLength: 0)
+      Button { NSWorkspace.shared.open(url) } label: {
+        HStack(spacing: 3) {
+          Text(ConnectorPage.shown(url)).lineLimit(1).truncationMode(.middle)
+          Image(systemName: "arrow.up.right").font(.system(size: 10, weight: .medium))
+        }
+        .font(PanelType.row)
+        .foregroundStyle(look.link.opacity(hovering ? 0.8 : 1))
+        .contentShape(Rectangle())
+      }
+      .buttonStyle(.hand)
+      .onHover { hovering = $0 }
+      .help(url.absoluteString)
+      .padding(.trailing, 4)
+    }
+    .frame(maxWidth: .infinity)
   }
 }
 
@@ -1325,6 +1447,8 @@ private struct PageActionView: View {
   let name: String
   let look: Look
   var comingSoon = false
+  /** A connector page's head: Connect as the reference's black pill with a plus. */
+  var large = false
   let add: () -> Void
   @Environment(PluginsState.self) private var plugins
 
@@ -1336,6 +1460,8 @@ private struct PageActionView: View {
         PluginPill(title: AppsComingSoon.label, kind: .soon, look: look).accessibilityLabel("\(name) is coming soon")
       } else if adding {
         AddingSpinner(name: name, look: look)
+      } else if large {
+        ConnectPill(disabled: busy, look: look, action: add).accessibilityLabel("Connect \(name)")
       } else {
         PluginPill(title: Connecting.connect, kind: .primary, disabled: busy, look: look, action: add).accessibilityLabel("Connect \(name)")
       }
@@ -1344,6 +1470,33 @@ private struct PageActionView: View {
     case .remove(let label), .managed(let label):
       PluginPill(title: label, kind: .label, look: look)
     }
+  }
+}
+
+/** Connect in a connector page's head (the reference's Install plugin): a plus and the word in the ground's colour on the ink, 30 high. */
+private struct ConnectPill: View {
+  var disabled = false
+  let look: Look
+  let action: () -> Void
+  @State private var hovering = false
+
+  var body: some View {
+    Button(action: action) {
+      HStack(spacing: 5) {
+        Image(systemName: "plus").font(.system(size: 12, weight: .semibold))
+        Text(Connecting.connect).font(.system(size: 13, weight: .medium))
+      }
+      .foregroundStyle(look.ground)
+      .padding(.horizontal, 14)
+      .frame(height: 30)
+      .background(Capsule().fill(look.ink.opacity(hovering && !disabled ? 0.85 : 1)))
+      .contentShape(Capsule())
+    }
+    .buttonStyle(.hand)
+    .disabled(disabled)
+    .opacity(disabled ? 0.56 : 1)
+    .onHover { hovering = $0 }
+    .fixedSize()
   }
 }
 
