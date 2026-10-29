@@ -134,7 +134,7 @@ private struct StarterPackDialog: View {
     }
     .background(look.elevated, in: shape)
     .clipShape(shape)
-    .overlay(shape.strokeBorder(look.ink.opacity(0.1), lineWidth: 1))
+    .overlay(shape.strokeBorder(look.panelEdge(0.1), lineWidth: 1))
     .shadow(color: .black.opacity(look.dark ? 0.5 : 0.22), radius: 30, x: 0, y: 12)
     .padding(.vertical, 32)
     .background(ViewerKeys(aboveLocks: true) { event in

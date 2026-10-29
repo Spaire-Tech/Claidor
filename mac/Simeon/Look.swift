@@ -130,6 +130,12 @@ struct Look {
   let onWarn = Color(hex: 0x1f1f1f)
   /** A raised surface (`--sand-bg-elevated`): find's bar. */
   var elevated: Color { dark ? Color(hex: 0x181818) : Color(hex: 0xfcfcfc) }
+  /**
+   * The edge of a panel over the dimmed window (Settings, Connectors, search,
+   * the dialogs): the ink at `opacity` on light; none on dark, where it cast
+   * a white line round the panel (the founder, 29 October 2026).
+   */
+  func panelEdge(_ opacity: Double = 0.15) -> Color { dark ? .clear : ink.opacity(opacity) }
   /** Red words (`--sand-text-danger`): find's count when nothing matches. */
   var danger: Color { dark ? Color(hex: 0xff5667) : Color(hex: 0xc21d2e) }
   /** A diagram's card in its full-screen view. */

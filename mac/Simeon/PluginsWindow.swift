@@ -139,7 +139,7 @@ struct PluginsLayer: View {
   }
 }
 
-/** The panel: Settings' (14 round, a line at 15%, the grouped ground with its shadows); its head, the bar on the list, the scroll pane, the notice. */
+/** The panel: Settings' (14 round, a line at 15% on light, the grouped ground with its shadows); its head, the bar on the list, the scroll pane, the notice. */
 private struct PluginsPanel: View {
   let look: Look
   @Environment(PluginsState.self) private var plugins
@@ -167,7 +167,7 @@ private struct PluginsPanel: View {
     .overlay(alignment: .bottom) { NoticeBar(look: look) }
     .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(look.settingsPanel))
     .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-    .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(look.ink.opacity(0.15), lineWidth: 1))
+    .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(look.panelEdge(), lineWidth: 1))
     .shadow(color: Color(red: 20 / 255, green: 30 / 255, blue: 60 / 255).opacity(look.dark ? 0 : 0.10), radius: 0.5)
     .shadow(color: Color(red: 20 / 255, green: 30 / 255, blue: 60 / 255).opacity(look.dark ? 0 : 0.45), radius: 28, x: 0, y: 30)
     // A click on the panel is the panel's, not the dim's.

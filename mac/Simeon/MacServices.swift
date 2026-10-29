@@ -440,7 +440,7 @@ private struct DeepLinksDialog: View {
     }
     .frame(width: 420)
     .background(look.elevated, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-    .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(look.ink.opacity(0.15), lineWidth: 1))
+    .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(look.panelEdge(), lineWidth: 1))
     .background(ViewerKeys(aboveLocks: true) { event in
       let mods = event.modifierFlags.intersection([.command, .shift, .option, .control])
       guard mods.isEmpty, event.keyCode == 53 || event.keyCode == 36 || event.keyCode == 76 else { return false }

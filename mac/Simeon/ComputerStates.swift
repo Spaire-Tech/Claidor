@@ -278,11 +278,11 @@ private struct SimpleDialog<Buttons: View>: View {
 }
 
 private extension View {
-  /** The card: the raised ground, 14 round, a one-point edge at 15%. */
+  /** The card: the raised ground, 14 round, a one-point edge at 15% on light (none on dark). */
   func dialogShell(look: Look) -> some View {
     self
       .background(look.elevated, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-      .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(look.ink.opacity(0.15), lineWidth: 1))
+      .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(look.panelEdge(), lineWidth: 1))
   }
 }
 
