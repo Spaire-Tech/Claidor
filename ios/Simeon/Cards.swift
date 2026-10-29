@@ -1063,13 +1063,14 @@ struct DraftCardView: View {
 enum FileKind {
   static let images: Set<String> = ["png", "jpg", "jpeg", "gif", "webp", "heic", "heif"]
 
-  /** The Mac's own artwork for Word, Excel, PowerPoint and PDF (`desktop/brand/file-icons`), else a symbol on a tile. */
+  /** The Mac's own artwork for Word, Excel, PowerPoint and PDF (`desktop/brand/file-icons`), and the founder's for Markdown (29 October 2026); else a symbol on a tile. */
   static func artwork(_ name: String) -> String? {
     switch (name as NSString).pathExtension.lowercased() {
     case "doc", "docx", "rtf", "pages": return "FileIcons/word"
     case "xls", "xlsx", "csv", "numbers": return "FileIcons/excel"
     case "ppt", "pptx", "key": return "FileIcons/powerpoint"
     case "pdf": return "FileIcons/pdf"
+    case "md", "markdown", "mdx": return "FileIcons/markdown"
     default: return nil
     }
   }

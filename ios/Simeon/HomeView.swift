@@ -162,6 +162,10 @@ struct HomeView: View {
           }
         }
       }
+      // Searching, the tabs are the top of the screen, as the Mac's search has them over its results (the founder, 29
+      // October 2026: "search bar needs the top to be like mac"): the bar with Messages, the account and the filter goes
+      // until search closes.
+      .toolbarVisibility(inSearch ? .hidden : .visible, for: .navigationBar)
       // Behind every screen of the stack, while one slides in and before its first frame: the app's ground, never the
       // system's black (the founder, 11 October 2026: "the darkest background coming up sometimes").
       .containerBackground(Ink.listGround, for: .navigation)

@@ -46,32 +46,61 @@ struct AttachmentChip: View {
   }
 }
 
-/** The + : a photo from the library, any file, or a copied picture, into the composer. */
+/** What the + menu asked for: a photo or video from the library, a photo taken now, any file, or a copied picture. */
+enum ComposerPick: Equatable {
+  case library, camera, files, paste
+}
+
+/**
+ * The + menu's items (the founder, 29 October 2026, after Messages' own:
+ * "ours rn is in the middle, not good"): Photo or Video, Take Photo (when
+ * the phone has a camera) and Choose File, in that order, in a menu that
+ * opens from the + itself; Paste Picture under them while the clipboard
+ * holds one (asking does not read it, so the phone does not ask about
+ * pasting until it is chosen). Until that day + opened a dialog in the
+ * middle of the screen.
+ */
+struct ComposerAttachItems: View {
+  let pick: (ComposerPick) -> Void
+
+  var body: some View {
+    Button("Photo or Video", systemImage: "photo.on.rectangle") { pick(.library) }
+    #if os(iOS)
+    if UIImagePickerController.isSourceTypeAvailable(.camera) {
+      Button("Take Photo", systemImage: "camera") { pick(.camera) }
+    }
+    #endif
+    Button("Choose File", systemImage: "folder") { pick(.files) }
+    #if os(iOS)
+    // A copied picture, as the Mac's ⌘V puts one in its composer (mac/Simeon/Composer.swift).
+    if UIPasteboard.general.hasImages {
+      Button("Paste Picture", systemImage: "doc.on.clipboard") { pick(.paste) }
+    }
+    #endif
+  }
+}
+
+/** What the + menu asked for, brought in: photos and videos from the library, a photo taken now, any file, or a copied picture. */
 struct ComposerPicker: ViewModifier {
-  @Binding var isPresented: Bool
+  @Binding var request: ComposerPick?
   let picked: ([ComposerAttachment]) -> Void
   @State private var photos = false
   @State private var files = false
+  @State private var camera = false
   @State private var selection: [PhotosPickerItem] = []
 
   func body(content: Content) -> some View {
     content
-      #if os(iOS)
-      .confirmationDialog("Attach", isPresented: $isPresented) {
-        Button("Photo Library") { photos = true }
-        Button("Files") { files = true }
-        // A copied picture, as the Mac's ⌘V puts one in its composer (mac/Simeon/Composer.swift); offered only while the
-        // clipboard holds one (asking does not read it, so the phone does not ask about pasting until this is chosen).
-        if UIPasteboard.general.hasImages { Button("Paste Picture") { pastePictures() } }
+      .onChange(of: request) { _, asked in
+        guard let asked else { return }
+        request = nil
+        switch asked {
+        case .library: photos = true
+        case .camera: camera = true
+        case .files: files = true
+        case .paste: pastePictures()
+        }
       }
-      #else
-      // On the Mac + opens the file chooser at once, as the Mac's window does (its sidebar reaches Photos too).
-      .onChange(of: isPresented) { _, asked in
-        guard asked else { return }
-        isPresented = false
-        files = true
-      }
-      #endif
       .photosPicker(isPresented: $photos, selection: $selection, maxSelectionCount: 10, matching: .any(of: [.images, .videos]))
       .onChange(of: selection) { _, items in
         guard !items.isEmpty else { return }
@@ -99,6 +128,16 @@ struct ComposerPicker: ViewModifier {
         }
         picked(out)
       }
+      #if os(iOS)
+      .fullScreenCover(isPresented: $camera) {
+        CameraCapture { image in
+          camera = false
+          guard let image, let data = image.jpegData(compressionQuality: 0.9) else { return }
+          picked([ComposerAttachment(name: "Photo.jpg", data: data, preview: image)])
+        }
+        .ignoresSafeArea()
+      }
+      #endif
   }
 
   /** The clipboard's pictures, as PNG files named as the Mac names a pasted one. */
@@ -112,9 +151,40 @@ struct ComposerPicker: ViewModifier {
   }
 }
 
+#if os(iOS)
+/** Take Photo: the phone's camera, as Messages opens it; the photo taken comes back, and Cancel brings nothing (nil). */
+struct CameraCapture: UIViewControllerRepresentable {
+  let done: (UIImage?) -> Void
+
+  func makeUIViewController(context: Context) -> UIImagePickerController {
+    let picker = UIImagePickerController()
+    picker.sourceType = .camera
+    picker.delegate = context.coordinator
+    return picker
+  }
+
+  func updateUIViewController(_ picker: UIImagePickerController, context: Context) {}
+
+  func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+  final class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+    let parent: CameraCapture
+    init(_ parent: CameraCapture) { self.parent = parent }
+
+    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
+      parent.done(info[.originalImage] as? UIImage)
+    }
+
+    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+      parent.done(nil)
+    }
+  }
+}
+#endif
+
 extension View {
-  func composerPicker(isPresented: Binding<Bool>, picked: @escaping ([ComposerAttachment]) -> Void) -> some View {
-    modifier(ComposerPicker(isPresented: isPresented, picked: picked))
+  func composerPicker(request: Binding<ComposerPick?>, picked: @escaping ([ComposerAttachment]) -> Void) -> some View {
+    modifier(ComposerPicker(request: request, picked: picked))
   }
 }
 

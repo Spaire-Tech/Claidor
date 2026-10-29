@@ -76,6 +76,22 @@ enum MentionArt {
     return image
   }
 
+  /** A link's site icon (`LinkIcons`): 1.05 em square in rounded corners, with a brand logo's room before and after it. */
+  static func site(_ found: (site: String, data: Data), em: CGFloat) -> UIImage? {
+    let key = "s|\(found.site)|\(Int(em * 100))"
+    if let made = cache[key] { return made }
+    guard let icon = UIImage(data: found.data), icon.size.width > 0, icon.size.height > 0 else { return nil }
+    let side = em * 1.05
+    let image = padded(width: em * (0.04 + 1.05 + 0.26), height: side) { _ in
+      let square = CGRect(x: em * 0.04, y: 0, width: side, height: side)
+      UIBezierPath(roundedRect: square, cornerRadius: side * 0.22).addClip()
+      icon.draw(in: fit(icon.size, in: square))
+    }
+    if cache.count > 400 { cache.removeAll() }
+    cache[key] = image
+    return image
+  }
+
   /** An agent's face for its mention: its picture in a 1.1 em circle, inside the pill's start. */
   static func agent(_ picture: AgentPictureSource?, em: CGFloat, dark: Bool) -> UIImage {
     let key = "a|\(picture?.key ?? "-")|\(Int(em * 100))|\(dark)"
@@ -133,9 +149,10 @@ enum MentionArt {
 /**
  * A run of a message's text: Markdown's inline marks drawn the window's way
  * (bold at 600, italics, red code on a grey tint, struck text greyed, links
- * blue) and every name the Mac dresses: a brand with its logo and colour at
- * 500, an agent with its face in a glass pill, its name in the app's blue at
- * 600 (the founder, 12 October 2026), never inside code or a link.
+ * blue, each after its site's icon: `LinkIcons`) and every name the Mac
+ * dresses: a brand with its logo and colour at 500, an agent with its face
+ * in a glass pill, its name in the app's blue at 600 (the founder, 12
+ * October 2026), never inside code or a link.
  */
 @MainActor
 enum InlineText {
@@ -154,7 +171,9 @@ enum InlineText {
       let agents: String = mentioning.agents.map { agent in "\(agent.name)=\(agent.picture?.key ?? "")" }.joined(separator: ",")
       names = "\(agents)|\(mentioning.personName ?? "")|\(mentioning.speaker ?? "")"
     }
-    let key = "\(size)|\(weight)|\(mentioning?.dark ?? false)|\(names)|\(markdown)"
+    // Words with a link are made again when a site's icon comes (`LinkIcons`).
+    let icons = mentioning != nil && (markdown.contains("://") || markdown.contains("www.")) ? LinkIcons.shared.generation : 0
+    let key = "\(size)|\(weight)|\(mentioning?.dark ?? false)|\(icons)|\(names)|\(markdown)"
     if colour == nil, let made = cache[key] { return made }
     let made = build(markdown, size: size, weight: weight, colour: colour, mentioning: mentioning)
     if colour == nil {
@@ -223,13 +242,37 @@ enum InlineText {
       return out
     }
 
-    guard !marks.isEmpty else { return Made(text: Text(piece(0, characters.count)), agents: []) }
+    // Each link's site icon where the link starts (a message's words only, not a file's).
+    var icons: [(at: Int, image: UIImage)] = []
+    if mentioning != nil {
+      for i in links.indices {
+        guard let url = links[i], i == 0 || links[i - 1] != url, let found = LinkIcons.shared.icon(for: url),
+              let image = MentionArt.site(found, em: size) else { continue }
+        icons.append((i, image))
+      }
+    }
+
+    /** The words from `from` to `to`, each link's icon before it, kept on the line with its first word (a word joiner). */
+    func words(_ from: Int, _ to: Int) -> Text {
+      let inside = icons.filter { $0.at >= from && $0.at < to }
+      guard !inside.isEmpty else { return Text(piece(from, to)) }
+      var text = Text(verbatim: "")
+      var cursor = from
+      for icon in inside {
+        if icon.at > cursor { text = Text("\(text)\(Text(piece(cursor, icon.at)))") }
+        text = Text("\(text)\(Text(Image(uiImage: icon.image)).baselineOffset(-0.18 * size))\(Text(verbatim: "\u{2060}"))")
+        cursor = icon.at
+      }
+      return Text("\(text)\(Text(piece(cursor, to)))")
+    }
+
+    guard !marks.isEmpty else { return Made(text: words(0, characters.count), agents: []) }
     var text = Text(verbatim: "")
     var agents: [String] = []
     var cursor = 0
     let em = size
     for mark in marks {
-      if mark.start > cursor { text = Text("\(text)\(Text(piece(cursor, mark.start)))") }
+      if mark.start > cursor { text = Text("\(text)\(words(cursor, mark.start))") }
       switch mark.kind {
       case .brand(let brand):
         let tint = Color.dynamic(light: brand.light, dark: brand.dark)
@@ -249,7 +292,7 @@ enum InlineText {
       }
       cursor = mark.end
     }
-    if cursor < characters.count { text = Text("\(text)\(Text(piece(cursor, characters.count)))") }
+    if cursor < characters.count { text = Text("\(text)\(words(cursor, characters.count))") }
     return Made(text: text, agents: agents)
   }
 

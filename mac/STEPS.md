@@ -531,7 +531,8 @@ from its code. Pushed so far:
   picks stay with its words while another chat is open. What is pasted
   comes in as plain words.
 
-- **Attaching files**: the + opens the Mac's open panel over the window
+- **Attaching files**: the + opens its menu (Photo or Video, Choose File;
+  "Attach's menu" below), Choose File the Mac's open panel over the window
   for several files; files dropped anywhere on the chat (the window's blue
   wash and "Drop files to add to chat") or on the words, and files or a
   picture pasted (as "image.png"), are taken too. Six at most ("Only 6
@@ -2727,3 +2728,34 @@ on the iPhone, whose connect card points here (`docs/services-agents.md`,
 "1Password").
 
 Not yet built or run on a Mac, and not with a real 1Password account.
+
+### Attach's menu (29 October 2026)
+
+The founder, after Messages' own: "the plus button in the chat design it like
+this for both iphone and mac". The + opens a Mac menu upward from itself
+(`AttachMenu` in `Attachments.swift`): Photo or Video (the Photos library's
+picker, up to six; a HEIC photo goes as JPEG so the chat shows it as a
+picture) and Choose File (the open panel, as before). On the iPhone the + is a
+menu too: Photo or Video, Take Photo (the camera, whose permission line now
+says so) and Choose File, with Paste Picture while the clipboard holds one.
+
+Not yet built or run on a Mac or an iPhone (Linux here: the files parse).
+
+### A link's site icon, and Markdown's (29 October 2026)
+
+The founder: "for each link sent in chat, put next to it the favicon … but
+the link stays blue". Each link in an agent's words comes after its site's
+icon (`LinkIcons` in SimeonCore), the one the Credentials Store shows: read
+from the site itself, never a favicon service, once per site while the app
+runs and kept a week on disk. It is drawn 1.05 em square in rounded corners,
+where an app's logo goes before its name; the words appear first and the
+icon joins them when it comes. A link to an email (Gmail, Outlook on the web)
+still has none (22 October 2026: "remove that gmail logo"), nor a link in a
+file's words. The same on the iPhone. A Markdown file (.md, .markdown, .mdx)
+has the founder's blue document icon, in the chat and over the words.
+
+On the iPhone, search hides the bar with Messages, the account and the filter,
+so its tabs are the top of the screen, as the Mac's search has them.
+
+Not yet built or run on a Mac or an iPhone (Linux here: the files parse, and
+SimeonCore and its tests build and pass).

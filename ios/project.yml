@@ -96,10 +96,10 @@ targets:
         NSMicrophoneUsageDescription: Simeon listens when you dictate a message or call an agent.
         NSSpeechRecognitionUsageDescription: Simeon turns what you say into the message you are writing.
         NSPhotoLibraryUsageDescription: Simeon sends the photos you pick to your agent.
-        # Never asked: the app has no camera feature, but the calls' voice kit
-        # (LiveKit, under ElevenLabs' kit) links camera code, and App Store
-        # Connect refuses a build without this line (ITMS-90683).
-        NSCameraUsageDescription: Simeon's calls with your agents are voice only and never turn on the camera.
+        # Asked at the + menu's Take Photo (Composer.swift), the camera's one
+        # use: calls stay voice only, though their kit (LiveKit, under
+        # ElevenLabs' kit) links camera code.
+        NSCameraUsageDescription: Simeon uses the camera only when you take a photo to send in a chat.
         # The lock the person may turn on in the first run or Settings (AppLock.swift).
         NSFaceIDUsageDescription: Simeon uses Face ID to unlock the app, so only you can see your agents.
         # A call keeps going with the screen locked.

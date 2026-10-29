@@ -1340,7 +1340,7 @@ private struct FileCard: View {
   }
 }
 
-/** A file's kind as the window draws it: Word, Excel, PowerPoint and PDF in their own colours, any other file as a page. */
+/** A file's kind as the window draws it: Word, Excel, PowerPoint, PDF and Markdown in their own colours, any other file as a page. */
 private struct FileIcon: View {
   let name: String
   let look: Look
@@ -1367,6 +1367,7 @@ private struct FileIcon: View {
     case "xls", "xlsx", "csv": return "FileIcons/excel"
     case "ppt", "pptx": return "FileIcons/powerpoint"
     case "pdf": return "FileIcons/pdf"
+    case "md", "markdown", "mdx": return "FileIcons/markdown"
     default: return nil
     }
   }

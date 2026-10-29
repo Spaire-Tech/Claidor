@@ -22,6 +22,28 @@ struct StagedFile: Identifiable, Equatable {
 enum IncomingFile: Sendable {
   case url(URL)
   case data(name: String, data: Data)
+
+  /**
+   * A photo or video from the Photos library (Attach's Photo or Video),
+   * named Photo 1, Photo 2…; a photo in a kind the chat doesn't show as a
+   * picture (HEIC, as an iPhone takes them) goes as JPEG, its orientation
+   * kept.
+   */
+  static func photo(_ data: Data, type: UTType?, number: Int) -> IncomingFile {
+    let ext = type?.preferredFilenameExtension?.lowercased() ?? "jpg"
+    if type?.conforms(to: .image) == true, !StagedFile.pictureExtensions.contains(ext), let jpeg = jpeg(data) {
+      return .data(name: "Photo \(number).jpg", data: jpeg)
+    }
+    return .data(name: "Photo \(number).\(ext)", data: data)
+  }
+
+  private static func jpeg(_ data: Data) -> Data? {
+    let out = NSMutableData()
+    guard let source = CGImageSourceCreateWithData(data as CFData, nil),
+          let destination = CGImageDestinationCreateWithData(out, UTType.jpeg.identifier as CFString, 1, nil) else { return nil }
+    CGImageDestinationAddImageFromSource(destination, source, 0, [kCGImageDestinationLossyCompressionQuality: 0.9] as CFDictionary)
+    return CGImageDestinationFinalize(destination) ? out as Data : nil
+  }
 }
 
 extension ChatControl {
@@ -113,6 +135,57 @@ extension ChatControl {
     } else {
       panel.begin(completionHandler: take)
     }
+  }
+}
+
+// MARK: Attach's menu
+
+/**
+ * Attach's menu (29 October 2026, the founder, after Messages' own: "the
+ * plus button in the chat design it like this for both iphone and mac"):
+ * Photo or Video and Choose File, each with its symbol, opening upward from
+ * the + so it never covers the field; at the pointer when the + can't be
+ * placed. Until that day + opened the open panel at once.
+ */
+@MainActor
+enum AttachMenu {
+  static func show(over button: CGRect, photos: @escaping () -> Void, files: @escaping () -> Void) {
+    let menu = NSMenu()
+    menu.autoenablesItems = false
+    let handler = Handler(photos: photos, files: files)
+    menu.addItem(handler.item(String(localized: "Photo or Video"), symbol: "photo.on.rectangle", action: #selector(Handler.choosePhotos)))
+    menu.addItem(handler.item(String(localized: "Choose File"), symbol: "folder", action: #selector(Handler.chooseFiles)))
+    // The handler lives as long as the menu.
+    objc_setAssociatedObject(menu, &Handler.key, handler, .OBJC_ASSOCIATION_RETAIN)
+    guard let window = NSApp.keyWindow ?? MacServices.shared.mainWindow, let view = window.contentView else {
+      files()
+      return
+    }
+    // The menu's top left goes at the point: its foot 4 over the button's top, as the account's menu opens upward.
+    let point = button == .zero ? window.mouseLocationOutsideOfEventStream : NSPoint(x: button.minX, y: button.maxY + 4 + menu.size.height)
+    menu.popUp(positioning: nil, at: view.convert(point, from: nil), in: view)
+  }
+
+  final class Handler: NSObject {
+    nonisolated(unsafe) static var key = 0
+    let photos: () -> Void
+    let files: () -> Void
+
+    init(photos: @escaping () -> Void, files: @escaping () -> Void) {
+      self.photos = photos
+      self.files = files
+    }
+
+    func item(_ title: String, symbol: String, action: Selector) -> NSMenuItem {
+      let item = NSMenuItem(title: title, action: action, keyEquivalent: "")
+      item.target = self
+      item.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)
+      return item
+    }
+
+    @MainActor @objc func choosePhotos() { photos() }
+
+    @MainActor @objc func chooseFiles() { files() }
   }
 }
 
@@ -270,13 +343,14 @@ private struct RemoveButton: View {
 }
 
 extension AttachmentStrip {
-  /** Word, Excel, PowerPoint and PDF in their own colours, as the chat's file card. */
+  /** Word, Excel, PowerPoint, PDF and Markdown in their own colours, as the chat's file card. */
   static func icon(_ name: String) -> String? {
     switch (name as NSString).pathExtension.lowercased() {
     case "doc", "docx", "rtf": return "FileIcons/word"
     case "xls", "xlsx", "csv": return "FileIcons/excel"
     case "ppt", "pptx": return "FileIcons/powerpoint"
     case "pdf": return "FileIcons/pdf"
+    case "md", "markdown", "mdx": return "FileIcons/markdown"
     default: return nil
     }
   }
