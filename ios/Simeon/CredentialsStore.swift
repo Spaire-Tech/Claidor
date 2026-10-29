@@ -2,9 +2,9 @@ import SimeonCore
 import SwiftUI
 
 /**
- * Secure Credentials Store (the founder, 28 October 2026: "Let's call it
- * Secure Credentials Store … the agent should be able to see logins … use
- * our existing design and for whatever saved, have the favicon be there"):
+ * Credentials Store (the founder, 28 October 2026: "the agent should be
+ * able to see logins … use our existing design and for whatever saved, have
+ * the favicon be there"; 29 October: "name it Credentials Store"):
  * as plain as Wallet. Logins, each its site's icon, its name and its
  * username; Cards, which Link keeps (Wallet); Contact info. + adds a login,
  * a card (Wallet) or contact info, as the upstream app's vault does. A row
@@ -67,7 +67,7 @@ struct CredentialsStorePage: View {
       }
     }
     .groupedGround()
-    .navigationTitle("Secure Credentials Store")
+    .navigationTitle("Credentials Store")
     .inlineBarTitle()
     .toolbar {
       ToolbarItem(placement: .primaryAction) {

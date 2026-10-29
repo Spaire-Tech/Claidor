@@ -12,7 +12,7 @@ import SimeonCore
  * each with its symbol, the current one on a grey ground, Log out at the
  * foot; the page's name at the top of the rest, its groups under it across
  * the page, from its left. General, Usage & Billing
- * once the account's usage is in hand, Wallet, Secure Credentials Store (28
+ * once the account's usage is in hand, Wallet, Credentials Store (28
  * October 2026), Permissions, Computer (the
  * agents' computer and this Mac), Updates (a dot while one is waiting),
  * Help & support (22 October 2026) and Legal; the account is General's
@@ -33,7 +33,7 @@ final class SettingsState {
       case .general: String(localized: "General")
       case .usage: String(localized: "Usage & Billing")
       case .wallet: String(localized: "Wallet")
-      case .credentials: String(localized: "Secure Credentials Store")
+      case .credentials: String(localized: "Credentials Store")
       case .permissions: String(localized: "Permissions")
       case .computer: String(localized: "Computer")
       case .updates: String(localized: "Updates")

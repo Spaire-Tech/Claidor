@@ -2,8 +2,8 @@ import Foundation
 import Observation
 
 /**
- * The Secure Credentials Store (28 October 2026, the founder: "Let's call it
- * Secure Credentials Store"): the logins and the contact info the person keeps
+ * The Credentials Store (28 October 2026; the founder, 29 October: "name it
+ * Credentials Store"): the logins and the contact info the person keeps
  * for their agents to sign in and sign up with, as the upstream app's own
  * vault keeps them. Simeon Labs' server holds them, sealed for this person
  * (`server/simeon/desktop/credentials.py`), so they are changed here while the

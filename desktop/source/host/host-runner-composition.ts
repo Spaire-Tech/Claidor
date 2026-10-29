@@ -918,7 +918,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
     browserPort: (agentId: string) => 9222 + (boxAgentWindowIndex(extensions.api("forever-box").box as any, agentId) ?? 1),
     otherPorts: BOX_CHROME_PORTS,
   });
-  // The person's Secure Credentials Store (28 October 2026, shared/node/credentials-store/):
+  // The person's Credentials Store (28 October 2026, shared/node/credentials-store/):
   // their logins and contact info, held sealed by the server and asked for as this computer.
   const credentialsStore = createCredentialsStore((path, request) => simeonApiData(serverAuth, path, {
     ...(request?.method === undefined ? {} : { method: request.method }),
@@ -2425,7 +2425,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
                 },
               },
             }),
-            // The Secure Credentials Store's tools (28 October 2026): a login typed into the agent's
+            // The Credentials Store's tools (28 October 2026): a login typed into the agent's
             // own Chrome first, else a tab on the site in another window; never for a channel's message.
             createCredentialsStoreToolInputs: () => {
               const ports = (): number[] => {

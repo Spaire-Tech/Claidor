@@ -1498,10 +1498,11 @@ decline. A password or a code is masked, and nothing they typed is ever shown to
   a selector, a snapshot ref, a field in a frame, a menu, a checkbox, Enter for a code).
 * **Not yet verified.** Not run on the cloud computer, a Mac or an iPhone.
 
-### The Secure Credentials Store (28 October 2026)
+### The Credentials Store (28 October 2026)
 
-**For the person.** Settings → Secure Credentials Store (the founder: "Let's call it Secure
-Credentials Store"), on the iPhone and the Mac, as the upstream app's vault: Logins (a name,
+**For the person.** Settings → Credentials Store (the founder, 29 October 2026: "name it
+Credentials Store"; its first name, Credentials Store, was cut in the Mac's
+Settings list), on the iPhone and the Mac, as the upstream app's vault: Logins (a name,
 the website, the username or email, the password, and hints, "Tell Simeon when to use this
 entry"), Cards and Contact info (a name, their full name, email, phone and address). Each
 login shows its site's icon. A saved password shows only after Face ID or Touch ID. Cards are

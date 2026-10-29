@@ -702,7 +702,7 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
 
   /** Whether the demo account has set a password (Settings › Account). */
   private var passwordSet = false
-  /** The Secure Credentials Store, as the server keeps it (`credentials.py`), with a login and the person's contact info. */
+  /** The Credentials Store, as the server keeps it (`credentials.py`), with a login and the person's contact info. */
   private var credentials: [JSON] = [
     ["id": "6f1c2a8e-0b1d-4c55-9a6e-2f0d3c4b5a61", "kind": "login", "name": "GitHub", "website": "github.com", "site": "github.com", "username": "bass@example.com", "password": "demo-Passw0rd-github", "hints": "Use for work"],
     ["id": "7a2d3b9f-1c2e-4d66-8b7f-3e1f4d5c6b72", "kind": "contact", "name": "Home", "fullName": "Bass Fall", "email": "bass@example.com", "phone": "+1 415 555 0100", "addressLine1": "1 Market Street", "city": "San Francisco", "region": "CA", "postalCode": "94105", "country": "US"],
@@ -731,7 +731,7 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
     }
     let id = String(path.dropFirst("credentials/".count))
     guard let index = credentials.firstIndex(where: { $0["id"]?.string == id }) else {
-      throw SimeonAPIError(message: "That entry isn't in your Secure Credentials Store anymore.", status: 404)
+      throw SimeonAPIError(message: "That entry isn't in your Credentials Store anymore.", status: 404)
     }
     switch method {
     case "DELETE":

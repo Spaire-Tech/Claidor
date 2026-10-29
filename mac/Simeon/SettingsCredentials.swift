@@ -2,12 +2,12 @@ import AppKit
 import SwiftUI
 import SimeonCore
 
-// MARK: - Secure Credentials Store
+// MARK: - Credentials Store
 
 /**
- * Secure Credentials Store (the iPhone's CredentialsStorePage; the founder,
- * 28 October 2026: "Let's call it Secure Credentials Store … use our
- * existing design and for whatever saved, have the favicon be there"): what
+ * Credentials Store (the iPhone's CredentialsStorePage; the founder, 28
+ * October 2026: "use our existing design and for whatever saved, have the
+ * favicon be there"; 29 October: "name it Credentials Store"): what
  * it is for in a line, as Wallet's page; then Logins, each its site's icon
  * (28), its name over its username; Cards, which Link keeps (Wallet's
  * page); Contact info. Each group ends in its Add, in the link blue. A row

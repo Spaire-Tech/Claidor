@@ -390,7 +390,7 @@ class DesktopChannelBot(RecordModel):
 
 
 class DesktopCredential(RecordModel):
-    """One entry of the person's Secure Credentials Store (28 October 2026,
+    """One entry of the person's Credentials Store (28 October 2026,
     `simeon.desktop.credentials`): a login (a site, a username, a password,
     hints on when to use it) or their contact info, kept for the agents to
     sign in and sign up with. `kind` says which; everything the person

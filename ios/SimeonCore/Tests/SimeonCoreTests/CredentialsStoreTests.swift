@@ -2,7 +2,7 @@ import Foundation
 import XCTest
 @testable import SimeonCore
 
-/** The Secure Credentials Store (CredentialsStore.swift): entries as the server lists them, the editor's checks and bodies, and the page's model against the demo. */
+/** The Credentials Store (CredentialsStore.swift): entries as the server lists them, the editor's checks and bodies, and the page's model against the demo. */
 final class CredentialsStoreTests: XCTestCase {
   func testAnEntryAsTheServerListsIt() throws {
     let login = try XCTUnwrap(StoredCredential(json: ["id": "a1", "kind": "login", "name": "", "website": "https://www.acme.com/login", "site": "acme.com", "username": "theo@example.com", "hasPassword": true, "hints": "Use for work", "savedBy": "Nora"]))

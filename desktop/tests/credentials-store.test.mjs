@@ -1,5 +1,5 @@
 /**
- * The Secure Credentials Store (28 October 2026): the logins and contact info
+ * The Credentials Store (28 October 2026): the logins and contact info
  * the person keeps in Settings for their agents, held sealed by the server
  * (`server/simeon/desktop/credentials.py`) and used by the agent's tools. At a
  * sign-in the saved login is typed into the page, only on its own site; at a
@@ -52,7 +52,7 @@ function fakeServer() {
     }
     const id = pathName.split("/")[1];
     if (id === HOME) return { entry: contact };
-    if (logins[id] == null) throw new Error("That entry isn't in your Secure Credentials Store anymore.");
+    if (logins[id] == null) throw new Error("That entry isn't in your Credentials Store anymore.");
     if (request.method === "PATCH") {
       Object.assign(logins[id], request.json);
       const { password: _password, ...shown } = logins[id];
@@ -167,7 +167,7 @@ test("the agent's tools: a login typed only on its own site, a password read onl
     assert.equal(server.calls.filter((one) => one.method === "POST").length, 0);
     newAnswer = { ok: true, page: "signup.shop.example", filled: 2, failed: 0 };
     const madeAnswer = await call(make, { site: "https://signup.shop.example/join", username: "ada@example.com" });
-    assert.match(madeAnswer, new RegExp(`typed it into 2 password fields on signup\\.shop\\.example; saved as a login for shop\\.example with username ada@example\\.com in the user's Secure Credentials Store \\(entry_id ${MADE}\\)`));
+    assert.match(madeAnswer, new RegExp(`typed it into 2 password fields on signup\\.shop\\.example; saved as a login for shop\\.example with username ada@example\\.com in the user's Credentials Store \\(entry_id ${MADE}\\)`));
     assert.doesNotMatch(madeAnswer, /kobwyc/, "the agent never needs to see it");
     assert.deepEqual(newPasswords.at(-1), { domain: "signup.shop.example", value: "kobwyc-Qinbe7-mocwux" });
     assert.deepEqual(server.calls.at(-1).json, { kind: "login", website: "shop.example", username: "ada@example.com", password: "kobwyc-Qinbe7-mocwux", savedBy: "Nora" });
@@ -180,7 +180,7 @@ test("the agent's tools: a login typed only on its own site, a password read onl
     const [, , , makeFailing] = tools.module.createCredentialsStoreTools(failing);
     assert.match(said(await run(context.module.createContext, makeFailing, { site: "shop.example", username: "ada" })), /couldn't be saved.*here it is: kobwyc-Qinbe7-mocwux/);
 
-    assert.match(await call(save, { website: "https://gym.example", username: "ada", password: "s3cret" }), /Saved \\"gym\.example\\" \(gym\.example\) in the user's Secure Credentials Store/);
+    assert.match(await call(save, { website: "https://gym.example", username: "ada", password: "s3cret" }), /Saved \\"gym\.example\\" \(gym\.example\) in the user's Credentials Store/);
 
     // A channel's message (Discord, Slack…) can come from anyone: nothing of the store is used for it.
     source = "connector";
@@ -255,7 +255,7 @@ test("the store's tools are in the agent's turn and brief, never in a shared roo
   const shared = toolset.slice(toolset.indexOf("export const SHARED_ROOM_TOOL_NAMES"), toolset.indexOf("export const SAND_FORCED_STATIC_TOOL_NAMES"));
   for (const name of ["ListStoredCredentials", "FillStoredLogin", "ReadStoredPassword", "FillNewPassword", "SaveStoredLogin"]) assert.doesNotMatch(shared, new RegExp(name), `${name} is never offered in a shared room`);
   const brief = await src("host/runner/system-prompt.ts");
-  assert.match(brief, /At any sign-in or sign-up, look in their Secure Credentials Store first \(ListStoredCredentials with the page's site/);
+  assert.match(brief, /At any sign-in or sign-up, look in their Credentials Store first \(ListStoredCredentials with the page's site/);
   assert.match(await src("host/runner/prompt-collector-glue.ts"), /FillNewPassword makes the password, types it into the page and saves the login/);
   assert.match(await src("shared/node/simeon-backend/simeon-api.ts"), /readonly method\?: "GET" \| "POST" \| "PATCH";/);
   const serverModule = await readFile(path.join(repoRoot, "..", "server", "simeon", "desktop", "credentials.py"), "utf8");

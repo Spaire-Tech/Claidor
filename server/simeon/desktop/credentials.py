@@ -1,5 +1,5 @@
-"""The person's Secure Credentials Store (28 October 2026, the founder: "Let's
-call it Secure Credentials Store"): the logins and the contact info the agents
+"""The person's Credentials Store (28 October 2026; the founder, 29 October:
+"name it Credentials Store"): the logins and the contact info the agents
 sign in and sign up with. Kept here, not on the agents' computer, so the apps
 change them while the computer sleeps and the agents use them while the Mac
 is closed.

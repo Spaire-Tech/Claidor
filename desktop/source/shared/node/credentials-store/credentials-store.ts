@@ -1,5 +1,5 @@
-// The person's Secure Credentials Store (28 October 2026, the founder: "Let's
-// call it Secure Credentials Store"): the logins and the contact info they keep
+// The person's Credentials Store (28 October 2026; the founder, 29 October:
+// "name it Credentials Store"): the logins and the contact info they keep
 // in Settings for their agents, the way the upstream app's own vault keeps
 // them. Simeon Labs' server holds them, sealed (`server/simeon/desktop/
 // credentials.py`), so the apps change them while this computer sleeps and the

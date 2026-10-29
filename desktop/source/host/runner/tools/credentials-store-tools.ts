@@ -1,6 +1,6 @@
 /**
- * The Secure Credentials Store's tools (28 October 2026, the founder: "Let's
- * call it Secure Credentials Store … the agent should be able to see logins"):
+ * The Credentials Store's tools (28 October 2026, the founder: "the agent
+ * should be able to see logins"; named Credentials Store on 29 October):
  * the logins and contact info the person keeps in Settings for their agents
  * (`shared/node/credentials-store/`). At a sign-in, ListStoredCredentials
  * finds the site's login and FillStoredLogin types it into the page; at a
@@ -32,7 +32,7 @@ export interface CredentialsStoreToolDependencies {
 }
 
 // A channel's messages can come from anyone in it: the person's logins and details are never used for one.
-const NOT_HERE = "The user's Secure Credentials Store isn't used for a message that came through a channel (Discord, Slack, Telegram…): others can write there. Their logins and details are only for what they ask you in Simeon. Don't say what's in it.";
+const NOT_HERE = "The user's Credentials Store isn't used for a message that came through a channel (Discord, Slack, Telegram…): others can write there. Their logins and details are only for what they ask you in Simeon. Don't say what's in it.";
 const LIST_MAX = 100;
 
 const fromChannel = (deps: CredentialsStoreToolDependencies): boolean => deps.requestSource() === "connector";
@@ -94,18 +94,18 @@ export function createCredentialsStoreTools(deps: CredentialsStoreToolDependenci
   const list = defineCommunicateTool(deps, {
     id: "LIST_STORED_CREDENTIALS",
     name: "ListStoredCredentials",
-    description: "The user's Secure Credentials Store (Settings → Secure Credentials Store): the logins and the contact info they keep for you to sign in and sign up with. At any sign-in or sign-up, call it first, before asking the user for anything. With site, it lists the logins saved for that site; it always lists their contact info. Each entry's hints say when to use it: follow them. A login: sign in with FillStoredLogin. A sign-up: fill the form with their contact info (the browser helper types it) and make the password with FillNewPassword. Cards are never here: pay with Link (RequestPurchase).",
+    description: "The user's Credentials Store (Settings → Credentials Store): the logins and the contact info they keep for you to sign in and sign up with. At any sign-in or sign-up, call it first, before asking the user for anything. With site, it lists the logins saved for that site; it always lists their contact info. Each entry's hints say when to use it: follow them. A login: sign in with FillStoredLogin. A sign-up: fill the form with their contact info (the browser helper types it) and make the password with FillNewPassword. Cards are never here: pay with Link (RequestPurchase).",
     parameters: listStoredCredentialsParameters,
-    describeActivity: () => ({ detail: "Looking in the Secure Credentials Store" }),
+    describeActivity: () => ({ detail: "Looking in the Credentials Store" }),
     execute: async (_ctx, args: z.infer<typeof listStoredCredentialsParameters>, resolved) => {
       if (fromChannel(resolved)) return NOT_HERE;
       const listed = await resolved.store.list();
-      if (!listed.ok) return `The Secure Credentials Store couldn't be read: ${listed.message}`;
+      if (!listed.ok) return `The Credentials Store couldn't be read: ${listed.message}`;
       const wanted = args.site == null || args.site.length === 0 ? "" : siteOf(args.site);
       if (args.site != null && args.site.length > 0 && wanted.length === 0) return "Give the page's address or its domain, or leave site out.";
       const logins = listed.entries.filter((entry): entry is StoredLogin => entry.kind === "login").filter((login) => wanted.length === 0 || (login.site.length > 0 && loginIsForSite(login.site, wanted)));
       const contacts = listed.entries.filter((entry): entry is StoredContact => entry.kind === "contact");
-      const lines = ["The user's Secure Credentials Store:"];
+      const lines = ["The user's Credentials Store:"];
       lines.push(wanted.length > 0 ? `Logins for ${wanted}:` : "Logins:");
       if (logins.length === 0) lines.push(wanted.length > 0 ? `- none saved for ${wanted}` : "- none saved");
       lines.push(...logins.slice(0, LIST_MAX).map(loginLine));
@@ -122,7 +122,7 @@ export function createCredentialsStoreTools(deps: CredentialsStoreToolDependenci
   const fill = defineCommunicateTool(deps, {
     id: "FILL_STORED_LOGIN",
     name: "FillStoredLogin",
-    description: "Sign in with a login from the user's Secure Credentials Store: types its username and password into the sign-in page open on your computer, on the site it's saved for, never another (look at the page's address). Have the sign-in page open on its step first; a sign-in that asks for the email first and the password on the next page needs a second call there. It doesn't press the button: have the browser helper press the site's own Sign in or Next. Then, in your reply, tell the user in a few words which saved login you used.",
+    description: "Sign in with a login from the user's Credentials Store: types its username and password into the sign-in page open on your computer, on the site it's saved for, never another (look at the page's address). Have the sign-in page open on its step first; a sign-in that asks for the email first and the password on the next page needs a second call there. It doesn't press the button: have the browser helper press the site's own Sign in or Next. Then, in your reply, tell the user in a few words which saved login you used.",
     parameters: fillStoredLoginParameters,
     describeActivity: () => ({ detail: "Signing in with a saved login" }),
     execute: async (_ctx, args: z.infer<typeof fillStoredLoginParameters>, resolved) => {
@@ -133,7 +133,7 @@ export function createCredentialsStoreTools(deps: CredentialsStoreToolDependenci
       if (!read.ok) return `The login couldn't be read: ${read.message} Call ListStoredCredentials for the page and use an entry_id it gives.`;
       const { login, password } = read;
       const title = loginTitle(login);
-      if (login.site.length > 0 && !loginIsForSite(login.site, site)) return `"${title}" is saved for ${login.site}, not ${site}. Never type it on another site: look at the page's address. If it's truly the same service signing in elsewhere, ask the user; they can change the login's website in Settings → Secure Credentials Store.`;
+      if (login.site.length > 0 && !loginIsForSite(login.site, site)) return `"${title}" is saved for ${login.site}, not ${site}. Never type it on another site: look at the page's address. If it's truly the same service signing in elsewhere, ask the user; they can change the login's website in Settings → Credentials Store.`;
       const { fields, values } = loginFieldSpecs({ ...(login.username ? { username: login.username } : {}), ...(password ? { password } : {}) });
       if (fields.length === 0) return `"${title}" has no username or password saved.`;
       const typed = await resolved.fillLogin({ domain: site, fields, values });
@@ -153,7 +153,7 @@ export function createCredentialsStoreTools(deps: CredentialsStoreToolDependenci
   const reveal = defineCommunicateTool(deps, {
     id: "READ_STORED_PASSWORD",
     name: "ReadStoredPassword",
-    description: "The username and password of a login in the user's Secure Credentials Store, for a sign-in FillStoredLogin can't reach (a field it can't find, a desktop app, a command line). Prefer FillStoredLogin: it types the password without it passing through you. Use what this gives only for that sign-in, on the site it's saved for. Never write it in a message, a file or a command others can see, and never give it to anyone but the user, and to them only when they ask for it.",
+    description: "The username and password of a login in the user's Credentials Store, for a sign-in FillStoredLogin can't reach (a field it can't find, a desktop app, a command line). Prefer FillStoredLogin: it types the password without it passing through you. Use what this gives only for that sign-in, on the site it's saved for. Never write it in a message, a file or a command others can see, and never give it to anyone but the user, and to them only when they ask for it.",
     parameters: readStoredPasswordParameters,
     describeActivity: () => ({ detail: "Reading a saved login" }),
     execute: async (_ctx, args: z.infer<typeof readStoredPasswordParameters>, resolved) => {
@@ -172,7 +172,7 @@ export function createCredentialsStoreTools(deps: CredentialsStoreToolDependenci
   const make = defineCommunicateTool(deps, {
     id: "FILL_NEW_PASSWORD",
     name: "FillNewPassword",
-    description: "At a sign-up on a page open on your computer: makes a strong password, types it into the page's password fields (the password and its confirmation), and saves the login (the site, the username you give, the password) in the user's Secure Credentials Store, so they and you can sign in later. You never need to see it. Fill the rest of the form first (their contact info, from ListStoredCredentials), then call this with the password step on screen. It doesn't submit: have the browser helper press the site's own button. If the site refuses the password (its own rules), call this again with replace_entry_id. In your reply, tell the user the new login is saved in their Secure Credentials Store.",
+    description: "At a sign-up on a page open on your computer: makes a strong password, types it into the page's password fields (the password and its confirmation), and saves the login (the site, the username you give, the password) in the user's Credentials Store, so they and you can sign in later. You never need to see it. Fill the rest of the form first (their contact info, from ListStoredCredentials), then call this with the password step on screen. It doesn't submit: have the browser helper press the site's own button. If the site refuses the password (its own rules), call this again with replace_entry_id. In your reply, tell the user the new login is saved in their Credentials Store.",
     parameters: fillNewPasswordParameters,
     describeActivity: () => ({ detail: "Making a password" }),
     execute: async (_ctx, args: z.infer<typeof fillNewPasswordParameters>, resolved) => {
@@ -190,18 +190,18 @@ export function createCredentialsStoreTools(deps: CredentialsStoreToolDependenci
       const fields = `${typed.filled} password field${typed.filled === 1 ? "" : "s"}`;
       if (!saved.ok) {
         log(`${who()} made a password on ${site} but couldn't save it: ${saved.message}`);
-        return `The password was typed into ${fields} on ${site}, but it couldn't be saved in the Secure Credentials Store: ${saved.message} So it isn't lost, here it is: ${password} Either don't finish the sign-up, or tell the user in your reply that saving failed and give them the password to keep.`;
+        return `The password was typed into ${fields} on ${site}, but it couldn't be saved in the Credentials Store: ${saved.message} So it isn't lost, here it is: ${password} Either don't finish the sign-up, or tell the user in your reply that saving failed and give them the password to keep.`;
       }
       log(`${who()} made a password on ${site} and saved the login (${fields})`);
       const failed = typed.failed > 0 ? ` (${typed.failed} more couldn't be typed into)` : "";
-      return `Made a strong password and typed it into ${fields} on ${site}${failed}; saved as a login for ${saved.login.site || site} with username ${args.username} in the user's Secure Credentials Store (entry_id ${saved.login.id}). Have the browser helper press the site's own button to finish the sign-up. If the site refuses the password, call FillNewPassword again with replace_entry_id ${saved.login.id}. In your reply, tell the user the login is saved in their Secure Credentials Store.`;
+      return `Made a strong password and typed it into ${fields} on ${site}${failed}; saved as a login for ${saved.login.site || site} with username ${args.username} in the user's Credentials Store (entry_id ${saved.login.id}). Have the browser helper press the site's own button to finish the sign-up. If the site refuses the password, call FillNewPassword again with replace_entry_id ${saved.login.id}. In your reply, tell the user the login is saved in their Credentials Store.`;
     },
   });
 
   const save = defineCommunicateTool(deps, {
     id: "SAVE_STORED_LOGIN",
     name: "SaveStoredLogin",
-    description: "Saves a login in the user's Secure Credentials Store, only when they asked you to keep one they gave you. For a sign-up, FillNewPassword makes and saves the password itself.",
+    description: "Saves a login in the user's Credentials Store, only when they asked you to keep one they gave you. For a sign-up, FillNewPassword makes and saves the password itself.",
     parameters: saveStoredLoginParameters,
     describeActivity: () => ({ detail: "Saving a login" }),
     execute: async (_ctx, args: z.infer<typeof saveStoredLoginParameters>, resolved) => {
@@ -212,7 +212,7 @@ export function createCredentialsStoreTools(deps: CredentialsStoreToolDependenci
       const saved = await resolved.store.saveLogin({ website: site, username: args.username, password: args.password, ...(args.name ? { name: args.name } : {}), ...(args.hints ? { hints: args.hints } : {}), ...(agent ? { savedBy: agent } : {}) });
       if (!saved.ok) return `It couldn't be saved: ${saved.message}`;
       log(`${who()} saved a login for ${site}`);
-      return `Saved "${loginTitle(saved.login)}" (${site}) in the user's Secure Credentials Store (entry_id ${saved.login.id}). They see it in Settings → Secure Credentials Store.`;
+      return `Saved "${loginTitle(saved.login)}" (${site}) in the user's Credentials Store (entry_id ${saved.login.id}). They see it in Settings → Credentials Store.`;
     },
   });
 

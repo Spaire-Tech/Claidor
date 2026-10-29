@@ -113,7 +113,7 @@ class AccountDeletionRepository:
             "link_wallets": delete(DesktopLinkWallet).where(
                 DesktopLinkWallet.user_id == user_id
             ),
-            # The Secure Credentials Store (`credentials.py`).
+            # The Credentials Store (`credentials.py`).
             "credentials": delete(DesktopCredential).where(
                 DesktopCredential.user_id == user_id
             ),
