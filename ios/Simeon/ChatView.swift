@@ -318,6 +318,8 @@ struct ChatMessages: View {
   @State private var window = ChatMessages.firstWindow
   /** The top of the drawn rows (the spinner over them) is on screen. */
   @State private var topInSight = false
+  /** The person's finger is moving the chat (or it still glides from it): nothing pulls it to the end meanwhile. */
+  @State private var dragging = false
   private static let firstWindow = 24
   private static let bottomId = "chat-bottom"
 
@@ -424,6 +426,18 @@ struct ChatMessages: View {
       // that left it. So the end is asked for again while the rows settle, until the person moves the chat themselves.
       .onScrollPhaseChange { _, phase in
         if phase == .interacting && !leftEnd { leftEnd = true }
+        let moving = phase == .interacting || phase == .tracking || phase == .decelerating
+        if dragging != moving { dragging = moving }
+      }
+      // Held at the end (29 October 2026, the founder: "when the text is sent, its not at the bottom"): what grows under
+      // the last line while the chat is at its end (the message just sent taking its place, the computer's copy of it, the
+      // agent's typing line, its answer) keeps the end in sight. `defaultScrollAnchor(.bottom, for: .sizeChanges)` alone
+      // let it slip. Never while the person is moving the chat, nor when they were reading further up.
+      .onScrollGeometryChange(for: EndGap.self) { geometry in
+        EndGap(height: geometry.contentSize.height.rounded(), gap: (geometry.contentSize.height - geometry.visibleRect.maxY).rounded())
+      } action: { old, new in
+        guard new.height > old.height, old.gap < 120, !dragging, store.revealing[agentId] == nil else { return }
+        withAnimation(.snappy) { reader.scrollTo(Self.bottomId, anchor: .bottom) }
       }
       .task { await holdAtEnd(reader) }
       .onChange(of: [all.count, rows.count]) { _, _ in
@@ -439,12 +453,15 @@ struct ChatMessages: View {
         guard let from = now.lastIndex(where: { $0.id == old }) else { return }
         let added = now[(from + 1)...]
         window += added.count
-        // A message of the person's own just went out: to the end, wherever the chat was, once the row has its place.
+        // A message of the person's own just went out: to the end, wherever the chat was, once the row has its place, and
+        // again once the keyboard and the field have settled (a scroll from far up can end short of rows that grew meanwhile).
         if added.contains(where: { row in if case .bubble(let b) = row { return b.fromPerson }; return false }) {
           unseen = 0
           Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 50_000_000)
-            withAnimation(.snappy) { reader.scrollTo(Self.bottomId, anchor: .bottom) }
+            for pause: UInt64 in [50, 300] {
+              try? await Task.sleep(nanoseconds: pause * 1_000_000)
+              withAnimation(.snappy) { reader.scrollTo(Self.bottomId, anchor: .bottom) }
+            }
           }
           return
         }
@@ -521,6 +538,12 @@ struct ChatMessages: View {
 
   /** A chat, or one of its threads, as the composer names it when it takes the keys. */
   static func scope(_ agentId: String, _ thread: String?) -> String { "\(agentId)#\(thread ?? "")" }
+
+  /** How tall the chat's content is, and how far its end is below what is in sight, in whole points. */
+  struct EndGap: Equatable {
+    let height: CGFloat
+    let gap: CGFloat
+  }
 
   /** A row above the drawn ones is drawn first, then scrolled to. */
   private func reveal(_ id: String, then scroll: @escaping () -> Void) {
