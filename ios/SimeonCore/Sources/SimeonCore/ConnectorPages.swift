@@ -22,115 +22,223 @@ public struct ConnectorPage: Sendable, Equatable {
   public static func page(for id: String) -> ConnectorPage? {
     switch id {
     case "gmail":
-      return ConnectorPage(
-        maker: "Google",
+      return page("Google", site: "https://workspace.google.com/products/gmail/", privacy: "https://policies.google.com/privacy", terms: "https://policies.google.com/terms",
         about: L10n.text("Your agents search and read your email in Gmail, summarize long threads, and draft replies for you to check before anything is sent."),
-        examples: [
-          L10n.text("Summarize the last five emails from my accountant in Gmail and list what needs a reply."),
-          L10n.text("Draft a polite reply in Gmail to the latest invoice email, asking for a new due date."),
-          L10n.text("Find every Gmail thread about the lease this month and pull out the key dates."),
-        ],
-        website: URL(string: "https://workspace.google.com/products/gmail/"), privacy: google.privacy, terms: google.terms)
+        L10n.text("Summarize the last five emails from my accountant in Gmail and list what needs a reply."),
+        L10n.text("Draft a polite reply in Gmail to the latest invoice email, asking for a new due date."),
+        L10n.text("Find every Gmail thread about the lease this month and pull out the key dates."))
     case "google-calendar":
-      return ConnectorPage(
-        maker: "Google",
+      return page("Google", site: "https://workspace.google.com/products/calendar/", privacy: "https://policies.google.com/privacy", terms: "https://policies.google.com/terms",
         about: L10n.text("Your agents read your Google Calendar, find free time, and schedule or move meetings for you."),
-        examples: [
-          L10n.text("Find a free hour next week in Google Calendar for a call with Sam and send the invite."),
-          L10n.text("What’s on my Google Calendar tomorrow, and which meetings could move?"),
-          L10n.text("Block two hours of focus time every morning this week in Google Calendar."),
-        ],
-        website: URL(string: "https://workspace.google.com/products/calendar/"), privacy: google.privacy, terms: google.terms)
+        L10n.text("Find a free hour next week in Google Calendar for a call with Sam and send the invite."),
+        L10n.text("What’s on my Google Calendar tomorrow, and which meetings could move?"),
+        L10n.text("Block two hours of focus time every morning this week in Google Calendar."))
     case "google-drive":
-      return ConnectorPage(
-        maker: "Google",
+      return page("Google", site: "https://workspace.google.com/products/drive/", privacy: "https://policies.google.com/privacy", terms: "https://policies.google.com/terms",
         about: L10n.text("Your agents find, read, and create files in Google Drive, and share them with the people you name."),
-        examples: [
-          L10n.text("Find the latest budget sheet in Google Drive and tell me what changed since last month."),
-          L10n.text("Put this week’s meeting notes in a new doc in Google Drive and share it with the team."),
-          L10n.text("List the files in Google Drive I haven’t opened in a year, so I can clean up."),
-        ],
-        website: URL(string: "https://workspace.google.com/products/drive/"), privacy: google.privacy, terms: google.terms)
+        L10n.text("Find the latest budget sheet in Google Drive and tell me what changed since last month."),
+        L10n.text("Put this week’s meeting notes in a new doc in Google Drive and share it with the team."),
+        L10n.text("List the files in Google Drive I haven’t opened in a year, so I can clean up."))
     case "outlook":
-      return ConnectorPage(
-        maker: "Microsoft",
+      return page("Microsoft", site: "https://www.microsoft.com/microsoft-365/outlook", privacy: "https://privacy.microsoft.com/privacystatement", terms: "https://www.microsoft.com/servicesagreement",
         about: L10n.text("Your agents read and sort your email in Outlook, draft replies, and keep your Microsoft 365 calendar up to date."),
-        examples: [
-          L10n.text("Go through my Outlook inbox and flag anything from clients that’s still waiting on me."),
-          L10n.text("Reply in Outlook to Jordan’s last email and suggest Thursday at 10 instead."),
-          L10n.text("Find the contract someone sent me in Outlook last month and summarize it."),
-        ],
-        website: URL(string: "https://www.microsoft.com/microsoft-365/outlook"),
-        privacy: URL(string: "https://privacy.microsoft.com/privacystatement"), terms: URL(string: "https://www.microsoft.com/servicesagreement"))
+        L10n.text("Go through my Outlook inbox and flag anything from clients that’s still waiting on me."),
+        L10n.text("Reply in Outlook to Jordan’s last email and suggest Thursday at 10 instead."),
+        L10n.text("Find the contract someone sent me in Outlook last month and summarize it."))
     case "slack":
-      return ConnectorPage(
-        maker: "Slack",
+      return page("Slack", site: "https://slack.com", privacy: "https://slack.com/trust/privacy/privacy-policy", terms: "https://slack.com/main-services-agreement",
         about: L10n.text("Your agents read your channels and messages in Slack, catch you up, and post for you when you ask."),
-        examples: [
-          L10n.text("Catch me up on #marketing in Slack since Monday, in five points."),
-          L10n.text("Post the launch checklist in Slack and ask who can take each item."),
-          L10n.text("Find what the team decided about pricing in Slack last week."),
-        ],
-        website: URL(string: "https://slack.com"),
-        privacy: URL(string: "https://slack.com/trust/privacy/privacy-policy"), terms: URL(string: "https://slack.com/main-services-agreement"))
+        L10n.text("Catch me up on #marketing in Slack since Monday, in five points."),
+        L10n.text("Post the launch checklist in Slack and ask who can take each item."),
+        L10n.text("Find what the team decided about pricing in Slack last week."))
     case "notion":
-      return ConnectorPage(
-        maker: "Notion",
+      return page("Notion", site: "https://www.notion.com", privacy: "https://www.notion.so/notion/Privacy-Policy-3468d120cf614d4c9014c09f6adc9091", terms: "https://www.notion.so/notion/Terms-and-Privacy-28ffdd083dc3473e9c2da6ec011b58ac",
         about: L10n.text("Your agents search, read, and write your pages and databases in Notion."),
-        examples: [
-          L10n.text("Turn these notes into a project page in Notion with owners and due dates."),
-          L10n.text("Find our onboarding checklist in Notion and tell me what’s out of date."),
-          L10n.text("Add today’s sales calls to our CRM database in Notion."),
-        ],
-        website: URL(string: "https://www.notion.com"),
-        privacy: URL(string: "https://www.notion.so/notion/Privacy-Policy-3468d120cf614d4c9014c09f6adc9091"),
-        terms: URL(string: "https://www.notion.so/notion/Terms-and-Privacy-28ffdd083dc3473e9c2da6ec011b58ac"))
+        L10n.text("Turn these notes into a project page in Notion with owners and due dates."),
+        L10n.text("Find our onboarding checklist in Notion and tell me what’s out of date."),
+        L10n.text("Add today’s sales calls to our CRM database in Notion."))
     case "github":
-      return ConnectorPage(
-        maker: "GitHub",
+      return page("GitHub", site: "https://github.com", privacy: "https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement", terms: "https://docs.github.com/en/site-policy/github-terms/github-terms-of-service",
         about: L10n.text("Your agents work in your repositories on GitHub: they read code, open issues, and review pull requests."),
-        examples: [
-          L10n.text("Summarize the open pull requests on GitHub that are waiting on my review."),
-          L10n.text("Open an issue on GitHub for the login bug, with the steps to reproduce it."),
-          L10n.text("What shipped in our GitHub repo this week? Write it up as release notes."),
-        ],
-        website: URL(string: "https://github.com"),
-        privacy: URL(string: "https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement"),
-        terms: URL(string: "https://docs.github.com/en/site-policy/github-terms/github-terms-of-service"))
+        L10n.text("Summarize the open pull requests on GitHub that are waiting on my review."),
+        L10n.text("Open an issue on GitHub for the login bug, with the steps to reproduce it."),
+        L10n.text("What shipped in our GitHub repo this week? Write it up as release notes."))
     case "linear":
-      return ConnectorPage(
-        maker: "Linear",
+      return page("Linear", site: "https://linear.app", privacy: "https://linear.app/privacy", terms: "https://linear.app/terms",
         about: L10n.text("Your agents create and update issues in Linear and tell you where your projects and cycles stand."),
-        examples: [
-          L10n.text("Create Linear issues for each bug in this list and assign them to me."),
-          L10n.text("What’s left in the current cycle in Linear, and what’s at risk?"),
-          L10n.text("Move every Linear issue I finished today to Done."),
-        ],
-        website: URL(string: "https://linear.app"), privacy: URL(string: "https://linear.app/privacy"), terms: URL(string: "https://linear.app/terms"))
+        L10n.text("Create Linear issues for each bug in this list and assign them to me."),
+        L10n.text("What’s left in the current cycle in Linear, and what’s at risk?"),
+        L10n.text("Move every Linear issue I finished today to Done."))
     case "dropbox":
-      return ConnectorPage(
-        maker: "Dropbox",
+      return page("Dropbox", site: "https://www.dropbox.com", privacy: "https://www.dropbox.com/privacy", terms: "https://www.dropbox.com/terms",
         about: L10n.text("Your agents find, read, and organize your files in Dropbox."),
-        examples: [
-          L10n.text("Find the signed lease in Dropbox and tell me when it ends."),
-          L10n.text("Make a folder in Dropbox for the Smith project and put these files in it."),
-          L10n.text("List what takes the most space in my Dropbox."),
-        ],
-        website: URL(string: "https://www.dropbox.com"), privacy: URL(string: "https://www.dropbox.com/privacy"), terms: URL(string: "https://www.dropbox.com/terms"))
+        L10n.text("Find the signed lease in Dropbox and tell me when it ends."),
+        L10n.text("Make a folder in Dropbox for the Smith project and put these files in it."),
+        L10n.text("List what takes the most space in my Dropbox."))
     case "hubspot":
-      return ConnectorPage(
-        maker: "HubSpot",
+      return page("HubSpot", site: "https://www.hubspot.com", privacy: "https://legal.hubspot.com/privacy-policy", terms: "https://legal.hubspot.com/terms-of-service",
         about: L10n.text("Your agents look up and update your contacts, companies, and deals in HubSpot."),
-        examples: [
-          L10n.text("Find the deals in HubSpot that haven’t moved in two weeks and draft a follow-up for each."),
-          L10n.text("Add the people from today’s event to HubSpot as contacts."),
-          L10n.text("Sum up what we know about Acme in HubSpot before my call."),
-        ],
-        website: URL(string: "https://www.hubspot.com"),
-        privacy: URL(string: "https://legal.hubspot.com/privacy-policy"), terms: URL(string: "https://legal.hubspot.com/terms-of-service"))
+        L10n.text("Find the deals in HubSpot that haven’t moved in two weeks and draft a follow-up for each."),
+        L10n.text("Add the people from today’s event to HubSpot as contacts."),
+        L10n.text("Sum up what we know about Acme in HubSpot before my call."))
+    case "airtable":
+      return page("Airtable", site: "https://www.airtable.com", privacy: "https://www.airtable.com/company/privacy", terms: "https://www.airtable.com/company/tos",
+        about: L10n.text("Your agents look up, add, and update the records in your Airtable bases."),
+        L10n.text("Add these five new leads to our sales base in Airtable."),
+        L10n.text("Which projects in Airtable are past their due date?"),
+        L10n.text("Update the status of every order in Airtable that shipped today."))
+    case "asana":
+      return page("Asana", site: "https://asana.com", privacy: "https://asana.com/terms/privacy-statement", terms: "https://asana.com/terms/terms-of-service",
+        about: L10n.text("Your agents find, create, and update tasks and projects in Asana."),
+        L10n.text("What’s due this week across my projects in Asana?"),
+        L10n.text("Create Asana tasks from these meeting notes and assign each one."),
+        L10n.text("Mark the launch tasks I finished today as done in Asana."))
+    case "clickup":
+      return page("ClickUp", site: "https://clickup.com", privacy: "https://clickup.com/terms/privacy", terms: "https://clickup.com/terms",
+        about: L10n.text("Your agents work with your tasks, docs, and spaces in ClickUp."),
+        L10n.text("List my overdue tasks in ClickUp, most urgent first."),
+        L10n.text("Turn this brief into a doc in ClickUp and share it with the design team."),
+        L10n.text("Create a ClickUp task for each item in this checklist."))
+    case "monday":
+      return page("monday.com", site: "https://monday.com", privacy: "https://monday.com/l/privacy/privacy-policy/", terms: "https://monday.com/l/legal/tos/",
+        about: L10n.text("Your agents read and update your boards and items on monday.com, and tell you what’s coming up this week."),
+        L10n.text("What’s on my plate this week on monday.com?"),
+        L10n.text("Add an item on monday.com for the Smith renovation, due Friday."),
+        L10n.text("Move every item on monday.com that’s waiting on the client to Stuck."))
+    case "todoist":
+      return page("Doist", site: "https://www.todoist.com", privacy: "https://www.todoist.com/privacy", terms: "https://www.todoist.com/terms-of-service",
+        about: L10n.text("Your agents add, find, and complete your tasks and projects in Todoist."),
+        L10n.text("Add “call the bank” to Todoist for tomorrow at 9."),
+        L10n.text("What’s left on my Todoist list for today?"),
+        L10n.text("Move everything in my Todoist inbox into the right projects."))
+    case "zoom":
+      return page("Zoom", site: "https://www.zoom.com", privacy: "https://www.zoom.com/en/trust/privacy/privacy-statement/", terms: "https://www.zoom.com/en/trust/terms/",
+        about: L10n.text("Your agents find your meetings in Zoom, pull their transcripts, and work with your Zoom Docs."),
+        L10n.text("Summarize yesterday’s call with the investors from Zoom and list the follow-ups."),
+        L10n.text("Find what we agreed on pricing in last week’s Zoom meetings."),
+        L10n.text("Turn the notes from my last Zoom meeting into a doc."))
+    case "google-meet":
+      return page("Google", site: "https://workspace.google.com/products/meet/", privacy: "https://policies.google.com/privacy", terms: "https://policies.google.com/terms",
+        about: L10n.text("Your agents find your meetings and recordings in Google Meet and turn them into notes and next steps."),
+        L10n.text("Summarize this morning’s Google Meet call and list who owes what."),
+        L10n.text("Find the Google Meet recording of the design review and pull out the decisions."),
+        L10n.text("Set up a Google Meet for tomorrow at 3 with Alex and Priya."))
+    case "figma":
+      return page("Figma", site: "https://www.figma.com", privacy: "https://www.figma.com/legal/privacy/", terms: "https://www.figma.com/legal/tos/",
+        about: L10n.text("Your agents read your Figma files, frames, and design context, so they can describe a design or check it against the spec."),
+        L10n.text("Describe the onboarding screens in Figma and list anything missing from the spec."),
+        L10n.text("Pull the colours and type styles from our design system in Figma."),
+        L10n.text("Compare the checkout frames in Figma with the live page and list the differences."))
+    case "canva":
+      return page("Canva", site: "https://www.canva.com", privacy: "https://www.canva.com/policies/privacy-policy/", terms: "https://www.canva.com/policies/terms-of-use/",
+        about: L10n.text("Your agents create and edit your designs in Canva."),
+        L10n.text("Make an Instagram post in Canva announcing our spring sale."),
+        L10n.text("Resize our event poster in Canva for a LinkedIn banner."),
+        L10n.text("Create a one-page flyer in Canva from these notes."))
+    case "miro":
+      return page("Miro", site: "https://miro.com", privacy: "https://miro.com/legal/privacy-policy/", terms: "https://miro.com/legal/terms-of-service/",
+        about: L10n.text("Your agents read your Miro boards and build new ones: sticky notes, diagrams, and plans."),
+        L10n.text("Summarize the ideas on our brainstorm board in Miro."),
+        L10n.text("Turn this process into a flowchart on a new Miro board."),
+        L10n.text("Group the sticky notes on our retro board in Miro by theme."))
+    case "webflow":
+      return page("Webflow", site: "https://webflow.com", privacy: "https://webflow.com/legal/privacy", terms: "https://webflow.com/legal/terms",
+        about: L10n.text("Your agents manage your sites, CMS, and collections in Webflow."),
+        L10n.text("Add this blog post to our Webflow CMS as a draft."),
+        L10n.text("List the pages on our Webflow site that have no meta description."),
+        L10n.text("Update the prices in our Webflow product collection from this sheet."))
+    case "wix":
+      return page("Wix", site: "https://www.wix.com", privacy: "https://www.wix.com/about/privacy", terms: "https://www.wix.com/about/terms-of-use",
+        about: L10n.text("Your agents manage your sites and collections on Wix."),
+        L10n.text("Add these three products to my store on Wix."),
+        L10n.text("Update the opening hours on my Wix site."),
+        L10n.text("List the newest entries in our Wix collection."))
+    case "stripe":
+      return page("Stripe", site: "https://stripe.com", privacy: "https://stripe.com/privacy", terms: "https://stripe.com/legal/ssa",
+        about: L10n.text("Your agents look up customers, payments, subscriptions, and invoices in Stripe."),
+        L10n.text("How much did we take in Stripe this month compared with last month?"),
+        L10n.text("Find the Stripe customer for lea@acme.com and show her last three payments."),
+        L10n.text("Send a Stripe invoice to Acme for 40 hours at $120."))
+    case "paypal":
+      return page("PayPal", site: "https://www.paypal.com", privacy: "https://www.paypal.com/us/legalhub/paypal/privacy-full", terms: "https://www.paypal.com/us/legalhub/paypal/useragreement-full",
+        about: L10n.text("Your agents send invoices and look up orders and transactions in PayPal."),
+        L10n.text("Send a PayPal invoice to Jordan for $350 for the logo work."),
+        L10n.text("List the PayPal payments I received this week."),
+        L10n.text("Which PayPal invoices are still unpaid?"))
+    case "square":
+      return page("Block", site: "https://squareup.com", privacy: "https://squareup.com/us/en/legal/general/privacy", terms: "https://squareup.com/us/en/legal/general/ua",
+        about: L10n.text("Your agents check your payments, catalog, and shop in Square."),
+        L10n.text("How were sales in Square yesterday compared with last Saturday?"),
+        L10n.text("Add the new seasonal latte to our Square catalog at $5.50."),
+        L10n.text("Which items in Square sold best this month?"))
+    case "ramp":
+      return page("Ramp", site: "https://ramp.com", privacy: "https://ramp.com/legal/privacy-policy", terms: "https://ramp.com/legal/platform-agreement",
+        about: L10n.text("Your agents check expenses, cards, bills, and reimbursements in Ramp."),
+        L10n.text("Which Ramp expenses this month are missing receipts?"),
+        L10n.text("How much has the team spent on software in Ramp this quarter?"),
+        L10n.text("List the bills in Ramp that are due this week."))
+    case "quickbooks":
+      return page("Intuit", site: "https://quickbooks.intuit.com", privacy: "https://www.intuit.com/privacy/statement/", terms: "https://www.intuit.com/legal/terms/en-us/quickbooks/online/",
+        about: L10n.text("Your agents work in your books in QuickBooks: invoices, expenses, and reports."),
+        L10n.text("Create an invoice in QuickBooks for Acme for the October retainer."),
+        L10n.text("Which customers in QuickBooks are more than 30 days overdue?"),
+        L10n.text("What were my biggest expenses in QuickBooks last month?"))
+    case "salesforce":
+      return page("Salesforce", site: "https://www.salesforce.com", privacy: "https://www.salesforce.com/company/privacy/", terms: "https://www.salesforce.com/company/legal/agreements/",
+        about: L10n.text("Your agents look up and update leads, accounts, opportunities, and cases in Salesforce."),
+        L10n.text("Which opportunities in Salesforce close this month, and what’s their total?"),
+        L10n.text("Log today’s call with Acme in Salesforce and set a follow-up for next Tuesday."),
+        L10n.text("Find the open cases in Salesforce for our five biggest accounts."))
+    case "intercom":
+      return page("Intercom", site: "https://www.intercom.com", privacy: "https://www.intercom.com/legal/privacy", terms: "https://www.intercom.com/legal/terms-and-policies",
+        about: L10n.text("Your agents search your conversations, contacts, and Help Center articles in Intercom."),
+        L10n.text("What are customers asking about most in Intercom this week?"),
+        L10n.text("Find the Intercom conversation with lea@acme.com and summarize it."),
+        L10n.text("Which Help Center articles in Intercom still mention the old pricing?"))
+    case "apollo":
+      return page("Apollo.io", site: "https://www.apollo.io", privacy: "https://www.apollo.io/privacy-policy", terms: "https://www.apollo.io/terms",
+        about: L10n.text("Your agents find people and accounts in Apollo and add them to your sequences."),
+        L10n.text("Find heads of marketing at fintech companies in London in Apollo."),
+        L10n.text("Add these ten contacts to our outreach sequence in Apollo."),
+        L10n.text("Which accounts in Apollo opened our emails this week?"))
+    case "jira":
+      return page("Atlassian", site: "https://www.atlassian.com/software/jira", privacy: "https://www.atlassian.com/legal/privacy-policy", terms: "https://www.atlassian.com/legal/atlassian-customer-agreement",
+        about: L10n.text("Your agents work in Jira and Confluence through Atlassian: issues, sprints, and pages."),
+        L10n.text("What’s left in the current sprint in Jira?"),
+        L10n.text("Create a bug in Jira for the checkout crash, with the steps to reproduce it."),
+        L10n.text("Summarize the Confluence page on our release process."))
+    case "vercel":
+      return page("Vercel", site: "https://vercel.com", privacy: "https://vercel.com/legal/privacy-policy", terms: "https://vercel.com/legal/terms",
+        about: L10n.text("Your agents check your projects, deployments, and logs on Vercel."),
+        L10n.text("Did the latest Vercel deployment of the website succeed?"),
+        L10n.text("Show me the errors in the Vercel logs from the last hour."),
+        L10n.text("Which of our Vercel projects haven’t been deployed in a month?"))
+    case "supabase":
+      return page("Supabase", site: "https://supabase.com", privacy: "https://supabase.com/privacy", terms: "https://supabase.com/terms",
+        about: L10n.text("Your agents look at your Supabase projects, read your tables, and run SQL."),
+        L10n.text("How many people signed up this week? Check the users table in Supabase."),
+        L10n.text("Show me the slowest queries in our Supabase project."),
+        L10n.text("Add a phone number column to the customers table in Supabase."))
+    case "sentry":
+      return page("Sentry", site: "https://sentry.io", privacy: "https://sentry.io/privacy/", terms: "https://sentry.io/terms/",
+        about: L10n.text("Your agents look into errors, releases, and performance in Sentry."),
+        L10n.text("What are the top new errors in Sentry since yesterday’s release?"),
+        L10n.text("Find the Sentry issue behind the checkout crash and explain the cause."),
+        L10n.text("Is the app slower in Sentry this week than last week?"))
+    case "cloudflare":
+      return page("Cloudflare", site: "https://www.cloudflare.com", privacy: "https://www.cloudflare.com/privacypolicy/", terms: "https://www.cloudflare.com/terms/",
+        about: L10n.text("Your agents manage your Workers, KV, and bindings on Cloudflare."),
+        L10n.text("List our Workers on Cloudflare and when each was last deployed."),
+        L10n.text("What’s stored under the “config” key in our KV namespace on Cloudflare?"),
+        L10n.text("Show me the routes bound to the api Worker on Cloudflare."))
     default:
       return nil
     }
+  }
+
+  /** A page from its maker, its three links and its words. */
+  private static func page(_ maker: String, site: String, privacy: String, terms: String, about: String, _ examples: String...) -> ConnectorPage {
+    ConnectorPage(maker: maker, about: about, examples: examples, website: URL(string: site), privacy: URL(string: privacy), terms: URL(string: terms))
   }
 
   /** Under the name: "By Google". */
@@ -150,9 +258,6 @@ public struct ConnectorPage: Sendable, Equatable {
     return host.hasPrefix("www.") ? String(host.dropFirst(4)) : host
   }
 
-  /** Google's policies, the same for Gmail, Calendar and Drive. */
-  private static let google = (privacy: URL(string: "https://policies.google.com/privacy"), terms: URL(string: "https://policies.google.com/terms"))
-
   /** The connectors written so far, for the tests. */
-  public static let written = ["gmail", "google-calendar", "google-drive", "outlook", "slack", "notion", "github", "linear", "dropbox", "hubspot"]
+  public static let written = ["gmail", "google-calendar", "google-drive", "outlook", "slack", "notion", "github", "linear", "dropbox", "hubspot", "airtable", "asana", "clickup", "monday", "todoist", "zoom", "google-meet", "figma", "canva", "miro", "webflow", "wix", "stripe", "paypal", "square", "ramp", "quickbooks", "salesforce", "intercom", "apollo", "jira", "vercel", "supabase", "sentry", "cloudflare"]
 }
