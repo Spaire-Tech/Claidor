@@ -8,18 +8,17 @@ import { getAppleAuthorizeURL, getGoogleAuthorizeLoginURL } from '@/utils/auth'
 import { useTranslations, type AcceptedLocale } from '@simeon/i18n'
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 
-// The web app's sign-in and sign-up, after Claude's (the founder, 18
-// October 2026: "with continue with apple, google, email etc. just remove
-// the download mac"): the heading and its line in the website's serif, then
-// one card with Continue with Google, Continue with Apple, "OR", the e-mail
-// and Continue with email, and the Terms and Privacy line. Each way comes
-// back to `returnTo`; from the Mac app that is its own sign-in link on the
-// API (`/loginDeepControl`), which then asks "Continue as …" and hands the
-// app its session. The e-mail way sends a six-character code
-// (`/login/code/verify`), where Continue with password goes to the account's
-// password instead (`/login/password`, 19 October 2026, as the iPhone's Log in
-// or sign up). The photo and the phone's single column are the frame's
-// (AuthShell).
+// The web app's sign-in and sign-up, after ChatGPT's "Log in or sign up" (the
+// founder, 29 October 2026: "lets design it like this. obviously, put
+// microsoft there, even tho we dont have it yet"): the heading and its line,
+// the e-mail and Continue, "OR", then Continue with Google, with Apple and
+// with Microsoft, and the Terms and Privacy line. Each way comes back to
+// `returnTo`; from the Mac app that is its own sign-in link on the API
+// (`/loginDeepControl`), which then asks "Continue as …" and hands the app its
+// session. The e-mail way sends a six-character code (`/login/code/verify`),
+// where Continue with password goes to the account's password instead
+// (`/login/password`, 19 October 2026, as the iPhone's Log in or sign up).
+// Microsoft's sign-in is not set up yet: its button says it is coming soon.
 export const GoogleMark = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -53,6 +52,16 @@ const AppleMark = () => (
       fill="currentColor"
       d="M16.37 12.6c-.03-2.6 2.12-3.85 2.22-3.91-1.21-1.77-3.09-2.01-3.76-2.04-1.6-.16-3.12.94-3.93.94-.81 0-2.06-.92-3.39-.89-1.74.03-3.35 1.01-4.25 2.57-1.81 3.14-.46 7.79 1.3 10.34.86 1.25 1.89 2.65 3.24 2.6 1.3-.05 1.79-.84 3.36-.84 1.57 0 2.01.84 3.39.81 1.4-.02 2.29-1.27 3.14-2.52.99-1.45 1.4-2.85 1.42-2.92-.03-.01-2.73-1.05-2.74-4.14zM13.79 4.97c.72-.87 1.2-2.07 1.07-3.27-1.03.04-2.28.69-3.02 1.55-.66.77-1.24 1.99-1.09 3.17 1.15.09 2.32-.58 3.04-1.45z"
     />
+  </svg>
+)
+
+/** Microsoft's four squares. */
+const MicrosoftMark = () => (
+  <svg viewBox="0 0 23 23" width="17" height="17" aria-hidden="true">
+    <path fill="#F25022" d="M1 1h10v10H1z" />
+    <path fill="#7FBA00" d="M12 1h10v10H12z" />
+    <path fill="#00A4EF" d="M1 12h10v10H1z" />
+    <path fill="#FFB900" d="M12 12h10v10H12z" />
   </svg>
 )
 
@@ -145,8 +154,38 @@ const SignInPage = ({
     <AuthShell
       heading={t('simeon.signIn.heading')}
       line={t('simeon.signIn.line')}
-      locale={locale}
     >
+      <form onSubmit={sendCode} className="flex flex-col gap-4" noValidate>
+        <label htmlFor="sign-in-email" className="sr-only">
+          {t('simeon.signIn.email')}
+        </label>
+        <input
+          id="sign-in-email"
+          type="email"
+          inputMode="email"
+          autoComplete="email"
+          placeholder={t('simeon.signIn.enterEmail')}
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className={field}
+        />
+        <button type="submit" disabled={sending} className={primary}>
+          {sending
+            ? t('simeon.signIn.sendingCode')
+            : t('simeon.signIn.continue')}
+        </button>
+      </form>
+      {problem ? (
+        <p
+          role="alert"
+          className="mt-4 text-center text-[13px] leading-[1.45] text-[#c21d2e]"
+        >
+          {problem}
+        </p>
+      ) : null}
+      <div className="my-6">
+        <Or locale={locale} />
+      </div>
       <div className="flex flex-col gap-3">
         <a
           href={googleUrl}
@@ -164,38 +203,17 @@ const SignInPage = ({
           <AppleMark />
           <span>{t('simeon.signIn.continueWithApple')}</span>
         </a>
-        <Or locale={locale} />
-        <form onSubmit={sendCode} className="flex flex-col gap-3" noValidate>
-          <label htmlFor="sign-in-email" className="sr-only">
-            {t('simeon.signIn.email')}
-          </label>
-          <input
-            id="sign-in-email"
-            type="email"
-            inputMode="email"
-            autoComplete="email"
-            placeholder={t('simeon.signIn.enterEmail')}
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className={field}
-          />
-          <button type="submit" disabled={sending} className={primary}>
-            {sending
-              ? t('simeon.signIn.sendingCode')
-              : t('simeon.signIn.continueWithEmail')}
-          </button>
-        </form>
-        {problem ? (
-          <p
-            role="alert"
-            className="text-center text-[13px] leading-[1.45] text-[#c21d2e]"
-          >
-            {problem}
-          </p>
-        ) : null}
-        <div className="pt-2">
-          <Legal locale={locale} />
-        </div>
+        <button
+          type="button"
+          onClick={() => setProblem(t('simeon.signIn.microsoftUnavailable'))}
+          className={provider}
+        >
+          <MicrosoftMark />
+          <span>{t('simeon.signIn.continueWithMicrosoft')}</span>
+        </button>
+      </div>
+      <div className="mt-12">
+        <Legal locale={locale} />
       </div>
     </AuthShell>
   )

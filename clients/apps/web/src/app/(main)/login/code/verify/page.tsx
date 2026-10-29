@@ -48,7 +48,6 @@ export default async function Page(props: {
           ? t('simeon.signIn.codeSentTo', { email })
           : t('simeon.signIn.codeSent')
       }
-      locale={locale}
     >
       <div className="flex flex-col gap-5">
         <VerifyPage

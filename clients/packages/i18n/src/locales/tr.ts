@@ -7,17 +7,19 @@ export default {
     signIn: {
       loginTitle: 'Simeon’a giriş yap',
       signupTitle: 'Simeon’a kaydol',
-      heading: 'Yükünü hafiflet',
-      line: 'İşinin her alanında senin için iş yapan ortaklar.',
+      heading: 'Giriş yap veya kaydol',
+      line: 'Yapılması gereken her şey için kişisel ajan ekibin.',
       continueWithGoogle: 'Google ile devam et',
       continueWithApple: 'Apple ile devam et',
+      continueWithMicrosoft: 'Microsoft ile devam et',
       or: 'VEYA',
       email: 'E-posta',
-      enterEmail: 'E-postanı gir',
+      enterEmail: 'E-posta adresi',
       sendingCode: 'Kod gönderiliyor…',
-      continueWithEmail: 'E-postayla devam et',
       appleUnavailable:
         'Apple ile giriş yakında geliyor. Şimdilik Google veya e-postanla devam et.',
+      microsoftUnavailable:
+        'Microsoft ile giriş yakında geliyor. Şimdilik Google, Apple veya e-postanla devam et.',
       didNotGoThrough: 'Giriş tamamlanamadı. Tekrar dene.',
       invalidEmail: 'Geçerli bir e-posta adresi gir.',
       couldNotSend: 'Kodu gönderemedik. Tekrar dene.',
@@ -25,8 +27,6 @@ export default {
         'Devam ederek Simeon’un {terms} ve {privacy} metinlerini kabul etmiş olursun.',
       terms: 'Hizmet Koşulları',
       privacy: 'Gizlilik Politikası',
-      photo:
-        'Bir kayanın etrafına kurulmuş, beyaz kanepeleri ve bir ipe asılı küresi olan bir oturma odası',
       codeTitle: 'Doğrulama kodunu gir',
       checkEmail: 'E-postanı kontrol et',
       codeSentTo: '{email} adresine altı karakterli bir kod gönderdik.',

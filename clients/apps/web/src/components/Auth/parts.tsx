@@ -2,29 +2,30 @@
 // (`/login/code/verify`, `/login/password`) and the client ones both take them.
 import { getTranslator, type AcceptedLocale } from '@simeon/i18n'
 
-// At Claude's sign-in's proportions (the founder, 21 October 2026: "the sign
-// in is way too big. compared to claude"): 44 high, 15 (16 on a phone, so
-// iOS does not zoom into the field).
+// At the proportions of the founder's reference (29 October 2026, ChatGPT's
+// "Log in or sign up"): 52 high, the words 16 and regular.
 
-/** The outlined round button (Continue with Google, with Apple, with password). */
+/** The outlined round button (Continue with Google, with Apple, with Microsoft, with password). */
 export const provider =
-  'flex h-[44px] w-full items-center justify-center gap-2.5 rounded-full border border-[#d9d9de] bg-white text-[16px] font-medium tracking-[-0.01em] text-[#1d1d1f] transition-colors hover:bg-[#f5f5f7] sm:text-[15px]'
+  'flex h-[52px] w-full items-center justify-center gap-2.5 rounded-full border border-[#e3e3e3] bg-white text-[16px] text-[#0d0d0d] transition-colors hover:bg-[#f5f5f5]'
 
-/** The black round button (Continue with email, Sign in). */
+/** The black round button (Continue, Sign in). */
 export const primary =
-  'h-[44px] w-full rounded-full bg-black text-[16px] font-medium tracking-[-0.01em] text-white transition-colors hover:bg-[#1d1d1f] disabled:cursor-not-allowed disabled:opacity-60 sm:text-[15px]'
+  'h-[52px] w-full rounded-full bg-[#0d0d0d] text-[16px] text-white transition-colors hover:bg-[#2b2b2b] disabled:cursor-not-allowed disabled:opacity-60'
 
 /** The round field (the e-mail, the password). */
 export const field =
-  'h-[44px] w-full rounded-full border border-[#d9d9de] bg-white px-5 text-[16px] text-[#1d1d1f] placeholder:text-[#a1a1a6] focus:border-[#1d1d1f] focus:outline-none sm:text-[15px]'
+  'h-[52px] w-full rounded-full border border-[#e3e3e3] bg-white px-6 text-[16px] text-[#0d0d0d] placeholder:text-[#8e8e93] focus:border-[#0d0d0d] focus:outline-none'
 
 /** A quiet link under the buttons (Use a different email). */
 export const quietLink =
-  'text-center text-[14px] text-[#1d1d1f] underline decoration-black/20 underline-offset-2 hover:decoration-black/50'
+  'text-center text-[14px] text-[#0d0d0d] underline decoration-black/20 underline-offset-2 hover:decoration-black/50'
 
-/** "OR" between two ways in. */
+/** "OR" between two ways in, a hairline on each side. */
 export const Or = ({ locale }: { locale: AcceptedLocale }) => (
-  <div className="py-1 text-center text-[12px] font-medium tracking-[0.06em] text-[#86868b]">
+  <div className="flex items-center gap-4 py-1 text-[13px] font-medium tracking-[0.04em] text-[#0d0d0d]">
+    <span className="h-px grow bg-[#e3e3e3]" />
     {getTranslator(locale)('simeon.signIn.or')}
+    <span className="h-px grow bg-[#e3e3e3]" />
   </div>
 )
