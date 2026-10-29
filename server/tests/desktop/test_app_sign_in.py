@@ -110,6 +110,38 @@ class TestLoginDeepControl:
         assert f"challenge={challenge}" in return_to
         assert f"uuid={uuid}" in return_to
 
+    async def test_the_mac_s_sign_up_goes_to_the_web_sign_up_and_asks_back(
+        self, client: httpx.AsyncClient
+    ) -> None:
+        _, challenge, uuid = _login_metadata()
+        response = await client.get(
+            "/loginDeepControl",
+            params={
+                "challenge": challenge,
+                "uuid": uuid,
+                "mode": "signup",
+                "redirectTarget": "simeon",
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 303
+        assert response.headers["location"].startswith(
+            settings.generate_frontend_url("/signup?")
+        )
+        location = urlparse(response.headers["location"])
+        return_to = parse_qs(location.query)["return_to"][0]
+        assert "mode=signup" in return_to
+
+        # Any other mode is a sign-in.
+        response = await client.get(
+            "/loginDeepControl",
+            params={"challenge": challenge, "uuid": uuid, "mode": "<b>"},
+            follow_redirects=False,
+        )
+        sign_in = response.headers["location"]
+        assert sign_in.startswith(settings.generate_frontend_url("/login?"))
+        assert "mode%3Dlogin" in sign_in
+
     async def test_the_iphone_s_apple_button_goes_to_apple_s_sign_in(
         self, client: httpx.AsyncClient, mocker: MockerFixture
     ) -> None:

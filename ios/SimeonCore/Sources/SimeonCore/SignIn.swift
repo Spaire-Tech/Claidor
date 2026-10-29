@@ -78,9 +78,11 @@ public enum SignIn {
   }
 
   /** The page the sheet opens, in the Mac's parameter order, then the way in. Every value is base64url, a uuid or a fixed word, so nothing needs escaping. */
-  public static func loginURL(api: URL, metadata: Metadata, provider: Provider? = nil, redirectTarget: String = SimeonConfig.urlScheme) -> URL {
+  public static func loginURL(api: URL, metadata: Metadata, provider: Provider? = nil, signUp: Bool = false, redirectTarget: String = SimeonConfig.urlScheme) -> URL {
     let way = provider.map { "&provider=\($0.rawValue)" } ?? ""
-    return URL(string: "\(api.absoluteString.trimmingTrailingSlashes)\(loginPath)?challenge=\(metadata.challenge)&uuid=\(metadata.uuid)&mode=login&redirectTarget=\(redirectTarget)\(way)")!
+    // Sign up (the Mac's second button, 29 October 2026): the web app's sign-up page instead of its sign-in.
+    let mode = signUp ? "signup" : "login"
+    return URL(string: "\(api.absoluteString.trimmingTrailingSlashes)\(loginPath)?challenge=\(metadata.challenge)&uuid=\(metadata.uuid)&mode=\(mode)&redirectTarget=\(redirectTarget)\(way)")!
   }
 
   /** The wait before the next poll, as the Mac's `pollAuthenticationStatus` has it. */

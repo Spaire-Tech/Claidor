@@ -352,6 +352,8 @@ async def login_deep_control(
             f"<p>{escape(say('sign_in.page.sign_in_there', product=PRODUCT))}</p>",
         )
 
+    # The Mac's Sign up names its mode (29 October 2026); anything else is a sign-in.
+    mode = "signup" if mode == "signup" else "login"
     kept = {"challenge": challenge, "uuid": uuid, "mode": mode}
     if redirectTarget:
         kept["redirectTarget"] = redirectTarget
@@ -363,12 +365,13 @@ async def login_deep_control(
         if provider not in PROVIDERS:
             # The Mac names no way in: the web app's sign-in page (the
             # founder, 18 October 2026: Google, Apple and e-mail on one
-            # page), each of whose ways comes back here with the session
-            # cookie set. The iPhone's buttons name theirs and go straight
-            # to it, below.
+            # page), or its sign-up page for the Mac's Sign up, each of
+            # whose ways comes back here with the session cookie set. The
+            # iPhone's buttons name theirs and go straight to it, below.
+            page = "/signup" if mode == "signup" else "/login"
             return RedirectResponse(
                 settings.generate_frontend_url(
-                    f"/login?return_to={quote(return_to, safe='')}"
+                    f"{page}?return_to={quote(return_to, safe='')}"
                 ),
                 303,
                 headers=NO_STORE,

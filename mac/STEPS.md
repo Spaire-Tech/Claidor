@@ -63,9 +63,11 @@ first build on the founder's Mac is the first real check.
 
 ### What it has
 
-- **Sign-in** (A01): the butterfly and "Simeon" in Suravaram, the line under
-  them, Sign in. Sign in opens the sign-in page in the Mac's own browser, as
-  the Electron app does.
+- **Sign-in** (A01; simpler since 29 October 2026): the SimeonLabs logo
+  lighting up, "Sign in to Simeon", and two buttons, Sign in (filled) and
+  Sign up (outlined). Sign in opens the sign-in page in the Mac's own
+  browser, as the Electron app does; Sign up opens the web app's sign-up
+  page (`mode=signup`), and either way the app signs in the same.
 - **Continue in your browser** (A02), with Reopen link (opens the same page
   again) and Cancel (back to A01). If the sign-in does not finish, or the
   account is refused, the reason shows under Sign in, in the Electron app's
