@@ -27,10 +27,10 @@ NAME="Simeon"
 # mac/dmg/background.cjs draws around them.
 WINDOW_X=200
 WINDOW_Y=120
-WIDTH=640
-HEIGHT=400
-APP_AT="160, 200"
-APPLICATIONS_AT="480, 200"
+WIDTH=720
+HEIGHT=480
+APP_AT="210, 215"
+APPLICATIONS_AT="510, 215"
 
 WORK=$(mktemp -d "${TMPDIR:-/tmp}/simeon-dmg.XXXXXX")
 DEVICE=""
