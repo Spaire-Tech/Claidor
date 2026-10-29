@@ -376,6 +376,9 @@ async def main():
     # The Contact page (contact.py), at /contact; its form posts to the API, which e-mails the founder.
     import contact
     contact.build(OUT)
+    # The Newsroom (newsroom.py), the blog, at /newsroom: its posts are stand-ins until the first real ones.
+    import newsroom
+    newsroom.build(OUT)
     print("site written to", os.path.abspath(OUT))
 
 asyncio.run(main())
