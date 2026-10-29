@@ -10979,6 +10979,64 @@
         }
       }
     },
+    "Add a contact in Chaser for Acme’s accounts team." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Füg in Chaser einen Kontakt für die Buchhaltung von Acme hinzu."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añade un contacto en Chaser para el equipo de cuentas de Acme."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajoute un contact dans Chaser pour le service comptable d’Acme."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi in Chaser un contatto per l’amministrazione di Acme."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voeg in Chaser een contactpersoon toe voor de administratie van Acme."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj w Chaser kontakt do działu księgowości Acme."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicione no Chaser um contato da equipe financeira da Acme."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lägg till en kontakt i Chaser för Acmes ekonomiavdelning."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chaser’a Acme’nin muhasebe ekibi için bir kişi ekle."
+          }
+        }
+      }
+    },
     "Add a monthly $15 transaction in YNAB for the music subscription." : {
       "localizations" : {
         "de" : {
@@ -11033,6 +11091,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "YNAB’ye müzik aboneliği için aylık 15 $’lık bir işlem ekle."
+          }
+        }
+      }
+    },
+    "Add a note to the Rivera matter in Clio about today’s call." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Füg der Akte Rivera in Clio eine Notiz zum heutigen Gespräch hinzu."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añade una nota al asunto Rivera en Clio sobre la llamada de hoy."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajoute une note au dossier Rivera dans Clio sur l’appel d’aujourd’hui."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi una nota alla pratica Rivera in Clio sulla chiamata di oggi."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voeg een notitie over het gesprek van vandaag toe aan het dossier Rivera in Clio."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj notatkę o dzisiejszej rozmowie do sprawy Rivera w Clio."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicione uma nota ao caso Rivera no Clio sobre a ligação de hoje."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lägg till en anteckning om dagens samtal i ärendet Rivera i Clio."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clio’daki Rivera dosyasına bugünkü görüşme hakkında bir not ekle."
           }
         }
       }
@@ -11323,6 +11439,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Magic Patterns’taki kontrol paneli tasarımına bir arama çubuğu ekle."
+          }
+        }
+      }
+    },
+    "Add a stop in Route4Me at 12 Oak Lane." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Füg in Route4Me einen Stopp in der Oak Lane 12 hinzu."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añade una parada en Route4Me en 12 Oak Lane."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajoute un arrêt dans Route4Me au 12 Oak Lane."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi in Route4Me una fermata al 12 di Oak Lane."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voeg in Route4Me een stop toe op Oak Lane 12."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj w Route4Me przystanek przy Oak Lane 12."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicione no Route4Me uma parada na 12 Oak Lane."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lägg till ett stopp i Route4Me på Oak Lane 12."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Route4Me’de 12 Oak Lane’e bir durak ekle."
           }
         }
       }
@@ -12251,6 +12425,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Geçen haftanın siparişlerini Excel’deki satış tablosuna yeni satırlar olarak ekle."
+          }
+        }
+      }
+    },
+    "Add Lea to Saturday’s 10 am spin class in Mindbody." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meld Lea in Mindbody für den Spinning-Kurs am Samstag um 10 Uhr an."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apunta a Lea a la clase de spinning del sábado a las 10 en Mindbody."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inscris Lea au cours de spinning de samedi 10 h dans Mindbody."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Iscrivi Lea alla lezione di spinning di sabato alle 10 in Mindbody."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schrijf Lea in voor de spinningles van zaterdag om 10 uur in Mindbody."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zapisz Leę na sobotnie zajęcia spinningu o 10:00 w Mindbody."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inscreva a Lea na aula de spinning de sábado às 10h no Mindbody."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Boka in Lea på spinningpasset på lördag klockan 10 i Mindbody."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lea’yı Mindbody’de cumartesi saat 10’daki spinning dersine ekle."
           }
         }
       }
@@ -13353,6 +13585,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Bu on potansiyel müşteriyi Lemlist’teki kurucular kampanyasına ekle."
+          }
+        }
+      }
+    },
+    "Add these ten leads to the founders list in HeyReach." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Füg diese zehn Leads zur Gründer-Liste in HeyReach hinzu."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añade estos diez clientes potenciales a la lista de fundadores en HeyReach."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajoute ces dix prospects à la liste fondateurs dans HeyReach."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi questi dieci contatti alla lista fondatori in HeyReach."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voeg deze tien leads toe aan de oprichterslijst in HeyReach."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj tych dziesięciu leadów do listy założycieli w HeyReach."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicione estes dez leads à lista de fundadores no HeyReach."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lägg till de här tio leadsen i grundarlistan i HeyReach."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu on potansiyel müşteriyi HeyReach’teki kurucular listesine ekle."
           }
         }
       }
@@ -18061,6 +18351,64 @@
         }
       }
     },
+    "Ask Lea for a review with GatherUp after her appointment today." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bitte Lea nach ihrem Termin heute mit GatherUp um eine Bewertung."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pídele una reseña a Lea con GatherUp después de su cita de hoy."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demande un avis à Lea avec GatherUp après son rendez-vous d’aujourd’hui."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chiedi a Lea una recensione con GatherUp dopo il suo appuntamento di oggi."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vraag Lea met GatherUp om een review na haar afspraak van vandaag."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Poproś Leę o recenzję za pomocą GatherUp po jej dzisiejszej wizycie."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Peça uma avaliação à Lea com o GatherUp depois do horário dela hoje."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Be Lea om en recension med GatherUp efter hennes besök i dag."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bugünkü randevusundan sonra GatherUp ile Lea’dan bir yorum iste."
+          }
+        }
+      }
+    },
     "Ask your team’s admin to add this account." : {
       "localizations" : {
         "de" : {
@@ -20377,6 +20725,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ tarafından"
+          }
+        }
+      }
+    },
+    "Calculate the sales tax in TaxJar on a $120 order shipped to Austin." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Berechne in TaxJar die Umsatzsteuer für eine Bestellung über 120 $, die nach Austin geht."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Calcula en TaxJar el impuesto sobre ventas de un pedido de 120 $ enviado a Austin."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Calcule dans TaxJar la taxe sur les ventes d’une commande de 120 $ livrée à Austin."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Calcola in TaxJar la sales tax su un ordine da 120 $ spedito ad Austin."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bereken in TaxJar de omzetbelasting op een bestelling van $ 120 die naar Austin gaat."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oblicz w TaxJar podatek od sprzedaży dla zamówienia za 120 $ wysyłanego do Austin."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Calcule no TaxJar o imposto sobre vendas de um pedido de US$ 120 enviado para Austin."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Räkna ut försäljningsskatten i TaxJar på en beställning på 120 $ som skickas till Austin."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TaxJar’da Austin’e gönderilen 120 $’lık bir siparişin satış vergisini hesapla."
           }
         }
       }
@@ -23055,6 +23461,64 @@
         }
       }
     },
+    "Check the citations in this brief with Midpage." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prüf die Fundstellen in diesem Schriftsatz mit Midpage."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comprueba las citas de este escrito con Midpage."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vérifie les citations de ce mémoire avec Midpage."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Controlla le citazioni di questa memoria con Midpage."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Controleer de bronvermeldingen in dit processtuk met Midpage."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sprawdź cytaty w tym piśmie za pomocą Midpage."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Confira as citações desta peça com o Midpage."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kontrollera källhänvisningarna i den här inlagan med Midpage."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu dilekçedeki atıfları Midpage ile kontrol et."
+          }
+        }
+      }
+    },
     "Check the flight, the travellers' names and the total before you allow it." : {
       "localizations" : {
         "de" : {
@@ -25376,6 +25840,64 @@
         }
       }
     },
+    "Compare how three states define an independent contractor in Vaquill." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vergleich in Vaquill, wie drei Bundesstaaten einen selbstständigen Auftragnehmer definieren."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compara en Vaquill cómo definen tres estados a un contratista independiente."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compare dans Vaquill comment trois États définissent un travailleur indépendant."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Confronta in Vaquill come tre stati definiscono un lavoratore autonomo."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vergelijk in Vaquill hoe drie staten een zelfstandige opdrachtnemer definiëren."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Porównaj w Vaquill, jak trzy stany definiują niezależnego wykonawcę."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compare no Vaquill como três estados definem um prestador de serviço independente."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jämför i Vaquill hur tre delstater definierar en oberoende uppdragstagare."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vaquill’de üç eyaletin bağımsız yükleniciyi nasıl tanımladığını karşılaştır."
+          }
+        }
+      }
+    },
     "Compare our traffic with our top competitor in Semrush." : {
       "localizations" : {
         "de" : {
@@ -25430,6 +25952,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Semrush’ta trafiğimizi en büyük rakibimizinkiyle karşılaştır."
+          }
+        }
+      }
+    },
+    "Compare round-trip fares from New York to London next month with Ignav." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vergleich mit Ignav die Hin- und Rückflugpreise von New York nach London nächsten Monat."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compara con Ignav las tarifas de ida y vuelta de Nueva York a Londres el mes que viene."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compare les tarifs aller-retour de New York à Londres le mois prochain avec Ignav."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Confronta con Ignav le tariffe di andata e ritorno da New York a Londra il mese prossimo."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vergelijk met Ignav de retourtarieven van New York naar Londen volgende maand."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Porównaj za pomocą Ignav ceny lotów w obie strony z Nowego Jorku do Londynu w przyszłym miesiącu."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compare com o Ignav as tarifas de ida e volta de Nova York a Londres no mês que vem."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jämför tur och retur-priser från New York till London nästa månad med Ignav."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ignav ile gelecek ay New York’tan Londra’ya gidiş-dönüş fiyatlarını karşılaştır."
           }
         }
       }
@@ -38436,6 +39016,64 @@
         }
       }
     },
+    "Estimate my federal tax with Aiwyn Tax on $85,000 in wages." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schätz mit Aiwyn Tax meine Bundessteuer bei 85.000 $ Lohn."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Estima mi impuesto federal con Aiwyn Tax con 85 000 $ de salario."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Estime mon impôt fédéral avec Aiwyn Tax sur 85 000 $ de salaire."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stima con Aiwyn Tax la mia tassa federale su 85.000 $ di stipendio."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schat met Aiwyn Tax mijn federale belasting op $ 85.000 aan loon."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oszacuj za pomocą Aiwyn Tax mój podatek federalny przy 85 000 $ wynagrodzenia."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Estime com o Aiwyn Tax meu imposto federal sobre US$ 85.000 de salário."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uppskatta min federala skatt med Aiwyn Tax på en lön på 85 000 $."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aiwyn Tax ile 85.000 $ maaş için federal vergimi tahmin et."
+          }
+        }
+      }
+    },
     "Every %@" : {
       "localizations" : {
         "de" : {
@@ -40756,6 +41394,122 @@
         }
       }
     },
+    "Find accounts in HypeAuditor that post about vegan baking." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Find in HypeAuditor Accounts, die über veganes Backen posten."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Busca cuentas en HypeAuditor que publiquen sobre repostería vegana."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trouve des comptes dans HypeAuditor qui parlent de pâtisserie vegan."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trova in HypeAuditor account che pubblicano sulla pasticceria vegana."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zoek in HypeAuditor accounts die posten over vegan bakken."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Znajdź w HypeAuditor konta, które publikują o wegańskich wypiekach."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encontre no HypeAuditor contas que postam sobre confeitaria vegana."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hitta konton i HypeAuditor som lägger upp inlägg om vegansk bakning."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HypeAuditor’da vegan pastacılık hakkında paylaşım yapan hesapları bul."
+          }
+        }
+      }
+    },
+    "Find cases in Midpage on landlord liability for snow and ice." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Find in Midpage Fälle zur Haftung von Vermietern bei Schnee und Eis."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Busca casos en Midpage sobre la responsabilidad del arrendador por nieve y hielo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trouve des décisions dans Midpage sur la responsabilité du propriétaire en cas de neige et de verglas."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trova in Midpage casi sulla responsabilità del locatore per neve e ghiaccio."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zoek in Midpage zaken over aansprakelijkheid van verhuurders bij sneeuw en ijs."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Znajdź w Midpage sprawy o odpowiedzialność wynajmującego za śnieg i lód."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encontre no Midpage casos sobre a responsabilidade do locador por neve e gelo."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hitta mål i Midpage om hyresvärdens ansvar vid snö och is."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Midpage’de ev sahibinin kar ve buz nedeniyle sorumluluğuna dair davaları bul."
+          }
+        }
+      }
+    },
     "Find coffee shops near our office in Google Maps that open before 7." : {
       "localizations" : {
         "de" : {
@@ -41336,6 +42090,64 @@
         }
       }
     },
+    "Find Jordan Lee’s work email with ContactOut." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Find mit ContactOut die berufliche E-Mail-Adresse von Jordan Lee."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Busca el correo de trabajo de Jordan Lee con ContactOut."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trouve l’e-mail professionnel de Jordan Lee avec ContactOut."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trova con ContactOut l’email di lavoro di Jordan Lee."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zoek met ContactOut het zakelijke e-mailadres van Jordan Lee."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Znajdź za pomocą ContactOut służbowy e-mail Jordana Lee."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encontre com o ContactOut o e-mail de trabalho de Jordan Lee."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hitta Jordan Lees jobbmejl med ContactOut."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ContactOut ile Jordan Lee’nin iş e-postasını bul."
+          }
+        }
+      }
+    },
     "Find Jordan Lee’s work phone number at Acme in Lusha." : {
       "localizations" : {
         "de" : {
@@ -41390,6 +42202,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Lusha’da Jordan Lee’nin Acme’deki iş telefonunu bul."
+          }
+        }
+      }
+    },
+    "Find keywords in vidIQ for a video about home espresso." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Find in vidIQ Keywords für ein Video über Espresso zu Hause."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Busca palabras clave en vidIQ para un vídeo sobre espresso en casa."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trouve des mots clés dans vidIQ pour une vidéo sur l’espresso à la maison."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trova in vidIQ parole chiave per un video sull’espresso fatto in casa."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zoek in vidIQ zoekwoorden voor een video over espresso thuis."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Znajdź w vidIQ słowa kluczowe do filmu o espresso w domu."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encontre no vidIQ palavras-chave para um vídeo sobre espresso em casa."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hitta sökord i vidIQ för en video om espresso hemma."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "vidIQ’da evde espresso hakkında bir video için anahtar kelimeler bul."
           }
         }
       }
@@ -42206,6 +43076,122 @@
         }
       }
     },
+    "Find the cheapest flight from Paris to Lisbon in March with Ignav." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Find mit Ignav den günstigsten Flug von Paris nach Lissabon im März."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Busca con Ignav el vuelo más barato de París a Lisboa en marzo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trouve le vol le moins cher de Paris à Lisbonne en mars avec Ignav."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trova con Ignav il volo più economico da Parigi a Lisbona a marzo."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zoek met Ignav de goedkoopste vlucht van Parijs naar Lissabon in maart."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Znajdź za pomocą Ignav najtańszy lot z Paryża do Lizbony w marcu."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encontre com o Ignav o voo mais barato de Paris a Lisboa em março."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hitta det billigaste flyget från Paris till Lissabon i mars med Ignav."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ignav ile martta Paris’ten Lizbon’a en ucuz uçuşu bul."
+          }
+        }
+      }
+    },
+    "Find the comparison of the two lease drafts in Draftable." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Find den Vergleich der beiden Mietvertragsentwürfe in Draftable."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Busca la comparación de los dos borradores del contrato de alquiler en Draftable."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retrouve la comparaison des deux versions du bail dans Draftable."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trova il confronto tra le due bozze del contratto d’affitto in Draftable."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zoek de vergelijking van de twee concepten van het huurcontract in Draftable."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Znajdź porównanie dwóch wersji umowy najmu w Draftable."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encontre a comparação das duas versões do contrato de aluguel no Draftable."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hitta jämförelsen av de två utkasten till hyresavtalet i Draftable."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Draftable’da iki kira sözleşmesi taslağının karşılaştırmasını bul."
+          }
+        }
+      }
+    },
     "Find the contract someone sent me in Outlook last month and summarize it." : {
       "localizations" : {
         "de" : {
@@ -42322,6 +43308,64 @@
         }
       }
     },
+    "Find the decision makers at acme.com with ContactOut." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Find mit ContactOut die Entscheider bei acme.com."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Busca a quienes toman las decisiones en acme.com con ContactOut."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trouve les décideurs chez acme.com avec ContactOut."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trova con ContactOut chi prende le decisioni su acme.com."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zoek met ContactOut de beslissers bij acme.com."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Znajdź za pomocą ContactOut decydentów w acme.com."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encontre com o ContactOut os tomadores de decisão da acme.com."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hitta beslutsfattarna på acme.com med ContactOut."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ContactOut ile acme.com’daki karar vericileri bul."
+          }
+        }
+      }
+    },
     "Find the Google Meet recording of the design review and pull out the decisions." : {
       "localizations" : {
         "de" : {
@@ -42376,6 +43420,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tasarım incelemesinin Google Meet kaydını bul ve alınan kararları çıkar."
+          }
+        }
+      }
+    },
+    "Find the head of marketing at Acme in ZoomInfo." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Find in ZoomInfo die Marketingleitung von Acme."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Busca al responsable de marketing de Acme en ZoomInfo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trouve le responsable marketing d’Acme dans ZoomInfo."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trova in ZoomInfo il responsabile marketing di Acme."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zoek in ZoomInfo het hoofd marketing van Acme."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Znajdź w ZoomInfo szefa marketingu w Acme."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encontre no ZoomInfo o líder de marketing da Acme."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hitta marknadschefen på Acme i ZoomInfo."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZoomInfo’da Acme’nin pazarlama müdürünü bul."
           }
         }
       }
@@ -43366,6 +44468,64 @@
         }
       }
     },
+    "Find the Texas statute on security deposits in Vaquill." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Find in Vaquill das texanische Gesetz zu Mietkautionen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Busca en Vaquill la ley de Texas sobre fianzas de alquiler."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trouve dans Vaquill la loi du Texas sur les dépôts de garantie."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trova in Vaquill la legge del Texas sui depositi cauzionali."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zoek in Vaquill de wet van Texas over huurwaarborgen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Znajdź w Vaquill teksańską ustawę o kaucjach."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encontre no Vaquill a lei do Texas sobre depósitos caução."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hitta Texas lag om hyresdepositioner i Vaquill."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vaquill’de Teksas’ın depozitolarla ilgili kanununu bul."
+          }
+        }
+      }
+    },
     "Find this month’s new backlinks to our site in Semrush." : {
       "localizations" : {
         "de" : {
@@ -43536,6 +44696,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tavily ile yeni espresso makinesi hakkında üç inceleme bul."
+          }
+        }
+      }
+    },
+    "Find well-reviewed hotels near the Colosseum on Tripadvisor." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Find auf Tripadvisor gut bewertete Hotels in der Nähe des Kolosseums."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Busca en Tripadvisor hoteles bien valorados cerca del Coliseo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trouve sur Tripadvisor des hôtels bien notés près du Colisée."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trova su Tripadvisor hotel con buone recensioni vicino al Colosseo."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zoek op Tripadvisor goed beoordeelde hotels bij het Colosseum."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Znajdź na Tripadvisorze dobrze oceniane hotele w pobliżu Koloseum."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encontre no Tripadvisor hotéis bem avaliados perto do Coliseu."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hitta hotell med bra betyg nära Colosseum på Tripadvisor."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tripadvisor’da Kolezyum yakınında iyi yorum almış oteller bul."
           }
         }
       }
@@ -44932,6 +46150,64 @@
         }
       }
     },
+    "Get a booking link with Ignav for the 8 am flight to Rome." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hol mit Ignav einen Buchungslink für den Flug um 8 Uhr nach Rom."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Consigue con Ignav un enlace de reserva para el vuelo de las 8 a Roma."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Obtiens avec Ignav un lien de réservation pour le vol de 8 h pour Rome."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prendi con Ignav un link di prenotazione per il volo delle 8 per Roma."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Haal met Ignav een boekingslink op voor de vlucht van 8 uur naar Rome."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zdobądź za pomocą Ignav link do rezerwacji lotu o 8:00 do Rzymu."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pegue com o Ignav um link de reserva para o voo das 8h para Roma."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hämta en bokningslänk med Ignav för flyget klockan 8 till Rom."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ignav ile Roma’ya saat 8 uçuşu için bir rezervasyon bağlantısı al."
+          }
+        }
+      }
+    },
     "Get more Simeon usage" : {
       "localizations" : {
         "de" : {
@@ -45164,6 +46440,64 @@
         }
       }
     },
+    "Get the review widget from GatherUp for our website." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hol das Bewertungs-Widget von GatherUp für unsere Website."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Consigue el widget de reseñas de GatherUp para nuestra web."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Récupère le widget d’avis de GatherUp pour notre site."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prendi il widget delle recensioni da GatherUp per il nostro sito."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Haal de reviewwidget van GatherUp op voor onze website."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pobierz z GatherUp widżet z recenzjami na naszą stronę."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pegue o widget de avaliações do GatherUp para o nosso site."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hämta recensionswidgeten från GatherUp till vår webbplats."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Web sitemiz için GatherUp’tan yorum widget’ını al."
+          }
+        }
+      }
+    },
     "Get the Shop app" : {
       "localizations" : {
         "de" : {
@@ -45276,6 +46610,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "DataForSEO’dan “best espresso machine” için ilk on arama sonucunu getir."
+          }
+        }
+      }
+    },
+    "Get the transcript of this talk with YouTube Transcript and summarize it." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hol dir mit YouTube Transcript das Transkript dieses Vortrags und fass es zusammen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saca la transcripción de esta charla con YouTube Transcript y resúmela."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Récupère la transcription de cette conférence avec YouTube Transcript et résume-la."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prendi la trascrizione di questo talk con YouTube Transcript e riassumila."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Haal met YouTube Transcript de transcriptie van deze talk op en vat hem samen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pobierz transkrypcję tego wystąpienia za pomocą YouTube Transcript i ją podsumuj."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pegue a transcrição desta palestra com o YouTube Transcript e resuma."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hämta transkriberingen av det här föredraget med YouTube Transcript och sammanfatta den."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu konuşmanın dökümünü YouTube Transcript ile al ve özetle."
           }
         }
       }
@@ -45572,6 +46964,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ (%@ dalı)"
+          }
+        }
+      }
+    },
+    "Give the cleaner a code in Seam for the front door on Friday from 9 to 12." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gib der Reinigungskraft in Seam einen Code für die Haustür am Freitag von 9 bis 12 Uhr."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dale al servicio de limpieza un código en Seam para la puerta principal el viernes de 9 a 12."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Donne à la personne qui fait le ménage un code dans Seam pour la porte d’entrée vendredi de 9 h à 12 h."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dai a chi fa le pulizie un codice in Seam per la porta d’ingresso venerdì dalle 9 alle 12."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geef de schoonmaker in Seam een code voor de voordeur op vrijdag van 9 tot 12 uur."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Daj osobie sprzątającej kod w Seam do drzwi wejściowych na piątek od 9:00 do 12:00."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dê à pessoa da limpeza um código no Seam para a porta da frente na sexta-feira, das 9h às 12h."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ge städaren en kod i Seam till ytterdörren på fredag mellan 9 och 12."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Temizlik görevlisine Seam’de cuma 9 ile 12 arası ön kapı için bir kod ver."
           }
         }
       }
@@ -46296,6 +47746,64 @@
         }
       }
     },
+    "How are our campaigns in HeyReach doing this week?" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wie laufen unsere Kampagnen in HeyReach diese Woche?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué tal van nuestras campañas en HeyReach esta semana?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comment se passent nos campagnes dans HeyReach cette semaine ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Come vanno le nostre campagne in HeyReach questa settimana?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hoe doen onze campagnes in HeyReach het deze week?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jak idą nasze kampanie w HeyReach w tym tygodniu?"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Como estão nossas campanhas no HeyReach esta semana?"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hur går våra kampanjer i HeyReach den här veckan?"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HeyReach’teki kampanyalarımız bu hafta nasıl gidiyor?"
+          }
+        }
+      }
+    },
     "How did daily active users change this month in Amplitude?" : {
       "localizations" : {
         "de" : {
@@ -46524,6 +48032,122 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Geçen haftaki bülten Mailchimp’te nasıl gitti?"
+          }
+        }
+      }
+    },
+    "How did last week’s posts do in OneUp?" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wie liefen die Beiträge der letzten Woche in OneUp?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué tal les fue a las publicaciones de la semana pasada en OneUp?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comment se sont passés les posts de la semaine dernière dans OneUp ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Come sono andati i post della settimana scorsa in OneUp?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hoe deden de posts van vorige week het in OneUp?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jak poradziły sobie posty z zeszłego tygodnia w OneUp?"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Como foram os posts da semana passada no OneUp?"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hur gick förra veckans inlägg i OneUp?"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OneUp’ta geçen haftanın gönderileri nasıl gitti?"
+          }
+        }
+      }
+    },
+    "How did my channel grow this month in vidIQ?" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wie ist mein Kanal diesen Monat laut vidIQ gewachsen?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Cómo creció mi canal este mes en vidIQ?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comment ma chaîne a-t-elle grandi ce mois-ci dans vidIQ ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Come è cresciuto il mio canale questo mese in vidIQ?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hoe is mijn kanaal deze maand gegroeid in vidIQ?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jak urósł mój kanał w tym miesiącu według vidIQ?"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Como meu canal cresceu este mês no vidIQ?"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hur har min kanal vuxit den här månaden i vidIQ?"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "vidIQ’ya göre kanalım bu ay nasıl büyüdü?"
           }
         }
       }
@@ -47684,6 +49308,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Bu hafta Harvest’a kaç saat girdim?"
+          }
+        }
+      }
+    },
+    "How many hours did I track this week in Toggl?" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wie viele Stunden habe ich diese Woche in Toggl erfasst?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Cuántas horas he registrado esta semana en Toggl?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Combien d’heures ai-je suivies cette semaine dans Toggl ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quante ore ho registrato questa settimana in Toggl?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hoeveel uur heb ik deze week geregistreerd in Toggl?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ile godzin mam zarejestrowanych w tym tygodniu w Toggl?"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quantas horas eu registrei esta semana no Toggl?"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hur många timmar har jag registrerat den här veckan i Toggl?"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu hafta Toggl’da kaç saat kaydettim?"
           }
         }
       }
@@ -49022,6 +50704,64 @@
         }
       }
     },
+    "How much did we sell this week in Mindbody?" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wie viel haben wir diese Woche in Mindbody verkauft?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Cuánto vendimos esta semana en Mindbody?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Combien avons-nous vendu cette semaine dans Mindbody ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quanto abbiamo venduto questa settimana in Mindbody?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hoeveel hebben we deze week verkocht in Mindbody?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ile sprzedaliśmy w tym tygodniu w Mindbody?"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quanto vendemos esta semana no Mindbody?"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hur mycket sålde vi den här veckan i Mindbody?"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu hafta Mindbody’de ne kadar satış yaptık?"
+          }
+        }
+      }
+    },
     "How much did we spend on travel in Brex last quarter?" : {
       "localizations" : {
         "de" : {
@@ -49424,6 +51164,122 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "YNAB’de bu ay Market kategorisinde ne kadar kaldı?"
+          }
+        }
+      }
+    },
+    "How much state tax would I owe in New York, according to Aiwyn Tax?" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wie viel Staatssteuer würde ich laut Aiwyn Tax in New York zahlen?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Cuánto impuesto estatal pagaría en Nueva York, según Aiwyn Tax?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Combien d’impôt de l’État de New York devrais-je payer, d’après Aiwyn Tax ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quanta tassa statale pagherei a New York, secondo Aiwyn Tax?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hoeveel staatsbelasting zou ik in New York betalen, volgens Aiwyn Tax?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ile podatku stanowego trzeba by zapłacić w Nowym Jorku według Aiwyn Tax?"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quanto de imposto estadual eu pagaria em Nova York, segundo o Aiwyn Tax?"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hur mycket delstatsskatt skulle jag betala i New York enligt Aiwyn Tax?"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aiwyn Tax’e göre New York’ta ne kadar eyalet vergisi öderdim?"
+          }
+        }
+      }
+    },
+    "How real are this creator’s followers, according to HypeAuditor?" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wie echt sind die Follower dieses Creators laut HypeAuditor?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué tan reales son los seguidores de este creador, según HypeAuditor?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les abonnés de ce créateur sont-ils vraiment réels, d’après HypeAuditor ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quanto sono reali i follower di questo creator, secondo HypeAuditor?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hoe echt zijn de volgers van deze maker, volgens HypeAuditor?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Na ile prawdziwi są obserwujący tego twórcy według HypeAuditor?"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quão reais são os seguidores deste criador, segundo o HypeAuditor?"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hur äkta är den här kreatörens följare enligt HypeAuditor?"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HypeAuditor’a göre bu içerik üreticisinin takipçileri ne kadar gerçek?"
           }
         }
       }
@@ -50782,6 +52638,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aralıklı"
+          }
+        }
+      }
+    },
+    "Invite Sam to the video interview for the support role in Hireflix." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lad Sam in Hireflix zum Videointerview für die Support-Stelle ein."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invita a Sam a la entrevista en vídeo para el puesto de soporte en Hireflix."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invite Sam à l’entretien vidéo pour le poste de support dans Hireflix."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invita Sam al colloquio video per il ruolo di supporto in Hireflix."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nodig Sam uit voor het video-interview voor de supportfunctie in Hireflix."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zaproś Sama na rozmowę wideo na stanowisko w supporcie w Hireflix."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Convide o Sam para a entrevista em vídeo da vaga de suporte no Hireflix."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bjud in Sam till videointervjun för supporttjänsten i Hireflix."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sam’i Hireflix’te destek pozisyonu için video mülakata davet et."
           }
         }
       }
@@ -54122,6 +56036,64 @@
         }
       }
     },
+    "List the assets at the warehouse in MaintainX." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Liste die Anlagen im Lager in MaintainX auf."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enumera los activos del almacén en MaintainX."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Liste les équipements de l’entrepôt dans MaintainX."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elenca gli asset del magazzino in MaintainX."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zet de assets in het magazijn in MaintainX op een rij."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wypisz zasoby w magazynie w MaintainX."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Liste os ativos do armazém no MaintainX."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lista tillgångarna i lagret i MaintainX."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MaintainX’te depodaki varlıkları listele."
+          }
+        }
+      }
+    },
     "List the assignments due next week in Google Classroom." : {
       "localizations" : {
         "de" : {
@@ -55398,6 +57370,64 @@
         }
       }
     },
+    "Look up this citation in Vaquill: Cal. Lab. Code § 226." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schlag diese Fundstelle in Vaquill nach: Cal. Lab. Code § 226."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Busca esta cita en Vaquill: Cal. Lab. Code § 226."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cherche cette citation dans Vaquill : Cal. Lab. Code § 226."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cerca questa citazione in Vaquill: Cal. Lab. Code § 226."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zoek deze bronvermelding op in Vaquill: Cal. Lab. Code § 226."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sprawdź ten cytat w Vaquill: Cal. Lab. Code § 226."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Procure esta citação no Vaquill: Cal. Lab. Code § 226."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Slå upp den här hänvisningen i Vaquill: Cal. Lab. Code § 226."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu atfı Vaquill’de ara: Cal. Lab. Code § 226."
+          }
+        }
+      }
+    },
     "Looking at the screen…" : {
       "localizations" : {
         "de" : {
@@ -56206,6 +58236,122 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Bu üç rapordan NotebookLM’de bir not defteri oluştur."
+          }
+        }
+      }
+    },
+    "Make a PDF of my tax estimate with Aiwyn Tax." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erstell mit Aiwyn Tax ein PDF meiner Steuerschätzung."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Haz un PDF de mi estimación de impuestos con Aiwyn Tax."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fais un PDF de mon estimation d’impôt avec Aiwyn Tax."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crea con Aiwyn Tax un PDF della mia stima delle tasse."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maak met Aiwyn Tax een pdf van mijn belastingschatting."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zrób za pomocą Aiwyn Tax PDF z moim szacunkiem podatku."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gere com o Aiwyn Tax um PDF da minha estimativa de imposto."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gör en pdf av min skatteuppskattning med Aiwyn Tax."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aiwyn Tax ile vergi tahminimin PDF’ini oluştur."
+          }
+        }
+      }
+    },
+    "Make a position in Hireflix for a junior designer with three questions." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leg in Hireflix eine Stelle für einen Junior-Designer mit drei Fragen an."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crea un puesto en Hireflix para un diseñador júnior con tres preguntas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crée un poste dans Hireflix pour un designer junior avec trois questions."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crea in Hireflix una posizione per un designer junior con tre domande."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maak in Hireflix een functie voor een junior designer met drie vragen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utwórz w Hireflix stanowisko dla młodszego projektanta z trzema pytaniami."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crie no Hireflix uma vaga para designer júnior com três perguntas."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skapa en tjänst i Hireflix för en juniordesigner med tre frågor."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hireflix’te üç soruluk bir genç tasarımcı pozisyonu oluştur."
           }
         }
       }
@@ -57192,6 +59338,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "fal.ai’da bu paragrafın seslendirmesini yap."
+          }
+        }
+      }
+    },
+    "Make a work order in MaintainX to fix the walk-in freezer." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leg in MaintainX einen Arbeitsauftrag an, um das Kühlhaus zu reparieren."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crea una orden de trabajo en MaintainX para arreglar la cámara frigorífica."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crée un ordre de travail dans MaintainX pour réparer la chambre froide."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crea in MaintainX un ordine di lavoro per riparare la cella frigorifera."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maak in MaintainX een werkorder om de vriescel te repareren."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utwórz w MaintainX zlecenie naprawy chłodni."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crie no MaintainX uma ordem de serviço para consertar a câmara fria."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skapa en arbetsorder i MaintainX för att laga frysrummet."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MaintainX’te soğuk odayı tamir etmek için bir iş emri oluştur."
           }
         }
       }
@@ -68737,6 +70941,64 @@
         }
       }
     },
+    "Plan the best route in Route4Me for today’s 12 deliveries." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plan in Route4Me die beste Route für die 12 Lieferungen von heute."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Planifica la mejor ruta en Route4Me para las 12 entregas de hoy."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Planifie le meilleur itinéraire dans Route4Me pour les 12 livraisons d’aujourd’hui."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pianifica in Route4Me il percorso migliore per le 12 consegne di oggi."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plan in Route4Me de beste route voor de 12 leveringen van vandaag."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zaplanuj w Route4Me najlepszą trasę dla dzisiejszych 12 dostaw."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Planeje no Route4Me a melhor rota para as 12 entregas de hoje."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Planera den bästa rutten i Route4Me för dagens 12 leveranser."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Route4Me’de bugünkü 12 teslimat için en iyi rotayı planla."
+          }
+        }
+      }
+    },
     "Plans can't be loaded right now. Check your connection and try again." : {
       "localizations" : {
         "de" : {
@@ -71075,6 +73337,64 @@
         }
       }
     },
+    "Pull the transcripts of every video in this playlist with YouTube Transcript." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hol dir mit YouTube Transcript die Transkripte aller Videos in dieser Playlist."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saca las transcripciones de todos los vídeos de esta lista con YouTube Transcript."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Récupère les transcriptions de toutes les vidéos de cette playlist avec YouTube Transcript."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prendi le trascrizioni di tutti i video di questa playlist con YouTube Transcript."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Haal met YouTube Transcript de transcripties van alle video’s in deze playlist op."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pobierz transkrypcje wszystkich filmów z tej playlisty za pomocą YouTube Transcript."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pegue as transcrições de todos os vídeos desta playlist com o YouTube Transcript."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hämta transkriberingarna av alla videor i den här spellistan med YouTube Transcript."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu oynatma listesindeki tüm videoların dökümlerini YouTube Transcript ile çek."
+          }
+        }
+      }
+    },
     "Put %@ to work" : {
       "localizations" : {
         "de" : {
@@ -72583,6 +74903,64 @@
         }
       }
     },
+    "Record last week’s orders in TaxJar." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erfass die Bestellungen der letzten Woche in TaxJar."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registra los pedidos de la semana pasada en TaxJar."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enregistre les commandes de la semaine dernière dans TaxJar."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registra gli ordini della settimana scorsa in TaxJar."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registreer de bestellingen van vorige week in TaxJar."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zarejestruj zamówienia z zeszłego tygodnia w TaxJar."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registre os pedidos da semana passada no TaxJar."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registrera förra veckans beställningar i TaxJar."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geçen haftanın siparişlerini TaxJar’a kaydet."
+          }
+        }
+      }
+    },
     "Recover failed" : {
       "localizations" : {
         "de" : {
@@ -73159,6 +75537,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ bu konuşmadan çıkarılsın mı?"
+          }
+        }
+      }
+    },
+    "Remove Jordan’s access to the office in Seam." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entzieh Jordan in Seam den Zugang zum Büro."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quita el acceso de Jordan a la oficina en Seam."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retire l’accès de Jordan au bureau dans Seam."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Revoca l’accesso di Jordan all’ufficio in Seam."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trek in Seam de toegang van Jordan tot het kantoor in."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Odbierz Jordanowi dostęp do biura w Seam."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remova o acesso do Jordan ao escritório no Seam."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ta bort Jordans åtkomst till kontoret i Seam."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seam’de Jordan’ın ofise erişimini kaldır."
           }
         }
       }
@@ -74087,6 +76523,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Bağlantıya yanıt ver…"
+          }
+        }
+      }
+    },
+    "Reply to the new comments in OneUp." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beantworte die neuen Kommentare in OneUp."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Responde a los comentarios nuevos en OneUp."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réponds aux nouveaux commentaires dans OneUp."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rispondi ai nuovi commenti in OneUp."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beantwoord de nieuwe reacties in OneUp."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Odpowiedz na nowe komentarze w OneUp."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Responda aos novos comentários no OneUp."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Svara på de nya kommentarerna i OneUp."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OneUp’taki yeni yorumları yanıtla."
           }
         }
       }
@@ -76661,6 +79155,64 @@
         }
       }
     },
+    "Run a report in Toggl of last month’s hours by client." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erstell in Toggl einen Bericht über die Stunden des letzten Monats nach Kunde."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saca un informe en Toggl de las horas del mes pasado por cliente."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fais un rapport dans Toggl des heures du mois dernier par client."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crea in Toggl un report delle ore del mese scorso per cliente."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maak in Toggl een rapport van de uren van vorige maand per klant."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przygotuj w Toggl raport godzin z zeszłego miesiąca według klientów."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gere no Toggl um relatório das horas do mês passado por cliente."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ta fram en rapport i Toggl över förra månadens timmar per kund."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toggl’da geçen ayın saatlerini müşteriye göre gösteren bir rapor çıkar."
+          }
+        }
+      }
+    },
     "Run the new-lead scenario in Make for Jordan from Acme." : {
       "localizations" : {
         "de" : {
@@ -77771,6 +80323,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ajanlarının çalıştırdığı senaryolar, bağladıkları uygulamalarda gerçek işler yapar ve Make operasyonlarını kullanır."
+          }
+        }
+      }
+    },
+    "Schedule this post in OneUp for Instagram and Facebook tomorrow at 9." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plan diesen Beitrag in OneUp für morgen um 9 Uhr auf Instagram und Facebook ein."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Programa esta publicación en OneUp para Instagram y Facebook mañana a las 9."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Programme ce post dans OneUp pour Instagram et Facebook demain à 9 h."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Programma questo post in OneUp per Instagram e Facebook domani alle 9."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plan deze post in OneUp in voor Instagram en Facebook, morgen om 9 uur."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zaplanuj ten post w OneUp na Instagram i Facebook na jutro na 9:00."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agende este post no OneUp para o Instagram e o Facebook amanhã às 9h."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schemalägg det här inlägget i OneUp för Instagram och Facebook i morgon klockan 9."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu gönderiyi OneUp’ta yarın saat 9’a Instagram ve Facebook için zamanla."
           }
         }
       }
@@ -79279,6 +81889,64 @@
         }
       }
     },
+    "Send a feedback request with GatherUp to this week’s new customers." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schick mit GatherUp eine Feedback-Anfrage an die neuen Kunden dieser Woche."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envía una solicitud de opinión con GatherUp a los clientes nuevos de esta semana."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envoie une demande d’avis avec GatherUp aux nouveaux clients de cette semaine."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invia una richiesta di feedback con GatherUp ai nuovi clienti di questa settimana."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stuur met GatherUp een feedbackverzoek naar de nieuwe klanten van deze week."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyślij za pomocą GatherUp prośbę o opinię do nowych klientów z tego tygodnia."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envie um pedido de feedback com o GatherUp aos clientes novos desta semana."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skicka en förfrågan om återkoppling med GatherUp till veckans nya kunder."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GatherUp ile bu haftaki yeni müşterilere geri bildirim isteği gönder."
+          }
+        }
+      }
+    },
     "Send a PayPal invoice to Jordan for $350 for the logo work." : {
       "localizations" : {
         "de" : {
@@ -79627,6 +82295,64 @@
         }
       }
     },
+    "Send me the link to yesterday’s comparison in Draftable." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schick mir den Link zum gestrigen Vergleich in Draftable."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envíame el enlace de la comparación de ayer en Draftable."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envoie-moi le lien de la comparaison d’hier dans Draftable."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mandami il link al confronto di ieri in Draftable."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stuur me de link naar de vergelijking van gisteren in Draftable."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyślij mi link do wczorajszego porównania w Draftable."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Me envie o link da comparação de ontem no Draftable."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skicka länken till gårdagens jämförelse i Draftable."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Draftable’daki dünkü karşılaştırmanın bağlantısını bana gönder."
+          }
+        }
+      }
+    },
     "Send me the transcript of yesterday’s demo from Fathom." : {
       "localizations" : {
         "de" : {
@@ -79913,6 +82639,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "PandaDoc’taki teklif şablonunu jordan@acme.com adresine gönder."
+          }
+        }
+      }
+    },
+    "Send today’s routes to the drivers in Route4Me." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schick die heutigen Routen in Route4Me an die Fahrer."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envía las rutas de hoy a los conductores en Route4Me."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envoie les itinéraires du jour aux chauffeurs dans Route4Me."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invia i percorsi di oggi agli autisti in Route4Me."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stuur de routes van vandaag naar de chauffeurs in Route4Me."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyślij kierowcom dzisiejsze trasy w Route4Me."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envie as rotas de hoje para os motoristas no Route4Me."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skicka dagens rutter till förarna i Route4Me."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Route4Me’de bugünkü rotaları sürücülere gönder."
           }
         }
       }
@@ -81889,6 +84673,122 @@
         }
       }
     },
+    "Show me my latest comparisons in Draftable." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zeig mir meine neuesten Vergleiche in Draftable."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enséñame mis últimas comparaciones en Draftable."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Montre-moi mes dernières comparaisons dans Draftable."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrami i miei ultimi confronti in Draftable."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Laat me mijn nieuwste vergelijkingen in Draftable zien."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pokaż mi moje najnowsze porównania w Draftable."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostre minhas comparações mais recentes no Draftable."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visa mina senaste jämförelser i Draftable."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Draftable’daki son karşılaştırmalarımı göster."
+          }
+        }
+      }
+    },
+    "Show me recent reviews of Café Lumen on Tripadvisor." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zeig mir aktuelle Bewertungen zum Café Lumen auf Tripadvisor."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enséñame las reseñas recientes de Café Lumen en Tripadvisor."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Montre-moi les avis récents sur le Café Lumen sur Tripadvisor."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrami le recensioni recenti del Café Lumen su Tripadvisor."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Laat me recente reviews van Café Lumen op Tripadvisor zien."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pokaż mi najnowsze recenzje Café Lumen na Tripadvisorze."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostre as avaliações recentes do Café Lumen no Tripadvisor."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visa nya recensioner av Café Lumen på Tripadvisor."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tripadvisor’da Café Lumen hakkındaki son yorumları göster."
+          }
+        }
+      }
+    },
     "Show me Sam’s time off balance in Gusto." : {
       "localizations" : {
         "de" : {
@@ -81943,6 +84843,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Gusto’da Sam’in kalan izin gününü göster."
+          }
+        }
+      }
+    },
+    "Show me the audience of @acmecoffee in HypeAuditor." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zeig mir die Zielgruppe von @acmecoffee in HypeAuditor."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enséñame la audiencia de @acmecoffee en HypeAuditor."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Montre-moi l’audience de @acmecoffee dans HypeAuditor."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrami il pubblico di @acmecoffee in HypeAuditor."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Laat me het publiek van @acmecoffee in HypeAuditor zien."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pokaż mi odbiorców @acmecoffee w HypeAuditor."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostre o público de @acmecoffee no HypeAuditor."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visa publiken för @acmecoffee i HypeAuditor."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HypeAuditor’da @acmecoffee hesabının kitlesini göster."
           }
         }
       }
@@ -82697,6 +85655,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Geçen çeyrek serbest çalışanlara ne ödediğimizi Mercury’de göster."
+          }
+        }
+      }
+    },
+    "Show me yesterday’s new replies in HeyReach." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zeig mir die neuen Antworten von gestern in HeyReach."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enséñame las respuestas nuevas de ayer en HeyReach."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Montre-moi les nouvelles réponses d’hier dans HeyReach."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrami le nuove risposte di ieri in HeyReach."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Laat me de nieuwe reacties van gisteren in HeyReach zien."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pokaż mi wczorajsze nowe odpowiedzi w HeyReach."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostre as respostas novas de ontem no HeyReach."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visa gårdagens nya svar i HeyReach."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HeyReach’te dün gelen yeni yanıtları göster."
           }
         }
       }
@@ -85133,6 +88149,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "TaskRabbit’te bir kanepeyi taşımak için yardım rezervasyonu başlat."
+          }
+        }
+      }
+    },
+    "Start a timer in Toggl for the Acme design work." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Starte in Toggl einen Timer für die Designarbeit für Acme."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inicia un temporizador en Toggl para el trabajo de diseño de Acme."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lance un chrono dans Toggl pour le travail de design pour Acme."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avvia un timer in Toggl per il lavoro di design per Acme."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start in Toggl een timer voor het ontwerpwerk voor Acme."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Włącz w Toggl stoper dla prac projektowych dla Acme."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inicie um cronômetro no Toggl para o trabalho de design da Acme."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Starta en timer i Toggl för designjobbet åt Acme."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toggl’da Acme tasarım işi için bir zamanlayıcı başlat."
           }
         }
       }
@@ -99545,6 +102619,64 @@
         }
       }
     },
+    "Verify these five email addresses with ContactOut." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prüf diese fünf E-Mail-Adressen mit ContactOut."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verifica estas cinco direcciones de correo con ContactOut."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vérifie ces cinq adresses e-mail avec ContactOut."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verifica questi cinque indirizzi email con ContactOut."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Controleer deze vijf e-mailadressen met ContactOut."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zweryfikuj te pięć adresów e-mail za pomocą ContactOut."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verifique estes cinco endereços de e-mail com o ContactOut."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verifiera de här fem mejladresserna med ContactOut."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu beş e-posta adresini ContactOut ile doğrula."
+          }
+        }
+      }
+    },
     "Verify these five email addresses with Hunter." : {
       "localizations" : {
         "de" : {
@@ -101343,6 +104475,64 @@
         }
       }
     },
+    "What are the top things to do in Lisbon on Tripadvisor?" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Was sind die besten Unternehmungen in Lissabon auf Tripadvisor?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué es lo mejor que hacer en Lisboa según Tripadvisor?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quelles sont les meilleures choses à faire à Lisbonne sur Tripadvisor ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quali sono le cose migliori da fare a Lisbona su Tripadvisor?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wat zijn de beste dingen om te doen in Lissabon op Tripadvisor?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jakie są najlepsze atrakcje w Lizbonie na Tripadvisorze?"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quais são os melhores passeios em Lisboa no Tripadvisor?"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vilka är de bästa sakerna att göra i Lissabon på Tripadvisor?"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tripadvisor’a göre Lizbon’da yapılacak en iyi şeyler neler?"
+          }
+        }
+      }
+    },
     "What are today’s most talked-about papers on Hugging Face?" : {
       "localizations" : {
         "de" : {
@@ -101687,6 +104877,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Yelp’teki yorumlar Café Lumen hakkında ne diyor?"
+          }
+        }
+      }
+    },
+    "What does California law say about meal breaks, according to Midpage?" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Was sagt das kalifornische Recht laut Midpage zu Essenspausen?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué dice la ley de California sobre las pausas para comer, según Midpage?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Que dit le droit californien sur les pauses repas, d’après Midpage ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cosa dice la legge della California sulle pause pranzo, secondo Midpage?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wat zegt de wet in Californië over maaltijdpauzes, volgens Midpage?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Co prawo Kalifornii mówi o przerwach na posiłek według Midpage?"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O que a lei da Califórnia diz sobre intervalos para refeição, segundo o Midpage?"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vad säger Kaliforniens lag om måltidsraster enligt Midpage?"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Midpage’e göre Kaliforniya yasası yemek molaları hakkında ne diyor?"
           }
         }
       }
@@ -103837,6 +107085,64 @@
         }
       }
     },
+    "What’s the latest news about Acme in ZoomInfo?" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Was gibt es Neues über Acme in ZoomInfo?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Cuáles son las últimas noticias sobre Acme en ZoomInfo?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quelles sont les dernières actualités sur Acme dans ZoomInfo ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quali sono le ultime notizie su Acme in ZoomInfo?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wat is het laatste nieuws over Acme in ZoomInfo?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jakie są najnowsze wiadomości o Acme w ZoomInfo?"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quais são as últimas notícias sobre a Acme no ZoomInfo?"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vilka är de senaste nyheterna om Acme i ZoomInfo?"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZoomInfo’da Acme hakkındaki son haberler neler?"
+          }
+        }
+      }
+    },
     "What’s the most returned product this month in Loop Returns?" : {
       "localizations" : {
         "de" : {
@@ -103953,6 +107259,64 @@
         }
       }
     },
+    "What’s the sales tax rate for 90210 in TaxJar?" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wie hoch ist der Umsatzsteuersatz für 90210 in TaxJar?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Cuál es el tipo del impuesto sobre ventas para 90210 en TaxJar?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quel est le taux de taxe sur les ventes pour 90210 dans TaxJar ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qual è l’aliquota della sales tax per 90210 in TaxJar?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wat is het omzetbelastingtarief voor 90210 in TaxJar?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jaka jest stawka podatku od sprzedaży dla 90210 w TaxJar?"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qual é a alíquota do imposto sobre vendas para 90210 no TaxJar?"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vilken försäljningsskattesats gäller för 90210 i TaxJar?"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TaxJar’da 90210 için satış vergisi oranı ne?"
+          }
+        }
+      }
+    },
     "What’s the total in our Q3 budget workbook in Excel?" : {
       "localizations" : {
         "de" : {
@@ -104065,6 +107429,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pipedrive’da bu ay kapanacak fırsatların toplam değeri ne?"
+          }
+        }
+      }
+    },
+    "What’s trending for cooking videos this week in vidIQ?" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Was ist laut vidIQ diese Woche bei Kochvideos im Trend?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué es tendencia en vídeos de cocina esta semana en vidIQ?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qu’est-ce qui marche en vidéos de cuisine cette semaine dans vidIQ ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cosa va di moda nei video di cucina questa settimana in vidIQ?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wat is er deze week trending bij kookvideo’s in vidIQ?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Co jest na topie w filmach kulinarnych w tym tygodniu według vidIQ?"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O que está em alta nos vídeos de culinária esta semana no vidIQ?"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vad trendar bland matlagningsvideor den här veckan i vidIQ?"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "vidIQ’ya göre bu hafta yemek videolarında ne trend?"
           }
         }
       }
@@ -104939,6 +108361,64 @@
         }
       }
     },
+    "Which bills in Clio are still unpaid?" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Welche Rechnungen in Clio sind noch offen?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué facturas de Clio siguen sin pagar?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quelles factures dans Clio ne sont pas encore payées ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quali fatture in Clio non sono ancora pagate?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Welke facturen in Clio zijn nog niet betaald?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Które rachunki w Clio są wciąż niezapłacone?"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quais faturas no Clio ainda não foram pagas?"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vilka fakturor i Clio är fortfarande obetalda?"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clio’da hangi faturalar hâlâ ödenmedi?"
+          }
+        }
+      }
+    },
     "Which blog posts in Contentful are still drafts?" : {
       "localizations" : {
         "de" : {
@@ -105345,6 +108825,64 @@
         }
       }
     },
+    "Which candidates in Hireflix answered this week?" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Welche Kandidaten haben diese Woche in Hireflix geantwortet?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué candidatos respondieron esta semana en Hireflix?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quels candidats ont répondu cette semaine dans Hireflix ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quali candidati hanno risposto questa settimana in Hireflix?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Welke kandidaten hebben deze week geantwoord in Hireflix?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Którzy kandydaci odpowiedzieli w tym tygodniu w Hireflix?"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quais candidatos responderam esta semana no Hireflix?"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vilka kandidater svarade den här veckan i Hireflix?"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hireflix’te bu hafta hangi adaylar yanıt verdi?"
+          }
+        }
+      }
+    },
     "Which candidates in Workable are waiting for an interview?" : {
       "localizations" : {
         "de" : {
@@ -105573,6 +109111,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Karbon’da bu hafta hangi müşteri işlerinin süresi doluyor?"
+          }
+        }
+      }
+    },
+    "Which companies in ZoomInfo are looking for payroll software?" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Welche Unternehmen in ZoomInfo suchen nach Lohnabrechnungssoftware?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué empresas de ZoomInfo están buscando software de nóminas?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quelles entreprises dans ZoomInfo cherchent un logiciel de paie ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quali aziende in ZoomInfo stanno cercando un software per le buste paga?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Welke bedrijven in ZoomInfo zoeken salarissoftware?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Które firmy w ZoomInfo szukają oprogramowania płacowego?"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quais empresas no ZoomInfo estão procurando software de folha de pagamento?"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vilka företag i ZoomInfo letar efter lönesystem?"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZoomInfo’da hangi şirketler bordro yazılımı arıyor?"
           }
         }
       }
@@ -106505,6 +110101,64 @@
         }
       }
     },
+    "Which invoices in Chaser are more than 30 days overdue?" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Welche Rechnungen in Chaser sind seit mehr als 30 Tagen überfällig?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué facturas de Chaser llevan más de 30 días vencidas?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quelles factures dans Chaser ont plus de 30 jours de retard ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quali fatture in Chaser sono scadute da più di 30 giorni?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Welke facturen in Chaser zijn meer dan 30 dagen te laat?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Które faktury w Chaser są przeterminowane o ponad 30 dni?"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quais faturas no Chaser estão vencidas há mais de 30 dias?"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vilka fakturor i Chaser är mer än 30 dagar försenade?"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chaser’da hangi faturaların vadesi 30 günden fazla geçti?"
+          }
+        }
+      }
+    },
     "Which invoices in Jobber are still unpaid?" : {
       "localizations" : {
         "de" : {
@@ -106969,6 +110623,64 @@
         }
       }
     },
+    "Which languages can I get this video’s transcript in with YouTube Transcript?" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In welchen Sprachen bekomme ich das Transkript dieses Videos mit YouTube Transcript?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿En qué idiomas puedo obtener la transcripción de este vídeo con YouTube Transcript?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dans quelles langues puis-je obtenir la transcription de cette vidéo avec YouTube Transcript ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In quali lingue posso avere la trascrizione di questo video con YouTube Transcript?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In welke talen kan ik de transcriptie van deze video krijgen met YouTube Transcript?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "W jakich językach mogę dostać transkrypcję tego filmu za pomocą YouTube Transcript?"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Em quais idiomas consigo a transcrição deste vídeo com o YouTube Transcript?"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "På vilka språk kan jag få transkriberingen av den här videon med YouTube Transcript?"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "YouTube Transcript ile bu videonun dökümünü hangi dillerde alabilirim?"
+          }
+        }
+      }
+    },
     "Which leads in Close haven’t been contacted this week?" : {
       "localizations" : {
         "de" : {
@@ -107081,6 +110793,122 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Bu hafta Lemlist’teki kampanyamıza hangi potansiyel müşteriler yanıt verdi?"
+          }
+        }
+      }
+    },
+    "Which locks in Seam are offline?" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Welche Schlösser in Seam sind offline?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué cerraduras de Seam están desconectadas?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quelles serrures dans Seam sont hors ligne ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quali serrature in Seam sono offline?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Welke sloten in Seam zijn offline?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Które zamki w Seam są offline?"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quais fechaduras no Seam estão offline?"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vilka lås i Seam är offline?"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seam’de hangi kilitler çevrim dışı?"
+          }
+        }
+      }
+    },
+    "Which matters in Clio have deadlines this week?" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Welche Akten in Clio haben diese Woche Fristen?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué asuntos de Clio tienen plazos esta semana?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quels dossiers dans Clio ont des échéances cette semaine ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quali pratiche in Clio hanno scadenze questa settimana?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Welke dossiers in Clio hebben deze week deadlines?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Które sprawy w Clio mają terminy w tym tygodniu?"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quais casos no Clio têm prazos esta semana?"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vilka ärenden i Clio har deadlines den här veckan?"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clio’da bu hafta hangi dosyaların son tarihi var?"
           }
         }
       }
@@ -109579,6 +113407,64 @@
         }
       }
     },
+    "Which work orders in MaintainX are overdue?" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Welche Arbeitsaufträge in MaintainX sind überfällig?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué órdenes de trabajo de MaintainX están atrasadas?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quels ordres de travail dans MaintainX sont en retard ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quali ordini di lavoro in MaintainX sono in ritardo?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Welke werkorders in MaintainX zijn te laat?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Które zlecenia prac w MaintainX są opóźnione?"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quais ordens de serviço no MaintainX estão atrasadas?"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vilka arbetsordrar i MaintainX är försenade?"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MaintainX’te hangi iş emirlerinin süresi geçti?"
+          }
+        }
+      }
+    },
     "Which workspaces do we have in Postman?" : {
       "localizations" : {
         "de" : {
@@ -109985,6 +113871,64 @@
         }
       }
     },
+    "Who owes us the most in Chaser?" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wer schuldet uns in Chaser am meisten?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Quién nos debe más en Chaser?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qui nous doit le plus dans Chaser ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chi ci deve di più in Chaser?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wie is ons het meeste schuldig in Chaser?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kto jest nam winien najwięcej w Chaser?"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quem nos deve mais no Chaser?"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vem är skyldig oss mest i Chaser?"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chaser’da bize en çok kim borçlu?"
+          }
+        }
+      }
+    },
     "Who works at the Main Street location in 7shifts?" : {
       "localizations" : {
         "de" : {
@@ -110039,6 +113983,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "7shifts’te Main Street şubesinde kimler çalışıyor?"
+          }
+        }
+      }
+    },
+    "Who’s booked into tonight’s yoga class in Mindbody?" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wer ist für den Yogakurs heute Abend in Mindbody angemeldet?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Quién está apuntado a la clase de yoga de esta noche en Mindbody?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qui est inscrit au cours de yoga de ce soir dans Mindbody ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chi è prenotato per la lezione di yoga di stasera in Mindbody?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wie zijn er ingeschreven voor de yogales van vanavond in Mindbody?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kto jest zapisany na dzisiejsze wieczorne zajęcia jogi w Mindbody?"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quem está inscrito na aula de yoga de hoje à noite no Mindbody?"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vilka är bokade på kvällens yogapass i Mindbody?"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mindbody’de bu akşamki yoga dersine kimler kayıtlı?"
           }
         }
       }
@@ -113581,6 +117583,64 @@
         }
       }
     },
+    "Your agents ask your customers for feedback and reviews with GatherUp." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten bitten deine Kunden mit GatherUp um Feedback und Bewertungen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes piden opiniones y reseñas a tus clientes con GatherUp."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents demandent des avis et des retours à tes clients avec GatherUp."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi agenti chiedono feedback e recensioni ai tuoi clienti con GatherUp."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten vragen je klanten met GatherUp om feedback en reviews."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci proszą twoich klientów o opinie i recenzje za pomocą GatherUp."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes pedem feedback e avaliações aos seus clientes com o GatherUp."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter ber dina kunder om återkoppling och recensioner med GatherUp."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların GatherUp ile müşterilerinden geri bildirim ve yorum ister."
+          }
+        }
+      }
+    },
     "Your agents build and change your apps and sites in Lovable from what you describe." : {
       "localizations" : {
         "de" : {
@@ -117061,6 +121121,64 @@
         }
       }
     },
+    "Your agents estimate federal and state taxes with Aiwyn Tax, formerly Column Tax." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten schätzen Bundes- und Staatssteuern mit Aiwyn Tax, früher Column Tax."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes estiman impuestos federales y estatales con Aiwyn Tax, antes Column Tax."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents estiment les impôts fédéraux et des États avec Aiwyn Tax, anciennement Column Tax."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi agenti stimano le tasse federali e statali con Aiwyn Tax, prima Column Tax."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten schatten federale en staatsbelastingen met Aiwyn Tax, voorheen Column Tax."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci szacują podatki federalne i stanowe za pomocą Aiwyn Tax, dawniej Column Tax."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes estimam impostos federais e estaduais com o Aiwyn Tax, antigo Column Tax."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter uppskattar federal skatt och delstatsskatt med Aiwyn Tax, tidigare Column Tax."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların eski adı Column Tax olan Aiwyn Tax ile federal ve eyalet vergilerini tahmin eder."
+          }
+        }
+      }
+    },
     "Your agents find and verify professional email addresses with Hunter." : {
       "localizations" : {
         "de" : {
@@ -117235,6 +121353,64 @@
         }
       }
     },
+    "Your agents find company and contact data, intent, and news for prospecting in ZoomInfo." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten finden Firmen- und Kontaktdaten, Kaufsignale und News für die Akquise in ZoomInfo."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes encuentran datos de empresas y contactos, señales de intención y noticias para prospectar en ZoomInfo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents trouvent des données d’entreprises et de contacts, des signaux d’intention et des actualités pour ta prospection dans ZoomInfo."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi agenti trovano dati su aziende e contatti, segnali d’interesse e notizie per la prospezione in ZoomInfo."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten vinden bedrijfs- en contactgegevens, koopsignalen en nieuws voor prospectie in ZoomInfo."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci znajdują dane firm i kontaktów, sygnały zakupowe i wiadomości do prospectingu w ZoomInfo."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes encontram dados de empresas e contatos, sinais de intenção e notícias para prospecção no ZoomInfo."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter hittar företags- och kontaktdata, köpsignaler och nyheter för prospektering i ZoomInfo."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların müşteri arayışı için ZoomInfo’da şirket ve kişi verisi, satın alma sinyalleri ve haberler bulur."
+          }
+        }
+      }
+    },
     "Your agents find contact and company data for prospecting in Lusha." : {
       "localizations" : {
         "de" : {
@@ -117289,6 +121465,180 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ajanların müşteri arayışı için Lusha’da kişi ve şirket verisi bulur."
+          }
+        }
+      }
+    },
+    "Your agents find emails and phone numbers for people and companies with ContactOut." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten finden mit ContactOut E-Mail-Adressen und Telefonnummern von Personen und Firmen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes encuentran correos y teléfonos de personas y empresas con ContactOut."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents trouvent les e-mails et les numéros de téléphone de personnes et d’entreprises avec ContactOut."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi agenti trovano email e numeri di telefono di persone e aziende con ContactOut."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten vinden met ContactOut e-mailadressen en telefoonnummers van mensen en bedrijven."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci znajdują e-maile i numery telefonów osób i firm za pomocą ContactOut."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes encontram e-mails e telefones de pessoas e empresas com o ContactOut."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter hittar mejladresser och telefonnummer till personer och företag med ContactOut."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların ContactOut ile kişilerin ve şirketlerin e-postalarını ve telefon numaralarını bulur."
+          }
+        }
+      }
+    },
+    "Your agents find hotels, restaurants, and things to do, with reviews and photos, on Tripadvisor." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten finden auf Tripadvisor Hotels, Restaurants und Unternehmungen, mit Bewertungen und Fotos."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes encuentran hoteles, restaurantes y cosas que hacer, con reseñas y fotos, en Tripadvisor."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents trouvent des hôtels, des restaurants et des activités, avec avis et photos, sur Tripadvisor."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi agenti trovano hotel, ristoranti e cose da fare, con recensioni e foto, su Tripadvisor."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten vinden op Tripadvisor hotels, restaurants en activiteiten, met reviews en foto’s."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci znajdują na Tripadvisorze hotele, restauracje i atrakcje, z recenzjami i zdjęciami."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes encontram hotéis, restaurantes e passeios, com avaliações e fotos, no Tripadvisor."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter hittar hotell, restauranger och saker att göra, med recensioner och bilder, på Tripadvisor."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların Tripadvisor’da yorum ve fotoğraflarıyla oteller, restoranlar ve gezilecek yerler bulur."
+          }
+        }
+      }
+    },
+    "Your agents find influencers, and read their audiences and reach in HypeAuditor." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten finden Influencer und lesen ihre Zielgruppen und Reichweite in HypeAuditor."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes encuentran influencers, y leen su audiencia y su alcance en HypeAuditor."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents trouvent des influenceurs, et analysent leur audience et leur portée dans HypeAuditor."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi agenti trovano influencer, e ne leggono il pubblico e la portata in HypeAuditor."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten vinden influencers en lezen hun publiek en bereik in HypeAuditor."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci znajdują influencerów oraz sprawdzają ich odbiorców i zasięg w HypeAuditor."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes encontram influenciadores, e leem o público e o alcance deles no HypeAuditor."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter hittar influencers och läser deras publik och räckvidd i HypeAuditor."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların HypeAuditor’da fenomen bulur, kitlelerini ve erişimlerini okur."
           }
         }
       }
@@ -117463,6 +121813,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ajanların TaskRabbit’te ev işleri için yakınındaki Tasker’ları bulur ve bir rezervasyon başlatır."
+          }
+        }
+      }
+    },
+    "Your agents find your document comparisons and their links in Draftable." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten finden deine Dokumentvergleiche und ihre Links in Draftable."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes encuentran tus comparaciones de documentos y sus enlaces en Draftable."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents retrouvent tes comparaisons de documents et leurs liens dans Draftable."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi agenti trovano i tuoi confronti tra documenti e i relativi link in Draftable."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten vinden je documentvergelijkingen en de links ervan in Draftable."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci znajdują twoje porównania dokumentów i ich linki w Draftable."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes encontram suas comparações de documentos e os links no Draftable."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter hittar dina dokumentjämförelser och länkarna till dem i Draftable."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların Draftable’daki belge karşılaştırmalarını ve bağlantılarını bulur."
           }
         }
       }
@@ -119555,6 +123963,64 @@
         }
       }
     },
+    "Your agents look up sales tax rates, calculate tax, and record transactions in TaxJar." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten schlagen Umsatzsteuersätze nach, berechnen die Steuer und erfassen Transaktionen in TaxJar."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes consultan tipos del impuesto sobre ventas, calculan impuestos y registran transacciones en TaxJar."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents consultent les taux de taxe sur les ventes, calculent la taxe et enregistrent les transactions dans TaxJar."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi agenti consultano le aliquote della sales tax, calcolano l’imposta e registrano le transazioni in TaxJar."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten zoeken omzetbelastingtarieven op, berekenen belasting en registreren transacties in TaxJar."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci sprawdzają stawki podatku od sprzedaży, liczą podatek i rejestrują transakcje w TaxJar."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes consultam alíquotas de imposto sobre vendas, calculam o imposto e registram transações no TaxJar."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter slår upp försäljningsskattesatser, räknar ut skatten och registrerar transaktioner i TaxJar."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların TaxJar’da satış vergisi oranlarına bakar, vergiyi hesaplar ve işlemleri kaydeder."
+          }
+        }
+      }
+    },
     "Your agents look up your 3D tours and the spaces in them in Matterport." : {
       "localizations" : {
         "de" : {
@@ -120599,6 +125065,64 @@
         }
       }
     },
+    "Your agents manage your smart locks and access codes in Seam." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten verwalten deine smarten Schlösser und Zugangscodes in Seam."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes gestionan tus cerraduras inteligentes y códigos de acceso en Seam."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents gèrent tes serrures connectées et tes codes d’accès dans Seam."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi agenti gestiscono le tue serrature smart e i codici d’accesso in Seam."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten beheren je slimme sloten en toegangscodes in Seam."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci zarządzają twoimi inteligentnymi zamkami i kodami dostępu w Seam."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes gerenciam suas fechaduras inteligentes e códigos de acesso no Seam."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter hanterar dina smarta lås och åtkomstkoder i Seam."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların Seam’deki akıllı kilitlerini ve erişim kodlarını yönetir."
+          }
+        }
+      }
+    },
     "Your agents manage your Workers, KV, and bindings on Cloudflare." : {
       "localizations" : {
         "de" : {
@@ -120653,6 +125177,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ajanların Cloudflare’deki Worker’larını, KV’ni ve bağlamalarını yönetir."
+          }
+        }
+      }
+    },
+    "Your agents plan and optimize routes, stops, and orders in Route4Me." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten planen und optimieren Routen, Stopps und Aufträge in Route4Me."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes planifican y optimizan rutas, paradas y pedidos en Route4Me."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents planifient et optimisent les itinéraires, les arrêts et les commandes dans Route4Me."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi agenti pianificano e ottimizzano percorsi, fermate e ordini in Route4Me."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten plannen en optimaliseren routes, stops en orders in Route4Me."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci planują i optymalizują trasy, przystanki i zamówienia w Route4Me."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes planejam e otimizam rotas, paradas e pedidos no Route4Me."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter planerar och optimerar rutter, stopp och ordrar i Route4Me."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların Route4Me’de rotaları, durakları ve siparişleri planlar ve optimize eder."
           }
         }
       }
@@ -121987,6 +126569,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ajanların Pinterest Ads’teki kampanyalarının ve reklam gruplarının sonuçlarını okur ve onları ayarlar."
+          }
+        }
+      }
+    },
+    "Your agents read the transcripts of videos, playlists, and channels with YouTube Transcript." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten lesen mit YouTube Transcript die Transkripte von Videos, Playlists und Kanälen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes leen las transcripciones de vídeos, listas y canales con YouTube Transcript."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents lisent les transcriptions de vidéos, de playlists et de chaînes avec YouTube Transcript."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi agenti leggono le trascrizioni di video, playlist e canali con YouTube Transcript."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten lezen met YouTube Transcript de transcripties van video’s, playlists en kanalen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci czytają transkrypcje filmów, playlist i kanałów za pomocą YouTube Transcript."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes leem as transcrições de vídeos, playlists e canais com o YouTube Transcript."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter läser transkriberingar av videor, spellistor och kanaler med YouTube Transcript."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların YouTube Transcript ile videoların, oynatma listelerinin ve kanalların dökümlerini okur."
           }
         }
       }
@@ -123441,6 +128081,64 @@
         }
       }
     },
+    "Your agents research case law and statutes in Midpage, with citations." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten recherchieren Rechtsprechung und Gesetze in Midpage, mit Fundstellen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes investigan jurisprudencia y leyes en Midpage, con citas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents font des recherches de jurisprudence et de textes de loi dans Midpage, avec les citations."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi agenti fanno ricerche su giurisprudenza e leggi in Midpage, con le citazioni."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten zoeken jurisprudentie en wetten op in Midpage, met bronvermelding."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci szukają orzecznictwa i przepisów w Midpage, z cytatami."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes pesquisam jurisprudência e leis no Midpage, com citações."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter söker rättspraxis och lagar i Midpage, med källhänvisningar."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların Midpage’de içtihat ve kanun araştırır, atıflarıyla birlikte."
+          }
+        }
+      }
+    },
     "Your agents research companies and people, and enrich your lists in Clay." : {
       "localizations" : {
         "de" : {
@@ -123495,6 +128193,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ajanların Clay’de şirketleri ve kişileri araştırır, listelerini zenginleştirir."
+          }
+        }
+      }
+    },
+    "Your agents research YouTube with vidIQ: trends, keywords, channels, and your channel’s stats." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten recherchieren YouTube mit vidIQ: Trends, Keywords, Kanäle und die Statistiken deines Kanals."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes investigan YouTube con vidIQ: tendencias, palabras clave, canales y las estadísticas de tu canal."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents étudient YouTube avec vidIQ : tendances, mots clés, chaînes et statistiques de ta chaîne."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi agenti studiano YouTube con vidIQ: tendenze, parole chiave, canali e le statistiche del tuo canale."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten onderzoeken YouTube met vidIQ: trends, zoekwoorden, kanalen en de statistieken van je kanaal."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci badają YouTube za pomocą vidIQ: trendy, słowa kluczowe, kanały i statystyki twojego kanału."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes pesquisam o YouTube com o vidIQ: tendências, palavras-chave, canais e as estatísticas do seu canal."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter undersöker YouTube med vidIQ: trender, sökord, kanaler och statistiken för din kanal."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların vidIQ ile YouTube’u araştırır: trendler, anahtar kelimeler, kanallar ve kanalının istatistikleri."
           }
         }
       }
@@ -123673,6 +128429,64 @@
         }
       }
     },
+    "Your agents run your one-way video interviews in Hireflix: positions, invites, and answers." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten betreuen deine zeitversetzten Videointerviews in Hireflix: Stellen, Einladungen und Antworten."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes gestionan tus entrevistas en vídeo diferidas en Hireflix: puestos, invitaciones y respuestas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents gèrent tes entretiens vidéo différés dans Hireflix : postes, invitations et réponses."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi agenti gestiscono i tuoi colloqui video registrati in Hireflix: posizioni, inviti e risposte."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten beheren je eenzijdige video-interviews in Hireflix: functies, uitnodigingen en antwoorden."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci prowadzą twoje nagrywane rozmowy wideo w Hireflix: stanowiska, zaproszenia i odpowiedzi."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes cuidam das suas entrevistas em vídeo gravadas no Hireflix: vagas, convites e respostas."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter sköter dina inspelade videointervjuer i Hireflix: tjänster, inbjudningar och svar."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların Hireflix’teki tek yönlü video mülakatlarını yönetir: pozisyonlar, davetler ve yanıtlar."
+          }
+        }
+      }
+    },
     "Your agents run your outreach campaigns, leads, and replies in Lemlist." : {
       "localizations" : {
         "de" : {
@@ -123727,6 +128541,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ajanların Lemlist’teki erişim kampanyalarını, potansiyel müşterilerini ve yanıtlarını yönetir."
+          }
+        }
+      }
+    },
+    "Your agents schedule posts to your social accounts, and see their results in OneUp." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten planen Beiträge für deine Social-Media-Konten und sehen ihre Ergebnisse in OneUp."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes programan publicaciones en tus redes sociales, y ven sus resultados en OneUp."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents programment des posts sur tes comptes sociaux, et voient leurs résultats dans OneUp."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi agenti programmano post sui tuoi account social, e ne vedono i risultati in OneUp."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten plannen posts voor je sociale accounts en bekijken de resultaten in OneUp."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci planują posty na twoich kontach społecznościowych i sprawdzają ich wyniki w OneUp."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes agendam posts nas suas redes sociais, e veem os resultados no OneUp."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter schemalägger inlägg till dina sociala konton och ser resultaten i OneUp."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların OneUp’ta sosyal medya hesapların için gönderi zamanlar ve sonuçlarını görür."
           }
         }
       }
@@ -123901,6 +128773,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ajanların Free Law Project’in CourtListener’ında içtihatları, dava dosyalarını ve hâkimleri arar."
+          }
+        }
+      }
+    },
+    "Your agents search flights and fares with Ignav, and get links to book them." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten suchen mit Ignav Flüge und Tarife und holen Links zum Buchen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes buscan vuelos y tarifas con Ignav, y consiguen enlaces para reservarlos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents cherchent des vols et des tarifs avec Ignav, et obtiennent des liens pour les réserver."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi agenti cercano voli e tariffe con Ignav, e ottengono i link per prenotarli."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten zoeken met Ignav vluchten en tarieven op en halen links om ze te boeken."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci wyszukują loty i taryfy za pomocą Ignav i zdobywają linki do rezerwacji."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes procuram voos e tarifas com o Ignav, e pegam links para reservar."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter söker flyg och priser med Ignav och hämtar länkar för att boka dem."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların Ignav ile uçuş ve bilet fiyatı arar, rezervasyon bağlantıları alır."
           }
         }
       }
@@ -124133,6 +129063,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ajanların Exa ile web’de arama yapar ve sayfaların içeriğini okur."
+          }
+        }
+      }
+    },
+    "Your agents search US statutes, session laws, and citations in Vaquill." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten durchsuchen US-Gesetze, Sitzungsgesetze und Fundstellen in Vaquill."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes buscan leyes de EE. UU., leyes de sesión y citas en Vaquill."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents cherchent des lois américaines, des lois de session et des citations dans Vaquill."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi agenti cercano leggi statunitensi, leggi di sessione e citazioni in Vaquill."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten doorzoeken Amerikaanse wetten, sessiewetten en bronvermeldingen in Vaquill."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci przeszukują ustawy USA, akty sesyjne i cytaty w Vaquill."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes pesquisam leis dos EUA, leis de sessão e citações no Vaquill."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter söker i amerikanska lagar, sessionslagar och källhänvisningar i Vaquill."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların Vaquill’de ABD kanunlarını, oturum yasalarını ve atıfları arar."
           }
         }
       }
@@ -124713,6 +129701,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ajanların Gem’de aday bulur, yetenek havuzunu ve aday iletişimini yönetir."
+          }
+        }
+      }
+    },
+    "Your agents track and read your time, projects, clients, and reports in Toggl Track." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten erfassen und lesen deine Zeiten, Projekte, Kunden und Berichte in Toggl Track."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes registran y consultan tus horas, proyectos, clientes e informes en Toggl Track."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents suivent et consultent ton temps, tes projets, tes clients et tes rapports dans Toggl Track."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi agenti registrano e leggono le tue ore, progetti, clienti e report in Toggl Track."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten registreren en lezen je uren, projecten, klanten en rapporten in Toggl Track."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci rejestrują i sprawdzają twój czas, projekty, klientów i raporty w Toggl Track."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes registram e consultam suas horas, projetos, clientes e relatórios no Toggl Track."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter registrerar och läser din tid, dina projekt, kunder och rapporter i Toggl Track."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların Toggl Track’teki zaman kayıtlarını, projelerini, müşterilerini ve raporlarını tutar ve okur."
           }
         }
       }
@@ -125529,6 +130575,64 @@
         }
       }
     },
+    "Your agents work with your classes, appointments, clients, and sales in Mindbody." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten arbeiten mit deinen Kursen, Terminen, Kunden und Verkäufen in Mindbody."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes trabajan con tus clases, citas, clientes y ventas en Mindbody."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents travaillent avec tes cours, tes rendez-vous, tes clients et tes ventes dans Mindbody."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi agenti lavorano con i tuoi corsi, appuntamenti, clienti e vendite in Mindbody."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten werken met je lessen, afspraken, klanten en verkopen in Mindbody."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci pracują z twoimi zajęciami, wizytami, klientami i sprzedażą w Mindbody."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes trabalham com suas aulas, agendamentos, clientes e vendas no Mindbody."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter arbetar med dina pass, bokningar, kunder och försäljning i Mindbody."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların Mindbody’deki derslerin, randevuların, müşterilerin ve satışlarınla çalışır."
+          }
+        }
+      }
+    },
     "Your agents work with your clients, quotes, jobs, and invoices in Jobber." : {
       "localizations" : {
         "de" : {
@@ -126225,6 +131329,64 @@
         }
       }
     },
+    "Your agents work with your invoice reminders, customers, and who owes what in Chaser." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten arbeiten mit deinen Zahlungserinnerungen, Kunden und offenen Beträgen in Chaser."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes trabajan con tus recordatorios de facturas, clientes y quién debe qué en Chaser."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents travaillent avec tes relances de factures, tes clients et qui doit quoi dans Chaser."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi agenti lavorano con i solleciti delle fatture, i clienti e chi deve cosa in Chaser."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten werken met je factuurherinneringen, klanten en openstaande bedragen in Chaser."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci pracują z przypomnieniami o fakturach, klientami i tym, kto ile jest winien, w Chaser."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes trabalham com seus lembretes de faturas, clientes e quem deve o quê no Chaser."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter arbetar med dina betalningspåminnelser, kunder och vem som är skyldig vad i Chaser."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların Chaser’daki fatura hatırlatmaların, müşterilerin ve kimin ne borçlu olduğuyla çalışır."
+          }
+        }
+      }
+    },
     "Your agents work with your invoices, contacts, reports, and payroll in Xero." : {
       "localizations" : {
         "de" : {
@@ -126515,6 +131677,64 @@
         }
       }
     },
+    "Your agents work with your law firm’s clients, matters, calendar, tasks, and billing in Clio." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten arbeiten mit den Mandanten, Akten, dem Kalender, den Aufgaben und der Abrechnung deiner Kanzlei in Clio."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes trabajan con los clientes, asuntos, calendario, tareas y facturación de tu despacho en Clio."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents travaillent avec les clients, les dossiers, l’agenda, les tâches et la facturation de ton cabinet dans Clio."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi agenti lavorano con i clienti, le pratiche, il calendario, le attività e la fatturazione del tuo studio in Clio."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten werken met de cliënten, dossiers, agenda, taken en facturering van je advocatenkantoor in Clio."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci pracują z klientami, sprawami, kalendarzem, zadaniami i rozliczeniami twojej kancelarii w Clio."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes trabalham com os clientes, casos, agenda, tarefas e cobrança do seu escritório no Clio."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter arbetar med advokatbyråns klienter, ärenden, kalender, uppgifter och fakturering i Clio."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların Clio’daki hukuk büronun müvekkilleri, dosyaları, takvimi, görevleri ve faturalamasıyla çalışır."
+          }
+        }
+      }
+    },
     "Your agents work with your leads, accounts, contacts, and opportunities in Dynamics 365." : {
       "localizations" : {
         "de" : {
@@ -126685,6 +131905,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ajanların Follow Up Boss’taki potansiyel müşteriler, kişiler, fırsatlar ve randevularla çalışır."
+          }
+        }
+      }
+    },
+    "Your agents work with your LinkedIn outreach campaigns, leads, and conversations in HeyReach." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten arbeiten mit deinen LinkedIn-Outreach-Kampagnen, Leads und Unterhaltungen in HeyReach."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes trabajan con tus campañas de prospección en LinkedIn, clientes potenciales y conversaciones en HeyReach."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents travaillent avec tes campagnes de prospection LinkedIn, tes prospects et tes conversations dans HeyReach."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi agenti lavorano con le tue campagne di outreach su LinkedIn, i contatti e le conversazioni in HeyReach."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten werken met je LinkedIn-outreachcampagnes, leads en gesprekken in HeyReach."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci pracują z twoimi kampaniami outreachowymi na LinkedIn, leadami i rozmowami w HeyReach."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes trabalham com suas campanhas de prospecção no LinkedIn, leads e conversas no HeyReach."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter arbetar med dina utskickskampanjer på LinkedIn, leads och konversationer i HeyReach."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların HeyReach’teki LinkedIn erişim kampanyalarınla, potansiyel müşterilerinle ve konuşmalarınla çalışır."
           }
         }
       }
@@ -127497,6 +132775,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ajanların ClickUp’taki görevlerin, belgelerin ve alanlarınla çalışır."
+          }
+        }
+      }
+    },
+    "Your agents work with your work orders, requests, assets, and locations in MaintainX." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten arbeiten mit deinen Arbeitsaufträgen, Anfragen, Anlagen und Standorten in MaintainX."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes trabajan con tus órdenes de trabajo, solicitudes, activos y ubicaciones en MaintainX."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents travaillent avec tes ordres de travail, tes demandes, tes équipements et tes sites dans MaintainX."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi agenti lavorano con ordini di lavoro, richieste, asset e sedi in MaintainX."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten werken met je werkorders, verzoeken, assets en locaties in MaintainX."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci pracują ze zleceniami prac, zgłoszeniami, zasobami i lokalizacjami w MaintainX."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes trabalham com suas ordens de serviço, solicitações, ativos e locais no MaintainX."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter arbetar med dina arbetsordrar, förfrågningar, tillgångar och platser i MaintainX."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların MaintainX’teki iş emirlerin, taleplerin, varlıkların ve konumlarınla çalışır."
           }
         }
       }
