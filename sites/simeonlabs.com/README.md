@@ -35,8 +35,12 @@ a pack changes and commit what it writes. `source/connectors.py` writes
 `public/connectors/`, `source/pricing.py` writes `public/pricing/` and
 `source/contact.py` writes `public/contact/` the same way (its form posts to the
 API, `server/simeon/desktop/contact.py`, which e-mails each message to the
-founder). The bar every page shares (Marketplace, Connectors, Pricing, Download; a
-menu on a phone) is `source/nav.py`, its styles in `source/site.css`.
+founder). `source/newsroom.py` writes `public/newsroom/`, the blog, laid out as
+Apple's Newsroom: its posts are the list `POSTS` in that file, stand-ins until the
+first real ones (the page asks search engines not to list it while any is), and
+no bar or footer links to it yet. The bar every page shares (Marketplace,
+Connectors, Pricing, Download; a menu on a phone) is `source/nav.py`, its styles
+in `source/site.css`.
 Edit `source/`, never `public/` by hand: a hand edit is lost at the next build
 (the Download and plan links, made in `public/` on 11 October 2026, are in
 `page.html` since 12 October).
