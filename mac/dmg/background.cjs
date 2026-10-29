@@ -18,27 +18,26 @@ const ICON = path.join(ROOT, "mac/Simeon/Assets.xcassets/MacIcon.appiconset/icon
 const W = 720, H = 480, TITLE_BAR = 28;
 const LEFT = 210, RIGHT = 510, ICON_Y = 215;
 const GROUND = "#FAFAF8";
-// Each face where it sits, its cursor pointing away at an angle (degrees, 0 to the right, 90 down), in a
-// brighter shade of the face's own background.
+// Each face where it sits, its cursor pointing at Applications, in a brighter shade of the face's own background.
 const FACES_AT = [
-  { face: "clay-06", x: 468, y: 50, angle: 100, colour: "#E2643F" },
-  { face: "clay-14", x: 338, y: 110, angle: -40, colour: "#E59A2F" },
-  { face: "clay-23", x: 664, y: 100, angle: 150, colour: "#2FA39A" },
-  { face: "clay-19", x: 342, y: 338, angle: -50, colour: "#A35CC7" },
-  { face: "clay-simeon", x: 652, y: 356, angle: -135, colour: "#3D8FD6" },
-  { face: "clay-27", x: 486, y: 412, angle: -70, colour: "#4FA352" },
+  { face: "clay-06", x: 468, y: 50, colour: "#E2643F" },
+  { face: "clay-14", x: 338, y: 110, colour: "#E59A2F" },
+  { face: "clay-23", x: 664, y: 100, colour: "#2FA39A" },
+  { face: "clay-19", x: 342, y: 338, colour: "#A35CC7" },
+  { face: "clay-simeon", x: 652, y: 356, colour: "#3D8FD6" },
+  { face: "clay-27", x: 486, y: 412, colour: "#4FA352" },
 ];
-const FACE = 34, RING = 2.5, REACH = 31;
+const FACE = 40, RING = 2.5, REACH = 35;
 
 const data = (file, type) => `data:${type};base64,${readFileSync(file).toString("base64")}`;
-const radians = (degrees) => (degrees * Math.PI) / 180;
 const face = ({ face: id, x, y }) =>
   `<div style="position:absolute;left:${x - FACE / 2}px;top:${y - FACE / 2}px;width:${FACE}px;height:${FACE}px;box-sizing:border-box;border:${RING}px solid #fff;border-radius:50%;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.18)">` +
   `<img src="${data(path.join(FACES, `${id}.webp`), "image/webp")}" style="width:100%;height:100%;object-fit:cover;transform:scale(1.4) translateY(10%)"></div>`;
-// A pointer, its tip ahead of the face.
-const cursor = ({ x, y, angle, colour }) => {
-  const cx = x + REACH * Math.cos(radians(angle)), cy = y + REACH * Math.sin(radians(angle));
-  return `<path transform="translate(${cx.toFixed(1)} ${cy.toFixed(1)}) rotate(${angle}) scale(1.15)" d="M11 0 L-9 -9.5 L-4.5 0 L-9 9.5 Z" fill="${colour}" stroke="#fff" stroke-width="2.2" stroke-linejoin="round"/>`;
+// A pointer beside the face, its tip toward the Applications folder's centre.
+const cursor = ({ x, y, colour }) => {
+  const toward = Math.atan2(ICON_Y - y, RIGHT - x);
+  const cx = x + REACH * Math.cos(toward), cy = y + REACH * Math.sin(toward);
+  return `<path transform="translate(${cx.toFixed(1)} ${cy.toFixed(1)}) rotate(${((toward * 180) / Math.PI).toFixed(1)}) scale(1.15)" d="M11 0 L-9 -9.5 L-4.5 0 L-9 9.5 Z" fill="${colour}" stroke="#fff" stroke-width="2.2" stroke-linejoin="round"/>`;
 };
 const picture = `
   <div style="position:absolute;inset:0;background:${GROUND}"></div>
