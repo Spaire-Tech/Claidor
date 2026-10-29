@@ -381,6 +381,156 @@ public struct ConnectorPage: Sendable, Equatable {
         L10n.text("What’s booked for me tomorrow in Cal.com?"),
         L10n.text("Make a 15-minute intro call event type in Cal.com."),
         L10n.text("Block next Monday in Cal.com so no one can book it."))
+    case "attio":
+      return page("Attio", site: "https://attio.com", privacy: "https://attio.com/legal/privacy", terms: "https://attio.com/legal/services-agreement",
+        about: L10n.text("Your agents look up and update the people, companies, deals, and lists in Attio."),
+        L10n.text("Which deals in Attio haven’t moved in two weeks?"),
+        L10n.text("Add Jordan Lee, CTO at Acme, to Attio."),
+        L10n.text("Show me every company on our Q4 targets list in Attio."))
+    case "zendesk":
+      return page("Zendesk", site: "https://www.zendesk.com", privacy: "https://www.zendesk.com/company/agreements-and-terms/privacy-notice/", terms: "https://www.zendesk.com/company/agreements-and-terms/main-services-agreement/",
+        about: L10n.text("Your agents read, answer, and sort your support tickets, and search your help center in Zendesk."),
+        L10n.text("How many tickets in Zendesk are still open from last week?"),
+        L10n.text("Draft a reply to the newest urgent ticket in Zendesk for me to check."),
+        L10n.text("Find the article in Zendesk that explains returns and send its link to Sam."))
+    case "microsoft-teams":
+      return page("Microsoft", site: "https://www.microsoft.com/microsoft-teams", privacy: "https://privacy.microsoft.com/privacystatement", terms: "https://www.microsoft.com/servicesagreement",
+        about: L10n.text("Your agents read and send messages in your chats and channels, and set up meetings in Microsoft Teams."),
+        L10n.text("Summarize what I missed in the design channel in Microsoft Teams."),
+        L10n.text("Set up a 30-minute meeting in Microsoft Teams with Sam tomorrow at 10."),
+        L10n.text("Post the release notes in the announcements channel in Microsoft Teams."))
+    case "discord":
+      return page("Discord", site: "https://discord.com", privacy: "https://discord.com/privacy", terms: "https://discord.com/terms",
+        about: L10n.text("Your agents see your profile and the servers you’re in on Discord, and check where an invite leads. They don’t read or send messages."),
+        L10n.text("Which servers am I in on Discord?"),
+        L10n.text("Check where this invite on Discord leads: discord.gg/acme."),
+        L10n.text("Which accounts are linked to my profile on Discord?"))
+    case "mercury":
+      return page("Mercury", site: "https://mercury.com", privacy: "https://mercury.com/legal/privacy", terms: "https://mercury.com/legal/terms",
+        about: L10n.text("Your agents read your business accounts, balances, and transactions in Mercury. They can’t move money."),
+        L10n.text("What’s our balance across every account in Mercury?"),
+        L10n.text("List this month’s card transactions over $500 in Mercury."),
+        L10n.text("Show me what we paid contractors last quarter in Mercury."))
+    case "posthog":
+      return page("PostHog", site: "https://posthog.com", privacy: "https://posthog.com/privacy", terms: "https://posthog.com/terms",
+        about: L10n.text("Your agents read your product analytics and insights, and manage feature flags in PostHog."),
+        L10n.text("How many sign-ups did we get this week in PostHog?"),
+        L10n.text("Which onboarding step loses the most people in PostHog?"),
+        L10n.text("Turn on the new-checkout flag in PostHog for 1 in 10 users."))
+    case "google-ads":
+      return page("Google", site: "https://ads.google.com", privacy: "https://policies.google.com/privacy", terms: "https://policies.google.com/terms",
+        about: L10n.text("Your agents read and adjust your campaigns, ad groups, keywords, and budgets in Google Ads."),
+        L10n.text("Which campaigns in Google Ads had the best cost per conversion last week?"),
+        L10n.text("Pause the keywords in Google Ads that spent over $50 without a conversion."),
+        L10n.text("Raise the daily budget of our brand campaign in Google Ads to $40."))
+    case "tiktok-ads":
+      return page("TikTok", site: "https://ads.tiktok.com", privacy: "https://www.tiktok.com/legal/page/global/partner-privacy-policy/en", terms: "https://ads.tiktok.com/i18n/official/policy/terms",
+        about: L10n.text("Your agents read and manage your campaigns, ads, audiences, and reports in TikTok Ads."),
+        L10n.text("How did our campaigns in TikTok Ads do this week?"),
+        L10n.text("Which ad in TikTok Ads has the lowest cost per click?"),
+        L10n.text("Pause the ad groups in TikTok Ads that spent over $100 without a sale."))
+    case "microsoft-excel":
+      return page("Microsoft", site: "https://www.microsoft.com/microsoft-365/excel", privacy: "https://privacy.microsoft.com/privacystatement", terms: "https://www.microsoft.com/servicesagreement",
+        about: L10n.text("Your agents read and write your workbooks in Excel: sheets, tables, and charts."),
+        L10n.text("Add last week’s orders as new rows in the sales table in Excel."),
+        L10n.text("What’s the total in our Q3 budget workbook in Excel?"),
+        L10n.text("Add a chart of monthly revenue to our report in Excel."))
+    case "reddit":
+      return page("Reddit", site: "https://www.reddit.com", privacy: "https://www.reddit.com/policies/privacy-policy", terms: "https://redditinc.com/policies/user-agreement",
+        about: L10n.text("Your agents search posts and comments on Reddit, and post and comment for you."),
+        L10n.text("What are people on Reddit saying about our app this month?"),
+        L10n.text("Find threads on Reddit where people ask for a tool like ours."),
+        L10n.text("Draft a post on Reddit for r/startups about our launch, and show it to me first."))
+    case "pinterest":
+      return page("Pinterest", site: "https://www.pinterest.com", privacy: "https://policy.pinterest.com/privacy-policy", terms: "https://policy.pinterest.com/terms-of-service",
+        about: L10n.text("Your agents create and organize your boards and pins on Pinterest, and read their analytics."),
+        L10n.text("Which of my pins on Pinterest got the most saves this month?"),
+        L10n.text("Make a board on Pinterest called Spring Looks with our new products."),
+        L10n.text("Pin these five product photos to our Summer board on Pinterest."))
+    case "gumroad":
+      return page("Gumroad", site: "https://gumroad.com", privacy: "https://gumroad.com/privacy", terms: "https://gumroad.com/terms",
+        about: L10n.text("Your agents look at your products, sales, and buyers on Gumroad."),
+        L10n.text("How much did we sell on Gumroad this month?"),
+        L10n.text("Which product on Gumroad sells best?"),
+        L10n.text("Who bought the course on Gumroad this week?"))
+    case "google-classroom":
+      return page("Google", site: "https://edu.google.com/workspace-for-education/classroom/", privacy: "https://policies.google.com/privacy", terms: "https://policies.google.com/terms",
+        about: L10n.text("Your agents work with your courses, assignments, students, and announcements in Google Classroom."),
+        L10n.text("Which students in Google Classroom haven’t turned in this week’s essay?"),
+        L10n.text("Post an announcement in Google Classroom that Friday’s class moves to 2 pm."),
+        L10n.text("List the assignments due next week in Google Classroom."))
+    case "gorgias":
+      return page("Gorgias", site: "https://www.gorgias.com", privacy: "https://www.gorgias.com/legal/privacy", terms: "https://www.gorgias.com/legal/terms-of-use",
+        about: L10n.text("Your agents read and answer your store’s support tickets, and look up customers in Gorgias."),
+        L10n.text("How many tickets in Gorgias are waiting for a reply?"),
+        L10n.text("Draft replies in Gorgias to the open questions about shipping, for me to check."),
+        L10n.text("Find every ticket in Gorgias from lea@acme.com."))
+    case "gong":
+      return page("Gong", site: "https://www.gong.io", privacy: "https://www.gong.io/legal/privacy-policy", terms: "https://www.gong.io/legal/terms-and-conditions",
+        about: L10n.text("Your agents read your sales calls, transcripts, and deal insights in Gong."),
+        L10n.text("Summarize yesterday’s call with Acme in Gong."),
+        L10n.text("What objections came up most in Gong calls this month?"),
+        L10n.text("Which deals in Gong are at risk, and why?"))
+    case "capsule-crm":
+      return page("Capsule", site: "https://capsulecrm.com", privacy: "https://capsulecrm.com/privacy/", terms: "https://capsulecrm.com/terms/",
+        about: L10n.text("Your agents work with your contacts, opportunities, and tasks in Capsule."),
+        L10n.text("Add Jordan from Acme as a contact in Capsule."),
+        L10n.text("Which opportunities in Capsule close this month?"),
+        L10n.text("What tasks are due today in Capsule?"))
+    case "dialpad":
+      return page("Dialpad", site: "https://www.dialpad.com", privacy: "https://www.dialpad.com/legal/", terms: "https://www.dialpad.com/legal/msaterms/",
+        about: L10n.text("Your agents look up your calls, texts, and contacts, and read call summaries in Dialpad."),
+        L10n.text("Summarize this morning’s calls in Dialpad."),
+        L10n.text("Text Sam from Dialpad that I’m running ten minutes late."),
+        L10n.text("Add Jordan’s number to my contacts in Dialpad."))
+    case "link":
+      return page("Stripe", site: "https://link.com", privacy: "https://link.com/privacy", terms: "https://link.com/terms",
+        about: L10n.text("Your agents buy what you ask for with Link, and each purchase waits for your OK in the Link app. They can also read the bank accounts you share. US only."),
+        L10n.text("Buy two tickets for Saturday’s show with Link."),
+        L10n.text("Reorder my usual coffee beans with Link."),
+        L10n.text("What’s the balance of my checking account in Link?"))
+    case "granola":
+      return page("Granola", site: "https://www.granola.ai", privacy: "https://www.granola.ai/privacy", terms: "https://www.granola.ai/terms",
+        about: L10n.text("Your agents read your meeting notes, transcripts, and folders in Granola."),
+        L10n.text("Summarize this week’s meetings in Granola in five points."),
+        L10n.text("What action items do I have from today’s meetings in Granola?"),
+        L10n.text("Find the meeting in Granola where we talked about pricing."))
+    case "resend":
+      return page("Resend", site: "https://resend.com", privacy: "https://resend.com/legal/privacy-policy", terms: "https://resend.com/legal/terms-of-service",
+        about: L10n.text("Your agents send email, and manage your domains, audiences, and broadcasts in Resend."),
+        L10n.text("Is our domain verified in Resend?"),
+        L10n.text("Send me a test email from Resend."),
+        L10n.text("Draft a broadcast in Resend about the new release."))
+    case "sharepoint":
+      return page("Microsoft", site: "https://www.microsoft.com/microsoft-365/sharepoint/collaboration", privacy: "https://privacy.microsoft.com/privacystatement", terms: "https://www.microsoft.com/servicesagreement",
+        about: L10n.text("Your agents find and work with the sites, lists, and files in SharePoint."),
+        L10n.text("Find the latest brand guidelines in SharePoint."),
+        L10n.text("Add the Acme launch to the project tracker list in SharePoint."),
+        L10n.text("Share the Q3 report in SharePoint with jordan@acme.com."))
+    case "onenote":
+      return page("Microsoft", site: "https://www.microsoft.com/microsoft-365/onenote/digital-note-taking-app", privacy: "https://privacy.microsoft.com/privacystatement", terms: "https://www.microsoft.com/servicesagreement",
+        about: L10n.text("Your agents read and write the notebooks, sections, and pages in OneNote."),
+        L10n.text("Summarize this week’s meeting notes in OneNote."),
+        L10n.text("Add a page in OneNote with today’s to-dos."),
+        L10n.text("Find my notes in OneNote about the kitchen renovation."))
+    case "microsoft-to-do":
+      return page("Microsoft", site: "https://www.microsoft.com/microsoft-365/microsoft-to-do-list-app", privacy: "https://privacy.microsoft.com/privacystatement", terms: "https://www.microsoft.com/servicesagreement",
+        about: L10n.text("Your agents add, find, and complete your tasks and lists in Microsoft To Do."),
+        L10n.text("Add “call the dentist” to Microsoft To Do for tomorrow."),
+        L10n.text("What’s on my list in Microsoft To Do today?"),
+        L10n.text("Mark “send invoices” as done in Microsoft To Do."))
+    case "lovable":
+      return page("Lovable", site: "https://lovable.dev", privacy: "https://lovable.dev/privacy", terms: "https://lovable.dev/terms",
+        about: L10n.text("Your agents build and change your apps and sites in Lovable from what you describe."),
+        L10n.text("Build a landing page in Lovable for our new coffee subscription."),
+        L10n.text("Add a contact form to my site in Lovable."),
+        L10n.text("Change the colors of our app in Lovable to match the new logo."))
+    case "shop":
+      return page("Shopify", site: "https://shop.app", privacy: "https://www.shopify.com/legal/privacy/app-users", terms: "https://shop.app/terms-of-service",
+        about: L10n.text("Your agents find products across Shopify stores and buy them with your Shop card, with your OK for each purchase. They track your orders too."),
+        L10n.text("Find a linen shirt under $80 on Shop."),
+        L10n.text("Where’s my latest order from Shop?"),
+        L10n.text("Buy the same running socks again with Shop."))
     default:
       return nil
     }
@@ -409,5 +559,5 @@ public struct ConnectorPage: Sendable, Equatable {
   }
 
   /** The connectors written so far, for the tests. */
-  public static let written = ["gmail", "google-calendar", "google-drive", "outlook", "slack", "notion", "github", "linear", "dropbox", "hubspot", "airtable", "asana", "clickup", "monday", "todoist", "zoom", "google-meet", "figma", "canva", "miro", "webflow", "wix", "stripe", "paypal", "square", "ramp", "quickbooks", "salesforce", "intercom", "apollo", "jira", "vercel", "supabase", "sentry", "cloudflare", "mailchimp", "greenhouse", "gusto", "linkedin", "google-docs", "google-sheets", "google-slides", "onedrive", "google-tasks", "trello", "xero", "shopify", "brex", "pipedrive", "docusign", "klaviyo", "ashby", "google-analytics", "google-search-console", "youtube", "kit", "instagram", "facebook", "calendly", "cal-com"]
+  public static let written = ["gmail", "google-calendar", "google-drive", "outlook", "slack", "notion", "github", "linear", "dropbox", "hubspot", "airtable", "asana", "clickup", "monday", "todoist", "zoom", "google-meet", "figma", "canva", "miro", "webflow", "wix", "stripe", "paypal", "square", "ramp", "quickbooks", "salesforce", "intercom", "apollo", "jira", "vercel", "supabase", "sentry", "cloudflare", "mailchimp", "greenhouse", "gusto", "linkedin", "google-docs", "google-sheets", "google-slides", "onedrive", "google-tasks", "trello", "xero", "shopify", "brex", "pipedrive", "docusign", "klaviyo", "ashby", "google-analytics", "google-search-console", "youtube", "kit", "instagram", "facebook", "calendly", "cal-com", "attio", "zendesk", "microsoft-teams", "discord", "mercury", "posthog", "google-ads", "tiktok-ads", "microsoft-excel", "reddit", "pinterest", "gumroad", "google-classroom", "gorgias", "gong", "capsule-crm", "dialpad", "link", "granola", "resend", "sharepoint", "onenote", "microsoft-to-do", "lovable", "shop"]
 }
