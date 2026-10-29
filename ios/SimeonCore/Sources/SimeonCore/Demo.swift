@@ -630,6 +630,8 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
       }
       lock.withLock { passwordSet = true }
       return ["set": true]
+    case let call where call == "credentials" || call.hasPrefix("credentials/"):
+      return try lock.withLock { try demoCredentials(path, method: method, body: body) }
     case "proxy/v1/voice/voices":
       return .array([("ljX1ZrXuDIIRVcmiVSyR", "Michael"), ("1t1EeRixsJrKbiF1zwM6", "Jerry"), ("XcXEQzuLXRU9RcfWzEJt", "Veda"), ("s3TPKV1kjDlVtZbl4Ksh", "Adam"), ("UgBBYS2sOqTuMpoF3BR0", "Mark"), ("6OzrBCQf8cjERkYgzSg8", "Jamal")].map { ["id": .string($0.0), "name": .string($0.1)] })
     default:
@@ -700,6 +702,50 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
 
   /** Whether the demo account has set a password (Settings › Account). */
   private var passwordSet = false
+  /** The Secure Credentials Store, as the server keeps it (`credentials.py`), with a login and the person's contact info. */
+  private var credentials: [JSON] = [
+    ["id": "6f1c2a8e-0b1d-4c55-9a6e-2f0d3c4b5a61", "kind": "login", "name": "GitHub", "website": "github.com", "site": "github.com", "username": "bass@example.com", "password": "demo-Passw0rd-github", "hints": "Use for work"],
+    ["id": "7a2d3b9f-1c2e-4d66-8b7f-3e1f4d5c6b72", "kind": "contact", "name": "Home", "fullName": "Bass Fall", "email": "bass@example.com", "phone": "+1 415 555 0100", "addressLine1": "1 Market Street", "city": "San Francisco", "region": "CA", "postalCode": "94105", "country": "US"],
+  ]
+
+  /** The Store's routes, as the server answers them: the list without a password, one entry with it, a save, a change, a delete. Under the lock. */
+  private func demoCredentials(_ path: String, method: String?, body: JSON?) throws -> JSON {
+    func shown(_ entry: JSON) -> JSON {
+      var fields = entry.object ?? [:]
+      let password = fields.removeValue(forKey: "password")?.string ?? ""
+      if fields["kind"]?.string == "login" { fields["hasPassword"] = .bool(!password.isEmpty) }
+      return .object(fields)
+    }
+    func kept(_ fields: [String: JSON]) -> [String: JSON] {
+      var fields = fields
+      if fields["kind"]?.string == "login" { fields["site"] = .string(CredentialSite.site(fields["website"]?.string ?? "")) }
+      return fields
+    }
+    if path == "credentials" {
+      guard method == "POST" else { return ["entries": .array(credentials.map(shown))] }
+      var fields = body?.object ?? [:]
+      fields["id"] = .string(UUID().uuidString.lowercased())
+      let entry = JSON.object(kept(fields))
+      credentials.append(entry)
+      return ["entry": shown(entry)]
+    }
+    let id = String(path.dropFirst("credentials/".count))
+    guard let index = credentials.firstIndex(where: { $0["id"]?.string == id }) else {
+      throw SimeonAPIError(message: "That entry isn't in your Secure Credentials Store anymore.", status: 404)
+    }
+    switch method {
+    case "DELETE":
+      credentials.remove(at: index)
+      return ["deleted": true]
+    case "PATCH":
+      var fields = credentials[index].object ?? [:]
+      for (key, value) in body?.object ?? [:] where key != "id" && key != "kind" { fields[key] = value }
+      credentials[index] = .object(kept(fields))
+      return ["entry": shown(credentials[index])]
+    default:
+      return ["entry": credentials[index]]
+    }
+  }
   /** The language the app told (`POST user/profile`, `AppStore.tellLanguage`), as the server keeps it. */
   private var profileLanguage: String?
   private var hostSettings: JSON = ["pinnedAgentIds": [], "autoReviewInstructions": ["isEnabled": true, "allowInstructions": [], "blockInstructions": []], "userTimeZone": .string(TimeZone.current.identifier), "userTimeZoneOverride": nil]

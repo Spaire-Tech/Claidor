@@ -197,8 +197,9 @@ import type { AgentRule } from "../packages/proto/generated/agent/v1/agent_rules
 import { HOST_LOG_PREFIX, logHostLine } from "../shared/host-log.js";
 import { configuredSimeonModel } from "./extensions/inference/provider-session.js";
 import { BOX_CHROME_PORTS, captureCheckout, fetchCheckoutIcon, readCheckoutText } from "../shared/node/link-wallet/checkout-fill.js";
-import { checkUserForm, locateFields } from "../shared/node/user-form/form-fill.js";
+import { checkUserForm, fillNewPassword, fillUserForm, locateFields } from "../shared/node/user-form/form-fill.js";
 import { OnePassword } from "../shared/node/onepassword/onepassword.js";
+import { createCredentialsStore } from "../shared/node/credentials-store/credentials-store.js";
 import type { LinkTools } from "../shared/node/link-wallet/link-tools.js";
 import type { ShopTools } from "../shared/node/shop-wallet/shop-tools.js";
 import type { WalletCheckoutFacts } from "./runner/tools/purchase-tool.js";
@@ -917,6 +918,14 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
     browserPort: (agentId: string) => 9222 + (boxAgentWindowIndex(extensions.api("forever-box").box as any, agentId) ?? 1),
     otherPorts: BOX_CHROME_PORTS,
   });
+  // The person's Secure Credentials Store (28 October 2026, shared/node/credentials-store/):
+  // their logins and contact info, held sealed by the server and asked for as this computer.
+  const credentialsStore = createCredentialsStore((path, request) => simeonApiData(serverAuth, path, {
+    ...(request?.method === undefined ? {} : { method: request.method }),
+    ...(request?.json === undefined ? {} : { json: request.json }),
+    signal: AbortSignal.timeout(20_000),
+    language: userLanguage(),
+  }));
   const localToolPermission = extensions.api("local-tool-permission");
   const localToolPermissionSurfaces = new Map<string, () => void>();
   const ownedRunners = new Set<Runner>();
@@ -2416,6 +2425,24 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
                 },
               },
             }),
+            // The Secure Credentials Store's tools (28 October 2026): a login typed into the agent's
+            // own Chrome first, else a tab on the site in another window; never for a channel's message.
+            createCredentialsStoreToolInputs: () => {
+              const ports = (): number[] => {
+                const own = 9222 + (boxAgentWindowIndex(extensions.api("forever-box").box as any, session.id) ?? 1);
+                return [own, ...BOX_CHROME_PORTS.filter((port) => port !== own)];
+              };
+              return {
+                dependencies: {
+                  store: credentialsStore,
+                  fillLogin: async (request) => await fillUserForm({ ...request, ports: ports(), missingAs: "notFound" }),
+                  fillNewPassword: async (request) => await fillNewPassword({ ...request, ports: ports() }),
+                  requestSource: () => { const source = method(extensions.api("transcript"), "activeRequestSource")?.(session.id); return typeof source === "string" ? source : undefined; },
+                  agentName: () => resolveAgentDisplayName(session.id) ?? undefined,
+                  log: (line) => logHostLine(`${HOST_LOG_PREFIX} ${line}`),
+                },
+              };
+            },
             // ListCredentials, request_credential_fill, request_1password_connect (28 October 2026).
             // The tools see the vault's name, never its key.
             createOnePasswordToolInputs: turn => ({

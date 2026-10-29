@@ -112,7 +112,8 @@ export function simeonApiUrl(path: string, backendUrl?: string): string {
 }
 
 export interface SimeonApiRequest {
-  readonly method?: "GET" | "POST";
+  /** PATCH for the Secure Credentials Store's own change (`credentials-store.ts`). */
+  readonly method?: "GET" | "POST" | "PATCH";
   readonly json?: unknown;
   readonly signal?: AbortSignal;
   readonly fetch?: typeof fetch;

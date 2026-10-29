@@ -389,6 +389,24 @@ class DesktopChannelBot(RecordModel):
     )
 
 
+class DesktopCredential(RecordModel):
+    """One entry of the person's Secure Credentials Store (28 October 2026,
+    `simeon.desktop.credentials`): a login (a site, a username, a password,
+    hints on when to use it) or their contact info, kept for the agents to
+    sign in and sign up with. `kind` says which; everything the person
+    wrote, the password with it, is in `sealed` (`simeon.kit.sealed`, for
+    this person only), never as itself.
+    """
+
+    __tablename__ = "desktop_credentials"
+
+    user_id: Mapped[UUID] = mapped_column(
+        Uuid, ForeignKey("users.id", ondelete="cascade"), nullable=False, index=True
+    )
+    kind: Mapped[str] = mapped_column(String(20), nullable=False)
+    sealed: Mapped[str] = mapped_column(Text, nullable=False)
+
+
 class DesktopVoiceCall(RecordModel):
     """One voice call the app placed to an agent, once it was billed.
 

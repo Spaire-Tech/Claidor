@@ -20,6 +20,7 @@ from simeon.models import (
     DesktopChatAgent,
     DesktopChatInbox,
     DesktopChatLine,
+    DesktopCredential,
     DesktopLinkWallet,
     DesktopMemoryFile,
     DesktopSession,
@@ -111,6 +112,10 @@ class AccountDeletionRepository:
             ),
             "link_wallets": delete(DesktopLinkWallet).where(
                 DesktopLinkWallet.user_id == user_id
+            ),
+            # The Secure Credentials Store (`credentials.py`).
+            "credentials": delete(DesktopCredential).where(
+                DesktopCredential.user_id == user_id
             ),
             "routines": delete(SandAutomation).where(SandAutomation.user_id == user_id),
             "listener_events": delete(SandListenerEvent).where(

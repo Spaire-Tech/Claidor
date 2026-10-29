@@ -3,10 +3,11 @@
 The same keys as `en.py`, with the same `{name}` values.
 """
 
-from . import _account, _booking
+from . import _account, _booking, _credentials
 
 WORDS: dict[str, str] = {
     "email.login_code.subject": "Connecte-toi à Simeon",
     **_booking.FR,
     **_account.FR,
+    **_credentials.FR,
 }

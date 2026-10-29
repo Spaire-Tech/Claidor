@@ -239,6 +239,11 @@ export class TurnRuntime {
 
   constructor(readonly tm: TranscriptManagerLike) {}
 
+  /** How the agent's running turn began ("turn" for the person's own message, "connector" for a channel's), for the tools that ask. */
+  activeRequestSource(agentId: string): string | undefined {
+    return this.activeRequestSources.get(agentId);
+  }
+
   settleCardStatus(args: {
     runSession?: LiveTranscriptSession | null;
     isForActiveAgent: boolean;
