@@ -68,28 +68,99 @@ test("the Chief of Staff is known by title, and a brief opens with the person's 
 
 test("the lifecycle runs the Chief of Staff's own first run by title, and the generic one for everyone else", async () => {
   const lifecycle = await loadModule("source/host/extensions/transcript/agent-lifecycle.ts", "agent-lifecycle-cos");
-  for (const [title, expected] of [["Chief of Staff", /as the person's Chief of Staff/], ["Inbox", /^\[first run\] This is your very first turn\. The user just created you/]]) {
+  for (const [title, expected, language] of [["Chief of Staff", /as the person's Chief of Staff/, undefined], ["Chief of Staff", /as the person's Chief of Staff/, "fr"], ["Inbox", /^\[first run\] This is your very first turn\. The user just created you/, undefined]]) {
     let pending = true;
     const prompts = [];
-    const session = { id: "a1", db: { getIntroductionPending: () => pending, setIntroductionPending: (value) => { pending = value; }, getTranscriptEntries: () => [], getAgentPurpose: () => null } };
+    const posted = [];
+    const order = [];
+    const session = { id: "a1", db: { getIntroductionPending: () => pending, setIntroductionPending: (value) => { pending = value; }, getTranscriptEntries: () => posted, getAgentPurpose: () => null, appendTranscriptEntry: (entry) => { posted.push(entry); order.push("posted"); } } };
     const tm = {
-      sessionStore: { getAgentProfileText: (id) => (id === "a1" ? { name: "Simeon", description: "", title } : null) },
+      sessionStore: { getAgentProfileText: (id) => (id === "a1" ? { name: "Simeon", description: "", title } : null), markSessionActivity() {} },
       sessions: { activeSession: null, resolveBackgroundSession: async () => session },
       groupChat: { isGroupSession: () => false, isRemoteRoomSession: () => false },
       execution: { canExecute: true, isRunReady: async () => true },
       runLifecycle: { inFlightRunCounts: new Map(), lastRequestIdBySession: new Map(), beginSessionRun() {}, endSessionRun() {}, enqueueExclusiveRun: async (_id, run) => { await run(); } },
-      runnerRegistry: { getRunner: () => ({ run: async (prompt) => { prompts.push(prompt); return { aborted: false, sentMessageCount: 2 }; } }) },
+      runnerRegistry: { getRunner: () => ({ run: async (prompt) => { prompts.push(prompt); order.push("run"); return { aborted: false, sentMessageCount: 1 }; } }) },
       turnRuntime: { activeRequestSources: new Map() },
       automationRuntime: { ensureHiddenTurnReply: async () => true },
       upgradeResume: { markAgentResumePending() {} },
       trayErrors: { pushError() {} },
       roster: { emitAgentUpdate: async () => {} },
       telemetry: { reportAgentError() {} },
+      requestContextUserFullName: () => "Bass F",
+      userLanguage: () => language,
     };
     await new lifecycle.AgentLifecycle(tm).kickstartAgent("a1", true);
     await new Promise((resolve) => setTimeout(resolve, 10));
     assert.equal(prompts.length, 1, title);
     assert.match(prompts[0], expected, title);
+    if (title !== "Chief of Staff") {
+      assert.deepEqual(posted, [], "nobody else's hello is posted for them");
+      continue;
+    }
+    // The founder's words (29 October 2026), four messages posted at once, before his turn adds the card.
+    const hello = words.chiefOfStaffHello("Bass F", language);
+    assert.deepEqual(posted.map((entry) => entry.kind), ["send-message", "send-message", "send-message", "send-message"]);
+    assert.deepEqual(posted.map((entry) => entry.message), hello.map((content) => ({ type: "text", content })));
+    assert.equal(new Set(posted.map((entry) => entry.id)).size, 4, "each its own id");
+    assert.ok(posted.every((entry, index) => index === 0 || entry.timestampMs > posted[index - 1].timestampMs), "in order");
+    assert.ok(posted[3].timestampMs - posted[0].timestampMs < 50, "together");
+    assert.deepEqual(order, ["posted", "posted", "posted", "posted", "run"]);
+    for (const line of hello) assert.ok(prompts[0].includes(`"${line}"`), "his turn is told what he said");
+    assert.match(prompts[0], /Do not greet them again or repeat any of it\. Your first turn is exactly one message: a question widget/);
+  }
+});
+
+test("his hello lands in the open chat the same way, each message its own id", async () => {
+  const lifecycle = await loadModule("source/host/extensions/transcript/agent-lifecycle.ts", "agent-lifecycle-open");
+  const shown = [];
+  let pending = true;
+  const session = { id: "a1", db: { getIntroductionPending: () => pending, setIntroductionPending: (value) => { pending = value; }, getTranscriptEntries: () => [], getAgentPurpose: () => null, appendTranscriptEntry() { throw new Error("the open chat appends through the send pipeline"); } } };
+  const tm = {
+    sessionStore: { getAgentProfileText: () => ({ name: "Simeon", description: "", title: "Chief of Staff" }), markSessionActivity() {} },
+    sessions: { activeSession: session, resolveBackgroundSession: async () => session },
+    sendPipeline: { appendSendMessageEntry: (entry) => shown.push(entry) },
+    groupChat: { isGroupSession: () => false, isRemoteRoomSession: () => false },
+    execution: { canExecute: true, isRunReady: async () => true },
+    runLifecycle: { inFlightRunCounts: new Map(), lastRequestIdBySession: new Map(), beginSessionRun() {}, endSessionRun() {}, enqueueExclusiveRun: async (_id, run) => { await run(); } },
+    runnerRegistry: { getRunner: () => ({ run: async () => ({ aborted: false, sentMessageCount: 1 }) }) },
+    turnRuntime: { activeRequestSources: new Map() },
+    automationRuntime: { ensureHiddenTurnReply: async () => true },
+    upgradeResume: { markAgentResumePending() {} },
+    trayErrors: { pushError() {} },
+    roster: { emitAgentUpdate: async () => {} },
+    telemetry: { reportAgentError() {} },
+    requestContextUserFullName: () => undefined,
+  };
+  await new lifecycle.AgentLifecycle(tm).kickstartAgent("a1", true);
+  await new Promise((resolve) => setTimeout(resolve, 10));
+  assert.deepEqual(shown.map((entry) => entry.message.content), words.chiefOfStaffHello(null));
+  assert.equal(new Set(shown.map((entry) => entry.id)).size, 4);
+  assert.equal(pending, false, "the introduction is done");
+});
+
+test("Simeon's hello is the founder's, in the person's language", async () => {
+  assert.deepEqual(words.chiefOfStaffHello("Bassirou Fall"), [
+    "Hi Bassirou, my name is Simeon, and I'm your Chief of Staff.",
+    "What I do is help build a team of agents to help you get things done. Each one has a job to do and its own computer to do it on, so they can use your apps, browse the web, and take care of things while you're busy doing everything else.",
+    "You can check in on them anytime, watch them work, or jump in and take over. I'll keep an eye on the bigger picture and bring you in when something needs your attention.",
+    "Unless you have any questions for me, I'd like to hire your first teammate.",
+  ]);
+  assert.equal(words.chiefOfStaffHello(null)[0], "Hi, my name is Simeon, and I'm your Chief of Staff.");
+  assert.equal(words.chiefOfStaffHello("Bass", "fr")[0], "Salut Bass, je m’appelle Simeon, et je suis ton bras droit.");
+  assert.equal(words.chiefOfStaffHello("Bass", "de")[0], "Hallo Bass, ich heiße Simeon und bin dein Chief of Staff.");
+  // The demos (the site's live one, the apps' own) say it as the engine does.
+  const scenario = await readFile(path.join(repoRoot, "demo/scenario.ts"), "utf8");
+  const appDemo = await readFile(path.join(repoRoot, "../ios/SimeonCore/Sources/SimeonCore/Demo.swift"), "utf8");
+  for (const line of words.chiefOfStaffHello("Bass")) {
+    assert.ok(scenario.includes(JSON.stringify(line)), `the site's demo: ${line}`);
+    assert.ok(appDemo.includes(JSON.stringify(line)), `the apps' demo: ${line}`);
+  }
+  for (const language of ["fr", "es", "de", "nl", "it", "pt-BR", "sv", "pl", "tr"]) {
+    const said = words.chiefOfStaffHello("Bass", language);
+    assert.equal(said.length, 4, language);
+    assert.match(said[0], /Bass/, language);
+    assert.ok(said.every((line, index) => line !== words.chiefOfStaffHello("Bass")[index]), `${language}: translated`);
   }
 });
 

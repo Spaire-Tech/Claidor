@@ -295,7 +295,16 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
     touch(agentId) { $0.isComposing = true }
     later(1.9) { [weak self] in
       let now = Date().timeIntervalSince1970 * 1000
-      self?.append(agentId, DemoData.says("o0a-\(agentId)", 0, "Hi Bass, I'm Simeon, your Chief of Staff. I don't do the work myself: I hire the agents who do, brief them, and keep you out of the weeds. Let's hire your first one.", now: now))
+      // His hello, the founder's words, four messages at once (29 October 2026; the engine's `chiefOfStaffHello`).
+      let hello = [
+        "Hi Bass, my name is Simeon, and I'm your Chief of Staff.",
+        "What I do is help build a team of agents to help you get things done. Each one has a job to do and its own computer to do it on, so they can use your apps, browse the web, and take care of things while you're busy doing everything else.",
+        "You can check in on them anytime, watch them work, or jump in and take over. I'll keep an eye on the bigger picture and bring you in when something needs your attention.",
+        "Unless you have any questions for me, I'd like to hire your first teammate.",
+      ]
+      for (index, line) in hello.enumerated() {
+        self?.append(agentId, DemoData.says("o0\(index)-\(agentId)", 0, line, now: now + Double(index)))
+      }
     }
     later(2.9) { [weak self] in
       let now = Date().timeIntervalSince1970 * 1000

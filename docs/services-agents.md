@@ -2122,8 +2122,16 @@ and the whole path on an iPhone or a Mac.
 **He staffs (7 October 2026).** The founder: "Simeon main job is to delegate. Not take on
 action from the get go … onboarding should be him delegating. That also showcases him messaging
 the agent, him creating it, and giving him directions." `desktop/source/shared/agents/chief-of-staff.ts`:
-- His first run is his own cue, `SAND_CHIEF_OF_STAFF_KICKSTART_PROMPT`, chosen by the lifecycle for
-  the agent titled Chief of Staff (`agent-lifecycle.ts`): a hello, then one question, "What's the
+- His hello is the founder's, word for word (29 October 2026: "this is what he should say … they
+  come in different texts. not one by one"): four messages the engine posts in his chat at once as
+  his first run begins (`chiefOfStaffHello`, `AgentLifecycle.postTogether`), in the person's language
+  (`simeon.*` in `shared/words/areas/previews.ts`), by their first name when it is known: who he is,
+  what the agents do and that each has its own computer, that the person can watch or take over, and
+  that he'd like to hire their first teammate unless they have questions. The model does not write
+  it, so it reads the same for everyone.
+- His first run is his own cue, `chiefOfStaffKickstartPrompt`, chosen by the lifecycle for
+  the agent titled Chief of Staff (`agent-lifecycle.ts`), told the hello already sent: one message,
+  the question card, "What's the
   first thing you'd hand to a person if you hired one today?", its options drawn from the apps
   connected during setup (he reads GetMcpServerStatus first; he proposes no connectors for himself).
   On the answer he hires with CreateAgent: a first name, a title that names the job, a description,

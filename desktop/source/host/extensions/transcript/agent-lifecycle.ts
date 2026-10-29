@@ -1,4 +1,4 @@
-import { isChiefOfStaffTitle, SAND_CHIEF_OF_STAFF_KICKSTART_PROMPT } from "../../../shared/agents/chief-of-staff.js";
+import { chiefOfStaffHello, chiefOfStaffKickstartPrompt, isChiefOfStaffTitle } from "../../../shared/agents/chief-of-staff.js";
 import { firstRunCueInLanguage } from "../../../shared/user-language.js";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
@@ -27,7 +27,8 @@ import { checkpointSandAgentDb } from "../../storage/store-db.js";
 import { publishTranscriptMutation } from "../../transcript-mutation-events.js";
 import { describeAgentRunError } from "./agent-run-error.js";
 import { say } from "../../../shared/say.js";
-import { isUserMessageEntry } from "./send-message-shaping.js";
+import { createSendMessageEntry, isUserMessageEntry } from "./send-message-shaping.js";
+import { nextEntryId } from "./transcript-entry-ids.js";
 import { getTranscript } from "./transcript-store.js";
 import { classifyAgentError } from "./turn-runtime.js";
 import type { TranscriptEntry, TranscriptManagerLike } from "./transcript-hub.js";
@@ -187,15 +188,22 @@ export class AgentLifecycle {
         this.tm.turnRuntime.activeRequestSources.set(session.id, "turn");
         try {
           // The Chief of Staff opens by hiring, not by offering to help
-          // (7 October 2026, `shared/agents/chief-of-staff.ts`).
+          // (7 October 2026, `shared/agents/chief-of-staff.ts`), after his
+          // hello, the founder's words, posted here at once (29 October 2026).
           // Said in the person's language when it is not English (20 October 2026).
+          const language = this.tm.userLanguage?.();
+          const diskSaver = session.db.getAgentPurpose() === "disk-saver";
+          const hello = !diskSaver && isChiefOfStaffTitle(this.tm.sessionStore?.getAgentProfileText?.(session.id)?.title)
+            ? chiefOfStaffHello(this.tm.requestContextUserFullName?.() ?? null, language)
+            : null;
+          if (hello != null) this.postTogether(session, hello);
           const prompt = firstRunCueInLanguage(
-            session.db.getAgentPurpose() === "disk-saver"
+            diskSaver
               ? SAND_DISK_SAVER_KICKSTART_PROMPT
-              : isChiefOfStaffTitle(this.tm.sessionStore?.getAgentProfileText?.(session.id)?.title)
-                ? SAND_CHIEF_OF_STAFF_KICKSTART_PROMPT
+              : hello != null
+                ? chiefOfStaffKickstartPrompt(hello)
                 : SAND_ONBOARDING_KICKSTART_PROMPT,
-            this.tm.userLanguage?.(),
+            language,
           );
           // Hidden (nobody asked yet) but under the asked turn's budget:
           // The upstream app gave its first message the same 5,000-call cap as any
@@ -205,6 +213,8 @@ export class AgentLifecycle {
           if (!result.aborted && result.sentMessageCount === 0)
             delivered =
               await this.tm.automationRuntime.ensureHiddenTurnReply(runner);
+          // His hello arrived, card or not: nothing to say went missing.
+          if (hello != null) delivered = true;
           if (result.quiescedForUpgrade) {
             this.tm.upgradeResume.markAgentResumePending(session, "turn");
             session.db.setIntroductionPending(false);
@@ -247,6 +257,24 @@ export class AgentLifecycle {
       { lane: "user", source: "kickstart" },
     );
     return true;
+  }
+
+  /**
+   * Messages from the agent, in its chat at once and in order, as its own
+   * (`send-message`, as SendMessage leaves them): the Chief of Staff's hello.
+   */
+  postTogether(session: any, lines: readonly string[]): void {
+    const active = this.tm.sessions.activeSession?.id === session.id;
+    const entries: TranscriptEntry[] = [...(active ? getTranscript() : session.db.getTranscriptEntries())];
+    const at = Date.now();
+    lines.forEach((content, index) => {
+      const entry = createSendMessageEntry(nextEntryId(entries, "send-message"), { type: "text", content }, at + index);
+      entries.push(entry);
+      if (active) this.tm.sendPipeline.appendSendMessageEntry(entry);
+      else session.db.appendTranscriptEntry(entry);
+    });
+    if (!active) this.tm.sessionStore.markSessionActivity(session);
+    void this.tm.roster.emitAgentUpdate(session.id);
   }
 
   async requestDiskSaverAudit(
