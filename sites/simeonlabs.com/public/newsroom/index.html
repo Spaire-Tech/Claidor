@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>SimeonLabs | Newsroom</title>
-<meta name="description" content="News and stories from SimeonLabs: what's new in Simeon, and the people putting their agents to work.">
+<meta name="description" content="News from SimeonLabs, and the people putting their agents to work.">
 <link rel="canonical" href="https://simeonlabs.com/newsroom">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://simeonlabs.com/newsroom">
 <meta property="og:title" content="SimeonLabs | Newsroom">
-<meta property="og:description" content="News and stories from SimeonLabs: what's new in Simeon, and the people putting their agents to work.">
+<meta property="og:description" content="News from SimeonLabs, and the people putting their agents to work.">
 <meta name="twitter:card" content="summary">
 <link rel="icon" href="/favicon.ico" sizes="48x48">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -74,97 +74,89 @@ footer a{color:var(--ink2);text-decoration:none}
 footer a:hover{color:var(--ink)}
 footer a[aria-current]{color:var(--ink)}
 
-/* The Newsroom (newsroom.py), as Apple's: its own bar, Latest News on the grey ground, Stories on white. Words
-   at the site's weights, never bold: titles medium, the headings regular. */
-.nw [hidden]{display:none!important}
-.nw-col{width:min(1000px,var(--col));margin-inline:auto}
-.nw-wide{width:min(1320px,var(--col));margin-inline:auto}
-.nw-bar .nw-col{display:flex;align-items:center;justify-content:space-between;gap:16px;height:56px}
-.nw-name{font-size:21px;font-weight:var(--w-title);letter-spacing:-.02em;color:var(--ink);text-decoration:none}
-.nw-links{display:flex;align-items:center;gap:clamp(16px,1.6*var(--vw,1vw),28px);font-size:var(--t-small)}
-.nw-links>a{color:var(--ink2);text-decoration:none}
-.nw-links>a:hover{color:var(--ink)}
-.nw-search{display:flex;align-items:center;gap:6px;height:30px;padding:0 12px;border-radius:99px;background:#e8e8ed;color:var(--ink2);cursor:text}
-.nw-search svg{flex:none;width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
-.nw-search input{width:120px;padding:0;border:0;background:none;color:var(--ink);font:inherit;font-size:13px;letter-spacing:-.01em;outline:none;-webkit-appearance:none;appearance:none}
-.nw-search input::placeholder{color:var(--ink2);opacity:1}
-.nw-search input::-webkit-search-cancel-button{display:none}
-.nw-search:focus-within{box-shadow:0 0 0 2px var(--blue)}
-.nw-none{padding:clamp(48px,5*var(--vw,1vw),96px) 0;text-align:center;font-size:var(--t-lead);color:var(--ink2)}
+/* The opening, from the home page (source/page.html). */
+.btn.ghost{background:#f2f2f2;color:#000}
+.btn.ghost:hover{background:#e8e8e8}
+.btn .apl{width:1.05em;height:1.05em;margin:-.18em .45em 0 -.1em;flex:none}
+.btn .dl{width:1em;height:1em;margin:0 -.15em 0 .4em;flex:none} /* Download for macOS, its arrow after the words (18 October 2026) */
+/* Hero: one sentence on the left edge, two buttons under it, nothing else. */
+.hero{padding:clamp(40px,8.1*var(--vw,1vw),162px) 0 0;color:#000}
+.hero h1{max-width:var(--title-max);font-size:var(--t-display);line-height:1.1;font-weight:var(--w-display);letter-spacing:-.025em;text-wrap:pretty}
+.hero h1.set{text-wrap:wrap} /* the home page's headline: its lines are set, "Put intelligent agents to work" on the first,
+   "for whatever needs doing." whole on the second (the founder, 29 October 2026); no single word left alone on a title's last line elsewhere (pretty) */
+.hero h1 .nw{white-space:nowrap}
+.hero .ctas{display:flex;gap:clamp(10px,.7*var(--vw,1vw),14px);flex-wrap:wrap;margin-top:clamp(18px,1.6*var(--vw,1vw),32px)}
+/* The headline and its buttons a size down (18 October 2026); the section titles, their lines, the statement and the closing title went down with them. */
+.hero .btn{height:var(--btn-h);padding:0 var(--btn-pad);font-size:var(--btn-font)}
+/* On a phone the hero breathes (4 October 2026): a long pause under the bar, a headline that leaves air on the right, and room before the app.
+   The home page's headline keeps its two lines on a phone too (the founder, 29 October 2026: "should only be 2"), its size down to fit
+   "Put intelligent agents to work" across the column (13 em in Inter, 14.3 left for a wider font), never the whole sentence on one. */
+.hero .btn.go{display:none} /* the phone's one button: Download for iOS, no link until there is an app (6 October 2026) */
+@media (max-width:734px){.hero{padding-top:88px}.hero h1{font-size:var(--t-display);line-height:1.1;font-weight:var(--w-display);letter-spacing:-.025em;max-width:11.5em;text-wrap:balance}.hero h1.set{font-size:min(var(--t-display),calc(var(--col) / 14.3));max-width:var(--title-max);text-wrap:wrap}.hero h1 .nw{white-space:normal}.hero h1.set .nw{white-space:nowrap}.hero .ctas{margin-top:26px}.hero .ctas .btn{display:none}.hero .btn.go{display:inline-flex}}
 
-.nw-latest{background:var(--soft);padding:clamp(28px,2.6*var(--vw,1vw),52px) 0 clamp(56px,5*var(--vw,1vw),100px)}
-.nw-h{font-size:var(--t-display);line-height:1.1;font-weight:var(--w-display);letter-spacing:-.025em;margin-bottom:clamp(20px,1.6*var(--vw,1vw),32px)}
-.nw-quick{position:relative;display:flex;align-items:center;gap:clamp(20px,3.4*var(--vw,1vw),60px);padding:clamp(24px,2.8*var(--vw,1vw),52px) clamp(72px,6*var(--vw,1vw),110px) clamp(24px,2.8*var(--vw,1vw),52px) clamp(24px,2.8*var(--vw,1vw),52px);border-radius:28px;background:#fff}
-.nw-quick .nw-img{flex:none;width:clamp(88px,8.4*var(--vw,1vw),150px);aspect-ratio:1;border-radius:22%;overflow:hidden;background:var(--soft)}
-.nw-kicker{display:flex;align-items:center;gap:5px;font-size:var(--t-small);font-weight:var(--w-title);letter-spacing:.03em;text-transform:uppercase;color:var(--ink2)}
-.nw-kicker svg{width:12px;height:12px;fill:currentColor}
-.nw-quick h3{margin-top:8px;max-width:22em;font-size:var(--t-title);line-height:1.2;font-weight:var(--w-title);letter-spacing:-.02em}
-.nw-ago{display:flex;align-items:center;gap:6px;margin-top:12px;font-size:var(--t-body);color:var(--ink2)}
-.nw-ago svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
-.nw-more{margin-top:14px;max-width:36em;font-size:var(--t-body);line-height:1.5}
-.nw-plus{position:absolute;right:clamp(16px,1.6*var(--vw,1vw),28px);bottom:clamp(16px,1.6*var(--vw,1vw),28px);display:grid;place-items:center;width:44px;height:44px;padding:0;border:0;border-radius:50%;background:var(--soft);color:var(--ink);cursor:pointer;transition:transform .25s ease,background .2s}
-.nw-plus:hover{background:#e8e8ed}
-.nw-plus svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
-.nw-plus[aria-expanded="true"]{transform:rotate(45deg)}
-.nw-grid{display:grid;gap:clamp(16px,1.8*var(--vw,1vw),36px);margin-top:clamp(16px,1.8*var(--vw,1vw),36px)}
-.nw-grid.two{grid-template-columns:repeat(2,minmax(0,1fr))}
-.nw-grid.three{grid-template-columns:repeat(3,minmax(0,1fr))}
-.nw-img{background:#e8e8ed}
-.nw-img img{width:100%;height:100%;object-fit:cover;transition:transform .5s ease}
-a:hover>.nw-img img,a:hover>img{transform:scale(1.03)}
-.nw-card{display:flex;flex-direction:column;border-radius:28px;overflow:hidden;background:#fff;color:inherit;text-decoration:none}
-.nw-card .nw-img{aspect-ratio:16/9;overflow:hidden}
-.nw-card .nw-text{flex:1;display:flex;flex-direction:column;padding:clamp(20px,2*var(--vw,1vw),32px)}
-.nw-label{font-size:var(--t-small);font-weight:var(--w-title);letter-spacing:.03em;text-transform:uppercase;color:var(--ink2)}
-.nw-card h3{margin-top:8px;font-size:var(--t-head);line-height:1.25;font-weight:var(--w-title);letter-spacing:-.015em}
-.two .nw-card h3{font-size:clamp(19px,1.35*var(--vw,1vw),26px);line-height:1.2}
-.nw-date{display:block;margin-top:auto;padding-top:clamp(14px,1.4*var(--vw,1vw),26px);font-size:var(--t-body);color:var(--ink2)}
+/* The Newsroom (newsroom.py): the posts down the column in Apple Stories' layout, in the site's measures (the home
+   page's 28-point corners, its rows of three with 20 between, its panel #fafafb). One white ground; where a ground
+   meets another (a picture's shade, the quote's panel and its picture, the page's end and the footer) it fades. */
+.nw-lead{max-width:34em;margin-top:clamp(14px,1.2*var(--vw,1vw),22px);font-size:var(--t-lead);line-height:1.45;color:var(--ink2);text-wrap:pretty}
+.nw-posts{display:flex;flex-direction:column;gap:clamp(40px,4*var(--vw,1vw),72px);margin-top:clamp(40px,4*var(--vw,1vw),80px)}
+.nw-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.nw-kicker{font-size:var(--t-small);line-height:1.3;font-weight:var(--w-title);letter-spacing:-.005em;color:var(--ink2)}
+.nw-date{display:block;margin-top:8px;font-size:var(--t-small);line-height:1.3;color:var(--ink2)}
+.nw-img{position:relative;overflow:hidden;background:var(--soft)}
+.nw-img img,.nw-over>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .8s cubic-bezier(.2,.7,.2,1)}
+a:hover>.nw-img img,a:hover>img{transform:scale(1.025)}
+a.nw-over:focus-visible,a.nw-tile:focus-visible,a.nw-quote:focus-visible{outline:2px solid var(--blue);outline-offset:4px}
 
-.nw-stories{padding-top:clamp(64px,6*var(--vw,1vw),120px)}
-.nw-stories-head{text-align:center;margin-bottom:clamp(36px,4*var(--vw,1vw),80px)}
-.nw-big{display:inline-flex;align-items:center;gap:.1em;font-size:clamp(44px,4.4*var(--vw,1vw),88px);line-height:1;font-weight:var(--w-title);letter-spacing:-.035em}
-.nw-big i{display:block;width:.9em;height:.9em;background:var(--ink);-webkit-mask:url(/logos/simeon.svg) center/133% no-repeat;mask:url(/logos/simeon.svg) center/133% no-repeat}
-.nw-stories-head p{max-width:24em;margin:16px auto 0;font-size:var(--t-lead);line-height:1.4;text-wrap:balance}
-.nw-pill{display:inline-block;align-self:flex-start;padding:3px 9px;border-radius:99px;background:var(--c,var(--ink));color:#fff;font-size:12px;line-height:1.35;font-weight:var(--w-title);letter-spacing:.04em;text-transform:uppercase}
-.nw-over{position:relative;display:block;overflow:hidden;border-radius:clamp(22px,2*var(--vw,1vw),36px);background:#2a2a2c;color:#fff;text-decoration:none}
-.nw-over>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .5s ease}
-.nw-over::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.74),rgba(0,0,0,.3) 42%,rgba(0,0,0,0) 68%);pointer-events:none}
-.nw-over .nw-text{position:absolute;left:0;right:0;bottom:0;z-index:1;display:flex;flex-direction:column;padding:clamp(20px,3*var(--vw,1vw),52px)}
-.nw-over h3{margin-top:12px;max-width:20em;font-size:clamp(24px,2.6*var(--vw,1vw),48px);line-height:1.12;font-weight:var(--w-title);letter-spacing:-.025em;text-wrap:pretty}
-.nw-over .nw-date{margin:0;padding-top:12px;color:rgba(255,255,255,.86)}
-.nw-over.lead{aspect-ratio:16/8}
+/* A story over its picture: the shade rises from the foot in even steps, and the words sit on it. */
+.nw-over{position:relative;display:block;overflow:hidden;border-radius:28px;background:#2c2c2e;color:#fff;text-decoration:none;isolation:isolate}
+.nw-over::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:linear-gradient(to top,rgba(0,0,0,.5) 0%,rgba(0,0,0,.42) 12%,rgba(0,0,0,.32) 24%,rgba(0,0,0,.21) 36%,rgba(0,0,0,.12) 48%,rgba(0,0,0,.05) 60%,rgba(0,0,0,0) 72%)}
+.nw-over .nw-text{position:absolute;z-index:2;left:0;right:0;bottom:0;padding:clamp(20px,2.4*var(--vw,1vw),40px);text-shadow:0 1px 14px rgba(0,0,0,.25)}
+.nw-over .nw-kicker,.nw-over .nw-date{color:rgba(255,255,255,.74)}
+.nw-over.lead{aspect-ratio:1260/700}
+.nw-over.lead .nw-kicker,.nw-over.lead .nw-date{font-size:var(--t-body)}
+.nw-over.lead h2{margin-top:8px;max-width:17em;font-size:var(--t-display);line-height:1.12;font-weight:var(--w-display);letter-spacing:-.025em;text-wrap:balance}
 .nw-over.small{aspect-ratio:4/5}
-.nw-over.small .nw-text{padding:clamp(18px,2*var(--vw,1vw),32px)}
-.nw-over.small h3{font-size:clamp(19px,1.4*var(--vw,1vw),26px);line-height:1.2;letter-spacing:-.015em}
-.nw-quote{display:grid;grid-template-columns:1fr 1fr;aspect-ratio:16/10;margin-top:clamp(24px,2.4*var(--vw,1vw),48px);overflow:hidden;border-radius:clamp(22px,2*var(--vw,1vw),36px);background:var(--soft);color:inherit;text-decoration:none}
-.nw-quote .nw-text{display:flex;flex-direction:column;padding:clamp(28px,4*var(--vw,1vw),68px)}
-.nw-quote blockquote{margin-top:auto;max-width:15em;font-size:clamp(24px,2.3*var(--vw,1vw),42px);line-height:1.14;font-weight:var(--w-title);letter-spacing:-.025em;text-wrap:pretty}
-.nw-by{margin-top:16px;font-size:var(--t-body);line-height:1.35;white-space:pre-line}
-.nw-read{display:inline-flex;align-items:center;align-self:flex-start;height:40px;margin-top:auto;padding:0 20px;border-radius:99px;background:#e8e8ed;font-size:var(--t-body)}
-.nw-quote .nw-story{margin-top:16px;font-size:var(--t-body);font-weight:var(--w-title)}
-.nw-quote .nw-img{overflow:hidden}
-.nw-tile{display:flex;flex-direction:column;color:inherit;text-decoration:none}
-.nw-tile .nw-img{aspect-ratio:1;overflow:hidden;border-radius:28px}
-.nw-tile .nw-text{display:flex;flex-direction:column;padding:18px clamp(12px,1.2*var(--vw,1vw),22px) 0}
-.nw-tile h3{margin-top:10px;font-size:clamp(19px,1.35*var(--vw,1vw),26px);line-height:1.2;font-weight:var(--w-title);letter-spacing:-.015em}
-.nw-tile .nw-date{padding-top:10px}
-.nw-stories .nw-grid.two{margin-top:clamp(56px,5*var(--vw,1vw),100px)}
-.nw-stories .nw-grid.three{margin-top:clamp(56px,5*var(--vw,1vw),100px)}
+.nw-over.small h3{margin-top:6px;font-size:var(--t-head);line-height:1.25;font-weight:var(--w-title);letter-spacing:-.015em;text-wrap:balance}
 
-@media (max-width:860px){.nw-grid.three{grid-template-columns:1fr 1fr}}
+/* A story under its picture, as the home page's cards: a square, the words 22 under it. */
+.nw-tile{display:block;color:inherit;text-decoration:none}
+.nw-tile .nw-img{aspect-ratio:1;border-radius:28px}
+.nw-tile .nw-text{padding:22px 4px 0}
+.nw-tile h3{margin-top:6px;font-size:var(--t-head);line-height:1.25;font-weight:var(--w-title);letter-spacing:-.015em;text-wrap:balance}
+
+/* A quoted story: the quote on the panel, the picture beside it, the panel's grey fading into the picture. */
+.nw-quote{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);aspect-ratio:1260/620;overflow:hidden;border-radius:28px;background:#fafafb;color:inherit;text-decoration:none}
+.nw-quote .nw-text{display:flex;flex-direction:column;padding:clamp(28px,3.4*var(--vw,1vw),60px)}
+.nw-quote blockquote{margin-top:auto;max-width:15em;font-size:var(--t-display);line-height:1.15;font-weight:var(--w-display);letter-spacing:-.025em;text-wrap:balance}
+.nw-by{margin-top:16px;font-size:var(--t-body);line-height:1.4;color:var(--ink2);white-space:pre-line}
+.nw-read{display:inline-flex;align-items:center;align-self:flex-start;height:var(--btn-h);margin-top:auto;padding:0 var(--btn-pad);border-radius:99px;background:rgba(0,0,0,.05);color:var(--ink);font-size:var(--btn-font);transition:background .2s}
+a:hover .nw-read{background:rgba(0,0,0,.08)}
+.nw-quote .nw-story{margin-top:14px;font-size:var(--t-body);font-weight:var(--w-title)}
+.nw-quote .nw-img{background:#fafafb}
+.nw-quote .nw-img::before{content:"";position:absolute;z-index:1;top:0;bottom:0;left:0;width:30%;pointer-events:none;
+  background:linear-gradient(to right,#fafafb 0%,rgba(250,250,251,.86) 14%,rgba(250,250,251,.62) 30%,rgba(250,250,251,.36) 48%,rgba(250,250,251,.14) 68%,rgba(250,250,251,0) 100%)}
+
+/* The page's end fades into the footer's grey. */
+.nw-end{height:clamp(96px,9*var(--vw,1vw),180px);margin-top:clamp(64px,6*var(--vw,1vw),120px);
+  background:linear-gradient(to bottom,var(--page) 0%,#fcfcfd 25%,#f9f9fa 50%,#f7f7f9 75%,var(--soft) 100%)}
+footer{margin-top:0}
+
 @media (max-width:734px){
-  .nw-links>a{display:none}
-  .nw-search{height:34px}
-  .nw-search input{width:140px;font-size:16px} /* 16: an iPhone does not zoom into it; the room the hidden links leave */
-  .nw-quick{align-items:flex-start;padding:20px 20px 76px}
-  .nw-grid.two,.nw-grid.three{grid-template-columns:1fr}
-  .nw-over.lead{aspect-ratio:4/5}
+  .nw-row{grid-template-columns:1fr;gap:28px}
+  .nw-over,.nw-tile .nw-img,.nw-quote{border-radius:22px}
+  .nw-over.lead{aspect-ratio:4/5.4}
+  .nw-tile .nw-img{aspect-ratio:4/3}
+  .nw-tile .nw-text{padding-top:16px}
   .nw-quote{grid-template-columns:1fr;aspect-ratio:auto}
   .nw-quote .nw-img{order:-1;aspect-ratio:4/3}
-  .nw-quote blockquote{margin-top:24px}
+  .nw-quote .nw-img::before{top:auto;right:0;width:auto;height:34%;
+    background:linear-gradient(to top,#fafafb 0%,rgba(250,250,251,.86) 14%,rgba(250,250,251,.62) 30%,rgba(250,250,251,.36) 48%,rgba(250,250,251,.14) 68%,rgba(250,250,251,0) 100%)}
+  .nw-quote .nw-text{padding:4px 24px 28px}
+  .nw-quote blockquote{margin-top:12px}
   .nw-read{margin-top:28px}
 }
-@media (prefers-reduced-motion:reduce){.nw-img img,.nw-over>img,.nw-plus{transition:none}}
+@media (prefers-reduced-motion:reduce){.nw-img img,.nw-over>img{transition:none}}
 </style>
 <meta name="robots" content="noindex">
 </head>
@@ -182,81 +174,23 @@ a:hover>.nw-img img,a:hover>img{transform:scale(1.03)}
 </header>
 
 <main>
-<div class="nw">
-<nav class="nw-bar" aria-label="Newsroom">
-  <div class="nw-col">
-    <a class="nw-name" href="/newsroom">Newsroom</a>
-    <div class="nw-links">
-      <a href="#latest">Latest News</a>
-      <a href="#stories">Stories</a>
-      <label class="nw-search"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="6.8" cy="6.8" r="4.8"/><path d="m10.4 10.4 3.8 3.8"/></svg><input type="search" placeholder="Search Newsroom" aria-label="Search Newsroom" autocomplete="off" enterkeyhint="search"></label>
+<section class="hero" aria-label="Newsroom">
+  <div class="wrap">
+    <h1>Newsroom</h1>
+    <p class="nw-lead">News from SimeonLabs, and the people putting their agents to work.</p>
+    <div class="nw-posts">
+    <div class="nw-over lead"><img src="/img/support.jpg" alt=""><div class="nw-text"><p class="nw-kicker">Customers</p><h2>The headline of the lead story, set over its picture</h2><time class="nw-date" datetime="2026-10-24">October 24, 2026</time></div></div>
+    <div class="nw-row"><div class="nw-tile"><div class="nw-img"><img src="/img/content.jpg" alt="" loading="lazy"></div><div class="nw-text"><p class="nw-kicker">Product</p><h3>Headline of a story about a team and its agents</h3><time class="nw-date" datetime="2026-10-22">October 22, 2026</time></div></div><div class="nw-tile"><div class="nw-img"><img src="/img/inbox.jpg" alt="" loading="lazy"></div><div class="nw-text"><p class="nw-kicker">Company</p><h3>Headline of a story, a little longer than the ones beside it</h3><time class="nw-date" datetime="2026-10-20">October 20, 2026</time></div></div><div class="nw-tile"><div class="nw-img"><img src="/img/books.jpg" alt="" loading="lazy"></div><div class="nw-text"><p class="nw-kicker">Customers</p><h3>Headline of a third story</h3><time class="nw-date" datetime="2026-10-18">October 18, 2026</time></div></div></div>
+    <div class="nw-quote"><div class="nw-text"><p class="nw-kicker">Builders</p><blockquote>“A line from the person the story is about, quoted as they said it.”</blockquote><p class="nw-by">Their name
+Their role and company</p><span class="nw-read">Read story</span><p class="nw-story">The title of the story the quote comes from</p></div><div class="nw-img"><img src="/img/ea.jpg" alt="" loading="lazy"></div></div>
+    <div class="nw-row"><div class="nw-over small"><img src="/img/sales.jpg" alt="" loading="lazy"><div class="nw-text"><p class="nw-kicker">Product</p><h3>Headline of a story, its words over the picture</h3><time class="nw-date" datetime="2026-10-12">October 12, 2026</time></div></div><div class="nw-over small"><img src="/img/marketing.jpg" alt="" loading="lazy"><div class="nw-text"><p class="nw-kicker">Builders</p><h3>Headline of another story, a little longer than the others</h3><time class="nw-date" datetime="2026-10-09">October 9, 2026</time></div></div><div class="nw-over small"><img src="/img/paint-teal.jpg" alt="" loading="lazy"><div class="nw-text"><p class="nw-kicker">Company</p><h3>Headline of one more story</h3><time class="nw-date" datetime="2026-10-06">October 6, 2026</time></div></div></div>
     </div>
   </div>
-</nav>
-<section class="nw-latest" id="latest" aria-labelledby="latest-title" data-group>
-  <div class="nw-col">
-    <h2 class="nw-h" id="latest-title">Latest News</h2>
-    <article class="nw-quick" data-post>
-      <div class="nw-img"><img src="/img/wall-blue.jpg" alt=""></div>
-      <div>
-        <p class="nw-kicker"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M7 .8 2.2 7h3.2l-.6 4.2L9.8 5H6.6z"/></svg>Quick read</p>
-        <h3>Headline of a quick read, a short piece of news</h3>
-        <p class="nw-ago"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.3"/><path d="M8 4.6V8l2.2 1.6"/></svg><time datetime="2026-10-26" data-ago>October 26, 2026</time></p>
-        <p class="nw-more" id="nw-more-0" hidden>A quick read opens here: a few lines on what changed, for whom, and where to find it.</p>
-      </div>
-      <button class="nw-plus" type="button" aria-expanded="false" aria-controls="nw-more-0" aria-label="Read more"><svg viewBox="0 0 18 18" aria-hidden="true"><path d="M9 3v12M3 9h12"/></svg></button>
-    </article>
-    <div class="nw-grid two"><div class="nw-card" data-post><div class="nw-img"><img src="/img/sales.jpg" alt="" loading="lazy"></div><div class="nw-text"><p class="nw-label">Update</p><h3>Headline of a news post</h3><time class="nw-date" datetime="2026-10-23">October 23, 2026</time></div></div><div class="nw-card" data-post><div class="nw-img"><img src="/img/marketing.jpg" alt="" loading="lazy"></div><div class="nw-text"><p class="nw-label">Press release</p><h3>A longer headline for a news post, to see how it wraps in a large card</h3><time class="nw-date" datetime="2026-10-22">October 22, 2026</time></div></div></div>
-    <div class="nw-grid three"><div class="nw-card" data-post><div class="nw-img"><img src="/img/paint-teal.jpg" alt="" loading="lazy"></div><div class="nw-text"><p class="nw-label">Update</p><h3>Headline of an update</h3><time class="nw-date" datetime="2026-10-20">October 20, 2026</time></div></div><div class="nw-card" data-post><div class="nw-img"><img src="/img/paint-pastel.jpg" alt="" loading="lazy"></div><div class="nw-text"><p class="nw-label">Product</p><h3>Headline of a post about something new in Simeon</h3><time class="nw-date" datetime="2026-10-16">October 16, 2026</time></div></div><div class="nw-card" data-post><div class="nw-img"><img src="/img/paint-green.jpg" alt="" loading="lazy"></div><div class="nw-text"><p class="nw-label">Press release</p><h3>Headline of a press release</h3><time class="nw-date" datetime="2026-10-14">October 14, 2026</time></div></div></div>
-  </div>
 </section>
-<section class="nw-stories" id="stories" aria-labelledby="stories-title" data-group>
-  <div class="nw-col nw-stories-head">
-    <h2 class="nw-big" id="stories-title"><i aria-hidden="true"></i>Stories</h2>
-    <p>The people and teams putting their agents to work, and what they make of it.</p>
-  </div>
-  <div class="nw-wide"><div class="nw-over lead" data-post><img src="/img/support.jpg" alt=""><div class="nw-text"><span class="nw-pill" style="--c:#2d7a1f">Customers</span><h3>The headline of the lead story, set large over its picture</h3><time class="nw-date" datetime="2026-10-24">October 24, 2026</time></div></div><div class="nw-quote" data-post><div class="nw-text"><span class="nw-pill" style="--c:#b4451a">Builders</span><blockquote>“A line from the person the story is about, quoted large, as they said it.”</blockquote><p class="nw-by">Their name,
-Their role and company</p><span class="nw-read">Read story</span><p class="nw-story">The title of the story the quote comes from</p></div><div class="nw-img"><img src="/img/ea.jpg" alt="" loading="lazy"></div></div></div>
-  <div class="nw-col"><div class="nw-grid two"><div class="nw-tile" data-post><div class="nw-img"><img src="/img/content.jpg" alt="" loading="lazy"></div><div class="nw-text"><span class="nw-pill" style="--c:#0066cc">Product</span><h3>Headline of a story about a team and its agents</h3><time class="nw-date" datetime="2026-10-18">October 18, 2026</time></div></div><div class="nw-tile" data-post><div class="nw-img"><img src="/img/inbox.jpg" alt="" loading="lazy"></div><div class="nw-text"><span class="nw-pill" style="--c:#6e3bbf">Company</span><h3>Headline of a story, a little longer than the one beside it</h3><time class="nw-date" datetime="2026-10-15">October 15, 2026</time></div></div></div></div>
-  <div class="nw-wide"><div class="nw-grid three"><div class="nw-over small" data-post><img src="/img/books.jpg" alt="" loading="lazy"><div class="nw-text"><span class="nw-pill" style="--c:#2d7a1f">Customers</span><h3>Headline of a story, its words over the picture</h3><time class="nw-date" datetime="2026-10-12">October 12, 2026</time></div></div><div class="nw-over small" data-post><img src="/img/paint-blue.jpg" alt="" loading="lazy"><div class="nw-text"><span class="nw-pill" style="--c:#b4451a">Builders</span><h3>Headline of another story, a little longer than the others</h3><time class="nw-date" datetime="2026-10-09">October 9, 2026</time></div></div><div class="nw-over small" data-post><img src="/img/paint-green.jpg" alt="" loading="lazy"><div class="nw-text"><span class="nw-pill" style="--c:#6e3bbf">Company</span><h3>Headline of a third story</h3><time class="nw-date" datetime="2026-10-06">October 6, 2026</time></div></div></div></div>
-</section>
-<p class="nw-none nw-col" role="status" hidden></p>
-</div>
+<div class="nw-end" aria-hidden="true"></div>
 </main>
 
 <footer><div class="wrap"><span>Copyright © 2026 Spaire, Inc. All rights reserved.</span><nav><a href="/marketplace">Marketplace</a><a href="/connectors">Connectors</a><a href="/pricing">Pricing</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/contact">Contact</a></nav></div></footer>
-<script>
-// The newsroom's search narrows the page to the posts whose words have what is typed; a quick read's + opens its
-// few lines; a date within the week reads as Today, Yesterday or so many days ago.
-(() => {
-  const input = document.querySelector('.nw-search input'), none = document.querySelector('.nw-none');
-  const posts = [...document.querySelectorAll('[data-post]')], groups = [...document.querySelectorAll('[data-group]')];
-  input.addEventListener('input', () => {
-    const words = input.value.trim().toLowerCase();
-    let found = 0;
-    for (const post of posts) {
-      const hit = !words || post.textContent.toLowerCase().includes(words);
-      post.hidden = !hit;
-      if (hit) found++;
-    }
-    for (const group of groups) group.hidden = !!words && !group.querySelector('[data-post]:not([hidden])');
-    none.hidden = !words || found > 0;
-    if (!none.hidden) none.textContent = 'No results for \u201c' + input.value.trim() + '\u201d.';
-  });
-  for (const plus of document.querySelectorAll('.nw-plus')) {
-    plus.addEventListener('click', () => {
-      const open = plus.getAttribute('aria-expanded') !== 'true';
-      plus.setAttribute('aria-expanded', String(open));
-      plus.setAttribute('aria-label', open ? 'Close' : 'Read more');
-      document.getElementById(plus.getAttribute('aria-controls')).hidden = !open;
-    });
-  }
-  for (const time of document.querySelectorAll('time[data-ago]')) {
-    const [y, m, d] = time.dateTime.split('-').map(Number), now = new Date();
-    const days = Math.round((new Date(now.getFullYear(), now.getMonth(), now.getDate()) - new Date(y, m - 1, d)) / 86400000);
-    if (days >= 0 && days < 7) time.textContent = days === 0 ? 'Today' : days === 1 ? 'Yesterday' : days + ' days ago';
-  }
-})();
-</script>
+
 </body>
 </html>
