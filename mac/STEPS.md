@@ -196,8 +196,10 @@ Written 10 October 2026, **not built yet** (as step 1). Compare with B01
 - **Files**: the card with the file's kind (Word, Excel, PowerPoint, PDF,
   any other file), its name cut short before the extension, its size, and
   Save, which asks where to save it and saves it.
-- **Reactions** under a message's right end; clicking one adds or takes back
-  your own.
+- **Reactions** under a message's right end, your own on a pale blue;
+  clicking one adds or takes back your own. A reaction shows the moment it
+  is picked; the computer is told after, and a refusal takes it off again
+  (29 October 2026: it waited for the computer, a resting one woken first).
 - **The agent at work**: its butterfly (28) and "Typing…" or what it is
   doing ("Searching the web", "Messaging Iris"), under the window's sweep of
   light, below the last message.
@@ -407,10 +409,14 @@ exchange, `b_n` and `u_n` for find):
 - **The hover bar** beside a message while the pointer is on it, 6 from
   the bubble and level with its middle: Add reaction, Reply and More (24,
   8 round), Add reaction nearest the bubble.
-- **Add reaction**: a Mac menu with the window's six quick reactions in a
-  row (👍 👎 ❤️ 😂 🎉 😮) and More emoji. **More**: Start a thread, Copy.
-  **A right click** on a message: the reactions, then Reply, Start a
-  thread, Copy. Start a thread is not offered inside a thread.
+- **Add reaction** (29 October 2026, as Messages' Tapback): a capsule in
+  glass just above the message, at its outer corner, with the six quick
+  reactions (👍 👎 ❤️ 😂 🎉 😮, your own on the blue) and More emoji. A
+  pick closes it; so do a click elsewhere, Escape, a scroll, or the window
+  going to the back. Until that day it was a row inside a Mac menu.
+  **More**: Start a thread, Copy. **A right click** on a message: Add
+  reaction, then Reply, Start a thread, Copy. Start a thread is not
+  offered inside a thread.
 - **Reply**: the message's line over the words (its reply glyph, the line,
   Cancel reply), "Reply…" in the field, which takes the keys; Escape lets
   it go; what is sent answers that message.
@@ -550,8 +556,8 @@ from its code. Pushed so far:
   is dropped, five minutes stops it, Escape cancels it. A refusal, no
   microphone, no network or any other failure says the window's line in
   red over the words until the microphone is tried again.
-- **More emoji** (from a message's Add reaction or right click): the
-  full picker where the menu was, in a Mac popover: "Search emoji" (it
+- **More emoji** (the capsule's last button): the full picker where the
+  capsule was, in a Mac popover: "Search emoji" (it
   takes the keys), then every category titled over its emoji, 8 to a row
   in 32-point cells, the person's own reactions grey; typed words show
   "Results" or "No emoji found", Return picks the first. A pick reacts (or

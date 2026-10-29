@@ -324,6 +324,22 @@ public struct Entry: Identifiable, Hashable, Sendable {
     (raw["reactions"]?.array ?? []).compactMap { r in r["emoji"]?.text.map { ($0, r["by"]?.string ?? "") } }
   }
 
+  /** The person's own reactions: the computer marks them "me" (`SAND_REACTION_SELF`); "user" is the demo's and older fixtures'. */
+  public var myReactions: [String] { reactions.filter { Entry.isMine($0.by) }.map(\.emoji) }
+
+  public static func isMine(_ by: String?) -> Bool { by == "me" || by == "user" }
+
+  /** The same entry with the person's own `emoji` reaction added, or taken off when it is there, as the computer toggles it (`toggleReaction`). */
+  public func togglingMyReaction(_ emoji: String) -> Entry {
+    var list = raw["reactions"]?.array ?? []
+    if let mine = list.firstIndex(where: { $0["emoji"]?.text == emoji && Entry.isMine($0["by"]?.string) }) {
+      list.remove(at: mine)
+    } else {
+      list.append(["emoji": .string(emoji), "by": "me"])
+    }
+    return Entry(raw.setting("reactions", list.isEmpty ? nil : .array(list))) ?? self
+  }
+
   /** A reply in a thread (`branched`, on a message, a card, a file or a notice): it is drawn in the thread, not in the chat (the window's `D2e`). */
   public var isBranched: Bool { Entry.threadKinds.contains(kind) && raw["branched"]?.bool == true }
 

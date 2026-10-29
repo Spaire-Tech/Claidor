@@ -1597,8 +1597,26 @@ public final class AppStore {
   }
 
   /** A reaction on a message (`reactToMessage`); the same emoji again takes it back. */
+  /**
+   * A reaction, shown the moment it is picked (29 October 2026, the founder:
+   * "whenever i do it it freezes for a while then come"): it waited for the
+   * computer, waking one that rested, before it showed. The computer is told
+   * after, toggles it the same way and sends the message back; a refusal
+   * takes it off again.
+   */
   public func react(_ emoji: String, to entryId: String, in agentId: String) async {
-    await command("reactToMessage", ["entryId": .string(entryId), "emoji": .string(emoji), "agentId": .string(agentId)], failure: L10n.text("Couldn't react"))
+    let shown = toggleMyReaction(emoji, on: entryId, in: agentId)
+    let answer = await command("reactToMessage", ["entryId": .string(entryId), "emoji": .string(emoji), "agentId": .string(agentId)], failure: L10n.text("Couldn't react"))
+    if answer == nil, shown { toggleMyReaction(emoji, on: entryId, in: agentId) }
+  }
+
+  /** The person's own `emoji` on one message, added or taken off here; false when the message isn't in the chat read. */
+  @discardableResult
+  func toggleMyReaction(_ emoji: String, on entryId: String, in agentId: String) -> Bool {
+    guard var entries = transcripts[agentId], let index = entries.firstIndex(where: { $0.id == entryId }) else { return false }
+    entries[index] = entries[index].togglingMyReaction(emoji)
+    setTranscript(agentId, entries)
+    return true
   }
 
   /**

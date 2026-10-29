@@ -889,7 +889,7 @@ public enum Chat {
         let fromPerson = entry.kind == "user-attachment"
         rows.append(.bubble(Bubble(id: entry.id, text: "", fromPerson: fromPerson, author: fromPerson ? nil : entry.author, showsName: false, showsAvatar: false,
                                    reactions: entry.reactions.map(\.emoji), isStreaming: false, replyTo: entry["replyTo"]?.text, timestampMs: entry.timestampMs,
-                                   images: pictures, myReactions: entry.reactions.filter { $0.by == "user" }.map(\.emoji))))
+                                   images: pictures, myReactions: entry.myReactions)))
         index = next
         continue
       }
@@ -1073,7 +1073,7 @@ public enum Chat {
 
   static func row(for entry: Entry) -> ChatRow? {
     let reactions = entry.reactions.map(\.emoji)
-    let mine = entry.reactions.filter { $0.by == "user" }.map(\.emoji)
+    let mine = entry.myReactions
     switch entry.kind {
     case "message", "user-message", "human-message":
       guard let text = entry.content, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
