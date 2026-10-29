@@ -981,6 +981,156 @@ public struct ConnectorPage: Sendable, Equatable {
         L10n.text("Turn this script into a voice-over in ElevenLabs."),
         L10n.text("Make a sound effect in ElevenLabs of a creaking door."),
         L10n.text("Compose a calm 30-second music track in ElevenLabs for our video."))
+    case "storyblok":
+      return page("Storyblok", site: "https://www.storyblok.com", privacy: "https://www.storyblok.com/legal/privacy-policy", terms: "https://www.storyblok.com/legal/terms",
+        about: L10n.text("Your agents work with your stories, components, and assets in Storyblok."),
+        L10n.text("Which stories in Storyblok are still unpublished?"),
+        L10n.text("Update the headline on the home story in Storyblok."),
+        L10n.text("Add these images to our assets in Storyblok."))
+    case "coda":
+      return page("Superhuman", site: "https://coda.io", privacy: "https://coda.io/trust/privacy", terms: "https://coda.io/trust/tos",
+        about: L10n.text("Your agents read and write your docs, tables, and pages in Coda."),
+        L10n.text("Add a row to the roadmap table in Coda for the new search feature."),
+        L10n.text("Summarize our team handbook in Coda."),
+        L10n.text("Which tasks in Coda are assigned to me this week?"))
+    case "make":
+      return page("Make", site: "https://www.make.com", privacy: "https://www.make.com/privacy-notice", terms: "https://www.make.com/terms-and-conditions",
+        about: L10n.text("Your agents run and manage your automation scenarios in Make."),
+        L10n.text("Run the new-lead scenario in Make for Jordan from Acme."),
+        L10n.text("Which scenarios in Make failed today?"),
+        L10n.text("Turn off the weekly report scenario in Make."))
+    case "tally":
+      return page("Tally", site: "https://tally.so", privacy: "https://tally.so/help/privacy-policy", terms: "https://tally.so/help/terms-and-privacy",
+        about: L10n.text("Your agents work with your forms and their submissions in Tally."),
+        L10n.text("How many people filled in the waitlist form in Tally this week?"),
+        L10n.text("Summarize the answers to our feedback form in Tally."),
+        L10n.text("Make a short contact form in Tally with name, email, and message."))
+    case "jotform":
+      return page("Jotform", site: "https://www.jotform.com", privacy: "https://www.jotform.com/privacy/", terms: "https://www.jotform.com/terms/",
+        about: L10n.text("Your agents work with your forms and their submissions in Jotform."),
+        L10n.text("Show me today’s submissions to the booking form in Jotform."),
+        L10n.text("How many people signed up through our event form in Jotform?"),
+        L10n.text("Make an order form in Jotform with three products."))
+    case "surveymonkey":
+      return page("SurveyMonkey", site: "https://www.surveymonkey.com", privacy: "https://www.surveymonkey.com/mp/legal/privacy/", terms: "https://www.surveymonkey.com/mp/legal/terms-of-use/",
+        about: L10n.text("Your agents work with your surveys and their responses in SurveyMonkey."),
+        L10n.text("Summarize the responses to our customer survey in SurveyMonkey."),
+        L10n.text("What’s the average rating in SurveyMonkey for last month’s survey?"),
+        L10n.text("Make a five-question survey in SurveyMonkey about our new menu."))
+    case "canny":
+      return page("Canny", site: "https://canny.io", privacy: "https://canny.io/privacy", terms: "https://canny.io/terms",
+        about: L10n.text("Your agents work with feature requests, votes, and your roadmap in Canny. Pro plan."),
+        L10n.text("Which feature requests in Canny have the most votes?"),
+        L10n.text("Add this customer’s idea to our board in Canny."),
+        L10n.text("What’s planned on our roadmap in Canny for next month?"))
+    case "fireflies":
+      return page("Fireflies", site: "https://fireflies.ai", privacy: "https://fireflies.ai/privacy", terms: "https://fireflies.ai/terms-of-service",
+        about: L10n.text("Your agents read your meeting transcripts, summaries, and action items in Fireflies."),
+        L10n.text("Summarize today’s calls in Fireflies."),
+        L10n.text("What action items came out of the Acme meeting in Fireflies?"),
+        L10n.text("Find the meeting in Fireflies where we talked about pricing."))
+    case "tldv":
+      return page("tl;dv", site: "https://tldv.io", privacy: "https://tldv.io/privacy/", terms: "https://tldv.io/terms/",
+        about: L10n.text("Your agents read your meeting recordings and notes in tl;dv. Read-only, Pro plan."),
+        L10n.text("Summarize yesterday’s team meeting in tl;dv."),
+        L10n.text("What did the client ask for in last week’s call in tl;dv?"),
+        L10n.text("Find the meetings in tl;dv where someone mentioned the deadline."))
+    case "avoma":
+      return page("Avoma", site: "https://www.avoma.com", privacy: "https://www.avoma.com/privacy-policy", terms: "https://www.avoma.com/terms",
+        about: L10n.text("Your agents read your meeting notes, transcripts, and deal insights in Avoma."),
+        L10n.text("Summarize my last sales call in Avoma."),
+        L10n.text("What risks did Avoma find in the Acme deal?"),
+        L10n.text("Find the meetings in Avoma where pricing came up this month."))
+    case "missive":
+      return page("Missive", site: "https://missiveapp.com", privacy: "https://missiveapp.com/privacy", terms: "https://missiveapp.com/terms",
+        about: L10n.text("Your agents read and draft conversations, and manage tasks in your team inbox in Missive."),
+        L10n.text("What’s waiting for a reply in our shared inbox in Missive?"),
+        L10n.text("Draft a reply in Missive to the latest message from Acme."),
+        L10n.text("Make a task in Missive to follow up with Jordan on Friday."))
+    case "mixmax":
+      return page("Mixmax", site: "https://www.mixmax.com", privacy: "https://www.mixmax.com/legal/privacy-policy", terms: "https://www.mixmax.com/legal/terms-of-service",
+        about: L10n.text("Your agents work with your email sequences, meetings, and tracking in Mixmax."),
+        L10n.text("Who opened my last email in Mixmax?"),
+        L10n.text("Add Jordan to the onboarding sequence in Mixmax."),
+        L10n.text("Which sequence in Mixmax gets the most replies?"))
+    case "close":
+      return page("Close", site: "https://www.close.com", privacy: "https://close.com/privacy", terms: "https://close.com/terms",
+        about: L10n.text("Your agents work with your leads, contacts, opportunities, and calls in Close."),
+        L10n.text("Which leads in Close haven’t been contacted this week?"),
+        L10n.text("Add Acme as a lead in Close with Jordan as the contact."),
+        L10n.text("Summarize today’s calls in Close."))
+    case "hunter":
+      return page("Hunter", site: "https://hunter.io", privacy: "https://hunter.io/privacy-policy", terms: "https://hunter.io/terms-of-service",
+        about: L10n.text("Your agents find and verify professional email addresses with Hunter."),
+        L10n.text("Find Jordan Lee’s email at acme.com with Hunter."),
+        L10n.text("Verify these five email addresses with Hunter."),
+        L10n.text("Find people in marketing at acme.com with Hunter."))
+    case "lusha":
+      return page("Lusha", site: "https://www.lusha.com", privacy: "https://www.lusha.com/legal/privacy-policy/", terms: "https://www.lusha.com/terms_and_conditions",
+        about: L10n.text("Your agents find contact and company data for prospecting in Lusha."),
+        L10n.text("Find Jordan Lee’s work phone number at Acme in Lusha."),
+        L10n.text("Find ten marketing directors at fintech companies in Lusha."),
+        L10n.text("How many people work at Acme, according to Lusha?"))
+    case "aircall":
+      return page("Aircall", site: "https://aircall.io", privacy: "https://aircall.io/privacy/", terms: "https://aircall.io/terms-of-use/",
+        about: L10n.text("Your agents look up your team’s calls and their details in Aircall."),
+        L10n.text("How many calls did we miss today in Aircall?"),
+        L10n.text("Summarize Sam’s calls this morning in Aircall."),
+        L10n.text("Who called us most this week in Aircall?"))
+    case "workable":
+      return page("Workable", site: "https://www.workable.com", privacy: "https://www.workable.com/privacy", terms: "https://www.workable.com/terms",
+        about: L10n.text("Your agents work with your jobs, candidates, and hiring pipeline in Workable."),
+        L10n.text("Which candidates in Workable are waiting for an interview?"),
+        L10n.text("How many people applied to the designer job in Workable this week?"),
+        L10n.text("Move Sam to the offer stage in Workable."))
+    case "breezy-hr":
+      return page("Breezy HR", site: "https://breezy.hr", privacy: "https://breezy.hr/privacy", terms: "https://breezy.hr/policies/terms",
+        about: L10n.text("Your agents work with your positions, candidates, and pipeline in Breezy HR."),
+        L10n.text("How many candidates applied to the barista position in Breezy HR?"),
+        L10n.text("Which candidates in Breezy HR have waited longest?"),
+        L10n.text("Add this résumé to the sales position in Breezy HR."))
+    case "postman":
+      return page("Postman", site: "https://www.postman.com", privacy: "https://www.postman.com/legal/privacy-policy/", terms: "https://www.postman.com/legal/terms/",
+        about: L10n.text("Your agents work with your APIs, collections, and workspaces in Postman."),
+        L10n.text("List the requests in our payments collection in Postman."),
+        L10n.text("Add a request for the profile endpoint to the users collection in Postman."),
+        L10n.text("Which workspaces do we have in Postman?"))
+    case "railway":
+      return page("Railway", site: "https://railway.com", privacy: "https://railway.com/legal/privacy", terms: "https://railway.com/legal/terms",
+        about: L10n.text("Your agents look after your projects, services, deploys, and logs on Railway."),
+        L10n.text("Did the last deploy on Railway succeed?"),
+        L10n.text("Show me the last hour of logs for the API on Railway."),
+        L10n.text("Restart the worker service on Railway."))
+    case "datadog":
+      return page("Datadog", site: "https://www.datadoghq.com", privacy: "https://www.datadoghq.com/legal/privacy/", terms: "https://www.datadoghq.com/legal/msa/",
+        about: L10n.text("Your agents read your logs, metrics, monitors, and incidents in Datadog. US1 site."),
+        L10n.text("Which monitors in Datadog are alerting right now?"),
+        L10n.text("Show me the checkout service’s errors from the last hour in Datadog."),
+        L10n.text("Summarize this week’s incidents in Datadog."))
+    case "tavily":
+      return page("Tavily", site: "https://www.tavily.com", privacy: "https://www.tavily.com/privacy", terms: "https://www.tavily.com/terms",
+        about: L10n.text("Your agents search the web and pull the text of pages with Tavily."),
+        L10n.text("Search the web with Tavily for this week’s news about our competitors."),
+        L10n.text("Pull the text of this article with Tavily and summarize it."),
+        L10n.text("Find three reviews of the new espresso machine with Tavily."))
+    case "exa":
+      return page("Exa", site: "https://exa.ai", privacy: "https://exa.ai/privacy-policy", terms: "https://exa.ai/terms",
+        about: L10n.text("Your agents search the web and read the contents of pages with Exa."),
+        L10n.text("Find startups building software for dentists with Exa."),
+        L10n.text("Find recent research on sleep and memory with Exa."),
+        L10n.text("Read this page with Exa and list its main points."))
+    case "shortcut":
+      return page("Shortcut", site: "https://www.shortcut.com", privacy: "https://www.shortcut.com/privacy", terms: "https://www.shortcut.com/terms",
+        about: L10n.text("Your agents work with your stories, epics, and iterations in Shortcut."),
+        L10n.text("What stories are in the current iteration in Shortcut?"),
+        L10n.text("Make a story in Shortcut for the login bug."),
+        L10n.text("Which epics in Shortcut are behind schedule?"))
+    case "razorpay":
+      return page("Razorpay", site: "https://razorpay.com", privacy: "https://razorpay.com/privacy/", terms: "https://razorpay.com/terms/",
+        about: L10n.text("Your agents look up payments, orders, refunds, and settlements in Razorpay."),
+        L10n.text("How much did we collect in Razorpay today?"),
+        L10n.text("Refund the payment from lea@acme.com in Razorpay."),
+        L10n.text("When is the next settlement in Razorpay?"))
     default:
       return nil
     }
@@ -1009,5 +1159,5 @@ public struct ConnectorPage: Sendable, Equatable {
   }
 
   /** The connectors written so far, for the tests. */
-  public static let written = ["gmail", "google-calendar", "google-drive", "outlook", "slack", "notion", "github", "linear", "dropbox", "hubspot", "airtable", "asana", "clickup", "monday", "todoist", "zoom", "google-meet", "figma", "canva", "miro", "webflow", "wix", "stripe", "paypal", "square", "ramp", "quickbooks", "salesforce", "intercom", "apollo", "jira", "vercel", "supabase", "sentry", "cloudflare", "mailchimp", "greenhouse", "gusto", "linkedin", "google-docs", "google-sheets", "google-slides", "onedrive", "google-tasks", "trello", "xero", "shopify", "brex", "pipedrive", "docusign", "klaviyo", "ashby", "google-analytics", "google-search-console", "youtube", "kit", "instagram", "facebook", "calendly", "cal-com", "attio", "zendesk", "microsoft-teams", "discord", "mercury", "posthog", "google-ads", "tiktok-ads", "microsoft-excel", "reddit", "pinterest", "gumroad", "google-classroom", "gorgias", "gong", "capsule-crm", "dialpad", "link", "granola", "resend", "sharepoint", "onenote", "microsoft-to-do", "lovable", "shop", "whatsapp", "twitch", "reddit-ads", "pinterest-ads", "omnisend", "dub", "eventbrite", "google-photos", "mural", "zeplin", "contentful", "box", "confluence", "notebooklm", "basecamp", "wrike", "ticktick", "harvest", "typeform", "productboard", "google-maps", "webex", "fathom", "freshbooks", "ynab", "splitwise", "shippo", "dynamics-365", "gitlab", "bitbucket", "pagerduty", "google-bigquery", "hugging-face", "excalidraw", "heygen", "higgsfield", "gamma", "descript", "lucid", "eraser", "mobbin", "magic-patterns", "pandadoc", "otter", "read-ai", "fellow", "plaid", "clay", "netlify", "neon", "beehiiv", "mailerlite", "getresponse", "customer-io", "lemlist", "mixpanel", "amplitude", "bitly", "ahrefs", "moz", "dataforseo", "semrush", "brevo", "runway", "black-forest-labs", "fal", "replicate", "creatomate", "shotstack", "bannerbear", "cloudinary", "sanity", "wistia", "captions", "elevenlabs"]
+  public static let written = ["gmail", "google-calendar", "google-drive", "outlook", "slack", "notion", "github", "linear", "dropbox", "hubspot", "airtable", "asana", "clickup", "monday", "todoist", "zoom", "google-meet", "figma", "canva", "miro", "webflow", "wix", "stripe", "paypal", "square", "ramp", "quickbooks", "salesforce", "intercom", "apollo", "jira", "vercel", "supabase", "sentry", "cloudflare", "mailchimp", "greenhouse", "gusto", "linkedin", "google-docs", "google-sheets", "google-slides", "onedrive", "google-tasks", "trello", "xero", "shopify", "brex", "pipedrive", "docusign", "klaviyo", "ashby", "google-analytics", "google-search-console", "youtube", "kit", "instagram", "facebook", "calendly", "cal-com", "attio", "zendesk", "microsoft-teams", "discord", "mercury", "posthog", "google-ads", "tiktok-ads", "microsoft-excel", "reddit", "pinterest", "gumroad", "google-classroom", "gorgias", "gong", "capsule-crm", "dialpad", "link", "granola", "resend", "sharepoint", "onenote", "microsoft-to-do", "lovable", "shop", "whatsapp", "twitch", "reddit-ads", "pinterest-ads", "omnisend", "dub", "eventbrite", "google-photos", "mural", "zeplin", "contentful", "box", "confluence", "notebooklm", "basecamp", "wrike", "ticktick", "harvest", "typeform", "productboard", "google-maps", "webex", "fathom", "freshbooks", "ynab", "splitwise", "shippo", "dynamics-365", "gitlab", "bitbucket", "pagerduty", "google-bigquery", "hugging-face", "excalidraw", "heygen", "higgsfield", "gamma", "descript", "lucid", "eraser", "mobbin", "magic-patterns", "pandadoc", "otter", "read-ai", "fellow", "plaid", "clay", "netlify", "neon", "beehiiv", "mailerlite", "getresponse", "customer-io", "lemlist", "mixpanel", "amplitude", "bitly", "ahrefs", "moz", "dataforseo", "semrush", "brevo", "runway", "black-forest-labs", "fal", "replicate", "creatomate", "shotstack", "bannerbear", "cloudinary", "sanity", "wistia", "captions", "elevenlabs", "storyblok", "coda", "make", "tally", "jotform", "surveymonkey", "canny", "fireflies", "tldv", "avoma", "missive", "mixmax", "close", "hunter", "lusha", "aircall", "workable", "breezy-hr", "postman", "railway", "datadog", "tavily", "exa", "shortcut", "razorpay"]
 }
