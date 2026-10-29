@@ -218,7 +218,13 @@ checkout):
    `from=app` (the cover, Usage & Billing's `upgradeUrl`, a served
    error): the page afterwards says "Go back to Simeon" and brings the
    app forward on its own link (`simeon://app/v1/open`) instead of
-   offering the download.
+   offering the download. So does the computer's refusal, which only the apps
+   show ("No active plan. Choose one at …"). And on a Mac, a person who
+   has ever signed in to the Mac app (`GET /v1/plans/subscription`'s
+   `has_mac_app`: one of their sessions names itself `mac-…`) is sent back
+   to it whatever link brought them (29 October 2026, the founder: "it
+   said you're all set, download the app … the app is clearly downloaded
+   here").
 7. **From the site.** "Try it free" opens the billing page with the plan
    chosen. A visitor with no account signs in with Google, saves a card,
    and the page comes back saying the free month has started, with the

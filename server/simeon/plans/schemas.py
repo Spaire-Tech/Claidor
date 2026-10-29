@@ -55,6 +55,13 @@ class CurrentSubscription(Schema):
     )
     scheduled_at: datetime | None = None
     entitlements: Entitlements
+    has_mac_app: bool = Field(
+        default=False,
+        description=(
+            "The person has signed in to the Mac app: once a plan is taken "
+            "the page brings the app forward, and offers no download."
+        ),
+    )
 
 
 class CheckoutCreate(Schema):

@@ -227,17 +227,16 @@ async def require_a_plan(call: ConnectCall, *, reaching: bool = False) -> None:
         )
         if allowed:
             return
+        # Said in the apps: the page sends the person back to them (`from=app`).
         if not allowance.payment_failed:
-            message = f"No active plan. Choose one at {billing_url()}."
+            message = f"No active plan. Choose one at {billing_url(from_app=True)}."
         elif allowance.provider == "app_store":
             message = (
                 "Your payment didn't go through. Update your payment method "
                 "in your Apple Account settings."
             )
         else:
-            message = (
-                f"Your payment didn't go through. Update your card at {billing_url()}."
-            )
+            message = f"Your payment didn't go through. Update your card at {billing_url(from_app=True)}."
         raise ConnectError("permission_denied", message)
 
 

@@ -763,7 +763,8 @@ struct OnboardingFlow: View {
     nameFocused = false
     let typed = name
     if !Onboarding.normalizedName(typed).isEmpty { session.nameNeeded = false }
-    Task { await store.saveName(typed) }
+    // Simeon is made once it is saved (`finishNameStep`), so his first words call the person by it.
+    Task { await store.finishNameStep(typed) }
     advance()
   }
 

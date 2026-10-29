@@ -358,6 +358,9 @@ public final class AppStore {
   public private(set) var isDown = false
   /** Simeon, once the first run's hand-off made him: a second try does not make another (Onboarding.swift). */
   @ObservationIgnored var firstRunAgentId: String?
+  /** The first run's name step is over (`finishNameStep`): the hand-off makes Simeon only then, and waits here until it is. */
+  @ObservationIgnored var firstRunNamed = false
+  @ObservationIgnored var firstRunNameWaiters: [CheckedContinuation<Void, Never>] = []
 
   /** The agents and chats kept on this device (SavedChats, StoreSaved.swift): set by the app once signed in; none in the demo and the tests. */
   @ObservationIgnored public var saved: SavedChats?
@@ -490,6 +493,8 @@ public final class AppStore {
     layoutTask?.cancel(); layoutTask = nil; pendingLayout = []; refreshing = []; caughtUp = [:]
     pendingAnswers = [:]; answeredApprovals = [:]; answeredPurchases = [:]; watchedPurchases = []; pickedPurchaseCards = [:]; pressedProducts = [:]; localAsks = [:]; trayList = TrayList(); fileLines = [:]; fileReadsAsText = [:]; unreadAfter = [:]; apps = []; catalog = []; appsComingSoon = AppsComingSoon.builtIn; appAccounts = [:]; catalogEntries = []; catalogFresh = false; pinnedIds = []; routinesByAgent = [:]; sidebarSections = nil
     streamingOnly = [:]; outbox = [:]; sentOffline = [:]; arrived = []; olderBefore = [:]; loadingOlder = []; paged = []; firstRunAgentId = nil; revealing = [:]
+    // A hand-off still waiting for the name goes on, finds the account gone and stops (`handOff`).
+    firstRunNamed = false; let named = firstRunNameWaiters; firstRunNameWaiters = []; named.forEach { $0.resume() }
     openThreads = [:]; threadRows = [:]; threadRoots = [:]; loadFailed = []; isDown = false; isAsleep = false
     computer = ComputerBook(); subagentsByAgent = [:]; pointers = [:]; lastComputerCatchUp = .distantPast
     rebuild.reset(); rosterHeld = false; diskSaverCreation = nil; diskAuditDone = false; rosterFailed = false; windowSelection = nil

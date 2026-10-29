@@ -9,6 +9,7 @@ import pytest
 import stripe as stripe_lib
 from pytest_mock import MockerFixture
 
+from simeon.desktop.service import desktop
 from simeon.models import User
 from simeon.plans.service import plans
 from simeon.postgres import AsyncSession
@@ -94,6 +95,28 @@ class TestPlans:
         assert body["trial_end"] is not None
         assert body["cancel_at_period_end"] is False
         assert body["stripe_customer_id"] == "cus_test"
+
+    @pytest.mark.auth
+    async def test_someone_who_uses_the_mac_app_is_known_to(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        """The page sends a person who uses the Mac app back to it after a
+        checkout, whatever link brought them (29 October 2026)."""
+        assert (await client.get("/v1/plans/subscription")).json()[
+            "has_mac_app"
+        ] is False
+        # The iPhone app and the web window are not the Mac app.
+        await desktop._issue_session(session, user, client_version="ios-0.1.0+26")
+        await desktop._issue_session(session, user, client_kind="web")
+        await session.flush()
+        assert (await client.get("/v1/plans/subscription")).json()[
+            "has_mac_app"
+        ] is False
+        await desktop._issue_session(session, user, client_version="mac-0.2.6+3020")
+        await session.flush()
+        assert (await client.get("/v1/plans/subscription")).json()[
+            "has_mac_app"
+        ] is True
 
     @pytest.mark.auth
     async def test_checkout_answers_with_the_url(

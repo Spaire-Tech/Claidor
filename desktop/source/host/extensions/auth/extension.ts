@@ -26,7 +26,9 @@ export const authExtension = defineHostExtension({
       getLastRenewalEvent: () => service.getLastRenewalEvent(),
       getMachineId: () => service.getMachineId(),
       subscribeToRenewal: (listener: Parameters<typeof service.subscribeToRenewal>[0]) => service.subscribeToRenewal(listener),
-      getUserFullName: () => userFullName.getUserFullName()
+      getUserFullName: () => userFullName.getUserFullName(),
+      // The person's name read again from the server now: the apps ask once it is given or changed (`refreshUserName`).
+      refreshUserFullName: async () => { await userFullName.refresh({ force: true }); return userFullName.getUserFullName() ?? null; }
     };
   }
 });

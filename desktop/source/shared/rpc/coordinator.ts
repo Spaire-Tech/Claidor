@@ -136,6 +136,8 @@ export const COORDINATOR_METHOD_TABLE = {
   deleteAgents: { args: "object", reply: "record" },
   duplicateAgent: { args: "object", reply: "record" },
   kickstartAgent: { args: "object", reply: "record-or-null" },
+  // The name the person gave, read again from the server (`{ name }`; 29 October 2026, the first run).
+  refreshUserName: { args: "none", reply: "record" },
   requestDiskSaverAudit: { args: "object", reply: "record-or-null" },
   broadcastToAgents: { args: "object", reply: "record" },
   getCloudAgentInfo: { args: "object", reply: "record-or-null" },

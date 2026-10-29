@@ -141,6 +141,23 @@ test("the person's name comes from the profile route, and the person never reads
     await new Promise((resolve) => setTimeout(resolve, 10));
     assert.equal(resolver.getUserFullName(), "Bassy");
     assert.equal(calls, 2);
+    // The apps' `refreshUserName`: read now, inside the window, and a slower read started before it never undoes it.
+    let release;
+    name = "Google Name";
+    const slow = module.createSandUserFullNameResolver({ getAccessToken: async () => token, peekAccessToken: () => token, getMachineId: async () => "m", fetchFullName: async () => { const said = name; if (said === "Google Name") await new Promise((done) => { release = done; }); return said; }, log: () => {}, now: () => clock });
+    const first = slow.refresh();
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    name = "Bass";
+    await slow.refresh({ force: true });
+    assert.equal(slow.getUserFullName(), "Bass");
+    release();
+    await first;
+    assert.equal(slow.getUserFullName(), "Bass", "the read from before the name was given does not win");
+    name = "Bassirou";
+    await slow.refresh();
+    assert.equal(slow.getUserFullName(), "Bass", "unforced, inside the window: no new read");
+    await slow.refresh({ force: true });
+    assert.equal(slow.getUserFullName(), "Bassirou");
     assert.equal(module.fullNameFromProfileBody({ code: 40101, message: "expired" }), undefined);
     assert.equal(module.fullNameFromProfileBody({ code: 0, data: { preferredName: "  " } }), undefined);
   } finally {
@@ -150,6 +167,8 @@ test("the person's name comes from the profile route, and the person never reads
   const composition = await src("host/host-runner-composition.ts");
   assert.match(composition, /getUserFullName: \(\) => method\(auth, "getUserFullName"\)\?\.\(\)/);
   assert.doesNotMatch(composition, /getUserFullName: async/);
+  assert.match(await src("host/gateway-protocol.ts"), /refreshUserName: \(api: GatewayApi\) => api\.refreshUserName\(\)/);
+  assert.match(await src("host/host-gateway-api.ts"), /refreshUserName: async \(\) =>[\s\S]*?"refreshUserFullName"/);
   const service = await src("host/extensions/auth/user-full-name-service.ts");
   assert.doesNotMatch(service, /new GetMeRequest|dashboard_connect\.js/);
   for (const [file, gone] of [

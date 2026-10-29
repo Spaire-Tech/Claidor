@@ -337,6 +337,7 @@ final class SleepingComputerTests: XCTestCase {
     let backend = RestingBackend(rest: .absent)
     let store = await MainActor.run { AppStore() }
     await store.attach(backend)
+    await store.finishNameStep("Bass")
     let id = try await store.handOff(ready: {}, wait: { _ in })
     XCTAssertEqual(id, "simeon")
     let language = backend.woken.firstIndex(of: "setHostSettings")
@@ -345,6 +346,42 @@ final class SleepingComputerTests: XCTestCase {
     XCTAssertNotNil(made)
     XCTAssertLessThan(language ?? .max, made ?? -1, "his introduction is in the person's language")
     XCTAssertEqual(backend.woken.first, "countAgents", "the first task makes the computer")
+  }
+
+  /** 29 October 2026, the founder: "the agent literally called me by the name my google account has": Simeon was made, and spoke, as the name screen showed. */
+  func testSimeonIsMadeOnlyOnceTheNameIsSavedAndReadAgain() async throws {
+    let backend = RestingBackend(rest: nil)
+    let store = await MainActor.run { AppStore() }
+    await store.attach(backend)
+    let handOff = Task { @MainActor in try await store.handOff(ready: {}, wait: { _ in }) }
+    for _ in 0..<400 where !backend.woken.contains("countAgents") { try await Task.sleep(nanoseconds: 5_000_000) }
+    try await Task.sleep(nanoseconds: 100_000_000)
+    XCTAssertTrue(backend.woken.contains("countAgents"), "the computer is woken meanwhile")
+    XCTAssertFalse(backend.woken.contains("createAgent"), "not while the name screen shows")
+    await store.finishNameStep("  Bass ")
+    let id = try await handOff.value
+    XCTAssertEqual(id, "simeon")
+    let trail = backend.trail
+    let saved = trail.firstIndex(of: "POST user/name Bass")
+    let read = trail.firstIndex(of: "refreshUserName")
+    let made = trail.firstIndex(of: "createAgent")
+    XCTAssertNotNil(saved)
+    XCTAssertLessThan(saved ?? .max, read ?? -1, "the name saved, then read again by the computer")
+    XCTAssertLessThan(read ?? .max, made ?? -1, "and only then Simeon made, who introduces himself at once")
+  }
+
+  func testASignOutWhileTheNameScreenShowsMakesNoSimeon() async throws {
+    let backend = RestingBackend(rest: nil)
+    let store = await MainActor.run { AppStore() }
+    await store.attach(backend)
+    let handOff = Task { @MainActor in try await store.handOff(ready: {}, wait: { _ in }) }
+    for _ in 0..<400 where !backend.woken.contains("countAgents") { try await Task.sleep(nanoseconds: 5_000_000) }
+    await MainActor.run { store.detach() }
+    do {
+      _ = try await handOff.value
+      XCTFail("the hand-off stops")
+    } catch {}
+    XCTAssertFalse(backend.woken.contains("createAgent"))
   }
 
   func testAComputerAsleepOnPurposeIsNotReconnecting() async throws {
@@ -386,7 +423,10 @@ final class RestingBackend: AgentBackend, @unchecked Sendable {
   private var wokenList: [String] = []
   private var heldList: [String] = []
   private var readList: [String] = []
+  private var trailList: [String] = []
   var serverAnswers: [String: JSON] = [:]
+  /** Commands and the server's calls, in order (a call: its method, path and name). */
+  var trail: [String] { lock.withLock { trailList } }
   init(rest: Gateway.Rest?) { resting = rest }
   var rest: Gateway.Rest? {
     get { lock.withLock { resting } }
@@ -420,7 +460,7 @@ final class RestingBackend: AgentBackend, @unchecked Sendable {
   func events() -> AsyncStream<BackendEvent> { AsyncStream { _ in } }
   var call: CallEngine? { nil }
   func command(_ method: String, _ args: JSON) async throws -> JSON {
-    lock.withLock { wokenList.append(method); resting = nil }
+    lock.withLock { wokenList.append(method); trailList.append(method); resting = nil }
     switch method {
     case "countAgents": return ["count": 0]
     case "createAgent": return ["agent": ["id": "simeon"]]
@@ -436,6 +476,9 @@ final class RestingBackend: AgentBackend, @unchecked Sendable {
     return [:]
   }
   func computerRest() async -> Gateway.Rest? { rest }
-  func server(_ path: String, method: String?, body: JSON?) async throws -> JSON { serverAnswers[path] ?? [:] }
+  func server(_ path: String, method: String?, body: JSON?) async throws -> JSON {
+    lock.withLock { trailList.append([method ?? "GET", path, body?["name"]?.string].compactMap { $0 }.joined(separator: " ")) }
+    return serverAnswers[path] ?? [:]
+  }
   func screen(_ agentId: String) async throws -> ScreenState { ScreenState(socket: nil, state: "starting") }
 }

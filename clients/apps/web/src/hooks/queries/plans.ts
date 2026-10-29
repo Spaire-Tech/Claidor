@@ -61,6 +61,11 @@ export interface CurrentSubscription {
   /** A smaller plan the subscription moves to at the renewal, and when. */
   scheduled_tier?: PaidTierKey | null
   scheduled_at?: string | null
+  /**
+   * The person has signed in to the Mac app: after a checkout the page
+   * brings it forward and offers no download, whatever link opened it.
+   */
+  has_mac_app?: boolean
   entitlements: {
     tier: TierKey
     weekly_credits: number

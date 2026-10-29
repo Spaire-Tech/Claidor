@@ -24,6 +24,7 @@ from simeon.desktop.allowance import (
     resolve_allowance,
 )
 from simeon.desktop.language import answer_in_request_language
+from simeon.desktop.repository import DesktopSessionRepository
 from simeon.entitlements.schemas import Entitlements
 from simeon.entitlements.tiers import PAID_TIERS, TIER_NAMES, TierKey, get_definition
 from simeon.models import User
@@ -183,11 +184,18 @@ async def get_subscription(
 ) -> CurrentSubscription:
     user = auth_subject.subject
     row = await plans_service.plan_of(session, user)  # type: ignore[arg-type]
-    return current_subscription(
+    answer = current_subscription(
         row,
         user.stripe_customer_id,
         free=not billing_required() or billing_exempt(user),
     )
+    # Someone who uses the Mac app is sent back to it after a checkout, whatever
+    # link brought them to the page (the founder, 29 October 2026: "the app is
+    # clearly downloaded here").
+    answer.has_mac_app = await DesktopSessionRepository.from_session(
+        session
+    ).has_mac_app(user.id)
+    return answer
 
 
 @router.post(
