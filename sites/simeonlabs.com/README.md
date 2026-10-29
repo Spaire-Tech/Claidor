@@ -70,7 +70,7 @@ The page is written by hand in `source/page.html`, light only, on one left
 edge shared by the wordmark, the headline and the demo.
 
 - **Bar**: the wordmark (SimeonLabs, `img/wordmark-labs.png`; the footer keeps `img/wordmark.png`) and Download. On a phone the hero shows Download for iOS, unlinked until there is an app.
-- **Hero**: "Create a team of agents for any part of your business." in the
+- **Hero**: "Put intelligent agents to work for whatever needs doing." in the
   serif, then Download for Mac and Request a demo.
 - **The app**: the real app window, playing a founder's morning.
 - **Statement**: one centred sentence, the key words in black.
