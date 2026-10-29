@@ -76,8 +76,9 @@ async def probe_tool(toolkit: str) -> str | None:
     return next((name for name in names if PROBE_PATTERN.search(name)), None)
 
 
-async def probe(user: User, toolkit: str) -> str:
-    """One read-only call through the agent's own path; what it answered."""
+async def probe(user: User, toolkit: str, account: str | None = None) -> str:
+    """One read-only call through the agent's own path, for one account
+    when the app has several; what it answered."""
     tool = await probe_tool(toolkit)
     if tool is None:
         return "no read-only 'who am I' tool found for this app; not called"
@@ -88,7 +89,10 @@ async def probe(user: User, toolkit: str) -> str:
             "jsonrpc": "2.0",
             "id": 1,
             "method": "tools/call",
-            "params": {"name": tool, "arguments": {}},
+            "params": {
+                "name": tool,
+                "arguments": {} if account is None else {apps.ACCOUNT_FIELD: account},
+            },
         },
     )
     if not isinstance(answer, dict):
@@ -130,7 +134,12 @@ async def check(user: User) -> list[str]:
         {row["app"] for row in rows if row["status"].upper() == "ACTIVE"}
     ):
         try:
-            lines.append(f"  {toolkit}: {await probe(user, toolkit)}")
+            accounts = await apps.active_accounts(user, toolkit)
+            if len(accounts) < 2:
+                lines.append(f"  {toolkit}: {await probe(user, toolkit)}")
+            for account in accounts if len(accounts) > 1 else []:
+                answer = await probe(user, toolkit, account.id)
+                lines.append(f"  {toolkit} ({account.label}): {answer}")
         except Exception as error:  # one app failing must not hide the others
             lines.append(f"  {toolkit}: FAILED: {type(error).__name__}: {error}")
     return lines

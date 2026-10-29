@@ -1271,7 +1271,7 @@ private struct PluginPage: View {
       }
       VStack(alignment: .leading, spacing: 16) {
         if let server = installed.server {
-          AccountsCard(serverId: server.id, look: look)
+          AppAccountsCard(serverId: server.id, name: entry.displayName, pluginId: entry.id, look: look)
           ToolsCard(serverId: server.id, look: look)
         }
         if installed.isInstalled && item != nil && entry.hasSetupFields {
@@ -1653,6 +1653,101 @@ private struct AccountsCard: View {
           }
         }
       }
+    }
+  }
+}
+
+/**
+ * The accounts Simeon Labs' server keeps for an app (Add Another Account,
+ * 29 October 2026; the iPhone's `appAccountsSection`): each by the name the
+ * person gave it or who it signs in as, Connected, the pencil to name it,
+ * and Remove while another stays; Add Another Account below them while
+ * there is room. Until the app is connected and they are read: the
+ * computer's own rows (`AccountsCard`), with their sign-in.
+ */
+private struct AppAccountsCard: View {
+  let serverId: String
+  let name: String
+  let pluginId: String?
+  let look: Look
+  @Environment(PluginsState.self) private var plugins
+  @Environment(AppStore.self) private var store
+  @State private var renaming: AppAccount?
+  @State private var newName = ""
+
+  var body: some View {
+    let rows = Plugins.accounts(plugins.model.servers, of: serverId)
+    let connected = rows.contains { $0.status == "connected" }
+    let toolkit = store.appsToolkit(serverURL: rows.first?.url, pluginId: pluginId)
+    Group {
+      if connected, let toolkit, let held = store.appAccounts[toolkit], !held.accounts.isEmpty {
+        PageCard(heading: String(localized: "Accounts"), look: look) {
+          ForEach(Array(held.accounts.enumerated()), id: \.element.id) { place, account in
+            let title = account.title(place: place + 1)
+            CardRow(divided: place > 0, look: look) {
+              VStack(alignment: .leading, spacing: 2) {
+                Text(verbatim: title).font(PanelType.row).foregroundStyle(look.ink).lineLimit(1)
+                HStack(spacing: 4) {
+                  Text(Connecting.connected).foregroundStyle(look.tone(.success))
+                  if let detail = account.detail { Text(verbatim: "· \(detail)").foregroundStyle(look.inkSecondary) }
+                }
+                .font(PanelType.detail)
+                .lineLimit(1)
+              }
+              .frame(maxWidth: .infinity, alignment: .leading)
+              Button {
+                newName = account.name ?? ""
+                renaming = account
+              } label: {
+                Image(systemName: "pencil").font(.system(size: 13)).foregroundStyle(look.inkSecondary)
+                  .frame(width: 24, height: 24).contentShape(Rectangle())
+              }
+              .buttonStyle(.hand)
+              .help(String(localized: "Rename"))
+              .accessibilityLabel("Rename \(title)")
+              if held.accounts.count > 1 {
+                PluginPill(title: String(localized: "Remove"), kind: .secondary, look: look) {
+                  Task { await store.removeAppAccount(toolkit, account) }
+                }
+              }
+            }
+          }
+          if held.canAddAnother {
+            CardRow(divided: true, look: look) {
+              if MacConnector.shared.connecting == name {
+                AddingSpinner(name: name, look: look)
+                Spacer(minLength: 0)
+              } else {
+                Button { MacConnector.shared.addAccount(toolkit, name: name, store: store) } label: {
+                  HStack(spacing: 6) {
+                    Image(systemName: "plus").font(.system(size: 12, weight: .medium))
+                    Text("Add Another Account")
+                  }
+                  .font(PanelType.row)
+                  .foregroundStyle(look.ink)
+                  .frame(maxWidth: .infinity, alignment: .leading)
+                  .contentShape(Rectangle())
+                }
+                .buttonStyle(.hand)
+                .disabled(MacConnector.shared.connecting != nil)
+              }
+            }
+          }
+        }
+      } else {
+        AccountsCard(serverId: serverId, look: look)
+      }
+    }
+    .task(id: "\(toolkit ?? "")\u{1F}\(connected)") {
+      if connected, let toolkit { await store.loadAppAccounts(toolkit) }
+    }
+    .alert("Rename account", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
+      TextField(renaming?.identity ?? String(localized: "Account name"), text: $newName)
+      Button("Rename") {
+        if let account = renaming, let toolkit { Task { await store.renameAppAccount(toolkit, account, to: newName) } }
+        renaming = nil
+      }
+      Button("Cancel", role: .cancel) { renaming = nil }
     }
   }
 }

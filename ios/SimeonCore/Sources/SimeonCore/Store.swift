@@ -281,6 +281,8 @@ public final class AppStore {
   @ObservationIgnored var catalogFresh = false
   /** The apps that can't be added yet (`AppsComingSoon`): the server's list once read. */
   public private(set) var appsComingSoon: Set<String> = AppsComingSoon.builtIn
+  /** The accounts of each app Simeon Labs' server serves, by its toolkit, as last read on its page (`AppAccounts`). */
+  public internal(set) var appAccounts: [String: AppAccounts] = [:]
 
   public private(set) var backend: AgentBackend?
   @ObservationIgnored private var listening: Task<Void, Never>?
@@ -486,7 +488,7 @@ public final class AppStore {
     backend = nil
     agents = []; transcripts = [:]; chatRows = [:]; runFlags = [:]; steps = [:]; call = nil; callLevels = []; isLive = false; account = nil; usage = .empty; usageReadAt = nil; access = .checking; accessBlocked = false; hasReachedBox = false; openChat = nil
     layoutTask?.cancel(); layoutTask = nil; pendingLayout = []; refreshing = []; caughtUp = [:]
-    pendingAnswers = [:]; answeredApprovals = [:]; answeredPurchases = [:]; watchedPurchases = []; pickedPurchaseCards = [:]; pressedProducts = [:]; localAsks = [:]; trayList = TrayList(); fileLines = [:]; fileReadsAsText = [:]; unreadAfter = [:]; apps = []; catalog = []; appsComingSoon = AppsComingSoon.builtIn; catalogEntries = []; catalogFresh = false; pinnedIds = []; routinesByAgent = [:]; sidebarSections = nil
+    pendingAnswers = [:]; answeredApprovals = [:]; answeredPurchases = [:]; watchedPurchases = []; pickedPurchaseCards = [:]; pressedProducts = [:]; localAsks = [:]; trayList = TrayList(); fileLines = [:]; fileReadsAsText = [:]; unreadAfter = [:]; apps = []; catalog = []; appsComingSoon = AppsComingSoon.builtIn; appAccounts = [:]; catalogEntries = []; catalogFresh = false; pinnedIds = []; routinesByAgent = [:]; sidebarSections = nil
     streamingOnly = [:]; outbox = [:]; sentOffline = [:]; arrived = []; olderBefore = [:]; loadingOlder = []; paged = []; firstRunAgentId = nil; revealing = [:]
     openThreads = [:]; threadRows = [:]; threadRoots = [:]; loadFailed = []; isDown = false; isAsleep = false
     computer = ComputerBook(); subagentsByAgent = [:]; pointers = [:]; lastComputerCatchUp = .distantPast

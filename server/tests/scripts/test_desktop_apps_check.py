@@ -128,3 +128,44 @@ async def test_disconnect_removes_the_apps_sign_ins(user: User) -> None:
         )
         assert await disconnect(user, "gmail") == 1
     assert deleted.called
+
+
+@pytest.mark.asyncio
+async def test_several_accounts_of_an_app_are_each_checked(user: User) -> None:
+    rows = [
+        {
+            "id": "ca_1",
+            "status": "ACTIVE",
+            "toolkit": {"slug": "gmail"},
+            "created_at": "2026-09-28T10:00:00Z",
+            "state": {"val": {"displayName": "jo@gmail.com"}},
+        },
+        {
+            "id": "ca_2",
+            "status": "ACTIVE",
+            "toolkit": {"slug": "gmail"},
+            "created_at": "2026-10-28T10:00:00Z",
+            "state": {"val": {"displayName": "jo@acme.com"}},
+        },
+    ]
+
+    def execute(request: httpx.Request) -> httpx.Response:
+        account = json.loads(request.content)["connected_account_id"]
+        address = "jo@gmail.com" if account == "ca_1" else "jo@acme.com"
+        return httpx.Response(
+            200, json={"successful": True, "data": {"emailAddress": address}}
+        )
+
+    with respx.mock() as mock:
+        mock.get(f"{API}/api/v3.1/connected_accounts").mock(
+            return_value=httpx.Response(200, json={"items": rows, "total_pages": 1})
+        )
+        mock.get(f"{API}/api/v3.1/tools").mock(return_value=_tools("GMAIL_GET_PROFILE"))
+        mock.post(f"{API}/api/v3.1/tools/execute/GMAIL_GET_PROFILE").mock(
+            side_effect=execute
+        )
+        lines = await check(user)
+
+    text = "\n".join(lines)
+    assert "gmail (jo@gmail.com): GMAIL_GET_PROFILE: works:" in text
+    assert "gmail (jo@acme.com): GMAIL_GET_PROFILE: works:" in text

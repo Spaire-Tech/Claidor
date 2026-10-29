@@ -82,6 +82,24 @@ final class MacConnector {
     }
   }
 
+  /** Add Another Account (an app Simeon Labs' server serves, `AppAccounts`): one more account's sign-in in the sheet, closed once the server lists it. */
+  func addAccount(_ toolkit: String, name: String, store: AppStore) {
+    guard connecting == nil else { return }
+    connecting = name
+    Task { [weak self] in
+      await store.loadAppAccounts(toolkit)
+      let before = Set(store.appAccounts[toolkit]?.accounts.map(\.id) ?? [])
+      guard let url = await store.anotherAccountURL(toolkit, name: name) else {
+        if self?.connecting == name { self?.connecting = nil }
+        return
+      }
+      await self?.signIn(url, name: name, store: store) {
+        await store.loadAppAccounts(toolkit)
+        return store.appAccounts[toolkit]?.accounts.contains { !before.contains($0.id) } == true
+      }
+    }
+  }
+
   /**
    * The sign-in page in Apple's sheet on the window, closed by itself once
    * `done` says so; in the browser when the sheet won't open. A second

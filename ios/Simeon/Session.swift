@@ -633,13 +633,28 @@ final class AppConnector {
     return await signIn(url, name: account.name, store: store) { store.accounts(of: account.serverId).contains { $0.accountKey == account.accountKey && $0.status == "connected" } }
   }
 
+  /** Add Another Account (an app Simeon Labs' server serves, `AppAccounts`): one more account's sign-in, closed once the server lists it. */
+  @discardableResult
+  func addAccount(_ toolkit: String, name: String, store: AppStore) async -> SignInEnd? {
+    guard connecting == nil else { return nil }
+    connecting = name
+    defer { connecting = nil; session = nil }
+    await store.loadAppAccounts(toolkit)
+    let before = Set(store.appAccounts[toolkit]?.accounts.map(\.id) ?? [])
+    guard let url = await store.anotherAccountURL(toolkit, name: name) else { return nil }
+    return await signIn(url, name: name, store: store) {
+      await store.loadAppAccounts(toolkit)
+      return store.appAccounts[toolkit]?.accounts.contains { !before.contains($0.id) } == true
+    }
+  }
+
   /**
    * The vendor's page in the system's sign-in sheet, closed by itself once
    * the box says the app is connected. A vendor that only sends sign-ins
    * back to `localhost:8787` (Canva, Square, Vercel, Dropbox) lands on this
    * iPhone's own loopback while the sheet is open (`LoopbackSignIn`).
    */
-  private func signIn(_ url: URL, name: String, store: AppStore, done: @escaping () -> Bool) async -> SignInEnd {
+  private func signIn(_ url: URL, name: String, store: AppStore, done: @escaping @MainActor () async -> Bool) async -> SignInEnd {
     let url = Connecting.returning(url, to: AppPlatform.urlScheme)
     var catcher: LoopbackCatcher?
     if let signInState = LoopbackSignIn.state(returningHere: url) {
@@ -682,7 +697,7 @@ final class AppConnector {
     for _ in 0..<150 {
       try? await Task.sleep(nanoseconds: 2_000_000_000)
       await store.loadApps()
-      if done() { session.cancel(); return .connected }
+      if await done() { session.cancel(); return .connected }
       if !state.keepGoing() { return state.ending }
     }
     session.cancel()

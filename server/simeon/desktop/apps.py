@@ -23,7 +23,14 @@ made through it is kept):
 - `POST /api/apps/{toolkit}/connect` — the sign-in link. Desktop and,
   since Simeon on the web (4 October 2026), the box: the window on the web
   starts a sign-in through the manager in the box.
+  `{"another": true}` starts a sign-in for one more account (Add Another
+  Account, 29 October 2026).
 - `DELETE /api/apps/{toolkit}` — disconnect. Desktop and box, likewise.
+- `GET /api/apps/{toolkit}/accounts`, `PATCH` and `DELETE
+  /api/apps/{toolkit}/accounts/{id}` — the person's accounts of one app,
+  one renamed, one removed (the app's page in the iPhone and Mac apps).
+  With several accounts each tool takes `use_account`, which one the call
+  is for (`ACCOUNT_FIELD`); the agent asks the person when they haven't said.
 - `POST /api/apps/{toolkit}/files` — a file a tool takes (an email's
   attachment), uploaded to the provider for the box (28 October 2026). The
   tool lists such a field as the path of a file on the computer
@@ -55,8 +62,9 @@ import html
 import json
 import re
 import time
+from dataclasses import dataclass
 from typing import Any
-from urllib.parse import urlencode, urljoin, urlsplit
+from urllib.parse import parse_qsl, urlencode, urljoin, urlsplit, urlunsplit
 
 import httpx
 import structlog
@@ -184,6 +192,49 @@ def own_auth_configs() -> dict[str, str]:
     }
 
 
+@dataclass(frozen=True)
+class AppAccount:
+    """One account a person has connected to an app (a second Gmail, a
+    second Slack workspace: Add Another Account, 29 October 2026)."""
+
+    id: str
+    #: The person's own name for it ("Work"), the provider's alias.
+    name: str | None
+    #: Who it signs in as, as the app says (Gmail's address), when it says.
+    identity: str | None
+    #: What the agent and the apps call it, unique among the app's accounts.
+    label: str
+
+    def described(self) -> str:
+        if self.identity is not None and self.identity != self.label:
+            return f"{self.label} ({self.identity})"
+        return self.label
+
+    def answers_to(self, asked: str) -> bool:
+        key = asked.strip().casefold()
+        return bool(key) and key in {
+            one.casefold()
+            for one in (self.label, self.name, self.identity, self.id)
+            if one
+        }
+
+    def as_json(self) -> dict[str, Any]:
+        return {
+            "id": self.id,
+            "name": self.name,
+            "identity": self.identity,
+            "label": self.label,
+        }
+
+
+#: How many accounts of one app a person may connect (the provider's own
+#: default for a session, which allows 2 to 10).
+MAX_ACCOUNTS = 5
+#: The argument each tool takes once several accounts of its app are
+#: connected: which one the call is for.
+ACCOUNT_FIELD = "use_account"
+_ACCOUNT_NAME_MAX = 40
+
 _tools_cache: dict[str, tuple[float, list[dict[str, Any]]]] = {}
 _sessions: dict[str, str] = {}
 # Which accounts a person has connected, per app, for the agent's tool calls.
@@ -192,7 +243,7 @@ _sessions: dict[str, str] = {}
 # minute; "not connected" is never kept, so an app connected a moment ago
 # works at once, and disconnecting forgets it.
 _ACCOUNTS_TTL_S = 60.0
-_accounts_cache: dict[tuple[str, str], tuple[float, list[str]]] = {}
+_accounts_cache: dict[tuple[str, str], tuple[float, list[AppAccount]]] = {}
 
 
 def scrub(text: str) -> str:
@@ -266,13 +317,19 @@ def _upstream_message(payload: Any) -> str:
     return "The app did not answer."
 
 
-async def connected_account_ids(user: User, toolkit: str) -> list[str]:
-    """active_account_ids, kept a minute when the app is connected."""
+async def connected_accounts(user: User, toolkit: str) -> list[AppAccount]:
+    """active_accounts, kept a minute when the app is connected."""
     key = (composio_user_id(user), toolkit)
     cached = _accounts_cache.get(key)
     if cached is not None and time.monotonic() - cached[0] < _ACCOUNTS_TTL_S:
         return cached[1]
-    accounts = await active_account_ids(user, toolkit)
+    return await fresh_accounts(user, toolkit)
+
+
+async def fresh_accounts(user: User, toolkit: str) -> list[AppAccount]:
+    """active_accounts asked now, and kept for the agent's next calls."""
+    key = (composio_user_id(user), toolkit)
+    accounts = await active_accounts(user, toolkit)
     if accounts:
         _accounts_cache[key] = (time.monotonic(), accounts)
     else:
@@ -290,6 +347,18 @@ def forget_user(user: User) -> None:
 
 
 async def active_account_ids(user: User, toolkit: str) -> list[str]:
+    return [account.id for account in await active_accounts(user, toolkit)]
+
+
+def _text(value: Any) -> str | None:
+    return value.strip() if isinstance(value, str) and value.strip() else None
+
+
+async def active_accounts(user: User, toolkit: str) -> list[AppAccount]:
+    """The person's connected accounts of one app, the first connected
+    first. Each is named by the person's own name for it, else by who it
+    signs in as (the provider's `state.val.displayName`, documented as the
+    account's identity, such as the Gmail address), else by its place."""
     status, payload = await _call(
         "GET",
         "api/v3.1/connected_accounts",
@@ -302,14 +371,32 @@ async def active_account_ids(user: User, toolkit: str) -> list[str]:
     )
     if status >= 400 or not isinstance(payload, dict):
         raise AppsUpstreamError(_upstream_message(payload), status)
-    items = payload.get("items") or []
-    return [
-        str(item["id"])
-        for item in items
+    items = [
+        item
+        for item in payload.get("items") or []
         if isinstance(item, dict)
         and isinstance(item.get("id"), str)
         and str(item.get("status", "")).upper() == "ACTIVE"
     ]
+    items.sort(key=lambda item: str(item.get("created_at") or ""))
+    accounts: list[AppAccount] = []
+    taken: set[str] = set()
+    for place, item in enumerate(items, start=1):
+        state = item.get("state")
+        values = state.get("val") if isinstance(state, dict) else None
+        name = _text(item.get("alias"))
+        identity = (
+            _text(values.get("displayName")) if isinstance(values, dict) else None
+        )
+        label = name or identity or f"Account {place}"
+        unique, more = label, 2
+        while unique.casefold() in taken:
+            unique, more = f"{label} ({more})", more + 1
+        taken.add(unique.casefold())
+        accounts.append(
+            AppAccount(id=str(item["id"]), name=name, identity=identity, label=unique)
+        )
+    return accounts
 
 
 _SCOPE_MISSING = re.compile(
@@ -319,14 +406,25 @@ _SCOPE_MISSING = re.compile(
 )
 
 
-def scope_guidance(toolkit: str, error: str) -> str:
+def scope_guidance(toolkit: str, error: str, several: AppAccount | None = None) -> str:
     """A refusal for a missing permission, with the way out in front. Google's
     consent screen shows one checkbox per permission and leaves them unticked;
     a sign-in that skipped the mail box is "connected" and refuses every read
     (7 October 2026, Gmail: "Request had insufficient authentication
-    scopes"). The agent is told the fix the person can actually do."""
+    scopes"). The agent is told the fix the person can actually do. With
+    several accounts of the app (`several`, the one that refused), signing
+    the app out would sign out every one, so the person redoes that one."""
     if _SCOPE_MISSING.search(error) is None:
         return error
+    if several is not None:
+        return (
+            f"The {toolkit} account {several.label} was connected without the "
+            "permission this needs. Tell the user to open this app's page in "
+            f"Simeon, remove {several.label}, and add it again with Add Another "
+            "Account, ticking every box on the permissions screen. Don't call "
+            "AuthenticateMcpServer with force_reauth: it signs out every account "
+            f"of this app. The app said: {error}"
+        )
     return (
         f"This {toolkit} sign-in was completed without the permission this needs. "
         "Call AuthenticateMcpServer for this app with force_reauth true: it signs "
@@ -465,12 +563,18 @@ async def _session_id(user: User) -> str:
     """One tool-router session per person, for sign-in links. It uses the
     provider's own sign-in for each app unless Simeon Labs' own is named in
     `COMPOSIO_AUTH_CONFIGS`: a config the session is not given is never
-    used (the provider's documentation, checked 11 October 2026)."""
+    used (the provider's documentation, checked 11 October 2026). Several
+    accounts of one app are allowed (`multi_account`, the provider's
+    documentation, 29 October 2026): each link makes a new one. The agent's
+    calls never go through the session; each names its account."""
     key = composio_user_id(user)
     known = _sessions.get(key)
     if known is not None:
         return known
-    body: dict[str, Any] = {"user_id": key}
+    body: dict[str, Any] = {
+        "user_id": key,
+        "multi_account": {"enable": True, "max_accounts_per_toolkit": MAX_ACCOUNTS},
+    }
     configs = own_auth_configs()
     if configs:
         body["auth_configs"] = configs
@@ -500,6 +604,25 @@ async def sign_in_link(user: User, toolkit: str) -> str:
     if not isinstance(url, str) or not url:
         raise AppsUpstreamError("No sign-in link came back for this app.", 502)
     return url
+
+
+def choose_account(url: str) -> str:
+    """Google's sign-in for another account opens on its account chooser
+    (`prompt=select_account`, kept beside the `consent` it may already
+    ask): without it, Google signs in the account the browser already
+    has, which is the one already connected."""
+    parts = urlsplit(url)
+    if (parts.hostname or "").lower() != "accounts.google.com":
+        return url
+    query = parse_qsl(parts.query, keep_blank_values=True)
+    prompts = [
+        word for key, value in query if key == "prompt" for word in value.split()
+    ]
+    if "select_account" in prompts:
+        return url
+    kept = [(key, value) for key, value in query if key != "prompt"]
+    kept.append(("prompt", " ".join(["select_account", *prompts])))
+    return urlunsplit(parts._replace(query=urlencode(kept)))
 
 
 def _is_composio(url: str) -> bool:
@@ -669,6 +792,74 @@ def _call_content(data: Any) -> str:
     return scrub(tidy_result(data))
 
 
+def _takes_own_account_field(tool: dict[str, Any] | None) -> bool:
+    """A tool that already has an argument by our name keeps it as its own."""
+    schema = tool.get("inputSchema") if tool is not None else None
+    properties = schema.get("properties") if isinstance(schema, dict) else None
+    return isinstance(properties, dict) and ACCOUNT_FIELD in properties
+
+
+def _with_account_choice(
+    tool: dict[str, Any], accounts: list[AppAccount]
+) -> dict[str, Any]:
+    """A tool as listed to a person with several accounts of its app: it
+    asks which one the call is for (`use_account`, required), so the agent
+    picks, or asks the person, instead of the first connected answering."""
+    if _takes_own_account_field(tool):
+        return tool
+    schema = tool.get("inputSchema")
+    schema = schema if isinstance(schema, dict) else {"type": "object"}
+    properties = schema.get("properties")
+    required = schema.get("required")
+    named = ", ".join(account.described() for account in accounts)
+    field = {
+        "type": "string",
+        "enum": [account.label for account in accounts],
+        "description": (
+            f"Which connected account to use: {named}. "
+            "Ask the user which one if they haven't said."
+        ),
+    }
+    return {
+        **tool,
+        "inputSchema": {
+            **schema,
+            "properties": {
+                ACCOUNT_FIELD: field,
+                **(properties if isinstance(properties, dict) else {}),
+            },
+            "required": [
+                ACCOUNT_FIELD,
+                *(required if isinstance(required, list) else []),
+            ],
+        },
+    }
+
+
+def _account_for(
+    accounts: list[AppAccount], asked: Any
+) -> tuple[AppAccount | None, str]:
+    """The account a call is for: the one it names, or the only one. A
+    name that matches none, or no name while there are several, is
+    refused with the accounts there are: never the first by default, so
+    an email never goes out from the wrong address."""
+    labels = ", ".join(account.described() for account in accounts)
+    if isinstance(asked, str) and asked.strip():
+        found = next((one for one in accounts if one.answers_to(asked)), None)
+        if found is not None:
+            return found, ""
+        return None, (
+            f'No account "{asked.strip()}" of this app is connected. '
+            f"Connected: {labels}. Call again with {ACCOUNT_FIELD} set to one of them."
+        )
+    if len(accounts) == 1:
+        return accounts[0], ""
+    return None, (
+        f"Several accounts of this app are connected: {labels}. Call again with "
+        f"{ACCOUNT_FIELD} set to one of them; ask the user which if they haven't said."
+    )
+
+
 async def _handle(
     user: User, toolkit: str, message: dict[str, Any]
 ) -> dict[str, Any] | Response | None:
@@ -694,28 +885,45 @@ async def _handle(
     if method == "ping":
         return _rpc_result(request_id, {})
     if method == "tools/list":
-        if not await connected_account_ids(user, toolkit):
+        accounts = await connected_accounts(user, toolkit)
+        if not accounts:
             return _error("This app is not connected yet.", 401)
-        return _rpc_result(request_id, {"tools": await toolkit_tools(toolkit)})
+        tools = await toolkit_tools(toolkit)
+        if len(accounts) > 1:
+            tools = [_with_account_choice(tool, accounts) for tool in tools]
+        return _rpc_result(request_id, {"tools": tools})
     if method == "tools/call":
         params = message.get("params") or {}
         name = params.get("name") if isinstance(params, dict) else None
         arguments = params.get("arguments") if isinstance(params, dict) else None
         if not isinstance(name, str) or not name:
             return _rpc_error(request_id, -32602, "A tool name is required.")
-        known = {tool["name"] for tool in await toolkit_tools(toolkit)}
+        tools = await toolkit_tools(toolkit)
+        known = {tool["name"]: tool for tool in tools}
         if name not in known and not name.upper().startswith(f"{toolkit.upper()}_"):
             return _rpc_error(request_id, -32602, f"{name} is not a tool of this app.")
-        accounts = await connected_account_ids(user, toolkit)
+        accounts = await connected_accounts(user, toolkit)
         if not accounts:
             return _error("This app is not connected yet.", 401)
+        arguments = dict(arguments) if isinstance(arguments, dict) else {}
+        asked = (
+            None
+            if _takes_own_account_field(known.get(name))
+            else arguments.pop(ACCOUNT_FIELD, None)
+        )
+        account, refusal = _account_for(accounts, asked)
+        if account is None:
+            return _rpc_result(
+                request_id,
+                {"content": [{"type": "text", "text": refusal}], "isError": True},
+            )
         status, payload = await _call(
             "POST",
             f"api/v3.1/tools/execute/{name}",
             body={
                 "user_id": composio_user_id(user),
-                "connected_account_id": accounts[0],
-                "arguments": arguments if isinstance(arguments, dict) else {},
+                "connected_account_id": account.id,
+                "arguments": arguments,
             },
         )
         if status >= 400 or not isinstance(payload, dict):
@@ -734,7 +942,9 @@ async def _handle(
             _call_content(payload.get("data"))
             if ok
             else scope_guidance(
-                toolkit, scrub(str(payload.get("error") or "The app refused the call."))
+                toolkit,
+                scrub(str(payload.get("error") or "The app refused the call.")),
+                account if len(accounts) > 1 else None,
             )
         )
         # Which tool ran and whether the app took it, never its arguments: a
@@ -897,17 +1107,37 @@ async def apps_status(
     return JSONResponse({"toolkit": toolkit, "connected": len(accounts) > 0})
 
 
+async def _body(request: Request) -> dict[str, Any]:
+    """A request's JSON object, or nothing: callers before 29 October 2026 send none."""
+    try:
+        body = json.loads(await request.body() or b"null")
+    except ValueError:
+        return {}
+    return body if isinstance(body, dict) else {}
+
+
 @router.post("/api/apps/{toolkit}/connect", name="desktop:apps_connect")
 async def apps_connect(
     toolkit: str,
+    request: Request,
     desktop_session: DesktopSession = Depends(get_desktop_or_box_session),
 ) -> JSONResponse:
+    """The sign-in link, or `connected` when the app already is. With
+    `{"another": true}` (Add Another Account on the app's page in the iPhone
+    and Mac apps) it is always a new sign-in, for one more account, up to
+    MAX_ACCOUNTS; Google's opens on its account chooser."""
     refused = _guard(toolkit)
     if refused is not None:
         return refused
+    another = (await _body(request)).get("another") is True
     try:
-        if await active_account_ids(desktop_session.user, toolkit):
+        accounts = await active_account_ids(desktop_session.user, toolkit)
+        if accounts and not another:
             return JSONResponse({"toolkit": toolkit, "connected": True})
+        if len(accounts) >= MAX_ACCOUNTS:
+            return _error(
+                f"You can connect up to {MAX_ACCOUNTS} accounts of this app.", 409
+            )
         url = await sign_in_link(desktop_session.user, toolkit)
     except AppsUpstreamError as error:
         if (
@@ -930,10 +1160,117 @@ async def apps_connect(
         "desktop.apps.sign_in_started",
         toolkit=toolkit,
         user_id=str(desktop_session.user.id),
+        another=bool(accounts),
     )
     # Ours first, then the app's own page: the provider's address shows nowhere it can be helped.
-    url = start_url(await provider_page(url))
+    page = await provider_page(url)
+    url = start_url(choose_account(page) if accounts else page)
     return JSONResponse({"toolkit": toolkit, "connected": False, "url": url})
+
+
+def _accounts_answer(toolkit: str, accounts: list[AppAccount]) -> JSONResponse:
+    return JSONResponse(
+        {
+            "toolkit": toolkit,
+            "accounts": [account.as_json() for account in accounts],
+            "max": MAX_ACCOUNTS,
+        }
+    )
+
+
+@router.get("/api/apps/{toolkit}/accounts", name="desktop:apps_accounts")
+async def apps_accounts(
+    toolkit: str,
+    desktop_session: DesktopSession = Depends(get_desktop_or_box_session),
+) -> JSONResponse:
+    """The person's accounts of one app, for its page in the iPhone and Mac
+    apps: each one's id, the person's name for it, who it signs in as, and
+    the label the agent knows it by. Asked fresh, so an account added a
+    moment ago shows, and kept for the agent's next calls."""
+    refused = _guard(toolkit)
+    if refused is not None:
+        return refused
+    try:
+        accounts = await fresh_accounts(desktop_session.user, toolkit)
+    except (AppsUpstreamError, httpx.HTTPError) as error:
+        return _error(str(error) or "The app could not be reached.", 502)
+    return _accounts_answer(toolkit, accounts)
+
+
+async def _owned_account(
+    user: User, toolkit: str, account_id: str
+) -> AppAccount | None:
+    """One of the person's own accounts of this app, by id: an id from
+    anywhere else changes nothing."""
+    return next(
+        (one for one in await active_accounts(user, toolkit) if one.id == account_id),
+        None,
+    )
+
+
+@router.patch("/api/apps/{toolkit}/accounts/{account_id}", name="desktop:apps_rename")
+async def apps_rename_account(
+    toolkit: str,
+    account_id: str,
+    request: Request,
+    desktop_session: DesktopSession = Depends(get_desktop_or_box_session),
+) -> JSONResponse:
+    """The person's own name for one account (`{"name": "Work"}`, the
+    pencil beside it); an empty name goes back to who it signs in as."""
+    refused = _guard(toolkit)
+    if refused is not None:
+        return refused
+    name = (await _body(request)).get("name")
+    if not isinstance(name, str):
+        return _error("Give the account's name.", 400)
+    name = " ".join(name.split())
+    if len(name) > _ACCOUNT_NAME_MAX:
+        return _error(f"A name can be at most {_ACCOUNT_NAME_MAX} characters.", 400)
+    user = desktop_session.user
+    try:
+        if await _owned_account(user, toolkit, account_id) is None:
+            return _error("No such account of this app.", 404)
+        status, payload = await _call(
+            "PATCH", f"api/v3.1/connected_accounts/{account_id}", body={"alias": name}
+        )
+        if status == 409:
+            return _error("Another account of this app has that name.", 409)
+        if status >= 400:
+            return _error(_upstream_message(payload), 400 if status < 500 else 502)
+        accounts = await fresh_accounts(user, toolkit)
+    except (AppsUpstreamError, httpx.HTTPError) as error:
+        return _error(str(error) or "The app could not be reached.", 502)
+    log.info("desktop.apps.account_renamed", toolkit=toolkit, cleared=not name)
+    return _accounts_answer(toolkit, accounts)
+
+
+@router.delete(
+    "/api/apps/{toolkit}/accounts/{account_id}", name="desktop:apps_remove_account"
+)
+async def apps_remove_account(
+    toolkit: str,
+    account_id: str,
+    desktop_session: DesktopSession = Depends(get_desktop_or_box_session),
+) -> JSONResponse:
+    """One account signed out of the app; the others stay connected."""
+    refused = _guard(toolkit)
+    if refused is not None:
+        return refused
+    user = desktop_session.user
+    _accounts_cache.pop((composio_user_id(user), toolkit), None)
+    try:
+        if await _owned_account(user, toolkit, account_id) is None:
+            return _error("No such account of this app.", 404)
+        status, payload = await _call(
+            "DELETE", f"api/v3.1/connected_accounts/{account_id}"
+        )
+        if status >= 400:
+            return _error(_upstream_message(payload), 502)
+        accounts = await fresh_accounts(user, toolkit)
+    except (AppsUpstreamError, httpx.HTTPError) as error:
+        return _error(str(error) or "The app could not be reached.", 502)
+    log.info("desktop.apps.account_removed", toolkit=toolkit, left=len(accounts))
+    return _accounts_answer(toolkit, accounts)
 
 
 @router.delete("/api/apps/{toolkit}", name="desktop:apps_disconnect")

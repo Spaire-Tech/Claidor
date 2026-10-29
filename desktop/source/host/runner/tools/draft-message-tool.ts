@@ -24,7 +24,7 @@ export const draftExternalMessageParameters = z.object({
   kind: z.enum(["email", "slack"]).describe('"email" or "slack": which kind of message this is, and which card is drawn.'),
   to: z.array(recipient).optional().describe("Email: the recipients' addresses. Required for an email. Real addresses only; never a placeholder."),
   cc: z.array(recipient).optional().describe("Email: Cc addresses, if any."),
-  from: z.string().trim().optional().describe("Email: the sending address when you know it (the connected account's address). Omit rather than guess."),
+  from: z.string().trim().optional().describe("Email: the sending address when you know it (the connected account's address). With several accounts of the mailbox connected, the one it goes out from. Omit rather than guess."),
   subject: z.string().trim().optional().describe("Email: the subject line. Required for an email."),
   target: z.string().trim().optional().describe('Slack: the channel or person, as the user names it ("#eng", "@sam"). Required for Slack. Never guess a conversation id.'),
   workspace: z.string().trim().optional().describe("Slack: the workspace name when the user has more than one."),
