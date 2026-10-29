@@ -681,6 +681,156 @@ public struct ConnectorPage: Sendable, Equatable {
         L10n.text("How much is left in the Groceries category this month in YNAB?"),
         L10n.text("What did we spend on eating out last month in YNAB?"),
         L10n.text("Add a monthly $15 transaction in YNAB for the music subscription."))
+    case "splitwise":
+      return page("Splitwise", site: "https://www.splitwise.com", privacy: "https://www.splitwise.com/privacy", terms: "https://www.splitwise.com/terms",
+        about: L10n.text("Your agents add and split expenses, and check who owes whom in Splitwise."),
+        L10n.text("Add $84 for dinner to our Lisbon group in Splitwise, split evenly."),
+        L10n.text("Who owes me money in Splitwise?"),
+        L10n.text("How much did our flat spend on groceries this month in Splitwise?"))
+    case "shippo":
+      return page("Shippo", site: "https://goshippo.com", privacy: "https://privacy.goshippo.com/policies?name=privacy-notice", terms: "https://privacy.goshippo.com/policies?name=terms-of-use",
+        about: L10n.text("Your agents compare shipping rates, buy labels, and track parcels in Shippo."),
+        L10n.text("What’s the cheapest rate in Shippo to send a 2 kg box to Chicago?"),
+        L10n.text("Buy a label in Shippo for Lea’s order."),
+        L10n.text("Track the parcel for order 1042 in Shippo."))
+    case "dynamics-365":
+      return page("Microsoft", site: "https://www.microsoft.com/dynamics-365", privacy: "https://privacy.microsoft.com/privacystatement", terms: "https://www.microsoft.com/servicesagreement",
+        about: L10n.text("Your agents work with your leads, accounts, contacts, and opportunities in Dynamics 365."),
+        L10n.text("Add Jordan from Acme as a lead in Dynamics 365."),
+        L10n.text("Which opportunities in Dynamics 365 close this quarter?"),
+        L10n.text("Log a call with Acme in Dynamics 365 and add a note."))
+    case "gitlab":
+      return page("GitLab", site: "https://about.gitlab.com", privacy: "https://about.gitlab.com/privacy/", terms: "https://about.gitlab.com/terms/",
+        about: L10n.text("Your agents work with your projects, issues, merge requests, and pipelines in GitLab."),
+        L10n.text("Which merge requests in GitLab are waiting for my review?"),
+        L10n.text("Why did the last pipeline fail in GitLab?"),
+        L10n.text("Open an issue in GitLab for the login bug."))
+    case "bitbucket":
+      return page("Atlassian", site: "https://www.atlassian.com/software/bitbucket", privacy: "https://www.atlassian.com/legal/privacy-policy", terms: "https://www.atlassian.com/legal/atlassian-customer-agreement",
+        about: L10n.text("Your agents work with your repositories, pull requests, and pipelines in Bitbucket."),
+        L10n.text("Summarize the open pull requests in Bitbucket."),
+        L10n.text("Why did the last pipeline fail in Bitbucket?"),
+        L10n.text("Create a branch in Bitbucket called fix-login."))
+    case "pagerduty":
+      return page("PagerDuty", site: "https://www.pagerduty.com", privacy: "https://www.pagerduty.com/privacy-policy/", terms: "https://www.pagerduty.com/terms-of-service/",
+        about: L10n.text("Your agents look up incidents, on-call schedules, and services in PagerDuty."),
+        L10n.text("Who’s on call right now in PagerDuty?"),
+        L10n.text("What incidents are open in PagerDuty?"),
+        L10n.text("Summarize last week’s incidents in PagerDuty."))
+    case "google-bigquery":
+      return page("Google", site: "https://cloud.google.com/bigquery", privacy: "https://cloud.google.com/terms/cloud-privacy-notice", terms: "https://cloud.google.com/terms",
+        about: L10n.text("Your agents read your datasets and tables, and run SQL in BigQuery."),
+        L10n.text("Count last week’s orders in the orders table in BigQuery."),
+        L10n.text("Which tables are in our analytics dataset in BigQuery?"),
+        L10n.text("Run a query in BigQuery for this month’s revenue by country."))
+    case "hugging-face":
+      return page("Hugging Face", site: "https://huggingface.co", privacy: "https://huggingface.co/privacy", terms: "https://huggingface.co/terms-of-service",
+        about: L10n.text("Your agents look up models, datasets, papers, and Spaces on Hugging Face."),
+        L10n.text("Find a small open model on Hugging Face for translating French to English."),
+        L10n.text("Show me the first rows of this dataset on Hugging Face."),
+        L10n.text("What are today’s most talked-about papers on Hugging Face?"))
+    case "excalidraw":
+      return page("Excalidraw", site: "https://plus.excalidraw.com", privacy: "https://plus.excalidraw.com/privacy-policy", terms: "https://plus.excalidraw.com/terms-of-service",
+        about: L10n.text("Your agents draw hand-drawn diagrams in Excalidraw and share them with a link."),
+        L10n.text("Draw a diagram in Excalidraw of how our sign-up works."),
+        L10n.text("Sketch our office floor plan in Excalidraw."),
+        L10n.text("Make a flowchart in Excalidraw of the refund process and send me the link."))
+    case "heygen":
+      return page("HeyGen", site: "https://www.heygen.com", privacy: "https://www.heygen.com/privacy", terms: "https://www.heygen.com/terms",
+        about: L10n.text("Your agents make videos with AI avatars and voices in HeyGen."),
+        L10n.text("Make a 30-second welcome video in HeyGen for new customers."),
+        L10n.text("Turn this script into a video in HeyGen with a friendly avatar."),
+        L10n.text("Which avatars can I use in HeyGen?"))
+    case "higgsfield":
+      return page("Higgsfield", site: "https://higgsfield.ai", privacy: "https://higgsfield.ai/privacy-policy", terms: "https://higgsfield.ai/terms-of-use-agreement",
+        about: L10n.text("Your agents generate images and videos with AI models in Higgsfield."),
+        L10n.text("Make a product photo in Higgsfield of our mug on a marble table."),
+        L10n.text("Turn this photo into a five-second video in Higgsfield."),
+        L10n.text("Generate three poster ideas in Higgsfield for the summer sale."))
+    case "gamma":
+      return page("Gamma", site: "https://gamma.app", privacy: "https://gamma.app/privacy", terms: "https://gamma.app/terms",
+        about: L10n.text("Your agents make presentations, documents, and web pages in Gamma."),
+        L10n.text("Make a ten-slide deck in Gamma from this report."),
+        L10n.text("Turn these notes into a one-page site in Gamma."),
+        L10n.text("Write a document in Gamma explaining our new pricing."))
+    case "descript":
+      return page("Descript", site: "https://www.descript.com", privacy: "https://www.descript.com/privacy", terms: "https://www.descript.com/terms",
+        about: L10n.text("Your agents edit your videos and podcasts in Descript: they import media, run edits, and export."),
+        L10n.text("Remove the filler words from my latest podcast episode in Descript."),
+        L10n.text("Import this recording into Descript and cut the first two minutes."),
+        L10n.text("Export the interview in Descript as an MP4."))
+    case "lucid":
+      return page("Lucid", site: "https://lucid.co", privacy: "https://lucid.co/privacy", terms: "https://lucid.co/tos",
+        about: L10n.text("Your agents make and read diagrams and whiteboards in Lucidchart and Lucidspark."),
+        L10n.text("Draw a flowchart in Lucidchart of our onboarding."),
+        L10n.text("Summarize the board from yesterday’s workshop in Lucid."),
+        L10n.text("Make an org chart in Lucidchart from this list."))
+    case "eraser":
+      return page("Eraser", site: "https://www.eraser.io", privacy: "https://www.eraser.io/privacy", terms: "https://www.eraser.io/terms",
+        about: L10n.text("Your agents make technical diagrams and docs in Eraser."),
+        L10n.text("Draw a diagram in Eraser of our API, database, and queue."),
+        L10n.text("Turn this architecture description into a diagram in Eraser."),
+        L10n.text("Write a design doc in Eraser for the new billing service."))
+    case "mobbin":
+      return page("Mobbin", site: "https://mobbin.com", privacy: "https://mobbin.com/privacy", terms: "https://mobbin.com/terms",
+        about: L10n.text("Your agents search real apps’ screens and flows in Mobbin for design ideas."),
+        L10n.text("Find onboarding screens in Mobbin from top finance apps."),
+        L10n.text("Show me checkout flows in Mobbin from food delivery apps."),
+        L10n.text("Find settings screens in Mobbin with a dark mode."))
+    case "magic-patterns":
+      return page("Magic Patterns", site: "https://www.magicpatterns.com", privacy: "https://www.magicpatterns.com/docs/documentation/legal/privacy", terms: "https://www.magicpatterns.com/docs/documentation/legal/terms",
+        about: L10n.text("Your agents design and change app screens in Magic Patterns from what you describe."),
+        L10n.text("Design a sign-up screen in Magic Patterns for our app."),
+        L10n.text("Make the pricing page in Magic Patterns use our brand colors."),
+        L10n.text("Add a search bar to the dashboard design in Magic Patterns."))
+    case "pandadoc":
+      return page("PandaDoc", site: "https://www.pandadoc.com", privacy: "https://www.pandadoc.com/legal/privacy-notice/", terms: "https://www.pandadoc.com/terms-of-use/",
+        about: L10n.text("Your agents create, send, and track proposals, quotes, and contracts in PandaDoc."),
+        L10n.text("Send the proposal template in PandaDoc to jordan@acme.com."),
+        L10n.text("Which documents in PandaDoc are still waiting for a signature?"),
+        L10n.text("Make a quote in PandaDoc for Acme with three seats at $40 each."))
+    case "otter":
+      return page("Otter.ai", site: "https://otter.ai", privacy: "https://otter.ai/privacy-policy", terms: "https://otter.ai/terms-of-service",
+        about: L10n.text("Your agents read your meeting transcripts and summaries in Otter.ai. Read-only."),
+        L10n.text("Summarize today’s meetings in Otter.ai."),
+        L10n.text("What did Sam say about the budget in yesterday’s call in Otter.ai?"),
+        L10n.text("Find the meeting in Otter.ai where we talked about hiring."))
+    case "read-ai":
+      return page("Read AI", site: "https://www.read.ai", privacy: "https://www.read.ai/privacy-policy", terms: "https://www.read.ai/termsofservice",
+        about: L10n.text("Your agents read your meeting summaries, transcripts, and action items in Read AI."),
+        L10n.text("What are my action items from this week’s meetings in Read AI?"),
+        L10n.text("Summarize the Acme call in Read AI."),
+        L10n.text("Find the meeting in Read AI where we set the launch date."))
+    case "fellow":
+      return page("Fellow", site: "https://fellow.ai", privacy: "https://fellow.ai/privacy-policy", terms: "https://fellow.ai/terms-of-use",
+        about: L10n.text("Your agents read and update your meeting notes, action items, and agendas in Fellow."),
+        L10n.text("What action items do I have in Fellow this week?"),
+        L10n.text("Add the budget review to Monday’s agenda in Fellow."),
+        L10n.text("Summarize the notes from my one-on-one with Sam in Fellow."))
+    case "plaid":
+      return page("Plaid", site: "https://plaid.com", privacy: "https://plaid.com/legal/#privacy-statement", terms: "https://plaid.com/legal/#developer-policy",
+        about: L10n.text("For teams building on Plaid: your agents read your integration’s Items, Link conversion, and usage. Read-only."),
+        L10n.text("Which Items on Plaid have errors right now?"),
+        L10n.text("How did our Link conversion change this week on Plaid?"),
+        L10n.text("How many API calls did we make on Plaid this month?"))
+    case "clay":
+      return page("Clay", site: "https://www.clay.com", privacy: "https://www.clay.com/privacy", terms: "https://www.clay.com/terms-of-service",
+        about: L10n.text("Your agents research companies and people, and enrich your lists in Clay."),
+        L10n.text("Find ten companies like Acme in Clay."),
+        L10n.text("Enrich this list of leads in Clay with job titles and emails."),
+        L10n.text("Research Acme’s leadership team in Clay."))
+    case "netlify":
+      return page("Netlify", site: "https://www.netlify.com", privacy: "https://www.netlify.com/privacy/", terms: "https://www.netlify.com/legal/terms-of-use/",
+        about: L10n.text("Your agents manage your sites, deploys, and environment settings on Netlify."),
+        L10n.text("Did the last deploy on Netlify succeed?"),
+        L10n.text("Deploy the latest version of our site on Netlify."),
+        L10n.text("Add the API_URL variable to our site on Netlify."))
+    case "neon":
+      return page("Neon", site: "https://neon.com", privacy: "https://neon.com/privacy-policy", terms: "https://neon.com/terms-of-service",
+        about: L10n.text("Your agents work with your Postgres projects, branches, and SQL in Neon."),
+        L10n.text("Make a branch in Neon of our production database for testing."),
+        L10n.text("Run this query in Neon and show me the results."),
+        L10n.text("Which tables are in our main database in Neon?"))
     default:
       return nil
     }
@@ -709,5 +859,5 @@ public struct ConnectorPage: Sendable, Equatable {
   }
 
   /** The connectors written so far, for the tests. */
-  public static let written = ["gmail", "google-calendar", "google-drive", "outlook", "slack", "notion", "github", "linear", "dropbox", "hubspot", "airtable", "asana", "clickup", "monday", "todoist", "zoom", "google-meet", "figma", "canva", "miro", "webflow", "wix", "stripe", "paypal", "square", "ramp", "quickbooks", "salesforce", "intercom", "apollo", "jira", "vercel", "supabase", "sentry", "cloudflare", "mailchimp", "greenhouse", "gusto", "linkedin", "google-docs", "google-sheets", "google-slides", "onedrive", "google-tasks", "trello", "xero", "shopify", "brex", "pipedrive", "docusign", "klaviyo", "ashby", "google-analytics", "google-search-console", "youtube", "kit", "instagram", "facebook", "calendly", "cal-com", "attio", "zendesk", "microsoft-teams", "discord", "mercury", "posthog", "google-ads", "tiktok-ads", "microsoft-excel", "reddit", "pinterest", "gumroad", "google-classroom", "gorgias", "gong", "capsule-crm", "dialpad", "link", "granola", "resend", "sharepoint", "onenote", "microsoft-to-do", "lovable", "shop", "whatsapp", "twitch", "reddit-ads", "pinterest-ads", "omnisend", "dub", "eventbrite", "google-photos", "mural", "zeplin", "contentful", "box", "confluence", "notebooklm", "basecamp", "wrike", "ticktick", "harvest", "typeform", "productboard", "google-maps", "webex", "fathom", "freshbooks", "ynab"]
+  public static let written = ["gmail", "google-calendar", "google-drive", "outlook", "slack", "notion", "github", "linear", "dropbox", "hubspot", "airtable", "asana", "clickup", "monday", "todoist", "zoom", "google-meet", "figma", "canva", "miro", "webflow", "wix", "stripe", "paypal", "square", "ramp", "quickbooks", "salesforce", "intercom", "apollo", "jira", "vercel", "supabase", "sentry", "cloudflare", "mailchimp", "greenhouse", "gusto", "linkedin", "google-docs", "google-sheets", "google-slides", "onedrive", "google-tasks", "trello", "xero", "shopify", "brex", "pipedrive", "docusign", "klaviyo", "ashby", "google-analytics", "google-search-console", "youtube", "kit", "instagram", "facebook", "calendly", "cal-com", "attio", "zendesk", "microsoft-teams", "discord", "mercury", "posthog", "google-ads", "tiktok-ads", "microsoft-excel", "reddit", "pinterest", "gumroad", "google-classroom", "gorgias", "gong", "capsule-crm", "dialpad", "link", "granola", "resend", "sharepoint", "onenote", "microsoft-to-do", "lovable", "shop", "whatsapp", "twitch", "reddit-ads", "pinterest-ads", "omnisend", "dub", "eventbrite", "google-photos", "mural", "zeplin", "contentful", "box", "confluence", "notebooklm", "basecamp", "wrike", "ticktick", "harvest", "typeform", "productboard", "google-maps", "webex", "fathom", "freshbooks", "ynab", "splitwise", "shippo", "dynamics-365", "gitlab", "bitbucket", "pagerduty", "google-bigquery", "hugging-face", "excalidraw", "heygen", "higgsfield", "gamma", "descript", "lucid", "eraser", "mobbin", "magic-patterns", "pandadoc", "otter", "read-ai", "fellow", "plaid", "clay", "netlify", "neon"]
 }
