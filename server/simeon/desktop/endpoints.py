@@ -1781,7 +1781,7 @@ router.include_router(packs_router)
 # The copy of the agents and their chats the apps read while the computer is away (26 October 2026).
 router.include_router(chats_router)
 router.include_router(channel_bots_router)
-# The Secure Credentials Store (`credentials.py`): logins and contact info for the agents' sign-ins and sign-ups.
+# The Credentials Store (`credentials.py`): logins and contact info for the agents' sign-ins and sign-ups.
 router.include_router(credentials_router)
 # The website's contact form (`contact.py`): each message e-mailed to the founder.
 router.include_router(contact_router)

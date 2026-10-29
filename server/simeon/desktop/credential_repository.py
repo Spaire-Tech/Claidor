@@ -1,4 +1,4 @@
-"""The queries behind the person's Secure Credentials Store
+"""The queries behind the person's Credentials Store
 (`credentials.py`, 28 October 2026)."""
 
 from __future__ import annotations

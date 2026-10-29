@@ -1688,7 +1688,7 @@ export function buildTurnTools(
     // The in-chat form types into the browser on the box, as the handoff hands it over.
     const userForm = factories.userForm?.();
     if (userForm !== undefined) tools.push(userForm);
-    // The Secure Credentials Store: the person's own logins and contact info, typed into the same browser.
+    // The Credentials Store: the person's own logins and contact info, typed into the same browser.
     const credentialsStore = factories.credentialsStore?.();
     if (credentialsStore !== undefined) tools.push(...credentialsStore);
     // 1Password's logins typed into the same browser, with the person's allowance.

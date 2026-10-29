@@ -343,7 +343,7 @@ test("the 1Password cards are on the gateway, in the agent's tools and brief, an
   assert.match(composition, /createOnePasswordToolInputs: turn =>/);
   assert.match(composition, /connection: \(\) => \{ const held = onePassword\.connection\(\); return held == null \? undefined : \{ vaultName: held\.vaultName \}; \}/, "the tools never hold the key");
   assert.match(await src("host/runner/tools/turn-toolset.ts"), /const onePassword = factories\.onePassword\?\.\(\);/);
-  // The person's own Secure Credentials Store comes first; 1Password next, when they connected it.
+  // The person's own Credentials Store comes first; 1Password next, when they connected it.
   assert.match(await src("host/runner/system-prompt.ts"), /When the store has no login for the site and you have ListCredentials \(they connected 1Password\), look there next/);
   assert.match(await src("host/runner/system-prompt.ts"), /Without it, don't bring up 1Password: many people don't use it/);
   const words = await src("shared/words/areas/trays.ts");

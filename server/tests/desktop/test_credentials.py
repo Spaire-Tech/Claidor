@@ -1,4 +1,4 @@
-"""The person's Secure Credentials Store (`simeon/desktop/credentials.py`, 28
+"""The person's Credentials Store (`simeon/desktop/credentials.py`, 28
 October 2026): logins and contact info, sealed for their person, listed
 without a password, read one at a time with it, added by the apps and the
 computer, changed and deleted by the apps only."""

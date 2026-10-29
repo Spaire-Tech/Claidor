@@ -303,7 +303,7 @@ export type NewPasswordFill =
   | { readonly ok: false; readonly message: string };
 
 /**
- * A sign-up's new password (the Secure Credentials Store, 28 October 2026):
+ * A sign-up's new password (the Credentials Store, 28 October 2026):
  * typed into every password field the page shows, the password and its
  * confirmation, at most three, never one asking for the current password.
  * What comes back is how many went in, never the value.
