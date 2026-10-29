@@ -5,12 +5,13 @@ import SimeonCore
 /**
  * The first run (the founder, 12 October 2026: "simple onboarding … asked
  * the necessary", as the iPhone's): one screen, "What should Simeon call
- * you?", the name from Google already in the field, and Continue. Simeon is
- * made meanwhile, out of sight (`AppStore.handOff`, from the moment the
- * screen shows); Continue opens the window on his chat, or waits on one
- * line while his computer finishes waking. A failure says why, with Try
- * again (no second Simeon). The Mac asks about notifications as the window
- * opens (MacServices).
+ * you?", the name from Google already in the field, and Continue. His
+ * computer wakes meanwhile, out of sight (`AppStore.handOff`, from the
+ * moment the screen shows); Continue saves the name, and Simeon is made
+ * once it is, so his first words call the person by it (29 October 2026);
+ * the window opens on his chat, after one line while that is done. A
+ * failure says why, with Try again (no second Simeon). The Mac asks about
+ * notifications as the window opens (MacServices).
  *
  * Until 12 October 2026 it was the Electron window's six scenes (Meet
  * Simeon, the Chief of Staff, the apps, the computer, the name, the
@@ -53,18 +54,19 @@ struct FirstRunScreen: View {
     .onAppear(perform: handOff)
   }
 
-  /** Continue: the name saved (an empty one is not), then the window once Simeon is made. */
+  /** Continue: the name saved (an empty one is not), which the hand-off waits for; then the window once Simeon is made. */
   private func forward() {
     let typed = name
-    if !Onboarding.normalizedName(typed).isEmpty { Task { await store.saveName(typed) } }
+    Task { await store.finishNameStep(typed) }
     leaving = true
     if let made { open(made) }
   }
 
   /**
-   * The hand-off (`Pe`), started as the screen shows: the computer, then
-   * Simeon made and his introduction begun, at least 1.5 s; the window opens
-   * on his chat once Continue has been pressed. Again with Try again.
+   * The hand-off (`Pe`), started as the screen shows: the computer, then,
+   * once Continue has saved the name, Simeon made and his introduction
+   * begun, at least 1.5 s; the window opens on his chat. Again with Try
+   * again.
    */
   private func handOff() {
     guard !handingOff, made == nil else { return }

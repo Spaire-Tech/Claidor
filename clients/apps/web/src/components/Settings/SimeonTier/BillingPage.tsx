@@ -30,7 +30,14 @@ import {
   type AcceptedLocale,
   type TranslateFn,
 } from '@simeon/i18n'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react'
 import { withParts } from '../../Auth/AuthShell'
 import styles from './BillingPage.module.css'
 
@@ -115,6 +122,11 @@ const dayOf = (iso: string, locale: AcceptedLocale): string =>
  * (docs/services-billing.md, section 3). A plan bought in the iPhone app
  * is shown as billed through Apple, with nothing to change here (section 9).
  */
+/** This browser is on a Mac (an iPad asking for the desktop site says Macintosh too, with touch). */
+const onAMac = () =>
+  /Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints < 2
+const unchanging = () => () => {}
+
 const BillingPage = ({
   email,
   plan,
@@ -148,6 +160,12 @@ const BillingPage = ({
 
   const sub = subscription.data
   const subscribed = hasPlan(sub)
+  // Someone who uses the Mac app, on a Mac, goes back to it, as if the app
+  // had opened this page, whatever link did (the founder, 29 October 2026:
+  // "it said you're all set, download the app … the app is clearly
+  // downloaded here"). The server's render knows no browser: not yet.
+  const mac = useSyncExternalStore(unchanging, onAMac, () => false)
+  const toApp = fromApp || (mac && sub?.has_mac_app === true)
   // Bought in the iPhone app: Apple changes and cancels it, so this page
   // only says so (the checkout and the portal would refuse).
   const billedByApple = subscribed && sub?.provider === 'app_store'
@@ -182,7 +200,7 @@ const BillingPage = ({
       {waiting ? null : confirming ? (
         <ConfirmChange
           change={confirming}
-          fromApp={fromApp}
+          fromApp={toApp}
           onClose={(changed) => {
             setConfirming(null)
             if (changed) setAdjusting(false)
@@ -194,7 +212,7 @@ const BillingPage = ({
         <AllSet
           sub={sub}
           returnTo={returnTo}
-          fromApp={fromApp}
+          fromApp={toApp}
           justPaid={upgraded || (checkoutSessionId !== null && !credits)}
           billedByApple={billedByApple}
           onAdjust={() => setAdjusting(true)}
@@ -208,7 +226,7 @@ const BillingPage = ({
           subscribed={subscribed}
           highlight={plan}
           returnTo={returnTo}
-          fromApp={fromApp}
+          fromApp={toApp}
           onPreview={setConfirming}
           t={t}
           locale={locale}

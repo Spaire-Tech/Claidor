@@ -62,13 +62,14 @@ export function createSandUserFullNameResolver(options: {
     const token = options.peekAccessToken();
     return token == null ? undefined : parseJwtPayload(token)?.sub;
   };
-  const resolve = async (principal: string) => {
+  const resolve = async (principal: string, generation: number) => {
     attemptedAtMs = now();
     try {
       const accessToken = await options.getAccessToken({ backendUrl: getSandInferenceBackendUrl() });
       if (parseJwtPayload(accessToken)?.sub !== principal) return;
       const fullName = await fetchFullName(accessToken);
-      if (currentPrincipal() !== principal) return;
+      // A read started later (a forced one) has the last word: this one may hold the name from before it was given.
+      if (currentPrincipal() !== principal || generation !== inFlightGeneration) return;
       resolvedPrincipal = principal;
       resolvedFullName = fullName;
       resolvedAtMs = now();
@@ -82,13 +83,15 @@ export function createSandUserFullNameResolver(options: {
       if (principal !== undefined && now() - resolvedAtMs >= USER_NAME_REFRESH_MS && now() - attemptedAtMs >= USER_NAME_RETRY_MS) void this.refresh();
       return resolvedPrincipal !== undefined && resolvedPrincipal === principal ? resolvedFullName : undefined;
     },
-    async refresh(): Promise<void> {
+    // `force`: read it now, the window and any read already under way aside, as the apps ask once the person has
+    // given the name (`refreshUserName`): the computer read Google's as it started, minutes before (29 October 2026).
+    async refresh(options: { readonly force?: boolean } = {}): Promise<void> {
       const principal = currentPrincipal();
-      if (principal === undefined || (resolvedPrincipal === principal && now() - resolvedAtMs < USER_NAME_REFRESH_MS)) return;
+      if (principal === undefined || (options.force !== true && resolvedPrincipal === principal && now() - resolvedAtMs < USER_NAME_REFRESH_MS)) return;
       let pending = inFlight;
-      if (pending === undefined || pending.principal !== principal) {
+      if (options.force === true || pending === undefined || pending.principal !== principal) {
         const generation = ++inFlightGeneration;
-        pending = { principal, done: resolve(principal).finally(() => { if (inFlightGeneration === generation) inFlight = undefined; }) };
+        pending = { principal, done: resolve(principal, generation).finally(() => { if (inFlightGeneration === generation) inFlight = undefined; }) };
         inFlight = pending;
       }
       await pending.done;

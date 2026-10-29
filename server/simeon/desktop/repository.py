@@ -48,6 +48,21 @@ class DesktopSessionRepository(RepositoryBase[DesktopSession]):
         statement = self.get_base_statement().where(DesktopSession.id == session_id)
         return await self.get_one_or_none(statement)
 
+    async def has_mac_app(self, user_id: UUID) -> bool:
+        """Whether the person has ever signed in to the Mac app: one of
+        their sessions names itself `mac-<version>` (`MacSession.clientVersion`),
+        a cloud job's credential aside."""
+        statement = (
+            self.get_base_statement()
+            .where(
+                DesktopSession.user_id == user_id,
+                DesktopSession.job_id.is_(None),
+                DesktopSession.client_version.like("mac-%"),
+            )
+            .limit(1)
+        )
+        return await self.get_one_or_none(statement) is not None
+
     async def get_parent_of(self, child: DesktopSession) -> DesktopSession | None:
         """The signed-in desktop a box credential belongs to."""
         if child.box_of_session_id is None:

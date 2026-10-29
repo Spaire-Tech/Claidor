@@ -994,6 +994,10 @@ suggestion (`namePrompt()`), the computer's probe, and the butterfly's
 > Replaced on 12 October 2026: the first run is one screen, the name, then
 > the window on Simeon's chat (`mac/Simeon/FirstRun.swift`). What follows is
 > the Electron window's six scenes as they were copied.
+> Since 29 October 2026 Simeon is made only once Continue has saved the
+> name and the computer has read it again (`AppStore.finishNameStep`, the
+> engine's `refreshUserName`). Made while the name screen showed, he greeted
+> the founder by the name on their Google account.
 
 - **The frame of every step**: the whole window, the ground colour, things
   placed about its centre. A title (28, `-0.02em`), the step's scene, and

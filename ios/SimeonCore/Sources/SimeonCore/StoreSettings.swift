@@ -55,7 +55,8 @@ extension AppStore {
    * The name changed in Settings › Account (the founder, 22 October 2026:
    * "theres name there, but uneditable"): what the agents call the person,
    * as the first run's name step saves it (`POST user/name`); they take it
-   * at their next turn after a few minutes at most. nil once saved, the
+   * at their next turn, the computer told to read it again
+   * (`refreshUserName`; asleep, it reads it as it wakes). nil once saved, the
    * account showing it; else why not, the server's sentence when it says
    * one ("A name of 1 to 60 characters.").
    */
@@ -70,6 +71,7 @@ extension AppStore {
       return L10n.text("Couldn't change it")
     }
     if let account { self.account = Account(name: name, email: account.email, pictureURL: account.pictureURL, id: account.id) }
+    _ = try? await backend.commandIfAwake("refreshUserName", [:])
     return nil
   }
 

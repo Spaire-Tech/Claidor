@@ -378,6 +378,12 @@ export function createHostGatewayApi(
     kickstartAgent: async (args: any) => ({
       isIntroductionInFlight: await deps.kickstartIfPending(args.id)
     }),
+    // What the person asked to be called, read again from the server now (the first run's name, or Settings): the
+    // next turn uses it, not the name read as the computer started (29 October 2026, the founder: "the agent
+    // literally called me by the name my google account has").
+    refreshUserName: async () => ({
+      name: await method(deps.extensions.api("auth"), "refreshUserFullName")()
+    }),
     requestDiskSaverAudit: async (args: any) => ({
       isAuditInFlight: await deps.requestDiskSaverAudit(args.id)
     }),

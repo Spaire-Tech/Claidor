@@ -258,11 +258,11 @@ final class SessionController {
   }
 
   /**
-   * Started as the first run shows: the computer, then Simeon made and his
-   * introduction begun (`AppStore.handOff`), while the person gives a name
-   * and answers the two questions. Once the first run is over his chat
-   * opens, now or when he is made. Again after a failure, with no second
-   * Simeon.
+   * Started as the first run shows: the computer, then, once the name is
+   * saved, Simeon made and his introduction begun (`AppStore.handOff`),
+   * while the person answers the two questions. Once the first run is over
+   * his chat opens, now or when he is made. Again after a failure, with no
+   * second Simeon.
    */
   func beginHandOff() {
     switch handOff {

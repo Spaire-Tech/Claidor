@@ -124,12 +124,18 @@ their Google name in `user.meta` (`server/simeon/integrations/google/service.py`
   step, filled in with `suggestedName`, and saves through the account's rename
   (`POST /desktop/api/user/name`, kept in `user.meta["preferred_name"]`). It may be
   left empty.
+- **In the Mac and iPhone apps** (29 October 2026). The first run asks "What
+  should we call you?" and Simeon is made only after Continue has saved the
+  name and the computer has read it again (`AppStore.finishNameStep`, then the
+  engine's `refreshUserName`): the computer read Google's name as it started,
+  and Simeon, made while the name screen showed, greeted the person by it.
+  Settings › Account's rename tells an awake computer the same way.
 - **Asked again only if skipped.** The window shows "What should your agents call
   you?" (`__simeonNameSheet`) while the profile has no `preferredName` and
   onboarding is done; "Not now" asks again at the next launch.
 - **Where it is used.** The agents' system prompt (`preferredName`, else `name`;
-  `host/extensions/auth/user-full-name-service.ts`, read again every 5 minutes so a
-  rename reaches the next turn), the voice call's prompt and greeting, and the
+  `host/extensions/auth/user-full-name-service.ts`, read again every 5 minutes, and
+  at once when an app asks with `refreshUserName`), the voice call's prompt and greeting, and the
   call recap. `nickname` is made from the e-mail's local part and is never used
   as the person's name.
 

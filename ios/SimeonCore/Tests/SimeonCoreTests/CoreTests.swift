@@ -1453,6 +1453,7 @@ final class OnboardingTests: XCTestCase {
     await store.attach(backend)
     var waited = 0.0
     var readyCalls = 0
+    await store.finishNameStep("Bass")
     let id = try await store.handOff(ready: { readyCalls += 1 }, wait: { waited += $0 })
     XCTAssertNotNil(id)
     XCTAssertEqual(readyCalls, 1)
@@ -1469,6 +1470,7 @@ final class OnboardingTests: XCTestCase {
     // Another phone, or a second try on this one, on an account already onboarded: nothing more is made.
     let other = AppStore()
     await other.attach(backend)
+    await other.finishNameStep("Bass")
     let second = try await other.handOff(ready: {}, wait: { _ in })
     XCTAssertNil(second)
     XCTAssertEqual(store.agents.count, 1)

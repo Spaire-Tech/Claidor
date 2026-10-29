@@ -146,11 +146,16 @@ extension AppStore {
   /**
    * The hand-off (the window's create-and-finish, `Pe`): at least 1.5 s on
    * screen; the computer first (asked every 2.5 s, a minute at most); then,
-   * unless the account is onboarded already, Simeon is made (his request
-   * named for the device, `client`: "ios", "mac") and starts his
-   * introduction, and the first run is marked done. His id, to open his
-   * chat; nil when the account already had agents (nothing is made). A
-   * second try after a failure does not make a second Simeon.
+   * unless the account is onboarded already, the name step's end
+   * (`finishNameStep`) and the name read again by the computer
+   * (`refreshUserName`), and only then Simeon is made (his request named for
+   * the device, `client`: "ios", "mac") and starts his introduction, which
+   * calls the person by the name they gave (29 October 2026, the founder:
+   * "the agent literally called me by the name my google account has": he
+   * was made, and spoke, as the name screen showed); and the first run is
+   * marked done. His id, to open his chat; nil when the account already had
+   * agents (nothing is made). A second try after a failure does not make a
+   * second Simeon.
    */
   public func handOff(client: String = "ios", ready: @MainActor () -> Void, wait: (Double) async -> Void = { seconds in _ = try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000)) }, now: () -> Date = Date.init) async throws -> String? {
     guard let backend else { throw GatewayError(message: Onboarding.unreachable, refused: false) }
@@ -168,6 +173,10 @@ extension AppStore {
     }
     if count != nil { ready() }
     if firstRunAgentId == nil {
+      // The name step over first, and only then the account looked at, so another device's first run meanwhile is seen.
+      await nameStepOver()
+      guard self.backend === backend else { throw GatewayError(message: Onboarding.unreachable, refused: false) }
+      if count == nil, let answered = try? await countAgents(backend) { count = answered; ready() }
       let seen = (try? await backend.command("getHostSettings", [:]))?["hasSeenOnboarding"]?.bool == true
       if seen || (count ?? 0) > 0 {
         _ = try? await backend.command("setHostSettings", ["hasSeenOnboarding": true])
@@ -177,6 +186,8 @@ extension AppStore {
       }
       // The language first: a computer made for this first task was not told it at launch (step 4), and Simeon introduces himself in it.
       _ = try? await backend.command("setHostSettings", ["userLanguage": .string(AppLanguage.current)])
+      // The name the person gave, read again by the computer: it read Google's as it started, minutes before.
+      _ = try? await backend.command("refreshUserName", [:])
       let made = try await backend.command("createAgent", Onboarding.chiefOfStaff(nonce: "\(client)-onboarding-\(UUID().uuidString.lowercased())"))
       guard let id = made["agent"]?["id"]?.text ?? made["id"]?.text else { throw GatewayError(message: "createAgent: no agent in the answer", refused: true) }
       firstRunAgentId = id
@@ -201,6 +212,21 @@ extension AppStore {
     guard !name.isEmpty, let backend else { return }
     _ = try? await backend.server("user/name", method: "POST", body: ["name": .string(name)])
     if let account { self.account = Account(name: name, email: account.email, pictureURL: account.pictureURL, id: account.id) }
+  }
+
+  /** The first run's name step is over: the name saved (an empty one is not), then the hand-off may make Simeon (`handOff`). */
+  public func finishNameStep(_ typed: String) async {
+    await saveName(typed)
+    firstRunNamed = true
+    let waiting = firstRunNameWaiters
+    firstRunNameWaiters = []
+    waiting.forEach { $0.resume() }
+  }
+
+  /** Until the first run's name step is over (`finishNameStep`), or the account is gone (`detach`). */
+  private func nameStepOver() async {
+    guard !firstRunNamed else { return }
+    await withCheckedContinuation { firstRunNameWaiters.append($0) }
   }
 
   /** Whether the person's computer answers now: the first run asks from its start, every 2.5 s until it does (`onboarding-box-probe`), so the hand-off can say "Getting your team ready…". */
