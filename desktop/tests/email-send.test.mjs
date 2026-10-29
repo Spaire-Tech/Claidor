@@ -196,7 +196,7 @@ async function draftState() {
   const outfile = path.join(dir, "draft-state.mjs");
   const entry = path.join(dir, "entry.ts");
   const { writeFile } = await import("node:fs/promises");
-  await writeFile(entry, `export * from ${JSON.stringify(path.join(repoRoot, "source/host/extensions/transcript/transcript-store.ts"))};\nexport { DraftCards, emailSendCalls } from ${JSON.stringify(path.join(repoRoot, "source/host/extensions/transcript/draft-cards.ts"))};\n`);
+  await writeFile(entry, `export * from ${JSON.stringify(path.join(repoRoot, "source/host/extensions/transcript/transcript-store.ts"))};\nexport { APP_ACCOUNT_FIELD, DraftCards, emailSendCalls } from ${JSON.stringify(path.join(repoRoot, "source/host/extensions/transcript/draft-cards.ts"))};\n`);
   await build({ entryPoints: [entry], outfile, bundle: true, format: "esm", platform: "node", target: "node22", logLevel: "silent", external: ["electron"] });
   const module = await import(`${pathToFileURL(outfile).href}?${Date.now()}`);
   return { module, dispose: () => rm(dir, { recursive: true, force: true }) };
@@ -297,6 +297,33 @@ test("a name the tool no longer takes is left to the agent with the exact call; 
     assert.equal(wakes[0].source, "draft-send");
     assert.match(wakes[0].prompt, /Send it with one CallMcpTool call: server "outlook", toolName "OUTLOOK_REPLY_EMAIL"/);
     assert.ok(lines.some((line) => /OUTLOOK_REPLY_EMAIL takes no comment; the agent sends iris\/e1/.test(line)));
+  } finally {
+    await dispose();
+  }
+});
+
+test("with several accounts of the mailbox, the card sends from its From; a card without one is left to the agent", async () => {
+  const { module, dispose } = await draftState();
+  try {
+    const called = [];
+    const several = { inputSchema: async () => ({ ...sendSchema, properties: { use_account: { enum: ["jo@gmail.com", "Work"] }, ...sendSchema.properties } }), call: async (server, tool, args) => { called.push({ tool, args }); return { ok: true, text: "" }; } };
+    const fresh = { ...REPLY, via: "outlook", from: "jo@acme.com" };
+    const named = setup(module, fresh, several);
+    await named.cards.sendDraft({ agentId: "iris", entryId: "e1" }, several);
+    await settled();
+    assert.equal(called.length, 1);
+    assert.equal(called[0].args.use_account, "jo@acme.com");
+    assert.equal(called[0].args.to, "sam@example.com");
+    assert.equal(named.state(), "sent");
+
+    const { from: _from, ...unnamed } = fresh;
+    const left = setup(module, unnamed, several);
+    await left.cards.sendDraft({ agentId: "iris", entryId: "e1" }, several);
+    await settled();
+    assert.equal(called.length, 1, "nothing sent from the card");
+    assert.equal(left.wakes[0].source, "draft-send");
+    assert.ok(left.lines.some((line) => /outlook has several accounts and the card names none; the agent sends iris\/e1/.test(line)));
+    assert.equal(module.APP_ACCOUNT_FIELD, "use_account");
   } finally {
     await dispose();
   }

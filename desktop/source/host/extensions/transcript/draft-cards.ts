@@ -101,6 +101,9 @@ export function emailBodyHtml(body: string): string {
 
 export interface EmailSendCall { readonly server: EmailMailbox; readonly tool: string; readonly args: Readonly<Record<string, unknown>> }
 
+/** The argument an app's tools take once several accounts of it are connected: which one (Simeon's server, `ACCOUNT_FIELD` in `server/simeon/desktop/apps.py`). */
+export const APP_ACCOUNT_FIELD = "use_account";
+
 /** The box's app tools, called by the host itself (`mcp-service.ts`): a tool's input schema, undefined when the app is not connected, and a call. */
 export interface DraftAppTools {
   inputSchema(server: string, tool: string): Promise<unknown>;
@@ -388,8 +391,19 @@ export class DraftCards {
       this.wake(agentId, entryId, "draft-send", buildDraftSendWakePrompt(entryId, { type: "email-draft", draft }), say(this.tm.userLanguage?.(), "tray.draftSendFailed"));
       return;
     }
+    // Several accounts of the mailbox (29 October 2026): the tool asks which (`use_account`) and the card's From says so; a card without one is left to the agent, which knows the accounts.
+    let args = call.args;
+    if (properties != null && APP_ACCOUNT_FIELD in properties) {
+      const from = text(draft.from);
+      if (from.length === 0) {
+        this.log(`[drafts] ${call.server} has several accounts and the card names none; the agent sends ${agentId}/${entryId}`);
+        this.wake(agentId, entryId, "draft-send", buildDraftSendWakePrompt(entryId, { type: "email-draft", draft }), say(this.tm.userLanguage?.(), "tray.draftSendFailed"));
+        return;
+      }
+      args = { ...call.args, [APP_ACCOUNT_FIELD]: from };
+    }
     let result: { readonly ok: boolean; readonly text: string };
-    try { result = await apps.call(call.server, call.tool, call.args, agentId); } catch (error) { result = { ok: false, text: error instanceof Error ? error.message : String(error) }; }
+    try { result = await apps.call(call.server, call.tool, args, agentId); } catch (error) { result = { ok: false, text: error instanceof Error ? error.message : String(error) }; }
     if (!result.ok) { await failed(plainReason(result.text)); return; }
     this.log(`[drafts] ${agentId}/${entryId} sent by ${call.tool}`);
     await this.stamp(agentId, entryId, (entry) => ({ ...entry, draftSendState: "sent" as DraftSendState } as TranscriptEntry));

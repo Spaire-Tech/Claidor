@@ -628,8 +628,11 @@ agents know them from the catalogue (`SIMEON_CONNECTOR_NAMES` in their brief, an
 - Server: `server/simeon/desktop/apps.py`, under `/desktop`: `GET /desktop/api/apps`
   (`{"available": true}` when configured), `POST /desktop/api/apps/mcp/{toolkit}` (our MCP
   server per app), `GET /desktop/api/apps/{toolkit}/status`,
-  `POST /desktop/api/apps/{toolkit}/connect` (the sign-in link),
-  `DELETE /desktop/api/apps/{toolkit}` (disconnect), `GET /desktop/apps/connected` and
+  `POST /desktop/api/apps/{toolkit}/connect` (the sign-in link; `{"another": true}` for one
+  more account), `DELETE /desktop/api/apps/{toolkit}` (disconnect, every account),
+  `GET /desktop/api/apps/{toolkit}/accounts` and `PATCH`/`DELETE
+  /desktop/api/apps/{toolkit}/accounts/{id}` (the accounts, one renamed, one removed),
+  `GET /desktop/apps/connected` and
   `GET /desktop/apps/oauth/callback`. The provider's key stays on the server; tool
   descriptions, results and errors are scrubbed of the provider's name.
 - App: each app is a vendor connector with `appsToolkit` (`vendor-mcp/catalog.ts`), so the
@@ -646,6 +649,27 @@ agents know them from the catalogue (`SIMEON_CONNECTOR_NAMES` in their brief, an
   answers `{"available": true}` (`vendor-mcp/apps-availability.ts`, cached one minute).
   Otherwise it stays "coming soon", and a sign-in answered 404 or 503 says "<App> is coming
   soon in Simeon." The vendor connectors in 7a do not depend on this check.
+- **Add Another Account** (29 October 2026). A person can connect up to five accounts of one
+  app (a work Gmail and a personal one, two Slack workspaces). The app's page on the iPhone and
+  the Mac lists them under Accounts once the app is connected: each by the name the person gave
+  it (the pencil; the provider's `alias`) or by who it signs in as (the provider's
+  `state.val.displayName`, documented as the account's identity, such as the Gmail address), else
+  "Account 2"; Connected; Remove (swiped on the iPhone) while another stays; and Add Another
+  Account, which asks `/connect` with `{"another": true}` for a new sign-in even though the app
+  is connected. Google's sign-in then opens on its account chooser (`prompt=select_account`
+  added beside its `consent`), or it would sign in the account the browser already has. The
+  sign-in session allows several accounts (`multi_account`). With two or more accounts, every
+  tool of the app takes `use_account` (required, the accounts' labels listed in its
+  description), and a call without it, or with a name that matches none, is refused with the
+  accounts there are; never the first by default, so an email never goes out from the wrong
+  address. The agent picks the one the person named, or asks. An email card's Send passes the
+  card's From as `use_account` (`draft-cards.ts`; a card without From is sent by the agent).
+  A missing permission on one of several accounts says to remove and add that one again, not
+  `force_reauth`, which signs out every account of the app. Only apps served here (Composio)
+  have this; a maker's own MCP server still holds one account. Log lines
+  `desktop.apps.sign_in_started` (with `another`), `desktop.apps.account_renamed`,
+  `desktop.apps.account_removed`. The engine part (the card's From) ships with the next engine
+  bundle; until then a card sent from an app with several accounts is refused and handed back.
 
 * **Settings on Render.** `SIMEON_COMPOSIO_API_KEY` (optional `SIMEON_COMPOSIO_BASE_URL`), and
   `SIMEON_COMPOSIO_AUTH_CONFIGS`, Simeon Labs' own sign-in per app as JSON

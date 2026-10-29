@@ -676,6 +676,8 @@ struct PluginPage: View {
   @State private var loadingTools = true
   @State private var renaming: ConnectedApp?
   @State private var newName = ""
+  /** An account Simeon Labs' server keeps, being renamed (the pencil), with its app's toolkit. */
+  @State private var renamingAppAccount: (toolkit: String, account: AppAccount)?
   @State private var switching: Set<String> = []
   @State private var removing = false
   /** An account's sign-in, asked first as every connect is (ConnectConsentSheet). */
@@ -697,6 +699,11 @@ struct PluginPage: View {
     /** Add, Uninstall, the team's Remove or label (`ft`), once the catalog and the servers are read. */
     var action: Plugins.PageAction?
     var name: String
+  }
+
+  /** The toolkit of an app Simeon Labs' server serves, whose accounts it keeps (`AppAccounts`); nil for any other. */
+  private func appsToolkit(_ shown: Shown) -> String? {
+    store.appsToolkit(serverURL: shown.accounts.first?.url, pluginId: shown.entry?.id ?? app?.pluginId ?? shown.catalogApp?.id)
   }
 
   private var resolved: Shown {
@@ -723,6 +730,7 @@ struct PluginPage: View {
     let shown = resolved
     let connected = shown.accounts.contains { $0.status == "connected" }
     let page = ConnectorPage.page(for: shown.entry?.id ?? shown.catalogApp?.id ?? "")
+    let toolkit = appsToolkit(shown)
     Form {
       // The reference's top on the page's own ground: the logo, the name, its maker; the card of messages naming it; a few lines on it.
       Section {
@@ -743,7 +751,12 @@ struct PluginPage: View {
       .listRowBackground(Color.clear)
       .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
       if !shown.accounts.isEmpty {
-        accountsSection(shown.accounts)
+        // Each account the server keeps, once the app is connected: Add Another Account below them.
+        if connected, let toolkit, let held = store.appAccounts[toolkit], !held.accounts.isEmpty {
+          appAccountsSection(toolkit, held, name: shown.name)
+        } else {
+          accountsSection(shown.accounts)
+        }
         toolsSection(serverId: shown.serverId, connected: connected, name: shown.name)
       }
       if let entry = shown.entry { contributions(entry, installed: shown.installed) }
@@ -772,10 +785,21 @@ struct PluginPage: View {
       tools = await store.tools(of: serverId)
       loadingTools = false
     }
+    .task(id: "\(toolkit ?? "")\u{1F}\(connected)") {
+      if connected, let toolkit { await store.loadAppAccounts(toolkit) }
+    }
     .alert("Rename account", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
       TextField("Account name", text: $newName)
       Button("Rename") { if let account = renaming { Task { await store.renameAccount(account, to: newName) } }; renaming = nil }
       Button("Cancel", role: .cancel) { renaming = nil }
+    }
+    .alert("Rename account", isPresented: Binding(get: { renamingAppAccount != nil }, set: { if !$0 { renamingAppAccount = nil } })) {
+      TextField(renamingAppAccount?.account.identity ?? String(localized: "Account name"), text: $newName)
+      Button("Rename") {
+        if let held = renamingAppAccount { Task { await store.renameAppAccount(held.toolkit, held.account, to: newName) } }
+        renamingAppAccount = nil
+      }
+      Button("Cancel", role: .cancel) { renamingAppAccount = nil }
     }
     // The sign-in page opens once the sheet has gone; then how it went, as Connect says it.
     .sheet(item: $asking, onDismiss: {
@@ -891,6 +915,57 @@ struct PluginPage: View {
             Button("Remove", role: .destructive) { Task { await store.removeAccount(account) } }
           }
           Button("Rename") { newName = account.accountKey == "default" ? "" : account.accountKey; renaming = account }
+        }
+      }
+    }
+    .listRowBackground(Ink.groupedRow)
+  }
+
+  /**
+   * The accounts Simeon Labs' server keeps for the app (Add Another Account,
+   * 29 October 2026): each by the name the person gave it or who it signs in
+   * as, Connected, the pencil to name it; swiped, Remove while another
+   * stays. Add Another Account below them while there is room.
+   */
+  private func appAccountsSection(_ toolkit: String, _ held: AppAccounts, name: String) -> some View {
+    Section("Accounts") {
+      ForEach(Array(held.accounts.enumerated()), id: \.element.id) { place, account in
+        let title = account.title(place: place + 1)
+        HStack(spacing: 12) {
+          VStack(alignment: .leading, spacing: 2) {
+            Text(verbatim: title).font(.system(size: 17)).lineLimit(1)
+            HStack(spacing: 4) {
+              Text(Connecting.connected).foregroundStyle(Ink.success)
+              if let detail = account.detail { Text(verbatim: "· \(detail)").foregroundStyle(Ink.secondary).lineLimit(1) }
+            }
+            .font(.system(size: 13))
+          }
+          Spacer(minLength: 8)
+          Button {
+            newName = account.name ?? ""
+            renamingAppAccount = (toolkit, account)
+          } label: {
+            Image(systemName: "pencil").font(.system(size: 17)).foregroundStyle(Ink.secondary).frame(width: 32, height: 32).contentShape(Rectangle())
+          }
+          .buttonStyle(.borderless)
+          .accessibilityLabel("Rename \(title)")
+        }
+        .swipeActions {
+          if held.accounts.count > 1 {
+            Button("Remove", role: .destructive) { Task { await store.removeAppAccount(toolkit, account) } }
+          }
+        }
+      }
+      if held.canAddAnother {
+        if connector.connecting == name {
+          HStack { ProgressView().controlSize(.small); Spacer() }
+        } else {
+          Button {
+            Task { await connector.addAccount(toolkit, name: name, store: store) }
+          } label: {
+            Label("Add Another Account", systemImage: "plus").foregroundStyle(Ink.primary)
+          }
+          .disabled(connector.connecting != nil)
         }
       }
     }

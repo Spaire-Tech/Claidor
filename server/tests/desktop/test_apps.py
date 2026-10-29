@@ -708,7 +708,8 @@ class TestSigningIn:
             == "https://accounts.google.com/o/oauth2/auth?x=1"
         )
         assert json.loads(created.calls[0].request.content) == {
-            "user_id": composio_user_id(user)
+            "user_id": composio_user_id(user),
+            "multi_account": {"enable": True, "max_accounts_per_toolkit": 5},
         }
         sent = json.loads(linked.calls[0].request.content)
         assert sent["toolkit"] == "gmail"
@@ -788,6 +789,7 @@ class TestSigningIn:
         assert _start_target(response.json()["url"]) == "https://login.xero.com/x"
         assert json.loads(created.calls[0].request.content) == {
             "user_id": composio_user_id(user),
+            "multi_account": {"enable": True, "max_accounts_per_toolkit": 5},
             "auth_configs": {"xero": "ac_xero1"},
         }
 
@@ -1165,6 +1167,408 @@ class TestSigningIn:
             callback.headers["location"]
             == f"{apps_module.COMPOSIO_CALLBACK}?code=abc&state=xyz"
         )
+
+
+def _rows(*rows: dict) -> httpx.Response:
+    """The provider's accounts as it lists them: tokens beside the identity."""
+    return httpx.Response(
+        200,
+        json={
+            "items": [
+                {
+                    "status": "ACTIVE",
+                    "alias": None,
+                    "state": {
+                        "authScheme": "OAUTH2",
+                        "val": {"access_token": "tok-secret", "status": "ACTIVE"},
+                    },
+                    **row,
+                }
+                for row in rows
+            ],
+            "total_pages": 1,
+        },
+    )
+
+
+WORK = {
+    "id": "ca_w",
+    "created_at": "2026-10-02T10:00:00Z",
+    "state": {"val": {"displayName": "jo@acme.com", "access_token": "tok-w"}},
+}
+HOME = {
+    "id": "ca_h",
+    "created_at": "2026-09-01T10:00:00Z",
+    "alias": "Home",
+    "state": {"val": {"displayName": "jo@gmail.com", "access_token": "tok-h"}},
+}
+
+
+@pytest.mark.asyncio
+class TestSeveralAccounts:
+    """Add Another Account (29 October 2026): a second Gmail, named by who
+    it signs in as or by the person; each tool then asks which account."""
+
+    async def test_the_accounts_are_listed_by_name_without_their_tokens(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _signed_in(client, session, user)
+        plain = {"id": "ca_p", "created_at": "2026-10-03T10:00:00Z"}
+        twin = {**WORK, "id": "ca_t", "created_at": "2026-10-04T10:00:00Z"}
+        with respx.mock(assert_all_called=True) as mock:
+            mock.get(f"{API}/api/v3.1/connected_accounts").mock(
+                return_value=_rows(WORK, plain, HOME, twin)
+            )
+            response = await client.get(
+                "/desktop/api/apps/gmail/accounts", headers=headers
+            )
+        assert response.status_code == 200, response.text
+        # The first connected first; the same address twice is told apart.
+        assert response.json() == {
+            "toolkit": "gmail",
+            "accounts": [
+                {
+                    "id": "ca_h",
+                    "name": "Home",
+                    "identity": "jo@gmail.com",
+                    "label": "Home",
+                },
+                {
+                    "id": "ca_w",
+                    "name": None,
+                    "identity": "jo@acme.com",
+                    "label": "jo@acme.com",
+                },
+                {"id": "ca_p", "name": None, "identity": None, "label": "Account 3"},
+                {
+                    "id": "ca_t",
+                    "name": None,
+                    "identity": "jo@acme.com",
+                    "label": "jo@acme.com (2)",
+                },
+            ],
+            "max": 5,
+        }
+        assert "tok" not in response.text
+
+    async def test_each_tool_asks_which_account_once_there_are_two(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _signed_in(client, session, user)
+        with respx.mock() as mock:
+            mock.get(f"{API}/api/v3.1/connected_accounts").mock(
+                side_effect=[_rows(WORK), _rows(WORK, HOME)]
+            )
+            mock.get(f"{API}/api/v3.1/tools").mock(
+                return_value=httpx.Response(200, json=TOOLS)
+            )
+            one = await client.post(
+                "/desktop/api/apps/mcp/gmail", headers=headers, json=_rpc("tools/list")
+            )
+            apps_module._accounts_cache.clear()
+            two = await client.post(
+                "/desktop/api/apps/mcp/gmail", headers=headers, json=_rpc("tools/list")
+            )
+        alone = one.json()["result"]["tools"][1]["inputSchema"]
+        assert "use_account" not in alone["properties"]
+        assert "required" not in alone
+        schema = two.json()["result"]["tools"][1]["inputSchema"]
+        assert list(schema["properties"]) == ["use_account", "to"]
+        assert schema["required"] == ["use_account"]
+        field = schema["properties"]["use_account"]
+        assert field["enum"] == ["Home", "jo@acme.com"]
+        assert field["description"] == (
+            "Which connected account to use: Home (jo@gmail.com), jo@acme.com. "
+            "Ask the user which one if they haven't said."
+        )
+        # The listing shared by everyone is left as it was.
+        cached = apps_module._tools_cache["gmail"][1][1]["inputSchema"]
+        assert "use_account" not in cached["properties"]
+
+    async def test_a_call_goes_to_the_account_it_names(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _signed_in(client, session, user)
+        with respx.mock() as mock:
+            mock.get(f"{API}/api/v3.1/connected_accounts").mock(
+                return_value=_rows(WORK, HOME)
+            )
+            mock.get(f"{API}/api/v3.1/tools").mock(
+                return_value=httpx.Response(200, json=TOOLS)
+            )
+            executed = mock.post(f"{API}/api/v3.1/tools/execute/GMAIL_TOOL_1").mock(
+                return_value=httpx.Response(
+                    200, json={"data": {"id": "m1"}, "successful": True}
+                )
+            )
+            answers = [
+                await client.post(
+                    "/desktop/api/apps/mcp/gmail",
+                    headers=headers,
+                    json=_rpc(
+                        "tools/call", {"name": "GMAIL_TOOL_1", "arguments": args}
+                    ),
+                )
+                for args in (
+                    {"to": "a@b.c", "use_account": "Home"},
+                    {"to": "a@b.c", "use_account": "JO@acme.com "},
+                    {"to": "a@b.c", "use_account": "jo@gmail.com"},
+                    {"to": "a@b.c"},
+                    {"to": "a@b.c", "use_account": "boss@acme.com"},
+                )
+            ]
+        sent = [json.loads(call.request.content) for call in executed.calls]
+        assert [body["connected_account_id"] for body in sent] == [
+            "ca_h",
+            "ca_w",
+            "ca_h",
+        ]
+        assert all(body["arguments"] == {"to": "a@b.c"} for body in sent)
+        missing = answers[3].json()["result"]
+        assert missing["isError"] is True
+        assert missing["content"][0]["text"] == (
+            "Several accounts of this app are connected: Home (jo@gmail.com), "
+            "jo@acme.com. Call again with use_account set to one of them; ask the "
+            "user which if they haven't said."
+        )
+        unknown = answers[4].json()["result"]
+        assert unknown["isError"] is True
+        assert unknown["content"][0]["text"].startswith(
+            'No account "boss@acme.com" of this app is connected.'
+        )
+
+    async def test_with_one_account_a_call_needs_no_name_but_a_wrong_one_is_refused(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        """An account removed after the agent read the tools: its name is
+        refused, never sent from the one left."""
+        headers = await _signed_in(client, session, user)
+        with respx.mock() as mock:
+            mock.get(f"{API}/api/v3.1/connected_accounts").mock(
+                return_value=_rows(WORK)
+            )
+            mock.get(f"{API}/api/v3.1/tools").mock(
+                return_value=httpx.Response(200, json=TOOLS)
+            )
+            executed = mock.post(f"{API}/api/v3.1/tools/execute/GMAIL_TOOL_1").mock(
+                return_value=httpx.Response(
+                    200, json={"data": {"id": "m1"}, "successful": True}
+                )
+            )
+            plain = await client.post(
+                "/desktop/api/apps/mcp/gmail",
+                headers=headers,
+                json=_rpc("tools/call", {"name": "GMAIL_TOOL_1"}),
+            )
+            gone = await client.post(
+                "/desktop/api/apps/mcp/gmail",
+                headers=headers,
+                json=_rpc(
+                    "tools/call",
+                    {"name": "GMAIL_TOOL_1", "arguments": {"use_account": "Home"}},
+                ),
+            )
+        assert plain.json()["result"]["isError"] is False
+        assert gone.json()["result"]["isError"] is True
+        assert executed.call_count == 1
+
+    async def test_a_tool_with_its_own_account_argument_keeps_it(self) -> None:
+        tool = {
+            "name": "STRIPE_X",
+            "inputSchema": {
+                "type": "object",
+                "properties": {"use_account": {"type": "string"}},
+            },
+        }
+        accounts = [
+            apps_module.AppAccount(id="a", name=None, identity=None, label="Account 1"),
+            apps_module.AppAccount(id="b", name=None, identity=None, label="Account 2"),
+        ]
+        assert apps_module._with_account_choice(tool, accounts) is tool
+        assert apps_module._takes_own_account_field(tool) is True
+
+    async def test_another_account_gets_a_new_sign_in_on_googles_chooser(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _signed_in(client, session, user)
+        google = (
+            "https://accounts.google.com/o/oauth2/v2/auth?client_id=c"
+            "&scope=openid+email&prompt=consent&state=s"
+        )
+        with respx.mock(assert_all_called=True) as mock:
+            mock.get(f"{API}/api/v3.1/connected_accounts").mock(
+                return_value=_rows(WORK)
+            )
+            mock.post(f"{API}/api/v3.1/tool_router/session").mock(
+                return_value=httpx.Response(201, json={"session_id": "trs_1"})
+            )
+            linked = mock.post(f"{API}/api/v3.1/tool_router/session/trs_1/link").mock(
+                return_value=httpx.Response(
+                    201,
+                    json={
+                        "link_token": "t",
+                        "redirect_url": google,
+                        "connected_account_id": "ca_2",
+                    },
+                )
+            )
+            plain = await client.post(
+                "/desktop/api/apps/gmail/connect", headers=headers
+            )
+            another = await client.post(
+                "/desktop/api/apps/gmail/connect",
+                headers=headers,
+                json={"another": True},
+            )
+        # Without "another", connected stays connected (every caller before it).
+        assert plain.json() == {"toolkit": "gmail", "connected": True}
+        assert linked.call_count == 1
+        assert another.status_code == 200, another.text
+        target = urlparse(_start_target(another.json()["url"]))
+        query = parse_qs(target.query)
+        assert target.hostname == "accounts.google.com"
+        assert query["prompt"] == ["select_account consent"]
+        assert query["scope"] == ["openid email"]
+        assert query["state"] == ["s"]
+
+    async def test_no_more_than_five_accounts_of_an_app(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _signed_in(client, session, user)
+        five = [
+            {"id": f"ca_{n}", "created_at": f"2026-10-0{n}T10:00:00Z"}
+            for n in range(1, 6)
+        ]
+        with respx.mock(assert_all_called=True) as mock:
+            mock.get(f"{API}/api/v3.1/connected_accounts").mock(
+                return_value=_rows(*five)
+            )
+            response = await client.post(
+                "/desktop/api/apps/gmail/connect",
+                headers=headers,
+                json={"another": True},
+            )
+        assert response.status_code == 409
+        assert (
+            response.json()["error"]["message"]
+            == "You can connect up to 5 accounts of this app."
+        )
+
+    async def test_an_account_is_renamed_and_only_ones_own(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _signed_in(client, session, user)
+        named = {**WORK, "alias": "Work"}
+        with respx.mock(assert_all_called=False) as mock:
+            mock.get(f"{API}/api/v3.1/connected_accounts").mock(
+                side_effect=[_rows(WORK, HOME), _rows(named, HOME), _rows(named, HOME)]
+            )
+            patched = mock.patch(f"{API}/api/v3.1/connected_accounts/ca_w").mock(
+                return_value=httpx.Response(200, json={"id": "ca_w"})
+            )
+            elsewhere = mock.patch(f"{API}/api/v3.1/connected_accounts/ca_x")
+            renamed = await client.patch(
+                "/desktop/api/apps/gmail/accounts/ca_w",
+                headers=headers,
+                json={"name": "  Work  "},
+            )
+            foreign = await client.patch(
+                "/desktop/api/apps/gmail/accounts/ca_x",
+                headers=headers,
+                json={"name": "Mine"},
+            )
+        assert renamed.status_code == 200, renamed.text
+        assert json.loads(patched.calls[0].request.content) == {"alias": "Work"}
+        assert [one["label"] for one in renamed.json()["accounts"]] == ["Home", "Work"]
+        assert foreign.status_code == 404
+        assert not elsewhere.called
+
+    async def test_a_name_another_account_has_is_refused(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _signed_in(client, session, user)
+        with respx.mock() as mock:
+            mock.get(f"{API}/api/v3.1/connected_accounts").mock(
+                return_value=_rows(WORK, HOME)
+            )
+            mock.patch(f"{API}/api/v3.1/connected_accounts/ca_w").mock(
+                return_value=httpx.Response(
+                    409, json={"error": {"message": "Alias already exists"}}
+                )
+            )
+            response = await client.patch(
+                "/desktop/api/apps/gmail/accounts/ca_w",
+                headers=headers,
+                json={"name": "Home"},
+            )
+            too_long = await client.patch(
+                "/desktop/api/apps/gmail/accounts/ca_w",
+                headers=headers,
+                json={"name": "x" * 41},
+            )
+        assert response.status_code == 409
+        assert (
+            response.json()["error"]["message"]
+            == "Another account of this app has that name."
+        )
+        assert too_long.status_code == 400
+
+    async def test_one_account_is_removed_and_the_others_stay(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _signed_in(client, session, user)
+        with respx.mock(assert_all_called=False) as mock:
+            mock.get(f"{API}/api/v3.1/connected_accounts").mock(
+                side_effect=[_rows(WORK, HOME), _rows(HOME), _rows(HOME)]
+            )
+            removed = mock.delete(f"{API}/api/v3.1/connected_accounts/ca_w").mock(
+                return_value=httpx.Response(200, json={"success": True})
+            )
+            kept = mock.delete(f"{API}/api/v3.1/connected_accounts/ca_h")
+            gone = await client.delete(
+                "/desktop/api/apps/gmail/accounts/ca_w", headers=headers
+            )
+            foreign = await client.delete(
+                "/desktop/api/apps/gmail/accounts/ca_x", headers=headers
+            )
+        assert gone.status_code == 200, gone.text
+        assert removed.call_count == 1
+        assert not kept.called
+        assert [one["id"] for one in gone.json()["accounts"]] == ["ca_h"]
+        assert foreign.status_code == 404
+
+    async def test_the_account_routes_need_a_sign_in(
+        self, client: httpx.AsyncClient
+    ) -> None:
+        assert (await client.get("/desktop/api/apps/gmail/accounts")).status_code == 401
+        assert (
+            await client.delete("/desktop/api/apps/gmail/accounts/ca_w")
+        ).status_code == 401
+
+
+def test_googles_chooser_is_asked_only_of_google() -> None:
+    choose = apps_module.choose_account
+    assert parse_qs(
+        urlparse(choose("https://accounts.google.com/o/oauth2/auth?a=1")).query
+    ) == {"a": ["1"], "prompt": ["select_account"]}
+    asked = "https://accounts.google.com/o/oauth2/auth?prompt=select_account+consent"
+    assert choose(asked) == asked
+    slack = "https://slack.com/oauth/v2/authorize?prompt=consent"
+    assert choose(slack) == slack
+
+
+def test_a_missing_permission_with_several_accounts_redoes_that_one() -> None:
+    work = apps_module.AppAccount(
+        id="ca_w", name=None, identity="jo@acme.com", label="jo@acme.com"
+    )
+    refused = apps_module.scope_guidance(
+        "gmail", "Request had insufficient authentication scopes.", work
+    )
+    assert refused.startswith(
+        "The gmail account jo@acme.com was connected without the permission"
+    )
+    assert "remove jo@acme.com, and add it again with Add Another Account" in refused
+    assert "Don't call AuthenticateMcpServer with force_reauth" in refused
 
 
 def test_a_missing_permission_says_how_to_sign_in_again() -> None:
