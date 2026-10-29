@@ -162,7 +162,7 @@ are not counted: their changes are kept in `mac/build/release/` and the
 files put back as committed, before the build and after it.
 
 The disk image's window (29 October 2026) is `scripts/dmg.sh`: Simeon and
-an Applications link over a picture of five clay faces and an arrow
+an Applications link among six clay faces, each with its cursor
 (`dmg/background.png` and `@2x`, drawn by `dmg/background.cjs`), laid out
 by Finder. To see it without a release, after `scripts/build.sh`:
 `mac/scripts/dmg.sh` makes `mac/build/Simeon.dmg` from the Debug app and
