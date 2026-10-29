@@ -1131,6 +1131,150 @@ public struct ConnectorPage: Sendable, Equatable {
         L10n.text("How much did we collect in Razorpay today?"),
         L10n.text("Refund the payment from lea@acme.com in Razorpay."),
         L10n.text("When is the next settlement in Razorpay?"))
+    case "coinbase":
+      return page("Coinbase", site: "https://www.coinbase.com", privacy: "https://www.coinbase.com/legal/privacy", terms: "https://www.coinbase.com/legal/user_agreement/united_states",
+        about: L10n.text("Your agents trade and manage a portfolio in your Coinbase account through Coinbase for Agents, within the limits you set."),
+        L10n.text("What’s in my agent portfolio on Coinbase?"),
+        L10n.text("Preview an order on Coinbase to buy $50 of bitcoin."),
+        L10n.text("Place a limit order on Coinbase to buy $100 of ETH at $3,000."))
+    case "typefully":
+      return page("Typefully", site: "https://typefully.com", privacy: "https://typefully.com/privacy", terms: "https://typefully.com/terms",
+        about: L10n.text("Your agents draft, schedule, and publish your posts to X, LinkedIn, and Threads in Typefully."),
+        L10n.text("Draft a thread in Typefully about our launch."),
+        L10n.text("Schedule this post in Typefully for tomorrow at 9."),
+        L10n.text("What’s in my queue in Typefully this week?"))
+    case "crunchbase":
+      return page("Crunchbase", site: "https://www.crunchbase.com", privacy: "https://about.crunchbase.com/privacy-policy/", terms: "https://about.crunchbase.com/terms-of-service/",
+        about: L10n.text("Your agents look up companies, funding rounds, investors, and the people behind them in Crunchbase."),
+        L10n.text("How much has Acme raised, according to Crunchbase?"),
+        L10n.text("Which seed investors in Crunchbase back climate startups?"),
+        L10n.text("Find fintech startups in Crunchbase that raised a Series A this year."))
+    case "gem":
+      return page("Gem", site: "https://www.gem.com", privacy: "https://www.gem.com/privacy", terms: "https://www.gem.com/terms",
+        about: L10n.text("Your agents source candidates, and manage your talent pipeline and outreach in Gem."),
+        L10n.text("Find ten senior designers in Gem for our open role."),
+        L10n.text("Add these candidates to the engineering project in Gem."),
+        L10n.text("Which outreach sequence in Gem gets the most replies?"))
+    case "meta-ads":
+      return page("Meta", site: "https://www.facebook.com/business/ads", privacy: "https://www.facebook.com/privacy/policy/", terms: "https://www.facebook.com/legal/commercial_terms",
+        about: L10n.text("Your agents read and manage your campaigns, ad sets, and ads on Facebook and Instagram in Meta Ads."),
+        L10n.text("How did our campaigns in Meta Ads do last week?"),
+        L10n.text("Pause the ad sets in Meta Ads with a cost per purchase over $30."),
+        L10n.text("Which ad in Meta Ads has the best click rate this month?"))
+    case "loop-returns":
+      return page("Loop", site: "https://www.loopreturns.com", privacy: "https://www.loopreturns.com/legal/privacy-notice/", terms: "https://www.loopreturns.com/legal/terms/",
+        about: L10n.text("Your agents handle returns, exchanges, and refunds for your Shopify store in Loop Returns."),
+        L10n.text("How many returns came in this week in Loop Returns?"),
+        L10n.text("Approve the exchange for order 1042 in Loop Returns."),
+        L10n.text("What’s the most returned product this month in Loop Returns?"))
+    case "upwork":
+      return page("Upwork", site: "https://www.upwork.com", privacy: "https://www.upwork.com/legal#privacy", terms: "https://www.upwork.com/legal#terms",
+        about: L10n.text("Your agents work with your jobs, freelancers, proposals, and contracts on Upwork."),
+        L10n.text("Post a job on Upwork for a logo designer with a $500 budget."),
+        L10n.text("Summarize the proposals for our job on Upwork."),
+        L10n.text("Which contracts on Upwork end this month?"))
+    case "courtlistener":
+      return page("Free Law Project", site: "https://www.courtlistener.com", privacy: "https://www.courtlistener.com/terms/", terms: "https://www.courtlistener.com/terms/",
+        about: L10n.text("Your agents search case law, court dockets, and judges in CourtListener, from the Free Law Project."),
+        L10n.text("Find recent appeals court cases in CourtListener on non-compete agreements."),
+        L10n.text("Show me the latest filings in this docket in CourtListener."),
+        L10n.text("Which cases did Judge Rivera decide this year in CourtListener?"))
+    case "karbon":
+      return page("Karbon", site: "https://karbonhq.com", privacy: "https://karbonhq.com/privacy-policy/", terms: "https://karbonhq.com/terms-of-use/",
+        about: L10n.text("Your agents work with your accounting practice’s clients, work, and deadlines in Karbon."),
+        L10n.text("Which client work in Karbon is due this week?"),
+        L10n.text("What’s overdue for the Acme account in Karbon?"),
+        L10n.text("Make a task in Karbon to send Lea her tax documents."))
+    case "ignition":
+      return page("Ignition", site: "https://www.ignitionapp.com", privacy: "https://www.ignitionapp.com/privacy", terms: "https://www.ignitionapp.com/terms",
+        about: L10n.text("Your agents work with proposals, engagement letters, billing, and payments for your firm in Ignition."),
+        L10n.text("Which proposals in Ignition are waiting for the client to accept?"),
+        L10n.text("Send a proposal in Ignition to Acme for monthly bookkeeping."),
+        L10n.text("Which payments in Ignition failed this month?"))
+    case "appfolio":
+      return page("AppFolio", site: "https://www.appfolio.com", privacy: "https://www.appfolio.com/privacy", terms: "https://www.appfolio.com/terms",
+        about: L10n.text("Your agents work with your properties, units, tenants, and work orders in AppFolio."),
+        L10n.text("Which units in AppFolio are vacant right now?"),
+        L10n.text("List the open work orders in AppFolio for the Elm Street building."),
+        L10n.text("Which tenants in AppFolio are late on rent this month?"))
+    case "jobber":
+      return page("Jobber", site: "https://www.getjobber.com", privacy: "https://www.getjobber.com/privacy-policy/", terms: "https://www.getjobber.com/terms-of-service/",
+        about: L10n.text("Your agents work with your clients, quotes, jobs, and invoices in Jobber."),
+        L10n.text("Make a quote in Jobber for Lea’s kitchen repaint."),
+        L10n.text("Which jobs in Jobber are scheduled for tomorrow?"),
+        L10n.text("Which invoices in Jobber are still unpaid?"))
+    case "companycam":
+      return page("CompanyCam", site: "https://companycam.com", privacy: "https://companycam.com/privacy-notice", terms: "https://companycam.com/terms",
+        about: L10n.text("Your agents work with your job site photos, projects, and checklists in CompanyCam."),
+        L10n.text("Show me today’s photos from the Elm Street project in CompanyCam."),
+        L10n.text("Which checklists in CompanyCam are still open?"),
+        L10n.text("Make a project in CompanyCam for the new roof at 12 Oak Lane."))
+    case "uber":
+      return page("Uber", site: "https://www.uber.com", privacy: "https://www.uber.com/legal/en/document/?name=privacy-notice&country=united-states&lang=en", terms: "https://www.uber.com/legal/en/document/?name=general-terms-of-use&country=united-states&lang=en",
+        about: L10n.text("Your agents check ride prices and times in Uber, and send you a link to book the ride."),
+        L10n.text("How much is a ride from the office to the airport in Uber right now?"),
+        L10n.text("Send me a link to book an Uber to the train station."),
+        L10n.text("How long would a ride downtown take in Uber?"))
+    case "instacart":
+      return page("Instacart", site: "https://www.instacart.com", privacy: "https://www.instacart.com/privacy", terms: "https://www.instacart.com/terms",
+        about: L10n.text("Your agents turn your recipes and shopping lists into Instacart pages you can order from."),
+        L10n.text("Turn this lasagna recipe into a shopping list on Instacart."),
+        L10n.text("Make an Instacart list for this week’s groceries."),
+        L10n.text("Put everything for taco night on one page on Instacart."))
+    case "taskrabbit":
+      return page("TaskRabbit", site: "https://www.taskrabbit.com", privacy: "https://www.taskrabbit.com/privacy", terms: "https://www.taskrabbit.com/terms",
+        about: L10n.text("Your agents find Taskers near you on TaskRabbit for jobs around the home, and start a booking."),
+        L10n.text("Find a Tasker on TaskRabbit to assemble a bed this Saturday."),
+        L10n.text("How much does furniture assembly cost near me on TaskRabbit?"),
+        L10n.text("Start a booking on TaskRabbit for help moving a sofa."))
+    case "bamboohr":
+      return page("BambooHR", site: "https://www.bamboohr.com", privacy: "https://www.bamboohr.com/legal/privacy-policy", terms: "https://www.bamboohr.com/legal/terms-of-service",
+        about: L10n.text("Your agents look up employees, time off, job openings, and applicants in BambooHR."),
+        L10n.text("Who’s off next week in BambooHR?"),
+        L10n.text("How many vacation days does Sam have left in BambooHR?"),
+        L10n.text("List the applicants for the marketing opening in BambooHR."))
+    case "7shifts":
+      return page("7shifts", site: "https://www.7shifts.com", privacy: "https://www.7shifts.com/privacy-policy/", terms: "https://www.7shifts.com/terms-of-service/",
+        about: L10n.text("Your agents see your shifts, locations, and restaurant team in 7shifts."),
+        L10n.text("Who’s working the dinner shift tonight in 7shifts?"),
+        L10n.text("List this week’s shifts at the downtown location in 7shifts."),
+        L10n.text("Who works at the Main Street location in 7shifts?"))
+    case "veryfi":
+      return page("Veryfi", site: "https://www.veryfi.com", privacy: "https://www.veryfi.com/privacy/", terms: "https://www.veryfi.com/terms/",
+        about: L10n.text("Your agents read your receipts, invoices, and bills into data with Veryfi."),
+        L10n.text("Read this receipt with Veryfi and tell me the total and the tax."),
+        L10n.text("Read these five invoices with Veryfi and list each total."),
+        L10n.text("Find last month’s fuel receipts in Veryfi."))
+    case "yelp":
+      return page("Yelp", site: "https://www.yelp.com", privacy: "https://terms.yelp.com/privacy/", terms: "https://terms.yelp.com/tos/",
+        about: L10n.text("Your agents find businesses and events, and read reviews and ratings on Yelp."),
+        L10n.text("Find the best-rated sushi near our office on Yelp."),
+        L10n.text("What do reviews on Yelp say about Café Lumen?"),
+        L10n.text("Find events in Austin this weekend on Yelp."))
+    case "tiktok":
+      return page("TikTok", site: "https://www.tiktok.com", privacy: "https://www.tiktok.com/legal/page/us/privacy-policy/en", terms: "https://www.tiktok.com/legal/page/us/terms-of-service/en",
+        about: L10n.text("Your agents post videos and photos to TikTok, and read your videos and stats."),
+        L10n.text("Post this video to TikTok with the caption “Behind the scenes”."),
+        L10n.text("Which of my videos on TikTok got the most views this month?"),
+        L10n.text("How many followers did I gain on TikTok this week?"))
+    case "follow-up-boss":
+      return page("Follow Up Boss", site: "https://www.followupboss.com", privacy: "https://www.followupboss.com/legal-pages/privacy-policy", terms: "https://www.followupboss.com/legal-pages/terms-of-service",
+        about: L10n.text("Your agents work with your leads, people, deals, and appointments in Follow Up Boss."),
+        L10n.text("Which new leads came into Follow Up Boss today?"),
+        L10n.text("Book a showing in Follow Up Boss with Lea for Saturday at 11."),
+        L10n.text("Which deals in Follow Up Boss are under contract?"))
+    case "matterport":
+      return page("Matterport", site: "https://matterport.com", privacy: "https://matterport.com/legal/privacy-policy", terms: "https://matterport.com/terms-of-use",
+        about: L10n.text("Your agents look up your 3D tours and the spaces in them in Matterport."),
+        L10n.text("List my 3D tours in Matterport."),
+        L10n.text("Which rooms are in the Elm Street tour in Matterport?"),
+        L10n.text("Turn off last year’s old tours in Matterport."))
+    case "zoho-inventory":
+      return page("Zoho", site: "https://www.zoho.com/inventory/", privacy: "https://www.zoho.com/privacy.html", terms: "https://www.zoho.com/terms.html",
+        about: L10n.text("Your agents work with your items, stock, sales orders, and invoices in Zoho Inventory."),
+        L10n.text("Which items in Zoho Inventory are below their reorder level?"),
+        L10n.text("Make a sales order in Zoho Inventory for Acme: 20 mugs."),
+        L10n.text("Email the invoice for order 1042 to the customer from Zoho Inventory."))
     default:
       return nil
     }
@@ -1159,5 +1303,5 @@ public struct ConnectorPage: Sendable, Equatable {
   }
 
   /** The connectors written so far, for the tests. */
-  public static let written = ["gmail", "google-calendar", "google-drive", "outlook", "slack", "notion", "github", "linear", "dropbox", "hubspot", "airtable", "asana", "clickup", "monday", "todoist", "zoom", "google-meet", "figma", "canva", "miro", "webflow", "wix", "stripe", "paypal", "square", "ramp", "quickbooks", "salesforce", "intercom", "apollo", "jira", "vercel", "supabase", "sentry", "cloudflare", "mailchimp", "greenhouse", "gusto", "linkedin", "google-docs", "google-sheets", "google-slides", "onedrive", "google-tasks", "trello", "xero", "shopify", "brex", "pipedrive", "docusign", "klaviyo", "ashby", "google-analytics", "google-search-console", "youtube", "kit", "instagram", "facebook", "calendly", "cal-com", "attio", "zendesk", "microsoft-teams", "discord", "mercury", "posthog", "google-ads", "tiktok-ads", "microsoft-excel", "reddit", "pinterest", "gumroad", "google-classroom", "gorgias", "gong", "capsule-crm", "dialpad", "link", "granola", "resend", "sharepoint", "onenote", "microsoft-to-do", "lovable", "shop", "whatsapp", "twitch", "reddit-ads", "pinterest-ads", "omnisend", "dub", "eventbrite", "google-photos", "mural", "zeplin", "contentful", "box", "confluence", "notebooklm", "basecamp", "wrike", "ticktick", "harvest", "typeform", "productboard", "google-maps", "webex", "fathom", "freshbooks", "ynab", "splitwise", "shippo", "dynamics-365", "gitlab", "bitbucket", "pagerduty", "google-bigquery", "hugging-face", "excalidraw", "heygen", "higgsfield", "gamma", "descript", "lucid", "eraser", "mobbin", "magic-patterns", "pandadoc", "otter", "read-ai", "fellow", "plaid", "clay", "netlify", "neon", "beehiiv", "mailerlite", "getresponse", "customer-io", "lemlist", "mixpanel", "amplitude", "bitly", "ahrefs", "moz", "dataforseo", "semrush", "brevo", "runway", "black-forest-labs", "fal", "replicate", "creatomate", "shotstack", "bannerbear", "cloudinary", "sanity", "wistia", "captions", "elevenlabs", "storyblok", "coda", "make", "tally", "jotform", "surveymonkey", "canny", "fireflies", "tldv", "avoma", "missive", "mixmax", "close", "hunter", "lusha", "aircall", "workable", "breezy-hr", "postman", "railway", "datadog", "tavily", "exa", "shortcut", "razorpay"]
+  public static let written = ["gmail", "google-calendar", "google-drive", "outlook", "slack", "notion", "github", "linear", "dropbox", "hubspot", "airtable", "asana", "clickup", "monday", "todoist", "zoom", "google-meet", "figma", "canva", "miro", "webflow", "wix", "stripe", "paypal", "square", "ramp", "quickbooks", "salesforce", "intercom", "apollo", "jira", "vercel", "supabase", "sentry", "cloudflare", "mailchimp", "greenhouse", "gusto", "linkedin", "google-docs", "google-sheets", "google-slides", "onedrive", "google-tasks", "trello", "xero", "shopify", "brex", "pipedrive", "docusign", "klaviyo", "ashby", "google-analytics", "google-search-console", "youtube", "kit", "instagram", "facebook", "calendly", "cal-com", "attio", "zendesk", "microsoft-teams", "discord", "mercury", "posthog", "google-ads", "tiktok-ads", "microsoft-excel", "reddit", "pinterest", "gumroad", "google-classroom", "gorgias", "gong", "capsule-crm", "dialpad", "link", "granola", "resend", "sharepoint", "onenote", "microsoft-to-do", "lovable", "shop", "whatsapp", "twitch", "reddit-ads", "pinterest-ads", "omnisend", "dub", "eventbrite", "google-photos", "mural", "zeplin", "contentful", "box", "confluence", "notebooklm", "basecamp", "wrike", "ticktick", "harvest", "typeform", "productboard", "google-maps", "webex", "fathom", "freshbooks", "ynab", "splitwise", "shippo", "dynamics-365", "gitlab", "bitbucket", "pagerduty", "google-bigquery", "hugging-face", "excalidraw", "heygen", "higgsfield", "gamma", "descript", "lucid", "eraser", "mobbin", "magic-patterns", "pandadoc", "otter", "read-ai", "fellow", "plaid", "clay", "netlify", "neon", "beehiiv", "mailerlite", "getresponse", "customer-io", "lemlist", "mixpanel", "amplitude", "bitly", "ahrefs", "moz", "dataforseo", "semrush", "brevo", "runway", "black-forest-labs", "fal", "replicate", "creatomate", "shotstack", "bannerbear", "cloudinary", "sanity", "wistia", "captions", "elevenlabs", "storyblok", "coda", "make", "tally", "jotform", "surveymonkey", "canny", "fireflies", "tldv", "avoma", "missive", "mixmax", "close", "hunter", "lusha", "aircall", "workable", "breezy-hr", "postman", "railway", "datadog", "tavily", "exa", "shortcut", "razorpay", "coinbase", "typefully", "crunchbase", "gem", "meta-ads", "loop-returns", "upwork", "courtlistener", "karbon", "ignition", "appfolio", "jobber", "companycam", "uber", "instacart", "taskrabbit", "bamboohr", "7shifts", "veryfi", "yelp", "tiktok", "follow-up-boss", "matterport", "zoho-inventory"]
 }
