@@ -21,7 +21,7 @@ settings:
     SWIFT_VERSION: "5.0"
     # 0.2.0: the first Swift release, after the Electron app's 0.1.2. 0.2.1
     # (22 October 2026): the design pass, paste, and the name in Settings.
-    MARKETING_VERSION: "0.2.4"
+    MARKETING_VERSION: "0.2.5"
     CURRENT_PROJECT_VERSION: "1"
     CODE_SIGN_STYLE: Automatic
     # The Apple developer team Simeon publishes from: set it here, or in
