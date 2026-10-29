@@ -831,6 +831,156 @@ public struct ConnectorPage: Sendable, Equatable {
         L10n.text("Make a branch in Neon of our production database for testing."),
         L10n.text("Run this query in Neon and show me the results."),
         L10n.text("Which tables are in our main database in Neon?"))
+    case "beehiiv":
+      return page("Beehiiv", site: "https://www.beehiiv.com", privacy: "https://www.beehiiv.com/privacy", terms: "https://www.beehiiv.com/tou",
+        about: L10n.text("Your agents work with your newsletters, posts, and subscribers in Beehiiv."),
+        L10n.text("How many people subscribed in Beehiiv this week?"),
+        L10n.text("Draft a post in Beehiiv about our new feature."),
+        L10n.text("What was the open rate of last week’s newsletter in Beehiiv?"))
+    case "mailerlite":
+      return page("MailerLite", site: "https://www.mailerlite.com", privacy: "https://www.mailerlite.com/legal/privacy-policy", terms: "https://www.mailerlite.com/legal/terms-of-service",
+        about: L10n.text("Your agents work with your subscribers, groups, campaigns, and automations in MailerLite."),
+        L10n.text("Add lea@acme.com to the Customers group in MailerLite."),
+        L10n.text("How did last week’s campaign do in MailerLite?"),
+        L10n.text("Draft a campaign in MailerLite announcing our summer sale."))
+    case "getresponse":
+      return page("GetResponse", site: "https://www.getresponse.com", privacy: "https://www.getresponse.com/legal/privacy", terms: "https://www.getresponse.com/legal",
+        about: L10n.text("Your agents work with your contacts, lists, newsletters, and automations in GetResponse."),
+        L10n.text("How many contacts joined our main list in GetResponse this month?"),
+        L10n.text("Draft a newsletter in GetResponse about the new course."),
+        L10n.text("Which automations in GetResponse are running?"))
+    case "customer-io":
+      return page("Customer.io", site: "https://customer.io", privacy: "https://customer.io/legal/privacy-policy", terms: "https://customer.io/legal/terms-of-service",
+        about: L10n.text("Your agents look up people and segments, and work with campaigns and messages in Customer.io."),
+        L10n.text("How many people are in the trial segment in Customer.io?"),
+        L10n.text("Which campaign in Customer.io sends the welcome email?"),
+        L10n.text("Show me the messages sent to lea@acme.com this week in Customer.io."))
+    case "lemlist":
+      return page("Lemlist", site: "https://www.lemlist.com", privacy: "https://www.lemlist.com/legal/privacy-policy", terms: "https://www.lemlist.com/legal/terms",
+        about: L10n.text("Your agents run your outreach campaigns, leads, and replies in Lemlist."),
+        L10n.text("Which leads replied to our campaign in Lemlist this week?"),
+        L10n.text("Add these ten leads to the founders campaign in Lemlist."),
+        L10n.text("What’s the reply rate of each campaign in Lemlist?"))
+    case "mixpanel":
+      return page("Mixpanel", site: "https://mixpanel.com", privacy: "https://mixpanel.com/legal/privacy-policy/", terms: "https://mixpanel.com/legal/terms-of-use/",
+        about: L10n.text("Your agents read your product analytics in Mixpanel: events, funnels, and retention."),
+        L10n.text("How many people used search this week in Mixpanel?"),
+        L10n.text("Where do people drop off in the checkout funnel in Mixpanel?"),
+        L10n.text("What’s the 30-day retention in Mixpanel for people who joined in September?"))
+    case "amplitude":
+      return page("Amplitude", site: "https://amplitude.com", privacy: "https://amplitude.com/privacy", terms: "https://amplitude.com/terms",
+        about: L10n.text("Your agents read your charts, cohorts, and experiments in Amplitude."),
+        L10n.text("How did daily active users change this month in Amplitude?"),
+        L10n.text("Which experiment in Amplitude won last week?"),
+        L10n.text("Make a cohort in Amplitude of people who used the app three days in a row."))
+    case "bitly":
+      return page("Bitly", site: "https://bitly.com", privacy: "https://bitly.com/pages/privacy/", terms: "https://bitly.com/pages/terms-of-service/",
+        about: L10n.text("Your agents make short links and QR codes, and read their clicks in Bitly."),
+        L10n.text("Make a short link in Bitly for our spring sale page."),
+        L10n.text("How many clicks did the newsletter link get in Bitly?"),
+        L10n.text("Make a QR code in Bitly for the menu page."))
+    case "ahrefs":
+      return page("Ahrefs", site: "https://ahrefs.com", privacy: "https://ahrefs.com/legal/privacy-policy", terms: "https://ahrefs.com/legal/terms",
+        about: L10n.text("Your agents check backlinks, keywords, and site audits in Ahrefs."),
+        L10n.text("Which sites linked to us this month in Ahrefs?"),
+        L10n.text("Find easy keywords in Ahrefs for our coffee subscription."),
+        L10n.text("What issues did the last site audit find in Ahrefs?"))
+    case "moz":
+      return page("Moz", site: "https://moz.com", privacy: "https://moz.com/privacy-policy", terms: "https://moz.com/terms-of-use",
+        about: L10n.text("Your agents look up domain authority, links, and keywords in Moz. Needs a Moz API plan."),
+        L10n.text("What’s our domain authority in Moz compared with acme.com?"),
+        L10n.text("Which pages link to our site in Moz?"),
+        L10n.text("How hard is the keyword “coffee subscription” in Moz?"))
+    case "dataforseo":
+      return page("DataForSEO", site: "https://dataforseo.com", privacy: "https://dataforseo.com/privacy-policy/", terms: "https://dataforseo.com/terms-of-service/",
+        about: L10n.text("Your agents pull search results, keyword, and backlink data from DataForSEO."),
+        L10n.text("Get the top ten search results for “best espresso machine” from DataForSEO."),
+        L10n.text("How many people search for “oat milk latte” each month, according to DataForSEO?"),
+        L10n.text("Pull the backlinks for acme.com from DataForSEO."))
+    case "semrush":
+      return page("Semrush", site: "https://www.semrush.com", privacy: "https://www.semrush.com/company/legal/privacy-policy/", terms: "https://www.semrush.com/company/legal/terms-of-service/",
+        about: L10n.text("Your agents check keywords, traffic, and backlinks for you and your competitors in Semrush."),
+        L10n.text("Which keywords bring acme.com the most traffic in Semrush?"),
+        L10n.text("Compare our traffic with our top competitor in Semrush."),
+        L10n.text("Find this month’s new backlinks to our site in Semrush."))
+    case "brevo":
+      return page("Brevo", site: "https://www.brevo.com", privacy: "https://www.brevo.com/legal/privacypolicy/", terms: "https://www.brevo.com/legal/termsofuse/",
+        about: L10n.text("Your agents work with your contacts and your email and SMS campaigns in Brevo."),
+        L10n.text("Add lea@acme.com to the newsletter list in Brevo."),
+        L10n.text("How did yesterday’s email campaign do in Brevo?"),
+        L10n.text("Draft an SMS campaign in Brevo for the weekend sale."))
+    case "runway":
+      return page("Runway", site: "https://runwayml.com", privacy: "https://runway.com/privacy-policy", terms: "https://runway.com/terms-of-use",
+        about: L10n.text("Your agents generate and edit video and images with AI in Runway."),
+        L10n.text("Make a five-second video in Runway of waves at sunset."),
+        L10n.text("Turn this product photo into a short video in Runway."),
+        L10n.text("Make three header images in Runway for our blog."))
+    case "black-forest-labs":
+      return page("Black Forest Labs", site: "https://bfl.ai", privacy: "https://bfl.ai/legal/privacy-policy", terms: "https://bfl.ai/legal/terms-of-service",
+        about: L10n.text("Your agents generate and edit images with FLUX, the models from Black Forest Labs."),
+        L10n.text("Make an image with FLUX of a cozy reading corner for our blog."),
+        L10n.text("Change the background of this photo to a beach with FLUX."),
+        L10n.text("Generate four logo ideas for a coffee shop with FLUX."))
+    case "fal":
+      return page("fal", site: "https://fal.ai", privacy: "https://fal.ai/legal/privacy-policy", terms: "https://fal.ai/legal/terms-of-service",
+        about: L10n.text("Your agents run AI models for images, video, and audio on fal.ai."),
+        L10n.text("Generate a product image on fal.ai with the newest image model."),
+        L10n.text("Turn this photo into a short video on fal.ai."),
+        L10n.text("Make a voice-over of this paragraph on fal.ai."))
+    case "replicate":
+      return page("Replicate", site: "https://replicate.com", privacy: "https://replicate.com/privacy", terms: "https://replicate.com/terms",
+        about: L10n.text("Your agents run open-source AI models on Replicate."),
+        L10n.text("Upscale this photo on Replicate."),
+        L10n.text("Find a model on Replicate that removes the background from images."),
+        L10n.text("Transcribe this audio file on Replicate."))
+    case "creatomate":
+      return page("Creatomate", site: "https://creatomate.com", privacy: "https://creatomate.com/privacy-policy", terms: "https://creatomate.com/terms-of-service",
+        about: L10n.text("Your agents make videos and images from your templates in Creatomate."),
+        L10n.text("Make ten product videos in Creatomate from our spring template."),
+        L10n.text("Render a story video in Creatomate with this quote."),
+        L10n.text("Which templates do we have in Creatomate?"))
+    case "shotstack":
+      return page("Shotstack", site: "https://shotstack.io", privacy: "https://shotstack.io/privacy/", terms: "https://shotstack.io/terms/",
+        about: L10n.text("Your agents edit and render videos in Shotstack."),
+        L10n.text("Join these three clips in Shotstack and add our logo."),
+        L10n.text("Render a 15-second promo in Shotstack with this music."),
+        L10n.text("Add subtitles to this video in Shotstack."))
+    case "bannerbear":
+      return page("Bannerbear", site: "https://www.bannerbear.com", privacy: "https://www.bannerbear.com/privacy/", terms: "https://www.bannerbear.com/terms/",
+        about: L10n.text("Your agents generate images and videos from your templates in Bannerbear."),
+        L10n.text("Make social images in Bannerbear for this week’s five blog posts."),
+        L10n.text("Generate a certificate in Bannerbear for each name on this list."),
+        L10n.text("Which templates do we have in Bannerbear?"))
+    case "cloudinary":
+      return page("Cloudinary", site: "https://cloudinary.com", privacy: "https://cloudinary.com/privacy", terms: "https://cloudinary.com/tou",
+        about: L10n.text("Your agents upload, organize, and transform your images and videos in Cloudinary."),
+        L10n.text("Upload these product photos to the spring folder in Cloudinary."),
+        L10n.text("Make square versions of our banner images in Cloudinary."),
+        L10n.text("Find every image in Cloudinary tagged homepage."))
+    case "sanity":
+      return page("Sanity", site: "https://www.sanity.io", privacy: "https://www.sanity.io/legal/privacy", terms: "https://www.sanity.io/legal/tos",
+        about: L10n.text("Your agents work with your content, schemas, and documents in Sanity."),
+        L10n.text("Which blog posts in Sanity are still drafts?"),
+        L10n.text("Update the headline on the home page in Sanity."),
+        L10n.text("Add an FAQ document in Sanity about shipping times."))
+    case "wistia":
+      return page("Wistia", site: "https://wistia.com", privacy: "https://wistia.com/privacy", terms: "https://wistia.com/terms",
+        about: L10n.text("Your agents look after your videos, channels, and stats in Wistia."),
+        L10n.text("Which videos in Wistia got the most plays this month?"),
+        L10n.text("How long do people watch our demo video in Wistia?"),
+        L10n.text("Move the webinar recordings into the Webinars project in Wistia."))
+    case "captions":
+      return page("Captions", site: "https://www.captions.ai", privacy: "https://mirage.app/legal/privacy-policy", terms: "https://mirage.app/legal/captions-web-terms",
+        about: L10n.text("Your agents edit talking videos and add captions with AI in Captions."),
+        L10n.text("Add captions to this video in Captions."),
+        L10n.text("Cut the pauses from my talking video in Captions."),
+        L10n.text("Trim this video in Captions to 60 seconds."))
+    case "elevenlabs":
+      return page("ElevenLabs", site: "https://elevenlabs.io", privacy: "https://elevenlabs.io/privacy-policy", terms: "https://elevenlabs.io/terms-of-use",
+        about: L10n.text("Your agents make speech, voices, sound effects, and music in ElevenLabs."),
+        L10n.text("Turn this script into a voice-over in ElevenLabs."),
+        L10n.text("Make a sound effect in ElevenLabs of a creaking door."),
+        L10n.text("Compose a calm 30-second music track in ElevenLabs for our video."))
     default:
       return nil
     }
@@ -859,5 +1009,5 @@ public struct ConnectorPage: Sendable, Equatable {
   }
 
   /** The connectors written so far, for the tests. */
-  public static let written = ["gmail", "google-calendar", "google-drive", "outlook", "slack", "notion", "github", "linear", "dropbox", "hubspot", "airtable", "asana", "clickup", "monday", "todoist", "zoom", "google-meet", "figma", "canva", "miro", "webflow", "wix", "stripe", "paypal", "square", "ramp", "quickbooks", "salesforce", "intercom", "apollo", "jira", "vercel", "supabase", "sentry", "cloudflare", "mailchimp", "greenhouse", "gusto", "linkedin", "google-docs", "google-sheets", "google-slides", "onedrive", "google-tasks", "trello", "xero", "shopify", "brex", "pipedrive", "docusign", "klaviyo", "ashby", "google-analytics", "google-search-console", "youtube", "kit", "instagram", "facebook", "calendly", "cal-com", "attio", "zendesk", "microsoft-teams", "discord", "mercury", "posthog", "google-ads", "tiktok-ads", "microsoft-excel", "reddit", "pinterest", "gumroad", "google-classroom", "gorgias", "gong", "capsule-crm", "dialpad", "link", "granola", "resend", "sharepoint", "onenote", "microsoft-to-do", "lovable", "shop", "whatsapp", "twitch", "reddit-ads", "pinterest-ads", "omnisend", "dub", "eventbrite", "google-photos", "mural", "zeplin", "contentful", "box", "confluence", "notebooklm", "basecamp", "wrike", "ticktick", "harvest", "typeform", "productboard", "google-maps", "webex", "fathom", "freshbooks", "ynab", "splitwise", "shippo", "dynamics-365", "gitlab", "bitbucket", "pagerduty", "google-bigquery", "hugging-face", "excalidraw", "heygen", "higgsfield", "gamma", "descript", "lucid", "eraser", "mobbin", "magic-patterns", "pandadoc", "otter", "read-ai", "fellow", "plaid", "clay", "netlify", "neon"]
+  public static let written = ["gmail", "google-calendar", "google-drive", "outlook", "slack", "notion", "github", "linear", "dropbox", "hubspot", "airtable", "asana", "clickup", "monday", "todoist", "zoom", "google-meet", "figma", "canva", "miro", "webflow", "wix", "stripe", "paypal", "square", "ramp", "quickbooks", "salesforce", "intercom", "apollo", "jira", "vercel", "supabase", "sentry", "cloudflare", "mailchimp", "greenhouse", "gusto", "linkedin", "google-docs", "google-sheets", "google-slides", "onedrive", "google-tasks", "trello", "xero", "shopify", "brex", "pipedrive", "docusign", "klaviyo", "ashby", "google-analytics", "google-search-console", "youtube", "kit", "instagram", "facebook", "calendly", "cal-com", "attio", "zendesk", "microsoft-teams", "discord", "mercury", "posthog", "google-ads", "tiktok-ads", "microsoft-excel", "reddit", "pinterest", "gumroad", "google-classroom", "gorgias", "gong", "capsule-crm", "dialpad", "link", "granola", "resend", "sharepoint", "onenote", "microsoft-to-do", "lovable", "shop", "whatsapp", "twitch", "reddit-ads", "pinterest-ads", "omnisend", "dub", "eventbrite", "google-photos", "mural", "zeplin", "contentful", "box", "confluence", "notebooklm", "basecamp", "wrike", "ticktick", "harvest", "typeform", "productboard", "google-maps", "webex", "fathom", "freshbooks", "ynab", "splitwise", "shippo", "dynamics-365", "gitlab", "bitbucket", "pagerduty", "google-bigquery", "hugging-face", "excalidraw", "heygen", "higgsfield", "gamma", "descript", "lucid", "eraser", "mobbin", "magic-patterns", "pandadoc", "otter", "read-ai", "fellow", "plaid", "clay", "netlify", "neon", "beehiiv", "mailerlite", "getresponse", "customer-io", "lemlist", "mixpanel", "amplitude", "bitly", "ahrefs", "moz", "dataforseo", "semrush", "brevo", "runway", "black-forest-labs", "fal", "replicate", "creatomate", "shotstack", "bannerbear", "cloudinary", "sanity", "wistia", "captions", "elevenlabs"]
 }
