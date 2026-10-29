@@ -10,9 +10,10 @@ final class ConnectorPagesTests: XCTestCase {
       XCTAssertFalse(page.maker.isEmpty, id)
       XCTAssertFalse(page.about.isEmpty, id)
       XCTAssertEqual(page.examples.count, 3, id)
-      // Each example names an app the chat dresses with its logo, so the card shows it as a message would.
+      // Each example names an app the chat dresses with its logo (an everyday-word name, as Square, only after "in", "on", "from"…), so the card shows it as a message would.
       for example in page.examples {
-        XCTAssertTrue(Brands.mentions.contains { example.contains($0.name) }, "\(id): \(example)")
+        let apps = Mentions.find(in: example, agents: []).filter { if case .brand = $0.kind { return true }; return false }
+        XCTAssertFalse(apps.isEmpty, "\(id): \(example)")
       }
       for link in [page.website, page.privacy, page.terms] {
         let url = try XCTUnwrap(link, id)
