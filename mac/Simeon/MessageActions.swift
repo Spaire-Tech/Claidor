@@ -20,6 +20,8 @@ final class ChatControl {
   var reply: Reply?
   /** The message under the pointer, for the right-click menu. */
   var hovered: Bubble?
+  /** Where that message is in the window, for its reactions' capsule (`Tapback`). */
+  @ObservationIgnored var hoveredSpot: WindowSpot?
   /** The message whose menu is open: its hover bar stays. */
   var menuFor: String?
   /** A row jumped to: the transcript scrolls to it and lights it (`sand-12cjh1l`), the count making each jump new. */
@@ -168,21 +170,24 @@ final class ChatControl {
  * beside the bubble, 6 from it and level with its middle, 2 apart; Add
  * reaction, Reply and More (24, 8 round, glyphs 14 at 60%), Add reaction
  * nearest the bubble: so on the person's side the order runs More, Reply,
- * Add reaction. More opens Start a thread and Copy; Add reaction the six
- * quick reactions. Native menus, as the window's are menus.
+ * Add reaction. More opens Start a thread and Copy, in a Mac menu; Add
+ * reaction the capsule of reactions over the message (`Tapback`).
  */
 struct HoverBar: View {
   let bubble: Bubble
   let agentId: String
   let inThread: Bool
   let look: Look
+  /** Where the message is: its reactions' capsule opens over it. */
+  var bubbleSpot: WindowSpot? = nil
   @Environment(AppStore.self) private var store
   @Environment(ChatControl.self) private var control
 
   var body: some View {
     let buttons = [
       AnyView(BarButton(symbol: "face.smiling", label: String(localized: "Add reaction"), look: look) { spot in
-        MessageMenu.show(for: bubble, agentId: agentId, kind: .reactions, inThread: inThread, store: store, control: control, under: spot)
+        let frame = bubbleSpot?.frame ?? .zero
+        Tapback.show(for: bubble, agentId: agentId, store: store, control: control, over: frame == .zero ? spot : frame)
       }),
       AnyView(BarButton(symbol: bubble.fromPerson ? "arrowshape.turn.up.right" : "arrowshape.turn.up.left", label: bubble.fromPerson ? String(localized: "Reply to your message") : String(localized: "Reply to Agent message"), look: look) {
         _ in control.startReply(bubble, entries: store.transcripts[agentId] ?? [])
@@ -231,15 +236,16 @@ struct BarButton: View {
 // MARK: The menus
 
 /**
- * A message's menus as Mac menus (the window's `ui-menu`): Add reaction
- * shows the six quick reactions in a row (👍 👎 ❤️ 😂 🎉 😮, 32 square,
- * 20 high, 6 round) with More emoji; More shows Start a thread and Copy;
- * the right-click menu shows the row, then Reply, Start a thread and Copy.
- * Start a thread is not offered inside a thread.
+ * A message's menus as Mac menus (the window's `ui-menu`): More shows Start
+ * a thread and Copy; the right-click menu shows Add reaction (the capsule
+ * over the message, `Tapback`, as Messages' Tapback), then Reply, Start a
+ * thread and Copy. Start a thread is not offered inside a thread. Until 29
+ * October 2026 the reactions were a row inside the menu, slow to draw and
+ * unlike the Mac's own.
  */
 @MainActor
 enum MessageMenu {
-  enum Kind { case reactions, more, context }
+  enum Kind { case more, context }
 
   /** The quick reactions (`sand-reaction-picker`), in the window's order. */
   static let quick = ["👍", "👎", "❤️", "😂", "🎉", "😮"]
@@ -253,37 +259,16 @@ enum MessageMenu {
   static func show(for bubble: Bubble, agentId: String, kind: Kind, inThread: Bool, store: AppStore, control: ChatControl, at event: NSEvent? = nil, under button: CGRect? = nil) {
     let menu = NSMenu()
     menu.autoenablesItems = false
-    let handler = Handler(bubble: bubble, agentId: agentId, store: store, control: control)
-    if kind != .more {
-      let row = NSMenuItem()
-      let look = Look(NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? .dark : .light)
-      let picker = NSHostingView(rootView: ReactionRow(look: look) { [weak menu] emoji in
-        menu?.cancelTracking()
-        if let emoji {
-          Task { await store.react(emoji, to: bubble.id, in: agentId) }
-        } else {
-          // More emoji: the full picker where the menu was, once the menu has gone.
-          DispatchQueue.main.async {
-            EmojiPopover.show(look: look, mine: Set(bubble.myReactions), holding: bubble.id, control: control, under: button) { emoji in
-              Task { await store.react(emoji, to: bubble.id, in: agentId) }
-            }
-          }
-        }
-      })
-      picker.frame = NSRect(x: 0, y: 0, width: 246, height: 44)
-      row.view = picker
-      menu.addItem(row)
-    }
+    let handler = Handler(bubble: bubble, agentId: agentId, store: store, control: control, spot: control.hoveredSpot)
     if kind == .context {
+      menu.addItem(handler.item(String(localized: "Add reaction"), symbol: "face.smiling", action: #selector(Handler.react)))
       menu.addItem(.separator())
       menu.addItem(handler.item(String(localized: "Reply"), symbol: "arrowshape.turn.up.left", action: #selector(Handler.reply)))
     }
-    if kind != .reactions {
-      if !inThread {
-        menu.addItem(handler.item(String(localized: "Start a thread"), symbol: "bubble.left.and.bubble.right", action: #selector(Handler.thread)))
-      }
-      menu.addItem(handler.item(String(localized: "Copy"), symbol: "doc.on.doc", action: #selector(Handler.copyText)))
+    if !inThread {
+      menu.addItem(handler.item(String(localized: "Start a thread"), symbol: "bubble.left.and.bubble.right", action: #selector(Handler.thread)))
     }
+    menu.addItem(handler.item(String(localized: "Copy"), symbol: "doc.on.doc", action: #selector(Handler.copyText)))
     // The handler lives as long as the menu.
     objc_setAssociatedObject(menu, &Handler.key, handler, .OBJC_ASSOCIATION_RETAIN)
     if let button, button != .zero {
@@ -346,12 +331,14 @@ enum MessageMenu {
     let agentId: String
     let store: AppStore
     let control: ChatControl
+    let spot: WindowSpot?
 
-    init(bubble: Bubble, agentId: String, store: AppStore, control: ChatControl) {
+    init(bubble: Bubble, agentId: String, store: AppStore, control: ChatControl, spot: WindowSpot? = nil) {
       self.bubble = bubble
       self.agentId = agentId
       self.store = store
       self.control = control
+      self.spot = spot
     }
 
     func item(_ title: String, symbol: String, action: Selector) -> NSMenuItem {
@@ -359,6 +346,14 @@ enum MessageMenu {
       item.target = self
       item.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)
       return item
+    }
+
+    /** The capsule once the menu has gone, over the message (at the pointer when its place isn't known). */
+    @MainActor @objc func react() {
+      let bubble = bubble, agentId = agentId, store = store, control = control, frame = spot?.frame
+      DispatchQueue.main.async {
+        Tapback.show(for: bubble, agentId: agentId, store: store, control: control, over: frame)
+      }
     }
 
     @MainActor @objc func reply() {
@@ -373,77 +368,6 @@ enum MessageMenu {
     @MainActor @objc func copyText() {
       NSPasteboard.general.clearContents()
       NSPasteboard.general.setString(bubble.text, forType: .string)
-    }
-  }
-}
-
-/**
- * The quick reactions in a menu (`sand-reaction-picker`): six 32-point
- * squares (the emoji 20, 6 round, grey under the pointer), 2 apart, then
- * More emoji (28, the glyph at 60%), padded 6. More emoji opens the full
- * picker (`EmojiPicker`).
- */
-private struct ReactionRow: View {
-  let look: Look
-  let pick: (String?) -> Void
-
-  var body: some View {
-    HStack(spacing: 2) {
-      ForEach(MessageMenu.quick, id: \.self) { emoji in
-        Cell(emoji: emoji, look: look) { pick(emoji) }
-      }
-      MoreEmoji(look: look) { pick(nil) }
-    }
-    .padding(.trailing, 2)
-    .padding(6)
-    .frame(width: 246, height: 44, alignment: .leading)
-  }
-
-  private struct Cell: View {
-    let emoji: String
-    let look: Look
-    let action: () -> Void
-    @State private var hovered = false
-
-    var body: some View {
-      Button(action: action) {
-        Text(emoji)
-          .font(.system(size: 20))
-          .frame(width: 32, height: 32)
-          .background(hovered ? look.rowHover : .clear, in: RoundedRectangle(cornerRadius: 6))
-          .contentShape(RoundedRectangle(cornerRadius: 6))
-      }
-      .buttonStyle(.hand)
-      .onHover { hovered = $0 }
-      .help(emoji)
-      .accessibilityLabel("React with \(emoji)")
-    }
-  }
-
-  private struct MoreEmoji: View {
-    let look: Look
-    let action: () -> Void
-    @State private var hovered = false
-
-    var body: some View {
-      Button(action: action) {
-        Image(systemName: "face.smiling")
-          .font(.system(size: 14))
-          .foregroundStyle(look.inkSecondary)
-          .overlay(alignment: .bottomTrailing) {
-            Image(systemName: "plus")
-              .font(.system(size: 7, weight: .bold))
-              .foregroundStyle(look.inkSecondary)
-              .offset(x: 3, y: 2)
-          }
-          .frame(width: 28, height: 28)
-          .background(hovered ? look.rowHover : .clear, in: RoundedRectangle(cornerRadius: 6))
-          .contentShape(RoundedRectangle(cornerRadius: 6))
-      }
-      .buttonStyle(.hand)
-      .onHover { hovered = $0 }
-      .help("More emoji")
-      .accessibilityLabel("More emoji")
     }
   }
 }

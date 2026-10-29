@@ -779,6 +779,8 @@ private struct BubbleRow: View {
   @State private var hovered = false
   @State private var barHovered = false
   @State private var bubbleWidth: CGFloat = 0
+  /** Where the bubble is in the window: its reactions' capsule opens over it (`Tapback`). */
+  @State private var spot = WindowSpot()
 
   /** The thread's chip joins the bubble unless the message has reactions (`JEn`). */
   private var chinJoined: Bool { threadCount != nil && bubble.reactions.isEmpty }
@@ -846,12 +848,14 @@ private struct BubbleRow: View {
           // A message that is one link is drawn as its card (`xEn`).
           LinkCardView(url: link, look: look)
             .frame(maxWidth: max(0, min(column * 0.88, 480, column - 82)))
+            .background(WindowSpotReader(spot: spot))
             .outside(trailing: !bubble.fromPerson) { bar }
             .onHover { hover($0) }
         } else if !words.isEmpty || bubble.images.isEmpty {
           VStack(alignment: .leading, spacing: 0) {
             shaped
               .onGeometryChange(for: CGFloat.self) { proxy in proxy.size.width } action: { value in bubbleWidth = value }
+              .background(WindowSpotReader(spot: spot))
             if chinJoined, let threadCount {
               ThreadChin(rootId: bubble.id, count: threadCount, attached: true, look: look) { openThread() }
                 .frame(width: max(bubbleWidth, 0))
@@ -885,7 +889,7 @@ private struct BubbleRow: View {
   private var bar: some View {
     // Not during a sideways swipe (`:not([data-peeking] *)`).
     if !control.peeking && (hovered || barHovered || control.menuFor == bubble.id) {
-      HoverBar(bubble: bubble, agentId: agentId, inThread: threadRoot != nil, look: look)
+      HoverBar(bubble: bubble, agentId: agentId, inThread: threadRoot != nil, look: look, bubbleSpot: spot)
         .fixedSize()
         // The 6 between is part of the bar, so the pointer can cross to it.
         .padding(bubble.fromPerson ? .trailing : .leading, 6)
@@ -898,14 +902,19 @@ private struct BubbleRow: View {
     hovered = inside
     if inside {
       control.hovered = bubble
+      control.hoveredSpot = spot
     } else if control.hovered?.id == bubble.id {
       control.hovered = nil
+      control.hoveredSpot = nil
     }
   }
 
   /** SwiftUI does not end a hover when the row goes (scrolled out, a thread opened): let go of it then. */
   private func gone() {
-    if control.hovered?.id == bubble.id { control.hovered = nil }
+    if control.hovered?.id == bubble.id {
+      control.hovered = nil
+      control.hoveredSpot = nil
+    }
   }
 
   private func openThread() {
@@ -985,7 +994,8 @@ private struct ThreadOpener: View {
 /**
  * The reactions under a message (`sand-reaction-pills`): each emoji once,
  * with how many when more than one, on a pale pill ringed with the ground,
- * 22 high. Clicking one adds or takes back the person's own.
+ * 22 high; the person's own on a pale blue, as Messages marks yours.
+ * Clicking one adds or takes back the person's own.
  */
 private struct ReactionPills: View {
   let bubble: Bubble
@@ -1027,7 +1037,7 @@ private struct ReactionPills: View {
           .padding(.leading, 7)
           .padding(.trailing, 8)
           .frame(height: 22)
-          .background(Capsule().fill(look.reaction))
+          .background(Capsule().fill(bubble.myReactions.contains(pill.emoji) ? look.settingsBlue.opacity(look.dark ? 0.32 : 0.16) : look.reaction))
           .background(Capsule().stroke(look.ground, lineWidth: 4))
           .contentShape(Capsule())
         }
