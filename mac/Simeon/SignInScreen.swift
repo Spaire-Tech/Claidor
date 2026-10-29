@@ -4,11 +4,12 @@ import SimeonCore
 /**
  * The sign-in (the founder, 29 October 2026, after a reference: "simple"):
  * the SimeonLabs logo lighting up as on the iPhone (`LogoShimmer`), "Sign
- * in to Simeon", and two buttons, Sign in and Sign up, each opening the
- * browser (Sign up at the web app's sign-up page). Measured from the
- * reference: the logo 36, the title 30 and 24 under it, the buttons 340
- * wide and 48 high, 36 under the title and 12 apart. Then "Setting up
- * Simeon's computer" (A03).
+ * in to Simeon", and two buttons, Continue to sign in (with the logo) and
+ * Sign up, each opening the browser (Sign up at the web app's sign-up
+ * page). Smaller than the reference at the founder's word ("the writing is
+ * too big. and the buttons"): the logo 32, the title 24 and 20 under it,
+ * the buttons 300 wide and 40 high, 28 under the title and 10 apart. Then
+ * "Setting up Simeon's computer" (A03).
  */
 struct SignInScreen: View {
   @Environment(MacSession.self) private var session
@@ -37,24 +38,30 @@ private struct Landing: View {
   var body: some View {
     VStack(spacing: 0) {
       LogoShimmer(look: look)
-        .frame(width: 36, height: 36)
+        .frame(width: 32, height: 32)
       Text("Sign in to Simeon")
-        .font(.system(size: 30))
+        .font(.system(size: 24))
         .foregroundStyle(look.ink)
         .fixedSize()
-        .padding(.top, 24)
-      VStack(spacing: 12) {
+        .padding(.top, 20)
+      VStack(spacing: 10) {
         if session.phase == .waitingForBrowser {
           Waiting(look: look)
         } else {
-          Button("Sign in") { session.signIn() }
-            .buttonStyle(SignInPill(filled: true, look: look))
-            .keyboardShortcut(.defaultAction)
+          Button { session.signIn() } label: {
+            HStack(spacing: 8) {
+              Image("SignIn/Mark").resizable().renderingMode(.template).interpolation(.high).scaledToFit()
+                .frame(width: 15, height: 15)
+              Text("Continue to sign in")
+            }
+          }
+          .buttonStyle(SignInPill(filled: true, look: look))
+          .keyboardShortcut(.defaultAction)
           Button("Sign up") { session.signIn(signUp: true) }
             .buttonStyle(SignInPill(filled: false, look: look))
           if case .signedOut(let message?) = session.phase {
             Text(message)
-              .font(.system(size: 14))
+              .font(.system(size: 13))
               .foregroundStyle(look.inkSecondary)
               .multilineTextAlignment(.center)
               .fixedSize(horizontal: false, vertical: true)
@@ -63,14 +70,14 @@ private struct Landing: View {
         }
       }
       // The same height in every state, so the logo and the title stay put.
-      .frame(height: 170, alignment: .top)
-      .padding(.top, 36)
+      .frame(height: 140, alignment: .top)
+      .padding(.top, 28)
     }
-    .frame(width: 340)
+    .frame(width: 300)
   }
 }
 
-/** A button of the two: a capsule the width of the column, 48 high, filled with the ink (Sign in) or outlined (Sign up). */
+/** A button of the two: a capsule the width of the column, 40 high, filled with the ink (Continue to sign in) or outlined (Sign up). */
 private struct SignInPill: ButtonStyle {
   let filled: Bool
   let look: Look
@@ -88,10 +95,10 @@ private struct SignInPill: ButtonStyle {
 
     var body: some View {
       label
-        .font(.system(size: 16, weight: .medium))
+        .font(.system(size: 14, weight: .medium))
         .foregroundStyle(filled ? look.ground : look.ink)
         .frame(maxWidth: .infinity)
-        .frame(height: 48)
+        .frame(height: 40)
         .background(Capsule().fill(filled ? look.ink : look.ink.opacity(hovering ? 0.04 : 0)))
         .overlay {
           if !filled { Capsule().strokeBorder(look.ink.opacity(0.12), lineWidth: 1) }
