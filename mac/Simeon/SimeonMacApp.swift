@@ -81,6 +81,14 @@ struct SimeonMacApp: App {
     .windowStyle(.hiddenTitleBar)
     .windowResizability(.contentMinSize)
     .commands { SimeonCommands(session: session, window: window, store: session.store, account: account) }
+    // Simeon in the menu bar, beside ChatGPT and Muse (MenuBar.swift).
+    MenuBarExtra {
+      MenuBarMenu(session: session, newChat: newChat)
+    } label: {
+      Image("MenuBarMark")
+        .accessibilityLabel(Text(verbatim: "Simeon"))
+    }
+    .menuBarExtraStyle(.menu)
   }
 }
 
