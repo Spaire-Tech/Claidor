@@ -161,6 +161,13 @@ build rewrote (Xcode writes the code's strings into them on every build)
 are not counted: their changes are kept in `mac/build/release/` and the
 files put back as committed, before the build and after it.
 
+The disk image's window (29 October 2026) is `scripts/dmg.sh`: Simeon and
+an Applications link over a picture of five clay faces and an arrow
+(`dmg/background.png` and `@2x`, drawn by `dmg/background.cjs`), laid out
+by Finder. To see it without a release, after `scripts/build.sh`:
+`mac/scripts/dmg.sh` makes `mac/build/Simeon.dmg` from the Debug app and
+opens it.
+
 Once per release Mac:
 
 1. Xcode › Settings › Accounts: the team `496QXRMJXG`, and in Manage
@@ -171,7 +178,10 @@ Once per release Mac:
    --key-id … --issuer …`.
 3. For `--publish`, the `aws` command line signed in to an account that
    may write to the bucket (`brew install awscli`, `aws configure`).
-4. Sparkle's key is made in the Keychain by the first run, which also
+4. Terminal allowed to control Finder, which lays out the disk image's
+   window: macOS asks the first time (System Settings › Privacy &
+   Security › Automation).
+5. Sparkle's key is made in the Keychain by the first run, which also
    writes a copy to the Desktop: keep it in the password manager and
    delete the file. A later release from another Mac needs it imported
    (`generate_keys -f <file>`), or installed apps refuse the update.
