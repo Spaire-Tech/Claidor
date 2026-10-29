@@ -397,7 +397,7 @@ private struct SearchPanel: View {
     .frame(width: width)
     .background(look.elevated, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
     .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-    .overlay { RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(look.ink.opacity(0.1), lineWidth: 0.5) }
+    .overlay { RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(look.panelEdge(0.1), lineWidth: 0.5) }
     .shadow(color: .black.opacity(look.dark ? 0 : 0.3), radius: 40, x: 0, y: 20)
     .task(id: search.focus) {
       // The field takes the keys once it is in the window (a moment after it appears), and again when search is opened over itself.

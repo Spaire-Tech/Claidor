@@ -145,7 +145,7 @@ struct SettingsLayer: View {
   }
 }
 
-/** The panel: the grouped ground, round 14, a line at 15%, a deep soft shadow on light; the list of pages, then the page's name and its groups across the rest. */
+/** The panel: the grouped ground, round 14, a line at 15% and a deep soft shadow on light (neither on dark); the list of pages, then the page's name and its groups across the rest. */
 private struct SettingsPanel: View {
   let look: Look
   @Environment(SettingsState.self) private var settings
@@ -195,7 +195,7 @@ private struct SettingsPanel: View {
     }
     .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(look.groupedGround))
     .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-    .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(look.ink.opacity(0.15), lineWidth: 1))
+    .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(look.panelEdge(), lineWidth: 1))
     .shadow(color: Color(red: 20 / 255, green: 30 / 255, blue: 60 / 255).opacity(look.dark ? 0 : 0.45), radius: 28, x: 0, y: 30)
     // A click on the panel is the panel's, not the dim's.
     .contentShape(Rectangle())
