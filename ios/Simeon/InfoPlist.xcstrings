@@ -232,61 +232,61 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Simeons Anrufe mit deinen Agenten sind reine Sprachanrufe und schalten nie die Kamera ein."
+            "value" : "Simeon nutzt die Kamera nur, wenn du ein Foto aufnimmst, um es in einem Chat zu senden."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Simeon's calls with your agents are voice only and never turn on the camera."
+            "value" : "Simeon uses the camera only when you take a photo to send in a chat."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Las llamadas de Simeon con tus agentes son solo de voz y nunca encienden la cámara."
+            "value" : "Simeon usa la cámara solo cuando haces una foto para enviarla en un chat."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Les appels de Simeon avec tes agents sont uniquement vocaux et n’allument jamais la caméra."
+            "value" : "Simeon utilise l’appareil photo seulement quand tu prends une photo à envoyer dans une discussion."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Le chiamate di Simeon con i tuoi agenti sono solo vocali e non accendono mai la fotocamera."
+            "value" : "Simeon usa la fotocamera solo quando scatti una foto da inviare in una chat."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Oproepen met je agenten in Simeon zijn alleen spraak en zetten nooit de camera aan."
+            "value" : "Simeon gebruikt de camera alleen als je een foto maakt om in een chat te sturen."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Połączenia z agentami w Simeonie są tylko głosowe i nigdy nie włączają kamery."
+            "value" : "Simeon używa aparatu tylko wtedy, gdy robisz zdjęcie do wysłania na czacie."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "As chamadas do Simeon com seus agentes são só de voz e nunca ligam a câmera."
+            "value" : "O Simeon usa a câmera só quando você tira uma foto para enviar em uma conversa."
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Simeons samtal med dina agenter är bara röstsamtal och slår aldrig på kameran."
+            "value" : "Simeon använder kameran bara när du tar en bild att skicka i en chatt."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Simeon’un ajanlarınla yaptığı aramalar yalnızca seslidir ve kamerayı asla açmaz."
+            "value" : "Simeon kamerayı yalnızca bir sohbette göndermek için fotoğraf çektiğinde kullanır."
           }
         }
       }

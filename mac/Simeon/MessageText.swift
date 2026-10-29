@@ -46,6 +46,29 @@ enum InlineImages {
     return copy
   }
 
+  private static var sites: [String: NSImage] = [:]
+
+  /** A link's site icon (`LinkIcons`): `side` square in rounded corners, drawn by SwiftUI where the words are laid out. */
+  static func site(_ found: (site: String, data: Data), side: CGFloat) -> Image? {
+    let icon: NSImage
+    if let hit = sites[found.site] {
+      icon = hit
+    } else {
+      guard let read = NSImage(data: found.data), read.size.width > 0, read.size.height > 0 else { return nil }
+      if sites.count > 200 { sites.removeAll() }
+      sites[found.site] = read
+      icon = read
+    }
+    return Image(size: CGSize(width: side, height: side)) { context in
+      let square = CGRect(x: 0, y: 0, width: side, height: side)
+      let scale = min(side / icon.size.width, side / icon.size.height)
+      let w = icon.size.width * scale, h = icon.size.height * scale
+      var clipped = context
+      clipped.clip(to: Path(roundedRect: square, cornerRadius: side * 0.22, style: .continuous))
+      clipped.draw(Image(nsImage: icon), in: CGRect(x: (side - w) / 2, y: (side - h) / 2, width: w, height: h))
+    }
+  }
+
   /** The agent's face before its name, inside the pill's start, drawn by SwiftUI where the words are laid out. */
   static func face(_ picture: AgentPictureSource?, em: CGFloat, dark: Bool) -> Image {
     let side = (1.1 * em).rounded(), lead = (0.22 * em).rounded(), trail = (0.24 * em).rounded()
@@ -227,8 +250,9 @@ struct MentionClicks: ViewModifier {
  * One line of a message as the window writes it (react-markdown with
  * GitHub's extensions, then `__simeonAppMentions` and
  * `__simeonAgentMentions`): bold at 600, italics, strikethrough at 40%, code
- * in red on grey (`refunds`), links in the link blue with no underline, a
- * bare address made a link; then, in each run of plain words (never in a
+ * in red on grey (`refunds`), links in the link blue with no underline,
+ * each after its site's icon (`LinkIcons`), a bare address made a link;
+ * then, in each run of plain words (never in a
  * link or code), app names in their colour after their logo at 500, and
  * agents' names in the app's blue at 600 after their face, in a glass pill
  * (the founder, 12 October 2026).
@@ -358,7 +382,13 @@ struct MessageLine {
     })
   }
 
-  /** A link: the link blue (the bubble's tint), no underline, marked for the hand (`LinkRun`). No logo before a link to an email (the founder, 22 October 2026: "remove that gmail logo"). */
+  /**
+   * A link: the link blue (the bubble's tint), no underline, marked for the
+   * hand (`LinkRun`), after its site's icon as an app's name is after its
+   * logo (`mention`; the founder, 29 October 2026: "for each link sent in
+   * chat, put next to it the favicon"). None before a link to an email (22
+   * October 2026: "remove that gmail logo"), nor in a file's words.
+   */
   private func linked(_ words: String, _ url: URL, style: Style, at offset: Int, marks: FindLine?) -> Text {
     var container = AttributeContainer()
     container.link = url
@@ -368,7 +398,9 @@ struct MessageLine {
       if let mark = part.mark { piece.backgroundColor = FindLine.paint(mark, look: look) }
       whole += piece
     }
-    return style.apply(Text(whole)).customAttribute(LinkRun())
+    let link = style.apply(Text(whole)).customAttribute(LinkRun())
+    guard marksNames, let found = LinkIcons.shared.icon(for: url), let icon = InlineImages.site(found, side: (1.05 * size).rounded()) else { return link }
+    return MessageLine.joined([Text(icon).baselineOffset(-0.18 * size), Text(verbatim: "\u{202F}"), link])
   }
 
   /** Inline code: 0.93 em monospaced, red on a grey wash (`code`, padded 0 4 and 4 round in the window). */

@@ -1,4 +1,5 @@
 import AppKit
+import PhotosUI
 import SwiftUI
 import SimeonCore
 
@@ -96,7 +97,7 @@ struct Composer: View {
           .padding(.leading, Composer.fieldInset)
       }
       HStack(alignment: .bottom, spacing: 8) {
-        AttachButton(look: look, full: files.count >= AttachmentLimits.maxStaged) { control.chooseFiles() }
+        AttachButton(look: look, full: files.count >= AttachmentLimits.maxStaged)
         fieldBox(payload: payload, placeholder: placeholder(reply: reply, hasFiles: !files.isEmpty))
       }
       // The open list hangs from the words, over the messages (outside the field's glass).
@@ -511,16 +512,22 @@ struct Composer: View {
 
 /**
  * Attach file (`sand-prompt-attach`): the iPhone's 40-point glass disc with
- * a plus beside the field, the Mac's open panel for several files; off
- * once six wait.
+ * a plus beside the field; off once six wait. It opens its menu upward
+ * from itself, as the iPhone's does (`AttachMenu`): Photo or Video (the
+ * Photos library's picker) or Choose File (the open panel, several files).
  */
 private struct AttachButton: View {
   let look: Look
   let full: Bool
-  let action: () -> Void
+  @Environment(ChatControl.self) private var control
+  @State private var spot = WindowSpot()
+  @State private var photos = false
+  @State private var selection: [PhotosPickerItem] = []
 
   var body: some View {
-    Button(action: action) {
+    Button {
+      AttachMenu.show(over: spot.frame, photos: { photos = true }, files: { control.chooseFiles() })
+    } label: {
       Image(systemName: "plus")
         .font(.system(size: 18, weight: .regular))
         .foregroundStyle(look.dark ? Color.white.opacity(0.86) : Color.black.opacity(0.78))
@@ -529,10 +536,24 @@ private struct AttachButton: View {
     }
     .buttonStyle(.hand)
     .liquidGlass(in: .circle, interactive: true)
+    .background(WindowSpotReader(spot: spot))
     .disabled(full)
     .opacity(full ? 0.4 : 1)
     .help("Attach file")
     .accessibilityLabel("Attach file")
+    .photosPicker(isPresented: $photos, selection: $selection, maxSelectionCount: AttachmentLimits.maxStaged, matching: .any(of: [.images, .videos]))
+    .onChange(of: selection) { _, items in
+      guard !items.isEmpty else { return }
+      selection = []
+      Task {
+        var picked: [IncomingFile] = []
+        for (index, item) in items.enumerated() {
+          guard let data = try? await item.loadTransferable(type: Data.self) else { continue }
+          picked.append(.photo(data, type: item.supportedContentTypes.first, number: index + 1))
+        }
+        control.stage(picked)
+      }
+    }
   }
 }
 

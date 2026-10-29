@@ -705,7 +705,8 @@ struct ChatComposer: View {
   @Environment(\.colorScheme) private var scheme
   @State private var draft = ""
   @State private var attachments: [ComposerAttachment] = []
-  @State private var picking = false
+  /** What the + menu asked for, until it is brought in (`ComposerPicker`). */
+  @State private var picking: ComposerPick?
   @State private var dictation = Dictation()
   @FocusState private var typing: Bool
   @Environment(ReplyDraft.self) private var reply: ReplyDraft?
@@ -882,11 +883,17 @@ struct ChatComposer: View {
           .accessibilityLabel("Cancel dictation")
           .transition(.scale(scale: 0.6).combined(with: .opacity))
         } else {
-          Button { picking = true } label: {
+          // + opens its menu from itself, as Messages' does (`ComposerAttachItems`).
+          Menu {
+            ComposerAttachItems { picking = $0 }
+          } label: {
             Image(systemName: "plus").font(.system(size: 19, weight: .regular)).foregroundStyle(Ink.primary)
               .frame(width: 40, height: 40)
+              .contentShape(.circle)
+              .glassEffect(.regular, in: .circle)
           }
-          .buttonStyle(Tactile(look: GlassDisc()))
+          // Fixed: Photo or Video stays on top, as the home's New menu keeps its order.
+          .menuOrder(.fixed)
           .accessibilityLabel("Attach")
           .transition(.scale(scale: 0.6).combined(with: .opacity))
         }
@@ -989,7 +996,7 @@ struct ChatComposer: View {
       routines = ComposerMenus.skills(from: answer, scheduled: true)
       if store.apps.isEmpty { await store.loadApps(wakes: false) }
     }
-    .composerPicker(isPresented: $picking) { picked in stage(picked) }
+    .composerPicker(request: $picking) { picked in stage(picked) }
     .onChange(of: dictation.problem) { _, problem in if let problem { store.problem = problem } }
     .onChange(of: reply?.target?.id) { _, id in if id != nil { typing = true } }
     // Taking the keys: the messages go to their end when read further up (`ChatMessages`).
