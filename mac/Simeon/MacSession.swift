@@ -97,11 +97,11 @@ final class MacSession {
 
   // MARK: Signing in
 
-  /** Sign in: the login page in the browser, and the poll. */
-  func signIn() {
+  /** Sign in (or Sign up: the web app's sign-up page): the page in the browser, and the poll. */
+  func signIn(signUp: Bool = false) {
     guard signing == nil else { return }
     let metadata = SignIn.freshMetadata()
-    let url = SignIn.loginURL(api: server, metadata: metadata, redirectTarget: SimeonConfig.macURLScheme)
+    let url = SignIn.loginURL(api: server, metadata: metadata, signUp: signUp, redirectTarget: SimeonConfig.macURLScheme)
     loginURL = url
     phase = .waitingForBrowser
     NSWorkspace.shared.open(url)

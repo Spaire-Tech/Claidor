@@ -70,6 +70,9 @@ final class SignInTests: XCTestCase {
     XCTAssertEqual(SignIn.loginURL(api: URL(string: "https://api.simeonlabs.com")!, metadata: metadata, provider: .apple).absoluteString,
                    "https://api.simeonlabs.com/loginDeepControl?challenge=c&uuid=u-1&mode=login&redirectTarget=simeon-ios&provider=apple")
     XCTAssertEqual(SignIn.loginURL(api: URL(string: "https://api.simeonlabs.com")!, metadata: metadata, provider: .google).query?.hasSuffix("&provider=google"), true)
+    // The Mac's Sign up: the same link in sign-up mode.
+    XCTAssertEqual(SignIn.loginURL(api: URL(string: "https://api.simeonlabs.com")!, metadata: metadata, signUp: true, redirectTarget: "simeon").absoluteString,
+                   "https://api.simeonlabs.com/loginDeepControl?challenge=c&uuid=u-1&mode=signup&redirectTarget=simeon")
   }
 
   func testPollWaitsThenTakesThePair() async throws {

@@ -2,15 +2,13 @@ import SwiftUI
 import SimeonCore
 
 /**
- * The Electron window's sign-in (`sand-onboarding__landing`, reference A01
- * and A02) and its "Setting up Simeon's computer" (A03), measured at
- * 1040 × 760: the logo and "Simeon" in Suravaram (68) side by side 14
- * apart, the logo 46, about the height of the word's capitals (the founder,
- * 21 October 2026: at 64 "the logo is way too big for the simeon text"),
- * the line under them 48 lower (22, at most 336 wide), the
- * button 39 below that; the whole block centred and moved 40 down. In the
- * butterfly's place, the SimeonLabs logo lighting up, as on the iPhone (the
- * founder, 11 October 2026: `LogoShimmer`).
+ * The sign-in (the founder, 29 October 2026, after a reference: "simple"):
+ * the SimeonLabs logo lighting up as on the iPhone (`LogoShimmer`), "Sign
+ * in to Simeon", and two buttons, Sign in and Sign up, each opening the
+ * browser (Sign up at the web app's sign-up page). Measured from the
+ * reference: the logo 36, the title 30 and 24 under it, the buttons 340
+ * wide and 48 high, 36 under the title and 12 apart. Then "Setting up
+ * Simeon's computer" (A03).
  */
 struct SignInScreen: View {
   @Environment(MacSession.self) private var session
@@ -25,83 +23,85 @@ struct SignInScreen: View {
         SettingUp(look: look)
       case .signedOut, .waitingForBrowser:
         Landing(look: look)
-          .offset(y: 40)
       }
     }
     .ignoresSafeArea()
   }
 }
 
-/** The logo and "Simeon", the line under them, and Sign in or its wait. */
+/** The logo, the title, and the two buttons or their wait. */
 private struct Landing: View {
   let look: Look
   @Environment(MacSession.self) private var session
 
   var body: some View {
     VStack(spacing: 0) {
-      HStack(spacing: 14) {
-        LogoShimmer(look: look)
-          .frame(width: 46, height: 46)
-        Text("Simeon")
-          .font(.custom(Faces.wordmark, size: 68))
-          .foregroundStyle(look.ink)
-          .fixedSize()
-      }
-      .frame(height: 64)
-      Text("Your personal team of agents for whatever needs doing.")
-        .font(.system(size: 22))
+      LogoShimmer(look: look)
+        .frame(width: 36, height: 36)
+      Text("Sign in to Simeon")
+        .font(.system(size: 30))
         .foregroundStyle(look.ink)
-        .multilineTextAlignment(.center)
-        .frame(maxWidth: 336)
-        .fixedSize(horizontal: false, vertical: true)
-        .padding(.top, 48)
-      VStack(spacing: 0) {
+        .fixedSize()
+        .padding(.top, 24)
+      VStack(spacing: 12) {
         if session.phase == .waitingForBrowser {
           Waiting(look: look)
         } else {
-          SignInButton(look: look)
+          Button("Sign in") { session.signIn() }
+            .buttonStyle(SignInPill(filled: true, look: look))
+            .keyboardShortcut(.defaultAction)
+          Button("Sign up") { session.signIn(signUp: true) }
+            .buttonStyle(SignInPill(filled: false, look: look))
           if case .signedOut(let message?) = session.phase {
             Text(message)
               .font(.system(size: 14))
               .foregroundStyle(look.inkSecondary)
               .multilineTextAlignment(.center)
-              .frame(maxWidth: 336)
-              .padding(.top, 14)
+              .fixedSize(horizontal: false, vertical: true)
+              .padding(.top, 2)
           }
         }
       }
-      .frame(height: 96, alignment: .top)
-      .padding(.top, 39)
+      // The same height in every state, so the logo and the title stay put.
+      .frame(height: 170, alignment: .top)
+      .padding(.top, 36)
     }
-    .frame(width: 336)
+    .frame(width: 340)
   }
 }
 
-/** Sign in →: Apple's prominent button, near black, as the window's. */
-private struct SignInButton: View {
+/** A button of the two: a capsule the width of the column, 48 high, filled with the ink (Sign in) or outlined (Sign up). */
+private struct SignInPill: ButtonStyle {
+  let filled: Bool
   let look: Look
-  @Environment(MacSession.self) private var session
 
-  var body: some View {
-    Button {
-      session.signIn()
-    } label: {
-      HStack(spacing: 5) {
-        Text("Sign in")
-          .font(.system(size: 18))
-        Image(systemName: "arrow.right")
-          .font(.system(size: 12, weight: .semibold))
-      }
-      .foregroundStyle(look.signInLabel)
-      .padding(.horizontal, 12)
-      .frame(height: 28)
+  func makeBody(configuration: Configuration) -> some View {
+    Pill(label: configuration.label, pressed: configuration.isPressed, filled: filled, look: look)
+  }
+
+  private struct Pill<Label: View>: View {
+    let label: Label
+    let pressed: Bool
+    let filled: Bool
+    let look: Look
+    @State private var hovering = false
+
+    var body: some View {
+      label
+        .font(.system(size: 16, weight: .medium))
+        .foregroundStyle(filled ? look.ground : look.ink)
+        .frame(maxWidth: .infinity)
+        .frame(height: 48)
+        .background(Capsule().fill(filled ? look.ink : look.ink.opacity(hovering ? 0.04 : 0)))
+        .overlay {
+          if !filled { Capsule().strokeBorder(look.ink.opacity(0.12), lineWidth: 1) }
+        }
+        .opacity(pressed ? 0.7 : filled && hovering ? 0.88 : 1)
+        .contentShape(Capsule())
+        .onHover { hovering = $0 }
+        .handCursor()
+        .animation(.easeOut(duration: 0.12), value: hovering)
     }
-    .buttonStyle(.borderedProminent)
-    .handCursor()
-    .buttonBorderShape(.capsule)
-    .controlSize(.large)
-    .tint(look.signInButton)
-    .keyboardShortcut(.defaultAction)
   }
 }
 
