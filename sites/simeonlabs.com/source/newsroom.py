@@ -8,9 +8,14 @@ latest news … its just newsroom. retake that stories design … make an effort
 with the style, the font size … the colors … if a background changes, change
 it gradually".
 
-So one page, Newsroom, in Apple Stories' layout and the site's own measures:
-the headline and its line where every page has them (the home page's opening);
-then the posts down the column: a lead story across it, its words over its
+And of its opening, after a news page whose newest post opens it: "maybe
+have the hero like this. instead of newsroom and the description".
+
+So one page, Newsroom, in Apple Stories' layout and the site's own measures.
+It opens with the newest post where every page has its headline (the home
+page's opening): on the left its date, its headline large on two lines, one
+line on it and Read more; on the right its picture, its name set over it in
+white. Then the posts down the column: a lead story across it, its words over its
 picture; three stories as squares with their words under them, as the home
 page's rows of cards; a quoted story, the quote on the site's panel and the
 picture beside it, the one fading into the other; three more stories with
@@ -42,6 +47,10 @@ OUT = teams.OUT
 # picture). Each has a `kind` (Customers, Product…) over its title. The pictures are the site's own (/img/),
 # standing in until each post has its own.
 POSTS = [
+    # The newest post, the page's opening: its headline breaks where it has "\n", and `mark` is its name set
+    # over its picture (none: the picture alone).
+    {"place": "hero", "title": "Introducing\nthe newest post", "summary": "One line on what it is, and why it matters.",
+     "mark": "The newest post", "date": "2026-10-28", "image": "/img/wall-blue.jpg", "placeholder": True},
     {"place": "lead", "kind": "Customers", "title": "The headline of the lead story, set over its picture",
      "date": "2026-10-24", "image": "/img/support.jpg", "placeholder": True},
     {"place": "tile", "kind": "Product", "title": "Headline of a story about a team and its agents",
@@ -65,13 +74,26 @@ NEWSROOM_CSS = """
 /* The Newsroom (newsroom.py): the posts down the column in Apple Stories' layout, in the site's measures (the home
    page's 28-point corners, its rows of three with 20 between, its panel #fafafb). One white ground; where a ground
    meets another (a picture's shade, the quote's panel and its picture, the page's end and the footer) it fades. */
-.nw-lead{max-width:34em;margin-top:clamp(14px,1.2*var(--vw,1vw),22px);font-size:var(--t-lead);line-height:1.45;color:var(--ink2);text-wrap:pretty}
-.nw-posts{display:flex;flex-direction:column;gap:clamp(40px,4*var(--vw,1vw),72px);margin-top:clamp(40px,4*var(--vw,1vw),80px)}
+.nw-sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+/* The opening: the newest post, its words on the left beside its picture, the two centred on each other. Its
+   headline a size over the pages' (the picture beside it is large), regular as every headline. */
+.nw-top{display:grid;grid-template-columns:minmax(0,.82fr) minmax(0,1.18fr);align-items:center;gap:clamp(32px,5*var(--vw,1vw),96px)}
+.nw-top .nw-date{margin:0;font-size:var(--t-body)}
+.nw-top h2{margin-top:clamp(10px,.9*var(--vw,1vw),16px);font-size:clamp(32px,3*var(--vw,1vw),56px);line-height:1.06;font-weight:var(--w-display);letter-spacing:-.035em}
+.nw-sum{margin-top:clamp(14px,1.4*var(--vw,1vw),24px);max-width:24em;font-size:var(--t-lead);line-height:1.4;text-wrap:pretty}
+.nw-top .btn{margin-top:clamp(22px,2.2*var(--vw,1vw),36px);height:var(--btn-h);padding:0 calc(var(--btn-pad) - 4px) 0 var(--btn-pad);font-size:var(--btn-font)}
+.nw-top .btn svg{width:.75em;height:.75em;margin-left:.1em;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.nw-art{position:relative;display:grid;place-items:center;aspect-ratio:1260/660;overflow:hidden;border-radius:28px;background:var(--soft);container-type:inline-size;color:#fff;text-decoration:none}
+.nw-art b{position:relative;z-index:1;padding:0 6cqw;font-size:7.2cqw;line-height:1.05;font-weight:var(--w-display);letter-spacing:-.035em;text-align:center;text-wrap:balance;text-shadow:0 2px 24px rgba(0,0,0,.16)}
+a.nw-art:focus-visible{outline:2px solid var(--blue);outline-offset:4px}
+
+.nw-posts{display:flex;flex-direction:column;gap:clamp(40px,4*var(--vw,1vw),72px);margin-top:clamp(56px,5.6*var(--vw,1vw),112px)}
 .nw-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
 .nw-kicker{font-size:var(--t-small);line-height:1.3;font-weight:var(--w-title);letter-spacing:-.005em;color:var(--ink2)}
 .nw-date{display:block;margin-top:8px;font-size:var(--t-small);line-height:1.3;color:var(--ink2)}
 .nw-img{position:relative;overflow:hidden;background:var(--soft)}
-.nw-img img,.nw-over>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .8s cubic-bezier(.2,.7,.2,1)}
+.nw-img img,.nw-over>img,.nw-art>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .8s cubic-bezier(.2,.7,.2,1)}
 a:hover>.nw-img img,a:hover>img{transform:scale(1.025)}
 a.nw-over:focus-visible,a.nw-tile:focus-visible,a.nw-quote:focus-visible{outline:2px solid var(--blue);outline-offset:4px}
 
@@ -111,8 +133,9 @@ a:hover .nw-read{background:rgba(0,0,0,.08)}
 footer{margin-top:0}
 
 @media (max-width:734px){
+  .nw-top{grid-template-columns:1fr;gap:28px}
   .nw-row{grid-template-columns:1fr;gap:28px}
-  .nw-over,.nw-tile .nw-img,.nw-quote{border-radius:22px}
+  .nw-art,.nw-over,.nw-tile .nw-img,.nw-quote{border-radius:22px}
   .nw-over.lead{aspect-ratio:4/5.4}
   .nw-tile .nw-img{aspect-ratio:4/3}
   .nw-tile .nw-text{padding-top:16px}
@@ -124,7 +147,7 @@ footer{margin-top:0}
   .nw-quote blockquote{margin-top:12px}
   .nw-read{margin-top:28px}
 }
-@media (prefers-reduced-motion:reduce){.nw-img img,.nw-over>img{transition:none}}
+@media (prefers-reduced-motion:reduce){.nw-img img,.nw-over>img,.nw-art>img{transition:none}}
 """
 
 
@@ -133,9 +156,9 @@ def esc(text):
 
 
 def when(post):
-    """The post's day as Apple writes it: October 23, 2026."""
+    """The post's day, short: Oct 23, 2026."""
     day = datetime.date.fromisoformat(post["date"])
-    return f"{day:%B} {day.day}, {day.year}"
+    return f"{day:%b} {day.day}, {day.year}"
 
 
 def date(post):
@@ -156,6 +179,24 @@ def opening(post, cls):
 
 def kicker(post):
     return f'<p class="nw-kicker">{esc(post["kind"])}</p>'
+
+
+CHEVRON = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="m4.5 2.5 3.5 3.5-3.5 3.5"/></svg>'
+
+
+def hero(post):
+    """The newest post, opening the page: its words beside its picture; Read more and the picture lead to it once it has a page."""
+    title = esc(post["title"]).replace("\n", "<br>")
+    mark = f'<b>{esc(post["mark"])}</b>' if post.get("mark") else ""
+    if post.get("url"):
+        url = esc(post["url"])
+        more = f'<a class="btn" href="{url}">Read more{CHEVRON}</a>'
+        art = f'<a class="nw-art" href="{url}" tabindex="-1" aria-hidden="true">{picture(post, lazy=False)}{mark}</a>'
+    else:
+        more = f'<span class="btn">Read more{CHEVRON}</span>'
+        art = f'<div class="nw-art">{picture(post, lazy=False)}{mark}</div>'
+    return (f'<div class="nw-top"><div>{date(post)}<h2>{title}</h2><p class="nw-sum">{esc(post["summary"])}</p>{more}</div>'
+            f'{art}</div>')
 
 
 def lead(post):
@@ -194,10 +235,11 @@ def page():
               "".join(quote(post) for post in placed("quote")),
               row([over(post) for post in placed("over")])]
     posts = "\n    ".join(block for block in blocks if block)
-    body = f"""<section class="hero" aria-label="Newsroom">
+    opening = "".join(hero(post) for post in placed("hero"))
+    body = f"""<section class="hero" aria-labelledby="newsroom">
   <div class="wrap">
-    <h1>Newsroom</h1>
-    <p class="nw-lead">News from SimeonLabs, and the people putting their agents to work.</p>
+    <h1 class="nw-sr" id="newsroom">Newsroom</h1>
+    {opening}
     <div class="nw-posts">
     {posts}
     </div>
