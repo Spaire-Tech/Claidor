@@ -661,6 +661,7 @@ const delegations: ReadonlyArray<[string, keyof TranscriptManager]> = [
   ["connectOnePassword", "onePasswordCards"],
   ["dismissOnePasswordConnect", "onePasswordCards"],
   ["fillAllowedCredential", "onePasswordCards"],
+  ["activeRequestSource", "turnRuntime"],
 ];
 
 for (const [method, domain] of delegations) {

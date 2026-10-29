@@ -70,6 +70,7 @@ import {
 import { createDraftExternalMessageTool, createMarkDraftDeliveredTool, type DraftToolDependencies } from "./draft-message-tool.js";
 import { createRequestUserFormTool, type UserFormToolDependencies } from "./user-form-tool.js";
 import { createOnePasswordTools, type OnePasswordToolDependencies } from "./onepassword-tools.js";
+import { createCredentialsStoreTools, type CredentialsStoreToolDependencies } from "./credentials-store-tools.js";
 import { createSearchFlightsTool, type FlightSearchDependencies } from "./flight-search-tool.js";
 import { createBookFlightTool, type BookFlightDependencies } from "./book-flight-tool.js";
 import { createMarkPurchaseDoneTool, createRequestPurchaseTool, createShowProductsTool, type PurchaseToolDependencies } from "./purchase-tool.js";
@@ -566,6 +567,7 @@ export interface TurnToolFactories {
   drafts?(): readonly TurnTool[];
   userForm?(): TurnTool;
   onePassword?(): readonly TurnTool[];
+  credentialsStore?(): readonly TurnTool[];
   purchases?(): readonly TurnTool[];
   flights?(): readonly TurnTool[];
   mcpMeta?(dynamicToolRegistry?: DynamicToolRegistry): readonly TurnTool[];
@@ -704,6 +706,7 @@ export interface TurnToolsetFactoryInputs {
   readonly drafts?: TurnDraftToolFactoryInput;
   readonly userForm?: TurnUserFormToolFactoryInput;
   readonly onePassword?: TurnOnePasswordToolFactoryInput;
+  readonly credentialsStore?: TurnCredentialsStoreToolFactoryInput;
   readonly purchases?: TurnPurchaseToolFactoryInput;
   readonly flights?: TurnFlightToolFactoryInput;
   readonly generateImage?: TurnGenerateImageToolFactoryInput;
@@ -771,6 +774,10 @@ export interface TurnToolsetHostFactoryProvider {
     turn: TurnToolsetTurnInput,
     props: TurnToolsetBuildProps,
   ) => TurnOnePasswordToolFactoryInput;
+  readonly createCredentialsStoreToolInputs?: (
+    turn: TurnToolsetTurnInput,
+    props: TurnToolsetBuildProps,
+  ) => TurnCredentialsStoreToolFactoryInput;
   readonly createPurchaseToolInputs?: (
     turn: TurnToolsetTurnInput,
     props: TurnToolsetBuildProps,
@@ -1028,6 +1035,16 @@ export function createTurnOnePasswordToolFactory(
   return () => createOnePasswordTools(input.dependencies).map((tool) => asTurnTool(tool));
 }
 
+export interface TurnCredentialsStoreToolFactoryInput {
+  readonly dependencies: CredentialsStoreToolDependencies;
+}
+
+export function createTurnCredentialsStoreToolFactory(
+  input: TurnCredentialsStoreToolFactoryInput,
+): () => readonly TurnTool[] {
+  return () => createCredentialsStoreTools(input.dependencies).map((tool) => asTurnTool(tool));
+}
+
 export interface TurnPurchaseToolFactoryInput {
   readonly dependencies: PurchaseToolDependencies;
 }
@@ -1187,7 +1204,7 @@ export function createTurnToolsetFactories(
 ): Pick<
   TurnToolFactories,
   "task" | "mcpMeta" | "computer" | "browser" | "openPage" | "screenshot"
-  | "fileTransfer" | "requestBoxHelp" | "drafts" | "userForm" | "onePassword" | "purchases" | "flights" | "generateImage" | "webSearch" | "webFetch" | "externalAwait"
+  | "fileTransfer" | "requestBoxHelp" | "drafts" | "userForm" | "onePassword" | "credentialsStore" | "purchases" | "flights" | "generateImage" | "webSearch" | "webFetch" | "externalAwait"
   | "boxAwait" | "externalShell" | "externalRead" | "boxShell" | "boxRead"
   | "sendMessage" | "sendToAgent" | "reaction" | "createAgent" | "updateAgent" | "updateState"
   | "subagentManagement"
@@ -1230,6 +1247,9 @@ export function createTurnToolsetFactories(
     ...(input.onePassword === undefined
       ? {}
       : { onePassword: createTurnOnePasswordToolFactory(input.onePassword) }),
+    ...(input.credentialsStore === undefined
+      ? {}
+      : { credentialsStore: createTurnCredentialsStoreToolFactory(input.credentialsStore) }),
     ...(input.purchases === undefined
       ? {}
       : { purchases: createTurnPurchaseToolFactory(input.purchases) }),
@@ -1342,6 +1362,9 @@ export function createTurnToolsetFactoriesForTurn(
     ...(provider.createOnePasswordToolInputs === undefined
       ? {}
       : { onePassword: provider.createOnePasswordToolInputs(turn, props) }),
+    ...(provider.createCredentialsStoreToolInputs === undefined
+      ? {}
+      : { credentialsStore: provider.createCredentialsStoreToolInputs(turn, props) }),
     ...(provider.createPurchaseToolInputs === undefined
       ? {}
       : { purchases: provider.createPurchaseToolInputs(turn, props) }),
@@ -1665,6 +1688,9 @@ export function buildTurnTools(
     // The in-chat form types into the browser on the box, as the handoff hands it over.
     const userForm = factories.userForm?.();
     if (userForm !== undefined) tools.push(userForm);
+    // The Secure Credentials Store: the person's own logins and contact info, typed into the same browser.
+    const credentialsStore = factories.credentialsStore?.();
+    if (credentialsStore !== undefined) tools.push(...credentialsStore);
     // 1Password's logins typed into the same browser, with the person's allowance.
     const onePassword = factories.onePassword?.();
     if (onePassword !== undefined) tools.push(...onePassword);

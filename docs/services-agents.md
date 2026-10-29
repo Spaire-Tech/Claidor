@@ -1498,6 +1498,72 @@ decline. A password or a code is masked, and nothing they typed is ever shown to
   a selector, a snapshot ref, a field in a frame, a menu, a checkbox, Enter for a code).
 * **Not yet verified.** Not run on the cloud computer, a Mac or an iPhone.
 
+### The Secure Credentials Store (28 October 2026)
+
+**For the person.** Settings → Secure Credentials Store (the founder: "Let's call it Secure
+Credentials Store"), on the iPhone and the Mac, as the upstream app's vault: Logins (a name,
+the website, the username or email, the password, and hints, "Tell Simeon when to use this
+entry"), Cards and Contact info (a name, their full name, email, phone and address). Each
+login shows its site's icon. A saved password shows only after Face ID or Touch ID. Cards are
+not kept here: the Cards row leads to Wallet, where Link holds them, and an agent pays with a
+one-time card.
+
+At any sign-in or sign-up the agent looks in the store first. A saved login is typed into the
+page with no card to answer (the person saved it for this), and the agent says which login it
+used. At a sign-up the agent fills the form with the contact info, makes a strong password,
+types it in (and in its confirmation), and saves the new login in the store. The agent can see
+the logins and the contact info (the founder: "the agent should be able to see logins"); it
+sees a password only when it asks for it, for a sign-in the fill can't reach.
+
+**How it works.**
+
+- **Kept on the server** (`server/simeon/desktop/credentials.py`, table `desktop_credentials`),
+  not on the agent's computer, so the apps change it while the computer sleeps and the agents
+  use it while the Mac is closed. Each entry is one row: its kind (`login` or `contact`) and
+  everything written in it sealed (`simeon.kit.sealed`, purpose `credentials:<user id>`), so a
+  copy of the database alone opens none and one person's entry can't be read as another's.
+  `GET /desktop/api/credentials` lists them without a password (`hasPassword`);
+  `GET …/{id}` gives one with its password; `POST` adds one (from the computer with `savedBy`,
+  the agent's name); `PATCH` changes one (the computer only for an entry an agent saved);
+  `DELETE` is the apps' only. At most 2,000 entries a person. Delete Account removes them.
+- **The agent's tools** (`host/runner/tools/credentials-store-tools.ts`, through
+  `shared/node/credentials-store/credentials-store.ts`): `ListStoredCredentials` (the logins
+  for a site, with their usernames and hints, and the contact info), `FillStoredLogin` (types
+  the username and password with the in-chat form's fill, only on the login's own site or a
+  subdomain of it), `ReadStoredPassword` (the password, for the same site),
+  `FillNewPassword` (a password in Apple's shape, `abcdef-Ghijk2-lmnopq`, typed into every
+  new-password field the page shows, at most three, never one asking for the current
+  password; then saved for the site without a sign-up subdomain, `signup.acme.com` →
+  `acme.com`; a site that refuses it gets another with `replace_entry_id`), and
+  `SaveStoredLogin` (a login the person gave in the chat and asked to keep). Nothing is saved
+  before the password went into the page; a save that fails twice hands the password to the
+  agent so it isn't lost.
+- **Never for a channel's message.** A turn begun by a message through Discord, Slack or
+  Telegram (`activeRequestSource` is `connector`), where others can write to the agent, gets
+  a refusal from every one of these tools. A shared room's turns never have them (its tools are
+  an allowlist).
+- **The brief** (`system-prompt.ts`, `prompt-collector-glue.ts`): the store first at any
+  sign-in or sign-up, then 1Password for someone who connected it, then the in-chat form or the
+  computer handed over.
+- **The apps** (`ios/SimeonCore/Sources/SimeonCore/CredentialsStore.swift`, shared;
+  `ios/Simeon/CredentialsStore.swift`; `mac/Simeon/SettingsCredentials.swift`). A login's icon
+  is read on the device from the site itself (its touch icon, its icon, then `/favicon.ico`),
+  never a favicon service, kept a week (`SiteIcons`). A change sends only what changed; a
+  password not read with Face ID is sent only when one was typed. The demo has a login and
+  contact info (`Demo.swift`).
+
+* **Log lines.** Server: `desktop.credentials.saved`, `.read`, `.changed`, `.deleted` (with
+  `kind` and `by`: `app` or `computer`), `desktop.credentials.unreadable` (entries sealed under
+  another `SECRET`, kept). Host: `[credentials] <agent> filled a login on <site>: username filled,
+  password filled`, `[credentials] <agent> made a password on <site> and saved the login`,
+  `[credentials] <agent> read the password of a login for <site>`. Never a value.
+* **Tested.** The server's routes (`server/tests/desktop/test_credentials.py`); the tools and the
+  new-password fill against a real Chromium (`desktop/tests/credentials-store.test.mjs`); the
+  core's model against the demo (`CredentialsStoreTests.swift`, run here as a program, since the
+  core's test binary does not start on Linux).
+* **Not yet verified.** Not run on the cloud computer, a Mac or an iPhone; the iPhone and Mac
+  screens were not compiled here (no Apple SDK on Linux).
+
 ### 1Password (28 October 2026)
 
 **For the person.** For someone who connected 1Password: at a sign-in on a page the agent has

@@ -12,7 +12,8 @@ import SimeonCore
  * each with its symbol, the current one on a grey ground, Log out at the
  * foot; the page's name at the top of the rest, its groups under it across
  * the page, from its left. General, Usage & Billing
- * once the account's usage is in hand, Wallet, Permissions, Computer (the
+ * once the account's usage is in hand, Wallet, Secure Credentials Store (28
+ * October 2026), Permissions, Computer (the
  * agents' computer and this Mac), Updates (a dot while one is waiting),
  * Help & support (22 October 2026) and Legal; the account is General's
  * first row, its page under General with Back. Nothing here that the window
@@ -25,13 +26,14 @@ import SimeonCore
 @Observable
 final class SettingsState {
   enum Page: Equatable, CaseIterable {
-    case general, usage, wallet, permissions, computer, updates, help, legal, account
+    case general, usage, wallet, credentials, permissions, computer, updates, help, legal, account
 
     var title: String {
       switch self {
       case .general: String(localized: "General")
       case .usage: String(localized: "Usage & Billing")
       case .wallet: String(localized: "Wallet")
+      case .credentials: String(localized: "Secure Credentials Store")
       case .permissions: String(localized: "Permissions")
       case .computer: String(localized: "Computer")
       case .updates: String(localized: "Updates")
@@ -46,6 +48,7 @@ final class SettingsState {
       case .general: "gearshape"
       case .usage: "chart.bar"
       case .wallet: "wallet.bifold"
+      case .credentials: "key"
       case .permissions: "hand.raised"
       case .computer: "desktopcomputer"
       case .updates: "arrow.down.circle"
@@ -172,6 +175,7 @@ private struct SettingsPanel: View {
             case .general: SettingsGeneralPage(look: look)
             case .usage: SettingsUsagePage(look: look)
             case .wallet: SettingsWalletPage(look: look)
+            case .credentials: SettingsCredentialsPage(look: look)
             case .permissions: SettingsPermissionsPage(look: look)
             case .computer: SettingsComputerPage(look: look)
             case .updates: SettingsUpdatesPage(look: look)

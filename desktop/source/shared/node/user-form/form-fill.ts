@@ -295,6 +295,43 @@ async function fillOne(field: FormLocator, type: UserFormFieldType, value: strin
   return (await field.inputValue({ timeout: 2000 }).catch(() => "")).length > 0;
 }
 
+/** Where a sign-up's new password goes: a password field, never one asking for the current password. */
+export const NEW_PASSWORD_SELECTOR = 'input[type="password"]:not([autocomplete="current-password"])';
+
+export type NewPasswordFill =
+  | { readonly ok: true; readonly page: string; readonly filled: number; readonly failed: number }
+  | { readonly ok: false; readonly message: string };
+
+/**
+ * A sign-up's new password (the Secure Credentials Store, 28 October 2026):
+ * typed into every password field the page shows, the password and its
+ * confirmation, at most three, never one asking for the current password.
+ * What comes back is how many went in, never the value.
+ */
+export async function fillNewPassword(options: Omit<UserFormPageOptions, "fields"> & { readonly value: string; readonly keyDelayMs?: number }): Promise<NewPasswordFill> {
+  const fields: UserFormFieldSpec[] = [{ id: "password", type: "password", target: { selector: NEW_PASSWORD_SELECTOR } }];
+  return await withFormPage<NewPasswordFill>({ ...options, fields }, async (page, located) => {
+    const host = hostOfAddress(page.url());
+    if (!located.has("password") || options.value.length === 0) return { ok: true, page: host, filled: 0, failed: 0 };
+    await page.bringToFront().catch(() => undefined);
+    const delay = options.keyDelayMs ?? 25;
+    let filled = 0;
+    let failed = 0;
+    const frames = [page.mainFrame(), ...page.frames().filter((frame) => frame !== page.mainFrame() && !frame.isDetached())];
+    for (const frame of frames) {
+      const all = frame.locator(NEW_PASSWORD_SELECTOR);
+      const count = Math.min(await all.count().catch(() => 0), 6);
+      for (let index = 0; index < count && filled + failed < 3; index += 1) {
+        const field = all.nth(index);
+        if (!(await field.isVisible().catch(() => false)) || !(await field.isEditable().catch(() => false))) continue;
+        if (await fillOne(field, "password", options.value, delay).catch(() => false)) filled += 1;
+        else failed += 1;
+      }
+    }
+    return { ok: true, page: host, filled, failed };
+  }, (message) => ({ ok: false, message }));
+}
+
 /**
  * Types what the person gave into the fields, each where the form pointed.
  * A field left empty is not touched ("notFilled"). Enter is pressed only
