@@ -11,8 +11,8 @@
 # 2. Exported for Developer ID with the company's certificate, checked.
 # 3. Sent to Apple to notarize, the ticket stapled, checked as Gatekeeper
 #    will on another Mac.
-# 4. The update zip, and a disk image (the app and an Applications link),
-#    signed, notarized and stapled too.
+# 4. The update zip, and a disk image (the app and an Applications link, in
+#    the window mac/scripts/dmg.sh lays out), signed, notarized and stapled too.
 # 5. Sparkle's signature of the zip, the feed (appcast.xml) and the record
 #    (release.json, with each file's sha256 and size).
 # With --publish, 6: the files to the release bucket, then appcast.xml and
@@ -27,6 +27,8 @@
 #   - the notary key stored as a profile:
 #       xcrun notarytool store-credentials simeon-notary \
 #         --key AuthKey_XXXXXXXXXX.p8 --key-id XXXXXXXXXX --issuer <issuer id>
+#   - Terminal allowed to control Finder, which lays out the disk image's
+#     window (macOS asks the first time);
 #   - for --publish, the aws command line signed in to an account that may
 #     write to the release bucket.
 # Sparkle's signing key is made in this Mac's Keychain the first time; keep
@@ -219,10 +221,7 @@ spctl --assess --type execute --verbose=2 "$APP"
 
 say "Packing the update and the disk image"
 ditto -c -k --sequesterRsrc --keepParent "$APP" "$ZIP"
-mkdir -p "$WORK/dmg"
-ditto "$APP" "$WORK/dmg/Simeon.app"
-ln -s /Applications "$WORK/dmg/Applications"
-hdiutil create -volname "Simeon" -srcfolder "$WORK/dmg" -ov -format UDZO "$DMG" > /dev/null
+"$MAC/scripts/dmg.sh" "$APP" "$DMG"
 codesign --sign "$IDENTITY" --timestamp "$DMG"
 notarize "$DMG"
 xcrun stapler staple "$DMG"
@@ -271,7 +270,7 @@ cat > "$OUT/release.json" <<JSON
 JSON
 xmllint --noout "$OUT/appcast.xml" || fail "appcast.xml is not well-formed XML."
 python3 -m json.tool "$OUT/release.json" > /dev/null || fail "release.json is not valid JSON."
-rm -rf "$WORK/dmg" "$WORK/notarize.zip"
+rm -f "$WORK/notarize.zip"
 
 echo
 echo "Release $VERSION (build $BUILD) is ready in mac/build/release/$VERSION/:"
