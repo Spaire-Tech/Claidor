@@ -6,6 +6,8 @@ import { Fragment, type ReactNode } from 'react'
 // "Log in or sign up": "lets design it like this"): one column in the middle
 // of a white page, the heading and its line, then the ways in, with the Terms
 // line at its foot; no photo and no card. The SimeonLabs wordmark top left.
+// At ChatGPT's size, nothing bold (the same day: "Simeon login page is too
+// big ... and no bold pls"): the column 320 wide, the heading 24 and regular.
 // The Mac app's sign-in (`/loginDeepControl`) sends a browser with no session
 // here, so this is the page people see between the app and "Continue as …".
 // In the page's language (`pageLocale`, 20 October 2026).
@@ -20,15 +22,15 @@ const AuthShell = ({
 }) => (
   <div className="flex min-h-screen w-full flex-col bg-white px-6 pt-7 pb-8 text-[#0d0d0d] sm:px-10 sm:pt-8">
     <div className="flex w-full items-center">
-      <LogoType labs height={40} className="-ml-[7px] w-[138px]" />
+      <LogoType labs height={32} className="-ml-[5px] w-[110px]" />
     </div>
     <main className="flex w-full grow flex-col items-center justify-center py-10">
-      <div className="flex w-full max-w-[380px] flex-col items-center">
-        <h1 className="text-center text-[32px] leading-[1.15] font-medium tracking-[-0.02em] text-balance">
+      <div className="flex w-full max-w-[320px] flex-col items-center">
+        <h1 className="text-center text-[24px] leading-[1.25] font-normal tracking-[-0.01em] text-balance">
           {heading}
         </h1>
         {line ? (
-          <p className="mt-3 text-center text-[17px] leading-[1.45] text-balance text-[#5d5d5d]">
+          <p className="mt-2.5 text-center text-[16px] leading-[1.45] text-balance text-[#5d5d5d]">
             {line}
           </p>
         ) : null}
@@ -53,7 +55,7 @@ export const withParts = (
   })
 
 const legalLink =
-  'text-[#1d1d1f] underline decoration-black/20 underline-offset-2 hover:decoration-black/50'
+  'whitespace-nowrap text-[#1d1d1f] underline decoration-black/20 underline-offset-2 hover:decoration-black/50'
 
 export const Legal = ({ locale }: { locale: AcceptedLocale }) => {
   const t = getTranslator(locale)

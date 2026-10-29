@@ -3,7 +3,7 @@
 import { getTranslator, type AcceptedLocale } from '@simeon/i18n'
 
 // At the proportions of the founder's reference (29 October 2026, ChatGPT's
-// "Log in or sign up"): 52 high, the words 16 and regular.
+// "Log in or sign up"): 52 high, the words 16 and regular; nothing bold.
 
 /** The outlined round button (Continue with Google, with Apple, with Microsoft, with password). */
 export const provider =
@@ -23,7 +23,7 @@ export const quietLink =
 
 /** "OR" between two ways in, a hairline on each side. */
 export const Or = ({ locale }: { locale: AcceptedLocale }) => (
-  <div className="flex items-center gap-4 py-1 text-[13px] font-medium tracking-[0.04em] text-[#0d0d0d]">
+  <div className="flex items-center gap-4 py-1 text-[13px] tracking-[0.04em] text-[#5d5d5d]">
     <span className="h-px grow bg-[#e3e3e3]" />
     {getTranslator(locale)('simeon.signIn.or')}
     <span className="h-px grow bg-[#e3e3e3]" />
