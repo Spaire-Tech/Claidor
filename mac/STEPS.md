@@ -2426,6 +2426,19 @@ table's cells). New clickable views use `.buttonStyle(.hand)` or
 To check on a Mac: links inside a message's words (SwiftUI's text draws
 them; whether it shows the hand over a link was not checked here).
 
+## After step 14: Simeon in the menu bar
+
+The founder, 29 October 2026: "how do we get this thing up there in the mac
+like chat gpt and muse". `mac/Simeon/MenuBar.swift`, a `MenuBarExtra` in
+the app's scenes: Simeon's mark (`MenuBarMark`, the website's
+`simeon-mark.svg` as a template image, 16 points, so macOS draws it in the
+menu bar's own ink), and a Mac menu: Open Simeon; New Agent (New chat while
+group chats are on, as ⌘N); the eight agents most recently at work, hidden
+ones aside, a dot on those with something unread, each opening its chat;
+Quit Simeon. With the window closed, Open Simeon and an agent make it again
+(`MacServices.open`, as a notification does). Signed out, the menu holds
+Open Simeon and Quit Simeon only. Not yet built or run on a Mac.
+
 ## After the founder's first build (11 October 2026)
 
 What the founder saw on their Mac, against the Electron app, and what
