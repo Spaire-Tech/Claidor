@@ -88,9 +88,11 @@ footer a[aria-current]{color:var(--ink)}
 .hero .ctas{display:flex;gap:clamp(10px,.7*var(--vw,1vw),14px);flex-wrap:wrap;margin-top:clamp(18px,1.6*var(--vw,1vw),32px)}
 /* The headline and its buttons a size down (18 October 2026); the section titles, their lines, the statement and the closing title went down with them. */
 .hero .btn{height:var(--btn-h);padding:0 var(--btn-pad);font-size:var(--btn-font)}
-/* On a phone the hero breathes (4 October 2026): a long pause under the bar, a headline that leaves air on the right, and room before the app. */
+/* On a phone the hero breathes (4 October 2026): a long pause under the bar, a headline that leaves air on the right, and room before the app.
+   The home page's headline keeps its two lines on a phone too (the founder, 29 October 2026: "should only be 2"), its size down to fit
+   "Put intelligent agents to work" across the column (13 em in Inter, 14.3 left for a wider font), never the whole sentence on one. */
 .hero .btn.go{display:none} /* the phone's one button: Download for iOS, no link until there is an app (6 October 2026) */
-@media (max-width:734px){.hero{padding-top:88px}.hero h1{font-size:var(--t-display);line-height:1.1;font-weight:var(--w-display);letter-spacing:-.025em;max-width:11.5em;text-wrap:balance}.hero h1.set{text-wrap:balance}.hero h1 .nw{white-space:normal}.hero .ctas{margin-top:26px}.hero .ctas .btn{display:none}.hero .btn.go{display:inline-flex}}
+@media (max-width:734px){.hero{padding-top:88px}.hero h1{font-size:var(--t-display);line-height:1.1;font-weight:var(--w-display);letter-spacing:-.025em;max-width:11.5em;text-wrap:balance}.hero h1.set{font-size:min(var(--t-display),calc(var(--col) / 14.3));max-width:var(--title-max);text-wrap:wrap}.hero h1 .nw{white-space:normal}.hero h1.set .nw{white-space:nowrap}.hero .ctas{margin-top:26px}.hero .ctas .btn{display:none}.hero .btn.go{display:inline-flex}}
 
 /* The opening: the home page's (its styles come from page.html), the headline and the buttons on the left;
    famous apps' icons drifting in the room on its right. On a phone they line up on the left, under the button. */
