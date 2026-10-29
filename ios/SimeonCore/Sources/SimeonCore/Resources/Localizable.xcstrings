@@ -11037,6 +11037,64 @@
         }
       }
     },
+    "Add the people from today’s event to HubSpot as contacts." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Füg die Leute von der heutigen Veranstaltung als Kontakte in HubSpot hinzu."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añade a las personas del evento de hoy como contactos en HubSpot."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajoute les personnes de l’événement d’aujourd’hui comme contacts dans HubSpot."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi le persone dell’evento di oggi come contatti in HubSpot."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voeg de mensen van het evenement van vandaag toe als contacten in HubSpot."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj osoby z dzisiejszego wydarzenia jako kontakty w HubSpot."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicione as pessoas do evento de hoje como contatos no HubSpot."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lägg till personerna från dagens evenemang som kontakter i HubSpot."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bugünkü etkinlikteki kişileri HubSpot’a kişi olarak ekle."
+          }
+        }
+      }
+    },
     "Add the username or the password." : {
       "localizations" : {
         "de" : {
@@ -11149,6 +11207,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Web sitesini ekle."
+          }
+        }
+      }
+    },
+    "Add today’s sales calls to our CRM database in Notion." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trag die heutigen Verkaufsgespräche in unsere CRM-Datenbank in Notion ein."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añade las llamadas de ventas de hoy a nuestra base de datos de CRM en Notion."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajoute les appels commerciaux d’aujourd’hui à notre base CRM dans Notion."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi le chiamate commerciali di oggi al nostro database CRM in Notion."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zet de verkoopgesprekken van vandaag in onze CRM-database in Notion."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj dzisiejsze rozmowy sprzedażowe do naszej bazy CRM w Notion."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicione as ligações de vendas de hoje ao nosso banco de dados de CRM no Notion."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lägg till dagens säljsamtal i vår CRM-databas i Notion."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bugünkü satış görüşmelerini Notion’daki CRM veritabanımıza ekle."
           }
         }
       }
@@ -15857,6 +15973,64 @@
         }
       }
     },
+    "Block two hours of focus time every morning this week in Google Calendar." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blocke diese Woche jeden Morgen zwei Stunden Fokuszeit in Google Calendar."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloquea dos horas de concentración cada mañana esta semana en Google Calendar."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réserve deux heures de concentration chaque matin cette semaine dans Google Calendar."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blocca due ore di concentrazione ogni mattina di questa settimana in Google Calendar."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blokkeer deze week elke ochtend twee uur focustijd in Google Calendar."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zablokuj w Google Calendar dwie godziny na skupienie każdego ranka w tym tygodniu."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloqueie duas horas de foco todas as manhãs desta semana no Google Calendar."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Boka två timmar fokustid varje morgon den här veckan i Google Calendar."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu hafta her sabah Google Calendar’da iki saatlik odaklanma zamanı ayır."
+          }
+        }
+      }
+    },
     "boards, lists and cards" : {
       "localizations" : {
         "de" : {
@@ -16665,6 +16839,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Satın alınıyor"
+          }
+        }
+      }
+    },
+    "By %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Von %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Par %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Di %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Door %@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Od %@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Por %@"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Av %@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ tarafından"
           }
         }
       }
@@ -17825,6 +18057,122 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Kart •••• %@"
+          }
+        }
+      }
+    },
+    "Catch me up on #marketing in Slack since Monday, in five points." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bring mich in fünf Punkten auf den Stand von #marketing in Slack seit Montag."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ponme al día de #marketing en Slack desde el lunes, en cinco puntos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fais-moi un point en cinq éléments sur #marketing dans Slack depuis lundi."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiornami su #marketing in Slack da lunedì, in cinque punti."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Praat me in vijf punten bij over #marketing in Slack sinds maandag."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Streść mi w pięciu punktach, co działo się na #marketing w Slack od poniedziałku."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Me atualize sobre o #marketing no Slack desde segunda, em cinco pontos."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uppdatera mig om #marketing i Slack sedan måndag, i fem punkter."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pazartesiden beri Slack’teki #marketing kanalında olanları beş maddede özetle."
+          }
+        }
+      }
+    },
+    "Category" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kategorie"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Categoría"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Catégorie"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Categoria"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Categorie"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kategoria"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Categoria"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kategori"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kategori"
           }
         }
       }
@@ -26652,6 +27000,64 @@
         }
       }
     },
+    "Create Linear issues for each bug in this list and assign them to me." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leg für jeden Fehler in dieser Liste ein Issue in Linear an und weise es mir zu."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crea una incidencia en Linear por cada error de esta lista y asígnamelas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crée un ticket Linear pour chaque bug de cette liste et assigne-les-moi."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crea una issue in Linear per ogni bug di questa lista e assegnale a me."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maak voor elke bug in deze lijst een issue in Linear aan en wijs ze aan mij toe."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utwórz w Linear zgłoszenie dla każdego błędu z tej listy i przypisz je do mnie."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crie uma issue no Linear para cada bug desta lista e atribua a mim."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skapa ett ärende i Linear för varje bugg i den här listan och tilldela dem till mig."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu listedeki her hata için Linear’da bir issue oluştur ve bana ata."
+          }
+        }
+      }
+    },
     "Create more Agents to add them here." : {
       "localizations" : {
         "de" : {
@@ -29326,6 +29732,64 @@
         }
       }
     },
+    "Developer" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entwickler"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desarrollador"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Développeur"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sviluppatore"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ontwikkelaar"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twórca"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desenvolvedor"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utvecklare"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geliştirici"
+          }
+        }
+      }
+    },
     "Didn't go through" : {
       "localizations" : {
         "de" : {
@@ -30134,6 +30598,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Dr."
+          }
+        }
+      }
+    },
+    "Draft a polite reply in Gmail to the latest invoice email, asking for a new due date." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entwirf in Gmail eine höfliche Antwort auf die letzte Rechnungs-E-Mail und bitte um ein neues Fälligkeitsdatum."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redacta en Gmail una respuesta amable al último correo de la factura y pide una nueva fecha de vencimiento."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rédige dans Gmail une réponse polie au dernier e-mail de facture pour demander une nouvelle échéance."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prepara in Gmail una risposta cortese all’ultima email della fattura chiedendo una nuova scadenza."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schrijf in Gmail een beleefd antwoord op de laatste factuurmail en vraag om een nieuwe vervaldatum."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Napisz w Gmail uprzejmą odpowiedź na ostatni e-mail z fakturą z prośbą o nowy termin płatności."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escreva no Gmail uma resposta educada ao último e-mail da fatura pedindo um novo prazo de vencimento."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skriv ett artigt svar i Gmail på det senaste fakturamejlet och be om ett nytt förfallodatum."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Son fatura e-postasına Gmail’de nazik bir yanıt hazırla ve yeni bir son ödeme tarihi iste."
           }
         }
       }
@@ -33622,6 +34144,470 @@
         }
       }
     },
+    "Find a free hour next week in Google Calendar for a call with Sam and send the invite." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finde nächste Woche in Google Calendar eine freie Stunde für einen Anruf mit Sam und schick die Einladung."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Busca una hora libre la semana que viene en Google Calendar para una llamada con Sam y envía la invitación."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trouve une heure libre la semaine prochaine dans Google Calendar pour un appel avec Sam et envoie l’invitation."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trova un’ora libera la prossima settimana in Google Calendar per una chiamata con Sam e manda l’invito."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zoek volgende week een vrij uur in Google Calendar voor een gesprek met Sam en stuur de uitnodiging."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Znajdź w Google Calendar wolną godzinę w przyszłym tygodniu na rozmowę z Samem i wyślij zaproszenie."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encontre uma hora livre na semana que vem no Google Calendar para uma ligação com o Sam e envie o convite."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hitta en ledig timme nästa vecka i Google Calendar för ett samtal med Sam och skicka inbjudan."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Google Calendar’da gelecek hafta Sam’le bir görüşme için boş bir saat bul ve daveti gönder."
+          }
+        }
+      }
+    },
+    "Find every Gmail thread about the lease this month and pull out the key dates." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finde alle Gmail-Verläufe zum Mietvertrag aus diesem Monat und zieh die wichtigen Termine heraus."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encuentra todos los hilos de Gmail de este mes sobre el contrato de alquiler y saca las fechas clave."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trouve toutes les conversations Gmail de ce mois sur le bail et relève les dates importantes."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trova tutte le conversazioni Gmail di questo mese sul contratto d’affitto ed estrai le date importanti."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zoek alle Gmail-gesprekken van deze maand over het huurcontract en haal de belangrijke data eruit."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Znajdź wszystkie wątki w Gmail z tego miesiąca o umowie najmu i wypisz najważniejsze daty."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encontre todas as conversas do Gmail deste mês sobre o contrato de aluguel e destaque as datas importantes."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hitta alla trådar i Gmail om hyresavtalet den här månaden och plocka ut de viktiga datumen."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu ay kira sözleşmesiyle ilgili tüm Gmail yazışmalarını bul ve önemli tarihleri çıkar."
+          }
+        }
+      }
+    },
+    "Find our onboarding checklist in Notion and tell me what’s out of date." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finde unsere Onboarding-Checkliste in Notion und sag mir, was veraltet ist."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encuentra nuestra lista de incorporación en Notion y dime qué está desactualizado."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trouve notre check-list d’intégration dans Notion et dis-moi ce qui n’est plus à jour."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trova la nostra checklist di inserimento in Notion e dimmi cosa non è più aggiornato."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zoek onze onboardingchecklist in Notion en vertel me wat verouderd is."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Znajdź naszą listę wdrożeniową w Notion i powiedz, co jest nieaktualne."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encontre nossa checklist de integração no Notion e me diga o que está desatualizado."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hitta vår introduktionschecklista i Notion och berätta vad som är inaktuellt."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notion’daki işe alışma kontrol listemizi bul ve nelerin güncel olmadığını söyle."
+          }
+        }
+      }
+    },
+    "Find the contract someone sent me in Outlook last month and summarize it." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finde in Outlook den Vertrag, den mir letzten Monat jemand geschickt hat, und fass ihn zusammen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encuentra en Outlook el contrato que me enviaron el mes pasado y resúmelo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trouve dans Outlook le contrat qu’on m’a envoyé le mois dernier et résume-le."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trova in Outlook il contratto che qualcuno mi ha mandato il mese scorso e riassumilo."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zoek in Outlook het contract dat iemand me vorige maand stuurde en vat het samen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Znajdź w Outlook umowę, którą ktoś przysłał mi w zeszłym miesiącu, i streść ją."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encontre no Outlook o contrato que alguém me mandou no mês passado e resuma."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hitta avtalet som någon skickade till mig i Outlook förra månaden och sammanfatta det."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geçen ay birinin Outlook’ta bana gönderdiği sözleşmeyi bul ve özetle."
+          }
+        }
+      }
+    },
+    "Find the deals in HubSpot that haven’t moved in two weeks and draft a follow-up for each." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finde die Deals in HubSpot, die sich seit zwei Wochen nicht bewegt haben, und entwirf für jeden ein Follow-up."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encuentra los negocios de HubSpot que no se han movido en dos semanas y redacta un seguimiento para cada uno."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trouve les affaires dans HubSpot qui n’ont pas bougé depuis deux semaines et rédige une relance pour chacune."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trova le trattative in HubSpot ferme da due settimane e prepara un messaggio di follow-up per ciascuna."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zoek de deals in HubSpot die al twee weken stilstaan en schrijf voor elke deal een follow-up."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Znajdź w HubSpot szanse sprzedaży, które stoją od dwóch tygodni, i napisz przypomnienie do każdej."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encontre os negócios no HubSpot que não andam há duas semanas e escreva um follow-up para cada um."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hitta affärerna i HubSpot som inte har rört sig på två veckor och skriv en uppföljning för var och en."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HubSpot’ta iki haftadır ilerlemeyen fırsatları bul ve her biri için bir takip mesajı hazırla."
+          }
+        }
+      }
+    },
+    "Find the latest budget sheet in Google Drive and tell me what changed since last month." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finde die neueste Budgettabelle in Google Drive und sag mir, was sich seit letztem Monat geändert hat."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encuentra la última hoja de presupuesto en Google Drive y dime qué cambió desde el mes pasado."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trouve le dernier tableau de budget dans Google Drive et dis-moi ce qui a changé depuis le mois dernier."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trova l’ultimo foglio del budget in Google Drive e dimmi cosa è cambiato dal mese scorso."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zoek de nieuwste begroting in Google Drive en vertel me wat er sinds vorige maand is veranderd."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Znajdź najnowszy arkusz budżetu w Google Drive i powiedz, co się zmieniło od zeszłego miesiąca."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encontre a planilha de orçamento mais recente no Google Drive e me diga o que mudou desde o mês passado."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hitta det senaste budgetarket i Google Drive och berätta vad som har ändrats sedan förra månaden."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Google Drive’daki en son bütçe tablosunu bul ve geçen aydan bu yana neyin değiştiğini söyle."
+          }
+        }
+      }
+    },
+    "Find the signed lease in Dropbox and tell me when it ends." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finde den unterschriebenen Mietvertrag in Dropbox und sag mir, wann er endet."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encuentra el contrato de alquiler firmado en Dropbox y dime cuándo termina."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trouve le bail signé dans Dropbox et dis-moi quand il se termine."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trova il contratto d’affitto firmato in Dropbox e dimmi quando scade."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zoek het getekende huurcontract in Dropbox en vertel me wanneer het afloopt."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Znajdź podpisaną umowę najmu w Dropbox i powiedz, kiedy się kończy."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encontre o contrato de aluguel assinado no Dropbox e me diga quando ele termina."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hitta det signerade hyresavtalet i Dropbox och berätta när det går ut."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dropbox’taki imzalı kira sözleşmesini bul ve ne zaman bittiğini söyle."
+          }
+        }
+      }
+    },
+    "Find what the team decided about pricing in Slack last week." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finde heraus, was das Team letzte Woche in Slack zu den Preisen entschieden hat."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Busca lo que el equipo decidió sobre los precios en Slack la semana pasada."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retrouve ce que l’équipe a décidé sur les prix dans Slack la semaine dernière."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trova cosa ha deciso il team sui prezzi in Slack la settimana scorsa."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zoek op wat het team vorige week in Slack over de prijzen heeft besloten."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sprawdź, co zespół ustalił w sprawie cen w Slack w zeszłym tygodniu."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Descubra o que a equipe decidiu sobre preços no Slack na semana passada."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ta reda på vad teamet bestämde om priserna i Slack förra veckan."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ekibin geçen hafta Slack’te fiyatlar hakkında ne karar verdiğini bul."
+          }
+        }
+      }
+    },
     "Finish on the store's page" : {
       "localizations" : {
         "de" : {
@@ -35132,6 +36118,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ (%@ dalı)"
+          }
+        }
+      }
+    },
+    "Go through my Outlook inbox and flag anything from clients that’s still waiting on me." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geh meinen Outlook-Posteingang durch und markiere alles von Kunden, das noch auf mich wartet."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Revisa mi bandeja de Outlook y marca todo lo de clientes que todavía espera algo de mí."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parcours ma boîte Outlook et signale tout ce qui vient de clients et attend encore une réponse de ma part."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scorri la mia casella di Outlook e segnala tutto ciò che arriva dai clienti e aspetta ancora me."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loop mijn Outlook-inbox door en markeer alles van klanten dat nog op mij wacht."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przejrzyj moją skrzynkę w Outlook i oznacz wszystko od klientów, co wciąż czeka na moją odpowiedź."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Passe pela minha caixa de entrada do Outlook e marque tudo de clientes que ainda está esperando por mim."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gå igenom min inkorg i Outlook och flagga allt från kunder som fortfarande väntar på mig."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Outlook gelen kutumu gözden geçir ve müşterilerden gelip hâlâ beni bekleyen her şeyi işaretle."
           }
         }
       }
@@ -36804,6 +37848,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Bebek"
+          }
+        }
+      }
+    },
+    "Information" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Informationen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Información"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Informations"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Informazioni"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Informatie"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Informacje"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Informações"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Information"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bilgiler"
           }
         }
       }
@@ -39796,6 +40898,122 @@
         }
       }
     },
+    "List the files in Google Drive I haven’t opened in a year, so I can clean up." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Liste die Dateien in Google Drive auf, die ich seit einem Jahr nicht geöffnet habe, damit ich aufräumen kann."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Haz una lista de los archivos de Google Drive que no abro desde hace un año, para poder limpiar."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Liste les fichiers de Google Drive que je n’ai pas ouverts depuis un an, pour que je fasse le tri."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elenca i file in Google Drive che non apro da un anno, così faccio pulizia."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zet de bestanden in Google Drive op een rij die ik al een jaar niet heb geopend, zodat ik kan opruimen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wypisz pliki w Google Drive, których nie otwierałem od roku, żebym mógł zrobić porządek."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Liste os arquivos do Google Drive que não abro há um ano, para eu poder fazer uma limpeza."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lista filerna i Google Drive som jag inte har öppnat på ett år, så att jag kan rensa."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Google Drive’da bir yıldır açmadığım dosyaları listele de temizlik yapayım."
+          }
+        }
+      }
+    },
+    "List what takes the most space in my Dropbox." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Liste auf, was in meinem Dropbox am meisten Platz belegt."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Haz una lista de lo que más espacio ocupa en mi Dropbox."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Liste ce qui prend le plus de place dans mon Dropbox."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elenca cosa occupa più spazio nel mio Dropbox."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zet op een rij wat de meeste ruimte inneemt in mijn Dropbox."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wypisz, co zajmuje najwięcej miejsca w moim Dropbox."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Liste o que ocupa mais espaço no meu Dropbox."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lista det som tar mest plats i min Dropbox."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dropbox’ımda en çok yer kaplayanları listele."
+          }
+        }
+      }
+    },
     "Loading connectors…" : {
       "localizations" : {
         "de" : {
@@ -40140,6 +41358,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sorgular Lusha kredilerini kullanır."
+          }
+        }
+      }
+    },
+    "Make a folder in Dropbox for the Smith project and put these files in it." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leg in Dropbox einen Ordner für das Smith-Projekt an und leg diese Dateien hinein."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crea una carpeta en Dropbox para el proyecto Smith y pon estos archivos dentro."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crée un dossier dans Dropbox pour le projet Smith et mets-y ces fichiers."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crea una cartella in Dropbox per il progetto Smith e mettici questi file."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maak in Dropbox een map voor het Smith-project en zet deze bestanden erin."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utwórz w Dropbox folder na projekt Smith i wrzuć do niego te pliki."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crie uma pasta no Dropbox para o projeto Smith e coloque estes arquivos nela."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skapa en mapp i Dropbox för Smith-projektet och lägg de här filerna i den."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dropbox’ta Smith projesi için bir klasör oluştur ve bu dosyaları içine koy."
           }
         }
       }
@@ -42972,6 +44248,64 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Move every Linear issue I finished today to Done." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verschieb alle Linear-Issues, die ich heute erledigt habe, auf Done."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mueve a Done todas las incidencias de Linear que terminé hoy."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Passe en Done chaque ticket Linear que j’ai terminé aujourd’hui."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sposta su Done ogni issue di Linear che ho finito oggi."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zet elke Linear-issue die ik vandaag heb afgerond op Done."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przenieś do Done każde zgłoszenie w Linear, które dziś skończyłem."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mova para Done toda issue do Linear que terminei hoje."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flytta alla ärenden i Linear som jag blev klar med i dag till Done."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bugün bitirdiğim tüm Linear issue’larını Done’a taşı."
           }
         }
       }
@@ -47567,6 +48901,64 @@
         }
       }
     },
+    "Open an issue on GitHub for the login bug, with the steps to reproduce it." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eröffne auf GitHub ein Issue für den Login-Fehler, mit den Schritten, um ihn nachzustellen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre una incidencia en GitHub para el error de inicio de sesión, con los pasos para reproducirlo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvre un ticket sur GitHub pour le bug de connexion, avec les étapes pour le reproduire."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri una issue su GitHub per il bug del login, con i passaggi per riprodurlo."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open een issue op GitHub voor de inlogbug, met de stappen om hem te reproduceren."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Załóż zgłoszenie na GitHub dla błędu logowania, z krokami, jak go odtworzyć."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abra uma issue no GitHub para o bug do login, com os passos para reproduzir."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Öppna ett ärende på GitHub för inloggningsbuggen, med stegen för att återskapa den."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Giriş hatası için GitHub’da, nasıl tekrarlanacağını anlatan adımlarla bir issue aç."
+          }
+        }
+      }
+    },
     "Open Hidden Agents" : {
       "localizations" : {
         "de" : {
@@ -50061,6 +51453,64 @@
         }
       }
     },
+    "Post the launch checklist in Slack and ask who can take each item." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Poste die Launch-Checkliste in Slack und frag, wer welchen Punkt übernehmen kann."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Publica la lista del lanzamiento en Slack y pregunta quién puede encargarse de cada punto."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Publie la check-list du lancement dans Slack et demande qui peut prendre chaque point."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pubblica la checklist del lancio in Slack e chiedi chi può occuparsi di ogni punto."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plaats de lanceringschecklist in Slack en vraag wie elk punt kan oppakken."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opublikuj w Slack listę zadań na premierę i zapytaj, kto weźmie każdy punkt."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Publique a checklist do lançamento no Slack e pergunte quem pode assumir cada item."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lägg upp checklistan för lanseringen i Slack och fråga vem som kan ta varje punkt."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lansman kontrol listesini Slack’te paylaş ve her maddeyi kimin üstlenebileceğini sor."
+          }
+        }
+      }
+    },
     "Posts your agents publish go out on your accounts." : {
       "localizations" : {
         "de" : {
@@ -50539,6 +51989,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sunum"
+          }
+        }
+      }
+    },
+    "Privacy Policy" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Datenschutzerklärung"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Política de privacidad"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Politique de confidentialité"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Informativa sulla privacy"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacybeleid"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Polityka prywatności"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Política de Privacidade"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Integritetspolicy"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gizlilik Politikası"
           }
         }
       }
@@ -51351,6 +52859,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ uygulamasını işe koş"
+          }
+        }
+      }
+    },
+    "Put this week’s meeting notes in a new doc in Google Drive and share it with the team." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pack die Besprechungsnotizen dieser Woche in ein neues Dokument in Google Drive und teile es mit dem Team."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pon las notas de las reuniones de esta semana en un documento nuevo en Google Drive y compártelo con el equipo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mets les notes de réunion de cette semaine dans un nouveau document sur Google Drive et partage-le avec l’équipe."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Metti gli appunti delle riunioni di questa settimana in un nuovo documento in Google Drive e condividilo con il team."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zet de vergadernotities van deze week in een nieuw document in Google Drive en deel het met het team."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Umieść notatki ze spotkań z tego tygodnia w nowym dokumencie w Google Drive i udostępnij go zespołowi."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coloque as anotações das reuniões desta semana em um novo documento no Google Drive e compartilhe com a equipe."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lägg veckans mötesanteckningar i ett nytt dokument i Google Drive och dela det med teamet."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu haftanın toplantı notlarını Google Drive’da yeni bir belgeye koy ve ekiple paylaş."
           }
         }
       }
@@ -53381,6 +54947,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Replicate sayfası, Replicate hesabından bir API belirteci ister. Model çalıştırma ücreti bu hesaba yansıtılır."
+          }
+        }
+      }
+    },
+    "Reply in Outlook to Jordan’s last email and suggest Thursday at 10 instead." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Antworte in Outlook auf Jordans letzte E-Mail und schlag stattdessen Donnerstag um 10 vor."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Responde en Outlook al último correo de Jordan y propón el jueves a las 10."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réponds dans Outlook au dernier e-mail de Jordan et propose plutôt jeudi à 10 h."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rispondi in Outlook all’ultima email di Jordan e proponi invece giovedì alle 10."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beantwoord in Outlook de laatste e-mail van Jordan en stel in plaats daarvan donderdag om 10 uur voor."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Odpowiedz w Outlook na ostatni e-mail od Jordana i zaproponuj zamiast tego czwartek o 10."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Responda no Outlook ao último e-mail do Jordan e sugira quinta às 10."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Svara i Outlook på Jordans senaste mejl och föreslå torsdag klockan 10 i stället."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jordan’ın son e-postasını Outlook’ta yanıtla ve onun yerine perşembe saat 10’u öner."
           }
         }
       }
@@ -62865,6 +64489,180 @@
         }
       }
     },
+    "Sum up what we know about Acme in HubSpot before my call." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fass vor meinem Anruf zusammen, was wir in HubSpot über Acme wissen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resume lo que sabemos de Acme en HubSpot antes de mi llamada."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Résume ce qu’on sait sur Acme dans HubSpot avant mon appel."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Riassumi cosa sappiamo di Acme in HubSpot prima della mia chiamata."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vat voor mijn gesprek samen wat we in HubSpot over Acme weten."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Podsumuj, co wiemy o Acme w HubSpot, przed moją rozmową."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resuma o que sabemos sobre a Acme no HubSpot antes da minha ligação."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sammanfatta vad vi vet om Acme i HubSpot inför mitt samtal."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Görüşmemden önce HubSpot’ta Acme hakkında bildiklerimizi özetle."
+          }
+        }
+      }
+    },
+    "Summarize the last five emails from my accountant in Gmail and list what needs a reply." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fass die letzten fünf E-Mails meines Steuerberaters in Gmail zusammen und liste auf, was eine Antwort braucht."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resume los últimos cinco correos de mi contador en Gmail y haz una lista de lo que necesita respuesta."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Résume les cinq derniers e-mails de mon comptable dans Gmail et liste ce qui demande une réponse."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Riassumi le ultime cinque email del mio commercialista in Gmail ed elenca quelle che richiedono una risposta."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vat de laatste vijf e-mails van mijn boekhouder in Gmail samen en zet op een rij wat een antwoord nodig heeft."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Streść pięć ostatnich e-maili od mojego księgowego w Gmail i wypisz, na co trzeba odpowiedzieć."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resuma os últimos cinco e-mails do meu contador no Gmail e liste o que precisa de resposta."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sammanfatta de fem senaste mejlen från min revisor i Gmail och lista det som behöver svar."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Muhasebecimden gelen son beş e-postayı Gmail’de özetle ve yanıt bekleyenleri listele."
+          }
+        }
+      }
+    },
+    "Summarize the open pull requests on GitHub that are waiting on my review." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fass die offenen Pull Requests auf GitHub zusammen, die auf mein Review warten."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resume las pull requests abiertas en GitHub que esperan mi revisión."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Résume les pull requests ouvertes sur GitHub qui attendent ma relecture."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Riassumi le pull request aperte su GitHub che aspettano la mia revisione."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vat de openstaande pull requests op GitHub samen die op mijn review wachten."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Streść otwarte pull requesty na GitHub, które czekają na mój przegląd."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resuma os pull requests abertos no GitHub que estão esperando minha revisão."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sammanfatta de öppna pull requests på GitHub som väntar på min granskning."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GitHub’da incelememi bekleyen açık pull request’leri özetle."
+          }
+        }
+      }
+    },
     "Sun" : {
       "localizations" : {
         "de" : {
@@ -63383,6 +65181,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Teams mesajı"
+          }
+        }
+      }
+    },
+    "Terms of Service" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nutzungsbedingungen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Términos del servicio"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conditions d’utilisation"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Termini di servizio"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Servicevoorwaarden"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Warunki korzystania"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Termos de Serviço"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Användarvillkor"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hizmet Şartları"
           }
         }
       }
@@ -70411,6 +72267,64 @@
         }
       }
     },
+    "Turn these notes into a project page in Notion with owners and due dates." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mach aus diesen Notizen eine Projektseite in Notion mit Verantwortlichen und Fristen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Convierte estas notas en una página de proyecto en Notion con responsables y fechas límite."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transforme ces notes en page de projet dans Notion, avec des responsables et des échéances."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trasforma questi appunti in una pagina di progetto in Notion con responsabili e scadenze."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maak van deze notities een projectpagina in Notion met eigenaren en deadlines."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zamień te notatki w stronę projektu w Notion z osobami odpowiedzialnymi i terminami."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transforme estas anotações em uma página de projeto no Notion com responsáveis e prazos."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gör om de här anteckningarna till en projektsida i Notion med ansvariga och deadlines."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu notları Notion’da sorumluları ve teslim tarihleri olan bir proje sayfasına dönüştür."
+          }
+        }
+      }
+    },
     "Type a name to create a Agent" : {
       "localizations" : {
         "de" : {
@@ -73329,6 +75243,64 @@
         }
       }
     },
+    "Website" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Website"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sitio web"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Site web"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sito web"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Website"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Strona"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Site"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Webbplats"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Web sitesi"
+          }
+        }
+      }
+    },
     "Wed" : {
       "localizations" : {
         "de" : {
@@ -73677,6 +75649,64 @@
         }
       }
     },
+    "What shipped in our GitHub repo this week? Write it up as release notes." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Was wurde diese Woche in unserem GitHub-Repository ausgeliefert? Schreib es als Versionshinweise auf."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué se publicó esta semana en nuestro repositorio de GitHub? Escríbelo como notas de la versión."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qu’est-ce qui a été livré cette semaine dans notre dépôt GitHub ? Rédige-le sous forme de notes de version."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cosa è uscito questa settimana nel nostro repository GitHub? Scrivilo come note di rilascio."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wat is er deze week uitgebracht in onze GitHub-repository? Schrijf het uit als release notes."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Co trafiło w tym tygodniu do naszego repozytorium na GitHub? Opisz to jako informacje o wydaniu."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O que foi lançado esta semana no nosso repositório do GitHub? Escreva como notas de versão."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vad levererades i vårt GitHub-repo den här veckan? Skriv det som versionsinformation."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu hafta GitHub depomuzda neler yayınlandı? Sürüm notları olarak yaz."
+          }
+        }
+      }
+    },
     "What should we call you?" : {
       "localizations" : {
         "de" : {
@@ -73847,6 +75877,122 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ajanlarının %@ içinde okudukları, onlarla yaptığın sohbetlerin bir parçası olur ve işi yapan yapay zekâ modellerine gönderilir."
+          }
+        }
+      }
+    },
+    "What’s left in the current cycle in Linear, and what’s at risk?" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Was ist im aktuellen Zyklus in Linear noch offen, und was ist gefährdet?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué queda en el ciclo actual de Linear y qué está en riesgo?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qu’est-ce qui reste dans le cycle en cours sur Linear, et qu’est-ce qui est en danger ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cosa resta nel ciclo attuale in Linear, e cosa è a rischio?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wat staat er nog open in de huidige cyclus in Linear, en wat loopt gevaar?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Co zostało w bieżącym cyklu w Linear i co jest zagrożone?"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O que falta no ciclo atual do Linear, e o que está em risco?"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vad är kvar i den nuvarande cykeln i Linear, och vad är i farozonen?"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Linear’daki mevcut döngüde ne kaldı, ne risk altında?"
+          }
+        }
+      }
+    },
+    "What’s on my Google Calendar tomorrow, and which meetings could move?" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Was steht morgen in meinem Google Calendar, und welche Termine könnte man verschieben?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué tengo mañana en Google Calendar y qué reuniones se podrían mover?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qu’est-ce qu’il y a demain dans mon Google Calendar, et quelles réunions pourraient être déplacées ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cosa c’è domani nel mio Google Calendar, e quali riunioni si potrebbero spostare?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wat staat er morgen in mijn Google Calendar, en welke afspraken kunnen worden verzet?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Co mam jutro w Google Calendar i które spotkania można przesunąć?"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O que tenho amanhã no Google Calendar, e quais reuniões poderiam mudar?"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vad har jag i Google Calendar i morgon, och vilka möten skulle kunna flyttas?"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yarın Google Calendar’ımda ne var, hangi toplantılar kaydırılabilir?"
           }
         }
       }
@@ -78607,6 +80753,528 @@
         }
       }
     },
+    "Your agents create and update issues in Linear and tell you where your projects and cycles stand." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten erstellen und aktualisieren Issues in Linear und sagen dir, wo deine Projekte und Zyklen stehen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes crean y actualizan incidencias en Linear y te dicen cómo van tus proyectos y ciclos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents créent et mettent à jour des tickets dans Linear et te disent où en sont tes projets et tes cycles."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi agenti creano e aggiornano issue in Linear e ti dicono a che punto sono i tuoi progetti e cicli."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten maken en werken issues bij in Linear en vertellen je hoe je projecten en cycli ervoor staan."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci tworzą i aktualizują zgłoszenia w Linear i mówią, na jakim etapie są twoje projekty i cykle."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes criam e atualizam issues no Linear e dizem como estão seus projetos e ciclos."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter skapar och uppdaterar ärenden i Linear och berättar hur dina projekt och cykler ligger till."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların Linear’da issue oluşturur ve günceller, projelerinin ve döngülerinin ne durumda olduğunu söyler."
+          }
+        }
+      }
+    },
+    "Your agents find, read, and create files in Google Drive, and share them with the people you name." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten finden, lesen und erstellen Dateien in Google Drive und teilen sie mit den Personen, die du nennst."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes encuentran, leen y crean archivos en Google Drive, y los comparten con las personas que indiques."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents trouvent, lisent et créent des fichiers dans Google Drive, et les partagent avec les personnes que tu nommes."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi agenti trovano, leggono e creano file in Google Drive e li condividono con le persone che indichi."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten vinden, lezen en maken bestanden in Google Drive en delen ze met de mensen die je noemt."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci znajdują, czytają i tworzą pliki w Google Drive oraz udostępniają je wskazanym osobom."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes encontram, leem e criam arquivos no Google Drive e os compartilham com as pessoas que você indicar."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter hittar, läser och skapar filer i Google Drive och delar dem med de personer du nämner."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların Google Drive’da dosya bulur, okur ve oluşturur, sonra adını verdiğin kişilerle paylaşır."
+          }
+        }
+      }
+    },
+    "Your agents find, read, and organize your files in Dropbox." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten finden, lesen und ordnen deine Dateien in Dropbox."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes encuentran, leen y ordenan tus archivos en Dropbox."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents trouvent, lisent et rangent tes fichiers dans Dropbox."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi agenti trovano, leggono e organizzano i tuoi file in Dropbox."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten vinden, lezen en ordenen je bestanden in Dropbox."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci znajdują, czytają i porządkują twoje pliki w Dropbox."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes encontram, leem e organizam seus arquivos no Dropbox."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter hittar, läser och ordnar dina filer i Dropbox."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların Dropbox’taki dosyalarını bulur, okur ve düzenler."
+          }
+        }
+      }
+    },
+    "Your agents look up and update your contacts, companies, and deals in HubSpot." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten schlagen deine Kontakte, Unternehmen und Deals in HubSpot nach und aktualisieren sie."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes consultan y actualizan tus contactos, empresas y negocios en HubSpot."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents consultent et mettent à jour tes contacts, entreprises et affaires dans HubSpot."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi agenti cercano e aggiornano i tuoi contatti, aziende e trattative in HubSpot."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten zoeken je contacten, bedrijven en deals op in HubSpot en werken ze bij."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci sprawdzają i aktualizują twoje kontakty, firmy i szanse sprzedaży w HubSpot."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes consultam e atualizam seus contatos, empresas e negócios no HubSpot."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter slår upp och uppdaterar dina kontakter, företag och affärer i HubSpot."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların HubSpot’taki kişilerini, şirketlerini ve fırsatlarını bulur ve günceller."
+          }
+        }
+      }
+    },
+    "Your agents read and sort your email in Outlook, draft replies, and keep your Microsoft 365 calendar up to date." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten lesen und sortieren deine E-Mails in Outlook, entwerfen Antworten und halten deinen Microsoft 365-Kalender aktuell."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes leen y ordenan tu correo en Outlook, redactan respuestas y mantienen al día tu calendario de Microsoft 365."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents lisent et trient tes e-mails dans Outlook, rédigent des réponses et tiennent ton calendrier Microsoft 365 à jour."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi agenti leggono e ordinano le tue email in Outlook, preparano risposte e tengono aggiornato il tuo calendario di Microsoft 365."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten lezen en sorteren je e-mail in Outlook, schrijven antwoorden en houden je Microsoft 365-agenda bij."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci czytają i porządkują twoje e-maile w Outlook, przygotowują odpowiedzi i aktualizują twój kalendarz Microsoft 365."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes leem e organizam seus e-mails no Outlook, escrevem respostas e mantêm seu calendário do Microsoft 365 em dia."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter läser och sorterar din e-post i Outlook, skriver svar och håller din Microsoft 365-kalender uppdaterad."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların Outlook’taki e-postalarını okur ve düzenler, yanıtlar hazırlar ve Microsoft 365 takvimini güncel tutar."
+          }
+        }
+      }
+    },
+    "Your agents read your channels and messages in Slack, catch you up, and post for you when you ask." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten lesen deine Kanäle und Nachrichten in Slack, bringen dich auf den neuesten Stand und posten für dich, wenn du sie darum bittest."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes leen tus canales y mensajes en Slack, te ponen al día y publican por ti cuando se lo pides."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents lisent tes canaux et tes messages dans Slack, te font un point et publient pour toi quand tu le demandes."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi agenti leggono i tuoi canali e messaggi in Slack, ti aggiornano e pubblicano per te quando lo chiedi."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten lezen je kanalen en berichten in Slack, praten je bij en plaatsen berichten voor je als je daarom vraagt."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci czytają twoje kanały i wiadomości w Slack, wprowadzają cię w temat i publikują za ciebie, gdy o to poprosisz."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes leem seus canais e mensagens no Slack, deixam você em dia e publicam por você quando pedir."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter läser dina kanaler och meddelanden i Slack, uppdaterar dig och skriver åt dig när du ber om det."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların Slack’teki kanallarını ve mesajlarını okur, seni gelişmelerden haberdar eder ve istediğinde senin yerine paylaşım yapar."
+          }
+        }
+      }
+    },
+    "Your agents read your Google Calendar, find free time, and schedule or move meetings for you." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten lesen deinen Google Calendar, finden freie Zeit und planen oder verschieben Termine für dich."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes leen tu Google Calendar, encuentran huecos libres y programan o mueven tus reuniones."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents lisent ton Google Calendar, trouvent des créneaux libres et planifient ou déplacent tes réunions."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi agenti leggono il tuo Google Calendar, trovano tempo libero e fissano o spostano le riunioni per te."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten lezen je Google Calendar, vinden vrije tijd en plannen of verzetten afspraken voor je."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci czytają twój Google Calendar, znajdują wolny czas i planują lub przesuwają spotkania za ciebie."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes leem seu Google Calendar, encontram horários livres e marcam ou remarcam reuniões para você."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter läser din Google Calendar, hittar lediga tider och bokar eller flyttar möten åt dig."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların Google Calendar’ını okur, boş zaman bulur ve toplantılarını planlar ya da kaydırır."
+          }
+        }
+      }
+    },
+    "Your agents search and read your email in Gmail, summarize long threads, and draft replies for you to check before anything is sent." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten durchsuchen und lesen deine E-Mails in Gmail, fassen lange Verläufe zusammen und entwerfen Antworten, die du prüfst, bevor etwas gesendet wird."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes buscan y leen tu correo en Gmail, resumen los hilos largos y redactan respuestas para que las revises antes de enviar nada."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents cherchent et lisent tes e-mails dans Gmail, résument les longues conversations et rédigent des réponses que tu relis avant tout envoi."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi agenti cercano e leggono le tue email in Gmail, riassumono le conversazioni lunghe e preparano risposte che controlli prima che parta qualcosa."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten zoeken en lezen je e-mail in Gmail, vatten lange gesprekken samen en schrijven antwoorden die jij nakijkt voordat er iets wordt verstuurd."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci wyszukują i czytają twoje e-maile w Gmail, streszczają długie wątki i przygotowują odpowiedzi, które sprawdzasz przed wysłaniem."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes buscam e leem seus e-mails no Gmail, resumem conversas longas e escrevem respostas para você revisar antes de qualquer envio."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter söker och läser din e-post i Gmail, sammanfattar långa trådar och skriver svar som du granskar innan något skickas."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların Gmail’deki e-postalarını arar ve okur, uzun yazışmaları özetler ve bir şey gönderilmeden önce kontrol etmen için yanıtlar hazırlar."
+          }
+        }
+      }
+    },
+    "Your agents search, read, and write your pages and databases in Notion." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten durchsuchen, lesen und schreiben deine Seiten und Datenbanken in Notion."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes buscan, leen y escriben en tus páginas y bases de datos de Notion."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents cherchent, lisent et écrivent dans tes pages et tes bases de données Notion."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi agenti cercano, leggono e scrivono le tue pagine e i tuoi database in Notion."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten zoeken, lezen en schrijven in je pagina’s en databases in Notion."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci przeszukują, czytają i piszą twoje strony i bazy danych w Notion."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes buscam, leem e escrevem nas suas páginas e bancos de dados do Notion."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter söker, läser och skriver i dina sidor och databaser i Notion."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların Notion’daki sayfalarında ve veritabanlarında arama yapar, okur ve yazar."
+          }
+        }
+      }
+    },
     "Your agents wait until your plan has credits again." : {
       "localizations" : {
         "de" : {
@@ -78661,6 +81329,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ajanların, planında yeniden kredi olana kadar bekler."
+          }
+        }
+      }
+    },
+    "Your agents work in your repositories on GitHub: they read code, open issues, and review pull requests." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten arbeiten in deinen Repositorys auf GitHub: Sie lesen Code, eröffnen Issues und prüfen Pull Requests."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes trabajan en tus repositorios de GitHub: leen código, abren incidencias y revisan pull requests."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents travaillent dans tes dépôts sur GitHub : ils lisent le code, ouvrent des tickets et relisent les pull requests."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi agenti lavorano nei tuoi repository su GitHub: leggono il codice, aprono issue e revisionano le pull request."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten werken in je repository’s op GitHub: ze lezen code, openen issues en beoordelen pull requests."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci pracują w twoich repozytoriach na GitHub: czytają kod, zakładają zgłoszenia i przeglądają pull requesty."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes trabalham nos seus repositórios no GitHub: leem código, abrem issues e revisam pull requests."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter arbetar i dina repon på GitHub: de läser kod, öppnar ärenden och granskar pull requests."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların GitHub’daki depolarında çalışır: kod okur, issue açar ve pull request’leri inceler."
           }
         }
       }
