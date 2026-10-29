@@ -1275,6 +1275,144 @@ public struct ConnectorPage: Sendable, Equatable {
         L10n.text("Which items in Zoho Inventory are below their reorder level?"),
         L10n.text("Make a sales order in Zoho Inventory for Acme: 20 mugs."),
         L10n.text("Email the invoice for order 1042 to the customer from Zoho Inventory."))
+    case "toggl":
+      return page("Toggl", site: "https://toggl.com/track/", privacy: "https://toggl.com/legal/privacy/", terms: "https://toggl.com/legal/terms/",
+        about: L10n.text("Your agents track and read your time, projects, clients, and reports in Toggl Track."),
+        L10n.text("Start a timer in Toggl for the Acme design work."),
+        L10n.text("How many hours did I track this week in Toggl?"),
+        L10n.text("Run a report in Toggl of last month’s hours by client."))
+    case "vidiq":
+      return page("vidIQ", site: "https://vidiq.com", privacy: "https://vidiq.com/privacy/", terms: "https://vidiq.com/terms/",
+        about: L10n.text("Your agents research YouTube with vidIQ: trends, keywords, channels, and your channel’s stats."),
+        L10n.text("What’s trending for cooking videos this week in vidIQ?"),
+        L10n.text("Find keywords in vidIQ for a video about home espresso."),
+        L10n.text("How did my channel grow this month in vidIQ?"))
+    case "youtube-transcript":
+      return page("YouTubeTranscript.dev", site: "https://youtubetranscript.dev", privacy: "https://youtubetranscript.dev/privacy", terms: "https://youtubetranscript.dev/terms",
+        about: L10n.text("Your agents read the transcripts of videos, playlists, and channels with YouTube Transcript."),
+        L10n.text("Get the transcript of this talk with YouTube Transcript and summarize it."),
+        L10n.text("Pull the transcripts of every video in this playlist with YouTube Transcript."),
+        L10n.text("Which languages can I get this video’s transcript in with YouTube Transcript?"))
+    case "hypeauditor":
+      return page("HypeAuditor", site: "https://hypeauditor.com", privacy: "https://hypeauditor.com/privacy/", terms: "https://hypeauditor.com/terms/",
+        about: L10n.text("Your agents find influencers, and read their audiences and reach in HypeAuditor."),
+        L10n.text("Find accounts in HypeAuditor that post about vegan baking."),
+        L10n.text("Show me the audience of @acmecoffee in HypeAuditor."),
+        L10n.text("How real are this creator’s followers, according to HypeAuditor?"))
+    case "zoominfo":
+      return page("ZoomInfo", site: "https://www.zoominfo.com", privacy: "https://www.zoominfo.com/trust-center/your-privacy", terms: "https://www.zoominfo.com/legal/terms-of-use",
+        about: L10n.text("Your agents find company and contact data, intent, and news for prospecting in ZoomInfo."),
+        L10n.text("Find the head of marketing at Acme in ZoomInfo."),
+        L10n.text("Which companies in ZoomInfo are looking for payroll software?"),
+        L10n.text("What’s the latest news about Acme in ZoomInfo?"))
+    case "heyreach":
+      return page("HeyReach", site: "https://www.heyreach.io", privacy: "https://www.heyreach.io/privacy-policy", terms: "https://www.heyreach.io/terms-of-service",
+        about: L10n.text("Your agents work with your LinkedIn outreach campaigns, leads, and conversations in HeyReach."),
+        L10n.text("How are our campaigns in HeyReach doing this week?"),
+        L10n.text("Add these ten leads to the founders list in HeyReach."),
+        L10n.text("Show me yesterday’s new replies in HeyReach."))
+    case "contactout":
+      return page("ContactOut", site: "https://contactout.com", privacy: "https://contactout.com/privacy", terms: "https://contactout.com/terms",
+        about: L10n.text("Your agents find emails and phone numbers for people and companies with ContactOut."),
+        L10n.text("Find Jordan Lee’s work email with ContactOut."),
+        L10n.text("Find the decision makers at acme.com with ContactOut."),
+        L10n.text("Verify these five email addresses with ContactOut."))
+    case "hireflix":
+      return page("Hireflix", site: "https://www.hireflix.com", privacy: "https://hireflix.com/privacy-policy-users", terms: "https://hireflix.com/terms-users",
+        about: L10n.text("Your agents run your one-way video interviews in Hireflix: positions, invites, and answers."),
+        L10n.text("Invite Sam to the video interview for the support role in Hireflix."),
+        L10n.text("Which candidates in Hireflix answered this week?"),
+        L10n.text("Make a position in Hireflix for a junior designer with three questions."))
+    case "clio":
+      return page("Clio", site: "https://www.clio.com", privacy: "https://www.clio.com/privacy/", terms: "https://www.clio.com/tos/",
+        about: L10n.text("Your agents work with your law firm’s clients, matters, calendar, tasks, and billing in Clio."),
+        L10n.text("Which matters in Clio have deadlines this week?"),
+        L10n.text("Add a note to the Rivera matter in Clio about today’s call."),
+        L10n.text("Which bills in Clio are still unpaid?"))
+    case "draftable":
+      return page("Draftable", site: "https://www.draftable.com", privacy: "https://www.draftable.com/privacy", terms: "https://www.draftable.com/terms",
+        about: L10n.text("Your agents find your document comparisons and their links in Draftable."),
+        L10n.text("Show me my latest comparisons in Draftable."),
+        L10n.text("Find the comparison of the two lease drafts in Draftable."),
+        L10n.text("Send me the link to yesterday’s comparison in Draftable."))
+    case "chaser":
+      return page("Chaser", site: "https://www.chaserhq.com", privacy: "https://www.chaserhq.com/privacy-notice", terms: "https://www.chaserhq.com/terms",
+        about: L10n.text("Your agents work with your invoice reminders, customers, and who owes what in Chaser."),
+        L10n.text("Who owes us the most in Chaser?"),
+        L10n.text("Which invoices in Chaser are more than 30 days overdue?"),
+        L10n.text("Add a contact in Chaser for Acme’s accounts team."))
+    case "midpage":
+      return page("Midpage", site: "https://www.midpage.ai", privacy: "https://www.midpage.ai/privacy-policy", terms: "https://www.midpage.ai/terms-and-conditions",
+        about: L10n.text("Your agents research case law and statutes in Midpage, with citations."),
+        L10n.text("Find cases in Midpage on landlord liability for snow and ice."),
+        L10n.text("What does California law say about meal breaks, according to Midpage?"),
+        L10n.text("Check the citations in this brief with Midpage."))
+    case "vaquill":
+      return page("Vaquill", site: "https://vaquill.ai", privacy: "https://www.vaquill.ai/privacy", terms: "https://www.vaquill.ai/terms",
+        about: L10n.text("Your agents search US statutes, session laws, and citations in Vaquill."),
+        L10n.text("Find the Texas statute on security deposits in Vaquill."),
+        L10n.text("Compare how three states define an independent contractor in Vaquill."),
+        L10n.text("Look up this citation in Vaquill: Cal. Lab. Code § 226."))
+    case "taxjar":
+      return page("TaxJar", site: "https://www.taxjar.com", privacy: "https://www.taxjar.com/privacy", terms: "https://www.taxjar.com/terms-of-service",
+        about: L10n.text("Your agents look up sales tax rates, calculate tax, and record transactions in TaxJar."),
+        L10n.text("What’s the sales tax rate for 90210 in TaxJar?"),
+        L10n.text("Calculate the sales tax in TaxJar on a $120 order shipped to Austin."),
+        L10n.text("Record last week’s orders in TaxJar."))
+    case "aiwyn-tax":
+      return page("Aiwyn", site: "https://www.aiwyn.ai", privacy: "https://www.aiwyn.ai/privacy-policy/", terms: "https://www.aiwyn.ai/terms-and-conditions/",
+        about: L10n.text("Your agents estimate federal and state taxes with Aiwyn Tax, formerly Column Tax."),
+        L10n.text("Estimate my federal tax with Aiwyn Tax on $85,000 in wages."),
+        L10n.text("How much state tax would I owe in New York, according to Aiwyn Tax?"),
+        L10n.text("Make a PDF of my tax estimate with Aiwyn Tax."))
+    case "maintainx":
+      return page("MaintainX", site: "https://www.getmaintainx.com", privacy: "https://www.getmaintainx.com/privacy-policy", terms: "https://www.getmaintainx.com/terms-of-service",
+        about: L10n.text("Your agents work with your work orders, requests, assets, and locations in MaintainX."),
+        L10n.text("Which work orders in MaintainX are overdue?"),
+        L10n.text("Make a work order in MaintainX to fix the walk-in freezer."),
+        L10n.text("List the assets at the warehouse in MaintainX."))
+    case "seam":
+      return page("Seam", site: "https://www.seam.co", privacy: "https://www.seam.co/legal/seam-privacy-notice", terms: "https://www.seam.co/legal/seam-platform-terms-of-service",
+        about: L10n.text("Your agents manage your smart locks and access codes in Seam."),
+        L10n.text("Give the cleaner a code in Seam for the front door on Friday from 9 to 12."),
+        L10n.text("Which locks in Seam are offline?"),
+        L10n.text("Remove Jordan’s access to the office in Seam."))
+    case "route4me":
+      return page("Route4Me", site: "https://route4me.com", privacy: "https://route4me.com/privacy-policy", terms: "https://route4me.com/terms-of-service",
+        about: L10n.text("Your agents plan and optimize routes, stops, and orders in Route4Me."),
+        L10n.text("Plan the best route in Route4Me for today’s 12 deliveries."),
+        L10n.text("Add a stop in Route4Me at 12 Oak Lane."),
+        L10n.text("Send today’s routes to the drivers in Route4Me."))
+    case "gatherup":
+      return page("GatherUp", site: "https://gatherup.com", privacy: "https://gatherup.com/your-privacy-rights/", terms: "https://gatherup.com/terms-of-use/",
+        about: L10n.text("Your agents ask your customers for feedback and reviews with GatherUp."),
+        L10n.text("Ask Lea for a review with GatherUp after her appointment today."),
+        L10n.text("Send a feedback request with GatherUp to this week’s new customers."),
+        L10n.text("Get the review widget from GatherUp for our website."))
+    case "oneup":
+      return page("OneUp", site: "https://www.oneupapp.io", privacy: "https://www.oneupapp.io/privacy", terms: "https://www.oneupapp.io/terms",
+        about: L10n.text("Your agents schedule posts to your social accounts, and see their results in OneUp."),
+        L10n.text("Schedule this post in OneUp for Instagram and Facebook tomorrow at 9."),
+        L10n.text("How did last week’s posts do in OneUp?"),
+        L10n.text("Reply to the new comments in OneUp."))
+    case "mindbody":
+      return page("Mindbody", site: "https://www.mindbodyonline.com", privacy: "https://www.mindbodyonline.com/company/legal/privacy-policy", terms: "https://www.mindbodyonline.com/company/legal/terms-of-service",
+        about: L10n.text("Your agents work with your classes, appointments, clients, and sales in Mindbody."),
+        L10n.text("Who’s booked into tonight’s yoga class in Mindbody?"),
+        L10n.text("Add Lea to Saturday’s 10 am spin class in Mindbody."),
+        L10n.text("How much did we sell this week in Mindbody?"))
+    case "ignav":
+      return page("Ignav", site: "https://ignav.com", privacy: "https://ignav.com/privacy", terms: "https://ignav.com/terms",
+        about: L10n.text("Your agents search flights and fares with Ignav, and get links to book them."),
+        L10n.text("Find the cheapest flight from Paris to Lisbon in March with Ignav."),
+        L10n.text("Compare round-trip fares from New York to London next month with Ignav."),
+        L10n.text("Get a booking link with Ignav for the 8 am flight to Rome."))
+    case "tripadvisor":
+      return page("Tripadvisor", site: "https://www.tripadvisor.com", privacy: "https://tripadvisor.mediaroom.com/us-privacy-policy", terms: "https://tripadvisor.mediaroom.com/us-terms-of-use",
+        about: L10n.text("Your agents find hotels, restaurants, and things to do, with reviews and photos, on Tripadvisor."),
+        L10n.text("Find well-reviewed hotels near the Colosseum on Tripadvisor."),
+        L10n.text("What are the top things to do in Lisbon on Tripadvisor?"),
+        L10n.text("Show me recent reviews of Café Lumen on Tripadvisor."))
     default:
       return nil
     }
@@ -1303,5 +1441,5 @@ public struct ConnectorPage: Sendable, Equatable {
   }
 
   /** The connectors written so far, for the tests. */
-  public static let written = ["gmail", "google-calendar", "google-drive", "outlook", "slack", "notion", "github", "linear", "dropbox", "hubspot", "airtable", "asana", "clickup", "monday", "todoist", "zoom", "google-meet", "figma", "canva", "miro", "webflow", "wix", "stripe", "paypal", "square", "ramp", "quickbooks", "salesforce", "intercom", "apollo", "jira", "vercel", "supabase", "sentry", "cloudflare", "mailchimp", "greenhouse", "gusto", "linkedin", "google-docs", "google-sheets", "google-slides", "onedrive", "google-tasks", "trello", "xero", "shopify", "brex", "pipedrive", "docusign", "klaviyo", "ashby", "google-analytics", "google-search-console", "youtube", "kit", "instagram", "facebook", "calendly", "cal-com", "attio", "zendesk", "microsoft-teams", "discord", "mercury", "posthog", "google-ads", "tiktok-ads", "microsoft-excel", "reddit", "pinterest", "gumroad", "google-classroom", "gorgias", "gong", "capsule-crm", "dialpad", "link", "granola", "resend", "sharepoint", "onenote", "microsoft-to-do", "lovable", "shop", "whatsapp", "twitch", "reddit-ads", "pinterest-ads", "omnisend", "dub", "eventbrite", "google-photos", "mural", "zeplin", "contentful", "box", "confluence", "notebooklm", "basecamp", "wrike", "ticktick", "harvest", "typeform", "productboard", "google-maps", "webex", "fathom", "freshbooks", "ynab", "splitwise", "shippo", "dynamics-365", "gitlab", "bitbucket", "pagerduty", "google-bigquery", "hugging-face", "excalidraw", "heygen", "higgsfield", "gamma", "descript", "lucid", "eraser", "mobbin", "magic-patterns", "pandadoc", "otter", "read-ai", "fellow", "plaid", "clay", "netlify", "neon", "beehiiv", "mailerlite", "getresponse", "customer-io", "lemlist", "mixpanel", "amplitude", "bitly", "ahrefs", "moz", "dataforseo", "semrush", "brevo", "runway", "black-forest-labs", "fal", "replicate", "creatomate", "shotstack", "bannerbear", "cloudinary", "sanity", "wistia", "captions", "elevenlabs", "storyblok", "coda", "make", "tally", "jotform", "surveymonkey", "canny", "fireflies", "tldv", "avoma", "missive", "mixmax", "close", "hunter", "lusha", "aircall", "workable", "breezy-hr", "postman", "railway", "datadog", "tavily", "exa", "shortcut", "razorpay", "coinbase", "typefully", "crunchbase", "gem", "meta-ads", "loop-returns", "upwork", "courtlistener", "karbon", "ignition", "appfolio", "jobber", "companycam", "uber", "instacart", "taskrabbit", "bamboohr", "7shifts", "veryfi", "yelp", "tiktok", "follow-up-boss", "matterport", "zoho-inventory"]
+  public static let written = ["gmail", "google-calendar", "google-drive", "outlook", "slack", "notion", "github", "linear", "dropbox", "hubspot", "airtable", "asana", "clickup", "monday", "todoist", "zoom", "google-meet", "figma", "canva", "miro", "webflow", "wix", "stripe", "paypal", "square", "ramp", "quickbooks", "salesforce", "intercom", "apollo", "jira", "vercel", "supabase", "sentry", "cloudflare", "mailchimp", "greenhouse", "gusto", "linkedin", "google-docs", "google-sheets", "google-slides", "onedrive", "google-tasks", "trello", "xero", "shopify", "brex", "pipedrive", "docusign", "klaviyo", "ashby", "google-analytics", "google-search-console", "youtube", "kit", "instagram", "facebook", "calendly", "cal-com", "attio", "zendesk", "microsoft-teams", "discord", "mercury", "posthog", "google-ads", "tiktok-ads", "microsoft-excel", "reddit", "pinterest", "gumroad", "google-classroom", "gorgias", "gong", "capsule-crm", "dialpad", "link", "granola", "resend", "sharepoint", "onenote", "microsoft-to-do", "lovable", "shop", "whatsapp", "twitch", "reddit-ads", "pinterest-ads", "omnisend", "dub", "eventbrite", "google-photos", "mural", "zeplin", "contentful", "box", "confluence", "notebooklm", "basecamp", "wrike", "ticktick", "harvest", "typeform", "productboard", "google-maps", "webex", "fathom", "freshbooks", "ynab", "splitwise", "shippo", "dynamics-365", "gitlab", "bitbucket", "pagerduty", "google-bigquery", "hugging-face", "excalidraw", "heygen", "higgsfield", "gamma", "descript", "lucid", "eraser", "mobbin", "magic-patterns", "pandadoc", "otter", "read-ai", "fellow", "plaid", "clay", "netlify", "neon", "beehiiv", "mailerlite", "getresponse", "customer-io", "lemlist", "mixpanel", "amplitude", "bitly", "ahrefs", "moz", "dataforseo", "semrush", "brevo", "runway", "black-forest-labs", "fal", "replicate", "creatomate", "shotstack", "bannerbear", "cloudinary", "sanity", "wistia", "captions", "elevenlabs", "storyblok", "coda", "make", "tally", "jotform", "surveymonkey", "canny", "fireflies", "tldv", "avoma", "missive", "mixmax", "close", "hunter", "lusha", "aircall", "workable", "breezy-hr", "postman", "railway", "datadog", "tavily", "exa", "shortcut", "razorpay", "coinbase", "typefully", "crunchbase", "gem", "meta-ads", "loop-returns", "upwork", "courtlistener", "karbon", "ignition", "appfolio", "jobber", "companycam", "uber", "instacart", "taskrabbit", "bamboohr", "7shifts", "veryfi", "yelp", "tiktok", "follow-up-boss", "matterport", "zoho-inventory", "toggl", "vidiq", "youtube-transcript", "hypeauditor", "zoominfo", "heyreach", "contactout", "hireflix", "clio", "draftable", "chaser", "midpage", "vaquill", "taxjar", "aiwyn-tax", "maintainx", "seam", "route4me", "gatherup", "oneup", "mindbody", "ignav", "tripadvisor"]
 }
