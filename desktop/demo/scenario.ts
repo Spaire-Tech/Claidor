@@ -200,9 +200,10 @@ export function openingScript(): Beat[] {
 /**
  * A new account's first agent (`?onboarding`): Simeon, the Chief of Staff,
  * once the person presses Get started, then after each answer. It follows
- * his own first-run cue (`SAND_CHIEF_OF_STAFF_KICKSTART_PROMPT`,
+ * his own first run (`chiefOfStaffHello`, `chiefOfStaffKickstartPrompt`,
  * source/shared/agents/chief-of-staff.ts; the founder, 7 October 2026:
- * "onboarding should be him delegating"): a hello and one question, "What's
+ * "onboarding should be him delegating"): his hello, four messages at once,
+ * and one question, "What's
  * the first thing you'd hand to a person if you hired one today?"; on the
  * answer he hires, in front of the person: a new agent appears in the
  * sidebar, its chat opens on Simeon's brief ("Bass staffed you to …") and
@@ -216,7 +217,11 @@ export function onboardingScript(agent: string, stage: number): Beat[] {
   if (stage === 0) {
     return [
       typing(700, true),
-      append(2600, says("o0a", 0, "Hi Bass, I'm Simeon, your Chief of Staff. I don't do the work myself: I hire the agents who do, brief them, and keep you out of the weeds. Let's hire your first one.")),
+      // His hello, the founder's words (`chiefOfStaffHello`), four messages at once (29 October 2026).
+      append(2600, says("o0a", 0, "Hi Bass, my name is Simeon, and I'm your Chief of Staff.")),
+      append(2600, says("o0b", 0, "What I do is help build a team of agents to help you get things done. Each one has a job to do and its own computer to do it on, so they can use your apps, browse the web, and take care of things while you're busy doing everything else.")),
+      append(2600, says("o0c", 0, "You can check in on them anytime, watch them work, or jump in and take over. I'll keep an eye on the bigger picture and bring you in when something needs your attention.")),
+      append(2600, says("o0d", 0, "Unless you have any questions for me, I'd like to hire your first teammate.")),
       append(3600, question("o0q", "What's the first thing you'd hand to a person if you hired one today?", ["My inbox: sort it, draft the replies", "My calendar and meeting prep", "Research and writing", "The books: invoices and expenses"], "Pick one, or type your own. Not sure? Say so and I'll recommend.")),
       typing(3700, false),
     ];
