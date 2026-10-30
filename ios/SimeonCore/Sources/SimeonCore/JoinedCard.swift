@@ -54,27 +54,21 @@ public struct JoinedCard: Hashable, Sendable {
    * teammate's card is theirs: a gradient from the colour 16% lighter at the
    * top leading corner to 24% darker at the bottom trailing one, a soft light
    * behind the face, Go to Chat white with its words in the colour 55%
-   * darker, and View Profile a pane of the words' colour over it. The words
-   * are white where white reads at 3 to 1 or better (the colour's luminance
-   * under 0.30: the title is 17-point semibold), else near black; drawn for
-   * all 31 faces before choosing, white on the beige and gold ones did not read.
+   * darker, and View Profile a white pane over it. The words are white on
+   * every face: shown all 30 with near-black words on the light ones and
+   * all 30 in white, the founder chose white ("make em all white").
    */
   public struct Colours: Hashable, Sendable {
     public let top: RGB
     public let bottom: RGB
     /** Go to Chat's words, on its white. */
     public let deep: RGB
-    /** White words (a darker colour), else near black (a lighter one: luminance 0.30 and over). */
-    public let lightInk: Bool
-
-    public static let lightInkBelow = 0.30
 
     public init(_ backdrop: RGB) {
       let white = RGB(1, 1, 1), black = RGB(0, 0, 0)
       top = backdrop.blended(toward: white, 0.16)
       bottom = backdrop.blended(toward: black, 0.24)
       deep = backdrop.blended(toward: black, 0.55)
-      lightInk = backdrop.luminance < Colours.lightInkBelow
     }
 
     public init?(face: AgentFace?) {
@@ -82,15 +76,13 @@ public struct JoinedCard: Hashable, Sendable {
       self.init(backdrop)
     }
 
-    static let nearBlack = RGB(29 / 255, 29 / 255, 31 / 255)
-
     /** The title. */
-    public var ink: RGB { lightInk ? RGB(1, 1, 1) : Colours.nearBlack }
+    public var ink: RGB { RGB(1, 1, 1) }
     /** What it does. */
-    public var secondaryInk: RGB { lightInk ? RGB(1, 1, 1, 0.8) : RGB(29 / 255, 29 / 255, 31 / 255, 0.72) }
+    public var secondaryInk: RGB { RGB(1, 1, 1, 0.8) }
     /** View Profile's pane and its edge. */
-    public var pane: RGB { lightInk ? RGB(1, 1, 1, 0.18) : RGB(29 / 255, 29 / 255, 31 / 255, 0.08) }
-    public var paneEdge: RGB { lightInk ? RGB(1, 1, 1, 0.4) : RGB(29 / 255, 29 / 255, 31 / 255, 0.25) }
+    public var pane: RGB { RGB(1, 1, 1, 0.18) }
+    public var paneEdge: RGB { RGB(1, 1, 1, 0.4) }
     /** The light behind the face. */
     public static let glow = RGB(1, 1, 1, 0.22)
   }
