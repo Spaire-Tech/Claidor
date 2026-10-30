@@ -3,7 +3,7 @@
    as the Mac app and its web window draw it; Inter elsewhere), one small scale of sizes, and medium
    for titles, never bold. Every page (the home page, the Marketplace, Connectors, Pricing, the legal
    pages) loads this before its own styles and sizes its words only with these. The illustrations of
-   the app inside a page keep their own measures. The bar every page shares is here too (below). */
+   the app inside a page keep their own measures. The bar and the footer every page shares are here too (below). */
 :root{
   --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Inter","Helvetica Neue",Arial,sans-serif;
   --t-display:clamp(28px,2*var(--vw),40px);  /* a page's headline and every section's title (Pricing, Questions…), the closing call, a price */
@@ -39,34 +39,80 @@
 }
 body{font-family:var(--font)}
 
-/* The bar at the top of every page (nav.py writes it). The wordmark goes home and says SimeonLabs (4 October
-   2026); its image has 85/1585 of empty space on its left, so the letters start on the column's edge. On the
-   right: Marketplace, Connectors, Pricing and Download. On a phone a menu button takes their place and drops
-   the three over the whole page, Download under them (the founder, 23 October 2026). */
+/* The bar at the top of every page (nav.py writes it), in the reference's layout (the founder, 30 October 2026):
+   the wordmark, then Products, Solutions and Resources with their arrows, Connectors and Pricing beside it, in
+   the ink; Contact Sales in the grey and Download in the black on the right. Products and Solutions open nothing
+   yet; Resources drops Marketplace and Newsroom on a hover or a tap (:focus-within), with no script. The
+   wordmark's image has 85/1585 of empty space on its left, so the letters start on the column's edge. Under
+   1024 points a menu button takes the links' and buttons' place and drops them over the whole page. */
 .bar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.82);-webkit-backdrop-filter:saturate(1.8) blur(20px);backdrop-filter:saturate(1.8) blur(20px);padding-top:env(safe-area-inset-top,0px)}
-.bar .wrap{display:flex;justify-content:space-between;align-items:center;height:clamp(52px,3.8*var(--vw),76px)}
-.bar .wordmark{--wm:clamp(118px,10.8*var(--vw),217px);display:block;width:var(--wm);margin-left:calc(var(--wm) * -85 / 1585);background:var(--ink);-webkit-mask:url(/img/wordmark-labs.png) center/contain no-repeat;mask:url(/img/wordmark-labs.png) center/contain no-repeat;aspect-ratio:1585/460}
-.bar .acts{display:flex;align-items:center;gap:clamp(14px,1.2*var(--vw),22px);font-size:var(--t-nav)}
-.bar .acts>a:not(.btn){text-decoration:none;color:var(--ink2)}
-.bar .acts>a:not(.btn):hover,.bar .acts>a[aria-current]{color:var(--ink)}
-.bar .btn{height:clamp(28px,1.9*var(--vw),38px);padding:0 clamp(12px,.8*var(--vw),16px);font-size:var(--t-nav)}
+.bar .wrap{display:flex;align-items:center;gap:clamp(32px,4*var(--vw),80px);height:clamp(52px,3.8*var(--vw),76px)}
+.bar .wordmark{--wm:clamp(118px,10.8*var(--vw),217px);flex:none;display:block;width:var(--wm);margin-left:calc(var(--wm) * -85 / 1585);background:var(--ink);-webkit-mask:url(/img/wordmark-labs.png) center/contain no-repeat;mask:url(/img/wordmark-labs.png) center/contain no-repeat;aspect-ratio:1585/460}
+.bar .bar-links{display:flex;align-items:center;gap:clamp(22px,2.2*var(--vw),40px);font-size:var(--t-nav)}
+.bar .bar-links>a,.bar .drop{display:inline-flex;align-items:center;gap:.42em;padding:6px 0;border:0;background:none;color:var(--ink);font:inherit;letter-spacing:-.01em;text-decoration:none;cursor:pointer;transition:opacity .15s}
+.bar .bar-links>a:hover,.bar .drops:hover>.drop{opacity:.6}
+.bar .drop[aria-disabled]{cursor:default}
+.drop .arrow{width:.6em;height:.36em;flex:none;transition:transform .2s ease}
+.drops{position:relative}
+.drop-panel{position:absolute;top:calc(100% + 8px);left:-14px;min-width:200px;display:flex;flex-direction:column;padding:8px;border-radius:16px;background:var(--page,#fff);box-shadow:0 0 0 1px rgba(0,0,0,.06),0 14px 36px rgba(20,30,60,.12);opacity:0;visibility:hidden;transform:translateY(-4px);transition:opacity .15s ease,transform .15s ease,visibility 0s .15s}
+.drop-panel::before{content:"";position:absolute;left:0;right:0;top:-12px;height:12px} /* the gap the pointer crosses */
+.drops:hover .drop-panel,.drops:focus-within .drop-panel{opacity:1;visibility:visible;transform:none;transition:opacity .15s ease,transform .15s ease}
+.drops:hover .arrow,.drops:focus-within .arrow{transform:rotate(180deg)}
+.drop-panel a{padding:9px 12px;border-radius:10px;color:var(--ink);font-size:var(--t-nav);letter-spacing:-.01em;text-decoration:none}
+.drop-panel a:hover,.drop-panel a[aria-current]{background:var(--soft,#f5f5f7)}
+.bar .acts{margin-left:auto;display:flex;align-items:center;gap:clamp(8px,.6*var(--vw),12px)}
+.bar .btn,.menu-acts .btn{display:inline-flex;align-items:center;justify-content:center;height:clamp(34px,2.5*var(--vw),44px);padding:0 clamp(14px,1.1*var(--vw),22px);border-radius:99px;background:#000;color:#fff;font-size:var(--t-nav);font-weight:400;letter-spacing:-.01em;white-space:nowrap;text-decoration:none;transition:background .2s}
+.bar .btn:hover,.menu-acts .btn:hover{background:#2b2b2d}
+.bar .btn.soft,.menu-acts .btn.soft{background:#efeff0;color:#000}
+.bar .btn.soft:hover,.menu-acts .btn.soft:hover{background:#e5e5e7}
 .menu{display:none}
-@media (max-width:734px){
-  .bar .acts{display:none}
-  .menu{display:block}
+@media (max-width:1023px){
+  .bar .bar-links,.bar .acts{display:none}
+  .menu{display:block;margin-left:auto}
   .menu summary{display:grid;place-items:center;width:44px;height:44px;margin-right:-13px;list-style:none;cursor:pointer;-webkit-tap-highlight-color:transparent}
   .menu summary::-webkit-details-marker{display:none}
   .menu summary:focus-visible{outline:2px solid var(--ink);outline-offset:-6px;border-radius:12px}
-  .menu summary i{grid-area:1/1;display:block;width:18px;height:1.5px;border-radius:1px;background:var(--ink);transform:translateY(-3.5px);transition:transform .25s ease}
-  .menu summary i+i{transform:translateY(3.5px)}
-  .menu[open] summary i{transform:rotate(45deg)}
-  .menu[open] summary i+i{transform:rotate(-45deg)}
-  .menu-in{position:absolute;top:100%;left:0;right:0;height:100dvh;padding:16px var(--gutter,20px) 0;background:var(--page,#fff);animation:menu-in .25s ease both}
+  .menu>summary i{grid-area:1/1;display:block;width:18px;height:1.5px;border-radius:1px;background:var(--ink);transform:translateY(-3.5px);transition:transform .25s ease}
+  .menu>summary i+i{transform:translateY(3.5px)}
+  .menu[open]>summary i{transform:rotate(45deg)}
+  .menu[open]>summary i+i{transform:rotate(-45deg)}
+  .menu-in{position:absolute;top:100%;left:0;right:0;height:100dvh;overflow-y:auto;padding:16px var(--gutter,20px) 0;background:var(--page,#fff);animation:menu-in .25s ease both}
   .menu-in nav{display:flex;flex-direction:column;align-items:flex-start}
-  .menu-in nav a{padding:9px 0;font-size:28px;line-height:1.2;font-weight:var(--w-display);letter-spacing:-.02em;color:var(--ink);text-decoration:none}
-  .menu-in .btn{margin-top:32px;height:48px;padding:0 28px;font-size:17px}
+  .menu-in nav>a,.menu-in .drop,.menu-group>summary{display:flex;align-items:center;gap:.3em;padding:9px 0;border:0;background:none;font:inherit;font-size:28px;line-height:1.2;font-weight:var(--w-display);letter-spacing:-.02em;color:var(--ink);text-decoration:none;cursor:pointer}
+  .menu-in .drop .arrow,.menu-group>summary .arrow{width:.42em;height:.26em}
+  .menu-group>summary{display:flex;align-items:center;justify-items:normal;width:auto;height:auto;margin:0}
+  .menu-group[open]>summary .arrow{transform:rotate(180deg)}
+  .menu-group>div{display:flex;flex-direction:column;padding:2px 0 10px 2px}
+  .menu-group>div a{padding:7px 0;font-size:20px;letter-spacing:-.01em;color:var(--ink2);text-decoration:none}
+  .menu-acts{display:flex;flex-wrap:wrap;gap:10px;margin-top:32px}
+  .menu-acts .btn{height:48px;padding:0 24px;font-size:17px}
   .bar:has(.menu[open]){background:var(--page,#fff)} /* the open menu and the bar are one white page */
   html:has(.menu[open]){overflow:hidden}
 }
 @keyframes menu-in{from{opacity:0;transform:translateY(-8px)}}
-@media (prefers-reduced-motion:reduce){.menu-in{animation:none}.menu summary i{transition:none}}
+@media (prefers-reduced-motion:reduce){.menu-in{animation:none}.menu summary i,.drop .arrow,.drop-panel{transition:none}}
+
+/* The footer of every page (nav.py writes it), the reference's (the founder, 30 October 2026): white, the mark at
+   its top left and four columns of links from 42.5% of the column; along its foot the wordmark, the copyright
+   under the first column and the site's language at the right. On a phone the columns go two by two. */
+.site-foot{background:var(--page,#fff);color:var(--ink2);font-size:14px;line-height:1.4;letter-spacing:-.005em;padding:clamp(44px,3.6*var(--vw),68px) 0 calc(clamp(28px,2.4*var(--vw),44px) + env(safe-area-inset-bottom,0px))}
+.foot-top,.foot-base{display:grid;grid-template-columns:42.5% repeat(4,minmax(0,1fr));column-gap:24px}
+.foot-mark{display:block;width:28px;height:28px;background:var(--ink);-webkit-mask:url(/favicon.svg) center/contain no-repeat;mask:url(/favicon.svg) center/contain no-repeat}
+.foot-cols{display:contents}
+.foot-col{display:flex;flex-direction:column;align-items:flex-start;gap:14px}
+.site-foot .foot-col h2{margin:0 0 2px;font-size:14px;line-height:1.4;font-weight:var(--w-title);letter-spacing:-.005em;color:var(--ink)}
+.site-foot a{color:var(--ink2);text-decoration:none}
+.site-foot .foot-col a:hover,.site-foot .foot-col a[aria-current]{color:var(--ink)}
+.foot-base{align-items:end;margin-top:clamp(120px,12*var(--vw),260px)}
+.foot-word{--fw:clamp(118px,10.8*var(--vw),217px);display:block;width:var(--fw);margin-left:calc(var(--fw) * -85 / 1585);aspect-ratio:1585/460;background:var(--ink);-webkit-mask:url(/img/wordmark-labs.png) center/contain no-repeat;mask:url(/img/wordmark-labs.png) center/contain no-repeat}
+.foot-copy{grid-column:2/5}
+.foot-lang{grid-column:5;justify-self:end;display:inline-flex;align-items:center;gap:7px}
+.foot-lang svg{width:15px;height:15px}
+@media (max-width:734px){
+  .foot-top{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:36px}
+  .foot-mark{grid-column:1/-1}
+  .foot-base{grid-template-columns:1fr auto;row-gap:14px;margin-top:72px}
+  .foot-word{grid-column:1/-1}
+  .foot-copy{grid-column:1}
+  .foot-lang{grid-column:2}
+}

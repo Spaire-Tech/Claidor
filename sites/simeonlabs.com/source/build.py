@@ -299,7 +299,7 @@ async def main():
     css = re.search(r'href="\./assets/(index-[^"]+\.css)"', app_idx).group(1)
     import nav
     for key, value in (("%MOBILE_CSS%", MOBILE_CSS), ("%MOBILE_HTML%", MOBILE_HTML), ("%FIT%", FIT),
-                       ("%APP_JS%", js), ("%APP_CSS%", css), ("%BAR%", nav.bar())):
+                       ("%APP_JS%", js), ("%APP_CSS%", css), ("%BAR%", nav.bar()), ("%FOOTER%", nav.footer())):
         assert page.count(key) == 1, key
         page = page.replace(key, value)
     page = re.sub(r"%FACE:([a-z-]+)%", lambda m: f"faces/{faces.face(m.group(1))}.webp", page)

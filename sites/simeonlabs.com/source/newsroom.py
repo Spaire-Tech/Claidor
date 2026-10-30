@@ -21,8 +21,8 @@ page's rows of cards; a quoted story, the quote on the site's panel and the
 picture beside it, the one fading into the other; three more stories with
 their words over their pictures. One white ground, the cards' 28-point
 corners, titles in medium and headlines regular, never bold; the labels and
-dates in the second grey, no colours of their own. The page's end fades into
-the footer's grey.
+dates in the second grey, no colours of their own. The page ends on the white
+footer every page shares (nav.py).
 
 A post's own page is not designed yet: a card is a link only once its post has
 a `url`. Every post is in POSTS, in the order it is shown within its place.
@@ -73,7 +73,7 @@ POSTS = [
 NEWSROOM_CSS = """
 /* The Newsroom (newsroom.py): the posts down the column in Apple Stories' layout, in the site's measures (the home
    page's 28-point corners, its rows of three with 20 between, its panel #fafafb). One white ground; where a ground
-   meets another (a picture's shade, the quote's panel and its picture, the page's end and the footer) it fades. */
+   meets another (a picture's shade, the quote's panel and its picture) it fades. */
 .nw-sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 
 /* The opening: the newest post, its words on the left beside its picture, the two centred on each other. Its
@@ -127,9 +127,8 @@ a:hover .nw-read{background:rgba(0,0,0,.08)}
 .nw-quote .nw-img::before{content:"";position:absolute;z-index:1;top:0;bottom:0;left:0;width:30%;pointer-events:none;
   background:linear-gradient(to right,#fafafb 0%,rgba(250,250,251,.86) 14%,rgba(250,250,251,.62) 30%,rgba(250,250,251,.36) 48%,rgba(250,250,251,.14) 68%,rgba(250,250,251,0) 100%)}
 
-/* The page's end fades into the footer's grey. */
-.nw-end{height:clamp(96px,9*var(--vw,1vw),180px);margin-top:clamp(64px,6*var(--vw,1vw),120px);
-  background:linear-gradient(to bottom,var(--page) 0%,#fcfcfd 25%,#f9f9fa 50%,#f7f7f9 75%,var(--soft) 100%)}
+/* Room before the footer. */
+.nw-end{height:clamp(32px,3*var(--vw,1vw),60px);margin-top:clamp(64px,6*var(--vw,1vw),120px)}
 footer{margin-top:0}
 
 @media (max-width:734px){
@@ -250,7 +249,7 @@ def page():
     # Stand-ins are not for search engines; the page is listed once every post on it is real.
     head = '\n<meta name="robots" content="noindex">' if any(post.get("placeholder") for post in POSTS) else ""
     return frame("Newsroom", "News from SimeonLabs, and the people putting their agents to work.",
-                 "/newsroom", body, hero_css + NEWSROOM_CSS, head=head)
+                 "/newsroom", body, hero_css + NEWSROOM_CSS, head=head, current="newsroom")
 
 
 def build(out=OUT):

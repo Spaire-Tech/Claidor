@@ -343,6 +343,7 @@
         "sites/simeonlabs.com/source/page.html",
         "sites/simeonlabs.com/public/index.html",
         "sites/simeonlabs.com/source/teams.py",
+        "sites/simeonlabs.com/source/nav.py",
         "sites/simeonlabs.com/public/marketplace/**",
         "sites/simeonlabs.com/public/connectors/**",
         "sites/simeonlabs.com/public/pricing/**",

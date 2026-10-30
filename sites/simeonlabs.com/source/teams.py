@@ -35,7 +35,7 @@ public/; it also runs alone, needing nothing but Python:
 """
 import hashlib, html, json, os, re, shutil, sys, unicodedata
 
-from nav import MAC_DOWNLOAD, bar
+from nav import MAC_DOWNLOAD, bar, footer
 from versioning import version_style
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -300,12 +300,7 @@ a{color:inherit}
 .add .btn .apl{width:1.05em;height:1.05em;margin:-.18em .45em 0 -.1em;flex:none}
 .add-note .go{display:none}
 @media (max-width:734px){.add-note .btn:not(.go){display:none}.add-note .go{display:inline-flex}} /* a phone: Download for iOS, as on the home page */
-footer{margin-top:clamp(80px,8*var(--vw,1vw),140px);background:var(--soft);padding:20px 0 calc(40px + env(safe-area-inset-bottom,0px));font-size:var(--t-tiny);color:var(--ink2)}
-footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
-footer nav{display:flex;flex-wrap:wrap;gap:8px 18px} /* six links: a phone takes them on two lines */
-footer a{color:var(--ink2);text-decoration:none}
-footer a:hover{color:var(--ink)}
-footer a[aria-current]{color:var(--ink)}
+footer{margin-top:clamp(80px,8*var(--vw,1vw),140px)} /* the footer itself is site.css's (nav.py) */
 """.replace("%BLUE%", BLUE)
 
 INDEX_CSS = """
@@ -383,7 +378,7 @@ html:has(dialog[open]){overflow:hidden}
 }
 @media (max-height:760px) and (min-width:735px){:root:not(.pc) .sheet-in{padding-top:38px;padding-bottom:34px}:root:not(.pc) .sheet .roster li{padding:13px 0}} /* a short laptop screen: still one screen (a computer drawn at 75%, site.css, has a third more room) */
 @media (prefers-reduced-motion:reduce){.sheet[open],.sheet[open]::backdrop{animation:none}}
-footer{margin-top:0;font-size:var(--t-tiny)} /* the closing call above leaves the room, as on the home page */
+footer{margin-top:0} /* the closing call above leaves the room, as on the home page */
 @media (max-width:1068px){.packs{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:734px){.hero h1 br.ph{display:inline}.list-title{max-width:none;text-wrap:wrap}.packs{grid-template-columns:1fr;gap:14px}.fan{--w:clamp(150px,44*var(--vw,1vw),240px)}.shot{border-width:4px;border-radius:18px}
   .chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-inline:calc(-1 * var(--gutter));padding:2px var(--gutter)}.chips::-webkit-scrollbar{display:none}}
@@ -425,7 +420,7 @@ TEAM_PAGE_CSS = """
 .team-page .back:hover{color:var(--ink)}
 .team-page .back svg{width:16px;height:16px}
 .team-page .roster{margin-top:32px}
-footer{margin-top:0;font-size:var(--t-tiny)}
+footer{margin-top:0}
 """
 
 ADD_JS = """<script>
@@ -545,7 +540,6 @@ MARKET_JS = """<script>
 
 def frame(title, description, path, body, css, current="", script="", head=""):
     url = f"{SITE}{path}"
-    here = lambda page: ' aria-current="page"' if current == page else ""
     return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -579,7 +573,7 @@ def frame(title, description, path, body, css, current="", script="", head=""):
 {body}
 </main>
 
-<footer><div class="wrap"><span>Copyright © 2026 Spaire, Inc. All rights reserved.</span><nav><a href="/marketplace"{here("marketplace")}>Marketplace</a><a href="/connectors"{here("connectors")}>Connectors</a><a href="/pricing"{here("pricing")}>Pricing</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/contact"{here("contact")}>Contact</a></nav></div></footer>
+{footer(current)}
 {script}
 </body>
 </html>

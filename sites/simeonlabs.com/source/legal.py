@@ -57,6 +57,7 @@ def page(slug: str, template: str) -> str:
         ),
         "%BODY%": body.strip("\n"),
         "%BAR%": nav.bar(),
+        "%FOOTER%": nav.footer(slug),
         "%PRIVACY_CURRENT%": ' aria-current="page"' if slug == "privacy" else "",
         "%TERMS_CURRENT%": ' aria-current="page"' if slug == "terms" else "",
     }
