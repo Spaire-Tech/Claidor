@@ -62,4 +62,42 @@ final class JoinedCardTests: XCTestCase {
     XCTAssertNil(AgentFaces.standing(ownPicture), "a picture of its own: no face stands for it")
     XCTAssertNil(AgentFaces.standing(Agent(id: "a2", name: "Iris")), "nothing given yet")
   }
+
+  // The card in its face's colour (the founder, 30 October 2026: design B).
+
+  func testEveryFaceHasItsBackdrop() {
+    for face in AgentFaces.all { XCTAssertNotNil(face.backdrop, face.id) }
+    XCTAssertEqual(AgentFaces.face(id: "clay-23")?.backdrop?.hex, "#618283", "Iris's teal")
+  }
+
+  func testTheCardIsInItsFacesColourAndItsWordsRead() throws {
+    let teal = try XCTUnwrap(JoinedCard.Colours(face: AgentFaces.face(id: "clay-23")))
+    XCTAssertEqual(teal.top.hex, "#7a9697", "16% lighter")
+    XCTAssertEqual(teal.bottom.hex, "#4a6364", "24% darker")
+    XCTAssertLessThan(teal.deep.luminance, teal.bottom.luminance, "Go to Chat's words, darker still")
+    XCTAssertTrue(teal.lightInk, "white words on the teal")
+    XCTAssertFalse(try XCTUnwrap(JoinedCard.Colours(face: AgentFaces.face(id: "clay-25"))).lightInk, "near black on the cream")
+    // Every face: its words read at 3 to 1 or better on its colour, white or near black.
+    let nearBlack = RGB(29 / 255, 29 / 255, 31 / 255).luminance
+    for face in AgentFaces.all {
+      let backdrop = try XCTUnwrap(face.backdrop, face.id)
+      let colours = JoinedCard.Colours(backdrop)
+      let contrast = colours.lightInk ? 1.05 / (backdrop.luminance + 0.05) : (backdrop.luminance + 0.05) / (nearBlack + 0.05)
+      XCTAssertGreaterThanOrEqual(contrast, 3, face.id)
+    }
+    XCTAssertNil(JoinedCard.Colours(face: AgentFace(id: "x", gender: "female", file: "x.webp", version: "0")), "no backdrop: no colour")
+  }
+
+  func testTheCardsColourIsTheFaceItsAgentStandsAs() throws {
+    let face = try XCTUnwrap(AgentFaces.face(id: "clay-23"))
+    let card = JoinedCard(agentId: "a2", name: "Iris", line: "")
+    var wearing = Agent(id: "a2", name: "Iris")
+    wearing.avatarVersion = face.version
+    XCTAssertEqual(card.colours(in: [wearing]), JoinedCard.Colours(face: face))
+    var ownPicture = Agent(id: "a2", name: "Iris")
+    ownPicture.avatarVersion = "0123456789abcdef"
+    ownPicture.avatarShape = face.id
+    XCTAssertNil(card.colours(in: [ownPicture]), "a picture of its own: the chat's grey")
+    XCTAssertNil(card.colours(in: []), "gone from the roster: the chat's grey")
+  }
 }

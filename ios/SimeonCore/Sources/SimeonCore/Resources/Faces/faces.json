@@ -4,187 +4,218 @@
    "id": "clay-01",
    "gender": "female",
    "file": "clay-01.webp",
-   "version": "69753ea53c017510"
+   "version": "69753ea53c017510",
+   "backdrop": "#b7b4bb"
   },
   {
    "id": "clay-02",
    "gender": "male",
    "file": "clay-02.webp",
-   "version": "31c9d2861731d4d0"
+   "version": "31c9d2861731d4d0",
+   "backdrop": "#6e8e8d"
   },
   {
    "id": "clay-03",
    "gender": "female",
    "file": "clay-03.webp",
-   "version": "ab2ac8f8b5a7d290"
+   "version": "ab2ac8f8b5a7d290",
+   "backdrop": "#a59384"
   },
   {
    "id": "clay-04",
    "gender": "female",
    "file": "clay-04.webp",
-   "version": "515ee9609bcea807"
+   "version": "515ee9609bcea807",
+   "backdrop": "#4a4a47"
   },
   {
    "id": "clay-05",
    "gender": "male",
    "file": "clay-05.webp",
-   "version": "b86ef7a4d0c55efa"
+   "version": "b86ef7a4d0c55efa",
+   "backdrop": "#b2a998"
   },
   {
    "id": "clay-06",
    "gender": "female",
    "file": "clay-06.webp",
-   "version": "8b4ba6a5a20aff10"
+   "version": "8b4ba6a5a20aff10",
+   "backdrop": "#c47256"
   },
   {
    "id": "clay-07",
    "gender": "male",
    "file": "clay-07.webp",
-   "version": "c5c27d786bf4670c"
+   "version": "c5c27d786bf4670c",
+   "backdrop": "#c18d54"
   },
   {
    "id": "clay-08",
    "gender": "male",
    "file": "clay-08.webp",
-   "version": "e4f281c62f4f7e9a"
+   "version": "e4f281c62f4f7e9a",
+   "backdrop": "#908d81"
   },
   {
    "id": "clay-09",
    "gender": "male",
    "file": "clay-09.webp",
-   "version": "f590ce0274f76b49"
+   "version": "f590ce0274f76b49",
+   "backdrop": "#d6a979"
   },
   {
    "id": "clay-10",
    "gender": "female",
    "file": "clay-10.webp",
-   "version": "1f1c0f7246a582a2"
+   "version": "1f1c0f7246a582a2",
+   "backdrop": "#88656c"
   },
   {
    "id": "clay-11",
    "gender": "male",
    "file": "clay-11.webp",
-   "version": "879ed87b67c70ccf"
+   "version": "879ed87b67c70ccf",
+   "backdrop": "#838567"
   },
   {
    "id": "clay-12",
    "gender": "male",
    "file": "clay-12.webp",
-   "version": "2376ac0a96a2557e"
+   "version": "2376ac0a96a2557e",
+   "backdrop": "#a5835f"
   },
   {
    "id": "clay-13",
    "gender": "male",
    "file": "clay-13.webp",
-   "version": "10c9a37b19adea92"
+   "version": "10c9a37b19adea92",
+   "backdrop": "#707e8c"
   },
   {
    "id": "clay-14",
    "gender": "female",
    "file": "clay-14.webp",
-   "version": "8f3ff86319b96e3f"
+   "version": "8f3ff86319b96e3f",
+   "backdrop": "#c69551"
   },
   {
    "id": "clay-15",
    "gender": "male",
    "file": "clay-15.webp",
-   "version": "3fa321e23f0492d5"
+   "version": "3fa321e23f0492d5",
+   "backdrop": "#878b71"
   },
   {
    "id": "clay-16",
    "gender": "female",
    "file": "clay-16.webp",
-   "version": "18ca1fdf3526ab07"
+   "version": "18ca1fdf3526ab07",
+   "backdrop": "#e1aa85"
   },
   {
    "id": "clay-17",
    "gender": "male",
    "file": "clay-17.webp",
-   "version": "0ebf69f9b6046cdf"
+   "version": "0ebf69f9b6046cdf",
+   "backdrop": "#778aa1"
   },
   {
    "id": "clay-18",
    "gender": "female",
    "file": "clay-18.webp",
-   "version": "05c4fc5b5cb1ba62"
+   "version": "05c4fc5b5cb1ba62",
+   "backdrop": "#beb0a8"
   },
   {
    "id": "clay-19",
    "gender": "female",
    "file": "clay-19.webp",
-   "version": "9903d8f327115e53"
+   "version": "9903d8f327115e53",
+   "backdrop": "#af8fa0"
   },
   {
    "id": "clay-20",
    "gender": "female",
    "file": "clay-20.webp",
-   "version": "626182e0828c6d12"
+   "version": "626182e0828c6d12",
+   "backdrop": "#5d6c7b"
   },
   {
    "id": "clay-21",
    "gender": "male",
    "file": "clay-21.webp",
-   "version": "e52648d41b164808"
+   "version": "e52648d41b164808",
+   "backdrop": "#9b9188"
   },
   {
    "id": "clay-22",
    "gender": "female",
    "file": "clay-22.webp",
-   "version": "da9397f441141841"
+   "version": "da9397f441141841",
+   "backdrop": "#86937c"
   },
   {
    "id": "clay-23",
    "gender": "female",
    "file": "clay-23.webp",
-   "version": "53ecc842f73aa364"
+   "version": "53ecc842f73aa364",
+   "backdrop": "#618283"
   },
   {
    "id": "clay-24",
    "gender": "female",
    "file": "clay-24.webp",
-   "version": "eef5730813b277fa"
+   "version": "eef5730813b277fa",
+   "backdrop": "#8f7f8d"
   },
   {
    "id": "clay-25",
    "gender": "male",
    "file": "clay-25.webp",
-   "version": "68a5eecb6c5c9d19"
+   "version": "68a5eecb6c5c9d19",
+   "backdrop": "#d5ccb7"
   },
   {
    "id": "clay-26",
    "gender": "female",
    "file": "clay-26.webp",
-   "version": "0f6a931f73a68e94"
+   "version": "0f6a931f73a68e94",
+   "backdrop": "#baaa71"
   },
   {
    "id": "clay-27",
    "gender": "male",
    "file": "clay-27.webp",
-   "version": "7474345e3c10e6ee"
+   "version": "7474345e3c10e6ee",
+   "backdrop": "#687d64"
   },
   {
    "id": "clay-28",
    "gender": "male",
    "file": "clay-28.webp",
-   "version": "fe9d6c6593d0632a"
+   "version": "fe9d6c6593d0632a",
+   "backdrop": "#546f80"
   },
   {
    "id": "clay-29",
    "gender": "female",
    "file": "clay-29.webp",
-   "version": "89941f1c36cbba12"
+   "version": "89941f1c36cbba12",
+   "backdrop": "#ab93a5"
   },
   {
    "id": "clay-30",
    "gender": "male",
    "file": "clay-30.webp",
-   "version": "4f78c813ad050787"
+   "version": "4f78c813ad050787",
+   "backdrop": "#edb393"
   },
   {
    "id": "clay-simeon",
    "gender": "male",
    "file": "clay-simeon.webp",
-   "version": "851594b537712f48"
+   "version": "851594b537712f48",
+   "backdrop": "#89acbc"
   }
  ]
 }
