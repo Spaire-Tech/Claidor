@@ -312,20 +312,21 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
   /** A new agent's first words and question, word for word as the review link plays them (`onboardingScript`, stage 0). */
   private func playOnboarding(_ agentId: String) {
     touch(agentId) { $0.isComposing = true }
-    later(1.9) { [weak self] in
-      let now = Date().timeIntervalSince1970 * 1000
-      // His hello, the founder's words, four messages at once (29 October 2026; the engine's `chiefOfStaffHello`).
-      let hello = [
-        "Hi Bass, my name is Simeon, and I'm your Chief of Staff.",
-        "What I do is help build a team of agents to help you get things done. Each one has a job to do and its own computer to do it on, so they can use your apps, browse the web, and take care of things while you're busy doing everything else.",
-        "You can check in on them anytime, watch them work, or jump in and take over. I'll keep an eye on the bigger picture and bring you in when something needs your attention.",
-        "Unless you have any questions for me, I'd like to hire your first teammate.",
-      ]
-      for (index, line) in hello.enumerated() {
-        self?.append(agentId, DemoData.says("o0\(index)-\(agentId)", 0, line, now: now + Double(index)))
+    // His hello, the founder's words (the engine's `chiefOfStaffHello`), one message at a time as the engine
+    // writes them, each after its typing (`helloTypingMs`, 30 October 2026); the first says who he is (`introduction`).
+    let hello: [(at: Double, text: String)] = [
+      (1.5, "Hi Bass, my name is Simeon, and I'm your Chief of Staff."),
+      (3.5, "I'm here to help you get things done by bringing the right agents onto your team."),
+      (6.7, "You can check in on them anytime, watch them work, or jump in and take over. I'll keep an eye on the bigger picture and bring you in when something needs your attention."),
+      (8.5, "Unless you have any questions for me, I'd like to hire your first teammate."),
+    ]
+    for (index, line) in hello.enumerated() {
+      later(line.at) { [weak self] in
+        let message: JSON = index == 0 ? ["type": "text", "content": .string(line.text), "introduction": true] : ["type": "text", "content": .string(line.text)]
+        self?.append(agentId, DemoData.card("o0\(index)-\(agentId)", 0, message, now: Date().timeIntervalSince1970 * 1000))
       }
     }
-    later(2.9) { [weak self] in
+    later(9.5) { [weak self] in
       let now = Date().timeIntervalSince1970 * 1000
       self?.append(agentId, DemoData.card("o0q-\(agentId)", 0, ["type": "widget", "widget": [
         "prompt": "What's the first thing you'd hand to a person if you hired one today?",

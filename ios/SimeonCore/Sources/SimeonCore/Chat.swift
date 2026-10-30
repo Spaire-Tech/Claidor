@@ -343,18 +343,24 @@ public struct Bubble: Hashable, Sendable {
   public let loneLink: URL?
   /** It came from a messaging channel, or the agent sent it to one: the tag under its words. */
   public let channel: ChannelTag?
+  /**
+   * The agent saying who it is (`message.introduction`, Simeon's "my name is
+   * Simeon"): its own name in these words is drawn in its pill, which its
+   * other messages never do (`Mentions.find`'s `introducing`, the founder,
+   * 30 October 2026).
+   */
+  public let introduces: Bool
 
-  public init(id: String, text: String, fromPerson: Bool, author: Party?, showsName: Bool, showsAvatar: Bool, reactions: [String], isStreaming: Bool, replyTo: String? = nil, quote: String? = nil, timestampMs: Double? = nil, images: [ChatImage] = [], sentOfflineAtMs: Double? = nil, loneLink: URL? = nil, myReactions: [String] = [], channel: ChannelTag? = nil) {
+  public init(id: String, text: String, fromPerson: Bool, author: Party?, showsName: Bool, showsAvatar: Bool, reactions: [String], isStreaming: Bool, replyTo: String? = nil, quote: String? = nil, timestampMs: Double? = nil, images: [ChatImage] = [], sentOfflineAtMs: Double? = nil, loneLink: URL? = nil, myReactions: [String] = [], channel: ChannelTag? = nil, introduces: Bool = false) {
     self.id = id; self.text = text; self.fromPerson = fromPerson; self.author = author
     self.showsName = showsName; self.showsAvatar = showsAvatar; self.reactions = reactions; self.isStreaming = isStreaming
     self.replyTo = replyTo; self.quote = quote; self.timestampMs = timestampMs; self.images = images; self.sentOfflineAtMs = sentOfflineAtMs
-    self.loneLink = loneLink; self.myReactions = myReactions; self.channel = channel
+    self.loneLink = loneLink; self.myReactions = myReactions; self.channel = channel; self.introduces = introduces
   }
 
   func with(showsName: Bool? = nil, showsAvatar: Bool? = nil, author: Party?? = nil, quote: String?? = nil) -> Bubble {
-    Bubble(id: id, text: text, fromPerson: fromPerson, author: author ?? self.author, showsName: showsName ?? self.showsName, showsAvatar: showsAvatar ?? self.showsAvatar, reactions: reactions, isStreaming: isStreaming, replyTo: replyTo, quote: quote ?? self.quote, timestampMs: timestampMs, images: images, sentOfflineAtMs: sentOfflineAtMs, loneLink: loneLink, myReactions: myReactions, channel: channel)
+    Bubble(id: id, text: text, fromPerson: fromPerson, author: author ?? self.author, showsName: showsName ?? self.showsName, showsAvatar: showsAvatar ?? self.showsAvatar, reactions: reactions, isStreaming: isStreaming, replyTo: replyTo, quote: quote ?? self.quote, timestampMs: timestampMs, images: images, sentOfflineAtMs: sentOfflineAtMs, loneLink: loneLink, myReactions: myReactions, channel: channel, introduces: introduces)
   }
-
   /** Only emoji, three at most: drawn large with no bubble, as Messages does. */
   public var isLoneEmoji: Bool {
     guard images.isEmpty else { return false }
@@ -1110,7 +1116,7 @@ public enum Chat {
         if images.isEmpty, let flights = FlightsCard.parse(text) { return .flights(id: entry.id, card: flights) }
         let streaming = entry["streaming"]?.bool ?? false
         let link = !streaming && images.isEmpty ? loneLink(text) : nil
-        return .bubble(Bubble(id: entry.id, text: text, fromPerson: false, author: entry.author, showsName: false, showsAvatar: false, reactions: reactions, isStreaming: streaming, replyTo: entry["replyTo"]?.text, timestampMs: entry.timestampMs, images: images, loneLink: link, myReactions: mine, channel: ChannelTag(channel: message["channel"]?.string, inbound: false)))
+        return .bubble(Bubble(id: entry.id, text: text, fromPerson: false, author: entry.author, showsName: false, showsAvatar: false, reactions: reactions, isStreaming: streaming, replyTo: entry["replyTo"]?.text, timestampMs: entry.timestampMs, images: images, loneLink: link, myReactions: mine, channel: ChannelTag(channel: message["channel"]?.string, inbound: false), introduces: message["introduction"]?.bool == true))
       case "attachment":
         guard let url = message["url"]?.text else { return nil }
         // The agent's own name for it (`file_name`); the computer keeps the file under one made from its contents.

@@ -1111,8 +1111,8 @@ final class MarkdownTests: XCTestCase {
   /** An agent's name used as a product's or a name being given is plain; the speaker's own name too (the founder, 19 October 2026: "my app name is Simeon" wore the agent Simeon's pill). */
   func testAnAgentsNameUsedAsAThingsIsPlain() {
     let agents = [Mentions.AgentName(name: "Simeon", id: "simeon"), Mentions.AgentName(name: "Theo", id: "theo")]
-    func named(_ text: String, speaker: String? = nil) -> [String] {
-      Mentions.find(in: text, agents: agents, speaker: speaker).compactMap { match in
+    func named(_ text: String, speaker: String? = nil, introducing: Bool = false) -> [String] {
+      Mentions.find(in: text, agents: agents, speaker: speaker, introducing: introducing).compactMap { match in
         guard case .agent(let id) = match.kind else { return nil }
         return id
       }
@@ -1125,6 +1125,25 @@ final class MarkdownTests: XCTestCase {
     XCTAssertEqual(named("I left a note in Theo's chat for Simeon."), ["theo", "simeon"])
     // Simeon writing about Simeon: its own name is never its pill.
     XCTAssertEqual(named("I'm Simeon. Simeon helps founders, and Theo helps me.", speaker: "simeon"), ["theo"])
+    // Save in his introduction (the founder, 30 October 2026: "my name is Simeon" comes with the pill), even as a name being given.
+    let hello = "Hi Bass, my name is Simeon, and I'm your Chief of Staff."
+    XCTAssertEqual(named(hello, speaker: "simeon"), [], "any other message of his")
+    XCTAssertEqual(named(hello, speaker: "simeon", introducing: true), ["simeon"])
+    XCTAssertEqual(named("Salut Bass, je m’appelle Simeon, et je suis ton bras droit.", speaker: "simeon", introducing: true), ["simeon"])
+    // Only his own name: another agent's keeps the rules.
+    XCTAssertEqual(named("My name is Simeon; Theo is on it, in the Theo app.", speaker: "simeon", introducing: true), ["simeon", "theo"])
+    XCTAssertEqual(named("My name is Theo.", speaker: "simeon", introducing: true), [], "a name being given that is not his")
+  }
+
+  /** His introduction is read from its message (`introduction`, the engine's first line of his hello). */
+  func testAnIntroductionIsMarkedOnItsBubble() {
+    func bubble(_ message: JSON) -> Bubble? {
+      guard case .bubble(let made)? = Chat.rows([Entry(["id": "t0s1", "kind": "send-message", "timestampMs": 1_000, "message": message])!]).last else { return nil }
+      return made
+    }
+    XCTAssertEqual(bubble(["type": "text", "content": "Hi Bass, my name is Simeon.", "introduction": true])?.introduces, true)
+    XCTAssertEqual(bubble(["type": "text", "content": "I'm here to help you get things done."])?.introduces, false)
+    XCTAssertEqual(bubble(["type": "text", "content": "Hi.", "introduction": "yes"])?.introduces, false, "a mark it does not know")
   }
 
   /** A Mac line's run is read in its whole line: the names inside it, at the line's offsets. */

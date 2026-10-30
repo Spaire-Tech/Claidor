@@ -12,8 +12,9 @@
  *   of Staff", or "COO", the title the day before).
  * - `chiefOfStaffHello` and `chiefOfStaffKickstartPrompt`: his first run.
  *   Every other agent keeps the generic cue (`onboarding.ts`). His hello is
- *   the founder's, word for word (29 October 2026): four messages the
- *   computer posts at once as the turn begins, in the person's language;
+ *   the founder's, word for word (29 and 30 October 2026): four messages
+ *   the computer writes one at a time as the person watches, before the
+ *   turn begins (`AgentLifecycle.writeHello`), in the person's language;
  *   then he asks one question, "What's the first thing you'd hand to a
  *   person if you hired one today?", and ends with a hire.
  * - `chiefOfStaffSection`: his standing rule in the system prompt, every

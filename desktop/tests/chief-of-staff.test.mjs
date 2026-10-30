@@ -79,7 +79,7 @@ test("the lifecycle runs the Chief of Staff's own first run by title, and the ge
       sessions: { activeSession: null, resolveBackgroundSession: async () => session },
       groupChat: { isGroupSession: () => false, isRemoteRoomSession: () => false },
       execution: { canExecute: true, isRunReady: async () => true },
-      runLifecycle: { inFlightRunCounts: new Map(), lastRequestIdBySession: new Map(), beginSessionRun() {}, endSessionRun() {}, enqueueExclusiveRun: async (_id, run) => { await run(); } },
+      runLifecycle: { inFlightRunCounts: new Map(), lastRequestIdBySession: new Map(), beginSessionRun() {}, endSessionRun() {}, enqueueExclusiveRun: async (_id, run) => { await run(); }, setSessionComposing: (_id, on) => order.push(on ? "typing" : "done typing") },
       runnerRegistry: { getRunner: () => ({ run: async (prompt) => { prompts.push(prompt); order.push("run"); return { aborted: false, sentMessageCount: 1 }; } }) },
       turnRuntime: { activeRequestSources: new Map() },
       automationRuntime: { ensureHiddenTurnReply: async () => true },
@@ -90,40 +90,49 @@ test("the lifecycle runs the Chief of Staff's own first run by title, and the ge
       requestContextUserFullName: () => "Bass F",
       userLanguage: () => language,
     };
-    await new lifecycle.AgentLifecycle(tm).kickstartAgent("a1", true);
+    const life = new lifecycle.AgentLifecycle(tm);
+    const waits = [];
+    life.pause = async (ms) => { waits.push(ms); };
+    await life.kickstartAgent("a1", true);
     await new Promise((resolve) => setTimeout(resolve, 10));
     assert.equal(prompts.length, 1, title);
     assert.match(prompts[0], expected, title);
     if (title !== "Chief of Staff") {
       assert.deepEqual(posted, [], "nobody else's hello is posted for them");
+      assert.deepEqual(waits, [], "nor waited for");
       continue;
     }
-    // The founder's words (29 October 2026), four messages posted at once, before his turn adds the card.
+    // The founder's words (29 October 2026), one message at a time after its typing (30 October 2026),
+    // before his turn adds the card; the first says who he is.
     const hello = words.chiefOfStaffHello("Bass F", language);
     assert.deepEqual(posted.map((entry) => entry.kind), ["send-message", "send-message", "send-message", "send-message"]);
-    assert.deepEqual(posted.map((entry) => entry.message), hello.map((content) => ({ type: "text", content })));
+    assert.deepEqual(posted.map((entry) => entry.message), hello.map((content, index) => (index === 0 ? { type: "text", content, introduction: true } : { type: "text", content })));
     assert.equal(new Set(posted.map((entry) => entry.id)).size, 4, "each its own id");
-    assert.ok(posted.every((entry, index) => index === 0 || entry.timestampMs > posted[index - 1].timestampMs), "in order");
-    assert.ok(posted[3].timestampMs - posted[0].timestampMs < 50, "together");
-    assert.deepEqual(order, ["posted", "posted", "posted", "posted", "run"]);
+    assert.ok(posted.every((entry, index) => index === 0 || entry.timestampMs >= posted[index - 1].timestampMs), "in order");
+    assert.deepEqual(order, ["typing", "posted", "typing", "posted", "typing", "posted", "typing", "posted", "done typing", "run"]);
+    assert.deepEqual(waits, [lifecycle.HELLO_OPEN_WAIT_MS, ...hello.map(lifecycle.helloTypingMs)], "nobody opened the chat: the longest wait, then each line's typing");
     for (const line of hello) assert.ok(prompts[0].includes(`"${line}"`), "his turn is told what he said");
     assert.match(prompts[0], /Do not greet them again or repeat any of it\. Your first turn is exactly one message: a question widget/);
   }
 });
 
-test("his hello lands in the open chat the same way, each message its own id", async () => {
-  const lifecycle = await loadModule("source/host/extensions/transcript/agent-lifecycle.ts", "agent-lifecycle-open");
+/** Simeon's chat for the hello's tests: `shown` through the open chat, `kept` straight to its record. */
+function helloChat({ active = false } = {}) {
   const shown = [];
-  let pending = true;
-  const session = { id: "a1", db: { getIntroductionPending: () => pending, setIntroductionPending: (value) => { pending = value; }, getTranscriptEntries: () => [], getAgentPurpose: () => null, appendTranscriptEntry() { throw new Error("the open chat appends through the send pipeline"); } } };
+  const kept = [];
+  const typing = [];
+  const runs = [];
+  const state = { pending: true };
+  const session = { id: "a1", db: { getIntroductionPending: () => state.pending, setIntroductionPending: (value) => { state.pending = value; }, getTranscriptEntries: () => kept, getAgentPurpose: () => null, appendTranscriptEntry: (entry) => kept.push(entry) } };
   const tm = {
     sessionStore: { getAgentProfileText: () => ({ name: "Simeon", description: "", title: "Chief of Staff" }), markSessionActivity() {} },
-    sessions: { activeSession: session, resolveBackgroundSession: async () => session },
+    sessions: { activeSession: active ? session : null, resolveBackgroundSession: async () => session },
     sendPipeline: { appendSendMessageEntry: (entry) => shown.push(entry) },
     groupChat: { isGroupSession: () => false, isRemoteRoomSession: () => false },
     execution: { canExecute: true, isRunReady: async () => true },
-    runLifecycle: { inFlightRunCounts: new Map(), lastRequestIdBySession: new Map(), beginSessionRun() {}, endSessionRun() {}, enqueueExclusiveRun: async (_id, run) => { await run(); } },
-    runnerRegistry: { getRunner: () => ({ run: async () => ({ aborted: false, sentMessageCount: 1 }) }) },
+    // In flight from its start to its end, as the real one counts it (`run-lifecycle.ts`).
+    runLifecycle: { inFlightRunCounts: new Map(), lastRequestIdBySession: new Map(), beginSessionRun(begun) { this.inFlightRunCounts.set(begun, 1); }, endSessionRun(ended) { this.inFlightRunCounts.delete(ended); }, enqueueExclusiveRun: async (_id, run) => { await run(); }, setSessionComposing: (_id, on) => typing.push(on) },
+    runnerRegistry: { getRunner: () => ({ run: async () => { runs.push(Date.now()); return { aborted: false, sentMessageCount: 1 }; } }) },
     turnRuntime: { activeRequestSources: new Map() },
     automationRuntime: { ensureHiddenTurnReply: async () => true },
     upgradeResume: { markAgentResumePending() {} },
@@ -132,17 +141,90 @@ test("his hello lands in the open chat the same way, each message its own id", a
     telemetry: { reportAgentError() {} },
     requestContextUserFullName: () => undefined,
   };
-  await new lifecycle.AgentLifecycle(tm).kickstartAgent("a1", true);
-  await new Promise((resolve) => setTimeout(resolve, 10));
-  assert.deepEqual(shown.map((entry) => entry.message.content), words.chiefOfStaffHello(null));
-  assert.equal(new Set(shown.map((entry) => entry.id)).size, 4);
-  assert.equal(pending, false, "the introduction is done");
+  return { session, tm, shown, kept, typing, runs, state };
+}
+
+const tick = () => new Promise((resolve) => setTimeout(resolve, 10));
+
+test("his hello lands in the open chat the same way, each message its own id", async () => {
+  const lifecycle = await loadModule("source/host/extensions/transcript/agent-lifecycle.ts", "agent-lifecycle-open");
+  const chat = helloChat({ active: true });
+  const life = new lifecycle.AgentLifecycle(chat.tm);
+  life.pause = async () => {};
+  await life.kickstartAgent("a1", true);
+  await tick();
+  assert.deepEqual(chat.shown.map((entry) => entry.message.content), words.chiefOfStaffHello(null));
+  assert.deepEqual(chat.kept, [], "the open chat appends through the send pipeline");
+  assert.equal(new Set(chat.shown.map((entry) => entry.id)).size, 4);
+  assert.equal(chat.state.pending, false, "the introduction is done");
+});
+
+test("his hello waits for his chat to open, then is written there; opened first, it starts at once", async () => {
+  const lifecycle = await loadModule("source/host/extensions/transcript/agent-lifecycle.ts", "agent-lifecycle-wait");
+  // The first run's hand-off asks for his introduction, then the app opens his chat (`Onboarding.handOff`).
+  const chat = helloChat();
+  const life = new lifecycle.AgentLifecycle(chat.tm);
+  const waits = [];
+  life.pause = (ms) => {
+    waits.push(ms);
+    return ms === lifecycle.HELLO_OPEN_WAIT_MS ? new Promise(() => {}) : Promise.resolve();
+  };
+  await life.kickstartAgent("a1", true);
+  await tick();
+  assert.deepEqual([...chat.shown, ...chat.kept], [], "nothing written before the chat is open");
+  assert.deepEqual(chat.typing, [], "nor typing");
+  assert.deepEqual(chat.runs, [], "nor his turn");
+  // The app opens it: the gateway's `openAgentTail` reaches `kickstartIfPending(id, true)`.
+  chat.tm.sessions.activeSession = chat.session;
+  assert.equal(await life.kickstartAgent("a1", true, true), true, "the introduction is under way");
+  await tick();
+  assert.deepEqual(chat.shown.map((entry) => entry.message.content), words.chiefOfStaffHello(null));
+  assert.deepEqual(chat.typing, [true, true, true, true, false]);
+  assert.equal(chat.runs.length, 1, "then his turn");
+
+  // His chat opened before the introduction began (the open itself started it): no wait.
+  const opened = helloChat({ active: true });
+  const first = new lifecycle.AgentLifecycle(opened.tm);
+  const pauses = [];
+  first.pause = async (ms) => { pauses.push(ms); };
+  await first.kickstartAgent("a1", true, true);
+  await tick();
+  assert.ok(!pauses.includes(lifecycle.HELLO_OPEN_WAIT_MS), "no wait for an open chat");
+  assert.equal(opened.shown.length, 4);
+});
+
+test("a chat opened partway through the hello takes the rest of it", async () => {
+  const lifecycle = await loadModule("source/host/extensions/transcript/agent-lifecycle.ts", "agent-lifecycle-midway");
+  const chat = helloChat();
+  const life = new lifecycle.AgentLifecycle(chat.tm);
+  let typed = 0;
+  life.pause = async (ms) => {
+    if (ms === lifecycle.HELLO_OPEN_WAIT_MS) return;
+    // Opened while the second line is being typed (the longest wait over, nobody had).
+    if (++typed === 2) chat.tm.sessions.activeSession = chat.session;
+  };
+  await life.kickstartAgent("a1", true);
+  await tick();
+  const hello = words.chiefOfStaffHello(null);
+  assert.deepEqual(chat.kept.map((entry) => entry.message.content), hello.slice(0, 1), "to its record while closed");
+  assert.deepEqual(chat.shown.map((entry) => entry.message.content), hello.slice(1), "through the open chat once open");
+});
+
+test("each line of the hello is typed for a while that grows with it", async () => {
+  const lifecycle = await loadModule("source/host/extensions/transcript/agent-lifecycle.ts", "agent-lifecycle-typing");
+  assert.equal(lifecycle.helloTypingMs("Hi."), 1_200, "a short line, the shortest typing");
+  assert.equal(lifecycle.helloTypingMs("x".repeat(100)), 2_300);
+  assert.equal(lifecycle.helloTypingMs("x".repeat(400)), 3_200, "a long one, the longest");
+  const [hi, here, checkIn, hire] = words.chiefOfStaffHello("Bass").map(lifecycle.helloTypingMs);
+  assert.ok(hi < here && here < checkIn && hire < checkIn, "the longest line types longest");
+  const total = [hi, here, checkIn, hire].reduce((sum, ms) => sum + ms, 0);
+  assert.ok(total > 6_000 && total < 12_000, `about eight seconds in all (${total} ms)`);
 });
 
 test("Simeon's hello is the founder's, in the person's language", async () => {
   assert.deepEqual(words.chiefOfStaffHello("Bassirou Fall"), [
     "Hi Bassirou, my name is Simeon, and I'm your Chief of Staff.",
-    "What I do is help build a team of agents to help you get things done. Each one has a job to do and its own computer to do it on, so they can use your apps, browse the web, and take care of things while you're busy doing everything else.",
+    "I'm here to help you get things done by bringing the right agents onto your team.",
     "You can check in on them anytime, watch them work, or jump in and take over. I'll keep an eye on the bigger picture and bring you in when something needs your attention.",
     "Unless you have any questions for me, I'd like to hire your first teammate.",
   ]);
