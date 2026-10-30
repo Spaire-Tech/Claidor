@@ -213,8 +213,9 @@ const WAITING_CARDS: ReadonlyMap<string, RegExp> = new Map([
 /**
  * Cards in front of the person that wait on nothing (30 October 2026): a turn
  * ending on one told them, so it is not nudged to say more; unlike a waiting
- * card it does not end the step, so the agent may go on (Simeon asks
- * "Anything else you'd hand off today?" after a hire).
+ * card it does not end the step, so the agent goes on (after a hire, one
+ * line on what happens next; at Simeon's first run, then "Anything else
+ * you'd hand off today?").
  */
 const SHOWN_CARDS: ReadonlyMap<string, RegExp> = new Map([
   // "Iris just joined your team" (`agent-joined`, shared/agents/agent-joined.ts).

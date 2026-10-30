@@ -274,12 +274,15 @@ test("CreateAgent with a brief delivers it first and skips the generic greeting;
   assert.deepEqual(calls, [["create", { name: "Max", description: "" }, { startIntroduction: true }]]);
   assert.match(plain, /It introduces itself to the user in its own chat now/);
 
-  // "Iris just joined your team" (30 October 2026): after the brief, the card in this chat, and the hire not announced again.
+  // "Iris just joined your team" (30 October 2026): after the brief, the card in this chat, then one line on what happens next.
   calls.length = 0;
   const shown = await run(tools.createCreateAgentTool({ ...dependencies, announceJoined: (message) => calls.push(["card", message]) }), { name: "Nora", description: "Runs the inbox: sorts what needs him, drafts the replies, and keeps his calendar in step with what he answers.", title: "Inbox", summary: "Sorts your inbox and drafts your replies.", brief: "Run his inbox." });
   assert.deepEqual(calls.map(([kind]) => kind), ["create", "brief", "card"], "the brief first, then the card");
   assert.deepEqual(calls[2][1], { type: "agent-joined", agentId: "agent-nora", name: "Nora", line: "Sorts your inbox and drafts your replies.", content: "Nora just joined your team. Sorts your inbox and drafts your replies." });
-  assert.match(shown, /The user now sees a card in this chat saying Nora just joined their team, with what it does and buttons to its chat and its profile: don't announce the hire in a message as well\./);
+  assert.match(shown, /The user now sees a card in this chat saying Nora just joined their team, with what it does and buttons to its chat and its profile\./);
+  // The founder (30 October 2026): "do the one line after the card everywhere".
+  assert.match(shown, /After it, send them one short line on what happens next, without repeating the card: that they'll hear from Nora in its own chat, and what it does there first\. Hiring several at once, one line after the last card\./);
+  assert.doesNotMatch(shown, /don't announce/);
   assert.doesNotMatch(shown, /Tell the user who you hired/);
   calls.length = 0;
   await run(tools.createCreateAgentTool({ ...dependencies, announceJoined: (message) => calls.push(["card", message]) }), { name: "Max", description: "Keeps the books." });
@@ -335,6 +338,9 @@ test("the joined card's line is never long, and says the same in words for an ap
   const composition = await readFile(path.join(repoRoot, "source/host/host-runner-composition.ts"), "utf8");
   assert.match(composition, /announceJoined: \(message: AgentJoinedMessage\) => \{[\s\S]*?const runner = builtRunner as \{ emitUpdate\?: [\s\S]*?runner\.emitUpdate\(update\);\n\s*else hooks\.transport\.onUpdate\(update\);/);
   assert.match(words.SAND_CHIEF_OF_STAFF_KICKSTART_PROMPT, /a summary, what it does for them in one short sentence of 50 characters at most/);
-  assert.match(words.SAND_CHIEF_OF_STAFF_KICKSTART_PROMPT, /don't announce the hire in a message as well/);
+  // At his first run as everywhere else: the card, one line on what happens next, then the next question.
+  assert.match(words.SAND_CHIEF_OF_STAFF_KICKSTART_PROMPT, /After the card, send one short line on what happens next, without repeating it: that they'll hear from the new agent in its own chat, and what it does there first\./);
+  assert.match(words.SAND_CHIEF_OF_STAFF_KICKSTART_PROMPT, /After the first hire and that line, one more question widget: "Anything else you'd hand off today\?"/);
+  assert.doesNotMatch(words.SAND_CHIEF_OF_STAFF_KICKSTART_PROMPT, /don't announce/);
   assert.doesNotMatch(words.SAND_CHIEF_OF_STAFF_KICKSTART_PROMPT, /Then tell the person, in one or two sentences, who you hired/);
 });

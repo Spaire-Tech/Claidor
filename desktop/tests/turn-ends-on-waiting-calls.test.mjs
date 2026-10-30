@@ -107,7 +107,7 @@ test("a hire whose joined card is shown is not silent, and does not end the step
     const user = { role: "user", content: "My inbox" };
     const opening = call("SendMessage", "s", { content: "On it" });
     const hire = call("CreateAgent", "c", { name: "Iris", summary: "Sorts your inbox." });
-    const shown = said("c", "Created agent \"Iris\" (id: a2) and delivered your brief as its first message: it introduces itself to the user in its own chat as the one now on the job and starts. The user now sees a card in this chat saying Iris just joined their team, with what it does and buttons to its chat and its profile: don't announce the hire in a message as well. Message it again with SendToAgent only when there is more to say.");
+    const shown = said("c", "Created agent \"Iris\" (id: a2) and delivered your brief as its first message: it introduces itself to the user in its own chat as the one now on the job and starts. The user now sees a card in this chat saying Iris just joined their team, with what it does and buttons to its chat and its profile. After it, send them one short line on what happens next, without repeating the card: that they'll hear from Iris in its own chat, and what it does there first. Hiring several at once, one line after the last card. Message it again with SendToAgent only when there is more to say.");
     assert.equal(turnEndedOnSilentToolCalls([user, opening, result("s"), hire, shown], finalSend), false);
     // An app with no card (an older engine's answer) leaves the hire to be told.
     assert.equal(turnEndedOnSilentToolCalls([user, opening, result("s"), hire, said("c", "Created agent \"Iris\" (id: a2). Tell the user who you hired and where to find them.")], finalSend), true);

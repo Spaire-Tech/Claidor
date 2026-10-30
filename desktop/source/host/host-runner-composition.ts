@@ -1333,7 +1333,8 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
       brief: async (agentId: string, message: string) => String(await sendToAgent(agentId, message, undefined, false) ?? ""),
       getPersonName: () => method(auth, "getUserFullName")?.() ?? null,
       // "Iris just joined your team" in this chat (30 October 2026): through the runner, which counts it as a message the
-      // person saw, so the turn is not nudged to announce the hire again; the transport when there is no runner yet.
+      // person saw, so a turn ending on it is not nudged (the agent adds one line on what happens next, as CreateAgent's
+      // answer asks); the transport when there is no runner yet.
       announceJoined: (message: AgentJoinedMessage) => {
         const update = { type: "send-message" as const, message, timestampMs: Date.now() };
         const runner = builtRunner as { emitUpdate?: (value: typeof update) => void } | undefined;
