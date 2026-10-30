@@ -312,16 +312,25 @@ async def _copy_in_checkout(
     when it is this person's own and made a subscription; a checkout
     that cannot be read (someone else's, a made-up id) is False, and the
     allowance decides."""
+    # In a savepoint: a database error in the copy is undone alone, and the
+    # page goes on (30 October 2026: an error swallowed here had left the
+    # request's session unusable, and the next read answered 500).
     try:
-        return (
-            await plans_service.sync_checkout_session(
-                session, user, checkout_session_id
+        async with session.begin_nested():
+            return (
+                await plans_service.sync_checkout_session(
+                    session, user, checkout_session_id
+                )
+                is not None
             )
-            is not None
-        )
     except PlansError:
         return False
-    except Exception:
+    except Exception as error:
+        log.warning(
+            "desktop.sign_in.checkout_copy_failed",
+            user_id=str(user.id),
+            error=type(error).__name__,
+        )
         return False
 
 

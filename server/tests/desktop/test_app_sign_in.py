@@ -351,6 +351,133 @@ class TestLoginDeepControl:
         assert "accessToken" in poll.json()
 
     @pytest.mark.auth
+    async def test_a_checkout_its_webhook_copies_at_the_same_moment_still_signs_in(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        save_fixture: SaveFixture,
+        mocker: MockerFixture,
+    ) -> None:
+        """30 October 2026, the founder, after paying from the Mac: the
+        page answered `InternalServerError`, the plan on Stripe all the
+        same. Stripe's webhooks and the browser's return copy the same new
+        subscription at once; the one writing second met the table's
+        unique rule, and the error it swallowed left the request's session
+        unusable, so the next read failed. Now the second writer updates
+        the row the first one made, and the page signs the app in."""
+        from simeon.plans.repository import DesktopSubscriptionRepository
+        from tests.plans.test_service import stripe_subscription
+
+        # The webhook's row, written a moment after this request looked for one.
+        await _person_with_plan(
+            save_fixture, mocker, user, tier="standard", status="incomplete"
+        )
+        real_by_id = DesktopSubscriptionRepository.get_by_stripe_subscription_id
+        real_by_user = DesktopSubscriptionRepository.get_by_user
+        unseen = {"by_id": 1, "by_user": 1}
+
+        async def by_id(
+            self: DesktopSubscriptionRepository, stripe_subscription_id: str
+        ) -> object:
+            if unseen["by_id"] > 0:
+                unseen["by_id"] -= 1
+                return None
+            return await real_by_id(self, stripe_subscription_id)
+
+        async def by_user(
+            self: DesktopSubscriptionRepository, user_id: object
+        ) -> object:
+            if unseen["by_user"] > 0:
+                unseen["by_user"] -= 1
+                return None
+            return await real_by_user(self, user_id)  # type: ignore[arg-type]
+
+        mocker.patch.object(
+            DesktopSubscriptionRepository, "get_by_stripe_subscription_id", by_id
+        )
+        mocker.patch.object(DesktopSubscriptionRepository, "get_by_user", by_user)
+        subscription = stripe_subscription(user, status="trialing")
+        mocker.patch(
+            "simeon.plans.service.stripe_billing.retrieve_checkout_session",
+            return_value={
+                "client_reference_id": str(user.id),
+                "subscription": subscription,
+            },
+        )
+        mocker.patch("simeon.plans.service.settings.STRIPE_SECRET_KEY", "sk_test_x")
+        verifier, challenge, uuid = _login_metadata()
+        response = await client.get(
+            "/loginDeepControl",
+            params={
+                "challenge": challenge,
+                "uuid": uuid,
+                "checkout_session_id": "cs_1",
+                "redirectTarget": "simeon",
+            },
+        )
+        assert response.status_code == 200, response.text
+        assert "signed in" in response.text
+        assert "simeon://app/v1/open" in response.text
+        assert unseen == {"by_id": 0, "by_user": 0}, "the race was played"
+        # The row the webhook made carries the checkout's subscription now.
+        row = await real_by_user(
+            DesktopSubscriptionRepository.from_session(session), user.id
+        )
+        assert row is not None
+        assert row.status == "trialing"
+        poll = await client.post(
+            "/auth/poll", json={"uuid": uuid, "verifier": verifier}
+        )
+        assert poll.status_code == 200
+
+    @pytest.mark.auth
+    async def test_a_copy_failing_halfway_is_undone_and_the_page_answers(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        """The copy fails after it wrote (Stripe down while it ends a
+        repeated trial): none of it stays, the person who wrote in it is
+        read afresh, and the page answers; Stripe's webhook, retried,
+        copies the subscription."""
+        from simeon.plans.repository import DesktopSubscriptionRepository
+        from simeon.plans.service import PlansService
+        from tests.plans.test_service import stripe_subscription
+
+        billing_on(mocker)
+        assert user.stripe_customer_id is None
+        trial_check = mocker.patch.object(
+            PlansService, "_check_trial_card", side_effect=RuntimeError("Stripe")
+        )
+        mocker.patch(
+            "simeon.plans.service.stripe_billing.retrieve_checkout_session",
+            return_value={
+                "client_reference_id": str(user.id),
+                "subscription": stripe_subscription(user, status="trialing"),
+            },
+        )
+        mocker.patch("simeon.plans.service.settings.STRIPE_SECRET_KEY", "sk_test_x")
+        _, challenge, uuid = _login_metadata()
+        response = await client.get(
+            "/loginDeepControl",
+            params={
+                "challenge": challenge,
+                "uuid": uuid,
+                "checkout_session_id": "cs_1",
+                "redirectTarget": "simeon",
+            },
+        )
+        assert response.status_code == 303, response.text
+        trial_check.assert_called_once()
+        assert urlparse(response.headers["location"]).path == "/billing"
+        rows = DesktopSubscriptionRepository.from_session(session)
+        assert await rows.get_by_user(user.id) is None
+        assert user.stripe_customer_id is None
+
+    @pytest.mark.auth
     async def test_someone_else_s_checkout_opens_nothing(
         self,
         client: httpx.AsyncClient,

@@ -152,7 +152,11 @@ checkout):
    Because the browser is usually back before the webhook, the billing
    page and the Mac sign-in page also post `POST /v1/plans/sync` (or
    carry `checkout_session_id`) and the server fetches that checkout's
-   subscription and copies it in at once.
+   subscription and copies it in at once. Stripe's two webhooks and the
+   browser's return often copy a new subscription at the same moment
+   (30 October 2026: the Mac's sign-in page answered 500 after the
+   founder paid): the one writing second finds the first one's row and
+   updates it (`apply_stripe_subscription`, in a savepoint).
 3. **One trial per card.** Checkout cannot refuse a card by its number
    before the subscription exists. So the first time a subscription is
    seen `trialing`, the server reads the card's fingerprint and the
@@ -454,6 +458,10 @@ and the Customer Portal configuration by hand (section 2). The migration
   arrived that no person matches (no `simeon_user_id` in its metadata and
   an unknown customer): made in the Stripe dashboard for a customer the
   server never made.
+- **`desktop.sign_in.checkout_copy_failed`**: the Mac sign-in page could
+  not copy the checkout it came back with (the error's type). None of the
+  copy stays; the page reads the plan as it is, and Stripe's webhook,
+  retried, copies the subscription.
 - **`plans.trial.repeated`**: a second trial on a known card or e-mail was
   ended at once. **`plans.trial.card_unreadable`**: the card could not be
   read, so the check passed the person.
