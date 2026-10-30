@@ -70,20 +70,16 @@ final class JoinedCardTests: XCTestCase {
     XCTAssertEqual(AgentFaces.face(id: "clay-23")?.backdrop?.hex, "#618283", "Iris's teal")
   }
 
-  func testTheCardIsInItsFacesColourAndItsWordsRead() throws {
+  func testTheCardIsInItsFacesColourWithWhiteWords() throws {
     let teal = try XCTUnwrap(JoinedCard.Colours(face: AgentFaces.face(id: "clay-23")))
     XCTAssertEqual(teal.top.hex, "#7a9697", "16% lighter")
     XCTAssertEqual(teal.bottom.hex, "#4a6364", "24% darker")
     XCTAssertLessThan(teal.deep.luminance, teal.bottom.luminance, "Go to Chat's words, darker still")
-    XCTAssertTrue(teal.lightInk, "white words on the teal")
-    XCTAssertFalse(try XCTUnwrap(JoinedCard.Colours(face: AgentFaces.face(id: "clay-25"))).lightInk, "near black on the cream")
-    // Every face: its words read at 3 to 1 or better on its colour, white or near black.
-    let nearBlack = RGB(29 / 255, 29 / 255, 31 / 255).luminance
+    // White words on every face, the cream one too (the founder, 30 October 2026: "make em all white").
     for face in AgentFaces.all {
-      let backdrop = try XCTUnwrap(face.backdrop, face.id)
-      let colours = JoinedCard.Colours(backdrop)
-      let contrast = colours.lightInk ? 1.05 / (backdrop.luminance + 0.05) : (backdrop.luminance + 0.05) / (nearBlack + 0.05)
-      XCTAssertGreaterThanOrEqual(contrast, 3, face.id)
+      let colours = try XCTUnwrap(JoinedCard.Colours(face: face), face.id)
+      XCTAssertEqual(colours.ink, RGB(1, 1, 1), face.id)
+      XCTAssertEqual(colours.secondaryInk, RGB(1, 1, 1, 0.8), face.id)
     }
     XCTAssertNil(JoinedCard.Colours(face: AgentFace(id: "x", gender: "female", file: "x.webp", version: "0")), "no backdrop: no colour")
   }

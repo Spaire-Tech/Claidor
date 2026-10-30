@@ -24,7 +24,8 @@ settings:
     # 0.2.7 (30 October 2026): the first run's name reaches the agents, Simeon's new hello, the "just joined" card.
     # 0.2.8 (30 October 2026): Simeon's name in its pill in his introduction.
     # 0.2.9 (30 October 2026): the "just joined" card in the colour of the new agent's face.
-    MARKETING_VERSION: "0.2.9"
+    # 0.2.10 (30 October 2026): its words white on every face.
+    MARKETING_VERSION: "0.2.10"
     CURRENT_PROJECT_VERSION: "1"
     CODE_SIGN_STYLE: Automatic
     # The Apple developer team Simeon publishes from: set it here, or in

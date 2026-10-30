@@ -2161,9 +2161,9 @@ the agent, him creating it, and giving him directions." `desktop/source/shared/a
   The card is in the colour of the face's own background (the founder, 30 October 2026, choosing
   design B of ten): `backdrop` in `Resources/Faces/faces.json` (`ios/scripts/make-faces.py`, the mean of
   each picture's top corners), a gradient from 16% lighter to 24% darker, a soft light behind the
-  face, Go to Chat white and View Profile a pane over the colour (`JoinedCard.Colours`). The words are
-  white where white reads at 3 to 1 or better (the colour's luminance under 0.30), else near black. A
-  picture of its own, or an agent gone, keeps the chat's grey.
+  face, Go to Chat white and View Profile a white pane over the colour (`JoinedCard.Colours`). The
+  words are white on every face (the founder, shown all 30 with near-black words on the light ones and
+  all 30 in white: "make em all white"). A picture of its own, or an agent gone, keeps the chat's grey.
   After the card, the hiring agent sends one short line on what happens next, without repeating the
   card: that the person will hear from the new agent in its own chat, and what it does there first
   (the founder, 30 October 2026: "do the one line after the card everywhere"; CreateAgent's answer asks
