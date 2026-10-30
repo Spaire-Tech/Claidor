@@ -19,6 +19,7 @@ from typing import Any
 from uuid import UUID
 
 import structlog
+from sqlalchemy.exc import IntegrityError
 
 from simeon.config import settings
 from simeon.desktop.tokens import (
@@ -862,14 +863,19 @@ class DesktopService:
         )
         if await repository.get_by_code_hash(code_hash) is not None:
             return False
-        session.add(
-            DesktopAuthCode(
-                code_hash=code_hash,
-                user_id=user.id,
-                expires_at=utc_now() + settings.DESKTOP_AUTH_CODE_TTL,
-            )
-        )
-        await session.flush()
+        # In a savepoint: the same page loaded twice at once (a browser's
+        # retry) writes the row once, and the second load is a confirm twice.
+        try:
+            async with session.begin_nested():
+                session.add(
+                    DesktopAuthCode(
+                        code_hash=code_hash,
+                        user_id=user.id,
+                        expires_at=utc_now() + settings.DESKTOP_AUTH_CODE_TTL,
+                    )
+                )
+        except IntegrityError:
+            return False
         return True
 
     async def complete_deep_control(

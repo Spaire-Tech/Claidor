@@ -19,6 +19,7 @@ from uuid import UUID
 
 import stripe as stripe_lib
 import structlog
+from sqlalchemy.exc import IntegrityError
 
 from simeon.config import settings
 from simeon.desktop.words import say
@@ -884,15 +885,33 @@ class PlansService:
         if row is None:
             row = await repository.get_by_user(user.id)
         now = utc_now()
+        created = False
         if row is None:
-            row = DesktopSubscription(
+            fresh = DesktopSubscription(
                 user_id=user.id,
                 synced_at=now,
                 raw=_raw(subscription),
                 **snapshot,
             )
-            session.add(row)
-        else:
+            try:
+                async with session.begin_nested():
+                    session.add(fresh)
+            except IntegrityError:
+                # Stripe's two webhooks and the checkout's return copy a new
+                # subscription at the same moment (30 October 2026: the Mac's
+                # sign-in page answered 500 after the founder paid). The one
+                # writing second finds the first one's row, there now, and
+                # updates it below; its own insert alone was undone, so the
+                # request goes on.
+                row = await repository.get_by_stripe_subscription_id(
+                    snapshot["stripe_subscription_id"]
+                ) or await repository.get_by_user(user.id)
+                if row is None:
+                    raise
+            else:
+                row = fresh
+                created = True
+        if not created:
             if (
                 row.stripe_subscription_id != snapshot["stripe_subscription_id"]
                 and row.billable
