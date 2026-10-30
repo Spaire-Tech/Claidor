@@ -34,6 +34,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from simeon.auth.dependencies import WebUserOrAnonymous
 from simeon.auth.models import is_user
 from simeon.config import settings
+from simeon.desktop.page_heading import HEADING_CSS, HEADING_STYLE
 from simeon.kit.utils import utc_now
 from simeon.models import SandListenerConnection
 from simeon.openapi import APITag
@@ -122,8 +123,8 @@ def _login_redirect(path: str) -> RedirectResponse:
 def _page(title: str, body: str, status: int = 200) -> HTMLResponse:
     return HTMLResponse(
         f"<!doctype html><html><head><meta charset='utf-8'><title>{title}</title>"
-        "<style>body{font-family:-apple-system,system-ui,sans-serif;max-width:32rem;margin:6rem auto;padding:0 1.5rem;color:#111}"
-        "h1{font-size:1.4rem}</style></head>"
+        f"<style>{HEADING_CSS}body{{font-family:-apple-system,system-ui,sans-serif;max-width:32rem;margin:6rem auto;padding:0 1.5rem;color:#111}}"
+        f"h1{{{HEADING_STYLE}}}</style></head>"
         f"<body><h1>{title}</h1><p>{body}</p></body></html>",
         status_code=status,
     )

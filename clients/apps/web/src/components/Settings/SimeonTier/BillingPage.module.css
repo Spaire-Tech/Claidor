@@ -72,15 +72,23 @@
   padding: clamp(24px, 4vw, 56px) 0 clamp(40px, 5vw, 80px);
 }
 
-/* The site's "Pricing" and "Questions and answers" heading (.trust h2). */
-.title {
+/* Every title on this page ("Choose your plan", "You're all set", a change
+   to confirm) is the sign-in's "Log in or sign up" (Auth/AuthShell.tsx):
+   the app's sans at 24, regular (the founder, 30 October 2026: "i want to
+   maintain a consistency"). */
+.title,
+.setTitle {
   margin: 0;
-  text-align: center;
-  font-family: 'Newsreader', Georgia, 'Times New Roman', serif;
+  font-family: var(--font-geist-sans), var(--font);
   font-weight: 400;
-  font-size: clamp(36px, 2.9vw, 58px);
-  line-height: 1.04;
-  letter-spacing: -0.02em;
+  font-size: 24px;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+.title {
+  text-align: center;
 }
 
 .lede {
@@ -376,13 +384,6 @@
 .setWordmark {
   height: 40px;
   width: auto;
-}
-
-.setTitle {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 500;
-  letter-spacing: -0.02em;
 }
 
 .setLede {

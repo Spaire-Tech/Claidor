@@ -85,6 +85,7 @@ from .allowance import BILLING_PATH
 from .endpoints import client_version_of, sign_in_url
 from .language import answer_in_request_language, current_language
 from .mcp_oauth_return import APP_RETURN_HOST, app_return_for
+from .page_heading import HEADING_CSS, HEADING_STYLE
 from .service import (
     DesktopUnauthenticated,
     desktop,
@@ -250,8 +251,8 @@ def _page(
         f"--wordmark:url(data:image/png;base64,{WORDMARK_PNG_BASE64});"
         "-webkit-mask:var(--wordmark) center/contain no-repeat;"
         "mask:var(--wordmark) center/contain no-repeat}"
-        "h1{margin:32px 0 0;font-size:20px;font-weight:500;letter-spacing:-.01em;"
-        "line-height:1.25;text-wrap:balance}"
+        # The title as the web app's "Log in or sign up" (`page_heading`).
+        f"{HEADING_CSS}h1{{margin:32px 0 0;{HEADING_STYLE}}}"
         "p{margin:10px 0 0;font-size:15px;color:var(--ink2);text-wrap:pretty}"
         "strong{font-weight:500;color:var(--ink);word-break:break-word}"
         ".actions{width:100%;display:flex;flex-direction:column;"

@@ -175,11 +175,6 @@ const BillingPage = ({
 
   return (
     <div className={styles.page}>
-      {/* The site's heading face (sites/simeonlabs.com loads it the same way). */}
-      <link
-        rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400&display=swap"
-      />
       <header className={styles.bar}>
         {/* The company's wordmark, as on the website's bar and the sign-in. */}
         <a href="https://simeonlabs.com" aria-label="SimeonLabs">

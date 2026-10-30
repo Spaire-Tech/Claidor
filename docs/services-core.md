@@ -188,6 +188,13 @@ two buttons (Continue as the account, Use a different account) and the Terms and
 Privacy line under them, as under the app's (`LEGAL`): no heading and no line naming
 the device (the founder: "its noise").
 
+Every title a browser shows, on those pages, the page after an app is connected, the
+Slack and GitHub install pages and the web app's (sign-in, "Choose your plan", "You're
+all set"), is the web sign-in's "Log in or sign up": Geist at 24, regular (30 October
+2026, the founder: "i want to maintain a consistency"). This host serves the font
+itself (`/desktop/fonts/geist-400.woff2`, `page_heading.py`), so its pages load
+nothing from elsewhere.
+
 ### In the app
 
 Every setting the app, the host in the box and the helpers read as

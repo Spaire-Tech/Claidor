@@ -79,6 +79,7 @@ from .app_results import tidy_result
 from .auth import get_desktop_or_box_session
 from .composio import composio_user_id, configured
 from .language import current_language
+from .page_heading import HEADING_CSS, HEADING_STYLE
 from .words import say
 
 log = structlog.get_logger()
@@ -1293,11 +1294,11 @@ async def apps_disconnect(
 
 _CONNECTED_PAGE = """<!doctype html><html lang="{lang}"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>Simeon</title>
-<style>:root{{color-scheme:light dark}}body{{margin:0;min-height:100vh;display:grid;place-items:center;
+<style>{heading_css}:root{{color-scheme:light dark}}body{{margin:0;min-height:100vh;display:grid;place-items:center;
 font:16px/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;background:#f5f5f7;color:#1d1d1f}}
 .card{{background:#fff;border-radius:18px;padding:36px 40px;text-align:center;max-width:360px;
 box-shadow:0 0 0 .5px rgba(20,30,60,.08),0 1px 2px rgba(20,30,60,.05)}}
-h1{{font-size:20px;font-weight:600;margin:0 0 6px}}p{{margin:0;opacity:.7}}
+h1{{margin:0 0 6px;{heading_style}}}p{{margin:0;opacity:.7}}
 @media (prefers-color-scheme:dark){{body{{background:#1c1c1e;color:#f5f5f7}}.card{{background:#2c2c2e;box-shadow:none}}}}</style></head>
 <body><div class="card"><h1>{title}</h1><p>{body}</p></div></body></html>"""
 
@@ -1324,6 +1325,8 @@ async def apps_connected(request: Request) -> Response:
     return HTMLResponse(
         _CONNECTED_PAGE.format(
             lang=current_language() or "en",
+            heading_css=HEADING_CSS,
+            heading_style=HEADING_STYLE,
             title=html.escape(title),
             body=html.escape(body),
         ),
@@ -1358,6 +1361,8 @@ async def apps_start(request: Request) -> Response:
         return HTMLResponse(
             _CONNECTED_PAGE.format(
                 lang=current_language() or "en",
+                heading_css=HEADING_CSS,
+                heading_style=HEADING_STYLE,
                 title=html.escape(
                     say("apps.page.expired") if expired else say("apps.page.broken"),
                     quote=False,
