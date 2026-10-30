@@ -115,6 +115,12 @@ struct SettingsSheet: View {
         }
         .listRowBackground(Ink.groupedRow)
         Section {
+          // The founder, 30 October 2026: Send Feedback and Report an Issue, e-mailed to Simeon Labs (Feedback.swift).
+          NavigationLink { SendFeedbackPage() } label: { Text("Send Feedback").foregroundStyle(Ink.primary) }
+          NavigationLink { ReportIssuePage() } label: { Text("Report an Issue").foregroundStyle(Ink.primary) }
+        }
+        .listRowBackground(Ink.groupedRow)
+        Section {
           // The pages the web app's sign-in links to; they are written on simeonlabs.com, not in the app.
           LegalLink(title: String(localized: "Privacy Policy"), url: Legal.privacy)
           LegalLink(title: String(localized: "Terms of Service"), url: Legal.terms)

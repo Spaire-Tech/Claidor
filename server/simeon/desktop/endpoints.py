@@ -49,6 +49,7 @@ from simeon.auth.dependencies import WebUserOrAnonymous
 from simeon.auth.models import is_user
 from simeon.config import settings
 from simeon.connectors.endpoints import router as connectors_router
+from simeon.email.sender import enqueue_email
 from simeon.entitlements.tiers import PAID_TIERS, tier_from_value
 from simeon.kit.db.postgres import AsyncSessionMaker
 from simeon.kit.utils import utc_now
@@ -86,6 +87,13 @@ from .chats import router as chats_router
 from .composio import forward as composio_forward
 from .contact import router as contact_router
 from .credentials import router as credentials_router
+from .feedback import (
+    FeedbackBody,
+    ScreenshotRefused,
+    diagnostics_attachment,
+    feedback_email,
+    screenshot_attachments,
+)
 from .flight_booking import router as flight_booking_router
 from .flights import router as flights_router
 from .language import answer_in_request_language, normalize_language
@@ -127,6 +135,7 @@ from .service import (
     desktop,
     model_policy,
     offered_models,
+    preferred_name,
     provider_api_key,
     provider_base_url,
     provider_configured,
@@ -560,46 +569,64 @@ async def profile_summary(
 # --- feedback ---------------------------------------------------------------
 
 
-FEEDBACK_MESSAGE_MAX_CHARS = 10_000
-
-
-class FeedbackBody(BaseModel):
-    """What the app's Send Feedback sheet posts
-    (`desktop/source/electron-main/feedback/feedback-report.ts`). The app
-    also sends `submissionId`, `osVersion`, `conversationId` and
-    `sentryEventIds`; they are accepted and not read."""
-
-    model_config = ConfigDict(extra="ignore")
-    category: str | None = Field(default=None, max_length=64)
-    message: str = Field(min_length=1, max_length=FEEDBACK_MESSAGE_MAX_CHARS)
-    appVersion: str | None = Field(default=None, max_length=64)
-    platform: str | None = Field(default=None, max_length=64)
-
-
 @router.post("/api/feedback", name="desktop:feedback")
 async def feedback(
     body: FeedbackBody,
     desktop_session: DesktopSession = Depends(get_desktop_session),
 ) -> JSONResponse:
-    """Send Feedback, recorded as one log line against the person.
+    """Send Feedback and Report an Issue (`feedback.py`): e-mailed to the
+    founder with the person as the reply-to, and a log line against them.
 
     Added 24 September 2026. Until then the app posted its feedback to
     `{api}/sand/feedback`, the upstream app's own address, which this
     server answered 404, so every message a person wrote in the sheet
-    was lost and the sheet said « unavailable ». There is no table: a
-    log line with the user id is what the founder asked for, and it is
-    searchable where the rest of the server's lines are.
+    was lost and the sheet said « unavailable ». Until 30 October 2026 the
+    log line was all it did.
     """
     message = body.message.strip()
     if not message:
         return _fail(40001, say("feedback.empty"), status=400)
+    user = desktop_session.user
+    try:
+        attachments = screenshot_attachments(body.screenshots)
+    except ScreenshotRefused as error:
+        log.info(
+            "desktop.feedback.screenshot_refused",
+            user_id=str(user.id),
+            reason=str(error),
+        )
+        return _fail(40002, say("feedback.screenshot"), status=400)
+    diagnostics = (body.diagnostics or "").strip()
+    if diagnostics:
+        attachments.append(diagnostics_attachment(diagnostics))
+    name = preferred_name(user)
+    subject, html = feedback_email(
+        body,
+        email=user.email,
+        name=name,
+        user_id=str(user.id),
+        screenshots=len(body.screenshots),
+    )
+    enqueue_email(
+        to_email_addr=settings.CONTACT_EMAIL,
+        subject=subject,
+        html_content=html,
+        reply_to_name=name or user.email,
+        reply_to_email_addr=user.email,
+        attachments=attachments or None,
+    )
     log.info(
         "desktop.feedback.received",
-        user_id=str(desktop_session.user.id),
+        user_id=str(user.id),
         session_id=str(desktop_session.id),
+        kind=body.kind,
         category=body.category,
+        topics=body.topics or None,
+        agent_id=body.agent.id if body.agent is not None else None,
         app_version=body.appVersion,
         platform=body.platform,
+        screenshots=len(body.screenshots),
+        diagnostics=bool(diagnostics),
         message=message,
     )
     return _ok({"received": True})
