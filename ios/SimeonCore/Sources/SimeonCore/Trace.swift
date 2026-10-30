@@ -8,8 +8,11 @@ import Foundation
  */
 public enum Trace {
   private static let step = LockedBox<(what: String, at: UInt64)>(("starting", 0))
-  /** Where the lines go: the console by default. */
-  nonisolated(unsafe) public static var log: (String) -> Void = { print($0) }
+  /** Where the lines go: the console by default, and the recent activity a report can carry (`RecentActivity`). */
+  nonisolated(unsafe) public static var log: (String) -> Void = { line in
+    print(line)
+    RecentActivity.note(line)
+  }
 
   public static var now: String { step.withLock { $0.what } }
 

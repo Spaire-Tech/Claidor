@@ -140,6 +140,25 @@ public actor SimeonAPI {
     for (name, value) in clientHeaders { request.setValue(value, forHTTPHeaderField: name) }
   }
 
+  /**
+   * `request` sent, and noted in the recent activity a report can carry
+   * (`RecentActivity`) when it fails, is refused or takes over three
+   * seconds: its method, its path without the query, its status and time.
+   */
+  private func sent(_ request: URLRequest, as path: String) async throws -> HTTPAnswer {
+    let name = "\(request.httpMethod ?? "GET") \(path.split(separator: "?", maxSplits: 1).first.map(String.init) ?? path)"
+    let started = now()
+    do {
+      let answer = try await http.send(request)
+      let ms = Int(now() - started)
+      if !answer.ok || ms > 3_000 { RecentActivity.note("api \(name) \(answer.status) in \(ms) ms") }
+      return answer
+    } catch {
+      RecentActivity.note("api \(name) failed after \(Int(now() - started)) ms: \(error.localizedDescription)")
+      throw error
+    }
+  }
+
   /** One `/desktop/api/…` call, in the app's envelope (`{code, data}`), the way `simeon-api.ts` reads it on the Mac. */
   public func data(_ path: String, method: String? = nil, json: JSON? = nil, timeout: TimeInterval? = nil) async throws -> JSON {
     var request = URLRequest(url: url(Self.desktopPrefix + path))
@@ -150,7 +169,7 @@ public actor SimeonAPI {
       request.setValue("application/json", forHTTPHeaderField: "content-type")
     }
     try await authorized(&request)
-    let answer = try await http.send(request)
+    let answer = try await sent(request, as: path)
     if answer.status == 401 { await refused() }
     guard answer.ok else {
       // The refusal's own sentence and code when it has them: the server's proxy and the providers it passes on answer
@@ -162,6 +181,7 @@ public actor SimeonAPI {
     }
     guard let parsed = answer.json else { throw SimeonAPIError(message: "Simeon Labs' server answered \(path) with something that is not JSON.", status: answer.status) }
     if let code = parsed["code"], code.int != 0 {
+      RecentActivity.note("api \(path.split(separator: "?", maxSplits: 1).first.map(String.init) ?? path) refused with code \(code.int ?? 0)")
       throw SimeonAPIError(message: parsed["message"]?.text ?? "Simeon Labs' server refused \(path).", status: answer.status)
     }
     return parsed["code"] == nil ? parsed : (parsed["data"] ?? .null)
@@ -236,7 +256,7 @@ public actor SimeonAPI {
   public func connect(_ method: String, _ message: JSON = [:], service: String = connectService) async throws -> JSON {
     var request = URLRequest.post(url("/\(service)/\(method)"), json: message, headers: ["connect-protocol-version": "1"])
     try await authorized(&request)
-    let answer = try await http.send(request)
+    let answer = try await sent(request, as: method)
     if answer.status == 401 { await refused() }
     guard answer.ok else {
       throw SimeonAPIError(message: answer.json?["message"]?.text ?? "Simeon's cloud computer answered \(method) with \(answer.status).", status: answer.status, headers: answer.headers)

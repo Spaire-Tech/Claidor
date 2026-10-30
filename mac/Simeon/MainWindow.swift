@@ -190,6 +190,7 @@ struct MainWindow: View {
   // The window in four parts, so the compiler checks each on its own (one chain of all of them was too long for it).
   var body: some View {
     @Bindable var newChat = newChat
+    @Bindable var feedback = FeedbackSheets.shared
     let look = Look(scheme)
     followingNewChat(followingComputer(closingFloaters(layered(columns(look: look), look: look))))
       .background(KeyWatcher())
@@ -200,6 +201,8 @@ struct MainWindow: View {
           window.choose(id, store: store)
         }
       }
+      // Send feedback and Report an issue (Settings › Help & support, the account menu): e-mailed to Simeon Labs.
+      .sheet(item: $feedback.showing) { kind in MacFeedbackSheet(kind: kind) }
   }
 
   /** The sidebar, the chat (or what stands in its place) and the agent's pane, side by side. */

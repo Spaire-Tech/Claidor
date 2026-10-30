@@ -171,6 +171,21 @@ their Google name in `user.meta` (`server/simeon/integrations/google/service.py`
   `desktop.contact.received` for each message and `desktop.contact.dropped` for a form
   whose hidden field a bot filled; `rate_limit.py` allows 5 a minute and 20 an hour from
   one address.
+- Send Feedback and Report an Issue in the apps (30 October 2026; Settings on the iPhone,
+  Settings › Help & support and the account menu on the Mac) go out the same way:
+  `POST /desktop/api/feedback` (signed in, `server/simeon/desktop/feedback.py`) queues one
+  e-mail to `SIMEON_CONTACT_EMAIL`, from the person's account and with them as the
+  reply-to. It says the app and its version, the device and its system, the language,
+  the time zone, the agent or the topics picked, then the words; up to four screenshots
+  come attached (JPEG or PNG, shrunk by the app). An issue asks first whether to include
+  logs and diagnostics; when the person agrees, `diagnostics.txt` is attached: what the
+  app knows of its state, its recent activity (console lines and failed or slow calls to
+  this server, `RecentActivity` in SimeonCore) and, on the Mac, the last lines of
+  `computer-stream.log` and `voice-call.log`. Never messages, and every line is scrubbed
+  of tokens, keys and query strings first (`Diagnostics.scrub`). Nothing is stored. The
+  log says `desktop.feedback.received` (kind, topics, agent, counts) and
+  `desktop.feedback.screenshot_refused` for a picture that is not one;
+  `rate_limit.py` allows 10 a minute and 40 an hour.
 - For Apple's review: `SIMEON_APP_REVIEW_EMAIL` (the review account's e-mail) and
   `SIMEON_APP_REVIEW_OTP_CODE` (six digits), in `simeon-shared` (only the API reads
   them). That e-mail then signs in with that code and no inbox; the reviewer can also be

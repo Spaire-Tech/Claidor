@@ -1,6 +1,7 @@
 """The desktop app's sign-in and proxy, end to end over HTTP
 (`simeon/desktop/endpoints.py`)."""
 
+import base64
 import gzip
 import io
 import json
@@ -158,8 +159,13 @@ class TestFeedback:
     posted to the upstream's `/sand/feedback` until 24 September 2026."""
 
     async def test_feedback_is_logged_against_the_person(
-        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
     ) -> None:
+        sent = mocker.patch.object(endpoints_module, "enqueue_email")
         access, _ = await _signed_in(client, session, user)
         headers = {"Authorization": f"Bearer {access}"}
 
@@ -188,6 +194,84 @@ class TestFeedback:
         assert received[0]["category"] == "app"
         assert received[0]["app_version"] == "0.18.0"
         assert received[0]["platform"] == "darwin-arm64"
+        # What the retired Electron app sends is e-mailed too, as feedback.
+        assert sent.call_args.kwargs["subject"].startswith("Feedback from ")
+
+    async def test_an_issue_is_emailed_to_the_founder_with_the_person_as_reply_to(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        sent = mocker.patch.object(endpoints_module, "enqueue_email")
+        access, _ = await _signed_in(client, session, user)
+        png = base64.b64encode(b"\x89PNG\r\n\x1a\n" + b"\x00" * 32).decode()
+        response = await client.post(
+            "/desktop/api/feedback",
+            headers={"Authorization": f"Bearer {access}"},
+            json={
+                "kind": "issue",
+                "message": "Gmail won't connect.\nIt spins forever.",
+                "platform": "iPhone",
+                "appVersion": "1.0 (29)",
+                "device": "iPhone16,2",
+                "osVersion": "iOS 26.1",
+                "language": "fr",
+                "timeZone": "Africa/Dakar",
+                "agent": {"id": "a1", "name": "Maya", "title": "Inbox"},
+                "topics": ["Connectors"],
+                "diagnostics": "12:00:01 GET /desktop/api/apps 502",
+                "screenshots": [{"filename": "IMG_1.png", "data": png}],
+            },
+        )
+        assert response.json() == {"code": 0, "data": {"received": True}}
+        sent.assert_called_once()
+        kwargs = sent.call_args.kwargs
+        assert (
+            kwargs["to_email_addr"] == settings.CONTACT_EMAIL == "bass@simeonlabs.com"
+        )
+        assert kwargs["reply_to_email_addr"] == user.email
+        assert kwargs["reply_to_name"] == user.email
+        assert kwargs["subject"] == f"Issue from {user.email}: Gmail won't connect."
+        assert [one["filename"] for one in kwargs["attachments"]] == [
+            "screenshot-1.png",
+            "diagnostics.txt",
+        ]
+        assert base64.b64decode(kwargs["attachments"][1]["content"]) == (
+            b"12:00:01 GET /desktop/api/apps 502"
+        )
+        html = kwargs["html_content"]
+        for part in (
+            "Maya · Inbox (a1)",
+            "Connectors",
+            "iPhone16,2 · iOS 26.1",
+            "Africa/Dakar",
+        ):
+            assert part in html
+
+    async def test_a_screenshot_that_is_not_a_picture_is_refused(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        sent = mocker.patch.object(endpoints_module, "enqueue_email")
+        access, _ = await _signed_in(client, session, user)
+        response = await client.post(
+            "/desktop/api/feedback",
+            headers={"Authorization": f"Bearer {access}"},
+            json={
+                "message": "Look",
+                "screenshots": [
+                    {"filename": "a.png", "data": base64.b64encode(b"<html>").decode()}
+                ],
+            },
+        )
+        assert response.status_code == 400
+        assert response.json()["code"] == 40002
+        sent.assert_not_called()
 
     async def test_feedback_needs_a_message_and_a_session(
         self, client: httpx.AsyncClient, session: AsyncSession, user: User
