@@ -7,8 +7,9 @@ with the catalogue's kinds as tabs, a search and Load more; then questions and
 answers on connecting, each one what the apps really do (the founder, 23 October
 2026: "remove the Connect an app in a few clicks section. only have an faq there
 based logically on whats real"); then the home page's closing call (the founder, 23
-October 2026: "add a cta in the connectors page"). A card does nothing yet (the
-founder: "this will need a lot more of designing").
+October 2026: "add a cta in the connectors page"). A card opens the connector's own
+page, /connectors/<id> (the founder, 30 October 2026: "a page in the website for
+all the connectors like we have in the app"; connector_pages.py).
 
 The connectors are the apps' own list (desktop/source/shared/node/vendor-mcp/
 catalog.ts): their names, kinds and lines, the retired places left out. The
@@ -20,6 +21,7 @@ and it runs alone too, needing nothing but Python:
 """
 import os, re, shutil, sys, unicodedata
 
+import connector_pages
 import teams
 from teams import CATALOG, Assets, esc, frame
 from versioning import version_style
@@ -103,8 +105,11 @@ CONN_CSS = """
 .kinds button:last-child{margin-right:56px}
 .kinds button:focus-visible,.more-apps:focus-visible,.step:focus-visible{outline:2px solid #1d1d1f;outline-offset:3px;border-radius:6px}
 .list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;margin:clamp(28px,2.8*var(--vw,1vw),52px) 0 0;padding:0;list-style:none}
-.list li{display:flex;align-items:center;gap:18px;min-width:0;padding:16px 18px;border-radius:24px;background:#f9f9fa}
+.list li{min-width:0}
 .list li[hidden]{display:none}
+.list a{display:flex;align-items:center;gap:18px;height:100%;padding:16px 18px;border-radius:24px;background:#f9f9fa;text-decoration:none;transition:background .2s}
+.list a:hover{background:#f2f2f4}
+.list a:focus-visible{outline:2px solid #1d1d1f;outline-offset:3px}
 .list .app{--as:60px;--ring:transparent}
 .list .tx{min-width:0}
 .list b{display:block;font-size:var(--t-head);font-weight:var(--w-title);letter-spacing:-.015em}
@@ -132,7 +137,7 @@ CONN_CSS = """
 
 LIST_JS = """<script>
 // Find an app: a kind shows its apps (All, every app), the search keeps the apps whose name, kind or line
-// hold every word typed, and Load more shows the next %PAGE%. A card does nothing yet.
+// hold every word typed, and Load more shows the next %PAGE%. A card opens the connector's page.
 (() => {
   const tools = document.querySelector('.find-tools'), input = document.getElementById('app-search');
   const kinds = [...document.querySelectorAll('.kinds button')], items = [...document.querySelectorAll('.list > li')];
@@ -181,8 +186,8 @@ def finder(apps, kinds, assets):
     for c in apps:
         soon = " <small>Coming soon</small>" if c["soon"] else ""
         q = esc(fold(" ".join((c["name"], c["kind"], c["line"]))))
-        cards.append(f'<li data-kind="{slug(c["kind"])}" data-q="{q}">{assets.tile(c["id"])}'
-                     f'<span class="tx"><b>{esc(c["name"])}{soon}</b><span title="{esc(c["line"])}">{esc(c["line"])}</span></span></li>')
+        cards.append(f'<li data-kind="{slug(c["kind"])}" data-q="{q}"><a href="/connectors/{c["id"]}/">{assets.tile(c["id"])}'
+                     f'<span class="tx"><b>{esc(c["name"])}{soon}</b><span title="{esc(c["line"])}">{esc(c["line"])}</span></span></a></li>')
     tabs = '<button type="button" data-kind="all" aria-pressed="true">All</button>' + "".join(
         f'<button type="button" data-kind="{slug(k)}" aria-pressed="false">{esc(k)}</button>' for k in kinds)
     return f"""<section class="find" id="apps" aria-labelledby="apps-title">
@@ -230,8 +235,21 @@ def build(out=OUT):
     page = frame("Connectors", f"Connect Gmail, Slack, Notion and {len(apps) - 3} more apps to your Simeon agents.", "/connectors",
                  body, hero_css + CONN_CSS + home_css, current="connectors", script=LIST_JS.replace("%PAGE%", str(PAGE)))
     open(f"{root}/index.html", "w", encoding="utf-8").write(version_style(page, out))
+    # Each connector's own page, /connectors/<id>, from the apps' words (connector_pages.py).
+    pages = connector_pages.pages()
+    missing = [c["id"] for c in apps if c["id"] not in pages]
+    taken = [c["id"] for c in apps if c["id"] in ("apps", "brands", "img")]
+    if missing or taken:
+        sys.exit("connectors.py: " + (f"no page in the apps for {', '.join(missing)}" if missing else f"an id is a folder's name: {', '.join(taken)}"))
+    logos = connector_pages.Logos(assets)
+    hero_url = assets._copy(connector_pages.HERO, "img", "connector-hero.jpg")
+    for c in apps:
+        own = connector_pages.body(c, pages[c["id"]], assets, logos, hero_url, ctas, close)
+        made = frame(c["name"], esc(pages[c["id"]]["about"]), f"/connectors/{c['id']}", own, home_css + connector_pages.PAGE_CSS, current="connectors")
+        os.makedirs(f"{root}/{c['id']}")
+        open(f"{root}/{c['id']}/index.html", "w", encoding="utf-8").write(version_style(made, out))
     letters = sorted(k for k, how in assets.drawn.items() if how == "letter")
-    print(f"connectors page written to {os.path.abspath(root)}: {len(apps)} app(s)")
+    print(f"connectors page written to {os.path.abspath(root)}: {len(apps)} app(s), each with its own page")
     if letters:
         print("  apps drawn as a letter (no logo yet):", ", ".join(letters))
 

@@ -32,7 +32,10 @@ while the app loads). It rewrites `public/` from scratch; commit what it writes.
 Marketplace pages: `python3 source/teams.py` rewrites `public/marketplace/`
 from `server/simeon/desktop/packs.json` (build.py runs it too); run it whenever
 a pack changes and commit what it writes. `source/connectors.py` writes
-`public/connectors/`, `source/pricing.py` writes `public/pricing/` and
+`public/connectors/`, with a page for each connector at `/connectors/<id>`
+(`source/connector_pages.py`: the apps' connector page, its words and links read
+from `ios/SimeonCore/.../ConnectorPages.swift`, so run it again when those
+change), `source/pricing.py` writes `public/pricing/` and
 `source/contact.py` writes `public/contact/` the same way (its form posts to the
 API, `server/simeon/desktop/contact.py`, which e-mails each message to the
 founder). `source/newsroom.py` writes `public/newsroom/`, the blog, in Apple Stories'
