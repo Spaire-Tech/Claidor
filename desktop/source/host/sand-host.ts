@@ -99,7 +99,7 @@ export interface SandHostRuntime {
     rosterBookkeeping: HostRosterBookkeeping;
     getHealth(): SandHostHealth;
     decorateForeverBoxStatus(status: any): any;
-    kickstartIfPending(agentId: string): Promise<boolean>;
+    kickstartIfPending(agentId: string, opened?: boolean): Promise<boolean>;
     requestDiskSaverAudit(agentId: string): Promise<boolean>;
     releaseAgentBox(agentId: string): Promise<void>;
     forgetLocalToolPermission(agentId: string): void;
@@ -602,14 +602,16 @@ export class SandHost {
     optionalMethod(extensions.api("host-upgrade"), "activateAfterHostIdentityReady")?.();
   }
 
-  async kickstartIfPending(agentId: string): Promise<boolean> {
+  /** `opened`: an app just opened the chat (the gateway's `openAgent…`). */
+  async kickstartIfPending(agentId: string, opened = false): Promise<boolean> {
     const inferenceReady = await optionalMethod(
       this.requireHostExtensions().api("inference"),
       "isReady"
     )?.() ?? false;
     return await optionalMethod(this.transcript, "kickstartAgent")?.(
       agentId,
-      inferenceReady
+      inferenceReady,
+      opened
     ) ?? false;
   }
 
@@ -676,7 +678,7 @@ export class SandHost {
       rosterBookkeeping,
       getHealth: () => this.getHealth(),
       decorateForeverBoxStatus: status => this.decorateForeverBoxStatus(status),
-      kickstartIfPending: agentId => this.kickstartIfPending(agentId),
+      kickstartIfPending: (agentId, opened) => this.kickstartIfPending(agentId, opened),
       requestDiskSaverAudit: agentId => this.requestDiskSaverAudit(agentId),
       releaseAgentBox: agentId => this.releaseAgentBox(agentId),
       forgetLocalToolPermission: agentId => this.forgetLocalToolPermission(agentId),

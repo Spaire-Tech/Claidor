@@ -22,7 +22,8 @@ settings:
     # 0.2.0: the first Swift release, after the Electron app's 0.1.2. 0.2.1
     # (22 October 2026): the design pass, paste, and the name in Settings.
     # 0.2.7 (30 October 2026): the first run's name reaches the agents, Simeon's new hello, the "just joined" card.
-    MARKETING_VERSION: "0.2.7"
+    # 0.2.8 (30 October 2026): Simeon's name in its pill in his introduction.
+    MARKETING_VERSION: "0.2.8"
     CURRENT_PROJECT_VERSION: "1"
     CODE_SIGN_STYLE: Automatic
     # The Apple developer team Simeon publishes from: set it here, or in

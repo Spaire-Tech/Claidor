@@ -273,10 +273,12 @@ struct MessageLine {
   var find: FindMarks?
   /** The agent who wrote these words (its id): its own name is not dressed. */
   var speaker: String?
+  /** The speaker is saying who it is (`Bubble.introduces`): its own name is dressed there. */
+  var introducing = false
 
   /** The same line at another size or in another colour (a heading, a table, a quote). */
   func with(size: CGFloat? = nil, lineHeight: CGFloat? = nil, colour: Color? = nil) -> MessageLine {
-    MessageLine(size: size ?? self.size, lineHeight: lineHeight ?? self.lineHeight, colour: colour ?? self.colour, look: look, agents: agents, personName: personName, marksNames: marksNames, find: find, speaker: speaker)
+    MessageLine(size: size ?? self.size, lineHeight: lineHeight ?? self.lineHeight, colour: colour ?? self.colour, look: look, agents: agents, personName: personName, marksNames: marksNames, find: find, speaker: speaker, introducing: introducing)
   }
 
   /** The same line with these marks (a table's cell). */
@@ -355,7 +357,7 @@ struct MessageLine {
     let ns = words as NSString
     var pieces: [Text] = []
     var cursor = 0
-    for found in Mentions.find(in: shown, within: NSRange(location: offset, length: ns.length), agents: agents, personName: personName, speaker: speaker) {
+    for found in Mentions.find(in: shown, within: NSRange(location: offset, length: ns.length), agents: agents, personName: personName, speaker: speaker, introducing: introducing) {
       let match = (location: found.location - offset, length: found.length, kind: found.kind)
       if match.location > cursor {
         pieces.append(painted(ns.substring(with: NSRange(location: cursor, length: match.location - cursor)), ink: ink, style: style, at: offset + cursor, marks: marks))

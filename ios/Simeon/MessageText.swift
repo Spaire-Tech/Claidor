@@ -32,16 +32,19 @@ struct Mentioning: Equatable {
   var agents: [Mentions.AgentName]
   var personName: String?
   var speaker: String?
+  /** The speaker is saying who it is (`Bubble.introduces`): its own name is dressed there. */
+  var introducing = false
   var dark: Bool
 
   init(agents: [Agent], personName: String?, dark: Bool) {
     self.init(names: agents.filter { !$0.isGroup }.map { Mentions.AgentName(name: $0.name.trimmingCharacters(in: .whitespaces), id: $0.id, picture: $0.picture) }, personName: personName, dark: dark)
   }
 
-  init(names: [Mentions.AgentName], personName: String?, speaker: String? = nil, dark: Bool) {
+  init(names: [Mentions.AgentName], personName: String?, speaker: String? = nil, introducing: Bool = false, dark: Bool) {
     self.agents = names
     self.personName = personName
     self.speaker = speaker
+    self.introducing = introducing
     self.dark = dark
   }
 
@@ -169,7 +172,7 @@ enum InlineText {
     var names = "-"
     if let mentioning {
       let agents: String = mentioning.agents.map { agent in "\(agent.name)=\(agent.picture?.key ?? "")" }.joined(separator: ",")
-      names = "\(agents)|\(mentioning.personName ?? "")|\(mentioning.speaker ?? "")"
+      names = "\(agents)|\(mentioning.personName ?? "")|\(mentioning.speaker ?? "")|\(mentioning.introducing)"
     }
     // Words with a link are made again when a site's icon comes (`LinkIcons`).
     let icons = mentioning != nil && (markdown.contains("://") || markdown.contains("www.")) ? LinkIcons.shared.generation : 0
@@ -203,7 +206,7 @@ enum InlineText {
     // Names, at character offsets; none inside code or a link.
     var marks: [(start: Int, end: Int, kind: Mentions.Kind)] = []
     if let mentioning {
-      for match in Mentions.find(in: plain, agents: mentioning.agents, personName: mentioning.personName, speaker: mentioning.speaker) {
+      for match in Mentions.find(in: plain, agents: mentioning.agents, personName: mentioning.personName, speaker: mentioning.speaker, introducing: mentioning.introducing) {
         guard let range = Range(NSRange(location: match.location, length: match.length), in: plain) else { continue }
         let start = plain.distance(from: plain.startIndex, to: range.lowerBound)
         let end = start + plain[range].count

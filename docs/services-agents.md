@@ -2123,12 +2123,20 @@ and the whole path on an iPhone or a Mac.
 action from the get go … onboarding should be him delegating. That also showcases him messaging
 the agent, him creating it, and giving him directions." `desktop/source/shared/agents/chief-of-staff.ts`:
 - His hello is the founder's, word for word (29 October 2026: "this is what he should say … they
-  come in different texts. not one by one"): four messages the engine posts in his chat at once as
-  his first run begins (`chiefOfStaffHello`, `AgentLifecycle.postTogether`), in the person's language
+  come in different texts"; the second line rewritten 30 October 2026), in the person's language
   (`simeon.*` in `shared/words/areas/previews.ts`), by their first name when it is known: who he is,
-  what the agents do and that each has its own computer, that the person can watch or take over, and
-  that he'd like to hire their first teammate unless they have questions. The model does not write
-  it, so it reads the same for everyone.
+  that he brings the right agents onto their team, that the person can watch or take over, and that
+  he'd like to hire their first teammate unless they have questions. The model does not write it, so
+  it reads the same for everyone.
+- It is written as the person watches (30 October 2026, the founder: "I want to show the thing being
+  written. not the thing appearing out of the blue"), before his first turn
+  (`AgentLifecycle.writeHello`): the engine waits for an app to open his chat (the gateway's
+  `openAgent…` reaches `kickstartIfPending(id, true)`; 8 seconds at most, `HELLO_OPEN_WAIT_MS`), then
+  for each line shows "Typing…" (`setSessionComposing`) for 1.2 to 3.2 seconds by its length
+  (`helloTypingMs`) and posts it whole, never streamed: about nine seconds for the four. A chat opened
+  partway takes the rest live. The first line carries `introduction: true`, and the apps draw his
+  name in its pill there ("my name is Simeon"), the one message of his where they do
+  (`Bubble.introduces`, `Mentions.find`'s `introducing`).
 - His first run is his own cue, `chiefOfStaffKickstartPrompt`, chosen by the lifecycle for
   the agent titled Chief of Staff (`agent-lifecycle.ts`), told the hello already sent: one message,
   the question card, "What's the

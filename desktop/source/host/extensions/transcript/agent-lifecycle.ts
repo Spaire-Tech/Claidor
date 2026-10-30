@@ -27,13 +27,28 @@ import { checkpointSandAgentDb } from "../../storage/store-db.js";
 import { publishTranscriptMutation } from "../../transcript-mutation-events.js";
 import { describeAgentRunError } from "./agent-run-error.js";
 import { say } from "../../../shared/say.js";
-import { createSendMessageEntry, isUserMessageEntry } from "./send-message-shaping.js";
+import { createSendMessageEntry, isUserMessageEntry, type SendMessage } from "./send-message-shaping.js";
 import { nextEntryId } from "./transcript-entry-ids.js";
 import { getTranscript } from "./transcript-store.js";
 import { classifyAgentError } from "./turn-runtime.js";
 import type { TranscriptEntry, TranscriptManagerLike } from "./transcript-hub.js";
 
 export class SandAgentLifecycleError extends Error {}
+
+/**
+ * Simeon's hello is written as the person watches (the founder, 30 October
+ * 2026: "I want to show the thing being written. not the thing appearing out
+ * of the blue"): it waits for his chat to be open, this long at most (the
+ * app opens it as the first run ends, `Onboarding.handOff`), then each line
+ * shows "Typing…" (`helloTypingMs`) and lands whole, never streamed.
+ */
+export const HELLO_OPEN_WAIT_MS = 8_000;
+
+/** How long a line of his hello shows "Typing…" before it lands: longer for a longer line, from 1.2 to 3.2 seconds. */
+export function helloTypingMs(line: string): number {
+  return Math.min(3_200, Math.max(1_200, 500 + 18 * [...line].length));
+}
+
 interface CreateOptions {
   purpose?: string;
   isKickstartRequested?: boolean;
@@ -43,6 +58,30 @@ interface CreateOptions {
 
 export class AgentLifecycle {
   constructor(readonly tm: TranscriptManagerLike) {}
+
+  /** The chats an app has opened (`kickstartIfPending` from the gateway's `openAgent…`), and a hello waiting for its own. */
+  #openedChats = new Set<string>();
+  #openWaiters = new Map<string, () => void>();
+  /** A pause (the tests make it instant). */
+  pause = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
+
+  noteChatOpened(agentId: string): void {
+    this.#openedChats.add(agentId);
+    this.#openWaiters.get(agentId)?.();
+  }
+
+  /** Once an app has opened this chat, or after `ms`, whichever is first. */
+  untilChatOpen(agentId: string, ms: number): Promise<void> {
+    if (this.#openedChats.has(agentId)) return Promise.resolve();
+    return new Promise((resolve) => {
+      const done = (): void => {
+        if (this.#openWaiters.get(agentId) === done) this.#openWaiters.delete(agentId);
+        resolve();
+      };
+      this.#openWaiters.set(agentId, done);
+      void this.pause(ms).then(done);
+    });
+  }
 
   async createAgent(
     profile: unknown,
@@ -152,7 +191,9 @@ export class AgentLifecycle {
     return session;
   }
 
-  async kickstartAgent(agentId: string, isRunReady: boolean): Promise<boolean> {
+  /** `opened`: an app just opened this chat (the gateway's `openAgent…`), which a hello waiting for it is told. */
+  async kickstartAgent(agentId: string, isRunReady: boolean, opened = false): Promise<boolean> {
+    if (opened) this.noteChatOpened(agentId);
     let session: any;
     try {
       session =
@@ -189,14 +230,15 @@ export class AgentLifecycle {
         try {
           // The Chief of Staff opens by hiring, not by offering to help
           // (7 October 2026, `shared/agents/chief-of-staff.ts`), after his
-          // hello, the founder's words, posted here at once (29 October 2026).
+          // hello, the founder's words (29 October 2026), written here line
+          // by line as the person watches (30 October 2026).
           // Said in the person's language when it is not English (20 October 2026).
           const language = this.tm.userLanguage?.();
           const diskSaver = session.db.getAgentPurpose() === "disk-saver";
           const hello = !diskSaver && isChiefOfStaffTitle(this.tm.sessionStore?.getAgentProfileText?.(session.id)?.title)
             ? chiefOfStaffHello(this.tm.requestContextUserFullName?.() ?? null, language)
             : null;
-          if (hello != null) this.postTogether(session, hello);
+          if (hello != null) await this.writeHello(session, hello);
           const prompt = firstRunCueInLanguage(
             diskSaver
               ? SAND_DISK_SAVER_KICKSTART_PROMPT
@@ -260,21 +302,43 @@ export class AgentLifecycle {
   }
 
   /**
-   * Messages from the agent, in its chat at once and in order, as its own
-   * (`send-message`, as SendMessage leaves them): the Chief of Staff's hello.
+   * The Chief of Staff's hello, line by line as the person watches: once his
+   * chat is open (`HELLO_OPEN_WAIT_MS` at most), "Typing…" for each line
+   * (`helloTypingMs`), then the line, whole. The first says who he is
+   * (`introduction`: the apps draw his name in its pill there, the founder,
+   * 30 October 2026).
    */
-  postTogether(session: any, lines: readonly string[]): void {
+  async writeHello(session: any, lines: readonly string[]): Promise<void> {
+    await this.untilChatOpen(session.id, HELLO_OPEN_WAIT_MS);
+    const written: TranscriptEntry[] = [];
+    try {
+      for (const [index, content] of lines.entries()) {
+        this.tm.runLifecycle.setSessionComposing(session.id, true);
+        await this.pause(helloTypingMs(content));
+        written.push(this.post(session, index === 0 ? { type: "text", content, introduction: true } : { type: "text", content }, written));
+      }
+    } finally {
+      this.tm.runLifecycle.setSessionComposing(session.id, false);
+    }
+  }
+
+  /**
+   * A message from the agent in its chat, as its own (`send-message`, as
+   * SendMessage leaves it): through the open chat when it is the one open
+   * (opening it between two lines makes it so), else straight to its record.
+   * `written`: what was just written before it, whose ids are taken too.
+   */
+  post(session: any, message: SendMessage, written: readonly TranscriptEntry[] = []): TranscriptEntry {
     const active = this.tm.sessions.activeSession?.id === session.id;
-    const entries: TranscriptEntry[] = [...(active ? getTranscript() : session.db.getTranscriptEntries())];
-    const at = Date.now();
-    lines.forEach((content, index) => {
-      const entry = createSendMessageEntry(nextEntryId(entries, "send-message"), { type: "text", content }, at + index);
-      entries.push(entry);
-      if (active) this.tm.sendPipeline.appendSendMessageEntry(entry);
-      else session.db.appendTranscriptEntry(entry);
-    });
-    if (!active) this.tm.sessionStore.markSessionActivity(session);
+    const entries: readonly TranscriptEntry[] = active ? getTranscript() : session.db.getTranscriptEntries();
+    const entry = createSendMessageEntry(nextEntryId([...entries, ...written], "send-message"), message, Date.now());
+    if (active) this.tm.sendPipeline.appendSendMessageEntry(entry);
+    else {
+      session.db.appendTranscriptEntry(entry);
+      this.tm.sessionStore.markSessionActivity(session);
+    }
     void this.tm.roster.emitAgentUpdate(session.id);
+    return entry;
   }
 
   async requestDiskSaverAudit(

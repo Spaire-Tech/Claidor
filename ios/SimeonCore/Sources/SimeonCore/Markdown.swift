@@ -434,8 +434,13 @@ public enum Mentions {
    *
    * `within` keeps only the names wholly inside that part of `text` (a run
    * of a Mac line), read in the whole line as the iPhone reads them.
+   *
+   * `introducing`: the speaker is saying who it is (Simeon's "my name is
+   * Simeon", `Bubble.introduces`): its own name is dressed there, even as a
+   * name being given (the founder, 30 October 2026); everyone else's
+   * follows the rules above.
    */
-  public static func find(in text: String, within part: NSRange? = nil, agents: [AgentName], personName: String? = nil, speaker: String? = nil) -> [Match] {
+  public static func find(in text: String, within part: NSRange? = nil, agents: [AgentName], personName: String? = nil, speaker: String? = nil, introducing: Bool = false) -> [Match] {
     let ns = text as NSString
     let searched = NSRange(location: 0, length: ns.length)
     let found: [(range: NSRange, brand: BrandMention)] = brandPattern.matches(in: text, range: searched).compactMap { result in
@@ -447,15 +452,18 @@ public enum Mentions {
       matches.append(Match(location: candidate.range.location, length: candidate.range.length, kind: .brand(candidate.brand)))
     }
     let person = personName?.trimmingCharacters(in: .whitespaces).lowercased()
-    let named = agents.filter { $0.name.trimmingCharacters(in: .whitespaces).count >= 2 && $0.name.lowercased() != person && $0.id != speaker }
+    let introduced = introducing ? speaker : nil
+    let named = agents.filter { $0.name.trimmingCharacters(in: .whitespaces).count >= 2 && $0.name.lowercased() != person && ($0.id != speaker || $0.id == introduced) }
     if !named.isEmpty {
       var byName: [String: AgentName] = [:]
-      for agent in named where byName[agent.name] == nil { byName[agent.name] = agent }
+      // The one introducing itself first: its name is its own, whoever else shares it.
+      for agent in named.filter({ $0.id == introduced }) + named.filter({ $0.id != introduced }) where byName[agent.name] == nil { byName[agent.name] = agent }
       let agentPattern = agentPattern(Array(byName.keys))
       for result in agentPattern.matches(in: text, range: searched) {
         let overlaps = matches.contains { NSIntersectionRange(NSRange(location: $0.location, length: $0.length), result.range).length > 0 }
-        if overlaps || namesAThing(ns, result.range) { continue }
-        if let agent = byName[ns.substring(with: result.range)] { matches.append(Match(location: result.range.location, length: result.range.length, kind: .agent(id: agent.id))) }
+        guard !overlaps, let agent = byName[ns.substring(with: result.range)] else { continue }
+        if agent.id != introduced && namesAThing(ns, result.range) { continue }
+        matches.append(Match(location: result.range.location, length: result.range.length, kind: .agent(id: agent.id)))
       }
     }
     if let part { matches.removeAll { $0.location < part.location || $0.location + $0.length > NSMaxRange(part) } }

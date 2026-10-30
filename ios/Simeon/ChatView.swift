@@ -1509,7 +1509,7 @@ struct BubbleView: View {
             // A call an older host wrote as a message: its row, which opens on the recap (the window's).
             CallRecordRow(record: record)
           } else {
-            MarkdownView(blocks: Markdown.cachedBlocks(shown.text), mentioning: Mentioning(names: store.mentionNames, personName: store.account?.name, speaker: bubble.author?.id ?? agentId, dark: scheme == .dark))
+            MarkdownView(blocks: Markdown.cachedBlocks(shown.text), mentioning: Mentioning(names: store.mentionNames, personName: store.account?.name, speaker: bubble.author?.id ?? agentId, introducing: bubble.introduces, dark: scheme == .dark))
               .foregroundStyle(Ink.theirsText)
               .tint(Ink.link)
               // A diagram waits until the message is written (the window's rule).

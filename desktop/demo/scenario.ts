@@ -217,13 +217,14 @@ export function onboardingScript(agent: string, stage: number): Beat[] {
   if (stage === 0) {
     return [
       typing(700, true),
-      // His hello, the founder's words (`chiefOfStaffHello`), four messages at once (29 October 2026).
-      append(2600, says("o0a", 0, "Hi Bass, my name is Simeon, and I'm your Chief of Staff.")),
-      append(2600, says("o0b", 0, "What I do is help build a team of agents to help you get things done. Each one has a job to do and its own computer to do it on, so they can use your apps, browse the web, and take care of things while you're busy doing everything else.")),
-      append(2600, says("o0c", 0, "You can check in on them anytime, watch them work, or jump in and take over. I'll keep an eye on the bigger picture and bring you in when something needs your attention.")),
-      append(2600, says("o0d", 0, "Unless you have any questions for me, I'd like to hire your first teammate.")),
-      append(3600, question("o0q", "What's the first thing you'd hand to a person if you hired one today?", ["My inbox: sort it, draft the replies", "My calendar and meeting prep", "Research and writing", "The books: invoices and expenses"], "Pick one, or type your own. Not sure? Say so and I'll recommend.")),
-      typing(3700, false),
+      // His hello, the founder's words (`chiefOfStaffHello`), one message at a time as the engine writes them
+      // (`helloTypingMs`: each line after its typing, 30 October 2026); the first says who he is (`introduction`).
+      append(2200, card("o0a", 0, { type: "text", content: "Hi Bass, my name is Simeon, and I'm your Chief of Staff.", introduction: true })),
+      append(4200, says("o0b", 0, "I'm here to help you get things done by bringing the right agents onto your team.")),
+      append(7400, says("o0c", 0, "You can check in on them anytime, watch them work, or jump in and take over. I'll keep an eye on the bigger picture and bring you in when something needs your attention.")),
+      append(9200, says("o0d", 0, "Unless you have any questions for me, I'd like to hire your first teammate.")),
+      append(10200, question("o0q", "What's the first thing you'd hand to a person if you hired one today?", ["My inbox: sort it, draft the replies", "My calendar and meeting prep", "Research and writing", "The books: invoices and expenses"], "Pick one, or type your own. Not sure? Say so and I'll recommend.")),
+      typing(10300, false),
     ];
   }
   if (stage === 1) {

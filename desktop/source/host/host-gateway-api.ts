@@ -38,7 +38,7 @@ export interface HostGatewayDependencies {
   };
   decorateForeverBoxStatus(status: any): any;
   getHealth(): { readonly isBusy: boolean };
-  kickstartIfPending(agentId: string): Promise<boolean>;
+  kickstartIfPending(agentId: string, opened?: boolean): Promise<boolean>;
   requestDiskSaverAudit(agentId: string): Promise<boolean>;
   releaseAgentBox(agentId: string): Promise<void>;
   handleDesktopMcpAuthCompletion(completion: unknown): Promise<void>;
@@ -141,7 +141,8 @@ export function createHostGatewayApi(
       entryCount: entries.length,
       wasActive
     });
-    void deps.kickstartIfPending(args.id);
+    // An app opened this chat: a hello waiting for it is written now (`AgentLifecycle.writeHello`).
+    void deps.kickstartIfPending(args.id, true);
     return result;
   };
 
