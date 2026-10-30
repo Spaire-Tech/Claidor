@@ -2158,7 +2158,12 @@ the agent, him creating it, and giving him directions." `desktop/source/shared/a
   standing on its own on the card's bottom edge (`AgentFaces.standing`: the 31 faces cut out once by
   `ios/scripts/make-face-cutouts.py` into `Resources/Faces/Standing`; a picture of its own sits round in
   its place), the title, the line in two lines at most, and Go to Chat and View Profile at the bottom.
-  Simeon no longer announces the hire himself. The chat list says "Iris just joined your team".
+  After the card, the hiring agent sends one short line on what happens next, without repeating the
+  card: that the person will hear from the new agent in its own chat, and what it does there first
+  (the founder, 30 October 2026: "do the one line after the card everywhere"; CreateAgent's answer asks
+  for it in every chat, and Simeon's first-run cue too, before his "Anything else you'd hand off
+  today?"). Hiring several at once, one line after the last card. The chat list says "Iris just joined
+  your team".
 - `CreateAgent` takes `title` and `brief`. With a brief the new agent runs no generic greeting: the
   brief is sent as its first message, and the inbound wake (`agent-to-agent-messaging.ts`) puts the
   staffed first-run cue in front of it: introduce yourself to the person as the one now on the job,

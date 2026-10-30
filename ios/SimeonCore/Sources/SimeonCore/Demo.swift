@@ -307,6 +307,10 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
     emit(.agentUpserted(nora))
     append(nora.id, DemoData.says("n1-\(nora.id)", 0, "Hi Bass, I'm Nora, on your inbox from today. First I'll sort this week's mail into what needs you and what doesn't, and draft the replies for you to approve.", now: now))
     append(agentId, DemoData.card("o1j-\(agentId)", 0, ["type": "agent-joined", "agentId": .string(nora.id), "name": .string(nora.name), "line": "Sorts your inbox and drafts your replies.", "content": "Nora just joined your team. Sorts your inbox and drafts your replies."], now: now + 1))
+    // Then one line from Simeon on what happens next, as after every hire (the founder, 30 October 2026).
+    later(1.2) { [weak self] in
+      self?.append(agentId, DemoData.says("o1l-\(agentId)", 0, "You'll hear from Nora in her own chat, where she'll get set up and show you what needs you first.", now: Date().timeIntervalSince1970 * 1000))
+    }
   }
 
   /** A new agent's first words and question, word for word as the review link plays them (`onboardingScript`, stage 0). */

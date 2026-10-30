@@ -170,7 +170,8 @@ export function createCreateAgentTool(management: AgentManagementDependencies) {
         const message = staffingMessage(resolved.getPersonName?.() ?? null, brief, currentUserLanguage());
         await resolved.brief!(created.id, message);
       }
-      // After the brief, as the founder put it (30 October 2026): Simeon messages the agent, then the card appears.
+      // After the brief, as the founder put it (30 October 2026): Simeon messages the agent, then the card appears,
+      // then one line from him on what happens next, in every chat ("do the one line after the card everywhere").
       resolved.announceJoined?.(agentJoinedMessage({
         agentId: created.id,
         name: created.name,
@@ -180,7 +181,7 @@ export function createCreateAgentTool(management: AgentManagementDependencies) {
       }));
       const shown = resolved.announceJoined == null
         ? ""
-        : ` The user now sees a card in this chat saying ${created.name} just joined their team, with what it does and buttons to its chat and its profile: don't announce the hire in a message as well.`;
+        : ` The user now sees a card in this chat saying ${created.name} just joined their team, with what it does and buttons to its chat and its profile. After it, send them one short line on what happens next, without repeating the card: that they'll hear from ${created.name} in its own chat, and what it does there first. Hiring several at once, one line after the last card.`;
       if (isStaffing) {
         const tell = shown.length > 0 ? shown : " Tell the user who you hired and where to find them.";
         return `Created agent "${created.name}" (id: ${created.id}) and delivered your brief as its first message: it introduces itself to the user in its own chat as the one now on the job and starts.${tell} Message it again with SendToAgent only when there is more to say.`;
