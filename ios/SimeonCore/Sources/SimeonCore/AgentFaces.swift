@@ -13,9 +13,11 @@ public struct AgentFace: Identifiable, Hashable, Sendable {
   public let file: String
   /** The first 16 hex characters of the file's SHA-256: the host's `avatarVersion` for an agent wearing it. */
   public let version: String
+  /** The colour of the face's background ("#618283"), which the "just joined your team" card is drawn in (`JoinedCard.Colours`). */
+  public let backdrop: RGB?
 
-  public init(id: String, gender: String, file: String, version: String) {
-    self.id = id; self.gender = gender; self.file = file; self.version = version
+  public init(id: String, gender: String, file: String, version: String, backdrop: RGB? = nil) {
+    self.id = id; self.gender = gender; self.file = file; self.version = version; self.backdrop = backdrop
   }
 }
 
@@ -56,7 +58,7 @@ public enum AgentFaces {
     return rows.compactMap { row in
       guard let id = row["id"] as? String, let gender = row["gender"] as? String,
             let file = row["file"] as? String, let version = row["version"] as? String else { return nil }
-      return AgentFace(id: id, gender: gender, file: file, version: version)
+      return AgentFace(id: id, gender: gender, file: file, version: version, backdrop: (row["backdrop"] as? String).map { RGB(hex: $0) })
     }
   }
 

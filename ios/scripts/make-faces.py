@@ -10,7 +10,13 @@ Each original is named `<number>-<woman|man>.<jpg|png|webp>`, or
 quality 82. `faces.json` lists each face's id, gender, file and version: the
 first 16 hex characters of the file's SHA-256, which is the `avatarVersion`
 the host reports for an agent wearing it (desktop/source/host/agents/agent-avatar.ts),
-so the apps know a face by it.
+so the apps know a face by it. And `backdrop`, the colour of the face's
+background (the mean of its two top corners, 36 px square each): the "just
+joined your team" card is drawn in it (JoinedCard.swift, 30 October 2026).
+
+    python3 ios/scripts/make-faces.py
+
+with no folder only fills in a missing `backdrop` for the faces already made.
 
 A face already made is never made again: another WebP encoder writes other
 bytes, the version would change, and agents already wearing the face would
@@ -39,7 +45,16 @@ def version(path: str) -> str:
         return hashlib.sha256(f.read()).hexdigest()[:16]
 
 
-def main(src: str) -> None:
+def backdrop(path: str) -> str:
+    """The face's background colour: the mean of its two top corners, where only the background is."""
+    image = Image.open(path).convert("RGB")
+    corner = range(4, 40, 4)
+    pixels = [image.getpixel((x, y)) for x in corner for y in corner]
+    pixels += [image.getpixel((image.width - 1 - x, y)) for x in corner for y in corner]
+    return "#%02x%02x%02x" % tuple(sum(pixel[i] for pixel in pixels) // len(pixels) for i in range(3))
+
+
+def main(src: str | None) -> None:
     os.makedirs(OUT, exist_ok=True)
     manifest_path = os.path.join(OUT, "faces.json")
     faces = []
@@ -47,7 +62,7 @@ def main(src: str) -> None:
         with open(manifest_path) as f:
             faces = json.load(f)["faces"]
     known = {face["id"] for face in faces}
-    for name in sorted(os.listdir(src)):
+    for name in sorted(os.listdir(src)) if src else []:
         match = NAMED.match(name)
         if not match:
             print(f"skipped {name}: not <number>-<woman|man|simeon>.<ext>")
@@ -68,8 +83,11 @@ def main(src: str) -> None:
             "gender": "female" if kind == "woman" else "male",
             "file": file,
             "version": version(path),
+            "backdrop": backdrop(path),
         })
         known.add(face_id)
+    for face in faces:
+        face.setdefault("backdrop", backdrop(os.path.join(OUT, face["file"])))
     # Simeon's face last; the others in their numbers' order (the editor's order).
     faces.sort(key=lambda face: (face["id"] == "clay-simeon", face["id"]))
     with open(manifest_path, "w") as f:
@@ -81,6 +99,6 @@ def main(src: str) -> None:
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
+    if len(sys.argv) > 2:
         sys.exit(__doc__)
-    main(sys.argv[1])
+    main(sys.argv[1] if len(sys.argv) == 2 else None)

@@ -2703,24 +2703,27 @@ struct JoinedCardView: View {
   @Environment(PaneState.self) private var pane
   @Environment(SidebarLayout.self) private var layout
 
-  /** 16 + the title (20) + 4 + two lines (38) + 14 at least + the buttons (32) + 16 is 140: room to spare. */
-  static let height: CGFloat = 152
-  static let faceColumn: CGFloat = 132
+  /** 18 + the title (22) + 4 + two lines (38) + 14 at least + the buttons (32) + 18 is 146: room to spare. */
+  static let height: CGFloat = 168
+  static let faceColumn: CGFloat = 140
+  static let radius: CGFloat = 20
 
   var body: some View {
     let agent = card.agent(in: store.agents)
+    // The face's own background colour (design B, 30 October 2026); the chat's grey for a picture of its own or an agent gone.
+    let colours = card.colours(in: store.agents)
     HStack(alignment: .top, spacing: 0) {
       if let agent { face(agent) }
       VStack(alignment: .leading, spacing: 0) {
         Text(verbatim: card.title(in: store.agents))
-          .font(.system(size: 15, weight: .semibold))
-          .foregroundStyle(look.ink)
+          .font(.system(size: 17, weight: .semibold))
+          .foregroundStyle(colours.map { Color($0.ink) } ?? look.ink)
           .lineLimit(1)
-          .minimumScaleFactor(0.85)
+          .minimumScaleFactor(0.8)
         if !card.line.isEmpty {
           Text(verbatim: card.line)
             .font(.system(size: 14))
-            .foregroundStyle(look.inkSecondary)
+            .foregroundStyle(colours.map { Color($0.secondaryInk) } ?? look.inkSecondary)
             .lineLimit(2)
             .truncationMode(.tail)
             .padding(.top, 4)
@@ -2728,30 +2731,45 @@ struct JoinedCardView: View {
         if agent != nil {
           Spacer(minLength: 14)
           HStack(spacing: 8) {
-            JoinedButton(title: JoinedCard.goToChat, prominent: true, look: look) {
+            JoinedButton(title: JoinedCard.goToChat, prominent: true, look: look, colours: colours) {
               window.choose(card.agentId, store: store)
             }
-            JoinedButton(title: JoinedCard.viewProfile, prominent: false, look: look) {
+            JoinedButton(title: JoinedCard.viewProfile, prominent: false, look: look, colours: colours) {
               pane.open(.profile, for: card.agentId, window: window, store: store, layout: layout)
             }
           }
         }
       }
-      .padding(.vertical, 16)
-      .padding(.leading, agent == nil ? 16 : 4)
-      .padding(.trailing, 16)
+      .padding(.vertical, 18)
+      .padding(.leading, agent == nil ? 18 : 4)
+      .padding(.trailing, 18)
       .frame(maxWidth: .infinity, alignment: .topLeading)
     }
     .frame(height: agent == nil ? nil : Self.height)
     .frame(maxWidth: .infinity, alignment: .leading)
-    .background(look.theirs, in: RoundedRectangle(cornerRadius: 16))
-    .clipShape(RoundedRectangle(cornerRadius: 16))
-    .overlay { RoundedRectangle(cornerRadius: 16).inset(by: -0.25).stroke(look.theirsHairline, lineWidth: 0.5) }
+    .background { ground(colours) }
+    .clipShape(RoundedRectangle(cornerRadius: Self.radius))
+    .overlay { RoundedRectangle(cornerRadius: Self.radius).inset(by: -0.25).stroke(colours == nil ? look.theirsHairline : .clear, lineWidth: 0.5) }
     .shadow(color: look.theirsShadow, radius: 1, x: 0, y: 1)
     .accessibilityElement(children: .contain)
   }
 
-  /** The face standing on the card's bottom edge, 12 points under its top; a picture of its own, round, in the middle of the same place. */
+  /** The colour, lighter at the top leading corner and darker at the bottom trailing one, a soft light behind the face; else the chat's grey. */
+  @ViewBuilder
+  private func ground(_ colours: JoinedCard.Colours?) -> some View {
+    if let colours {
+      ZStack(alignment: .leading) {
+        LinearGradient(colors: [Color(colours.top), Color(colours.bottom)], startPoint: .topLeading, endPoint: .bottomTrailing)
+        RadialGradient(colors: [Color(JoinedCard.Colours.glow), .clear], center: UnitPoint(x: 0.5, y: 0.7), startRadius: 0, endRadius: 110)
+          .frame(width: 220, height: Self.height)
+          .offset(x: Self.faceColumn / 2 - 110)
+      }
+    } else {
+      look.theirs
+    }
+  }
+
+  /** The face standing on the card's bottom edge, 10 points under its top; a picture of its own, round, in the middle of the same place. */
   @ViewBuilder
   private func face(_ agent: Agent) -> some View {
     if let face = AgentFaces.standing(agent), let image = AvatarPictures.standing(face) {
@@ -2759,7 +2777,7 @@ struct JoinedCardView: View {
         .resizable()
         .interpolation(.high)
         .scaledToFit()
-        .frame(width: Self.faceColumn, height: Self.height - 12, alignment: .bottom)
+        .frame(width: Self.faceColumn, height: Self.height - 10, alignment: .bottom)
         .frame(width: Self.faceColumn, height: Self.height, alignment: .bottom)
         .accessibilityHidden(true)
     } else {
@@ -2769,29 +2787,49 @@ struct JoinedCardView: View {
   }
 }
 
-/** The joined card's buttons: round ends, as wide as each other; Go to Chat in the window's blue. */
+/**
+ * The joined card's buttons: round ends, as wide as each other. On the face's
+ * colour, Go to Chat white with its words in the colour's deep shade, View
+ * Profile a pane of the words' colour; on the chat's grey, Go to Chat in the
+ * window's blue.
+ */
 private struct JoinedButton: View {
   let title: String
   let prominent: Bool
   let look: Look
+  let colours: JoinedCard.Colours?
   let action: () -> Void
 
   var body: some View {
     Button(action: action) {
       Text(verbatim: title)
         .font(.system(size: 14, weight: .medium))
-        .foregroundStyle(prominent ? (look.dark ? Color(hex: 0x0b1828) : look.yoursText) : look.ink)
+        .foregroundStyle(ink)
         .lineLimit(1)
         .minimumScaleFactor(0.85)
         .padding(.horizontal, 12)
         .frame(maxWidth: .infinity)
         .frame(height: 32)
-        .background(prominent ? look.blue : look.wash, in: Capsule())
-        .overlay {
-          if !prominent { Capsule().strokeBorder(look.ink.opacity(0.15), lineWidth: 1) }
-        }
+        .background(fill, in: Capsule())
+        .overlay { Capsule().strokeBorder(edge, lineWidth: colours == nil ? 1 : 0.5) }
         .contentShape(Capsule())
     }
     .buttonStyle(.hand)
+  }
+
+  private var ink: Color {
+    if let colours { return prominent ? Color(colours.deep) : Color(colours.ink) }
+    return prominent ? (look.dark ? Color(hex: 0x0b1828) : look.yoursText) : look.ink
+  }
+
+  private var fill: Color {
+    if let colours { return prominent ? .white : Color(colours.pane) }
+    return prominent ? look.blue : look.wash
+  }
+
+  private var edge: Color {
+    if prominent { return .clear }
+    if let colours { return Color(colours.paneEdge) }
+    return look.ink.opacity(0.15)
   }
 }

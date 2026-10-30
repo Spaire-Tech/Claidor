@@ -2158,6 +2158,12 @@ the agent, him creating it, and giving him directions." `desktop/source/shared/a
   standing on its own on the card's bottom edge (`AgentFaces.standing`: the 31 faces cut out once by
   `ios/scripts/make-face-cutouts.py` into `Resources/Faces/Standing`; a picture of its own sits round in
   its place), the title, the line in two lines at most, and Go to Chat and View Profile at the bottom.
+  The card is in the colour of the face's own background (the founder, 30 October 2026, choosing
+  design B of ten): `backdrop` in `Resources/Faces/faces.json` (`ios/scripts/make-faces.py`, the mean of
+  each picture's top corners), a gradient from 16% lighter to 24% darker, a soft light behind the
+  face, Go to Chat white and View Profile a pane over the colour (`JoinedCard.Colours`). The words are
+  white where white reads at 3 to 1 or better (the colour's luminance under 0.30), else near black. A
+  picture of its own, or an agent gone, keeps the chat's grey.
   After the card, the hiring agent sends one short line on what happens next, without repeating the
   card: that the person will hear from the new agent in its own chat, and what it does there first
   (the founder, 30 October 2026: "do the one line after the card everywhere"; CreateAgent's answer asks

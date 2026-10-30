@@ -24,6 +24,17 @@ public struct RGB: Hashable, Sendable {
     return "#" + channel(r) + channel(g) + channel(b)
   }
 
+  /** A straight sRGB blend, as a design tool mixes: `t` of the way toward `other` (the joined card's shades, `JoinedCard.Colours`). */
+  public func blended(toward other: RGB, _ t: Double) -> RGB {
+    RGB(r + (other.r - r) * t, g + (other.g - g) * t, b + (other.b - b) * t, a)
+  }
+
+  /** WCAG's relative luminance: 0 for black, 1 for white. */
+  public var luminance: Double {
+    let lin = { (c: Double) in c <= 0.03928 ? c / 12.92 : pow((c + 0.055) / 1.055, 2.4) }
+    return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b)
+  }
+
   /** CSS `color-mix(in oklab, self p, other)`: `amount` is this colour's share. */
   public func mixed(with other: RGB, amount: Double = 0.5) -> RGB {
     let a = Oklab(self), b = Oklab(other)
