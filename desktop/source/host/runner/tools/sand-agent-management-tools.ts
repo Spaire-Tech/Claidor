@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { AGENT_COLOR_LABELS, agentColorIdFromName } from "../../../shared/agents/agent-colors.js";
+import { agentJoinedMessage, type AgentJoinedMessage } from "../../../shared/agents/agent-joined.js";
 import { staffingMessage } from "../../../shared/agents/chief-of-staff.js";
 import { currentUserLanguage } from "../../../shared/user-language.js";
 import {
@@ -39,6 +40,8 @@ export interface AgentManagementDependencies {
   brief?(agentId: string, message: string): Promise<string>;
   /** The person's name, for "<first name> staffed you to …". */
   getPersonName?(): string | null;
+  /** The card in this chat that says the new agent joined the team (`agent-joined`), counted as a message the person saw. */
+  announceJoined?(message: AgentJoinedMessage): void;
   update(
     agentId: string,
     patch: { readonly name?: string; readonly description?: string; readonly avatarColor?: string },
@@ -84,6 +87,9 @@ export const createAgentParameters = z.object({
   ),
   title: z.string().trim().optional().describe(
     "The job, in a word or two, shown under the name: Inbox, Calendar, Research, Bookkeeping (in the user's language when it is not English). Give one when you are staffing.",
+  ),
+  summary: z.string().trim().optional().describe(
+    "What the user reads under \"<name> just joined your team\" on the card that shows them the new agent: what it does for them, one short sentence of 50 characters at most, starting with a verb, without its name (in the user's language when it is not English). For example: \"Sorts your inbox and drafts your replies.\"",
   ),
   brief: z.string().trim().optional().describe(
     "The staffing brief: what the agent is to do first and how to report, written to the agent and delivered as its first message, which starts it. Begin it with \"<the user's first name> staffed you to …\" (in the user's language when it is not English: the whole brief is in it, opening with their first name). With a brief the agent does not run the generic introduction; it introduces itself to the user as the one now on the job and starts.",
@@ -163,9 +169,23 @@ export function createCreateAgentTool(management: AgentManagementDependencies) {
       if (isStaffing) {
         const message = staffingMessage(resolved.getPersonName?.() ?? null, brief, currentUserLanguage());
         await resolved.brief!(created.id, message);
-        return `Created agent "${created.name}" (id: ${created.id}) and delivered your brief as its first message: it introduces itself to the user in its own chat as the one now on the job and starts. Tell the user who you hired and where to find them; message it again with SendToAgent only when there is more to say.`;
       }
-      return `Created agent "${created.name}" (id: ${created.id}). It introduces itself to the user in its own chat now, so there is no need to ask it to. Message it with SendToAgent using that id to brief it.`;
+      // After the brief, as the founder put it (30 October 2026): Simeon messages the agent, then the card appears.
+      resolved.announceJoined?.(agentJoinedMessage({
+        agentId: created.id,
+        name: created.name,
+        summary: args.summary,
+        description: args.description,
+        language: currentUserLanguage(),
+      }));
+      const shown = resolved.announceJoined == null
+        ? ""
+        : ` The user now sees a card in this chat saying ${created.name} just joined their team, with what it does and buttons to its chat and its profile: don't announce the hire in a message as well.`;
+      if (isStaffing) {
+        const tell = shown.length > 0 ? shown : " Tell the user who you hired and where to find them.";
+        return `Created agent "${created.name}" (id: ${created.id}) and delivered your brief as its first message: it introduces itself to the user in its own chat as the one now on the job and starts.${tell} Message it again with SendToAgent only when there is more to say.`;
+      }
+      return `Created agent "${created.name}" (id: ${created.id}). It introduces itself to the user in its own chat now, so there is no need to ask it to.${shown} Message it with SendToAgent using that id to brief it.`;
     },
   });
 }

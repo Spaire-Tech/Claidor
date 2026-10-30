@@ -97,3 +97,25 @@ test("a turn that ends on a shown card is not one that forgot to tell the person
     await dispose();
   }
 });
+
+// 30 October 2026: "Iris just joined your team" is in front of the person once CreateAgent says so. A turn ending on it
+// told them (no closing nudge), but it does not end the step: Simeon may go on ("Anything else you'd hand off today?").
+test("a hire whose joined card is shown is not silent, and does not end the step", async () => {
+  const { module, dispose } = await loadModule();
+  try {
+    const { turnEndedOnSilentToolCalls, stepEndsTurn, cardCallShown, cardCallWaits } = module;
+    const user = { role: "user", content: "My inbox" };
+    const opening = call("SendMessage", "s", { content: "On it" });
+    const hire = call("CreateAgent", "c", { name: "Iris", summary: "Sorts your inbox." });
+    const shown = said("c", "Created agent \"Iris\" (id: a2) and delivered your brief as its first message: it introduces itself to the user in its own chat as the one now on the job and starts. The user now sees a card in this chat saying Iris just joined their team, with what it does and buttons to its chat and its profile: don't announce the hire in a message as well. Message it again with SendToAgent only when there is more to say.");
+    assert.equal(turnEndedOnSilentToolCalls([user, opening, result("s"), hire, shown], finalSend), false);
+    // An app with no card (an older engine's answer) leaves the hire to be told.
+    assert.equal(turnEndedOnSilentToolCalls([user, opening, result("s"), hire, said("c", "Created agent \"Iris\" (id: a2). Tell the user who you hired and where to find them.")], finalSend), true);
+    assert.equal(stepEndsTurn([hire, shown], finalSend), false, "the agent keeps the floor");
+    assert.ok(cardCallShown("CreateAgent", "The user now sees a card in this chat saying Iris just joined their team, with …"));
+    assert.ok(!cardCallWaits("CreateAgent", "The user now sees a card in this chat saying Iris just joined their team, with …"));
+    assert.ok(cardCallShown("DraftExternalMessage", "Draft shown to the user as an editable email card"), "a waiting card is shown too");
+  } finally {
+    await dispose();
+  }
+});

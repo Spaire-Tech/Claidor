@@ -2684,3 +2684,114 @@ private struct MacProductTile: View {
     .contentShape(Rectangle())
   }
 }
+
+/**
+ * "Iris just joined your team" (the founder, 30 October 2026, after his
+ * reference): the agent another one hired, its face standing on its own on
+ * the card's bottom edge at the left (`AgentFaces.standing`; a picture of
+ * its own sits round in that place), the title, what it does in two lines
+ * at most, and Go to Chat and View Profile side by side at the bottom. One
+ * height for every card, enough for the title, two lines and the buttons,
+ * so the buttons sit on the bottom whatever the words. The agent gone
+ * (deleted since), the words stay and the face and buttons go.
+ */
+struct JoinedCardView: View {
+  let card: JoinedCard
+  let look: Look
+  @Environment(AppStore.self) private var store
+  @Environment(WindowState.self) private var window
+  @Environment(PaneState.self) private var pane
+  @Environment(SidebarLayout.self) private var layout
+
+  /** 16 + the title (20) + 4 + two lines (38) + 14 at least + the buttons (32) + 16 is 140: room to spare. */
+  static let height: CGFloat = 152
+  static let faceColumn: CGFloat = 132
+
+  var body: some View {
+    let agent = card.agent(in: store.agents)
+    HStack(alignment: .top, spacing: 0) {
+      if let agent { face(agent) }
+      VStack(alignment: .leading, spacing: 0) {
+        Text(verbatim: card.title(in: store.agents))
+          .font(.system(size: 15, weight: .semibold))
+          .foregroundStyle(look.ink)
+          .lineLimit(1)
+          .minimumScaleFactor(0.85)
+        if !card.line.isEmpty {
+          Text(verbatim: card.line)
+            .font(.system(size: 14))
+            .foregroundStyle(look.inkSecondary)
+            .lineLimit(2)
+            .truncationMode(.tail)
+            .padding(.top, 4)
+        }
+        if agent != nil {
+          Spacer(minLength: 14)
+          HStack(spacing: 8) {
+            JoinedButton(title: JoinedCard.goToChat, prominent: true, look: look) {
+              window.choose(card.agentId, store: store)
+            }
+            JoinedButton(title: JoinedCard.viewProfile, prominent: false, look: look) {
+              pane.open(.profile, for: card.agentId, window: window, store: store, layout: layout)
+            }
+          }
+        }
+      }
+      .padding(.vertical, 16)
+      .padding(.leading, agent == nil ? 16 : 4)
+      .padding(.trailing, 16)
+      .frame(maxWidth: .infinity, alignment: .topLeading)
+    }
+    .frame(height: agent == nil ? nil : Self.height)
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .background(look.theirs, in: RoundedRectangle(cornerRadius: 16))
+    .clipShape(RoundedRectangle(cornerRadius: 16))
+    .overlay { RoundedRectangle(cornerRadius: 16).inset(by: -0.25).stroke(look.theirsHairline, lineWidth: 0.5) }
+    .shadow(color: look.theirsShadow, radius: 1, x: 0, y: 1)
+    .accessibilityElement(children: .contain)
+  }
+
+  /** The face standing on the card's bottom edge, 12 points under its top; a picture of its own, round, in the middle of the same place. */
+  @ViewBuilder
+  private func face(_ agent: Agent) -> some View {
+    if let face = AgentFaces.standing(agent), let image = AvatarPictures.standing(face) {
+      Image(nsImage: image)
+        .resizable()
+        .interpolation(.high)
+        .scaledToFit()
+        .frame(width: Self.faceColumn, height: Self.height - 12, alignment: .bottom)
+        .frame(width: Self.faceColumn, height: Self.height, alignment: .bottom)
+        .accessibilityHidden(true)
+    } else {
+      AgentPicture(image: AvatarPictures.image(for: agent), size: 72)
+        .frame(width: Self.faceColumn, height: Self.height)
+    }
+  }
+}
+
+/** The joined card's buttons: round ends, as wide as each other; Go to Chat in the window's blue. */
+private struct JoinedButton: View {
+  let title: String
+  let prominent: Bool
+  let look: Look
+  let action: () -> Void
+
+  var body: some View {
+    Button(action: action) {
+      Text(verbatim: title)
+        .font(.system(size: 14, weight: .medium))
+        .foregroundStyle(prominent ? (look.dark ? Color(hex: 0x0b1828) : look.yoursText) : look.ink)
+        .lineLimit(1)
+        .minimumScaleFactor(0.85)
+        .padding(.horizontal, 12)
+        .frame(maxWidth: .infinity)
+        .frame(height: 32)
+        .background(prominent ? look.blue : look.wash, in: Capsule())
+        .overlay {
+          if !prominent { Capsule().strokeBorder(look.ink.opacity(0.15), lineWidth: 1) }
+        }
+        .contentShape(Capsule())
+    }
+    .buttonStyle(.hand)
+  }
+}

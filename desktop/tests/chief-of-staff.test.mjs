@@ -186,10 +186,23 @@ test("CreateAgent with a brief delivers it first and skips the generic greeting;
     ["brief", "agent-nora", "Bass staffed you to run his inbox: sort what needs him, draft the replies."],
   ]);
   assert.match(staffed, /delivered your brief as its first message/);
+  assert.match(staffed, /Tell the user who you hired and where to find them\./, "with no card to show, the agent says it");
   calls.length = 0;
   const plain = await run(tool, { name: "Max", description: "" });
   assert.deepEqual(calls, [["create", { name: "Max", description: "" }, { startIntroduction: true }]]);
   assert.match(plain, /It introduces itself to the user in its own chat now/);
+
+  // "Iris just joined your team" (30 October 2026): after the brief, the card in this chat, and the hire not announced again.
+  calls.length = 0;
+  const shown = await run(tools.createCreateAgentTool({ ...dependencies, announceJoined: (message) => calls.push(["card", message]) }), { name: "Nora", description: "Runs the inbox: sorts what needs him, drafts the replies, and keeps his calendar in step with what he answers.", title: "Inbox", summary: "Sorts your inbox and drafts your replies.", brief: "Run his inbox." });
+  assert.deepEqual(calls.map(([kind]) => kind), ["create", "brief", "card"], "the brief first, then the card");
+  assert.deepEqual(calls[2][1], { type: "agent-joined", agentId: "agent-nora", name: "Nora", line: "Sorts your inbox and drafts your replies.", content: "Nora just joined your team. Sorts your inbox and drafts your replies." });
+  assert.match(shown, /The user now sees a card in this chat saying Nora just joined their team, with what it does and buttons to its chat and its profile: don't announce the hire in a message as well\./);
+  assert.doesNotMatch(shown, /Tell the user who you hired/);
+  calls.length = 0;
+  await run(tools.createCreateAgentTool({ ...dependencies, announceJoined: (message) => calls.push(["card", message]) }), { name: "Max", description: "Keeps the books." });
+  assert.deepEqual(calls.map(([kind]) => kind), ["create", "card"], "no brief: the card all the same");
+  assert.equal(calls[1][1].line, "Keeps the books.", "no summary: the description, short");
 });
 
 test("a brief that is an agent's first message carries the staffed cue, and the prompt carries his section for him only", async () => {
@@ -211,4 +224,35 @@ test("the title given at New Agent is the agent's role in its own prompt, and th
   assert.match(assembly, /const role = profile\.title\?\.trim\(\) \?\? "";\n\s*if \(role\.length > 0 && !sharedRoom\) lines\.push\(`Role: \$\{role\}\. This is the job the user made you for; work as that role\.`\);/);
   const { SAND_ONBOARDING_KICKSTART_PROMPT } = await loadModule("source/shared/agents/onboarding.ts", "onboarding");
   assert.match(SAND_ONBOARDING_KICKSTART_PROMPT, /say who you are \(and your role, when your profile gives you one\); if you have neither a description nor a role yet, say you're a blank slate/);
+});
+
+test("the joined card's line is never long, and says the same in words for an app without the card", async () => {
+  const joined = await loadModule("source/shared/agents/agent-joined.ts", "agent-joined");
+  const { joinedLine, agentJoinedMessage, JOINED_LINE_MAX } = joined;
+  assert.equal(JOINED_LINE_MAX, 64);
+  assert.equal(joinedLine("  Sorts your   inbox and drafts your replies. ", null), "Sorts your inbox and drafts your replies.");
+  assert.equal(joinedLine("\u201cSorts your inbox.\u201d", null), "Sorts your inbox.", "quotes taken off");
+  assert.equal(joinedLine("", "Keeps the books."), "Keeps the books.", "no summary: the description");
+  assert.equal(joinedLine(null, null), "");
+  // Too long: its first sentence when that is short enough, else cut at a word, never past the longest.
+  assert.equal(joinedLine("Sorts your inbox. Then drafts every reply for you to read, edit and send when you are ready.", null), "Sorts your inbox.");
+  const long = joinedLine("Sorts your inbox every morning, drafts the replies, chases the people who owe you an answer and files the rest", null);
+  assert.ok(long.length <= JOINED_LINE_MAX, long);
+  assert.ok(long.endsWith("…"));
+  assert.equal(long, "Sorts your inbox every morning, drafts the replies, chases the…");
+  for (const text of ["x".repeat(200), "word ".repeat(40), "Ein sehr langer deutscher Satz über das Postfach und die Antworten, die Iris schreibt."]) {
+    assert.ok(joinedLine(text, null).length <= JOINED_LINE_MAX, text);
+  }
+  assert.deepEqual(agentJoinedMessage({ agentId: "a2", name: "Iris", summary: "Trie ta boîte mail.", language: "fr" }), {
+    type: "agent-joined", agentId: "a2", name: "Iris", line: "Trie ta boîte mail.", content: "Iris vient de rejoindre ton équipe. Trie ta boîte mail.",
+  });
+  assert.equal(agentJoinedMessage({ agentId: "a2", name: "Iris" }).content, "Iris just joined your team", "no line: the title alone");
+  // The chat list says it too, and the composition sends it through the runner, so it counts as a message the person saw.
+  const projection = await loadModule("source/host/extensions/session/session-projection.ts", "joined-preview");
+  assert.equal(projection.lastMessagePreviewText({ type: "agent-joined", agentId: "a2", name: "Iris", line: "Sorts your inbox.", content: "" }), "Iris just joined your team");
+  const composition = await readFile(path.join(repoRoot, "source/host/host-runner-composition.ts"), "utf8");
+  assert.match(composition, /announceJoined: \(message: AgentJoinedMessage\) => \{[\s\S]*?const runner = builtRunner as \{ emitUpdate\?: [\s\S]*?runner\.emitUpdate\(update\);\n\s*else hooks\.transport\.onUpdate\(update\);/);
+  assert.match(words.SAND_CHIEF_OF_STAFF_KICKSTART_PROMPT, /a summary, what it does for them in one short sentence of 50 characters at most/);
+  assert.match(words.SAND_CHIEF_OF_STAFF_KICKSTART_PROMPT, /don't announce the hire in a message as well/);
+  assert.doesNotMatch(words.SAND_CHIEF_OF_STAFF_KICKSTART_PROMPT, /Then tell the person, in one or two sentences, who you hired/);
 });

@@ -665,6 +665,10 @@ private struct TranscriptRow: View {
       FlightPassengersCardView(entryId: id, agentId: agentId, card: card, look: look)
         .frame(maxWidth: limit(520), alignment: .leading)
         .padding(.top, startsGroup ? 12 : 0)
+    case .joined(_, let card):
+      JoinedCardView(card: card, look: look)
+        .frame(maxWidth: limit(460), alignment: .leading)
+        .padding(.top, startsGroup ? 12 : 0)
     case .request(_, .computer(let requestId, let instruction, let resolution)):
       ComputerHandoffCard(agentId: agentId, requestId: requestId, instruction: instruction, resolution: resolution, look: look)
         .frame(maxWidth: limit(520), alignment: .leading)

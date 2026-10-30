@@ -247,12 +247,14 @@ public enum ChatRow: Identifiable, Hashable, Sendable {
   case products(id: String, card: ProductsCard)
   /** The traveller form for a flight being booked (`flight-passengers`). */
   case flightPassengers(id: String, card: FlightPassengersCard)
+  /** "Iris just joined your team" (`agent-joined`): an agent this one hired, Go to Chat and View Profile (JoinedCard.swift). */
+  case joined(id: String, card: JoinedCard)
 
   public var id: String {
     switch self {
     case .stamp(let id, _), .unread(let id), .flights(let id, _), .file(let id, _, _, _), .question(let id, _), .draft(let id, _),
          .connectors(let id, _, _, _), .listenerConnect(let id, _, _), .request(let id, _), .teammates(let id, _, _), .voiceCall(let id, _, _, _), .routines(let id, _, _),
-         .notice(let id, _), .failedSend(let id, _), .queuedSend(let id, _), .thread(let id, _, _, _), .cloudAgent(let id, _), .purchase(let id, _), .products(let id, _), .flightPassengers(let id, _): return id
+         .notice(let id, _), .failedSend(let id, _), .queuedSend(let id, _), .thread(let id, _, _, _), .cloudAgent(let id, _), .purchase(let id, _), .products(let id, _), .flightPassengers(let id, _), .joined(let id, _): return id
     case .bubble(let bubble): return bubble.id
     }
   }
@@ -281,6 +283,7 @@ public enum ChatRow: Identifiable, Hashable, Sendable {
     case .purchase: return "purchase"
     case .products: return "products"
     case .flightPassengers: return "flight-passengers"
+    case .joined: return "joined"
     }
   }
 
@@ -301,7 +304,7 @@ public enum ChatRow: Identifiable, Hashable, Sendable {
     case .file(_, _, _, let fromPerson): return fromPerson ? .person : .agent(nil)
     case .failedSend, .queuedSend: return .person
     case .thread(_, _, _, let side): return side
-    case .flights, .question, .draft, .connectors, .listenerConnect, .request, .notice, .cloudAgent, .purchase, .products, .flightPassengers: return .agent(nil)
+    case .flights, .question, .draft, .connectors, .listenerConnect, .request, .notice, .cloudAgent, .purchase, .products, .flightPassengers, .joined: return .agent(nil)
     default: return .middle
     }
   }
@@ -711,6 +714,7 @@ public enum Chat {
     case "purchase": return message["content"]?.string ?? L10n.text("Checkout")
     case "products": return message["content"]?.string ?? L10n.text("Products")
     case "flight-passengers": return message["content"]?.string ?? L10n.text("Traveller details")
+    case "agent-joined": return message["name"]?.text.map { JoinedCard.title(name: $0) } ?? L10n.text("Message")
     default: return L10n.text("Message")
     }
   }
@@ -1160,6 +1164,9 @@ public enum Chat {
         return .notice(id: entry.id, text: message["content"]?.text ?? notShown)
       case "flight-passengers":
         if let card = FlightPassengersCard(message: message, entry: entry) { return .flightPassengers(id: entry.id, card: card) }
+        return .notice(id: entry.id, text: message["content"]?.text ?? notShown)
+      case "agent-joined":
+        if let card = JoinedCard(message: message) { return .joined(id: entry.id, card: card) }
         return .notice(id: entry.id, text: message["content"]?.text ?? notShown)
       case "local-tool-permission":
         // Waiting, it is the Mac's dock above the composer, not a line; expired, it is gone; answered, one line says how (`_Ln`).

@@ -45,6 +45,16 @@ enum AvatarPictures {
   static func image(forId id: String) -> NSImage? {
     image(AgentFaces.stand(forId: id).map(AgentPictureSource.face))
   }
+
+  private static var standingCache: [String: NSImage?] = [:]
+
+  /** A face standing on its own, its background taken away (`AgentFaces.standingData`): the "just joined your team" card. */
+  static func standing(_ face: AgentFace) -> NSImage? {
+    if let known = standingCache[face.id] { return known }
+    let image = AgentFaces.standingData(face).flatMap(NSImage.init(data:))
+    standingCache[face.id] = .some(image)
+    return image
+  }
 }
 
 /**
