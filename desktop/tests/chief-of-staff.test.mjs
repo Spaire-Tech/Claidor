@@ -246,6 +246,31 @@ test("Simeon's hello is the founder's, in the person's language", async () => {
   }
 });
 
+test("Simeon's first hire on a new account wears her face, under a woman's name", async () => {
+  // The founder (30 October 2026): "i wanna influence the first avatar simeon always create. doesnt matter for what, it's her".
+  assert.equal(words.FIRST_HIRE_FACE, "clay-06");
+  const faces = JSON.parse(await readFile(path.join(repoRoot, "../ios/SimeonCore/Sources/SimeonCore/Resources/Faces/faces.json"), "utf8")).faces;
+  assert.equal(faces.find((face) => face.id === words.FIRST_HIRE_FACE)?.gender, "female", "a woman's face, in the apps' catalogue");
+  assert.equal(words.firstHireFace({ hiredByChiefOfStaff: true, teammates: 0, name: "Maya" }), "clay-06");
+  assert.equal(words.firstHireFace({ hiredByChiefOfStaff: true, teammates: 0, name: "Xyla" }), "clay-06", "a name of neither list: hers");
+  assert.equal(words.firstHireFace({ hiredByChiefOfStaff: true, teammates: 0, name: "Leo" }), null, "named as a man: the usual face, so name, face and voice agree");
+  assert.equal(words.firstHireFace({ hiredByChiefOfStaff: true, teammates: 1, name: "Maya" }), null, "an account with a teammate already");
+  assert.equal(words.firstHireFace({ hiredByChiefOfStaff: false, teammates: 0, name: "Maya" }), null, "another agent hiring");
+  // Who counts: not the one hiring, a group, someone else's room, or the disk saver.
+  const roster = [{ id: "simeon", title: "Chief of Staff" }, { id: "g1", isGroup: true }, { id: "room", remoteRoom: { roomId: "r" } }, { id: "saver", purpose: "disk-saver" }];
+  assert.equal(words.teammateCount(roster, "simeon"), 0);
+  assert.equal(words.teammateCount([...roster, { id: "iris", title: "Inbox" }], "simeon"), 1);
+  // He is asked for a woman's name for her, at his first run and on CreateAgent's name.
+  assert.match(words.SAND_CHIEF_OF_STAFF_KICKSTART_PROMPT, /a human first name, a woman's for this first hire \(her face is already chosen for her\)/);
+  const tools = await readFile(path.join(repoRoot, "source/host/runner/tools/sand-agent-management-tools.ts"), "utf8");
+  assert.match(tools, /The Chief of Staff's first hire on an account with no other teammate yet is a woman: give her a woman's first name\./);
+  // The engine gives the face as it makes her, counting the teammates made before, one hire at a time.
+  const composition = await readFile(path.join(repoRoot, "source/host/host-runner-composition.ts"), "utf8");
+  assert.match(composition, /firstHireFace\(\{\s*hiredByChiefOfStaff: isChiefOfStaffTitle\(agents\.find\(\(agent\) => agent\.id === session\.id\)\?\.title\),\s*teammates: teammateCount\(agents, session\.id\),\s*name: input\.name\s*\}\)/);
+  assert.match(composition, /\.\.\.\(face == null \? \{\} : \{ avatarShape: face \}\)/);
+  assert.match(composition, /const made = hiring\.then\(async \(\) => \{[\s\S]*?"createBackgroundAgent"[\s\S]*?\}\);\s*hiring = made\.catch\(\(\) => \{\}\);/);
+});
+
 test("CreateAgent with a brief delivers it first and skips the generic greeting; without one, as before", async () => {
   const tools = await loadModule("source/host/runner/tools/sand-agent-management-tools.ts", "agent-management-cos");
   const calls = [];

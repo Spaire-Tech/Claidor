@@ -2170,6 +2170,14 @@ the agent, him creating it, and giving him directions." `desktop/source/shared/a
   for it in every chat, and Simeon's first-run cue too, before his "Anything else you'd hand off
   today?"). Hiring several at once, one line after the last card. The chat list says "Iris just joined
   your team".
+- **His first hire on a new account is always her** (the founder, 30 October 2026: "doesnt matter
+  for what, it's her"): when the Chief of Staff hires and the account has no teammate yet (not
+  counting groups, someone else's rooms, or the disk saver), the engine makes the agent with the face
+  `clay-06` already given (`avatarShape`, `FIRST_HIRE_FACE` and `firstHireFace` in
+  `shared/agents/chief-of-staff.ts`, `host-runner-composition.ts`), and the apps give her that picture.
+  He is asked for a woman's first name for her (his first-run cue, CreateAgent's `name`); named as a
+  man anyway, the hire keeps the usual face, so name, face and voice agree. An agent's hires go one at a
+  time, so two made in one step never both wear it. Accounts with teammates already are unchanged.
 - `CreateAgent` takes `title` and `brief`. With a brief the new agent runs no generic greeting: the
   brief is sent as its first message, and the inbound wake (`agent-to-agent-messaging.ts`) puts the
   staffed first-run cue in front of it: introduce yourself to the person as the one now on the job,
