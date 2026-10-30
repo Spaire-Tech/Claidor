@@ -288,6 +288,25 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
       self?.append(agentId, DemoData.says("a-\(UUID().uuidString.prefix(8))", 0, "Good call. Hiring someone for your inbox now.", now: now))
       self?.touch(agentId) { $0.isComposing = false }
     }
+    // The first run's question answered (`playOnboarding`): Simeon hires, and the card says who joined (30 October 2026).
+    guard entryId.hasPrefix("o0q-") else { return }
+    later(3.2) { [weak self] in self?.hireNora(for: agentId) }
+  }
+
+  /** Nora, hired for the inbox: in the list with her face and her first words in her own chat, and the card in Simeon's. */
+  private func hireNora(for agentId: String) {
+    let now = Date().timeIntervalSince1970 * 1000
+    var nora = Agent(id: "agent-nora", name: "Nora", title: "Inbox", description: "Runs the inbox: sorts what needs you, drafts the replies for you to approve, and flags customers within the hour.", colour: "green", lastActivityAt: now)
+    nora.avatarShape = "clay-24"
+    let isNew = lock.withLock { () -> Bool in
+      guard !agents.contains(where: { $0.id == nora.id }) else { return false }
+      agents.append(nora); transcripts[nora.id] = []
+      return true
+    }
+    guard isNew else { return }
+    emit(.agentUpserted(nora))
+    append(nora.id, DemoData.says("n1-\(nora.id)", 0, "Hi Bass, I'm Nora, on your inbox from today. First I'll sort this week's mail into what needs you and what doesn't, and draft the replies for you to approve.", now: now))
+    append(agentId, DemoData.card("o1j-\(agentId)", 0, ["type": "agent-joined", "agentId": .string(nora.id), "name": .string(nora.name), "line": "Sorts your inbox and drafts your replies.", "content": "Nora just joined your team. Sorts your inbox and drafts your replies."], now: now + 1))
   }
 
   /** A new agent's first words and question, word for word as the review link plays them (`onboardingScript`, stage 0). */

@@ -72,6 +72,22 @@ public enum AgentFaces {
     return try? Data(contentsOf: url)
   }
 
+  /**
+   * The face standing on its own, its background taken away
+   * (Resources/Faces/Standing, made by ios/scripts/make-face-cutouts.py):
+   * what the "just joined your team" card shows (JoinedCard.swift).
+   */
+  public static func standingData(_ face: AgentFace) -> Data? {
+    guard let url = Bundle.module.url(forResource: face.id, withExtension: "webp", subdirectory: "Faces/Standing") else { return nil }
+    return try? Data(contentsOf: url)
+  }
+
+  /** The face an agent stands as on that card: the catalogue face it wears, or, with no picture yet, the one it was given; none for a picture of its own. */
+  public static func standing(_ agent: Agent) -> AgentFace? {
+    if let face = worn(agent) { return face }
+    return agent.hasPicture ? nil : given(agent)
+  }
+
   /** The catalogue face the agent's picture is, if it is one. */
   public static func worn(_ agent: Agent) -> AgentFace? { face(version: agent.avatarVersion) }
   /** The face the agent was given (`avatarShape`), worn now or not. */

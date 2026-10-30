@@ -2139,6 +2139,18 @@ the agent, him creating it, and giving him directions." `desktop/source/shared/a
   says what he assumed. "I don't know" or "what do you recommend": he recommends and says why. A
   project that needs several roles: he says who he'd staff, three at most for a first team, and
   creates each. Then "Anything else you'd hand off today?".
+- **"Iris just joined your team"** (the founder, 30 October 2026). After `CreateAgent` has made an agent
+  (and sent its brief), the engine puts a card in the hiring agent's chat (`agent-joined`,
+  `shared/agents/agent-joined.ts`): the new agent's id and name, `line` (what it does: CreateAgent's
+  `summary`, else its description, one short sentence of at most 64 characters, cut at a sentence or a
+  word), and `content`, the same in words for an app without the card. It goes through the runner, so it
+  counts as a message the person saw, and a turn ending on it is not nudged (`SHOWN_CARDS`,
+  `turn-shape.ts`); it does not end the step, so Simeon still asks "Anything else you'd hand off today?".
+  The apps draw it (`JoinedCard.swift`, `JoinedCardView` on the Mac and the iPhone): the agent's face
+  standing on its own on the card's bottom edge (`AgentFaces.standing`: the 31 faces cut out once by
+  `ios/scripts/make-face-cutouts.py` into `Resources/Faces/Standing`; a picture of its own sits round in
+  its place), the title, the line in two lines at most, and Go to Chat and View Profile at the bottom.
+  Simeon no longer announces the hire himself. The chat list says "Iris just joined your team".
 - `CreateAgent` takes `title` and `brief`. With a brief the new agent runs no generic greeting: the
   brief is sent as its first message, and the inbound wake (`agent-to-agent-messaging.ts`) puts the
   staffed first-run cue in front of it: introduce yourself to the person as the one now on the job,

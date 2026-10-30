@@ -42,6 +42,16 @@ enum AgentPictures {
   /** A face from the catalogue, for the editor's grid and the first run's seats. */
   @MainActor static func image(_ face: AgentFace) -> UIImage? { image(.face(face)) }
 
+  /** A face standing on its own, its background taken away (`AgentFaces.standingData`): the "just joined your team" card. */
+  @MainActor static func standing(_ face: AgentFace) -> UIImage? {
+    if let known = standingDecoded[face.id] { return known }
+    let image = AgentFaces.standingData(face).flatMap(UIImage.init(data:))
+    standingDecoded[face.id] = .some(image)
+    return image
+  }
+
+  @MainActor private static var standingDecoded: [String: UIImage?] = [:]
+
   /**
    * A group's members as one image, drawn once per members, size and theme:
    * in a list row the Mac's cluster (GroupLayout), in the chat's header side

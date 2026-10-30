@@ -131,6 +131,7 @@ import {
   createProductionTurnRunShellHostInput,
 } from "./runner/production-turn-run-shell-adapter.js";
 import type { TurnRunShellHost } from "./runner/turn-run-shell.js";
+import type { AgentJoinedMessage } from "../shared/agents/agent-joined.js";
 import { SAND_SUMMARIZATION_MODEL_ID } from "../shared/agents/sand-agent-model.js";
 import {
   createPromptCollectorGlue,
@@ -1331,6 +1332,14 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
       },
       brief: async (agentId: string, message: string) => String(await sendToAgent(agentId, message, undefined, false) ?? ""),
       getPersonName: () => method(auth, "getUserFullName")?.() ?? null,
+      // "Iris just joined your team" in this chat (30 October 2026): through the runner, which counts it as a message the
+      // person saw, so the turn is not nudged to announce the hire again; the transport when there is no runner yet.
+      announceJoined: (message: AgentJoinedMessage) => {
+        const update = { type: "send-message" as const, message, timestampMs: Date.now() };
+        const runner = builtRunner as { emitUpdate?: (value: typeof update) => void } | undefined;
+        if (typeof runner?.emitUpdate === "function") runner.emitUpdate(update);
+        else hooks.transport.onUpdate(update);
+      },
       update: async (
         id: string,
         patch: { name?: string; description?: string; avatarColor?: string }

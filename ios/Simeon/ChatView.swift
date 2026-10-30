@@ -1314,6 +1314,8 @@ struct ChatRowView: View, Equatable {
       ProductsCardView(entryId: id, agentId: agentId, card: card)
     case .flightPassengers(let id, let card):
       FlightPassengersCardView(entryId: id, agentId: agentId, card: card)
+    case .joined(_, let card):
+      JoinedCardView(card: card)
     }
   }
 }

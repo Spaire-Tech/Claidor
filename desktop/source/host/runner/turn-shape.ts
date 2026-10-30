@@ -1,4 +1,5 @@
 import { isInjectedReminderMessage } from "./send-message-reminder-middleware.js";
+import { SAND_CREATE_AGENT_TOOL_NAME } from "../agents/agent-messaging.js";
 import { SAND_REACT_TO_MESSAGE_TOOL_NAME } from "./tools/sand-reaction-tool.js";
 import { SAND_SEND_MESSAGE_TOOL_NAME } from "./tools/send-message-tool.js";
 
@@ -209,6 +210,24 @@ const WAITING_CARDS: ReadonlyMap<string, RegExp> = new Map([
   ["request_1password_connect", /^The 1Password connect card is in the chat/],
 ]);
 
+/**
+ * Cards in front of the person that wait on nothing (30 October 2026): a turn
+ * ending on one told them, so it is not nudged to say more; unlike a waiting
+ * card it does not end the step, so the agent may go on (Simeon asks
+ * "Anything else you'd hand off today?" after a hire).
+ */
+const SHOWN_CARDS: ReadonlyMap<string, RegExp> = new Map([
+  // "Iris just joined your team" (`agent-joined`, shared/agents/agent-joined.ts).
+  [SAND_CREATE_AGENT_TOOL_NAME, /The user now sees a card in this chat saying .+ just joined their team/s],
+]);
+
+/** A call whose answer says its card is in front of the person, waiting on them or not. */
+export function cardCallShown(toolName: string | undefined, result: unknown): boolean {
+  if (cardCallWaits(toolName, result)) return true;
+  const shown = toolName === undefined ? undefined : SHOWN_CARDS.get(toolName);
+  return shown !== undefined && typeof result === "string" && shown.test(result);
+}
+
 /** A card call whose answer says its card is in front of the person. */
 export function cardCallWaits(toolName: string | undefined, result: unknown): boolean {
   const shown = toolName === undefined ? undefined : WAITING_CARDS.get(toolName);
@@ -236,7 +255,7 @@ function tailShowsWaitingCard(tail: CoreMessage, messages: readonly (CoreMessage
     && part.toolCallId != null
     && !erroredIds.has(part.toolCallId)
     && results.has(part.toolCallId)
-    && (part.toolName === SAND_REQUEST_BOX_HELP_TOOL_NAME || cardCallWaits(part.toolName, results.get(part.toolCallId))));
+    && (part.toolName === SAND_REQUEST_BOX_HELP_TOOL_NAME || cardCallShown(part.toolName, results.get(part.toolCallId))));
 }
 // The subagent launcher under its three names (`getTaskToolName`).
 export const TASK_TOOL_NAMES = new Set(["Task", "Subagent", "mcp_task"]);
