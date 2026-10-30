@@ -132,6 +132,7 @@ import {
 } from "./runner/production-turn-run-shell-adapter.js";
 import type { TurnRunShellHost } from "./runner/turn-run-shell.js";
 import type { AgentJoinedMessage } from "../shared/agents/agent-joined.js";
+import { firstHireFace, isChiefOfStaffTitle, teammateCount } from "../shared/agents/chief-of-staff.js";
 import { SAND_SUMMARIZATION_MODEL_ID } from "../shared/agents/sand-agent-model.js";
 import {
   createPromptCollectorGlue,
@@ -1307,16 +1308,30 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
       images,
       priority,
     );
+    // This agent's hires, one at a time: each counts the teammates made before it (Simeon's first hire wears her face, once).
+    let hiring: Promise<unknown> = Promise.resolve();
     const agentManagement = {
       create: async (input: { name: string; description: string; title?: string }, options?: { readonly startIntroduction?: boolean }) => {
-        const result = await method(
-          transcript,
-          "createBackgroundAgent"
-        )?.({
-          name: input.name,
-          description: input.description,
-          ...(input.title === undefined ? {} : { title: input.title })
-        }, "user");
+        const made = hiring.then(async () => {
+          const agents: any[] = (await method(transcript, "listAgents")?.()) ?? [];
+          // Simeon's first hire on a new account is always her, the founder's choice (30 October 2026, `FIRST_HIRE_FACE`).
+          const face = firstHireFace({
+            hiredByChiefOfStaff: isChiefOfStaffTitle(agents.find((agent) => agent.id === session.id)?.title),
+            teammates: teammateCount(agents, session.id),
+            name: input.name
+          });
+          return await method(
+            transcript,
+            "createBackgroundAgent"
+          )?.({
+            name: input.name,
+            description: input.description,
+            ...(input.title === undefined ? {} : { title: input.title }),
+            ...(face == null ? {} : { avatarShape: face })
+          }, "user");
+        });
+        hiring = made.catch(() => {});
+        const result = await made;
         const agent = result.agent;
         // The new agent introduces itself to the person now, the way one they
         // create themselves does: the window starts that for its own creations

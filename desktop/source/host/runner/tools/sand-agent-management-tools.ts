@@ -81,7 +81,7 @@ export const sendToAgentParameters = z.object({
 });
 
 export const createAgentParameters = z.object({
-  name: z.string().trim().min(1).describe("A short, human-readable name for the new agent, like a person's first name."),
+  name: z.string().trim().min(1).describe("A short, human-readable name for the new agent, like a person's first name. The Chief of Staff's first hire on an account with no other teammate yet is a woman: give her a woman's first name."),
   description: z.string().trim().default("").describe(
     "The new agent's persona / instructions: what it is for and how it should behave. This becomes its profile and shapes its replies. Optional but strongly recommended.",
   ),
