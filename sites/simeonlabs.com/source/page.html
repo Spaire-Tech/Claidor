@@ -893,11 +893,6 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .end .wordmark{width:120px;margin:0 auto;color:var(--ink)}
 .end h2{margin-top:16px;font-size:clamp(36px,4.6*var(--vw,1vw),56px);line-height:1.07;letter-spacing:-.035em}
 .end .btn{margin-top:30px}
-footer{background:var(--soft);padding:20px 0 calc(40px + env(safe-area-inset-bottom,0px));font-size:var(--t-tiny);color:var(--ink2)}
-footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
-footer nav{display:flex;flex-wrap:wrap;gap:8px 18px} /* six links: a phone takes them on two lines */
-footer a{color:inherit;text-decoration:none}
-footer a:hover{color:var(--ink)}
 </style>
 </head>
 <body>
@@ -1079,7 +1074,7 @@ footer a:hover{color:var(--ink)}
 
 </main>
 
-<footer><div class="wrap"><span>Copyright © 2026 Spaire, Inc. All rights reserved.</span><nav><a href="/marketplace">Marketplace</a><a href="/connectors">Connectors</a><a href="/pricing">Pricing</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/contact">Contact</a></nav></div></footer>
+%FOOTER%
 
 %FIT%
 <script>

@@ -37,10 +37,14 @@ a pack changes and commit what it writes. `source/connectors.py` writes
 API, `server/simeon/desktop/contact.py`, which e-mails each message to the
 founder). `source/newsroom.py` writes `public/newsroom/`, the blog, in Apple Stories'
 layout: its posts are the list `POSTS` in that file, stand-ins until the
-first real ones (the page asks search engines not to list it while any is), and
-no bar or footer links to it yet. The bar every page shares (Marketplace,
-Connectors, Pricing, Download; a menu on a phone) is `source/nav.py`, its styles
-in `source/site.css`.
+first real ones (the page asks search engines not to list it while any is); the
+bar's Resources and the footer link to it. The bar and the footer every page
+shares are `source/nav.py`, their styles in `source/site.css` (30 October 2026):
+the bar holds Products and Solutions (their arrows open nothing yet), Resources
+(Marketplace, Newsroom), Connectors and Pricing, with Contact Sales and Download
+on the right and a menu on a phone; the footer holds the mark, four columns
+(Product, Company, Legal, Get started), then the wordmark, the copyright and the
+language.
 Edit `source/`, never `public/` by hand: a hand edit is lost at the next build
 (the Download and plan links, made in `public/` on 11 October 2026, are in
 `page.html` since 12 October).
@@ -73,7 +77,7 @@ the butterfly was.
 The page is written by hand in `source/page.html`, light only, on one left
 edge shared by the wordmark, the headline and the demo.
 
-- **Bar**: the wordmark (SimeonLabs, `img/wordmark-labs.png`; the footer keeps `img/wordmark.png`) and Download. On a phone the hero shows Download for iOS, unlinked until there is an app.
+- **Bar**: `nav.py`'s, as on every page (above). On a phone the hero shows Download for iOS, unlinked until there is an app.
 - **Hero**: "Put intelligent agents to work for whatever needs doing." in the
   serif, then Download for Mac and Request a demo.
 - **The app**: the real app window, playing a founder's morning.
@@ -92,7 +96,7 @@ edge shared by the wordmark, the headline and the demo.
 
 Download and Download for Mac fetch the Mac app (`api.simeonlabs.com/desktop/download/mac`),
 and each plan's button opens billing with that plan (`app.simeonlabs.com/billing?plan=…`).
-In the footer, Teams opens the starter packs (`/teams`), Privacy and Terms open the legal pages, Contact writes to support@simeonlabs.com.
+The footer is `nav.py`'s, as on every page (above).
 
 ## The legal pages
 
