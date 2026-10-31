@@ -39,7 +39,11 @@ closing call. The words are a file of their own (source/news/<slug>.md, read by
 `article`: a paragraph per block, "## " a section's title, "> " a line set apart,
 "![words](file)" a picture from source/img/news/<slug>/, **bold** and [a
 link](/address) within a paragraph). The pictures are copied to
-public/img/news/ here, so this script runs alone.
+public/img/news/ here, so this script runs alone. On a phone the page is laid out
+as roomily as Dots' is on one (the founder, 31 October 2026: "Look how spacious
+dots is. Ours is too tight. Also add simeon avatar up there. Like dots. No need
+to do that in mac"): a post's `face`, a cut-out from its pictures, stands over
+its date there, and only there.
 
 It rewrites public/newsroom/ from scratch; build.py calls it after contact.py,
 and it runs alone too, needing nothing but Python:
@@ -64,7 +68,7 @@ POSTS = [
     {"place": "hero", "slug": "introducing-simeon", "title": "Introducing\nSimeon",
      "summary": "A team of AI agents that you hire, talk to, and give work to.",
      "kinds": ["Product", "Company"], "date": "2026-10-30", "url": "/newsroom/introducing-simeon",
-     "image": "/img/news/introducing-simeon/hero.webp", "text": "news/introducing-simeon.md",
+     "image": "/img/news/introducing-simeon/hero.webp", "text": "news/introducing-simeon.md", "face": "simeon.webp",
      "alt": "Clay faces of agents around the word Simeon, each with a cursor pointing at it"},
 ]
 
@@ -278,6 +282,18 @@ POST_CSS = """
 .np-body figure+figure{margin-top:clamp(16px,1.6*var(--vw,1vw),28px)}
 .np-end{height:clamp(24px,2.4*var(--vw,1vw),48px)}
 footer{margin-top:0}
+/* The post's face, over its date, on a phone only; its foot fades into the page, as the cut-out stops at the waist. */
+.np-face{display:none}
+/* A phone: Dots' room, read off its page on an iPhone (the face 36 above the date, the headline smaller and 28 under it,
+   the buttons 30 under that, 72 to the hairline, 56 from Share to the first line). */
+@media (max-width:734px){
+  .np-face{display:block;width:auto;height:136px;margin:0 auto 36px;-webkit-mask-image:linear-gradient(180deg,#000 64%,transparent 98%);mask-image:linear-gradient(180deg,#000 64%,transparent 98%)}
+  .np-head h1{margin-top:28px;font-size:36px}
+  .np-ctas{margin-top:30px;gap:8px}
+  .np-ctas .btn{padding:0 14px} /* side by side, as Dots' are, from a 375-wide phone up */
+  .np-body{margin-top:72px}
+  .np-body p.np-lead{margin-top:56px}
+}
 """
 
 SHARE_ICON = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M8.6 11.4a3.4 3.4 0 0 0 4.8 0l2.6-2.6a3.4 3.4 0 0 0-4.8-4.8l-1.2 1.2"/><path d="M11.4 8.6a3.4 3.4 0 0 0-4.8 0L4 11.2a3.4 3.4 0 0 0 4.8 4.8l1.2-1.2"/></svg>'
@@ -366,10 +382,18 @@ def post_page(post):
     _, close, home_css = teams.from_home()
     ctas = (f'<a class="btn" href="{MAC_DOWNLOAD}">Download for macOS{teams.DOWNLOAD}</a>'
             '<a class="btn ghost" href="/contact">Contact Sales</a>')
+    face = ""
+    if post.get("face"):
+        src = os.path.join(teams.HERE, "img", "news", post["slug"], post["face"])
+        size = _webp_size(src) if os.path.isfile(src) else None
+        if not size:
+            sys.exit(f"newsroom.py: {post['slug']}'s face {post['face']} is not in source/img/news/{post['slug']}/")
+        face = (f'<img class="np-face" src="/img/news/{post["slug"]}/{post["face"]}?v={teams._version(src)}" alt="" '
+                f'width="{size[0]}" height="{size[1]}">\n      ')
     body = f"""<article class="np" aria-labelledby="post-title">
   <div class="wrap">
     <header class="np-head">
-      <p class="np-meta"><time datetime="{post["date"]}">{day:%B} {day.day}, {day.year}</time>{kinds}</p>
+      {face}<p class="np-meta"><time datetime="{post["date"]}">{day:%B} {day.day}, {day.year}</time>{kinds}</p>
       <h1 id="post-title">{esc(headline)}</h1>
       <div class="np-ctas">{ctas}</div>
     </header>

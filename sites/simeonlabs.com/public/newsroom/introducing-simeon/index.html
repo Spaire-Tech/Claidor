@@ -139,6 +139,18 @@ footer{margin-top:clamp(80px,8*var(--vw,1vw),140px)} /* the footer itself is sit
 .np-body figure+figure{margin-top:clamp(16px,1.6*var(--vw,1vw),28px)}
 .np-end{height:clamp(24px,2.4*var(--vw,1vw),48px)}
 footer{margin-top:0}
+/* The post's face, over its date, on a phone only; its foot fades into the page, as the cut-out stops at the waist. */
+.np-face{display:none}
+/* A phone: Dots' room, read off its page on an iPhone (the face 36 above the date, the headline smaller and 28 under it,
+   the buttons 30 under that, 72 to the hairline, 56 from Share to the first line). */
+@media (max-width:734px){
+  .np-face{display:block;width:auto;height:136px;margin:0 auto 36px;-webkit-mask-image:linear-gradient(180deg,#000 64%,transparent 98%);mask-image:linear-gradient(180deg,#000 64%,transparent 98%)}
+  .np-head h1{margin-top:28px;font-size:36px}
+  .np-ctas{margin-top:30px;gap:8px}
+  .np-ctas .btn{padding:0 14px} /* side by side, as Dots' are, from a 375-wide phone up */
+  .np-body{margin-top:72px}
+  .np-body p.np-lead{margin-top:56px}
+}
 </style>
 <meta property="og:image" content="https://simeonlabs.com/img/news/introducing-simeon/hero.webp">
 </head>
@@ -160,6 +172,7 @@ footer{margin-top:0}
 <article class="np" aria-labelledby="post-title">
   <div class="wrap">
     <header class="np-head">
+      <img class="np-face" src="/img/news/introducing-simeon/simeon.webp?v=49738469" alt="" width="421" height="464">
       <p class="np-meta"><time datetime="2026-10-30">October 30, 2026</time><span>Product</span><span>Company</span></p>
       <h1 id="post-title">Introducing Simeon</h1>
       <div class="np-ctas"><a class="btn" href="https://api.simeonlabs.com/desktop/download/mac">Download for macOS<svg class="dl" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m-5-5 5 5 5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a><a class="btn ghost" href="/contact">Contact Sales</a></div>
@@ -174,12 +187,12 @@ footer{margin-top:0}
     <p>That’s the idea behind Simeon. And, as it turns out, one person isn’t always enough.</p>
     <h2>Meet Simeon. He’s hiring.</h2>
     <p>When you open Simeon for the first time, there’s already someone there. His name is Simeon, and he’s your Chief of Staff.</p>
-    <figure><img src="/img/news/introducing-simeon/badge.webp?v=b4960059" alt="Simeon&#x27;s employee badge: Chief of Staff, reports to you, since day one, hiring your team, always on" width="1260" height="760" loading="lazy"></figure>
+    <figure><img src="/img/news/introducing-simeon/badge.webp?v=1d4789e9" alt="Simeon&#x27;s employee badge: Chief of Staff, reports to you, since day one, hiring your team, always on" width="1260" height="660" loading="lazy"></figure>
     <p>He doesn’t start by showing you a dashboard or asking you to configure anything. He asks a question:</p>
     <blockquote>“What’s the first thing you’d hand to a person if you hired one today?”</blockquote>
     <p>We like this question because it gets straight to the point. You probably already know the answer. Maybe it’s something you’ve been doing yourself for years. Maybe it’s a job you keep putting off because there never seems to be a good time to get to it.</p>
     <p>You tell Simeon, and he finds the right person for the job. He gives them a first name, a job title, and a brief. Then a little card appears in your conversation: “Iris just joined your team.”</p>
-    <figure><img src="/img/news/introducing-simeon/joined.webp?v=461bfcd2" alt="The card in the chat: Iris just joined your team, with Go to Chat and View Profile" width="1260" height="620" loading="lazy"></figure>
+    <figure><img src="/img/news/introducing-simeon/joined.webp?v=b046576f" alt="The card in the chat: Iris just joined your team, with Go to Chat and View Profile" width="1260" height="400" loading="lazy"></figure>
     <p>Your new hire introduces themselves in their own chat and gets to work.</p>
     <p>That’s Simeon’s job. He delegates. When a task belongs to someone on your team, he sends it their way. When nobody has the right job, he hires someone. When something is bigger, he puts a few people together.</p>
     <p>And if you’d rather start with a team that’s already put together, there’s the <a href="/marketplace">Marketplace</a> on our website. We’ve made fifteen teams for different kinds of businesses and working lives. Five agents come with each team, already named and instructed. Adding one is free.</p>
@@ -194,7 +207,7 @@ footer{margin-top:0}
     <h2>They know their way around your apps.</h2>
     <p>Your business already has a home. It’s in your inbox, your calendar, your files, and all the other places where your work happens. We didn’t want to ask you to move everything somewhere new.</p>
     <p>Simeon works with more than 200 apps. Gmail, Outlook, Google Calendar, Drive, Slack, Notion, QuickBooks, HubSpot, Salesforce, Shopify, Stripe, Zoom, Figma, Canva, LinkedIn. The list goes on.</p>
-    <figure><img src="/img/news/introducing-simeon/apps.webp?v=3582ba06" alt="An agent surrounded by twelve app icons: Gmail, Slack, HubSpot, Google Calendar, Shopify, Notion, Stripe, Zoom, QuickBooks, Figma, Salesforce and Canva" width="1260" height="700" loading="lazy"></figure>
+    <figure><img src="/img/news/introducing-simeon/apps.webp?v=69d16602" alt="An agent surrounded by twelve app icons: Gmail, Slack, HubSpot, Google Calendar, Shopify, Notion, Stripe, Zoom, QuickBooks, Figma, Salesforce and Canva" width="1260" height="700" loading="lazy"></figure>
     <p>When an agent needs an app for the first time, it asks you to connect it. You sign in on the app’s own page. Simeon never sees your password. You can also decide which tools an app is allowed to use, or disconnect it altogether.</p>
     <p>This opens up some interesting possibilities. An agent can look at your sales in Stripe, check the customer information in HubSpot, and put together a report. Another can work through your bookkeeping and come back with a question about a missing receipt.</p>
     <p>They can also search for flights and book them using Link, Stripe’s wallet. You approve the purchase in the Link app before anything is bought. Every purchase gets its own one-time card, rather than using your actual card. This works with US and Canadian Link accounts.</p>
@@ -204,14 +217,14 @@ footer{margin-top:0}
     <p>You can message any agent from the Mac app. You can also call one and talk out loud. It keeps working while you talk, and you can ask for an update whenever you want.</p>
     <p>If your team uses Slack or Discord, an agent can have its own app or bot there, too. Other people can talk to it without having to open Simeon.</p>
     <p>Something else happens when you have more than one agent: they start working together. They can message each other, share what they’ve learned, and pass tasks along. You can bring several agents into a group chat when a project needs them.</p>
-    <figure><img src="/img/news/introducing-simeon/team.webp?v=faa47178" alt="A group chat on a phone: Maya asks Theo for the spring campaign&#x27;s numbers from Shopify and Meta Ads, then asks Scout for a one-pager" width="1260" height="760" loading="lazy"></figure>
+    <figure><img src="/img/news/introducing-simeon/team.webp?v=b574517c" alt="A group chat on a phone: Maya asks Theo for the spring campaign&#x27;s numbers from Shopify and Meta Ads, then asks Scout for a one-pager" width="1260" height="860" loading="lazy"></figure>
     <p>Imagine asking Nora what needs to happen before Friday. She checks in with the team and comes back with two things: the Halden contract still needs a signature, and the offsite needs a venue. You ask her to find somewhere for twelve people near the office. A little while later, you have three options.</p>
     <p>That’s a conversation. It doesn’t need to become a project plan before anyone can do anything.</p>
     <p>Your agents also remember what they learn about your business and how you like things done. Over time, they get to know the way you work. You shouldn’t have to introduce yourself every time you open a chat.</p>
     <h2>You still get the final say.</h2>
     <p>We spent a lot of time thinking about this. When you hire someone, you give them responsibility. But that doesn’t mean you stop being the person in charge.</p>
+    <figure><img src="/img/news/introducing-simeon/checkout.webp?v=8e1b5e30" alt="Leo asks for the OK on a Studio Display from apple.com, $1,599.00 on a Visa through Link by Stripe, with Deny and Allow" width="1260" height="1064" loading="lazy"></figure>
     <p>So when an agent writes an email in your name, it comes back as a draft. You read it, make whatever changes you want, and press Send. The same goes for Slack messages. Nothing gets sent in your name without your say-so.</p>
-    <figure><img src="/img/news/introducing-simeon/draft.webp?v=62bd7e7a" alt="Simeon on a Mac: Iris has drafted a reply to Jenny, with Send email and Discard" width="1260" height="760" loading="lazy"></figure>
     <p>Passwords and verification codes work similarly. You enter them in a form in the chat, where the agent can’t see them. If you use 1Password, you can connect it and approve logins with Face ID or Touch ID. Your credentials stay private there, too.</p>
     <p>You can stop an agent at any point. You can take over its computer. You can disconnect an app.</p>
     <p>Your data is encrypted, kept separate from other customers, and never used to train a model.</p>
@@ -221,7 +234,7 @@ footer{margin-top:0}
     <p>The best place to start is probably something you’ve been meaning to hand off for a while.</p>
     <p>Maybe it’s the books. Maybe it’s the inbox. Maybe there’s a client you owe a response to and you just haven’t found the time. You can start with one person and one job. You can add more as you go.</p>
     <p>In our demos, we’ve shown an agent catching a $4,200 invoice that’s 34 days overdue and asking whether it should send a reminder. Another helps close September, matching 212 transactions before coming back with one missing Delta receipt. These are small things, but they’re the kinds of things that take up a surprising amount of a person’s day.</p>
-    <figure><img src="/img/news/introducing-simeon/invoice.webp?v=e24f191d" alt="Theo on a phone: Acme Health is 34 days late on the $4,200 invoice. Want me to send them a reminder?" width="1260" height="760" loading="lazy"></figure>
+    <figure><img src="/img/news/introducing-simeon/invoice.webp?v=73c40105" alt="Theo on a phone: Acme Health is 34 days late on the $4,200 invoice. Want me to send them a reminder?" width="1260" height="670" loading="lazy"></figure>
     <p>Simeon is available today on Mac for Apple silicon, running macOS 15 or later. The iPhone app is coming soon. It speaks English, French, Spanish, German, Dutch, Italian, Portuguese, Swedish, Polish, and Turkish.</p>
     <p>Every plan comes with a seven-day free trial. After that, Standard is $30 a month. Pro is $100 a month, with 3.5 times the usage of Standard. Max is $200 a month, with nine times the usage, for teams with agents working every day.</p>
     <p>You can find the <a href="/pricing">plans</a> and meet the <a href="/marketplace">ready-made teams</a> on our website.</p>
