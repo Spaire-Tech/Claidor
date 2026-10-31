@@ -43,7 +43,11 @@ public/img/news/ here, so this script runs alone. On a phone the page is laid ou
 as roomily as Dots' is on one (the founder, 31 October 2026: "Look how spacious
 dots is. Ours is too tight. Also add simeon avatar up there. Like dots. No need
 to do that in mac"): a post's `face`, a cut-out from its pictures, stands over
-its date there, and only there.
+its date there, and only there. There too each picture runs across the whole
+screen ("make simeon pic and iris and the apps etc fit the whole screen"): a
+picture's phone copy, <name>-phone.webp beside it, is cut to what is drawn in
+it, so that what is drawn lines up with the words' edges. Every line of the
+words runs to the column's edge ("Should go to the end").
 
 It rewrites public/newsroom/ from scratch; build.py calls it after contact.py,
 and it runs alone too, needing nothing but Python:
@@ -269,14 +273,14 @@ POST_CSS = """
 .np-share{display:inline-flex;align-items:center;gap:7px;padding:4px 2px;border:0;background:none;font:inherit;font-size:var(--t-body);color:var(--ink);cursor:pointer}
 .np-share svg{width:17px;height:17px}
 .np-share:focus-visible{outline:2px solid var(--blue);outline-offset:3px;border-radius:6px}
-.np-body p{margin-top:1.15em;font-size:clamp(17px,1.15*var(--vw,1vw),19px);line-height:1.6;letter-spacing:-.012em;text-wrap:pretty}
+.np-body p{margin-top:1.15em;font-size:clamp(17px,1.15*var(--vw,1vw),19px);line-height:1.6;letter-spacing:-.012em}
 .np-body p.np-lead{margin-top:clamp(36px,3.4*var(--vw,1vw),60px)}
 .np-body p b{font-weight:600}
 .np-body a{color:var(--blue);text-decoration:none}
 .np-body a:hover{text-decoration:underline}
 .np-body h2{margin-top:clamp(64px,6*var(--vw,1vw),112px);font-size:clamp(26px,2.1*var(--vw,1vw),36px);line-height:1.15;font-weight:var(--w-display);letter-spacing:-.025em;text-wrap:balance}
 .np-body h2+p{margin-top:clamp(18px,1.6*var(--vw,1vw),28px)}
-.np-body blockquote{margin-top:1.3em;font-size:clamp(22px,1.8*var(--vw,1vw),30px);line-height:1.3;font-weight:var(--w-display);letter-spacing:-.02em;text-wrap:balance}
+.np-body blockquote{margin-top:1.3em;font-size:clamp(22px,1.8*var(--vw,1vw),30px);line-height:1.3;font-weight:var(--w-display);letter-spacing:-.02em}
 .np-body figure{max-width:1140px;margin-top:clamp(40px,4*var(--vw,1vw),72px);margin-bottom:clamp(40px,4*var(--vw,1vw),72px)}
 .np-body figure img{display:block;width:100%;height:auto;border-radius:clamp(18px,1.8*var(--vw,1vw),28px)}
 .np-body figure+figure{margin-top:clamp(16px,1.6*var(--vw,1vw),28px)}
@@ -293,6 +297,9 @@ footer{margin-top:0}
   .np-ctas .btn{padding:0 14px} /* side by side, as Dots' are, from a 375-wide phone up */
   .np-body{margin-top:72px}
   .np-body p.np-lead{margin-top:56px}
+  /* Each picture across the whole screen, its phone copy cut so that what is drawn lines up with the words' edges. */
+  .np-body figure{max-width:none;margin-left:calc(-1*var(--gutter));margin-right:calc(-1*var(--gutter))}
+  .np-body figure img{border-radius:0}
 }
 """
 
@@ -361,8 +368,16 @@ def article(post):
             if not size:
                 sys.exit(f"newsroom.py: {post['text']} shows {file}, not found in source/img/news/{post['slug']}/")
             lazy = ' loading="lazy"' if len(out) >= 3 else ""
-            out.append(f'<figure><img src="/img/news/{post["slug"]}/{file}?v={teams._version(src)}" alt="{esc(alt)}" '
-                       f'width="{size[0] // 2}" height="{size[1] // 2}"{lazy}></figure>')
+            img = (f'<img src="/img/news/{post["slug"]}/{file}?v={teams._version(src)}" alt="{esc(alt)}" '
+                   f'width="{size[0] // 2}" height="{size[1] // 2}"{lazy}>')
+            # Its phone copy, <name>-phone.webp beside it when there is one: cut to what is drawn, shown across the screen.
+            stem, ext = os.path.splitext(file)
+            phone = os.path.join(os.path.dirname(src), f"{stem}-phone{ext}")
+            if os.path.isfile(phone):
+                small = _webp_size(phone)
+                img = (f'<picture><source media="(max-width:734px)" srcset="/img/news/{post["slug"]}/{stem}-phone{ext}'
+                       f'?v={teams._version(phone)}" width="{small[0] // 2}" height="{small[1] // 2}">{img}</picture>')
+            out.append(f"<figure>{img}</figure>")
         elif block.startswith("## "):
             out.append(f"<h2>{_inline(block[3:])}</h2>")
         elif block.startswith("> "):
