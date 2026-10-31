@@ -9,6 +9,7 @@
 | [services-billing.md](services-billing.md) | Part 3: the plans (Standard, Pro, Max), the trial, Stripe Billing (Checkout, the Customer Portal, the webhook-synced subscription, the usage meters), how the app's weekly allowance follows the plan, and the settings Render and Stripe need. |
 | [cost-test-set.md](cost-test-set.md) | Thirty real tasks to run before and after a change that could move cost or quality, and how to read the cost per reason. |
 | [ops/box-host/](ops/box-host/) | Setting up a server for cloud computers, and the settings Render needs. |
+| [launch-film.md](launch-film.md) | The film that introduces Simeon: the reference it follows, Iris (`clay-06`) presenting, the first test, and running Higgsfield from a session. |
 | [kept-names.md](kept-names.md) | Which earlier names are still in the code, why, and how the name check works. |
 
 Patterns for writing server code are in `server/CLAUDE.md`, for the web app in
