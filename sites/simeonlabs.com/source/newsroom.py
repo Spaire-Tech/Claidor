@@ -24,50 +24,48 @@ corners, titles in medium and headlines regular, never bold; the labels and
 dates in the second grey, no colours of their own. The page ends on the white
 footer every page shares (nav.py).
 
-A post's own page is not designed yet: a card is a link only once its post has
-a `url`. Every post is in POSTS, in the order it is shown within its place.
-While any of them is a stand-in (`placeholder`), the page asks search engines
-not to list it. No bar or footer links to it yet; it is at /newsroom.
+Every post is in POSTS, in the order it is shown within its place; the stand-ins
+went on 31 October 2026 (the founder: "remove all the fake post in newroom. i
+want only one and it's introducing Simeon"), so the page shows that one post in
+its opening and nothing under it until there are more. While any post is a
+stand-in (`placeholder`), the page asks search engines not to list it.
+
+A post with `text` has its own page, /newsroom/<slug>, after OpenAI's
+"Introducing dots" (the founder's reference, 30 October 2026: "an image for all
+titles"): its date and kinds, its headline large and centred, Download for macOS
+and Contact Sales, Share along a hairline, then its words in a column, the first
+line in bold, each picture a little wider than the words, and the home page's
+closing call. The words are a file of their own (source/news/<slug>.md, read by
+`article`: a paragraph per block, "## " a section's title, "> " a line set apart,
+"![words](file)" a picture from source/img/news/<slug>/, **bold** and [a
+link](/address) within a paragraph). The pictures are copied to
+public/img/news/ here, so this script runs alone.
 
 It rewrites public/newsroom/ from scratch; build.py calls it after contact.py,
 and it runs alone too, needing nothing but Python:
 
     python3 newsroom.py
 """
-import datetime, html, os, shutil
+import datetime, html, os, re, shutil, sys
 
 import teams
+from nav import MAC_DOWNLOAD
 from teams import frame
 from versioning import version_style
 
 OUT = teams.OUT
 
-# Where each post goes: "lead" (across the column, its words over the picture), "tile" (a square, its words
-# under it, three to a row), "quote" (its quote beside the picture) or "over" (three to a row, the words over the
-# picture). Each has a `kind` (Customers, Product…) over its title. The pictures are the site's own (/img/),
-# standing in until each post has its own.
+# Where each post goes: "hero" (the page's opening), "lead" (across the column, its words over the picture), "tile"
+# (a square, its words under it, three to a row), "quote" (its quote beside the picture) or "over" (three to a row,
+# the words over the picture). Each but the hero has a `kind` (Customers, Product…) over its title.
 POSTS = [
     # The newest post, the page's opening: its headline breaks where it has "\n", and `mark` is its name set
-    # over its picture (none: the picture alone).
-    {"place": "hero", "title": "Introducing\nthe newest post", "summary": "One line on what it is, and why it matters.",
-     "mark": "The newest post", "date": "2026-10-28", "image": "/img/wall-blue.jpg", "placeholder": True},
-    {"place": "lead", "kind": "Customers", "title": "The headline of the lead story, set over its picture",
-     "date": "2026-10-24", "image": "/img/support.jpg", "placeholder": True},
-    {"place": "tile", "kind": "Product", "title": "Headline of a story about a team and its agents",
-     "date": "2026-10-22", "image": "/img/content.jpg", "placeholder": True},
-    {"place": "tile", "kind": "Company", "title": "Headline of a story, a little longer than the ones beside it",
-     "date": "2026-10-20", "image": "/img/inbox.jpg", "placeholder": True},
-    {"place": "tile", "kind": "Customers", "title": "Headline of a third story",
-     "date": "2026-10-18", "image": "/img/books.jpg", "placeholder": True},
-    {"place": "quote", "kind": "Builders", "title": "The title of the story the quote comes from",
-     "quote": "A line from the person the story is about, quoted as they said it.",
-     "by": "Their name\nTheir role and company", "date": "2026-10-15", "image": "/img/ea.jpg", "placeholder": True},
-    {"place": "over", "kind": "Product", "title": "Headline of a story, its words over the picture",
-     "date": "2026-10-12", "image": "/img/sales.jpg", "placeholder": True},
-    {"place": "over", "kind": "Builders", "title": "Headline of another story, a little longer than the others",
-     "date": "2026-10-09", "image": "/img/marketing.jpg", "placeholder": True},
-    {"place": "over", "kind": "Company", "title": "Headline of one more story",
-     "date": "2026-10-06", "image": "/img/paint-teal.jpg", "placeholder": True},
+    # over its picture (none: the picture alone, which says it already).
+    {"place": "hero", "slug": "introducing-simeon", "title": "Introducing\nSimeon",
+     "summary": "A team of AI agents that you hire, talk to, and give work to.",
+     "kinds": ["Product", "Company"], "date": "2026-10-30", "url": "/newsroom/introducing-simeon",
+     "image": "/img/news/introducing-simeon/hero.webp", "text": "news/introducing-simeon.md",
+     "alt": "Clay faces of agents around the word Simeon, each with a cursor pointing at it"},
 ]
 
 NEWSROOM_CSS = """
@@ -239,9 +237,7 @@ def page():
   <div class="wrap">
     <h1 class="nw-sr" id="newsroom">Newsroom</h1>
     {opening}
-    <div class="nw-posts">
-    {posts}
-    </div>
+    {f'<div class="nw-posts">{chr(10)}    {posts}{chr(10)}    </div>' if posts else ""}
   </div>
 </section>
 <div class="nw-end" aria-hidden="true"></div>"""
@@ -252,12 +248,159 @@ def page():
                  "/newsroom", body, hero_css + NEWSROOM_CSS, head=head, current="newsroom")
 
 
+# A post's own page (`post_page`): the words in a column of 680, each picture a little wider (1140 at most).
+POST_CSS = """
+/* A post's page (newsroom.py, after OpenAI's "Introducing dots"): its date and kinds, its headline large and centred,
+   the two buttons, Share on a hairline, then the words in a column, the pictures wider than the words. */
+.np{padding:clamp(48px,6*var(--vw,1vw),112px) 0 0}
+.np-head{text-align:center}
+.np-meta{display:flex;justify-content:center;flex-wrap:wrap;gap:6px 18px;margin:0;font-size:var(--t-body);color:var(--ink2)}
+.np-meta time{color:var(--ink)}
+.np-head h1{margin-top:clamp(14px,1.3*var(--vw,1vw),24px);font-size:clamp(40px,4.4*var(--vw,1vw),80px);line-height:1.05;font-weight:var(--w-display);letter-spacing:-.035em;text-wrap:balance}
+.np-ctas{display:flex;justify-content:center;flex-wrap:wrap;gap:clamp(10px,.7*var(--vw,1vw),14px);margin-top:clamp(22px,2*var(--vw,1vw),36px)}
+.np-ctas .btn{height:var(--btn-h);padding:0 var(--btn-pad);font-size:var(--btn-font)}
+.np-body{margin-top:clamp(48px,5*var(--vw,1vw),96px)}
+.np-body>*{max-width:680px;margin-left:auto;margin-right:auto}
+.np-bar{display:flex;justify-content:flex-end;padding-top:14px;border-top:1px solid #e8e8ed}
+.np-share{display:inline-flex;align-items:center;gap:7px;padding:4px 2px;border:0;background:none;font:inherit;font-size:var(--t-body);color:var(--ink);cursor:pointer}
+.np-share svg{width:17px;height:17px}
+.np-share:focus-visible{outline:2px solid var(--blue);outline-offset:3px;border-radius:6px}
+.np-body p{margin-top:1.15em;font-size:clamp(17px,1.15*var(--vw,1vw),19px);line-height:1.6;letter-spacing:-.012em;text-wrap:pretty}
+.np-body p.np-lead{margin-top:clamp(36px,3.4*var(--vw,1vw),60px)}
+.np-body p b{font-weight:600}
+.np-body a{color:var(--blue);text-decoration:none}
+.np-body a:hover{text-decoration:underline}
+.np-body h2{margin-top:clamp(64px,6*var(--vw,1vw),112px);font-size:clamp(26px,2.1*var(--vw,1vw),36px);line-height:1.15;font-weight:var(--w-display);letter-spacing:-.025em;text-wrap:balance}
+.np-body h2+p{margin-top:clamp(18px,1.6*var(--vw,1vw),28px)}
+.np-body blockquote{margin-top:1.3em;font-size:clamp(22px,1.8*var(--vw,1vw),30px);line-height:1.3;font-weight:var(--w-display);letter-spacing:-.02em;text-wrap:balance}
+.np-body figure{max-width:1140px;margin-top:clamp(40px,4*var(--vw,1vw),72px);margin-bottom:clamp(40px,4*var(--vw,1vw),72px)}
+.np-body figure img{display:block;width:100%;height:auto;border-radius:clamp(18px,1.8*var(--vw,1vw),28px)}
+.np-body figure+figure{margin-top:clamp(16px,1.6*var(--vw,1vw),28px)}
+.np-end{height:clamp(24px,2.4*var(--vw,1vw),48px)}
+footer{margin-top:0}
+"""
+
+SHARE_ICON = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M8.6 11.4a3.4 3.4 0 0 0 4.8 0l2.6-2.6a3.4 3.4 0 0 0-4.8-4.8l-1.2 1.2"/><path d="M11.4 8.6a3.4 3.4 0 0 0-4.8 0L4 11.2a3.4 3.4 0 0 0 4.8 4.8l1.2-1.2"/></svg>'
+
+SHARE_JS = """<script>
+// Share: the phone's own sheet where there is one, else the address copied, "Link copied" for two seconds.
+(() => {
+  const button = document.querySelector('.np-share');
+  if (!button) return;
+  const label = button.querySelector('span');
+  button.addEventListener('click', async () => {
+    const url = location.href.split('#')[0];
+    if (navigator.share && matchMedia('(pointer:coarse)').matches) {
+      try { await navigator.share({ title: document.title, url }); } catch (_) {}
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      label.textContent = 'Link copied';
+      setTimeout(() => { label.textContent = 'Share'; }, 2000);
+    } catch (_) {}
+  });
+})();
+</script>"""
+
+
+def _webp_size(path):
+    """A WebP picture's width and height, read from its header (lossy, lossless or extended), or None."""
+    data = open(path, "rb").read(30)
+    if data[:4] != b"RIFF" or data[8:12] != b"WEBP":
+        return None
+    kind = data[12:16]
+    if kind == b"VP8X":
+        return 1 + int.from_bytes(data[24:27], "little"), 1 + int.from_bytes(data[27:30], "little")
+    if kind == b"VP8 ":
+        return int.from_bytes(data[26:28], "little") & 0x3FFF, int.from_bytes(data[28:30], "little") & 0x3FFF
+    if kind == b"VP8L":
+        bits = int.from_bytes(data[21:25], "little")
+        return 1 + (bits & 0x3FFF), 1 + ((bits >> 14) & 0x3FFF)
+    return None
+
+
+def _inline(text):
+    """A paragraph's words as the site writes them: typographic quotes and apostrophes, **bold**, [a link](/address)."""
+    text = html.escape(text, quote=False)
+    text = re.sub(r"(?<=\w)'(?=\w)", "\u2019", text)
+    text = re.sub(r"(^|[\s(])'", "\\1\u2018", text).replace("'", "\u2019")
+    text = re.sub(r'"([^"]*)"', "\u201c\\1\u201d", text)
+    text = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", text)
+    return re.sub(r"\[([^\]]+)\]\((/[^)\s]*|https://[^)\s]+)\)", r'<a href="\2">\1</a>', text)
+
+
+def article(post):
+    """The post's words and pictures (source/news/<slug>.md), as HTML; the first paragraph is its lead."""
+    blocks = [b.strip() for b in teams._text(os.path.join(teams.HERE, post["text"])).split("\n\n") if b.strip()]
+    if not blocks:
+        sys.exit(f"newsroom.py: {post['text']} has no words")
+    out, lead = [], True
+    for block in blocks:
+        figure = re.fullmatch(r"!\[([^\]]*)\]\(([\w.-]+)\)", block)
+        if figure:
+            alt, file = figure.groups()
+            src = os.path.join(teams.HERE, "img", "news", post["slug"], file)
+            size = _webp_size(src) if os.path.isfile(src) else None
+            if not size:
+                sys.exit(f"newsroom.py: {post['text']} shows {file}, not found in source/img/news/{post['slug']}/")
+            lazy = ' loading="lazy"' if len(out) >= 3 else ""
+            out.append(f'<figure><img src="/img/news/{post["slug"]}/{file}?v={teams._version(src)}" alt="{esc(alt)}" '
+                       f'width="{size[0] // 2}" height="{size[1] // 2}"{lazy}></figure>')
+        elif block.startswith("## "):
+            out.append(f"<h2>{_inline(block[3:])}</h2>")
+        elif block.startswith("> "):
+            out.append(f"<blockquote>{_inline(block[2:])}</blockquote>")
+        else:
+            cls = ' class="np-lead"' if lead else ""
+            out.append(f'<p{cls}>{_inline(" ".join(block.split()))}</p>')
+            lead = False
+    return "\n    ".join(out)
+
+
+def post_page(post):
+    """/newsroom/<slug>: the post itself."""
+    headline = post["title"].replace("\n", " ")
+    kinds = "".join(f"<span>{esc(kind)}</span>" for kind in post.get("kinds", []))
+    day = datetime.date.fromisoformat(post["date"])
+    _, close, home_css = teams.from_home()
+    ctas = (f'<a class="btn" href="{MAC_DOWNLOAD}">Download for macOS{teams.DOWNLOAD}</a>'
+            '<a class="btn ghost" href="/contact">Contact Sales</a>')
+    body = f"""<article class="np" aria-labelledby="post-title">
+  <div class="wrap">
+    <header class="np-head">
+      <p class="np-meta"><time datetime="{post["date"]}">{day:%B} {day.day}, {day.year}</time>{kinds}</p>
+      <h1 id="post-title">{esc(headline)}</h1>
+      <div class="np-ctas">{ctas}</div>
+    </header>
+    <div class="np-body">
+    <div class="np-bar"><button class="np-share" type="button">{SHARE_ICON}<span>Share</span></button></div>
+    {article(post)}
+    </div>
+  </div>
+</article>
+<div class="np-end" aria-hidden="true"></div>
+{close}"""
+    image = f'\n<meta property="og:image" content="{teams.SITE}{post["image"]}">'
+    return frame(headline, esc(post["summary"]), post["url"], body, home_css + POST_CSS, head=image,
+                 current="newsroom", script=SHARE_JS)
+
+
 def build(out=OUT):
     teams.copy_site_css(out)
     root = os.path.join(out, "newsroom")
     shutil.rmtree(root, ignore_errors=True)
     os.makedirs(root)
     open(f"{root}/index.html", "w", encoding="utf-8").write(version_style(page(), out))
+    # Each post with words of its own: its page, and its pictures (build.py copies source/img too).
+    pictures = os.path.join(teams.HERE, "img", "news")
+    if os.path.isdir(pictures):
+        shutil.rmtree(os.path.join(out, "img", "news"), ignore_errors=True)
+        shutil.copytree(pictures, os.path.join(out, "img", "news"))
+    for post in POSTS:
+        if post.get("text"):
+            os.makedirs(f"{root}/{post['slug']}")
+            open(f"{root}/{post['slug']}/index.html", "w", encoding="utf-8").write(version_style(post_page(post), out))
     print(f"newsroom written to {os.path.abspath(root)}")
 
 

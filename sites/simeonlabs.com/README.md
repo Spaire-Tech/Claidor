@@ -39,9 +39,10 @@ change), `source/pricing.py` writes `public/pricing/` and
 `source/contact.py` writes `public/contact/` the same way (its form posts to the
 API, `server/simeon/desktop/contact.py`, which e-mails each message to the
 founder). `source/newsroom.py` writes `public/newsroom/`, the blog, in Apple Stories'
-layout: its posts are the list `POSTS` in that file, stand-ins until the
-first real ones (the page asks search engines not to list it while any is); the
-bar's Resources and the footer link to it. The bar and the footer every page
+layout: its posts are the list `POSTS` in that file (one since 31 October 2026,
+Introducing Simeon). A post has its own page, `/newsroom/<slug>`: its words are
+`source/news/<slug>.md`, its pictures `source/img/news/<slug>/`. The bar's
+Resources and the footer link to it. The bar and the footer every page
 shares are `source/nav.py`, their styles in `source/site.css` (30 October 2026):
 the bar holds Products and Solutions (their arrows open nothing yet), Resources
 (Marketplace, Newsroom), Connectors and Pricing, with Contact Sales and Download
