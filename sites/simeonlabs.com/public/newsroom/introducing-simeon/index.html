@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SimeonLabs | Introducing Simeon</title>
+<meta name="description" content="A team of AI agents that you hire, talk to, and give work to.">
+<link rel="canonical" href="https://simeonlabs.com/newsroom/introducing-simeon">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://simeonlabs.com/newsroom/introducing-simeon">
+<meta property="og:title" content="SimeonLabs | Introducing Simeon">
+<meta property="og:description" content="A team of AI agents that you hire, talk to, and give work to.">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap">
+<link rel="stylesheet" href="/site.css?v=0e63586d">
+<script>if (!/Macintosh|Mac OS X/.test(navigator.userAgent)) document.documentElement.classList.add('pc')</script>
+<style>
+/* The Marketplace pages (/marketplace, /marketplace/<pack>): the home page's bar, type and colours (source/page.html) around
+   the starter packs. Light only, every colour set here. Made by teams.py from server/simeon/desktop/packs.json. */
+:root{
+  --page:#fff; --soft:#f5f5f7; --ink:#1d1d1f; --ink2:#6e6e73; --ink3:#86868b; --line:#e5e5ea; --blue:#255a93;
+  --gutter:max(20px,4.6*var(--vw,1vw));
+  --col:min(1840px,calc(100*var(--vw,1vw) - 2 * var(--gutter))); /* the home page's column */
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--page);color:var(--ink);font-family:var(--font);font-size:17px;line-height:1.47;letter-spacing:-.022em;-webkit-font-smoothing:antialiased;overflow-x:clip}
+h1,h2,h3,p,ul,blockquote{margin:0}
+img{display:block;max-width:100%}
+a{color:inherit}
+.wrap{width:var(--col);margin-inline:auto}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.5em;border-radius:99px;background:#000;color:#fff;font-weight:400;letter-spacing:-.01em;white-space:nowrap;text-decoration:none;transition:background .2s}
+.btn:hover{background:#2b2b2d}
+.btn:focus-visible,a:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
+
+
+/* Faces in a row, each over the last, ringed in the ground they sit on. */
+.faces{display:flex;--fs:48px;--ring:var(--page)}
+.faces img,.faces .noface{width:var(--fs);height:var(--fs);border-radius:50%;object-fit:cover;flex:none;box-shadow:0 0 0 3px var(--ring);background:var(--soft)}
+.faces>*+*{margin-left:calc(var(--fs) * -.26)}
+.noface{display:grid;place-items:center;font-weight:500;color:var(--ink2);background:#e8e8ed}
+
+/* An app's tile: its own icon with an app icon's corners, else its mark on white, else its first letter. */
+.apps{display:flex;align-items:center;flex:none;--as:36px;--ring:var(--soft)}
+.app{position:relative;flex:none;display:grid;place-items:center;width:var(--as);height:var(--as);border-radius:calc(var(--as) * .2237);overflow:hidden;background:#fff;box-shadow:0 0 0 2.5px var(--ring)}
+.app::after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 0 .5px rgba(0,0,0,.16);pointer-events:none}
+.app+.app{margin-left:calc(var(--as) * -.14)}
+.app.icon img{width:100%;height:100%;object-fit:cover}
+.app.mark img{width:64%;height:64%;object-fit:contain}
+.app.mark i{display:block;width:64%;height:64%;-webkit-mask:var(--m) center/contain no-repeat;mask:var(--m) center/contain no-repeat}
+.app.letter{color:#3a3a3c;font-size:calc(var(--as) * .46);font-weight:600;letter-spacing:0;line-height:1}
+
+/* Add to Simeon, on a team's page and in its window on /marketplace. */
+.add{display:flex;flex-direction:column;align-items:center;margin-top:clamp(18px,1.6*var(--vw,1vw),32px)}
+.add .btn{height:var(--btn-h);padding:0 var(--btn-pad);font-size:var(--btn-font)} /* the home page's buttons */
+.add .btn svg{width:1em;height:1em;flex:none;margin-left:-.15em}
+.add-note{margin:0}
+.add-note[hidden]{display:none}
+.add.noapp .add-btn{display:none}
+.add .btn .dl{margin:0 -.15em 0 0} /* Download for macOS, its arrow after the words, as on the home page */
+.add .btn .apl{width:1.05em;height:1.05em;margin:-.18em .45em 0 -.1em;flex:none}
+.add-note .go{display:none}
+@media (max-width:734px){.add-note .btn:not(.go){display:none}.add-note .go{display:inline-flex}} /* a phone: Download for iOS, as on the home page */
+footer{margin-top:clamp(80px,8*var(--vw,1vw),140px)} /* the footer itself is site.css's (nav.py) */
+
+/* From the home page (source/page.html): the section titles, the pricing, the questions and the closing call. */
+.btn.ghost{background:#f2f2f2;color:#000}
+.btn.ghost:hover{background:#e8e8e8}
+.btn .apl{width:1.05em;height:1.05em;margin:-.18em .45em 0 -.1em;flex:none}
+.btn .dl{width:1em;height:1em;margin:0 -.15em 0 .4em;flex:none} /* Download for macOS, its arrow after the words (18 October 2026) */
+.trust{padding:clamp(72px,6.2*var(--vw,1vw),118px) 0 clamp(32px,3*var(--vw,1vw),56px)}
+.trust-top{display:grid;grid-template-columns:1fr 1fr;gap:clamp(24px,5*var(--vw,1vw),96px);align-items:start}
+.trust h2{margin:0;font-weight:var(--w-display);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em;max-width:var(--title-max);text-wrap:pretty} /* every section's title is the headline's size (the founder, 23 October 2026) */
+@media (max-width:734px){.trust h2{max-width:13em;text-wrap:balance}.close3 h2{max-width:none;text-wrap:balance}} /* the shared title width is for a computer's screen; a phone keeps its titles as they were (the founder, 23 October 2026) */
+.trust-top p{justify-self:end;margin:clamp(4px,.45*var(--vw,1vw),9px) 0 0;max-width:30em;font-size:var(--t-lead);line-height:1.5;letter-spacing:-.01em;color:var(--ink2)} /* on the far right, as the title is on the far left */
+@media (max-width:860px){.trust-top{grid-template-columns:1fr}.trust-top p{justify-self:start}}
+/* Pricing: Trial, Standard, Pro and Max on the pale panels (the founder, 4 October 2026), laid out simpler (18 October 2026): the name, the price at the display size, how it is billed, a full-width button, then what the plan includes in a few words. */
+.plans3{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:22px;margin-top:clamp(40px,4*var(--vw,1vw),80px)}
+.plan3{display:flex;flex-direction:column;padding:clamp(28px,2.4*var(--vw,1vw),44px) clamp(24px,2.1*var(--vw,1vw),40px);border-radius:28px;background:#fafafb}
+.plan3 h3{margin:0;font-size:var(--t-body);font-weight:400;letter-spacing:-.01em;color:var(--ink2)}
+.plan3 .pr{margin-top:clamp(16px,1.4*var(--vw,1vw),26px);font-weight:var(--w-display);font-size:var(--t-display);line-height:1;letter-spacing:-.025em;color:var(--ink)}
+.plan3 .pr small{font-family:var(--font);font-weight:400;font-size:var(--t-body);letter-spacing:-.01em;color:var(--ink2);margin-left:6px}
+.plan3 .billed{margin:10px 0 0;font-size:var(--t-body);letter-spacing:-.01em;color:var(--ink2)}
+.plan3 .btn{display:flex;align-items:center;justify-content:center;width:100%;margin-top:clamp(22px,2*var(--vw,1vw),36px);height:var(--btn-h);padding:0 20px;font-size:var(--btn-font)}
+.plan3 .inc{margin:clamp(26px,2.2*var(--vw,1vw),40px) 0 0;font-size:var(--t-body);letter-spacing:-.01em;color:var(--ink)}
+.plan3 ul{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:12px;align-content:start;font-size:var(--t-body);line-height:1.4;letter-spacing:-.01em;color:var(--ink2)}
+.plan3 li{display:flex;gap:12px;align-items:flex-start}
+.plan3 li::before{content:"";flex:none;width:.95em;height:.95em;margin-top:.24em;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236e6e73' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12.5 4.5 4.5L19 7'/%3E%3C/svg%3E") center/contain no-repeat}
+@supports (grid-template-rows:subgrid){.plans3{grid-template-rows:repeat(6,auto)}.plan3{display:grid;grid-template-rows:subgrid;row-gap:0;grid-row:span 6;align-content:start}}
+@media (max-width:1068px){.plans3{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:734px){.plans3{grid-template-columns:1fr;gap:14px}.plan3{border-radius:24px}}
+.qa3{margin-top:clamp(40px,4*var(--vw,1vw),80px);padding:clamp(12px,1.2*var(--vw,1vw),24px) clamp(28px,3*var(--vw,1vw),56px);border-radius:28px;background:#fafafb}
+.qa3 details{border-top:1px solid #ececef}
+.qa3 details:first-child{border-top:0}
+.qa3 summary{list-style:none;display:flex;justify-content:space-between;align-items:center;gap:24px;padding:clamp(20px,1.7*var(--vw,1vw),30px) 0;cursor:pointer;font-size:var(--t-head);letter-spacing:-.015em;color:#1d1d1f}
+.qa3 summary::-webkit-details-marker{display:none}
+.qa3 summary::after{content:"";flex:none;width:clamp(28px,1.8*var(--vw,1vw),34px);height:clamp(28px,1.8*var(--vw,1vw),34px);border-radius:50%;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231d1d1f' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M12 6v12M6 12h12'/%3E%3C/svg%3E") center/50% no-repeat;box-shadow:0 0 0 1px rgba(0,0,0,.05);transition:transform .25s}
+.qa3 details[open] summary::after{transform:rotate(45deg)}
+.qa3 summary:focus-visible{outline:2px solid var(--blue);outline-offset:4px;border-radius:6px}
+.qa3 details p{margin:0;padding:0 0 clamp(22px,1.8*var(--vw,1vw),32px);max-width:46em;font-size:var(--t-body);line-height:1.6;color:var(--ink2)}
+.close3{padding:clamp(88px,7*var(--vw,1vw),140px) 0 clamp(88px,7*var(--vw,1vw),140px);text-align:center}
+.close3 h2{margin:0 auto;max-width:var(--title-max);font-weight:var(--w-display);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em;text-wrap:pretty}
+.close3 .ctas{display:flex;justify-content:center;gap:clamp(10px,.7*var(--vw,1vw),14px);flex-wrap:wrap;margin-top:clamp(28px,2.4*var(--vw,1vw),44px)}
+.close3 .btn{height:var(--btn-h);padding:0 var(--btn-pad);font-size:var(--btn-font)}
+.close3 .btn.go{display:none} /* on a phone the close offers Download for iOS, as the top does, and Request a demo beside it (the founder, 12 October 2026) */
+@media (max-width:734px){.close3 .ctas .btn:not(.ghost):not(.go){display:none}.close3 .btn.go{display:inline-flex;order:-1}}
+
+/* A post's page (newsroom.py, after OpenAI's "Introducing dots"): its date and kinds, its headline large and centred,
+   the two buttons, Share on a hairline, then the words in a column, the pictures wider than the words. */
+.np{padding:clamp(48px,6*var(--vw,1vw),112px) 0 0}
+.np-head{text-align:center}
+.np-meta{display:flex;justify-content:center;flex-wrap:wrap;gap:6px 18px;margin:0;font-size:var(--t-body);color:var(--ink2)}
+.np-meta time{color:var(--ink)}
+.np-head h1{margin-top:clamp(14px,1.3*var(--vw,1vw),24px);font-size:clamp(40px,4.4*var(--vw,1vw),80px);line-height:1.05;font-weight:var(--w-display);letter-spacing:-.035em;text-wrap:balance}
+.np-ctas{display:flex;justify-content:center;flex-wrap:wrap;gap:clamp(10px,.7*var(--vw,1vw),14px);margin-top:clamp(22px,2*var(--vw,1vw),36px)}
+.np-ctas .btn{height:var(--btn-h);padding:0 var(--btn-pad);font-size:var(--btn-font)}
+.np-body{margin-top:clamp(48px,5*var(--vw,1vw),96px)}
+.np-body>*{max-width:680px;margin-left:auto;margin-right:auto}
+.np-bar{display:flex;justify-content:flex-end;padding-top:14px;border-top:1px solid #e8e8ed}
+.np-share{display:inline-flex;align-items:center;gap:7px;padding:4px 2px;border:0;background:none;font:inherit;font-size:var(--t-body);color:var(--ink);cursor:pointer}
+.np-share svg{width:17px;height:17px}
+.np-share:focus-visible{outline:2px solid var(--blue);outline-offset:3px;border-radius:6px}
+.np-body p{margin-top:1.15em;font-size:clamp(17px,1.15*var(--vw,1vw),19px);line-height:1.6;letter-spacing:-.012em;text-wrap:pretty}
+.np-body p.np-lead{margin-top:clamp(36px,3.4*var(--vw,1vw),60px)}
+.np-body p b{font-weight:600}
+.np-body a{color:var(--blue);text-decoration:none}
+.np-body a:hover{text-decoration:underline}
+.np-body h2{margin-top:clamp(64px,6*var(--vw,1vw),112px);font-size:clamp(26px,2.1*var(--vw,1vw),36px);line-height:1.15;font-weight:var(--w-display);letter-spacing:-.025em;text-wrap:balance}
+.np-body h2+p{margin-top:clamp(18px,1.6*var(--vw,1vw),28px)}
+.np-body blockquote{margin-top:1.3em;font-size:clamp(22px,1.8*var(--vw,1vw),30px);line-height:1.3;font-weight:var(--w-display);letter-spacing:-.02em;text-wrap:balance}
+.np-body figure{max-width:1140px;margin-top:clamp(40px,4*var(--vw,1vw),72px);margin-bottom:clamp(40px,4*var(--vw,1vw),72px)}
+.np-body figure img{display:block;width:100%;height:auto;border-radius:clamp(18px,1.8*var(--vw,1vw),28px)}
+.np-body figure+figure{margin-top:clamp(16px,1.6*var(--vw,1vw),28px)}
+.np-end{height:clamp(24px,2.4*var(--vw,1vw),48px)}
+footer{margin-top:0}
+</style>
+<meta property="og:image" content="https://simeonlabs.com/img/news/introducing-simeon/hero.webp">
+</head>
+<body>
+
+<header class="bar">
+  <div class="wrap">
+    <a class="wordmark" href="/" aria-label="SimeonLabs home"></a>
+    <nav class="bar-links" aria-label="Pages"><button class="drop" type="button" aria-disabled="true">Products<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="drop" type="button" aria-disabled="true">Solutions<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div class="drops"><button class="drop" type="button" aria-haspopup="true">Resources<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div class="drop-panel"><a href="/marketplace">Marketplace</a><a href="/newsroom" aria-current="page">Newsroom</a></div></div><a href="/connectors">Connectors</a><a href="/pricing">Pricing</a></nav>
+    <div class="acts"><a class="btn soft" href="/contact">Contact Sales</a><a class="btn" href="https://api.simeonlabs.com/desktop/download/mac">Download</a></div>
+    <details class="menu">
+      <summary aria-label="Menu"><i></i><i></i></summary>
+      <div class="menu-in"><nav aria-label="Pages"><button class="drop" type="button" aria-disabled="true">Products<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="drop" type="button" aria-disabled="true">Solutions<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><details class="menu-group"><summary>Resources<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></summary><div><a href="/marketplace">Marketplace</a><a href="/newsroom" aria-current="page">Newsroom</a></div></details><a href="/connectors">Connectors</a><a href="/pricing">Pricing</a></nav><div class="menu-acts"><a class="btn soft" href="/contact">Contact Sales</a><a class="btn" href="https://api.simeonlabs.com/desktop/download/mac">Download</a></div></div>
+    </details>
+  </div>
+</header>
+
+<main>
+<article class="np" aria-labelledby="post-title">
+  <div class="wrap">
+    <header class="np-head">
+      <p class="np-meta"><time datetime="2026-10-30">October 30, 2026</time><span>Product</span><span>Company</span></p>
+      <h1 id="post-title">Introducing Simeon</h1>
+      <div class="np-ctas"><a class="btn" href="https://api.simeonlabs.com/desktop/download/mac">Download for macOS<svg class="dl" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m-5-5 5 5 5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a><a class="btn ghost" href="/contact">Contact Sales</a></div>
+    </header>
+    <div class="np-body">
+    <div class="np-bar"><button class="np-share" type="button"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M8.6 11.4a3.4 3.4 0 0 0 4.8 0l2.6-2.6a3.4 3.4 0 0 0-4.8-4.8l-1.2 1.2"/><path d="M11.4 8.6a3.4 3.4 0 0 0-4.8 0L4 11.2a3.4 3.4 0 0 0 4.8 4.8l1.2-1.2"/></svg><span>Share</span></button></div>
+    <p class="np-lead"><b>Simeon is a team of AI agents that you hire, talk to, and give work to.</b> They have their own computer in the cloud and can use the same apps you do.</p>
+    <figure><img src="/img/news/introducing-simeon/hero.webp?v=7533bc26" alt="Clay faces of agents around the word Simeon, each with a cursor pointing at it" width="1260" height="660"></figure>
+    <p>There is a funny thing about running a business. You can spend an entire day working and still feel like you haven’t gotten to anything. You answered the emails. You moved the meeting. You checked on the invoice. You found the document someone needed. And somewhere in the middle of all that, the work you actually wanted to do got pushed to tomorrow.</p>
+    <p>Tomorrow, of course, has its own plans.</p>
+    <p>We kept thinking about what it would be like to have another person around. Someone who could take a thing off your plate and actually take care of it. Someone who didn’t need you to explain every little step, or sit beside them while they did it. Someone who could get on with their day while you got on with yours.</p>
+    <p>That’s the idea behind Simeon. And, as it turns out, one person isn’t always enough.</p>
+    <h2>Meet Simeon. He’s hiring.</h2>
+    <p>When you open Simeon for the first time, there’s already someone there. His name is Simeon, and he’s your Chief of Staff.</p>
+    <figure><img src="/img/news/introducing-simeon/badge.webp?v=b4960059" alt="Simeon&#x27;s employee badge: Chief of Staff, reports to you, since day one, hiring your team, always on" width="1260" height="760" loading="lazy"></figure>
+    <p>He doesn’t start by showing you a dashboard or asking you to configure anything. He asks a question:</p>
+    <blockquote>“What’s the first thing you’d hand to a person if you hired one today?”</blockquote>
+    <p>We like this question because it gets straight to the point. You probably already know the answer. Maybe it’s something you’ve been doing yourself for years. Maybe it’s a job you keep putting off because there never seems to be a good time to get to it.</p>
+    <p>You tell Simeon, and he finds the right person for the job. He gives them a first name, a job title, and a brief. Then a little card appears in your conversation: “Iris just joined your team.”</p>
+    <figure><img src="/img/news/introducing-simeon/joined.webp?v=461bfcd2" alt="The card in the chat: Iris just joined your team, with Go to Chat and View Profile" width="1260" height="620" loading="lazy"></figure>
+    <p>Your new hire introduces themselves in their own chat and gets to work.</p>
+    <p>That’s Simeon’s job. He delegates. When a task belongs to someone on your team, he sends it their way. When nobody has the right job, he hires someone. When something is bigger, he puts a few people together.</p>
+    <p>And if you’d rather start with a team that’s already put together, there’s the <a href="/marketplace">Marketplace</a> on our website. We’ve made fifteen teams for different kinds of businesses and working lives. Five agents come with each team, already named and instructed. Adding one is free.</p>
+    <h2>A computer, a desk, and somewhere to get things done.</h2>
+    <p>One thing we felt strongly about was that agents needed to actually do the work. A chat window is a fine place to talk about work. It isn’t always a great place to do it.</p>
+    <p>So every person on Simeon gets a computer in the cloud, shared by their agents. It has a browser and files. Your agents can open websites, sign in, move between pages, download documents, and fill out forms.</p>
+    <p>They can work in a tool even when there’s no app integration for it. They just open the website.</p>
+    <p>You can watch their screen whenever you like. There’s something quite nice about seeing someone get on with a job you would otherwise be doing yourself. And if you want to step in, you can take over the computer.</p>
+    <p>Sometimes an agent will reach a sign-in page or need a verification code. It hands you the screen, you take care of it, and then it continues.</p>
+    <p>The computer lives in the cloud, so closing your Mac doesn’t mean closing the office. Agents can keep working. You can have routines run on a schedule, or have them start when something happens in Slack, GitHub, Linear, Sentry, or PagerDuty.</p>
+    <p>Your laptop can finally go to sleep before you do.</p>
+    <h2>They know their way around your apps.</h2>
+    <p>Your business already has a home. It’s in your inbox, your calendar, your files, and all the other places where your work happens. We didn’t want to ask you to move everything somewhere new.</p>
+    <p>Simeon works with more than 200 apps. Gmail, Outlook, Google Calendar, Drive, Slack, Notion, QuickBooks, HubSpot, Salesforce, Shopify, Stripe, Zoom, Figma, Canva, LinkedIn. The list goes on.</p>
+    <figure><img src="/img/news/introducing-simeon/apps.webp?v=3582ba06" alt="An agent surrounded by twelve app icons: Gmail, Slack, HubSpot, Google Calendar, Shopify, Notion, Stripe, Zoom, QuickBooks, Figma, Salesforce and Canva" width="1260" height="700" loading="lazy"></figure>
+    <p>When an agent needs an app for the first time, it asks you to connect it. You sign in on the app’s own page. Simeon never sees your password. You can also decide which tools an app is allowed to use, or disconnect it altogether.</p>
+    <p>This opens up some interesting possibilities. An agent can look at your sales in Stripe, check the customer information in HubSpot, and put together a report. Another can work through your bookkeeping and come back with a question about a missing receipt.</p>
+    <p>They can also search for flights and book them using Link, Stripe’s wallet. You approve the purchase in the Link app before anything is bought. Every purchase gets its own one-time card, rather than using your actual card. This works with US and Canadian Link accounts.</p>
+    <p>And if you send an agent a short video, it can watch it and tell you what happens.</p>
+    <p>We want your agents to be able to go where the work is. That’s where the work is, after all.</p>
+    <h2>A team should talk to each other.</h2>
+    <p>You can message any agent from the Mac app. You can also call one and talk out loud. It keeps working while you talk, and you can ask for an update whenever you want.</p>
+    <p>If your team uses Slack or Discord, an agent can have its own app or bot there, too. Other people can talk to it without having to open Simeon.</p>
+    <p>Something else happens when you have more than one agent: they start working together. They can message each other, share what they’ve learned, and pass tasks along. You can bring several agents into a group chat when a project needs them.</p>
+    <figure><img src="/img/news/introducing-simeon/team.webp?v=faa47178" alt="A group chat on a phone: Maya asks Theo for the spring campaign&#x27;s numbers from Shopify and Meta Ads, then asks Scout for a one-pager" width="1260" height="760" loading="lazy"></figure>
+    <p>Imagine asking Nora what needs to happen before Friday. She checks in with the team and comes back with two things: the Halden contract still needs a signature, and the offsite needs a venue. You ask her to find somewhere for twelve people near the office. A little while later, you have three options.</p>
+    <p>That’s a conversation. It doesn’t need to become a project plan before anyone can do anything.</p>
+    <p>Your agents also remember what they learn about your business and how you like things done. Over time, they get to know the way you work. You shouldn’t have to introduce yourself every time you open a chat.</p>
+    <h2>You still get the final say.</h2>
+    <p>We spent a lot of time thinking about this. When you hire someone, you give them responsibility. But that doesn’t mean you stop being the person in charge.</p>
+    <p>So when an agent writes an email in your name, it comes back as a draft. You read it, make whatever changes you want, and press Send. The same goes for Slack messages. Nothing gets sent in your name without your say-so.</p>
+    <figure><img src="/img/news/introducing-simeon/draft.webp?v=62bd7e7a" alt="Simeon on a Mac: Iris has drafted a reply to Jenny, with Send email and Discard" width="1260" height="760" loading="lazy"></figure>
+    <p>Passwords and verification codes work similarly. You enter them in a form in the chat, where the agent can’t see them. If you use 1Password, you can connect it and approve logins with Face ID or Touch ID. Your credentials stay private there, too.</p>
+    <p>You can stop an agent at any point. You can take over its computer. You can disconnect an app.</p>
+    <p>Your data is encrypted, kept separate from other customers, and never used to train a model.</p>
+    <p>And we should say this plainly: agents make mistakes. Sometimes they misunderstand something. Sometimes they get something wrong. Important work deserves a second look, particularly when you’re just getting started. We think that’s part of learning to work together.</p>
+    <p>The point isn’t to disappear from your business. It’s to stop having to be involved in every single thing.</p>
+    <h2>Give them something to do.</h2>
+    <p>The best place to start is probably something you’ve been meaning to hand off for a while.</p>
+    <p>Maybe it’s the books. Maybe it’s the inbox. Maybe there’s a client you owe a response to and you just haven’t found the time. You can start with one person and one job. You can add more as you go.</p>
+    <p>In our demos, we’ve shown an agent catching a $4,200 invoice that’s 34 days overdue and asking whether it should send a reminder. Another helps close September, matching 212 transactions before coming back with one missing Delta receipt. These are small things, but they’re the kinds of things that take up a surprising amount of a person’s day.</p>
+    <figure><img src="/img/news/introducing-simeon/invoice.webp?v=e24f191d" alt="Theo on a phone: Acme Health is 34 days late on the $4,200 invoice. Want me to send them a reminder?" width="1260" height="760" loading="lazy"></figure>
+    <p>Simeon is available today on Mac for Apple silicon, running macOS 15 or later. The iPhone app is coming soon. It speaks English, French, Spanish, German, Dutch, Italian, Portuguese, Swedish, Polish, and Turkish.</p>
+    <p>Every plan comes with a seven-day free trial. After that, Standard is $30 a month. Pro is $100 a month, with 3.5 times the usage of Standard. Max is $200 a month, with nine times the usage, for teams with agents working every day.</p>
+    <p>You can find the <a href="/pricing">plans</a> and meet the <a href="/marketplace">ready-made teams</a> on our website.</p>
+    <p>Or you can just download Simeon and answer the first question.</p>
+    <blockquote>What’s the first thing you’d hand to a person if you hired one today?</blockquote>
+    <p>We’d love to meet the person you hire.</p>
+    </div>
+  </div>
+</article>
+<div class="np-end" aria-hidden="true"></div>
+<section class="close3" aria-label="Get started">
+  <div class="wrap">
+    <h2>Your team is ready<br>when you are.</h2>
+    <div class="ctas"><a class="btn" href="https://api.simeonlabs.com/desktop/download/mac">Download for macOS<svg class="dl" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m-5-5 5 5 5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a><a class="btn ghost" href="/contact">Request a demo&nbsp;&#8594;</a><span class="btn go"><svg class="apl" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></svg>Download for iOS<svg class="dl" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m-5-5 5 5 5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div>
+  </div>
+</section>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <div class="foot-top">
+      <a class="foot-mark" href="/" aria-label="SimeonLabs home"></a>
+      <nav class="foot-cols" aria-label="Site"><div class="foot-col"><h2>Product</h2><a href="/marketplace">Marketplace</a><a href="/connectors">Connectors</a><a href="/pricing">Pricing</a><a href="https://api.simeonlabs.com/desktop/download/mac">Download for Mac</a></div><div class="foot-col"><h2>Company</h2><a href="/newsroom" aria-current="page">Newsroom</a><a href="/contact">Contact</a></div><div class="foot-col"><h2>Legal</h2><a href="/privacy">Privacy policy</a><a href="/terms">Terms of service</a></div><div class="foot-col"><h2>Get started</h2><a href="https://app.simeonlabs.com/billing?plan=standard">Try it free</a><a href="https://app.simeonlabs.com/login">Log in</a></div></nav>
+    </div>
+    <div class="foot-base">
+      <a class="foot-word" href="/" aria-label="SimeonLabs"></a>
+      <span class="foot-copy">© 2026 Spaire, Inc.</span>
+      <span class="foot-lang"><svg viewBox="0 0 16 16" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.1"><circle cx="8" cy="8" r="6.5"/><path d="M1.5 8h13M8 1.5c1.9 1.8 2.9 4 2.9 6.5S9.9 12.7 8 14.5M8 1.5C6.1 3.3 5.1 5.5 5.1 8s1 4.7 2.9 6.5"/></g></svg>English</span>
+    </div>
+  </div>
+</footer>
+<script>
+// Share: the phone's own sheet where there is one, else the address copied, "Link copied" for two seconds.
+(() => {
+  const button = document.querySelector('.np-share');
+  if (!button) return;
+  const label = button.querySelector('span');
+  button.addEventListener('click', async () => {
+    const url = location.href.split('#')[0];
+    if (navigator.share && matchMedia('(pointer:coarse)').matches) {
+      try { await navigator.share({ title: document.title, url }); } catch (_) {}
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      label.textContent = 'Link copied';
+      setTimeout(() => { label.textContent = 'Share'; }, 2000);
+    } catch (_) {}
+  });
+})();
+</script>
+</body>
+</html>
