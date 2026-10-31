@@ -69,7 +69,7 @@ OUT = teams.OUT
 POSTS = [
     # The newest post, the page's opening: its headline breaks where it has "\n", and `mark` is its name set
     # over its picture (none: the picture alone, which says it already).
-    {"place": "hero", "slug": "introducing-simeon", "title": "Introducing\nSimeon",
+    {"place": "hero", "slug": "introducing-simeon", "title": "Introducing Simeon",
      "summary": "A team of AI agents that you hire, talk to, and give work to.",
      "kinds": ["Product", "Company"], "date": "2026-10-30", "url": "/newsroom/introducing-simeon",
      "image": "/img/news/introducing-simeon/hero.webp", "text": "news/introducing-simeon.md", "face": "simeon.webp",
@@ -260,8 +260,13 @@ def page():
 POST_CSS = """
 /* A post's page (newsroom.py, after OpenAI's "Introducing dots"): its date and kinds, its headline large and centred,
    the two buttons, Share on a hairline, then the words in a column, the pictures wider than the words. */
-.np{padding:clamp(48px,6*var(--vw,1vw),112px) 0 0}
-.np-head{text-align:center}
+.np{padding:clamp(24px,2.2*var(--vw,1vw),40px) 0 0}
+/* Back to the Newsroom: the arrow and the words in the second grey, over the post at the column's left edge. */
+.np-back{display:inline-flex;align-items:center;gap:8px;font-size:var(--t-body);color:var(--ink2);text-decoration:none}
+.np-back svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.np-back:hover{color:var(--ink)}
+.np-back:focus-visible{outline:2px solid var(--blue);outline-offset:3px;border-radius:6px}
+.np-head{margin-top:clamp(28px,3.6*var(--vw,1vw),56px);text-align:center}
 .np-meta{display:flex;justify-content:center;flex-wrap:wrap;gap:6px 18px;margin:0;font-size:var(--t-body);color:var(--ink2)}
 .np-meta time{color:var(--ink)}
 .np-head h1{margin-top:clamp(14px,1.3*var(--vw,1vw),24px);font-size:clamp(40px,4.4*var(--vw,1vw),80px);line-height:1.05;font-weight:var(--w-display);letter-spacing:-.035em;text-wrap:balance}
@@ -302,6 +307,8 @@ footer{margin-top:0}
   .np-body figure img{border-radius:0}
 }
 """
+
+BACK = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13 8H3M7.5 3.5 3 8l4.5 4.5"/></svg>'
 
 SHARE_ICON = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M8.6 11.4a3.4 3.4 0 0 0 4.8 0l2.6-2.6a3.4 3.4 0 0 0-4.8-4.8l-1.2 1.2"/><path d="M11.4 8.6a3.4 3.4 0 0 0-4.8 0L4 11.2a3.4 3.4 0 0 0 4.8 4.8l1.2-1.2"/></svg>'
 
@@ -407,6 +414,7 @@ def post_page(post):
                 f'width="{size[0]}" height="{size[1]}">\n      ')
     body = f"""<article class="np" aria-labelledby="post-title">
   <div class="wrap">
+    <a class="np-back" href="/newsroom">{BACK}Back to Newsroom</a>
     <header class="np-head">
       {face}<p class="np-meta"><time datetime="{post["date"]}">{day:%B} {day.day}, {day.year}</time>{kinds}</p>
       <h1 id="post-title">{esc(headline)}</h1>
