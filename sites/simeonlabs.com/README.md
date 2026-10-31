@@ -41,7 +41,8 @@ API, `server/simeon/desktop/contact.py`, which e-mails each message to the
 founder). `source/newsroom.py` writes `public/newsroom/`, the blog, in Apple Stories'
 layout: its posts are the list `POSTS` in that file (one since 31 October 2026,
 Introducing Simeon). A post has its own page, `/newsroom/<slug>`: its words are
-`source/news/<slug>.md`, its pictures `source/img/news/<slug>/`. The bar's
+`source/news/<slug>.md`, its pictures `source/img/news/<slug>/`; on a phone its
+`face`, a cut-out from those pictures, stands over the date, as Dots' does. The bar's
 Resources and the footer link to it. The bar and the footer every page
 shares are `source/nav.py`, their styles in `source/site.css` (30 October 2026):
 the bar holds Products and Solutions (their arrows open nothing yet), Resources

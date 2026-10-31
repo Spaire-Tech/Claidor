@@ -86,9 +86,9 @@ Your agents also remember what they learn about your business and how you like t
 
 We spent a lot of time thinking about this. When you hire someone, you give them responsibility. But that doesn't mean you stop being the person in charge.
 
-So when an agent writes an email in your name, it comes back as a draft. You read it, make whatever changes you want, and press Send. The same goes for Slack messages. Nothing gets sent in your name without your say-so.
+![Leo asks for the OK on a Studio Display from apple.com, $1,599.00 on a Visa through Link by Stripe, with Deny and Allow](checkout.webp)
 
-![Simeon on a Mac: Iris has drafted a reply to Jenny, with Send email and Discard](draft.webp)
+So when an agent writes an email in your name, it comes back as a draft. You read it, make whatever changes you want, and press Send. The same goes for Slack messages. Nothing gets sent in your name without your say-so.
 
 Passwords and verification codes work similarly. You enter them in a form in the chat, where the agent can't see them. If you use 1Password, you can connect it and approve logins with Face ID or Touch ID. Your credentials stay private there, too.
 
