@@ -16,6 +16,7 @@
     "brands": "node scripts/make-brands.mjs"
   },
   "dependencies": {
+    "highlight.js": "11.9.0",
     "react": "19.2.4",
     "react-dom": "19.2.4"
   },

@@ -39,7 +39,7 @@ import {
 import { type RunFlags, runFlags } from './chatRuns'
 import { Entry, appliedChange } from './entry'
 import { fileLine, fileSize } from './fileLine'
-import { computerPath } from './filePreview'
+import { byteCap, computerPath } from './filePreview'
 import { GatewayError } from './gatewayConnection'
 import { type JSONValue, arr, bool, field, int, num, str, text } from './json'
 import { t } from './l10n'
@@ -1385,6 +1385,37 @@ export class AppStore {
     return facts
   }
 
+  /**
+   * A file read for the preview (`readForPreview`): its size asked first
+   * (a piece of no length), so a file over the cap (25 MB) is never
+   * fetched; then its bytes, or nothing when the computer will not hand it
+   * over.
+   */
+  async readForPreview(url: string, agentId: string): Promise<PreviewRead> {
+    const sent = this.sentFile(url)
+    if (sent)
+      return sent.data.length > byteCap
+        ? { kind: 'tooLarge', size: sent.data.length }
+        : { kind: 'ready', data: sent.data }
+    const backend = this.backend
+    if (!backend) return { kind: 'missing' }
+    try {
+      const probe = await backend.command('readAttachmentChunk', {
+        path: computerPath(url),
+        agentId,
+        offset: 0,
+        length: 0,
+      })
+      const total = int(field(probe, 'totalSize'))
+      if (total != null && total > byteCap)
+        return { kind: 'tooLarge', size: total }
+    } catch {
+      // No size: the read below says whether it is there.
+    }
+    const data = await this.readFile(url, agentId, { limit: byteCap })
+    return data ? { kind: 'ready', data } : { kind: 'missing' }
+  }
+
   /** Resend on a message that failed. */
   async resend(id: string, agentId: string): Promise<void> {
     if (
@@ -1601,6 +1632,12 @@ export class AppStore {
     return threadSplit(entries, this.olderBefore[agentId] != null).visible
   }
 }
+
+/** What the preview has of a file (`PreviewRead`): its bytes, too large to show (over 25 MB), or nothing. */
+export type PreviewRead =
+  | { kind: 'ready'; data: Uint8Array }
+  | { kind: 'tooLarge'; size: number }
+  | { kind: 'missing' }
 
 /** A file card's line, and whether the computer read the file as text (unknown until it answers). */
 export interface FileFacts {

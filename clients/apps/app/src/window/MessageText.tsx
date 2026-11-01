@@ -322,9 +322,16 @@ function Paragraph({ markdown }: { markdown: string }) {
   )
 }
 
-export function MessageBlocks({ markdown }: { markdown: string }) {
+export function MessageBlocks({
+  markdown,
+  document = false,
+}: {
+  markdown: string
+  /** A Markdown file's page (`proseDocument`): its own headings, lists, tables and quotes. */
+  document?: boolean
+}) {
   return (
-    <div className="message-blocks">
+    <div className={document ? 'message-blocks document' : 'message-blocks'}>
       <Blocks blocks={cachedBlocks(markdown)} />
     </div>
   )

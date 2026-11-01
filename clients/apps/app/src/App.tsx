@@ -4,10 +4,11 @@
 // (the address keeps it, `?agent=`), else the first in the list opens
 // (`WindowState.chooseFirst`).
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { WebSession } from './session'
 import { ChatPane } from './window/ChatPane'
 import { Sidebar } from './window/Sidebar'
+import { type FileItem, FileViewer, OpenFile } from './window/Viewers'
 import { useWatched } from './window/useStore'
 
 function Splash() {
@@ -46,20 +47,33 @@ function MainWindow({ session }: { session: WebSession }) {
   const known = open != null && store.agents.some((agent) => agent.id === open)
   const shown = known ? open : store.agents.find((agent) => !agent.isHidden)?.id
   useEffect(() => keepInAddress(shown), [shown])
+  // A file's preview over the window (`Viewers`), one at a time.
+  const [file, setFile] = useState<FileItem>()
+  const closeFile = useCallback(() => setFile(undefined), [])
   return (
-    <div className="window">
-      <Sidebar store={store} open={shown} onOpen={setOpen} />
-      <main className="chat-area">
-        {shown != null && (
-          <ChatPane
-            key={shown}
-            store={store}
-            agentId={shown}
-            onOpenAgent={setOpen}
-          />
-        )}
-      </main>
-    </div>
+    <OpenFile.Provider value={setFile}>
+      <div className="window">
+        <Sidebar store={store} open={shown} onOpen={setOpen} />
+        <main className="chat-area">
+          {shown != null && (
+            <ChatPane
+              key={shown}
+              store={store}
+              agentId={shown}
+              onOpenAgent={setOpen}
+            />
+          )}
+        </main>
+      </div>
+      {file && (
+        <FileViewer
+          key={file.url}
+          item={file}
+          store={store}
+          close={closeFile}
+        />
+      )}
+    </OpenFile.Provider>
   )
 }
 
