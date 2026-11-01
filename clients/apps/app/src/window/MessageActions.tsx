@@ -4,8 +4,8 @@
 // right click: Add reaction, Reply, Start a thread, Copy), and the message
 // being answered over the field.
 //
-// Still to come (docs/web-app/PROGRESS.md): More emoji, the full picker
-// (`EmojiPopover`, 2b).
+// More emoji, the capsule's last cell, opens the full picker
+// (EmojiPicker.tsx).
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { Bubble } from '../core/chat'
@@ -35,8 +35,10 @@ export interface MessageActions {
 
 function Glyph({
   name,
+  size = 14,
 }: {
   name: 'smile' | 'reply' | 'forward' | 'more' | 'thread' | 'copy'
+  size?: number
 }) {
   const paths: Record<typeof name, string> = {
     smile:
@@ -48,7 +50,7 @@ function Glyph({
     copy: 'M5.5 5.5h7v8h-7zM3.5 10.5v-8h7',
   }
   return (
-    <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
+    <svg width={size} height={size} viewBox="0 0 16 16" aria-hidden="true">
       <path
         d={paths[name]}
         fill="none"
@@ -148,7 +150,7 @@ export interface MenuItem {
 export type Dismissal = 'click' | 'key' | 'scroll' | 'blur' | 'pick'
 
 /** Closes on a click outside, Escape (which goes no further), the wheel or trackpad scrolling outside it (not the chat's own scrolling as lines come), or the window going to the back. */
-function useDismiss(
+export function useDismiss(
   box: React.RefObject<HTMLElement | null>,
   close: (why: Dismissal) => void,
 ) {
@@ -274,8 +276,9 @@ export function PopMenu({
 const cell = 36
 const gap = 2
 const inset = 5
-const capsuleWidth =
-  quickReactions.length * cell + (quickReactions.length - 1) * gap + 2 * inset
+/** The six quick reactions, then More emoji. */
+const cells = quickReactions.length + 1
+const capsuleWidth = cells * cell + (cells - 1) * gap + 2 * inset
 const capsuleHeight = cell + 2 * inset
 
 /**
@@ -291,6 +294,7 @@ export function TapbackCapsule({
   anchor,
   bounds,
   pick,
+  more,
   close,
 }: {
   bubble: Bubble
@@ -298,6 +302,8 @@ export function TapbackCapsule({
   anchor: { left: number; top: number; right: number; bottom: number }
   bounds: { width: number; height: number }
   pick: (emoji: string) => void
+  /** More emoji: the full picker where the capsule was. */
+  more: () => void
   close: (why: Dismissal) => void
 }) {
   const box = useRef<HTMLDivElement>(null)
@@ -344,6 +350,18 @@ export function TapbackCapsule({
           </button>
         )
       })}
+      <button
+        type="button"
+        className="tapback-cell more"
+        title={t('More emoji')}
+        aria-label={t('More emoji')}
+        onClick={() => {
+          close('pick')
+          more()
+        }}
+      >
+        <Glyph name="smile" size={17} />
+      </button>
     </div>
   )
 }

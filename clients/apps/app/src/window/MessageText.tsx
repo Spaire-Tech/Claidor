@@ -15,7 +15,11 @@
 // in its colour after its logo, an agent in a glass pill with its face,
 // which opens its chat.
 //
-// Still to come (docs/web-app/PROGRESS.md): a link's site icon (2b); maths and diagrams drawn
+// A link in an agent's message comes after its site's icon (`LinkIcons`):
+// the site's own /favicon.ico, read by the browser from the site itself,
+// shown once it has come.
+//
+// Still to come (docs/web-app/PROGRESS.md): maths and diagrams drawn
 // (the Mac's `DrawingView`; until then their TeX shows as code); the code's
 // colours.
 
@@ -33,6 +37,7 @@ import {
   tableCells,
 } from '../core/chatFind'
 import { brandLogos } from '../core/generatedBrands'
+import { siteOf } from '../core/linkIcons'
 import {
   type InlineRun,
   type MarkdownBlock,
@@ -158,7 +163,7 @@ function Run({
   if (run.struck) node = <s>{node}</s>
   if (run.link != null) {
     // A link opens in the browser's own new tab, never in the app's.
-    return (
+    const link = (
       <a
         className="message-link"
         href={run.link}
@@ -168,8 +173,50 @@ function Run({
         {node}
       </a>
     )
+    // Its site's icon before it, in an agent's message (not in a file's words, nor before an email's page).
+    const site = names ? siteOf(run.link) : undefined
+    if (!site) return link
+    return (
+      <>
+        <SiteIcon key={site} site={site} />
+        {link}
+      </>
+    )
   }
   return node
+}
+
+/** What each site's icon came to while the app runs: shown, or none (asked for once per site, as `LinkIcons`). */
+const siteIcons = new Map<string, 'shown' | 'none'>()
+
+/**
+ * A link's site icon (`InlineImages.site`): the site's own /favicon.ico,
+ * loaded by the browser from the site (never a favicon service; the chat's
+ * address not sent with it), 1.05 of the words, a 22% corner, a little below
+ * the line, then a narrow space that keeps it with the link. Nothing until
+ * it has come, and nothing for a site without one.
+ */
+function SiteIcon({ site }: { site: string }) {
+  const [state, setState] = useState(siteIcons.get(site))
+  if (state === 'none') return null
+  const settle = (shown: boolean) => {
+    siteIcons.set(site, shown ? 'shown' : 'none')
+    setState(shown ? 'shown' : 'none')
+  }
+  return (
+    <>
+      <img
+        className={state === 'shown' ? 'site-icon' : 'site-icon coming'}
+        src={`https://${site}/favicon.ico`}
+        alt=""
+        aria-hidden="true"
+        referrerPolicy="no-referrer"
+        onLoad={(event) => settle(event.currentTarget.naturalWidth > 0)}
+        onError={() => settle(false)}
+      />
+      {state === 'shown' && '\u202f'}
+    </>
+  )
 }
 
 /**

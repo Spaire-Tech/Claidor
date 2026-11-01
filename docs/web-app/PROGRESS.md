@@ -15,7 +15,7 @@ file and the code disagree, the code is right and this file is fixed.
 |---|---|
 | 0. The audit | Done, 1 November 2026 |
 | 1. The base: the server and the computer, signing in, the window | Done, 1 November 2026 (1a to 1d). Carried to step 2: the first run for a new account and the access cover |
-| 2. The sidebar and the chat | In progress: 2a (the chat's core, and the chat on screen) done; 2b parts 1 (a message's actions), 2 (find, the working line) and 3 (names in colour) done; 2b part 4 next |
+| 2. The sidebar and the chat | In progress: 2a (the chat's core, and the chat on screen) done; 2b (a message's actions, find, the working line, names in colour, link icons, the emoji picker) done; 2c (pictures and files from the computer, link cards, previews) next |
 | 3. The cards | Not started |
 | 4. The agent's pane, search, new chat, the org chart, starter packs | Not started |
 | 5. The computer and calls | Not started |
@@ -66,6 +66,59 @@ For the founder, each to be answered before the step that needs it:
 ## Log
 
 Newest first.
+
+### 1 November 2026: step 2b, part 4, a link's site icon and the emoji picker
+
+- `src/core/linkIcons.ts` (SimeonCore's `LinkIcons`, `CredentialSite`):
+  the website a link goes to, its host without "www."; none for an email's
+  page (Gmail's, Outlook's on the web) nor a link to no website.
+  `linkIcons.test.ts` is the core's tests, translated.
+- `MessageText.tsx` (`MessageLine.linked`, `InlineImages.site`): before each
+  link in an agent's message, its site's icon, 1.05 of the words with a 22%
+  corner, once it has come; nothing for a site without one.
+- **Decision (the session):** the icon is the site's own `/favicon.ico`,
+  loaded by the browser from the site itself, sent without the chat's
+  address. The Mac reads the site's page for its touch icon first; a web
+  page may not read another site's page, and a favicon service would show
+  the person's sites to a third party, which the Mac rules out ("never a
+  favicon service"). So a site whose icon is only named in its page shows
+  none on the web.
+- `src/core/emoji.ts` (SimeonCore's `Emoji.swift`): the window's 3,944 emoji
+  in its nine groups, from the core's own `Resources/emoji.json`, read when
+  the picker first opens (its own script, 119 KB compressed); search as the
+  window's; the ":" being typed and recent picks, for the composer later.
+  `emoji.test.ts` is the core's `EmojiTests`, translated.
+- `src/window/EmojiPicker.tsx` (`EmojiPicker`, `EmojiPopover`): More emoji,
+  the reactions capsule's seventh cell, opens the full picker under the
+  message: 294 by 320, "Search emoji" with the keys, each group titled over
+  its emoji 8 to a row, the person's own on the grey; "Results" or "No emoji
+  found"; a pick reacts and closes, Return picks the first result, Escape or
+  a click outside closes it. The message's bar stays while it is open.
+- `scripts/kept_names.json`: the polar bear emoji ("polar_bear"), already
+  kept in the core's emoji.json, is kept in the web app's built copy of it.
+- **Not in this part:** the ":" list in the field and the composer's own
+  emoji (2e, with "@" and "/").
+- **Checked:** in Chromium, the built app against a stand-in server and
+  computer (`picker-check.cjs` in the session's scratchpad), light and dark:
+  the capsule's seventh cell More emoji (the capsule 233 wide); the picker
+  294 by 320 with the keys in its search, nine groups and 3,944 emoji, the
+  capsule gone and the message's bar held; "tada" gave Results with 🎉
+  first, Return reacted with it (`reactToMessage` with 🎉) and closed it, the
+  message showing 🎉 as the person's own; "zzzzqqq" said "No emoji found";
+  Escape closed it; on the brief, the person's 👍 stood on the grey. Links:
+  the icons asked for were simeonlabs.com's, nosuch.example's and
+  docs.example's (www. left out), none for the Gmail link, each without the
+  chat's address, hidden until it comes and taken away when the site does
+  not answer. The checks of parts 1 to 3 again. The 169 tests, typecheck,
+  lint, the words', the brands' and the build's checks,
+  `check_translations.py`, `check_names.py`. The inventory counts 202
+  strings the new web app shows.
+- **Not checked:** an icon coming and showing: the browser here reaches no
+  other website, and the test browser does not let a stand-in answer for a
+  `/favicon.ico`; against the real server and a real computer (the address
+  is not live yet; see Open questions).
+- **Next:** step 2c: pictures and files read from the computer, files'
+  kinds, sizes and Save, link cards, previews.
 
 ### 1 November 2026: step 2b, part 3, names in their colours
 
