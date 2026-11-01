@@ -1,8 +1,10 @@
-// The app's words (ios/SimeonCore/Sources/SimeonCore/L10n.swift). Every
-// sentence the person reads goes through `t`, in English, the source
-// language; step 1c brings the catalogue and its translations
-// (docs/web-app/PROGRESS.md), and `t` then answers in the app's language.
+// The shared core's sentences (L10n.swift), from the core's catalogue
+// (ios/SimeonCore/Sources/SimeonCore/Resources/Localizable.xcstrings). How
+// keys and translations work: `words.ts`. Every call takes its English as
+// written, so `python3 scripts/check_translations.py` can find it in the
+// catalogue.
 
-export function t(english: string): string {
-  return english
-}
+import { keyedTranslator, translator } from './words'
+
+export const t = translator('core')
+export const tk = keyedTranslator('core')

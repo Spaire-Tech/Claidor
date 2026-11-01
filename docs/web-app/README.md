@@ -37,7 +37,7 @@ and writes `docs/web-app/inventory/`:
 |---|---|
 | `files.json` | Every Swift file of the Mac app (`mac/Simeon`) and the shared core (`ios/SimeonCore`): lines, what its header says it is, its views, whether it needs a Mac, its words on screen and how many of them the old web app has |
 | `areas.json` | The files in 14 areas. Each file is in exactly one, and the script stops when a file is new or gone, until the map in the script is updated |
-| `strings.json` | Every English string in the two catalogues (`Localizable.xcstrings`), the files that show it, and whether the old web app shows it |
+| `strings.json` | Every English string in the two catalogues (`Localizable.xcstrings`), the files that show it, whether the old web app shows it, and whether the new one does (`web_app`: its `t(…)`, read as `check_translations.py` reads it) |
 | `server.json` | Every call to Simeon Labs' server: paths and Connect RPC methods |
 | `box.json` | Every command the Mac sends to the cloud computer, with the 144 the host answers (`desktop/source/host/gateway-protocol.ts`) |
 | `chat.json` | Every kind of chat row and card the Mac draws (SimeonCore's `ChatRow` and `RequestCard`) |
@@ -148,6 +148,11 @@ them until the web app has it:
 
 1. **Words:** every string in the two catalogues is in the web app's
    catalogue and shown by its code. The translations come along with it.
+   *In place (step 1c):* the web app reads the two catalogues themselves
+   (`scripts/make-words.mjs`; `pnpm test` fails when its tables are not
+   theirs), `check_translations.py` fails on a sentence of the web app's
+   that no catalogue has, and `strings.json` counts the strings the web app
+   shows (`web_app`).
 2. **Server calls:** each of the 50 calls in `server.json` is made by the
    web app, or is listed as the Mac's alone (Apple's sign-in, the App Store).
 3. **Box commands:** each of the 70 in `box.json` is sent by the web app,

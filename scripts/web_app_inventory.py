@@ -134,6 +134,13 @@ def main():
 
     # --- the words ---
     file_literals = {p: set(literals(t)) for p, t in texts.items()}
+    # "web_app": the new web app (clients/apps/app) shows it, read the way check_translations.py reads its `t(…)`.
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+    import check_translations
+    web = {"mac": [], "core": []}
+    for _path, _line, pattern, table in check_translations.web_sentences():
+        if not pattern.endswith("as written"):
+            web[table].append(re.compile(pattern))
     strings = []
     for cat in CATALOGUES:
         data = json.loads(cat.read_text(encoding="utf-8"))
@@ -142,7 +149,9 @@ def main():
                 continue
             nk = norm(key)
             used = [rel(p) for p, lits in file_literals.items() if nk in lits]
-            strings.append({"text": key, "catalogue": rel(cat), "files": used, "old_web_app": in_bundle(key, bundle)})
+            table = "core" if "SimeonCore" in str(cat) else "mac"
+            strings.append({"text": key, "catalogue": rel(cat), "files": used, "old_web_app": in_bundle(key, bundle),
+                            "web_app": any(p.fullmatch(key) for p in web[table])})
     (OUT / "strings.json").write_text(lines(strings))
 
     # --- the files ---
@@ -243,7 +252,7 @@ def main():
           f"({sum(f['lines'] for f in files if f['part'] == 'core')} lines); {sum(1 for f in files if f['needs_a_mac'])} need a Mac")
     print(f"views: {sum(len(f['views']) for f in files)}")
     print(f"strings: {len(strings)} in the catalogues, {len(shown)} found in the code; "
-          f"{sum(1 for s in strings if s['old_web_app'])} also in the old web app")
+          f"{sum(1 for s in strings if s['old_web_app'])} also in the old web app, {sum(1 for s in strings if s['web_app'])} in the new one")
     print(f"server: {len(server_list)} calls; box: {len(box)} commands the Mac sends ({sum(1 for b in box_list['used_by_the_mac'] if b['old_web_app'])} "
           f"also in the old web app) of {len(host)} the host answers")
     print(f"chat: {len(chat['ChatRow'])} row kinds, {len(chat['RequestCard'])} request cards; tests: {sum(t['tests'] for t in tests)} in {len(tests)} files")
