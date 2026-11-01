@@ -15,7 +15,7 @@ file and the code disagree, the code is right and this file is fixed.
 |---|---|
 | 0. The audit | Done, 1 November 2026 |
 | 1. The base: the server and the computer, signing in, the window | Done, 1 November 2026 (1a to 1d). Carried to step 2: the first run for a new account and the access cover |
-| 2. The sidebar and the chat | In progress: 2a (the chat's core, and the chat on screen) done; 2b part 1 (a message's actions) done; 2b part 2 next |
+| 2. The sidebar and the chat | In progress: 2a (the chat's core, and the chat on screen) done; 2b parts 1 (a message's actions) and 2 (find, the working line) done; 2b part 3 next |
 | 3. The cards | Not started |
 | 4. The agent's pane, search, new chat, the org chart, starter packs | Not started |
 | 5. The computer and calls | Not started |
@@ -66,6 +66,75 @@ For the founder, each to be answered before the step that needs it:
 ## Log
 
 Newest first.
+
+### 1 November 2026: step 2b, part 2, find and the working line
+
+- `src/core/activity.ts` (SimeonCore's `Activity.swift`): what an agent is
+  doing, in the Mac's words ("Searching the web", "Messaging Iris",
+  "Connecting to Linear", "Theo is working", "Typing…"), with the time once
+  past a minute ("1h 5m"), and the hold that keeps each activity's words for
+  0.8 s so quick steps do not flicker. `activity.test.ts` is the core's
+  `ActivityLineTests`, translated.
+- `src/core/chatFind.ts` (SimeonCore's `ChatFind.swift`; `FindMarks`,
+  `FindLine` and `FindText` from mac/Simeon/Find.swift): which lines hold the
+  words and how often, oldest first, capitals aside (messages, a question's
+  prompt, an email or Slack draft, a notice; not agents talking to each other,
+  nor a file's name); where find stands and how it steps, round at either
+  end; and where the words show on screen, each block, list item and table
+  cell counted past the ones before so the current match is lit where it is.
+  `chatFind.test.ts` is the core's `ChatFindTests`, translated, with the
+  marks.
+- `src/window/ActivitySlot.tsx` (`ActivitySlot`, `ActivityRow`,
+  `ActivityWords` in ChatMotion.swift): the agent at work under the messages,
+  in a place 40 high whether or not it works; its picture (28; a group's
+  member at work, 22) beside what it is doing under the window's sweep of
+  light, the time after a minute; it comes in, its words rise as they change,
+  and it goes out over 0.14 s. The last message meets it at a 6-point corner.
+- `src/window/FindBar.tsx` (`FindBar`, `FindButton`, `FindField`): find's bar
+  8 under the chat's head and 16 from its right, with its count ("2/5", red
+  "0/0" when nothing matches), Previous, Next and Close; Return goes to the
+  next match and Shift-Return back, each brought to the middle unlit; Escape
+  closes; ⌘F again chooses its words. Every match lies under the warning
+  yellow at 30%, the current one on the yellow itself. On a thread, or back,
+  the bar starts again, still open. `MessageText.tsx` carries the marks
+  through an agent's paragraphs, headings, lists, quotes and tables; a code
+  block's words count but are not lit, as on the Mac.
+- **Decision (the session):** find opens with ⌘F on a Mac and Ctrl-F on
+  Windows and other computers; on a Mac, Ctrl-F stays the field's own (it
+  moves the caret). The browser's own find is not opened by the same keys
+  while the app is shown.
+- **Faults found on screen and fixed before the pull request:** find's bar
+  and the chat's lines had the same React key (the thread's id), and lines
+  left over from an earlier view stayed on screen with stale marks; the bar
+  has its own key now. The find count's spoken words used a key the Mac's
+  catalogue does not have ("Match %lld of %lld"; the Mac's is "Match %@ of
+  %lld"), so they stayed English in French.
+- **Not in this part:** names in their colours and pills, a link's site icon,
+  More emoji and the full picker (2b, part 3); find in the cards (step 3);
+  the motion of a line coming in, the time on a sideways swipe.
+- **Checked:** in Chromium, the built app against a stand-in server and
+  computer (`find-check.cjs` in the session's scratchpad), light and dark:
+  Simeon at work showed "Searching the web" beside his picture (28) in a slot
+  40 high, its label "Simeon: Searching the web"; reading a file then running
+  commands came in turn, each held its 0.8 s; when he stopped, the line went
+  and the 40 stayed. ⌘F (Ctrl-F here) opened the bar 8 under the head and 16
+  from the right, 34 high, with the keys; "launch" counted 4/4 with four marks
+  across a message and the brief, the current one on the yellow; Return went
+  to 1/4 and brought it into view, Shift-Return back to 4/4; "iris" lit the
+  table's cell; "zzz" said a red 0/0, "No matches", Previous and Next off;
+  ⌘F again chose the field's words; in a thread the bar stayed open with its
+  words gone and found 2/2 there; Escape closed it and every mark went.
+  Theo at work: "Messaging Iris", his last message's corner 6. French: the
+  line, "Aucun résultat", "Résultat 4 sur 4". The message actions of part 1
+  checked again. The 156 tests, typecheck, lint, the words' and the build's
+  checks, `check_translations.py`, `check_names.py`. The inventory counts 188
+  strings the new web app shows.
+- **Not checked:** against the real server and a real computer (the address
+  is not live yet; see Open questions); ⌘F on a Mac's browser (Ctrl-F was
+  pressed here, on Linux).
+- Pull request #524.
+- **Next:** step 2b, part 3: names in their colours and pills, a link's site
+  icon, More emoji.
 
 ### 1 November 2026: step 2b, part 1, a message's actions
 
