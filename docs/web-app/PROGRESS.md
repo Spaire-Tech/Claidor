@@ -74,5 +74,5 @@ Newest first.
   - the script runs and its JSON files load;
   - the measurements were spot-checked by searching both codebases (routines' commands found in the old web app; `publishSkill` in the old web app only; the connector pages' strings almost all missing from it).
 - **Not checked:** the strings measure can read a little high, because short words shared by many screens ("Cancel", "Done") count as found.
-- Pull request [Spaire-Tech/Claidor#515](https://github.com/Spaire-Tech/Claidor/pull/515).
+- Pull request #515.
 - **Next:** step 1, the base, once the founder answers where the code lives.
