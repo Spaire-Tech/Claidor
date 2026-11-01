@@ -1,0 +1,34 @@
+{
+ "ChatRow": [
+  "stamp",
+  "unread",
+  "bubble",
+  "flights",
+  "file",
+  "question",
+  "draft",
+  "connectors",
+  "listenerConnect",
+  "request",
+  "teammates",
+  "voiceCall",
+  "routines",
+  "notice",
+  "failedSend",
+  "queuedSend",
+  "thread",
+  "cloudAgent",
+  "purchase",
+  "products",
+  "flightPassengers",
+  "joined"
+ ],
+ "RequestCard": [
+  "approval",
+  "secret",
+  "computer",
+  "form",
+  "credential",
+  "onePasswordConnect"
+ ]
+}

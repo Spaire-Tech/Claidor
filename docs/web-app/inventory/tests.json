@@ -1,0 +1,254 @@
+[
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/AccessTests.swift",
+  "tests": 2
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/AccountMenuTests.swift",
+  "tests": 6
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/AgentFaceTests.swift",
+  "tests": 22
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/AppAccountsTests.swift",
+  "tests": 4
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/AppReturnSignInTests.swift",
+  "tests": 4
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/ApplePlansTests.swift",
+  "tests": 7
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/AppleSignInTests.swift",
+  "tests": 4
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/ApprovalTests.swift",
+  "tests": 9
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/CallBannerTests.swift",
+  "tests": 6
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/CallFlowTests.swift",
+  "tests": 10
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/ChatExtrasTests.swift",
+  "tests": 39
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/ChatPeekTests.swift",
+  "tests": 3
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/ChatRunsTests.swift",
+  "tests": 5
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/CloudComputerTests.swift",
+  "tests": 5
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/ComputerControlTests.swift",
+  "tests": 4
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/ComputerRebuildTests.swift",
+  "tests": 5
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/ComputerStoreTests.swift",
+  "tests": 24
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/ConnectorIconsTests.swift",
+  "tests": 4
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/ConnectorPagesTests.swift",
+  "tests": 2
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/CoreTests.swift",
+  "tests": 101
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/CredentialsStoreTests.swift",
+  "tests": 5
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/DictatedTextTests.swift",
+  "tests": 6
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/EmailSignInTests.swift",
+  "tests": 8
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/FeedbackTests.swift",
+  "tests": 8
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/FilePreviewTests.swift",
+  "tests": 7
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/FirstRunTests.swift",
+  "tests": 10
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/FlightBookingTests.swift",
+  "tests": 6
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/FreeMonthTests.swift",
+  "tests": 3
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/GatewayConnectTests.swift",
+  "tests": 11
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/GoogleSignInTests.swift",
+  "tests": 6
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/JoinedCardTests.swift",
+  "tests": 8
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/JumpTests.swift",
+  "tests": 14
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/L10nTests.swift",
+  "tests": 3
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/LanguageTests.swift",
+  "tests": 10
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/LinkIconsTests.swift",
+  "tests": 2
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/LogoLightUpTests.swift",
+  "tests": 4
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/LoopbackSignInTests.swift",
+  "tests": 7
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/NetworkTests.swift",
+  "tests": 9
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/NewChatTests.swift",
+  "tests": 4
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/OnePasswordCardsTests.swift",
+  "tests": 2
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/PaneMembersFlightTests.swift",
+  "tests": 8
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/PhoneSpeedTests.swift",
+  "tests": 3
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/PlainWordsTests.swift",
+  "tests": 4
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/PluginCallsTests.swift",
+  "tests": 9
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/PluginsOverlayTests.swift",
+  "tests": 6
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/PluginsTests.swift",
+  "tests": 3
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/ProductsCardTests.swift",
+  "tests": 5
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/PurchaseCardTests.swift",
+  "tests": 8
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/ReactionsTests.swift",
+  "tests": 3
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/RoutineEditingTests.swift",
+  "tests": 7
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/RoutineTriggerTests.swift",
+  "tests": 8
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/SavedChatsTests.swift",
+  "tests": 22
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/SettingsTests.swift",
+  "tests": 9
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/SidebarSectionsTests.swift",
+  "tests": 3
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/SleepingComputerTests.swift",
+  "tests": 18
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/StarterPacksTests.swift",
+  "tests": 3
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/TraysTests.swift",
+  "tests": 6
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/UpgradeTests.swift",
+  "tests": 9
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/UserFormTests.swift",
+  "tests": 3
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonMacCoreTests/LocalExecTests.swift",
+  "tests": 10
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonMacCoreTests/LocalToolTests.swift",
+  "tests": 6
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonMacCoreTests/MacCoreTests.swift",
+  "tests": 6
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonMacCoreTests/NotificationTests.swift",
+  "tests": 8
+ }
+]

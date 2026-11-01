@@ -1,0 +1,410 @@
+[
+ {
+  "call": "/api",
+  "kind": "path",
+  "files": [
+   "ios/SimeonCore/Sources/SimeonCore/Gateway.swift"
+  ],
+  "old_web_app": true
+ },
+ {
+  "call": "/auth/apple",
+  "kind": "path",
+  "files": [
+   "ios/SimeonCore/Sources/SimeonCore/AppleSignIn.swift"
+  ],
+  "old_web_app": false
+ },
+ {
+  "call": "/auth/email/code",
+  "kind": "path",
+  "files": [
+   "ios/SimeonCore/Sources/SimeonCore/EmailSignIn.swift"
+  ],
+  "old_web_app": false
+ },
+ {
+  "call": "/auth/email/password",
+  "kind": "path",
+  "files": [
+   "ios/SimeonCore/Sources/SimeonCore/EmailSignIn.swift"
+  ],
+  "old_web_app": false
+ },
+ {
+  "call": "/auth/email/verify",
+  "kind": "path",
+  "files": [
+   "ios/SimeonCore/Sources/SimeonCore/EmailSignIn.swift"
+  ],
+  "old_web_app": false
+ },
+ {
+  "call": "/auth/google",
+  "kind": "path",
+  "files": [
+   "ios/SimeonCore/Sources/SimeonCore/GoogleSignIn.swift"
+  ],
+  "old_web_app": false
+ },
+ {
+  "call": "/auth/google/config",
+  "kind": "path",
+  "files": [
+   "ios/SimeonCore/Sources/SimeonCore/GoogleSignIn.swift"
+  ],
+  "old_web_app": false
+ },
+ {
+  "call": "/auth/poll",
+  "kind": "path",
+  "files": [
+   "ios/SimeonCore/Sources/SimeonCore/SignIn.swift"
+  ],
+  "old_web_app": false
+ },
+ {
+  "call": "/callback",
+  "kind": "path",
+  "files": [
+   "ios/SimeonCore/Sources/SimeonCore/LoopbackSignIn.swift"
+  ],
+  "old_web_app": true
+ },
+ {
+  "call": "/desktop/api/",
+  "kind": "path",
+  "files": [
+   "ios/SimeonCore/Sources/SimeonCore/SimeonAPI.swift"
+  ],
+  "old_web_app": true
+ },
+ {
+  "call": "/desktop/api/apps/mcp/",
+  "kind": "path",
+  "files": [
+   "ios/SimeonCore/Sources/SimeonCore/AppAccounts.swift",
+   "ios/SimeonCore/Sources/SimeonCore/ConnectConsent.swift"
+  ],
+  "old_web_app": false
+ },
+ {
+  "call": "/desktop/apps/start",
+  "kind": "path",
+  "files": [
+   "ios/SimeonCore/Sources/SimeonCore/Connecting.swift"
+  ],
+  "old_web_app": false
+ },
+ {
+  "call": "/desktop/mcp-oauth/callback",
+  "kind": "path",
+  "files": [
+   "ios/SimeonCore/Sources/SimeonCore/AppReturnSignIn.swift"
+  ],
+  "old_web_app": false
+ },
+ {
+  "call": "/desktop/push-devices",
+  "kind": "path",
+  "files": [
+   "ios/SimeonCore/Sources/SimeonCore/SimeonAPI.swift"
+  ],
+  "old_web_app": true
+ },
+ {
+  "call": "/loginDeepControl",
+  "kind": "path",
+  "files": [
+   "ios/SimeonCore/Sources/SimeonCore/SignIn.swift"
+  ],
+  "old_web_app": false
+ },
+ {
+  "call": "/oauth/token",
+  "kind": "path",
+  "files": [
+   "ios/SimeonCore/Sources/SimeonCore/Tokens.swift"
+  ],
+  "old_web_app": true
+ },
+ {
+  "call": "/sand/link",
+  "kind": "path",
+  "files": [
+   "ios/SimeonCore/Sources/SimeonMacCore/DeepLink.swift"
+  ],
+  "old_web_app": false
+ },
+ {
+  "call": "/v1/info",
+  "kind": "path",
+  "files": [
+   "ios/SimeonCore/Sources/SimeonMacCore/DeepLink.swift"
+  ],
+  "old_web_app": true
+ },
+ {
+  "call": "/v1/open",
+  "kind": "path",
+  "files": [
+   "ios/SimeonCore/Sources/SimeonMacCore/DeepLink.swift"
+  ],
+  "old_web_app": true
+ },
+ {
+  "call": "/v1/pack/add",
+  "kind": "path",
+  "files": [
+   "ios/SimeonCore/Sources/SimeonCore/StarterPacks.swift",
+   "ios/SimeonCore/Sources/SimeonMacCore/DeepLink.swift"
+  ],
+  "old_web_app": false
+ },
+ {
+  "call": "/v1/plugin/add",
+  "kind": "path",
+  "files": [
+   "ios/SimeonCore/Sources/SimeonMacCore/DeepLink.swift"
+  ],
+  "old_web_app": true
+ },
+ {
+  "call": "CancelSandTrial",
+  "kind": "dashboard RPC",
+  "files": [
+   "ios/SimeonCore/Sources/SimeonCore/StoreSettings.swift"
+  ],
+  "old_web_app": true
+ },
+ {
+  "call": "EnsureSandBox",
+  "kind": "RPC",
+  "files": [
+   "ios/SimeonCore/Sources/SimeonCore/Gateway.swift"
+  ],
+  "old_web_app": true
+ },
+ {
+  "call": "ForceRecreateSandBox",
+  "kind": "RPC",
+  "files": [
+   "ios/SimeonCore/Sources/SimeonCore/Backend.swift"
+  ],
+  "old_web_app": true
+ },
+ {
+  "call": "GetSandAccessStatus",
+  "kind": "dashboard RPC",
+  "files": [
+   "ios/SimeonCore/Sources/SimeonCore/StoreSettings.swift"
+  ],
+  "old_web_app": false
+ },
+ {
+  "call": "GetSandBoxRunState",
+  "kind": "RPC",
+  "files": [
+   "ios/SimeonCore/Sources/SimeonCore/Gateway.swift"
+  ],
+  "old_web_app": false
+ },
+ {
+  "call": "GetTeamAdminSettingsOrEmptyIfNotInTeam",
+  "kind": "dashboard RPC",
+  "files": [
+   "ios/SimeonCore/Sources/SimeonCore/StoreSettings.swift"
+  ],
+  "old_web_app": false
+ },
+ {
+  "call": "RecreateSandBox",
+  "kind": "RPC",
+  "files": [
+   "ios/SimeonCore/Sources/SimeonCore/Backend.swift"
+  ],
+  "old_web_app": true
+ },
+ {
+  "call": "apps",
+  "kind": "path",
+  "files": [
+   "ios/SimeonCore/Sources/SimeonCore/Store.swift"
+  ],
+  "old_web_app": true
+ },
+ {
+  "call": "apps/\\(toolkit)/accounts",
+  "kind": "path",
+  "files": [
+   "ios/SimeonCore/Sources/SimeonCore/AppAccounts.swift"
+  ],
+  "old_web_app": false
+ },
+ {
+  "call": "apps/\\(toolkit)/accounts/\\(id)",
+  "kind": "path",
+  "files": [
+   "ios/SimeonCore/Sources/SimeonCore/AppAccounts.swift"
+  ],
+  "old_web_app": false
+ },
+ {
+  "call": "apps/\\(toolkit)/connect",
+  "kind": "path",
+  "files": [
+   "ios/SimeonCore/Sources/SimeonCore/AppAccounts.swift"
+  ],
+  "old_web_app": false
+ },
+ {
+  "call": "billing/apple/products",
+  "kind": "path",
+  "files": [
+   "ios/SimeonCore/Sources/SimeonCore/StoreSettings.swift"
+  ],
+  "old_web_app": false
+ },
+ {
+  "call": "billing/apple/transactions",
+  "kind": "path",
+  "files": [
+   "ios/SimeonCore/Sources/SimeonCore/StoreSettings.swift"
+  ],
+  "old_web_app": false
+ },
+ {
+  "call": "billing/free-month",
+  "kind": "path",
+  "files": [
+   "ios/SimeonCore/Sources/SimeonCore/FreeMonth.swift"
+  ],
+  "old_web_app": false
+ },
+ {
+  "call": "billing/portal",
+  "kind": "path",
+  "files": [
+   "ios/SimeonCore/Sources/SimeonCore/Store.swift",
+   "ios/SimeonCore/Sources/SimeonCore/StoreSettings.swift"
+  ],
+  "old_web_app": false
+ },
+ {
+  "call": "billing/settle",
+  "kind": "path",
+  "files": [
+   "ios/SimeonCore/Sources/SimeonCore/StoreSettings.swift"
+  ],
+  "old_web_app": false
+ },
+ {
+  "call": "chats/agents",
+  "kind": "path",
+  "files": [
+   "ios/SimeonCore/Sources/SimeonCore/StoreSaved.swift"
+  ],
+  "old_web_app": false
+ },
+ {
+  "call": "chats/lines?agentId=\\(Self.queryValue(agentId))&limit=\\(SavedChats.linesKept)",
+  "kind": "path",
+  "files": [
+   "ios/SimeonCore/Sources/SimeonCore/StoreSaved.swift"
+  ],
+  "old_web_app": false
+ },
+ {
+  "call": "chats/send",
+  "kind": "path",
+  "files": [
+   "ios/SimeonCore/Sources/SimeonCore/Store.swift"
+  ],
+  "old_web_app": false
+ },
+ {
+  "call": "feedback",
+  "kind": "path",
+  "files": [
+   "ios/SimeonCore/Sources/SimeonCore/Feedback.swift"
+  ],
+  "old_web_app": true
+ },
+ {
+  "call": "mcp-oauth/return",
+  "kind": "path",
+  "files": [
+   "ios/SimeonCore/Sources/SimeonCore/AppReturnSignIn.swift"
+  ],
+  "old_web_app": false
+ },
+ {
+  "call": "packs/\\(id)",
+  "kind": "path",
+  "files": [
+   "ios/SimeonCore/Sources/SimeonCore/StarterPacks.swift"
+  ],
+  "old_web_app": false
+ },
+ {
+  "call": "proxy/v1/images/generations",
+  "kind": "path",
+  "files": [
+   "ios/SimeonCore/Sources/SimeonCore/Store.swift",
+   "ios/SimeonCore/Sources/SimeonCore/StoreAgents.swift"
+  ],
+  "old_web_app": false
+ },
+ {
+  "call": "proxy/v1/voice/calls",
+  "kind": "path",
+  "files": [
+   "ios/SimeonCore/Sources/SimeonCore/VoiceCall.swift"
+  ],
+  "old_web_app": false
+ },
+ {
+  "call": "proxy/v1/voice/calls/\\(conversation)/end",
+  "kind": "path",
+  "files": [
+   "ios/SimeonCore/Sources/SimeonCore/VoiceCall.swift"
+  ],
+  "old_web_app": false
+ },
+ {
+  "call": "proxy/v1/voice/voices",
+  "kind": "path",
+  "files": [
+   "ios/SimeonCore/Sources/SimeonCore/Store.swift"
+  ],
+  "old_web_app": false
+ },
+ {
+  "call": "user/name",
+  "kind": "path",
+  "files": [
+   "ios/SimeonCore/Sources/SimeonCore/Onboarding.swift",
+   "ios/SimeonCore/Sources/SimeonCore/StoreAgents.swift",
+   "ios/SimeonCore/Sources/SimeonCore/StoreSettings.swift"
+  ],
+  "old_web_app": true
+ },
+ {
+  "call": "user/profile",
+  "kind": "path",
+  "files": [
+   "ios/SimeonCore/Sources/SimeonCore/Onboarding.swift",
+   "ios/SimeonCore/Sources/SimeonCore/StoreSettings.swift"
+  ],
+  "old_web_app": true
+ },
+ {
+  "call": "user/quota",
+  "kind": "path",
+  "files": [
+   "ios/SimeonCore/Sources/SimeonCore/Store.swift",
+   "ios/SimeonCore/Sources/SimeonCore/StoreSettings.swift"
+  ],
+  "old_web_app": false
+ }
+]
