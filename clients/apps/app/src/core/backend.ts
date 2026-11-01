@@ -3,20 +3,64 @@
 // roster, the host's events in the screens' terms, commands, and calls to
 // Simeon Labs' server.
 //
-// Translated so far: what the window and its agents list need (step 1d).
-// The chat's lines (`transcript`, `TranscriptChange`), the computer's screen,
-// calls, files and the rebuild come with their screens (docs/web-app/PROGRESS.md).
+// Translated so far: the agents list (step 1d) and the chat's lines, sending
+// and reading (step 2a). The computer's screen, calls, files and the rebuild
+// come with their screens (docs/web-app/PROGRESS.md).
 
 import type { SimeonAPI } from './api'
 import { SimeonAPIError } from './api'
-import { Gateway, type GatewayEvent, type Rest } from './gateway'
-import { type JSONValue, arr, field, isObject, str, text } from './json'
+import { Entry, type TranscriptChange, transcriptChangeFrom } from './entry'
+import { Gateway, GatewayError, type GatewayEvent, type Rest } from './gateway'
+import {
+  type JSONObject,
+  type JSONValue,
+  arr,
+  field,
+  int,
+  isObject,
+  str,
+  text,
+} from './json'
 import { t } from './l10n'
 import { type Agent, agentFrom } from './models'
+
+/** A file the composer put on the agent's computer, by its path there and its name. */
+export interface AttachmentRef {
+  path: string
+  name: string
+}
+
+/**
+ * What goes with a message besides its words and files, as `sendPrompt`
+ * takes it (host-gateway-api.ts).
+ */
+export interface SendOptions {
+  /** The message this one answers (`replyToId`). */
+  replyTo?: string
+  /** A reply in a thread (`isFork`, with `replyTo` the thread's first message). */
+  isFork?: boolean
+  /** The composer's document (TipTap's JSON, `richText`). */
+  richText?: string
+  /** When it was written, for a message held while the computer was out of reach (`composedAtMs`). */
+  composedAtMs?: number
+}
+
+/** Lines of a chat, newest last, and where the lines before them start (`nextBeforeSeq`), when there are more. */
+export interface TranscriptPage {
+  entries: Entry[]
+  olderBefore?: number
+}
+
+/** A message's own id before it is sent: the nonce that makes a resent message land once. */
+export function newMessageId(): string {
+  return `ios-${crypto.randomUUID().toLowerCase()}`
+}
 
 export type BackendEvent =
   | { kind: 'agents'; agents: Agent[] }
   | { kind: 'agentUpserted'; agent: Agent }
+  /** A line of a chat written, changed or taken away (`transcript`). */
+  | { kind: 'transcript'; change: TranscriptChange }
   /** A step the agent is on ("Checking Linear"), or done with. */
   | {
       kind: 'step'
@@ -47,6 +91,21 @@ export type BackendEvent =
 
 export interface AgentBackend {
   listAgents(): Promise<Agent[]>
+  /** The newest lines (`before` undefined), or the hundred before `before`. */
+  transcriptPage(agentId: string, before?: number): Promise<TranscriptPage>
+  /** A chat's newest lines, read without opening it on the host: a preview, which must not mark it read. */
+  tail(agentId: string, limit: number): Promise<Entry[]>
+  /** A message, with the files already on the agent's computer (`uploadAttachment`), and what goes with it. */
+  send(
+    agentId: string,
+    words: string,
+    attachments: AttachmentRef[],
+    options: SendOptions,
+    nonce?: string,
+  ): Promise<void>
+  markRead(agentId: string): Promise<void>
+  /** The server is waking the computer (a message handed to it): reach it now, not at the next look. */
+  computerWaking?(): void
   /** One call to Simeon Labs' server (`/desktop/api/…`). */
   server(path: string, method?: string, body?: JSONValue): Promise<JSONValue>
   /** One command to the host; `wakes` false lets a computer that rests rest. */
@@ -106,6 +165,113 @@ export class LiveBackend implements AgentBackend {
     return this.gateway.restAtLaunch()
   }
 
+  computerWaking(): void {
+    this.gateway.waking()
+  }
+
+  /**
+   * A chat opened as the window opens one (`openAgentTail`, the last 500
+   * lines): the host makes it the chat on screen, so its new lines stream to
+   * the app as they are written. Read without waking a computer that rests;
+   * the server's copy shows meanwhile. Older lines, scrolled up to, are asked
+   * for, so they wake it.
+   */
+  async transcriptPage(
+    agentId: string,
+    before?: number,
+  ): Promise<TranscriptPage> {
+    let page: JSONValue
+    if (before != null) {
+      page = await this.gateway.command('getAgentTranscriptTail', {
+        id: agentId,
+        limit: 100,
+        beforeSeq: before,
+      })
+    } else {
+      try {
+        page = await this.gateway.command(
+          'openAgentTail',
+          { id: agentId, limit: 500 },
+          { wakes: false },
+        )
+      } catch (error) {
+        if (GatewayError.isResting(error)) throw error
+        page = await this.gateway.command(
+          'getAgentTranscriptTail',
+          { id: agentId, limit: 500 },
+          { wakes: false },
+        )
+      }
+    }
+    return {
+      entries: Entry.list(arr(field(page, 'entries')) ?? arr(page) ?? []),
+      olderBefore: int(field(page, 'nextBeforeSeq')),
+    }
+  }
+
+  async tail(agentId: string, limit: number): Promise<Entry[]> {
+    const page = await this.gateway.command(
+      'getAgentTranscriptTail',
+      { id: agentId, limit },
+      { wakes: false },
+    )
+    return Entry.list(arr(field(page, 'entries')) ?? arr(page) ?? [])
+  }
+
+  async send(
+    agentId: string,
+    words: string,
+    attachments: AttachmentRef[],
+    options: SendOptions,
+    nonce?: string,
+  ): Promise<void> {
+    await this.gateway.command(
+      'sendPrompt',
+      LiveBackend.sendArguments(agentId, words, attachments, options, nonce),
+    )
+  }
+
+  /**
+   * `sendPrompt`'s arguments, in the host's names (host-gateway-api.ts). The
+   * nonce lets a resent message land once, and the host keeps it on the line
+   * it writes (`clientNonce`). `composedAtMs` only for a message held offline.
+   */
+  static sendArguments(
+    agentId: string,
+    words: string,
+    attachments: AttachmentRef[],
+    options: SendOptions,
+    nonce?: string,
+  ): JSONObject {
+    const args: JSONObject = {
+      agentId,
+      prompt: words,
+      attachmentPaths: attachments.map((file) => file.path),
+      attachmentNames: attachments.map((file) => file.name),
+      clientNonce: nonce ?? newMessageId(),
+      directAddressedAcceptance: true,
+    }
+    if (options.replyTo != null) {
+      args.replyToId = options.replyTo
+      if (options.isFork) args.isFork = true
+    }
+    if (options.richText) args.richText = options.richText
+    if (options.composedAtMs != null) args.composedAtMs = options.composedAtMs
+    return args
+  }
+
+  async markRead(agentId: string): Promise<void> {
+    try {
+      await this.gateway.command(
+        'setAgentUnread',
+        { id: agentId, isUnread: false, atMs: Date.now() },
+        { wakes: false },
+      )
+    } catch {
+      // Read here; the host hears it next time.
+    }
+  }
+
   invalidate(): void {
     this.gateway.invalidate()
   }
@@ -138,6 +304,10 @@ export class LiveBackend implements AgentBackend {
       case 'agent-upserted': {
         const agent = agentFrom(field(payload, 'agent'))
         return agent ? [{ kind: 'agentUpserted', agent }] : []
+      }
+      case 'transcript': {
+        const change = transcriptChangeFrom(payload)
+        return change ? [{ kind: 'transcript', change }] : []
       }
       case 'mcp-auth':
       case 'mcp-servers':

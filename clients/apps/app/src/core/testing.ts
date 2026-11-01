@@ -3,8 +3,16 @@
 // `GatewayConnectTests.Routes`, `Clock`).
 
 import { MemoryVault, SimeonAPI, SimeonAPIError } from './api'
-import type { AgentBackend, BackendEvent } from './backend'
+import type {
+  AgentBackend,
+  AttachmentRef,
+  BackendEvent,
+  SendOptions,
+  TranscriptPage,
+} from './backend'
+import { Entry } from './entry'
 import { Gateway, GatewayConnection } from './gateway'
+import { GatewayError } from './gatewayConnection'
 import type { HTTPAnswer, HTTPClient, HTTPRequest, HTTPStream } from './http'
 import { NetworkError } from './http'
 import type { JSONValue } from './json'
@@ -191,9 +199,46 @@ export async function eventually(condition: () => boolean): Promise<void> {
 export const ms = (milliseconds: number) =>
   new Promise<void>((resolve) => setTimeout(resolve, milliseconds))
 
-/** A computer that answers as told, and a server whose copy comes when told. */
+/**
+ * A computer that answers as told, and a server whose copy comes when told
+ * (the core's tests' `ScriptedBackend` and `QuietBackend`): one chat's lines,
+ * paged by their place (`seq`), sends that fail on demand, and the events a
+ * test pushes.
+ */
 export class FakeBackend implements AgentBackend {
   agents: Agent[] = []
+  lines: JSONValue[] = [
+    {
+      kind: 'message',
+      id: 'u1',
+      role: 'user',
+      content: 'Hi Theo',
+      timestampMs: 1_000,
+    },
+  ]
+  /** What was sent, with what went with it. */
+  sent: {
+    text: string
+    options: SendOptions
+    nonce?: string
+    agentId: string
+  }[] = []
+  failSends = false
+  /** The fetch of the chat fails (`transcriptPage`). */
+  failLoads = false
+  /** The fetch of the chat says the computer rests. */
+  resting = false
+  /** The chats opened on the host (`openAgentTail`), read without opening (`tail`), and marked read. */
+  opened: string[] = []
+  tailed: string[] = []
+  read: string[] = []
+  /** Each command, with its arguments. */
+  commands: { method: string; args: JSONValue }[] = []
+  /** Each call to the server, with its method and body. */
+  serverCalls: { path: string; method?: string; body?: JSONValue }[] = []
+  /** The server refuses every call when set. */
+  serverFails = false
+  wakings = 0
   /** The list fails with this, when set. */
   listError?: unknown
   listDelayMs = 0
@@ -207,15 +252,63 @@ export class FakeBackend implements AgentBackend {
     if (this.listError) throw this.listError
     return this.agents
   }
-  async server(path: string): Promise<JSONValue> {
+  async server(
+    path: string,
+    method?: string,
+    body?: JSONValue,
+  ): Promise<JSONValue> {
     this.serverPaths.push(path)
+    this.serverCalls.push({ path, method, body })
     await ms(this.serverDelayMs)
+    if (this.serverFails) throw new SimeonAPIError('Refused.', 500)
     const found = this.serverAnswers[path]
     if (found === undefined) throw new SimeonAPIError('No such path.', 404)
     return found
   }
-  async command(): Promise<JSONValue> {
+  async command(method: string, args: JSONValue = {}): Promise<JSONValue> {
+    this.commands.push({ method, args })
     return {}
+  }
+  async transcriptPage(
+    agentId: string,
+    before?: number,
+  ): Promise<TranscriptPage> {
+    if (before == null) this.opened.push(agentId)
+    await ms(0)
+    if (this.resting) throw GatewayError.resting()
+    if (this.failLoads) throw new GatewayError('offline', false)
+    const end = before ?? this.lines.length
+    const size = before == null ? 500 : 100
+    const start = Math.max(0, end - size)
+    return {
+      entries: Entry.list(this.lines.slice(start, end)),
+      olderBefore: start > 0 ? start : undefined,
+    }
+  }
+  async tail(agentId: string, limit: number): Promise<Entry[]> {
+    this.tailed.push(agentId)
+    return Entry.list(this.lines).slice(-limit)
+  }
+  async send(
+    agentId: string,
+    text: string,
+    _attachments: AttachmentRef[],
+    options: SendOptions,
+    nonce?: string,
+  ): Promise<void> {
+    await ms(0)
+    if (this.failSends) throw new GatewayError('offline', false)
+    this.sent.push({ agentId, text, options, nonce })
+  }
+  async markRead(agentId: string): Promise<void> {
+    this.read.push(agentId)
+  }
+  computerWaking(): void {
+    this.wakings += 1
+  }
+  /** An event from the host, as the stream would bring it. */
+  push(event: BackendEvent): void {
+    this.emit?.(event)
   }
   async computerRest() {
     return null

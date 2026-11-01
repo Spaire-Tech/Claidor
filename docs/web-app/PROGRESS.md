@@ -15,7 +15,7 @@ file and the code disagree, the code is right and this file is fixed.
 |---|---|
 | 0. The audit | Done, 1 November 2026 |
 | 1. The base: the server and the computer, signing in, the window | Done, 1 November 2026 (1a to 1d). Carried to step 2: the first run for a new account and the access cover |
-| 2. The sidebar and the chat | Next |
+| 2. The sidebar and the chat | In progress: 2a part 1 (the chat's core) done; part 2 (the chat on screen) next |
 | 3. The cards | Not started |
 | 4. The agent's pane, search, new chat, the org chart, starter packs | Not started |
 | 5. The computer and calls | Not started |
@@ -36,6 +36,7 @@ file and the code disagree, the code is right and this file is fixed.
 | 1 November 2026 | Skills publishing is left out, as on the Mac. If the Mac app gets it, the checks ask for it here too | The session, as above |
 | 1 November 2026 | The web app keeps no copy of the agents and chats on the device, as the Mac does on disk (`SavedChats`): it shows the server's copy (`chats/agents`, `chats/lines`) while the computer is away, which the server keeps for exactly that. A browser's storage would hold the person's messages on a shared or public computer | The session, as above |
 | 1 November 2026 | Signed out, the web app goes straight to the website's own sign-in page and comes back (`/login?return_to=…`), as the old web app does: the website's page is the gate. The Mac's sign-in screen comes with Windows (step 7) | The session, as above |
+| 1 November 2026 | What the person has typed and not sent (the Mac's drafts, kept on disk) is kept in the tab's memory only, and goes with the tab: for the same reason as the chats | The session, as above |
 | 1 November 2026 | The web app has no catalogue of its own: it reads the Mac's two String Catalogs, made into tables by a script, so a translation is written once, for the Mac, and the web app has it. The screens read the Mac app's catalogue and the code translated from the core reads the core's, because the two say some English differently ("Done": "OK" on a Mac screen, "Terminé" in the core) | The session, as above |
 
 ## Open questions
@@ -61,6 +62,73 @@ For the founder, each to be answered before the step that needs it:
 ## Log
 
 Newest first.
+
+### 1 November 2026: step 2a, part 1, the chat's core
+
+- `src/core/entry.ts` (`Entry` and `TranscriptChange` in `Models.swift` and
+  `Backend.swift`): a chat's line, the person's own reactions, a thread's
+  reply, and the changes the host streams (written, changed, taken away,
+  cleared, a whole copy).
+- `src/core/chat.ts` (`Chat.swift`): a chat's rows. Stamps after a quarter of
+  an hour or on a new day, "New" before the first unread line, bubbles with
+  their quotes (none on an agent's answer to the only line since), pictures
+  sent together as one, files, agents talking to each other folded into one
+  line, a call written before calls were one line, routines changed one
+  after another, notices in plain words, a thread's replies counted under
+  their message, a message that is one link, a group's names and pictures.
+  The cards keep their line as a `card` row until step 3 draws them; until
+  then the chat says "This message can't be shown in this version of Simeon."
+  in their place, the core's own sentence for a card it cannot draw.
+- `src/core/chatRuns.ts` (`ChatRuns.swift`): each line's run (12 lower when
+  someone else spoke before it, its corners 6 round beside the same
+  sender's), checked against the window's own functions run on the same
+  lines (the core's fixtures `chat-runs.json` and `sender-keys.json`).
+- `src/core/markdown.ts` (`Markdown.swift`): a message's blocks (headings,
+  lists and tasks, quotes, code, tables, rules, maths). Within a line, bold,
+  italics, code, links and strikethrough, then GitHub's bare links: the Mac
+  reads these with Apple's own Markdown reader, which has no copy for the
+  web, so this one follows CommonMark's rules (the Mac's tests have none for
+  it; its own are in `markdown.test.ts`).
+- `src/core/plainWords.ts` (`PlainWords.swift`): a notice that names
+  something behind Simeon reads plainly. Like the Swift copy, it names two
+  earlier names to keep them off the screen: `scripts/kept_names.json`'s rule
+  for the filter now keeps this copy and the built index file too.
+- The backend (`Backend.swift`): a chat opened on the host (`openAgentTail`,
+  without waking a computer that rests), older lines (`getAgentTranscriptTail`),
+  a preview read without opening it, a message (`sendPrompt`, in the host's
+  names), read (`setAgentUnread`), the chat's live lines (`transcript`).
+- The store (`Store.swift`, `StoreSaved.swift`): a chat opened shows the
+  server's copy of its lines (`chats/lines`) while the computer's are on
+  their way, then the computer's; its new lines stream, a growing answer
+  redrawing only its own row; a line the stream missed is fetched; a chat on
+  screen stays read; older lines when scrolled up; "Couldn't load" and Retry.
+  A message shows at once and gives way to the host's copy (by its nonce);
+  "Failed to send" with Resend and Delete; held while the computer is out of
+  reach ("Waiting to send…", Cancel), handed to the server meanwhile
+  (`chats/send`), and sent to the computer again when it is back. Threads,
+  and the lines find will read.
+- **Not in this part:** the chat on screen (part 2); names in the chat in
+  their colours and pills (`Mentions`), sending a reaction, find, the
+  composer's files and "/" and "@" (2b and after); the Mac's asks to use
+  this Mac (the Mac's alone); sending held through a rebuild (step 5).
+- **Checked:**
+  - 148 tests pass (52 more), translated from the core's ChatTests,
+    ChatThreadTests, ChatDeliveryTests, ChatQueueAndThreadTests,
+    ChatRunsTests, ReactionsTests, SendArgumentTests, MarkdownTests and
+    SavedChatsTests' server copy and held messages, with the two fixtures;
+  - three deliberate breaks (the nonce match, the quote rule, a run's
+    corner), each caught by a test;
+  - typecheck, lint, the words' and the build's checks,
+    `check_translations.py`, `check_names.py`. The inventory now counts 110
+    strings the new web app shows.
+- **Not translated:** the core's tests that run on its demo seed
+  (`DemoData`: the morning brief, a group's names, every card, the cards'
+  buttons); the cards' come with step 3.
+- **Not checked:** in a browser (nothing on screen uses it yet), and against
+  the real computer.
+- Pull request #521.
+- **Next:** step 2a, part 2: the chat on screen (its head, its rows, the
+  bubbles and their Markdown, the composer).
 
 ### 1 November 2026: step 1d, part 2, the session and the window
 

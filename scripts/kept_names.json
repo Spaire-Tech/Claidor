@@ -585,10 +585,12 @@
       ],
       "paths": [
         "ios/SimeonCore/Sources/SimeonCore/PlainWords.swift",
-        "desktop/source/host/extensions/transcript/agent-run-error.ts"
+        "desktop/source/host/extensions/transcript/agent-run-error.ts",
+        "clients/apps/app/src/core/plainWords.ts",
+        "clients/apps/web/public/app-next/assets/index-*.js"
       ],
       "match": "eleven \\?labs|\\(SAND\\|SIMEON\\|CLAIDOR\\)_",
-      "reason": "The filter that keeps what is behind Simeon off the person's screen (PlainWords, simeonFacingProviderError) names the earlier names and setting prefixes it replaces."
+      "reason": "The filter that keeps what is behind Simeon off the person's screen (PlainWords, simeonFacingProviderError, and the web app's copy of PlainWords, built into its index file) names the earlier names and setting prefixes it replaces."
     }
   ]
 }
