@@ -88,6 +88,9 @@ edge shared by the wordmark, the headline and the demo.
 - **Hero**: "Put intelligent agents to work for whatever needs doing." in the
   serif, then Download for Mac and Request a demo.
 - **The app**: the real app window, playing a founder's morning.
+- **The film** (before Pricing): "Hear it from our spokesperson agent", the 90-second launch film of
+  Iris explaining Simeon (`source/video/what-is-simeon.mp4`, its still `source/img/film-poster.webp`) in a
+  rounded card; Play starts it with the player's controls, and it returns to the still when it ends.
 - **Statement**: one centred sentence, the key words in black.
 - **Gallery**: six cards, light grey and dusk blue in turn, moved with back
   and next: connect your apps, message an agent, a computer of its own, agents
