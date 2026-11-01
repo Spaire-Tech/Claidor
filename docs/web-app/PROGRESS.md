@@ -107,6 +107,7 @@ Newest first.
   the address is not live yet (`/app-next` answers 404 since the first
   merge; see Open questions). The inventory now counts 40 strings the new
   web app shows.
+- Pull request #520.
 - **Next:** step 2, the sidebar and the chat.
 
 ### 1 November 2026: step 1d, part 1, the agents and the store's roster
