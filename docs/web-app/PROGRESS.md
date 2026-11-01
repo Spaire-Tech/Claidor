@@ -132,6 +132,7 @@ Newest first.
 - **Not checked:** against the real server and a real computer (the address
   is not live yet; see Open questions); ⌘F on a Mac's browser (Ctrl-F was
   pressed here, on Linux).
+- Pull request #524.
 - **Next:** step 2b, part 3: names in their colours and pills, a link's site
   icon, More emoji.
 
