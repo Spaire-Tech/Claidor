@@ -15,7 +15,7 @@ file and the code disagree, the code is right and this file is fixed.
 |---|---|
 | 0. The audit | Done, 1 November 2026 |
 | 1. The base: the server and the computer, signing in, the window | Done, 1 November 2026 (1a to 1d). Carried to step 2: the first run for a new account and the access cover |
-| 2. The sidebar and the chat | In progress: 2a (the chat's core, and the chat on screen) done; 2b (a message's actions, find, the working line, names in colour, link icons, the emoji picker) done; 2c (pictures and files from the computer, link cards, previews) next |
+| 2. The sidebar and the chat | In progress: 2a (the chat's core, and the chat on screen) done; 2b (a message's actions, find, the working line, names in colour, link icons, the emoji picker) done; 2c part 1 (file cards, pictures from the computer, link cards) done; 2c part 2 (the previews) next |
 | 3. The cards | Not started |
 | 4. The agent's pane, search, new chat, the org chart, starter packs | Not started |
 | 5. The computer and calls | Not started |
@@ -38,6 +38,9 @@ file and the code disagree, the code is right and this file is fixed.
 | 1 November 2026 | Signed out, the web app goes straight to the website's own sign-in page and comes back (`/login?return_to=…`), as the old web app does: the website's page is the gate. The Mac's sign-in screen comes with Windows (step 7) | The session, as above |
 | 1 November 2026 | What the person has typed and not sent (the Mac's drafts, kept on disk) is kept in the tab's memory only, and goes with the tab: for the same reason as the chats | The session, as above |
 | 1 November 2026 | The web app has no catalogue of its own: it reads the Mac's two String Catalogs, made into tables by a script, so a translation is written once, for the Mac, and the web app has it. The screens read the Mac app's catalogue and the code translated from the core reads the core's, because the two say some English differently ("Done": "OK" on a Mac screen, "Terminé" in the core) | The session, as above |
+
+| 1 November 2026 | A message that is one link is drawn as the Mac's card with the site's icon, its name and the address, but not the page's title, which the Mac reads from the page. A web page may not read another site, and a route on Simeon's server that read it would hand the server every link the person opens | The session, as above |
+| 1 November 2026 | Save hands the file to the browser as a download (the browser asks where, or puts it in Downloads, as the person set it), not the Mac's save panel; a file the computer won't hand over says "Couldn't save this file" in the browser's own alert, as the Electron app's error box did. A picture keeps the browser's own right-click menu (Copy image, Save image as), as a link does | The session, as above |
 
 ## Open questions
 
@@ -67,6 +70,83 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 1 November 2026: step 2c, part 1, file cards, pictures from the computer, link cards
+
+- `src/core/fileLine.ts` (SimeonCore's `FileLine`): a file card's line,
+  its size as the window writes it ("1.3 KB" under 10 KB, "42 KB",
+  "3.4 MB", a tie rounded up), with the language's decimal mark and units
+  ("2,9 Ko"), or "Couldn't read file".
+- `src/core/filePreview.ts` (`FilePreview`'s kinds and names): a file's
+  kind from its name, its highlighting language, whether its card opens a
+  preview (never for an unknown kind; text, Markdown and JSON only once the
+  computer read them as text), the parts of a name, the last part of a path,
+  a `file://` address's path, and the name Save offers (the Electron app's
+  `resolveSuggestedDownloadName`). The CSV, JSON and picture viewers' parts
+  come with part 2.
+- `src/core/store.ts` (`AppStore.readFile`, `fileFacts`): a file read from
+  the computer in 4 MiB pieces (`readAttachmentChunk`), then as a picture
+  (`readAttachmentImage`) when the pieces come empty; a file sent from this
+  tab read from the tab. A card's line and whether it reads as text
+  (`readAttachmentText`), kept once answered, asked again after a failed
+  read. Both read without waking a computer that rests (`wakes: false`),
+  as the Mac's cards and pictures do; Save wakes it.
+- `src/core/files.test.ts` is the core's `FileLineTests`, `FilePreviewTests`'
+  kinds, names and opening (with the window's own answers,
+  `Fixtures/file-preview.json`), `SentPictureTests`, and the reads of
+  `SleepingComputerTests`, translated. The stand-in computer
+  (`src/core/testing.ts`) now answers commands as a test tells it and keeps
+  whether each may wake it.
+- `src/window/Files.tsx` (`FileCard`, `FileIcon`, `ChatPicture`,
+  `LinkCardView`, `saveFile`):
+  - a file's card, 220 to 340 wide and as wide as its words between; the
+    icon for Word, Excel, PowerPoint, PDF and Markdown (the window's,
+    from `desktop/brand/file-icons`, and the founder's Markdown page from
+    the Mac's assets), a page for any other file; its name over its size;
+    Save ("Save Q3 report.pdf"), which reads the file and hands it to the
+    browser as a download under the card's name;
+  - a picture on the agent's computer, read from it and drawn, grey until
+    then;
+  - a message that is one link (`Bubble.loneLink`, the core's rule): the
+    card, at most 88% of the chat, 480, or the chat less 82; the site's
+    icon (a globe until it comes, and for an email's page), the site's
+    name and the address under it; it opens in a new tab, without telling
+    the site where it came from. The hover bar beside it and the reactions
+    under it as on a message.
+- `MessageText.tsx`: the site icon's cache is shared with the link card
+  (`useSiteIcon`), so a site is asked once.
+- **Decisions (the session):** in the table above: the link card without
+  the page's title; Save as a browser download, its failure in the
+  browser's alert; the picture's right-click menu the browser's own.
+- **Not in this part:** a card's name opening the preview (it stays plain
+  until the viewers come, part 2).
+- **Checked:** in Chromium, the built app against a stand-in server and
+  computer (`files-check.cjs` in the session's scratchpad), light and dark,
+  then French: four cards (PDF, Markdown, an unknown kind, a missing
+  spreadsheet) with their icons at 36, "29 B", "8 B", "2.9 KB" and
+  "Couldn't read file" ("29 o", "2,9 Ko", "Impossible de lire le fichier"
+  in French); widths 220 and, for the long name, 340 with the name cut;
+  one `readAttachmentText` per card; the picture on the computer read in
+  one piece and drawn (192 high in its row); three link cards 480 wide and
+  60 high, the person's on the right, the Gmail one with the globe, each
+  `target=_blank` and `rel="noopener noreferrer"`; the message with words
+  and a link stays a bubble; the bar shows beside a card on hover and its
+  👍 under it; Save downloaded "Q3 report.pdf" with the computer's exact
+  bytes; Save of the missing file said "Couldn't save this file"
+  ("Impossible d'enregistrer ce fichier"); no errors on the page. The 180
+  tests, typecheck, lint, the words', the brands' and the build's checks,
+  `check_translations.py`, `check_names.py`. The inventory counts 208
+  strings the new web app shows.
+- **Fixed on the way:** `check_names.py` failed on main on part 4's entry
+  here, which named the emoji the kept rule is for; the entry now says it
+  without the name.
+- **Not checked:** a site's icon showing in a link card (as in part 4, the
+  test browser reaches no other site and can't stand in for a
+  `/favicon.ico`); a large file read in several pieces in the browser (the
+  core's test reads one in three); against the real server and a real
+  computer (the address is not live yet; see Open questions).
+- **Next:** step 2c, part 2: the previews (pictures and video, PDF, text
+  with its colours, Markdown, JSON, tables), opened from a card's name.
+
 ### 1 November 2026: step 2b, part 4, a link's site icon and the emoji picker
 
 - `src/core/linkIcons.ts` (SimeonCore's `LinkIcons`, `CredentialSite`):
@@ -94,8 +174,8 @@ Newest first.
   its emoji 8 to a row, the person's own on the grey; "Results" or "No emoji
   found"; a pick reacts and closes, Return picks the first result, Escape or
   a click outside closes it. The message's bar stays while it is open.
-- `scripts/kept_names.json`: the polar bear emoji ("polar_bear"), already
-  kept in the core's emoji.json, is kept in the web app's built copy of it.
+- `scripts/kept_names.json`: the emoji rule that keeps one emoji's id in the
+  core's emoji.json now covers the web app's built copy of it too.
 - **Not in this part:** the ":" list in the field and the composer's own
   emoji (2e, with "@" and "/").
 - **Checked:** in Chromium, the built app against a stand-in server and

@@ -38,11 +38,14 @@ import {
 } from './chat'
 import { type RunFlags, runFlags } from './chatRuns'
 import { Entry, appliedChange } from './entry'
+import { fileLine, fileSize } from './fileLine'
+import { computerPath } from './filePreview'
 import { GatewayError } from './gatewayConnection'
-import { type JSONValue, arr, bool, field, num, str, text } from './json'
+import { type JSONValue, arr, bool, field, int, num, str, text } from './json'
 import { t } from './l10n'
 import { type Agent, agentFrom, sameAgent, sortRoster } from './models'
 import { plainError } from './plainWords'
+import { bytesFromBase64URL } from './tokens'
 
 /** A message the person sent, shown at once and kept until the host's own copy arrives (the Mac's outbox). */
 interface Outgoing {
@@ -382,6 +385,8 @@ export class AppStore {
   private markAgain = new Set<string>()
   /** Files the person sent from this tab, by every address the chat shows them under. The last 24. */
   private sentFiles: { keys: string[]; data: Uint8Array }[] = []
+  /** Each file card's line once the computer answered, and whether it read the file as text. */
+  private fileLines = new Map<string, FileFacts>()
   private listening?: AbortController
   private onListShown?: () => void
   private readonly listeners = new Set<() => void>()
@@ -480,6 +485,7 @@ export class AppStore {
     this.savedLines = new Map()
     this.savedOlder = new Set()
     this.sentFiles = []
+    this.fileLines = new Map()
     this.changed()
   }
 
@@ -1279,6 +1285,106 @@ export class AppStore {
     return undefined
   }
 
+  // MARK: Files
+
+  /**
+   * A file an agent sent or the person attached, read from the computer in
+   * 4 MiB pieces (`readAttachmentChunk`), as the Mac's preview reads it;
+   * none when the computer will not hand it over. With `wakes` false (a
+   * picture shown as a chat opens), it waits for a resting computer without
+   * waking it.
+   */
+  async readFile(
+    url: string,
+    agentId: string,
+    {
+      limit = 60 << 20,
+      wakes = true,
+    }: { limit?: number; wakes?: boolean } = {},
+  ): Promise<Uint8Array | undefined> {
+    const sent = this.sentFile(url)
+    if (sent) return sent.data
+    const backend = this.backend
+    if (!backend) return undefined
+    const path = computerPath(url)
+    const pieces: Uint8Array[] = []
+    let read = 0
+    let total = Number.MAX_SAFE_INTEGER
+    while (read < Math.min(total, limit)) {
+      let piece: JSONValue
+      try {
+        piece = await backend.command(
+          'readAttachmentChunk',
+          { path, agentId, offset: read, length: 4 << 20 },
+          { wakes },
+        )
+      } catch {
+        return read === 0 ? undefined : joined(pieces, read)
+      }
+      total = int(field(piece, 'totalSize')) ?? read
+      const bytes = bytesFromBase64URL(str(field(piece, 'bytesBase64')) ?? '')
+      if (!bytes || bytes.length === 0) break
+      pieces.push(bytes)
+      read += bytes.length
+    }
+    if (read === 0) {
+      try {
+        const image = await backend.command(
+          'readAttachmentImage',
+          { path },
+          { wakes },
+        )
+        const address =
+          str(field(image, 'dataUrl')) ??
+          str(field(image, 'url')) ??
+          str(image) ??
+          ''
+        const comma = address.indexOf(',')
+        const bytes =
+          comma >= 0 ? bytesFromBase64URL(address.slice(comma + 1)) : undefined
+        if (bytes && bytes.length > 0) return bytes
+      } catch {
+        // Neither way: nothing to show.
+      }
+    }
+    return read === 0 ? undefined : joined(pieces, read)
+  }
+
+  /**
+   * A file card's line under its name and whether the computer read the
+   * file as text (`fileFacts`): the size, or "Couldn't read file"; "" until
+   * the computer answers, and again after a failed read, which is tried
+   * next time. Text, Markdown and JSON open only once read as text.
+   */
+  async fileFacts(url: string, wakes = true): Promise<FileFacts> {
+    const known = this.fileLines.get(url)
+    if (known) return known
+    const sent = this.sentFile(url)
+    if (sent)
+      return {
+        line: fileSize(sent.data.length),
+        readsAsText: isText(sent.data),
+      }
+    const backend = this.backend
+    if (!backend) return { line: '' }
+    let answer: JSONValue
+    try {
+      answer = await backend.command(
+        'readAttachmentText',
+        { path: computerPath(url) },
+        { wakes },
+      )
+    } catch {
+      return { line: '' }
+    }
+    const facts = {
+      line: fileLine(answer),
+      readsAsText: str(field(answer, 'kind')) === 'text',
+    }
+    this.fileLines.set(url, facts)
+    return facts
+  }
+
   /** Resend on a message that failed. */
   async resend(id: string, agentId: string): Promise<void> {
     if (
@@ -1493,6 +1599,33 @@ export class AppStore {
     const root = this.openThreads[agentId]
     if (root != null) return threadEntries(root, entries)
     return threadSplit(entries, this.olderBefore[agentId] != null).visible
+  }
+}
+
+/** A file card's line, and whether the computer read the file as text (unknown until it answers). */
+export interface FileFacts {
+  line: string
+  readsAsText?: boolean
+}
+
+/** The pieces read, as one. */
+function joined(pieces: readonly Uint8Array[], length: number): Uint8Array {
+  const all = new Uint8Array(length)
+  let at = 0
+  for (const piece of pieces) {
+    all.set(piece, at)
+    at += piece.length
+  }
+  return all
+}
+
+/** Whether the bytes are UTF-8 text (`String(data:encoding: .utf8)`). */
+function isText(data: Uint8Array): boolean {
+  try {
+    new TextDecoder('utf-8', { fatal: true }).decode(data)
+    return true
+  } catch {
+    return false
   }
 }
 

@@ -189,6 +189,18 @@ function Run({
 /** What each site's icon came to while the app runs: shown, or none (asked for once per site, as `LinkIcons`). */
 const siteIcons = new Map<string, 'shown' | 'none'>()
 
+/** A site's icon as far as it is known (unknown until it loads or fails), and the call that settles it for every link to the site. */
+export function useSiteIcon(
+  site: string,
+): [state: 'shown' | 'none' | undefined, settle: (shown: boolean) => void] {
+  const [state, setState] = useState(siteIcons.get(site))
+  const settle = (shown: boolean) => {
+    siteIcons.set(site, shown ? 'shown' : 'none')
+    setState(shown ? 'shown' : 'none')
+  }
+  return [state, settle]
+}
+
 /**
  * A link's site icon (`InlineImages.site`): the site's own /favicon.ico,
  * loaded by the browser from the site (never a favicon service; the chat's
@@ -197,12 +209,8 @@ const siteIcons = new Map<string, 'shown' | 'none'>()
  * it has come, and nothing for a site without one.
  */
 function SiteIcon({ site }: { site: string }) {
-  const [state, setState] = useState(siteIcons.get(site))
+  const [state, settle] = useSiteIcon(site)
   if (state === 'none') return null
-  const settle = (shown: boolean) => {
-    siteIcons.set(site, shown ? 'shown' : 'none')
-    setState(shown ? 'shown' : 'none')
-  }
   return (
     <>
       <img

@@ -659,14 +659,13 @@ button {
   margin-top: 12px;
 }
 
-/* A file: 220 to 340 wide, grey and 12 round, padded 8; its icon 36, its name as a title. */
+/* A file: 220 to 340 wide (the limits set on it), as wide as its words between; grey and 12 round, padded 8; its icon 36, its name over its size, Save. */
 .file-card {
   display: flex;
   align-items: center;
   gap: 8px;
   box-sizing: border-box;
-  min-width: min(220px, 100%);
-  max-width: min(340px, 100%);
+  width: fit-content;
   padding: 8px;
   margin: 4px 0;
   border-radius: 12px;
@@ -696,11 +695,123 @@ button {
   background: var(--unread);
 }
 
+.file-icon.kind {
+  background: none;
+  object-fit: cover;
+}
+
+.file-words {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
 .file-title {
   font-size: 13px;
   font-weight: 500;
   line-height: 18px;
   color: var(--theirs-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file-meta {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--ink-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Save: the arrow to the line, 12 at 60%, in a 24 square, 6 round. */
+.file-save {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--ink-secondary);
+  cursor: pointer;
+}
+
+.file-save:hover {
+  background: var(--row-hover);
+}
+
+/* A message that is one link: the ground, a 10% edge, 18 round; the site's icon in a 60 square, its name over the address. */
+.link-card-wrap {
+  position: relative;
+  max-width: 100%;
+}
+
+.link-card {
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  width: 100%;
+  border-radius: 18px;
+  background: var(--ground);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--ink) 10%, transparent),
+    0 1px 2px var(--theirs-shadow);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.link-card-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  color: var(--ink-secondary);
+}
+
+.link-card-icon > * {
+  grid-area: 1 / 1;
+}
+
+.link-site {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  object-fit: contain;
+}
+
+.link-site.coming {
+  visibility: hidden;
+}
+
+.link-card-words {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 12px 12px 12px 0;
+}
+
+.link-card-title {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 18px;
+  letter-spacing: -0.08px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.link-card-address {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--ink-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
