@@ -163,6 +163,13 @@ const nextConfig = {
         source: '/app',
         destination: '/app/index.html',
       },
+      // The new web app, the Mac app translated (clients/apps/app, built
+      // into public/app-next): here until it has everything, then at /app
+      // (docs/web-app/PROGRESS.md).
+      {
+        source: '/app-next',
+        destination: '/app-next/index.html',
+      },
       {
         source: '/ingest/static/:path*',
         destination: 'https://us-assets.i.posthog.com/static/:path*',
@@ -396,6 +403,29 @@ const nextConfig = {
           },
         ],
       },
+      // The new web app (clients/apps/app): the old window's policy.
+      ...['/app-next', '/app-next/:path*'].map((source) => ({
+        source,
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: appWindowCSP.replace(/\n/g, ''),
+          },
+          {
+            key: 'Permissions-Policy',
+            value:
+              'payment=(), publickey-credentials-get=(), camera=(), microphone=(self), geolocation=()',
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY',
+          },
+          {
+            key: 'X-Robots-Tag',
+            value: 'noindex, nofollow, noarchive, nosnippet, noimageindex',
+          },
+        ],
+      })),
       {
         source: '/oauth2/:path*',
         headers: [

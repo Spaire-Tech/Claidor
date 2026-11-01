@@ -18,6 +18,7 @@ pnpm typecheck    # Type checking (in apps/web)
 ```
 clients/
 ├── apps/
+│   ├── app/                    # The new web app, the Mac app translated (Vite; README.md)
 │   └── web/                    # Main Next.js application
 │       └── src/
 │           ├── app/            # App Router pages

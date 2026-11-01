@@ -14,7 +14,8 @@ open questions are in `PROGRESS.md`, updated with every change.
   the one at `app.simeonlabs.com/app`, so one codebase serves the web,
   Windows (and Linux).
 - **That web app is a translation of the Mac app**, screen by screen, into
-  code Simeon Labs owns. It is not the web app people use today.
+  code Simeon Labs owns (`clients/apps/app`). It is not the web app people
+  use today.
 - **Why not today's web app** (`clients/apps/web/public/app`):
   - Its window is another company's compiled renderer, read from their Mac
     installer and patched (`desktop/NOTICE.md`: "No licence to the upstream
@@ -119,8 +120,8 @@ deliberately not built (staff-only screens, a privacy block the server never
 raises, broken shared rooms).
 
 **So** the old web app is not a base to build on. The new web app replaces
-it at the same address, and Skills publishing is the one thing to decide on
-(port it, or leave it as the Mac has it).
+it at the same address. Skills publishing is left out, as on the Mac
+(`PROGRESS.md`, "Decisions").
 
 ## What the Mac's own parts become
 

@@ -3,6 +3,8 @@
   "globalDependencies": ["**/.env.*local"],
   "globalEnv": [
     "SIMEON_API_URL",
+    "SIMEON_APP_BASE",
+    "SIMEON_APP_OUT",
     "POLAR_API_URL",
     "CODESPACES",
     "CODESPACE_NAME",

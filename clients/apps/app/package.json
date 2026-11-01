@@ -1,0 +1,33 @@
+{
+  "name": "app",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "check:built": "node scripts/check-built.mjs",
+    "format": "prettier --write ./src ./scripts",
+    "format:check": "prettier -c ./src ./scripts",
+    "lint": "pnpm format:check && eslint .",
+    "test": "vitest run && node scripts/check-built.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
+  },
+  "devDependencies": {
+    "@simeon/eslint-config": "workspace:*",
+    "@simeon/typescript-config": "workspace:*",
+    "@types/node": "^24.0.0",
+    "@types/react": "19.2.10",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "^5.1.2",
+    "eslint": "^9.39.2",
+    "prettier": "^3.8.1",
+    "typescript": "5.9.3",
+    "vite": "7.3.0",
+    "vitest": "^3.2.4"
+  }
+}
