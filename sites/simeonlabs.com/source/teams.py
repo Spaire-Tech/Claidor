@@ -780,10 +780,17 @@ def team_photo(pack):
     return src if os.path.isfile(src) else None
 
 
+# The list's order for the teams with a photo: the first row is three the opening's photos do not show, so the list
+# does not repeat the opening right under it; the opening's six are spread through the rest (the founder, 1 November
+# 2026: "the hero has coffee shop creators etc, but then below its them again... shuffle it").
+LIST = ["real-estate", "sales", "law-firms", "coffee-shop", "life", "founders", "trades", "freelancers", "accountants",
+        "salons", "agencies", "online-stores", "recruiters", "creators", "property"]
+
+
 def by_photo(packs):
-    """The teams with a photo first, in the opening's order, then the rest as packs.json has them."""
-    lead = {pid: i for i, pid in enumerate(LEAD)}
-    return sorted(packs, key=lambda p: (0, lead.get(p["id"], len(lead))) if team_photo(p) else (1, 0))
+    """The teams with a photo first, in LIST's order, then the rest as packs.json has them."""
+    order = {pid: i for i, pid in enumerate(LIST)}
+    return sorted(packs, key=lambda p: (0, order.get(p["id"], len(order))) if team_photo(p) else (1, 0))
 
 
 def card(pack, groups, assets):
