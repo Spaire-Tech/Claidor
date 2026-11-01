@@ -232,8 +232,10 @@ export class FakeBackend implements AgentBackend {
   opened: string[] = []
   tailed: string[] = []
   read: string[] = []
-  /** Each command, with its arguments. */
-  commands: { method: string; args: JSONValue }[] = []
+  /** Each command, with its arguments, and whether it may wake a computer that rests. */
+  commands: { method: string; args: JSONValue; wakes: boolean }[] = []
+  /** The computer's answer to a command, by its name (`{}` otherwise). */
+  commandAnswers: Record<string, (args: JSONValue) => JSONValue> = {}
   /** Each call to the server, with its method and body. */
   serverCalls: { path: string; method?: string; body?: JSONValue }[] = []
   /** The server refuses every call when set. */
@@ -267,12 +269,16 @@ export class FakeBackend implements AgentBackend {
   }
   /** The commands the computer refuses. */
   refusedCommands = new Set<string>()
-  async command(method: string, args: JSONValue = {}): Promise<JSONValue> {
-    this.commands.push({ method, args })
+  async command(
+    method: string,
+    args: JSONValue = {},
+    options: { wakes?: boolean } = {},
+  ): Promise<JSONValue> {
+    this.commands.push({ method, args, wakes: options.wakes ?? true })
     this.beforeAnswer?.(method)
     if (this.refusedCommands.has(method))
       throw new GatewayError("The computer didn't answer.", true)
-    return {}
+    return this.commandAnswers[method]?.(args) ?? {}
   }
   /** Told of each command before it is answered (what the chat showed then). */
   beforeAnswer?: (method: string) => void

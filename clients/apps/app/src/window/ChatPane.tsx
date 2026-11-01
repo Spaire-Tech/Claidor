@@ -57,7 +57,7 @@ import { type RunFlags, noRun } from '../core/chatRuns'
 import { pictureURL } from '../core/faces'
 import { english, languageCode } from '../core/language'
 import type { AgentName } from '../core/mentions'
-import { type Agent, fileTitle } from '../core/models'
+import type { Agent } from '../core/models'
 import type { AppStore } from '../core/store'
 import { wordsLanguage } from '../core/words'
 import { t } from '../l10n'
@@ -65,6 +65,7 @@ import { ActivitySlot } from './ActivitySlot'
 import { AgentMark } from './AgentMark'
 import { Composer } from './Composer'
 import { EmojiPicker } from './EmojiPicker'
+import { FileCard, LinkCard, useShownPicture } from './Files'
 import { FindBar, FindContext, Marked } from './FindBar'
 import {
   type Dismissal,
@@ -898,14 +899,14 @@ function RowContent({
       )
     case 'file':
       return (
-        <div
-          className={classes('file-card', run.startsGroup && 'starts-group')}
-        >
-          <span className="file-icon" aria-hidden="true" />
-          <span className="file-title" title={row.name}>
-            {fileTitle(row.name)}
-          </span>
-        </div>
+        <FileCard
+          name={row.name}
+          url={row.url}
+          agentId={control.agentId}
+          store={control.store}
+          column={control.column}
+          startsGroup={run.startsGroup}
+        />
       )
     case 'teammates': {
       const peers = exchangePeers(row.exchange)
@@ -1215,20 +1216,33 @@ function Message({
         quoteTarget !== control.threadRoot && (
           <ReplyQuote words={bubble.quote} target={quoteTarget} />
         )}
-      {showsWords && (
+      {bubble.loneLink != null ? (
         <div className="bubble-stack">
-          <Shaped
-            bubble={bubble}
-            run={run}
-            isGroup={isGroup}
-            chinJoined={chinJoined}
-            threadCount={threadCount}
-            seamsBelow={seamsBelow}
-          />
+          <LinkCard
+            link={bubble.loneLink}
+            column={control.column - (isGroup && !bubble.fromPerson ? 30 : 0)}
+            bubbleId={bubble.id}
+          >
+            <HoverBar bubble={bubble} actions={control.actions} />
+          </LinkCard>
           {bubble.reactions.length > 0 && <ReactionPills bubble={bubble} />}
         </div>
+      ) : (
+        showsWords && (
+          <div className="bubble-stack">
+            <Shaped
+              bubble={bubble}
+              run={run}
+              isGroup={isGroup}
+              chinJoined={chinJoined}
+              threadCount={threadCount}
+              seamsBelow={seamsBelow}
+            />
+            {bubble.reactions.length > 0 && <ReactionPills bubble={bubble} />}
+          </div>
+        )
       )}
-      {!chinJoined && threadCount != null && (
+      {(!chinJoined || bubble.loneLink != null) && threadCount != null && (
         <ThreadChin rootId={bubble.id} count={threadCount} attached={false} />
       )}
       {bubble.images.length > 0 && (
@@ -1468,20 +1482,6 @@ function ReactionPills({ bubble }: { bubble: Bubble }) {
   )
 }
 
-/** A picture's address on screen: the web's own, or one the person sent from this tab; a computer's file comes with the previews (2c). */
-function useShownPicture(image: ChatImage): string | undefined {
-  const control = useControl()
-  const sent = control.store.sentFile(image.url)
-  const blob = useMemo(
-    () =>
-      sent ? URL.createObjectURL(new Blob([sent.data as BlobPart])) : undefined,
-    [sent],
-  )
-  useEffect(() => () => (blob ? URL.revokeObjectURL(blob) : undefined), [blob])
-  if (image.url.startsWith('https://')) return image.url
-  return blob
-}
-
 /** One picture's size (`PictureStrip.single`): its width up to 320, at most 200 high, its shape kept. */
 function single(
   image: ChatImage,
@@ -1547,7 +1547,8 @@ function Picture({
   image: ChatImage
   size: { width: number; height: number }
 }) {
-  const shown = useShownPicture(image)
+  const control = useControl()
+  const shown = useShownPicture(image, control.store, control.agentId)
   return (
     <span
       className="chat-picture"
