@@ -448,7 +448,11 @@ describe('what the store reads for the lists', () => {
     expect(store.apps.map((app) => app.name)).toEqual(['Gmail'])
     expect(
       backend.commands
-        .filter((one) => one.method !== 'listAgents')
+        // The roster and the sidebar's pins and sections are read on attaching.
+        .filter(
+          (one) =>
+            one.method !== 'listAgents' && one.method !== 'getHostSettings',
+        )
         .map((one) => [one.method, one.wakes]),
     ).toEqual([
       ['getAgentWorkflows', false],

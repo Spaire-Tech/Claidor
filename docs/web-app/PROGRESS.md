@@ -15,7 +15,7 @@ file and the code disagree, the code is right and this file is fixed.
 |---|---|
 | 0. The audit | Done, 1 November 2026 |
 | 1. The base: the server and the computer, signing in, the window | Done, 1 November 2026 (1a to 1d). Carried to step 2: the first run for a new account and the access cover |
-| 2. The sidebar and the chat | In progress: 2a (the chat's core, and the chat on screen) done; 2b (a message's actions, find, the working line, names in colour, link icons, the emoji picker) done; 2c part 1 (file cards, pictures from the computer, link cards) part 2 (the preview: text and code, Markdown, JSON, tables) and part 3a (pictures and videos full screen), part 3b (PDF, Word, sound) and part 3c (Excel) done; 2e (the message field's own parts: attaching files, the ":" emoji list, "@", "/" and "#", dictation) done. Next: the rest of step 2: the sidebar's own parts (pins and folders, several rows picked, renaming, its right-click menu, dragging, the rail and the width), then the first run for a new account and the access cover |
+| 2. The sidebar and the chat | In progress: 2a (the chat's core, and the chat on screen) done; 2b (a message's actions, find, the working line, names in colour, link icons, the emoji picker) done; 2c part 1 (file cards, pictures from the computer, link cards) part 2 (the preview: text and code, Markdown, JSON, tables) and part 3a (pictures and videos full screen), part 3b (PDF, Word, sound) and part 3c (Excel) done; 2e (the message field's own parts: attaching files, the ":" emoji list, "@", "/" and "#", dictation) done; 2f part 1 (the sidebar's pins, sections, several rows picked, its menus, renaming, hiding, Hidden Agents, deleting) done. Next: 2f part 2 (dragging, the rail, the width dragged, folding the sidebar), then the first run for a new account and the access cover |
 | 3. The cards | Not started |
 | 4. The agent's pane, search, new chat, the org chart, starter packs | Not started |
 | 5. The computer and calls | Not started |
@@ -46,8 +46,13 @@ file and the code disagree, the code is right and this file is fixed.
 | 1 November 2026 | The emoji picked lately from ":" are kept in the browser (`simeon.emojiRecents`, the Mac's own name for them): only which emoji, never words of a message | The session |
 | 1 November 2026 | A pick from "@", "/" or "#" sits in the field as its own words ("@Nora", "#12") on the Mac's grey, kept track of as the words change (the iPhone's way), not as the Mac's picture of a chip with its face or logo: a browser's text field holds only words, and an editor of our own for it would be a large piece for a small gain. It goes with the message in the window's document, as on the Mac; Delete takes it whole; undo and redo bring it back. The agents picked lately from "@" are kept in the browser (`simeon.mentionRecents`): which rows, never words | The session |
 | 1 November 2026 | Dictation records in the kind the browser can (WebM with Opus in Chrome, Edge and Firefox; MP4 in Safari), not the Mac's AAC: the transcription takes either. The browser asks for the microphone itself, the first time | The session |
+| 1 November 2026 | Dictation's refused-microphone line stays the Mac's sentence ("…in your system settings."), in a browser and in the Windows app too | The founder: "keep the mac sentence" |
 | 1 November 2026 | "/" offers the agent's skills now; each of the app's actions ("Org Chart", "Chat Settings", "Settings: General", the themes…) joins it with the screen it opens (steps 4 to 6), so the list never offers what does nothing | The session |
 | 1 November 2026 | Excel workbooks (.xlsx) are read by a small reader of our own (`src/core/xlsx.ts`): the browser unzips them itself and the reader takes the first sheet, each value written as its number format says. No library: SheetJS's npm copy has known holes, and the other readers are either days old with unfamiliar dependencies or built for servers. The old binary .xls is not read; it says "Preview not available" with Download. The founder: "keep going on excel" | The session |
+| 1 November 2026 | The sidebar's pins and sections live on the computer, in its settings (`pinnedAgentIds`, `sidebarSections`), as the Mac keeps them, so the Mac and the web app show the same; which sections are folded is kept in the browser (`simeon.sidebar.foldedSections`, the Mac's own name for it): which sections, never names | The session |
+| 1 November 2026 | Several rows are picked with ⌘-click on a Mac and Control-click on Windows and Linux (each system's own way), and ⇧-click. Control-Tab, which walks the Mac's rows, is left out in a browser, which switches tabs with it; the Windows app (step 7) can take it back | The session |
+| 1 November 2026 | The row's menu leaves out Edit Profile until the agent's pane (step 4), so it never offers what does nothing (as "/" does) | The session |
+| 1 November 2026 | The confirmations and alerts are the window's own, drawn as the Mac's (the mark, the title and words, Cancel and Delete in red), not the browser's `confirm()`, which can't make Delete red, says the site's address over it, and stops the page | The session |
 
 ## Open questions
 
@@ -65,14 +70,6 @@ For the founder, each to be answered before the step that needs it:
   in Vercel and say whether the newer ones were ignored, failed or are
   waiting to be promoted.
 
-- **Dictation's refused-microphone line in a browser.** The web app says
-  the Mac's sentence, "Microphone access denied. Please enable microphone
-  permissions in your system settings." In a browser the microphone is
-  allowed in the browser's own site settings (the padlock beside the
-  address), and in the Windows app in Windows' privacy settings. Kept as the
-  Mac's until the founder says whether the web app should have its own
-  sentence (a new sentence needs its nine translations).
-
 - **A Windows code-signing certificate.** An unsigned installer makes
   Windows warn people before it runs (SmartScreen). Simeon Labs needs a
   code-signing certificate in its name before the first public Windows
@@ -84,6 +81,103 @@ For the founder, each to be answered before the step that needs it:
 ## Log
 
 Newest first.
+
+### 1 November 2026: step 2f, part 1, the sidebar's pins, sections, menus and picked rows
+
+- `src/core/sidebarSections.ts` (SimeonCore's SidebarSections.swift): the
+  sections as the computer keeps them, "Unassigned" always last and holding
+  the rest; rename, remove, create, move agents in, move a section; what the
+  sidebar draws and its order (the pins, then the open sections' rows);
+  several rows picked (⌘ or Control, ⇧, a plain click); the delete
+  confirmation's words. `sidebarSections.test.ts` runs the core's own cases
+  from `fixtures/sidebar-sections.json` (copied from the Swift tests).
+- The store (`store.ts`), each change shown at once and written to the
+  computer, a refusal putting back what the computer holds:
+  - the pins (`pinnedAgentIds`) and sections (`sidebarSections`), read once
+    together, without waking a resting computer, on attaching, on
+    reconnecting, and again when another device changes them
+    (`settingsChanged`);
+  - pin, unpin, move a pin; edit and create sections;
+  - Mark as Read and Unread, hide and show, delete (false when refused),
+    duplicate (the copy's id), rename (quiet on a refusal, as the Mac's).
+  - `sidebarStore.test.ts`: the commands as the Mac's menu sends them.
+- `src/window/Sidebar.tsx` (mac/Simeon/SidebarList.swift,
+  SidebarMenus.swift, SidebarState.swift):
+  - the pins as tiles (the picture 60, the name, the title in blue, the
+    unread or working dot on its corner), in as many 80-point columns as
+    fit;
+  - the rows, or the person's sections: a header (a click folds it, its
+    count while folded, the chevron under the pointer), "Drag chats here"
+    in an empty one; Hidden Agents at the foot with its count; "No saved
+    agents yet." and "All bots are hidden" with Show Hidden Agents; the
+    list fading out over its last 24 points;
+  - a row: the open one the white card, a picked one the blue wash, the
+    group badge, "Draft: …" for words left unsent in another chat; a
+    double click renames it in place (Return or leaving keeps it, Escape
+    puts it back);
+  - the row's menu: Pin or Unpin; Move to with the sections (its own
+    ticked) and New section, or Move to new section while there are none;
+    Mark as Read or Unread; Duplicate (not for groups or rooms from
+    another account), which opens the copy; Copy conversation ID; Hide
+    from sidebar; Delete in red. With several rows picked and this one
+    among them, Move and Delete act on them all;
+  - a section's menu: Rename, Move up, Move down (greyed at the ends),
+    Delete; a new section opens with its name ready to type over;
+  - picked rows: the head turns into the Mac's bar (Move, Delete, Clear);
+    Escape lets them go, Delete or Backspace asks to delete them; not while
+    a field has the keys or a menu, an alert or a sheet is open; picking
+    takes the keys from the message field, as on the Mac;
+  - Hidden Agents (520 by 440): each hidden agent, a click opens it,
+    Unhide puts it back; "No hidden bots" when none.
+- `src/window/ContextMenu.tsx`: a right-click menu in the Mac's look, at
+  the pointer and kept in the window, submenus beside their item, the keys
+  ↑ ↓ → ← and Return. `src/window/Dialogs.tsx`: the alert and the sheet;
+  Escape reaches them wherever the keys are.
+- `App.tsx`: with nothing open, the first agent in the sidebar's order
+  opens (the pins first), as the Mac's `chooseFirst`.
+- **Found on the Mac:** "Draft: …" and the refused delete's "OK" are
+  English there (not in the catalogue); the web app says the same. The
+  menus' names for a screen reader ("Agent actions", "Section actions") are
+  the web app's own, in English, as the Mac's menus have none.
+- **Decisions:** in the table above (where the pins, sections and folds
+  are kept; ⌘ or Control and no Control-Tab; Edit Profile waits; the
+  window's own alerts).
+- **Checked:** in Chromium against a stand-in server and computer that
+  keeps the settings and answers each command (`sidebar-check.cjs` in the
+  session's scratchpad), light and dark, then French:
+  - the tile, Work and Unassigned, the group badge, the working and unread
+    dots, Hidden Agents 1;
+  - the row's menu and its submenu (Work ticked); Theo moved to Unassigned,
+    the sections written whole;
+  - Control-click two rows: the bar's three buttons with their counts;
+    Escape lets them go; ⇧-click a range of three; Delete: "Delete 3
+    agents" with its words, Cancel and Delete in red, Delete with the keys;
+    Escape cancels and nothing is deleted;
+  - the bar's Move → New section: the field with "New section" chosen,
+    "Clients" typed, written at the top with the three agents;
+  - the section's menu with Move up greyed; Move down; folding Work: its
+    count, kept in the browser;
+  - a double click: "Iris B" sent as `updateAgent`; Escape sends nothing;
+  - Mark as Unread: the dot, `setAgentUnread`; Pin Nova: two tiles,
+    written; Unpin from the tile's menu (no Move to on a pin);
+  - Copy conversation ID: "scout" on the clipboard; Duplicate: the copy
+    opens (the address and the open row);
+  - Hide Scout: gone, Hidden Agents 2; the sheet (520 by 440) with both,
+    Unhide Old bot, Escape closes it; Delete Old bot, confirmed; a refused
+    delete: "Deleting failed…" with OK; a section deleted: its agents in
+    Unassigned;
+  - French: every menu, the bar, the alerts and the sheet in French, the
+    times on the 24-hour clock; no page errors in any run.
+  The 223 tests, typecheck, lint, the words', the brands' and the build's
+  checks, `check_names.py`, `check_translations.py`.
+- **Not checked:** the Mac and the web app open together on one computer
+  (a pin made on one showing on the other); a real computer's answers to
+  these commands; Safari and Firefox; the Windows Control-click (Chromium
+  on Linux was used, which picks with Control as Windows does).
+- **Next:** 2f part 2: dragging (a row onto the pins, into a section, a
+  pin to another place, a section above or below another), the rail, the
+  width dragged (240 to 400), folding the sidebar and ⌘B; then the first
+  run for a new account and the access cover.
 
 ### 1 November 2026: step 2e, part 3, dictation
 
@@ -107,8 +201,8 @@ Newest first.
 - The store's `transcribe`, and the stand-in's (`FakeBackend`).
 - `src/window/dictation.test.ts`: the lines, the space, the meter, and
   French.
-- **Decision (the session):** in the table above. **Open question** for
-  the founder: the refused-microphone line's "system settings" (above).
+- **Decisions:** in the table above (the recording kind, the session; the
+  refused-microphone line, the founder).
 - **Checked:** in Chromium with its fake microphone playing a 440 Hz tone
   (`dictation-check.cjs` and `tone.wav` in the session's scratchpad),
   against a stand-in server, light and dark, then French:

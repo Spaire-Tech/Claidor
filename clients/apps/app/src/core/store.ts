@@ -46,6 +46,14 @@ import { type JSONValue, arr, bool, field, int, num, str, text } from './json'
 import { t } from './l10n'
 import { type Agent, agentFrom, sameAgent, sortRoster } from './models'
 import { plainError } from './plainWords'
+import {
+  type SidebarSection,
+  createSection,
+  newSectionId,
+  normalize,
+  parseSections,
+  sectionsJSON,
+} from './sidebarSections'
 import { bytesFromBase64URL } from './tokens'
 
 /** A message the person sent, shown at once and kept until the host's own copy arrives (the Mac's outbox). */
@@ -439,6 +447,8 @@ export class AppStore {
         this.changed()
       }
     }
+    // The pins and sections, shared with the Mac through the computer's settings.
+    if (this.backend === backend) await this.loadSidebar()
   }
 
   /** Signed out, or the sign-in ended. */
@@ -474,6 +484,8 @@ export class AppStore {
     this.threadRows = {}
     this.drafts = {}
     this.apps = []
+    this.pinnedIds = []
+    this.sidebarSections = undefined
     this.canceledDraft = undefined
     this.composerNotice = undefined
     this.running = {}
@@ -640,8 +652,19 @@ export class AppStore {
           void (async () => {
             await this.reloadRoster()
             if (this.openChat) await this.refresh(this.openChat)
+            await this.loadSidebar()
           })()
         }
+        return
+      }
+      case 'settingsChanged': {
+        // Another device (or this one) changed the computer's settings: the pins and sections read again.
+        const every = event.fields.length === 0
+        const pins = every || event.fields.includes('pinnedAgentIds')
+        const sections = every || event.fields.includes('sidebarSections')
+        if (pins && sections) void this.loadSidebar()
+        else if (pins) void this.loadPins()
+        else if (sections) void this.loadSections()
         return
       }
       case 'computerAsleep':
@@ -658,6 +681,258 @@ export class AppStore {
   /** One agent, by id. */
   agent(id: string): Agent | undefined {
     return this.agents.find((agent) => agent.id === id)
+  }
+
+  // MARK: The list, as the Mac's sidebar (pins, sections, read, hidden, delete, duplicate)
+
+  /** The pinned agents, in their order (the host's `pinnedAgentIds`, shared with the Mac). */
+  pinnedIds: string[] = []
+  /**
+   * The sidebar's sections as the host keeps them (`sidebarSections`): none
+   * read yet, and nothing can be moved, until the computer answers; empty
+   * when the person has made none.
+   */
+  sidebarSections?: SidebarSection[]
+  /** Bumped by each pin written here: a read of the host's pins begun before it would undo it, so it is dropped. */
+  private pinWrites = 0
+  /** Pin writes on their way: no read begins meanwhile (its answer could come back without the write). */
+  private pinWritesInFlight = 0
+  /** Bumped by each sections write, so a read begun before it is dropped. */
+  private sectionWrites = 0
+  private sectionSeed = 0
+
+  /** The pinned agents that still exist and are not hidden, in pin order. */
+  get pinned(): Agent[] {
+    return this.pinnedIds
+      .map((id) =>
+        this.agents.find((agent) => agent.id === id && !agent.isHidden),
+      )
+      .filter((agent): agent is Agent => agent != null)
+  }
+
+  get hiddenAgents(): Agent[] {
+    return this.agents.filter((agent) => agent.isHidden)
+  }
+
+  /** The host's settings, read without waking a computer that rests. */
+  private async hostSettings(): Promise<JSONValue | undefined> {
+    try {
+      return await this.backend?.command(
+        'getHostSettings',
+        {},
+        { wakes: false },
+      )
+    } catch {
+      return undefined
+    }
+  }
+
+  /** The pins and sections at once: one read of the computer's settings. */
+  async loadSidebar(): Promise<void> {
+    if (this.pinWritesInFlight > 0) return this.loadSections()
+    const pins = this.pinWrites
+    const sections = this.sectionWrites
+    const settings = await this.hostSettings()
+    if (settings === undefined) return
+    this.takePins(settings, pins)
+    this.takeSections(settings, sections)
+  }
+
+  /** The computer's pins (`getHostSettings` → `pinnedAgentIds`). */
+  async loadPins(): Promise<void> {
+    if (this.pinWritesInFlight > 0) return
+    const started = this.pinWrites
+    const settings = await this.hostSettings()
+    if (settings !== undefined) this.takePins(settings, started)
+  }
+
+  /** The pins read, unless one was written since the read began. */
+  private takePins(settings: JSONValue, started: number): void {
+    if (started !== this.pinWrites || this.pinWritesInFlight > 0) return
+    const ids = (arr(field(settings, 'pinnedAgentIds')) ?? [])
+      .map(text)
+      .filter((id): id is string => id != null)
+    if (ids.join('\u0000') === this.pinnedIds.join('\u0000')) return
+    this.pinnedIds = ids
+    this.changed()
+  }
+
+  /** Pin or unpin: the whole ordered list is written, as the Mac writes it (`setHostSettings({pinnedAgentIds})`); a new pin goes last. */
+  async setPinned(agentId: string, pinned: boolean): Promise<void> {
+    const next = this.pinnedIds.filter((id) => id !== agentId)
+    if (pinned) next.push(agentId)
+    await this.writePins(
+      next,
+      pinned ? t("Couldn't pin it") : t("Couldn't unpin it"),
+    )
+  }
+
+  /** Moves a pin to another pin's place (the Mac's drag in the pin grid). */
+  async movePin(agentId: string, index: number): Promise<void> {
+    const from = this.pinnedIds.indexOf(agentId)
+    if (from < 0) return
+    const next = this.pinnedIds.filter((id) => id !== agentId)
+    next.splice(Math.min(Math.max(index, 0), next.length), 0, agentId)
+    await this.writePins(next, t("Couldn't move the pin"))
+  }
+
+  /** Shown at once, then written; a refusal puts back what the host holds. */
+  private async writePins(next: string[], failure: string): Promise<void> {
+    if (next.join('\u0000') === this.pinnedIds.join('\u0000')) return
+    this.pinWrites += 1
+    this.pinnedIds = next
+    this.changed()
+    this.pinWritesInFlight += 1
+    const written = await this.command(
+      'setHostSettings',
+      { pinnedAgentIds: next },
+      failure,
+    )
+    this.pinWritesInFlight -= 1
+    if (written === undefined) await this.loadPins()
+  }
+
+  /** The host's sections (`getHostSettings` → `sidebarSections`, an empty list when none). */
+  async loadSections(): Promise<void> {
+    const started = this.sectionWrites
+    const settings = await this.hostSettings()
+    if (settings !== undefined) this.takeSections(settings, started)
+  }
+
+  /** The sections read, unless they were written since the read began. */
+  private takeSections(settings: JSONValue, started: number): void {
+    if (started !== this.sectionWrites) return
+    const next = parseSections(field(settings, 'sidebarSections') ?? [])
+    if (JSON.stringify(next) === JSON.stringify(this.sidebarSections)) return
+    this.sidebarSections = next
+    this.changed()
+  }
+
+  /**
+   * One change to the sections, shown at once and written whole
+   * (`setHostSettings({sidebarSections})`), as the window's store edits
+   * them; a refusal puts back what the host holds. Nothing changes before
+   * there are sections read.
+   */
+  editSections(
+    change: (sections: SidebarSection[]) => SidebarSection[],
+  ): boolean {
+    const current = this.sidebarSections
+    if (!current) return false
+    const next = normalize(change(current))
+    if (JSON.stringify(next) === JSON.stringify(current)) return true
+    this.sectionWrites += 1
+    this.sidebarSections = next
+    this.changed()
+    void (async () => {
+      const written = await this.command(
+        'setHostSettings',
+        { sidebarSections: sectionsJSON(next) },
+        t("Couldn't change it"),
+      )
+      if (written === undefined) await this.loadSections()
+    })()
+    return true
+  }
+
+  /** A new section at the top, holding these agents; its id, to rename it at once. */
+  createSection(agentIds: readonly string[]): string | undefined {
+    if (!this.sidebarSections) return undefined
+    this.sectionSeed += 1
+    const id = newSectionId(this.sectionSeed)
+    this.editSections((sections) => createSection(sections, id, agentIds))
+    return id
+  }
+
+  /** Mark as Read / Mark as Unread (`setAgentUnread`), shown at once. */
+  async setUnread(agentId: string, unread: boolean): Promise<void> {
+    this.agents = this.agents.map((agent) =>
+      agent.id === agentId
+        ? {
+            ...agent,
+            hasUnread: unread,
+            unreadCount: unread ? Math.max(agent.unreadCount, 1) : 0,
+          }
+        : agent,
+    )
+    this.changed()
+    await this.command(
+      'setAgentUnread',
+      { id: agentId, isUnread: unread, atMs: Date.now() },
+      t("Couldn't change it"),
+    )
+  }
+
+  /** Hide from the list, or show again (`setAgentHiddenFromSidebar`). A hidden agent keeps working and keeps its history. */
+  async setHidden(agentId: string, hidden: boolean): Promise<void> {
+    this.agents = this.agents.map((agent) =>
+      agent.id === agentId ? { ...agent, isHidden: hidden } : agent,
+    )
+    this.changed()
+    const done = await this.command(
+      'setAgentHiddenFromSidebar',
+      { id: agentId, isHidden: hidden },
+      hidden ? t("Couldn't hide it") : t("Couldn't show it again"),
+    )
+    if (done === undefined) await this.reloadRoster()
+  }
+
+  /** Deletes agents or groups and their chats (`deleteAgents`); false when the host refused. */
+  async deleteAgents(agentIds: readonly string[]): Promise<boolean> {
+    const backend = this.backend
+    if (!backend) return false
+    try {
+      await backend.command('deleteAgents', { ids: [...agentIds] })
+    } catch {
+      this.problem = t('Deleting failed. Check your connection and try again.')
+      this.changed()
+      return false
+    }
+    const gone = new Set(agentIds)
+    this.agents = this.agents.filter((agent) => !gone.has(agent.id))
+    this.pinnedIds = this.pinnedIds.filter((id) => !gone.has(id))
+    for (const id of agentIds) {
+      delete this.transcripts[id]
+      delete this.chatRows[id]
+      delete this.runFlags[id]
+    }
+    this.changed()
+    return true
+  }
+
+  /** A copy of an agent (`duplicateAgent`); the copy's id, to open it. */
+  async duplicate(agentId: string): Promise<string | undefined> {
+    const answer = await this.command(
+      'duplicateAgent',
+      { id: agentId },
+      t("Couldn't duplicate it"),
+    )
+    if (answer === undefined) return undefined
+    await this.reloadRoster()
+    return (
+      text(field(field(answer, 'agent'), 'id')) ??
+      text(field(answer, 'id')) ??
+      text(field(answer, 'agentId'))
+    )
+  }
+
+  /** Rename in the row (`updateAgent` with the name and the description as they are); shown at once, the roster read again on a refusal. */
+  async renameAgent(agentId: string, name: string): Promise<void> {
+    const agent = this.agent(agentId)
+    if (!agent) return
+    this.agents = this.agents.map((one) =>
+      one.id === agentId ? { ...one, name } : one,
+    )
+    this.changed()
+    // As the Mac's profile field: quietly, the roster read again on a refusal.
+    try {
+      await this.backend?.command('updateAgent', {
+        id: agentId,
+        profile: { name, description: agent.description },
+      })
+    } catch {
+      await this.reloadRoster()
+    }
   }
 
   // MARK: The chats

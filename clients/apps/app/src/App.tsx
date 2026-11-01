@@ -1,13 +1,13 @@
 // The window (`AppRoot` and `MainWindow` in mac/Simeon/MainWindow.swift):
 // the mark while the sign-in and the computer are found, then the sidebar
 // and the open agent's chat side by side. The agent left open stays open
-// (the address keeps it, `?agent=`), else the first in the list opens
-// (`WindowState.chooseFirst`).
+// (the address keeps it, `?agent=`), else the first in the sidebar's order
+// opens, the pins first (`WindowState.chooseFirst`).
 
 import { useCallback, useEffect, useState } from 'react'
 import type { WebSession } from './session'
 import { ChatPane } from './window/ChatPane'
-import { Sidebar } from './window/Sidebar'
+import { Sidebar, listOrder } from './window/Sidebar'
 import { type Shown, ViewerContext, ViewerLayer } from './window/Viewers'
 import { useWatched } from './window/useStore'
 
@@ -43,9 +43,9 @@ function MainWindow({ session }: { session: WebSession }) {
   const store = session.store
   useWatched(store)
   const [open, setOpen] = useState<string | undefined>(agentInAddress)
-  // The agent left open while it is there, else the first in the list.
+  // The agent left open while it is there, else the first in the sidebar's order.
   const known = open != null && store.agents.some((agent) => agent.id === open)
-  const shown = known ? open : store.agents.find((agent) => !agent.isHidden)?.id
+  const shown = known ? open : listOrder(store)[0]
   useEffect(() => keepInAddress(shown), [shown])
   // Files dropped outside the chat are taken by nothing, and the browser does not open them in the window's place.
   useEffect(() => {
