@@ -64,6 +64,17 @@
   /* The raised ground (`elevated`): find's bar; the words on the warning yellow (`onWarn`) */
   --elevated: #fcfcfc;
   --on-warn: #1f1f1f;
+
+  /* A file's preview: the window's chrome, the scrim, the table's head, the chosen cell, the JSON tree's colours. */
+  --chrome: #f7f7f7;
+  --file-scrim: rgb(20 20 20 / 0.898);
+  --table-head: #eeeeee;
+  --selected-cell: rgb(127 127 127 / 0.18);
+  --cell-card: #ffffff;
+  --json-key: #c27400;
+  --json-string: #009957;
+  --json-number: #c24e00;
+  --json-keyword: #6e44c1;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -104,6 +115,14 @@
     --hairline: rgb(252 252 252 / 0.1);
     --settings-blue: #2f6db0;
     --elevated: #181818;
+    --chrome: #111111;
+    --file-scrim: rgb(20 20 20 / 0.95);
+    --table-head: #161616;
+    --cell-card: #1a1a1a;
+    --json-key: #ffaf38;
+    --json-string: #38d591;
+    --json-number: #ff8838;
+    --json-keyword: #a97efe;
   }
 }
 
@@ -2064,4 +2083,544 @@ strong .brand-name {
   margin: 8px 0 0;
   font-size: 12px;
   color: var(--ink-secondary);
+}
+
+/* ---------------------------------------------------------------------- */
+/* A file's preview (mac/Simeon/Viewers.swift, FileBodies.swift).          */
+
+/* A card's name that opens its preview: the name as it was, with the hand. */
+.file-title.opens {
+  display: block;
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+  text-align: left;
+  cursor: pointer;
+}
+
+/* The window dimmed, padded 40; the panel up to 1100, the ground, 12 round, a half-point edge and a deep shadow. */
+.file-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 40px;
+  background: var(--file-scrim);
+}
+
+.file-viewer {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 1100px;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--ground);
+  box-shadow:
+    0 0 0 0.5px color-mix(in srgb, var(--ink) 15%, transparent),
+    0 32px 80px rgb(0 0 0 / 0.55);
+  outline: none;
+}
+
+/* Its head: the chrome, padded 8 12 8 16; the name over its grey line, then Download and Close. */
+.file-viewer-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px 8px 16px;
+  background: var(--chrome);
+}
+
+.file-viewer-words {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.file-viewer-name {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file-viewer-subtitle {
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--ink-tertiary);
+  white-space: nowrap;
+}
+
+.viewer-head-button {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--ink-secondary);
+  cursor: pointer;
+}
+
+.viewer-head-button + .viewer-head-button {
+  margin-left: -4px;
+}
+
+.viewer-head-button:hover {
+  background: var(--row-hover);
+}
+
+.file-viewer-body {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  background: var(--ground);
+}
+
+/* A state, centred, padded 32: the glyph at 40%, the title (13, 60%) and its detail (12, 40%), then the action. */
+.viewer-state {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 32px;
+  color: var(--ink-tertiary);
+  text-align: center;
+}
+
+.viewer-loading {
+  font-size: 12px;
+}
+
+.viewer-state-words {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.viewer-state-title {
+  font-size: 13px;
+  color: var(--ink-secondary);
+}
+
+.viewer-state-detail {
+  max-width: 440px;
+  font-size: 12px;
+}
+
+/* Download: 14 on a 32-high grey, 8 round, a 15% edge. */
+.viewer-download {
+  height: 32px;
+  margin-top: 2px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--wash);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 15%, transparent);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* A Markdown file as a page: 624 wide at most, padded 40 32 56; its words 15 on 24, its blocks 12 apart. */
+.markdown-page {
+  flex: 1;
+  overflow: auto;
+}
+
+.markdown-page-column {
+  box-sizing: border-box;
+  max-width: 624px;
+  margin: 0 auto;
+  padding: 40px 32px 56px;
+}
+
+.message-blocks.document {
+  gap: 12px;
+  font-size: 15px;
+  line-height: 24px;
+  color: var(--ink);
+  user-select: text;
+}
+
+/* Its headings 1.55, 1.3 and 1.13 of the words on 1.3, with 20, 16 and 12 above (none for the first). */
+.message-blocks.document .message-heading {
+  line-height: 1.3;
+  padding-top: 0;
+}
+
+.message-blocks.document .message-heading.h1 {
+  margin-top: 20px;
+  font-size: 23.25px;
+  letter-spacing: -0.012em;
+}
+
+.message-blocks.document .message-heading.h2 {
+  margin-top: 16px;
+  font-size: 19.5px;
+  letter-spacing: -0.008em;
+}
+
+.message-blocks.document .message-heading.h3 {
+  margin-top: 12px;
+  font-size: 16.95px;
+  letter-spacing: 0;
+}
+
+.message-blocks.document > .message-heading:first-child {
+  margin-top: 0;
+}
+
+/* Lists 24 in; tables 0.93 of the words on 1.6, padded 6 12; quotes 16 in. */
+.message-blocks.document .message-list .marker {
+  width: 20px;
+}
+
+.message-blocks.document .message-table {
+  font-size: 13.95px;
+  line-height: 1.6;
+}
+
+.message-blocks.document .message-table th,
+.message-blocks.document .message-table td {
+  padding: 6px 12px;
+}
+
+.message-blocks.document .message-quote {
+  gap: 12px;
+  margin: 2px 0;
+  padding-left: 16px;
+}
+
+/* A text or code file: the numbers down the left at 30%, staying while the lines scroll sideways; 12.5 on 20, monospaced. */
+.code-body {
+  display: flex;
+  flex: 1;
+  align-items: flex-start;
+  overflow: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12.5px;
+  line-height: 20px;
+}
+
+.code-numbers {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  flex: none;
+  box-sizing: border-box;
+  min-width: 37px;
+  min-height: 100%;
+  margin: 0;
+  padding: 16px 12px 24px 16px;
+  background: var(--ground);
+  color: color-mix(in srgb, var(--ink) 30%, transparent);
+  font: inherit;
+  text-align: right;
+  user-select: none;
+}
+
+.code-lines {
+  flex: none;
+  margin: 0;
+  padding: 16px 24px 24px 16px;
+  color: var(--ink);
+  font: inherit;
+  white-space: pre;
+  user-select: text;
+}
+
+/* The window's palette for highlight.js, its rules in the window's order (a later one wins). */
+.code-lines .hljs-comment,
+.code-lines .hljs-quote {
+  color: var(--ink-tertiary);
+  font-style: italic;
+}
+
+.code-lines .hljs-keyword,
+.code-lines .hljs-selector-tag,
+.code-lines .hljs-literal,
+.code-lines .hljs-type {
+  color: #c678dd;
+}
+
+.code-lines .hljs-string,
+.code-lines .hljs-meta-string,
+.code-lines .hljs-regexp,
+.code-lines .hljs-addition {
+  color: #98c379;
+}
+
+.code-lines .hljs-number,
+.code-lines .hljs-built_in {
+  color: #d19a66;
+}
+
+.code-lines .hljs-title,
+.code-lines .hljs-section,
+.code-lines .hljs-name {
+  color: #61afef;
+}
+
+.code-lines .hljs-attr,
+.code-lines .hljs-attribute,
+.code-lines .hljs-variable,
+.code-lines .hljs-template-variable,
+.code-lines .hljs-property {
+  color: #e5c07b;
+}
+
+.code-lines .hljs-symbol,
+.code-lines .hljs-bullet,
+.code-lines .hljs-link,
+.code-lines .hljs-selector-id,
+.code-lines .hljs-selector-class {
+  color: #56b6c2;
+}
+
+.code-lines .hljs-deletion {
+  color: #e06c75;
+}
+
+.code-lines .hljs-class .hljs-title {
+  color: #d19a66;
+}
+
+.code-lines .hljs-meta .hljs-keyword {
+  color: #c678dd;
+}
+
+.code-lines .hljs-emphasis {
+  font-style: italic;
+}
+
+.code-lines .hljs-strong {
+  font-weight: 600;
+}
+
+.code-lines .hljs-addition {
+  background: rgb(63 162 102 / 0.14);
+}
+
+.code-lines .hljs-deletion {
+  background: rgb(252 107 131 / 0.12);
+}
+
+/* A JSON file as a tree: 12 on 20.4, monospaced, at 60%, padded 16 24 28. */
+.json-body {
+  flex: 1;
+  overflow: auto;
+  padding: 16px 24px 28px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 20.4px;
+  color: var(--ink-secondary);
+  white-space: nowrap;
+  user-select: text;
+}
+
+.json-line {
+  display: flex;
+  align-items: center;
+  min-height: 20.4px;
+}
+
+.json-caret {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: color-mix(in srgb, var(--ink) 30%, transparent);
+}
+
+button.json-caret {
+  cursor: pointer;
+}
+
+.json-entries {
+  margin-left: 7px;
+  padding-left: 9px;
+  box-shadow: inset 1px 0 0 color-mix(in srgb, var(--ink) 6%, transparent);
+}
+
+.json-more {
+  padding-left: 16px;
+  color: var(--ink-tertiary);
+}
+
+.json-key {
+  color: var(--json-key);
+}
+
+.json-colon {
+  color: color-mix(in srgb, var(--ink) 30%, transparent);
+  white-space: pre;
+}
+
+.json-size {
+  color: var(--ink-tertiary);
+}
+
+.json-string {
+  color: var(--json-string);
+}
+
+.json-number {
+  color: var(--json-number);
+}
+
+.json-keyword {
+  color: var(--json-keyword);
+}
+
+/* A CSV or TSV: a grid padded 12, 12.5 with even figures at 60%; each cell padded 5 10 with a hairline round it. */
+.sheet {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-width: 0;
+}
+
+.sheet-scroll {
+  flex: 1;
+  overflow: auto;
+}
+
+.sheet-grid {
+  width: max-content;
+  padding: 12px;
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-secondary);
+}
+
+.sheet-row {
+  display: flex;
+  height: 25px;
+}
+
+.sheet-row.head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.sheet-number,
+.sheet-cell {
+  flex: none;
+  box-sizing: border-box;
+  height: 25px;
+  padding: 5px 10px;
+  line-height: 15px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: inset 0 0 0 0.5px color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+.sheet-number {
+  background: var(--table-head);
+  color: color-mix(in srgb, var(--ink) 30%, transparent);
+}
+
+.sheet-cell {
+  cursor: pointer;
+}
+
+.sheet-row.head .sheet-number,
+.sheet-row.head .sheet-cell {
+  background: var(--table-head);
+  font-weight: 500;
+}
+
+.sheet-row.head .sheet-cell,
+.sheet-cell.picked {
+  color: var(--ink);
+}
+
+.sheet-cell.picked {
+  background: var(--selected-cell);
+}
+
+/* A chosen cell's words: a card 12 in from the foot, at most 45% high, 10 round; its head with Close, the words 12.5 on 1.5. */
+.cell-detail {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  max-height: 45%;
+  overflow: hidden;
+  border-radius: 10px;
+  background: var(--cell-card);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--ink) 10%, transparent),
+    0 12px 32px rgb(0 0 0 / 0.4);
+}
+
+.cell-detail-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-tertiary);
+  box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+.cell-detail-head span {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cell-detail-close {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink-secondary);
+  cursor: pointer;
+}
+
+.cell-detail-words {
+  overflow: auto;
+  padding: 10px 14px 12px;
+  font-size: 12.5px;
+  line-height: 18.75px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  white-space: pre-wrap;
+  user-select: text;
 }

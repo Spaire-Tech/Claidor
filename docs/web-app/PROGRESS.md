@@ -15,7 +15,7 @@ file and the code disagree, the code is right and this file is fixed.
 |---|---|
 | 0. The audit | Done, 1 November 2026 |
 | 1. The base: the server and the computer, signing in, the window | Done, 1 November 2026 (1a to 1d). Carried to step 2: the first run for a new account and the access cover |
-| 2. The sidebar and the chat | In progress: 2a (the chat's core, and the chat on screen) done; 2b (a message's actions, find, the working line, names in colour, link icons, the emoji picker) done; 2c part 1 (file cards, pictures from the computer, link cards) done; 2c part 2 (the previews) next |
+| 2. The sidebar and the chat | In progress: 2a (the chat's core, and the chat on screen) done; 2b (a message's actions, find, the working line, names in colour, link icons, the emoji picker) done; 2c part 1 (file cards, pictures from the computer, link cards) and part 2 (the preview: text and code, Markdown, JSON, tables) done; 2c part 3 (PDF, Word, Excel, sound, pictures and videos) next |
 | 3. The cards | Not started |
 | 4. The agent's pane, search, new chat, the org chart, starter packs | Not started |
 | 5. The computer and calls | Not started |
@@ -41,6 +41,7 @@ file and the code disagree, the code is right and this file is fixed.
 
 | 1 November 2026 | A message that is one link is drawn as the Mac's card with the site's icon, its name and the address, but not the page's title, which the Mac reads from the page. A web page may not read another site, and a route on Simeon's server that read it would hand the server every link the person opens | The session, as above |
 | 1 November 2026 | Save hands the file to the browser as a download (the browser asks where, or puts it in Downloads, as the person set it), not the Mac's save panel; a file the computer won't hand over says "Couldn't save this file" in the browser's own alert, as the Electron app's error box did. A picture keeps the browser's own right-click menu (Copy image, Save image as), as a link does | The session, as above |
+| 1 November 2026 | The preview uses the libraries the window itself used, at its versions: highlight.js 11.9 now (in a worker, with only the languages the preview asks for), pdf.js 5.4.296 and mammoth for PDF and Word in part 3. Not SheetJS 0.18.5, the window's reader for Excel: the copy on npm has known security holes (fixed only in releases off npm), and the files come from the internet through the agents. How Excel files show is decided in part 3 | The session, as above |
 
 ## Open questions
 
@@ -69,6 +70,77 @@ For the founder, each to be answered before the step that needs it:
 ## Log
 
 Newest first.
+
+### 1 November 2026: step 2c, part 2, the preview (text and code, Markdown, JSON, tables)
+
+- `src/core/filePreview.ts` (`FilePreview`): a text file's words (UTF-8,
+  cut at 1.5 million characters, a cut inside an emoji or between "\r" and
+  "\n" falling back to its start); a CSV's separator, rows and row count;
+  a sheet (2,000 rows at most); "3 rows", "1,204 rows", "Revenue · row 2",
+  "2 pages", "[2 items]", "{1 key}"; a picture's caption and previous and
+  next wrapping round, for part 3.
+- `src/core/store.ts` (`AppStore.readForPreview`): a file's size asked
+  first (a piece of no length), so a file over 25 MB is never fetched;
+  then its bytes, or nothing.
+- `src/core/files.test.ts` adds `FilePreviewTests`' CSV, JSON sizes,
+  captions and lines (with the window's own answers,
+  `Fixtures/file-preview.json`), the text's cut, and the preview's read.
+- `src/window/Viewers.tsx` (`FileViewer`, `ViewerState`, `MarkdownPage`,
+  `CodeBody`, `JSONBody`, `TableBody`):
+  - a card's name opens the file's preview over the whole window
+    ("Open notes.md"), for text and code, Markdown, JSON, CSV and TSV
+    once the computer read them as text; the other kinds stay plain until
+    part 3;
+  - the window dimmed, the panel up to 1100 wide; its head with the name,
+    the grey line ("2,999 rows", "Showing the start of this file"),
+    Download file and Close preview; Escape or a click outside closes it,
+    and the keys go back where they were;
+  - "Loading file…", "File unavailable", and too large ("Spreadsheet too
+    large to preview" with Download) as the Mac says them;
+  - Markdown as a page (624 wide, 15 on 24, the page's headings, lists,
+    tables and quotes; names left as words);
+  - text and code with their line numbers staying while the lines scroll
+    sideways, coloured in the window's palette once highlight.js has read
+    them (`codeColours.worker.ts`, 148 KB, loaded with the first code
+    file);
+  - JSON as a tree open two levels deep, 200 entries then "… 50 more";
+    a file that is not JSON as text;
+  - CSV and TSV as a table, the head row staying, a cell's words in a
+    card at the foot ("Note · row 2"); only the rows in view are drawn.
+- `MessageText.tsx`: `MessageBlocks` draws a file's page (`document`).
+- `package.json`: highlight.js 11.9.0, the window's version. The lockfile
+  adds it, and the same pnpm (10.28.1) records vitest's jsdom with its
+  postcss peer for the two apps that test with it; no other version
+  changed.
+- **Decision (the session):** in the table above, the window's own
+  libraries, and not SheetJS 0.18.5.
+- **Checked:** in Chromium, the built app against a stand-in server and
+  computer (`preview-check.cjs` in the session's scratchpad), light and
+  dark, then French: six cards' names open ("Open notes.md"), the PDF's
+  stays plain; the panel 1100 by 780, focused, named for the file; the
+  Markdown page 624 wide at 15, its heading 23.25, no names in pills nor
+  site icons, its table and quote; Escape closed it and the card's name
+  had the keys again; a TypeScript file in 23 numbered lines, keywords
+  violet, strings green, comments italic, the numbers staying put when
+  scrolled 300 sideways; a click outside closed it; a JSON file's tree with
+  its sizes, "… 50 more" under 250 items, a closed entry opened with its
+  caret ("Déplier deeper" in French); a broken JSON file shown as its text;
+  a 3,000-line CSV said "2,999 rows" ("2 999 lignes"), drew 41 rows of
+  1,999, its last row 1999 at the end with the head still at the top; a
+  cell clicked showed "Note · row 2" and its words; the head's Download
+  saved "revenue.csv"; a 30 MB CSV said it was too large, its size asked
+  with a piece of no length and nothing else fetched; no errors on the
+  page. The 185 tests, typecheck, lint, the words', the brands' and the
+  build's checks, `check_translations.py`, `check_names.py`. The inventory
+  counts 246 strings the new web app shows.
+- **Not checked:** a file larger than a few megabytes in the browser
+  (the colours run in the worker; a 1.5-million-character file was not
+  tried); against the real server and a real computer (the address is not
+  live yet; see Open questions); in the Windows app, where the worker is
+  loaded from disk (step 7).
+- **Next:** step 2c, part 3: PDF (pdf.js), Word (mammoth), Excel, sound,
+  and pictures and videos in their own viewer, from a card and from a
+  picture in the chat.
 
 ### 1 November 2026: step 2c, part 1, file cards, pictures from the computer, link cards
 

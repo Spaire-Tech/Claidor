@@ -1,18 +1,24 @@
 // Files, pictures and links in a chat (mac/Simeon/ChatPane.swift's
 // `FileCard` and `FileIcon`, Cards.swift's `ChatPicture` and
 // `LinkCardView`, Viewers.swift's `saveFile`): a file's card with its kind's
-// icon, its size and Save; a picture read from the agent's computer; a
-// message that is one link drawn as a card. The previews come with step 2c's
-// second part.
+// icon, its size and Save, its name opening its preview (Viewers.tsx); a
+// picture read from the agent's computer; a message that is one link drawn
+// as a card.
 
 import { type ReactNode, useEffect, useMemo, useState } from 'react'
 import type { ChatImage } from '../core/chat'
-import { downloadName, fileExtension } from '../core/filePreview'
+import {
+  downloadName,
+  fileExtension,
+  fileKind,
+  opensPreview,
+} from '../core/filePreview'
 import { siteOf } from '../core/linkIcons'
 import { fileTitle } from '../core/models'
-import type { AppStore } from '../core/store'
+import type { AppStore, FileFacts } from '../core/store'
 import { t } from '../l10n'
 import { useSiteIcon } from './MessageText'
+import { previewShown, useOpenFile } from './Viewers'
 
 /** The window's icons for Word, Excel, PowerPoint, PDF and Markdown (desktop/brand/file-icons, and the founder's Markdown page). Each written in full, so the build keeps it as a file. */
 const fileIcons = {
@@ -68,7 +74,7 @@ export function fileIcon(name: string): string | undefined {
  * ("Couldn't save this file" when it can't be), then handed to the browser
  * as a download, named as the Electron app names it.
  */
-async function saveFile(
+export async function saveFile(
   store: AppStore,
   name: string,
   url: string,
@@ -113,17 +119,25 @@ export function FileCard({
   column: number
   startsGroup: boolean
 }) {
-  const [meta, setMeta] = useState<{ url: string; line: string }>()
+  const [meta, setMeta] = useState<{ url: string; facts: FileFacts }>()
+  const openFile = useOpenFile()
   useEffect(() => {
     let live = true
     void store.fileFacts(url, false).then((facts) => {
-      if (live) setMeta({ url, line: facts.line })
+      if (live) setMeta({ url, facts })
     })
     return () => {
       live = false
     }
   }, [store, url])
-  const line = meta?.url === url ? meta.line : ''
+  const facts = meta?.url === url ? meta.facts : undefined
+  const line = facts?.line ?? ''
+  // The name opens the preview when the window would: never for a kind it can't show, and text, Markdown or JSON only once read as text.
+  const opens =
+    openFile != null &&
+    previewShown(name) &&
+    opensPreview(fileKind(name), facts?.readsAsText)
+  const title = fileTitle(name)
   const limit = Math.max(0, Math.min(column * 0.76, 460, column - 82))
   const kind = fileIcon(name)
   return (
@@ -137,9 +151,21 @@ export function FileCard({
         <span className="file-icon" aria-hidden="true" />
       )}
       <span className="file-words">
-        <span className="file-title" title={name}>
-          {fileTitle(name)}
-        </span>
+        {opens ? (
+          <button
+            type="button"
+            className="file-title opens"
+            title={name}
+            aria-label={t`Open ${name}`}
+            onClick={() => openFile({ name, url, agentId })}
+          >
+            {title}
+          </button>
+        ) : (
+          <span className="file-title" title={name}>
+            {title}
+          </span>
+        )}
         {line !== '' && <span className="file-meta">{line}</span>}
       </span>
       <button

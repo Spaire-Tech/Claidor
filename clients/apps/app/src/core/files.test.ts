@@ -8,13 +8,26 @@ import { afterEach, describe, expect, it } from 'vitest'
 import fixture from '../../../../../ios/SimeonCore/Tests/SimeonCoreTests/Fixtures/file-preview.json'
 import { fileLine, fileSize } from './fileLine'
 import {
+  byteCap,
+  cellLabel,
   computerPath,
+  csvRows,
+  delimiter,
   downloadName,
   fileKind,
   fileLanguage,
+  jsonSummary,
   lastPart,
+  mediaCaption,
   opensPreview,
+  pagesLine,
+  previewText,
+  readSheet,
+  rowCount,
+  rowsLine,
   splitName,
+  textCap,
+  wrap,
 } from './filePreview'
 import type { JSONValue } from './json'
 import { makeAgent } from './models'
@@ -90,6 +103,91 @@ describe("a file's kind", () => {
     expect(downloadName('Q3 report', '/home/box/f81d.pdf')).toBe('f81d.pdf')
     expect(downloadName('notes', '/home/box/f81d.bin')).toBe('notes')
     expect(downloadName('  ', '/')).toBe('download')
+  })
+})
+
+describe("a file's preview", () => {
+  it('reads a CSV as the window reads it', () => {
+    const cases = fixture.csv
+    expect(cases.length).toBeGreaterThan(8)
+    for (const item of cases) {
+      const separator = delimiter(item.text, item.name)
+      expect(separator, item.label).toBe(item.delimiter)
+      expect(csvRows(item.text, separator, 3), item.label).toEqual(item.rows)
+      expect(csvRows(item.text, separator), item.label).toEqual(item.all)
+      expect(rowCount(item.text), item.label).toBe(item.total)
+    }
+  })
+
+  it('sizes JSON, captions pictures and names as the window does', () => {
+    for (const item of fixture.summaries) {
+      const value = JSON.parse(item.value) as unknown
+      const isList = Array.isArray(value)
+      const count = isList
+        ? value.length
+        : Object.keys(value as Record<string, unknown>).length
+      expect(jsonSummary(isList, count)).toBe(item.summary)
+    }
+    for (const item of fixture.captions as {
+      caption?: string
+      entryName?: string
+      source: string
+      index: number
+      total: number
+      out: string
+    }[])
+      expect(
+        mediaCaption(
+          item.caption,
+          item.entryName,
+          item.source,
+          item.index,
+          item.total,
+        ),
+      ).toBe(item.out)
+  })
+
+  it('writes its lines', () => {
+    expect(rowsLine(4)).toBe('3 rows')
+    expect(rowsLine(2)).toBe('1 row')
+    expect(rowsLine(0)).toBe('0 rows')
+    expect(rowsLine(1205)).toBe('1,204 rows')
+    expect(pagesLine(1)).toBe('1 page')
+    expect(pagesLine(2)).toBe('2 pages')
+    expect(cellLabel(1, 0, 'Revenue')).toBe('Revenue · row 1')
+    expect(cellLabel(2, -1, '')).toBe('Column 3 · header')
+    expect(wrap(-1, 3)).toBe(2)
+    expect(wrap(3, 3)).toBe(0)
+    const sheet = readSheet(
+      'Month,Revenue\nJuly,42000\nAugust,45500\n',
+      'revenue.csv',
+    )
+    expect(sheet.rows.length).toBe(3)
+    expect(sheet.totalRows).toBe(3)
+    setWords('fr', {
+      core: { '%@ rows': '%@ lignes', '%@ · row %lld': '%@ · ligne %lld' },
+    })
+    expect(rowsLine(1205).replace(/\s/g, ' ')).toBe('1 204 lignes')
+    expect(cellLabel(0, 1, 'Mois')).toBe('Mois · ligne 2')
+  })
+
+  it("shows a text file's start when it is longer than the preview", () => {
+    const short = previewText(new TextEncoder().encode('héllo\n'))
+    expect(short).toEqual({ text: 'héllo\n', cut: false })
+    const long = previewText(new TextEncoder().encode('a'.repeat(textCap + 5)))
+    expect(long.cut).toBe(true)
+    expect(long.text.length).toBe(textCap)
+    // A cut inside an emoji, or between "\r" and "\n", falls back to its start.
+    const emoji = previewText(
+      new TextEncoder().encode('a'.repeat(textCap - 1) + '😀b'),
+    )
+    expect(emoji.text.length).toBe(textCap - 1)
+    const crlf = previewText(
+      new TextEncoder().encode('a'.repeat(textCap - 1) + '\r\nb'),
+    )
+    expect(crlf.text.endsWith('a')).toBe(true)
+    // Bytes that are not UTF-8 read as the replacement mark, as the window reads them.
+    expect(previewText(new Uint8Array([0x61, 0xff])).text).toBe('a\ufffd')
   })
 })
 
@@ -228,5 +326,45 @@ describe('a file read from the computer', () => {
     })
     // Read from the tab, not the computer.
     expect(backend.commands.length).toBe(before)
+  })
+
+  it('is read for the preview, its size asked first', async () => {
+    const backend = new FakeBackend()
+    const sizes: Record<string, number> = {
+      '/home/a.txt': 5,
+      '/home/huge.csv': byteCap + 1,
+    }
+    backend.commandAnswers.readAttachmentChunk = (args) => {
+      const { path, offset, length } = args as {
+        path: string
+        offset: number
+        length: number
+      }
+      const size = sizes[path] ?? 0
+      return {
+        totalSize: size,
+        bytesBase64: base64(
+          Array.from({ length: Math.min(length, size - offset) }, () => 0x61),
+        ),
+      }
+    }
+    const { store } = await attached(backend)
+    const ready = await store.readForPreview('/home/a.txt', 'theo')
+    expect(ready.kind === 'ready' && [...ready.data]).toEqual([
+      0x61, 0x61, 0x61, 0x61, 0x61,
+    ])
+    expect(await store.readForPreview('/home/huge.csv', 'theo')).toEqual({
+      kind: 'tooLarge',
+      size: byteCap + 1,
+    })
+    // Its size only: the large file is never fetched.
+    const asked = backend.commands.filter(
+      (c) => (c.args as { path: string }).path === '/home/huge.csv',
+    )
+    expect(asked.map((c) => (c.args as { length: number }).length)).toEqual([0])
+    expect(asked.every((c) => c.wakes)).toBe(true)
+    expect(await store.readForPreview('/home/none.txt', 'theo')).toEqual({
+      kind: 'missing',
+    })
   })
 })
