@@ -14,7 +14,7 @@ file and the code disagree, the code is right and this file is fixed.
 | Step (`README.md`, "The order of work") | State |
 |---|---|
 | 0. The audit | Done, 1 November 2026 |
-| 1. The base: the server and the computer, signing in, the window | In progress: the app's folder, build and address are done (1a); next, talking to the server and the computer (1b) |
+| 1. The base: the server and the computer, signing in, the window | In progress: the app's folder, build and address (1a) and talking to the server and the computer (1b) are done; next, the words (1c) |
 | 2. The sidebar and the chat | Not started |
 | 3. The cards | Not started |
 | 4. The agent's pane, search, new chat, the org chart, starter packs | Not started |
@@ -50,6 +50,65 @@ For the founder, each to be answered before the step that needs it:
 ## Log
 
 Newest first.
+
+### 1 November 2026: step 1b, talking to the server and the computer
+
+- `clients/apps/app/src/core`: the shared core's plumbing translated, file
+  for file, each file's header naming the Swift it comes from:
+  - `tokens.ts` (`Tokens.swift`): the pair, its expiry and account read off
+    the envelope, the refresh answer read the Mac's way;
+  - `api.ts` (`SimeonAPI.swift`): the bearer and the client headers,
+    refreshing with five minutes left and once for calls made together, a
+    401 asking one refresh before it signs out, `/desktop/api/` and its
+    envelope, Connect calls to the box broker, dictation, Delete Account
+    (five minutes, then asking the server), sign-out. Plus the web's own:
+    the cookie traded for the pair (`/auth/web-session`), where the API is
+    (`resolveApiBase`) and the pair kept in the tab under the old web app's
+    key (`simeon.web.tokens`), all from `desktop/web/api.ts`;
+  - `savedGateway.ts` (`SavedGateway.swift`): the computer's address kept
+    for its account for seven days, in the tab's storage;
+  - `gatewayConnection.ts` and `gateway.ts` (`Gateway.swift`): the address
+    from the broker, `/health` before the broker, the hold on a full box
+    server, the kept address at launch, a call sent again only when it
+    surely never arrived, the computer that sleeps while the app is open
+    (reads that do not wake it, the launch's one question, the wait while
+    it rests), and the event stream (35 s of silence ends it; dialled again
+    after 1, 2, 4, 8, then 10 s);
+  - `http.ts`: fetch, with timeouts, cancelling and streams, in the place of
+    URLSession; `json.ts`, `language.ts`, `recentActivity.ts` (the last 400
+    lines, scrubbed, for a report);
+  - `l10n.ts`: every sentence the person reads already goes through `t()`,
+    which answers in English until step 1c brings the catalogue.
+- **Not translated here, and where it goes:**
+  - the iPhone's notifications (`registerPushDevice`): the browser's and
+    Windows' notifications are step 7;
+  - the host's commands and events as the screens read them (`LiveBackend`)
+    and the tests that need them: step 2;
+  - the picture editor's wording of a refusal and the account's initials,
+    which belong to their screens.
+- **The tests:** 39 of the shared core's tests translated with the same
+  inputs and answers (`TokenTests`, `GatewayTests`, `GatewayConnectTests`,
+  the gateway's part of `SleepingComputerTests`, and base64url from
+  `SignInTests`), plus 15 new ones: the event stream loop (the Swift one
+  runs only on Apple's systems and has no test), letters split across
+  chunks, which failures are sent again, French dictation, one refresh for
+  calls made together, the web sign-in (4), and fetch itself against a
+  server on the same machine (an answer, a timeout, a closed port, a
+  cancelled call, a stream, a silent stream).
+- **Checked:**
+  - 55 tests pass, with the typecheck and lint;
+  - the tests catch faults: with one line of the gateway undone at a time
+    (the stream's trust, the hold on a full server, the kept address, the
+    forgotten address of a refused account, the asleep state, the record's
+    word), each run fails;
+  - the live server: `POST /auth/web-session` without a cookie answers 401,
+    which the app reads as "not signed in on the website"; the browser's
+    preflight from `https://app.simeonlabs.com` to the box broker allows
+    every header the app sends, and the server exposes
+    `x-automation-failure-hint` and `retry-after`, which the hold reads.
+- **Not checked:** signed in, against a real computer. Nothing on screen
+  uses this code yet; step 1d's window does.
+- **Next:** 1c, the words.
 
 ### 1 November 2026: step 1a, the app's folder, build and address
 
