@@ -140,6 +140,7 @@ Newest first.
 - **Not checked:** against the real server and a real computer (the address
   is not live yet; see Open questions); a trackpad's scroll closing the
   capsule (the wheel event is the same in Chromium, not tried on a trackpad).
+- Pull request #523.
 - **Next:** step 2b, part 2: find (⌘F), the agent's working line, names in
   their colours and pills, a link's site icon, More emoji.
 
