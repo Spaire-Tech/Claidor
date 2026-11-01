@@ -14,7 +14,7 @@ file and the code disagree, the code is right and this file is fixed.
 | Step (`README.md`, "The order of work") | State |
 |---|---|
 | 0. The audit | Done, 1 November 2026 |
-| 1. The base: the server and the computer, signing in, the window | In progress: the app's folder, build and address (1a), talking to the server and the computer (1b) and the words (1c) are done; next, the window (1d) |
+| 1. The base: the server and the computer, signing in, the window | In progress: 1a, 1b, 1c done; 1d, the window: its data (the agents, the store's roster) done, the session and the window drawn next |
 | 2. The sidebar and the chat | Not started |
 | 3. The cards | Not started |
 | 4. The agent's pane, search, new chat, the org chart, starter packs | Not started |
@@ -34,6 +34,8 @@ file and the code disagree, the code is right and this file is fixed.
 | 1 November 2026 | It is served at `app.simeonlabs.com/app-next` while it is built. The old web app stays at `/app` until the new one has everything the Mac app has; then the new one moves to `/app` | The session, as above |
 | 1 November 2026 | Its built files are committed into `clients/apps/web/public/app-next`, as the old app's are, so the website's deploy does not change (Vercel builds only `web`). `pnpm test` fails when they are not the build of the source | The session, as above |
 | 1 November 2026 | Skills publishing is left out, as on the Mac. If the Mac app gets it, the checks ask for it here too | The session, as above |
+| 1 November 2026 | The web app keeps no copy of the agents and chats on the device, as the Mac does on disk (`SavedChats`): it shows the server's copy (`chats/agents`, `chats/lines`) while the computer is away, which the server keeps for exactly that. A browser's storage would hold the person's messages on a shared or public computer | The session, as above |
+| 1 November 2026 | Signed out, the web app goes straight to the website's own sign-in page and comes back (`/login?return_to=…`), as the old web app does: the website's page is the gate. The Mac's sign-in screen comes with Windows (step 7) | The session, as above |
 | 1 November 2026 | The web app has no catalogue of its own: it reads the Mac's two String Catalogs, made into tables by a script, so a translation is written once, for the Mac, and the web app has it. The screens read the Mac app's catalogue and the code translated from the core reads the core's, because the two say some English differently ("Done": "OK" on a Mac screen, "Terminé" in the core) | The session, as above |
 
 ## Open questions
@@ -51,6 +53,45 @@ For the founder, each to be answered before the step that needs it:
 ## Log
 
 Newest first.
+
+### 1 November 2026: step 1d, part 1, the agents and the store's roster
+
+- `src/core/models.ts` (`Models.swift`): an agent's row, every field the host
+  sends; the sidebar's preview line (the Mac's Markdown stripping, "Sent 2
+  images", "Waiting for you: …"); the Chief of Staff and his title in the
+  app's language; the list's order. A row is the same row whatever its stamp.
+- `src/core/backend.ts` (`Backend.swift`): `LiveBackend` with the list
+  (read without waking a resting computer), calls to the server, commands,
+  and the host's events in the screens' terms (`LiveBackend.map`, every
+  channel but the chat's lines, which come with the chat).
+- `src/core/store.ts` (`Store.swift`, `StoreSaved.swift`): the roster part of
+  the store. On attach the server's copy of the list shows while the
+  computer has not answered, the computer's list replaces it (and wins when
+  it answers first), a resting computer is no failure, a refused account
+  (403) raises the access cover, the host's events keep the list current and
+  the same row again redraws nothing. The account read as the Mac reads its
+  profile. The rest of the store comes with its screens.
+- **Left for later, on purpose:** the agents' faces given to rows that have
+  none (`wearingFaces`, step 1d's window), the open chat (step 2), the
+  account's initials (Settings, step 6).
+- **The tests:** 19 more (83 in all): the row and its preview line, French
+  included (`testTheListLineIsTheMacs`, `testNoTimeIsNotNineteenSixtyNine`,
+  the row of `SavedChatsTests`, `LanguageTests`' Chief of Staff); the list at
+  launch (`SavedChatsTests`' computer-first and no-copy-unless-asked,
+  `SleepingComputerTests`' resting computer); the events (`GatewayTests`'
+  mapping) and the store after them; the list read from a computer through
+  the gateway; the account.
+- **Checked:** the tests, typecheck and lint pass; `check_translations.py`
+  finds every new sentence in the core's catalogue; the inventory now counts
+  31 strings the new web app shows. Two of my own test expectations were
+  wrong at first (French writes a narrow space before ":", and "the list is
+  on screen" is told only for an early copy, as in Swift); the code was
+  right in the first and made to match Swift in the second.
+- **Not checked:** against a real computer; the window that draws this is
+  next.
+- Pull request #519.
+- **Next:** 1d, part 2: the session (the cookie, else the website's sign-in)
+  and the window drawn (its colours, the sidebar, the faces).
 
 ### 1 November 2026: step 1c, the words
 
