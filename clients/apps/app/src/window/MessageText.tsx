@@ -11,18 +11,28 @@
 // current match is lit where it is on screen. A code block's words count but
 // are not lit, as on the Mac.
 //
-// Still to come (docs/web-app/PROGRESS.md): names in their colours and
-// pills (`Mentions`) and a link's site icon (2b); maths and diagrams drawn
+// Names in an agent's message (`Mentions`, `MessageLine.mention`): an app
+// in its colour after its logo, an agent in a glass pill with its face,
+// which opens its chat.
+//
+// Still to come (docs/web-app/PROGRESS.md): a link's site icon (2b); maths and diagrams drawn
 // (the Mac's `DrawingView`; until then their TeX shows as code); the code's
 // colours.
 
-import { type ReactNode, useContext, useState } from 'react'
+import {
+  type CSSProperties,
+  type ReactNode,
+  createContext,
+  useContext,
+  useState,
+} from 'react'
 import {
   FindLine,
   type FindMarks,
   marksPerBlock,
   tableCells,
 } from '../core/chatFind'
+import { brandLogos } from '../core/generatedBrands'
 import {
   type InlineRun,
   type MarkdownBlock,
@@ -32,16 +42,41 @@ import {
   inlineRuns,
   shownWords,
 } from '../core/markdown'
+import { type AgentName, type Mention, findMentions } from '../core/mentions'
 import { t } from '../l10n'
 import { FindContext, markedWords } from './FindBar'
+
+/** What names in a message are read with (`MessageLine`'s agents, person and speaker), and what a pill does; none for the person's own words. */
+export interface MentionSetting {
+  agents: readonly AgentName[]
+  personName?: string
+  /** The agent writing: its own name is no pill, save in its introduction. */
+  speaker?: string
+  introducing: boolean
+  picture: (agentId: string) => string | undefined
+  open: (agentId: string) => void
+}
+
+export const MentionContext = createContext<MentionSetting | undefined>(
+  undefined,
+)
 
 /** A line of Markdown's words in their styles (`MessageLine.made`), find's marks on the words shown. */
 export function Line({ markdown }: { markdown: string }) {
   const marks = useContext(FindContext)
+  const names = useContext(MentionContext)
   const runs = inlineRuns(markdown)
-  const found = marks
-    ? FindLine.of(marks, runs.map((run) => run.text).join(''))
-    : undefined
+  const shown = runs.map((run) => run.text).join('')
+  const found = marks ? FindLine.of(marks, shown) : undefined
+  // The names, read in the whole line (a run alone would read "Link" as a sentence's first word).
+  const mentions = names
+    ? findMentions(shown, {
+        agents: names.agents,
+        personName: names.personName,
+        speaker: names.speaker,
+        introducing: names.introducing,
+      })
+    : []
   // Where each run starts in the words shown (UTF-16), so find's marks land on it.
   const offsets: number[] = []
   let offset = 0
@@ -51,9 +86,22 @@ export function Line({ markdown }: { markdown: string }) {
   }
   return (
     <>
-      {runs.map((run, index) => (
-        <Run key={index} run={run} found={found} at={offsets[index]!} />
-      ))}
+      {runs.map((run, index) => {
+        const at = offsets[index]!
+        const end = at + run.text.length
+        return (
+          <Run
+            key={index}
+            run={run}
+            found={found}
+            at={at}
+            mentions={mentions.filter(
+              (m) => m.location >= at && m.location + m.length <= end,
+            )}
+            names={names}
+          />
+        )
+      })}
     </>
   )
 }
@@ -62,12 +110,48 @@ function Run({
   run,
   found,
   at,
+  mentions,
+  names,
 }: {
   run: InlineRun
   found?: FindLine
   at: number
+  /** The names wholly inside this run, at the line's offsets. */
+  mentions: Mention[]
+  names?: MentionSetting
 }) {
-  let node: ReactNode = markedWords(run.text, found, at)
+  let node: ReactNode
+  if (run.link == null && !run.code && names && mentions.length > 0) {
+    // Plain words with names among them: each name drawn as its kind, find's marks on all of it.
+    const pieces: ReactNode[] = []
+    let cursor = at
+    for (const mention of mentions) {
+      if (mention.location > cursor)
+        pieces.push(
+          markedWords(
+            run.text.slice(cursor - at, mention.location - at),
+            found,
+            cursor,
+          ),
+        )
+      pieces.push(
+        <Name
+          key={mention.location}
+          mention={mention}
+          words={run.text.slice(
+            mention.location - at,
+            mention.location - at + mention.length,
+          )}
+          found={found}
+          names={names}
+        />,
+      )
+      cursor = mention.location + mention.length
+    }
+    if (cursor < at + run.text.length)
+      pieces.push(markedWords(run.text.slice(cursor - at), found, cursor))
+    node = pieces
+  } else node = markedWords(run.text, found, at)
   if (run.code) node = <code className="inline-code">{node}</code>
   if (run.bold) node = <strong>{node}</strong>
   if (run.italic) node = <em>{node}</em>
@@ -86,6 +170,74 @@ function Run({
     )
   }
   return node
+}
+
+/**
+ * A name in a message (`MessageLine.mention`), kept on one line: an app's
+ * logo (1.05 of the words, a little below the line), a narrow space, and its
+ * name in its colour at 500 (600 in bold); one-colour logos take the name's
+ * colour. An agent's face (1.1 of the words) and its name in the blue at 600
+ * in a glass pill, which opens its chat.
+ */
+function Name({
+  mention,
+  words,
+  found,
+  names,
+}: {
+  mention: Mention
+  words: string
+  found?: FindLine
+  names: MentionSetting
+}) {
+  // `white-space: nowrap`: the name's spaces do not break.
+  const kept = markedWords(
+    words.replace(/ /g, '\u00a0'),
+    found,
+    mention.location,
+  )
+  const kind = mention.kind
+  if (kind.kind === 'brand') {
+    const logo = brandLogos[kind.brand.key]
+    const colours = {
+      '--brand-light': kind.brand.light,
+      '--brand-dark': kind.brand.dark,
+    } as CSSProperties
+    return (
+      <span className="brand-name" style={colours}>
+        {logo &&
+          (kind.brand.mono ? (
+            <span
+              className="brand-logo mono"
+              style={{
+                maskImage: `url("${logo}")`,
+                WebkitMaskImage: `url("${logo}")`,
+              }}
+              aria-hidden="true"
+            />
+          ) : (
+            <img className="brand-logo" src={logo} alt="" aria-hidden="true" />
+          ))}
+        {'\u202f'}
+        <span className="brand-words">{kept}</span>
+      </span>
+    )
+  }
+  const picture = names.picture(kind.id)
+  return (
+    <button
+      type="button"
+      className="agent-pill"
+      onClick={() => names.open(kind.id)}
+    >
+      {picture ? (
+        <img className="pill-face" src={picture} alt="" aria-hidden="true" />
+      ) : (
+        <span className="pill-face blank" aria-hidden="true" />
+      )}
+      <span className="pill-name">{kept}</span>
+    </button>
+  )
 }
 
 /** A paragraph: its words, or with maths in it, its words and its TeX (drawn as code until maths is drawn; unmarked, as the Mac draws such a paragraph whole). */

@@ -54,7 +54,9 @@ import {
   steppedIndex,
 } from '../core/chatFind'
 import { type RunFlags, noRun } from '../core/chatRuns'
+import { pictureURL } from '../core/faces'
 import { english, languageCode } from '../core/language'
+import type { AgentName } from '../core/mentions'
 import { type Agent, fileTitle } from '../core/models'
 import type { AppStore } from '../core/store'
 import { wordsLanguage } from '../core/words'
@@ -72,7 +74,11 @@ import {
   type Reply,
   TapbackCapsule,
 } from './MessageActions'
-import { MessageBlocks } from './MessageText'
+import {
+  MentionContext,
+  type MentionSetting,
+  MessageBlocks,
+} from './MessageText'
 import { classes } from './classes'
 import { useWatched } from './useStore'
 
@@ -88,6 +94,10 @@ interface ChatControl {
   /** The messages' column: the chat's width less its 16 on each side. */
   column: number
   actions: MessageActions
+  /** The agents a message can name (`mentionNames`: not the groups). */
+  names: readonly AgentName[]
+  /** Another agent's chat, from its pill. */
+  openAgent: (agentId: string) => void
 }
 
 const Control = createContext<ChatControl | null>(null)
@@ -133,9 +143,12 @@ const reopenGap = 500
 export function ChatPane({
   store,
   agentId,
+  onOpenAgent,
 }: {
   store: AppStore
   agentId: string
+  /** The window opens another agent's chat (a name's pill). */
+  onOpenAgent: (agentId: string) => void
 }) {
   useWatched(store)
   // The chat comes on screen: what the app has at once, then the host's; it is read. It leaves: all of it was read.
@@ -349,6 +362,7 @@ export function ChatPane({
         actions={actions}
         find={findOnScreen}
         revealRef={revealRef}
+        openAgent={onOpenAgent}
       />
       {agent &&
         (threadRoot != null ? (
@@ -506,6 +520,7 @@ function Transcript({
   actions,
   find,
   revealRef,
+  openAgent,
 }: {
   store: AppStore
   agentId: string
@@ -515,6 +530,7 @@ function Transcript({
   /** What find lights: its words in small letters, and the match it stands on. */
   find?: { needle: string; current?: FindMatch }
   revealRef: React.RefObject<((rowId: string) => void) | undefined>
+  openAgent: (agentId: string) => void
 }) {
   const rows =
     threadRoot != null
@@ -669,6 +685,15 @@ function Transcript({
         out.set(row.rootId, row.count)
     return out
   }, [rows, shownIds])
+  // The agents a message can name, as the store notes them (`noteNames`): every one but the groups.
+  const agents = store.agents
+  const names = useMemo(
+    () =>
+      agents
+        .filter((one) => !one.isGroup)
+        .map((one) => ({ name: one.name.trim(), id: one.id })),
+    [agents],
+  )
   const control = useMemo<ChatControl>(
     () => ({
       store,
@@ -679,8 +704,21 @@ function Transcript({
       lit,
       column,
       actions,
+      names,
+      openAgent,
     }),
-    [store, agentId, threadRoot, shownIds, jump, lit, column, actions],
+    [
+      store,
+      agentId,
+      threadRoot,
+      shownIds,
+      jump,
+      lit,
+      column,
+      actions,
+      names,
+      openAgent,
+    ],
   )
 
   return (
@@ -1287,7 +1325,7 @@ function Shaped({
         {bubble.fromPerson ? (
           <FoldingText words={bubble.text} centred={short} />
         ) : (
-          <MessageBlocks markdown={bubble.text} />
+          <AgentWords bubble={bubble} />
         )}
         {bubble.channel && (
           <span
@@ -1305,6 +1343,33 @@ function Shaped({
         <ThreadChin rootId={bubble.id} count={threadCount} attached />
       )}
     </div>
+  )
+}
+
+/** An agent's words, the names in them read as its own (`speaker`, `introducing`) and the person's name left plain. */
+function AgentWords({ bubble }: { bubble: Bubble }) {
+  const control = useControl()
+  const { store, names, openAgent, agentId } = control
+  const personName = store.account?.name
+  const speaker = bubble.author?.id ?? agentId
+  const setting = useMemo<MentionSetting>(
+    () => ({
+      agents: names,
+      personName,
+      speaker,
+      introducing: bubble.introduces,
+      picture: (id) => {
+        const agent = store.agent(id)
+        return agent ? pictureURL(agent) : undefined
+      },
+      open: openAgent,
+    }),
+    [names, personName, speaker, bubble.introduces, store, openAgent],
+  )
+  return (
+    <MentionContext.Provider value={setting}>
+      <MessageBlocks markdown={bubble.text} />
+    </MentionContext.Provider>
   )
 }
 

@@ -1747,3 +1747,88 @@ mark.find-current {
   background: var(--warn);
   color: var(--on-warn);
 }
+
+/* ---------------------------------------------------------------------- */
+/* Names in an agent's message (`MessageLine.mention`, `MentionPills`).    */
+
+/* An app: its logo (1.05 of the words, 0.18 below the line), a narrow space, its name in its colour at 500; kept on one line. */
+.brand-name {
+  white-space: nowrap;
+  color: var(--brand-light);
+  font-weight: 500;
+}
+
+strong .brand-name {
+  font-weight: 600;
+}
+
+@media (prefers-color-scheme: dark) {
+  .brand-name {
+    color: var(--brand-dark);
+  }
+}
+
+.brand-logo {
+  display: inline-block;
+  width: 1.05em;
+  height: 1.05em;
+  vertical-align: -0.18em;
+  object-fit: contain;
+}
+
+/* A one-colour logo takes the name's colour, as the Mac masks it. */
+.brand-logo.mono {
+  background-color: currentColor;
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+}
+
+/* An agent: its face (1.1 of the words) and its name in the blue at 600, in a pill of water glass (a clear frosted fill, a bright rim, a soft shadow); a click opens its chat. */
+.agent-pill {
+  display: inline;
+  margin: 0;
+  padding: 0.04em 0.3em 0.04em 0.22em;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-weight: 600;
+  line-height: inherit;
+  color: var(--blue);
+  white-space: nowrap;
+  cursor: pointer;
+  background: linear-gradient(rgb(255 255 255 / 0.85), rgb(255 255 255 / 0.5));
+  box-shadow:
+    inset 0 0.75px 0 rgb(255 255 255),
+    0 0 0 0.5px rgb(0 0 0 / 0.07),
+    0 1px 1.2px rgb(0 0 0 / 0.08);
+}
+
+@media (prefers-color-scheme: dark) {
+  .agent-pill {
+    background: linear-gradient(
+      rgb(255 255 255 / 0.14),
+      rgb(255 255 255 / 0.05)
+    );
+    box-shadow:
+      inset 0 0.75px 0 rgb(255 255 255 / 0.24),
+      0 1px 1.5px rgb(0 0 0 / 0.45);
+  }
+}
+
+.pill-face {
+  display: inline-block;
+  width: 1.1em;
+  height: 1.1em;
+  margin-right: 0.24em;
+  border-radius: 50%;
+  vertical-align: -0.2em;
+  object-fit: cover;
+}
+
+.pill-face.blank {
+  background: var(--member-blank);
+}

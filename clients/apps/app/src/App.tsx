@@ -51,7 +51,12 @@ function MainWindow({ session }: { session: WebSession }) {
       <Sidebar store={store} open={shown} onOpen={setOpen} />
       <main className="chat-area">
         {shown != null && (
-          <ChatPane key={shown} store={store} agentId={shown} />
+          <ChatPane
+            key={shown}
+            store={store}
+            agentId={shown}
+            onOpenAgent={setOpen}
+          />
         )}
       </main>
     </div>

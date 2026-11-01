@@ -15,7 +15,7 @@ file and the code disagree, the code is right and this file is fixed.
 |---|---|
 | 0. The audit | Done, 1 November 2026 |
 | 1. The base: the server and the computer, signing in, the window | Done, 1 November 2026 (1a to 1d). Carried to step 2: the first run for a new account and the access cover |
-| 2. The sidebar and the chat | In progress: 2a (the chat's core, and the chat on screen) done; 2b parts 1 (a message's actions) and 2 (find, the working line) done; 2b part 3 next |
+| 2. The sidebar and the chat | In progress: 2a (the chat's core, and the chat on screen) done; 2b parts 1 (a message's actions), 2 (find, the working line) and 3 (names in colour) done; 2b part 4 next |
 | 3. The cards | Not started |
 | 4. The agent's pane, search, new chat, the org chart, starter packs | Not started |
 | 5. The computer and calls | Not started |
@@ -66,6 +66,56 @@ For the founder, each to be answered before the step that needs it:
 ## Log
 
 Newest first.
+
+### 1 November 2026: step 2b, part 3, names in their colours
+
+- `src/core/mentions.ts` (SimeonCore's `Mentions`, Markdown.swift): the
+  apps and agents a message names, as the Mac reads them: case-sensitive,
+  the longest spelling first, not glued to a word; an app whose name is an
+  everyday word (Link, Shop, Square, Close…) only where its sentence makes it
+  the app ("pay with Link", not "we can Shop here"); an agent anywhere but
+  as a thing's ("the Simeon app", "an app called Simeon"), never the
+  person's own name nor the speaker's, save in its introduction.
+  `mentions.test.ts` is the core's tests of it, translated.
+- `scripts/make-brands.mjs` makes `src/core/generatedBrands.ts` from the
+  table the iPhone and the Mac use (`GeneratedBrands.swift`, made by
+  `ios/scripts/make-assets.mjs`): 265 spellings with their colours in light
+  and dark, and each of the 249 logos from the file the Mac's own is drawn
+  from (`desktop/brand`). `pnpm test` fails when the table is out of date
+  (`pnpm brands` makes it again), so a connector added for the Mac (the rule
+  in CLAUDE.md) reaches the web app with one command. The logos are built as
+  files of their own, fetched when a message names one.
+- `MessageText.tsx` (`MessageLine.mention`, `MentionPills`): in an agent's
+  message, an app's name after its logo in its colour (one-colour logos
+  take it too), at 500, 600 in bold; an agent's name with its face in a
+  pill of water glass, in the blue at 600, which opens its chat (the window
+  is given `onOpenAgent`). Each kept on one line, find's marks on it too.
+  The person's own words are not dressed, as on the Mac.
+- **Decision (the session):** the web app takes the logos from
+  `desktop/brand`, the Mac's sources (SVG, mostly, 1.3 MB), not the Mac's
+  144-point PNGs (3.7 MB): smaller, and sharp at any size.
+- **Not in this part:** a link's site icon and More emoji with the full
+  picker (2b, part 4); names in the cards (step 3).
+- **Checked:** in Chromium, the built app against a stand-in server and
+  computer (`names-check.cjs` in the session's scratchpad), light and dark,
+  an agent's message: "Ask Theo to post it on **LinkedIn** and Slack, then
+  pay with Link. Notion has the brief; GitHub has the code." with a list
+  "Iris drafts in Google Docs" and "the Simeon app ships Friday": LinkedIn
+  (at 600, in bold), Slack, Link, Notion, GitHub and Google Docs each in
+  its colour after its logo (15 points; Notion's, GitHub's and LinkedIn's
+  one-colour logos tinted, the colours changing in dark), Theo and Iris in
+  pills with their faces, "the Simeon app" plain, each name on one line;
+  find lit "inked" inside LinkedIn's name; Theo's pill opened Theo's chat
+  (the address said `agent=theo`). Find and the message actions of parts 1
+  and 2 checked again. The 163 tests, typecheck, lint, the words', the
+  brands' and the build's checks, `check_translations.py`, `check_names.py`.
+- **Not checked:** against the real server and a real computer (the address
+  is not live yet; see Open questions); every one of the 249 logos by eye
+  (each is a file the Mac draws from, and the test asks that each app has
+  one).
+- Pull request #525.
+- **Next:** step 2b, part 4: a link's site icon, More emoji and the full
+  picker.
 
 ### 1 November 2026: step 2b, part 2, find and the working line
 

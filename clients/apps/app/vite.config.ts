@@ -19,6 +19,9 @@ export default defineConfig({
       fileURLToPath(new URL('../web/public/app-next', import.meta.url)),
     emptyOutDir: true,
     sourcemap: false,
+    // The apps' logos (src/core/generatedBrands.ts) stay files, fetched when a message names one, not written into the script.
+    assetsInlineLimit: (file) =>
+      file.includes('/desktop/brand/') ? false : undefined,
   },
   server: {
     port: 5174,
