@@ -88,6 +88,17 @@
     {
       "kind": "contract",
       "names": [
+        "Cursor"
+      ],
+      "paths": [
+        "clients/apps/web/public/app-next/assets/pdf.worker.min-*.mjs"
+      ],
+      "match": "TeX Gyre Cursor",
+      "reason": "pdf.js (the window's PDF reader, built into the new web app's assets) lists the font TeX Gyre Cursor among the monospaced fonts it can stand in for; a font's name, not the earlier name."
+    },
+    {
+      "kind": "contract",
+      "names": [
         "anysphere",
         "grok"
       ],

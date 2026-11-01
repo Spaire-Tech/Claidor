@@ -2794,3 +2794,212 @@ button.json-caret {
   color: rgb(255 255 255 / 0.85);
   cursor: pointer;
 }
+
+/* ---------------------------------------------------------------------- */
+/* PDF, Word and sound in the preview (mac/Simeon/FileBodies.swift).       */
+
+/* The PDF's controls in the head, 8 apart: Zoom out, "1 / 2" (11, at 60%, 78 wide), Zoom in (20, 4 round). */
+.pdf-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pdf-tool {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--ink-secondary);
+  cursor: pointer;
+}
+
+.pdf-tool:hover:not(:disabled) {
+  background: var(--row-hover);
+}
+
+.pdf-tool:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.pdf-pages {
+  width: 78px;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-secondary);
+  text-align: center;
+}
+
+/* Its pages one under another, 16 apart, 16 in from the sides, each with its shadow. */
+.pdf-body {
+  flex: 1;
+  overflow: auto;
+  padding: 8px 16px;
+}
+
+.pdf-page {
+  position: relative;
+  margin: 0 auto 16px;
+  background: #ffffff;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.25);
+}
+
+.pdf-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* pdf.js's text layer: the words over the page, clear, to be chosen and copied. */
+.pdf-page .textLayer {
+  position: absolute;
+  inset: 0;
+  overflow: clip;
+  line-height: 1;
+  text-align: initial;
+  text-size-adjust: none;
+  forced-color-adjust: none;
+  transform-origin: 0 0;
+  z-index: 0;
+}
+
+.pdf-page .textLayer :is(span, br) {
+  position: absolute;
+  color: transparent;
+  white-space: pre;
+  cursor: text;
+  transform-origin: 0% 0%;
+}
+
+.pdf-page .textLayer span.markedContent {
+  top: 0;
+  height: 0;
+}
+
+.pdf-page .textLayer ::selection {
+  background: color-mix(in srgb, AccentColor, transparent 75%);
+}
+
+.pdf-page .textLayer br::selection {
+  background: transparent;
+}
+
+.pdf-page .textLayer .endOfContent {
+  display: block;
+  position: absolute;
+  inset: 100% 0 0;
+  z-index: 0;
+  cursor: default;
+  user-select: none;
+}
+
+/* A page's number at its foot: 11, white at 90%, on a black pill at 55%, 18 high, padded 2 8, 8 up. */
+.pdf-badge {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  z-index: 2;
+  min-width: 22px;
+  height: 18px;
+  box-sizing: border-box;
+  padding: 0 8px;
+  border-radius: 9px;
+  background: rgb(0 0 0 / 0.55);
+  color: rgb(255 255 255 / 0.9);
+  font-size: 11px;
+  line-height: 18px;
+  text-align: center;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+/* A Word document on the Markdown page: 15 on 24, its headings, lists, tables and pictures. */
+.docx-page {
+  font-size: 15px;
+  line-height: 24px;
+  color: var(--ink);
+  user-select: text;
+  overflow-wrap: anywhere;
+}
+
+.docx-page > :first-child {
+  margin-top: 0;
+}
+
+.docx-page p {
+  margin: 0 0 12px;
+}
+
+.docx-page h1,
+.docx-page h2,
+.docx-page h3,
+.docx-page h4 {
+  margin: 20px 0 12px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.docx-page h1 {
+  font-size: 23.25px;
+  letter-spacing: -0.012em;
+}
+
+.docx-page h2 {
+  font-size: 19.5px;
+  letter-spacing: -0.008em;
+}
+
+.docx-page h3 {
+  font-size: 16.95px;
+}
+
+.docx-page h4 {
+  font-size: 15px;
+}
+
+.docx-page ul,
+.docx-page ol {
+  margin: 0 0 12px;
+  padding-left: 24px;
+}
+
+.docx-page table {
+  margin: 0 0 12px;
+  border-collapse: collapse;
+  font-size: 13.95px;
+  line-height: 1.6;
+}
+
+.docx-page td,
+.docx-page th {
+  padding: 6px 12px;
+  box-shadow: inset 0 -1px 0 var(--hairline);
+  vertical-align: top;
+}
+
+.docx-page img {
+  max-width: 100%;
+  height: auto;
+}
+
+.docx-page a {
+  color: var(--link);
+}
+
+/* A sound: the browser's player, centred. */
+.audio-body {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+}
+
+.audio-body audio {
+  width: min(480px, 100%);
+}

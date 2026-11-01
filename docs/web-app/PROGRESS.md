@@ -15,7 +15,7 @@ file and the code disagree, the code is right and this file is fixed.
 |---|---|
 | 0. The audit | Done, 1 November 2026 |
 | 1. The base: the server and the computer, signing in, the window | Done, 1 November 2026 (1a to 1d). Carried to step 2: the first run for a new account and the access cover |
-| 2. The sidebar and the chat | In progress: 2a (the chat's core, and the chat on screen) done; 2b (a message's actions, find, the working line, names in colour, link icons, the emoji picker) done; 2c part 1 (file cards, pictures from the computer, link cards) part 2 (the preview: text and code, Markdown, JSON, tables) and part 3a (pictures and videos full screen) done; 2c part 3b (PDF, Word, Excel, sound) next |
+| 2. The sidebar and the chat | In progress: 2a (the chat's core, and the chat on screen) done; 2b (a message's actions, find, the working line, names in colour, link icons, the emoji picker) done; 2c part 1 (file cards, pictures from the computer, link cards) part 2 (the preview: text and code, Markdown, JSON, tables) and part 3a (pictures and videos full screen) and part 3b (PDF, Word, sound) done; 2c part 3c (Excel) next |
 | 3. The cards | Not started |
 | 4. The agent's pane, search, new chat, the org chart, starter packs | Not started |
 | 5. The computer and calls | Not started |
@@ -70,6 +70,64 @@ For the founder, each to be answered before the step that needs it:
 ## Log
 
 Newest first.
+
+### 1 November 2026: step 2c, part 3b, PDF, Word and sound in the preview
+
+- `src/window/PDFBody.tsx` (`PDFControl`, `PDFToolbar`, `PDFBody`): a PDF
+  drawn by pdf.js 5.4.296, the window's own version, loaded with the first
+  PDF (its script 117 KB compressed, its worker apart):
+  - the pages one under another, 16 apart, as wide as the panel less 32
+    times the zoom; each page's number at its foot; a page is drawn when it
+    comes near the view, sharp on a Retina screen;
+  - its words can be chosen and copied (pdf.js's text layer);
+  - in the head, "2 pages", then Zoom out, "1 / 2" (the page at the middle
+    of the view) and Zoom in; the zoom 0.5 to 4, a quarter a step, + and −
+    as well;
+  - "Couldn't render this PDF" with Download when pdf.js can't read it.
+- `Viewers.tsx`:
+  - a Word document read by mammoth (the window's reader; the Mac uses
+    Quick Look) onto the Markdown page, its HTML made safe by DOMPurify
+    before it is drawn; "Loading document…" meanwhile;
+  - a sound in the browser's own player, centred, not playing until asked
+    (Quick Look on the Mac, the window's player in the window);
+  - PDF, Word and sound cards' names now open the preview. Excel's stay
+    plain until part 3c.
+- `package.json`: pdfjs-dist 5.4.296, mammoth 1.13.0 (the window asked for
+  1.12 or later), DOMPurify 3.3.1 (the version the workspace already has).
+  The lockfile adds them and mammoth's own (jszip, underscore, and small
+  helpers); nothing else changed.
+- `scripts/kept_names.json`: pdf.js's built worker names the font "TeX Gyre
+  Cursor"; a rule keeps that font's name there.
+- **Checked:** in Chromium, the built app against a stand-in server and
+  computer (`docs-check.cjs` in the session's scratchpad, with a two-page
+  PDF, a Word file and a sound made in the session), light and dark: the
+  PDF said "2 pages" and "1 / 2", its first page painted 1068 wide in an
+  1100 panel, its words in the text layer ("Launch plan", "Quarterly
+  report, page 1") with the text cursor, its badge "1"; Zoom in and + took
+  it to 1.5 (1602 wide), − four times to 0.5 (534 wide) with Zoom out
+  disabled; scrolled to the end it said "2 / 2"; a broken PDF said
+  "Couldn't render this PDF" with Download; the Word file showed its
+  heading, its bold word and its table, and a `<script>` written in it
+  stayed words; the sound opened in the player, paused, 2 seconds. Then the
+  three previews' checks again (`docs-check`, `preview-check`,
+  `media-check`) under the website's own security policy for /app-next
+  (`appWindowCSP`, proved in force by an inline script it refused): no
+  other error, the PDF, code colours, Word, sound, table and the media
+  viewer all worked. The 185 tests, typecheck, lint, the words', the
+  brands' and the build's checks, `check_translations.py`,
+  `check_names.py`. The inventory counts 259 strings the new web app
+  shows.
+- **Not checked:** PDFs with JPEG 2000 pictures (pdf.js reads them with
+  WebAssembly, which the security policy does not allow; such a picture
+  would not show) and PDFs that lean on fonts they do not carry (pdf.js's
+  font files are not shipped, so the browser's own fonts stand in); a long
+  PDF (pages drawn as they come near the view were tried on two); against
+  the real server and a real computer (the address is not live yet; see
+  Open questions).
+- **Next:** step 2c, part 3c: Excel in the preview. The window's SheetJS
+  is out (see Decisions); the choice is between a small reader of our own
+  for .xlsx (the browser unzips and reads XML itself) and "Preview not
+  available" with Download.
 
 ### 1 November 2026: step 2c, part 3a, pictures and videos full screen
 
