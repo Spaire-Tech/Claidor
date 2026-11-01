@@ -99,6 +99,7 @@ Newest first.
     English), the page's `lang` is the language, nothing errs.
 - **Not checked:** a sentence on screen in each language: the window
   (step 1d) is the first to show any.
+- Pull request #518.
 - **Next:** 1d, the window: signing in, the layout, the agents list.
 
 ### 1 November 2026: step 1b, talking to the server and the computer
