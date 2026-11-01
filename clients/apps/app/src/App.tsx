@@ -47,6 +47,21 @@ function MainWindow({ session }: { session: WebSession }) {
   const known = open != null && store.agents.some((agent) => agent.id === open)
   const shown = known ? open : store.agents.find((agent) => !agent.isHidden)?.id
   useEffect(() => keepInAddress(shown), [shown])
+  // Files dropped outside the chat are taken by nothing, and the browser does not open them in the window's place.
+  useEffect(() => {
+    const refuse = (event: DragEvent) => {
+      if (event.defaultPrevented) return
+      if (!event.dataTransfer?.types.includes('Files')) return
+      event.preventDefault()
+      event.dataTransfer.dropEffect = 'none'
+    }
+    window.addEventListener('dragover', refuse)
+    window.addEventListener('drop', refuse)
+    return () => {
+      window.removeEventListener('dragover', refuse)
+      window.removeEventListener('drop', refuse)
+    }
+  }, [])
   // A file's preview, or pictures and videos, over the window (`Viewers`), one at a time.
   const [viewer, setViewer] = useState<Shown>()
   const closeViewer = useCallback(() => setViewer(undefined), [])

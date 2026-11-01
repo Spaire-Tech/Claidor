@@ -64,6 +64,7 @@ import { wordsLanguage } from '../core/words'
 import { t } from '../l10n'
 import { ActivitySlot } from './ActivitySlot'
 import { AgentMark } from './AgentMark'
+import { DropOverlay, useFileDrop, useStaging } from './Attachments'
 import { Composer } from './Composer'
 import { EmojiPicker } from './EmojiPicker'
 import { FileCard, LinkCard, useShownPicture } from './Files'
@@ -165,6 +166,9 @@ export function ChatPane({
   const threadRoot = store.openThreads[agentId]
   const [composerHeight, setComposerHeight] = useState(56)
   const pane = useRef<HTMLElement>(null)
+  // The files waiting to go with the next message (`ChatControl.staged`), and files dropped anywhere on the chat.
+  const staging = useStaging()
+  const drop = useFileDrop(staging.stage)
   // The message being answered (`ChatControl.reply`), in the chat or the thread it was chosen in.
   const [answering, setAnswering] = useState<{
     reply: Reply
@@ -356,7 +360,12 @@ export function ChatPane({
   }, [agentId, overlay, store])
 
   return (
-    <section className="chat-pane" aria-label={agent?.name} ref={pane}>
+    <section
+      className="chat-pane"
+      aria-label={agent?.name}
+      ref={pane}
+      {...drop.handlers}
+    >
       {/* A thread, or back to the chat: the lines on screen start again, at their newest. */}
       <Transcript
         key={threadRoot ?? ''}
@@ -388,6 +397,7 @@ export function ChatPane({
         onCancelReply={() => setAnswering(undefined)}
         focusKey={focusKey}
         onHeight={setComposerHeight}
+        staging={staging}
       />
       {/* Find's bar, 8 under the head and 16 from the right, over the messages. */}
       {here.open && (
@@ -445,6 +455,7 @@ export function ChatPane({
           close={closeOverlay}
         />
       )}
+      {drop.dropping && <DropOverlay />}
     </section>
   )
 }

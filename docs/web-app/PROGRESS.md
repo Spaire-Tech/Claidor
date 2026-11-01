@@ -15,7 +15,7 @@ file and the code disagree, the code is right and this file is fixed.
 |---|---|
 | 0. The audit | Done, 1 November 2026 |
 | 1. The base: the server and the computer, signing in, the window | Done, 1 November 2026 (1a to 1d). Carried to step 2: the first run for a new account and the access cover |
-| 2. The sidebar and the chat | In progress: 2a (the chat's core, and the chat on screen) done; 2b (a message's actions, find, the working line, names in colour, link icons, the emoji picker) done; 2c part 1 (file cards, pictures from the computer, link cards) part 2 (the preview: text and code, Markdown, JSON, tables) and part 3a (pictures and videos full screen), part 3b (PDF, Word, sound) and part 3c (Excel) done. Next: 2e, the message field's own parts (attaching files, the ":" emoji list, "@", "/" and "#", dictation) |
+| 2. The sidebar and the chat | In progress: 2a (the chat's core, and the chat on screen) done; 2b (a message's actions, find, the working line, names in colour, link icons, the emoji picker) done; 2c part 1 (file cards, pictures from the computer, link cards) part 2 (the preview: text and code, Markdown, JSON, tables) and part 3a (pictures and videos full screen), part 3b (PDF, Word, sound) and part 3c (Excel) done; 2e part 1 (attaching files, the ":" emoji list) done. Next: 2e part 2, "@", "/" and "#", then dictation |
 | 3. The cards | Not started |
 | 4. The agent's pane, search, new chat, the org chart, starter packs | Not started |
 | 5. The computer and calls | Not started |
@@ -42,6 +42,8 @@ file and the code disagree, the code is right and this file is fixed.
 | 1 November 2026 | A message that is one link is drawn as the Mac's card with the site's icon, its name and the address, but not the page's title, which the Mac reads from the page. A web page may not read another site, and a route on Simeon's server that read it would hand the server every link the person opens | The session, as above |
 | 1 November 2026 | Save hands the file to the browser as a download (the browser asks where, or puts it in Downloads, as the person set it), not the Mac's save panel; a file the computer won't hand over says "Couldn't save this file" in the browser's own alert, as the Electron app's error box did. A picture keeps the browser's own right-click menu (Copy image, Save image as), as a link does | The session, as above |
 | 1 November 2026 | The preview uses the libraries the window itself used, at its versions: highlight.js 11.9 now (in a worker, with only the languages the preview asks for), pdf.js 5.4.296 and mammoth for PDF and Word in part 3. Not SheetJS 0.18.5, the window's reader for Excel: the copy on npm has known security holes (fixed only in releases off npm), and the files come from the internet through the agents. How Excel files show is decided in part 3 | The session, as above |
+| 1 November 2026 | Attaching files in the browser: Photo or Video opens the browser's own file chooser showing only pictures and videos (a web page can't open the Photos library), and a photo goes as it is, not made a JPEG as the Mac makes HEIC; a picture the browser can't draw (HEIC outside Safari) shows the tile's symbol. A paste brings files unless it also holds the words as rich text (Office, iWork and web pages put a picture of copied words beside them; the words win, as on the Mac). Files dropped outside the chat are taken by nothing, so the browser never opens them in the window's place | The session |
+| 1 November 2026 | The emoji picked lately from ":" are kept in the browser (`simeon.emojiRecents`, the Mac's own name for them): only which emoji, never words of a message | The session |
 | 1 November 2026 | Excel workbooks (.xlsx) are read by a small reader of our own (`src/core/xlsx.ts`): the browser unzips them itself and the reader takes the first sheet, each value written as its number format says. No library: SheetJS's npm copy has known holes, and the other readers are either days old with unfamiliar dependencies or built for servers. The old binary .xls is not read; it says "Preview not available" with Download. The founder: "keep going on excel" | The session |
 
 ## Open questions
@@ -71,6 +73,74 @@ For the founder, each to be answered before the step that needs it:
 ## Log
 
 Newest first.
+
+### 1 November 2026: step 2e, part 1, attaching files and the ":" emoji list
+
+- `src/core/attachmentLimits.ts` (SimeonCore's `AttachmentLimits`): six
+  files at most, each up to 25 MB (200 MB for a video), none empty, and
+  the line for what was left out, from the core's catalogue. Its tests
+  are the core's `AttachmentLimitTests`, and French.
+- `src/window/Attachments.tsx` (mac/Simeon/Attachments.swift):
+  - `useStaging`: the chat's files waiting to go. As many as fit beside
+    those waiting, files still being read counted; each size checked
+    before it is read; the line over the words for five seconds, the
+    latest kept. They belong to the chat on screen, as on the Mac: another
+    chat starts with none.
+  - Attach: the 40-point glass disc left of the field, off at six; its
+    menu opens upward, its foot 4 over the disc: Photo or Video and
+    Choose File (several files). A second click, Escape or a click
+    elsewhere closes it.
+  - The files over the words, lined up with the field (48 in): a picture
+    as a 52-point square of it, any other file as a 220 by 54 chip with
+    its kind's icon, its name (the extension always shown) and its size;
+    Remove on each.
+  - Files dragged over the chat: the blue wash (17%, 32% on dark) with
+    "Drop files to add to chat"; dropped anywhere on the chat, they wait
+    to go. Dropped outside the chat, nothing takes them.
+  - A paste of files or a picture (a screenshot comes as "image.png")
+    goes with them; words pasted with a picture of them stay words.
+- `Composer.tsx`: the field starts 48 in, after Attach; with files
+  waiting it says "Add a message, or hit send." and Send shows with no
+  words; Return sends the files (each put on the computer first, then
+  the message); a message canceled before it went comes back with its
+  files.
+- `src/window/ComposerPicks.tsx` (mac/Simeon/ComposerPicks.swift): ":"
+  and two letters before the caret open the emoji list, hung 4 over the
+  colon's line and from its left: 320 wide, twelve at most (those picked
+  lately first), each as the emoji, ":shortcode:" and its name. ↑ and ↓
+  choose, Return and Tab pick, Escape puts it away until that ":" is
+  gone; a click picks, the field keeping the keys. Not in "10:30" or an
+  address. Nothing found shows nothing. The catalogue is read when ":"
+  first asks.
+- **Decisions (the session):** in the table above.
+- **Checked:** in Chromium, the built app against a stand-in server and
+  computer (`compose-check.cjs` in the session's scratchpad), light and
+  dark, then French:
+  - the menu's two items and place, Escape and a second click closing it;
+    Choose File taking several files, Photo or Video asking for
+    `image/*,video/*`;
+  - a picture, a PDF and a CSV in the strip with their sizes, the
+    placeholder and Send;
+  - five more dropped: six kept, "Only 6 attachments allowed — 2 weren't
+    added.", Attach off; Remove; a 26 MB file, an empty one and two too
+    large each with their line, gone after five seconds;
+  - a pasted picture taken, an Office-style paste left as words;
+  - Return with no words: five `uploadAttachment` calls, then `sendPrompt`
+    with their five paths and names; the strip emptied;
+  - the emoji list for ":tad" (🎉 first), Return, ↓ and Tab, Escape and
+    typing on, a new ":" opening it again, "10:30" and "https://" not
+    opening it, a click; the lately-picked kept;
+  - a drop on the sidebar refused; no page errors. In French every line
+    and the menu read in French.
+  The 195 tests, typecheck, lint, the words', the brands' and the build's
+  checks, `check_names.py`, `check_translations.py`.
+- **Not checked:** a real file chooser and a real drag from Finder or
+  Explorer (the check hands the page files as a browser would); a paste
+  from Finder (what each browser puts on the clipboard for a copied file
+  differs); Safari; against the real server and a real computer.
+- **Next:** step 2e, part 2: "@" (agents, groups, routines and apps),
+  "/" (skills and the app's actions) and "#" (pull requests); then
+  dictation.
 
 ### 1 November 2026: step 2c, part 3c, Excel in the preview
 

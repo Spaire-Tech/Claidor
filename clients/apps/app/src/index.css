@@ -75,6 +75,12 @@
   --json-string: #009957;
   --json-number: #c24e00;
   --json-keyword: #6e44c1;
+
+  /* The files waiting to go: a tile's ground, Remove's disc and its X. */
+  --tile-ground: var(--ground);
+  --remove-disc: #070707;
+  --remove-x: #fcfcfc;
+  --drop-wash: color-mix(in srgb, var(--unread) 17%, transparent);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -123,6 +129,10 @@
     --json-string: #38d591;
     --json-number: #ff8838;
     --json-keyword: #a97efe;
+    --tile-ground: #2f2f2f;
+    --remove-disc: #fafafa;
+    --remove-x: #141414;
+    --drop-wash: color-mix(in srgb, var(--unread) 32%, transparent);
   }
 }
 
@@ -1597,7 +1607,7 @@ button {
   font-size: 11px;
   line-height: 14px;
   color: var(--ink-tertiary);
-  padding-left: 16px;
+  padding-left: 64px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1607,13 +1617,249 @@ button {
   color: var(--danger);
 }
 
+/* Attach, then the field, 8 apart; over them, lined up with the field (48 in), the files and the message answered. */
+.composer-row {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+/* The emoji list: hung by its foot over the words, 320 wide on the ground, a hairline at 10%, 14 round; rows 1 apart, padded 4, to 260 high. */
+.pick-list {
+  position: absolute;
+  z-index: 25;
+  transform: translateY(-100%);
+  box-sizing: border-box;
+  background: var(--ground);
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.pick-list.emoji {
+  width: 320px;
+  max-height: 260px;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  border-radius: 14px;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--ink) 10%, transparent),
+    0 8px 24px rgb(20 20 20 / 0.18);
+}
+
+.pick-list::-webkit-scrollbar {
+  display: none;
+}
+
+/* A row: 28 high, padded 6 8, 10 round, grey when chosen; the emoji, ":shortcode:" (13) and its name (11, at 40%), 8 apart. */
+.emoji-row {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 28px;
+  padding: 6px 8px;
+  box-sizing: border-box;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.emoji-row.chosen {
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+}
+
+.emoji-glyph {
+  flex: none;
+  width: 20px;
+  font-size: 13px;
+  text-align: center;
+}
+
+.emoji-code {
+  flex: none;
+  font-size: 13px;
+  line-height: 16px;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.emoji-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 11px;
+  line-height: 14px;
+  color: var(--ink-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.composer > .reply-pill,
+.attachment-strip {
+  margin-left: 48px;
+}
+
 .field-box {
+  flex: 1;
+  min-width: 0;
   display: flex;
   align-items: flex-end;
   gap: 4px;
   min-height: 40px;
   border-radius: 20px;
   cursor: text;
+}
+
+/* Attach: the 40-point glass disc, its plus 18 at 78% (86% on dark); faded and off once six wait. */
+.attach {
+  position: relative;
+  flex: none;
+}
+
+.attach-button {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: var(--disc-ink);
+  cursor: pointer;
+}
+
+.attach-button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* Its menu opens upward: its foot 4 over the disc, from its left. */
+.attach-menu {
+  left: 0;
+  bottom: calc(100% + 4px);
+}
+
+.attach-menu .menu-item svg {
+  flex: none;
+}
+
+/* The files over the words: 8 apart, 54 high, scrolling sideways when they don't fit. */
+.attachment-strip {
+  display: flex;
+  gap: 8px;
+  height: 54px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+
+.attachment-strip::-webkit-scrollbar {
+  display: none;
+}
+
+/* A picture: a 52-point square of it, 12 round, a hairline at 15%; Remove at its top right, 2 in. */
+.picture-tile {
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--tile-ground);
+  color: var(--ink-tertiary);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 15%, transparent);
+}
+
+.picture-tile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.picture-tile .remove-staged {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+}
+
+/* Any other file: a chip like the chat's, 220 by 54, padded 8, 12 round. */
+.file-chip {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 220px;
+  height: 54px;
+  padding: 8px;
+  box-sizing: border-box;
+  border-radius: 12px;
+  background: var(--tile-ground);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 15%, transparent);
+}
+
+.chip-name {
+  display: flex;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+  color: var(--ink);
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.chip-base {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chip-ext {
+  flex: none;
+}
+
+/* Remove: 20, round, the text colour with the ground's X. */
+.remove-staged {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--remove-disc);
+  color: var(--remove-x);
+  cursor: pointer;
+}
+
+/* Files dragged over the chat: the blue at 17% (32% on dark) over all of it, and its words on a blue pill. */
+.drop-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  background: var(--drop-wash);
+  pointer-events: none;
+  animation: drop-in 0.12s ease-out;
+}
+
+.drop-overlay span {
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--unread);
+  color: #fff;
+  font-size: 14px;
+  line-height: 18px;
+}
+
+@keyframes drop-in {
+  from {
+    opacity: 0;
+  }
 }
 
 .field {
