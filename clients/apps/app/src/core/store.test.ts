@@ -5,52 +5,11 @@
 
 import { describe, expect, it } from 'vitest'
 import { SimeonAPIError } from './api'
-import { type AgentBackend, type BackendEvent, LiveBackend } from './backend'
+import { LiveBackend } from './backend'
 import { GatewayError } from './gatewayConnection'
-import type { JSONValue } from './json'
-import { type Agent, makeAgent } from './models'
+import { makeAgent } from './models'
 import { AppStore, accountFrom } from './store'
-import { Routes, answer, ensure, makeGateway, ms } from './testing'
-
-/** A computer that answers as told, and a server whose copy comes when told. */
-class FakeBackend implements AgentBackend {
-  agents: Agent[] = []
-  /** The list fails with this, when set. */
-  listError?: unknown
-  listDelayMs = 0
-  serverAnswers: Record<string, JSONValue> = {}
-  serverDelayMs = 0
-  serverPaths: string[] = []
-  emit?: (event: BackendEvent) => void
-
-  async listAgents(): Promise<Agent[]> {
-    await ms(this.listDelayMs)
-    if (this.listError) throw this.listError
-    return this.agents
-  }
-  async server(path: string): Promise<JSONValue> {
-    this.serverPaths.push(path)
-    await ms(this.serverDelayMs)
-    const found = this.serverAnswers[path]
-    if (found === undefined) throw new SimeonAPIError('No such path.', 404)
-    return found
-  }
-  async command(): Promise<JSONValue> {
-    return {}
-  }
-  async computerRest() {
-    return null
-  }
-  events(
-    onEvent: (event: BackendEvent) => void,
-    signal: AbortSignal,
-  ): Promise<void> {
-    this.emit = onEvent
-    return new Promise((resolve) =>
-      signal.addEventListener('abort', () => resolve()),
-    )
-  }
-}
+import { FakeBackend, Routes, answer, ensure, makeGateway, ms } from './testing'
 
 const serverAgents = {
   agents: [

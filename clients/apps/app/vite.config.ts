@@ -20,7 +20,12 @@ export default defineConfig({
     emptyOutDir: true,
     sourcemap: false,
   },
-  server: { port: 5174, strictPort: true },
+  server: {
+    port: 5174,
+    strictPort: true,
+    // The agents' faces are read from the shared core's own copy (src/core/faces.ts).
+    fs: { allow: [fileURLToPath(new URL('../../..', import.meta.url))] },
+  },
   test: {
     environment: 'node',
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],

@@ -14,8 +14,8 @@ file and the code disagree, the code is right and this file is fixed.
 | Step (`README.md`, "The order of work") | State |
 |---|---|
 | 0. The audit | Done, 1 November 2026 |
-| 1. The base: the server and the computer, signing in, the window | In progress: 1a, 1b, 1c done; 1d, the window: its data (the agents, the store's roster) done, the session and the window drawn next |
-| 2. The sidebar and the chat | Not started |
+| 1. The base: the server and the computer, signing in, the window | Done, 1 November 2026 (1a to 1d). Carried to step 2: the first run for a new account and the access cover |
+| 2. The sidebar and the chat | Next |
 | 3. The cards | Not started |
 | 4. The agent's pane, search, new chat, the org chart, starter packs | Not started |
 | 5. The computer and calls | Not started |
@@ -42,6 +42,14 @@ file and the code disagree, the code is right and this file is fixed.
 
 For the founder, each to be answered before the step that needs it:
 
+- **The website's deploy.** `app.simeonlabs.com/app-next` has answered 404
+  since pull request #516 merged: the Vercel project `simeon` (the one
+  that serves `clients/apps/web`) has not published it. Its previews say
+  "Canceled by Ignored Build Step", a setting kept in Vercel, not in the
+  repository. Needed before anything of the new app can be checked live:
+  the founder to open the project's deployment for #516 and say whether it
+  was ignored, failed or is ready.
+
 - **A Windows code-signing certificate.** An unsigned installer makes
   Windows warn people before it runs (SmartScreen). Simeon Labs needs a
   code-signing certificate in its name before the first public Windows
@@ -53,6 +61,53 @@ For the founder, each to be answered before the step that needs it:
 ## Log
 
 Newest first.
+
+### 1 November 2026: step 1d, part 2, the session and the window
+
+- `src/session.ts` (`MacSession.swift`, and the old web app's
+  `desktop/web/bridge.ts`): a pair kept in the tab, else the website's
+  cookie traded, else the website's sign-in page told to come back here;
+  "Setting up" until a list is on screen (the server's copy when it comes
+  first); the profile read for the account; a sign-in the server ends goes
+  back to the sign-in page and forgets the computer's address.
+- `src/core/faces.ts` (`AgentFaces.swift`): the faces read from the shared
+  core's own copy (`Resources/Faces`, the same files the Mac and the iPhone
+  ship); which face an agent shows (worn, its own picture, given, or one its
+  id picks with the voices' hash); a group's layout.
+- `src/core/listTime.ts` (`Chat.listTime`): "8:33 AM", "Yesterday", the
+  weekday, "9/22", "9/2/25"; in the app's language in the person's region.
+- The window (`MainWindow.swift`, `Sidebar.swift`, `SidebarList.swift`,
+  `Pictures.swift`, `Look.swift`): the colours light and dark as CSS
+  (`src/index.css`); the sidebar 320 wide with its half-point edge; each row
+  as the Mac's (62 high, the picture 46, the name, the title's tag in blue,
+  the time or the unread dot, the last line, the green dot at work in a hole
+  cut round it, the open row's white card); a group's members drawn together
+  with the gaps cut between them; "Can’t reach your computer" with Retry over
+  no list, "Reconnecting to your computer…" over one, read again every 4 s;
+  the store's Retry asks the broker again.
+- **Not in this step, each with its screen:** the chat (step 2); the head's
+  search and new chat, the foot's account and Connect apps, pins and
+  folders, several rows picked, renaming, the right-click menu, dragging,
+  the rail and the width dragged (step 2 and after); the first run for a new
+  account and the access cover (step 2); Recover computer (step 5); faces
+  given to agents that have none (the store's actions).
+- **Checked:**
+  - 96 tests pass (13 more: the session's five ways in and out, the faces
+    against `AgentFaceTests` with the hash worked out apart in Python, the
+    group's layout, the list's time against `testStampTexts` and
+    `testNoTimeIsNotNineteenSixtyNine`); typecheck, lint, the words' and
+    the build's checks, `check_translations.py`, `check_names.py`;
+  - in Chromium, the built app against a stand-in server (the cookie, the
+    profile, the broker, the computer's list): the whole way in ran and the
+    window drew six agents' rows, the hidden one left out, the faces loaded,
+    light and dark (screenshots taken); in French ("Bras droit", "Hier",
+    "jeudi", "22/09", "En attente de toi : …"); and with the computer
+    answering 500, the "Can’t reach your computer" card with Retry.
+- **Not checked:** against the real server and a real computer, signed in:
+  the address is not live yet (`/app-next` answers 404 since the first
+  merge; see Open questions). The inventory now counts 40 strings the new
+  web app shows.
+- **Next:** step 2, the sidebar and the chat.
 
 ### 1 November 2026: step 1d, part 1, the agents and the store's roster
 

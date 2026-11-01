@@ -62,6 +62,8 @@ export interface AgentBackend {
     onEvent: (event: BackendEvent) => void,
     signal: AbortSignal,
   ): Promise<void>
+  /** Forgets where the computer was, so the next call asks the broker again (a restarted box can move). */
+  invalidate?(): void
 }
 
 const signInFirst = () => new SimeonAPIError(t('Sign in to Simeon first.'), 401)
@@ -102,6 +104,10 @@ export class LiveBackend implements AgentBackend {
 
   computerRest(): Promise<Rest | null> {
     return this.gateway.restAtLaunch()
+  }
+
+  invalidate(): void {
+    this.gateway.invalidate()
   }
 
   events(

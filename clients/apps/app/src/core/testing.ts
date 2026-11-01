@@ -2,10 +2,13 @@
 // (ios/SimeonCore/Tests/SimeonCoreTests: `ScriptedHTTP`, `Unanswered`,
 // `GatewayConnectTests.Routes`, `Clock`).
 
-import { MemoryVault, SimeonAPI } from './api'
+import { MemoryVault, SimeonAPI, SimeonAPIError } from './api'
+import type { AgentBackend, BackendEvent } from './backend'
 import { Gateway, GatewayConnection } from './gateway'
 import type { HTTPAnswer, HTTPClient, HTTPRequest, HTTPStream } from './http'
 import { NetworkError } from './http'
+import type { JSONValue } from './json'
+import type { Agent } from './models'
 import { type SavedGatewayStore, encodeSavedGateway } from './savedGateway'
 import { base64URL } from './tokens'
 
@@ -187,3 +190,43 @@ export async function eventually(condition: () => boolean): Promise<void> {
 
 export const ms = (milliseconds: number) =>
   new Promise<void>((resolve) => setTimeout(resolve, milliseconds))
+
+/** A computer that answers as told, and a server whose copy comes when told. */
+export class FakeBackend implements AgentBackend {
+  agents: Agent[] = []
+  /** The list fails with this, when set. */
+  listError?: unknown
+  listDelayMs = 0
+  serverAnswers: Record<string, JSONValue> = {}
+  serverDelayMs = 0
+  serverPaths: string[] = []
+  emit?: (event: BackendEvent) => void
+
+  async listAgents(): Promise<Agent[]> {
+    await ms(this.listDelayMs)
+    if (this.listError) throw this.listError
+    return this.agents
+  }
+  async server(path: string): Promise<JSONValue> {
+    this.serverPaths.push(path)
+    await ms(this.serverDelayMs)
+    const found = this.serverAnswers[path]
+    if (found === undefined) throw new SimeonAPIError('No such path.', 404)
+    return found
+  }
+  async command(): Promise<JSONValue> {
+    return {}
+  }
+  async computerRest() {
+    return null
+  }
+  events(
+    onEvent: (event: BackendEvent) => void,
+    signal: AbortSignal,
+  ): Promise<void> {
+    this.emit = onEvent
+    return new Promise((resolve) =>
+      signal.addEventListener('abort', () => resolve()),
+    )
+  }
+}
