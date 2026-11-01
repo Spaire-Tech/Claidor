@@ -144,6 +144,7 @@ Newest first.
   `/favicon.ico`); a large file read in several pieces in the browser (the
   core's test reads one in three); against the real server and a real
   computer (the address is not live yet; see Open questions).
+- Pull request #527.
 - **Next:** step 2c, part 2: the previews (pictures and video, PDF, text
   with its colours, Markdown, JSON, tables), opened from a card's name.
 
