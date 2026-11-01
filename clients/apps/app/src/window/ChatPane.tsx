@@ -55,6 +55,7 @@ import {
 } from '../core/chatFind'
 import { type RunFlags, noRun } from '../core/chatRuns'
 import { pictureURL } from '../core/faces'
+import { fileKind } from '../core/filePreview'
 import { english, languageCode } from '../core/language'
 import type { AgentName } from '../core/mentions'
 import type { Agent } from '../core/models'
@@ -81,6 +82,7 @@ import {
   type MentionSetting,
   MessageBlocks,
 } from './MessageText'
+import { useOpenMedia } from './Viewers'
 import { classes } from './classes'
 import { useWatched } from './useStore'
 
@@ -1531,10 +1533,27 @@ function PictureStrip({
       height: Math.round(height),
     }))
   }
+  // A picture opens full screen, the others beside it.
+  const control = useControl()
+  const openMedia = useOpenMedia()
+  const open = (index: number) =>
+    openMedia?.(
+      images.map((image) => ({
+        url: image.url,
+        agentId: control.agentId,
+        caption: image.alt === '' ? undefined : image.alt,
+      })),
+      index,
+    )
   return (
     <div className={alone ? 'picture-strip' : 'picture-strip under-words'}>
       {images.map((image, index) => (
-        <Picture key={image.url + index} image={image} size={sizes[index]!} />
+        <Picture
+          key={image.url + index}
+          image={image}
+          size={sizes[index]!}
+          open={() => open(index)}
+        />
       ))}
     </div>
   )
@@ -1543,18 +1562,27 @@ function PictureStrip({
 function Picture({
   image,
   size,
+  open,
 }: {
   image: ChatImage
   size: { width: number; height: number }
+  open: () => void
 }) {
   const control = useControl()
   const shown = useShownPicture(image, control.store, control.agentId)
   return (
-    <span
+    <button
+      type="button"
       className="chat-picture"
       style={{ width: size.width, height: size.height }}
+      aria-label={
+        fileKind(image.url) === 'video'
+          ? t('Open video full screen')
+          : t('Open image full screen')
+      }
+      onClick={open}
     >
       {shown && <img src={shown} alt={image.alt} />}
-    </span>
+    </button>
   )
 }

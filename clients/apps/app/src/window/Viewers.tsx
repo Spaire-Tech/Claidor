@@ -31,6 +31,7 @@ import {
 import type { AppStore, PreviewRead } from '../core/store'
 import { t } from '../l10n'
 import { saveFile } from './Files'
+import { type MediaItem, MediaViewer } from './MediaViewer'
 import { MessageBlocks } from './MessageText'
 
 /** A file to preview: its name, where it is, and whose computer has it. */
@@ -40,16 +41,82 @@ export interface FileItem {
   agentId: string
 }
 
-/** Opens a file's preview over the window (`Viewers.open`). */
-export const OpenFile = createContext<((file: FileItem) => void) | null>(null)
-export const useOpenFile = () => useContext(OpenFile)
+/** What opens over the window (`Viewers.Shown`), one at a time: a file's preview, or pictures and videos full screen. */
+export type Shown =
+  | { kind: 'file'; item: FileItem }
+  | { kind: 'media'; items: MediaItem[]; start: number }
 
-/** The kinds this part shows: the rest open with part 3. */
+/** Opens a viewer over the window (`Viewers`). */
+export const ViewerContext = createContext<((shown: Shown) => void) | null>(
+  null,
+)
+
+/** A file card's Open (`Viewers.open`, `w1t`): a picture or a video in the media viewer, any other file in the preview. */
+export function useOpenFile(): ((file: FileItem) => void) | undefined {
+  const show = useContext(ViewerContext)
+  if (!show) return undefined
+  return (file) => {
+    const kind = fileKind(file.name)
+    show(
+      kind === 'image' || kind === 'video'
+        ? {
+            kind: 'media',
+            items: [{ url: file.url, agentId: file.agentId, name: file.name }],
+            start: 0,
+          }
+        : { kind: 'file', item: file },
+    )
+  }
+}
+
+/** Pictures from the chat full screen, starting at one of them. */
+export function useOpenMedia():
+  | ((items: MediaItem[], start: number) => void)
+  | undefined {
+  const show = useContext(ViewerContext)
+  if (!show) return undefined
+  return (items, start) => show({ kind: 'media', items, start })
+}
+
+/** The open viewer, over the sidebar and the chat (`ViewerLayer`). */
+export function ViewerLayer({
+  shown,
+  store,
+  close,
+}: {
+  shown?: Shown
+  store: AppStore
+  close: () => void
+}) {
+  if (!shown) return null
+  if (shown.kind === 'media')
+    return (
+      <MediaViewer
+        key={shown.items.map((item) => item.url).join('\n')}
+        items={shown.items}
+        start={shown.start}
+        store={store}
+        close={close}
+      />
+    )
+  return (
+    <FileViewer
+      key={shown.item.url}
+      item={shown.item}
+      store={store}
+      close={close}
+    />
+  )
+}
+
+/** The kinds this part shows: PDF, Word, Excel and sound open with the next. */
 export function previewShown(name: string): boolean {
   switch (fileKind(name)) {
     case 'text':
     case 'markdown':
     case 'json':
+    case 'image':
+    case 'video':
       return true
     case 'table':
       return ['csv', 'tsv'].includes(fileExtension(name) ?? '')
@@ -59,13 +126,13 @@ export function previewShown(name: string): boolean {
 }
 
 /** What a file shows once read: its words, a sheet, or nothing it can read. */
-type Shown =
+type FileShows =
   | { kind: 'text'; text: string; cut: boolean }
   | { kind: 'sheet'; sheet: Sheet }
   | { kind: 'noSheet' }
   | { kind: 'none' }
 
-function shown(read: PreviewRead, name: string, kind: FileKind): Shown {
+function shown(read: PreviewRead, name: string, kind: FileKind): FileShows {
   if (read.kind !== 'ready') return { kind: 'none' }
   switch (kind) {
     case 'table':
@@ -103,7 +170,7 @@ export function FileViewer({
   close: () => void
 }) {
   const kind = fileKind(item.name)
-  const [read, setRead] = useState<{ read: PreviewRead; shown: Shown }>()
+  const [read, setRead] = useState<{ read: PreviewRead; shown: FileShows }>()
   const panel = useRef<HTMLDivElement>(null)
   useEffect(() => {
     let live = true
@@ -203,7 +270,7 @@ function Content({
 }: {
   kind: FileKind
   name: string
-  read?: { read: PreviewRead; shown: Shown }
+  read?: { read: PreviewRead; shown: FileShows }
   download: () => void
 }) {
   const action = (

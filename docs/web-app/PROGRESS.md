@@ -15,7 +15,7 @@ file and the code disagree, the code is right and this file is fixed.
 |---|---|
 | 0. The audit | Done, 1 November 2026 |
 | 1. The base: the server and the computer, signing in, the window | Done, 1 November 2026 (1a to 1d). Carried to step 2: the first run for a new account and the access cover |
-| 2. The sidebar and the chat | In progress: 2a (the chat's core, and the chat on screen) done; 2b (a message's actions, find, the working line, names in colour, link icons, the emoji picker) done; 2c part 1 (file cards, pictures from the computer, link cards) and part 2 (the preview: text and code, Markdown, JSON, tables) done; 2c part 3 (PDF, Word, Excel, sound, pictures and videos) next |
+| 2. The sidebar and the chat | In progress: 2a (the chat's core, and the chat on screen) done; 2b (a message's actions, find, the working line, names in colour, link icons, the emoji picker) done; 2c part 1 (file cards, pictures from the computer, link cards) part 2 (the preview: text and code, Markdown, JSON, tables) and part 3a (pictures and videos full screen) done; 2c part 3b (PDF, Word, Excel, sound) next |
 | 3. The cards | Not started |
 | 4. The agent's pane, search, new chat, the org chart, starter packs | Not started |
 | 5. The computer and calls | Not started |
@@ -70,6 +70,53 @@ For the founder, each to be answered before the step that needs it:
 ## Log
 
 Newest first.
+
+### 1 November 2026: step 2c, part 3a, pictures and videos full screen
+
+- `src/window/MediaViewer.tsx` (`MediaViewer`): pictures and videos full
+  screen, black at 92% over the window:
+  - the picture as large as fits (at most 95% of the window's width and
+    1400, never past its own pixels), 12 round; its caption ("two.webp ·
+    2 / 3", or the picture's own words); with more than one, a strip of
+    48-point squares, the one shown ringed in white, and Previous and Next
+    at the sides; Close at the top right;
+  - the arrows go round, Escape closes, a click on the picture closes it
+    after a moment (so a double click can zoom), a click beside it closes;
+  - a double click zooms to 2.5 where clicked, or back; the wheel zooms up
+    to 4 where the pointer is; zoomed, a drag moves it, kept over the
+    window;
+  - a video plays in the browser's own player, not until asked;
+  - pictures and videos are read from the agent's computer (a video under
+    25 MB, its size asked first) or from the web.
+- `Viewers.tsx`: one viewer at a time over the window, a file's preview or
+  pictures and videos (`ViewerLayer`); a picture's or a video's card opens
+  the viewer, any other file the preview (`Viewers.open`).
+- `ChatPane.tsx`: a picture in the chat is a button ("Open image full
+  screen", "Open video full screen") that opens the viewer at it, with the
+  others of its message beside it.
+- `Files.tsx`: a video in the chat stays grey, as on the Mac (it is no
+  picture), and is no longer read for a picture it cannot make.
+- **Checked:** in Chromium, the built app against a stand-in server and
+  computer (`media-check.cjs` in the session's scratchpad, with a two-second
+  WebM made by ffmpeg): the five pictures' labels; the second of three
+  opened at 512 by 512 ("two.webp · 2 / 3", "Media 2 of 3", focused); the
+  right arrow went to the third and round to the first ("The shoot · 1 /
+  3", its own words), Previous and the strip as well; a double click zoomed
+  to 2.5 where clicked and kept it open, a drag moved it (and kept it
+  open), a double click came back; the wheel zoomed to 1.82; a click on
+  the picture closed it and the keys went back to its tile; an agent's
+  picture and video sent as files opened together ("Media 1 of 2"); a click
+  beside the picture closed it; the video tile stayed grey, and opened in
+  the browser's player, paused, its 2 seconds read, 1216 by 684; Escape
+  closed it; no errors on the page. The 185 tests, typecheck, lint, the
+  words', the brands' and the build's checks, `check_translations.py`,
+  `check_names.py`. The inventory counts 256 strings the new web app shows.
+- **Not checked:** a trackpad's pinch (the browser sends it as the wheel
+  with Ctrl; the zoom follows the same rule but was not tried); against
+  the real server and a real computer (the address is not live yet; see
+  Open questions).
+- **Next:** step 2c, part 3b: PDF (pdf.js), Word (mammoth), Excel and sound
+  in the preview.
 
 ### 1 November 2026: step 2c, part 2, the preview (text and code, Markdown, JSON, tables)
 
