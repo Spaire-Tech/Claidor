@@ -14,7 +14,7 @@ file and the code disagree, the code is right and this file is fixed.
 | Step (`README.md`, "The order of work") | State |
 |---|---|
 | 0. The audit | Done, 1 November 2026 |
-| 1. The base: the server and the computer, signing in, the window | Not started |
+| 1. The base: the server and the computer, signing in, the window | In progress: the app's folder, build and address are done (1a); next, talking to the server and the computer (1b) |
 | 2. The sidebar and the chat | Not started |
 | 3. The cards | Not started |
 | 4. The agent's pane, search, new chat, the org chart, starter packs | Not started |
@@ -30,18 +30,15 @@ file and the code disagree, the code is right and this file is fixed.
 | 1 November 2026 | The Windows app is Electron around a web app. The web app is a translation of the Mac app into Simeon Labs' own code, and replaces the old web app at `app.simeonlabs.com/app`. It is not built on the old web app, whose window is another company's compiled renderer (`desktop/NOTICE.md`) | Proposed in the session; the founder said "Go" |
 | 1 November 2026 | The Mac app stays Swift. A new Mac feature is also needed in the web app, and the checks in `README.md` fail until it is there | Proposed in the session; the founder said "Go" |
 | 1 November 2026 | Nothing is remembered: the checklist is generated from the code (`scripts/web_app_inventory.py`) and this file records the work as it happens | The founder |
+| 1 November 2026 | The code lives in `clients/apps/app`: its own app in the web workspace, React, TypeScript and Vite, in the browser only. Not inside the Next website (`clients/apps/web`), because the Windows app loads the same files from disk, which needs plain built files and no server | The session; the founder left the open questions to the session ("Ok well all you") |
+| 1 November 2026 | It is served at `app.simeonlabs.com/app-next` while it is built. The old web app stays at `/app` until the new one has everything the Mac app has; then the new one moves to `/app` | The session, as above |
+| 1 November 2026 | Its built files are committed into `clients/apps/web/public/app-next`, as the old app's are, so the website's deploy does not change (Vercel builds only `web`). `pnpm test` fails when they are not the build of the source | The session, as above |
+| 1 November 2026 | Skills publishing is left out, as on the Mac. If the Mac app gets it, the checks ask for it here too | The session, as above |
 
 ## Open questions
 
 For the founder, each to be answered before the step that needs it:
 
-- **Skills publishing.** The old web app has it (`publishSkill` and its
-  family); the Mac app does not. Port it to the web app, or leave it out as
-  the Mac does? Needed by step 6.
-- **Where the web app's code lives.** The proposal is `clients/apps/web`,
-  the web app already at `app.simeonlabs.com`: the same address and the
-  same sign-in cookie, under `/app` in place of the old bundle. Needed at
-  step 1.
 - **A Windows code-signing certificate.** An unsigned installer makes
   Windows warn people before it runs (SmartScreen). Simeon Labs needs a
   code-signing certificate in its name before the first public Windows
@@ -53,6 +50,41 @@ For the founder, each to be answered before the step that needs it:
 ## Log
 
 Newest first.
+
+### 1 November 2026: step 1a, the app's folder, build and address
+
+- `clients/apps/app`: the new app (Vite 7.3.0, React 19.2.4, TypeScript
+  5.9.3, Vitest 3.2.4, the versions the workspace already uses). For now it
+  shows only the mark, so the address, the build and the headers could be
+  checked on their own. Its `README.md` says how it is built and served.
+- `clients/apps/web/next.config.mjs`: `/app-next` opens
+  `public/app-next/index.html`; `/app-next` and everything under it get the
+  old window's headers (its security policy, the microphone allowed, never
+  in a frame, not indexed).
+- `scripts/check-built.mjs`, run by `pnpm test`: builds again into a
+  scratch folder and fails when the committed files differ.
+- `pnpm-workspace.yaml`, `turbo.json` (the two build settings,
+  `SIMEON_APP_BASE` and `SIMEON_APP_OUT`), `.prettierignore`,
+  `clients/CLAUDE.md`.
+- **The lockfile:** adding the app made pnpm settle Vitest on Vite 7.3.0
+  for the website's tests too (it was on 5.4.21), and changed how Next's
+  optional peers are recorded. No version of Next or React changed.
+- **Checked:**
+  - the new app's typecheck, lint and test pass;
+  - the build check passes, fails when a style changes without a new build
+    (`width: 64px` to `65px`), and passes again once restored;
+  - the website (`clients/apps/web`) still builds (`pnpm build`, 77 s) and
+    its 24 tests pass with the new lockfile;
+  - served by `next start`: `/app-next`, `/app-next/`, its script and its
+    mark answer 200 with the headers above, and `/app` still serves the old
+    app;
+  - in Chromium, light and dark: the page draws the mark, the title is
+    Simeon, and the console has no errors under the security policy.
+- **Not checked:** on Vercel. The deploy after the merge is the first time;
+  `app.simeonlabs.com/app-next` should show the mark.
+- Pull request #516.
+- **Next:** 1b, talking to the server and the computer (`Tokens`,
+  `SimeonAPI`, `Gateway` translated, with the shared core's tests).
 
 ### 1 November 2026: the audit
 
