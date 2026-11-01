@@ -354,6 +354,16 @@ html{scroll-behavior:smooth;scroll-padding-top:clamp(72px,4.6*var(--vw,1vw),96px
 .pack .open{flex:none;display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#1d1d1f;color:#fff;transition:transform .3s}
 .pack .open svg{width:14px;height:14px}
 .pack:hover .open{transform:scale(1.08)}
+/* A team with a photo: the photo is the card, its kind of work and its name in white over a shade at the foot, the + in
+   white in the corner (1 November 2026). Taller than a white card, 4 by 5, as the opening's photos. */
+.photo .pack{position:relative;display:block;height:auto;aspect-ratio:4/5;padding:0;overflow:hidden;border-radius:22px;background:#2b2b2d}
+.photo .pack .cover{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .6s cubic-bezier(0,0,.5,1)}
+.photo .pack:hover .cover{transform:scale(1.03)}
+.photo .pack .shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0) 45%,rgba(0,0,0,.6) 100%)}
+.photo .pack .say{position:absolute;left:clamp(22px,1.9*var(--vw,1vw),32px);right:76px;bottom:clamp(20px,1.7*var(--vw,1vw),30px);color:#fff}
+.photo .pack .kind{margin:0 0 4px;color:rgba(255,255,255,.82)}
+.photo .pack h2{margin:0;font-size:clamp(22px,1.8*var(--vw,1vw),28px);line-height:1.15;letter-spacing:-.02em;color:#fff}
+.photo .pack .open{position:absolute;right:clamp(20px,1.7*var(--vw,1vw),28px);bottom:clamp(22px,1.8*var(--vw,1vw),30px);width:34px;height:34px;background:rgba(255,255,255,.94);color:#1d1d1f}
 /* A team's window (23 October 2026, after Apple's AppleCare window): over the dimmed page, on one screen
    without scrolling (the founder: "too big... not proportionate"). The team, then its five agents as rows
    between hairlines (face, name and job, what it does, the apps it connects), then Add to Simeon alone. The long
@@ -764,14 +774,39 @@ def questions(qa=TEAM_QA):
 </section>"""
 
 
+def team_photo(pack):
+    """The team's photo (source/img/teams/<id>.jpg), or None."""
+    src = f"{HERE}/img/teams/{pack['id']}.jpg"
+    return src if os.path.isfile(src) else None
+
+
+def by_photo(packs):
+    """The teams with a photo first, in the opening's order, then the rest as packs.json has them."""
+    lead = {pid: i for i, pid in enumerate(LEAD)}
+    return sorted(packs, key=lambda p: (0, lead.get(p["id"], len(lead))) if team_photo(p) else (1, 0))
+
+
+def card(pack, groups, assets):
+    """A team's card in the list. A team with a photo is the photo itself, its kind of work and its name over a
+    shade at the foot and the + in the corner (the founder, 1 November 2026: "the pics as a card, with a title");
+    one without keeps the white card: its faces, kind, name, summary and apps."""
+    pid = pack["id"]
+    kind = f'<span class="kind">{esc(GROUPS[groups[0]][0])}</span>' if groups else ""
+    head = f'<li data-groups="{" ".join(groups)}" data-q="{search_words(pack)}"'
+    photo = team_photo(pack)
+    if photo:
+        url = assets._copy(photo, "photos", f"{pid}.jpg")
+        return (f'{head} class="photo"><a class="pack" href="/marketplace/{pid}/" data-team="{pid}">'
+                f'<img class="cover" src="{url}" alt="" width="736" height="920" loading="lazy"><span class="shade" aria-hidden="true"></span>'
+                f'<span class="say">{kind}<h2>{esc(pack["title"])}</h2></span><span class="open" aria-hidden="true">{PLUS_SMALL}</span></a></li>')
+    return (f'{head}><a class="pack" href="/marketplace/{pid}/" data-team="{pid}">{faces_row(pack, assets)}{kind}'
+            f'<h2>{esc(pack["title"])}</h2><p>{esc(pack["summary"])}</p>'
+            f'<span class="foot">{some_apps(pack, assets)}<span class="open" aria-hidden="true">{PLUS_SMALL}</span></span></a></li>')
+
+
 def index_page(packs, assets):
     groups = {pid: [slug for slug, (_, ids) in GROUPS.items() if pid in ids] for pid in (p["id"] for p in packs)}
-    cards = "\n".join(
-        f'<li data-groups="{" ".join(groups[p["id"]])}" data-q="{search_words(p)}"><a class="pack" href="/marketplace/{p["id"]}/" data-team="{p["id"]}">{faces_row(p, assets)}'
-        + (f'<span class="kind">{esc(GROUPS[groups[p["id"]][0]][0])}</span>' if groups[p["id"]] else "")
-        + f'<h2>{esc(p["title"])}</h2><p>{esc(p["summary"])}</p>'
-        f'<span class="foot">{some_apps(p, assets)}<span class="open" aria-hidden="true">{PLUS_SMALL}</span></span></a></li>'
-        for p in packs)
+    cards = "\n".join(card(p, groups[p["id"]], assets) for p in by_photo(packs))
     pricing, close, home_css = from_home()
     chips = '<button class="chip" type="button" data-group="all" aria-pressed="true">All</button>' + "".join(
         f'<button class="chip" type="button" data-group="{slug}" aria-pressed="false">{esc(label)}</button>' for slug, (label, _) in GROUPS.items())
