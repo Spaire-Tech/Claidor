@@ -183,10 +183,29 @@ button {
 }
 
 /* The window: the sidebar and the chat side by side (`sand-shell`). */
+/* At its narrowest the rail (88) and the chat (424), as the Mac's window (512). */
 .window {
+  position: relative;
   display: flex;
   height: 100%;
-  min-width: 744px;
+  min-width: 512px;
+}
+
+/* The sidebar's edge: 12 wide over its hairline; dragged, it widens, narrows or folds the sidebar. */
+.resize-edge {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 6;
+  width: 12px;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.window.resizing,
+.window.resizing * {
+  cursor: col-resize !important;
+  user-select: none;
 }
 
 .chat-area {
@@ -202,8 +221,15 @@ button {
   flex-direction: column;
   width: 320px;
   flex: none;
+  overflow: hidden;
   background: var(--sidebar-paint);
   box-shadow: inset -0.5px 0 0 var(--sidebar-edge);
+  /* Folding and opening: 0.2 s on the window's curve; dragged, it follows the pointer. */
+  transition: width 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.window.resizing .sidebar {
+  transition: none;
 }
 
 .sidebar-head {
@@ -364,6 +390,121 @@ button {
   font: inherit;
   font-weight: 500;
   cursor: pointer;
+}
+
+/* The rail (88): the pictures alone, 54 square, 36 across; the pins, then a hairline 54 wide; hairlines between the open sections. */
+.sidebar.rail .agent-list {
+  mask-image: none;
+}
+
+.agent-row.rail {
+  flex: none;
+  align-self: center;
+  width: 54px;
+  height: 54px;
+  padding: 9px;
+}
+
+.sidebar.rail .rows,
+.rail-pins {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.rail-pins {
+  padding-bottom: 16px;
+}
+
+.rail-hairline {
+  display: block;
+  flex: none;
+  width: 54px;
+  height: 0.5px;
+  margin-top: 6px;
+  background: color-mix(in srgb, var(--ink) 15%, transparent);
+}
+
+.rail-hairline.between {
+  margin: 2px 0;
+}
+
+.rail-picked {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding-bottom: 8px;
+}
+
+.rail-roster {
+  display: grid;
+  place-items: center;
+  height: 36px;
+  color: var(--ink-secondary);
+}
+
+/* On the rail, unread is a blue dot on the picture's corner, before at work's green. */
+.agent-mark .working-dot.unread {
+  background: var(--unread);
+}
+
+/* Dragging: where a drop would land greys (the list 12 round, a section 8, the pins 12); a section dragged over another shows a hairline where it would go. */
+.list-body.lit,
+.pin-grid.lit {
+  background: var(--row-hover);
+  border-radius: 12px;
+}
+
+.section-block {
+  position: relative;
+  border-radius: 8px;
+}
+
+.section-block.lit {
+  background: var(--row-hover);
+}
+
+.section-block.line-top::before,
+.section-block.line-bottom::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: color-mix(in srgb, var(--ink) 30%, transparent);
+  pointer-events: none;
+}
+
+.section-block.line-top::before {
+  top: 0;
+}
+
+.section-block.line-bottom::after {
+  bottom: 0;
+}
+
+.pin-tile.lit {
+  background: var(--row-hover);
+}
+
+/* Nothing pinned: while a row is dragged, a dashed zone 104 high says "Drag here to pin" (14 on 20, 60%). */
+.pin-zone {
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  height: 104px;
+  margin: 8px 0 12px;
+  border: 1px dashed color-mix(in srgb, var(--ink) 30%, transparent);
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--ink-secondary);
+}
+
+.pin-zone.lit {
+  background: var(--row-hover);
 }
 
 /* The pins (C03): as many 80-point columns as fit, 8 apart, in the middle, rows 12 apart, padded 6. */

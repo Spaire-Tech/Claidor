@@ -4,12 +4,88 @@
 // (the address keeps it, `?agent=`), else the first in the sidebar's order
 // opens, the pins first (`WindowState.chooseFirst`).
 
-import { useCallback, useEffect, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react'
+import { t } from './l10n'
 import type { WebSession } from './session'
 import { ChatPane } from './window/ChatPane'
 import { Sidebar, listOrder } from './window/Sidebar'
-import { type Shown, ViewerContext, ViewerLayer } from './window/Viewers'
+import {
+  type SidebarSize,
+  dragTo,
+  keepSize,
+  readSize,
+  showsRail,
+  sidebarWidth,
+  toggled,
+} from './window/sidebarLayout'
 import { useWatched } from './window/useStore'
+import { type Shown, ViewerContext, ViewerLayer } from './window/Viewers'
+
+/** An Apple computer: its shortcuts take ⌘. */
+const apple =
+  typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform)
+
+/** The window's width, as it is resized. */
+function useWindowWidth(): number {
+  return useSyncExternalStore(
+    (changed) => {
+      window.addEventListener('resize', changed)
+      return () => window.removeEventListener('resize', changed)
+    },
+    () => window.innerWidth,
+  )
+}
+
+/**
+ * The sidebar's right edge, 12 wide over its hairline (`SidebarResizeEdge`):
+ * dragged, it widens, narrows or folds the sidebar; the pointer's place
+ * across the window is the sidebar's new width.
+ */
+function ResizeEdge({
+  left,
+  drag,
+  dragging,
+}: {
+  left: number
+  drag: (x: number) => void
+  dragging: (on: boolean) => void
+}) {
+  const held = useRef(false)
+  return (
+    <div
+      className="resize-edge"
+      style={{ left }}
+      role="separator"
+      aria-orientation="vertical"
+      aria-label={t('Resize sidebar')}
+      onPointerDown={(event) => {
+        if (event.button !== 0) return
+        event.preventDefault()
+        event.currentTarget.setPointerCapture(event.pointerId)
+        held.current = true
+        dragging(true)
+        drag(event.clientX)
+      }}
+      onPointerMove={(event) => {
+        if (held.current) drag(event.clientX)
+      }}
+      onPointerUp={() => {
+        held.current = false
+        dragging(false)
+      }}
+      onPointerCancel={() => {
+        held.current = false
+        dragging(false)
+      }}
+    />
+  )
+}
 
 function Splash() {
   return (
@@ -62,13 +138,45 @@ function MainWindow({ session }: { session: WebSession }) {
       window.removeEventListener('drop', refuse)
     }
   }, [])
+  // The sidebar's width, kept in this browser: its rail when folded or when the chat would be narrower than 424.
+  const windowWidth = useWindowWidth()
+  const [size, setSize] = useState<SidebarSize>(readSize)
+  const resize = useCallback((change: (now: SidebarSize) => SidebarSize) => {
+    setSize((now) => {
+      const next = change(now)
+      if (next !== now) keepSize(next)
+      return next
+    })
+  }, [])
+  const [resizing, setResizing] = useState(false)
+  const rail = showsRail(size, windowWidth)
+  const width = sidebarWidth(size, windowWidth)
+  // ⌘B (Control-B on Windows) folds the sidebar to its rail and opens it again, from a field too.
+  useEffect(() => {
+    const key = (event: KeyboardEvent) => {
+      const command = apple ? event.metaKey : event.ctrlKey
+      if (!command || event.metaKey === event.ctrlKey) return
+      if (event.shiftKey || event.altKey || event.key.toLowerCase() !== 'b')
+        return
+      event.preventDefault()
+      resize(toggled)
+    }
+    window.addEventListener('keydown', key)
+    return () => window.removeEventListener('keydown', key)
+  }, [resize])
   // A file's preview, or pictures and videos, over the window (`Viewers`), one at a time.
   const [viewer, setViewer] = useState<Shown>()
   const closeViewer = useCallback(() => setViewer(undefined), [])
   return (
     <ViewerContext.Provider value={setViewer}>
-      <div className="window">
-        <Sidebar store={store} open={shown} onOpen={setOpen} />
+      <div className={resizing ? 'window resizing' : 'window'}>
+        <Sidebar
+          store={store}
+          open={shown}
+          onOpen={setOpen}
+          rail={rail}
+          width={width}
+        />
         <main className="chat-area">
           {shown != null && (
             <ChatPane
@@ -79,6 +187,11 @@ function MainWindow({ session }: { session: WebSession }) {
             />
           )}
         </main>
+        <ResizeEdge
+          left={width - 7}
+          drag={(x) => resize((now) => dragTo(now, x, window.innerWidth))}
+          dragging={setResizing}
+        />
       </div>
       <ViewerLayer shown={viewer} store={store} close={closeViewer} />
     </ViewerContext.Provider>

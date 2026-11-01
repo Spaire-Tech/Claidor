@@ -9,10 +9,14 @@
 // several rows; Escape lets them go and Delete deletes them, after the
 // Mac's confirmation. A double click renames a row in place.
 //
+// Rows, pins and sections drag as on the Mac: a row onto the pins pins it,
+// into a section moves it; a pin onto another takes its place, onto the list
+// unpins it; a section goes above or below another. Folded, the sidebar is
+// its rail: the pictures alone.
+//
 // Still to come, each with its screen (docs/web-app/PROGRESS.md): search and
-// new chat in the head, the account and Connect apps in the foot, dragging
-// (pins, rows into sections, sections), the rail, the width dragged, Edit
-// Profile (with the agent's pane), Recover computer.
+// new chat in the head, the account and Connect apps in the foot (and the
+// rail's discs), Edit Profile (with the agent's pane), Recover computer.
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { listTime } from '../core/listTime'
@@ -122,6 +126,12 @@ function rowPreview(agent: Agent, store: AppStore, open: boolean): string {
 /** What a click on a row or a tile does: with ⌘ (Control on Windows) or ⇧ it picks, else it opens. */
 type RowClick = (id: string, event: React.MouseEvent) => void
 
+/** What makes a row, a tile or a section's header draggable. */
+type Dragging = Pick<
+  React.HTMLAttributes<HTMLElement>,
+  'draggable' | 'onDragStart' | 'onDragEnd'
+>
+
 /**
  * A row (`AgentRow`): the picture, the name, the title's tag, the time or
  * the unread dot, the last line. The open agent's row is the white card; a
@@ -139,6 +149,8 @@ export function AgentRow({
   onRename,
   onRenamed,
   onMenu,
+  rail = false,
+  drag,
 }: {
   agent: Agent
   agents: readonly Agent[]
@@ -151,7 +163,44 @@ export function AgentRow({
   onRename?: () => void
   onRenamed?: (name: string | undefined) => void
   onMenu?: (event: React.MouseEvent) => void
+  /** On the rail: the picture alone (36), unread or at work on its corner. */
+  rail?: boolean
+  drag?: Dragging
 }) {
+  const label = agent.hasUnread ? t`${agent.name}, Unread activity` : agent.name
+  if (rail) {
+    const dot = agent.hasUnread
+      ? 'unread'
+      : agent.isRunning
+        ? 'working'
+        : undefined
+    return (
+      <button
+        type="button"
+        className={
+          'agent-row rail' + (picked ? ' picked' : open ? ' open' : '')
+        }
+        onClick={onClick}
+        onContextMenu={onMenu}
+        aria-label={label}
+        aria-current={open ? 'true' : undefined}
+        {...drag}
+      >
+        <span className={dot ? 'agent-mark holed' : 'agent-mark'}>
+          <AgentMark agent={agent} agents={agents} size={36} />
+          {dot && (
+            <span
+              className={`working-dot ${dot}`}
+              style={{ left: 26, top: 26 }}
+            />
+          )}
+          {!dot && agent.isGroup && hasPicture(agent) && (
+            <GroupBadge offset={3} />
+          )}
+        </span>
+      </button>
+    )
+  }
   const titled = !agent.isGroup && agent.title !== ''
   const time =
     agent.hasUnread || renaming ? undefined : listTime(agent.lastActivityAt)
@@ -205,10 +254,9 @@ export function AgentRow({
         onRename?.()
       }}
       onContextMenu={onMenu}
-      aria-label={
-        agent.hasUnread ? t`${agent.name}, Unread activity` : agent.name
-      }
+      aria-label={label}
       aria-current={open ? 'true' : undefined}
+      {...drag}
     >
       {body}
     </button>
@@ -301,15 +349,20 @@ function PinTile({
   agents,
   open,
   picked,
+  lit,
   onClick,
   onMenu,
+  drag,
 }: {
   agent: Agent
   agents: readonly Agent[]
   open: boolean
   picked: boolean
+  /** A pin dragged over it would take its place. */
+  lit: boolean
   onClick: (event: React.MouseEvent) => void
   onMenu: (event: React.MouseEvent) => void
+  drag: Dragging
 }) {
   const dot = agent.hasUnread
     ? 'unread'
@@ -320,9 +373,13 @@ function PinTile({
   return (
     <button
       type="button"
-      className={'pin-tile' + (picked ? ' picked' : open ? ' open' : '')}
+      className={
+        'pin-tile' + (picked ? ' picked' : open ? ' open' : lit ? ' lit' : '')
+      }
+      data-id={agent.id}
       onClick={onClick}
       onContextMenu={onMenu}
+      {...drag}
       aria-label={
         agent.hasUnread ? t`${agent.name}, Unread activity` : agent.name
       }
@@ -376,6 +433,26 @@ interface Shown {
   fromBar?: boolean
 }
 
+/** What is being dragged: a row, a pin or a section's header. */
+interface Dragged {
+  kind: 'agent' | 'pin' | 'section'
+  id: string
+}
+
+/** What letting go over the list would do: unpin onto it, go into a section, or (a section) go above or below another. */
+type ListTarget =
+  | { kind: 'list' }
+  | { kind: 'section'; id: string }
+  | { kind: 'line'; id: string; edge: 'top' | 'bottom' }
+
+/** Over the pins: pin it (anywhere on the grid), or take a tile's place. */
+type PinTarget = { kind: 'grid' } | { kind: 'tile'; id: string }
+
+/** The sidebar's own kind of drag, so the message field never takes it as words or files. */
+const sidebarItem = 'application/x-simeon-sidebar'
+
+const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b)
+
 interface Asking {
   title: string
   message: string
@@ -390,10 +467,15 @@ export function Sidebar({
   store,
   open,
   onOpen,
+  rail = false,
+  width,
 }: {
   store: AppStore
   open?: string
   onOpen: (id: string) => void
+  /** Folded to its rail (88): the pictures alone. */
+  rail?: boolean
+  width?: number
 }) {
   useWatched(store)
   // Read again every 4 seconds while the list can't be read.
@@ -414,6 +496,9 @@ export function Sidebar({
   const [menu, setMenu] = useState<Shown>()
   const [asking, setAsking] = useState<Asking>()
   const menuClosed = useRef({ at: 0, fromBar: false })
+  const [dragging, setDragging] = useState<Dragged>()
+  const [listTarget, setListTarget] = useState<ListTarget>()
+  const [pinTarget, setPinTarget] = useState<PinTarget>()
 
   const visible = store.agents.filter((agent) => !agent.isHidden)
   const pins = store.pinned
@@ -683,6 +768,142 @@ export function Sidebar({
     return () => window.removeEventListener('keydown', listen)
   }, [])
 
+  // MARK: Dragging (`sidebar-dnd`)
+
+  const endDrag = () => {
+    setDragging(undefined)
+    setListTarget(undefined)
+    setPinTarget(undefined)
+  }
+
+  /** A row, a pin or a section's header that can be dragged. Nothing drags on the rail, which takes no drops. */
+  const dragFor = (kind: Dragged['kind'], id: string): Dragging | undefined =>
+    rail
+      ? undefined
+      : {
+          draggable: true,
+          onDragStart: (event) => {
+            event.dataTransfer.setData(sidebarItem, id)
+            event.dataTransfer.effectAllowed = 'move'
+            // The pins' zone appears once the drag is under way: changing the page as a drag starts ends it in Chromium.
+            setTimeout(() => setDragging({ kind, id }), 0)
+          },
+          onDragEnd: endDrag,
+        }
+
+  const under = (event: React.DragEvent, selector: string) =>
+    (event.target as Element | null)?.closest<HTMLElement>(selector)?.dataset.id
+
+  /** Over the list: a pin is unpinned (into the section under it, if any); a row goes into another section; a section goes above (dragged up) or below (dragged down) another. "Unassigned" stays last. */
+  const aimAtList = (event: React.DragEvent): ListTarget | undefined => {
+    if (!dragging) return undefined
+    const section = shown.find(
+      (one) => one.id === under(event, '.section-block'),
+    )
+    switch (dragging.kind) {
+      case 'pin':
+        return section ? { kind: 'section', id: section.id } : { kind: 'list' }
+      case 'agent':
+        if (!section || sectionIdOf(dragging.id, sections) === section.id)
+          return undefined
+        return { kind: 'section', id: section.id }
+      case 'section': {
+        if (!section || section.isUnassigned || section.id === dragging.id)
+          return undefined
+        const from = shown.findIndex((one) => one.id === dragging.id)
+        const to = shown.findIndex((one) => one.id === section.id)
+        if (from < 0 || to < 0) return undefined
+        return {
+          kind: 'line',
+          id: section.id,
+          edge: to < from ? 'top' : 'bottom',
+        }
+      }
+    }
+  }
+
+  /** Over the pins: a row is pinned; a pin takes the place of the tile it is let go on. */
+  const aimAtPins = (event: React.DragEvent): PinTarget | undefined => {
+    if (dragging?.kind === 'agent')
+      return pinIds.has(dragging.id) ? undefined : { kind: 'grid' }
+    if (dragging?.kind === 'pin') {
+      const tile = under(event, '.pin-tile')
+      return tile && tile !== dragging.id
+        ? { kind: 'tile', id: tile }
+        : undefined
+    }
+    return undefined
+  }
+
+  /** A drop zone's handlers: lit while a drop would land, the drop done on letting go. */
+  const zone = <Target,>(
+    aim: (event: React.DragEvent) => Target | undefined,
+    set: React.Dispatch<React.SetStateAction<Target | undefined>>,
+    drop: (target: Target, event: React.DragEvent) => void,
+  ) => {
+    // Entering each element and moving over it: lit while a drop would land.
+    const aimHere = (event: React.DragEvent) => {
+      if (!event.dataTransfer.types.includes(sidebarItem)) return
+      const target = aim(event)
+      set((now) => (same(now, target) ? now : target))
+      if (!target) return
+      event.preventDefault()
+      event.dataTransfer.dropEffect = 'move'
+    }
+    return {
+      onDragEnter: aimHere,
+      onDragOver: aimHere,
+      onDragLeave: (event: React.DragEvent) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null))
+          set(undefined)
+      },
+      onDrop: (event: React.DragEvent) => {
+        const target = aim(event)
+        endDrag()
+        if (!target) return
+        event.preventDefault()
+        drop(target, event)
+      },
+    }
+  }
+
+  const listZone = zone(aimAtList, setListTarget, (target) => {
+    if (!dragging) return
+    const id = dragging.id
+    if (dragging.kind === 'pin') {
+      void store.setPinned(id, false)
+      if (target.kind === 'section')
+        store.editSections((now) => assignAgents(now, [id], target.id))
+    } else if (dragging.kind === 'agent' && target.kind === 'section') {
+      // The picked rows go with it when it is one of them; pins stay where they are.
+      move(
+        picked.targets(id).filter((one) => !pinIds.has(one)),
+        target.id,
+      )
+    } else if (dragging.kind === 'section' && target.kind === 'line') {
+      store.editSections((now) =>
+        moveSection(now, id, target.id, target.edge === 'top'),
+      )
+    }
+  })
+
+  const pinZone = zone(aimAtPins, setPinTarget, (_target, event) => {
+    if (!dragging) return
+    const id = dragging.id
+    const place = pins.findIndex(
+      (agent) => agent.id === under(event, '.pin-tile'),
+    )
+    if (dragging.kind === 'agent')
+      void (async () => {
+        await store.setPinned(id, true)
+        if (place >= 0) await store.movePin(id, place)
+      })()
+    else if (dragging.kind === 'pin' && place >= 0)
+      void store.movePin(id, place)
+  })
+
+  // MARK: Rows and sections
+
   const row = (agent: Agent) => (
     <AgentRow
       key={agent.id}
@@ -691,22 +912,33 @@ export function Sidebar({
       open={open === agent.id}
       picked={picked.has(agent.id)}
       preview={rowPreview(agent, store, open === agent.id)}
-      renaming={renamingAgent === agent.id}
+      renaming={!rail && renamingAgent === agent.id}
       onClick={(event) => click(agent.id, event)}
-      onRename={() => setRenamingAgent(agent.id)}
+      onRename={rail ? undefined : () => setRenamingAgent(agent.id)}
       onRenamed={(name) => {
         setRenamingAgent(undefined)
         if (name != null) void store.renameAgent(agent.id, name)
       }}
       onMenu={showMenu(rowMenu(agent), menuNames.agent)}
+      rail={rail}
+      drag={dragFor('agent', agent.id)}
     />
   )
 
   const sectionBlock = (section: ShownSection) => {
     const renaming = renamingSection === section.id && !section.isUnassigned
     const count = section.isCollapsed ? section.agents.length : undefined
+    const lit = listTarget?.kind === 'section' && listTarget.id === section.id
+    const line =
+      listTarget?.kind === 'line' && listTarget.id === section.id
+        ? ` line-${listTarget.edge}`
+        : ''
     return (
-      <div key={section.id} className="section-block">
+      <div
+        key={section.id}
+        className={'section-block' + (lit ? ' lit' : '') + line}
+        data-id={section.id}
+      >
         {renaming ? (
           <div className="section-header renaming">
             <HeaderLine count={count} folded={section.isCollapsed}>
@@ -738,6 +970,7 @@ export function Sidebar({
                     menuNames.section,
                   )
             }
+            {...(section.isUnassigned ? {} : dragFor('section', section.id))}
           >
             <HeaderLine count={count} folded={section.isCollapsed}>
               {section.name}
@@ -773,10 +1006,63 @@ export function Sidebar({
       <Glyph name={glyph} />
     </button>
   )
+  const deleteButton = glyphButton(
+    'trash',
+    t`Delete ${picked.count} selected agents`,
+    () => confirmDelete([...picked.ids]),
+  )
+  const clearButton = glyphButton('xmark', t('Clear selection'), () =>
+    setSelection(picked.clear()),
+  )
+
+  /** The rail (88): the pins, a hairline, then the rows, or the open sections' rows with hairlines between. */
+  const railBody = () => {
+    const openSections = shown.filter(
+      (section) => !section.isCollapsed && section.agents.length > 0,
+    )
+    return (
+      <>
+        {pins.length > 0 && (
+          <div className="rail-pins">
+            {pins.map(row)}
+            <span className="rail-hairline" />
+          </div>
+        )}
+        {sections.length === 0 ? (
+          <div className="rows">{listed.map(row)}</div>
+        ) : (
+          <div className="sections">
+            {openSections.map((section, index) => (
+              <div key={section.id} className="rows">
+                {index > 0 && <span className="rail-hairline between" />}
+                {section.agents.map(row)}
+              </div>
+            ))}
+          </div>
+        )}
+      </>
+    )
+  }
+
+  const pinsLit = pinTarget?.kind === 'grid'
+  const draggingAgent = dragging?.kind === 'agent'
 
   return (
-    <nav className="sidebar">
-      {picked.isEmpty ? (
+    <nav
+      className={rail ? 'sidebar rail' : 'sidebar'}
+      style={width != null ? { width } : undefined}
+    >
+      {rail ? (
+        <>
+          <div className="sidebar-head" />
+          {!picked.isEmpty && (
+            <div className="rail-picked">
+              {deleteButton}
+              {clearButton}
+            </div>
+          )}
+        </>
+      ) : picked.isEmpty ? (
         <div className="sidebar-head" />
       ) : (
         // Rows picked (C11): the head is 44 high, the picked rows' buttons at its right.
@@ -799,77 +1085,129 @@ export function Sidebar({
                 })
               },
             )}
-          {glyphButton('trash', t`Delete ${picked.count} selected agents`, () =>
-            confirmDelete([...picked.ids]),
-          )}
-          {glyphButton('xmark', t('Clear selection'), () =>
-            setSelection(picked.clear()),
-          )}
+          {deleteButton}
+          {clearButton}
         </div>
       )}
       {store.rosterFailed &&
-        (store.agents.length === 0 ? (
+        (rail ? (
+          // The rail shows the glyph alone; its words are its tooltip.
+          store.agents.length === 0 && (
+            <div
+              className="rail-roster"
+              role="status"
+              title={
+                store.accessBlocked
+                  ? t('Your computer isn’t set up')
+                  : t('Can’t reach your computer')
+              }
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 16 16"
+                aria-hidden="true"
+              >
+                <path
+                  d="M2 3.5h12v8H2ZM6 14h4M8 11.5V14"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </div>
+          )
+        ) : store.agents.length === 0 ? (
           <RosterCard store={store} />
         ) : (
           <RosterLine store={store} />
         ))}
       <div className="agent-list">
-        {pins.length > 0 && (
-          <div
-            className="pin-grid"
-            role="group"
-            aria-label={t('Pinned agents')}
-          >
-            {pins.map((agent) => (
-              <PinTile
-                key={agent.id}
-                agent={agent}
-                agents={store.agents}
-                open={open === agent.id}
-                picked={picked.has(agent.id)}
-                onClick={(event) => click(agent.id, event)}
-                onMenu={showMenu(rowMenu(agent), menuNames.agent)}
-              />
-            ))}
-          </div>
-        )}
-        <div className="list-body">
-          {sections.length === 0 ? (
-            <div className="rows">{listed.map(row)}</div>
-          ) : (
-            <div className="sections">{shown.map(sectionBlock)}</div>
-          )}
-          {hiddenCount > 0 && (
-            <button
-              type="button"
-              className="section-header hidden-foot"
-              aria-label={t`Hidden Agents, ${hiddenCount}`}
-              onClick={() => setShowsHidden(true)}
+        {rail ? (
+          railBody()
+        ) : (
+          <>
+            {pins.length > 0 ? (
+              <div
+                className={pinsLit ? 'pin-grid lit' : 'pin-grid'}
+                role="group"
+                aria-label={t('Pinned agents')}
+                {...pinZone}
+              >
+                {pins.map((agent) => (
+                  <PinTile
+                    key={agent.id}
+                    agent={agent}
+                    agents={store.agents}
+                    open={open === agent.id}
+                    picked={picked.has(agent.id)}
+                    lit={
+                      pinTarget?.kind === 'tile' && pinTarget.id === agent.id
+                    }
+                    onClick={(event) => click(agent.id, event)}
+                    onMenu={showMenu(rowMenu(agent), menuNames.agent)}
+                    drag={dragFor('pin', agent.id)!}
+                  />
+                ))}
+              </div>
+            ) : (
+              draggingAgent && (
+                // Nothing pinned yet: while a row is dragged, a dashed zone to pin it.
+                <div
+                  className={pinsLit ? 'pin-zone lit' : 'pin-zone'}
+                  aria-label={t('Pin drop zone')}
+                  {...pinZone}
+                >
+                  {t('Drag here to pin')}
+                </div>
+              )
+            )}
+            <div
+              className={
+                listTarget?.kind === 'list' ? 'list-body lit' : 'list-body'
+              }
+              {...listZone}
             >
-              <HeaderLine count={hiddenCount} folded>
-                {t('Hidden Agents')}
-              </HeaderLine>
-            </button>
-          )}
-          {store.hasReachedBox && store.agents.length === 0 ? (
-            <div className="empty-lines">{t('No saved agents yet.')}</div>
-          ) : (
-            listed.length === 0 &&
-            pins.length === 0 &&
-            hiddenCount > 0 && (
-              <div className="empty-lines">
-                <span>{t('All bots are hidden')}</span>
+              {sections.length === 0 ? (
+                <div className="rows">{listed.map(row)}</div>
+              ) : (
+                <div className="sections">{shown.map(sectionBlock)}</div>
+              )}
+              {hiddenCount > 0 && (
                 <button
                   type="button"
-                  className="link-button"
+                  className="section-header hidden-foot"
+                  aria-label={t`Hidden Agents, ${hiddenCount}`}
                   onClick={() => setShowsHidden(true)}
                 >
-                  {t('Show Hidden Agents')}
+                  <HeaderLine count={hiddenCount} folded>
+                    {t('Hidden Agents')}
+                  </HeaderLine>
                 </button>
-              </div>
-            )
-          )}
-        </div>
+              )}
+              {store.hasReachedBox && store.agents.length === 0 ? (
+                <div className="empty-lines">{t('No saved agents yet.')}</div>
+              ) : (
+                listed.length === 0 &&
+                pins.length === 0 &&
+                hiddenCount > 0 && (
+                  <div className="empty-lines">
+                    <span>{t('All bots are hidden')}</span>
+                    <button
+                      type="button"
+                      className="link-button"
+                      onClick={() => setShowsHidden(true)}
+                    >
+                      {t('Show Hidden Agents')}
+                    </button>
+                  </div>
+                )
+              )}
+            </div>
+          </>
+        )}
       </div>
       {menu && (
         <ContextMenu

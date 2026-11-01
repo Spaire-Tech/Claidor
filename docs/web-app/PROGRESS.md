@@ -15,7 +15,7 @@ file and the code disagree, the code is right and this file is fixed.
 |---|---|
 | 0. The audit | Done, 1 November 2026 |
 | 1. The base: the server and the computer, signing in, the window | Done, 1 November 2026 (1a to 1d). Carried to step 2: the first run for a new account and the access cover |
-| 2. The sidebar and the chat | In progress: 2a (the chat's core, and the chat on screen) done; 2b (a message's actions, find, the working line, names in colour, link icons, the emoji picker) done; 2c part 1 (file cards, pictures from the computer, link cards) part 2 (the preview: text and code, Markdown, JSON, tables) and part 3a (pictures and videos full screen), part 3b (PDF, Word, sound) and part 3c (Excel) done; 2e (the message field's own parts: attaching files, the ":" emoji list, "@", "/" and "#", dictation) done; 2f part 1 (the sidebar's pins, sections, several rows picked, its menus, renaming, hiding, Hidden Agents, deleting) done. Next: 2f part 2 (dragging, the rail, the width dragged, folding the sidebar), then the first run for a new account and the access cover |
+| 2. The sidebar and the chat | In progress: 2a (the chat's core, and the chat on screen) done; 2b (a message's actions, find, the working line, names in colour, link icons, the emoji picker) done; 2c part 1 (file cards, pictures from the computer, link cards) part 2 (the preview: text and code, Markdown, JSON, tables) and part 3a (pictures and videos full screen), part 3b (PDF, Word, sound) and part 3c (Excel) done; 2e (the message field's own parts: attaching files, the ":" emoji list, "@", "/" and "#", dictation) done; 2f (the sidebar: pins, sections, several rows picked, its menus, renaming, hiding, Hidden Agents, deleting, dragging, the rail, the width) done. Next: the first run for a new account and the access cover, which end step 2. The sidebar's head and foot (search, new chat, the account, Connect apps) come with their screens in step 4 |
 | 3. The cards | Not started |
 | 4. The agent's pane, search, new chat, the org chart, starter packs | Not started |
 | 5. The computer and calls | Not started |
@@ -53,6 +53,8 @@ file and the code disagree, the code is right and this file is fixed.
 | 1 November 2026 | Several rows are picked with ⌘-click on a Mac and Control-click on Windows and Linux (each system's own way), and ⇧-click. Control-Tab, which walks the Mac's rows, is left out in a browser, which switches tabs with it; the Windows app (step 7) can take it back | The session |
 | 1 November 2026 | The row's menu leaves out Edit Profile until the agent's pane (step 4), so it never offers what does nothing (as "/" does) | The session |
 | 1 November 2026 | The confirmations and alerts are the window's own, drawn as the Mac's (the mark, the title and words, Cancel and Delete in red), not the browser's `confirm()`, which can't make Delete red, says the site's address over it, and stops the page | The session |
+| 1 November 2026 | The sidebar's width and whether it is folded are kept in the browser under the Mac's names (`simeon.sidebar.width.320`, `simeon.sidebar.collapsed`), as the Mac keeps them on each Mac: each computer its own. ⌘B on a Mac, Control-B on Windows and Linux. The window is never narrower than 512 (the rail and the chat's 424), as the Mac's | The session |
+| 1 November 2026 | Rows, pins and sections are dragged with the browser's own dragging, in a kind of their own, so the message field never takes a dragged row as words or files | The session |
 
 ## Open questions
 
@@ -81,6 +83,65 @@ For the founder, each to be answered before the step that needs it:
 ## Log
 
 Newest first.
+
+### 1 November 2026: step 2f, part 2, dragging, the rail and the width
+
+- Dragging (`Sidebar.tsx`, the Mac's `ListDrop` and `PinDrop`):
+  - a row onto the pins pins it, at the tile it is let go on; with nothing
+    pinned, a dashed zone 104 high says "Drag here to pin" while a row is
+    dragged;
+  - a pin onto another takes its place; onto the list it is unpinned, into
+    the section it is let go on, if any;
+  - a row onto another section moves it there, with the other picked rows
+    when it is one of them (pins stay where they are); its own section
+    takes nothing;
+  - a section's header onto another puts it above (dragged up) or below
+    (dragged down), a hairline showing where; "Unassigned" stays last;
+  - where a drop would land greys (the list, a section, the pins, a tile).
+- The rail (88): the pictures alone (36 in 54), unread blue and at work
+  green on the corner, the pins and then a hairline, hairlines between the
+  open sections; picked rows' Delete and Clear under the head; the roster's
+  trouble as a glyph with its words as the tooltip.
+- `src/window/sidebarLayout.ts` (the Mac's `SidebarLayout`) with its tests:
+  320 at first, the edge dragged between 240 and 400 and never leaving the
+  chat under 424; under 210 it folds, and from the rail it opens again
+  from 220; the rail by itself while the chat would be narrower than 424;
+  ⌘B (Control-B) folds and opens it. Kept in the browser.
+- `App.tsx`: the edge (12 wide over the hairline), the width as the window
+  is resized, ⌘B; folding and opening slide over 0.2 s on the window's
+  curve, and the width follows the pointer while dragged.
+- **Decisions:** in the table above (the width kept in the browser, ⌘B or
+  Control-B, the window's 512; the browser's own dragging).
+- **Checked:** in Chromium against the stand-in computer
+  (`drag-check.cjs` in the session's scratchpad), light and dark, then
+  French:
+  - Theo onto the empty pins: the dashed zone, lit, 104 high; pinned and
+    written. Nova onto Theo's tile: the grid lit, pinned first. Nova's tile
+    onto Theo's: Theo lit; their places changed and written;
+  - Nova's tile onto Work: Work lit; unpinned and in Work. Scout onto
+    Work: lit, moved. Iris onto her own Work: nothing lit;
+  - Clients' header dragged down onto Work: the hairline under Work; then
+    Work, Clients, Unassigned, written;
+  - the message field empty after every drag;
+  - Control-B: the rail (88), the pins, the hairlines, the unread dot
+    blue; kept; Control-B again: 320;
+  - the edge: 380, held at 400, held at 240, folded under 210, open again
+    at 300; the width kept;
+  - a window 700 wide: the rail by itself, the chat 612; back at 1280: open;
+  - a row picked on the rail: Delete and Clear under the head.
+  - Part 1's check again on this build: every step as before. No page
+    errors. The 226 tests, typecheck, lint, the words', the brands' and the
+    build's checks, `check_names.py`, `check_translations.py`.
+  - Found while checking: Chromium's emulated drag (the one Playwright
+    drives) sends `dragover` once per drag, so the highlights are also set
+    on `dragenter`, which a browser sends at each element crossed.
+- **Not checked:** dragging with a real mouse and a trackpad; Safari and
+  Firefox (no Firefox in the session; Firefox has been reported not to
+  drag a `<button>`, which rows and tiles are: to be tried there, and the
+  rows changed to another element if so); the Windows app's keys.
+- **Next:** the first run for a new account and the access cover, which end
+  step 2. The sidebar's head and foot (search, new chat, the account and
+  Connect apps, and the rail's discs) come with their screens in step 4.
 
 ### 1 November 2026: step 2f, part 1, the sidebar's pins, sections, menus and picked rows
 
