@@ -930,6 +930,32 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .film-play svg{width:.46em;height:.52em;flex:none}
 .film-play:focus-visible{outline:2px solid #fff;outline-offset:6px;border-radius:8px}
 .film-box.on::after,.film-box.on .film-play{opacity:0;pointer-events:none}
+/* The film's own controls, as Apple's film players draw them (the founder, 1 November 2026: "more Apple like", not the
+   browser's): one dark glass pill floating over the foot of the film, with play or pause, the time gone, a thin
+   scrubber, the time left, sound and full screen. It shows when the film starts, on a move or a tap, and while paused;
+   it fades out after a few seconds of playing, with the pointer. A click on the picture plays or pauses it. */
+.film-box video{cursor:pointer}
+.film-box.on.idle,.film-box.on.idle video{cursor:none}
+.film-bar{position:absolute;left:50%;bottom:clamp(14px,3.2%,28px);z-index:2;display:flex;align-items:center;gap:clamp(6px,.9*var(--vw,1vw),12px);width:min(620px,calc(100% - 28px));height:48px;padding:0 10px;transform:translate(-50%,8px);border-radius:999px;color:#fff;
+  background:rgba(28,28,30,.48);-webkit-backdrop-filter:blur(24px) saturate(1.6);backdrop-filter:blur(24px) saturate(1.6);box-shadow:inset 0 0 0 .5px rgba(255,255,255,.22),0 10px 30px -12px rgba(0,0,0,.45);
+  opacity:0;pointer-events:none;transition:opacity .35s,transform .35s cubic-bezier(.2,.8,.2,1);font-size:13px;font-variant-numeric:tabular-nums;letter-spacing:0}
+.film-box.on .film-bar{opacity:1;pointer-events:auto;transform:translate(-50%,0)}
+.film-box.on.idle .film-bar{opacity:0;pointer-events:none;transform:translate(-50%,8px)}
+.film-bar button{flex:none;display:grid;place-items:center;width:32px;height:32px;padding:0;border:0;border-radius:50%;background:none;color:inherit;cursor:pointer;transition:background .2s}
+.film-bar button:hover{background:rgba(255,255,255,.14)}
+.film-bar button:focus-visible{outline:2px solid #fff;outline-offset:1px}
+.film-bar svg{width:18px;height:18px;fill:currentColor}
+.film-bar .ftime{flex:none;min-width:36px;text-align:center;opacity:.85}
+.film-seek{position:relative;flex:1;height:28px;display:flex;align-items:center;cursor:pointer;touch-action:none}
+.film-seek i{position:absolute;left:0;right:0;height:4px;border-radius:2px;background:rgba(255,255,255,.28);transition:height .15s}
+.film-seek b{position:absolute;left:0;height:4px;border-radius:2px;background:#fff;transition:height .15s}
+.film-seek:hover i,.film-seek:hover b,.film-seek.drag i,.film-seek.drag b{height:6px}
+.film-seek:focus-visible{outline:2px solid #fff;outline-offset:2px;border-radius:4px}
+.film-bar [data-icon] svg{display:none}
+.film-bar [data-icon="play"] .i-play,.film-bar [data-icon="pause"] .i-pause,.film-bar [data-icon="on"] .i-on,.film-bar [data-icon="off"] .i-off,.film-bar [data-icon="in"] .i-in,.film-bar [data-icon="out"] .i-out{display:block}
+.film-box:fullscreen{width:100%;border-radius:0;background:#000}
+.film-box:fullscreen video{object-fit:contain}
+@media (max-width:734px){.film-bar{height:42px;gap:4px;padding:0 6px}.film-bar .ftime{min-width:32px;font-size:12px}.film-bar .fvol{display:none}}
 /* a little narrower than the page on a computer (the founder, 1 November 2026: "a bit too wide"); the whole width on a phone */
 @media (max-width:734px){.film-box{width:100%}}
 
@@ -1131,13 +1157,60 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
     <div class="film-box">
       <video preload="none" playsinline poster="img/film-poster.webp?v=798727ca" src="video/what-is-simeon.mp4?v=d8dcc452"></video>
       <button type="button" class="film-play" aria-label="Play the film"><svg viewBox="0 0 10 11" aria-hidden="true"><path d="M0 0v11l10-5.5z" fill="currentColor"/></svg>Play</button>
+      <div class="film-bar" role="group" aria-label="Film controls">
+        <button type="button" class="fpp" data-icon="pause" aria-label="Pause"><svg class="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.6-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg><svg class="i-pause" viewBox="0 0 24 24"><rect x="6.5" y="5" width="3.6" height="14" rx="1.2"/><rect x="13.9" y="5" width="3.6" height="14" rx="1.2"/></svg></button>
+        <span class="ftime fnow">0:00</span>
+        <div class="film-seek" role="slider" tabindex="0" aria-label="Seek" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i></i><b></b></div>
+        <span class="ftime fleft">-0:00</span>
+        <button type="button" class="fvol" data-icon="on" aria-label="Mute"><svg class="i-on" viewBox="0 0 24 24"><path d="M4 9.5h3.2L12 5.6v12.8l-4.8-3.9H4a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1z"/><path d="M15.2 8.8a4.5 4.5 0 0 1 0 6.4M17.8 6.2a8.2 8.2 0 0 1 0 11.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><svg class="i-off" viewBox="0 0 24 24"><path d="M4 9.5h3.2L12 5.6v12.8l-4.8-3.9H4a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1z"/><path d="m15.5 9.5 5 5m0-5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+        <button type="button" class="ffs" data-icon="in" aria-label="Full screen"><svg class="i-in" viewBox="0 0 24 24"><path d="M4.5 9V5.5a1 1 0 0 1 1-1H9M15 4.5h3.5a1 1 0 0 1 1 1V9M19.5 15v3.5a1 1 0 0 1-1 1H15M9 19.5H5.5a1 1 0 0 1-1-1V15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg><svg class="i-out" viewBox="0 0 24 24"><path d="M9 4.5V8a1 1 0 0 1-1 1H4.5M19.5 9H16a1 1 0 0 1-1-1V4.5M15 19.5V16a1 1 0 0 1 1-1h3.5M4.5 15H8a1 1 0 0 1 1 1v3.5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></button>
+      </div>
     </div>
   </div>
   <script>
     for (const box of document.querySelectorAll('.film-box')) {
       const v = box.querySelector('video'), b = box.querySelector('.film-play');
-      b.addEventListener('click', () => { box.classList.add('on'); v.controls = true; v.play(); });
-      v.addEventListener('ended', () => { box.classList.remove('on'); v.controls = false; v.load(); });
+      const bar = box.querySelector('.film-bar'), pp = bar.querySelector('.fpp'), vol = bar.querySelector('.fvol'), fs = bar.querySelector('.ffs');
+      const seek = bar.querySelector('.film-seek'), fill = seek.querySelector('b'), now = bar.querySelector('.fnow'), left = bar.querySelector('.fleft');
+      const clock = s => { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+      let idle;
+      // the controls show, then fade after three seconds of playing undisturbed
+      const wake = () => { box.classList.remove('idle'); clearTimeout(idle); if (!v.paused) idle = setTimeout(() => box.classList.add('idle'), 3000); };
+      const draw = () => {
+        const d = v.duration || 0, p = d ? v.currentTime / d : 0;
+        fill.style.width = (p * 100) + '%'; seek.setAttribute('aria-valuenow', Math.round(p * 100));
+        now.textContent = clock(v.currentTime); left.textContent = '-' + clock(d - v.currentTime);
+      };
+      const toggle = () => v.paused ? v.play() : v.pause();
+      b.addEventListener('click', () => { box.classList.add('on'); v.play(); wake(); });
+      v.addEventListener('click', () => { toggle(); wake(); });
+      pp.addEventListener('click', () => { toggle(); wake(); });
+      v.addEventListener('play', () => { pp.dataset.icon = 'pause'; pp.setAttribute('aria-label', 'Pause'); wake(); });
+      v.addEventListener('pause', () => { pp.dataset.icon = 'play'; pp.setAttribute('aria-label', 'Play'); wake(); });
+      v.addEventListener('timeupdate', draw); v.addEventListener('loadedmetadata', draw);
+      vol.addEventListener('click', () => { v.muted = !v.muted; vol.dataset.icon = v.muted ? 'off' : 'on'; vol.setAttribute('aria-label', v.muted ? 'Unmute' : 'Mute'); wake(); });
+      fs.addEventListener('click', () => {
+        if (document.fullscreenElement) document.exitFullscreen();
+        else if (box.requestFullscreen) box.requestFullscreen();
+        else if (v.webkitEnterFullscreen) v.webkitEnterFullscreen(); // an iPhone plays it in its own full-screen player
+        wake();
+      });
+      document.addEventListener('fullscreenchange', () => { const on = document.fullscreenElement === box; fs.dataset.icon = on ? 'out' : 'in'; fs.setAttribute('aria-label', on ? 'Exit full screen' : 'Full screen'); });
+      // the scrubber: press or drag along it; the arrow keys step five seconds
+      const to = e => { const r = seek.getBoundingClientRect(); v.currentTime = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)) * (v.duration || 0); draw(); };
+      seek.addEventListener('pointerdown', e => { seek.setPointerCapture(e.pointerId); seek.classList.add('drag'); to(e); wake(); });
+      seek.addEventListener('pointermove', e => { if (seek.classList.contains('drag')) to(e); });
+      seek.addEventListener('pointerup', () => seek.classList.remove('drag'));
+      box.addEventListener('pointermove', wake);
+      box.addEventListener('keydown', e => {
+        if (!box.classList.contains('on')) return;
+        if (e.key === ' ' && e.target === v) { e.preventDefault(); toggle(); }
+        else if (e.key === 'ArrowRight' && e.target === seek) v.currentTime = Math.min(v.duration, v.currentTime + 5);
+        else if (e.key === 'ArrowLeft' && e.target === seek) v.currentTime = Math.max(0, v.currentTime - 5);
+        else return;
+        wake();
+      });
+      v.addEventListener('ended', () => { if (document.fullscreenElement) document.exitFullscreen(); box.classList.remove('on', 'idle'); v.load(); });
     }
   </script>
 </section>
