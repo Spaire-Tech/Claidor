@@ -66,6 +66,14 @@ skills, connectors, avatars, approvals). Running the box servers:
   familiar "you" ("tu", "du"…; `docs/localization.md`). The person's language travels to the server
   (`Accept-Language`, `users.language`) and the agents (`userLanguage`). Run
   `python3 scripts/check_translations.py` with `check_names.py`.
+- **The web and Windows app** (from 1 November 2026) is the Mac app
+  translated into our own web code, wrapped in Electron for Windows. The
+  plan and the checklist are `docs/web-app/README.md`, read from the code
+  by `python3 scripts/web_app_inventory.py` (run it again when the Mac app
+  or the shared core changes). Every change to it updates
+  `docs/web-app/PROGRESS.md` in the same pull request: what was done, what
+  was and was not checked, decisions and who made them, what comes next.
+  Read both before any work on it; nothing about it is kept in memory.
 - **Server code:** never call `session.commit()` in request code (the session
   commits at the end of the request; see `server/CLAUDE.md`).
 - **Git:** no model names in commits or pull requests. PR bodies follow

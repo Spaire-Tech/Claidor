@@ -5,7 +5,8 @@ projet … my mission for you is to audit the mac app, then the web app. and
 see whats missing." Then: "How do we make sure we dont miss anything".
 
 This is that audit. It is the checklist the web app is built against, and
-the Windows app after it.
+the Windows app after it. Where the work stands, every decision and the
+open questions are in `PROGRESS.md`, updated with every change.
 
 ## The plan it rests on
 
