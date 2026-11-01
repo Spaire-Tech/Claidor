@@ -599,3 +599,33 @@ describe('the server’s copy and the messages it keeps', () => {
     expect(store.waitingToSend).toBe(true)
   })
 })
+
+describe('a reaction', () => {
+  it('shows at once, and a refusal takes it back', async () => {
+    const { backend, store } = await attached()
+    backend.lines = [
+      { id: 'm1', kind: 'message', role: 'assistant', content: 'Done.' },
+    ]
+    await store.open('theo')
+    const shownWhenSent: string[][] = []
+    backend.beforeAnswer = (method) => {
+      if (method === 'reactToMessage')
+        shownWhenSent.push(store.transcripts.theo?.[0]?.myReactions ?? [])
+    }
+    await store.react('👍', 'm1', 'theo')
+    expect(shownWhenSent).toEqual([['👍']])
+    expect(store.transcripts.theo?.[0]?.myReactions).toEqual(['👍'])
+    expect(
+      backend.commands
+        .filter((c) => c.method === 'reactToMessage')
+        .map((c) => c.args),
+    ).toEqual([{ entryId: 'm1', emoji: '👍', agentId: 'theo' }])
+    const row = store.rows('theo')[0]
+    expect(row?.kind === 'bubble' && row.bubble.myReactions).toEqual(['👍'])
+
+    backend.refusedCommands.add('reactToMessage')
+    await store.react('❤️', 'm1', 'theo')
+    expect(store.transcripts.theo?.[0]?.myReactions).toEqual(['👍'])
+    expect(store.problem).toBeDefined()
+  })
+})

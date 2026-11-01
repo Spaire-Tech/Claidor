@@ -265,10 +265,17 @@ export class FakeBackend implements AgentBackend {
     if (found === undefined) throw new SimeonAPIError('No such path.', 404)
     return found
   }
+  /** The commands the computer refuses. */
+  refusedCommands = new Set<string>()
   async command(method: string, args: JSONValue = {}): Promise<JSONValue> {
     this.commands.push({ method, args })
+    this.beforeAnswer?.(method)
+    if (this.refusedCommands.has(method))
+      throw new GatewayError("The computer didn't answer.", true)
     return {}
   }
+  /** Told of each command before it is answered (what the chat showed then). */
+  beforeAnswer?: (method: string) => void
   async transcriptPage(
     agentId: string,
     before?: number,

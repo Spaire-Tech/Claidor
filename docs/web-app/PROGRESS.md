@@ -15,7 +15,7 @@ file and the code disagree, the code is right and this file is fixed.
 |---|---|
 | 0. The audit | Done, 1 November 2026 |
 | 1. The base: the server and the computer, signing in, the window | Done, 1 November 2026 (1a to 1d). Carried to step 2: the first run for a new account and the access cover |
-| 2. The sidebar and the chat | In progress: 2a (the chat's core, and the chat on screen) done; 2b next |
+| 2. The sidebar and the chat | In progress: 2a (the chat's core, and the chat on screen) done; 2b part 1 (a message's actions) done; 2b part 2 next |
 | 3. The cards | Not started |
 | 4. The agent's pane, search, new chat, the org chart, starter packs | Not started |
 | 5. The computer and calls | Not started |
@@ -47,9 +47,13 @@ For the founder, each to be answered before the step that needs it:
   since pull request #516 merged: the Vercel project `simeon` (the one
   that serves `clients/apps/web`) has not published it. Its previews say
   "Canceled by Ignored Build Step", a setting kept in Vercel, not in the
-  repository. Needed before anything of the new app can be checked live:
-  the founder to open the project's deployment for #516 and say whether it
-  was ignored, failed or is ready.
+  repository. Measured 1 November 2026: the scripts `app.simeonlabs.com`
+  serves were built from commit `982cd4527` (pull request #480, 29 October
+  2026), so nothing merged since has reached it, the website's own changes
+  included (#490, #501, #516 onward). Needed before anything of the new
+  app can be checked live: the founder to open the project's Deployments
+  in Vercel and say whether the newer ones were ignored, failed or are
+  waiting to be promoted.
 
 - **A Windows code-signing certificate.** An unsigned installer makes
   Windows warn people before it runs (SmartScreen). Simeon Labs needs a
@@ -62,6 +66,83 @@ For the founder, each to be answered before the step that needs it:
 ## Log
 
 Newest first.
+
+### 1 November 2026: step 2b, part 1, a message's actions
+
+- `src/window/MessageActions.tsx` (`MessageActions.swift`, `Tapback.swift`):
+  - **The hover bar** (`HoverBar`): under the pointer, beside the message, 6
+    from it and level with its middle; Add reaction, Reply and More (24, 8
+    round), Add reaction nearest the message, so on the person's side the
+    order runs More, Reply, Add reaction. It stays while its menu or capsule
+    is open.
+  - **The reactions' capsule** (`Tapback`): glass, over the message's outer
+    corner (its bottom 2 above the message, its outer edge 8 past it), under
+    the message when there is no room above; the six quick reactions, the
+    person's own on the settings blue, larger under the pointer; it grows out
+    of its corner. A pick shows on the message at once and goes to the
+    computer (`reactToMessage`); refused, it is taken back. A click
+    elsewhere, Escape, the wheel or the window going behind closes it; the
+    same button pressed again within half a second closes it and opens
+    nothing (`closedByClick`).
+  - **The menus** (`MessageMenu`): More holds Start a thread and Copy, under
+    its button (4 below, its left edge on the button's, its right edge for the
+    person's message); the right click holds Add reaction, a line, Reply,
+    Start a thread and Copy, at the pointer. No thread is started inside one.
+    The arrows choose an item, Return picks it.
+  - **Replying** (`ReplyPill`): the message's line (72 characters) over the
+    field in glass, with Cancel reply; the field says "Reply…" (or "Reply to
+    file…", "to link…", "to attachment…") and takes the keys; Escape lets go.
+    The message goes as an answer to it (`replyToId`), and the line goes.
+- `src/core/store.ts`: `command` (a command to the computer, its failure said
+  once) and `react` (`AppStore.react`); `chatStore.test.ts` checks a
+  reaction shows at once, goes with its message, emoji and agent, and is
+  taken back when refused.
+- `src/window/ChatPane.tsx`: the reactions under a message are buttons, which
+  add the person's own or take it back. `src/window/Composer.tsx`: the reply's
+  line, its words and Escape.
+- `src/window/classes.ts`: class lists built from their parts. **A fault found
+  on screen:** the formatter's Tailwind plugin (`prettier-plugin-tailwindcss`,
+  from the workspace) trims the space before a class added inside a
+  `className` template, so `"bubble theirs" + " short"` had become
+  `bubble theirsshort` in 2a (a one-character message was not centred) and
+  the row lit by a quote's jump was never lit. Both fixed with it.
+- **Decision (the session):** a right click on a link keeps the browser's own
+  menu (open in a new tab, copy the address); everywhere else on a message it
+  is the message's menu, as on the Mac. A Mac takes the click there too, but
+  a browser's link menu is what people use a link with.
+- **As the Mac does:** a refused reaction is taken back and nothing else is
+  said on screen (the Mac's window does not show the store's `problem`).
+- **Not in this part:** More emoji (the capsule's seventh cell) and the full
+  picker (`EmojiPopover`), find (⌘F), the agent's working line, names in their
+  colours and pills, a link's site icon, Attach and the files (2b, part 2
+  and after); the menus of two agents' messages and of a call's lines (only
+  Copy), which come with those views.
+- **Checked:** in Chromium, the built app against a stand-in server and
+  computer (`actions-check.cjs` in the session's scratchpad), light and dark:
+  the bar under the pointer, 6 from the message and level with its middle,
+  kept when the pointer moves onto it; the capsule 8 past and 2 above the
+  message, its six reactions; ❤️ picked showed at once on the message as the
+  person's own and reached `reactToMessage` with `{entryId, emoji,
+  agentId}`; a pill of the person's own clicked took it back; the person's
+  bar on the left in its order, More's menu 4 under the button with its right
+  edge on the button's, the menu taking the keys and the arrows choosing; More
+  pressed again closed it; the right click's menu in its order with its line;
+  Escape closed it; Copy put the message's words on the clipboard; Add
+  reaction from the menu opened the capsule over the message; Reply showed the
+  line and "Reply…" with the keys in the field, Escape let go; the bar's
+  Reply and a send reached `sendPrompt` with `replyToId` and the quote showed
+  over the sent message; Start a thread opened the thread with the keys in its
+  field and no Start a thread in its menus; a link's right click left to the
+  browser; a refused reaction taken back. French: the menus, the field, the
+  labels in "tu". The 149 tests, typecheck, lint, the words' and the build's
+  checks, `check_translations.py`, `check_names.py`. The inventory counts 153
+  strings the new web app shows.
+- **Not checked:** against the real server and a real computer (the address
+  is not live yet; see Open questions); a trackpad's scroll closing the
+  capsule (the wheel event is the same in Chromium, not tried on a trackpad).
+- Pull request #523.
+- **Next:** step 2b, part 2: find (⌘F), the agent's working line, names in
+  their colours and pills, a link's site icon, More emoji.
 
 ### 1 November 2026: step 2a, part 2, the chat on screen
 

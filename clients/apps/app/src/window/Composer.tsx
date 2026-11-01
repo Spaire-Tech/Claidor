@@ -6,14 +6,17 @@
 // send's error. Return sends, Shift-Return starts a new line, and what is
 // typed is kept per chat (and per thread).
 //
-// Still to come, each with its part (docs/web-app/PROGRESS.md): replying to
-// a message with its line over the field (2b, with the message's hover bar),
-// Attach and the files (2b), the microphone and dictation, "@", "/" and "#"
-// (2e), the access notice and the credits line (step 6).
+// The message being answered sits over the field (`ReplyPill`), the field
+// saying what it answers; Escape lets go of it.
+//
+// Still to come, each with its part (docs/web-app/PROGRESS.md): Attach and
+// the files (2b), the microphone and dictation, "@", "/" and "#" (2e), the
+// access notice and the credits line (step 6).
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { type AppStore, draftScope } from '../core/store'
 import { t } from '../l10n'
+import { type Reply, ReplyPill } from './MessageActions'
 import { useWatched } from './useStore'
 
 /** Six lines of 20, then the words scroll. */
@@ -24,12 +27,19 @@ export function Composer({
   agentId,
   name,
   threadRoot,
+  reply,
+  onCancelReply,
+  focusKey,
   onHeight,
 }: {
   store: AppStore
   agentId: string
   name: string
   threadRoot?: string
+  reply?: Reply
+  onCancelReply: () => void
+  /** Bumped when the field should take the keys: a reply chosen, a thread started. */
+  focusKey: number
   onHeight: (height: number) => void
 }) {
   useWatched(store)
@@ -43,6 +53,11 @@ export function Composer({
     setWords(store.drafts[scope] ?? '')
     field.current?.focus()
   }, [scope, store])
+
+  // A reply chosen, or a thread started: the keys come here.
+  useEffect(() => {
+    if (focusKey > 0) field.current?.focus()
+  }, [focusKey])
 
   // A message canceled before it went comes back into the field it came from, when that field is empty.
   const canceled = store.canceledDraft
@@ -81,10 +96,13 @@ export function Composer({
   const send = () => {
     const message = words.trim()
     if (message === '') return
+    // The message answered, or the thread's first; in a thread, it stays there.
+    const answering = reply?.id ?? threadRoot
+    onCancelReply()
     setWords('')
     store.setDraft('', scope)
     void store.send(message, agentId, {
-      replyTo: threadRoot,
+      replyTo: answering,
       inThread: threadRoot != null,
     })
   }
@@ -96,13 +114,14 @@ export function Composer({
           {notice.text}
         </div>
       )}
+      {reply && <ReplyPill reply={reply} cancel={onCancelReply} />}
       <div className="field-box" onClick={() => field.current?.focus()}>
         <textarea
           ref={field}
           className="field"
           rows={1}
           value={words}
-          placeholder={t`Message ${name}`}
+          placeholder={reply?.placeholder ?? t`Message ${name}`}
           aria-label={t`Message ${name}`}
           onChange={(event) => {
             setWords(event.target.value)
@@ -111,6 +130,12 @@ export function Composer({
           onKeyDown={(event) => {
             // Letters still being composed (an accent, Japanese) are not a send.
             if (event.nativeEvent.isComposing) return
+            // Escape lets go of a reply (unless it just closed a menu over the chat).
+            if (event.key === 'Escape' && reply && !event.defaultPrevented) {
+              event.preventDefault()
+              onCancelReply()
+              return
+            }
             if (event.key === 'Enter' && !event.shiftKey) {
               event.preventDefault()
               send()
