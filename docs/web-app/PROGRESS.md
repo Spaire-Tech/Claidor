@@ -123,6 +123,7 @@ Newest first.
   `check_names.py`. The inventory counts 136 strings the new web app shows.
 - **Not checked:** against the real server and a real computer (the address
   is not live yet; see Open questions).
+- Pull request #522.
 - **Next:** step 2b, the chat's actions: the hover bar, reactions, replying,
   find, the working line, names in their colours.
 
