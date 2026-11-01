@@ -222,7 +222,8 @@ export function useShownPicture(
   )
   const [read, setRead] = useState<{ url: string; address: string }>()
   useEffect(() => {
-    if (web || sent) return
+    // A video in the chat stays grey, as on the Mac (it is no picture): it is not read for nothing.
+    if (web || sent || fileKind(image.url) === 'video') return
     let live = true
     let made: string | undefined
     void store.readFile(image.url, agentId, { wakes: false }).then((data) => {

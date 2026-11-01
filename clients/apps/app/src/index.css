@@ -1309,9 +1309,12 @@ button {
 .chat-picture {
   display: block;
   flex: none;
+  padding: 0;
+  border: 0;
   border-radius: 12px;
   overflow: hidden;
   background: var(--code-wash);
+  cursor: pointer;
 }
 
 .chat-picture img {
@@ -2623,4 +2626,171 @@ button.json-caret {
   color: var(--ink);
   white-space: pre-wrap;
   user-select: text;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Pictures and videos full screen (mac/Simeon/MediaViewer.swift).         */
+
+/* Black at 92% over the window, padded 32: the picture, its caption, the strip; Close at the top right. */
+.media-viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  box-sizing: border-box;
+  padding: 32px;
+  background: rgb(0 0 0 / 0.92);
+  outline: none;
+  user-select: none;
+}
+
+.media-column {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  pointer-events: none;
+}
+
+.media-column > * {
+  pointer-events: auto;
+}
+
+.media-cell {
+  position: relative;
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* The picture as large as fits, 12 round with a deep shadow; zoomed, it can be dragged. */
+.media-picture,
+.media-film {
+  flex: none;
+  border-radius: 12px;
+  box-shadow: 0 32px 80px rgb(0 0 0 / 0.55);
+  cursor: zoom-out;
+  transform-origin: center;
+}
+
+.media-picture.zoomed {
+  cursor: grab;
+}
+
+.media-picture.zoomed:active {
+  cursor: grabbing;
+}
+
+.media-film {
+  background: #000;
+  cursor: default;
+}
+
+/* "Loading media…" or "Couldn't load media": 13, white at 78%, on white at 8%, 10 round, padded 10 14. */
+.media-status {
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgb(255 255 255 / 0.08);
+  color: rgb(255 255 255 / 0.78);
+  font-size: 13px;
+}
+
+/* Previous and Next: 28, round, white at 14%, at the sides, 24 in. */
+.media-nav {
+  position: absolute;
+  top: 50%;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin-top: -14px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.14);
+  color: rgb(255 255 255 / 0.92);
+  cursor: pointer;
+}
+
+.media-nav.previous {
+  left: 24px;
+}
+
+.media-nav.next {
+  right: 24px;
+}
+
+.media-caption {
+  max-width: 100%;
+  height: 18px;
+  font-size: 13px;
+  line-height: 18px;
+  color: rgb(255 255 255 / 0.72);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The strip: 48-point squares, 8 round, 8 apart, padded 8; the one shown ringed in white. */
+.media-strip {
+  display: flex;
+  gap: 8px;
+  max-width: 100%;
+  padding: 8px;
+  box-sizing: border-box;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.media-thumb {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 8px;
+  background: rgb(255 255 255 / 0.08);
+  color: rgb(255 255 255 / 0.6);
+  cursor: pointer;
+}
+
+.media-thumb.shown {
+  box-shadow: inset 0 0 0 2px rgb(255 255 255 / 0.95);
+}
+
+.media-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.media-thumb.shown img {
+  outline: 2px solid rgb(255 255 255 / 0.95);
+  outline-offset: -2px;
+  border-radius: 8px;
+}
+
+/* Close: 24, white at 85%, 10 from the top and 8 from the right. */
+.media-close {
+  position: absolute;
+  top: 10px;
+  right: 8px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: rgb(255 255 255 / 0.85);
+  cursor: pointer;
 }
