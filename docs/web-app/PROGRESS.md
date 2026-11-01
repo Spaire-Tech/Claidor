@@ -108,6 +108,7 @@ Newest first.
     `x-automation-failure-hint` and `retry-after`, which the hold reads.
 - **Not checked:** signed in, against a real computer. Nothing on screen
   uses this code yet; step 1d's window does.
+- Pull request #517.
 - **Next:** 1c, the words.
 
 ### 1 November 2026: step 1a, the app's folder, build and address
