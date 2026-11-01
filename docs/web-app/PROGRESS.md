@@ -15,7 +15,7 @@ file and the code disagree, the code is right and this file is fixed.
 |---|---|
 | 0. The audit | Done, 1 November 2026 |
 | 1. The base: the server and the computer, signing in, the window | Done, 1 November 2026 (1a to 1d). Carried to step 2: the first run for a new account and the access cover |
-| 2. The sidebar and the chat | In progress: 2a (the chat's core, and the chat on screen) done; 2b (a message's actions, find, the working line, names in colour, link icons, the emoji picker) done; 2c part 1 (file cards, pictures from the computer, link cards) part 2 (the preview: text and code, Markdown, JSON, tables) and part 3a (pictures and videos full screen), part 3b (PDF, Word, sound) and part 3c (Excel) done; 2e part 1 (attaching files, the ":" emoji list) done. Next: 2e part 2, "@", "/" and "#", then dictation |
+| 2. The sidebar and the chat | In progress: 2a (the chat's core, and the chat on screen) done; 2b (a message's actions, find, the working line, names in colour, link icons, the emoji picker) done; 2c part 1 (file cards, pictures from the computer, link cards) part 2 (the preview: text and code, Markdown, JSON, tables) and part 3a (pictures and videos full screen), part 3b (PDF, Word, sound) and part 3c (Excel) done; 2e part 1 (attaching files, the ":" emoji list) and part 2 ("@", "/" and "#") done. Next: 2e part 3, dictation |
 | 3. The cards | Not started |
 | 4. The agent's pane, search, new chat, the org chart, starter packs | Not started |
 | 5. The computer and calls | Not started |
@@ -44,6 +44,8 @@ file and the code disagree, the code is right and this file is fixed.
 | 1 November 2026 | The preview uses the libraries the window itself used, at its versions: highlight.js 11.9 now (in a worker, with only the languages the preview asks for), pdf.js 5.4.296 and mammoth for PDF and Word in part 3. Not SheetJS 0.18.5, the window's reader for Excel: the copy on npm has known security holes (fixed only in releases off npm), and the files come from the internet through the agents. How Excel files show is decided in part 3 | The session, as above |
 | 1 November 2026 | Attaching files in the browser: Photo or Video opens the browser's own file chooser showing only pictures and videos (a web page can't open the Photos library), and a photo goes as it is, not made a JPEG as the Mac makes HEIC; a picture the browser can't draw (HEIC outside Safari) shows the tile's symbol. A paste brings files unless it also holds the words as rich text (Office, iWork and web pages put a picture of copied words beside them; the words win, as on the Mac). Files dropped outside the chat are taken by nothing, so the browser never opens them in the window's place | The session |
 | 1 November 2026 | The emoji picked lately from ":" are kept in the browser (`simeon.emojiRecents`, the Mac's own name for them): only which emoji, never words of a message | The session |
+| 1 November 2026 | A pick from "@", "/" or "#" sits in the field as its own words ("@Nora", "#12") on the Mac's grey, kept track of as the words change (the iPhone's way), not as the Mac's picture of a chip with its face or logo: a browser's text field holds only words, and an editor of our own for it would be a large piece for a small gain. It goes with the message in the window's document, as on the Mac; Delete takes it whole; undo and redo bring it back. The agents picked lately from "@" are kept in the browser (`simeon.mentionRecents`): which rows, never words | The session |
+| 1 November 2026 | "/" offers the agent's skills now; each of the app's actions ("Org Chart", "Chat Settings", "Settings: General", the themes…) joins it with the screen it opens (steps 4 to 6), so the list never offers what does nothing | The session |
 | 1 November 2026 | Excel workbooks (.xlsx) are read by a small reader of our own (`src/core/xlsx.ts`): the browser unzips them itself and the reader takes the first sheet, each value written as its number format says. No library: SheetJS's npm copy has known holes, and the other readers are either days old with unfamiliar dependencies or built for servers. The old binary .xls is not read; it says "Preview not available" with Download. The founder: "keep going on excel" | The session |
 
 ## Open questions
@@ -73,6 +75,76 @@ For the founder, each to be answered before the step that needs it:
 ## Log
 
 Newest first.
+
+### 1 November 2026: step 2e, part 2, "@", "/" and "#"
+
+- The shared core's lists, translated with their tests
+  (`ComposerMenuTests`, `testTheComposerOffersNamesAfterAnAt`):
+  - `src/core/composerLists.ts` (ComposerLists.swift): the window's
+    matching (its own scores, to the hundredth), where a list opens, what
+    "@" offers (the other agents and the groups this one is in, or a
+    group's members and "everyone"; the routines; the connected apps), what
+    "/" offers (skills, then the app's actions, eight at most), what "#"
+    offers (the pull requests the chat named, newest first), and the lines
+    for nothing found;
+  - `src/core/composerMenus.ts` (ComposerMenus.swift): the skills and
+    routines in `getAgentWorkflows`' answer, and pull requests in a text;
+  - `src/core/composerDocument.ts` (ComposerDocument.swift): a pick's
+    words, the picks kept while the words change, and the message's
+    document (`richText`) as the window's editor writes it, read back for a
+    canceled message;
+  - `src/core/connectedApps.ts`: the connected apps (`ConnectedApp`).
+- The store reads the agent's skills and routines as a chat opens
+  (`getAgentWorkflows`, waiting for a computer that rests, not waking it)
+  and the connected apps (`desktopMcp` `listServers`, only while the
+  computer is awake).
+- `src/window/ComposerPicks.tsx`: one list for "@", "/", "#" and ":",
+  hung 4 over the trigger's line: 360 wide (emoji 320), each row with its
+  picture (the agent's face, a group's people, a routine's clock, an app's
+  logo), its name, what it is at 40% and its kind at the right. "@" and "/"
+  with nothing found say so, over "Press Esc to close".
+- `Composer.tsx`: a pick goes in through the field's own typing, so undo
+  takes it out; it sits on the Mac's grey (a layer under the words, laid
+  out as the field lays them out); Delete or Backspace beside it takes it
+  whole; a pick in the middle of the words keeps the words after it; a
+  message with picks goes with its document; a canceled one comes back with
+  its picks; each chat and thread keeps its picks while its words wait.
+- **Decisions (the session):** in the table above.
+- **Found on the Mac, not changed:** the "#" rows' "Pull request" is
+  written in English in every language (the Mac's `PickLine` is given a
+  plain string, and the catalogues have no such entry); the web shows the
+  same. A routine's time in "@" is the computer's own English words in
+  every language on the web until the routines' words come with step 4
+  (the Mac writes them from the routine's schedule).
+- **Checked:** in Chromium, the built app against a stand-in computer with
+  four agents (one a group), two skills, a routine, two connected apps and
+  three pull-request links in the chat (`picks-check.cjs` in the session's
+  scratchpad), light and dark, then French:
+  - "@" listing Nora, Nova, the group "Launch squad · 2 agents", "Morning
+    brief · Every day at 9:00 · Routine", "Gmail (work@acme.com) · needs
+    auth · Plugin", "Slack · connected"; "no" leaving Nora and Nova;
+    Return putting in "@Nora" on the grey;
+  - "/" listing "Weekly report · Sums up the week · Skill"; Tab putting it
+    in; "#" listing #40, #41, #12 (newest first), "4" leaving #40 and #41,
+    ↓ and Return putting in #41;
+  - Backspace twice after "#41 " taking the space, then "#41" whole;
+  - "@zz" saying "No matches for “zz”" over "Press Esc to close"; Escape
+    putting it away and typing on keeping it away;
+  - "@nov" typed at the start of the words, picked, the words after it
+    kept; undo and redo taking a pick out and bringing it back as a pick;
+  - the message sent with the words trimmed and its document: two
+    mentions, a skill's reference and the text between;
+  - in the group: "everyone" first, then its members and the apps; "all"
+    finding "everyone"; "/" there saying "Nothing to reference yet";
+  - the reads: `getAgentWorkflows` and `listServers` once per chat; no
+    page errors. In French the kinds, the apps' lines and the empty lines
+    read in French.
+  The 207 tests, typecheck, lint, the words', the brands' and the build's
+  checks, `check_names.py`, `check_translations.py`.
+- **Not checked:** a real computer's skills, routines and apps; Safari's
+  and Firefox's undo (the field's own typing is used, which both have).
+  A pick copied and pasted comes in as plain words, as on the Mac.
+- **Next:** step 2e, part 3: dictation.
 
 ### 1 November 2026: step 2e, part 1, attaching files and the ":" emoji list
 

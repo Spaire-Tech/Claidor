@@ -81,6 +81,9 @@
   --remove-disc: #070707;
   --remove-x: #fcfcfc;
   --drop-wash: color-mix(in srgb, var(--unread) 17%, transparent);
+  /* The lists: the logo tile's grey, and a soft shadow on light only. */
+  --logo-tile: rgb(119 119 119 / 0.17);
+  --pick-shadow: 0.1;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -133,6 +136,8 @@
     --remove-disc: #fafafa;
     --remove-x: #141414;
     --drop-wash: color-mix(in srgb, var(--unread) 32%, transparent);
+    --logo-tile: rgb(119 119 119 / 0.32);
+    --pick-shadow: 0;
   }
 }
 
@@ -1636,6 +1641,126 @@ button {
   scrollbar-width: none;
 }
 
+/* "@", "/" and "#": 360 wide, a hairline at 15% and (on light) a soft shadow, 12 round; rows 2 apart, padded 6, to 320 high. */
+.pick-list:not(.emoji) {
+  width: 360px;
+  max-height: 320px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-radius: 12px;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--ink) 15%, transparent),
+    0 10px 16px rgb(0 0 0 / var(--pick-shadow));
+}
+
+/* A row: 28, padded 6 8, 6 round, the logo tile's grey when chosen; its picture (16), name (13), what it is (40%) and its kind at the right. */
+.pick-row {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 6px 8px;
+  box-sizing: border-box;
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 16px;
+  cursor: pointer;
+}
+
+.pick-row.chosen {
+  background: var(--logo-tile);
+}
+
+.pick-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  color: var(--ink-secondary);
+}
+
+.pick-icon .pick-glyph.people {
+  color: var(--ink);
+}
+
+.pick-icon .pick-glyph.command {
+  color: #777777;
+}
+
+.pick-words {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.pick-title {
+  flex: none;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--ink);
+}
+
+.pick-subtitle {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--ink-tertiary);
+}
+
+.pick-tag {
+  flex: none;
+  color: var(--ink-tertiary);
+  white-space: nowrap;
+}
+
+/* Nothing found: the words (13) over "Press Esc to close" (11, at 40%), padded 8 12. */
+.pick-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 12px;
+}
+
+.pick-empty-words {
+  font-size: 13px;
+  line-height: 17px;
+  color: var(--ink);
+}
+
+.pick-empty-hint {
+  font-size: 11px;
+  line-height: 14px;
+  color: var(--ink-tertiary);
+}
+
+/* An app's logo on its tile: the grey (17%, 32% on dark), its first letter at 60%. */
+.logo-tile {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: var(--logo-tile);
+  color: var(--ink-secondary);
+  font-weight: 600;
+  line-height: 1;
+}
+
+.logo-tile.drawn {
+  background: none;
+}
+
+.logo-tile img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
 .pick-list.emoji {
   width: 320px;
   max-height: 260px;
@@ -1862,9 +1987,20 @@ button {
   }
 }
 
-.field {
+.field-words {
+  position: relative;
   flex: 1;
+  min-width: 0;
   margin: 10px 0 10px 16px;
+}
+
+.field {
+  position: relative;
+  z-index: 1;
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0;
   padding: 0;
   border: 0;
   outline: none;
@@ -1876,6 +2012,29 @@ button {
   line-height: 20px;
   height: 20px;
   max-height: 120px;
+}
+
+/* A pick in the words (`sand-inserted-chip`): the grey wash (13%), 4 round, under its words, laid out as the field lays them out. */
+.field-picks {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  overflow: hidden;
+  font: inherit;
+  font-size: 14px;
+  line-height: 20px;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  color: transparent;
+  pointer-events: none;
+}
+
+.field-picks mark {
+  color: transparent;
+  background: rgb(119 119 119 / 0.13);
+  border-radius: 2px;
+  box-shadow: 0 0 0 2px rgb(119 119 119 / 0.13);
 }
 
 .field::placeholder {

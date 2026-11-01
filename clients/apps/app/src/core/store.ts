@@ -37,6 +37,7 @@ import {
   threadTitle,
 } from './chat'
 import { type RunFlags, runFlags } from './chatRuns'
+import { type ConnectedApp, connectedApp } from './connectedApps'
 import { Entry, appliedChange } from './entry'
 import { fileLine, fileSize } from './fileLine'
 import { byteCap, computerPath } from './filePreview'
@@ -350,6 +351,8 @@ export class AppStore {
   threadRows: Record<string, ChatRow[]> = {}
   /** What the person has typed and not sent, by composer (`draftScope`). Kept in this tab only. */
   drafts: Record<string, string> = {}
+  /** The connected apps (`desktopMcp` `listServers`), which "@" offers; read as a chat opens. */
+  apps: ConnectedApp[] = []
   /** The last message canceled, until its composer takes it back. */
   canceledDraft?: CanceledDraft
   composerNotice?: ComposerNotice
@@ -387,6 +390,7 @@ export class AppStore {
   private sentFiles: { keys: string[]; data: Uint8Array }[] = []
   /** Each file card's line once the computer answered, and whether it read the file as text. */
   private fileLines = new Map<string, FileFacts>()
+  private appsLoad?: Promise<void>
   private listening?: AbortController
   private onListShown?: () => void
   private readonly listeners = new Set<() => void>()
@@ -469,6 +473,7 @@ export class AppStore {
     this.openThreads = {}
     this.threadRows = {}
     this.drafts = {}
+    this.apps = []
     this.canceledDraft = undefined
     this.composerNotice = undefined
     this.running = {}
@@ -1348,6 +1353,73 @@ export class AppStore {
       }
     }
     return read === 0 ? undefined : joined(pieces, read)
+  }
+
+  // MARK: The composer's lists
+
+  /**
+   * The agent's skills and routines (`getAgentWorkflows`), for "/" and "@";
+   * nothing, quietly, when they can't be read. With `wakes` false (a chat
+   * opening), a computer that rests is waited for, not woken (step 4),
+   * until `signal` ends the wait.
+   */
+  async workflows(
+    agentId: string,
+    wakes = true,
+    signal?: AbortSignal,
+  ): Promise<JSONValue> {
+    const backend = this.backend
+    if (!backend) return []
+    try {
+      if (!wakes && backend.commandWhenAwake)
+        return await backend.commandWhenAwake(
+          'getAgentWorkflows',
+          { id: agentId },
+          signal,
+        )
+      return await backend.command(
+        'getAgentWorkflows',
+        { id: agentId },
+        { wakes },
+      )
+    } catch {
+      return []
+    }
+  }
+
+  /**
+   * The connected apps, read again; one read at a time. With `wakes` false
+   * (a chat opening), nothing is read while the computer rests, and it is
+   * not waited for.
+   */
+  loadApps(wakes = true): Promise<void> {
+    this.appsLoad ??= this.readApps(wakes).finally(() => {
+      this.appsLoad = undefined
+    })
+    return this.appsLoad
+  }
+
+  private async readApps(wakes: boolean): Promise<void> {
+    const backend = this.backend
+    if (!backend) return
+    let state: JSONValue
+    try {
+      state = await backend.command(
+        'desktopMcp',
+        { action: 'listServers', args: [] },
+        { wakes },
+      )
+    } catch {
+      return
+    }
+    if (this.backend !== backend) return
+    const next = (arr(field(state, 'servers')) ?? arr(state) ?? [])
+      .map(connectedApp)
+      .filter((app): app is ConnectedApp => app != null)
+    if (JSON.stringify(next) !== JSON.stringify(this.apps)) {
+      this.apps = next
+      this.changed()
+    }
   }
 
   /**

@@ -114,6 +114,12 @@ export interface AgentBackend {
     args?: JSONValue,
     options?: { wakes?: boolean },
   ): Promise<JSONValue>
+  /** A read that waits for a computer that rests, without waking it (`commandWhenAwake`); ended with `signal`. */
+  commandWhenAwake?(
+    method: string,
+    args?: JSONValue,
+    signal?: AbortSignal,
+  ): Promise<JSONValue>
   /** Where the computer rests, when the server lets it sleep. */
   computerRest(): Promise<Rest | null>
   /** The host's events until `signal` aborts. */
@@ -159,6 +165,14 @@ export class LiveBackend implements AgentBackend {
     options: { wakes?: boolean } = {},
   ): Promise<JSONValue> {
     return this.gateway.command(method, args, options)
+  }
+
+  commandWhenAwake(
+    method: string,
+    args: JSONValue = {},
+    signal?: AbortSignal,
+  ): Promise<JSONValue> {
+    return this.gateway.commandWhenAwake(method, args, signal)
   }
 
   computerRest(): Promise<Rest | null> {

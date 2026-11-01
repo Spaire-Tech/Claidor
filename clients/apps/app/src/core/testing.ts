@@ -280,6 +280,13 @@ export class FakeBackend implements AgentBackend {
       throw new GatewayError("The computer didn't answer.", true)
     return this.commandAnswers[method]?.(args) ?? {}
   }
+  /** A read that waits for a resting computer: recorded as one that lets it rest. */
+  async commandWhenAwake(
+    method: string,
+    args: JSONValue = {},
+  ): Promise<JSONValue> {
+    return this.command(method, args, { wakes: false })
+  }
   /** Told of each command before it is answered (what the chat showed then). */
   beforeAnswer?: (method: string) => void
   async transcriptPage(

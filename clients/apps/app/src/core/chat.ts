@@ -669,17 +669,19 @@ const markdownLink = /^\[[^\]\n]*\]\(\s*([^)\s]+)(?:\s+[^)]*)?\)\s*$/
  * an `https:` address with a host is a card.
  */
 export function loneLink(words: string, richText?: string): string | undefined {
-  const doc = document(richText)
+  const doc = richDocument(richText)
   if (doc) return documentLink(doc)
   const trimmedWords = words.trim()
   const match = markdownLink.exec(trimmedWords)
   return httpsLink(match ? match[1]! : trimmedWords)
 }
 
-type DocNode = { [key: string]: unknown }
+export type DocNode = { [key: string]: unknown }
 
-/** The composer's document (TipTap's JSON) when `richText` is one (`KAe`). */
-function document(richText: string | undefined): DocNode | undefined {
+/** The composer's document (TipTap's JSON) when `richText` is one (`KAe`, `Chat.document`). */
+export function richDocument(
+  richText: string | undefined,
+): DocNode | undefined {
   if (!richText) return undefined
   const doc = parseJSON(richText)
   return isObject(doc) && doc.type === 'doc' ? (doc as DocNode) : undefined
