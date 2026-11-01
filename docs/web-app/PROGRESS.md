@@ -126,6 +126,7 @@ Newest first.
   buttons); the cards' come with step 3.
 - **Not checked:** in a browser (nothing on screen uses it yet), and against
   the real computer.
+- Pull request #521.
 - **Next:** step 2a, part 2: the chat on screen (its head, its rows, the
   bubbles and their Markdown, the composer).
 
