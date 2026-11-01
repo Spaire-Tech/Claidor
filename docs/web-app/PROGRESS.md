@@ -138,6 +138,7 @@ Newest first.
   tried); against the real server and a real computer (the address is not
   live yet; see Open questions); in the Windows app, where the worker is
   loaded from disk (step 7).
+- Pull request #528.
 - **Next:** step 2c, part 3: PDF (pdf.js), Word (mammoth), Excel, sound,
   and pictures and videos in their own viewer, from a card and from a
   picture in the chat.
