@@ -1408,6 +1408,53 @@ export class AppStore {
     this.outboxChanged()
   }
 
+  // MARK: The cards' and the messages' commands (host/gateway-protocol.ts)
+
+  /** One command to the computer; a failure is said once (`problem`), and gives nothing back. */
+  async command(
+    method: string,
+    args: JSONValue,
+    failure?: string,
+  ): Promise<JSONValue | undefined> {
+    const backend = this.backend
+    if (!backend) return undefined
+    try {
+      return await backend.command(method, args)
+    } catch (error) {
+      const why = error instanceof Error ? error.message : String(error)
+      this.problem = t`${failure ?? t("That didn't work")}: ${why}`
+      this.changed()
+      return undefined
+    }
+  }
+
+  /** A reaction of the person's own, added or taken off: on the message at once, taken back if the computer refuses it. */
+  async react(emoji: string, entryId: string, agentId: string): Promise<void> {
+    const shown = this.toggleMyReaction(emoji, entryId, agentId)
+    const answer = await this.command(
+      'reactToMessage',
+      { entryId, emoji, agentId },
+      t("Couldn't react"),
+    )
+    if (answer === undefined && shown)
+      this.toggleMyReaction(emoji, entryId, agentId)
+  }
+
+  /** The person's own `emoji` on one message, added or taken off here; false when the message isn't in the chat read. */
+  private toggleMyReaction(
+    emoji: string,
+    entryId: string,
+    agentId: string,
+  ): boolean {
+    const entries = this.transcripts[agentId]
+    const index = entries?.findIndex((entry) => entry.id === entryId) ?? -1
+    if (!entries || index < 0) return false
+    const next = [...entries]
+    next[index] = next[index]!.togglingMyReaction(emoji)
+    this.setTranscript(agentId, next)
+    return true
+  }
+
   // MARK: Threads (the window's thread view)
 
   /** A thread comes on screen in its chat, made from the chat's own lines: its first message and the replies that lead back to it. */

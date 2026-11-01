@@ -6,10 +6,13 @@
 // head and over the message field, opening at the newest and held there
 // while new lines come; a thread in the chat's place under its breadcrumb.
 //
-// Still to come, each with its part (docs/web-app/PROGRESS.md): the hover
-// bar, reactions sent, replying, the right-click menu, find, the agent's
-// working line, the motion of a line coming in, the time on a sideways
-// swipe, two agents' messages and a call's lines opened over the chat (2b);
+// A message's hover bar, its reactions' capsule, its menus and the reply
+// over the field are in MessageActions.tsx.
+//
+// Still to come, each with its part (docs/web-app/PROGRESS.md): find, the
+// agent's working line, the motion of a line coming in, the time on a
+// sideways swipe, two agents' messages and a call's lines opened over the
+// chat (2b);
 // the pictures from the computer, files' kinds, sizes and Save, link cards,
 // previews (2c); the call button (step 5); the cards (step 3); the agent's
 // pane opened from the head (step 4).
@@ -33,6 +36,8 @@ import {
   exchangePeers,
   isOneEmoji,
   notShown,
+  quoteLine,
+  replyPlaceholder,
   routineLabel,
   routineVerb,
   stampText,
@@ -46,10 +51,20 @@ import { wordsLanguage } from '../core/words'
 import { t } from '../l10n'
 import { AgentMark } from './AgentMark'
 import { Composer } from './Composer'
+import {
+  type Dismissal,
+  HoverBar,
+  type MenuItem,
+  type MessageActions,
+  PopMenu,
+  type Reply,
+  TapbackCapsule,
+} from './MessageActions'
 import { MessageBlocks } from './MessageText'
+import { classes } from './classes'
 import { useWatched } from './useStore'
 
-/** What a row asks of the chat around it: going to another row, opening a thread. */
+/** What a row asks of the chat around it: going to another row, opening a thread, a message's actions. */
 interface ChatControl {
   store: AppStore
   agentId: string
@@ -60,10 +75,33 @@ interface ChatControl {
   lit?: string
   /** The messages' column: the chat's width less its 16 on each side. */
   column: number
+  actions: MessageActions
 }
 
 const Control = createContext<ChatControl | null>(null)
 const useControl = () => useContext(Control)!
+
+/** A place in the chat's own coordinates. */
+interface Spot {
+  left: number
+  top: number
+  right: number
+  bottom: number
+}
+
+/** What is open over the chat: a message's menu, or its reactions' capsule; with the chat's size then. */
+type Overlay = { bounds: { width: number; height: number } } & (
+  | {
+      kind: 'menu'
+      forId: string
+      items: MenuItem[]
+      at: { x: number; y: number; endAligned: boolean }
+    }
+  | { kind: 'tapback'; bubble: Bubble; anchor: Spot }
+)
+
+/** A click on the button whose menu or capsule it just closed closes it, and opens nothing (the Mac's `closedByClick`, half a second). */
+const reopenGap = 500
 
 export function ChatPane({
   store,
@@ -81,8 +119,151 @@ export function ChatPane({
   const agent = store.agent(agentId)
   const threadRoot = store.openThreads[agentId]
   const [composerHeight, setComposerHeight] = useState(56)
+  const pane = useRef<HTMLElement>(null)
+  // The message being answered (`ChatControl.reply`), in the chat or the thread it was chosen in.
+  const [answering, setAnswering] = useState<{
+    reply: Reply
+    thread?: string
+  }>()
+  const reply = answering?.thread === threadRoot ? answering?.reply : undefined
+  /** Bumped to give the field the keys (`focusCount`). */
+  const [focusKey, setFocusKey] = useState(0)
+  const [overlay, setOverlay] = useState<Overlay>()
+  const closed = useRef<{ id: string; at: number }>(undefined)
+
+  const closeOverlay = useCallback(
+    (why: Dismissal) => {
+      // Closed by a click: the same button pressed again opens nothing (`closedByClick`).
+      if (why === 'click' && overlay)
+        closed.current = {
+          id: overlay.kind === 'menu' ? overlay.forId : overlay.bubble.id,
+          at: Date.now(),
+        }
+      setOverlay(undefined)
+    },
+    [overlay],
+  )
+
+  const actions = useMemo<MessageActions>(() => {
+    const local = (rect: DOMRect): Spot => {
+      const box = pane.current!.getBoundingClientRect()
+      return {
+        left: rect.left - box.left,
+        top: rect.top - box.top,
+        right: rect.right - box.left,
+        bottom: rect.bottom - box.top,
+      }
+    }
+    const bounds = () => ({
+      width: pane.current?.clientWidth ?? 0,
+      height: pane.current?.clientHeight ?? 0,
+    })
+    const justClosed = (id: string) =>
+      closed.current?.id === id && Date.now() - closed.current.at < reopenGap
+    const tapback = (bubble: Bubble, anchor: Element | null | undefined) => {
+      if (!pane.current || !anchor) return
+      setOverlay({
+        kind: 'tapback',
+        bubble,
+        anchor: local(anchor.getBoundingClientRect()),
+        bounds: bounds(),
+      })
+    }
+    const startReply = (bubble: Bubble) => {
+      const entry = (store.transcripts[agentId] ?? []).find(
+        (line) => line.id === bubble.id,
+      )
+      setAnswering({
+        reply: {
+          id: bubble.id,
+          line: quoteLine(entry, 72),
+          placeholder: replyPlaceholder(entry),
+        },
+        thread: store.openThreads[agentId],
+      })
+      setFocusKey((key) => key + 1)
+    }
+    // The menus (`MessageMenu.show`): More holds Start a thread and Copy; the right click Add reaction, then Reply, Start a thread and Copy. No thread is started inside one.
+    const items = (bubble: Bubble, context: boolean): MenuItem[] => {
+      const out: MenuItem[] = []
+      if (context) {
+        out.push({
+          label: t('Add reaction'),
+          glyph: 'smile',
+          action: () =>
+            tapback(
+              bubble,
+              pane.current?.querySelector(
+                `[data-bubble-id="${CSS.escape(bubble.id)}"]`,
+              ),
+            ),
+        })
+        out.push({
+          label: t('Reply'),
+          glyph: 'reply',
+          separated: true,
+          action: () => startReply(bubble),
+        })
+      }
+      if (store.openThreads[agentId] == null)
+        out.push({
+          label: t('Start a thread'),
+          glyph: 'thread',
+          action: () => {
+            store.openThread(bubble.id, agentId)
+            setFocusKey((key) => key + 1)
+          },
+        })
+      out.push({
+        label: t('Copy'),
+        glyph: 'copy',
+        action: () => void navigator.clipboard?.writeText(bubble.text),
+      })
+      return out
+    }
+    return {
+      react: (bubble, anchor) => {
+        if (!justClosed(bubble.id)) tapback(bubble, anchor)
+      },
+      reply: startReply,
+      more: (bubble, button) => {
+        if (justClosed(bubble.id) || !pane.current) return
+        const spot = local(button.getBoundingClientRect())
+        // 4 under the button, its left edge on the button's, or its right edge for the person's message.
+        setOverlay({
+          kind: 'menu',
+          forId: bubble.id,
+          items: items(bubble, false),
+          at: {
+            x: bubble.fromPerson ? spot.right : spot.left,
+            y: spot.bottom + 4,
+            endAligned: bubble.fromPerson,
+          },
+          bounds: bounds(),
+        })
+      },
+      context: (bubble, x, y) => {
+        const box = pane.current?.getBoundingClientRect()
+        if (!box) return
+        setOverlay({
+          kind: 'menu',
+          forId: bubble.id,
+          items: items(bubble, true),
+          at: { x: x - box.left, y: y - box.top, endAligned: false },
+          bounds: bounds(),
+        })
+      },
+      heldFor:
+        overlay?.kind === 'menu'
+          ? overlay.forId
+          : overlay?.kind === 'tapback'
+            ? overlay.bubble.id
+            : undefined,
+    }
+  }, [agentId, overlay, store])
+
   return (
-    <section className="chat-pane" aria-label={agent?.name}>
+    <section className="chat-pane" aria-label={agent?.name} ref={pane}>
       {/* A thread, or back to the chat: the lines on screen start again, at their newest. */}
       <Transcript
         key={threadRoot ?? ''}
@@ -90,6 +271,7 @@ export function ChatPane({
         agentId={agentId}
         threadRoot={threadRoot}
         composerHeight={composerHeight}
+        actions={actions}
       />
       {agent &&
         (threadRoot != null ? (
@@ -106,8 +288,28 @@ export function ChatPane({
         agentId={agentId}
         name={agent?.name ?? ''}
         threadRoot={threadRoot}
+        reply={reply}
+        onCancelReply={() => setAnswering(undefined)}
+        focusKey={focusKey}
         onHeight={setComposerHeight}
       />
+      {overlay?.kind === 'menu' && (
+        <PopMenu
+          items={overlay.items}
+          at={overlay.at}
+          bounds={overlay.bounds}
+          close={closeOverlay}
+        />
+      )}
+      {overlay?.kind === 'tapback' && (
+        <TapbackCapsule
+          bubble={overlay.bubble}
+          anchor={overlay.anchor}
+          bounds={overlay.bounds}
+          pick={(emoji) => void store.react(emoji, overlay.bubble.id, agentId)}
+          close={closeOverlay}
+        />
+      )}
     </section>
   )
 }
@@ -202,11 +404,13 @@ function Transcript({
   agentId,
   threadRoot,
   composerHeight,
+  actions,
 }: {
   store: AppStore
   agentId: string
   threadRoot?: string
   composerHeight: number
+  actions: MessageActions
 }) {
   const rows =
     threadRoot != null
@@ -339,8 +543,17 @@ function Transcript({
     return out
   }, [rows, shownIds])
   const control = useMemo<ChatControl>(
-    () => ({ store, agentId, threadRoot, shownIds, jump, lit, column }),
-    [store, agentId, threadRoot, shownIds, jump, lit, column],
+    () => ({
+      store,
+      agentId,
+      threadRoot,
+      shownIds,
+      jump,
+      lit,
+      column,
+      actions,
+    }),
+    [store, agentId, threadRoot, shownIds, jump, lit, column, actions],
   )
 
   return (
@@ -405,7 +618,11 @@ function TranscriptRow({
   const side = row.kind === 'notice' ? 'middle' : rowSideClass(row)
   return (
     <div
-      className={`transcript-row ${side}${control.lit === row.id ? 'lit' : ''}`}
+      className={classes(
+        'transcript-row',
+        side,
+        control.lit === row.id && 'lit',
+      )}
       data-row-id={row.id}
     >
       <RowContent
@@ -452,7 +669,6 @@ function RowContent({
   threadCount?: number
 }) {
   const control = useControl()
-  const startsGroup = run.startsGroup ? ' starts-group' : ''
   switch (row.kind) {
     case 'stamp':
       return <div className="stamp">{stampText(row.date)}</div>
@@ -475,7 +691,9 @@ function RowContent({
       )
     case 'file':
       return (
-        <div className={`file-card${startsGroup}`}>
+        <div
+          className={classes('file-card', run.startsGroup && 'starts-group')}
+        >
           <span className="file-icon" aria-hidden="true" />
           <span className="file-title" title={row.name}>
             {fileTitle(row.name)}
@@ -601,7 +819,13 @@ function RowContent({
       )
     case 'card':
       // Step 3 draws each card; until then its place is kept and said.
-      return <div className={`later-card${startsGroup}`}>{notShown()}</div>
+      return (
+        <div
+          className={classes('later-card', run.startsGroup && 'starts-group')}
+        >
+          {notShown()}
+        </div>
+      )
   }
 }
 
@@ -760,7 +984,15 @@ function Message({
   const showsWords = words !== '' || bubble.images.length === 0
   const quoteTarget = bubble.replyTo
   return (
-    <div className={bubble.fromPerson ? 'message mine' : 'message'}>
+    <div
+      className={bubble.fromPerson ? 'message mine' : 'message'}
+      onContextMenu={(event) => {
+        // A link keeps the browser's own menu (open it, copy its address); the rest of the message is its menu's.
+        if ((event.target as Element).closest('a')) return
+        event.preventDefault()
+        control.actions.context(bubble, event.clientX, event.clientY)
+      }}
+    >
       {/* In a thread, a reply to its first message carries no quote. */}
       {bubble.quote != null &&
         quoteTarget != null &&
@@ -840,11 +1072,18 @@ function Shaped({
   chinJoined: boolean
   threadCount?: number
 }) {
+  const control = useControl()
   const trimmed = bubble.text.trim()
   const short = isShort(bubble, trimmed)
+  const bar = <HoverBar bubble={bubble} actions={control.actions} />
   // An emoji on its own: 32 on 38, no bubble.
   if (isOneEmoji(trimmed) && bubble.channel == null)
-    return <div className="lone-emoji">{trimmed}</div>
+    return (
+      <div className="lone-emoji" data-bubble-id={bubble.id}>
+        {trimmed}
+        {bar}
+      </div>
+    )
   const r = (value: number) => `${value}px`
   let radius: string
   if (bubble.fromPerson) {
@@ -871,8 +1110,13 @@ function Shaped({
   return (
     <div className="shaped">
       <div
-        className={`${bubble.fromPerson ? 'bubble yours' : 'bubble theirs'}${short ? 'short' : ''}`}
+        className={classes(
+          'bubble',
+          bubble.fromPerson ? 'yours' : 'theirs',
+          short && 'short',
+        )}
         style={{ borderRadius: radius }}
+        data-bubble-id={bubble.id}
       >
         {bubble.fromPerson ? (
           <FoldingText words={bubble.text} centred={short} />
@@ -889,6 +1133,7 @@ function Shaped({
             {bubble.channel.platform}
           </span>
         )}
+        {bar}
       </div>
       {chinJoined && threadCount != null && (
         <ThreadChin rootId={bubble.id} count={threadCount} attached />
@@ -942,22 +1187,33 @@ function FoldingText({ words, centred }: { words: string; centred: boolean }) {
  * the person's own on a pale blue.
  */
 function ReactionPills({ bubble }: { bubble: Bubble }) {
+  const control = useControl()
   const counts = new Map<string, number>()
   for (const emoji of bubble.reactions)
     counts.set(emoji, (counts.get(emoji) ?? 0) + 1)
   return (
     <div className="reaction-pills">
-      {[...counts].map(([emoji, count]) => (
-        <span
-          key={emoji}
-          className={
-            bubble.myReactions.includes(emoji) ? 'reaction mine' : 'reaction'
-          }
-        >
-          <span className="emoji">{emoji}</span>
-          {count > 1 && <span className="count">{count}</span>}
-        </span>
-      ))}
+      {/* A click on one adds the person's own, or takes it back (`ReactionPills`). */}
+      {[...counts].map(([emoji, count]) => {
+        const mine = bubble.myReactions.includes(emoji)
+        const label = mine
+          ? t`Remove your ${emoji} reaction`
+          : t`Toggle your ${emoji} reaction`
+        return (
+          <button
+            key={emoji}
+            type="button"
+            className={mine ? 'reaction mine' : 'reaction'}
+            aria-label={label}
+            onClick={() =>
+              void control.store.react(emoji, bubble.id, control.agentId)
+            }
+          >
+            <span className="emoji">{emoji}</span>
+            {count > 1 && <span className="count">{count}</span>}
+          </button>
+        )
+      })}
     </div>
   )
 }

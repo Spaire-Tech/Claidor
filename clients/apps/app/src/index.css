@@ -59,6 +59,8 @@
   --disc-ink: rgb(0 0 0 / 0.78);
   /* The ink at 10%: a table's lines, a code block's edge */
   --hairline: rgb(20 20 20 / 0.1);
+  /* The settings' blue (`settingsBlue`): the person's own reaction in the capsule */
+  --settings-blue: #255a93;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -97,6 +99,7 @@
     --glass-rim: rgb(252 252 252 / 0.1);
     --disc-ink: rgb(255 255 255 / 0.86);
     --hairline: rgb(252 252 252 / 0.1);
+    --settings-blue: #2f6db0;
   }
 }
 
@@ -886,10 +889,13 @@ button {
   gap: 3px;
   height: 22px;
   padding: 0 8px 0 7px;
+  border: 0;
   border-radius: 11px;
   background: var(--reaction);
   box-shadow: 0 0 0 2px var(--ground);
+  color: var(--ink);
   font-size: 14px;
+  cursor: pointer;
 }
 
 .reaction.mine {
@@ -899,6 +905,214 @@ button {
 .reaction .count {
   font-size: 12px;
   color: var(--ink-secondary);
+}
+
+/* A message's hover bar: beside the bubble, 6 from it (its padding, so the pointer can cross), level with its middle; 2 apart. */
+.bubble,
+.lone-emoji {
+  position: relative;
+}
+
+.hover-bar {
+  position: absolute;
+  top: 50%;
+  left: 100%;
+  transform: translateY(-50%);
+  display: none;
+  gap: 2px;
+  padding-left: 6px;
+  color: var(--ink-secondary);
+  user-select: none;
+  z-index: 1;
+}
+
+.hover-bar.mine {
+  left: auto;
+  right: 100%;
+  padding-left: 0;
+  padding-right: 6px;
+}
+
+.message:hover .hover-bar,
+.hover-bar.held {
+  display: flex;
+}
+
+/* Its buttons: 24, 8 round, the glyph at 60%, grey under the pointer. */
+.bar-button {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.bar-button:hover {
+  background: var(--row-hover);
+}
+
+/* A message's menu, as the Mac's look: glass, 10 round, its items 13 on 22, the chosen one on the accent. */
+.pop-menu {
+  position: absolute;
+  z-index: 20;
+  min-width: 180px;
+  padding: 5px;
+  box-sizing: border-box;
+  border-radius: 10px;
+  background: var(--glass);
+  backdrop-filter: blur(24px) saturate(1.8);
+  -webkit-backdrop-filter: blur(24px) saturate(1.8);
+  box-shadow:
+    inset 0 0 0 0.5px var(--glass-rim),
+    0 8px 28px rgb(0 0 0 / 0.18);
+  outline: none;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 24px;
+  padding: 0 10px 0 8px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 13px;
+  text-align: left;
+  white-space: nowrap;
+  cursor: default;
+  outline: none;
+}
+
+.menu-item:hover,
+.menu-item:focus-visible {
+  background: var(--unread);
+  color: #fff;
+}
+
+.menu-separator {
+  height: 1px;
+  margin: 5px 9px;
+  background: var(--hairline);
+}
+
+/* The reactions' capsule: glass, 5 in, its cells 36 and 2 apart; it grows out of its corner with a spring. */
+.tapback {
+  position: absolute;
+  z-index: 20;
+  display: flex;
+  gap: 2px;
+  padding: 5px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  animation: tapback-in 0.26s cubic-bezier(0.34, 1.45, 0.64, 1);
+}
+
+.tapback.glass {
+  box-shadow:
+    inset 0 0 0 0.5px var(--glass-rim),
+    0 4px 20px rgb(0 0 0 / 0.16);
+}
+
+@media (prefers-color-scheme: dark) {
+  .tapback.glass {
+    box-shadow:
+      inset 0 0 0 0.5px var(--glass-rim),
+      0 4px 20px rgb(0 0 0 / 0.4);
+  }
+}
+
+@keyframes tapback-in {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+}
+
+.tapback-cell {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.tapback-emoji {
+  display: inline-block;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.tapback-cell:hover {
+  background: var(--row-hover);
+}
+
+.tapback-cell:hover .tapback-emoji {
+  transform: scale(1.15);
+}
+
+.tapback-cell.chosen {
+  background: var(--settings-blue);
+}
+
+/* The message being answered, over the field: glass, 36 high, 18 round, padded 4 4 4 14. */
+.reply-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 4px 4px 4px 14px;
+  box-sizing: border-box;
+  border-radius: 18px;
+}
+
+.reply-glyph {
+  display: grid;
+  place-items: center;
+  width: 12px;
+  height: 12px;
+  color: var(--ink-tertiary);
+}
+
+.reply-glyph svg {
+  width: 12px;
+  height: 12px;
+}
+
+.reply-line {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  line-height: 22px;
+  color: var(--ink-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.reply-cancel {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink-tertiary);
+  cursor: pointer;
 }
 
 /* "2 replies": joined under its bubble as a chin, or a small pill of its own. */
