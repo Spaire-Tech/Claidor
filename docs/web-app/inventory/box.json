@@ -1,0 +1,672 @@
+{
+ "used_by_the_mac": [
+  {
+   "command": "answerCredentialRequest",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Store.swift"
+   ],
+   "old_web_app": false
+  },
+  {
+   "command": "answerPurchase",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Store.swift"
+   ],
+   "old_web_app": false
+  },
+  {
+   "command": "appendSendMessage",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/VoiceCall.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "buyProduct",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Store.swift"
+   ],
+   "old_web_app": false
+  },
+  {
+   "command": "clearTrays",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Store.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "completeMcpOAuth",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/LoopbackSignIn.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "connectOnePassword",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Store.swift"
+   ],
+   "old_web_app": false
+  },
+  {
+   "command": "countAgents",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Onboarding.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "createAgent",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Backend.swift",
+    "ios/SimeonCore/Sources/SimeonCore/Onboarding.swift",
+    "ios/SimeonCore/Sources/SimeonCore/StoreAgents.swift",
+    "ios/SimeonCore/Sources/SimeonCore/StoreNewChat.swift",
+    "ios/SimeonCore/Sources/SimeonCore/StoreRebuild.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "createAgentAutomation",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Store.swift",
+    "ios/SimeonCore/Sources/SimeonCore/StoreAgents.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "createGroup",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Backend.swift",
+    "ios/SimeonCore/Sources/SimeonCore/StoreAgents.swift",
+    "ios/SimeonCore/Sources/SimeonCore/StoreNewChat.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "deleteAgentAutomation",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Store.swift",
+    "ios/SimeonCore/Sources/SimeonCore/StoreAgents.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "deleteAgents",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Store.swift",
+    "ios/SimeonCore/Sources/SimeonCore/StoreAgents.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "desktopMcp",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Store.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "discardDraft",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Store.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "dismissOnePasswordConnect",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Store.swift"
+   ],
+   "old_web_app": false
+  },
+  {
+   "command": "dismissTray",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Store.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "dismissUserForm",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Store.swift"
+   ],
+   "old_web_app": false
+  },
+  {
+   "command": "dismissWidget",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Store.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "duplicateAgent",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Store.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "ensureForeverBox",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Backend.swift",
+    "ios/SimeonCore/Sources/SimeonCore/StoreComputer.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "getAgentAutomations",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Backend.swift",
+    "ios/SimeonCore/Sources/SimeonCore/StoreAgents.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "getAgentChannels",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Jump.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "getAgentTranscriptTail",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Backend.swift",
+    "ios/SimeonCore/Sources/SimeonCore/VoiceCall.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "getAgentWorkflows",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Store.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "getCloudAgentInfo",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Store.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "getForeverBoxStatus",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/StoreComputer.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "getHostSettings",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Onboarding.swift",
+    "ios/SimeonCore/Sources/SimeonCore/Store.swift",
+    "ios/SimeonCore/Sources/SimeonCore/StoreAgents.swift",
+    "ios/SimeonCore/Sources/SimeonCore/StoreSettings.swift",
+    "mac/Simeon/MacLocalPermission.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "getListenerConnectUrl",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Store.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "getListenerIntegrations",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Store.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "getSubagents",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/StoreComputer.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "handBackForeverBox",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/StoreComputer.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "isAgentNetworkEnabled",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Jump.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "isGlobalSearchEnabled",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Search.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "kickstartAgent",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Onboarding.swift",
+    "ios/SimeonCore/Sources/SimeonCore/StoreAgents.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "listAgents",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Backend.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "listAllAutomations",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Search.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "openAgentTail",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Backend.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "reactToMessage",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Store.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "readAttachmentChunk",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Store.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "readAttachmentImage",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Store.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "readAttachmentText",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Store.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "refreshUserName",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Onboarding.swift"
+   ],
+   "old_web_app": false
+  },
+  {
+   "command": "requestDiskSaverAudit",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/StoreRebuild.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "resolveAutoReviewApproval",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Store.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "resolveLocalToolPermission",
+   "files": [
+    "mac/Simeon/MacLocalPermission.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "respondToWidget",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Backend.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "runAgentAutomationNow",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Store.swift",
+    "ios/SimeonCore/Sources/SimeonCore/StoreAgents.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "searchAgents",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Search.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "searchMedia",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Search.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "sendDraft",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Store.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "sendPrompt",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Backend.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "setAgentAutomationEnabled",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Store.swift",
+    "ios/SimeonCore/Sources/SimeonCore/StoreAgents.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "setAgentAvatarBytes",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Store.swift",
+    "ios/SimeonCore/Sources/SimeonCore/StoreAgents.swift",
+    "ios/SimeonCore/Sources/SimeonCore/StoreFaces.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "setAgentHiddenFromSidebar",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Store.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "setAgentNotifyOnUpdates",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Store.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "setAgentUnread",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Backend.swift",
+    "ios/SimeonCore/Sources/SimeonCore/Store.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "setGroupMembers",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Store.swift",
+    "ios/SimeonCore/Sources/SimeonCore/StoreAgents.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "setHostSettings",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Onboarding.swift",
+    "ios/SimeonCore/Sources/SimeonCore/Store.swift",
+    "ios/SimeonCore/Sources/SimeonCore/StoreAgents.swift",
+    "ios/SimeonCore/Sources/SimeonCore/StoreSettings.swift",
+    "mac/Simeon/MacLocalPermission.swift",
+    "mac/Simeon/MacServices.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "startFlightBooking",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Store.swift"
+   ],
+   "old_web_app": false
+  },
+  {
+   "command": "stopAgentTask",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/StoreComputer.swift"
+   ],
+   "old_web_app": false
+  },
+  {
+   "command": "submitFlightPassengers",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Store.swift"
+   ],
+   "old_web_app": false
+  },
+  {
+   "command": "submitSecret",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Store.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "submitUserForm",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Store.swift"
+   ],
+   "old_web_app": false
+  },
+  {
+   "command": "takeComputerControl",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/StoreComputer.swift"
+   ],
+   "old_web_app": false
+  },
+  {
+   "command": "typingFocus",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/StoreComputer.swift"
+   ],
+   "old_web_app": false
+  },
+  {
+   "command": "updateAgent",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Backend.swift",
+    "ios/SimeonCore/Sources/SimeonCore/Store.swift",
+    "ios/SimeonCore/Sources/SimeonCore/StoreAgents.swift",
+    "ios/SimeonCore/Sources/SimeonCore/StoreFaces.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "updateAgentAutomation",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Store.swift",
+    "ios/SimeonCore/Sources/SimeonCore/StoreAgents.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "uploadAttachment",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Store.swift"
+   ],
+   "old_web_app": true
+  },
+  {
+   "command": "voiceCall",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/VoiceCall.swift"
+   ],
+   "old_web_app": true
+  }
+ ],
+ "host_commands": [
+  "addOwnAgentToSharedRoom",
+  "answerCredentialRequest",
+  "answerPurchase",
+  "appendConnectorCard",
+  "appendSendMessage",
+  "autoUpdateBoxNow",
+  "broadcastToAgents",
+  "buyProduct",
+  "clearAgentMemories",
+  "clearBoxStoreNow",
+  "clearTrays",
+  "completeMcpOAuth",
+  "connectChannel",
+  "connectOnePassword",
+  "countAgents",
+  "createAgent",
+  "createAgentAutomation",
+  "createAgentWorkflow",
+  "createGroup",
+  "createRoomFromAgent",
+  "createRoomInvite",
+  "createSharedRoom",
+  "deleteAgent",
+  "deleteAgentAutomation",
+  "deleteAgentMemory",
+  "deleteAgentWorkflow",
+  "deleteAgents",
+  "desktopMcp",
+  "discardDraft",
+  "disconnectChannel",
+  "dismissOnePasswordConnect",
+  "dismissTray",
+  "dismissUserForm",
+  "dismissWidget",
+  "duplicateAgent",
+  "ensureForeverBox",
+  "executeRoutedAgentTool",
+  "executeRoutedMcpTool",
+  "getAgentAutomations",
+  "getAgentAvatar",
+  "getAgentChannels",
+  "getAgentMemories",
+  "getAgentThread",
+  "getAgentTranscript",
+  "getAgentTranscriptPage",
+  "getAgentTranscriptTail",
+  "getAgentTranscriptWindow",
+  "getAgentWorkflows",
+  "getAsyncTasks",
+  "getBoxSecretsStatus",
+  "getBoxStoreStatus",
+  "getCloudAgentInfo",
+  "getConversationOutline",
+  "getForeverBoxStatus",
+  "getHostSettings",
+  "getHostStatus",
+  "getListenerConnectUrl",
+  "getListenerIntegrations",
+  "getPlugin",
+  "getPluginSyncStatus",
+  "getSharingState",
+  "getSkillPublishTargets",
+  "getSubagents",
+  "getTeachRecordingStatus",
+  "getTranscript",
+  "getTrays",
+  "handBackForeverBox",
+  "importAgentWorkflowText",
+  "importAgentWorkflowUrl",
+  "installPlugin",
+  "isAgentNetworkEnabled",
+  "isEgressTunnelAvailable",
+  "isGlobalSearchEnabled",
+  "joinSharedRoom",
+  "kickstartAgent",
+  "leaveSharedRoom",
+  "listAgents",
+  "listAllAutomations",
+  "listBoxMcpServers",
+  "listRoutedMcpTools",
+  "openAgent",
+  "openAgentTail",
+  "openAgentWindowed",
+  "portAgentLocalSkills",
+  "prepareBoxForRecreate",
+  "promptAcceptanceStatus",
+  "publishSkill",
+  "reactToMessage",
+  "readAttachmentChunk",
+  "readAttachmentImage",
+  "readAttachmentText",
+  "refreshChannel",
+  "refreshMcp",
+  "refreshUserName",
+  "removeOwnAgentFromSharedRoom",
+  "requestDiskSaverAudit",
+  "requestWebAuthnCeremony",
+  "resetForeverBox",
+  "resolveAutoReviewApproval",
+  "resolveLocalToolPermission",
+  "respondToRoomJoinRequest",
+  "respondToWidget",
+  "resumeBoxAfterRecreate",
+  "resyncPublishedSkill",
+  "runAgentAutomationNow",
+  "runAgentWorkflowNow",
+  "searchAgents",
+  "searchMedia",
+  "searchPlugins",
+  "sendDraft",
+  "sendPrompt",
+  "setAgentAutomationEnabled",
+  "setAgentAvatarBytes",
+  "setAgentHiddenFromSidebar",
+  "setAgentNotificationsEnabled",
+  "setAgentNotifyOnUpdates",
+  "setAgentUnread",
+  "setAgentWorkflowEnabled",
+  "setBoxMigrating",
+  "setBoxSecrets",
+  "setGroupMembers",
+  "setHostSettings",
+  "setSharedRoomTyping",
+  "setWindowFocused",
+  "skillsCatalog",
+  "snapshotBoxStoreNow",
+  "startFlightBooking",
+  "startTeachRecording",
+  "stopAgentTask",
+  "stopTeachRecording",
+  "submitFlightPassengers",
+  "submitSecret",
+  "submitUserForm",
+  "syncPluginSkills",
+  "takeComputerControl",
+  "typingFocus",
+  "unpublishSkill",
+  "updateAgent",
+  "updateAgentAutomation",
+  "updateAgentWorkflow",
+  "updateForeverBox",
+  "updateHostNow",
+  "uploadAttachment",
+  "voiceCall"
+ ]
+}
