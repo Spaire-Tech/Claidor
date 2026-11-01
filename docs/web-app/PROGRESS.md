@@ -15,7 +15,7 @@ file and the code disagree, the code is right and this file is fixed.
 |---|---|
 | 0. The audit | Done, 1 November 2026 |
 | 1. The base: the server and the computer, signing in, the window | Done, 1 November 2026 (1a to 1d). Carried to step 2: the first run for a new account and the access cover |
-| 2. The sidebar and the chat | In progress: 2a (the chat's core, and the chat on screen) done; 2b (a message's actions, find, the working line, names in colour, link icons, the emoji picker) done; 2c part 1 (file cards, pictures from the computer, link cards) part 2 (the preview: text and code, Markdown, JSON, tables) and part 3a (pictures and videos full screen) and part 3b (PDF, Word, sound) done; 2c part 3c (Excel) next |
+| 2. The sidebar and the chat | In progress: 2a (the chat's core, and the chat on screen) done; 2b (a message's actions, find, the working line, names in colour, link icons, the emoji picker) done; 2c part 1 (file cards, pictures from the computer, link cards) part 2 (the preview: text and code, Markdown, JSON, tables) and part 3a (pictures and videos full screen), part 3b (PDF, Word, sound) and part 3c (Excel) done. Next: 2e, the message field's own parts (attaching files, the ":" emoji list, "@", "/" and "#", dictation) |
 | 3. The cards | Not started |
 | 4. The agent's pane, search, new chat, the org chart, starter packs | Not started |
 | 5. The computer and calls | Not started |
@@ -42,6 +42,7 @@ file and the code disagree, the code is right and this file is fixed.
 | 1 November 2026 | A message that is one link is drawn as the Mac's card with the site's icon, its name and the address, but not the page's title, which the Mac reads from the page. A web page may not read another site, and a route on Simeon's server that read it would hand the server every link the person opens | The session, as above |
 | 1 November 2026 | Save hands the file to the browser as a download (the browser asks where, or puts it in Downloads, as the person set it), not the Mac's save panel; a file the computer won't hand over says "Couldn't save this file" in the browser's own alert, as the Electron app's error box did. A picture keeps the browser's own right-click menu (Copy image, Save image as), as a link does | The session, as above |
 | 1 November 2026 | The preview uses the libraries the window itself used, at its versions: highlight.js 11.9 now (in a worker, with only the languages the preview asks for), pdf.js 5.4.296 and mammoth for PDF and Word in part 3. Not SheetJS 0.18.5, the window's reader for Excel: the copy on npm has known security holes (fixed only in releases off npm), and the files come from the internet through the agents. How Excel files show is decided in part 3 | The session, as above |
+| 1 November 2026 | Excel workbooks (.xlsx) are read by a small reader of our own (`src/core/xlsx.ts`): the browser unzips them itself and the reader takes the first sheet, each value written as its number format says. No library: SheetJS's npm copy has known holes, and the other readers are either days old with unfamiliar dependencies or built for servers. The old binary .xls is not read; it says "Preview not available" with Download. The founder: "keep going on excel" | The session |
 
 ## Open questions
 
@@ -71,6 +72,58 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 1 November 2026: step 2c, part 3c, Excel in the preview
+
+- `src/core/xlsx.ts`: an Excel workbook (.xlsx) read by our own code,
+  loaded with the first one (10 KB, 4 KB compressed):
+  - the zip unzipped by the browser itself (`DecompressionStream`), its
+    parts together held to 120 MB, so a small file that unzips to
+    gigabytes is refused;
+  - a small XML reader (no page needed, so the tests run it too);
+  - the first sheet in the workbook's order, from its first cell: shared
+    and inline words, numbers, true and false, errors, a formula's saved
+    value; blank rows kept, 2,000 rows and 200 columns at most, and how
+    many rows it has;
+  - each number written as its format says: dates and times (and a
+    workbook counted from 1904), percentages, decimals, thousands,
+    currency, negatives in brackets, scientific, General's 11 digits.
+- `Viewers.tsx`: an .xlsx shows as the CSV's table ("5 rows", a cell's
+  words in the card); one it can't read says "Couldn't read this
+  spreadsheet"; an .xls says "Preview not available" with Download. Every
+  file card's name now opens, save a kind the window can't show.
+- The table measures its words in the page's own font before drawing
+  them: measured on a canvas, dates and figures came out a few points
+  short and were cut.
+- `src/core/xlsx.test.ts`: a workbook LibreOffice made
+  (`src/core/fixtures/revenue.xlsx`, from `revenue.fods` beside it: two
+  sheets, words with a comma, quotes and an emoji, a date, a percentage,
+  formulas, two blank rows); one written the way Excel writes one (prefixed
+  tags, a path from the root, inline words, true and false, an error, a
+  1904 date, a sheet starting at B2), deflated and stored; a 2,500-row
+  sheet; a zip that unzips past its limit; files that are not workbooks;
+  and the number formats.
+- **Decision (the session, on the founder's "keep going on excel"):** in
+  the table above.
+- **Fixed on the way:** part 3b's entry here quoted a font's name that
+  `check_names.py` flags; it now says it without the name.
+- **Checked:** in Chromium, the built app under the website's security
+  policy (`excel-check.cjs` in the session's scratchpad), light and dark:
+  LibreOffice's workbook showed "5 rows" and its six columns with
+  "2026-07-01", "12.5%", "45500.75", the words with quotes and the
+  emoji, the formulas' values, the two blank rows and "Total", no cell
+  cut; a cell's card ("Note · row 1"); the .xls said "Preview not
+  available" with Download; a broken .xlsx said "Couldn't read this
+  spreadsheet"; no error but the policy probe's own. The CSV preview
+  again. The 192 tests, typecheck, lint, the words', the brands' and the
+  build's checks, `check_translations.py`, `check_names.py`.
+- **Not checked:** a workbook saved by Excel itself (the test builds one
+  the way Excel writes it; no copy of Excel here); formats beyond the
+  common ones (fractions, conditions in brackets, colours are left out of
+  the words); a sheet's other tabs (only the first is shown, as the CSV's
+  one sheet is); against the real server and a real computer.
+- **Next:** step 2e, the message field's own parts: attaching files, the
+  ":" emoji list, "@", "/" and "#", and dictation.
+
 ### 1 November 2026: step 2c, part 3b, PDF, Word and sound in the preview
 
 - `src/window/PDFBody.tsx` (`PDFControl`, `PDFToolbar`, `PDFBody`): a PDF
@@ -96,8 +149,8 @@ Newest first.
   1.12 or later), DOMPurify 3.3.1 (the version the workspace already has).
   The lockfile adds them and mammoth's own (jszip, underscore, and small
   helpers); nothing else changed.
-- `scripts/kept_names.json`: pdf.js's built worker names the font "TeX Gyre
-  Cursor"; a rule keeps that font's name there.
+- `scripts/kept_names.json`: pdf.js's built worker lists a font whose
+  name holds one of the earlier names; a rule keeps that font's name there.
 - **Checked:** in Chromium, the built app against a stand-in server and
   computer (`docs-check.cjs` in the session's scratchpad, with a two-page
   PDF, a Word file and a sound made in the session), light and dark: the

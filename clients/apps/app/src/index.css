@@ -2568,6 +2568,22 @@ button.json-caret {
   background: var(--selected-cell);
 }
 
+/* Where the table's words are measured before it is drawn: hidden, its font. */
+.sheet-measure {
+  position: absolute;
+  top: -10000px;
+  left: 0;
+  visibility: hidden;
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.sheet-measure > span {
+  display: block;
+  width: max-content;
+}
+
 /* A chosen cell's words: a card 12 in from the foot, at most 45% high, 10 round; its head with Close, the words 12.5 on 1.5. */
 .cell-detail {
   position: absolute;

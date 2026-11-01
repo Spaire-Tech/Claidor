@@ -2,8 +2,8 @@
 // `FileViewer` and `ViewerState`, FileBodies.swift's `MarkdownPage`,
 // `CodeBody`, `JSONBody` and `TableBody`): the file read from the computer
 // and shown as its kind shows it. Text and code in their colours, Markdown
-// as a page, JSON as a tree, CSV and TSV as a table, PDF in its pages,
-// Word on a page, sound in the browser's player. Excel comes next.
+// as a page, JSON as a tree, CSV, TSV and Excel as a table, PDF in its
+// pages, Word on a page, sound in the browser's player.
 
 import {
   type Dispatch,
@@ -120,25 +120,6 @@ export function ViewerLayer({
   )
 }
 
-/** The kinds the preview shows: Excel opens with the next part. */
-export function previewShown(name: string): boolean {
-  switch (fileKind(name)) {
-    case 'text':
-    case 'markdown':
-    case 'json':
-    case 'image':
-    case 'video':
-    case 'pdf':
-    case 'docx':
-    case 'audio':
-      return true
-    case 'table':
-      return ['csv', 'tsv'].includes(fileExtension(name) ?? '')
-    default:
-      return false
-  }
-}
-
 /** What a file shows once read: its words, a sheet, or nothing it can read. */
 type FileShows =
   | { kind: 'text'; text: string; cut: boolean }
@@ -147,16 +128,30 @@ type FileShows =
   | { kind: 'bytes'; data: Uint8Array }
   | { kind: 'none' }
 
-function shown(read: PreviewRead, name: string, kind: FileKind): FileShows {
+/**
+ * What a file shows once read. A CSV or TSV as its rows; an Excel workbook
+ * (.xlsx) by our own reader, loaded with the first one (`xlsx.ts`); the old
+ * binary .xls is not read, and says so with Download.
+ */
+async function shown(
+  read: PreviewRead,
+  name: string,
+  kind: FileKind,
+): Promise<FileShows> {
   if (read.kind !== 'ready') return { kind: 'none' }
   switch (kind) {
-    case 'table':
-      return ['csv', 'tsv'].includes(fileExtension(name) ?? '')
-        ? {
-            kind: 'sheet',
-            sheet: readSheet(new TextDecoder().decode(read.data), name),
-          }
-        : { kind: 'noSheet' }
+    case 'table': {
+      const ext = fileExtension(name) ?? ''
+      if (ext === 'csv' || ext === 'tsv')
+        return {
+          kind: 'sheet',
+          sheet: readSheet(new TextDecoder().decode(read.data), name),
+        }
+      if (ext !== 'xlsx') return { kind: 'none' }
+      const { readXlsx } = await import('../core/xlsx')
+      const sheet = await readXlsx(read.data)
+      return sheet ? { kind: 'sheet', sheet } : { kind: 'noSheet' }
+    }
     case 'text':
     case 'markdown':
     case 'json':
@@ -193,9 +188,17 @@ export function FileViewer({
   const panel = useRef<HTMLDivElement>(null)
   useEffect(() => {
     let live = true
-    void store.readForPreview(item.url, item.agentId).then((answer) => {
-      if (live) setRead({ read: answer, shown: shown(answer, item.name, kind) })
-    })
+    void store
+      .readForPreview(item.url, item.agentId)
+      .then(async (answer) => ({
+        read: answer,
+        shown: await shown(answer, item.name, kind).catch(
+          (): FileShows => ({ kind: 'noSheet' }),
+        ),
+      }))
+      .then((done) => {
+        if (live) setRead(done)
+      })
     return () => {
       live = false
     }
@@ -833,30 +836,44 @@ function JSONNode({
 
 const rowHeight = 25
 
-/** A text's width at the table's size (12.5, medium for the head), read once per sheet. */
-function measure(): (words: string, medium: boolean) => number {
-  const context = document.createElement('canvas').getContext('2d')
-  const family = getComputedStyle(document.body).fontFamily
-  return (words, medium) => {
-    if (!context) return words.length * 7
-    context.font = `${medium ? 500 : 400} 12.5px ${family}`
-    return context.measureText(words).width
+/**
+ * The widths of words as the table draws them (12.5, even-width digits,
+ * medium for the head): each in a hidden box with the table's own font,
+ * all read in one pass.
+ */
+function drawnWidths(words: { text: string; medium: boolean }[]): number[] {
+  const box = document.createElement('div')
+  box.className = 'sheet-measure'
+  for (const word of words) {
+    const line = document.createElement('span')
+    line.textContent = word.text
+    if (word.medium) line.style.fontWeight = '500'
+    box.append(line)
   }
+  document.body.append(box)
+  const widths = [...box.children].map(
+    (line) => line.getBoundingClientRect().width,
+  )
+  box.remove()
+  return widths
 }
 
 /** Each column as wide as its widest cell in the first rows, padded, at most 360 (`TableBody.widths`). */
 function columnWidths(sheet: Sheet, columns: number): number[] {
-  const width = measure()
   const widths = Array.from({ length: columns }, () => 40)
+  const cells: { column: number; text: string; medium: boolean }[] = []
   sheet.rows.slice(0, 200).forEach((row, index) => {
     for (let column = 0; column < Math.min(columns, row.length); column += 1) {
-      const words = row[column]!
-      if (words === '') continue
-      widths[column] = Math.max(
-        widths[column]!,
-        Math.min(360, Math.ceil(width(words, index === 0)) + 21),
-      )
+      const text = row[column]!
+      if (text !== '') cells.push({ column, text, medium: index === 0 })
     }
+  })
+  drawnWidths(cells).forEach((width, index) => {
+    const column = cells[index]!.column
+    widths[column] = Math.max(
+      widths[column]!,
+      Math.min(360, Math.ceil(width) + 21),
+    )
   })
   return widths
 }
@@ -881,8 +898,11 @@ function TableBody({ sheet }: { sheet: Sheet }) {
   const widths = useMemo(() => columnWidths(sheet, columns), [sheet, columns])
   const numberWidth = useMemo(
     () =>
-      Math.ceil(measure()(String(Math.max(1, sheet.rows.length - 1)), false)) +
-      21,
+      Math.ceil(
+        drawnWidths([
+          { text: String(Math.max(1, sheet.rows.length - 1)), medium: false },
+        ])[0] ?? 0,
+      ) + 21,
     [sheet],
   )
   const [view, setView] = useState({ top: 0, height: 600 })
