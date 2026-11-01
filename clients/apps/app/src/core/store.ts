@@ -16,6 +16,14 @@
 // (`SavedChats`); the web shows the server's copy instead (the decision is in
 // PROGRESS.md).
 
+import {
+  type PlanFacts,
+  type SandAccess,
+  accessFrom,
+  checkingAccess,
+  planFacts,
+  unknownAccess,
+} from './access'
 import { SimeonAPIError } from './api'
 import {
   type AgentBackend,
@@ -44,7 +52,18 @@ import { byteCap, computerPath } from './filePreview'
 import { GatewayError } from './gatewayConnection'
 import { type JSONValue, arr, bool, field, int, num, str, text } from './json'
 import { t } from './l10n'
+import { currentLanguage } from './language'
 import { type Agent, agentFrom, sameAgent, sortRoster } from './models'
+import {
+  type FirstRun,
+  chiefOfStaff,
+  computerWait,
+  handOffDwell,
+  normalizedName,
+  probeEvery,
+  suggestedName,
+  unreachableLine,
+} from './onboarding'
 import { plainError } from './plainWords'
 import {
   type SidebarSection,
@@ -55,6 +74,15 @@ import {
   sectionsJSON,
 } from './sidebarSections'
 import { bytesFromBase64URL } from './tokens'
+
+/** A call whose failure changes nothing: tried, and let be. */
+async function quietly(call: Promise<unknown>): Promise<void> {
+  try {
+    await call
+  } catch {
+    // Told again another time, or not needed.
+  }
+}
 
 /** A message the person sent, shown at once and kept until the host's own copy arrives (the Mac's outbox). */
 interface Outgoing {
@@ -456,6 +484,14 @@ export class AppStore {
     this.listening?.abort()
     this.listening = undefined
     this.backend = undefined
+    this.access = checkingAccess
+    this.plan = undefined
+    this.firstRunAgentId = undefined
+    this.firstRunNamed = false
+    // A hand-off waiting on the name step ends (it finds the account gone and makes nothing).
+    const waiting = this.firstRunNameWaiters
+    this.firstRunNameWaiters = []
+    for (const resume of waiting) resume()
     this.agents = []
     this.account = undefined
     this.showingSaved = false
@@ -932,6 +968,246 @@ export class AppStore {
       })
     } catch {
       await this.reloadRoster()
+    }
+  }
+
+  // MARK: The first run (Onboarding.swift) and the account's access (StoreSettings.swift)
+
+  /** Whether this account may use Simeon (`GetSandAccessStatus`): checking until it is read. */
+  access: SandAccess = checkingAccess
+  /** The plan, as far as the access cover reads it (`user/quota`); none until it is read. */
+  plan?: PlanFacts
+  /** Simeon, once the hand-off made him: a second try does not make a second. */
+  private firstRunAgentId?: string
+  private firstRunNamed = false
+  private firstRunNameWaiters: (() => void)[] = []
+
+  private async countAgents(backend: AgentBackend): Promise<number> {
+    const answer = await backend.command('countAgents', {})
+    return int(answer) ?? int(field(answer, 'count')) ?? 0
+  }
+
+  /**
+   * The start-up gate (`hUn`): seen when the host says so; else the agents
+   * are counted, and an account that has some is marked seen (the host is
+   * told); none means the first run. Where the server lets the computer
+   * rest: none made yet and no agents is a new account (its computer is made
+   * by the hand-off, its first task); asleep with agents listed here or in
+   * the server's copy has used Simeon. Neither wakes it.
+   */
+  async firstRun(): Promise<FirstRun> {
+    const backend = this.backend
+    if (!backend) return 'unknown'
+    const rest = await backend.computerRest()
+    if (rest === 'absent') return this.agents.length === 0 ? 'needed' : 'seen'
+    if (rest === 'asleep') {
+      if (this.agents.length === 0 && this.readsServerCopy)
+        await this.showServerList(backend)
+      if (this.agents.length > 0) return 'seen'
+    }
+    try {
+      const settings = await backend.command('getHostSettings', {})
+      if (bool(field(settings, 'hasSeenOnboarding')) === true) return 'seen'
+    } catch {
+      // The count below says.
+    }
+    try {
+      if ((await this.countAgents(backend)) > 0) {
+        await quietly(
+          backend.command('setHostSettings', { hasSeenOnboarding: true }),
+        )
+        return 'seen'
+      }
+      return 'needed'
+    } catch {
+      return this.agents.length === 0 ? 'unknown' : 'seen'
+    }
+  }
+
+  /**
+   * The hand-off (`Pe`): at least 1.5 s on screen; the computer first (asked
+   * every 2.5 s, a minute at most); then, unless the account is onboarded
+   * already, the name step's end and the name read again by the computer
+   * (`refreshUserName`), and only then Simeon made (his request named for
+   * the device, `client`) and his introduction begun, which calls the
+   * person by the name they gave; the first run marked done. His id, to
+   * open his chat; undefined when the account already had agents. A second
+   * try after a failure makes no second Simeon.
+   */
+  async handOff(
+    client: string,
+    ready: () => void,
+    wait: (seconds: number) => Promise<void> = (seconds) =>
+      new Promise((done) => setTimeout(done, seconds * 1000)),
+    now: () => number = Date.now,
+  ): Promise<string | undefined> {
+    const backend = this.backend
+    if (!backend) throw new GatewayError(unreachableLine(), false)
+    const started = now()
+    const dwell = async () => {
+      const left = handOffDwell - (now() - started) / 1000
+      if (left > 0) await wait(left)
+    }
+    // The computer: any answer means it is up.
+    let count: number | undefined
+    while (count === undefined) {
+      try {
+        count = await this.countAgents(backend)
+        break
+      } catch {
+        // Not yet.
+      }
+      if ((now() - started) / 1000 >= computerWait) break
+      await wait(probeEvery)
+    }
+    if (count !== undefined) ready()
+    if (this.firstRunAgentId === undefined) {
+      // The name step over first, and only then the account looked at, so another device's first run meanwhile is seen.
+      await this.nameStepOver()
+      if (this.backend !== backend)
+        throw new GatewayError(unreachableLine(), false)
+      if (count === undefined) {
+        try {
+          count = await this.countAgents(backend)
+          ready()
+        } catch {
+          // Asked again below, by making Simeon.
+        }
+      }
+      let seen = false
+      try {
+        seen =
+          bool(
+            field(
+              await backend.command('getHostSettings', {}),
+              'hasSeenOnboarding',
+            ),
+          ) === true
+      } catch {
+        // Not seen, as far as can be told.
+      }
+      if (seen || (count ?? 0) > 0) {
+        await quietly(
+          backend.command('setHostSettings', { hasSeenOnboarding: true }),
+        )
+        await dwell()
+        await this.reloadRoster()
+        return undefined
+      }
+      // The language first: a computer made for this first task was not told it, and Simeon introduces himself in it.
+      await quietly(
+        backend.command('setHostSettings', { userLanguage: currentLanguage() }),
+      )
+      // The name the person gave, read again by the computer: it read Google's as it started.
+      await quietly(backend.command('refreshUserName', {}))
+      const made = await backend.command(
+        'createAgent',
+        chiefOfStaff(
+          `${client}-onboarding-${crypto.randomUUID().toLowerCase()}`,
+        ),
+      )
+      const id =
+        text(field(field(made, 'agent'), 'id')) ?? text(field(made, 'id'))
+      if (!id)
+        throw new GatewayError('createAgent: no agent in the answer', true)
+      this.firstRunAgentId = id
+    }
+    const id = this.firstRunAgentId
+    await backend.command('kickstartAgent', { id })
+    await backend.command('setHostSettings', { hasSeenOnboarding: true })
+    await dwell()
+    await this.reloadRoster()
+    return id
+  }
+
+  /** The name step's suggestion (`GET user/profile`): the name chosen, else Google's or Apple's first name. */
+  async namePrompt(): Promise<string | undefined> {
+    try {
+      const profile = await this.backend?.server('user/profile')
+      return profile === undefined ? undefined : suggestedName(profile)
+    } catch {
+      return undefined
+    }
+  }
+
+  /** The name the agents call the person (`POST user/name`); an empty one is not sent. */
+  async saveName(typed: string): Promise<void> {
+    const name = normalizedName(typed)
+    const backend = this.backend
+    if (name === '' || !backend) return
+    await quietly(backend.server('user/name', 'POST', { name }))
+    if (this.account) {
+      this.account = { ...this.account, name }
+      this.changed()
+    }
+  }
+
+  /** The first run's name step is over: the name saved, then the hand-off may make Simeon. */
+  async finishNameStep(typed: string): Promise<void> {
+    await this.saveName(typed)
+    this.firstRunNamed = true
+    const waiting = this.firstRunNameWaiters
+    this.firstRunNameWaiters = []
+    for (const resume of waiting) resume()
+  }
+
+  /** Until the name step is over, or the account is gone (`detach`). */
+  private nameStepOver(): Promise<void> {
+    if (this.firstRunNamed) return Promise.resolve()
+    return new Promise((resume) => this.firstRunNameWaiters.push(resume))
+  }
+
+  /** Whether this account may use Simeon (`GetSandAccessStatus`); unknown when it can't be read. */
+  async refreshAccess(): Promise<void> {
+    const backend = this.backend
+    if (!backend?.dashboard) {
+      this.access = backend ? unknownAccess : checkingAccess
+      this.changed()
+      return
+    }
+    try {
+      this.access = accessFrom(
+        await backend.dashboard('GetSandAccessStatus', {}),
+      )
+    } catch {
+      this.access = unknownAccess
+    }
+    this.changed()
+  }
+
+  /** The plan, as the cover reads it (`GET user/quota`); a failure keeps what was read. */
+  async refreshPlan(): Promise<void> {
+    try {
+      const quota = await this.backend?.server('user/quota')
+      if (quota === undefined) return
+      this.plan = planFacts(quota)
+      this.changed()
+    } catch {
+      // The last read stays.
+    }
+  }
+
+  /** Stripe's page for the account (`POST billing/portal`, with its flow): its address, or the words to show. */
+  async billingPortal(
+    flow?: string,
+  ): Promise<{ url?: string; message?: string }> {
+    const fallback = t('Couldn’t open billing. Try again.')
+    const backend = this.backend
+    if (!backend) return { message: t('Sign in to Simeon to continue') }
+    try {
+      const answer = await backend.server(
+        'billing/portal',
+        'POST',
+        flow ? { flow } : {},
+      )
+      const url = str(field(answer, 'portalUrl'))
+      return url?.startsWith('https://') ? { url } : { message: fallback }
+    } catch (error) {
+      const words = plainError(
+        error instanceof Error ? error.message : String(error),
+        fallback,
+      )
+      return { message: words === '' ? fallback : words }
     }
   }
 

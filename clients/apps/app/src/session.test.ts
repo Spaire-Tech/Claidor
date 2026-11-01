@@ -1,7 +1,8 @@
 // Signing in and reaching the computer, the web's way: the pair kept in the
 // tab, the website's cookie traded, the website's sign-in page when there is
 // neither, the window as soon as a list is on screen, and back to the sign-in
-// page when the server ends the sign-in.
+// page when the server ends the sign-in; a new account's first run, and Sign
+// Out through the website's own sign-out.
 
 import { describe, expect, it } from 'vitest'
 import { MemoryVault, SimeonAPI } from './core/api'
@@ -17,11 +18,15 @@ function session(options: {
   backend: FakeBackend
   signIns: string[]
   saved?: MemorySavedGateway
+  signOuts?: string[]
 }): WebSession {
   return new WebSession({
     base: 'https://api.example.com',
     here: () => '/app-next/?agent=theo',
     goSignIn: (returnTo) => options.signIns.push(returnTo),
+    goSignOut: (base) => options.signOuts?.push(base),
+    gateRetryMs: 0,
+    forcesFirstRun: false,
     saved: options.saved ?? new MemorySavedGateway(),
     makeAPI: () =>
       new SimeonAPI({
@@ -80,11 +85,54 @@ describe('the web session', () => {
       profile,
     ])
     const signIns: string[] = []
-    const web = session({ vault, http, backend: new FakeBackend(), signIns })
+    const backend = new FakeBackend()
+    backend.agents = [makeAgent({ id: 'theo', name: 'Theo' })]
+    const web = session({ vault, http, backend, signIns })
     await web.start()
     expect(web.phase).toBe('signedIn')
     expect(vault.read()?.refreshToken).toBe('r')
     expect(signIns).toEqual([])
+  })
+
+  it('gives a new account the first run, then the window', async () => {
+    const vault = new MemoryVault({
+      accessToken: tokenFor('u1'),
+      refreshToken: 'r',
+      expiresAtMs: 9e15,
+    })
+    const http = new ScriptedHTTP([profile])
+    const web = session({
+      vault,
+      http,
+      backend: new FakeBackend(),
+      signIns: [],
+    })
+    await web.start()
+    expect(web.phase).toBe('firstRun')
+    web.finishFirstRun()
+    expect(web.phase).toBe('signedIn')
+  })
+
+  it('signs out here and then at the website, which ends its cookie', async () => {
+    const vault = new MemoryVault({
+      accessToken: tokenFor('u1'),
+      refreshToken: 'r',
+      expiresAtMs: 9e15,
+    })
+    const http = new ScriptedHTTP([profile, () => answer(200, '{}')])
+    const backend = new FakeBackend()
+    backend.agents = [makeAgent({ id: 'theo', name: 'Theo' })]
+    const signOuts: string[] = []
+    const web = session({ vault, http, backend, signIns: [], signOuts })
+    await web.start()
+    await web.signOut()
+    expect(web.phase).toBe('signedOut')
+    expect(vault.read()).toBeNull()
+    expect(web.store.agents).toEqual([])
+    expect(signOuts).toEqual(['https://api.example.com'])
+    expect(http.sent.map((r) => new URL(r.url).pathname)).toContain(
+      '/desktop/api/auth/logout',
+    )
   })
 
   it('goes to the website’s sign-in page with neither, told to come back here', async () => {

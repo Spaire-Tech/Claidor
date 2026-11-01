@@ -1,6 +1,7 @@
 // The window (`AppRoot` and `MainWindow` in mac/Simeon/MainWindow.swift):
-// the mark while the sign-in and the computer are found, then the sidebar
-// and the open agent's chat side by side. The agent left open stays open
+// the mark while the sign-in and the computer are found; a new account's
+// first run, or the access cover; then the sidebar and the open agent's
+// chat side by side. The agent left open stays open
 // (the address keeps it, `?agent=`), else the first in the sidebar's order
 // opens, the pins first (`WindowState.chooseFirst`).
 
@@ -13,7 +14,9 @@ import {
 } from 'react'
 import { t } from './l10n'
 import type { WebSession } from './session'
+import { AccessCover } from './window/AccessCover'
 import { ChatPane } from './window/ChatPane'
+import { FirstRunScreen } from './window/FirstRun'
 import { Sidebar, listOrder } from './window/Sidebar'
 import {
   type SidebarSize,
@@ -198,8 +201,37 @@ function MainWindow({ session }: { session: WebSession }) {
   )
 }
 
+/**
+ * Signed in (`AppRoot`): the access cover when the account was refused
+ * before its computer was ever reached; a new account's first run; else
+ * the window.
+ */
+function SignedIn({ session }: { session: WebSession }) {
+  const store = session.store
+  useWatched(store)
+  const covered =
+    store.accessBlocked &&
+    !store.hasReachedBox &&
+    store.access.state !== 'granted'
+  if (covered) return <AccessCover session={session} />
+  if (session.phase === 'firstRun')
+    return (
+      <FirstRunScreen
+        store={store}
+        open={(agentId) => {
+          // The window opens on Simeon's chat.
+          if (agentId) keepInAddress(agentId)
+          session.finishFirstRun()
+        }}
+      />
+    )
+  return <MainWindow session={session} />
+}
+
 export function App({ session }: { session?: WebSession }) {
   useWatched(session ?? { subscribe: () => () => {}, getVersion: () => 0 })
-  if (!session || session.phase !== 'signedIn') return <Splash />
-  return <MainWindow session={session} />
+  if (!session) return <Splash />
+  if (session.phase === 'signedIn' || session.phase === 'firstRun')
+    return <SignedIn session={session} />
+  return <Splash />
 }

@@ -14,8 +14,8 @@ file and the code disagree, the code is right and this file is fixed.
 | Step (`README.md`, "The order of work") | State |
 |---|---|
 | 0. The audit | Done, 1 November 2026 |
-| 1. The base: the server and the computer, signing in, the window | Done, 1 November 2026 (1a to 1d). Carried to step 2: the first run for a new account and the access cover |
-| 2. The sidebar and the chat | In progress: 2a (the chat's core, and the chat on screen) done; 2b (a message's actions, find, the working line, names in colour, link icons, the emoji picker) done; 2c part 1 (file cards, pictures from the computer, link cards) part 2 (the preview: text and code, Markdown, JSON, tables) and part 3a (pictures and videos full screen), part 3b (PDF, Word, sound) and part 3c (Excel) done; 2e (the message field's own parts: attaching files, the ":" emoji list, "@", "/" and "#", dictation) done; 2f (the sidebar: pins, sections, several rows picked, its menus, renaming, hiding, Hidden Agents, deleting, dragging, the rail, the width) done. Next: the first run for a new account and the access cover, which end step 2. The sidebar's head and foot (search, new chat, the account, Connect apps) come with their screens in step 4 |
+| 1. The base: the server and the computer, signing in, the window | Done, 1 November 2026 (1a to 1d); the first run for a new account and the access cover, carried to step 2, done there |
+| 2. The sidebar and the chat | Done, 1 November 2026: 2a (the chat's core and the chat on screen), 2b (a message's actions, find, the working line, names in colour, link icons, the emoji picker), 2c (file cards, pictures, link cards, the preview with PDF, Word, sound and Excel, the viewer), 2e (the message field's own parts: files, ":", "@", "/", "#", dictation), 2f (the sidebar: pins, sections, picked rows, menus, renaming, hiding, deleting, dragging, the rail, the width), 2g (a new account's first run, the access cover). The sidebar's head and foot (search, new chat, the account, Connect apps) come with their screens in step 4. Next: step 3, the cards |
 | 3. The cards | Not started |
 | 4. The agent's pane, search, new chat, the org chart, starter packs | Not started |
 | 5. The computer and calls | Not started |
@@ -55,6 +55,9 @@ file and the code disagree, the code is right and this file is fixed.
 | 1 November 2026 | The confirmations and alerts are the window's own, drawn as the Mac's (the mark, the title and words, Cancel and Delete in red), not the browser's `confirm()`, which can't make Delete red, says the site's address over it, and stops the page | The session |
 | 1 November 2026 | The sidebar's width and whether it is folded are kept in the browser under the Mac's names (`simeon.sidebar.width.320`, `simeon.sidebar.collapsed`), as the Mac keeps them on each Mac: each computer its own. ⌘B on a Mac, Control-B on Windows and Linux. The window is never narrower than 512 (the rail and the chat's 424), as the Mac's | The session |
 | 1 November 2026 | Rows, pins and sections are dragged with the browser's own dragging, in a kind of their own, so the message field never takes a dragged row as words or files | The session |
+| 1 November 2026 | Sign Out on the web drops this tab's pair (on the server and here), then goes to the website's own sign-out (`/v1/auth/logout`), which ends its cookie; otherwise the next visit would sign straight back in from it | The session |
+| 1 November 2026 | The access cover's button opens its page (the plans page, Apple's, Simeon Labs', or Stripe's card page asked for first) in a new tab, and the cover reads the access, the plan and the agents again when the tab comes back to the front. The Mac's charge after Stripe's card page (`billing/settle`) is not made: the web can't tell when that page was finished (the Mac's sheet comes back on the app's own link) | The session |
+| 1 November 2026 | The wordmark's face (Suravaram, SIL Open Font License) ships with the web app, its licence served beside it (`/app-next/fonts/Suravaram-OFL.txt`) | The session |
 
 ## Open questions
 
@@ -83,6 +86,83 @@ For the founder, each to be answered before the step that needs it:
 ## Log
 
 Newest first.
+
+### 1 November 2026: step 2g, a new account's first run and the access cover
+
+- `src/core/onboarding.ts` (SimeonCore's Onboarding.swift): the name
+  step's words, the suggestion (the name chosen, else Google's, never the
+  mail), the name as it is saved (60 at most), Simeon's profile, the
+  hand-off's line.
+- The store (`store.ts`), as the core's:
+  - `firstRun()`, the start-up gate: seen when the host says so; else the
+    agents counted (and the host told when there are some); a new account
+    whose computer was never made, or asleep with agents in the server's
+    copy, is told apart without waking or making it;
+  - `handOff('web', …)`: the computer asked every 2.5 s (a minute at most),
+    the name step waited for, the language told, the name read again by
+    the computer (`refreshUserName`), and only then Simeon made, his
+    introduction begun and the first run marked done; at least 1.5 s on
+    screen; a second try makes no second Simeon; leaving makes none;
+  - `namePrompt`, `saveName` (`POST user/name`), `finishNameStep`;
+  - `refreshAccess` (`GetSandAccessStatus`, the account's Connect service,
+    new on the backend as `dashboard`), `refreshPlan` (`user/quota`),
+    `billingPortal`.
+- `src/core/access.ts` (Access.swift and Upgrade.swift's `MacUpgrade`): the
+  access words for every state and reason, the cover's words for an
+  account without a plan (the trial, an ended trial, a card that failed,
+  Apple's), and where its button goes.
+- `src/session.ts`: the gate after the list (a silent computer asked once
+  more after 2.5 s), the `firstRun` phase, `finishFirstRun`, `signOut`;
+  `?first-run` forces the first run, as the Mac's `--first-run`.
+- `src/window/FirstRun.tsx`: "What should we call you?", the mark, the
+  field (Google's name in it, the keys after 0.45 s), Continue dim until
+  there is a name; then the line in the window's moving light, "Getting
+  your team ready…" once the computer answers; the window on Simeon's
+  chat. A failure: "Simeon couldn’t finish setting up", why in red, Try
+  again with the keys.
+- `src/window/AccessCover.tsx`: the mark and "Simeon" in the wordmark's
+  face, the tagline, the account's words and button, "Signed in as …" and
+  Sign Out, asked first (Cancel, Sign out in red).
+- `App.tsx`: the cover when the account was refused before its computer
+  was ever reached, else the first run, else the window.
+- Tests: the core's access table (`fixtures/access.json`, all 50), the
+  server's numbers, the Mac's cover words and routes, the first run's
+  words, the gate (new, known, never made, asleep with a copy), the
+  hand-off's order, a sign-out meanwhile, a retry; the session's first run
+  and Sign Out.
+- **Decisions:** in the table above (Sign Out through the website's own
+  sign-out; the cover's pages in a new tab, no charge after the card page;
+  the wordmark's face and its licence).
+- **Checked:** in Chromium against a stand-in server and computer
+  (`firstrun-check.cjs` in the session's scratchpad), light and dark, then
+  French:
+  - a new account: the screen, "Bastian" from the profile in the field
+    with the keys; the computer asked while the name shows, nothing made;
+    an empty name: Continue dim, Return does nothing; "  Bass   Fall ",
+    Return: "Getting your team ready…", then the window on Simeon (Chief of
+    Staff, "Bras droit" in French), the address `?agent=simeon`; in order:
+    the name saved as "Bass Fall", the language told ("fr" in French), the
+    name read again, Simeon made (`web-onboarding-…`), his introduction,
+    the first run marked done;
+  - Simeon's making refused once: the failure's three lines, Try again
+    with the keys, Return: the window on Simeon, made once;
+  - a refused account (`EnsureSandBox` 403, a trial to start): the cover
+    in the wordmark's face (loaded), "Start your free trial to send
+    messages", Start Free Trial opening the plans page in a new tab, "Signed
+    in as bass@simeonlabs.com"; Sign Out asked, Escape keeps it; Sign out:
+    the pair dropped, the server told, then the website's sign-out.
+  - The sidebar's and the dragging checks again on this build: every step
+    as before. No page errors in any run. The 239 tests, typecheck, lint,
+    the words', the brands' and the build's checks, `check_names.py`,
+    `check_translations.py`.
+- **Not checked:** against the real server and a new account's real
+  computer being made (the address is not live yet); the website's real
+  sign-out and its return; Stripe's card page from the cover.
+- **Not done, with the step that brings it:** the hand-off's percentage
+  while the computer's image is pulled, and "Waking your computer…" (the
+  computer's status, step 5); the browser's notifications, which the Mac
+  asks for as its window opens (step 6).
+- **Next:** step 3, the cards.
 
 ### 1 November 2026: step 2f, part 2, dragging, the rail and the width
 

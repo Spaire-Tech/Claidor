@@ -124,6 +124,8 @@ export interface AgentBackend {
   transcribe?(audio: Uint8Array, mimeType: string): Promise<string>
   /** Where the computer rests, when the server lets it sleep. */
   computerRest(): Promise<Rest | null>
+  /** One method of the account's Connect service on Simeon Labs' server (`simeon.v1.DashboardService`): whether the account may use Simeon. */
+  dashboard?(method: string, message?: JSONValue): Promise<JSONValue>
   /** The host's events until `signal` aborts. */
   events(
     onEvent: (event: BackendEvent) => void,
@@ -184,6 +186,11 @@ export class LiveBackend implements AgentBackend {
 
   computerRest(): Promise<Rest | null> {
     return this.gateway.restAtLaunch()
+  }
+
+  dashboard(method: string, message: JSONValue = {}): Promise<JSONValue> {
+    if (!this.api) throw signInFirst()
+    return this.api.connect(method, message, 'simeon.v1.DashboardService')
   }
 
   computerWaking(): void {

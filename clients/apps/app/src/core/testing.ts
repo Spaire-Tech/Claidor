@@ -11,7 +11,7 @@ import type {
   TranscriptPage,
 } from './backend'
 import { Entry } from './entry'
-import { Gateway, GatewayConnection } from './gateway'
+import { Gateway, GatewayConnection, type Rest } from './gateway'
 import { GatewayError } from './gatewayConnection'
 import type { HTTPAnswer, HTTPClient, HTTPRequest, HTTPStream } from './http'
 import { NetworkError } from './http'
@@ -278,7 +278,11 @@ export class FakeBackend implements AgentBackend {
     this.beforeAnswer?.(method)
     if (this.refusedCommands.has(method))
       throw new GatewayError("The computer didn't answer.", true)
-    return this.commandAnswers[method]?.(args) ?? {}
+    const answer = this.commandAnswers[method]
+    if (answer) return answer(args)
+    // The host counts the agents it has (`countAgents`).
+    if (method === 'countAgents') return { count: this.agents.length }
+    return {}
   }
   /** What a recording is heard as (dictation), and each recording's type. */
   heard = 'Book a table for two'
@@ -339,8 +343,17 @@ export class FakeBackend implements AgentBackend {
   push(event: BackendEvent): void {
     this.emit?.(event)
   }
+  /** Where the computer rests (`computerRest`): awake by default. */
+  rest: Rest | null = null
   async computerRest() {
-    return null
+    return this.rest
+  }
+  /** The account's Connect service's answers, by method; refused otherwise. */
+  dashboardAnswers: Record<string, JSONValue> = {}
+  async dashboard(method: string): Promise<JSONValue> {
+    const found = this.dashboardAnswers[method]
+    if (found === undefined) throw new SimeonAPIError('No such method.', 404)
+    return found
   }
   events(
     onEvent: (event: BackendEvent) => void,
