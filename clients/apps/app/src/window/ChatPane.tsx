@@ -64,6 +64,7 @@ import { t } from '../l10n'
 import { ActivitySlot } from './ActivitySlot'
 import { AgentMark } from './AgentMark'
 import { Composer } from './Composer'
+import { EmojiPicker } from './EmojiPicker'
 import { FindBar, FindContext, Marked } from './FindBar'
 import {
   type Dismissal,
@@ -120,6 +121,7 @@ type Overlay = { bounds: { width: number; height: number } } & (
       at: { x: number; y: number; endAligned: boolean }
     }
   | { kind: 'tapback'; bubble: Bubble; anchor: Spot }
+  | { kind: 'picker'; bubble: Bubble; anchor: Spot }
 )
 
 /** Find in the chat: open or not, its words, ⌘F's count (the field takes the keys on each), the match stepped to for these words, and the lines it was for. */
@@ -344,7 +346,7 @@ export function ChatPane({
       heldFor:
         overlay?.kind === 'menu'
           ? overlay.forId
-          : overlay?.kind === 'tapback'
+          : overlay?.kind === 'tapback' || overlay?.kind === 'picker'
             ? overlay.bubble.id
             : undefined,
     }
@@ -417,6 +419,23 @@ export function ChatPane({
       {overlay?.kind === 'tapback' && (
         <TapbackCapsule
           bubble={overlay.bubble}
+          anchor={overlay.anchor}
+          bounds={overlay.bounds}
+          pick={(emoji) => void store.react(emoji, overlay.bubble.id, agentId)}
+          more={() =>
+            setOverlay({
+              kind: 'picker',
+              bubble: overlay.bubble,
+              anchor: overlay.anchor,
+              bounds: overlay.bounds,
+            })
+          }
+          close={closeOverlay}
+        />
+      )}
+      {overlay?.kind === 'picker' && (
+        <EmojiPicker
+          mine={overlay.bubble.myReactions}
           anchor={overlay.anchor}
           bounds={overlay.bounds}
           pick={(emoji) => void store.react(emoji, overlay.bubble.id, agentId)}
