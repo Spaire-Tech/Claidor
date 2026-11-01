@@ -1,2 +1,4 @@
 # Made by scripts/make-words.mjs from the String Catalogs.
 src/words
+# Made by scripts/make-brands.mjs from GeneratedBrands.swift and desktop/brand.
+src/core/generatedBrands.ts
