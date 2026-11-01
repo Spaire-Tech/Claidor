@@ -122,6 +122,7 @@ work, never stiff.
 | The server's answers: refusals, the sign-in pages, the free month | `server/simeon/desktop/words/` (`_booking.py`, `_account.py`: `EN` and one table per language; `en.py`, `fr.py`… gather them), read by `say(key, **values)` in the request's `Accept-Language` | `server/tests/desktop/test_words.py`, `check_translations.py` |
 | The sign-in code email | `server/emails/src/words.ts` | `check_translations.py` |
 | The website's pages Simeon owns: sign-in (`/login`, `/signup`, the code and password pages) and `/billing` | `clients/packages/i18n/src/locales/en.ts` and each language's file, under `simeon`; the page's language from `pageLocale` (`clients/apps/web/src/utils/i18n.ts`: `?locale=`, else the browser's, else English) | `clients/packages/i18n/src/simeon.test.ts` |
+| The web and Windows app (`clients/apps/app`, docs/web-app/) | No words of its own: it reads the two catalogues above, made into one table per language by `scripts/make-words.mjs` (`src/words/mac/` for its screens, `src/words/core/` for the code translated from the core), with `t` and `tk` (`src/l10n.ts`, `src/core/l10n.ts`) | `check_translations.py` (each `t` is in the catalogue its code reads; the languages are the apps'); `pnpm test` (the tables are the catalogues') |
 | The App Store page: name, subtitle, description, keywords, what's new, promotional text | `ios/AppStore/metadata/<language>/*.txt` (`en-US`, `fr-FR`, `de-DE`…), pasted into App Store Connect (`ios/AppStore/README.md`) | `check_translations.py` (every field in every language) |
 | The engine (the agents' prompts, voice calls) | `desktop/source/shared/user-language.ts`; the calls' greetings in `voice-call-prompt.ts` | `desktop/tests/user-language.test.mjs` |
 | The core (calls) | `ios/SimeonCore/Sources/SimeonCore/VoiceCall.swift` (`firstMessage`), word for word as the engine's | `LanguageTests.swift` |
@@ -266,9 +267,13 @@ say("email.login_code.subject", language="fr")
    which have none, read English on Simeon's pages). A language the checkout
    is not in (Polish, Turkish) has a file with `simeon` alone and goes in
    `SIMEON_ONLY_LOCALES` (`config.ts`); its other keys read English.
-5. The App Store page: a folder beside `ios/AppStore/metadata/fr-FR` with
+5. The web and Windows app: add it to `languages` in
+   `clients/apps/app/src/core/language.ts`, then run
+   `node scripts/make-words.mjs` there (it makes the language's tables from
+   the catalogues of step 1).
+6. The App Store page: a folder beside `ios/AppStore/metadata/fr-FR` with
    each field (App Store Connect's own language code, like `es-ES`,
    `de-DE`, `pt-BR`, `ja`), and the plans' descriptions
    (`ios/AppStore/README.md`).
-6. Run `python3 scripts/check_translations.py`, the tests, and read every
+7. Run `python3 scripts/check_translations.py`, the tests, and read every
    screen in the new language on an iPhone and a Mac.

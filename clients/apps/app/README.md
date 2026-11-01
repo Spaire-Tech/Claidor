@@ -20,6 +20,23 @@ both before changing anything here.
 - **Windows** will load the same files from disk, built with
   `SIMEON_APP_BASE=./`.
 
+## Its words
+
+The Mac app's own, in every language Simeon is in: the screens read the
+Mac's catalogue, the code translated from the shared core reads the core's
+(`docs/localization.md`, "Where each platform keeps its words"). Write the
+English as the Swift writes it, through `t`:
+
+```ts
+t('Sign in to Simeon first.')
+t`Couldn’t reach ${name}.`   // the key is "Couldn’t reach %@."; a number is %lld
+tk('section.open')           // a sentence with its own key
+```
+
+`python3 scripts/check_translations.py` fails when the sentence is not in the
+catalogue. After a catalogue changes, run `pnpm words` and commit the tables
+(`src/words`); `pnpm test` fails until they match.
+
 ## Commands
 
 ```sh
@@ -27,7 +44,8 @@ cd clients && pnpm install
 cd clients/apps/app
 pnpm dev          # http://localhost:5174/app-next/
 pnpm build        # into ../web/public/app-next; commit the result
-pnpm test         # the tests, then the build check
+pnpm words        # the words' tables, from the String Catalogs
+pnpm test         # the tests, then the words' and the build's checks
 pnpm typecheck
 pnpm lint
 ```

@@ -10,8 +10,9 @@
     "format": "prettier --write ./src ./scripts",
     "format:check": "prettier -c ./src ./scripts",
     "lint": "pnpm format:check && eslint .",
-    "test": "vitest run && node scripts/check-built.mjs",
-    "typecheck": "tsc --noEmit"
+    "test": "vitest run && node scripts/make-words.mjs --check && node scripts/check-built.mjs",
+    "typecheck": "tsc --noEmit",
+    "words": "node scripts/make-words.mjs"
   },
   "dependencies": {
     "react": "19.2.4",

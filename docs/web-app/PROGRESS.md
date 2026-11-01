@@ -14,7 +14,7 @@ file and the code disagree, the code is right and this file is fixed.
 | Step (`README.md`, "The order of work") | State |
 |---|---|
 | 0. The audit | Done, 1 November 2026 |
-| 1. The base: the server and the computer, signing in, the window | In progress: the app's folder, build and address (1a) and talking to the server and the computer (1b) are done; next, the words (1c) |
+| 1. The base: the server and the computer, signing in, the window | In progress: the app's folder, build and address (1a), talking to the server and the computer (1b) and the words (1c) are done; next, the window (1d) |
 | 2. The sidebar and the chat | Not started |
 | 3. The cards | Not started |
 | 4. The agent's pane, search, new chat, the org chart, starter packs | Not started |
@@ -34,6 +34,7 @@ file and the code disagree, the code is right and this file is fixed.
 | 1 November 2026 | It is served at `app.simeonlabs.com/app-next` while it is built. The old web app stays at `/app` until the new one has everything the Mac app has; then the new one moves to `/app` | The session, as above |
 | 1 November 2026 | Its built files are committed into `clients/apps/web/public/app-next`, as the old app's are, so the website's deploy does not change (Vercel builds only `web`). `pnpm test` fails when they are not the build of the source | The session, as above |
 | 1 November 2026 | Skills publishing is left out, as on the Mac. If the Mac app gets it, the checks ask for it here too | The session, as above |
+| 1 November 2026 | The web app has no catalogue of its own: it reads the Mac's two String Catalogs, made into tables by a script, so a translation is written once, for the Mac, and the web app has it. The screens read the Mac app's catalogue and the code translated from the core reads the core's, because the two say some English differently ("Done": "OK" on a Mac screen, "Terminé" in the core) | The session, as above |
 
 ## Open questions
 
@@ -50,6 +51,55 @@ For the founder, each to be answered before the step that needs it:
 ## Log
 
 Newest first.
+
+### 1 November 2026: step 1c, the words
+
+- `clients/apps/app/scripts/make-words.mjs` turns the Mac app's and the
+  core's String Catalogs into one table per language (`src/words/mac/`,
+  `src/words/core/`): each entry the translation in Apple's format (`%@`,
+  `%lld`, `%1$@`, `%%`) or its plural forms. `--check` fails when the tables
+  are not the catalogues'.
+- `src/core/words.ts`, with `t` and `tk` for the screens (`src/l10n.ts`, the
+  Mac's catalogue) and for the core's code (`src/core/l10n.ts`, the core's):
+  - the key is made the way Swift makes it: t`Couldn’t reach ${name}.` is
+    "Couldn’t reach %@.", a number `%lld`, a written % `%%`;
+  - values go where the translation puts them, by place where it numbers
+    them; a plural picks its form by the language's own rules (Polish has
+    four);
+  - a sentence with no translation shows its English.
+- The app loads its language before it draws: the browser's first language
+  Simeon is in (Windows' in Electron), else English. Only that language's
+  two tables are downloaded (French: 15 KB and 73 KB compressed). The page's
+  `lang` says it.
+- **The checks:**
+  - `check_translations.py` fails on a `t(…)` in the web app that is in no
+    catalogue, on a `t` or `tk` whose English is not written out, when the
+    web app's languages are not the apps', and when the tables are not the
+    catalogues' (it runs `make-words.mjs --check`). So a catalogue changed by
+    Mac work fails it until `pnpm words` is run (`CLAUDE.md` says so);
+  - `pnpm test` runs the same table check;
+  - `web_app_inventory.py` now counts the strings the new web app shows:
+    2 of 3,164 (the two sentences step 1b uses).
+- `docs/localization.md` names the web app's place in its platform table and
+  in "Adding a language".
+- **Checked:**
+  - 9 new tests against the real catalogues: the keys and the values; English;
+    each table its own ("Done" is "OK" on a screen, "Terminé" in the core);
+    values in the translation's order; French and Polish plurals; the
+    keyed sentences; a missing translation shown in English. 64 tests pass;
+  - the checks catch faults: four wrong calls planted in a file (a sentence
+    in no catalogue, a template whose words are not the catalogue's, a `tk`
+    built from a value, a `t` of a variable) each failed
+    `check_translations.py`, and the valid ones passed; a language taken off
+    the web app's list failed it; a table edited by hand failed
+    `make-words.mjs --check`, from `pnpm test` and from
+    `check_translations.py`;
+  - in Chromium, served by Vite: French, Polish, English and Japanese
+    browsers each load only their own tables (Japanese falls back to
+    English), the page's `lang` is the language, nothing errs.
+- **Not checked:** a sentence on screen in each language: the window
+  (step 1d) is the first to show any.
+- **Next:** 1d, the window: signing in, the layout, the agents list.
 
 ### 1 November 2026: step 1b, talking to the server and the computer
 

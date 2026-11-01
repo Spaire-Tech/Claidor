@@ -15,6 +15,13 @@ left out): adding one there makes this ask for it everywhere. It reads:
 - the shared core's sentences (`L10n.text("…")` in ios/SimeonCore): each one
   is a key of the core's catalog (Resources/Localizable.xcstrings), so the
   first check asks for its translations;
+- the web app's sentences (`t(…)`, t`…` and `tk(…)` in clients/apps/app/src,
+  docs/web-app/README.md): each one is a key of the catalog its code reads,
+  the core's for `src/core`, the Mac app's for the screens, and the web
+  app reads their translations from there: its tables
+  (clients/apps/app/src/words) are the catalogues' own, made by
+  `scripts/make-words.mjs` (run with Node), so a catalogue changed by Mac
+  work fails here until `pnpm words` is run in clients/apps/app;
 - the engine's, the server's and the emails' tables (`say`): each language's
   table has every key of the English one, with the same `{values}`
   (desktop/source/shared/words, server/simeon/desktop/words,
@@ -29,6 +36,8 @@ from __future__ import annotations
 
 import json
 import re
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -220,6 +229,103 @@ def check_core_keys() -> list[str]:
     return problems
 
 
+WEB = ROOT / "clients/apps/app/src"
+MAC_CATALOG = ROOT / "mac/Simeon/Localizable.xcstrings"
+# Where the words are made and looked up, and the tests' sentences that are in no catalog on purpose.
+WEB_SKIPPED = {"words.ts", "l10n.ts", "testing.ts"}
+
+
+def js_literal(text: str, start: int) -> tuple[str, int]:
+    """The pattern of the JS string or template at `start` (each `${…}` a value) and where it ends."""
+    quote, out, i = text[start], [], start + 1
+    while text[i] != quote:
+        if quote == "`" and text.startswith("${", i):
+            depth, i = 1, i + 2
+            while depth:
+                if text[i] in "'\"`":
+                    i = js_literal(text, i)[1]
+                    continue
+                depth += {"{": 1, "}": -1}.get(text[i], 0)
+                i += 1
+            out.append("(?:%@|%lld)")
+            continue
+        if text[i] == "\\":
+            nxt = text[i + 1]
+            if nxt == "u":
+                if text[i + 2] == "{":
+                    end = text.index("}", i)
+                    char, i = chr(int(text[i + 3:end], 16)), end + 1
+                else:
+                    char, i = chr(int(text[i + 2:i + 6], 16)), i + 6
+            else:
+                char, i = {"n": "\n", "t": "\t", "r": "\r"}.get(nxt, nxt), i + 2
+            out.append("%%" if char == "%" else re.escape(char))
+            continue
+        out.append("%%" if text[i] == "%" else re.escape(text[i]))
+        i += 1
+    return "".join(out), i + 1
+
+
+def web_sentences() -> list[tuple[Path, int, str, str]]:
+    """Each sentence the web app shows: (file, line, the key's pattern or a problem, "core" or "mac")."""
+    found: list[tuple[Path, int, str, str]] = []
+    if not WEB.exists():
+        return found
+    for path in sorted([*WEB.rglob("*.ts"), *WEB.rglob("*.tsx")]):
+        if path.name in WEB_SKIPPED or ".test." in path.name:
+            continue
+        table = "core" if WEB / "core" in path.parents else "mac"
+        text = path.read_text()
+        for call in re.finditer(r"(?<![\w.$])(t|tk)(\(\s*|`)", text):
+            line = text.count("\n", 0, call.start()) + 1
+            at = call.end() - 1 if call.group(2) == "`" else call.end()
+            if text[at] not in "'\"`":
+                found.append((path, line, f"{call.group(1)} takes its English as written", table))
+                continue
+            pattern, _ = js_literal(text, at)
+            if call.group(1) == "tk" and "(?:%@|%lld)" in pattern:
+                found.append((path, line, "tk takes its key as written", table))
+                continue
+            found.append((path, line, pattern, table))
+    return found
+
+
+def check_web_keys() -> list[str]:
+    """Every sentence the web app shows is in the catalog its code reads: text values are `%@`, numbers `%lld`."""
+    keys = {
+        "core": set(json.loads(CORE_CATALOG.read_text()).get("strings", {})),
+        "mac": set(json.loads(MAC_CATALOG.read_text()).get("strings", {})),
+    }
+    names = {"core": CORE_CATALOG, "mac": MAC_CATALOG}
+    problems: list[str] = []
+    # The languages it offers are the apps' (`languages` in src/core/language.ts).
+    language_file = WEB / "core/language.ts"
+    if language_file.exists():
+        listed = re.search(r"export const languages = \[(.*?)\]", language_file.read_text(), re.S)
+        offered = re.findall(r"'([^']+)'", listed.group(1)) if listed else []
+        if offered != ["en", *languages()]:
+            problems.append(f"{language_file.relative_to(ROOT)}: `languages` is {offered}, the apps' are {['en', *languages()]}")
+    for path, line, pattern, table in web_sentences():
+        where = f"{path.relative_to(ROOT)}:{line}"
+        if pattern.endswith("as written"):
+            problems.append(f"{where}: {pattern}")
+        elif not any(re.fullmatch(pattern, key) for key in keys[table]):
+            problems.append(f"{where}: not in the {table} catalog ({names[table].relative_to(ROOT)})")
+    return problems
+
+
+def check_web_words() -> list[str]:
+    """The web app's tables are the catalogues' (`make-words.mjs --check`)."""
+    script = ROOT / "clients/apps/app/scripts/make-words.mjs"
+    if not script.exists():
+        return []
+    if shutil.which("node") is None:
+        print("check_translations: Node not found, so the web app's tables were not compared with the catalogues")
+        return []
+    run = subprocess.run(["node", str(script), "--check"], capture_output=True, text=True)
+    return [] if run.returncode == 0 else [line for line in run.stderr.splitlines() if line.strip()]
+
+
 def table_keys(text: str, name: str) -> dict[str, str]:
     """The `"key": "value"` pairs of one object or dict named `name` in a source file (TS or Python)."""
     found = re.search(rf"\b{name}\b[^=\n]*=\s*\{{(.*?)\n\}}", text, re.S)
@@ -304,6 +410,8 @@ def main() -> int:
     problems += check_greetings(wanted)
     problems += check_server_voice(wanted)
     problems += check_core_keys()
+    problems += check_web_keys()
+    problems += check_web_words()
     problems += check_tables(wanted)
     problems += check_listing(wanted)
     if problems:

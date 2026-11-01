@@ -70,7 +70,10 @@ skills, connectors, avatars, approvals). Running the box servers:
   translated into our own web code, wrapped in Electron for Windows. The
   plan and the checklist are `docs/web-app/README.md`, read from the code
   by `python3 scripts/web_app_inventory.py` (run it again when the Mac app
-  or the shared core changes). Every change to it updates
+  or the shared core changes). It reads the Mac's two String Catalogs, so
+  when one changes, run `pnpm words && pnpm build` in `clients/apps/app`
+  and commit the result (`check_translations.py` fails until then). Every
+  change to it updates
   `docs/web-app/PROGRESS.md` in the same pull request: what was done, what
   was and was not checked, decisions and who made them, what comes next.
   Read both before any work on it; nothing about it is kept in memory.
