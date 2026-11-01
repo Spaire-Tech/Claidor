@@ -89,6 +89,7 @@ Newest first.
   right in the first and made to match Swift in the second.
 - **Not checked:** against a real computer; the window that draws this is
   next.
+- Pull request #519.
 - **Next:** 1d, part 2: the session (the cookie, else the website's sign-in)
   and the window drawn (its colours, the sidebar, the faces).
 
