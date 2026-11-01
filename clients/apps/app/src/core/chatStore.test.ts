@@ -14,9 +14,9 @@ import { makeAgent } from './models'
 import { AppStore } from './store'
 import { FakeBackend, eventually, ms } from './testing'
 
-const texts = (rows: ChatRow[]) =>
+const texts = (rows: readonly ChatRow[]) =>
   rows.flatMap((row) => (row.kind === 'bubble' ? [row.bubble.text] : []))
-const ids = (rows: ChatRow[]) =>
+const ids = (rows: readonly ChatRow[]) =>
   rows.flatMap((row) => (row.kind === 'bubble' ? [row.bubble.id] : []))
 const theo = () => makeAgent({ id: 'theo', name: 'Theo' })
 
