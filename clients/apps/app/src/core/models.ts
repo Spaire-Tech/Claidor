@@ -384,6 +384,77 @@ function attachments(count: number, kinds: Record<string, JSONValue>): string {
   return t`Sent ${label('file', total)} · ${present.map(([kind, n]) => label(kind, n)).join(', ')}`
 }
 
+/** A file's name from its `file://` (or any) address: the last part, decoded. */
+export function fileName(ofURL: string): string {
+  const parts = ofURL.split('/').filter((part) => part !== '')
+  const last = parts[parts.length - 1] ?? ofURL
+  try {
+    return decodeURIComponent(last)
+  } catch {
+    return last
+  }
+}
+
+/**
+ * A file's name read as a title, as the chat's file card shows it (the
+ * founder, 24 October 2026: "it should be a title"): "dakar_trip_budget.xlsx"
+ * reads "Dakar trip budget". The extension goes, "_" reads as a space, and
+ * "-" too in a name with no spaces. A name the computer made from the file's
+ * contents (a long run of hex digits) reads as its kind.
+ */
+export function fileTitle(name: string): string {
+  let base = name
+  let ext = ''
+  const dot = name.lastIndexOf('.')
+  if (dot > 0) {
+    const tail = [...name.slice(dot + 1)]
+    if (
+      tail.length >= 2 &&
+      tail.length <= 5 &&
+      tail.every((ch) => /[\p{L}\p{N}]/u.test(ch)) &&
+      tail.some((ch) => /\p{L}/u.test(ch))
+    ) {
+      base = name.slice(0, dot)
+      ext = tail.join('').toLowerCase()
+    }
+  }
+  if ([...base].length >= 32 && /^[0-9a-fA-F]+$/.test(base)) {
+    switch (ext) {
+      case 'xls':
+      case 'xlsx':
+      case 'csv':
+      case 'tsv':
+      case 'numbers':
+        return t('Spreadsheet')
+      case 'doc':
+      case 'docx':
+      case 'rtf':
+      case 'pages':
+      case 'odt':
+      case 'md':
+      case 'txt':
+        return t('Document')
+      case 'ppt':
+      case 'pptx':
+      case 'key':
+        return t('Presentation')
+      case 'pdf':
+        return 'PDF'
+      default:
+        return t('File')
+    }
+  }
+  let words = base.replace(/_/g, ' ')
+  if (!words.includes(' ')) words = words.replace(/-/g, ' ')
+  words = words
+    .split(' ')
+    .filter((word) => word !== '')
+    .join(' ')
+  const first = [...words][0]
+  if (first == null) return name
+  return first.toUpperCase() + words.slice(first.length)
+}
+
 /** The roster in the list's order: newest activity first. Hidden agents stay in it; the list leaves them out. */
 export function sortRoster(agents: readonly Agent[]): Agent[] {
   return [...agents].sort(
