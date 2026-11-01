@@ -117,6 +117,7 @@ Newest first.
   other website, and the test browser does not let a stand-in answer for a
   `/favicon.ico`; against the real server and a real computer (the address
   is not live yet; see Open questions).
+- Pull request #526.
 - **Next:** step 2c: pictures and files read from the computer, files'
   kinds, sizes and Save, link cards, previews.
 
