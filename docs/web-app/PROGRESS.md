@@ -82,6 +82,7 @@ Newest first.
     Simeon, and the console has no errors under the security policy.
 - **Not checked:** on Vercel. The deploy after the merge is the first time;
   `app.simeonlabs.com/app-next` should show the mark.
+- Pull request #516.
 - **Next:** 1b, talking to the server and the computer (`Tokens`,
   `SimeonAPI`, `Gateway` translated, with the shared core's tests).
 
