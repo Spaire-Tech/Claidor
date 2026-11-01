@@ -124,6 +124,7 @@ Newest first.
   PDF (pages drawn as they come near the view were tried on two); against
   the real server and a real computer (the address is not live yet; see
   Open questions).
+- Pull request #530.
 - **Next:** step 2c, part 3c: Excel in the preview. The window's SheetJS
   is out (see Decisions); the choice is between a small reader of our own
   for .xlsx (the browser unzips and reads XML itself) and "Preview not
