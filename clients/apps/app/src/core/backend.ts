@@ -120,6 +120,8 @@ export interface AgentBackend {
     args?: JSONValue,
     signal?: AbortSignal,
   ): Promise<JSONValue>
+  /** What was said in a recording (dictation, `transcribeAudio`). */
+  transcribe?(audio: Uint8Array, mimeType: string): Promise<string>
   /** Where the computer rests, when the server lets it sleep. */
   computerRest(): Promise<Rest | null>
   /** The host's events until `signal` aborts. */
@@ -173,6 +175,11 @@ export class LiveBackend implements AgentBackend {
     signal?: AbortSignal,
   ): Promise<JSONValue> {
     return this.gateway.commandWhenAwake(method, args, signal)
+  }
+
+  transcribe(audio: Uint8Array, mimeType: string): Promise<string> {
+    if (!this.api) throw signInFirst()
+    return this.api.transcribe(audio, mimeType)
   }
 
   computerRest(): Promise<Rest | null> {

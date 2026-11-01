@@ -1355,6 +1355,19 @@ export class AppStore {
     return read === 0 ? undefined : joined(pieces, read)
   }
 
+  // MARK: Dictation
+
+  /** What was said in a recording (`transcribeAudio`): Simeon Labs' transcription, in the app's language. */
+  async transcribe(audio: Uint8Array, mimeType: string): Promise<string> {
+    const backend = this.backend
+    if (!backend?.transcribe)
+      throw new SimeonAPIError(
+        t('Voice transcription source is unavailable.'),
+        0,
+      )
+    return backend.transcribe(audio, mimeType)
+  }
+
   // MARK: The composer's lists
 
   /**

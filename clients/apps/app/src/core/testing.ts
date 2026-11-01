@@ -280,6 +280,15 @@ export class FakeBackend implements AgentBackend {
       throw new GatewayError("The computer didn't answer.", true)
     return this.commandAnswers[method]?.(args) ?? {}
   }
+  /** What a recording is heard as (dictation), and each recording's type. */
+  heard = 'Book a table for two'
+  transcribed: string[] = []
+  transcribeFails?: Error
+  async transcribe(audio: Uint8Array, mimeType: string): Promise<string> {
+    this.transcribed.push(`${mimeType}:${audio.length}`)
+    if (this.transcribeFails) throw this.transcribeFails
+    return this.heard
+  }
   /** A read that waits for a resting computer: recorded as one that lets it rest. */
   async commandWhenAwake(
     method: string,

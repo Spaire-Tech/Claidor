@@ -84,6 +84,9 @@
   /* The lists: the logo tile's grey, and a soft shadow on light only. */
   --logo-tile: rgb(119 119 119 / 0.17);
   --pick-shadow: 0.1;
+  /* The recording chip's wash, and under the pointer. */
+  --chip-wash: 0.09;
+  --chip-wash-hover: 0.17;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -138,6 +141,8 @@
     --drop-wash: color-mix(in srgb, var(--unread) 32%, transparent);
     --logo-tile: rgb(119 119 119 / 0.32);
     --pick-shadow: 0;
+    --chip-wash: 0.173;
+    --chip-wash-hover: 0.32;
   }
 }
 
@@ -2039,6 +2044,97 @@ button {
 
 .field::placeholder {
   color: var(--placeholder);
+}
+
+/* Start voice input: the grey microphone (16, at 60%) in a 36 target, at the field's right, 2 in. */
+.mic-button {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  margin: 0 2px 2px 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink-secondary);
+  cursor: pointer;
+}
+
+/* The recording chip in Send's place: 28 high, padded 4 10, round, on the grey wash (darker under the pointer), 6 apart. */
+.recording-chip {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  margin: 0 2px 6px 0;
+  padding: 4px 10px;
+  box-sizing: border-box;
+  border: 0;
+  border-radius: 999px;
+  background: rgb(119 119 119 / var(--chip-wash));
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.recording-chip:hover {
+  background: rgb(119 119 119 / var(--chip-wash-hover));
+}
+
+.recording-stop {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--ink);
+}
+
+.recording-time {
+  font-size: 14px;
+  line-height: 22px;
+  letter-spacing: -0.15px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Five sound bars: 2 wide, 2 apart, in 18 by 13, at 60%. */
+.recording-bars {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  width: 18px;
+  height: 13px;
+}
+
+.recording-bars span {
+  width: 2px;
+  border-radius: 1px;
+  background: var(--ink-secondary);
+}
+
+/* Transcribing: a small spinner in a 36 target. */
+.transcribing {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  margin: 0 2px 2px 0;
+}
+
+.transcribing-wheel {
+  width: 14px;
+  height: 14px;
+  border: 2px solid color-mix(in srgb, var(--ink) 18%, transparent);
+  border-top-color: var(--ink-secondary);
+  border-radius: 50%;
+  animation: transcribing 0.8s linear infinite;
+}
+
+@keyframes transcribing {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Send: the blue disc, 30 in a 36 target, at the field's right, 2 in. */

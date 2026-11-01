@@ -22,11 +22,15 @@
 // iPhone's way); Delete takes it whole, and it goes with the message in the
 // editor's document (`richText`), as the window's does.
 //
-// Still to come, each with its part (docs/web-app/PROGRESS.md): the
-// microphone and dictation (2e), the access notice and the credits line
-// (step 6).
+// While there is nothing to send, the grey microphone sits in Send's place
+// (Dictation.tsx): while it listens the recording chip takes that place and
+// the field says "Listening…", then "Transcribing…" with a small spinner;
+// what was said goes in at the caret. Escape drops the recording.
+//
+// Still to come, with its step (docs/web-app/PROGRESS.md): the access notice
+// and the credits line (step 6).
 
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { maxStaged } from '../core/attachmentLimits'
 import {
   type ChipNode,
@@ -54,6 +58,13 @@ import {
   placeInField,
   useComposerPicks,
 } from './ComposerPicks'
+import {
+  Dictation,
+  MicButton,
+  RecordingChip,
+  Transcribing,
+  spacedDictation,
+} from './Dictation'
 import { type Reply, ReplyPill } from './MessageActions'
 import { useWatched } from './useStore'
 
@@ -142,6 +153,13 @@ export function Composer({
   // A message canceled before it went comes back into the field it came from, its picks and files too, when that field is empty.
   const canceled = store.canceledDraft
   const files = staging.files
+  // Dictation, this field's own; it stops with the chat.
+  const dictation = useMemo(
+    () => new Dictation((audio, kind) => store.transcribe(audio, kind)),
+    [store],
+  )
+  useWatched(dictation)
+  useEffect(() => () => dictation.cancel(), [dictation])
   const restore = staging.restore
   useEffect(() => {
     if (!canceled || canceled.scope !== scope) return
@@ -304,7 +322,20 @@ export function Composer({
     }
   }
 
+  // What was said goes in at the caret through the field's own typing, a space before it when the word before runs on; the field takes the keys.
+  useEffect(() => {
+    dictation.onWords = (said) => {
+      const element = field.current
+      if (!element) return
+      const from = element.selectionStart
+      const to = element.selectionEnd
+      insert(from, to, spacedDictation(element.value.slice(0, from), said))
+    }
+  })
+
   const send = () => {
+    // The message has gone: dictation still on its way writes nothing more.
+    if (dictation.phase !== 'idle') dictation.cancel()
     const message = prompt(words)
     if (message === '' && files.length === 0) return
     // The editor's document goes with the words when they hold a pick (`richText`).
@@ -328,6 +359,11 @@ export function Composer({
       {notice && (
         <div className="composer-line error" role="status">
           {notice.text}
+        </div>
+      )}
+      {dictation.error && (
+        <div className="composer-line error" role="status">
+          {dictation.error}
         </div>
       )}
       {staging.notice && (
@@ -368,10 +404,14 @@ export function Composer({
               rows={1}
               value={words}
               placeholder={
-                reply?.placeholder ??
-                (files.length > 0
-                  ? t('Add a message, or hit send.')
-                  : t`Message ${name}`)
+                dictation.isListening
+                  ? t('Listening…')
+                  : dictation.phase === 'transcribing'
+                    ? t('Transcribing…')
+                    : (reply?.placeholder ??
+                      (files.length > 0
+                        ? t('Add a message, or hit send.')
+                        : t`Message ${name}`))
               }
               aria-label={t`Message ${name}`}
               onChange={(event) => {
@@ -456,6 +496,12 @@ export function Composer({
                     return
                   }
                 }
+                // Escape while listening or transcribing drops the recording; else it lets go of a reply.
+                if (event.key === 'Escape' && dictation.phase !== 'idle') {
+                  event.preventDefault()
+                  dictation.cancel()
+                  return
+                }
                 // Escape lets go of a reply (unless it just closed a menu over the chat).
                 if (
                   event.key === 'Escape' &&
@@ -473,7 +519,16 @@ export function Composer({
               }}
             />
           </div>
-          {payload && (
+          {dictation.isListening ? (
+            <RecordingChip
+              meter={dictation.meter}
+              stop={() => void dictation.stop()}
+            />
+          ) : dictation.phase === 'transcribing' ? (
+            <Transcribing />
+          ) : !payload ? (
+            <MicButton start={() => dictation.start()} />
+          ) : (
             <button
               type="button"
               className="send-button"

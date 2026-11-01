@@ -15,7 +15,7 @@ file and the code disagree, the code is right and this file is fixed.
 |---|---|
 | 0. The audit | Done, 1 November 2026 |
 | 1. The base: the server and the computer, signing in, the window | Done, 1 November 2026 (1a to 1d). Carried to step 2: the first run for a new account and the access cover |
-| 2. The sidebar and the chat | In progress: 2a (the chat's core, and the chat on screen) done; 2b (a message's actions, find, the working line, names in colour, link icons, the emoji picker) done; 2c part 1 (file cards, pictures from the computer, link cards) part 2 (the preview: text and code, Markdown, JSON, tables) and part 3a (pictures and videos full screen), part 3b (PDF, Word, sound) and part 3c (Excel) done; 2e part 1 (attaching files, the ":" emoji list) and part 2 ("@", "/" and "#") done. Next: 2e part 3, dictation |
+| 2. The sidebar and the chat | In progress: 2a (the chat's core, and the chat on screen) done; 2b (a message's actions, find, the working line, names in colour, link icons, the emoji picker) done; 2c part 1 (file cards, pictures from the computer, link cards) part 2 (the preview: text and code, Markdown, JSON, tables) and part 3a (pictures and videos full screen), part 3b (PDF, Word, sound) and part 3c (Excel) done; 2e (the message field's own parts: attaching files, the ":" emoji list, "@", "/" and "#", dictation) done. Next: the rest of step 2: the sidebar's own parts (pins and folders, several rows picked, renaming, its right-click menu, dragging, the rail and the width), then the first run for a new account and the access cover |
 | 3. The cards | Not started |
 | 4. The agent's pane, search, new chat, the org chart, starter packs | Not started |
 | 5. The computer and calls | Not started |
@@ -45,6 +45,7 @@ file and the code disagree, the code is right and this file is fixed.
 | 1 November 2026 | Attaching files in the browser: Photo or Video opens the browser's own file chooser showing only pictures and videos (a web page can't open the Photos library), and a photo goes as it is, not made a JPEG as the Mac makes HEIC; a picture the browser can't draw (HEIC outside Safari) shows the tile's symbol. A paste brings files unless it also holds the words as rich text (Office, iWork and web pages put a picture of copied words beside them; the words win, as on the Mac). Files dropped outside the chat are taken by nothing, so the browser never opens them in the window's place | The session |
 | 1 November 2026 | The emoji picked lately from ":" are kept in the browser (`simeon.emojiRecents`, the Mac's own name for them): only which emoji, never words of a message | The session |
 | 1 November 2026 | A pick from "@", "/" or "#" sits in the field as its own words ("@Nora", "#12") on the Mac's grey, kept track of as the words change (the iPhone's way), not as the Mac's picture of a chip with its face or logo: a browser's text field holds only words, and an editor of our own for it would be a large piece for a small gain. It goes with the message in the window's document, as on the Mac; Delete takes it whole; undo and redo bring it back. The agents picked lately from "@" are kept in the browser (`simeon.mentionRecents`): which rows, never words | The session |
+| 1 November 2026 | Dictation records in the kind the browser can (WebM with Opus in Chrome, Edge and Firefox; MP4 in Safari), not the Mac's AAC: the transcription takes either. The browser asks for the microphone itself, the first time | The session |
 | 1 November 2026 | "/" offers the agent's skills now; each of the app's actions ("Org Chart", "Chat Settings", "Settings: General", the themes…) joins it with the screen it opens (steps 4 to 6), so the list never offers what does nothing | The session |
 | 1 November 2026 | Excel workbooks (.xlsx) are read by a small reader of our own (`src/core/xlsx.ts`): the browser unzips them itself and the reader takes the first sheet, each value written as its number format says. No library: SheetJS's npm copy has known holes, and the other readers are either days old with unfamiliar dependencies or built for servers. The old binary .xls is not read; it says "Preview not available" with Download. The founder: "keep going on excel" | The session |
 
@@ -64,6 +65,14 @@ For the founder, each to be answered before the step that needs it:
   in Vercel and say whether the newer ones were ignored, failed or are
   waiting to be promoted.
 
+- **Dictation's refused-microphone line in a browser.** The web app says
+  the Mac's sentence, "Microphone access denied. Please enable microphone
+  permissions in your system settings." In a browser the microphone is
+  allowed in the browser's own site settings (the padlock beside the
+  address), and in the Windows app in Windows' privacy settings. Kept as the
+  Mac's until the founder says whether the web app should have its own
+  sentence (a new sentence needs its nine translations).
+
 - **A Windows code-signing certificate.** An unsigned installer makes
   Windows warn people before it runs (SmartScreen). Simeon Labs needs a
   code-signing certificate in its name before the first public Windows
@@ -75,6 +84,56 @@ For the founder, each to be answered before the step that needs it:
 ## Log
 
 Newest first.
+
+### 1 November 2026: step 2e, part 3, dictation
+
+- `src/window/Dictation.tsx` (mac/Simeon/Dictation.swift):
+  - the grey microphone in Send's place while there is nothing to send;
+    the browser asks for the microphone the first time;
+  - while it listens, the recording chip in Send's place (Stop, the time,
+    five sound bars from the microphone's loudness, -50 dB silent) and
+    "Listening…" in the field; Stop sends the recording to Simeon's
+    transcription (`/desktop/api/proxy/v1/audio/transcriptions`, in the
+    app's language when it is not English) with a small spinner and
+    "Transcribing…"; what was said goes in at the caret through the field's
+    own typing (so undo takes it out), a space before it when the word
+    before runs on;
+  - under half a second is dropped; five minutes stops it; Escape, a
+    message sent, or the chat closing drops it, and the microphone is let
+    go each time (the browser's recording light goes out);
+  - the window's red lines: microphone refused, no microphone, connection
+    failed, anything else; gone when the microphone is tried again.
+  - The chip's time and bars redraw only the chip.
+- The store's `transcribe`, and the stand-in's (`FakeBackend`).
+- `src/window/dictation.test.ts`: the lines, the space, the meter, and
+  French.
+- **Decision (the session):** in the table above. **Open question** for
+  the founder: the refused-microphone line's "system settings" (above).
+- **Checked:** in Chromium with its fake microphone playing a 440 Hz tone
+  (`dictation-check.cjs` and `tone.wav` in the session's scratchpad),
+  against a stand-in server, light and dark, then French:
+  - the microphone shown on an empty field, Send once there are words;
+  - the chip, "0:01" and bars rising with the tone, "Listening…"; Stop: the
+    spinner and "Transcribing…", then "Book a table for two" in the field,
+    which keeps the keys; the request multipart with `audio.webm`, signed
+    in, with `language` "fr" in French and none in English;
+  - "Hi" typed while listening: "Hi Book a table for two";
+  - Escape while listening, and a recording under half a second: nothing
+    sent;
+  - a dropped connection: "Network connection failed…", gone when the
+    microphone is tried again; a refusal (the browser's `NotAllowedError`)
+    and no microphone (`NotFoundError`): their lines; no page errors.
+  The 212 tests, typecheck, lint, the words', the brands' and the build's
+  checks, `check_names.py`, `check_translations.py`.
+- **Not checked:** a real microphone and a person's real refusal (headless
+  Chromium has no permission prompt: it answers "not supported", so the
+  refusal was given as the browser gives it); Safari's MP4 recording and
+  Firefox; the real transcription service from `app.simeonlabs.com` (the
+  address is not live yet); five minutes.
+- **Next:** the rest of step 2, as the entries for 1d and 2a left it: the
+  sidebar's own parts (pins and folders, several rows picked, renaming, its
+  right-click menu, dragging, the rail and the width), then the first run
+  for a new account and the access cover.
 
 ### 1 November 2026: step 2e, part 2, "@", "/" and "#"
 
