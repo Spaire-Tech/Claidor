@@ -15,7 +15,7 @@ file and the code disagree, the code is right and this file is fixed.
 |---|---|
 | 0. The audit | Done, 1 November 2026 |
 | 1. The base: the server and the computer, signing in, the window | Done, 1 November 2026 (1a to 1d). Carried to step 2: the first run for a new account and the access cover |
-| 2. The sidebar and the chat | In progress: 2a part 1 (the chat's core) done; part 2 (the chat on screen) next |
+| 2. The sidebar and the chat | In progress: 2a (the chat's core, and the chat on screen) done; 2b next |
 | 3. The cards | Not started |
 | 4. The agent's pane, search, new chat, the org chart, starter packs | Not started |
 | 5. The computer and calls | Not started |
@@ -62,6 +62,70 @@ For the founder, each to be answered before the step that needs it:
 ## Log
 
 Newest first.
+
+### 1 November 2026: step 2a, part 2, the chat on screen
+
+- `src/window/ChatPane.tsx` (`ChatPane.swift`, with `ThreadChin` and
+  `ThreadHeader` from `MessageActions.swift`, `ReplyQuote`, `ChannelTagView`
+  and `PictureStrip` from `Cards.swift`, `CallLineRow` from `CallChat.swift`):
+  the open agent's chat, its messages the whole height under a blurred head
+  (its picture, 52, over its name in a pill) and over the field. It opens at
+  the newest and is held there while lines come; scrolled up, it lets go,
+  and ⌄ goes back with what came meanwhile; a message of the person's own
+  goes to the newest wherever the chat was; near the top, older lines are
+  read. Rows as the Mac draws them: stamps, "New", the person's bubbles in
+  the blue and the agents' in grey, a run's corners, a group's names and
+  pictures, a lone emoji large, a quote over a reply (a click goes to it, or
+  opens its thread), reactions under the bubble (shown; sending one is 2b),
+  a thread's "2 replies" joined under its message, agents talking to each
+  other, routines, a call's line, notices, "Failed to send" with Resend and
+  Delete, "Waiting to send…" with Cancel, files as a card with their name
+  read as a title, pictures (the web's, and the person's own sent from this
+  tab). A thread opens in the chat's place under its breadcrumb. The cards
+  say the core's "This message can't be shown in this version of Simeon."
+  until step 3.
+- `src/window/MessageText.tsx` (`MessageText.swift`): an agent's words as
+  the Mac draws them: paragraphs, headings, lists and tasks, quotes, code
+  with Copy, tables, links in the link blue.
+- `src/window/Composer.tsx` (`Composer.swift`): the field in glass, 40 high
+  and growing to six lines, the blue send once there is something to send,
+  Return to send and Shift-Return for a new line, what is typed kept per chat
+  and per thread, a send's error over it; the messages fade into the ground
+  under it.
+- `src/App.tsx` (`MainWindow.swift`): the chat beside the sidebar; the agent
+  left open stays open (the address keeps it, `?agent=`), else the first in
+  the list opens, as the Mac's `chooseFirst`.
+- **The Mac's own bug, seen while translating:** "1 reply" under a message is
+  a plain string on the Mac (`ThreadChin`), so it stays English in every
+  language, while the catalogue's "%lld replies" has the right plural ("1
+  réponse"). The web says "1 reply" in English and uses the catalogue's
+  plural in the others. Not changed on the Mac here.
+- **Not in this part:** the hover bar (reply, react, copy), sending a
+  reaction, replying with its line over the field, the right-click menu,
+  find (⌘F), the agent's working line under the chat, the motion of a line
+  coming in, the time on a sideways swipe, two agents' messages and a call's
+  lines opened over the chat, names in their colours and pills, a link's
+  site icon (2b); Attach and the files, dictation, "@", "/" and "#" (2b, 2e);
+  pictures and files read from the computer, files' kinds, sizes and Save,
+  link cards, previews, maths drawn (2c); the call button (step 5); the
+  agent's pane from the head (step 4); the cards (step 3).
+- **Checked:** in Chromium, the built app against a stand-in server and
+  computer (`chat-check.cjs` in the session's scratchpad): Simeon's chat
+  opened first, with Markdown, a quote, reactions, a thread, agents talking,
+  a routine, a card, a notice, a picture and a lone emoji, held at the
+  newest; scrolled to the top, ⌄ shown; a message typed and sent with
+  Return reached `sendPrompt` with its nonce, showed at once and gave way to
+  the computer's copy, and the agent's answer streamed in; the thread opened
+  from its chip and closed from the breadcrumb; the group's names over the
+  first of each run and pictures beside the last; the address kept the open
+  chat. Light, dark and French (screenshots taken). The 148 tests, typecheck,
+  lint, the words' and the build's checks, `check_translations.py`,
+  `check_names.py`. The inventory counts 136 strings the new web app shows.
+- **Not checked:** against the real server and a real computer (the address
+  is not live yet; see Open questions).
+- Pull request #522.
+- **Next:** step 2b, the chat's actions: the hover bar, reactions, replying,
+  find, the working line, names in their colours.
 
 ### 1 November 2026: step 2a, part 1, the chat's core
 

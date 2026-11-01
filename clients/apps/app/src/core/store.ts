@@ -245,6 +245,9 @@ function sameFlags(
   return a != null && JSON.stringify(a) === JSON.stringify(b)
 }
 
+/** A chat with no rows yet: one list for all of them, so a screen sees no change. */
+const noRows: readonly ChatRow[] = []
+
 /** The kept lines of the server's copy (`SavedChats.linesKept`). */
 const serverLinesKept = 300
 
@@ -648,8 +651,8 @@ export class AppStore {
 
   // MARK: The chats
 
-  rows(agentId: string): ChatRow[] {
-    return this.chatRows[agentId] ?? []
+  rows(agentId: string): readonly ChatRow[] {
+    return this.chatRows[agentId] ?? noRows
   }
 
   private setTranscript(agentId: string, entries: Entry[], soon = false): void {

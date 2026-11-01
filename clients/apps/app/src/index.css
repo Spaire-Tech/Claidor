@@ -35,6 +35,30 @@
   /* A blank member and "+N" in a group's picture */
   --member-blank: rgb(119 119 119 / 0.09);
   --member-more: #3d3d3d;
+  /* The person's bubble (`yours`) and an agent's (`theirs`), with its hairline and shadow */
+  --yours: #255a93;
+  --yours-text: #fcfcfc;
+  --theirs: #e9e9eb;
+  --theirs-text: #1d1d1f;
+  --theirs-hairline: rgb(20 30 60 / 0.07);
+  --theirs-shadow: rgb(20 30 60 / 0.04);
+  /* A link's blue, the unread blue's hairline, code's ink and wash, a code block's words */
+  --link: #0c64c1;
+  --code-ink: #c21d2e;
+  --code-wash: rgb(119 119 119 / 0.09);
+  --code-text: rgb(20 20 20 / 0.92);
+  /* The field's empty words, red words, a reaction's pill, the warning yellow */
+  --placeholder: rgb(20 20 20 / 0.3);
+  --danger: #c21d2e;
+  --reaction: #f3f3f3;
+  --mine-reaction: rgb(0 122 255 / 0.16);
+  --warn: #f1b467;
+  /* Glass: the ground behind a blur, its rim */
+  --glass: rgb(252 252 252 / 0.72);
+  --glass-rim: rgb(20 20 20 / 0.08);
+  --disc-ink: rgb(0 0 0 / 0.78);
+  /* The ink at 10%: a table's lines, a code block's edge */
+  --hairline: rgb(20 20 20 / 0.1);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -56,6 +80,23 @@
     --picture-edge: rgb(252 252 252 / 0.1);
     --member-blank: rgb(119 119 119 / 0.173);
     --member-more: #c2c2c2;
+    --yours: #1f5087;
+    --theirs: #262626;
+    --theirs-text: #fcfcfc;
+    --theirs-hairline: transparent;
+    --theirs-shadow: transparent;
+    --link: #459ffe;
+    --code-ink: #ff5667;
+    --code-wash: rgb(119 119 119 / 0.173);
+    --code-text: #d6d6dd;
+    --placeholder: rgb(252 252 252 / 0.3);
+    --danger: #ff5667;
+    --reaction: #151515;
+    --mine-reaction: rgb(10 132 255 / 0.32);
+    --glass: rgb(30 30 30 / 0.72);
+    --glass-rim: rgb(252 252 252 / 0.1);
+    --disc-ink: rgb(255 255 255 / 0.86);
+    --hairline: rgb(252 252 252 / 0.1);
   }
 }
 
@@ -103,6 +144,7 @@ button {
   flex: 1;
   min-width: 424px;
   background: var(--ground);
+  position: relative;
 }
 
 /* The sidebar: 320 wide at first (`SidebarLayout.firstWidth`), its paint, a half-point edge. */
@@ -326,4 +368,943 @@ button {
   font-size: 12px;
   color: var(--ink-secondary);
   cursor: pointer;
+}
+
+/* ---------------------------------------------------------------------- */
+/* The chat (mac/Simeon/ChatPane.swift): its messages the whole height,    */
+/* under a blurred head and over the message field.                       */
+
+.chat-pane {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.glass,
+.glass-disc,
+.name-pill,
+.field-box {
+  background: var(--glass);
+  backdrop-filter: blur(20px) saturate(1.6);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  box-shadow:
+    inset 0 0 0 0.5px var(--glass-rim),
+    0 1px 3px rgb(0 0 0 / 0.06);
+}
+
+/* The head: 116 high, the ground at 78% over a blur, fading out over its last 30. */
+.chat-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 116px;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.chat-header .veil {
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--ground) 78%, transparent);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  mask: linear-gradient(to bottom, #000 0, #000 74%, transparent 100%);
+  -webkit-mask: linear-gradient(to bottom, #000 0, #000 74%, transparent 100%);
+}
+
+.chat-header .identity {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px 2px 8px;
+  pointer-events: auto;
+}
+
+.name-pill {
+  height: 26px;
+  line-height: 26px;
+  padding: 0 12px;
+  border-radius: 13px;
+  font-size: 13px;
+  font-weight: 500;
+  max-width: 280px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* A thread's head: 44 high on the ground, padded 0 12 0 8. */
+.thread-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px 0 8px;
+  background: var(--ground);
+  z-index: 2;
+}
+
+.thread-header .crumb {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 30px;
+  padding: 6px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-sizing: border-box;
+}
+
+.thread-header button.crumb {
+  cursor: pointer;
+}
+
+.thread-header button.crumb:hover {
+  background: var(--row-hover);
+}
+
+.thread-header .crumb.title {
+  min-width: 0;
+  display: block;
+  line-height: 18px;
+}
+
+.chevron {
+  flex: none;
+  color: var(--ink-tertiary);
+}
+
+/* The messages: 16 in from each side. */
+.transcript {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  overflow-anchor: none;
+}
+
+.transcript-rows {
+  display: flex;
+  flex-direction: column;
+  padding-left: 16px;
+  padding-right: 16px;
+  box-sizing: border-box;
+  min-height: 100%;
+  justify-content: flex-end;
+}
+
+.transcript-row {
+  display: flex;
+  padding: 2px 0;
+  transition: background-color 2.5s ease-out;
+}
+
+.transcript-row.person {
+  justify-content: flex-end;
+}
+
+.transcript-row.agent {
+  justify-content: flex-start;
+}
+
+.transcript-row.middle {
+  justify-content: center;
+}
+
+.transcript-row.lit {
+  background: color-mix(in srgb, var(--warn) 22%, transparent);
+  transition: none;
+}
+
+/* A time: 12, at 60%, 14 above and 8 below. */
+.stamp {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--ink-secondary);
+  padding: 20px 0 14px;
+  white-space: nowrap;
+}
+
+/* "New" between two blue hairlines. */
+.unread-divider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 16px 0 10px;
+}
+
+.unread-divider .hairline {
+  flex: 1;
+  height: 1px;
+  background: var(--unread);
+}
+
+.unread-divider .new {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.055px;
+  line-height: 16px;
+  color: var(--link);
+}
+
+/* A line about the chat in its middle: 12 on 16, at 60%, a chip after it, 8 below the row before. */
+.system-event,
+.call-line {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 24px;
+  margin-top: 8px;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--ink-secondary);
+  white-space: nowrap;
+}
+
+.system-event .routine {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.event-chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px 4px 4px;
+  border-radius: 999px;
+}
+
+.event-chip .marks {
+  display: flex;
+}
+
+.event-chip .marks > * + * {
+  margin-left: -4px;
+}
+
+.call-line {
+  gap: 4px;
+  padding: 4px 6px 4px 4px;
+}
+
+.notice {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--ink-secondary);
+  text-align: center;
+  min-height: 24px;
+  margin-top: 8px;
+  max-width: 560px;
+}
+
+.send-state {
+  display: flex;
+  gap: 8px;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.send-state .failed {
+  color: #ff3b30;
+}
+
+.send-state .waiting {
+  color: var(--ink-secondary);
+}
+
+.link-button,
+.quiet-link {
+  border: 0;
+  padding: 0;
+  background: none;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--link);
+}
+
+.quiet-link {
+  color: var(--ink-secondary);
+}
+
+/* A card step 3 draws: its place kept, and said. */
+.later-card {
+  font-size: 12px;
+  color: var(--ink-secondary);
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: var(--theirs);
+}
+
+.starts-group {
+  margin-top: 12px;
+}
+
+/* A file: 220 to 340 wide, grey and 12 round, padded 8; its icon 36, its name as a title. */
+.file-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  min-width: min(220px, 100%);
+  max-width: min(340px, 100%);
+  padding: 8px;
+  margin: 4px 0;
+  border-radius: 12px;
+  background: var(--theirs);
+  box-shadow:
+    0 0 0 0.5px var(--theirs-hairline),
+    0 1px 2px var(--theirs-shadow);
+}
+
+.file-icon {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--unread) 12%, transparent);
+  position: relative;
+}
+
+.file-icon::after {
+  content: '';
+  position: absolute;
+  left: 11px;
+  top: 8px;
+  width: 14px;
+  height: 19px;
+  border-radius: 2px;
+  background: var(--unread);
+}
+
+.file-title {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+  color: var(--theirs-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* A message: at most 88% of the column, 640, or the column less 82. */
+.bubble-row {
+  display: flex;
+  width: 100%;
+}
+
+.transcript-row.person .bubble-row {
+  justify-content: flex-end;
+}
+
+.bubble-row.group {
+  align-items: flex-end;
+  gap: 8px;
+  width: 100%;
+}
+
+.bubble-row .gutter {
+  flex: none;
+  width: 22px;
+  height: 22px;
+}
+
+.group-column {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.group-column .author {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--ink-secondary);
+  padding: 12px 6px 4px 12px;
+}
+
+.message {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: min(88%, 640px, calc(100% - 82px));
+  min-width: 0;
+}
+
+.bubble-row.group .message {
+  max-width: min(88%, 640px, calc(100% - 82px));
+}
+
+.message.mine {
+  align-items: flex-end;
+}
+
+.bubble-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  max-width: 100%;
+}
+
+.shaped {
+  display: flex;
+  flex-direction: column;
+  max-width: 100%;
+}
+
+.bubble {
+  box-sizing: border-box;
+  font-size: 14px;
+  letter-spacing: -0.042px;
+  overflow-wrap: break-word;
+  user-select: text;
+}
+
+.bubble.short {
+  min-width: 36px;
+  text-align: center;
+}
+
+/* The person's: the window's blue, 14 on 21, padded 10 15 (on dark 14 on 20, padded 8 12). */
+.bubble.yours {
+  background: var(--yours);
+  color: var(--yours-text);
+  padding: 10px 15px;
+  line-height: 21px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .bubble.yours {
+    padding: 8px 12px;
+    line-height: 20px;
+  }
+}
+
+/* An agent's: grey with a hairline and a soft shadow, padded 8 12. */
+.bubble.theirs {
+  background: var(--theirs);
+  color: var(--theirs-text);
+  padding: 8px 12px;
+  line-height: 20px;
+  box-shadow:
+    0 0 0 0.5px var(--theirs-hairline),
+    0 1px 2px var(--theirs-shadow);
+}
+
+.person-words {
+  white-space: pre-wrap;
+}
+
+.person-words.centred {
+  text-align: center;
+}
+
+.show-more {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--yours-text);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.show-more .chevron {
+  color: inherit;
+}
+
+/* An emoji on its own: 32 on 38, no bubble. */
+.lone-emoji {
+  font-size: 32px;
+  line-height: 38px;
+}
+
+/* The line a reply answers: an arrow and the line, 13, at 40%. */
+.reply-quote {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  padding: 4px 8px 0;
+  border: 0;
+  background: none;
+  color: var(--ink-tertiary);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.reply-quote span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Where a message came from or went: an arrow and the platform (11, 500) in a faint pill, 6 under its words. */
+.channel-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  padding: 2px 7px 2px 6px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.07px;
+  line-height: 14px;
+  color: color-mix(in srgb, currentColor 65%, transparent);
+  background: color-mix(in srgb, currentColor 7.8%, transparent);
+}
+
+/* The reactions: each emoji once, on a pale pill ringed with the ground, 22 high, under the message's right end. */
+.reaction-pills {
+  display: flex;
+  gap: 4px;
+  margin-top: -6px;
+  margin-right: 10px;
+  position: relative;
+}
+
+.reaction {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 22px;
+  padding: 0 8px 0 7px;
+  border-radius: 11px;
+  background: var(--reaction);
+  box-shadow: 0 0 0 2px var(--ground);
+  font-size: 14px;
+}
+
+.reaction.mine {
+  background: var(--mine-reaction);
+}
+
+.reaction .count {
+  font-size: 12px;
+  color: var(--ink-secondary);
+}
+
+/* "2 replies": joined under its bubble as a chin, or a small pill of its own. */
+.thread-chin {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 26px;
+  padding: 4px 10px;
+  margin-top: 4px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--row-hover);
+  color: var(--ink-tertiary);
+  font-size: 13px;
+  line-height: 18px;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.thread-chin.attached {
+  height: 32px;
+  margin-top: 0;
+  padding: 7px 12px;
+  border-radius: 0 0 18px 18px;
+  box-shadow: inset 0 1px 0 rgb(20 20 20 / 0.05);
+}
+
+.thread-chin .view {
+  display: none;
+}
+
+.thread-chin:hover {
+  color: var(--ink-secondary);
+}
+
+.thread-chin:hover .replies {
+  display: none;
+}
+
+.thread-chin:hover .view {
+  display: inline;
+}
+
+.thread-chin .chevron {
+  color: inherit;
+}
+
+/* Pictures: one alone at its own size, several in a row 192 high, 6 apart, 12 round. */
+.picture-strip {
+  display: flex;
+  gap: 6px;
+  max-width: 100%;
+}
+
+.picture-strip.under-words {
+  margin-top: 8px;
+}
+
+.chat-picture {
+  display: block;
+  flex: none;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--code-wash);
+}
+
+.chat-picture img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ⌄ to the newest: a glass disc, 36, with what came meanwhile in the person's blue. */
+.to-newest {
+  position: absolute;
+  right: 16px;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--disc-ink);
+  cursor: pointer;
+  z-index: 3;
+}
+
+.to-newest .chevron {
+  width: 16px;
+  height: 16px;
+  color: inherit;
+}
+
+.to-newest .unseen {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  box-sizing: border-box;
+  border-radius: 9px;
+  background: var(--yours);
+  color: var(--yours-text);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 18px;
+}
+
+/* An agent's words as blocks, 10 apart. */
+.message-blocks {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.message-paragraph {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.message-heading {
+  font-weight: 600;
+}
+
+.message-heading.h1 {
+  font-size: 22px;
+  line-height: 28px;
+  letter-spacing: -0.264px;
+}
+
+.message-heading.h2 {
+  font-size: 17px;
+  line-height: 24px;
+  letter-spacing: -0.136px;
+}
+
+.message-heading.h3 {
+  font-size: 14px;
+  line-height: 20px;
+  padding-top: 8px;
+}
+
+.message-link {
+  color: var(--link);
+  text-decoration: none;
+}
+
+.message-link:hover {
+  text-decoration: underline;
+}
+
+.inline-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.93em;
+  color: var(--code-ink);
+  background: var(--code-wash);
+  padding: 0 4px;
+  border-radius: 4px;
+}
+
+.message-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.message-item {
+  display: flex;
+  align-items: baseline;
+}
+
+.message-list .marker {
+  flex: none;
+  width: 16px;
+  margin-right: 4px;
+  text-align: right;
+  color: var(--ink-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+.message-list.nested .marker {
+  width: 12px;
+}
+
+.message-list.tasks {
+  padding-left: 4px;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.item-blocks {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.check-box {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-right: 6px;
+  border-radius: 4px;
+  box-sizing: border-box;
+  border: 1px solid rgb(20 20 20 / 0.3);
+  background: var(--ground);
+  align-self: center;
+}
+
+.check-box.checked {
+  border: 0;
+  background: var(--yours)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4.5 8.2 7 10.5l4.5-5' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+    center / 16px no-repeat;
+}
+
+.message-quote {
+  margin: 0;
+  padding-left: 10px;
+  box-shadow: inset 2px 0 0 rgb(20 20 20 / 0.3);
+  color: var(--ink-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .message-quote {
+    box-shadow: inset 2px 0 0 rgb(252 252 252 / 0.3);
+  }
+  .check-box {
+    border-color: rgb(252 252 252 / 0.3);
+  }
+}
+
+.message-rule {
+  height: 1px;
+}
+
+.message-table {
+  overflow-x: auto;
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.message-table table {
+  border-collapse: collapse;
+}
+
+.message-table th,
+.message-table td {
+  padding: 8px;
+  white-space: nowrap;
+}
+
+.message-table th {
+  font-weight: 500;
+}
+
+.message-table td {
+  color: var(--ink-secondary);
+}
+
+.message-table tr {
+  box-shadow: inset 0 -1px 0 var(--hairline);
+}
+
+.message-table tbody tr:last-child {
+  box-shadow: none;
+}
+
+/* A code block: the ground, a 10% edge, 10 round; its lines 12 on 18 monospaced, 10 in and 6 from top and bottom. */
+.code-block {
+  position: relative;
+  border-radius: 10px;
+  background: var(--ground);
+  box-shadow: inset 0 0 0 1px var(--hairline);
+}
+
+.code-block pre {
+  margin: 0;
+  padding: 6px 10px;
+  overflow-x: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--code-text);
+}
+
+.copy-code {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  display: none;
+}
+
+.code-block:hover .copy-code {
+  display: block;
+}
+
+/* The message field: padded 0 16 16; the field in glass, 20 round, 40 high on one line. */
+.composer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0 16px 16px;
+  z-index: 2;
+}
+
+/* The iPhone's soft edge: the messages fade into the ground under the field, its glass over them. */
+.composer::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: calc(min(100%, 160px) + 28px);
+  background: linear-gradient(
+    to bottom,
+    transparent 0,
+    color-mix(in srgb, var(--ground) 85%, transparent) 60%,
+    var(--ground) 100%
+  );
+  pointer-events: none;
+  z-index: -1;
+}
+
+.composer-line {
+  font-size: 11px;
+  line-height: 14px;
+  color: var(--ink-tertiary);
+  padding-left: 16px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.composer-line.error {
+  color: var(--danger);
+}
+
+.field-box {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  min-height: 40px;
+  border-radius: 20px;
+  cursor: text;
+}
+
+.field {
+  flex: 1;
+  margin: 10px 0 10px 16px;
+  padding: 0;
+  border: 0;
+  outline: none;
+  resize: none;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  line-height: 20px;
+  height: 20px;
+  max-height: 120px;
+}
+
+.field::placeholder {
+  color: var(--placeholder);
+}
+
+/* Send: the blue disc, 30 in a 36 target, at the field's right, 2 in. */
+.send-button {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  margin: 0 2px 2px 0;
+  padding: 3px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.send-button svg {
+  width: 30px;
+  height: 30px;
+  padding: 8px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  background: var(--yours);
+  color: #fff;
 }
