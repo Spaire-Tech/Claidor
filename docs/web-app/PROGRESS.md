@@ -115,6 +115,7 @@ Newest first.
   with Ctrl; the zoom follows the same rule but was not tried); against
   the real server and a real computer (the address is not live yet; see
   Open questions).
+- Pull request #529.
 - **Next:** step 2c, part 3b: PDF (pdf.js), Word (mammoth), Excel and sound
   in the preview.
 
