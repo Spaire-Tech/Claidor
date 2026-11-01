@@ -42,7 +42,7 @@ catalogue. After a catalogue changes, run `pnpm words` and commit the tables
 ```sh
 cd clients && pnpm install
 cd clients/apps/app
-pnpm dev          # http://localhost:5174/app-next/
+pnpm dev          # http://localhost:5174/app-next/ (add ?api=<address> for another server)
 pnpm build        # into ../web/public/app-next; commit the result
 pnpm words        # the words' tables, from the String Catalogs
 pnpm test         # the tests, then the words' and the build's checks

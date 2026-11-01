@@ -1,11 +1,61 @@
+/*
+ * The window's colours, light and dark (`Look` in mac/Simeon/Look.swift, the
+ * Electron window's stylesheet as measured): every screen takes its colours
+ * from here, so a colour is set once.
+ */
 :root {
   color-scheme: light dark;
-  --window: #ffffff;
+  /* Text (`--sand-text-primary`, and its 0.6 and 0.4 shades) */
+  --ink: #141414;
+  --ink-secondary: rgb(20 20 20 / 0.6);
+  --ink-tertiary: rgb(20 20 20 / 0.4);
+  /* The window's blue for titles (`--simeon-foreground`) */
+  --blue: #255a93;
+  /* The chat's ground (`--sand-bg-base`) */
+  --ground: #fcfcfc;
+  /* The sidebar's paint, at 93%, and its right edge (the ink at 6%) */
+  --sidebar-paint: rgb(250 250 250 / 0.93);
+  --sidebar-edge: rgb(20 20 20 / 0.06);
+  /* The open agent's row: white with a hairline and a soft shadow */
+  --row-selected: #ffffff;
+  --row-selected-hairline: rgb(20 30 60 / 0.07);
+  --row-selected-shadow: rgb(20 30 60 / 0.04);
+  /* A row under the pointer (`--simeon-bg-hover`) */
+  --row-hover: rgb(119 119 119 / 0.09);
+  --row-radius: 14px;
+  /* An agent's title tag in a row */
+  --tag: rgb(118 118 128 / 0.12);
+  /* Unread (`--simeon-accent`) and working (`--simeon-green`) */
+  --unread: #1084fe;
+  --working: #00c972;
+  /* A plain button's grey (`rgba(119,119,119,.063)`) */
+  --wash: rgb(119 119 119 / 0.063);
+  /* A picture's edge (`--sand-border-weak`): the ink at 10% */
+  --picture-edge: rgb(20 20 20 / 0.1);
+  /* A blank member and "+N" in a group's picture */
+  --member-blank: rgb(119 119 119 / 0.09);
+  --member-more: #3d3d3d;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --window: #1e1e1e;
+    --ink: #fcfcfc;
+    --ink-secondary: rgb(252 252 252 / 0.6);
+    --ink-tertiary: rgb(252 252 252 / 0.4);
+    --blue: #8cb8e8;
+    --ground: #070707;
+    --sidebar-paint: rgb(12 12 12 / 0.93);
+    --sidebar-edge: rgb(252 252 252 / 0.06);
+    --row-selected: rgb(255 255 255 / 0.12);
+    --row-selected-hairline: rgb(255 255 255 / 0.08);
+    --row-selected-shadow: rgb(0 0 0 / 0.3);
+    --row-hover: rgb(119 119 119 / 0.173);
+    --row-radius: 10px;
+    --tag: #252527;
+    --wash: rgb(119 119 119 / 0.14);
+    --picture-edge: rgb(252 252 252 / 0.1);
+    --member-blank: rgb(119 119 119 / 0.173);
+    --member-more: #c2c2c2;
   }
 }
 
@@ -17,11 +67,18 @@ body,
 }
 
 body {
-  background: var(--window);
+  background: var(--ground);
+  color: var(--ink);
+  /* Apple's system font where there is one (the window's `-apple-system`), Windows' own on Windows. */
   font-family:
     -apple-system, BlinkMacSystemFont, 'Segoe UI Variable', 'Segoe UI', Inter,
     system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font: inherit;
+  color: inherit;
 }
 
 .splash {
@@ -33,4 +90,240 @@ body {
 .mark {
   width: 64px;
   height: 64px;
+}
+
+/* The window: the sidebar and the chat side by side (`sand-shell`). */
+.window {
+  display: flex;
+  height: 100%;
+  min-width: 744px;
+}
+
+.chat-area {
+  flex: 1;
+  min-width: 424px;
+  background: var(--ground);
+}
+
+/* The sidebar: 320 wide at first (`SidebarLayout.firstWidth`), its paint, a half-point edge. */
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  width: 320px;
+  flex: none;
+  background: var(--sidebar-paint);
+  box-shadow: inset -0.5px 0 0 var(--sidebar-edge);
+}
+
+.sidebar-head {
+  height: 60px;
+  flex: none;
+}
+
+.agent-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 12px 24px;
+}
+
+/* A row: 62 high, padded 8, the picture 46 and the words 10 beside it. */
+.agent-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-sizing: border-box;
+  width: 100%;
+  height: 62px;
+  padding: 8px;
+  border: 0;
+  border-radius: var(--row-radius);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.agent-row:hover {
+  background: var(--row-hover);
+}
+
+.agent-row.open {
+  background: var(--row-selected);
+  box-shadow:
+    0 0 0 0.5px var(--row-selected-hairline),
+    0 1px 2px var(--row-selected-shadow);
+}
+
+.agent-row .details {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+}
+
+.agent-row .details.unread {
+  padding-right: 16px;
+}
+
+.agent-row .first-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 20px;
+}
+
+.agent-row .first-line.titled {
+  height: 22px;
+}
+
+.agent-row .name {
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 0 1 auto;
+}
+
+/* The title tag: the iPhone's grey box, the words in our blue. */
+.agent-row .title {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--blue);
+  background: var(--tag);
+  border-radius: 4px;
+  padding: 1px 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 0 1000 auto;
+  min-width: 0;
+}
+
+.agent-row .time {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--ink-tertiary);
+  white-space: nowrap;
+}
+
+.agent-row .preview {
+  font-size: 13px;
+  line-height: 18px;
+  height: 18px;
+  color: var(--ink-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Unread: a blue dot in the time's place. */
+.agent-row .unread-dot {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  margin-top: -4px;
+  border-radius: 50%;
+  background: var(--unread);
+}
+
+/* A picture in a circle, the whole picture filling it, with a faint edge. */
+.picture {
+  display: block;
+  position: relative;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--member-blank);
+}
+
+.picture img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.picture::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 0.5px var(--picture-edge);
+}
+
+/* The picture, and at work a green dot on its corner in a hole cut round it (12 across, the dot 8). */
+.agent-mark {
+  position: relative;
+  flex: none;
+}
+
+.agent-mark.holed > :first-child {
+  mask: radial-gradient(
+    circle 6px at calc(100% - 6px) calc(100% - 6px),
+    transparent 6px,
+    #000 6.5px
+  );
+}
+
+.agent-mark .working-dot {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--working);
+}
+
+/* "Can't reach your computer": the card over no list, the line over one. */
+.roster-card {
+  margin: 4px 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--ink-secondary);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.roster-card .heading {
+  font-weight: 500;
+}
+
+.roster-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 12px;
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--ink-secondary);
+}
+
+.roster-line span {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pill-button {
+  height: 26px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 13px;
+  background: var(--wash);
+  font-size: 12px;
+  cursor: pointer;
+  align-self: flex-start;
+}
+
+.quiet-button {
+  height: 22px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 11px;
+  background: transparent;
+  font-size: 12px;
+  color: var(--ink-secondary);
+  cursor: pointer;
 }

@@ -68,6 +68,8 @@ export class AppStore {
   /** The computer sleeps where the server lets it, and is not woken for the list. */
   isAsleep = false
   isLoading = false
+  /** Retry is under way (the sidebar's "Retrying…"). */
+  rosterRetrying = false
   /** What went wrong, in the person's words, when the screens should say it. */
   problem?: string
   /** Whether the list's failure is said (`problem`); the Mac says it in the sidebar instead. */
@@ -193,6 +195,22 @@ export class AppStore {
         const why = error instanceof Error ? error.message : String(error)
         this.problem = t`Couldn't reach your agents: ${why}`
       }
+      this.changed()
+    }
+  }
+
+  /**
+   * The sidebar's Retry under "Can't reach your computer" and "Reconnecting
+   * to your computer…": the computer asked for again, then the agents read again.
+   */
+  async retryRoster(): Promise<void> {
+    this.rosterRetrying = true
+    this.changed()
+    try {
+      this.backend?.invalidate?.()
+      await this.reloadRoster()
+    } finally {
+      this.rosterRetrying = false
       this.changed()
     }
   }
