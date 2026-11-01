@@ -61,6 +61,9 @@
   --hairline: rgb(20 20 20 / 0.1);
   /* The settings' blue (`settingsBlue`): the person's own reaction in the capsule */
   --settings-blue: #255a93;
+  /* The raised ground (`elevated`): find's bar; the words on the warning yellow (`onWarn`) */
+  --elevated: #fcfcfc;
+  --on-warn: #1f1f1f;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -100,6 +103,7 @@
     --disc-ink: rgb(255 255 255 / 0.86);
     --hairline: rgb(252 252 252 / 0.1);
     --settings-blue: #2f6db0;
+    --elevated: #181818;
   }
 }
 
@@ -1521,4 +1525,225 @@ button {
   border-radius: 50%;
   background: var(--yours);
   color: #fff;
+}
+
+/* ---------------------------------------------------------------------- */
+/* The agent at work (mac/Simeon/ChatMotion.swift): its place under the   */
+/* messages, 40 high whether or not it works.                             */
+
+.activity-slot {
+  height: 40px;
+  display: flex;
+  align-items: center;
+}
+
+/* Its picture (28; a group's member at 22), 8 from its words; in over 0.18 s from 92% at its left, out over 0.14 s. */
+.activity-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  min-width: 0;
+  transform-origin: left center;
+  animation: activity-in 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+  transition:
+    opacity 0.14s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.14s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.activity-row.exiting {
+  opacity: 0;
+  transform: scale(0.92);
+}
+
+@keyframes activity-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+}
+
+/* What it is doing, 14 on 22 at 500, rising 4 as new words come; the time after a minute, 12 in the tertiary grey. */
+.activity-words {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  position: relative;
+  top: -1px;
+  animation: activity-rise 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes activity-rise {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+.activity-time {
+  font-size: 12px;
+  color: var(--ink-tertiary);
+  white-space: nowrap;
+}
+
+/* The window's sweep of light (`sand-shimmer-text`): the words in the tertiary grey, the ink crossing them from right to left every 2.2 s. */
+.shimmer {
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: transparent;
+  background-image: linear-gradient(
+    90deg,
+    var(--ink-tertiary) 0%,
+    var(--ink-tertiary) 25%,
+    var(--ink) 60%,
+    var(--ink-tertiary) 75%,
+    var(--ink-tertiary) 100%
+  );
+  background-size: 200% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  animation: shimmer 2.2s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: -100% 0;
+  }
+  to {
+    background-position: 200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .activity-row,
+  .activity-words {
+    animation: fade-in 0.12s ease-out;
+  }
+  .activity-row.exiting {
+    transform: none;
+  }
+  .shimmer {
+    animation: none;
+    color: var(--ink-tertiary);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+/* Find in the chat (mac/Simeon/Find.swift).                               */
+
+/* The bar: 8 under the head, 16 from the right; 34 high, padded 0 6, 10 round on the raised ground with a hairline; a soft shadow on light. */
+.find-bar {
+  position: absolute;
+  right: 16px;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 34px;
+  padding: 0 6px;
+  box-sizing: border-box;
+  border-radius: 10px;
+  background: var(--elevated);
+  box-shadow:
+    inset 0 0 0 0.5px var(--hairline),
+    0 10px 20px -3px rgb(0 0 0 / 0.1),
+    0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+  .find-bar {
+    box-shadow: inset 0 0 0 0.5px var(--hairline);
+  }
+}
+
+.find-glass {
+  flex: none;
+  margin-left: 4px;
+  color: var(--ink-tertiary);
+}
+
+/* The field: 136 wide, 13 on 18, padded 0 6. */
+.find-field {
+  width: 136px;
+  height: 18px;
+  padding: 0 6px;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.find-field::placeholder {
+  color: var(--placeholder);
+}
+
+/* "2/5": 12 on 16, tabular, at 40%, red when nothing matches, right aligned in 36 with 4 after. */
+.find-count {
+  min-width: 36px;
+  padding-right: 4px;
+  text-align: right;
+  font-size: 12px;
+  line-height: 16px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-tertiary);
+  white-space: nowrap;
+}
+
+.find-count.none {
+  color: var(--danger);
+}
+
+.find-rule {
+  width: 1px;
+  height: 20px;
+  margin: 0 2px;
+  background: var(--hairline);
+}
+
+/* Previous, Next and Close: 24, 6 round, the glyphs at 60%; at 30% and off while nothing matches. */
+.find-button {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink-secondary);
+  cursor: pointer;
+}
+
+.find-button:hover:not(:disabled) {
+  background: var(--row-hover);
+}
+
+.find-button:disabled {
+  color: color-mix(in srgb, var(--ink) 30%, transparent);
+  cursor: default;
+}
+
+/* What find lights: every match under the warning yellow at 30%, the current one on the yellow itself, its words #1f1f1f. */
+mark.find-match {
+  background: color-mix(in srgb, var(--warn) 30%, transparent);
+  color: inherit;
+}
+
+mark.find-current {
+  background: var(--warn);
+  color: var(--on-warn);
 }

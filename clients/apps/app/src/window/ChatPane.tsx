@@ -9,10 +9,12 @@
 // A message's hover bar, its reactions' capsule, its menus and the reply
 // over the field are in MessageActions.tsx.
 //
-// Still to come, each with its part (docs/web-app/PROGRESS.md): find, the
-// agent's working line, the motion of a line coming in, the time on a
-// sideways swipe, two agents' messages and a call's lines opened over the
-// chat (2b);
+// Find (⌘F) is in FindBar.tsx; the agent's working line under the messages
+// in ActivitySlot.tsx.
+//
+// Still to come, each with its part (docs/web-app/PROGRESS.md): the motion
+// of a line coming in, the time on a sideways swipe, two agents' messages
+// and a call's lines opened over the chat (2b);
 // the pictures from the computer, files' kinds, sizes and Save, link cards,
 // previews (2c); the call button (step 5); the cards (step 3); the agent's
 // pane opened from the head (step 4).
@@ -27,6 +29,7 @@ import {
   useRef,
   useState,
 } from 'react'
+import { activityLine } from '../core/activity'
 import {
   type Bubble,
   type ChatImage,
@@ -43,14 +46,23 @@ import {
   stampText,
   voiceChatLabel,
 } from '../core/chat'
+import {
+  FindMarks,
+  type FindMatch,
+  findIndex,
+  findMatches,
+  steppedIndex,
+} from '../core/chatFind'
 import { type RunFlags, noRun } from '../core/chatRuns'
 import { english, languageCode } from '../core/language'
 import { type Agent, fileTitle } from '../core/models'
 import type { AppStore } from '../core/store'
 import { wordsLanguage } from '../core/words'
 import { t } from '../l10n'
+import { ActivitySlot } from './ActivitySlot'
 import { AgentMark } from './AgentMark'
 import { Composer } from './Composer'
+import { FindBar, FindContext, Marked } from './FindBar'
 import {
   type Dismissal,
   HoverBar,
@@ -100,6 +112,21 @@ type Overlay = { bounds: { width: number; height: number } } & (
   | { kind: 'tapback'; bubble: Bubble; anchor: Spot }
 )
 
+/** Find in the chat: open or not, its words, ⌘F's count (the field takes the keys on each), the match stepped to for these words, and the lines it was for. */
+interface FindState {
+  open: boolean
+  query: string
+  focus: number
+  choice?: { query: string; match: FindMatch; index: number }
+  thread?: string
+}
+
+const noMatches: FindMatch[] = []
+
+/** An Apple computer: its shortcuts take ⌘. */
+const apple =
+  typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform)
+
 /** A click on the button whose menu or capsule it just closed closes it, and opens nothing (the Mac's `closedByClick`, half a second). */
 const reopenGap = 500
 
@@ -130,6 +157,54 @@ export function ChatPane({
   const [focusKey, setFocusKey] = useState(0)
   const [overlay, setOverlay] = useState<Overlay>()
   const closed = useRef<{ id: string; at: number }>(undefined)
+
+  // Find in the chat (⌘F, `ChatControl`'s find): open, its words, ⌘F's count, the match stepped to.
+  const [find, setFind] = useState<FindState>({
+    open: false,
+    query: '',
+    focus: 0,
+  })
+  // The bar belongs to the lines on screen: on a thread, or back, it starts again, still open.
+  const here: FindState =
+    find.thread === threadRoot
+      ? find
+      : { ...find, query: '', choice: undefined, thread: threadRoot }
+  // Find reads the lines on screen: the thread's while one is open (`ChatFind`).
+  const matches = here.open
+    ? findMatches(here.query, store.findableEntries(agentId))
+    : noMatches
+  const index = findIndex(matches, here.choice, here.query)
+  const current = index != null ? matches[index] : undefined
+  const findOnScreen =
+    here.open && here.query.trim() !== ''
+      ? { needle: here.query.toLowerCase(), current }
+      : undefined
+  /** Brings a row to the middle without lighting it (find's `scrollToEntryWithoutHighlight`); set by the lines on screen. */
+  const revealRef = useRef<(rowId: string) => void>(undefined)
+
+  // ⌘F (Ctrl-F on Windows): the bar, or its field again with its words chosen.
+  useEffect(() => {
+    const key = (event: KeyboardEvent) => {
+      // ⌘ on a Mac (where Control-F moves the caret in a field), Control elsewhere.
+      const command = apple ? event.metaKey : event.ctrlKey
+      if (!command || event.metaKey === event.ctrlKey) return
+      if (event.shiftKey || event.altKey) return
+      if (event.key.toLowerCase() !== 'f') return
+      event.preventDefault()
+      setFind((now) => ({ ...now, open: true, focus: now.focus + 1 }))
+    }
+    window.addEventListener('keydown', key)
+    return () => window.removeEventListener('keydown', key)
+  }, [])
+
+  /** Next (1) or Previous (-1), round at either end, the row brought to the middle unlit (`stepFind`). */
+  const stepFind = (delta: number) => {
+    if (index == null) return
+    const at = steppedIndex(index, delta, matches.length)
+    const match = matches[at]!
+    setFind({ ...here, choice: { query: here.query, match, index: at } })
+    revealRef.current?.(match.rowId)
+  }
 
   const closeOverlay = useCallback(
     (why: Dismissal) => {
@@ -272,6 +347,8 @@ export function ChatPane({
         threadRoot={threadRoot}
         composerHeight={composerHeight}
         actions={actions}
+        find={findOnScreen}
+        revealRef={revealRef}
       />
       {agent &&
         (threadRoot != null ? (
@@ -293,6 +370,28 @@ export function ChatPane({
         focusKey={focusKey}
         onHeight={setComposerHeight}
       />
+      {/* Find's bar, 8 under the head and 16 from the right, over the messages. */}
+      {here.open && (
+        <FindBar
+          // Its own key: the lines' key is the thread's id too, and siblings with one key are not told apart.
+          key={`find:${threadRoot ?? ''}`}
+          query={here.query}
+          focus={here.focus}
+          ordinal={index != null ? index + 1 : 0}
+          count={matches.length}
+          top={(threadRoot != null ? 44 : 116) + 8}
+          onQuery={(query) => setFind({ ...here, query })}
+          step={stepFind}
+          close={() =>
+            setFind({
+              open: false,
+              query: '',
+              focus: here.focus,
+              thread: threadRoot,
+            })
+          }
+        />
+      )}
       {overlay?.kind === 'menu' && (
         <PopMenu
           items={overlay.items}
@@ -405,12 +504,17 @@ function Transcript({
   threadRoot,
   composerHeight,
   actions,
+  find,
+  revealRef,
 }: {
   store: AppStore
   agentId: string
   threadRoot?: string
   composerHeight: number
   actions: MessageActions
+  /** What find lights: its words in small letters, and the match it stands on. */
+  find?: { needle: string; current?: FindMatch }
+  revealRef: React.RefObject<((rowId: string) => void) | undefined>
 }) {
   const rows =
     threadRoot != null
@@ -518,6 +622,29 @@ function Transcript({
     setTimeout(() => setLit((now) => (now === rowId ? undefined : now)), 2_500)
   }, [])
 
+  // Find's step: the row to the middle, unlit, letting go of the newest.
+  useEffect(() => {
+    revealRef.current = (rowId: string) => {
+      const element = scroller.current?.querySelector(
+        `[data-row-id="${CSS.escape(rowId)}"]`,
+      )
+      if (!element) return
+      pinned.current = false
+      setAtNewest(false)
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+    return () => {
+      revealRef.current = undefined
+    }
+  }, [revealRef])
+
+  // The agent at work: the words beside its picture under the messages.
+  const activity = useMemo(
+    () =>
+      agent ? activityLine(agent, (id) => store.agent(id)?.name) : undefined,
+    [agent, store],
+  )
+
   const unseen = useMemo(() => {
     if (atNewest || seenUpTo == null) return 0
     const from = rows.findIndex((row) => row.id === seenUpTo)
@@ -564,20 +691,37 @@ function Transcript({
           ref={content}
           style={{
             paddingTop: threadRoot != null ? 44 : 116,
-            paddingBottom: composerHeight + 28 + 40,
+            // Over the message field: its frame and 28 (the working line's 40 is in its slot).
+            paddingBottom: composerHeight + 28,
           }}
         >
-          {rows.map((row) =>
+          {rows.map((row, at) =>
             row.kind === 'thread' && threads.has(row.rootId) ? null : (
-              <TranscriptRow
+              <FindContext.Provider
                 key={row.id}
-                row={row}
-                run={runs[row.id] ?? noRun}
-                isGroup={agent?.isGroup ?? false}
-                threadCount={threads.get(row.id)}
-              />
+                value={
+                  find
+                    ? new FindMarks(
+                        find.needle,
+                        find.current?.rowId === row.id
+                          ? find.current.occurrence
+                          : undefined,
+                      )
+                    : undefined
+                }
+              >
+                <TranscriptRow
+                  row={row}
+                  run={runs[row.id] ?? noRun}
+                  isGroup={agent?.isGroup ?? false}
+                  threadCount={threads.get(row.id)}
+                  // Under the last message while the agent works, the working line meets its bubble (`isIndicatorSeamingBubble`).
+                  seamsBelow={activity != null && at === rows.length - 1}
+                />
+              </FindContext.Provider>
             ),
           )}
+          <ActivitySlot store={store} agent={agent} line={activity} />
         </div>
       </div>
       {!atNewest && (
@@ -608,11 +752,13 @@ function TranscriptRow({
   run,
   isGroup,
   threadCount,
+  seamsBelow,
 }: {
   row: ChatRow
   run: RunFlags
   isGroup: boolean
   threadCount?: number
+  seamsBelow: boolean
 }) {
   const control = useControl()
   const side = row.kind === 'notice' ? 'middle' : rowSideClass(row)
@@ -630,6 +776,7 @@ function TranscriptRow({
         run={run}
         isGroup={isGroup}
         threadCount={threadCount}
+        seamsBelow={seamsBelow}
       />
     </div>
   )
@@ -662,11 +809,13 @@ function RowContent({
   run,
   isGroup,
   threadCount,
+  seamsBelow,
 }: {
   row: ChatRow
   run: RunFlags
   isGroup: boolean
   threadCount?: number
+  seamsBelow: boolean
 }) {
   const control = useControl()
   switch (row.kind) {
@@ -687,6 +836,7 @@ function RowContent({
           run={run}
           isGroup={isGroup}
           threadCount={threadCount}
+          seamsBelow={seamsBelow}
         />
       )
     case 'file':
@@ -768,7 +918,11 @@ function RowContent({
         </div>
       )
     case 'notice':
-      return <div className="notice">{row.text}</div>
+      return (
+        <div className="notice">
+          <Marked words={row.text} />
+        </div>
+      )
     case 'failedSend':
       return (
         <div className="send-state">
@@ -917,11 +1071,13 @@ function BubbleRow({
   run,
   isGroup,
   threadCount,
+  seamsBelow,
 }: {
   bubble: Bubble
   run: RunFlags
   isGroup: boolean
   threadCount?: number
+  seamsBelow: boolean
 }) {
   const control = useControl()
   const message = (
@@ -930,6 +1086,7 @@ function BubbleRow({
       run={run}
       isGroup={isGroup}
       threadCount={threadCount}
+      seamsBelow={seamsBelow}
     />
   )
   if (bubble.fromPerson || !isGroup) {
@@ -972,11 +1129,13 @@ function Message({
   run,
   isGroup,
   threadCount,
+  seamsBelow,
 }: {
   bubble: Bubble
   run: RunFlags
   isGroup: boolean
   threadCount?: number
+  seamsBelow: boolean
 }) {
   const control = useControl()
   const words = bubble.text.trim()
@@ -1007,6 +1166,7 @@ function Message({
             isGroup={isGroup}
             chinJoined={chinJoined}
             threadCount={threadCount}
+            seamsBelow={seamsBelow}
           />
           {bubble.reactions.length > 0 && <ReactionPills bubble={bubble} />}
         </div>
@@ -1065,12 +1225,15 @@ function Shaped({
   isGroup,
   chinJoined,
   threadCount,
+  seamsBelow,
 }: {
   bubble: Bubble
   run: RunFlags
   isGroup: boolean
   chinJoined: boolean
   threadCount?: number
+  /** The working line under it meets it at a 6-point corner. */
+  seamsBelow: boolean
 }) {
   const control = useControl()
   const trimmed = bubble.text.trim()
@@ -1097,7 +1260,10 @@ function Shaped({
       .join(' ')
   } else {
     // A run's bubbles meet at 6-point corners; so does the one beside its author's picture in a group.
-    const joinsBelow = run.continuesNext || (isGroup && bubble.showsAvatar)
+    const joinsBelow =
+      run.continuesNext ||
+      (seamsBelow && bubble.reactions.length === 0) ||
+      (isGroup && bubble.showsAvatar)
     radius = [
       run.continuesPrevious ? 6 : 18,
       18,
@@ -1165,7 +1331,7 @@ function FoldingText({ words, centred }: { words: string; centred: boolean }) {
           folds && !open ? { maxHeight: 160, overflow: 'hidden' } : undefined
         }
       >
-        {words}
+        <Marked words={words} />
       </div>
       {folds && (
         <button
