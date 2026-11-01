@@ -113,6 +113,7 @@ Newest first.
   is not live yet; see Open questions); every one of the 249 logos by eye
   (each is a file the Mac draws from, and the test asks that each app has
   one).
+- Pull request #525.
 - **Next:** step 2b, part 4: a link's site icon, More emoji and the full
   picker.
 
