@@ -15,7 +15,8 @@ lost every margin and padding on the founder's Windows computer.
 import hashlib, os, re
 
 STYLE = re.compile(r'(href="/?)site\.css(?:\?v=[0-9a-f]{8})?"')
-ASSET = re.compile(r"(?<![\w/.:-])((?:faces|logos|img)/[\w.%-]+\.(?:png|jpe?g|webp|svg|gif)|app-poster-[\w-]+\.jpg)(?:\?v=[0-9a-f]{8})?(?![\w.%-])")
+# the films (video/, 1 November 2026) the same way, so a new cut is a new address
+ASSET = re.compile(r"(?<![\w/.:-])((?:faces|logos|img|video)/[\w.%-]+\.(?:png|jpe?g|webp|svg|gif|mp4)|app-poster-[\w-]+\.jpg)(?:\?v=[0-9a-f]{8})?(?![\w.%-])")
 
 
 def version_assets(html, root):

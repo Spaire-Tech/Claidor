@@ -920,6 +920,17 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .duo p{margin-top:14px;max-width:34ch;font-size:17px;line-height:1.47;color:rgba(255,255,255,.78)}
 @media (max-width:734px){.duo{grid-template-columns:1fr;gap:14px}}
 
+/* The film: Iris, the spokesperson agent, explains Simeon; a rounded card that plays on a press (the founder, 1 November 2026). */
+.film{padding:clamp(72px,6.2*var(--vw,1vw),118px) 0 clamp(32px,3*var(--vw,1vw),56px)}
+.film h2{margin:0 auto clamp(28px,3.4*var(--vw,1vw),56px);text-align:center;font-weight:var(--w-display);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em;max-width:var(--title-max);text-wrap:balance}
+.film-box{position:relative;aspect-ratio:16/9;border-radius:clamp(18px,2.2*var(--vw,1vw),32px);overflow:hidden;background:#e9e7e3;isolation:isolate}
+.film-box video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.film-box::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(18deg,rgba(0,0,0,.42),rgba(0,0,0,0) 48%);transition:opacity .3s}
+.film-play{position:absolute;left:clamp(20px,4.6%,72px);bottom:clamp(18px,8%,84px);z-index:1;display:flex;align-items:center;gap:.3em;padding:0;border:0;background:none;color:#fff;font:inherit;font-size:clamp(28px,4*var(--vw,1vw),60px);font-weight:500;letter-spacing:-.02em;cursor:pointer;text-shadow:0 1px 20px rgba(0,0,0,.25);transition:opacity .3s}
+.film-play svg{width:.46em;height:.52em;flex:none}
+.film-play:focus-visible{outline:2px solid #fff;outline-offset:6px;border-radius:8px}
+.film-box.on::after,.film-box.on .film-play{opacity:0;pointer-events:none}
+
 /* Pricing. */
 .bill{display:inline-flex;margin-top:30px;padding:3px;border-radius:99px;background:#e8e8ed}
 .bill button{appearance:none;border:0;background:none;border-radius:99px;padding:8px 18px;font-size:14px;cursor:pointer;color:var(--ink2)}
@@ -1110,6 +1121,23 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
       <button type="button" class="btn white ring-more">Learn more</button>
     </div>
   </div>
+</section>
+
+<section class="film" id="film" aria-label="Hear it from our spokesperson agent">
+  <div class="wrap">
+    <h2>Hear it from our spokesperson agent</h2>
+    <div class="film-box">
+      <video preload="none" playsinline poster="img/film-poster.webp?v=40a0c9d3" src="video/what-is-simeon.mp4?v=71131a66"></video>
+      <button type="button" class="film-play" aria-label="Play the film"><svg viewBox="0 0 10 11" aria-hidden="true"><path d="M0 0v11l10-5.5z" fill="currentColor"/></svg>Play</button>
+    </div>
+  </div>
+  <script>
+    for (const box of document.querySelectorAll('.film-box')) {
+      const v = box.querySelector('video'), b = box.querySelector('.film-play');
+      b.addEventListener('click', () => { box.classList.add('on'); v.controls = true; v.play(); });
+      v.addEventListener('ended', () => { box.classList.remove('on'); v.controls = false; v.load(); });
+    }
+  </script>
 </section>
 
 <section class="trust" id="pricing" aria-label="Pricing">
