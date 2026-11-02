@@ -111,6 +111,14 @@ describe('the logs', () => {
       'computer-stream.log',
       'voice-call.log',
     ])
+    // The updater's own (7e), last; the page can't write it.
+    writeFileSync(path.join(dir, 'updates.log'), 'checked\n')
+    expect((await logs.readTails()).map((tail) => tail.name)).toEqual([
+      'computer-stream.log',
+      'voice-call.log',
+      'updates.log',
+    ])
+    expect(isLogName('updates.log')).toBe(false)
   })
 })
 

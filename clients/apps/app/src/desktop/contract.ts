@@ -63,7 +63,10 @@ export interface DesktopCalls {
   /** A line for one of the app's logs in its data folder (the Mac's `voice-call.log`, `computer-stream.log`), stamped and appended there. */
   writeLog(name: 'voice-call.log' | 'computer-stream.log', line: string): void
   /** The logs' last 256 KB each, for a report's diagnostics (the Mac's `MacFeedback.logFiles`); an empty one is left out. */
-  readLogs(): { name: 'computer-stream.log' | 'voice-call.log'; text: string }[]
+  readLogs(): {
+    name: 'computer-stream.log' | 'voice-call.log' | 'updates.log'
+    text: string
+  }[]
   /** This PC's maker and model as Windows names them, for a report (the Mac's `hw.model`); else the processor's kind ("x86_64"). */
   deviceModel(): string
   /** The agents, the sidebar's pins and sections and the connectors' catalogue kept on this PC (the Mac's `SavedChats`), each null when there is none. */

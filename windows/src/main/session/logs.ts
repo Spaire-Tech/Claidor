@@ -17,6 +17,9 @@ import path from 'node:path'
 
 export const logNames = ['computer-stream.log', 'voice-call.log'] as const
 export type LogName = (typeof logNames)[number]
+/** What a report reads: the page's two logs, then the updater's own (7e's `updates.log`, written by the main process only, never by the page). */
+export const reportedLogNames = [...logNames, 'updates.log'] as const
+export type ReportedLogName = (typeof reportedLogNames)[number]
 
 /** What a report reads of each log: its last 256 KB. */
 export const logTail = 256 * 1024
@@ -115,14 +118,14 @@ export class AppLogs {
     })
   }
 
-  /** Each log's last 256 KB, the screens' first, as the Mac's report reads them; an empty or missing one is left out. */
-  async readTails(): Promise<{ name: LogName; text: string }[]> {
-    const tails: { name: LogName; text: string }[] = []
-    for (const name of logNames) {
-      await this.queues.get(name)
+  /** Each log's last 256 KB, the screens' first, as the Mac's report reads them, then the updater's; an empty or missing one is left out. */
+  async readTails(): Promise<{ name: ReportedLogName; text: string }[]> {
+    const tails: { name: ReportedLogName; text: string }[] = []
+    for (const name of reportedLogNames) {
+      if (name !== 'updates.log') await this.queues.get(name)
       let handle
       try {
-        handle = await open(this.file(name), 'r')
+        handle = await open(path.join(this.folder, name), 'r')
       } catch {
         continue
       }
