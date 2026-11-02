@@ -7,9 +7,7 @@
         "isComposingMessage": false,
         "isGroup": false,
         "memberIds": [],
-        "conversationPartnerIds": [
-          "a1"
-        ],
+        "conversationPartnerIds": ["a1"],
         "description": "",
         "hasUnread": false,
         "lastEntry": null,
@@ -23,12 +21,7 @@
         "isComposingMessage": false,
         "isGroup": false,
         "memberIds": [],
-        "conversationPartnerIds": [
-          "b2",
-          "c3",
-          "a1",
-          "gone"
-        ],
+        "conversationPartnerIds": ["b2", "c3", "a1", "gone"],
         "description": "",
         "hasUnread": false,
         "lastEntry": null,
@@ -42,9 +35,7 @@
         "isComposingMessage": false,
         "isGroup": false,
         "memberIds": [],
-        "conversationPartnerIds": [
-          "a1"
-        ],
+        "conversationPartnerIds": ["a1"],
         "description": "",
         "hasUnread": false,
         "lastEntry": null,
@@ -71,16 +62,8 @@
         "isRunning": false,
         "isComposingMessage": false,
         "isGroup": true,
-        "memberIds": [
-          "a1",
-          "b2",
-          "zz",
-          "g1",
-          "a1"
-        ],
-        "conversationPartnerIds": [
-          "d4"
-        ],
+        "memberIds": ["a1", "b2", "zz", "g1", "a1"],
+        "conversationPartnerIds": ["d4"],
         "description": "",
         "hasUnread": false,
         "lastEntry": null,
@@ -118,13 +101,7 @@
   },
   "headerSubtitle": [
     {
-      "agents": [
-        "b2",
-        "a1",
-        "c3",
-        "d4",
-        "g1"
-      ],
+      "agents": ["b2", "a1", "c3", "d4", "g1"],
       "edges": "se(roster)",
       "text": "4 agents · 1 group · 2 message links"
     },
@@ -160,13 +137,7 @@
         "createdAt": 500
       }
     ],
-    "output": [
-      "g1",
-      "a1",
-      "b2",
-      "c3",
-      "d4"
-    ]
+    "output": ["g1", "a1", "b2", "c3", "d4"]
   },
   "activity": [
     {
@@ -463,11 +434,7 @@
         "isRunning": false,
         "isComposingMessage": false,
         "isGroup": true,
-        "memberIds": [
-          "a",
-          "b",
-          "c"
-        ],
+        "memberIds": ["a", "b", "c"],
         "conversationPartnerIds": [],
         "description": "",
         "hasUnread": false,
@@ -491,9 +458,7 @@
         "isRunning": false,
         "isComposingMessage": false,
         "isGroup": true,
-        "memberIds": [
-          "a"
-        ],
+        "memberIds": ["a"],
         "conversationPartnerIds": [],
         "description": "",
         "hasUnread": false,
@@ -541,10 +506,7 @@
         "isRunning": true,
         "isComposingMessage": false,
         "isGroup": true,
-        "memberIds": [
-          "a",
-          "b"
-        ],
+        "memberIds": ["a", "b"],
         "conversationPartnerIds": [],
         "description": "",
         "hasUnread": false,
@@ -573,9 +535,7 @@
     },
     {
       "name": "one node: centre",
-      "nodeIds": [
-        "a"
-      ],
+      "nodeIds": ["a"],
       "edges": [],
       "width": 800,
       "height": 600,
@@ -588,10 +548,7 @@
     },
     {
       "name": "two linked",
-      "nodeIds": [
-        "a",
-        "b"
-      ],
+      "nodeIds": ["a", "b"],
       "edges": [
         {
           "sourceId": "a",
@@ -613,10 +570,7 @@
     },
     {
       "name": "two unlinked",
-      "nodeIds": [
-        "a",
-        "b"
-      ],
+      "nodeIds": ["a", "b"],
       "edges": [],
       "width": 800,
       "height": 600,
@@ -633,12 +587,7 @@
     },
     {
       "name": "triangle + loner, wide",
-      "nodeIds": [
-        "a",
-        "b",
-        "c",
-        "d"
-      ],
+      "nodeIds": ["a", "b", "c", "d"],
       "edges": [
         {
           "sourceId": "a",
@@ -676,13 +625,7 @@
     },
     {
       "name": "roster1 (se edges, Ce order)",
-      "nodeIds": [
-        "g1",
-        "a1",
-        "b2",
-        "c3",
-        "d4"
-      ],
+      "nodeIds": ["g1", "a1", "b2", "c3", "d4"],
       "edges": [
         {
           "key": "msg::a1::b2",
@@ -736,16 +679,7 @@
     },
     {
       "name": "group of 5 + two message links",
-      "nodeIds": [
-        "g",
-        "m1",
-        "m2",
-        "m3",
-        "m4",
-        "m5",
-        "x",
-        "y"
-      ],
+      "nodeIds": ["g", "m1", "m2", "m3", "m4", "m5", "x", "y"],
       "edges": [
         {
           "sourceId": "g",
@@ -930,14 +864,7 @@
     },
     {
       "name": "six unlinked in a tiny box (fit scale < 1)",
-      "nodeIds": [
-        "a",
-        "b",
-        "c",
-        "d",
-        "e",
-        "f"
-      ],
+      "nodeIds": ["a", "b", "c", "d", "e", "f"],
       "edges": [],
       "width": 200,
       "height": 180,
@@ -970,11 +897,7 @@
     },
     {
       "name": "duplicate and self edges are ignored by the springs",
-      "nodeIds": [
-        "a",
-        "b",
-        "c"
-      ],
+      "nodeIds": ["a", "b", "c"],
       "edges": [
         {
           "sourceId": "a",
@@ -1012,11 +935,7 @@
     },
     {
       "name": "iterations 1 (option)",
-      "nodeIds": [
-        "a",
-        "b",
-        "c"
-      ],
+      "nodeIds": ["a", "b", "c"],
       "edges": [
         {
           "sourceId": "a",
