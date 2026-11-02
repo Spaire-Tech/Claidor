@@ -35,6 +35,13 @@ import {
 } from './agentVoices'
 import { SimeonAPIError } from './api'
 import {
+  type AppAccount,
+  type AppAccounts,
+  accountPath,
+  appAccountsFrom,
+  toolkitOf,
+} from './appAccounts'
+import {
   type AgentBackend,
   type AttachmentRef,
   type BackendEvent,
@@ -4544,15 +4551,43 @@ export class AppStore {
   // `anotherAccountURL`). 6b's connector reads the three below; 6d writes
   // them.
 
-  /** An app's accounts read again (`GET apps/{toolkit}/accounts`, `loadAppAccounts`). */
+  /** Each app's accounts as Simeon Labs' server last listed them, by the app's toolkit (`appAccounts`). */
+  appAccounts: Record<string, AppAccounts> = {}
+
+  /** The toolkit of an app whose accounts Simeon's server keeps: by its server's address, else its catalogue row's (`appsToolkit(serverURL:pluginId:)`). */
+  appsToolkit(
+    serverURL: string | undefined,
+    pluginId: string | undefined,
+  ): string | undefined {
+    return (
+      toolkitOf(serverURL) ??
+      toolkitOf(
+        pluginId === undefined
+          ? undefined
+          : this.catalog.find((app) => app.id === pluginId)?.serverURL,
+      )
+    )
+  }
+
+  /** An app's accounts read again (`GET apps/{toolkit}/accounts`, `loadAppAccounts`); what was shown stays when they can't be read. */
   async loadAppAccounts(toolkit: string): Promise<void> {
-    void toolkit
+    const backend = this.backend
+    if (!backend) return
+    let answer: JSONValue
+    try {
+      answer = await backend.server(`apps/${toolkit}/accounts`)
+    } catch {
+      return
+    }
+    const read = appAccountsFrom(answer)
+    if (this.backend !== backend || !read) return
+    this.appAccounts = { ...this.appAccounts, [toolkit]: read }
+    this.changed()
   }
 
   /** The ids of an app's accounts as last read (`appAccounts[toolkit].accounts`). */
   appAccountIds(toolkit: string): readonly string[] {
-    void toolkit
-    return []
+    return this.appAccounts[toolkit]?.accounts.map((one) => one.id) ?? []
   }
 
   /** The sign-in page for one more account (`POST apps/{toolkit}/connect` with `another`, `anotherAccountURL`); none when it can't be had (the store's problem says why). */
@@ -4560,13 +4595,86 @@ export class AppStore {
     toolkit: string,
     name: string,
   ): Promise<string | undefined> {
-    void toolkit
-    void name
+    const backend = this.backend
+    if (!backend) return undefined
+    let why: string | undefined
+    try {
+      const answer = await backend.server(`apps/${toolkit}/connect`, 'POST', {
+        another: true,
+      })
+      const url = text(field(answer, 'url'))
+      if (url !== undefined) return url
+    } catch (error) {
+      why = plainError(error instanceof Error ? error.message : String(error))
+    }
+    if (this.backend !== backend) return undefined
+    // Connecting.swift's `didntConnect` (6b's connecting says it too).
+    this.problem = why
+      ? t`${name} didn't connect: ${why}`
+      : t`${name} didn't connect. Try again.`
+    this.changed()
     return undefined
   }
 
+  /** The pencil: the person's own name for one account; an empty one goes back to who it signs in as (`renameAppAccount`). */
+  async renameAppAccount(
+    toolkit: string,
+    account: AppAccount,
+    name: string,
+  ): Promise<void> {
+    const next = name.split(/\s+/).filter(Boolean).join(' ')
+    if (next === (account.name ?? '')) return
+    await this.changeAppAccounts(
+      toolkit,
+      account,
+      'PATCH',
+      { name: next },
+      t("Couldn't rename the account"),
+    )
+  }
+
+  /** One account signed out of the app; the others stay (`removeAppAccount`). */
+  async removeAppAccount(toolkit: string, account: AppAccount): Promise<void> {
+    await this.changeAppAccounts(
+      toolkit,
+      account,
+      'DELETE',
+      undefined,
+      t("Couldn't remove the account"),
+    )
+  }
+
+  /** A change to one account; the server answers with the app's accounts as they now are, and a refusal is said (`problem`). */
+  private async changeAppAccounts(
+    toolkit: string,
+    account: AppAccount,
+    method: string,
+    body: JSONValue | undefined,
+    failure: string,
+  ): Promise<void> {
+    const backend = this.backend
+    if (!backend) return
+    try {
+      const answer = await backend.server(
+        `apps/${toolkit}/accounts/${accountPath(account.id)}`,
+        method,
+        body,
+      )
+      const read = appAccountsFrom(answer)
+      if (this.backend !== backend || !read) return
+      this.appAccounts = { ...this.appAccounts, [toolkit]: read }
+    } catch (error) {
+      if (this.backend !== backend) return
+      const why = error instanceof Error ? error.message : String(error)
+      this.problem = t`${failure}: ${why}`
+    }
+    this.changed()
+  }
+
   /** 6d's state back to nothing (signed out). */
-  private resetConnectorPages(): void {}
+  private resetConnectorPages(): void {
+    this.appAccounts = {}
+  }
 
   // MARK: Step 6e's Settings: General (the account, language, appearance,
   // time zone), the account's page (name, password), Permissions
