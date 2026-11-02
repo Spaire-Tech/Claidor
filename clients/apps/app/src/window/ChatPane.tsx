@@ -38,6 +38,7 @@ import {
   type CardKind,
   type ChatImage,
   type ChatRow,
+  type RoutineRef,
   channelTitle,
   exchangeLabel,
   exchangePeers,
@@ -78,6 +79,7 @@ import {
 } from './Cards'
 import { Composer } from './Composer'
 import { connectCardView } from './ConnectCards'
+import { ContextMenu } from './ContextMenu'
 import { somethingOver } from './Dialogs'
 import { EmojiPicker } from './EmojiPicker'
 import { FileCard, LinkCard, useShownPicture } from './Files'
@@ -997,29 +999,12 @@ function RowContent({
       )
     }
     case 'routines':
-      return row.routines.length >= 3 ? (
-        <div className="system-event">
-          <span className="label">{routineVerb(row.action)}</span>
-          <span className="event-chip">
-            <Clock />
-            <span className="chip-title">{t`${row.routines.length} routines`}</span>
-          </span>
-        </div>
-      ) : (
-        <div className="system-event">
-          <span className="label">
-            {routineLabel(row.action, row.routines.length)}
-          </span>
-          {row.routines.map((routine, index) => (
-            <span key={routine.id} className="routine">
-              {index > 0 && <span className="label">{t('and')}</span>}
-              <span className="event-chip">
-                <Clock />
-                <span className="chip-title">{routine.name}</span>
-              </span>
-            </span>
-          ))}
-        </div>
+      return (
+        <RoutinesLine
+          action={row.action}
+          routines={row.routines}
+          agentId={control.agentId}
+        />
       )
     case 'voiceCall':
       return (
@@ -1188,6 +1173,75 @@ function cardView(kind: CardKind, card: CardProps): React.ReactNode {
     case 'products':
       return shopCardView(kind, card)
   }
+}
+
+/**
+ * A line of routines made or changed (mac/Simeon/ChatPane.swift's
+ * `RoutinesLine`): one or two chips, joined by "and", three or more as a
+ * count. A routine's chip opens the agent's pane on Routines with its
+ * editor (`KPn`); the count opens a menu of them where the pointer is
+ * (`YPn`).
+ */
+function RoutinesLine({
+  action,
+  routines,
+  agentId,
+}: {
+  action: string
+  routines: RoutineRef[]
+  agentId: string
+}) {
+  const model = useWindowModel()
+  const [list, setList] = useState<{ x: number; y: number }>()
+  const open = (id: string) => model.openRoutineFor(id, agentId)
+  if (routines.length >= 3)
+    return (
+      <div className="system-event">
+        <span className="label">{routineVerb(action)}</span>
+        <button
+          type="button"
+          className="event-chip routine-chip"
+          title={t`${routines.length} routines, show list`}
+          aria-label={t`${routines.length} routines, show list`}
+          aria-haspopup="menu"
+          onClick={(event) => setList({ x: event.clientX, y: event.clientY })}
+        >
+          <Clock />
+          <span className="chip-title">{t`${routines.length} routines`}</span>
+        </button>
+        {list && (
+          <ContextMenu
+            at={list}
+            close={() => setList(undefined)}
+            items={routines.map((routine) => ({
+              label: routine.name,
+              glyph: 'clock',
+              action: () => open(routine.id),
+            }))}
+          />
+        )}
+      </div>
+    )
+  return (
+    <div className="system-event">
+      <span className="label">{routineLabel(action, routines.length)}</span>
+      {routines.map((routine, index) => (
+        <span key={routine.id} className="routine">
+          {index > 0 && <span className="label">{t('and')}</span>}
+          <button
+            type="button"
+            className="event-chip routine-chip"
+            title={t`Open routine ${routine.name}`}
+            aria-label={t`Open routine ${routine.name}`}
+            onClick={() => open(routine.id)}
+          >
+            <Clock />
+            <span className="chip-title">{routine.name}</span>
+          </button>
+        </span>
+      ))}
+    </div>
+  )
 }
 
 function Clock() {

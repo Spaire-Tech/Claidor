@@ -76,7 +76,17 @@ import {
   travellerJSON,
 } from './flightCards'
 import { GatewayError } from './gatewayConnection'
-import { type JSONValue, arr, bool, field, int, num, str, text } from './json'
+import {
+  type JSONObject,
+  type JSONValue,
+  arr,
+  bool,
+  field,
+  int,
+  num,
+  str,
+  text,
+} from './json'
 import { t } from './l10n'
 import { currentLanguage } from './language'
 import { type Agent, agentFrom, sameAgent, sortRoster } from './models'
@@ -91,6 +101,13 @@ import {
   unreachableLine,
 } from './onboarding'
 import { plainError } from './plainWords'
+import { RoutineTestRuns } from './routineEditing'
+import {
+  type Routine,
+  createdRoutine,
+  routinesFrom,
+  sameRoutines,
+} from './routines'
 import {
   type SidebarSection,
   createSection,
@@ -739,6 +756,9 @@ export class AppStore {
         else if (sections) void this.loadSections()
         return
       }
+      case 'automations':
+        this.applyAutomations(event.agentId, event.automations)
+        return
       case 'computerAsleep':
         if (this.isAsleep === event.asleep) return
         this.isAsleep = event.asleep
@@ -968,6 +988,7 @@ export class AppStore {
       delete this.chatRows[id]
       delete this.runFlags[id]
     }
+    this.forgetRoutines(agentIds)
     this.changed()
     return true
   }
@@ -2713,8 +2734,153 @@ export class AppStore {
   // RoutineEditing.swift, RoutineTriggers.swift). 4c's state and commands go
   // below this line, and nowhere else.
 
+  /** Each agent's routines as the host lists them (`getAgentAutomations`, and its `agents-automation` pushes); absent until read. A list is replaced only when it changed, so a screen sees a new list only then. */
+  routinesByAgent: Record<string, Routine[]> = {}
+  /** Test run's waits, for every routine (the Mac's `pane.runBlocks`). */
+  readonly routineRuns = new RoutineTestRuns(() => this.changed())
+
   /** 4c's state back to nothing (signed out). */
-  private resetRoutines(): void {}
+  private resetRoutines(): void {
+    this.routinesByAgent = {}
+    this.routineRuns.reset()
+  }
+
+  /** An agent's list, kept when it changed; Test run's waits move on. */
+  private setRoutines(agentId: string, list: Routine[] | undefined): void {
+    const was = this.routinesByAgent[agentId]
+    if (sameRoutines(was, list)) return
+    const next = { ...this.routinesByAgent }
+    if (list) next[agentId] = list
+    else delete next[agentId]
+    this.routinesByAgent = next
+    this.changed()
+    this.routineRuns.listChanged(agentId, this)
+  }
+
+  /** The host's answer, when it is a list (`takeRoutines`). */
+  private takeRoutines(agentId: string, answer: JSONValue): void {
+    const list = routinesFrom(answer)
+    if (list) this.setRoutines(agentId, list)
+  }
+
+  /** An agent's routines changed on the computer (`agents-automation`, Store.swift's `.automations`): the whole list. */
+  private applyAutomations(agentId: string, rows: JSONValue[]): void {
+    this.setRoutines(agentId, routinesFrom(rows) ?? [])
+  }
+
+  /** Agents deleted (`forgetAgents`): their routines go with them. */
+  private forgetRoutines(agentIds: readonly string[]): void {
+    for (const id of agentIds) this.setRoutines(id, undefined)
+  }
+
+  /** One routine command; its answer, or undefined when it was refused or the sign-in ended meanwhile. */
+  private async routineCommand(
+    method: string,
+    args: JSONValue,
+  ): Promise<{ answer: JSONValue } | undefined> {
+    const backend = this.backend
+    if (!backend) return undefined
+    try {
+      const answer = await backend.command(method, args)
+      return this.backend === backend ? { answer } : undefined
+    } catch {
+      return undefined
+    }
+  }
+
+  /** The agent's routines, read again (`getAgentAutomations`); false when the computer did not answer. */
+  async loadRoutines(agentId: string): Promise<boolean> {
+    const done = await this.routineCommand('getAgentAutomations', {
+      id: agentId,
+    })
+    if (!done) return false
+    this.takeRoutines(agentId, done.answer)
+    return true
+  }
+
+  /** A new routine (`createAgentAutomation`): the record made, or undefined when none was (a refusal, or the agent's 50 already). */
+  async createRoutine(
+    agentId: string,
+    spec: JSONObject,
+  ): Promise<Routine | undefined> {
+    const before = new Set(
+      (this.routinesByAgent[agentId] ?? []).map((routine) => routine.id),
+    )
+    const done = await this.routineCommand('createAgentAutomation', {
+      id: agentId,
+      spec,
+    })
+    if (!done) return undefined
+    this.takeRoutines(agentId, done.answer)
+    return createdRoutine(
+      this.routinesByAgent[agentId] ?? [],
+      before,
+      str(field(spec, 'name')) ?? '',
+    )
+  }
+
+  /** A routine changed (`updateAgentAutomation`); false when it was not saved. */
+  async updateRoutine(
+    agentId: string,
+    routineId: string,
+    spec: JSONObject,
+  ): Promise<boolean> {
+    const done = await this.routineCommand('updateAgentAutomation', {
+      id: agentId,
+      automationId: routineId,
+      spec,
+    })
+    if (!done) return false
+    this.takeRoutines(agentId, done.answer)
+    return true
+  }
+
+  /** The Active switch (`setAgentAutomationEnabled`), shown at once; false when refused, and the switch goes back. */
+  async enableRoutine(
+    agentId: string,
+    routineId: string,
+    on: boolean,
+  ): Promise<boolean> {
+    const was = this.routinesByAgent[agentId]
+    if (was?.some((routine) => routine.id === routineId))
+      this.setRoutines(
+        agentId,
+        was.map((routine) =>
+          routine.id === routineId ? { ...routine, isEnabled: on } : routine,
+        ),
+      )
+    const done = await this.routineCommand('setAgentAutomationEnabled', {
+      id: agentId,
+      automationId: routineId,
+      isEnabled: on,
+    })
+    if (!done) {
+      if (this.backend) this.setRoutines(agentId, was)
+      return false
+    }
+    this.takeRoutines(agentId, done.answer)
+    return true
+  }
+
+  /** Delete, with no question and nothing said when it fails (`deleteAgentAutomation`). */
+  async removeRoutine(agentId: string, routineId: string): Promise<void> {
+    const done = await this.routineCommand('deleteAgentAutomation', {
+      id: agentId,
+      automationId: routineId,
+    })
+    if (done) this.takeRoutines(agentId, done.answer)
+  }
+
+  /** Test run (`runAgentAutomationNow`), then the list again for its new run; nothing is said either way. False when the run was refused (and the list is not read). */
+  async testRoutine(agentId: string, routineId: string): Promise<boolean> {
+    const done = await this.routineCommand('runAgentAutomationNow', {
+      id: agentId,
+      automationId: routineId,
+    })
+    if (!done) return false
+    await this.loadRoutines(agentId)
+    return true
+  }
 
   // MARK: Step 4d's search, channels and a group's members: ⌘K
   // (SearchPanel.swift, Jump.swift, Search.swift), an agent's channels

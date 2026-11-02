@@ -1,0 +1,881 @@
+/*
+ * An agent's routines (RoutinesPage.tsx, RoutineTriggerCard.tsx) at the
+ * Mac's measures (mac/Simeon/RoutinesPage.swift, RoutineTriggerCard.swift):
+ * the list, the empty state, the editor's bars and body, When to run, its
+ * popover and pills, Run history, the menus. Light and dark.
+ */
+:root {
+  /* The grey fill under the pointer (`fillHover`, `--sand-fill-secondary-hover`) */
+  --routine-fill-hover: rgb(119 119 119 / 0.17);
+  /* Green words and signs (`success`): an active routine's clock, a run that went well */
+  --routine-success: #009957;
+  /* A primary button (`primaryFill`, its hover) and its words (`onPrimary`) */
+  --routine-primary: #070707;
+  --routine-primary-hover: #2f2f2f;
+  --routine-on-primary: #fcfcfc;
+  /* A field's and the card's line: the ink at 15% */
+  --routine-line: rgb(20 20 20 / 0.15);
+  /* The popover's two shadows, on light only */
+  --routine-popover-shadow:
+    0 10px 16px rgb(0 0 0 / 0.1), 0 4px 4px rgb(0 0 0 / 0.1);
+  /* A menu's checkbox when ticked: Apple's blue */
+  --routine-tick: #007aff;
+  --routine-tick-off: #ffffff;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --routine-fill-hover: rgb(119 119 119 / 0.32);
+    --routine-success: #38d591;
+    --routine-primary: #fafafa;
+    --routine-primary-hover: #d5d5d5;
+    --routine-on-primary: #141414;
+    --routine-line: rgb(252 252 252 / 0.15);
+    --routine-popover-shadow: 0 0 0 transparent;
+    --routine-tick: #0a84ff;
+    --routine-tick-off: rgb(255 255 255 / 0.12);
+  }
+}
+
+/* MARK: The list */
+
+.routines-none {
+  height: 0;
+}
+
+/* A column 6 apart: New Routine at the right (24 high), then the rows 2 apart. */
+.routines-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.routines-head {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  height: 24px;
+}
+
+/* New Routine: `plus` 11 in 12, 14 medium, 5 apart, padded 2 above and below; at 65% under the pointer. */
+.new-routine {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 0;
+  border: 0;
+  background: transparent;
+  color: var(--pane-ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 17px;
+  cursor: pointer;
+}
+
+.new-routine:hover {
+  opacity: 0.65;
+}
+
+.routine-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* A row: 48 high, round 10, 8 into the pane's padding on both sides, padded 6 8; the grey under the pointer, over 0.12 s. */
+.routine-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  height: 48px;
+  margin: 0 -8px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s ease-in-out;
+}
+
+.routine-row:hover {
+  background: var(--routine-fill-hover);
+}
+
+.routine-icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+}
+
+.routine-icon svg {
+  display: block;
+}
+
+.routine-paused {
+  color: var(--ink-secondary);
+}
+
+.routine-clock {
+  display: grid;
+  color: var(--routine-success);
+}
+
+/* The window's `loading` glyph: eight spokes, turning once each 1.2 s, the link's blue. */
+.routine-spinner {
+  display: block;
+  color: var(--link);
+  animation: routine-turn 1.2s linear infinite;
+}
+
+@keyframes routine-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .routine-spinner {
+    animation: none;
+  }
+}
+
+.routine-lines {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* A row's lines: 13/18, -0.08, one line, cut at its end. */
+.routine-line {
+  height: 18px;
+  overflow: hidden;
+  font-size: 13px;
+  line-height: 18px;
+  letter-spacing: -0.08px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.routine-line.detail {
+  color: var(--ink-secondary);
+}
+
+/* No routines: a column 18 apart, padded 12 above and 8 a side; the 56 tile (round 15), the words (15/21, at most 256 wide), Create Routine. */
+.routines-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  padding: 12px 8px 0;
+}
+
+.routines-empty-tile {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 15px;
+  background: var(--pane-fill);
+  color: var(--pane-ink);
+}
+
+.routines-empty-tile svg {
+  display: block;
+}
+
+.routines-empty-words {
+  max-width: 256px;
+  margin: 0;
+  font-size: 15px;
+  line-height: 21px;
+  color: var(--pane-ink-2);
+  text-align: center;
+}
+
+/* Create Routine: a 32 capsule in the pane's ink, padded 16, 14 medium in the pane's ground. */
+.create-routine {
+  height: 32px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--pane-ink);
+  color: var(--pane-ground);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+/* MARK: The editor */
+
+/* The top bar: Back, "Routine" in the middle (13 medium), Close. */
+.routine-top-bar {
+  position: relative;
+}
+
+.routine-top-title {
+  position: absolute;
+  inset: 0;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 44px;
+  color: var(--ink);
+  text-align: center;
+  pointer-events: none;
+}
+
+.routine-top-bar > .pane-icon-button {
+  position: relative;
+}
+
+/* The control bar: 44 high, 16 left and 12 right; its hairline (the ink at 10%) shows as the body scrolls its first 16 points. */
+.routine-control-bar {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  height: 44px;
+  padding: 0 12px 0 16px;
+}
+
+.routine-active {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.routine-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.routine-control-line {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 0.5px;
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+  pointer-events: none;
+}
+
+/* Delete (the grey, darker under the pointer) and Test run (the ink; pale while it can't be pressed): 32 high, padded 10, round 8, 14. */
+.routine-button {
+  height: 32px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--row-hover);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.routine-button:hover {
+  background: var(--routine-fill-hover);
+}
+
+.routine-button.primary {
+  background: var(--routine-primary);
+  color: var(--routine-on-primary);
+}
+
+.routine-button.primary:hover {
+  background: var(--routine-primary-hover);
+}
+
+.routine-button.primary:disabled {
+  background: color-mix(in srgb, var(--ink) 15%, transparent);
+  color: color-mix(in srgb, var(--ink) 30%, transparent);
+  cursor: default;
+}
+
+.routine-editor-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/* The body: padded 4 12 16, its parts 12 apart. */
+.routine-editor-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 4px 12px 16px;
+}
+
+.routine-save-error {
+  height: 18px;
+  padding: 0 8px;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--danger);
+}
+
+.routine-section {
+  display: flex;
+  flex-direction: column;
+}
+
+/* When to run stands over Run history, so its popover hangs over it. */
+.routine-section.raised {
+  position: relative;
+  z-index: 1;
+}
+
+/* A section's head: 12/16, grey, padded 8 8 6. */
+.routine-section-title {
+  height: 16px;
+  margin: 0;
+  padding: 8px 8px 6px;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+  color: var(--ink-secondary);
+}
+
+/* Name: 30 high, padded 10, 13; the field's box (the window's ground, a 1-point line at 15%, round 10). */
+.routine-name {
+  box-sizing: border-box;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--routine-line);
+  border-radius: 10px;
+  outline: none;
+  background: var(--ground);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+}
+
+.routine-name::placeholder,
+.pane-text.routine-instruction::placeholder,
+.pill-field::placeholder {
+  color: var(--ink-tertiary);
+  opacity: 1;
+}
+
+.routine-field-box {
+  box-sizing: border-box;
+  overflow: hidden;
+  border: 1px solid var(--routine-line);
+  border-radius: 10px;
+  background: var(--ground);
+}
+
+/* Instruction: 14/20, 8 and 10 in from the box's edge, 80 to 160 high with the box, then it scrolls. */
+.pane-text.routine-instruction {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 78px;
+  max-height: 158px;
+  padding: 7px 9px;
+  border: 0;
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+/* Run history: rows 30 high and 2 apart, padded 8; "No runs yet" 13/18 in the faintest grey. */
+.run-history-none {
+  height: 18px;
+  padding: 6px 8px;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--ink-tertiary);
+}
+
+.run-history {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.run-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  padding: 0 8px;
+}
+
+.run-when {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 13px;
+  color: var(--ink);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.run-status {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+}
+
+.run-status svg {
+  display: block;
+}
+
+.run-status.ok {
+  color: var(--routine-success);
+}
+
+.run-status.failed {
+  color: var(--danger);
+}
+
+/* MARK: When to run */
+
+/* The card: padded 6, the window's ground, a half-point line at 15%, round 12; its rows 2 apart. */
+.trigger-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  box-sizing: border-box;
+  padding: 6px;
+  border-radius: 12px;
+  background: var(--ground);
+  box-shadow: inset 0 0 0 0.5px var(--routine-line);
+}
+
+/* A row: 30 high, padded 6 8 6 6, round 10, the grey under the pointer; its sign and sentence 4 apart. */
+.trigger-row {
+  position: relative;
+  height: 30px;
+}
+
+.trigger-open {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  box-sizing: border-box;
+  width: 100%;
+  height: 30px;
+  padding: 6px 6px 6px 8px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.trigger-row:hover .trigger-open {
+  background: var(--row-hover);
+}
+
+.trigger-words {
+  min-width: 0;
+  overflow: hidden;
+  line-height: 16px;
+  color: var(--ink-secondary);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.trigger-words .lead {
+  color: var(--ink);
+}
+
+/* ×: 20, round 6, 6 from the row's right, seen while the pointer is on the row. */
+.trigger-remove {
+  position: absolute;
+  top: 5px;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink-secondary);
+  cursor: pointer;
+  opacity: 0;
+}
+
+.trigger-row:hover .trigger-remove,
+.trigger-remove:focus-visible {
+  opacity: 1;
+}
+
+.trigger-remove:hover {
+  background: var(--row-hover);
+}
+
+.glyph-frame {
+  display: grid;
+  flex: none;
+  place-items: center;
+}
+
+.glyph-frame svg,
+.trigger-remove svg,
+.small-icon-button svg {
+  display: block;
+}
+
+.trigger-clock {
+  width: 18px;
+  height: 18px;
+  color: var(--ink);
+}
+
+.trigger-logo {
+  display: block;
+  flex: none;
+}
+
+.trigger-logo img {
+  display: block;
+  object-fit: contain;
+}
+
+.trigger-bolt {
+  color: var(--ink-secondary);
+}
+
+/* Add trigger / Add another: 4 above and below, 2 in; 24 high, padded 6, round 6, `plus` and 12 in grey; the grey under the pointer. */
+.add-trigger-holder {
+  padding: 4px 2px;
+}
+
+.add-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink-secondary);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.add-trigger:hover {
+  background: var(--row-hover);
+}
+
+/* The popover: just under its row, as wide as the rows, padded 8, round 12, raised; its lines 8 apart. */
+.trigger-popover {
+  position: absolute;
+  left: 6px;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-sizing: border-box;
+  padding: 8px;
+  border-radius: 12px;
+  background: var(--elevated);
+  box-shadow:
+    inset 0 0 0 0.5px var(--routine-line),
+    var(--routine-popover-shadow);
+}
+
+/* A line of the popover: its parts 6 apart, wrapping 6 under, each line's parts centred on it. */
+.flow-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.flow-word {
+  flex: none;
+  font-size: 13px;
+  line-height: 16px;
+  color: var(--ink-secondary);
+  white-space: nowrap;
+}
+
+/* A pill: 26 high, padded 6, round 6, the grey (darker under the pointer), its words 13 and a small chevron 4 apart; a Select's line at 5%, a menu button's at 10%. */
+.pill-button {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  height: 26px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--row-hover);
+  box-shadow: inset 0 0 0 0.5px color-mix(in srgb, var(--ink) 5%, transparent);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.pill-button.menu {
+  box-shadow: inset 0 0 0 0.5px color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+.pill-button:hover,
+.pill-field:hover {
+  background: var(--routine-fill-hover);
+}
+
+.pill-chevron {
+  width: 10px;
+  height: 10px;
+  color: var(--ink-secondary);
+}
+
+/* A pill field: 26 high, at least 72 wide and growing with its words, padded 6, round 6, the grey with a 10% line. */
+.pill-field {
+  box-sizing: border-box;
+  height: 26px;
+  min-width: 0;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 6px;
+  outline: none;
+  background: var(--row-hover);
+  box-shadow: inset 0 0 0 0.5px color-mix(in srgb, var(--ink) 10%, transparent);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+}
+
+/* Custom's line: full width, 32 high, padded 10, 14, the field's box. */
+.custom-schedule {
+  box-sizing: border-box;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--routine-line);
+  border-radius: 10px;
+  outline: none;
+  background: var(--ground);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+}
+
+/* Advanced: three lines 8 apart, each a 44 label (12/16, grey, at least 26 high) and its controls 8 beside it. */
+.advanced-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.grid-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.grid-label {
+  display: flex;
+  flex: none;
+  align-items: center;
+  width: 44px;
+  min-height: 26px;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--ink-secondary);
+}
+
+.grid-line > .flow-line {
+  flex: 1;
+}
+
+.time-entry {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+}
+
+/* A small icon button: 24, round 6, grey; the grey under the pointer. */
+.small-icon-button {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink-secondary);
+  cursor: pointer;
+}
+
+/* "+ Add time": 24 high, padded 6, round 6, 12 in the text's colour. */
+.small-text-button {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.small-icon-button:hover,
+.small-text-button:hover {
+  background: var(--row-hover);
+}
+
+.new-routine:focus-visible,
+.routine-row:focus-visible,
+.create-routine:focus-visible,
+.routine-button:focus-visible,
+.trigger-open:focus-visible,
+.trigger-remove:focus-visible,
+.add-trigger:focus-visible,
+.pill-button:focus-visible,
+.small-icon-button:focus-visible,
+.small-text-button:focus-visible {
+  outline: 2px solid var(--unread);
+  outline-offset: 1px;
+}
+
+/* MARK: The menus (the window's `.pop-menu` look), over everything but the alerts */
+
+.routine-menus {
+  position: fixed;
+  inset: 0 auto auto 0;
+  z-index: 60;
+}
+
+.routine-menu {
+  position: fixed;
+  z-index: 60;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.routine-menu .menu-item {
+  flex: none;
+}
+
+.routine-menu .menu-image {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+}
+
+.routine-menu .menu-item:hover .trigger-clock,
+.routine-menu .menu-item:focus-visible .trigger-clock {
+  color: inherit;
+}
+
+/* A heading over a group of ticks (`sectionHeader`): 11, bold, grey. */
+.menu-heading {
+  padding: 6px 10px 2px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 14px;
+  color: var(--ink-secondary);
+}
+
+/* A tick that stays open: the Mac's checkbox 14 in from the menu's edge, its words beside it; no highlight under the pointer. */
+.menu-item.menu-tick {
+  gap: 6px;
+  padding-left: 9px;
+}
+
+.menu-item.menu-tick:hover,
+.menu-item.menu-tick:focus-visible {
+  background: transparent;
+  color: var(--ink);
+}
+
+.menu-item.menu-tick:focus-visible .tick-box {
+  outline: 2px solid var(--unread);
+  outline-offset: 1px;
+}
+
+.tick-box {
+  display: grid;
+  flex: none;
+  place-items: center;
+  box-sizing: border-box;
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  background: var(--routine-tick-off);
+  box-shadow:
+    inset 0 0 0 0.5px color-mix(in srgb, var(--ink) 25%, transparent),
+    0 0.5px 1px rgb(0 0 0 / 0.12);
+  color: #ffffff;
+}
+
+.tick-box.on {
+  background: var(--routine-tick);
+  box-shadow: none;
+}
+
+.tick-box svg {
+  display: block;
+}
+
+.menu-item.menu-tick:disabled {
+  color: var(--ink-tertiary);
+}
+
+.menu-item.menu-tick:disabled .tick-box {
+  opacity: 0.5;
+}
+
+/* MARK: The chat's routine chips (ChatPane.tsx's `RoutinesLine`): buttons in the chip's look, the clock 2 from the name, the pointer over them. */
+
+.system-event button.routine-chip {
+  gap: 2px;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.system-event button.routine-chip .chip-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.system-event button.routine-chip:focus-visible {
+  outline: 2px solid var(--unread);
+  outline-offset: 1px;
+}

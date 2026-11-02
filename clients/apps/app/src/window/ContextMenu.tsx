@@ -210,6 +210,7 @@ export type GlyphName =
   | 'check'
   | 'chevron'
   | 'xmark'
+  | 'clock'
 
 const glyphs: Record<GlyphName, ReactNode> = {
   pin: <path d="M6 2.5h4l-.5 4 2 2v1H4.5v-1l2-2ZM8 9.5V14" />,
@@ -240,6 +241,7 @@ const glyphs: Record<GlyphName, ReactNode> = {
   check: <path d="M3 8.5 6.5 12l6.5-8" />,
   chevron: <path d="M6 3.5 10.5 8 6 12.5" />,
   xmark: <path d="M3.5 3.5l9 9M12.5 3.5l-9 9" />,
+  clock: <path d="M8 14A6 6 0 1 0 8 2a6 6 0 0 0 0 12ZM8 5v3.2l2 1.3" />,
 }
 
 export function Glyph({ name, size = 14 }: { name: GlyphName; size?: number }) {
