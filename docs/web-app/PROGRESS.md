@@ -166,7 +166,7 @@ file and the code disagree, the code is right and this file is fixed.
 | 2 November 2026 | The server lets `app://simeon` call the API with the window's headers, never a cookie: a rule of its own (`DESKTOP_APP_ORIGINS`, `server/simeon/app.py`), not a Render setting | The session |
 | 2 November 2026 | Electron 44.10.1 (Chromium 152), electron-builder 26.18.0 and electron-updater 6.8.11, exact versions in the lockfile | The session |
 | 2 November 2026 | The installer is electron-builder's NSIS, for the person only (no administrator), in `%LOCALAPPDATA%\Programs\Simeon`, with Start menu and desktop shortcuts; the AppUserModelID is the Mac's bundle id, `com.simeonlabs.simeon`. x64 first, arm64 later | The session |
-| 2 November 2026 | Updates are electron-updater's, from a feed through the server, as the Mac's appcast: `/desktop/download/windows/latest.yml` names `<version>/Simeon-Setup-<version>.exe`, and the server 302s it, the installers and the blockmaps to the bucket's `releases/win32-x64/`; one range a request | The session |
+| 2 November 2026 | Updates are electron-updater's, from a feed through the server, as the Mac's appcast: its `latest.yml`, beside the versions' folders, names `<version>/Simeon-Setup-<version>.exe`, and the server 302s it (`/desktop/download/windows/latest.yml`), the installers and the blockmaps to the bucket's `releases/win32-x64/`; one range a request | The session |
 | 2 November 2026 | `simeon://` is the Windows app's scheme too, so the server changes nothing (`back: "simeon"` everywhere) | The session |
 | 2 November 2026 | The app names itself `windows-<version>+<build>`. The server knows a Windows app user (`has_windows_app`) beside a Mac app user and apart, so each platform's browser is sent back to its own app after a checkout, and a Mac app user on a PC still gets the download | The session |
 | 2 November 2026 | Chrome's cookies and the security-key signer: nothing to port, as neither is built on the Mac | The session |
@@ -216,7 +216,7 @@ file and the code disagree, the code is right and this file is fixed.
 | 2 November 2026 | A look (the page opening, Check Now) downloads nothing; only the daily check downloads by itself, a day after the last answer (the first 10 s after launch, a failed one an hour later); Update Now always does. A failed check says nothing, and a release found shows no window or notification: the dot beside Updates and the page say it | The session |
 | 2 November 2026 | "Last checked 0 seconds ago." for a moment past (Foundation's formatter says "in 0 seconds" there) | The session |
 | 2 November 2026 | An installer runs only when Windows' own check (`scripts/lib/signature.mjs`: Windows' PowerShell, no shell) says it is validly signed by one of the signers, each a certificate's whole subject, every part compared; refused on any error. Asked as the download ends and again just before it runs | The session, after the review (S2, S3) |
-| 2 November 2026 | A release is published signed only, from Windows only, its installer checked as the installed app checks it. The signers are written in `windows/scripts/lib/release.mjs`, empty until the certificate exists, with the rename's rule beside them; the legal name is Spaire, Inc. | The session, after the review (S3, S4) |
+| 2 November 2026 | A release is published signed only, from Windows only, its installer checked as the installed app checks it. The signers are written in `windows/scripts/lib/release.mjs`, empty until the certificate exists, with the rename's rule beside them; the signer is the legal company (CLAUDE.md; `lib/release.mjs`'s `company`) | The session, after the review (S3, S4) |
 | 2 November 2026 | The workflow (`.github/workflows/windows.yml`, by hand) builds a release and never publishes; a signed one only from main, through the `windows-release` environment, which alone holds the certificate | The session, after the review (S10) |
 | 2 November 2026 | The icon is the Mac's tile, its own pictures at the sizes it has, 24 and 48 averaged from its 256; made by a script with nothing but Node, its output committed | The session |
 | 2 November 2026 | Check for Updates… is 7c's tray item and its event (`checkForUpdates`), named once; offered only in a build that updates itself (`updatesItself`: a signed release) and signed in; Settings › Updates opens and looks. Signed out the tray has Open Simeon and Quit Simeon only; the daily check is the main process's anyway | The session |
@@ -232,11 +232,11 @@ these files, step 7). Electron draws with Chromium, so the checks run in
 Chromium in each step stand for Windows' engine too; what they can't stand
 for is listed here. Added to with every step.
 
-This list was step 7's plan. Step 7 built it (the log of 2 November 2026,
-step 7, the Windows app): each item now says what was built and where
-(files under `windows/` are the app's main process, the rest the web
-app's), what was decided instead, or that it is not built yet. Nothing of
-it has run on a Windows PC (Open questions).
+This list was step 7's plan. Step 7 built most of it (the log of 2
+November 2026, step 7, the Windows app): each item now says what was
+built and where (files under `windows/` are the app's main process, the
+rest the web app's), what was decided instead, or that it is not built
+yet. Nothing of it has run on a Windows PC (Open questions).
 
 - **Loading the app.** The web app is built for `/app-next/` and finds the
   server from its own address (`resolveApiBase`). Loaded from disk, it needs
@@ -544,10 +544,11 @@ For the founder, each to be answered before the step that needs it:
   Windows warn people before it runs (SmartScreen), and an unsigned build
   never updates itself (step 7's decision), so today no Windows build can
   be released. Needed before the first release: a code-signing certificate
-  in the legal company's name (Spaire, Inc., `lib/release.mjs`'s
-  `company`); its subject in full, every part as Windows shows it (`CN=…,
-  O=…, L=…, S=…, C=…`), written into `windows/scripts/lib/release.mjs`'s
-  `signers` before the first signed release; the GitHub Environment
+  in the legal company's name (CLAUDE.md; `lib/release.mjs`'s `company`);
+  its subject in full, every part as Windows shows it
+  (`CN=…, O=…, L=…, S=…, C=…`), written into
+  `windows/scripts/lib/release.mjs`'s `signers` before the first signed
+  release; the GitHub Environment
   `windows-release` (the repository's Settings › Environments, deployment
   branches main only, a required reviewer if wanted) holding the
   certificate as `WIN_CSC_LINK` (the .pfx in base64) and its password as
@@ -885,8 +886,8 @@ TODO-7F
 **Putting the parts together**
 
 - On the branch, in this order: 7b (`4c677c148`), 7c (`ff90af46e`), 7e
-  (`ba6c0f84b`), the merge's own commits, then 7d (`d23387591`).
-  Conflicts: the frame's stubs in `windows/src/main/parts/` met each
+  (`ba6c0f84b`), four of the merge's own commits, 7d (`d23387591`), then
+  one more of its own. Conflicts: the frame's stubs in `windows/src/main/parts/` met each
   part's own file (add/add: each part's kept); 7c's in `App.tsx`, the store
   (7b's `agents` and `account` accessors beside 7c's `rosterNews`),
   `main.tsx` and the stand-in (both sides kept) and `windows/.gitignore`;
@@ -1109,8 +1110,8 @@ names' checks.
 On the merged build (before 7f), every part's real-app check ran again,
 all passing: the smoke check, 7b's 59 checks, 7c's 79, 7d's 77 light, 75
 dark and 75 French, 7e's 141. Two checks were brought up to date for the
-merge, the app not changed for them: 7b's now makes the page's Windows
-dark too (the page tells the app its theme, "System", which sets
+merge, the app not changed for them: 7b's now shows the page a dark
+Windows too (the page tells the app its theme, "System", which sets
 Electron's theme back to the system's) and expects the starter pack's
 sheet its launch link now opens (7d); 7c's reads the call's hang-up line
 from `voice-call.log` (7b sends the call's lines there, as the Mac).
@@ -1166,7 +1167,7 @@ the frame's smoke check on each part's build; screenshots, looked at:
   changed installer refused; the switches kept; `checkForUpdates`; a
   developer's build asking nothing; the daily check 10 s after launch; no
   one's folder and no token in `updates.log`. The installer with Wine, and
-  `release.mjs` end to end in a scratch repository with a real
+  `release.mjs` end to end in a throwaway copy of the repository with a real
   `node_modules` (the version and build inside, the feed and the signer,
   the icon, each refusal before any build or upload); the server's tests,
   ruff and mypy on its files.
