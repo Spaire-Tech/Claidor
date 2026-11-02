@@ -29,6 +29,7 @@ import {
   threadEntries,
   threadRows,
   threadTitle,
+  unreadCardWords,
 } from './chat'
 import {
   displayItems,
@@ -933,5 +934,32 @@ describe('what a message carries', () => {
         LiveBackend.sendArguments('theo', 'Hi', [], {}).clientNonce,
       ).startsWith('ios-'),
     ).toBe(true)
+  })
+})
+
+describe('a card whose line can’t be read', () => {
+  it('says the message’s own words for a checkout, products, travellers or a teammate, else that it can’t be shown (Chat.swift)', () => {
+    const line = (content?: string) =>
+      Entry.from({
+        kind: 'send-message',
+        id: 'x',
+        message:
+          content == null
+            ? { type: 'purchase' }
+            : { type: 'purchase', content },
+      })!
+    for (const kind of [
+      'purchase',
+      'products',
+      'flightPassengers',
+      'joined',
+    ] as const) {
+      expect(unreadCardWords(kind, line('Checkout at oldshop.com'))).toBe(
+        'Checkout at oldshop.com',
+      )
+      expect(unreadCardWords(kind, line())).toBe(notShown())
+    }
+    for (const kind of ['form', 'credential', 'question'] as const)
+      expect(unreadCardWords(kind, line('Some words'))).toBe(notShown())
   })
 })

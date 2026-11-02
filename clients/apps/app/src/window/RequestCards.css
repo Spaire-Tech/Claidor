@@ -1,0 +1,483 @@
+/* RequestCards.tsx's cards, at the Mac's measures (tokens from index.css). */
+
+/* The pill's other dots: red (`danger`) and blue (`blue`). */
+.status-dot.ask-red {
+  background: var(--danger);
+}
+
+.status-dot.ask-blue {
+  background: var(--blue);
+}
+
+/* A card's head: the title (14 on 22, 500) and its line under it, the X or the pill at the right, 8 apart, at the top. */
+.ask-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.ask-words {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.ask-title {
+  font-weight: 500;
+  line-height: 22px;
+  letter-spacing: -0.15px;
+}
+
+.ask-title.quiet {
+  color: var(--ink-secondary);
+}
+
+/* Why it is asked, and what it says once kept: 14 on 22, at 60%. */
+.ask-line {
+  line-height: 22px;
+  letter-spacing: -0.15px;
+  color: var(--ink-secondary);
+  white-space: pre-wrap;
+}
+
+/* The site it is for: 13, one line, at 60%. */
+.ask-site {
+  font-size: 13px;
+  line-height: 16px;
+  letter-spacing: -0.08px;
+  color: var(--ink-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* What went in, a note, the account: 14, at 60%. */
+.ask-said {
+  /* No line height on the Mac: the font's own, 17 at 14. */
+  line-height: 17px;
+  letter-spacing: -0.15px;
+  color: var(--ink-secondary);
+  white-space: pre-wrap;
+}
+
+/* A field: 14, 32 high, padded 10 at the sides, on the ground, 8 round, a line at 15%. */
+.ask-input {
+  box-sizing: border-box;
+  min-width: 0;
+  height: 32px;
+  margin: 0;
+  padding: 0 9px;
+  border: 1px solid color-mix(in srgb, var(--ink) 15%, transparent);
+  border-radius: 8px;
+  outline: none;
+  background: var(--ground);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.ask-input::placeholder {
+  color: var(--placeholder);
+}
+
+.ask-input:focus-visible {
+  border-color: var(--unread);
+}
+
+/* A lock (9 in a 12 square, 3 down) and its line (13), 4 apart, at 40%. */
+.ask-lock {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  font-size: 13px;
+  line-height: 16px;
+  letter-spacing: -0.08px;
+  color: var(--ink-tertiary);
+}
+
+.ask-lock svg {
+  flex: none;
+  margin-top: 3px;
+  fill: currentColor;
+}
+
+/* Why the computer didn't take it: 13, in red. */
+.ask-refusal {
+  font-size: 13px;
+  line-height: 16px;
+  color: var(--danger);
+  white-space: pre-wrap;
+}
+
+/* The secret's field and Save securely, 8 apart. */
+.secret-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.secret-row .ask-input {
+  flex: 1;
+}
+
+/* The in-chat form: each field's name (13, at 60%) 4 over it. */
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.form-label {
+  font-size: 13px;
+  line-height: 16px;
+  letter-spacing: -0.08px;
+  color: var(--ink-secondary);
+}
+
+.form-field > .ask-input {
+  width: 100%;
+}
+
+/* Words over several lines: three to six, padded 6 and 10, the field's own edge and ground (over `.growing-field`'s). */
+.form-field > textarea.ask-input {
+  height: auto;
+  padding: 5px 9px;
+  border: 1px solid color-mix(in srgb, var(--ink) 15%, transparent);
+  border-radius: 8px;
+  background: var(--ground);
+  font-size: 14px;
+  line-height: 17px;
+}
+
+.form-field > textarea.ask-input:focus-visible {
+  border-color: var(--unread);
+}
+
+/* A checkbox (14 square) with its name beside it (14). */
+.form-check {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 6px;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.form-check input {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  accent-color: #007aff;
+  cursor: pointer;
+}
+
+/* A menu (the Mac's pop-up button): 13, 24 high, 6 round, at most 320 wide, the chevrons at the right. */
+.form-select {
+  position: relative;
+  display: flex;
+  max-width: 320px;
+  color: var(--ink);
+}
+
+.form-select select {
+  flex: 1;
+  min-width: 0;
+  height: 24px;
+  margin: 0;
+  padding: 0 26px 0 9px;
+  border: 0;
+  border-radius: 6px;
+  outline: none;
+  appearance: none;
+  background: #ffffff;
+  box-shadow:
+    0 0 0 0.5px rgb(0 0 0 / 0.16),
+    0 1px 1.5px rgb(0 0 0 / 0.1);
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  line-height: 18px;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.form-select select:focus-visible {
+  box-shadow:
+    0 0 0 0.5px rgb(0 0 0 / 0.16),
+    0 0 0 3px color-mix(in srgb, var(--unread) 45%, transparent);
+}
+
+.form-select svg {
+  position: absolute;
+  top: 6px;
+  right: 9px;
+  pointer-events: none;
+  color: var(--ink-secondary);
+}
+
+/* Fill in, and the line beside it (13, at 40%). */
+.form-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.form-sends {
+  min-width: 0;
+  font-size: 13px;
+  line-height: 18px;
+  letter-spacing: -0.08px;
+  color: var(--ink-tertiary);
+}
+
+/* Once answered: each field (14, one line) and whether it went in (13, at 60%, in red when it couldn't), rows 4 apart. */
+.form-outcomes {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form-outcome {
+  line-height: 17px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.form-outcome-label {
+  flex: 0 1 auto;
+  min-width: 0;
+  letter-spacing: -0.15px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.form-outcome-gap {
+  flex: 1 0 8px;
+}
+
+.form-outcome-line {
+  flex: none;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--ink-secondary);
+  white-space: nowrap;
+}
+
+.form-outcome-line.failed {
+  color: var(--danger);
+}
+
+/* The computer handed over: its own card, 20 round, padded 16, its parts 14 apart, its words 15 at -0.15. */
+.handoff-card {
+  --handoff-ink: #1d1d1f;
+  --handoff-grey: #6e6e73;
+  --handoff-fill: #ffffff;
+  --handoff-blue: #255a93;
+  --handoff-added: #009957;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 16px;
+  border-radius: 20px;
+  background: var(--theirs);
+  color: var(--handoff-ink);
+  font-size: 15px;
+  line-height: 20px;
+  letter-spacing: -0.15px;
+  overflow-wrap: anywhere;
+}
+
+.handoff-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* The tile: 44 square, 12 round, white (the grey on dark), the screen 18 in it. */
+.handoff-tile {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--handoff-fill);
+  color: var(--handoff-ink);
+}
+
+.handoff-words {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.handoff-title {
+  font-weight: 600;
+  /* No line height on the Mac: the font's own, 18 at 15. */
+  line-height: 18px;
+}
+
+.handoff-title.settled {
+  flex: 1;
+  min-width: 0;
+}
+
+/* "Waiting for you" (13, grey) beside the 7-point dot, 6 apart. */
+.handoff-waiting {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--handoff-grey);
+}
+
+/* The dot, blue, with a ring that breathes out to 5 and fades, and back, every 0.9 seconds. */
+.handoff-dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--handoff-blue);
+  animation: handoff-breathe 0.9s ease-in-out infinite alternate;
+}
+
+@keyframes handoff-breathe {
+  from {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--handoff-blue) 35%, transparent);
+  }
+  to {
+    box-shadow: 0 0 0 5px
+      color-mix(in srgb, var(--handoff-blue) 0%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .handoff-dot {
+    animation: none;
+  }
+}
+
+/* What happened: the large pill in its colour (green, blue, red) on its colour at 10% (20% on dark). */
+.handoff-card .handoff-outcome {
+  --handoff-tint: var(--handoff-added);
+  align-self: center;
+  color: var(--handoff-tint);
+  background: color-mix(in srgb, var(--handoff-tint) 10%, transparent);
+}
+
+.handoff-card .handoff-outcome .status-dot {
+  background: var(--handoff-tint);
+}
+
+.handoff-card .handoff-outcome.skipped {
+  --handoff-tint: var(--link);
+}
+
+.handoff-card .handoff-outcome.canceled {
+  --handoff-tint: var(--danger);
+}
+
+/* The instruction: 15 on 21, grey once settled. */
+.handoff-instruction {
+  line-height: 21px;
+  white-space: pre-wrap;
+}
+
+.handoff-card:not(.waiting) .handoff-instruction {
+  color: var(--handoff-grey);
+}
+
+/* Skip quiet at the left (13, grey, 32 high); I'm done at the right, as wide as its words (88 at least), 32 high, round. */
+.handoff-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.handoff-skip {
+  flex: none;
+  height: 32px;
+  padding: 0 8px;
+  border: 0;
+  background: none;
+  color: var(--handoff-grey);
+  font: inherit;
+  font-size: 13px;
+  line-height: 18px;
+  letter-spacing: -0.15px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.handoff-spacer {
+  flex: 1 0 8px;
+}
+
+.handoff-pill {
+  flex: none;
+  min-width: 88px;
+  height: 32px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--handoff-fill);
+  color: var(--handoff-ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  letter-spacing: -0.15px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.handoff-skip:focus-visible,
+.handoff-pill:focus-visible,
+.form-check input:focus-visible {
+  outline: 2px solid var(--unread);
+  outline-offset: 1px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .handoff-card {
+    --handoff-ink: #f5f5f7;
+    --handoff-grey: #98989d;
+    --handoff-fill: #3a3a3c;
+    --handoff-blue: #2f6db0;
+    --handoff-added: #38d591;
+    background: #2c2c2e;
+  }
+
+  .handoff-card .handoff-outcome {
+    background: color-mix(in srgb, var(--handoff-tint) 20%, transparent);
+  }
+
+  .form-check input {
+    accent-color: #0a84ff;
+  }
+
+  .form-select select {
+    background: rgb(255 255 255 / 0.12);
+    box-shadow:
+      0 0 0 0.5px rgb(255 255 255 / 0.1),
+      0 1px 1.5px rgb(0 0 0 / 0.3);
+  }
+
+  .form-select select:focus-visible {
+    box-shadow:
+      0 0 0 0.5px rgb(255 255 255 / 0.1),
+      0 0 0 3px color-mix(in srgb, var(--unread) 45%, transparent);
+  }
+}

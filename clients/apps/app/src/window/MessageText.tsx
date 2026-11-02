@@ -550,7 +550,7 @@ function ItemBlocks({
 }
 
 /** A code block (`ui-code-block`): the ground, a 10% edge, 10 round; its lines 12 on 18 monospaced; Copy at its top right under the pointer. */
-function CodeBlock({ words }: { words: string }) {
+export function CodeBlock({ words }: { words: string }) {
   const [copied, setCopied] = useState(false)
   return (
     <div className="code-block" onMouseLeave={() => setCopied(false)}>

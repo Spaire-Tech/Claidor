@@ -262,6 +262,28 @@ export const stampGap = 15 * 60 * 1000
 export const notShown = () =>
   t("This message can't be shown in this version of Simeon.")
 
+/** The cards the core says in the message's own words when it can't read them (`message["content"] ?? notShown`). */
+const ownWordsCards: ReadonlySet<CardKind> = new Set([
+  'purchase',
+  'products',
+  'flightPassengers',
+  'joined',
+])
+
+/**
+ * What the chat says, as a notice, for a card whose line can't be read
+ * (Chat.swift's `row(for:)`): a checkout, products, the travellers' form
+ * and a teammate joined say the message's own words when it has them; the
+ * others, "This message can't be shown…".
+ */
+export function unreadCardWords(kind: CardKind, entry: Entry): string {
+  return (
+    (ownWordsCards.has(kind)
+      ? text(field(entry.message, 'content'))
+      : undefined) ?? notShown()
+  )
+}
+
 /**
  * A long text cut for drawing (the Mac folds a message past 664 pt behind
  * "Show more"): at most `limit` characters, at the last line break in its
@@ -669,17 +691,19 @@ const markdownLink = /^\[[^\]\n]*\]\(\s*([^)\s]+)(?:\s+[^)]*)?\)\s*$/
  * an `https:` address with a host is a card.
  */
 export function loneLink(words: string, richText?: string): string | undefined {
-  const doc = document(richText)
+  const doc = richDocument(richText)
   if (doc) return documentLink(doc)
   const trimmedWords = words.trim()
   const match = markdownLink.exec(trimmedWords)
   return httpsLink(match ? match[1]! : trimmedWords)
 }
 
-type DocNode = { [key: string]: unknown }
+export type DocNode = { [key: string]: unknown }
 
-/** The composer's document (TipTap's JSON) when `richText` is one (`KAe`). */
-function document(richText: string | undefined): DocNode | undefined {
+/** The composer's document (TipTap's JSON) when `richText` is one (`KAe`, `Chat.document`). */
+export function richDocument(
+  richText: string | undefined,
+): DocNode | undefined {
   if (!richText) return undefined
   const doc = parseJSON(richText)
   return isObject(doc) && doc.type === 'doc' ? (doc as DocNode) : undefined
@@ -1344,7 +1368,15 @@ export function rowFor(entry: Entry): ChatRow | undefined {
         case 'flight-passengers':
           return card('flightPassengers')
         case 'agent-joined':
-          return card('joined')
+          // Without the agent's id and name, the message's own words (`JoinedCard(message:)`).
+          return text(field(message, 'agentId')) != null &&
+            (text(field(message, 'name'))?.trim() ?? '') !== ''
+            ? card('joined')
+            : {
+                kind: 'notice',
+                id: entry.id,
+                text: text(field(message, 'content')) ?? notShown(),
+              }
         case 'local-tool-permission': {
           // Waiting, it is the Mac's dock above the composer, not a line; expired, it is gone; answered, one line says how (`_Ln`).
           const status =

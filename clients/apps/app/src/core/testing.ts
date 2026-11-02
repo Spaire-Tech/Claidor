@@ -11,7 +11,7 @@ import type {
   TranscriptPage,
 } from './backend'
 import { Entry } from './entry'
-import { Gateway, GatewayConnection } from './gateway'
+import { Gateway, GatewayConnection, type Rest } from './gateway'
 import { GatewayError } from './gatewayConnection'
 import type { HTTPAnswer, HTTPClient, HTTPRequest, HTTPStream } from './http'
 import { NetworkError } from './http'
@@ -278,7 +278,27 @@ export class FakeBackend implements AgentBackend {
     this.beforeAnswer?.(method)
     if (this.refusedCommands.has(method))
       throw new GatewayError("The computer didn't answer.", true)
-    return this.commandAnswers[method]?.(args) ?? {}
+    const answer = this.commandAnswers[method]
+    if (answer) return answer(args)
+    // The host counts the agents it has (`countAgents`).
+    if (method === 'countAgents') return { count: this.agents.length }
+    return {}
+  }
+  /** What a recording is heard as (dictation), and each recording's type. */
+  heard = 'Book a table for two'
+  transcribed: string[] = []
+  transcribeFails?: Error
+  async transcribe(audio: Uint8Array, mimeType: string): Promise<string> {
+    this.transcribed.push(`${mimeType}:${audio.length}`)
+    if (this.transcribeFails) throw this.transcribeFails
+    return this.heard
+  }
+  /** A read that waits for a resting computer: recorded as one that lets it rest. */
+  async commandWhenAwake(
+    method: string,
+    args: JSONValue = {},
+  ): Promise<JSONValue> {
+    return this.command(method, args, { wakes: false })
   }
   /** Told of each command before it is answered (what the chat showed then). */
   beforeAnswer?: (method: string) => void
@@ -323,8 +343,17 @@ export class FakeBackend implements AgentBackend {
   push(event: BackendEvent): void {
     this.emit?.(event)
   }
+  /** Where the computer rests (`computerRest`): awake by default. */
+  rest: Rest | null = null
   async computerRest() {
-    return null
+    return this.rest
+  }
+  /** The account's Connect service's answers, by method; refused otherwise. */
+  dashboardAnswers: Record<string, JSONValue> = {}
+  async dashboard(method: string): Promise<JSONValue> {
+    const found = this.dashboardAnswers[method]
+    if (found === undefined) throw new SimeonAPIError('No such method.', 404)
+    return found
   }
   events(
     onEvent: (event: BackendEvent) => void,

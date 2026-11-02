@@ -1,0 +1,661 @@
+{
+  "normalize": [
+    {
+      "in": [],
+      "out": []
+    },
+    {
+      "in": [
+        {
+          "id": " a ",
+          "name": "Work",
+          "agentIds": ["1", "2", "", "2"]
+        },
+        {
+          "id": "a",
+          "name": "Dup",
+          "agentIds": ["3"]
+        },
+        {
+          "id": "__agents__",
+          "name": "x",
+          "agentIds": ["4"]
+        },
+        {
+          "id": "b",
+          "name": "Home",
+          "agentIds": ["2", "5"]
+        },
+        {
+          "id": "",
+          "name": "no",
+          "agentIds": ["6"]
+        }
+      ],
+      "out": [
+        {
+          "id": "a",
+          "name": "Work",
+          "agentIds": ["1", "2"]
+        },
+        {
+          "id": "b",
+          "name": "Home",
+          "agentIds": ["5"]
+        },
+        {
+          "id": "__agents__",
+          "name": "Unassigned",
+          "agentIds": []
+        }
+      ]
+    },
+    {
+      "in": [
+        {
+          "id": "__agents__",
+          "name": "Unassigned",
+          "agentIds": []
+        }
+      ],
+      "out": []
+    },
+    {
+      "in": [
+        {
+          "id": "s1",
+          "name": "One",
+          "agentIds": ["1"]
+        },
+        {
+          "id": "s2",
+          "name": "Two",
+          "agentIds": ["2", "3"]
+        },
+        {
+          "id": "s3",
+          "name": "Three",
+          "agentIds": []
+        }
+      ],
+      "out": [
+        {
+          "id": "s1",
+          "name": "One",
+          "agentIds": ["1"]
+        },
+        {
+          "id": "s2",
+          "name": "Two",
+          "agentIds": ["2", "3"]
+        },
+        {
+          "id": "s3",
+          "name": "Three",
+          "agentIds": []
+        },
+        {
+          "id": "__agents__",
+          "name": "Unassigned",
+          "agentIds": []
+        }
+      ]
+    }
+  ],
+  "base": [
+    {
+      "id": "s1",
+      "name": "One",
+      "agentIds": ["1"]
+    },
+    {
+      "id": "s2",
+      "name": "Two",
+      "agentIds": ["2", "3"]
+    },
+    {
+      "id": "s3",
+      "name": "Three",
+      "agentIds": []
+    },
+    {
+      "id": "__agents__",
+      "name": "Unassigned",
+      "agentIds": []
+    }
+  ],
+  "edits": [
+    {
+      "op": "rename",
+      "args": ["s2", "Renamed"],
+      "out": [
+        {
+          "id": "s1",
+          "name": "One",
+          "agentIds": ["1"]
+        },
+        {
+          "id": "s2",
+          "name": "Renamed",
+          "agentIds": ["2", "3"]
+        },
+        {
+          "id": "s3",
+          "name": "Three",
+          "agentIds": []
+        },
+        {
+          "id": "__agents__",
+          "name": "Unassigned",
+          "agentIds": []
+        }
+      ]
+    },
+    {
+      "op": "rename",
+      "args": ["__agents__", "Nope"],
+      "out": [
+        {
+          "id": "s1",
+          "name": "One",
+          "agentIds": ["1"]
+        },
+        {
+          "id": "s2",
+          "name": "Two",
+          "agentIds": ["2", "3"]
+        },
+        {
+          "id": "s3",
+          "name": "Three",
+          "agentIds": []
+        },
+        {
+          "id": "__agents__",
+          "name": "Unassigned",
+          "agentIds": []
+        }
+      ]
+    },
+    {
+      "op": "remove",
+      "args": ["s1"],
+      "out": [
+        {
+          "id": "s2",
+          "name": "Two",
+          "agentIds": ["2", "3"]
+        },
+        {
+          "id": "s3",
+          "name": "Three",
+          "agentIds": []
+        },
+        {
+          "id": "__agents__",
+          "name": "Unassigned",
+          "agentIds": []
+        }
+      ]
+    },
+    {
+      "op": "remove",
+      "args": ["__agents__"],
+      "out": [
+        {
+          "id": "s1",
+          "name": "One",
+          "agentIds": ["1"]
+        },
+        {
+          "id": "s2",
+          "name": "Two",
+          "agentIds": ["2", "3"]
+        },
+        {
+          "id": "s3",
+          "name": "Three",
+          "agentIds": []
+        },
+        {
+          "id": "__agents__",
+          "name": "Unassigned",
+          "agentIds": []
+        }
+      ]
+    },
+    {
+      "op": "create",
+      "args": ["new1", ["3", "9"]],
+      "out": [
+        {
+          "id": "new1",
+          "name": "New section",
+          "agentIds": ["3", "9"]
+        },
+        {
+          "id": "s1",
+          "name": "One",
+          "agentIds": ["1"]
+        },
+        {
+          "id": "s2",
+          "name": "Two",
+          "agentIds": ["2"]
+        },
+        {
+          "id": "s3",
+          "name": "Three",
+          "agentIds": []
+        },
+        {
+          "id": "__agents__",
+          "name": "Unassigned",
+          "agentIds": []
+        }
+      ]
+    },
+    {
+      "op": "assignAgents",
+      "args": [["3", "1", "3"], "s3"],
+      "out": [
+        {
+          "id": "s1",
+          "name": "One",
+          "agentIds": []
+        },
+        {
+          "id": "s2",
+          "name": "Two",
+          "agentIds": ["2"]
+        },
+        {
+          "id": "s3",
+          "name": "Three",
+          "agentIds": ["3", "1"]
+        },
+        {
+          "id": "__agents__",
+          "name": "Unassigned",
+          "agentIds": []
+        }
+      ]
+    },
+    {
+      "op": "assignAgents",
+      "args": [["2"], "__agents__"],
+      "out": [
+        {
+          "id": "s1",
+          "name": "One",
+          "agentIds": ["1"]
+        },
+        {
+          "id": "s2",
+          "name": "Two",
+          "agentIds": ["3"]
+        },
+        {
+          "id": "s3",
+          "name": "Three",
+          "agentIds": []
+        },
+        {
+          "id": "__agents__",
+          "name": "Unassigned",
+          "agentIds": []
+        }
+      ]
+    },
+    {
+      "op": "assignAgents",
+      "args": [["7"], "s1"],
+      "out": [
+        {
+          "id": "s1",
+          "name": "One",
+          "agentIds": ["1", "7"]
+        },
+        {
+          "id": "s2",
+          "name": "Two",
+          "agentIds": ["2", "3"]
+        },
+        {
+          "id": "s3",
+          "name": "Three",
+          "agentIds": []
+        },
+        {
+          "id": "__agents__",
+          "name": "Unassigned",
+          "agentIds": []
+        }
+      ]
+    },
+    {
+      "op": "move",
+      "args": ["s3", "s1", "before"],
+      "out": [
+        {
+          "id": "s3",
+          "name": "Three",
+          "agentIds": []
+        },
+        {
+          "id": "s1",
+          "name": "One",
+          "agentIds": ["1"]
+        },
+        {
+          "id": "s2",
+          "name": "Two",
+          "agentIds": ["2", "3"]
+        },
+        {
+          "id": "__agents__",
+          "name": "Unassigned",
+          "agentIds": []
+        }
+      ]
+    },
+    {
+      "op": "move",
+      "args": ["s1", "s3", "after"],
+      "out": [
+        {
+          "id": "s2",
+          "name": "Two",
+          "agentIds": ["2", "3"]
+        },
+        {
+          "id": "s3",
+          "name": "Three",
+          "agentIds": []
+        },
+        {
+          "id": "s1",
+          "name": "One",
+          "agentIds": ["1"]
+        },
+        {
+          "id": "__agents__",
+          "name": "Unassigned",
+          "agentIds": []
+        }
+      ]
+    },
+    {
+      "op": "move",
+      "args": ["s1", "__agents__", "after"],
+      "out": [
+        {
+          "id": "s1",
+          "name": "One",
+          "agentIds": ["1"]
+        },
+        {
+          "id": "s2",
+          "name": "Two",
+          "agentIds": ["2", "3"]
+        },
+        {
+          "id": "s3",
+          "name": "Three",
+          "agentIds": []
+        },
+        {
+          "id": "__agents__",
+          "name": "Unassigned",
+          "agentIds": []
+        }
+      ]
+    },
+    {
+      "op": "move",
+      "args": ["s2", "s2", "before"],
+      "out": [
+        {
+          "id": "s1",
+          "name": "One",
+          "agentIds": ["1"]
+        },
+        {
+          "id": "s3",
+          "name": "Three",
+          "agentIds": []
+        },
+        {
+          "id": "s2",
+          "name": "Two",
+          "agentIds": ["2", "3"]
+        },
+        {
+          "id": "__agents__",
+          "name": "Unassigned",
+          "agentIds": []
+        }
+      ]
+    },
+    {
+      "op": "move",
+      "args": ["zz", "s1", "before"],
+      "out": [
+        {
+          "id": "s1",
+          "name": "One",
+          "agentIds": ["1"]
+        },
+        {
+          "id": "s2",
+          "name": "Two",
+          "agentIds": ["2", "3"]
+        },
+        {
+          "id": "s3",
+          "name": "Three",
+          "agentIds": []
+        },
+        {
+          "id": "__agents__",
+          "name": "Unassigned",
+          "agentIds": []
+        }
+      ]
+    }
+  ],
+  "removeAll": [],
+  "shown": [
+    {
+      "pins": [],
+      "sections": [
+        {
+          "id": "s1",
+          "name": "One",
+          "agentIds": ["1"]
+        },
+        {
+          "id": "s2",
+          "name": "Two",
+          "agentIds": ["2", "3"]
+        },
+        {
+          "id": "s3",
+          "name": "Three",
+          "agentIds": []
+        },
+        {
+          "id": "__agents__",
+          "name": "Unassigned",
+          "agentIds": []
+        }
+      ],
+      "collapsed": [],
+      "shown": [
+        {
+          "id": "s1",
+          "un": false,
+          "col": false,
+          "agents": ["1"]
+        },
+        {
+          "id": "s2",
+          "un": false,
+          "col": false,
+          "agents": ["2", "3"]
+        },
+        {
+          "id": "s3",
+          "un": false,
+          "col": false,
+          "agents": []
+        },
+        {
+          "id": "__agents__",
+          "un": true,
+          "col": false,
+          "agents": ["4", "5", "6"]
+        }
+      ],
+      "order": ["1", "2", "3", "4", "5", "6"]
+    },
+    {
+      "pins": ["2", "9"],
+      "sections": [
+        {
+          "id": "s1",
+          "name": "One",
+          "agentIds": ["1"]
+        },
+        {
+          "id": "s2",
+          "name": "Two",
+          "agentIds": ["2", "3"]
+        },
+        {
+          "id": "s3",
+          "name": "Three",
+          "agentIds": []
+        },
+        {
+          "id": "__agents__",
+          "name": "Unassigned",
+          "agentIds": []
+        }
+      ],
+      "collapsed": ["s2"],
+      "shown": [
+        {
+          "id": "s1",
+          "un": false,
+          "col": false,
+          "agents": ["1"]
+        },
+        {
+          "id": "s2",
+          "un": false,
+          "col": true,
+          "agents": ["3"]
+        },
+        {
+          "id": "s3",
+          "un": false,
+          "col": false,
+          "agents": []
+        },
+        {
+          "id": "__agents__",
+          "un": true,
+          "col": false,
+          "agents": ["4", "5", "6"]
+        }
+      ],
+      "order": ["2", "1", "4", "5", "6"]
+    },
+    {
+      "pins": ["4"],
+      "sections": [],
+      "collapsed": [],
+      "shown": [],
+      "order": ["4", "1", "2", "3", "5", "6"]
+    },
+    {
+      "pins": [],
+      "sections": [
+        {
+          "id": "s1",
+          "name": "One",
+          "agentIds": ["1", "2", "3", "4", "5", "6"]
+        },
+        {
+          "id": "__agents__",
+          "name": "Unassigned",
+          "agentIds": []
+        }
+      ],
+      "collapsed": [],
+      "shown": [
+        {
+          "id": "s1",
+          "un": false,
+          "col": false,
+          "agents": ["1", "2", "3", "4", "5", "6"]
+        }
+      ],
+      "order": ["1", "2", "3", "4", "5", "6"]
+    },
+    {
+      "pins": ["6", "1"],
+      "sections": [
+        {
+          "id": "s1",
+          "name": "One",
+          "agentIds": ["1"]
+        },
+        {
+          "id": "s2",
+          "name": "Two",
+          "agentIds": ["2", "3"]
+        },
+        {
+          "id": "s3",
+          "name": "Three",
+          "agentIds": []
+        },
+        {
+          "id": "__agents__",
+          "name": "Unassigned",
+          "agentIds": []
+        }
+      ],
+      "collapsed": ["__agents__"],
+      "shown": [
+        {
+          "id": "s1",
+          "un": false,
+          "col": false,
+          "agents": []
+        },
+        {
+          "id": "s2",
+          "un": false,
+          "col": false,
+          "agents": ["2", "3"]
+        },
+        {
+          "id": "s3",
+          "un": false,
+          "col": false,
+          "agents": []
+        },
+        {
+          "id": "__agents__",
+          "un": true,
+          "col": true,
+          "agents": ["4", "5"]
+        }
+      ],
+      "order": ["6", "1", "2", "3"]
+    }
+  ]
+}
