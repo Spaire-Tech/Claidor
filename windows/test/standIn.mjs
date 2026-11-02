@@ -58,7 +58,8 @@ function corsHeaders(origin) {
 
 /**
  * Starts the stand-in. `routes` may answer a path first (each part's own
- * calls): `(request, body) => ({ status, json } | { status, text, type } | undefined)`.
+ * calls): `(request, body) => ({ status, json } | { status, text, type } | undefined)`,
+ * or a promise of one (an answer that waits).
  */
 export async function startStandIn({ routes } = {}) {
   const state = { requests: [], box: computer() }
@@ -103,7 +104,7 @@ export async function startStandIn({ routes } = {}) {
     } catch {
       args = {}
     }
-    const own = routes?.(record, args, state)
+    const own = await routes?.(record, args, state)
     if (own) {
       if ('json' in own) return json(own.json, own.status ?? 200)
       return send(own.status ?? 200, own.text ?? '', own.type ?? 'text/plain')
