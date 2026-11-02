@@ -482,7 +482,7 @@
   cursor: default;
 }
 
-/* The rename's field in the window's alert: the alert's width, 22 high, 6 round, the field's own ground. */
+/* The rename's field in the window's alert: the alert's width, 24 high, 5 round, 7 in, the field's own ground; the blue edge with the keys. */
 .page-alert-field {
   box-sizing: border-box;
   align-self: stretch;

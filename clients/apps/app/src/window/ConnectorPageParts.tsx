@@ -11,9 +11,10 @@
 //
 // The web's own choices (docs/web-app/PROGRESS.md, "Decisions"): the links
 // open in a new tab without `opener` or the referrer, and only http and
-// https ones are drawn as links; the rename is the window's own alert with a
-// field; the picture ships with the app; a value cut short is cut in its
-// middle as the Mac's.
+// https ones are drawn as links (`webPage`, 3c's); the rename is the
+// window's own alert with a field; an account's Remove waits while it goes;
+// the picture ships with the app; a value cut short is cut in its middle as
+// the Mac's.
 
 import {
   type CSSProperties,
@@ -30,7 +31,7 @@ import {
   accountDetail,
   accountTitle,
 } from '../core/appAccounts'
-import { middleCut } from '../core/connectCards'
+import { middleCut, webPage } from '../core/connectCards'
 import {
   type ConnectorPage,
   informationWords,
@@ -40,6 +41,7 @@ import { t as coreT } from '../core/l10n'
 import { t } from '../l10n'
 import { classes } from './classes'
 import './ConnectorPages.css'
+import { OneAtATime } from './connectorPageState'
 import { AddingSpinner, PluginPill, PluginSwitch } from './Connectors'
 import { Line, MentionContext, type MentionSetting } from './MessageText'
 import {
@@ -124,7 +126,7 @@ export function MetaLine({
   market?: string
   homepage?: string
 }) {
-  const source = webAddress(homepage)
+  const source = webPage(homepage)
   if (market === undefined && source === undefined) return null
   return (
     <span className="page-meta">
@@ -143,19 +145,6 @@ export function MetaLine({
       )}
     </span>
   )
-}
-
-/** An address a link may open: http or https only (a catalogue's homepage could hold anything). */
-export function webAddress(address: string | undefined): string | undefined {
-  if (address === undefined) return undefined
-  try {
-    const url = new URL(address)
-    return url.protocol === 'https:' || url.protocol === 'http:'
-      ? address
-      : undefined
-  } catch {
-    return undefined
-  }
 }
 
 // MARK: The examples on the picture
@@ -312,12 +301,12 @@ export function InformationCard({
   homepage?: string
 }) {
   const words = informationWords
-  const website = webAddress(page?.website ?? homepage)
+  const website = webPage(page?.website ?? homepage)
   const links: [string, string][] = []
   if (website !== undefined) links.push([words.website(), website])
   if (page) {
-    const privacy = webAddress(page.privacy)
-    const terms = webAddress(page.terms)
+    const privacy = webPage(page.privacy)
+    const terms = webPage(page.terms)
     if (privacy !== undefined) links.push([words.privacy(), privacy])
     if (terms !== undefined) links.push([words.terms(), terms])
   }
@@ -532,9 +521,12 @@ export function AppAccountsList({
   addDisabled: boolean
   add: () => void
   rename: (account: AppAccount, name: string) => void
-  remove: (account: AppAccount) => void
+  remove: (account: AppAccount) => Promise<void>
 }) {
   const [renaming, setRenaming] = useState<AppAccount>()
+  // A Remove runs once at a time per account: its pill waits while it goes, so a double click sends one.
+  const [, redraw] = useState(0)
+  const [removing] = useState(() => new OneAtATime(() => redraw((n) => n + 1)))
   return (
     <PageCard heading={t('Accounts')}>
       {accounts.map((account, place) => {
@@ -563,7 +555,13 @@ export function AppAccountsList({
               <PageSymbol name="pencil" size={13} weight={1.25} />
             </button>
             {accounts.length > 1 && (
-              <PluginPill title={t('Remove')} onClick={() => remove(account)} />
+              <PluginPill
+                title={t('Remove')}
+                disabled={removing.isRunning(account.id)}
+                onClick={() =>
+                  void removing.run(account.id, () => remove(account))
+                }
+              />
             )}
           </CardRow>
         )
@@ -800,7 +798,12 @@ export function SetupField({
         : {})}
       onInput={(event) => filled(event.currentTarget.value.trim() !== '')}
       onKeyDown={(event) => {
-        if (event.key === 'Enter' && !event.nativeEvent.isComposing) {
+        // Letters still being composed (Japanese, Chinese…) take Return first; Safari sends that Return as key 229.
+        if (
+          event.key === 'Enter' &&
+          !event.nativeEvent.isComposing &&
+          event.keyCode !== 229
+        ) {
           event.preventDefault()
           submit()
         }

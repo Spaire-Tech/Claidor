@@ -105,6 +105,7 @@ import {
   isComingSoon,
   isConnected,
   listenerConnectedIn,
+  webPage,
 } from './connectCards'
 import { type ConnectedApp, connectedApp } from './connectedApps'
 import { callTransport } from './elevenLabsVoice'
@@ -5053,6 +5054,13 @@ export class AppStore {
 
   /** Each app's accounts as Simeon Labs' server last listed them, by the app's toolkit (`appAccounts`). */
   appAccounts: Record<string, AppAccounts> = {}
+  /**
+   * How many changes (a rename, a Remove) have been sent for each app: an
+   * answer that left before a later change is older than that change's own
+   * and is dropped, so a slow read never brings back an account just
+   * removed or its old name. (The core keeps whichever answer comes last.)
+   */
+  private appAccountChanges = new Map<string, number>()
 
   /** The toolkit of an app whose accounts Simeon's server keeps: by its server's address, else its catalogue row's (`appsToolkit(serverURL:pluginId:)`). */
   appsToolkit(
@@ -5069,10 +5077,11 @@ export class AppStore {
     )
   }
 
-  /** An app's accounts read again (`GET apps/{toolkit}/accounts`, `loadAppAccounts`); what was shown stays when they can't be read. */
+  /** An app's accounts read again (`GET apps/{toolkit}/accounts`, `loadAppAccounts`); what was shown stays when they can't be read, or when a change was sent since the read began. */
   async loadAppAccounts(toolkit: string): Promise<void> {
     const backend = this.backend
     if (!backend) return
+    const asked = this.appAccountChanges.get(toolkit) ?? 0
     let answer: JSONValue
     try {
       answer = await backend.server(`apps/${toolkit}/accounts`)
@@ -5081,6 +5090,7 @@ export class AppStore {
     }
     const read = appAccountsFrom(answer)
     if (this.backend !== backend || !read) return
+    if ((this.appAccountChanges.get(toolkit) ?? 0) !== asked) return
     this.appAccounts = { ...this.appAccounts, [toolkit]: read }
     this.changed()
   }
@@ -5090,7 +5100,7 @@ export class AppStore {
     return this.appAccounts[toolkit]?.accounts.map((one) => one.id) ?? []
   }
 
-  /** The sign-in page for one more account (`POST apps/{toolkit}/connect` with `another`, `anotherAccountURL`); none when it can't be had (the store's problem says why). */
+  /** The sign-in page for one more account (`POST apps/{toolkit}/connect` with `another`, `anotherAccountURL`): a web page only, and none once signed out; none when it can't be had (the store's problem says why). */
   async anotherAccountURL(
     toolkit: string,
     name: string,
@@ -5098,16 +5108,17 @@ export class AppStore {
     const backend = this.backend
     if (!backend) return undefined
     let why: string | undefined
+    let url: string | undefined
     try {
       const answer = await backend.server(`apps/${toolkit}/connect`, 'POST', {
         another: true,
       })
-      const url = text(field(answer, 'url'))
-      if (url !== undefined) return url
+      url = webPage(text(field(answer, 'url')))
     } catch (error) {
       why = plainError(error instanceof Error ? error.message : String(error))
     }
     if (this.backend !== backend) return undefined
+    if (url !== undefined) return url
     // Connecting.swift's `didntConnect` (6b's connecting says it too).
     this.problem = why
       ? t`${name} didn't connect: ${why}`
@@ -5144,7 +5155,7 @@ export class AppStore {
     )
   }
 
-  /** A change to one account; the server answers with the app's accounts as they now are, and a refusal is said (`problem`). */
+  /** A change to one account; the server answers with the app's accounts as they now are (kept unless a later change was sent meanwhile), and a refusal is said (`problem`). */
   private async changeAppAccounts(
     toolkit: string,
     account: AppAccount,
@@ -5154,6 +5165,8 @@ export class AppStore {
   ): Promise<void> {
     const backend = this.backend
     if (!backend) return
+    const change = (this.appAccountChanges.get(toolkit) ?? 0) + 1
+    this.appAccountChanges.set(toolkit, change)
     try {
       const answer = await backend.server(
         `apps/${toolkit}/accounts/${accountPath(account.id)}`,
@@ -5162,11 +5175,15 @@ export class AppStore {
       )
       const read = appAccountsFrom(answer)
       if (this.backend !== backend || !read) return
+      if (this.appAccountChanges.get(toolkit) !== change) return
       this.appAccounts = { ...this.appAccounts, [toolkit]: read }
     } catch (error) {
       if (this.backend !== backend) return
       const why = error instanceof Error ? error.message : String(error)
       this.problem = t`${failure}: ${why}`
+      // The last change refused: an earlier one's answer may have been dropped for it, so the list is read again.
+      if (this.appAccountChanges.get(toolkit) === change)
+        void this.loadAppAccounts(toolkit)
     }
     this.changed()
   }
@@ -5174,6 +5191,7 @@ export class AppStore {
   /** 6d's state back to nothing (signed out). */
   private resetConnectorPages(): void {
     this.appAccounts = {}
+    this.appAccountChanges = new Map()
   }
 
   // MARK: Step 6e's Settings: General (the account, language, appearance,

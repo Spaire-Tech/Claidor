@@ -72,14 +72,21 @@ export function toolkitOf(serverURL: string | undefined): string | undefined {
   if (serverURL === undefined) return undefined
   let path: string
   try {
-    // The path as Foundation's `URLComponents.path` reads it: its escapes undone.
-    path = decodeURIComponent(new URL(serverURL).pathname)
+    // The path as Foundation's `URLComponents.path` reads it: its escapes undone; a path alone read as one.
+    path = decodeURIComponent(
+      new URL(serverURL, 'http://path.invalid').pathname,
+    )
   } catch {
     return undefined
   }
   const at = path.indexOf(marker)
   if (at < 0) return undefined
-  const toolkit = path.slice(at + marker.length).split('/')[0] ?? ''
+  // Its first part, empty ones skipped (Swift's `split`).
+  const toolkit =
+    path
+      .slice(at + marker.length)
+      .split('/')
+      .find((part) => part !== '') ?? ''
   return toolkit !== '' && toolkit.length <= 64 && /^[a-z0-9_]+$/.test(toolkit)
     ? toolkit
     : undefined
