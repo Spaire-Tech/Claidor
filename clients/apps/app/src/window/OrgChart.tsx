@@ -458,6 +458,9 @@ function NetworkStage({
     }
   }
   const onPointerMove = (event: React.PointerEvent) => {
+    // A press let go outside the canvas, before it became a drag, is over.
+    if (press.current && (event.buttons & 1) === 0 && !press.current.moved)
+      press.current = undefined
     const held = press.current
     if (held && held.id === event.pointerId) {
       const dx = event.clientX - held.x
