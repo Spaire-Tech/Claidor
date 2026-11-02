@@ -284,7 +284,7 @@ export function QuestionCardView({
 }
 
 /** A field that grows with its words, one line to `maxLines`, then scrolls. Return does `onReturn` when given (Shift-Return a new line). */
-function GrowingField({
+export function GrowingField({
   value,
   onChange,
   placeholder,
