@@ -7,7 +7,10 @@
 // which brings the app forward and ends the sign-in's wait); everything
 // else gets 404. Only this PC's own loopback (127.0.0.1 and ::1) is
 // listened on: nothing on the network reaches it, and Windows' firewall
-// doesn't ask about it.
+// doesn't ask about it. Both addresses must be had (browsers try ::1 first
+// for `localhost`): one held by another program means the address is busy,
+// as the core's one listener on the loopback; ::1 is left out only on a PC
+// with no IPv6 at all (review of 2 November 2026).
 
 import net from 'node:net'
 
@@ -86,6 +89,12 @@ export const notFound = Buffer.from(
 /** Where the listener listens: this PC's own loopback, IPv4 first (`localhost` is both). */
 export const loopbackHosts = ['127.0.0.1', '::1'] as const
 
+/** One address listened on, or why not (Node's error code). */
+export type Bind = (port: number, host: string) => Promise<{ server: net.Server } | { error: string }>
+
+/** The errors that mean this PC has no such address (no IPv6), not that another program holds it. */
+export const noSuchAddress = new Set(['EADDRNOTAVAIL', 'EAFNOSUPPORT'])
+
 /**
  * The loopback listener for one sign-in: it answers this sign-in's
  * callback once (on to `finish`), refuses everything else, and stops when
@@ -112,20 +121,25 @@ export class LoopbackCatcher {
   static async start(
     state: string,
     onAnswer: (answer: LoopbackAnswer) => void,
-    options: { port?: number; finish?: string; hosts?: readonly string[] } = {},
+    options: { port?: number; finish?: string; hosts?: readonly string[]; bind?: Bind; retryMs?: number } = {},
   ): Promise<LoopbackCatcher | undefined> {
     const port = options.port ?? loopbackPort
     const hosts = options.hosts ?? loopbackHosts
-    for (let attempt = 0; attempt < 5; attempt += 1) {
-      if (attempt > 0) await new Promise((done) => setTimeout(done, 250))
+    const bind = options.bind ?? listen
+    tries: for (let attempt = 0; attempt < 5; attempt += 1) {
+      if (attempt > 0) await new Promise((done) => setTimeout(done, options.retryMs ?? 250))
       const servers: net.Server[] = []
-      // IPv4's loopback must be had; IPv6's when this PC has one.
-      const first = await listen(port, hosts[0] ?? '127.0.0.1')
-      if (!first) continue
-      servers.push(first)
-      for (const host of hosts.slice(1)) {
-        const more = await listen(port, host)
-        if (more) servers.push(more)
+      // IPv4's loopback must be had; IPv6's too, unless this PC has none.
+      for (const [index, host] of hosts.entries()) {
+        const bound = await bind(port, host)
+        if ('server' in bound) {
+          servers.push(bound.server)
+          continue
+        }
+        if (index > 0 && noSuchAddress.has(bound.error)) continue
+        // Held by another program (or refused): busy this time; what was had is let go.
+        for (const server of servers) server.close()
+        continue tries
       }
       return new LoopbackCatcher(state, options.finish ?? loopbackFinish, servers, onAnswer)
     }
@@ -174,18 +188,17 @@ export class LoopbackCatcher {
   }
 }
 
-function listen(port: number, host: string): Promise<net.Server | undefined> {
-  return new Promise((done) => {
+const listen: Bind = (port, host) =>
+  new Promise((done) => {
     const server = net.createServer()
-    const failed = () => {
+    const failed = (error: NodeJS.ErrnoException) => {
       server.close()
-      done(undefined)
+      done({ error: error.code ?? 'EUNKNOWN' })
     }
     server.once('error', failed)
     server.listen({ port, host, exclusive: true }, () => {
       server.off('error', failed)
       server.on('error', () => {})
-      done(server)
+      done({ server })
     })
   })
-}

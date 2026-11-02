@@ -165,26 +165,31 @@ describe('a link (MacServices.handle)', () => {
 })
 
 describe('a connector’s sign-in coming back to the app', () => {
-  it('finishes an answer on this account’s computer as “the app” when no open sign-in has it, never dropped as a repeat', async () => {
+  it('finishes an answer only for a sign-in this app named, under its name, and drops any other without a word (review S2)', async () => {
     const backend = new FakeBackend()
+    backend.serverAnswers['mcp-oauth/return'] = {}
     const store = new AppStore()
     await store.attach(backend)
     const { links: made } = links(store)
     const window = new StandInWindow()
     made.attach(window)
+    const finished = () =>
+      backend.commands
+        .filter((one) => one.method === 'completeMcpOAuth')
+        .map((one) => one.args)
+    // A page's own link: no sign-in of this app's has that state.
+    await made.take('simeon://mcp-oauth?state=made-up&code=c')
+    await made.take(
+      'simeon://mcp-oauth?state=made-up&error=x&error_description=Your+Simeon+plan+was+cancelled.',
+    )
+    expect(finished()).toEqual([])
+    expect(store.problem).toBeUndefined()
+    // One this app named (its window had closed meanwhile): finished once; the same link again is no answer of a sign-in still waiting.
+    await store.sendSignInBack('vendor-stripe-1', 'simeon', 'Stripe')
     const link = 'simeon://mcp-oauth?state=vendor-stripe-1&code=c%2F1'
     await made.take(link)
     await made.take(link)
-    const finished = backend.commands.filter(
-      (one) => one.method === 'completeMcpOAuth',
-    )
-    expect(finished.map((one) => one.args)).toEqual([
-      { stateId: 'vendor-stripe-1', code: 'c/1' },
-      { stateId: 'vendor-stripe-1', code: 'c/1' },
-    ])
-    // A refusal is said under "the app".
-    await made.take('simeon://mcp-oauth?state=s&error=access_denied')
-    expect(store.problem).toBe('the app refused the sign-in (access_denied).')
+    expect(finished()).toEqual([{ stateId: 'vendor-stripe-1', code: 'c/1' }])
     store.detach()
   })
 

@@ -297,8 +297,9 @@ function ComputerFullView({
         void pcClipboard?.send(screen.current)
     }
   })
+  // As the screen comes up only while the window is in front: a screen that reconnects behind it sends nothing (a password copied in another app meanwhile; review of 2 November 2026).
   useEffect(() => {
-    if (phase === 'connected') sendClipboard.current()
+    if (phase === 'connected' && document.hasFocus()) sendClipboard.current()
   }, [phase])
   useEffect(() => {
     if (!pcClipboard) return

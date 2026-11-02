@@ -257,7 +257,7 @@ describe('the person’s OK (PurchaseApproval.confirm, Windows Hello)', () => {
     expect(await confirmPresence('Approve $2.47 at gumroad.com')).toBe('alert')
   })
 
-  it('is Windows Hello in the Windows app, with the Mac’s reason, and the alert where Hello can’t ask', async () => {
+  it('is Windows Hello in the Windows app, with the Mac’s reason, the alert only where Hello can’t ask, never after a failure', async () => {
     const fake = inTheApp()
     let said: 'confirmed' | 'cancelled' | 'unavailable' = 'confirmed'
     fake.answer('confirmPresence', () => said)
@@ -272,10 +272,11 @@ describe('the person’s OK (PurchaseApproval.confirm, Windows Hello)', () => {
     expect(await confirmPresence('x')).toBe('cancelled')
     said = 'unavailable'
     expect(await confirmPresence('x')).toBe('alert')
+    // Once the app was asked, a call that fails never opens the alert (review B2).
     fake.answer('confirmPresence', () => {
-      throw new Error('PowerShell missing')
+      throw new Error('Hello ended')
     })
-    expect(await confirmPresence('x')).toBe('alert')
+    expect(await confirmPresence('x')).toBe('cancelled')
   })
 })
 

@@ -7,8 +7,9 @@
 //   as they come (outside/links.ts); what each does is the page's (the Mac's
 //   rules, src/core/deepLink.ts).
 // - The loopback: one sign-in's listener at a time, its answer to the page
-//   that asked; let go when the sign-in ends, the page goes, or after ten
-//   minutes (the sign-in's own wait is five).
+//   that asked; let go when the sign-in ends, when that page reloads, goes
+//   elsewhere or closes, at quit, or after ten minutes (the sign-in's own
+//   wait is five) (outside/loopbackSlot.ts).
 // - Stripe's page: a window of the app's own over the main one
 //   (outside/billing.ts).
 // - Windows Hello (outside/hello.ts), the clipboard (Electron's own, read
@@ -22,8 +23,10 @@ import { emit, handle, text } from '../bridge'
 import type { AppContext } from '../context'
 import { openBillingWindow, opensBilling } from '../outside/billing'
 import { Hello } from '../outside/hello'
+import { pageLeaves } from '../outside/leaving'
 import { type LinkPage, LinkPost } from '../outside/links'
 import { LoopbackCatcher } from '../outside/loopback'
+import { LoopbackSlot } from '../outside/loopbackSlot'
 import { OnePassword } from '../outside/onePassword'
 
 /** A loopback listener is let go after this, whatever happens: the sign-in it serves asks for 5 minutes. */
@@ -43,66 +46,62 @@ function signInState(value: unknown): string {
 export function register(context: AppContext): void {
   const mainPage = (): WebContents | undefined => context.mainWindow()?.webContents
 
+  // Each page of the app, watched once: when it reloads, goes to another of the app's addresses or closes, what it waited for is let go.
+  // A refused link to another site starts a navigation too, and leaves nothing (outside/leaving.ts).
+  const watched = new WeakSet<WebContents>()
+  const leaving: ((page: WebContents) => void)[] = []
+  const watch = (page: WebContents) => {
+    if (watched.has(page)) return
+    watched.add(page)
+    page.on('did-start-navigation', (details) => {
+      if (pageLeaves(details)) for (const left of leaving) left(page)
+    })
+    page.once('destroyed', () => {
+      for (const left of leaving) left(page)
+    })
+  }
+
   // MARK: Links
 
   const post = new LinkPost()
   const pages = new WeakMap<WebContents, LinkPage>()
   context.onLink((url) => post.arrive(url))
+  leaving.push((page) => {
+    const made = pages.get(page)
+    if (made) post.left(made)
+  })
   handle('takeLinks', (from) => {
     if (from !== mainPage()) return []
     let page = pages.get(from)
     if (!page) {
-      const made: LinkPage = {
+      page = {
         get alive() {
           return !from.isDestroyed()
         },
         send: (url: string) => emit(from, 'link', url),
       }
-      page = made
-      pages.set(from, made)
-      // The page reloaded or went: links wait for it again, until it takes them.
-      from.on('did-start-navigation', (details) => {
-        if (details.isMainFrame && !details.isSameDocument) post.left(made)
-      })
-      from.once('destroyed', () => post.left(made))
+      pages.set(from, page)
     }
+    watch(from)
     return post.take(page)
   })
 
   // MARK: The loopback
 
-  let catcher: { catcher: LoopbackCatcher; page: WebContents; timer: ReturnType<typeof setTimeout> } | undefined
-  const letGo = (state?: string) => {
-    if (!catcher || (state !== undefined && catcher.catcher.state !== state)) return
-    clearTimeout(catcher.timer)
-    catcher.catcher.stop()
-    catcher = undefined
-  }
-  handle('catchLoopback', async (from, value) => {
+  const slot = new LoopbackSlot<WebContents>(
+    (state, page) => LoopbackCatcher.start(state, (answer) => emit(page, 'loopbackAnswer', answer)),
+    loopbackMostMs,
+  )
+  leaving.push((page) => slot.left(page))
+  handle('catchLoopback', (from, value) => {
     const state = signInState(value)
-    // A newer sign-in takes the older one's place, and its address.
-    letGo()
-    const made = await LoopbackCatcher.start(state, (answer) => emit(from, 'loopbackAnswer', answer))
-    if (!made) return false
-    // Another call came meanwhile: the newest keeps the address.
-    if (catcher) {
-      made.stop()
-      return false
-    }
-    catcher = {
-      catcher: made,
-      page: from,
-      timer: setTimeout(() => letGo(state), loopbackMostMs),
-    }
-    from.once('destroyed', () => {
-      if (catcher?.page === from) letGo()
-    })
-    return true
+    watch(from)
+    return slot.catch(from, state)
   })
   handle('stopLoopback', (_from, value) => {
-    letGo(signInState(value))
+    slot.stop(signInState(value))
   })
-  context.beforeQuit(() => letGo())
+  context.beforeQuit(() => slot.letGo())
 
   // MARK: Stripe's page
 

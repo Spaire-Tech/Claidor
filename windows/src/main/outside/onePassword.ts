@@ -21,18 +21,26 @@ import path from 'node:path'
 export const vaultName = 'Shared with Simeon'
 export const toolTimeoutMs = 180_000
 
-/** Where 1Password's command-line tool is on Windows, beside PATH: its own folder under Program Files, winget's links, Scoop's and Chocolatey's shims. */
+/**
+ * Where 1Password's command-line tool is on Windows, before PATH: only
+ * folders no other account on this PC can make (review of 2 November
+ * 2026): its own folder under both Program Files (an administrator's), then
+ * the person's own (winget's links in their %LOCALAPPDATA%, Scoop's shims
+ * in their profile). Never %ProgramData% (any account may make folders
+ * there: Chocolatey's shims are on PATH when it is installed) nor the folder
+ * the app was started in.
+ */
 export function toolPlaces(env: Readonly<Record<string, string | undefined>>): string[] {
   const join = path.win32.join
   const places: string[] = []
   const programFiles = env.ProgramFiles ?? env.PROGRAMFILES
   if (programFiles) places.push(join(programFiles, '1Password CLI', 'op.exe'))
+  const programFiles86 = env['ProgramFiles(x86)'] ?? env['PROGRAMFILES(X86)']
+  if (programFiles86) places.push(join(programFiles86, '1Password CLI', 'op.exe'))
   const local = env.LOCALAPPDATA ?? env.LocalAppData
   if (local) places.push(join(local, 'Microsoft', 'WinGet', 'Links', 'op.exe'))
   const home = env.USERPROFILE ?? env.UserProfile
   if (home) places.push(join(home, 'scoop', 'shims', 'op.exe'))
-  const data = env.ProgramData ?? env.PROGRAMDATA
-  if (data) places.push(join(data, 'chocolatey', 'bin', 'op.exe'))
   return places
 }
 
@@ -189,6 +197,11 @@ export function isAccountId(value: string): boolean {
   return /^[A-Za-z0-9]{1,64}$/.test(value)
 }
 
+/** A vault's id as 1Password writes it: 26 lower-case letters and digits, so nothing in it can widen `--vault <id>:read_items`. */
+export function isVaultId(value: string): boolean {
+  return /^[a-z0-9]{26}$/.test(value)
+}
+
 /** The shared vault in the account (made when missing) and a read-only key for it (`connect(_:)`). */
 export async function connectAccount(
   run: RunTool,
@@ -214,7 +227,7 @@ export async function connectAccount(
       }
     }
   }
-  if (vaultId === '' || vaultId.startsWith('-')) return { failure: 'noVault' }
+  if (!isVaultId(vaultId)) return { failure: 'noVault' }
   const key = await run([
     'service-account',
     'create',

@@ -2,7 +2,11 @@
 // (mac/Simeon/MacConnector.swift's `MacBillingPage`, the Mac's sign-in sheet
 // on the window): over the app's window and holding it while it shows, as a
 // sheet does; Stripe's own pages and the bank's checks go on inside it;
-// links that open a new window go to the default browser. It closes once
+// a link that opens a new window goes to the default browser only when it
+// is https and the person has just pressed something in the window (Electron
+// has no pop-up blocker: no page there opens tabs or launches an app by
+// itself). Its title is the page's site, as Apple's sheet names the site it
+// shows, so the person always knows where they type. It closes once
 // the page comes back on the app's own link (Simeon Labs' server sends
 // Stripe's return on: `/desktop/billing/back?to=simeon` → `simeon://app/v1/open`),
 // or when the person closes it. Nothing of the app reaches it: no preload,
@@ -19,7 +23,6 @@ import {
   shell,
 } from 'electron'
 import { ownsNavigation } from '../navigation'
-import { opensOutside } from '../policy'
 
 /** The window's own storage: Stripe's cookies, apart from the app's page. */
 export const billingPartition = 'persist:simeon-billing'
@@ -44,6 +47,30 @@ export function billingStep(url: string, apiBase: string): 'back' | 'go' | 'refu
     // No server: nothing else goes.
   }
   return 'refuse'
+}
+
+/** A new window's page goes to the default browser only this long after the person pressed something in the billing window (Chromium's own user activation lasts about this). */
+export const pressWindowMs = 1_000
+
+/** Whether a page the billing window opens may go to the default browser: https, just after the person pressed something there. */
+export function opensFromBilling(url: string, pressedAt: number | undefined, now: number): boolean {
+  if (pressedAt === undefined || now - pressedAt > pressWindowMs) return false
+  try {
+    const address = new URL(url)
+    return address.protocol === 'https:' && address.hostname !== '' && !address.username && !address.password
+  } catch {
+    return false
+  }
+}
+
+/** The window's title: the site its page is on (`billing.stripe.com`). */
+export function billingTitle(url: string): string {
+  try {
+    const host = new URL(url).host
+    return host === '' ? 'Simeon' : host
+  } catch {
+    return 'Simeon'
+  }
 }
 
 /** The first page: https only (Stripe's), as the Mac takes it (`StoreSettings.billingPortal`). */
@@ -79,6 +106,20 @@ function billingStorage(): Session {
   const own = session.fromPartition(billingPartition)
   own.setPermissionRequestHandler((_contents, _permission, done) => done(false))
   own.setPermissionCheckHandler(() => false)
+  own.setDevicePermissionHandler(() => false)
+  // No device is offered to a page in it (Bluetooth's own picker is the window's, below).
+  own.on('select-hid-device', (event, _details, choose) => {
+    event.preventDefault()
+    choose('')
+  })
+  own.on('select-serial-port', (event, _ports, _contents, choose) => {
+    event.preventDefault()
+    choose('')
+  })
+  own.on('select-usb-device', (event, _details, choose) => {
+    event.preventDefault()
+    choose()
+  })
   // Nothing is saved from it without the person: Electron's own save dialog.
   billingSession = own
   return own
@@ -111,7 +152,7 @@ export function openBillingWindow(
       parent: parent && !parent.isDestroyed() ? parent : undefined,
       modal: !!parent && !parent.isDestroyed(),
       show: false,
-      title: 'Simeon',
+      title: billingTitle(url),
       autoHideMenuBar: true,
       minimizable: false,
       backgroundColor: nativeTheme.shouldUseDarkColors ? '#070707' : '#fcfcfc',
@@ -122,6 +163,7 @@ export function openBillingWindow(
         nodeIntegration: false,
         webSecurity: true,
         spellcheck: false,
+        safeDialogs: true,
       },
     })
   } catch {
@@ -171,10 +213,28 @@ function watchNavigation(contents: WebContents, apiBase: string, back: () => voi
     if (permission === 'openExternal' && external && billingStep(external, apiBase) === 'back') back()
     done(false)
   })
+  // The person's last press in the window (a click, a key, a tap): a new window's page goes out only just after one, and once.
+  let pressedAt: number | undefined
+  contents.on('input-event', (_event, input) => {
+    if (['mouseDown', 'keyDown', 'rawKeyDown', 'gestureTap', 'touchStart'].includes(input.type)) pressedAt = Date.now()
+  })
   contents.setWindowOpenHandler(({ url }) => {
+    // One window at most per press, whether it goes or not.
+    const pressed = pressedAt
+    pressedAt = undefined
     if (billingStep(url, apiBase) === 'back') back()
-    else if (opensOutside(url)) void shell.openExternal(url)
+    else if (opensFromBilling(url, pressed, Date.now())) void shell.openExternal(url)
     return { action: 'deny' }
   })
   contents.on('will-attach-webview', (event) => event.preventDefault())
+  contents.on('select-bluetooth-device', (event, _devices, choose) => {
+    event.preventDefault()
+    choose('')
+  })
+  // Its title is its page's site, never the page's own words.
+  const window = BrowserWindow.fromWebContents(contents)
+  window?.on('page-title-updated', (event) => event.preventDefault())
+  contents.on('did-navigate', (_event, url) => {
+    if (window && !window.isDestroyed()) window.setTitle(billingTitle(url))
+  })
 }

@@ -5,10 +5,11 @@
 //
 // - A connector's sign-in answer the server sent back
 //   (`simeon://mcp-oauth?…`) is read first, before any other rule, and is
-//   finished on this account's computer (`finishLoopbackSignIn`): under the
-//   open sign-in's name when it is that one's (the Mac's sheet), else "the
-//   app" (the Mac's own outside a sheet). Never held, never dropped as a
-//   repeat.
+//   finished on this account's computer only when this app named that
+//   sign-in to the server, signed in, in its lifetime
+//   (`finishReturnedSignIn`); any other is dropped without a word, its
+//   words never shown (the Mac finishes any: review of 2 November 2026).
+//   Never held, never dropped as a repeat.
 // - The server's last page back on the app's address (`simeon://connected`)
 //   is the open sign-in's sheet closing there; outside a sign-in nothing.
 // - Every other link is read by the Mac's rules (`parseDeepLink`); the same
@@ -28,7 +29,6 @@ import {
   parseDeepLink,
 } from '../core/deepLink'
 import type { AppStore } from '../core/store'
-import { t } from '../l10n'
 import type { Connector } from '../window/connector'
 import type { Desktop } from './desktop'
 
@@ -89,10 +89,11 @@ export class DesktopLinks {
   async take(raw: string): Promise<void> {
     if (typeof raw !== 'string') return
     // A connected app's sign-in the browser finished: the app hands it to its computer (`AppReturnSignIn`).
+    // Only a sign-in this app named to the server, signed in, in its lifetime (`finishReturnedSignIn`); any other is dropped without a word.
     const answer = appReturnAnswer(raw)
     if (answer) {
       if (await this.window?.connector?.answered(answer)) return
-      await this.store()?.finishLoopbackSignIn(answer, t('the app'))
+      await this.store()?.finishReturnedSignIn(answer)
       return
     }
     // The server's last page back on the app's own address: the open sign-in's sheet closing there.

@@ -6143,7 +6143,49 @@ export class AppStore {
   // MARK: Step 7d's links and pages outside: `simeon://` links handed in, a connector's
   // sign-in coming back (`completeMcpOAuth`), Stripe's pages in the app's window.
 
-  private resetDesktopOutside(): void {}
+  /**
+   * The sign-ins this app named to Simeon Labs' server to come back to it
+   * (`sendSignInBack`), by their state: the app's own name and when. Only
+   * these are finished when a `simeon://mcp-oauth` link comes back, within
+   * `AppStore.returnedSignInMs`; forgotten on sign-out (review of 2 November 2026:
+   * any page can write such a link).
+   */
+  private returnedSignIns = new Map<string, { name: string; at: number }>()
+
+  /** A sign-in named to the server to come back to the app is finished within this (its own wait is 5 minutes). */
+  static readonly returnedSignInMs = 10 * 60_000
+
+  private resetDesktopOutside(): void {
+    this.returnedSignIns.clear()
+  }
+
+  /**
+   * A sign-in's answer the server sent back to the app
+   * (`simeon://mcp-oauth`), finished on this account's computer
+   * (`completeMcpOAuth`) only when this app named that sign-in in this
+   * sign-in session, within its lifetime, and once: any other link is
+   * dropped without a word. A refusal says the catalogue's sentence, never
+   * the link's own words. Whether it was one of this app's.
+   */
+  async finishReturnedSignIn(
+    answer: SignInAnswer,
+    now: number = Date.now(),
+  ): Promise<boolean> {
+    const started = this.returnedSignIns.get(answer.state)
+    if (!started || now - started.at > AppStore.returnedSignInMs) return false
+    if (!this.backend) return false
+    this.returnedSignIns.delete(answer.state)
+    if (answer.error != null) {
+      this.problem = didntConnect(started.name)
+      this.changed()
+      return true
+    }
+    await this.finishLoopbackSignIn(
+      { state: answer.state, code: answer.code },
+      started.name,
+    )
+    return true
+  }
 
   /**
    * A connector's sign-in answer, caught on this PC's loopback or sent back
@@ -6181,12 +6223,23 @@ export class AppStore {
 
   /**
    * Asks Simeon Labs' server to send this sign-in back to the app, by its
-   * own scheme (`sendSignInBack`, `POST mcp-oauth/return`); false when it
-   * could not (the server's own page then finishes it, as before).
+   * own scheme (`sendSignInBack`, `POST mcp-oauth/return`), remembering it
+   * under the app's `name` (`finishReturnedSignIn`); false when it could not
+   * (the server's own page then finishes it, as before).
    */
-  async sendSignInBack(state: string, scheme: string): Promise<boolean> {
+  async sendSignInBack(
+    state: string,
+    scheme: string,
+    name: string,
+    now: number = Date.now(),
+  ): Promise<boolean> {
     const backend = this.backend
     if (!backend) return false
+    // Remembered before it goes: the answer may come back before the server's reply does.
+    for (const [old, started] of this.returnedSignIns)
+      if (now - started.at > AppStore.returnedSignInMs)
+        this.returnedSignIns.delete(old)
+    this.returnedSignIns.set(state, { name, at: now })
     try {
       await backend.server('mcp-oauth/return', 'POST', { state, back: scheme })
       return true

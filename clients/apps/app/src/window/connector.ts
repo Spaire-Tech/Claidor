@@ -469,16 +469,35 @@ export class Connector {
   /**
    * A maker's answer the server sent back to the app (the Windows app's
    * `simeon://mcp-oauth`): when it is the open sign-in's (its state), it is
-   * finished on this account's computer under that sign-in's name, which
-   * then ends as the Mac's sheet does on it; false when it isn't.
+   * finished on this account's computer (`finishReturnedSignIn`, the
+   * catalogue's words for a refusal), and the sign-in then ends as the
+   * Mac's sheet does on it; false when it isn't, or the store doesn't take
+   * it (not named by this app, already finished): then nothing ends.
    */
   async answered(answer: SignInAnswer): Promise<boolean> {
     const open = this.open
     if (!open || open.state == null || open.state !== answer.state) return false
+    if (!(await this.store.finishReturnedSignIn(answer))) return false
     if (answer.error == null) open.watch.cameBack()
     else open.watch.refused()
-    await this.store.finishLoopbackSignIn(answer, open.name)
     return true
+  }
+
+  /**
+   * The window went (signed out, the page going): the open sign-in ends
+   * here, its loopback listener let go (the port freed), its wait stops at
+   * its next look, and nothing it catches later goes anywhere. A newer
+   * sign-in may start afterwards (React may draw the window again).
+   */
+  close(): void {
+    this.current += 1
+    this.stopLoopback?.()
+    this.stopLoopback = undefined
+    this.open = undefined
+    this.tab = undefined
+    this.asking = undefined
+    this.connecting = undefined
+    this.changed()
   }
 
   /** The window's alert, read: gone. */
@@ -532,25 +551,28 @@ export class Connector {
         const listening: { stop?: () => void } = {}
         const stop = await this.browser.catchLoopback(loopback, (answer) => {
           listening.stop?.()
+          // Caught after this sign-in ended (replaced, the window gone): it goes nowhere.
+          if (this.current !== token) return
           void this.store.finishLoopbackSignIn(answer, name)
         })
+        // A newer sign-in took this one's place meanwhile: replaced, never "busy" (nothing it added is taken back).
+        if (this.current !== token) {
+          stop?.()
+          own?.tab?.close()
+          return { end: 'replaced', refused: false }
+        }
         if (!stop) {
           this.store.keepProblem(loopbackBusy(name))
           own?.tab?.close()
           return { end: 'cancelled', refused: false }
         }
         listening.stop = stop
-        if (this.current !== token) {
-          stop()
-          own?.tab?.close()
-          return { end: 'replaced', refused: false }
-        }
         this.stopLoopback = stop
       }
       // One that comes back through Simeon Labs' server comes back to the app, named to the server first, which finishes it on its own computer (`AppReturnSignIn`).
       const serverState = serverReturnState(page)
       if (serverState != null && scheme != null) {
-        await this.store.sendSignInBack(serverState, scheme)
+        await this.store.sendSignInBack(serverState, scheme, name)
         if (this.current !== token) {
           own?.tab?.close()
           return { end: 'replaced', refused: false }

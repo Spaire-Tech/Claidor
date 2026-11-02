@@ -89,7 +89,11 @@ describe('a sign-in named to the server first (AppReturnSignInTests)', () => {
     const backend = new FakeBackend()
     backend.serverAnswers['mcp-oauth/return'] = {}
     const { store } = await attached(backend)
-    const sent = await store.sendSignInBack('vendor-stripe-Ab_9', 'simeon')
+    const sent = await store.sendSignInBack(
+      'vendor-stripe-Ab_9',
+      'simeon',
+      'Stripe',
+    )
     expect(sent).toBe(true)
     const returns = backend.serverCalls.filter(
       (call) => call.path === 'mcp-oauth/return',
@@ -105,11 +109,105 @@ describe('a sign-in named to the server first (AppReturnSignInTests)', () => {
   })
 
   it('names nothing without a computer, and says when the server refused', async () => {
-    expect(await new AppStore().sendSignInBack('s', 'simeon')).toBe(false)
+    expect(await new AppStore().sendSignInBack('s', 'simeon', 'Stripe')).toBe(
+      false,
+    )
     const backend = new FakeBackend()
     backend.serverFails = true
     const { store } = await attached(backend)
-    expect(await store.sendSignInBack('s', 'simeon')).toBe(false)
+    expect(await store.sendSignInBack('s', 'simeon', 'Stripe')).toBe(false)
+    store.detach()
+  })
+})
+
+describe('a sign-in coming back on simeon://mcp-oauth, only one this app named (review S2)', () => {
+  async function named() {
+    const backend = new FakeBackend()
+    backend.serverAnswers['mcp-oauth/return'] = {}
+    const { store } = await attached(backend)
+    await store.sendSignInBack('vendor-stripe-1', 'simeon', 'Stripe', 1_000)
+    return { store, backend }
+  }
+
+  it('finishes one this app named, once, under its own name', async () => {
+    const { store, backend } = await named()
+    expect(
+      await store.finishReturnedSignIn(
+        { state: 'vendor-stripe-1', code: 'c/1' },
+        2_000,
+      ),
+    ).toBe(true)
+    expect(finished(backend)).toEqual([
+      { stateId: 'vendor-stripe-1', code: 'c/1' },
+    ])
+    expect(
+      await store.finishReturnedSignIn(
+        { state: 'vendor-stripe-1', code: 'c/1' },
+        3_000,
+      ),
+    ).toBe(false)
+    expect(finished(backend)).toHaveLength(1)
+    store.detach()
+  })
+
+  it('drops, without a word, one this app never named, or named too long ago', async () => {
+    const { store, backend } = await named()
+    expect(
+      await store.finishReturnedSignIn({ state: 'made-up', code: 'x' }, 2_000),
+    ).toBe(false)
+    expect(
+      await store.finishReturnedSignIn(
+        {
+          state: 'made-up',
+          error: 'x',
+          errorDescription: 'Your Simeon plan was cancelled. Call us.',
+        },
+        2_000,
+      ),
+    ).toBe(false)
+    expect(
+      await store.finishReturnedSignIn(
+        { state: 'vendor-stripe-1', code: 'c' },
+        1_000 + AppStore.returnedSignInMs + 1,
+      ),
+    ).toBe(false)
+    expect(finished(backend)).toEqual([])
+    expect(store.problem).toBeUndefined()
+    store.detach()
+  })
+
+  it('says the catalogue’s sentence for a refusal, never the link’s own words', async () => {
+    const { store, backend } = await named()
+    await store.finishReturnedSignIn(
+      {
+        state: 'vendor-stripe-1',
+        error: 'access_denied',
+        errorDescription: 'Your Simeon plan was cancelled. Call us.',
+      },
+      2_000,
+    )
+    expect(store.problem).toBe("Stripe didn't connect. Try again.")
+    expect(finished(backend)).toEqual([])
+    store.detach()
+  })
+
+  it('forgets what it named on sign-out, and finishes nothing signed out', async () => {
+    const { store, backend } = await named()
+    store.detach()
+    expect(
+      await store.finishReturnedSignIn(
+        { state: 'vendor-stripe-1', code: 'c' },
+        2_000,
+      ),
+    ).toBe(false)
+    await store.attach(backend)
+    expect(
+      await store.finishReturnedSignIn(
+        { state: 'vendor-stripe-1', code: 'c' },
+        2_000,
+      ),
+    ).toBe(false)
+    expect(finished(backend)).toEqual([])
     store.detach()
   })
 })

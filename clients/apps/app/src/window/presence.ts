@@ -7,23 +7,25 @@
 // Allow carries the approval to Link, with no method, as the Mac's
 // passcode: Hello doesn't say which it used); cancelled, nothing is done.
 // Where Hello can't ask (not set up on this PC, or not Windows), the
-// window's own alert asks, as on the web (the caller shows it).
+// window's own alert asks, as on the web (the caller shows it). Once the
+// app was asked, anything else (a refused call, an error) is cancelled:
+// nothing unlocks on an error (review of 2 November 2026).
 
 import { desktop } from '../desktop/desktop'
 
 /** How the person was asked: the device confirmed (`confirmed`), they said no (`cancelled`), or the window's own alert is to ask (`alert`). */
 export type Presence = 'confirmed' | 'cancelled' | 'alert'
 
-/** Asks Windows Hello in the Windows app; on the web, and where Hello can't ask, `alert`. */
+/** Asks Windows Hello in the Windows app; on the web, and where Hello can't ask, `alert`; a call that fails, `cancelled`. */
 export async function confirmPresence(reason: string): Promise<Presence> {
   const host = desktop()
   if (!host) return 'alert'
   try {
     const said = await host.call('confirmPresence', reason)
     if (said === 'confirmed') return 'confirmed'
-    if (said === 'cancelled') return 'cancelled'
-    return 'alert'
+    if (said === 'unavailable') return 'alert'
+    return 'cancelled'
   } catch {
-    return 'alert'
+    return 'cancelled'
   }
 }

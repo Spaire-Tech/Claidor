@@ -6,8 +6,12 @@
 // call Windows' own (WinRT) parts; no package is added to the app. The
 // reason goes to PowerShell in its environment, never in the script or on
 // its command line, so nothing in it can run. Hello not set up (or not
-// Windows, or PowerShell refused): `unavailable`, and the page asks in its
-// own alert instead.
+// Windows, or PowerShell refused before asking): `unavailable`, and the
+// page asks in its own alert instead. Once Hello may have asked (the script
+// says `asking` first), anything but Verified is `cancelled`: the person's
+// no, three minutes without an answer, a PowerShell that was ended, an
+// error, an answer it doesn't know (review of 2 November 2026). Waiting or
+// an error never unlocks anything.
 
 import { spawn } from 'node:child_process'
 import path from 'node:path'
@@ -25,7 +29,8 @@ export const reasonVariable = 'SIMEON_HELLO_REASON'
 /**
  * The script: is Hello there (`CheckAvailabilityAsync`), then ask
  * (`RequestVerificationAsync`) with the reason from the environment; one
- * line out: `result:<UserConsentVerificationResult>` or `unavailable:<why>`.
+ * line out: `unavailable:<why>` before asking, or `asking` then
+ * `result:<UserConsentVerificationResult>`.
  */
 export const helloScript = String.raw`$ErrorActionPreference = 'Stop'
 try {
@@ -44,6 +49,7 @@ try {
     Write-Output "unavailable:$availability"
     exit 0
   }
+  Write-Output 'asking'
   $reason = [string] $env:${reasonVariable}
   $result = Wait-WinRT ([Windows.Security.Credentials.UI.UserConsentVerifier]::RequestVerificationAsync($reason)) ([Windows.Security.Credentials.UI.UserConsentVerificationResult])
   Write-Output "result:$result"
@@ -63,61 +69,71 @@ export function windowsPowerShell(env: Readonly<Record<string, string | undefine
   return path.win32.join(root, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe')
 }
 
-/** PowerShell's line out, read: Verified is confirmed; the person's no (or too many tries, or Hello busy) cancelled; anything else unavailable. */
-export function helloAnswer(output: string): HelloAnswer {
-  const line = output
-    .split(/\r?\n/)
-    .map((one) => one.trim())
-    .find((one) => one.startsWith('result:') || one.startsWith('unavailable:'))
-  if (!line?.startsWith('result:')) return 'unavailable'
-  switch (line.slice('result:'.length)) {
-    case 'Verified':
-      return 'confirmed'
-    case 'Canceled':
-    case 'RetriesExhausted':
-    case 'DeviceBusy':
-      return 'cancelled'
-    default:
-      return 'unavailable'
-  }
+/** How a run of PowerShell ended, and what it printed. */
+export interface PowerShellRun {
+  output: string
+  /** It ran to its end; it ran out of time and was ended; it could not be started at all. */
+  ended: 'exited' | 'timedOut' | 'notStarted'
 }
 
-/** A run of PowerShell: its output, or none when it couldn't run or ran out of time. */
+/**
+ * PowerShell's lines, read: `unavailable` only when PowerShell couldn't be
+ * started, or said so before asking and ended by itself; `confirmed` only
+ * for Verified after asking; everything else `cancelled`.
+ */
+export function helloAnswer(run: PowerShellRun): HelloAnswer {
+  if (run.ended === 'notStarted') return 'unavailable'
+  const lines = run.output.split(/\r?\n/).map((one) => one.trim())
+  const asked = lines.includes('asking')
+  if (!asked) {
+    const said = lines.some((one) => one.startsWith('unavailable:'))
+    return said && run.ended === 'exited' ? 'unavailable' : 'cancelled'
+  }
+  if (run.ended !== 'exited') return 'cancelled'
+  const result = lines.slice(lines.indexOf('asking') + 1).find((one) => one.startsWith('result:'))
+  return result === 'result:Verified' ? 'confirmed' : 'cancelled'
+}
+
+/** A run of PowerShell, its input closed (a stand-in in the tests). */
 export type RunPowerShell = (
   file: string,
   args: string[],
   env: Record<string, string>,
   timeoutMs: number,
-) => Promise<string | undefined>
+) => Promise<PowerShellRun>
 
-/** Runs PowerShell hidden, its input closed, killed after `timeoutMs`. */
+/** Runs PowerShell hidden, its input closed, ended after `timeoutMs`. */
 export const runPowerShell: RunPowerShell = (file, args, env, timeoutMs) =>
   new Promise((done) => {
-    let out = ''
+    let output = ''
+    let started = false
     let settled = false
-    const finish = (value: string | undefined) => {
+    const finish = (ended: PowerShellRun['ended']) => {
       if (settled) return
       settled = true
       clearTimeout(timer)
-      done(value)
+      done({ output, ended })
     }
     let child: ReturnType<typeof spawn>
     try {
       child = spawn(file, args, { env, stdio: ['ignore', 'pipe', 'ignore'], windowsHide: true, shell: false })
     } catch {
-      finish(undefined)
+      finish('notStarted')
       return
     }
     const timer = setTimeout(() => {
       child.kill()
-      finish(undefined)
+      finish('timedOut')
     }, timeoutMs)
+    child.on('spawn', () => {
+      started = true
+    })
     child.stdout?.setEncoding('utf8')
     child.stdout?.on('data', (chunk: string) => {
-      if (out.length < 4_096) out += chunk
+      if (output.length < 4_096) output += chunk
     })
-    child.on('error', () => finish(undefined))
-    child.on('close', () => finish(out))
+    child.on('error', () => finish(started ? 'exited' : 'notStarted'))
+    child.on('close', () => finish(started ? 'exited' : 'notStarted'))
   })
 
 /**
@@ -141,13 +157,16 @@ export class Hello {
       const env: Record<string, string> = {}
       for (const [key, value] of Object.entries(this.env)) if (value != null) env[key] = value
       env[reasonVariable] = reason.slice(0, reasonLimit)
-      const output = await this.run(
+      const run = await this.run(
         windowsPowerShell(this.env),
         ['-NoLogo', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-EncodedCommand', encodedScript()],
         env,
         helloTimeoutMs,
       )
-      return output == null ? 'unavailable' : helloAnswer(output)
+      return helloAnswer(run)
+    } catch {
+      // Something went wrong once it may have asked: nothing unlocks.
+      return 'cancelled'
     } finally {
       this.asking = false
     }

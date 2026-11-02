@@ -220,24 +220,23 @@ describe('Stripe’s window (MacBillingPage)', () => {
 
 describe('Windows Hello (PurchaseApproval.confirm)', () => {
   it('reads Hello’s answers', () => {
-    expect(helloAnswer('result:Verified\r\n')).toBe('confirmed')
-    expect(helloAnswer('result:Canceled')).toBe('cancelled')
-    expect(helloAnswer('result:RetriesExhausted')).toBe('cancelled')
-    expect(helloAnswer('result:DeviceBusy')).toBe('cancelled')
-    expect(helloAnswer('result:DeviceNotPresent')).toBe('unavailable')
-    expect(helloAnswer('result:NotConfiguredForUser')).toBe('unavailable')
-    expect(helloAnswer('result:DisabledByPolicy')).toBe('unavailable')
-    expect(helloAnswer('unavailable:NotConfiguredForUser')).toBe('unavailable')
-    expect(helloAnswer('unavailable:error')).toBe('unavailable')
-    expect(helloAnswer('')).toBe('unavailable')
-    expect(helloAnswer('garbage\nresult:Verified')).toBe('confirmed')
+    const asked = (result: string) => helloAnswer({ output: `asking\r\nresult:${result}\r\n`, ended: 'exited' })
+    expect(asked('Verified')).toBe('confirmed')
+    // Once it asked, every other answer is a no (the guard's own answers too).
+    for (const result of ['Canceled', 'RetriesExhausted', 'DeviceBusy', 'DeviceNotPresent', 'NotConfiguredForUser', 'DisabledByPolicy'])
+      expect(asked(result), result).toBe('cancelled')
+    // Known before asking: the window's alert may ask instead.
+    for (const why of ['DeviceNotPresent', 'NotConfiguredForUser', 'DisabledByPolicy', 'DeviceBusy', 'error'])
+      expect(helloAnswer({ output: `unavailable:${why}\r\n`, ended: 'exited' }), why).toBe('unavailable')
+    // A Verified with no ask before it is no answer of Hello's.
+    expect(helloAnswer({ output: 'garbage\nresult:Verified', ended: 'exited' })).toBe('cancelled')
   })
 
   it('carries the reason in the environment, never in the script or on the command line', async () => {
     const runs: { file: string; args: string[]; env: Record<string, string> }[] = []
     const run: RunPowerShell = async (file, args, env) => {
       runs.push({ file, args, env })
-      return 'result:Verified\r\n'
+      return { output: 'asking\r\nresult:Verified\r\n', ended: 'exited' }
     }
     const reason = "Approve $2.47 at gumroad.com'; Remove-Item C:\\ -Recurse; '"
     const hello = new Hello('win32', { SystemRoot: 'C:\\Windows', PATH: 'C:\\Windows' }, run)
@@ -256,15 +255,17 @@ describe('Windows Hello (PurchaseApproval.confirm)', () => {
     expect(script).toContain('UserConsentVerifier]::RequestVerificationAsync($reason)')
   })
 
-  it('is not there off Windows, asks one at a time, and is unavailable when PowerShell can’t run', async () => {
+  it('is not there off Windows, asks one at a time, and is unavailable when PowerShell can’t start', async () => {
     expect(await new Hello('linux', {}).confirm('x')).toBe('unavailable')
-    let finish!: (out: string) => void
+    let finish!: (run: { output: string; ended: 'exited' }) => void
     const slow = new Hello('win32', {}, () => new Promise((done) => (finish = done)))
     const first = slow.confirm('x')
     expect(await slow.confirm('y')).toBe('cancelled')
-    finish('result:Canceled')
+    finish({ output: 'asking\r\nresult:Canceled\r\n', ended: 'exited' })
     expect(await first).toBe('cancelled')
-    expect(await new Hello('win32', {}, async () => undefined).confirm('x')).toBe('unavailable')
+    expect(await new Hello('win32', {}, async () => ({ output: '', ended: 'notStarted' })).confirm('x')).toBe('unavailable')
+    // A runner that throws: nothing unlocks.
+    expect(await new Hello('win32', {}, async () => Promise.reject(new Error('x'))).confirm('x')).toBe('cancelled')
     expect(windowsPowerShell({})).toBe('C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe')
     expect(windowsPowerShell({ SystemRoot: 'D:\\Win' })).toBe('D:\\Win\\System32\\WindowsPowerShell\\v1.0\\powershell.exe')
     expect(encodedScript('a')).toBe(Buffer.from('a', 'utf16le').toString('base64'))
@@ -293,11 +294,10 @@ describe('1Password’s command-line tool (MacOnePassword)', () => {
       'C:\\Program Files\\1Password CLI\\op.exe',
       'C:\\Users\\sam\\AppData\\Local\\Microsoft\\WinGet\\Links\\op.exe',
       'C:\\Users\\sam\\scoop\\shims\\op.exe',
-      'C:\\ProgramData\\chocolatey\\bin\\op.exe',
     ])
     const looked: string[] = []
     expect(findTool('win32', windowsEnv, (file) => (looked.push(file), false))).toBeUndefined()
-    expect(looked.slice(4)).toEqual(['C:\\Windows\\System32\\op.exe', 'C:\\Tools\\1Password\\op.exe'])
+    expect(looked.slice(3)).toEqual(['C:\\Windows\\System32\\op.exe', 'C:\\Tools\\1Password\\op.exe'])
     expect(findTool('win32', windowsEnv, (file) => file.startsWith('C:\\Tools'))).toBe('C:\\Tools\\1Password\\op.exe')
     expect(findTool('win32', windowsEnv, (file) => file.includes('WinGet') || file.startsWith('C:\\Tools'))).toBe(
       'C:\\Users\\sam\\AppData\\Local\\Microsoft\\WinGet\\Links\\op.exe',
@@ -346,7 +346,7 @@ describe('1Password’s command-line tool (MacOnePassword)', () => {
         ]),
       },
       'vault list': { ok: true, out: JSON.stringify([{ id: 'other', name: 'Private' }]) },
-      'vault create': { ok: true, out: JSON.stringify({ id: 'v123', name: 'Shared with Simeon' }) },
+      'vault create': { ok: true, out: JSON.stringify({ id: 'v123abcdefghijklmnopqrstuv', name: 'Shared with Simeon' }) },
       'service-account create': { ok: true, out: 'ops_fake_key_for_the_test_only_0123456789\n' },
     })
     const listed = await listAccounts(run)
@@ -354,7 +354,7 @@ describe('1Password’s command-line tool (MacOnePassword)', () => {
     const made = await connectAccount(run, { id: 'WORKUUID', email: 'sam@work.example', url: '' })
     expect(made).toEqual({
       token: 'ops_fake_key_for_the_test_only_0123456789',
-      vaultId: 'v123',
+      vaultId: 'v123abcdefghijklmnopqrstuv',
       vaultName: 'Shared with Simeon',
       accountEmail: 'sam@work.example',
     })
@@ -362,13 +362,13 @@ describe('1Password’s command-line tool (MacOnePassword)', () => {
       ['account', 'list', '--format=json'],
       ['vault', 'list', '--account', 'WORKUUID', '--format=json'],
       ['vault', 'create', 'Shared with Simeon', '--account', 'WORKUUID', '--format=json'],
-      ['service-account', 'create', 'Simeon', '--vault', 'v123:read_items', '--expires-in', '52w', '--account', 'WORKUUID', '--raw'],
+      ['service-account', 'create', 'Simeon', '--vault', 'v123abcdefghijklmnopqrstuv:read_items', '--expires-in', '52w', '--account', 'WORKUUID', '--raw'],
     ])
   })
 
   it('uses the vault that is there, and says each failure as the Mac does', async () => {
     const there = tool({
-      'vault list': { ok: true, out: JSON.stringify([{ id: 'v9', name: 'Shared with Simeon' }]) },
+      'vault list': { ok: true, out: JSON.stringify([{ id: 'v9abcdefghijklmnopqrstuvwx', name: 'Shared with Simeon' }]) },
       'service-account create': { ok: true, out: 'not a key' },
     })
     expect(await connectAccount(there.run, { id: 'A1', email: 'a@b', url: '' })).toEqual({ failure: 'noKey' })
@@ -403,7 +403,7 @@ describe('1Password’s command-line tool (MacOnePassword)', () => {
         await new Promise((done) => setTimeout(done, 5))
         running -= 1
         if (args[0] === 'account') return { ok: true, out: JSON.stringify([{ account_uuid: 'A1', email: 'a@b', url: '' }]) }
-        if (args[0] === 'vault' && args[1] === 'list') return { ok: true, out: JSON.stringify([{ id: 'v1', name: 'Shared with Simeon' }]) }
+        if (args[0] === 'vault' && args[1] === 'list') return { ok: true, out: JSON.stringify([{ id: 'v1abcdefghijklmnopqrstuvwx', name: 'Shared with Simeon' }]) }
         return { ok: true, out: 'ops_fake_key_for_the_test_only_0123456789' }
       },
       () => '/opt/stand-in/op',
@@ -416,7 +416,7 @@ describe('1Password’s command-line tool (MacOnePassword)', () => {
       onePassword.connect('B2'),
     ])
     expect(listed).toEqual({ accounts: [{ id: 'A1', email: 'a@b', url: '' }] })
-    expect(made).toMatchObject({ vaultId: 'v1', accountEmail: 'a@b' })
+    expect(made).toMatchObject({ vaultId: 'v1abcdefghijklmnopqrstuvwx', accountEmail: 'a@b' })
     expect(other).toEqual({ failure: 'noAccounts' })
     expect(most).toBe(1)
     expect(runs.map((args) => args.slice(0, 2).join(' '))).toEqual(['account list', 'vault list', 'service-account create'])

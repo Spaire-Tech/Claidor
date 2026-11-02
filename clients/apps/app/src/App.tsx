@@ -224,6 +224,8 @@ function MainWindow({ session }: { session: WebSession }) {
     connector,
   }))
   useDesktopLinks(links)
+  // The window going (signed out): its open sign-in ends with it, its loopback let go (step 7d).
+  useEffect(() => () => connector.close(), [connector])
   // The agent left open while it is there, else the first in the sidebar's order.
   const asked = model.selected
   const known =

@@ -641,6 +641,16 @@ describe('a sign-in in the Windows app (MacConnector.signIn, the browser’s way
     expect(
       backend.commands.find((one) => one.method === 'completeMcpOAuth')?.args,
     ).toEqual({ stateId: 'vendor-stripe-Ab_9', code: 'c/1' })
+    // The same answer again, while the sign-in is still open: finished once, it ends nothing more (review S2).
+    expect(
+      await connector.answered({
+        state: 'vendor-stripe-Ab_9',
+        error: 'access_denied',
+      }),
+    ).toBe(false)
+    expect(
+      backend.commands.filter((one) => one.method === 'completeMcpOAuth'),
+    ).toHaveLength(1)
     connected = true
     expect(await end).toBe('connected')
     // Nothing open any more: an answer then is no sign-in's of this window.
@@ -690,7 +700,59 @@ describe('a sign-in in the Windows app (MacConnector.signIn, the browser’s way
       'cancelled',
     )
     expect(browser.looks).toBe(3)
-    expect(store.problem).toBe('You declined.')
+    // The catalogue's sentence, never the link's own words (review S2).
+    expect(store.problem).toBe("Stripe didn't connect. Try again.")
+  })
+
+  it('lets go of the loopback and stops waiting when the window goes; a code caught after goes nowhere (review S3)', async () => {
+    const { backend, browser, connector } = await desktopWorld()
+    const end = connector.signIn(canva, 'Canva', async () => false)
+    await eventually(() => browser.tabs.length === 1)
+    const caught = browser.listening[0]!.caught
+    connector.close()
+    const looks = browser.looks
+    expect(browser.stopped).toEqual(['vendor-canva-1'])
+    expect(connector.connecting).toBeUndefined()
+    expect(await end).toBe('replaced')
+    // Its wait ends at its next look.
+    expect(browser.looks).toBeLessThanOrEqual(looks + 1)
+    caught({ state: 'vendor-canva-1', code: 'late' })
+    await new Promise((done) => setTimeout(done, 10))
+    expect(
+      backend.commands.filter((one) => one.method === 'completeMcpOAuth'),
+    ).toEqual([])
+    // The server's later answer for a closed window's sign-in: no open one has it.
+    expect(
+      await connector.answered({ state: 'vendor-canva-1', code: 'x' }),
+    ).toBe(false)
+  })
+
+  it('ends an older loopback sign-in replaced, never busy, when a newer one takes the address first (review nit 2)', async () => {
+    const { browser, connector, store } = await desktopWorld()
+    let release!: () => void
+    const held = new Promise<void>((done) => (release = done))
+    const real = browser.catchLoopback.bind(browser)
+    let calls = 0
+    browser.catchLoopback = async (state, caught) => {
+      calls += 1
+      // The first ask finds the address taken by the newer one, which answers first.
+      if (calls === 1) {
+        await held
+        return undefined
+      }
+      return real(state, caught)
+    }
+    const first = connector.signIn(canva, 'Canva', async () => false)
+    await new Promise((done) => setTimeout(done, 0))
+    const second = connector.signIn(
+      canva.replace('vendor-canva-1', 'vendor-canva-2'),
+      'Canva',
+      async () => true,
+    )
+    release()
+    expect(await first).toBe('replaced')
+    expect(await second).toBe('connected')
+    expect(store.problem).toBeUndefined()
   })
 
   it('is told nothing outside a sign-in', async () => {
