@@ -751,4 +751,24 @@ describe('the products card', () => {
       ),
     ).toBe('4,5')
   })
+
+  it('rounds the rating as the core’s "%.1f" does: the stored number, not its decimal', () => {
+    const rated = (rating: number) =>
+      ratingText(
+        product({
+          index: 0,
+          title: 'x',
+          url: 'https://a.com',
+          domain: 'a.com',
+          rating,
+        }),
+      )
+    // C's printf("%.1f") on these doubles: 4.35 is kept as 4.3499…, 4.25 is exact and rounds to even.
+    expect(rated(4.35)).toBe('4.3')
+    expect(rated(4.25)).toBe('4.2')
+    expect(rated(4.05)).toBe('4.0')
+    expect(rated(1.45)).toBe('1.4')
+    expect(rated(4.46)).toBe('4.5')
+    expect(rated(5)).toBe('5.0')
+  })
 })

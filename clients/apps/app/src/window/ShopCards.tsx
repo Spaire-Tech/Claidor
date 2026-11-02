@@ -2,9 +2,11 @@
 // answer (paid with Link), and products the agent found to buy. Read by
 // `src/core/shopCards.ts`.
 //
-// The web's own choices (docs/web-app/PROGRESS.md, "Decisions"): Allow goes
+// The web's own choices (docs/web-app/PROGRESS.md, "Decisions"): Allow asks
+// first in the window's own alert, with the Mac's Touch ID words, and goes
 // without the device's approval, which a browser can't give, so Link asks
-// the person in the Link app; Review order and Open the computer, which open
+// the person in the Link app (a Shop checkout is paid at once: the alert is
+// the only ask); Review order and Open the computer, which open
 // the agent's computer, wait for the computer's screen (step 5), but for a
 // Shop checkout, whose Review order is the store's page; pages open in a new
 // tab; the products' pictures come from the shops as the Mac's do, without
@@ -30,6 +32,7 @@ import {
   type PurchaseCard,
   type Star,
   type StatusKind,
+  approvalReason,
   buyLabel,
   byline,
   canChooseCard,
@@ -65,7 +68,7 @@ import type { AppStore } from '../core/store'
 import { t } from '../l10n'
 import { type CardProps, StatusPill, cardWidth } from './Cards'
 import { classes } from './classes'
-import { Sheet } from './Dialogs'
+import { Alert, Sheet } from './Dialogs'
 import { AirlineMark } from './FlightCards'
 import './ShopCards.css'
 
@@ -91,7 +94,7 @@ export function shopCardView(kind: ShopKind, card: CardProps): React.ReactNode {
 
 /** Opens a page in a new tab (in the Windows app, the default browser). */
 function openPage(url: string): void {
-  window.open(url, '_blank', 'noopener')
+  window.open(url, '_blank', 'noopener,noreferrer')
 }
 
 /** The Mac's own marks for the wallets (its asset catalogue): Link's, and Shop's. */
@@ -369,6 +372,8 @@ function PurchaseCardView({
   card: PurchaseCard
   store: AppStore
 }) {
+  // Allow's question open (the window's alert in place of the Mac's Touch ID).
+  const [confirming, setConfirming] = useState(false)
   const shown = shownPurchase(
     card,
     store.answeredPurchases[entryId],
@@ -388,12 +393,22 @@ function PurchaseCardView({
     store,
     24 << 20,
   )
-  const icon = useComputerPicture(card.icon?.url, agentId, store, 1 << 20)
   // Review order opens the agent's computer on the checkout: on the web, only a Shop checkout's, which is the store's page (the computer's screen comes in step 5).
   const reviewOrder =
     shown.isShopCheckout && shown.url != null
       ? () => openPage(shown.url!)
       : undefined
+  // The shop's icon is worn only by Review order: read it only when the pill shows.
+  const icon = useComputerPicture(
+    reviewOrder ? card.icon?.url : undefined,
+    agentId,
+    store,
+    1 << 20,
+  )
+  // A picture that came but can't be drawn shows the photo symbol, as one that never came.
+  const [brokenPreview, setBrokenPreview] = useState<string>()
+  const previewDrawn =
+    preview.address != null && preview.address !== brokenPreview
   const note = reviewNote(shown)
   const line = itemsLine(shown)
   return (
@@ -437,10 +452,15 @@ function PurchaseCardView({
             className={classes('picture-frame', reviewOrder && 'opens')}
             onClick={reviewOrder}
           >
-            {preview.address ? (
-              <img src={preview.address} alt="" draggable={false} />
+            {previewDrawn ? (
+              <img
+                src={preview.address}
+                alt=""
+                draggable={false}
+                onError={() => setBrokenPreview(preview.address)}
+              />
             ) : (
-              preview.missing && (
+              (preview.missing || preview.address != null) && (
                 <span className="picture-missing">
                   <Photo />
                 </span>
@@ -475,8 +495,28 @@ function PurchaseCardView({
       </div>
       <PurchaseFooter
         shown={shown}
-        answer={(allow) => void store.answerPurchase(entryId, allow, agentId)}
+        answer={(allow) => {
+          // Allow asks first, as the Mac asks for Touch ID (`PurchaseApproval.confirm`); Deny goes at once.
+          if (allow) setConfirming(true)
+          else void store.answerPurchase(entryId, false, agentId)
+        }}
       />
+      {/* Only while the card waits: a checkout answered meanwhile (here or on the Mac) asks nothing. */}
+      {confirming &&
+        waitsOnPerson(shown) &&
+        createPortal(
+          <Alert
+            title={approvalReason(shown)}
+            message={itemsLine(shown)}
+            action={checkoutWords.allow}
+            onAction={() => {
+              setConfirming(false)
+              void store.answerPurchase(entryId, true, agentId)
+            }}
+            onCancel={() => setConfirming(false)}
+          />,
+          document.body,
+        )}
     </div>
   )
 }
@@ -746,8 +786,15 @@ function CardChooser({
     window.addEventListener('resize', place)
     return () => window.removeEventListener('resize', place)
   }, [anchor])
+  // The card that pays now takes the focus (the first when none is ticked).
   useEffect(() => {
-    box.current?.querySelector<HTMLButtonElement>('.chooser-card')?.focus()
+    const element = box.current
+    if (!element) return
+    ;(
+      element.querySelector<HTMLButtonElement>(
+        '.chooser-card[aria-pressed="true"]',
+      ) ?? element.querySelector<HTMLButtonElement>('.chooser-card')
+    )?.focus()
   }, [])
   return createPortal(
     <div
@@ -830,7 +877,7 @@ function PurchaseFooter({
       <div className="purchase-footer">
         <div className="purchase-buttons">
           <Pill title={checkoutWords.deny} onClick={() => answer(false)} />
-          {/* The Mac asks Touch ID first and hands Link that approval; a browser has none to give, so Link asks in its app. */}
+          {/* The Mac asks Touch ID first and hands Link that approval; the web asks in its alert (the card's own), and with no approval to give, Link asks in its app. */}
           <Pill
             title={checkoutWords.allow}
             prominent
@@ -1135,7 +1182,9 @@ function ProductSheet({
     }
     scroller.current?.scrollTo({ top: 0, behavior: 'smooth' })
   }, [current.index])
-  // Return presses Buy, as a Mac's default button.
+  // Return presses Buy, as a Mac's default button: when the keys are on the
+  // sheet itself, not on one of its buttons, links or fields (which take
+  // their own Return, as a browser's do), and never from outside the sheet.
   const latest = useRef({ status, buy, current })
   useEffect(() => {
     latest.current = { status, buy, current }
@@ -1149,6 +1198,14 @@ function ProductSheet({
         event.altKey ||
         event.metaKey ||
         event.ctrlKey
+      )
+        return
+      const target = event.target instanceof Element ? event.target : null
+      if (!target?.closest('.product-sheet')) return
+      if (
+        target.closest(
+          'button, a[href], input, textarea, select, [contenteditable="true"]',
+        )
       )
         return
       event.preventDefault()

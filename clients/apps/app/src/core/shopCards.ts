@@ -755,18 +755,34 @@ export function soldBy(of: Product): string {
   return t`Sold by: ${byline(of)}`
 }
 
+/**
+ * One decimal as C's "%.1f" writes it: the stored number rounded (4.35,
+ * kept as 4.3499…, is "4.3", where `Intl` says "4.4"), and a true half to
+ * the even digit (4.25 is "4.2", where `toFixed` says "4.3"). A true half
+ * is a number whose quarters are whole (4.25, 4.75).
+ */
+function oneDecimal(value: number): string {
+  const tenths = value * 10
+  if (
+    Number.isInteger(value * 4) &&
+    Math.abs(tenths - Math.trunc(tenths)) === 0.5
+  ) {
+    const down = Math.floor(tenths)
+    return ((down % 2 === 0 ? down : down + 1) / 10).toFixed(1)
+  }
+  return value.toFixed(1)
+}
+
 /** "4.5" (or "4,5" in French), by the stars (`String(format: "%.1f", locale: L10n.locale(), …)`). */
 export function ratingText(of: Product): string | undefined {
   if (of.rating == null) return undefined
+  const digits = oneDecimal(of.rating)
   const language = wordsLanguage()
-  return new Intl.NumberFormat(
-    isEnglish(language) ? `${english}-US` : language,
-    {
-      minimumFractionDigits: 1,
-      maximumFractionDigits: 1,
-      useGrouping: false,
-    },
-  ).format(of.rating)
+  const mark =
+    new Intl.NumberFormat(isEnglish(language) ? `${english}-US` : language)
+      .formatToParts(1.5)
+      .find((part) => part.type === 'decimal')?.value ?? '.'
+  return digits.replace('.', mark)
 }
 
 /** "(153)", after the rating. */
