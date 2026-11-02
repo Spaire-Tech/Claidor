@@ -7,32 +7,55 @@
 // - A look (the page opening, Check Now) asks the feed and installs nothing,
 //   as the Mac's `lookQuietly`.
 // - The daily check, while Check for Updates Automatically is on, asks once a
-//   day counted from the last answer (Sparkle's schedule), and downloads what
-//   it finds while Download Updates Automatically is on; a downloaded release
-//   installs as the app quits (electron-updater's own rule).
-// - Update Now downloads the release if it isn't yet, then installs it and
+//   day (Sparkle's schedule), and downloads what it finds while Download
+//   Updates Automatically is on. A download counts only once the installer
+//   is the company's (engine.ts); it is then kept as the release waiting.
+// - A waiting release is installed as Simeon quits, silently; and, since
+//   Windows' shutdown or sign-out ends Simeon with no quit, at the next
+//   launch, before the window, silently with Simeon opened again.
+// - Update Now downloads the release if it isn't yet, then asks the app to
+//   quit as it always does (the page's own work first: a call hung up, the
+//   chats kept); the installer runs only once all of that is done, and
 //   opens Simeon again (on the Mac, Sparkle's own window does both).
+// - Each time, the installer is checked again just before it runs.
 // - A build that doesn't update itself has no engine: nothing is asked.
 
 import type { DesktopEvents } from '../../../../clients/apps/app/src/desktop/contract'
 
 export type UpdatesState = DesktopEvents['updatesChanged']
 
-/** What the updater does for the model (electron-updater in the app, a stand-in in the tests). */
-export interface UpdateEngine {
-  /** Asks the feed: the newer version, or null when there is none. Rejects when the feed can't be read. */
-  check(): Promise<string | null>
-  /** Downloads the release the last check found. */
-  download(): Promise<void>
-  /** Installs the downloaded release and opens Simeon again; false when it couldn't start. */
-  installNow(): boolean
+/** A release downloaded and found to be the company's, waiting to be installed. */
+export interface Waiting {
+  version: string
+  /** Where electron-updater keeps it (its cache's `pending` folder). */
+  file: string
+  /** The installer's sha512 (base64), as the feed named it. */
+  sha512: string
+  /** An install at a launch was tried: if Simeon starts again on the old version, it is not tried again. */
+  launchTried?: boolean
 }
 
-/** What the app keeps between launches (`updates.json`, Sparkle's defaults on the Mac). */
+/** What the updater does for the model (electron-updater in the app, a stand-in in the tests). */
+export interface UpdateEngine {
+  /** Asks the feed: the newer release (its version and installer's sha512), or null when there is none. Rejects when the feed can't be read. */
+  check(): Promise<{ version: string; sha512: string } | null>
+  /** Downloads the release the last check found and checks it is the company's: where it is. Rejects otherwise. */
+  download(): Promise<{ file: string; sha512: string }>
+  /** Whether a waiting installer may run now (in the updater's own folder, the bytes the feed named, signed by the company), waiting for Windows' answer: null when it may, else why not. */
+  vetNow(waiting: Waiting): string | null
+  /** Starts the installer, silently; Simeon opened after it when `relaunch`. False when it couldn't start. */
+  run(file: string, relaunch: boolean): boolean
+}
+
+/** What the app keeps between launches (`updates.json`; Sparkle's defaults on the Mac). */
 export interface KeptUpdates {
   checksAutomatically: boolean
   downloadsAutomatically: boolean
+  /** When a check last answered: the page's "Last checked". */
   lastChecked: number | null
+  /** When the daily check last answered: the next is a day after (a look doesn't move it). */
+  lastDaily: number | null
+  waiting: Waiting | null
 }
 
 export const day = 86_400_000
@@ -45,12 +68,34 @@ export const firstLookMs = 10_000
  * The switches as a person finds them at first: both on. The Mac starts with
  * Sparkle's (checks on, downloads off) because Sparkle shows a window of its
  * own when the daily check finds a release; Windows has none, so the release
- * is downloaded and installed as Simeon quits, as Windows apps do.
+ * is downloaded and installed as Simeon quits or starts, as Windows apps do.
  */
 export const firstKept: KeptUpdates = {
   checksAutomatically: true,
   downloadsAutomatically: true,
   lastChecked: null,
+  lastDaily: null,
+  waiting: null,
+}
+
+const versionShape = /^\d{1,9}\.\d{1,9}\.\d{1,9}(?:-[0-9A-Za-z.-]{1,40})?$/
+
+function stamp(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : null
+}
+
+function readWaiting(value: unknown): Waiting | null {
+  if (typeof value !== 'object' || value == null) return null
+  const raw = value as Record<string, unknown>
+  if (typeof raw.version !== 'string' || !versionShape.test(raw.version)) return null
+  if (typeof raw.file !== 'string' || raw.file.length > 1_024) return null
+  if (typeof raw.sha512 !== 'string' || !/^[A-Za-z0-9+/]{80,100}={0,2}$/.test(raw.sha512)) return null
+  return {
+    version: raw.version,
+    file: raw.file,
+    sha512: raw.sha512,
+    ...(raw.launchTried === true ? { launchTried: true } : {}),
+  }
 }
 
 /** The kept values read back: anything not of its kind is the first value. */
@@ -58,11 +103,12 @@ export function readKept(value: unknown): KeptUpdates {
   const raw = (typeof value === 'object' && value != null ? value : {}) as Record<string, unknown>
   const flag = (key: 'checksAutomatically' | 'downloadsAutomatically') =>
     typeof raw[key] === 'boolean' ? (raw[key] as boolean) : firstKept[key]
-  const last = raw.lastChecked
   return {
     checksAutomatically: flag('checksAutomatically'),
     downloadsAutomatically: flag('downloadsAutomatically'),
-    lastChecked: typeof last === 'number' && Number.isFinite(last) && last > 0 ? last : null,
+    lastChecked: stamp(raw.lastChecked),
+    lastDaily: stamp(raw.lastDaily),
+    waiting: readWaiting(raw.waiting),
   }
 }
 
@@ -81,13 +127,29 @@ export function readSwitches(value: unknown): Partial<Pick<KeptUpdates, 'checksA
   return switches
 }
 
+/** Whether version `a` is newer than `b` (numbers, a pre-release before its release); false for anything that isn't a version. */
+export function newer(a: string, b: string): boolean {
+  const read = (value: string) => {
+    if (!versionShape.test(value)) return undefined
+    const [main, pre] = value.split('-', 2) as [string, string | undefined]
+    return [...main.split('.').map(Number), pre === undefined ? 1 : 0] as number[]
+  }
+  const left = read(a)
+  const right = read(b)
+  if (!left || !right) return false
+  for (let i = 0; i < left.length; i++)
+    if ((left[i] ?? 0) !== (right[i] ?? 0)) return (left[i] ?? 0) > (right[i] ?? 0)
+  return false
+}
+
 export class Updates {
   private kept: KeptUpdates
   private checking = false
   private found: string | null = null
-  private downloaded = false
   private installing = false
   private upToDate = false
+  /** Update Now was pressed: the quit installs and opens Simeon again. */
+  private installAsked = false
   private downloading?: Promise<boolean>
   private timer?: ReturnType<typeof setTimeout>
   private startedAt = 0
@@ -99,9 +161,17 @@ export class Updates {
     private readonly options: {
       /** Undefined in a build that doesn't update itself. */
       engine: UpdateEngine | undefined
+      /** This app's version. */
+      version: string
       kept: KeptUpdates
       keep(value: KeptUpdates): void
       send(state: UpdatesState): void
+      /** The app's own quit (the page's work first, then each part's). */
+      quit(): void
+      /** Simeon opened again after it quits (an Update Now whose installer can't run). */
+      relaunch(): void
+      /** A line for `updates.log`. */
+      log(line: string): void
       now?: () => number
     },
   ) {
@@ -110,6 +180,10 @@ export class Updates {
 
   private now(): number {
     return (this.options.now ?? Date.now)()
+  }
+
+  private get downloaded(): boolean {
+    return this.found != null && this.kept.waiting?.version === this.found
   }
 
   get current(): UpdatesState {
@@ -132,6 +206,47 @@ export class Updates {
     this.options.send(this.current)
   }
 
+  private keep(next: Partial<KeptUpdates>): void {
+    this.kept = { ...this.kept, ...next }
+    this.options.keep({ ...this.kept })
+  }
+
+  /**
+   * At launch, before the window: a release that waits since a session that
+   * ended with no quit (Windows shut down, the person signed out) is
+   * installed now, silently, Simeon opened again after it. True when the
+   * installer runs (the app then goes at once); a release already installed,
+   * or not the company's, is forgotten.
+   */
+  installAtLaunch(): boolean {
+    const engine = this.options.engine
+    const waiting = this.kept.waiting
+    if (!engine || !waiting) return false
+    if (!newer(waiting.version, this.options.version)) {
+      this.keep({ waiting: null })
+      return false
+    }
+    if (waiting.launchTried) {
+      this.options.log(`install of ${waiting.version} at launch did not finish: not tried again`)
+      this.keep({ waiting: null })
+      return false
+    }
+    const refused = engine.vetNow(waiting)
+    if (refused) {
+      this.options.log(`install of ${waiting.version} at launch refused: ${refused}`)
+      this.keep({ waiting: null })
+      return false
+    }
+    this.keep({ waiting: { ...waiting, launchTried: true } })
+    if (!engine.run(waiting.file, true)) {
+      this.options.log(`install of ${waiting.version} at launch could not start`)
+      this.keep({ waiting: null })
+      return false
+    }
+    this.options.log(`installing ${waiting.version} at launch, Simeon opened again after it`)
+    return true
+  }
+
   /** At launch: the daily check's schedule (Sparkle starts with the app, `MacUpdates.start`). */
   start(): void {
     this.stopped = false
@@ -139,10 +254,38 @@ export class Updates {
     this.schedule(firstLookMs)
   }
 
-  /** As the app quits. */
+  /** As the app quits (before the installer may run). */
   stop(): void {
     this.stopped = true
     clearTimeout(this.timer)
+  }
+
+  /**
+   * The app quits (the page and every part are done): the release waiting is
+   * installed, silently; after Update Now, Simeon is opened again. Checked
+   * again first; not the company's, it isn't run.
+   */
+  quitting(): void {
+    const engine = this.options.engine
+    const waiting = this.kept.waiting
+    const relaunch = this.installAsked
+    if (!engine || !waiting || !newer(waiting.version, this.options.version)) {
+      if (relaunch) this.options.relaunch()
+      return
+    }
+    const refused = engine.vetNow(waiting)
+    if (refused) {
+      this.options.log(`install of ${waiting.version} as Simeon quits refused: ${refused}`)
+      this.keep({ waiting: null })
+      if (relaunch) this.options.relaunch()
+      return
+    }
+    if (engine.run(waiting.file, relaunch)) {
+      this.options.log(`installing ${waiting.version} as Simeon quits${relaunch ? ', Simeon opened again after it' : ''}`)
+      return
+    }
+    this.options.log(`install of ${waiting.version} as Simeon quits could not start`)
+    if (relaunch) this.options.relaunch()
   }
 
   /** The page opening, Check Now (`lookQuietly`): asks the feed, downloads nothing. */
@@ -158,29 +301,36 @@ export class Updates {
       next.downloadsAutomatically === this.kept.downloadsAutomatically
     )
       return
-    this.kept = next
-    this.options.keep({ ...this.kept })
+    this.keep(switches)
+    this.options.log(
+      `switches: checks ${this.kept.checksAutomatically ? 'on' : 'off'}, downloads ${this.kept.downloadsAutomatically ? 'on' : 'off'}`,
+    )
     this.changed()
     // Checks turned on: the daily one may be due now.
     if (switches.checksAutomatically === true) this.schedule()
   }
 
-  /** Update Now: downloaded if it isn't yet, then installed, Simeon opened again. */
+  /** Update Now: downloaded if it isn't yet, then the app's own quit, which installs it and opens Simeon again. */
   async install(): Promise<void> {
     const engine = this.options.engine
     if (!engine || this.found == null || this.installing) return
     this.installing = true
     this.changed()
     const ready = this.downloaded || (await this.download(engine))
-    if (ready && !this.stopped && engine.installNow()) return
+    if (ready && !this.stopped) {
+      this.installAsked = true
+      this.options.log(`Update Now: quitting to install ${this.found}`)
+      this.options.quit()
+      return
+    }
     // It couldn't: Update Now is there to press again.
     this.installing = false
     this.changed()
   }
 
-  /** When the daily check is due: a day after the last answer; at first, a moment after launch; an hour after a failed one. */
+  /** When the daily check is due: a day after it last answered; at first, a moment after launch; an hour after a failed one. */
   private dueAt(): number {
-    const last = this.kept.lastChecked
+    const last = this.kept.lastDaily
     let due = last == null ? this.startedAt + firstLookMs : last + day
     // A clock set back past the last check: due now.
     if (last != null && last > this.now()) due = this.now()
@@ -213,32 +363,40 @@ export class Updates {
     if (!engine || this.checking || this.installing || this.stopped) return false
     this.checking = true
     this.changed()
-    let version: string | null
+    let release: { version: string; sha512: string } | null
     try {
-      version = await engine.check()
-    } catch {
+      release = await engine.check()
+    } catch (error) {
       // Nothing changes but the check ending (`didFinishUpdateCycle` with an error).
+      this.options.log(`${daily ? 'daily check' : 'look'} failed: ${error instanceof Error ? error.message : String(error)}`)
       this.checking = false
       this.changed()
       return false
     }
     this.failedAt = undefined
-    this.kept = { ...this.kept, lastChecked: this.now() }
-    this.options.keep({ ...this.kept })
-    if (version != null) {
-      if (version !== this.found) this.downloaded = false
-      this.found = version
+    const now = this.now()
+    // A release waiting that the feed no longer names (pulled, or a newer one out) is not installed.
+    const stale = this.kept.waiting != null && this.kept.waiting.version !== release?.version
+    this.keep({
+      lastChecked: now,
+      ...(daily ? { lastDaily: now } : {}),
+      ...(stale ? { waiting: null } : {}),
+    })
+    if (release != null) {
+      this.found = release.version
       this.upToDate = false
     } else {
       this.found = null
-      this.downloaded = false
       this.upToDate = true
     }
+    this.options.log(
+      `${daily ? 'daily check' : 'look'}: ${release ? `found ${release.version}` : `nothing newer than ${this.options.version}`}`,
+    )
     this.checking = false
     this.changed()
     if (
       daily &&
-      version != null &&
+      release != null &&
       !this.downloaded &&
       this.kept.checksAutomatically &&
       this.kept.downloadsAutomatically
@@ -247,21 +405,25 @@ export class Updates {
     return true
   }
 
-  /** One download at a time; true once the release found is on disk. */
+  /** One download at a time; true once the release found is on disk and the company's (then kept as waiting). */
   private download(engine: UpdateEngine): Promise<boolean> {
     if (this.downloaded) return Promise.resolve(true)
     if (!this.downloading) {
       const version = this.found
       this.downloading = engine
         .download()
-        .then(() => {
+        .then(({ file, sha512 }) => {
           // A newer release found meanwhile is another download.
-          if (this.found !== version) return false
-          this.downloaded = true
+          if (version == null || this.found !== version) return false
+          this.keep({ waiting: { version, file, sha512 } })
+          this.options.log(`downloaded ${version}, the company's: it waits to be installed`)
           this.changed()
           return true
         })
-        .catch(() => false)
+        .catch((error: unknown) => {
+          this.options.log(`download of ${version} refused or failed: ${error instanceof Error ? error.message : String(error)}`)
+          return false
+        })
         .finally(() => {
           this.downloading = undefined
         })

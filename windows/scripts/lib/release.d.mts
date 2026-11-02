@@ -2,7 +2,9 @@
 
 export const platform: string
 export const minimumWindows: string
-export const signer: string
+export const company: string
+export const signers: string[]
+export function signersReady(list: unknown): boolean
 export function installerName(version: string): string
 export function isVersion(value: unknown): boolean
 export function signingConfigured(env: Record<string, string | undefined>): boolean

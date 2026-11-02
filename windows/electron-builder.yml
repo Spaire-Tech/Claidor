@@ -29,7 +29,8 @@ win:
         - x64
   # Signed only when a certificate is given through the environment
   # (WIN_CSC_LINK and WIN_CSC_KEY_PASSWORD, electron-builder's own); the
-  # release names the signer the updater accepts (scripts/release.mjs).
+  # release names the signers, in full, the installed app asks of every
+  # update (scripts/lib/release.mjs, `signers`).
 nsis:
   # One click, for this person only: no administrator, in %LOCALAPPDATA%\Programs\Simeon.
   oneClick: true

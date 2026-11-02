@@ -3,14 +3,43 @@
 // releases/win32-x64/ in the release bucket, then, last, the two files that
 // point at it, which the server reads (server/simeon/desktop/releases.py).
 
+import { fullSubject } from './signature.mjs'
+
 /** The bucket's folder for the Windows app (x64; arm64 would be win32-arm64 beside it). */
 export const platform = 'win32-x64'
 
 /** The oldest Windows Electron runs on (10), the Mac's `minimum_macos`. */
 export const minimumWindows = '10'
 
-/** The company the installer is signed as, and the updater asks of every update: the legal name until it is renamed (CLAUDE.md). */
-export const signer = 'Spaire, Inc.'
+/** The company that signs Simeon for Windows: the legal name until it is renamed (CLAUDE.md). */
+export const company = 'Spaire, Inc.'
+
+/**
+ * The certificates a release is signed with and an installed app accepts an
+ * update from, each its subject in full as Windows shows it (the
+ * certificate's Details › Subject, or `Get-AuthenticodeSignature`'s
+ * `SignerCertificate.Subject`), for example
+ * `CN="Spaire, Inc.", O="Spaire, Inc.", L=Wilmington, S=Delaware, C=US`:
+ * every part is compared (lib/signature.mjs), never the common name alone,
+ * which another company of the same name could get a certificate for.
+ *
+ * Empty until the company's certificate exists: until then no release is
+ * signed, and an unsigned build never updates itself (the Mac's build
+ * without Sparkle's key).
+ *
+ * At the company's rename (or any change of certificate): first release
+ * once more, signed with the old certificate, listing both subjects here
+ * (the old, then the new). The apps it updates then accept the first
+ * release signed with the new certificate; the old subject may go after
+ * that. An app that never got that release refuses every update signed
+ * with the new one.
+ */
+export const signers = []
+
+/** The signers a release can be signed for: at least one, each a subject in full. */
+export function signersReady(list) {
+  return Array.isArray(list) && list.length > 0 && list.every(fullSubject)
+}
 
 /** The installer's name, as electron-builder.yml's `artifactName` makes it. */
 export function installerName(version) {
@@ -22,9 +51,9 @@ export function isVersion(value) {
   return typeof value === 'string' && /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(value)
 }
 
-/** Whether a certificate is given for signing (electron-builder's own settings; never in the repository). */
+/** Whether a Windows certificate is given for signing (electron-builder's own `WIN_CSC_LINK`; never in the repository). A Mac's `CSC_LINK` is not one. */
 export function signingConfigured(env) {
-  const link = env.WIN_CSC_LINK || env.CSC_LINK
+  const link = env.WIN_CSC_LINK
   return typeof link === 'string' && link.trim() !== ''
 }
 

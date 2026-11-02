@@ -22,9 +22,15 @@ Windows' own parts around it. The plan and the record are
 - **Updates** (`src/main/updates/`, the Mac's `Updates.swift`): electron-updater
   reads the feed electron-builder.yml names (`publish`: the server, which sends
   it on to the release bucket's `releases/win32-x64/`), daily and from Settings ›
-  Updates; only a release updates itself (a build number from
-  `scripts/release.mjs`), never a developer's build. The switches and the last
-  check are kept in `%APPDATA%\Simeon\updates.json`.
+  Updates. Only a signed release updates itself (its build number and signers
+  written by `scripts/release.mjs`), never an unsigned or a developer's build.
+  An installer runs only when Windows says it is signed, validly, by the
+  certificate's whole subject in `scripts/lib/release.mjs` (`signers`), checked
+  just before it runs: as Simeon quits (after the page's and every part's
+  work), or at the next launch, before the window, when Windows shut Simeon
+  down with a release waiting. The switches, the last checks and the release
+  waiting are kept in `%APPDATA%\Simeon\updates.json`; what the updater did
+  is in `updates.log` beside it.
 - **The icon** is the Mac's (`resources/icon.ico`, `icon.png`, made by
   `scripts/make-icon.mjs` from `mac/Simeon/Assets.xcassets/MacIcon.appiconset`).
 
@@ -40,8 +46,8 @@ npm start                  # the app, against https://api.simeonlabs.com
 npm start -- --api=http://127.0.0.1:8000   # against a server on this computer
 npm run smoke              # the app run for real against a stand-in (Linux: xvfb-run -a npm run smoke)
 npm run package            # a developer's installer in out/ (on Linux: needs Wine)
-node scripts/release.mjs   # a release in out/release/<version>/ (signed with WIN_CSC_LINK, WIN_CSC_KEY_PASSWORD)
-node scripts/release.mjs --publish   # and on the website (signed only; the aws command line signed in)
+node scripts/release.mjs   # a release in out/release/<version>/ (signed with WIN_CSC_LINK, WIN_CSC_KEY_PASSWORD, for lib/release.mjs's signers)
+node scripts/release.mjs --publish   # and on the website (on Windows, signed and checked only; the aws command line signed in)
 node scripts/make-icon.mjs # the icon again, from the Mac's
 ```
 

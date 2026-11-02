@@ -38,7 +38,8 @@ describe('a Windows release', () => {
     expect(signingConfigured({ WIN_CSC_LINK: '' })).toBe(false)
     expect(signingConfigured({ WIN_CSC_LINK: '  ' })).toBe(false)
     expect(signingConfigured({ WIN_CSC_LINK: 'C:\\certs\\simeon.pfx' })).toBe(true)
-    expect(signingConfigured({ CSC_LINK: 'MIIK…' })).toBe(true)
+    // A Mac's certificate is not a Windows one.
+    expect(signingConfigured({ CSC_LINK: 'MIIK…' })).toBe(false)
   })
 
   it('writes the feed electron-updater reads; beside the folders it names the version’s folder, which the server sends on', () => {

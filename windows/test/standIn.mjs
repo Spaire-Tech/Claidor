@@ -77,6 +77,8 @@ export async function startStandIn({ routes } = {}) {
       origin: origin ?? null,
       bearer: (request.headers.authorization ?? '').startsWith('Bearer '),
       client: request.headers['x-simeon-client-version'] ?? null,
+      // What the updater says of this PC (7e: the same for everyone).
+      updaterId: request.headers['x-user-staging-id'] ?? null,
     }
     state.requests.push(record)
     const cors = corsHeaders(origin)
