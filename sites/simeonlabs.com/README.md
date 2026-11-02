@@ -45,7 +45,13 @@ Introducing Simeon). A post has its own page, `/newsroom/<slug>`: its words are
 `face`, a cut-out from those pictures, stands over the date, as Dots' does, and a
 picture with a `<name>-phone.webp` beside it (cut to what is drawn) shows that copy
 across the whole screen. The bar's
-Resources and the footer link to it. The bar and the footer every page
+Resources and the footer link to it.
+`source/docs.py` writes `public/docs/`, the documentation at `/docs`, laid out as the reference
+docs the founder chose (2 November 2026): its pages are `source/docs/<slug>.md` (a head of title, group,
+nav, eyebrow and description, then Markdown; `:::cards` draws the Next steps cards), its
+groups and order `PAGES` in that file. Each page is also served as Markdown at
+`/docs/<slug>.md` (View as Markdown), and `/docs/search.json` feeds the search (⌘K). Write a
+page's words from what the apps do (`docs/services-*.md`), for the people using Simeon. The bar and the footer every page
 shares are `source/nav.py`, their styles in `source/site.css` (30 October 2026):
 the bar holds Products and Solutions (their arrows open nothing yet), Resources
 (Marketplace, Newsroom), Connectors and Pricing, with Contact Sales and Download

@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FAQ | Simeon Docs</title>
+<meta name="description" content="Answers to common questions about Simeon, its agents, their computers, apps, privacy and pricing.">
+<link rel="canonical" href="https://simeonlabs.com/docs/faq">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://simeonlabs.com/docs/faq">
+<meta property="og:title" content="FAQ | Simeon Docs">
+<meta property="og:description" content="Answers to common questions about Simeon, its agents, their computers, apps, privacy and pricing.">
+<meta name="twitter:card" content="summary">
+<link rel="alternate" type="text/markdown" href="/docs/faq.md">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..600&display=swap">
+<script>try{var t=localStorage.getItem('docs-theme');document.documentElement.dataset.theme=t||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light')}catch(e){}</script>
+<style>
+:root{--bg:#fff;--fg:#0a0a0a;--muted:rgba(10,10,10,.6);--faint:rgba(10,10,10,.38);--line:rgba(10,10,10,.1);--pill:rgba(10,10,10,.15);
+  --card:#f9f8f6;--card-hover:#f2f0ec;--hover:rgba(10,10,10,.05);--accent:#255a93;--btn:#0a0a0a;--btn-fg:#f9f8f6;--code:rgba(10,10,10,.05);--shade:rgba(0,0,0,.28)}
+html[data-theme=dark]{--bg:#0a0a0a;--fg:#f4f4f2;--muted:rgba(244,244,242,.6);--faint:rgba(244,244,242,.38);--line:rgba(244,244,242,.12);--pill:rgba(244,244,242,.18);
+  --card:#161616;--card-hover:#1e1e1e;--hover:rgba(244,244,242,.07);--accent:#6fa3dc;--btn:#f4f4f2;--btn-fg:#0a0a0a;--code:rgba(244,244,242,.08);--shade:rgba(0,0,0,.6);color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-padding-top:104px;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:400 16px/24px Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;font-feature-settings:"cv11","ss01";-webkit-font-smoothing:antialiased}
+a{color:inherit}
+button{font:inherit;color:inherit}
+svg{display:block}
+
+/* The bar */
+.top{position:sticky;top:0;z-index:30;height:80px;display:flex;align-items:center;gap:16px;padding:0 24px;background:var(--bg)}
+.logo{flex:none;display:block;width:132px;height:38px;background:var(--fg);-webkit-mask:url(/img/wordmark-labs.png) left center/contain no-repeat;mask:url(/img/wordmark-labs.png) left center/contain no-repeat}
+.tabs{position:absolute;left:50%;transform:translateX(-50%);display:flex;gap:2px}
+.tabs a{padding:6px 12px;border-radius:6px;font-size:14px;line-height:20px;font-weight:500;text-decoration:none;color:var(--muted);transition:color .15s}
+.tabs a:hover,.tabs a.on{color:var(--fg)}
+.right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.icon-btn{display:grid;place-items:center;width:36px;height:36px;padding:0;border:0;border-radius:999px;background:none;cursor:pointer;color:var(--fg)}
+.icon-btn:hover{background:var(--hover)}
+.icon-btn svg{width:18px;height:18px}
+html[data-theme=dark] .i-moon,html:not([data-theme=dark]) .i-sun{display:none}
+.search{display:flex;align-items:center;gap:8px;width:208px;height:36px;padding:0 12px 0 16px;border:1px solid var(--pill);border-radius:999px;background:none;cursor:pointer;font-size:14px;font-weight:500;line-height:20px;color:var(--muted)}
+.search svg{width:16px;height:16px;flex:none;color:var(--fg)}
+.search span{flex:1;text-align:left;color:var(--fg)}
+.search kbd{font:500 12px/1 Inter,system-ui,sans-serif;letter-spacing:.06em;color:var(--faint)}
+.cta{position:relative;display:flex;height:36px;border-radius:999px;background:var(--btn);color:var(--btn-fg)}
+.cta>a{display:flex;align-items:center;padding:8px 14px 8px 18px;font-size:14px;line-height:20px;font-weight:500;text-decoration:none}
+.cta>button{display:grid;place-items:center;width:34px;padding:0;border:0;border-left:1px solid color-mix(in srgb,var(--btn-fg) 22%,transparent);border-radius:0 999px 999px 0;background:none;color:inherit;cursor:pointer}
+.cta>button svg{width:12px;height:12px}
+.cta-menu{position:absolute;right:0;top:44px;min-width:200px;padding:6px;border-radius:14px;background:var(--bg);color:var(--fg);box-shadow:0 0 0 1px var(--line),0 16px 40px -12px rgba(0,0,0,.25);display:none}
+.cta.open .cta-menu{display:block}
+.cta-menu a{display:block;padding:8px 12px;border-radius:9px;font-size:14px;line-height:20px;text-decoration:none}
+.cta-menu a:hover{background:var(--hover)}
+.phone-only{display:none}
+
+/* The three columns */
+.shell{display:grid;grid-template-columns:288px minmax(0,1fr) 288px;max-width:1440px;margin:0 auto}
+.side{position:sticky;top:80px;align-self:start;height:calc(100vh - 80px);overflow-y:auto;padding:16px 16px 48px;scrollbar-width:none}
+.side::-webkit-scrollbar{display:none}
+.group+.group{margin-top:28px}
+.group-name{display:block;padding:6px 8px;font-size:13px;line-height:19.5px;font-weight:500;color:var(--fg)}
+.side a{display:block;padding:6px 8px;border-radius:10px;font-size:13px;line-height:20px;font-weight:500;text-decoration:none;color:var(--muted);transition:color .15s,background .15s}
+.side a:hover{color:var(--fg);background:var(--hover)}
+.side a.on{color:var(--fg)}
+
+main{min-width:0;padding:16px 0 96px}
+.page{max-width:672px;margin-left:max(24px,calc(50% - 304px));margin-right:24px}
+.eyebrow{margin:0;font-size:14px;line-height:24px;color:var(--fg)}
+h1{margin:4px 0 0;font-size:48px;line-height:1.1;font-weight:500;letter-spacing:-.01em}
+.acts{display:flex;align-items:center;gap:16px;margin:16px 0 28px}
+.acts button,.acts a{display:inline-flex;align-items:center;gap:7px;padding:0;border:0;background:none;cursor:pointer;font-size:12px;line-height:16px;font-weight:600;color:var(--muted);text-decoration:none;transition:color .15s}
+.acts button:hover,.acts a:hover{color:var(--fg)}
+.acts svg{width:15px;height:15px}
+.acts i{width:1px;height:16px;background:var(--line)}
+.body{font-size:14px;line-height:24px}
+.body p{margin:0 0 20px}
+.body h2{margin:64px 0 18px;font-size:30px;line-height:1.25;font-weight:500;letter-spacing:-.01em}
+.body h3{margin:36px 0 12px;font-size:24px;line-height:1.375;font-weight:500;letter-spacing:-.01em}
+.body h2 .anchor,.body h3 .anchor{text-decoration:none}
+.body a{font-weight:500;text-decoration:underline dotted;text-decoration-thickness:1px;text-underline-offset:3.5px}
+.body a:hover{text-decoration-style:solid}
+.body strong{font-weight:600}
+.body ul,.body ol{margin:0 0 20px;padding-left:22px}
+.body li{padding-left:6px;margin:0 0 8px}
+.body ul li::marker{color:var(--faint)}
+.body ol li::marker{color:var(--muted);font-weight:500}
+.body blockquote{margin:0 0 24px;padding:0 0 0 16px;border-left:4px solid var(--accent);font-style:italic;color:var(--muted)}
+.body blockquote p{margin:0}
+.body code{padding:1px 5px;border-radius:5px;background:var(--code);font:500 12.5px/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--accent)}
+.table{margin:0 0 24px;overflow-x:auto}
+.body table{width:100%;border-collapse:collapse;font-size:14px}
+.body th{padding:10px 16px 10px 0;text-align:left;font-weight:500;border-bottom:1px solid var(--line)}
+.body td{padding:12px 16px 12px 0;vertical-align:top;border-bottom:1px solid var(--line)}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:8px 0 0}
+.card{display:flex;flex-direction:column;justify-content:space-between;gap:20px;padding:28px;border-radius:16px;background:var(--card);text-decoration:none!important;font-weight:400!important;transition:background .2s}
+.card:hover{background:var(--card-hover)}
+.card h3{margin:0;font-size:20px;line-height:28px;font-weight:500;letter-spacing:-.01em}
+.card p{margin:8px 0 0;font-size:14px;line-height:24px}
+.card .go{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:500;color:var(--muted)}
+.card .go svg{width:13px;height:13px;transition:transform .2s}
+.card:hover .go svg{transform:translateX(2px)}
+.foot{margin-top:72px;padding-top:24px;border-top:1px solid var(--line);font-size:14px;line-height:20px;color:var(--muted)}
+
+/* On this page */
+.toc{position:sticky;top:80px;align-self:start;max-height:calc(100vh - 80px);overflow-y:auto;padding:16px 32px 48px 16px;scrollbar-width:none}
+.toc-head{display:flex;align-items:center;justify-content:space-between;font-size:13px;line-height:20px;font-weight:500;margin-bottom:12px}
+.toc-head svg{width:16px;height:16px;color:var(--muted)}
+.toc a.t{display:block;padding:2px 0;font-size:12px;line-height:18px;text-decoration:none;color:var(--muted);transition:color .1s}
+.toc a.t+a.t{margin-top:6px}
+.toc a.t.l3{padding-left:12px}
+.toc a.t:hover,.toc a.t.on{color:var(--fg)}
+.toc-more{margin-top:16px;padding-top:16px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
+.toc-more a,.toc-more button{display:flex;align-items:center;gap:9px;padding:0;border:0;background:none;cursor:pointer;font-size:13px;line-height:20px;font-weight:500;color:var(--muted);text-decoration:none}
+.toc-more a:hover,.toc-more button:hover{color:var(--fg)}
+.toc-more svg{width:15px;height:15px}
+
+/* Search */
+.find{position:fixed;inset:0;z-index:50;display:none;align-items:flex-start;justify-content:center;padding:12vh 16px 16px;background:var(--shade)}
+.find.open{display:flex}
+.find-box{width:min(640px,100%);max-height:70vh;display:flex;flex-direction:column;border-radius:18px;background:var(--bg);box-shadow:0 0 0 1px var(--line),0 30px 80px -20px rgba(0,0,0,.4);overflow:hidden}
+.find-in{display:flex;align-items:center;gap:10px;padding:0 16px;border-bottom:1px solid var(--line)}
+.find-in svg{width:18px;height:18px;color:var(--muted);flex:none}
+.find-in input::-webkit-search-cancel-button{display:none}
+.find-in input{flex:1;height:56px;border:0;outline:0;background:none;font:400 16px Inter,system-ui,sans-serif;color:var(--fg)}
+.find-in kbd{font:500 11px Inter,system-ui,sans-serif;padding:3px 6px;border-radius:6px;box-shadow:0 0 0 1px var(--line);color:var(--muted)}
+.hits{overflow-y:auto;padding:8px}
+.hit{display:block;padding:10px 12px;border-radius:10px;text-decoration:none}
+.hit.sel,.hit:hover{background:var(--hover)}
+.hit b{display:block;font-size:14px;font-weight:500}
+.hit small{display:block;margin-top:2px;font-size:12px;line-height:18px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hit em{font-style:normal;color:var(--fg);font-weight:500}
+.none{padding:28px 12px;text-align:center;font-size:14px;color:var(--muted)}
+.toast{position:fixed;left:50%;bottom:28px;z-index:60;transform:translate(-50%,12px);padding:10px 16px;border-radius:999px;background:var(--btn);color:var(--btn-fg);font-size:13px;font-weight:500;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+
+@media (max-width:1200px){.shell{grid-template-columns:260px minmax(0,1fr)}.toc{display:none}.page{margin:0 auto;padding:0 40px}}
+@media (max-width:900px){
+  .top{height:72px;padding:0 20px}
+  .tabs,.search,.cta,.theme{display:none}
+  .phone-only{display:grid}
+  .shell{display:block}
+  .side{position:fixed;inset:72px 0 0 0;z-index:25;align-self:auto;height:auto;padding:12px 20px 48px;background:var(--bg);display:none}
+  body.menu .side{display:block}
+  body.menu{overflow:hidden}
+  main{padding:20px 0 72px}
+  .page{padding:0 24px}
+  .eyebrow{font-size:16px}
+  h1{font-size:40px}
+  .body{font-size:16px;line-height:26px}
+  .body h2{font-size:26px;margin-top:52px}
+  .body h3{font-size:21px}
+  .cards{grid-template-columns:1fr}
+  .side a,.group-name{font-size:15px;padding:8px 8px}
+  .phone-extra{display:block!important;margin-top:28px}
+}
+.phone-extra{display:none}
+</style>
+</head>
+<body>
+<header class="top">
+  <a class="logo" href="/" aria-label="SimeonLabs"></a>
+  <nav class="tabs" aria-label="SimeonLabs"><a href="/docs" class=on>Docs</a><a href="/marketplace">Marketplace</a><a href="/connectors">Connectors</a><a href="/pricing">Pricing</a><a href="/newsroom">Newsroom</a></nav>
+  <div class="right">
+    <button class="icon-btn theme" type="button" aria-label="Switch theme"><svg class="i-moon" viewBox="0 0 16 16" aria-hidden="true"><path d="M13.2 9.6A5.6 5.6 0 0 1 6.4 2.8a5.6 5.6 0 1 0 6.8 6.8z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg><svg class="i-sun" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M8 1.5v1.3M8 13.2v1.3M1.5 8h1.3M13.2 8h1.3M3.4 3.4l.9.9M11.7 11.7l.9.9M3.4 12.6l.9-.9M11.7 4.3l.9-.9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
+    <button class="search" type="button" data-find><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="m10.4 10.4 3.4 3.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>Search</span><kbd>⌘K</kbd></button>
+    <div class="cta"><a href="https://api.simeonlabs.com/desktop/download/mac">Download</a><button type="button" aria-label="More"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <div class="cta-menu"><a href="https://api.simeonlabs.com/desktop/download/mac">Download for macOS</a><a href="https://app.simeonlabs.com/login">Log in</a><a href="/contact">Contact sales</a></div></div>
+    <button class="icon-btn phone-only" type="button" data-find aria-label="Search"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="m10.4 10.4 3.4 3.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+    <button class="icon-btn phone-only menu-btn" type="button" aria-label="Menu" aria-expanded="false"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 7h14M3 13h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+  </div>
+</header>
+<div class="shell">
+  <nav class="side" aria-label="Documentation"><div class="group"><span class="group-name">Get started</span><a href="/docs">Overview</a><a href="/docs/get-started">Get started</a><a href="/docs/use-cases">Use cases</a><a href="/docs/iphone">Simeon for iPhone</a></div><div class="group"><span class="group-name">Work with Simeon</span><a href="/docs/agents">Create and manage agents</a><a href="/docs/messaging">Message and call</a><a href="/docs/computer">The computer</a><a href="/docs/connectors">Connect apps</a><a href="/docs/routines">Routines and skills</a><a href="/docs/credentials">Credentials Store</a></div><div class="group"><span class="group-name">Manage and protect</span><a href="/docs/approvals">Approvals, security, and privacy</a><a href="/docs/billing">Plans and billing</a></div><div class="group"><span class="group-name">Help</span><a href="/docs/faq" class=on aria-current=page>FAQ</a></div><div class="group phone-extra"><span class="group-name">SimeonLabs</span><a href="/marketplace">Marketplace</a><a href="/connectors">Connectors</a><a href="/pricing">Pricing</a><a href="/newsroom">Newsroom</a><a href="https://api.simeonlabs.com/desktop/download/mac">Download for macOS</a></div></nav>
+  <main>
+    <article class="page">
+      <p class="eyebrow">Help</p>
+      <h1>FAQ</h1>
+      <div class="acts"><button type="button" data-copy><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 5V3.8A1.3 1.3 0 0 0 9.2 2.5H3.8a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 1.3 1.3H5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Copy for LLM</button><i></i><a href="/docs/faq.md"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 1.8h5.2L12.5 5v8.4a.8.8 0 0 1-.8.8H4a.8.8 0 0 1-.8-.8V2.6a.8.8 0 0 1 .8-.8z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M5.5 8.5h5M5.5 11h3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>View as Markdown</a></div>
+      <div class="body">
+<h2 id="what-is-simeon"><a class="anchor" href="#what-is-simeon">What is Simeon?</a></h2>
+<p>A team of AI agents for your business. Each agent has a job you give it, a computer of its own in the cloud, and access to the apps you already use. You ask in plain words, and they do the work.</p>
+<h2 id="do-i-need-to-set-anything-up"><a class="anchor" href="#do-i-need-to-set-anything-up">Do I need to set anything up?</a></h2>
+<p>No. There are no workflows to build. Tell an agent what you need. When it needs one of your apps, it asks you to sign in once, on that app's own page.</p>
+<h2 id="where-does-the-work-happen"><a class="anchor" href="#where-does-the-work-happen">Where does the work happen?</a></h2>
+<p>On each agent's own computer in the cloud, with a browser and files. You can watch it work or take over at any time, and routines keep running when your Mac is closed.</p>
+<h2 id="will-an-agent-act-without-asking"><a class="anchor" href="#will-an-agent-act-without-asking">Will an agent act without asking?</a></h2>
+<p>Not on anything that matters. Before it sends an email, makes a payment or publishes something, it asks you in the chat, and you allow or refuse it.</p>
+<h2 id="is-my-data-safe"><a class="anchor" href="#is-my-data-safe">Is my data safe?</a></h2>
+<p>Your data is encrypted, kept apart from every other customer, and never used to train a model. See <a href="/docs/approvals">Approvals, security, and privacy</a>.</p>
+<h2 id="what-do-i-need"><a class="anchor" href="#what-do-i-need">What do I need?</a></h2>
+<p>A Mac with Apple silicon on macOS 15 or later. Every plan starts with a 7-day free trial.</p>
+<h2 id="how-many-agents-can-i-have"><a class="anchor" href="#how-many-agents-can-i-have">How many agents can I have?</a></h2>
+<p>As many as your work needs. Your plan sets how much they can do each week, not how many there are.</p>
+<h2 id="can-my-agents-use-apps-that-don-t-have-a-connector"><a class="anchor" href="#can-my-agents-use-apps-that-don-t-have-a-connector">Can my agents use apps that don't have a connector?</a></h2>
+<p>Yes. They can use most websites in their browser. A connector is faster and more reliable when there is one. See <a href="/docs/connectors">Connect apps</a>.</p>
+<h2 id="can-i-talk-to-an-agent"><a class="anchor" href="#can-i-talk-to-an-agent">Can I talk to an agent?</a></h2>
+<p>Yes. Call any agent and talk it through out loud. See <a href="/docs/messaging">Message and call your agents</a>.</p>
+<h2 id="how-do-i-cancel"><a class="anchor" href="#how-do-i-cancel">How do I cancel?</a></h2>
+<p>On the web, from your account's billing page; on iPhone, in your Apple ID settings. See <a href="/docs/billing">Plans and billing</a>.</p>
+<h2 id="something-isn-t-working"><a class="anchor" href="#something-isn-t-working">Something isn't working</a></h2>
+<p>Quit and reopen the app first. If that doesn't fix it, <a href="/contact">contact us</a> and tell us what you were doing.</p>
+      </div>
+      <p class="foot">Last updated: November 2, 2026</p>
+    </article>
+  </main>
+  <aside class="toc"><div class="toc-head">On this page<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 4h8M5.5 8h8M5.5 12h8M2.5 4h.01M2.5 8h.01M2.5 12h.01" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div><a class="t l2" href="#what-is-simeon">What is Simeon?</a><a class="t l2" href="#do-i-need-to-set-anything-up">Do I need to set anything up?</a><a class="t l2" href="#where-does-the-work-happen">Where does the work happen?</a><a class="t l2" href="#will-an-agent-act-without-asking">Will an agent act without asking?</a><a class="t l2" href="#is-my-data-safe">Is my data safe?</a><a class="t l2" href="#what-do-i-need">What do I need?</a><a class="t l2" href="#how-many-agents-can-i-have">How many agents can I have?</a><a class="t l2" href="#can-my-agents-use-apps-that-don-t-have-a-connector">Can my agents use apps that don&#x27;t have a connector?</a><a class="t l2" href="#can-i-talk-to-an-agent">Can I talk to an agent?</a><a class="t l2" href="#how-do-i-cancel">How do I cancel?</a><a class="t l2" href="#something-isn-t-working">Something isn&#x27;t working</a><div class="toc-more"><button type="button" data-copy><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 5V3.8A1.3 1.3 0 0 0 9.2 2.5H3.8a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 1.3 1.3H5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Copy for LLM</button><a href="/contact"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.2c3.3 0 5.8 2.2 5.8 5s-2.5 5-5.8 5c-.6 0-1.2-.1-1.8-.2L3 13.4l.7-2.6C2.7 9.9 2.2 8.6 2.2 7.2c0-2.8 2.5-5 5.8-5z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>Share feedback</a></div></aside>
+</div>
+<div class="find" role="dialog" aria-label="Search the docs"><div class="find-box"><label class="find-in"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="m10.4 10.4 3.4 3.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><input type="search" placeholder="Search the docs" autocomplete="off" spellcheck="false"><kbd>Esc</kbd></label><div class="hits"></div></div></div>
+<div class="toast" role="status"></div>
+<script type="text/markdown" id="md"># FAQ
+
+## What is Simeon?
+
+A team of AI agents for your business. Each agent has a job you give it, a computer of its own in the cloud, and access to the apps you already use. You ask in plain words, and they do the work.
+
+## Do I need to set anything up?
+
+No. There are no workflows to build. Tell an agent what you need. When it needs one of your apps, it asks you to sign in once, on that app&#x27;s own page.
+
+## Where does the work happen?
+
+On each agent&#x27;s own computer in the cloud, with a browser and files. You can watch it work or take over at any time, and routines keep running when your Mac is closed.
+
+## Will an agent act without asking?
+
+Not on anything that matters. Before it sends an email, makes a payment or publishes something, it asks you in the chat, and you allow or refuse it.
+
+## Is my data safe?
+
+Your data is encrypted, kept apart from every other customer, and never used to train a model. See [Approvals, security, and privacy](/docs/approvals).
+
+## What do I need?
+
+A Mac with Apple silicon on macOS 15 or later. Every plan starts with a 7-day free trial.
+
+## How many agents can I have?
+
+As many as your work needs. Your plan sets how much they can do each week, not how many there are.
+
+## Can my agents use apps that don&#x27;t have a connector?
+
+Yes. They can use most websites in their browser. A connector is faster and more reliable when there is one. See [Connect apps](/docs/connectors).
+
+## Can I talk to an agent?
+
+Yes. Call any agent and talk it through out loud. See [Message and call your agents](/docs/messaging).
+
+## How do I cancel?
+
+On the web, from your account&#x27;s billing page; on iPhone, in your Apple ID settings. See [Plans and billing](/docs/billing).
+
+## Something isn&#x27;t working
+
+Quit and reopen the app first. If that doesn&#x27;t fix it, [contact us](/contact) and tell us what you were doing.
+</script>
+<script>
+(function(){
+  var root = document.documentElement, body = document.body;
+  // the theme: the person's choice, else the system's
+  var theme = document.querySelector('.theme');
+  if (theme) theme.addEventListener('click', function(){
+    var dark = root.dataset.theme !== 'dark';
+    root.dataset.theme = dark ? 'dark' : 'light';
+    try { localStorage.setItem('docs-theme', root.dataset.theme); } catch (e) {}
+  });
+  // Download's menu
+  var cta = document.querySelector('.cta');
+  if (cta) {
+    cta.querySelector('button').addEventListener('click', function(e){ e.stopPropagation(); cta.classList.toggle('open'); });
+    document.addEventListener('click', function(){ cta.classList.remove('open'); });
+  }
+  // the phone's menu
+  var menu = document.querySelector('.menu-btn');
+  if (menu) menu.addEventListener('click', function(){ body.classList.toggle('menu'); menu.setAttribute('aria-expanded', body.classList.contains('menu')); });
+  // Copy for LLM: the page's Markdown, with its title
+  var toast = document.querySelector('.toast');
+  function say(t){ toast.textContent = t; toast.classList.add('on'); clearTimeout(say.t); say.t = setTimeout(function(){ toast.classList.remove('on'); }, 1600); }
+  document.querySelectorAll('[data-copy]').forEach(function(b){
+    b.addEventListener('click', function(){
+      var md = document.getElementById('md').textContent;
+      (navigator.clipboard ? navigator.clipboard.writeText(md) : Promise.reject()).then(function(){ say('Copied for LLM'); }, function(){ say('Could not copy'); });
+    });
+  });
+  // On this page: the line for the section you're reading darkens
+  var links = [].slice.call(document.querySelectorAll('.toc a.t'));
+  var heads = links.map(function(a){ return document.getElementById(a.hash.slice(1)); });
+  function spy(){
+    var on = 0;
+    heads.forEach(function(h, i){ if (h && h.getBoundingClientRect().top < 140) on = i; });
+    if (innerHeight + scrollY >= document.documentElement.scrollHeight - 4) on = heads.length - 1;
+    links.forEach(function(a, i){ a.classList.toggle('on', i === on && scrollY > 40); });
+  }
+  if (links.length) { addEventListener('scroll', spy, { passive: true }); spy(); }
+  // Search: every page's sections, from search.json
+  var find = document.querySelector('.find'), input = find.querySelector('input'), hits = find.querySelector('.hits'), index = null, sel = 0;
+  function open(){ find.classList.add('open'); input.value = ''; input.focus(); draw();
+    if (!index) fetch('/docs/search.json').then(function(r){ return r.json(); }).then(function(d){ index = d; draw(); }); }
+  function close(){ find.classList.remove('open'); }
+  function esc(s){ return s.replace(/[&<>"]/g, function(c){ return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function draw(){
+    var q = input.value.trim().toLowerCase();
+    if (!index) { hits.innerHTML = '<div class="none">Loading…</div>'; return; }
+    var words = q.split(/\s+/).filter(Boolean), out = [];
+    index.forEach(function(s){
+      var hay = (s.page + ' ' + s.head + ' ' + s.text).toLowerCase();
+      if (!words.every(function(w){ return hay.indexOf(w) >= 0; })) return;
+      var score = words.reduce(function(n, w){ return n + ((s.page + ' ' + s.head).toLowerCase().indexOf(w) >= 0 ? 3 : 1); }, 0);
+      var at = words.length ? s.text.toLowerCase().indexOf(words[0]) : 0, snip = s.text.slice(Math.max(0, at - 40), at + 110);
+      out.push({ s: s, score: score, snip: (at > 40 ? '…' : '') + snip });
+    });
+    out.sort(function(a, b){ return b.score - a.score; });
+    out = out.slice(0, q ? 12 : 8); sel = 0;
+    if (!out.length) { hits.innerHTML = '<div class="none">No results for “' + esc(input.value) + '”</div>'; return; }
+    hits.innerHTML = out.map(function(o, i){
+      var snip = esc(o.snip);
+      words.forEach(function(w){ snip = snip.replace(new RegExp('(' + w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'ig'), '<em>$1</em>'); });
+      return '<a class="hit' + (i ? '' : ' sel') + '" href="' + o.s.url + '"><b>' + esc(o.s.page) + (o.s.head ? ' › ' + esc(o.s.head) : '') + '</b><small>' + snip + '</small></a>';
+    }).join('');
+  }
+  input.addEventListener('input', draw);
+  input.addEventListener('keydown', function(e){
+    var all = hits.querySelectorAll('.hit');
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); if (!all.length) return;
+      all[sel].classList.remove('sel'); sel = (sel + (e.key === 'ArrowDown' ? 1 : all.length - 1)) % all.length; all[sel].classList.add('sel'); all[sel].scrollIntoView({ block: 'nearest' }); }
+    else if (e.key === 'Enter' && all[sel]) location.href = all[sel].href;
+  });
+  find.addEventListener('click', function(e){ if (e.target === find) close(); });
+  document.querySelectorAll('[data-find]').forEach(function(b){ b.addEventListener('click', open); });
+  addEventListener('keydown', function(e){
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); find.classList.contains('open') ? close() : open(); }
+    else if (e.key === 'Escape') { close(); body.classList.remove('menu'); }
+  });
+  var kbd = document.querySelector('.search kbd');
+  if (kbd && !/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)) kbd.textContent = 'Ctrl+K';
+})();
+</script>
+</body>
+</html>

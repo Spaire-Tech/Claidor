@@ -381,6 +381,9 @@ async def main():
     # The Newsroom (newsroom.py), the blog, at /newsroom: its posts are stand-ins until the first real ones.
     import newsroom
     newsroom.build(OUT)
+    # The documentation (docs.py), at /docs: its pages are source/docs/<slug>.md.
+    import docs
+    docs.build(OUT)
     print("site written to", os.path.abspath(OUT))
 
 asyncio.run(main())
