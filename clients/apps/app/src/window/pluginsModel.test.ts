@@ -10,33 +10,64 @@ import type { JSONValue } from '../core/json'
 import { pluginEntryFrom, pluginServerFrom } from '../core/plugins'
 import { PluginsBox } from '../core/pluginsTesting'
 import { AppStore } from '../core/store'
-import type { SignInEnd } from './connector'
+import { eventually } from '../core/testing'
+import {
+  Connector,
+  type ConnectorBrowser,
+  HeldTab,
+  type SignInEnd,
+  type SignInTab,
+} from './connector'
 import { PluginsModel } from './pluginsModel'
 
-/** The window's connector, as a test drives it: each consent waits for `confirm`; a sign-in ends as `end` says, or as the computer says once polled. */
+/**
+ * The window's connector, as a test drives it (6b's shape): each consent
+ * waits for `confirm`, which hands `go` a tab unless no sign-in follows; a
+ * click with no consent holds one too; a sign-in shows its page once its
+ * wait (`after`) is over, and ends as `end` says, or as the computer says
+ * once polled.
+ */
 class StandInConnector {
   asked: string[] = []
-  private going?: () => Promise<void>
-  opened: { url: string; name: string }[] = []
+  /** Whether each consent was told a sign-in follows (`signIn: false` when not). */
+  opensSignIn: boolean[] = []
+  private going?: (tab: HeldTab | undefined) => Promise<void>
+  /** The tabs the clicks opened, in order. */
+  held: HeldTab[] = []
+  opened: { url: string; name: string; tab?: HeldTab }[] = []
   end: SignInEnd | 'poll' = 'poll'
 
-  ask(name: string, go: () => Promise<void>): void {
+  ask(
+    name: string,
+    go: (tab: HeldTab | undefined) => Promise<void>,
+    options: { signIn?: boolean } = {},
+  ): void {
     this.asked.push(name)
+    this.opensSignIn.push(options.signIn ?? true)
     this.going = go
   }
 
   async confirm(): Promise<void> {
     const go = this.going
     this.going = undefined
-    await go?.()
+    if (this.opensSignIn.at(-1) === false) await go?.(undefined)
+    else await this.holdingTab(async (tab) => go?.(tab))
+  }
+
+  async holdingTab(work: (tab: HeldTab) => Promise<void>): Promise<void> {
+    const tab = new HeldTab({ closed: false, go() {}, close() {} })
+    this.held.push(tab)
+    await work(tab)
   }
 
   async signIn(
     url: string,
     name: string,
     done: () => Promise<boolean>,
+    options: { tab?: HeldTab; after?: Promise<unknown> } = {},
   ): Promise<SignInEnd> {
-    this.opened.push({ url, name })
+    await options.after
+    this.opened.push({ url, name, tab: options.tab })
     if (this.end !== 'poll') return this.end
     return (await done()) ? 'connected' : 'unconfirmed'
   }
@@ -150,8 +181,13 @@ describe('Connectors’ model', () => {
       action: 'authenticateServer',
       args: ['900042', 'default'],
     })
+    // The sign-in shows in the tab Connect's click opened.
     expect(connector.opened).toEqual([
-      { url: 'https://linear.app/oauth', name: 'Linear' },
+      {
+        url: 'https://linear.app/oauth',
+        name: 'Linear',
+        tab: connector.held[0],
+      },
     ])
     expect(model.notice).toEqual({ isError: false, text: 'Connected Linear' })
     expect(model.adding).toBeUndefined()
@@ -246,13 +282,19 @@ describe('Connectors’ model', () => {
     expect(model.path).toEqual([{ kind: 'setup', id: 'acme' }])
     expect(model.setup).toEqual({ entryId: 'acme', editing: false })
     expect(box.all('desktopMcp:installEntry')).toEqual([])
+    // A form of values first: the consent opens no tab.
+    expect(connector.opensSignIn).toEqual([false])
+    expect(connector.held).toEqual([])
 
     box.answers['desktopMcp:installEntry'] = {
       servers: [
         { id: 'acme', name: 'Acme', pluginId: 'acme', status: 'connected' },
       ],
     }
-    await model.submitSetup({ token: 'abc' }, 'theo')
+    // The page's Add, from its click: a tab for a new add's sign-in.
+    model.requestSubmitSetup({ token: 'abc' }, 'theo')
+    await vi.waitFor(() => expect(model.setup).toBeUndefined())
+    expect(connector.held.length).toBe(1)
     expect(box.sentTo('desktopMcp:installEntry')).toEqual({
       action: 'installEntry',
       args: [{ entryId: 'acme', values: { token: 'abc' } }],
@@ -264,7 +306,12 @@ describe('Connectors’ model', () => {
     // Edit Values: replaced, never shown.
     model.editValues(entry)
     expect(model.setup).toEqual({ entryId: 'acme', editing: true })
-    await model.submitSetup({ token: 'new' }, 'theo')
+    // Edit Values, from its click: no tab.
+    model.requestSubmitSetup({ token: 'new' }, 'theo')
+    await vi.waitFor(() =>
+      expect(model.notice?.text).toBe("Saved Acme's setup values"),
+    )
+    expect(connector.held.length).toBe(1)
     expect(box.sentTo('desktopMcp:updatePluginInstall')).toEqual({
       action: 'updatePluginInstall',
       args: [{ pluginId: 'acme', values: { token: 'new' } }],
@@ -379,6 +426,9 @@ describe('Connectors’ model', () => {
     expect(connector.opened.length).toBe(1)
     await vi.advanceTimersByTimeAsync(600)
     await vi.waitFor(() => expect(connector.opened.length).toBe(2))
+    // In the tab Reopen's own click opened.
+    expect(connector.held.length).toBe(2)
+    expect(connector.opened[1]?.tab).toBe(connector.held[1])
     expect(box.all('desktopMcp:authenticateServer').length).toBe(1)
 
     // Ten minutes: Retry, which asks again.
@@ -609,5 +659,141 @@ describe('Connectors’ model', () => {
     expect(model.searchFocus).toBe(asked + 1)
     // An entry the list doesn't read yet still finds its page's key.
     expect(pluginEntryFrom({ id: 'x' })?.displayName).toBe('x')
+  })
+})
+
+/** A tab of the stand-in browser: where it was sent, and whether the app closed it. */
+class StandInTab implements SignInTab {
+  closed = false
+  url?: string
+  go(url: string) {
+    this.url = url
+  }
+  close() {
+    this.closed = true
+  }
+}
+
+/** The browser 6b's connector opens tabs in: each opened blank, as on a click; the connector's looks a few ms apart. */
+class StandInBrowser implements ConnectorBrowser {
+  tabs: StandInTab[] = []
+  openTab() {
+    const tab = new StandInTab()
+    this.tabs.push(tab)
+    return tab
+  }
+  wait() {
+    return new Promise<void>((done) => setTimeout(done, 5))
+  }
+}
+
+/** The model with 6b's own connector, its tabs in a stand-in browser. */
+async function withConnector(box = computer()) {
+  const store = new AppStore()
+  await store.attach(box)
+  const browser = new StandInBrowser()
+  const connector = new Connector(store, browser)
+  const model = new PluginsModel(store)
+  model.setConnector(connector)
+  model.setAgent('theo')
+  await model.load('theo')
+  return { store, model, connector, browser, box }
+}
+
+describe('Connectors’ model with the window’s connector', () => {
+  it('hands each click’s tab to its sign-in: Connect’s, then Reopen’s within the 0.9 s', async () => {
+    const box = computer()
+    box.answers['desktopMcp:listServers'] = needsAuth()
+    box.answers['desktopMcp:authenticateServer'] = {
+      status: 'started',
+      authorizationUrl: 'https://linear.app/oauth?state=s',
+    }
+    const { model, connector, browser } = await withConnector(box)
+    const server = model.servers[0]!
+    // Connect: the consent, its click's tab, then the page in it.
+    model.requestSignIn(server, 'default')
+    expect(browser.tabs.length).toBe(0)
+    connector.confirm()
+    expect(browser.tabs.length).toBe(1)
+    await eventually(() => browser.tabs[0]?.url != null)
+    expect(browser.tabs[0]?.url).toBe('https://linear.app/oauth?state=s')
+    expect(model.signInState(server, 'default')).toBe('waiting')
+
+    // Reopen at once: its own click's tab, kept while the 0.9 s pass (its work has long ended), then the page.
+    model.requestSignIn(server, 'default')
+    expect(browser.tabs.length).toBe(2)
+    await new Promise((done) => setTimeout(done, 300))
+    expect(browser.tabs[1]?.closed).toBe(false)
+    expect(browser.tabs[1]?.url).toBeUndefined()
+    // The page it replaces closed.
+    expect(browser.tabs[0]?.closed).toBe(true)
+    await eventually(() => browser.tabs[1]?.url != null)
+    expect(browser.tabs[1]?.url).toBe('https://linear.app/oauth?state=s')
+
+    // Signed in: the tab closed by the app, Connected said.
+    box.answers['desktopMcp:listServers'] = needsAuth('connected')
+    await eventually(() => browser.tabs[1]?.closed === true)
+    await eventually(() => model.notice?.text === 'Connected Linear')
+    expect(browser.tabs.length).toBe(2)
+  })
+
+  it('carries Add’s tab through the install to its sign-in; a form first opens one only on its own Add', async () => {
+    const box = computer()
+    box.answers['desktopMcp:getCatalog'] = {
+      plugins: [
+        linear,
+        {
+          ...linear,
+          id: 'acme',
+          displayName: 'Acme',
+          fields: [{ key: 'token', label: 'API token', isRequired: true }],
+        },
+      ],
+    }
+    box.answers['desktopMcp:installEntry'] = needsAuth()
+    box.answers['desktopMcp:vendorServerIdForPlugin'] = '900042'
+    box.answers['desktopMcp:authenticateServer'] = {
+      status: 'started',
+      authorizationUrl: 'https://linear.app/oauth?state=s',
+    }
+    const { model, connector, browser } = await withConnector(box)
+    // Connect on Linear's +: one tab, opened on the consent's click, sent to the page once installed.
+    model.requestAdd(model.catalog.find((one) => one.id === 'linear')!, 'theo')
+    connector.confirm()
+    expect(browser.tabs.length).toBe(1)
+    await eventually(() => browser.tabs[0]?.url != null)
+    expect(box.all('desktopMcp:installEntry').length).toBe(1)
+    box.answers['desktopMcp:listServers'] = needsAuth('connected')
+    await eventually(() => model.notice?.text === 'Connected Linear')
+    expect(browser.tabs.length).toBe(1)
+
+    // Acme asks for values first: its consent opens no tab; its page's Add does, for the sign-in after the install.
+    box.answers['desktopMcp:listServers'] = needsAuth()
+    await model.refreshServers()
+    const acme = model.catalog.find((one) => one.id === 'acme')!
+    model.requestAdd(acme, 'theo')
+    connector.confirm()
+    await eventually(() => model.path.length === 1)
+    expect(browser.tabs.length).toBe(1)
+    box.answers['desktopMcp:installEntry'] = {
+      servers: [
+        { id: 'acme-1', name: 'Acme', pluginId: 'acme', status: 'needsAuth' },
+      ],
+    }
+    box.answers['desktopMcp:vendorServerIdForPlugin'] = 'acme-1'
+    box.answers['desktopMcp:authenticateServer'] = {
+      status: 'started',
+      authorizationUrl: 'https://acme.example/oauth?state=a',
+    }
+    model.requestSubmitSetup({ token: 'abc' }, 'theo')
+    expect(browser.tabs.length).toBe(2)
+    await eventually(() => browser.tabs[1]?.url != null)
+    expect(browser.tabs[1]?.url).toBe('https://acme.example/oauth?state=a')
+
+    // Edit Values: no tab.
+    model.editValues(acme)
+    model.requestSubmitSetup({ token: 'new' }, 'theo')
+    await eventually(() => model.notice?.text === "Saved Acme's setup values")
+    expect(browser.tabs.length).toBe(2)
   })
 })

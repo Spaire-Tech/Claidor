@@ -22,13 +22,13 @@
 
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { appLogo, comingSoonWord, connectedWord } from '../core/connectCards'
+import { connectWord } from '../core/connecting'
 import {
   type AgentSkill,
   type PluginEntry,
   type PluginItem,
   type PluginServer,
   authBlockedLine,
-  connectWord,
   connectorList,
   entryContributions,
   entryForServer,

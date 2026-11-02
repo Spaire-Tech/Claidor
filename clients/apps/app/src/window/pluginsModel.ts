@@ -16,6 +16,13 @@
 // Mac's `forget`). The consent and an app's sign-in go through the window's
 // connector (`Connector`, step 6b).
 
+import {
+  connectedNotice,
+  didntConnect,
+  notConnectedNotice,
+  type SignInEnd,
+  stillConnectingNotice,
+} from '../core/connecting'
 import { field, str, text } from '../core/json'
 import { plainError } from '../core/plainWords'
 import { resyncsSkills } from '../core/pluginCalls'
@@ -23,16 +30,13 @@ import {
   addedNotice,
   type AgentSkill,
   allPlugins,
-  connectedNotice,
   connectorList,
   defaultAccount,
-  didntConnect,
   type EffectivePlugin,
   entryForServer,
   hasSetupFields,
   type InstalledState,
   installedState,
-  notConnectedNotice,
   type Notice,
   noticeSeconds,
   onePerServer,
@@ -48,7 +52,6 @@ import {
   serversByName,
   signInNotice,
   skillsAddedNotice,
-  stillConnectingNotice,
 } from '../core/plugins'
 import {
   agentFailedNotice,
@@ -65,7 +68,7 @@ import {
 } from '../core/pluginsOverlay'
 import type { AppStore } from '../core/store'
 import { t } from '../l10n'
-import type { Connector, SignInEnd } from './connector'
+import type { Connector, HeldTab } from './connector'
 import type { ConnectorsOpening } from './windowModel'
 
 /** A page over the list (`PluginsModel.Page`): a plugin's, an installed server's, the setup page, a skill's, or a section of Available with every app in it. */
@@ -97,8 +100,12 @@ export interface PluginsSetup {
   editing: boolean
 }
 
-/** What the model asks of the window's connector (6b's `Connector`): the consent, then the app's sign-in. */
-export type PluginsConnector = Pick<Connector, 'ask' | 'signIn'>
+/**
+ * What the model asks of the window's connector (6b's `Connector`): the
+ * consent, a tab opened on a click with no consent (`holdingTab`), then
+ * the app's sign-in, handed the tab its click opened.
+ */
+export type PluginsConnector = Pick<Connector, 'ask' | 'holdingTab' | 'signIn'>
 
 /** What a skills step did: how many of the plugin's skills it brought, or why it couldn't. */
 interface Synced {
@@ -521,8 +528,14 @@ export class PluginsModel {
       void this.add(entry, agentId)
       return
     }
-    // 6b: pass `{ signIn: false }` when `needsSetupPage(entry, this.effective.get(entry.id)?.hasTeamConfiguredVariables === true)`: Add goes to the setup page, so no tab is held.
-    this.connector?.ask(entry.displayName, () => this.add(entry, agentId))
+    // Connect's click opens the sign-in's tab, handed down to it; Add that goes to the setup page first opens none.
+    const team =
+      this.effective.get(entry.id)?.hasTeamConfiguredVariables === true
+    this.connector?.ask(
+      entry.displayName,
+      (tab) => this.add(entry, agentId, tab),
+      { signIn: !needsSetupPage(entry, team) },
+    )
   }
 
   /**
@@ -532,7 +545,12 @@ export class PluginsModel {
    * (`connectAfterInstall`): "Connected" only once it is, and a sign-in the
    * person cancels takes the app back out.
    */
-  async add(entry: PluginEntry, agentId: string | undefined): Promise<void> {
+  async add(
+    entry: PluginEntry,
+    agentId: string | undefined,
+    /** The tab Connect's click opened, for its sign-in (6b's `HeldTab`). */
+    tab?: HeldTab,
+  ): Promise<void> {
     this.show(undefined)
     const team =
       this.effective.get(entry.id)?.hasTeamConfiguredVariables === true
@@ -564,7 +582,7 @@ export class PluginsModel {
     try {
       const addedNow = !this.installed(entry).isInstalled
       if (!(await this.install(entry.id, {}, team))) return
-      await this.connectAfterInstall(entry, addedNow, agentId)
+      await this.connectAfterInstall(entry, addedNow, agentId, tab)
     } finally {
       this.setAdding(undefined)
     }
@@ -600,6 +618,7 @@ export class PluginsModel {
     entry: PluginEntry,
     addedNow: boolean,
     agentId: string | undefined,
+    tab?: HeldTab,
   ): Promise<void> {
     const store = this.store
     const name = entry.displayName
@@ -648,7 +667,9 @@ export class PluginsModel {
       })
       return
     }
-    switch (await this.openSignInAndWait(url, serverId, accountKey, name)) {
+    switch (
+      await this.openSignInAndWait(url, serverId, accountKey, name, tab)
+    ) {
       case 'connected': {
         const synced = await this.syncSkills(entry, agentId)
         this.show(connectedNotice(name, synced.added, synced.error))
@@ -694,14 +715,30 @@ export class PluginsModel {
     this.push({ kind: 'setup', id: entry.id })
   }
 
+  /**
+   * The setup page's button, from its click: a new add's sign-in may open a
+   * page once it is installed, so its click opens the tab for it
+   * (`holdingTab`); Edit Values opens none.
+   */
+  requestSubmitSetup(
+    values: Readonly<Record<string, string>>,
+    agentId: string | undefined,
+  ): void {
+    const connector = this.connector
+    if (this.setup?.editing === false && connector)
+      void connector.holdingTab((tab) => this.submitSetup(values, agentId, tab))
+    else void this.submitSetup(values, agentId)
+  }
+
   /** The setup page's button (`At`): install with the values, or replace them; then back one page, and a new one's sign-in as Connect opens it. */
   async submitSetup(
     values: Readonly<Record<string, string>>,
     agentId: string | undefined,
+    /** The tab the button's click opened (`requestSubmitSetup`), for a new add's sign-in. */
+    tab?: HeldTab,
   ): Promise<void> {
     const setup = this.setup
     if (!setup) return
-    // 6b: a new add's sign-in may open a page after the install: the setup page's button wraps this in `connector.holdingTab(…)` (not Edit Values).
     const entry = this.catalog.find((one) => one.id === setup.entryId)
     const name = entry?.displayName ?? t('the plugin')
     this.show(undefined)
@@ -722,7 +759,7 @@ export class PluginsModel {
     })
     if (!installedNew) return
     // Its sign-in, when it has one, outside the busy mark (the window stays usable while the page is open); the values given are kept whatever the sign-in does.
-    if (entry) await this.connectAfterInstall(entry, false, agentId)
+    if (entry) await this.connectAfterInstall(entry, false, agentId, tab)
     else this.show({ isError: false, text: t`Added ${name}` })
   }
 
@@ -807,12 +844,16 @@ export class PluginsModel {
   requestSignIn(server: PluginServer, accountKey: string): void {
     const flow = this.flows.get(this.signInKeyFor(server, accountKey))
     if (flow && !flow.timedOut) {
-      // 6b: Reopen opens the waiting page again: wrap in `connector.holdingTab(…)`.
-      void this.signIn(server, accountKey)
+      // Reopen, with no consent: its own click opens the tab the page shows in again.
+      void this.connector?.holdingTab((tab) =>
+        this.signIn(server, accountKey, tab),
+      )
       return
     }
-    // Connect and Retry: the consent holds the tab for the sign-in, as `ask` does by default (nothing to wire).
-    this.connector?.ask(server.name, () => this.signIn(server, accountKey))
+    // Connect and Retry: the consent's Connect opens the tab, handed to the sign-in.
+    this.connector?.ask(server.name, (tab) =>
+      this.signIn(server, accountKey, tab),
+    )
   }
 
   /**
@@ -820,13 +861,18 @@ export class PluginsModel {
    * Connect and Retry ask the computer for a sign-in (no trigger:
    * Connectors' own), and say how it ended as Connect does.
    */
-  async signIn(server: PluginServer, accountKey: string): Promise<void> {
+  async signIn(
+    server: PluginServer,
+    accountKey: string,
+    /** The tab its click opened (6b's `HeldTab`), taken by the sign-in before this ends. */
+    tab?: HeldTab,
+  ): Promise<void> {
     const store = this.store
     const key = this.signInKeyFor(server, accountKey)
     const flow = this.flows.get(key)
     if (flow && !flow.timedOut) {
       store.reopenSignInFlow(key)
-      await this.openSignIn(flow.url, server.id, accountKey, server.name)
+      this.openSignIn(flow.url, server.id, accountKey, server.name, tab)
       return
     }
     this.show(undefined)
@@ -842,6 +888,7 @@ export class PluginsModel {
           server.id,
           accountKey,
           server.name,
+          tab,
         ).then((end) => {
           switch (end) {
             case 'connected':
@@ -884,36 +931,54 @@ export class PluginsModel {
     }
   }
 
-  /** Two sign-in pages at least `signInSpacing` apart. */
-  private async spaced(): Promise<void> {
-    const wait = signInSpacing * 1000 - (Date.now() - this.lastOpen)
-    if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait))
-    this.lastOpen = Date.now()
+  /**
+   * Two sign-in pages at least `signInSpacing` apart: this page's moment
+   * is kept for it as it is asked (so two asked together are spaced too),
+   * and the wait until then given to the sign-in (`after`), which takes
+   * its click's tab at once and shows the page once the wait is over.
+   */
+  private spaced(): Promise<void> {
+    const now = Date.now()
+    const at = Math.max(now, this.lastOpen + signInSpacing * 1000)
+    this.lastOpen = at
+    if (at <= now) return Promise.resolve()
+    return new Promise((resolve) => setTimeout(resolve, at - now))
   }
 
   /** The sign-in page (`openSignIn`), closed by itself once the computer says the account is connected; not waited for. */
-  private async openSignIn(
+  private openSignIn(
     url: string,
     serverId: string,
     accountKey: string,
     name: string,
-  ): Promise<void> {
-    await this.spaced()
-    void this.connector?.signIn(url, name, this.connected(serverId, accountKey))
+    tab?: HeldTab,
+  ): void {
+    void this.connector?.signIn(
+      url,
+      name,
+      this.connected(serverId, accountKey),
+      {
+        tab,
+        after: this.spaced(),
+      },
+    )
   }
 
-  /** The same page, waited for: how the sign-in ended (Connect's, `openSignInAndWait`). */
-  private async openSignInAndWait(
+  /** The same page, waited for: how the sign-in ended (Connect's, `openSignInAndWait`). Started at once, so it takes its click's tab before that click's work ends. */
+  private openSignInAndWait(
     url: string,
     serverId: string,
     accountKey: string,
     name: string,
+    tab?: HeldTab,
   ): Promise<SignInEnd> {
-    await this.spaced()
     const connector = this.connector
     // No window to open it in (never in the window): kept, as one that may still finish.
-    if (!connector) return 'unconfirmed'
-    return connector.signIn(url, name, this.connected(serverId, accountKey))
+    if (!connector) return Promise.resolve('unconfirmed')
+    return connector.signIn(url, name, this.connected(serverId, accountKey), {
+      tab,
+      after: this.spaced(),
+    })
   }
 
   // MARK: Tools and skills

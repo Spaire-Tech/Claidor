@@ -8,7 +8,8 @@
 // the tools' names, the status words and the notices.
 //
 // Apps that can't be added yet (Plugins.swift's `AppsComingSoon`) are step
-// 3c's, in connectCards.ts.
+// 3c's, in connectCards.ts; Connecting.swift's words (Connect, the
+// connect's notices) are step 6b's, in connecting.ts.
 
 import {
   arr,
@@ -1034,51 +1035,6 @@ export function removedNotice(
     isError: true,
     text: t`Couldn't remove ${name}. It may be managed elsewhere. Reopen settings and try again.`,
   }
-}
-
-// MARK: Connecting's words the list says (Connecting.swift; step 6b ports the rest)
-
-/** The button of an app that isn't connected (`Connecting.connect`). */
-export function connectWord(): string {
-  return t('Connect')
-}
-
-/** Once connected: the app, and the skills it brought (`Connecting.connectedNotice`). */
-export function connectedNotice(
-  name: string,
-  skills: number,
-  error?: string,
-): Notice {
-  if (error != null)
-    return {
-      isError: true,
-      text: t`Connected ${name}, but its skills didn't sync: ${error}`,
-    }
-  if (skills === 1)
-    return { isError: false, text: t`Connected ${name} and 1 skill` }
-  return {
-    isError: false,
-    text:
-      skills > 0
-        ? t`Connected ${name} and ${skills} skills`
-        : t`Connected ${name}`,
-  }
-}
-
-/** The sign-in closed before the app was connected (`Connecting.notConnectedNotice`). */
-export function notConnectedNotice(name: string): Notice {
-  return { isError: false, text: t`${name} wasn't connected` }
-}
-
-/** The sign-in closed on the maker's page before the computer said so (`Connecting.stillConnectingNotice`). */
-export function stillConnectingNotice(name: string): Notice {
-  return { isError: false, text: t`Finishing ${name}'s sign-in…` }
-}
-
-/** What a sign-in that never opened says (`Connecting.didntConnect`). */
-export function didntConnect(name: string, why?: string): string {
-  if (why == null || why === '') return t`${name} didn't connect. Try again.`
-  return t`${name} didn't connect: ${why}`
 }
 
 // MARK: Fix with agent (`Ql`, `Xl`, `Zl`)
