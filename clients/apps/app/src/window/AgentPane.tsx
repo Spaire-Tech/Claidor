@@ -133,6 +133,8 @@ function usePaneEscape(model: WindowModel, shown: boolean) {
         return
       if (document.querySelector('[aria-modal="true"]')) return
       if (model.orgChart || model.avatarEditorFor !== undefined) return
+      // The agent's Allow card over the message field takes this Escape first, as the Mac's window does (step 7f).
+      if (document.querySelector('.local-ask')) return
       const focused = document.activeElement
       const field =
         focused instanceof HTMLInputElement ||

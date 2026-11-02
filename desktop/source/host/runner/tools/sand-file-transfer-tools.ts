@@ -1,4 +1,4 @@
-import { posix } from "node:path";
+import { posix, win32 } from "node:path";
 import { z } from "zod";
 import {
   BoxTransferError,
@@ -15,7 +15,14 @@ export interface UserComputerHandle {
   readonly id: string;
   readonly label: string;
   readonly connected: boolean;
+  /** What the computer's hello said of its system (`win32` on Windows); none from a Mac's. */
+  readonly platform?: string;
   readonly box: TransferBox;
+}
+
+/** A path on the person's computer taken apart by its own rules: Windows' on a Windows PC (either slash, a drive), POSIX otherwise. */
+function computerPaths(computer: UserComputerHandle): typeof posix {
+  return computer.platform === "win32" ? win32 : posix;
 }
 
 export interface FileTransferController {
@@ -98,7 +105,7 @@ export async function copyFileToBox(
   const computer = resolveComputerOrThrow(controller, args.computer);
   const boxPath = resolveBoxWorkspacePath(
     args.box_path
-      ?? posix.join(SAND_BOX_UPLOADS_DIR, posix.basename(args.computer_path)),
+      ?? posix.join(SAND_BOX_UPLOADS_DIR, computerPaths(computer).basename(args.computer_path)),
   );
   const bytes = await transferFileBetweenBoxes(context, {
     source: {
@@ -126,7 +133,7 @@ export async function copyFileFromBox(
   const computer = resolveComputerOrThrow(controller, args.computer);
   const boxPath = resolveBoxWorkspacePath(args.box_path);
   // Downloads, not the home folder root (F-275); the daemon resolves a relative path against the person's home.
-  const computerPath = args.computer_path ?? posix.join("Downloads", posix.basename(boxPath));
+  const computerPath = args.computer_path ?? computerPaths(computer).join("Downloads", posix.basename(boxPath));
   const bytes = await transferFileBetweenBoxes(context, {
     source: {
       box: controller.agentBox,

@@ -59,10 +59,11 @@ function corsHeaders(origin) {
 /**
  * Starts the stand-in. `routes` may answer a path first (each part's own
  * calls): `(request, body) => ({ status, json } | { status, text, type, headers } |
- * { status, body, headers } | undefined)`, or a promise of one (an answer
- * that takes its time). `body` is bytes or text, sent with only the headers
- * given; `headers` are added (a 302's `location`: 7d's sign-ins, the
- * updates' feed, 7e).
+ * { status, body, headers } | { stream: (response, corsHeaders) => void } |
+ * undefined)`, or a promise of one (an answer that takes its time). `body` is
+ * bytes or text, sent with only the headers given; `headers` are added (a
+ * 302's `location`: 7d's sign-ins, the updates' feed, 7e); `stream` holds the
+ * answer open itself (7f's requests).
  */
 export async function startStandIn({ routes } = {}) {
   const state = { requests: [], box: computer() }
@@ -112,6 +113,8 @@ export async function startStandIn({ routes } = {}) {
     }
     const own = await routes?.(record, args, state)
     if (own) {
+      // A stream the route holds open itself (step 7f's requests), with the CORS headers.
+      if (typeof own.stream === 'function') return own.stream(response, cors)
       if ('json' in own) return json(own.json, own.status ?? 200)
       if ('body' in own) {
         response.writeHead(own.status ?? 200, {

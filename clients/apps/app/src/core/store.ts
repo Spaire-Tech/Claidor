@@ -16,6 +16,8 @@
 // (`SavedChats`); the web shows the server's copy instead (the decision is in
 // PROGRESS.md).
 
+import type { HandsPermission, HandsStreamEnd } from '../desktop/contract'
+import { type Desktop, desktop } from '../desktop/desktop'
 import {
   type PlanFacts,
   type SandAccess,
@@ -136,7 +138,8 @@ import {
   bookingAnswer,
   travellerJSON,
 } from './flightCards'
-import { GatewayError } from './gatewayConnection'
+import { Gateway } from './gateway'
+import { GatewayConnection, GatewayError } from './gatewayConnection'
 import {
   type AutoReviewInstructions,
   detectedTimeZone,
@@ -156,6 +159,19 @@ import {
 } from './json'
 import { t } from './l10n'
 import { currentLanguage } from './language'
+import {
+  type LocalAsk,
+  type LocalAskResolution,
+  answerLocalAsk,
+  waitingAsk,
+} from './localAsk'
+import {
+  type LocalToolPermission,
+  defaultLocalToolPermission,
+  isAboveCeiling,
+  reconcilePermission,
+  teamCeiling,
+} from './localToolPermission'
 import {
   MigrationRelay,
   type RebuildServer,
@@ -6041,6 +6057,7 @@ export class AppStore {
       return
     }
     this.mark(id, agentId, 'sent')
+    this.handsPromptSent()
     void this.sendNextQueued(agentId)
     // The host's copy may already be here: the waiting one goes, and only then is the chat laid out again.
     const waiting = this.outbox.get(agentId)?.length ?? 0
@@ -6759,8 +6776,446 @@ export class AppStore {
 
   // MARK: Step 7f's agent's hands on this PC: the local permission, the team's ceiling,
   // the Allow card's ask, commands allowed once.
+  //
+  // In the Windows app only (`desktop()`), as MacServices.swift's `track`
+  // and MacLocalPermission.swift: signed in, this account's setting and its
+  // team's ceiling are read, and the computer told when they change what it
+  // should do; each time the computer is reached the setting is squared
+  // with its own. The hands' loop (`LocalHandsProvider.run`) hands the main
+  // process the computer's address and dials again when the stream drops,
+  // never a computer that rests; the main process reads the stream and runs
+  // what it asks (windows/src/main/hands/). The Allow card's ask is read
+  // from the chat (`localAsks`), and its answers go as the Mac's.
 
-  private resetDesktopHands(): void {}
+  /** The team's ceiling, once read this sign-in (a failed read keeps the one this PC last had). */
+  localCeiling?: LocalToolPermission
+  /** The ceiling has been read this sign-in (the card's Always allow waits for it). */
+  localCeilingKnown = false
+  /** "Execution on Local Computer" as this PC keeps it, the ceiling applied (Settings' menu). */
+  localPermission: LocalToolPermission = defaultLocalToolPermission
+  /** A change of it on its way to the computer (the menu greyed). */
+  localPermissionPending = false
+  /** The account the hands serve, by its lower-case e-mail. */
+  private handsAccount?: string
+  private handsBackend?: AgentBackend
+  private handsLive = false
+  private handsGateway?: Gateway
+  private handsLoop?: AbortController
+  /** Bumped by each read of the ceiling, so an older answer is dropped (`localToolCeilingSyncSeq`). */
+  private ceilingReads = 0
+  private handsScheduled = false
+  private readonly waitingAsks = new WeakMap<
+    readonly Entry[],
+    LocalAsk | null
+  >()
+  /** The loop's wait between dials (the tests' is at once). */
+  handsPause: (seconds: number, signal?: AbortSignal) => Promise<void> = pausing
+  /** Every change the store announces is looked at (the Mac's observation of the account, the computer and the stream). */
+  private readonly followsHands = this.subscribe(() => this.scheduleHands())
+
+  private resetDesktopHands(): void {
+    this.localPermissionPending = false
+  }
+
+  /** Whether an answer to the Allow card can go now: a computer is attached (the card's buttons greyed otherwise, as the Mac's). */
+  get localAskAnswerable(): boolean {
+    return this.backend != null
+  }
+
+  /** The agent's first ask still waiting to use this PC (`localAsks`): the Allow card over its composer. Windows only. */
+  localAsk(agentId: string): LocalAsk | undefined {
+    if (desktop() == null) return undefined
+    const entries = this.transcripts[agentId]
+    if (!entries) return undefined
+    let ask = this.waitingAsks.get(entries)
+    if (ask === undefined) {
+      ask = waitingAsk(entries) ?? null
+      this.waitingAsks.set(entries, ask)
+    }
+    return ask ?? undefined
+  }
+
+  /** Looked at once the change that called it is done, as the Mac's observation runs after the change. */
+  private scheduleHands(): void {
+    // The main window's store only (not the call's window, 7c): only it drives the hands.
+    if (this.handsScheduled || desktop()?.facts.window !== 'main') return
+    this.handsScheduled = true
+    queueMicrotask(() => {
+      this.handsScheduled = false
+      this.followHands()
+    })
+  }
+
+  /**
+   * `MacServices.track`'s hands: a new computer or account gets the
+   * account's setting and ceiling, and the hands on its gateway (not a demo's
+   * computer); none at all is signed out (the setting forgotten, the hands
+   * stopped); the stream coming up squares the setting with the computer's.
+   */
+  private followHands(): void {
+    const host = desktop()
+    if (host?.facts.window !== 'main') return
+    const backend = this.backend
+    // The account is known after its computer (the profile answers later): an account gone while a computer is attached is the same one still.
+    const account = this.account?.email.trim().toLowerCase() || undefined
+    const next = account ?? (backend ? this.handsAccount : undefined)
+    if (next !== this.handsAccount || backend !== this.handsBackend) {
+      this.handsAccount = next
+      this.handsBackend = backend
+      if (backend) {
+        void this.localPermissionSignedIn(host, next)
+        if (backend instanceof LiveBackend)
+          this.startHands(host, backend.gateway)
+      } else if (next == null) {
+        this.stopHands()
+        this.localPermissionSignedOut()
+        void host.call('handsSignedOut').catch(() => {})
+      }
+    }
+    if (this.isLive && !this.handsLive && backend)
+      void this.localPermissionConnected(host, backend)
+    this.handsLive = this.isLive
+  }
+
+  /** The hands for this computer (`MacLocalHands.start`): a second start for the same gateway does nothing; another stops the first's commands. */
+  private startHands(host: Desktop, gateway: Gateway): void {
+    if (this.handsGateway === gateway && this.handsLoop) return
+    const running = this.handsLoop != null
+    this.stopHands()
+    if (running) void host.call('handsStop').catch(() => {})
+    this.handsGateway = gateway
+    const loop = new AbortController()
+    this.handsLoop = loop
+    void this.runHands(host, gateway, loop.signal)
+  }
+
+  private stopHands(): void {
+    this.handsLoop?.abort()
+    this.handsLoop = undefined
+    this.handsGateway = undefined
+  }
+
+  /**
+   * Dial, read, and dial again (`LocalHandsProvider.run`): 1, 2, 4, 8, then
+   * every 10 s; after three failures in a row the computer's address is
+   * asked for again. A computer that rests where the server lets it is not
+   * dialled, which would wake it, until it runs.
+   */
+  private async runHands(
+    host: Desktop,
+    gateway: Gateway,
+    signal: AbortSignal,
+  ): Promise<void> {
+    let attempt = 1
+    let failures = 0
+    while (!signal.aborted) {
+      await gateway
+        .waitWhileAsleep(() => {}, { ask: false, signal })
+        .catch(() => false)
+      if (signal.aborted) break
+      let broke = false
+      try {
+        const connection = await gateway.currentConnection()
+        if (signal.aborted) break
+        const end = await this.streamHands(host, gateway, connection, signal)
+        if (end.connected) {
+          attempt = 1
+          failures = 0
+        }
+        if (end.ended === 'stopped') break
+        broke = end.ended !== 'closed'
+      } catch {
+        broke = true
+      }
+      if (signal.aborted) break
+      if (broke) {
+        // Asleep where the server lets it sleep while the app is open: waited for without waking it, then dialled again.
+        if (
+          await gateway.waitWhileAsleep(() => {}, { signal }).catch(() => false)
+        ) {
+          attempt = 1
+          failures = 0
+          continue
+        }
+        failures += 1
+        if (failures >= 3) {
+          gateway.invalidate()
+          failures = 0
+        }
+      }
+      await this.handsPause(Gateway.reconnectDelay(attempt), signal)
+      attempt += 1
+    }
+  }
+
+  /**
+   * One stream, read by the main process (`stream(connected:)`); the
+   * computer's address looked at every 10 s meanwhile, a moved one ending
+   * it, as a failure.
+   */
+  private async streamHands(
+    host: Desktop,
+    gateway: Gateway,
+    connection: GatewayConnection,
+    signal: AbortSignal,
+  ): Promise<HandsStreamEnd> {
+    const done = new AbortController()
+    const both = AbortSignal.any([signal, done.signal])
+    let moved = false
+    void (async () => {
+      while (!both.aborted) {
+        await pausing(10, both)
+        if (both.aborted) return
+        const fresh = await gateway.currentConnection().catch(() => undefined)
+        if (both.aborted) return
+        if (
+          fresh &&
+          (fresh.baseURL !== connection.baseURL ||
+            fresh.token !== connection.token ||
+            fresh.networkToken !== connection.networkToken)
+        ) {
+          moved = true
+          void host.call('handsEnd').catch(() => {})
+          return
+        }
+      }
+    })()
+    try {
+      const end = await host.call('handsStream', {
+        baseURL: connection.baseURL,
+        headers: connection.headers(),
+      })
+      return moved && end.ended === 'ended' ? { ...end, ended: 'failed' } : end
+    } finally {
+      done.abort()
+    }
+  }
+
+  /**
+   * Signed in, and at each launch (`MacLocalPermission.signedIn`): this
+   * account's setting, and its team's ceiling read from Simeon Labs. The
+   * computer is told when that changes what it should do. When Simeon Labs
+   * does not answer, the ceiling this PC last had for the account holds
+   * (the Mac's counts as none, which lifts a team's "Never" at every
+   * offline launch: proposed for the Mac too).
+   */
+  private async localPermissionSignedIn(
+    host: Desktop,
+    account: string | undefined,
+  ): Promise<void> {
+    let kept: HandsPermission
+    try {
+      kept = await host.call('handsPermission', account ?? null)
+    } catch {
+      return
+    }
+    const previous = kept.effective
+    this.ceilingReads += 1
+    const read = this.ceilingReads
+    const answer = await this.teamAdminSettings()
+    if (read !== this.ceilingReads) return
+    const now =
+      answer === undefined
+        ? kept
+        : await host
+            .call('handsCeiling', teamCeiling(answer) ?? null)
+            .catch(() => undefined)
+    if (!now || read !== this.ceilingReads) return
+    this.tookLocalPermission(now)
+    if (now.effective !== previous)
+      await this.pushHostSetting('localToolPermission', now.effective)
+  }
+
+  private tookLocalPermission(now: HandsPermission): void {
+    this.localCeiling = now.ceiling ?? undefined
+    this.localCeilingKnown = true
+    this.localPermission = now.effective
+    this.changed()
+  }
+
+  /** Signed out: forgotten, so the next account starts from "Ask every time" (the main process forgets its copy). */
+  private localPermissionSignedOut(): void {
+    this.ceilingReads += 1
+    this.localCeiling = undefined
+    this.localCeilingKnown = false
+    this.localPermission = defaultLocalToolPermission
+    this.changed()
+  }
+
+  /** Connected (`MacLocalPermission.connected`): a computer set to always or never while this PC is at the default is taken; otherwise it is told this PC's. */
+  private async localPermissionConnected(
+    host: Desktop,
+    backend: AgentBackend,
+  ): Promise<void> {
+    let box: unknown
+    try {
+      box = field(
+        await backend.command('getHostSettings', {}),
+        'localToolPermission',
+      )
+    } catch {
+      box = undefined
+    }
+    const here = await host.call('handsPermission', null).catch(() => undefined)
+    if (!here || backend !== this.backend) return
+    const step = reconcilePermission(box, here.effective)
+    if (step.kind === 'adopt') {
+      const now = await host
+        .call('handsChoose', step.value)
+        .catch(() => undefined)
+      if (now) {
+        this.localPermission = now.effective
+        this.changed()
+        // The team's ceiling lowered what was taken: the computer is told what holds, or it would send no asks this PC could answer (the Mac doesn't: proposed for it too).
+        if (now.effective !== step.value)
+          await this.pushHostSetting('localToolPermission', now.effective)
+      }
+      return
+    }
+    await quietly(
+      backend.command('setHostSettings', { localToolPermission: step.value }),
+    )
+  }
+
+  /** The team admin's settings (`GetTeamAdminSettingsOrEmptyIfNotInTeam`); undefined when they can't be read. */
+  async teamAdminSettings(): Promise<JSONValue | undefined> {
+    try {
+      return await this.backend?.dashboard?.(
+        'GetTeamAdminSettingsOrEmptyIfNotInTeam',
+        {},
+      )
+    } catch {
+      return undefined
+    }
+  }
+
+  /** A host setting the computer must take (`pushHostSetting`): written, then read back, up to three times (250 and 500 ms apart) until it says it. */
+  async pushHostSetting(key: string, value: JSONValue): Promise<boolean> {
+    for (const wait of [0, 250, 500]) {
+      if (wait > 0) await pausing(wait / 1000)
+      if (!(await this.writeHostSettings({ [key]: value }))) continue
+      if (field(await this.readHostSettings(), key) === value) return true
+    }
+    return false
+  }
+
+  /**
+   * Settings › Computer opened (`GeneralSettingsModel.load`): this
+   * account's setting, then its team's ceiling read again, the card
+   * following it.
+   */
+  async loadLocalPermission(): Promise<void> {
+    const host = desktop()
+    if (!host) return
+    const account = this.account?.email.trim().toLowerCase() || null
+    const kept = await host
+      .call('handsPermission', account)
+      .catch(() => undefined)
+    if (!kept) return
+    this.localPermission = kept.effective
+    this.changed()
+    const team = await this.teamAdminSettings()
+    if (team === undefined) return
+    const now = await host
+      .call('handsCeiling', teamCeiling(team) ?? null)
+      .catch(() => undefined)
+    if (now) this.tookLocalPermission(now)
+  }
+
+  /** Execution on Local Computer (`GeneralSettingsModel.setPermission`): kept on this PC, then given to the computer until it says it back. */
+  async setLocalPermission(next: LocalToolPermission): Promise<void> {
+    const host = desktop()
+    if (
+      !host ||
+      this.localPermissionPending ||
+      isAboveCeiling(next, this.localCeiling)
+    )
+      return
+    this.localPermissionPending = true
+    this.changed()
+    try {
+      const now = await host.call('handsChoose', next)
+      await this.pushHostSetting('localToolPermission', now.effective)
+      this.localPermission = now.effective
+    } catch {
+      // Not kept: the menu shows what still holds.
+    } finally {
+      this.localPermissionPending = false
+      this.changed()
+    }
+  }
+
+  /** Commands Allowed Once's Forget; false when the app did not take it. */
+  async forgetCommandsAllowedOnce(): Promise<boolean> {
+    const host = desktop()
+    if (!host) return false
+    try {
+      await host.call('handsForgetOnce')
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  /** Each message the computer takes lets go of the "Allow once" answers (`clearLocalToolApprovals` after `sendPrompt`). */
+  private handsPromptSent(): void {
+    void desktop()
+      ?.call('handsForgetOnce')
+      .catch(() => {})
+  }
+
+  /**
+   * The Allow card's answer (`LocalAskDock.answer`): Always allow and Never
+   * change the setting first (`MacLocalPermission.choose`: kept here, then
+   * the computer told), falling back to once when it did not take; Allow
+   * once written down before the computer is told. False when the answer
+   * didn't go through.
+   */
+  async answerLocalAsk(
+    ask: LocalAsk,
+    agentId: string,
+    resolution: LocalAskResolution,
+  ): Promise<boolean> {
+    const host = desktop()
+    const backend = this.backend
+    try {
+      await answerLocalAsk(ask, agentId, resolution, {
+        choose: async (value) => {
+          if (!host) return undefined
+          const now = await host.call('handsChoose', value)
+          this.localPermission = now.effective
+          this.changed()
+          await this.pushHostSetting('localToolPermission', now.effective)
+          return now.effective
+        },
+        allowOnce: async (approval) => {
+          if (!host) throw new Error()
+          await host.call('handsAllowOnce', approval)
+        },
+        resolve: async (fields) => {
+          if (!backend) throw new Error()
+          await backend.command('resolveLocalToolPermission', { ...fields })
+        },
+      })
+      return true
+    } catch {
+      return false
+    }
+  }
+}
+
+/** Seconds, ended early when `signal` aborts. */
+function pausing(seconds: number, signal?: AbortSignal): Promise<void> {
+  return new Promise((done) => {
+    if (signal?.aborted) return done()
+    const finish = () => {
+      clearTimeout(timer)
+      signal?.removeEventListener('abort', finish)
+      done()
+    }
+    const timer = setTimeout(finish, seconds * 1000)
+    signal?.addEventListener('abort', finish, { once: true })
+  })
 }
 
 /** What the preview has of a file (`PreviewRead`): its bytes, too large to show (over 25 MB), or nothing. */

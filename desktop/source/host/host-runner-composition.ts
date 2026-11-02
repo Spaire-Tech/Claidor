@@ -146,6 +146,7 @@ import {
   type ShellTerminalWatchHost,
 } from "./runner/shell-terminal-watch.js";
 import { buildSandSubagentSystemPrompt, DEFAULT_SAND_SYSTEM_PROMPT, AGENT_SCREENSHOT_TOOL_OFFERED } from "./runner/system-prompt.js";
+import { userComputerSection, type LocalExecPlatform } from "./extensions/local-exec/local-exec-platform.js";
 import {
   createSystemPromptAssembly,
   type PromptSnapshotStore,
@@ -1717,6 +1718,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
           mcpDiscoveryStatusSection: () => glue?.getMcpDiscoveryStatusSection() ?? null,
           remoteBoxSection: () => glue?.getRemoteBoxSection() ?? "",
           computerSection: () => glue?.getComputerSection() ?? null,
+          userComputerSection: () => userComputerSection(method(localExec, "userComputerPlatform")?.() as LocalExecPlatform | undefined),
         });
     const productionSystemPromptAssembly = createPromptAssemblyFor(AGENT_PROMPT_IDENTITY, productionPromptGlue);
 

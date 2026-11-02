@@ -1,0 +1,56 @@
+/*
+ * The Allow card (LocalAskDock.tsx; mac/Simeon/MacLocalPermission.swift's
+ * `LocalAskDock`): the chat's approval card (`.card-shell.approval-card`,
+ * its parts 12 apart, its words 4 apart), 8 over the message field and as
+ * wide, as the access notice sits.
+ */
+
+.local-ask {
+  margin-bottom: 2px;
+}
+
+/* ×: 11, medium, the grey, the ink under the pointer; 20 square, 2 down; a ring with the keys. */
+.local-ask-close {
+  margin-top: 2px;
+  transition: color 0.12s ease-out;
+}
+
+.local-ask-close:hover:not(:disabled) {
+  background: none;
+  color: var(--ink);
+}
+
+.local-ask-close:disabled {
+  opacity: 0.56;
+  cursor: default;
+}
+
+.local-ask-close:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--ink) 40%, transparent);
+  outline-offset: 1px;
+  border-radius: 7px;
+}
+
+/* The line under the title: 13, the grey. */
+.local-ask-description {
+  color: var(--ink-secondary);
+  font-size: 13px;
+  line-height: 18px;
+  letter-spacing: -0.08px;
+}
+
+/* An answer that didn't go through: 13, in the red. */
+.local-ask-failure {
+  color: var(--danger);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+/* The buttons greyed at 56% while they can't be pressed (an answer on its way, Always allow above the team's ceiling). */
+.local-ask .card-button:disabled {
+  opacity: 0.56;
+}
+
+.local-ask-always {
+  display: inline-flex;
+}
