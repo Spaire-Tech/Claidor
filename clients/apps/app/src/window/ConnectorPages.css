@@ -20,6 +20,9 @@
   /* The examples' pills: white at 82%, black at 50% on dark; the picture dimmed by black at 35% on dark. */
   --page-example: rgb(255 255 255 / 0.82);
   --page-hero-dim: transparent;
+  /* `PluginIcon`'s tile and its hairline. */
+  --page-icon: #ffffff;
+  --page-icon-edge: rgb(20 20 20 / 0.08);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -32,7 +35,54 @@
     --page-field-ring: transparent;
     --page-example: rgb(0 0 0 / 0.5);
     --page-hero-dim: rgb(0 0 0 / 0.35);
+    --page-icon: #232325;
+    --page-icon-edge: rgb(252 252 252 / 0.12);
   }
+}
+
+/* MARK: Icons (`PluginIcon`, `SkillTile`) */
+
+/* A tile: white (#232325 on dark), a hairline (the ink at 8%, 12% on dark); its logo at 76%, else its letter (36%, semibold, grey). */
+.page-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  overflow: hidden;
+  background: var(--page-icon);
+  box-shadow: inset 0 0 0 0.5px var(--page-icon-edge);
+  color: var(--ink-secondary);
+  font-weight: 600;
+  line-height: 1;
+}
+
+.page-icon img,
+.page-icon-mask {
+  display: block;
+  width: 76%;
+  height: 76%;
+  object-fit: contain;
+}
+
+.page-icon-mask {
+  background-color: var(--ink);
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+}
+
+/* A skill's tile: the list mark in the ink on the ink at 3%, a ring at 10%. */
+.page-skill-tile {
+  flex: none;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  background: color-mix(in srgb, var(--ink) 3%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 10%, transparent);
+  color: var(--ink);
 }
 
 /* MARK: The page's column (`PluginPages`): at most 720, in the middle of the panel; 16 above, 24 a side, 32 at the foot. */
@@ -365,6 +415,20 @@
 
 .page-pill.primary:hover:not(:disabled) {
   background: color-mix(in srgb, var(--page-authenticate) 88%, transparent);
+}
+
+/* A team's label and Coming soon: the grey, not buttons; the words grey, or fainter. */
+.page-pill.label,
+.page-pill.soon {
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
+  color: var(--ink-secondary);
+  cursor: default;
+}
+
+.page-pill.soon {
+  color: var(--ink-tertiary);
 }
 
 /* While an add runs (`AddingSpinner`): a 15 ring in a 28 square, its bottom quarter fainter, turning every 0.7 s. */
@@ -759,4 +823,12 @@
 
 .page-skill-input:disabled {
   color: var(--ink-tertiary);
+}
+
+/* A row's words at its left (Setup Values): 13, the ink. */
+.page-row-words {
+  flex: 1;
+  min-width: 0;
+  color: var(--ink);
+  font-size: 13px;
 }

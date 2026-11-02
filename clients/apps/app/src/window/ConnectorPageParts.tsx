@@ -27,7 +27,7 @@ import {
   accountDetail,
   accountTitle,
 } from '../core/appAccounts'
-import { middleCut } from '../core/connectCards'
+import { appLogo, middleCut } from '../core/connectCards'
 import {
   type ConnectorPage,
   informationWords,
@@ -36,6 +36,7 @@ import {
 import { t as coreT } from '../core/l10n'
 import { t } from '../l10n'
 import { classes } from './classes'
+import { AppLogoTile } from './ConnectCards'
 import './ConnectorPages.css'
 import { Line, MentionContext, type MentionSetting } from './MessageText'
 import {
@@ -78,6 +79,103 @@ function PageSymbol({
         )}
       </g>
     </svg>
+  )
+}
+
+// MARK: Icons
+
+/**
+ * An app's icon on its page (`PluginIcon`): its own app icon, whole; else
+ * a tile (white, #232325 on dark, a hairline, an app icon's corners) with
+ * the brand's logo bundled with the app or the catalogue's logo as the
+ * computer read it (`resolvePluginLogo`, asked for once), at 76%; else its
+ * first letter (36%, semibold, grey). 6c's rows draw the same.
+ */
+export function PageIcon({
+  name,
+  side,
+  id,
+  iconUrl,
+  logos,
+  loadLogo,
+}: {
+  name: string
+  side: number
+  id?: string
+  iconUrl?: string
+  /** The catalogue's logos read so far, by address. */
+  logos: ReadonlyMap<string, string>
+  loadLogo: (address: string) => void
+}) {
+  const logo = appLogo(name, id)
+  const bundled = logo.kind === 'logo' ? logo : undefined
+  const wanted = logo.kind !== 'icon' && !bundled ? iconUrl : undefined
+  useEffect(() => {
+    if (wanted !== undefined) loadLogo(wanted)
+  }, [wanted, loadLogo])
+  if (logo.kind === 'icon')
+    return <AppLogoTile name={name} id={id} side={side} />
+  const read = wanted !== undefined ? logos.get(wanted) : undefined
+  return (
+    <span
+      className="page-icon"
+      style={{
+        width: side,
+        height: side,
+        borderRadius: (side * 11) / 40,
+        fontSize: side * 0.36,
+      }}
+      aria-hidden="true"
+    >
+      {bundled?.mono ? (
+        <span
+          className="page-icon-mask"
+          style={{
+            maskImage: `url("${bundled.url}")`,
+            WebkitMaskImage: `url("${bundled.url}")`,
+          }}
+        />
+      ) : bundled || read !== undefined ? (
+        <img src={bundled?.url ?? read} alt="" />
+      ) : (
+        firstLetter(name).toUpperCase()
+      )}
+    </span>
+  )
+}
+
+/** The first character as a person reads it (`String.prefix(1)`). */
+function firstLetter(name: string): string {
+  const first = new Intl.Segmenter().segment(name)[Symbol.iterator]().next()
+  return first.done ? '' : first.value.segment
+}
+
+/** A skill's tile on its page (`SkillTile`, 48): the list mark (18, in the ink) on the ink at 3%, a ring at 10%, an app icon's corners. */
+export function SkillTile({ side }: { side: number }) {
+  return (
+    <span
+      className="page-skill-tile"
+      style={{ width: side, height: side, borderRadius: (side * 11) / 40 }}
+      aria-hidden="true"
+    >
+      <svg width="20" height="20" viewBox="0 0 20 20">
+        <g
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.4"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <rect x="2.2" y="3.5" width="15.6" height="13" rx="2.6" />
+          <path d="M8.6 7.6h6M8.6 10h6M8.6 12.4h6" />
+        </g>
+        <g fill="currentColor">
+          <circle cx="5.9" cy="7.6" r="0.85" />
+          <circle cx="5.9" cy="10" r="0.85" />
+          <circle cx="5.9" cy="12.4" r="0.85" />
+        </g>
+      </svg>
+    </span>
   )
 }
 
@@ -394,24 +492,36 @@ export function RemoveGroup({
   )
 }
 
-/** A pill (`PluginPill`): the iPhone's grey one at a row's end (Reopen, Remove), or the blue one (Save, Add, Save Values); 24 high, 12 medium, a step darker under the pointer, faded while it can't be pressed. */
+/**
+ * A pill (`PluginPill`, the iPhone's: 12 medium, 24 high, 10 a side,
+ * round): `secondary`, the grey, a step darker under the pointer (Reopen,
+ * Remove, Edit Values); `primary`, white on Connect's blue (Save, Add);
+ * `label`, a team's, grey words on the grey; `soon`, Coming soon, fainter
+ * words. The last two are not buttons. Faded to 56% while it waits.
+ */
 export function PagePill({
   title,
   label,
-  primary,
+  kind = 'secondary',
   disabled,
   onClick,
 }: {
   title: string
   label?: string
-  primary?: boolean
+  kind?: 'secondary' | 'primary' | 'label' | 'soon'
   disabled?: boolean
-  onClick: () => void
+  onClick?: () => void
 }) {
+  if (kind === 'label' || kind === 'soon')
+    return (
+      <span className={`page-pill ${kind}`} aria-label={label}>
+        {title}
+      </span>
+    )
   return (
     <button
       type="button"
-      className={classes('page-pill', primary && 'primary')}
+      className={classes('page-pill', kind === 'primary' && 'primary')}
       aria-label={label}
       disabled={disabled}
       onClick={onClick}
