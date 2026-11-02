@@ -356,6 +356,19 @@ describe('the Allow card (LocalAskDock)', () => {
   })
 })
 
+describe('the call’s own window (7c)', () => {
+  it('leaves the hands to the main window', async () => {
+    const host = new FakeDesktop({ window: 'call' })
+    restore = host.install()
+    const store = new AppStore()
+    store.account = { name: 'Sam', email: 'sam@example.com' }
+    await store.attach(new SettingsBackend())
+    store.detach()
+    await ms(20)
+    expect(host.calls).toEqual([])
+  })
+})
+
 describe('the hands’ loop (LocalHandsProvider.run)', () => {
   it('hands over the gateway’s address and keys, dials again, and asks for the address again after three failures', async () => {
     const fake = desktopWith()

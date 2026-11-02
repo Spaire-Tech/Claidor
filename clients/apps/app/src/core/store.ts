@@ -6220,7 +6220,8 @@ export class AppStore {
 
   /** Looked at once the change that called it is done, as the Mac's observation runs after the change. */
   private scheduleHands(): void {
-    if (this.handsScheduled || desktop() == null) return
+    // The main window's store only (not the call's window, 7c): only it drives the hands.
+    if (this.handsScheduled || desktop()?.facts.window !== 'main') return
     this.handsScheduled = true
     queueMicrotask(() => {
       this.handsScheduled = false
@@ -6236,7 +6237,7 @@ export class AppStore {
    */
   private followHands(): void {
     const host = desktop()
-    if (!host) return
+    if (host?.facts.window !== 'main') return
     const backend = this.backend
     // The account is known after its computer (the profile answers later): an account gone while a computer is attached is the same one still.
     const account = this.account?.email.trim().toLowerCase() || undefined
