@@ -1,0 +1,1476 @@
+{
+  "phases": [
+    {
+      "status": null,
+      "ensuring": false,
+      "phase": "off",
+      "usable": false
+    },
+    {
+      "status": null,
+      "ensuring": true,
+      "phase": "starting",
+      "usable": false
+    },
+    {
+      "status": {
+        "state": "absent",
+        "vncUrl": null
+      },
+      "ensuring": false,
+      "phase": "off",
+      "usable": false
+    },
+    {
+      "status": {
+        "state": "absent",
+        "vncUrl": null
+      },
+      "ensuring": true,
+      "phase": "starting",
+      "usable": false
+    },
+    {
+      "status": {
+        "state": "hibernated",
+        "vncUrl": null
+      },
+      "ensuring": false,
+      "phase": "sleeping",
+      "usable": false
+    },
+    {
+      "status": {
+        "state": "hibernated",
+        "vncUrl": null
+      },
+      "ensuring": true,
+      "phase": "starting",
+      "usable": false
+    },
+    {
+      "status": {
+        "state": "running",
+        "vncUrl": "http://x/vnc.html"
+      },
+      "ensuring": false,
+      "phase": "running",
+      "usable": true
+    },
+    {
+      "status": {
+        "state": "running",
+        "vncUrl": "http://x/vnc.html"
+      },
+      "ensuring": true,
+      "phase": "running",
+      "usable": true
+    },
+    {
+      "status": {
+        "state": "running",
+        "vncUrl": ""
+      },
+      "ensuring": false,
+      "phase": "local",
+      "usable": false
+    },
+    {
+      "status": {
+        "state": "running",
+        "vncUrl": ""
+      },
+      "ensuring": true,
+      "phase": "local",
+      "usable": false
+    },
+    {
+      "status": {
+        "state": "running",
+        "vncUrl": null,
+        "pull": {
+          "percent": 0
+        }
+      },
+      "ensuring": false,
+      "phase": "pulling",
+      "usable": false
+    },
+    {
+      "status": {
+        "state": "running",
+        "vncUrl": null,
+        "pull": {
+          "percent": 0
+        }
+      },
+      "ensuring": true,
+      "phase": "pulling",
+      "usable": false
+    },
+    {
+      "status": {
+        "state": "absent",
+        "vncUrl": null,
+        "pull": {
+          "percent": 42.6
+        }
+      },
+      "ensuring": false,
+      "phase": "pulling",
+      "usable": false
+    },
+    {
+      "status": {
+        "state": "absent",
+        "vncUrl": null,
+        "pull": {
+          "percent": 42.6
+        }
+      },
+      "ensuring": true,
+      "phase": "pulling",
+      "usable": false
+    },
+    {
+      "status": {
+        "state": "starting",
+        "vncUrl": null
+      },
+      "ensuring": false,
+      "phase": "off",
+      "usable": false
+    },
+    {
+      "status": {
+        "state": "starting",
+        "vncUrl": null
+      },
+      "ensuring": true,
+      "phase": "starting",
+      "usable": false
+    }
+  ],
+  "previews": [
+    {
+      "read": "unknown",
+      "phase": "pulling",
+      "pull": null,
+      "shown": true,
+      "copy": {
+        "message": "Booting up the computer",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "unknown",
+      "phase": "pulling",
+      "pull": 37.4,
+      "shown": true,
+      "copy": {
+        "message": "Setting up the computer",
+        "progressPercent": 37.4,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "unknown",
+      "phase": "running",
+      "pull": null,
+      "shown": true,
+      "copy": {
+        "message": "Booting up the computer",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "unknown",
+      "phase": "running",
+      "pull": 37.4,
+      "shown": true,
+      "copy": {
+        "message": "Setting up the computer",
+        "progressPercent": 37.4,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "unknown",
+      "phase": "local",
+      "pull": null,
+      "shown": true,
+      "copy": {
+        "message": "Booting up the computer",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "unknown",
+      "phase": "local",
+      "pull": 37.4,
+      "shown": true,
+      "copy": {
+        "message": "Setting up the computer",
+        "progressPercent": 37.4,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "unknown",
+      "phase": "starting",
+      "pull": null,
+      "shown": true,
+      "copy": {
+        "message": "Booting up the computer",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "unknown",
+      "phase": "starting",
+      "pull": 37.4,
+      "shown": true,
+      "copy": {
+        "message": "Setting up the computer",
+        "progressPercent": 37.4,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "unknown",
+      "phase": "sleeping",
+      "pull": null,
+      "shown": true,
+      "copy": {
+        "message": "Booting up the computer",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "unknown",
+      "phase": "sleeping",
+      "pull": 37.4,
+      "shown": true,
+      "copy": {
+        "message": "Setting up the computer",
+        "progressPercent": 37.4,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "unknown",
+      "phase": "off",
+      "pull": null,
+      "shown": true,
+      "copy": {
+        "message": "Booting up the computer",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "unknown",
+      "phase": "off",
+      "pull": 37.4,
+      "shown": true,
+      "copy": {
+        "message": "Setting up the computer",
+        "progressPercent": 37.4,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "known",
+      "phase": "pulling",
+      "pull": null,
+      "shown": true,
+      "copy": {
+        "message": "Booting up the computer",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "known",
+      "phase": "pulling",
+      "pull": 37.4,
+      "shown": true,
+      "copy": {
+        "message": "Setting up the computer",
+        "progressPercent": 37.4,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "known",
+      "phase": "running",
+      "pull": null,
+      "shown": false,
+      "copy": {
+        "message": "Booting up the computer",
+        "progressPercent": null,
+        "isBusy": false,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "known",
+      "phase": "running",
+      "pull": 37.4,
+      "shown": true,
+      "copy": {
+        "message": "Setting up the computer",
+        "progressPercent": 37.4,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "known",
+      "phase": "local",
+      "pull": null,
+      "shown": false,
+      "copy": {
+        "message": "Booting up the computer",
+        "progressPercent": null,
+        "isBusy": false,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "known",
+      "phase": "local",
+      "pull": 37.4,
+      "shown": true,
+      "copy": {
+        "message": "Setting up the computer",
+        "progressPercent": 37.4,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "known",
+      "phase": "starting",
+      "pull": null,
+      "shown": true,
+      "copy": {
+        "message": "Booting up the computer",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "known",
+      "phase": "starting",
+      "pull": 37.4,
+      "shown": true,
+      "copy": {
+        "message": "Setting up the computer",
+        "progressPercent": 37.4,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "known",
+      "phase": "sleeping",
+      "pull": null,
+      "shown": false,
+      "copy": {
+        "message": "Booting up the computer",
+        "progressPercent": null,
+        "isBusy": false,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "known",
+      "phase": "sleeping",
+      "pull": 37.4,
+      "shown": true,
+      "copy": {
+        "message": "Setting up the computer",
+        "progressPercent": 37.4,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "known",
+      "phase": "off",
+      "pull": null,
+      "shown": false,
+      "copy": {
+        "message": "Booting up the computer",
+        "progressPercent": null,
+        "isBusy": false,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "known",
+      "phase": "off",
+      "pull": 37.4,
+      "shown": true,
+      "copy": {
+        "message": "Setting up the computer",
+        "progressPercent": 37.4,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "error",
+      "phase": "pulling",
+      "pull": null,
+      "shown": true,
+      "copy": {
+        "message": "Can't reach Nora's screen",
+        "progressPercent": null,
+        "isBusy": false,
+        "hasRetry": true
+      }
+    },
+    {
+      "read": "error",
+      "phase": "pulling",
+      "pull": 37.4,
+      "shown": true,
+      "copy": {
+        "message": "Can't reach Nora's screen",
+        "progressPercent": null,
+        "isBusy": false,
+        "hasRetry": true
+      }
+    },
+    {
+      "read": "error",
+      "phase": "running",
+      "pull": null,
+      "shown": true,
+      "copy": {
+        "message": "Can't reach Nora's screen",
+        "progressPercent": null,
+        "isBusy": false,
+        "hasRetry": true
+      }
+    },
+    {
+      "read": "error",
+      "phase": "running",
+      "pull": 37.4,
+      "shown": true,
+      "copy": {
+        "message": "Can't reach Nora's screen",
+        "progressPercent": null,
+        "isBusy": false,
+        "hasRetry": true
+      }
+    },
+    {
+      "read": "error",
+      "phase": "local",
+      "pull": null,
+      "shown": true,
+      "copy": {
+        "message": "Can't reach Nora's screen",
+        "progressPercent": null,
+        "isBusy": false,
+        "hasRetry": true
+      }
+    },
+    {
+      "read": "error",
+      "phase": "local",
+      "pull": 37.4,
+      "shown": true,
+      "copy": {
+        "message": "Can't reach Nora's screen",
+        "progressPercent": null,
+        "isBusy": false,
+        "hasRetry": true
+      }
+    },
+    {
+      "read": "error",
+      "phase": "starting",
+      "pull": null,
+      "shown": true,
+      "copy": {
+        "message": "Can't reach Nora's screen",
+        "progressPercent": null,
+        "isBusy": false,
+        "hasRetry": true
+      }
+    },
+    {
+      "read": "error",
+      "phase": "starting",
+      "pull": 37.4,
+      "shown": true,
+      "copy": {
+        "message": "Can't reach Nora's screen",
+        "progressPercent": null,
+        "isBusy": false,
+        "hasRetry": true
+      }
+    },
+    {
+      "read": "error",
+      "phase": "sleeping",
+      "pull": null,
+      "shown": true,
+      "copy": {
+        "message": "Can't reach Nora's screen",
+        "progressPercent": null,
+        "isBusy": false,
+        "hasRetry": true
+      }
+    },
+    {
+      "read": "error",
+      "phase": "sleeping",
+      "pull": 37.4,
+      "shown": true,
+      "copy": {
+        "message": "Can't reach Nora's screen",
+        "progressPercent": null,
+        "isBusy": false,
+        "hasRetry": true
+      }
+    },
+    {
+      "read": "error",
+      "phase": "off",
+      "pull": null,
+      "shown": true,
+      "copy": {
+        "message": "Can't reach Nora's screen",
+        "progressPercent": null,
+        "isBusy": false,
+        "hasRetry": true
+      }
+    },
+    {
+      "read": "error",
+      "phase": "off",
+      "pull": 37.4,
+      "shown": true,
+      "copy": {
+        "message": "Can't reach Nora's screen",
+        "progressPercent": null,
+        "isBusy": false,
+        "hasRetry": true
+      }
+    }
+  ],
+  "fulls": [
+    {
+      "read": "unknown",
+      "phase": "pulling",
+      "pull": null,
+      "helpers": false,
+      "copy": {
+        "message": "Switching to Nora's screen…",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "unknown",
+      "phase": "pulling",
+      "pull": null,
+      "helpers": true,
+      "copy": {
+        "message": "Booting up the computer",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "unknown",
+      "phase": "pulling",
+      "pull": 12,
+      "helpers": false,
+      "copy": {
+        "message": "Switching to Nora's screen…",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "unknown",
+      "phase": "pulling",
+      "pull": 12,
+      "helpers": true,
+      "copy": {
+        "message": "Booting up the computer",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "unknown",
+      "phase": "running",
+      "pull": null,
+      "helpers": false,
+      "copy": {
+        "message": "Switching to Nora's screen…",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "unknown",
+      "phase": "running",
+      "pull": null,
+      "helpers": true,
+      "copy": {
+        "message": "Booting up the computer",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "unknown",
+      "phase": "running",
+      "pull": 12,
+      "helpers": false,
+      "copy": {
+        "message": "Switching to Nora's screen…",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "unknown",
+      "phase": "running",
+      "pull": 12,
+      "helpers": true,
+      "copy": {
+        "message": "Booting up the computer",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "unknown",
+      "phase": "local",
+      "pull": null,
+      "helpers": false,
+      "copy": {
+        "message": "Switching to Nora's screen…",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "unknown",
+      "phase": "local",
+      "pull": null,
+      "helpers": true,
+      "copy": {
+        "message": "This agent runs on your machine. There's no separate desktop to stream.",
+        "progressPercent": null,
+        "isBusy": false,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "unknown",
+      "phase": "local",
+      "pull": 12,
+      "helpers": false,
+      "copy": {
+        "message": "Switching to Nora's screen…",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "unknown",
+      "phase": "local",
+      "pull": 12,
+      "helpers": true,
+      "copy": {
+        "message": "This agent runs on your machine. There's no separate desktop to stream.",
+        "progressPercent": null,
+        "isBusy": false,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "unknown",
+      "phase": "starting",
+      "pull": null,
+      "helpers": false,
+      "copy": {
+        "message": "Switching to Nora's screen…",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "unknown",
+      "phase": "starting",
+      "pull": null,
+      "helpers": true,
+      "copy": {
+        "message": "Booting up the computer",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "unknown",
+      "phase": "starting",
+      "pull": 12,
+      "helpers": false,
+      "copy": {
+        "message": "Switching to Nora's screen…",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "unknown",
+      "phase": "starting",
+      "pull": 12,
+      "helpers": true,
+      "copy": {
+        "message": "Booting up the computer",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "unknown",
+      "phase": "sleeping",
+      "pull": null,
+      "helpers": false,
+      "copy": {
+        "message": "Switching to Nora's screen…",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "unknown",
+      "phase": "sleeping",
+      "pull": null,
+      "helpers": true,
+      "copy": {
+        "message": "Booting up the computer",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "unknown",
+      "phase": "sleeping",
+      "pull": 12,
+      "helpers": false,
+      "copy": {
+        "message": "Switching to Nora's screen…",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "unknown",
+      "phase": "sleeping",
+      "pull": 12,
+      "helpers": true,
+      "copy": {
+        "message": "Booting up the computer",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "unknown",
+      "phase": "off",
+      "pull": null,
+      "helpers": false,
+      "copy": {
+        "message": "Switching to Nora's screen…",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "unknown",
+      "phase": "off",
+      "pull": null,
+      "helpers": true,
+      "copy": {
+        "message": "Booting up the computer",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "unknown",
+      "phase": "off",
+      "pull": 12,
+      "helpers": false,
+      "copy": {
+        "message": "Switching to Nora's screen…",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "unknown",
+      "phase": "off",
+      "pull": 12,
+      "helpers": true,
+      "copy": {
+        "message": "Booting up the computer",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "known",
+      "phase": "pulling",
+      "pull": null,
+      "helpers": false,
+      "copy": {
+        "message": "Booting up the computer",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "known",
+      "phase": "pulling",
+      "pull": null,
+      "helpers": true,
+      "copy": {
+        "message": "Booting up the computer",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "known",
+      "phase": "pulling",
+      "pull": 12,
+      "helpers": false,
+      "copy": {
+        "message": "Setting up the computer",
+        "progressPercent": 12,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "known",
+      "phase": "pulling",
+      "pull": 12,
+      "helpers": true,
+      "copy": {
+        "message": "Booting up the computer",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "known",
+      "phase": "running",
+      "pull": null,
+      "helpers": false,
+      "copy": {
+        "message": "Booting up the computer",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "known",
+      "phase": "running",
+      "pull": null,
+      "helpers": true,
+      "copy": {
+        "message": "Booting up the computer",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "known",
+      "phase": "running",
+      "pull": 12,
+      "helpers": false,
+      "copy": {
+        "message": "Setting up the computer",
+        "progressPercent": 12,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "known",
+      "phase": "running",
+      "pull": 12,
+      "helpers": true,
+      "copy": {
+        "message": "Booting up the computer",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "known",
+      "phase": "local",
+      "pull": null,
+      "helpers": false,
+      "copy": {
+        "message": "This agent runs on your machine. There's no separate desktop to stream.",
+        "progressPercent": null,
+        "isBusy": false,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "known",
+      "phase": "local",
+      "pull": null,
+      "helpers": true,
+      "copy": {
+        "message": "This agent runs on your machine. There's no separate desktop to stream.",
+        "progressPercent": null,
+        "isBusy": false,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "known",
+      "phase": "local",
+      "pull": 12,
+      "helpers": false,
+      "copy": {
+        "message": "Setting up the computer",
+        "progressPercent": 12,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "known",
+      "phase": "local",
+      "pull": 12,
+      "helpers": true,
+      "copy": {
+        "message": "This agent runs on your machine. There's no separate desktop to stream.",
+        "progressPercent": null,
+        "isBusy": false,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "known",
+      "phase": "starting",
+      "pull": null,
+      "helpers": false,
+      "copy": {
+        "message": "Booting up the computer",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "known",
+      "phase": "starting",
+      "pull": null,
+      "helpers": true,
+      "copy": {
+        "message": "Booting up the computer",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "known",
+      "phase": "starting",
+      "pull": 12,
+      "helpers": false,
+      "copy": {
+        "message": "Setting up the computer",
+        "progressPercent": 12,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "known",
+      "phase": "starting",
+      "pull": 12,
+      "helpers": true,
+      "copy": {
+        "message": "Booting up the computer",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "known",
+      "phase": "sleeping",
+      "pull": null,
+      "helpers": false,
+      "copy": {
+        "message": "Booting up the computer",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "known",
+      "phase": "sleeping",
+      "pull": null,
+      "helpers": true,
+      "copy": {
+        "message": "Booting up the computer",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "known",
+      "phase": "sleeping",
+      "pull": 12,
+      "helpers": false,
+      "copy": {
+        "message": "Setting up the computer",
+        "progressPercent": 12,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "known",
+      "phase": "sleeping",
+      "pull": 12,
+      "helpers": true,
+      "copy": {
+        "message": "Booting up the computer",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "known",
+      "phase": "off",
+      "pull": null,
+      "helpers": false,
+      "copy": {
+        "message": "Booting up the computer",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "known",
+      "phase": "off",
+      "pull": null,
+      "helpers": true,
+      "copy": {
+        "message": "Booting up the computer",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "known",
+      "phase": "off",
+      "pull": 12,
+      "helpers": false,
+      "copy": {
+        "message": "Setting up the computer",
+        "progressPercent": 12,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "known",
+      "phase": "off",
+      "pull": 12,
+      "helpers": true,
+      "copy": {
+        "message": "Booting up the computer",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "error",
+      "phase": "pulling",
+      "pull": null,
+      "helpers": false,
+      "copy": {
+        "message": "Can't reach Nora's screen",
+        "progressPercent": null,
+        "isBusy": false,
+        "hasRetry": true
+      }
+    },
+    {
+      "read": "error",
+      "phase": "pulling",
+      "pull": null,
+      "helpers": true,
+      "copy": {
+        "message": "Booting up the computer",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "error",
+      "phase": "pulling",
+      "pull": 12,
+      "helpers": false,
+      "copy": {
+        "message": "Can't reach Nora's screen",
+        "progressPercent": null,
+        "isBusy": false,
+        "hasRetry": true
+      }
+    },
+    {
+      "read": "error",
+      "phase": "pulling",
+      "pull": 12,
+      "helpers": true,
+      "copy": {
+        "message": "Booting up the computer",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "error",
+      "phase": "running",
+      "pull": null,
+      "helpers": false,
+      "copy": {
+        "message": "Can't reach Nora's screen",
+        "progressPercent": null,
+        "isBusy": false,
+        "hasRetry": true
+      }
+    },
+    {
+      "read": "error",
+      "phase": "running",
+      "pull": null,
+      "helpers": true,
+      "copy": {
+        "message": "Booting up the computer",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "error",
+      "phase": "running",
+      "pull": 12,
+      "helpers": false,
+      "copy": {
+        "message": "Can't reach Nora's screen",
+        "progressPercent": null,
+        "isBusy": false,
+        "hasRetry": true
+      }
+    },
+    {
+      "read": "error",
+      "phase": "running",
+      "pull": 12,
+      "helpers": true,
+      "copy": {
+        "message": "Booting up the computer",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "error",
+      "phase": "local",
+      "pull": null,
+      "helpers": false,
+      "copy": {
+        "message": "Can't reach Nora's screen",
+        "progressPercent": null,
+        "isBusy": false,
+        "hasRetry": true
+      }
+    },
+    {
+      "read": "error",
+      "phase": "local",
+      "pull": null,
+      "helpers": true,
+      "copy": {
+        "message": "This agent runs on your machine. There's no separate desktop to stream.",
+        "progressPercent": null,
+        "isBusy": false,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "error",
+      "phase": "local",
+      "pull": 12,
+      "helpers": false,
+      "copy": {
+        "message": "Can't reach Nora's screen",
+        "progressPercent": null,
+        "isBusy": false,
+        "hasRetry": true
+      }
+    },
+    {
+      "read": "error",
+      "phase": "local",
+      "pull": 12,
+      "helpers": true,
+      "copy": {
+        "message": "This agent runs on your machine. There's no separate desktop to stream.",
+        "progressPercent": null,
+        "isBusy": false,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "error",
+      "phase": "starting",
+      "pull": null,
+      "helpers": false,
+      "copy": {
+        "message": "Can't reach Nora's screen",
+        "progressPercent": null,
+        "isBusy": false,
+        "hasRetry": true
+      }
+    },
+    {
+      "read": "error",
+      "phase": "starting",
+      "pull": null,
+      "helpers": true,
+      "copy": {
+        "message": "Booting up the computer",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "error",
+      "phase": "starting",
+      "pull": 12,
+      "helpers": false,
+      "copy": {
+        "message": "Can't reach Nora's screen",
+        "progressPercent": null,
+        "isBusy": false,
+        "hasRetry": true
+      }
+    },
+    {
+      "read": "error",
+      "phase": "starting",
+      "pull": 12,
+      "helpers": true,
+      "copy": {
+        "message": "Booting up the computer",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "error",
+      "phase": "sleeping",
+      "pull": null,
+      "helpers": false,
+      "copy": {
+        "message": "Can't reach Nora's screen",
+        "progressPercent": null,
+        "isBusy": false,
+        "hasRetry": true
+      }
+    },
+    {
+      "read": "error",
+      "phase": "sleeping",
+      "pull": null,
+      "helpers": true,
+      "copy": {
+        "message": "Booting up the computer",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "error",
+      "phase": "sleeping",
+      "pull": 12,
+      "helpers": false,
+      "copy": {
+        "message": "Can't reach Nora's screen",
+        "progressPercent": null,
+        "isBusy": false,
+        "hasRetry": true
+      }
+    },
+    {
+      "read": "error",
+      "phase": "sleeping",
+      "pull": 12,
+      "helpers": true,
+      "copy": {
+        "message": "Booting up the computer",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "error",
+      "phase": "off",
+      "pull": null,
+      "helpers": false,
+      "copy": {
+        "message": "Can't reach Nora's screen",
+        "progressPercent": null,
+        "isBusy": false,
+        "hasRetry": true
+      }
+    },
+    {
+      "read": "error",
+      "phase": "off",
+      "pull": null,
+      "helpers": true,
+      "copy": {
+        "message": "Booting up the computer",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    },
+    {
+      "read": "error",
+      "phase": "off",
+      "pull": 12,
+      "helpers": false,
+      "copy": {
+        "message": "Can't reach Nora's screen",
+        "progressPercent": null,
+        "isBusy": false,
+        "hasRetry": true
+      }
+    },
+    {
+      "read": "error",
+      "phase": "off",
+      "pull": 12,
+      "helpers": true,
+      "copy": {
+        "message": "Booting up the computer",
+        "progressPercent": null,
+        "isBusy": true,
+        "hasRetry": false
+      }
+    }
+  ],
+  "focus": [
+    {
+      "asked": "b",
+      "count": 3,
+      "out": "b"
+    },
+    {
+      "asked": "z",
+      "count": 3,
+      "out": "a"
+    },
+    {
+      "asked": null,
+      "count": 3,
+      "out": "a"
+    },
+    {
+      "asked": null,
+      "count": 0,
+      "out": null
+    }
+  ]
+}

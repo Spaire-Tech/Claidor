@@ -136,7 +136,8 @@ function keepInAddress(agentId: string | undefined): void {
  * folds and opens the sidebar; ⌘K opens and closes search, ⌘⇧F opens it;
  * ⌘N opens New Agent; ⌘⇧, the agent's pane on Profile, ⌘⇧I and ⌥⌘B the
  * pane as it was. None of them while a sheet or an alert is over the window
- * (search's own keys are its own). A browser keeps some for itself (⌘N
+ * (search's own keys are its own), nor while the computer is (its screen
+ * has every key). A browser keeps some for itself (⌘N
  * opens a browser window; on Windows, Control-Shift-I its developer tools);
  * the Windows app has them all.
  */
@@ -147,6 +148,8 @@ function useWindowKeys(
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
       if (event.isComposing) return
+      // The computer over the window (step 5b): every key is its screen's, ⌘K, ⌘N and ⌘B too (MainWindow.swift's `computerShowing`).
+      if (model.computerShowing) return
       const command = apple ? event.metaKey : event.ctrlKey
       const other = apple ? event.ctrlKey : event.metaKey
       if (!command || other) return
