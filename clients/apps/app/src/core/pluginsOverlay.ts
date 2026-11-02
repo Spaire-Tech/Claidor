@@ -5,9 +5,9 @@
 // form (`Di`), a server's Details (`wi`), the skill page's Save, and the
 // notices the overlay says.
 
+import { connectWord } from './connecting'
 import { t } from './l10n'
 import {
-  connectWord,
   hasSetupFields,
   type Notice,
   type PluginEntry,
