@@ -12,7 +12,8 @@
 //   ended with no quit (Windows shut down) is installed, and Simeon opened
 //   again; the app goes at once.
 // - As the app quits (`quit`, once the page and every part are done): a
-//   release waiting is installed; after Update Now, Simeon opened again.
+//   release waiting is installed; after Update Now or Relaunch, the
+//   installer opens Simeon again (else the app does, main.ts).
 //
 // Check for Updates… is the page's (`checkForUpdates`, sent by the tray,
 // 7c's): Settings › Updates comes up and looks. Whether this build has an
@@ -80,8 +81,7 @@ export function register(context: AppContext): void {
     kept: readKeptFile(keptFile),
     keep: (value) => writeKeptFile(keptFile, value),
     send: (state) => emit(context.mainWindow()?.webContents, 'updatesChanged', state),
-    quit: () => context.quit(),
-    relaunch: () => app.relaunch(),
+    relaunch: () => context.relaunch(),
     log: (line) => log.write(line),
   })
 
@@ -99,8 +99,9 @@ export function register(context: AppContext): void {
   handle('setUpdateSwitches', (_from, switches) => updates.setSwitches(readSwitches(switches)))
 
   // The installer only once everything else is done; never on a failed quit.
+  // After Relaunch or Update Now, the installer opens Simeon after it, and the app doesn't too (main.ts).
   app.on('quit', (_event, exitCode) => {
-    if (exitCode === 0) updates.quitting()
+    if (exitCode === 0 && updates.quitting(context.relaunchAsked())) context.relaunchTaken()
   })
   updates.start()
   context.beforeQuit(() => updates.stop())

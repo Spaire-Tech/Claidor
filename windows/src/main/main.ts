@@ -30,6 +30,7 @@ import { emit, fromApp, handle, startBridge, text } from './bridge'
 import type { AppContext } from './context'
 import { type AppFacts, factsFor } from './facts'
 import { KeptValues } from './kept'
+import { relaunchArguments } from './session/relaunch'
 import { appLinkScheme, linksIn } from './links'
 import * as handsPart from './parts/hands'
 import * as outsidePart from './parts/outside'
@@ -218,6 +219,8 @@ function start(): void {
       applyLook(mainWindow, asked)
   })
 
+  // Relaunch: once, after the quit; by the updater's installer when it runs (parts/updates.ts), else below.
+  let relaunch: 'no' | 'asked' | 'taken' = 'no'
   const context: AppContext = {
     facts,
     app: appFacts,
@@ -226,6 +229,14 @@ function start(): void {
     mainWindow: () => (mainWindow && !mainWindow.isDestroyed() ? mainWindow : undefined),
     showMainWindow,
     quit: () => app.quit(),
+    relaunch() {
+      if (relaunch === 'no') relaunch = 'asked'
+      app.quit()
+    },
+    relaunchAsked: () => relaunch === 'asked',
+    relaunchTaken() {
+      relaunch = 'taken'
+    },
     onLink(listener) {
       linkListeners.push(listener)
       for (const url of pendingLinks.splice(0)) listener(url)
@@ -236,6 +247,11 @@ function start(): void {
   }
   for (const part of [sessionPart, surfacesPart, outsidePart, updatesPart, handsPart])
     part.register(context)
+  // After every part's own `quit` (the updater's first, which may take the relaunch over): a new instance with no link, as the Mac's (the one Windows started this one with is not handed over again).
+  app.on('quit', (_event, exitCode) => {
+    if (exitCode === 0 && relaunch === 'asked')
+      app.relaunch({ args: relaunchArguments(appFacts.argv) })
+  })
 
   makeWindow()
 }

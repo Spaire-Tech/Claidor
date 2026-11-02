@@ -21,6 +21,16 @@ export interface AppContext {
   showMainWindow(): BrowserWindow
   /** Quits for real (the ×, Alt-F4 and Control-W only hide the window). */
   quit(): void
+  /**
+   * Quits, then Simeon opens again with no link (Relaunch after a new
+   * language, Update Now): once, by the updater's installer when it runs as
+   * Simeon quits (`relaunchTaken`), else by the app itself.
+   */
+  relaunch(): void
+  /** Whether the quit under way opens Simeon again. */
+  relaunchAsked(): boolean
+  /** The updater's installer opens Simeon after it: the app doesn't too (two would race the install). */
+  relaunchTaken(): void
   /** A `simeon://` link that reached the app (at launch, from a second launch); 7d reads them. */
   onLink(listener: (url: string) => void): void
   /** Something of the main process's own to do before quitting, after the page's (`quitting`). */

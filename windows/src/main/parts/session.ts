@@ -16,12 +16,10 @@
 //   app's local folder; what goes in them, and whose they are, is the
 //   page's (its store's "Step 7b" section).
 
-import { app } from 'electron'
 import { handle, text } from '../bridge'
 import type { AppContext } from '../context'
 import { deviceModel } from '../session/device'
 import { AppLogs, isLogName } from '../session/logs'
-import { relaunchArguments } from '../session/relaunch'
 import {
   SavedChatsFolder,
   agentIdArgument,
@@ -45,11 +43,8 @@ export function register(context: AppContext): void {
     }),
   )
 
-  handle('relaunch', () => {
-    // As the Mac's: a new instance with no link (the one Windows started this one with is not handed over again).
-    app.relaunch({ args: relaunchArguments(context.app.argv) })
-    context.quit()
-  })
+  // As the Mac's: a new instance with no link (main.ts; the updater's installer opens it instead when one runs).
+  handle('relaunch', () => context.relaunch())
 
   handle('writeLog', (_from, name, line) => {
     if (!isLogName(name)) throw new Error('No such log.')

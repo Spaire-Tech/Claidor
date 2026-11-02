@@ -149,7 +149,6 @@ export class Updates {
   private installing = false
   private upToDate = false
   /** Update Now was pressed: the quit installs and opens Simeon again. */
-  private installAsked = false
   private downloading?: Promise<boolean>
   private timer?: ReturnType<typeof setTimeout>
   private startedAt = 0
@@ -166,9 +165,7 @@ export class Updates {
       kept: KeptUpdates
       keep(value: KeptUpdates): void
       send(state: UpdatesState): void
-      /** The app's own quit (the page's work first, then each part's). */
-      quit(): void
-      /** Simeon opened again after it quits (an Update Now whose installer can't run). */
+      /** Update Now: the app's own quit (the page's work first, then each part's), Simeon opened again after it (by the installer when it runs, `quitting`). */
       relaunch(): void
       /** A line for `updates.log`. */
       log(line: string): void
@@ -262,30 +259,27 @@ export class Updates {
 
   /**
    * The app quits (the page and every part are done): the release waiting is
-   * installed, silently; after Update Now, Simeon is opened again. Checked
-   * again first; not the company's, it isn't run.
+   * installed, silently; when the quit opens Simeon again (Update Now,
+   * Relaunch), the installer does it, after the install. Checked again
+   * first; not the company's, it isn't run. True when the installer opens
+   * Simeon (the app then doesn't: two would race the install).
    */
-  quitting(): void {
+  quitting(relaunching = false): boolean {
     const engine = this.options.engine
     const waiting = this.kept.waiting
-    const relaunch = this.installAsked
-    if (!engine || !waiting || !newer(waiting.version, this.options.version)) {
-      if (relaunch) this.options.relaunch()
-      return
-    }
+    if (!engine || !waiting || !newer(waiting.version, this.options.version)) return false
     const refused = engine.vetNow(waiting)
     if (refused) {
       this.options.log(`install of ${waiting.version} as Simeon quits refused: ${refused}`)
       this.keep({ waiting: null })
-      if (relaunch) this.options.relaunch()
-      return
+      return false
     }
-    if (engine.run(waiting.file, relaunch)) {
-      this.options.log(`installing ${waiting.version} as Simeon quits${relaunch ? ', Simeon opened again after it' : ''}`)
-      return
+    if (engine.run(waiting.file, relaunching)) {
+      this.options.log(`installing ${waiting.version} as Simeon quits${relaunching ? ', Simeon opened again after it' : ''}`)
+      return relaunching
     }
     this.options.log(`install of ${waiting.version} as Simeon quits could not start`)
-    if (relaunch) this.options.relaunch()
+    return false
   }
 
   /** The page opening, Check Now (`lookQuietly`): asks the feed, downloads nothing. */
@@ -310,7 +304,7 @@ export class Updates {
     if (switches.checksAutomatically === true) this.schedule()
   }
 
-  /** Update Now: downloaded if it isn't yet, then the app's own quit, which installs it and opens Simeon again. */
+  /** Update Now: downloaded if it isn't yet, then the app's own quit and relaunch, the installer run as it quits. */
   async install(): Promise<void> {
     const engine = this.options.engine
     if (!engine || this.found == null || this.installing) return
@@ -318,9 +312,8 @@ export class Updates {
     this.changed()
     const ready = this.downloaded || (await this.download(engine))
     if (ready && !this.stopped) {
-      this.installAsked = true
       this.options.log(`Update Now: quitting to install ${this.found}`)
-      this.options.quit()
+      this.options.relaunch()
       return
     }
     // It couldn't: Update Now is there to press again.

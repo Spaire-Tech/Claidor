@@ -86,16 +86,13 @@ function made(options: { engine?: FakeEngine | null; kept?: Partial<KeptUpdates>
   const sent: UpdatesState[] = []
   const keeps: KeptUpdates[] = []
   const lines: string[] = []
-  const app = { quits: 0, relaunches: 0 }
+  const app = { relaunches: 0 }
   const updates = new Updates({
     engine,
     version: options.version ?? '0.1.0',
     kept: { ...firstKept, ...options.kept },
     keep: (value) => keeps.push(value),
     send: (state) => sent.push(state),
-    quit: () => {
-      app.quits += 1
-    },
     relaunch: () => {
       app.relaunches += 1
     },
@@ -126,10 +123,10 @@ describe('the updates', () => {
     updates.start()
     updates.look()
     await updates.install()
-    updates.quitting()
+    expect(updates.quitting(true)).toBe(false)
     await vi.advanceTimersByTimeAsync(3 * day)
     expect(sent).toEqual([])
-    expect(app).toEqual({ quits: 0, relaunches: 0 })
+    expect(app).toEqual({ relaunches: 0 })
     expect(updates.current).toMatchObject({ available: false, checking: false, found: null })
   })
 
@@ -262,19 +259,25 @@ describe('the updates', () => {
     expect(lines.some((l) => l.includes('refused or failed: not signed by the company'))).toBe(true)
   })
 
-  it('Update Now downloads, then asks the app to quit as it always does; the installer runs only as it quits, Simeon opened again', async () => {
+  it('Update Now downloads, then asks the app to quit and open again; the installer runs only as it quits, and opens Simeon itself', async () => {
     const { updates, engine, app } = made()
     engine.latest = '0.2.0'
     updates.look()
     await settle()
     await updates.install()
     expect(engine.downloads).toBe(1)
-    expect(app.quits).toBe(1)
+    expect(app.relaunches).toBe(1)
     expect(engine.runs).toEqual([])
     expect(updates.current).toMatchObject({ installing: true, downloaded: true })
-    // The page and every part are done: the app's `quit`.
-    updates.quitting()
+    // The page and every part are done: the app's `quit`, which opens Simeon again. The installer takes that over.
+    expect(updates.quitting(true)).toBe(true)
     expect(engine.vets).toEqual([waiting020])
+    expect(engine.runs).toEqual([{ file: waiting020.file, relaunch: true }])
+  })
+
+  it('Relaunch (a new language) with a release waiting: the installer opens Simeon, after the install, never the old one beside it', () => {
+    const { updates, engine, app } = made({ kept: { waiting: waiting020 } })
+    expect(updates.quitting(true)).toBe(true)
     expect(engine.runs).toEqual([{ file: waiting020.file, relaunch: true }])
     expect(app.relaunches).toBe(0)
   })
@@ -287,7 +290,7 @@ describe('the updates', () => {
     expect(engine.downloads).toBe(1)
     await updates.install()
     expect(engine.downloads).toBe(1)
-    expect(app.quits).toBe(1)
+    expect(app.relaunches).toBe(1)
   })
 
   it('Update Now that can’t download is there to press again, and quits nothing', async () => {
@@ -297,13 +300,13 @@ describe('the updates', () => {
     await settle()
     engine.downloadFails = true
     await updates.install()
-    expect(app.quits).toBe(0)
+    expect(app.relaunches).toBe(0)
     expect(updates.current.installing).toBe(false)
   })
 
   it('quitting with a release waiting installs it silently, Simeon not opened again', async () => {
     const { updates, engine } = made({ kept: { waiting: waiting020 } })
-    updates.quitting()
+    expect(updates.quitting()).toBe(false)
     expect(engine.runs).toEqual([{ file: waiting020.file, relaunch: false }])
   })
 
@@ -316,29 +319,27 @@ describe('the updates', () => {
     expect(installed.engine.runs).toEqual([])
   })
 
-  it('an installer that fails its check as Simeon quits isn’t run, is forgotten, and after Update Now Simeon comes back', async () => {
-    const { updates, engine, keeps, lines, app } = made()
+  it('an installer that fails its check as Simeon quits isn’t run, is forgotten, and after Update Now the app opens Simeon again itself', async () => {
+    const { updates, engine, keeps, lines } = made()
     engine.latest = '0.2.0'
     updates.look()
     await settle()
     await updates.install()
     engine.refuse = 'the installer is signed by someone else'
-    updates.quitting()
+    expect(updates.quitting(true)).toBe(false)
     expect(engine.runs).toEqual([])
     expect(keeps.at(-1)?.waiting).toBeNull()
-    expect(app.relaunches).toBe(1)
     expect(lines.at(-1)).toBe('install of 0.2.0 as Simeon quits refused: the installer is signed by someone else')
   })
 
-  it('an installer that can’t start after Update Now: Simeon comes back', async () => {
-    const { updates, engine, app } = made()
+  it('an installer that can’t start after Update Now: the app opens Simeon again itself', async () => {
+    const { updates, engine } = made()
     engine.latest = '0.2.0'
     updates.look()
     await settle()
     await updates.install()
     engine.runStarts = false
-    updates.quitting()
-    expect(app.relaunches).toBe(1)
+    expect(updates.quitting(true)).toBe(false)
   })
 
   it('at launch, before the window: a release left waiting (Windows shut down) is installed, Simeon opened again', () => {
@@ -404,7 +405,7 @@ describe('the updates', () => {
     updates.look()
     expect(updates.current.checking).toBe(true)
     await updates.install()
-    expect(app.quits).toBe(1)
+    expect(app.relaunches).toBe(1)
     engine.answer()
     await settle()
     expect(updates.current).toMatchObject({ checking: false, installing: true, found: '0.2.0', downloaded: true })
@@ -413,7 +414,7 @@ describe('the updates', () => {
   it('Update Now with nothing found does nothing; a look is refused while it installs', async () => {
     const { updates, engine, app } = made()
     await updates.install()
-    expect(engine.downloads + app.quits).toBe(0)
+    expect(engine.downloads + app.relaunches).toBe(0)
     engine.latest = '0.2.0'
     updates.look()
     await settle()
