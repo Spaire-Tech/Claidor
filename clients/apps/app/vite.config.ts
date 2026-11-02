@@ -22,6 +22,13 @@ export default defineConfig({
       fileURLToPath(new URL('../web/public/app-next', import.meta.url)),
     emptyOutDir: true,
     sourcemap: false,
+    // Two pages: the window, and the page that ends a connected app's sign-in come back through Simeon Labs' server (connected.html, step 6b).
+    rollupOptions: {
+      input: {
+        index: fileURLToPath(new URL('./index.html', import.meta.url)),
+        connected: fileURLToPath(new URL('./connected.html', import.meta.url)),
+      },
+    },
     // The apps' logos (src/core/generatedBrands.ts) stay files, fetched when a message names one, not written into the script.
     assetsInlineLimit: (file) =>
       file.includes('/desktop/brand/') ? false : undefined,
