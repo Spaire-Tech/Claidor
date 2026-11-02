@@ -616,6 +616,7 @@ export class AppStore {
     this.resetCalls()
     this.resetConnecting()
     this.resetConnectors()
+    this.resetConnectorPages()
     this.resetGeneralSettings()
     this.resetUsageAndBilling()
     this.firstRunAgentId = undefined
@@ -4528,14 +4529,44 @@ export class AppStore {
   /** 6b's state back to nothing (signed out). */
   private resetConnecting(): void {}
 
-  // MARK: Step 6c and 6d's Connectors: the catalogue's entries, the
-  // computer's servers and plugins, their tools and skills, the list and
-  // an app's pages (mac/Simeon/PluginsModel.swift, PluginsWindow.swift; the
-  // core's Plugins.swift, PluginsOverlay.swift, PluginCalls.swift,
-  // ConnectorPages.swift). The screens' side is src/window/Connectors.tsx.
+  // MARK: Step 6c's Connectors: the catalogue's entries, the computer's
+  // servers and plugins, their tools and skills, the list
+  // (mac/Simeon/PluginsModel.swift, PluginsWindow.swift; the core's
+  // Plugins.swift, PluginsOverlay.swift, PluginCalls.swift). The screens'
+  // side is src/window/Connectors.tsx.
 
-  /** 6c's and 6d's state back to nothing (signed out; `PluginsModel.forget`). */
+  /** 6c's state back to nothing (signed out; `PluginsModel.forget`). */
   private resetConnectors(): void {}
+
+  // MARK: Step 6d's Connectors pages and an app's accounts on Simeon Labs'
+  // server (Add Another Account, rename, remove; the core's
+  // AppAccounts.swift, Store.swift's `loadAppAccounts`,
+  // `anotherAccountURL`). 6b's connector reads the three below; 6d writes
+  // them.
+
+  /** An app's accounts read again (`GET apps/{toolkit}/accounts`, `loadAppAccounts`). */
+  async loadAppAccounts(toolkit: string): Promise<void> {
+    void toolkit
+  }
+
+  /** The ids of an app's accounts as last read (`appAccounts[toolkit].accounts`). */
+  appAccountIds(toolkit: string): readonly string[] {
+    void toolkit
+    return []
+  }
+
+  /** The sign-in page for one more account (`POST apps/{toolkit}/connect` with `another`, `anotherAccountURL`); none when it can't be had (the store's problem says why). */
+  async anotherAccountURL(
+    toolkit: string,
+    name: string,
+  ): Promise<string | undefined> {
+    void toolkit
+    void name
+    return undefined
+  }
+
+  /** 6d's state back to nothing (signed out). */
+  private resetConnectorPages(): void {}
 
   // MARK: Step 6e's Settings: General (the account, language, appearance,
   // time zone), the account's page (name, password), Permissions
