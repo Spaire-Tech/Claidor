@@ -10,9 +10,11 @@
 // site icons elsewhere (the Mac reads the site's page for its touch icon,
 // which a web page may not); the eye shows a saved password only after the
 // window's alert with the words the Mac's Touch ID shows (as 1Password's
-// Fill), then `GET credentials/{id}`. A password is left to the browser's
-// field, read only when it is saved, never put in the page's HTML or the
-// browser's storage, and emptied before the sheet closes. The field is a text
+// Fill), then `GET credentials/{id}`; in the Windows app Windows Hello asks
+// with those words first, the alert only where Hello can't (presence.ts).
+// A password is left to the browser's field, read only when it is saved,
+// never put in the page's HTML or the browser's storage, and emptied
+// before the sheet closes. The field is a text
 // field whose words are masked (`-webkit-text-security`), so the browser's own
 // password manager sees no sign-in or sign-up here: it offers no password of
 // its own and asks to save none of the person's under Simeon's address. A
@@ -42,9 +44,12 @@ import {
 } from '../core/credentialsStore'
 import type { AppStore } from '../core/store'
 import { t } from '../l10n'
+import { classes } from './classes'
 import { AppLogoTile } from './ConnectCards'
+import countries from './countries.json'
 import { Alert } from './Dialogs'
 import { useSiteIcon } from './MessageText'
+import { confirmPresence } from './presence'
 import './SettingsCredentials.css'
 import {
   PanelDisc,
@@ -55,8 +60,6 @@ import {
   SettingsPill,
   SettingsSymbol,
 } from './SettingsParts'
-import { classes } from './classes'
-import countries from './countries.json'
 import { useWatched } from './useStore'
 import { useWindowModel } from './windowModel'
 
@@ -404,6 +407,8 @@ function CredentialSheet({
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [revealing, setRevealing] = useState(false)
+  // Windows Hello asking (the Windows app): the eye waits.
+  const helloAsking = useRef(false)
   const [problem, setProblem] = useState<string>()
   const [asking, setAsking] = useState<'reveal' | 'delete'>()
   const sheet = useRef<HTMLDivElement>(null)
@@ -509,7 +514,7 @@ function CredentialSheet({
 
   /** The eye: hides; shows what is typed; a saved password only once the person allows it, then read from the server. */
   const togglePassword = () => {
-    if (revealing || asking !== undefined) return
+    if (revealing || asking !== undefined || helloAsking.current) return
     if (showsPassword) {
       setShowsPassword(false)
       return
@@ -518,7 +523,16 @@ function CredentialSheet({
       setShowsPassword(true)
       return
     }
-    setAsking('reveal')
+    // Windows Hello first, with the Mac's Touch ID words; cancelled, nothing is read; where it can't ask, the window's alert.
+    helloAsking.current = true
+    void confirmPresence(t`Show the password for ${credentialTitle(entry)}`)
+      .then((said) => {
+        if (said === 'confirmed') void reveal()
+        else if (said === 'alert') setAsking('reveal')
+      })
+      .finally(() => {
+        helloAsking.current = false
+      })
   }
 
   const reveal = async () => {

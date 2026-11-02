@@ -5,12 +5,14 @@ import { currentLanguage } from './core/language'
 import { loadWords } from './core/words'
 import { CallWindowPage } from './desktop/CallWindow'
 import { desktop } from './desktop/desktop'
+import { startDesktopLinks } from './desktop/links'
 import { listenForQuitting } from './desktop/quitting'
 import { desktopSessionOptions, startDesktopSession } from './desktop/session'
 import { DesktopSurfaces } from './desktop/surfaces'
 import { followWindowLook } from './desktop/windowLook'
 import './index.css'
 import { WebSession } from './session'
+import { mountDeepLinks } from './window/DeepLinks'
 import './window/desktop.css'
 import { applyTheme } from './window/theme'
 
@@ -44,6 +46,9 @@ async function start() {
   if (host) startDesktopSession(host, session)
   // Windows' notifications, the taskbar, the tray and the menu keys, for the app's life (src/desktop/surfaces.ts).
   if (host) new DesktopSurfaces(host, session).start()
+  // In the Windows app's own window: `simeon://` links, heard from the start (the Deep Links dialog shows signed out too; 7d).
+  if (host?.facts.window === 'main')
+    mountDeepLinks(startDesktopLinks(host, () => session.store))
   const root = document.getElementById('root')
   if (root) {
     createRoot(root).render(

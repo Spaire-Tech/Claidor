@@ -111,6 +111,7 @@ import { useSearchReveal } from './SearchPanel'
 import { shopCardView } from './ShopCards'
 import { useOpenMedia } from './Viewers'
 import { classes } from './classes'
+import { copyText } from './clipboard'
 import { apple } from './keys'
 import { useWatched } from './useStore'
 import { useWindowModel } from './windowModel'
@@ -346,7 +347,7 @@ export function ChatPane({
       out.push({
         label: t('Copy'),
         glyph: 'copy',
-        action: () => void navigator.clipboard?.writeText(bubble.text),
+        action: () => void copyText(bubble.text).catch(() => {}),
       })
       return out
     }

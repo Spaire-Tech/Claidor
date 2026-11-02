@@ -6,7 +6,9 @@
 // first in the window's own alert, with the Mac's Touch ID words, and goes
 // without the device's approval, which a browser can't give, so Link asks
 // the person in the Link app (a Shop checkout is paid at once: the alert is
-// the only ask); Review order, the checkout's picture and Open the computer
+// the only ask). In the Windows app Windows Hello asks first, and its yes
+// is the approval Allow carries, as the Mac's Touch ID (presence.ts); where
+// Hello can't ask, the alert, as on the web. Review order, the checkout's picture and Open the computer
 // open the agent's computer over the window (step 5b), but for a Shop
 // checkout, whose Review order is the store's page; pages open in a new
 // tab; the products' pictures come from the shops as the Mac's do, without
@@ -72,6 +74,7 @@ import { classes } from './classes'
 import { openComputerView } from './ComputerView'
 import { Alert, Sheet } from './Dialogs'
 import { AirlineMark } from './FlightCards'
+import { confirmPresence } from './presence'
 import './ShopCards.css'
 import { useWindowModel } from './windowModel'
 
@@ -377,6 +380,8 @@ function PurchaseCardView({
 }) {
   // Allow's question open (the window's alert in place of the Mac's Touch ID).
   const [confirming, setConfirming] = useState(false)
+  // Windows Hello asking (the Windows app): one ask at a time.
+  const helloAsking = useRef(false)
   const shown = shownPurchase(
     card,
     store.answeredPurchases[entryId],
@@ -498,9 +503,23 @@ function PurchaseCardView({
         shown={shown}
         openComputer={() => openComputerView(model, store, agentId)}
         answer={(allow) => {
-          // Allow asks first, as the Mac asks for Touch ID (`PurchaseApproval.confirm`); Deny goes at once.
-          if (allow) setConfirming(true)
-          else void store.answerPurchase(entryId, false, agentId)
+          // Deny goes at once.
+          if (!allow) {
+            void store.answerPurchase(entryId, false, agentId)
+            return
+          }
+          // Allow asks first, as the Mac asks for Touch ID (`PurchaseApproval.confirm`): Windows Hello, whose yes Link is handed (no method, as the Mac's passcode); else the window's alert.
+          if (helloAsking.current) return
+          helloAsking.current = true
+          void confirmPresence(approvalReason(shown))
+            .then((said) => {
+              if (said === 'confirmed')
+                void store.answerPurchase(entryId, true, agentId, {})
+              else if (said === 'alert') setConfirming(true)
+            })
+            .finally(() => {
+              helloAsking.current = false
+            })
         }}
       />
       {/* Only while the card waits: a checkout answered meanwhile (here or on the Mac) asks nothing. */}

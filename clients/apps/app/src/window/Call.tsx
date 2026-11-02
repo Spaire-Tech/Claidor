@@ -43,6 +43,7 @@ import { t } from '../l10n'
 import { AgentMark, AgentPicture } from './AgentMark'
 import './Call.css'
 import { classes } from './classes'
+import { copyText } from './clipboard'
 import { ContextMenu } from './ContextMenu'
 import { somethingOver } from './Dialogs'
 import { Glyph as BarGlyph, useDismiss } from './MessageActions'
@@ -905,7 +906,7 @@ function CopyMenuView({ menu, close }: { menu: CopyMenu; close: () => void }) {
         {
           label: t('Copy'),
           glyph: 'copy',
-          action: () => void navigator.clipboard?.writeText(menu.words),
+          action: () => void copyText(menu.words).catch(() => {}),
         },
       ]}
     />

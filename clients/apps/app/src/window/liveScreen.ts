@@ -126,6 +126,11 @@ export class ScreenClipboard {
     return this.bridge.fromBox(words)
   }
 
+  /** Whether this computer's clipboard may be read and sent now: 0.2 s since the last try (the Windows app's way, window/clipboard.ts). */
+  mayRead(now?: number): boolean {
+    return this.bridge.mayRead(now)
+  }
+
   /** A paste's words: those to send before the keys, or none when the agent's clipboard holds them already. */
   toBox(words: string | undefined): string | undefined {
     if (words == null || words === '' || words === this.holds) return undefined

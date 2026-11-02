@@ -6,10 +6,12 @@
 // (LoopbackSignIn.swift's and AppReturnSignIn.swift's `state`), and what a
 // sign-in's last page reads from its own address.
 //
-// Left out, the Mac's alone: `returning` (our start link names the app that
-// opens it, `back=`, so Apple's sheet closes on the app's own address; a
-// browser has no such address, and the server's own "Connected" page ends
-// it) and `failed` (the address the sheet closed on).
+// The Windows app's alone, as the Mac's (step 7d): `returning` (our start
+// link names the app that opens it, `back=`, so the sign-in's last page
+// sends the browser back to the app; a browser tab has no such address, and
+// the server's own "Connected" page ends it) and the loopback's
+// `busyMessage`; `failed` (the address the sheet closed on) is
+// `connectedReturn` in deepLink.ts.
 
 import { bool, field, str, text } from './json'
 import { t } from './l10n'
@@ -160,6 +162,41 @@ export function loopbackState(url: string): string | undefined {
   if (redirect == null || !isLoopback(redirect)) return undefined
   const state = first(items, 'state')
   return state != null && state !== '' ? state : undefined
+}
+
+/** Why the loopback's listener could not start: another app holds the address (`LoopbackSignIn.busyMessage`). */
+export function loopbackBusy(name: string): string {
+  return t`${name}'s sign-in comes back to localhost:8787, and another app is using it. Quit the other Simeon app and try again.`
+}
+
+/** Our own start link for an app's sign-in (`/desktop/apps/start`, server apps.py). */
+const startPath = '/desktop/apps/start'
+
+/**
+ * Our start link with the app that opens it named (`back`), so the
+ * sign-in's last page sends the person back to the app
+ * (`Connecting.returning`); a maker's own page is left as it is. The
+ * signed link's own pieces are kept as they were written.
+ */
+export function returning(url: string, scheme: string): string {
+  let parsed: URL
+  try {
+    parsed = new URL(url)
+  } catch {
+    return url
+  }
+  if (!parsed.pathname.endsWith(startPath)) return url
+  const pieces = parsed.search
+    .replace(/^\?/, '')
+    .split('&')
+    .filter((piece) => {
+      if (piece === '') return false
+      const at = piece.indexOf('=')
+      return decoded(at < 0 ? piece : piece.slice(0, at)) !== 'back'
+    })
+  pieces.push(`back=${encodeURIComponent(scheme)}`)
+  parsed.search = `?${pieces.join('&')}`
+  return parsed.href
 }
 
 /** Simeon Labs' return address the computer registers with the makers (`AppReturnSignIn.serverCallbackPath`). */

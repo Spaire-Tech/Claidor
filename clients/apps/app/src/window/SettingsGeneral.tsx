@@ -63,6 +63,7 @@ import type { AppStore } from '../core/store'
 import { desktop } from '../desktop/desktop'
 import { t } from '../l10n'
 import { classes } from './classes'
+import { copyText } from './clipboard'
 import { ContextMenu, Glyph } from './ContextMenu'
 import { markStyle } from './FirstRun'
 import { useDismiss } from './MessageActions'
@@ -508,7 +509,7 @@ export function SettingsAccountPage({ store }: { store: AppStore }) {
     return () => clearTimeout(timer)
   }, [copied])
   const copy = () => {
-    void navigator.clipboard?.writeText(mail).then(
+    void copyText(mail).then(
       () => setCopied(true),
       () => {},
     )

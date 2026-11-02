@@ -119,6 +119,36 @@ export interface DesktopCalls {
 
   // MARK: 7d, links and pages outside
 
+  /** The `simeon://` links the app holds for the main window's page (at launch, from a second launch, while the page loaded), each handed over once; later ones come as `link`. */
+  takeLinks(): string[]
+  /** Listens on this PC's loopback (port 8787) for one connector's sign-in, whose state is `state` (the core's `LoopbackCatcher`): its answer comes as `loopbackAnswer`. False when another app holds the address. A newer one takes its place. */
+  catchLoopback(state: string): boolean
+  /** Stops listening for that sign-in (it ended, or another took its place). */
+  stopLoopback(state: string): void
+  /** Stripe's page (https) in a window of the app's own over this one, as the Mac's sheet (`MacBillingPage`): `back` when it came back on the app's own link, `closed` when the person closed it, `browser` when it opened in the default browser instead, `busy` when one is open already. */
+  openBilling(url: string): 'back' | 'closed' | 'browser' | 'busy'
+  /** Windows Hello for one guarded act, with its reason (`PurchaseApproval.confirm`): `unavailable` when Hello can't ask (not set up, another system). */
+  confirmPresence(reason: string): 'confirmed' | 'cancelled' | 'unavailable'
+  /** This PC's clipboard's text (the main window's page only). */
+  readClipboard(): string
+  /** Text onto this PC's clipboard, whether or not the window is in front. */
+  writeClipboard(text: string): void
+  /** The person's 1Password accounts, from 1Password's command-line tool (`MacOnePassword.accounts`): a failure is a code, or 1Password's own sentence (`refused`). */
+  onePasswordAccounts():
+    | { accounts: { id: string; email: string; url: string }[] }
+    | { failure: 'noTool' | 'noAccounts' | 'noAnswer' }
+    | { refused: string }
+  /** The vault "Shared with Simeon" in one of the accounts just listed (made when missing) and a key that can only read it (`MacOnePassword.connect`); an account not just listed is `noAccounts`. */
+  onePasswordConnect(accountId: string):
+    | {
+        token: string
+        vaultId: string
+        vaultName: string
+        accountEmail: string
+      }
+    | { failure: 'noTool' | 'noAccounts' | 'noVault' | 'noKey' | 'noAnswer' }
+    | { refused: string }
+
   // MARK: 7e, updates
 
   /** What the updater knows now (Settings › Updates as it opens, the dot beside Updates in Settings' list). */
@@ -174,6 +204,16 @@ export interface DesktopEvents {
   callZoom: number
 
   // MARK: 7d, links and pages outside
+
+  /** A `simeon://` link that reached the app after `takeLinks` (a second launch's command line). */
+  link: string
+  /** A loopback sign-in's answer, caught once (`LoopbackSignIn.Answer`): the code, or the maker's refusal, with its state. */
+  loopbackAnswer: {
+    state: string
+    code?: string
+    error?: string
+    errorDescription?: string
+  }
 
   // MARK: 7e, updates
 

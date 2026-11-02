@@ -41,9 +41,9 @@ import { t } from '../l10n'
 import { AgentPicture } from './AgentMark'
 import { CardShell, type CardProps } from './Cards'
 import './ConnectCards.css'
-import { openBlankTab } from './blankTab'
 import { classes } from './classes'
 import { useConnector, useConnectorWatched } from './connector'
+import { openPending } from './outside'
 import { useDarkScheme } from './theme'
 import { useWindowModel } from './windowModel'
 
@@ -327,16 +327,13 @@ function ListenerConnectCardView({
 
   const connect = async () => {
     setOpening(true)
-    // Opened at once, before the computer answers, so the browser lets it open; sent to the page once it is known.
-    const tab = openBlankTab()
+    // Opened at once, before the computer answers, so the browser lets it open; sent to the page once it is known (the Windows app: the default browser then, as the Mac's).
+    const tab = openPending()
     const page = webPage(await store.listenerConnectURL(platform))
-    if (!page) tab?.close()
-    else if (!tab) {
+    if (!page) tab.drop()
+    else if (!tab.closed) {
       opened.current = true
-      window.open(page, '_blank', 'noopener')
-    } else if (!tab.closed) {
-      opened.current = true
-      tab.location.href = page
+      tab.go(page)
     }
     // A tab the person closed before the page was known stays closed: they changed their mind.
     setOpening(false)

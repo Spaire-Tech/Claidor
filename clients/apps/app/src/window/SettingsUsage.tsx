@@ -15,7 +15,9 @@
 // comes back to the front, Settings open or not. A tab the browser blocks
 // says so in the group's red line. The Mac's charge after Stripe's card
 // page (`billing/settle`) is not made: the web can't tell when that page was
-// finished.
+// finished. The Windows app opens Stripe's page as the Mac does, in a window
+// of its own that comes back on the app's link, then charges and reads
+// again; the plans page goes to the default browser (outside.ts).
 
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
@@ -43,8 +45,8 @@ import {
   SettingsPill,
 } from './SettingsParts'
 import './SettingsUsage.css'
-import { openBlankTab } from './blankTab'
 import { classes } from './classes'
+import { inApp, openBillingWindow, openPending } from './outside'
 import { useWatched } from './useStore'
 
 /** The time now, again every `every` ms (the Mac's `TimelineView(.periodic(by: 30))`). */
@@ -76,28 +78,6 @@ export function useBillingReturn(store: AppStore): void {
       document.removeEventListener('visibilitychange', back)
     }
   }, [store])
-}
-
-/**
- * A tab opened blank at once, in the click, so the browser lets it open,
- * with no handle on the app; none when the browser blocked it.
- */
-export function blankTab(): Window | undefined {
-  // The copied sign-in emptied and no `opener` (`openBlankTab`).
-  return openBlankTab() ?? undefined
-}
-
-/** The blank tab sent to `url` by a link of its own that carries no referrer: the page isn't told the app's address. */
-export function sendTab(page: Window, url: string): void {
-  try {
-    const link = page.document.createElement('a')
-    link.href = url
-    link.rel = 'noreferrer'
-    page.document.body.append(link)
-    link.click()
-  } catch {
-    page.location.href = url
-  }
 }
 
 /** Only an https page is opened from the app; the quota's own address otherwise gives way to the web's plans page. */
@@ -208,10 +188,11 @@ function UsageGroup({
           title={upgrade.label}
           divided
           onClick={() => {
-            const page = blankTab()
-            setBlocked(page === undefined)
-            if (!page) return
-            sendTab(page, securePage(upgrade.url))
+            // A tab opened blank in the click on the web; the default browser in the Windows app.
+            const page = openPending()
+            setBlocked(page.refused)
+            if (page.refused) return
+            page.go(securePage(upgrade.url), { noReferrer: true })
             opened()
           }}
         />
@@ -335,7 +316,9 @@ function UsageMeterLine({
  * Now for a card trial, Upgrade to the plan above, Add Credits for a paid
  * plan, then Manage Billing ↗. Each asks the server for Stripe's page
  * ("Opening…" meanwhile) and opens it in a new tab, opened blank at once so
- * the browser lets it open; a failure under the rows in red.
+ * the browser lets it open; a failure under the rows in red. In the Windows
+ * app, the Mac's sheet: a window of the app's own, "Opening…" while it is
+ * open, as the Mac's row reads while its sheet shows.
  */
 function ManagePlanGroup({
   store,
@@ -353,9 +336,18 @@ function ManagePlanGroup({
   const web = !summary.billedByApple
   const open = (which: string, flow?: string, tier?: string) => {
     if (opening !== undefined) return
+    if (inApp()) {
+      setOpening(which)
+      setFailure(undefined)
+      void openBillingWindow(store, flow, tier).then((failed) => {
+        setFailure(failed)
+        setOpening(undefined)
+      })
+      return
+    }
     // Opened at once, before the answer, so the browser lets it open; sent to the page once it is known.
-    const page = blankTab()
-    if (!page) {
+    const page = openPending()
+    if (page.refused) {
       // The browser blocked it: said in the group's red line, nothing asked of the server.
       setFailure(t('Couldn’t open billing. Try again.'))
       return
@@ -365,10 +357,10 @@ function ManagePlanGroup({
     void (async () => {
       const answer = await store.billingPortal(flow, tier)
       if (answer.url) {
-        sendTab(page, answer.url)
+        page.go(answer.url, { noReferrer: true })
         opened()
       } else {
-        page.close()
+        page.drop()
         setFailure(answer.message)
       }
       setOpening(undefined)

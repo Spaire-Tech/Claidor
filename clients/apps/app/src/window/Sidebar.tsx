@@ -47,6 +47,7 @@ import { t } from '../l10n'
 import type { WebSession } from '../session'
 import { AccountDisc } from './AccountMenu'
 import { AgentMark } from './AgentMark'
+import { copyText } from './clipboard'
 import { ComputerUpdatePill, StateSpinner } from './ComputerStates'
 import {
   ContextMenu,
@@ -728,7 +729,7 @@ export function Sidebar({
       {
         label: t('Copy conversation ID'),
         glyph: 'copy',
-        action: () => void navigator.clipboard?.writeText(agent.id),
+        action: () => void copyText(agent.id).catch(() => {}),
       },
       'separator',
       {

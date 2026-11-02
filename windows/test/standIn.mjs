@@ -58,10 +58,11 @@ function corsHeaders(origin) {
 
 /**
  * Starts the stand-in. `routes` may answer a path first (each part's own
- * calls): `(request, body) => ({ status, json } | { status, text, type } |
+ * calls): `(request, body) => ({ status, json } | { status, text, type, headers } |
  * { status, body, headers } | undefined)`, or a promise of one (an answer
- * that takes its time). `body` is bytes or text; `headers` are added (a 302's
- * `location`: the updates' feed, 7e).
+ * that takes its time). `body` is bytes or text, sent with only the headers
+ * given; `headers` are added (a 302's `location`: 7d's sign-ins, the
+ * updates' feed, 7e).
  */
 export async function startStandIn({ routes } = {}) {
   const state = { requests: [], box: computer() }
@@ -74,6 +75,7 @@ export async function startStandIn({ routes } = {}) {
     const record = {
       method: request.method,
       path: url.pathname,
+      query: url.search,
       origin: origin ?? null,
       bearer: (request.headers.authorization ?? '').startsWith('Bearer '),
       client: request.headers['x-simeon-client-version'] ?? null,
@@ -82,8 +84,8 @@ export async function startStandIn({ routes } = {}) {
     }
     state.requests.push(record)
     const cors = corsHeaders(origin)
-    const send = (status, body, type = 'application/json') => {
-      response.writeHead(status, { 'content-type': type, 'cache-control': 'no-store', ...cors })
+    const send = (status, body, type = 'application/json', headers = {}) => {
+      response.writeHead(status, { 'content-type': type, 'cache-control': 'no-store', ...cors, ...headers })
       response.end(body)
     }
     const json = (value, status = 200) => send(status, JSON.stringify(value))
@@ -111,7 +113,7 @@ export async function startStandIn({ routes } = {}) {
     const own = await routes?.(record, args, state)
     if (own) {
       if ('json' in own) return json(own.json, own.status ?? 200)
-      if ('body' in own || 'headers' in own) {
+      if ('body' in own) {
         response.writeHead(own.status ?? 200, {
           'cache-control': 'no-store',
           ...cors,
@@ -119,7 +121,7 @@ export async function startStandIn({ routes } = {}) {
         })
         return response.end(own.body ?? '')
       }
-      return send(own.status ?? 200, own.text ?? '', own.type ?? 'text/plain')
+      return send(own.status ?? 200, own.text ?? '', own.type ?? 'text/plain', own.headers)
     }
 
     const p = url.pathname

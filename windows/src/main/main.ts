@@ -32,6 +32,7 @@ import { type AppFacts, factsFor } from './facts'
 import { KeptValues } from './kept'
 import { relaunchArguments } from './session/relaunch'
 import { appLinkScheme, linksIn } from './links'
+import { navigatesOnItsOwn } from './navigation'
 import * as handsPart from './parts/hands'
 import * as outsidePart from './parts/outside'
 import * as sessionPart from './parts/session'
@@ -256,11 +257,11 @@ function start(): void {
   makeWindow()
 }
 
-// What any page of the app may open: nothing but the app's own page in its windows; addresses go to the default browser.
+// What any page of the app may open: nothing but the app's own page in its windows; addresses go to the default browser. A window a part made for another site's page (7d's Stripe window) is ruled by that part (navigation.ts).
 app.on('web-contents-created', (_event, contents) => {
   contents.on('will-attach-webview', (event) => event.preventDefault())
   contents.on('will-navigate', (event, url) => {
-    if (url.startsWith(appStart)) return
+    if (url.startsWith(appStart) || navigatesOnItsOwn(contents)) return
     event.preventDefault()
     if (opensOutside(url)) void shell.openExternal(url)
   })
