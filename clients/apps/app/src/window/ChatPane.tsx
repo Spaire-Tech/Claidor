@@ -102,6 +102,7 @@ import { shopCardView } from './ShopCards'
 import { useOpenMedia } from './Viewers'
 import { classes } from './classes'
 import { useWatched } from './useStore'
+import { useWindowModel } from './windowModel'
 
 /** What a row asks of the chat around it: going to another row, opening a thread, a message's actions. */
 interface ChatControl {
@@ -483,12 +484,29 @@ export function ChatPane({
  * over its name in a pill (13, medium).
  */
 function ChatHeader({ store, agent }: { store: AppStore; agent: Agent }) {
+  const model = useWindowModel()
+  // Both open the agent's pane on Profile, and close it when it shows (`toggleSettings`).
   return (
     <header className="chat-header">
       <div className="veil" aria-hidden="true" />
-      <div className="identity" title={agent.name}>
-        <AgentMark agent={agent} agents={store.agents} size={52} />
-        <span className="name-pill">{agent.name}</span>
+      <div className="identity">
+        <button
+          type="button"
+          className="identity-button"
+          aria-label={t('View agent settings')}
+          onClick={() => model.toggleSettings()}
+        >
+          <AgentMark agent={agent} agents={store.agents} size={52} />
+        </button>
+        <button
+          type="button"
+          className="identity-button name-pill"
+          title={agent.name}
+          aria-label={t('View agent settings')}
+          onClick={() => model.toggleSettings()}
+        >
+          {agent.name}
+        </button>
       </div>
     </header>
   )
@@ -508,6 +526,7 @@ function ThreadHeader({
   agent: Agent
   title: string
 }) {
+  const model = useWindowModel()
   return (
     <header className="thread-header" aria-label={t('Thread breadcrumb')}>
       <button
@@ -521,7 +540,14 @@ function ThreadHeader({
         <span>{agent.name}</span>
       </button>
       <Chevron />
-      <span className="crumb title">{title}</span>
+      <button
+        type="button"
+        className="crumb title"
+        aria-label={t('View conversation details')}
+        onClick={() => model.toggleDetails()}
+      >
+        {title}
+      </button>
     </header>
   )
 }

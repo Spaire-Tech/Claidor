@@ -237,6 +237,54 @@ button {
   flex: none;
 }
 
+/* Search and New Agent at the head's right: 40 round, 10 apart, 12 from the right edge. */
+.sidebar-head:not(.picking):not(.rail-head) {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-right: 12px;
+}
+
+/* The rail's foot: the same discs stacked, 10 apart, 8 from the bottom. */
+.rail-foot {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 8px;
+}
+
+/* One of the window's round buttons in Apple's glass: its symbol (16) black at 78%, white at 86% on dark. */
+.window-disc {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: rgb(0 0 0 / 0.78);
+  cursor: pointer;
+}
+
+.window-disc svg {
+  display: block;
+}
+
+.window-disc:focus-visible {
+  outline: 2px solid var(--unread);
+  outline-offset: 2px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .window-disc {
+    color: rgb(255 255 255 / 0.86);
+  }
+}
+
 /* Rows picked (C11): the head 44 high, its three 24-point buttons 2 apart at the right, 16 in. */
 .sidebar-head.picking {
   height: 44px;
@@ -897,6 +945,26 @@ button {
   gap: 4px;
   padding: 4px 12px 2px 8px;
   pointer-events: auto;
+}
+
+/* The picture and the name both open the agent's pane: buttons with nothing of a button's own look. */
+.identity-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.identity-button:focus-visible {
+  outline: 2px solid var(--unread);
+  outline-offset: 2px;
+}
+
+.identity-button.name-pill {
+  padding: 0 12px;
+  background: var(--glass);
 }
 
 .name-pill {

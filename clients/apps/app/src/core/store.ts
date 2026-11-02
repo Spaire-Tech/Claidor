@@ -71,8 +71,6 @@ import { fileLine, fileSize } from './fileLine'
 import { byteCap, computerPath } from './filePreview'
 import {
   type FlightBookingAnswer,
-  type FlightOffer,
-  type OpenFlight,
   type Traveller,
   bookingAnswer,
   travellerJSON,
@@ -990,19 +988,7 @@ export class AppStore {
   async renameAgent(agentId: string, name: string): Promise<void> {
     const agent = this.agent(agentId)
     if (!agent) return
-    this.agents = this.agents.map((one) =>
-      one.id === agentId ? { ...one, name } : one,
-    )
-    this.changed()
-    // As the Mac's profile field: quietly, the roster read again on a refusal.
-    try {
-      await this.backend?.command('updateAgent', {
-        id: agentId,
-        profile: { name, description: agent.description },
-      })
-    } catch {
-      await this.reloadRoster()
-    }
+    await this.saveProfileField(agentId, name, agent.description)
   }
 
   // MARK: The first run (Onboarding.swift) and the account's access (StoreSettings.swift)
@@ -1649,18 +1635,8 @@ export class AppStore {
   // form (Store.swift's `startFlightBooking`, `submitFlightPassengers`…).
   // The flights' state and commands go below this line, and nowhere else.
 
-  /**
-   * The flight whose details the pane shows (`PaneState.flight`): its key
-   * (the card's row and the offer's place), the offer as it was opened, and
-   * the agent whose chat holds the card. The window draws it beside that
-   * chat (FlightCards.tsx) until the agent's pane comes (step 4).
-   */
-  openFlight?: OpenFlight
-
-  /** The flight cards' state back to nothing (signed out). */
-  private resetFlightCards(): void {
-    this.openFlight = undefined
-  }
+  /** The flight cards' state back to nothing (signed out): none is kept here; a flight's details are the window's (windowModel.ts). */
+  private resetFlightCards(): void {}
 
   /**
    * Nothing to settle: Book with Simeon and the form's Continue wait for the
@@ -1670,20 +1646,6 @@ export class AppStore {
   private settleFlightCards(agentId: string, entries: readonly Entry[]): void {
     void agentId
     void entries
-  }
-
-  /** A flight row (`__simeonOpenFlight`): the open one again closes its details; another shows in their place. */
-  toggleFlight(key: string, offer: FlightOffer, agentId: string): void {
-    this.openFlight =
-      this.openFlight?.key === key ? undefined : { key, offer, agentId }
-    this.changed()
-  }
-
-  /** The details' ×, Escape, Book with Simeon done, or another chat opened. */
-  closeFlight(): void {
-    if (this.openFlight === undefined) return
-    this.openFlight = undefined
-    this.changed()
   }
 
   /** "Book with Simeon" on a flight (`startFlightBooking`): the traveller form in the chat, or why not. */
@@ -2629,6 +2591,108 @@ export class AppStore {
         0,
       )
     return backend.transcribe(audio, mimeType)
+  }
+
+  // MARK: Step 4's agent's pane: Profile (StoreAgents.swift's
+  // `saveProfileField`, Store.swift's `setNotify`), and the gates "/" and
+  // ⌘K share (Jump.swift's `agentNetworkEnabled`, `channelsAvailable`).
+
+  /**
+   * One field of the profile (`updateAgent`), as the pane sends it: the
+   * name and description always, the title only when it is the field
+   * changed. Shown at once; a refusal puts the roster back, quietly.
+   */
+  async saveProfileField(
+    agentId: string,
+    name: string,
+    description: string,
+    title?: string,
+  ): Promise<void> {
+    if (!this.agent(agentId)) return
+    const profile: Record<string, JSONValue> = { name, description }
+    if (title !== undefined) profile.title = title
+    this.agents = this.agents.map((one) =>
+      one.id === agentId
+        ? {
+            ...one,
+            name,
+            description,
+            ...(title !== undefined ? { title } : {}),
+          }
+        : one,
+    )
+    this.changed()
+    try {
+      await this.backend?.command('updateAgent', { id: agentId, profile })
+    } catch {
+      await this.reloadRoster()
+    }
+  }
+
+  /** Notifications on the agent's page (`setAgentNotifyOnUpdates`): shown at once; a refusal is said. */
+  async setNotify(agentId: string, on: boolean): Promise<void> {
+    this.agents = this.agents.map((one) =>
+      one.id === agentId ? { ...one, notifyOnUpdates: on } : one,
+    )
+    this.changed()
+    await this.command(
+      'setAgentNotifyOnUpdates',
+      { id: agentId, isEnabled: on },
+      t("Couldn't change notifications"),
+    )
+  }
+
+  /** One read for a gate: with `wakes` false, a computer that rests is waited for, not woken, until `signal` ends the wait. */
+  private async gateRead(
+    method: string,
+    args: JSONValue,
+    wakes: boolean,
+    signal?: AbortSignal,
+  ): Promise<JSONValue | undefined> {
+    const backend = this.backend
+    if (!backend) return undefined
+    try {
+      if (!wakes && backend.commandWhenAwake)
+        return await backend.commandWhenAwake(method, args, signal)
+      return await backend.command(method, args, { wakes })
+    } catch {
+      return undefined
+    }
+  }
+
+  /** Whether the agent network is on for this account (`isAgentNetworkEnabled`): the Org Chart's gate. */
+  async agentNetworkEnabled(
+    wakes = true,
+    signal?: AbortSignal,
+  ): Promise<boolean> {
+    const answer = await this.gateRead(
+      'isAgentNetworkEnabled',
+      {},
+      wakes,
+      signal,
+    )
+    return bool(answer) ?? bool(field(answer, 'enabled')) ?? false
+  }
+
+  /** Whether a chat can have channels (`getAgentChannels`): any platform available, or any connected. */
+  async channelsAvailable(
+    agentId: string,
+    wakes = true,
+    signal?: AbortSignal,
+  ): Promise<boolean> {
+    const answer = await this.gateRead(
+      'getAgentChannels',
+      { id: agentId },
+      wakes,
+      signal,
+    )
+    const manifests = arr(field(answer, 'manifests')) ?? []
+    const connections = arr(field(answer, 'connections')) ?? []
+    return (
+      manifests.some(
+        (manifest) => str(field(manifest, 'availability')) === 'available',
+      ) || connections.length > 0
+    )
   }
 
   // MARK: The composer's lists
