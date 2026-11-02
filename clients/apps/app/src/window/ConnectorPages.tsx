@@ -18,6 +18,7 @@
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import { canAddAnother } from '../core/appAccounts'
 import { comingSoonWord } from '../core/connectCards'
+import { connectWord } from '../core/connecting'
 import { byline, connectorPage } from '../core/connectorPages'
 import {
   type AgentSkill,
@@ -25,7 +26,6 @@ import {
   type PluginInstallMode,
   type PluginServer,
   accountLabel,
-  connectWord,
   connectorList,
   countWord,
   entryForServer,
@@ -47,10 +47,8 @@ import {
   pageAction,
   requiredLine,
   setupIntro,
-  setupMissing,
   setupStart,
   setupSubmit,
-  setupValues,
   signInButton,
   skillDescriptionHint,
   sourceWord,
@@ -79,6 +77,12 @@ import {
   SkillField,
   ToolsCard,
 } from './ConnectorPageParts'
+import {
+  setupShownMissing,
+  setupSubmitted,
+  setupTyped,
+  setupView,
+} from './connectorPageState'
 import { AddingSpinner, PluginIcon, PluginPill, SkillTile } from './Connectors'
 import type { PluginsModel, PluginsPage } from './pluginsModel'
 import { SettingsActionRow, SettingsGroup } from './SettingsParts'
@@ -559,7 +563,7 @@ function AppAccountsCard({
       rename={(account, next) =>
         void store.renameAppAccount(toolkit, account, next)
       }
-      remove={(account) => void store.removeAppAccount(toolkit, account)}
+      remove={(account) => store.removeAppAccount(toolkit, account)}
     />
   )
 }
@@ -596,7 +600,7 @@ function ServerTools({
  * hidden, " (optional)"), what is required, and Add or Save Values. It
  * starts from each field's default; values given before are never shown.
  * The words stay the browser's: read when they are sent, and a secret
- * emptied then.
+ * emptied then (connectorPageState.ts).
  */
 function SetupPage({
   entry,
@@ -610,39 +614,30 @@ function SetupPage({
   const fields = entry.fields ?? []
   const [start] = useState(() => setupStart(fields))
   const inputs = useRef(new Map<string, HTMLInputElement>())
-  /** Which fields hold more than spaces; never what. */
-  const [filled, setFilled] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(
-      fields.map((one) => [one.key, (start[one.key] ?? '').trim() !== '']),
-    ),
-  )
-  const [tried, setTried] = useState(false)
-  // `setupMissing` on what the fields hold.
-  const missing = fields.filter((one) => one.isRequired && !filled[one.key])
+  /** Whether the button was pressed, and which fields hold more than spaces; never what. */
+  const [view, setView] = useState(() => setupView(fields))
+  const missing = setupShownMissing(fields, view)
   const submit = () => {
-    setTried(true)
-    const values = Object.fromEntries(
-      fields.map((one) => [one.key, inputs.current.get(one.key)?.value ?? '']),
+    const done = setupSubmitted(
+      fields,
+      view,
+      (key) => inputs.current.get(key)?.value ?? '',
+      model.isBusy,
     )
-    if (setupMissing(fields, values).length > 0 || model.isBusy) return
-    for (const one of fields) {
-      const input = inputs.current.get(one.key)
-      if (one.isSecret && input) input.value = ''
+    for (const key of done.empty) {
+      const input = inputs.current.get(key)
+      if (input) input.value = ''
     }
-    setFilled((now) => ({
-      ...now,
-      ...Object.fromEntries(
-        fields.filter((one) => one.isSecret).map((one) => [one.key, false]),
-      ),
-    }))
-    void model.submitSetup(setupValues(values), model.agentId)
+    setView(done.view)
+    // From the click itself: a new add's sign-in takes the tab it opens (`requestSubmitSetup`).
+    if (done.send) model.requestSubmitSetup(done.send, model.agentId)
   }
   return (
     <div className="setup-page">
       <Description text={setupIntro(entry.displayName, editing)} />
       <div className="setup-fields">
         {fields.map((one) => {
-          const invalid = tried && missing.includes(one)
+          const invalid = missing.includes(one)
           return (
             <div key={one.key} className="setup-value">
               <span className="setup-label">
@@ -663,9 +658,7 @@ function SetupPage({
                   else inputs.current.delete(one.key)
                 }}
                 filled={(now) =>
-                  setFilled((was) =>
-                    was[one.key] === now ? was : { ...was, [one.key]: now },
-                  )
+                  setView((was) => setupTyped(was, one.key, now))
                 }
                 submit={submit}
               />
@@ -685,7 +678,7 @@ function SetupPage({
         })}
       </div>
       <div className="setup-foot">
-        {tried && missing.length > 0 && (
+        {missing.length > 0 && (
           <span className="setup-missing">{fillInLine(missing.length)}</span>
         )}
         <PluginPill
