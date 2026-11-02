@@ -255,3 +255,32 @@ describe('the window', () => {
     expect(changes).toBe(2)
   })
 })
+
+describe("step 5's slots", () => {
+  it('an agent chosen closes the computer, the open one too (`Fzn`)', () => {
+    const model = new WindowModel('iris')
+    model.openComputer('iris')
+    expect(model.computerShowing).toBe(true)
+    model.choose('iris')
+    expect(model.computer).toBeUndefined()
+    model.openComputer('iris', 'helper-1')
+    model.showComputerHelper('helper-2')
+    expect(model.computer).toEqual({ agentId: 'iris', helper: 'helper-2' })
+    model.openChat('theo')
+    expect(model.computer).toBeUndefined()
+  })
+
+  it('a cover over the chat goes when another agent opens; signed out, everything goes', () => {
+    const model = new WindowModel('iris')
+    model.coverChat({ kind: 'call', agentId: 'iris', lineId: 'c1' })
+    model.agentChanged('theo')
+    expect(model.chatCover).toBeUndefined()
+    model.openComputer('theo')
+    model.askComputer({ kind: 'recover', fromSidebar: true })
+    model.coverChat({ kind: 'exchange', agentId: 'theo', peerId: 'nora' })
+    model.leftWindow()
+    expect(model.computer).toBeUndefined()
+    expect(model.computerAsk).toBeUndefined()
+    expect(model.chatCover).toBeUndefined()
+  })
+})

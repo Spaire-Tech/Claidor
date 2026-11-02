@@ -21,6 +21,7 @@ import {
   type SandAccess,
   accessFrom,
   checkingAccess,
+  pausesSending,
   planFacts,
   unknownAccess,
 } from './access'
@@ -41,6 +42,8 @@ import {
   type SendOptions,
   newMessageId,
 } from './backend'
+import { type CallEngine, type CallState, voiceCallsEnabled } from './call'
+import { type CallTonePlaying, WebCallTones } from './callTones'
 import {
   addingAllowRule,
   autoReviewFrom,
@@ -61,6 +64,28 @@ import {
 } from './chat'
 import { type RunFlags, runFlags } from './chatRuns'
 import {
+  type AgentPointer,
+  type BoxStatus,
+  ComputerBook,
+  type ComputerHelper,
+  type TypingField,
+  agentPointerFrom,
+  boxStatusFrom,
+  computerScreen,
+  helperScreens,
+  screenURL,
+  typingFieldFrom,
+  withDeadline,
+} from './cloudComputer'
+import {
+  type RebuildKind,
+  type RebuildSteps,
+  RebuildWords,
+  type UpdateAvailability,
+  projectSteps,
+  updateAvailability,
+} from './computerRebuild'
+import {
   type CatalogApp,
   type CloudAgentRead,
   type ListenerPlatform,
@@ -75,6 +100,7 @@ import {
   listenerConnectedIn,
 } from './connectCards'
 import { type ConnectedApp, connectedApp } from './connectedApps'
+import { callTransport } from './elevenLabsVoice'
 import { Entry, appliedChange } from './entry'
 import {
   type AgentFace,
@@ -106,6 +132,12 @@ import {
 } from './json'
 import { t } from './l10n'
 import { currentLanguage } from './language'
+import {
+  MigrationRelay,
+  type RebuildServer,
+  type RecreateAnswer,
+  rebuildServerOf,
+} from './migrationWatch'
 import { type Agent, agentFrom, sameAgent, sortRoster } from './models'
 import {
   type FirstRun,
@@ -118,6 +150,11 @@ import {
   unreachableLine,
 } from './onboarding'
 import { plainError } from './plainWords'
+import {
+  RebuildDriver,
+  type RebuildInputs,
+  noRebuildInputs,
+} from './rebuildDriver'
 import { RoutineTestRuns } from './routineEditing'
 import {
   type Routine,
@@ -151,6 +188,7 @@ import {
   packSectionId,
 } from './starterPacks'
 import { bytesFromBase64URL } from './tokens'
+import { LiveCall, type VoiceTransport } from './voiceCall'
 
 /** A call whose failure changes nothing: tried, and let be. */
 async function quietly(call: Promise<unknown>): Promise<void> {
@@ -573,6 +611,9 @@ export class AppStore {
     this.resetRoutines()
     this.resetSearchAndChannels()
     this.resetOrgChartAndPacks()
+    this.resetComputer()
+    this.resetRebuild()
+    this.resetCalls()
     this.firstRunAgentId = undefined
     this.firstRunNamed = false
     // A hand-off waiting on the name step ends (it finds the account gone and makes nothing).
@@ -700,6 +741,8 @@ export class AppStore {
   apply(event: BackendEvent): void {
     switch (event.kind) {
       case 'agents': {
+        // Held while the computer is rebuilt, read again once it ends (Store.swift's `rosterHeld`, 5c).
+        if (this.holdsRoster()) return
         this.showingSaved = false
         this.listFromServer = false
         const sorted = this.readingOpenChat(sortRoster(event.agents))
@@ -709,6 +752,7 @@ export class AppStore {
         return
       }
       case 'agentUpserted': {
+        if (this.holdsRoster()) return
         // The host sends the same agent again often (each step of a turn); only a change redraws the list.
         if (this.agents.some((agent) => sameAgent(agent, event.agent))) return
         const next = this.agents.filter((agent) => agent.id !== event.agent.id)
@@ -772,6 +816,8 @@ export class AppStore {
         if (this.isDown === event.live) this.setDown(!event.live)
         if (was !== event.live) this.changed()
         if (recovered && this.backend) {
+          // The computers watched read again, and started again where started here (5b).
+          this.computerReconnected()
           void (async () => {
             await this.reloadRoster()
             if (this.openChat) await this.refresh(this.openChat)
@@ -798,8 +844,15 @@ export class AppStore {
         this.isAsleep = event.asleep
         this.changed()
         return
+      case 'computer':
+      case 'diskPressure':
+      case 'computerAction':
+      case 'subagents':
+        this.applyComputer(event)
+        return
       default:
-        // The rest comes with its screens.
+        // The rebuild's and the move's (5c); the rest comes with its screens.
+        this.applyRebuild(event)
         return
     }
   }
@@ -3601,6 +3654,867 @@ export class AppStore {
     this.changed()
   }
 
+  // MARK: Step 5b's computer: its screen, the Computer tab and the full view
+  // (StoreComputer.swift, CloudComputer.swift, ComputerPreview.swift,
+  // ComputerView.swift). 5b's state and commands go below this line, and
+  // nowhere else.
+
+  /** Each agent's computer: its status, read and pushed, and who is looking (CloudComputer.swift's `ComputerBook`, Store.swift's `computer`). */
+  readonly computer = new ComputerBook()
+  /** Each agent's subagents, read once a view watches its computer (`getSubagents`), then kept by the host's pushes. */
+  subagentsByAgent: Record<string, JSONValue[]> = {}
+  /** The agent's pointer on its computer, the last place it moved or clicked (`computer-action`). */
+  pointers: Record<string, AgentPointer> = {}
+  /** When the computer was last read again for the window coming forward or the stream coming back, in ms (`lastComputerCatchUp`). */
+  lastComputerCatchUp = -Infinity
+  /** A status read or a start waits this long, in seconds (`ComputerScreen.deadline`; the tests make it short). */
+  computerDeadline: number = computerScreen.deadline
+
+  /**
+   * The computer's disk (CloudComputer.swift's `diskPressure`): kept by 5b
+   * from a status's `diskPressure` and the `box-disk-pressure` push, which
+   * then calls `diskPressureChanged` (5c's, StoreRebuild.swift's); read by
+   * 5c's low-disk banner. Nothing while it has room.
+   */
+  diskPressure?: JSONValue
+
+  /**
+   * 5b's state back to nothing (signed out): the book forgets everything
+   * but who is watching (`ComputerBook.reset`), so a start answered after
+   * the sign-out is dropped and the window's watch stays counted until it
+   * lets go. (Store.swift makes a new book, which forgets the watchers too.)
+   */
+  private resetComputer(): void {
+    this.computer.reset()
+    this.subagentsByAgent = {}
+    this.pointers = {}
+    this.lastComputerCatchUp = -Infinity
+    if (this.diskPressure !== undefined) {
+      this.diskPressure = undefined
+      this.diskPressureChanged()
+    }
+  }
+
+  /**
+   * After the book moved (Store.swift's `computer` didSet): the screens are
+   * told when something they draw changed, and 5c when the disk did
+   * (`diskPressureChanged`). `seen` is the book's version before.
+   */
+  private computerChanged(seen: number): void {
+    const disk = this.computer.diskPressure
+    if (JSON.stringify(disk) !== JSON.stringify(this.diskPressure)) {
+      this.diskPressure = disk
+      this.diskPressureChanged()
+    }
+    // The rebuild follows the selected computer's status (5c; Store.swift's `computer` didSet, StoreRebuild.swift's `rebuildInputs`).
+    this.rebuildStatusChanged()
+    if (this.computer.version !== seen) this.changed()
+  }
+
+  /** A `forever-box`, `box-disk-pressure`, `computer-action` or `subagents` push (StoreComputer.swift's `applyComputer`). */
+  private applyComputer(
+    event: Extract<
+      BackendEvent,
+      { kind: 'computer' | 'diskPressure' | 'computerAction' | 'subagents' }
+    >,
+  ): void {
+    const seen = this.computer.version
+    switch (event.kind) {
+      case 'computer': {
+        const status = boxStatusFrom(event.status)
+        if (status) this.computer.ingest(status)
+        break
+      }
+      case 'diskPressure':
+        // The same level again (the computer says it often) changes nothing.
+        this.computer.ingestDiskPressure(event.pressure)
+        break
+      case 'computerAction': {
+        const agentId = text(field(event.action, 'agentId'))
+        const pointer = agentPointerFrom(event.action)
+        if (agentId == null || pointer == null) return
+        this.pointers = { ...this.pointers, [agentId]: pointer }
+        this.changed()
+        return
+      }
+      case 'subagents':
+        this.subagentsByAgent = {
+          ...this.subagentsByAgent,
+          [event.parentId]: event.subagents,
+        }
+        this.changed()
+        return
+    }
+    this.computerChanged(seen)
+  }
+
+  /** The event stream back (`computerReconnected`, `noteReconnect`): what is watched read again, what was started here started again, the helpers again. */
+  private computerReconnected(): void {
+    this.lastComputerCatchUp = Date.now()
+    const { read, ensure } = this.computer.reconnected()
+    for (const id of read) {
+      this.readComputer(id)
+      void this.loadSubagents(id)
+    }
+    for (const id of ensure) this.ensureComputer(id)
+  }
+
+  /** A view shows this agent's computer (MainWindow.swift's `watch`, `watchComputer`): its status is read now when the stream is up, and kept fresh while it shows; its helpers read once. */
+  watchComputer(agentId: string): void {
+    this.computer.watch(agentId)
+    if (this.isLive) this.readComputer(agentId)
+    if (this.subagentsByAgent[agentId] === undefined)
+      void this.loadSubagents(agentId)
+  }
+
+  unwatchComputer(agentId: string): void {
+    this.computer.unwatch(agentId)
+  }
+
+  /** `getForeverBoxStatus`, given 15 s; a later answer is still taken if nothing newer came (`readComputer`). */
+  readComputer(agentId: string): void {
+    const backend = this.backend
+    if (!backend) return
+    const seen = this.computer.version
+    const attempt = this.computer.beginRead(agentId)
+    this.computerChanged(seen)
+    if (attempt == null) return
+    const call = backend.command('getForeverBoxStatus', { id: agentId })
+    void (async () => {
+      const outcome = await withDeadline(this.computerDeadline, call)
+      if (this.backend !== backend) return
+      const before = this.computer.version
+      if (outcome.kind === 'answered') {
+        this.computer.readAnswered(
+          agentId,
+          attempt,
+          boxStatusFrom(outcome.value),
+        )
+        this.computerChanged(before)
+        return
+      }
+      this.computer.readFailed(agentId, attempt)
+      this.computerChanged(before)
+      if (outcome.kind === 'failed') return
+      try {
+        const late = await call
+        if (this.backend !== backend) return
+        const now = this.computer.version
+        this.computer.lateRead(agentId, attempt, boxStatusFrom(late))
+        this.computerChanged(now)
+      } catch {
+        const now = this.computer.version
+        this.computer.readFailed(agentId, attempt)
+        this.computerChanged(now)
+      }
+    })()
+  }
+
+  /** `ensureForeverBox`: wakes or starts the computer and waits for its screen, given 15 s; the agent is "demanded" from now on (`ensureComputer`). */
+  ensureComputer(agentId: string): void {
+    const backend = this.backend
+    if (!backend) return
+    const seen = this.computer.version
+    const generation = this.computer.beginEnsure(agentId)
+    this.computerChanged(seen)
+    if (generation == null) return
+    const call = backend.command('ensureForeverBox', { id: agentId })
+    void (async () => {
+      const outcome = await withDeadline(this.computerDeadline, call)
+      if (this.backend !== backend) return
+      const before = this.computer.version
+      if (outcome.kind === 'answered') {
+        this.computer.ensureSettled(
+          agentId,
+          generation,
+          boxStatusFrom(outcome.value),
+          false,
+        )
+        this.computerChanged(before)
+        return
+      }
+      this.computer.ensureSettled(agentId, generation, undefined, true)
+      this.computerChanged(before)
+      if (outcome.kind === 'failed') return
+      try {
+        const late = await call
+        if (this.backend !== backend) return
+        const now = this.computer.version
+        this.computer.lateEnsure(agentId, generation, boxStatusFrom(late))
+        this.computerChanged(now)
+      } catch {
+        // Failed after its deadline: already said.
+      }
+    })()
+  }
+
+  /** Retry under "Can't reach…": read again, and start again if it was started here (`retryComputer`). */
+  retryComputer(agentId: string): void {
+    this.readComputer(agentId)
+    if (this.computer.demanded.has(agentId)) this.ensureComputer(agentId)
+  }
+
+  /** Opening the full view (`XOn` `_`): the computer is started (`openComputer`). */
+  openComputer(agentId: string): void {
+    this.ensureComputer(agentId)
+  }
+
+  /**
+   * What a click on the computer focused (`typingFocus`,
+   * host/box/typing-focus.ts): the field's kind, or `none` for nothing to
+   * type into; none when the computer did not say (an engine without the
+   * question, no answer). The iPhone's: the Mac's view doesn't ask.
+   */
+  async typingFocus(agentId: string): Promise<TypingField | undefined> {
+    const backend = this.backend
+    if (!backend) return undefined
+    try {
+      const answer = await backend.command('typingFocus', { id: agentId })
+      const focus = str(field(answer, 'focus'))
+      return focus == null ? undefined : typingFieldFrom(focus)
+    } catch {
+      return undefined
+    }
+  }
+
+  /** The person takes control: the computer's Chrome made ready to see their clicks (`typingFocus` with `prepare`); an engine without it does no harm. */
+  async prepareTypingFocus(agentId: string): Promise<void> {
+    await quietly(
+      this.backend?.command('typingFocus', { id: agentId, prepare: true }) ??
+        Promise.resolve(),
+    )
+  }
+
+  /** Take control (`takeComputerControl`): a working agent is stopped and the computer is the person's until handed back; true when that started a hand-off. */
+  async takeComputerControl(agentId: string): Promise<boolean> {
+    const backend = this.backend
+    if (!backend) return false
+    try {
+      const answer = await backend.command('takeComputerControl', {
+        id: agentId,
+      })
+      return bool(field(answer, 'handoff')) ?? false
+    } catch {
+      return false
+    }
+  }
+
+  /** Stop task (`stopAgentTask`): the agent's run and its helpers stop; an open hand-off ends without waking it. */
+  async stopAgentTask(agentId: string): Promise<boolean> {
+    const backend = this.backend
+    if (!backend) return false
+    try {
+      const answer = await backend.command('stopAgentTask', { id: agentId })
+      return bool(field(answer, 'stopped')) ?? false
+    } catch {
+      return false
+    }
+  }
+
+  /** The address of a screen the host gave (its loopback page), through Simeon Labs' proxy (`screenSocket`, `GatewayConnection.screenSocket`); none away from a live computer. */
+  async screenSocket(vncUrl: string): Promise<string | undefined> {
+    const backend = this.backend
+    if (!(backend instanceof LiveBackend)) return undefined
+    try {
+      const connection = await backend.gateway.currentConnection()
+      if (this.backend !== backend) return undefined
+      return connection.screenSocket(vncUrl)
+    } catch {
+      return undefined
+    }
+  }
+
+  /** The agent's subagents (`getSubagents`), read once a view watches its computer, then kept by the host's pushes. */
+  async loadSubagents(agentId: string): Promise<void> {
+    const backend = this.backend
+    if (!backend) return
+    let answer: JSONValue
+    try {
+      answer = await backend.command('getSubagents', { id: agentId })
+    } catch {
+      return
+    }
+    if (this.backend !== backend) return
+    this.subagentsByAgent = {
+      ...this.subagentsByAgent,
+      [agentId]: arr(answer) ?? arr(field(answer, 'subagents')) ?? [],
+    }
+    this.changed()
+  }
+
+  /**
+   * The helpers' screens on this agent's computer, in the host's order
+   * (`MTn`): only while the agent's own computer has a screen, since each
+   * helper is drawn with that screen (`CTn` gives them the agent's `N2e`).
+   */
+  computerHelpers(agentId: string): ComputerHelper[] {
+    if (screenURL(this.computer.status(agentId)) == null) return []
+    return helperScreens(this.subagentsByAgent[agentId] ?? [])
+  }
+
+  /** The most recent status of any agent's computer (`getMostRecentStatus`): the first run's "Waking your computer…". */
+  get latestComputerStatus(): BoxStatus | undefined {
+    return this.computer.mostRecent
+  }
+
+  /**
+   * The window came forward (`windowCameForward`). A computer started here
+   * is started again at once (`NTn`'s focus listener); at most once a
+   * minute, and not while the computer is being rebuilt (`rebuildingNow`,
+   * 5c), everything watched is read again with the agents, the open chat,
+   * the pins and the sections (`noteWindowFocus`).
+   */
+  windowCameForward(): void {
+    if (!this.isLive) return
+    for (const id of this.computer.watched)
+      if (this.computer.demanded.has(id)) this.ensureComputer(id)
+    if (
+      this.rebuildingNow() ||
+      Date.now() - this.lastComputerCatchUp < computerScreen.focusCatchUp * 1000
+    )
+      return
+    this.lastComputerCatchUp = Date.now()
+    const { read, ensure } = this.computer.focused()
+    for (const id of read) this.readComputer(id)
+    for (const id of ensure) this.ensureComputer(id)
+    void (async () => {
+      await this.reloadRoster()
+      if (this.openChat) await this.refresh(this.openChat)
+      await this.loadSidebar()
+    })()
+  }
+
+  // MARK: Step 5c's computer states: its rebuild, recovery and move, the
+  // dialogs and pills, low disk (ComputerRebuild.swift, RebuildDriver.swift,
+  // StoreRebuild.swift, MigrationWatch.swift, ComputerStates.swift). 5c's
+  // state and commands go below this line, and nowhere else.
+  //
+  // The rebuild follows the store as the Mac's `didSet`s tell it: each
+  // change the store announces is looked at here (`followRebuild`), and the
+  // driver hears the selected agent, the roster's work, the stream and the
+  // selected computer's status when they moved. The server's record of the
+  // computer being replaced is followed while a sign-in lasts
+  // (`MigrationRelay`), its steps coming in as `migration` events.
+
+  /**
+   * Simeon's computer being rebuilt, or the stream away (RebuildDriver.swift).
+   * Every change the store announces is looked at by the rebuild from the
+   * start (the Mac's `didSet`s on the roster, the chat, the stream and the
+   * computer).
+   */
+  readonly rebuild: RebuildDriver = (() => {
+    const driver = new RebuildDriver()
+    driver.onChange = () => this.changed()
+    driver.onHardLockChanged = (held) => this.hardLockChanged(held)
+    this.subscribe(() => this.followRebuild())
+    return driver
+  })()
+  /** The window shows the computer's rebuild (`followsRebuild`, the Mac's and the iPhone's): sending waits through it, the list holds still. */
+  followsRebuild = true
+  /**
+   * The disk running low sets Disk Saver to work by itself (`$8n`,
+   * `startsDiskSaver`). Not from a browser's tab, as the iPhone: the Mac
+   * app open beside it starts it, and two apps each making one would give
+   * the person two Disk Savers. The Windows app sets it, as the Mac.
+   */
+  startsDiskSaver = false
+  /** The agent the window has selected (`windowSelection`), told by the window, so a chat closing just before the next opens does not read as nothing selected. */
+  windowSelection?: string
+  /** How the rebuild reaches Simeon Labs' server for a computer: through its sign-in; the tests give their own. */
+  rebuildServerFor: (backend: AgentBackend) => RebuildServer | undefined =
+    rebuildServerOf
+  /** Roster pushes skipped while the computer was rebuilt: the list is read again after. */
+  private rosterHeld = false
+  /** A Disk Saver being made, so a second click waits for it. */
+  private diskSaverCreation?: Promise<string | undefined>
+  /** Disk Saver was set to work for this time the disk ran low. */
+  private diskAuditDone = false
+  /** The computer the rebuild follows, its relay, and what the driver was last told. */
+  private rebuildBackend?: AgentBackend
+  private migrations?: MigrationRelay
+  private stopMigrations?: () => void
+  private rebuildSeen: RebuildInputs = noRebuildInputs
+  private rebuildLive = false
+
+  /** 5c's state back to nothing (signed out). */
+  private resetRebuild(): void {
+    this.rebuildBackend = undefined
+    this.rebuildSeen = noRebuildInputs
+    this.rebuildLive = false
+    this.stopMigrations?.()
+    this.stopMigrations = undefined
+    this.migrations?.stop()
+    this.migrations = undefined
+    this.rosterHeld = false
+    this.diskSaverCreation = undefined
+    this.diskAuditDone = false
+    this.windowSelection = undefined
+    this.rebuild.reset()
+  }
+
+  /** An event no other section takes: a step of the server's replacement of the computer (`.migration`). */
+  private applyRebuild(event: BackendEvent): void {
+    if (event.kind === 'migration') this.rebuild.migrationEvent(event.event)
+  }
+
+  /** A rebuild under way: the window's catch-up waits (`windowCameForward(rebuilding:)`). */
+  rebuildingNow(): boolean {
+    return this.rebuild.isHardLocked
+  }
+
+  /** The agent the window shows now, told by the window (`windowSelection`). */
+  setWindowSelection(agentId: string | undefined): void {
+    if (this.windowSelection === agentId) return
+    this.windowSelection = agentId
+    this.changed()
+  }
+
+  /**
+   * Whether a newer computer is out for this agent's, as its status says
+   * (`computer.status(id)?.raw["imageUpdateAvailable"]`, 5b's book);
+   * unknown while it has none.
+   */
+  private imageUpdateAvailable(
+    agentId: string | undefined,
+  ): boolean | undefined {
+    return bool(
+      field(this.computer.status(agentId)?.raw, 'imageUpdateAvailable'),
+    )
+  }
+
+  /**
+   * The selected computer's status moved (Store.swift's `computer` didSet:
+   * `rebuild.statusChanged(rebuildInputs)`), told by 5b's `computerChanged`.
+   */
+  private rebuildStatusChanged(): void {
+    const inputs = this.rebuildInputs()
+    const seen = this.rebuildSeen
+    if (
+      inputs.phase === seen.phase &&
+      inputs.imageUpdateAvailable === seen.imageUpdateAvailable
+    )
+      return
+    this.rebuildSeen = {
+      ...seen,
+      phase: inputs.phase,
+      imageUpdateAvailable: inputs.imageUpdateAvailable,
+    }
+    this.rebuild.statusChanged(inputs)
+  }
+
+  /** The agent the window has selected, else the chat on screen (`computerSelection`). */
+  private get computerSelection(): string | undefined {
+    return this.windowSelection ?? this.openChat
+  }
+
+  /** What the driver is told (`rebuildInputs`): the selected agent when it is one and not a group, its computer, the agents at work, the stream. */
+  private rebuildInputs(): RebuildInputs {
+    const selection = this.computerSelection
+    const agent = selection !== undefined ? this.agent(selection) : undefined
+    const box = agent?.isGroup ? undefined : selection
+    return {
+      boxId: box,
+      isCurrentGroup: agent?.isGroup ?? false,
+      phase: this.computer.phase(box),
+      imageUpdateAvailable: this.imageUpdateAvailable(box),
+      anyRunning: this.agents.some((one) => one.isRunning),
+      // A computer asleep on purpose is not one the stream lost (`isAsleep`).
+      transportConnected: this.isLive || this.isAsleep,
+    }
+  }
+
+  /** The store changed: the driver hears what moved, as the Mac's `didSet`s tell it. */
+  private followRebuild(): void {
+    const backend = this.backend
+    if (backend !== this.rebuildBackend) {
+      this.rebuildBackend = backend
+      if (backend) {
+        this.connectRebuild(backend)
+        return
+      }
+    }
+    const inputs = this.rebuildInputs()
+    const seen = this.rebuildSeen
+    this.rebuildSeen = inputs
+    // Back after a drop (`recovered`): the server's last step read back.
+    const recovered = this.isLive && !this.rebuildLive
+    this.rebuildLive = this.isLive
+    if (inputs.transportConnected !== seen.transportConnected)
+      this.rebuild.transportChanged(inputs)
+    if (
+      inputs.boxId !== seen.boxId ||
+      inputs.isCurrentGroup !== seen.isCurrentGroup ||
+      inputs.anyRunning !== seen.anyRunning
+    )
+      this.rebuild.selectionChanged(inputs)
+    else if (
+      inputs.phase !== seen.phase ||
+      inputs.imageUpdateAvailable !== seen.imageUpdateAvailable
+    )
+      this.rebuild.statusChanged(inputs)
+    if (recovered && backend) {
+      this.rebuild.migrationReadBack(this.migrations?.status)
+      // A computer rebuilt meanwhile starts with no language: told again (Store.swift's `recovered`).
+      void this.tellLanguage(backend)
+    }
+  }
+
+  /**
+   * The app's language to the computer and the account (StoreSettings.swift's
+   * `tellLanguage`): the agents write in it. Told each time the stream comes
+   * (back), as the core tells it, without waking a computer that rests.
+   */
+  private async tellLanguage(backend: AgentBackend): Promise<void> {
+    const language = currentLanguage()
+    try {
+      await backend.command(
+        'setHostSettings',
+        { userLanguage: language },
+        { wakes: false },
+      )
+    } catch {
+      // Told the next time the stream comes back.
+    }
+    if (backend !== this.backend) return
+    try {
+      await backend.server('user/profile', 'POST', { language })
+    } catch {
+      // The header carries it meanwhile (`Accept-Language`).
+    }
+  }
+
+  /** The window starts with an account (`connectRebuild`): the driver gets its calls, the server's record is followed and its last step read back. */
+  private connectRebuild(backend: AgentBackend): void {
+    const server = this.rebuildServerFor(backend)
+    const relay = server
+      ? new MigrationRelay((from, signal) =>
+          server.watchMigration(from, signal),
+        )
+      : undefined
+    this.migrations = relay
+    if (relay) {
+      this.stopMigrations = relay.listen((event) => {
+        if (this.backend === backend) this.apply({ kind: 'migration', event })
+      })
+      relay.start()
+    }
+    // A recreate that started: its steps are watched for, and the computer is asked for again (the new one has new tokens).
+    const accepted = (answer: RecreateAnswer): RecreateAnswer => {
+      if (answer.kind === 'rejected') return answer
+      relay?.recreateAccepted(
+        answer.kind === 'started' ? answer.operationId : undefined,
+      )
+      backend.invalidate?.()
+      return answer
+    }
+    const notSignedIn = () =>
+      new SimeonAPIError(t('Sign in to Simeon first.'), 401)
+    const inputs = this.rebuildInputs()
+    this.rebuildSeen = inputs
+    this.rebuildLive = this.isLive
+    this.rebuild.connect(
+      {
+        update: async (_agentId, force) => {
+          if (!server) throw notSignedIn()
+          return accepted(await server.updateComputer(force))
+        },
+        reset: async () => {
+          if (!server) throw notSignedIn()
+          return accepted(await server.resetComputer())
+        },
+      },
+      inputs,
+    )
+    this.rebuild.migrationReadBack(relay?.status)
+  }
+
+  /** A rebuild began or ended: once it ends, a list held still meanwhile is read again, as after a reconnect (`GOn`). */
+  private hardLockChanged(held: boolean): void {
+    if (held || !this.rosterHeld) return
+    this.rosterHeld = false
+    this.computerReconnected()
+    void (async () => {
+      await this.reloadRoster()
+      if (this.openChat) await this.refresh(this.openChat)
+      await this.loadSidebar()
+    })()
+  }
+
+  /**
+   * Whether a roster push is held while the computer is rebuilt (`roster.setFrozen`):
+   * the store's `agents` and `agentUpserted` take nothing while this says
+   * so, and the list is read again once the rebuild ends.
+   */
+  holdsRoster(): boolean {
+    if (!this.followsRebuild || !this.rebuild.isHardLocked) return false
+    this.rosterHeld = true
+    return true
+  }
+
+  /** The agents at work now, by name (the busy confirmation's list). */
+  get workingAgentNames(): string[] {
+    return this.agents.filter((one) => one.isRunning).map((one) => one.name)
+  }
+
+  /**
+   * "Update Simeon's Computer" in ⌘K, "/" and the sidebar (`UOn`): ready,
+   * or with agents at work; undefined when it is not offered (no agent
+   * open, the computer known to be up to date, an update queued, a rebuild
+   * asked for or under way, or refused for the session). An unknown answer
+   * offers it, as the window does.
+   */
+  get computerUpdateOffer(): UpdateAvailability | undefined {
+    const selection = this.computerSelection
+    const selected = selection !== undefined ? this.agent(selection) : undefined
+    const baseline = selected !== undefined && !selected.isGroup
+    const availability = updateAvailability({
+      canUpdateBaseline: baseline,
+      canUpdateBox: baseline && this.workingAgentNames.length === 0,
+      isBoxUpToDate: this.imageUpdateAvailable(selection) === false,
+      isUpdateQueued: this.rebuild.isUpdateQueued,
+    })
+    if (
+      this.rebuild.pendingKind !== undefined ||
+      this.rebuild.lock.isLocked ||
+      this.rebuild.isBlocked ||
+      !(availability === 'ready' || availability === 'busy-override')
+    )
+      return undefined
+    return availability
+  }
+
+  /** A newer computer is out for the open agent (`imageUpdateAvailable`): the sidebar's Update. */
+  get computerUpdateAvailable(): boolean {
+    return this.imageUpdateAvailable(this.computerSelection) === true
+  }
+
+  /** The steps of the rebuild under way, for its dialog and its pill (`J1t`). */
+  rebuildSteps(kind: RebuildKind): RebuildSteps {
+    const lock = this.rebuild.lock
+    const box = this.rebuild.inputs.boxId
+    return projectSteps(
+      kind,
+      lock.stage,
+      this.rebuild.migration.phaseFor(lock.operationId),
+      this.rebuild.migration.phasesFor(lock.operationId),
+      this.computer.status(box)?.pullPercent,
+    )
+  }
+
+  /** A failure the window keeps (`store.problem = …`): the access notice's page that could not be opened, as the Mac's. */
+  keepProblem(words: string | undefined): void {
+    if (this.problem === words) return
+    this.problem = words
+    this.changed()
+  }
+
+  /** Sending waits while the computer is rebuilt (`isSendingPaused`), where the rebuild is shown, and while this account has no Simeon (`gft`). */
+  get isSendingPaused(): boolean {
+    return (
+      (this.followsRebuild && this.rebuild.isHardLocked) ||
+      pausesSending(this.access)
+    )
+  }
+
+  // The disk
+
+  /** The disk's state: "soft", "hard", or undefined when it has room (`diskPressureSnapshots`, from 5b's `diskPressure`). */
+  get diskLevel(): string | undefined {
+    return str(field(this.diskPressure, 'level'))
+  }
+
+  /** The Disk Saver agent, when there is one (`purpose: "disk-saver"`). */
+  get diskSaver(): Agent | undefined {
+    return this.agents.find((one) => one.purpose === 'disk-saver')
+  }
+
+  /**
+   * "Go to Disk Saver" (`D1t.launch`): its chat if it exists, else a new
+   * one made and introduced; the id to open, or undefined (the list not
+   * read yet, or the computer refused).
+   */
+  async launchDiskSaver(): Promise<string | undefined> {
+    const existing = this.diskSaver
+    if (existing) return existing.id
+    if (this.diskSaverCreation) return this.diskSaverCreation
+    if (this.agents.length === 0 && !this.backend) return undefined
+    const making = this.createDiskSaver()
+    this.diskSaverCreation = making
+    try {
+      return await making
+    } finally {
+      if (this.diskSaverCreation === making) this.diskSaverCreation = undefined
+    }
+  }
+
+  private async createDiskSaver(): Promise<string | undefined> {
+    const backend = this.backend
+    if (!backend) return undefined
+    let answer: JSONValue
+    try {
+      answer = await backend.command('createAgent', {
+        name: RebuildWords.diskSaverName,
+        description: RebuildWords.diskSaverDescription,
+        purpose: 'disk-saver',
+        origin: 'user',
+        isKickstartRequested: true,
+        clientNonce: newMessageId(),
+      })
+    } catch {
+      // Only reported in the window, never shown.
+      return undefined
+    }
+    await this.reloadRoster()
+    return (
+      text(field(field(answer, 'agent'), 'id')) ?? text(field(answer, 'id'))
+    )
+  }
+
+  /**
+   * The disk's state changed (StoreRebuild.swift's `diskPressureChanged`,
+   * `$8n`): called by 5b when `diskPressure` does. Once per time the disk
+   * runs low, where this app starts Disk Saver: an existing one not at work
+   * is asked to audit (`requestDiskSaverAudit`); with none, one is made,
+   * not opened.
+   */
+  private diskPressureChanged(): void {
+    if (this.diskLevel === undefined) {
+      this.diskAuditDone = false
+      return
+    }
+    const backend = this.backend
+    if (
+      !this.followsRebuild ||
+      !this.startsDiskSaver ||
+      this.diskAuditDone ||
+      this.agents.length === 0 ||
+      !backend
+    )
+      return
+    this.diskAuditDone = true
+    const saver = this.diskSaver
+    if (saver) {
+      if (saver.isRunning) return
+      void backend
+        .command('requestDiskSaverAudit', { id: saver.id })
+        .catch(() => {})
+    } else {
+      void this.launchDiskSaver()
+    }
+  }
+
+  // MARK: Step 5d's calls: a call with an agent, its banner and its lines
+  // (Call.swift, CallTones.swift, VoiceCall.swift, CallBannerWindow.swift,
+  // CallChat.swift), and two agents' exchange over the chat
+  // (Exchange.swift). 5d's state and commands go below this line, and
+  // nowhere else.
+
+  /**
+   * The call shown (Store.swift's `call`), its waveform's bars kept apart
+   * (`callLevels`): they change every 90 ms, and only the waveform reads
+   * them, so they change nothing the screens redraw for. The call keeps
+   * only whether there are bars.
+   */
+  call?: CallState
+  callLevels: number[] = []
+  /** The voice for the next call (ElevenLabs' kit; a stand-in in the tests). */
+  callVoice: () => VoiceTransport = callTransport
+  /** The ring and the hang-up (the browser's audio; none in the tests unless given). */
+  callTones: () => CallTonePlaying | undefined = () =>
+    typeof AudioContext === 'undefined' ? undefined : new WebCallTones()
+  /** One line per step of a call (the Mac's `voice-call.log`, echoed to the console as the Mac echoes it to stderr). */
+  callLog: (line: string) => void = (line) =>
+    console.info(`[simeon] voice-call ${line}`)
+  /** The call's engine, for the computer it was made for (the Mac's `backend.call`, made at sign-in), with its tones. */
+  private callEngine?: {
+    engine: CallEngine
+    backend: AgentBackend
+    tones?: CallTonePlaying
+  }
+
+  /** Calls are on, and there is a computer to call through (`canCall`). */
+  get canCall(): boolean {
+    return this.backend != null && voiceCallsEnabled()
+  }
+
+  /**
+   * The engine for this sign-in (MacSession.swift's `LiveCall`): the voice,
+   * the person's name for the prompt, the agent's voice from its picker
+   * (`ensureVoice`), the ring, a failed call kept until dismissed (the
+   * banner's 20 s or Close), the log. Only while this is the computer in
+   * use: a call heard after a sign-out never comes back on screen.
+   */
+  private callEngineNow(): CallEngine | undefined {
+    const backend = this.backend
+    if (!backend || !voiceCallsEnabled()) return undefined
+    if (this.callEngine?.backend === backend) return this.callEngine.engine
+    const tones = this.callTones()
+    const engine = new LiveCall({
+      backend,
+      transport: this.callVoice(),
+      personName: () => this.account?.name,
+      voiceFor: (agentId) => this.ensureVoice(agentId),
+      tones,
+      failedStays: null,
+      log: (line) => this.callLog(line),
+      language: currentLanguage,
+    })
+    this.callEngine = { engine, backend, tones }
+    engine.observe((state) => {
+      if (this.callEngine?.engine === engine) this.takeCall(state)
+    })
+    return engine
+  }
+
+  /** The call's change: the screens redraw only when more than its bars changed (Store.swift's `take`). */
+  private takeCall(state: CallState | undefined): void {
+    if (!state) {
+      this.callLevels = []
+      if (this.call) {
+        this.call = undefined
+        this.changed()
+      }
+      return
+    }
+    this.callLevels = state.levels
+    const kept: CallState = {
+      ...state,
+      levels: state.levels.length === 0 ? [] : [1],
+    }
+    if (JSON.stringify(kept) === JSON.stringify(this.call)) return
+    this.call = kept
+    this.changed()
+  }
+
+  /** The agent's own colour on the call: the one the app draws it in, not blue (the founder, 9 October 2026: the call showed another avatar). */
+  startCall(agent: Agent): void {
+    this.callEngineNow()?.start(agent.id, agent.name, agent.colour ?? '')
+  }
+
+  mute(muted: boolean): void {
+    this.callEngine?.engine.mute(muted)
+  }
+
+  hangUp(): void {
+    this.callEngine?.engine.hangUp()
+  }
+
+  /** A finished or failed call put away (the banner's Close). */
+  dismissCall(): void {
+    this.callEngine?.engine.dismiss()
+  }
+
+  /** 5d's state back to nothing (signed out): a call on ends (its voice let go, its record sent), and nothing of it comes back on screen. */
+  private resetCalls(): void {
+    const made = this.callEngine
+    this.callEngine = undefined
+    made?.engine.hangUp()
+    // The tones' audio let go, once the hang-up has played: one for each sign-in at most.
+    made?.tones?.close?.()
+    this.call = undefined
+    this.callLevels = []
+  }
+
   // MARK: The composer's lists
 
   /**
@@ -3736,6 +4650,8 @@ export class AppStore {
 
   /** Resend on a message that failed. */
   async resend(id: string, agentId: string): Promise<void> {
+    // Not while the computer is rebuilt (`rebuild-locked`), as Store.swift's.
+    if (this.isSendingPaused) return
     if (
       !(this.outbox.get(agentId) ?? []).some(
         (item) => item.id === id && item.state === 'failed',

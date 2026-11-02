@@ -260,7 +260,8 @@ export function useComposerPicks({
   const transcript = store.transcripts[agentId]
   const hasHidden = roster.some((one) => one.isHidden)
   const gatesHere = gates?.agentId === agentId ? gates : undefined
-  // The app's actions whose screens the window has; Settings, Connectors and the themes come with step 6.
+  // The app's actions whose screens the window has, Update Simeon's Computer while it is offered (step 5c); Settings, Connectors and the themes come with step 6.
+  const computerUpdate = store.computerUpdateOffer !== undefined
   const actions = useMemo(
     () =>
       appActions({
@@ -269,8 +270,9 @@ export function useComposerPicks({
         hasChannels: gatesHere?.channels ?? false,
         showsOrgChart: (gatesHere?.orgChart ?? false) && roster.length > 0,
         showsUsage: false,
+        computerUpdate,
       }).filter((action) => windowActionIds.has(action.id)),
-    [agent, hasHidden, gatesHere, roster.length],
+    [agent, hasHidden, gatesHere, roster.length, computerUpdate],
   )
   const rows = useMemo((): PickRow[] => {
     switch (kind) {

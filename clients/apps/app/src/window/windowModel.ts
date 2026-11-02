@@ -8,6 +8,11 @@
 // shared through `WindowContext`; the screens read it with `useWindow()`.
 
 import { createContext, useContext } from 'react'
+import {
+  type ComputerHelper,
+  focusedHelper,
+  stepHelper,
+} from '../core/cloudComputer'
 import type { OpenFlight } from '../core/flightCards'
 import { chatMinimum } from './sidebarLayout'
 
@@ -47,6 +52,27 @@ export interface RoutineEditing {
   agentId: string
   routineId?: string
 }
+
+/** The full computer view (step 5b, MainWindow.swift's `ComputerOpen`): whose computer, and the helper's screen asked for. */
+export interface ComputerOpen {
+  agentId: string
+  helper?: string
+}
+
+/** A computer question the person asked (step 5c, ComputerStates.swift's `ComputerAsk`): ⌘K or "/" Update Simeon's Computer, the sidebar's or "Couldn't Reach"'s Recover. */
+export type ComputerAsk =
+  | { kind: 'update' }
+  | { kind: 'recover'; fromSidebar: boolean }
+
+/**
+ * What covers the chat and its field (step 5d, MessageActions.swift's
+ * `callOpen` and `exchangePeer`): a call's lines, opened from its "Voice
+ * chat" line, or two agents' messages to each other, opened from their
+ * chip. It goes when another agent opens.
+ */
+export type ChatCover =
+  | { kind: 'call'; agentId: string; lineId: string }
+  | { kind: 'exchange'; agentId: string; peerId: string }
 
 const openKey = 'simeon.pane.open'
 const widthKey = 'simeon.pane.width'
@@ -96,6 +122,9 @@ export const windowActionIds: ReadonlySet<string> = new Set([
   'info:settings',
   'info:members',
   'open-hidden-chats',
+  // Update Simeon's Computer: ⌘K's id, and "/"'s (step 5c).
+  'update:computer',
+  'computer-update',
 ])
 
 export class WindowModel {
@@ -166,14 +195,16 @@ export class WindowModel {
       count: (this.sidebarPlain?.count ?? 0) + 1,
     }
     this.orgChart = false
+    this.computer = undefined
     this.selected = agentId
     this.changed()
   }
 
-  /** An agent opened (`WindowState.choose`): the org chart closes. The pane follows it in `agentChanged`, once the window shows it. */
+  /** An agent opened (`WindowState.choose`): the org chart and the computer close (`Fzn`). The pane follows it in `agentChanged`, once the window shows it. */
   choose(agentId: string): void {
-    if (this.selected === agentId && !this.orgChart) return
+    if (this.selected === agentId && !this.orgChart && !this.computer) return
     this.orgChart = false
+    this.computer = undefined
     this.selected = agentId
     this.changed()
   }
@@ -235,9 +266,10 @@ export class WindowModel {
   /**
    * One of the app's actions, from "/" (Composer.swift's `run`) or ⌘K:
    * the org chart in the chat's place, the pane on Channels, Profile
-   * (Chat Settings) or a group's members, the hidden agents. The Settings
-   * pages, Connectors and the themes come with their screens (step 6).
-   * Whether it was one the window runs.
+   * (Chat Settings) or a group's members, the hidden agents, Update
+   * Simeon's Computer's question (step 5c). The Settings pages, Connectors
+   * and the themes come with their screens (step 6). Whether it was one
+   * the window runs.
    */
   runAction(id: string): boolean {
     switch (id) {
@@ -256,6 +288,11 @@ export class WindowModel {
         return true
       case 'open-hidden-chats':
         this.showHiddenAgents()
+        return true
+      case 'update:computer':
+      case 'computer-update':
+        // Its question: "Update Simeon's Computer?", or "An agent is working" (step 5c).
+        this.askComputer({ kind: 'update' })
         return true
       default:
         return false
@@ -398,6 +435,8 @@ export class WindowModel {
   agentChanged(agentId: string | undefined): void {
     this.avatarEditorFor = undefined
     this.routineEditor = undefined
+    // A call's lines or an exchange belong to the chat they were opened over.
+    this.chatCover = undefined
     if (this.request && this.request.agentId === agentId) {
       this.section = this.request.section
     } else {
@@ -510,6 +549,70 @@ export class WindowModel {
     this.paneVisible = visible
   }
 
+  // MARK: Step 5b's computer over the window (MainWindow.swift's `computer`)
+
+  /** An agent's computer over the whole window, from its pane's preview or a card (`WindowState.computer`). */
+  computer?: ComputerOpen
+
+  /** The computer is over the window: the window's own keys go to its screen (`computerShowing`). */
+  get computerShowing(): boolean {
+    return this.computer !== undefined
+  }
+
+  /**
+   * Opens it (`openComputer`): the caller starts the computer too
+   * (`store.openComputer`, 5b), as the Mac's `openComputer` does; nothing
+   * behind keeps the keys.
+   */
+  openComputer(agentId: string, helper?: string): void {
+    this.computer = { agentId, helper }
+    this.changed()
+  }
+
+  closeComputer(): void {
+    if (this.computer === undefined) return
+    this.computer = undefined
+    this.changed()
+  }
+
+  /** Another helper's screen asked for (the strip, ↑← and ↓→), on the computer shown. */
+  showComputerHelper(helper: string | undefined): void {
+    if (this.computer === undefined || this.computer.helper === helper) return
+    this.computer = { ...this.computer, helper }
+    this.changed()
+  }
+
+  /** ↑← (-1) and ↓→ (1) between two or more helpers' screens, round (`stepComputerHelper`, `bbn`): `helpers` are the store's for the computer shown. */
+  stepComputerHelper(delta: number, helpers: readonly ComputerHelper[]): void {
+    if (this.computer === undefined) return
+    const next = stepHelper(
+      helpers,
+      focusedHelper(helpers, this.computer.helper),
+      delta,
+    )
+    if (next !== undefined) this.showComputerHelper(next)
+  }
+
+  // MARK: Step 5c's computer questions (`computerAsk`)
+
+  /** A computer question asked: its dialog shows when no other does (ComputerStates.swift's `ComputerDialog.current`). */
+  computerAsk?: ComputerAsk
+
+  askComputer(ask: ComputerAsk | undefined): void {
+    this.computerAsk = ask
+    this.changed()
+  }
+
+  // MARK: Step 5d's covers over the chat (`callOpen`, `exchangePeer`)
+
+  /** A call's lines or two agents' exchange over the chat and its field; another agent opened closes it. */
+  chatCover?: ChatCover
+
+  coverChat(cover: ChatCover | undefined): void {
+    this.chatCover = cover
+    this.changed()
+  }
+
   /** Signed out: the chart and what floats over the window go with it; the pane stays as it was, as on the Mac. */
   leftWindow(): void {
     this.orgChart = false
@@ -518,6 +621,10 @@ export class WindowModel {
     this.hiddenAgents = false
     this.avatarEditorFor = undefined
     this.pendingReveal = undefined
+    // The next sign-in opens on a chat, not a computer (MainWindow.swift's sign-out).
+    this.computer = undefined
+    this.computerAsk = undefined
+    this.chatCover = undefined
     this.changed()
   }
 }
