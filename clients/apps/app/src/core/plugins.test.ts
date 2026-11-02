@@ -64,8 +64,12 @@ const filterOf = (json: any): PluginFilter => ({
   ownership: json?.ownership ?? 'all',
 })
 
-const some = <T>(list: (T | undefined)[]): T[] =>
-  list.filter((one): one is T => one != null)
+/** The rows read as `from` reads them, those it can't read left out. */
+function some<T>(rows: any, from: (json: unknown) => T | undefined): T[] {
+  return ((rows ?? []) as unknown[])
+    .map(from)
+    .filter((one): one is T => one != null)
+}
 
 function describeItem(item: PluginItem): unknown {
   return item.kind === 'connector'
@@ -89,9 +93,9 @@ describe('Connectors’ rules, as the overlay', () => {
     expect(scenarios.length).toBe(160)
     scenarios.forEach((row, index) => {
       const label = `scenario ${index}`
-      const catalog = some((row.catalog ?? []).map(pluginEntryFrom))
-      const servers = some((row.servers ?? []).map(pluginServerFrom))
-      const plugins = some((row.plugins ?? []).map(effectivePluginFrom))
+      const catalog = some(row.catalog, pluginEntryFrom)
+      const servers = some(row.servers, pluginServerFrom)
+      const plugins = some(row.plugins, effectivePluginFrom)
       const query: string = row.query ?? ''
       const chosen = filterOf(row.filter)
       const deduped = onePerServer(servers)
@@ -169,7 +173,7 @@ describe('Connectors’ rules, as the overlay', () => {
 
   it('list the private skills as the overlay', () => {
     ;(fixture.skillSets as any[]).forEach((row, index) => {
-      const skills = some((row.skills ?? []).map(agentSkillFrom))
+      const skills = some(row.skills, agentSkillFrom)
       expect(
         privateSkills(skills).map((one) => one.id),
         `set ${index}`,
@@ -186,7 +190,7 @@ describe('Connectors’ rules, as the overlay', () => {
 
   it('name the tools and accounts, and say the words, as the overlay', () => {
     for (const row of fixture.toolSets as any[]) {
-      const tools = some((row.tools ?? []).map(pluginToolFrom))
+      const tools = some(row.tools, pluginToolFrom)
       expect(toolNames(tools)).toEqual(row.names)
     }
     for (const row of fixture.accounts as any[])
