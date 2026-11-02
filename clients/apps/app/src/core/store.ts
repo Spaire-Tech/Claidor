@@ -1349,6 +1349,12 @@ export class AppStore {
   // MARK: Step 3b's cards: the secret, the computer hand-off, the in-chat
   // form, 1Password's fill and connect (Store.swift's commands for them).
   // 3b's state and commands go below this line, and nowhere else.
+  //
+  // Nothing of these cards is kept here: each reads its own line, which the
+  // computer stamps (`secretProvided`, `boxResolution`, `formState`,
+  // `credentialState`, `connectState`), and what a card holds while it is
+  // answered (what was typed, a refusal) is the card's own, as the Mac's.
+  // The secret's X is the question's (`dismissQuestion`, `dismissWidget`).
 
   /** 3b's card state back to nothing (signed out). */
   private resetRequestCards(): void {}
@@ -1357,6 +1363,97 @@ export class AppStore {
   private settleRequestCards(agentId: string, entries: readonly Entry[]): void {
     void agentId
     void entries
+  }
+
+  /** Save securely on a secret card (`submitSecret`): the computer keeps it where the agent asked, and marks the card (`secretProvided`). */
+  async submitSecret(
+    value: string,
+    entryId: string,
+    agentId: string,
+  ): Promise<void> {
+    await this.command(
+      'submitSecret',
+      { entryId, value, agentId },
+      t("The secret wasn't saved"),
+    )
+  }
+
+  /**
+   * I'm done (`button`) or Skip (`dismissed`) on a hand-off
+   * (`handBackForeverBox`); the computer takes it from there, and a failure
+   * is not said (the window's is an empty function).
+   */
+  async handBackComputer(agentId: string, skip = false): Promise<void> {
+    try {
+      await this.backend?.command('handBackForeverBox', {
+        id: agentId,
+        trigger: skip ? 'dismissed' : 'button',
+      })
+    } catch {
+      // Said nowhere, as the Mac's.
+    }
+  }
+
+  /**
+   * The in-chat form's Fill in (`submitUserForm`): the values go to the
+   * computer, which types them into the page; nothing is kept here.
+   * Undefined once it is taken, else the computer's sentence (a field left
+   * empty, a form already answered).
+   */
+  async submitUserForm(
+    values: JSONValue,
+    entryId: string,
+    agentId: string,
+  ): Promise<string | undefined> {
+    const failed = t("The form wasn't sent")
+    const reply = await this.command(
+      'submitUserForm',
+      { agentId, entryId, values },
+      failed,
+    )
+    if (reply === undefined) return failed
+    return bool(field(reply, 'ok')) === false
+      ? (text(field(reply, 'message')) ?? failed)
+      : undefined
+  }
+
+  /** The in-chat form's X (`dismissUserForm`): a decline. */
+  async dismissUserForm(entryId: string, agentId: string): Promise<void> {
+    await this.command(
+      'dismissUserForm',
+      { agentId, entryId },
+      t("Couldn't dismiss the form"),
+    )
+  }
+
+  /** The 1Password fill card's Fill (`allow`), once the person confirmed it, or Not now. Undefined once taken, else why not. */
+  async answerCredentialRequest(
+    entryId: string,
+    allow: boolean,
+    agentId: string,
+  ): Promise<string | undefined> {
+    const failed = t("1Password didn't get your answer")
+    const reply = await this.command(
+      'answerCredentialRequest',
+      { agentId, entryId, allow },
+      failed,
+    )
+    if (reply === undefined) return failed
+    return bool(field(reply, 'ok')) === false
+      ? (text(field(reply, 'message')) ?? failed)
+      : undefined
+  }
+
+  /** The 1Password connect card's X (`dismissOnePasswordConnect`): a decline. */
+  async dismissOnePasswordConnect(
+    entryId: string,
+    agentId: string,
+  ): Promise<void> {
+    await this.command(
+      'dismissOnePasswordConnect',
+      { agentId, entryId },
+      t("Couldn't dismiss the card"),
+    )
   }
 
   // MARK: Step 3c's cards: apps to connect, Slack or GitHub for a routine,
