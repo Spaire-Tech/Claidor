@@ -151,6 +151,22 @@ import {
 } from './onboarding'
 import { plainError } from './plainWords'
 import {
+  PluginCalls,
+  type Removal,
+  privateCopies,
+  setupAgentIn,
+} from './pluginCalls'
+import {
+  type AgentSkill,
+  type EffectivePlugin,
+  type PluginEntry,
+  type PluginServer,
+  type PluginTool,
+  pluginEntriesFrom,
+  serverAccounts,
+} from './plugins'
+import { type SignInFlow, signInKey, signInTimeout } from './pluginsOverlay'
+import {
   RebuildDriver,
   type RebuildInputs,
   noRebuildInputs,
@@ -1587,18 +1603,23 @@ export class AppStore {
 
   /** The apps the catalogue offers (`getCatalog`, in the app's language): an app card's title and line, and the id the computer files it under. */
   catalog: CatalogApp[] = []
+  /** The same answer's entries as Connectors lists them (Store.swift's `catalogEntries`, `PluginEntry`; step 6c). */
+  catalogEntries: PluginEntry[] = []
   /** The apps that can't be connected yet (`AppsComingSoon`): the server's list once read. */
   appsComingSoon: Set<string> = new Set(appsComingSoonBuiltIn)
   /** The catalogue was read from the computer in this sign-in. */
   private catalogFresh = false
   private appCardsLoad?: Promise<void>
+  private catalogRead?: Promise<PluginEntry[] | undefined>
 
   /** 3c's card state back to nothing (signed out). */
   private resetConnectCards(): void {
     this.catalog = []
+    this.catalogEntries = []
     this.appsComingSoon = new Set(appsComingSoonBuiltIn)
     this.catalogFresh = false
     this.appCardsLoad = undefined
+    this.catalogRead = undefined
   }
 
   /**
@@ -1634,10 +1655,27 @@ export class AppStore {
     return load
   }
 
-  /** The catalogue from the computer (`desktopMcp` `getCatalog`); what was shown stays when it doesn't answer. */
-  private async readCatalog(): Promise<void> {
+  /**
+   * The catalogue from the computer (`desktopMcp` `getCatalog`, Store.swift's
+   * `readCatalog`): the cards' apps and Connectors' entries, from one answer
+   * (`takeCatalog`); what was shown stays when it doesn't answer. One read
+   * at a time: a card's and Connectors' often ask together. The entries, or
+   * none when it didn't answer.
+   */
+  readCatalog(): Promise<PluginEntry[] | undefined> {
+    if (this.catalogRead) return this.catalogRead
+    const read: Promise<PluginEntry[] | undefined> =
+      this.fetchCatalog().finally(() => {
+        // Only this read's: a sign-out and sign-in meanwhile may have started another.
+        if (this.catalogRead === read) this.catalogRead = undefined
+      })
+    this.catalogRead = read
+    return read
+  }
+
+  private async fetchCatalog(): Promise<PluginEntry[] | undefined> {
     const backend = this.backend
-    if (!backend) return
+    if (!backend) return undefined
     let answer: JSONValue
     try {
       answer = await backend.command('desktopMcp', {
@@ -1645,15 +1683,23 @@ export class AppStore {
         args: [{ language: currentLanguage() }],
       })
     } catch {
-      return
+      return undefined
     }
-    if (this.backend !== backend) return
+    if (this.backend !== backend) return undefined
     this.catalogFresh = true
     const next = catalogFrom(answer)
+    const entries = pluginEntriesFrom(answer)
+    let moved = false
     if (JSON.stringify(next) !== JSON.stringify(this.catalog)) {
       this.catalog = next
-      this.changed()
+      moved = true
     }
+    if (JSON.stringify(entries) !== JSON.stringify(this.catalogEntries)) {
+      this.catalogEntries = entries
+      moved = true
+    }
+    if (moved) this.changed()
+    return this.catalogEntries
   }
 
   /** Which apps can't be connected yet, from Simeon Labs' server (`GET apps`); an older server's answer, or none, keeps the list. */
@@ -4535,8 +4581,466 @@ export class AppStore {
   // Plugins.swift, PluginsOverlay.swift, PluginCalls.swift). The screens'
   // side is src/window/Connectors.tsx.
 
+  // The computer's side of mac/Simeon/PluginsModel.swift lives here, kept
+  // until sign-out (`forget`); the window's side (the view, the order of
+  // each action, its notice, the consent and the sign-in through the
+  // window's connector) is src/window/pluginsModel.ts. The catalogue's
+  // entries are 3c's `catalogEntries`, from the same `getCatalog` answer.
+
+  /** Each account of each of the computer's servers, as Connectors last read them (`servers`, `listServers`). */
+  pluginServers: PluginServer[] = []
+  /** The plugins the computer has on (`plugins`, `listEffectivePlugins`). */
+  effectivePlugins: EffectivePlugin[] = []
+  /** Each server's tools as last read (`tools`, `listServerTools`), by the server's id. */
+  pluginTools: ReadonlyMap<string, readonly PluginTool[]> = new Map()
+  /** Why a tool's switch didn't change, said under its server's tools (`toolFailures`), by the server's id. */
+  pluginToolFailures: ReadonlyMap<string, string> = new Map()
+  /** The open agent's skills (`skills`, `getAgentWorkflows`). */
+  agentSkills: AgentSkill[] = []
+  /** The plugins the GitHub banner names (`authBlocked`, `getPluginSyncStatus`). */
+  pluginAuthBlocked: string[] = []
+  /** Sign-ins waiting on their page, by key (`flows`, `signInKey`): kept across openings, as the Mac's window keeps them. */
+  signInFlows: ReadonlyMap<string, SignInFlow> = new Map()
+  /** The catalogue's logos read so far (`logos`, `resolvePluginLogo`): data URLs, by address. The catalogue's, not the account's: kept for the next account, as the Mac keeps them. */
+  pluginLogos: ReadonlyMap<string, string> = new Map()
+  private pluginLogoReads = new Set<string>()
+  private signInTimers = new Map<string, ReturnType<typeof setTimeout>>()
+  /** The agent whose skills were asked for last: an older answer for another is dropped. */
+  private skillsAskedFor?: string
+
   /** 6c's state back to nothing (signed out; `PluginsModel.forget`). */
-  private resetConnectors(): void {}
+  private resetConnectors(): void {
+    this.pluginServers = []
+    this.effectivePlugins = []
+    this.pluginTools = new Map()
+    this.pluginToolFailures = new Map()
+    this.agentSkills = []
+    this.pluginAuthBlocked = []
+    this.signInFlows = new Map()
+    for (const timer of this.signInTimers.values()) clearTimeout(timer)
+    this.signInTimers.clear()
+    this.skillsAskedFor = undefined
+  }
+
+  /** Someone is signed in: Connectors' calls can go (the Mac's `try? calls()`). */
+  get pluginCallsReady(): boolean {
+    return this.backend != null
+  }
+
+  /** Connectors' calls to the computer (SimeonCore's `PluginCalls`); signed out, the core's words. */
+  private pluginCalls(): PluginCalls {
+    const backend = this.backend
+    if (!backend) throw new GatewayError(t('Sign in to Simeon first.'), true)
+    return new PluginCalls(backend)
+  }
+
+  // Reading
+
+  /** The servers read again (`refreshServers`): as Connectors opens, every 15 s while it is open, as the window comes forward, after a change. No answer: they stay. */
+  async readPluginServers(): Promise<void> {
+    const backend = this.backend
+    if (!backend) return
+    let next: PluginServer[] | undefined
+    try {
+      next = await new PluginCalls(backend).servers()
+    } catch {
+      return
+    }
+    if (this.backend === backend) this.applyPluginServers(next)
+  }
+
+  /** The servers an answer held (none: they stay as they were); only a change redraws. A sign-in whose account now says connected is over (`apply(servers:)`). */
+  private applyPluginServers(next: PluginServer[] | undefined): void {
+    if (!next) return
+    let moved = false
+    if (JSON.stringify(next) !== JSON.stringify(this.pluginServers)) {
+      this.pluginServers = next
+      moved = true
+    }
+    const over = [...this.signInFlows.keys()].filter((key) =>
+      this.pluginServers.some(
+        (server) =>
+          signInKey(server.serverIdentifier) === key &&
+          server.status === 'connected',
+      ),
+    )
+    if (over.length > 0) {
+      const flows = new Map(this.signInFlows)
+      for (const key of over) {
+        flows.delete(key)
+        clearTimeout(this.signInTimers.get(key))
+        this.signInTimers.delete(key)
+      }
+      this.signInFlows = flows
+      moved = true
+    }
+    if (moved) this.changed()
+  }
+
+  /** The plugins the computer has on, read again (`refreshPlugins`). */
+  async readEffectivePlugins(): Promise<void> {
+    const backend = this.backend
+    if (!backend) return
+    let list: EffectivePlugin[]
+    try {
+      list = await new PluginCalls(backend).effectivePlugins()
+    } catch {
+      return
+    }
+    if (this.backend !== backend) return
+    if (JSON.stringify(list) === JSON.stringify(this.effectivePlugins)) return
+    this.effectivePlugins = list
+    this.changed()
+  }
+
+  /** The open agent's skills (`loadSkills`); with no agent open, none. */
+  async readAgentSkills(agentId: string | undefined): Promise<void> {
+    this.skillsAskedFor = agentId
+    if (agentId == null) {
+      if (this.agentSkills.length === 0) return
+      this.agentSkills = []
+      this.changed()
+      return
+    }
+    const backend = this.backend
+    if (!backend) return
+    let list: AgentSkill[]
+    try {
+      list = await new PluginCalls(backend).skills(agentId)
+    } catch {
+      return
+    }
+    if (this.backend !== backend || this.skillsAskedFor !== agentId) return
+    this.setAgentSkills(list)
+  }
+
+  private setAgentSkills(list: AgentSkill[]): void {
+    if (JSON.stringify(list) === JSON.stringify(this.agentSkills)) return
+    this.agentSkills = list
+    this.changed()
+  }
+
+  /** A server's tools (`loadTools`); no answer, they stay. */
+  async readPluginTools(serverId: string): Promise<void> {
+    const backend = this.backend
+    if (!backend) return
+    let list: PluginTool[]
+    try {
+      list = await new PluginCalls(backend).tools(serverId)
+    } catch {
+      return
+    }
+    if (this.backend !== backend) return
+    this.pluginTools = new Map(this.pluginTools).set(serverId, list)
+    this.changed()
+  }
+
+  /** The GitHub banner's plugins (`readSyncStatus`, `getPluginSyncStatus`). */
+  async readPluginSyncStatus(): Promise<void> {
+    const backend = this.backend
+    if (!backend) return
+    let names: string[]
+    try {
+      names = await new PluginCalls(backend).authBlocked()
+    } catch {
+      return
+    }
+    if (this.backend !== backend) return
+    if (JSON.stringify(names) === JSON.stringify(this.pluginAuthBlocked)) return
+    this.pluginAuthBlocked = names
+    this.changed()
+  }
+
+  /** The one sync each opening of Connectors starts (`syncPluginSkills`), the banner read again after it; a failure is let go. */
+  async syncPluginSkillsQuietly(): Promise<void> {
+    const backend = this.backend
+    if (!backend) return
+    try {
+      await new PluginCalls(backend).syncSkills()
+    } catch {
+      // Let go: the banner says what can't be fetched.
+    }
+    await this.readPluginSyncStatus()
+  }
+
+  /**
+   * A catalogue entry's logo (`loadLogo`, `resolvePluginLogo`): the
+   * computer answers with a data URL (SVG or PNG); read once per address,
+   * and only a picture is kept.
+   */
+  async readPluginLogo(address: string): Promise<void> {
+    if (this.pluginLogos.has(address) || this.pluginLogoReads.has(address))
+      return
+    const backend = this.backend
+    if (!backend) return
+    this.pluginLogoReads.add(address)
+    let source: string | undefined
+    try {
+      source = await new PluginCalls(backend).logo(address)
+    } catch {
+      return
+    }
+    if (
+      source == null ||
+      !/^data:image\/(png|svg\+xml|jpeg|gif|webp)[;,]/i.test(source)
+    )
+      return
+    this.pluginLogos = new Map(this.pluginLogos).set(address, source)
+    this.changed()
+  }
+
+  // Add, setup, remove (each refusal thrown, for the window to say)
+
+  /** Add (`install`, `installEntry`): the servers as the computer answers them, and its plugins read again. */
+  async installPlugin(
+    entryId: string,
+    values: Readonly<Record<string, string>>,
+    team: boolean,
+  ): Promise<void> {
+    const calls = this.pluginCalls()
+    this.applyPluginServers(await calls.install(entryId, values, team))
+    await this.readEffectivePlugins()
+  }
+
+  /** The server a plugin from the app's own maker makes (`vendorServerIdForPlugin`), whose sign-in opens after Add; none for the rest. */
+  async pluginVendorServer(entryId: string): Promise<string | undefined> {
+    const backend = this.backend
+    if (!backend) return undefined
+    return new PluginCalls(backend).vendorServerId(entryId)
+  }
+
+  /** An account's sign-in asked of the computer (`authenticateServer`, no trigger: Connectors' own): its answer, with its status and the page to open. */
+  askServerSignIn(serverId: string, accountKey: string): Promise<JSONValue> {
+    return this.pluginCalls().signIn(serverId, accountKey)
+  }
+
+  /** Edit Values (`updatePluginInstall`): all of the plugin's setup values replaced. */
+  updatePluginValues(
+    pluginId: string,
+    values: Readonly<Record<string, string>>,
+  ): Promise<void> {
+    return this.pluginCalls().updateInstall(pluginId, values)
+  }
+
+  /** Uninstall or Remove of a server (`removeServer`): what it did, the servers as they are then. */
+  async removePluginServer(serverId: string): Promise<Removal> {
+    const removal = await this.pluginCalls().removeServer(serverId)
+    this.applyPluginServers(removal.servers)
+    return removal
+  }
+
+  /** Uninstall of a plugin (`uninstallPlugin`): what it did, the servers as they are then, its plugins read again. */
+  async uninstallPluginEntry(pluginId: string): Promise<Removal> {
+    const removal = await this.pluginCalls().uninstallPlugin(pluginId)
+    this.applyPluginServers(removal.servers)
+    await this.readEffectivePlugins()
+    return removal
+  }
+
+  /** A connect's app taken back out (`takeBack`): uninstalled again, unless the computer says it connected after all; the connected apps read again. */
+  async takeBackPlugin(pluginId: string, serverId: string): Promise<void> {
+    await this.readPluginServers()
+    if (
+      serverAccounts(this.pluginServers, serverId).some(
+        (server) => server.status === 'connected',
+      )
+    )
+      return
+    try {
+      await this.uninstallPluginEntry(pluginId)
+    } catch {
+      return
+    }
+    await this.loadApps()
+  }
+
+  // Skills
+
+  /** The agent's private copies of a plugin's skills dropped, before its own are synced (`dropPrivateCopies`); a failure is let go. */
+  async dropPluginCopies(
+    entry: PluginEntry,
+    agentId: string | undefined,
+  ): Promise<void> {
+    const backend = this.backend
+    if (!backend || agentId == null) return
+    if (privateCopies(entry, this.agentSkills).length === 0) return
+    await new PluginCalls(backend).dropPrivateCopies(
+      entry,
+      this.agentSkills,
+      agentId,
+    )
+  }
+
+  /** The computer's plugin skills synced (`syncPluginSkills`): how many of them are the plugin's (none asked, none counted). */
+  syncPluginSkills(pluginId?: string): Promise<number> {
+    return this.pluginCalls().syncSkills(pluginId)
+  }
+
+  /** A private skill's switch (`setEnabled`, `setAgentWorkflowEnabled`); a failure is let go, as the overlay does. */
+  async setAgentSkillEnabled(
+    skill: AgentSkill,
+    agentId: string | undefined,
+  ): Promise<void> {
+    const backend = this.backend
+    if (!backend || agentId == null) return
+    let list: AgentSkill[]
+    try {
+      list = await new PluginCalls(backend).setSkillEnabled(
+        skill,
+        !skill.isEnabledForAgent,
+        agentId,
+      )
+    } catch {
+      return
+    }
+    if (this.backend === backend) this.setAgentSkills(list)
+  }
+
+  /** Save on a skill's page (`updateAgentWorkflow`): the name and description trimmed, the trigger and source kept; the skills as the computer lists them. */
+  async saveAgentSkill(
+    skill: AgentSkill,
+    name: string,
+    description: string,
+    body: string,
+    agentId: string,
+  ): Promise<void> {
+    const list = await this.pluginCalls().updateSkill(
+      skill,
+      name,
+      description,
+      body,
+      agentId,
+    )
+    if (list) this.setAgentSkills(list)
+  }
+
+  /** Delete skill (`deleteAgentWorkflow`): the skills as the computer lists them. */
+  async deleteAgentSkill(skillId: string, agentId: string): Promise<void> {
+    const list = await this.pluginCalls().deleteSkill(skillId, agentId)
+    if (list) this.setAgentSkills(list)
+  }
+
+  // Tools
+
+  /**
+   * A tool's switch (`toggle`): changed at once, then asked of the
+   * computer (`toggleMcpToolDisabled`); a refusal is said under the tools
+   * and the switch goes back.
+   */
+  async togglePluginTool(toolName: string, serverId: string): Promise<void> {
+    const list = this.pluginTools.get(serverId)
+    if (list?.some((tool) => tool.name === toolName)) {
+      this.pluginTools = new Map(this.pluginTools).set(
+        serverId,
+        list.map((tool) =>
+          tool.name === toolName
+            ? { ...tool, isDisabled: !tool.isDisabled }
+            : tool,
+        ),
+      )
+      this.changed()
+    }
+    try {
+      const next = await this.pluginCalls().toggleTool(toolName, serverId)
+      this.pluginTools = new Map(this.pluginTools).set(serverId, next)
+      const failures = new Map(this.pluginToolFailures)
+      failures.delete(serverId)
+      this.pluginToolFailures = failures
+      this.changed()
+      await this.readPluginServers()
+    } catch (error) {
+      const why = error instanceof Error ? error.message : String(error)
+      this.pluginToolFailures = new Map(this.pluginToolFailures).set(
+        serverId,
+        plainError(why),
+      )
+      this.changed()
+      await this.readPluginTools(serverId)
+    }
+  }
+
+  // Sign-ins waiting (`PBn`)
+
+  /** A sign-in's page opened (`flows[key] = Flow`): Reopen while it waits, Retry once it has waited ten minutes (`expire`). */
+  startSignInFlow(key: string, url: string): void {
+    const openedAt = Date.now()
+    this.signInFlows = new Map(this.signInFlows).set(key, {
+      url,
+      openedAt,
+      timedOut: false,
+    })
+    this.expireSignInFlow(key, openedAt)
+    this.changed()
+  }
+
+  /** Reopen: the waiting page opened again, its ten minutes counted from now. */
+  reopenSignInFlow(key: string): void {
+    const flow = this.signInFlows.get(key)
+    if (!flow) return
+    const openedAt = Date.now()
+    this.signInFlows = new Map(this.signInFlows).set(key, { ...flow, openedAt })
+    this.expireSignInFlow(key, openedAt)
+    this.changed()
+  }
+
+  private expireSignInFlow(key: string, openedAt: number): void {
+    clearTimeout(this.signInTimers.get(key))
+    this.signInTimers.set(
+      key,
+      setTimeout(() => {
+        this.signInTimers.delete(key)
+        const flow = this.signInFlows.get(key)
+        if (!flow || flow.openedAt !== openedAt) return
+        this.signInFlows = new Map(this.signInFlows).set(key, {
+          ...flow,
+          timedOut: true,
+        })
+        this.changed()
+      }, signInTimeout * 1000),
+    )
+  }
+
+  // Fix with agent (`si.launch`)
+
+  /** The Plugin Setup agent there is already (by its purpose). */
+  get pluginSetupAgent(): Agent | undefined {
+    return setupAgentIn(this.agents)
+  }
+
+  /**
+   * Fix with agent once no Plugin Setup agent was found and the roster is
+   * in (PluginCalls.swift's `makePluginSetupAgent`): the agent made, the
+   * roster read again, and its first message sent. Its id once it can be
+   * opened (even when the message could not be sent), and what went wrong
+   * on the way, which the window says as `agentFailedNotice`.
+   */
+  async makePluginSetupAgent(): Promise<{ id?: string; failure?: string }> {
+    const backend = this.backend
+    if (!backend) return { failure: t('Sign in to Simeon first.') }
+    const calls = new PluginCalls(backend)
+    let id: string
+    try {
+      id = await calls.createSetupAgent()
+    } catch (error) {
+      return {
+        failure: plainError(
+          error instanceof Error ? error.message : String(error),
+        ),
+      }
+    }
+    await this.reloadRoster()
+    try {
+      await calls.sendSetupRequest(id)
+    } catch (error) {
+      return {
+        id,
+        failure: plainError(
+          error instanceof Error ? error.message : String(error),
+        ),
+      }
+    }
+    return { id }
+  }
 
   // MARK: Step 6d's Connectors pages and an app's accounts on Simeon Labs'
   // server (Add Another Account, rename, remove; the core's
