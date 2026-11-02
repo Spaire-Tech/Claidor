@@ -770,12 +770,31 @@ quotas, `AccountMenuTests`, `UpgradeTests`, `TraysTests`,
 
 **Checked:**
 
-[AFTER-MERGE CHECKS: the session fills this. Known from the session's
-notes: on the merged branch (`b2c747e84`), 973 tests, the committed build's
-check, lint, typecheck, `check_names.py` and `check_translations.py` pass;
-the inventory shows 2,899 of the catalogues' 3,164 strings (1,316 after
-step 5); the Chromium run of every check of steps 3 to 6
-(`final6/run-all.sh`), light, dark and French: its results.]
+After the merge, on one build of the merged branch (the committed build,
+`b2c747e84`), every check ran again in Chromium, light and dark, then French
+(48 runs, `final6/run-all.sh`): step 6's six scripts (the frame, connecting,
+the list, the pages, Settings, usage and billing), step 5's three (5d's also
+on a development build with its stand-in voice), and every check of steps 3
+and 4 with their probes, so nothing step 6 changed in the window broke an
+earlier screen. No page errors. Every outside address answered by a stand-in:
+those a screen opens on purpose (the billing pages, Privacy and Terms, an
+app's Information links, the stand-in makers' sign-in pages, Add Another
+Account's page on the server's address, the shop's and Link's pages, an
+airline's logo) were caught as they opened.
+
+- One script brought to the merged app, the app not changed for it: 6f's
+  Report an issue now opens 6e's issue sheet (empty in 6f's own branch), so
+  its check sees the sheet and closes it before going on.
+- The names check found the code both pages share (the window and
+  `connected.html`) in a chunk Rollup named after `theme.ts`, holding the
+  plain words' guarded names: that chunk is now named as the window's own
+  (`index-…`, `vite.config.ts`), the code unchanged (the same hash); the
+  frame's and connecting's checks ran again on it, light, dark and French,
+  no page errors.
+- On the branch: 973 tests, the words', brands', connector pages' and
+  committed build's checks, lint, typecheck, `check_names.py` and
+  `check_translations.py` pass. The inventory: the web app shows 2,899 of
+  the catalogues' 3,164 strings (1,316 after step 5).
 
 Before the merge, each part on its own branch, in Chromium against
 stand-ins (the session's scratchpad: `6b-check.cjs` to `6f-check.cjs` and

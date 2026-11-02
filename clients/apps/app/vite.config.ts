@@ -28,6 +28,13 @@ export default defineConfig({
         index: fileURLToPath(new URL('./index.html', import.meta.url)),
         connected: fileURLToPath(new URL('./connected.html', import.meta.url)),
       },
+      // The code both pages share is named as the window's own (`index-…`), whatever module Rollup would name it after, so the names check's rules for the window's script keep reading it (scripts/kept_names.json).
+      output: {
+        chunkFileNames: (chunk) =>
+          chunk.moduleIds.some((id) => id.endsWith('/src/core/plainWords.ts'))
+            ? 'assets/index-[hash].js'
+            : 'assets/[name]-[hash].js',
+      },
     },
     // The apps' logos (src/core/generatedBrands.ts) stay files, fetched when a message names one, not written into the script.
     assetsInlineLimit: (file) =>
