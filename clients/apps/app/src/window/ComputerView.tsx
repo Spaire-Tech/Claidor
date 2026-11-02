@@ -11,8 +11,9 @@
 // computer's words go to the agent's with a paste (⌘V or Ctrl+V while the
 // screen holds the keys), not on a click, the window coming forward or the
 // screen coming up; the computer's copied words are written to the
-// clipboard while the page has the focus (or as soon as it has it again);
-// Tab goes round the view's own buttons, where the Mac's swallows it.
+// clipboard only while the page has the focus (one copied while it is
+// behind is dropped, never written later over a newer copy); Tab goes round
+// the view's own buttons, where the Mac's swallows it.
 
 import {
   type CSSProperties,
@@ -25,7 +26,6 @@ import {
 } from 'react'
 import {
   type AgentPointer,
-  ClipboardBridge,
   type ComputerHelper,
   type ComputerPlaceholder,
   ScreenCrashes,
@@ -48,7 +48,7 @@ import { classes } from './classes'
 import './ComputerView.css'
 import { ContextMenu } from './ContextMenu'
 import { somethingOver } from './Dialogs'
-import { LiveScreen, ScreenEvents } from './liveScreen'
+import { LiveScreen, ScreenClipboard, ScreenEvents } from './liveScreen'
 import { useWatched } from './useStore'
 import { type WindowModel, useWindowModel } from './windowModel'
 
@@ -261,9 +261,7 @@ function ComputerFullView({
     phaseRef.current = phase
   })
   const screen = useRef<LiveScreen>(undefined)
-  const [bridge] = useState(() => new ClipboardBridge())
-  /** The computer's copied words, waiting for the page to have the focus. */
-  const waiting = useRef<string>(undefined)
+  const [clipboard] = useState(() => new ScreenClipboard())
   const view = useRef<HTMLDivElement>(null)
   const [stage, fitted] = useFitted()
   const helpersRef = useRef(helpers)
@@ -283,24 +281,6 @@ function ComputerFullView({
   useEffect(() => {
     if (phase === 'connected') screen.current?.focus()
   }, [phase])
-
-  /** The computer's words onto this computer's clipboard, while the page has the focus; else as soon as it has it again. */
-  const write = (words: string) => {
-    if (!document.hasFocus()) {
-      waiting.current = words
-      return
-    }
-    waiting.current = undefined
-    void navigator.clipboard?.writeText(words).catch(() => {})
-  }
-  useEffect(() => {
-    const forward = () => {
-      const words = waiting.current
-      if (words != null) write(words)
-    }
-    window.addEventListener('focus', forward)
-    return () => window.removeEventListener('focus', forward)
-  })
 
   // Every key is the screen's while it shows; while the screen has none, Tab goes round the view's buttons and the arrows switch helpers' screens.
   useEffect(() => {
@@ -398,22 +378,16 @@ function ComputerFullView({
                     helpersRef.current,
                   )
                 }
-                // The computer's copied text onto this computer's clipboard, unless it was just sent either way.
+                // The computer's copied text onto this computer's clipboard, unless it was just sent either way; only while the page has the focus.
                 onClipboard={(words) => {
-                  const fresh = bridge.fromBox(words)
-                  if (fresh != null) write(fresh)
+                  const fresh = clipboard.fromBox(words, document.hasFocus())
+                  if (fresh != null)
+                    void navigator.clipboard?.writeText(fresh).catch(() => {})
                 }}
-                // ⌘V: the words the computer doesn't have yet go with the keys, read from the paste itself.
+                // ⌘V: the words the computer doesn't hold go with the keys, read from the paste itself.
                 onPaste={(words, shift) => {
                   if (phaseRef.current !== 'connected') return
-                  const fresh =
-                    words != null &&
-                    words !== bridge.sentToBox &&
-                    words !== bridge.sentToHere
-                      ? words
-                      : undefined
-                  if (fresh != null) bridge.sent(fresh)
-                  screen.current?.pasteAndPress(fresh, shift)
+                  screen.current?.pasteAndPress(clipboard.toBox(words), shift)
                 }}
               />
             </div>

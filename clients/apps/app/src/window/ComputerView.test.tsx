@@ -13,7 +13,7 @@ import type { JSONValue } from '../core/json'
 import { makeAgent } from '../core/models'
 import { AppStore } from '../core/store'
 import { ComputerLayer, ComputerPreview } from './ComputerView'
-import { ctrlStrokes, pasteStrokes } from './liveScreen'
+import { ScreenClipboard, ctrlStrokes, pasteStrokes } from './liveScreen'
 import { requestCardView } from './RequestCards'
 import { WindowContext, WindowModel } from './windowModel'
 
@@ -258,11 +258,46 @@ describe('the keys sent to the computer', () => {
     expect(ctrlStrokes('KeyQ', false)).toEqual([])
   })
 
-  it('pastes with Ctrl+V on a Mac, and with the V alone where Ctrl is already held', () => {
-    expect(pasteStrokes(true, false)).toEqual(ctrlStrokes('KeyV', false))
-    expect(pasteStrokes(false, true)).toEqual([
-      [0x76, 'KeyV', true],
-      [0x76, 'KeyV', false],
+  it('presses Control around a paste’s V on every computer (noVNC may not have sent a held one), then puts back the left Control and Shift still held', () => {
+    // Windows: noVNC holds a Control back up to 100 ms for AltGr, so a quick Ctrl+V can't count on it.
+    expect(pasteStrokes(false)).toEqual(ctrlStrokes('KeyV', false))
+    expect(pasteStrokes(true)).toEqual(ctrlStrokes('KeyV', true))
+    expect(
+      pasteStrokes(true, ['ControlLeft', 'ShiftLeft', 'ControlRight']),
+    ).toEqual([
+      ...ctrlStrokes('KeyV', true),
+      [0xffe3, 'ControlLeft', true],
+      [0xffe1, 'ShiftLeft', true],
     ])
+  })
+})
+
+describe('the clipboard between this computer and the agent’s', () => {
+  it('sends a paste’s words unless the agent’s clipboard holds them now', () => {
+    const clipboard = new ScreenClipboard()
+    expect(clipboard.toBox('my email')).toBe('my email')
+    // The same words again: the agent's clipboard has them; only the keys.
+    expect(clipboard.toBox('my email')).toBeUndefined()
+    expect(clipboard.toBox(undefined)).toBeUndefined()
+    // The agent copies other words; the person copies "my email" here again and pastes: it goes (the review's case).
+    expect(clipboard.fromBox('copied on the computer', true)).toBe(
+      'copied on the computer',
+    )
+    expect(clipboard.toBox('my email')).toBe('my email')
+    // Pasting what the agent copied, written here: it has them already.
+    expect(clipboard.fromBox('a line', true)).toBe('a line')
+    expect(clipboard.toBox('a line')).toBeUndefined()
+  })
+
+  it('writes the agent’s copy here only while the page has the focus, never later', () => {
+    const clipboard = new ScreenClipboard()
+    expect(clipboard.fromBox('copied while away', false)).toBeUndefined()
+    // Behind, it was dropped, though the agent's clipboard holds it.
+    expect(clipboard.holds).toBe('copied while away')
+    expect(clipboard.toBox('copied while away')).toBeUndefined()
+    expect(clipboard.fromBox('copied in front', true)).toBe('copied in front')
+    // The words this page just sent, coming back: not written again.
+    clipboard.toBox('mine')
+    expect(clipboard.fromBox('mine', true)).toBeUndefined()
   })
 })
