@@ -1,0 +1,530 @@
+/*
+ * The agent's pane (AgentPane.tsx) at the Mac's measures
+ * (mac/Simeon/AgentPane.swift): its own colours (`Look.pane…`), light and
+ * dark; the column, its edge, the top bar, the head, the tabs, Profile.
+ */
+:root {
+  /* The pane's ground and its own inks (`paneGround`, `paneInk`, `paneInk2`) */
+  --pane-ground: #fbfbfd;
+  --pane-ink: #1d1d1f;
+  --pane-ink-2: #86868b;
+  /* The tabs' track, the pencil's disc, the bell's tile (`paneFill`), the pencil's disc under the pointer (`paneFill2`) */
+  --pane-fill: #f2f2f4;
+  --pane-fill-2: #e8e8ed;
+  --pane-hairline: rgb(0 0 0 / 0.08);
+  --pane-avatar-disc: #ffffff;
+  --pane-thumb: #ffffff;
+  --pane-tab-idle: #6e6e73;
+  --pane-separator: #d8d8dd;
+  /* The switch when on: the window's blue */
+  --pane-switch-on: #255a93;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --pane-ground: #1c1c1e;
+    --pane-ink: #f5f5f7;
+    --pane-ink-2: #98989d;
+    --pane-fill: #2c2c2e;
+    --pane-fill-2: #3a3a3c;
+    --pane-hairline: rgb(255 255 255 / 0.1);
+    --pane-avatar-disc: #2c2c2e;
+    --pane-thumb: #636366;
+    --pane-tab-idle: #aeaeb2;
+    --pane-separator: #48484a;
+    --pane-switch-on: #2f6db0;
+  }
+}
+
+/* The column: the pane's ground, widening over 0.24 s on the window's curve as it opens and shuts. */
+.agent-pane {
+  position: relative;
+  flex: none;
+  height: 100%;
+  overflow: hidden;
+  background: var(--pane-ground);
+}
+
+.agent-pane.moving {
+  transition: width 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.window.resizing .agent-pane {
+  transition: none;
+}
+
+/* Its page, laid out at its full width while the column slides, fading in over 0.16 s. */
+.pane-page {
+  height: 100%;
+}
+
+.agent-pane.shown .pane-page {
+  animation: pane-page-in 0.16s ease-in-out;
+}
+
+@keyframes pane-page-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* The left edge: 10 wide inside the pane, the half-point line at its left, darker under the pointer and while dragged. */
+.pane-edge {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 2;
+  width: 10px;
+  cursor: ew-resize;
+  touch-action: none;
+}
+
+.pane-edge::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 0.5px;
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+  transition: background 0.12s ease-in-out;
+}
+
+.pane-edge:hover::before,
+.pane-edge.dragging::before {
+  background: color-mix(in srgb, var(--ink) 20%, transparent);
+}
+
+.pane-column {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* The top bar: 44 high, padded 12 a side, its buttons at the right. */
+.pane-top-bar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 12px;
+}
+
+.pane-top-space {
+  flex: 1;
+}
+
+/* A ghost icon button (`PaneIconButton`): 28 square, round 6; the icon at 60%, full on the hover grey. */
+.pane-icon-button {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink-secondary);
+  cursor: pointer;
+  transition:
+    background 0.12s ease-out,
+    color 0.12s ease-out;
+}
+
+.pane-icon-button:hover {
+  background: var(--row-hover);
+  color: var(--ink);
+}
+
+.pane-icon-button svg {
+  display: block;
+}
+
+.pane-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/* The agent's page: padded 6 20 40. */
+.pane-body {
+  box-sizing: border-box;
+  padding: 6px 20px 40px;
+}
+
+/* No agent open: 13, the window's faintest grey. */
+.pane-empty {
+  display: grid;
+  flex: 1;
+  place-items: center;
+  padding: 28px 12px;
+  font-size: 13px;
+  color: var(--ink-tertiary);
+}
+
+.agent-page {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+/* The head: the avatar's button 3 below the top, the name 11 under it (22/28, 500), the title 1 under that (15/20, grey). */
+.pane-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 3px;
+}
+
+.pane-name {
+  height: 28px;
+  margin-top: 11px;
+  overflow: hidden;
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 28px;
+  letter-spacing: -0.484px;
+  color: var(--pane-ink);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.pane-title {
+  height: 20px;
+  margin-top: 1px;
+  overflow: hidden;
+  font-size: 15px;
+  line-height: 20px;
+  letter-spacing: -0.16px;
+  color: var(--pane-ink-2);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/*
+ * The avatar's button: 102 square, the 96 disc 3 in from each side
+ * (white, #2c2c2e on dark, a hairline inside), the 32 pencil disc in the
+ * corner ringed 3 in the pane's colour. Only the disc and the pencil take
+ * clicks.
+ */
+.avatar-trigger {
+  position: relative;
+  width: 102px;
+  height: 102px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  pointer-events: none;
+}
+
+.avatar-disc,
+.avatar-pencil {
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.avatar-disc {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  display: grid;
+  place-items: center;
+  width: 96px;
+  height: 96px;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--pane-avatar-disc);
+}
+
+.avatar-disc::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px var(--pane-hairline);
+  pointer-events: none;
+}
+
+.avatar-disc > img {
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
+}
+
+.avatar-pencil {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--pane-fill);
+  color: var(--pane-ink);
+  box-shadow: 0 0 0 3px var(--pane-ground);
+  transition: background 0.15s ease-in-out;
+}
+
+.avatar-trigger:hover .avatar-pencil {
+  background: var(--pane-fill-2);
+}
+
+.avatar-pencil svg {
+  display: block;
+}
+
+.avatar-trigger:focus-visible .avatar-disc,
+.pane-icon-button:focus-visible,
+.pane-tab:focus-visible,
+.pane-switch:focus-visible {
+  outline: 2px solid var(--unread);
+  outline-offset: 1px;
+}
+
+/*
+ * The tabs: a 36 track (padded 3, the pane's fill); the chosen tab's pill
+ * (30, the pane's white, two soft shadows) sliding under it over 0.34 s;
+ * a 1 by 16 line between two tabs unless one beside it is chosen.
+ */
+.pane-tabs {
+  position: relative;
+  display: flex;
+  box-sizing: border-box;
+  height: 36px;
+  margin: 32px 0 26px;
+  padding: 0 3px;
+  border-radius: 999px;
+  background: var(--pane-fill);
+}
+
+.pane-tab-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  height: 30px;
+  border-radius: 999px;
+  background: var(--pane-thumb);
+  box-shadow:
+    0 1px 1px rgb(0 0 0 / 0.06),
+    0 2px 4px rgb(0 0 0 / 0.06);
+  transition: transform 0.34s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.pane-tab-line {
+  position: absolute;
+  top: 10px;
+  width: 1px;
+  height: 16px;
+  background: var(--pane-separator);
+  transition: opacity 0.2s ease-in-out;
+}
+
+.pane-tab-line.hidden {
+  opacity: 0;
+}
+
+.pane-tab {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: 30px;
+  margin-top: 3px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--pane-tab-idle);
+  cursor: pointer;
+  transition: color 0.2s ease-in-out;
+}
+
+.pane-tab.chosen {
+  color: var(--pane-ink);
+}
+
+.pane-tab svg {
+  display: block;
+}
+
+/* Profile: the fields, then Notifications 22 below. */
+.profile-body {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.profile-fields {
+  display: flex;
+  flex-direction: column;
+}
+
+.pane-field {
+  display: flex;
+  flex-direction: column;
+}
+
+/* A field's grey label: 13/16, 14 above (none for the first) and 2 below. */
+.pane-label {
+  display: block;
+  height: 16px;
+  padding: 14px 0 2px;
+  font-size: 13px;
+  line-height: 16px;
+  color: var(--pane-ink-2);
+}
+
+.pane-label.first {
+  padding-top: 0;
+}
+
+/* A one-line field: its words 15/20, 4 above and 12 below, a hairline under them that turns to the words' colour while it has the keys. */
+.pane-line {
+  box-sizing: content-box;
+  height: 20px;
+  padding: 4px 0 12px;
+  border: 0;
+  border-bottom: 1px solid var(--pane-hairline);
+  border-radius: 0;
+  outline: none;
+  background: transparent;
+  color: var(--pane-ink);
+  font: inherit;
+  font-size: 15px;
+  line-height: 20px;
+}
+
+.pane-line.focused {
+  border-bottom-color: var(--pane-ink);
+}
+
+.pane-line::placeholder,
+.pane-text::placeholder {
+  color: var(--ink-secondary);
+  opacity: 1;
+}
+
+.pane-line.read-only {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.pane-line.read-only.empty {
+  color: var(--ink-secondary);
+}
+
+/* The description: 15/20, growing from one line (27) to 143, then scrolling; 4 above and 12 below, its hairline. */
+.pane-text {
+  box-sizing: content-box;
+  min-height: 27px;
+  max-height: 143px;
+  padding: 4px 0 12px;
+  border: 0;
+  border-bottom: 1px solid var(--pane-hairline);
+  border-radius: 0;
+  outline: none;
+  background: transparent;
+  color: var(--pane-ink);
+  font: inherit;
+  font-size: 15px;
+  line-height: 20px;
+  resize: none;
+  overflow-y: auto;
+}
+
+.pane-text.focused {
+  border-bottom-color: var(--pane-ink);
+}
+
+/* Notifications: the 40 tile (round 11, the pane's fill) with the bell, the words, the switch at the right; 14 apart. */
+.notifications-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.notifications-tile {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  background: var(--pane-fill);
+  color: var(--pane-ink);
+}
+
+.notifications-tile svg {
+  display: block;
+}
+
+.notifications-words {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.notifications-title {
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 18px;
+  letter-spacing: -0.16px;
+  color: var(--pane-ink);
+}
+
+.notifications-line {
+  font-size: 13px;
+  line-height: 17px;
+  color: var(--pane-ink-2);
+}
+
+/* The Mac's small switch: 32 by 18, a white thumb, the window's blue when on. */
+.pane-switch {
+  position: relative;
+  flex: none;
+  width: 32px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 12%, transparent);
+  cursor: pointer;
+  transition: background 0.18s ease-in-out;
+}
+
+.pane-switch.on {
+  background: var(--pane-switch-on);
+}
+
+.pane-switch:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.pane-switch-thumb {
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow:
+    0 0 0 0.5px rgb(0 0 0 / 0.04),
+    0 1px 2px rgb(0 0 0 / 0.2);
+  transition: transform 0.18s ease-in-out;
+}
+
+.pane-switch.on .pane-switch-thumb {
+  transform: translateX(14px);
+}

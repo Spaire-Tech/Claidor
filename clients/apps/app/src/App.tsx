@@ -8,6 +8,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   useSyncExternalStore,
@@ -15,22 +16,28 @@ import {
 import { t } from './l10n'
 import type { WebSession } from './session'
 import { AccessCover } from './window/AccessCover'
+import { AgentPaneColumn, paneShownWidth } from './window/AgentPane'
 import { ChatPane } from './window/ChatPane'
 import { somethingOver } from './window/Dialogs'
 import { FirstRunScreen } from './window/FirstRun'
-import { FlightPane, useFlightPane } from './window/FlightCards'
+import { NewAgentLayer } from './window/NewAgentSheet'
+import { OrgChartView } from './window/OrgChart'
+import { SearchLayer } from './window/SearchPanel'
 import { Sidebar, listOrder } from './window/Sidebar'
 import {
   type SidebarSize,
   dragTo,
   keepSize,
+  railWidth,
   readSize,
   showsRail,
   sidebarWidth,
   toggled,
 } from './window/sidebarLayout'
+import { StarterPackLayer } from './window/StarterPackSheet'
 import { useWatched } from './window/useStore'
 import { type Shown, ViewerContext, ViewerLayer } from './window/Viewers'
+import { WindowContext, WindowModel } from './window/windowModel'
 
 /** An Apple computer: its shortcuts take ⌘. */
 const apple =
@@ -120,14 +127,84 @@ function keepInAddress(agentId: string | undefined): void {
     window.history.replaceState(null, '', url)
 }
 
+/**
+ * The window's own keys that are not in a menu (MainWindow.swift's
+ * `KeyWatcher`), with ⌘ on an Apple computer and Control elsewhere: ⌘B
+ * folds and opens the sidebar; ⌘K opens and closes search, ⌘⇧F opens it;
+ * ⌘N opens New Agent; ⌘⇧, the agent's pane on Profile, ⌘⇧I and ⌥⌘B the
+ * pane as it was. None of them while a sheet or an alert is over the window
+ * (search's own keys are its own). A browser keeps some for itself (⌘N
+ * opens a browser window; on Windows, Control-Shift-I its developer tools);
+ * the Windows app has them all.
+ */
+function useWindowKeys(
+  model: WindowModel,
+  resize: (change: (now: SidebarSize) => SidebarSize) => void,
+) {
+  useEffect(() => {
+    const key = (event: KeyboardEvent) => {
+      if (event.isComposing) return
+      const command = apple ? event.metaKey : event.ctrlKey
+      const other = apple ? event.ctrlKey : event.metaKey
+      if (!command || other) return
+      const letter = event.key.toLowerCase()
+      const shift = event.shiftKey
+      const alt = event.altKey
+      // ⌘B, from a field too.
+      if (!shift && !alt && letter === 'b') {
+        event.preventDefault()
+        if (!somethingOver()) resize(toggled)
+        return
+      }
+      // ⌘K: search, open or closed (its own panel takes the rest of its keys).
+      if (!shift && !alt && letter === 'k') {
+        event.preventDefault()
+        if (!somethingOver() || model.searchOpen) model.toggleSearch()
+        return
+      }
+      if (somethingOver()) return
+      if (shift && !alt && letter === 'f') {
+        event.preventDefault()
+        model.openSearch()
+      } else if (!shift && !alt && letter === 'n') {
+        event.preventDefault()
+        model.startNewChat()
+      } else if (shift && !alt && (event.key === ',' || event.key === '<')) {
+        event.preventDefault()
+        model.toggleSettings()
+      } else if (
+        (shift && !alt && letter === 'i') ||
+        (!shift && alt && event.code === 'KeyB')
+      ) {
+        event.preventDefault()
+        model.toggleDetails()
+      }
+    }
+    window.addEventListener('keydown', key)
+    return () => window.removeEventListener('keydown', key)
+  }, [model, resize])
+}
+
 function MainWindow({ session }: { session: WebSession }) {
   const store = session.store
   useWatched(store)
-  const [open, setOpen] = useState<string | undefined>(agentInAddress)
+  const [model] = useState(() => new WindowModel(agentInAddress()))
+  useWatched(model)
   // The agent left open while it is there, else the first in the sidebar's order.
-  const known = open != null && store.agents.some((agent) => agent.id === open)
-  const shown = known ? open : listOrder(store)[0]
+  const asked = model.selected
+  const known =
+    asked != null && store.agents.some((agent) => agent.id === asked)
+  const shown = known ? asked : listOrder(store)[0]
   useEffect(() => keepInAddress(shown), [shown])
+  // Another agent shown: the pane starts on its Profile, or on the page asked for it.
+  const lastShown = useRef(shown)
+  useEffect(() => {
+    if (lastShown.current === shown) return
+    lastShown.current = shown
+    model.agentChanged(shown)
+  }, [model, shown])
+  // Signed out (or the computer lost): the chart and what floats over the window go with it.
+  useEffect(() => () => model.leftWindow(), [model])
   // Files dropped outside the chat are taken by nothing, and the browser does not open them in the window's place.
   useEffect(() => {
     const refuse = (event: DragEvent) => {
@@ -153,57 +230,83 @@ function MainWindow({ session }: { session: WebSession }) {
       return next
     })
   }, [])
+  // The pane folds the sidebar as it opens and opens it again as it closes (`agent-pane-compacts-sidebar`).
+  const folded = useRef(size.isCollapsed)
+  useLayoutEffect(() => {
+    folded.current = size.isCollapsed
+  }, [size.isCollapsed])
+  useEffect(() => {
+    model.setLayout({
+      isCollapsed: () => folded.current,
+      setCollapsed: (collapsed) => {
+        folded.current = collapsed
+        resize((now) =>
+          now.isCollapsed === collapsed
+            ? now
+            : { ...now, isCollapsed: collapsed },
+        )
+      },
+    })
+    return () => model.setLayout(undefined)
+  }, [model, resize])
   const [resizing, setResizing] = useState(false)
-  // A flight's details beside the chat (FlightCards.tsx, until the agent's pane in step 4): the sidebar is measured beside them.
-  const pane = useFlightPane(store, shown, size, resize, windowWidth)
+  // The agent's pane beside the chat, measured beside the sidebar as it stands.
+  const standing = size.isCollapsed ? railWidth : size.expandedWidth
+  const pane = paneShownWidth(model, standing, windowWidth)
+  useLayoutEffect(() => model.setPaneVisible(pane > 0), [model, pane])
   const rail = showsRail(size, windowWidth - pane)
   const width = sidebarWidth(size, windowWidth - pane)
-  // ⌘B (Control-B on Windows) folds the sidebar to its rail and opens it again, from a field too.
-  useEffect(() => {
-    const key = (event: KeyboardEvent) => {
-      const command = apple ? event.metaKey : event.ctrlKey
-      if (!command || event.metaKey === event.ctrlKey) return
-      if (event.shiftKey || event.altKey || event.key.toLowerCase() !== 'b')
-        return
-      event.preventDefault()
-      if (somethingOver()) return
-      resize(toggled)
-    }
-    window.addEventListener('keydown', key)
-    return () => window.removeEventListener('keydown', key)
-  }, [resize])
+  useWindowKeys(model, resize)
   // A file's preview, or pictures and videos, over the window (`Viewers`), one at a time.
   const [viewer, setViewer] = useState<Shown>()
   const closeViewer = useCallback(() => setViewer(undefined), [])
+  const choose = useCallback(
+    (agentId: string) => model.choose(agentId),
+    [model],
+  )
   return (
-    <ViewerContext.Provider value={setViewer}>
-      <div className={resizing ? 'window resizing' : 'window'}>
-        <Sidebar
-          store={store}
-          open={shown}
-          onOpen={setOpen}
-          rail={rail}
-          width={width}
-        />
-        <main className="chat-area">
-          {shown != null && (
-            <ChatPane
-              key={shown}
-              store={store}
-              agentId={shown}
-              onOpenAgent={setOpen}
-            />
-          )}
-        </main>
-        <FlightPane store={store} width={pane} />
-        <ResizeEdge
-          left={width - 7}
-          drag={(x) => resize((now) => dragTo(now, x, window.innerWidth))}
-          dragging={setResizing}
-        />
-      </div>
-      <ViewerLayer shown={viewer} store={store} close={closeViewer} />
-    </ViewerContext.Provider>
+    <WindowContext.Provider value={model}>
+      <ViewerContext.Provider value={setViewer}>
+        <div className={resizing ? 'window resizing' : 'window'}>
+          <Sidebar
+            store={store}
+            open={shown}
+            onOpen={choose}
+            rail={rail}
+            width={width}
+          />
+          <main className="chat-area">
+            {model.orgChart ? (
+              <OrgChartView store={store} />
+            ) : (
+              shown != null && (
+                <ChatPane
+                  key={shown}
+                  store={store}
+                  agentId={shown}
+                  onOpenAgent={choose}
+                />
+              )
+            )}
+          </main>
+          <AgentPaneColumn
+            store={store}
+            agentId={shown}
+            shownWidth={pane}
+            sidebarWidth={width}
+          />
+          <ResizeEdge
+            left={width - 7}
+            drag={(x) => resize((now) => dragTo(now, x, window.innerWidth))}
+            dragging={setResizing}
+          />
+        </div>
+        <ViewerLayer shown={viewer} store={store} close={closeViewer} />
+        <SearchLayer store={store} />
+        <NewAgentLayer store={store} />
+        <StarterPackLayer store={store} />
+      </ViewerContext.Provider>
+    </WindowContext.Provider>
   )
 }
 

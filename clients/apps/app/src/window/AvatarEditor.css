@@ -1,0 +1,646 @@
+/*
+ * The avatar editor (AvatarEditor.tsx) at the Mac's measures
+ * (mac/Simeon/AvatarEditor.swift): the card, its tabs and Reset, the
+ * buttons, Faces with the voice, Generate, Upload and the crop. Its greys
+ * are the window's row grey (`rowHover`) at the Mac's shares: 82% for the
+ * buttons, 86% for Reset under the pointer; #777 at 17% (32% on dark) for a
+ * grey button under the pointer.
+ */
+:root {
+  --editor-grey: rgb(119 119 119 / 0.0738);
+  --editor-grey-hover: rgb(119 119 119 / 0.17);
+  --editor-reset-hover: rgb(119 119 119 / 0.0774);
+  /* A field's edge (the ink at 15%), the stage's (5%), the card's shadow (#141414 at 9%) */
+  --editor-edge: rgb(20 20 20 / 0.15);
+  --editor-stage-edge: rgb(20 20 20 / 0.05);
+  --editor-shadow: rgb(20 20 20 / 0.09);
+  /* The small slider: its blue (the system's accent), its track, its knob's ring */
+  --editor-slider-blue: #007aff;
+  --editor-slider-track: rgb(0 0 0 / 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --editor-grey: rgb(119 119 119 / 0.1419);
+    --editor-grey-hover: rgb(119 119 119 / 0.32);
+    --editor-reset-hover: rgb(119 119 119 / 0.1488);
+    --editor-edge: rgb(252 252 252 / 0.15);
+    --editor-stage-edge: rgb(252 252 252 / 0.05);
+    --editor-slider-blue: #0a84ff;
+    --editor-slider-track: rgb(255 255 255 / 0.16);
+  }
+}
+
+/* Under the pane's avatar: 6 below its disc (the head's 3, the button's 3, the 96 disc), centred on the page, over what is under it. */
+.avatar-editor-place {
+  position: absolute;
+  top: 108px;
+  z-index: 5;
+}
+
+/* The card: round 16; with its chrome, the raised ground, a half-point hairline and two soft shadows. */
+.avatar-editor {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  border-radius: 16px;
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 16px;
+  text-align: left;
+}
+
+.avatar-editor.chrome {
+  overflow: hidden;
+  background: var(--elevated);
+  box-shadow:
+    inset 0 0 0 0.5px var(--hairline),
+    0 8px 12px var(--editor-shadow),
+    0 1px 1.5px var(--editor-shadow);
+}
+
+/* Each button sets its own size and weight; only the family is the window's. */
+.avatar-editor button {
+  font-family: inherit;
+  line-height: normal;
+  cursor: pointer;
+}
+
+.avatar-editor button:disabled {
+  cursor: default;
+}
+
+.avatar-editor button:focus-visible,
+.avatar-editor textarea:focus-visible,
+.avatar-editor input:focus-visible {
+  outline: 2px solid var(--unread);
+  outline-offset: 1px;
+}
+
+/* The head: the tabs and Reset, 8 apart, padded 8. */
+.editor-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+}
+
+.editor-tabs {
+  display: flex;
+  flex: 1;
+  gap: 2px;
+  min-width: 0;
+}
+
+/* A tab: 26 high, padded 8 a side, round 8, 13; the chosen one in the ink on the grey, the others grey, the grey under the pointer. */
+.editor-tab {
+  flex: none;
+  height: 26px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink-secondary);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.editor-tab.chosen {
+  color: var(--ink);
+}
+
+.editor-tab.chosen,
+.editor-tab:hover {
+  background: var(--row-hover);
+}
+
+/* Reset: ghost, 22 high, round 8, grey words, the ink on the grey under the pointer; dimmed while a face is saved. */
+.editor-reset {
+  flex: none;
+  height: 22px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink-secondary);
+  font-size: 13px;
+  white-space: nowrap;
+  transition:
+    background 0.14s cubic-bezier(0.16, 1, 0.3, 1),
+    color 0.14s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.editor-reset:hover {
+  background: var(--editor-reset-hover);
+  color: var(--ink);
+}
+
+.editor-reset:disabled {
+  opacity: 0.56;
+}
+
+.editor-rule {
+  flex: none;
+  height: 0.5px;
+  background: var(--hairline);
+}
+
+/* The body: padded 12, its parts 12 apart, 240 high at the least. */
+.editor-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-sizing: border-box;
+  min-height: 240px;
+  padding: 12px;
+}
+
+/* What went wrong: 12/16 in red, at the left. */
+.editor-error {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--danger);
+  overflow-wrap: anywhere;
+}
+
+/* The buttons: 30 high, padded 13 a side, round 10, 13; the dark one (the ink, the ground's words; grey under the pointer), the grey one; dimmed when off. */
+.editor-button {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  height: 30px;
+  padding: 0 13px;
+  border: 0;
+  border-radius: 10px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.editor-button.wide {
+  flex: 1;
+  width: 100%;
+}
+
+.editor-button.primary {
+  background: var(--ink);
+  color: var(--ground);
+}
+
+.editor-button.primary:hover:not(:disabled) {
+  background: var(--ink-secondary);
+}
+
+.editor-button.secondary {
+  background: var(--editor-grey);
+  color: var(--ink);
+}
+
+.editor-button.secondary:hover:not(:disabled) {
+  background: var(--editor-grey-hover);
+}
+
+.editor-button:disabled {
+  opacity: 0.56;
+}
+
+/* Faces: Woman and Man with Shuffle, the faces, the voice 6 lower; 12 apart. */
+.faces-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.faces-gender {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.faces-grid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.faces-row {
+  display: flex;
+  gap: 8px;
+}
+
+/* A face: a 44 cell, the face at 36 in its middle; ringed 2 in the ink at 55% when worn, 1 at 15% under the pointer. */
+.face-cell {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+}
+
+.face-cell::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.face-cell:hover::after {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 15%, transparent);
+}
+
+.face-cell.worn::after {
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--ink) 55%, transparent);
+}
+
+.face-cell:focus-visible {
+  outline-offset: -1px;
+}
+
+/* Voice: "Voice" (12, semibold, grey, 2 in), the note, then the field and the play button 8 apart; 6 apart. */
+.voice-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.voice-title {
+  padding: 0 2px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 15px;
+  color: var(--ink-secondary);
+}
+
+.voice-note {
+  padding: 0 2px;
+  font-size: 12px;
+  line-height: 15px;
+  color: var(--ink-secondary);
+}
+
+.voice-loading {
+  display: flex;
+  align-items: center;
+  height: 30px;
+}
+
+.voice-row {
+  display: flex;
+  gap: 8px;
+}
+
+/* The voice's field: the row's width, 30 high, round 10, padded 12 a side; the name (13) at the left, the chevrons (10, semibold, grey) at the right. */
+.voice-field {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  height: 30px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--editor-grey);
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.voice-field:hover {
+  background: var(--editor-grey-hover);
+}
+
+.voice-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-align: left;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.voice-field svg {
+  flex: none;
+  margin-left: 4px;
+  color: var(--ink-secondary);
+}
+
+/* The play button: 30 square, round 10, the grey; its symbol at 11 in the ink; faint without a sample. */
+.voice-play {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: var(--editor-grey);
+  color: var(--ink);
+}
+
+.voice-play svg {
+  fill: currentColor;
+}
+
+.voice-play:disabled {
+  opacity: 0.4;
+}
+
+/* The voices' list: at least as wide as the field. */
+.voice-menu .context-menu {
+  min-width: var(--voice-menu-width);
+  box-sizing: border-box;
+}
+
+/* The small spinner while the voices load. */
+.editor-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  box-sizing: border-box;
+  border: 2px solid color-mix(in srgb, var(--ink) 15%, transparent);
+  border-top-color: var(--ink-secondary);
+  border-radius: 50%;
+  animation: editor-spin 0.8s linear infinite;
+}
+
+@keyframes editor-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Generate: the field and its button, 12 apart. */
+.generate-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* The field: 150 high, round 10, the ground, an edge in the ink at 15%; its words 14, 10 in and 8 down. */
+.generate-field {
+  box-sizing: border-box;
+  height: 150px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 10px;
+  outline: none;
+  background: var(--ground);
+  box-shadow: inset 0 0 0 1px var(--editor-edge);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  line-height: 17px;
+  resize: none;
+}
+
+.generate-field::placeholder {
+  color: var(--ink-tertiary);
+  opacity: 1;
+}
+
+/* While it draws: the words on one line (36 high, 14, 10 in), the grey disc breathing, "Generating…". */
+.generate-line {
+  box-sizing: border-box;
+  height: 36px;
+  padding: 0 10px;
+  border-radius: 10px;
+  background: var(--ground);
+  box-shadow: inset 0 0 0 1px var(--editor-edge);
+  font-size: 14px;
+  line-height: 36px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.generate-pulse {
+  align-self: center;
+  width: 96px;
+  height: 96px;
+  margin: 16px 0;
+  border-radius: 50%;
+  background: var(--row-hover);
+  animation: editor-pulse 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes editor-pulse {
+  to {
+    opacity: 0.55;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .generate-pulse {
+    animation: none;
+    opacity: 0.55;
+  }
+}
+
+/* Upload: the drop zone, 190 high at the least, padded 12 a side, its words centred 8 apart; a dashed edge (4 on, 3 off) in the ink at 15%, blue on the grey while a file is over it. */
+.drop-zone {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-sizing: border-box;
+  min-height: 190px;
+  padding: 0 12px;
+  border-radius: 10px;
+  text-align: center;
+  font-size: 14px;
+  line-height: 17px;
+  letter-spacing: -0.15px;
+}
+
+.drop-zone.over {
+  background: var(--row-hover);
+}
+
+.drop-edge {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.drop-edge rect {
+  width: calc(100% - 1px);
+  height: calc(100% - 1px);
+  fill: none;
+  stroke: var(--editor-edge);
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+}
+
+.drop-zone.over .drop-edge rect {
+  stroke: var(--link);
+}
+
+.drop-words {
+  color: var(--ink-secondary);
+}
+
+.drop-or {
+  color: var(--ink-tertiary);
+}
+
+.drop-zone .editor-button {
+  position: relative;
+  letter-spacing: normal;
+}
+
+/* The crop: the stage, its lines, the zoom and the buttons, 8 apart. */
+.crop-view {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+
+/* The stage: a 96 circle on the grey, the picture where the crop puts it, a half-point edge in the ink at 5%; the open hand. */
+.crop-stage {
+  position: relative;
+  align-self: center;
+  width: 96px;
+  height: 96px;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--row-hover);
+  cursor: grab;
+  touch-action: none;
+}
+
+.crop-stage::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 0.5px var(--editor-stage-edge);
+  pointer-events: none;
+}
+
+.crop-stage canvas {
+  display: block;
+  width: 96px;
+  height: 96px;
+}
+
+/* The file's name and size (grey, cut in its middle) and "Drag to reposition" (fainter): 13, 2 apart, centred. */
+.crop-lines {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+  font-size: 13px;
+  line-height: 16px;
+  text-align: center;
+}
+
+.crop-file {
+  overflow: hidden;
+  white-space: nowrap;
+  color: var(--ink-secondary);
+}
+
+.crop-hint {
+  color: var(--ink-tertiary);
+}
+
+/* The zoom: −, the small slider, +; 8 apart, grey. */
+.crop-zoom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink-secondary);
+}
+
+.zoom-step {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+}
+
+.zoom-step:hover {
+  background: var(--row-hover);
+}
+
+/* The Mac's small slider: a 4-point track, blue up to the knob; a 14-point white knob with its shadow. */
+.crop-slider {
+  flex: 1;
+  min-width: 0;
+  height: 16px;
+  margin: 0;
+  background: transparent;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: default;
+}
+
+.crop-slider::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(
+    to right,
+    var(--editor-slider-blue) var(--filled),
+    var(--editor-slider-track) var(--filled)
+  );
+}
+
+.crop-slider::-moz-range-track {
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(
+    to right,
+    var(--editor-slider-blue) var(--filled),
+    var(--editor-slider-track) var(--filled)
+  );
+}
+
+.crop-slider::-webkit-slider-thumb {
+  width: 14px;
+  height: 14px;
+  margin-top: -5px;
+  border: 0;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow:
+    0 0 0 0.5px rgb(0 0 0 / 0.12),
+    0 1px 2px rgb(0 0 0 / 0.3);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.crop-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: 0;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow:
+    0 0 0 0.5px rgb(0 0 0 / 0.12),
+    0 1px 2px rgb(0 0 0 / 0.3);
+}
+
+.crop-buttons {
+  display: flex;
+  gap: 8px;
+}

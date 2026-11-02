@@ -38,6 +38,7 @@ import {
   type CardKind,
   type ChatImage,
   type ChatRow,
+  type RoutineRef,
   channelTitle,
   exchangeLabel,
   exchangePeers,
@@ -78,6 +79,7 @@ import {
 } from './Cards'
 import { Composer } from './Composer'
 import { connectCardView } from './ConnectCards'
+import { ContextMenu } from './ContextMenu'
 import { somethingOver } from './Dialogs'
 import { EmojiPicker } from './EmojiPicker'
 import { FileCard, LinkCard, useShownPicture } from './Files'
@@ -98,10 +100,12 @@ import {
   MessageBlocks,
 } from './MessageText'
 import { requestCardView } from './RequestCards'
+import { useSearchReveal } from './SearchPanel'
 import { shopCardView } from './ShopCards'
 import { useOpenMedia } from './Viewers'
 import { classes } from './classes'
 import { useWatched } from './useStore'
+import { useWindowModel } from './windowModel'
 
 /** What a row asks of the chat around it: going to another row, opening a thread, a message's actions. */
 interface ChatControl {
@@ -219,6 +223,9 @@ export function ChatPane({
       : undefined
   /** Brings a row to the middle without lighting it (find's `scrollToEntryWithoutHighlight`); set by the lines on screen. */
   const revealRef = useRef<(rowId: string) => void>(undefined)
+  /** Brings a row to the middle and lights it (`jump`); set by the lines on screen. A line search found goes there (step 4d). */
+  const jumpRef = useRef<(rowId: string) => void>(undefined)
+  useSearchReveal(store, agentId, jumpRef)
 
   // ⌘F (Ctrl-F on Windows): the bar, or its field again with its words chosen.
   useEffect(() => {
@@ -393,6 +400,7 @@ export function ChatPane({
         actions={actions}
         find={findOnScreen}
         revealRef={revealRef}
+        jumpRef={jumpRef}
         openAgent={onOpenAgent}
       />
       {agent &&
@@ -483,12 +491,29 @@ export function ChatPane({
  * over its name in a pill (13, medium).
  */
 function ChatHeader({ store, agent }: { store: AppStore; agent: Agent }) {
+  const model = useWindowModel()
+  // Both open the agent's pane on Profile, and close it when it shows (`toggleSettings`).
   return (
     <header className="chat-header">
       <div className="veil" aria-hidden="true" />
-      <div className="identity" title={agent.name}>
-        <AgentMark agent={agent} agents={store.agents} size={52} />
-        <span className="name-pill">{agent.name}</span>
+      <div className="identity">
+        <button
+          type="button"
+          className="identity-button"
+          aria-label={t('View agent settings')}
+          onClick={() => model.toggleSettings()}
+        >
+          <AgentMark agent={agent} agents={store.agents} size={52} />
+        </button>
+        <button
+          type="button"
+          className="identity-button name-pill"
+          title={agent.name}
+          aria-label={t('View agent settings')}
+          onClick={() => model.toggleSettings()}
+        >
+          {agent.name}
+        </button>
       </div>
     </header>
   )
@@ -508,6 +533,7 @@ function ThreadHeader({
   agent: Agent
   title: string
 }) {
+  const model = useWindowModel()
   return (
     <header className="thread-header" aria-label={t('Thread breadcrumb')}>
       <button
@@ -521,7 +547,14 @@ function ThreadHeader({
         <span>{agent.name}</span>
       </button>
       <Chevron />
-      <span className="crumb title">{title}</span>
+      <button
+        type="button"
+        className="crumb title"
+        aria-label={t('View conversation details')}
+        onClick={() => model.toggleDetails()}
+      >
+        {title}
+      </button>
     </header>
   )
 }
@@ -570,6 +603,7 @@ function Transcript({
   actions,
   find,
   revealRef,
+  jumpRef,
   openAgent,
 }: {
   store: AppStore
@@ -580,6 +614,7 @@ function Transcript({
   /** What find lights: its words in small letters, and the match it stands on. */
   find?: { needle: string; current?: FindMatch }
   revealRef: React.RefObject<((rowId: string) => void) | undefined>
+  jumpRef: React.RefObject<((rowId: string) => void) | undefined>
   openAgent: (agentId: string) => void
 }) {
   const rows =
@@ -662,7 +697,8 @@ function Transcript({
     const element = scroller.current
     if (!element) return
     const gap = element.scrollHeight - element.scrollTop - element.clientHeight
-    pinned.current = gap <= pinGap
+    // A jump's scroll under way leaves the newest line, though its first steps are still near it.
+    if (!jumping.current) pinned.current = gap <= pinGap
     if (pinned.current !== atNewest) setAtNewest(pinned.current)
     const newest = rows[rows.length - 1]?.id
     if (pinned.current && seenUpTo !== newest) setSeenUpTo(newest)
@@ -675,18 +711,68 @@ function Transcript({
       void store.loadOlder(agentId)
   }
 
-  const jump = useCallback((rowId: string) => {
-    const element = scroller.current?.querySelector(
-      `[data-row-id="${CSS.escape(rowId)}"]`,
-    )
-    if (!element) return
+  /**
+   * A row brought to the middle: the chat holds its newest line no more,
+   * even while the scroll's first steps are still near it (a far one, a
+   * found line or a quote, was taken back to the newest). Once the scroll
+   * ends (or nothing moved, or after 3 s) the chat reads where it stands
+   * again, holding the newest line when it landed there (ChatPane.swift's
+   * `follow`). A later jump ends an earlier one's watch.
+   */
+  const jumping = useRef(false)
+  const jumpWatch = useRef<() => void>(undefined)
+  const settle = useRef<() => void>(undefined)
+  const scrollToRow = useCallback((element: Element) => {
+    jumpWatch.current?.()
+    const box = scroller.current
     pinned.current = false
     setAtNewest(false)
+    jumping.current = true
+    const startTop = box?.scrollTop
+    let watching = true
+    const stopWatching = () => {
+      if (!watching) return
+      watching = false
+      clearTimeout(timer)
+      clearTimeout(still)
+      box?.removeEventListener('scrollend', ended)
+      jumpWatch.current = undefined
+    }
+    const ended = () => {
+      stopWatching()
+      jumping.current = false
+      settle.current?.()
+    }
+    const timer = setTimeout(ended, 3_000)
+    // Already in place: no scroll starts, so no scroll ends.
+    const still = setTimeout(() => {
+      if (box && box.scrollTop === startTop) ended()
+    }, 150)
+    box?.addEventListener('scrollend', ended)
+    jumpWatch.current = stopWatching
     element.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    // Lit in the warning yellow at 22%, then it fades (`sand-12cjh1l`).
-    setLit(rowId)
-    setTimeout(() => setLit((now) => (now === rowId ? undefined : now)), 2_500)
   }, [])
+  useEffect(() => () => jumpWatch.current?.(), [])
+  useLayoutEffect(() => {
+    settle.current = onScroll
+  })
+
+  const jump = useCallback(
+    (rowId: string) => {
+      const element = scroller.current?.querySelector(
+        `[data-row-id="${CSS.escape(rowId)}"]`,
+      )
+      if (!element) return
+      scrollToRow(element)
+      // Lit in the warning yellow at 22%, then it fades (`sand-12cjh1l`).
+      setLit(rowId)
+      setTimeout(
+        () => setLit((now) => (now === rowId ? undefined : now)),
+        2_500,
+      )
+    },
+    [scrollToRow],
+  )
 
   // Find's step: the row to the middle, unlit, letting go of the newest.
   useEffect(() => {
@@ -695,14 +781,18 @@ function Transcript({
         `[data-row-id="${CSS.escape(rowId)}"]`,
       )
       if (!element) return
-      pinned.current = false
-      setAtNewest(false)
-      element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      scrollToRow(element)
     }
     return () => {
       revealRef.current = undefined
     }
-  }, [revealRef])
+  }, [revealRef, scrollToRow])
+  useEffect(() => {
+    jumpRef.current = jump
+    return () => {
+      jumpRef.current = undefined
+    }
+  }, [jump, jumpRef])
 
   // The agent at work: the words beside its picture under the messages.
   const activity = useMemo(
@@ -971,29 +1061,12 @@ function RowContent({
       )
     }
     case 'routines':
-      return row.routines.length >= 3 ? (
-        <div className="system-event">
-          <span className="label">{routineVerb(row.action)}</span>
-          <span className="event-chip">
-            <Clock />
-            <span className="chip-title">{t`${row.routines.length} routines`}</span>
-          </span>
-        </div>
-      ) : (
-        <div className="system-event">
-          <span className="label">
-            {routineLabel(row.action, row.routines.length)}
-          </span>
-          {row.routines.map((routine, index) => (
-            <span key={routine.id} className="routine">
-              {index > 0 && <span className="label">{t('and')}</span>}
-              <span className="event-chip">
-                <Clock />
-                <span className="chip-title">{routine.name}</span>
-              </span>
-            </span>
-          ))}
-        </div>
+      return (
+        <RoutinesLine
+          action={row.action}
+          routines={row.routines}
+          agentId={control.agentId}
+        />
       )
     case 'voiceCall':
       return (
@@ -1162,6 +1235,81 @@ function cardView(kind: CardKind, card: CardProps): React.ReactNode {
     case 'products':
       return shopCardView(kind, card)
   }
+}
+
+/**
+ * A line of routines made or changed (mac/Simeon/ChatPane.swift's
+ * `RoutinesLine`): one or two chips, joined by "and", three or more as a
+ * count. A routine's chip opens the agent's pane on Routines with its
+ * editor (`KPn`); the count opens a menu of them where the pointer is
+ * (`YPn`).
+ */
+function RoutinesLine({
+  action,
+  routines,
+  agentId,
+}: {
+  action: string
+  routines: RoutineRef[]
+  agentId: string
+}) {
+  const model = useWindowModel()
+  const [list, setList] = useState<{ x: number; y: number }>()
+  const open = (id: string) => model.openRoutineFor(id, agentId)
+  if (routines.length >= 3)
+    return (
+      <div className="system-event">
+        <span className="label">{routineVerb(action)}</span>
+        <button
+          type="button"
+          className="event-chip routine-chip"
+          title={t`${routines.length} routines, show list`}
+          aria-label={t`${routines.length} routines, show list`}
+          aria-haspopup="menu"
+          onClick={(event) => {
+            // From the keys (Return, Space) there is no pointer: the list opens under the chip.
+            if (event.detail === 0) {
+              const chip = event.currentTarget.getBoundingClientRect()
+              setList({ x: chip.left, y: chip.bottom + 4 })
+            } else setList({ x: event.clientX, y: event.clientY })
+          }}
+        >
+          <Clock />
+          <span className="chip-title">{t`${routines.length} routines`}</span>
+        </button>
+        {list && (
+          <ContextMenu
+            at={list}
+            close={() => setList(undefined)}
+            items={routines.map((routine) => ({
+              label: routine.name,
+              glyph: 'clock',
+              action: () => open(routine.id),
+            }))}
+          />
+        )}
+      </div>
+    )
+  return (
+    <div className="system-event">
+      <span className="label">{routineLabel(action, routines.length)}</span>
+      {routines.map((routine, index) => (
+        <span key={routine.id} className="routine">
+          {index > 0 && <span className="label">{t('and')}</span>}
+          <button
+            type="button"
+            className="event-chip routine-chip"
+            title={t`Open routine ${routine.name}`}
+            aria-label={t`Open routine ${routine.name}`}
+            onClick={() => open(routine.id)}
+          >
+            <Clock />
+            <span className="chip-title">{routine.name}</span>
+          </button>
+        </span>
+      ))}
+    </div>
+  )
 }
 
 function Clock() {

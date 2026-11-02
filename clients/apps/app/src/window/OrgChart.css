@@ -1,0 +1,604 @@
+/*
+ * The org chart (OrgChart.tsx) at the Mac's measures (mac/Simeon/OrgChart.swift):
+ * the head (58), the canvas with its lines and nodes, the card over its
+ * right, the foot; the window's own colours (`Look`), light and dark.
+ */
+.org-chart {
+  /* `look.added`: a working agent's line, a talking link. */
+  --chart-added: #009957;
+  /* `look.fillHover`: Open chat under the pointer. */
+  --chart-fill-hover: rgb(119 119 119 / 0.17);
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--ground);
+  color: var(--ink);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  .org-chart {
+    --chart-added: #38d591;
+    --chart-fill-hover: rgb(119 119 119 / 0.32);
+  }
+}
+
+/* MARK: The head (`sand-org-chart__header`, 58): "Org chart" over the count line, × at the right. */
+
+.org-chart-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px 10px;
+}
+
+.org-chart-titles {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.org-chart-title {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.08px;
+  line-height: 18px;
+  color: var(--ink);
+}
+
+.org-chart-subtitle {
+  font-size: 11px;
+  letter-spacing: 0.07px;
+  line-height: 14px;
+  color: var(--ink-tertiary);
+}
+
+/* × (`Close org chart`): 20, round 4, the glyph in the second ink; the full ink on the grey under the pointer. */
+.chart-close {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ink-secondary);
+  cursor: pointer;
+  transition:
+    background-color 0.1s ease-out,
+    color 0.1s ease-out;
+}
+
+.chart-close:hover {
+  background: var(--row-hover);
+  color: var(--ink);
+}
+
+/* The foot: 11 on 14, the third ink, centred; 8 over it, 12 under, 20 a side. */
+.org-chart-foot {
+  flex: none;
+  margin: 0;
+  padding: 8px 20px 12px;
+  font-size: 11px;
+  line-height: 14px;
+  color: var(--ink-tertiary);
+  text-align: center;
+}
+
+/* MARK: The stage: the canvas ("Agent network") and the card over its right. */
+
+.network-stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  /* The card slides in from the right edge and stays inside it; its shadow falls softly over the foot, as the Mac's card, a sibling of the clipped canvas, casts it (only the canvas clips itself). */
+  clip-path: inset(-48px 0 -48px 0);
+}
+
+.network-canvas {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  touch-action: none;
+}
+
+/* The open hand while zoomed in, the closed one while dragging (over the nodes and lines too). */
+.network-canvas.zoomed {
+  cursor: grab;
+}
+
+.network-canvas.dragging,
+.network-canvas.dragging * {
+  cursor: grabbing !important;
+}
+
+.network-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 0 24px;
+  font-size: 13px;
+  line-height: 16px;
+  color: var(--ink-secondary);
+  text-align: center;
+}
+
+/* The drawing, zoomed about its top left and moved (`scaleEffect(anchor: .topLeading)`, `offset`). */
+.network-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+}
+
+/* Double-click: the zoom put back over 0.24 s. */
+.network-layer.resetting {
+  transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.network-ground {
+  position: absolute;
+  inset: 0;
+}
+
+.network-lines {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+
+/* A 16-point band takes the click, round at its ends. */
+.network-hit {
+  stroke: transparent;
+  stroke-width: 16px;
+  stroke-linecap: round;
+  fill: none;
+  pointer-events: stroke;
+  cursor: pointer;
+}
+
+.network-hit:focus-visible {
+  outline: none;
+  stroke: color-mix(in srgb, var(--unread) 25%, transparent);
+}
+
+.network-line {
+  fill: none;
+  stroke-width: 1px;
+}
+
+/* MARK: A node (`be`): 120 wide, its point at its middle. */
+
+.network-node {
+  position: absolute;
+  display: flex;
+  justify-content: center;
+  width: 120px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transform: translate(-50%, -50%);
+}
+
+.network-node:focus-visible {
+  outline: none;
+}
+
+.network-node:focus-visible .node-body {
+  box-shadow: 0 0 0 2px var(--unread);
+}
+
+/* The picture, the name and its line, 5 apart; padded 6 by 8 on a faint wash under the pointer, a touch larger. */
+.node-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  max-width: 120px;
+  box-sizing: border-box;
+  padding: 6px 8px;
+  border-radius: 12px;
+  transition:
+    transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.network-node:hover .node-body {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  transform: scale(1.04);
+}
+
+.node-name,
+.node-caption {
+  display: block;
+  max-width: 104px;
+  overflow: hidden;
+  font-size: 11px;
+  line-height: 13px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.node-name {
+  letter-spacing: 0.07px;
+  color: var(--ink-secondary);
+}
+
+.network-node.selected .node-name {
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.node-caption {
+  color: var(--ink-tertiary);
+}
+
+.node-caption.live {
+  color: var(--chart-added);
+}
+
+/* A picture with the sidebar's dot at its lower right (unread blue, working green, blue round green), ringed in the ground. */
+.node-mark {
+  position: relative;
+  display: block;
+  flex: none;
+}
+
+.node-mark .picture,
+.node-mark > svg {
+  display: block;
+}
+
+.node-dot {
+  position: absolute;
+  box-sizing: content-box;
+  border: 2.5px solid var(--node-ring, var(--ground));
+  border-radius: 50%;
+  background: var(--unread);
+}
+
+.node-dot.working {
+  background: var(--working);
+}
+
+.node-dot.both::after {
+  content: '';
+  position: absolute;
+  inset: 25%;
+  border-radius: 50%;
+  background: var(--working);
+}
+
+/* The ring round the picture while its card shows: 2 in the link's blue, 4 out from it. */
+.node-ring {
+  position: absolute;
+  inset: -4px;
+  border: 2px solid var(--link);
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.network-node.selected .node-ring {
+  opacity: 1;
+}
+
+/* MARK: The card (`me`, "Org chart details"): 312 wide, 8 from the top and bottom, 12 from the right, round 14. */
+
+.network-card {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  bottom: 8px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  width: 312px;
+  border-radius: 14px;
+  background: var(--elevated);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--ink) 10%, transparent),
+    0 8px 28px rgb(0 0 0 / 0.18);
+  overflow: hidden;
+}
+
+/* In from the right only when none showed; another card swaps at once, and closing is at once. */
+.network-card.entering {
+  animation: network-card-in 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes network-card-in {
+  from {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .network-card.entering {
+    animation: none;
+  }
+
+  .network-layer.resetting {
+    transition: none;
+  }
+}
+
+/* Its parts 14 apart, padded 20 at the top and 16 elsewhere; scrolled when long. */
+.network-card-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 20px 16px 16px;
+  overflow-y: auto;
+}
+
+.network-card-body.fixed {
+  overflow: hidden;
+}
+
+/* × at its corner: 16, 8 in. */
+.network-card-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink-secondary);
+  cursor: pointer;
+}
+
+.chart-close:focus-visible,
+.network-card-close:focus-visible,
+.chart-button:focus-visible {
+  outline: 2px solid var(--unread);
+  outline-offset: 1px;
+}
+
+/* An agent or a group: its picture (72) and state over the sections. */
+.card-identity {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.card-name {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 16px;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.card-word {
+  font-size: 11px;
+  line-height: 13px;
+  color: var(--ink-tertiary);
+}
+
+.card-word.live {
+  color: var(--chart-added);
+}
+
+.card-section {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* A section's heading (`ys`): 11, 500, upper case, spaced, the ink at 30%. */
+.card-heading {
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 13px;
+  letter-spacing: 0.66px;
+  color: color-mix(in srgb, var(--ink) 30%, transparent);
+}
+
+.card-text {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--ink-secondary);
+  overflow-wrap: anywhere;
+}
+
+.card-text.clamped {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 5;
+  overflow: hidden;
+}
+
+.card-time {
+  font-size: 11px;
+  line-height: 13px;
+  color: color-mix(in srgb, var(--ink) 30%, transparent);
+}
+
+/* A group's members at 28, 6 apart, wrapping; then "+N". */
+.member-marks {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 28px);
+  gap: 6px;
+}
+
+.member-mark {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 33px;
+}
+
+.member-more {
+  display: grid;
+  place-items: center;
+  height: 33px;
+  font-size: 12px;
+  color: var(--ink-tertiary);
+  white-space: nowrap;
+}
+
+/* Open chat / Open room: 13, 20 high, 4 a side, round 4, on the grey. */
+.chart-button {
+  flex: none;
+  height: 20px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 4px;
+  background: var(--row-hover);
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 20px;
+  cursor: pointer;
+}
+
+.chart-button:hover {
+  background: var(--chart-fill-hover);
+}
+
+/* Two pictures overlapping (36, the second 10 over the first), each ringed in the card's ground. */
+.pair-head {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.pair-marks {
+  display: flex;
+}
+
+.pair-mark {
+  display: block;
+  padding: 2.5px;
+  margin: -2.5px;
+  border-radius: 50%;
+  background: var(--elevated);
+}
+
+.pair-mark + .pair-mark {
+  margin-left: -12.5px;
+}
+
+.pair-caption {
+  font-size: 11px;
+  line-height: 13px;
+  color: var(--ink-tertiary);
+}
+
+.pair-caption.live {
+  color: var(--chart-added);
+}
+
+/* The conversation: its lines 10 apart, kept at the newest; read only. */
+.exchange-scroll {
+  align-self: stretch;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.exchange-lines {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  min-height: 80px;
+  box-sizing: border-box;
+  padding: 2px;
+}
+
+.exchange-note {
+  font-size: 11px;
+  line-height: 13px;
+  color: var(--ink-tertiary);
+}
+
+.exchange-row {
+  align-self: stretch;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.exchange-mark {
+  flex: none;
+  display: block;
+  width: 22px;
+  height: 22px;
+  color: var(--ink-tertiary);
+}
+
+.exchange-words {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.exchange-who {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 11px;
+  line-height: 13px;
+}
+
+.exchange-author {
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.exchange-time {
+  color: color-mix(in srgb, var(--ink) 30%, transparent);
+}
+
+.exchange-text {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--ink-secondary);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* "Read-only — …" under a line at 5%. */
+.exchange-foot {
+  align-self: stretch;
+  border-top: 1px solid color-mix(in srgb, var(--ink) 5%, transparent);
+  padding: 10px 0 2px;
+  font-size: 11px;
+  line-height: 13px;
+  color: color-mix(in srgb, var(--ink) 30%, transparent);
+  text-align: center;
+}

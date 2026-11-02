@@ -4,7 +4,7 @@
 //
 // Left for their steps, so no button here does nothing: an app's Connect
 // (the consent, then the app added and its sign-in, step 6, "connecting"),
-// and the joined card's View Profile (the agent's pane, step 4).
+// and the joined card's View Profile (the agent's pane).
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { CardKind } from '../core/chat'
@@ -28,6 +28,7 @@ import {
   standingFace,
   standingURL,
   unavailableCloudAgent,
+  viewProfileWord,
   webPage,
   type CloudAgentInfo,
   type ConnectorsCard,
@@ -41,6 +42,7 @@ import { AgentPicture } from './AgentMark'
 import { CardShell, type CardProps } from './Cards'
 import './ConnectCards.css'
 import { classes } from './classes'
+import { useWindowModel } from './windowModel'
 
 type ConnectKind = Extract<
   CardKind,
@@ -619,11 +621,11 @@ function useFitted<Element extends HTMLElement>(
  * "Iris just joined your team" (the founder's design B): the agent another
  * one hired, its face standing on its own on the card's bottom edge at the
  * left (a picture of its own sits round in that place), the title (17,
- * 600), what it does in two lines at most, and Go to Chat at the bottom; the
- * card in the colour of the face's own background, its words white. One
- * height for every card, 168. The agent gone (deleted since), the words
- * stay on the chat's grey and the face and the button go. View Profile joins
- * Go to Chat with the agent's pane (step 4).
+ * 600), what it does in two lines at most, and Go to Chat and View Profile
+ * (the agent's pane on its Profile) at the bottom; the card in the colour
+ * of the face's own background, its words white. One height for every
+ * card, 168. The agent gone (deleted since), the words stay on the chat's
+ * grey and the face and the buttons go.
  */
 function JoinedCardView({
   card,
@@ -634,6 +636,7 @@ function JoinedCardView({
   store: AppStore
   openAgent: (agentId: string) => void
 }) {
+  const model = useWindowModel()
   const agents = store.agents
   const agent = joinedAgent(card, agents)
   const colours = joinedColours(card, agents)
@@ -700,6 +703,11 @@ function JoinedCardView({
               title={goToChatWord()}
               onClick={() => openAgent(card.agentId)}
             />
+            <JoinedButton
+              title={viewProfileWord()}
+              quiet
+              onClick={() => model.openPaneFor('profile', card.agentId)}
+            />
           </div>
         )}
       </div>
@@ -707,17 +715,28 @@ function JoinedCardView({
   )
 }
 
-/** Go to Chat: round ends, half the row (View Profile takes the other half in step 4); white with its words in the colour's deep shade on the colour, the window's blue on the grey. */
+/**
+ * Go to Chat and View Profile (`JoinedButton`), each half the row with
+ * round ends. Go to Chat: white with its words in the colour's deep shade
+ * on the colour, the window's blue on the grey. View Profile (`quiet`): a
+ * white pane over the colour with its edge, the wash on the grey.
+ */
 function JoinedButton({
   title,
+  quiet = false,
   onClick,
 }: {
   title: string
+  quiet?: boolean
   onClick: () => void
 }) {
   const words = useFitted<HTMLSpanElement>(14, 0.85, title)
   return (
-    <button type="button" className="joined-button" onClick={onClick}>
+    <button
+      type="button"
+      className={classes('joined-button', quiet && 'quiet')}
+      onClick={onClick}
+    >
       <span ref={words} className="joined-button-words">
         {title}
       </span>

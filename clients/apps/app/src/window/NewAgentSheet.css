@@ -1,0 +1,235 @@
+/*
+ * New Agent's sheet (NewAgentSheet.tsx) at the Mac's measures
+ * (mac/Simeon/NewAgentSheet.swift with SettingsParts.swift's group, row
+ * and divider): the settings' grouped ground (white, #141414 on dark) and
+ * its cards (#f4f4f4, #262626 on dark).
+ */
+:root {
+  --new-agent-ground: #ffffff;
+  --new-agent-row: #f4f4f4;
+  /* Create with no name yet: grey words on the grey (the iPhone's) */
+  --new-agent-create-off: rgb(119 119 119 / 0.12);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --new-agent-ground: #141414;
+    --new-agent-row: #262626;
+    --new-agent-create-off: rgb(119 119 119 / 0.24);
+  }
+}
+
+/* 440 wide, the grouped ground; its height its own. */
+.sheet.new-agent-sheet {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  width: 440px;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 32px);
+  background: var(--new-agent-ground);
+  color: var(--ink);
+  line-height: normal;
+  letter-spacing: normal;
+}
+
+/* Each button sets its own size and weight; only the family is the window's. */
+.new-agent-sheet button {
+  font-family: inherit;
+  line-height: normal;
+  cursor: pointer;
+}
+
+.new-agent-sheet button:disabled {
+  cursor: default;
+}
+
+.new-agent-sheet button:focus-visible {
+  outline: 2px solid var(--unread);
+  outline-offset: 1px;
+}
+
+/* The top: the title (17, 500) in the middle, the glass disc at the left; padded 16 16 8. */
+.new-agent-top {
+  position: relative;
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 16px 16px 8px;
+}
+
+.new-agent-title {
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 22px;
+  color: var(--ink);
+}
+
+/* The glass disc that closes it: 32, its X at 40%, the discs' ink. */
+.new-agent-close {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: var(--disc-ink);
+}
+
+.new-agent-close:disabled {
+  opacity: 0.4;
+}
+
+/* The face and the fields, 24 apart, padded 32 a side and 8 above. */
+.new-agent-body {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 8px 32px 0;
+}
+
+/* The face at 120 and Edit under it, 12 apart, centred. */
+.new-agent-face {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.new-agent-picture {
+  display: block;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+}
+
+/* Edit: 13, 500, the ink, padded 14 a side, 28 high, a capsule of the cards' grey. */
+.new-agent-edit {
+  height: 28px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--new-agent-row);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* The group: its card (round 16), the line under it 8 below. */
+.new-agent-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.new-agent-rows {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 16px;
+  background: var(--new-agent-row);
+}
+
+/* A row: its words (13) 18 in, 56 high at the least, its name as its placeholder in the faintest grey. */
+.new-agent-line {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 56px;
+  padding: 0 18px;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+}
+
+.new-agent-line::placeholder {
+  color: var(--ink-tertiary);
+  opacity: 1;
+}
+
+/* The line between the two rows: half a point, the ink at 10%, 18 in at both ends. */
+.new-agent-divider {
+  height: 0.5px;
+  margin: 0 18px;
+  background: var(--hairline);
+}
+
+/* "Couldn’t create the agent. Try again.": 12, red, 8 in. */
+.new-agent-footer {
+  padding: 0 8px;
+  font-size: 12px;
+  line-height: 15px;
+  color: var(--danger);
+}
+
+/* Create: the sheet's one wide button, 36 high, a capsule in the blue, white words (14, 600); with no name, grey words on the grey. Padded 28 above, 32 a side, 24 below. */
+.new-agent-create-row {
+  display: flex;
+  flex: none;
+  padding: 28px 32px 24px;
+}
+
+.new-agent-create {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 18px;
+  background: var(--yours);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: inset 0 0.5px 0 rgb(255 255 255 / 0.18);
+}
+
+.new-agent-create.empty {
+  background: var(--new-agent-create-off);
+  color: var(--ink-secondary);
+  box-shadow: none;
+}
+
+/* The small white spinner while the agent is made. */
+.new-agent-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  box-sizing: border-box;
+  border: 2px solid rgb(255 255 255 / 0.35);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: new-agent-spin 0.8s linear infinite;
+}
+
+@keyframes new-agent-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* The editor's popover under the face: padded 4, the raised ground, round 16, a hairline and a soft shadow; placed before it shows. */
+.new-agent-popover {
+  position: fixed;
+  z-index: 2;
+  padding: 4px;
+  border-radius: 16px;
+  background: var(--elevated);
+  box-shadow:
+    inset 0 0 0 0.5px var(--hairline),
+    0 8px 12px rgb(20 20 20 / 0.09),
+    0 1px 1.5px rgb(20 20 20 / 0.09),
+    0 12px 32px rgb(0 0 0 / 0.12);
+  visibility: hidden;
+}

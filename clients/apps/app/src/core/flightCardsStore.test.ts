@@ -1,15 +1,11 @@
 // The flight cards' commands, as the Mac's cards send them (SimeonCore's
 // Store.swift `startFlightBooking`, `submitFlightPassengers`,
 // `cancelFlightPassengers`): what each sends, the computer's answer read,
-// a refusal said; and the flight whose details are open beside its chat.
+// a refusal said. The flight whose details are open is the window's
+// (windowModel.test.ts).
 
 import { describe, expect, it } from 'vitest'
-import {
-  type FlightOffer,
-  type Traveller,
-  newTraveller,
-  parseFlights,
-} from './flightCards'
+import { type Traveller, newTraveller } from './flightCards'
 import type { JSONObject } from './json'
 import { makeAgent } from './models'
 import { AppStore } from './store'
@@ -23,10 +19,6 @@ function computer() {
 
 const sent = (backend: FakeBackend, method: string) =>
   backend.commands.filter((one) => one.method === method).map((one) => one.args)
-
-const offer: FlightOffer = parseFlights(
-  '```simeon-flights\n{"title":"Seattle to Los Angeles","offers":[{"offerId":"off_0000AxyzTestOffer01","airline":"Duffel Airways","price":"$361.20"}]}\n```',
-)!.offers[0]!
 
 const ada: Traveller = {
   ...newTraveller('pas_0000Ada'),
@@ -164,25 +156,5 @@ describe('booking a flight from the store', () => {
     expect(store.problem).toBe(
       "Couldn't cancel the booking: The computer didn't answer.",
     )
-  })
-
-  it('opens a flight’s details, closes them on the same row, and forgets them on signing out', async () => {
-    const backend = computer()
-    const store = new AppStore()
-    await store.attach(backend)
-    let changes = 0
-    store.subscribe(() => (changes += 1))
-    store.toggleFlight('f1:0', offer, 'iris')
-    expect(store.openFlight).toEqual({ key: 'f1:0', offer, agentId: 'iris' })
-    // Another offer shows in its place; the open one again closes them.
-    store.toggleFlight('f1:1', offer, 'iris')
-    expect(store.openFlight?.key).toBe('f1:1')
-    store.toggleFlight('f1:1', offer, 'iris')
-    expect(store.openFlight).toBeUndefined()
-    store.closeFlight()
-    expect(changes).toBe(3)
-    store.toggleFlight('f1:0', offer, 'iris')
-    store.detach()
-    expect(store.openFlight).toBeUndefined()
   })
 })

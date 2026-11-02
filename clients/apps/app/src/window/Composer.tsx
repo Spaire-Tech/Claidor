@@ -67,6 +67,7 @@ import {
 } from './Dictation'
 import { type Reply, ReplyPill } from './MessageActions'
 import { useWatched } from './useStore'
+import { useWindowModel } from './windowModel'
 
 /** Six lines of 20, then the words scroll. */
 const tallest = 120
@@ -105,6 +106,7 @@ export function Composer({
   staging: Staging
 }) {
   useWatched(store)
+  const model = useWindowModel()
   const scope = draftScope(agentId, threadRoot)
   const [words, setWords] = useState(() => store.drafts[scope] ?? '')
   const [chips, setChips] = useState<ComposerChip[]>(() =>
@@ -275,8 +277,12 @@ export function Composer({
         node = row.row.insert
         break
       case 'slash':
-        // The app's actions join "/" with their screens (steps 4 to 6); a skill goes in as a pick.
-        if (row.item.kind !== 'skill') return
+        // An action runs at once and takes the "/" and what followed it out of the field (`run`); a skill goes in as a pick.
+        if (row.item.kind === 'action') {
+          insert(request.start, request.end, '')
+          model.runAction(row.item.action.id)
+          return
+        }
         node = {
           kind: 'workflow',
           id: row.item.skill.id,

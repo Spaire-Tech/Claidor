@@ -22,6 +22,7 @@ import { type ComposerChip, textStart } from '../core/composerDocument'
 import {
   type MentionRow,
   type SlashItem,
+  appActions,
   filterMentions,
   filterPulls,
   mentionConnectors,
@@ -47,10 +48,11 @@ import {
   remembering,
 } from '../core/emoji'
 import { brandLogos, brandMentions } from '../core/generatedBrands'
-import type { Agent } from '../core/models'
+import { type Agent, showsMembers } from '../core/models'
 import type { AppStore } from '../core/store'
 import { t } from '../l10n'
 import { AgentMark } from './AgentMark'
+import { windowActionIds } from './windowModel'
 
 export type PickKind = 'mention' | 'slash' | 'pull' | 'emoji'
 
@@ -139,6 +141,26 @@ function keep(key: string, value: string[]): void {
   }
 }
 
+/** Whether "/" offers Org Chart (the agent network on, `isAgentNetworkEnabled`) and Channels (`getAgentChannels`) in this chat. */
+interface Gates {
+  agentId: string
+  orgChart: boolean
+  channels: boolean
+}
+
+async function readGates(
+  store: AppStore,
+  agentId: string,
+  wakes: boolean,
+  signal: AbortSignal,
+): Promise<Gates> {
+  const [orgChart, channels] = await Promise.all([
+    store.agentNetworkEnabled(wakes, signal),
+    store.channelsAvailable(agentId, wakes, signal),
+  ])
+  return { agentId, orgChart, channels }
+}
+
 /**
  * The field's open list: its request (Escape's dismissal applied), its rows
  * as the window filters them, what it says with nothing to offer ("@" and
@@ -166,6 +188,8 @@ export function useComposerPicks({
     setDismissedAt(undefined)
   const request = asked && asked.start !== dismissedAt ? asked : undefined
 
+  // Whether "/" offers Org Chart and Channels: read as the chat opens (a resting computer waited for), and again each time "/" opens.
+  const [gates, setGates] = useState<Gates>()
   // The agent's skills ("/") and routines ("@"), and the connected apps ("@"), read as the chat opens.
   const [lists, setLists] = useState<{
     agentId: string
@@ -183,8 +207,21 @@ export function useComposerPicks({
       })
     })
     void store.loadApps(false)
+    void readGates(store, agentId, false, ending.signal).then((read) => {
+      if (!ending.signal.aborted) setGates(read)
+    })
     return () => ending.abort()
   }, [store, agentId])
+  // Read again each time "/" opens, waking a resting computer.
+  const wantsSlash = request?.kind === 'slash'
+  useEffect(() => {
+    if (!wantsSlash) return
+    const ending = new AbortController()
+    void readGates(store, agentId, true, ending.signal).then((read) => {
+      if (!ending.signal.aborted) setGates(read)
+    })
+    return () => ending.abort()
+  }, [wantsSlash, store, agentId])
   const skills = useMemo(
     () => (lists?.agentId === agentId ? lists.skills : []),
     [lists, agentId],
@@ -221,6 +258,20 @@ export function useComposerPicks({
   const roster = store.agents
   const apps = store.apps
   const transcript = store.transcripts[agentId]
+  const hasHidden = roster.some((one) => one.isHidden)
+  const gatesHere = gates?.agentId === agentId ? gates : undefined
+  // The app's actions whose screens the window has; Settings, Connectors and the themes come with step 6.
+  const actions = useMemo(
+    () =>
+      appActions({
+        isGroup: agent != null && showsMembers(agent),
+        hasHiddenAgents: hasHidden,
+        hasChannels: gatesHere?.channels ?? false,
+        showsOrgChart: (gatesHere?.orgChart ?? false) && roster.length > 0,
+        showsUsage: false,
+      }).filter((action) => windowActionIds.has(action.id)),
+    [agent, hasHidden, gatesHere, roster.length],
+  )
   const rows = useMemo((): PickRow[] => {
     switch (kind) {
       case 'mention': {
@@ -236,7 +287,7 @@ export function useComposerPicks({
         }))
       }
       case 'slash':
-        return slashItems(skills, [], query).map((item) => ({
+        return slashItems(skills, actions, query).map((item) => ({
           kind: 'slash',
           item,
         }))
@@ -259,6 +310,7 @@ export function useComposerPicks({
     apps,
     routines,
     skills,
+    actions,
     transcript,
     catalog,
     emojiRecents,

@@ -53,6 +53,7 @@ import {
 } from './ContextMenu'
 import { Alert, Sheet, somethingOver } from './Dialogs'
 import { useWatched } from './useStore'
+import { useWindowModel } from './windowModel'
 
 /** An Apple computer picks with ⌘-click; Windows with Control-click. */
 const apple =
@@ -478,6 +479,10 @@ export function Sidebar({
   width?: number
 }) {
   useWatched(store)
+  const model = useWindowModel()
+  useWatched(model)
+  // No row is lit while the org chart is in the chat's place (SidebarList.swift's `RowGround(open: … && !window.orgChart)`).
+  const lit = model.orgChart ? undefined : open
   // Read again every 4 seconds while the list can't be read.
   const failed = store.rosterFailed
   useEffect(() => {
@@ -489,10 +494,18 @@ export function Sidebar({
   }, [failed, store])
 
   const [selection, setSelection] = useState(SidebarSelection.empty)
+  // An agent opened from search or the org chart lets the picked rows go, its row the anchor (`sidebar.selection.plain`).
+  const plain = model.sidebarPlain
+  const [plainTaken, setPlainTaken] = useState(plain)
+  if (plain !== plainTaken) {
+    setPlainTaken(plain)
+    if (plain) setSelection((now) => now.plain(plain.agentId))
+  }
   const [renamingAgent, setRenamingAgent] = useState<string>()
   const [renamingSection, setRenamingSection] = useState<string>()
   const [folded, setFolded] = useState<ReadonlySet<string>>(readFolded)
-  const [showsHidden, setShowsHidden] = useState(false)
+  const showsHidden = model.hiddenAgents
+  const setShowsHidden = (show: boolean) => model.showHiddenAgents(show)
   const [menu, setMenu] = useState<Shown>()
   const [asking, setAsking] = useState<Asking>()
   const menuClosed = useRef({ at: 0, fromBar: false })
@@ -669,9 +682,14 @@ export function Sidebar({
       glyph: agent.hasUnread ? 'bell' : 'bellBadge',
       action: () => void store.setUnread(agent.id, !agent.hasUnread),
     })
-    // Edit Profile comes with the agent's pane (step 4).
+    // The agent's pane on its Profile (`openProfile`), that agent opening if it is not the open one.
+    lines.push('separator', {
+      label: t('Edit Profile'),
+      glyph: 'pencil',
+      action: () => model.openPaneFor('profile', agent.id),
+    })
     if (!agent.isGroup && !agent.isRemoteRoom)
-      lines.push('separator', {
+      lines.push({
         label: t('Duplicate'),
         glyph: 'duplicate',
         action: () =>
@@ -910,7 +928,7 @@ export function Sidebar({
       key={agent.id}
       agent={agent}
       agents={store.agents}
-      open={open === agent.id}
+      open={lit === agent.id}
       picked={picked.has(agent.id)}
       preview={rowPreview(agent, store, open === agent.id)}
       renaming={!rail && renamingAgent === agent.id}
@@ -1055,7 +1073,7 @@ export function Sidebar({
     >
       {rail ? (
         <>
-          <div className="sidebar-head" />
+          <div className="sidebar-head rail-head" />
           {!picked.isEmpty && (
             <div className="rail-picked">
               {deleteButton}
@@ -1064,7 +1082,10 @@ export function Sidebar({
           )}
         </>
       ) : picked.isEmpty ? (
-        <div className="sidebar-head" />
+        // Search and New Agent, 40 round, 10 apart, 12 from the right edge (`sand-agents-sidebar__new-actions`).
+        <div className="sidebar-head">
+          <WindowDiscs />
+        </div>
       ) : (
         // Rows picked (C11): the head is 44 high, the picked rows' buttons at its right.
         <div className="sidebar-head picking">
@@ -1142,7 +1163,7 @@ export function Sidebar({
                     key={agent.id}
                     agent={agent}
                     agents={store.agents}
-                    open={open === agent.id}
+                    open={lit === agent.id}
                     picked={picked.has(agent.id)}
                     lit={
                       pinTarget?.kind === 'tile' && pinTarget.id === agent.id
@@ -1210,6 +1231,12 @@ export function Sidebar({
           </>
         )}
       </div>
+      {/* The rail's foot: search and New Agent stacked, 10 apart, 8 from the bottom (`simeon-rail-discs`); the account comes with Settings (step 6). */}
+      {rail && (
+        <div className="rail-foot">
+          <WindowDiscs />
+        </div>
+      )}
       {menu && (
         <ContextMenu
           items={menu.items}
@@ -1239,6 +1266,61 @@ export function Sidebar({
         />
       )}
     </nav>
+  )
+}
+
+// MARK: The head's discs
+
+/**
+ * Search (⌘K) and New Agent (⌘N), each a 40 disc in Apple's glass with its
+ * symbol (16) at 78% black (86% white on dark), its name as its tooltip
+ * (`SearchDisc`, `NewChatDisc`). New Agent while group chats are off, as on
+ * the Mac and the iPhone.
+ */
+function WindowDiscs() {
+  const model = useWindowModel()
+  return (
+    <>
+      <button
+        type="button"
+        className="window-disc glass-disc"
+        title={t('Search')}
+        aria-label={t('Search')}
+        onClick={() => model.openSearch()}
+      >
+        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+          <g
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.4"
+            strokeLinecap="round"
+          >
+            <circle cx="6.9" cy="6.9" r="4.7" />
+            <path d="M10.4 10.4 14 14" />
+          </g>
+        </svg>
+      </button>
+      <button
+        type="button"
+        className="window-disc glass-disc"
+        title={t('New Agent')}
+        aria-label={t('New Agent')}
+        onClick={() => model.startNewChat()}
+      >
+        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+          <g
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M12.6 9.2v3.3a1.6 1.6 0 0 1-1.6 1.6H3.5a1.6 1.6 0 0 1-1.6-1.6V5a1.6 1.6 0 0 1 1.6-1.6h3.3" />
+            <path d="M11.7 2.3 13.7 4.3 8.2 9.8 5.9 10.1 6.2 7.8Z" />
+          </g>
+        </svg>
+      </button>
+    </>
   )
 }
 

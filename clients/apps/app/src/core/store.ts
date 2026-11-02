@@ -24,6 +24,14 @@ import {
   planFacts,
   unknownAccess,
 } from './access'
+import type { AgentDraft } from './agentDraft'
+import { type ExchangeLine, exchangeLines } from './agentNetwork'
+import {
+  type VoiceChoice,
+  keptVoice,
+  voiceChoicesFrom,
+  voicePlan,
+} from './agentVoices'
 import { SimeonAPIError } from './api'
 import {
   type AgentBackend,
@@ -39,6 +47,7 @@ import {
   autoReviewJSON,
   proposedRule,
 } from './cards'
+import { type ChannelsView, channelDeadline, channelsFrom } from './channels'
 import {
   type ChatRow,
   chatRows,
@@ -67,18 +76,34 @@ import {
 } from './connectCards'
 import { type ConnectedApp, connectedApp } from './connectedApps'
 import { Entry, appliedChange } from './entry'
+import {
+  type AgentFace,
+  faceForReset,
+  faceURL,
+  ownFace,
+  shuffledFace,
+  voiceForFace,
+} from './faces'
 import { fileLine, fileSize } from './fileLine'
 import { byteCap, computerPath } from './filePreview'
 import {
   type FlightBookingAnswer,
-  type FlightOffer,
-  type OpenFlight,
   type Traveller,
   bookingAnswer,
   travellerJSON,
 } from './flightCards'
 import { GatewayError } from './gatewayConnection'
-import { type JSONValue, arr, bool, field, int, num, str, text } from './json'
+import {
+  type JSONObject,
+  type JSONValue,
+  arr,
+  bool,
+  field,
+  int,
+  num,
+  str,
+  text,
+} from './json'
 import { t } from './l10n'
 import { currentLanguage } from './language'
 import { type Agent, agentFrom, sameAgent, sortRoster } from './models'
@@ -93,6 +118,21 @@ import {
   unreachableLine,
 } from './onboarding'
 import { plainError } from './plainWords'
+import { RoutineTestRuns } from './routineEditing'
+import {
+  type Routine,
+  createdRoutine,
+  routinesFrom,
+  sameRoutines,
+} from './routines'
+import {
+  type FileHit,
+  type MessageHit,
+  type RoutineHit,
+  fileHitFrom,
+  messageHitFrom,
+  routineHitFrom,
+} from './search'
 import {
   type SidebarSection,
   createSection,
@@ -101,6 +141,15 @@ import {
   parseSections,
   sectionsJSON,
 } from './sidebarSections'
+import {
+  type PackAsk,
+  type StarterPack,
+  packAddFailure,
+  packAgentArguments,
+  packFrom,
+  packReadFailure,
+  packSectionId,
+} from './starterPacks'
 import { bytesFromBase64URL } from './tokens'
 
 /** A call whose failure changes nothing: tried, and let be. */
@@ -520,6 +569,10 @@ export class AppStore {
     this.resetConnectCards()
     this.resetFlightCards()
     this.resetShopCards()
+    this.resetAvatarAndNewAgent()
+    this.resetRoutines()
+    this.resetSearchAndChannels()
+    this.resetOrgChartAndPacks()
     this.firstRunAgentId = undefined
     this.firstRunNamed = false
     // A hand-off waiting on the name step ends (it finds the account gone and makes nothing).
@@ -737,6 +790,9 @@ export class AppStore {
         else if (sections) void this.loadSections()
         return
       }
+      case 'automations':
+        this.applyAutomations(event.agentId, event.automations)
+        return
       case 'computerAsleep':
         if (this.isAsleep === event.asleep) return
         this.isAsleep = event.asleep
@@ -966,6 +1022,7 @@ export class AppStore {
       delete this.chatRows[id]
       delete this.runFlags[id]
     }
+    this.forgetRoutines(agentIds)
     this.changed()
     return true
   }
@@ -990,19 +1047,7 @@ export class AppStore {
   async renameAgent(agentId: string, name: string): Promise<void> {
     const agent = this.agent(agentId)
     if (!agent) return
-    this.agents = this.agents.map((one) =>
-      one.id === agentId ? { ...one, name } : one,
-    )
-    this.changed()
-    // As the Mac's profile field: quietly, the roster read again on a refusal.
-    try {
-      await this.backend?.command('updateAgent', {
-        id: agentId,
-        profile: { name, description: agent.description },
-      })
-    } catch {
-      await this.reloadRoster()
-    }
+    await this.saveProfileField(agentId, name, agent.description)
   }
 
   // MARK: The first run (Onboarding.swift) and the account's access (StoreSettings.swift)
@@ -1649,18 +1694,8 @@ export class AppStore {
   // form (Store.swift's `startFlightBooking`, `submitFlightPassengers`…).
   // The flights' state and commands go below this line, and nowhere else.
 
-  /**
-   * The flight whose details the pane shows (`PaneState.flight`): its key
-   * (the card's row and the offer's place), the offer as it was opened, and
-   * the agent whose chat holds the card. The window draws it beside that
-   * chat (FlightCards.tsx) until the agent's pane comes (step 4).
-   */
-  openFlight?: OpenFlight
-
-  /** The flight cards' state back to nothing (signed out). */
-  private resetFlightCards(): void {
-    this.openFlight = undefined
-  }
+  /** The flight cards' state back to nothing (signed out): none is kept here; a flight's details are the window's (windowModel.ts). */
+  private resetFlightCards(): void {}
 
   /**
    * Nothing to settle: Book with Simeon and the form's Continue wait for the
@@ -1670,20 +1705,6 @@ export class AppStore {
   private settleFlightCards(agentId: string, entries: readonly Entry[]): void {
     void agentId
     void entries
-  }
-
-  /** A flight row (`__simeonOpenFlight`): the open one again closes its details; another shows in their place. */
-  toggleFlight(key: string, offer: FlightOffer, agentId: string): void {
-    this.openFlight =
-      this.openFlight?.key === key ? undefined : { key, offer, agentId }
-    this.changed()
-  }
-
-  /** The details' ×, Escape, Book with Simeon done, or another chat opened. */
-  closeFlight(): void {
-    if (this.openFlight === undefined) return
-    this.openFlight = undefined
-    this.changed()
   }
 
   /** "Book with Simeon" on a flight (`startFlightBooking`): the traveller form in the chat, or why not. */
@@ -2629,6 +2650,955 @@ export class AppStore {
         0,
       )
     return backend.transcribe(audio, mimeType)
+  }
+
+  // MARK: Step 4's agent's pane: Profile (StoreAgents.swift's
+  // `saveProfileField`, Store.swift's `setNotify`), and the gates "/" and
+  // ⌘K share (Jump.swift's `agentNetworkEnabled`, `channelsAvailable`).
+
+  /**
+   * One field of the profile (`updateAgent`), as the pane sends it: the
+   * name and description always, the title only when it is the field
+   * changed. Shown at once; a refusal puts the roster back, quietly.
+   */
+  async saveProfileField(
+    agentId: string,
+    name: string,
+    description: string,
+    title?: string,
+  ): Promise<void> {
+    if (!this.agent(agentId)) return
+    const profile: Record<string, JSONValue> = { name, description }
+    if (title !== undefined) profile.title = title
+    this.agents = this.agents.map((one) =>
+      one.id === agentId
+        ? {
+            ...one,
+            name,
+            description,
+            ...(title !== undefined ? { title } : {}),
+          }
+        : one,
+    )
+    this.changed()
+    try {
+      await this.backend?.command('updateAgent', { id: agentId, profile })
+    } catch {
+      await this.reloadRoster()
+    }
+  }
+
+  /** Notifications on the agent's page (`setAgentNotifyOnUpdates`): shown at once; a refusal is said. */
+  async setNotify(agentId: string, on: boolean): Promise<void> {
+    this.agents = this.agents.map((one) =>
+      one.id === agentId ? { ...one, notifyOnUpdates: on } : one,
+    )
+    this.changed()
+    await this.command(
+      'setAgentNotifyOnUpdates',
+      { id: agentId, isEnabled: on },
+      t("Couldn't change notifications"),
+    )
+  }
+
+  /** One read for a gate: with `wakes` false, a computer that rests is waited for, not woken, until `signal` ends the wait. */
+  private async gateRead(
+    method: string,
+    args: JSONValue,
+    wakes: boolean,
+    signal?: AbortSignal,
+  ): Promise<JSONValue | undefined> {
+    const backend = this.backend
+    if (!backend) return undefined
+    try {
+      if (!wakes && backend.commandWhenAwake)
+        return await backend.commandWhenAwake(method, args, signal)
+      return await backend.command(method, args, { wakes })
+    } catch {
+      return undefined
+    }
+  }
+
+  /** Whether the agent network is on for this account (`isAgentNetworkEnabled`): the Org Chart's gate. */
+  async agentNetworkEnabled(
+    wakes = true,
+    signal?: AbortSignal,
+  ): Promise<boolean> {
+    const answer = await this.gateRead(
+      'isAgentNetworkEnabled',
+      {},
+      wakes,
+      signal,
+    )
+    return bool(answer) ?? bool(field(answer, 'enabled')) ?? false
+  }
+
+  /** Whether a chat can have channels (`getAgentChannels`): any platform available, or any connected. */
+  async channelsAvailable(
+    agentId: string,
+    wakes = true,
+    signal?: AbortSignal,
+  ): Promise<boolean> {
+    const answer = await this.gateRead(
+      'getAgentChannels',
+      { id: agentId },
+      wakes,
+      signal,
+    )
+    const manifests = arr(field(answer, 'manifests')) ?? []
+    const connections = arr(field(answer, 'connections')) ?? []
+    return (
+      manifests.some(
+        (manifest) => str(field(manifest, 'availability')) === 'available',
+      ) || connections.length > 0
+    )
+  }
+
+  // MARK: Step 4b's avatar and New Agent: the avatar editor (AvatarEditor.swift,
+  // AvatarCrop.swift, AgentVoices.swift, StoreFaces.swift) and New Agent's
+  // sheet (NewAgentSheet.swift, AgentDraft.swift, StoreAgents.swift's
+  // `createAgent`). 4b's state and commands go below this line, and nowhere
+  // else.
+  //
+  // The pass that gives every agent without a picture its face
+  // (StoreFaces.swift's `queueFaces`, `assignMissingFaces`) is not here: the
+  // web shows the face each would be given (`pictureOf`) and leaves the
+  // giving to the Mac and the iPhone for now (docs/web-app/PROGRESS.md).
+
+  /** The voices listed, kept ten minutes as the Mac keeps them (`voiceList`). */
+  private voiceList?: { at: number; list: VoiceChoice[] }
+  /** A pass giving the agents their voices, one at a time (`assigning`). */
+  private assigningVoices?: Promise<Record<string, string>>
+
+  /**
+   * A face's picture as shipped (WebP, 512 px), read from the app's own
+   * copy: what is sent to the computer (`AgentFaces.data`). The tests give
+   * their own reader.
+   */
+  readFace = async (face: AgentFace): Promise<Uint8Array | undefined> => {
+    const url = faceURL(face)
+    if (!url) return undefined
+    try {
+      const answer = await fetch(url)
+      return answer.ok ? new Uint8Array(await answer.arrayBuffer()) : undefined
+    } catch {
+      return undefined
+    }
+  }
+
+  /** 4b's state back to nothing (signed out). */
+  private resetAvatarAndNewAgent(): void {
+    this.voiceList = undefined
+    this.assigningVoices = undefined
+  }
+
+  /** One agent's row changed here at once (`updateAgentLocally`). */
+  private changeAgent(agentId: string, change: (agent: Agent) => Agent): void {
+    let changed = false
+    this.agents = this.agents.map((agent) => {
+      if (agent.id !== agentId) return agent
+      changed = true
+      return change(agent)
+    })
+    if (changed) this.changed()
+  }
+
+  /**
+   * The voices to pick from (`GET proxy/v1/voice/voices`: the founder's,
+   * never ElevenLabs' others); none when calls are not switched on or the
+   * server can't be reached. Kept ten minutes, as the Mac keeps them.
+   */
+  async voices(): Promise<VoiceChoice[]> {
+    const kept = this.voiceList
+    if (kept && Date.now() - kept.at < 600_000) return kept.list
+    const backend = this.backend
+    if (!backend) return []
+    let list: VoiceChoice[]
+    try {
+      list = voiceChoicesFrom(await backend.server('proxy/v1/voice/voices'))
+    } catch {
+      return []
+    }
+    if (backend !== this.backend) return []
+    if (list.length > 0) this.voiceList = { at: Date.now(), list }
+    return list
+  }
+
+  /**
+   * The agent's voice for its picker (`ensureVoice`): its own while it is on
+   * the list, else one given now by its name, with every other agent missing
+   * one. Undefined is the agent's own voice, Michael.
+   */
+  async ensureVoice(agentId: string): Promise<string | undefined> {
+    if (!this.agent(agentId)) await this.reloadRoster()
+    const list = await this.voices()
+    const kept = keptVoice(this.agent(agentId)?.voiceId, list)
+    if (kept !== undefined) return kept
+    if (list.length === 0 || !this.agent(agentId)) return undefined
+    // A pass already under way may have started before this agent was hired: then one more.
+    let all = await this.assignMissingVoices()
+    if (all[agentId] === undefined) all = await this.assignMissingVoices()
+    return all[agentId]
+  }
+
+  /**
+   * Gives each agent without a voice on the list its own, as the Mac does
+   * (`assignMissingVoices`), and saves it on the agent (`updateAgent` with
+   * `voiceId`). One pass at a time; every agent's voice after it.
+   */
+  async assignMissingVoices(): Promise<Record<string, string>> {
+    if (this.assigningVoices) return this.assigningVoices
+    const pass = this.giveMissingVoices()
+    this.assigningVoices = pass
+    try {
+      return await pass
+    } finally {
+      if (this.assigningVoices === pass) this.assigningVoices = undefined
+    }
+  }
+
+  private async giveMissingVoices(): Promise<Record<string, string>> {
+    const list = await this.voices()
+    const plan = voicePlan(this.agents, list)
+    for (const { agentId, voiceId } of plan.given) {
+      const backend = this.backend
+      const agent = this.agent(agentId)
+      if (!backend || !agent) continue
+      this.changeAgent(agentId, (row) => ({ ...row, voiceId }))
+      // Given for now when it can't be saved; the next pass tries again.
+      await quietly(
+        backend.command('updateAgent', {
+          id: agentId,
+          profile: {
+            name: agent.name,
+            description: agent.description,
+            title: agent.title,
+            voiceId,
+          },
+        }),
+      )
+    }
+    return plan.voices
+  }
+
+  /** The agent's voice (`updateAgent` with `voiceId`, as the Mac's picker saves it): shown at once; refused, the old one comes back and the refusal is thrown. */
+  async setAgentVoice(agentId: string, voiceId: string): Promise<void> {
+    const agent = this.agent(agentId)
+    const backend = this.backend
+    if (!agent || !backend) return
+    const was = agent.voiceId
+    this.changeAgent(agentId, (row) => ({ ...row, voiceId }))
+    const profile: Record<string, JSONValue> = {
+      name: agent.name,
+      description: agent.description,
+      voiceId,
+    }
+    if (!agent.isGroup) profile.title = agent.title
+    try {
+      await backend.command('updateAgent', { id: agentId, profile })
+    } catch (error) {
+      this.changeAgent(agentId, (row) => ({ ...row, voiceId: was }))
+      throw error
+    }
+  }
+
+  /** The face's picture to the computer, and the face kept on the agent when it was not kept already (with the voice, when one is given with it). */
+  private async sendFace(
+    backend: AgentBackend,
+    face: AgentFace,
+    agent: Agent,
+    voiceId?: string,
+  ): Promise<void> {
+    const bytes = await this.readFace(face)
+    if (!bytes)
+      throw new GatewayError(
+        t`The face ${face.id} is missing from the app.`,
+        true,
+      )
+    await backend.command('setAgentAvatarBytes', {
+      id: agent.id,
+      pngBase64: base64(bytes),
+    })
+    if (agent.avatarShape === face.id && voiceId === undefined) return
+    // `updateAgent` always carries the name and the description; the fields left out are kept.
+    const profile: Record<string, JSONValue> = {
+      name: agent.name,
+      description: agent.description,
+      avatarShape: face.id,
+    }
+    if (voiceId !== undefined) profile.voiceId = voiceId
+    await backend.command('updateAgent', { id: agent.id, profile })
+  }
+
+  /**
+   * A face from the editor (a pick, Shuffle or Reset, `wearFace`): the
+   * agent's picture, and the face kept on it. When the face is not of its
+   * voice's gender, the voice changes with it, so face and voice agree.
+   * Shown at once; a refusal puts the roster back and is thrown.
+   */
+  async wearFace(agentId: string, face: AgentFace): Promise<void> {
+    const backend = this.backend
+    const agent = this.agent(agentId)
+    if (!backend || !agent) return
+    const list = await this.voices()
+    const voiceId = voiceForFace(agent, face, this.agents, list)
+    this.changeAgent(agentId, (row) => ({
+      ...row,
+      avatarVersion: face.version,
+      avatarShape: face.id,
+      avatarDataURL: undefined,
+      ...(voiceId !== undefined ? { voiceId } : {}),
+    }))
+    try {
+      await this.sendFace(backend, face, agent, voiceId)
+    } catch (error) {
+      await this.reloadRoster()
+      throw error
+    }
+    await this.reloadRoster()
+  }
+
+  /** Shuffle: the next face of `gender` no other agent wears, put on at once; the face, or undefined when there is none. */
+  async shuffleFace(
+    agentId: string,
+    gender: string,
+  ): Promise<AgentFace | undefined> {
+    const agent = this.agent(agentId)
+    if (!agent) return undefined
+    const current = ownFace(agent)
+    const face = shuffledFace(
+      current?.gender === gender ? current : undefined,
+      gender,
+      agentId,
+      this.agents,
+    )
+    if (!face) return undefined
+    await this.wearFace(agentId, face)
+    return face
+  }
+
+  /** Reset: back to the face the agent was given (or the one it would be given now, for an agent from before faces). */
+  async resetFace(agentId: string): Promise<AgentFace | undefined> {
+    const agent = this.agent(agentId)
+    if (!agent) return undefined
+    const face = faceForReset(agent, this.agents, await this.voices())
+    if (!face) return undefined
+    await this.wearFace(agentId, face)
+    return face
+  }
+
+  /** A picture of the agent's own, uploaded or drawn (`setAgentAvatarBytes`; the face it was given stays kept for Reset); the computer's refusal is thrown. */
+  async setAvatarImage(agentId: string, png: Uint8Array | null): Promise<void> {
+    const backend = this.backend
+    if (!backend) return
+    await backend.command('setAgentAvatarBytes', {
+      id: agentId,
+      pngBase64: png ? base64(png) : null,
+    })
+    await this.reloadRoster()
+  }
+
+  /**
+   * A picture drawn from a description for the avatar editor
+   * (`POST proxy/v1/images/generations`, the cheapest quality: it is a
+   * thumbnail); its bytes, or the words of what went wrong, thrown. It costs
+   * the person's credits.
+   */
+  async generateAvatarImage(description: string): Promise<Uint8Array> {
+    const words = description.trim()
+    if (words === '')
+      throw new GatewayError(t('Describe the avatar to generate first.'), true)
+    const backend = this.backend
+    if (!backend)
+      throw new GatewayError(t('Image generation returned no picture.'), false)
+    const answer = await backend.server('proxy/v1/images/generations', 'POST', {
+      prompt: words,
+      size: 'auto',
+      quality: 'low',
+    })
+    const drawn = text(field(arr(field(answer, 'data'))?.[0], 'b64_json'))
+    const bytes = drawn ? bytesFromBase64URL(drawn) : undefined
+    if (!bytes || bytes.length === 0)
+      throw new GatewayError(t('Image generation returned no picture.'), false)
+    return bytes
+  }
+
+  /**
+   * New Agent (`createAgent(name:draft:)`): the agent made with the face it
+   * was shown, its title and, when the person chose any, its voice; a
+   * picture drawn or uploaded goes right after it. It is asked to introduce
+   * itself. Its id, or undefined with the core's words in `problem`.
+   */
+  async createAgentFromDraft(
+    name: string,
+    draft: AgentDraft,
+  ): Promise<string | undefined> {
+    const backend = this.backend
+    if (!backend) return undefined
+    let ready = draft.named(name)
+    if (draft.chosen)
+      ready = ready.settleVoice(this.agents, await this.voices())
+    try {
+      const id = await this.mintAgent(backend, {
+        name,
+        title: ready.title,
+        face: ready.shownFace(this.agents)?.id,
+        voiceId: draft.chosen ? ready.voiceId : undefined,
+      })
+      if (draft.chosen && ready.picture)
+        // Not saved: it wears its face then, as any agent with no picture.
+        await quietly(
+          backend.command('setAgentAvatarBytes', {
+            id,
+            pngBase64: base64(ready.picture),
+          }),
+        )
+      await this.reloadRoster()
+      return id
+    } catch (error) {
+      const why = error instanceof Error ? error.message : String(error)
+      this.problem = t`Couldn't create ${name}: ${why}`
+      this.changed()
+      return undefined
+    }
+  }
+
+  /**
+   * `createAgent` as the core's backend sends it (Backend.swift's
+   * `createAgent(name:title:description:face:voiceId:)`): introduced at once,
+   * the face kept on it (`avatarShape`), its title its role, the voice kept.
+   */
+  private async mintAgent(
+    backend: AgentBackend,
+    agent: { name: string; title: string; face?: string; voiceId?: string },
+  ): Promise<string> {
+    const args: Record<string, JSONValue> = {
+      name: agent.name,
+      description: '',
+      isKickstartRequested: true,
+      origin: 'user',
+      clientNonce: newMessageId(),
+    }
+    const role = agent.title.trim()
+    if (role !== '') args.title = role
+    if (agent.face !== undefined) args.avatarShape = agent.face
+    if (agent.voiceId !== undefined) args.voiceId = agent.voiceId
+    const answer = await backend.command('createAgent', args)
+    const id = text(field(field(answer, 'agent'), 'id'))
+    if (!id) throw new GatewayError('createAgent: no agent in the answer', true)
+    return id
+  }
+
+  // MARK: Step 4c's routines: an agent's routines in its pane and a routine's
+  // editor (RoutinesPage.swift, RoutineTriggerCard.swift, Routines.swift,
+  // RoutineEditing.swift, RoutineTriggers.swift). 4c's state and commands go
+  // below this line, and nowhere else.
+
+  /** Each agent's routines as the host lists them (`getAgentAutomations`, and its `agents-automation` pushes); absent until read. A list is replaced only when it changed, so a screen sees a new list only then. */
+  routinesByAgent: Record<string, Routine[]> = {}
+  /** Test run's waits, for every routine (the Mac's `pane.runBlocks`). */
+  readonly routineRuns = new RoutineTestRuns(() => this.changed())
+
+  /** 4c's state back to nothing (signed out). */
+  private resetRoutines(): void {
+    this.routinesByAgent = {}
+    this.routineRuns.reset()
+  }
+
+  /** An agent's list, kept when it changed; Test run's waits move on. */
+  private setRoutines(agentId: string, list: Routine[] | undefined): void {
+    const was = this.routinesByAgent[agentId]
+    if (sameRoutines(was, list)) return
+    const next = { ...this.routinesByAgent }
+    if (list) next[agentId] = list
+    else delete next[agentId]
+    this.routinesByAgent = next
+    this.changed()
+    this.routineRuns.listChanged(agentId, this)
+  }
+
+  /** The host's answer, when it is a list (`takeRoutines`). */
+  private takeRoutines(agentId: string, answer: JSONValue): void {
+    const list = routinesFrom(answer)
+    if (list) this.setRoutines(agentId, list)
+  }
+
+  /** An agent's routines changed on the computer (`agents-automation`, Store.swift's `.automations`): the whole list. */
+  private applyAutomations(agentId: string, rows: JSONValue[]): void {
+    this.setRoutines(agentId, routinesFrom(rows) ?? [])
+  }
+
+  /** Agents deleted (`forgetAgents`): their routines go with them. */
+  private forgetRoutines(agentIds: readonly string[]): void {
+    for (const id of agentIds) this.setRoutines(id, undefined)
+  }
+
+  /** One routine command; its answer, or undefined when it was refused or the sign-in ended meanwhile. */
+  private async routineCommand(
+    method: string,
+    args: JSONValue,
+  ): Promise<{ answer: JSONValue } | undefined> {
+    const backend = this.backend
+    if (!backend) return undefined
+    try {
+      const answer = await backend.command(method, args)
+      return this.backend === backend ? { answer } : undefined
+    } catch {
+      return undefined
+    }
+  }
+
+  /** The agent's routines, read again (`getAgentAutomations`); false when the computer did not answer. */
+  async loadRoutines(agentId: string): Promise<boolean> {
+    const done = await this.routineCommand('getAgentAutomations', {
+      id: agentId,
+    })
+    if (!done) return false
+    this.takeRoutines(agentId, done.answer)
+    return true
+  }
+
+  /** A new routine (`createAgentAutomation`): the record made, or undefined when none was (a refusal, or the agent's 50 already). */
+  async createRoutine(
+    agentId: string,
+    spec: JSONObject,
+  ): Promise<Routine | undefined> {
+    const before = new Set(
+      (this.routinesByAgent[agentId] ?? []).map((routine) => routine.id),
+    )
+    const done = await this.routineCommand('createAgentAutomation', {
+      id: agentId,
+      spec,
+    })
+    if (!done) return undefined
+    this.takeRoutines(agentId, done.answer)
+    return createdRoutine(
+      this.routinesByAgent[agentId] ?? [],
+      before,
+      str(field(spec, 'name')) ?? '',
+    )
+  }
+
+  /** A routine changed (`updateAgentAutomation`); false when it was not saved. */
+  async updateRoutine(
+    agentId: string,
+    routineId: string,
+    spec: JSONObject,
+  ): Promise<boolean> {
+    const done = await this.routineCommand('updateAgentAutomation', {
+      id: agentId,
+      automationId: routineId,
+      spec,
+    })
+    if (!done) return false
+    this.takeRoutines(agentId, done.answer)
+    return true
+  }
+
+  /** The Active switch (`setAgentAutomationEnabled`), shown at once; false when refused, and the switch goes back. */
+  async enableRoutine(
+    agentId: string,
+    routineId: string,
+    on: boolean,
+  ): Promise<boolean> {
+    const was = this.routinesByAgent[agentId]
+    if (was?.some((routine) => routine.id === routineId))
+      this.setRoutines(
+        agentId,
+        was.map((routine) =>
+          routine.id === routineId ? { ...routine, isEnabled: on } : routine,
+        ),
+      )
+    const done = await this.routineCommand('setAgentAutomationEnabled', {
+      id: agentId,
+      automationId: routineId,
+      isEnabled: on,
+    })
+    if (!done) {
+      if (this.backend) this.setRoutines(agentId, was)
+      return false
+    }
+    this.takeRoutines(agentId, done.answer)
+    return true
+  }
+
+  /** Delete, with no question and nothing said when it fails (`deleteAgentAutomation`). */
+  async removeRoutine(agentId: string, routineId: string): Promise<void> {
+    const done = await this.routineCommand('deleteAgentAutomation', {
+      id: agentId,
+      automationId: routineId,
+    })
+    if (done) this.takeRoutines(agentId, done.answer)
+  }
+
+  /** Test run (`runAgentAutomationNow`), then the list again for its new run; nothing is said either way. False when the run was refused (and the list is not read). */
+  async testRoutine(agentId: string, routineId: string): Promise<boolean> {
+    const done = await this.routineCommand('runAgentAutomationNow', {
+      id: agentId,
+      automationId: routineId,
+    })
+    if (!done) return false
+    await this.loadRoutines(agentId)
+    return true
+  }
+
+  // MARK: Step 4d's search, channels and a group's members: ⌘K
+  // (SearchPanel.swift, Jump.swift, Search.swift), an agent's channels
+  // (ChannelsPage.swift, Channels.swift), a group's members
+  // (PaneMembersFlight.swift, GroupMembers.swift). 4d's state and commands
+  // go below this line, and nowhere else.
+
+  /**
+   * 4d's state back to nothing (signed out). The store keeps none: search's
+   * words and answers are the window's (SearchPanel.swift's `SearchState`),
+   * a Channels page's answer is its own (`ChannelsModel`), and a found line
+   * being read in (`loadUntil`) stops when the sign-in it began in ends.
+   */
+  private resetSearchAndChannels(): void {}
+
+  /** Whether the computer's search index is on (`isGlobalSearchEnabled`); on when it can't be read, as the Mac's default. */
+  async globalSearchEnabled(): Promise<boolean> {
+    const backend = this.backend
+    if (!backend) return true
+    let answer: JSONValue
+    try {
+      answer = await backend.command('isGlobalSearchEnabled', {})
+    } catch {
+      return true
+    }
+    return bool(answer) ?? bool(field(answer, 'enabled')) ?? true
+  }
+
+  /** Every chat's messages matching the words (`searchAgents`; the computer gives at most 50, 5 a chat, newest first). Thrown when it can't answer. */
+  async searchMessages(query: string): Promise<MessageHit[]> {
+    const backend = this.backend
+    if (!backend) return []
+    const answer = await backend.command('searchAgents', { query })
+    return (arr(answer) ?? [])
+      .map(messageHitFrom)
+      .filter((hit): hit is MessageHit => hit != null)
+  }
+
+  /** Files matching the words, or the newest 50 for none (`searchMedia`). Thrown when the computer can't answer. */
+  async searchFiles(query: string): Promise<FileHit[]> {
+    const backend = this.backend
+    if (!backend) return []
+    const answer = await backend.command('searchMedia', { query })
+    return (arr(answer) ?? [])
+      .map(fileHitFrom)
+      .filter((hit): hit is FileHit => hit != null)
+  }
+
+  /** Every agent's routines (`listAllAutomations`); none when they can't be read. */
+  async allRoutines(): Promise<RoutineHit[]> {
+    const backend = this.backend
+    if (!backend) return []
+    let answer: JSONValue
+    try {
+      answer = await backend.command('listAllAutomations', {})
+    } catch {
+      return []
+    }
+    return (arr(answer) ?? [])
+      .map(routineHitFrom)
+      .filter((hit): hit is RoutineHit => hit != null)
+  }
+
+  /**
+   * A chat's older lines, page by page, until the given one is among them
+   * (the Mac's `revealSearchHit`: at most 20 pages or 30 s). Whether it is.
+   * It ends with the sign-in it began in.
+   */
+  async loadUntil(
+    entryId: string,
+    agentId: string,
+    pages = 20,
+    seconds = 30,
+  ): Promise<boolean> {
+    const backend = this.backend
+    const started = Date.now()
+    const has = () =>
+      this.transcripts[agentId]?.some((entry) => entry.id === entryId) === true
+    const late = () => (Date.now() - started) / 1000 > seconds
+    // The chat opening fetches its newest lines first.
+    while (this.transcripts[agentId] == null || this.fetching.has(agentId)) {
+      if (late() || backend !== this.backend) return has()
+      await new Promise((resolve) => setTimeout(resolve, 100))
+    }
+    for (let page = 0; page < pages; page += 1) {
+      // A page the chat itself is reading (its own scroll near the top) is waited for, not counted: loadOlder returns at once meanwhile.
+      while (this.loadingOlder.has(agentId)) {
+        if (late() || backend !== this.backend) return has()
+        await new Promise((resolve) => setTimeout(resolve, 100))
+      }
+      if (has()) return true
+      if (this.olderBefore[agentId] == null || late()) return false
+      if (backend !== this.backend) return false
+      await this.loadOlder(agentId)
+    }
+    return has()
+  }
+
+  /** A group's members, in its order, those the roster has (`members(of:)`). */
+  members(group: Agent): Agent[] {
+    return group.memberIds
+      .map((id) => this.agent(id))
+      .filter((agent): agent is Agent => agent != null)
+  }
+
+  /** A group's members (`setGroupMembers`): shown at once, put back and thrown when refused, for the dialog to say. */
+  async setGroupMembers(groupId: string, memberIds: string[]): Promise<void> {
+    const backend = this.backend
+    if (!backend) return
+    const was = this.agent(groupId)?.memberIds
+    const set = (ids: string[]) => {
+      this.agents = this.agents.map((one) =>
+        one.id === groupId ? { ...one, memberIds: ids } : one,
+      )
+      this.changed()
+    }
+    if (was) set(memberIds)
+    try {
+      await backend.command('setGroupMembers', {
+        id: groupId,
+        memberAgentIds: memberIds,
+      })
+    } catch (error) {
+      if (was && this.agent(groupId) && backend === this.backend) set(was)
+      throw error
+    }
+  }
+
+  /** An agent's channels (`getAgentChannels`): undefined when the computer doesn't answer within 15 s. */
+  channels(agentId: string): Promise<ChannelsView | undefined> {
+    return this.channelCall('getAgentChannels', { id: agentId })
+  }
+
+  /** Store securely: the token for `platform` (Slack takes its app and bot tokens together, the computer sorts them). */
+  connectChannel(
+    agentId: string,
+    platform: string,
+    token: string,
+  ): Promise<ChannelsView | undefined> {
+    return this.channelCall('connectChannel', {
+      id: agentId,
+      platform,
+      token,
+    })
+  }
+
+  refreshChannel(
+    agentId: string,
+    platform: string,
+  ): Promise<ChannelsView | undefined> {
+    return this.channelCall('refreshChannel', { id: agentId, platform })
+  }
+
+  disconnectChannel(
+    agentId: string,
+    platform: string,
+  ): Promise<ChannelsView | undefined> {
+    return this.channelCall('disconnectChannel', { id: agentId, platform })
+  }
+
+  /** A channel call (`I$n`): it answers the whole view, and gives up after 15 s (a failure keeps the last answer on screen). */
+  private async channelCall(
+    method: string,
+    args: JSONValue,
+  ): Promise<ChannelsView | undefined> {
+    const backend = this.backend
+    if (!backend) return undefined
+    let timer: ReturnType<typeof setTimeout> | undefined
+    try {
+      const answer = await Promise.race([
+        backend.command(method, args),
+        new Promise<undefined>((resolve) => {
+          timer = setTimeout(() => resolve(undefined), channelDeadline * 1000)
+        }),
+      ])
+      return channelsFrom(answer)
+    } catch {
+      return undefined
+    } finally {
+      clearTimeout(timer)
+    }
+  }
+
+  // MARK: Step 4e's org chart and starter packs (OrgChart.swift,
+  // AgentNetwork.swift, StarterPackSheet.swift, StarterPacks.swift). 4e's
+  // state and commands go below this line, and nowhere else.
+
+  /**
+   * The starter pack's sheet while it shows (MacServices.swift's
+   * `packAsk`): the pack asked for, then read from the server or why it
+   * couldn't be, and Add under way. Asked by the window (`askPack`).
+   */
+  packAsk?: PackAsk
+  /** Bumped by each pack asked for and by signing out: a read begun before is dropped. */
+  private packAsks = 0
+
+  /** 4e's state back to nothing (signed out). */
+  private resetOrgChartAndPacks(): void {
+    this.packAsk = undefined
+    this.packAsks += 1
+  }
+
+  /** Signed out: what the core's `starterPack` says without a backend. */
+  private notSignedIn(): SimeonAPIError {
+    return new SimeonAPIError(t('Sign in to Simeon first.'), 401)
+  }
+
+  /**
+   * What two agents said to each other (OrgChart.swift's `ExchangeCard`):
+   * the first one's last 200 lines (`tail`, read without opening its chat
+   * or waking a computer that rests), their messages to each other, the
+   * last 30. Refused when the lines can't be read.
+   */
+  async networkExchange(
+    source: { id: string; name: string },
+    targetId: string,
+  ): Promise<ExchangeLine[]> {
+    const backend = this.backend
+    if (!backend) throw this.notSignedIn()
+    const entries = await backend.tail(source.id, 200)
+    return exchangeLines(entries, source, targetId)
+  }
+
+  /** A pack, read from Simeon Labs' server (`starterPack`); the server's sentence when it has none ("This team isn't available anymore."). */
+  async starterPack(id: string): Promise<StarterPack> {
+    const backend = this.backend
+    if (!backend) throw this.notSignedIn()
+    const answer = await backend.server(`packs/${id}`)
+    const pack = packFrom(answer)
+    if (!pack)
+      throw new SimeonAPIError(t("This team isn't available anymore."), 404)
+    return pack
+  }
+
+  /** The pack's agents already here (its section's, still listed); none when it was never added or they are gone. */
+  packAgents(pack: StarterPack): string[] {
+    const id = packSectionId(pack.id)
+    const section = this.sidebarSections?.find((one) => one.id === id)
+    if (!section) return []
+    const listed = new Set(this.agents.map((agent) => agent.id))
+    return section.agentIds.filter((agentId) => listed.has(agentId))
+  }
+
+  /**
+   * Add (`addPack`): the five agents made one after another, each with its
+   * face, title and instructions, and each speaking first at once; then a
+   * section named after the pack at the top of the sidebar, holding them.
+   * The ids made, the first to open; one that fails is said (`problem`)
+   * and the rest are still made.
+   */
+  async addPack(pack: StarterPack): Promise<string[]> {
+    return (await this.makePack(pack)).made
+  }
+
+  /** `addPack`, with the last refusal's words (what the Mac's sheet reads back as `problemShown`). */
+  private async makePack(
+    pack: StarterPack,
+  ): Promise<{ made: string[]; problem?: string }> {
+    const backend = this.backend
+    if (!backend) return { made: [] }
+    if (this.sidebarSections === undefined) await this.loadSections()
+    const made: string[] = []
+    let problem: string | undefined
+    for (const member of pack.members) {
+      try {
+        const answer = await backend.command(
+          'createAgent',
+          packAgentArguments(member, newMessageId()),
+        )
+        const id = text(field(field(answer, 'agent'), 'id'))
+        if (!id)
+          throw new GatewayError('createAgent: no agent in the answer', true)
+        made.push(id)
+      } catch (error) {
+        const why = error instanceof Error ? error.message : String(error)
+        problem = t`Couldn't create ${member.name}: ${why}`
+        this.problem = problem
+        this.changed()
+      }
+    }
+    if (backend !== this.backend) return { made: [], problem }
+    await this.reloadRoster()
+    if (made.length > 0) {
+      // A section at the top holding them, named after the pack (`create`, then `rename`; written normalised).
+      const sectionId = packSectionId(pack.id)
+      this.editSections((sections) =>
+        createSection(sections, sectionId, made).map((section) =>
+          section.id === sectionId
+            ? { ...section, name: pack.folder }
+            : section,
+        ),
+      )
+    }
+    return { made, problem }
+  }
+
+  /** The website's Add to Simeon (MacServices.swift's `askPack`): the sheet at once, its pack read from the server. */
+  askPack(id: string): void {
+    if (!this.backend) return
+    this.packAsks += 1
+    const asked = this.packAsks
+    this.packAsk = { id, adding: false }
+    this.changed()
+    void (async () => {
+      let read: PackAsk
+      try {
+        read = { id, adding: false, pack: await this.starterPack(id) }
+      } catch (error) {
+        read = { id, adding: false, failure: { read: packReadFailure(error) } }
+      }
+      if (asked !== this.packAsks || this.packAsk?.id !== id) return
+      this.packAsk = read
+      this.changed()
+    })()
+  }
+
+  /**
+   * Add on the sheet (`addAskedPack`): a team already added only opens;
+   * else the five are made and the sheet goes. The agent to open, the
+   * first one's chat; none while adding, or when nothing could be made
+   * (the sheet then says why).
+   */
+  async addAskedPack(): Promise<string | undefined> {
+    const ask = this.packAsk
+    const pack = ask?.pack
+    if (!ask || !pack || ask.adding) return undefined
+    const first = this.packAgents(pack)[0]
+    if (first) {
+      this.packAsk = undefined
+      this.changed()
+      return first
+    }
+    const asked = this.packAsks
+    this.packAsk = { ...ask, adding: true }
+    this.changed()
+    const { made, problem } = await this.makePack(pack)
+    if (asked !== this.packAsks || this.packAsk?.id !== pack.id)
+      return undefined
+    if (made[0]) {
+      this.packAsk = undefined
+      this.changed()
+      return made[0]
+    }
+    this.packAsk = {
+      id: pack.id,
+      adding: false,
+      failure: packAddFailure(problem),
+    }
+    this.changed()
+    return undefined
+  }
+
+  /** ×, Escape or a click beside the sheet: it goes, unless Add is under way. */
+  closePack(): void {
+    if (!this.packAsk || this.packAsk.adding) return
+    this.packAsk = undefined
+    this.packAsks += 1
+    this.changed()
   }
 
   // MARK: The composer's lists
