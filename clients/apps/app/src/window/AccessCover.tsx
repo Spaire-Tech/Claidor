@@ -53,8 +53,9 @@ export function AccessCover({ session }: { session: WebSession }) {
       window.open(route.url, '_blank', 'noopener')
       return
     }
-    // Opened at once, before the answer, so the browser lets it open; sent to the page once it is known.
+    // Opened at once, before the answer, so the browser lets it open; sent to the page once it is known. It keeps no handle on the app.
     const page = window.open('', '_blank')
+    if (page) page.opener = null
     const answer = await store.billingPortal(route.flow)
     if (answer.url) {
       if (page) page.location.href = answer.url

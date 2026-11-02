@@ -335,6 +335,36 @@ describe('the store’s rebuild commands, against a stand-in server', () => {
     store.detach()
   })
 
+  it('the language told again each time the stream comes back (a computer rebuilt meanwhile starts with none)', async () => {
+    const { store, backend } = await started()
+    const told = () =>
+      backend.commands.filter(
+        (c) =>
+          c.method === 'setHostSettings' &&
+          field(c.args, 'userLanguage') !== undefined,
+      )
+    await eventually(() => told().length === 1)
+    expect(told()[0]).toEqual({
+      method: 'setHostSettings',
+      args: { userLanguage: 'en' },
+      wakes: false,
+    })
+    store.apply({ kind: 'connection', live: false })
+    store.apply({ kind: 'connection', live: true })
+    await eventually(() => told().length === 2)
+    await eventually(() =>
+      backend.serverCalls.some((c) => c.path === 'user/profile'),
+    )
+    expect(
+      backend.serverCalls.filter((c) => c.path === 'user/profile')[0],
+    ).toEqual({
+      path: 'user/profile',
+      method: 'POST',
+      body: { language: 'en' },
+    })
+    store.detach()
+  })
+
   it('the list holds still through a rebuild, and is read again after', async () => {
     const { store, backend } = await started()
     const list = backend.listAgents.bind(backend)
