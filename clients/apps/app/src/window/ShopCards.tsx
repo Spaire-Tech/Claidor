@@ -20,18 +20,16 @@ import {
 } from 'react'
 import { createPortal } from 'react-dom'
 import type { CardKind } from '../core/chat'
+import { type BookedFlight, whenLine } from '../core/flightCards'
 import { inlineRuns } from '../core/markdown'
 import {
   type CardChoice,
-  type CheckoutFlight,
   type Product,
   type ProductStatus,
   type ProductsCard,
   type PurchaseCard,
   type Star,
   type StatusKind,
-  airlineInitials,
-  airlineLogoBox,
   buyLabel,
   byline,
   canChooseCard,
@@ -39,7 +37,6 @@ import {
   checkoutHeadline,
   checkoutWords,
   flightHeadline,
-  flightWhenLine,
   itemsLine,
   needsCard,
   openWalletLabel,
@@ -69,6 +66,7 @@ import { t } from '../l10n'
 import { type CardProps, StatusPill, cardWidth } from './Cards'
 import { classes } from './classes'
 import { Sheet } from './Dialogs'
+import { AirlineMark } from './FlightCards'
 import './ShopCards.css'
 
 type ShopKind = Extract<CardKind, 'purchase' | 'products'>
@@ -513,11 +511,11 @@ function ReviewOrderPill({
 }
 
 /** The flight on its checkout card: the airline's mark, the route and times, who flies, and what changed (on white, 12 round, padded 12). */
-function FlightCheckoutBlock({ flight }: { flight: CheckoutFlight }) {
-  const when = flightWhenLine(flight)
+function FlightCheckoutBlock({ flight }: { flight: BookedFlight }) {
+  const when = whenLine(flight)
   return (
     <div className="flight-checkout">
-      <AirlineMark name={flight.airline} logo={flight.logo} />
+      <AirlineMark name={flight.airline} logo={flight.logo} side={36} />
       <div className="flight-words">
         <div className="flight-route">{flight.route}</div>
         {when !== '' && <div className="flight-line">{when}</div>}
@@ -528,49 +526,10 @@ function FlightCheckoutBlock({ flight }: { flight: CheckoutFlight }) {
           </div>
         )}
         {flight.changed !== '' && (
-          <div className="flight-changed">{flight.changed}</div>
+          <div className="checkout-changed">{flight.changed}</div>
         )}
       </div>
     </div>
-  )
-}
-
-/** An airline's round mark (36): its logo fitted to the circle, else its initials. */
-function AirlineMark({ name, logo }: { name: string; logo: string }) {
-  const side = 36
-  const usable = logo.startsWith('https://') || logo.startsWith('data:image/')
-  const [box, setBox] = useState<{
-    logo: string
-    width: number
-    height: number
-  }>()
-  const fitted = box?.logo === logo ? box : undefined
-  return (
-    <span className="airline-mark" aria-hidden="true">
-      {usable && (
-        <img
-          src={logo}
-          alt=""
-          referrerPolicy="no-referrer"
-          draggable={false}
-          style={
-            fitted
-              ? { width: fitted.width, height: fitted.height }
-              : { visibility: 'hidden', position: 'absolute' }
-          }
-          onLoad={(event) => {
-            const image = event.currentTarget
-            setBox({
-              logo,
-              ...airlineLogoBox(image.naturalWidth, image.naturalHeight, side),
-            })
-          }}
-        />
-      )}
-      {!fitted && (
-        <span className="airline-initials">{airlineInitials(name)}</span>
-      )}
-    </span>
   )
 }
 

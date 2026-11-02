@@ -505,7 +505,7 @@ function useLogo(logo: string, dark: boolean): Picture | undefined {
  * White in light, the dark disc in dark with the logo's too-dark parts
  * lightened; a faint ring.
  */
-function AirlineMark({
+export function AirlineMark({
   name,
   logo,
   side,

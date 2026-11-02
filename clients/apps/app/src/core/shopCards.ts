@@ -15,6 +15,7 @@
 
 import { type ChatImage, chatImageFrom } from './chat'
 import type { Entry } from './entry'
+import { type BookedFlight, bookedFlight } from './flightCards'
 import {
   type JSONValue,
   arr,
@@ -114,29 +115,6 @@ export interface CardChoice {
   isDefault: boolean
 }
 
-/**
- * The flight a checkout card is for (`BookedFlight`, the host's
- * `FlightBlock`): the parts the checkout card draws. Simeon pays it, not the
- * agent. The traveller form's whole flight is FlightCards' part.
- */
-export interface CheckoutFlight {
-  offerId: string
-  route: string
-  airline: string
-  /** The airline's logo: an https address or a `data:` picture; else its initials. */
-  logo: string
-  date: string
-  depart: string
-  arrive: string
-  stops: string
-  /** Duffel's test mode: a pretend airline, nothing charged. */
-  isTest: boolean
-  /** Who flies. */
-  travellers: string[]
-  /** What changed since the person last saw it, or empty. */
-  changed: string
-}
-
 export interface PurchaseCard {
   merchant: string
   /** The checkout's site, "ncvss.com". */
@@ -166,33 +144,12 @@ export interface PurchaseCard {
   /** Link's approval page, or what Link asks the person to do first (https only). */
   actionURL?: string
   order?: string
-  flight?: CheckoutFlight
+  /** The flight it pays for (FlightBooking.swift's `BookedFlight`, read by FlightCards' `bookedFlight`). */
+  flight?: BookedFlight
   step?: PurchaseStep
   wallet: Wallet
   /** A Shopify store's checkout Simeon opened through Shop: Allow places the order, no app to approve in. */
   isShopCheckout: boolean
-}
-
-/** The flight on a checkout card (`BookedFlight(json:)`): none unless it has its offer and route. */
-export function checkoutFlight(json: unknown): CheckoutFlight | undefined {
-  const words = (key: string) => (str(field(json, key)) ?? '').trim()
-  if (!words('offerId').startsWith('off_') || words('route') === '')
-    return undefined
-  return {
-    offerId: words('offerId'),
-    route: words('route'),
-    airline: words('airline'),
-    logo: words('logo'),
-    date: words('date'),
-    depart: words('depart'),
-    arrive: words('arrive'),
-    stops: words('stops'),
-    isTest: bool(field(json, 'test')) ?? false,
-    travellers: (arr(field(json, 'travellers')) ?? []).filter(
-      (one): one is string => typeof one === 'string' && one !== '',
-    ),
-    changed: words('changed'),
-  }
 }
 
 /** A checkout card, or none when the message lacks its shop or its total (the chat then says its words). */
@@ -257,7 +214,7 @@ export function purchaseCard(entry: Entry): PurchaseCard | undefined {
     note: present(trimmed(entry.get('purchaseNote'))),
     actionURL: httpsAddress(str(entry.get('purchaseActionUrl'))),
     order: present(trimmed(entry.get('purchaseOrder'))),
-    flight: checkoutFlight(purchase.flight),
+    flight: bookedFlight(purchase.flight),
     step: step && purchaseSteps.includes(step) ? step : undefined,
     wallet,
     isShopCheckout:
@@ -647,65 +604,6 @@ export function approvalReason(card: PurchaseCard): string {
   return card.flight != null
     ? t`Approve ${card.total} for the flight ${card.flight.route}`
     : t`Approve ${card.total} at ${card.domain}`
-}
-
-// MARK: The flight on a checkout card (FlightText, FlightsCard.initials)
-
-/** "2:30 PM" is "2:30pm" and "10:46 PM +1" is "10:46pm+1" (without the day when `days` is false); anything else stays as it is. */
-export function flightClock(words: string, days = true): string {
-  const parts = words.split(' ').filter((part) => part !== '')
-  if (
-    parts.length < 2 ||
-    !parts[0]!.includes(':') ||
-    !['AM', 'PM'].includes(parts[1]!.toUpperCase())
-  )
-    return words
-  const later =
-    days && parts.length > 2 && parts[2]!.startsWith('+') ? parts[2]! : ''
-  return parts[0]! + parts[1]!.toLowerCase() + later
-}
-
-/** "Nonstop" or "1 stop": the first part of the server's stops line. */
-export function flightStops(stops: string): string {
-  return stops.split(' · ')[0] ?? ''
-}
-
-/** "Thu, Nov 12 · 6:49am – 9:34am · Nonstop" */
-export function flightWhenLine(flight: CheckoutFlight): string {
-  const times = [flightClock(flight.depart), flightClock(flight.arrive)]
-    .filter((one) => one !== '')
-    .join(' – ')
-  return [flight.date, times, flightStops(flight.stops)]
-    .filter((one) => one !== '')
-    .join(' · ')
-}
-
-/** An airline's two letters when its logo doesn't come: "DA" for Duffel Airways, "DE" for Delta. */
-export function airlineInitials(name: string): string {
-  const words = name
-    .split(/\s+/)
-    .filter(
-      (word) =>
-        word !== '' &&
-        !['airline', 'airlines', 'airways', 'air'].includes(word.toLowerCase()),
-    )
-  if (words.length > 1)
-    return (
-      [...words[0]!].slice(0, 1).join('') + [...words[1]!].slice(0, 1).join('')
-    ).toUpperCase()
-  return [...(words[0] ?? '?')].slice(0, 2).join('').toUpperCase()
-}
-
-/** The largest box of a logo's own shape a circle holds, a little inside it (`AirlineLogo.box`). */
-export function airlineLogoBox(
-  width: number,
-  height: number,
-  diameter: number,
-): { width: number; height: number } {
-  if (width <= 0 || height <= 0) return { width: 0, height: 0 }
-  const aspect = width / height
-  const across = (diameter * 0.92) / Math.sqrt(1 + aspect * aspect)
-  return { width: across * aspect, height: across }
 }
 
 // MARK: The products card

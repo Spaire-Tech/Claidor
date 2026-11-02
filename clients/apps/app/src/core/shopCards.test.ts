@@ -7,11 +7,11 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { aspect, cardText, rowFor } from './chat'
 import { Entry } from './entry'
+import { clock, initials, whenLine } from './flightCards'
 import type { JSONObject, JSONValue } from './json'
 import {
   type ProductsCard,
   type PurchaseCard,
-  airlineInitials,
   approvalReason,
   buyLabel,
   byline,
@@ -20,9 +20,7 @@ import {
   checkoutHeadline,
   checkoutWords,
   choiceLine,
-  flightClock,
   flightHeadline,
-  flightWhenLine,
   itemsLine,
   needsCard,
   openWalletLabel,
@@ -530,19 +528,15 @@ describe('the flight on a checkout card', () => {
     )
   })
 
-  it('writes its times as the cards do', () => {
-    expect(flightWhenLine(card().flight!)).toBe(
+  it('writes its times as the flight cards do (FlightCards’ own words)', () => {
+    expect(whenLine(card().flight!)).toBe(
       'Thu, Nov 12 · 6:49am – 9:34am · Nonstop',
     )
-    expect(flightClock('2:30 PM')).toBe('2:30pm')
-    expect(flightClock('12:18 PM')).toBe('12:18pm')
-    expect(flightClock('6:40 AM +1')).toBe('6:40am+1')
-    expect(flightClock('6:40 AM +1', false)).toBe('6:40am')
-    expect(flightClock('14:30')).toBe('14:30')
-    expect(flightClock('')).toBe('')
-    expect(airlineInitials('Duffel Airways')).toBe('DU')
-    expect(airlineInitials('Delta Air Lines')).toBe('DL')
-    expect(airlineInitials('JetBlue')).toBe('JE')
+    expect(clock('2:30 PM')).toBe('2:30pm')
+    expect(clock('6:40 AM +1', false)).toBe('6:40am')
+    expect(initials('Duffel Airways')).toBe('DU')
+    expect(initials('Delta Air Lines')).toBe('DL')
+    expect(initials('JetBlue')).toBe('JE')
   })
 
   it('reads no flight without its offer', () => {
