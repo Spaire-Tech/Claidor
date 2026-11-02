@@ -672,6 +672,11 @@ export class AppStore {
     this.resetConnectorPages()
     this.resetGeneralSettings()
     this.resetUsageAndBilling()
+    this.resetDesktopSession()
+    this.resetDesktopSurfaces()
+    this.resetDesktopOutside()
+    this.resetDesktopUpdates()
+    this.resetDesktopHands()
     this.firstRunAgentId = undefined
     this.firstRunNamed = false
     // A hand-off waiting on the name step ends (it finds the account gone and makes nothing).
@@ -6119,6 +6124,31 @@ export class AppStore {
     if (root != null) return threadEntries(root, entries)
     return threadSplit(entries, this.olderBefore[agentId] != null).visible
   }
+
+  // MARK: Step 7b's session in the Windows app: the chats kept on disk (the Mac's
+  // `SavedChats`), the logs. Only in the Windows app (src/desktop/).
+
+  private resetDesktopSession(): void {}
+
+  // MARK: Step 7c's notifications, the taskbar's number, the tray and the menu: the
+  // roster's news (the Mac's `rosterNews`), each agent's waiting and unread.
+
+  private resetDesktopSurfaces(): void {}
+
+  // MARK: Step 7d's links and pages outside: `simeon://` links handed in, a connector's
+  // sign-in coming back (`completeMcpOAuth`), Stripe's pages in the app's window.
+
+  private resetDesktopOutside(): void {}
+
+  // MARK: Step 7e's updates (the updater's state lives in the main process; nothing of the
+  // account's).
+
+  private resetDesktopUpdates(): void {}
+
+  // MARK: Step 7f's agent's hands on this PC: the local permission, the team's ceiling,
+  // the Allow card's ask, commands allowed once.
+
+  private resetDesktopHands(): void {}
 }
 
 /** What the preview has of a file (`PreviewRead`): its bytes, too large to show (over 25 MB), or nothing. */

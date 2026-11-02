@@ -29,6 +29,7 @@ export type SettingsSymbolName =
   | 'key'
   | 'handRaised'
   | 'desktopcomputer'
+  | 'arrowDownCircle'
   | 'questionmarkCircle'
   | 'checkmarkShield'
   | 'personCropCircle'
@@ -63,6 +64,12 @@ const symbols: Record<SettingsSymbolName, ReactNode> = {
     <path d="M5.5 8.2V3.6a1 1 0 0 1 2 0V7.4M7.5 7.2V2.6a1 1 0 0 1 2 0V7.4M9.5 7.4V3.8a1 1 0 0 1 2 0V9M5.5 8.6V6.6a1 1 0 0 0-2 0v3.3c0 2.6 2 4.6 4.6 4.6h.4c2.4 0 4-1.9 4-4.3V7a1 1 0 0 0-2 0" />
   ),
   desktopcomputer: <path d="M2 3h12v8H2ZM6 14h4M8 11v3" />,
+  arrowDownCircle: (
+    <>
+      <circle cx="8" cy="8" r="6.3" />
+      <path d="M8 4.6v6.3M5.4 8.4 8 11l2.6-2.6" />
+    </>
+  ),
   questionmarkCircle: (
     <>
       <circle cx="8" cy="8" r="6.3" />
