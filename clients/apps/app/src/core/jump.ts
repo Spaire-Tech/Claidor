@@ -28,13 +28,23 @@ import {
 
 // MARK: Matching
 
+/** One segmenter for every text (making one is costly). */
+const segmenter =
+  typeof Intl !== 'undefined' && 'Segmenter' in Intl
+    ? new Intl.Segmenter()
+    : undefined
+/** Plain ASCII, where each letter is a character, but for a CR LF, which Swift counts as one. */
+function plainASCII(text: string): boolean {
+  for (let index = 0; index < text.length; index += 1)
+    if (text.charCodeAt(index) > 0x7f) return false
+  return !text.includes('\r\n')
+}
+
 /** A text's characters as Swift counts them (grapheme clusters). */
 function characters(text: string): string[] {
-  if (typeof Intl !== 'undefined' && 'Segmenter' in Intl)
-    return Array.from(
-      new Intl.Segmenter().segment(text),
-      (part) => part.segment,
-    )
+  if (plainASCII(text)) return text.split('')
+  if (segmenter)
+    return Array.from(segmenter.segment(text), (part) => part.segment)
   return Array.from(text)
 }
 
@@ -48,10 +58,25 @@ const marks = /\p{M}/gu
  * run of other characters one space, and for each kept letter the place
  * (in characters) it came from, -1 for a space (`Wmt`).
  */
-export function normalize(text: string): {
-  normalized: string[]
-  sources: number[]
-} {
+export function normalize(text: string): Normalized {
+  const kept = normalizedTexts.get(text)
+  if (kept) return kept
+  const made = normalizeOnce(text)
+  if (normalizedTexts.size >= 5_000) normalizedTexts.clear()
+  normalizedTexts.set(text, made)
+  return made
+}
+
+/** A text normalized: read only, as it is kept for the next keystroke. */
+export interface Normalized {
+  readonly normalized: readonly string[]
+  readonly sources: readonly number[]
+}
+
+/** The texts normalized lately: the same labels and snippets come back with every letter typed, every arrow and every row under the pointer. */
+const normalizedTexts = new Map<string, Normalized>()
+
+function normalizeOnce(text: string): Normalized {
   const out: string[] = []
   const sources: number[] = []
   let gap = false

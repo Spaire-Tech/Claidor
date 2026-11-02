@@ -135,16 +135,17 @@ export class WindowModel {
     this.selected = selected
   }
 
-  /** Search's message or file (`reveal`): its chat opens (the chart gives way to it) and goes to the line. */
+  /** Search's message or file (`reveal`): its chat opens as an agent chosen does (`open(agentId)`), the chart giving way to it, and goes to the line. */
   reveal(entryId: string, agentId: string): void {
     this.pendingReveal = {
       agentId,
       entryId,
       count: (this.pendingReveal?.count ?? 0) + 1,
     }
-    this.orgChart = false
-    this.selected = agentId
-    this.changed()
+    const shown = this.selected === agentId && !this.orgChart
+    this.choose(agentId)
+    // Already shown: choose has nothing to do, but the line is new.
+    if (shown) this.changed()
   }
 
   /** The chat has taken the line it was asked to show. */

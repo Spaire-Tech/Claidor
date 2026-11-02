@@ -76,7 +76,8 @@ export function GroupMembersBody({
       setAsking(undefined)
       return
     }
-    setAsking({ member, busy: true, failed: false })
+    // A refusal's words stay while it is tried again, until the new answer (the Mac's alert keeps them).
+    setAsking((now) => ({ member, busy: true, failed: now?.failed ?? false }))
     setPending(true)
     store.setGroupMembers(group.id, next).then(
       () => {

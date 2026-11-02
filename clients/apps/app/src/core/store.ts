@@ -3160,6 +3160,11 @@ export class AppStore {
       await new Promise((resolve) => setTimeout(resolve, 100))
     }
     for (let page = 0; page < pages; page += 1) {
+      // A page the chat itself is reading (its own scroll near the top) is waited for, not counted: loadOlder returns at once meanwhile.
+      while (this.loadingOlder.has(agentId)) {
+        if (late() || backend !== this.backend) return has()
+        await new Promise((resolve) => setTimeout(resolve, 100))
+      }
       if (has()) return true
       if (this.olderBefore[agentId] == null || late()) return false
       if (backend !== this.backend) return false

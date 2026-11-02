@@ -57,6 +57,12 @@ export function Alert({
   useEscape(() => {
     if (!busy) (onCancel ?? onAction)()
   })
+  // A disabled button lets go of the keys; once its action has answered, it takes them again, so Return presses it as on the Mac.
+  const wasBusy = useRef(busy)
+  useEffect(() => {
+    if (wasBusy.current && !busy) first.current?.focus()
+    wasBusy.current = busy
+  }, [busy])
   return (
     <div
       className="sheet-scrim"
@@ -77,7 +83,7 @@ export function Alert({
           aria-hidden="true"
         />
         <div className="alert-title">{title}</div>
-        <div className="alert-message">{message}</div>
+        {message !== '' && <div className="alert-message">{message}</div>}
         <div className="alert-buttons">
           {onCancel && (
             <button

@@ -709,19 +709,51 @@ function Transcript({
       void store.loadOlder(agentId)
   }
 
-  /** A row brought to the middle: the chat holds its newest line no more, even while the scroll's first steps are still near it (a far one, a found line or a quote, was taken back to the newest). */
+  /**
+   * A row brought to the middle: the chat holds its newest line no more,
+   * even while the scroll's first steps are still near it (a far one, a
+   * found line or a quote, was taken back to the newest). Once the scroll
+   * ends (or nothing moved, or after 3 s) the chat reads where it stands
+   * again, holding the newest line when it landed there (ChatPane.swift's
+   * `follow`). A later jump ends an earlier one's watch.
+   */
   const jumping = useRef(false)
+  const jumpWatch = useRef<() => void>(undefined)
+  const settle = useRef<() => void>(undefined)
   const scrollToRow = useCallback((element: Element) => {
+    jumpWatch.current?.()
+    const box = scroller.current
     pinned.current = false
     setAtNewest(false)
     jumping.current = true
-    const done = () => {
-      jumping.current = false
+    const startTop = box?.scrollTop
+    let watching = true
+    const stopWatching = () => {
+      if (!watching) return
+      watching = false
+      clearTimeout(timer)
+      clearTimeout(still)
+      box?.removeEventListener('scrollend', ended)
+      jumpWatch.current = undefined
     }
-    scroller.current?.addEventListener('scrollend', done, { once: true })
-    setTimeout(done, 3_000)
+    const ended = () => {
+      stopWatching()
+      jumping.current = false
+      settle.current?.()
+    }
+    const timer = setTimeout(ended, 3_000)
+    // Already in place: no scroll starts, so no scroll ends.
+    const still = setTimeout(() => {
+      if (box && box.scrollTop === startTop) ended()
+    }, 150)
+    box?.addEventListener('scrollend', ended)
+    jumpWatch.current = stopWatching
     element.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }, [])
+  useEffect(() => () => jumpWatch.current?.(), [])
+  useLayoutEffect(() => {
+    settle.current = onScroll
+  })
 
   const jump = useCallback(
     (rowId: string) => {

@@ -249,8 +249,19 @@ export class SearchState {
 
   // MARK: What is listed
 
+  /** The last listing, and what it was made from: made again only when search, the store or the open chat changes. */
+  private listed?: { key: string; listing: Listing }
+
   /** The rows for the tab and the words (`listing`, `WFn`): the agents (pins first), the actions, and, with the computer's search on, its answers, the open chat's links and the routines. */
   listing(): Listing {
+    const key = `${this.version}:${this.store.getVersion()}:${this.current() ?? ''}`
+    if (this.listed?.key === key) return this.listed.listing
+    const listing = this.makeListing()
+    this.listed = { key, listing }
+    return listing
+  }
+
+  private makeListing(): Listing {
     const store = this.store
     const visible = store.agents.filter((agent) => !agent.isHidden)
     const hidden = store.agents.filter((agent) => agent.isHidden)

@@ -117,6 +117,23 @@ describe('search’s reads', () => {
     expect(backend.opened).toEqual(['theo'])
   })
 
+  it('a page the chat is already reading is waited for, not counted', async () => {
+    const { store } = await attached((one) => {
+      one.lines = Array.from({ length: 1200 }, (_, n) => ({
+        kind: 'message',
+        id: `m${n}`,
+        role: 'assistant',
+        content: `Line ${n}`,
+        timestampMs: n * 1000,
+      }))
+    })
+    await store.open('theo')
+    // The chat's own scroll near its top asks for the page before.
+    const reading = store.loadOlder('theo')
+    expect(await store.loadUntil('m100', 'theo')).toBe(true)
+    await reading
+  })
+
   it('waits for the chat’s first lines, and stops when signed out', async () => {
     const { store } = await attached()
     const waiting = store.loadUntil('u1', 'iris')

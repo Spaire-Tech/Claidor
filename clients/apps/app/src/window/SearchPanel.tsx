@@ -221,6 +221,10 @@ function SearchPanel({
       role="dialog"
       aria-modal={open ? true : undefined}
       aria-label={t('Search')}
+      // A click on the panel but the field keeps the keys in the field, as the Mac's panel does.
+      onMouseDown={(event) => {
+        if (event.target !== field.current) event.preventDefault()
+      }}
     >
       <div className="search-field-row">
         <span className="search-field-glass">

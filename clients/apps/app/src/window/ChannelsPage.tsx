@@ -426,15 +426,16 @@ function AddingSpinner({ name }: { name: string }) {
       role="img"
       aria-label={t`Connecting ${name}`}
     >
-      <svg width="15" height="15" viewBox="0 0 15 15" aria-hidden="true">
-        <circle className="channel-spinner-track" cx="7.5" cy="7.5" r="6.5" />
+      {/* SwiftUI strokes a 15 circle on its edge: r 7.5, the 2-wide line 1 outside it, 17 across. */}
+      <svg width="17" height="17" viewBox="0 0 17 17" aria-hidden="true">
+        <circle className="channel-spinner-track" cx="8.5" cy="8.5" r="7.5" />
         <circle
           className="channel-spinner-arc"
-          cx="7.5"
-          cy="7.5"
-          r="6.5"
-          strokeDasharray={`${(Math.PI * 13 * 0.75).toFixed(2)} 100`}
-          transform="rotate(135 7.5 7.5)"
+          cx="8.5"
+          cy="8.5"
+          r="7.5"
+          strokeDasharray={`${(Math.PI * 15 * 0.75).toFixed(2)} 100`}
+          transform="rotate(135 8.5 8.5)"
         />
       </svg>
     </span>
