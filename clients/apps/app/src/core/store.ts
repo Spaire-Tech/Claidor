@@ -22,6 +22,7 @@ import {
   accessFrom,
   checkingAccess,
   pausesSending,
+  paymentMethodFlow,
   planFacts,
   unknownAccess,
 } from './access'
@@ -34,6 +35,13 @@ import {
   voicePlan,
 } from './agentVoices'
 import { SimeonAPIError } from './api'
+import {
+  type AppAccount,
+  type AppAccounts,
+  accountPath,
+  appAccountsFrom,
+  toolkitOf,
+} from './appAccounts'
 import {
   type AgentBackend,
   type AttachmentRef,
@@ -98,8 +106,15 @@ import {
   isComingSoon,
   isConnected,
   listenerConnectedIn,
+  webPage,
 } from './connectCards'
-import { type ConnectedApp, connectedApp } from './connectedApps'
+import { type ConnectedApp, connectedApp, makeApp } from './connectedApps'
+import {
+  type ConnectStart,
+  alreadySignedIn,
+  authorizationURL,
+  didntConnect,
+} from './connecting'
 import { callTransport } from './elevenLabsVoice'
 import { Entry, appliedChange } from './entry'
 import {
@@ -110,6 +125,7 @@ import {
   shuffledFace,
   voiceForFace,
 } from './faces'
+import { type DeviceFacts, type FeedbackReport, feedbackBody } from './feedback'
 import { fileLine, fileSize } from './fileLine'
 import { byteCap, computerPath } from './filePreview'
 import {
@@ -119,6 +135,12 @@ import {
   travellerJSON,
 } from './flightCards'
 import { GatewayError } from './gatewayConnection'
+import {
+  type AutoReviewInstructions,
+  detectedTimeZone,
+  isHiddenZone,
+  normalizedRules,
+} from './generalSettings'
 import {
   type JSONObject,
   type JSONValue,
@@ -150,6 +172,22 @@ import {
   unreachableLine,
 } from './onboarding'
 import { plainError } from './plainWords'
+import {
+  PluginCalls,
+  type Removal,
+  privateCopies,
+  setupAgentIn,
+} from './pluginCalls'
+import {
+  type AgentSkill,
+  type EffectivePlugin,
+  type PluginEntry,
+  type PluginServer,
+  type PluginTool,
+  pluginEntriesFrom,
+  serverAccounts,
+} from './plugins'
+import { type SignInFlow, signInKey, signInTimeout } from './pluginsOverlay'
 import {
   RebuildDriver,
   type RebuildInputs,
@@ -188,6 +226,21 @@ import {
   packSectionId,
 } from './starterPacks'
 import { bytesFromBase64URL } from './tokens'
+import { TrayList } from './trays'
+import {
+  creditsFlow,
+  isOutOfCredits,
+  startNowFlow,
+  upgradeFlow,
+} from './upgrade'
+import {
+  type UsageLoad,
+  emptyUsage,
+  shownSummary,
+  showsSection,
+  usageFreshMs,
+  usageSummary,
+} from './usage'
 import { LiveCall, type VoiceTransport } from './voiceCall'
 
 /** A call whose failure changes nothing: tried, and let be. */
@@ -614,6 +667,11 @@ export class AppStore {
     this.resetComputer()
     this.resetRebuild()
     this.resetCalls()
+    this.resetConnecting()
+    this.resetConnectors()
+    this.resetConnectorPages()
+    this.resetGeneralSettings()
+    this.resetUsageAndBilling()
     this.firstRunAgentId = undefined
     this.firstRunNamed = false
     // A hand-off waiting on the name step ends (it finds the account gone and makes nothing).
@@ -849,6 +907,14 @@ export class AppStore {
       case 'computerAction':
       case 'subagents':
         this.applyComputer(event)
+        return
+      case 'tray':
+        // The computer's notices (6f): the credits' line reads an open agent's.
+        this.takeTray(event.tray)
+        return
+      case 'appsChanged':
+        // An app connected or removed on the computer: the apps read again (Store.swift's `.appsChanged`), so a sign-in finished after its wait says Connected.
+        void this.loadApps()
         return
       default:
         // The rebuild's and the move's (5c); the rest comes with its screens.
@@ -1319,19 +1385,33 @@ export class AppStore {
     }
   }
 
-  /** Stripe's page for the account (`POST billing/portal`, with its flow): its address, or the words to show. */
+  /**
+   * Stripe's page for the account (`POST billing/portal`, StoreSettings.swift's
+   * `billingPortal`): the confirmation of the next plan up (`update_confirm`
+   * with its `tier`), the card form for a payment that failed
+   * (`payment_method`), Start Plan Now for a card trial (`start_now`),
+   * extra credits (`credits`), or its front page. No `back`: the web opens it
+   * in a tab, and the page ends on the web's billing page (decision of 1
+   * November 2026). Its address, or the words to show.
+   */
   async billingPortal(
     flow?: string,
+    tier?: string,
   ): Promise<{ url?: string; message?: string }> {
     const fallback = t('Couldn’t open billing. Try again.')
     const backend = this.backend
     if (!backend) return { message: t('Sign in to Simeon to continue') }
+    const fields: JSONObject = {}
+    if (flow === upgradeFlow && tier) {
+      fields.flow = upgradeFlow
+      fields.tier = tier
+    } else if (
+      flow &&
+      [paymentMethodFlow, startNowFlow, creditsFlow].includes(flow)
+    )
+      fields.flow = flow
     try {
-      const answer = await backend.server(
-        'billing/portal',
-        'POST',
-        flow ? { flow } : {},
-      )
+      const answer = await backend.server('billing/portal', 'POST', fields)
       const url = str(field(answer, 'portalUrl'))
       return url?.startsWith('https://') ? { url } : { message: fallback }
     } catch (error) {
@@ -1582,18 +1662,23 @@ export class AppStore {
 
   /** The apps the catalogue offers (`getCatalog`, in the app's language): an app card's title and line, and the id the computer files it under. */
   catalog: CatalogApp[] = []
+  /** The same answer's entries as Connectors lists them (Store.swift's `catalogEntries`, `PluginEntry`; step 6c). */
+  catalogEntries: PluginEntry[] = []
   /** The apps that can't be connected yet (`AppsComingSoon`): the server's list once read. */
   appsComingSoon: Set<string> = new Set(appsComingSoonBuiltIn)
   /** The catalogue was read from the computer in this sign-in. */
   private catalogFresh = false
   private appCardsLoad?: Promise<void>
+  private catalogRead?: Promise<PluginEntry[] | undefined>
 
   /** 3c's card state back to nothing (signed out). */
   private resetConnectCards(): void {
     this.catalog = []
+    this.catalogEntries = []
     this.appsComingSoon = new Set(appsComingSoonBuiltIn)
     this.catalogFresh = false
     this.appCardsLoad = undefined
+    this.catalogRead = undefined
   }
 
   /**
@@ -1629,10 +1714,27 @@ export class AppStore {
     return load
   }
 
-  /** The catalogue from the computer (`desktopMcp` `getCatalog`); what was shown stays when it doesn't answer. */
-  private async readCatalog(): Promise<void> {
+  /**
+   * The catalogue from the computer (`desktopMcp` `getCatalog`, Store.swift's
+   * `readCatalog`): the cards' apps and Connectors' entries, from one answer
+   * (`takeCatalog`); what was shown stays when it doesn't answer. One read
+   * at a time: a card's and Connectors' often ask together. The entries, or
+   * none when it didn't answer.
+   */
+  readCatalog(): Promise<PluginEntry[] | undefined> {
+    if (this.catalogRead) return this.catalogRead
+    const read: Promise<PluginEntry[] | undefined> =
+      this.fetchCatalog().finally(() => {
+        // Only this read's: a sign-out and sign-in meanwhile may have started another.
+        if (this.catalogRead === read) this.catalogRead = undefined
+      })
+    this.catalogRead = read
+    return read
+  }
+
+  private async fetchCatalog(): Promise<PluginEntry[] | undefined> {
     const backend = this.backend
-    if (!backend) return
+    if (!backend) return undefined
     let answer: JSONValue
     try {
       answer = await backend.command('desktopMcp', {
@@ -1640,15 +1742,23 @@ export class AppStore {
         args: [{ language: currentLanguage() }],
       })
     } catch {
-      return
+      return undefined
     }
-    if (this.backend !== backend) return
+    if (this.backend !== backend) return undefined
     this.catalogFresh = true
     const next = catalogFrom(answer)
+    const entries = pluginEntriesFrom(answer)
+    let moved = false
     if (JSON.stringify(next) !== JSON.stringify(this.catalog)) {
       this.catalog = next
-      this.changed()
+      moved = true
     }
+    if (JSON.stringify(entries) !== JSON.stringify(this.catalogEntries)) {
+      this.catalogEntries = entries
+      moved = true
+    }
+    if (moved) this.changed()
+    return this.catalogEntries
   }
 
   /** Which apps can't be connected yet, from Simeon Labs' server (`GET apps`); an older server's answer, or none, keeps the list. */
@@ -4156,6 +4266,8 @@ export class AppStore {
       this.rebuild.migrationReadBack(this.migrations?.status)
       // A computer rebuilt meanwhile starts with no language: told again (Store.swift's `recovered`).
       void this.tellLanguage(backend)
+      // And the zone this browser is in, as the Mac on every connect (step 6e).
+      void this.tellTimeZone(backend)
     }
   }
 
@@ -4513,6 +4625,1148 @@ export class AppStore {
     made?.tones?.close?.()
     this.call = undefined
     this.callLevels = []
+  }
+
+  // MARK: Step 6b's connecting: the consent, an app's sign-in, Add Another
+  // Account, the chat card's Connect (mac/Simeon/MacConnector.swift; the
+  // core's Store.swift `beginConnect`, `undoConnect`, `ConnectConsent.swift`,
+  // `Connecting.swift`, `AppAccounts.swift`). The screens' side is
+  // src/window/connector.ts and ConnectConsent.tsx.
+
+  /**
+   * Connect (`beginConnect`, `Connecting`): the app installed from the
+   * catalogue when it is not on the computer yet, then its sign-in started;
+   * the sign-in's page, and whether this connect added the app. An app this
+   * connect added whose sign-in then doesn't open is taken back at once, so
+   * nothing stays half added; `problem` says why.
+   */
+  async beginConnect(name: string): Promise<ConnectStart | undefined> {
+    const backend = this.backend
+    if (!backend) return undefined
+    // The box's app events keep the list current, so it is read here only when it never was (an empty list counts as never read: the web keeps no time of the last read).
+    if (this.catalog.length === 0 || this.apps.length === 0)
+      await this.loadAppCards()
+    if (this.backend !== backend) return undefined
+    const key = name.toLowerCase()
+    const plugin = this.catalogApp(name)
+    let server = this.apps.find(
+      (app) =>
+        app.name.toLowerCase() === key ||
+        (app.pluginId != null && app.pluginId === plugin?.id),
+    )
+    let added: string | undefined
+    if (!server && plugin) {
+      try {
+        // The install and the maker's server id at once (the second only names the server the first makes).
+        const [installed, vendor] = await Promise.all([
+          backend.command('desktopMcp', {
+            action: 'installEntry',
+            args: [{ entryId: plugin.id }],
+          }),
+          backend
+            .command('desktopMcp', {
+              action: 'vendorServerIdForPlugin',
+              args: [plugin.id],
+            })
+            .catch(() => undefined),
+        ])
+        if (this.backend !== backend) return undefined
+        added = plugin.id
+        this.apps = (arr(field(installed, 'servers')) ?? [])
+          .map(connectedApp)
+          .filter((app): app is ConnectedApp => app != null)
+        this.changed()
+        const vendorId = text(vendor)
+        server = vendorId
+          ? makeApp({
+              serverId: vendorId,
+              name: plugin.title,
+              pluginId: plugin.id,
+              accountKey: 'default',
+              status: 'needs-auth',
+              toolCount: 0,
+            })
+          : this.apps.find((app) => app.pluginId === plugin.id)
+      } catch (error) {
+        this.connectProblem(t`Couldn't add ${name}: ${this.connectWhy(error)}`)
+        return undefined
+      }
+    }
+    if (!server) {
+      this.connectProblem(t`${name} isn't in Simeon's apps yet.`)
+      return undefined
+    }
+    if (server.status === 'connected') return undefined
+    try {
+      const started = await backend.command('desktopMcp', {
+        action: 'authenticateServer',
+        args: [server.serverId, server.accountKey, 'connector_card'],
+      })
+      if (this.backend !== backend) return undefined
+      const url = await this.signInStarted(started, name)
+      if (url) return { url, addedPlugin: added }
+      // Signed in already: kept, whatever the list says yet.
+      if (alreadySignedIn(started)) return undefined
+    } catch (error) {
+      if (this.backend !== backend) return undefined
+      this.connectProblem(
+        didntConnect(name, plainError(this.connectWhy(error))),
+      )
+    }
+    // No sign-in to open: the app this connect added goes again, unless it turned out signed in already.
+    if (added) await this.takeBack(added, name, backend)
+    return undefined
+  }
+
+  /**
+   * A connect whose sign-in was cancelled (`undoConnect`, `Connecting.undoes`):
+   * the app it added is uninstalled again (`uninstallPlugin`, as Uninstall
+   * on its page does), so it isn't left added and not signed in. One the
+   * computer says is connected after all is kept.
+   */
+  async undoConnect(start: ConnectStart, name: string): Promise<void> {
+    const backend = this.backend
+    if (start.addedPlugin == null || !backend) return
+    await this.takeBack(start.addedPlugin, name, backend)
+  }
+
+  /** Sign in to one account of an app (`signInURL`, `authenticateServer`): its page, or none with the reason in `problem`. */
+  async signInURL(app: ConnectedApp): Promise<string | undefined> {
+    const backend = this.backend
+    if (!backend) return undefined
+    try {
+      const started = await backend.command('desktopMcp', {
+        action: 'authenticateServer',
+        args: [app.serverId, app.accountKey, 'connector_card'],
+      })
+      return await this.signInStarted(started, app.name)
+    } catch (error) {
+      this.connectProblem(
+        t`Couldn't sign in to ${app.name}: ${this.connectWhy(error)}`,
+      )
+      return undefined
+    }
+  }
+
+  /** The app a connect added, uninstalled again unless the computer now says it is connected (`takeBack`): only on the computer it was added to (`backend`), never another account's. */
+  private async takeBack(
+    plugin: string,
+    name: string,
+    backend: AgentBackend,
+  ): Promise<void> {
+    if (this.backend !== backend) return
+    await this.readApps(true)
+    if (this.backend !== backend || this.isConnected(name)) return
+    try {
+      await backend.command('desktopMcp', {
+        action: 'uninstallPlugin',
+        args: [plugin],
+      })
+    } catch {
+      // Left as it is: its page offers Uninstall.
+    }
+    if (this.backend === backend) await this.readApps(true)
+  }
+
+  /** The sign-in's page; or, when the computer has none to offer, why (it was signed in already, or the app can't sign in here), said rather than dropped (`signInStarted`). */
+  private async signInStarted(
+    started: JSONValue,
+    name: string,
+  ): Promise<string | undefined> {
+    const url = authorizationURL(started)
+    if (url) return url
+    if (alreadySignedIn(started)) {
+      await this.readApps(true)
+      return undefined
+    }
+    this.connectProblem(didntConnect(name, text(field(started, 'message'))))
+    return undefined
+  }
+
+  /** A failure's own words (`localizedDescription`). */
+  private connectWhy(error: unknown): string {
+    return error instanceof Error ? error.message : String(error)
+  }
+
+  private connectProblem(words: string): void {
+    this.problem = words
+    this.changed()
+  }
+
+  /** 6b's state back to nothing (signed out): it keeps none; the connector's sign-in ends with the window. */
+  private resetConnecting(): void {}
+
+  // MARK: Step 6c's Connectors: the catalogue's entries, the computer's
+  // servers and plugins, their tools and skills, the list
+  // (mac/Simeon/PluginsModel.swift, PluginsWindow.swift; the core's
+  // Plugins.swift, PluginsOverlay.swift, PluginCalls.swift). The screens'
+  // side is src/window/Connectors.tsx.
+
+  // The computer's side of mac/Simeon/PluginsModel.swift lives here, kept
+  // until sign-out (`forget`); the window's side (the view, the order of
+  // each action, its notice, the consent and the sign-in through the
+  // window's connector) is src/window/pluginsModel.ts. The catalogue's
+  // entries are 3c's `catalogEntries`, from the same `getCatalog` answer.
+
+  /** Each account of each of the computer's servers, as Connectors last read them (`servers`, `listServers`). */
+  pluginServers: PluginServer[] = []
+  /** The plugins the computer has on (`plugins`, `listEffectivePlugins`). */
+  effectivePlugins: EffectivePlugin[] = []
+  /** Each server's tools as last read (`tools`, `listServerTools`), by the server's id. */
+  pluginTools: ReadonlyMap<string, readonly PluginTool[]> = new Map()
+  /** Why a tool's switch didn't change, said under its server's tools (`toolFailures`), by the server's id. */
+  pluginToolFailures: ReadonlyMap<string, string> = new Map()
+  /** The open agent's skills (`skills`, `getAgentWorkflows`). */
+  agentSkills: AgentSkill[] = []
+  /** The plugins the GitHub banner names (`authBlocked`, `getPluginSyncStatus`). */
+  pluginAuthBlocked: string[] = []
+  /** Sign-ins waiting on their page, by key (`flows`, `signInKey`): kept across openings, as the Mac's window keeps them. */
+  signInFlows: ReadonlyMap<string, SignInFlow> = new Map()
+  /** The catalogue's logos read so far (`logos`, `resolvePluginLogo`): data URLs, by address. The catalogue's, not the account's: kept for the next account, as the Mac keeps them. */
+  pluginLogos: ReadonlyMap<string, string> = new Map()
+  private pluginLogoReads = new Set<string>()
+  private signInTimers = new Map<string, ReturnType<typeof setTimeout>>()
+  /** The agent the window shows, whose skills Connectors lists (the model's `setAgent`): an answer for another agent is not kept. */
+  private skillsAgent?: string
+
+  /** 6c's state back to nothing (signed out; `PluginsModel.forget`). */
+  private resetConnectors(): void {
+    this.pluginServers = []
+    this.effectivePlugins = []
+    this.pluginTools = new Map()
+    this.pluginToolFailures = new Map()
+    this.agentSkills = []
+    this.pluginAuthBlocked = []
+    this.signInFlows = new Map()
+    for (const timer of this.signInTimers.values()) clearTimeout(timer)
+    this.signInTimers.clear()
+    this.skillsAgent = undefined
+  }
+
+  /** Someone is signed in: Connectors' calls can go (the Mac's `try? calls()`). */
+  get pluginCallsReady(): boolean {
+    return this.backend != null
+  }
+
+  /** Connectors' calls to the computer (SimeonCore's `PluginCalls`); signed out, the core's words. */
+  private pluginCalls(): PluginCalls {
+    const backend = this.backend
+    if (!backend) throw new GatewayError(t('Sign in to Simeon first.'), true)
+    return new PluginCalls(backend)
+  }
+
+  // Reading
+
+  /** The servers read again (`refreshServers`): as Connectors opens, every 15 s while it is open, as the window comes forward, after a change. No answer: they stay. */
+  async readPluginServers(): Promise<void> {
+    const backend = this.backend
+    if (!backend) return
+    let next: PluginServer[] | undefined
+    try {
+      next = await new PluginCalls(backend).servers()
+    } catch {
+      return
+    }
+    if (this.backend === backend) this.applyPluginServers(next)
+  }
+
+  /** The servers an answer held (none: they stay as they were); only a change redraws. A sign-in whose account now says connected is over (`apply(servers:)`). */
+  private applyPluginServers(next: PluginServer[] | undefined): void {
+    if (!next) return
+    let moved = false
+    if (JSON.stringify(next) !== JSON.stringify(this.pluginServers)) {
+      this.pluginServers = next
+      moved = true
+    }
+    const over = [...this.signInFlows.keys()].filter((key) =>
+      this.pluginServers.some(
+        (server) =>
+          signInKey(server.serverIdentifier) === key &&
+          server.status === 'connected',
+      ),
+    )
+    if (over.length > 0) {
+      const flows = new Map(this.signInFlows)
+      for (const key of over) {
+        flows.delete(key)
+        clearTimeout(this.signInTimers.get(key))
+        this.signInTimers.delete(key)
+      }
+      this.signInFlows = flows
+      moved = true
+    }
+    if (moved) this.changed()
+  }
+
+  /** The plugins the computer has on, read again (`refreshPlugins`). */
+  async readEffectivePlugins(): Promise<void> {
+    const backend = this.backend
+    if (!backend) return
+    let list: EffectivePlugin[]
+    try {
+      list = await new PluginCalls(backend).effectivePlugins()
+    } catch {
+      return
+    }
+    if (this.backend !== backend) return
+    if (JSON.stringify(list) === JSON.stringify(this.effectivePlugins)) return
+    this.effectivePlugins = list
+    this.changed()
+  }
+
+  /** The open agent's skills (`loadSkills`); with no agent open, none. */
+  async readAgentSkills(agentId: string | undefined): Promise<void> {
+    if (agentId == null) {
+      if (this.skillsAgent != null || this.agentSkills.length === 0) return
+      this.agentSkills = []
+      this.changed()
+      return
+    }
+    const backend = this.backend
+    if (!backend) return
+    let list: AgentSkill[]
+    try {
+      list = await new PluginCalls(backend).skills(agentId)
+    } catch {
+      return
+    }
+    if (this.backend !== backend) return
+    this.setAgentSkills(agentId, list)
+  }
+
+  /**
+   * The agent the window shows (Connectors' `setAgent`): only its skills are
+   * kept, however the answers cross (an opening's read for no agent yet, an
+   * Add's skills step for the agent open when it began).
+   */
+  showSkillsOf(agentId: string | undefined): void {
+    this.skillsAgent = agentId
+  }
+
+  private setAgentSkills(agentId: string, list: AgentSkill[]): void {
+    if (agentId !== this.skillsAgent) return
+    if (JSON.stringify(list) === JSON.stringify(this.agentSkills)) return
+    this.agentSkills = list
+    this.changed()
+  }
+
+  /** A server's tools (`loadTools`); no answer, they stay. */
+  async readPluginTools(serverId: string): Promise<void> {
+    const backend = this.backend
+    if (!backend) return
+    let list: PluginTool[]
+    try {
+      list = await new PluginCalls(backend).tools(serverId)
+    } catch {
+      return
+    }
+    if (this.backend !== backend) return
+    this.pluginTools = new Map(this.pluginTools).set(serverId, list)
+    this.changed()
+  }
+
+  /** The GitHub banner's plugins (`readSyncStatus`, `getPluginSyncStatus`). */
+  async readPluginSyncStatus(): Promise<void> {
+    const backend = this.backend
+    if (!backend) return
+    let names: string[]
+    try {
+      names = await new PluginCalls(backend).authBlocked()
+    } catch {
+      return
+    }
+    if (this.backend !== backend) return
+    if (JSON.stringify(names) === JSON.stringify(this.pluginAuthBlocked)) return
+    this.pluginAuthBlocked = names
+    this.changed()
+  }
+
+  /** The one sync each opening of Connectors starts (`syncPluginSkills`), the banner read again after it; a failure is let go. */
+  async syncPluginSkillsQuietly(): Promise<void> {
+    const backend = this.backend
+    if (!backend) return
+    try {
+      await new PluginCalls(backend).syncSkills()
+    } catch {
+      // Let go: the banner says what can't be fetched.
+    }
+    await this.readPluginSyncStatus()
+  }
+
+  /**
+   * A catalogue entry's logo (`loadLogo`, `resolvePluginLogo`): the
+   * computer answers with a data URL (SVG or PNG); read once per address,
+   * and only a picture is kept (any image kind the computer read: an `<img>` runs no script).
+   */
+  async readPluginLogo(address: string): Promise<void> {
+    if (this.pluginLogos.has(address) || this.pluginLogoReads.has(address))
+      return
+    const backend = this.backend
+    if (!backend) return
+    this.pluginLogoReads.add(address)
+    let source: string | undefined
+    try {
+      source = await new PluginCalls(backend).logo(address)
+    } catch {
+      return
+    }
+    if (source == null || !/^data:image\/[a-z0-9.+-]+[;,]/i.test(source)) return
+    this.pluginLogos = new Map(this.pluginLogos).set(address, source)
+    this.changed()
+  }
+
+  // Add, setup, remove (each refusal thrown, for the window to say)
+
+  /** Add (`install`, `installEntry`): the servers as the computer answers them, and its plugins read again. */
+  async installPlugin(
+    entryId: string,
+    values: Readonly<Record<string, string>>,
+    team: boolean,
+  ): Promise<void> {
+    const calls = this.pluginCalls()
+    this.applyPluginServers(await calls.install(entryId, values, team))
+    await this.readEffectivePlugins()
+  }
+
+  /** The server a plugin from the app's own maker makes (`vendorServerIdForPlugin`), whose sign-in opens after Add; none for the rest. */
+  async pluginVendorServer(entryId: string): Promise<string | undefined> {
+    const backend = this.backend
+    if (!backend) return undefined
+    return new PluginCalls(backend).vendorServerId(entryId)
+  }
+
+  /** An account's sign-in asked of the computer (`authenticateServer`, no trigger: Connectors' own): its answer, with its status and the page to open. */
+  askServerSignIn(serverId: string, accountKey: string): Promise<JSONValue> {
+    return this.pluginCalls().signIn(serverId, accountKey)
+  }
+
+  /** Edit Values (`updatePluginInstall`): all of the plugin's setup values replaced. */
+  updatePluginValues(
+    pluginId: string,
+    values: Readonly<Record<string, string>>,
+  ): Promise<void> {
+    return this.pluginCalls().updateInstall(pluginId, values)
+  }
+
+  /** Uninstall or Remove of a server (`removeServer`): what it did, the servers as they are then. */
+  async removePluginServer(serverId: string): Promise<Removal> {
+    const removal = await this.pluginCalls().removeServer(serverId)
+    this.applyPluginServers(removal.servers)
+    return removal
+  }
+
+  /** Uninstall of a plugin (`uninstallPlugin`): what it did, the servers as they are then, its plugins read again. */
+  async uninstallPluginEntry(pluginId: string): Promise<Removal> {
+    const removal = await this.pluginCalls().uninstallPlugin(pluginId)
+    this.applyPluginServers(removal.servers)
+    await this.readEffectivePlugins()
+    return removal
+  }
+
+  /** A connect's app taken back out (`takeBack`): uninstalled again, unless the computer says it connected after all; the connected apps read again. */
+  async takeBackPlugin(pluginId: string, serverId: string): Promise<void> {
+    await this.readPluginServers()
+    if (
+      serverAccounts(this.pluginServers, serverId).some(
+        (server) => server.status === 'connected',
+      )
+    )
+      return
+    try {
+      await this.uninstallPluginEntry(pluginId)
+    } catch {
+      return
+    }
+    await this.loadApps()
+  }
+
+  // Skills
+
+  /** The agent's private copies of a plugin's skills dropped, before its own are synced (`dropPrivateCopies`); a failure is let go. */
+  async dropPluginCopies(
+    entry: PluginEntry,
+    agentId: string | undefined,
+  ): Promise<void> {
+    const backend = this.backend
+    if (!backend || agentId == null) return
+    if (privateCopies(entry, this.agentSkills).length === 0) return
+    await new PluginCalls(backend).dropPrivateCopies(
+      entry,
+      this.agentSkills,
+      agentId,
+    )
+  }
+
+  /** The computer's plugin skills synced (`syncPluginSkills`): how many of them are the plugin's (none asked, none counted). */
+  syncPluginSkills(pluginId?: string): Promise<number> {
+    return this.pluginCalls().syncSkills(pluginId)
+  }
+
+  /** A private skill's switch (`setEnabled`, `setAgentWorkflowEnabled`); a failure is let go, as the overlay does. */
+  async setAgentSkillEnabled(
+    skill: AgentSkill,
+    agentId: string | undefined,
+  ): Promise<void> {
+    const backend = this.backend
+    if (!backend || agentId == null) return
+    let list: AgentSkill[]
+    try {
+      list = await new PluginCalls(backend).setSkillEnabled(
+        skill,
+        !skill.isEnabledForAgent,
+        agentId,
+      )
+    } catch {
+      return
+    }
+    if (this.backend === backend) this.setAgentSkills(agentId, list)
+  }
+
+  /** Save on a skill's page (`updateAgentWorkflow`): the name and description trimmed, the trigger and source kept; the skills as the computer lists them. */
+  async saveAgentSkill(
+    skill: AgentSkill,
+    name: string,
+    description: string,
+    body: string,
+    agentId: string,
+  ): Promise<void> {
+    const list = await this.pluginCalls().updateSkill(
+      skill,
+      name,
+      description,
+      body,
+      agentId,
+    )
+    if (list) this.setAgentSkills(agentId, list)
+  }
+
+  /** Delete skill (`deleteAgentWorkflow`): the skills as the computer lists them. */
+  async deleteAgentSkill(skillId: string, agentId: string): Promise<void> {
+    const list = await this.pluginCalls().deleteSkill(skillId, agentId)
+    if (list) this.setAgentSkills(agentId, list)
+  }
+
+  // Tools
+
+  /**
+   * A tool's switch (`toggle`): changed at once, then asked of the
+   * computer (`toggleMcpToolDisabled`); a refusal is said under the tools
+   * and the switch goes back.
+   */
+  async togglePluginTool(toolName: string, serverId: string): Promise<void> {
+    const list = this.pluginTools.get(serverId)
+    if (list?.some((tool) => tool.name === toolName)) {
+      this.pluginTools = new Map(this.pluginTools).set(
+        serverId,
+        list.map((tool) =>
+          tool.name === toolName
+            ? { ...tool, isDisabled: !tool.isDisabled }
+            : tool,
+        ),
+      )
+      this.changed()
+    }
+    try {
+      const next = await this.pluginCalls().toggleTool(toolName, serverId)
+      this.pluginTools = new Map(this.pluginTools).set(serverId, next)
+      const failures = new Map(this.pluginToolFailures)
+      failures.delete(serverId)
+      this.pluginToolFailures = failures
+      this.changed()
+      await this.readPluginServers()
+    } catch (error) {
+      const why = error instanceof Error ? error.message : String(error)
+      this.pluginToolFailures = new Map(this.pluginToolFailures).set(
+        serverId,
+        plainError(why),
+      )
+      this.changed()
+      await this.readPluginTools(serverId)
+    }
+  }
+
+  // Sign-ins waiting (`PBn`)
+
+  /** A sign-in's page opened (`flows[key] = Flow`): Reopen while it waits, Retry once it has waited ten minutes (`expire`). */
+  startSignInFlow(key: string, url: string): void {
+    const openedAt = Date.now()
+    this.signInFlows = new Map(this.signInFlows).set(key, {
+      url,
+      openedAt,
+      timedOut: false,
+    })
+    this.expireSignInFlow(key, openedAt)
+    this.changed()
+  }
+
+  /** Reopen: the waiting page opened again, its ten minutes counted from now. */
+  reopenSignInFlow(key: string): void {
+    const flow = this.signInFlows.get(key)
+    if (!flow) return
+    const openedAt = Date.now()
+    this.signInFlows = new Map(this.signInFlows).set(key, { ...flow, openedAt })
+    this.expireSignInFlow(key, openedAt)
+    this.changed()
+  }
+
+  private expireSignInFlow(key: string, openedAt: number): void {
+    clearTimeout(this.signInTimers.get(key))
+    this.signInTimers.set(
+      key,
+      setTimeout(() => {
+        this.signInTimers.delete(key)
+        const flow = this.signInFlows.get(key)
+        if (!flow || flow.openedAt !== openedAt) return
+        this.signInFlows = new Map(this.signInFlows).set(key, {
+          ...flow,
+          timedOut: true,
+        })
+        this.changed()
+      }, signInTimeout * 1000),
+    )
+  }
+
+  // Fix with agent (`si.launch`)
+
+  /** The Plugin Setup agent there is already (by its purpose). */
+  get pluginSetupAgent(): Agent | undefined {
+    return setupAgentIn(this.agents)
+  }
+
+  /**
+   * Fix with agent once no Plugin Setup agent was found and the roster is
+   * in (PluginCalls.swift's `makePluginSetupAgent`): the agent made, the
+   * roster read again, and its first message sent. Its id once it can be
+   * opened (even when the message could not be sent), and what went wrong
+   * on the way, which the window says as `agentFailedNotice`.
+   */
+  async makePluginSetupAgent(): Promise<{ id?: string; failure?: string }> {
+    const backend = this.backend
+    if (!backend) return { failure: t('Sign in to Simeon first.') }
+    const calls = new PluginCalls(backend)
+    let id: string
+    try {
+      id = await calls.createSetupAgent()
+    } catch (error) {
+      return {
+        failure: plainError(
+          error instanceof Error ? error.message : String(error),
+        ),
+      }
+    }
+    await this.reloadRoster()
+    try {
+      await calls.sendSetupRequest(id)
+    } catch (error) {
+      return {
+        id,
+        failure: plainError(
+          error instanceof Error ? error.message : String(error),
+        ),
+      }
+    }
+    return { id }
+  }
+
+  // MARK: Step 6d's Connectors pages and an app's accounts on Simeon Labs'
+  // server (Add Another Account, rename, remove; the core's
+  // AppAccounts.swift, Store.swift's `loadAppAccounts`,
+  // `anotherAccountURL`). 6b's connector reads the three below; 6d writes
+  // them.
+
+  /** Each app's accounts as Simeon Labs' server last listed them, by the app's toolkit (`appAccounts`). */
+  appAccounts: Record<string, AppAccounts> = {}
+  /**
+   * How many changes (a rename, a Remove) have been sent for each app: an
+   * answer that left before a later change is older than that change's own
+   * and is dropped, so a slow read never brings back an account just
+   * removed or its old name. (The core keeps whichever answer comes last.)
+   */
+  private appAccountChanges = new Map<string, number>()
+
+  /** The toolkit of an app whose accounts Simeon's server keeps: by its server's address, else its catalogue row's (`appsToolkit(serverURL:pluginId:)`). */
+  appsToolkit(
+    serverURL: string | undefined,
+    pluginId: string | undefined,
+  ): string | undefined {
+    return (
+      toolkitOf(serverURL) ??
+      toolkitOf(
+        pluginId === undefined
+          ? undefined
+          : this.catalog.find((app) => app.id === pluginId)?.serverURL,
+      )
+    )
+  }
+
+  /** An app's accounts read again (`GET apps/{toolkit}/accounts`, `loadAppAccounts`); what was shown stays when they can't be read, or when a change was sent since the read began. */
+  async loadAppAccounts(toolkit: string): Promise<void> {
+    const backend = this.backend
+    if (!backend) return
+    const asked = this.appAccountChanges.get(toolkit) ?? 0
+    let answer: JSONValue
+    try {
+      answer = await backend.server(`apps/${toolkit}/accounts`)
+    } catch {
+      return
+    }
+    const read = appAccountsFrom(answer)
+    if (this.backend !== backend || !read) return
+    if ((this.appAccountChanges.get(toolkit) ?? 0) !== asked) return
+    this.appAccounts = { ...this.appAccounts, [toolkit]: read }
+    this.changed()
+  }
+
+  /** The ids of an app's accounts as last read (`appAccounts[toolkit].accounts`). */
+  appAccountIds(toolkit: string): readonly string[] {
+    return this.appAccounts[toolkit]?.accounts.map((one) => one.id) ?? []
+  }
+
+  /** The sign-in page for one more account (`POST apps/{toolkit}/connect` with `another`, `anotherAccountURL`): a web page only, and none once signed out; none when it can't be had (the store's problem says why). */
+  async anotherAccountURL(
+    toolkit: string,
+    name: string,
+  ): Promise<string | undefined> {
+    const backend = this.backend
+    if (!backend) return undefined
+    let why: string | undefined
+    let url: string | undefined
+    try {
+      const answer = await backend.server(`apps/${toolkit}/connect`, 'POST', {
+        another: true,
+      })
+      url = webPage(text(field(answer, 'url')))
+    } catch (error) {
+      why = plainError(error instanceof Error ? error.message : String(error))
+    }
+    if (this.backend !== backend) return undefined
+    if (url !== undefined) return url
+    this.problem = didntConnect(name, why)
+    this.changed()
+    return undefined
+  }
+
+  /** The pencil: the person's own name for one account; an empty one goes back to who it signs in as (`renameAppAccount`). */
+  async renameAppAccount(
+    toolkit: string,
+    account: AppAccount,
+    name: string,
+  ): Promise<void> {
+    const next = name.split(/\s+/).filter(Boolean).join(' ')
+    if (next === (account.name ?? '')) return
+    await this.changeAppAccounts(
+      toolkit,
+      account,
+      'PATCH',
+      { name: next },
+      t("Couldn't rename the account"),
+    )
+  }
+
+  /** One account signed out of the app; the others stay (`removeAppAccount`). */
+  async removeAppAccount(toolkit: string, account: AppAccount): Promise<void> {
+    await this.changeAppAccounts(
+      toolkit,
+      account,
+      'DELETE',
+      undefined,
+      t("Couldn't remove the account"),
+    )
+  }
+
+  /** A change to one account; the server answers with the app's accounts as they now are (kept unless a later change was sent meanwhile), and a refusal is said (`problem`). */
+  private async changeAppAccounts(
+    toolkit: string,
+    account: AppAccount,
+    method: string,
+    body: JSONValue | undefined,
+    failure: string,
+  ): Promise<void> {
+    const backend = this.backend
+    if (!backend) return
+    const change = (this.appAccountChanges.get(toolkit) ?? 0) + 1
+    this.appAccountChanges.set(toolkit, change)
+    try {
+      const answer = await backend.server(
+        `apps/${toolkit}/accounts/${accountPath(account.id)}`,
+        method,
+        body,
+      )
+      const read = appAccountsFrom(answer)
+      if (this.backend !== backend || !read) return
+      if (this.appAccountChanges.get(toolkit) !== change) return
+      this.appAccounts = { ...this.appAccounts, [toolkit]: read }
+    } catch (error) {
+      if (this.backend !== backend) return
+      const why = error instanceof Error ? error.message : String(error)
+      this.problem = t`${failure}: ${why}`
+      // The last change refused: an earlier one's answer may have been dropped for it, so the list is read again.
+      if (this.appAccountChanges.get(toolkit) === change)
+        void this.loadAppAccounts(toolkit)
+    }
+    this.changed()
+  }
+
+  /** 6d's state back to nothing (signed out). */
+  private resetConnectorPages(): void {
+    this.appAccounts = {}
+    this.appAccountChanges = new Map()
+  }
+
+  // MARK: Step 6e's Settings: General (the account, language, appearance,
+  // time zone), the account's page (name, password), Permissions
+  // (Auto-review's rules), Computer, Help & support, Legal; Send Feedback
+  // and Report an Issue (mac/Simeon/SettingsGeneral.swift, SettingsPages.swift,
+  // Feedback.swift; the core's AccountSettings.swift, StoreSettings.swift,
+  // Feedback.swift).
+  //
+  // Nothing of these pages is kept here: each page reads the computer's
+  // values afresh as it shows (`GeneralSettingsModel`), and each sheet holds
+  // its own words. A password typed is read only as it is sent, and never
+  // kept.
+
+  /** 6e's state back to nothing (signed out): it keeps none. */
+  private resetGeneralSettings(): void {}
+
+  /** The zone this browser is in (`TimeZone.current`); the tests give their own. */
+  timeZoneNow: () => string = detectedTimeZone
+
+  /**
+   * The name changed in Settings › Account (StoreSettings.swift's
+   * `changeName`): what the agents call the person, as the first run's name
+   * step saves it (`POST user/name`); the computer told to read it again
+   * (`refreshUserName`; asleep, it reads it as it wakes). None once saved,
+   * the account showing it; else why not, the server's sentence when it
+   * says one ("A name of 1 to 60 characters.").
+   */
+  async changeName(typed: string): Promise<string | undefined> {
+    const backend = this.backend
+    if (!backend) return t('Sign in to Simeon first.')
+    const name = normalizedName(typed)
+    try {
+      await backend.server('user/name', 'POST', { name })
+    } catch (error) {
+      if (error instanceof SimeonAPIError && error.message !== '')
+        return error.message
+      return t("Couldn't change it")
+    }
+    if (this.backend !== backend) return undefined
+    if (this.account) {
+      this.account = { ...this.account, name }
+      this.changed()
+    }
+    await quietly(backend.command('refreshUserName', {}, { wakes: false }))
+    return undefined
+  }
+
+  /** Settings › Account › Password: whether the account has one (`GET account/password`); none when it can't be asked (`hasPassword`). */
+  async hasPassword(): Promise<boolean | undefined> {
+    const backend = this.backend
+    if (!backend) return undefined
+    try {
+      return bool(field(await backend.server('account/password', 'GET'), 'set'))
+    } catch {
+      return undefined
+    }
+  }
+
+  /** Set or change the account's password (`PUT account/password`, `setPassword`): none once it is saved, else the sentence to show ("Use at least 8 characters."). The password is only sent. */
+  async setPassword(password: string): Promise<string | undefined> {
+    const backend = this.backend
+    if (!backend) return t('Sign in to Simeon first.')
+    try {
+      await backend.server('account/password', 'PUT', { password })
+      return undefined
+    } catch (error) {
+      if (error instanceof SimeonAPIError && error.message !== '')
+        return error.message
+      return t("The password wasn't saved. Try again.")
+    }
+  }
+
+  /** The computer's settings, quietly: none when they can't be read (`readHostSettings`). */
+  async readHostSettings(): Promise<JSONValue | undefined> {
+    const backend = this.backend
+    if (!backend) return undefined
+    try {
+      return await backend.command('getHostSettings', {})
+    } catch {
+      return undefined
+    }
+  }
+
+  /** A setting written, quietly: false when refused (`writeHostSettings`). */
+  private async writeHostSettings(update: JSONValue): Promise<boolean> {
+    const backend = this.backend
+    if (!backend) return false
+    try {
+      await backend.command('setHostSettings', update)
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  /** The time zone (`setTimeZone`): the zone the agents and routines use, or none for the one this browser is in (not told when the browser hides it, `isHiddenZone`). */
+  setTimeZone(
+    zone: string | undefined,
+    detected: string = this.timeZoneNow(),
+  ): Promise<boolean> {
+    return this.writeHostSettings(
+      isHiddenZone(detected)
+        ? { userTimeZoneOverride: zone ?? '' }
+        : { userTimeZone: detected, userTimeZoneOverride: zone ?? '' },
+    )
+  }
+
+  /** Auto-review (`setAutoReview`): its switch and its two lists of rules, as the host keeps them. */
+  setAutoReview(rules: AutoReviewInstructions): Promise<boolean> {
+    return this.writeHostSettings({
+      autoReviewInstructions: autoReviewJSON(
+        normalizedRules(autoReviewJSON(rules)),
+      ),
+    })
+  }
+
+  /**
+   * The zone this browser is in, told to the computer each time the stream
+   * comes (back), beside the language (MacServices.swift's `connected`),
+   * without waking a computer that rests. The person's own pick stays the
+   * computer's: the host keeps it apart (`userTimeZoneOverride`) and goes
+   * by it while there is one. A browser that hides its zone (UTC,
+   * `isHiddenZone`) tells nothing: the agents keep the zone the person's
+   * other devices told.
+   */
+  private async tellTimeZone(backend: AgentBackend): Promise<void> {
+    const zone = this.timeZoneNow()
+    if (isHiddenZone(zone)) return
+    await quietly(
+      backend.command(
+        'setHostSettings',
+        { userTimeZone: zone },
+        { wakes: false },
+      ),
+    )
+  }
+
+  /** Send Feedback and Report an Issue, e-mailed to Simeon Labs (`sendFeedback`); the server's sentence is thrown when it refuses. */
+  async sendFeedback(
+    report: FeedbackReport,
+    facts: DeviceFacts,
+    diagnostics: string | undefined,
+  ): Promise<void> {
+    const backend = this.backend
+    if (!backend) throw new SimeonAPIError(t('Sign in to Simeon first.'), 401)
+    await backend.server(
+      'feedback',
+      'POST',
+      feedbackBody(report, facts, diagnostics),
+    )
+  }
+
+  /** What the app knows of its own state, a line each, for a report's diagnostics (`diagnosticsState`). */
+  get diagnosticsState(): string[] {
+    const agents = this.agents.filter((agent) => !agent.isGroup).length
+    const groups = this.agents.filter((agent) => agent.isGroup).length
+    const lines = [
+      `Signed in: ${this.account === undefined ? 'no' : 'yes'}`,
+      `Agents: ${agents}, groups: ${groups}`,
+      `Computer: ${this.latestComputerStatus?.state ?? 'unknown'}, stream ${this.isLive ? 'connected' : 'not connected'}${this.isAsleep ? ', asleep' : ''}`,
+      `Open chat: ${this.openChat ?? 'none'}`,
+    ]
+    if (this.problem) lines.push(`Last problem shown: ${this.problem}`)
+    return lines
+  }
+
+  // MARK: Step 6f's usage and billing: the usage (`UsageLoad`), Usage &
+  // Billing, the credits line over the message field, Wallet, the
+  // Credentials Store, the account menu and its Weekly usage, About
+  // (mac/Simeon/SettingsUsage.swift, SettingsPages.swift's Wallet,
+  // SettingsCredentials.swift, Account.swift; the core's AccountSettings.swift
+  // usage, StoreSettings.swift, Upgrade.swift, Trays.swift, AccountMenu.swift,
+  // CredentialsStore.swift).
+
+  /**
+   * The account's usage (`usage`, StoreSettings.swift): read once signed
+   * in, as a chat opens and after each of its turns, when the account menu
+   * opens and on Usage & Billing, unless it was read in the last 30 s; a
+   * failure keeps the last summary on screen.
+   */
+  usage: UsageLoad = emptyUsage
+  /** When the usage was last read, in ms (`usageReadAt`): the account menu counts its reset from it. */
+  usageReadAt?: number
+  /** The computer's notices (`trayList`, Trays.swift): the credits' line reads the open agent's. */
+  trayList = new TrayList()
+  private usageReading?: Promise<void>
+  /** Each read of the usage numbered: only the latest one's answer lands. */
+  private usageSeq = 0
+  /** A billing page was opened in another tab and this one hasn't come back to the front since. */
+  private billingAway = false
+
+  /**
+   * Usage & Billing in Settings' list (SettingsWindow.swift's `pages`):
+   * while the usage is not read yet, and while it is shown (not for an
+   * enterprise team).
+   */
+  get usageListed(): boolean {
+    return shownSummary(this.usage) === undefined || showsSection(this.usage)
+  }
+
+  /** ⌘K and "/" offer Usage & Billing once the usage is read and shown (`usage.showsSection`). */
+  get usageOffered(): boolean {
+    return showsSection(this.usage)
+  }
+
+  /** The usage read again unless it was read under 30 s ago (`loadUsage`); a read on its way is waited for, not doubled. */
+  loadUsage(now: number = Date.now()): Promise<void> {
+    if (this.usage.kind === 'loading')
+      return this.usageReading ?? Promise.resolve()
+    if (
+      this.usage.kind === 'ready' &&
+      this.usageReadAt !== undefined &&
+      now - this.usageReadAt < usageFreshMs
+    )
+      return Promise.resolve()
+    return this.refreshUsage()
+  }
+
+  /** Retry, after Cancel Trial and after a billing page (`refreshUsage`): the server's quota summarised as the Electron app summarised it. */
+  refreshUsage(): Promise<void> {
+    const reading = this.readUsage()
+    this.usageReading = reading
+    return reading
+  }
+
+  private async readUsage(): Promise<void> {
+    const backend = this.backend
+    if (!backend) {
+      this.usage = emptyUsage
+      this.changed()
+      return
+    }
+    this.usageSeq += 1
+    const seq = this.usageSeq
+    const previous = shownSummary(this.usage)
+    this.usage = { kind: 'loading', previous }
+    this.changed()
+    // An answer lands only while it is the latest read's: an older one landing late (a turn's read under Cancel Trial's) is dropped.
+    const latest = () => this.backend === backend && seq === this.usageSeq
+    try {
+      const quota = await backend.server('user/quota')
+      if (!latest()) return
+      this.usage = { kind: 'ready', summary: usageSummary(quota) }
+      this.usageReadAt = Date.now()
+    } catch {
+      if (!latest()) return
+      this.usage = { kind: 'failed', previous }
+    }
+    this.changed()
+  }
+
+  /** A billing page opened in another tab (Usage & Billing's rows): when this tab comes back to the front, they are read again. */
+  billingTabOpened(): void {
+    this.billingAway = true
+  }
+
+  /**
+   * This tab back in front (the window's `focus`, the page shown again):
+   * after a billing page, the access, the plan the access notice words
+   * itself from (5c's `plan`) and the usage are read again, once, as the
+   * Mac reads them when its sheet closes; Settings may have closed meanwhile.
+   */
+  async billingTabBack(): Promise<void> {
+    if (!this.billingAway) return
+    this.billingAway = false
+    await this.refreshAccess()
+    await Promise.all([this.refreshUsage(), this.refreshPlan()])
+  }
+
+  /**
+   * Cancel Trial (`cancelTrial`, Connect's `CancelSandTrial`): none once it
+   * is done and the access and the usage read again (the trial's end
+   * changes what this account may do), else what to say in the question.
+   */
+  async cancelTrial(): Promise<string | undefined> {
+    const backend = this.backend
+    if (!backend?.dashboard) return t('Sign in to Simeon to continue')
+    try {
+      await backend.dashboard('CancelSandTrial', {})
+    } catch (error) {
+      if (
+        error instanceof SimeonAPIError &&
+        error.status >= 400 &&
+        error.status < 500 &&
+        error.message !== ''
+      )
+        return error.message
+      return t('Couldn’t cancel the trial. Try again.')
+    }
+    if (this.backend !== backend) return undefined
+    await this.refreshAccess()
+    // The usage, and the plan the access notice words itself from (5c's `plan`).
+    await Promise.all([this.refreshUsage(), this.refreshPlan()])
+    return undefined
+  }
+
+  /** One of the computer's `tray` events (snapshot, pushed, dismissed, cleared), applied as it comes. */
+  private takeTray(event: JSONValue): void {
+    const before = this.trayList.trays
+    this.trayList.take(event)
+    if (this.trayList.trays !== before) this.changed()
+  }
+
+  /**
+   * The computer's notices read (`loadTrays`, `getTrays`), what came
+   * meanwhile applied over the answer. A resting computer is not woken: it
+   * is read again when the stream comes back.
+   */
+  async loadTrays(): Promise<void> {
+    const backend = this.backend
+    if (!backend) return
+    const seq = this.trayList.beginRead()
+    let answer: JSONValue | undefined
+    try {
+      answer = await backend.command('getTrays', {}, { wakes: false })
+    } catch {
+      answer = undefined
+    }
+    if (this.backend !== backend) return
+    const before = this.trayList.trays
+    this.trayList.finishRead(seq, answer)
+    if (this.trayList.trays !== before) this.changed()
+  }
+
+  /** Whether one of the agent's notices carries the server's sentence for spent credits (the credits' line's `outOfCredits`). */
+  outOfCredits(agentId: string): boolean {
+    return this.trayList.shown(agentId).some(isOutOfCredits)
+  }
+
+  /**
+   * The Credentials Store's calls to Simeon Labs' server (`credentials`,
+   * `credentials/{id}`; `CredentialsStoreModel(store:)`): the page's model
+   * says each to the server, and keeps nothing of a password.
+   */
+  credentialsCall = (
+    path: string,
+    method?: string,
+    body?: JSONValue,
+  ): Promise<JSONValue> => {
+    const backend = this.backend
+    if (!backend)
+      return Promise.reject(
+        new SimeonAPIError(t('Sign in to Simeon first.'), 401),
+      )
+    return backend.server(path, method, body)
+  }
+
+  /** 6f's state back to nothing (signed out). */
+  private resetUsageAndBilling(): void {
+    this.usage = emptyUsage
+    this.usageReadAt = undefined
+    this.usageReading = undefined
+    this.usageSeq += 1
+    this.billingAway = false
+    this.trayList = new TrayList()
   }
 
   // MARK: The composer's lists

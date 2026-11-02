@@ -1,0 +1,47 @@
+/*
+ * Settings' Computer (SettingsComputer.tsx) at the Mac's measures
+ * (mac/Simeon/SettingsPages.swift's `AgentsComputerGroup`).
+ */
+
+/* How it is now: 13, grey, one line; the spinner or the dot 6 before the words. */
+.computer-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 320px;
+  color: var(--ink-secondary);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.computer-status-words {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.computer-status.unreachable {
+  color: var(--danger);
+}
+
+/* Connected: the working green, 8 round. */
+.computer-status-dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--working);
+}
+
+/* "A new version is available" in the action blue; "Up to date" in the green with its tick, 4 apart. */
+.computer-version-new {
+  color: var(--settings-action);
+  font-size: 13px;
+}
+
+.computer-up-to-date {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--settings-green);
+  font-size: 13px;
+}

@@ -94,6 +94,22 @@
   --chip-wash-hover: 0.17;
 }
 
+/* A theme chosen in Settings (src/window/theme.ts): the browser's own parts (fields, scroll bars) follow it too. */
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+/* The old look fading into the new as a theme is chosen: 0.3 s, easing out (`MacTheme`'s fade). */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.3s;
+  animation-timing-function: ease-out;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --ink: #fcfcfc;
@@ -251,12 +267,11 @@ button {
   padding-right: 12px;
 }
 
-/* The foot (`SidebarFoot`): padded 2 over, 12 a side and under, 8 apart; the computer's Update at the right. Nothing in it, nothing drawn (the account and Connect apps come with step 6). */
+/* The foot (`SidebarFoot`): padded 2 over, 12 a side and under, 8 apart; the account's disc and Connect apps, the computer's Update at the right. */
 .sidebar-foot {
   display: flex;
   flex: none;
   align-items: center;
-  justify-content: flex-end;
   gap: 8px;
   min-height: 32px;
   padding: 2px 12px 12px;
@@ -264,6 +279,10 @@ button {
 
 .sidebar-foot:empty {
   display: none;
+}
+
+.sidebar-foot-spacer {
+  flex: 1;
 }
 
 /* The rail's foot: the same discs stacked, 10 apart, 8 from the bottom. */

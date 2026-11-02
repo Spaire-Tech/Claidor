@@ -14,10 +14,9 @@
 // unpins it; a section goes above or below another. Folded, the sidebar is
 // its rail: the pictures alone.
 //
-// The foot has the computer's Update at its right (ComputerStates.tsx, step
-// 5c). Still to come, each with its screen (docs/web-app/PROGRESS.md): the
-// account and Connect apps in the foot, and the account in the rail's
-// discs (step 6).
+// The foot has the account's disc and Connect apps (step 6), the computer's
+// Update at its right (ComputerStates.tsx, step 5c); the rail's foot has
+// search, New Agent and the account's disc.
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { listTime } from '../core/listTime'
@@ -45,6 +44,8 @@ import {
 } from '../core/sidebarSections'
 import type { AppStore } from '../core/store'
 import { t } from '../l10n'
+import type { WebSession } from '../session'
+import { AccountDisc } from './AccountMenu'
 import { AgentMark } from './AgentMark'
 import { ComputerUpdatePill, StateSpinner } from './ComputerStates'
 import {
@@ -472,6 +473,7 @@ export function Sidebar({
   onOpen,
   rail = false,
   width,
+  session,
 }: {
   store: AppStore
   open?: string
@@ -479,6 +481,8 @@ export function Sidebar({
   /** Folded to its rail (88): the pictures alone. */
   rail?: boolean
   width?: number
+  /** The sign-in, for the account's disc and its menu (step 6); none in a test of the list alone. */
+  session?: WebSession
 }) {
   useWatched(store)
   const model = useWindowModel()
@@ -1233,15 +1237,19 @@ export function Sidebar({
           </>
         )}
       </div>
-      {/* The rail's foot: search and New Agent stacked, 10 apart, 8 from the bottom (`simeon-rail-discs`); the account comes with Settings (step 6). */}
+      {/* The rail's foot: search, New Agent and the account stacked, 10 apart, 8 from the bottom (`simeon-rail-discs`). */}
       {rail && (
         <div className="rail-foot">
           <WindowDiscs />
+          {session && <AccountDisc store={store} session={session} />}
         </div>
       )}
-      {/* The foot (`SidebarFoot`): the computer's Update at the right (step 5c); the account and Connect apps come with step 6. */}
+      {/* The foot (`SidebarFoot`): the account's disc and Connect apps beside it, 8 apart; the computer's Update at the right (step 5c). */}
       {!rail && (
         <div className="sidebar-foot">
+          {session && <AccountDisc store={store} session={session} />}
+          {session && <ConnectApps />}
+          <span className="sidebar-foot-spacer" />
           <ComputerUpdatePill store={store} />
         </div>
       )}
@@ -1285,6 +1293,50 @@ export function Sidebar({
  * (`SearchDisc`, `NewChatDisc`). New Agent while group chats are off, as on
  * the Mac and the iPhone.
  */
+const connectAppsTiles = [
+  new URL(
+    '../../../../../mac/Simeon/Assets.xcassets/Gmail.imageset/Gmail@2x.png',
+    import.meta.url,
+  ).href,
+  new URL(
+    '../../../../../mac/Simeon/Assets.xcassets/GoogleCalendar.imageset/GoogleCalendar@2x.png',
+    import.meta.url,
+  ).href,
+  new URL(
+    '../../../../../mac/Simeon/Assets.xcassets/GoogleDrive.imageset/GoogleDrive@2x.png',
+    import.meta.url,
+  ).href,
+]
+
+/**
+ * Connect apps (`sand-agents-sidebar__plugins`): 15, medium, the window's
+ * blue, then Gmail, Calendar and Drive on three white tiles, the first
+ * turned 7° left, the last 7° right. It opens Connectors on Marketplace.
+ */
+function ConnectApps() {
+  const model = useWindowModel()
+  return (
+    <button
+      type="button"
+      className="connect-apps"
+      onClick={() => model.openConnectors()}
+    >
+      {t('Connect apps')}
+      <span className="connect-apps-tiles" aria-hidden="true">
+        {connectAppsTiles.map((tile, index) => (
+          <span
+            key={tile}
+            className="connect-apps-tile"
+            style={{ rotate: `${(index - 1) * 7}deg` }}
+          >
+            <img src={tile} alt="" draggable={false} />
+          </span>
+        ))}
+      </span>
+    </button>
+  )
+}
+
 function WindowDiscs() {
   const model = useWindowModel()
   return (

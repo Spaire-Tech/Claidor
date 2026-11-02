@@ -30,10 +30,12 @@
 // Over it all, 8 over the field and as wide, the access notice
 // (ComputerStates.tsx, step 5c): this account can't send, and why; Send
 // waits under it, as it waits while the computer is rebuilt
-// (`isSendingPaused`). Still to come, with its step (docs/web-app/PROGRESS.md):
-// the credits line, which opens Usage & Billing (step 6).
+// (`isSendingPaused`). Else, in its place, the credits' line
+// (CreditsLine.tsx, step 6f): the credits spent, or near the limit; it
+// opens Usage & Billing.
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { accessNotice } from '../core/access'
 import { maxStaged } from '../core/attachmentLimits'
 import {
   type ChipNode,
@@ -62,6 +64,7 @@ import {
   useComposerPicks,
 } from './ComposerPicks'
 import { AccessNotice } from './ComputerStates'
+import { CreditsLine, useCreditsReads } from './CreditsLine'
 import {
   Dictation,
   MicButton,
@@ -111,6 +114,8 @@ export function Composer({
 }) {
   useWatched(store)
   const model = useWindowModel()
+  // The usage and the computer's notices, for the credits' line (6f).
+  useCreditsReads(store, agentId)
   const scope = draftScope(agentId, threadRoot)
   const [words, setWords] = useState(() => store.drafts[scope] ?? '')
   const [chips, setChips] = useState<ComposerChip[]>(() =>
@@ -368,8 +373,11 @@ export function Composer({
 
   return (
     <div className="composer" ref={dock}>
-      {/* Whether this account may use Simeon (`Qvn`, step 5c): over everything, 8 over it. */}
+      {/* Whether this account may use Simeon (`Qvn`, step 5c), else the credits' line (6f): one at a time, over everything, 8 over it. */}
       <AccessNotice store={store} />
+      {accessNotice(store.access) === undefined && (
+        <CreditsLine store={store} agentId={agentId} />
+      )}
       {/* The lines: a send refused (six seconds) in red, then the files' (five seconds) at 40%. */}
       {notice && (
         <div className="composer-line error" role="status">

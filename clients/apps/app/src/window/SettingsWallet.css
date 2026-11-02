@@ -1,0 +1,87 @@
+/*
+ * Wallet (SettingsWallet.tsx, mac/Simeon/SettingsPages.swift's
+ * `SettingsWalletPage`, `WalletLine`): its line and its group 22 apart; a
+ * wallet's row a step darker under the pointer.
+ */
+
+.wallet-page {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+/* What it is for: the row's words (13), in the ink. */
+.wallet-lead {
+  margin: 0;
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.wallet-line {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 56px;
+  padding: 10px 18px;
+  box-sizing: border-box;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.wallet-line:hover {
+  background: var(--grouped-row-hover);
+}
+
+.wallet-line:focus-visible {
+  outline: 2px solid var(--unread);
+  outline-offset: -2px;
+}
+
+.wallet-line.divided::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 18px;
+  right: 18px;
+  height: 0.5px;
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+.wallet-name {
+  overflow: hidden;
+  font-size: 13px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.wallet-spacer {
+  flex: 1;
+  min-width: 8px;
+}
+
+/* Connected: the tick (10, medium) and the word, 4 apart, in green. */
+.wallet-connected {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--settings-green);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.wallet-chevron {
+  display: grid;
+  color: var(--ink-tertiary);
+}
+
+.wallet-add {
+  color: var(--settings-action);
+  font-size: 13px;
+  white-space: nowrap;
+}

@@ -2,9 +2,8 @@
 // GitHub for a routine, the cloud agent's card, and a new teammate joined.
 // Read by `src/core/connectCards.ts`.
 //
-// Left for their steps, so no button here does nothing: an app's Connect
-// (the consent, then the app added and its sign-in, step 6, "connecting"),
-// and the joined card's View Profile (the agent's pane).
+// An app's Connect (step 6b): the consent, then the app added and its
+// sign-in in one go, through the window's connector (connector.ts).
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { CardKind } from '../core/chat'
@@ -35,13 +34,17 @@ import {
   type JoinedCard,
   type ListenerCard,
 } from '../core/connectCards'
+import { connectWord } from '../core/connecting'
 import { pictureURL } from '../core/faces'
 import type { AppStore } from '../core/store'
 import { t } from '../l10n'
 import { AgentPicture } from './AgentMark'
 import { CardShell, type CardProps } from './Cards'
 import './ConnectCards.css'
+import { openBlankTab } from './blankTab'
 import { classes } from './classes'
+import { useConnector, useConnectorWatched } from './connector'
+import { useDarkScheme } from './theme'
 import { useWindowModel } from './windowModel'
 
 type ConnectKind = Extract<
@@ -123,8 +126,11 @@ function ConnectorCardsView({
 /**
  * One app: its icon (40), its name (13 on 18, 500), the agent's reason or
  * else what the app does (60%), how many tools it brings once connected
- * (12, 40%); at the right "Connected" in green, or "Coming soon" for an app
- * that can't be connected yet. Connect comes with step 6.
+ * (12, 40%); at the right "Connected" in green, "Coming soon" for an app
+ * that can't be connected yet, or Connect (`ConnectorCard`): the consent,
+ * then the app added and its sign-in in a tab (step 6b). A spinner in it
+ * while its sign-in is asked for and open; every other Connect waits
+ * meanwhile, one sign-in at a time.
  */
 function ConnectorCardView({
   name,
@@ -142,6 +148,8 @@ function ConnectorCardView({
   const connected = markedConnected || store.isConnected(name)
   const tools = store.connectedToolCount(name)
   const line = reason ?? app?.summary ?? ''
+  const connector = useConnector()
+  useConnectorWatched(connector)
   return (
     <CardShell>
       <div className="connector-row">
@@ -161,12 +169,28 @@ function ConnectorCardView({
         </div>
         {connected ? (
           <span className="connector-connected">{connectedWord()}</span>
+        ) : store.isComingSoon(name) ? (
+          <span className="connector-soon">
+            <span aria-hidden="true">{comingSoonWord()}</span>
+            <span className="connect-unseen">{t`${title} is coming soon`}</span>
+          </span>
         ) : (
-          store.isComingSoon(name) && (
-            <span className="connector-soon">
-              <span aria-hidden="true">{comingSoonWord()}</span>
-              <span className="connect-unseen">{t`${title} is coming soon`}</span>
-            </span>
+          connector && (
+            // The consent first, then the app's sign-in in a tab (`MacConnector`).
+            <button
+              type="button"
+              className="connector-connect"
+              disabled={connector.connecting !== undefined}
+              aria-busy={connector.connecting === name}
+              aria-label={t`Connect ${name}`}
+              onClick={() => connector.connect(name)}
+            >
+              {connector.connecting === name ? (
+                <span className="connect-spinner" aria-hidden="true" />
+              ) : (
+                connectWord()
+              )}
+            </button>
           )
         )}
       </div>
@@ -304,8 +328,7 @@ function ListenerConnectCardView({
   const connect = async () => {
     setOpening(true)
     // Opened at once, before the computer answers, so the browser lets it open; sent to the page once it is known.
-    const tab = window.open('', '_blank')
-    if (tab) tab.opener = null
+    const tab = openBlankTab()
     const page = webPage(await store.listenerConnectURL(platform))
     if (!page) tab?.close()
     else if (!tab) {
@@ -320,15 +343,11 @@ function ListenerConnectCardView({
   }
 
   const logo = listenerLogos[platform]
+  const dark = useDarkScheme()
   return (
     <div className="listener-card">
       <span className="listener-logo" aria-hidden="true">
-        <picture>
-          {logo.dark && (
-            <source srcSet={logo.dark} media="(prefers-color-scheme: dark)" />
-          )}
-          <img src={logo.light} alt="" />
-        </picture>
+        <img src={dark && logo.dark ? logo.dark : logo.light} alt="" />
       </span>
       <div className="listener-words">
         <div className="listener-title">{t`Connect ${name}`}</div>

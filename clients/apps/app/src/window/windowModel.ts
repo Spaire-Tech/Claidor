@@ -4,8 +4,10 @@
 // `NewChatState.newAgent`): the agent asked for, the agent's pane (open or
 // closed, its width and its page, kept in this browser under the Mac's
 // names), and what stands in the chat's place or over the window (the org
-// chart, search, New Agent, the hidden agents). One model for the window,
-// shared through `WindowContext`; the screens read it with `useWindow()`.
+// chart, search, New Agent, the hidden agents), and the window's one overlay
+// slot (Settings or Connectors, step 6), About and the feedback sheets. One
+// model for the window, shared through `WindowContext`; the screens read it
+// with `useWindow()`.
 
 import { createContext, useContext } from 'react'
 import {
@@ -15,6 +17,7 @@ import {
 } from '../core/cloudComputer'
 import type { OpenFlight } from '../core/flightCards'
 import { chatMinimum } from './sidebarLayout'
+import { setTheme } from './theme'
 
 export type { OpenFlight }
 
@@ -74,6 +77,54 @@ export type ChatCover =
   | { kind: 'call'; agentId: string; lineId: string }
   | { kind: 'exchange'; agentId: string; peerId: string }
 
+/**
+ * Settings' pages (SettingsWindow.swift's `SettingsState.Page`), in the
+ * Mac's order; the account sits under General (its first row), with Back.
+ * Updates is the Mac's alone (Sparkle): a web page is always the latest.
+ */
+export type SettingsPage =
+  | 'general'
+  | 'usage'
+  | 'wallet'
+  | 'credentials'
+  | 'permissions'
+  | 'computer'
+  | 'help'
+  | 'legal'
+  | 'account'
+
+/** What Connectors is asked to show as it opens (PluginsWindow.swift's `PluginsState.Opening`). */
+export type ConnectorsOpening =
+  | { kind: 'marketplace' }
+  | { kind: 'plugin'; id: string }
+  | { kind: 'server'; id: string }
+  | { kind: 'query'; text: string }
+  | { kind: 'skill'; id: string }
+
+/**
+ * The window's one overlay slot (MainWindow.swift's `SettingsLayer` and
+ * `PluginsLayer`): Settings or Connectors over the whole window, never
+ * both. `opening` counts the openings, so each one is drawn afresh at its
+ * top; `asks` counts Connectors' asks, so an ask while it is open is new.
+ */
+export type OverlaySlot =
+  | {
+      kind: 'settings'
+      page: SettingsPage
+      /** The page the opening asked for: asking for it again changes nothing (⌘, over Settings). */
+      asked: SettingsPage
+      opening: number
+    }
+  | {
+      kind: 'connectors'
+      ask: ConnectorsOpening
+      asks: number
+      opening: number
+    }
+
+/** Send Feedback or Report an Issue (mac/Simeon/Feedback.swift's `FeedbackSheets`). */
+export type FeedbackKind = 'feedback' | 'issue'
+
 const openKey = 'simeon.pane.open'
 const widthKey = 'simeon.pane.width'
 const tookKey = 'simeon.pane.tookSidebar'
@@ -125,6 +176,13 @@ export const windowActionIds: ReadonlySet<string> = new Set([
   // Update Simeon's Computer: ⌘K's id, and "/"'s (step 5c).
   'update:computer',
   'computer-update',
+  // Settings' pages, Connectors and the themes (step 6).
+  'settings:general',
+  'settings:usage',
+  'overlay:plugins',
+  'theme:system',
+  'theme:light',
+  'theme:dark',
 ])
 
 export class WindowModel {
@@ -267,9 +325,9 @@ export class WindowModel {
    * One of the app's actions, from "/" (Composer.swift's `run`) or ⌘K:
    * the org chart in the chat's place, the pane on Channels, Profile
    * (Chat Settings) or a group's members, the hidden agents, Update
-   * Simeon's Computer's question (step 5c). The Settings pages, Connectors
-   * and the themes come with their screens (step 6). Whether it was one
-   * the window runs.
+   * Simeon's Computer's question (step 5c); Settings on General or Usage &
+   * Billing, Connectors, a theme (step 6). Whether it was one the window
+   * runs.
    */
   runAction(id: string): boolean {
     switch (id) {
@@ -293,6 +351,20 @@ export class WindowModel {
       case 'computer-update':
         // Its question: "Update Simeon's Computer?", or "An agent is working" (step 5c).
         this.askComputer({ kind: 'update' })
+        return true
+      case 'settings:general':
+        this.openSettings('general')
+        return true
+      case 'settings:usage':
+        this.openSettings('usage')
+        return true
+      case 'overlay:plugins':
+        this.openConnectors()
+        return true
+      case 'theme:system':
+      case 'theme:light':
+      case 'theme:dark':
+        setTheme(id.slice('theme:'.length) as 'system' | 'light' | 'dark')
         return true
       default:
         return false
@@ -613,6 +685,121 @@ export class WindowModel {
     this.changed()
   }
 
+  // MARK: Step 6's overlay slot, About and the feedback sheets
+
+  /** Settings or Connectors over the window, or neither (`settings.isOpen`, `plugins.isOpen`). */
+  overlay?: OverlaySlot
+  /** About over everything (Account.swift's `AccountState.aboutOpen`). */
+  about = false
+  /** Send Feedback's or Report an Issue's sheet (`FeedbackSheets.showing`). */
+  feedback?: FeedbackKind
+  private openings = 0
+
+  /** Settings or Connectors is over the window: the window's keys and gestures under it wait (`WindowOverlay.showing`). */
+  get overlayShowing(): boolean {
+    return this.overlay !== undefined || this.about
+  }
+
+  /**
+   * Settings or Connectors opening (MainWindow.swift's `overlayOpened`):
+   * it takes the computer's place, and what floats over the pane (the
+   * avatar editor) closes, as a click outside it would.
+   */
+  private overlayOpened(): void {
+    this.computer = undefined
+    this.avatarEditorFor = undefined
+  }
+
+  /**
+   * Settings on `page` (`SettingsState.open`): Connectors gives way (one
+   * overlay at a time); each opening starts afresh at the page's top; the
+   * page the opening asked for, asked again, changes nothing (⌘, over
+   * Settings).
+   */
+  openSettings(page: SettingsPage = 'general'): void {
+    const now = this.overlay
+    if (now?.kind === 'settings' && now.asked === page) return
+    if (now?.kind !== 'settings') {
+      this.openings += 1
+      this.overlayOpened()
+    }
+    this.overlay = {
+      kind: 'settings',
+      page,
+      asked: page,
+      opening: now?.kind === 'settings' ? now.opening : this.openings,
+    }
+    this.changed()
+  }
+
+  /** Another of Settings' pages, from its list or Back (`settings.page = page`): the opening's ask stays. */
+  showSettingsPage(page: SettingsPage): void {
+    const now = this.overlay
+    if (now?.kind !== 'settings' || now.page === page) return
+    this.overlay = { ...now, page }
+    this.changed()
+  }
+
+  closeSettings(): void {
+    if (this.overlay?.kind !== 'settings') return
+    this.overlay = undefined
+    this.changed()
+  }
+
+  /**
+   * Connectors (`PluginsState.open`, `SettingsState.openConnectors`):
+   * Settings gives way; on Marketplace, or on what is asked (an app's page
+   * from Wallet or a link). A fresh opening starts afresh; an ask while it
+   * is open is followed.
+   */
+  openConnectors(ask: ConnectorsOpening = { kind: 'marketplace' }): void {
+    const now = this.overlay
+    if (now?.kind !== 'connectors') {
+      this.openings += 1
+      this.overlayOpened()
+    }
+    this.overlay = {
+      kind: 'connectors',
+      ask,
+      asks: now?.kind === 'connectors' ? now.asks + 1 : 1,
+      opening: now?.kind === 'connectors' ? now.opening : this.openings,
+    }
+    this.changed()
+  }
+
+  closeConnectors(): void {
+    if (this.overlay?.kind !== 'connectors') return
+    this.overlay = undefined
+    this.changed()
+  }
+
+  /** About (the account menu's About): over everything; only what floats over the pane closes for it. */
+  openAbout(): void {
+    if (this.about) return
+    this.about = true
+    this.avatarEditorFor = undefined
+    this.changed()
+  }
+
+  closeAbout(): void {
+    if (!this.about) return
+    this.about = false
+    this.changed()
+  }
+
+  /** Send Feedback or Report an Issue (Help & support's rows, the account menu's Report an issue). */
+  openFeedback(kind: FeedbackKind): void {
+    if (this.feedback === kind) return
+    this.feedback = kind
+    this.changed()
+  }
+
+  closeFeedback(): void {
+    if (this.feedback === undefined) return
+    this.feedback = undefined
+    this.changed()
+  }
+
   /** Signed out: the chart and what floats over the window go with it; the pane stays as it was, as on the Mac. */
   leftWindow(): void {
     this.orgChart = false
@@ -625,6 +812,10 @@ export class WindowModel {
     this.computer = undefined
     this.computerAsk = undefined
     this.chatCover = undefined
+    // Settings and Connectors go with the window (MainWindow.swift's `leftWindow`), About and the sheets too.
+    this.overlay = undefined
+    this.about = false
+    this.feedback = undefined
     this.changed()
   }
 }

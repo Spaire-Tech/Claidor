@@ -19,7 +19,7 @@ file and the code disagree, the code is right and this file is fixed.
 | 3. The cards | Done, 2 November 2026: 3a (the card's frame, the question, the email and Slack drafts, the auto-review approval), 3b (the secret, the computer handed over, the in-chat form, 1Password's fill and connect cards), 3c (apps to connect, Slack or GitHub for a routine, the cloud agent, a new teammate), 3d (the flights, a flight's details, the travellers' form, the checkout, the products). What needs the computer's screen comes with it in step 5, an app's Connect in step 6, a teammate's View Profile in step 4. Next: step 4 |
 | 4. The agent's pane, search, new chat, the org chart, starter packs | Done, 2 November 2026: 4a (the agent's pane: its frame, Profile and Notifications, a flight's details taken in; the window's model; Search and New Agent in the sidebar), 4b (the avatar editor: faces and voices, a picture generated or of one's own; New Agent), 4c (an agent's routines and a routine's editor), 4d (search, ⌘K; an agent's channels; a group's members), 4e (the org chart, starter packs from `?pack=`). An agent's own Computer tab and the computer's screen come with step 5 (done); in search and "/", Settings' pages, Connectors and the themes come with step 6, Update Simeon's Computer with step 5 (done); the sidebar's account and Connect apps with step 6. Next: step 5, the computer and calls |
 | 5. The computer and calls | Done, 2 November 2026: 5a (the frame: the window model's and the store's places, noVNC and ElevenLabs' kit, the app window's policy), 5b (the pane's Computer tab, the full computer view with its keys, paste and helpers, the agent's pointer, step 3's buttons that open the computer), 5c (the rebuild, recovery and move, the computer's dialogs and pills, low disk, the access notice, the sidebar's card and Update pill, Update Simeon's Computer in ⌘K and "/"), 5d (calls with an agent: the ring, the banner, the call's line and its lines over the chat; and two agents' exchange over the chat, missed in step 2). Next: step 6, Connectors and Settings |
-| 6. Connectors and Settings | Not started |
+| 6. Connectors and Settings | Done, 2 November 2026: 6a (the frame: the window's overlay slot, the theme chosen, Settings' shell and parts, the sidebar's account and Connect apps), 6b (connecting an app: the consent, the sign-in in a tab, the card's Connect, Add Another Account, the new app's return page), 6c (Connectors' core, model and list), 6d (Connectors' pages: an app's, a server's, setup, a skill, accounts and tools; the 232 written pages as data), 6e (Settings' General, Account, Permissions, Computer, Help & support and Legal; Send Feedback and Report an Issue), 6f (Usage & Billing, Wallet, the Credentials Store, the credits' line, the account menu and About). Updates and the Mac's "Your Computer" are left out (the Mac's alone). Next: step 7, Windows |
 | 7. Windows | Not started |
 
 ## Decisions
@@ -46,7 +46,7 @@ file and the code disagree, the code is right and this file is fixed.
 | 1 November 2026 | A pick from "@", "/" or "#" sits in the field as its own words ("@Nora", "#12") on the Mac's grey, kept track of as the words change (the iPhone's way), not as the Mac's picture of a chip with its face or logo: a browser's text field holds only words, and an editor of our own for it would be a large piece for a small gain. It goes with the message in the window's document, as on the Mac; Delete takes it whole; undo and redo bring it back. The agents picked lately from "@" are kept in the browser (`simeon.mentionRecents`): which rows, never words | The session |
 | 1 November 2026 | Dictation records in the kind the browser can (WebM with Opus in Chrome, Edge and Firefox; MP4 in Safari), not the Mac's AAC: the transcription takes either. The browser asks for the microphone itself, the first time | The session |
 | 1 November 2026 | Dictation's refused-microphone line stays the Mac's sentence ("…in your system settings."), in a browser and in the Windows app too | The founder: "keep the mac sentence" |
-| 1 November 2026 | "/" offers the agent's skills now; each of the app's actions ("Org Chart", "Chat Settings", "Settings: General", the themes…) joins it with the screen it opens (steps 4 to 6), so the list never offers what does nothing | The session |
+| 1 November 2026 | "/" offers the agent's skills now; each of the app's actions ("Org Chart", "Chat Settings", "Settings: General", the themes…) joins it with the screen it opens (steps 4 to 6), so the list never offers what does nothing (Step 6: done; see below.) | The session |
 | 1 November 2026 | Excel workbooks (.xlsx) are read by a small reader of our own (`src/core/xlsx.ts`): the browser unzips them itself and the reader takes the first sheet, each value written as its number format says. No library: SheetJS's npm copy has known holes, and the other readers are either days old with unfamiliar dependencies or built for servers. The old binary .xls is not read; it says "Preview not available" with Download. The founder: "keep going on excel" | The session |
 | 1 November 2026 | The sidebar's pins and sections live on the computer, in its settings (`pinnedAgentIds`, `sidebarSections`), as the Mac keeps them, so the Mac and the web app show the same; which sections are folded is kept in the browser (`simeon.sidebar.foldedSections`, the Mac's own name for it): which sections, never names | The session |
 | 1 November 2026 | Several rows are picked with ⌘-click on a Mac and Control-click on Windows and Linux (each system's own way), and ⇧-click. Control-Tab, which walks the Mac's rows, is left out in a browser, which switches tabs with it; the Windows app (step 7) can take it back | The session |
@@ -62,7 +62,7 @@ file and the code disagree, the code is right and this file is fixed.
 | 2 November 2026 | Where the Mac asks for Touch ID (1Password's Fill, a checkout's Allow), the web asks in the window's own alert, with the words the Mac's Touch ID shows: a web page has no Touch ID of its own (WebAuthn would need the server to keep a key for each person), and the alert keeps the Mac's second, deliberate step. A checkout's Allow then carries no device approval, so Link asks the person in its own app, as the Mac does when there is none. In the Windows app: Windows Hello, decided at step 7 | The session |
 | 2 November 2026 | 1Password's Connect is left out on the web: it runs 1Password's command-line tool on the person's computer to make the shared vault and its read-only key, which a page can't. The card shows the agent's reason, the Mac's paragraph on what connecting makes, and the X. It comes back in the Windows app (step 7) | The session |
 | 2 November 2026 | What needs the computer's screen comes with it in step 5: the hand-off's Take over and Open computer, a Link checkout's Review order and its picture opening the checkout, the bank check's Open the computer. Until then they are left out, never a button that does nothing; a Shop checkout's Review order is the store's page, in a new tab, as on the Mac (Step 5: done; see below.) | The session |
-| 2 November 2026 | An app card's Connect waits for step 6, with the founder's consent sheet (`ConnectConsent`) and the app's sign-in, built once there for the cards, the rows and the pages. Until then the card says Connected or Coming soon, and otherwise has no button | The session |
+| 2 November 2026 | An app card's Connect waits for step 6, with the founder's consent sheet (`ConnectConsent`) and the app's sign-in, built once there for the cards, the rows and the pages. Until then the card says Connected or Coming soon, and otherwise has no button (Step 6: done; see below.) | The session |
 | 2 November 2026 | Pages a card opens (a pull request, Link's and Shop's pages, a shop's page) open in a new tab, without `opener` or the referrer. Slack's and GitHub's linking page opens in a tab opened blank at once, so the browser lets it open while the computer is asked, then sent to the page, without `opener` (that page may be told the app's address, its origin only); the card asks again whether it is linked when the tab comes back to the front | The session |
 | 2 November 2026 | A cloud agent card has View PR and no Open: the Mac's Open goes to `app.simeonlabs.com/agents/<id>`, a page that doesn't exist. Its name and "PR #412" open the pull request when there is one; otherwise they are words | The session |
 | 2 November 2026 | The joined card's View Profile waits for the agent's pane (step 4); meanwhile Go to Chat keeps its half of the row (Step 4: done; see below.) | The session |
@@ -89,7 +89,7 @@ file and the code disagree, the code is right and this file is fixed.
 | 2 November 2026 | Run history says "Just now" for a run begun since the last 30-second tick (the Mac's can say "In 1 min") | The session |
 | 2 November 2026 | A routine's popover keeps its connecting words ("at", "on", "every"…) and Advanced's "minutes" and "hours" in English in every language, as the Mac draws them: they are in neither catalogue | The session |
 | 2 November 2026 | A time of day in another language is that language's short time ("09:00" in French, "9:00" in Spanish), CLDR's, as Apple's "jmm" | The session |
-| 2 November 2026 | Search offers only the actions whose screens the window has, as "/" (`windowActionIds`): Org Chart, Open Hidden Agents, Members, Channels, Chat Settings. Settings: General, Usage & Billing, Connectors and the themes join it with step 6, Update Simeon's Computer with step 5; each is one id and one case in `runAction` (Step 5: done; see below.) | The session |
+| 2 November 2026 | Search offers only the actions whose screens the window has, as "/" (`windowActionIds`): Org Chart, Open Hidden Agents, Members, Channels, Chat Settings. Settings: General, Usage & Billing, Connectors and the themes join it with step 6, Update Simeon's Computer with step 5; each is one id and one case in `runAction` (Step 5: done; see below.) (Step 6: done; see below.) | The session |
 | 2 November 2026 | A routine found by search opens that routine in its agent's pane (`openRoutineFor`). The Mac, copying the Electron window, opens the open agent's pane on Computer, or another's on Profile | The session |
 | 2 November 2026 | A link found by search shows its address and its site's own icon, not the page's title (as in the chat, 1 November), and opens in a new tab without `opener` or the referrer | The session |
 | 2 November 2026 | With ⌘ held, search's rows show ⌘ on an Apple computer and Ctrl elsewhere (the Mac's always show ⌘) | The session |
@@ -111,6 +111,54 @@ file and the code disagree, the code is right and this file is fixed.
 | 2 November 2026 | The call's banner sits inside the window, over everything in it (a page can't float a window of its own), at the Mac's top right, 12 down and 16 in, of the chat's column: left of the agent's pane when it is open, 8 under find's bar when find is open, so it never covers the window's own controls | The session |
 | 2 November 2026 | The ring and the hang-up are the core's samples played with the browser's audio at the Mac's loudness; the waveform follows the Mac (random bars scaled by the voice's activity). No environment on the web: calls are on, the Mac's default. Leaving the page with a call on ends it. No Agent › Call menu (a page has none). A stand-in voice exists only for the tests and a development build | The session |
 | 2 November 2026 | Under a call's lines or an exchange, the chat, its head and its field are inert and files dropped refused, as the Mac's covers are modal; the cover takes its Escape, so find stays open | The session |
+| 2 November 2026 | The theme chosen (System, Light, Dark, in Settings › General, ⌘K or "/") is kept in the browser under the Mac's name (`simeon.theme`) and set on the page's root (`data-theme`). The stylesheets keep their dark colours under `prefers-color-scheme: dark`; a build step (`scripts/theme-css.mjs`) makes each such rule follow the theme chosen, its weight unchanged. What the page draws by the scheme itself (a dark logo) asks `useDarkScheme()`, never the system. A change fades over 0.3 s (the browser's view transition), none with Reduce Motion | The session |
+| 2 November 2026 | Settings has no Updates page: it is the Mac's alone (Sparkle), and a web page is always the latest | The session |
+| 2 November 2026 | Computer's second group, "Your Computer" (Execution on Local Computer and the team's ceiling, hardware security keys, Commands Allowed Once), is left out: it is the Mac's own hands on the person's computer, which a browser doesn't have; so are the team's ceiling read and the `localToolPermission` and `webauthnProxyEnabled` pushes. It comes back with the agent's hands on the PC | The session |
+| 2 November 2026 | Help & support has no "Simeon Help Center" row: on the Mac it does nothing (`HelpSupport.openHelpCenter() {}`, kept by the founder on 22 October 2026 though it points nowhere yet), and the web never shows a button that does nothing. It comes back when it points somewhere | The session |
+| 2 November 2026 | An app's sign-in opens in a tab of the browser's own, not a sheet: a tab opened blank on the click (a browser lets a page open one only then: the consent's Connect, Reopen, the setup page's Add, Add Another Account), handed to its own sign-in (`holdingTab`, `signIn(…, { tab })`), then sent to the page once the computer gives it, http or https only. Asked every 2 s up to 150 times, as the Mac. A Connect that leads to a form first opens no tab (`{ signIn: false }`) | The session |
+| 2 November 2026 | The app closes a sign-in's tab only while it may (blank, or on the web app's own pages); on another site the tab is left to its page. Keeping its `opener` would let the window close it, but would also let a maker's page send the Simeon tab itself to a page of its own (measured: reverse tabnabbing). The web app's return page closes its own tab; the server's "Connected, you can close this tab" page stays open (Open questions) | The session |
+| 2 November 2026 | A sign-in's tab the person closed can't say whether the sign-in finished: ten more looks, then `unconfirmed`, and the app the connect added is never taken back (the Mac's browser fallback). A blank tab closed before its page came is the person changing their mind: `cancelled`, the app taken back. A tab the browser refused on the click asks nothing of the computer and says "<name> didn't connect. Try again." (the core's `didntConnect`) in the window's alert | The session |
+| 2 November 2026 | The makers that take only the loopback (`loopbackOnly`: Dropbox, Canva, Square, Vercel, Lovable, Gamma, Semrush and eleven others), found as the core finds them, by the page's `redirect_uri`, are never opened: a browser can't listen on 8787. The connect ends `cancelled`, the app taken back, and nothing is said, as no sentence in the catalogues fits (Open questions) | The session |
+| 2 November 2026 | A sign-in that comes back through Simeon Labs' server is not named to the server first (`mcp-oauth/return` takes only the apps' schemes): the server sends it to the web app's own return page, `connected.html`, built by Vite as a second page beside the window. Until the move to `/app`, the server's target is the old app's `/app/connected.html`, which finishes the new app's sign-ins too; the server is not changed | The session |
+| 2 November 2026 | The return page trades the website's cookie for a pair in its memory only, hands the maker's code to the computer, says Connected, closes its tab and signs the pair out (with `keepalive`, and again on `pagehide`). It says a maker's refusal in the catalogues' words, not the address's, and tells the window how the sign-in ended, on the same site only (`BroadcastChannel` `simeon.sign-in-ends`: the state and whether it was refused, no code), so a refusal ends `cancelled` and the app is taken back, as on the Mac. The old page's second lines are in neither catalogue and left out | The session |
+| 2 November 2026 | A refused Connect on a chat card says nothing on the card, as on the Mac: the spinner ends, Connect is back, and the store keeps the sentence (`problem`) | The session |
+| 2 November 2026 | The apps are read again when the computer says they changed (Store.swift's `.appsChanged`), so a sign-in that finishes after its wait says Connected | The session |
+| 2 November 2026 | Connectors' model is split as the store asks: the computer's state lives in the store until sign-out, the view and the order of each action in the window's model (`pluginsModel.ts`), which reads the state through getters | The session |
+| 2 November 2026 | The categories' menu is the window's own, under its button, the chosen one ticked (the Mac pops its NSMenu with the chosen item over the button); a press outside only closes it and the click after it is swallowed, as an NSMenu takes that click. Available \| Yours is drawn in the page, a group of two, the chosen half sliding in 0.22 s | The session |
+| 2 November 2026 | ⌘F on a Mac, Control-F elsewhere, gives Connectors' search the keys; the browser's own find never opens while Connectors is open. The window coming forward is the tab's `focus`, as for the computer and Channels | The session |
+| 2 November 2026 | A browser tab left behind on Connectors doesn't keep the computer from resting: the servers are not read every 15 s while the page is hidden, and are read once when it shows again or comes forward (the Mac reads them every 15 s while open) | The session |
+| 2 November 2026 | Only the skills of the agent the window shows are kept, whatever order the answers come in (the Mac lets the last answer win) | The session |
+| 2 November 2026 | A logo the computer reads is kept only as an image data address, drawn in an `<img>`, where an SVG runs no script. A sign-in page from the computer is opened only when it is an http or https address; another says "didn't connect" and the app is taken back (the Mac opens any address in Apple's sheet) | The session |
+| 2 November 2026 | Available's order and its sections' are English's collation in every language, as the Mac's; a section's › says "Shows every app in …" to a screen reader, without a tooltip, as the Mac's accessibility hint | The session |
+| 2 November 2026 | The 0.9 s between two sign-in pages is the sign-in's own wait (`after`), so it takes its click's tab at once; each page's moment is kept as it is asked, so two asked together are spaced too (the Mac's two could both find the last page old enough) | The session |
+| 2 November 2026 | The 232 written connector pages are data made from the core's ConnectorPages.swift (`scripts/make-connector-pages.mjs`, `pnpm pages`), each sentence a literal `t('…')` made only when its page is asked for, in the app's language then. `pnpm test` checks the table is the Swift's; the script stops on a case of another shape | The session |
+| 2 November 2026 | A connector page's Information links and View Source open in a new tab without `opener` or the referrer, and only http and https addresses are drawn as links (the Mac opens whatever scheme `NSWorkspace` takes) | The session |
+| 2 November 2026 | A connector's setup values stay in the browser's own fields, read when sent; a secret is masked, offered no saved logins and emptied when sent (3b's way), so after a refusal it is typed again; only whether each field is filled is kept, for the required lines | The session |
+| 2 November 2026 | An app's accounts: a read, or an earlier change's answer, that left before a later change is dropped, and a refused last change reads the list again; an account's Remove runs once at a time. The core keeps whichever answer comes last (proposed for it) | The session |
+| 2 November 2026 | On a connector page, the rename is the window's alert with a field (the Mac's alert with a `TextField`); the examples' picture is the Mac's own asset (`ConnectorHero`), shipped with the app; a long value is cut in its middle; the instructions' field grows with its words where the browser can (`field-sizing: content`), else stays 94 high and scrolls; a page reads its server's tools as it shows and again once its server is there; Add Another Account is faded while another app's sign-in is open | The session |
+| 2 November 2026 | " (optional)" after a setup value's label and "URL" in a server's Details stay English in every language, as the Mac draws them (neither is in a catalogue) | The session |
+| 2 November 2026 | The language chosen in Settings is kept in the browser (`simeon.language`) and read once as the page loads, as Apple reads an app's language at launch, so the window never mixes two; Relaunch loads the page again; System gives it back to the browser's languages. The server and the computer are told it from the next load | The session |
+| 2 November 2026 | General's time zone and Permissions wait until the computer's values are read: the switches greyed, the rules coming with the read; a failed read says "Couldn't load your settings" and keeps them waiting; a read answering after a change is dropped. The Mac writes on its defaults meanwhile; on the web the read can wake a resting computer and take tens of seconds, and a write replaces every rule or the zone chosen (proposed for the Mac and the iPhone) | The session |
+| 2 November 2026 | The time zone menu lists the browser's own zones (`Intl.supportedValuesOf('timeZone')`, 418 in Chromium 141), drawn as the window's menus with each zone's time in grey and the Mac's type-to-select, not the browser's `<select>`; a zone chosen elsewhere that the browser doesn't list shows first, ticked | The session |
+| 2 November 2026 | The browser's zone is told to the computer each time the stream comes (back), beside the language, without waking it, as the Mac tells its own on every connect; the person's own pick stays (the computer keeps it apart, `userTimeZoneOverride`). A browser that says exactly UTC (the privacy browsers hide the zone so) tells nothing and writes no zone of its own; General then shows the computer's | The session |
+| 2 November 2026 | The account's password is typed in the browser's own masked fields, as a new password (a password manager may keep it: it is the person's own Simeon password), read once as it is sent and emptied once saved; never in the page's HTML or storage | The session |
+| 2 November 2026 | A report says where it comes from as the browser tells every site: platform "Web", the app's version (`web-next-0.1.0`), the browser and its major version, the system with its version only from Chromium's client hints (Safari and Firefox freeze theirs), the language and the zone. Diagnostics, when the person agrees, are what the tab keeps (its state, its recent activity, the screens' log), scrubbed; there is no `voice-call.log` on the web | The session |
+| 2 November 2026 | A report's screenshots come from the browser's file chooser or a drop, drawn into a canvas at 1,600 on the long side at most and sent as a JPEG at 80%, as the Mac's ImageIO makes them; a file the browser can't draw is left out. The agent menu is the browser's own list laid unseen over its button (3d's way), so Escape closes the list, not the sheet | The session |
+| 2 November 2026 | Legal's pages open in a new tab without `opener` or the referrer. The copyright line is written once (`copyrightLine`, read by Legal and About), and the names check allows the legal company's name there and in the committed build | The session |
+| 2 November 2026 | Stripe's pages (Start Plan Now, Upgrade, Add Credits, Manage Billing) and the plans page open in a new tab, blank on the click, then sent by a link of its own without the referrer, https only; no `back` and no `billing/settle` (the 1 November decision). When the tab comes back to the front, the access, the plan and the usage are read again, once, Settings open or not. A tab the browser blocks says "Couldn’t open billing. Try again." | The session |
+| 2 November 2026 | The usage is read once signed in from the account's disc (there as long as the window is), as a chat opens and as each of its answers ends; only the latest read's answer lands. The computer's notices are read as a chat opens and when the stream comes back, not waking a resting computer, and their events applied as they come | The session |
+| 2 November 2026 | The line near the limit, once closed, is kept closed in the browser under the Mac's name (`simeon.usage.approachingClosed`), the last twelve | The session |
+| 2 November 2026 | Wallet reads the connected apps and the catalogue (`loadAppCards`), without which "Link by Stripe" can't be matched to its app; a row opens the app's page in Connectors | The session |
+| 2 November 2026 | In the Credentials Store, a saved password shows only after the window's alert with the words the Mac's Touch ID shows ("Show the password for GitHub", Cancel and Show), then is read from the server. Its field is a text field masked by CSS while hidden, with no password field and no form on the page, so the browser's own password manager finds no sign-in or sign-up to offer or save; a browser that can't mask a text field gets a password field. Never in the page's HTML or storage; emptied before the sheet closes | The session |
+| 2 November 2026 | A login's icon is the site's own `/favicon.ico`, loaded without the referrer, the name's letter until it comes and for a site without one (the Mac reads the site's page for its touch icon, which a page may not) | The session |
+| 2 November 2026 | The Credentials Store's sheet is drawn in the page: Escape closes it, a click outside only while nothing changed, Return in a one-line field saves; its Country menu (the 261 regions) scrolls inside the window | The session |
+| 2 November 2026 | The account menu is drawn by the page, as the window's other menus, with Apple's badge and the submenu's figures; a click on the disc while it is open closes it | The session |
+| 2 November 2026 | About shows the Mac's app icon, and Copy version info writes the web's own facts in the Mac's three lines: the version without "web-" or "web-next-", the track ("next" at `/app-next`, else "stable") and the system in the Mac's words ("darwin", "win32", "linux"). It sits over the window and the computer's dialogs, under the computer's pills | The session |
+| 2 November 2026 | The call's banner sits over everything in the window, About and an app's consent included, as the Mac's banner is a window of its own; the consent sits over the computer's dialogs and pills | The session |
+| 2 November 2026 | Every tab opened blank on a click (an app's sign-in, the billing pages, the access cover's and the access notice's pages, Slack's and GitHub's linking page) has the copy of the window's tab storage it starts with emptied, the sign-in's pair with it, and no `opener`, before it goes anywhere (`openBlankTab`) | The session |
+| 2 November 2026 | `?api=` in the page's address is followed on a page served from this computer (a developer's, the checks' stand-ins) and elsewhere only to Simeon Labs' own servers over https, so a link can't send a person's window to another server; the return page follows it only on this computer | The session |
+| 2 November 2026 | Delete Account is left out of the account's page, as on the Mac (the iPhone's alone, by Apple's rule for apps that make accounts) | The session |
+| 2 November 2026 | The app's tests stay without a page library (no new dependency): the pages' clicks and typing are checked in Chromium by the step's scripts, their state by the tests | The session |
 
 ## For Windows
 
@@ -173,18 +221,6 @@ for is listed here. Added to with every step.
   command-line tool from the main process, as the Mac runs it (1Password's
   Windows app has the same integration, with Windows Hello). Electron keeps
   no passwords, so no "save password" offer on the masked fields.
-- **Connecting an app (step 6).** Measured for it: on the web the computer
-  starts the sign-in (`desktopMcp` `authenticateServer`) with Simeon Labs'
-  hosted return (`/desktop/mcp-oauth/callback`), which sends a sign-in no
-  app named to the old web app's `/app/connected.html`; the apps Simeon
-  Labs' server serves end on its own page (`/desktop/apps/connected`). So
-  the new app needs its own `connected.html` before it takes `/app`, and
-  the makers that take only the loopback (`loopbackOnly` in `catalog.ts`:
-  Canva, Square, Vercel, Dropbox, Lovable, Gamma, Semrush and others)
-  can't connect from a browser at all. Windows can do as the Mac: name the
-  sign-in to the server first (`POST /desktop/api/mcp-oauth/return` with
-  `simeon`), come back on `simeon://mcp-oauth` and finish it on the
-  computer; the loopback listened for on 8787 by the main process.
 - **A flight's details (3d).** Their top bar moves the window on the Mac:
   `-webkit-app-region: drag` there, × not. Electron can grow the window
   for them, as the Mac does. The menus' lists are Chromium's on Windows.
@@ -257,6 +293,86 @@ for is listed here. Added to with every step.
   data folder, `before-quit` ending a call and waiting for its record, and
   "Call <name>" in the app's menu. The exchange's head and a call's head
   move the window on the Mac: `-webkit-app-region: drag` there.
+- **The frame and the theme (6a).** Settings, Connectors, About and the
+  sheets are drawn in the page, so the same in Electron. The theme chosen
+  and the language are in the page's storage (`simeon.theme`,
+  `simeon.language`), which Electron keeps per app; the theme's fade is
+  Chromium's own. Off a Mac: Control-, (Settings), Control-Shift-M and
+  Control-Shift-W (Connectors), Control-F in Connectors, Control-Return (a
+  report). A browser keeps some of them for itself (Control-Shift-W closes
+  its window, Control-Shift-M is Chrome's profile menu, ⌘, its settings on
+  a Mac; not checked in a browser); the Windows app has them all.
+- **Connecting an app (6b).** The sign-in page goes to the default browser
+  (`shell.openExternal`), not a child window: Google and others refuse
+  their sign-in inside an embedded web view ("disallowed_useragent"). The
+  connector's browser is a seam (`ConnectorBrowser`): Electron's opens the
+  page outside and has no tab to watch, so it is the Mac's browser fallback
+  (asked every 2 s while it may finish, never taken back), and the tab
+  rules of the web don't apply. Register `simeon://`
+  (`app.setAsDefaultProtocolClient`, `second-instance`); name a sign-in
+  that comes back through the server first (`POST
+  /desktop/api/mcp-oauth/return` with `back: simeon`, which the server
+  already takes), so it comes back on `simeon://mcp-oauth?state=…&code=…`
+  and the app finishes it on its computer (`completeMcpOAuth`); open
+  `/desktop/apps/start` with `back=simeon` (`Connecting.returning`, left
+  out on the web), so the server's last page sends the browser back to the
+  app. A scheme of Windows' own would need `back` widened on the server
+  (`mcp_oauth_return.py`'s `AppScheme`, `billing/back`'s check). The makers
+  that take only the loopback: the main process listens on `127.0.0.1:8787`
+  while one's sign-in is open (the Electron Mac app's
+  `mcp-oauth-loopback.ts`, the core's `LoopbackCatcher`: this state
+  answered once with a 302 to `simeon://connected`, 404 otherwise), so
+  Canva, Dropbox and the others connect on Windows; Windows' firewall
+  doesn't ask for a loopback-only listener. The return page
+  (`connected.html`) is then the web's alone.
+- **Connectors (6c, 6d).** The window coming forward is the BrowserWindow's
+  `focus`, and a minimised window is the hidden page (no reads every 15 s,
+  one when it shows again), as in a browser. The categories' menu could
+  become Electron's own (`Menu.popup`, the chosen item over the button, as
+  the Mac's), decided at step 7 with the routines' menus. The logos are
+  data addresses: the policy Electron sets needs `img-src data:`, as the
+  website's has. Information's links and View Source go to the default
+  browser through `setWindowOpenHandler`, http and https only. The rename
+  alert, the folds and the fields are the page's own; the masked setup
+  field gets no save-password offer (Electron keeps none); `field-sizing:
+  content` is in Electron's Chromium. The examples' picture and the logos
+  are bundled: loaded from disk with `SIMEON_APP_BASE=./`, they resolve
+  beside the page.
+- **Settings (6e).** Relaunch can be `app.relaunch()` and quit, as the
+  Mac's, or the window loaded again; with no language chosen, the Windows
+  app may start from Windows' own (`app.getPreferredSystemLanguages()`).
+  The time zones are Chromium's list, Windows' own zone names already
+  turned into the database's. "Your Computer" comes back with the agent's
+  hands on the PC: Execution on Local Computer and the team's ceiling, the
+  commands allowed once, the hardware security keys with a Windows WebAuthn
+  proxy. A report's facts: platform "Windows", `app.getVersion()`, the
+  Windows version from `os.release()` (the main process), the PC's model if
+  wanted; `voice-call.log` and `computer-stream.log` from the app's data
+  folder, as the Mac reads them. Screenshots from Windows' own file dialog
+  (`dialog.showOpenDialog`, titled with the Mac's "Choose screenshots to
+  add") or a drop from Explorer; `nativeImage` could shrink them as ImageIO
+  does. Legal's pages in the default browser; Electron's `clipboard` copies
+  the e-mail without asking. A rule's Edit and Delete are always shown on a
+  Windows touch screen or a 2-in-1 in tablet mode (`hover: none`).
+- **Usage and billing (6f).** Stripe's pages in a child window that comes
+  back on the app's own link, as the Mac's sheet (`back: "simeon"` once the
+  scheme is registered on Windows, `/desktop/billing/back`); then the
+  charge after Stripe's card page (`billing/settle`) after a failed
+  payment, and the access and the usage read again as it closes. The plans
+  page in the default browser. If the child window can't open, a sentence
+  in Windows' own words is needed (Open questions).
+- **The Credentials Store (6f).** Showing a saved password asks Windows
+  Hello (`UserConsentVerifier`) in place of the alert; cancelled, nothing
+  is read. Electron keeps no passwords, so no manager offers or saves one;
+  the masked text field is the same there (Chromium masks it). A login's
+  icon: the main process can read the site's page for its touch icon (no
+  CORS) and keep it on disk a week, as the Mac's `SiteIcons`.
+- **The account menu and About (6f).** Electron's `Menu.popup` could draw
+  Windows' own menu, but it has no badge or figure rows, so the page's menu
+  may stay; decided at step 7. About's facts from Electron
+  (`app.getVersion()`, `process.platform`, "win32"), the same three lines;
+  the clipboard through Electron's. When the call's banner has its own
+  window (5d), its place over About and the consent goes with it.
 - **Already listed in README.md's table:** notifications and the taskbar
   badge, the tray, updates, `simeon://` links, the agent's hands on the PC,
   1Password and Chrome on Windows.
@@ -332,10 +448,423 @@ For the founder, each to be answered before the step that needs it:
   nowhere; the relay asking every 3 s for an account with no computer. For
   the founder: make them in the Mac and the core (then the web follows),
   or leave them.
+- **The Mac's and the core's own fixes found in step 6** (the log of 2
+  November 2026, step 6, "Found in the Mac's and the core's code"): a
+  refused Connect on a chat card saying nothing (the store's `problem`,
+  drawn nowhere on the Mac); the computer's words shown raw after a
+  sign-in; an older agent's skills landing after the newer one's; a logo
+  that fails once never tried again; "Team" on a person's own marketplace;
+  a change under way after a sign-out acting on the next account's
+  computer; " (optional)" in no catalogue (and "URL", if it should be
+  translated); the organization's skill page reached by no row; any address
+  scheme handed to `NSWorkspace`; an app's accounts taken in the order the
+  answers come (a removed account back, then a 404), and Remove pressable
+  twice; General and Permissions writing their defaults over the person's
+  rules or zone before the computer's values are read (the web's wait
+  proposed for the Mac and the iPhone); a rule's 1,000 counted in
+  characters by the apps and in JavaScript's units by the computer (the
+  computer counts characters, or the apps cut as it does?); "your email" in
+  English; "Up to date" when nothing is known; "Recovering Simeon's
+  Computer" while the stream is only away; `SettingsPill`'s `primary`
+  drawing nothing; the French plan line's two full stops; the credits' line
+  flooring a share the meter rounds; the menu's spend never in the app's
+  language; "Update card" opening two different pages; "%@, connected" in
+  no catalogue; two usage reads landing out of order. For the founder: make
+  them in the Mac and the core (then the web follows), or leave them.
+- **A sentence for the makers a browser can't connect.** Eighteen makers
+  take only the loopback (`loopbackOnly`: Dropbox, Canva, Square, Vercel
+  and others). The web never opens their page and takes the app back, but
+  says nothing: no sentence in either catalogue fits (the Mac's
+  `busyMessage`, "another app is using it. Quit the other Simeon app",
+  would be wrong). A sentence in the Mac's catalogue would let the web say
+  why Connect did nothing. Windows won't need it once it listens on 8787.
+- **A sentence for a page the browser blocks.** When the browser refuses
+  the tab a click opens, the web says "<name> didn't connect. Try again."
+  (an app's sign-in) or "Couldn’t open billing. Try again." (Usage &
+  Billing), the catalogues' only words for it. Neither says the browser
+  blocked the page or how to allow it. A sentence in the Mac's catalogue,
+  with Windows' own words if its child window can't open?
+- **The server's "Connected" page closing itself.** A sign-in started
+  through the server (`/desktop/apps/start`) ends on its own page,
+  "Connected, you can close this tab" (`/desktop/apps/connected`), which
+  the web app can't close: closing a tab on another site would need its
+  `opener`, which would let a maker's page send the Simeon tab elsewhere.
+  The page could close itself after it says Connected (`window.close()`, as
+  the new `connected.html` does), which a tab the app opened allows; then
+  every sign-in's tab closes on the web as the Mac's sheet does. A server
+  change, not made.
+- **Cancel Trial's words and the server.** The Mac's question says "This
+  ends your Simeon trial now and removes your remaining trial credits"; the
+  server's `CancelSandTrial` says the subscription is scheduled to end when
+  the trial does, the person keeping the remaining days
+  (`server/simeon/sand/dashboard.py` 120-123; `plans_service.cancel_trial`
+  not read further). Which is right? The words or the server then change;
+  the web follows the Mac.
+- **The old web app's `?api=`.** The new app now follows `?api=` only on a
+  page served from this computer, or to Simeon Labs' own servers over
+  https. The old web app at `/app` still follows it to any http or https
+  server (`desktop/web/api.ts`, `resolveApiBase`), so a link can send its
+  window to another server. The same rule there? A change to
+  `desktop/web/api.ts`.
+- **The return page's second lines.** The old `/app/connected.html` said
+  "You can close this tab and go back to Simeon.", "The sign-in came back
+  incomplete. Go back to Simeon and try again." and others under its
+  titles; they are in neither catalogue, so the new page leaves them out.
+  Add them to the Mac's catalogue, or leave them?
+- **Simeon Help Center.** The Mac's row does nothing (kept on 22 October
+  2026: "leave it there even tho it doesn't point to anything yet"); the
+  web leaves it out until it points somewhere. Where should it point?
 
 ## Log
 
 Newest first.
+
+### 2 November 2026: step 6, Connectors and Settings
+
+The founder: "Go for it". Part a, the frame, was
+written first by the session on the branch (`2036a744d`, `2a5e9eac7`), with
+a place for each other part: a page file each, a section of the store each,
+the window model's overlay slot, one connector for the window. Parts b to f
+were then written at once, each in its own slim checkout (`web-6b` to
+`web-6f`), 6d on 6c's model as it came, 6c and 6d on 6b's connector once
+fixed. Each was read by a second, independent reviewer against the Mac's
+Swift and the core, fixed by its own builder after its review, and merged
+into one branch (below).
+
+**6a: the frame** (`2036a744d`, `2a5e9eac7`)
+
+- `windowModel.ts`: the window's one overlay slot, Settings or Connectors,
+  never both (MainWindow.swift's `SettingsLayer`, `PluginsLayer`), each
+  opening afresh; About and the feedback sheets; the window's keys wait
+  under them. ⌘, (Settings), ⌘⇧M and ⌘⇧W (Connectors), Control off a Mac;
+  ⌘K and ⌘B over the slot; Settings' pages, Connectors and the themes in ⌘K
+  and "/".
+- `theme.ts` (`MacTheme`) and `scripts/theme-css.mjs`: System, Light or
+  Dark, kept as `simeon.theme`, faded over 0.3 s; a build step makes every
+  dark rule follow the theme chosen.
+- `SettingsWindow.tsx`, `SettingsParts.tsx` (SettingsWindow.swift,
+  SettingsParts.swift): the dim and the panel (at most 960 × 720), its
+  pages listed (Log out at the foot, asked first), the account under
+  General with Back, Usage & Billing once the usage is in hand, no Updates
+  (decision below); the shared rows, switches, menus, pills and glass
+  discs; an empty page for each part.
+- The sidebar's foot: the account's disc (its picture, or its letters,
+  `accountInitials.ts`, on the core's fixture) and Connect apps; the disc
+  in the rail. `connector.ts`, one for the window; an app's accounts' place
+  (`2a5e9eac7`); a store section per part, each reset on sign-out.
+
+**6b: connecting an app** (`afbf7bd8b`, `1cbef25c4`, `30d1cad3e`,
+`bb6e472d1`)
+
+- `src/core/connecting.ts` (Connecting.swift; LoopbackSignIn.swift's and
+  AppReturnSignIn.swift's `state`) and `connectConsent.ts`
+  (ConnectConsent.swift): Connect's words, which sign-ins come back to the
+  loopback and which through Simeon Labs' server; an app's consent from the
+  Swift's tables (189 reaches, 95 notes…), compared both ways by the tests.
+- The store (Store.swift 1914-2060): `beginConnect` (install, the sign-in;
+  an app it added that opened no sign-in taken back), `undoConnect`,
+  `signInURL`.
+- `src/window/connector.ts` (MacConnector.swift 21-283): `ask`, `connect`,
+  `addAccount`, `signIn` (every 2 s, 150 times), `holdingTab` (the click's
+  tab handed to its own sign-in); the browser behind it a seam for
+  Electron. `ConnectConsent.tsx` (MacConnector.swift 285-451): 600 wide,
+  Return connects, Escape, × or the dim cancel. The chat card's Connect
+  (Cards.swift 470-550).
+- The return page (`connected.html`, `connectedPage.ts`; the old app's
+  bridge.ts 132-180), built by Vite beside the window: it trades the
+  website's cookie for a pair in its memory, hands the maker's code to the
+  computer, says Connected, closes its tab, signs its pair out, and tells
+  the window how the sign-in ended.
+
+**6c: Connectors' core, model and list** (`e591aaba6` to `3f5b048c4`,
+`1fc94bf6b`, `4cfea0595`, `b729545dc`)
+
+- `src/core/plugins.ts`, `pluginsOverlay.ts`, `pluginCalls.ts`
+  (Plugins.swift, PluginsOverlay.swift, PluginCalls.swift): entries,
+  servers, tools and skills, the search and sections, the words and
+  notices, every `desktopMcp` call. The store: 3c's catalogue read once for
+  both; the computer's side of PluginsModel.swift, kept until sign-out.
+- `src/window/pluginsModel.ts` (PluginsModel.swift): Add with its sign-in
+  and take-back, the setup page, Remove, Uninstall; Connect, Reopen and
+  Retry 0.9 s apart; the switches, Save, Delete, Fix with agent.
+- `Connectors.tsx` (PluginsWindow.swift 1-1125): the panel, search, the
+  categories' menu, Available | Yours, the sections, the GitHub banner, the
+  notice bar, the rows the pages share; the servers read every 15 s.
+
+**6d: Connectors' pages** (`92f729450` to `eb6bf5fbf`, `a071e0bda` to
+`a101379cd`)
+
+- `scripts/make-connector-pages.mjs` → `writtenConnectorPages.ts` (the
+  core's ConnectorPages.swift): the 232 written pages as data, each
+  sentence a literal `t('…')` (`pnpm pages`, checked in `pnpm test`);
+  `appAccounts.ts` (AppAccounts.swift) and the store's accounts: rename,
+  Remove, another account's page.
+- `ConnectorPages.tsx`, `ConnectorPageParts.tsx` (PluginsWindow.swift
+  1126-2035): an app's page (Connect, the examples on the Mac's picture,
+  accounts, Tools, Setup, the folds, Information, Uninstall), a server's
+  page, the account rows, Add Another Account through 6b, the setup page, a
+  skill's page.
+
+**6e: Settings' General, Account, Permissions, Computer, Help and Legal;
+feedback** (`680b839d9`, `98670b5ff`, `6258f0c7a`)
+
+- `src/core/generalSettings.ts` (AccountSettings.swift, AppLanguage.swift,
+  `GeneralSettingsModel`): the account's lines, Auto-review's rules (20 a
+  list, 1,000 characters each), the zones, the languages; `language.ts`
+  keeps the one chosen. `feedback.ts` (Feedback.swift): the report,
+  screenshots, diagnostics, the web's device facts. The store: the name,
+  the password, the computer's settings, the zone told on each connect,
+  `sendFeedback`.
+- `SettingsGeneral.tsx` (SettingsGeneral.swift): General (Language with
+  Relaunch, Appearance, Time Zone), Account (name, e-mail, password; no
+  Delete Account, as on the Mac), Permissions (Auto-review's rules edited
+  in their rows), Help & support, Legal. `SettingsComputer.tsx`
+  (SettingsPages.swift 105-187) from 5c's store. `Feedback.tsx`: Send
+  Feedback and Report an Issue.
+
+**6f: usage and billing, Wallet, the Credentials Store, the account menu
+and About** (`860e6c241`, `d0734c1da`, `8f10d6800`)
+
+- `src/core/usage.ts` (AccountSettings.swift's `UsageSummary`,
+  `ManagePlan`, `UsageMeters`; AccountMenu.swift), `upgrade.ts`,
+  `trays.ts`, `credentialsStore.ts` (Upgrade.swift, Trays.swift,
+  CredentialsStore.swift). The store: the usage (not again within 30 s),
+  Cancel Trial, the computer's notices, `billingPortal(flow, tier)`.
+- `SettingsUsage.tsx`, `SettingsWallet.tsx`, `SettingsCredentials.tsx`
+  (SettingsUsage.swift, SettingsPages.swift 17-89,
+  SettingsCredentials.swift); `CreditsLine.tsx` (Composer.swift 119-219),
+  in the access notice's place; `AccountMenu.tsx` (Account.swift 90-405):
+  the menu from the disc, Weekly usage with its badge and submenu, and
+  About. `ContextMenu` gains badges and figure rows.
+
+**Putting the parts together**
+
+- On one branch (`web-6-trial`): 6b, then 6d (with 6c's first commits), 6e
+  and 6f (`4cb847aa6`, `4fccd1d46`, `53da8b4c8`), no conflicts, 930 tests.
+  Then the merge's own fixes (`5680bce5b`, `0013ffa19`): the apps read
+  again on the computer's `appsChanged`; every blank tab through
+  `openBlankTab`; the copyright line in one place; `?api=` only from this
+  computer or to Simeon Labs' servers; the call's banner over About and the
+  consent (decisions below).
+- Then each part's review fixes, merged again: 6e (`b569a66ce`), 6b
+  (`82fe194b3`), 6c (`487e96ec0`), 6d (`ff19d916d`), 6f (`352cc19cb`). One
+  conflict, `SettingsUsage.tsx`: 6f's blank tab now opened by
+  `openBlankTab`. 6c and 6d merged 6b's fixed connector and wired it: every
+  Connect, Reopen, Retry and Add hands its click's tab to its sign-in. One
+  copy of Connecting's words, 6b's.
+- The main branch fast-forwarded to the merge; then the committed build and
+  the inventory (`b2c747e84`).
+- Left for later, each named here so it isn't lost: the browser's
+  notifications (the README's table; with Windows' own in step 7); the
+  store's `problem` shown nowhere, as on the Mac (Open questions); a
+  refused tool switch saying "Simeon isn't available…" for a plain
+  refusal (the gateway's error read as an internal one, seen by 6d, not
+  judged); the rule for the agent shown in three places (`App.tsx`,
+  `ComputerStates.tsx`, `Connectors.tsx`); two reads of the quota (5c's
+  `refreshPlan` and 6f's usage, both read again after Cancel Trial and a
+  billing page); the usage's read at sign-in made by the account's disc.
+
+**What the reviews found, and what was done**
+
+- 6b (`30d1cad3e`, `bb6e472d1`):
+  - medium: the click's tab went to whichever sign-in asked first (two
+    clicks could swap tabs; a late sign-in found its tab closed): each tab
+    is now handed to its own sign-in;
+  - a tab the browser refused had a fallback no browser allows, leaving the
+    app half added: now nothing is asked and the alert says so; the return
+    page no longer takes its server or the maker's sentence from its
+    address, signs its pair out even when its tab is closed first, and
+    tells the window how the sign-in ended, so a refusal takes the app
+    back, as on the Mac.
+  - Found after, by 6c's and 6d's checks: the app couldn't close a
+    sign-in's tab on another site, its `opener` nulled. Kept nulled
+    (decision below).
+  - Clean, per the reviewer: the timings, what is taken back and when, the
+    consent's tables, measures, keys and words; no token or code in a log,
+    an address or storage.
+- 6c (`1fc94bf6b`):
+  - medium: the open agent's skills could be dropped for an older ask,
+    leaving Private empty: only the shown agent's are kept now;
+  - a sign-in page that isn't a web address said it had opened; a click
+    outside the categories' menu acted on what it landed on; the category
+    button's and Coming soon's spoken names; reads while the tab is hidden:
+    all fixed.
+  - Clean, per the reviewer: the core's rules on its fixture (160
+    catalogues), each call against the computer's, the model's flows, the
+    list's measures and colours.
+- 6d (`a071e0bda`):
+  - medium: the setup page said a secret it had just sent was required:
+    fixed;
+  - medium: a slow read of an app's accounts brought back a renamed or
+    removed one: older answers are dropped now (the core has the same
+    race);
+  - another account's page a web page only, none once signed out; Remove
+    once at a time. Kept: " (optional)" and "URL" in English, as on the
+    Mac.
+  - Clean, per the reviewer: the generated table equal to the Swift (2,088
+    strings, in order), the pages' order, measures and words, no secret in
+    the HTML or storage.
+- 6e (`6258f0c7a`):
+  - medium: General and Permissions could write the page's defaults over
+    the person's rules or zone before the computer's values came, as the
+    Mac can: they wait for them now (decision below);
+  - a browser hiding its zone as UTC moved the agents' zone: it tells
+    nothing now; a report's system version from client hints only; a rule's
+    line breaks; Edit and Delete shown on a touch screen.
+  - Clean, per the reviewer: the zone told on every connect, right for how
+    the computer keeps it; the language reaching the server and the
+    computer; the rules' 390 cases; no token in the diagnostics.
+- 6f (`8f10d6800`):
+  - medium: the browser's own password manager could offer or save another
+    site's password from the Credentials Store's sheet: no password field
+    and no form now (decision below);
+  - two usage reads at once could bring back Cancel Trial: only the latest
+    lands; the menu's keys as its row comes or goes; About keeps Tab;
+    billing pages without the referrer, https only, a blocked one said, the
+    reads after one made though Settings closed; the sheet's outside click.
+  - Clean, per the reviewer: the usage on the fixture's 500 quotas, Cancel
+    Trial, the billing flows, the credits' line, the password's handling,
+    the menu and About.
+
+**Found in the Mac's and the core's code** (proposed, for the founder):
+
+- Connecting: a refused Connect on a card goes to the store's `problem`,
+  which the Mac draws nowhere; `MacConnector.connect` clears `connecting`
+  though another sign-in took its place; the computer's `message` shown
+  raw; the card's spoken name in the agent's words, its Coming soon's in
+  the catalogue's.
+- Connectors: an older agent's skills landing after the newer one's; the
+  Filter menu's state, gone since 21 October, still kept; a logo that fails
+  once never tried again; the servers read when any window becomes key;
+  "Team" on a person's own marketplace; a change under way after a sign-out
+  acting on the next account's computer.
+- The pages: " (optional)" in no catalogue; the tools read only as a page
+  appears; the organization's skill page reached by no row; any scheme
+  handed to `NSWorkspace`; the accounts' answers taken in the order they
+  come; Remove pressable twice.
+- Settings: General and Permissions writing their defaults before the
+  computer's values; a rule's 1,000 counted in characters by the apps and
+  in JavaScript's units by the computer; "your email" in English; "Up to
+  date" when nothing is known; "Recovering Simeon's Computer" while the
+  stream is only away; `SettingsPill`'s `primary` drawing nothing;
+  `changeName` writing into whichever account is signed in.
+- Usage: the French plan line's two full stops ("7 nov.."); the credits'
+  line flooring a share the meter rounds (92% and 93%); the menu's spend
+  never in the app's language; "Update card" opening two different pages;
+  Cancel Trial's question against the server's (Open questions); "%@,
+  connected" in no catalogue; two usage reads landing out of order.
+
+**Tests:** 973 (99 files), from step 5's 768 (73): 5 for the frame (the
+account's letters on the core's fixture, the theme's build step, the window
+model); 6b's 60 (`ConnectConsentTests` with the Swift's tables read in
+place, the connecting parts of `PluginCallsTests`, `LoopbackSignInTests`,
+`AppReturnSignInTests`, the connector with a stand-in browser, the return
+page); 6c's 32 (`PluginsTests` on the core's fixture,
+`PluginsOverlayTests`, `PluginCallsTests`, the model on the core's
+`PluginsBox`); 6d's 23 (`ConnectorPagesTests`, `AppAccountsTests`, the
+table against the Swift, the pages, the accounts' races); 6e's 37
+(`SettingsTests`' rules on their 390 cases, `LanguageTests`,
+`FeedbackTests`, the model's wait); 6f's 48 (`SettingsTests`' usage on 500
+quotas, `AccountMenuTests`, `UpgradeTests`, `TraysTests`,
+`CredentialsStoreTests`, the reads' order, the password field's shape).
+
+**Checked:**
+
+After the merge, on one build of the merged branch (the committed build,
+`b2c747e84`), every check ran again in Chromium, light and dark, then French
+(48 runs, `final6/run-all.sh`): step 6's six scripts (the frame, connecting,
+the list, the pages, Settings, usage and billing), step 5's three (5d's also
+on a development build with its stand-in voice), and every check of steps 3
+and 4 with their probes, so nothing step 6 changed in the window broke an
+earlier screen. No page errors. Every outside address answered by a stand-in:
+those a screen opens on purpose (the billing pages, Privacy and Terms, an
+app's Information links, the stand-in makers' sign-in pages, Add Another
+Account's page on the server's address, the shop's and Link's pages, an
+airline's logo) were caught as they opened.
+
+- One script brought to the merged app, the app not changed for it: 6f's
+  Report an issue now opens 6e's issue sheet (empty in 6f's own branch), so
+  its check sees the sheet and closes it before going on.
+- The names check found the code both pages share (the window and
+  `connected.html`) in a chunk Rollup named after `theme.ts`, holding the
+  plain words' guarded names: that chunk is now named as the window's own
+  (`index-…`, `vite.config.ts`), the code unchanged (the same hash); the
+  frame's and connecting's checks ran again on it, light, dark and French,
+  no page errors.
+- On the branch: 973 tests, the words', brands', connector pages' and
+  committed build's checks, lint, typecheck, `check_names.py` and
+  `check_translations.py` pass. The inventory: the web app shows 2,899 of
+  the catalogues' 3,164 strings (1,316 after step 5).
+
+Before the merge, each part on its own branch, in Chromium against
+stand-ins (the session's scratchpad: `6b-check.cjs` to `6f-check.cjs` and
+their probes; every outside address answered by a stand-in), light and
+dark, then French, no page errors:
+
+- 6a, before the parts were begun (`6a-check.cjs`): the sidebar's foot
+  (the account's disc, Connect apps and its three tiles), Control-, on
+  General, a page from the list, Control-K over Settings, Escape, a click
+  on the dim, the sign-out question, a theme from Control-K kept after a
+  reload and System again, Connect apps opening the slot.
+
+- 6b: the card's Connect and its spinner; the consent's measures, colours
+  and keys, a short window; Linear through the server to the new
+  `connected.html` (one tab, the code handed over, Connected, its pair
+  signed out, the tab closed, no copy of the window's pair in it); Notion's
+  page closing its own tab (nothing taken back); Canva (only the loopback)
+  and Stripe (refused) taken back. After the review: a maker's refusal
+  taking the app back; a browser refusing the tab; a tab left on the
+  server's "close this tab" page, the card Connected.
+- 6c: Connect apps and Control-Shift-M; the sections, a section's page, the
+  categories' menu, search; Escape's three steps, Control-F, Control-K over
+  it; Yours and Fix with agent; the servers read every 15 s, never once
+  closed nor while hidden. With 6b's connector: the consent, one tab,
+  Reopen's tab blank for the 0.9 s, then its page.
+- 6d: Notion's written page, its links without `opener` or the referrer;
+  Gmail's accounts (rename, Remove double-clicked sending one `DELETE`, Add
+  Another Account's tab on the click); Weather's rows, Retry ten minutes on
+  (Playwright's clock); the setup page (its tab on the click, the key in
+  neither the page nor its storage, a slow refused Save with nothing red);
+  a skill's Save and Delete; Uninstall.
+- 6e: Control-, on General; Appearance; the zone told, its switch and its
+  menu of 418 zones; French after Relaunch, then sent to the server and the
+  computer; the name, the e-mail, the password never in the HTML or
+  storage; rules added, moved, deleted, twenty; the Computer page's states;
+  a report with a 3000 × 1800 PNG sent as a 1600 × 960 JPEG, no token in
+  it. After the review: a held and a refused read, everything waiting; a
+  browser in UTC telling nothing.
+- 6f: the account menu with and without the usage, from the foot and the
+  rail; About; Usage & Billing (the trial, Cancel Trial and its refusal,
+  the billing tabs without `opener`, the reads when the tab comes back, a
+  failed payment); the credits' line near the limit, closed, spent; Wallet;
+  the Credentials Store (a password read only after the alert, in neither
+  the HTML nor storage). After the review: no password field or form; no
+  `Referer` at the stubs; a blocked tab's line.
+
+**Not checked:**
+
+- Against the real computer, server and services (`/app-next` is not live):
+  any real maker, Composio, the server's callback and its "Connected" page,
+  Stripe, a real computer's settings and notices, a report really sent; the
+  old `/app/connected.html` finishing a new app's sign-in, and the new one
+  at `/app` after the move (only it tells the window how a sign-in ended).
+- Whether a real maker's page (Google's, GitHub's, Slack's, Linear's) sends
+  a Cross-Origin-Opener-Policy that makes its tab read closed: the spinner
+  would end after about 22 s, the app kept. To measure before the move.
+- Side by side with the Mac: every measure read from the Swift; the symbols
+  drawn by eye.
+- Windows, Safari, Firefox (a tab opened on a click, `BroadcastChannel`,
+  `keepalive` across origins), a screen reader, Reduce Motion, a touch
+  screen (but Edit and Delete, emulated), a Mac's browser (Control was
+  pressed, on Linux); a browser's own password manager (headless Chromium
+  has none); a site's own icon (this sandbox's Chromium fails other sites'
+  pictures); the window really going behind (the scripts sent `focus`).
+- The organization's skill page (no row reaches it); a screenshot dropped;
+  HEIC; the usage read after an answer ends (no turn ran); the menus by
+  keyboard alone. The pages' clicks and typing in Chromium only: the app's
+  tests have no page to click in.
+
+**Next:** step 7, Windows.
 
 ### 2 November 2026: step 5, the computer and calls
 

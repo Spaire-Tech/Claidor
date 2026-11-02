@@ -1,0 +1,638 @@
+/*
+ * Settings and its parts (SettingsWindow.tsx, SettingsParts.tsx) at the
+ * Mac's measures (mac/Simeon/SettingsWindow.swift, SettingsParts.swift):
+ * the dim and the panel, its list of pages, its head; the groups, rows,
+ * switches, menus and actions every page draws (Connectors' panel uses the
+ * same ground, type and round buttons). The window's own colours (`Look`),
+ * light and dark.
+ */
+:root {
+  /* `look.groupedGround`: a settings page's ground (white, #141414 on dark). */
+  --grouped-ground: #ffffff;
+  /* `look.groupedRow`: a group's card, a step off the ground. */
+  --grouped-row: #f4f4f4;
+  /* `look.groupedRowHover`: a row under the pointer, a step further. */
+  --grouped-row-hover: #ebebeb;
+  /* `look.settingsAction`: an action in words ("Add", "Upgrade"). */
+  --settings-action: #0a6cdf;
+  /* `look.settingsGreen`: done, in words (Connected, Up to date). */
+  --settings-green: #009957;
+  /* `look.panelEdge()`: the panel's line, ink at 15% (none on dark). */
+  --panel-edge: rgb(20 20 20 / 0.15);
+  /* `look.blueHover`: Connect apps under the pointer. */
+  --blue-hover: #1b4a7d;
+  /* `look.tile`, `tileHairline`, `tileShadow`: Connect apps' three logos. */
+  --logo-card: #ffffff;
+  --logo-card-hairline: rgb(0 0 0 / 0.08);
+  --logo-card-shadow: rgb(0 0 0 / 0.1);
+  /* `look.initials`: the account's letters. */
+  --initials: rgb(0 0 0 / 0.72);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --grouped-ground: #141414;
+    --grouped-row: #262626;
+    --grouped-row-hover: #2f2f2f;
+    --settings-action: #4c9bff;
+    --settings-green: #38d591;
+    --panel-edge: transparent;
+    --blue-hover: #a9ccf0;
+    --logo-card: #2c2c2e;
+    --logo-card-hairline: rgb(255 255 255 / 0.1);
+    --logo-card-shadow: rgb(0 0 0 / 0.45);
+    --initials: rgb(255 255 255 / 0.86);
+  }
+}
+
+/* MARK: The dim and the panel (`SettingsLayer`, `SettingsPanel`) */
+
+/* Over the window, under search: black at 50%; a click on it closes. */
+.overlay-dim {
+  position: fixed;
+  inset: 0;
+  z-index: 58;
+  display: grid;
+  place-items: center;
+  background: rgb(0 0 0 / 0.5);
+}
+
+/* At most 960 × 720, the window less 48 and 64; the grouped ground, round 14, a line at 15% and a deep soft shadow on light (neither on dark). */
+.overlay-panel {
+  position: relative;
+  display: flex;
+  width: min(960px, calc(100vw - 48px));
+  height: min(720px, calc(100vh - 64px));
+  overflow: hidden;
+  border-radius: 14px;
+  background: var(--grouped-ground);
+  color: var(--ink);
+  box-shadow:
+    inset 0 0 0 1px var(--panel-edge),
+    0 30px 56px rgb(20 30 60 / 0.45);
+  outline: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  .overlay-panel {
+    box-shadow: none;
+  }
+}
+
+/* The app's type (`PanelType`): never bold. */
+.panel-title {
+  margin: 0;
+  overflow: hidden;
+  font-size: 17px;
+  font-weight: 500;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* The pages (`SettingsNav`), 210 wide, a hairline at its right; Log out at its foot. */
+.settings-nav {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 210px;
+  padding: 18px 10px 14px;
+  box-shadow: inset -0.5px 0 0 color-mix(in srgb, var(--ink) 8%, transparent);
+}
+
+.settings-nav-spacer {
+  flex: 1;
+}
+
+/* An entry: its symbol (14 in 20) and its name (13), 32 high, 8 round; the current one on the card's grey, under the pointer at 60%. */
+.settings-nav-entry {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 32px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.settings-nav-entry:hover {
+  background: color-mix(in srgb, var(--grouped-row) 60%, transparent);
+}
+
+.settings-nav-entry.current {
+  background: var(--grouped-row);
+}
+
+.settings-nav-entry:focus-visible {
+  outline: 2px solid var(--unread);
+  outline-offset: -2px;
+}
+
+.settings-nav-symbol {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  flex: none;
+}
+
+.settings-nav-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.settings-nav-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--unread);
+}
+
+/* The rest: the page's name and ×, 32 high, 18 from the top, 28 in and 18 at the right; the page under it, 16 below, 28 a side, 32 at the foot. */
+.settings-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 32px;
+  margin: 18px 18px 0 28px;
+}
+
+.panel-head .panel-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.settings-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px 28px 32px;
+}
+
+/* The pages' groups, one under another. */
+.settings-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* MARK: The round glass buttons (`GlassDiscButton`) */
+
+.panel-disc {
+  flex: none;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: var(--disc-ink);
+  cursor: pointer;
+}
+
+.panel-disc:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.panel-disc:focus-visible {
+  outline: 2px solid var(--unread);
+  outline-offset: 1px;
+}
+
+/* MARK: Groups and rows (`SettingsGroup`, `SettingsLine`) */
+
+.settings-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.settings-group-title {
+  margin: 0;
+  color: var(--ink-secondary);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* The card: a step off the ground, 16 round. */
+.settings-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 16px;
+  background: var(--grouped-row);
+}
+
+.settings-group-footer {
+  margin: 0;
+  padding: 0 8px;
+  color: var(--ink-secondary);
+  font-size: 12px;
+}
+
+/* A row: 18 in, 14 above and below, at least 56; its symbol (14 in 20), its words over a line, its end. */
+.settings-line {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 14px 18px;
+  box-sizing: border-box;
+}
+
+/* The line between two rows: inset 18 at both ends. */
+.settings-line.divided::before,
+.settings-link-row.divided::before,
+.settings-action-row.divided::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 18px;
+  right: 18px;
+  height: 0.5px;
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+.settings-line-symbol {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  color: var(--ink);
+}
+
+.settings-line-words {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.settings-line-label {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.settings-line-detail {
+  color: var(--ink-secondary);
+  font-size: 12px;
+}
+
+.settings-line-end {
+  flex: none;
+  display: flex;
+  align-items: center;
+}
+
+/* A switch: Apple's, 38 by 22, in the blue when on; greyed while its change goes. */
+.settings-switch {
+  position: relative;
+  width: 38px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--ink) 16%, transparent);
+  cursor: pointer;
+  transition: background-color 0.18s ease;
+}
+
+.settings-switch.on {
+  background: var(--settings-blue);
+}
+
+.settings-switch:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.settings-switch:focus-visible {
+  outline: 2px solid var(--unread);
+  outline-offset: 2px;
+}
+
+.settings-switch-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.25);
+  transition: transform 0.18s ease;
+}
+
+.settings-switch.on .settings-switch-knob {
+  transform: translateX(16px);
+}
+
+/* A menu's face: the choice (13, grey) and the chevron (9, fainter), 6 apart. */
+.settings-menu {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.settings-menu:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.settings-menu-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-tertiary);
+}
+
+.settings-menu-text {
+  color: var(--ink-secondary);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+/* A row that opens something: a step darker under the pointer. */
+.settings-link-row,
+.settings-action-row {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.settings-link-row:hover,
+.settings-action-row:hover:not(:disabled) {
+  background: var(--grouped-row-hover);
+}
+
+.settings-link-row:focus-visible,
+.settings-action-row:focus-visible {
+  outline: 2px solid var(--unread);
+  outline-offset: -2px;
+}
+
+.settings-link-end {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-secondary);
+}
+
+.settings-link-value {
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.settings-link-chevron {
+  display: grid;
+  color: var(--ink-tertiary);
+}
+
+/* An action row: its words in the link blue (red for one that takes something away), a spinner while it goes. */
+.settings-action-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 56px;
+  padding: 14px 18px;
+  box-sizing: border-box;
+}
+
+.settings-action-title {
+  flex: 1;
+  color: var(--settings-action);
+  font-size: 13px;
+}
+
+.settings-action-row.destructive .settings-action-title {
+  color: var(--danger);
+}
+
+.settings-action-row:disabled {
+  cursor: default;
+}
+
+.settings-action-row:disabled .settings-action-title {
+  opacity: 0.4;
+}
+
+.settings-spinner {
+  width: 14px;
+  height: 14px;
+  border: 1.6px solid color-mix(in srgb, var(--ink) 20%, transparent);
+  border-top-color: var(--ink-secondary);
+  border-radius: 50%;
+  animation: settings-spin 0.8s linear infinite;
+}
+
+@keyframes settings-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* An action at a row's end, in words: the link blue, lighter under the pointer, greyed while it can't be pressed. */
+.settings-pill {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--settings-action);
+  font: inherit;
+  font-size: 13px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.settings-pill:hover:not(:disabled) {
+  opacity: 0.8;
+}
+
+.settings-pill:disabled {
+  color: var(--ink-tertiary);
+  cursor: default;
+}
+
+/* A choice of a few symbols: a grey capsule, padded 2; each 34 by 28; the chosen one on a white disc with the faintest shadow (white at 14% on dark). */
+.settings-symbol-picker {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+
+.settings-symbol-choice {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-secondary);
+  cursor: pointer;
+}
+
+.settings-symbol-choice.chosen {
+  background: #ffffff;
+  color: var(--ink);
+  box-shadow: 0 1px 1.5px rgb(0 0 0 / 0.1);
+  cursor: default;
+}
+
+.settings-symbol-choice:focus-visible {
+  outline: 2px solid var(--unread);
+  outline-offset: 1px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .settings-symbol-picker {
+    background: color-mix(in srgb, var(--ink) 8%, transparent);
+  }
+
+  .settings-symbol-choice.chosen {
+    background: rgb(255 255 255 / 0.14);
+    box-shadow: none;
+  }
+}
+
+/* The account's picture, else its letters (38% of it, medium, grey) on the row's grey; a faint ring. */
+.settings-account-face {
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--row-hover);
+  color: var(--ink-secondary);
+  font-weight: 500;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 5%, transparent);
+}
+
+.settings-account-face img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* MARK: The sidebar's foot (`SidebarFoot`): the account's disc and Connect apps */
+
+/* The account's disc: 32, in the glass, its letters 12 medium, a touch larger under the pointer. */
+.account-disc {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 50%;
+  color: var(--initials);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.24px;
+  cursor: pointer;
+  transition: transform 0.18s ease-in-out;
+}
+
+.account-disc:hover {
+  transform: scale(1.04);
+}
+
+.account-disc img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.account-disc:focus-visible,
+.connect-apps:focus-visible {
+  outline: 2px solid var(--unread);
+  outline-offset: 2px;
+}
+
+/* Connect apps: 15 medium in the window's blue, then Gmail, Calendar and Drive on three white tiles, 4 over each other, the first turned 7° left and the last 7° right; 32 high, 8 a side. */
+.connect-apps {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 32px;
+  padding: 0 8px;
+  border: 0;
+  background: transparent;
+  color: var(--blue);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.075px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.connect-apps:hover {
+  color: var(--blue-hover);
+}
+
+.connect-apps-tiles {
+  display: flex;
+}
+
+.connect-apps-tile {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  margin-left: -4px;
+  border-radius: 7px;
+  background: var(--logo-card);
+  box-shadow:
+    0 0 0 1px var(--logo-card-hairline),
+    0 1px 1px var(--logo-card-shadow);
+}
+
+.connect-apps-tile:first-child {
+  margin-left: 0;
+}
+
+.connect-apps-tile img {
+  display: block;
+  width: 17px;
+  height: 17px;
+  object-fit: contain;
+}

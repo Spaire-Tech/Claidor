@@ -118,6 +118,12 @@ describe('search opens and closes with the window', () => {
       'Open Hidden Agents',
       'Channels',
       'Chat Settings',
+      // Step 6: Usage & Billing waits for the usage to be read.
+      'Settings: General',
+      'Connectors',
+      'Theme: System',
+      'Theme: Light',
+      'Theme: Dark',
     ])
     expect(state.listing().tabs.length).toBe(8)
   })

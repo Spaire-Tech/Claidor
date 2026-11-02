@@ -553,8 +553,7 @@
   flex: none;
 }
 
-.trigger-logo img {
-  display: block;
+img.trigger-logo {
   object-fit: contain;
 }
 

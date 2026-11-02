@@ -14,6 +14,7 @@ import { macCover, macRoute, tagline } from '../core/access'
 import { t as coreT } from '../core/l10n'
 import { t } from '../l10n'
 import type { WebSession } from '../session'
+import { openBlankTab } from './blankTab'
 import { Alert } from './Dialogs'
 import { markStyle } from './FirstRun'
 import { useWatched } from './useStore'
@@ -54,8 +55,7 @@ export function AccessCover({ session }: { session: WebSession }) {
       return
     }
     // Opened at once, before the answer, so the browser lets it open; sent to the page once it is known. It keeps no handle on the app.
-    const page = window.open('', '_blank')
-    if (page) page.opener = null
+    const page = openBlankTab()
     const answer = await store.billingPortal(route.flow)
     if (answer.url) {
       if (page) page.location.href = answer.url

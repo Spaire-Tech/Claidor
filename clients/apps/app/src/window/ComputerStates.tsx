@@ -24,6 +24,7 @@ import {
 import type { RebuildDriver } from '../core/rebuildDriver'
 import type { AppStore } from '../core/store'
 import { t } from '../l10n'
+import { openBlankTab } from './blankTab'
 import { classes } from './classes'
 import './ComputerStates.css'
 import { listOrder } from './Sidebar'
@@ -999,8 +1000,7 @@ export function AccessNotice({ store }: { store: AppStore }): ReactNode {
       return
     }
     // Opened at once, before the answer, so the browser lets it open; sent to the page once it is known. It keeps no handle on the app.
-    const page = window.open('', '_blank')
-    if (page) page.opener = null
+    const page = openBlankTab()
     const answer = await store.billingPortal(route.flow)
     if (answer.url) {
       if (page) page.location.href = answer.url

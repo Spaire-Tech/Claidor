@@ -1,0 +1,92 @@
+/*
+ * Usage & Billing (SettingsUsage.tsx, mac/Simeon/SettingsUsage.swift): its
+ * groups 22 apart; a meter as the founder's reference has it. Its rows,
+ * groups and actions are Settings' own (Settings.css).
+ */
+
+.usage-page {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+/* A meter: 18 in, 14 above and below; its title and what is used over its bar, 10 apart. */
+.usage-meter {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 18px;
+}
+
+.usage-meter.divided::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 18px;
+  right: 18px;
+  height: 0.5px;
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+/* The title (13) over when it resets (12, grey), 3 apart; what is used (13, grey, even figures) at the right, on the title's line. */
+.usage-meter-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.usage-meter-words {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.usage-meter-title {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.usage-meter-reset {
+  color: var(--ink-secondary);
+  font-size: 12px;
+}
+
+.usage-figure {
+  color: var(--ink-secondary);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* The bar: 5 high, a capsule; the ink at 8% (14% on dark) under the used part in the link blue, red past 90%, never under 5 wide. */
+.usage-bar {
+  height: 5px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+}
+
+.usage-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--settings-action);
+}
+
+.usage-bar-fill.over {
+  background: var(--danger);
+}
+
+@media (prefers-color-scheme: dark) {
+  .usage-bar {
+    background: color-mix(in srgb, var(--ink) 14%, transparent);
+  }
+}
+
+/* Cancel Trial's refusal goes under the question's words, a line apart, as the Mac's alert writes it. */
+.usage-question .alert-message {
+  white-space: pre-line;
+}

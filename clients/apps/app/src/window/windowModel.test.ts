@@ -209,8 +209,15 @@ describe('the window', () => {
     expect(model.section).toBe('computer')
     expect(model.runAction('open-hidden-chats')).toBe(true)
     expect(model.hiddenAgents).toBe(true)
-    expect(model.runAction('settings:general')).toBe(false)
-    expect(model.runAction('theme:dark')).toBe(false)
+    expect(model.runAction('settings:usage')).toBe(true)
+    expect(model.overlay).toMatchObject({ kind: 'settings', page: 'usage' })
+    expect(model.runAction('overlay:plugins')).toBe(true)
+    expect(model.overlay).toMatchObject({ kind: 'connectors' })
+    expect(model.runAction('theme:dark')).toBe(true)
+    expect(localStorage.getItem('simeon.theme')).toBe('dark')
+    expect(model.runAction('theme:system')).toBe(true)
+    expect(localStorage.getItem('simeon.theme')).toBeNull()
+    expect(model.runAction('pane:nothing')).toBe(false)
   })
 
   it('an agent opened from search or the chart asks the sidebar to let its picked rows go, each time anew', () => {
@@ -282,5 +289,59 @@ describe("step 5's slots", () => {
     expect(model.computer).toBeUndefined()
     expect(model.computerAsk).toBeUndefined()
     expect(model.chatCover).toBeUndefined()
+  })
+})
+
+describe("step 6's overlay slot", () => {
+  it('Settings and Connectors take the one slot, each opening afresh', () => {
+    const model = new WindowModel('iris')
+    model.openComputer('iris')
+    model.toggleAvatarEditor('iris')
+    model.openSettings('wallet')
+    expect(model.overlay).toEqual({
+      kind: 'settings',
+      page: 'wallet',
+      asked: 'wallet',
+      opening: 1,
+    })
+    // It takes the computer's place; what floats over the pane closes.
+    expect(model.computer).toBeUndefined()
+    expect(model.avatarEditorFor).toBeUndefined()
+    expect(model.overlayShowing).toBe(true)
+    // Another page from its list; the same ask again (⌘,) changes nothing.
+    model.showSettingsPage('credentials')
+    model.openSettings('wallet')
+    expect(model.overlay).toMatchObject({ page: 'credentials', opening: 1 })
+    model.openSettings('general')
+    expect(model.overlay).toMatchObject({ page: 'general', opening: 1 })
+    // Connectors gives Settings no room: one overlay at a time.
+    model.openConnectors({ kind: 'plugin', id: 'link' })
+    expect(model.overlay).toEqual({
+      kind: 'connectors',
+      ask: { kind: 'plugin', id: 'link' },
+      asks: 1,
+      opening: 2,
+    })
+    model.openConnectors()
+    expect(model.overlay).toMatchObject({ asks: 2, opening: 2 })
+    model.closeConnectors()
+    expect(model.overlay).toBeUndefined()
+    model.openSettings()
+    expect(model.overlay).toMatchObject({ page: 'general', opening: 3 })
+  })
+
+  it('About and the feedback sheets; signed out, everything goes', () => {
+    const model = new WindowModel('iris')
+    model.openAbout()
+    expect(model.overlayShowing).toBe(true)
+    model.closeAbout()
+    model.openFeedback('issue')
+    expect(model.feedback).toBe('issue')
+    model.openConnectors()
+    model.openAbout()
+    model.leftWindow()
+    expect(model.overlay).toBeUndefined()
+    expect(model.about).toBe(false)
+    expect(model.feedback).toBeUndefined()
   })
 })

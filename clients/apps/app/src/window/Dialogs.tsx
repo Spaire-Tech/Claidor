@@ -40,6 +40,7 @@ export function Alert({
   onAction,
   onCancel,
   busy,
+  busyAction,
 }: {
   title: string
   message: string
@@ -51,6 +52,8 @@ export function Alert({
   onCancel?: () => void
   /** While its action is on its way: neither button can be pressed, and Escape waits (a Mac alert's disabled buttons). */
   busy?: boolean
+  /** The action's words while it is on its way ("Canceling…", the Mac's `PendingAlert`); its own words otherwise. */
+  busyAction?: string
 }) {
   const first = useRef<HTMLButtonElement>(null)
   useTakesFocus(first)
@@ -104,7 +107,7 @@ export function Alert({
             disabled={busy}
             onClick={onAction}
           >
-            {action}
+            {busy && busyAction !== undefined ? busyAction : action}
           </button>
         </div>
       </div>
