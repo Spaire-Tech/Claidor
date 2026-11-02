@@ -2,3 +2,6 @@
 dist/
 out/
 node_modules/
+
+# The root's `parts/` (a Python build folder) must not hide the main process's parts.
+!src/main/parts/
