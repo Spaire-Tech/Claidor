@@ -1,10 +1,10 @@
-// Step 4b: a group's members, its Computer tab (mac/Simeon/PaneMembersFlight.swift's
+// Step 4d: a group's members, its Computer tab (mac/Simeon/PaneMembersFlight.swift's
 // `GroupMembersBody`). Drawn by AgentPane.tsx.
 
 import type { Agent } from '../core/models'
 import type { AppStore } from '../core/store'
 
-/** A group's members (`GroupMembersBody`, step 4b). */
+/** A group's members (`GroupMembersBody`, step 4d). */
 export function GroupMembersBody({
   store,
   group,

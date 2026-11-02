@@ -1,11 +1,11 @@
-// Step 4b: an agent's channels in its pane (mac/Simeon/ChannelsPage.swift):
+// Step 4d: an agent's channels in its pane (mac/Simeon/ChannelsPage.swift):
 // Discord and Slack, reached from "Channels" in ⌘K and "/". Drawn by
 // AgentPane.tsx.
 
 import type { Agent } from '../core/models'
 import type { AppStore } from '../core/store'
 
-/** Channels (`ChannelsBody`, step 4b). */
+/** Channels (`ChannelsBody`, step 4d). */
 export function ChannelsBody({
   store,
   agent,

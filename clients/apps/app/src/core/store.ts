@@ -518,6 +518,10 @@ export class AppStore {
     this.resetConnectCards()
     this.resetFlightCards()
     this.resetShopCards()
+    this.resetAvatarAndNewAgent()
+    this.resetRoutines()
+    this.resetSearchAndChannels()
+    this.resetOrgChartAndPacks()
     this.firstRunAgentId = undefined
     this.firstRunNamed = false
     // A hand-off waiting on the name step ends (it finds the account gone and makes nothing).
@@ -2694,6 +2698,39 @@ export class AppStore {
       ) || connections.length > 0
     )
   }
+
+  // MARK: Step 4b's avatar and New Agent: the avatar editor (AvatarEditor.swift,
+  // AvatarCrop.swift, AgentVoices.swift, StoreFaces.swift) and New Agent's
+  // sheet (NewAgentSheet.swift, AgentDraft.swift, StoreAgents.swift's
+  // `createAgent`). 4b's state and commands go below this line, and nowhere
+  // else.
+
+  /** 4b's state back to nothing (signed out). */
+  private resetAvatarAndNewAgent(): void {}
+
+  // MARK: Step 4c's routines: an agent's routines in its pane and a routine's
+  // editor (RoutinesPage.swift, RoutineTriggerCard.swift, Routines.swift,
+  // RoutineEditing.swift, RoutineTriggers.swift). 4c's state and commands go
+  // below this line, and nowhere else.
+
+  /** 4c's state back to nothing (signed out). */
+  private resetRoutines(): void {}
+
+  // MARK: Step 4d's search, channels and a group's members: ⌘K
+  // (SearchPanel.swift, Jump.swift, Search.swift), an agent's channels
+  // (ChannelsPage.swift, Channels.swift), a group's members
+  // (PaneMembersFlight.swift, GroupMembers.swift). 4d's state and commands
+  // go below this line, and nowhere else.
+
+  /** 4d's state back to nothing (signed out). */
+  private resetSearchAndChannels(): void {}
+
+  // MARK: Step 4e's org chart and starter packs (OrgChart.swift,
+  // AgentNetwork.swift, StarterPackSheet.swift, StarterPacks.swift). 4e's
+  // state and commands go below this line, and nowhere else.
+
+  /** 4e's state back to nothing (signed out). */
+  private resetOrgChartAndPacks(): void {}
 
   // MARK: The composer's lists
 
