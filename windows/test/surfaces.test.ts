@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs'
 import { inflateSync } from 'node:zlib'
 import { describe, expect, it } from 'vitest'
 import type { TrayMenu } from '../../clients/apps/app/src/desktop/contract'
-import { callFrame, callHeight, callResized } from '../src/main/surfaces/callPlace'
+import { callFrame, callHeight, callResized, zoomed } from '../src/main/surfaces/callPlace'
 import {
   readAction,
   readBadge,
@@ -261,5 +261,19 @@ describe('the call’s window (CallBannerWindow.swift’s `frame`, `resize`)', (
     expect(callHeight(900)).toBe(480)
     const frame = callFrame({ x: 0, y: 0, width: 1440, height: 900 }, 78)
     expect(callResized(frame, 201)).toEqual({ ...frame, height: 201 + 56 })
+  })
+})
+
+describe('the main window’s zoom (WindowChrome.swift’s `WindowZoom.apply`)', () => {
+  it('steps by a tenth, 50 % to 300 %, rounded, and goes back to 100 %', () => {
+    expect(zoomed(1, 0.1)).toBe(1.1)
+    expect(zoomed(1.1, 0.1)).toBe(1.2)
+    expect(zoomed(1, -0.1)).toBe(0.9)
+    expect(zoomed(0.5, -0.1)).toBe(0.5)
+    expect(zoomed(3, 0.1)).toBe(3)
+    expect(zoomed(2.7, 0)).toBe(1)
+    let factor = 1
+    for (let i = 0; i < 7; i += 1) factor = zoomed(factor, 0.1)
+    expect(factor).toBe(1.7)
   })
 })

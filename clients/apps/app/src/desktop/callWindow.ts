@@ -102,6 +102,8 @@ export class CallMirror {
   call?: CallState
   callLevels: number[] = []
   agents: Agent[] = []
+  /** The main window's zoom, which Chromium gives this page too: the page draws itself back at 1 (`callZoom`). */
+  zoom = 1
   private readonly listeners = new Set<() => void>()
   private version = 0
 
@@ -126,6 +128,12 @@ export class CallMirror {
         // Only the waveform reads them, every frame: no redraw for them.
         if (Array.isArray(levels)) this.callLevels = levels
       }),
+      this.host.on('callZoom', (zoom) => {
+        if (typeof zoom !== 'number' || !(zoom > 0) || zoom === this.zoom)
+          return
+        this.zoom = zoom
+        this.changed()
+      }),
     ]
     void this.host
       .call('callWindowReady')
@@ -142,6 +150,10 @@ export class CallMirror {
     this.call = call
     this.agents = shown?.agent ? [shown.agent as unknown as Agent] : []
     if (!call) this.callLevels = []
+    this.changed()
+  }
+
+  private changed(): void {
     this.version += 1
     for (const listener of [...this.listeners]) listener()
   }

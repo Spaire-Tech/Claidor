@@ -16,6 +16,7 @@ import { useWatched } from '../window/useStore'
 import { CallMirror } from './callWindow'
 import './callWindow.css'
 import type { Desktop } from './desktop'
+import { keyLetter } from './surfaces'
 
 export function CallWindowPage({ host }: { host: Desktop }) {
   const [mirror] = useState(() => new CallMirror(host))
@@ -28,16 +29,17 @@ export function CallWindowPage({ host }: { host: Desktop }) {
       if (event.key === themeKey || event.key === null) applyTheme()
     }
     window.addEventListener('storage', changed)
+    // Control-W on it ends a call that is on or puts away one that is over (`closing`); Control-Q quits, whichever window has the keys.
     const keys = (event: KeyboardEvent) => {
-      if (
-        event.ctrlKey &&
-        !event.metaKey &&
-        !event.altKey &&
-        !event.shiftKey &&
-        event.key.toLowerCase() === 'w'
-      ) {
+      if (!event.ctrlKey || event.metaKey || event.altKey || event.shiftKey)
+        return
+      const letter = keyLetter(event)
+      if (letter === 'w') {
         event.preventDefault()
         mirror.close()
+      } else if (letter === 'q') {
+        event.preventDefault()
+        void host.call('quit').catch(() => {})
       }
     }
     window.addEventListener('keydown', keys)
@@ -45,8 +47,13 @@ export function CallWindowPage({ host }: { host: Desktop }) {
       window.removeEventListener('storage', changed)
       window.removeEventListener('keydown', keys)
     }
-  }, [mirror])
-  // The card measured itself: the window follows (`resize`).
+  }, [mirror, host])
+  // The main window's zoom reaches this page too (Chromium zooms every page of the app's origin): drawn back at its own size.
+  const zoom = mirror.zoom
+  useLayoutEffect(() => {
+    document.documentElement.style.zoom = zoom === 1 ? '' : String(1 / zoom)
+  }, [zoom])
+  // The card measured itself: the window follows (`resize`), in Windows' points.
   const room = useRef<HTMLDivElement>(null)
   const call = mirror.call
   const shownId = call?.agentId
@@ -55,13 +62,18 @@ export function CallWindowPage({ host }: { host: Desktop }) {
     if (!card) return
     const tell = () =>
       void host
-        .call('callWindowHeight', card.getBoundingClientRect().height)
+        .call(
+          'callWindowHeight',
+          // To the hundredth: the zoom's sums leave a trace past it, which would round a point up.
+          Math.round(card.getBoundingClientRect().height * mirror.zoom * 100) /
+            100,
+        )
         .catch(() => {})
     const watch = new ResizeObserver(tell)
     watch.observe(card)
     tell()
     return () => watch.disconnect()
-  }, [host, shownId])
+  }, [host, shownId, zoom, mirror])
   return (
     <div ref={room} className="call-window">
       {call && (

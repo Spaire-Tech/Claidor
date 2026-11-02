@@ -39,10 +39,18 @@ import type {
   TrayMenu,
 } from '../../../../clients/apps/app/src/desktop/contract'
 import { appStart } from '../appProtocol'
-import { emit, handle } from '../bridge'
+import { emit, handle, limit } from '../bridge'
 import type { AppContext } from '../context'
 import { factsArgument, factsFor } from '../facts'
-import { callFrame, callHeight, callHeights, callResized } from '../surfaces/callPlace'
+import {
+  callCard,
+  callFrame,
+  callHeight,
+  callHeights,
+  callMargin,
+  callResized,
+  zoomed,
+} from '../surfaces/callPlace'
 import {
   badgeImagePrefix,
   readAction,
@@ -107,7 +115,18 @@ export function register(context: AppContext): void {
     if (window && isMain(from)) window.setFullScreen(!window.isFullScreen())
   })
   handle('quit', (from) => {
-    if (isMain(from)) context.quit()
+    // Whichever of the app's windows has the keys (the Mac's ⌘Q).
+    if (isMain(from) || call.isIts(from)) context.quit()
+  })
+  // ⌘= ⌘- ⌘0 (WindowChrome.swift's `WindowZoom`): 0.1 a step, 50 % to 300 %, not kept.
+  let zoom = 1
+  handle('zoomWindow', (from, step) => {
+    if (step !== 0.1 && step !== -0.1 && step !== 0) throw new Error('A zoom step was expected.')
+    const window = context.mainWindow()
+    if (!window || !isMain(from)) return
+    zoom = zoomed(zoom, step)
+    window.webContents.setZoomFactor(zoom)
+    call.zoomed(zoom)
   })
   handle('showCall', (from, shown) => {
     if (!isMain(from)) return
@@ -124,7 +143,7 @@ export function register(context: AppContext): void {
   handle('focusCall', (from) => {
     if (isMain(from)) call.focus()
   })
-  handle('callWindowReady', (from) => (call.isIts(from) ? call.shown() : null))
+  handle('callWindowReady', (from) => (call.isIts(from) ? call.ready() : null))
   handle('callWindowHeight', (from, height) => {
     const checked = readHeight(height)
     if (checked === undefined) throw new Error('A height was expected.')
@@ -174,7 +193,11 @@ function notifications(context: AppContext) {
       notification.show()
     },
     clear() {
-      for (const notification of shown) notification.close()
+      // Another account's: a click on one Windows still lists opens nothing.
+      for (const notification of shown) {
+        notification.removeAllListeners('click')
+        notification.close()
+      }
       shown = []
     },
   }
@@ -290,7 +313,7 @@ function trayIcon(context: AppContext) {
     const template: MenuItemConstructorOptions[] = trayTemplate(
       menu,
       {
-        // The Mac's "only in a released build": the updater is a packaged build's (7e).
+        // The Mac's "only in a released build": the updater is a packaged build's (7e). At the merge: 7e's `releasedBuild`, not `app.isPackaged` alone.
         checksForUpdates: app.isPackaged,
         unreadMark: unreadMark(nativeTheme.shouldUseDarkColors),
       },
@@ -321,6 +344,15 @@ function trayIcon(context: AppContext) {
 
 // MARK: The call's window
 
+/** What the call's window's page may ask (the bridge refuses it the rest, and the kept values). */
+const callWindowCalls = [
+  'callWindowReady',
+  'callWindowHeight',
+  'callWindowPointer',
+  'callWindowAction',
+  'quit',
+] as const
+
 /**
  * The call's own window (CallBannerWindow.swift): frameless and clear, the
  * card drawing its own shadow in the room around it; over every window
@@ -329,15 +361,48 @@ function trayIcon(context: AppContext) {
  * click makes it the one with the keys, so its transcript can be chosen and
  * copied. Its height follows the card's, its top where it is. On Windows it
  * takes clicks only over the card, so the clear room never stands in the
- * way of what is under it. It opens when the main window's call appears and
- * closes when the call is put away.
+ * way of what is under it: by following the pointer with a mouse; on a
+ * touch screen, where a tap comes with no pointer before it, by the
+ * window's shape (the card alone, its shadow cut there). Closed by
+ * Windows (Alt-F4), it asks the call, as the Mac's `performClose`: a call
+ * that is on ends, one that is over goes. It opens when the main window's
+ * call appears and closes when the call is put away, or when the main
+ * window's page goes.
  */
 function callWindow(context: AppContext) {
   let window: BrowserWindow | undefined
   let shown: ShownCall | null = null
   let height: number = callHeights.first
-  const passesClicks = process.platform === 'win32'
+  let zoom = 1
+  const onWindows = process.platform === 'win32'
+  const touch = () =>
+    onWindows && screen.getAllDisplays().some((display) => display.touchSupport === 'available')
+  let shaped = false
   const there = () => (window && !window.isDestroyed() ? window : undefined)
+  const shape = (made: BrowserWindow) => {
+    if (shaped) made.setShape([{ x: callMargin.left, y: callMargin.top, width: callCard.width, height }])
+  }
+  const close = () => {
+    const now = there()
+    window = undefined
+    // `destroy` closes without asking (no `close` event).
+    if (now) now.destroy()
+  }
+  // The main window's page gone (it crashed, or loads again): nothing could answer the card's buttons.
+  const watched = new WeakSet<WebContents>()
+  const watchMain = () => {
+    const main = context.mainWindow()?.webContents
+    if (!main || watched.has(main)) return
+    watched.add(main)
+    const gone = () => {
+      shown = null
+      close()
+    }
+    main.on('render-process-gone', gone)
+    main.on('did-start-navigation', (details) => {
+      if (details.isMainFrame && !details.isSameDocument) gone()
+    })
+  }
   const open = () => {
     const area = screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).workArea
     height = callHeights.first
@@ -368,27 +433,37 @@ function callWindow(context: AppContext) {
         additionalArguments: [factsArgument(factsFor(context.app, 'call'))],
       },
     })
+    // Before it loads: its page makes only its own calls and never holds the kept pair.
+    limit(made.webContents, callWindowCalls)
     made.setAlwaysOnTop(true, 'floating')
-    if (passesClicks) made.setIgnoreMouseEvents(true, { forward: true })
+    shaped = touch()
+    if (shaped) shape(made)
+    else if (onWindows) made.setIgnoreMouseEvents(true, { forward: true })
     made.once('ready-to-show', () => {
       if (made.isDestroyed() || window !== made) return
       made.showInactive()
+    })
+    // Windows' own close (Alt-F4 with the keys on it): the call is asked, the window stays until the call goes.
+    made.on('close', (event) => {
+      if (window !== made) return
+      event.preventDefault()
+      emit(context.mainWindow()?.webContents, 'callAction', 'close')
     })
     made.on('closed', () => {
       if (window === made) window = undefined
     })
     window = made
+    watchMain()
     void made.loadURL(appStart)
-  }
-  const close = () => {
-    const now = there()
-    window = undefined
-    if (now) now.destroy()
   }
   context.beforeQuit(close)
   return {
     isIts: (from: WebContents) => from === there()?.webContents,
-    shown: () => shown,
+    /** The call as it is, and the main window's zoom for the page to undo (`callZoom`). */
+    ready() {
+      emit(there()?.webContents, 'callZoom', zoom)
+      return shown
+    },
     show(next: ShownCall | null) {
       shown = next
       if (!next) return close()
@@ -399,10 +474,13 @@ function callWindow(context: AppContext) {
     levels(levels: number[]) {
       emit(there()?.webContents, 'callLevels', levels)
     },
-    /** Brought forward, without the keys (`focus`). */
+    /** Brought forward, without the keys (`focus`); opened again if Windows took it away. */
     focus() {
       const now = there()
-      if (!now) return
+      if (!now) {
+        if (shown) open()
+        return
+      }
       now.showInactive()
       now.moveTop()
     },
@@ -412,10 +490,16 @@ function callWindow(context: AppContext) {
       if (!now || next === height) return
       height = next
       now.setBounds(callResized(now.getBounds(), next))
+      shape(now)
     },
     pointer(inside: boolean) {
       const now = there()
-      if (now && passesClicks) now.setIgnoreMouseEvents(!inside, { forward: true })
+      if (now && onWindows && !shaped) now.setIgnoreMouseEvents(!inside, { forward: true })
+    },
+    /** The main window's zoom, which reaches this page too: told, for it to draw itself back at 1. */
+    zoomed(factor: number) {
+      zoom = factor
+      emit(there()?.webContents, 'callZoom', factor)
     },
   }
 }

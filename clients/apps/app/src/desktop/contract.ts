@@ -74,8 +74,10 @@ export interface DesktopCalls {
   closeWindow(): void
   /** F11 (the Mac's View › Enter Full Screen): the window full screen, or back. */
   toggleFullScreen(): void
-  /** Control-Q (the Mac's Quit Simeon ⌘Q). */
+  /** Control-Q (the Mac's Quit Simeon ⌘Q), from the main window or the call's. */
   quit(): void
+  /** Control-= or Control-+ (0.1), Control-- (-0.1), Control-0 (0, back to 100 %): the main window's zoom, 50 % to 300 %, not kept (WindowChrome.swift's `WindowZoom`). */
+  zoomWindow(step: number): void
   /** The call as the main window's page has it, or null once it is put away: the call's own window opens, follows it and closes (CallBannerWindow.swift). */
   showCall(call: ShownCall | null): void
   /** The call's waveform, as it changes (every 90 ms or so). */
@@ -132,6 +134,8 @@ export interface DesktopEvents {
   callShown: ShownCall | null
   /** The call's window's page: the waveform's bars. */
   callLevels: number[]
+  /** The call's window's page: the main window's zoom, which Chromium gives every page of the app's origin; the page draws itself back at 100 %. */
+  callZoom: number
 
   // MARK: 7d, links and pages outside
 

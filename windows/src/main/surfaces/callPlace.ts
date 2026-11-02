@@ -46,3 +46,14 @@ export function callResized(frame: Place, cardHeight: number): Place {
     height: cardHeight + callMargin.top + callMargin.bottom,
   }
 }
+
+/**
+ * The main window's zoom after a step (WindowChrome.swift's
+ * `WindowZoom.apply`): 0 back to 100 %, else 0.1 more or less, rounded to
+ * the hundredth, 50 % to 300 %. (Here with the call's window's sums: it
+ * draws itself back at 100 % whatever the main window's is.)
+ */
+export function zoomed(factor: number, step: number): number {
+  const next = step === 0 ? 1 : Math.round((factor + step) * 100) / 100
+  return Math.min(3, Math.max(0.5, next))
+}

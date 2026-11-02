@@ -13,7 +13,12 @@ import { FakeBackend, ms } from '../core/testing'
 import type { AgentNote, TaskbarBadge, TrayMenu } from './contract'
 import { desktop } from './desktop'
 import { runBeforeQuit } from './quitting'
-import { DesktopSurfaces, type FollowedSession } from './surfaces'
+import {
+  DesktopSurfaces,
+  type FollowedSession,
+  keyLetter,
+  zoomStep,
+} from './surfaces'
 import { FakeDesktop } from './testing'
 
 const fixture = JSON.parse(
@@ -52,6 +57,7 @@ const iris = (fields: Partial<Agent>) =>
 function key(
   fields: Partial<{
     key: string
+    code: string
     ctrlKey: boolean
     shiftKey: boolean
     altKey: boolean
@@ -60,6 +66,7 @@ function key(
 ): Event {
   return Object.assign(new Event('keydown', { cancelable: true }), {
     key: '',
+    code: '',
     ctrlKey: false,
     shiftKey: false,
     altKey: false,
@@ -85,6 +92,7 @@ async function started(options: { focused?: boolean } = {}) {
     'closeWindow',
     'quit',
     'toggleFullScreen',
+    'zoomWindow',
   ] as const)
     fake.answer(name, () => undefined)
   fake.answer('isWindowFocused', () => options.focused ?? false)
@@ -349,5 +357,81 @@ describe('quitting with a call on (CallBannerWindow.swift’s `follow`)', () => 
     store.call = { phase: 'ended' } as CallState
     await runBeforeQuit()
     expect(hungUp).toBe(1)
+  })
+})
+
+describe('the Mac’s zoom keys (WindowChrome.swift’s `WindowZoom.step`)', () => {
+  it('reads Control-= and Control-+ in, Control-- out, Control-0 back; not with Alt, not Control-Shift-0', () => {
+    const with_ = (key: string, more: Partial<Record<string, boolean>> = {}) =>
+      zoomStep({
+        key,
+        ctrlKey: true,
+        metaKey: false,
+        altKey: false,
+        shiftKey: false,
+        ...more,
+      })
+    expect(with_('=')).toBe(0.1)
+    expect(with_('+', { shiftKey: true })).toBe(0.1)
+    expect(with_('-')).toBe(-0.1)
+    expect(with_('0')).toBe(0)
+    expect(with_('0', { shiftKey: true })).toBeUndefined()
+    expect(with_('=', { altKey: true })).toBeUndefined()
+    expect(with_('=', { ctrlKey: false })).toBeUndefined()
+    expect(with_('a')).toBeUndefined()
+  })
+
+  it('asks the app, taking them before anything in the window hears them', async () => {
+    const { target, calls } = await started()
+    const keys = [
+      key({ key: '=', ctrlKey: true }),
+      key({ key: '-', ctrlKey: true }),
+      key({ key: '0', ctrlKey: true }),
+    ]
+    for (const event of keys) target.dispatchEvent(event)
+    expect(calls('zoomWindow')).toEqual([0.1, -0.1, 0])
+    // Taken as they go down to the page (capture), so the field or the computer's screen under them never has them.
+    expect(
+      keys.every((event) => event.defaultPrevented && event.cancelBubble),
+    ).toBe(true)
+  })
+})
+
+describe('keys on any keyboard layout', () => {
+  it('finds Control-W by its place where the layout writes no Latin letter', async () => {
+    expect(keyLetter({ key: 'W', code: 'KeyW' })).toBe('w')
+    expect(keyLetter({ key: 'ц', code: 'KeyW' })).toBe('w')
+    // AZERTY: the letter the layout writes, as Windows' own shortcuts read it.
+    expect(keyLetter({ key: 'z', code: 'KeyW' })).toBe('z')
+    const { target, calls } = await started()
+    target.dispatchEvent(key({ key: 'ц', code: 'KeyW', ctrlKey: true }))
+    expect(calls('closeWindow').length).toBe(1)
+  })
+})
+
+describe('as the app starts', () => {
+  it('reads the window as behind until it is in front (MacServices.swift’s `watch`)', async () => {
+    const { store } = await started({ focused: false })
+    expect(store.isForeground).toBe(false)
+  })
+
+  it('cuts a long name to what the app takes, never giving up the notification', async () => {
+    const { backend, calls } = await started()
+    const long = 'Iris'.repeat(200)
+    backend.push({
+      kind: 'agentUpserted',
+      agent: iris({ name: long, isRunning: true }),
+    })
+    backend.push({
+      kind: 'agentUpserted',
+      agent: iris({
+        name: long,
+        lastMessageId: 'm1',
+        lastMessagePreview: 'Hi',
+      }),
+    })
+    const note = (calls('notify') as AgentNote[])[0]
+    expect(note?.title.length).toBe(512)
+    expect(note?.body).toBe('Hi')
   })
 })

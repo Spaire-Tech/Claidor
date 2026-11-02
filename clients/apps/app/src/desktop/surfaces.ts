@@ -23,6 +23,9 @@ import type { TrayMenu } from './contract'
 import type { Desktop } from './desktop'
 import { beforeQuit } from './quitting'
 
+/** The longest title and body the app takes for a notification (windows/src/main/surfaces/checks.ts). */
+export const notificationTitleMost = 512
+
 /** What the signed-in window adds to the tray's menu (useDesktopWindow.ts). */
 export type WindowTray = Pick<TrayMenu, 'agents' | 'call'>
 
@@ -52,6 +55,43 @@ export function trayWords(): TrayMenu['words'] {
     aboutSimeon: t('About Simeon'),
     checkForUpdates: t('Check for Updates…'),
     quitSimeon: t('Quit Simeon'),
+  }
+}
+
+/**
+ * The letter a Control key was pressed with: the layout's own, or, where the
+ * layout writes no Latin letter (Russian, Greek), the key's place
+ * (`KeyW`), as the Mac's menus and Windows' accelerators find it.
+ */
+export function keyLetter(event: { key: string; code: string }): string {
+  if (/^[a-z]$/i.test(event.key)) return event.key.toLowerCase()
+  const place = /^Key([A-Z])$/.exec(event.code)
+  return place ? place[1]!.toLowerCase() : event.key.toLowerCase()
+}
+
+/**
+ * The whole window's zoom keys (WindowChrome.swift's `WindowZoom.step`):
+ * Control-= or Control-+ in, Control-- out, Control-0 back; Shift allowed
+ * but for 0, never with Alt. The step, or undefined.
+ */
+export function zoomStep(event: {
+  key: string
+  ctrlKey: boolean
+  metaKey: boolean
+  altKey: boolean
+  shiftKey: boolean
+}): number | undefined {
+  if (!event.ctrlKey || event.metaKey || event.altKey) return undefined
+  switch (event.key) {
+    case '=':
+    case '+':
+      return 0.1
+    case '-':
+      return -0.1
+    case '0':
+      return event.shiftKey ? undefined : 0
+    default:
+      return undefined
   }
 }
 
@@ -124,11 +164,19 @@ export class DesktopSurfaces {
           this.focusChanged(focused)
       })
       .catch(() => {})
+    // The window's focus as it starts (MacServices.swift's `watch`): the store reads the open chat only while it is in front. The computer is told once it is reached.
+    this.store.isForeground = this.inFront
     const target = this.target
     if (target) {
       const keys = (event: Event) => this.key(event as KeyboardEvent)
+      // The zoom keys before anything in the window, a field and the computer's screen too (`WindowZoom`'s monitor).
+      const zoom = (event: Event) => this.zoomKey(event as KeyboardEvent)
       target.addEventListener('keydown', keys)
-      this.stops.push(() => target.removeEventListener('keydown', keys))
+      target.addEventListener('keydown', zoom, true)
+      this.stops.push(() => {
+        target.removeEventListener('keydown', keys)
+        target.removeEventListener('keydown', zoom, true)
+      })
     }
     // Quitting with a call on ends it, rather than leaving its line "now" (CallBannerWindow.swift's `follow`).
     this.stops.push(
@@ -225,8 +273,9 @@ export class DesktopSurfaces {
       void this.host
         .call('notify', {
           agentId: transition.agentId,
-          title: words.title,
-          body: words.body,
+          // A long name is cut to what the app takes, never refused whole.
+          title: words.title.slice(0, notificationTitleMost),
+          body: words.body.slice(0, notificationTitleMost),
           sound: transition.kind === 'agent-needs-input',
         })
         .catch(() => {})
@@ -264,7 +313,7 @@ export class DesktopSurfaces {
     }
     if (!event.ctrlKey || event.metaKey || event.altKey || event.shiftKey)
       return
-    switch (event.key.toLowerCase()) {
+    switch (keyLetter(event)) {
       case 'w':
         event.preventDefault()
         void this.host.call('closeWindow').catch(() => {})
@@ -280,5 +329,15 @@ export class DesktopSurfaces {
           void this.store.reloadFromComputer()
         return
     }
+  }
+
+  /** ⌘= ⌘- ⌘0 as Control-= Control-- Control-0: the main window's zoom, 50 % to 300 % (`WindowZoom.apply`, in the app). */
+  private zoomKey(event: KeyboardEvent): void {
+    if (event.isComposing) return
+    const step = zoomStep(event)
+    if (step === undefined) return
+    event.preventDefault()
+    event.stopPropagation()
+    void this.host.call('zoomWindow', step).catch(() => {})
   }
 }

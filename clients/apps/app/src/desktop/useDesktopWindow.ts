@@ -36,13 +36,14 @@ export function windowTray(
       .slice(0, trayAgentsShown)
       .map((agent) => ({
         id: agent.id,
-        name: agent.name,
+        // Cut to what the app takes (windows/src/main/surfaces/checks.ts), never refused whole.
+        name: agent.name.slice(0, 256),
         unread: agent.hasUnread || agent.unreadCount > 0,
       })),
     ...(canCall
       ? {
           call: callee
-            ? { title: t`Call ${callee.name}`, enabled: true }
+            ? { title: t`Call ${callee.name}`.slice(0, 300), enabled: true }
             : { title: t('Call Agent'), enabled: false },
         }
       : {}),

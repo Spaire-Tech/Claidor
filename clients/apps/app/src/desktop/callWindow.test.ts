@@ -145,6 +145,12 @@ describe('the call window’s side (CallMirror)', () => {
       'dismiss',
       'close',
     ])
+    // The main window zoomed: the page is told, to draw itself back at 100 %.
+    fake.emit('callZoom', 1.5)
+    expect(mirror.zoom).toBe(1.5)
+    expect(redraws).toBe(before + 1)
+    fake.emit('callZoom', 'big' as never)
+    expect(mirror.zoom).toBe(1.5)
     fake.emit('callShown', null)
     expect(mirror.call).toBeUndefined()
     expect(mirror.callLevels).toEqual([])
