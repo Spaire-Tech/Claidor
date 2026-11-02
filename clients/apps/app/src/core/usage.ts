@@ -6,6 +6,7 @@
 // window drew them, the money and the share as it wrote them. Checked
 // against the core's own fixture (Fixtures/settings.json), read in place.
 
+import { copyrightLine } from './generalSettings'
 import { type JSONValue, bool, field, num, str, text } from './json'
 import { t } from './l10n'
 import { displayLocale } from './listTime'
@@ -425,7 +426,8 @@ export function usageReading(
 // MARK: About (`AboutSimeon`)
 
 export const aboutName = 'Simeon'
-export const aboutCopyright = 'Copyright © 2026 Spaire, Inc.'
+/** About's copyright line: Legal's, kept in one place (`AboutSimeon.copyright`). */
+export const aboutCopyright = copyrightLine
 /** How long "Copied" stays (`copiedSeconds`). */
 export const copiedSeconds = 1.2
 

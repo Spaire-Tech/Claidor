@@ -41,6 +41,7 @@ import { t } from '../l10n'
 import { AgentPicture } from './AgentMark'
 import { CardShell, type CardProps } from './Cards'
 import './ConnectCards.css'
+import { openBlankTab } from './blankTab'
 import { classes } from './classes'
 import { useConnector, useConnectorWatched } from './connector'
 import { useDarkScheme } from './theme'
@@ -327,8 +328,7 @@ function ListenerConnectCardView({
   const connect = async () => {
     setOpening(true)
     // Opened at once, before the computer answers, so the browser lets it open; sent to the page once it is known.
-    const tab = window.open('', '_blank')
-    if (tab) tab.opener = null
+    const tab = openBlankTab()
     const page = webPage(await store.listenerConnectURL(platform))
     if (!page) tab?.close()
     else if (!tab) {

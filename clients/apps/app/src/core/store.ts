@@ -910,6 +910,10 @@ export class AppStore {
         // The computer's notices (6f): the credits' line reads an open agent's.
         this.takeTray(event.tray)
         return
+      case 'appsChanged':
+        // An app connected or removed on the computer: the apps read again (Store.swift's `.appsChanged`), so a sign-in finished after its wait says Connected.
+        void this.loadApps()
+        return
       default:
         // The rebuild's and the move's (5c); the rest comes with its screens.
         this.applyRebuild(event)

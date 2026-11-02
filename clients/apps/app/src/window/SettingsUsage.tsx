@@ -41,6 +41,7 @@ import {
   SettingsPill,
 } from './SettingsParts'
 import './SettingsUsage.css'
+import { openBlankTab } from './blankTab'
 import { classes } from './classes'
 import { useWatched } from './useStore'
 
@@ -320,8 +321,7 @@ function ManagePlanGroup({
   const open = (which: string, flow?: string, tier?: string) => {
     if (opening !== undefined) return
     // Opened at once, before the answer, so the browser lets it open; sent to the page once it is known. It keeps no handle on the app.
-    const page = window.open('', '_blank')
-    if (page) page.opener = null
+    const page = openBlankTab()
     setOpening(which)
     setFailure(undefined)
     void (async () => {
