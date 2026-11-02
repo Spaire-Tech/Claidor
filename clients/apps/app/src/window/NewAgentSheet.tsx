@@ -156,6 +156,26 @@ function NewAgentSheet({
       setFailed(true)
     }
   }
+  // Return where no field takes it creates the agent, as the Mac's Create is the sheet's default button (`.keyboardShortcut(.defaultAction)`); not while the editor is open, whose popover has the keys.
+  const returnCreates = useRef<() => void>(undefined)
+  useLayoutEffect(() => {
+    returnCreates.current = editing ? undefined : () => void create()
+  })
+  useEffect(() => {
+    const key = (event: KeyboardEvent) => {
+      if (event.key !== 'Enter' || event.isComposing || event.keyCode === 229)
+        return
+      if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey)
+        return
+      if (isTextField(event.target)) return
+      const run = returnCreates.current
+      if (!run) return
+      event.preventDefault()
+      run()
+    }
+    window.addEventListener('keydown', key, true)
+    return () => window.removeEventListener('keydown', key, true)
+  }, [])
   return (
     <Sheet label={t('New Agent')} close={dismiss} className="new-agent-sheet">
       <div className="new-agent-top">
@@ -350,21 +370,24 @@ function EditorPopover({
   }, [anchor])
   useEffect(() => {
     const down = (event: MouseEvent) => {
-      if (editor.voiceMenu) return
       const target = event.target
       if (!(target instanceof Node)) return
+      if (editor.voiceMenu) {
+        // The voices' list closes itself (`useDismiss`); as the Mac's menu, it takes the click outside it: nothing under it gets it, the sheet's dimmed window neither.
+        const inList =
+          target instanceof Element && target.closest('.context-menus')
+        if (!inList) swallowClick(event)
+        return
+      }
       if (box.current?.contains(target)) return
       if (keep.some((one) => one.current?.contains(target))) return
+      // On the dimmed window, the click closes only the editor, as the Mac's sheet waits while it is open (`!editingAvatar`).
+      if (!(target instanceof Element && target.closest('.sheet')))
+        event.preventDefault()
       latest.current()
     }
     const paste = (event: ClipboardEvent) => {
-      const target = event.target
-      if (
-        target instanceof HTMLInputElement ||
-        target instanceof HTMLTextAreaElement ||
-        (target instanceof HTMLElement && target.isContentEditable)
-      )
-        return
+      if (isTextField(event.target)) return
       event.preventDefault()
       editor.paste([...(event.clipboardData?.files ?? [])])
     }
@@ -380,4 +403,39 @@ function EditorPopover({
       {children}
     </div>
   )
+}
+
+/** A mousedown taken by an open list: it reaches nothing under it (the sheet's dimmed window reads `defaultPrevented`), nor does the click it makes. */
+function swallowClick(event: MouseEvent) {
+  event.preventDefault()
+  event.stopPropagation()
+  const click = (next: MouseEvent) => {
+    next.preventDefault()
+    next.stopPropagation()
+  }
+  document.addEventListener('click', click, true)
+  document.addEventListener(
+    'mouseup',
+    () =>
+      setTimeout(() => document.removeEventListener('click', click, true), 0),
+    { capture: true, once: true },
+  )
+}
+
+/** A field that takes words (its own Return and paste come first); not a slider or a checkbox. */
+function isTextField(target: EventTarget | null): boolean {
+  if (target instanceof HTMLTextAreaElement) return true
+  if (target instanceof HTMLElement && target.isContentEditable) return true
+  if (!(target instanceof HTMLInputElement)) return false
+  return ![
+    'range',
+    'checkbox',
+    'radio',
+    'button',
+    'submit',
+    'reset',
+    'file',
+    'color',
+    'image',
+  ].includes(target.type)
 }

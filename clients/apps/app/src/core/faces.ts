@@ -7,7 +7,7 @@
 // Which face an agent is given, and the avatar editor's Shuffle and Reset
 // (step 4b, at the end). Giving a face to every agent that has none (the
 // store writes it to the computer, StoreFaces.swift's `assignMissingFaces`)
-// comes with the store's actions.
+// is left to the Mac and the iPhone for now (store.ts, step 4b's section).
 
 import catalogue from '../../../../../ios/SimeonCore/Sources/SimeonCore/Resources/Faces/faces.json'
 import {

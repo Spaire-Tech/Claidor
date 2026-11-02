@@ -15,6 +15,8 @@ function useEscape(handle: () => void) {
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return
+      // Letters still being composed (Japanese, Chinese…) take Escape first, as a Mac field does; Safari sends that Escape as key 229.
+      if (event.isComposing || event.keyCode === 229) return
       event.preventDefault()
       event.stopPropagation()
       latest.current()
@@ -130,7 +132,7 @@ export function somethingOver(): boolean {
   return document.querySelector('[aria-modal="true"]') != null
 }
 
-/** A sheet over the window: the dimmed window behind, a click outside or Escape closes it. */
+/** A sheet over the window: the dimmed window behind, a click outside or Escape closes it (not a click a popover over it took first). */
 export function Sheet({
   label,
   close,
@@ -149,7 +151,9 @@ export function Sheet({
     <div
       className="sheet-scrim"
       onMouseDown={(event) => {
-        if (event.target === event.currentTarget) close()
+        // A click already taken by something over the sheet (a popover, a list; it called preventDefault) closes only that.
+        if (event.target === event.currentTarget && !event.defaultPrevented)
+          close()
       }}
     >
       <div

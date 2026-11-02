@@ -33,6 +33,17 @@ export function base64Of(bytes: Uint8Array): string {
   return btoa(binary)
 }
 
+/** A picture's data address, made once per picture (the editor draws the draft again on every change of the store). */
+const pictureAddresses = new WeakMap<Uint8Array, string>()
+function pictureAddress(picture: Uint8Array): string {
+  let address = pictureAddresses.get(picture)
+  if (address === undefined) {
+    address = `data:image/png;base64,${base64Of(picture)}`
+    pictureAddresses.set(picture, address)
+  }
+  return address
+}
+
 interface DraftFields {
   name: string
   title: string
@@ -127,7 +138,7 @@ export class AgentDraft {
       name: this.name,
       avatarShape: shown?.id,
       ...(this.picture
-        ? { avatarDataURL: `data:image/png;base64,${base64Of(this.picture)}` }
+        ? { avatarDataURL: pictureAddress(this.picture) }
         : { avatarVersion: shown?.version }),
       voiceId: this.voiceId,
     })

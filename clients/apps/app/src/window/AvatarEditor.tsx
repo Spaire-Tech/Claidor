@@ -467,13 +467,22 @@ export class AvatarEditorModel {
 
 // MARK: The popover
 
-/** Whether the keys are in a field that takes words (its own Escape and paste come first). */
+/** Whether the keys are in a field that takes words (its own Escape and paste come first); not the zoom's slider. */
 function isField(target: EventTarget | null): boolean {
-  return (
-    target instanceof HTMLInputElement ||
-    target instanceof HTMLTextAreaElement ||
-    (target instanceof HTMLElement && target.isContentEditable)
-  )
+  if (target instanceof HTMLTextAreaElement) return true
+  if (target instanceof HTMLElement && target.isContentEditable) return true
+  if (!(target instanceof HTMLInputElement)) return false
+  return ![
+    'range',
+    'checkbox',
+    'radio',
+    'button',
+    'submit',
+    'reset',
+    'file',
+    'color',
+    'image',
+  ].includes(target.type)
 }
 
 /**
@@ -496,7 +505,11 @@ export function AvatarEditorPopover({
   close: () => void
 }) {
   const [model] = useState(() => new AvatarEditorModel(agent.id, agent.isGroup))
-  useEffect(() => () => model.closeNow(), [model])
+  // Open while shown, closed when it goes (a picture still being drawn is then saved as it comes); opened again on mounting, as React's strict mode mounts twice.
+  useEffect(() => {
+    model.reopen()
+    return () => model.closeNow()
+  }, [model])
   const box = useRef<HTMLDivElement>(null)
   const latest = useRef(close)
   useLayoutEffect(() => {
@@ -921,7 +934,11 @@ function VoicePicker({
       <div className="voice-title">{t('Voice')}</div>
       {note !== undefined && <div className="voice-note">{note}</div>}
       {voices.length === 0 ? (
-        <div className="voice-loading" aria-label={t('Loading voices')}>
+        <div
+          className="voice-loading"
+          role="status"
+          aria-label={t('Loading voices')}
+        >
           <span className="editor-spinner" />
         </div>
       ) : (
@@ -1048,7 +1065,7 @@ function VoiceMenu({
 
 /**
  * Generate: a 150-point field ("Describe your avatar…", 14) and Generate
- * under it (⌘Return in the field too, Control-Return elsewhere). While it
+ * under it (⌘Return in the field too, Control-Return off a Mac). While it
  * draws: the words on one line, a grey disc pulsing, and "Generating…".
  * Then the crop.
  */
