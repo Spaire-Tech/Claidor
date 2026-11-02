@@ -506,6 +506,8 @@ export class ComputerStreamLog {
   /** The last reason a screen gave for not connecting; cleared once one connects. */
   reason?: string
   readonly lines: string[] = []
+  /** The Windows app's file beside its data, where each line also goes (src/desktop/session.ts). */
+  sink?: (line: string) => void
   private listeners = new Set<() => void>()
   private version = 0
 
@@ -518,6 +520,7 @@ export class ComputerStreamLog {
 
   write(line: string, now: Date = new Date()): void {
     this.lines.push(`${now.toISOString()} ${line}`)
+    this.sink?.(line)
     if (this.lines.length > 500) this.lines.splice(0, this.lines.length - 500)
     const change = streamReasonChange(line)
     const before = this.reason

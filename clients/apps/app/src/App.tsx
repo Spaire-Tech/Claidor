@@ -13,6 +13,7 @@ import {
   useState,
   useSyncExternalStore,
 } from 'react'
+import { desktop } from './desktop/desktop'
 import { t } from './l10n'
 import type { WebSession } from './session'
 import { AccessCover } from './window/AccessCover'
@@ -44,6 +45,7 @@ import {
   sidebarWidth,
   toggled,
 } from './window/sidebarLayout'
+import { SignInScreen } from './window/SignInScreen'
 import { StarterPackLayer } from './window/StarterPackSheet'
 import { useWatched } from './window/useStore'
 import { type Shown, ViewerContext, ViewerLayer } from './window/Viewers'
@@ -396,5 +398,7 @@ export function App({ session }: { session?: WebSession }) {
   if (!session) return <Splash />
   if (session.phase === 'signedIn' || session.phase === 'firstRun')
     return <SignedIn session={session} />
+  // The Windows app signs in as the Mac does, on its own screen (step 7b); the web on the website, the mark meanwhile.
+  if (desktop()) return <SignInScreen session={session} />
   return <Splash />
 }

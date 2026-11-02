@@ -4,6 +4,8 @@
 // choose it in Settings › General (step 6e): kept in this browser, used from
 // the next load.
 
+import { desktop } from '../desktop/desktop'
+
 /** English, the source language. */
 export const english = 'en'
 
@@ -117,13 +119,19 @@ export function chooseLanguage(
 /** This run's language and the choice it was opened with, read once. */
 let launched: { language: string; chosen: string } | undefined
 
+/** The person's own languages, most wanted first: Windows' own in the Windows app (`app.getPreferredSystemLanguages()`), else the browser's. */
+function systemLanguages(): readonly string[] {
+  const windows = desktop()?.facts.systemLanguages ?? []
+  if (windows.length > 0) return windows
+  return typeof navigator === 'undefined'
+    ? [english]
+    : (navigator.languages ?? [navigator.language])
+}
+
 function launch(): { language: string; chosen: string } {
   if (launched) return launched
   const chosen = chosenLanguage()
-  const browser =
-    typeof navigator === 'undefined'
-      ? [english]
-      : (navigator.languages ?? [navigator.language])
+  const browser = systemLanguages()
   launched = {
     language: chosen !== systemLanguage ? chosen : pickLanguage(browser),
     chosen,

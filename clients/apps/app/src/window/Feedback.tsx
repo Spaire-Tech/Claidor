@@ -51,6 +51,8 @@ import { detectedTimeZone } from '../core/generalSettings'
 import { currentLanguage } from '../core/language'
 import { recentActivity } from '../core/recentActivity'
 import type { AppStore } from '../core/store'
+import { desktop } from '../desktop/desktop'
+import { desktopDeviceFacts, desktopLogs } from '../desktop/facts'
 import { t, tk } from '../l10n'
 import { clientVersion } from '../session'
 import { classes } from './classes'
@@ -194,18 +196,22 @@ function FeedbackSheet({
     setSending(true)
     setFailure(undefined)
     const snapshot = report
-    const facts = deviceFactsFrom(
-      await browserSays(),
-      clientVersion,
-      currentLanguage(),
-      detectedTimeZone(),
-    )
+    // The Windows app says what the Mac says of itself (`MacFeedback.facts`) and sends its two logs from its folder.
+    const host = desktop()
+    const facts = host
+      ? await desktopDeviceFacts(host, currentLanguage(), detectedTimeZone())
+      : deviceFactsFrom(
+          await browserSays(),
+          clientVersion,
+          currentLanguage(),
+          detectedTimeZone(),
+        )
     const diagnostics = snapshot.includesDiagnostics
       ? diagnosticsText(
           facts,
           store.diagnosticsState,
           recentActivity(),
-          tabLogs(),
+          host ? await desktopLogs(host) : tabLogs(),
         )
       : undefined
     try {

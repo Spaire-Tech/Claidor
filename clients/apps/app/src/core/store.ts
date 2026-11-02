@@ -200,6 +200,7 @@ import {
   routinesFrom,
   sameRoutines,
 } from './routines'
+import { type SavedChats, ownerOf, sameOwner } from './savedChats'
 import {
   type FileHit,
   type MessageHit,
@@ -492,8 +493,24 @@ function sameList(a: readonly Agent[], b: readonly Agent[]): boolean {
 }
 
 export class AppStore {
-  agents: Agent[] = []
-  account?: Account
+  // The list and the account: a change to either is a change to what the Windows app keeps (the Mac's `didSet`s, Step 7b's section).
+  private agentsNow: Agent[] = []
+  private accountNow?: Account
+  get agents(): Agent[] {
+    return this.agentsNow
+  }
+  set agents(next: Agent[]) {
+    this.agentsNow = next
+    this.rosterChanged()
+  }
+  get account(): Account | undefined {
+    return this.accountNow
+  }
+  set account(next: Account | undefined) {
+    const before = this.accountNow
+    this.accountNow = next
+    if (next !== before) this.savedOwnerKnown()
+  }
   /** The list shown is a copy (the server's), not yet the computer's. */
   showingSaved = false
   /** The copy shown is the server's. */
@@ -619,11 +636,15 @@ export class AppStore {
    * soon as a list is on screen, the server's copy or the computer's.
    */
   async attach(backend: AgentBackend, shown?: () => void): Promise<void> {
+    // What changed since the last save is kept before it goes (Reload), and shown again at once below (Step 7b).
+    this.saveNow()
     const account = this.account
     this.detach()
     this.account = account
     this.backend = backend
     this.onListShown = shown
+    // The list, its pins and folders and the catalogue kept on this device, until the computer answers (the Windows app's SavedChats).
+    this.showKept(shown)
     if (this.readsServerCopy) void this.showServerList(backend)
     this.isLoading = true
     this.changed()
@@ -854,6 +875,7 @@ export class AppStore {
         const next = appliedChange(change, current)
         if (this.streamingOnly.has(change.agentId)) {
           this.transcripts[change.agentId] = next
+          this.chatChanged(change.agentId)
           this.scheduleLayout(change.agentId)
         } else {
           this.setTranscript(change.agentId, next, streaming)
@@ -1002,6 +1024,7 @@ export class AppStore {
     const ids = (arr(field(settings, 'pinnedAgentIds')) ?? [])
       .map(text)
       .filter((id): id is string => id != null)
+    this.pinsFromComputer()
     if (ids.join('\u0000') === this.pinnedIds.join('\u0000')) return
     this.pinnedIds = ids
     this.changed()
@@ -1009,6 +1032,7 @@ export class AppStore {
 
   /** Pin or unpin: the whole ordered list is written, as the Mac writes it (`setHostSettings({pinnedAgentIds})`); a new pin goes last. */
   async setPinned(agentId: string, pinned: boolean): Promise<void> {
+    if (this.pinsKept) await this.freshPinsIfKept()
     const next = this.pinnedIds.filter((id) => id !== agentId)
     if (pinned) next.push(agentId)
     await this.writePins(
@@ -1019,6 +1043,7 @@ export class AppStore {
 
   /** Moves a pin to another pin's place (the Mac's drag in the pin grid). */
   async movePin(agentId: string, index: number): Promise<void> {
+    if (this.pinsKept) await this.freshPinsIfKept()
     const from = this.pinnedIds.indexOf(agentId)
     if (from < 0) return
     const next = this.pinnedIds.filter((id) => id !== agentId)
@@ -1031,6 +1056,7 @@ export class AppStore {
     if (next.join('\u0000') === this.pinnedIds.join('\u0000')) return
     this.pinWrites += 1
     this.pinnedIds = next
+    this.layoutChanged()
     this.changed()
     this.pinWritesInFlight += 1
     const written = await this.command(
@@ -1053,6 +1079,7 @@ export class AppStore {
   private takeSections(settings: JSONValue, started: number): void {
     if (started !== this.sectionWrites) return
     const next = parseSections(field(settings, 'sidebarSections') ?? [])
+    this.sectionsFromComputer()
     if (JSON.stringify(next) === JSON.stringify(this.sidebarSections)) return
     this.sidebarSections = next
     this.changed()
@@ -1073,11 +1100,18 @@ export class AppStore {
     if (JSON.stringify(next) === JSON.stringify(current)) return true
     this.sectionWrites += 1
     this.sidebarSections = next
+    this.layoutChanged()
     this.changed()
+    const kept = this.sectionsKept
     void (async () => {
+      // The sections shown are this device's copy: the change is made on the computer's own (Step 7b).
+      const toWrite = kept
+        ? await this.keptSectionsChange(change, current, next)
+        : next
+      if (!toWrite) return
       const written = await this.command(
         'setHostSettings',
-        { sidebarSections: sectionsJSON(next) },
+        { sidebarSections: sectionsJSON(toWrite) },
         t("Couldn't change it"),
       )
       if (written === undefined) await this.loadSections()
@@ -1141,6 +1175,7 @@ export class AppStore {
     const gone = new Set(agentIds)
     this.agents = this.agents.filter((agent) => !gone.has(agent.id))
     this.pinnedIds = this.pinnedIds.filter((id) => !gone.has(id))
+    this.layoutChanged()
     for (const id of agentIds) {
       delete this.transcripts[id]
       delete this.chatRows[id]
@@ -1751,6 +1786,7 @@ export class AppStore {
     }
     if (this.backend !== backend) return undefined
     this.catalogFresh = true
+    this.keepCatalog(answer)
     const next = catalogFrom(answer)
     const entries = pluginEntriesFrom(answer)
     let moved = false
@@ -2108,6 +2144,7 @@ export class AppStore {
 
   private setTranscript(agentId: string, entries: Entry[], soon = false): void {
     this.transcripts[agentId] = entries
+    this.chatChanged(agentId)
     // A card's answer shown here is the computer's once its copy has it.
     for (const entry of entries)
       if (
@@ -2231,6 +2268,11 @@ export class AppStore {
         ? Math.max(agent.unreadCount, 1)
         : 0
       : 0
+    // Its lines kept on this device first, while the computer's are on their way (the Windows app's SavedChats).
+    if (this.saved) {
+      await this.showSavedLines(agentId)
+      if (backend !== this.backend) return
+    }
     if (this.readsServerCopy) void this.showServerLines(agentId)
     const cached = this.transcripts[agentId]
     if (cached) {
@@ -2259,6 +2301,8 @@ export class AppStore {
   async peek(agentId: string): Promise<void> {
     const backend = this.backend
     if (!backend) return
+    // The lines kept on this device show at once, else the server's copy.
+    if (this.saved) await this.showSavedLines(agentId)
     if (this.transcripts[agentId] == null) await this.showServerLines(agentId)
     if (
       !(
@@ -6127,8 +6171,306 @@ export class AppStore {
 
   // MARK: Step 7b's session in the Windows app: the chats kept on disk (the Mac's
   // `SavedChats`), the logs. Only in the Windows app (src/desktop/).
+  //
+  // The agents and their chats kept on this device (StoreSaved.swift, 26
+  // October 2026): shown at once while the computer is asleep, updated or
+  // out of reach, and replaced by the computer's own copy when it answers.
+  // Kept a moment after each change the computer sends, when the window goes
+  // behind and as the app quits. Only what the computer sent in this sign-in
+  // is kept, never the list kept before nor a chat's kept lines (nor the
+  // server's copy), and only once the account is known. The web sets no
+  // `saved`, and none of this runs there.
 
-  private resetDesktopSession(): void {}
+  /** The agents and chats kept on this device (core/savedChats.ts): set by the Windows app as it signs in; none on the web and in most tests. */
+  saved?: SavedChats
+  /** The pins and sections shown are this device's copy (`pinsKept`, `sectionsKept`), not yet the computer's: a change is made on the computer's own. */
+  private pinsKept = false
+  private sectionsKept = false
+  /** What changed since the last save: the list, the layout, and which chats. */
+  private rosterToSave = false
+  private layoutToSave = false
+  private chatsToSave = new Set<string>()
+  /** The save a moment after a change (`saveSoon`), and this sign-in's number, so a save begun before a sign-out never writes after it. */
+  private saving?: ReturnType<typeof setTimeout>
+  private saveEpoch = 0
+  /** How long after a change it is kept: a streamed answer is written every two seconds, not per word (`saveDelayNs`). */
+  static readonly saveDelayMs = 2_000
+
+  /** Signed out, or the computer let go of: nothing more is kept for this sign-in (`stopSaving`). */
+  private resetDesktopSession(): void {
+    clearTimeout(this.saving)
+    this.saving = undefined
+    this.saveEpoch += 1
+    this.rosterToSave = false
+    this.layoutToSave = false
+    this.chatsToSave = new Set()
+    this.pinsKept = false
+    this.sectionsKept = false
+  }
+
+  /** Signing out, or the sign-in ended: everything kept on this device goes (`forgetSaved`). */
+  forgetSaved(): void {
+    this.resetDesktopSession()
+    this.saved?.forget()
+  }
+
+  /** What `attach` shows before the computer answers: the list kept, its pins and folders, the catalogue; then `shown` is told, as the core tells it (the session looks whether a list shows). */
+  private showKept(shown?: () => void): void {
+    if (!this.saved) return
+    this.showSaved()
+    this.showSavedLayout()
+    this.showSavedCatalog()
+    shown?.()
+  }
+
+  /** The list kept, shown while the computer has not answered; another account's is forgotten instead (`showSaved`). */
+  private showSaved(): void {
+    const saved = this.saved
+    if (!saved || this.agents.length > 0) return
+    const roster = saved.readRoster()
+    if (!roster || roster.agents.length === 0) return
+    const owner = ownerOf(this.account)
+    if (owner && !sameOwner(owner, roster.owner)) {
+      this.forgetSaved()
+      return
+    }
+    this.showingSaved = true
+    this.listFromServer = false
+    this.agents = sortRoster(roster.agents)
+  }
+
+  /**
+   * The pins and folders kept with the list, shown with it until the
+   * computer's come (`showSavedLayout`; the founder, 27 October 2026:
+   * without them every chat showed in one list for seconds at each launch).
+   * Another account's are never shown.
+   */
+  private showSavedLayout(): void {
+    const layout = this.saved?.readLayout()
+    if (!layout) return
+    const owner = ownerOf(this.account)
+    if (owner && !sameOwner(owner, layout.owner)) return
+    if (this.pinnedIds.length === 0 && layout.pinnedIds.length > 0) {
+      this.pinnedIds = [...layout.pinnedIds]
+      this.pinsKept = true
+    }
+    if (this.sidebarSections === undefined && layout.sections) {
+      this.sidebarSections = layout.sections
+      this.sectionsKept = true
+    }
+  }
+
+  /** The connectors' catalogue kept on this device, until the computer's comes: Connectors opens on it, not on "Loading connectors…" (`showSavedCatalog`). */
+  private showSavedCatalog(): void {
+    if (this.catalog.length > 0 || this.catalogEntries.length > 0) return
+    const answer = this.saved?.readCatalog(currentLanguage())
+    if (answer === undefined) return
+    this.catalog = catalogFrom(answer)
+    this.catalogEntries = pluginEntriesFrom(answer)
+  }
+
+  /** A `getCatalog` answer the computer gave: kept on this device when it has rows (`takeCatalog`'s `keep`). */
+  private keepCatalog(answer: JSONValue): void {
+    const rows = arr(answer) ?? arr(field(answer, 'plugins')) ?? []
+    if (rows.length > 0) this.saved?.writeCatalog(answer, currentLanguage())
+  }
+
+  /** A chat's kept lines, when it has none here yet (`showSavedLines`): read from this device's copy, a moment, then shown unless something newer came meanwhile. */
+  private async showSavedLines(agentId: string): Promise<void> {
+    const saved = this.saved
+    const backend = this.backend
+    const listed = () => this.agents.some((agent) => agent.id === agentId)
+    if (!saved || !backend || this.transcripts[agentId] != null || !listed())
+      return
+    const lines = await saved.readChat(agentId)
+    if (
+      !lines ||
+      backend !== this.backend ||
+      this.transcripts[agentId] != null ||
+      !listed()
+    )
+      return
+    const owner = ownerOf(this.account)
+    const roster = saved.readRoster()
+    if (owner && roster && !sameOwner(owner, roster.owner)) return
+    this.savedLines.set(
+      agentId,
+      new Set(lines.entries.map((entry) => entry.id)),
+    )
+    if (lines.hasOlder) this.savedOlder.add(agentId)
+    else this.savedOlder.delete(agentId)
+    this.setTranscript(agentId, lines.entries)
+    this.changed()
+  }
+
+  /** The computer's pins, in place of this device's copy (`takePins`). */
+  private pinsFromComputer(): void {
+    this.pinsKept = false
+    this.layoutChanged()
+  }
+
+  /** The computer's sections, in place of this device's copy (`takeSections`). */
+  private sectionsFromComputer(): void {
+    this.sectionsKept = false
+    this.layoutChanged()
+  }
+
+  /**
+   * The pins shown are this device's copy: the computer's own are read first
+   * (waking it if it sleeps), so a pin made now does not undo one made on
+   * another device meanwhile (`freshPinsIfKept`).
+   */
+  private async freshPinsIfKept(): Promise<void> {
+    if (!this.pinsKept) return
+    let settings: JSONValue | undefined
+    try {
+      settings = await this.backend?.command('getHostSettings', {})
+    } catch {
+      return
+    }
+    if (settings !== undefined) this.takePins(settings, this.pinWrites)
+  }
+
+  /**
+   * A change made while the sections are this device's copy, made on the
+   * computer's own, read first (waking it if it sleeps): another device may
+   * have changed them since (`editSections`). Undefined when the computer
+   * can't be reached: what it holds is unknown, so the change is not shown
+   * as made.
+   */
+  private async keptSectionsChange(
+    change: (sections: SidebarSection[]) => SidebarSection[],
+    current: SidebarSection[],
+    next: SidebarSection[],
+  ): Promise<SidebarSection[] | undefined> {
+    let settings: JSONValue | undefined
+    try {
+      settings = await this.backend?.command('getHostSettings', {})
+    } catch {
+      settings = undefined
+    }
+    if (settings === undefined) {
+      if (this.sidebarSections === next) {
+        this.sidebarSections = current
+        this.changed()
+      }
+      return undefined
+    }
+    const toWrite = normalize(
+      change(parseSections(field(settings, 'sidebarSections') ?? [])),
+    )
+    this.sectionsKept = false
+    if (JSON.stringify(toWrite) !== JSON.stringify(this.sidebarSections)) {
+      this.sidebarSections = toWrite
+      this.changed()
+    }
+    this.layoutChanged()
+    return toWrite
+  }
+
+  private rosterChanged(): void {
+    if (!this.saved || !this.backend) return
+    this.rosterToSave = true
+    this.saveSoon()
+  }
+
+  private layoutChanged(): void {
+    if (!this.saved || !this.backend) return
+    this.layoutToSave = true
+    this.saveSoon()
+  }
+
+  private chatChanged(agentId: string): void {
+    if (!this.saved || !this.backend) return
+    this.chatsToSave.add(agentId)
+    this.saveSoon()
+  }
+
+  private saveSoon(): void {
+    if (!this.saved || this.saving !== undefined) return
+    const epoch = this.saveEpoch
+    this.saving = setTimeout(() => {
+      this.saving = undefined
+      if (this.saveEpoch === epoch) this.saveNow()
+    }, AppStore.saveDelayMs)
+  }
+
+  /**
+   * What changed is kept now (`saveNow`): the list once the computer has
+   * sent it, and each chat it sent lines for. Waits, keeping what changed,
+   * while the account is not known yet (it is read beside the agents).
+   */
+  saveNow(): void {
+    clearTimeout(this.saving)
+    this.saving = undefined
+    const saved = this.saved
+    const owner = ownerOf(this.account)
+    // Another account's copy went when this one became known (`savedOwnerKnown`).
+    if (!saved || !this.hasReachedBox || !this.backend || !owner) return
+    if (this.rosterToSave && !this.showingSaved) {
+      saved.writeRoster(this.agents, owner)
+      saved.removeChats(new Set(this.agents.map((agent) => agent.id)))
+      this.rosterToSave = false
+    }
+    // Only once the computer has said: a copy shown from this device is not kept again as if it were its.
+    if (this.layoutToSave && !this.pinsKept && !this.sectionsKept) {
+      saved.writeLayout(this.pinnedIds, this.sidebarSections, owner)
+      this.layoutToSave = false
+    }
+    const listed = new Set(this.agents.map((agent) => agent.id))
+    for (const agentId of this.chatsToSave) {
+      if (
+        this.savedLines.has(agentId) ||
+        this.loadFailed.has(agentId) ||
+        !listed.has(agentId)
+      )
+        continue
+      const entries = this.transcripts[agentId]
+      if (entries)
+        saved.writeChat(agentId, entries, this.olderBefore[agentId] != null)
+    }
+    this.chatsToSave = new Set()
+  }
+
+  /**
+   * The account is known (the profile answered): what was kept for another
+   * account goes, from the screen too (its list, and any chat still showing
+   * its lines); then what waited for the account is kept (`savedOwnerKnown`).
+   */
+  private savedOwnerKnown(): void {
+    const saved = this.saved
+    const owner = ownerOf(this.account)
+    if (!saved || !owner) return
+    const roster = saved.readRoster()
+    const layout = saved.readLayout()
+    const otherList = roster ? !sameOwner(owner, roster.owner) : false
+    const otherLayout = layout ? !sameOwner(owner, layout.owner) : false
+    if (otherList || otherLayout) {
+      saved.forget()
+      for (const agentId of this.savedLines.keys()) {
+        delete this.transcripts[agentId]
+        delete this.chatRows[agentId]
+      }
+      this.savedLines = new Map()
+      this.savedOlder = new Set()
+      // The server's copy is this account's own: it stays.
+      if (this.showingSaved && !this.listFromServer) {
+        this.showingSaved = false
+        this.agents = []
+      }
+      if (this.pinsKept) {
+        this.pinnedIds = []
+        this.pinsKept = false
+      }
+      if (this.sectionsKept) {
+        this.sidebarSections = undefined
+        this.sectionsKept = false
+      }
+      this.changed()
+    }
+    if (this.rosterToSave || this.layoutToSave || this.chatsToSave.size > 0)
+      this.saveSoon()
+  }
 
   // MARK: Step 7c's notifications, the taskbar's number, the tray and the menu: the
   // roster's news (the Mac's `rosterNews`), each agent's waiting and unread.
