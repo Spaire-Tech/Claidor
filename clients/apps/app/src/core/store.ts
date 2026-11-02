@@ -5285,10 +5285,7 @@ export class AppStore {
     }
     if (this.backend !== backend) return undefined
     if (url !== undefined) return url
-    // Connecting.swift's `didntConnect` (6b's connecting says it too).
-    this.problem = why
-      ? t`${name} didn't connect: ${why}`
-      : t`${name} didn't connect. Try again.`
+    this.problem = didntConnect(name, why)
     this.changed()
     return undefined
   }
