@@ -481,6 +481,8 @@ export function Sidebar({
   useWatched(store)
   const model = useWindowModel()
   useWatched(model)
+  // No row is lit while the org chart is in the chat's place (SidebarList.swift's `RowGround(open: … && !window.orgChart)`).
+  const lit = model.orgChart ? undefined : open
   // Read again every 4 seconds while the list can't be read.
   const failed = store.rosterFailed
   useEffect(() => {
@@ -919,7 +921,7 @@ export function Sidebar({
       key={agent.id}
       agent={agent}
       agents={store.agents}
-      open={open === agent.id}
+      open={lit === agent.id}
       picked={picked.has(agent.id)}
       preview={rowPreview(agent, store, open === agent.id)}
       renaming={!rail && renamingAgent === agent.id}
@@ -1154,7 +1156,7 @@ export function Sidebar({
                     key={agent.id}
                     agent={agent}
                     agents={store.agents}
-                    open={open === agent.id}
+                    open={lit === agent.id}
                     picked={picked.has(agent.id)}
                     lit={
                       pinTarget?.kind === 'tile' && pinTarget.id === agent.id
