@@ -157,6 +157,11 @@ def test_what_the_feed_may_name() -> None:
     assert is_windows_file("0.2.0-beta.1", "Simeon-Setup-0.2.0-beta.1.exe.blockmap")
     assert not is_windows_file("0.2.0", "Simeon-Setup-0.2.0.exe.sig")
     assert not is_windows_file("0.2.0-a..b", "Simeon-Setup-0.2.0-a..b.exe")
+    # The whole of it, ASCII only: no trailing newline, no other script's digits.
+    assert not is_windows_file("0.2.0\n", "Simeon-Setup-0.2.0\n.exe")
+    assert not is_windows_file(
+        "\u0660.\u0662.\u0660", "Simeon-Setup-\u0660.\u0662.\u0660.exe"
+    )
 
 
 @pytest.mark.asyncio

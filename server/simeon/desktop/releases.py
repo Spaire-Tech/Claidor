@@ -77,8 +77,11 @@ PLATFORM = "darwin-arm64"
 WINDOWS_PLATFORM = "win32-x64"
 INDEX_TTL_S = 300.0
 _VERSION = re.compile(r"^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?")
-# A Windows version as it goes into a path: the whole of it, nothing else.
-_WHOLE_VERSION = re.compile(r"^\d{1,9}\.\d{1,9}\.\d{1,9}(?:-[0-9A-Za-z.-]{1,40})?$")
+# A Windows version as it goes into a path: the whole of it (`fullmatch`, no
+# trailing newline), ASCII only, nothing else.
+_WHOLE_VERSION = re.compile(
+    r"[0-9]{1,9}\.[0-9]{1,9}\.[0-9]{1,9}(?:-[0-9A-Za-z.-]{1,40})?"
+)
 
 
 def parse_version(value: str) -> tuple[int, int, int, int] | None:
@@ -123,7 +126,7 @@ def windows_installer_name(version: str) -> str:
 
 
 def is_windows_version(value: str) -> bool:
-    return _WHOLE_VERSION.match(value) is not None and ".." not in value
+    return _WHOLE_VERSION.fullmatch(value) is not None and ".." not in value
 
 
 def is_windows_file(version: str, file: str) -> bool:
