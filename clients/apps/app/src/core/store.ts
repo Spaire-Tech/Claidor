@@ -620,9 +620,13 @@ export class AppStore {
    * soon as a list is on screen, the server's copy or the computer's.
    */
   async attach(backend: AgentBackend, shown?: () => void): Promise<void> {
+    // The same computer again (Reload) keeps a call that is on and what was typed, as the Mac's (Store.swift's `detach(endingCall:)`); another one ends them.
+    const same = this.backend === backend
     const account = this.account
-    this.detach()
+    const drafts = this.drafts
+    this.detachFrom(!same)
     this.account = account
+    if (same) this.drafts = drafts
     this.backend = backend
     this.onListShown = shown
     if (this.readsServerCopy) void this.showServerList(backend)
@@ -648,8 +652,12 @@ export class AppStore {
     if (this.backend === backend) await this.loadSidebar()
   }
 
-  /** Signed out, or the sign-in ended. */
+  /** Signed out, or the sign-in ended: a call that is on ends with it. */
   detach(): void {
+    this.detachFrom(true)
+  }
+
+  private detachFrom(endingCall: boolean): void {
     this.listening?.abort()
     this.listening = undefined
     this.backend = undefined
@@ -667,7 +675,7 @@ export class AppStore {
     this.resetOrgChartAndPacks()
     this.resetComputer()
     this.resetRebuild()
-    this.resetCalls()
+    if (endingCall) this.resetCalls()
     this.resetConnecting()
     this.resetConnectors()
     this.resetConnectorPages()
