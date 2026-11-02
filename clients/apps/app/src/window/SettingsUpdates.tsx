@@ -5,6 +5,7 @@
 
 import type { AppStore } from '../core/store'
 
-export function SettingsUpdatesPage(_props: { store: AppStore }) {
+export function SettingsUpdatesPage({ store }: { store: AppStore }) {
+  void store
   return null
 }
