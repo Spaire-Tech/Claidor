@@ -7,19 +7,27 @@
 // older one's place.
 //
 // The web's way (2 November 2026, the session): the Mac opens the page in
-// Apple's sign-in sheet on the window; a browser has none, so the page
-// opens in a tab of the browser's own, opened blank at once on the person's
-// click (a browser lets a tab open only then; the computer is asked for the
-// page meanwhile), without `opener`, then sent to the page, the way step
-// 3c's Slack and GitHub cards open theirs. As on the Mac the app is asked
-// every 2 seconds, up to 150 times, and the tab is closed once it is
-// connected. A tab the person closed can't say whether the sign-in had
-// finished (the server's last page says "close this tab", and the web
-// app's own return page closes itself): it is the Mac's browser
-// fallback, "it may finish there", so it is looked at ten more times (the
-// Mac's sheet closed on the maker's page) and then ends `unconfirmed`, and
-// the app it added is never taken back for it. A blank tab closed before
-// its page came is the person changing their mind: `cancelled`.
+// Apple's sign-in sheet on the window, at any time; a browser lets a page
+// open a tab only on the person's click. So the click opens a tab, blank,
+// at once (`holdingTab`, the consent's Connect does it for its `go`), and
+// that click's work hands the tab to its own sign-in (`signIn`'s `tab`):
+// a sign-in takes only the tab it is given, never another click's; the tab
+// waits until its sign-in takes it, and closes if the work ends without
+// one. The page opens without `opener`, the way step 3c's Slack and GitHub
+// cards open theirs. As on the Mac the app is asked every 2 seconds, up to
+// 150 times, and the tab is closed once it is connected.
+//
+// A tab the person closed can't say whether the sign-in had finished (the
+// server's last page says "close this tab", and the web app's own return
+// page closes itself): it is the Mac's browser fallback, "it may finish
+// there", so it is looked at ten more times (the Mac's sheet closed on the
+// maker's page) and then ends `unconfirmed`, and the app it added is never
+// taken back for it. A blank tab closed before its page came is the person
+// changing their mind, and a tab the browser refused on the click can't be
+// had later: both `cancelled`, as a Mac sheet that never opened (the
+// second is said in the window's alert). When the web app's own return
+// page says the maker refused the sign-in (`signInEndsChannel`), it ends as
+// the Mac's sheet closed on a refusal: two more looks, then `cancelled`.
 //
 // The makers that send a sign-in back only to this computer's own loopback
 // (`localhost:8787`, `loopbackOnly` in the computer's catalogue: Canva,
@@ -35,7 +43,15 @@ import {
   useSyncExternalStore,
 } from 'react'
 import { type ConnectConsent, connectConsent } from '../core/connectConsent'
-import { type SignInEnd, loopbackState, undoes } from '../core/connecting'
+import {
+  type SignInEnd,
+  didntConnect,
+  loopbackState,
+  serverReturnState,
+  signInEndsChannel,
+  signInHeard,
+  undoes,
+} from '../core/connecting'
 import type { AppStore } from '../core/store'
 
 export type { SignInEnd } from '../core/connecting'
@@ -46,7 +62,8 @@ export interface ConnectAsk {
   name: string
   /** What the person reads (`ConnectConsent`). */
   consent: ConnectConsent
-  go: () => Promise<void>
+  /** What Connect does, given the tab its click opened (none when Connect leads to no page). */
+  go: (tab: HeldTab | undefined) => Promise<void>
   /** Connect goes on to a sign-in page: its tab is opened blank on the click. */
   opensSignIn: boolean
 }
@@ -59,13 +76,36 @@ export interface SignInTab {
   close(): void
 }
 
+/**
+ * A tab opened blank on one click (`holdingTab`), for the sign-in that
+ * click leads to: only the sign-in it is handed to (`signIn`'s `tab`) takes
+ * it. It waits until then, and is closed if its click's work ends without
+ * one.
+ */
+export class HeldTab {
+  /** A sign-in took it. */
+  taken = false
+  /** Its click's work ended without a sign-in taking it: closed. */
+  released = false
+
+  constructor(
+    /** None when the browser refused to open it on the click. */
+    readonly tab: SignInTab | undefined,
+  ) {}
+
+  /** The browser refused it: no page can be shown for this click. */
+  get refused(): boolean {
+    return this.tab === undefined
+  }
+}
+
 /** What connecting asks of the browser (a stand-in in the tests). */
 export interface ConnectorBrowser {
   /** A new tab, opened blank now; none when the browser won't open one (it lets a page open tabs only on the person's click). */
   openTab(): SignInTab | undefined
-  /** The page in a tab not watched (`NSWorkspace.open`): when no tab of ours would open. */
-  openElsewhere(url: string): void
   wait(ms: number): Promise<void>
+  /** Hears the web app's return page say how a sign-in with this state ended (`signInEndsChannel`); stops hearing when called back. */
+  hear?(state: string, heard: (refused: boolean) => void): () => void
 }
 
 /** The browser's own tabs. */
@@ -92,10 +132,16 @@ export const browserTabs: ConnectorBrowser = {
       },
     }
   },
-  openElsewhere(url) {
-    window.open(url, '_blank', 'noopener')
-  },
   wait: (ms) => new Promise((done) => setTimeout(done, ms)),
+  hear(state, heard) {
+    if (typeof BroadcastChannel === 'undefined') return () => {}
+    const channel = new BroadcastChannel(signInEndsChannel)
+    channel.onmessage = (event: MessageEvent) => {
+      const said = signInHeard(event.data)
+      if (said?.state === state) heard(said.refused)
+    }
+    return () => channel.close()
+  },
 }
 
 /** The app is asked every 2 seconds, 150 times: 5 minutes (`signIn`). */
@@ -103,21 +149,41 @@ export const askEvery = 2_000
 export const askTimes = 150
 /** Looks after the tab closed (the Mac's sheet closed on the maker's page). */
 export const looksAfterClosing = 10
+/** Looks after the return page said the maker refused (the Mac's sheet closed on a refusal). */
+export const looksAfterRefusal = 2
 
 /**
  * A tab and the asking together (the Mac's `SignInSheetState`): once the
- * tab is closed, ten more looks, then the end.
+ * tab is closed, ten more looks, then `unconfirmed`; once the return page
+ * said the maker refused, two, then `cancelled`.
  */
 class TabWatch {
   private looksLeft?: number
+  private refusedOnPage = false
+
+  refused(): void {
+    if (this.refusedOnPage) return
+    this.refusedOnPage = true
+    this.looksLeft = looksAfterRefusal
+  }
 
   keepGoing(closed: boolean): boolean {
-    if (!closed) return true
+    if (!closed && !this.refusedOnPage) return true
     this.looksLeft ??= looksAfterClosing
     if (this.looksLeft <= 0) return false
     this.looksLeft -= 1
     return true
   }
+
+  get ending(): SignInEnd {
+    return this.refusedOnPage ? 'cancelled' : 'unconfirmed'
+  }
+}
+
+/** How a sign-in ended, and whether its tab was refused by the browser (said to the person by the connector's own flows). */
+interface SignInRun {
+  end: SignInEnd
+  refused: boolean
 }
 
 export class Connector {
@@ -128,10 +194,10 @@ export class Connector {
   asking?: ConnectAsk
   /** The app whose sign-in is open (its name), or none (`connecting`): the other Connect buttons wait. */
   connecting?: string
+  /** What the window's alert tells the person, or none: a sign-in's page that couldn't open (the browser refused its tab). */
+  told?: string
   /** The open sign-in's tab (the Mac's `session`). */
   private tab?: SignInTab
-  /** Tabs opened blank on a click, waiting for their page. */
-  private held: SignInTab[] = []
   /** The newest sign-in (`current`): an older one finds it changed and ends `replaced`. */
   private current = 0
 
@@ -159,13 +225,14 @@ export class Connector {
 
   /**
    * The consent for `name` (the catalogue's app when there is one), then
-   * `go` on Connect (`ask(_:store:then:)`). `signIn: false` when Connect
-   * goes on to no sign-in page (a form of values first): no tab is opened
-   * for it.
+   * `go` on Connect (`ask(_:store:then:)`), given the tab Connect's click
+   * opened, to hand to its sign-in (`signIn(url, name, done, { tab })`).
+   * `signIn: false` when Connect goes on to no sign-in page (a form of
+   * values first): no tab is opened, and `go` is given none.
    */
   ask(
     name: string,
-    go: () => Promise<void>,
+    go: (tab: HeldTab | undefined) => Promise<void>,
     options: { signIn?: boolean } = {},
   ): void {
     this.asking = {
@@ -189,26 +256,26 @@ export class Connector {
     if (!ask) return
     this.asking = undefined
     this.changed()
-    if (ask.opensSignIn) void this.holdingTab(ask.go)
-    else void ask.go()
+    if (ask.opensSignIn) void this.holdingTab((tab) => ask.go(tab))
+    else void ask.go(undefined)
   }
 
   /**
-   * `work` with a tab opened blank now, on the person's click: the first
-   * sign-in it opens (`signIn`) is shown there, and the tab closes if none
-   * is. For a sign-in asked for without the consent (Reopen, Retry), so its
-   * tab can open.
+   * `work` with a tab opened blank now, on the person's click, handed to it
+   * for its sign-in (`signIn(url, name, done, { tab })`). Call it from the
+   * click itself (a browser opens a tab only then). The tab waits until a
+   * sign-in takes it; when `work` ends and none has, it closes. A sign-in
+   * that waits before its page (Connectors' spacing) is started before
+   * `work` ends, its wait given as `after`.
    */
-  async holdingTab(work: () => Promise<void>): Promise<void> {
-    const tab = this.browser.openTab()
-    if (tab) this.held.push(tab)
+  async holdingTab(work: (tab: HeldTab) => Promise<void>): Promise<void> {
+    const held = new HeldTab(this.browser.openTab())
     try {
-      await work()
+      await work(held)
     } finally {
-      const left = tab ? this.held.indexOf(tab) : -1
-      if (tab && left >= 0) {
-        this.held.splice(left, 1)
-        tab.close()
+      if (!held.taken) {
+        held.released = true
+        held.tab?.close()
       }
     }
   }
@@ -220,8 +287,13 @@ export class Connector {
    * out, the card's spinner held until that is done.
    */
   connect(name: string): void {
-    this.ask(name, async () => {
+    this.ask(name, async (held) => {
       if (this.connecting !== undefined) return
+      // The browser refused the click's tab: no page can be shown, so nothing is asked or added; the person is told.
+      if (held?.refused) {
+        this.tell(didntConnect(name))
+        return
+      }
       // The card's spinner while the page is asked for.
       this.connecting = name
       this.changed()
@@ -233,10 +305,16 @@ export class Connector {
         }
         return
       }
-      const end = await this.signIn(start.url, name, async () => {
-        await this.store.loadApps()
-        return this.store.isConnected(name)
-      })
+      const { end, refused } = await this.run(
+        start.url,
+        name,
+        async () => {
+          await this.store.loadApps()
+          return this.store.isConnected(name)
+        },
+        { tab: held },
+      )
+      if (refused) this.tell(didntConnect(name))
       if (undoes(end, start)) {
         this.connecting = name
         this.changed()
@@ -252,13 +330,18 @@ export class Connector {
   /**
    * Add Another Account for an app Simeon Labs' server serves
    * (`addAccount(_:name:store:)`, `AppAccounts`): one more account's
-   * sign-in, no consent, closed once the server lists a new account.
+   * sign-in, no consent, closed once the server lists a new account. Called
+   * from the click itself, which opens its tab.
    */
   addAccount(toolkit: string, name: string): void {
     if (this.connecting !== undefined) return
-    this.connecting = name
-    this.changed()
-    void this.holdingTab(async () => {
+    void this.holdingTab(async (held) => {
+      if (held.refused) {
+        this.tell(didntConnect(name))
+        return
+      }
+      this.connecting = name
+      this.changed()
       await this.store.loadAppAccounts(toolkit)
       const before = new Set(this.store.appAccountIds(toolkit))
       const url = await this.store.anotherAccountURL(toolkit, name)
@@ -269,61 +352,108 @@ export class Connector {
         }
         return
       }
-      await this.signIn(url, name, async () => {
-        await this.store.loadAppAccounts(toolkit)
-        return this.store.appAccountIds(toolkit).some((id) => !before.has(id))
-      })
+      const { refused } = await this.run(
+        url,
+        name,
+        async () => {
+          await this.store.loadAppAccounts(toolkit)
+          return this.store.appAccountIds(toolkit).some((id) => !before.has(id))
+        },
+        { tab: held },
+      )
+      if (refused) this.tell(didntConnect(name))
     })
   }
 
   /**
    * The app's sign-in page in a tab, closed once `done` says so
-   * (`signIn(_:name:store:done:)`); how it ended (`SignInEnd`). A newer
-   * sign-in takes this one's place and closes its tab.
+   * (`signIn(_:name:store:done:)`); how it ended (`SignInEnd`). `tab` is the
+   * one its click opened (`holdingTab`), taken at once: give it whenever
+   * there is one, and start the sign-in before that click's work ends;
+   * `after` is a wait before the page shows (Connectors' spacing between
+   * two pages). Without `tab`, a tab is opened now, which a browser allows
+   * only on a click. A newer sign-in takes this one's place and closes its
+   * tab.
    */
   async signIn(
     url: string,
     name: string,
     done: () => Promise<boolean>,
+    options: { tab?: HeldTab; after?: Promise<unknown> } = {},
   ): Promise<SignInEnd> {
+    return (await this.run(url, name, done, options)).end
+  }
+
+  /** The window's alert, read: gone. */
+  dismissTold(): void {
+    if (this.told === undefined) return
+    this.told = undefined
+    this.changed()
+  }
+
+  private tell(words: string): void {
+    this.told = words
+    this.changed()
+  }
+
+  private async run(
+    url: string,
+    name: string,
+    done: () => Promise<boolean>,
+    options: { tab?: HeldTab; after?: Promise<unknown> },
+  ): Promise<SignInRun> {
+    const held = options.tab
+    // The click's tab, taken at once: its work may end while this waits.
+    const own = held && !held.taken && !held.released ? held : undefined
+    if (own) own.taken = true
     this.tab?.close()
     this.tab = undefined
     const token = ++this.current
     this.connecting = name
     this.changed()
-    const held = this.held.pop()
+    let stopHearing: (() => void) | undefined
     try {
+      if (options.after) await options.after.catch(() => {})
+      if (this.current !== token) {
+        own?.tab?.close()
+        return { end: 'replaced', refused: false }
+      }
       // A maker that sends it back only to this computer's loopback: a browser can't listen there, so its page couldn't finish.
       if (loopbackState(url) != null) {
-        held?.close()
-        return 'cancelled'
+        own?.tab?.close()
+        return { end: 'cancelled', refused: false }
       }
-      // One that comes back through Simeon Labs' server (`serverReturnState`) is named to it first by the Mac and the
-      // iPhone, with their own address; the web has none, and the server sends it on to the web app's own page
-      // (connected.html), which finishes it on the computer and closes the tab. Nothing to do before it opens.
+      // Its click's own tab; with none given, one opened now (a sign-in started on the click itself).
+      const tab = held ? own?.tab : this.browser.openTab()
+      // The browser refused it (or it was handed over late, already let go): a tab can't be opened later, off the click. It never opened.
+      if (!tab) return { end: 'cancelled', refused: true }
       // The blank tab closed before its page came: the person changed their mind.
-      if (held?.closed) return 'cancelled'
-      const tab = held ?? this.browser.openTab()
-      if (!tab) {
-        // In a tab not ours, it may finish there: never taken back.
-        this.browser.openElsewhere(url)
-        return 'unconfirmed'
-      }
+      if (tab.closed) return { end: 'cancelled', refused: false }
       this.tab = tab
-      tab.go(url)
       const watch = new TabWatch()
+      // One that comes back through Simeon Labs' server is named to it first by the Mac and the iPhone, with their own
+      // address; the web has none, and the server sends it on to the web app's own page (connected.html), which finishes
+      // it on the computer, closes the tab and says here, by its state, whether the maker refused it.
+      const state = serverReturnState(url)
+      if (state != null)
+        stopHearing = this.browser.hear?.(state, (refused) => {
+          if (refused) watch.refused()
+        })
+      tab.go(url)
       for (let look = 0; look < askTimes; look += 1) {
         await this.browser.wait(askEvery)
-        if (this.current !== token) return 'replaced'
+        if (this.current !== token) return { end: 'replaced', refused: false }
         if (await answered(done)) {
           tab.close()
-          return 'connected'
+          return { end: 'connected', refused: false }
         }
-        if (!watch.keepGoing(tab.closed)) return 'unconfirmed'
+        if (!watch.keepGoing(tab.closed))
+          return { end: watch.ending, refused: false }
       }
       tab.close()
-      return 'unconfirmed'
+      return { end: 'unconfirmed', refused: false }
     } finally {
+      stopHearing?.()
       if (this.current === token) {
         this.tab = undefined
         this.connecting = undefined

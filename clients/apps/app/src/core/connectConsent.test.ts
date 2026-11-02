@@ -10,7 +10,7 @@ import {
   comingSoonNames,
   connectorIconId,
 } from './connectCards'
-import { connectConsent } from './connectConsent'
+import { connectConsent, consentTables } from './connectConsent'
 
 function app(
   values: Partial<CatalogApp> & { id: string; title: string },
@@ -381,6 +381,31 @@ describe('each app’s part', () => {
       'draftable',
     ])
     expect(money.size).toBe(14)
+  })
+
+  it('holds no app the Swift doesn’t, and the same sentences, both ways', () => {
+    const tables = consentTables()
+    const same = (ts: Record<string, string>, swift: Map<string, string>) => {
+      expect(Object.keys(ts).sort()).toEqual([...swift.keys()].sort())
+      for (const [key, words] of swift) expect(ts[key], key).toBe(words)
+    }
+    same(tables.reaches, reaches)
+    same(tables.reachSentences, reachSentence)
+    same(tables.signInSentences, signInSentence)
+    same(tables.notes, notes)
+    expect([...tables.readOnly].sort()).toEqual([...readOnly].sort())
+    expect([...tables.money].sort()).toEqual([...money].sort())
+  })
+
+  it('puts a title in its place as it is, whatever it holds', () => {
+    // Swift's `replacingOccurrences` is literal: "$&" in a title is not a pattern.
+    const odd = 'Pay$&Co'
+    expect(
+      connectConsent(app({ id: 'linkedin', title: odd }), odd).points[0]!.body,
+    ).toBe('Your agents can read your profile and publish posts on Pay$&Co.')
+    expect(
+      connectConsent(app({ id: 'link', title: "A$'B" }), "A$'B").smallPrint[0],
+    ).toContain("in the A$'B app")
   })
 
   it('says what the agents reach in every app as the Swift does', () => {

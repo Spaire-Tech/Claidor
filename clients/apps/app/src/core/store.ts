@@ -4601,17 +4601,19 @@ export class AppStore {
         action: 'authenticateServer',
         args: [server.serverId, server.accountKey, 'connector_card'],
       })
+      if (this.backend !== backend) return undefined
       const url = await this.signInStarted(started, name)
       if (url) return { url, addedPlugin: added }
       // Signed in already: kept, whatever the list says yet.
       if (alreadySignedIn(started)) return undefined
     } catch (error) {
+      if (this.backend !== backend) return undefined
       this.connectProblem(
         didntConnect(name, plainError(this.connectWhy(error))),
       )
     }
     // No sign-in to open: the app this connect added goes again, unless it turned out signed in already.
-    if (added) await this.takeBack(added, name)
+    if (added) await this.takeBack(added, name, backend)
     return undefined
   }
 
@@ -4622,8 +4624,9 @@ export class AppStore {
    * computer says is connected after all is kept.
    */
   async undoConnect(start: ConnectStart, name: string): Promise<void> {
-    if (start.addedPlugin == null) return
-    await this.takeBack(start.addedPlugin, name)
+    const backend = this.backend
+    if (start.addedPlugin == null || !backend) return
+    await this.takeBack(start.addedPlugin, name, backend)
   }
 
   /** Sign in to one account of an app (`signInURL`, `authenticateServer`): its page, or none with the reason in `problem`. */
@@ -4644,10 +4647,13 @@ export class AppStore {
     }
   }
 
-  /** The app a connect added, uninstalled again unless the computer now says it is connected (`takeBack`). */
-  private async takeBack(plugin: string, name: string): Promise<void> {
-    const backend = this.backend
-    if (!backend) return
+  /** The app a connect added, uninstalled again unless the computer now says it is connected (`takeBack`): only on the computer it was added to (`backend`), never another account's. */
+  private async takeBack(
+    plugin: string,
+    name: string,
+    backend: AgentBackend,
+  ): Promise<void> {
+    if (this.backend !== backend) return
     await this.readApps(true)
     if (this.backend !== backend || this.isConnected(name)) return
     try {
@@ -4658,7 +4664,7 @@ export class AppStore {
     } catch {
       // Left as it is: its page offers Uninstall.
     }
-    await this.readApps(true)
+    if (this.backend === backend) await this.readApps(true)
   }
 
   /** The sign-in's page; or, when the computer has none to offer, why (it was signed in already, or the app can't sign in here), said rather than dropped (`signInStarted`). */

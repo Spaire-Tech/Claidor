@@ -7,9 +7,12 @@ import {
   type PageWords,
   connectingWords,
   finishSignIn,
+  pageApiBase,
   pageClientVersion,
+  signOutPair,
 } from './connectedPage'
-import { MemoryVault, SimeonAPI, resolveApiBase } from './core/api'
+import { MemoryVault, SimeonAPI } from './core/api'
+import { type SignInHeard, signInEndsChannel } from './core/connecting'
 import { Gateway } from './core/gateway'
 import { currentLanguage } from './core/language'
 import { loadWords } from './core/words'
@@ -25,6 +28,14 @@ function say(words: PageWords): void {
   }
 }
 
+/** How it ended, said to the window that opened the sign-in (connector.ts listens by the sign-in's state). */
+function tellWindow(heard: SignInHeard): void {
+  if (typeof BroadcastChannel === 'undefined') return
+  const channel = new BroadcastChannel(signInEndsChannel)
+  channel.postMessage(heard)
+  channel.close()
+}
+
 async function start(): Promise<void> {
   applyTheme()
   const language = currentLanguage()
@@ -32,18 +43,33 @@ async function start(): Promise<void> {
   await loadWords(language)
   say(connectingWords())
   // The page's own pair, in its memory only (connectedPage.ts).
+  const vault = new MemoryVault()
   const api = new SimeonAPI({
-    base: resolveApiBase(location),
+    base: pageApiBase(location),
     clientVersion: pageClientVersion,
-    vault: new MemoryVault(),
+    vault,
   })
-  const { words, closes } = await finishSignIn(location.search, {
+  // Signed out once, whichever comes first: the page done, or the page going (the window closed its tab).
+  const signOut = async () => {
+    const token = vault.read()?.accessToken
+    vault.write(null)
+    if (token)
+      await signOutPair(
+        (input, init) => fetch(input, init),
+        api.base,
+        api.language,
+        token,
+      )
+  }
+  addEventListener('pagehide', () => void signOut())
+  const { words, closes, heard } = await finishSignIn(location.search, {
     signIn: () => api.signInFromCookie(),
     complete: async (answer) => {
       await new Gateway({ api }).command('completeMcpOAuth', answer)
     },
-    signOut: () => api.signOut(),
+    signOut,
   })
+  if (heard) tellWindow(heard)
   say(words)
   // The tab the window opened closes itself, as the old page's does; one the page didn't open stays.
   if (closes)

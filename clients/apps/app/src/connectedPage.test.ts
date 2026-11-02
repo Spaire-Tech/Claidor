@@ -1,13 +1,16 @@
 // The page that ends a sign-in come back through Simeon Labs' server
 // (connected.html, connectedPage.ts): what the old web app's page does
 // (desktop/web/bridge.ts, `finishConnectedAppSignIn`), with stand-ins for
-// the website's cookie and the computer.
+// the website's cookie and the computer; what it tells the window; the
+// server it talks to; its pair signed out so it outlives the tab.
 
 import { describe, expect, it } from 'vitest'
 import {
   type Finishing,
   finishSignIn,
+  pageApiBase,
   pageClientVersion,
+  signOutPair,
 } from './connectedPage'
 import { clientVersion } from './session'
 
@@ -32,8 +35,13 @@ function standIns(
   return { finishing, done }
 }
 
+const notFinished = {
+  title: "That didn't work.",
+  body: 'Sign-in did not finish. Try again.',
+}
+
 describe('the sign-in’s return page', () => {
-  it('hands the code to the computer, says Connected, closes, and leaves no session', async () => {
+  it('hands the code to the computer, signs its pair out, says Connected and closes', async () => {
     const { finishing, done } = standIns()
     const end = await finishSignIn(
       '?state=vendor-stripe-1&code=c%2F1',
@@ -42,32 +50,36 @@ describe('the sign-in’s return page', () => {
     expect(end).toEqual({
       words: { title: 'Connected', body: '' },
       closes: true,
+      heard: { state: 'vendor-stripe-1', refused: false },
     })
     expect(done).toEqual(['signIn', 'complete vendor-stripe-1 c/1', 'signOut'])
   })
 
-  it('says the maker’s refusal, and asks nothing', async () => {
+  it('says a maker’s refusal in the catalogue’s words, never the address’s, and tells the window', async () => {
     const { finishing, done } = standIns()
     expect(
       await finishSignIn(
-        '?state=s&error=access_denied&error_description=The+user+said+no',
+        '?state=s&error=access_denied&error_description=Call+0800+now',
         finishing,
       ),
     ).toEqual({
-      words: { title: "That didn't work.", body: 'The user said no' },
+      words: notFinished,
       closes: false,
+      heard: { state: 's', refused: true },
     })
-    expect(
-      (await finishSignIn('?state=s&error=access_denied', finishing)).words,
-    ).toEqual({
-      title: "That didn't work.",
-      body: 'Sign-in did not finish. Try again.',
+    // Back without its code: incomplete, not a refusal.
+    expect(await finishSignIn('?state=s', finishing)).toEqual({
+      words: notFinished,
+      closes: false,
+      heard: { state: 's', refused: false },
     })
-    // Back without its code or its state: incomplete.
-    for (const query of ['?state=s', '?code=c', ''])
-      expect((await finishSignIn(query, finishing)).words.body).toBe(
-        'Sign-in did not finish. Try again.',
-      )
+    // No state: nothing to tell.
+    for (const query of ['?code=c', ''])
+      expect(await finishSignIn(query, finishing)).toEqual({
+        words: notFinished,
+        closes: false,
+        heard: undefined,
+      })
     expect(done).toEqual([])
   })
 
@@ -92,11 +104,69 @@ describe('the sign-in’s return page', () => {
         body: 'No pending vendor sign-in matches this callback.',
       },
       closes: false,
+      heard: { state: 's', refused: false },
     })
     expect(done).toEqual(['signIn', 'complete s c', 'signOut'])
   })
 
   it('names itself to the server as the window does', () => {
     expect(pageClientVersion).toBe(clientVersion)
+  })
+
+  it('takes its server from where it is, never from its address but on this computer', () => {
+    const at = (hostname: string, search: string) =>
+      pageApiBase({ hostname, search, protocol: 'https:' })
+    expect(at('app.simeonlabs.com', '?api=https://other.example&state=s')).toBe(
+      'https://api.simeonlabs.com',
+    )
+    expect(at('app.simeonlabs.com', '')).toBe('https://api.simeonlabs.com')
+    // A developer's or the checks' stand-in server, on the loopback only.
+    expect(
+      pageApiBase({
+        hostname: 'localhost',
+        search: '?api=http://localhost:4211/fake',
+        protocol: 'http:',
+      }),
+    ).toBe('http://localhost:4211/fake')
+    expect(
+      pageApiBase({ hostname: '127.0.0.1', search: '', protocol: 'http:' }),
+    ).toBe('http://127.0.0.1:8000')
+  })
+
+  it('signs its pair out so it outlives the tab, and plainly when the browser won’t', async () => {
+    const sent: { url: string; init: RequestInit }[] = []
+    const send = (async (url: string, init: RequestInit) => {
+      sent.push({ url, init })
+      return new Response('{}')
+    }) as typeof fetch
+    await signOutPair(send, 'https://api.example.com', 'fr', 'tok')
+    expect(sent).toHaveLength(1)
+    expect(sent[0]!.url).toBe('https://api.example.com/desktop/api/auth/logout')
+    expect(sent[0]!.init).toMatchObject({
+      method: 'POST',
+      keepalive: true,
+      credentials: 'omit',
+      headers: { authorization: 'Bearer tok', 'accept-language': 'fr' },
+    })
+    const refusing = (async (url: string, init: RequestInit) => {
+      sent.push({ url, init })
+      if (init.keepalive) throw new TypeError('keepalive not supported')
+      return new Response('{}')
+    }) as typeof fetch
+    sent.length = 0
+    await signOutPair(refusing, 'https://api.example.com', 'en', 'tok')
+    expect(sent.map((one) => one.init.keepalive ?? false)).toEqual([
+      true,
+      false,
+    ])
+    // A network that answers nothing: let go.
+    await signOutPair(
+      (async () => {
+        throw new TypeError('offline')
+      }) as typeof fetch,
+      'https://api.example.com',
+      'en',
+      'tok',
+    )
   })
 })

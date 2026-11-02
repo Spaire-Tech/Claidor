@@ -220,6 +220,33 @@ describe('one Connect (PluginCallsTests)', () => {
     )
   })
 
+  it('takes nothing back on another account’s computer', async () => {
+    const { backend } = computer()
+    const other = computer()
+    const store = new AppStore()
+    await store.attach(backend)
+    await store.loadAppCards()
+    // Into another account while the computer was asked for the sign-in.
+    const asked = backend.commandAnswers.desktopMcp!
+    backend.commandAnswers.desktopMcp = (args) => {
+      if ((args as { action?: string }).action === 'authenticateServer') {
+        void store.attach(other.backend)
+        return { status: 'not-supported', message: 'No.' }
+      }
+      return asked(args)
+    }
+    expect(await store.beginConnect('Linear')).toBeUndefined()
+    expect(store.problem).toBeUndefined()
+    const uninstalls = (one: FakeBackend) =>
+      one.commands.filter(
+        (call) =>
+          call.method === 'desktopMcp' &&
+          (call.args as { action: string }).action === 'uninstallPlugin',
+      )
+    expect(uninstalls(backend)).toHaveLength(0)
+    expect(uninstalls(other.backend)).toHaveLength(0)
+  })
+
   it('does nothing signed out', async () => {
     const store = new AppStore()
     expect(await store.beginConnect('Linear')).toBeUndefined()
