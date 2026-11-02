@@ -100,11 +100,18 @@ function collapse(words: string): string {
   return words.split(/\s+/u).filter(Boolean).join(' ')
 }
 
+const graphemes = new Intl.Segmenter(undefined, { granularity: 'grapheme' })
+
+/** The characters as Swift counts them (`String.count`): a flag or a family emoji is one. */
+export function characters(words: string): string[] {
+  return Array.from(graphemes.segment(words), (part) => part.segment)
+}
+
 /** Past `max` characters: its first `max - 1` and "…". */
-function clamp(words: string, max: number): string {
-  const characters = [...words]
-  return characters.length > max
-    ? characters
+export function clamp(words: string, max: number): string {
+  const all = characters(words)
+  return all.length > max
+    ? all
         .slice(0, max - 1)
         .join('')
         .trim() + '…'
@@ -112,8 +119,8 @@ function clamp(words: string, max: number): string {
 }
 
 /** The first `max` characters. */
-function prefix(words: string, max: number): string {
-  return [...words].slice(0, max).join('')
+export function prefix(words: string, max: number): string {
+  return characters(words).slice(0, max).join('')
 }
 
 const gerundExceptions: Record<string, string> = {
@@ -182,7 +189,7 @@ function appName(identifier: string): string | undefined {
   return cleaned
     .split(' ')
     .map((word) =>
-      [...word].length <= 2
+      characters(word).length <= 2
         ? word.toUpperCase()
         : word.slice(0, 1).toUpperCase() + word.slice(1),
     )
@@ -587,10 +594,16 @@ export type VoiceEvent =
   | { kind: 'ended' }
   | { kind: 'failed'; message: string }
 
-/** The voice itself (`VoiceTransport`): ElevenLabs' kit in the app, a stand-in in the tests. */
+/**
+ * The voice itself (`VoiceTransport`): ElevenLabs' kit in the app, a
+ * stand-in in the tests. Each start is one call's (`call`, the call's own
+ * id): ending a call lets go of its own voice only, never a later call's.
+ */
 export interface VoiceTransport {
   start(
     args: {
+      /** The call's own id: `end` names it. */
+      call: string
       token: string
       prompt: string
       firstMessage: string
@@ -603,7 +616,8 @@ export interface VoiceTransport {
   /** A note into the call, then a nudge so the voice speaks now (`sendContextualUpdate`, `sendUserMessage`). */
   say(context: string, nudge: string): Promise<void>
   toolResult(id: string, result: string): Promise<void>
-  end(): Promise<void>
+  /** Lets go of that call's voice: a session still opening is never opened, or ended the moment it opens. */
+  end(call: string): Promise<void>
 }
 
 export interface LiveCallOptions {
@@ -632,10 +646,36 @@ const errorText = (error: unknown): string =>
   error instanceof Error ? `${error.name}: ${error.message}` : String(error)
 
 /**
+ * One call's own record (the Swift keeps these on the engine and cancels a
+ * call's tasks at its end): what an earlier call's work finds when it comes
+ * back late is its own, never the call on now's.
+ */
+interface Call {
+  id: string
+  agentId: string
+  conversationId?: string
+  opened: boolean
+  viaChat: boolean
+  /** The outbox's last message read (`after`). */
+  after: number
+  seenChat: Set<string>
+  lastTask?: string
+  finished: boolean
+  speaking: boolean
+  activity: number
+  /** What the agent sent on the call, waiting for the line to be quiet. */
+  pendingReplies: string[]
+  /** The call is ready to start its voice: the ring stops after the cycle it is in. */
+  prepared: boolean
+  /** The server's token is here: past the seventh ring, only its absence fails the call (`call-controller.ts`). */
+  tokenHere: boolean
+  ringing?: Promise<void>
+}
+
+/**
  * A real call, the Mac's way (`LiveCall`; electron-main/voice/
- * voice-call-service.ts and shared/voice-call/handoff.ts). Where the Swift
- * cancels a call's tasks, each loop here stops when the call it was started
- * for is over (`generation`).
+ * voice-call-service.ts and shared/voice-call/handoff.ts). Each call keeps
+ * its own record (`Call`); the screens see only the call on now.
  */
 export class LiveCall implements CallEngine {
   static readonly pollSeconds = 1.2
@@ -656,27 +696,8 @@ export class LiveCall implements CallEngine {
 
   private state?: CallState
   private listeners: ((state: CallState | undefined) => void)[] = []
-  private callId = ''
-  private conversationId?: string
-  private opened = false
-  private viaChat = false
-  private after = 0
-  private seenChat = new Set<string>()
-  private lastTask?: string
-  private finished = false
-  private speaking = false
-  private activity = 0
-  /** What the agent sent on the call, waiting for the line to be quiet. */
-  private pendingReplies: string[] = []
-  /** The call is ready to start its voice: the ring stops after the cycle it is in. */
-  private prepared = false
-  /** The server's token is here: past the seventh ring, only its absence fails the call (`call-controller.ts`). */
-  private tokenHere = false
-  private ringing?: Promise<void>
-  /** Each call's own number: what an earlier call left running stops at the next. */
-  private generation = 0
-  /** The call's loops are let go (the Swift cancels its tasks at the end). */
-  private stopped = true
+  /** The call on now (or the last one, over). */
+  private current?: Call
 
   constructor(options: LiveCallOptions) {
     this.backend = options.backend
@@ -707,46 +728,41 @@ export class LiveCall implements CallEngine {
     for (const listener of [...this.listeners]) listener(value)
   }
 
-  private update(change: (call: CallState) => void): void {
-    if (!this.state) return
+  /** The screens' copy changed, for the call on now only. */
+  private update(call: Call, change: (state: CallState) => void): void {
+    if (call !== this.current || !this.state) return
     const next = copied(this.state)
     change(next)
     this.set(next)
   }
 
-  /** Whether `call` is still the one under way and its loops still run. */
-  private running(call: number): boolean {
-    return this.generation === call && !this.stopped
-  }
-
-  /** Whether `call` is over (or another began): what it started stops. */
-  private over(call: number): boolean {
-    return this.generation !== call || this.finished
+  /** Whether `call` is over, or another began: what it started stops. */
+  private over(call: Call): boolean {
+    return call !== this.current || call.finished
   }
 
   start(agentId: string, agentName: string, colour: string): void {
     if (this.state) return
     this.log(`call started for agent ${agentId}`)
-    this.generation += 1
-    const call = this.generation
-    this.callId = crypto.randomUUID().toLowerCase()
-    this.conversationId = undefined
-    this.opened = false
-    this.viaChat = false
-    this.after = 0
-    this.seenChat = new Set()
-    this.lastTask = undefined
-    this.finished = false
-    this.speaking = false
-    this.activity = 0
-    this.pendingReplies = []
-    this.prepared = false
-    this.tokenHere = false
-    this.stopped = false
+    const call: Call = {
+      id: crypto.randomUUID().toLowerCase(),
+      agentId,
+      opened: false,
+      viaChat: false,
+      after: 0,
+      seenChat: new Set(),
+      finished: false,
+      speaking: false,
+      activity: 0,
+      pendingReplies: [],
+      prepared: false,
+      tokenHere: false,
+    }
+    this.current = call
     this.set(ringingCall(agentId, agentName, colour))
     // The ring, as the Mac's banner rings, while the call gets ready.
-    this.ringing = this.ring(call)
-    void this.connect(call, agentId, agentName)
+    call.ringing = this.ring(call)
+    void this.connect(call, agentName)
   }
 
   /**
@@ -755,37 +771,24 @@ export class LiveCall implements CallEngine {
    * ready after the seventh, the call fails "Couldn't connect", as the Mac's
    * banner does (`call-controller.ts`).
    */
-  private async ring(call: number): Promise<void> {
+  private async ring(call: Call): Promise<void> {
     const tones = this.tones
     if (!tones) return
     await tones.ring(CallTones.ringsBeforeConnect)
     let rings = CallTones.ringsBeforeConnect
-    while (
-      this.running(call) &&
-      !this.finished &&
-      !this.prepared &&
-      rings < CallTones.maxRings
-    ) {
+    while (!this.over(call) && !call.prepared && rings < CallTones.maxRings) {
       await tones.ring(1)
       rings += 1
     }
-    if (
-      this.running(call) &&
-      !this.finished &&
-      !this.tokenHere &&
-      rings >= CallTones.maxRings
-    ) {
+    if (!this.over(call) && !call.tokenHere && rings >= CallTones.maxRings) {
       this.log(`connect: no token after ${rings} rings`)
-      this.fail(VoiceCallText.couldNotConnect())
+      this.fail(call, VoiceCallText.couldNotConnect())
     }
   }
 
-  private async connect(
-    call: number,
-    agentId: string,
-    agentName: string,
-  ): Promise<void> {
+  private async connect(call: Call, agentName: string): Promise<void> {
     const backend = this.backend
+    const agentId = call.agentId
     let roster: Agent[] = []
     try {
       roster = await backend.listAgents()
@@ -807,10 +810,10 @@ export class LiveCall implements CallEngine {
     try {
       ticket = await backend.server('proxy/v1/voice/calls', 'POST', {})
     } catch (error) {
-      if (this.generation !== call) return
       if (error instanceof SimeonAPIError) {
         this.log(`connect: the server refused the call: ${error.message}`)
         return this.fail(
+          call,
           error.status === 503
             ? VoiceCallText.notSwitchedOn()
             : error.status === 402
@@ -819,14 +822,14 @@ export class LiveCall implements CallEngine {
         )
       }
       this.log(`connect: the server refused the call: ${errorText(error)}`)
-      return this.fail(VoiceCallText.couldNotConnect())
+      return this.fail(call, VoiceCallText.couldNotConnect())
     }
     // Hung up (or given up on) while the server answered: nothing more to do (`voice-call-service.ts`).
     if (this.over(call)) return
     const token = text(field(ticket, 'token'))
-    if (token == null) return this.fail(VoiceCallText.couldNotConnect())
-    this.conversationId = text(field(ticket, 'conversation_id'))
-    this.tokenHere = true
+    if (token == null) return this.fail(call, VoiceCallText.couldNotConnect())
+    call.conversationId = text(field(ticket, 'conversation_id'))
+    call.tokenHere = true
     const person = this.personName()
     const teammates = roster
       .filter(
@@ -861,25 +864,33 @@ export class LiveCall implements CallEngine {
     const voiceId = this.voiceFor ? await this.voiceFor(agentId) : row?.voiceId
     if (this.over(call)) return
     // The call's address opens while it still rings, and the agent's chat gets its line ("Voice chat · now"), as on the Mac.
-    await this.open(call, agentId)
-    // The voice starts once the ring is over, so the two never sound together.
-    this.prepared = true
-    await this.ringing
-    this.tones?.stopRinging()
+    await this.open(call)
     if (this.over(call)) return
+    // The voice starts once the ring is over, so the two never sound together.
+    call.prepared = true
+    await call.ringing
+    if (this.over(call)) return
+    this.tones?.stopRinging()
     this.log(
       `connect: token issued for agent ${agentId} (voice ${voiceId ?? "the agent's own"}, ${entries.length} chat entries read)`,
     )
     try {
       await this.transport.start(
-        { token, prompt, firstMessage: greeting, voiceId, language },
-        (event) => this.handle(call, event, agentId),
+        {
+          call: call.id,
+          token,
+          prompt,
+          firstMessage: greeting,
+          voiceId,
+          language,
+        },
+        (event) => this.handle(call, event),
       )
     } catch (error) {
-      if (this.generation !== call) return
       this.log(`starting the conversation failed: ${errorText(error)}`)
       const said = errorText(error).toLowerCase()
       this.fail(
+        call,
         said.includes('microphone') || said.includes('permission')
           ? VoiceCallText.noMicrophone()
           : VoiceCallText.couldNotConnect(),
@@ -887,26 +898,33 @@ export class LiveCall implements CallEngine {
     }
   }
 
+  /** The call's channel closed with nothing in it: the chat's line does not stay "now". */
+  private closeEmpty(call: Call): void {
+    void this.backend
+      .command('voiceCall', {
+        agentId: call.agentId,
+        callId: call.id,
+        kind: 'ended',
+        record: { seconds: 0, recap: null, transcript: [] },
+      })
+      .catch(() => {})
+  }
+
   /** Opens `voice:<call>` on the agent; a host without the channel gets the call through its chat. */
-  private async open(call: number, agentId: string): Promise<void> {
+  private async open(call: Call): Promise<void> {
     const backend = this.backend
-    const id = this.callId
+    const agentId = call.agentId
     try {
-      await backend.command('voiceCall', { agentId, callId: id, kind: 'open' })
-      if (this.generation !== call) return
-      this.opened = true
-      // Ended (hung up, or the seventh ring) while it opened: closed at once, so the chat's line does not stay "now".
-      if (this.finished) {
-        try {
-          await backend.command('voiceCall', {
-            agentId,
-            callId: id,
-            kind: 'ended',
-            record: { seconds: 0, recap: null, transcript: [] },
-          })
-        } catch {
-          // The host closes it with its own.
-        }
+      await backend.command('voiceCall', {
+        agentId,
+        callId: call.id,
+        kind: 'open',
+      })
+      call.opened = true
+      // Ended (hung up, the seventh ring, or another call begun) while it opened: closed at once, so the chat's line does not stay "now".
+      if (this.over(call)) {
+        call.finished = true
+        this.closeEmpty(call)
         return
       }
     } catch {
@@ -919,57 +937,57 @@ export class LiveCall implements CallEngine {
       } catch {
         // None seen yet.
       }
-      if (this.generation !== call) return
-      const ids = (arr(field(page, 'entries')) ?? []).flatMap((entry) => {
-        const lineId = text(field(entry, 'id'))
-        return str(field(entry, 'kind')) === 'send-message' && lineId != null
-          ? [lineId]
-          : []
-      })
-      this.seenChat = new Set(ids)
-      this.viaChat = true
-      this.opened = true
+      call.seenChat = new Set(
+        (arr(field(page, 'entries')) ?? []).flatMap((entry) => {
+          const lineId = text(field(entry, 'id'))
+          return str(field(entry, 'kind')) === 'send-message' && lineId != null
+            ? [lineId]
+            : []
+        }),
+      )
+      call.viaChat = true
+      call.opened = true
     }
     if (this.over(call)) return
-    void this.pollLoop(call, agentId)
+    void this.pollLoop(call)
     void this.waveLoop(call)
     void this.replyLoop(call)
   }
 
-  private handle(call: number, event: VoiceEvent, agentId: string): void {
-    // The call is over (hung up while the voice was still connecting): what the kit says now is dropped, and a voice that connects late is let go.
+  private handle(call: Call, event: VoiceEvent): void {
+    // The call is over (hung up while the voice was still connecting): what the kit says now is dropped, and a voice that connects late is let go: its own, never a later call's.
     if (this.over(call)) {
-      if (event.kind === 'connected') void this.transport.end()
+      if (event.kind === 'connected') void this.transport.end(call.id)
       return
     }
     switch (event.kind) {
       case 'connected':
         if (event.conversationId != null)
-          this.conversationId = event.conversationId
-        this.log(`connected: conversation ${this.conversationId ?? 'unknown'}`)
-        this.update((state) => {
+          call.conversationId = event.conversationId
+        this.log(`connected: conversation ${call.conversationId ?? 'unknown'}`)
+        this.update(call, (state) => {
           state.phase = 'live'
           state.status = ''
           state.connectedAt = state.connectedAt ?? Date.now()
         })
         return
       case 'agentSpeaking':
-        this.speaking = event.on
-        this.update((state) => (state.agentSpeaking = event.on))
+        call.speaking = event.on
+        this.update(call, (state) => (state.agentSpeaking = event.on))
         return
       case 'activity':
-        this.activity = event.level
+        call.activity = event.level
         return
       case 'line': {
         const trimmed = event.text.trim()
         if (trimmed === '' || VoiceCallText.isNudge(trimmed)) return
-        this.update((state) =>
+        this.update(call, (state) =>
           state.lines.push({ fromPerson: event.fromPerson, text: trimmed }),
         )
         return
       }
       case 'transcript':
-        this.update((state) => {
+        this.update(call, (state) => {
           state.lines = event.lines.filter((line) => {
             const trimmed = line.text.trim()
             return trimmed !== '' && !VoiceCallText.isNudge(trimmed)
@@ -981,10 +999,10 @@ export class LiveCall implements CallEngine {
           let answer: string
           switch (event.name) {
             case 'send_task':
-              answer = await this.sendTask(agentId, event.parameters)
+              answer = await this.sendTask(call, event.parameters)
               break
             case 'recall_text_messages':
-              answer = await this.recall(agentId)
+              answer = await this.recall(call.agentId)
               break
             default:
               answer = "That tool isn't here."
@@ -994,9 +1012,9 @@ export class LiveCall implements CallEngine {
         return
       case 'ended':
         // Dropped before it connected (not hung up): "Couldn't connect", as the Mac's banner (`call-state.ts`).
-        if (this.state?.connectedAt == null && !this.finished)
-          this.fail(VoiceCallText.couldNotConnect())
-        else this.finish(agentId)
+        if (this.state?.connectedAt == null)
+          this.fail(call, VoiceCallText.couldNotConnect())
+        else this.finish(call)
         return
       case 'failed':
         // The kit's error once the call is live: written down, the call goes on (`call-state.ts`).
@@ -1006,6 +1024,7 @@ export class LiveCall implements CallEngine {
           // The voice service's own words go to the log; the person reads plain ones (PlainWords).
           this.log(`banner: sdk error before connecting: ${event.message}`)
           this.fail(
+            call,
             event.message === ''
               ? VoiceCallText.couldNotConnect()
               : plainError(event.message, VoiceCallText.couldNotConnect()),
@@ -1015,8 +1034,8 @@ export class LiveCall implements CallEngine {
   }
 
   /** The voice's `send_task`: the request (2,000 characters at most) and the caller's words, to the agent. */
-  async sendTask(agentId: string, parameters: JSONValue): Promise<string> {
-    if (!(this.opened && !this.finished)) return VoiceCallText.relaySoftFail
+  private async sendTask(call: Call, parameters: JSONValue): Promise<string> {
+    if (!(call.opened && !call.finished)) return VoiceCallText.relaySoftFail
     const backend = this.backend
     const task = prefix(
       (str(field(parameters, 'task')) ?? '').trim(),
@@ -1027,17 +1046,17 @@ export class LiveCall implements CallEngine {
       VoiceCallText.relayMaxChars,
     )
     try {
-      if (this.viaChat) {
+      if (call.viaChat) {
         const prompt = [
           `(On our call) ${task === '' ? 'Are you there?' : task}`,
           ...(quote === '' ? [] : [`My words: "${quote}"`]),
           'Answer here in a sentence or two of plain text; it is read out to me on the call.',
         ].join('\n')
-        await backend.send(agentId, prompt, [], {})
+        await backend.send(call.agentId, prompt, [], {})
       } else {
         const args: Record<string, JSONValue> = {
-          agentId,
-          callId: this.callId,
+          agentId: call.agentId,
+          callId: call.id,
           kind: 'request',
           request: task,
         }
@@ -1048,8 +1067,10 @@ export class LiveCall implements CallEngine {
       return VoiceCallText.relaySoftFail
     }
     if (task !== '') {
-      this.lastTask = task
+      call.lastTask = task
+      // Only on this call's banner: one begun since shows nothing of it.
       this.update(
+        call,
         (state) => (state.activity = VoiceCallText.workingLabel(task)),
       )
     }
@@ -1057,7 +1078,7 @@ export class LiveCall implements CallEngine {
   }
 
   /** The voice's `recall_text_messages`: the latest texts between the person and the agent. */
-  async recall(agentId: string): Promise<string> {
+  private async recall(agentId: string): Promise<string> {
     let page: JSONValue
     try {
       page = await this.backend.command('getAgentTranscriptTail', {
@@ -1073,20 +1094,22 @@ export class LiveCall implements CallEngine {
   }
 
   /** The call's outbox (or the chat, without a channel) every 1.2 s: what the agent sent is said; its activity is the status line. */
-  private async pollLoop(call: number, agentId: string): Promise<void> {
+  private async pollLoop(call: Call): Promise<void> {
     const backend = this.backend
+    const agentId = call.agentId
     let failures = 0
-    const going = () => this.running(call) && this.opened && !this.finished
+    const going = () => !this.over(call) && call.opened
     while (going()) {
       await this.pause(LiveCall.pollSeconds)
       if (!going()) return
       try {
         const fresh: string[] = []
-        if (this.viaChat) {
+        if (call.viaChat) {
           const page = await backend.command('getAgentTranscriptTail', {
             id: agentId,
             limit: 30,
           })
+          if (!going()) return
           for (const entry of arr(field(page, 'entries')) ?? []) {
             const message = field(entry, 'message')
             if (
@@ -1097,22 +1120,23 @@ export class LiveCall implements CallEngine {
             const entryId = text(field(entry, 'id'))
             const words = text(field(message, 'content'))
             if (entryId == null || words == null) continue
-            if (!this.seenChat.has(entryId)) {
-              this.seenChat.add(entryId)
+            if (!call.seenChat.has(entryId)) {
+              call.seenChat.add(entryId)
               fresh.push(prefix(words, VoiceCallText.relayMaxChars))
             }
           }
         } else {
           const outbox = await backend.command('voiceCall', {
             agentId,
-            callId: this.callId,
+            callId: call.id,
             kind: 'outbox',
-            after: this.after,
+            after: call.after,
           })
+          if (!going()) return
           for (const message of arr(field(outbox, 'messages')) ?? []) {
             const seq = num(field(message, 'seq')) ?? 0
-            if (seq <= this.after) continue
-            this.after = seq
+            if (seq <= call.after) continue
+            call.after = seq
             const words = text(field(message, 'text'))?.trim()
             if (words) fresh.push(words)
           }
@@ -1124,7 +1148,7 @@ export class LiveCall implements CallEngine {
         } catch {
           roster = undefined
         }
-        if (!this.running(call)) return
+        if (!going()) return
         const row = roster?.find((agent) => agent.id === agentId)
         // What it is doing ("Using Gmail…"), else what it was asked ("Sending the agenda to Dana…"), while it or a helper runs.
         const label = row?.isRunning
@@ -1133,17 +1157,18 @@ export class LiveCall implements CallEngine {
               row.activityTool,
               row.activityDetail,
             ) ??
-            (this.lastTask != null
-              ? VoiceCallText.workingLabel(this.lastTask)
+            (call.lastTask != null
+              ? VoiceCallText.workingLabel(call.lastTask)
               : undefined))
           : undefined
-        this.update((state) => (state.activity = label))
+        this.update(call, (state) => (state.activity = label))
         // Said by `replyLoop` once the line is quiet, never over the voice.
-        if (fresh.length > 0) this.pendingReplies.push(...fresh)
+        if (fresh.length > 0) call.pendingReplies.push(...fresh)
       } catch {
+        if (!going()) return
         failures += 1
         if (failures >= 10) {
-          this.update((state) => (state.activity = undefined))
+          this.update(call, (state) => (state.activity = undefined))
           return
         }
       }
@@ -1157,22 +1182,22 @@ export class LiveCall implements CallEngine {
    * middle of a sentence: "he cant cut himself like this, wait of turn").
    * Several that arrive while the voice talks are said together.
    */
-  private async replyLoop(call: number): Promise<void> {
+  private async replyLoop(call: Call): Promise<void> {
     let quietSince: number | undefined
-    while (this.running(call) && !this.finished) {
+    while (!this.over(call)) {
       await this.pause(0.1)
-      if (!this.running(call) || this.finished) return
+      if (this.over(call)) return
       const live = this.state?.phase === 'live'
       // Before the voice is on (the channel opens while it rings), what came back waits.
-      if (!live || this.speaking || this.activity >= LiveCall.personTalking) {
+      if (!live || call.speaking || call.activity >= LiveCall.personTalking) {
         quietSince = undefined
         continue
       }
       const since = quietSince ?? Date.now()
       quietSince = since
       if ((Date.now() - since) / 1000 < this.quiet) continue
-      const replies = this.pendingReplies
-      this.pendingReplies = []
+      const replies = call.pendingReplies
+      call.pendingReplies = []
       if (replies.length === 0) continue
       quietSince = undefined
       await this.transport.say(
@@ -1183,14 +1208,14 @@ export class LiveCall implements CallEngine {
   }
 
   /** The waveform: louder while the agent speaks, the person's own voice otherwise. */
-  private async waveLoop(call: number): Promise<void> {
-    while (this.running(call) && !this.finished) {
+  private async waveLoop(call: Call): Promise<void> {
+    while (!this.over(call)) {
       await this.pause(0.09)
-      if (!this.running(call) || this.finished) return
+      if (this.over(call)) return
       const muted = this.state?.isMuted ?? false
-      const level = this.activity
-      const talking = this.speaking
-      this.update((state) => {
+      const level = call.activity
+      const talking = call.speaking
+      this.update(call, (state) => {
         if (state.phase !== 'live') return
         const loud = talking ? 1 : muted ? 0 : Math.max(0, Math.min(1, level))
         state.levels = Array.from(
@@ -1202,29 +1227,28 @@ export class LiveCall implements CallEngine {
   }
 
   mute(muted: boolean): void {
-    this.update((state) => (state.isMuted = muted))
+    const call = this.current
+    if (!call) return
+    this.update(call, (state) => (state.isMuted = muted))
     void this.transport.setMuted(muted)
   }
 
   /** End (or the red button while it rings): ended at once, with its tone and its length as of the click, and the voice let go after (`call-controller.ts`). */
   hangUp(): void {
-    const agentId = this.state?.agentId
-    if (agentId == null) return
-    this.finish(agentId)
-    void this.transport.end()
+    const call = this.current
+    if (!call || !this.state) return
+    this.finish(call)
+    void this.transport.end(call.id)
   }
 
-  private fail(message: string): void {
-    const already = this.finished
-    this.finished = true
+  private fail(call: Call, message: string): void {
+    const already = call.finished
+    call.finished = true
     // Hung up, or failed already: what comes late (a token, the seventh ring) changes nothing.
-    if (already) return
-    const wasOpen = this.opened
-    const id = this.callId
-    const agentId = this.state?.agentId
+    if (already || call !== this.current) return
     this.tones?.stopRinging()
     this.log(`call failed: ${message}`)
-    this.update((state) => {
+    this.update(call, (state) => {
       state.phase = 'ended'
       state.status = message
       state.failed = true
@@ -1232,33 +1256,22 @@ export class LiveCall implements CallEngine {
       state.levels = []
       state.endedAt = Date.now()
     })
-    if (wasOpen && agentId != null)
-      void this.backend
-        .command('voiceCall', {
-          agentId,
-          callId: id,
-          kind: 'ended',
-          record: { seconds: 0, recap: null, transcript: [] },
-        })
-        .catch(() => {})
-    if (this.failedStays != null) this.leaveSoon(this.failedStays)
+    if (call.opened) this.closeEmpty(call)
+    if (this.failedStays != null) this.leaveSoon(call, this.failedStays)
   }
 
   /** The end: the server's summary and transcript (asked again after 5 and 10 s), then the record to the agent. */
-  private finish(agentId: string): void {
-    const already = this.finished
-    this.finished = true
-    if (already) return
-    const conversation = this.conversationId
-    const id = this.callId
-    const wasOpen = this.opened
-    const chat = this.viaChat
+  private finish(call: Call): void {
+    const already = call.finished
+    call.finished = true
+    if (already || call !== this.current) return
     const snapshot = this.state
     const seconds = snapshot ? callSeconds(snapshot) : 0
+    const conversation = call.conversationId
     this.tones?.stopRinging()
     // The Mac's tone when a call that was live ends.
     if (snapshot?.phase === 'live') this.tones?.hangUp()
-    this.update((state) => {
+    this.update(call, (state) => {
       state.phase = 'ended'
       state.status = VoiceCallText.ended()
       state.agentSpeaking = false
@@ -1268,11 +1281,10 @@ export class LiveCall implements CallEngine {
     })
     this.log(
       snapshot?.connectedAt == null
-        ? `call ended before it connected (agent ${agentId})`
+        ? `call ended before it connected (agent ${call.agentId})`
         : `call ended: ${seconds}s`,
     )
-    this.stopped = true
-    this.leaveSoon(1.2)
+    this.leaveSoon(call, 1.2)
     const heard = snapshot?.lines ?? []
     const person = this.personName()
     const backend = this.backend
@@ -1309,7 +1321,7 @@ export class LiveCall implements CallEngine {
         if (lines && lines.length > 0) transcript = lines
       }
       let written = 0
-      if (wasOpen && !chat) {
+      if (call.opened && !call.viaChat) {
         const record = {
           seconds,
           personName: person ?? null,
@@ -1318,8 +1330,8 @@ export class LiveCall implements CallEngine {
         }
         try {
           const answer = await backend.command('voiceCall', {
-            agentId,
-            callId: id,
+            agentId: call.agentId,
+            callId: call.id,
             kind: 'ended',
             record,
           })
@@ -1335,7 +1347,7 @@ export class LiveCall implements CallEngine {
         const words = summary != null ? `${head}\n\n${summary}` : head
         try {
           await backend.command('appendSendMessage', {
-            agentId,
+            agentId: call.agentId,
             message: { type: 'text', content: words },
           })
         } catch {
@@ -1345,11 +1357,10 @@ export class LiveCall implements CallEngine {
     })()
   }
 
-  private leaveSoon(seconds: number): void {
-    const call = this.generation
+  private leaveSoon(call: Call, seconds: number): void {
     void (async () => {
       await this.pause(seconds)
-      if (this.generation === call && this.state?.phase === 'ended')
+      if (call === this.current && this.state?.phase === 'ended')
         this.set(undefined)
     })()
   }

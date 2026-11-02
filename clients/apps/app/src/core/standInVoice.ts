@@ -11,6 +11,7 @@ import type { VoiceEvent, VoiceTransport } from './voiceCall'
 
 export class StandInVoice implements VoiceTransport {
   started?: {
+    call: string
     token: string
     prompt: string
     firstMessage: string
@@ -20,7 +21,8 @@ export class StandInVoice implements VoiceTransport {
   said: string[] = []
   results = new Map<string, string>()
   muted = false
-  ended = false
+  /** The calls let go, by their ids. */
+  endedCalls = new Set<string>()
   private events?: (event: VoiceEvent) => void
 
   /**
@@ -37,8 +39,14 @@ export class StandInVoice implements VoiceTransport {
     } = {},
   ) {}
 
+  /** The last call started was let go. */
+  get ended(): boolean {
+    return this.started != null && this.endedCalls.has(this.started.call)
+  }
+
   async start(
     args: {
+      call: string
       token: string
       prompt: string
       firstMessage: string
@@ -47,20 +55,22 @@ export class StandInVoice implements VoiceTransport {
     },
     events: (event: VoiceEvent) => void,
   ): Promise<void> {
-    this.ended = false
+    // As the real voice: a call let go never opens, whatever the browser answers.
+    if (this.endedCalls.has(args.call)) return
     if (this.options.asksMicrophone ?? true) await askForMicrophone()
+    if (this.endedCalls.has(args.call)) return
     this.started = args
     this.events = events
     const wait = this.options.answersAfter ?? 0
     if (wait > 0)
       await new Promise((resolve) => setTimeout(resolve, wait * 1000))
-    if (this.ended) return
+    if (this.endedCalls.has(args.call)) return
     events({ kind: 'connected', conversationId: this.options.conversationId })
     if (this.options.greets ?? false)
       events({ kind: 'line', fromPerson: false, text: args.firstMessage })
   }
 
-  /** What the voice's kit would report next. */
+  /** What the voice's kit would report next, for the call speaking now. */
   emit(event: VoiceEvent): void {
     this.events?.(event)
   }
@@ -77,7 +87,7 @@ export class StandInVoice implements VoiceTransport {
     this.results.set(id, result)
   }
 
-  async end(): Promise<void> {
-    this.ended = true
+  async end(call: string): Promise<void> {
+    this.endedCalls.add(call)
   }
 }

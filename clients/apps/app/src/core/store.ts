@@ -3703,8 +3703,12 @@ export class AppStore {
   /** One line per step of a call (the Mac's `voice-call.log`, echoed to the console as the Mac echoes it to stderr). */
   callLog: (line: string) => void = (line) =>
     console.info(`[simeon] voice-call ${line}`)
-  /** The call's engine, for the computer it was made for (the Mac's `backend.call`, made at sign-in). */
-  private callEngine?: { engine: CallEngine; backend: AgentBackend }
+  /** The call's engine, for the computer it was made for (the Mac's `backend.call`, made at sign-in), with its tones. */
+  private callEngine?: {
+    engine: CallEngine
+    backend: AgentBackend
+    tones?: CallTonePlaying
+  }
 
   /** Calls are on, and there is a computer to call through (`canCall`). */
   get canCall(): boolean {
@@ -3722,17 +3726,18 @@ export class AppStore {
     const backend = this.backend
     if (!backend || !voiceCallsEnabled()) return undefined
     if (this.callEngine?.backend === backend) return this.callEngine.engine
+    const tones = this.callTones()
     const engine = new LiveCall({
       backend,
       transport: this.callVoice(),
       personName: () => this.account?.name,
       voiceFor: (agentId) => this.ensureVoice(agentId),
-      tones: this.callTones(),
+      tones,
       failedStays: null,
       log: (line) => this.callLog(line),
       language: currentLanguage,
     })
-    this.callEngine = { engine, backend }
+    this.callEngine = { engine, backend, tones }
     engine.observe((state) => {
       if (this.callEngine?.engine === engine) this.takeCall(state)
     })
@@ -3779,9 +3784,11 @@ export class AppStore {
 
   /** 5d's state back to nothing (signed out): a call on ends (its voice let go, its record sent), and nothing of it comes back on screen. */
   private resetCalls(): void {
-    const engine = this.callEngine?.engine
+    const made = this.callEngine
     this.callEngine = undefined
-    engine?.hangUp()
+    made?.engine.hangUp()
+    // The tones' audio let go, once the hang-up has played: one for each sign-in at most.
+    made?.tones?.close?.()
     this.call = undefined
     this.callLevels = []
   }

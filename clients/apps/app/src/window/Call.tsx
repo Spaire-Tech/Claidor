@@ -6,10 +6,11 @@
 // ChatPane.tsx).
 //
 // The Mac's banner is a panel of its own, floating over every window. A
-// page can't float a window, so the banner sits inside the window where the
-// Mac's sits on the screen: 12 under its top and 16 from its right, over
-// everything in it (docs/web-app/PROGRESS.md, "For Windows": the Windows
-// app can give it its own always-on-top window).
+// page can't float a window, so the banner sits inside the window, over
+// everything in it, at the Mac's 12 from the top and 16 from the right of
+// the chat's column, so it covers none of the window's own controls (the
+// agent's pane, find's bar). The Windows app can give it its own
+// always-on-top window (docs/web-app/PROGRESS.md, "For Windows").
 
 import {
   type ReactNode,
@@ -107,6 +108,64 @@ export function CallBanner({ store }: { store: AppStore }): ReactNode {
   return <BannerCard key={call.agentId} store={store} call={call} />
 }
 
+/**
+ * Where the banner sits, measured from the window (the session, 2
+ * November 2026): the Mac's 12 from the top and 16 from the right
+ * (`CallBanner.insetTop`, `insetRight`), but of the chat's column, not the
+ * window, so it covers none of the window's own controls: left of the
+ * agent's pane when it is open, and 8 under find's bar while it is open in
+ * that chat.
+ */
+function bannerPlace(): { top: number; right: number } {
+  const column = document.querySelector('.chat-area')
+  const area = column?.getBoundingClientRect()
+  const find = column?.querySelector('.find-bar')?.getBoundingClientRect()
+  return {
+    top: Math.round(
+      find ? find.bottom + 8 : (area?.top ?? 0) + Banner.insetTop,
+    ),
+    right: Math.round(
+      area
+        ? window.innerWidth - area.right + Banner.insetRight
+        : Banner.insetRight,
+    ),
+  }
+}
+
+/** The banner's place, followed as the column changes (the pane, the sidebar, the window's size) and as find opens and closes. */
+function useBannerPlace(): { top: number; right: number } {
+  const [place, setPlace] = useState(bannerPlace)
+  useEffect(() => {
+    let frame = 0
+    const measure = () => {
+      frame = 0
+      const next = bannerPlace()
+      setPlace((now) =>
+        now.top === next.top && now.right === next.right ? now : next,
+      )
+    }
+    const soon = () => {
+      if (frame === 0) frame = window.requestAnimationFrame(measure)
+    }
+    const column = document.querySelector('.chat-area')
+    const resized = new ResizeObserver(soon)
+    const changed = new MutationObserver(soon)
+    if (column) {
+      resized.observe(column)
+      changed.observe(column, { childList: true, subtree: true })
+    }
+    window.addEventListener('resize', soon)
+    soon()
+    return () => {
+      window.cancelAnimationFrame(frame)
+      resized.disconnect()
+      changed.disconnect()
+      window.removeEventListener('resize', soon)
+    }
+  }, [])
+  return place
+}
+
 /** The time now, again every `every` ms while `on` (the status line's `TimelineView(.periodic(by: 1))`). */
 function useNow(every: number, on: boolean): number {
   const [now, setNow] = useState(() => Date.now())
@@ -129,6 +188,7 @@ function useNow(every: number, on: boolean): number {
  * call).
  */
 function BannerCard({ store, call }: { store: AppStore; call: CallState }) {
+  const place = useBannerPlace()
   const look = Banner.look(call)
   const [transcript, setTranscript] = useState(false)
   const [hovering, setHovering] = useState(false)
@@ -149,6 +209,7 @@ function BannerCard({ store, call }: { store: AppStore; call: CallState }) {
       role="region"
       aria-label={t('Call')}
       tabIndex={-1}
+      style={place}
       onMouseEnter={() => setHovering(true)}
       onMouseLeave={() => setHovering(false)}
     >
@@ -758,7 +819,9 @@ function useCoverKeys(close: () => void, exchange: boolean) {
       if (document.querySelector('.context-menus')) return
       // While find has the keys, Escape is find's.
       if (exchange && document.activeElement?.closest('.find-bar')) return
+      // The cover takes it (`CallChat.swift`'s key monitor returns true): find, open under it, stays open.
       event.preventDefault()
+      event.stopPropagation()
       latest.current()
     }
     window.addEventListener('keydown', key, true)

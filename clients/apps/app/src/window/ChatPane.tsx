@@ -399,32 +399,36 @@ export function ChatPane({
       ref={pane}
       {...(covered ? {} : drop.handlers)}
     >
-      {/* A thread, or back to the chat: the lines on screen start again, at their newest. */}
-      <Transcript
-        key={threadRoot ?? ''}
-        store={store}
-        agentId={agentId}
-        threadRoot={threadRoot}
-        composerHeight={composerHeight}
-        actions={actions}
-        find={findOnScreen}
-        revealRef={revealRef}
-        jumpRef={jumpRef}
-        openAgent={onOpenAgent}
-      />
-      {agent &&
-        (threadRoot != null ? (
-          <ThreadHeader
-            store={store}
-            agent={agent}
-            title={store.threadTitle(threadRoot, agentId)}
-          />
-        ) : (
-          <ChatHeader store={store} agent={agent} />
-        ))}
-      {/* Low disk, 8 under the head (step 5c). */}
-      <DiskBanner store={store} top={(threadRoot != null ? 44 : 116) + 8} />
-      <div className={covered ? 'under-cover' : undefined} inert={covered}>
+      {/* Under a call's lines or an exchange (step 5d), the chat, its head and its field take no keys and are not read, as the Mac's covers are modal; find, the sidebar and search stay. */}
+      <div
+        className={classes('chat-under', covered && 'covered')}
+        inert={covered}
+      >
+        {/* A thread, or back to the chat: the lines on screen start again, at their newest. */}
+        <Transcript
+          key={threadRoot ?? ''}
+          store={store}
+          agentId={agentId}
+          threadRoot={threadRoot}
+          composerHeight={composerHeight}
+          actions={actions}
+          find={findOnScreen}
+          revealRef={revealRef}
+          jumpRef={jumpRef}
+          openAgent={onOpenAgent}
+        />
+        {agent &&
+          (threadRoot != null ? (
+            <ThreadHeader
+              store={store}
+              agent={agent}
+              title={store.threadTitle(threadRoot, agentId)}
+            />
+          ) : (
+            <ChatHeader store={store} agent={agent} />
+          ))}
+        {/* Low disk, 8 under the head (step 5c). */}
+        <DiskBanner store={store} top={(threadRoot != null ? 44 : 116) + 8} />
         <Composer
           store={store}
           agentId={agentId}
