@@ -34,6 +34,12 @@ import {
   newMessageId,
 } from './backend'
 import {
+  addingAllowRule,
+  autoReviewFrom,
+  autoReviewJSON,
+  proposedRule,
+} from './cards'
+import {
   type ChatRow,
   chatRows,
   replacingLast,
@@ -486,6 +492,8 @@ export class AppStore {
     this.backend = undefined
     this.access = checkingAccess
     this.plan = undefined
+    this.pendingAnswers = {}
+    this.answeredApprovals = {}
     this.firstRunAgentId = undefined
     this.firstRunNamed = false
     // A hand-off waiting on the name step ends (it finds the account gone and makes nothing).
@@ -1211,6 +1219,129 @@ export class AppStore {
     }
   }
 
+  // MARK: The waiting cards' answers (Store.swift's card commands)
+
+  /** An answer given on a question card, shown until the computer's copy has it; "" for one dismissed. */
+  pendingAnswers: Record<string, string> = {}
+  /** How each approval card was answered here (`approved`, `always`, `denied`, `expired`). */
+  answeredApprovals: Record<string, string> = {}
+
+  /** A choice, several choices (one per line) or the person's own words, on a question card (`respondToWidget`). */
+  async answer(value: string, entryId: string, agentId: string): Promise<void> {
+    const backend = this.backend
+    if (!backend) return
+    this.pendingAnswers[entryId] = value
+    this.changed()
+    try {
+      await backend.command('respondToWidget', { agentId, entryId, value })
+    } catch (error) {
+      delete this.pendingAnswers[entryId]
+      const why = error instanceof Error ? error.message : String(error)
+      const name = this.agent(agentId)?.name
+      this.problem = name
+        ? t`Your answer didn't reach ${name}: ${why}`
+        : t`Your answer didn't reach the agent: ${why}`
+      this.changed()
+    }
+  }
+
+  /** The question card's X (`dismissWidget`). */
+  async dismissQuestion(entryId: string, agentId: string): Promise<void> {
+    this.pendingAnswers[entryId] = ''
+    this.changed()
+    const done = await this.command(
+      'dismissWidget',
+      { entryId, agentId },
+      t("Couldn't dismiss the question"),
+    )
+    if (done === undefined) {
+      delete this.pendingAnswers[entryId]
+      this.changed()
+    }
+  }
+
+  /** Send on an email or Slack draft, with what the person changed in it (`sendDraft`). */
+  async sendDraft(
+    entryId: string,
+    agentId: string,
+    draft: JSONValue,
+  ): Promise<void> {
+    await this.command(
+      'sendDraft',
+      { agentId, entryId, draft },
+      t("The draft didn't send"),
+    )
+  }
+
+  async discardDraft(entryId: string, agentId: string): Promise<void> {
+    await this.command(
+      'discardDraft',
+      { agentId, entryId },
+      t("Couldn't discard the draft"),
+    )
+  }
+
+  /**
+   * Allow once (`approved`), Always allow (`always`) or Deny (`denied`) on an
+   * auto-review approval (`pe`): Always allow first adds the proposed rule
+   * to Auto-review, and counts as Allow once when there is none or it can't
+   * be saved. The answer shows once the computer takes it, "Expired" when it
+   * says the request is stale; any other failure says nothing, as the card.
+   */
+  async resolveApproval(
+    requestId: string,
+    resolution: string,
+    rule: string | undefined,
+    entryId: string,
+    agentId: string,
+  ): Promise<void> {
+    const backend = this.backend
+    if (!backend) return
+    const sent =
+      resolution === 'always'
+        ? await this.alwaysAllow(proposedRule(rule))
+        : resolution
+    try {
+      await backend.command('resolveAutoReviewApproval', {
+        requestId,
+        resolution: sent,
+        entryId,
+        agentId,
+      })
+      this.answeredApprovals[entryId] = sent
+    } catch (error) {
+      const why = error instanceof Error ? error.message : String(error)
+      if (why.includes('auto-review/stale'))
+        this.answeredApprovals[entryId] = 'expired'
+      else delete this.answeredApprovals[entryId]
+    }
+    this.changed()
+  }
+
+  /** The rule saved to Auto-review's allowed list: `always`, or `approved` when there is none or it could not be saved. */
+  private async alwaysAllow(rule: string | undefined): Promise<string> {
+    const backend = this.backend
+    if (rule == null || !backend) return 'approved'
+    let settings: JSONValue
+    try {
+      settings = await backend.command('getHostSettings', {})
+    } catch {
+      return 'approved'
+    }
+    const next = addingAllowRule(
+      autoReviewFrom(field(settings, 'autoReviewInstructions')),
+      rule,
+    )
+    try {
+      await backend.command('setHostSettings', {
+        autoReviewInstructions: autoReviewJSON(next),
+      })
+    } catch {
+      return 'approved'
+    }
+    return 'always'
+  }
+
   // MARK: The chats
 
   rows(agentId: string): readonly ChatRow[] {
@@ -1219,6 +1350,14 @@ export class AppStore {
 
   private setTranscript(agentId: string, entries: Entry[], soon = false): void {
     this.transcripts[agentId] = entries
+    // A card's answer shown here is the computer's once its copy has it.
+    for (const entry of entries)
+      if (
+        this.pendingAnswers[entry.id] !== undefined &&
+        (text(entry.get('respondedValue')) != null ||
+          bool(entry.get('widgetDismissed')) === true)
+      )
+        delete this.pendingAnswers[entry.id]
     this.streamingOnly.delete(agentId)
     this.settleOutbox(agentId, entries)
     if (soon) this.scheduleLayout(agentId)

@@ -16,7 +16,7 @@ file and the code disagree, the code is right and this file is fixed.
 | 0. The audit | Done, 1 November 2026 |
 | 1. The base: the server and the computer, signing in, the window | Done, 1 November 2026 (1a to 1d); the first run for a new account and the access cover, carried to step 2, done there |
 | 2. The sidebar and the chat | Done, 1 November 2026: 2a (the chat's core and the chat on screen), 2b (a message's actions, find, the working line, names in colour, link icons, the emoji picker), 2c (file cards, pictures, link cards, the preview with PDF, Word, sound and Excel, the viewer), 2e (the message field's own parts: files, ":", "@", "/", "#", dictation), 2f (the sidebar: pins, sections, picked rows, menus, renaming, hiding, deleting, dragging, the rail, the width), 2g (a new account's first run, the access cover). The sidebar's head and foot (search, new chat, the account, Connect apps) come with their screens in step 4. Next: step 3, the cards |
-| 3. The cards | Not started |
+| 3. The cards | In progress, 2 November 2026: 3a done (the card's frame, the question, the email and Slack drafts, the auto-review approval). Next: 3b, the secret, the computer hand-off, the form, 1Password's two cards |
 | 4. The agent's pane, search, new chat, the org chart, starter packs | Not started |
 | 5. The computer and calls | Not started |
 | 6. Connectors and Settings | Not started |
@@ -58,6 +58,63 @@ file and the code disagree, the code is right and this file is fixed.
 | 1 November 2026 | Sign Out on the web drops this tab's pair (on the server and here), then goes to the website's own sign-out (`/v1/auth/logout`), which ends its cookie; otherwise the next visit would sign straight back in from it | The session |
 | 1 November 2026 | The access cover's button opens its page (the plans page, Apple's, Simeon Labs', or Stripe's card page asked for first) in a new tab, and the cover reads the access, the plan and the agents again when the tab comes back to the front. The Mac's charge after Stripe's card page (`billing/settle`) is not made: the web can't tell when that page was finished (the Mac's sheet comes back on the app's own link) | The session |
 | 1 November 2026 | The wordmark's face (Suravaram, SIL Open Font License) ships with the web app, its licence served beside it (`/app-next/fonts/Suravaram-OFL.txt`) | The session |
+| 2 November 2026 | **Windows is the goal.** The web app is the means: every choice in it is weighed for the Windows app (Electron around these same files), and what a choice becomes there is listed under "For Windows" below, so step 7 starts from a list, not from memory | The founder: "remember that we building for window. Window is the final goal" |
+
+## For Windows
+
+What each web choice so far becomes in the Windows app (Electron around
+these files, step 7). Electron draws with Chromium, so the checks run in
+Chromium in each step stand for Windows' engine too; what they can't stand
+for is listed here. Added to with every step.
+
+- **Loading the app.** The web app is built for `/app-next/` and finds the
+  server from its own address (`resolveApiBase`). Loaded from disk, it needs
+  the server's address given (`https://api.simeonlabs.com`) and a base that
+  works from disk (Electron's own `app://` protocol, or relative paths), and
+  the security policy the website gives it now set by Electron.
+- **Signing in and out.** The web trades the website's cookie
+  (`/auth/web-session`) and sends the person to the website's `/login`; Sign
+  Out ends the website's cookie (`/v1/auth/logout`). Windows has no website
+  cookie: the Mac's sign-in screen and its way (the browser, then
+  `/auth/poll`), and Sign Out drops the pair and shows that screen. The pair
+  kept in Windows' credential store (`safeStorage`), not the tab's.
+- **Pages opened elsewhere.** Links in messages and file cards
+  (`target="_blank"`), and the access cover's pages (`window.open`): in
+  Electron, `setWindowOpenHandler` sends them to the default browser with
+  the Mac's allowlist (http, https, mailto, obsidian, tel), and denies the
+  rest. Stripe's card page from the cover can open in a child window that
+  comes back on the app's own link, as the Mac's sheet does; then the
+  Mac's charge after it (`billing/settle`) can be made.
+- **Saving files.** The web hands a file to the browser as a download
+  (`Files.tsx`). In Electron, `will-download` with Windows' save dialog,
+  as the Mac's save panel.
+- **The microphone.** The browser asks the person; Electron asks Windows
+  and lets the page have it through `setPermissionRequestHandler` (audio
+  only, the app's own page only). The refused line's "system settings" is
+  right on Windows (Settings, Privacy, Microphone).
+- **Keys.** The web uses Control where the Mac uses ⌘ (picking rows,
+  Control-B, Control-F) whenever it isn't on an Apple computer, so Windows
+  has these already. Control-Tab, left out in a browser (it changes tabs),
+  can come back in Electron, which has no tabs.
+- **Kept on the device.** The folds, the sidebar's width, the emoji and
+  "@" picked lately are in the page's storage, which Electron keeps per
+  app. Drafts and the chats are kept in memory only on the web (a shared
+  computer); the Windows app can keep them on disk as the Mac does
+  (`SavedChats`), decided at step 7.
+- **The window.** The Mac's window is moved by its sidebar's head and the
+  chat's top (`WindowDragArea`): in Electron, `-webkit-app-region: drag` on
+  the same places, Windows' own buttons through `titleBarOverlay`. The
+  narrowest window is 512 wide, the Mac's.
+- **The cards (step 3).** Drawn with the page's own parts only (no
+  browser dialogs, no pop-ups), so they are the same in Electron. A card's
+  answer field: Return sends, Shift-Return starts a new line, as the
+  message field; a draft's words take Return as a new line, as the Mac's.
+  A long command in an approval scrolls sideways in its box with the
+  pointer or the trackpad; with a mouse wheel on Windows that is
+  Shift-wheel, Windows' own way.
+- **Already listed in README.md's table:** notifications and the taskbar
+  badge, the tray, updates, `simeon://` links, the agent's hands on the PC,
+  1Password and Chrome on Windows.
 
 ## Open questions
 
@@ -86,6 +143,80 @@ For the founder, each to be answered before the step that needs it:
 ## Log
 
 Newest first.
+
+### 2 November 2026: step 3, part a, the question, the drafts and the approval
+
+- `src/core/cards.ts` (SimeonCore's Chat.swift `QuestionCard`, `DraftCard`,
+  `RequestCard.approval`; Approvals.swift's `AutoReviewCard`;
+  AccountSettings.swift's `AutoReviewInstructions`):
+  - a question: its prompt, help, choices (each with its line, the reply it
+    sends, recommended or destructive), several at once, its own answer,
+    answered, dismissed or skipped; an answer shown by its choices' labels;
+  - a draft: an email (a new one or a reply, Cc, files by name) or a Slack
+    message, its state (Ready to send, Sending…, Sent, Discarded), the
+    addresses typed split as the Mac splits them;
+  - an approval: the title, where it runs, the summary said only when it
+    says more than the command, the badge, the fold cut at 340 characters,
+    the note under Always allow, secrets taken out of the rule, the rule
+    added to Auto-review's allowed list (20 at most, 1,000 characters each).
+- The store (`store.ts`), as the core's: `answer` (`respondToWidget`, shown
+  at once and kept until the computer's copy has it, taken back with the
+  core's line when it doesn't reach the agent), `dismissQuestion`
+  (`dismissWidget`), `sendDraft` with what was changed, `discardDraft`,
+  `resolveApproval` (`resolveAutoReviewApproval`; Always allow writes the
+  rule into the computer's settings first and counts as Allow once when
+  there is none or it can't be saved; a stale request reads Expired; any
+  other refusal says nothing, as the Mac's card).
+- `src/window/Cards.tsx` (mac/Simeon/Cards.swift): the card's frame (the
+  agent's grey, 16 round, padded 12), the status pill, the two buttons, and
+  the three cards at the Mac's measures; `ChatPane.tsx` draws them as wide
+  as a message may be (640 for the question and the draft, 520 for the
+  approval) and keeps the other cards' places until their parts.
+- Tests: the core's approval table (`fixtures/approvals.json`, copied from
+  the core: titles, badges, redactions, rules, the shipped cards, Always
+  allow's writes), the question and draft cards; the store's commands
+  (`cardsStore.test.ts`: an answer shown at once, taken back, kept until
+  the copy has it, a dismissal refused, a draft sent and discarded, the
+  three approval answers, Always allow without a rule or unsaved, Expired).
+- **Found:** the Mac's window never shows the store's problem line (only
+  the starter-pack sheet reads it), so a refused answer, dismissal or
+  draft on the Mac quietly returns the card to waiting; the iPhone shows it
+  in its "Something went wrong" alert. The web does as the Mac for now.
+  Proposed for step 6 (Settings and the alerts): the iPhone's alert on the
+  web and Windows, and on the Mac.
+- **Checked:** in Chromium against a stand-in server and computer
+  (`cards-check.cjs` in the session's scratchpad), light and dark, then
+  French:
+  - questions: the answered card with its blue tick and the dismissed one
+    at 60% with its pill, as the computer sends them; the open card's
+    choices (blue for the recommended, red for the destructive), the line
+    under each, the hover; a choice sends its own reply ("Delete every spam
+    email") and shows its label at once, then still once the computer's
+    copy has it; several picked (blue rings, `aria-pressed`), Submit, the
+    values one per line in the choices' order, shown "Order 1042, Order
+    1044"; its own words: the field 30 high, 50 with a second line
+    (Shift-Return), Submit only once something is written, Return sends;
+    the X (its tooltip, "Dismissed");
+  - drafts: Reply with From, To, Cc, Subject, the words six lines high, the
+    file by name; Slack's logo, Workspace, To, "New message"; To, Subject
+    and the words changed and sent as typed (two addresses split, Cc
+    kept); then Sent with its green dot, the fields fixed, no buttons;
+    Discard: "Discarded";
+  - approvals: the five cards' titles, "Approval needed", where each runs,
+    the reason while it waits; Show the command and Hide the command; a
+    412-character command cut ("...[72 chars omitted]..."); Always allow:
+    the rule added after the one already there, then "Always allowed" and
+    its note; a stale request: "Expired"; Deny: "Denied" in red;
+  - French: every word of the three cards from the Mac's catalogue ("Ta
+    réponse : …", "Ignorée", "Prêt à envoyer", "Abandonné", "Expiré",
+    "Refusé", "Toujours autorisé"). No page errors in any run. The 255
+    tests, typecheck, lint, the words', the brands' and the build's
+    checks, `check_names.py`, `check_translations.py`.
+- **Not checked:** against the real computer (the address is not live
+  yet); "Sending…" on screen (the stand-in's updates came together, after
+  Sent was already set).
+- **Next:** 3b, the secret, the computer hand-off, the in-chat form,
+  1Password's fill and connect cards.
 
 ### 1 November 2026: step 2g, a new account's first run and the access cover
 

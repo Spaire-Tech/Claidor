@@ -1128,6 +1128,543 @@ button {
   margin-top: 12px;
 }
 
+/*
+ * The cards (Cards.tsx, mac/Simeon/Cards.swift). A card is as wide as a
+ * message may be (its max-width set on it), grey like an agent's bubble, 16
+ * round, padded 12, its parts 10 apart.
+ */
+.card-row {
+  width: 100%;
+  min-width: 0;
+}
+
+.card-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 12px;
+  border-radius: 16px;
+  background: var(--theirs);
+  color: var(--ink);
+  box-shadow:
+    0 0 0 0.5px var(--theirs-hairline),
+    0 1px 2px var(--theirs-shadow);
+  font-size: 14px;
+  line-height: 20px;
+  overflow-wrap: anywhere;
+}
+
+/* A card's state: 12, 500, at 60%, in the grey capsule with a 6-point dot (the approval's 13 and 22 high). */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  flex: none;
+  gap: 6px;
+  height: 20px;
+  box-sizing: border-box;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--wash);
+  color: var(--ink-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.status-pill.large {
+  height: 22px;
+  font-size: 13px;
+  letter-spacing: -0.08px;
+}
+
+.status-dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ink-tertiary);
+}
+
+.status-dot.green {
+  background: var(--working);
+}
+
+/* The two buttons: 14, 32 high, 12 at the sides, 8 round; plain is the grey with a line at 15%, prominent the person's blue. */
+.card-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.card-button {
+  flex: none;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid color-mix(in srgb, var(--ink) 15%, transparent);
+  border-radius: 8px;
+  background: var(--wash);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  line-height: 20px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.card-button.prominent {
+  border-color: transparent;
+  background: var(--yours);
+  color: #ffffff;
+}
+
+.card-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.card-button:focus-visible,
+.question-option:focus-visible,
+.card-close:focus-visible,
+.approval-fold:focus-visible {
+  outline: 2px solid var(--unread);
+  outline-offset: 1px;
+}
+
+/* A question: 14 on 20, 500; its help under it at 60%; the X 20 square at the right. */
+.question-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.question-words {
+  flex: 1;
+  min-width: 0;
+}
+
+.question-prompt {
+  font-weight: 500;
+}
+
+.question-prompt.quiet {
+  color: var(--ink-secondary);
+}
+
+.question-help {
+  color: var(--ink-secondary);
+}
+
+.card-close {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--ink-secondary);
+  cursor: pointer;
+}
+
+.card-close:hover {
+  background: var(--row-hover);
+}
+
+/* The choices in one box, 8 round, a hairline at 10% between; each padded 8. */
+.question-options {
+  display: flex;
+  flex-direction: column;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.question-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.question-option + .question-option {
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+.question-option:hover {
+  background: var(--row-hover);
+}
+
+.option-ring {
+  flex: none;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: 18px;
+  height: 18px;
+  border: 1px solid color-mix(in srgb, var(--ink) 30%, transparent);
+  border-radius: 50%;
+  /* The tick cut out of the blue, as `checkmark.circle.fill`. */
+  color: var(--theirs);
+}
+
+.option-ring.picked {
+  border-color: transparent;
+  background: var(--blue);
+}
+
+.option-words {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.option-label.primary {
+  color: var(--blue);
+  font-weight: 500;
+}
+
+.option-label.danger {
+  color: var(--danger);
+}
+
+.option-line {
+  color: var(--ink-secondary);
+}
+
+/* Answered: the blue tick, 18 square, and the answer, padded 8. */
+.question-answer {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px;
+}
+
+.answer-tick {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 20px;
+  color: var(--blue);
+}
+
+/* Its own answer: on the ground, 8 round, a line at 15%, 30 high at least, one to six lines. */
+.question-own {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.growing-field {
+  display: block;
+  box-sizing: border-box;
+  resize: none;
+  margin: 0;
+  border: 0;
+  outline: none;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.growing-field::placeholder {
+  color: var(--placeholder);
+}
+
+.question-own .growing-field {
+  flex: 1;
+  min-width: 0;
+  min-height: 30px;
+  padding: 4px 10px;
+  border: 1px solid color-mix(in srgb, var(--ink) 15%, transparent);
+  border-radius: 8px;
+  background: var(--ground);
+}
+
+.question-own .growing-field:focus-visible {
+  border-color: var(--unread);
+}
+
+/* A draft: its title (14 on 22, 500, Slack's logo 20 before it) with its state; its fields on the ground, 10 round. */
+.draft-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 22px;
+}
+
+.draft-title {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 500;
+  line-height: 22px;
+  letter-spacing: -0.15px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.draft-logo {
+  flex: none;
+  width: 20px;
+  height: 20px;
+}
+
+.draft-box {
+  display: flex;
+  flex-direction: column;
+  border-radius: 10px;
+  background: var(--ground);
+  overflow: hidden;
+}
+
+/* A field: 36 high at least, padded 7 and 10, a hairline at 10% under it; its name 12 at 40%, its value 14 at 60%. */
+.draft-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  box-sizing: border-box;
+  padding: 7px 10px;
+  box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+.draft-name {
+  flex: none;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--ink-tertiary);
+}
+
+.draft-value,
+.draft-input {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  line-height: 22px;
+  letter-spacing: -0.15px;
+  color: var(--ink-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.draft-input {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: none;
+  font-family: inherit;
+}
+
+.draft-input::placeholder {
+  color: var(--placeholder);
+}
+
+.draft-input:disabled {
+  color: var(--ink-secondary);
+  opacity: 1;
+}
+
+/* A sent draft's words keep the ink, as the Mac's text view does. */
+.draft-words:disabled {
+  color: var(--ink);
+  opacity: 1;
+}
+
+/* The words: 14 on 22, 10 all round, three lines at least and twelve at most, then they scroll. */
+.draft-words.growing-field {
+  width: 100%;
+  padding: 10px;
+  line-height: 22px;
+  letter-spacing: -0.15px;
+}
+
+/* A file that goes with it: 13 at 60% with the paperclip at 40%, a hairline over it. */
+.draft-file {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--ink) 10%, transparent);
+  font-size: 13px;
+  line-height: 18px;
+  letter-spacing: -0.15px;
+  color: var(--ink-secondary);
+}
+
+.draft-file svg {
+  flex: none;
+  color: var(--ink-tertiary);
+}
+
+.draft-file span {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* An approval: its parts 12 apart, its words 4 apart. */
+.approval-card {
+  gap: 12px;
+}
+
+.approval-words {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.approval-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.approval-title {
+  flex: 1;
+  min-width: 0;
+  min-height: 22px;
+  font-weight: 500;
+  line-height: 22px;
+  letter-spacing: -0.15px;
+}
+
+.approval-needed,
+.approval-badge {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
+  height: 22px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+  letter-spacing: -0.08px;
+  white-space: nowrap;
+}
+
+.approval-needed {
+  gap: 4px;
+  padding: 2px 8px 2px 4px;
+  color: var(--blue);
+  background: color-mix(in srgb, var(--yours) 12%, transparent);
+}
+
+.approval-needed svg {
+  width: 14px;
+}
+
+.approval-badge {
+  gap: 6px;
+  padding: 2px 8px;
+}
+
+.approval-badge.success {
+  color: #009957;
+  background: rgb(0 201 114 / 0.09);
+}
+
+.approval-badge.success .status-dot {
+  background: var(--working);
+}
+
+.approval-badge.danger {
+  color: #c21d2e;
+  background: rgb(255 38 60 / 0.09);
+}
+
+.approval-badge.danger .status-dot {
+  background: #ff263c;
+}
+
+.approval-badge.muted {
+  color: var(--ink-secondary);
+  background: var(--wash);
+}
+
+.approval-place {
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  color: var(--ink-secondary);
+}
+
+.approval-summary {
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.approval-reason {
+  font-size: 13px;
+  line-height: 18px;
+  letter-spacing: -0.08px;
+  color: var(--ink-secondary);
+}
+
+.approval-fold {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink-secondary);
+  font: inherit;
+  font-size: 13px;
+  line-height: 18px;
+  cursor: pointer;
+}
+
+.fold-chevron {
+  flex: none;
+  width: 14px;
+  height: 9px;
+  transition: transform 0.15s ease-out;
+}
+
+.fold-chevron.open {
+  transform: rotate(90deg);
+}
+
+.approval-note {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--ink-secondary);
+}
+
+@media (prefers-color-scheme: dark) {
+  .approval-badge.success {
+    color: #38d591;
+    background: rgb(0 201 114 / 0.173);
+  }
+
+  .approval-badge.danger {
+    color: #ff5667;
+    background: rgb(255 38 60 / 0.16);
+  }
+}
+
 /* A file: 220 to 340 wide (the limits set on it), as wide as its words between; grey and 12 round, padded 8; its icon 36, its name over its size, Save. */
 .file-card {
   display: flex;

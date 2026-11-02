@@ -16,8 +16,9 @@
 // of a line coming in, the time on a sideways swipe, two agents' messages
 // and a call's lines opened over the chat (2b);
 // the pictures from the computer, files' kinds, sizes and Save, link cards,
-// previews (2c); the call button (step 5); the cards (step 3); the agent's
-// pane opened from the head (step 4).
+// previews (2c); the call button (step 5); the cards after 3a (step 3: the
+// question, draft and approval cards are in Cards.tsx); the agent's pane
+// opened from the head (step 4).
 
 import {
   createContext,
@@ -30,6 +31,7 @@ import {
   useState,
 } from 'react'
 import { activityLine } from '../core/activity'
+import { approvalCard, draftCard, questionCard } from '../core/cards'
 import {
   type Bubble,
   type ChatImage,
@@ -65,6 +67,12 @@ import { t } from '../l10n'
 import { ActivitySlot } from './ActivitySlot'
 import { AgentMark } from './AgentMark'
 import { DropOverlay, useFileDrop, useStaging } from './Attachments'
+import {
+  ApprovalCardView,
+  DraftCardView,
+  QuestionCardView,
+  cardWidth,
+} from './Cards'
 import { Composer } from './Composer'
 import { EmojiPicker } from './EmojiPicker'
 import { FileCard, LinkCard, useShownPicture } from './Files'
@@ -1043,15 +1051,52 @@ function RowContent({
         <ThreadChin rootId={row.rootId} count={row.count} attached={false} />
       )
     case 'card':
-      // Step 3 draws each card; until then its place is kept and said.
-      return (
-        <div
-          className={classes('later-card', run.startsGroup && 'starts-group')}
-        >
-          {notShown()}
-        </div>
-      )
+      return <CardRow row={row} startsGroup={run.startsGroup} />
   }
+}
+
+/** A card in its place: as wide as a message may be (the approval 520 at most, the others 640). */
+function CardRow({
+  row,
+  startsGroup,
+}: {
+  row: Extract<ChatRow, { kind: 'card' }>
+  startsGroup: boolean
+}) {
+  const control = useControl()
+  const { store, agentId, column } = control
+  const frame = (cap: number, card: React.ReactNode) => (
+    <div
+      className={classes('card-row', startsGroup && 'starts-group')}
+      style={{ maxWidth: cardWidth(column, cap) }}
+    >
+      {card}
+    </div>
+  )
+  const props = { entryId: row.entry.id, agentId, store }
+  switch (row.card) {
+    case 'question': {
+      const card = questionCard(row.entry)
+      if (card) return frame(640, <QuestionCardView {...props} card={card} />)
+      break
+    }
+    case 'draft': {
+      const card = draftCard(row.entry)
+      if (card) return frame(640, <DraftCardView {...props} card={card} />)
+      break
+    }
+    case 'approval': {
+      const card = approvalCard(row.entry)
+      if (card) return frame(520, <ApprovalCardView {...props} card={card} />)
+      break
+    }
+  }
+  // The other cards come in the next parts of step 3; until then their place is kept and said.
+  return (
+    <div className={classes('later-card', startsGroup && 'starts-group')}>
+      {notShown()}
+    </div>
+  )
 }
 
 function Clock() {
