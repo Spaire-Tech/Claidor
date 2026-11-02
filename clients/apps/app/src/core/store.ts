@@ -39,6 +39,7 @@ import {
   autoReviewJSON,
   proposedRule,
 } from './cards'
+import { type ChannelsView, channelDeadline, channelsFrom } from './channels'
 import {
   type ChatRow,
   chatRows,
@@ -91,6 +92,14 @@ import {
   unreachableLine,
 } from './onboarding'
 import { plainError } from './plainWords'
+import {
+  type FileHit,
+  type MessageHit,
+  type RoutineHit,
+  fileHitFrom,
+  messageHitFrom,
+  routineHitFrom,
+} from './search'
 import {
   type SidebarSection,
   createSection,
@@ -2722,8 +2731,176 @@ export class AppStore {
   // (PaneMembersFlight.swift, GroupMembers.swift). 4d's state and commands
   // go below this line, and nowhere else.
 
-  /** 4d's state back to nothing (signed out). */
+  /**
+   * 4d's state back to nothing (signed out). The store keeps none: search's
+   * words and answers are the window's (SearchPanel.swift's `SearchState`),
+   * a Channels page's answer is its own (`ChannelsModel`), and a found line
+   * being read in (`loadUntil`) stops when the sign-in it began in ends.
+   */
   private resetSearchAndChannels(): void {}
+
+  /** Whether the computer's search index is on (`isGlobalSearchEnabled`); on when it can't be read, as the Mac's default. */
+  async globalSearchEnabled(): Promise<boolean> {
+    const backend = this.backend
+    if (!backend) return true
+    let answer: JSONValue
+    try {
+      answer = await backend.command('isGlobalSearchEnabled', {})
+    } catch {
+      return true
+    }
+    return bool(answer) ?? bool(field(answer, 'enabled')) ?? true
+  }
+
+  /** Every chat's messages matching the words (`searchAgents`; the computer gives at most 50, 5 a chat, newest first). Thrown when it can't answer. */
+  async searchMessages(query: string): Promise<MessageHit[]> {
+    const backend = this.backend
+    if (!backend) return []
+    const answer = await backend.command('searchAgents', { query })
+    return (arr(answer) ?? [])
+      .map(messageHitFrom)
+      .filter((hit): hit is MessageHit => hit != null)
+  }
+
+  /** Files matching the words, or the newest 50 for none (`searchMedia`). Thrown when the computer can't answer. */
+  async searchFiles(query: string): Promise<FileHit[]> {
+    const backend = this.backend
+    if (!backend) return []
+    const answer = await backend.command('searchMedia', { query })
+    return (arr(answer) ?? [])
+      .map(fileHitFrom)
+      .filter((hit): hit is FileHit => hit != null)
+  }
+
+  /** Every agent's routines (`listAllAutomations`); none when they can't be read. */
+  async allRoutines(): Promise<RoutineHit[]> {
+    const backend = this.backend
+    if (!backend) return []
+    let answer: JSONValue
+    try {
+      answer = await backend.command('listAllAutomations', {})
+    } catch {
+      return []
+    }
+    return (arr(answer) ?? [])
+      .map(routineHitFrom)
+      .filter((hit): hit is RoutineHit => hit != null)
+  }
+
+  /**
+   * A chat's older lines, page by page, until the given one is among them
+   * (the Mac's `revealSearchHit`: at most 20 pages or 30 s). Whether it is.
+   * It ends with the sign-in it began in.
+   */
+  async loadUntil(
+    entryId: string,
+    agentId: string,
+    pages = 20,
+    seconds = 30,
+  ): Promise<boolean> {
+    const backend = this.backend
+    const started = Date.now()
+    const has = () =>
+      this.transcripts[agentId]?.some((entry) => entry.id === entryId) === true
+    const late = () => (Date.now() - started) / 1000 > seconds
+    // The chat opening fetches its newest lines first.
+    while (this.transcripts[agentId] == null || this.fetching.has(agentId)) {
+      if (late() || backend !== this.backend) return has()
+      await new Promise((resolve) => setTimeout(resolve, 100))
+    }
+    for (let page = 0; page < pages; page += 1) {
+      if (has()) return true
+      if (this.olderBefore[agentId] == null || late()) return false
+      if (backend !== this.backend) return false
+      await this.loadOlder(agentId)
+    }
+    return has()
+  }
+
+  /** A group's members, in its order, those the roster has (`members(of:)`). */
+  members(group: Agent): Agent[] {
+    return group.memberIds
+      .map((id) => this.agent(id))
+      .filter((agent): agent is Agent => agent != null)
+  }
+
+  /** A group's members (`setGroupMembers`): shown at once, put back and thrown when refused, for the dialog to say. */
+  async setGroupMembers(groupId: string, memberIds: string[]): Promise<void> {
+    const backend = this.backend
+    if (!backend) return
+    const was = this.agent(groupId)?.memberIds
+    const set = (ids: string[]) => {
+      this.agents = this.agents.map((one) =>
+        one.id === groupId ? { ...one, memberIds: ids } : one,
+      )
+      this.changed()
+    }
+    if (was) set(memberIds)
+    try {
+      await backend.command('setGroupMembers', {
+        id: groupId,
+        memberAgentIds: memberIds,
+      })
+    } catch (error) {
+      if (was && this.agent(groupId) && backend === this.backend) set(was)
+      throw error
+    }
+  }
+
+  /** An agent's channels (`getAgentChannels`): undefined when the computer doesn't answer within 15 s. */
+  channels(agentId: string): Promise<ChannelsView | undefined> {
+    return this.channelCall('getAgentChannels', { id: agentId })
+  }
+
+  /** Store securely: the token for `platform` (Slack takes its app and bot tokens together, the computer sorts them). */
+  connectChannel(
+    agentId: string,
+    platform: string,
+    token: string,
+  ): Promise<ChannelsView | undefined> {
+    return this.channelCall('connectChannel', {
+      id: agentId,
+      platform,
+      token,
+    })
+  }
+
+  refreshChannel(
+    agentId: string,
+    platform: string,
+  ): Promise<ChannelsView | undefined> {
+    return this.channelCall('refreshChannel', { id: agentId, platform })
+  }
+
+  disconnectChannel(
+    agentId: string,
+    platform: string,
+  ): Promise<ChannelsView | undefined> {
+    return this.channelCall('disconnectChannel', { id: agentId, platform })
+  }
+
+  /** A channel call (`I$n`): it answers the whole view, and gives up after 15 s (a failure keeps the last answer on screen). */
+  private async channelCall(
+    method: string,
+    args: JSONValue,
+  ): Promise<ChannelsView | undefined> {
+    const backend = this.backend
+    if (!backend) return undefined
+    let timer: ReturnType<typeof setTimeout> | undefined
+    try {
+      const answer = await Promise.race([
+        backend.command(method, args),
+        new Promise<undefined>((resolve) => {
+          timer = setTimeout(() => resolve(undefined), channelDeadline * 1000)
+        }),
+      ])
+      return channelsFrom(answer)
+    } catch {
+      return undefined
+    } finally {
+      clearTimeout(timer)
+    }
+  }
 
   // MARK: Step 4e's org chart and starter packs (OrgChart.swift,
   // AgentNetwork.swift, StarterPackSheet.swift, StarterPacks.swift). 4e's

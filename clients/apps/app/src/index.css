@@ -2331,6 +2331,13 @@ button {
   outline-offset: 1px;
 }
 
+/* While its action is on its way (Remove's "Removing..."): the words greyed, as a Mac alert's disabled buttons. */
+.alert-button:disabled {
+  background: var(--row-hover);
+  color: var(--ink-tertiary);
+  cursor: default;
+}
+
 /* Hidden Agents (C14): 520 by 440, its title and line padded 12 10 12 16, Close at the right, rows 36 high and 2 apart. */
 .hidden-agents {
   display: flex;

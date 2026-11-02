@@ -37,6 +37,7 @@ export function Alert({
   cancel,
   onAction,
   onCancel,
+  busy,
 }: {
   title: string
   message: string
@@ -46,10 +47,14 @@ export function Alert({
   cancel?: string
   onAction: () => void
   onCancel?: () => void
+  /** While its action is on its way: neither button can be pressed, and Escape waits (a Mac alert's disabled buttons). */
+  busy?: boolean
 }) {
   const first = useRef<HTMLButtonElement>(null)
   useTakesFocus(first)
-  useEscape(onCancel ?? onAction)
+  useEscape(() => {
+    if (!busy) (onCancel ?? onAction)()
+  })
   return (
     <div
       className="sheet-scrim"
@@ -73,7 +78,12 @@ export function Alert({
         <div className="alert-message">{message}</div>
         <div className="alert-buttons">
           {onCancel && (
-            <button type="button" className="alert-button" onClick={onCancel}>
+            <button
+              type="button"
+              className="alert-button"
+              disabled={busy}
+              onClick={onCancel}
+            >
               {cancel ?? t('Cancel')}
             </button>
           )}
@@ -83,6 +93,7 @@ export function Alert({
             className={
               destructive ? 'alert-button destructive' : 'alert-button default'
             }
+            disabled={busy}
             onClick={onAction}
           >
             {action}
