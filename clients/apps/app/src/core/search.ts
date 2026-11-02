@@ -14,6 +14,7 @@ import type { ChatRow } from './chat'
 import { type JSONValue, field, int, num, str, text } from './json'
 import { t, tk } from './l10n'
 import type { Agent } from './models'
+import { routineFrom } from './routines'
 
 /** The tabs, in the Mac's order (`SearchTab`). */
 export type SearchTab =
@@ -132,13 +133,13 @@ export interface RoutineSummary {
 
 /**
  * When a routine runs, as its row says it (`Routine.summary`): the
- * computer's own words. The Mac writes them in the app's language from the
- * routine's trigger outside English, and from its schedule when the
- * computer gives no words (`Routine.when`, `Schedule.summary`); those come
- * with the routines' own code (step 4c), and are read here then.
+ * computer's own words in English; in another language the routine's own
+ * sentence from its trigger, and its schedule's when the computer gives no
+ * words (`Routine.when`, `Schedule.summary`, routines.ts).
  */
 export function routineSummary(automation: JSONValue | undefined): string {
-  return text(field(automation, 'triggerDescription')) ?? ''
+  if (automation == null) return ''
+  return routineFrom(automation)?.summary ?? ''
 }
 
 /** A routine of any agent (`listAllAutomations`: `{agentId, automation}`). */
