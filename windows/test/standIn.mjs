@@ -58,7 +58,8 @@ function corsHeaders(origin) {
 
 /**
  * Starts the stand-in. `routes` may answer a path first (each part's own
- * calls): `(request, body) => ({ status, json } | { status, text, type } | undefined)`.
+ * calls): `(request, body) => ({ status, json } | { status, text, type, headers } | undefined)`
+ * (`headers` for a redirect's `location`, 7d's).
  */
 export async function startStandIn({ routes } = {}) {
   const state = { requests: [], box: computer() }
@@ -71,14 +72,15 @@ export async function startStandIn({ routes } = {}) {
     const record = {
       method: request.method,
       path: url.pathname,
+      query: url.search,
       origin: origin ?? null,
       bearer: (request.headers.authorization ?? '').startsWith('Bearer '),
       client: request.headers['x-simeon-client-version'] ?? null,
     }
     state.requests.push(record)
     const cors = corsHeaders(origin)
-    const send = (status, body, type = 'application/json') => {
-      response.writeHead(status, { 'content-type': type, 'cache-control': 'no-store', ...cors })
+    const send = (status, body, type = 'application/json', headers = {}) => {
+      response.writeHead(status, { 'content-type': type, 'cache-control': 'no-store', ...cors, ...headers })
       response.end(body)
     }
     const json = (value, status = 200) => send(status, JSON.stringify(value))
@@ -106,7 +108,7 @@ export async function startStandIn({ routes } = {}) {
     const own = routes?.(record, args, state)
     if (own) {
       if ('json' in own) return json(own.json, own.status ?? 200)
-      return send(own.status ?? 200, own.text ?? '', own.type ?? 'text/plain')
+      return send(own.status ?? 200, own.text ?? '', own.type ?? 'text/plain', own.headers)
     }
 
     const p = url.pathname
