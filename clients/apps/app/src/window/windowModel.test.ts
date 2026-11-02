@@ -213,6 +213,19 @@ describe('the window', () => {
     expect(model.runAction('theme:dark')).toBe(false)
   })
 
+  it('an agent opened from search or the chart asks the sidebar to let its picked rows go, each time anew', () => {
+    const model = new WindowModel('iris')
+    model.showOrgChart()
+    model.openChat('theo')
+    expect(model.orgChart).toBe(false)
+    expect(model.selected).toBe('theo')
+    const first = model.sidebarPlain
+    expect(first).toEqual({ agentId: 'theo', count: 1 })
+    model.openChat('theo')
+    expect(model.sidebarPlain).not.toBe(first)
+    expect(model.sidebarPlain?.count).toBe(2)
+  })
+
   it('opens a page of the pane over the chart, closing the chart', () => {
     const model = new WindowModel('iris')
     model.showOrgChart()

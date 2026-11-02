@@ -973,7 +973,7 @@ function AgentCard({ agent, store }: { agent: Agent; store: AppStore }) {
       )}
       <ChartButton
         title={agent.isGroup ? t('Open room') : t('Open chat')}
-        action={() => model.choose(agent.id)}
+        action={() => model.openChat(agent.id)}
       />
     </>
   )
@@ -1057,7 +1057,7 @@ function MembershipCard({
       </div>
       <ChartButton
         title={t('Open room')}
-        action={() => model.choose(group.id)}
+        action={() => model.openChat(group.id)}
       />
     </>
   )

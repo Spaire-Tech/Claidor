@@ -494,6 +494,13 @@ export function Sidebar({
   }, [failed, store])
 
   const [selection, setSelection] = useState(SidebarSelection.empty)
+  // An agent opened from search or the org chart lets the picked rows go, its row the anchor (`sidebar.selection.plain`).
+  const plain = model.sidebarPlain
+  const [plainTaken, setPlainTaken] = useState(plain)
+  if (plain !== plainTaken) {
+    setPlainTaken(plain)
+    if (plain) setSelection((now) => now.plain(plain.agentId))
+  }
   const [renamingAgent, setRenamingAgent] = useState<string>()
   const [renamingSection, setRenamingSection] = useState<string>()
   const [folded, setFolded] = useState<ReadonlySet<string>>(readFolded)

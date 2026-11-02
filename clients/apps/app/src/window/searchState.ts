@@ -411,7 +411,7 @@ export class SearchState {
     const model = this.model
     switch (row.kind) {
       case 'agent':
-        model.choose(row.agent.id)
+        model.openChat(row.agent.id)
         break
       case 'command':
         model.runAction(row.command.id)

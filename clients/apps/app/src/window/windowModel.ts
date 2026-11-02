@@ -128,6 +128,8 @@ export class WindowModel {
   hiddenAgents = false
   /** A message or file found by search, its chat to open at that line, lit (`pendingReveal`, step 4d); the count makes each one new. */
   pendingReveal?: Reveal
+  /** The sidebar's picked rows to let go, this agent's row the anchor (`sidebar.selection.plain`), asked by search and the org chart; the count makes each one new. */
+  sidebarPlain?: { agentId: string; count: number }
 
   constructor(selected?: string) {
     this.selected = selected
@@ -149,6 +151,21 @@ export class WindowModel {
   revealTaken(reveal: Reveal): void {
     if (this.pendingReveal !== reveal) return
     this.pendingReveal = undefined
+    this.changed()
+  }
+
+  /**
+   * An agent opened from search or the org chart (SearchPanel.swift's
+   * `activate`, OrgChart.swift's `openChat`): the rows picked in the sidebar
+   * let go, this one the anchor, then its chat.
+   */
+  openChat(agentId: string): void {
+    this.sidebarPlain = {
+      agentId,
+      count: (this.sidebarPlain?.count ?? 0) + 1,
+    }
+    this.orgChart = false
+    this.selected = agentId
     this.changed()
   }
 
