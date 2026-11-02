@@ -3618,8 +3618,18 @@ export class AppStore {
   // ComputerView.swift). 5b's state and commands go below this line, and
   // nowhere else.
 
+  /**
+   * The computer's disk (CloudComputer.swift's `diskPressure`): kept by 5b
+   * from a status's `diskPressure` and the `box-disk-pressure` push, which
+   * then calls `diskPressureChanged` (5c's, StoreRebuild.swift's); read by
+   * 5c's low-disk banner. Nothing while it has room.
+   */
+  diskPressure?: JSONValue
+
   /** 5b's state back to nothing (signed out). */
-  private resetComputer(): void {}
+  private resetComputer(): void {
+    this.diskPressure = undefined
+  }
 
   /** A `forever-box`, `box-disk-pressure`, `computer-action` or `subagents` push (StoreComputer.swift's `applyComputer`). */
   private applyComputer(
@@ -3663,6 +3673,9 @@ export class AppStore {
   rebuildingNow(): boolean {
     return false
   }
+
+  /** The disk's state changed (StoreRebuild.swift's `diskPressureChanged`): called by 5b when `diskPressure` does. */
+  private diskPressureChanged(): void {}
 
   // MARK: Step 5d's calls: a call with an agent, its banner and its lines
   // (Call.swift, CallTones.swift, VoiceCall.swift, CallBannerWindow.swift,
