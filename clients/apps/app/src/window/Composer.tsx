@@ -27,8 +27,11 @@
 // the field says "Listening…", then "Transcribing…" with a small spinner;
 // what was said goes in at the caret. Escape drops the recording.
 //
-// Still to come, with its step (docs/web-app/PROGRESS.md): the access notice
-// and the credits line (step 6).
+// Over it all, 8 over the field and as wide, the access notice
+// (ComputerStates.tsx, step 5c): this account can't send, and why; Send
+// waits under it, as it waits while the computer is rebuilt
+// (`isSendingPaused`). Still to come, with its step (docs/web-app/PROGRESS.md):
+// the credits line, which opens Usage & Billing (step 6).
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { maxStaged } from '../core/attachmentLimits'
@@ -58,6 +61,7 @@ import {
   placeInField,
   useComposerPicks,
 } from './ComposerPicks'
+import { AccessNotice } from './ComputerStates'
 import {
   Dictation,
   MicButton,
@@ -339,7 +343,10 @@ export function Composer({
     }
   })
 
+  // While the computer is rebuilt or this account has no Simeon, Send is off and Return keeps the words (decision 3).
+  const paused = store.isSendingPaused
   const send = () => {
+    if (paused) return
     // The message has gone: dictation still on its way writes nothing more.
     if (dictation.phase !== 'idle') dictation.cancel()
     const message = prompt(words)
@@ -361,6 +368,8 @@ export function Composer({
 
   return (
     <div className="composer" ref={dock}>
+      {/* Whether this account may use Simeon (`Qvn`, step 5c): over everything, 8 over it. */}
+      <AccessNotice store={store} />
       {/* The lines: a send refused (six seconds) in red, then the files' (five seconds) at 40%. */}
       {notice && (
         <div className="composer-line error" role="status">
@@ -537,7 +546,8 @@ export function Composer({
           ) : (
             <button
               type="button"
-              className="send-button"
+              className={paused ? 'send-button paused' : 'send-button'}
+              disabled={paused}
               aria-label={t('Send message')}
               title={t('Send message')}
               onClick={(event) => {

@@ -68,8 +68,8 @@ export interface Listing {
 /**
  * The actions search offers now: those whose screens the window has, as
  * "/" (`windowActionIds`): Org Chart, Open Hidden Agents, Members, Channels,
- * Chat Settings. Settings, Connectors and the themes come with their
- * screens (step 6), Update Simeon's Computer with the computer (step 5).
+ * Chat Settings, Update Simeon's Computer while it is offered. Settings,
+ * Connectors and the themes come with their screens (step 6).
  */
 export function offeredActions(list: readonly Command[]): Command[] {
   return list.filter((command) => windowActionIds.has(command.id))
@@ -278,6 +278,7 @@ export class SearchState {
         // Usage & Billing and the themes come with Settings (step 6).
         usage: false,
         theme: 'system',
+        computerUpdate: store.computerUpdateOffer !== undefined,
       }),
     )
     const shown = tabs(this.globalSearch)

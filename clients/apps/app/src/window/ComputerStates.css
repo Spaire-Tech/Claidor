@@ -1,0 +1,543 @@
+/*
+ * The computer's states at the Mac's measures, light and dark
+ * (mac/Simeon/ComputerStates.swift): its dialogs, the pills at the window's
+ * top, low disk, the access notice and the sidebar's update pill.
+ */
+:root {
+  /* The dialogs' scrim: the ink (#141414) at 50%, 69.8% on dark. */
+  --computer-scrim: rgb(20 20 20 / 0.5);
+  /* The card's one-point edge (`panelEdge`): the ink at 15%, none on dark. */
+  --computer-card-edge: rgb(20 20 20 / 0.15);
+  /* The ink at 15% (a button's half-point ring, a hairline, the bar's track), at 40% (the focused button's ring), at 10% (the ring's track, low disk's edge). */
+  --computer-ink-15: rgb(20 20 20 / 0.15);
+  --computer-ink-40: rgb(20 20 20 / 0.4);
+  --computer-ink-10: rgb(20 20 20 / 0.1);
+  /* A grey button under the pointer (`fillHover`). */
+  --computer-fill-hover: rgb(119 119 119 / 0.17);
+  /* The primary's black, white on dark (`primaryFill`, `primaryFillHover`, `onPrimary`). */
+  --computer-primary: #070707;
+  --computer-primary-hover: #2f2f2f;
+  --computer-on-primary: #fcfcfc;
+  /* "Update anyway": red words on a red wash (255 38 60 at 9%, 17% under the pointer). */
+  --computer-red-wash: rgb(255 38 60 / 0.09);
+  --computer-red-wash-hover: rgb(255 38 60 / 0.17);
+  /* Low disk's orange (`attentionInk`, `attentionWash`). */
+  --computer-attention-ink: #c27400;
+  --computer-attention-wash: rgb(255 152 0 / 0.09);
+  /* The access notice's soft grey, solid (`notice`). */
+  --computer-notice: #f3f3f3;
+  /* A pill's shadow (`sand-progress-banner`: the window's shadow-lg), none on dark. */
+  --computer-pill-shadow:
+    0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --computer-scrim: rgb(20 20 20 / 0.698);
+    --computer-card-edge: transparent;
+    --computer-ink-15: rgb(252 252 252 / 0.15);
+    --computer-ink-40: rgb(252 252 252 / 0.4);
+    --computer-ink-10: rgb(252 252 252 / 0.1);
+    --computer-fill-hover: rgb(119 119 119 / 0.32);
+    --computer-primary: #fafafa;
+    --computer-primary-hover: #d5d5d5;
+    --computer-on-primary: #141414;
+    --computer-red-wash: rgb(255 38 60 / 0.173);
+    --computer-red-wash-hover: rgb(255 38 60 / 0.32);
+    --computer-attention-ink: #ffaf38;
+    --computer-attention-wash: rgb(255 152 0 / 0.173);
+    --computer-notice: #1a1a1a;
+    --computer-pill-shadow: 0 0 0 transparent;
+  }
+}
+
+/* MARK: The dialogs: over everything (search, the sheets, the alerts); the pills over them. */
+
+.computer-dialogs {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+}
+
+/* The lock beginning or settling fades it over 0.16 s; anything else is at once. */
+.computer-dialogs.fading-in {
+  animation: computer-fade-in 0.16s ease-out;
+}
+
+.computer-dialogs.fading-out {
+  animation: computer-fade-out 0.16s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes computer-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes computer-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+.computer-scrim {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--computer-scrim);
+}
+
+/* The card: the raised ground, 14 round, a one-point edge at 15% on light. */
+.computer-card {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  max-width: calc(100vw - 32px);
+  border-radius: 14px;
+  background: var(--elevated);
+  box-shadow: inset 0 0 0 1px var(--computer-card-edge);
+  color: var(--ink);
+  text-align: left;
+  outline: none;
+}
+
+/* The title (14/22, 600) over what it says (14/22, at 40%), 4 apart, padded 12 16; a refusal 13 in red, 4 more over it. */
+.computer-card-words {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 16px;
+}
+
+.computer-card-title,
+.rebuild-title {
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 600;
+  letter-spacing: -0.15px;
+}
+
+.computer-card-message {
+  font-size: 14px;
+  line-height: 22px;
+  color: var(--ink-tertiary);
+}
+
+.computer-card-refusal {
+  padding-top: 4px;
+  font-size: 13px;
+  color: var(--danger);
+}
+
+/* The buttons at the right of a 56-point bar: padded 12, 16 at the left, 8 apart. */
+.computer-card-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 12px 12px 16px;
+}
+
+/* A button: 32 high, 10 a side, 8 round, 14/20, a half-point ring at 15%. */
+.computer-button {
+  height: 32px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 20px;
+  white-space: nowrap;
+  box-shadow: inset 0 0 0 0.5px var(--computer-ink-15);
+  cursor: pointer;
+  transition: background-color 0.12s ease-out;
+}
+
+/* The one the window focuses first: a 2-point ring at 40%, 1.5 outside it. */
+.computer-button.focused {
+  box-shadow:
+    inset 0 0 0 0.5px var(--computer-ink-40),
+    0 0 0 1.5px var(--computer-ink-40);
+}
+
+.computer-button.neutral {
+  background: var(--row-hover);
+  color: var(--ink);
+}
+
+.computer-button.neutral:hover:not(:disabled) {
+  background: var(--computer-fill-hover);
+}
+
+.computer-button.primary {
+  background: var(--computer-primary);
+  color: var(--computer-on-primary);
+}
+
+.computer-button.primary:hover:not(:disabled) {
+  background: var(--computer-primary-hover);
+}
+
+.computer-button.red-secondary {
+  background: var(--computer-red-wash);
+  color: var(--danger);
+}
+
+.computer-button.red-secondary:hover:not(:disabled) {
+  background: var(--computer-red-wash-hover);
+}
+
+.computer-button.destructive {
+  background: #ff263c;
+  color: #fcfcfc;
+}
+
+.computer-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* MARK: The rebuild in front: 520 wide, at most 480 high. */
+
+.computer-card.rebuild {
+  width: 520px;
+  max-height: min(480px, calc(100vh - 32px));
+}
+
+.rebuild-title {
+  padding: 16px;
+}
+
+.computer-hairline {
+  flex: none;
+  height: 1px;
+  background: var(--computer-ink-15);
+}
+
+/* The steps and the bar, 12 apart, padded 16; they scroll past 368 (480 less the head and the foot). */
+.rebuild-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 368px;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.rebuild-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* A step: its mark (13 in 18) and its words (13), 4 apart, 18 high. Done at 40%, to come at 60%. */
+.rebuild-step {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 18px;
+}
+
+.rebuild-step-mark {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  color: var(--ink);
+}
+
+.rebuild-step.done .rebuild-step-mark {
+  color: var(--ink-tertiary);
+}
+
+.rebuild-step.pending .rebuild-step-mark {
+  color: var(--ink-secondary);
+}
+
+.rebuild-step-label {
+  font-size: 13px;
+  letter-spacing: -0.08px;
+  white-space: nowrap;
+}
+
+/* The bar (6 high, a capsule: the ink at 15%, how far in the ink) and its percent (13), 8 apart, 18 high. */
+.rebuild-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 18px;
+}
+
+.rebuild-bar {
+  flex: 1;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--computer-ink-15);
+}
+
+.rebuild-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--ink);
+  transition: width 0.2s ease-out;
+}
+
+.rebuild-percent {
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* MARK: The pills at the window's top: 12 down, centred on the window, over the dialogs. */
+
+.computer-pills {
+  position: fixed;
+  top: 12px;
+  left: 0;
+  right: 0;
+  z-index: 91;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+}
+
+/* A pill: padded 8 10, 10 round, a one-point edge at 15%, the window's shadow on light; its ring or spinner and its words 10 apart. */
+.progress-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--elevated);
+  box-shadow:
+    inset 0 0 0 1px var(--computer-ink-15),
+    var(--computer-pill-shadow);
+  color: var(--ink);
+  text-align: left;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+/* "Reconnecting" can't be clicked. */
+.progress-pill.quiet {
+  pointer-events: none;
+  cursor: default;
+}
+
+.progress-pill-words {
+  display: flex;
+  flex-direction: column;
+  white-space: nowrap;
+}
+
+.progress-pill-title {
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 500;
+}
+
+.progress-pill-subtitle {
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--ink-secondary);
+}
+
+.progress-ring {
+  flex: none;
+}
+
+.progress-ring circle {
+  fill: none;
+  stroke-width: 2.75;
+}
+
+.progress-ring .track {
+  stroke: var(--computer-ink-10);
+}
+
+.progress-ring .done {
+  stroke: var(--computer-primary);
+  stroke-linecap: round;
+  transition: stroke-dasharray 0.2s ease-out;
+}
+
+/* The computer's spinner: a ring at 30% and its quarter at 60%, 2 wide, the quarter from 10:30 to 1:30, then turning; still with less motion. */
+.state-spinner {
+  flex: none;
+  animation: state-spinner-turn linear infinite;
+  transform: rotate(-135deg);
+}
+
+.state-spinner circle {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+.state-spinner .rest {
+  opacity: 0.3;
+}
+
+.state-spinner .head {
+  opacity: 0.6;
+}
+
+@keyframes state-spinner-turn {
+  from {
+    transform: rotate(-135deg);
+  }
+  to {
+    transform: rotate(225deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .state-spinner {
+    animation: none;
+  }
+}
+
+/* MARK: Low disk: under the chat's head, 16 in from each side; the orange wash, 10 round, a half-point edge at 10%; padded 10, 12 at the left. */
+
+.disk-banner {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 10px 10px 12px;
+  border-radius: 10px;
+  background: var(--computer-attention-wash);
+  box-shadow: inset 0 0 0 0.5px var(--computer-ink-10);
+}
+
+.disk-banner-words {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.disk-banner-title {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--computer-attention-ink);
+}
+
+.disk-banner-body {
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--ink-secondary);
+}
+
+/* Go to Disk Saver: 12/16 on the primary's black, 6 a side, 24 high, 6 round. */
+.disk-banner-button {
+  flex: none;
+  height: 24px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--computer-primary);
+  color: var(--computer-on-primary);
+  font-size: 12px;
+  line-height: 16px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.12s ease-out;
+}
+
+.disk-banner-button:hover:not(:disabled) {
+  background: var(--computer-primary-hover);
+}
+
+.disk-banner-button:disabled {
+  cursor: default;
+}
+
+/* MARK: The access notice: 8 over the message field and as wide; padded 10 14 on the soft grey, 14 round. */
+
+.access-notice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 2px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--computer-notice);
+}
+
+.access-notice-words {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.access-notice-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.access-notice-body {
+  font-size: 12px;
+  color: var(--ink-secondary);
+}
+
+/* Its button: 12, 500, in the ground's colour on the ink (82% under the pointer), a capsule 26 high, 12 a side. */
+.access-notice-button {
+  flex: none;
+  height: 26px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 13px;
+  background: var(--ink);
+  color: var(--ground);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.12s ease-out;
+}
+
+.access-notice-button:hover {
+  background: color-mix(in srgb, var(--ink) 82%, transparent);
+}
+
+/* MARK: The sidebar's update: a 24 disc, its symbol at 60%, the ink and the row's grey under the pointer. */
+
+.computer-update-pill {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink-secondary);
+  cursor: pointer;
+  transition:
+    background-color 0.12s ease-out,
+    color 0.12s ease-out;
+}
+
+.computer-update-pill:hover {
+  background: var(--row-hover);
+  color: var(--ink);
+}
+
+/* Send while sending waits (the computer rebuilt, or no Simeon for this account): at 40%, off. */
+.send-button.paused {
+  opacity: 0.4;
+  cursor: default;
+}

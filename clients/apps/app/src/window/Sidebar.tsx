@@ -14,9 +14,10 @@
 // unpins it; a section goes above or below another. Folded, the sidebar is
 // its rail: the pictures alone.
 //
-// Still to come, each with its screen (docs/web-app/PROGRESS.md): search and
-// new chat in the head, the account and Connect apps in the foot (and the
-// rail's discs), Edit Profile (with the agent's pane), Recover computer.
+// The foot has the computer's Update at its right (ComputerStates.tsx, step
+// 5c). Still to come, each with its screen (docs/web-app/PROGRESS.md): the
+// account and Connect apps in the foot, and the account in the rail's
+// discs (step 6).
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { listTime } from '../core/listTime'
@@ -45,7 +46,7 @@ import {
 import type { AppStore } from '../core/store'
 import { t } from '../l10n'
 import { AgentMark } from './AgentMark'
-import { ComputerUpdatePill } from './ComputerStates'
+import { ComputerUpdatePill, StateSpinner } from './ComputerStates'
 import {
   ContextMenu,
   Glyph,
@@ -1404,12 +1405,35 @@ function HiddenAgentsSheet({
 
 // MARK: The computer out of reach
 
-/** "Can't reach your computer" over no list (`RosterCard`), with Retry; "Your computer isn't set up" for an account without access. */
+/**
+ * The sidebar when the agents can't be read (`RosterCard`, `tpn`): "Can’t
+ * reach your computer" (12/16, 500, at 60%, the display glyph) over why,
+ * then Retry and Recover computer (26 high, round, on a faint grey);
+ * "Retrying…" in Retry's place while it runs. "Your computer isn’t set up"
+ * with Retry alone while this account has no Simeon. Recover computer asks
+ * first (decision 8; the window resets at once): the computer's question
+ * (step 5c), then "Resetting Simeon's Computer".
+ */
 function RosterCard({ store }: { store: AppStore }) {
+  const model = useWindowModel()
+  const driver = store.rebuild
   const blocked = store.accessBlocked
+  const canRecover = !blocked && driver.canReset && !driver.isBlocked
+  const recovering =
+    driver.pendingKind === 'reset' || driver.lock.kind === 'reset'
   return (
     <div className="roster-card" role="status">
       <div className="heading">
+        <svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true">
+          <path
+            d="M2 3.5h12v8H2ZM6 14h4M8 11.5V14"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
         {blocked
           ? t('Your computer isn’t set up')
           : t('Can’t reach your computer')}
@@ -1419,24 +1443,50 @@ function RosterCard({ store }: { store: AppStore }) {
           ? t(
               'Simeon can’t set up a computer for this account yet. Setup starts automatically once this account has access.',
             )
-          : t('Your agents are safe — they just can’t be loaded right now.')}
+          : t('Your agents are safe — they just can’t be loaded right now.') +
+            (canRecover
+              ? t(
+                  ' If it doesn’t come back on its own, recover it — your files and logins are kept.',
+                )
+              : '')}
       </div>
-      {store.rosterRetrying ? (
-        <div>{t('Retrying…')}</div>
-      ) : (
-        <button
-          type="button"
-          className="pill-button"
-          onClick={() => void store.retryRoster()}
-        >
-          {t('Retry')}
-        </button>
-      )}
+      <div className="roster-card-buttons">
+        {store.rosterRetrying ? (
+          <div className="roster-retrying">
+            <StateSpinner size={12} />
+            {t('Retrying…')}
+          </div>
+        ) : (
+          <button
+            type="button"
+            className="pill-button"
+            onClick={() => void store.retryRoster()}
+          >
+            {t('Retry')}
+          </button>
+        )}
+        {canRecover && (
+          <button
+            type="button"
+            className="pill-button"
+            disabled={recovering}
+            onClick={() =>
+              model.askComputer({ kind: 'recover', fromSidebar: true })
+            }
+          >
+            {recovering ? t('Recovering…') : t('Recover computer')}
+          </button>
+        )}
+      </div>
     </div>
   )
 }
 
-/** "Reconnecting to your computer…" over a list already shown (`RosterLine`), and a quiet Retry. */
+/**
+ * "Reconnecting to your computer…" over a list already shown when reading
+ * it again fails (`RosterLine`, `npn`; decision 7): 28 high across the
+ * sidebar, 11/16 at 60%, and a quiet Retry ("Retrying…" while it runs).
+ */
 function RosterLine({ store }: { store: AppStore }) {
   return (
     <div className="roster-line" role="status">

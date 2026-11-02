@@ -8,7 +8,7 @@
 // Rows that lead to screens not built yet are left out until their step,
 // in one place (`offeredActions`, the window's `windowActionIds`):
 // Settings: General and Usage & Billing, Connectors and the themes (step
-// 6), Update Simeon's Computer (step 5).
+// 6). Update Simeon's Computer opens its question (step 5c).
 
 import {
   type ReactNode,
