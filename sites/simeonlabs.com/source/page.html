@@ -170,7 +170,7 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 /* Meet your team: Apple's gallery. One agent per card, neighbours at the edges. */
 .gallery{position:relative;margin-top:40px}
 .track{--cw:min(var(--col),calc((100*var(--vh,1vh) - 220px) * 1260 / 760),1000px);display:flex;gap:24px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;
-  --ge:calc((100*var(--vw,1vw) - var(--col)) / 2);padding-inline:var(--ge) calc(100*var(--vw,1vw) - var(--ge) - var(--cw));scroll-padding-inline:var(--ge);padding-bottom:4px;overscroll-behavior-x:contain}
+  --ge:calc((100*var(--win,1vw) - var(--col)) / 2);padding-inline:var(--ge) calc(100*var(--win,1vw) - var(--ge) - var(--cw));scroll-padding-inline:var(--ge);padding-bottom:4px;overscroll-behavior-x:contain}
 .track::-webkit-scrollbar{display:none}
 .slide{position:relative;flex:none;width:var(--cw);aspect-ratio:1260/760;border-radius:28px;overflow:hidden;scroll-snap-align:start;container:slide/inline-size;isolation:isolate}
 .slide.dark{background:var(--night);color:#f5f5f7}
@@ -429,7 +429,7 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 /* Some of the agents people create: Apple's "Get to know" rail. Tall black cards, a kicker and a bold title, a plus; each opens a sheet. */
 .trust.ex{padding:clamp(60px,5*var(--vw,1vw),96px) 0 clamp(32px,3*var(--vw,1vw),56px)}
 .exrail{--cw:min(var(--col),calc((100*var(--vh,1vh) - 220px) * 1260 / 760),1000px);display:flex;gap:24px;margin-top:clamp(36px,3*var(--vw,1vw),56px);overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior-x:contain;
-  --ge:calc((100*var(--vw,1vw) - var(--col)) / 2);padding-inline:var(--ge);scroll-padding-inline:var(--ge)}
+  --ge:calc((100*var(--win,1vw) - var(--col)) / 2);padding-inline:var(--ge);scroll-padding-inline:var(--ge)}
 .exrail::-webkit-scrollbar{display:none}
 .exc{position:relative;display:block;flex:none;box-sizing:border-box;width:var(--cw);aspect-ratio:1260/760;border-radius:28px;overflow:hidden;scroll-snap-align:start;container-type:size;background:#000;color:#fff;text-align:left;padding:0;border:0;cursor:pointer;font:inherit;letter-spacing:inherit}
 .exc.lt{background:#f5f5f7;color:var(--ink)}
