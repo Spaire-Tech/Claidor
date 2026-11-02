@@ -966,7 +966,9 @@ function RuleText({
     const element = field.current
     if (!element) return
     element.style.height = '0px'
-    element.style.height = `${element.scrollHeight}px`
+    // Its words and padding, and its border (the edited rule's field has one).
+    const border = element.offsetHeight - element.clientHeight
+    element.style.height = `${element.scrollHeight + border}px`
   }, [value])
   useEffect(() => {
     if (focus) field.current?.focus()
