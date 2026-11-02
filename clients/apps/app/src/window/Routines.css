@@ -354,7 +354,8 @@
 .routine-name {
   box-sizing: border-box;
   height: 30px;
-  padding: 0 10px;
+  /* The words 10 in from the box's edge, the hairline drawn inside that 10 (the Mac's overlay stroke). */
+  padding: 0 9px;
   border: 1px solid var(--routine-line);
   border-radius: 10px;
   outline: none;
@@ -620,7 +621,7 @@
 }
 
 /* A pill: 26 high, padded 6, round 6, the grey (darker under the pointer), its words 13 and a small chevron 4 apart; a Select's line at 5%, a menu button's at 10%. */
-.pill-button {
+.routine-pill {
   display: inline-flex;
   flex: none;
   align-items: center;
@@ -638,11 +639,11 @@
   cursor: pointer;
 }
 
-.pill-button.menu {
+.routine-pill.menu {
   box-shadow: inset 0 0 0 0.5px color-mix(in srgb, var(--ink) 10%, transparent);
 }
 
-.pill-button:hover,
+.routine-pill:hover,
 .pill-field:hover {
   background: var(--routine-fill-hover);
 }
@@ -673,7 +674,8 @@
 .custom-schedule {
   box-sizing: border-box;
   height: 32px;
-  padding: 0 10px;
+  /* The words 10 in from the box's edge, the hairline drawn inside that 10 (the Mac's overlay stroke). */
+  padding: 0 9px;
   border: 1px solid var(--routine-line);
   border-radius: 10px;
   outline: none;
@@ -761,7 +763,7 @@
 .trigger-open:focus-visible,
 .trigger-remove:focus-visible,
 .add-trigger:focus-visible,
-.pill-button:focus-visible,
+.routine-pill:focus-visible,
 .small-icon-button:focus-visible,
 .small-text-button:focus-visible {
   outline: 2px solid var(--unread);

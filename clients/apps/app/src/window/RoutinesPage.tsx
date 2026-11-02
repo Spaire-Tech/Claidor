@@ -36,6 +36,7 @@ import {
   PaneIconButton,
   PaneSwitch,
   PaneTextArea,
+  windowLetGo,
 } from './AgentPane'
 import { classes } from './classes'
 import './Routines.css'
@@ -489,6 +490,7 @@ function EditorBody({
           onChange={(event) => editing.setName(event.target.value)}
           onFocus={() => setNameFocused(true)}
           onBlur={() => {
+            if (windowLetGo()) return
             setNameFocused(false)
             editing.nameDone(store)
           }}

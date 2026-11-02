@@ -76,6 +76,7 @@ import {
   windowUnits,
 } from '../core/routineTriggers'
 import { t } from '../l10n'
+import { windowLetGo } from './AgentPane'
 import { classes } from './classes'
 import { Glyph } from './ContextMenu'
 import { somethingOver } from './Dialogs'
@@ -143,7 +144,6 @@ export function TriggerCard({
   const open = index !== undefined
   useEffect(() => {
     if (!open) return
-    let swallow = false
     const outside = (event: Event) =>
       !menuOpen.current &&
       !popover.current?.contains(event.target as Node) &&
@@ -153,15 +153,9 @@ export function TriggerCard({
       if (!outside(event)) return
       event.preventDefault()
       event.stopPropagation()
-      swallow = true
+      // The click the press makes reaches nothing (the Mac's catcher swallows it), even once this popover is gone.
+      swallowClick()
       close.current()
-    }
-    const after = (event: MouseEvent) => {
-      if (!swallow) return
-      if (event.type === 'click' || event.type === 'contextmenu')
-        swallow = false
-      event.preventDefault()
-      event.stopPropagation()
     }
     const key = (event: KeyboardEvent) => {
       if (event.key !== 'Escape' || event.isComposing) return
@@ -174,17 +168,9 @@ export function TriggerCard({
       close.current()
     }
     document.addEventListener('pointerdown', down, true)
-    document.addEventListener('mousedown', after, true)
-    document.addEventListener('mouseup', after, true)
-    document.addEventListener('click', after, true)
-    document.addEventListener('contextmenu', after, true)
     document.addEventListener('keydown', key, true)
     return () => {
       document.removeEventListener('pointerdown', down, true)
-      document.removeEventListener('mousedown', after, true)
-      document.removeEventListener('mouseup', after, true)
-      document.removeEventListener('click', after, true)
-      document.removeEventListener('contextmenu', after, true)
       document.removeEventListener('keydown', key, true)
     }
   }, [open])
@@ -983,7 +969,9 @@ function CustomScheduleField({
       autoCorrect="off"
       spellCheck={false}
       onChange={(event) => change(event.target.value)}
-      onBlur={(event) => done(event.target.value)}
+      onBlur={(event) => {
+        if (!windowLetGo()) done(event.target.value)
+      }}
       onKeyDown={(event) => {
         if (event.key === 'Enter' && !event.nativeEvent.isComposing) {
           event.preventDefault()
@@ -1383,7 +1371,7 @@ function PillButton({
   return (
     <button
       type="button"
-      className={classes('pill-button', menu && 'menu')}
+      className={classes('routine-pill', menu && 'menu')}
       aria-label={label}
       aria-haspopup="menu"
       onClick={(event) => open(event.currentTarget.getBoundingClientRect())}
@@ -1548,7 +1536,9 @@ function PillField({
       autoCorrect="off"
       spellCheck={false}
       onChange={(event) => change(event.target.value)}
-      onBlur={commit}
+      onBlur={() => {
+        if (!windowLetGo()) commit()
+      }}
       onKeyDown={(event) => {
         if (event.key === 'Enter' && !event.nativeEvent.isComposing) {
           event.preventDefault()
@@ -1840,20 +1830,13 @@ function RoutineMenu({
     [returnTo],
   )
   useEffect(() => {
-    let swallow = false
     const down = (event: PointerEvent) => {
       if (holder.current?.contains(event.target as Node)) return
       event.preventDefault()
       event.stopPropagation()
-      swallow = true
+      // As an AppKit menu, it takes the click outside it: nothing under it gets it, even once the menu is gone.
+      swallowClick()
       latest.current(false)
-    }
-    const after = (event: MouseEvent) => {
-      if (!swallow) return
-      if (event.type === 'click' || event.type === 'contextmenu')
-        swallow = false
-      event.preventDefault()
-      event.stopPropagation()
     }
     const key = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return
@@ -1866,19 +1849,11 @@ function RoutineMenu({
     }
     const blur = () => latest.current(false)
     document.addEventListener('pointerdown', down, true)
-    document.addEventListener('mousedown', after, true)
-    document.addEventListener('mouseup', after, true)
-    document.addEventListener('click', after, true)
-    document.addEventListener('contextmenu', after, true)
     document.addEventListener('keydown', key, true)
     document.addEventListener('wheel', wheel, true)
     window.addEventListener('blur', blur)
     return () => {
       document.removeEventListener('pointerdown', down, true)
-      document.removeEventListener('mousedown', after, true)
-      document.removeEventListener('mouseup', after, true)
-      document.removeEventListener('click', after, true)
-      document.removeEventListener('contextmenu', after, true)
       document.removeEventListener('keydown', key, true)
       document.removeEventListener('wheel', wheel, true)
       window.removeEventListener('blur', blur)
@@ -2129,4 +2104,37 @@ function MenuPanel({
         })()}
     </>
   )
+}
+
+/**
+ * The click a press outside a popover or a menu makes reaches nothing (the
+ * Mac's swallowed mouse-down): watched at the window, apart from the
+ * popover's own listeners, which go with it as it closes before the click
+ * comes; let go once that click (or a right click's menu) has come, or the
+ * press ended without one.
+ */
+function swallowClick() {
+  const stop = (event: Event) => {
+    event.preventDefault()
+    event.stopPropagation()
+  }
+  const end = (event: Event) => {
+    stop(event)
+    done()
+  }
+  const later = () => setTimeout(done, 0)
+  function done() {
+    window.removeEventListener('mousedown', stop, true)
+    window.removeEventListener('mouseup', stop, true)
+    window.removeEventListener('click', end, true)
+    window.removeEventListener('contextmenu', end, true)
+    window.removeEventListener('pointerup', later, true)
+    window.removeEventListener('pointercancel', later, true)
+  }
+  window.addEventListener('mousedown', stop, true)
+  window.addEventListener('mouseup', stop, true)
+  window.addEventListener('click', end, true)
+  window.addEventListener('contextmenu', end, true)
+  window.addEventListener('pointerup', later, true)
+  window.addEventListener('pointercancel', later, true)
 }

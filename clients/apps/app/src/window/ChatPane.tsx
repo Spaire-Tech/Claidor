@@ -1266,7 +1266,13 @@ function RoutinesLine({
           title={t`${routines.length} routines, show list`}
           aria-label={t`${routines.length} routines, show list`}
           aria-haspopup="menu"
-          onClick={(event) => setList({ x: event.clientX, y: event.clientY })}
+          onClick={(event) => {
+            // From the keys (Return, Space) there is no pointer: the list opens under the chip.
+            if (event.detail === 0) {
+              const chip = event.currentTarget.getBoundingClientRect()
+              setList({ x: chip.left, y: chip.bottom + 4 })
+            } else setList({ x: event.clientX, y: event.clientY })
+          }}
         >
           <Clock />
           <span className="chip-title">{t`${routines.length} routines`}</span>

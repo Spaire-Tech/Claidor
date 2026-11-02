@@ -732,6 +732,7 @@ function PaneLineField({
           onChange={(event) => setDraft(event.target.value)}
           onFocus={() => setFocused(true)}
           onBlur={() => {
+            if (windowLetGo()) return
             setFocused(false)
             if (cancelledRef.current) {
               cancelledRef.current = false
@@ -881,7 +882,9 @@ export function PaneTextArea({
       spellCheck={false}
       onChange={(event) => change(event.target.value)}
       onFocus={() => focus(true)}
-      onBlur={() => focus(false)}
+      onBlur={() => {
+        if (!windowLetGo()) focus(false)
+      }}
       onKeyDown={(event) => {
         if (event.nativeEvent.isComposing) return
         if (event.key === 'Escape') {
@@ -973,4 +976,14 @@ export function PaneSwitch({
       <span className="pane-switch-thumb" />
     </button>
   )
+}
+
+/**
+ * Whether a field's blur is the window's, not the field's: another app or
+ * tab came forward. The field keeps its words and the keys, as a Mac field
+ * keeps its focus while its app is in the background; it is saved when it
+ * really lets go.
+ */
+export function windowLetGo(): boolean {
+  return !document.hasFocus()
 }
