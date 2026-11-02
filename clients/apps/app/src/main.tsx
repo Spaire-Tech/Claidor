@@ -8,6 +8,7 @@ import { desktop } from './desktop/desktop'
 import { listenForQuitting } from './desktop/quitting'
 import { desktopSessionOptions, startDesktopSession } from './desktop/session'
 import { DesktopSurfaces } from './desktop/surfaces'
+import { followWindowLook } from './desktop/windowLook'
 import './index.css'
 import { WebSession } from './session'
 import './window/desktop.css'
@@ -37,6 +38,8 @@ async function start() {
   }
   const session = new WebSession(host ? desktopSessionOptions(host) : {})
   if (host) listenForQuitting(host)
+  // Windows' caption buttons in the page's colours, following the theme (src/desktop/windowLook.ts).
+  if (host) followWindowLook(host)
   // The logs and the chats kept on this PC (src/desktop/session.ts); the call's window returned above and never signs in.
   if (host) startDesktopSession(host, session)
   // Windows' notifications, the taskbar, the tray and the menu keys, for the app's life (src/desktop/surfaces.ts).
