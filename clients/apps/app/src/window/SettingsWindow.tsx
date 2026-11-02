@@ -38,7 +38,7 @@ import {
   SettingsSymbol,
   type SettingsSymbolName,
 } from './SettingsParts'
-import { SettingsUpdatesPage, useShowUpdates } from './SettingsUpdates'
+import { SettingsUpdatesPage, useCheckForUpdates } from './SettingsUpdates'
 import { SettingsUsagePage } from './SettingsUsage'
 import { SettingsWalletPage } from './SettingsWallet'
 import { classes } from './classes'
@@ -305,7 +305,7 @@ export function SettingsLayer({
   const model = useWindowModel()
   useWatched(store)
   // Check for Updates… in the Windows app opens Settings on Updates (step 7e).
-  useShowUpdates(model)
+  useCheckForUpdates(model)
   const overlay = model.overlay
   const open = overlay?.kind === 'settings'
   const page = open ? overlay.page : undefined

@@ -132,16 +132,18 @@ export function SettingsUpdatesPage({ store }: { store: AppStore }) {
 }
 
 /**
- * Check for Updates… (the Mac's Simeon menu; in the Windows app the menu or
- * the tray, which send `showUpdates`): Sparkle's own window on the Mac;
- * here Settings comes up on Updates and the updater looks, the page saying
- * what it finds. Heard while the window is signed in (Settings is there).
+ * Check for Updates… (the Mac's Simeon menu; in the Windows app the tray's,
+ * 7c's, which sends `checkForUpdates`): Sparkle's own window on the Mac;
+ * here Settings comes up on Updates (already so when 7c's page code opened
+ * it: asked again, nothing changes) and the updater looks, again if the
+ * page was already open, the page saying what it finds. Heard while the
+ * window is signed in (Settings is there).
  */
-export function useShowUpdates(model: WindowModel): void {
+export function useCheckForUpdates(model: WindowModel): void {
   useEffect(() => {
     const host = desktop()
     if (!host) return
-    return host.on('showUpdates', () => {
+    return host.on('checkForUpdates', () => {
       model.openSettings('updates')
       desktopUpdates()?.look()
     })

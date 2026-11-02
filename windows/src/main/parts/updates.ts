@@ -6,8 +6,10 @@
 // its engine (../updates/engine.ts), only in a release or against a stand-in
 // feed (../updates/feed.ts). The switches and the last check are kept in
 // `updates.json` in the app's data folder. Check for Updates… is the page's
-// (`showUpdates`, sent by the menu or the tray): Settings › Updates comes up
-// and looks.
+// (`checkForUpdates`, sent by the tray, 7c's): Settings › Updates comes up
+// and looks. Whether this build has an updater at all is `releasedBuild`
+// (../updates/feed.ts): a packaged build without a release's build number
+// has none, so the tray's item follows that, not only `app.isPackaged`.
 
 import path from 'node:path'
 import { app } from 'electron'

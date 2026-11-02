@@ -115,8 +115,8 @@ export interface DesktopEvents {
     /** Download Updates Automatically: a release found by the daily check is downloaded, and installed as Simeon quits. */
     downloadsAutomatically: boolean
   }
-  /** Check for Updates… (the menu or the tray, 7c's): Settings › Updates comes up and looks for a release (the Mac's Simeon › Check for Updates…). */
-  showUpdates: null
+  /** Check for Updates… chosen in the tray (7c's, which names it too: the same name, one kept at the merge): Settings › Updates comes up and looks for a release, again if it is already open (the Mac's Simeon › Check for Updates…). */
+  checkForUpdates: null
 
   // MARK: 7f, the agent's hands on this PC
 }
