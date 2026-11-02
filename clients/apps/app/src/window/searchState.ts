@@ -32,6 +32,7 @@ import {
   debounce,
 } from '../core/search'
 import type { AppStore } from '../core/store'
+import { themePreference } from './theme'
 import { type WindowModel, windowActionIds } from './windowModel'
 
 /** An Apple computer: its shortcuts take ⌘. */
@@ -68,8 +69,8 @@ export interface Listing {
 /**
  * The actions search offers now: those whose screens the window has, as
  * "/" (`windowActionIds`): Org Chart, Open Hidden Agents, Members, Channels,
- * Chat Settings, Update Simeon's Computer while it is offered. Settings,
- * Connectors and the themes come with their screens (step 6).
+ * Chat Settings, Update Simeon's Computer while it is offered, Settings'
+ * General and Usage & Billing, Connectors and the themes (step 6).
  */
 export function offeredActions(list: readonly Command[]): Command[] {
   return list.filter((command) => windowActionIds.has(command.id))
@@ -254,7 +255,7 @@ export class SearchState {
 
   /** The rows for the tab and the words (`listing`, `WFn`): the agents (pins first), the actions, and, with the computer's search on, its answers, the open chat's links and the routines. */
   listing(): Listing {
-    const key = `${this.version}:${this.store.getVersion()}:${this.current() ?? ''}`
+    const key = `${this.version}:${this.store.getVersion()}:${this.current() ?? ''}:${themePreference()}`
     if (this.listed?.key === key) return this.listed.listing
     const listing = this.makeListing()
     this.listed = { key, listing }
@@ -275,9 +276,9 @@ export class SearchState {
         hiddenCount: hidden.length,
         current: currentId ? store.agent(currentId) : undefined,
         hasChannels: this.hasChannels,
-        // Usage & Billing and the themes come with Settings (step 6).
-        usage: false,
-        theme: 'system',
+        // Usage & Billing once the usage is read and shown (`usage.showsSection`); the theme in use ticked.
+        usage: store.usageOffered,
+        theme: themePreference(),
         computerUpdate: store.computerUpdateOffer !== undefined,
       }),
     )

@@ -81,6 +81,7 @@ import { classes } from './classes'
 import { Glyph } from './ContextMenu'
 import { somethingOver } from './Dialogs'
 import './Routines.css'
+import { useDarkScheme } from './theme'
 
 // MARK: The card
 
@@ -1709,6 +1710,7 @@ export function TriggerGlyph({
   platform: string
   size: number
 }) {
+  const dark = useDarkScheme()
   if (platform === 'schedule')
     return (
       <span className="glyph-frame trigger-clock" aria-hidden="true">
@@ -1751,18 +1753,15 @@ export function TriggerGlyph({
       </span>
     )
   return (
-    <picture className="trigger-logo" aria-hidden="true">
-      {logo.dark && (
-        <source srcSet={logo.dark} media="(prefers-color-scheme: dark)" />
-      )}
-      <img
-        src={logo.light}
-        alt=""
-        width={size}
-        height={size}
-        draggable={false}
-      />
-    </picture>
+    <img
+      className="trigger-logo"
+      aria-hidden="true"
+      src={dark && logo.dark ? logo.dark : logo.light}
+      alt=""
+      width={size}
+      height={size}
+      draggable={false}
+    />
   )
 }
 

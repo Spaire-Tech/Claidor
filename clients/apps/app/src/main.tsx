@@ -5,8 +5,11 @@ import { currentLanguage } from './core/language'
 import { loadWords } from './core/words'
 import './index.css'
 import { WebSession } from './session'
+import { applyTheme } from './window/theme'
 
 async function start() {
+  // The theme chosen in Settings (`simeon.theme`), before anything is drawn.
+  applyTheme()
   // The person's language, chosen from the ones Simeon is in, before anything is drawn.
   const language = currentLanguage()
   document.documentElement.lang = language

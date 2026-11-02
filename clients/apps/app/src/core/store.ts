@@ -614,6 +614,10 @@ export class AppStore {
     this.resetComputer()
     this.resetRebuild()
     this.resetCalls()
+    this.resetConnecting()
+    this.resetConnectors()
+    this.resetGeneralSettings()
+    this.resetUsageAndBilling()
     this.firstRunAgentId = undefined
     this.firstRunNamed = false
     // A hand-off waiting on the name step ends (it finds the account gone and makes nothing).
@@ -4514,6 +4518,59 @@ export class AppStore {
     this.call = undefined
     this.callLevels = []
   }
+
+  // MARK: Step 6b's connecting: the consent, an app's sign-in, Add Another
+  // Account, the chat card's Connect (mac/Simeon/MacConnector.swift; the
+  // core's Store.swift `beginConnect`, `undoConnect`, `ConnectConsent.swift`,
+  // `Connecting.swift`, `AppAccounts.swift`). The screens' side is
+  // src/window/connector.ts and ConnectConsent.tsx.
+
+  /** 6b's state back to nothing (signed out). */
+  private resetConnecting(): void {}
+
+  // MARK: Step 6c and 6d's Connectors: the catalogue's entries, the
+  // computer's servers and plugins, their tools and skills, the list and
+  // an app's pages (mac/Simeon/PluginsModel.swift, PluginsWindow.swift; the
+  // core's Plugins.swift, PluginsOverlay.swift, PluginCalls.swift,
+  // ConnectorPages.swift). The screens' side is src/window/Connectors.tsx.
+
+  /** 6c's and 6d's state back to nothing (signed out; `PluginsModel.forget`). */
+  private resetConnectors(): void {}
+
+  // MARK: Step 6e's Settings: General (the account, language, appearance,
+  // time zone), the account's page (name, password), Permissions
+  // (Auto-review's rules), Computer, Help & support, Legal; Send Feedback
+  // and Report an Issue (mac/Simeon/SettingsGeneral.swift, SettingsPages.swift,
+  // Feedback.swift; the core's AccountSettings.swift, StoreSettings.swift,
+  // Feedback.swift).
+
+  /** 6e's state back to nothing (signed out). */
+  private resetGeneralSettings(): void {}
+
+  // MARK: Step 6f's usage and billing: the usage (`UsageLoad`), Usage &
+  // Billing, the credits line over the message field, Wallet, the
+  // Credentials Store, the account menu and its Weekly usage, About
+  // (mac/Simeon/SettingsUsage.swift, SettingsPages.swift's Wallet,
+  // SettingsCredentials.swift, Account.swift; the core's AccountSettings.swift
+  // usage, StoreSettings.swift, Upgrade.swift, Trays.swift, AccountMenu.swift,
+  // CredentialsStore.swift).
+
+  /**
+   * Usage & Billing in Settings' list (SettingsWindow.swift's `pages`):
+   * while the usage is not read yet, and while it is shown (not for an
+   * enterprise team). 6f reads it.
+   */
+  get usageListed(): boolean {
+    return true
+  }
+
+  /** ⌘K and "/" offer Usage & Billing once the usage is read and shown (`usage.showsSection`). 6f reads it. */
+  get usageOffered(): boolean {
+    return false
+  }
+
+  /** 6f's state back to nothing (signed out). */
+  private resetUsageAndBilling(): void {}
 
   // MARK: The composer's lists
 

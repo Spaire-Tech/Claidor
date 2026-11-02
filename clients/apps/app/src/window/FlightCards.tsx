@@ -15,7 +15,6 @@ import {
   useLayoutEffect,
   useRef,
   useState,
-  useSyncExternalStore,
 } from 'react'
 import type { CardKind } from '../core/chat'
 import {
@@ -75,6 +74,7 @@ import { classes } from './classes'
 import countries from './countries.json'
 import { Sheet } from './Dialogs'
 import './FlightCards.css'
+import { useDarkScheme } from './theme'
 import { useWatched } from './useStore'
 import { useWindowModel } from './windowModel'
 
@@ -112,17 +112,9 @@ export function flightCardView(
 
 // MARK: The look
 
-/** Dark or light, as the system says, kept up to date. */
+/** Dark or light, as the theme chosen or the system says, kept up to date. */
 function useDark(): boolean {
-  return useSyncExternalStore(
-    (changed) => {
-      const query = window.matchMedia('(prefers-color-scheme: dark)')
-      query.addEventListener('change', changed)
-      return () => query.removeEventListener('change', changed)
-    },
-    () => window.matchMedia('(prefers-color-scheme: dark)').matches,
-    () => false,
-  )
+  return useDarkScheme()
 }
 
 type SymbolName =

@@ -42,6 +42,7 @@ import { AgentPicture } from './AgentMark'
 import { CardShell, type CardProps } from './Cards'
 import './ConnectCards.css'
 import { classes } from './classes'
+import { useDarkScheme } from './theme'
 import { useWindowModel } from './windowModel'
 
 type ConnectKind = Extract<
@@ -320,15 +321,11 @@ function ListenerConnectCardView({
   }
 
   const logo = listenerLogos[platform]
+  const dark = useDarkScheme()
   return (
     <div className="listener-card">
       <span className="listener-logo" aria-hidden="true">
-        <picture>
-          {logo.dark && (
-            <source srcSet={logo.dark} media="(prefers-color-scheme: dark)" />
-          )}
-          <img src={logo.light} alt="" />
-        </picture>
+        <img src={dark && logo.dark ? logo.dark : logo.light} alt="" />
       </span>
       <div className="listener-words">
         <div className="listener-title">{t`Connect ${name}`}</div>

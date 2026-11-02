@@ -16,16 +16,22 @@ import {
 import { t } from './l10n'
 import type { WebSession } from './session'
 import { AccessCover } from './window/AccessCover'
+import { AboutLayer } from './window/AccountMenu'
 import { AgentPaneColumn, paneShownWidth } from './window/AgentPane'
 import { CallBanner } from './window/Call'
 import { ChatPane } from './window/ChatPane'
 import { ComputerDialogLayer, ComputerPills } from './window/ComputerStates'
 import { ComputerLayer } from './window/ComputerView'
+import { ConsentLayer } from './window/ConnectConsent'
+import { Connector, ConnectorContext } from './window/connector'
+import { ConnectorsLayer } from './window/Connectors'
 import { somethingOver } from './window/Dialogs'
+import { FeedbackLayer } from './window/Feedback'
 import { FirstRunScreen } from './window/FirstRun'
 import { NewAgentLayer } from './window/NewAgentSheet'
 import { OrgChartView } from './window/OrgChart'
 import { SearchLayer } from './window/SearchPanel'
+import { SettingsLayer, overSlot } from './window/SettingsWindow'
 import { Sidebar, listOrder } from './window/Sidebar'
 import {
   type SidebarSize,
@@ -135,11 +141,13 @@ function keepInAddress(agentId: string | undefined): void {
  * `KeyWatcher`), with ⌘ on an Apple computer and Control elsewhere: ⌘B
  * folds and opens the sidebar; ⌘K opens and closes search, ⌘⇧F opens it;
  * ⌘N opens New Agent; ⌘⇧, the agent's pane on Profile, ⌘⇧I and ⌥⌘B the
- * pane as it was. None of them while a sheet or an alert is over the window
- * (search's own keys are its own), nor while the computer is (its screen
- * has every key). A browser keeps some for itself (⌘N
- * opens a browser window; on Windows, Control-Shift-I its developer tools);
- * the Windows app has them all.
+ * pane as it was; ⌘, Settings on General, ⌘⇧M and ⌘⇧W Connectors (step 6).
+ * None of them while a sheet or an alert is over the window (search's own
+ * keys are its own), nor while the computer is (its screen has every key);
+ * ⌘B, ⌘K, ⌘, and Connectors' keys also over Settings or Connectors, as
+ * on the Mac. A browser keeps some for itself (⌘N opens a browser window;
+ * Control-Shift-W closes it; on Windows, Control-Shift-I its developer
+ * tools); the Windows app has them all.
  */
 function useWindowKeys(
   model: WindowModel,
@@ -156,16 +164,28 @@ function useWindowKeys(
       const letter = event.key.toLowerCase()
       const shift = event.shiftKey
       const alt = event.altKey
-      // ⌘B, from a field too.
+      // ⌘B, from a field too, over Settings or Connectors too.
       if (!shift && !alt && letter === 'b') {
         event.preventDefault()
-        if (!somethingOver()) resize(toggled)
+        if (!overSlot()) resize(toggled)
         return
       }
-      // ⌘K: search, open or closed (its own panel takes the rest of its keys).
+      // ⌘K: search, open or closed, over Settings or Connectors too (its own panel takes the rest of its keys).
       if (!shift && !alt && letter === 'k') {
         event.preventDefault()
-        if (!somethingOver() || model.searchOpen) model.toggleSearch()
+        if (!overSlot() || model.searchOpen) model.toggleSearch()
+        return
+      }
+      // ⌘, (`sand.openSettings`): Settings on General, from a field too; again while it is open, nothing.
+      if (!shift && !alt && event.key === ',') {
+        event.preventDefault()
+        if (!overSlot()) model.openSettings('general')
+        return
+      }
+      // ⌘⇧M ("Customize") and ⌘⇧W ("Skills"): Connectors on Marketplace, from a field too.
+      if (shift && !alt && (letter === 'm' || letter === 'w')) {
+        event.preventDefault()
+        if (!overSlot()) model.openConnectors()
         return
       }
       if (somethingOver()) return
@@ -196,6 +216,8 @@ function MainWindow({ session }: { session: WebSession }) {
   useWatched(store)
   const [model] = useState(() => new WindowModel(agentInAddress()))
   useWatched(model)
+  // Connecting an app: one consent and one sign-in at a time, for the cards and Connectors alike (step 6b).
+  const [connector] = useState(() => new Connector(store))
   // The agent left open while it is there, else the first in the sidebar's order.
   const asked = model.selected
   const known =
@@ -286,51 +308,59 @@ function MainWindow({ session }: { session: WebSession }) {
   )
   return (
     <WindowContext.Provider value={model}>
-      <ViewerContext.Provider value={setViewer}>
-        <div className={resizing ? 'window resizing' : 'window'}>
-          <Sidebar
-            store={store}
-            open={shown}
-            onOpen={choose}
-            rail={rail}
-            width={width}
-          />
-          <main className="chat-area">
-            {model.orgChart ? (
-              <OrgChartView store={store} />
-            ) : (
-              shown != null && (
-                <ChatPane
-                  key={shown}
-                  store={store}
-                  agentId={shown}
-                  onOpenAgent={choose}
-                />
-              )
-            )}
-          </main>
-          <AgentPaneColumn
-            store={store}
-            agentId={shown}
-            shownWidth={pane}
-            sidebarWidth={width}
-          />
-          <ResizeEdge
-            left={width - 7}
-            drag={(x) => resize((now) => dragTo(now, x, window.innerWidth))}
-            dragging={setResizing}
-          />
-        </div>
-        {/* What stands over the window, in the Mac's order: a viewer, the computer, search, the sheets, the computer's dialogs and its pills; the call's banner above all (the Mac's own window). */}
-        <ViewerLayer shown={viewer} store={store} close={closeViewer} />
-        <ComputerLayer store={store} />
-        <SearchLayer store={store} />
-        <NewAgentLayer store={store} />
-        <StarterPackLayer store={store} />
-        <ComputerDialogLayer store={store} />
-        <ComputerPills store={store} />
-        <CallBanner store={store} />
-      </ViewerContext.Provider>
+      <ConnectorContext.Provider value={connector}>
+        <ViewerContext.Provider value={setViewer}>
+          <div className={resizing ? 'window resizing' : 'window'}>
+            <Sidebar
+              store={store}
+              open={shown}
+              onOpen={choose}
+              rail={rail}
+              width={width}
+              session={session}
+            />
+            <main className="chat-area">
+              {model.orgChart ? (
+                <OrgChartView store={store} />
+              ) : (
+                shown != null && (
+                  <ChatPane
+                    key={shown}
+                    store={store}
+                    agentId={shown}
+                    onOpenAgent={choose}
+                  />
+                )
+              )}
+            </main>
+            <AgentPaneColumn
+              store={store}
+              agentId={shown}
+              shownWidth={pane}
+              sidebarWidth={width}
+            />
+            <ResizeEdge
+              left={width - 7}
+              drag={(x) => resize((now) => dragTo(now, x, window.innerWidth))}
+              dragging={setResizing}
+            />
+          </div>
+          {/* What stands over the window, in the Mac's order: a viewer, the computer, Settings or Connectors (the one overlay slot), search, the sheets, the computer's dialogs and its pills; About and an app's consent over all of it; the call's banner above all (the Mac's own window). */}
+          <ViewerLayer shown={viewer} store={store} close={closeViewer} />
+          <ComputerLayer store={store} />
+          <SettingsLayer store={store} session={session} />
+          <ConnectorsLayer store={store} />
+          <SearchLayer store={store} />
+          <NewAgentLayer store={store} />
+          <StarterPackLayer store={store} />
+          <FeedbackLayer store={store} />
+          <ComputerDialogLayer store={store} />
+          <ComputerPills store={store} />
+          <AboutLayer />
+          <ConsentLayer connector={connector} />
+          <CallBanner store={store} />
+        </ViewerContext.Provider>
+      </ConnectorContext.Provider>
     </WindowContext.Provider>
   )
 }

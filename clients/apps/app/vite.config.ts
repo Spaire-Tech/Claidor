@@ -1,6 +1,7 @@
 import react from '@vitejs/plugin-react'
 import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vitest/config'
+import { themeCSS } from './scripts/theme-css.mjs'
 
 // Simeon's web app, the Mac app translated (docs/web-app/README.md).
 //
@@ -13,6 +14,8 @@ import { defineConfig } from 'vitest/config'
 export default defineConfig({
   base: process.env.SIMEON_APP_BASE ?? '/app-next/',
   plugins: [react()],
+  // Each dark rule also follows the theme chosen in Settings (scripts/theme-css.mjs).
+  css: { postcss: { plugins: [themeCSS()] } },
   build: {
     outDir:
       process.env.SIMEON_APP_OUT ??
