@@ -559,7 +559,28 @@ held through a rebuild, Resend while sending waits).
 
 **Checked:**
 
-(Checked after the merge: in progress.)
+After the merge, on one build of the merged branch (`63434a28c`, the code
+of the committed build, `517282b47`), every check ran again in Chromium,
+light and dark, then French: step 5's three scripts (5d's on the
+production build, and with its stand-in voice on a development build of
+the same code), and every check of steps 3 and 4 (the cards, 3b, 3c, the
+flights, the shop, 4a to 4e and their probes), so nothing step 5 changed
+in the window broke an earlier screen. No page errors. Every outside
+address answered by a stand-in; those a screen opens on purpose (the plans
+page from the access notice, a pull request, the shop's and Link's pages,
+an airline's logo) were caught as they opened, and the call kit's one
+socket (`wss://livekit.rtc.elevenlabs.io/rtc/v1`) was refused.
+
+- One script brought to step 5's markup, the app not changed for it: the
+  waiting hand-off card has the Mac's two buttons now (I'm done, and Take
+  over in the blue), so 3b's check presses I'm done by its class.
+- The development build with the stand-in voice is made with
+  `NODE_ENV=development` and `--mode development`; with the mode alone,
+  Vite makes a production build, which leaves the stand-in out, as it
+  should.
+- The inventory: the web app shows 1,316 of the catalogues' 3,164 strings
+  (1,149 after step 4). The committed build made again from this code;
+  `pnpm test`'s check of it passes.
 
 Before the merge, each part on its own branch, in Chromium against stand-ins
 (the session's scratchpad: `5b-check.cjs`, `5c-check.cjs`, `5d-check.cjs`
