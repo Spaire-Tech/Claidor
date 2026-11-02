@@ -124,19 +124,28 @@ export interface CallTonePlaying {
   ring(cycles: number): Promise<void>
   stopRinging(): void
   hangUp(): void
+  /** Signed out: the player's audio let go, once the tone playing is over. */
+  close?(): void
 }
 
 /**
  * The ring and the hang-up in the browser (`CallTonePlayer`): the same
  * samples played from memory through Web Audio, at the Mac's loudness. The
- * ring is over before the call's own audio starts.
+ * ring is over before the call's own audio starts. One audio context for a
+ * sign-in, made at the first ring (inside the click that calls), suspended
+ * whenever no tone plays, and closed at sign-out (the Mac lets each tone's
+ * player go after it plays).
  */
 export class WebCallTones implements CallTonePlaying {
   private context?: AudioContext
   private ringing?: { source: AudioBufferSourceNode; over: () => void }
+  /** The tones playing now. */
+  private playing = new Set<AudioBufferSourceNode>()
+  private closing = false
 
-  /** The browser's audio, or none (a page that can't play: the call goes on without its sounds). */
+  /** The browser's audio, or none (a page that can't play, or signed out: the call goes on without its sounds). */
   private audio(): AudioContext | undefined {
+    if (this.closing) return undefined
     if (this.context) return this.context
     if (typeof AudioContext === 'undefined') return undefined
     try {
@@ -160,8 +169,23 @@ export class WebCallTones implements CallTonePlaying {
     const source = context.createBufferSource()
     source.buffer = buffer
     source.connect(context.destination)
+    this.playing.add(source)
+    source.onended = () => {
+      this.playing.delete(source)
+      this.rest()
+    }
     source.start()
     return source
+  }
+
+  /** No tone playing: the audio suspended, or closed once signed out. */
+  private rest(): void {
+    const context = this.context
+    if (!context || this.playing.size > 0) return
+    if (this.closing) {
+      this.context = undefined
+      void context.close().catch(() => {})
+    } else void context.suspend().catch(() => {})
   }
 
   ring(cycles: number): Promise<void> {
@@ -194,5 +218,11 @@ export class WebCallTones implements CallTonePlaying {
 
   hangUp(): void {
     this.play(CallTones.hangUpSamples(CallTones.macHangUpPeak))
+  }
+
+  close(): void {
+    this.closing = true
+    this.stopRinging()
+    this.rest()
   }
 }

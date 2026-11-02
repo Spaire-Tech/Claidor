@@ -52,8 +52,9 @@
 }
 
 /* ---------------------------------------------------------------------- */
-/* The banner: 360 wide, 12 under the window's top and 16 from its right, */
-/* over everything in the window (the Mac's floats over every window).    */
+/* The banner: 360 wide, 12 under the chat column's top and 16 from its   */
+/* right (8 under find's bar while it is open), over everything in the    */
+/* window (the Mac's floats over every window). Placed by Call.tsx.       */
 
 .call-banner {
   position: fixed;
@@ -418,7 +419,12 @@ button.call-line:focus-visible,
 /* ---------------------------------------------------------------------- */
 /* What covers the chat and its field: the ground over everything.        */
 
-.under-cover {
+/* The chat under a cover: in its place as it was (its parts keep their own places), taking no keys; its field hidden. */
+.chat-under {
+  display: contents;
+}
+
+.chat-under.covered .composer {
   visibility: hidden;
 }
 

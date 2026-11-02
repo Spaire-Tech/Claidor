@@ -95,8 +95,8 @@ class StandInLoader implements VoiceTransport {
   async toolResult(id: string, result: string): Promise<void> {
     return (await this.load()).toolResult(id, result)
   }
-  async end(): Promise<void> {
-    return (await this.load()).end()
+  async end(call: string): Promise<void> {
+    return (await this.load()).end(call)
   }
 }
 
@@ -108,21 +108,47 @@ interface Conversation {
   sendUserMessage(text: string): void
 }
 
+/** The kit, as much of it as the call uses: `Conversation.startSession`. */
+type Kit = Pick<typeof import('@elevenlabs/client'), 'Conversation'>
+
 /** A conversation id the server knows (`conv_…`): the room's own name is not one. */
 function conversationId(id: unknown): string | undefined {
   return typeof id === 'string' && id.startsWith('conv_') ? id : undefined
 }
 
+/**
+ * One call's voice (ios/Simeon/Voice.swift keeps one `conversation` and one
+ * `endedEarly` for every call; here each call has its own): hung up, its
+ * session is never opened, or is ended the moment it opens, and ending it
+ * never touches a later call's.
+ */
+interface Attempt {
+  call: string
+  ended: boolean
+  conversation?: Conversation
+}
+
 export class ElevenLabsVoice implements VoiceTransport {
-  private conversation?: Conversation
-  /** Hung up before the kit handed the conversation over: it is ended the moment it arrives. */
-  private endedEarly = false
+  /** The call speaking now: mute and the notes go to it. */
+  private attempt?: Attempt
+  private attempts = new Map<string, Attempt>()
   /** The client tools waiting on the call's answer, by the id given to the call. */
-  private waiting = new Map<string, (result: string) => void>()
+  private waiting = new Map<
+    string,
+    { attempt: Attempt; answer: (result: string) => void }
+  >()
   private asked = 0
+
+  /** The kit and the microphone's question, given by the tests. */
+  constructor(
+    private readonly kit: () => Promise<Kit> = () =>
+      import('@elevenlabs/client'),
+    private readonly microphone: () => Promise<void> = askForMicrophone,
+  ) {}
 
   async start(
     args: {
+      call: string
       token: string
       prompt: string
       firstMessage: string
@@ -131,9 +157,18 @@ export class ElevenLabsVoice implements VoiceTransport {
     },
     events: (event: VoiceEvent) => void,
   ): Promise<void> {
-    this.endedEarly = false
-    await askForMicrophone()
-    const { Conversation } = await import('@elevenlabs/client')
+    const attempt: Attempt = this.attempts.get(args.call) ?? {
+      call: args.call,
+      ended: false,
+    }
+    this.attempts.set(args.call, attempt)
+    if (attempt.ended) return
+    this.attempt = attempt
+    await this.microphone()
+    // Hung up while the browser asked: no session is opened, whatever the answer.
+    if (attempt.ended) return
+    const { Conversation } = await this.kit()
+    if (attempt.ended) return
     type Options = Parameters<typeof Conversation.startSession>[0]
     type Overrides = NonNullable<Options['overrides']>
     // `send_task` and `recall_text_messages` answer once the call has: the kit sends what they return.
@@ -141,9 +176,10 @@ export class ElevenLabsVoice implements VoiceTransport {
       (name: string) =>
       (parameters: unknown): Promise<string> =>
         new Promise((resolve) => {
+          if (attempt.ended) return resolve('')
           this.asked += 1
           const id = `${name}-${this.asked}`
-          this.waiting.set(id, resolve)
+          this.waiting.set(id, { attempt, answer: resolve })
           events({
             kind: 'tool',
             name,
@@ -165,60 +201,74 @@ export class ElevenLabsVoice implements VoiceTransport {
       },
       ...(args.voiceId ? { tts: { voiceId: args.voiceId } } : {}),
     }
-    const started = (await Conversation.startSession({
-      conversationToken: args.token,
-      connectionType: 'webrtc',
-      overrides,
-      clientTools: {
-        send_task: tool('send_task'),
-        recall_text_messages: tool('recall_text_messages'),
-      },
-      onConnect: ({ conversationId: id }) =>
-        events({ kind: 'connected', conversationId: conversationId(id) }),
-      onConversationMetadata: (metadata) =>
-        events({
-          kind: 'connected',
-          conversationId: conversationId(metadata.conversation_id),
-        }),
-      onDisconnect: () => events({ kind: 'ended' }),
-      onError: (message) => events({ kind: 'failed', message }),
-      onModeChange: ({ mode }) =>
-        events({ kind: 'agentSpeaking', on: mode === 'speaking' }),
-      onVadScore: ({ vadScore }) =>
-        events({ kind: 'activity', level: vadScore }),
-      onMessage: ({ message, role }) =>
-        events({ kind: 'line', fromPerson: role === 'user', text: message }),
-    })) as Conversation
+    let started: Conversation
+    try {
+      started = (await Conversation.startSession({
+        conversationToken: args.token,
+        connectionType: 'webrtc',
+        overrides,
+        clientTools: {
+          send_task: tool('send_task'),
+          recall_text_messages: tool('recall_text_messages'),
+        },
+        onConnect: ({ conversationId: id }) =>
+          events({ kind: 'connected', conversationId: conversationId(id) }),
+        onConversationMetadata: (metadata) =>
+          events({
+            kind: 'connected',
+            conversationId: conversationId(metadata.conversation_id),
+          }),
+        onDisconnect: () => events({ kind: 'ended' }),
+        onError: (message) => events({ kind: 'failed', message }),
+        onModeChange: ({ mode }) =>
+          events({ kind: 'agentSpeaking', on: mode === 'speaking' }),
+        onVadScore: ({ vadScore }) =>
+          events({ kind: 'activity', level: vadScore }),
+        onMessage: ({ message, role }) =>
+          events({ kind: 'line', fromPerson: role === 'user', text: message }),
+      })) as Conversation
+    } catch (error) {
+      // A call already let go has nothing to fail.
+      if (attempt.ended) return
+      throw error
+    }
     // Hung up while it connected: let it go at once, so no voice speaks after the call ended.
-    if (this.endedEarly) {
+    if (attempt.ended) {
       await started.endSession().catch(() => {})
       return
     }
-    this.conversation = started
+    attempt.conversation = started
   }
 
   async setMuted(muted: boolean): Promise<void> {
-    this.conversation?.setMicMuted(muted)
+    this.attempt?.conversation?.setMicMuted(muted)
   }
 
   async say(context: string, nudge: string): Promise<void> {
-    this.conversation?.sendContextualUpdate(context)
-    this.conversation?.sendUserMessage(nudge)
+    const conversation = this.attempt?.conversation
+    conversation?.sendContextualUpdate(context)
+    conversation?.sendUserMessage(nudge)
   }
 
   async toolResult(id: string, result: string): Promise<void> {
-    const answer = this.waiting.get(id)
+    const waiting = this.waiting.get(id)
     this.waiting.delete(id)
-    answer?.(result)
+    waiting?.answer(result)
   }
 
-  async end(): Promise<void> {
-    this.endedEarly = true
-    const conversation = this.conversation
-    this.conversation = undefined
-    // A tool still waiting is answered with nothing: the call is over.
-    for (const answer of this.waiting.values()) answer('')
-    this.waiting.clear()
+  async end(call: string): Promise<void> {
+    const attempt = this.attempts.get(call) ?? { call, ended: false }
+    this.attempts.set(call, attempt)
+    attempt.ended = true
+    if (this.attempt === attempt) this.attempt = undefined
+    const conversation = attempt.conversation
+    attempt.conversation = undefined
+    // A tool of this call still waiting is answered with nothing: the call is over.
+    for (const [id, waiting] of this.waiting)
+      if (waiting.attempt === attempt) {
+        this.waiting.delete(id)
+        waiting.answer('')
+      }
     await conversation?.endSession().catch(() => {})
   }
 }
