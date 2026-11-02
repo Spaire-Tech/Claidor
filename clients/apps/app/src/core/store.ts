@@ -4152,8 +4152,35 @@ export class AppStore {
       inputs.imageUpdateAvailable !== seen.imageUpdateAvailable
     )
       this.rebuild.statusChanged(inputs)
-    if (recovered && backend)
+    if (recovered && backend) {
       this.rebuild.migrationReadBack(this.migrations?.status)
+      // A computer rebuilt meanwhile starts with no language: told again (Store.swift's `recovered`).
+      void this.tellLanguage(backend)
+    }
+  }
+
+  /**
+   * The app's language to the computer and the account (StoreSettings.swift's
+   * `tellLanguage`): the agents write in it. Told each time the stream comes
+   * (back), as the core tells it, without waking a computer that rests.
+   */
+  private async tellLanguage(backend: AgentBackend): Promise<void> {
+    const language = currentLanguage()
+    try {
+      await backend.command(
+        'setHostSettings',
+        { userLanguage: language },
+        { wakes: false },
+      )
+    } catch {
+      // Told the next time the stream comes back.
+    }
+    if (backend !== this.backend) return
+    try {
+      await backend.server('user/profile', 'POST', { language })
+    } catch {
+      // The header carries it meanwhile (`Accept-Language`).
+    }
   }
 
   /** The window starts with an account (`connectRebuild`): the driver gets its calls, the server's record is followed and its last step read back. */

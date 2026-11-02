@@ -15,7 +15,7 @@ import {
   useRef,
   useState,
 } from 'react'
-import { accessNotice, macCover, macRoute } from '../core/access'
+import { accessNotice, macCover, macRoute, pausesSending } from '../core/access'
 import {
   type RebuildKind,
   type RebuildStep,
@@ -85,9 +85,19 @@ export function currentDialog(
   return undefined
 }
 
-/** A computer dialog is over the window: every key is its own (`ComputerDialog.showing`). */
-export function computerDialogShowing(): boolean {
-  return document.querySelector('.computer-dialogs:not(.fading-out)') != null
+/**
+ * What a lock beginning or settling does to the dialog (the Mac animates
+ * `lock.kind == nil`): the one drawn before fades out when none follows it,
+ * one appearing (or another in its place) fades in, and one that stays as it
+ * was is left alone. `before` is what the previous render drew.
+ */
+export function lockFade(
+  before: ComputerDialog | undefined,
+  now: ComputerDialog | undefined,
+): 'in' | 'out' | undefined {
+  if (before && !now) return 'out'
+  if (now && JSON.stringify(before) !== JSON.stringify(now)) return 'in'
+  return undefined
 }
 
 /** What a rebuild's dialog draws: its title, its steps and how far, which only goes forward for this rebuild. */
@@ -125,7 +135,8 @@ function useWindowAccess(store: AppStore): void {
       if (store.rebuildingNow()) return
       void (async () => {
         await store.refreshAccess()
-        if (live && store.isSendingPaused) await store.refreshPlan()
+        // The plan only for an account that can't send: the notice's words depend on it.
+        if (live && pausesSending(store.access)) await store.refreshPlan()
       })()
     }
     read()
@@ -190,20 +201,21 @@ export function ComputerDialogLayer({ store }: { store: AppStore }): ReactNode {
     }
   }
 
-  // Only the lock beginning or settling fades it (0.16 s); the last one drawn stays while it fades out.
+  // Only the lock beginning or settling fades it (0.16 s), and only a dialog that appears or goes with it (`ComputerStates.swift`'s animation on `lock.kind == nil`); the one drawn last stays while it fades out.
   const present = dialog !== undefined
   const shownNow: Shown | undefined = dialog ? { dialog, rebuild } : undefined
-  const [lastShown, setLastShown] = useState<Shown>()
-  if (shownNow && JSON.stringify(shownNow) !== JSON.stringify(lastShown))
-    setLastShown(shownNow)
+  const [previous, setPrevious] = useState<Shown>()
   const [wasLocked, setWasLocked] = useState(locked)
   const [leaving, setLeaving] = useState<Shown>()
   const [fading, setFading] = useState(false)
   if (wasLocked !== locked) {
     setWasLocked(locked)
-    if (!present && lastShown) setLeaving(lastShown)
-    else if (present) setFading(true)
+    const fade = lockFade(previous?.dialog, dialog)
+    if (fade === 'out') setLeaving(previous)
+    else if (fade === 'in') setFading(true)
   }
+  if (JSON.stringify(shownNow) !== JSON.stringify(previous))
+    setPrevious(shownNow)
   if (present && leaving) setLeaving(undefined)
   useEffect(() => {
     if (!leaving) return
@@ -986,8 +998,9 @@ export function AccessNotice({ store }: { store: AppStore }): ReactNode {
       window.open(route.url, '_blank', 'noopener')
       return
     }
-    // Opened at once, before the answer, so the browser lets it open; sent to the page once it is known.
+    // Opened at once, before the answer, so the browser lets it open; sent to the page once it is known. It keeps no handle on the app.
     const page = window.open('', '_blank')
+    if (page) page.opener = null
     const answer = await store.billingPortal(route.flow)
     if (answer.url) {
       if (page) page.location.href = answer.url

@@ -188,6 +188,38 @@ describe('the server’s side of the rebuild (`ComputerWireTests`)', () => {
     ).rejects.toThrow('503')
   })
 
+  it('stopped while its token is read, the stream sends nothing', async () => {
+    let release: (token: string) => void = () => {}
+    const slow = {
+      base: 'https://api.example.com',
+      clientHeaders: {},
+      accessToken: () => new Promise<string>((resolve) => (release = resolve)),
+    } as unknown as SimeonAPI
+    let asked = 0
+    const fetcher = (async () => {
+      asked += 1
+      return new Response(new Uint8Array(end('{}')), { status: 200 })
+    }) as unknown as typeof fetch
+    const stop = new AbortController()
+    const reading = (async () => {
+      const got: JSONValue[] = []
+      for await (const one of connectStream(
+        slow,
+        'WatchSandBoxMigration',
+        {},
+        stop.signal,
+        fetcher,
+      ))
+        got.push(one)
+      return got
+    })()
+    await Promise.resolve()
+    stop.abort()
+    release(tokenFor('u1'))
+    expect(await reading).toEqual([])
+    expect(asked).toBe(0)
+  })
+
   it('only a computer reached through a sign-in has the server’s calls', () => {
     expect(rebuildServerOf(new FakeBackend())).toBeUndefined()
     expect(rebuildServerOf(new LiveBackend(makeGateway(new Routes())))).toBe(

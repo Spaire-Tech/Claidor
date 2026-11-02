@@ -8,7 +8,7 @@ import {
   RebuildDriver,
   type RebuildInputs,
 } from '../core/rebuildDriver'
-import { currentDialog } from './ComputerStates'
+import { currentDialog, lockFade } from './ComputerStates'
 import { WindowModel, windowActionIds } from './windowModel'
 
 /** Time that moves only when the test says. */
@@ -134,5 +134,27 @@ describe('Update Simeon’s Computer among the window’s actions', () => {
       expect(model.runAction(id)).toBe(true)
       expect(model.computerAsk).toEqual({ kind: 'update' })
     }
+  })
+})
+
+describe('the fade as a lock begins or settles (the Mac animates `lock.kind == nil`)', () => {
+  it('only a dialog that appears or goes with it', () => {
+    const rebuild = {
+      kind: 'rebuild',
+      rebuild: 'reset',
+      longer: false,
+    } as const
+    // A rebuild in front settling: it fades out.
+    expect(lockFade(rebuild, undefined)).toBe('out')
+    // Nothing was drawn (a question closed long ago, a rebuild in the background): nothing comes back.
+    expect(lockFade(undefined, undefined)).toBeUndefined()
+    // A rebuild beginning with its dialog: it fades in.
+    expect(lockFade(undefined, rebuild)).toBe('in')
+    // A question open while the stream drops: it stays as it was.
+    expect(lockFade({ kind: 'update' }, { kind: 'update' })).toBeUndefined()
+    // A rebuild ending on its failure: the failure fades in.
+    expect(
+      lockFade(rebuild, { kind: 'failed', rebuild: 'reset', episode: 1 }),
+    ).toBe('in')
   })
 })

@@ -251,7 +251,6 @@ button {
   padding-right: 12px;
 }
 
-/* The rail's foot: the same discs stacked, 10 apart, 8 from the bottom. */
 /* The foot (`SidebarFoot`): padded 2 over, 12 a side and under, 8 apart; the computer's Update at the right. Nothing in it, nothing drawn (the account and Connect apps come with step 6). */
 .sidebar-foot {
   display: flex;
@@ -267,6 +266,7 @@ button {
   display: none;
 }
 
+/* The rail's foot: the same discs stacked, 10 apart, 8 from the bottom. */
 .rail-foot {
   display: flex;
   flex: none;

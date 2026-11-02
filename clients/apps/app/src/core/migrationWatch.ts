@@ -104,6 +104,8 @@ export async function* connectStream(
   fetcher: typeof fetch = (input, init) => fetch(input, init),
 ): AsyncGenerator<JSONValue> {
   const token = await api.accessToken()
+  // Stopped while the token was read (a sign-out, the stall watchdog): nothing is sent.
+  if (signal.aborted) return
   if (token == null)
     throw new SimeonAPIError(t('Sign in to Simeon first.'), 401)
   const ended = new AbortController()
