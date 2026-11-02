@@ -65,6 +65,60 @@ export interface DesktopCalls {
   // MARK: 7e, updates
 
   // MARK: 7f, the agent's hands on this PC
+
+  /**
+   * Reads the person's computer's requests to this PC (`GET
+   * {gateway}/local-exec/requests`) and answers them, until the stream ends;
+   * resolves saying how. The page's own loop waits while the computer rests
+   * and dials again, as the Mac's `LocalHandsProvider.run` (store.ts, 7f).
+   */
+  handsStream(target: HandsTarget): HandsStreamEnd
+  /** Ends the open stream now (the computer's address moved): its `handsStream` resolves `ended`. */
+  handsEnd(): void
+  /** Another account's computer, or none: the stream ends and the commands still running are stopped. */
+  handsStop(): void
+  /** Signed out: as `handsStop`, and the setting forgotten, so the next account starts from "Ask every time". */
+  handsSignedOut(): void
+  /** "Execution on Local Computer" as this PC keeps it, kept for this account once it is known (lower case e-mail). */
+  handsPermission(account: string | null): HandsPermission
+  /** The person's choice (Settings, the Allow card); what it is now, the team's ceiling applied, comes back. */
+  handsChoose(choice: HandsPermissionValue): HandsPermission
+  /** The team's ceiling, as Simeon Labs' server says it (null: none). */
+  handsCeiling(ceiling: HandsPermissionValue | null): HandsPermission
+  /** "Allow once" written down before the answer goes to the computer, or the hands would refuse what it then asks. */
+  handsAllowOnce(approval: HandsApproval): void
+  /** The commands allowed once forgotten: a message sent, or Settings' Forget. */
+  handsForgetOnce(): void
+}
+
+// MARK: 7f's shapes, for its calls above
+
+/** Where the hands reach the person's computer: the gateway's address and the headers that open it (never written down). */
+export interface HandsTarget {
+  baseURL: string
+  headers: Record<string, string>
+}
+
+/** How a requests stream ended: the computer closed it, it could not be opened or broke, it went silent 35 s, the page ended it, or the hands stopped. */
+export interface HandsStreamEnd {
+  connected: boolean
+  ended: 'closed' | 'failed' | 'stalled' | 'ended' | 'stopped'
+}
+
+export type HandsPermissionValue = 'always' | 'ask' | 'never'
+
+/** The setting as this PC keeps it: the person's choice, the team's ceiling, and the two together, which the computer is told. */
+export interface HandsPermission {
+  choice: HandsPermissionValue
+  ceiling: HandsPermissionValue | null
+  effective: HandsPermissionValue
+}
+
+/** An "Allow once" answer: the ask's request, its action and its target, exactly. */
+export interface HandsApproval {
+  id: string
+  action: string
+  target: string
 }
 
 /** What the main process tells the page. */
