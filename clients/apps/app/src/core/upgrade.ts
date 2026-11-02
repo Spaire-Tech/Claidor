@@ -16,7 +16,7 @@ import {
   accessNotice,
 } from './access'
 import { t, tk } from './l10n'
-import { displayLocale } from './listTime'
+import { dayNumber, displayLocale } from './listTime'
 import type { Tray } from './trays'
 import type { UsageSummary } from './usage'
 
@@ -32,7 +32,6 @@ export const approachingTitle = () => t('You’re approaching your usage limit')
 const weekUsedTitle = () => t('This week’s credits are used')
 export const approachingSteps = [80, 95] as const
 
-export const paymentMethodFlow = 'payment_method'
 export const upgradeFlow = 'update_confirm'
 export const startNowFlow = 'start_now'
 export const creditsFlow = 'credits'
@@ -185,22 +184,10 @@ export function resetDay(
   return ms > now ? day(ms, now, timeZone) : undefined
 }
 
-/** The calendar day of `ms` in `timeZone`, as a count of days. */
-function dayNumber(ms: number, timeZone?: string): number {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone,
-    year: 'numeric',
-    month: 'numeric',
-    day: 'numeric',
-  }).formatToParts(new Date(ms))
-  const part = (type: string) =>
-    Number(parts.find((one) => one.type === type)?.value)
-  return Date.UTC(part('year'), part('month') - 1, part('day')) / 86_400_000
-}
-
 /** "today", "tomorrow", else "on Monday", in the person's time zone (French "aujourd’hui", "demain", "lundi") (`day`). */
 export function day(ms: number, now: number, timeZone?: string): string {
-  const days = dayNumber(ms, timeZone) - dayNumber(now, timeZone)
+  const days =
+    dayNumber(new Date(ms), timeZone) - dayNumber(new Date(now), timeZone)
   if (days <= 0) return tk('reset.today')
   if (days === 1) return tk('reset.tomorrow')
   const weekday = new Intl.DateTimeFormat(displayLocale(), {

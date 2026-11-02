@@ -30,6 +30,7 @@ import { ContextMenu, type MenuLine } from './ContextMenu'
 import type { Dismissal } from './MessageActions'
 import './Settings.css'
 import { PanelDisc, SettingsSymbol } from './SettingsParts'
+import { useBillingReturn } from './SettingsUsage'
 import { SignOutQuestion } from './SettingsWindow'
 import { useWatched } from './useStore'
 import { useWindowModel } from './windowModel'
@@ -130,11 +131,13 @@ function AccountMenu({
         'separator',
       )
     submenu.push({
+      id: 'usage',
       label: t('Usage & Billing'),
       bare: true,
       action: () => model.openSettings('usage'),
     })
     items.push({
+      id: 'weekly',
       label: coreT('Weekly usage'),
       icon: <AccountSymbol name="gauge" />,
       badge: reading.percent,
@@ -143,23 +146,27 @@ function AccountMenu({
   }
   items.push(
     {
+      id: 'settings',
       label: coreT('Settings'),
       icon: <SettingsSymbol name="gearshape" size={14} />,
       action: () => model.openSettings('general'),
     },
     {
+      id: 'about',
       label: coreT('About'),
       icon: <AccountSymbol name="info" />,
       action: () => model.openAbout(),
     },
     {
       // Report an issue here, not in the sidebar (the founder, 22 October 2026).
+      id: 'report',
       label: t('Report an issue'),
       icon: <AccountSymbol name="ladybug" />,
       action: () => model.openFeedback('issue'),
     },
     'separator',
     {
+      id: 'logOut',
       label: coreT('Log out'),
       icon: <SettingsSymbol name="logOut" size={14} />,
       action: logOut,
@@ -205,6 +212,8 @@ export function AccountDisc({
   useEffect(() => {
     void store.loadUsage()
   }, [store])
+  // A billing page opened from Usage & Billing: read again when this tab comes back, Settings open or not.
+  useBillingReturn(store)
   const account = store.account
   const picture =
     account?.pictureURL && account.pictureURL !== failed
@@ -274,8 +283,8 @@ export function AccountDisc({
 
 // MARK: About
 
-/** The web app's version, as it names itself to the server (`clientVersion`, "web-next-0.1.0"): its number. */
-const webVersion = clientVersion.replace(/^web-next-/, '')
+/** The web app's version, as it names itself to the server (`clientVersion`, "web-next-0.1.0", "web-…" once at /app): its number. */
+const webVersion = clientVersion.replace(/^web-(next-)?/, '')
 
 /** Its track: "next" while it is served at /app-next, else the Mac's "stable". */
 function releaseTrack(): string {
@@ -331,6 +340,31 @@ function AboutShown({ close }: { close: () => void }) {
         : null
     card.current?.focus()
     const key = (event: KeyboardEvent) => {
+      // Tab and Shift-Tab go round the card's own buttons, never to the window behind (a modal dialog's way).
+      if (
+        event.key === 'Tab' &&
+        !event.metaKey &&
+        !event.ctrlKey &&
+        !event.altKey
+      ) {
+        event.preventDefault()
+        event.stopPropagation()
+        const buttons = [
+          ...(card.current?.querySelectorAll<HTMLButtonElement>(
+            'button:not(:disabled)',
+          ) ?? []),
+        ]
+        if (buttons.length === 0) return
+        const at = buttons.indexOf(document.activeElement as HTMLButtonElement)
+        const next =
+          at < 0
+            ? event.shiftKey
+              ? buttons.length - 1
+              : 0
+            : (at + (event.shiftKey ? -1 : 1) + buttons.length) % buttons.length
+        buttons[next]?.focus()
+        return
+      }
       if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey)
         return
       if (event.key === 'Escape') {

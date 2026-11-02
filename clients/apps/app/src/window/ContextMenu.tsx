@@ -17,6 +17,8 @@ import { type Dismissal, useDismiss } from './MessageActions'
 
 export interface MenuEntry {
   label: string
+  /** What it is, for an item that may come or go while the menu is open (the account menu's Weekly usage): the others keep their place and the keys. */
+  id?: string
   glyph?: GlyphName
   /** A symbol of the menu owner's own, in the glyph's place (the account menu's). */
   icon?: ReactNode
@@ -45,6 +47,24 @@ export type MenuLine = MenuEntry | MenuFigure | 'separator'
 
 function isEntry(line: MenuLine | undefined): line is MenuEntry {
   return line !== undefined && line !== 'separator' && !('figure' in line)
+}
+
+/** What an item is known by while its menu is open: its id when it has one, else its place and its words (as before ids). */
+export function menuKey(item: MenuEntry, index: number): string {
+  return item.id ?? `${index}-${item.label}`
+}
+
+/** Where the item whose submenu is open now is: none once it is gone or has no submenu (nothing is left lit). */
+export function openIndexOf(
+  items: readonly MenuLine[],
+  key: string | undefined,
+): number {
+  if (key === undefined) return -1
+  const index = items.findIndex(
+    (item, place) => isEntry(item) && menuKey(item, place) === key,
+  )
+  const entry = items[index]
+  return isEntry(entry) && entry.submenu ? index : -1
 }
 
 export function ContextMenu({
@@ -103,7 +123,9 @@ function MenuPanel({
   minWidth?: number
 }) {
   const box = useRef<HTMLDivElement>(null)
-  const [open, setOpen] = useState<{ index: number; rect: DOMRect }>()
+  // The open submenu, by its item's key, so an item coming or going above it doesn't move it.
+  const [open, setOpen] = useState<{ key: string; rect: DOMRect }>()
+  const openIndex = openIndexOf(items, open?.key)
   // A menu that opens from its foot is placed again as it grows (Weekly usage arriving while it is open).
   const grows = foot && !side ? items.length : 0
   // Measured, then placed inside the window and shown, before it is painted.
@@ -132,8 +154,14 @@ function MenuPanel({
       ':scope > .menu-item:not(:disabled)',
     ) ?? []),
   ]
-  const openSub = (index: number, button: HTMLElement) =>
-    setOpen({ index, rect: button.getBoundingClientRect() })
+  const openSub = (index: number, button: HTMLElement) => {
+    const item = items[index]
+    if (isEntry(item))
+      setOpen({
+        key: menuKey(item, index),
+        rect: button.getBoundingClientRect(),
+      })
+  }
   return (
     <>
       <div
@@ -185,17 +213,17 @@ function MenuPanel({
             <MenuFigureRow key={`figure-${index}`} {...item.figure} />
           ) : (
             <button
-              key={`${index}-${item.label}`}
+              key={menuKey(item, index)}
               type="button"
               role="menuitem"
               data-index={index}
               aria-haspopup={item.submenu ? 'menu' : undefined}
-              aria-expanded={item.submenu ? open?.index === index : undefined}
+              aria-expanded={item.submenu ? openIndex === index : undefined}
               disabled={item.disabled}
               className={
                 'menu-item' +
                 (item.destructive ? ' destructive' : '') +
-                (open?.index === index ? ' expanded' : '')
+                (openIndex === index ? ' expanded' : '')
               }
               onMouseEnter={(event) => {
                 if (item.submenu) openSub(index, event.currentTarget)
@@ -230,7 +258,7 @@ function MenuPanel({
       </div>
       {open &&
         (() => {
-          const entry = items[open.index]
+          const entry = items[openIndex]
           if (!isEntry(entry) || !entry.submenu) return null
           return (
             <MenuPanel
@@ -240,7 +268,7 @@ function MenuPanel({
               close={close}
               minWidth={minWidth}
               back={() => {
-                const index = open.index
+                const index = openIndex
                 setOpen(undefined)
                 box.current
                   ?.querySelector<HTMLButtonElement>(`[data-index="${index}"]`)

@@ -10,12 +10,14 @@
 //
 // The Mac shows Stripe's page in its own sheet, which comes back on the
 // app's link; the web opens it in a new tab, as the access cover does
-// (decisions of 1 and 2 November 2026), and reads the access and the
-// usage again when this tab comes back to the front. The Mac's charge after
-// Stripe's card page (`billing/settle`) is not made: the web can't tell when
-// that page was finished.
+// (decisions of 1 and 2 November 2026), without telling it the app's
+// address, and reads the access, the plan and the usage again when this tab
+// comes back to the front, Settings open or not. A tab the browser blocks
+// says so in the group's red line. The Mac's charge after Stripe's card
+// page (`billing/settle`) is not made: the web can't tell when that page was
+// finished.
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { plansPage } from '../core/access'
 import { t as coreT } from '../core/l10n'
@@ -56,20 +58,16 @@ function useNow(every: number): number {
 }
 
 /**
- * A page of the account's billing opened in another tab: the access and
- * the usage read again once this tab is in front again (the Mac reads them
- * as its sheet closes). One read for both of the browser's signals.
+ * This tab coming back to the front after a billing page (the store's
+ * `billingTabBack`: the access, the plan and the usage read again, once).
+ * Drawn with the window (the account's disc), so it reads them though
+ * Settings closed meanwhile; the window's `focus` and the page shown again
+ * both say it, and the store reads once for the two.
  */
-function useBillingTab(store: AppStore): () => void {
-  const away = useRef(false)
+export function useBillingReturn(store: AppStore): void {
   useEffect(() => {
     const back = () => {
-      if (!away.current || document.visibilityState !== 'visible') return
-      away.current = false
-      void (async () => {
-        await store.refreshAccess()
-        await store.refreshUsage()
-      })()
+      if (document.visibilityState === 'visible') void store.billingTabBack()
     }
     window.addEventListener('focus', back)
     document.addEventListener('visibilitychange', back)
@@ -78,15 +76,39 @@ function useBillingTab(store: AppStore): () => void {
       document.removeEventListener('visibilitychange', back)
     }
   }, [store])
-  return () => {
-    away.current = true
+}
+
+/**
+ * A tab opened blank at once, in the click, so the browser lets it open,
+ * with no handle on the app; none when the browser blocked it.
+ */
+export function blankTab(): Window | undefined {
+  // The copied sign-in emptied and no `opener` (`openBlankTab`).
+  return openBlankTab() ?? undefined
+}
+
+/** The blank tab sent to `url` by a link of its own that carries no referrer: the page isn't told the app's address. */
+export function sendTab(page: Window, url: string): void {
+  try {
+    const link = page.document.createElement('a')
+    link.href = url
+    link.rel = 'noreferrer'
+    page.document.body.append(link)
+    link.click()
+  } catch {
+    page.location.href = url
   }
+}
+
+/** Only an https page is opened from the app; the quota's own address otherwise gives way to the web's plans page. */
+function securePage(url: string): string {
+  return url.startsWith('https://') ? url : plansPage
 }
 
 export function SettingsUsagePage({ store }: { store: AppStore }) {
   useWatched(store)
   const now = useNow(30_000)
-  const opened = useBillingTab(store)
+  const opened = () => store.billingTabOpened()
   useEffect(() => {
     void store.loadUsage()
   }, [store])
@@ -138,6 +160,7 @@ function UsageGroup({
   opened: () => void
 }) {
   const [asking, setAsking] = useState(false)
+  const [blocked, setBlocked] = useState(false)
   const meters = usageMeters(summary, now)
   // With a plan, the Plan group below holds the upgrade, the credits and billing; with none (the free month too), Choose a plan.
   const upgrade =
@@ -147,7 +170,14 @@ function UsageGroup({
   return (
     <SettingsGroup
       title={t('Usage')}
-      footer={upgrade ? meters.upgradeSupportingText : undefined}
+      footer={
+        blocked
+          ? t('Couldn’t open billing. Try again.')
+          : upgrade
+            ? meters.upgradeSupportingText
+            : undefined
+      }
+      footerTint={blocked ? 'var(--danger)' : undefined}
     >
       {meters.weekly ? (
         <UsageMeterLine
@@ -178,7 +208,10 @@ function UsageGroup({
           title={upgrade.label}
           divided
           onClick={() => {
-            window.open(upgrade.url, '_blank', 'noopener')
+            const page = blankTab()
+            setBlocked(page === undefined)
+            if (!page) return
+            sendTab(page, securePage(upgrade.url))
             opened()
           }}
         />
@@ -320,18 +353,22 @@ function ManagePlanGroup({
   const web = !summary.billedByApple
   const open = (which: string, flow?: string, tier?: string) => {
     if (opening !== undefined) return
-    // Opened at once, before the answer, so the browser lets it open; sent to the page once it is known. It keeps no handle on the app.
-    const page = openBlankTab()
+    // Opened at once, before the answer, so the browser lets it open; sent to the page once it is known.
+    const page = blankTab()
+    if (!page) {
+      // The browser blocked it: said in the group's red line, nothing asked of the server.
+      setFailure(t('Couldn’t open billing. Try again.'))
+      return
+    }
     setOpening(which)
     setFailure(undefined)
     void (async () => {
       const answer = await store.billingPortal(flow, tier)
       if (answer.url) {
-        if (page) page.location.href = answer.url
-        else window.open(answer.url, '_blank', 'noopener')
+        sendTab(page, answer.url)
         opened()
       } else {
-        page?.close()
+        page.close()
         setFailure(answer.message)
       }
       setOpening(undefined)

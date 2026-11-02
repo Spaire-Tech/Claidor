@@ -12,7 +12,12 @@
 // window's alert with the words the Mac's Touch ID shows (as 1Password's
 // Fill), then `GET credentials/{id}`. A password is left to the browser's
 // field, read only when it is saved, never put in the page's HTML or the
-// browser's storage, and the password managers are asked not to fill it.
+// browser's storage, and emptied before the sheet closes. The field is a text
+// field whose words are masked (`-webkit-text-security`), so the browser's own
+// password manager sees no sign-in or sign-up here: it offers no password of
+// its own and asks to save none of the person's under Simeon's address. A
+// browser that can't mask a text field gets a password field, with the
+// managers' marks (review of 2 November 2026).
 
 import {
   type KeyboardEvent as ReactKeyboardEvent,
@@ -330,6 +335,31 @@ function fieldsOf(draft: CredentialDraft): Fields {
 const sameFields = (a: Fields, b: Fields) =>
   (Object.keys(a) as (keyof Fields)[]).every((key) => a[key] === b[key])
 
+/** Whether this browser masks a text field's words (`-webkit-text-security`: Chromium, so Edge and Electron, and Safari). */
+function masksText(): boolean {
+  return (
+    typeof CSS !== 'undefined' &&
+    typeof CSS.supports === 'function' &&
+    CSS.supports('-webkit-text-security', 'disc')
+  )
+}
+
+/**
+ * The password field's shape: a text field, its words masked while they are
+ * hidden, so no password manager takes the sheet for a sign-in or sign-up
+ * (a page without a password field is no login form to it); where the
+ * browser can't mask a text field, a password field while hidden. Never
+ * filled by the browser.
+ */
+export function secretFieldShape(
+  shown: boolean,
+  masks: boolean,
+): { type: 'text' | 'password'; masked: boolean; autoComplete: string } {
+  if (shown) return { type: 'text', masked: false, autoComplete: 'off' }
+  if (masks) return { type: 'text', masked: true, autoComplete: 'off' }
+  return { type: 'password', masked: false, autoComplete: 'new-password' }
+}
+
 /** The password managers' own marks for a field that isn't the person's login here (the secret card's way, 3b). */
 const notTheirs = {
   'data-1p-ignore': 'true',
@@ -372,14 +402,38 @@ function CredentialSheet({
   const [passwordRead, setPasswordRead] = useState(entry === undefined)
   const [showsPassword, setShowsPassword] = useState(entry === undefined)
   const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [revealing, setRevealing] = useState(false)
   const [problem, setProblem] = useState<string>()
   const [asking, setAsking] = useState<'reveal' | 'delete'>()
   const sheet = useRef<HTMLDivElement>(null)
+  const [masks] = useState(masksText)
+  const shape = secretFieldShape(showsPassword, masks)
+  /** The Country menu was open as this press began (its own listener closes it first): the press is the menu's. */
+  const menuAtPress = useRef(false)
 
   const unchanged = sameFields(fields, opened) && !passwordChanged
   const empty =
     Object.values(fields).every((value) => value.trim() === '') && passwordBlank
-  const canSave = !saving && !empty && !(entry !== undefined && unchanged)
+  const canSave =
+    !saving && !deleting && !empty && !(entry !== undefined && unchanged)
+
+  /** Closed: the password's field emptied first, the one read from the server let go. */
+  const leave = () => {
+    if (password.current) password.current.value = ''
+    openedPassword.current = ''
+    close()
+  }
+
+  // Before any listener of the page sees a press: whether the Country menu is open.
+  useEffect(() => {
+    const press = () => {
+      menuAtPress.current =
+        sheet.current?.querySelector('.context-menus') != null
+    }
+    window.addEventListener('mousedown', press, true)
+    return () => window.removeEventListener('mousedown', press, true)
+  }, [])
 
   // The keys come to the sheet as it opens, and go back to what had them as it closes.
   useEffect(() => {
@@ -394,9 +448,9 @@ function CredentialSheet({
   }, [])
 
   // Escape closes it (the × is its `cancelAction`), not while it saves, an alert is over it or its Country menu is open.
-  const latest = useRef({ close, saving, asking })
+  const latest = useRef({ close: leave, saving, asking })
   useEffect(() => {
-    latest.current = { close, saving, asking }
+    latest.current = { close: leave, saving, asking }
   })
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
@@ -450,11 +504,12 @@ function CredentialSheet({
       setProblem(model.problem)
       return
     }
-    close()
+    leave()
   }
 
   /** The eye: hides; shows what is typed; a saved password only once the person allows it, then read from the server. */
   const togglePassword = () => {
+    if (revealing || asking !== undefined) return
     if (showsPassword) {
       setShowsPassword(false)
       return
@@ -467,7 +522,9 @@ function CredentialSheet({
   }
 
   const reveal = async () => {
-    if (!entry) return
+    if (!entry || revealing) return
+    // One read at a time: the eye waits while it goes.
+    setRevealing(true)
     try {
       const read = await model.password(entry)
       const field = password.current
@@ -479,12 +536,18 @@ function CredentialSheet({
       setShowsPassword(true)
     } catch (error) {
       setProblem(error instanceof Error ? error.message : String(error))
+    } finally {
+      setRevealing(false)
     }
   }
 
   const remove = async () => {
-    if (!entry) return
-    if (await model.delete(entry)) close()
+    if (!entry || saving || deleting) return
+    // Save waits while the entry is deleted, so a change can't race it.
+    setDeleting(true)
+    const done = await model.delete(entry)
+    setDeleting(false)
+    if (done) leave()
     else setProblem(model.problem)
   }
 
@@ -526,10 +589,11 @@ function CredentialSheet({
     <div
       className="sheet-scrim"
       onMouseDown={(event) => {
-        // A click outside closes it only while nothing was changed.
+        // A click outside closes it only while nothing was changed; with the Country menu open, it closes only the menu.
         if (event.target !== event.currentTarget || event.defaultPrevented)
           return
-        if (!saving && unchanged && asking === undefined) close()
+        if (menuAtPress.current) return
+        if (!saving && unchanged && asking === undefined) leave()
       }}
     >
       <div
@@ -546,7 +610,7 @@ function CredentialSheet({
               symbol="xmark"
               label={t('Close')}
               disabled={saving}
-              onClick={close}
+              onClick={leave}
             />
           </span>
           <h2 className="credential-title">{title}</h2>
@@ -568,17 +632,31 @@ function CredentialSheet({
                   <span className="credential-password">
                     <input
                       ref={password}
-                      className="credentials-field password"
-                      type={showsPassword ? 'text' : 'password'}
+                      className={classes(
+                        'credentials-field password',
+                        shape.masked && 'masked',
+                      )}
+                      type={shape.type}
                       defaultValue=""
                       placeholder={hidden ? '••••••••' : t('Required')}
                       aria-label={t('Password')}
-                      autoComplete="new-password"
+                      autoComplete={shape.autoComplete}
                       autoCapitalize="none"
+                      autoCorrect="off"
                       spellCheck={false}
                       {...notTheirs}
                       onChange={passwordTyped}
                       onKeyDown={onReturn}
+                      // Masked, its words can't be copied, cut or dragged out, as a password field's.
+                      onCopy={(event) => {
+                        if (shape.masked) event.preventDefault()
+                      }}
+                      onCut={(event) => {
+                        if (shape.masked) event.preventDefault()
+                      }}
+                      onDragStart={(event) => {
+                        if (shape.masked) event.preventDefault()
+                      }}
                     />
                     <button
                       type="button"
@@ -589,6 +667,7 @@ function CredentialSheet({
                       aria-label={
                         showsPassword ? t('Hide Password') : t('Show Password')
                       }
+                      disabled={revealing || deleting}
                       onClick={togglePassword}
                     >
                       <EyeSymbol slashed={showsPassword} />
@@ -667,6 +746,8 @@ function CredentialSheet({
               <SettingsActionRow
                 title={isLogin ? t('Delete Login') : t('Delete Contact Info')}
                 destructive
+                busy={deleting}
+                disabled={saving}
                 onClick={() => setAsking('delete')}
               />
             </SettingsGroup>
