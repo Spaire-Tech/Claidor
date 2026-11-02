@@ -403,6 +403,11 @@ export class PluginsModel {
     this.changed()
   }
 
+  /** The window's connector, for the consent and the sign-in (the Mac's `model.store = store`). */
+  setConnector(connector: PluginsConnector | undefined): void {
+    this.connector = connector
+  }
+
   /** The agent open in the window; another one's skills are read (`onChange(of: window.selected)`). */
   setAgent(agentId: string | undefined): void {
     if (agentId === this.agentId) return
@@ -514,6 +519,7 @@ export class PluginsModel {
       void this.add(entry, agentId)
       return
     }
+    // 6b: pass `{ signIn: false }` when `needsSetupPage(entry, team)`: Add goes to the setup page, so no tab is held.
     this.connector?.ask(entry.displayName, () => this.add(entry, agentId))
   }
 
@@ -693,6 +699,7 @@ export class PluginsModel {
   ): Promise<void> {
     const setup = this.setup
     if (!setup) return
+    // 6b: a new add's sign-in may open a page after the install: the setup page's button wraps this in `connector.holdingTab(…)` (not Edit Values).
     const entry = this.catalog.find((one) => one.id === setup.entryId)
     const name = entry?.displayName ?? t('the plugin')
     this.show(undefined)
@@ -798,9 +805,11 @@ export class PluginsModel {
   requestSignIn(server: PluginServer, accountKey: string): void {
     const flow = this.flows.get(this.signInKeyFor(server, accountKey))
     if (flow && !flow.timedOut) {
+      // 6b: Reopen opens the waiting page again: wrap in `connector.holdingTab(…)`.
       void this.signIn(server, accountKey)
       return
     }
+    // 6b: Connect and Retry: the consent holds the tab for the sign-in (`ask`'s default).
     this.connector?.ask(server.name, () => this.signIn(server, accountKey))
   }
 
