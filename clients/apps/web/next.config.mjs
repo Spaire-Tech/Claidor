@@ -49,12 +49,15 @@ const embeddedCSP = `
 // talks to the API and, through the API's proxy, to the person's cloud
 // computer: commands and the event stream (connect-src), the agents'
 // pictures (img-src) and the computer panel (frame-src). It is never
-// shown inside another site.
+// shown inside another site. The new app (/app-next) plays the voices'
+// samples from ElevenLabs' own links (the avatar editor's play button),
+// whose host varies, so sound may come from any https address, as pictures
+// may (media-src).
 const appWindowCSP = `
   default-src 'self';
   connect-src 'self' blob: ${process.env.NEXT_PUBLIC_API_URL};
   img-src 'self' blob: data: https: ${process.env.NEXT_PUBLIC_API_URL};
-  media-src 'self' blob: ${process.env.NEXT_PUBLIC_API_URL};
+  media-src 'self' blob: https: ${process.env.NEXT_PUBLIC_API_URL};
   frame-src ${process.env.NEXT_PUBLIC_API_URL};
   script-src 'self' blob:;
   worker-src 'self' blob:;
