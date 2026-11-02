@@ -64,6 +64,18 @@ export interface DesktopCalls {
 
   // MARK: 7e, updates
 
+  /** What the updater knows now (Settings › Updates as it opens, the dot beside Updates in Settings' list). */
+  readUpdates(): DesktopEvents['updatesChanged']
+  /** Looks for a release without installing it (the Mac's `lookQuietly`): Check Now, and the page as it opens. Nothing while a check or an install is under way, nor in a build that doesn't update itself. */
+  lookForUpdates(): void
+  /** Update Now: the release found, downloaded if it isn't yet, installed, and Simeon opened again (Sparkle's own check and install on the Mac). */
+  installUpdate(): void
+  /** Check for Updates Automatically and Download Updates Automatically, kept by the app; a switch left out stays as it is. */
+  setUpdateSwitches(switches: {
+    checksAutomatically?: boolean
+    downloadsAutomatically?: boolean
+  }): void
+
   // MARK: 7f, the agent's hands on this PC
 }
 
@@ -81,6 +93,30 @@ export interface DesktopEvents {
   // MARK: 7d, links and pages outside
 
   // MARK: 7e, updates
+
+  /** The updater's state (the Mac's `MacUpdates`), sent whenever it changes. */
+  updatesChanged: {
+    /** This build updates itself: a release (`windows/scripts/release.mjs`), installed. A developer's build never does. */
+    available: boolean
+    /** A check is under way. */
+    checking: boolean
+    /** The version of a release found that this PC doesn't have yet. */
+    found: string | null
+    /** The release found is downloaded: it installs as Simeon quits. */
+    downloaded: boolean
+    /** Update Now is under way: the release downloading, then installing. */
+    installing: boolean
+    /** The last check found nothing newer. */
+    upToDate: boolean
+    /** When a check last answered (ms since 1970), kept between launches. */
+    lastChecked: number | null
+    /** Check for Updates Automatically: once a day. */
+    checksAutomatically: boolean
+    /** Download Updates Automatically: a release found by the daily check is downloaded, and installed as Simeon quits. */
+    downloadsAutomatically: boolean
+  }
+  /** Check for Updates… (the menu or the tray, 7c's): Settings › Updates comes up and looks for a release (the Mac's Simeon › Check for Updates…). */
+  showUpdates: null
 
   // MARK: 7f, the agent's hands on this PC
 }
