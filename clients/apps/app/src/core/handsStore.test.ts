@@ -181,10 +181,15 @@ describe('signed in (MacLocalPermission.signedIn)', () => {
     expect(backend.settings.localToolPermission).toBe('ask')
   })
 
-  it('counts a team that does not answer as none, and tells nothing when nothing changed', async () => {
-    const { host, store, backend } = await signedIn()
-    expect(calls(host, 'handsCeiling').at(-1)?.args).toEqual([null])
-    expect(store.localCeiling).toBeUndefined()
+  it('keeps the ceiling this PC last had when the team does not answer, and tells nothing when nothing changed', async () => {
+    const { host, store, backend } = await signedIn({
+      setting: keptSetting({ choice: 'always', ceiling: 'never' }),
+    })
+    // Not lifted by a read that failed (the Mac's lifts it: proposed for the Mac).
+    expect(calls(host, 'handsCeiling')).toEqual([])
+    expect(store.localCeiling).toBe('never')
+    expect(store.localPermission).toBe('never')
+    expect(store.localCeilingKnown).toBe(true)
     await ms(20)
     expect(
       backend.commands.filter(
@@ -193,6 +198,31 @@ describe('signed in (MacLocalPermission.signedIn)', () => {
           'localToolPermission' in (command.args as object),
       ),
     ).toEqual([])
+  })
+
+  it('lifts the ceiling only when the team answers with none', async () => {
+    const { host, store } = await signedIn({
+      setting: keptSetting({ ceiling: 'never' }),
+      team: {},
+    })
+    expect(calls(host, 'handsCeiling').at(-1)?.args).toEqual([null])
+    expect(store.localCeiling).toBeUndefined()
+  })
+
+  it('tells the computer what holds when the ceiling lowers what it took from it', async () => {
+    const adopting = new SettingsBackend()
+    adopting.settings.localToolPermission = 'always'
+    const { host, store } = await signedIn({
+      box: adopting,
+      team: { localToolControls: { permissionCeiling: 2 } },
+    })
+    adopting.push({ kind: 'connection', live: true })
+    await eventually(() => calls(host, 'handsChoose').length > 0)
+    expect(calls(host, 'handsChoose')[0]?.args).toEqual(['always'])
+    // This PC holds "Ask every time" under the team's ceiling: the computer is told, so it sends the asks this PC can answer.
+    await eventually(() => adopting.settings.localToolPermission === 'ask')
+    expect(adopting.settings.localToolPermission).toBe('ask')
+    expect(store.localPermission).toBe('ask')
   })
 
   it('takes the computer’s always or never over this PC’s default once connected, else tells it this PC’s', async () => {

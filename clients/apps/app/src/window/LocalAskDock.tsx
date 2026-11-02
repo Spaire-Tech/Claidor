@@ -70,7 +70,7 @@ function LocalAskCard({
   const model = useWindowModel()
   const [submitting, setSubmitting] = useState(false)
   const [failed, setFailed] = useState(false)
-  const enabled = !submitting
+  const enabled = !submitting && store.localAskAnswerable
   const blocked = alwaysBlocked(store.localCeilingKnown, store.localCeiling)
   const always = enabled && blocked === undefined
 

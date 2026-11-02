@@ -6175,7 +6175,7 @@ export class AppStore {
   // what it asks (windows/src/main/hands/). The Allow card's ask is read
   // from the chat (`localAsks`), and its answers go as the Mac's.
 
-  /** The team's ceiling, once read this sign-in (a failed read counts as none). */
+  /** The team's ceiling, once read this sign-in (a failed read keeps the one this PC last had). */
   localCeiling?: LocalToolPermission
   /** The ceiling has been read this sign-in (the card's Always allow waits for it). */
   localCeilingKnown = false
@@ -6203,6 +6203,11 @@ export class AppStore {
 
   private resetDesktopHands(): void {
     this.localPermissionPending = false
+  }
+
+  /** Whether an answer to the Allow card can go now: a computer is attached (the card's buttons greyed otherwise, as the Mac's). */
+  get localAskAnswerable(): boolean {
+    return this.backend != null
   }
 
   /** The agent's first ask still waiting to use this PC (`localAsks`): the Allow card over its composer. Windows only. */
@@ -6376,27 +6381,33 @@ export class AppStore {
 
   /**
    * Signed in, and at each launch (`MacLocalPermission.signedIn`): this
-   * account's setting, and its team's ceiling read from Simeon Labs (none
-   * when it does not answer). The computer is told when that changes what
-   * it should do.
+   * account's setting, and its team's ceiling read from Simeon Labs. The
+   * computer is told when that changes what it should do. When Simeon Labs
+   * does not answer, the ceiling this PC last had for the account holds
+   * (the Mac's counts as none, which lifts a team's "Never" at every
+   * offline launch: proposed for the Mac too).
    */
   private async localPermissionSignedIn(
     host: Desktop,
     account: string | undefined,
   ): Promise<void> {
-    let previous: LocalToolPermission
+    let kept: HandsPermission
     try {
-      previous = (await host.call('handsPermission', account ?? null)).effective
+      kept = await host.call('handsPermission', account ?? null)
     } catch {
       return
     }
+    const previous = kept.effective
     this.ceilingReads += 1
     const read = this.ceilingReads
     const answer = await this.teamAdminSettings()
     if (read !== this.ceilingReads) return
-    const now = await host
-      .call('handsCeiling', teamCeiling(answer) ?? null)
-      .catch(() => undefined)
+    const now =
+      answer === undefined
+        ? kept
+        : await host
+            .call('handsCeiling', teamCeiling(answer) ?? null)
+            .catch(() => undefined)
     if (!now || read !== this.ceilingReads) return
     this.tookLocalPermission(now)
     if (now.effective !== previous)
@@ -6443,6 +6454,9 @@ export class AppStore {
       if (now) {
         this.localPermission = now.effective
         this.changed()
+        // The team's ceiling lowered what was taken: the computer is told what holds, or it would send no asks this PC could answer (the Mac doesn't: proposed for it too).
+        if (now.effective !== step.value)
+          await this.pushHostSetting('localToolPermission', now.effective)
       }
       return
     }
