@@ -16,9 +16,10 @@
 // of a line coming in, the time on a sideways swipe, two agents' messages
 // and a call's lines opened over the chat (2b);
 // the pictures from the computer, files' kinds, sizes and Save, link cards,
-// previews (2c); the call button (step 5); the cards after 3a (step 3: the
-// question, draft and approval cards are in Cards.tsx); the agent's pane
-// opened from the head (step 4).
+// previews (2c); the call button (step 5); the agent's pane opened from the
+// head (step 4). The cards (step 3) are drawn by `CardRow` from Cards.tsx
+// and their groups' files (RequestCards, ConnectCards, FlightCards,
+// ShopCards).
 
 import {
   createContext,
@@ -34,6 +35,7 @@ import { activityLine } from '../core/activity'
 import { approvalCard, draftCard, questionCard } from '../core/cards'
 import {
   type Bubble,
+  type CardKind,
   type ChatImage,
   type ChatRow,
   channelTitle,
@@ -69,14 +71,17 @@ import { AgentMark } from './AgentMark'
 import { DropOverlay, useFileDrop, useStaging } from './Attachments'
 import {
   ApprovalCardView,
+  type CardProps,
   DraftCardView,
   QuestionCardView,
   cardWidth,
 } from './Cards'
 import { Composer } from './Composer'
+import { connectCardView } from './ConnectCards'
 import { EmojiPicker } from './EmojiPicker'
 import { FileCard, LinkCard, useShownPicture } from './Files'
 import { FindBar, FindContext, Marked } from './FindBar'
+import { flightCardView } from './FlightCards'
 import {
   type Dismissal,
   HoverBar,
@@ -91,6 +96,8 @@ import {
   type MentionSetting,
   MessageBlocks,
 } from './MessageText'
+import { requestCardView } from './RequestCards'
+import { shopCardView } from './ShopCards'
 import { useOpenMedia } from './Viewers'
 import { classes } from './classes'
 import { useWatched } from './useStore'
@@ -1055,7 +1062,27 @@ function RowContent({
   }
 }
 
-/** A card in its place: as wide as a message may be (the approval 520 at most, the others 640). */
+/** Each card's widest, as the Mac's chat sets it (`limit(…)` in ChatPane.swift's `TranscriptRow`). */
+const cardCaps: Record<CardKind, number> = {
+  question: 640,
+  draft: 640,
+  approval: 520,
+  secret: 640,
+  computer: 520,
+  form: 520,
+  credential: 520,
+  onePasswordConnect: 520,
+  connectors: 640,
+  listenerConnect: 520,
+  cloudAgent: 640,
+  joined: 460,
+  flights: 680,
+  flightPassengers: 520,
+  purchase: 520,
+  products: 640,
+}
+
+/** A card in its place: as wide as a message may be, at most its own cap. */
 function CardRow({
   row,
   startsGroup,
@@ -1064,39 +1091,74 @@ function CardRow({
   startsGroup: boolean
 }) {
   const control = useControl()
-  const { store, agentId, column } = control
-  const frame = (cap: number, card: React.ReactNode) => (
+  const card: CardProps = {
+    entry: row.entry,
+    entryId: row.entry.id,
+    agentId: control.agentId,
+    store: control.store,
+    column: control.column,
+    openAgent: control.openAgent,
+  }
+  const view = cardView(row.card, card)
+  // A card its group can't read keeps its place, and says so.
+  if (view == null)
+    return (
+      <div className={classes('later-card', startsGroup && 'starts-group')}>
+        {notShown()}
+      </div>
+    )
+  return (
     <div
       className={classes('card-row', startsGroup && 'starts-group')}
-      style={{ maxWidth: cardWidth(column, cap) }}
+      style={{ maxWidth: cardWidth(control.column, cardCaps[row.card]) }}
     >
-      {card}
+      {view}
     </div>
   )
-  const props = { entryId: row.entry.id, agentId, store }
-  switch (row.card) {
+}
+
+/** The card for a row, from its group's file; none when the entry doesn't read as one. */
+function cardView(kind: CardKind, card: CardProps): React.ReactNode {
+  const props = {
+    entryId: card.entryId,
+    agentId: card.agentId,
+    store: card.store,
+  }
+  switch (kind) {
     case 'question': {
-      const card = questionCard(row.entry)
-      if (card) return frame(640, <QuestionCardView {...props} card={card} />)
-      break
+      const read = questionCard(card.entry)
+      return read && <QuestionCardView {...props} card={read} />
     }
     case 'draft': {
-      const card = draftCard(row.entry)
-      if (card) return frame(640, <DraftCardView {...props} card={card} />)
-      break
+      const read = draftCard(card.entry)
+      return read && <DraftCardView {...props} card={read} />
     }
     case 'approval': {
-      const card = approvalCard(row.entry)
-      if (card) return frame(520, <ApprovalCardView {...props} card={card} />)
-      break
+      const read = approvalCard(card.entry)
+      return read && <ApprovalCardView {...props} card={read} />
     }
+    // 3b: what an agent asks of the person (RequestCards.tsx).
+    case 'secret':
+    case 'computer':
+    case 'form':
+    case 'credential':
+    case 'onePasswordConnect':
+      return requestCardView(kind, card)
+    // 3c: apps to connect, Slack or GitHub for a routine, the cloud agent, a new teammate (ConnectCards.tsx).
+    case 'connectors':
+    case 'listenerConnect':
+    case 'cloudAgent':
+    case 'joined':
+      return connectCardView(kind, card)
+    // 3d: flights and the travellers' form (FlightCards.tsx).
+    case 'flights':
+    case 'flightPassengers':
+      return flightCardView(kind, card)
+    // 3d: a checkout and products to buy (ShopCards.tsx).
+    case 'purchase':
+    case 'products':
+      return shopCardView(kind, card)
   }
-  // The other cards come in the next parts of step 3; until then their place is kept and said.
-  return (
-    <div className={classes('later-card', startsGroup && 'starts-group')}>
-      {notShown()}
-    </div>
-  )
 }
 
 function Clock() {

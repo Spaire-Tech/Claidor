@@ -22,12 +22,24 @@ import {
   shownAnswer,
   summaryLine,
 } from '../core/cards'
+import type { Entry } from '../core/entry'
 import { brandLogos } from '../core/generatedBrands'
 import type { JSONValue } from '../core/json'
 import type { AppStore } from '../core/store'
 import { t } from '../l10n'
 import { CodeBlock } from './MessageText'
 import { classes } from './classes'
+
+/** What every card is given: its line, the chat it is in, the store, the messages' column, and a way to another agent's chat. */
+export interface CardProps {
+  entry: Entry
+  entryId: string
+  agentId: string
+  store: AppStore
+  /** The messages' column: the chat's width less its 16 on each side. */
+  column: number
+  openAgent: (agentId: string) => void
+}
 
 /** A card's widest (`max-width: min(88%, cap, 100% - 82px)`). */
 export function cardWidth(column: number, cap: number): number {

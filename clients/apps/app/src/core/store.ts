@@ -494,6 +494,10 @@ export class AppStore {
     this.plan = undefined
     this.pendingAnswers = {}
     this.answeredApprovals = {}
+    this.resetRequestCards()
+    this.resetConnectCards()
+    this.resetFlightCards()
+    this.resetShopCards()
     this.firstRunAgentId = undefined
     this.firstRunNamed = false
     // A hand-off waiting on the name step ends (it finds the account gone and makes nothing).
@@ -1342,6 +1346,58 @@ export class AppStore {
     return 'always'
   }
 
+  // MARK: Step 3b's cards: the secret, the computer hand-off, the in-chat
+  // form, 1Password's fill and connect (Store.swift's commands for them).
+  // 3b's state and commands go below this line, and nowhere else.
+
+  /** 3b's card state back to nothing (signed out). */
+  private resetRequestCards(): void {}
+
+  /** 3b's answers shown here, settled once the computer's copy of a chat has them. */
+  private settleRequestCards(agentId: string, entries: readonly Entry[]): void {
+    void agentId
+    void entries
+  }
+
+  // MARK: Step 3c's cards: apps to connect, Slack or GitHub for a routine,
+  // the cloud agent, a new teammate joined (Store.swift's commands for them).
+  // 3c's state and commands go below this line, and nowhere else.
+
+  /** 3c's card state back to nothing (signed out). */
+  private resetConnectCards(): void {}
+
+  /** 3c's answers shown here, settled once the computer's copy of a chat has them. */
+  private settleConnectCards(agentId: string, entries: readonly Entry[]): void {
+    void agentId
+    void entries
+  }
+
+  // MARK: Step 3d's flight cards: the flights found and the travellers'
+  // form (Store.swift's `startFlightBooking`, `submitFlightPassengers`…).
+  // The flights' state and commands go below this line, and nowhere else.
+
+  /** The flight cards' state back to nothing (signed out). */
+  private resetFlightCards(): void {}
+
+  /** The flight cards' answers shown here, settled once the computer's copy of a chat has them. */
+  private settleFlightCards(agentId: string, entries: readonly Entry[]): void {
+    void agentId
+    void entries
+  }
+
+  // MARK: Step 3d's shop cards: a checkout paid with Link and products to
+  // buy (Store.swift's `answerPurchase`, `buyProduct`…).
+  // The shop's state and commands go below this line, and nowhere else.
+
+  /** The shop cards' state back to nothing (signed out). */
+  private resetShopCards(): void {}
+
+  /** The shop cards' answers shown here, settled once the computer's copy of a chat has them. */
+  private settleShopCards(agentId: string, entries: readonly Entry[]): void {
+    void agentId
+    void entries
+  }
+
   // MARK: The chats
 
   rows(agentId: string): readonly ChatRow[] {
@@ -1358,6 +1414,10 @@ export class AppStore {
           bool(entry.get('widgetDismissed')) === true)
       )
         delete this.pendingAnswers[entry.id]
+    this.settleRequestCards(agentId, entries)
+    this.settleConnectCards(agentId, entries)
+    this.settleFlightCards(agentId, entries)
+    this.settleShopCards(agentId, entries)
     this.streamingOnly.delete(agentId)
     this.settleOutbox(agentId, entries)
     if (soon) this.scheduleLayout(agentId)
