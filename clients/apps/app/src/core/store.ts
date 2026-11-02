@@ -24,6 +24,13 @@ import {
   planFacts,
   unknownAccess,
 } from './access'
+import type { AgentDraft } from './agentDraft'
+import {
+  type VoiceChoice,
+  keptVoice,
+  voiceChoicesFrom,
+  voicePlan,
+} from './agentVoices'
 import { SimeonAPIError } from './api'
 import {
   type AgentBackend,
@@ -67,6 +74,14 @@ import {
 } from './connectCards'
 import { type ConnectedApp, connectedApp } from './connectedApps'
 import { Entry, appliedChange } from './entry'
+import {
+  type AgentFace,
+  faceForReset,
+  faceURL,
+  ownFace,
+  shuffledFace,
+  voiceForFace,
+} from './faces'
 import { fileLine, fileSize } from './fileLine'
 import { byteCap, computerPath } from './filePreview'
 import {
@@ -2704,9 +2719,335 @@ export class AppStore {
   // sheet (NewAgentSheet.swift, AgentDraft.swift, StoreAgents.swift's
   // `createAgent`). 4b's state and commands go below this line, and nowhere
   // else.
+  //
+  // The pass that gives every agent without a picture its face
+  // (StoreFaces.swift's `queueFaces`, `assignMissingFaces`) is not here: the
+  // web shows the face each would be given (`pictureOf`) and leaves the
+  // giving to the Mac and the iPhone for now (docs/web-app/PROGRESS.md).
+
+  /** The voices listed, kept ten minutes as the Mac keeps them (`voiceList`). */
+  private voiceList?: { at: number; list: VoiceChoice[] }
+  /** A pass giving the agents their voices, one at a time (`assigning`). */
+  private assigningVoices?: Promise<Record<string, string>>
+
+  /**
+   * A face's picture as shipped (WebP, 512 px), read from the app's own
+   * copy: what is sent to the computer (`AgentFaces.data`). The tests give
+   * their own reader.
+   */
+  readFace = async (face: AgentFace): Promise<Uint8Array | undefined> => {
+    const url = faceURL(face)
+    if (!url) return undefined
+    try {
+      const answer = await fetch(url)
+      return answer.ok ? new Uint8Array(await answer.arrayBuffer()) : undefined
+    } catch {
+      return undefined
+    }
+  }
 
   /** 4b's state back to nothing (signed out). */
-  private resetAvatarAndNewAgent(): void {}
+  private resetAvatarAndNewAgent(): void {
+    this.voiceList = undefined
+    this.assigningVoices = undefined
+  }
+
+  /** One agent's row changed here at once (`updateAgentLocally`). */
+  private changeAgent(agentId: string, change: (agent: Agent) => Agent): void {
+    let changed = false
+    this.agents = this.agents.map((agent) => {
+      if (agent.id !== agentId) return agent
+      changed = true
+      return change(agent)
+    })
+    if (changed) this.changed()
+  }
+
+  /**
+   * The voices to pick from (`GET proxy/v1/voice/voices`: the founder's,
+   * never ElevenLabs' others); none when calls are not switched on or the
+   * server can't be reached. Kept ten minutes, as the Mac keeps them.
+   */
+  async voices(): Promise<VoiceChoice[]> {
+    const kept = this.voiceList
+    if (kept && Date.now() - kept.at < 600_000) return kept.list
+    const backend = this.backend
+    if (!backend) return []
+    let list: VoiceChoice[]
+    try {
+      list = voiceChoicesFrom(await backend.server('proxy/v1/voice/voices'))
+    } catch {
+      return []
+    }
+    if (backend !== this.backend) return []
+    if (list.length > 0) this.voiceList = { at: Date.now(), list }
+    return list
+  }
+
+  /**
+   * The agent's voice for its picker (`ensureVoice`): its own while it is on
+   * the list, else one given now by its name, with every other agent missing
+   * one. Undefined is the agent's own voice, Michael.
+   */
+  async ensureVoice(agentId: string): Promise<string | undefined> {
+    if (!this.agent(agentId)) await this.reloadRoster()
+    const list = await this.voices()
+    const kept = keptVoice(this.agent(agentId)?.voiceId, list)
+    if (kept !== undefined) return kept
+    if (list.length === 0 || !this.agent(agentId)) return undefined
+    // A pass already under way may have started before this agent was hired: then one more.
+    let all = await this.assignMissingVoices()
+    if (all[agentId] === undefined) all = await this.assignMissingVoices()
+    return all[agentId]
+  }
+
+  /**
+   * Gives each agent without a voice on the list its own, as the Mac does
+   * (`assignMissingVoices`), and saves it on the agent (`updateAgent` with
+   * `voiceId`). One pass at a time; every agent's voice after it.
+   */
+  async assignMissingVoices(): Promise<Record<string, string>> {
+    if (this.assigningVoices) return this.assigningVoices
+    const pass = this.giveMissingVoices()
+    this.assigningVoices = pass
+    try {
+      return await pass
+    } finally {
+      if (this.assigningVoices === pass) this.assigningVoices = undefined
+    }
+  }
+
+  private async giveMissingVoices(): Promise<Record<string, string>> {
+    const list = await this.voices()
+    const plan = voicePlan(this.agents, list)
+    for (const { agentId, voiceId } of plan.given) {
+      const backend = this.backend
+      const agent = this.agent(agentId)
+      if (!backend || !agent) continue
+      this.changeAgent(agentId, (row) => ({ ...row, voiceId }))
+      // Given for now when it can't be saved; the next pass tries again.
+      await quietly(
+        backend.command('updateAgent', {
+          id: agentId,
+          profile: {
+            name: agent.name,
+            description: agent.description,
+            title: agent.title,
+            voiceId,
+          },
+        }),
+      )
+    }
+    return plan.voices
+  }
+
+  /** The agent's voice (`updateAgent` with `voiceId`, as the Mac's picker saves it): shown at once; refused, the old one comes back and the refusal is thrown. */
+  async setAgentVoice(agentId: string, voiceId: string): Promise<void> {
+    const agent = this.agent(agentId)
+    const backend = this.backend
+    if (!agent || !backend) return
+    const was = agent.voiceId
+    this.changeAgent(agentId, (row) => ({ ...row, voiceId }))
+    const profile: Record<string, JSONValue> = {
+      name: agent.name,
+      description: agent.description,
+      voiceId,
+    }
+    if (!agent.isGroup) profile.title = agent.title
+    try {
+      await backend.command('updateAgent', { id: agentId, profile })
+    } catch (error) {
+      this.changeAgent(agentId, (row) => ({ ...row, voiceId: was }))
+      throw error
+    }
+  }
+
+  /** The face's picture to the computer, and the face kept on the agent when it was not kept already (with the voice, when one is given with it). */
+  private async sendFace(
+    backend: AgentBackend,
+    face: AgentFace,
+    agent: Agent,
+    voiceId?: string,
+  ): Promise<void> {
+    const bytes = await this.readFace(face)
+    if (!bytes)
+      throw new GatewayError(
+        t`The face ${face.id} is missing from the app.`,
+        true,
+      )
+    await backend.command('setAgentAvatarBytes', {
+      id: agent.id,
+      pngBase64: base64(bytes),
+    })
+    if (agent.avatarShape === face.id && voiceId === undefined) return
+    // `updateAgent` always carries the name and the description; the fields left out are kept.
+    const profile: Record<string, JSONValue> = {
+      name: agent.name,
+      description: agent.description,
+      avatarShape: face.id,
+    }
+    if (voiceId !== undefined) profile.voiceId = voiceId
+    await backend.command('updateAgent', { id: agent.id, profile })
+  }
+
+  /**
+   * A face from the editor (a pick, Shuffle or Reset, `wearFace`): the
+   * agent's picture, and the face kept on it. When the face is not of its
+   * voice's gender, the voice changes with it, so face and voice agree.
+   * Shown at once; a refusal puts the roster back and is thrown.
+   */
+  async wearFace(agentId: string, face: AgentFace): Promise<void> {
+    const backend = this.backend
+    const agent = this.agent(agentId)
+    if (!backend || !agent) return
+    const list = await this.voices()
+    const voiceId = voiceForFace(agent, face, this.agents, list)
+    this.changeAgent(agentId, (row) => ({
+      ...row,
+      avatarVersion: face.version,
+      avatarShape: face.id,
+      avatarDataURL: undefined,
+      ...(voiceId !== undefined ? { voiceId } : {}),
+    }))
+    try {
+      await this.sendFace(backend, face, agent, voiceId)
+    } catch (error) {
+      await this.reloadRoster()
+      throw error
+    }
+    await this.reloadRoster()
+  }
+
+  /** Shuffle: the next face of `gender` no other agent wears, put on at once; the face, or undefined when there is none. */
+  async shuffleFace(
+    agentId: string,
+    gender: string,
+  ): Promise<AgentFace | undefined> {
+    const agent = this.agent(agentId)
+    if (!agent) return undefined
+    const current = ownFace(agent)
+    const face = shuffledFace(
+      current?.gender === gender ? current : undefined,
+      gender,
+      agentId,
+      this.agents,
+    )
+    if (!face) return undefined
+    await this.wearFace(agentId, face)
+    return face
+  }
+
+  /** Reset: back to the face the agent was given (or the one it would be given now, for an agent from before faces). */
+  async resetFace(agentId: string): Promise<AgentFace | undefined> {
+    const agent = this.agent(agentId)
+    if (!agent) return undefined
+    const face = faceForReset(agent, this.agents, await this.voices())
+    if (!face) return undefined
+    await this.wearFace(agentId, face)
+    return face
+  }
+
+  /** A picture of the agent's own, uploaded or drawn (`setAgentAvatarBytes`; the face it was given stays kept for Reset); the computer's refusal is thrown. */
+  async setAvatarImage(agentId: string, png: Uint8Array | null): Promise<void> {
+    const backend = this.backend
+    if (!backend) return
+    await backend.command('setAgentAvatarBytes', {
+      id: agentId,
+      pngBase64: png ? base64(png) : null,
+    })
+    await this.reloadRoster()
+  }
+
+  /**
+   * A picture drawn from a description for the avatar editor
+   * (`POST proxy/v1/images/generations`, the cheapest quality: it is a
+   * thumbnail); its bytes, or the words of what went wrong, thrown. It costs
+   * the person's credits.
+   */
+  async generateAvatarImage(description: string): Promise<Uint8Array> {
+    const words = description.trim()
+    if (words === '')
+      throw new GatewayError(t('Describe the avatar to generate first.'), true)
+    const backend = this.backend
+    if (!backend)
+      throw new GatewayError(t('Image generation returned no picture.'), false)
+    const answer = await backend.server('proxy/v1/images/generations', 'POST', {
+      prompt: words,
+      size: 'auto',
+      quality: 'low',
+    })
+    const drawn = text(field(arr(field(answer, 'data'))?.[0], 'b64_json'))
+    const bytes = drawn ? bytesFromBase64URL(drawn) : undefined
+    if (!bytes || bytes.length === 0)
+      throw new GatewayError(t('Image generation returned no picture.'), false)
+    return bytes
+  }
+
+  /**
+   * New Agent (`createAgent(name:draft:)`): the agent made with the face it
+   * was shown, its title and, when the person chose any, its voice; a
+   * picture drawn or uploaded goes right after it. It is asked to introduce
+   * itself. Its id, or undefined with the core's words in `problem`.
+   */
+  async createAgentFromDraft(
+    name: string,
+    draft: AgentDraft,
+  ): Promise<string | undefined> {
+    const backend = this.backend
+    if (!backend) return undefined
+    let ready = draft.named(name)
+    if (draft.chosen)
+      ready = ready.settleVoice(this.agents, await this.voices())
+    try {
+      const id = await this.mintAgent(backend, {
+        name,
+        title: ready.title,
+        face: ready.shownFace(this.agents)?.id,
+        voiceId: draft.chosen ? ready.voiceId : undefined,
+      })
+      if (draft.chosen && ready.picture)
+        // Not saved: it wears its face then, as any agent with no picture.
+        await quietly(
+          backend.command('setAgentAvatarBytes', {
+            id,
+            pngBase64: base64(ready.picture),
+          }),
+        )
+      await this.reloadRoster()
+      return id
+    } catch (error) {
+      const why = error instanceof Error ? error.message : String(error)
+      this.problem = t`Couldn't create ${name}: ${why}`
+      this.changed()
+      return undefined
+    }
+  }
+
+  /**
+   * `createAgent` as the core's backend sends it (Backend.swift's
+   * `createAgent(name:title:description:face:voiceId:)`): introduced at once,
+   * the face kept on it (`avatarShape`), its title its role, the voice kept.
+   */
+  private async mintAgent(
+    backend: AgentBackend,
+    agent: { name: string; title: string; face?: string; voiceId?: string },
+  ): Promise<string> {
+    const args: Record<string, JSONValue> = {
+      name: agent.name,
+      description: '',
+      isKickstartRequested: true,
+      origin: 'user',
+      clientNonce: newMessageId(),
+    }
+    const role = agent.title.trim()
+    if (role !== '') args.title = role
+    if (agent.face !== undefined) args.avatarShape = agent.face
+    if (agent.voiceId !== undefined) args.voiceId = agent.voiceId
+    const answer = await backend.command('createAgent', args)
+    const id = text(field(field(answer, 'agent'), 'id'))
+    if (!id) throw new GatewayError('createAgent: no agent in the answer', true)
+    return id
+  }
 
   // MARK: Step 4c's routines: an agent's routines in its pane and a routine's
   // editor (RoutinesPage.swift, RoutineTriggerCard.swift, Routines.swift,

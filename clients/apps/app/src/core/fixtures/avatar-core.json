@@ -1,0 +1,3943 @@
+{
+  "crops": [
+    {
+      "after": [
+        {
+          "centerX": 100,
+          "centerY": 50,
+          "placement": [-48, 0, 192, 96],
+          "rect": [50, 0, 100, 100],
+          "scale": 0.96,
+          "side": 100,
+          "zoom": 1
+        },
+        {
+          "centerX": 89.58333333333333,
+          "centerY": 50,
+          "placement": [-37.999999999999986, 0, 192, 96],
+          "rect": [39.58333333333333, 0, 100, 100],
+          "scale": 0.96,
+          "side": 100,
+          "zoom": 1
+        },
+        {
+          "centerX": 89.58333333333333,
+          "centerY": 50,
+          "placement": [-381.99999999999994, -192, 960, 480],
+          "rect": [79.58333333333333, 40, 20, 20],
+          "scale": 4.8,
+          "side": 20,
+          "zoom": 5
+        },
+        {
+          "centerX": 190,
+          "centerY": 90,
+          "placement": [-864, -384, 960, 480],
+          "rect": [180, 80, 20, 20],
+          "scale": 4.8,
+          "side": 20,
+          "zoom": 5
+        },
+        {
+          "centerX": 180,
+          "centerY": 80,
+          "placement": [-384, -144, 480, 240],
+          "rect": [160, 60, 40, 40],
+          "scale": 2.4,
+          "side": 40,
+          "zoom": 2.5
+        },
+        {
+          "centerX": 164.47916666666666,
+          "centerY": 80,
+          "placement": [-346.74999999999994, -144, 480, 240],
+          "rect": [144.47916666666666, 60, 40, 40],
+          "scale": 2.4,
+          "side": 40,
+          "zoom": 2.5
+        },
+        {
+          "centerX": 150,
+          "centerY": 50,
+          "placement": [-96, 0, 192, 96],
+          "rect": [100, 0, 100, 100],
+          "scale": 0.96,
+          "side": 100,
+          "zoom": 1
+        },
+        {
+          "centerX": 150,
+          "centerY": 50,
+          "placement": [-168, -24, 288, 144],
+          "rect": [
+            116.66666666666666, 16.666666666666664, 66.66666666666667,
+            66.66666666666667
+          ],
+          "scale": 1.44,
+          "side": 66.66666666666667,
+          "zoom": 1.5
+        },
+        {
+          "centerX": 33.333333333333336,
+          "centerY": 47.916666666666664,
+          "placement": [0, -21, 288, 144],
+          "rect": [0, 14.583333333333329, 66.66666666666667, 66.66666666666667],
+          "scale": 1.44,
+          "side": 66.66666666666667,
+          "zoom": 1.5
+        },
+        {
+          "centerX": 50,
+          "centerY": 50,
+          "placement": [0, 0, 192, 96],
+          "rect": [0, 0, 100, 100],
+          "scale": 0.96,
+          "side": 100,
+          "zoom": 1
+        },
+        {
+          "centerX": 50,
+          "centerY": 50,
+          "placement": [
+            -179.99999999999997, -179.99999999999997, 911.9999999999999,
+            455.99999999999994
+          ],
+          "rect": [
+            39.473684210526315, 39.473684210526315, 21.05263157894737,
+            21.05263157894737
+          ],
+          "scale": 4.56,
+          "side": 21.05263157894737,
+          "zoom": 4.75
+        },
+        {
+          "centerX": 50.10964912280702,
+          "centerY": 49.94517543859649,
+          "placement": [-180.5, -179.75, 911.9999999999999, 455.99999999999994],
+          "rect": [
+            39.583333333333336, 39.41885964912281, 21.05263157894737,
+            21.05263157894737
+          ],
+          "scale": 4.56,
+          "side": 21.05263157894737,
+          "zoom": 4.75
+        }
+      ],
+      "height": 100,
+      "moves": [
+        { "dx": 10, "dy": 30, "op": "pan" },
+        { "op": "zoom", "to": 9 },
+        { "dx": -1000, "dy": -1000, "op": "pan" },
+        { "op": "zoom", "to": 2.5 },
+        { "dx": 37.25, "dy": -12.5, "op": "pan" },
+        { "op": "zoom", "to": 0.2 },
+        { "op": "zoom", "to": 1.5 },
+        { "dx": 1000, "dy": 3, "op": "pan" },
+        { "op": "zoom", "to": "nan" },
+        { "op": "zoom", "to": 4.75 },
+        { "dx": -0.5, "dy": 0.25, "op": "pan" }
+      ],
+      "width": 200
+    },
+    {
+      "after": [
+        {
+          "centerX": 18.5,
+          "centerY": 512,
+          "placement": [0, -1280.4324324324325, 96, 2656.864864864865],
+          "rect": [0, 493.5, 37, 37],
+          "scale": 2.5945945945945947,
+          "side": 37,
+          "zoom": 1
+        },
+        {
+          "centerX": 18.5,
+          "centerY": 500.4375,
+          "placement": [0, -1250.4324324324325, 96, 2656.864864864865],
+          "rect": [0, 481.9375, 37, 37],
+          "scale": 2.5945945945945947,
+          "side": 37,
+          "zoom": 1
+        },
+        {
+          "centerX": 18.5,
+          "centerY": 500.4375,
+          "placement": [-192, -6444.1621621621625, 480, 13284.324324324325],
+          "rect": [14.8, 496.7375, 7.4, 7.4],
+          "scale": 12.972972972972974,
+          "side": 7.4,
+          "zoom": 5
+        },
+        {
+          "centerX": 33.3,
+          "centerY": 577.5208333333334,
+          "placement": [-384, -7444.162162162163, 480, 13284.324324324325],
+          "rect": [29.599999999999998, 573.8208333333333, 7.4, 7.4],
+          "scale": 12.972972972972974,
+          "side": 7.4,
+          "zoom": 5
+        },
+        {
+          "centerX": 29.6,
+          "centerY": 577.5208333333334,
+          "placement": [
+            -144.00000000000003, -3698.0810810810817, 240, 6642.1621621621625
+          ],
+          "rect": [22.200000000000003, 570.1208333333334, 14.8, 14.8],
+          "scale": 6.486486486486487,
+          "side": 14.8,
+          "zoom": 2.5
+        },
+        {
+          "centerX": 23.85729166666667,
+          "centerY": 579.4479166666667,
+          "placement": [
+            -106.75000000000003, -3710.5810810810817, 240, 6642.1621621621625
+          ],
+          "rect": [16.45729166666667, 572.0479166666668, 14.8, 14.8],
+          "scale": 6.486486486486487,
+          "side": 14.8,
+          "zoom": 2.5
+        },
+        {
+          "centerX": 18.5,
+          "centerY": 579.4479166666667,
+          "placement": [0, -1455.4324324324327, 96, 2656.864864864865],
+          "rect": [0, 560.9479166666667, 37, 37],
+          "scale": 2.5945945945945947,
+          "side": 37,
+          "zoom": 1
+        },
+        {
+          "centerX": 18.5,
+          "centerY": 579.4479166666667,
+          "placement": [-24, -2207.148648648649, 144, 3985.2972972972975],
+          "rect": [
+            6.166666666666666, 567.1145833333334, 24.666666666666668,
+            24.666666666666668
+          ],
+          "scale": 3.891891891891892,
+          "side": 24.666666666666668,
+          "zoom": 1.5
+        },
+        {
+          "centerX": 12.333333333333334,
+          "centerY": 578.6770833333334,
+          "placement": [
+            -7.105427357601002e-15, -2204.1486486486488, 144, 3985.2972972972975
+          ],
+          "rect": [0, 566.34375, 24.666666666666668, 24.666666666666668],
+          "scale": 3.891891891891892,
+          "side": 24.666666666666668,
+          "zoom": 1.5
+        },
+        {
+          "centerX": 18.5,
+          "centerY": 578.6770833333334,
+          "placement": [0, -1453.4324324324325, 96, 2656.864864864865],
+          "rect": [0, 560.1770833333334, 37, 37],
+          "scale": 2.5945945945945947,
+          "side": 37,
+          "zoom": 1
+        },
+        {
+          "centerX": 18.5,
+          "centerY": 578.6770833333334,
+          "placement": [-180, -7083.804054054055, 456, 12620.108108108108],
+          "rect": [
+            14.605263157894736, 574.782346491228, 7.7894736842105265,
+            7.7894736842105265
+          ],
+          "scale": 12.324324324324325,
+          "side": 7.7894736842105265,
+          "zoom": 4.75
+        },
+        {
+          "centerX": 18.540570175438596,
+          "centerY": 578.656798245614,
+          "placement": [-180.5, -7083.554054054054, 456, 12620.108108108108],
+          "rect": [
+            14.645833333333332, 574.7620614035087, 7.7894736842105265,
+            7.7894736842105265
+          ],
+          "scale": 12.324324324324325,
+          "side": 7.7894736842105265,
+          "zoom": 4.75
+        }
+      ],
+      "height": 1024,
+      "moves": [
+        { "dx": 10, "dy": 30, "op": "pan" },
+        { "op": "zoom", "to": 9 },
+        { "dx": -1000, "dy": -1000, "op": "pan" },
+        { "op": "zoom", "to": 2.5 },
+        { "dx": 37.25, "dy": -12.5, "op": "pan" },
+        { "op": "zoom", "to": 0.2 },
+        { "op": "zoom", "to": 1.5 },
+        { "dx": 1000, "dy": 3, "op": "pan" },
+        { "op": "zoom", "to": "nan" },
+        { "op": "zoom", "to": 4.75 },
+        { "dx": -0.5, "dy": 0.25, "op": "pan" }
+      ],
+      "width": 37
+    }
+  ],
+  "draftAgentFields": [
+    "avatarShape",
+    "avatarVersion",
+    "avatarDataURL",
+    "voiceId",
+    "name"
+  ],
+  "draftFields": [
+    "shownFace",
+    "voice",
+    "voiceId",
+    "chosen",
+    "resettable",
+    "picture",
+    "resetWords"
+  ],
+  "draftScripts": {
+    "faceThenVoice": [
+      { "op": "name", "value": "Leo" },
+      { "op": "settle" },
+      { "face": "clay-01", "op": "wear" },
+      { "op": "settleVoice" },
+      { "face": "clay-07", "op": "wear" },
+      { "op": "settleVoice" },
+      { "face": "clay-09", "op": "wear" }
+    ],
+    "picture": [
+      { "op": "name", "value": "Nora" },
+      { "op": "settle" },
+      { "op": "picture" },
+      { "gender": "female", "op": "shuffle" },
+      { "op": "picture" },
+      { "op": "reset" },
+      { "gender": "male", "op": "shuffle" },
+      { "gender": "male", "op": "shuffle" },
+      { "gender": "female", "op": "shuffle" },
+      { "op": "reset" }
+    ],
+    "typing": [
+      { "op": "name", "value": "" },
+      { "op": "settle" },
+      { "op": "name", "value": "Q" },
+      { "op": "settle" },
+      { "op": "name", "value": "Qu" },
+      { "op": "settle" },
+      { "op": "name", "value": "Qui" },
+      { "op": "settle" },
+      { "op": "name", "value": "Quill" },
+      { "op": "settle" },
+      { "op": "name", "value": "Quill Bot" },
+      { "op": "settle" },
+      { "op": "name", "value": "Leo" },
+      { "op": "settle" },
+      { "op": "name", "value": "Leo Smith" },
+      { "op": "settle" },
+      { "op": "name", "value": "Nora" },
+      { "op": "settle" },
+      { "op": "name", "value": "Sarah" },
+      { "op": "settle" },
+      { "op": "name", "value": "Jordan" },
+      { "op": "settle" }
+    ],
+    "unnamed": [
+      { "op": "settle" },
+      { "gender": "male", "op": "shuffle" },
+      { "op": "name", "value": "Ava" },
+      { "op": "settle" },
+      { "op": "settleVoice" },
+      { "op": "reset" },
+      { "op": "title", "value": "Personal Shopper" }
+    ],
+    "voicePicked": [
+      { "op": "name", "value": "Maya" },
+      { "op": "settle" },
+      { "op": "pickVoice", "value": "NHRgOEwqx5WZNClv5sat" },
+      { "op": "settleVoice" },
+      { "face": "clay-29", "op": "wear" },
+      { "face": "clay-05", "op": "wear" },
+      { "op": "pickVoice", "value": "gone" },
+      { "op": "settleVoice" }
+    ]
+  },
+  "drafts": [
+    {
+      "after": [
+        ["clay-05", null, null, false, false, false, null],
+        ["clay-05", null, null, false, false, false, null],
+        ["clay-05", null, null, false, false, false, null],
+        ["clay-05", null, null, false, false, false, null],
+        ["clay-05", null, null, false, false, false, null],
+        ["clay-05", null, null, false, false, false, null],
+        ["clay-05", null, null, false, false, false, null],
+        ["clay-05", null, null, false, false, false, null],
+        ["clay-05", null, null, false, false, false, null],
+        ["clay-05", null, null, false, false, false, null],
+        ["clay-05", null, null, false, false, false, null],
+        ["clay-05", null, null, false, false, false, null],
+        ["clay-05", null, null, false, false, false, null],
+        ["clay-05", null, null, false, false, false, null],
+        ["clay-05", null, null, false, false, false, null],
+        ["clay-05", null, null, false, false, false, null],
+        ["clay-05", null, null, false, false, false, null],
+        ["clay-14", null, null, false, false, false, null],
+        ["clay-14", null, null, false, false, false, null],
+        ["clay-14", null, null, false, false, false, null],
+        ["clay-14", null, null, false, false, false, null],
+        ["clay-14", null, null, false, false, false, null]
+      ],
+      "roster": "empty",
+      "script": "typing",
+      "voices": "none"
+    },
+    {
+      "after": [
+        [
+          "clay-11",
+          "1t1EeRixsJrKbiF1zwM6",
+          null,
+          false,
+          false,
+          false,
+          null,
+          ["clay-11", "879ed87b67c70ccf", null, null, ""]
+        ],
+        [
+          "clay-11",
+          "1t1EeRixsJrKbiF1zwM6",
+          null,
+          false,
+          false,
+          false,
+          null,
+          ["clay-11", "879ed87b67c70ccf", null, null, ""]
+        ],
+        [
+          "clay-11",
+          "ljX1ZrXuDIIRVcmiVSyR",
+          null,
+          false,
+          false,
+          false,
+          null,
+          ["clay-11", "879ed87b67c70ccf", null, null, "Q"]
+        ],
+        [
+          "clay-11",
+          "ljX1ZrXuDIIRVcmiVSyR",
+          null,
+          false,
+          false,
+          false,
+          null,
+          ["clay-11", "879ed87b67c70ccf", null, null, "Q"]
+        ],
+        [
+          "clay-11",
+          "gfRt6Z3Z8aTbpLfexQ7N",
+          null,
+          false,
+          false,
+          false,
+          null,
+          ["clay-11", "879ed87b67c70ccf", null, null, "Qu"]
+        ],
+        [
+          "clay-11",
+          "gfRt6Z3Z8aTbpLfexQ7N",
+          null,
+          false,
+          false,
+          false,
+          null,
+          ["clay-11", "879ed87b67c70ccf", null, null, "Qu"]
+        ],
+        [
+          "clay-11",
+          "UgBBYS2sOqTuMpoF3BR0",
+          null,
+          false,
+          false,
+          false,
+          null,
+          ["clay-11", "879ed87b67c70ccf", null, null, "Qui"]
+        ],
+        [
+          "clay-11",
+          "UgBBYS2sOqTuMpoF3BR0",
+          null,
+          false,
+          false,
+          false,
+          null,
+          ["clay-11", "879ed87b67c70ccf", null, null, "Qui"]
+        ],
+        [
+          "clay-11",
+          "UgBBYS2sOqTuMpoF3BR0",
+          null,
+          false,
+          false,
+          false,
+          null,
+          ["clay-11", "879ed87b67c70ccf", null, null, "Quill"]
+        ],
+        [
+          "clay-11",
+          "UgBBYS2sOqTuMpoF3BR0",
+          null,
+          false,
+          false,
+          false,
+          null,
+          ["clay-11", "879ed87b67c70ccf", null, null, "Quill"]
+        ],
+        [
+          "clay-11",
+          "gfRt6Z3Z8aTbpLfexQ7N",
+          null,
+          false,
+          false,
+          false,
+          null,
+          ["clay-11", "879ed87b67c70ccf", null, null, "Quill Bot"]
+        ],
+        [
+          "clay-11",
+          "gfRt6Z3Z8aTbpLfexQ7N",
+          null,
+          false,
+          false,
+          false,
+          null,
+          ["clay-11", "879ed87b67c70ccf", null, null, "Quill Bot"]
+        ],
+        [
+          "clay-11",
+          "6OzrBCQf8cjERkYgzSg8",
+          null,
+          false,
+          false,
+          false,
+          null,
+          ["clay-11", "879ed87b67c70ccf", null, null, "Leo"]
+        ],
+        [
+          "clay-11",
+          "6OzrBCQf8cjERkYgzSg8",
+          null,
+          false,
+          false,
+          false,
+          null,
+          ["clay-11", "879ed87b67c70ccf", null, null, "Leo"]
+        ],
+        [
+          "clay-11",
+          "snyKKuaGYk1VUEh42zbW",
+          null,
+          false,
+          false,
+          false,
+          null,
+          ["clay-11", "879ed87b67c70ccf", null, null, "Leo Smith"]
+        ],
+        [
+          "clay-11",
+          "snyKKuaGYk1VUEh42zbW",
+          null,
+          false,
+          false,
+          false,
+          null,
+          ["clay-11", "879ed87b67c70ccf", null, null, "Leo Smith"]
+        ],
+        [
+          "clay-11",
+          "gfRt6Z3Z8aTbpLfexQ7N",
+          null,
+          false,
+          false,
+          false,
+          null,
+          ["clay-11", "879ed87b67c70ccf", null, null, "Nora"]
+        ],
+        [
+          "clay-29",
+          "5u41aNhyCU6hXOcjPPv0",
+          null,
+          false,
+          false,
+          false,
+          null,
+          ["clay-29", "89941f1c36cbba12", null, null, "Nora"]
+        ],
+        [
+          "clay-29",
+          "NHRgOEwqx5WZNClv5sat",
+          null,
+          false,
+          false,
+          false,
+          null,
+          ["clay-29", "89941f1c36cbba12", null, null, "Sarah"]
+        ],
+        [
+          "clay-29",
+          "NHRgOEwqx5WZNClv5sat",
+          null,
+          false,
+          false,
+          false,
+          null,
+          ["clay-29", "89941f1c36cbba12", null, null, "Sarah"]
+        ],
+        [
+          "clay-29",
+          "5u41aNhyCU6hXOcjPPv0",
+          null,
+          false,
+          false,
+          false,
+          null,
+          ["clay-29", "89941f1c36cbba12", null, null, "Jordan"]
+        ],
+        [
+          "clay-29",
+          "5u41aNhyCU6hXOcjPPv0",
+          null,
+          false,
+          false,
+          false,
+          null,
+          ["clay-29", "89941f1c36cbba12", null, null, "Jordan"]
+        ]
+      ],
+      "roster": "team",
+      "script": "typing",
+      "voices": "curated"
+    },
+    {
+      "after": [
+        ["clay-05", "s3TPKV1kjDlVtZbl4Ksh", null, false, false, false, null],
+        ["clay-05", "s3TPKV1kjDlVtZbl4Ksh", null, false, false, false, null],
+        ["clay-05", "1t1EeRixsJrKbiF1zwM6", null, false, false, false, null],
+        ["clay-05", "1t1EeRixsJrKbiF1zwM6", null, false, false, false, null],
+        ["clay-05", "gfRt6Z3Z8aTbpLfexQ7N", null, false, false, false, null],
+        ["clay-05", "gfRt6Z3Z8aTbpLfexQ7N", null, false, false, false, null],
+        ["clay-05", "ljX1ZrXuDIIRVcmiVSyR", null, false, false, false, null],
+        ["clay-05", "ljX1ZrXuDIIRVcmiVSyR", null, false, false, false, null],
+        ["clay-05", "gfRt6Z3Z8aTbpLfexQ7N", null, false, false, false, null],
+        ["clay-05", "gfRt6Z3Z8aTbpLfexQ7N", null, false, false, false, null],
+        ["clay-05", "gfRt6Z3Z8aTbpLfexQ7N", null, false, false, false, null],
+        ["clay-05", "gfRt6Z3Z8aTbpLfexQ7N", null, false, false, false, null],
+        ["clay-05", "6OzrBCQf8cjERkYgzSg8", null, false, false, false, null],
+        ["clay-05", "6OzrBCQf8cjERkYgzSg8", null, false, false, false, null],
+        ["clay-05", "ljX1ZrXuDIIRVcmiVSyR", null, false, false, false, null],
+        ["clay-05", "ljX1ZrXuDIIRVcmiVSyR", null, false, false, false, null],
+        ["clay-05", "snyKKuaGYk1VUEh42zbW", null, false, false, false, null],
+        ["clay-29", "5u41aNhyCU6hXOcjPPv0", null, false, false, false, null],
+        ["clay-29", "XcXEQzuLXRU9RcfWzEJt", null, false, false, false, null],
+        ["clay-29", "XcXEQzuLXRU9RcfWzEJt", null, false, false, false, null],
+        ["clay-29", "5u41aNhyCU6hXOcjPPv0", null, false, false, false, null],
+        ["clay-29", "5u41aNhyCU6hXOcjPPv0", null, false, false, false, null]
+      ],
+      "roster": "women",
+      "script": "typing",
+      "voices": "curated"
+    },
+    {
+      "after": [
+        ["clay-02", null, null, false, false, false, null],
+        ["clay-02", null, null, false, false, false, null],
+        ["clay-01", null, null, true, true, false, "Reset face"],
+        ["clay-01", null, null, true, true, false, "Reset face"],
+        ["clay-07", null, null, true, true, false, "Reset face"],
+        ["clay-07", null, null, true, true, false, "Reset face"],
+        ["clay-09", null, null, true, true, false, "Reset face"]
+      ],
+      "roster": "empty",
+      "script": "faceThenVoice",
+      "voices": "none"
+    },
+    {
+      "after": [
+        [
+          "clay-11",
+          "6OzrBCQf8cjERkYgzSg8",
+          null,
+          false,
+          false,
+          false,
+          null,
+          ["clay-11", "879ed87b67c70ccf", null, null, "Leo"]
+        ],
+        [
+          "clay-11",
+          "6OzrBCQf8cjERkYgzSg8",
+          null,
+          false,
+          false,
+          false,
+          null,
+          ["clay-11", "879ed87b67c70ccf", null, null, "Leo"]
+        ],
+        [
+          "clay-01",
+          "5u41aNhyCU6hXOcjPPv0",
+          null,
+          true,
+          true,
+          false,
+          "Reset face",
+          ["clay-01", "69753ea53c017510", null, null, "Leo"]
+        ],
+        [
+          "clay-01",
+          "5u41aNhyCU6hXOcjPPv0",
+          "5u41aNhyCU6hXOcjPPv0",
+          true,
+          true,
+          false,
+          "Reset face",
+          ["clay-01", "69753ea53c017510", null, "5u41aNhyCU6hXOcjPPv0", "Leo"]
+        ],
+        [
+          "clay-07",
+          "6OzrBCQf8cjERkYgzSg8",
+          "6OzrBCQf8cjERkYgzSg8",
+          true,
+          true,
+          false,
+          "Reset face",
+          ["clay-07", "c5c27d786bf4670c", null, "6OzrBCQf8cjERkYgzSg8", "Leo"]
+        ],
+        [
+          "clay-07",
+          "6OzrBCQf8cjERkYgzSg8",
+          "6OzrBCQf8cjERkYgzSg8",
+          true,
+          true,
+          false,
+          "Reset face",
+          ["clay-07", "c5c27d786bf4670c", null, "6OzrBCQf8cjERkYgzSg8", "Leo"]
+        ],
+        [
+          "clay-09",
+          "6OzrBCQf8cjERkYgzSg8",
+          "6OzrBCQf8cjERkYgzSg8",
+          true,
+          true,
+          false,
+          "Reset face",
+          ["clay-09", "f590ce0274f76b49", null, "6OzrBCQf8cjERkYgzSg8", "Leo"]
+        ]
+      ],
+      "roster": "team",
+      "script": "faceThenVoice",
+      "voices": "curated"
+    },
+    {
+      "after": [
+        ["clay-02", "6OzrBCQf8cjERkYgzSg8", null, false, false, false, null],
+        ["clay-02", "6OzrBCQf8cjERkYgzSg8", null, false, false, false, null],
+        [
+          "clay-01",
+          "5u41aNhyCU6hXOcjPPv0",
+          null,
+          true,
+          true,
+          false,
+          "Reset face"
+        ],
+        [
+          "clay-01",
+          "5u41aNhyCU6hXOcjPPv0",
+          "5u41aNhyCU6hXOcjPPv0",
+          true,
+          true,
+          false,
+          "Reset face"
+        ],
+        [
+          "clay-07",
+          "6OzrBCQf8cjERkYgzSg8",
+          "6OzrBCQf8cjERkYgzSg8",
+          true,
+          true,
+          false,
+          "Reset face"
+        ],
+        [
+          "clay-07",
+          "6OzrBCQf8cjERkYgzSg8",
+          "6OzrBCQf8cjERkYgzSg8",
+          true,
+          true,
+          false,
+          "Reset face"
+        ],
+        [
+          "clay-09",
+          "6OzrBCQf8cjERkYgzSg8",
+          "6OzrBCQf8cjERkYgzSg8",
+          true,
+          true,
+          false,
+          "Reset face"
+        ]
+      ],
+      "roster": "women",
+      "script": "faceThenVoice",
+      "voices": "curated"
+    },
+    {
+      "after": [
+        ["clay-29", null, null, false, false, false, null],
+        ["clay-29", null, null, false, false, false, null],
+        [
+          "clay-29",
+          "NHRgOEwqx5WZNClv5sat",
+          "NHRgOEwqx5WZNClv5sat",
+          true,
+          false,
+          false,
+          null
+        ],
+        [
+          "clay-29",
+          "NHRgOEwqx5WZNClv5sat",
+          "NHRgOEwqx5WZNClv5sat",
+          true,
+          false,
+          false,
+          null
+        ],
+        [
+          "clay-29",
+          "NHRgOEwqx5WZNClv5sat",
+          "NHRgOEwqx5WZNClv5sat",
+          true,
+          true,
+          false,
+          "Reset face"
+        ],
+        ["clay-05", null, null, true, true, false, "Reset face"],
+        ["clay-05", "gone", "gone", true, true, false, "Reset face"],
+        ["clay-05", "gone", "gone", true, true, false, "Reset face"]
+      ],
+      "roster": "empty",
+      "script": "voicePicked",
+      "voices": "none"
+    },
+    {
+      "after": [
+        [
+          "clay-19",
+          "5u41aNhyCU6hXOcjPPv0",
+          null,
+          false,
+          false,
+          false,
+          null,
+          ["clay-19", "9903d8f327115e53", null, null, "Maya"]
+        ],
+        [
+          "clay-19",
+          "5u41aNhyCU6hXOcjPPv0",
+          null,
+          false,
+          false,
+          false,
+          null,
+          ["clay-19", "9903d8f327115e53", null, null, "Maya"]
+        ],
+        [
+          "clay-19",
+          "NHRgOEwqx5WZNClv5sat",
+          "NHRgOEwqx5WZNClv5sat",
+          true,
+          false,
+          false,
+          null,
+          ["clay-19", "9903d8f327115e53", null, "NHRgOEwqx5WZNClv5sat", "Maya"]
+        ],
+        [
+          "clay-19",
+          "NHRgOEwqx5WZNClv5sat",
+          "NHRgOEwqx5WZNClv5sat",
+          true,
+          false,
+          false,
+          null,
+          ["clay-19", "9903d8f327115e53", null, "NHRgOEwqx5WZNClv5sat", "Maya"]
+        ],
+        [
+          "clay-29",
+          "NHRgOEwqx5WZNClv5sat",
+          "NHRgOEwqx5WZNClv5sat",
+          true,
+          true,
+          false,
+          "Reset face",
+          ["clay-29", "89941f1c36cbba12", null, "NHRgOEwqx5WZNClv5sat", "Maya"]
+        ],
+        [
+          "clay-05",
+          "gfRt6Z3Z8aTbpLfexQ7N",
+          "gfRt6Z3Z8aTbpLfexQ7N",
+          true,
+          true,
+          false,
+          "Reset face",
+          ["clay-05", "b86ef7a4d0c55efa", null, "gfRt6Z3Z8aTbpLfexQ7N", "Maya"]
+        ],
+        [
+          "clay-05",
+          "gfRt6Z3Z8aTbpLfexQ7N",
+          "gone",
+          true,
+          true,
+          false,
+          "Reset face",
+          ["clay-05", "b86ef7a4d0c55efa", null, "gone", "Maya"]
+        ],
+        [
+          "clay-05",
+          "gfRt6Z3Z8aTbpLfexQ7N",
+          "gfRt6Z3Z8aTbpLfexQ7N",
+          true,
+          true,
+          false,
+          "Reset face",
+          ["clay-05", "b86ef7a4d0c55efa", null, "gfRt6Z3Z8aTbpLfexQ7N", "Maya"]
+        ]
+      ],
+      "roster": "team",
+      "script": "voicePicked",
+      "voices": "curated"
+    },
+    {
+      "after": [
+        ["clay-29", "WI5pMmcGGS32yI7yttoP", null, false, false, false, null],
+        ["clay-29", "WI5pMmcGGS32yI7yttoP", null, false, false, false, null],
+        [
+          "clay-29",
+          "NHRgOEwqx5WZNClv5sat",
+          "NHRgOEwqx5WZNClv5sat",
+          true,
+          false,
+          false,
+          null
+        ],
+        [
+          "clay-29",
+          "NHRgOEwqx5WZNClv5sat",
+          "NHRgOEwqx5WZNClv5sat",
+          true,
+          false,
+          false,
+          null
+        ],
+        [
+          "clay-29",
+          "NHRgOEwqx5WZNClv5sat",
+          "NHRgOEwqx5WZNClv5sat",
+          true,
+          true,
+          false,
+          "Reset face"
+        ],
+        [
+          "clay-05",
+          "6OzrBCQf8cjERkYgzSg8",
+          "6OzrBCQf8cjERkYgzSg8",
+          true,
+          true,
+          false,
+          "Reset face"
+        ],
+        [
+          "clay-05",
+          "6OzrBCQf8cjERkYgzSg8",
+          "gone",
+          true,
+          true,
+          false,
+          "Reset face"
+        ],
+        [
+          "clay-05",
+          "6OzrBCQf8cjERkYgzSg8",
+          "6OzrBCQf8cjERkYgzSg8",
+          true,
+          true,
+          false,
+          "Reset face"
+        ]
+      ],
+      "roster": "women",
+      "script": "voicePicked",
+      "voices": "curated"
+    },
+    {
+      "after": [
+        ["clay-14", null, null, false, false, false, null],
+        ["clay-14", null, null, false, false, false, null],
+        ["clay-14", null, null, true, true, true, "Reset face"],
+        ["clay-01", null, null, true, true, false, "Reset face"],
+        ["clay-01", null, null, true, true, true, "Reset face"],
+        ["clay-14", null, null, false, false, false, null],
+        ["clay-02", null, null, true, true, false, "Reset face"],
+        ["clay-05", null, null, true, true, false, "Reset face"],
+        ["clay-01", null, null, true, true, false, "Reset face"],
+        ["clay-14", null, null, false, false, false, null]
+      ],
+      "roster": "empty",
+      "script": "picture",
+      "voices": "none"
+    },
+    {
+      "after": [
+        [
+          "clay-29",
+          "5u41aNhyCU6hXOcjPPv0",
+          null,
+          false,
+          false,
+          false,
+          null,
+          ["clay-29", "89941f1c36cbba12", null, null, "Nora"]
+        ],
+        [
+          "clay-29",
+          "5u41aNhyCU6hXOcjPPv0",
+          null,
+          false,
+          false,
+          false,
+          null,
+          ["clay-29", "89941f1c36cbba12", null, null, "Nora"]
+        ],
+        [
+          "clay-29",
+          "5u41aNhyCU6hXOcjPPv0",
+          null,
+          true,
+          true,
+          true,
+          "Reset face",
+          [
+            "clay-29",
+            null,
+            "data:image/png;base64,iVBORw0KGgoAAAAA",
+            null,
+            "Nora"
+          ]
+        ],
+        [
+          "clay-06",
+          "5u41aNhyCU6hXOcjPPv0",
+          null,
+          true,
+          true,
+          false,
+          "Reset face",
+          ["clay-06", "8b4ba6a5a20aff10", null, null, "Nora"]
+        ],
+        [
+          "clay-06",
+          "5u41aNhyCU6hXOcjPPv0",
+          null,
+          true,
+          true,
+          true,
+          "Reset face",
+          [
+            "clay-06",
+            null,
+            "data:image/png;base64,iVBORw0KGgoAAAAA",
+            null,
+            "Nora"
+          ]
+        ],
+        [
+          "clay-29",
+          "5u41aNhyCU6hXOcjPPv0",
+          null,
+          false,
+          false,
+          false,
+          null,
+          ["clay-29", "89941f1c36cbba12", null, null, "Nora"]
+        ],
+        [
+          "clay-05",
+          "gfRt6Z3Z8aTbpLfexQ7N",
+          null,
+          true,
+          true,
+          false,
+          "Reset face",
+          ["clay-05", "b86ef7a4d0c55efa", null, null, "Nora"]
+        ],
+        [
+          "clay-07",
+          "gfRt6Z3Z8aTbpLfexQ7N",
+          null,
+          true,
+          true,
+          false,
+          "Reset face",
+          ["clay-07", "c5c27d786bf4670c", null, null, "Nora"]
+        ],
+        [
+          "clay-06",
+          "5u41aNhyCU6hXOcjPPv0",
+          null,
+          true,
+          true,
+          false,
+          "Reset face",
+          ["clay-06", "8b4ba6a5a20aff10", null, null, "Nora"]
+        ],
+        [
+          "clay-29",
+          "5u41aNhyCU6hXOcjPPv0",
+          null,
+          false,
+          false,
+          false,
+          null,
+          ["clay-29", "89941f1c36cbba12", null, null, "Nora"]
+        ]
+      ],
+      "roster": "team",
+      "script": "picture",
+      "voices": "curated"
+    },
+    {
+      "after": [
+        ["clay-29", "5u41aNhyCU6hXOcjPPv0", null, false, false, false, null],
+        ["clay-29", "5u41aNhyCU6hXOcjPPv0", null, false, false, false, null],
+        [
+          "clay-29",
+          "5u41aNhyCU6hXOcjPPv0",
+          null,
+          true,
+          true,
+          true,
+          "Reset face"
+        ],
+        [
+          "clay-29",
+          "5u41aNhyCU6hXOcjPPv0",
+          null,
+          true,
+          true,
+          false,
+          "Reset face"
+        ],
+        [
+          "clay-29",
+          "5u41aNhyCU6hXOcjPPv0",
+          null,
+          true,
+          true,
+          true,
+          "Reset face"
+        ],
+        ["clay-29", "5u41aNhyCU6hXOcjPPv0", null, false, false, false, null],
+        [
+          "clay-02",
+          "snyKKuaGYk1VUEh42zbW",
+          null,
+          true,
+          true,
+          false,
+          "Reset face"
+        ],
+        [
+          "clay-05",
+          "snyKKuaGYk1VUEh42zbW",
+          null,
+          true,
+          true,
+          false,
+          "Reset face"
+        ],
+        [
+          "clay-29",
+          "5u41aNhyCU6hXOcjPPv0",
+          null,
+          true,
+          true,
+          false,
+          "Reset face"
+        ],
+        ["clay-29", "5u41aNhyCU6hXOcjPPv0", null, false, false, false, null]
+      ],
+      "roster": "women",
+      "script": "picture",
+      "voices": "curated"
+    },
+    {
+      "after": [
+        ["clay-05", null, null, false, false, false, null],
+        ["clay-07", null, null, true, true, false, "Reset face"],
+        ["clay-07", null, null, true, true, false, "Reset face"],
+        ["clay-07", null, null, true, true, false, "Reset face"],
+        ["clay-07", null, null, true, true, false, "Reset face"],
+        ["clay-24", null, null, false, false, false, null],
+        ["clay-24", null, null, false, false, false, null]
+      ],
+      "roster": "empty",
+      "script": "unnamed",
+      "voices": "none"
+    },
+    {
+      "after": [
+        [
+          "clay-11",
+          "1t1EeRixsJrKbiF1zwM6",
+          null,
+          false,
+          false,
+          false,
+          null,
+          ["clay-11", "879ed87b67c70ccf", null, null, ""]
+        ],
+        [
+          "clay-12",
+          "1t1EeRixsJrKbiF1zwM6",
+          null,
+          true,
+          true,
+          false,
+          "Reset face",
+          ["clay-12", "2376ac0a96a2557e", null, null, ""]
+        ],
+        [
+          "clay-12",
+          "6OzrBCQf8cjERkYgzSg8",
+          null,
+          true,
+          true,
+          false,
+          "Reset face",
+          ["clay-12", "2376ac0a96a2557e", null, null, "Ava"]
+        ],
+        [
+          "clay-12",
+          "6OzrBCQf8cjERkYgzSg8",
+          null,
+          true,
+          true,
+          false,
+          "Reset face",
+          ["clay-12", "2376ac0a96a2557e", null, null, "Ava"]
+        ],
+        [
+          "clay-12",
+          "6OzrBCQf8cjERkYgzSg8",
+          "6OzrBCQf8cjERkYgzSg8",
+          true,
+          true,
+          false,
+          "Reset face",
+          ["clay-12", "2376ac0a96a2557e", null, "6OzrBCQf8cjERkYgzSg8", "Ava"]
+        ],
+        [
+          "clay-24",
+          "5u41aNhyCU6hXOcjPPv0",
+          "5u41aNhyCU6hXOcjPPv0",
+          true,
+          false,
+          false,
+          null,
+          ["clay-24", "eef5730813b277fa", null, "5u41aNhyCU6hXOcjPPv0", "Ava"]
+        ],
+        [
+          "clay-24",
+          "5u41aNhyCU6hXOcjPPv0",
+          "5u41aNhyCU6hXOcjPPv0",
+          true,
+          false,
+          false,
+          null,
+          ["clay-24", "eef5730813b277fa", null, "5u41aNhyCU6hXOcjPPv0", "Ava"]
+        ]
+      ],
+      "roster": "team",
+      "script": "unnamed",
+      "voices": "curated"
+    },
+    {
+      "after": [
+        ["clay-05", "s3TPKV1kjDlVtZbl4Ksh", null, false, false, false, null],
+        [
+          "clay-07",
+          "s3TPKV1kjDlVtZbl4Ksh",
+          null,
+          true,
+          true,
+          false,
+          "Reset face"
+        ],
+        [
+          "clay-07",
+          "s3TPKV1kjDlVtZbl4Ksh",
+          null,
+          true,
+          true,
+          false,
+          "Reset face"
+        ],
+        [
+          "clay-07",
+          "s3TPKV1kjDlVtZbl4Ksh",
+          null,
+          true,
+          true,
+          false,
+          "Reset face"
+        ],
+        [
+          "clay-07",
+          "s3TPKV1kjDlVtZbl4Ksh",
+          "s3TPKV1kjDlVtZbl4Ksh",
+          true,
+          true,
+          false,
+          "Reset face"
+        ],
+        [
+          "clay-29",
+          "WI5pMmcGGS32yI7yttoP",
+          "WI5pMmcGGS32yI7yttoP",
+          true,
+          false,
+          false,
+          null
+        ],
+        [
+          "clay-29",
+          "WI5pMmcGGS32yI7yttoP",
+          "WI5pMmcGGS32yI7yttoP",
+          true,
+          false,
+          false,
+          null
+        ]
+      ],
+      "roster": "women",
+      "script": "unnamed",
+      "voices": "curated"
+    }
+  ],
+  "editorWords": [
+    {
+      "agent": "7d1c",
+      "gender": "male",
+      "own": "clay-simeon",
+      "picture": "face:clay-simeon",
+      "reset": "Reset face",
+      "roster": "team",
+      "worn": "clay-simeon"
+    },
+    {
+      "agent": "a91f",
+      "gender": "female",
+      "own": "clay-01",
+      "picture": "face:clay-01",
+      "reset": null,
+      "roster": "team",
+      "worn": "clay-01"
+    },
+    {
+      "agent": "b22e",
+      "gender": "male",
+      "own": "clay-02",
+      "picture": "face:clay-02",
+      "reset": null,
+      "roster": "team",
+      "worn": "clay-02"
+    },
+    {
+      "agent": "c3",
+      "gender": "female",
+      "own": "clay-03",
+      "picture": "own",
+      "reset": "Reset face",
+      "roster": "team",
+      "worn": null
+    },
+    {
+      "agent": "d4",
+      "gender": "male",
+      "own": null,
+      "picture": "face:clay-20",
+      "reset": "Reset face",
+      "roster": "team",
+      "worn": null
+    },
+    {
+      "agent": "e5",
+      "gender": "female",
+      "own": "clay-04",
+      "picture": "face:clay-04",
+      "reset": "Reset face",
+      "roster": "team",
+      "worn": null
+    },
+    {
+      "agent": "f6",
+      "gender": "male",
+      "own": null,
+      "picture": "face:clay-22",
+      "reset": null,
+      "roster": "team",
+      "worn": null
+    },
+    {
+      "agent": "g7",
+      "gender": "male",
+      "own": "clay-08",
+      "picture": "face:clay-08",
+      "reset": "Reset face",
+      "roster": "team",
+      "worn": "clay-08"
+    },
+    {
+      "agent": "h8",
+      "gender": "male",
+      "own": null,
+      "picture": "face:clay-04",
+      "reset": "Reset face",
+      "roster": "team",
+      "worn": null
+    },
+    {
+      "agent": "i9",
+      "gender": "male",
+      "own": null,
+      "picture": "face:clay-04",
+      "reset": "Reset face",
+      "roster": "team",
+      "worn": null
+    },
+    {
+      "agent": "j10",
+      "gender": "female",
+      "own": null,
+      "picture": "face:clay-05",
+      "reset": "Reset face",
+      "roster": "team",
+      "worn": null
+    },
+    {
+      "agent": "k11",
+      "gender": "male",
+      "own": null,
+      "picture": "own",
+      "reset": "Reset face",
+      "roster": "team",
+      "worn": null
+    },
+    {
+      "agent": "w0",
+      "gender": "female",
+      "own": "clay-01",
+      "picture": "face:clay-01",
+      "reset": "Reset face",
+      "roster": "women",
+      "worn": "clay-01"
+    },
+    {
+      "agent": "w1",
+      "gender": "female",
+      "own": "clay-03",
+      "picture": "face:clay-03",
+      "reset": "Reset face",
+      "roster": "women",
+      "worn": "clay-03"
+    },
+    {
+      "agent": "w2",
+      "gender": "female",
+      "own": "clay-04",
+      "picture": "face:clay-04",
+      "reset": "Reset face",
+      "roster": "women",
+      "worn": "clay-04"
+    },
+    {
+      "agent": "w3",
+      "gender": "female",
+      "own": "clay-06",
+      "picture": "face:clay-06",
+      "reset": "Reset face",
+      "roster": "women",
+      "worn": "clay-06"
+    },
+    {
+      "agent": "w4",
+      "gender": "female",
+      "own": "clay-10",
+      "picture": "face:clay-10",
+      "reset": "Reset face",
+      "roster": "women",
+      "worn": "clay-10"
+    },
+    {
+      "agent": "w5",
+      "gender": "female",
+      "own": "clay-14",
+      "picture": "face:clay-14",
+      "reset": "Reset face",
+      "roster": "women",
+      "worn": "clay-14"
+    },
+    {
+      "agent": "w6",
+      "gender": "female",
+      "own": "clay-16",
+      "picture": "face:clay-16",
+      "reset": "Reset face",
+      "roster": "women",
+      "worn": "clay-16"
+    },
+    {
+      "agent": "w7",
+      "gender": "female",
+      "own": "clay-18",
+      "picture": "face:clay-18",
+      "reset": "Reset face",
+      "roster": "women",
+      "worn": "clay-18"
+    },
+    {
+      "agent": "w8",
+      "gender": "female",
+      "own": "clay-19",
+      "picture": "face:clay-19",
+      "reset": "Reset face",
+      "roster": "women",
+      "worn": "clay-19"
+    },
+    {
+      "agent": "w9",
+      "gender": "female",
+      "own": "clay-20",
+      "picture": "face:clay-20",
+      "reset": "Reset face",
+      "roster": "women",
+      "worn": "clay-20"
+    },
+    {
+      "agent": "w10",
+      "gender": "female",
+      "own": "clay-22",
+      "picture": "face:clay-22",
+      "reset": "Reset face",
+      "roster": "women",
+      "worn": "clay-22"
+    },
+    {
+      "agent": "w11",
+      "gender": "female",
+      "own": "clay-23",
+      "picture": "face:clay-23",
+      "reset": "Reset face",
+      "roster": "women",
+      "worn": "clay-23"
+    },
+    {
+      "agent": "w12",
+      "gender": "female",
+      "own": "clay-24",
+      "picture": "face:clay-24",
+      "reset": "Reset face",
+      "roster": "women",
+      "worn": "clay-24"
+    },
+    {
+      "agent": "w13",
+      "gender": "female",
+      "own": "clay-26",
+      "picture": "face:clay-26",
+      "reset": "Reset face",
+      "roster": "women",
+      "worn": "clay-26"
+    },
+    {
+      "agent": "theo",
+      "gender": "male",
+      "own": null,
+      "picture": "face:clay-14",
+      "reset": "Reset face",
+      "roster": "women",
+      "worn": null
+    }
+  ],
+  "extraAgents": {
+    "cosx": {
+      "avatarDataURL": null,
+      "avatarShape": null,
+      "avatarVersion": null,
+      "createdAt": 0,
+      "id": "cosx",
+      "isGroup": false,
+      "isRemoteRoom": false,
+      "name": "Simeon",
+      "title": "Chief of Staff",
+      "voiceId": "XcXEQzuLXRU9RcfWzEJt"
+    },
+    "x": {
+      "avatarDataURL": null,
+      "avatarShape": null,
+      "avatarVersion": null,
+      "createdAt": null,
+      "id": "x",
+      "isGroup": false,
+      "isRemoteRoom": false,
+      "name": "Maya",
+      "title": "",
+      "voiceId": "XcXEQzuLXRU9RcfWzEJt"
+    }
+  },
+  "facePlan": [
+    { "given": [], "roster": "empty", "voices": "none" },
+    { "given": [], "roster": "empty", "voices": "curated" },
+    {
+      "given": [
+        ["cos", "clay-simeon"],
+        ["hire-0", "clay-18"],
+        ["hire-1", "clay-24"],
+        ["hire-10", "clay-09"],
+        ["hire-2", "clay-26"],
+        ["hire-3", "clay-29"],
+        ["hire-4", "clay-10"],
+        ["hire-5", "clay-16"],
+        ["hire-6", "clay-11"],
+        ["hire-7", "clay-21"],
+        ["hire-8", "clay-01"],
+        ["hire-9", "clay-13"],
+        ["later", "clay-17"]
+      ],
+      "roster": "hires",
+      "voices": "none"
+    },
+    {
+      "given": [
+        ["cos", "clay-simeon"],
+        ["hire-0", "clay-18"],
+        ["hire-1", "clay-24"],
+        ["hire-10", "clay-09"],
+        ["hire-2", "clay-26"],
+        ["hire-3", "clay-29"],
+        ["hire-4", "clay-10"],
+        ["hire-5", "clay-16"],
+        ["hire-6", "clay-11"],
+        ["hire-7", "clay-21"],
+        ["hire-8", "clay-01"],
+        ["hire-9", "clay-13"],
+        ["later", "clay-17"]
+      ],
+      "roster": "hires",
+      "voices": "curated"
+    },
+    {
+      "given": [
+        ["d4", "clay-13"],
+        ["e5", "clay-04"],
+        ["i9", "clay-11"],
+        ["j10", "clay-18"]
+      ],
+      "roster": "team",
+      "voices": "none"
+    },
+    {
+      "given": [
+        ["d4", "clay-13"],
+        ["e5", "clay-04"],
+        ["i9", "clay-11"],
+        ["j10", "clay-18"]
+      ],
+      "roster": "team",
+      "voices": "curated"
+    },
+    { "given": [["theo", "clay-28"]], "roster": "women", "voices": "none" },
+    { "given": [["theo", "clay-28"]], "roster": "women", "voices": "curated" }
+  ],
+  "fitted": [
+    { "fitted": [1024, 512], "height": 2000, "width": 4000 },
+    { "fitted": [1024, 1024], "height": 1024, "width": 1024 },
+    { "fitted": [1024, 3], "height": 3, "width": 1025 },
+    { "fitted": [3, 1024], "height": 1025, "width": 3 },
+    { "fitted": [1024, 768], "height": 1535, "width": 2048 },
+    { "fitted": [800, 600], "height": 600, "width": 800 },
+    { "fitted": [1024, 1], "height": 1, "width": 1500 },
+    { "fitted": [1024, 768], "height": 3024, "width": 4032 },
+    { "fitted": [1023, 10], "height": 10.4, "width": 1023.9 }
+  ],
+  "genderFor": [
+    { "agent": "7d1c", "gender": "male", "roster": "team", "voices": "none" },
+    {
+      "agent": "7d1c",
+      "gender": "male",
+      "roster": "team",
+      "voices": "curated"
+    },
+    { "agent": "a91f", "gender": "female", "roster": "team", "voices": "none" },
+    {
+      "agent": "a91f",
+      "gender": "female",
+      "roster": "team",
+      "voices": "curated"
+    },
+    { "agent": "b22e", "gender": "male", "roster": "team", "voices": "none" },
+    {
+      "agent": "b22e",
+      "gender": "male",
+      "roster": "team",
+      "voices": "curated"
+    },
+    { "agent": "c3", "gender": "female", "roster": "team", "voices": "none" },
+    {
+      "agent": "c3",
+      "gender": "female",
+      "roster": "team",
+      "voices": "curated"
+    },
+    { "agent": "d4", "gender": "male", "roster": "team", "voices": "none" },
+    { "agent": "d4", "gender": "male", "roster": "team", "voices": "curated" },
+    { "agent": "e5", "gender": "female", "roster": "team", "voices": "none" },
+    {
+      "agent": "e5",
+      "gender": "female",
+      "roster": "team",
+      "voices": "curated"
+    },
+    { "agent": "f6", "gender": "male", "roster": "team", "voices": "none" },
+    { "agent": "f6", "gender": "male", "roster": "team", "voices": "curated" },
+    { "agent": "g7", "gender": "male", "roster": "team", "voices": "none" },
+    { "agent": "g7", "gender": "male", "roster": "team", "voices": "curated" },
+    { "agent": "h8", "gender": "male", "roster": "team", "voices": "none" },
+    { "agent": "h8", "gender": "male", "roster": "team", "voices": "curated" },
+    { "agent": "i9", "gender": "male", "roster": "team", "voices": "none" },
+    { "agent": "i9", "gender": "male", "roster": "team", "voices": "curated" },
+    { "agent": "j10", "gender": "female", "roster": "team", "voices": "none" },
+    {
+      "agent": "j10",
+      "gender": "female",
+      "roster": "team",
+      "voices": "curated"
+    },
+    { "agent": "k11", "gender": "male", "roster": "team", "voices": "none" },
+    { "agent": "k11", "gender": "male", "roster": "team", "voices": "curated" },
+    {
+      "agent": "w0",
+      "gender": "female",
+      "roster": "women",
+      "voices": "curated"
+    },
+    {
+      "agent": "w1",
+      "gender": "female",
+      "roster": "women",
+      "voices": "curated"
+    },
+    {
+      "agent": "w2",
+      "gender": "female",
+      "roster": "women",
+      "voices": "curated"
+    },
+    {
+      "agent": "w3",
+      "gender": "female",
+      "roster": "women",
+      "voices": "curated"
+    },
+    {
+      "agent": "w4",
+      "gender": "female",
+      "roster": "women",
+      "voices": "curated"
+    },
+    {
+      "agent": "w5",
+      "gender": "female",
+      "roster": "women",
+      "voices": "curated"
+    },
+    {
+      "agent": "w6",
+      "gender": "female",
+      "roster": "women",
+      "voices": "curated"
+    },
+    {
+      "agent": "w7",
+      "gender": "female",
+      "roster": "women",
+      "voices": "curated"
+    },
+    {
+      "agent": "w8",
+      "gender": "female",
+      "roster": "women",
+      "voices": "curated"
+    },
+    {
+      "agent": "w9",
+      "gender": "female",
+      "roster": "women",
+      "voices": "curated"
+    },
+    {
+      "agent": "w10",
+      "gender": "female",
+      "roster": "women",
+      "voices": "curated"
+    },
+    {
+      "agent": "w11",
+      "gender": "female",
+      "roster": "women",
+      "voices": "curated"
+    },
+    {
+      "agent": "w12",
+      "gender": "female",
+      "roster": "women",
+      "voices": "curated"
+    },
+    {
+      "agent": "w13",
+      "gender": "female",
+      "roster": "women",
+      "voices": "curated"
+    },
+    {
+      "agent": "theo",
+      "gender": "male",
+      "roster": "women",
+      "voices": "curated"
+    }
+  ],
+  "hash": [
+    { "hash": 2166136261, "text": "" },
+    { "hash": 3826002220, "text": "a" },
+    { "hash": 3379142309, "text": "maya" },
+    { "hash": 55939499, "text": "alex-1" },
+    { "hash": 3303964293, "text": "théo" },
+    { "hash": 1610399396, "text": "日本" },
+    { "hash": 1301260459, "text": "0f6b7c1e-3c2a-4b8e-9d1f-1234567890ab" },
+    { "hash": 3409036472, "text": "😀" },
+    { "hash": 3180153956, "text": "nora smith" }
+  ],
+  "kept": [
+    {
+      "kept": "cgSgspJ2msm6clMCkdW9",
+      "voiceId": "cgSgspJ2msm6clMCkdW9",
+      "voices": "none"
+    },
+    { "kept": null, "voiceId": "cgSgspJ2msm6clMCkdW9", "voices": "curated" },
+    { "kept": null, "voiceId": "../x", "voices": "none" },
+    { "kept": null, "voiceId": "", "voices": "none" },
+    {
+      "kept": "XcXEQzuLXRU9RcfWzEJt",
+      "voiceId": "XcXEQzuLXRU9RcfWzEJt",
+      "voices": "curated"
+    },
+    {
+      "kept": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "voiceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "voices": "none"
+    },
+    {
+      "kept": null,
+      "voiceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "voices": "none"
+    },
+    { "kept": null, "voiceId": "é1", "voices": "none" }
+  ],
+  "made": "SimeonCore (ios/SimeonCore, 2 November 2026) built with Swift 6.2.1 on Linux, its AgentVoices, AgentFaces, AgentDraft, AvatarCrop and AvatarEditorWords run on these inputs (step 4b); a sample of the 455,968 bytes it wrote, all of which the web app also matched",
+  "nameGender": [
+    { "gender": "female", "name": "Maya" },
+    { "gender": "female", "name": "Nina" },
+    { "gender": "female", "name": "Ava" },
+    { "gender": "female", "name": "Zoë" },
+    { "gender": "female", "name": "Ana Lucía" },
+    { "gender": "female", "name": "Fatou" },
+    { "gender": "female", "name": "Isla" },
+    { "gender": "female", "name": "Ms Taylor" },
+    { "gender": "female", "name": "Dr. Amara" },
+    { "gender": "male", "name": "Leo" },
+    { "gender": "male", "name": "Simeon" },
+    { "gender": "male", "name": "Jon" },
+    { "gender": "male", "name": "Mark" },
+    { "gender": "male", "name": "Bassirou" },
+    { "gender": "male", "name": "Theo" },
+    { "gender": "male", "name": "Mr. Kim" },
+    { "gender": "male", "name": "Sir Elton" },
+    { "gender": null, "name": "Jordan" },
+    { "gender": null, "name": "Taylor" },
+    { "gender": null, "name": "Riley" },
+    { "gender": null, "name": "Sage" },
+    { "gender": null, "name": "Atlas" },
+    { "gender": null, "name": "" },
+    { "gender": null, "name": "  " },
+    { "gender": "female", "name": "Chloé-Anne" },
+    { "gender": "female", "name": "MAYA" },
+    { "gender": null, "name": "Dr Jordan Lee" },
+    { "gender": "female", "name": "Jessica" },
+    { "gender": "male", "name": "José" },
+    { "gender": "female", "name": "Élodie" },
+    { "gender": null, "name": "Søren" },
+    { "gender": null, "name": "Noël" },
+    { "gender": null, "name": "François" },
+    { "gender": "female", "name": "Ève" },
+    { "gender": "female", "name": "Ålice" },
+    { "gender": "female", "name": "Mrs" },
+    { "gender": "female", "name": "Mrs Smith" },
+    { "gender": "female", "name": "Ms. Jordan" },
+    { "gender": "female", "name": "Lady Gaga" },
+    { "gender": "male", "name": "Lord Byron" },
+    { "gender": "female", "name": "Captain Marvel" },
+    { "gender": "male", "name": "Coach Carter" },
+    { "gender": "female", "name": "Prof. Ada" },
+    { "gender": null, "name": "Doctor Who" },
+    { "gender": "female", "name": "Madam X" },
+    { "gender": "female", "name": "Miss Kim" },
+    { "gender": null, "name": "李" },
+    { "gender": null, "name": "O'Neil" },
+    { "gender": "female", "name": "Jean-Pierre" },
+    { "gender": "female", "name": "Marie-Claire" },
+    { "gender": "male", "name": "Sam" },
+    { "gender": "male", "name": "Alex" },
+    { "gender": null, "name": "Kim" },
+    { "gender": null, "name": "Lee" },
+    { "gender": "female", "name": "Ashley" },
+    { "gender": null, "name": "Jessie" },
+    { "gender": "female", "name": "MARIA" },
+    { "gender": "female", "name": "ÉLODIE" },
+    { "gender": "female", "name": "Zoe" },
+    { "gender": "male", "name": "Mohammed" },
+    { "gender": null, "name": "Aïcha" },
+    { "gender": null, "name": "Ngozi" },
+    { "gender": "male", "name": "İbrahim" },
+    { "gender": "female", "name": "FIona" },
+    { "gender": null, "name": "Bjørn" },
+    { "gender": null, "name": "Łukasz" },
+    { "gender": null, "name": "Quill Bot" },
+    { "gender": null, "name": "Q" },
+    { "gender": "female", "name": "Nora Smith" },
+    { "gender": "male", "name": "Leo Smith" },
+    { "gender": "female", "name": "Ada" },
+    { "gender": null, "name": "Kit" },
+    { "gender": "male", "name": "Ezra" },
+    { "gender": "female", "name": "Iris" },
+    { "gender": "female", "name": "Nova" },
+    { "gender": "male", "name": "Sam Taylor" },
+    { "gender": null, "name": "dr" },
+    { "gender": "male", "name": "mr" },
+    { "gender": null, "name": "123" },
+    { "gender": "female", "name": "Maya2" },
+    { "gender": null, "name": "x-æ-12" }
+  ],
+  "pick": [
+    {
+      "agentId": "a",
+      "gender": null,
+      "isChiefOfStaff": false,
+      "name": "Jordan",
+      "taken": [],
+      "voice": "v6",
+      "voices": "seven"
+    },
+    {
+      "agentId": "a",
+      "gender": null,
+      "isChiefOfStaff": false,
+      "name": "Maya",
+      "taken": ["XcXEQzuLXRU9RcfWzEJt"],
+      "voice": "v6",
+      "voices": "seven"
+    },
+    {
+      "agentId": "a",
+      "gender": null,
+      "isChiefOfStaff": false,
+      "name": "Leo",
+      "taken": [
+        "s3TPKV1kjDlVtZbl4Ksh",
+        "s3TPKV1kjDlVtZbl4Ksh",
+        "ljX1ZrXuDIIRVcmiVSyR"
+      ],
+      "voice": "v6",
+      "voices": "seven"
+    },
+    {
+      "agentId": "a",
+      "gender": null,
+      "isChiefOfStaff": true,
+      "name": "Simeon",
+      "taken": [],
+      "voice": "v6",
+      "voices": "seven"
+    },
+    {
+      "agentId": "a",
+      "gender": "female",
+      "isChiefOfStaff": false,
+      "name": "Leo",
+      "taken": [],
+      "voice": "v6",
+      "voices": "seven"
+    },
+    {
+      "agentId": "a",
+      "gender": "male",
+      "isChiefOfStaff": false,
+      "name": "Sage",
+      "taken": ["v1", "v2", "g1"],
+      "voice": "v3",
+      "voices": "seven"
+    },
+    {
+      "agentId": "日本",
+      "gender": null,
+      "isChiefOfStaff": false,
+      "name": "Jordan",
+      "taken": [],
+      "voice": "v5",
+      "voices": "seven"
+    },
+    {
+      "agentId": "日本",
+      "gender": null,
+      "isChiefOfStaff": false,
+      "name": "Maya",
+      "taken": ["XcXEQzuLXRU9RcfWzEJt"],
+      "voice": "v5",
+      "voices": "seven"
+    },
+    {
+      "agentId": "日本",
+      "gender": null,
+      "isChiefOfStaff": false,
+      "name": "Leo",
+      "taken": [
+        "s3TPKV1kjDlVtZbl4Ksh",
+        "s3TPKV1kjDlVtZbl4Ksh",
+        "ljX1ZrXuDIIRVcmiVSyR"
+      ],
+      "voice": "v5",
+      "voices": "seven"
+    },
+    {
+      "agentId": "日本",
+      "gender": null,
+      "isChiefOfStaff": true,
+      "name": "Simeon",
+      "taken": [],
+      "voice": "v5",
+      "voices": "seven"
+    },
+    {
+      "agentId": "日本",
+      "gender": "female",
+      "isChiefOfStaff": false,
+      "name": "Leo",
+      "taken": [],
+      "voice": "v5",
+      "voices": "seven"
+    },
+    {
+      "agentId": "日本",
+      "gender": "male",
+      "isChiefOfStaff": false,
+      "name": "Sage",
+      "taken": ["v1", "v2", "g1"],
+      "voice": "v4",
+      "voices": "seven"
+    },
+    {
+      "agentId": "a",
+      "gender": null,
+      "isChiefOfStaff": false,
+      "name": "Jordan",
+      "taken": [],
+      "voice": "snyKKuaGYk1VUEh42zbW",
+      "voices": "curated"
+    },
+    {
+      "agentId": "a",
+      "gender": null,
+      "isChiefOfStaff": false,
+      "name": "Maya",
+      "taken": ["XcXEQzuLXRU9RcfWzEJt"],
+      "voice": "NHRgOEwqx5WZNClv5sat",
+      "voices": "curated"
+    },
+    {
+      "agentId": "a",
+      "gender": null,
+      "isChiefOfStaff": false,
+      "name": "Leo",
+      "taken": [
+        "s3TPKV1kjDlVtZbl4Ksh",
+        "s3TPKV1kjDlVtZbl4Ksh",
+        "ljX1ZrXuDIIRVcmiVSyR"
+      ],
+      "voice": "1t1EeRixsJrKbiF1zwM6",
+      "voices": "curated"
+    },
+    {
+      "agentId": "a",
+      "gender": null,
+      "isChiefOfStaff": true,
+      "name": "Simeon",
+      "taken": [],
+      "voice": "Cz0K1kOv9tD8l0b5Qu53",
+      "voices": "curated"
+    },
+    {
+      "agentId": "a",
+      "gender": "female",
+      "isChiefOfStaff": false,
+      "name": "Leo",
+      "taken": [],
+      "voice": "XcXEQzuLXRU9RcfWzEJt",
+      "voices": "curated"
+    },
+    {
+      "agentId": "a",
+      "gender": "male",
+      "isChiefOfStaff": false,
+      "name": "Sage",
+      "taken": ["v1", "v2", "g1"],
+      "voice": "snyKKuaGYk1VUEh42zbW",
+      "voices": "curated"
+    },
+    {
+      "agentId": "日本",
+      "gender": null,
+      "isChiefOfStaff": false,
+      "name": "Jordan",
+      "taken": [],
+      "voice": "1t1EeRixsJrKbiF1zwM6",
+      "voices": "curated"
+    },
+    {
+      "agentId": "日本",
+      "gender": null,
+      "isChiefOfStaff": false,
+      "name": "Maya",
+      "taken": ["XcXEQzuLXRU9RcfWzEJt"],
+      "voice": "5u41aNhyCU6hXOcjPPv0",
+      "voices": "curated"
+    },
+    {
+      "agentId": "日本",
+      "gender": null,
+      "isChiefOfStaff": false,
+      "name": "Leo",
+      "taken": [
+        "s3TPKV1kjDlVtZbl4Ksh",
+        "s3TPKV1kjDlVtZbl4Ksh",
+        "ljX1ZrXuDIIRVcmiVSyR"
+      ],
+      "voice": "UgBBYS2sOqTuMpoF3BR0",
+      "voices": "curated"
+    },
+    {
+      "agentId": "日本",
+      "gender": null,
+      "isChiefOfStaff": true,
+      "name": "Simeon",
+      "taken": [],
+      "voice": "Cz0K1kOv9tD8l0b5Qu53",
+      "voices": "curated"
+    },
+    {
+      "agentId": "日本",
+      "gender": "female",
+      "isChiefOfStaff": false,
+      "name": "Leo",
+      "taken": [],
+      "voice": "XcXEQzuLXRU9RcfWzEJt",
+      "voices": "curated"
+    },
+    {
+      "agentId": "日本",
+      "gender": "male",
+      "isChiefOfStaff": false,
+      "name": "Sage",
+      "taken": ["v1", "v2", "g1"],
+      "voice": "6OzrBCQf8cjERkYgzSg8",
+      "voices": "curated"
+    },
+    {
+      "agentId": "a",
+      "gender": null,
+      "isChiefOfStaff": false,
+      "name": "Jordan",
+      "taken": [],
+      "voice": "g1",
+      "voices": "gendered"
+    },
+    {
+      "agentId": "a",
+      "gender": null,
+      "isChiefOfStaff": false,
+      "name": "Maya",
+      "taken": ["XcXEQzuLXRU9RcfWzEJt"],
+      "voice": "g1",
+      "voices": "gendered"
+    },
+    {
+      "agentId": "a",
+      "gender": null,
+      "isChiefOfStaff": false,
+      "name": "Leo",
+      "taken": [
+        "s3TPKV1kjDlVtZbl4Ksh",
+        "s3TPKV1kjDlVtZbl4Ksh",
+        "ljX1ZrXuDIIRVcmiVSyR"
+      ],
+      "voice": "g2",
+      "voices": "gendered"
+    },
+    {
+      "agentId": "a",
+      "gender": null,
+      "isChiefOfStaff": true,
+      "name": "Simeon",
+      "taken": [],
+      "voice": "g2",
+      "voices": "gendered"
+    },
+    {
+      "agentId": "a",
+      "gender": "female",
+      "isChiefOfStaff": false,
+      "name": "Leo",
+      "taken": [],
+      "voice": "g1",
+      "voices": "gendered"
+    },
+    {
+      "agentId": "a",
+      "gender": "male",
+      "isChiefOfStaff": false,
+      "name": "Sage",
+      "taken": ["v1", "v2", "g1"],
+      "voice": "g2",
+      "voices": "gendered"
+    },
+    {
+      "agentId": "日本",
+      "gender": null,
+      "isChiefOfStaff": false,
+      "name": "Jordan",
+      "taken": [],
+      "voice": "g1",
+      "voices": "gendered"
+    },
+    {
+      "agentId": "日本",
+      "gender": null,
+      "isChiefOfStaff": false,
+      "name": "Maya",
+      "taken": ["XcXEQzuLXRU9RcfWzEJt"],
+      "voice": "g1",
+      "voices": "gendered"
+    },
+    {
+      "agentId": "日本",
+      "gender": null,
+      "isChiefOfStaff": false,
+      "name": "Leo",
+      "taken": [
+        "s3TPKV1kjDlVtZbl4Ksh",
+        "s3TPKV1kjDlVtZbl4Ksh",
+        "ljX1ZrXuDIIRVcmiVSyR"
+      ],
+      "voice": "g2",
+      "voices": "gendered"
+    },
+    {
+      "agentId": "日本",
+      "gender": null,
+      "isChiefOfStaff": true,
+      "name": "Simeon",
+      "taken": [],
+      "voice": "g2",
+      "voices": "gendered"
+    },
+    {
+      "agentId": "日本",
+      "gender": "female",
+      "isChiefOfStaff": false,
+      "name": "Leo",
+      "taken": [],
+      "voice": "g1",
+      "voices": "gendered"
+    },
+    {
+      "agentId": "日本",
+      "gender": "male",
+      "isChiefOfStaff": false,
+      "name": "Sage",
+      "taken": ["v1", "v2", "g1"],
+      "voice": "g2",
+      "voices": "gendered"
+    }
+  ],
+  "preview": [
+    { "face": "clay-14", "name": "Nora", "roster": "empty" },
+    { "face": "clay-14", "name": "  Nora ", "roster": "empty" },
+    { "face": "clay-02", "name": "Leo", "roster": "empty" },
+    { "face": "clay-02", "name": "Jordan", "roster": "empty" },
+    { "face": "clay-19", "name": "Quill", "roster": "empty" },
+    { "face": "clay-07", "name": "Quill Bot", "roster": "empty" },
+    { "face": "clay-05", "name": "", "roster": "empty" },
+    { "face": "clay-14", "name": "Sarah", "roster": "empty" },
+    { "face": "clay-29", "name": "Ms Taylor", "roster": "empty" },
+    { "face": "clay-01", "name": "Zoë", "roster": "empty" },
+    { "face": "clay-20", "name": "Atlas", "roster": "empty" },
+    { "face": "clay-29", "name": "Nora", "roster": "team" },
+    { "face": "clay-29", "name": "  Nora ", "roster": "team" },
+    { "face": "clay-11", "name": "Leo", "roster": "team" },
+    { "face": "clay-13", "name": "Jordan", "roster": "team" },
+    { "face": "clay-14", "name": "Quill", "roster": "team" },
+    { "face": "clay-09", "name": "Quill Bot", "roster": "team" },
+    { "face": "clay-11", "name": "", "roster": "team" },
+    { "face": "clay-23", "name": "Sarah", "roster": "team" },
+    { "face": "clay-23", "name": "Ms Taylor", "roster": "team" },
+    { "face": "clay-16", "name": "Zoë", "roster": "team" },
+    { "face": "clay-06", "name": "Atlas", "roster": "team" },
+    { "face": "clay-29", "name": "Nora", "roster": "women" },
+    { "face": "clay-29", "name": "  Nora ", "roster": "women" },
+    { "face": "clay-02", "name": "Leo", "roster": "women" },
+    { "face": "clay-02", "name": "Jordan", "roster": "women" },
+    { "face": "clay-29", "name": "Quill", "roster": "women" },
+    { "face": "clay-07", "name": "Quill Bot", "roster": "women" },
+    { "face": "clay-05", "name": "", "roster": "women" },
+    { "face": "clay-29", "name": "Sarah", "roster": "women" },
+    { "face": "clay-29", "name": "Ms Taylor", "roster": "women" },
+    { "face": "clay-29", "name": "Zoë", "roster": "women" },
+    { "face": "clay-29", "name": "Atlas", "roster": "women" }
+  ],
+  "reset": [
+    {
+      "agent": "7d1c",
+      "face": "clay-simeon",
+      "roster": "team",
+      "voices": "none"
+    },
+    {
+      "agent": "7d1c",
+      "face": "clay-simeon",
+      "roster": "team",
+      "voices": "curated"
+    },
+    { "agent": "a91f", "face": "clay-01", "roster": "team", "voices": "none" },
+    {
+      "agent": "a91f",
+      "face": "clay-01",
+      "roster": "team",
+      "voices": "curated"
+    },
+    { "agent": "b22e", "face": "clay-02", "roster": "team", "voices": "none" },
+    {
+      "agent": "b22e",
+      "face": "clay-02",
+      "roster": "team",
+      "voices": "curated"
+    },
+    { "agent": "c3", "face": "clay-03", "roster": "team", "voices": "none" },
+    { "agent": "c3", "face": "clay-03", "roster": "team", "voices": "curated" },
+    { "agent": "d4", "face": "clay-13", "roster": "team", "voices": "none" },
+    { "agent": "d4", "face": "clay-13", "roster": "team", "voices": "curated" },
+    { "agent": "e5", "face": "clay-04", "roster": "team", "voices": "none" },
+    { "agent": "e5", "face": "clay-04", "roster": "team", "voices": "curated" },
+    { "agent": "f6", "face": "clay-21", "roster": "team", "voices": "none" },
+    { "agent": "f6", "face": "clay-21", "roster": "team", "voices": "curated" },
+    { "agent": "g7", "face": "clay-21", "roster": "team", "voices": "none" },
+    { "agent": "g7", "face": "clay-21", "roster": "team", "voices": "curated" },
+    { "agent": "h8", "face": "clay-12", "roster": "team", "voices": "none" },
+    { "agent": "h8", "face": "clay-12", "roster": "team", "voices": "curated" },
+    { "agent": "i9", "face": "clay-30", "roster": "team", "voices": "none" },
+    { "agent": "i9", "face": "clay-30", "roster": "team", "voices": "curated" },
+    { "agent": "j10", "face": "clay-18", "roster": "team", "voices": "none" },
+    {
+      "agent": "j10",
+      "face": "clay-18",
+      "roster": "team",
+      "voices": "curated"
+    },
+    { "agent": "k11", "face": "clay-12", "roster": "team", "voices": "none" },
+    {
+      "agent": "k11",
+      "face": "clay-12",
+      "roster": "team",
+      "voices": "curated"
+    },
+    {
+      "agent": "w0",
+      "face": "clay-01",
+      "roster": "women",
+      "voices": "curated"
+    },
+    {
+      "agent": "w1",
+      "face": "clay-28",
+      "roster": "women",
+      "voices": "curated"
+    },
+    {
+      "agent": "w2",
+      "face": "clay-04",
+      "roster": "women",
+      "voices": "curated"
+    },
+    {
+      "agent": "w3",
+      "face": "clay-02",
+      "roster": "women",
+      "voices": "curated"
+    },
+    {
+      "agent": "w4",
+      "face": "clay-10",
+      "roster": "women",
+      "voices": "curated"
+    },
+    {
+      "agent": "w5",
+      "face": "clay-07",
+      "roster": "women",
+      "voices": "curated"
+    },
+    {
+      "agent": "w6",
+      "face": "clay-16",
+      "roster": "women",
+      "voices": "curated"
+    },
+    {
+      "agent": "w7",
+      "face": "clay-09",
+      "roster": "women",
+      "voices": "curated"
+    },
+    {
+      "agent": "w8",
+      "face": "clay-19",
+      "roster": "women",
+      "voices": "curated"
+    },
+    {
+      "agent": "w9",
+      "face": "clay-11",
+      "roster": "women",
+      "voices": "curated"
+    },
+    {
+      "agent": "w10",
+      "face": "clay-25",
+      "roster": "women",
+      "voices": "curated"
+    },
+    {
+      "agent": "w11",
+      "face": "clay-23",
+      "roster": "women",
+      "voices": "curated"
+    },
+    {
+      "agent": "w12",
+      "face": "clay-17",
+      "roster": "women",
+      "voices": "curated"
+    },
+    {
+      "agent": "w13",
+      "face": "clay-26",
+      "roster": "women",
+      "voices": "curated"
+    },
+    {
+      "agent": "theo",
+      "face": "clay-28",
+      "roster": "women",
+      "voices": "curated"
+    }
+  ],
+  "rosters": {
+    "empty": [],
+    "hires": [
+      {
+        "avatarDataURL": null,
+        "avatarShape": null,
+        "avatarVersion": null,
+        "createdAt": null,
+        "id": "hire-0",
+        "isGroup": false,
+        "isRemoteRoom": false,
+        "name": "Maya",
+        "title": "",
+        "voiceId": null
+      },
+      {
+        "avatarDataURL": null,
+        "avatarShape": null,
+        "avatarVersion": null,
+        "createdAt": null,
+        "id": "hire-1",
+        "isGroup": false,
+        "isRemoteRoom": false,
+        "name": "Nina",
+        "title": "",
+        "voiceId": null
+      },
+      {
+        "avatarDataURL": null,
+        "avatarShape": null,
+        "avatarVersion": null,
+        "createdAt": null,
+        "id": "hire-2",
+        "isGroup": false,
+        "isRemoteRoom": false,
+        "name": "Ava",
+        "title": "",
+        "voiceId": null
+      },
+      {
+        "avatarDataURL": null,
+        "avatarShape": null,
+        "avatarVersion": null,
+        "createdAt": null,
+        "id": "hire-3",
+        "isGroup": false,
+        "isRemoteRoom": false,
+        "name": "Isla",
+        "title": "",
+        "voiceId": null
+      },
+      {
+        "avatarDataURL": null,
+        "avatarShape": null,
+        "avatarVersion": null,
+        "createdAt": null,
+        "id": "hire-4",
+        "isGroup": false,
+        "isRemoteRoom": false,
+        "name": "Fatou",
+        "title": "",
+        "voiceId": null
+      },
+      {
+        "avatarDataURL": null,
+        "avatarShape": null,
+        "avatarVersion": null,
+        "createdAt": null,
+        "id": "hire-5",
+        "isGroup": false,
+        "isRemoteRoom": false,
+        "name": "Zoë",
+        "title": "",
+        "voiceId": null
+      },
+      {
+        "avatarDataURL": null,
+        "avatarShape": null,
+        "avatarVersion": null,
+        "createdAt": null,
+        "id": "hire-6",
+        "isGroup": false,
+        "isRemoteRoom": false,
+        "name": "Leo",
+        "title": "",
+        "voiceId": null
+      },
+      {
+        "avatarDataURL": null,
+        "avatarShape": null,
+        "avatarVersion": null,
+        "createdAt": null,
+        "id": "hire-7",
+        "isGroup": false,
+        "isRemoteRoom": false,
+        "name": "Jon",
+        "title": "",
+        "voiceId": null
+      },
+      {
+        "avatarDataURL": null,
+        "avatarShape": null,
+        "avatarVersion": null,
+        "createdAt": null,
+        "id": "hire-8",
+        "isGroup": false,
+        "isRemoteRoom": false,
+        "name": "Riley",
+        "title": "",
+        "voiceId": null
+      },
+      {
+        "avatarDataURL": null,
+        "avatarShape": null,
+        "avatarVersion": null,
+        "createdAt": null,
+        "id": "hire-9",
+        "isGroup": false,
+        "isRemoteRoom": false,
+        "name": "Sam",
+        "title": "",
+        "voiceId": null
+      },
+      {
+        "avatarDataURL": null,
+        "avatarShape": null,
+        "avatarVersion": null,
+        "createdAt": null,
+        "id": "hire-10",
+        "isGroup": false,
+        "isRemoteRoom": false,
+        "name": "Kai",
+        "title": "",
+        "voiceId": null
+      },
+      {
+        "avatarDataURL": null,
+        "avatarShape": null,
+        "avatarVersion": null,
+        "createdAt": 1,
+        "id": "cos",
+        "isGroup": false,
+        "isRemoteRoom": false,
+        "name": "Simeon",
+        "title": "Chief of Staff",
+        "voiceId": null
+      },
+      {
+        "avatarDataURL": null,
+        "avatarShape": null,
+        "avatarVersion": null,
+        "createdAt": 5,
+        "id": "later",
+        "isGroup": false,
+        "isRemoteRoom": false,
+        "name": "Ezra",
+        "title": "Chief of Staff",
+        "voiceId": null
+      }
+    ],
+    "team": [
+      {
+        "avatarDataURL": null,
+        "avatarShape": null,
+        "avatarVersion": "851594b537712f48",
+        "createdAt": 1,
+        "id": "7d1c",
+        "isGroup": false,
+        "isRemoteRoom": false,
+        "name": "Simeon",
+        "title": "Chief of Staff",
+        "voiceId": null
+      },
+      {
+        "avatarDataURL": null,
+        "avatarShape": "clay-01",
+        "avatarVersion": "69753ea53c017510",
+        "createdAt": 2,
+        "id": "a91f",
+        "isGroup": false,
+        "isRemoteRoom": false,
+        "name": "Maya",
+        "title": "Inbox",
+        "voiceId": "XcXEQzuLXRU9RcfWzEJt"
+      },
+      {
+        "avatarDataURL": null,
+        "avatarShape": "clay-02",
+        "avatarVersion": "31c9d2861731d4d0",
+        "createdAt": 3,
+        "id": "b22e",
+        "isGroup": false,
+        "isRemoteRoom": false,
+        "name": "Leo",
+        "title": "Growth",
+        "voiceId": "s3TPKV1kjDlVtZbl4Ksh"
+      },
+      {
+        "avatarDataURL": "data:image/png;base64,iVBORw0KGgo=",
+        "avatarShape": "clay-03",
+        "avatarVersion": null,
+        "createdAt": 4,
+        "id": "c3",
+        "isGroup": false,
+        "isRemoteRoom": false,
+        "name": "Nina",
+        "title": "Finance",
+        "voiceId": "cgSgspJ2msm6clMCkdW9"
+      },
+      {
+        "avatarDataURL": null,
+        "avatarShape": null,
+        "avatarVersion": null,
+        "createdAt": 5,
+        "id": "d4",
+        "isGroup": false,
+        "isRemoteRoom": false,
+        "name": "Jordan",
+        "title": "Research",
+        "voiceId": null
+      },
+      {
+        "avatarDataURL": null,
+        "avatarShape": "clay-04",
+        "avatarVersion": null,
+        "createdAt": 6,
+        "id": "e5",
+        "isGroup": false,
+        "isRemoteRoom": false,
+        "name": "Ava",
+        "title": "",
+        "voiceId": null
+      },
+      {
+        "avatarDataURL": null,
+        "avatarShape": null,
+        "avatarVersion": null,
+        "createdAt": null,
+        "id": "f6",
+        "isGroup": true,
+        "isRemoteRoom": false,
+        "name": "Team",
+        "title": "",
+        "voiceId": null
+      },
+      {
+        "avatarDataURL": null,
+        "avatarShape": null,
+        "avatarVersion": "e4f281c62f4f7e9a",
+        "createdAt": 7,
+        "id": "g7",
+        "isGroup": false,
+        "isRemoteRoom": false,
+        "name": "Theo",
+        "title": "Books",
+        "voiceId": ""
+      },
+      {
+        "avatarDataURL": null,
+        "avatarShape": null,
+        "avatarVersion": null,
+        "createdAt": null,
+        "id": "h8",
+        "isGroup": false,
+        "isRemoteRoom": true,
+        "name": "Shared",
+        "title": "",
+        "voiceId": null
+      },
+      {
+        "avatarDataURL": null,
+        "avatarShape": null,
+        "avatarVersion": null,
+        "createdAt": 8,
+        "id": "i9",
+        "isGroup": false,
+        "isRemoteRoom": false,
+        "name": "Ezra",
+        "title": "COO",
+        "voiceId": "WI5pMmcGGS32yI7yttoP"
+      },
+      {
+        "avatarDataURL": null,
+        "avatarShape": null,
+        "avatarVersion": null,
+        "createdAt": 9,
+        "id": "j10",
+        "isGroup": false,
+        "isRemoteRoom": false,
+        "name": "Sage",
+        "title": "",
+        "voiceId": "XcXEQzuLXRU9RcfWzEJt"
+      },
+      {
+        "avatarDataURL": "data:image/png;base64,iVBORw0KGgo=",
+        "avatarShape": null,
+        "avatarVersion": null,
+        "createdAt": 10,
+        "id": "k11",
+        "isGroup": false,
+        "isRemoteRoom": false,
+        "name": "Alex",
+        "title": "",
+        "voiceId": null
+      }
+    ],
+    "women": [
+      {
+        "avatarDataURL": null,
+        "avatarShape": null,
+        "avatarVersion": "69753ea53c017510",
+        "createdAt": null,
+        "id": "w0",
+        "isGroup": false,
+        "isRemoteRoom": false,
+        "name": "Agent",
+        "title": "",
+        "voiceId": null
+      },
+      {
+        "avatarDataURL": null,
+        "avatarShape": null,
+        "avatarVersion": "ab2ac8f8b5a7d290",
+        "createdAt": null,
+        "id": "w1",
+        "isGroup": false,
+        "isRemoteRoom": false,
+        "name": "Agent",
+        "title": "",
+        "voiceId": null
+      },
+      {
+        "avatarDataURL": null,
+        "avatarShape": null,
+        "avatarVersion": "515ee9609bcea807",
+        "createdAt": null,
+        "id": "w2",
+        "isGroup": false,
+        "isRemoteRoom": false,
+        "name": "Agent",
+        "title": "",
+        "voiceId": null
+      },
+      {
+        "avatarDataURL": null,
+        "avatarShape": null,
+        "avatarVersion": "8b4ba6a5a20aff10",
+        "createdAt": null,
+        "id": "w3",
+        "isGroup": false,
+        "isRemoteRoom": false,
+        "name": "Agent",
+        "title": "",
+        "voiceId": null
+      },
+      {
+        "avatarDataURL": null,
+        "avatarShape": null,
+        "avatarVersion": "1f1c0f7246a582a2",
+        "createdAt": null,
+        "id": "w4",
+        "isGroup": false,
+        "isRemoteRoom": false,
+        "name": "Agent",
+        "title": "",
+        "voiceId": null
+      },
+      {
+        "avatarDataURL": null,
+        "avatarShape": null,
+        "avatarVersion": "8f3ff86319b96e3f",
+        "createdAt": null,
+        "id": "w5",
+        "isGroup": false,
+        "isRemoteRoom": false,
+        "name": "Agent",
+        "title": "",
+        "voiceId": null
+      },
+      {
+        "avatarDataURL": null,
+        "avatarShape": null,
+        "avatarVersion": "18ca1fdf3526ab07",
+        "createdAt": null,
+        "id": "w6",
+        "isGroup": false,
+        "isRemoteRoom": false,
+        "name": "Agent",
+        "title": "",
+        "voiceId": null
+      },
+      {
+        "avatarDataURL": null,
+        "avatarShape": null,
+        "avatarVersion": "05c4fc5b5cb1ba62",
+        "createdAt": null,
+        "id": "w7",
+        "isGroup": false,
+        "isRemoteRoom": false,
+        "name": "Agent",
+        "title": "",
+        "voiceId": null
+      },
+      {
+        "avatarDataURL": null,
+        "avatarShape": null,
+        "avatarVersion": "9903d8f327115e53",
+        "createdAt": null,
+        "id": "w8",
+        "isGroup": false,
+        "isRemoteRoom": false,
+        "name": "Agent",
+        "title": "",
+        "voiceId": null
+      },
+      {
+        "avatarDataURL": null,
+        "avatarShape": null,
+        "avatarVersion": "626182e0828c6d12",
+        "createdAt": null,
+        "id": "w9",
+        "isGroup": false,
+        "isRemoteRoom": false,
+        "name": "Agent",
+        "title": "",
+        "voiceId": null
+      },
+      {
+        "avatarDataURL": null,
+        "avatarShape": null,
+        "avatarVersion": "da9397f441141841",
+        "createdAt": null,
+        "id": "w10",
+        "isGroup": false,
+        "isRemoteRoom": false,
+        "name": "Agent",
+        "title": "",
+        "voiceId": null
+      },
+      {
+        "avatarDataURL": null,
+        "avatarShape": null,
+        "avatarVersion": "53ecc842f73aa364",
+        "createdAt": null,
+        "id": "w11",
+        "isGroup": false,
+        "isRemoteRoom": false,
+        "name": "Agent",
+        "title": "",
+        "voiceId": null
+      },
+      {
+        "avatarDataURL": null,
+        "avatarShape": null,
+        "avatarVersion": "eef5730813b277fa",
+        "createdAt": null,
+        "id": "w12",
+        "isGroup": false,
+        "isRemoteRoom": false,
+        "name": "Agent",
+        "title": "",
+        "voiceId": null
+      },
+      {
+        "avatarDataURL": null,
+        "avatarShape": null,
+        "avatarVersion": "0f6a931f73a68e94",
+        "createdAt": null,
+        "id": "w13",
+        "isGroup": false,
+        "isRemoteRoom": false,
+        "name": "Agent",
+        "title": "",
+        "voiceId": null
+      },
+      {
+        "avatarDataURL": null,
+        "avatarShape": null,
+        "avatarVersion": null,
+        "createdAt": null,
+        "id": "theo",
+        "isGroup": false,
+        "isRemoteRoom": false,
+        "name": "Theo",
+        "title": "",
+        "voiceId": null
+      }
+    ]
+  },
+  "shuffle": [
+    {
+      "agentId": "7d1c",
+      "current": null,
+      "face": "clay-06",
+      "gender": "female",
+      "roster": "team"
+    },
+    {
+      "agentId": "7d1c",
+      "current": "clay-01",
+      "face": "clay-06",
+      "gender": "female",
+      "roster": "team"
+    },
+    {
+      "agentId": "7d1c",
+      "current": "clay-29",
+      "face": "clay-06",
+      "gender": "female",
+      "roster": "team"
+    },
+    {
+      "agentId": "7d1c",
+      "current": "clay-02",
+      "face": "clay-06",
+      "gender": "female",
+      "roster": "team"
+    },
+    {
+      "agentId": "7d1c",
+      "current": "clay-11",
+      "face": "clay-06",
+      "gender": "female",
+      "roster": "team"
+    },
+    {
+      "agentId": "7d1c",
+      "current": "clay-simeon",
+      "face": "clay-06",
+      "gender": "female",
+      "roster": "team"
+    },
+    {
+      "agentId": "7d1c",
+      "current": null,
+      "face": "clay-05",
+      "gender": "male",
+      "roster": "team"
+    },
+    {
+      "agentId": "7d1c",
+      "current": "clay-01",
+      "face": "clay-05",
+      "gender": "male",
+      "roster": "team"
+    },
+    {
+      "agentId": "7d1c",
+      "current": "clay-29",
+      "face": "clay-05",
+      "gender": "male",
+      "roster": "team"
+    },
+    {
+      "agentId": "7d1c",
+      "current": "clay-02",
+      "face": "clay-05",
+      "gender": "male",
+      "roster": "team"
+    },
+    {
+      "agentId": "7d1c",
+      "current": "clay-11",
+      "face": "clay-12",
+      "gender": "male",
+      "roster": "team"
+    },
+    {
+      "agentId": "7d1c",
+      "current": "clay-simeon",
+      "face": "clay-05",
+      "gender": "male",
+      "roster": "team"
+    },
+    {
+      "agentId": "",
+      "current": null,
+      "face": "clay-06",
+      "gender": "female",
+      "roster": "team"
+    },
+    {
+      "agentId": "",
+      "current": "clay-01",
+      "face": "clay-06",
+      "gender": "female",
+      "roster": "team"
+    },
+    {
+      "agentId": "",
+      "current": "clay-29",
+      "face": "clay-06",
+      "gender": "female",
+      "roster": "team"
+    },
+    {
+      "agentId": "",
+      "current": "clay-02",
+      "face": "clay-06",
+      "gender": "female",
+      "roster": "team"
+    },
+    {
+      "agentId": "",
+      "current": "clay-11",
+      "face": "clay-06",
+      "gender": "female",
+      "roster": "team"
+    },
+    {
+      "agentId": "",
+      "current": "clay-simeon",
+      "face": "clay-06",
+      "gender": "female",
+      "roster": "team"
+    },
+    {
+      "agentId": "",
+      "current": null,
+      "face": "clay-05",
+      "gender": "male",
+      "roster": "team"
+    },
+    {
+      "agentId": "",
+      "current": "clay-01",
+      "face": "clay-05",
+      "gender": "male",
+      "roster": "team"
+    },
+    {
+      "agentId": "",
+      "current": "clay-29",
+      "face": "clay-05",
+      "gender": "male",
+      "roster": "team"
+    },
+    {
+      "agentId": "",
+      "current": "clay-02",
+      "face": "clay-05",
+      "gender": "male",
+      "roster": "team"
+    },
+    {
+      "agentId": "",
+      "current": "clay-11",
+      "face": "clay-12",
+      "gender": "male",
+      "roster": "team"
+    },
+    {
+      "agentId": "",
+      "current": "clay-simeon",
+      "face": "clay-05",
+      "gender": "male",
+      "roster": "team"
+    },
+    {
+      "agentId": "w0",
+      "current": null,
+      "face": "clay-01",
+      "gender": "female",
+      "roster": "women"
+    },
+    {
+      "agentId": "w0",
+      "current": "clay-01",
+      "face": "clay-29",
+      "gender": "female",
+      "roster": "women"
+    },
+    {
+      "agentId": "w0",
+      "current": "clay-29",
+      "face": "clay-01",
+      "gender": "female",
+      "roster": "women"
+    },
+    {
+      "agentId": "w0",
+      "current": "clay-02",
+      "face": "clay-01",
+      "gender": "female",
+      "roster": "women"
+    },
+    {
+      "agentId": "w0",
+      "current": "clay-11",
+      "face": "clay-01",
+      "gender": "female",
+      "roster": "women"
+    },
+    {
+      "agentId": "w0",
+      "current": "clay-simeon",
+      "face": "clay-01",
+      "gender": "female",
+      "roster": "women"
+    },
+    {
+      "agentId": "w0",
+      "current": null,
+      "face": "clay-02",
+      "gender": "male",
+      "roster": "women"
+    },
+    {
+      "agentId": "w0",
+      "current": "clay-01",
+      "face": "clay-02",
+      "gender": "male",
+      "roster": "women"
+    },
+    {
+      "agentId": "w0",
+      "current": "clay-29",
+      "face": "clay-02",
+      "gender": "male",
+      "roster": "women"
+    },
+    {
+      "agentId": "w0",
+      "current": "clay-02",
+      "face": "clay-05",
+      "gender": "male",
+      "roster": "women"
+    },
+    {
+      "agentId": "w0",
+      "current": "clay-11",
+      "face": "clay-12",
+      "gender": "male",
+      "roster": "women"
+    },
+    {
+      "agentId": "w0",
+      "current": "clay-simeon",
+      "face": "clay-02",
+      "gender": "male",
+      "roster": "women"
+    },
+    {
+      "agentId": "",
+      "current": null,
+      "face": "clay-29",
+      "gender": "female",
+      "roster": "women"
+    },
+    {
+      "agentId": "",
+      "current": "clay-01",
+      "face": "clay-29",
+      "gender": "female",
+      "roster": "women"
+    },
+    {
+      "agentId": "",
+      "current": "clay-29",
+      "face": "clay-01",
+      "gender": "female",
+      "roster": "women"
+    },
+    {
+      "agentId": "",
+      "current": "clay-02",
+      "face": "clay-29",
+      "gender": "female",
+      "roster": "women"
+    },
+    {
+      "agentId": "",
+      "current": "clay-11",
+      "face": "clay-29",
+      "gender": "female",
+      "roster": "women"
+    },
+    {
+      "agentId": "",
+      "current": "clay-simeon",
+      "face": "clay-29",
+      "gender": "female",
+      "roster": "women"
+    },
+    {
+      "agentId": "",
+      "current": null,
+      "face": "clay-02",
+      "gender": "male",
+      "roster": "women"
+    },
+    {
+      "agentId": "",
+      "current": "clay-01",
+      "face": "clay-02",
+      "gender": "male",
+      "roster": "women"
+    },
+    {
+      "agentId": "",
+      "current": "clay-29",
+      "face": "clay-02",
+      "gender": "male",
+      "roster": "women"
+    },
+    {
+      "agentId": "",
+      "current": "clay-02",
+      "face": "clay-05",
+      "gender": "male",
+      "roster": "women"
+    },
+    {
+      "agentId": "",
+      "current": "clay-11",
+      "face": "clay-12",
+      "gender": "male",
+      "roster": "women"
+    },
+    {
+      "agentId": "",
+      "current": "clay-simeon",
+      "face": "clay-02",
+      "gender": "male",
+      "roster": "women"
+    }
+  ],
+  "voiceFor": [
+    {
+      "agent": "7d1c",
+      "face": "clay-14",
+      "roster": "team",
+      "voice": null,
+      "voices": "curated"
+    },
+    {
+      "agent": "7d1c",
+      "face": "clay-02",
+      "roster": "team",
+      "voice": null,
+      "voices": "curated"
+    },
+    {
+      "agent": "7d1c",
+      "face": "clay-simeon",
+      "roster": "team",
+      "voice": null,
+      "voices": "curated"
+    },
+    {
+      "agent": "a91f",
+      "face": "clay-14",
+      "roster": "team",
+      "voice": null,
+      "voices": "curated"
+    },
+    {
+      "agent": "a91f",
+      "face": "clay-02",
+      "roster": "team",
+      "voice": "UgBBYS2sOqTuMpoF3BR0",
+      "voices": "curated"
+    },
+    {
+      "agent": "a91f",
+      "face": "clay-simeon",
+      "roster": "team",
+      "voice": "UgBBYS2sOqTuMpoF3BR0",
+      "voices": "curated"
+    },
+    {
+      "agent": "b22e",
+      "face": "clay-14",
+      "roster": "team",
+      "voice": "NHRgOEwqx5WZNClv5sat",
+      "voices": "curated"
+    },
+    {
+      "agent": "b22e",
+      "face": "clay-02",
+      "roster": "team",
+      "voice": null,
+      "voices": "curated"
+    },
+    {
+      "agent": "b22e",
+      "face": "clay-simeon",
+      "roster": "team",
+      "voice": null,
+      "voices": "curated"
+    },
+    {
+      "agent": "c3",
+      "face": "clay-14",
+      "roster": "team",
+      "voice": null,
+      "voices": "curated"
+    },
+    {
+      "agent": "c3",
+      "face": "clay-02",
+      "roster": "team",
+      "voice": null,
+      "voices": "curated"
+    },
+    {
+      "agent": "c3",
+      "face": "clay-simeon",
+      "roster": "team",
+      "voice": null,
+      "voices": "curated"
+    },
+    {
+      "agent": "d4",
+      "face": "clay-14",
+      "roster": "team",
+      "voice": null,
+      "voices": "curated"
+    },
+    {
+      "agent": "d4",
+      "face": "clay-02",
+      "roster": "team",
+      "voice": null,
+      "voices": "curated"
+    },
+    {
+      "agent": "d4",
+      "face": "clay-simeon",
+      "roster": "team",
+      "voice": null,
+      "voices": "curated"
+    },
+    {
+      "agent": "e5",
+      "face": "clay-14",
+      "roster": "team",
+      "voice": null,
+      "voices": "curated"
+    },
+    {
+      "agent": "e5",
+      "face": "clay-02",
+      "roster": "team",
+      "voice": null,
+      "voices": "curated"
+    },
+    {
+      "agent": "e5",
+      "face": "clay-simeon",
+      "roster": "team",
+      "voice": null,
+      "voices": "curated"
+    },
+    {
+      "agent": "f6",
+      "face": "clay-14",
+      "roster": "team",
+      "voice": null,
+      "voices": "curated"
+    },
+    {
+      "agent": "f6",
+      "face": "clay-02",
+      "roster": "team",
+      "voice": null,
+      "voices": "curated"
+    },
+    {
+      "agent": "f6",
+      "face": "clay-simeon",
+      "roster": "team",
+      "voice": null,
+      "voices": "curated"
+    },
+    {
+      "agent": "g7",
+      "face": "clay-14",
+      "roster": "team",
+      "voice": null,
+      "voices": "curated"
+    },
+    {
+      "agent": "g7",
+      "face": "clay-02",
+      "roster": "team",
+      "voice": null,
+      "voices": "curated"
+    },
+    {
+      "agent": "g7",
+      "face": "clay-simeon",
+      "roster": "team",
+      "voice": null,
+      "voices": "curated"
+    },
+    {
+      "agent": "h8",
+      "face": "clay-14",
+      "roster": "team",
+      "voice": null,
+      "voices": "curated"
+    },
+    {
+      "agent": "h8",
+      "face": "clay-02",
+      "roster": "team",
+      "voice": null,
+      "voices": "curated"
+    },
+    {
+      "agent": "h8",
+      "face": "clay-simeon",
+      "roster": "team",
+      "voice": null,
+      "voices": "curated"
+    },
+    {
+      "agent": "i9",
+      "face": "clay-14",
+      "roster": "team",
+      "voice": null,
+      "voices": "curated"
+    },
+    {
+      "agent": "i9",
+      "face": "clay-02",
+      "roster": "team",
+      "voice": "6OzrBCQf8cjERkYgzSg8",
+      "voices": "curated"
+    },
+    {
+      "agent": "i9",
+      "face": "clay-simeon",
+      "roster": "team",
+      "voice": "6OzrBCQf8cjERkYgzSg8",
+      "voices": "curated"
+    },
+    {
+      "agent": "j10",
+      "face": "clay-14",
+      "roster": "team",
+      "voice": null,
+      "voices": "curated"
+    },
+    {
+      "agent": "j10",
+      "face": "clay-02",
+      "roster": "team",
+      "voice": "snyKKuaGYk1VUEh42zbW",
+      "voices": "curated"
+    },
+    {
+      "agent": "j10",
+      "face": "clay-simeon",
+      "roster": "team",
+      "voice": "snyKKuaGYk1VUEh42zbW",
+      "voices": "curated"
+    },
+    {
+      "agent": "k11",
+      "face": "clay-14",
+      "roster": "team",
+      "voice": null,
+      "voices": "curated"
+    },
+    {
+      "agent": "k11",
+      "face": "clay-02",
+      "roster": "team",
+      "voice": null,
+      "voices": "curated"
+    },
+    {
+      "agent": "k11",
+      "face": "clay-simeon",
+      "roster": "team",
+      "voice": null,
+      "voices": "curated"
+    },
+    {
+      "agent": "x",
+      "face": "clay-14",
+      "roster": "team",
+      "voice": null,
+      "voices": "curated"
+    },
+    {
+      "agent": "x",
+      "face": "clay-02",
+      "roster": "team",
+      "voice": "6OzrBCQf8cjERkYgzSg8",
+      "voices": "curated"
+    },
+    {
+      "agent": "x",
+      "face": "clay-simeon",
+      "roster": "team",
+      "voice": "6OzrBCQf8cjERkYgzSg8",
+      "voices": "curated"
+    },
+    {
+      "agent": "cosx",
+      "face": "clay-14",
+      "roster": "team",
+      "voice": null,
+      "voices": "curated"
+    },
+    {
+      "agent": "cosx",
+      "face": "clay-02",
+      "roster": "team",
+      "voice": "ljX1ZrXuDIIRVcmiVSyR",
+      "voices": "curated"
+    },
+    {
+      "agent": "cosx",
+      "face": "clay-simeon",
+      "roster": "team",
+      "voice": "ljX1ZrXuDIIRVcmiVSyR",
+      "voices": "curated"
+    },
+    {
+      "agent": "x",
+      "face": "clay-14",
+      "roster": "empty",
+      "voice": null,
+      "voices": "faceTests"
+    },
+    {
+      "agent": "x",
+      "face": "clay-14",
+      "roster": "empty",
+      "voice": null,
+      "voices": "curated"
+    },
+    {
+      "agent": "x",
+      "face": "clay-02",
+      "roster": "empty",
+      "voice": "s3TPKV1kjDlVtZbl4Ksh",
+      "voices": "faceTests"
+    },
+    {
+      "agent": "x",
+      "face": "clay-02",
+      "roster": "empty",
+      "voice": "6OzrBCQf8cjERkYgzSg8",
+      "voices": "curated"
+    },
+    {
+      "agent": "x",
+      "face": "clay-simeon",
+      "roster": "empty",
+      "voice": "s3TPKV1kjDlVtZbl4Ksh",
+      "voices": "faceTests"
+    },
+    {
+      "agent": "x",
+      "face": "clay-simeon",
+      "roster": "empty",
+      "voice": "6OzrBCQf8cjERkYgzSg8",
+      "voices": "curated"
+    },
+    {
+      "agent": "cosx",
+      "face": "clay-14",
+      "roster": "empty",
+      "voice": null,
+      "voices": "faceTests"
+    },
+    {
+      "agent": "cosx",
+      "face": "clay-14",
+      "roster": "empty",
+      "voice": null,
+      "voices": "curated"
+    },
+    {
+      "agent": "cosx",
+      "face": "clay-02",
+      "roster": "empty",
+      "voice": "ljX1ZrXuDIIRVcmiVSyR",
+      "voices": "faceTests"
+    },
+    {
+      "agent": "cosx",
+      "face": "clay-02",
+      "roster": "empty",
+      "voice": "snyKKuaGYk1VUEh42zbW",
+      "voices": "curated"
+    },
+    {
+      "agent": "cosx",
+      "face": "clay-simeon",
+      "roster": "empty",
+      "voice": "ljX1ZrXuDIIRVcmiVSyR",
+      "voices": "faceTests"
+    },
+    {
+      "agent": "cosx",
+      "face": "clay-simeon",
+      "roster": "empty",
+      "voice": "snyKKuaGYk1VUEh42zbW",
+      "voices": "curated"
+    }
+  ],
+  "voiceLists": {
+    "curated": [
+      { "gender": null, "id": "ljX1ZrXuDIIRVcmiVSyR", "name": "Michael" },
+      { "gender": null, "id": "1t1EeRixsJrKbiF1zwM6", "name": "Jerry" },
+      { "gender": null, "id": "XcXEQzuLXRU9RcfWzEJt", "name": "Veda" },
+      { "gender": null, "id": "s3TPKV1kjDlVtZbl4Ksh", "name": "Adam" },
+      { "gender": null, "id": "UgBBYS2sOqTuMpoF3BR0", "name": "Mark" },
+      { "gender": null, "id": "6OzrBCQf8cjERkYgzSg8", "name": "Jamal" },
+      { "gender": null, "id": "Cz0K1kOv9tD8l0b5Qu53", "name": "Simeon" },
+      { "gender": null, "id": "WI5pMmcGGS32yI7yttoP", "name": "Amanda" },
+      { "gender": null, "id": "snyKKuaGYk1VUEh42zbW", "name": "Chris" },
+      { "gender": null, "id": "gfRt6Z3Z8aTbpLfexQ7N", "name": "Boyd" },
+      { "gender": null, "id": "NHRgOEwqx5WZNClv5sat", "name": "Chelsea" },
+      { "gender": null, "id": "5u41aNhyCU6hXOcjPPv0", "name": "Hope" }
+    ],
+    "faceTests": [
+      { "gender": null, "id": "ljX1ZrXuDIIRVcmiVSyR", "name": "Michael" },
+      { "gender": null, "id": "XcXEQzuLXRU9RcfWzEJt", "name": "Veda" },
+      { "gender": null, "id": "s3TPKV1kjDlVtZbl4Ksh", "name": "Adam" },
+      { "gender": null, "id": "Cz0K1kOv9tD8l0b5Qu53", "name": "Simeon" },
+      { "gender": null, "id": "WI5pMmcGGS32yI7yttoP", "name": "Amanda" },
+      { "gender": null, "id": "NHRgOEwqx5WZNClv5sat", "name": "Chelsea" }
+    ],
+    "gendered": [
+      { "gender": "female", "id": "g1", "name": "Ana" },
+      { "gender": "male", "id": "g2", "name": "Bo" },
+      { "gender": "male", "id": "XcXEQzuLXRU9RcfWzEJt", "name": "Veda" },
+      { "gender": null, "id": "g3", "name": "Cy" }
+    ],
+    "none": [],
+    "seven": [
+      { "gender": null, "id": "v1", "name": "v1" },
+      { "gender": null, "id": "v2", "name": "v2" },
+      { "gender": null, "id": "v3", "name": "v3" },
+      { "gender": null, "id": "v4", "name": "v4" },
+      { "gender": null, "id": "v5", "name": "v5" },
+      { "gender": null, "id": "v6", "name": "v6" },
+      { "gender": null, "id": "v7", "name": "v7" }
+    ]
+  },
+  "voicePlan": [
+    { "all": {}, "given": [], "roster": "empty", "voices": "curated" },
+    { "all": {}, "given": [], "roster": "empty", "voices": "gendered" },
+    {
+      "all": {
+        "cos": "Cz0K1kOv9tD8l0b5Qu53",
+        "hire-0": "NHRgOEwqx5WZNClv5sat",
+        "hire-1": "XcXEQzuLXRU9RcfWzEJt",
+        "hire-10": "6OzrBCQf8cjERkYgzSg8",
+        "hire-2": "WI5pMmcGGS32yI7yttoP",
+        "hire-3": "5u41aNhyCU6hXOcjPPv0",
+        "hire-4": "NHRgOEwqx5WZNClv5sat",
+        "hire-5": "WI5pMmcGGS32yI7yttoP",
+        "hire-6": "snyKKuaGYk1VUEh42zbW",
+        "hire-7": "s3TPKV1kjDlVtZbl4Ksh",
+        "hire-8": "UgBBYS2sOqTuMpoF3BR0",
+        "hire-9": "gfRt6Z3Z8aTbpLfexQ7N",
+        "later": "Cz0K1kOv9tD8l0b5Qu53"
+      },
+      "given": [
+        ["cos", "Cz0K1kOv9tD8l0b5Qu53"],
+        ["hire-0", "NHRgOEwqx5WZNClv5sat"],
+        ["hire-1", "XcXEQzuLXRU9RcfWzEJt"],
+        ["hire-10", "6OzrBCQf8cjERkYgzSg8"],
+        ["hire-2", "WI5pMmcGGS32yI7yttoP"],
+        ["hire-3", "5u41aNhyCU6hXOcjPPv0"],
+        ["hire-4", "NHRgOEwqx5WZNClv5sat"],
+        ["hire-5", "WI5pMmcGGS32yI7yttoP"],
+        ["hire-6", "snyKKuaGYk1VUEh42zbW"],
+        ["hire-7", "s3TPKV1kjDlVtZbl4Ksh"],
+        ["hire-8", "UgBBYS2sOqTuMpoF3BR0"],
+        ["hire-9", "gfRt6Z3Z8aTbpLfexQ7N"],
+        ["later", "Cz0K1kOv9tD8l0b5Qu53"]
+      ],
+      "roster": "hires",
+      "voices": "curated"
+    },
+    {
+      "all": {
+        "cos": "g2",
+        "hire-0": "g1",
+        "hire-1": "g1",
+        "hire-10": "XcXEQzuLXRU9RcfWzEJt",
+        "hire-2": "g1",
+        "hire-3": "g1",
+        "hire-4": "g1",
+        "hire-5": "g1",
+        "hire-6": "g2",
+        "hire-7": "XcXEQzuLXRU9RcfWzEJt",
+        "hire-8": "g3",
+        "hire-9": "XcXEQzuLXRU9RcfWzEJt",
+        "later": "g2"
+      },
+      "given": [
+        ["cos", "g2"],
+        ["hire-0", "g1"],
+        ["hire-1", "g1"],
+        ["hire-10", "XcXEQzuLXRU9RcfWzEJt"],
+        ["hire-2", "g1"],
+        ["hire-3", "g1"],
+        ["hire-4", "g1"],
+        ["hire-5", "g1"],
+        ["hire-6", "g2"],
+        ["hire-7", "XcXEQzuLXRU9RcfWzEJt"],
+        ["hire-8", "g3"],
+        ["hire-9", "XcXEQzuLXRU9RcfWzEJt"],
+        ["later", "g2"]
+      ],
+      "roster": "hires",
+      "voices": "gendered"
+    },
+    {
+      "all": {
+        "7d1c": "Cz0K1kOv9tD8l0b5Qu53",
+        "a91f": "XcXEQzuLXRU9RcfWzEJt",
+        "b22e": "s3TPKV1kjDlVtZbl4Ksh",
+        "c3": "5u41aNhyCU6hXOcjPPv0",
+        "d4": "ljX1ZrXuDIIRVcmiVSyR",
+        "e5": "NHRgOEwqx5WZNClv5sat",
+        "g7": "snyKKuaGYk1VUEh42zbW",
+        "i9": "WI5pMmcGGS32yI7yttoP",
+        "j10": "XcXEQzuLXRU9RcfWzEJt",
+        "k11": "1t1EeRixsJrKbiF1zwM6"
+      },
+      "given": [
+        ["7d1c", "Cz0K1kOv9tD8l0b5Qu53"],
+        ["c3", "5u41aNhyCU6hXOcjPPv0"],
+        ["d4", "ljX1ZrXuDIIRVcmiVSyR"],
+        ["e5", "NHRgOEwqx5WZNClv5sat"],
+        ["g7", "snyKKuaGYk1VUEh42zbW"],
+        ["k11", "1t1EeRixsJrKbiF1zwM6"]
+      ],
+      "roster": "team",
+      "voices": "curated"
+    },
+    {
+      "all": {
+        "7d1c": "g2",
+        "a91f": "XcXEQzuLXRU9RcfWzEJt",
+        "b22e": "g2",
+        "c3": "g1",
+        "d4": "g3",
+        "e5": "g1",
+        "g7": "XcXEQzuLXRU9RcfWzEJt",
+        "i9": "g2",
+        "j10": "XcXEQzuLXRU9RcfWzEJt",
+        "k11": "g2"
+      },
+      "given": [
+        ["7d1c", "g2"],
+        ["b22e", "g2"],
+        ["c3", "g1"],
+        ["d4", "g3"],
+        ["e5", "g1"],
+        ["g7", "XcXEQzuLXRU9RcfWzEJt"],
+        ["i9", "g2"],
+        ["k11", "g2"]
+      ],
+      "roster": "team",
+      "voices": "gendered"
+    },
+    {
+      "all": {
+        "a91f": "XcXEQzuLXRU9RcfWzEJt",
+        "b22e": "s3TPKV1kjDlVtZbl4Ksh",
+        "c3": "cgSgspJ2msm6clMCkdW9",
+        "i9": "WI5pMmcGGS32yI7yttoP",
+        "j10": "XcXEQzuLXRU9RcfWzEJt"
+      },
+      "given": [],
+      "roster": "team",
+      "voices": "none"
+    },
+    {
+      "all": {
+        "theo": "1t1EeRixsJrKbiF1zwM6",
+        "w0": "NHRgOEwqx5WZNClv5sat",
+        "w1": "WI5pMmcGGS32yI7yttoP",
+        "w10": "5u41aNhyCU6hXOcjPPv0",
+        "w11": "XcXEQzuLXRU9RcfWzEJt",
+        "w12": "WI5pMmcGGS32yI7yttoP",
+        "w13": "NHRgOEwqx5WZNClv5sat",
+        "w2": "XcXEQzuLXRU9RcfWzEJt",
+        "w3": "5u41aNhyCU6hXOcjPPv0",
+        "w4": "NHRgOEwqx5WZNClv5sat",
+        "w5": "5u41aNhyCU6hXOcjPPv0",
+        "w6": "XcXEQzuLXRU9RcfWzEJt",
+        "w7": "WI5pMmcGGS32yI7yttoP",
+        "w8": "NHRgOEwqx5WZNClv5sat",
+        "w9": "5u41aNhyCU6hXOcjPPv0"
+      },
+      "given": [
+        ["theo", "1t1EeRixsJrKbiF1zwM6"],
+        ["w0", "NHRgOEwqx5WZNClv5sat"],
+        ["w1", "WI5pMmcGGS32yI7yttoP"],
+        ["w10", "5u41aNhyCU6hXOcjPPv0"],
+        ["w11", "XcXEQzuLXRU9RcfWzEJt"],
+        ["w12", "WI5pMmcGGS32yI7yttoP"],
+        ["w13", "NHRgOEwqx5WZNClv5sat"],
+        ["w2", "XcXEQzuLXRU9RcfWzEJt"],
+        ["w3", "5u41aNhyCU6hXOcjPPv0"],
+        ["w4", "NHRgOEwqx5WZNClv5sat"],
+        ["w5", "5u41aNhyCU6hXOcjPPv0"],
+        ["w6", "XcXEQzuLXRU9RcfWzEJt"],
+        ["w7", "WI5pMmcGGS32yI7yttoP"],
+        ["w8", "NHRgOEwqx5WZNClv5sat"],
+        ["w9", "5u41aNhyCU6hXOcjPPv0"]
+      ],
+      "roster": "women",
+      "voices": "curated"
+    },
+    {
+      "all": {
+        "theo": "XcXEQzuLXRU9RcfWzEJt",
+        "w0": "g1",
+        "w1": "g1",
+        "w10": "g1",
+        "w11": "g1",
+        "w12": "g1",
+        "w13": "g1",
+        "w2": "g1",
+        "w3": "g1",
+        "w4": "g1",
+        "w5": "g1",
+        "w6": "g1",
+        "w7": "g1",
+        "w8": "g1",
+        "w9": "g1"
+      },
+      "given": [
+        ["theo", "XcXEQzuLXRU9RcfWzEJt"],
+        ["w0", "g1"],
+        ["w1", "g1"],
+        ["w10", "g1"],
+        ["w11", "g1"],
+        ["w12", "g1"],
+        ["w13", "g1"],
+        ["w2", "g1"],
+        ["w3", "g1"],
+        ["w4", "g1"],
+        ["w5", "g1"],
+        ["w6", "g1"],
+        ["w7", "g1"],
+        ["w8", "g1"],
+        ["w9", "g1"]
+      ],
+      "roster": "women",
+      "voices": "gendered"
+    }
+  ]
+}
