@@ -24,6 +24,7 @@ import {
 import type { RebuildDriver } from '../core/rebuildDriver'
 import type { AppStore } from '../core/store'
 import { t } from '../l10n'
+import { classes } from './classes'
 import './ComputerStates.css'
 import { listOrder } from './Sidebar'
 import { useWatched } from './useStore'
@@ -247,12 +248,10 @@ export function ComputerDialogLayer({ store }: { store: AppStore }): ReactNode {
 
   const showing = dialog ?? leaving?.dialog
   if (!showing) return null
-  const className = [
+  const className = classes(
     'computer-dialogs',
-    !dialog ? 'fading-out' : fading ? 'fading-in' : '',
-  ]
-    .filter(Boolean)
-    .join(' ')
+    !dialog ? 'fading-out' : fading && 'fading-in',
+  )
   return (
     <div className={className}>
       <div
@@ -603,7 +602,7 @@ function DialogButton({
   return (
     <button
       type="button"
-      className={`computer-button ${style}${focused ? 'focused' : ''}`}
+      className={classes('computer-button', style, focused && 'focused')}
       disabled={disabled}
       // The keys stay with the dialog: a click does not move them to the button.
       onMouseDown={(event) => event.preventDefault()}
@@ -650,7 +649,7 @@ function RebuildCard({
           {view.steps.map((step, i) => (
             <div
               key={i}
-              className={`rebuild-step ${step.state}`}
+              className={classes('rebuild-step', step.state)}
               aria-label={
                 step.label +
                 (step.state === 'done'
