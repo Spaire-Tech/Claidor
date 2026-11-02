@@ -24,6 +24,7 @@ import {
   planFacts,
   unknownAccess,
 } from './access'
+import { type ExchangeLine, exchangeLines } from './agentNetwork'
 import { SimeonAPIError } from './api'
 import {
   type AgentBackend,
@@ -99,6 +100,15 @@ import {
   parseSections,
   sectionsJSON,
 } from './sidebarSections'
+import {
+  type PackAsk,
+  type StarterPack,
+  packAddFailure,
+  packAgentArguments,
+  packFrom,
+  packReadFailure,
+  packSectionId,
+} from './starterPacks'
 import { bytesFromBase64URL } from './tokens'
 
 /** A call whose failure changes nothing: tried, and let be. */
@@ -2729,8 +2739,178 @@ export class AppStore {
   // AgentNetwork.swift, StarterPackSheet.swift, StarterPacks.swift). 4e's
   // state and commands go below this line, and nowhere else.
 
+  /**
+   * The starter pack's sheet while it shows (MacServices.swift's
+   * `packAsk`): the pack asked for, then read from the server or why it
+   * couldn't be, and Add under way. Asked by the window (`askPack`).
+   */
+  packAsk?: PackAsk
+  /** Bumped by each pack asked for and by signing out: a read begun before is dropped. */
+  private packAsks = 0
+
   /** 4e's state back to nothing (signed out). */
-  private resetOrgChartAndPacks(): void {}
+  private resetOrgChartAndPacks(): void {
+    this.packAsk = undefined
+    this.packAsks += 1
+  }
+
+  /** Signed out: what the core's `starterPack` says without a backend. */
+  private notSignedIn(): SimeonAPIError {
+    return new SimeonAPIError(t('Sign in to Simeon first.'), 401)
+  }
+
+  /**
+   * What two agents said to each other (OrgChart.swift's `ExchangeCard`):
+   * the first one's last 200 lines (`tail`, read without opening its chat
+   * or waking a computer that rests), their messages to each other, the
+   * last 30. Refused when the lines can't be read.
+   */
+  async networkExchange(
+    source: { id: string; name: string },
+    targetId: string,
+  ): Promise<ExchangeLine[]> {
+    const backend = this.backend
+    if (!backend) throw this.notSignedIn()
+    const entries = await backend.tail(source.id, 200)
+    return exchangeLines(entries, source, targetId)
+  }
+
+  /** A pack, read from Simeon Labs' server (`starterPack`); the server's sentence when it has none ("This team isn't available anymore."). */
+  async starterPack(id: string): Promise<StarterPack> {
+    const backend = this.backend
+    if (!backend) throw this.notSignedIn()
+    const answer = await backend.server(`packs/${id}`)
+    const pack = packFrom(answer)
+    if (!pack)
+      throw new SimeonAPIError(t("This team isn't available anymore."), 404)
+    return pack
+  }
+
+  /** The pack's agents already here (its section's, still listed); none when it was never added or they are gone. */
+  packAgents(pack: StarterPack): string[] {
+    const id = packSectionId(pack.id)
+    const section = this.sidebarSections?.find((one) => one.id === id)
+    if (!section) return []
+    const listed = new Set(this.agents.map((agent) => agent.id))
+    return section.agentIds.filter((agentId) => listed.has(agentId))
+  }
+
+  /**
+   * Add (`addPack`): the five agents made one after another, each with its
+   * face, title and instructions, and each speaking first at once; then a
+   * section named after the pack at the top of the sidebar, holding them.
+   * The ids made, the first to open; one that fails is said (`problem`)
+   * and the rest are still made.
+   */
+  async addPack(pack: StarterPack): Promise<string[]> {
+    return (await this.makePack(pack)).made
+  }
+
+  /** `addPack`, with the last refusal's words (what the Mac's sheet reads back as `problemShown`). */
+  private async makePack(
+    pack: StarterPack,
+  ): Promise<{ made: string[]; problem?: string }> {
+    const backend = this.backend
+    if (!backend) return { made: [] }
+    if (this.sidebarSections === undefined) await this.loadSections()
+    const made: string[] = []
+    let problem: string | undefined
+    for (const member of pack.members) {
+      try {
+        const answer = await backend.command(
+          'createAgent',
+          packAgentArguments(member, newMessageId()),
+        )
+        const id = text(field(field(answer, 'agent'), 'id'))
+        if (!id)
+          throw new GatewayError('createAgent: no agent in the answer', true)
+        made.push(id)
+      } catch (error) {
+        const why = error instanceof Error ? error.message : String(error)
+        problem = t`Couldn't create ${member.name}: ${why}`
+        this.problem = problem
+        this.changed()
+      }
+    }
+    if (backend !== this.backend) return { made: [], problem }
+    await this.reloadRoster()
+    if (made.length > 0) {
+      // A section at the top holding them, named after the pack (`create`, then `rename`; written normalised).
+      const sectionId = packSectionId(pack.id)
+      this.editSections((sections) =>
+        createSection(sections, sectionId, made).map((section) =>
+          section.id === sectionId
+            ? { ...section, name: pack.folder }
+            : section,
+        ),
+      )
+    }
+    return { made, problem }
+  }
+
+  /** The website's Add to Simeon (MacServices.swift's `askPack`): the sheet at once, its pack read from the server. */
+  askPack(id: string): void {
+    if (!this.backend) return
+    this.packAsks += 1
+    const asked = this.packAsks
+    this.packAsk = { id, adding: false }
+    this.changed()
+    void (async () => {
+      let read: PackAsk
+      try {
+        read = { id, adding: false, pack: await this.starterPack(id) }
+      } catch (error) {
+        read = { id, adding: false, failure: { read: packReadFailure(error) } }
+      }
+      if (asked !== this.packAsks || this.packAsk?.id !== id) return
+      this.packAsk = read
+      this.changed()
+    })()
+  }
+
+  /**
+   * Add on the sheet (`addAskedPack`): a team already added only opens;
+   * else the five are made and the sheet goes. The agent to open, the
+   * first one's chat; none while adding, or when nothing could be made
+   * (the sheet then says why).
+   */
+  async addAskedPack(): Promise<string | undefined> {
+    const ask = this.packAsk
+    const pack = ask?.pack
+    if (!ask || !pack || ask.adding) return undefined
+    const first = this.packAgents(pack)[0]
+    if (first) {
+      this.packAsk = undefined
+      this.changed()
+      return first
+    }
+    const asked = this.packAsks
+    this.packAsk = { ...ask, adding: true }
+    this.changed()
+    const { made, problem } = await this.makePack(pack)
+    if (asked !== this.packAsks || this.packAsk?.id !== pack.id)
+      return undefined
+    if (made[0]) {
+      this.packAsk = undefined
+      this.changed()
+      return made[0]
+    }
+    this.packAsk = {
+      id: pack.id,
+      adding: false,
+      failure: packAddFailure(problem),
+    }
+    this.changed()
+    return undefined
+  }
+
+  /** ×, Escape or a click beside the sheet: it goes, unless Add is under way. */
+  closePack(): void {
+    if (!this.packAsk || this.packAsk.adding) return
+    this.packAsk = undefined
+    this.packAsks += 1
+    this.changed()
+  }
 
   // MARK: The composer's lists
 
