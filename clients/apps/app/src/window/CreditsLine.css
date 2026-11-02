@@ -1,0 +1,32 @@
+/*
+ * The credits' line (CreditsLine.tsx): the access notice's look
+ * (ComputerStates.css, `AccessNotice`), with its × near the limit and the
+ * fade as it closes.
+ */
+
+.credits-line {
+  transition: opacity 0.15s ease-out;
+}
+
+.credits-line.fading {
+  opacity: 0;
+}
+
+/* ×: 10, semibold, the grey, in a 22 square. */
+.credits-close {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink-secondary);
+  cursor: pointer;
+}
+
+.credits-close:focus-visible {
+  outline: 2px solid var(--unread);
+  outline-offset: 1px;
+}
