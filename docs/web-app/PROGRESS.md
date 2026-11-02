@@ -665,7 +665,40 @@ and a pack read with no answer.
 
 **Checked:**
 
-(Checked after the merge: in progress.)
+After the merge, on one build of the merged branch (`9640e1fb1`, whose
+code is `d5a38a6e5`'s), every check ran again in Chromium, light and dark,
+then French: step 4's nine scripts, and steps 3b and 3c's, the cards', the
+flights' and the shop's, so nothing step 4 changed in the window broke an
+earlier screen. Every outside address answered by a stand-in. No page
+errors.
+
+- Three scripts were brought to step 4's markup; the app was not changed
+  for them: 3c's joined card has two buttons now (Go to Chat, View
+  Profile); the flights' checks find a flight's details in the agent's
+  pane; 4d's refused removal draws no empty message line.
+- The addresses a card opens on purpose (a cloud agent's pull request,
+  the shop's and Link's pages, an airline's logo) were caught as they
+  opened, as each script expects.
+- 4c's fixes on this build (and `4c-through.cjs`, written for them): with
+  the Add menu open, Delete pressed only closes the menu (nothing sent);
+  with Frequency's menu open, Active pressed only closes the menu (the
+  popover stays, nothing sent); with a trigger's popover open, Delete
+  only closes it, and the name field under a click outside doesn't take
+  the keys; with nothing open, Delete deletes. "3 routines" opened by
+  Return lists its three under the chip (at its left edge, 4 below it;
+  `4c-chipkeys.cjs`), by the pointer at the pointer. The keys back on the
+  pill after a menu ("routine-pill Frequency"); in a 388-wide pane a
+  popover's sentence ("Issue status changed with status s1 in All
+  projects for ENG") fits inside it. In French the routines read their
+  own sentences ("En semaine à 08:00", "Toutes les 15 minutes en semaine,
+  09:00 – 17:45", "En pause").
+- In French, a routine found by search reads "Every Monday at 9:00 AM":
+  the stand-in routine carries only the computer's English words, with no
+  trigger to word, and the Mac shows the same.
+- The committed build (`clients/apps/web/public/app-next`) made again from
+  this code (`54775ac3a`); `pnpm test`'s check of it passes. The
+  inventory: the web app now shows 1,149 of the catalogues' 3,164 strings
+  (702 after step 3).
 
 Before the merge, each part on its own branch, in Chromium against
 stand-in servers and computers (the session's scratchpad: `4a-check.cjs`,
@@ -766,9 +799,9 @@ then French (every word from the catalogues). No page errors in any run.
 - Whether the Mac's node opens its card after a drag that began on it;
   what the Mac does when another overlay opens over a routine's popover
   (its `overlayOpened` closes it; on the web it stays, under search).
-- `pnpm test`'s check of the committed build:
-  `clients/apps/web/public/app-next` is still step 3's, made again at the
-  end of step 4.
+- The Profile and routine fields keeping their words when another window
+  comes forward (the fix reads `document.hasFocus()`, which a headless
+  browser always answers true).
 
 **Next:** step 5, the computer and calls.
 
