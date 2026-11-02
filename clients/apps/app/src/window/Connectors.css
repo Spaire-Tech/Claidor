@@ -1,0 +1,724 @@
+/*
+ * Connectors (Connectors.tsx) at the Mac's measures
+ * (mac/Simeon/PluginsWindow.swift 1-1125): Settings' dim and panel
+ * (Settings.css), its head, the bar (the search, the categories, Available |
+ * Yours), the lists in two columns, the rows and their marks, the GitHub
+ * banner and the notice. The window's own colours (`Look` and its
+ * Connectors extension), light and dark.
+ */
+:root {
+  /* `look.pluginPill`: the pills' grey (Reopen, a team's label, Coming soon). */
+  --plugin-pill: rgb(118 118 128 / 0.1216);
+  /* `look.fillHover`: a grey pill under the pointer. */
+  --plugin-pill-hover: rgb(119 119 119 / 0.17);
+  /* `look.authenticate`: Connect's blue. */
+  --plugin-blue: #0a6cdf;
+  /* `look.warning`: orange words (Needs auth, the GitHub banner's title). */
+  --plugin-warning: #c27400;
+  /* `look.success` (`--settings-green`): Connected, the notice of a success. */
+  --plugin-success: #009957;
+  /* The notice's tints (`noticeSuccessFill`, `noticeErrorFill`). */
+  --plugin-notice-success: #d4ece2;
+  --plugin-notice-error: #f3d8db;
+  /* A logo's tile: white with a hairline (the raised grey on dark). */
+  --plugin-tile: #ffffff;
+  --plugin-tile-edge: rgb(20 20 20 / 0.08);
+  /* The search and the categories' capsules, and the edge of a capsule. */
+  --plugin-capsule: #ffffff;
+  --plugin-capsule-edge: rgb(20 20 20 / 0.12);
+  --plugin-capsule-edge-focus: rgb(20 20 20 / 0.22);
+  /* Available | Yours: the track, the chosen half, its hairline and shadow. */
+  --plugin-track: #f1f1f1;
+  --plugin-thumb: #ffffff;
+  --plugin-thumb-edge: rgb(20 20 20 / 0.1);
+  --plugin-thumb-shadow: rgb(0 0 0 / 0.04);
+  /* The GitHub banner's orange wash (#ff9800 at 9%). */
+  --plugin-banner: rgb(255 152 0 / 0.09);
+  /* The notice's shadow on light. */
+  --plugin-notice-shadow: rgb(0 0 0 / 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --plugin-pill: #2b2b2d;
+    --plugin-pill-hover: rgb(119 119 119 / 0.32);
+    --plugin-blue: #016cec;
+    --plugin-warning: #ffaf38;
+    --plugin-success: #38d591;
+    --plugin-notice-success: #1d362b;
+    --plugin-notice-error: #3d2225;
+    --plugin-tile: #232325;
+    --plugin-tile-edge: rgb(252 252 252 / 0.12);
+    --plugin-capsule: rgb(255 255 255 / 0.05);
+    --plugin-capsule-edge: rgb(252 252 252 / 0.12);
+    --plugin-capsule-edge-focus: rgb(252 252 252 / 0.22);
+    --plugin-track: rgb(255 255 255 / 0.08);
+    --plugin-thumb: rgb(255 255 255 / 0.16);
+    --plugin-thumb-edge: transparent;
+    --plugin-thumb-shadow: transparent;
+    --plugin-banner: rgb(255 152 0 / 0.173);
+    --plugin-notice-shadow: transparent;
+  }
+}
+
+/* MARK: The panel (`PluginsPanel`): Settings' panel, its parts one under another */
+
+.connectors-panel {
+  flex-direction: column;
+}
+
+/* The head (`PanelHead`): 32 high, 18 from the top, 24 in and 18 at the right; Back before the page's name. */
+.connectors-panel .panel-head {
+  margin: 18px 18px 0 24px;
+}
+
+/* Under the head: the list, and a page over it. */
+.connectors-body {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+/* The list (`PluginsList`), padded 4, 10, 32 and 10; its parts 8 apart. Kept under a page, unseen, so Back finds it where it was. */
+.connectors-list {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  padding: 4px 10px 32px;
+  box-sizing: border-box;
+}
+
+.connectors-list.under-page {
+  opacity: 0;
+}
+
+.connectors-list-parts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* A page over the list: the area under the head, scrolling (the page draws its own room). */
+.connectors-page {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+}
+
+/* A section on its own page (`CategoryPage`): across the panel, 4 above, 12 a side, 32 at the foot. */
+.connectors-category-page {
+  padding: 4px 12px 32px;
+}
+
+/* MARK: The bar (`PluginsBar`): 14 under the head, 24 a side, 4 under; the search and the categories 8 apart, Available | Yours 14 under them */
+
+.connectors-bar {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 24px 4px;
+}
+
+.connectors-bar-line {
+  display: flex;
+  gap: 8px;
+  align-self: stretch;
+}
+
+/* "Search connectors" (`PluginsSearch`): a capsule 32 high, its edge a touch darker with the keys, never the blue ring; the glass (12) and the words (13). */
+.connectors-search {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  background: var(--plugin-capsule);
+  box-shadow: inset 0 0 0 1px var(--plugin-capsule-edge);
+  cursor: text;
+}
+
+.connectors-search:focus-within {
+  box-shadow: inset 0 0 0 1px var(--plugin-capsule-edge-focus);
+}
+
+.connectors-search-glass {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  color: var(--ink-secondary);
+}
+
+.connectors-search input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+}
+
+.connectors-search input::placeholder {
+  color: var(--ink-tertiary);
+  opacity: 1;
+}
+
+.connectors-search input::-webkit-search-cancel-button {
+  display: none;
+}
+
+/* × once something is typed: the filled circle (12) in the faint grey. */
+.connectors-search-clear {
+  flex: none;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink-tertiary);
+  cursor: pointer;
+}
+
+.connectors-search-clear:focus-visible,
+.connectors-category:focus-visible,
+.connectors-segment:focus-visible,
+.connectors-row-open:focus-visible,
+.connectors-heading-button:focus-visible,
+.plugin-plus:focus-visible,
+.plugin-pill:focus-visible,
+.connectors-notice-dismiss:focus-visible {
+  outline: 2px solid var(--unread);
+  outline-offset: 1px;
+}
+
+/* The categories (`CategoryButton`), on Available only: as high as the search, "All Categories ⌄" (grey) or the one chosen (in the ink), 14 a side; the row's grey under the pointer. */
+.connectors-category {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--plugin-capsule);
+  box-shadow: inset 0 0 0 1px var(--plugin-capsule-edge);
+  color: var(--ink-tertiary);
+  font: inherit;
+  cursor: pointer;
+}
+
+.connectors-category:hover {
+  background: var(--grouped-row);
+}
+
+.connectors-category-name {
+  color: var(--ink-secondary);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.connectors-category-name.chosen {
+  color: var(--ink);
+}
+
+/* The categories' menu: at least the button's width, scrolling when the window is short. */
+.connectors-category-menu .pop-menu {
+  min-width: var(--menu-width, 180px);
+  max-height: calc(100vh - 16px);
+  overflow-y: auto;
+}
+
+/* Available | Yours (`GlassSegments`): 220 by 34 in the middle; the track a point shorter above and below; the chosen half a white capsule with a hairline, sliding (0.22 s); the words 13, the chosen in the ink. */
+.connectors-segments {
+  position: relative;
+  display: flex;
+  width: 220px;
+  height: 34px;
+}
+
+.connectors-segments::before {
+  content: '';
+  position: absolute;
+  inset: 1px 0;
+  border-radius: 999px;
+  background: var(--plugin-track);
+}
+
+.connectors-segments-thumb {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--plugin-thumb);
+  box-shadow:
+    inset 0 0 0 0.5px var(--plugin-thumb-edge),
+    0 0.5px 1px var(--plugin-thumb-shadow);
+  transition: transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+.connectors-segments-thumb.right {
+  transform: translateX(100%);
+}
+
+.connectors-segment {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-tertiary);
+  font: inherit;
+  font-size: 13px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.connectors-segment.chosen {
+  color: var(--ink);
+  cursor: default;
+}
+
+/* MARK: The lists */
+
+/* A section's name (`SectionHeading`): 13 medium in grey, 20 over it and 6 under, 12 in; its › (9, fainter) moves 2 right under the pointer, the name darkens. */
+.connectors-heading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 20px 12px 6px;
+  color: var(--ink-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.connectors-heading-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.connectors-heading-button > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.connectors-heading-chevron {
+  display: grid;
+  color: var(--ink-tertiary);
+  transition: transform 0.15s ease-out;
+}
+
+.connectors-heading-button:hover {
+  color: var(--ink);
+}
+
+.connectors-heading-button:hover .connectors-heading-chevron {
+  transform: translateX(2px);
+}
+
+/* Two apps to a line, 12 between the columns and 2 between the rows. */
+.connectors-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  column-gap: 12px;
+  row-gap: 2px;
+  align-items: start;
+}
+
+/* An empty line (`YoursEmpty`): 12 in grey, 6 above and below, 12 in. */
+.connectors-empty {
+  margin: 0;
+  padding: 6px 12px;
+  color: var(--ink-secondary);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.connectors-empty.first {
+  margin-top: 18px;
+}
+
+/* MARK: A row (`PluginRow`): at least 56, 12 in and 10 above and below; the icon, then the name over its line, and the mark; the row's grey under the pointer, 10 round */
+
+.connectors-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 10px 12px;
+  box-sizing: border-box;
+  border-radius: 10px;
+}
+
+.connectors-row:hover {
+  background: var(--grouped-row);
+}
+
+.connectors-row-open {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.connectors-row-open.dimmed {
+  opacity: 0.6;
+}
+
+.connectors-row-words {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.connectors-row-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.connectors-row-name {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 13px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.connectors-row-line {
+  overflow: hidden;
+  color: var(--ink-secondary);
+  font-size: 12px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.connectors-row-end {
+  flex: none;
+  display: flex;
+  align-items: center;
+}
+
+/* Team (`TeamBadge`): 18 high, people and "Team" at 11 in the faint grey on the ink at 7%. */
+.plugin-team {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 18px;
+  padding: 1px 6px 1px 5px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 7%, transparent);
+  color: var(--ink-tertiary);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+/* An app's tile (`PluginIcon`): white with a hairline (the raised grey on dark), its logo at 76%, else its first letter (36%, 600, grey). */
+.plugin-tile {
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: var(--plugin-tile);
+  color: var(--ink-secondary);
+  font-weight: 600;
+  line-height: 1;
+}
+
+.plugin-tile::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 0.5px var(--plugin-tile-edge);
+  pointer-events: none;
+}
+
+.plugin-tile img,
+.plugin-tile .plugin-tile-mask {
+  display: block;
+  width: 76%;
+  height: 76%;
+  object-fit: contain;
+}
+
+.plugin-tile-mask {
+  background-color: var(--ink);
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+}
+
+/* A skill's tile (`SkillTile`): the list mark (14, grey) on the ink at 6%, an app icon's corners. */
+.plugin-skill-tile {
+  flex: none;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  color: var(--ink-secondary);
+}
+
+.plugin-skill-tile.large {
+  background: color-mix(in srgb, var(--ink) 3%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 10%, transparent);
+  color: var(--ink);
+}
+
+/* MARK: The marks at a row's end, each in a 28 square */
+
+/* + (`PlusMark`): 16, light, in the ink; a faint disc under the pointer; 45% while it waits. */
+.plugin-plus {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.plugin-plus:hover:not(:disabled) {
+  background: var(--grouped-row-hover);
+}
+
+.plugin-plus:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* Connected (`AddedMark`): the tick (13, medium) in green. */
+.plugin-added {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  color: var(--plugin-success);
+}
+
+/* While its add runs (`AddingSpinner`): a 15 ring turning every 0.7 s, all but its bottom quarter in the darker grey. */
+.plugin-spinner {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+}
+
+.plugin-spinner::before {
+  content: '';
+  width: 15px;
+  height: 15px;
+  box-sizing: border-box;
+  border: 2px solid var(--ink-secondary);
+  border-bottom-color: var(--ink-tertiary);
+  border-radius: 50%;
+  animation: plugin-turn 0.7s linear infinite;
+}
+
+@keyframes plugin-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Coming soon (`SoonWord`): said quietly, 12 in the faint grey. */
+.plugin-soon {
+  color: var(--ink-tertiary);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+/* A status (`StatusWord`): its word at 13, green, orange, red or grey. */
+.plugin-status {
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.plugin-status.success {
+  color: var(--plugin-success);
+}
+
+.plugin-status.warning {
+  color: var(--plugin-warning);
+}
+
+.plugin-status.danger {
+  color: var(--danger);
+}
+
+.plugin-status.tertiary {
+  color: var(--ink-tertiary);
+}
+
+/* A pill (`PluginPill`): 12 medium, 24 high, 10 a side, round; the grey (darker under the pointer), Connect's blue, a team's label or Coming soon; 56% while it waits. */
+.plugin-pill {
+  flex: none;
+  height: 24px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--plugin-pill);
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.plugin-pill:hover:not(:disabled) {
+  background: var(--plugin-pill-hover);
+}
+
+.plugin-pill.primary {
+  background: var(--plugin-blue);
+  color: #ffffff;
+}
+
+.plugin-pill.primary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--plugin-blue) 88%, transparent);
+}
+
+.plugin-pill.label {
+  color: var(--ink-secondary);
+  cursor: default;
+}
+
+.plugin-pill.soon {
+  color: var(--ink-tertiary);
+  cursor: default;
+}
+
+.plugin-pill.waiting {
+  opacity: 0.56;
+  cursor: default;
+}
+
+/* MARK: The GitHub banner (`GitHubBanner`): the orange wash, 10 round, a hairline; its title (12, orange) over its line (13, grey); Fix with agent at its right */
+
+.connectors-banner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 10px 10px 12px;
+  border-radius: 10px;
+  background: var(--plugin-banner);
+  box-shadow: inset 0 0 0 0.5px color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+.connectors-banner-words {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.connectors-banner-title {
+  color: var(--plugin-warning);
+  font-size: 12px;
+}
+
+.connectors-banner-line {
+  color: var(--ink-secondary);
+  font-size: 13px;
+}
+
+/* MARK: The notice (`NoticeBar`): at the panel's foot, 20 in and 16 above its edge; tinted green or red with a line of its colour at 38%; the tick or the cross, the words (12.5), Dismiss */
+
+.connectors-notice {
+  position: absolute;
+  right: 20px;
+  bottom: 16px;
+  left: 20px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border-radius: 9px;
+  color: var(--plugin-success);
+  background: var(--plugin-notice-success);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, currentColor 38%, transparent),
+    0 6px 16px var(--plugin-notice-shadow);
+}
+
+.connectors-notice.error {
+  color: var(--danger);
+  background: var(--plugin-notice-error);
+}
+
+.connectors-notice-mark {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 13px;
+  height: 13px;
+}
+
+.connectors-notice-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 12.5px;
+}
+
+.connectors-notice-dismiss {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: inherit;
+  opacity: 0.7;
+  cursor: pointer;
+}
