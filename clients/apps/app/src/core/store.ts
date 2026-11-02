@@ -28,6 +28,7 @@ import {
 } from './access'
 import type { AgentDraft } from './agentDraft'
 import { type ExchangeLine, exchangeLines } from './agentNetwork'
+import type { RosterNews } from './agentNotifications'
 import {
   type VoiceChoice,
   keptVoice,
@@ -762,6 +763,7 @@ export class AppStore {
     try {
       const list = await backend.listAgents()
       if (backend !== this.backend) return
+      this.rosterNews?.({ kind: 'seed', agents: list })
       this.showingSaved = false
       this.listFromServer = false
       this.agents = this.readingOpenChat(sortRoster(list))
@@ -804,6 +806,8 @@ export class AppStore {
   apply(event: BackendEvent): void {
     switch (event.kind) {
       case 'agents': {
+        // Heard as the computer says it, held or not (Store.swift's `rosterNews`, 7c).
+        this.rosterNews?.({ kind: 'roster', agents: event.agents })
         // Held while the computer is rebuilt, read again once it ends (Store.swift's `rosterHeld`, 5c).
         if (this.holdsRoster()) return
         this.showingSaved = false
@@ -815,6 +819,7 @@ export class AppStore {
         return
       }
       case 'agentUpserted': {
+        this.rosterNews?.({ kind: 'update', agent: event.agent })
         if (this.holdsRoster()) return
         // The host sends the same agent again often (each step of a turn); only a change redraws the list.
         if (this.agents.some((agent) => sameAgent(agent, event.agent))) return
@@ -6133,6 +6138,84 @@ export class AppStore {
   // MARK: Step 7c's notifications, the taskbar's number, the tray and the menu: the
   // roster's news (the Mac's `rosterNews`), each agent's waiting and unread.
 
+  /**
+   * What the computer says of the agents, as it says it, before the list's
+   * own handling (Store.swift's `rosterNews`): the Windows app's
+   * notifications and taskbar number (src/desktop/surfaces.ts). Set once for
+   * the app's life; nothing else hears it.
+   */
+  rosterNews?: (news: RosterNews) => void
+  /** One `setWindowFocused` at a time, each reading the window when it goes (MacServices.swift's `focusChain`). */
+  private focusChain: Promise<void> = Promise.resolve()
+
+  /**
+   * The Windows app's window came in front or went behind
+   * (MacServices.swift's `focusChanged`, decision 3): the computer is told,
+   * and the open chat counts as read only while it is in front, so the
+   * taskbar's number, the sidebar's dots and the notifications agree.
+   */
+  windowFocusChanged(focused: () => boolean): void {
+    const now = focused()
+    this.isForeground = now
+    const open = this.openChat
+    const agent = open != null ? this.agent(open) : undefined
+    if (
+      now &&
+      open != null &&
+      (agent?.hasUnread || (agent?.unreadCount ?? 0) > 0)
+    )
+      this.markRead(open)
+    this.tellWindowFocus(focused)
+  }
+
+  /**
+   * `setWindowFocused` (MacServices.swift's `sendFocus`): whether the window
+   * is the one in front, as it is when the command goes; never to a
+   * computer that rests (`commandIfAwake`), which is told again when it is
+   * back (`desktopConnected`).
+   */
+  tellWindowFocus(focused: () => boolean): void {
+    this.focusChain = this.focusChain.then(async () => {
+      const backend = this.backend
+      if (!backend) return
+      await quietly(
+        backend.command(
+          'setWindowFocused',
+          { isFocused: focused() },
+          { wakes: false },
+        ),
+      )
+    })
+  }
+
+  /**
+   * The computer reached, at start and after each drop (MacServices.swift's
+   * `connected`): its own notifications off, the Windows app says them;
+   * then whether the window is in front. The zone this computer is in is
+   * told by `tellTimeZone` (6e), "Execution on Local Computer" by 7f.
+   */
+  async desktopConnected(focused: () => boolean): Promise<void> {
+    const backend = this.backend
+    if (!backend) return
+    await quietly(
+      backend.command('setHostSettings', {
+        notifications: { isEnabled: false },
+      }),
+    )
+    if (backend !== this.backend) return
+    this.tellWindowFocus(focused)
+  }
+
+  /** View › Reload (Control-R in the Windows app; MacSession.swift's `reload`): everything read again from the computer, the account kept. */
+  async reloadFromComputer(): Promise<void> {
+    const backend = this.backend
+    if (!backend) return
+    const account = this.account
+    await this.attach(backend)
+    if (this.account == null && backend === this.backend) this.account = account
+  }
+
+  /** Nothing of the account's is kept here: the Windows app follows the account itself (src/desktop/surfaces.ts, as MacServices.swift's `track`). */
   private resetDesktopSurfaces(): void {}
 
   // MARK: Step 7d's links and pages outside: `simeon://` links handed in, a connector's
