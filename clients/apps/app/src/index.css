@@ -32,6 +32,9 @@
   --working: #00c972;
   /* A plain button's grey (`rgba(119,119,119,.063)`) */
   --wash: rgb(119 119 119 / 0.063);
+  /* The sidebar card's buttons (`SidebarPillButton`): 213 grey at 25%, 56 at 32% on dark; `fillHover` under the pointer. */
+  --roster-pill: rgb(213 213 213 / 0.25);
+  --roster-pill-hover: rgb(119 119 119 / 0.17);
   /* A picture's edge (`--sand-border-weak`): the ink at 10% */
   --picture-edge: rgb(20 20 20 / 0.1);
   /* A blank member and "+N" in a group's picture */
@@ -108,6 +111,8 @@
     --row-picked: rgb(97 136 178 / 0.457);
     --tag: #252527;
     --wash: rgb(119 119 119 / 0.14);
+    --roster-pill: rgb(56 56 56 / 0.32);
+    --roster-pill-hover: rgb(119 119 119 / 0.32);
     --picture-edge: rgb(252 252 252 / 0.1);
     --member-blank: rgb(119 119 119 / 0.173);
     --member-more: #c2c2c2;
@@ -247,6 +252,21 @@ button {
 }
 
 /* The rail's foot: the same discs stacked, 10 apart, 8 from the bottom. */
+/* The foot (`SidebarFoot`): padded 2 over, 12 a side and under, 8 apart; the computer's Update at the right. Nothing in it, nothing drawn (the account and Connect apps come with step 6). */
+.sidebar-foot {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-height: 32px;
+  padding: 2px 12px 12px;
+}
+
+.sidebar-foot:empty {
+  display: none;
+}
+
 .rail-foot {
   display: flex;
   flex: none;
@@ -839,9 +859,10 @@ button {
   background: var(--working);
 }
 
-/* "Can't reach your computer": the card over no list, the line over one. */
+/* "Can't reach your computer": the card over no list (4 down, 12 in; padded 12 10; 12/16 at 60%, 8 apart), the line over one. */
 .roster-card {
   margin: 4px 12px 0;
+  padding: 12px 10px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -850,8 +871,34 @@ button {
   line-height: 16px;
 }
 
+/* The display glyph (11) and the words (500), 8 apart. */
 .roster-card .heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-weight: 500;
+}
+
+/* Retry and Recover computer, 8 apart, 2 lower. */
+.roster-card-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 2px;
+}
+
+/* "Retrying…" (11) beside its spinner (12), 6 apart, in Retry's 26. */
+.roster-retrying {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  font-size: 11px;
+  color: var(--ink-secondary);
+}
+
+.roster-retrying .state-spinner {
+  color: var(--ink);
 }
 
 .roster-line {
@@ -872,15 +919,27 @@ button {
   text-overflow: ellipsis;
 }
 
+/* The card's buttons (`SidebarPillButton`): 26 high, a capsule, 10 a side, 12/16 in the ink, on a faint grey (darker under the pointer). */
 .pill-button {
   height: 26px;
-  padding: 0 12px;
+  padding: 0 10px;
   border: 0;
   border-radius: 13px;
-  background: var(--wash);
+  background: var(--roster-pill);
+  color: var(--ink);
   font-size: 12px;
+  line-height: 16px;
+  white-space: nowrap;
   cursor: pointer;
-  align-self: flex-start;
+  transition: background-color 0.12s ease-out;
+}
+
+.pill-button:hover:not(:disabled) {
+  background: var(--roster-pill-hover);
+}
+
+.pill-button:disabled {
+  cursor: default;
 }
 
 .quiet-button {

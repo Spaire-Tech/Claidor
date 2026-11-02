@@ -117,6 +117,9 @@ export const windowActionIds: ReadonlySet<string> = new Set([
   'info:settings',
   'info:members',
   'open-hidden-chats',
+  // Update Simeon's Computer: ⌘K's id, and "/"'s (step 5c).
+  'update:computer',
+  'computer-update',
 ])
 
 export class WindowModel {
@@ -258,9 +261,10 @@ export class WindowModel {
   /**
    * One of the app's actions, from "/" (Composer.swift's `run`) or ⌘K:
    * the org chart in the chat's place, the pane on Channels, Profile
-   * (Chat Settings) or a group's members, the hidden agents. The Settings
-   * pages, Connectors and the themes come with their screens (step 6).
-   * Whether it was one the window runs.
+   * (Chat Settings) or a group's members, the hidden agents, Update
+   * Simeon's Computer's question (step 5c). The Settings pages, Connectors
+   * and the themes come with their screens (step 6). Whether it was one
+   * the window runs.
    */
   runAction(id: string): boolean {
     switch (id) {
@@ -279,6 +283,11 @@ export class WindowModel {
         return true
       case 'open-hidden-chats':
         this.showHiddenAgents()
+        return true
+      case 'update:computer':
+      case 'computer-update':
+        // Its question: "Update Simeon's Computer?", or "An agent is working" (step 5c).
+        this.askComputer({ kind: 'update' })
         return true
       default:
         return false

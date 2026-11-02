@@ -9,6 +9,7 @@
 
 import type { SimeonAPI } from './api'
 import { SimeonAPIError } from './api'
+import type { MigrationEvent } from './computerRebuild'
 import { Entry, type TranscriptChange, transcriptChangeFrom } from './entry'
 import { Gateway, GatewayError, type GatewayEvent, type Rest } from './gateway'
 import {
@@ -88,6 +89,8 @@ export type BackendEvent =
   | { kind: 'subagents'; parentId: string; subagents: JSONValue[] }
   /** The computer's notices changed (`tray`). */
   | { kind: 'tray'; tray: JSONValue }
+  /** A step of the server's replacement of the computer (`box-migration`, from the server's stream: migrationWatch.ts, read by `migrationEventFrom`). */
+  | { kind: 'migration'; event: MigrationEvent }
 
 export interface AgentBackend {
   listAgents(): Promise<Agent[]>

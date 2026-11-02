@@ -186,6 +186,8 @@ export function ChatPane({
   const agent = store.agent(agentId)
   const threadRoot = store.openThreads[agentId]
   const [composerHeight, setComposerHeight] = useState(56)
+  // Low disk's height and the 8 under it, while it shows (`bannerHeight`, step 5c).
+  const [bannerHeight, setBannerHeight] = useState(0)
   const pane = useRef<HTMLElement>(null)
   // The files waiting to go with the next message (`ChatControl.staged`), and files dropped anywhere on the chat.
   const staging = useStaging()
@@ -398,6 +400,7 @@ export function ChatPane({
         agentId={agentId}
         threadRoot={threadRoot}
         composerHeight={composerHeight}
+        bannerHeight={bannerHeight}
         actions={actions}
         find={findOnScreen}
         revealRef={revealRef}
@@ -414,8 +417,12 @@ export function ChatPane({
         ) : (
           <ChatHeader store={store} agent={agent} />
         ))}
-      {/* Low disk, 8 under the head (step 5c). */}
-      <DiskBanner store={store} top={(threadRoot != null ? 44 : 116) + 8} />
+      {/* Low disk, 8 under the head and in the page's flow: the messages start under it (step 5c). */}
+      <DiskBanner
+        store={store}
+        top={(threadRoot != null ? 44 : 116) + 8}
+        onHeight={setBannerHeight}
+      />
       <Composer
         store={store}
         agentId={agentId}
@@ -608,6 +615,7 @@ function Transcript({
   agentId,
   threadRoot,
   composerHeight,
+  bannerHeight,
   actions,
   find,
   revealRef,
@@ -618,6 +626,8 @@ function Transcript({
   agentId: string
   threadRoot?: string
   composerHeight: number
+  /** Low disk's height and the 8 under it, or 0 (step 5c). */
+  bannerHeight: number
   actions: MessageActions
   /** What find lights: its words in small letters, and the match it stands on. */
   find?: { needle: string; current?: FindMatch }
@@ -876,7 +886,8 @@ function Transcript({
           className="transcript-rows"
           ref={content}
           style={{
-            paddingTop: threadRoot != null ? 44 : 116,
+            // Under the head, and under low disk while it shows (step 5c).
+            paddingTop: (threadRoot != null ? 44 : 116) + bannerHeight,
             // Over the message field: its frame and 28 (the working line's 40 is in its slot).
             paddingBottom: composerHeight + 28,
           }}
