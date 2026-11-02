@@ -6,7 +6,8 @@
 // before the app quits.
 
 import os from 'node:os'
-import { type WebContents, net } from 'electron'
+import path from 'node:path'
+import { type WebContents, app, net, safeStorage } from 'electron'
 import type { HandsApproval } from '../../../../clients/apps/app/src/desktop/contract'
 import { handle } from '../bridge'
 import type { AppContext } from '../context'
@@ -46,6 +47,14 @@ export function register(context: AppContext): void {
     platform: process.platform,
     transport: fetchTransport((input, init) => net.fetch(input, init)),
     shrinkImage,
+    // The app as installed (for this person only, so any of their programs could change it): refused as its data folder is.
+    installFolder: app.isPackaged ? path.dirname(app.getPath('exe')) : undefined,
+    // The setting and the "Allow once" answers signed with a key Windows seals, as the page's kept values are (main.ts).
+    sealer: {
+      available: () => safeStorage.isEncryptionAvailable(),
+      seal: (value) => safeStorage.encryptString(value),
+      open: (sealed) => safeStorage.decryptString(sealed),
+    },
   })
 
   // Only the app's own window drives the hands (not the call's window, not anything else).

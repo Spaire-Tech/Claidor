@@ -47,9 +47,8 @@ $OutputEncoding = [System.Text.UTF8Encoding]::new($false)
 if ($PSStyle) { $PSStyle.OutputRendering = 'PlainText' }
 `
 
-/** The state said as one line: the start marker given, its JSON in base64, the end marker (`dump_zsh_state`). */
-function dump(start: string): string {
-  return `
+/** The state as JSON in `$__simeonJson` (`dump_zsh_state`): the folder, the environment, and the functions and aliases that differ from a plain PowerShell's. */
+const collect = `
 $__simeonHere = Get-Location
 $__simeonState = [ordered]@{
   cwd = $(if ($__simeonHere.Provider.Name -eq 'FileSystem') { $__simeonHere.ProviderPath } else { $__simeonStart })
@@ -58,11 +57,12 @@ $__simeonState = [ordered]@{
   aliases = @(Get-Alias | Where-Object { $__simeonAliases[$_.Name] -ne $_.Definition } | ForEach-Object { [ordered]@{ n = $_.Name; v = [string]$_.Definition } })
 }
 $__simeonJson = ConvertTo-Json -InputObject $__simeonState -Depth 4 -Compress
-[Console]::Out.Flush()
-[Console]::Out.Write(${start} + [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($__simeonJson)) + '${endMarker}' + [char]10)
-[Console]::Out.Flush()
 `
-}
+
+/** The state said as one line after the marker: its JSON in base64, then the end marker. */
+const say = (marker: string) => `[Console]::Out.Flush()
+[Console]::Out.Write(${marker} + [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($json)) + '${endMarker}' + [char]10)
+[Console]::Out.Flush()`
 
 /**
  * The person's PowerShell, once, with their profile (`initZshState`): what
@@ -75,7 +75,9 @@ $__simeonStart = (Get-Location).ProviderPath
 $__simeonFunctions = @{}
 $__simeonAliases = @{}
 [Console]::Out.Write([char]10 + '${stateMarker}' + [char]10)
-${dump(`'${startMarker}'`)}
+${collect}
+$json = $__simeonJson
+${say(`'${startMarker}'`)}
 `
 
 /**
@@ -84,31 +86,59 @@ ${dump(`'${startMarker}'`)}
  * scope (so what it defines stays), its success read after its last
  * statement, then the state said after the run's own marker, and the
  * command's code as the shell's.
+ *
+ * The run's marker is never in a variable the command can list
+ * (`Get-Variable`, `dir variable:`, `$x | Format-List`): the line is read
+ * in a scope of its own, which keeps only a closure that says the state
+ * (`GetNewClosure`, a module of its own whose variables no listing shows),
+ * the command taken out of it as a script block. A command that sets out to
+ * find it can (it runs in the same PowerShell, and could reach the
+ * closure's module); what it would gain is a state it chose, which it can
+ * set anyway, and its folder is checked again before the next command
+ * (rules.ts). The app takes the marker's last occurrence, so one printed
+ * earlier is output (shell.ts, `StateSplitter`).
  */
 export const commandScript = `${prelude}
 $__simeonStart = (Get-Location).ProviderPath
-$__simeonRun = [System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String([Console]::In.ReadLine())) | ConvertFrom-Json
 $__simeonFunctions = @{}
 foreach ($__simeonItem in @(Get-ChildItem Function:)) { $__simeonFunctions[$__simeonItem.Name] = $__simeonItem.Definition }
 $__simeonAliases = @{}
 foreach ($__simeonItem in @(Get-Alias)) { $__simeonAliases[$__simeonItem.Name] = $__simeonItem.Definition }
-foreach ($__simeonItem in @($__simeonRun.env)) { if ($__simeonItem.n) { Set-Item -LiteralPath ('Env:' + $__simeonItem.n) -Value ([string]$__simeonItem.v) } }
-foreach ($__simeonItem in @($__simeonRun.functions)) { if ($__simeonItem.n -and $__simeonFunctions[$__simeonItem.n] -ne $__simeonItem.v) { try { Set-Item -LiteralPath ('Function:global:' + $__simeonItem.n) -Value ([ScriptBlock]::Create($__simeonItem.v)) } catch {} } }
-foreach ($__simeonItem in @($__simeonRun.aliases)) { if ($__simeonItem.n -and $__simeonAliases[$__simeonItem.n] -ne $__simeonItem.v) { try { Set-Alias -Name $__simeonItem.n -Value $__simeonItem.v -Scope Global -Force -ErrorAction Stop } catch {} } }
 Remove-Variable __simeonItem -ErrorAction SilentlyContinue
+$__simeonRun = & {
+  $run = [System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String([Console]::In.ReadLine())) | ConvertFrom-Json
+  foreach ($item in @($run.env)) { if ($item.n) { Set-Item -LiteralPath ('Env:' + $item.n) -Value ([string]$item.v) } }
+  foreach ($item in @($run.functions)) { if ($item.n -and $__simeonFunctions[$item.n] -ne $item.v) { try { Set-Item -LiteralPath ('Function:global:' + $item.n) -Value ([ScriptBlock]::Create($item.v)) } catch {} } }
+  foreach ($item in @($run.aliases)) { if ($item.n -and $__simeonAliases[$item.n] -ne $item.v) { try { Set-Alias -Name $item.n -Value $item.v -Scope Global -Force -ErrorAction Stop } catch {} } }
+  $made = @{ block = $null; failure = $null }
+  try { $made.block = [ScriptBlock]::Create([string]$run.command + [char]10 + '$global:__simeonOk = $?') } catch { $made.failure = ($_ | Out-String).TrimEnd() }
+  $marker = [string]$run.marker
+  Remove-Variable run, item -ErrorAction SilentlyContinue
+  $made.say = { param($json) ${say('$marker')} }.GetNewClosure()
+  $made
+}
+$__simeonBlock = $__simeonRun.block
+$__simeonFailure = $__simeonRun.failure
+Set-Variable -Name __simeonSay -Value $__simeonRun.say -Option ReadOnly
+Remove-Variable __simeonRun
 Remove-Item -LiteralPath Env:SIMEON_CONVERSATION_ID, Env:SIMEON_AGENT_STORE_FILES_DIR, Env:SIMEON_AGENT_STORE_SHARED_PATHS -ErrorAction SilentlyContinue
 $global:LASTEXITCODE = 0
 $global:__simeonOk = $true
 $__simeonFailed = $false
-try {
-  $__simeonBlock = [ScriptBlock]::Create([string]$__simeonRun.command + [char]10 + '$global:__simeonOk = $?')
-  . $__simeonBlock | Out-Default
-} catch {
+if ($null -ne $__simeonFailure) {
   $__simeonFailed = $true
-  [Console]::Error.WriteLine(($_ | Out-String).TrimEnd())
+  [Console]::Error.WriteLine($__simeonFailure)
+} else {
+  try {
+    . $__simeonBlock | Out-Default
+  } catch {
+    $__simeonFailed = $true
+    [Console]::Error.WriteLine(($_ | Out-String).TrimEnd())
+  }
 }
 $__simeonCode = if ($__simeonFailed) { 1 } elseif (-not $global:__simeonOk) { if ($global:LASTEXITCODE) { $global:LASTEXITCODE } else { 1 } } else { 0 }
-${dump('[string]$__simeonRun.marker')}
+${collect}
+& $__simeonSay $__simeonJson
 exit $__simeonCode
 `
 

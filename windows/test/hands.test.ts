@@ -20,6 +20,7 @@ import {
   resolveReadPath,
 } from '../src/main/hands/files'
 import { placesFrom, rootFrom } from '../src/main/hands/hands'
+import { LineEnds, shellName } from '../src/main/hands/provider'
 import {
   LocalToolSettings,
   capped,
@@ -57,8 +58,10 @@ import {
   placeForPath,
   placeInCommand,
   sensitiveRefusal,
+  shortNamePattern,
 } from '../src/main/hands/sensitivePaths'
 import { StateSplitter } from '../src/main/hands/shell'
+import { SigningKey, readSigned, writeSigned } from '../src/main/hands/signed'
 import { checkTarget, sameTarget } from '../src/main/hands/target'
 import * as wire from '../src/main/hands/wire'
 
@@ -220,6 +223,178 @@ describe('the places that hold keys (testPlacesThatHoldKeys)', () => {
     expect(placeInCommand('cat /tmp/h/.ssh/id', linux)?.shown).toBe('~\\.ssh')
     expect(placeForPath('/tmp/data/kept', linux)?.shown).toBe('/tmp/data')
     expect(placeForPath('/tmp/other/x', linux)).toBeUndefined()
+  })
+})
+
+describe('Windows’ own spellings in a command (the review’s probe, S2, S5)', () => {
+  const pc: SensitivePlaces = {
+    home: 'C:\\Users\\Jonathan',
+    appData: 'C:\\Users\\Jonathan\\AppData\\Roaming',
+    localAppData: 'C:\\Users\\Jonathan\\AppData\\Local',
+    systemRoot: 'C:\\Windows',
+    dataFolder: 'C:\\Users\\Jonathan\\AppData\\Roaming\\Simeon',
+    installFolder: 'C:\\Users\\Jonathan\\AppData\\Local\\Programs\\Simeon',
+    hostName: 'JONATHANS-PC',
+  }
+  const inCommand = (command: string, folders: string[] = []) => placeInCommand(command, pc, folders)?.shown
+  const ssh = '~\\.ssh'
+
+  it('refuses each spelling the review ran, as Windows reads it', () => {
+    const commands: [string, string][] = [
+      // Device paths and this PC's own shares.
+      ['gc \\\\?\\C:\\Users\\Jonathan\\.ssh\\id_rsa', ssh],
+      ['gc \\\\.\\C:\\Users\\Jonathan\\.ssh\\id_rsa', ssh],
+      ['gc \\\\localhost\\C$\\Users\\Jonathan\\.ssh\\id_rsa', ssh],
+      ['gc \\\\127.0.0.1\\c$\\Users\\Jonathan\\.ssh\\id_rsa', ssh],
+      ['gc \\\\?\\UNC\\localhost\\c$\\Users\\Jonathan\\.ssh\\id_rsa', ssh],
+      ['gc \\\\JONATHANS-PC\\c$\\Users\\Jonathan\\.ssh\\id_rsa', ssh],
+      ['gc \\\\localhost\\admin$\\System32\\config\\SAM', '%SystemRoot%\\System32\\config'],
+      // No drive: the current drive's root.
+      ['gc \\Users\\Jonathan\\.ssh\\id_rsa', ssh],
+      // 8.3 short names (`Jonathan` is 8.3 already: it has none).
+      ['gc ~\\SSH~1\\id_rsa', ssh],
+      ['gc C:\\Users\\Jonathan\\DOCKER~1\\config.json', '~\\.docker'],
+      ['gc $env:APPDATA\\MICROS~1\\Protect\\x', '%APPDATA%\\Microsoft\\Protect'],
+      ['gc C:\\Users\\Jonathan\\AppData\\Local\\Google\\Chrome\\USERDA~1\\x', '%LOCALAPPDATA%\\Google\\Chrome'],
+      // Windows' old junctions.
+      ['gc "C:\\Documents and Settings\\Jonathan\\.ssh\\id_rsa"', ssh],
+      ['gc "$HOME\\Application Data\\Microsoft\\Credentials\\x"', '%APPDATA%\\Microsoft\\Credentials'],
+      ['gc "$HOME\\Local Settings\\Google\\Chrome\\User Data\\Default\\Login Data"', '%LOCALAPPDATA%\\Google\\Chrome'],
+      ['gc "$HOME\\Local Settings\\Application Data\\Microsoft\\Edge\\x"', '%LOCALAPPDATA%\\Microsoft\\Edge'],
+      ['dir $HOME\\Cookies', '%APPDATA%\\Microsoft\\Windows\\Cookies'],
+      // Streams.
+      ['gc ~\\.netrc::$DATA', '~\\.netrc'],
+      ['cd ~\\.ssh::$INDEX_ALLOCATION; gc id_rsa', ssh],
+      ['gc ~\\.ssh:$I30:$INDEX_ALLOCATION\\id_rsa', ssh],
+      // `..` worked out.
+      ['gc ~\\Documents\\..\\.ssh\\id_rsa', ssh],
+      ['gc $env:TEMP\\..\\..\\..\\.ssh\\id_rsa', ssh],
+      ['gc $PROFILE\\..\\..\\..\\.ssh\\id_rsa', ssh],
+      ['gc "$env:OneDrive\\..\\.ssh\\id_rsa"', ssh],
+      // The home folder's parts as variables, PowerShell's and cmd's.
+      ['gc ${env:HOMEDRIVE}${env:HOMEPATH}\\.ssh\\id_rsa', ssh],
+      ['gc "$env:HOMEDRIVE\\$env:HOMEPATH\\.ssh\\id_rsa"', ssh],
+      ['cmd /c type %USERPROFILE:~0%\\.ssh\\id_rsa', ssh],
+      ['cmd /v:on /c type !USERPROFILE!\\.ssh\\id_rsa', ssh],
+      ['cmd /c "type %userprofile%\\.ssh\\id_rsa"', ssh],
+      // Named from a folder the command moves to.
+      ['cd $env:LOCALAPPDATA; gc "Google\\Chrome\\User Data\\Local State"', '%LOCALAPPDATA%\\Google\\Chrome'],
+      ['cd $env:APPDATA; sc Simeon\\local-tool-permission.json \'{"choice":"always"}\'', '%APPDATA%\\Simeon'],
+      ['Set-Location $env:APPDATA\\Microsoft; gci Protect -Recurse', '%APPDATA%\\Microsoft\\Protect'],
+      ['pushd C:\\Users; type Jonathan\\.ssh\\id_rsa', ssh],
+      ['cd C:\\; type Users\\Jonathan\\.aws\\credentials', '~\\.aws'],
+      // S5: the Mac's places still missing, translated.
+      [
+        'gc "$env:LOCALAPPDATA\\Packages\\TheBrowserCompany.Arc_ttt1ap7aakyb4\\LocalCache\\Local\\Arc\\User Data\\Default\\Cookies"',
+        '%LOCALAPPDATA%\\Packages\\TheBrowserCompany.Arc_*',
+      ],
+      ['gci -Force $env:LOCALAPPDATA\\Microsoft\\Windows\\INetCookies', '%LOCALAPPDATA%\\Microsoft\\Windows\\INetCookies'],
+      ['gc $env:APPDATA\\Microsoft\\Windows\\Cookies\\index.dat', '%APPDATA%\\Microsoft\\Windows\\Cookies'],
+      // N6: the app as installed for this person.
+      ['sc $env:LOCALAPPDATA\\Programs\\Simeon\\resources\\app.asar x', '%LOCALAPPDATA%\\Programs\\Simeon'],
+      // And the review's plain ones still.
+      ['gc ~/AppData/Local/Microsoft/Edge/User` Data/Default/Cookies', '%LOCALAPPDATA%\\Microsoft\\Edge'],
+      ['gc ~\\Ap^pData\\Roaming\\Simeon\\x', '%APPDATA%\\Simeon'],
+      ['gc ($HOME + "\\.ssh\\id_rsa")', ssh],
+      ['gc K:\\.ssh\\id_rsa', ssh],
+    ]
+    for (const [command, shown] of commands) expect(inCommand(command), command).toBe(shown)
+  })
+
+  it('refuses a name read from the folder the command runs in (S2.8)', () => {
+    expect(inCommand('sc Simeon\\local-tool-permission.json x', [pc.appData])).toBe('%APPDATA%\\Simeon')
+    expect(inCommand('gci Protect', ['C:\\Users\\Jonathan\\AppData\\Roaming\\Microsoft'])).toBe(
+      '%APPDATA%\\Microsoft\\Protect',
+    )
+    // A folder that is itself a place: the gate refuses the command whatever its words (rules.ts).
+    const request = describeRequest('shellStreamArgs', { command: 'gc id_rsa' }, 'C:\\Users\\Jonathan\\terminals')
+    const gate = (folders: string[]) =>
+      refusal({ request, approvalId: undefined, permission: 'always', live: new Map(), terminalsFolder: 'C:\\t', places: pc, folders })
+    expect(gate(['C:\\Users\\Jonathan\\.ssh'])).toBe(sensitiveRefusal('read-file', '~/.ssh', pc))
+    expect(gate(['C:\\Users\\Jonathan\\SSH~1'])).toBe(sensitiveRefusal('read-file', '~/.ssh', pc))
+    expect(gate(['C:\\Users\\Jonathan\\Documents'])).toBeUndefined()
+  })
+
+  it('reads a long name’s short form in the home folder too', () => {
+    const long: SensitivePlaces = {
+      home: 'C:\\Users\\Christopher',
+      appData: 'C:\\Users\\Christopher\\AppData\\Roaming',
+      localAppData: 'C:\\Users\\Christopher\\AppData\\Local',
+      systemRoot: 'C:\\Windows',
+      dataFolder: 'C:\\Users\\Christopher\\AppData\\Roaming\\Simeon',
+    }
+    expect(placeInCommand('gc C:\\Users\\CHRIST~1\\.ssh\\id_rsa', long)?.shown).toBe(ssh)
+    expect(placeInCommand('gc C:\\Users\\CHRIST~1\\APPDATA\\Roaming\\MICROS~1\\Credentials', long)?.shown).toBe(
+      '%APPDATA%\\Microsoft\\Credentials',
+    )
+    expect(placeForPath('C:\\Users\\CHRIST~1\\.ssh\\id_rsa', long)?.shown).toBe(ssh)
+    expect(placeInCommand('gc C:\\Users\\CHRIST~1\\Documents\\x.txt', long)).toBeUndefined()
+  })
+
+  it('lets ordinary commands through', () => {
+    for (const command of [
+      'git log HEAD~1',
+      'git rebase -i HEAD~3',
+      'npm install && npm test',
+      'echo .sshx',
+      'cd ..; ls',
+      'gc C:\\Users\\Jonathan\\Documents\\report.docx',
+      'cd C:\\Users\\Jonathan\\Documents; gc notes.txt',
+      'gci $env:APPDATA',
+      'cd $env:APPDATA; gci',
+      'gc $env:TEMP\\build.log',
+      'Get-ChildItem C:\\PROGRA~1',
+      'gc "C:\\Documents and Settings\\Public\\x.txt"',
+    ])
+      expect(inCommand(command), command).toBeUndefined()
+  })
+
+  it('cannot catch what is built while the command runs (said in the code and the record)', () => {
+    for (const command of [
+      'gc ([Environment]::GetEnvironmentVariable("USERPROFILE") + "\\.s" + "sh\\id_rsa")',
+      'gc ~\\.s?h\\id_rsa',
+      'gci ~ -Force -Recurse -Filter id_rsa | gc',
+      'iex ([Text.Encoding]::UTF8.GetString([Convert]::FromBase64String("Z2Mgfi8uc3NoL2lkX3JzYQ==")))',
+      'powershell -EncodedCommand ZwBjACAAfgAvAC4AcwBzAGgALwBpAGQAXwByAHMAYQA=',
+      'cmdkey /list',
+      'gci Cert:\\CurrentUser\\My',
+    ])
+      expect(inCommand(command), command).toBeUndefined()
+  })
+
+  it('reads the same spellings in a path', () => {
+    const paths: [string, string | undefined][] = [
+      ['\\\\JONATHANS-PC\\c$\\Users\\Jonathan\\.ssh\\id_rsa', ssh],
+      ['\\\\[::1]\\c$\\Users\\Jonathan\\.ssh\\id_rsa', ssh],
+      ['C:\\Users\\Jonathan\\SSH~1\\id_rsa', ssh],
+      ['C:\\Users\\Jonathan\\AppData\\Roaming\\MICROS~1\\Protect\\x', '%APPDATA%\\Microsoft\\Protect'],
+      ['C:\\Users\\Jonathan\\Application Data\\Microsoft\\Credentials\\x', '%APPDATA%\\Microsoft\\Credentials'],
+      ['C:\\Documents and Settings\\Jonathan\\.ssh\\id_rsa', ssh],
+      ['C:\\Users\\Jonathan\\.netrc::$DATA', '~\\.netrc'],
+      ['file:///C:/Users/Jonathan/%2Essh/id_rsa', ssh],
+      ['C:.ssh\\id_rsa', ssh],
+      ['%APPDATA%\\Simeon\\local-tool-approvals.json', '%APPDATA%\\Simeon'],
+      ['C:\\Users\\Jonathan\\AppData\\Local\\Packages\\TheBrowserCompany.Arc_x1\\LocalCache', '%LOCALAPPDATA%\\Packages\\TheBrowserCompany.Arc_*'],
+      ['C:\\Users\\Jonathan\\AppData\\Local\\Packages\\Microsoft.WindowsTerminal_8wekyb3d8bbwe', undefined],
+      ['C:\\Users\\Jonathan\\AppData\\Local\\Programs\\Simeon\\resources\\app.asar', '%LOCALAPPDATA%\\Programs\\Simeon'],
+      ['D:\\Users\\Jonathan\\.ssh\\id_rsa', undefined],
+    ]
+    for (const [target, shown] of paths) expect(placeForPath(target, pc)?.shown, target).toBe(shown)
+  })
+
+  it('makes the short names Windows makes', () => {
+    const matches = (name: string, short: string) => new RegExp(`^${shortNamePattern(name)}$`).test(short)
+    expect(matches('.ssh', 'ssh~1')).toBe(true)
+    expect(matches('microsoft', 'micros~1')).toBe(true)
+    expect(matches('microsoft', 'micro~12')).toBe(true)
+    expect(matches('microsoft', 'mi3f2a~1')).toBe(true)
+    expect(matches('local-tool-permission.json', 'local-~1.jso')).toBe(true)
+    // Not a name Windows would give it.
+    expect(matches('.ssh', 's~1')).toBe(false)
+    expect(matches('microsoft', 'm~1')).toBe(false)
+    // An 8.3 name has none of its own.
+    expect(shortNamePattern('appdata')).toBeUndefined()
+    expect(shortNamePattern('_netrc')).toBeUndefined()
   })
 })
 
@@ -600,6 +775,56 @@ describe('the shell’s state (testTheShellsState, PowerShell’s)', () => {
     expect(plain.join('')).toBe('ends with __M')
     expect(other.stateText).toBeUndefined()
   })
+
+  it('takes the state after the marker’s last time, the earlier ones as output (S3)', () => {
+    const out: string[] = []
+    const splitter = new StateSplitter(Buffer.from('__MARK__'), (data) => out.push(data.toString()))
+    splitter.push(Buffer.from('a __MARK__ printed by the command, then __MA'))
+    splitter.push(Buffer.from('RK__the state'))
+    splitter.end()
+    expect(out.join('')).toBe('a __MARK__ printed by the command, then ')
+    expect(splitter.stateText).toBe('the state')
+  })
+
+  it('holds no more than its cap after the marker, then gives it as output (S3)', () => {
+    const out: Buffer[] = []
+    const logs: string[] = []
+    const splitter = new StateSplitter(Buffer.from('__MARK__'), (data) => out.push(data), (line) => logs.push(line), 1_000)
+    splitter.push(Buffer.from('__MARK__'))
+    for (let i = 0; i < 10; i += 1) splitter.push(Buffer.alloc(300, 120))
+    // Over the cap: what was held went out as output, the next marker is looked for again.
+    expect(Buffer.concat(out).length).toBeGreaterThan(1_000)
+    splitter.push(Buffer.from('__MARK__real state'))
+    splitter.end()
+    expect(splitter.stateText).toBe('real state')
+    expect(logs.some((line) => line.includes('passed its cap'))).toBe(true)
+    expect(logs.join('\n')).not.toContain('xxx')
+  })
+
+  it('keeps the run’s marker out of every variable a command can list (S3)', () => {
+    // Only a closure holds it: the line is read in a scope of its own, then let go.
+    expect(commandScript).not.toMatch(/\$__simeonRun\.marker/)
+    expect(commandScript).toContain('.GetNewClosure()')
+    expect(commandScript).toContain('Remove-Variable run, item')
+    expect(commandScript).toContain('Remove-Variable __simeonRun')
+  })
+})
+
+describe('the stream’s words to the agent', () => {
+  it('makes Windows’ line ends the Mac’s, across pieces (N9)', () => {
+    const lines = new LineEnds()
+    const out = [lines.write(Buffer.from('one\r\ntwo\r')), lines.write(Buffer.from('\nthree\r')), lines.end()].join('')
+    expect(out).toBe('one\ntwo\nthree\r')
+    const split = new LineEnds()
+    const euro = Buffer.from('€\r\n')
+    expect(split.write(euro.subarray(0, 1)) + split.write(euro.subarray(1)) + split.end()).toBe('€\n')
+  })
+
+  it('names the shell by its program', () => {
+    expect(shellName('C:\\Program Files\\PowerShell\\7\\pwsh.exe')).toBe('pwsh')
+    expect(shellName('C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe')).toBe('powershell')
+    expect(shellName('/usr/bin/pwsh')).toBe('pwsh')
+  })
 })
 
 describe('the setting (LocalToolPermissionTests)', () => {
@@ -642,7 +867,54 @@ describe('the setting (LocalToolPermissionTests)', () => {
     expect(settings.choice).toBe('ask')
     // A damaged file is the default, never more.
     writeFileSync(settings.file, '{"choice":"always"')
-    expect(settings.effective).toBe('ask')
+    expect(new LocalToolSettings(folder).effective).toBe('ask')
+  })
+
+  it('reads an edited file as “Ask every time” with no ceiling, and holds what it read (tamper-evident)', () => {
+    folder = mkdtempSync(path.join(os.tmpdir(), 'simeon-hands-'))
+    const key = SigningKey.forThisRun()
+    const settings = new LocalToolSettings(folder, key)
+    settings.scope('a@x.co')
+    settings.choice = 'never'
+    settings.ceiling = 'never'
+    // Read again with its key: what was kept.
+    expect(new LocalToolSettings(folder, key).now()).toEqual({ choice: 'never', ceiling: 'never', effective: 'never' })
+    // A command that writes the file plainly: not read at the next start; the running app holds what it had.
+    writeFileSync(settings.file, JSON.stringify({ account: 'a@x.co', choice: 'always' }))
+    expect(settings.effective).toBe('never')
+    expect(new LocalToolSettings(folder, key).now()).toEqual({ choice: 'ask', ceiling: null, effective: 'ask' })
+    // A body changed under a signature, or another key's: the same.
+    settings.choice = 'never'
+    const signed = JSON.parse(readFileSync(settings.file, 'utf8')) as { body: string }
+    writeFileSync(settings.file, JSON.stringify({ ...signed, body: signed.body.replace('never', 'always') }))
+    expect(new LocalToolSettings(folder, key).effective).toBe('ask')
+    settings.choice = 'always'
+    expect(new LocalToolSettings(folder, SigningKey.forThisRun()).effective).toBe('ask')
+    // Nor is the answers' file taken for the setting's.
+    const approvals = new LocalToolApprovals(folder, key)
+    approvals.record({ id: 'q', action: 'run-command', target: 'ls' })
+    writeFileSync(settings.file, readFileSync(approvals.approvalsFile))
+    expect(new LocalToolSettings(folder, key).effective).toBe('ask')
+  })
+
+  it('keeps its key sealed, and starts again from Ask when the key does not open', () => {
+    folder = mkdtempSync(path.join(os.tmpdir(), 'simeon-hands-'))
+    const file = path.join(folder, 'local-tool-key.sealed')
+    // A stand-in for Windows' protection: reversible, never the key as written.
+    const sealer = {
+      available: () => true,
+      seal: (text: string) => Buffer.from(text.split('').reverse().join(''), 'utf8'),
+      open: (sealed: Buffer) => sealed.toString('utf8').split('').reverse().join(''),
+    }
+    const logs: string[] = []
+    const first = new SigningKey(file, sealer, (line) => logs.push(line))
+    expect(writeSigned(path.join(folder, 'x.json'), first, 'x', { choice: 'always' })).toBe(true)
+    expect(readFileSync(file, 'utf8')).not.toContain(first.value.toString('hex'))
+    expect(readSigned(path.join(folder, 'x.json'), new SigningKey(file, sealer), 'x')).toEqual({ choice: 'always' })
+    writeFileSync(file, 'damaged')
+    expect(readSigned(path.join(folder, 'x.json'), new SigningKey(file, sealer, (line) => logs.push(line)), 'x')).toBeUndefined()
+    expect(logs.join('\n')).toContain('did not open')
+    expect(logs.join('\n')).not.toMatch(/[0-9a-f]{64}/)
   })
 })
 
@@ -660,8 +932,8 @@ describe('“Allow once” (LocalToolApprovalsTests)', () => {
     approvals.record({ id: 'q1', action: 'run-command', target: 'ls -la' })
     approvals.record({ id: 'q2', action: 'read-file', target: 'C:\\tmp\\a', resourcePath: 'C:\\tmp\\a' })
     expect(approvals.all().get('q2')?.resourcePath).toBe('C:\\tmp\\a')
-    const written = JSON.parse(readFileSync(approvals.approvalsFile, 'utf8')) as { approvals: unknown[] }
-    expect(written.approvals).toHaveLength(2)
+    const written = JSON.parse(readFileSync(approvals.approvalsFile, 'utf8')) as { body: string }
+    expect((JSON.parse(written.body) as { approvals: unknown[] }).approvals).toHaveLength(2)
     approvals.retire('q1')
     expect([...approvals.live().keys()]).toEqual(['q2'])
     expect([...approvals.all().keys()].sort()).toEqual(['q1', 'q2'])
@@ -670,6 +942,24 @@ describe('“Allow once” (LocalToolApprovalsTests)', () => {
     // A row the Electron app would not read is not read here either.
     expect(readApproval({ id: 'x', action: 'delete-everything', target: '/' })).toBeUndefined()
     expect(readApproval({ id: '', action: 'run-command', target: 'ls' })).toBeUndefined()
+  })
+
+  it('takes no answer from a file it did not sign, and keeps the retired ones with them (tamper-evident)', () => {
+    folder = mkdtempSync(path.join(os.tmpdir(), 'simeon-approvals-'))
+    const key = SigningKey.forThisRun()
+    const approvals = new LocalToolApprovals(folder, key)
+    approvals.record({ id: 'q1', action: 'run-command', target: 'ls' })
+    approvals.retire('q1')
+    approvals.record({ id: 'q2', action: 'run-command', target: 'dir' })
+    // Read again (the next start): the same, the retired one still retired.
+    expect([...new LocalToolApprovals(folder, key).live().keys()]).toEqual(['q2'])
+    // An answer a command writes for itself counts for nothing, now or at the next start.
+    writeFileSync(
+      approvals.approvalsFile,
+      JSON.stringify({ approvals: [{ id: 'forged', action: 'run-command', target: 'gc secret' }] }),
+    )
+    expect(approvals.live().has('forged')).toBe(false)
+    expect(new LocalToolApprovals(folder, key).live().size).toBe(0)
   })
 })
 
@@ -683,9 +973,13 @@ describe('the computer’s address from the page', () => {
     expect(checkTarget({ baseURL: 'https://box1-8790.simeonlabs.com', headers: {} }, api).baseURL).toBe(
       'https://box1-8790.simeonlabs.com',
     )
-    expect(checkTarget({ baseURL: 'http://127.0.0.1:4100/box', headers: { 'x-anyrun-network-token': 'n' } }, api).baseURL).toBe(
-      'http://127.0.0.1:4100/box',
-    )
+    expect(
+      checkTarget({ baseURL: 'http://127.0.0.1:4100/box', headers: { 'x-anyrun-network-token': 'n' } }, 'http://127.0.0.1:9000')
+        .baseURL,
+    ).toBe('http://127.0.0.1:4100/box')
+    // This computer only for a server on this computer (a developer's build, the checks), never with Simeon Labs' (N2).
+    expect(() => checkTarget({ baseURL: 'http://127.0.0.1:4100/box', headers: {} }, api)).toThrow()
+    expect(() => checkTarget({ baseURL: 'http://localhost:4100/box', headers: {} }, api)).toThrow()
     expect(checkTarget({ baseURL: 'http://10.0.0.2:4100/box', headers: {} }, 'http://10.0.0.2:4100').baseURL).toBe(
       'http://10.0.0.2:4100/box',
     )

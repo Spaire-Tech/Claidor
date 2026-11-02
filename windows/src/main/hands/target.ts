@@ -2,8 +2,10 @@
 // (its `Gateway.currentConnection()`: the gateway's address and the headers
 // that open it), checked here: it comes from a page. Only Simeon Labs' own
 // servers over https, the app's own server (`--api=`, a stand-in on this
-// computer in the checks), or this computer itself; only the gateway's own
-// three headers, each a plain line. Nothing of it is ever written down.
+// computer in the checks), or this computer itself, only when the app's
+// server is on this computer too (a developer's build, the checks); only
+// the gateway's own three headers, each a plain line. Nothing of it is ever
+// written down.
 
 /** The headers a gateway takes (`GatewayConnection.headers()`): its token, the network token, and that the app lets it sleep. */
 export const targetHeaders = ['authorization', 'x-anyrun-network-token', 'x-simeon-lets-sleep'] as const
@@ -33,13 +35,16 @@ export function checkTarget(value: unknown, apiBase: string): Target {
   const ours =
     url.protocol === 'https:' &&
     (url.hostname === 'simeonlabs.com' || url.hostname.endsWith('.simeonlabs.com'))
-  const local = (url.protocol === 'http:' || url.protocol === 'https:') && isLoopback(url.hostname)
   let server = false
+  let serverIsLocal = false
   try {
-    server = url.origin === new URL(apiBase).origin
+    const api = new URL(apiBase)
+    server = url.origin === api.origin
+    serverIsLocal = isLoopback(api.hostname)
   } catch {
     server = false
   }
+  const local = serverIsLocal && (url.protocol === 'http:' || url.protocol === 'https:') && isLoopback(url.hostname)
   if (!ours && !local && !server) throw new Error('The computer’s address was refused.')
   if (typeof headers !== 'object' || headers == null || Array.isArray(headers))
     throw new Error('The computer’s headers were expected.')

@@ -3,12 +3,14 @@
 // engine's `sand-settings-store.ts`): the person's choice and the team's
 // ceiling. Another account signing in starts again from the default;
 // signing out forgets both (`scopeToAccount`, `clearAccountScope`). The Mac
-// keeps them in its defaults; here in the app's data folder, where the
-// hands read them before every request.
+// keeps them in its defaults; here in the app's data folder,
+// `local-tool-permission.json`, signed (signed.ts): read once when the app
+// starts (an edited file reads as "Ask every time", no ceiling), then held
+// in memory, where the hands read it before every request.
 
-import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import type { Permission } from './rules'
+import { SigningKey, readSigned, writeSigned } from './signed'
 
 export const permissions: readonly Permission[] = ['always', 'ask', 'never']
 export const defaultPermission: Permission = 'ask'
@@ -48,33 +50,32 @@ export interface PermissionNow {
 
 export class LocalToolSettings {
   readonly file: string
+  private held?: Kept
 
-  constructor(folder: string) {
+  constructor(
+    folder: string,
+    private readonly key: SigningKey = SigningKey.forThisRun(),
+  ) {
     this.file = path.join(folder, 'local-tool-permission.json')
   }
 
+  /** The file once, when its signature is this app's; else nothing (the default, no ceiling); then memory. */
   private read(): Kept {
-    try {
-      const value = JSON.parse(readFileSync(this.file, 'utf8')) as Record<string, unknown>
-      return {
-        ...(typeof value.account === 'string' ? { account: value.account } : {}),
-        ...(isPermission(value.choice) ? { choice: value.choice } : {}),
-        ...(isPermission(value.ceiling) ? { ceiling: value.ceiling } : {}),
-      }
-    } catch {
-      return {}
+    if (this.held) return this.held
+    const value = readSigned(this.file, this.key, 'local-tool-permission')
+    const fields = typeof value === 'object' && value != null ? (value as Record<string, unknown>) : {}
+    this.held = {
+      ...(typeof fields.account === 'string' ? { account: fields.account } : {}),
+      ...(isPermission(fields.choice) ? { choice: fields.choice } : {}),
+      ...(isPermission(fields.ceiling) ? { ceiling: fields.ceiling } : {}),
     }
+    return this.held
   }
 
   private write(kept: Kept): void {
-    try {
-      mkdirSync(path.dirname(this.file), { recursive: true })
-      const temp = `${this.file}.${process.pid}.tmp`
-      writeFileSync(temp, JSON.stringify(kept), { mode: 0o600 })
-      renameSync(temp, this.file)
-    } catch {
-      // Not kept: the choice holds for this run only.
-    }
+    this.held = kept
+    // Not kept: the choice holds for this run only.
+    writeSigned(this.file, this.key, 'local-tool-permission', kept)
   }
 
   /** The person's own pick, before any ceiling (`getLocalToolPermissionChoice`). */

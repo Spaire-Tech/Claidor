@@ -73,8 +73,15 @@ export function hello(fields: {
   label: string
   supervised: boolean
   variant: string
+  /** The system (`process.platform`: `win32` on Windows), its shell (`powershell` or `pwsh`) and their versions; the Mac's hello has none (the engine takes it for a Mac). */
+  platform?: string
+  shell?: string
+  shellVersion?: string
+  osVersion?: string
 }): JSONObject {
-  return { kind: 'hello', ...fields }
+  const frame: JSONObject = { kind: 'hello' }
+  for (const [key, value] of Object.entries(fields)) if (value != null) frame[key] = value
+  return frame
 }
 
 export function ping(supervised: boolean): JSONObject {

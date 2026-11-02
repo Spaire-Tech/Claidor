@@ -14,20 +14,9 @@
 // command, lives here, in the main process, until the app quits or signs
 // out.
 
+import { execFile } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
-import {
-  closeSync,
-  fsyncSync,
-  mkdirSync,
-  openSync,
-  readFileSync,
-  realpathSync,
-  renameSync,
-  rmSync,
-  statSync,
-  writeSync,
-} from 'node:fs'
-import { readFile, stat } from 'node:fs/promises'
+import { mkdir, open, readFile, realpath, rename, rm, stat } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { StringDecoder } from 'node:string_decoder'
@@ -43,7 +32,6 @@ import {
   readRange,
   resolveReadPath,
 } from './files'
-import { isFolder } from './powershell'
 import {
   LocalExec,
   type LocalToolRequest,
@@ -56,6 +44,7 @@ import {
   workingDirectory,
 } from './rules'
 import { type SensitivePlaces, sensitiveRefusal } from './sensitivePaths'
+import { isFolder, shellEnvironment } from './powershell'
 import { BackgroundShells, ShellHost, type ShellProcess, type ShellSystem } from './shell'
 import type { Target } from './target'
 import type { Transport } from './transport'
@@ -86,6 +75,8 @@ export interface HandsOptions {
   shrinkImage?: (data: Buffer) => Buffer
   /** This PC's name (`os.hostname()`), as the computer lists it. */
   hostName?: string
+  /** This PC's system as the hello says it (`os.version()` and `os.release()` when not given). */
+  osVersion?: string
   flavor?: PathFlavor
   /** Shorter waits for the tests. */
   timing?: { pingMs?: number; stallMs?: number; heartbeatMs?: number; postGapMs?: number }
@@ -125,13 +116,18 @@ function messageOf(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
 }
 
-/** The nearest folder that exists, links followed, with the rest put back (`realpathNearestExisting`). */
-export function realpathNearestExisting(target: string, flavor: PathFlavor = path): string {
+/**
+ * The nearest folder that exists, links followed, with the rest put back
+ * (`realpathNearestExisting`). On Windows the system's own answer
+ * (`GetFinalPathNameByHandle`): junctions, links and short names worked
+ * out. Never blocks the main process (`fs/promises`).
+ */
+export async function realpathNearestExisting(target: string, flavor: PathFlavor = path): Promise<string> {
   let head = target
   const tail: string[] = []
   for (;;) {
     try {
-      const real = realpathSync.native(head)
+      const real = await realpath(head)
       return tail.length === 0 ? real : flavor.join(real, ...tail.reverse())
     } catch {
       const parent = flavor.dirname(head)
@@ -142,79 +138,88 @@ export function realpathNearestExisting(target: string, flavor: PathFlavor = pat
   }
 }
 
-function regularFileSize(file: string): number | undefined {
+async function regularFileSize(file: string): Promise<number | undefined> {
   try {
-    const info = statSync(file)
+    const info = await stat(file)
     return info.isFile() ? info.size : undefined
   } catch {
     return undefined
   }
 }
 
-/** `.name.<16 hex>.part` made new beside it, flushed to disk, then moved over it (`writeFileAtomic`). */
-export function writeAtomically(data: Buffer, target: string, flavor: PathFlavor = path): void {
+/**
+ * `.name.<16 hex>.part` made new beside it, flushed to disk, then moved
+ * over it (`writeFileAtomic`); written without blocking the main process,
+ * where the window's calls and the stream's pings are answered.
+ */
+export async function writeAtomically(data: Buffer, target: string, flavor: PathFlavor = path): Promise<void> {
   const folder = flavor.dirname(target)
-  mkdirSync(folder, { recursive: true })
+  await mkdir(folder, { recursive: true })
   const temp = flavor.join(folder, `.${flavor.basename(target)}.${randomBytes(8).toString('hex')}.part`)
-  const fd = openSync(temp, 'wx', 0o666)
+  const handle = await open(temp, 'wx', 0o666)
   try {
     let offset = 0
-    while (offset < data.length) offset += writeSync(fd, data, offset, data.length - offset)
-    fsyncSync(fd)
+    while (offset < data.length) offset += (await handle.write(data, offset, data.length - offset)).bytesWritten
+    await handle.sync()
   } catch (error) {
-    closeSync(fd)
-    rmSync(temp, { force: true })
+    await handle.close().catch(() => {})
+    await rm(temp, { force: true })
     throw error
   }
-  closeSync(fd)
+  await handle.close()
   try {
-    renameSync(temp, target)
+    await rename(temp, target)
   } catch (error) {
-    rmSync(temp, { force: true })
+    await rm(temp, { force: true })
     throw error
   }
 }
 
-/** The read executor (`LocalReadExecutor`): text with its lines, or the bytes of an image, a PDF or a video. */
+/**
+ * The read executor (`LocalReadExecutor`): text with its lines, or the
+ * bytes of an image, a PDF or a video. `file` is what is read; `shown` the
+ * path the answer names (the one the agent gave, worked out).
+ */
 export async function readLocalFile(
   file: string,
   offset: number | undefined,
   limit: number | undefined,
   shrinkImage: (data: Buffer) => Buffer = (data) => data,
+  shown: string = file,
 ): Promise<JSONObject> {
   let info
   try {
     info = await stat(file)
   } catch {
-    return wire.readFailure('fileNotFound', file)
+    return wire.readFailure('fileNotFound', shown)
   }
   if (info.isDirectory())
-    return wire.readFailure('invalidFile', file, { key: 'reason', value: 'Path is a directory, not a file' })
+    return wire.readFailure('invalidFile', shown, { key: 'reason', value: 'Path is a directory, not a file' })
   if (!info.isFile())
-    return wire.readFailure('invalidFile', file, { key: 'reason', value: 'Path is neither a file nor a directory' })
+    return wire.readFailure('invalidFile', shown, { key: 'reason', value: 'Path is neither a file nor a directory' })
   let data: Buffer
   try {
     data = await readFile(file)
   } catch (error) {
     const code = (error as NodeJS.ErrnoException).code
-    if (code === 'EACCES' || code === 'EPERM') return wire.readFailure('permissionDenied', file)
-    return wire.readFailure('error', file, { key: 'error', value: messageOf(error) })
+    if (code === 'EACCES' || code === 'EPERM') return wire.readFailure('permissionDenied', shown)
+    return wire.readFailure('error', shown, { key: 'error', value: messageOf(error) })
   }
   const size = data.length
   switch (readKind(data.subarray(0, 8192))) {
     case 'image':
-      return wire.readData(file, shrinkImage(data), size)
+      return wire.readData(shown, shrinkImage(data), size)
     case 'binary':
-      if (isPDF(file) || isVideo(file)) return wire.readData(file, data, size)
-      return wire.readFailure('invalidFile', file, { key: 'reason', value: binaryRefusal(file) })
+      if (isPDF(shown) || isVideo(shown)) return wire.readData(shown, data, size)
+      return wire.readFailure('invalidFile', shown, { key: 'reason', value: binaryRefusal(shown) })
     case 'text': {
-      if (isPDF(file)) return wire.readData(file, data, size)
+      if (isPDF(shown)) return wire.readData(shown, data, size)
       const content = decodeText(data)
       const total = countLines(content)
       const ranged = readRange(content, total, offset, limit)
       const capped = capText(ranged.content)
       return wire.readText({
-        path: file,
+        path: shown,
         content: capped.content,
         totalLines: total,
         fileSize: size,
@@ -255,6 +260,9 @@ export class HandsProvider {
   private lastChunk = 0
   private current?: CurrentStream
   private stopped = false
+  /** The shell's version once asked (`$PSVersionTable.PSVersion`), for the hello. */
+  private shellVersion?: string
+  private readonly versionAsked: Promise<void>
 
   constructor(private readonly options: HandsOptions) {
     this.flavor = options.flavor ?? path
@@ -267,6 +275,9 @@ export class HandsProvider {
     this.stallMs = options.timing?.stallMs ?? LocalExec.stallSeconds * 1000
     this.heartbeatMs = options.timing?.heartbeatMs ?? LocalExec.execHeartbeatSeconds * 1000
     this.postGapMs = options.timing?.postGapMs ?? 200
+    this.versionAsked = askShellVersion(options.system, options.root).then((version) => {
+      this.shellVersion = version
+    })
   }
 
   /** Whether a stream is open now. */
@@ -299,7 +310,16 @@ export class HandsProvider {
       if (status < 200 || status >= 300) return { connected: false, ended: current.reason ?? 'failed' }
       connected = true
       this.lastChunk = Date.now()
+      // The hello names the shell's version when it is known in time; else a second hello says it.
+      const known = await Promise.race([this.versionAsked.then(() => true), sleep(2_000).then(() => false)])
       await this.post([this.helloFrame()], LocalExec.controlPostSeconds)
+      if (!known)
+        void this.versionAsked
+          .then(async () => {
+            if (this.current === current && !current.done && this.shellVersion != null)
+              await this.post([this.helloFrame()], LocalExec.controlPostSeconds)
+          })
+          .catch(() => {})
       pinging = this.pingWhileOpen(current)
       const parser = new wire.EventParser()
       for await (const chunk of body) {
@@ -342,8 +362,10 @@ export class HandsProvider {
     }
   }
 
+  /** The hello: the Mac's fields, then this PC's system and shell, so the agent writes PowerShell and Windows paths. */
   private helloFrame(): JSONObject {
     const name = (this.options.hostName ?? os.hostname()).trim()
+    const shell = this.options.system.shell
     return wire.hello({
       localRoot: this.root,
       terminalsFolder: this.terminalsFolder,
@@ -351,6 +373,10 @@ export class HandsProvider {
       label: name === '' ? 'this computer' : name,
       supervised: true,
       variant: 'sand',
+      platform: this.options.system.platform,
+      shell: shell == null ? undefined : shellName(shell),
+      shellVersion: this.shellVersion,
+      osVersion: this.options.osVersion ?? systemVersion(this.options.system.platform),
     })
   }
 
@@ -466,11 +492,13 @@ export class HandsProvider {
     }
     const { kind, value } = wire.command(message)
     const described = describe(kind, value, this.terminalsFolder)
-    // The folder the command would run in: the one asked for, else where the shell is.
+    // The folder the command would run in (the one asked for, else where the shell is), as written and where it really is (links, junctions and short names worked out, as `contain` does).
     let folders: string[] | undefined
     if (kind === 'shellStreamArgs' || kind === 'backgroundShellSpawnArgs') {
       const asked = text(field(value, 'workingDirectory'))?.trim() ?? ''
-      folders = [asked === '' ? this.shell.saidFolder : resolveAgainst(asked, this.root, this.flavor)]
+      const folder = asked === '' ? this.shell.saidFolder : resolveAgainst(asked, this.root, this.flavor)
+      const real = await realpathNearestExisting(folder, this.flavor)
+      folders = real === folder ? [folder] : [folder, real]
     }
     const reason = this.refusal(described, wire.request.approvalId(request), folders)
     if (reason) {
@@ -544,19 +572,25 @@ export class HandsProvider {
     const cwd = folder.path === '' ? this.shell.cwd : folder.path
     const process = await this.shell.spawn(commandText, cwd, pipeStdin)
 
-    // Output in order, each stream's bytes read as UTF-8 across the pipe's pieces.
+    // Output in order, each stream's bytes read as UTF-8 across the pipe's pieces, Windows' line ends made the Mac's (a `\r` at a piece's end held until the next says).
     let forwarding = true
-    const decoders = { stdout: new StringDecoder('utf8'), stderr: new StringDecoder('utf8') }
-    process.onOutput((stream, data) => {
-      if (!forwarding) return
-      const words = decoders[stream].write(data)
+    const lines = { stdout: new LineEnds(), stderr: new LineEnds() }
+    const sendWords = (stream: 'stdout' | 'stderr', words: string) => {
       if (words !== '') send(wire.shellOutput(stream, words))
+    }
+    process.onOutput((stream, data) => {
+      if (forwarding) sendWords(stream, lines[stream].write(data))
     })
+    const flushLines = () => {
+      if (!forwarding) return
+      for (const stream of ['stdout', 'stderr'] as const) sendWords(stream, lines[stream].end())
+    }
 
     let timer: ReturnType<typeof setTimeout> | undefined
     const ending = await new Promise<'exited' | 'timedOut' | 'cancelled'>((resolve) => {
       void process.waitForExit().then(() => resolve('exited'))
-      if (backgroundBehavior || block > 0) timer = setTimeout(() => resolve('timedOut'), block)
+      if (backgroundBehavior || block > 0)
+        timer = setTimeout(() => resolve('timedOut'), Math.min(block, LocalExec.longestTimerMs))
       this.cancelListeners.set(requestId, () => resolve('cancelled'))
       if (this.cancelled.has(requestId)) resolve('cancelled')
     })
@@ -567,12 +601,14 @@ export class HandsProvider {
     switch (ending) {
       case 'exited': {
         const exit = await process.waitForExit()
+        flushLines()
         this.shell.adopt(process)
         send(wire.shellExit({ code: exit.code ?? 0, cwd: this.shell.saidFolder, aborted: false, localMs: localMs() }))
         return
       }
       case 'cancelled':
         await this.stopCommand(process)
+        flushLines()
         send(
           wire.shellExit({
             code: -1,
@@ -586,6 +622,7 @@ export class HandsProvider {
       case 'timedOut':
         if (backgroundBehavior) {
           // What was already sent goes first, so no output follows `backgrounded`; its terminal file starts with what it printed so far.
+          flushLines()
           forwarding = false
           const shellId = this.background.adopt(process, {
             command: commandText,
@@ -607,6 +644,7 @@ export class HandsProvider {
           return
         }
         await this.stopCommand(process)
+        flushLines()
         send(
           wire.shellExit({
             code: -1,
@@ -647,22 +685,25 @@ export class HandsProvider {
   // MARK: Files
 
   /**
-   * Inside the root, also once links are followed (`containPath`); the path
-   * as the root sees it. On Windows, the place it really is (links,
-   * junctions and short names worked out) is checked against the places
-   * that hold keys again.
+   * Inside the root, also once links are followed (`containPath`): the path
+   * as the root sees it (`shown`, what the answers name) and where it
+   * really is (`real`, links, junctions and short names worked out), which
+   * is checked against the places that hold keys again, and is what is
+   * then read or written, so a link changed after the check is not
+   * followed (it narrows the moment, without closing it: a folder on the
+   * way could still be swapped between the check and the open).
    */
-  contain(target: string): string {
+  async contain(target: string): Promise<{ shown: string; real: string }> {
     const resolved = resolveAgainst(target, this.root, this.flavor)
     if (escapesRoot(this.root, resolved, this.flavor)) throw new HandsError(LocalExec.outsideRoot(target))
-    const realRoot = realpathNearestExisting(this.root, this.flavor)
-    const realResolved = realpathNearestExisting(resolved, this.flavor)
+    const realRoot = await realpathNearestExisting(this.root, this.flavor)
+    const realResolved = await realpathNearestExisting(resolved, this.flavor)
     if (escapesRoot(realRoot, realResolved, this.flavor)) throw new HandsError(LocalExec.throughSymlink(target))
     for (const one of [resolved, realResolved]) {
       const sensitive = sensitiveRefusal('read-file', one, this.options.places)
       if (sensitive) throw new HandsError(sensitive)
     }
-    return resolved
+    return { shown: resolved, real: realResolved }
   }
 
   /** A read (`readArgs`): the places that hold keys and the root checked on what is read, too large, then the read executor's answers. */
@@ -670,23 +711,29 @@ export class HandsProvider {
     const target = resolveReadPath(text(field(args, 'path')) ?? '', this.root, this.home, this.flavor)
     const sensitive = sensitiveRefusal('read-file', target, this.options.places)
     if (sensitive) throw new HandsError(sensitive)
-    const contained = this.contain(target)
-    const size = regularFileSize(contained)
+    const contained = await this.contain(target)
+    const size = await regularFileSize(contained.real)
     if (size != null && size > LocalExec.maxFileBytes)
-      return wire.readFailure('error', contained, { key: 'error', value: LocalExec.fileTooLarge(size) })
-    return readLocalFile(contained, int(field(args, 'offset')), int(field(args, 'limit')), this.options.shrinkImage)
+      return wire.readFailure('error', contained.shown, { key: 'error', value: LocalExec.fileTooLarge(size) })
+    return readLocalFile(
+      contained.real,
+      int(field(args, 'offset')),
+      int(field(args, 'limit')),
+      this.options.shrinkImage,
+      contained.shown,
+    )
   }
 
   /** A folder's listing (`lsArgs`): the shipped one answers for a missing path or a file, and fails on a real folder. */
   private async list(args: JSONValue): Promise<void> {
-    const contained = this.contain(text(field(args, 'path')) ?? '')
+    const contained = await this.contain(text(field(args, 'path')) ?? '')
     let info
     try {
-      info = statSync(contained)
+      info = await stat(contained.real)
     } catch {
-      throw new HandsError(`Path does not exist: ${contained}`)
+      throw new HandsError(`Path does not exist: ${contained.shown}`)
     }
-    if (!info.isDirectory()) throw new HandsError(`Path is not a directory: ${contained}`)
+    if (!info.isDirectory()) throw new HandsError(`Path is not a directory: ${contained.shown}`)
     throw new HandsError('')
   }
 
@@ -703,10 +750,10 @@ export class HandsProvider {
       return
     }
     try {
-      const contained = this.contain(target)
-      const size = regularFileSize(contained)
+      const contained = await this.contain(target)
+      const size = await regularFileSize(contained.real)
       if (size != null && size > LocalExec.maxFileBytes) throw new HandsError(LocalExec.fileTooLarge(size))
-      const data = readFileSync(contained)
+      const data = await readFile(contained.real)
       this.enqueue(wire.file(requestId, data.toString('base64')))
     } catch (error) {
       this.enqueue(wire.fileError(requestId, messageOf(error)))
@@ -730,11 +777,11 @@ export class HandsProvider {
       return
     }
     try {
-      const contained = this.contain(target)
+      const contained = await this.contain(target)
       // As strict as Foundation's `Data(base64Encoded:)`: nothing but the alphabet, whole quads.
       if (base64.length % 4 !== 0 || !/^[A-Za-z0-9+/]*={0,2}$/.test(base64))
         throw new HandsError('The upload was not valid base64.')
-      writeAtomically(Buffer.from(base64, 'base64'), contained, this.flavor)
+      await writeAtomically(Buffer.from(base64, 'base64'), contained.real, this.flavor)
       this.enqueue(wire.file(requestId))
     } catch (error) {
       this.enqueue(wire.fileError(requestId, messageOf(error)))
@@ -756,7 +803,12 @@ export class HandsProvider {
     return this.flushed
   }
 
-  /** A batch the computer did not take is kept and sent again, with what was queued since, after each of `answerRetrySeconds`; then dropped. */
+  /**
+   * A batch the computer did not take is kept and sent again, with what was
+   * queued since, after each of `answerRetrySeconds`; then dropped. Once the
+   * hands have stopped (signed out, quitting), each answer goes once, with
+   * its three tries, and is not kept for the old address.
+   */
   private async flush(): Promise<void> {
     let retries = 0
     while (this.outbox.length > 0) {
@@ -766,7 +818,7 @@ export class HandsProvider {
         retries = 0
         continue
       }
-      const wait = LocalExec.answerRetrySeconds[retries]
+      const wait = this.stopped ? undefined : LocalExec.answerRetrySeconds[retries]
       if (wait == null) {
         this.options.log(`[local-exec-provider] dropping ${batch.length}-frame response batch after ${retries} retries`)
         retries = 0
@@ -812,5 +864,67 @@ export class HandsProvider {
     }
     this.options.log(`[local-exec-provider] dropping ${frames.length}-frame response batch after 3 failed POSTs: ${last}`)
     return true
+  }
+}
+
+/** `powershell` (Windows PowerShell 5.1) or `pwsh` (PowerShell 7), by the program's name. */
+export function shellName(program: string): 'powershell' | 'pwsh' {
+  const name = program.replace(/\\/g, '/').split('/').at(-1)?.toLowerCase() ?? ''
+  return name.startsWith('pwsh') ? 'pwsh' : 'powershell'
+}
+
+/** The system as the hello says it: Windows' own name and number ("Windows 11 Pro 10.0.22631"), elsewhere its kind and release. */
+export function systemVersion(platform: string): string {
+  return platform === 'win32' ? `${os.version()} ${os.release()}`.trim() : `${os.type()} ${os.release()}`
+}
+
+/** The shell's version (`$PSVersionTable.PSVersion`), asked once without the person's profile, ten seconds at most; undefined when it doesn't say. */
+export function askShellVersion(system: ShellSystem, root: string): Promise<string | undefined> {
+  const shell = system.shell
+  if (!shell) return Promise.resolve(undefined)
+  return new Promise((done) => {
+    try {
+      execFile(
+        shell,
+        ['-NoLogo', '-NoProfile', '-NonInteractive', '-Command', '$PSVersionTable.PSVersion.ToString()'],
+        {
+          cwd: isFolder(root) ? root : undefined,
+          env: shellEnvironment(system.environment, root, system.platform),
+          timeout: 10_000,
+          windowsHide: true,
+          maxBuffer: 64 * 1024,
+        },
+        (error, stdout) => {
+          const version = String(stdout).trim()
+          done(!error && /^\d+(\.\d+){1,3}(-[\w.]+)?$/.test(version) ? version : undefined)
+        },
+      )
+    } catch {
+      done(undefined)
+    }
+  })
+}
+
+/** Text as it comes, Windows' line ends (`\r\n`) made `\n`; a `\r` at a piece's end held until the next piece says. */
+export class LineEnds {
+  private readonly decoder = new StringDecoder('utf8')
+  private held = ''
+
+  write(data: Buffer): string {
+    return this.take(this.held + this.decoder.write(data), false)
+  }
+
+  end(): string {
+    return this.take(this.held + this.decoder.end(), true)
+  }
+
+  private take(text: string, last: boolean): string {
+    this.held = ''
+    let out = text
+    if (!last && out.endsWith('\r')) {
+      this.held = '\r'
+      out = out.slice(0, -1)
+    }
+    return out.replace(/\r\n/g, '\n')
   }
 }

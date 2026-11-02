@@ -6,16 +6,19 @@
 // the app's data folder are made there, and nothing outside it is read.
 // Skipped where no PowerShell is found.
 
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { execFileSync, spawn } from 'node:child_process'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { LocalToolApprovals } from '../src/main/hands/approvals'
-import { placesFrom } from '../src/main/hands/hands'
+import { Hands, placesFrom } from '../src/main/hands/hands'
 import { findPowerShell } from '../src/main/hands/powershell'
 import { HandsProvider, type StreamEnd } from '../src/main/hands/provider'
 import { LocalExec, type Permission } from '../src/main/hands/rules'
+import { launch } from '../src/main/hands/shell'
 import { fetchTransport } from '../src/main/hands/transport'
+import * as wire from '../src/main/hands/wire'
 import { type Frame, startHandsGateway } from './handsStandIn.mjs'
 
 const shell = findPowerShell(process.env, process.platform)
@@ -131,6 +134,14 @@ describe.skipIf(!shell)('the hands run for real in PowerShell', () => {
     expect(standIn.gateway.state.batches.every((one) => one.authorized)).toBe(true)
   })
 
+  it('says its system and its shell in the hello, so the agent writes PowerShell', async () => {
+    const hello = await standIn.gateway.waitFor(() =>
+      standIn.gateway.state.frames.find((frame) => frame.kind === 'hello' && frame.shellVersion),
+    )
+    expect(hello).toMatchObject({ platform: process.platform, shell: 'pwsh', osVersion: `${os.type()} ${os.release()}` })
+    expect(String(hello.shellVersion)).toMatch(/^\d+\.\d+/)
+  }, 20_000)
+
   it('runs a command and streams its answer', async () => {
     const frames = await run("Write-Output 'hello from PowerShell'")
     const events = shellEvents(frames)
@@ -164,6 +175,51 @@ describe.skipIf(!shell)('the hands run for real in PowerShell', () => {
     // No colours, and nothing of the state said after the command.
     expect(output(failed, 'stderr')).not.toContain('\u001b[')
     expect(output(exited) + output(failed)).not.toContain('__SIMEON_PS_STATE')
+  }, 60_000)
+
+  it('keeps the run’s state when the command lists every variable (S3)', async () => {
+    const listed = await run(
+      "New-Item -ItemType Directory -Force listed | Out-Null; Set-Location listed; $env:SIMEON_TEST_B = 'two'; Get-Variable | Format-List; dir variable: | Format-List; 'LAST LINE'",
+    )
+    const said = output(listed)
+    expect(said).toContain('LAST LINE')
+    // The run's own marker is in no variable listed (the closure's text names only the end marker, which marks nothing on its own).
+    expect(said).not.toMatch(/__SIMEON_PS_STATE_[0-9a-f]{32}__/)
+    expect(said).not.toMatch(/marker\s*=/)
+    expect((shellEvents(listed).find((event) => event.exit)?.exit as Message).cwd).toBe(path.join(root, 'listed'))
+    const next = await run('(Get-Location).Path; $env:SIMEON_TEST_B')
+    expect(output(next).split(/\r?\n/).filter(Boolean)).toEqual([path.join(root, 'listed'), 'two'])
+    await run(`Set-Location '${root.replace(/'/g, "''")}'`)
+  }, 60_000)
+
+  it('gives the agent the Mac’s line ends (N9)', async () => {
+    const frames = await run('[Console]::Out.Write("one`r`ntwo`r`n")')
+    expect(output(frames)).toBe('one\ntwo\n')
+  }, 30_000)
+
+  it('waits as long as it is asked, even past what a timer keeps (N4)', async () => {
+    const frames = await run("Write-Output 'a long wait asked'", { timeout: 2 ** 31 + 1_000 })
+    const exit = shellEvents(frames).find((event) => event.exit)?.exit as Message
+    expect(exit.aborted).toBeUndefined()
+    expect(output(frames)).toContain('a long wait asked')
+  }, 30_000)
+
+  it('refuses a command whose folder leads to a place that holds keys through a link (S1)', async () => {
+    permission = 'always'
+    // `k` in the root leads to the stand-in home's `.ssh` (a junction would on Windows).
+    symlinkSync(path.join(home, '.ssh'), path.join(root, 'k'))
+    const asked = await run('Get-Content id_rsa', { workingDirectory: 'k' })
+    expect(thrownOf(asked)).toContain('~\\.ssh')
+    expect(shellEvents(asked)).toEqual([])
+    // The shell moved there by a name that says nothing: its next command is refused all the same.
+    const moved = await run('Set-Location k')
+    expect((shellEvents(moved).find((event) => event.exit)?.exit as Message).cwd).toBe(path.join(root, 'k'))
+    const after = await run('Get-Content id_rsa')
+    expect(thrownOf(after)).toContain('~\\.ssh')
+    expect(JSON.stringify(standIn.gateway.state.frames)).not.toContain('NOT-A-REAL-KEY')
+    // A folder asked for that is not one runs, and takes the shell back.
+    await run(`Set-Location '${root.replace(/'/g, "''")}'`, { workingDirectory: root })
+    rmSync(path.join(root, 'k'))
   }, 60_000)
 
   it('refuses a place that holds keys, whatever the setting, before anything runs', async () => {
@@ -277,6 +333,28 @@ describe.skipIf(!shell)('the hands run for real in PowerShell', () => {
     expect(bad.error).toBe('The upload was not valid base64.')
   }, 40_000)
 
+  it('reads a file for the computer without holding up the app (S6)', async () => {
+    const fifo = path.join(root, 'slow.pipe')
+    execFileSync('mkfifo', [fifo])
+    // Another program writes it a second from now; until then a read waits.
+    const writer = spawn('sh', ['-c', `sleep 1; printf 'piped' > '${fifo}'`], { stdio: 'ignore' })
+    let ticks = 0
+    const ticker = setInterval(() => {
+      ticks += 1
+    }, 20)
+    try {
+      standIn.gateway.push({ kind: 'download', requestId: 'slow', path: 'slow.pipe' })
+      const file = await standIn.gateway.waitFor(() => standIn.gateway.framesFor('slow').find((frame) => frame.kind === 'file'), 10_000)
+      expect(Buffer.from(String(file.bytesBase64), 'base64').toString()).toBe('piped')
+      // The app went on answering meanwhile: its timers kept firing.
+      expect(ticks).toBeGreaterThan(20)
+    } finally {
+      clearInterval(ticker)
+      writer.kill()
+      rmSync(fifo, { force: true })
+    }
+  }, 30_000)
+
   it('says when it has no handler for a kind', async () => {
     const frames = await exec({ grepArgs: { pattern: 'x' } })
     expect(thrownOf(frames)).toBe(LocalExec.noHandler('grepArgs'))
@@ -373,4 +451,112 @@ describe('the stream, with no PowerShell needed', () => {
       rmSync(folder, { recursive: true, force: true })
     }
   }, 30_000)
+})
+
+describe.skipIf(!shell)('a stop on Windows when taskkill does not stop it (S4)', () => {
+  it('stops the shell itself a second later', async () => {
+    const folder = mkdtempSync(path.join(os.tmpdir(), 'simeon-hands-stop-'))
+    const logs: string[] = []
+    // Windows' rules on Linux: `taskkill.exe` is not there, so only the fallback can stop it.
+    const system = { shell, platform: 'win32', environment: { SystemRoot: path.join(folder, 'no-windows') }, log: (line: string) => logs.push(line) }
+    const started = launch(system, {
+      args: ['-NoLogo', '-NoProfile', '-NonInteractive', '-Command', 'Start-Sleep -Seconds 30'],
+      cwd: folder,
+      env: { ...process.env } as Record<string, string>,
+      pipeStdin: false,
+    })
+    try {
+      const began = Date.now()
+      started.terminate()
+      await Promise.race([started.waitForExit(), new Promise((_, fail) => setTimeout(() => fail(new Error('the stop did not end it')), 8_000))])
+      expect(Date.now() - began).toBeLessThan(8_000)
+    } finally {
+      started.child.kill('SIGKILL')
+      rmSync(folder, { recursive: true, force: true })
+    }
+  }, 20_000)
+})
+
+describe('a stop that nothing ends (S4)', () => {
+  it('is told ended all the same, so a cancel never hangs', async () => {
+    const folder = mkdtempSync(path.join(os.tmpdir(), 'simeon-hands-stuck-'))
+    const logs: string[] = []
+    const system = { shell: '/bin/sh', platform: 'win32', environment: { SystemRoot: path.join(folder, 'no-windows') }, log: (line: string) => logs.push(line) }
+    // A program that lets the stop's signal go by.
+    const started = launch(system, {
+      args: ['-c', 'trap "" TERM; while :; do sleep 1; done'],
+      cwd: folder,
+      env: { PATH: process.env.PATH ?? '/usr/bin:/bin' },
+      pipeStdin: false,
+    })
+    try {
+      await new Promise((done) => setTimeout(done, 300))
+      started.terminate()
+      const exit = await Promise.race([
+        started.waitForExit(),
+        new Promise((_, fail) => setTimeout(() => fail(new Error('the wait did not end')), 12_000)),
+      ])
+      expect(exit).toEqual({ code: null, signaled: true })
+      expect(logs.join('\n')).toContain('did not end')
+    } finally {
+      started.child.kill('SIGKILL')
+      rmSync(folder, { recursive: true, force: true })
+    }
+  }, 20_000)
+})
+
+describe('signing out and stopping', () => {
+  it('forgets the “Allow once” answers with the setting (N7)', async () => {
+    const folder = mkdtempSync(path.join(os.tmpdir(), 'simeon-hands-out-'))
+    try {
+      const made = new Hands({
+        dataFolder: path.join(folder, 'data'),
+        env: {},
+        home: folder,
+        platform: process.platform,
+        transport: fetchTransport(fetch),
+      })
+      made.permission('a@x.co')
+      made.choose('always')
+      made.allowOnce({ id: 'q1', action: 'run-command', target: 'ls' })
+      expect(made.approvals.live().size).toBe(1)
+      await made.signedOut()
+      expect(made.approvals.live().size).toBe(0)
+      expect(made.settings.now().effective).toBe('ask')
+    } finally {
+      rmSync(folder, { recursive: true, force: true })
+    }
+  })
+
+  it('sends each answer once after it stops, never again to the old address (N8)', async () => {
+    const folder = mkdtempSync(path.join(os.tmpdir(), 'simeon-hands-outbox-'))
+    let posts = 0
+    try {
+      const provider = new HandsProvider({
+        transport: {
+          stream: async () => ({ status: 503, body: (async function* () {})() }),
+          post: async () => {
+            posts += 1
+            return { status: 503 }
+          },
+        },
+        root: folder,
+        home: folder,
+        places: placesFrom({}, folder, path.join(folder, 'data'), process.platform),
+        approvals: new LocalToolApprovals(path.join(folder, 'data')),
+        permission: () => 'ask',
+        system: { shell: undefined, platform: process.platform, environment: {}, log: () => {} },
+        log: () => {},
+        timing: { postGapMs: 10 },
+      })
+      await provider.openStream({ baseURL: 'http://127.0.0.1:9', headers: {} })
+      await provider.stop()
+      provider.enqueue(wire.fileError('late', 'stopped'))
+      const settled = await Promise.race([provider.settled.then(() => true), new Promise((done) => setTimeout(() => done(false), 3_000))])
+      expect(settled).toBe(true)
+      expect(posts).toBe(3)
+    } finally {
+      rmSync(folder, { recursive: true, force: true })
+    }
+  })
 })

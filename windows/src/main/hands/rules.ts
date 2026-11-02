@@ -19,6 +19,14 @@ export const LocalExec = {
   streamCap: 1_048_576,
   /** A read's text, in characters (`MAX_TEXT_SIZE`). */
   textCap: 8 * 1024 * 1024,
+  /** What a command's shell may say after its run's marker before it is taken as output (a state is far smaller). */
+  stateCap: 16 * 1024 * 1024,
+  /** A stopped command still there after this is stopped harder (`killProcess`'s second). */
+  killGraceMs: 1_000,
+  /** And after this, its end is told anyway. */
+  endGraceMs: 5_000,
+  /** The longest wait a timer keeps (Node fires a longer one at once). */
+  longestTimerMs: 2 ** 31 - 1,
   execHeartbeatSeconds: 3,
   pingSeconds: 10,
   stallSeconds: 35,
@@ -195,8 +203,9 @@ export function covers(
  * setting; then Never; Always; and under Ask, only what the person allowed
  * once, exactly that (a command's approval also covers its terminal file).
  * On Windows a command is also refused when the folder it would run in (the
- * one asked for, or where the shell is) is such a place: the Mac checks the
- * command's words only.
+ * one asked for, or where the shell is; the provider gives it as written
+ * and where it really is) is such a place, and names in its words are also
+ * read from that folder: the Mac checks the command's words only.
  */
 export function refusal(fields: {
   request: LocalToolRequest | undefined
@@ -210,7 +219,7 @@ export function refusal(fields: {
 }): string | undefined {
   const { request, approvalId, permission, live, terminalsFolder, places } = fields
   if (request) {
-    const sensitive = sensitiveRefusal(request.action, request.target, places)
+    const sensitive = sensitiveRefusal(request.action, request.target, places, fields.folders ?? [])
     if (sensitive) return sensitive
     if (request.action === 'run-command')
       for (const folder of fields.folders ?? []) {

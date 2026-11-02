@@ -39,31 +39,34 @@ export interface ShellSystem {
 /**
  * Splits a command's output from the state said after its run's own
  * marker: what comes before goes on as it comes; only what could be the
- * marker's start is held back until the next piece says.
+ * marker's start is held back until the next piece says. The state is what
+ * follows the marker's last occurrence: when the marker comes again, the
+ * one before and what followed it were output after all. What follows is
+ * held up to `LocalExec.stateCap`; past it, it was not a state, and goes
+ * on as output (whose own cap then holds), the next marker looked for.
  */
 export class StateSplitter {
   private held: Buffer = Buffer.alloc(0)
   private found = false
   private state: Buffer[] = []
+  private stateBytes = 0
 
   constructor(
     private readonly marker: Buffer,
     private readonly out: (data: Buffer) => void,
+    private readonly log: (line: string) => void = () => {},
+    private readonly cap: number = LocalExec.stateCap,
   ) {}
 
   push(chunk: Buffer): void {
-    if (this.found) {
-      this.state.push(chunk)
-      return
-    }
-    const data = this.held.length > 0 ? Buffer.concat([this.held, chunk]) : chunk
-    const at = data.indexOf(this.marker)
-    if (at >= 0) {
-      if (at > 0) this.out(data.subarray(0, at))
+    let data = this.held.length > 0 ? Buffer.concat([this.held, chunk]) : chunk
+    this.held = Buffer.alloc(0)
+    for (let at = data.indexOf(this.marker); at >= 0; at = data.indexOf(this.marker)) {
+      this.pass(data.subarray(0, at))
+      // An earlier marker was not the last one: it, and what followed, were the command's output.
+      if (this.found) this.release()
       this.found = true
-      this.held = Buffer.alloc(0)
-      this.state.push(data.subarray(at + this.marker.length))
-      return
+      data = data.subarray(at + this.marker.length)
     }
     let hold = 0
     for (let size = Math.min(data.length, this.marker.length - 1); size > 0; size -= 1) {
@@ -72,14 +75,40 @@ export class StateSplitter {
         break
       }
     }
-    if (data.length - hold > 0) this.out(data.subarray(0, data.length - hold))
+    this.pass(data.subarray(0, data.length - hold))
     this.held = Buffer.from(data.subarray(data.length - hold))
   }
 
-  /** The output ended: what was held is output after all. */
+  /** Output before any marker goes on; after one, it is held as the state, up to the cap. */
+  private pass(data: Buffer): void {
+    if (data.length === 0) return
+    if (!this.found) {
+      this.out(data)
+      return
+    }
+    this.state.push(Buffer.from(data))
+    this.stateBytes += data.length
+    if (this.stateBytes > this.cap) {
+      this.log('[shell-exec] output after the state marker passed its cap; taken as output, the state not adopted')
+      this.release()
+      this.found = false
+    }
+  }
+
+  /** The marker and what was held after it, given as output. */
+  private release(): void {
+    const held = this.state
+    this.state = []
+    this.stateBytes = 0
+    this.out(Buffer.from(this.marker))
+    for (const data of held) this.out(data)
+  }
+
+  /** The output ended: what was held is output (or the state's end) after all. */
   end(): void {
-    if (!this.found && this.held.length > 0) this.out(this.held)
+    const held = this.held
     this.held = Buffer.alloc(0)
+    this.pass(held)
   }
 
   /** What was said after the marker, if it came. */
@@ -110,7 +139,12 @@ export class ShellProcess {
     marker: Buffer | undefined,
   ) {
     this.pid = child.pid ?? 0
-    if (marker) this.splitter = new StateSplitter(marker, (data) => this.received('stdout', data))
+    if (marker)
+      this.splitter = new StateSplitter(
+        marker,
+        (data) => this.received('stdout', data),
+        (line) => system.log(line),
+      )
   }
 
   /**
@@ -161,15 +195,37 @@ export class ShellProcess {
     return new Promise((done) => this.waiters.push(done))
   }
 
-  /** Stops it and everything it started: Windows' `taskkill /T /F`; elsewhere its group, SIGTERM then SIGKILL a second later (`killProcess`). */
+  /**
+   * Stops it and everything it started: Windows' `taskkill /T /F`, then, a
+   * second later if the shell is still there, the shell itself
+   * (`TerminateProcess`); elsewhere its group, SIGTERM then SIGKILL a
+   * second later (`killProcess`). Its end is told whatever happens: if even
+   * that doesn't end it, five seconds on, its output is let go and it is
+   * said to have ended (a wait on it never hangs).
+   */
   terminate(): void {
     if (this.terminating || this.hasEnded) return
     this.terminating = true
     killTree(this.pid, this.system)
-    if (this.system.platform !== 'win32')
-      setTimeout(() => {
-        if (!this.hasEnded) killGroup(this.pid, 'SIGKILL', this.child)
-      }, 1_000).unref()
+    const after = setTimeout(() => {
+      if (this.hasEnded) return
+      if (this.system.platform === 'win32') {
+        try {
+          this.child.kill()
+        } catch {
+          // Gone already, or not ours to stop: the end below is told anyway.
+        }
+      } else killGroup(this.pid, 'SIGKILL', this.child)
+      const last = setTimeout(() => {
+        if (this.hasEnded) return
+        this.system.log('[shell-exec] the stopped command did not end; its output let go')
+        this.child.stdout?.destroy()
+        this.child.stderr?.destroy()
+        this.ended({ code: null, signaled: true })
+      }, LocalExec.endGraceMs)
+      last.unref()
+    }, LocalExec.killGraceMs)
+    after.unref()
   }
 }
 
@@ -214,12 +270,13 @@ export function killTree(pid: number, system: ShellSystem): void {
  * (Windows has no process group to stop): found by their parent's number,
  * which Windows keeps, and stopped with theirs.
  */
-function killLeftBehind(pid: number, system: ShellSystem): void {
+function killLeftBehind(pid: number, endedAt: number, system: ShellSystem): void {
   if (system.platform !== 'win32' || !system.shell) {
     killGroup(pid, 'SIGKILL')
     return
   }
-  const script = `Get-CimInstance Win32_Process -Filter 'ParentProcessId=${pid}' | ForEach-Object { & '${taskkill(system).replace(/'/g, "''")}' /T /F /PID $_.ProcessId | Out-Null }`
+  // Windows gives a number again once its process is gone: only what was started before the shell ended is its own.
+  const script = `$__ended = [DateTimeOffset]::FromUnixTimeMilliseconds(${Math.trunc(endedAt)}).UtcDateTime; Get-CimInstance Win32_Process -Filter 'ParentProcessId=${pid}' | Where-Object { $_.CreationDate -and $_.CreationDate.ToUniversalTime() -le $__ended } | ForEach-Object { & '${taskkill(system).replace(/'/g, "''")}' /T /F /PID $_.ProcessId | Out-Null }`
   try {
     const sweeper = spawn(system.shell, ['-NoLogo', '-NoProfile', '-NonInteractive', '-EncodedCommand', Buffer.from(script, 'utf16le').toString('base64')], {
       stdio: 'ignore',
@@ -268,6 +325,7 @@ export function launch(
   if (fields.input != null) child.stdin?.write(fields.input)
   if (!fields.pipeStdin) child.stdin?.end()
   let exited: Exit | undefined
+  let exitedAt = 0
   let watch: ReturnType<typeof setTimeout> | undefined
   child.on('error', (error) => {
     clearTimeout(watch)
@@ -276,12 +334,13 @@ export function launch(
   })
   child.on('exit', (code, signal) => {
     exited = { code: signal ? null : code, signaled: signal != null }
+    exitedAt = Date.now()
     watch = setTimeout(() => {
       if (process.hasEnded) return
       system.log(
         '[shell-exec] Close event did not fire within 5000ms after exit. This may indicate a background process is holding file descriptors open. Killing detached process group.',
       )
-      killLeftBehind(process.pid, system)
+      killLeftBehind(process.pid, exitedAt, system)
       child.stdout?.destroy()
       child.stderr?.destroy()
       process.ended(exited ?? { code: null, signaled: true })
@@ -497,7 +556,7 @@ export class BackgroundShells {
     let stoppedByTimeout = false
     let killer: ReturnType<typeof setTimeout> | undefined
     if (fields.hardTimeoutMs != null) {
-      const left = Math.max(0, fields.hardTimeoutMs - (Date.now() - started))
+      const left = Math.min(Math.max(0, fields.hardTimeoutMs - (Date.now() - started)), LocalExec.longestTimerMs)
       killer = setTimeout(() => {
         stoppedByTimeout = true
         process.terminate()

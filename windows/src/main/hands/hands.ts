@@ -3,10 +3,13 @@
 // MacLocalPermission.swift): one provider at a time, made when the page
 // first opens the stream for a signed-in account and stopped when it signs
 // out or the app quits; the setting and the "Allow once" answers kept in
-// the app's data folder; the hands' log beside them.
+// the app's data folder, signed with a key Windows seals (signed.ts); the
+// hands' log beside them.
 
 import { appendFile } from 'node:fs/promises'
+import os from 'node:os'
 import path from 'node:path'
+import type { Sealer } from '../kept'
 import { LocalToolApprovals } from './approvals'
 import { type PermissionNow, LocalToolSettings } from './permission'
 import { findPowerShell } from './powershell'
@@ -14,6 +17,7 @@ import { HandsProvider, type StreamEnd } from './provider'
 import type { LocalToolApproval, Permission } from './rules'
 import type { SensitivePlaces } from './sensitivePaths'
 import type { ShellSystem } from './shell'
+import { SigningKey } from './signed'
 import type { Target } from './target'
 import type { Transport } from './transport'
 
@@ -26,6 +30,10 @@ export interface HandsSetup {
   transport: Transport
   shrinkImage?: (data: Buffer) => Buffer
   hostName?: string
+  /** The app's own folder, when it is installed (refused as the data folder is). */
+  installFolder?: string
+  /** What seals the key the setting and the answers are signed with (`safeStorage`); without one, a key for this run only. */
+  sealer?: Sealer
 }
 
 /**
@@ -51,14 +59,25 @@ export function placesFrom(
   home: string,
   dataFolder: string,
   platform: string,
+  more: { installFolder?: string; hostName?: string } = {},
 ): SensitivePlaces {
   const flavor = platform === 'win32' ? path.win32 : path.posix
+  // Windows' names don't care about case: `Temp`, `TEMP` and `temp` are one.
+  const read = (name: string) =>
+    Object.entries(env)
+      .find(([key]) => key.toLowerCase() === name.toLowerCase())?.[1]
+      ?.trim() || undefined
   return {
     home,
-    appData: env.APPDATA?.trim() || flavor.join(home, 'AppData', 'Roaming'),
-    localAppData: env.LOCALAPPDATA?.trim() || flavor.join(home, 'AppData', 'Local'),
-    systemRoot: platform === 'win32' ? env.SystemRoot?.trim() || env.SYSTEMROOT?.trim() || 'C:\\Windows' : undefined,
+    appData: read('APPDATA') ?? flavor.join(home, 'AppData', 'Roaming'),
+    localAppData: read('LOCALAPPDATA') ?? flavor.join(home, 'AppData', 'Local'),
+    systemRoot: platform === 'win32' ? (read('SystemRoot') ?? 'C:\\Windows') : undefined,
     dataFolder,
+    ...(more.installFolder ? { installFolder: more.installFolder } : {}),
+    ...(more.hostName ? { hostName: more.hostName } : {}),
+    ...(read('TEMP') ? { temp: read('TEMP') } : {}),
+    ...(read('USERNAME') ? { userName: read('USERNAME') } : {}),
+    ...(read('OneDrive') ? { oneDrive: read('OneDrive') } : {}),
   }
 }
 
@@ -87,11 +106,17 @@ export class Hands {
   private provider?: HandsProvider
 
   constructor(private readonly setup: HandsSetup) {
-    this.settings = new LocalToolSettings(setup.dataFolder)
-    this.approvals = new LocalToolApprovals(setup.dataFolder)
-    this.places = placesFrom(setup.env, setup.home, setup.dataFolder, setup.platform)
-    this.root = rootFrom(setup.env, setup.home)
     this.log = new HandsLog(path.join(setup.dataFolder, 'local-exec-daemon.log'))
+    const key = setup.sealer
+      ? new SigningKey(path.join(setup.dataFolder, 'local-tool-key.sealed'), setup.sealer, (line) => this.log.write(line))
+      : SigningKey.forThisRun()
+    this.settings = new LocalToolSettings(setup.dataFolder, key)
+    this.approvals = new LocalToolApprovals(setup.dataFolder, key)
+    this.places = placesFrom(setup.env, setup.home, setup.dataFolder, setup.platform, {
+      installFolder: setup.installFolder,
+      hostName: setup.hostName ?? os.hostname(),
+    })
+    this.root = rootFrom(setup.env, setup.home)
     this.system = {
       shell: findPowerShell(setup.env, setup.platform),
       platform: setup.platform,
@@ -139,9 +164,10 @@ export class Hands {
     await provider?.stop()
   }
 
-  /** Signed out: the setting forgotten, so the next account starts from "Ask every time"; the hands stopped. */
+  /** Signed out: the setting and the "Allow once" answers forgotten, so the next account starts from "Ask every time"; the hands stopped. */
   async signedOut(): Promise<void> {
     this.settings.clearScope()
+    this.approvals.clear()
     await this.stop()
   }
 
