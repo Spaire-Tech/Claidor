@@ -174,10 +174,6 @@
   opacity: 1;
 }
 
-.connectors-search input::-webkit-search-cancel-button {
-  display: none;
-}
-
 /* × once something is typed: the filled circle (12) in the faint grey. */
 .connectors-search-clear {
   flex: none;

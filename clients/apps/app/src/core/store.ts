@@ -4605,8 +4605,8 @@ export class AppStore {
   pluginLogos: ReadonlyMap<string, string> = new Map()
   private pluginLogoReads = new Set<string>()
   private signInTimers = new Map<string, ReturnType<typeof setTimeout>>()
-  /** The agent whose skills were asked for last: an older answer for another is dropped. */
-  private skillsAskedFor?: string
+  /** The agent the window shows, whose skills Connectors lists (the model's `setAgent`): an answer for another agent is not kept. */
+  private skillsAgent?: string
 
   /** 6c's state back to nothing (signed out; `PluginsModel.forget`). */
   private resetConnectors(): void {
@@ -4619,7 +4619,7 @@ export class AppStore {
     this.signInFlows = new Map()
     for (const timer of this.signInTimers.values()) clearTimeout(timer)
     this.signInTimers.clear()
-    this.skillsAskedFor = undefined
+    this.skillsAgent = undefined
   }
 
   /** Someone is signed in: Connectors' calls can go (the Mac's `try? calls()`). */
@@ -4695,9 +4695,8 @@ export class AppStore {
 
   /** The open agent's skills (`loadSkills`); with no agent open, none. */
   async readAgentSkills(agentId: string | undefined): Promise<void> {
-    this.skillsAskedFor = agentId
     if (agentId == null) {
-      if (this.agentSkills.length === 0) return
+      if (this.skillsAgent != null || this.agentSkills.length === 0) return
       this.agentSkills = []
       this.changed()
       return
@@ -4710,11 +4709,21 @@ export class AppStore {
     } catch {
       return
     }
-    if (this.backend !== backend || this.skillsAskedFor !== agentId) return
-    this.setAgentSkills(list)
+    if (this.backend !== backend) return
+    this.setAgentSkills(agentId, list)
   }
 
-  private setAgentSkills(list: AgentSkill[]): void {
+  /**
+   * The agent the window shows (Connectors' `setAgent`): only its skills are
+   * kept, however the answers cross (an opening's read for no agent yet, an
+   * Add's skills step for the agent open when it began).
+   */
+  showSkillsOf(agentId: string | undefined): void {
+    this.skillsAgent = agentId
+  }
+
+  private setAgentSkills(agentId: string, list: AgentSkill[]): void {
+    if (agentId !== this.skillsAgent) return
     if (JSON.stringify(list) === JSON.stringify(this.agentSkills)) return
     this.agentSkills = list
     this.changed()
@@ -4889,7 +4898,7 @@ export class AppStore {
     } catch {
       return
     }
-    if (this.backend === backend) this.setAgentSkills(list)
+    if (this.backend === backend) this.setAgentSkills(agentId, list)
   }
 
   /** Save on a skill's page (`updateAgentWorkflow`): the name and description trimmed, the trigger and source kept; the skills as the computer lists them. */
@@ -4907,13 +4916,13 @@ export class AppStore {
       body,
       agentId,
     )
-    if (list) this.setAgentSkills(list)
+    if (list) this.setAgentSkills(agentId, list)
   }
 
   /** Delete skill (`deleteAgentWorkflow`): the skills as the computer lists them. */
   async deleteAgentSkill(skillId: string, agentId: string): Promise<void> {
     const list = await this.pluginCalls().deleteSkill(skillId, agentId)
-    if (list) this.setAgentSkills(list)
+    if (list) this.setAgentSkills(agentId, list)
   }
 
   // Tools

@@ -78,11 +78,27 @@ const apple =
 /** How many of a section's apps Available shows under its name (two columns of three, the founder's reference); the name opens the rest (`PluginsPreview.count`). */
 const previewCount = 6
 
-/** A click on the button whose menu it just closed closes it, and opens nothing (the Mac's menu takes that click; half a second). */
-const reopenGap = 500
-
-/** When a click outside closed the categories' menu: that click closes only the menu, as the Mac's, not Connectors through the dim. */
-let menuClosedByClickAt = -Infinity
+/**
+ * A press outside an open menu only closes it, as the Mac's menu takes that
+ * click: what it lands on (×, a row, +, the dim, the button that opened the
+ * menu) does nothing. Its press is kept from focusing or closing anything
+ * (`preventDefault`), and the click that follows it is swallowed.
+ */
+function swallowNextClick(): void {
+  const swallow = (event: MouseEvent) => {
+    event.stopPropagation()
+    event.preventDefault()
+    done()
+  }
+  // The click comes in the same task as its mouseup; none came (a drag off the window), let go.
+  const later = () => setTimeout(done, 0)
+  const done = () => {
+    window.removeEventListener('click', swallow, true)
+    window.removeEventListener('mouseup', later, true)
+  }
+  window.addEventListener('click', swallow, true)
+  window.addEventListener('mouseup', later, true)
+}
 
 // MARK: Symbols (SF Symbols, outlined on a 16 grid)
 
@@ -335,11 +351,14 @@ export function PlusMark({
 
 /** An app that can't be added yet (`SoonWord`): said quietly, no +. */
 export function SoonWord({ label }: { label?: string }) {
-  return (
-    <span className="plugin-soon" aria-label={label}>
-      {comingSoonWord()}
-    </span>
-  )
+  // Its sentence ("Notion is coming soon") is what a screen reader says, as the Mac's label: a name on a plain span is not read.
+  if (label != null)
+    return (
+      <span className="plugin-soon" role="img" aria-label={label}>
+        {comingSoonWord()}
+      </span>
+    )
+  return <span className="plugin-soon">{comingSoonWord()}</span>
 }
 
 /** A status (`StatusWord`): its word, green, orange, red or grey; an error's detail as its tooltip. */
@@ -429,7 +448,7 @@ function PluginRow({
           {line !== '' && <span className="connectors-row-line">{line}</span>}
         </span>
       </button>
-      {children != null && (
+      {children != null && children !== false && (
         <span className="connectors-row-end">{children}</span>
       )}
     </div>
@@ -857,7 +876,8 @@ function ConnectorsSearch({ model }: { model: PluginsModel }) {
     <div
       className="connectors-search"
       onMouseDown={(event) => {
-        // A click anywhere in the capsule gives the field the keys (`onTapGesture`).
+        // A click anywhere in the capsule gives the field the keys (`onTapGesture`); not one that only closes a menu.
+        if (event.defaultPrevented) return
         if (event.target !== field.current) {
           event.preventDefault()
           field.current?.focus()
@@ -902,7 +922,19 @@ function ConnectorsSearch({ model }: { model: PluginsModel }) {
 function CategoryButton({ model }: { model: PluginsModel }) {
   const button = useRef<HTMLButtonElement>(null)
   const [open, setOpen] = useState<{ x: number; y: number; width: number }>()
-  const closedAt = useRef(0)
+  const menu = useRef<HTMLDivElement>(null)
+  const nameId = useId()
+  // While the menu is open, a press outside it only closes it (the window's `useDismiss` sees the press and closes the menu).
+  useEffect(() => {
+    if (!open) return
+    const press = (event: MouseEvent) => {
+      if (menu.current?.contains(event.target as Node)) return
+      event.preventDefault()
+      swallowNextClick()
+    }
+    window.addEventListener('mousedown', press, true)
+    return () => window.removeEventListener('mousedown', press, true)
+  }, [open])
   if (model.tab !== 'marketplace') return null
   const sections = pluginSections(model.catalog)
   const chosen = sections.find((section) => section.key === model.category)
@@ -926,16 +958,17 @@ function CategoryButton({ model }: { model: PluginsModel }) {
         ref={button}
         type="button"
         className="connectors-category"
-        aria-label={`${t('Category')}: ${name}`}
+        aria-label={t('Category')}
+        aria-describedby={nameId}
         aria-haspopup="menu"
         aria-expanded={open !== undefined}
         onClick={() => {
-          if (Date.now() - closedAt.current < reopenGap) return
           const box = button.current?.getBoundingClientRect()
           if (box) setOpen({ x: box.left, y: box.bottom + 4, width: box.width })
         }}
       >
         <span
+          id={nameId}
           className={classes('connectors-category-name', chosen && 'chosen')}
         >
           {name}
@@ -944,6 +977,7 @@ function CategoryButton({ model }: { model: PluginsModel }) {
       </button>
       {open && (
         <div
+          ref={menu}
           className="connectors-category-menu"
           style={
             {
@@ -955,14 +989,7 @@ function CategoryButton({ model }: { model: PluginsModel }) {
             items={items}
             at={open}
             label={t('Category')}
-            close={(why?: unknown) => {
-              // Only a click outside (on this button, say) is the menu's own; a pick or Escape leaves the button free.
-              if (why === 'click') {
-                closedAt.current = Date.now()
-                menuClosedByClickAt = performance.now()
-              }
-              setOpen(undefined)
-            }}
+            close={() => setOpen(undefined)}
           />
         </div>
       )}
@@ -1209,13 +1236,10 @@ export function ConnectorsLayer({ store }: { store: AppStore }) {
     model.setAgent(agentId)
   }, [model, agentId])
   const skillsFor = useRef(agentId)
-  useEffect(() => {
-    if (!open || skillsFor.current === agentId) return
-    skillsFor.current = agentId
-    void model.loadSkills(agentId)
-  }, [model, open, agentId])
 
-  // Each opening: which apps can't be added yet, and the computer read; then its servers every 15 s while it is open.
+  // Each opening: which apps can't be added yet, and the computer read; then its servers every 15 s while it is open,
+  // but not while the page is hidden: a browser tab left behind on Connectors doesn't keep the computer from resting.
+  // (Before the skills' effect, so an opening reads the open agent's skills once.)
   useEffect(() => {
     if (opening === undefined) return
     let stopped = false
@@ -1224,7 +1248,9 @@ export function ConnectorsLayer({ store }: { store: AppStore }) {
     void store.loadAppsComingSoon()
     void model.load(agentRef.current).then(() => {
       if (stopped) return
-      timer = setInterval(() => void model.refreshServers(), 15_000)
+      timer = setInterval(() => {
+        if (!document.hidden) void model.refreshServers()
+      }, 15_000)
     })
     return () => {
       stopped = true
@@ -1232,12 +1258,27 @@ export function ConnectorsLayer({ store }: { store: AppStore }) {
     }
   }, [model, store, opening])
 
-  // The window coming forward (the tab's focus): the servers read again.
+  useEffect(() => {
+    if (!open || skillsFor.current === agentId) return
+    skillsFor.current = agentId
+    void model.loadSkills(agentId)
+  }, [model, open, agentId])
+
+  // The window coming forward (the tab's focus), or the page shown again: the servers read once.
   useEffect(() => {
     if (!open) return
-    const forward = () => void model.refreshServers()
+    let readAt = -Infinity
+    const forward = () => {
+      if (document.hidden || performance.now() - readAt < 1000) return
+      readAt = performance.now()
+      void model.refreshServers()
+    }
     window.addEventListener('focus', forward)
-    return () => window.removeEventListener('focus', forward)
+    document.addEventListener('visibilitychange', forward)
+    return () => {
+      window.removeEventListener('focus', forward)
+      document.removeEventListener('visibilitychange', forward)
+    }
   }, [model, open])
 
   // ⌘F and Escape while it is open and nothing stands over it (MainWindow.swift 496-512).
@@ -1284,7 +1325,6 @@ export function ConnectorsLayer({ store }: { store: AppStore }) {
       onMouseDown={(event) => {
         if (event.target !== event.currentTarget || event.defaultPrevented)
           return
-        if (performance.now() - menuClosedByClickAt < 200) return
         win.closeConnectors()
       }}
     >

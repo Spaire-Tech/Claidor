@@ -410,6 +410,8 @@ export class PluginsModel {
 
   /** The agent open in the window; another one's skills are read (`onChange(of: window.selected)`). */
   setAgent(agentId: string | undefined): void {
+    // Only the shown agent's skills are kept, however the answers cross (M1 of the review: the Mac lets the last answer win).
+    this.store.showSkillsOf(agentId)
     if (agentId === this.agentId) return
     this.agentId = agentId
     this.changed()
@@ -519,7 +521,7 @@ export class PluginsModel {
       void this.add(entry, agentId)
       return
     }
-    // 6b: pass `{ signIn: false }` when `needsSetupPage(entry, team)`: Add goes to the setup page, so no tab is held.
+    // 6b: pass `{ signIn: false }` when `needsSetupPage(entry, this.effective.get(entry.id)?.hasTeamConfiguredVariables === true)`: Add goes to the setup page, so no tab is held.
     this.connector?.ask(entry.displayName, () => this.add(entry, agentId))
   }
 
@@ -809,7 +811,7 @@ export class PluginsModel {
       void this.signIn(server, accountKey)
       return
     }
-    // 6b: Connect and Retry: the consent holds the tab for the sign-in (`ask`'s default).
+    // Connect and Retry: the consent holds the tab for the sign-in, as `ask` does by default (nothing to wire).
     this.connector?.ask(server.name, () => this.signIn(server, accountKey))
   }
 
@@ -857,6 +859,9 @@ export class PluginsModel {
         })
       } else if (status === 'already-authenticated') {
         this.show(connectedNotice(server.name, 0))
+      } else if (status === 'started') {
+        // Its page is not a web address (a script): nothing opens, said as a sign-in that never opened, as Connect says it.
+        this.show({ isError: true, text: didntConnect(server.name) })
       } else {
         this.show(signInNotice(status, str(field(answer, 'message'))))
       }

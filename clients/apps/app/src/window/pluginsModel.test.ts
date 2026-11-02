@@ -67,7 +67,9 @@ async function opened(box = computer()) {
   await store.attach(box)
   const model = new PluginsModel(store)
   const connector = new StandInConnector()
-  model.connector = connector
+  model.setConnector(connector)
+  // The window tells it its open agent first, as ConnectorsLayer does.
+  model.setAgent('theo')
   await model.load('theo')
   return { store, model, connector, box }
 }
@@ -94,6 +96,7 @@ describe('Connectors’ model', () => {
     box.before = (key) => {
       if (key === 'desktopMcp:getCatalog') loadedAtFirst ??= model.catalogLoaded
     }
+    model.setAgent('theo')
     await model.load('theo')
     expect(loadedAtFirst).toBe(false)
     expect(model.catalogLoaded).toBe(true)
@@ -113,6 +116,7 @@ describe('Connectors’ model', () => {
     // Held now: shown at once, and read again behind it.
     const again = new PluginsModel(store)
     loadedAtFirst = undefined
+    again.setAgent(undefined)
     await again.load(undefined)
     expect(loadedAtFirst).toBe(true)
     // No agent open: no private skills.
@@ -368,10 +372,12 @@ describe('Connectors’ model', () => {
     )
     await vi.waitFor(() => expect(connector.opened.length).toBe(1))
 
-    // Reopen: no consent, the same page again (at least 0.9 s after the last).
+    // Reopen: no consent, the same page again, 0.9 s after the last at the soonest.
     model.requestSignIn(server, 'default')
     expect(connector.asked.length).toBe(1)
-    await vi.advanceTimersByTimeAsync(1000)
+    await vi.advanceTimersByTimeAsync(400)
+    expect(connector.opened.length).toBe(1)
+    await vi.advanceTimersByTimeAsync(600)
     await vi.waitFor(() => expect(connector.opened.length).toBe(2))
     expect(box.all('desktopMcp:authenticateServer').length).toBe(1)
 
@@ -386,6 +392,69 @@ describe('Connectors’ model', () => {
     await model.refreshServers()
     expect(store.signInFlows.size).toBe(0)
     expect(model.signInState(server, 'default')).toBe('none')
+
+    // A page that is not a web address: nothing opens, and it says so (not "Opened the OAuth flow…").
+    box.answers['desktopMcp:listServers'] = needsAuth()
+    await model.refreshServers()
+    box.answers['desktopMcp:authenticateServer'] = {
+      status: 'started',
+      authorizationUrl: 'javascript:alert(1)',
+    }
+    const pagesBefore = connector.opened.length
+    model.requestSignIn(server, 'default')
+    await connector.confirm()
+    expect(connector.opened.length).toBe(pagesBefore)
+    expect(model.signInState(server, 'default')).toBe('none')
+    expect(model.notice).toEqual({
+      isError: true,
+      text: "Linear didn't connect. Try again.",
+    })
+  })
+
+  it('keeps only the shown agent’s skills, however the answers cross', async () => {
+    const box = computer()
+    box.answers.getAgentWorkflows = [
+      {
+        id: 'w1',
+        name: 'Brief',
+        description: 'x',
+        body: 'y',
+        source: 'workflow',
+      },
+    ]
+    const store = new AppStore()
+    await store.attach(box)
+    const model = new PluginsModel(store)
+    // Connectors opens before the roster: no agent yet.
+    model.setAgent(undefined)
+    let releaseLoad = () => {}
+    let releaseSkills = () => {}
+    const loadHeld = new Promise<void>((resolve) => (releaseLoad = resolve))
+    const skillsHeld = new Promise<void>((resolve) => (releaseSkills = resolve))
+    box.before = async (key, args) => {
+      if (key === 'desktopMcp:listServers') await loadHeld
+      if (key === 'getAgentWorkflows' && (args as { id: string }).id === 'theo')
+        await skillsHeld
+    }
+    const loading = model.load(undefined)
+    // The roster arrives: the window shows Theo, whose skills are read.
+    model.setAgent('theo')
+    const reading = model.loadSkills('theo')
+    // The opening's read for no agent comes first; Theo's answer after it.
+    releaseLoad()
+    await loading
+    releaseSkills()
+    await reading
+    expect(model.skills.map((one) => one.id)).toEqual(['w1'])
+
+    // An Add's skills step for the agent open when it began, after another was opened: not kept.
+    box.before = undefined
+    box.answers.getAgentWorkflows = []
+    model.setAgent('sam')
+    await model.loadSkills('theo')
+    expect(model.skills.map((one) => one.id)).toEqual(['w1'])
+    await model.loadSkills('sam')
+    expect(model.skills).toEqual([])
   })
 
   it('switches a tool at once, and puts it back when the computer refuses', async () => {
