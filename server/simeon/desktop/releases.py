@@ -30,12 +30,32 @@ The routes:
 
 Until an index is uploaded, both answer "nothing": the download is a 404
 with a sentence, the update a 204.
+
+The Windows app (`windows/`, 2 November 2026) has its own folder beside the
+Mac's, `releases/win32-x64/<version>/`, written by
+`windows/scripts/release.mjs` in the same order: the installer, its
+blockmap, `release.json` and `latest.yml` in the version's folder, then
+`win32-x64/latest.yml` (electron-updater's feed, naming the version's
+folder) and `win32-x64/latest.json` beside the folders, last. Its routes:
+
+- `GET /desktop/download/windows` sends the browser to the latest installer
+  (302), from `win32-x64/latest.json`.
+- `GET /desktop/download/windows/latest` is that release as JSON.
+- `GET /desktop/download/windows/latest.yml` sends the app's updater to its
+  feed in the bucket (302): the app's feed is `/desktop/download/windows`
+  (`windows/electron-builder.yml`, `publish`), so the bucket can move without
+  a release, as with Sparkle's.
+- `GET /desktop/download/windows/{version}/{file}` sends it on to a file the
+  feed names (302): only a version's installer and its blockmap, never any
+  other path in the bucket. The updater checks the installer's sha512 from
+  the feed, and in a signed release its publisher, itself.
 """
 
 from __future__ import annotations
 
 import re
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
@@ -54,8 +74,11 @@ log = structlog.get_logger()
 router = APIRouter(include_in_schema=False)
 
 PLATFORM = "darwin-arm64"
+WINDOWS_PLATFORM = "win32-x64"
 INDEX_TTL_S = 300.0
 _VERSION = re.compile(r"^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?")
+# A Windows version as it goes into a path: the whole of it, nothing else.
+_WHOLE_VERSION = re.compile(r"^\d{1,9}\.\d{1,9}\.\d{1,9}(?:-[0-9A-Za-z.-]{1,40})?$")
 
 
 def parse_version(value: str) -> tuple[int, int, int, int] | None:
@@ -94,6 +117,23 @@ def file_names(version: str, platform: str = PLATFORM) -> dict[str, str]:
     }
 
 
+def windows_installer_name(version: str) -> str:
+    """The installer's name (`windows/electron-builder.yml`, `artifactName`)."""
+    return f"Simeon-Setup-{version}.exe"
+
+
+def is_windows_version(value: str) -> bool:
+    return _WHOLE_VERSION.match(value) is not None and ".." not in value
+
+
+def is_windows_file(version: str, file: str) -> bool:
+    """A file the Windows feed may name: a version's installer or its blockmap."""
+    if not is_windows_version(version):
+        return False
+    installer = windows_installer_name(version)
+    return file in (installer, f"{installer}.blockmap")
+
+
 @dataclass(frozen=True)
 class Release:
     version: str
@@ -104,7 +144,9 @@ class Release:
     zip_sha256: str | None
 
     @classmethod
-    def from_index(cls, index: dict[str, Any], base_url: str) -> Release | None:
+    def from_index(cls, index: Any, base_url: str) -> Release | None:
+        if not isinstance(index, dict):
+            return None
         version = index.get("version")
         if not isinstance(version, str) or parse_version(version) is None:
             return None
@@ -122,6 +164,35 @@ class Release:
         )
 
 
+@dataclass(frozen=True)
+class WindowsRelease:
+    """The latest Windows release, from `win32-x64/latest.json` (the
+    release's `release.json`); its installer's URL built here, as the Mac's."""
+
+    version: str
+    pub_date: str
+    exe_url: str
+    exe_sha256: str | None
+
+    @classmethod
+    def from_index(cls, index: Any, base_url: str) -> WindowsRelease | None:
+        if not isinstance(index, dict):
+            return None
+        version = index.get("version")
+        if not isinstance(version, str) or not is_windows_version(version):
+            return None
+        pub_date = index.get("pub_date")
+        return cls(
+            version=version,
+            pub_date=pub_date if isinstance(pub_date, str) else "",
+            exe_url=(
+                f"{base_url}/{WINDOWS_PLATFORM}/{version}/"
+                f"{windows_installer_name(version)}"
+            ),
+            exe_sha256=_sha256_of(index.get("exe")),
+        )
+
+
 def _sha256_of(section: Any) -> str | None:
     if not isinstance(section, dict):
         return None
@@ -129,14 +200,14 @@ def _sha256_of(section: Any) -> str | None:
     return value if isinstance(value, str) else None
 
 
-_cache: dict[str, tuple[float, Release | None]] = {}
+_cache: dict[str, tuple[float, Any]] = {}
 
 
 def forget_cached_releases() -> None:
     _cache.clear()
 
 
-async def latest_release(platform: str = PLATFORM) -> Release | None:
+async def _latest[R](platform: str, read: Callable[[Any, str], R | None]) -> R | None:
     """The latest release for the platform, from `latest.json` in the
     bucket; None when there is none yet or it cannot be read. Cached for
     `INDEX_TTL_S` so a thousand installed apps asking in the same hour
@@ -147,12 +218,12 @@ async def latest_release(platform: str = PLATFORM) -> Release | None:
         return cached[1]
     base = releases_base_url()
     url = f"{base}/{platform}/latest.json"
-    release: Release | None = None
+    release: R | None = None
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
             response = await client.get(url, headers={"cache-control": "no-cache"})
         if response.status_code == 200:
-            release = Release.from_index(response.json(), base)
+            release = read(response.json(), base)
             if release is None:
                 log.warning("desktop.releases.index_unreadable", url=url)
         elif response.status_code not in (403, 404):
@@ -163,6 +234,16 @@ async def latest_release(platform: str = PLATFORM) -> Release | None:
         log.warning("desktop.releases.index_failed", url=url, error=str(error))
     _cache[platform] = (now, release)
     return release
+
+
+async def latest_release(platform: str = PLATFORM) -> Release | None:
+    """The Mac's latest release (`darwin-arm64/latest.json`)."""
+    return await _latest(platform, Release.from_index)
+
+
+async def latest_windows_release() -> WindowsRelease | None:
+    """The Windows app's latest release (`win32-x64/latest.json`)."""
+    return await _latest(WINDOWS_PLATFORM, WindowsRelease.from_index)
 
 
 @router.get("/download/mac", name="desktop:download_mac")
@@ -196,6 +277,51 @@ async def download_mac_latest() -> Response:
             "dmg": {"url": release.dmg_url, "sha256": release.dmg_sha256},
             "zip": {"url": release.zip_url, "sha256": release.zip_sha256},
         }
+    )
+
+
+@router.get("/download/windows", name="desktop:download_windows")
+async def download_windows() -> Response:
+    """The website's Download for Windows: the latest installer."""
+    release = await latest_windows_release()
+    if release is None:
+        return JSONResponse(
+            {"error": "Simeon for Windows is not published yet."}, status_code=404
+        )
+    return RedirectResponse(release.exe_url, status_code=302)
+
+
+@router.get("/download/windows/latest", name="desktop:download_windows_latest")
+async def download_windows_latest() -> Response:
+    """The latest Windows release as JSON, for the website or a person checking."""
+    release = await latest_windows_release()
+    if release is None:
+        return JSONResponse({"version": None}, status_code=404)
+    return JSONResponse(
+        {
+            "version": release.version,
+            "pub_date": release.pub_date,
+            "exe": {"url": release.exe_url, "sha256": release.exe_sha256},
+        }
+    )
+
+
+@router.get("/download/windows/latest.yml", name="desktop:download_windows_feed")
+async def download_windows_feed() -> Response:
+    """The Windows app's update feed (electron-updater's `latest.yml`), in the bucket."""
+    return RedirectResponse(
+        f"{releases_base_url()}/{WINDOWS_PLATFORM}/latest.yml", status_code=302
+    )
+
+
+@router.get("/download/windows/{version}/{file}", name="desktop:download_windows_file")
+async def download_windows_file(version: str, file: str) -> Response:
+    """A file the feed names: a version's installer or its blockmap, in the
+    bucket; anything else is not here."""
+    if not is_windows_file(version, file):
+        return Response(status_code=404)
+    return RedirectResponse(
+        f"{releases_base_url()}/{WINDOWS_PLATFORM}/{version}/{file}", status_code=302
     )
 
 
