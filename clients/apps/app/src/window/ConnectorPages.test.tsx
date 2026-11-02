@@ -144,6 +144,8 @@ async function opened(answers: Record<string, JSONValue> = {}) {
   const store = new AppStore()
   await store.attach(box)
   const model = new PluginsModel(store)
+  // The agent open in the window, as the layer tells it before it reads.
+  model.setAgent('theo')
   await model.load('theo')
   return { store, model, box }
 }

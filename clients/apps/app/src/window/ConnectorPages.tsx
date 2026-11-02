@@ -18,6 +18,7 @@
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import { canAddAnother } from '../core/appAccounts'
 import { comingSoonWord } from '../core/connectCards'
+import { connectWord } from '../core/connecting'
 import { byline, connectorPage } from '../core/connectorPages'
 import {
   type AgentSkill,
@@ -25,7 +26,6 @@ import {
   type PluginInstallMode,
   type PluginServer,
   accountLabel,
-  connectWord,
   connectorList,
   countWord,
   entryForServer,
@@ -629,7 +629,8 @@ function SetupPage({
       if (input) input.value = ''
     }
     setView(done.view)
-    if (done.send) void model.submitSetup(done.send, model.agentId)
+    // From the click itself: a new add's sign-in takes the tab it opens (`requestSubmitSetup`).
+    if (done.send) model.requestSubmitSetup(done.send, model.agentId)
   }
   return (
     <div className="setup-page">
