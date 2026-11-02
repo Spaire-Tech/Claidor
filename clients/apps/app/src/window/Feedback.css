@@ -1,0 +1,388 @@
+/*
+ * Send Feedback and Report an Issue (Feedback.tsx) at the Mac's measures
+ * (mac/Simeon/Feedback.swift, with SettingsParts.swift's groups and New
+ * Agent's wide button): the settings' grouped ground and cards, light and
+ * dark.
+ */
+:root {
+  /* The wide button before it can be pressed: grey words on the grey (New Agent's). */
+  --feedback-wide-off: rgb(119 119 119 / 0.12);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --feedback-wide-off: rgb(119 119 119 / 0.24);
+  }
+}
+
+/* 480 wide on the grouped ground; its height its own, scrolled in a short window. */
+.sheet.feedback-sheet {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  width: 480px;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  background: var(--grouped-ground);
+  color: var(--ink);
+  line-height: normal;
+  letter-spacing: normal;
+}
+
+.feedback-sheet button {
+  font-family: inherit;
+  line-height: normal;
+  cursor: pointer;
+}
+
+.feedback-sheet button:disabled {
+  cursor: default;
+}
+
+.feedback-sheet button:focus-visible {
+  outline: 2px solid var(--unread);
+  outline-offset: 1px;
+}
+
+/* The top: the title (17, 500) in the middle, the glass discs (32) at its ends; padded 16 16 8. */
+.feedback-top {
+  position: relative;
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 16px 16px 8px;
+}
+
+.feedback-title {
+  color: var(--ink);
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 22px;
+}
+
+.feedback-top-left,
+.feedback-top-right {
+  position: absolute;
+  top: 16px;
+  display: flex;
+}
+
+.feedback-top-left {
+  left: 16px;
+}
+
+.feedback-top-right {
+  right: 16px;
+}
+
+/* Each step comes in over 0.18 s, easing out (`withAnimation(.easeOut(duration: 0.18))`). */
+.feedback-step {
+  display: flex;
+  flex-direction: column;
+  animation: feedback-step-in 0.18s ease-out;
+}
+
+@keyframes feedback-step-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feedback-step {
+    animation: none;
+  }
+}
+
+/* The form: its groups 22 apart, padded 32 a side and 8 above. */
+.feedback-body {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding: 8px 32px 0;
+}
+
+/* The words: 13, 140 high, in the card's grey; the placeholder in the field's faint ink. */
+.feedback-editor {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  height: 140px;
+  padding: 12px 18px;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  line-height: 17px;
+  resize: none;
+}
+
+.feedback-editor::placeholder {
+  color: var(--placeholder);
+  opacity: 1;
+}
+
+/* The agent's menu: the choice in grey and its chevron, the browser's own list laid unseen over them. */
+.feedback-agent {
+  position: relative;
+  display: inline-flex;
+  border-radius: 4px;
+}
+
+.feedback-agent:has(.feedback-agent-select:focus-visible) {
+  outline: 2px solid var(--unread);
+  outline-offset: 3px;
+}
+
+.feedback-agent-select {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* Why it wasn't sent (12, red); the issue's note under it (12, grey), 6 apart. */
+.feedback-failure,
+.feedback-note {
+  margin: 0;
+  font-size: 12px;
+}
+
+.feedback-failure {
+  color: var(--danger);
+}
+
+.feedback-note {
+  color: var(--ink-secondary);
+}
+
+.feedback-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Screenshots and the topics: their name (13, 500, grey) 8 over them. */
+.feedback-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.feedback-section-title {
+  margin: 0;
+  color: var(--ink-secondary);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* The screenshots, 10 apart: each 96 × 64, round 10, a hairline of the faint ink at 40%; its × a glass disc of 20, 4 in. */
+.feedback-shots {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-height: 64px;
+}
+
+.feedback-shot {
+  position: relative;
+  flex: none;
+  width: 96px;
+  height: 64px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: var(--grouped-row);
+}
+
+.feedback-shot img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.feedback-shot::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 10px;
+  box-shadow: inset 0 0 0 0.5px
+    color-mix(in srgb, var(--ink-tertiary) 40%, transparent);
+  pointer-events: none;
+}
+
+.feedback-shot-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: var(--disc-ink);
+}
+
+/* Add: a dashed tile the size of a screenshot, the blue + (18) over the word (12, blue), 4 apart. */
+.feedback-add {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 96px;
+  height: 64px;
+  box-sizing: border-box;
+  padding: 0;
+  border: 1px dashed var(--ink-tertiary);
+  border-radius: 10px;
+  background: var(--grouped-row);
+  color: var(--settings-blue);
+  font-size: 12px;
+}
+
+/* The topics: chips one after another, 8 apart, onto the next line when a line is full. */
+.feedback-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* A chip: its symbol (12) and its name (13), 5 apart, in a capsule 28 high padded 12; picked, white on the blue. */
+.feedback-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--grouped-row);
+  color: var(--ink);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.feedback-chip.on {
+  background: var(--settings-blue);
+  color: #ffffff;
+}
+
+/* The one wide button: 36 high, a capsule in the blue, white words (14, 600); padded 28 above, 32 a side, 24 below. */
+.feedback-wide-row {
+  display: flex;
+  flex: none;
+  padding: 28px 32px 24px;
+}
+
+.feedback-wide {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 18px;
+  background: var(--yours);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: inset 0 0.5px 0 rgb(255 255 255 / 0.18);
+}
+
+.feedback-wide.off {
+  background: var(--feedback-wide-off);
+  color: var(--ink-secondary);
+  box-shadow: none;
+}
+
+/* The small white spinner while it sends. */
+.feedback-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  box-sizing: border-box;
+  border: 2px solid rgb(255 255 255 / 0.35);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: feedback-spin 0.8s linear infinite;
+}
+
+@keyframes feedback-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* The logs question: its title (20, 500) and three paragraphs (13, grey), 12 apart, padded 32 a side and 8 above. */
+.feedback-question {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 8px 32px 0;
+}
+
+.feedback-question-title {
+  color: var(--ink);
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.feedback-question p {
+  margin: 0;
+  color: var(--ink-secondary);
+  font-size: 13px;
+}
+
+/* Don't Include and Continue: 13, 500, in the settings' blue, 28 high, 12 under the wide button and 20 over the foot. */
+.feedback-skip {
+  height: 28px;
+  margin: -12px 0 20px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--settings-blue);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* Sent: the tick (40, blue), the title (17, 500) and its line (13, grey), 10 apart, 20 under the top. */
+.feedback-done {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding-top: 20px;
+}
+
+.feedback-done-mark {
+  display: flex;
+  color: var(--settings-blue);
+}
+
+.feedback-done-title {
+  color: var(--ink);
+  font-size: 17px;
+  font-weight: 500;
+}
+
+.feedback-done-line {
+  color: var(--ink-secondary);
+  font-size: 13px;
+}

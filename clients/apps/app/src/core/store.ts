@@ -123,6 +123,7 @@ import {
   shuffledFace,
   voiceForFace,
 } from './faces'
+import { type DeviceFacts, type FeedbackReport, feedbackBody } from './feedback'
 import { fileLine, fileSize } from './fileLine'
 import { byteCap, computerPath } from './filePreview'
 import {
@@ -132,6 +133,11 @@ import {
   travellerJSON,
 } from './flightCards'
 import { GatewayError } from './gatewayConnection'
+import {
+  type AutoReviewInstructions,
+  detectedTimeZone,
+  normalizedRules,
+} from './generalSettings'
 import {
   type JSONObject,
   type JSONValue,
@@ -4220,6 +4226,8 @@ export class AppStore {
       this.rebuild.migrationReadBack(this.migrations?.status)
       // A computer rebuilt meanwhile starts with no language: told again (Store.swift's `recovered`).
       void this.tellLanguage(backend)
+      // And the zone this browser is in, as the Mac on every connect (step 6e).
+      void this.tellTimeZone(backend)
     }
   }
 
@@ -5342,9 +5350,156 @@ export class AppStore {
   // and Report an Issue (mac/Simeon/SettingsGeneral.swift, SettingsPages.swift,
   // Feedback.swift; the core's AccountSettings.swift, StoreSettings.swift,
   // Feedback.swift).
+  //
+  // Nothing of these pages is kept here: each page reads the computer's
+  // values afresh as it shows (`GeneralSettingsModel`), and each sheet holds
+  // its own words. A password typed is read only as it is sent, and never
+  // kept.
 
-  /** 6e's state back to nothing (signed out). */
+  /** 6e's state back to nothing (signed out): it keeps none. */
   private resetGeneralSettings(): void {}
+
+  /**
+   * The name changed in Settings › Account (StoreSettings.swift's
+   * `changeName`): what the agents call the person, as the first run's name
+   * step saves it (`POST user/name`); the computer told to read it again
+   * (`refreshUserName`; asleep, it reads it as it wakes). None once saved,
+   * the account showing it; else why not, the server's sentence when it
+   * says one ("A name of 1 to 60 characters.").
+   */
+  async changeName(typed: string): Promise<string | undefined> {
+    const backend = this.backend
+    if (!backend) return t('Sign in to Simeon first.')
+    const name = normalizedName(typed)
+    try {
+      await backend.server('user/name', 'POST', { name })
+    } catch (error) {
+      if (error instanceof SimeonAPIError && error.message !== '')
+        return error.message
+      return t("Couldn't change it")
+    }
+    if (this.backend !== backend) return undefined
+    if (this.account) {
+      this.account = { ...this.account, name }
+      this.changed()
+    }
+    await quietly(backend.command('refreshUserName', {}, { wakes: false }))
+    return undefined
+  }
+
+  /** Settings › Account › Password: whether the account has one (`GET account/password`); none when it can't be asked (`hasPassword`). */
+  async hasPassword(): Promise<boolean | undefined> {
+    const backend = this.backend
+    if (!backend) return undefined
+    try {
+      return bool(field(await backend.server('account/password', 'GET'), 'set'))
+    } catch {
+      return undefined
+    }
+  }
+
+  /** Set or change the account's password (`PUT account/password`, `setPassword`): none once it is saved, else the sentence to show ("Use at least 8 characters."). The password is only sent. */
+  async setPassword(password: string): Promise<string | undefined> {
+    const backend = this.backend
+    if (!backend) return t('Sign in to Simeon first.')
+    try {
+      await backend.server('account/password', 'PUT', { password })
+      return undefined
+    } catch (error) {
+      if (error instanceof SimeonAPIError && error.message !== '')
+        return error.message
+      return t("The password wasn't saved. Try again.")
+    }
+  }
+
+  /** The computer's settings, quietly: none when they can't be read (`readHostSettings`). */
+  async readHostSettings(): Promise<JSONValue | undefined> {
+    const backend = this.backend
+    if (!backend) return undefined
+    try {
+      return await backend.command('getHostSettings', {})
+    } catch {
+      return undefined
+    }
+  }
+
+  /** A setting written, quietly: false when refused (`writeHostSettings`). */
+  private async writeHostSettings(update: JSONValue): Promise<boolean> {
+    const backend = this.backend
+    if (!backend) return false
+    try {
+      await backend.command('setHostSettings', update)
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  /** The time zone (`setTimeZone`): the zone the agents and routines use, or none for the one this browser is in. */
+  setTimeZone(
+    zone: string | undefined,
+    detected: string = detectedTimeZone(),
+  ): Promise<boolean> {
+    return this.writeHostSettings({
+      userTimeZone: detected,
+      userTimeZoneOverride: zone ?? '',
+    })
+  }
+
+  /** Auto-review (`setAutoReview`): its switch and its two lists of rules, as the host keeps them. */
+  setAutoReview(rules: AutoReviewInstructions): Promise<boolean> {
+    return this.writeHostSettings({
+      autoReviewInstructions: autoReviewJSON(
+        normalizedRules(autoReviewJSON(rules)),
+      ),
+    })
+  }
+
+  /**
+   * The zone this browser is in, told to the computer each time the stream
+   * comes (back), beside the language (MacServices.swift's `connected`),
+   * without waking a computer that rests. The person's own pick stays the
+   * computer's: the host keeps it apart (`userTimeZoneOverride`) and goes
+   * by it while there is one.
+   */
+  private async tellTimeZone(backend: AgentBackend): Promise<void> {
+    await quietly(
+      backend.command(
+        'setHostSettings',
+        { userTimeZone: detectedTimeZone() },
+        { wakes: false },
+      ),
+    )
+  }
+
+  /** Send Feedback and Report an Issue, e-mailed to Simeon Labs (`sendFeedback`); the server's sentence is thrown when it refuses. */
+  async sendFeedback(
+    report: FeedbackReport,
+    facts: DeviceFacts,
+    diagnostics: string | undefined,
+  ): Promise<void> {
+    const backend = this.backend
+    if (!backend) throw new SimeonAPIError(t('Sign in to Simeon first.'), 401)
+    await backend.server(
+      'feedback',
+      'POST',
+      feedbackBody(report, facts, diagnostics),
+    )
+  }
+
+  /** What the app knows of its own state, a line each, for a report's diagnostics (`diagnosticsState`). */
+  get diagnosticsState(): string[] {
+    const agents = this.agents.filter((agent) => !agent.isGroup).length
+    const groups = this.agents.filter((agent) => agent.isGroup).length
+    const lines = [
+      `Signed in: ${this.account === undefined ? 'no' : 'yes'}`,
+      `Agents: ${agents}, groups: ${groups}`,
+      `Computer: ${this.latestComputerStatus?.state ?? 'unknown'}, stream ${this.isLive ? 'connected' : 'not connected'}${this.isAsleep ? ', asleep' : ''}`,
+      `Open chat: ${this.openChat ?? 'none'}`,
+    ]
+    if (this.problem) lines.push(`Last problem shown: ${this.problem}`)
+    return lines
+  }
 
   // MARK: Step 6f's usage and billing: the usage (`UsageLoad`), Usage &
   // Billing, the credits line over the message field, Wallet, the
