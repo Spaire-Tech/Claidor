@@ -10,9 +10,12 @@
 //   when it comes first, else the computer's; then the window.
 // - A sign-in the server ends (a spent pair) goes back to the website's page.
 //
-// The first run for a new account (`FirstRunScreen`) and the access cover
-// (`AccessCover`) come with their screens; the store already says when the
-// account is refused (`accessBlocked`).
+// - Then the start-up gate: an account never onboarded and with no agents
+//   gets the first run (window/FirstRun.tsx); a computer that does not answer
+//   yet is asked once more after 2.5 s. `?first-run` in the address forces
+//   it, as the Mac's `--first-run` does.
+// - Signing out drops this tab's pair, then the website's own sign-out ends
+//   its cookie, so the next visit does not sign straight back in.
 
 import { SimeonAPI, resolveApiBase, sessionVault } from './core/api'
 import { LiveBackend } from './core/backend'
@@ -23,7 +26,12 @@ import {
 } from './core/savedGateway'
 import { AppStore, accountFrom } from './core/store'
 
-export type Phase = 'starting' | 'signedOut' | 'settingUp' | 'signedIn'
+export type Phase =
+  | 'starting'
+  | 'signedOut'
+  | 'settingUp'
+  | 'firstRun'
+  | 'signedIn'
 
 /** How the web app names itself to the server (`x-simeon-client-version`). */
 export const clientVersion = 'web-next-0.1.0'
@@ -41,6 +49,22 @@ export interface SessionOptions {
   here?: () => string
   /** Where the computer's address is kept; by default the tab's storage. */
   saved?: SavedGatewayStore
+  /** Goes to the website's sign-out, which ends its cookie (the tests listen instead). */
+  goSignOut?: (base: string) => void
+  /** How long the gate waits before asking a silent computer again (2.5 s). */
+  gateRetryMs?: number
+  /** The first run on any account (`?first-run`). */
+  forcesFirstRun?: boolean
+}
+
+export function defaultGoSignOut(base: string): void {
+  location.assign(`${base}/v1/auth/logout`)
+}
+
+/** `?first-run` in the address: the first run on any account, to compare it with the Mac's. */
+function firstRunAsked(): boolean {
+  if (typeof location === 'undefined') return false
+  return new URLSearchParams(location.search).has('first-run')
 }
 
 export function defaultGoSignIn(returnTo: string): void {
@@ -51,6 +75,7 @@ export class WebSession {
   phase: Phase = 'starting'
   readonly store = new AppStore()
   private api?: SimeonAPI
+  private base = ''
   private readonly listeners = new Set<() => void>()
   private version = 0
 
@@ -90,6 +115,7 @@ export class WebSession {
   async start(): Promise<void> {
     if (this.phase !== 'starting') return
     const base = this.options.base ?? resolveApiBase(location)
+    this.base = base
     const ended = () => this.ended(api)
     const api =
       this.options.makeAPI?.(base, ended) ??
@@ -129,7 +155,36 @@ export class WebSession {
       if (this.api === api && this.store.showingSaved) this.set('signedIn')
     })
     if (this.api !== api) return
-    this.set('signedIn')
+    // The start-up gate (`hUn`): a new account gets the first run; a computer not answering yet is asked once more.
+    let gate = await this.store.firstRun()
+    if (gate === 'unknown') {
+      await new Promise((done) =>
+        setTimeout(done, this.options.gateRetryMs ?? 2_500),
+      )
+      if (this.api !== api) return
+      gate =
+        this.store.agents.length === 0 ? await this.store.firstRun() : 'seen'
+    }
+    if (this.api !== api) return
+    const forced = this.options.forcesFirstRun ?? firstRunAsked()
+    this.set(gate !== 'seen' || forced ? 'firstRun' : 'signedIn')
+  }
+
+  /** The first run's hand-off is done: the window. */
+  finishFirstRun(): void {
+    if (this.phase === 'firstRun') this.set('signedIn')
+  }
+
+  /** Sign Out (asked first by the screen): this tab's pair dropped on the server and here, then the website's own sign-out. */
+  async signOut(): Promise<void> {
+    const api = this.api
+    if (!api) return
+    this.api = undefined
+    this.store.detach()
+    this.saved().write(null)
+    await api.signOut()
+    this.set('signedOut')
+    ;(this.options.goSignOut ?? defaultGoSignOut)(this.base)
   }
 
   /** The server ended the sign-in: back to the website's sign-in page. */

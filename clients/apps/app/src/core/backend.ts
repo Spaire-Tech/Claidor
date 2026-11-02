@@ -114,8 +114,18 @@ export interface AgentBackend {
     args?: JSONValue,
     options?: { wakes?: boolean },
   ): Promise<JSONValue>
+  /** A read that waits for a computer that rests, without waking it (`commandWhenAwake`); ended with `signal`. */
+  commandWhenAwake?(
+    method: string,
+    args?: JSONValue,
+    signal?: AbortSignal,
+  ): Promise<JSONValue>
+  /** What was said in a recording (dictation, `transcribeAudio`). */
+  transcribe?(audio: Uint8Array, mimeType: string): Promise<string>
   /** Where the computer rests, when the server lets it sleep. */
   computerRest(): Promise<Rest | null>
+  /** One method of the account's Connect service on Simeon Labs' server (`simeon.v1.DashboardService`): whether the account may use Simeon. */
+  dashboard?(method: string, message?: JSONValue): Promise<JSONValue>
   /** The host's events until `signal` aborts. */
   events(
     onEvent: (event: BackendEvent) => void,
@@ -161,8 +171,26 @@ export class LiveBackend implements AgentBackend {
     return this.gateway.command(method, args, options)
   }
 
+  commandWhenAwake(
+    method: string,
+    args: JSONValue = {},
+    signal?: AbortSignal,
+  ): Promise<JSONValue> {
+    return this.gateway.commandWhenAwake(method, args, signal)
+  }
+
+  transcribe(audio: Uint8Array, mimeType: string): Promise<string> {
+    if (!this.api) throw signInFirst()
+    return this.api.transcribe(audio, mimeType)
+  }
+
   computerRest(): Promise<Rest | null> {
     return this.gateway.restAtLaunch()
+  }
+
+  dashboard(method: string, message: JSONValue = {}): Promise<JSONValue> {
+    if (!this.api) throw signInFirst()
+    return this.api.connect(method, message, 'simeon.v1.DashboardService')
   }
 
   computerWaking(): void {

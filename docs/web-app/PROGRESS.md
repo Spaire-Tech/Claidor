@@ -14,9 +14,9 @@ file and the code disagree, the code is right and this file is fixed.
 | Step (`README.md`, "The order of work") | State |
 |---|---|
 | 0. The audit | Done, 1 November 2026 |
-| 1. The base: the server and the computer, signing in, the window | Done, 1 November 2026 (1a to 1d). Carried to step 2: the first run for a new account and the access cover |
-| 2. The sidebar and the chat | In progress: 2a (the chat's core, and the chat on screen) done; 2b (a message's actions, find, the working line, names in colour, link icons, the emoji picker) done; 2c part 1 (file cards, pictures from the computer, link cards) part 2 (the preview: text and code, Markdown, JSON, tables) and part 3a (pictures and videos full screen) done; 2c part 3b (PDF, Word, Excel, sound) next |
-| 3. The cards | Not started |
+| 1. The base: the server and the computer, signing in, the window | Done, 1 November 2026 (1a to 1d); the first run for a new account and the access cover, carried to step 2, done there |
+| 2. The sidebar and the chat | Done, 1 November 2026: 2a (the chat's core and the chat on screen), 2b (a message's actions, find, the working line, names in colour, link icons, the emoji picker), 2c (file cards, pictures, link cards, the preview with PDF, Word, sound and Excel, the viewer), 2e (the message field's own parts: files, ":", "@", "/", "#", dictation), 2f (the sidebar: pins, sections, picked rows, menus, renaming, hiding, deleting, dragging, the rail, the width), 2g (a new account's first run, the access cover). The sidebar's head and foot (search, new chat, the account, Connect apps) come with their screens in step 4. Next: step 3, the cards |
+| 3. The cards | Done, 2 November 2026: 3a (the card's frame, the question, the email and Slack drafts, the auto-review approval), 3b (the secret, the computer handed over, the in-chat form, 1Password's fill and connect cards), 3c (apps to connect, Slack or GitHub for a routine, the cloud agent, a new teammate), 3d (the flights, a flight's details, the travellers' form, the checkout, the products). What needs the computer's screen comes with it in step 5, an app's Connect in step 6, a teammate's View Profile in step 4. Next: step 4 |
 | 4. The agent's pane, search, new chat, the org chart, starter packs | Not started |
 | 5. The computer and calls | Not started |
 | 6. Connectors and Settings | Not started |
@@ -42,6 +42,124 @@ file and the code disagree, the code is right and this file is fixed.
 | 1 November 2026 | A message that is one link is drawn as the Mac's card with the site's icon, its name and the address, but not the page's title, which the Mac reads from the page. A web page may not read another site, and a route on Simeon's server that read it would hand the server every link the person opens | The session, as above |
 | 1 November 2026 | Save hands the file to the browser as a download (the browser asks where, or puts it in Downloads, as the person set it), not the Mac's save panel; a file the computer won't hand over says "Couldn't save this file" in the browser's own alert, as the Electron app's error box did. A picture keeps the browser's own right-click menu (Copy image, Save image as), as a link does | The session, as above |
 | 1 November 2026 | The preview uses the libraries the window itself used, at its versions: highlight.js 11.9 now (in a worker, with only the languages the preview asks for), pdf.js 5.4.296 and mammoth for PDF and Word in part 3. Not SheetJS 0.18.5, the window's reader for Excel: the copy on npm has known security holes (fixed only in releases off npm), and the files come from the internet through the agents. How Excel files show is decided in part 3 | The session, as above |
+| 1 November 2026 | Attaching files in the browser: Photo or Video opens the browser's own file chooser showing only pictures and videos (a web page can't open the Photos library), and a photo goes as it is, not made a JPEG as the Mac makes HEIC; a picture the browser can't draw (HEIC outside Safari) shows the tile's symbol. A paste brings files unless it also holds the words as rich text (Office, iWork and web pages put a picture of copied words beside them; the words win, as on the Mac). Files dropped outside the chat are taken by nothing, so the browser never opens them in the window's place | The session |
+| 1 November 2026 | The emoji picked lately from ":" are kept in the browser (`simeon.emojiRecents`, the Mac's own name for them): only which emoji, never words of a message | The session |
+| 1 November 2026 | A pick from "@", "/" or "#" sits in the field as its own words ("@Nora", "#12") on the Mac's grey, kept track of as the words change (the iPhone's way), not as the Mac's picture of a chip with its face or logo: a browser's text field holds only words, and an editor of our own for it would be a large piece for a small gain. It goes with the message in the window's document, as on the Mac; Delete takes it whole; undo and redo bring it back. The agents picked lately from "@" are kept in the browser (`simeon.mentionRecents`): which rows, never words | The session |
+| 1 November 2026 | Dictation records in the kind the browser can (WebM with Opus in Chrome, Edge and Firefox; MP4 in Safari), not the Mac's AAC: the transcription takes either. The browser asks for the microphone itself, the first time | The session |
+| 1 November 2026 | Dictation's refused-microphone line stays the Mac's sentence ("…in your system settings."), in a browser and in the Windows app too | The founder: "keep the mac sentence" |
+| 1 November 2026 | "/" offers the agent's skills now; each of the app's actions ("Org Chart", "Chat Settings", "Settings: General", the themes…) joins it with the screen it opens (steps 4 to 6), so the list never offers what does nothing | The session |
+| 1 November 2026 | Excel workbooks (.xlsx) are read by a small reader of our own (`src/core/xlsx.ts`): the browser unzips them itself and the reader takes the first sheet, each value written as its number format says. No library: SheetJS's npm copy has known holes, and the other readers are either days old with unfamiliar dependencies or built for servers. The old binary .xls is not read; it says "Preview not available" with Download. The founder: "keep going on excel" | The session |
+| 1 November 2026 | The sidebar's pins and sections live on the computer, in its settings (`pinnedAgentIds`, `sidebarSections`), as the Mac keeps them, so the Mac and the web app show the same; which sections are folded is kept in the browser (`simeon.sidebar.foldedSections`, the Mac's own name for it): which sections, never names | The session |
+| 1 November 2026 | Several rows are picked with ⌘-click on a Mac and Control-click on Windows and Linux (each system's own way), and ⇧-click. Control-Tab, which walks the Mac's rows, is left out in a browser, which switches tabs with it; the Windows app (step 7) can take it back | The session |
+| 1 November 2026 | The row's menu leaves out Edit Profile until the agent's pane (step 4), so it never offers what does nothing (as "/" does) | The session |
+| 1 November 2026 | The confirmations and alerts are the window's own, drawn as the Mac's (the mark, the title and words, Cancel and Delete in red), not the browser's `confirm()`, which can't make Delete red, says the site's address over it, and stops the page | The session |
+| 1 November 2026 | The sidebar's width and whether it is folded are kept in the browser under the Mac's names (`simeon.sidebar.width.320`, `simeon.sidebar.collapsed`), as the Mac keeps them on each Mac: each computer its own. ⌘B on a Mac, Control-B on Windows and Linux. The window is never narrower than 512 (the rail and the chat's 424), as the Mac's | The session |
+| 1 November 2026 | Rows, pins and sections are dragged with the browser's own dragging, in a kind of their own, so the message field never takes a dragged row as words or files | The session |
+| 1 November 2026 | Sign Out on the web drops this tab's pair (on the server and here), then goes to the website's own sign-out (`/v1/auth/logout`), which ends its cookie; otherwise the next visit would sign straight back in from it | The session |
+| 1 November 2026 | The access cover's button opens its page (the plans page, Apple's, Simeon Labs', or Stripe's card page asked for first) in a new tab, and the cover reads the access, the plan and the agents again when the tab comes back to the front. The Mac's charge after Stripe's card page (`billing/settle`) is not made: the web can't tell when that page was finished (the Mac's sheet comes back on the app's own link) | The session |
+| 1 November 2026 | The wordmark's face (Suravaram, SIL Open Font License) ships with the web app, its licence served beside it (`/app-next/fonts/Suravaram-OFL.txt`) | The session |
+| 2 November 2026 | **Windows is the goal.** The web app is the means: every choice in it is weighed for the Windows app (Electron around these same files), and what a choice becomes there is listed under "For Windows" below, so step 7 starts from a list, not from memory | The founder: "remember that we building for window. Window is the final goal" |
+| 2 November 2026 | The secret card says Saved only once the computer's copy says it kept the secret (`secretProvided`), as the iPhone does (the Mac says it as soon as the command returns). What is pasted, or typed in a form's masked field, is left to the browser, read only when sent and emptied then, never copied into the page's HTML; the browser and the password managers are asked not to offer the person's own logins there, which would go to the agent's computer | The session |
+| 2 November 2026 | Where the Mac asks for Touch ID (1Password's Fill, a checkout's Allow), the web asks in the window's own alert, with the words the Mac's Touch ID shows: a web page has no Touch ID of its own (WebAuthn would need the server to keep a key for each person), and the alert keeps the Mac's second, deliberate step. A checkout's Allow then carries no device approval, so Link asks the person in its own app, as the Mac does when there is none. In the Windows app: Windows Hello, decided at step 7 | The session |
+| 2 November 2026 | 1Password's Connect is left out on the web: it runs 1Password's command-line tool on the person's computer to make the shared vault and its read-only key, which a page can't. The card shows the agent's reason, the Mac's paragraph on what connecting makes, and the X. It comes back in the Windows app (step 7) | The session |
+| 2 November 2026 | What needs the computer's screen comes with it in step 5: the hand-off's Take over and Open computer, a Link checkout's Review order and its picture opening the checkout, the bank check's Open the computer. Until then they are left out, never a button that does nothing; a Shop checkout's Review order is the store's page, in a new tab, as on the Mac | The session |
+| 2 November 2026 | An app card's Connect waits for step 6, with the founder's consent sheet (`ConnectConsent`) and the app's sign-in, built once there for the cards, the rows and the pages. Until then the card says Connected or Coming soon, and otherwise has no button | The session |
+| 2 November 2026 | Pages a card opens (a pull request, Link's and Shop's pages, a shop's page) open in a new tab, without `opener` or the referrer. Slack's and GitHub's linking page opens in a tab opened blank at once, so the browser lets it open while the computer is asked, then sent to the page, without `opener` (that page may be told the app's address, its origin only); the card asks again whether it is linked when the tab comes back to the front | The session |
+| 2 November 2026 | A cloud agent card has View PR and no Open: the Mac's Open goes to `app.simeonlabs.com/agents/<id>`, a page that doesn't exist. Its name and "PR #412" open the pull request when there is one; otherwise they are words | The session |
+| 2 November 2026 | The joined card's View Profile waits for the agent's pane (step 4); meanwhile Go to Chat keeps its half of the row | The session |
+| 2 November 2026 | The catalogue and the server's Coming soon list are kept in the tab's memory for the sign-in, read once each (the Mac also keeps the catalogue on disk) | The session |
+| 2 November 2026 | A flight's details show beside the chat as the Mac's pane, until the agent's pane (step 4) takes them in: what the window leaves beside the chat's 424, from the Mac's 280 to 480 (a browser can't grow its window as the Mac does). Another chat opened closes them. Whether they folded the sidebar is kept under the Mac's name (`simeon.pane.tookSidebar`) | The session |
+| 2 November 2026 | A day is picked on the Mac's calendar, drawn in the page's own parts, not the browser's date field, which looks and orders its parts differently in each browser and system. Title, Gender on ID and Issued by are the Mac's words over the system's own list. "Issued by" lists the Mac's 261 regions with their English names (measured from Foundation, kept in `countries.json`), English in every language, as on the Mac | The session |
+| 2 November 2026 | What a traveller types is held by the sheet only and forgotten when it closes; nothing of it in the browser's storage. The names, email and phone carry the browser's autofill hints (the Mac's `textContentType`); the passport number none. The email is a plain field (a browser's email field rewrites an international domain) | The session |
+| 2 November 2026 | Airline logos and the products' pictures come straight from their sites, as the Mac fetches them, without the referrer, https only. An airline logo is cut and lightened as the Mac's when its site lets a page read it, else drawn as it comes, else the initials. The checkout's picture and the shop's icon are read from the computer, a resting computer waited for, not woken | The session |
+| 2 November 2026 | The card chooser is the window's own popover under the row, without the Mac popover's arrow; a product's sheet in a window narrower than 812 lets its picture give way so its words keep 240 | The session |
+| 2 November 2026 | A card whose line can't be read is one notice, with the message's own words where the core keeps them (Chat.swift's `row(for:)`) | The session |
+| 2 November 2026 | Book with Simeon belongs to its flight: another flight shows its own button, and a booking answered after another flight was opened doesn't close that one (the Mac's reused button keeps the last flight's spinner or refusal). No beep when the sheet finds something to fix (the Mac's `NSSound.beep`): a page has no system alert sound | The session |
+
+## For Windows
+
+What each web choice so far becomes in the Windows app (Electron around
+these files, step 7). Electron draws with Chromium, so the checks run in
+Chromium in each step stand for Windows' engine too; what they can't stand
+for is listed here. Added to with every step.
+
+- **Loading the app.** The web app is built for `/app-next/` and finds the
+  server from its own address (`resolveApiBase`). Loaded from disk, it needs
+  the server's address given (`https://api.simeonlabs.com`) and a base that
+  works from disk (Electron's own `app://` protocol, or relative paths), and
+  the security policy the website gives it now set by Electron.
+- **Signing in and out.** The web trades the website's cookie
+  (`/auth/web-session`) and sends the person to the website's `/login`; Sign
+  Out ends the website's cookie (`/v1/auth/logout`). Windows has no website
+  cookie: the Mac's sign-in screen and its way (the browser, then
+  `/auth/poll`), and Sign Out drops the pair and shows that screen. The pair
+  kept in Windows' credential store (`safeStorage`), not the tab's.
+- **Pages opened elsewhere.** Links in messages and file cards
+  (`target="_blank"`), and the access cover's pages (`window.open`): in
+  Electron, `setWindowOpenHandler` sends them to the default browser with
+  the Mac's allowlist (http, https, mailto, obsidian, tel), and denies the
+  rest. Stripe's card page from the cover can open in a child window that
+  comes back on the app's own link, as the Mac's sheet does; then the
+  Mac's charge after it (`billing/settle`) can be made.
+- **Saving files.** The web hands a file to the browser as a download
+  (`Files.tsx`). In Electron, `will-download` with Windows' save dialog,
+  as the Mac's save panel.
+- **The microphone.** The browser asks the person; Electron asks Windows
+  and lets the page have it through `setPermissionRequestHandler` (audio
+  only, the app's own page only). The refused line's "system settings" is
+  right on Windows (Settings, Privacy, Microphone).
+- **Keys.** The web uses Control where the Mac uses ⌘ (picking rows,
+  Control-B, Control-F) whenever it isn't on an Apple computer, so Windows
+  has these already. Control-Tab, left out in a browser (it changes tabs),
+  can come back in Electron, which has no tabs.
+- **Kept on the device.** The folds, the sidebar's width, the emoji and
+  "@" picked lately are in the page's storage, which Electron keeps per
+  app. Drafts and the chats are kept in memory only on the web (a shared
+  computer); the Windows app can keep them on disk as the Mac does
+  (`SavedChats`), decided at step 7.
+- **The window.** The Mac's window is moved by its sidebar's head and the
+  chat's top (`WindowDragArea`): in Electron, `-webkit-app-region: drag` on
+  the same places, Windows' own buttons through `titleBarOverlay`. The
+  narrowest window is 512 wide, the Mac's.
+- **The cards (step 3).** Drawn with the page's own parts only (no
+  browser dialogs, no pop-ups), so they are the same in Electron. A card's
+  answer field: Return sends, Shift-Return starts a new line, as the
+  message field; a draft's words take Return as a new line, as the Mac's.
+  A long command in an approval scrolls sideways in its box with the
+  pointer or the trackpad; with a mouse wheel on Windows that is
+  Shift-wheel, Windows' own way.
+- **The cards that need the person's OK (3b, 3d).** The window's alert in
+  place of Touch ID becomes Windows Hello (`UserConsentVerifier` from
+  Electron's main process): cancelled, nothing is sent; confirmed, a
+  checkout's Allow carries the approval (`answerPurchase(…, confirmed)`,
+  no method, as the Mac's passcode, since Hello doesn't say which it used)
+  and Link asks no more. 1Password's Connect runs 1Password's
+  command-line tool from the main process, as the Mac runs it (1Password's
+  Windows app has the same integration, with Windows Hello). Electron keeps
+  no passwords, so no "save password" offer on the masked fields.
+- **Connecting an app (step 6).** Measured for it: on the web the computer
+  starts the sign-in (`desktopMcp` `authenticateServer`) with Simeon Labs'
+  hosted return (`/desktop/mcp-oauth/callback`), which sends a sign-in no
+  app named to the old web app's `/app/connected.html`; the apps Simeon
+  Labs' server serves end on its own page (`/desktop/apps/connected`). So
+  the new app needs its own `connected.html` before it takes `/app`, and
+  the makers that take only the loopback (`loopbackOnly` in `catalog.ts`:
+  Canva, Square, Vercel, Dropbox, Lovable, Gamma, Semrush and others)
+  can't connect from a browser at all. Windows can do as the Mac: name the
+  sign-in to the server first (`POST /desktop/api/mcp-oauth/return` with
+  `simeon`), come back on `simeon://mcp-oauth` and finish it on the
+  computer; the loopback listened for on 8787 by the main process.
+- **A flight's details (3d).** Their top bar moves the window on the Mac:
+  `-webkit-app-region: drag` there, × not. Electron can grow the window
+  for them, as the Mac does. The menus' lists are Chromium's on Windows.
+  The airline logos can be fetched by the main process (no CORS) and kept
+  on disk, as the Mac keeps them. Chromium's autofill offers the person's
+  saved name, email and phone.
+- **Pictures from other sites.** The shops' pictures and the airline logos
+  need `img-src https:` in the policy Electron sets.
+- **Already listed in README.md's table:** notifications and the taskbar
+  badge, the tray, updates, `simeon://` links, the agent's hands on the PC,
+  1Password and Chrome on Windows.
 
 ## Open questions
 
@@ -66,10 +184,984 @@ For the founder, each to be answered before the step that needs it:
 - **Who checks on a Windows PC.** Nothing is done until it has run on the
   machine people use; for Windows, someone installs each build on a
   Windows PC. Needed at step 7.
+- **The Mac's and the core's own fixes found in step 3** (the log of 2
+  November 2026, "Found in the Mac's and the core's code"): the secret
+  card's Saved, the cloud agent's Open landing on a page that doesn't
+  exist, Han numerals refused in a name, " to " and "Ms" in French, Link's
+  line for a refused card, Review order's tooltip on a Shop checkout. For
+  the founder: make them in the Mac and the core (then the web follows), or
+  leave them.
+- **The iPhone's 1Password connect sentence** ("Open Simeon on your Mac to
+  connect it: …") is in neither catalogue the web reads. The web card says
+  the Mac's paragraph instead. Adding a sentence to the Mac's catalogue
+  (with a Windows one after step 7) would let the web say where to connect.
 
 ## Log
 
 Newest first.
+
+### 2 November 2026: step 3, parts b to d, the rest of the cards
+
+The founder: "Please do all of step 3", then "Make no mistake taje ur time".
+The three parts were written at once, each in its own slim checkout of the
+branch (`git worktree` with a sparse checkout, in the session's
+scratchpad), each with its own group of files, so they couldn't touch each
+other's work. Each was then read by a second, independent reviewer against
+the Mac's Swift and the core, and checked in Chromium. They were merged
+into this branch one by one, and what the reviews found was fixed after
+the merge (below).
+
+**3b: the cards that ask the person for something**
+
+- `src/core/requestCards.ts` (SimeonCore's Chat.swift `RequestCard.secret`
+  and `.computer`; CloudComputer.swift's `HandoffCardState`,
+  `HandoffOutcome`, `BoxStatus.Handoff`; UserForm.swift's `UserFormCard`;
+  OnePasswordCards.swift's `CredentialRequestCard` and
+  `OnePasswordConnectCard`):
+  - a secret: its name ("A secret" when it has none), why, kept
+    (`secretProvided`) or declined (`widgetDismissed`);
+  - the computer handed over: its request, its words, how it ended
+    (`boxResolution`: Done, Answered, Skipped, Canceled, and every word the
+    engine writes), waiting while the line has no answer;
+  - the in-chat form: title, site, instruction, each field (ten kinds; a
+    password or a code always masked, a checkbox never required), trimmed
+    as the core trims, a field it can't read left out, no form without a
+    title, a site or a field; Fill in waits on every field it needs; what
+    is sent (a checkbox "true" or "false"); the pill (Filling in…, Filled,
+    Partly filled, Not filled, Dismissed) and each field's line;
+  - 1Password's fill card: the login's name, the site, why, the words to
+    confirm ("Fill your Acme login on acme.com"), the pill and what went
+    in, in a line;
+  - 1Password's connect card: why, Connected with the account, Dismissed.
+- The store (`store.ts`, its 3b section): `submitSecret`,
+  `handBackComputer` (`handBackForeverBox`: I'm done `button`, Skip
+  `dismissed`), `submitUserForm`, `dismissUserForm`,
+  `answerCredentialRequest`, `dismissOnePasswordConnect`; the secret's X is
+  the question's `dismissQuestion`.
+- `src/window/RequestCards.tsx` and `.css` (mac/Simeon/Cards.swift's
+  `SecretCardView` and `ComputerHandoffCard`, UserFormCard.swift,
+  OnePasswordCards.swift): the five cards at the Mac's measures.
+
+**3c: apps to connect, Slack or GitHub for a routine, the cloud agent, a
+new teammate**
+
+- `src/core/connectCards.ts` (SimeonCore's Chat.swift `.connectors`,
+  `.listenerConnect`, `.cloudAgent`, `CloudAgentInfo`; Store.swift's
+  `CatalogApp`, `catalogApp`, `isConnected`, `isComingSoon`; Plugins.swift's
+  `AppsComingSoon`; ConnectorIcons.swift; JoinedCard.swift,
+  `AgentFaces.standing` and Colour.swift's blend):
+  - an app: the names a card gives, the catalogue's app by its title, name
+    or id, connected by its name or the catalogue's id, its tools, Coming
+    soon by the server's list or the catalogue's word; its icon (the app
+    icon, else the brand's logo, else its first letter);
+  - Slack or GitHub: the platform and the reason; linked or not;
+  - a cloud agent: its state as the core reads it, its badge, the files
+    changed, when it is asked again (5 s while it works, 60 s after a
+    failure with nothing read, never once done, failed, expired or empty);
+  - a new teammate: its title by the roster's name, the face it stands as,
+    its colours (16% lighter, 24% darker, 55% darker for Go to Chat).
+- The store (3c's section): `loadAppCards` (the connected apps, and once a
+  sign-in the catalogue in the app's language and the server's
+  `GET apps`), `catalogApp`, `isConnected`, `isComingSoon`,
+  `connectedToolCount`, `listenerConnected`, `listenerConnectURL`,
+  `cloudAgent`.
+- `src/window/ConnectCards.tsx` and `.css` (Cards.swift's
+  `ConnectorCards`, `AppLogoTile`, `ListenerConnectCardView`,
+  `CloudAgentCardView`, `JoinedCardView`).
+- The pictures are read where the Mac's come from, not copied: the app
+  icons from `desktop/brand/app-icons` (the same bytes as the Mac's and
+  the iPhone's `AppIcons`), the cut-outs from the core's
+  `Resources/Faces/Standing`, Slack's and GitHub's logos from
+  `desktop/brand/connector-logos`. About 4.4 MB more in the build (232
+  icons, 31 cut-outs), each fetched only when a card shows it.
+
+**3d: the flights, a flight's details, the travellers' form**
+
+- `src/core/flightCards.ts` (SimeonCore's Chat.swift `FlightsCard`,
+  `FlightOffer`, `FlightLeg`; Flights.swift `FlightText`, `FlightTimes`,
+  `FlightWay`, `AirlineLogo`; GroupMembers.swift `FlightPane`;
+  FlightBooking.swift `FlightPassengersCard`, `BookedFlight`, `Traveller`,
+  `FlightBookingAnswer`): a search and its offers (eight at most), each
+  row's times ("2:30pm", "2h40m · 1 stop", "6:40am+1"), a round trip's way
+  back; a flight's details (its two ways, each flight's day and number, who
+  operates it, the layover, the fare's terms, who sells it); the form and
+  each traveller checked as the core checks them (names, title, gender,
+  date of birth, an adult 18 on the last flight's day, email, phone with
+  its country code, the passport).
+- The store (the flight section): `startFlightBooking`,
+  `submitFlightPassengers`, `cancelFlightPassengers`, and the flight open
+  beside the chat (`toggleFlight`, `closeFlight`).
+- `src/window/FlightCards.tsx` and `.css` (Cards.swift's flights,
+  FlightBooking.swift, PaneMembersFlight.swift's `FlightPage`,
+  AgentPane.swift): the flights card (a row per offer across a wide chat,
+  stacked as the iPhone's on a narrow one, each row deciding as
+  `ViewThatFits` does); the airline's mark (the logo cut to its edges,
+  sized by its shape, lightened on the dark disc, else the initials); the
+  details beside the chat (480, down to 280); the travellers' card; the
+  sheet (640 by 720) with its menus and the calendar.
+- `App.tsx`: the details' column beside the chat, and the sidebar measured
+  beside it. `src/window/countries.json`: the Mac's "Issued by" list.
+- Before committing, every function was run on the same 275 inputs as the
+  core's own code (SimeonCore built with Swift 6.2 on Linux in the
+  session's scratchpad): the same answers.
+
+**3d: the checkout and the products**
+
+- `src/core/shopCards.ts` (SimeonCore's PurchaseCard.swift,
+  PurchaseApproval.swift's `reason`, ProductsCard.swift):
+  - a checkout: the shop, its site and page (https only), the total, what
+    is bought ("Linen shirt ×2, Gift wrap"), the Link card that pays, the
+    person's other cards, the checkout's picture and the shop's icon,
+    Link's test mode, Link or Shop, the flight (read with the flights'
+    `bookedFlight`);
+  - where it stands, in the core's words (waiting, In progress, Approve
+    with Link, Approved · placing your order, Ordered with its number and
+    day, Didn't go through, Denied, Expired, Canceled; a flight's paying,
+    bank check, booking, Booked, Not booked, Not confirmed); Get the Link
+    app and Open Link (Link's pages only);
+  - products: each with its picture (https only), name, seller or site,
+    price and the price before a sale, stars to the nearest half, the
+    rating with one decimal as the Mac's `%.1f` rounds it (half to even on
+    an exact half: 4.25 is "4.2") in the person's language ("4,5"),
+    Buying and Bought.
+- The store (the shop section): `answerPurchase` (shown at once; the card
+  picked rides with Allow, never with Deny), `purchaseApproval`,
+  `pickPurchaseCard`, `buyProduct`, `keepWatchingPurchase`.
+- `src/window/ShopCards.tsx` and `.css` (Cards.swift's `PurchaseCardView`,
+  `MacPaymentMark`, `MacLinkByStripe`, `MacCardChooser`,
+  `ProductsCardView`): the checkout card, the card marks drawn as the Mac
+  draws them, Link's and Shop's marks from the Mac's own asset catalogue
+  (imported, not copied), the chooser under the row; the products three to
+  a line, or the iPhone's rows in a narrow chat; a product's sheet (780 by
+  600).
+
+**Putting the parts together**
+
+- `ChatPane.tsx`: each kind of card at the Mac's widest (`cardCaps`: 640
+  for the question, draft, secret, apps, cloud agent and products; 680 for
+  the flights; 460 for a new teammate; 520 for the rest), drawn by its
+  group's file.
+- A card whose line can't be read is one notice in the chat's middle, as
+  Chat.swift's `row(for:)`: the message's own words for a checkout,
+  products, the travellers' form and a new teammate, else "This message
+  can't be shown in this version of Simeon." (`unreadCardWords`,
+  `chat.ts`).
+- One flight model for both groups: the checkout's flight is the core's
+  `BookedFlight`, read and drawn by the flights' code (the shop's copies
+  of the times, the initials and the logo's box are gone). Both groups had
+  set `.airline-mark` and `.flight-changed` for the whole window, so
+  whichever loaded last drew the other's; the flights' rules are now the
+  only ones, the checkout's line of what changed is `.checkout-changed`.
+- Alerts and sheets give the keys back to what had them when they close
+  (`useTakesFocus`, `Dialogs.tsx`). ⌘F, ⌘B and Delete on picked rows wait
+  while an alert, a sheet or a viewer is over the window
+  (`somethingOver`), as behind a Mac's sheet.
+
+**What the reviews found, and what was done**
+
+- 3b:
+  - the 1Password connect card was a dead end: it now says the Mac's
+    paragraph on what connecting makes;
+  - the browser and password managers could offer to save an agent's key,
+    or fill the person's own logins into a form that goes to the agent's
+    computer: the secret and the form's masked fields now ask them not to
+    (`autocomplete` `new-password` or `one-time-code`, and 1Password's,
+    LastPass's and Bitwarden's own "ignore" marks);
+  - React writes a controlled field's value into the page's HTML: the
+    secret and the form's masked fields are now left to the browser, read
+    only when sent and emptied then, so what is typed is never copied into
+    the page;
+  - a form or fill card that can't be read showed a grey box: now the
+    notice above;
+  - the lines the Mac gives no height now take the font's own (16 at 13,
+    17 at 14, 18 at 15); the form's words field is named by its label; the
+    keys go back to Fill after its alert.
+- 3c:
+  - Slack's and GitHub's Connected tick was white on dark: now cut out of
+    the green, as the Mac's;
+  - coming back to the tab asked twice, and still asked after Connected:
+    now once, and not after; a blank tab closed before the page was known
+    stays closed;
+  - the cloud agent card asked every 5 s while scrolled away: now only
+    while on screen, as the Mac's lazy chat;
+  - the app cards' read could clear a newer read's after signing out and
+    in: no more;
+  - a group without a picture showed its members on the joined card: now
+    the plain disc, as the Mac's `AgentPicture`.
+- 3d, the flights:
+  - a reload, a sign-out or the access cover while the details had folded
+    the sidebar left it folded with nothing to open it: the fold is now
+    kept under the Mac's name (`simeon.pane.tookSidebar`) and the sidebar
+    opens again;
+  - the travellers' sheet took the card's tighter letters: no more;
+  - the details slid as the window was made narrower: now only as they
+    open and shut;
+  - a calendar opened years from 29 February started on 1 March: now the
+    28th, as the Mac's;
+  - the window's keys acted behind the sheet: see above.
+- 3d, the checkout and the products:
+  - Allow now asks first, in the window's alert, as 1Password's Fill does
+    (decisions below);
+  - Return in a product's sheet bought even from a button or a link in
+    it: now only from the sheet itself;
+  - the rating rounded exact halves up: now as the Mac's;
+  - the shop's icon was read from the computer for every Link checkout,
+    though only Review order wears it: now only then; a checkout picture
+    that can't be drawn shows the photo symbol; pages open without the
+    referrer; the chooser focuses the card that pays; the card marks in the
+    Mac's heavy weight (800).
+
+**Found in the Mac's and the core's code** (proposed, for the founder):
+
+- The Mac's secret card says "Saved securely and kept private." as soon
+  as the command returns, even when the computer couldn't keep the secret
+  (it answers the same and says so only in its tray). The iPhone and the
+  web wait for `secretProvided`. Proposed: the Mac waits too.
+- The Mac's window never shows the store's problem line (3a's finding):
+  on the web the same, until the trays and alerts (step 6). So a secret
+  the computer couldn't keep says nothing on the web either, yet.
+- Open on a cloud agent's card goes to `app.simeonlabs.com/agents/<id>`,
+  a page that doesn't exist: the Mac's Open lands on the website's
+  not-found page. The web leaves Open out (decisions below).
+- The core's checks take any character with a number's value as a digit:
+  91 Han characters (一, 二, 十…), so 李一 or 健一 is refused as a first
+  name on the Mac and the iPhone, while the computer takes it. The web
+  does as the core. Proposed: the core checks as the computer does.
+- The flight's details join the airports with an English " to " in every
+  language ("SEA to LAX" in French), in the Mac's code, not its catalogue;
+  "Ms" is marked not to translate. The web does the same.
+- A card picked on a checkout and refused by Link never shows Link's line
+  on the device that picked it (Mac, iPhone, web): the core keeps the pick
+  and drops the line whenever there is one. Ported as it is. Proposed:
+  forget the pick when Allow comes back with the card still waiting.
+- The Mac's Review order says "Open the computer on the checkout" on a
+  Shop checkout too, where it opens the store's page; the web says "Open
+  the store's page" (the core's words).
+- The Mac's form card puts an empty stack under the head of a dismissed or
+  failed form with no note; the web draws nothing there.
+
+**Tests:** 369 (40 files), 114 of them new: the core's `UserFormTests`,
+`OnePasswordCardsTests`, `testHandoffCard`, `JoinedCardTests`,
+`ConnectorIconsTests`, `CloudAgentTests`, the connectors rows and Coming
+soon, `FlightCardTests`, `PaneMembersFlightTests`, `FlightBookingTests`,
+`PurchaseCardTests`, `ProductsCardTests`, against the core's own gallery
+(`fixtures/flights.json`, from Demo.swift); each group's store commands
+against the stand-in computer; the cards that can't be read; the rating's
+rounding against C's `printf("%.1f")` (509 values, no difference).
+
+**Checked:** in Chromium, on one build of the merged branch, against
+stand-in servers and computers (the session's scratchpad:
+`cards-check.cjs`, `3b-check.cjs`, `3c-check.cjs`, `flights-check.cjs`,
+`flights-keys.cjs`, `shop-check.cjs`, `shop-extra.cjs`,
+`review-check.cjs`; every page a card opens and every outside picture
+answered by the stand-in, nothing reached), light and dark, then French.
+Each part had also been checked on its own branch before merging. No
+page errors in any run.
+
+- 3a again, after the merge: the question, drafts and approvals as in
+  part a's check.
+- 3b:
+  - secrets: Saved and Dismissed as the computer sends them; the field
+    masked, Save securely off until something is pasted; Return saves and
+    the field empties at once; a secret the computer answers but doesn't
+    keep: the empty field again; the X: Dismissed; what was typed is in
+    the page's HTML neither while typed nor after (the field's `value`
+    stays empty), and the field carries `new-password` and the password
+    managers' marks; the same for the form's password;
+  - the hand-off: Answered and Canceled with their words; waiting with
+    the breathing dot; Skip: Skipped; I'm done: Done;
+  - forms: dismissed, failed, filled ("Typed in", "Left empty"), one that
+    can't be read as a notice; Fill in off until Email and Password are
+    there, then the four values sent (the checkbox "true", the menu "es"),
+    "Filling in…", then "Partly filled" with "Couldn't type it in" in red;
+    the code refused by the computer in red; the address field growing
+    from three lines to six, then scrolling;
+  - 1Password: Fill asks in the window's alert (Fill in focused; Cancel
+    and Escape send nothing), then Filling in…, Filled; Not now: Declined;
+    the connect card with the Mac's paragraph, its X: Dismissed;
+- 3c:
+  - apps: Connected with "12 tools", Coming soon from the server's list,
+    the letter tile, a one-colour logo in the words' colour, a long reason
+    cut with its whole as the tooltip; `listServers`, `getCatalog` (with
+    the language) and `GET apps` each asked once;
+  - Slack and GitHub: Connect opening the linking page in a new tab with
+    no `opener`; Connected; in French the card says the agent's reason in
+    the agent's own words, as the Mac does;
+  - cloud agents: running, error, nothing and refused; asked again 5 s
+    later, then Done and not asked again; only View PR, opening the pull
+    request; the branch cut in its middle at 512 wide;
+  - new teammates: their faces standing on the bottom edge in their
+    colours, an own picture round on the grey, an agent gone, Go to Chat
+    opening the chat;
+- 3d, the flights:
+  - the one-way search, the round trip, the test search, the logos cut
+    and sized (and lightened on the dark disc), a logo served without CORS
+    as it came, a missing one as initials; rows stacked in a 900-wide
+    window;
+  - the details: opened by a click, Return and Space; the sidebar folded
+    to its rail and back; Escape from the page and from the message field
+    (a reply over the field let go first); another chat closing them; Book
+    with Simeon refused in red, then the form in the chat;
+  - after the review: opening slides (0.24 s), a window narrowed to 900
+    moves the details to 388 at once; a reload with them open brings the
+    sidebar back (320) and clears `simeon.pane.tookSidebar`; behind the
+    travellers' sheet ⌘F, ⌘B and Delete on a picked row do nothing, and ⌘F
+    works again once it closes; the sheet's letters untracked;
+  - the travellers' sheet: Link's details in the first traveller, the
+    menus, the calendar by pointer and keys, "The date of birth isn't
+    right." under the second, the computer's refusal under the first,
+    Continue sending both, the card saved with both names; Cancel, Escape
+    and a click outside sending nothing;
+- 3d, the checkout and the products:
+  - the chooser (Pay with, four cards with their marks, the one that pays
+    ticked and focused, Mastercard after picking it), Escape closing it;
+  - Allow: the window's alert ("Approve $80.00 at ncvss.com", the items,
+    Allow focused); Cancel sends nothing; Allow sends the pick and no
+    approval, then In progress, Approve with Link with its two pages in
+    new tabs, Approved, Ordered with "Order #1043 · Arrives Thu, Oct 18";
+    Deny: Denied, "Nothing was paid."; Link declining: Didn't go through;
+    a pick Link refused: the buttons back (without Link's line, as on the
+    Mac); a Shop checkout's Review order opening the store's page; the
+    card it can't read as "Checkout at oldshop.com · $12.00";
+  - the products: three to a line, the sheet (780 by 600), See more,
+    More like this in place, Buy: Buying then Bought; Return on the sheet
+    buys, Return on View website opens the page and buys nothing; the
+    pictures fetched without the referrer;
+  - French: every word of all the cards from the catalogues ("Approuver
+    $80.00 chez ncvss.com", "Annuler", "Autoriser", "Enregistrer en
+    sécurité", "Remplir", "Connecter Slack", "Voir la PR", "Réserver avec
+    Simeon", "Acheter avec Theo", "Dans le même genre"…).
+- The 369 tests, typecheck, lint and formatting, the words', the brands'
+  and the committed build's checks (`pnpm test`), `check_names.py`,
+  `check_translations.py`, `web_app_inventory.py`.
+
+**Not checked:**
+
+- Against the real computer, server, Link, Shop, Duffel, Slack or GitHub
+  (the address is not live yet; nothing was bought, no call reached
+  Stripe, Link or Shop). Real shops' pictures and airline logos
+  (stand-ins), and whether Duffel's server lets a page read its logos.
+- Side by side with the Mac: every measure was read from the Swift, not
+  from a screenshot. Drawn by eye: the symbols (`display`, `lock.fill`,
+  the branch and file marks), the ring spinner, CSS's round corners for
+  Apple's continuous ones, the joined card's light.
+- Windows, Safari and Firefox (Firefox before 125 has no
+  `Intl.Segmenter`), a screen reader, a phone's keyboards.
+- Whether a browser's password manager still offers to save a pasted
+  secret, with 1Password, LastPass or Bitwarden installed; whether Chrome
+  keeps a traveller's name, email or phone in its own form history.
+- Whether the Mac's sheet puts the caret in its first field when it opens
+  (the web's sheet takes the keys itself).
+- A resting computer and the checkout's picture waited for.
+
+**Next:** step 4, the agent's pane (which takes in the flight's details),
+search, new chat, the org chart, starter packs.
+
+### 2 November 2026: step 3, part a, the question, the drafts and the approval
+
+- `src/core/cards.ts` (SimeonCore's Chat.swift `QuestionCard`, `DraftCard`,
+  `RequestCard.approval`; Approvals.swift's `AutoReviewCard`;
+  AccountSettings.swift's `AutoReviewInstructions`):
+  - a question: its prompt, help, choices (each with its line, the reply it
+    sends, recommended or destructive), several at once, its own answer,
+    answered, dismissed or skipped; an answer shown by its choices' labels;
+  - a draft: an email (a new one or a reply, Cc, files by name) or a Slack
+    message, its state (Ready to send, Sending…, Sent, Discarded), the
+    addresses typed split as the Mac splits them;
+  - an approval: the title, where it runs, the summary said only when it
+    says more than the command, the badge, the fold cut at 340 characters,
+    the note under Always allow, secrets taken out of the rule, the rule
+    added to Auto-review's allowed list (20 at most, 1,000 characters each).
+- The store (`store.ts`), as the core's: `answer` (`respondToWidget`, shown
+  at once and kept until the computer's copy has it, taken back with the
+  core's line when it doesn't reach the agent), `dismissQuestion`
+  (`dismissWidget`), `sendDraft` with what was changed, `discardDraft`,
+  `resolveApproval` (`resolveAutoReviewApproval`; Always allow writes the
+  rule into the computer's settings first and counts as Allow once when
+  there is none or it can't be saved; a stale request reads Expired; any
+  other refusal says nothing, as the Mac's card).
+- `src/window/Cards.tsx` (mac/Simeon/Cards.swift): the card's frame (the
+  agent's grey, 16 round, padded 12), the status pill, the two buttons, and
+  the three cards at the Mac's measures; `ChatPane.tsx` draws them as wide
+  as a message may be (640 for the question and the draft, 520 for the
+  approval) and keeps the other cards' places until their parts.
+- Tests: the core's approval table (`fixtures/approvals.json`, copied from
+  the core: titles, badges, redactions, rules, the shipped cards, Always
+  allow's writes), the question and draft cards; the store's commands
+  (`cardsStore.test.ts`: an answer shown at once, taken back, kept until
+  the copy has it, a dismissal refused, a draft sent and discarded, the
+  three approval answers, Always allow without a rule or unsaved, Expired).
+- **Found:** the Mac's window never shows the store's problem line (only
+  the starter-pack sheet reads it), so a refused answer, dismissal or
+  draft on the Mac quietly returns the card to waiting; the iPhone shows it
+  in its "Something went wrong" alert. The web does as the Mac for now.
+  Proposed for step 6 (Settings and the alerts): the iPhone's alert on the
+  web and Windows, and on the Mac.
+- **Checked:** in Chromium against a stand-in server and computer
+  (`cards-check.cjs` in the session's scratchpad), light and dark, then
+  French:
+  - questions: the answered card with its blue tick and the dismissed one
+    at 60% with its pill, as the computer sends them; the open card's
+    choices (blue for the recommended, red for the destructive), the line
+    under each, the hover; a choice sends its own reply ("Delete every spam
+    email") and shows its label at once, then still once the computer's
+    copy has it; several picked (blue rings, `aria-pressed`), Submit, the
+    values one per line in the choices' order, shown "Order 1042, Order
+    1044"; its own words: the field 30 high, 50 with a second line
+    (Shift-Return), Submit only once something is written, Return sends;
+    the X (its tooltip, "Dismissed");
+  - drafts: Reply with From, To, Cc, Subject, the words six lines high, the
+    file by name; Slack's logo, Workspace, To, "New message"; To, Subject
+    and the words changed and sent as typed (two addresses split, Cc
+    kept); then Sent with its green dot, the fields fixed, no buttons;
+    Discard: "Discarded";
+  - approvals: the five cards' titles, "Approval needed", where each runs,
+    the reason while it waits; Show the command and Hide the command; a
+    412-character command cut ("...[72 chars omitted]..."); Always allow:
+    the rule added after the one already there, then "Always allowed" and
+    its note; a stale request: "Expired"; Deny: "Denied" in red;
+  - French: every word of the three cards from the Mac's catalogue ("Ta
+    réponse : …", "Ignorée", "Prêt à envoyer", "Abandonné", "Expiré",
+    "Refusé", "Toujours autorisé"). No page errors in any run. The 255
+    tests, typecheck, lint, the words', the brands' and the build's
+    checks, `check_names.py`, `check_translations.py`.
+- **Not checked:** against the real computer (the address is not live
+  yet); "Sending…" on screen (the stand-in's updates came together, after
+  Sent was already set).
+- **Next:** 3b, the secret, the computer hand-off, the in-chat form,
+  1Password's fill and connect cards.
+
+### 1 November 2026: step 2g, a new account's first run and the access cover
+
+- `src/core/onboarding.ts` (SimeonCore's Onboarding.swift): the name
+  step's words, the suggestion (the name chosen, else Google's, never the
+  mail), the name as it is saved (60 at most), Simeon's profile, the
+  hand-off's line.
+- The store (`store.ts`), as the core's:
+  - `firstRun()`, the start-up gate: seen when the host says so; else the
+    agents counted (and the host told when there are some); a new account
+    whose computer was never made, or asleep with agents in the server's
+    copy, is told apart without waking or making it;
+  - `handOff('web', …)`: the computer asked every 2.5 s (a minute at most),
+    the name step waited for, the language told, the name read again by
+    the computer (`refreshUserName`), and only then Simeon made, his
+    introduction begun and the first run marked done; at least 1.5 s on
+    screen; a second try makes no second Simeon; leaving makes none;
+  - `namePrompt`, `saveName` (`POST user/name`), `finishNameStep`;
+  - `refreshAccess` (`GetSandAccessStatus`, the account's Connect service,
+    new on the backend as `dashboard`), `refreshPlan` (`user/quota`),
+    `billingPortal`.
+- `src/core/access.ts` (Access.swift and Upgrade.swift's `MacUpgrade`): the
+  access words for every state and reason, the cover's words for an
+  account without a plan (the trial, an ended trial, a card that failed,
+  Apple's), and where its button goes.
+- `src/session.ts`: the gate after the list (a silent computer asked once
+  more after 2.5 s), the `firstRun` phase, `finishFirstRun`, `signOut`;
+  `?first-run` forces the first run, as the Mac's `--first-run`.
+- `src/window/FirstRun.tsx`: "What should we call you?", the mark, the
+  field (Google's name in it, the keys after 0.45 s), Continue dim until
+  there is a name; then the line in the window's moving light, "Getting
+  your team ready…" once the computer answers; the window on Simeon's
+  chat. A failure: "Simeon couldn’t finish setting up", why in red, Try
+  again with the keys.
+- `src/window/AccessCover.tsx`: the mark and "Simeon" in the wordmark's
+  face, the tagline, the account's words and button, "Signed in as …" and
+  Sign Out, asked first (Cancel, Sign out in red).
+- `App.tsx`: the cover when the account was refused before its computer
+  was ever reached, else the first run, else the window.
+- Tests: the core's access table (`fixtures/access.json`, all 50), the
+  server's numbers, the Mac's cover words and routes, the first run's
+  words, the gate (new, known, never made, asleep with a copy), the
+  hand-off's order, a sign-out meanwhile, a retry; the session's first run
+  and Sign Out.
+- **Decisions:** in the table above (Sign Out through the website's own
+  sign-out; the cover's pages in a new tab, no charge after the card page;
+  the wordmark's face and its licence).
+- **Checked:** in Chromium against a stand-in server and computer
+  (`firstrun-check.cjs` in the session's scratchpad), light and dark, then
+  French:
+  - a new account: the screen, "Bastian" from the profile in the field
+    with the keys; the computer asked while the name shows, nothing made;
+    an empty name: Continue dim, Return does nothing; "  Bass   Fall ",
+    Return: "Getting your team ready…", then the window on Simeon (Chief of
+    Staff, "Bras droit" in French), the address `?agent=simeon`; in order:
+    the name saved as "Bass Fall", the language told ("fr" in French), the
+    name read again, Simeon made (`web-onboarding-…`), his introduction,
+    the first run marked done;
+  - Simeon's making refused once: the failure's three lines, Try again
+    with the keys, Return: the window on Simeon, made once;
+  - a refused account (`EnsureSandBox` 403, a trial to start): the cover
+    in the wordmark's face (loaded), "Start your free trial to send
+    messages", Start Free Trial opening the plans page in a new tab, "Signed
+    in as bass@simeonlabs.com"; Sign Out asked, Escape keeps it; Sign out:
+    the pair dropped, the server told, then the website's sign-out.
+  - The sidebar's and the dragging checks again on this build: every step
+    as before. No page errors in any run. The 239 tests, typecheck, lint,
+    the words', the brands' and the build's checks, `check_names.py`,
+    `check_translations.py`.
+- **Not checked:** against the real server and a new account's real
+  computer being made (the address is not live yet); the website's real
+  sign-out and its return; Stripe's card page from the cover.
+- **Not done, with the step that brings it:** the hand-off's percentage
+  while the computer's image is pulled, and "Waking your computer…" (the
+  computer's status, step 5); the browser's notifications, which the Mac
+  asks for as its window opens (step 6).
+- **Next:** step 3, the cards.
+
+### 1 November 2026: step 2f, part 2, dragging, the rail and the width
+
+- Dragging (`Sidebar.tsx`, the Mac's `ListDrop` and `PinDrop`):
+  - a row onto the pins pins it, at the tile it is let go on; with nothing
+    pinned, a dashed zone 104 high says "Drag here to pin" while a row is
+    dragged;
+  - a pin onto another takes its place; onto the list it is unpinned, into
+    the section it is let go on, if any;
+  - a row onto another section moves it there, with the other picked rows
+    when it is one of them (pins stay where they are); its own section
+    takes nothing;
+  - a section's header onto another puts it above (dragged up) or below
+    (dragged down), a hairline showing where; "Unassigned" stays last;
+  - where a drop would land greys (the list, a section, the pins, a tile).
+- The rail (88): the pictures alone (36 in 54), unread blue and at work
+  green on the corner, the pins and then a hairline, hairlines between the
+  open sections; picked rows' Delete and Clear under the head; the roster's
+  trouble as a glyph with its words as the tooltip.
+- `src/window/sidebarLayout.ts` (the Mac's `SidebarLayout`) with its tests:
+  320 at first, the edge dragged between 240 and 400 and never leaving the
+  chat under 424; under 210 it folds, and from the rail it opens again
+  from 220; the rail by itself while the chat would be narrower than 424;
+  ⌘B (Control-B) folds and opens it. Kept in the browser.
+- `App.tsx`: the edge (12 wide over the hairline), the width as the window
+  is resized, ⌘B; folding and opening slide over 0.2 s on the window's
+  curve, and the width follows the pointer while dragged.
+- **Decisions:** in the table above (the width kept in the browser, ⌘B or
+  Control-B, the window's 512; the browser's own dragging).
+- **Checked:** in Chromium against the stand-in computer
+  (`drag-check.cjs` in the session's scratchpad), light and dark, then
+  French:
+  - Theo onto the empty pins: the dashed zone, lit, 104 high; pinned and
+    written. Nova onto Theo's tile: the grid lit, pinned first. Nova's tile
+    onto Theo's: Theo lit; their places changed and written;
+  - Nova's tile onto Work: Work lit; unpinned and in Work. Scout onto
+    Work: lit, moved. Iris onto her own Work: nothing lit;
+  - Clients' header dragged down onto Work: the hairline under Work; then
+    Work, Clients, Unassigned, written;
+  - the message field empty after every drag;
+  - Control-B: the rail (88), the pins, the hairlines, the unread dot
+    blue; kept; Control-B again: 320;
+  - the edge: 380, held at 400, held at 240, folded under 210, open again
+    at 300; the width kept;
+  - a window 700 wide: the rail by itself, the chat 612; back at 1280: open;
+  - a row picked on the rail: Delete and Clear under the head.
+  - Part 1's check again on this build: every step as before. No page
+    errors. The 226 tests, typecheck, lint, the words', the brands' and the
+    build's checks, `check_names.py`, `check_translations.py`.
+  - Found while checking: Chromium's emulated drag (the one Playwright
+    drives) sends `dragover` once per drag, so the highlights are also set
+    on `dragenter`, which a browser sends at each element crossed.
+- **Not checked:** dragging with a real mouse and a trackpad; Safari and
+  Firefox (no Firefox in the session; Firefox has been reported not to
+  drag a `<button>`, which rows and tiles are: to be tried there, and the
+  rows changed to another element if so); the Windows app's keys.
+- **Next:** the first run for a new account and the access cover, which end
+  step 2. The sidebar's head and foot (search, new chat, the account and
+  Connect apps, and the rail's discs) come with their screens in step 4.
+
+### 1 November 2026: step 2f, part 1, the sidebar's pins, sections, menus and picked rows
+
+- `src/core/sidebarSections.ts` (SimeonCore's SidebarSections.swift): the
+  sections as the computer keeps them, "Unassigned" always last and holding
+  the rest; rename, remove, create, move agents in, move a section; what the
+  sidebar draws and its order (the pins, then the open sections' rows);
+  several rows picked (⌘ or Control, ⇧, a plain click); the delete
+  confirmation's words. `sidebarSections.test.ts` runs the core's own cases
+  from `fixtures/sidebar-sections.json` (copied from the Swift tests).
+- The store (`store.ts`), each change shown at once and written to the
+  computer, a refusal putting back what the computer holds:
+  - the pins (`pinnedAgentIds`) and sections (`sidebarSections`), read once
+    together, without waking a resting computer, on attaching, on
+    reconnecting, and again when another device changes them
+    (`settingsChanged`);
+  - pin, unpin, move a pin; edit and create sections;
+  - Mark as Read and Unread, hide and show, delete (false when refused),
+    duplicate (the copy's id), rename (quiet on a refusal, as the Mac's).
+  - `sidebarStore.test.ts`: the commands as the Mac's menu sends them.
+- `src/window/Sidebar.tsx` (mac/Simeon/SidebarList.swift,
+  SidebarMenus.swift, SidebarState.swift):
+  - the pins as tiles (the picture 60, the name, the title in blue, the
+    unread or working dot on its corner), in as many 80-point columns as
+    fit;
+  - the rows, or the person's sections: a header (a click folds it, its
+    count while folded, the chevron under the pointer), "Drag chats here"
+    in an empty one; Hidden Agents at the foot with its count; "No saved
+    agents yet." and "All bots are hidden" with Show Hidden Agents; the
+    list fading out over its last 24 points;
+  - a row: the open one the white card, a picked one the blue wash, the
+    group badge, "Draft: …" for words left unsent in another chat; a
+    double click renames it in place (Return or leaving keeps it, Escape
+    puts it back);
+  - the row's menu: Pin or Unpin; Move to with the sections (its own
+    ticked) and New section, or Move to new section while there are none;
+    Mark as Read or Unread; Duplicate (not for groups or rooms from
+    another account), which opens the copy; Copy conversation ID; Hide
+    from sidebar; Delete in red. With several rows picked and this one
+    among them, Move and Delete act on them all;
+  - a section's menu: Rename, Move up, Move down (greyed at the ends),
+    Delete; a new section opens with its name ready to type over;
+  - picked rows: the head turns into the Mac's bar (Move, Delete, Clear);
+    Escape lets them go, Delete or Backspace asks to delete them; not while
+    a field has the keys or a menu, an alert or a sheet is open; picking
+    takes the keys from the message field, as on the Mac;
+  - Hidden Agents (520 by 440): each hidden agent, a click opens it,
+    Unhide puts it back; "No hidden bots" when none.
+- `src/window/ContextMenu.tsx`: a right-click menu in the Mac's look, at
+  the pointer and kept in the window, submenus beside their item, the keys
+  ↑ ↓ → ← and Return. `src/window/Dialogs.tsx`: the alert and the sheet;
+  Escape reaches them wherever the keys are.
+- `App.tsx`: with nothing open, the first agent in the sidebar's order
+  opens (the pins first), as the Mac's `chooseFirst`.
+- **Found on the Mac:** "Draft: …" and the refused delete's "OK" are
+  English there (not in the catalogue); the web app says the same. The
+  menus' names for a screen reader ("Agent actions", "Section actions") are
+  the web app's own, in English, as the Mac's menus have none.
+- **Decisions:** in the table above (where the pins, sections and folds
+  are kept; ⌘ or Control and no Control-Tab; Edit Profile waits; the
+  window's own alerts).
+- **Checked:** in Chromium against a stand-in server and computer that
+  keeps the settings and answers each command (`sidebar-check.cjs` in the
+  session's scratchpad), light and dark, then French:
+  - the tile, Work and Unassigned, the group badge, the working and unread
+    dots, Hidden Agents 1;
+  - the row's menu and its submenu (Work ticked); Theo moved to Unassigned,
+    the sections written whole;
+  - Control-click two rows: the bar's three buttons with their counts;
+    Escape lets them go; ⇧-click a range of three; Delete: "Delete 3
+    agents" with its words, Cancel and Delete in red, Delete with the keys;
+    Escape cancels and nothing is deleted;
+  - the bar's Move → New section: the field with "New section" chosen,
+    "Clients" typed, written at the top with the three agents;
+  - the section's menu with Move up greyed; Move down; folding Work: its
+    count, kept in the browser;
+  - a double click: "Iris B" sent as `updateAgent`; Escape sends nothing;
+  - Mark as Unread: the dot, `setAgentUnread`; Pin Nova: two tiles,
+    written; Unpin from the tile's menu (no Move to on a pin);
+  - Copy conversation ID: "scout" on the clipboard; Duplicate: the copy
+    opens (the address and the open row);
+  - Hide Scout: gone, Hidden Agents 2; the sheet (520 by 440) with both,
+    Unhide Old bot, Escape closes it; Delete Old bot, confirmed; a refused
+    delete: "Deleting failed…" with OK; a section deleted: its agents in
+    Unassigned;
+  - French: every menu, the bar, the alerts and the sheet in French, the
+    times on the 24-hour clock; no page errors in any run.
+  The 223 tests, typecheck, lint, the words', the brands' and the build's
+  checks, `check_names.py`, `check_translations.py`.
+- **Not checked:** the Mac and the web app open together on one computer
+  (a pin made on one showing on the other); a real computer's answers to
+  these commands; Safari and Firefox; the Windows Control-click (Chromium
+  on Linux was used, which picks with Control as Windows does).
+- **Next:** 2f part 2: dragging (a row onto the pins, into a section, a
+  pin to another place, a section above or below another), the rail, the
+  width dragged (240 to 400), folding the sidebar and ⌘B; then the first
+  run for a new account and the access cover.
+
+### 1 November 2026: step 2e, part 3, dictation
+
+- `src/window/Dictation.tsx` (mac/Simeon/Dictation.swift):
+  - the grey microphone in Send's place while there is nothing to send;
+    the browser asks for the microphone the first time;
+  - while it listens, the recording chip in Send's place (Stop, the time,
+    five sound bars from the microphone's loudness, -50 dB silent) and
+    "Listening…" in the field; Stop sends the recording to Simeon's
+    transcription (`/desktop/api/proxy/v1/audio/transcriptions`, in the
+    app's language when it is not English) with a small spinner and
+    "Transcribing…"; what was said goes in at the caret through the field's
+    own typing (so undo takes it out), a space before it when the word
+    before runs on;
+  - under half a second is dropped; five minutes stops it; Escape, a
+    message sent, or the chat closing drops it, and the microphone is let
+    go each time (the browser's recording light goes out);
+  - the window's red lines: microphone refused, no microphone, connection
+    failed, anything else; gone when the microphone is tried again.
+  - The chip's time and bars redraw only the chip.
+- The store's `transcribe`, and the stand-in's (`FakeBackend`).
+- `src/window/dictation.test.ts`: the lines, the space, the meter, and
+  French.
+- **Decisions:** in the table above (the recording kind, the session; the
+  refused-microphone line, the founder).
+- **Checked:** in Chromium with its fake microphone playing a 440 Hz tone
+  (`dictation-check.cjs` and `tone.wav` in the session's scratchpad),
+  against a stand-in server, light and dark, then French:
+  - the microphone shown on an empty field, Send once there are words;
+  - the chip, "0:01" and bars rising with the tone, "Listening…"; Stop: the
+    spinner and "Transcribing…", then "Book a table for two" in the field,
+    which keeps the keys; the request multipart with `audio.webm`, signed
+    in, with `language` "fr" in French and none in English;
+  - "Hi" typed while listening: "Hi Book a table for two";
+  - Escape while listening, and a recording under half a second: nothing
+    sent;
+  - a dropped connection: "Network connection failed…", gone when the
+    microphone is tried again; a refusal (the browser's `NotAllowedError`)
+    and no microphone (`NotFoundError`): their lines; no page errors.
+  The 212 tests, typecheck, lint, the words', the brands' and the build's
+  checks, `check_names.py`, `check_translations.py`.
+- **Not checked:** a real microphone and a person's real refusal (headless
+  Chromium has no permission prompt: it answers "not supported", so the
+  refusal was given as the browser gives it); Safari's MP4 recording and
+  Firefox; the real transcription service from `app.simeonlabs.com` (the
+  address is not live yet); five minutes.
+- **Next:** the rest of step 2, as the entries for 1d and 2a left it: the
+  sidebar's own parts (pins and folders, several rows picked, renaming, its
+  right-click menu, dragging, the rail and the width), then the first run
+  for a new account and the access cover.
+
+### 1 November 2026: step 2e, part 2, "@", "/" and "#"
+
+- The shared core's lists, translated with their tests
+  (`ComposerMenuTests`, `testTheComposerOffersNamesAfterAnAt`):
+  - `src/core/composerLists.ts` (ComposerLists.swift): the window's
+    matching (its own scores, to the hundredth), where a list opens, what
+    "@" offers (the other agents and the groups this one is in, or a
+    group's members and "everyone"; the routines; the connected apps), what
+    "/" offers (skills, then the app's actions, eight at most), what "#"
+    offers (the pull requests the chat named, newest first), and the lines
+    for nothing found;
+  - `src/core/composerMenus.ts` (ComposerMenus.swift): the skills and
+    routines in `getAgentWorkflows`' answer, and pull requests in a text;
+  - `src/core/composerDocument.ts` (ComposerDocument.swift): a pick's
+    words, the picks kept while the words change, and the message's
+    document (`richText`) as the window's editor writes it, read back for a
+    canceled message;
+  - `src/core/connectedApps.ts`: the connected apps (`ConnectedApp`).
+- The store reads the agent's skills and routines as a chat opens
+  (`getAgentWorkflows`, waiting for a computer that rests, not waking it)
+  and the connected apps (`desktopMcp` `listServers`, only while the
+  computer is awake).
+- `src/window/ComposerPicks.tsx`: one list for "@", "/", "#" and ":",
+  hung 4 over the trigger's line: 360 wide (emoji 320), each row with its
+  picture (the agent's face, a group's people, a routine's clock, an app's
+  logo), its name, what it is at 40% and its kind at the right. "@" and "/"
+  with nothing found say so, over "Press Esc to close".
+- `Composer.tsx`: a pick goes in through the field's own typing, so undo
+  takes it out; it sits on the Mac's grey (a layer under the words, laid
+  out as the field lays them out); Delete or Backspace beside it takes it
+  whole; a pick in the middle of the words keeps the words after it; a
+  message with picks goes with its document; a canceled one comes back with
+  its picks; each chat and thread keeps its picks while its words wait.
+- **Decisions (the session):** in the table above.
+- **Found on the Mac, not changed:** the "#" rows' "Pull request" is
+  written in English in every language (the Mac's `PickLine` is given a
+  plain string, and the catalogues have no such entry); the web shows the
+  same. A routine's time in "@" is the computer's own English words in
+  every language on the web until the routines' words come with step 4
+  (the Mac writes them from the routine's schedule).
+- **Checked:** in Chromium, the built app against a stand-in computer with
+  four agents (one a group), two skills, a routine, two connected apps and
+  three pull-request links in the chat (`picks-check.cjs` in the session's
+  scratchpad), light and dark, then French:
+  - "@" listing Nora, Nova, the group "Launch squad · 2 agents", "Morning
+    brief · Every day at 9:00 · Routine", "Gmail (work@acme.com) · needs
+    auth · Plugin", "Slack · connected"; "no" leaving Nora and Nova;
+    Return putting in "@Nora" on the grey;
+  - "/" listing "Weekly report · Sums up the week · Skill"; Tab putting it
+    in; "#" listing #40, #41, #12 (newest first), "4" leaving #40 and #41,
+    ↓ and Return putting in #41;
+  - Backspace twice after "#41 " taking the space, then "#41" whole;
+  - "@zz" saying "No matches for “zz”" over "Press Esc to close"; Escape
+    putting it away and typing on keeping it away;
+  - "@nov" typed at the start of the words, picked, the words after it
+    kept; undo and redo taking a pick out and bringing it back as a pick;
+  - the message sent with the words trimmed and its document: two
+    mentions, a skill's reference and the text between;
+  - in the group: "everyone" first, then its members and the apps; "all"
+    finding "everyone"; "/" there saying "Nothing to reference yet";
+  - the reads: `getAgentWorkflows` and `listServers` once per chat; no
+    page errors. In French the kinds, the apps' lines and the empty lines
+    read in French.
+  The 207 tests, typecheck, lint, the words', the brands' and the build's
+  checks, `check_names.py`, `check_translations.py`.
+- **Not checked:** a real computer's skills, routines and apps; Safari's
+  and Firefox's undo (the field's own typing is used, which both have).
+  A pick copied and pasted comes in as plain words, as on the Mac.
+- **Next:** step 2e, part 3: dictation.
+
+### 1 November 2026: step 2e, part 1, attaching files and the ":" emoji list
+
+- `src/core/attachmentLimits.ts` (SimeonCore's `AttachmentLimits`): six
+  files at most, each up to 25 MB (200 MB for a video), none empty, and
+  the line for what was left out, from the core's catalogue. Its tests
+  are the core's `AttachmentLimitTests`, and French.
+- `src/window/Attachments.tsx` (mac/Simeon/Attachments.swift):
+  - `useStaging`: the chat's files waiting to go. As many as fit beside
+    those waiting, files still being read counted; each size checked
+    before it is read; the line over the words for five seconds, the
+    latest kept. They belong to the chat on screen, as on the Mac: another
+    chat starts with none.
+  - Attach: the 40-point glass disc left of the field, off at six; its
+    menu opens upward, its foot 4 over the disc: Photo or Video and
+    Choose File (several files). A second click, Escape or a click
+    elsewhere closes it.
+  - The files over the words, lined up with the field (48 in): a picture
+    as a 52-point square of it, any other file as a 220 by 54 chip with
+    its kind's icon, its name (the extension always shown) and its size;
+    Remove on each.
+  - Files dragged over the chat: the blue wash (17%, 32% on dark) with
+    "Drop files to add to chat"; dropped anywhere on the chat, they wait
+    to go. Dropped outside the chat, nothing takes them.
+  - A paste of files or a picture (a screenshot comes as "image.png")
+    goes with them; words pasted with a picture of them stay words.
+- `Composer.tsx`: the field starts 48 in, after Attach; with files
+  waiting it says "Add a message, or hit send." and Send shows with no
+  words; Return sends the files (each put on the computer first, then
+  the message); a message canceled before it went comes back with its
+  files.
+- `src/window/ComposerPicks.tsx` (mac/Simeon/ComposerPicks.swift): ":"
+  and two letters before the caret open the emoji list, hung 4 over the
+  colon's line and from its left: 320 wide, twelve at most (those picked
+  lately first), each as the emoji, ":shortcode:" and its name. ↑ and ↓
+  choose, Return and Tab pick, Escape puts it away until that ":" is
+  gone; a click picks, the field keeping the keys. Not in "10:30" or an
+  address. Nothing found shows nothing. The catalogue is read when ":"
+  first asks.
+- **Decisions (the session):** in the table above.
+- **Checked:** in Chromium, the built app against a stand-in server and
+  computer (`compose-check.cjs` in the session's scratchpad), light and
+  dark, then French:
+  - the menu's two items and place, Escape and a second click closing it;
+    Choose File taking several files, Photo or Video asking for
+    `image/*,video/*`;
+  - a picture, a PDF and a CSV in the strip with their sizes, the
+    placeholder and Send;
+  - five more dropped: six kept, "Only 6 attachments allowed — 2 weren't
+    added.", Attach off; Remove; a 26 MB file, an empty one and two too
+    large each with their line, gone after five seconds;
+  - a pasted picture taken, an Office-style paste left as words;
+  - Return with no words: five `uploadAttachment` calls, then `sendPrompt`
+    with their five paths and names; the strip emptied;
+  - the emoji list for ":tad" (🎉 first), Return, ↓ and Tab, Escape and
+    typing on, a new ":" opening it again, "10:30" and "https://" not
+    opening it, a click; the lately-picked kept;
+  - a drop on the sidebar refused; no page errors. In French every line
+    and the menu read in French.
+  The 195 tests, typecheck, lint, the words', the brands' and the build's
+  checks, `check_names.py`, `check_translations.py`.
+- **Not checked:** a real file chooser and a real drag from Finder or
+  Explorer (the check hands the page files as a browser would); a paste
+  from Finder (what each browser puts on the clipboard for a copied file
+  differs); Safari; against the real server and a real computer.
+- **Next:** step 2e, part 2: "@" (agents, groups, routines and apps),
+  "/" (skills and the app's actions) and "#" (pull requests); then
+  dictation.
+
+### 1 November 2026: step 2c, part 3c, Excel in the preview
+
+- `src/core/xlsx.ts`: an Excel workbook (.xlsx) read by our own code,
+  loaded with the first one (10 KB, 4 KB compressed):
+  - the zip unzipped by the browser itself (`DecompressionStream`), its
+    parts together held to 120 MB, so a small file that unzips to
+    gigabytes is refused;
+  - a small XML reader (no page needed, so the tests run it too);
+  - the first sheet in the workbook's order, from its first cell: shared
+    and inline words, numbers, true and false, errors, a formula's saved
+    value; blank rows kept, 2,000 rows and 200 columns at most, and how
+    many rows it has;
+  - each number written as its format says: dates and times (and a
+    workbook counted from 1904), percentages, decimals, thousands,
+    currency, negatives in brackets, scientific, General's 11 digits.
+- `Viewers.tsx`: an .xlsx shows as the CSV's table ("5 rows", a cell's
+  words in the card); one it can't read says "Couldn't read this
+  spreadsheet"; an .xls says "Preview not available" with Download. Every
+  file card's name now opens, save a kind the window can't show.
+- The table measures its words in the page's own font before drawing
+  them: measured on a canvas, dates and figures came out a few points
+  short and were cut.
+- `src/core/xlsx.test.ts`: a workbook LibreOffice made
+  (`src/core/fixtures/revenue.xlsx`, from `revenue.fods` beside it: two
+  sheets, words with a comma, quotes and an emoji, a date, a percentage,
+  formulas, two blank rows); one written the way Excel writes one (prefixed
+  tags, a path from the root, inline words, true and false, an error, a
+  1904 date, a sheet starting at B2), deflated and stored; a 2,500-row
+  sheet; a zip that unzips past its limit; files that are not workbooks;
+  and the number formats.
+- **Decision (the session, on the founder's "keep going on excel"):** in
+  the table above.
+- **Fixed on the way:** part 3b's entry here quoted a font's name that
+  `check_names.py` flags; it now says it without the name.
+- **Checked:** in Chromium, the built app under the website's security
+  policy (`excel-check.cjs` in the session's scratchpad), light and dark:
+  LibreOffice's workbook showed "5 rows" and its six columns with
+  "2026-07-01", "12.5%", "45500.75", the words with quotes and the
+  emoji, the formulas' values, the two blank rows and "Total", no cell
+  cut; a cell's card ("Note · row 1"); the .xls said "Preview not
+  available" with Download; a broken .xlsx said "Couldn't read this
+  spreadsheet"; no error but the policy probe's own. The CSV preview
+  again. The 192 tests, typecheck, lint, the words', the brands' and the
+  build's checks, `check_translations.py`, `check_names.py`.
+- **Not checked:** a workbook saved by Excel itself (the test builds one
+  the way Excel writes it; no copy of Excel here); formats beyond the
+  common ones (fractions, conditions in brackets, colours are left out of
+  the words); a sheet's other tabs (only the first is shown, as the CSV's
+  one sheet is); against the real server and a real computer.
+- **Next:** step 2e, the message field's own parts: attaching files, the
+  ":" emoji list, "@", "/" and "#", and dictation.
+
+### 1 November 2026: step 2c, part 3b, PDF, Word and sound in the preview
+
+- `src/window/PDFBody.tsx` (`PDFControl`, `PDFToolbar`, `PDFBody`): a PDF
+  drawn by pdf.js 5.4.296, the window's own version, loaded with the first
+  PDF (its script 117 KB compressed, its worker apart):
+  - the pages one under another, 16 apart, as wide as the panel less 32
+    times the zoom; each page's number at its foot; a page is drawn when it
+    comes near the view, sharp on a Retina screen;
+  - its words can be chosen and copied (pdf.js's text layer);
+  - in the head, "2 pages", then Zoom out, "1 / 2" (the page at the middle
+    of the view) and Zoom in; the zoom 0.5 to 4, a quarter a step, + and −
+    as well;
+  - "Couldn't render this PDF" with Download when pdf.js can't read it.
+- `Viewers.tsx`:
+  - a Word document read by mammoth (the window's reader; the Mac uses
+    Quick Look) onto the Markdown page, its HTML made safe by DOMPurify
+    before it is drawn; "Loading document…" meanwhile;
+  - a sound in the browser's own player, centred, not playing until asked
+    (Quick Look on the Mac, the window's player in the window);
+  - PDF, Word and sound cards' names now open the preview. Excel's stay
+    plain until part 3c.
+- `package.json`: pdfjs-dist 5.4.296, mammoth 1.13.0 (the window asked for
+  1.12 or later), DOMPurify 3.3.1 (the version the workspace already has).
+  The lockfile adds them and mammoth's own (jszip, underscore, and small
+  helpers); nothing else changed.
+- `scripts/kept_names.json`: pdf.js's built worker lists a font whose
+  name holds one of the earlier names; a rule keeps that font's name there.
+- **Checked:** in Chromium, the built app against a stand-in server and
+  computer (`docs-check.cjs` in the session's scratchpad, with a two-page
+  PDF, a Word file and a sound made in the session), light and dark: the
+  PDF said "2 pages" and "1 / 2", its first page painted 1068 wide in an
+  1100 panel, its words in the text layer ("Launch plan", "Quarterly
+  report, page 1") with the text cursor, its badge "1"; Zoom in and + took
+  it to 1.5 (1602 wide), − four times to 0.5 (534 wide) with Zoom out
+  disabled; scrolled to the end it said "2 / 2"; a broken PDF said
+  "Couldn't render this PDF" with Download; the Word file showed its
+  heading, its bold word and its table, and a `<script>` written in it
+  stayed words; the sound opened in the player, paused, 2 seconds. Then the
+  three previews' checks again (`docs-check`, `preview-check`,
+  `media-check`) under the website's own security policy for /app-next
+  (`appWindowCSP`, proved in force by an inline script it refused): no
+  other error, the PDF, code colours, Word, sound, table and the media
+  viewer all worked. The 185 tests, typecheck, lint, the words', the
+  brands' and the build's checks, `check_translations.py`,
+  `check_names.py`. The inventory counts 259 strings the new web app
+  shows.
+- **Not checked:** PDFs with JPEG 2000 pictures (pdf.js reads them with
+  WebAssembly, which the security policy does not allow; such a picture
+  would not show) and PDFs that lean on fonts they do not carry (pdf.js's
+  font files are not shipped, so the browser's own fonts stand in); a long
+  PDF (pages drawn as they come near the view were tried on two); against
+  the real server and a real computer (the address is not live yet; see
+  Open questions).
+- Pull request #530.
+- **Next:** step 2c, part 3c: Excel in the preview. The window's SheetJS
+  is out (see Decisions); the choice is between a small reader of our own
+  for .xlsx (the browser unzips and reads XML itself) and "Preview not
+  available" with Download.
 
 ### 1 November 2026: step 2c, part 3a, pictures and videos full screen
 

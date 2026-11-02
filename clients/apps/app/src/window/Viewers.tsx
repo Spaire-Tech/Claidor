@@ -2,12 +2,15 @@
 // `FileViewer` and `ViewerState`, FileBodies.swift's `MarkdownPage`,
 // `CodeBody`, `JSONBody` and `TableBody`): the file read from the computer
 // and shown as its kind shows it. Text and code in their colours, Markdown
-// as a page, JSON as a tree, CSV and TSV as a table. PDF, Word, Excel,
-// sound, pictures and videos come with step 2c's third part.
+// as a page, JSON as a tree, CSV, TSV and Excel as a table, PDF in its
+// pages, Word on a page, sound in the browser's player.
 
 import {
+  type Dispatch,
   type ReactNode,
+  type SetStateAction,
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -23,6 +26,7 @@ import {
   fileLanguage,
   jsonEntries,
   jsonSummary,
+  pagesLine,
   previewText,
   readSheet,
   rowsLine,
@@ -33,6 +37,13 @@ import { t } from '../l10n'
 import { saveFile } from './Files'
 import { type MediaItem, MediaViewer } from './MediaViewer'
 import { MessageBlocks } from './MessageText'
+import {
+  PDFBody,
+  type PDFState,
+  PDFToolbar,
+  clampZoom,
+  zoomStep,
+} from './PDFBody'
 
 /** A file to preview: its name, where it is, and whose computer has it. */
 export interface FileItem {
@@ -109,43 +120,46 @@ export function ViewerLayer({
   )
 }
 
-/** The kinds this part shows: PDF, Word, Excel and sound open with the next. */
-export function previewShown(name: string): boolean {
-  switch (fileKind(name)) {
-    case 'text':
-    case 'markdown':
-    case 'json':
-    case 'image':
-    case 'video':
-      return true
-    case 'table':
-      return ['csv', 'tsv'].includes(fileExtension(name) ?? '')
-    default:
-      return false
-  }
-}
-
 /** What a file shows once read: its words, a sheet, or nothing it can read. */
 type FileShows =
   | { kind: 'text'; text: string; cut: boolean }
   | { kind: 'sheet'; sheet: Sheet }
   | { kind: 'noSheet' }
+  | { kind: 'bytes'; data: Uint8Array }
   | { kind: 'none' }
 
-function shown(read: PreviewRead, name: string, kind: FileKind): FileShows {
+/**
+ * What a file shows once read. A CSV or TSV as its rows; an Excel workbook
+ * (.xlsx) by our own reader, loaded with the first one (`xlsx.ts`); the old
+ * binary .xls is not read, and says so with Download.
+ */
+async function shown(
+  read: PreviewRead,
+  name: string,
+  kind: FileKind,
+): Promise<FileShows> {
   if (read.kind !== 'ready') return { kind: 'none' }
   switch (kind) {
-    case 'table':
-      return ['csv', 'tsv'].includes(fileExtension(name) ?? '')
-        ? {
-            kind: 'sheet',
-            sheet: readSheet(new TextDecoder().decode(read.data), name),
-          }
-        : { kind: 'noSheet' }
+    case 'table': {
+      const ext = fileExtension(name) ?? ''
+      if (ext === 'csv' || ext === 'tsv')
+        return {
+          kind: 'sheet',
+          sheet: readSheet(new TextDecoder().decode(read.data), name),
+        }
+      if (ext !== 'xlsx') return { kind: 'none' }
+      const { readXlsx } = await import('../core/xlsx')
+      const sheet = await readXlsx(read.data)
+      return sheet ? { kind: 'sheet', sheet } : { kind: 'noSheet' }
+    }
     case 'text':
     case 'markdown':
     case 'json':
       return { kind: 'text', ...previewText(read.data) }
+    case 'pdf':
+    case 'docx':
+    case 'audio':
+      return { kind: 'bytes', data: read.data }
     default:
       return { kind: 'none' }
   }
@@ -174,39 +188,64 @@ export function FileViewer({
   const panel = useRef<HTMLDivElement>(null)
   useEffect(() => {
     let live = true
-    void store.readForPreview(item.url, item.agentId).then((answer) => {
-      if (live) setRead({ read: answer, shown: shown(answer, item.name, kind) })
-    })
+    void store
+      .readForPreview(item.url, item.agentId)
+      .then(async (answer) => ({
+        read: answer,
+        shown: await shown(answer, item.name, kind).catch(
+          (): FileShows => ({ kind: 'noSheet' }),
+        ),
+      }))
+      .then((done) => {
+        if (live) setRead(done)
+      })
     return () => {
       live = false
     }
   }, [store, item, kind])
-  // Escape closes it before anything under it hears the key; the place the person was gets the keys back after.
+  // A PDF's zoom, page and pages, shared by the head's controls and its pages (`PDFControl`).
+  const [pdf, setPDF] = useState<PDFState & { failed: boolean }>({
+    zoom: 1,
+    page: 1,
+    pages: 0,
+    failed: false,
+  })
+  const zoomBy = useCallback(
+    (delta: number) =>
+      setPDF((was) => ({ ...was, zoom: clampZoom(was.zoom + delta) })),
+    [],
+  )
+  // Escape closes it before anything under it hears the key, and a PDF's + and - zoom; the place the person was gets the keys back after.
   useEffect(() => {
     const before = document.activeElement as HTMLElement | null
     panel.current?.focus()
     const keys = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return
+      if (event.key === 'Escape') close()
+      else if (kind === 'pdf' && (event.key === '+' || event.key === '='))
+        zoomBy(zoomStep)
+      else if (kind === 'pdf' && event.key === '-') zoomBy(-zoomStep)
+      else return
       event.preventDefault()
       event.stopPropagation()
-      close()
     }
     window.addEventListener('keydown', keys, true)
     return () => {
       window.removeEventListener('keydown', keys, true)
       before?.focus?.()
     }
-  }, [close])
+  }, [close, kind, zoomBy])
 
   const download = () => void saveFile(store, item.name, item.url, item.agentId)
   const subtitle =
-    read?.shown.kind === 'sheet'
-      ? rowsLine(read.shown.sheet.totalRows)
-      : read?.shown.kind === 'text' &&
-          read.shown.cut &&
-          (kind === 'text' || kind === 'markdown')
-        ? t('Showing the start of this file')
-        : undefined
+    kind === 'pdf' && pdf.pages > 0
+      ? pagesLine(pdf.pages)
+      : read?.shown.kind === 'sheet'
+        ? rowsLine(read.shown.sheet.totalRows)
+        : read?.shown.kind === 'text' &&
+            read.shown.cut &&
+            (kind === 'text' || kind === 'markdown')
+          ? t('Showing the start of this file')
+          : undefined
   return (
     <div
       className="file-scrim"
@@ -229,6 +268,9 @@ export function FileViewer({
               <span className="file-viewer-subtitle">{subtitle}</span>
             )}
           </div>
+          {kind === 'pdf' && pdf.pages > 0 && !pdf.failed && (
+            <PDFToolbar state={pdf} zoom={zoomBy} />
+          )}
           <HeadButton label={t('Download file')} onClick={download}>
             <path
               d="M7 2v7.5M3.8 6.3 7 9.5l3.2-3.2M2.5 12h9"
@@ -255,6 +297,8 @@ export function FileViewer({
             name={item.name}
             read={read}
             download={download}
+            pdf={pdf}
+            setPDF={setPDF}
           />
         </div>
       </div>
@@ -267,11 +311,15 @@ function Content({
   name,
   read,
   download,
+  pdf,
+  setPDF,
 }: {
   kind: FileKind
   name: string
   read?: { read: PreviewRead; shown: FileShows }
   download: () => void
+  pdf: PDFState & { failed: boolean }
+  setPDF: Dispatch<SetStateAction<PDFState & { failed: boolean }>>
 }) {
   const action = (
     <button type="button" className="viewer-download" onClick={download}>
@@ -293,6 +341,28 @@ function Content({
     )
   }
   const what = read.shown
+  if (what.kind === 'bytes') {
+    if (kind === 'pdf')
+      return pdf.failed ? (
+        <ViewerState
+          glyph="pdf"
+          title={t("Couldn't render this PDF")}
+          action={action}
+        />
+      ) : (
+        <PDFBody
+          data={what.data}
+          zoom={pdf.zoom}
+          onPages={(pages) => setPDF((was) => ({ ...was, pages }))}
+          onPage={(page) =>
+            setPDF((was) => (was.page === page ? was : { ...was, page }))
+          }
+          onFailure={() => setPDF((was) => ({ ...was, failed: true }))}
+        />
+      )
+    if (kind === 'docx') return <DocxBody data={what.data} action={action} />
+    return <AudioBody data={what.data} name={name} />
+  }
   if (what.kind === 'sheet') return <TableBody sheet={what.sheet} />
   if (what.kind === 'noSheet')
     return (
@@ -487,6 +557,102 @@ function MarkdownPage({ text }: { text: string }) {
   )
 }
 
+// MARK: Word and sound
+
+type Mammoth = typeof import('mammoth')
+let mammothLoading: Promise<Mammoth> | undefined
+
+/**
+ * A Word document as the window shows it (its own reader, mammoth): the
+ * document's words, headings, lists, tables and pictures on the Markdown
+ * page, made safe before they are drawn. The Mac shows it with Quick Look.
+ */
+function DocxBody({ data, action }: { data: Uint8Array; action: ReactNode }) {
+  const [html, setHtml] = useState<{ data: Uint8Array; html?: string }>()
+  useEffect(() => {
+    let live = true
+    mammothLoading ??= import('mammoth').then(
+      (module) => (module as { default?: Mammoth }).default ?? module,
+    )
+    void Promise.all([mammothLoading, import('dompurify')])
+      .then(async ([mammoth, purify]) => {
+        const copy = data.slice()
+        const converted = await mammoth.convertToHtml({
+          arrayBuffer: copy.buffer,
+        })
+        if (live)
+          setHtml({ data, html: purify.default.sanitize(converted.value) })
+      })
+      .catch(() => {
+        if (live) setHtml({ data })
+      })
+    return () => {
+      live = false
+    }
+  }, [data])
+  if (html?.data !== data)
+    return <ViewerState loading={t('Loading document…')} />
+  if (html.html == null)
+    return (
+      <ViewerState
+        glyph="doc"
+        title={t('Preview not available')}
+        detail={t(
+          "This file type can't be previewed. Download it to open it on your computer.",
+        )}
+        action={action}
+      />
+    )
+  return (
+    <div className="markdown-page">
+      <div
+        className="markdown-page-column docx-page"
+        dangerouslySetInnerHTML={{ __html: html.html }}
+      />
+    </div>
+  )
+}
+
+/** A sound's kind for the browser, from its name. */
+function soundType(name: string): string {
+  switch (fileExtension(name)) {
+    case 'mp3':
+      return 'audio/mpeg'
+    case 'm4a':
+    case 'aac':
+      return 'audio/mp4'
+    case 'wav':
+      return 'audio/wav'
+    case 'flac':
+      return 'audio/flac'
+    case 'ogg':
+    case 'oga':
+    case 'opus':
+      return 'audio/ogg'
+    case 'weba':
+      return 'audio/webm'
+    default:
+      return ''
+  }
+}
+
+/** A sound in the browser's own player, centred, not playing until asked (the window's player; Quick Look on the Mac). */
+function AudioBody({ data, name }: { data: Uint8Array; name: string }) {
+  const address = useMemo(
+    () =>
+      URL.createObjectURL(
+        new Blob([data as BlobPart], { type: soundType(name) }),
+      ),
+    [data, name],
+  )
+  useEffect(() => () => URL.revokeObjectURL(address), [address])
+  return (
+    <div className="audio-body">
+      <audio controls preload="metadata" src={address} aria-label={name} />
+    </div>
+  )
+}
+
 // MARK: Code and text
 
 let colourer: Worker | undefined
@@ -670,30 +836,44 @@ function JSONNode({
 
 const rowHeight = 25
 
-/** A text's width at the table's size (12.5, medium for the head), read once per sheet. */
-function measure(): (words: string, medium: boolean) => number {
-  const context = document.createElement('canvas').getContext('2d')
-  const family = getComputedStyle(document.body).fontFamily
-  return (words, medium) => {
-    if (!context) return words.length * 7
-    context.font = `${medium ? 500 : 400} 12.5px ${family}`
-    return context.measureText(words).width
+/**
+ * The widths of words as the table draws them (12.5, even-width digits,
+ * medium for the head): each in a hidden box with the table's own font,
+ * all read in one pass.
+ */
+function drawnWidths(words: { text: string; medium: boolean }[]): number[] {
+  const box = document.createElement('div')
+  box.className = 'sheet-measure'
+  for (const word of words) {
+    const line = document.createElement('span')
+    line.textContent = word.text
+    if (word.medium) line.style.fontWeight = '500'
+    box.append(line)
   }
+  document.body.append(box)
+  const widths = [...box.children].map(
+    (line) => line.getBoundingClientRect().width,
+  )
+  box.remove()
+  return widths
 }
 
 /** Each column as wide as its widest cell in the first rows, padded, at most 360 (`TableBody.widths`). */
 function columnWidths(sheet: Sheet, columns: number): number[] {
-  const width = measure()
   const widths = Array.from({ length: columns }, () => 40)
+  const cells: { column: number; text: string; medium: boolean }[] = []
   sheet.rows.slice(0, 200).forEach((row, index) => {
     for (let column = 0; column < Math.min(columns, row.length); column += 1) {
-      const words = row[column]!
-      if (words === '') continue
-      widths[column] = Math.max(
-        widths[column]!,
-        Math.min(360, Math.ceil(width(words, index === 0)) + 21),
-      )
+      const text = row[column]!
+      if (text !== '') cells.push({ column, text, medium: index === 0 })
     }
+  })
+  drawnWidths(cells).forEach((width, index) => {
+    const column = cells[index]!.column
+    widths[column] = Math.max(
+      widths[column]!,
+      Math.min(360, Math.ceil(width) + 21),
+    )
   })
   return widths
 }
@@ -718,8 +898,11 @@ function TableBody({ sheet }: { sheet: Sheet }) {
   const widths = useMemo(() => columnWidths(sheet, columns), [sheet, columns])
   const numberWidth = useMemo(
     () =>
-      Math.ceil(measure()(String(Math.max(1, sheet.rows.length - 1)), false)) +
-      21,
+      Math.ceil(
+        drawnWidths([
+          { text: String(Math.max(1, sheet.rows.length - 1)), medium: false },
+        ])[0] ?? 0,
+      ) + 21,
     [sheet],
   )
   const [view, setView] = useState({ top: 0, height: 600 })

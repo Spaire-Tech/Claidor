@@ -16,6 +16,14 @@
 // (`SavedChats`); the web shows the server's copy instead (the decision is in
 // PROGRESS.md).
 
+import {
+  type PlanFacts,
+  type SandAccess,
+  accessFrom,
+  checkingAccess,
+  planFacts,
+  unknownAccess,
+} from './access'
 import { SimeonAPIError } from './api'
 import {
   type AgentBackend,
@@ -25,6 +33,12 @@ import {
   type SendOptions,
   newMessageId,
 } from './backend'
+import {
+  addingAllowRule,
+  autoReviewFrom,
+  autoReviewJSON,
+  proposedRule,
+} from './cards'
 import {
   type ChatRow,
   chatRows,
@@ -37,15 +51,66 @@ import {
   threadTitle,
 } from './chat'
 import { type RunFlags, runFlags } from './chatRuns'
+import {
+  type CatalogApp,
+  type CloudAgentRead,
+  type ListenerPlatform,
+  appsComingSoonBuiltIn,
+  catalogApp,
+  catalogFrom,
+  cloudAgentInfo,
+  comingSoonFrom,
+  connectedToolCount,
+  isComingSoon,
+  isConnected,
+  listenerConnectedIn,
+} from './connectCards'
+import { type ConnectedApp, connectedApp } from './connectedApps'
 import { Entry, appliedChange } from './entry'
 import { fileLine, fileSize } from './fileLine'
 import { byteCap, computerPath } from './filePreview'
+import {
+  type FlightBookingAnswer,
+  type FlightOffer,
+  type OpenFlight,
+  type Traveller,
+  bookingAnswer,
+  travellerJSON,
+} from './flightCards'
 import { GatewayError } from './gatewayConnection'
 import { type JSONValue, arr, bool, field, int, num, str, text } from './json'
 import { t } from './l10n'
+import { currentLanguage } from './language'
 import { type Agent, agentFrom, sameAgent, sortRoster } from './models'
+import {
+  type FirstRun,
+  chiefOfStaff,
+  computerWait,
+  handOffDwell,
+  normalizedName,
+  probeEvery,
+  suggestedName,
+  unreachableLine,
+} from './onboarding'
 import { plainError } from './plainWords'
+import {
+  type SidebarSection,
+  createSection,
+  newSectionId,
+  normalize,
+  parseSections,
+  sectionsJSON,
+} from './sidebarSections'
 import { bytesFromBase64URL } from './tokens'
+
+/** A call whose failure changes nothing: tried, and let be. */
+async function quietly(call: Promise<unknown>): Promise<void> {
+  try {
+    await call
+  } catch {
+    // Told again another time, or not needed.
+  }
+}
 
 /** A message the person sent, shown at once and kept until the host's own copy arrives (the Mac's outbox). */
 interface Outgoing {
@@ -350,6 +415,8 @@ export class AppStore {
   threadRows: Record<string, ChatRow[]> = {}
   /** What the person has typed and not sent, by composer (`draftScope`). Kept in this tab only. */
   drafts: Record<string, string> = {}
+  /** The connected apps (`desktopMcp` `listServers`), which "@" offers; read as a chat opens. */
+  apps: ConnectedApp[] = []
   /** The last message canceled, until its composer takes it back. */
   canceledDraft?: CanceledDraft
   composerNotice?: ComposerNotice
@@ -387,6 +454,7 @@ export class AppStore {
   private sentFiles: { keys: string[]; data: Uint8Array }[] = []
   /** Each file card's line once the computer answered, and whether it read the file as text. */
   private fileLines = new Map<string, FileFacts>()
+  private appsLoad?: Promise<void>
   private listening?: AbortController
   private onListShown?: () => void
   private readonly listeners = new Set<() => void>()
@@ -435,6 +503,8 @@ export class AppStore {
         this.changed()
       }
     }
+    // The pins and sections, shared with the Mac through the computer's settings.
+    if (this.backend === backend) await this.loadSidebar()
   }
 
   /** Signed out, or the sign-in ended. */
@@ -442,6 +512,20 @@ export class AppStore {
     this.listening?.abort()
     this.listening = undefined
     this.backend = undefined
+    this.access = checkingAccess
+    this.plan = undefined
+    this.pendingAnswers = {}
+    this.answeredApprovals = {}
+    this.resetRequestCards()
+    this.resetConnectCards()
+    this.resetFlightCards()
+    this.resetShopCards()
+    this.firstRunAgentId = undefined
+    this.firstRunNamed = false
+    // A hand-off waiting on the name step ends (it finds the account gone and makes nothing).
+    const waiting = this.firstRunNameWaiters
+    this.firstRunNameWaiters = []
+    for (const resume of waiting) resume()
     this.agents = []
     this.account = undefined
     this.showingSaved = false
@@ -469,6 +553,9 @@ export class AppStore {
     this.openThreads = {}
     this.threadRows = {}
     this.drafts = {}
+    this.apps = []
+    this.pinnedIds = []
+    this.sidebarSections = undefined
     this.canceledDraft = undefined
     this.composerNotice = undefined
     this.running = {}
@@ -635,8 +722,19 @@ export class AppStore {
           void (async () => {
             await this.reloadRoster()
             if (this.openChat) await this.refresh(this.openChat)
+            await this.loadSidebar()
           })()
         }
+        return
+      }
+      case 'settingsChanged': {
+        // Another device (or this one) changed the computer's settings: the pins and sections read again.
+        const every = event.fields.length === 0
+        const pins = every || event.fields.includes('pinnedAgentIds')
+        const sections = every || event.fields.includes('sidebarSections')
+        if (pins && sections) void this.loadSidebar()
+        else if (pins) void this.loadPins()
+        else if (sections) void this.loadSections()
         return
       }
       case 'computerAsleep':
@@ -655,6 +753,1164 @@ export class AppStore {
     return this.agents.find((agent) => agent.id === id)
   }
 
+  // MARK: The list, as the Mac's sidebar (pins, sections, read, hidden, delete, duplicate)
+
+  /** The pinned agents, in their order (the host's `pinnedAgentIds`, shared with the Mac). */
+  pinnedIds: string[] = []
+  /**
+   * The sidebar's sections as the host keeps them (`sidebarSections`): none
+   * read yet, and nothing can be moved, until the computer answers; empty
+   * when the person has made none.
+   */
+  sidebarSections?: SidebarSection[]
+  /** Bumped by each pin written here: a read of the host's pins begun before it would undo it, so it is dropped. */
+  private pinWrites = 0
+  /** Pin writes on their way: no read begins meanwhile (its answer could come back without the write). */
+  private pinWritesInFlight = 0
+  /** Bumped by each sections write, so a read begun before it is dropped. */
+  private sectionWrites = 0
+  private sectionSeed = 0
+
+  /** The pinned agents that still exist and are not hidden, in pin order. */
+  get pinned(): Agent[] {
+    return this.pinnedIds
+      .map((id) =>
+        this.agents.find((agent) => agent.id === id && !agent.isHidden),
+      )
+      .filter((agent): agent is Agent => agent != null)
+  }
+
+  get hiddenAgents(): Agent[] {
+    return this.agents.filter((agent) => agent.isHidden)
+  }
+
+  /** The host's settings, read without waking a computer that rests. */
+  private async hostSettings(): Promise<JSONValue | undefined> {
+    try {
+      return await this.backend?.command(
+        'getHostSettings',
+        {},
+        { wakes: false },
+      )
+    } catch {
+      return undefined
+    }
+  }
+
+  /** The pins and sections at once: one read of the computer's settings. */
+  async loadSidebar(): Promise<void> {
+    if (this.pinWritesInFlight > 0) return this.loadSections()
+    const pins = this.pinWrites
+    const sections = this.sectionWrites
+    const settings = await this.hostSettings()
+    if (settings === undefined) return
+    this.takePins(settings, pins)
+    this.takeSections(settings, sections)
+  }
+
+  /** The computer's pins (`getHostSettings` → `pinnedAgentIds`). */
+  async loadPins(): Promise<void> {
+    if (this.pinWritesInFlight > 0) return
+    const started = this.pinWrites
+    const settings = await this.hostSettings()
+    if (settings !== undefined) this.takePins(settings, started)
+  }
+
+  /** The pins read, unless one was written since the read began. */
+  private takePins(settings: JSONValue, started: number): void {
+    if (started !== this.pinWrites || this.pinWritesInFlight > 0) return
+    const ids = (arr(field(settings, 'pinnedAgentIds')) ?? [])
+      .map(text)
+      .filter((id): id is string => id != null)
+    if (ids.join('\u0000') === this.pinnedIds.join('\u0000')) return
+    this.pinnedIds = ids
+    this.changed()
+  }
+
+  /** Pin or unpin: the whole ordered list is written, as the Mac writes it (`setHostSettings({pinnedAgentIds})`); a new pin goes last. */
+  async setPinned(agentId: string, pinned: boolean): Promise<void> {
+    const next = this.pinnedIds.filter((id) => id !== agentId)
+    if (pinned) next.push(agentId)
+    await this.writePins(
+      next,
+      pinned ? t("Couldn't pin it") : t("Couldn't unpin it"),
+    )
+  }
+
+  /** Moves a pin to another pin's place (the Mac's drag in the pin grid). */
+  async movePin(agentId: string, index: number): Promise<void> {
+    const from = this.pinnedIds.indexOf(agentId)
+    if (from < 0) return
+    const next = this.pinnedIds.filter((id) => id !== agentId)
+    next.splice(Math.min(Math.max(index, 0), next.length), 0, agentId)
+    await this.writePins(next, t("Couldn't move the pin"))
+  }
+
+  /** Shown at once, then written; a refusal puts back what the host holds. */
+  private async writePins(next: string[], failure: string): Promise<void> {
+    if (next.join('\u0000') === this.pinnedIds.join('\u0000')) return
+    this.pinWrites += 1
+    this.pinnedIds = next
+    this.changed()
+    this.pinWritesInFlight += 1
+    const written = await this.command(
+      'setHostSettings',
+      { pinnedAgentIds: next },
+      failure,
+    )
+    this.pinWritesInFlight -= 1
+    if (written === undefined) await this.loadPins()
+  }
+
+  /** The host's sections (`getHostSettings` → `sidebarSections`, an empty list when none). */
+  async loadSections(): Promise<void> {
+    const started = this.sectionWrites
+    const settings = await this.hostSettings()
+    if (settings !== undefined) this.takeSections(settings, started)
+  }
+
+  /** The sections read, unless they were written since the read began. */
+  private takeSections(settings: JSONValue, started: number): void {
+    if (started !== this.sectionWrites) return
+    const next = parseSections(field(settings, 'sidebarSections') ?? [])
+    if (JSON.stringify(next) === JSON.stringify(this.sidebarSections)) return
+    this.sidebarSections = next
+    this.changed()
+  }
+
+  /**
+   * One change to the sections, shown at once and written whole
+   * (`setHostSettings({sidebarSections})`), as the window's store edits
+   * them; a refusal puts back what the host holds. Nothing changes before
+   * there are sections read.
+   */
+  editSections(
+    change: (sections: SidebarSection[]) => SidebarSection[],
+  ): boolean {
+    const current = this.sidebarSections
+    if (!current) return false
+    const next = normalize(change(current))
+    if (JSON.stringify(next) === JSON.stringify(current)) return true
+    this.sectionWrites += 1
+    this.sidebarSections = next
+    this.changed()
+    void (async () => {
+      const written = await this.command(
+        'setHostSettings',
+        { sidebarSections: sectionsJSON(next) },
+        t("Couldn't change it"),
+      )
+      if (written === undefined) await this.loadSections()
+    })()
+    return true
+  }
+
+  /** A new section at the top, holding these agents; its id, to rename it at once. */
+  createSection(agentIds: readonly string[]): string | undefined {
+    if (!this.sidebarSections) return undefined
+    this.sectionSeed += 1
+    const id = newSectionId(this.sectionSeed)
+    this.editSections((sections) => createSection(sections, id, agentIds))
+    return id
+  }
+
+  /** Mark as Read / Mark as Unread (`setAgentUnread`), shown at once. */
+  async setUnread(agentId: string, unread: boolean): Promise<void> {
+    this.agents = this.agents.map((agent) =>
+      agent.id === agentId
+        ? {
+            ...agent,
+            hasUnread: unread,
+            unreadCount: unread ? Math.max(agent.unreadCount, 1) : 0,
+          }
+        : agent,
+    )
+    this.changed()
+    await this.command(
+      'setAgentUnread',
+      { id: agentId, isUnread: unread, atMs: Date.now() },
+      t("Couldn't change it"),
+    )
+  }
+
+  /** Hide from the list, or show again (`setAgentHiddenFromSidebar`). A hidden agent keeps working and keeps its history. */
+  async setHidden(agentId: string, hidden: boolean): Promise<void> {
+    this.agents = this.agents.map((agent) =>
+      agent.id === agentId ? { ...agent, isHidden: hidden } : agent,
+    )
+    this.changed()
+    const done = await this.command(
+      'setAgentHiddenFromSidebar',
+      { id: agentId, isHidden: hidden },
+      hidden ? t("Couldn't hide it") : t("Couldn't show it again"),
+    )
+    if (done === undefined) await this.reloadRoster()
+  }
+
+  /** Deletes agents or groups and their chats (`deleteAgents`); false when the host refused. */
+  async deleteAgents(agentIds: readonly string[]): Promise<boolean> {
+    const backend = this.backend
+    if (!backend) return false
+    try {
+      await backend.command('deleteAgents', { ids: [...agentIds] })
+    } catch {
+      this.problem = t('Deleting failed. Check your connection and try again.')
+      this.changed()
+      return false
+    }
+    const gone = new Set(agentIds)
+    this.agents = this.agents.filter((agent) => !gone.has(agent.id))
+    this.pinnedIds = this.pinnedIds.filter((id) => !gone.has(id))
+    for (const id of agentIds) {
+      delete this.transcripts[id]
+      delete this.chatRows[id]
+      delete this.runFlags[id]
+    }
+    this.changed()
+    return true
+  }
+
+  /** A copy of an agent (`duplicateAgent`); the copy's id, to open it. */
+  async duplicate(agentId: string): Promise<string | undefined> {
+    const answer = await this.command(
+      'duplicateAgent',
+      { id: agentId },
+      t("Couldn't duplicate it"),
+    )
+    if (answer === undefined) return undefined
+    await this.reloadRoster()
+    return (
+      text(field(field(answer, 'agent'), 'id')) ??
+      text(field(answer, 'id')) ??
+      text(field(answer, 'agentId'))
+    )
+  }
+
+  /** Rename in the row (`updateAgent` with the name and the description as they are); shown at once, the roster read again on a refusal. */
+  async renameAgent(agentId: string, name: string): Promise<void> {
+    const agent = this.agent(agentId)
+    if (!agent) return
+    this.agents = this.agents.map((one) =>
+      one.id === agentId ? { ...one, name } : one,
+    )
+    this.changed()
+    // As the Mac's profile field: quietly, the roster read again on a refusal.
+    try {
+      await this.backend?.command('updateAgent', {
+        id: agentId,
+        profile: { name, description: agent.description },
+      })
+    } catch {
+      await this.reloadRoster()
+    }
+  }
+
+  // MARK: The first run (Onboarding.swift) and the account's access (StoreSettings.swift)
+
+  /** Whether this account may use Simeon (`GetSandAccessStatus`): checking until it is read. */
+  access: SandAccess = checkingAccess
+  /** The plan, as far as the access cover reads it (`user/quota`); none until it is read. */
+  plan?: PlanFacts
+  /** Simeon, once the hand-off made him: a second try does not make a second. */
+  private firstRunAgentId?: string
+  private firstRunNamed = false
+  private firstRunNameWaiters: (() => void)[] = []
+
+  private async countAgents(backend: AgentBackend): Promise<number> {
+    const answer = await backend.command('countAgents', {})
+    return int(answer) ?? int(field(answer, 'count')) ?? 0
+  }
+
+  /**
+   * The start-up gate (`hUn`): seen when the host says so; else the agents
+   * are counted, and an account that has some is marked seen (the host is
+   * told); none means the first run. Where the server lets the computer
+   * rest: none made yet and no agents is a new account (its computer is made
+   * by the hand-off, its first task); asleep with agents listed here or in
+   * the server's copy has used Simeon. Neither wakes it.
+   */
+  async firstRun(): Promise<FirstRun> {
+    const backend = this.backend
+    if (!backend) return 'unknown'
+    const rest = await backend.computerRest()
+    if (rest === 'absent') return this.agents.length === 0 ? 'needed' : 'seen'
+    if (rest === 'asleep') {
+      if (this.agents.length === 0 && this.readsServerCopy)
+        await this.showServerList(backend)
+      if (this.agents.length > 0) return 'seen'
+    }
+    try {
+      const settings = await backend.command('getHostSettings', {})
+      if (bool(field(settings, 'hasSeenOnboarding')) === true) return 'seen'
+    } catch {
+      // The count below says.
+    }
+    try {
+      if ((await this.countAgents(backend)) > 0) {
+        await quietly(
+          backend.command('setHostSettings', { hasSeenOnboarding: true }),
+        )
+        return 'seen'
+      }
+      return 'needed'
+    } catch {
+      return this.agents.length === 0 ? 'unknown' : 'seen'
+    }
+  }
+
+  /**
+   * The hand-off (`Pe`): at least 1.5 s on screen; the computer first (asked
+   * every 2.5 s, a minute at most); then, unless the account is onboarded
+   * already, the name step's end and the name read again by the computer
+   * (`refreshUserName`), and only then Simeon made (his request named for
+   * the device, `client`) and his introduction begun, which calls the
+   * person by the name they gave; the first run marked done. His id, to
+   * open his chat; undefined when the account already had agents. A second
+   * try after a failure makes no second Simeon.
+   */
+  async handOff(
+    client: string,
+    ready: () => void,
+    wait: (seconds: number) => Promise<void> = (seconds) =>
+      new Promise((done) => setTimeout(done, seconds * 1000)),
+    now: () => number = Date.now,
+  ): Promise<string | undefined> {
+    const backend = this.backend
+    if (!backend) throw new GatewayError(unreachableLine(), false)
+    const started = now()
+    const dwell = async () => {
+      const left = handOffDwell - (now() - started) / 1000
+      if (left > 0) await wait(left)
+    }
+    // The computer: any answer means it is up.
+    let count: number | undefined
+    while (count === undefined) {
+      try {
+        count = await this.countAgents(backend)
+        break
+      } catch {
+        // Not yet.
+      }
+      if ((now() - started) / 1000 >= computerWait) break
+      await wait(probeEvery)
+    }
+    if (count !== undefined) ready()
+    if (this.firstRunAgentId === undefined) {
+      // The name step over first, and only then the account looked at, so another device's first run meanwhile is seen.
+      await this.nameStepOver()
+      if (this.backend !== backend)
+        throw new GatewayError(unreachableLine(), false)
+      if (count === undefined) {
+        try {
+          count = await this.countAgents(backend)
+          ready()
+        } catch {
+          // Asked again below, by making Simeon.
+        }
+      }
+      let seen = false
+      try {
+        seen =
+          bool(
+            field(
+              await backend.command('getHostSettings', {}),
+              'hasSeenOnboarding',
+            ),
+          ) === true
+      } catch {
+        // Not seen, as far as can be told.
+      }
+      if (seen || (count ?? 0) > 0) {
+        await quietly(
+          backend.command('setHostSettings', { hasSeenOnboarding: true }),
+        )
+        await dwell()
+        await this.reloadRoster()
+        return undefined
+      }
+      // The language first: a computer made for this first task was not told it, and Simeon introduces himself in it.
+      await quietly(
+        backend.command('setHostSettings', { userLanguage: currentLanguage() }),
+      )
+      // The name the person gave, read again by the computer: it read Google's as it started.
+      await quietly(backend.command('refreshUserName', {}))
+      const made = await backend.command(
+        'createAgent',
+        chiefOfStaff(
+          `${client}-onboarding-${crypto.randomUUID().toLowerCase()}`,
+        ),
+      )
+      const id =
+        text(field(field(made, 'agent'), 'id')) ?? text(field(made, 'id'))
+      if (!id)
+        throw new GatewayError('createAgent: no agent in the answer', true)
+      this.firstRunAgentId = id
+    }
+    const id = this.firstRunAgentId
+    await backend.command('kickstartAgent', { id })
+    await backend.command('setHostSettings', { hasSeenOnboarding: true })
+    await dwell()
+    await this.reloadRoster()
+    return id
+  }
+
+  /** The name step's suggestion (`GET user/profile`): the name chosen, else Google's or Apple's first name. */
+  async namePrompt(): Promise<string | undefined> {
+    try {
+      const profile = await this.backend?.server('user/profile')
+      return profile === undefined ? undefined : suggestedName(profile)
+    } catch {
+      return undefined
+    }
+  }
+
+  /** The name the agents call the person (`POST user/name`); an empty one is not sent. */
+  async saveName(typed: string): Promise<void> {
+    const name = normalizedName(typed)
+    const backend = this.backend
+    if (name === '' || !backend) return
+    await quietly(backend.server('user/name', 'POST', { name }))
+    if (this.account) {
+      this.account = { ...this.account, name }
+      this.changed()
+    }
+  }
+
+  /** The first run's name step is over: the name saved, then the hand-off may make Simeon. */
+  async finishNameStep(typed: string): Promise<void> {
+    await this.saveName(typed)
+    this.firstRunNamed = true
+    const waiting = this.firstRunNameWaiters
+    this.firstRunNameWaiters = []
+    for (const resume of waiting) resume()
+  }
+
+  /** Until the name step is over, or the account is gone (`detach`). */
+  private nameStepOver(): Promise<void> {
+    if (this.firstRunNamed) return Promise.resolve()
+    return new Promise((resume) => this.firstRunNameWaiters.push(resume))
+  }
+
+  /** Whether this account may use Simeon (`GetSandAccessStatus`); unknown when it can't be read. */
+  async refreshAccess(): Promise<void> {
+    const backend = this.backend
+    if (!backend?.dashboard) {
+      this.access = backend ? unknownAccess : checkingAccess
+      this.changed()
+      return
+    }
+    try {
+      this.access = accessFrom(
+        await backend.dashboard('GetSandAccessStatus', {}),
+      )
+    } catch {
+      this.access = unknownAccess
+    }
+    this.changed()
+  }
+
+  /** The plan, as the cover reads it (`GET user/quota`); a failure keeps what was read. */
+  async refreshPlan(): Promise<void> {
+    try {
+      const quota = await this.backend?.server('user/quota')
+      if (quota === undefined) return
+      this.plan = planFacts(quota)
+      this.changed()
+    } catch {
+      // The last read stays.
+    }
+  }
+
+  /** Stripe's page for the account (`POST billing/portal`, with its flow): its address, or the words to show. */
+  async billingPortal(
+    flow?: string,
+  ): Promise<{ url?: string; message?: string }> {
+    const fallback = t('Couldn’t open billing. Try again.')
+    const backend = this.backend
+    if (!backend) return { message: t('Sign in to Simeon to continue') }
+    try {
+      const answer = await backend.server(
+        'billing/portal',
+        'POST',
+        flow ? { flow } : {},
+      )
+      const url = str(field(answer, 'portalUrl'))
+      return url?.startsWith('https://') ? { url } : { message: fallback }
+    } catch (error) {
+      const words = plainError(
+        error instanceof Error ? error.message : String(error),
+        fallback,
+      )
+      return { message: words === '' ? fallback : words }
+    }
+  }
+
+  // MARK: The waiting cards' answers (Store.swift's card commands)
+
+  /** An answer given on a question card, shown until the computer's copy has it; "" for one dismissed. */
+  pendingAnswers: Record<string, string> = {}
+  /** How each approval card was answered here (`approved`, `always`, `denied`, `expired`). */
+  answeredApprovals: Record<string, string> = {}
+
+  /** A choice, several choices (one per line) or the person's own words, on a question card (`respondToWidget`). */
+  async answer(value: string, entryId: string, agentId: string): Promise<void> {
+    const backend = this.backend
+    if (!backend) return
+    this.pendingAnswers[entryId] = value
+    this.changed()
+    try {
+      await backend.command('respondToWidget', { agentId, entryId, value })
+    } catch (error) {
+      delete this.pendingAnswers[entryId]
+      const why = error instanceof Error ? error.message : String(error)
+      const name = this.agent(agentId)?.name
+      this.problem = name
+        ? t`Your answer didn't reach ${name}: ${why}`
+        : t`Your answer didn't reach the agent: ${why}`
+      this.changed()
+    }
+  }
+
+  /** The question card's X (`dismissWidget`). */
+  async dismissQuestion(entryId: string, agentId: string): Promise<void> {
+    this.pendingAnswers[entryId] = ''
+    this.changed()
+    const done = await this.command(
+      'dismissWidget',
+      { entryId, agentId },
+      t("Couldn't dismiss the question"),
+    )
+    if (done === undefined) {
+      delete this.pendingAnswers[entryId]
+      this.changed()
+    }
+  }
+
+  /** Send on an email or Slack draft, with what the person changed in it (`sendDraft`). */
+  async sendDraft(
+    entryId: string,
+    agentId: string,
+    draft: JSONValue,
+  ): Promise<void> {
+    await this.command(
+      'sendDraft',
+      { agentId, entryId, draft },
+      t("The draft didn't send"),
+    )
+  }
+
+  async discardDraft(entryId: string, agentId: string): Promise<void> {
+    await this.command(
+      'discardDraft',
+      { agentId, entryId },
+      t("Couldn't discard the draft"),
+    )
+  }
+
+  /**
+   * Allow once (`approved`), Always allow (`always`) or Deny (`denied`) on an
+   * auto-review approval (`pe`): Always allow first adds the proposed rule
+   * to Auto-review, and counts as Allow once when there is none or it can't
+   * be saved. The answer shows once the computer takes it, "Expired" when it
+   * says the request is stale; any other failure says nothing, as the card.
+   */
+  async resolveApproval(
+    requestId: string,
+    resolution: string,
+    rule: string | undefined,
+    entryId: string,
+    agentId: string,
+  ): Promise<void> {
+    const backend = this.backend
+    if (!backend) return
+    const sent =
+      resolution === 'always'
+        ? await this.alwaysAllow(proposedRule(rule))
+        : resolution
+    try {
+      await backend.command('resolveAutoReviewApproval', {
+        requestId,
+        resolution: sent,
+        entryId,
+        agentId,
+      })
+      this.answeredApprovals[entryId] = sent
+    } catch (error) {
+      const why = error instanceof Error ? error.message : String(error)
+      if (why.includes('auto-review/stale'))
+        this.answeredApprovals[entryId] = 'expired'
+      else delete this.answeredApprovals[entryId]
+    }
+    this.changed()
+  }
+
+  /** The rule saved to Auto-review's allowed list: `always`, or `approved` when there is none or it could not be saved. */
+  private async alwaysAllow(rule: string | undefined): Promise<string> {
+    const backend = this.backend
+    if (rule == null || !backend) return 'approved'
+    let settings: JSONValue
+    try {
+      settings = await backend.command('getHostSettings', {})
+    } catch {
+      return 'approved'
+    }
+    const next = addingAllowRule(
+      autoReviewFrom(field(settings, 'autoReviewInstructions')),
+      rule,
+    )
+    try {
+      await backend.command('setHostSettings', {
+        autoReviewInstructions: autoReviewJSON(next),
+      })
+    } catch {
+      return 'approved'
+    }
+    return 'always'
+  }
+
+  // MARK: Step 3b's cards: the secret, the computer hand-off, the in-chat
+  // form, 1Password's fill and connect (Store.swift's commands for them).
+  // 3b's state and commands go below this line, and nowhere else.
+  //
+  // Nothing of these cards is kept here: each reads its own line, which the
+  // computer stamps (`secretProvided`, `boxResolution`, `formState`,
+  // `credentialState`, `connectState`), and what a card holds while it is
+  // answered (what was typed, a refusal) is the card's own, as the Mac's.
+  // The secret's X is the question's (`dismissQuestion`, `dismissWidget`).
+
+  /** 3b's card state back to nothing (signed out). */
+  private resetRequestCards(): void {}
+
+  /** 3b's answers shown here, settled once the computer's copy of a chat has them. */
+  private settleRequestCards(agentId: string, entries: readonly Entry[]): void {
+    void agentId
+    void entries
+  }
+
+  /** Save securely on a secret card (`submitSecret`): the computer keeps it where the agent asked, and marks the card (`secretProvided`). */
+  async submitSecret(
+    value: string,
+    entryId: string,
+    agentId: string,
+  ): Promise<void> {
+    await this.command(
+      'submitSecret',
+      { entryId, value, agentId },
+      t("The secret wasn't saved"),
+    )
+  }
+
+  /**
+   * I'm done (`button`) or Skip (`dismissed`) on a hand-off
+   * (`handBackForeverBox`); the computer takes it from there, and a failure
+   * is not said (the window's is an empty function).
+   */
+  async handBackComputer(agentId: string, skip = false): Promise<void> {
+    try {
+      await this.backend?.command('handBackForeverBox', {
+        id: agentId,
+        trigger: skip ? 'dismissed' : 'button',
+      })
+    } catch {
+      // Said nowhere, as the Mac's.
+    }
+  }
+
+  /**
+   * The in-chat form's Fill in (`submitUserForm`): the values go to the
+   * computer, which types them into the page; nothing is kept here.
+   * Undefined once it is taken, else the computer's sentence (a field left
+   * empty, a form already answered).
+   */
+  async submitUserForm(
+    values: JSONValue,
+    entryId: string,
+    agentId: string,
+  ): Promise<string | undefined> {
+    const failed = t("The form wasn't sent")
+    const reply = await this.command(
+      'submitUserForm',
+      { agentId, entryId, values },
+      failed,
+    )
+    if (reply === undefined) return failed
+    return bool(field(reply, 'ok')) === false
+      ? (text(field(reply, 'message')) ?? failed)
+      : undefined
+  }
+
+  /** The in-chat form's X (`dismissUserForm`): a decline. */
+  async dismissUserForm(entryId: string, agentId: string): Promise<void> {
+    await this.command(
+      'dismissUserForm',
+      { agentId, entryId },
+      t("Couldn't dismiss the form"),
+    )
+  }
+
+  /** The 1Password fill card's Fill (`allow`), once the person confirmed it, or Not now. Undefined once taken, else why not. */
+  async answerCredentialRequest(
+    entryId: string,
+    allow: boolean,
+    agentId: string,
+  ): Promise<string | undefined> {
+    const failed = t("1Password didn't get your answer")
+    const reply = await this.command(
+      'answerCredentialRequest',
+      { agentId, entryId, allow },
+      failed,
+    )
+    if (reply === undefined) return failed
+    return bool(field(reply, 'ok')) === false
+      ? (text(field(reply, 'message')) ?? failed)
+      : undefined
+  }
+
+  /** The 1Password connect card's X (`dismissOnePasswordConnect`): a decline. */
+  async dismissOnePasswordConnect(
+    entryId: string,
+    agentId: string,
+  ): Promise<void> {
+    await this.command(
+      'dismissOnePasswordConnect',
+      { agentId, entryId },
+      t("Couldn't dismiss the card"),
+    )
+  }
+
+  // MARK: Step 3c's cards: apps to connect, Slack or GitHub for a routine,
+  // the cloud agent, a new teammate joined (Store.swift's commands for them).
+  // 3c's state and commands go below this line, and nowhere else.
+
+  /** The apps the catalogue offers (`getCatalog`, in the app's language): an app card's title and line, and the id the computer files it under. */
+  catalog: CatalogApp[] = []
+  /** The apps that can't be connected yet (`AppsComingSoon`): the server's list once read. */
+  appsComingSoon: Set<string> = new Set(appsComingSoonBuiltIn)
+  /** The catalogue was read from the computer in this sign-in. */
+  private catalogFresh = false
+  private appCardsLoad?: Promise<void>
+
+  /** 3c's card state back to nothing (signed out). */
+  private resetConnectCards(): void {
+    this.catalog = []
+    this.appsComingSoon = new Set(appsComingSoonBuiltIn)
+    this.catalogFresh = false
+    this.appCardsLoad = undefined
+  }
+
+  /**
+   * 3c's answers shown here, settled once the computer's copy of a chat has
+   * them: none. Nothing these cards show is the person's answer kept here:
+   * the apps, the catalogue, Slack's and GitHub's links, a cloud agent's
+   * state and the roster are each read from the computer as they are.
+   */
+  private settleConnectCards(agentId: string, entries: readonly Entry[]): void {
+    void agentId
+    void entries
+  }
+
+  /**
+   * What an app card reads as it shows (the Mac's card's `loadApps`): the
+   * connected apps, and, once a sign-in, the catalogue and the apps that
+   * can't be connected yet, all at once. One read at a time.
+   */
+  loadAppCards(): Promise<void> {
+    if (this.appCardsLoad) return this.appCardsLoad
+    const load: Promise<void> = (async () => {
+      const once = !this.catalogFresh
+      await Promise.all([
+        this.loadApps(),
+        once ? this.readCatalog() : undefined,
+        once ? this.loadAppsComingSoon() : undefined,
+      ])
+    })().finally(() => {
+      // Only this read's: a sign-out and sign-in meanwhile may have started another.
+      if (this.appCardsLoad === load) this.appCardsLoad = undefined
+    })
+    this.appCardsLoad = load
+    return load
+  }
+
+  /** The catalogue from the computer (`desktopMcp` `getCatalog`); what was shown stays when it doesn't answer. */
+  private async readCatalog(): Promise<void> {
+    const backend = this.backend
+    if (!backend) return
+    let answer: JSONValue
+    try {
+      answer = await backend.command('desktopMcp', {
+        action: 'getCatalog',
+        args: [{ language: currentLanguage() }],
+      })
+    } catch {
+      return
+    }
+    if (this.backend !== backend) return
+    this.catalogFresh = true
+    const next = catalogFrom(answer)
+    if (JSON.stringify(next) !== JSON.stringify(this.catalog)) {
+      this.catalog = next
+      this.changed()
+    }
+  }
+
+  /** Which apps can't be connected yet, from Simeon Labs' server (`GET apps`); an older server's answer, or none, keeps the list. */
+  async loadAppsComingSoon(): Promise<void> {
+    const backend = this.backend
+    if (!backend) return
+    let answer: JSONValue
+    try {
+      answer = await backend.server('apps')
+    } catch {
+      return
+    }
+    const named = comingSoonFrom(answer)
+    if (this.backend !== backend || !named) return
+    const same =
+      named.size === this.appsComingSoon.size &&
+      [...named].every((one) => this.appsComingSoon.has(one))
+    if (same) return
+    this.appsComingSoon = named
+    this.changed()
+  }
+
+  /** The catalogue's app a card names ("Gmail"). */
+  catalogApp(name: string): CatalogApp | undefined {
+    return catalogApp(this.catalog, name)
+  }
+
+  /** Whether an app a card names is connected. */
+  isConnected(name: string): boolean {
+    return isConnected(this.apps, this.catalog, name)
+  }
+
+  /** Whether an app can't be connected yet: "Coming soon" on its card. */
+  isComingSoon(name: string): boolean {
+    return isComingSoon(this.appsComingSoon, this.catalog, name)
+  }
+
+  /** How many tools a connected app brings. */
+  connectedToolCount(name: string): number {
+    return connectedToolCount(this.apps, name)
+  }
+
+  /** Whether Slack or GitHub is linked for routines to wake on (`getListenerIntegrations`); none while it can't be known. */
+  async listenerConnected(
+    platform: ListenerPlatform,
+  ): Promise<boolean | undefined> {
+    const backend = this.backend
+    if (!backend) return undefined
+    try {
+      return listenerConnectedIn(
+        await backend.command('getListenerIntegrations', {}),
+        platform,
+      )
+    } catch {
+      return undefined
+    }
+  }
+
+  /** The page that links Slack or GitHub (`getListenerConnectUrl`); a failure is said (`problem`), as the core says it. */
+  async listenerConnectURL(
+    platform: ListenerPlatform,
+  ): Promise<string | undefined> {
+    const backend = this.backend
+    if (!backend) return undefined
+    try {
+      const answer = await backend.command('getListenerConnectUrl', {
+        platform,
+      })
+      return text(field(answer, 'url'))
+    } catch (error) {
+      const why = error instanceof Error ? error.message : String(error)
+      this.problem = t`Couldn't open the link: ${why}`
+      this.changed()
+      return undefined
+    }
+  }
+
+  /** A cloud agent's state (`getCloudAgentInfo`): what it is, nothing (final), or that it couldn't be asked. */
+  async cloudAgent(bcId: string): Promise<CloudAgentRead> {
+    const backend = this.backend
+    if (!backend) return { kind: 'failed' }
+    let answer: JSONValue
+    try {
+      answer = await backend.command('getCloudAgentInfo', {
+        bcId,
+        includeFiles: false,
+      })
+    } catch {
+      return { kind: 'failed' }
+    }
+    const info = cloudAgentInfo(answer)
+    return info ? { kind: 'info', info } : { kind: 'empty' }
+  }
+
+  // MARK: Step 3d's flight cards: the flights found and the travellers'
+  // form (Store.swift's `startFlightBooking`, `submitFlightPassengers`…).
+  // The flights' state and commands go below this line, and nowhere else.
+
+  /**
+   * The flight whose details the pane shows (`PaneState.flight`): its key
+   * (the card's row and the offer's place), the offer as it was opened, and
+   * the agent whose chat holds the card. The window draws it beside that
+   * chat (FlightCards.tsx) until the agent's pane comes (step 4).
+   */
+  openFlight?: OpenFlight
+
+  /** The flight cards' state back to nothing (signed out). */
+  private resetFlightCards(): void {
+    this.openFlight = undefined
+  }
+
+  /**
+   * Nothing to settle: Book with Simeon and the form's Continue wait for the
+   * computer's own answer, and the form's state is the computer's
+   * (`passengersState`), so nothing is shown here ahead of its copy.
+   */
+  private settleFlightCards(agentId: string, entries: readonly Entry[]): void {
+    void agentId
+    void entries
+  }
+
+  /** A flight row (`__simeonOpenFlight`): the open one again closes its details; another shows in their place. */
+  toggleFlight(key: string, offer: FlightOffer, agentId: string): void {
+    this.openFlight =
+      this.openFlight?.key === key ? undefined : { key, offer, agentId }
+    this.changed()
+  }
+
+  /** The details' ×, Escape, Book with Simeon done, or another chat opened. */
+  closeFlight(): void {
+    if (this.openFlight === undefined) return
+    this.openFlight = undefined
+    this.changed()
+  }
+
+  /** "Book with Simeon" on a flight (`startFlightBooking`): the traveller form in the chat, or why not. */
+  async startFlightBooking(
+    entryId: string,
+    offerIndex: number,
+    agentId: string,
+  ): Promise<FlightBookingAnswer> {
+    const backend = this.backend
+    if (!backend) return { message: t("Your computer isn't connected.") }
+    try {
+      return bookingAnswer(
+        await backend.command('startFlightBooking', {
+          agentId,
+          entryId,
+          offerIndex,
+        }),
+      )
+    } catch (error) {
+      return { message: error instanceof Error ? error.message : String(error) }
+    }
+  }
+
+  /** The traveller form's Continue (`submitFlightPassengers`): the flight's checkout card, or what to fix. */
+  async submitFlightPassengers(
+    entryId: string,
+    travellers: readonly Traveller[],
+    agentId: string,
+  ): Promise<FlightBookingAnswer> {
+    const backend = this.backend
+    if (!backend) return { message: t("Your computer isn't connected.") }
+    try {
+      return bookingAnswer(
+        await backend.command('submitFlightPassengers', {
+          agentId,
+          entryId,
+          passengers: travellers.map(travellerJSON),
+        }),
+      )
+    } catch (error) {
+      return { message: error instanceof Error ? error.message : String(error) }
+    }
+  }
+
+  /** The traveller form's Cancel (the core's; neither the Mac's form nor the iPhone's offers it). */
+  async cancelFlightPassengers(
+    entryId: string,
+    agentId: string,
+  ): Promise<void> {
+    await this.command(
+      'submitFlightPassengers',
+      { agentId, entryId, cancel: true },
+      t("Couldn't cancel the booking"),
+    )
+  }
+
+  // MARK: Step 3d's shop cards: a checkout paid with Link and products to
+  // buy (Store.swift's `answerPurchase`, `buyProduct`…).
+  // The shop's state and commands go below this line, and nowhere else.
+
+  /** Checkout cards answered here (Allow is `sending`, Deny `denied`), until the computer's copy says so. */
+  answeredPurchases: Record<string, import('./shopCards').PurchaseState> = {}
+  /** The Link card picked on a checkout card here (its id), until Allow carries it to the computer. */
+  pickedPurchaseCards: Record<string, string> = {}
+  /** Buy pressed here on a products card (the product's place), until the computer's copy says so. */
+  pressedProducts: Record<string, number> = {}
+  /** Checkout cards with Link this app asked the computer to keep watching, once each per state. */
+  private watchedPurchases = new Set<string>()
+
+  /** The shop cards' state back to nothing (signed out). */
+  private resetShopCards(): void {
+    this.answeredPurchases = {}
+    this.pickedPurchaseCards = {}
+    this.pressedProducts = {}
+    this.watchedPurchases = new Set()
+  }
+
+  /** The shop cards' answers shown here, settled once the computer's copy of a chat has them. */
+  private settleShopCards(agentId: string, entries: readonly Entry[]): void {
+    void agentId
+    for (const entry of entries) {
+      if (
+        this.answeredPurchases[entry.id] !== undefined &&
+        (text(entry.get('purchaseState')) ?? 'review') !== 'review'
+      )
+        delete this.answeredPurchases[entry.id]
+      const pressed = this.pressedProducts[entry.id]
+      if (
+        pressed !== undefined &&
+        (int(entry.get('productsBuying')) === pressed ||
+          (arr(entry.get('productsBought')) ?? []).some(
+            (one) => int(one) === pressed,
+          ))
+      )
+        delete this.pressedProducts[entry.id]
+    }
+  }
+
+  /**
+   * Allow or Deny on a checkout card (`answerPurchase`): the card shows the
+   * answer at once; Allow then waits on Link, which asks the person to
+   * approve it in the Link app. Allow carries the card picked on the card,
+   * and `confirmed`, the device's own yes (Face ID or Touch ID on the Mac,
+   * Windows Hello later), as the approval Link is handed so it asks no more;
+   * the web has none to give (docs/web-app/PROGRESS.md). A failed answer, or
+   * one the computer didn't take (Link refused the card picked, which its
+   * line says), comes back to the buttons.
+   */
+  async answerPurchase(
+    entryId: string,
+    allow: boolean,
+    agentId: string,
+    confirmed?: { method?: string; deviceType?: string },
+  ): Promise<void> {
+    if (this.answeredPurchases[entryId] !== undefined) return
+    this.answeredPurchases[entryId] = allow ? 'sending' : 'denied'
+    this.changed()
+    const args: Record<string, JSONValue> = { agentId, entryId, allow }
+    const picked = this.pickedPurchaseCards[entryId]
+    // The card picked on the card rides with Allow (14 October 2026); the computer checks it with Link first.
+    if (allow && picked !== undefined) args.paymentMethodId = picked
+    const approval =
+      allow && confirmed ? this.purchaseApproval(confirmed) : undefined
+    if (approval) args.approval = approval
+    const reply = await this.command(
+      'answerPurchase',
+      args,
+      allow
+        ? t("The purchase didn't go to Link")
+        : t("Couldn't deny the purchase"),
+    )
+    const waits =
+      reply != null &&
+      typeof reply === 'object' &&
+      !Array.isArray(reply) &&
+      (text(field(reply, 'purchaseState')) ?? 'review') === 'review'
+    if (reply === undefined || waits) {
+      delete this.answeredPurchases[entryId]
+      this.changed()
+    }
+  }
+
+  /**
+   * The approval Allow carries, once the device confirmed it (`approval`):
+   * who (this account: its id on Simeon Labs' server, else its e-mail),
+   * when (whole seconds), how (`biometric_face`, `biometric_fingerprint`,
+   * none for a passcode) and on what (`mobile` on an iPhone). None only when
+   * nobody is signed in: Link then asks in its app.
+   */
+  purchaseApproval(
+    confirmed: { method?: string; deviceType?: string },
+    at: Date = new Date(),
+  ): Record<string, JSONValue> | undefined {
+    const account = this.account
+    if (!account) return undefined
+    const who =
+      account.id != null && account.id !== ''
+        ? account.id
+        : account.email.trim()
+    if (who === '') return undefined
+    const approval: Record<string, JSONValue> = {
+      approvedAt: Math.round(at.getTime() / 1000),
+      userId: who,
+    }
+    if (confirmed.method != null)
+      approval.authenticationMethod = confirmed.method
+    if (confirmed.deviceType != null) approval.deviceType = confirmed.deviceType
+    if (account.name !== '') approval.userName = account.name
+    return approval
+  }
+
+  /** A Link card picked on a checkout card, before Allow: the card shows it at once; Allow carries it. */
+  pickPurchaseCard(entryId: string, cardId: string): void {
+    this.pickedPurchaseCards[entryId] = cardId
+    this.changed()
+  }
+
+  /**
+   * "Buy with <agent>" on one product of a products card (`buyProduct`): the
+   * card marks it at once, and the agent is woken to buy exactly that one.
+   * A failed press comes back to the button.
+   */
+  async buyProduct(
+    entryId: string,
+    index: number,
+    agentId: string,
+  ): Promise<void> {
+    if (this.pressedProducts[entryId] === index) return
+    this.pressedProducts[entryId] = index
+    this.changed()
+    const done = await this.command(
+      'buyProduct',
+      { agentId, entryId, index },
+      t("Couldn't tell your agent to buy it"),
+    )
+    if (done === undefined) {
+      delete this.pressedProducts[entryId]
+      this.changed()
+    }
+  }
+
+  /**
+   * A checkout card still with Link, on screen: the computer makes sure it
+   * is watching Link for it (after a restart nothing is), and closes a
+   * flight it was paying when it restarted. It never answers a card; once
+   * per card and state while the app runs.
+   */
+  async keepWatchingPurchase(
+    entryId: string,
+    agentId: string,
+    state: import('./shopCards').PurchaseState = 'approving',
+  ): Promise<void> {
+    const key = `${entryId}#${state}`
+    const backend = this.backend
+    if (this.watchedPurchases.has(key) || !backend) return
+    this.watchedPurchases.add(key)
+    try {
+      await backend.command('answerPurchase', {
+        agentId,
+        entryId,
+        resume: true,
+      })
+    } catch {
+      // Nothing to say: the card shows the computer's copy either way.
+    }
+  }
+
   // MARK: The chats
 
   rows(agentId: string): readonly ChatRow[] {
@@ -663,6 +1919,18 @@ export class AppStore {
 
   private setTranscript(agentId: string, entries: Entry[], soon = false): void {
     this.transcripts[agentId] = entries
+    // A card's answer shown here is the computer's once its copy has it.
+    for (const entry of entries)
+      if (
+        this.pendingAnswers[entry.id] !== undefined &&
+        (text(entry.get('respondedValue')) != null ||
+          bool(entry.get('widgetDismissed')) === true)
+      )
+        delete this.pendingAnswers[entry.id]
+    this.settleRequestCards(agentId, entries)
+    this.settleConnectCards(agentId, entries)
+    this.settleFlightCards(agentId, entries)
+    this.settleShopCards(agentId, entries)
     this.streamingOnly.delete(agentId)
     this.settleOutbox(agentId, entries)
     if (soon) this.scheduleLayout(agentId)
@@ -1348,6 +2616,86 @@ export class AppStore {
       }
     }
     return read === 0 ? undefined : joined(pieces, read)
+  }
+
+  // MARK: Dictation
+
+  /** What was said in a recording (`transcribeAudio`): Simeon Labs' transcription, in the app's language. */
+  async transcribe(audio: Uint8Array, mimeType: string): Promise<string> {
+    const backend = this.backend
+    if (!backend?.transcribe)
+      throw new SimeonAPIError(
+        t('Voice transcription source is unavailable.'),
+        0,
+      )
+    return backend.transcribe(audio, mimeType)
+  }
+
+  // MARK: The composer's lists
+
+  /**
+   * The agent's skills and routines (`getAgentWorkflows`), for "/" and "@";
+   * nothing, quietly, when they can't be read. With `wakes` false (a chat
+   * opening), a computer that rests is waited for, not woken (step 4),
+   * until `signal` ends the wait.
+   */
+  async workflows(
+    agentId: string,
+    wakes = true,
+    signal?: AbortSignal,
+  ): Promise<JSONValue> {
+    const backend = this.backend
+    if (!backend) return []
+    try {
+      if (!wakes && backend.commandWhenAwake)
+        return await backend.commandWhenAwake(
+          'getAgentWorkflows',
+          { id: agentId },
+          signal,
+        )
+      return await backend.command(
+        'getAgentWorkflows',
+        { id: agentId },
+        { wakes },
+      )
+    } catch {
+      return []
+    }
+  }
+
+  /**
+   * The connected apps, read again; one read at a time. With `wakes` false
+   * (a chat opening), nothing is read while the computer rests, and it is
+   * not waited for.
+   */
+  loadApps(wakes = true): Promise<void> {
+    this.appsLoad ??= this.readApps(wakes).finally(() => {
+      this.appsLoad = undefined
+    })
+    return this.appsLoad
+  }
+
+  private async readApps(wakes: boolean): Promise<void> {
+    const backend = this.backend
+    if (!backend) return
+    let state: JSONValue
+    try {
+      state = await backend.command(
+        'desktopMcp',
+        { action: 'listServers', args: [] },
+        { wakes },
+      )
+    } catch {
+      return
+    }
+    if (this.backend !== backend) return
+    const next = (arr(field(state, 'servers')) ?? arr(state) ?? [])
+      .map(connectedApp)
+      .filter((app): app is ConnectedApp => app != null)
+    if (JSON.stringify(next) !== JSON.stringify(this.apps)) {
+      this.apps = next
+      this.changed()
+    }
   }
 
   /**

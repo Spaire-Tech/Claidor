@@ -23,6 +23,8 @@
   /* A row under the pointer (`--simeon-bg-hover`) */
   --row-hover: rgb(119 119 119 / 0.09);
   --row-radius: 14px;
+  /* A picked row's or tile's wash (`RowGround`) */
+  --row-picked: rgb(55 108 163 / 0.335);
   /* An agent's title tag in a row */
   --tag: rgb(118 118 128 / 0.12);
   /* Unread (`--simeon-accent`) and working (`--simeon-green`) */
@@ -75,6 +77,18 @@
   --json-string: #009957;
   --json-number: #c24e00;
   --json-keyword: #6e44c1;
+
+  /* The files waiting to go: a tile's ground, Remove's disc and its X. */
+  --tile-ground: var(--ground);
+  --remove-disc: #070707;
+  --remove-x: #fcfcfc;
+  --drop-wash: color-mix(in srgb, var(--unread) 17%, transparent);
+  /* The lists: the logo tile's grey, and a soft shadow on light only. */
+  --logo-tile: rgb(119 119 119 / 0.17);
+  --pick-shadow: 0.1;
+  /* The recording chip's wash, and under the pointer. */
+  --chip-wash: 0.09;
+  --chip-wash-hover: 0.17;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -91,6 +105,7 @@
     --row-selected-shadow: rgb(0 0 0 / 0.3);
     --row-hover: rgb(119 119 119 / 0.173);
     --row-radius: 10px;
+    --row-picked: rgb(97 136 178 / 0.457);
     --tag: #252527;
     --wash: rgb(119 119 119 / 0.14);
     --picture-edge: rgb(252 252 252 / 0.1);
@@ -123,6 +138,14 @@
     --json-string: #38d591;
     --json-number: #ff8838;
     --json-keyword: #a97efe;
+    --tile-ground: #2f2f2f;
+    --remove-disc: #fafafa;
+    --remove-x: #141414;
+    --drop-wash: color-mix(in srgb, var(--unread) 32%, transparent);
+    --logo-tile: rgb(119 119 119 / 0.32);
+    --pick-shadow: 0;
+    --chip-wash: 0.173;
+    --chip-wash-hover: 0.32;
   }
 }
 
@@ -160,10 +183,29 @@ button {
 }
 
 /* The window: the sidebar and the chat side by side (`sand-shell`). */
+/* At its narrowest the rail (88) and the chat (424), as the Mac's window (512). */
 .window {
+  position: relative;
   display: flex;
   height: 100%;
-  min-width: 744px;
+  min-width: 512px;
+}
+
+/* The sidebar's edge: 12 wide over its hairline; dragged, it widens, narrows or folds the sidebar. */
+.resize-edge {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 6;
+  width: 12px;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.window.resizing,
+.window.resizing * {
+  cursor: col-resize !important;
+  user-select: none;
 }
 
 .chat-area {
@@ -179,8 +221,15 @@ button {
   flex-direction: column;
   width: 320px;
   flex: none;
+  overflow: hidden;
   background: var(--sidebar-paint);
   box-shadow: inset -0.5px 0 0 var(--sidebar-edge);
+  /* Folding and opening: 0.2 s on the window's curve; dragged, it follows the pointer. */
+  transition: width 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.window.resizing .sidebar {
+  transition: none;
 }
 
 .sidebar-head {
@@ -188,10 +237,411 @@ button {
   flex: none;
 }
 
+/* Rows picked (C11): the head 44 high, its three 24-point buttons 2 apart at the right, 16 in. */
+.sidebar-head.picking {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+  padding: 0 16px;
+}
+
+.bar-icon {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink-secondary);
+  cursor: pointer;
+}
+
+.bar-icon:hover {
+  background: var(--row-hover);
+}
+
+/* The list, padded 4 12 24; its rows fade out over their last 24 instead of being cut off. */
 .agent-list {
   flex: 1;
   overflow-y: auto;
   padding: 4px 12px 24px;
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 24px), transparent);
+}
+
+.list-body,
+.rows,
+.section-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* The sections, 10 apart; a section's rows 4 under its header. */
+.sections {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.section-rows {
+  padding-top: 4px;
+  animation: section-open 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes section-open {
+  from {
+    opacity: 0;
+  }
+}
+
+/* A section's header (C08, C09): 30 high, padded 8 8 6, 6 round, its name 12 on 16 at 60%, the count while folded, a chevron under the pointer. */
+.section-header {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.section-header.renaming {
+  cursor: default;
+}
+
+.header-line {
+  display: flex;
+  align-items: center;
+  height: 16px;
+  padding: 8px 8px 6px;
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--ink-secondary);
+}
+
+.section-header:not(.renaming):hover .header-line {
+  background: var(--row-hover);
+}
+
+.header-name {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.header-count {
+  font-variant-numeric: tabular-nums;
+}
+
+.header-chevron {
+  display: none;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  margin-left: 4px;
+}
+
+.header-chevron.open .glyph {
+  transform: rotate(90deg);
+}
+
+.section-header:not(.renaming):hover .header-chevron {
+  display: grid;
+}
+
+/* An empty section: "Drag chats here", 12 on 16 at 40%, padded 6 8. */
+.section-empty {
+  padding: 6px 8px;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--ink-tertiary);
+}
+
+/* Hidden Agents at the foot, in a header's look with the count. */
+.hidden-foot {
+  margin-top: 6px;
+}
+
+/* "No saved agents yet." and "All bots are hidden", 12 at 60%, padded 10 8. */
+.empty-lines {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 10px 8px;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--ink-secondary);
+}
+
+.link-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--link);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+/* The rail (88): the pictures alone, 54 square, 36 across; the pins, then a hairline 54 wide; hairlines between the open sections. */
+.sidebar.rail .agent-list {
+  mask-image: none;
+}
+
+.agent-row.rail {
+  flex: none;
+  align-self: center;
+  width: 54px;
+  height: 54px;
+  padding: 9px;
+}
+
+.sidebar.rail .rows,
+.rail-pins {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.rail-pins {
+  padding-bottom: 16px;
+}
+
+.rail-hairline {
+  display: block;
+  flex: none;
+  width: 54px;
+  height: 0.5px;
+  margin-top: 6px;
+  background: color-mix(in srgb, var(--ink) 15%, transparent);
+}
+
+.rail-hairline.between {
+  margin: 2px 0;
+}
+
+.rail-picked {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding-bottom: 8px;
+}
+
+.rail-roster {
+  display: grid;
+  place-items: center;
+  height: 36px;
+  color: var(--ink-secondary);
+}
+
+/* On the rail, unread is a blue dot on the picture's corner, before at work's green. */
+.agent-mark .working-dot.unread {
+  background: var(--unread);
+}
+
+/* Dragging: where a drop would land greys (the list 12 round, a section 8, the pins 12); a section dragged over another shows a hairline where it would go. */
+.list-body.lit,
+.pin-grid.lit {
+  background: var(--row-hover);
+  border-radius: 12px;
+}
+
+.section-block {
+  position: relative;
+  border-radius: 8px;
+}
+
+.section-block.lit {
+  background: var(--row-hover);
+}
+
+.section-block.line-top::before,
+.section-block.line-bottom::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: color-mix(in srgb, var(--ink) 30%, transparent);
+  pointer-events: none;
+}
+
+.section-block.line-top::before {
+  top: 0;
+}
+
+.section-block.line-bottom::after {
+  bottom: 0;
+}
+
+.pin-tile.lit {
+  background: var(--row-hover);
+}
+
+/* Nothing pinned: while a row is dragged, a dashed zone 104 high says "Drag here to pin" (14 on 20, 60%). */
+.pin-zone {
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  height: 104px;
+  margin: 8px 0 12px;
+  border: 1px dashed color-mix(in srgb, var(--ink) 30%, transparent);
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--ink-secondary);
+}
+
+.pin-zone.lit {
+  background: var(--row-hover);
+}
+
+/* The pins (C03): as many 80-point columns as fit, 8 apart, in the middle, rows 12 apart, padded 6. */
+.pin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(80px, max-content));
+  justify-content: center;
+  column-gap: 8px;
+  row-gap: 12px;
+  margin: 8px 0 12px;
+  padding: 6px;
+  border-radius: 12px;
+}
+
+/* A tile: the picture 60 over its name (11 on 16) and its title in blue, padded 6 4 4, at least 80 wide. */
+.pin-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  box-sizing: border-box;
+  min-width: 80px;
+  padding: 6px 4px 4px;
+  border: 0;
+  border-radius: var(--row-radius);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.pin-names {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+}
+
+.pin-name,
+.pin-title {
+  max-width: 92px;
+  font-size: 11px;
+  letter-spacing: 0.055px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pin-name {
+  line-height: 16px;
+}
+
+.pin-title {
+  padding: 3px 1px;
+  line-height: 13px;
+  color: var(--blue);
+}
+
+/* The grounds: the open agent's white card, a picked one's blue wash, grey under the pointer. */
+.pin-tile:hover {
+  background: var(--row-hover);
+}
+
+.pin-tile.open {
+  background: var(--row-selected);
+  box-shadow:
+    0 0 0 0.5px var(--row-selected-hairline),
+    0 1px 2px var(--row-selected-shadow);
+}
+
+.agent-row.picked,
+.pin-tile.picked {
+  background: var(--row-picked);
+  box-shadow: none;
+}
+
+/* The tile's corner: unread (blue) or at work (green), 10 across, 2 in, in a hole 14 across. */
+.agent-mark.holed.wide > :first-child {
+  mask: radial-gradient(
+    circle 7px at calc(100% - 7px) calc(100% - 7px),
+    transparent 7px,
+    #000 7.5px
+  );
+}
+
+.agent-mark .corner-dot {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.corner-dot.unread {
+  background: var(--unread);
+}
+
+.corner-dot.working {
+  background: var(--working);
+}
+
+/* A group with its own picture: a 16-point grey disc with two people, ringed in the sidebar's ground. */
+.group-badge {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #777777;
+  color: #fcfcfc;
+  box-shadow: 0 0 0 1.5px var(--chrome);
+}
+
+/* A name typed over in place: a row's 14 on 20 at 500, a section's 12 on 16. */
+.name-field {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  outline: none;
+}
+
+.name-field.small {
+  width: 100%;
+  height: 16px;
+  font-size: 12px;
+  line-height: 16px;
 }
 
 /* A row: 62 high, padded 8, the picture 46 and the words 10 beside it. */
@@ -665,17 +1115,551 @@ button {
   color: var(--ink-secondary);
 }
 
-/* A card step 3 draws: its place kept, and said. */
-.later-card {
-  font-size: 12px;
-  color: var(--ink-secondary);
-  padding: 8px 12px;
-  border-radius: 12px;
-  background: var(--theirs);
+/* A card whose line can't be read: the notice, in the chat's middle though its row is the agent's. */
+.card-notice {
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .starts-group {
   margin-top: 12px;
+}
+
+/*
+ * The cards (Cards.tsx, mac/Simeon/Cards.swift). A card is as wide as a
+ * message may be (its max-width set on it), grey like an agent's bubble, 16
+ * round, padded 12, its parts 10 apart.
+ */
+.card-row {
+  width: 100%;
+  min-width: 0;
+}
+
+.card-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 12px;
+  border-radius: 16px;
+  background: var(--theirs);
+  color: var(--ink);
+  box-shadow:
+    0 0 0 0.5px var(--theirs-hairline),
+    0 1px 2px var(--theirs-shadow);
+  font-size: 14px;
+  line-height: 20px;
+  overflow-wrap: anywhere;
+}
+
+/* A card's state: 12, 500, at 60%, in the grey capsule with a 6-point dot (the approval's 13 and 22 high). */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  flex: none;
+  gap: 6px;
+  height: 20px;
+  box-sizing: border-box;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--wash);
+  color: var(--ink-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.status-pill.large {
+  height: 22px;
+  font-size: 13px;
+  letter-spacing: -0.08px;
+}
+
+.status-dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ink-tertiary);
+}
+
+.status-dot.green {
+  background: var(--working);
+}
+
+/* The two buttons: 14, 32 high, 12 at the sides, 8 round; plain is the grey with a line at 15%, prominent the person's blue. */
+.card-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.card-button {
+  flex: none;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid color-mix(in srgb, var(--ink) 15%, transparent);
+  border-radius: 8px;
+  background: var(--wash);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  line-height: 20px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.card-button.prominent {
+  border-color: transparent;
+  background: var(--yours);
+  color: #ffffff;
+}
+
+.card-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.card-button:focus-visible,
+.question-option:focus-visible,
+.card-close:focus-visible,
+.approval-fold:focus-visible {
+  outline: 2px solid var(--unread);
+  outline-offset: 1px;
+}
+
+/* A question: 14 on 20, 500; its help under it at 60%; the X 20 square at the right. */
+.question-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.question-words {
+  flex: 1;
+  min-width: 0;
+}
+
+.question-prompt {
+  font-weight: 500;
+}
+
+.question-prompt.quiet {
+  color: var(--ink-secondary);
+}
+
+.question-help {
+  color: var(--ink-secondary);
+}
+
+.card-close {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--ink-secondary);
+  cursor: pointer;
+}
+
+.card-close:hover {
+  background: var(--row-hover);
+}
+
+/* The choices in one box, 8 round, a hairline at 10% between; each padded 8. */
+.question-options {
+  display: flex;
+  flex-direction: column;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.question-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.question-option + .question-option {
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+.question-option:hover {
+  background: var(--row-hover);
+}
+
+.option-ring {
+  flex: none;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: 18px;
+  height: 18px;
+  border: 1px solid color-mix(in srgb, var(--ink) 30%, transparent);
+  border-radius: 50%;
+  /* The tick cut out of the blue, as `checkmark.circle.fill`. */
+  color: var(--theirs);
+}
+
+.option-ring.picked {
+  border-color: transparent;
+  background: var(--blue);
+}
+
+.option-words {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.option-label.primary {
+  color: var(--blue);
+  font-weight: 500;
+}
+
+.option-label.danger {
+  color: var(--danger);
+}
+
+.option-line {
+  color: var(--ink-secondary);
+}
+
+/* Answered: the blue tick, 18 square, and the answer, padded 8. */
+.question-answer {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px;
+}
+
+.answer-tick {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 20px;
+  color: var(--blue);
+}
+
+/* Its own answer: on the ground, 8 round, a line at 15%, 30 high at least, one to six lines. */
+.question-own {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.growing-field {
+  display: block;
+  box-sizing: border-box;
+  resize: none;
+  margin: 0;
+  border: 0;
+  outline: none;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.growing-field::placeholder {
+  color: var(--placeholder);
+}
+
+.question-own .growing-field {
+  flex: 1;
+  min-width: 0;
+  min-height: 30px;
+  padding: 4px 10px;
+  border: 1px solid color-mix(in srgb, var(--ink) 15%, transparent);
+  border-radius: 8px;
+  background: var(--ground);
+}
+
+.question-own .growing-field:focus-visible {
+  border-color: var(--unread);
+}
+
+/* A draft: its title (14 on 22, 500, Slack's logo 20 before it) with its state; its fields on the ground, 10 round. */
+.draft-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 22px;
+}
+
+.draft-title {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 500;
+  line-height: 22px;
+  letter-spacing: -0.15px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.draft-logo {
+  flex: none;
+  width: 20px;
+  height: 20px;
+}
+
+.draft-box {
+  display: flex;
+  flex-direction: column;
+  border-radius: 10px;
+  background: var(--ground);
+  overflow: hidden;
+}
+
+/* A field: 36 high at least, padded 7 and 10, a hairline at 10% under it; its name 12 at 40%, its value 14 at 60%. */
+.draft-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  box-sizing: border-box;
+  padding: 7px 10px;
+  box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+.draft-name {
+  flex: none;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--ink-tertiary);
+}
+
+.draft-value,
+.draft-input {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  line-height: 22px;
+  letter-spacing: -0.15px;
+  color: var(--ink-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.draft-input {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: none;
+  font-family: inherit;
+}
+
+.draft-input::placeholder {
+  color: var(--placeholder);
+}
+
+.draft-input:disabled {
+  color: var(--ink-secondary);
+  opacity: 1;
+}
+
+/* A sent draft's words keep the ink, as the Mac's text view does. */
+.draft-words:disabled {
+  color: var(--ink);
+  opacity: 1;
+}
+
+/* The words: 14 on 22, 10 all round, three lines at least and twelve at most, then they scroll. */
+.draft-words.growing-field {
+  width: 100%;
+  padding: 10px;
+  line-height: 22px;
+  letter-spacing: -0.15px;
+}
+
+/* A file that goes with it: 13 at 60% with the paperclip at 40%, a hairline over it. */
+.draft-file {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--ink) 10%, transparent);
+  font-size: 13px;
+  line-height: 18px;
+  letter-spacing: -0.15px;
+  color: var(--ink-secondary);
+}
+
+.draft-file svg {
+  flex: none;
+  color: var(--ink-tertiary);
+}
+
+.draft-file span {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* An approval: its parts 12 apart, its words 4 apart. */
+.approval-card {
+  gap: 12px;
+}
+
+.approval-words {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.approval-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.approval-title {
+  flex: 1;
+  min-width: 0;
+  min-height: 22px;
+  font-weight: 500;
+  line-height: 22px;
+  letter-spacing: -0.15px;
+}
+
+.approval-needed,
+.approval-badge {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
+  height: 22px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+  letter-spacing: -0.08px;
+  white-space: nowrap;
+}
+
+.approval-needed {
+  gap: 4px;
+  padding: 2px 8px 2px 4px;
+  color: var(--blue);
+  background: color-mix(in srgb, var(--yours) 12%, transparent);
+}
+
+.approval-needed svg {
+  width: 14px;
+}
+
+.approval-badge {
+  gap: 6px;
+  padding: 2px 8px;
+}
+
+.approval-badge.success {
+  color: #009957;
+  background: rgb(0 201 114 / 0.09);
+}
+
+.approval-badge.success .status-dot {
+  background: var(--working);
+}
+
+.approval-badge.danger {
+  color: #c21d2e;
+  background: rgb(255 38 60 / 0.09);
+}
+
+.approval-badge.danger .status-dot {
+  background: #ff263c;
+}
+
+.approval-badge.muted {
+  color: var(--ink-secondary);
+  background: var(--wash);
+}
+
+.approval-place {
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  color: var(--ink-secondary);
+}
+
+.approval-summary {
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.approval-reason {
+  font-size: 13px;
+  line-height: 18px;
+  letter-spacing: -0.08px;
+  color: var(--ink-secondary);
+}
+
+.approval-fold {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink-secondary);
+  font: inherit;
+  font-size: 13px;
+  line-height: 18px;
+  cursor: pointer;
+}
+
+.fold-chevron {
+  flex: none;
+  width: 14px;
+  height: 9px;
+  transition: transform 0.15s ease-out;
+}
+
+.fold-chevron.open {
+  transform: rotate(90deg);
+}
+
+.approval-note {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--ink-secondary);
+}
+
+@media (prefers-color-scheme: dark) {
+  .approval-badge.success {
+    color: #38d591;
+    background: rgb(0 201 114 / 0.173);
+  }
+
+  .approval-badge.danger {
+    color: #ff5667;
+    background: rgb(255 38 60 / 0.16);
+  }
 }
 
 /* A file: 220 to 340 wide (the limits set on it), as wide as its words between; grey and 12 round, padded 8; its icon 36, its name over its size, Save. */
@@ -1135,6 +2119,278 @@ button {
   height: 1px;
   margin: 5px 9px;
   background: var(--hairline);
+}
+
+/* A right-click menu: at the pointer, over everything; a destructive item in red; a disabled one greyed. */
+.context-menus {
+  position: fixed;
+  inset: 0 auto auto 0;
+  z-index: 60;
+}
+
+.context-menu {
+  z-index: 60;
+  min-width: 200px;
+}
+
+.menu-glyph {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+
+.menu-label {
+  flex: 1;
+}
+
+.menu-item > .glyph-chevron {
+  opacity: 0.6;
+}
+
+.menu-item.destructive {
+  color: var(--danger);
+}
+
+.menu-item.expanded,
+.menu-item.destructive:hover,
+.menu-item.destructive:focus-visible {
+  background: var(--unread);
+  color: #fff;
+}
+
+.menu-item:disabled,
+.menu-item:disabled:hover {
+  background: transparent;
+  color: var(--ink-tertiary);
+}
+
+/* An alert or a sheet over the window: the window dimmed behind it. */
+.sheet-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  background: rgb(0 0 0 / 0.18);
+  animation: scrim-in 0.15s ease-out;
+}
+
+@keyframes scrim-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.sheet {
+  box-sizing: border-box;
+  border-radius: 14px;
+  background: var(--elevated);
+  color: var(--ink);
+  box-shadow:
+    inset 0 0 0 0.5px var(--glass-rim),
+    0 18px 50px rgb(0 0 0 / 0.25);
+  outline: none;
+}
+
+/* An alert: the mark, the title (13, bold) and words (11), centred, 260 wide, 14 round; Cancel and the action side by side. */
+.alert {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+  width: 260px;
+  padding: 20px 16px 16px;
+  border-radius: 14px;
+  background: var(--elevated);
+  color: var(--ink);
+  text-align: center;
+  box-shadow:
+    inset 0 0 0 0.5px var(--glass-rim),
+    0 18px 50px rgb(0 0 0 / 0.25);
+}
+
+.alert-mark {
+  width: 56px;
+  height: 56px;
+}
+
+.alert-title {
+  margin-top: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 16px;
+}
+
+.alert-message {
+  margin-top: 6px;
+  font-size: 11px;
+  line-height: 14px;
+}
+
+.alert-buttons {
+  display: flex;
+  gap: 8px;
+  align-self: stretch;
+  margin-top: 16px;
+}
+
+.alert-button {
+  flex: 1;
+  height: 28px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 7px;
+  background: var(--row-hover);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.alert-button.default {
+  background: var(--unread);
+  color: #fff;
+}
+
+.alert-button.destructive {
+  color: var(--danger);
+}
+
+.alert-button:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--unread) 50%, transparent);
+  outline-offset: 1px;
+}
+
+/* Hidden Agents (C14): 520 by 440, its title and line padded 12 10 12 16, Close at the right, rows 36 high and 2 apart. */
+.hidden-agents {
+  display: flex;
+  flex-direction: column;
+  width: 520px;
+  height: 440px;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 32px);
+  overflow: hidden;
+}
+
+.hidden-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 10px 12px 16px;
+}
+
+.hidden-words {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hidden-title {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+}
+
+.hidden-line {
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--ink-secondary);
+}
+
+.hidden-close {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink-tertiary);
+  cursor: pointer;
+}
+
+.hidden-none {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--ink-secondary);
+}
+
+.hidden-none .glyph {
+  color: var(--ink-tertiary);
+}
+
+.hidden-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 16px 16px 16px;
+}
+
+.hidden-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  height: 36px;
+  padding-right: 8px;
+  border-radius: 8px;
+}
+
+.hidden-row:hover {
+  background: var(--row-hover);
+}
+
+.hidden-open {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 100%;
+  padding: 6px 0 6px 8px;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.hidden-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  line-height: 18px;
+  letter-spacing: -0.08px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hidden-unhide {
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink-secondary);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.hidden-unhide:hover {
+  background: var(--row-hover);
 }
 
 /* The reactions' capsule: glass, 5 in, its cells 36 and 2 apart; it grows out of its corner with a spring. */
@@ -1597,7 +2853,7 @@ button {
   font-size: 11px;
   line-height: 14px;
   color: var(--ink-tertiary);
-  padding-left: 16px;
+  padding-left: 64px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1607,7 +2863,213 @@ button {
   color: var(--danger);
 }
 
+/* Attach, then the field, 8 apart; over them, lined up with the field (48 in), the files and the message answered. */
+.composer-row {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+/* The emoji list: hung by its foot over the words, 320 wide on the ground, a hairline at 10%, 14 round; rows 1 apart, padded 4, to 260 high. */
+.pick-list {
+  position: absolute;
+  z-index: 25;
+  transform: translateY(-100%);
+  box-sizing: border-box;
+  background: var(--ground);
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+/* "@", "/" and "#": 360 wide, a hairline at 15% and (on light) a soft shadow, 12 round; rows 2 apart, padded 6, to 320 high. */
+.pick-list:not(.emoji) {
+  width: 360px;
+  max-height: 320px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-radius: 12px;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--ink) 15%, transparent),
+    0 10px 16px rgb(0 0 0 / var(--pick-shadow));
+}
+
+/* A row: 28, padded 6 8, 6 round, the logo tile's grey when chosen; its picture (16), name (13), what it is (40%) and its kind at the right. */
+.pick-row {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 6px 8px;
+  box-sizing: border-box;
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 16px;
+  cursor: pointer;
+}
+
+.pick-row.chosen {
+  background: var(--logo-tile);
+}
+
+.pick-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  color: var(--ink-secondary);
+}
+
+.pick-icon .pick-glyph.people {
+  color: var(--ink);
+}
+
+.pick-icon .pick-glyph.command {
+  color: #777777;
+}
+
+.pick-words {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.pick-title {
+  flex: none;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--ink);
+}
+
+.pick-subtitle {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--ink-tertiary);
+}
+
+.pick-tag {
+  flex: none;
+  color: var(--ink-tertiary);
+  white-space: nowrap;
+}
+
+/* Nothing found: the words (13) over "Press Esc to close" (11, at 40%), padded 8 12. */
+.pick-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 12px;
+}
+
+.pick-empty-words {
+  font-size: 13px;
+  line-height: 17px;
+  color: var(--ink);
+}
+
+.pick-empty-hint {
+  font-size: 11px;
+  line-height: 14px;
+  color: var(--ink-tertiary);
+}
+
+/* An app's logo on its tile: the grey (17%, 32% on dark), its first letter at 60%. */
+.logo-tile {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: var(--logo-tile);
+  color: var(--ink-secondary);
+  font-weight: 600;
+  line-height: 1;
+}
+
+.logo-tile.drawn {
+  background: none;
+}
+
+.logo-tile img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.pick-list.emoji {
+  width: 320px;
+  max-height: 260px;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  border-radius: 14px;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--ink) 10%, transparent),
+    0 8px 24px rgb(20 20 20 / 0.18);
+}
+
+.pick-list::-webkit-scrollbar {
+  display: none;
+}
+
+/* A row: 28 high, padded 6 8, 10 round, grey when chosen; the emoji, ":shortcode:" (13) and its name (11, at 40%), 8 apart. */
+.emoji-row {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 28px;
+  padding: 6px 8px;
+  box-sizing: border-box;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.emoji-row.chosen {
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+}
+
+.emoji-glyph {
+  flex: none;
+  width: 20px;
+  font-size: 13px;
+  text-align: center;
+}
+
+.emoji-code {
+  flex: none;
+  font-size: 13px;
+  line-height: 16px;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.emoji-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 11px;
+  line-height: 14px;
+  color: var(--ink-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.composer > .reply-pill,
+.attachment-strip {
+  margin-left: 48px;
+}
+
 .field-box {
+  flex: 1;
+  min-width: 0;
   display: flex;
   align-items: flex-end;
   gap: 4px;
@@ -1616,9 +3078,170 @@ button {
   cursor: text;
 }
 
-.field {
+/* Attach: the 40-point glass disc, its plus 18 at 78% (86% on dark); faded and off once six wait. */
+.attach {
+  position: relative;
+  flex: none;
+}
+
+.attach-button {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: var(--disc-ink);
+  cursor: pointer;
+}
+
+.attach-button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* Its menu opens upward: its foot 4 over the disc, from its left. */
+.attach-menu {
+  left: 0;
+  bottom: calc(100% + 4px);
+}
+
+.attach-menu .menu-item svg {
+  flex: none;
+}
+
+/* The files over the words: 8 apart, 54 high, scrolling sideways when they don't fit. */
+.attachment-strip {
+  display: flex;
+  gap: 8px;
+  height: 54px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+
+.attachment-strip::-webkit-scrollbar {
+  display: none;
+}
+
+/* A picture: a 52-point square of it, 12 round, a hairline at 15%; Remove at its top right, 2 in. */
+.picture-tile {
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--tile-ground);
+  color: var(--ink-tertiary);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 15%, transparent);
+}
+
+.picture-tile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.picture-tile .remove-staged {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+}
+
+/* Any other file: a chip like the chat's, 220 by 54, padded 8, 12 round. */
+.file-chip {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 220px;
+  height: 54px;
+  padding: 8px;
+  box-sizing: border-box;
+  border-radius: 12px;
+  background: var(--tile-ground);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 15%, transparent);
+}
+
+.chip-name {
+  display: flex;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+  color: var(--ink);
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.chip-base {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chip-ext {
+  flex: none;
+}
+
+/* Remove: 20, round, the text colour with the ground's X. */
+.remove-staged {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--remove-disc);
+  color: var(--remove-x);
+  cursor: pointer;
+}
+
+/* Files dragged over the chat: the blue at 17% (32% on dark) over all of it, and its words on a blue pill. */
+.drop-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  background: var(--drop-wash);
+  pointer-events: none;
+  animation: drop-in 0.12s ease-out;
+}
+
+.drop-overlay span {
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--unread);
+  color: #fff;
+  font-size: 14px;
+  line-height: 18px;
+}
+
+@keyframes drop-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.field-words {
+  position: relative;
   flex: 1;
+  min-width: 0;
   margin: 10px 0 10px 16px;
+}
+
+.field {
+  position: relative;
+  z-index: 1;
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0;
   padding: 0;
   border: 0;
   outline: none;
@@ -1632,8 +3255,122 @@ button {
   max-height: 120px;
 }
 
+/* A pick in the words (`sand-inserted-chip`): the grey wash (13%), 4 round, under its words, laid out as the field lays them out. */
+.field-picks {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  overflow: hidden;
+  font: inherit;
+  font-size: 14px;
+  line-height: 20px;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  color: transparent;
+  pointer-events: none;
+}
+
+.field-picks mark {
+  color: transparent;
+  background: rgb(119 119 119 / 0.13);
+  border-radius: 2px;
+  box-shadow: 0 0 0 2px rgb(119 119 119 / 0.13);
+}
+
 .field::placeholder {
   color: var(--placeholder);
+}
+
+/* Start voice input: the grey microphone (16, at 60%) in a 36 target, at the field's right, 2 in. */
+.mic-button {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  margin: 0 2px 2px 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink-secondary);
+  cursor: pointer;
+}
+
+/* The recording chip in Send's place: 28 high, padded 4 10, round, on the grey wash (darker under the pointer), 6 apart. */
+.recording-chip {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  margin: 0 2px 6px 0;
+  padding: 4px 10px;
+  box-sizing: border-box;
+  border: 0;
+  border-radius: 999px;
+  background: rgb(119 119 119 / var(--chip-wash));
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.recording-chip:hover {
+  background: rgb(119 119 119 / var(--chip-wash-hover));
+}
+
+.recording-stop {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--ink);
+}
+
+.recording-time {
+  font-size: 14px;
+  line-height: 22px;
+  letter-spacing: -0.15px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Five sound bars: 2 wide, 2 apart, in 18 by 13, at 60%. */
+.recording-bars {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  width: 18px;
+  height: 13px;
+}
+
+.recording-bars span {
+  width: 2px;
+  border-radius: 1px;
+  background: var(--ink-secondary);
+}
+
+/* Transcribing: a small spinner in a 36 target. */
+.transcribing {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  margin: 0 2px 2px 0;
+}
+
+.transcribing-wheel {
+  width: 14px;
+  height: 14px;
+  border: 2px solid color-mix(in srgb, var(--ink) 18%, transparent);
+  border-top-color: var(--ink-secondary);
+  border-radius: 50%;
+  animation: transcribing 0.8s linear infinite;
+}
+
+@keyframes transcribing {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Send: the blue disc, 30 in a 36 target, at the field's right, 2 in. */
@@ -2568,6 +4305,22 @@ button.json-caret {
   background: var(--selected-cell);
 }
 
+/* Where the table's words are measured before it is drawn: hidden, its font. */
+.sheet-measure {
+  position: absolute;
+  top: -10000px;
+  left: 0;
+  visibility: hidden;
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.sheet-measure > span {
+  display: block;
+  width: max-content;
+}
+
 /* A chosen cell's words: a card 12 in from the foot, at most 45% high, 10 round; its head with Close, the words 12.5 on 1.5. */
 .cell-detail {
   position: absolute;
@@ -2793,4 +4546,494 @@ button.json-caret {
   background: none;
   color: rgb(255 255 255 / 0.85);
   cursor: pointer;
+}
+
+/* ---------------------------------------------------------------------- */
+/* PDF, Word and sound in the preview (mac/Simeon/FileBodies.swift).       */
+
+/* The PDF's controls in the head, 8 apart: Zoom out, "1 / 2" (11, at 60%, 78 wide), Zoom in (20, 4 round). */
+.pdf-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pdf-tool {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--ink-secondary);
+  cursor: pointer;
+}
+
+.pdf-tool:hover:not(:disabled) {
+  background: var(--row-hover);
+}
+
+.pdf-tool:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.pdf-pages {
+  width: 78px;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-secondary);
+  text-align: center;
+}
+
+/* Its pages one under another, 16 apart, 16 in from the sides, each with its shadow. */
+.pdf-body {
+  flex: 1;
+  overflow: auto;
+  padding: 8px 16px;
+}
+
+.pdf-page {
+  position: relative;
+  margin: 0 auto 16px;
+  background: #ffffff;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.25);
+}
+
+.pdf-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* pdf.js's text layer: the words over the page, clear, to be chosen and copied. */
+.pdf-page .textLayer {
+  position: absolute;
+  inset: 0;
+  overflow: clip;
+  line-height: 1;
+  text-align: initial;
+  text-size-adjust: none;
+  forced-color-adjust: none;
+  transform-origin: 0 0;
+  z-index: 0;
+}
+
+.pdf-page .textLayer :is(span, br) {
+  position: absolute;
+  color: transparent;
+  white-space: pre;
+  cursor: text;
+  transform-origin: 0% 0%;
+}
+
+.pdf-page .textLayer span.markedContent {
+  top: 0;
+  height: 0;
+}
+
+.pdf-page .textLayer ::selection {
+  background: color-mix(in srgb, AccentColor, transparent 75%);
+}
+
+.pdf-page .textLayer br::selection {
+  background: transparent;
+}
+
+.pdf-page .textLayer .endOfContent {
+  display: block;
+  position: absolute;
+  inset: 100% 0 0;
+  z-index: 0;
+  cursor: default;
+  user-select: none;
+}
+
+/* A page's number at its foot: 11, white at 90%, on a black pill at 55%, 18 high, padded 2 8, 8 up. */
+.pdf-badge {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  z-index: 2;
+  min-width: 22px;
+  height: 18px;
+  box-sizing: border-box;
+  padding: 0 8px;
+  border-radius: 9px;
+  background: rgb(0 0 0 / 0.55);
+  color: rgb(255 255 255 / 0.9);
+  font-size: 11px;
+  line-height: 18px;
+  text-align: center;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+/* A Word document on the Markdown page: 15 on 24, its headings, lists, tables and pictures. */
+.docx-page {
+  font-size: 15px;
+  line-height: 24px;
+  color: var(--ink);
+  user-select: text;
+  overflow-wrap: anywhere;
+}
+
+.docx-page > :first-child {
+  margin-top: 0;
+}
+
+.docx-page p {
+  margin: 0 0 12px;
+}
+
+.docx-page h1,
+.docx-page h2,
+.docx-page h3,
+.docx-page h4 {
+  margin: 20px 0 12px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.docx-page h1 {
+  font-size: 23.25px;
+  letter-spacing: -0.012em;
+}
+
+.docx-page h2 {
+  font-size: 19.5px;
+  letter-spacing: -0.008em;
+}
+
+.docx-page h3 {
+  font-size: 16.95px;
+}
+
+.docx-page h4 {
+  font-size: 15px;
+}
+
+.docx-page ul,
+.docx-page ol {
+  margin: 0 0 12px;
+  padding-left: 24px;
+}
+
+.docx-page table {
+  margin: 0 0 12px;
+  border-collapse: collapse;
+  font-size: 13.95px;
+  line-height: 1.6;
+}
+
+.docx-page td,
+.docx-page th {
+  padding: 6px 12px;
+  box-shadow: inset 0 -1px 0 var(--hairline);
+  vertical-align: top;
+}
+
+.docx-page img {
+  max-width: 100%;
+  height: auto;
+}
+
+.docx-page a {
+  color: var(--link);
+}
+
+/* A sound: the browser's player, centred. */
+.audio-body {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+}
+
+.audio-body audio {
+  width: min(480px, 100%);
+}
+
+/* The wordmark's face (the Mac's Fonts/Suravaram-Regular.ttf, SIL Open Font License; its licence is served with the app, fonts/Suravaram-OFL.txt). */
+@font-face {
+  font-family: 'Simeon Suravaram';
+  src: url('./assets/fonts/Suravaram-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: block;
+}
+
+/* The SimeonLabs mark in the text's colour (the Mac's template image). */
+.first-run-mark,
+.access-mark {
+  display: block;
+  flex: none;
+  background: var(--ink);
+  mask: var(--mark) center / contain no-repeat;
+  -webkit-mask: var(--mark) center / contain no-repeat;
+}
+
+/* The first run (FirstRun.swift): the whole window, its ground, one screen in the middle. */
+.first-run {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  min-height: 520px;
+  background: var(--ground);
+  color: var(--ink);
+}
+
+.name-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: fade-in 0.2s ease-in-out;
+}
+
+.first-run-mark {
+  width: 40px;
+  height: 40px;
+}
+
+.first-run-title {
+  margin: 24px 0 0;
+  font-size: 28px;
+  font-weight: 400;
+  letter-spacing: -0.56px;
+  text-align: center;
+}
+
+/* The name field: 300 × 38, 10 round, the words centred at 16; blue with a 3-point ring when it has the keys. */
+.first-run-field {
+  box-sizing: border-box;
+  width: 300px;
+  height: 38px;
+  margin-top: 36px;
+  padding: 0 14px;
+  border: 1px solid rgb(60 60 67 / 0.16);
+  border-radius: 10px;
+  background: #ffffff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 16px;
+  letter-spacing: -0.16px;
+  text-align: center;
+  outline: none;
+  box-shadow: 0 1px 1px rgb(0 0 0 / 0.04);
+  transition:
+    border-color 0.2s linear,
+    box-shadow 0.2s linear;
+}
+
+.first-run-field::placeholder {
+  color: rgb(60 60 67 / 0.3);
+}
+
+.first-run-field:focus {
+  border-color: rgb(10 132 255 / 0.55);
+  box-shadow: 0 0 0 3px rgb(10 132 255 / 0.14);
+}
+
+/* Continue: a 288 × 36 pill, near black (near white on dark), dim until there is a name. */
+.flow-button {
+  width: 288px;
+  height: 36px;
+  margin-top: 32px;
+  border: 0;
+  border-radius: 999px;
+  background: #070707;
+  color: #fcfcfc;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.12s ease-out;
+}
+
+.flow-button:hover {
+  background: #2f2f2f;
+}
+
+.flow-button.dim {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.flow-button:focus-visible {
+  outline: 2px solid rgb(10 132 255 / 0.55);
+  outline-offset: 2px;
+}
+
+/* The hand-off: one line in the window's moving light (17); a failure, why in red (13), and Try again (16, blue), 22 apart. */
+.hand-off {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+  width: 305px;
+  text-align: center;
+  animation: fade-in 0.2s ease-in-out;
+}
+
+.shimmer.hand-off-line {
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 400;
+  letter-spacing: -0.136px;
+  white-space: normal;
+}
+
+.hand-off-failed {
+  font-size: 17px;
+  letter-spacing: -0.136px;
+}
+
+.hand-off-why {
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--danger);
+}
+
+.hand-off-again {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--link);
+  font: inherit;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+/* The access cover (ComputerStates.swift): the mark (46) and "Simeon" (68), the tagline (22), what this account needs, its button, then the account and Sign Out; 40 below the middle. */
+.access-cover {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  min-height: 520px;
+  background: var(--ground);
+  color: var(--ink);
+}
+
+.access-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 16px;
+  transform: translateY(40px);
+  text-align: center;
+}
+
+.access-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 64px;
+}
+
+.access-mark {
+  width: 46px;
+  height: 46px;
+}
+
+.access-wordmark {
+  font-family: 'Simeon Suravaram', serif;
+  font-size: 68px;
+  line-height: 64px;
+  white-space: nowrap;
+}
+
+.access-tagline {
+  max-width: 336px;
+  margin: 48px 0 0;
+  font-size: 22px;
+  line-height: 28px;
+}
+
+.access-words {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 400px;
+  margin-top: 39px;
+}
+
+.access-title {
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.access-line {
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--ink-secondary);
+}
+
+/* The sign-in's black button, in both themes. */
+.access-button {
+  height: 40px;
+  margin-top: 24px;
+  padding: 0 24px;
+  border: 0;
+  border-radius: 999px;
+  background: #121212;
+  color: #fcfcfc;
+  font: inherit;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.access-failure {
+  margin-top: 10px;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--danger);
+}
+
+.access-account {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-top: 28px;
+}
+
+.access-email {
+  font-size: 12px;
+  color: var(--ink-secondary);
+  user-select: text;
+}
+
+.access-sign-out {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink-secondary);
+  font: inherit;
+  font-size: 13px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+@media (prefers-color-scheme: dark) {
+  .first-run-field {
+    border-color: rgb(235 235 245 / 0.16);
+    background: #1c1c1e;
+    box-shadow: 0 1px 1px rgb(0 0 0 / 0.3);
+  }
+  .first-run-field::placeholder {
+    color: rgb(235 235 245 / 0.3);
+  }
+  .first-run-field:focus {
+    border-color: rgb(10 132 255 / 0.7);
+    box-shadow: 0 0 0 3px rgb(10 132 255 / 0.28);
+  }
+  .flow-button {
+    background: #fafafa;
+    color: #141414;
+  }
+  .flow-button:hover {
+    background: #d5d5d5;
+  }
 }

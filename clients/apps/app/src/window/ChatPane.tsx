@@ -16,8 +16,10 @@
 // of a line coming in, the time on a sideways swipe, two agents' messages
 // and a call's lines opened over the chat (2b);
 // the pictures from the computer, files' kinds, sizes and Save, link cards,
-// previews (2c); the call button (step 5); the cards (step 3); the agent's
-// pane opened from the head (step 4).
+// previews (2c); the call button (step 5); the agent's pane opened from the
+// head (step 4). The cards (step 3) are drawn by `CardRow` from Cards.tsx
+// and their groups' files (RequestCards, ConnectCards, FlightCards,
+// ShopCards).
 
 import {
   createContext,
@@ -30,20 +32,22 @@ import {
   useState,
 } from 'react'
 import { activityLine } from '../core/activity'
+import { approvalCard, draftCard, questionCard } from '../core/cards'
 import {
   type Bubble,
+  type CardKind,
   type ChatImage,
   type ChatRow,
   channelTitle,
   exchangeLabel,
   exchangePeers,
   isOneEmoji,
-  notShown,
   quoteLine,
   replyPlaceholder,
   routineLabel,
   routineVerb,
   stampText,
+  unreadCardWords,
   voiceChatLabel,
 } from '../core/chat'
 import {
@@ -64,10 +68,21 @@ import { wordsLanguage } from '../core/words'
 import { t } from '../l10n'
 import { ActivitySlot } from './ActivitySlot'
 import { AgentMark } from './AgentMark'
+import { DropOverlay, useFileDrop, useStaging } from './Attachments'
+import {
+  ApprovalCardView,
+  type CardProps,
+  DraftCardView,
+  QuestionCardView,
+  cardWidth,
+} from './Cards'
 import { Composer } from './Composer'
+import { connectCardView } from './ConnectCards'
+import { somethingOver } from './Dialogs'
 import { EmojiPicker } from './EmojiPicker'
 import { FileCard, LinkCard, useShownPicture } from './Files'
 import { FindBar, FindContext, Marked } from './FindBar'
+import { flightCardView } from './FlightCards'
 import {
   type Dismissal,
   HoverBar,
@@ -82,6 +97,8 @@ import {
   type MentionSetting,
   MessageBlocks,
 } from './MessageText'
+import { requestCardView } from './RequestCards'
+import { shopCardView } from './ShopCards'
 import { useOpenMedia } from './Viewers'
 import { classes } from './classes'
 import { useWatched } from './useStore'
@@ -165,6 +182,9 @@ export function ChatPane({
   const threadRoot = store.openThreads[agentId]
   const [composerHeight, setComposerHeight] = useState(56)
   const pane = useRef<HTMLElement>(null)
+  // The files waiting to go with the next message (`ChatControl.staged`), and files dropped anywhere on the chat.
+  const staging = useStaging()
+  const drop = useFileDrop(staging.stage)
   // The message being answered (`ChatControl.reply`), in the chat or the thread it was chosen in.
   const [answering, setAnswering] = useState<{
     reply: Reply
@@ -209,6 +229,7 @@ export function ChatPane({
       if (event.shiftKey || event.altKey) return
       if (event.key.toLowerCase() !== 'f') return
       event.preventDefault()
+      if (somethingOver()) return
       setFind((now) => ({ ...now, open: true, focus: now.focus + 1 }))
     }
     window.addEventListener('keydown', key)
@@ -356,7 +377,12 @@ export function ChatPane({
   }, [agentId, overlay, store])
 
   return (
-    <section className="chat-pane" aria-label={agent?.name} ref={pane}>
+    <section
+      className="chat-pane"
+      aria-label={agent?.name}
+      ref={pane}
+      {...drop.handlers}
+    >
       {/* A thread, or back to the chat: the lines on screen start again, at their newest. */}
       <Transcript
         key={threadRoot ?? ''}
@@ -388,6 +414,7 @@ export function ChatPane({
         onCancelReply={() => setAnswering(undefined)}
         focusKey={focusKey}
         onHeight={setComposerHeight}
+        staging={staging}
       />
       {/* Find's bar, 8 under the head and 16 from the right, over the messages. */}
       {here.open && (
@@ -445,6 +472,7 @@ export function ChatPane({
           close={closeOverlay}
         />
       )}
+      {drop.dropping && <DropOverlay />}
     </section>
   )
 }
@@ -1032,14 +1060,107 @@ function RowContent({
         <ThreadChin rootId={row.rootId} count={row.count} attached={false} />
       )
     case 'card':
-      // Step 3 draws each card; until then its place is kept and said.
-      return (
-        <div
-          className={classes('later-card', run.startsGroup && 'starts-group')}
-        >
-          {notShown()}
-        </div>
-      )
+      return <CardRow row={row} startsGroup={run.startsGroup} />
+  }
+}
+
+/** Each card's widest, as the Mac's chat sets it (`limit(…)` in ChatPane.swift's `TranscriptRow`). */
+const cardCaps: Record<CardKind, number> = {
+  question: 640,
+  draft: 640,
+  approval: 520,
+  secret: 640,
+  computer: 520,
+  form: 520,
+  credential: 520,
+  onePasswordConnect: 520,
+  connectors: 640,
+  listenerConnect: 520,
+  cloudAgent: 640,
+  joined: 460,
+  flights: 680,
+  flightPassengers: 520,
+  purchase: 520,
+  products: 640,
+}
+
+/** A card in its place: as wide as a message may be, at most its own cap. */
+function CardRow({
+  row,
+  startsGroup,
+}: {
+  row: Extract<ChatRow, { kind: 'card' }>
+  startsGroup: boolean
+}) {
+  const control = useControl()
+  const card: CardProps = {
+    entry: row.entry,
+    entryId: row.entry.id,
+    agentId: control.agentId,
+    store: control.store,
+    column: control.column,
+    openAgent: control.openAgent,
+  }
+  const view = cardView(row.card, card)
+  // A card whose line can't be read is said in the chat's middle, as the
+  // core makes it a notice (`unreadCardWords`).
+  if (view == null)
+    return (
+      <div className="notice card-notice">
+        {unreadCardWords(row.card, row.entry)}
+      </div>
+    )
+  return (
+    <div
+      className={classes('card-row', startsGroup && 'starts-group')}
+      style={{ maxWidth: cardWidth(control.column, cardCaps[row.card]) }}
+    >
+      {view}
+    </div>
+  )
+}
+
+/** The card for a row, from its group's file; none when the entry doesn't read as one. */
+function cardView(kind: CardKind, card: CardProps): React.ReactNode {
+  const props = {
+    entryId: card.entryId,
+    agentId: card.agentId,
+    store: card.store,
+  }
+  switch (kind) {
+    case 'question': {
+      const read = questionCard(card.entry)
+      return read && <QuestionCardView {...props} card={read} />
+    }
+    case 'draft': {
+      const read = draftCard(card.entry)
+      return read && <DraftCardView {...props} card={read} />
+    }
+    case 'approval': {
+      const read = approvalCard(card.entry)
+      return read && <ApprovalCardView {...props} card={read} />
+    }
+    // 3b: what an agent asks of the person (RequestCards.tsx).
+    case 'secret':
+    case 'computer':
+    case 'form':
+    case 'credential':
+    case 'onePasswordConnect':
+      return requestCardView(kind, card)
+    // 3c: apps to connect, Slack or GitHub for a routine, the cloud agent, a new teammate (ConnectCards.tsx).
+    case 'connectors':
+    case 'listenerConnect':
+    case 'cloudAgent':
+    case 'joined':
+      return connectCardView(kind, card)
+    // 3d: flights and the travellers' form (FlightCards.tsx).
+    case 'flights':
+    case 'flightPassengers':
+      return flightCardView(kind, card)
+    // 3d: a checkout and products to buy (ShopCards.tsx).
+    case 'purchase':
+    case 'products':
+      return shopCardView(kind, card)
   }
 }
 

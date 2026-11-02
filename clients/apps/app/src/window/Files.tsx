@@ -18,7 +18,7 @@ import { fileTitle } from '../core/models'
 import type { AppStore, FileFacts } from '../core/store'
 import { t } from '../l10n'
 import { useSiteIcon } from './MessageText'
-import { previewShown, useOpenFile } from './Viewers'
+import { useOpenFile } from './Viewers'
 
 /** The window's icons for Word, Excel, PowerPoint, PDF and Markdown (desktop/brand/file-icons, and the founder's Markdown page). Each written in full, so the build keeps it as a file. */
 const fileIcons = {
@@ -134,9 +134,7 @@ export function FileCard({
   const line = facts?.line ?? ''
   // The name opens the preview when the window would: never for a kind it can't show, and text, Markdown or JSON only once read as text.
   const opens =
-    openFile != null &&
-    previewShown(name) &&
-    opensPreview(fileKind(name), facts?.readsAsText)
+    openFile != null && opensPreview(fileKind(name), facts?.readsAsText)
   const title = fileTitle(name)
   const limit = Math.max(0, Math.min(column * 0.76, 460, column - 82))
   const kind = fileIcon(name)
