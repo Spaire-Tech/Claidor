@@ -1389,13 +1389,171 @@ export class AppStore {
   // buy (Store.swift's `answerPurchase`, `buyProduct`…).
   // The shop's state and commands go below this line, and nowhere else.
 
+  /** Checkout cards answered here (Allow is `sending`, Deny `denied`), until the computer's copy says so. */
+  answeredPurchases: Record<string, import('./shopCards').PurchaseState> = {}
+  /** The Link card picked on a checkout card here (its id), until Allow carries it to the computer. */
+  pickedPurchaseCards: Record<string, string> = {}
+  /** Buy pressed here on a products card (the product's place), until the computer's copy says so. */
+  pressedProducts: Record<string, number> = {}
+  /** Checkout cards with Link this app asked the computer to keep watching, once each per state. */
+  private watchedPurchases = new Set<string>()
+
   /** The shop cards' state back to nothing (signed out). */
-  private resetShopCards(): void {}
+  private resetShopCards(): void {
+    this.answeredPurchases = {}
+    this.pickedPurchaseCards = {}
+    this.pressedProducts = {}
+    this.watchedPurchases = new Set()
+  }
 
   /** The shop cards' answers shown here, settled once the computer's copy of a chat has them. */
   private settleShopCards(agentId: string, entries: readonly Entry[]): void {
     void agentId
-    void entries
+    for (const entry of entries) {
+      if (
+        this.answeredPurchases[entry.id] !== undefined &&
+        (text(entry.get('purchaseState')) ?? 'review') !== 'review'
+      )
+        delete this.answeredPurchases[entry.id]
+      const pressed = this.pressedProducts[entry.id]
+      if (
+        pressed !== undefined &&
+        (int(entry.get('productsBuying')) === pressed ||
+          (arr(entry.get('productsBought')) ?? []).some(
+            (one) => int(one) === pressed,
+          ))
+      )
+        delete this.pressedProducts[entry.id]
+    }
+  }
+
+  /**
+   * Allow or Deny on a checkout card (`answerPurchase`): the card shows the
+   * answer at once; Allow then waits on Link, which asks the person to
+   * approve it in the Link app. Allow carries the card picked on the card,
+   * and `confirmed`, the device's own yes (Face ID or Touch ID on the Mac,
+   * Windows Hello later), as the approval Link is handed so it asks no more;
+   * the web has none to give (docs/web-app/PROGRESS.md). A failed answer, or
+   * one the computer didn't take (Link refused the card picked, which its
+   * line says), comes back to the buttons.
+   */
+  async answerPurchase(
+    entryId: string,
+    allow: boolean,
+    agentId: string,
+    confirmed?: { method?: string; deviceType?: string },
+  ): Promise<void> {
+    if (this.answeredPurchases[entryId] !== undefined) return
+    this.answeredPurchases[entryId] = allow ? 'sending' : 'denied'
+    this.changed()
+    const args: Record<string, JSONValue> = { agentId, entryId, allow }
+    const picked = this.pickedPurchaseCards[entryId]
+    // The card picked on the card rides with Allow (14 October 2026); the computer checks it with Link first.
+    if (allow && picked !== undefined) args.paymentMethodId = picked
+    const approval =
+      allow && confirmed ? this.purchaseApproval(confirmed) : undefined
+    if (approval) args.approval = approval
+    const reply = await this.command(
+      'answerPurchase',
+      args,
+      allow
+        ? t("The purchase didn't go to Link")
+        : t("Couldn't deny the purchase"),
+    )
+    const waits =
+      reply != null &&
+      typeof reply === 'object' &&
+      !Array.isArray(reply) &&
+      (text(field(reply, 'purchaseState')) ?? 'review') === 'review'
+    if (reply === undefined || waits) {
+      delete this.answeredPurchases[entryId]
+      this.changed()
+    }
+  }
+
+  /**
+   * The approval Allow carries, once the device confirmed it (`approval`):
+   * who (this account: its id on Simeon Labs' server, else its e-mail),
+   * when (whole seconds), how (`biometric_face`, `biometric_fingerprint`,
+   * none for a passcode) and on what (`mobile` on an iPhone). None only when
+   * nobody is signed in: Link then asks in its app.
+   */
+  purchaseApproval(
+    confirmed: { method?: string; deviceType?: string },
+    at: Date = new Date(),
+  ): Record<string, JSONValue> | undefined {
+    const account = this.account
+    if (!account) return undefined
+    const who =
+      account.id != null && account.id !== ''
+        ? account.id
+        : account.email.trim()
+    if (who === '') return undefined
+    const approval: Record<string, JSONValue> = {
+      approvedAt: Math.round(at.getTime() / 1000),
+      userId: who,
+    }
+    if (confirmed.method != null)
+      approval.authenticationMethod = confirmed.method
+    if (confirmed.deviceType != null) approval.deviceType = confirmed.deviceType
+    if (account.name !== '') approval.userName = account.name
+    return approval
+  }
+
+  /** A Link card picked on a checkout card, before Allow: the card shows it at once; Allow carries it. */
+  pickPurchaseCard(entryId: string, cardId: string): void {
+    this.pickedPurchaseCards[entryId] = cardId
+    this.changed()
+  }
+
+  /**
+   * "Buy with <agent>" on one product of a products card (`buyProduct`): the
+   * card marks it at once, and the agent is woken to buy exactly that one.
+   * A failed press comes back to the button.
+   */
+  async buyProduct(
+    entryId: string,
+    index: number,
+    agentId: string,
+  ): Promise<void> {
+    if (this.pressedProducts[entryId] === index) return
+    this.pressedProducts[entryId] = index
+    this.changed()
+    const done = await this.command(
+      'buyProduct',
+      { agentId, entryId, index },
+      t("Couldn't tell your agent to buy it"),
+    )
+    if (done === undefined) {
+      delete this.pressedProducts[entryId]
+      this.changed()
+    }
+  }
+
+  /**
+   * A checkout card still with Link, on screen: the computer makes sure it
+   * is watching Link for it (after a restart nothing is), and closes a
+   * flight it was paying when it restarted. It never answers a card; once
+   * per card and state while the app runs.
+   */
+  async keepWatchingPurchase(
+    entryId: string,
+    agentId: string,
+    state: import('./shopCards').PurchaseState = 'approving',
+  ): Promise<void> {
+    const key = `${entryId}#${state}`
+    const backend = this.backend
+    if (this.watchedPurchases.has(key) || !backend) return
+    this.watchedPurchases.add(key)
+    try {
+      await backend.command('answerPurchase', {
+        agentId,
+        entryId,
+        resume: true,
+      })
+    } catch {
+      // Nothing to say: the card shows the computer's copy either way.
+    }
   }
 
   // MARK: The chats

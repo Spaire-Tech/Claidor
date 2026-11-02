@@ -1,1 +1,1255 @@
-/* ShopCards.tsx's cards, at the Mac's measures (tokens from index.css). */
+/*
+ * ShopCards.tsx's cards, at the Mac's measures (mac/Simeon/Cards.swift's
+ * `PurchaseCardView` and `ProductsCardView`; tokens from index.css). These
+ * two cards are the iPhone's, in Apple's own colours rather than the
+ * window's: the ink #1d1d1f, the grey #6e6e73, white tiles, the blue
+ * #255a93 (#f5f5f7, #98989d, #3a3a3c and #2f6db0 in dark), on the agent's
+ * grey (#2c2c2e in dark), 20 round.
+ */
+
+.shop-card,
+.card-chooser,
+.product-sheet {
+  --shop-ink: #1d1d1f;
+  --shop-grey: #6e6e73;
+  --shop-fill: #ffffff;
+  --shop-blue: #255a93;
+  --shop-hairline: rgb(0 0 0 / 0.08);
+  --shop-ground: var(--theirs);
+  --shop-green: #00c972;
+  /* `look.added` and its wash: Bought. */
+  --shop-added: #009957;
+  --shop-added-wash: rgb(0 201 114 / 0.09);
+  /* A status mark's tick, cross or dash, cut out of its circle. */
+  --shop-on-mark: var(--shop-ground);
+  --shop-tint-wash: 10%;
+}
+
+@media (prefers-color-scheme: dark) {
+  .shop-card,
+  .card-chooser,
+  .product-sheet {
+    --shop-ink: #f5f5f7;
+    --shop-grey: #98989d;
+    --shop-fill: #3a3a3c;
+    --shop-blue: #2f6db0;
+    --shop-hairline: rgb(255 255 255 / 0.08);
+    --shop-ground: #2c2c2e;
+    --shop-added: #38d591;
+    --shop-added-wash: rgb(0 201 114 / 0.173);
+    --shop-tint-wash: 20%;
+  }
+
+  .product-sheet {
+    --shop-hairline: rgb(255 255 255 / 0.1);
+  }
+}
+
+.shop-card {
+  box-sizing: border-box;
+  border-radius: 20px;
+  background: var(--shop-ground);
+  color: var(--shop-ink);
+  letter-spacing: -0.15px;
+  overflow-wrap: anywhere;
+}
+
+/* The cards' buttons take the card's words and ink, unless they say otherwise. */
+:where(.shop-card, .card-chooser, .product-sheet) button {
+  font: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+}
+
+/* A card the core can't read: its words, as the chat's notice (8 above it, never the group's 12). */
+.shop-notice {
+  width: fit-content;
+}
+
+.card-row.starts-group > .shop-notice {
+  margin-top: -4px;
+}
+
+/* MARK: The checkout card: padded 16, its parts 14 apart. */
+
+.purchase-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+  padding: 16px;
+}
+
+.purchase-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* The cart (18) in a 44-point tile, 12 round. */
+.purchase-tile {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--shop-fill);
+  color: var(--shop-ink);
+}
+
+.purchase-titles {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+/* "Checkout" (15, semibold) and the Test pill, 6 apart. */
+.purchase-heading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 18px;
+}
+
+.purchase-headline,
+.purchase-check {
+  font-size: 13px;
+  line-height: 16px;
+  color: var(--shop-grey);
+}
+
+/* What is bought, for a card without a picture (14), and Review order at its right. */
+.purchase-items {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.items-line {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  line-height: 17px;
+}
+
+/* The checkout as the agent left it: 16:10, 12 round, on white, a hairline round it, its top shown. */
+.checkout-picture {
+  position: relative;
+}
+
+.picture-frame {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  border-radius: 12px;
+  background: var(--shop-fill);
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px var(--shop-hairline);
+}
+
+.picture-frame img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  transform-origin: top center;
+  transition: transform 0.3s ease-out;
+}
+
+/* The picture opens the checkout (a Shop checkout's page on the web), growing a little under the pointer. */
+.picture-frame.opens {
+  cursor: pointer;
+}
+
+.picture-frame.opens:hover img {
+  transform: scale(1.02);
+}
+
+/* The hairline over the picture, as the Mac's border is drawn over it. */
+.picture-frame::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px var(--shop-hairline);
+  pointer-events: none;
+}
+
+.picture-missing {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--shop-grey);
+}
+
+/* Review order in glass: 28 high, 4 in at the left and 10 at the right, 12, 500; the shop's icon in an 18-point white circle. */
+.review-order {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  box-sizing: border-box;
+  padding: 0 10px 0 4px;
+  border: 0;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 15px;
+  white-space: nowrap;
+  color: var(--shop-ink);
+  cursor: pointer;
+}
+
+.review-order.floats {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+}
+
+.review-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #ffffff;
+  color: rgb(115 115 115);
+  overflow: hidden;
+}
+
+.review-icon img {
+  width: 12px;
+  height: 12px;
+  object-fit: contain;
+  border-radius: 50%;
+}
+
+/* The flight on its checkout card: on white, 12 round, padded 12; the airline's mark (36) and the flight's lines, 12 apart. */
+.flight-checkout {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--shop-fill);
+}
+
+.flight-words {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.flight-route {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 17px;
+}
+
+.flight-line {
+  font-size: 12px;
+  line-height: 15px;
+  color: var(--shop-grey);
+}
+
+.flight-travellers {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.flight-changed {
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 15px;
+  color: var(--danger);
+}
+
+/* An airline's mark: white (the dark disc in dark), a hairline ring at 12%, its initials 12, 500, grey. */
+.airline-mark {
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.12);
+  overflow: hidden;
+}
+
+.airline-initials {
+  font-size: 12px;
+  font-weight: 500;
+  color: #6e6e73;
+}
+
+@media (prefers-color-scheme: dark) {
+  .airline-mark {
+    background: #232325;
+    box-shadow: inset 0 0 0 0.5px rgb(255 255 255 / 0.12);
+  }
+
+  .airline-initials {
+    color: #b4b4b8;
+  }
+}
+
+/* The card that pays, the note, a hairline, the total. */
+.purchase-sums {
+  display: flex;
+  flex-direction: column;
+}
+
+.payment-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 9px 0;
+  border: 0;
+  background: none;
+  text-align: left;
+}
+
+.payment-row.chooses {
+  cursor: pointer;
+}
+
+.payment-row:focus-visible,
+.shop-pill:focus-visible,
+.review-order:focus-visible,
+.chooser-card:focus-visible,
+.product-tile:focus-visible,
+.product-row:focus-visible,
+.buy-button:focus-visible,
+.view-website:focus-visible,
+.reviews-row:focus-visible,
+.more-tile:focus-visible,
+.see-more:focus-visible,
+.sheet-close:focus-visible {
+  outline: 2px solid var(--unread);
+  outline-offset: 1px;
+}
+
+.payment-words {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* The card's name and last four (14, 500), cut in the middle so the last four stay. */
+.payment-line {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 17px;
+}
+
+.payment-line.choose {
+  color: var(--shop-blue);
+}
+
+.middle-cut {
+  display: flex;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.cut-head {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cut-tail {
+  flex: none;
+  white-space: pre;
+}
+
+/* "Link by Stripe" (12, grey) after Link's mark (12, 3 round), 4 apart. */
+.wallet-line {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  line-height: 15px;
+  color: var(--shop-grey);
+}
+
+.wallet-mark {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  object-fit: contain;
+}
+
+.payment-chevron {
+  flex: none;
+  display: grid;
+  place-items: center;
+  color: var(--shop-grey);
+}
+
+/* The network's mark: a white card 40 by 27, 6 round, with a hairline at half a point. */
+.payment-mark {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 27px;
+  box-sizing: border-box;
+  border-radius: 6px;
+  background: #ffffff;
+  box-shadow: inset 0 0 0 0.5px var(--shop-hairline);
+  letter-spacing: 0;
+}
+
+.payment-mark.amex {
+  background: #0070cc;
+}
+
+.mark-visa {
+  font-size: 11px;
+  font-weight: 900;
+  font-style: italic;
+  line-height: 1;
+  color: #1a1f70;
+}
+
+.mark-mastercard {
+  display: flex;
+}
+
+.mark-mastercard span {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.mark-mastercard .red {
+  background: #eb001c;
+}
+
+.mark-mastercard .orange {
+  margin-left: -5px;
+  background: rgb(247 158 28 / 0.9);
+}
+
+.mark-amex {
+  font-size: 9px;
+  font-weight: 900;
+  line-height: 1;
+  color: #ffffff;
+}
+
+.mark-discover {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  font-size: 7px;
+  font-weight: 900;
+  line-height: 1;
+  color: #262626;
+}
+
+.disc-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #f2731a;
+}
+
+.mark-card {
+  display: grid;
+  color: #737373;
+}
+
+/* Link's line while the card waits (12, red), 8 above the hairline. */
+.purchase-note {
+  padding-bottom: 8px;
+  font-size: 12px;
+  line-height: 15px;
+  color: var(--danger);
+}
+
+.purchase-rule {
+  height: 1px;
+  background: var(--shop-hairline);
+}
+
+/* "Total" (14, grey) and the sum (15, semibold, even figures), padded 9. */
+.purchase-total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 9px 0;
+}
+
+.total-label {
+  font-size: 14px;
+  line-height: 17px;
+  color: var(--shop-grey);
+}
+
+.total-sum {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 18px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Deny and Allow at the right, 8 apart; the test line under them (12, grey). */
+.purchase-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.purchase-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.purchase-test {
+  font-size: 12px;
+  line-height: 15px;
+  color: var(--shop-grey);
+}
+
+/* A Mac's pill: 32 high, 16 at the sides, at least 88, 14, 500; on white, or the blue with white words. */
+.shop-pill {
+  flex: none;
+  min-width: 88px;
+  height: 32px;
+  box-sizing: border-box;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--shop-fill);
+  color: var(--shop-ink);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 17px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.shop-pill.prominent {
+  background: var(--shop-blue);
+  color: #ffffff;
+}
+
+.shop-pill:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* Answered: the mark (15, 1 down) and where it stands (14, 500), the line under it (12, grey); the pills 12 under. */
+.purchase-status-block {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.purchase-status {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.purchase-mark {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 15px;
+  height: 15px;
+  margin-top: 1px;
+}
+
+.purchase-mark .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--shop-blue);
+}
+
+.purchase-mark.success {
+  color: var(--shop-green);
+}
+
+.purchase-mark.danger {
+  color: var(--danger);
+}
+
+.purchase-mark.neutral {
+  color: var(--shop-grey);
+}
+
+.status-words {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.status-label {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 17px;
+}
+
+.status-detail {
+  font-size: 12px;
+  line-height: 15px;
+  color: var(--shop-grey);
+}
+
+/* The chooser: a popover under the card's row, 300 wide, padded 8, on the raised ground. */
+.card-chooser {
+  position: fixed;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 300px;
+  box-sizing: border-box;
+  padding: 8px;
+  border-radius: 10px;
+  background: var(--elevated);
+  color: var(--shop-ink);
+  letter-spacing: -0.15px;
+  box-shadow:
+    inset 0 0 0 0.5px var(--hairline),
+    0 10px 30px rgb(0 0 0 / 0.18);
+  visibility: hidden;
+}
+
+@media (prefers-color-scheme: dark) {
+  .card-chooser {
+    box-shadow:
+      inset 0 0 0 0.5px var(--hairline),
+      0 10px 30px rgb(0 0 0 / 0.5);
+  }
+}
+
+.chooser-title {
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 15px;
+  color: var(--shop-grey);
+}
+
+/* A card: its mark, its name (13, 500) and its network and last four (11, grey), the tick (12, semibold) in the blue; padded 10 and 6, grey under the pointer, 8 round. */
+.chooser-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.chooser-card:hover {
+  background: var(--shop-hairline);
+}
+
+.chooser-words {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-right: 2px;
+}
+
+.chooser-name {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 16px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chooser-number {
+  font-size: 11px;
+  line-height: 13px;
+  color: var(--shop-grey);
+}
+
+.chooser-tick {
+  flex: none;
+  display: grid;
+  margin-left: 10px;
+  color: var(--settings-blue);
+}
+
+.chooser-footer {
+  padding: 6px 10px 0;
+  font-size: 11px;
+  line-height: 13px;
+  color: var(--shop-grey);
+}
+
+/* MARK: The products card */
+
+.products-card {
+  overflow: hidden;
+}
+
+/* Side by side: as wide as its tiles, padded 8, 4 between. */
+.products-card.tiles {
+  width: max-content;
+  max-width: 100%;
+}
+
+.product-grid {
+  display: grid;
+  gap: 4px;
+  padding: 8px;
+}
+
+/* A tile: padded 8, 14 round, grey under the pointer; the picture 168 square, 12 round, a hairline round it; its words 2 in from the sides, 8 under it. */
+.product-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 184px;
+  box-sizing: border-box;
+  padding: 8px;
+  border: 0;
+  border-radius: 14px;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.product-tile:hover {
+  background: var(--shop-hairline);
+}
+
+.product-picture {
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: var(--shop-fill);
+  color: var(--shop-grey);
+}
+
+.product-picture img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+}
+
+.product-picture.fit img {
+  object-fit: contain;
+}
+
+.product-picture img.loaded {
+  opacity: 1;
+}
+
+/* A hairline over the picture, as the Mac's border is drawn over it. */
+.tile-picture::after,
+.sheet-picture::after,
+.reviews-picture::after,
+.more-picture::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px var(--shop-hairline);
+  pointer-events: none;
+}
+
+.tile-picture {
+  width: 168px;
+  height: 168px;
+  border-radius: 12px;
+}
+
+.tile-words {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 2px;
+}
+
+/* The name: 13, 500, two lines kept for it. */
+.tile-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  min-height: 32px;
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 16px;
+}
+
+.tile-byline,
+.row-byline {
+  font-size: 12px;
+  line-height: 15px;
+  color: var(--shop-grey);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The price and, at its right, Buying or Bought: 20 high at least, 2 under the seller. */
+.tile-foot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 20px;
+  margin-top: 2px;
+}
+
+.tile-foot .product-pill,
+.row-foot .product-pill {
+  margin-left: auto;
+}
+
+.product-price {
+  display: inline-flex;
+  gap: 4px;
+  min-width: 0;
+  font-size: 13px;
+  line-height: 16px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.product-price s {
+  color: var(--shop-grey);
+}
+
+/* Buying in the link's blue, Bought in the green, each in its own wash. */
+.status-pill.product-pill.buying {
+  background: color-mix(
+    in srgb,
+    var(--link) var(--shop-tint-wash),
+    transparent
+  );
+  color: var(--link);
+}
+
+.status-pill.product-pill.bought {
+  background: color-mix(
+    in srgb,
+    var(--shop-added) var(--shop-tint-wash),
+    transparent
+  );
+  color: var(--shop-added);
+}
+
+.product-pill .status-dot {
+  background: currentColor;
+}
+
+/* The iPhone's rows: padded 12, the picture 72 square, 10 round, 12 from the words; a hairline between, 12 in. */
+.products-card.rows {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.product-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.product-row:hover {
+  background: var(--shop-hairline);
+}
+
+.row-picture {
+  width: 72px;
+  height: 72px;
+  border-radius: 10px;
+}
+
+.row-words {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.row-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 17px;
+}
+
+.row-foot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.row-price {
+  font-size: 13px;
+  line-height: 16px;
+  color: var(--shop-grey);
+  font-variant-numeric: tabular-nums;
+}
+
+.product-rule {
+  height: 1px;
+  margin-left: 12px;
+  background: var(--shop-hairline);
+}
+
+/* MARK: A product opened: a store's page, 780 by 600, white (#1e1e1e in dark). */
+
+.sheet.product-sheet {
+  position: relative;
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  width: 780px;
+  height: 600px;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 32px);
+  overflow: hidden;
+  background: #ffffff;
+  color: var(--shop-ink);
+  letter-spacing: -0.15px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .sheet.product-sheet {
+    background: #1e1e1e;
+  }
+}
+
+.product-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: 28px;
+}
+
+/* The picture at the left (340, fitted, 16 round), what it is at its right, 28 apart; 28 in and 28 from the top. */
+.product-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 28px;
+  padding: 28px 28px 0;
+}
+
+.sheet-picture {
+  width: 340px;
+  height: 340px;
+  border-radius: 16px;
+}
+
+/* A window narrower than the sheet: the picture gives way first, down to 160 (the Mac's sheet is always 780). */
+@media (max-width: 811px) {
+  .sheet-picture {
+    flex: 0 1 340px;
+    min-width: 160px;
+    height: auto;
+    aspect-ratio: 1;
+  }
+}
+
+.product-facts {
+  flex: 1;
+  min-width: 240px;
+  display: flex;
+  flex-direction: column;
+  padding-top: 8px;
+}
+
+.product-sold-by {
+  font-size: 13px;
+  line-height: 16px;
+  color: var(--shop-grey);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.product-title {
+  margin-top: 4px;
+  font-size: 22px;
+  line-height: 26px;
+}
+
+.product-sheet-price {
+  margin-top: 6px;
+}
+
+.product-sheet-price .product-price {
+  font-size: 16px;
+  line-height: 19px;
+}
+
+/* Buy with <agent>: the blue capsule, 38 high, 15, 500, white words; Buying faded, Bought in the green's wash. */
+.buy-button {
+  height: 38px;
+  margin-top: 18px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--shop-blue);
+  color: #fcfcfc;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.buy-button.buying {
+  background: color-mix(in srgb, var(--shop-blue) 55%, transparent);
+}
+
+.buy-button.bought {
+  background: var(--shop-added-wash);
+  color: var(--shop-added);
+}
+
+.buy-button:disabled {
+  cursor: default;
+}
+
+/* View website: 15, the ink, 36 high, 4 under Buy. */
+.view-website {
+  height: 36px;
+  margin-top: 4px;
+  border: 0;
+  background: none;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+/* What it is: 14, three lines, then See more (14, grey); 20 under View website. */
+.product-description {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  margin-top: 20px;
+}
+
+.description-words {
+  font-size: 14px;
+  line-height: 17px;
+  white-space: pre-wrap;
+}
+
+.description-words.folded {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+}
+
+.description-words strong {
+  font-weight: 600;
+}
+
+.description-words a {
+  color: var(--link);
+}
+
+.see-more {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 14px;
+  line-height: 17px;
+  color: var(--shop-grey);
+  cursor: pointer;
+}
+
+/* Reviews and More like this: 16, 500. */
+.product-heading {
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 19px;
+}
+
+.product-heading.reviews {
+  margin-top: 26px;
+}
+
+.product-heading.more {
+  padding: 30px 28px 0;
+}
+
+/* The reviews row: the picture 48 square, 8 round, its name (14) and its stars, 12 apart; 10 under Reviews. */
+.reviews-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.reviews-picture {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+}
+
+.reviews-words {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.reviews-title {
+  font-size: 14px;
+  line-height: 17px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Five stars (12, 1 apart, Apple's orange), "4.5" at 70% and "(153)" in grey, 5 apart, 13. */
+.product-stars {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  line-height: 16px;
+  font-variant-numeric: tabular-nums;
+}
+
+.stars {
+  display: flex;
+  gap: 1px;
+  color: #f5a524;
+}
+
+.stars svg {
+  display: block;
+}
+
+.stars-rating {
+  color: color-mix(in srgb, var(--shop-ink) 70%, transparent);
+}
+
+.stars-count {
+  color: var(--shop-grey);
+}
+
+/* More like this: tiles 120 wide, 14 apart, sideways, no scroll bar; 10 under its title. */
+.more-like-this {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-top: 10px;
+  padding: 0 28px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.more-like-this::-webkit-scrollbar {
+  display: none;
+}
+
+.more-tile {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 120px;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.more-picture {
+  width: 120px;
+  height: 120px;
+  margin-bottom: 6px;
+  border-radius: 10px;
+}
+
+.more-title,
+.more-byline {
+  font-size: 13px;
+  line-height: 16px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.more-title {
+  font-weight: 600;
+}
+
+.more-byline {
+  color: var(--shop-grey);
+}
+
+/* The X: the window's round glass button, 32, its cross at 40% in the discs' ink, 12 from the corner. */
+.sheet-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: var(--disc-ink);
+  cursor: pointer;
+}
