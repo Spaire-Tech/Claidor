@@ -6566,8 +6566,19 @@ export class AppStore {
     const backend = this.backend
     if (!backend) return
     const account = this.account
-    await this.attach(backend)
+    // The chat on screen stays on screen through a Reload (the list kept on the PC shows at once, so nothing on screen opens it again): it is opened again as soon as a list shows it, its lines with it.
+    const open = this.openChat
+    let reopened = false
+    const reopen = () => {
+      if (reopened || open == null || backend !== this.backend) return
+      if (this.openChat != null) return
+      if (!this.agents.some((agent) => agent.id === open)) return
+      reopened = true
+      void this.open(open)
+    }
+    await this.attach(backend, reopen)
     if (this.account == null && backend === this.backend) this.account = account
+    reopen()
   }
 
   /** Nothing of the account's is kept here: the Windows app follows the account itself (src/desktop/surfaces.ts, as MacServices.swift's `track`). */

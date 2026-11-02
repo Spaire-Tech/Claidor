@@ -419,6 +419,27 @@ describe('the store', () => {
     expect(store.agents.map((agent) => agent.id)).toEqual(['theo'])
   })
 
+  /** View › Reload with a chat on screen: the window keeps it there (the kept list shows at once, so nothing on screen opens it again): the store opens it again itself, and its lines come back (found at the merge of 7b and 7c). */
+  it('opens the chat on screen again after a Reload', async () => {
+    const place = new MemorySavedPlace()
+    const store = await storeOn(place, bass)
+    const backend = new AwayBackend()
+    backend.lines.push({
+      kind: 'message',
+      id: 'a1',
+      role: 'assistant',
+      content: 'On it',
+      timestampMs: 3_000,
+    })
+    await store.attach(backend)
+    await store.open('theo')
+    store.saveNow()
+    await store.saved?.waitForWrites()
+    await store.reloadFromComputer()
+    expect(store.openChat).toBe('theo')
+    expect(texts(store.rows('theo'))).toEqual(['Hi Theo', 'On it'])
+  })
+
   /** A first launch keeps what the computer sent; the next, with the computer asleep, shows it at once, and the computer's copy replaces it when it wakes. */
   it('shows the list and a chat from this device while the computer is away', async () => {
     const place = new MemorySavedPlace()
