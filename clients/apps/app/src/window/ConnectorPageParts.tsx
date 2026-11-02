@@ -6,6 +6,9 @@
 // folds, the accounts (the computer's and those Simeon Labs' server keeps,
 // with the rename alert), the tools, the setup and skill fields.
 //
+// The pills, the spinner and the switch are the list's own (6c's
+// Connectors.tsx), as the Mac's pages share the window's row parts.
+//
 // The web's own choices (docs/web-app/PROGRESS.md, "Decisions"): the links
 // open in a new tab without `opener` or the referrer, and only http and
 // https ones are drawn as links; the rename is the window's own alert with a
@@ -27,7 +30,7 @@ import {
   accountDetail,
   accountTitle,
 } from '../core/appAccounts'
-import { appLogo, middleCut } from '../core/connectCards'
+import { middleCut } from '../core/connectCards'
 import {
   type ConnectorPage,
   informationWords,
@@ -36,8 +39,8 @@ import {
 import { t as coreT } from '../core/l10n'
 import { t } from '../l10n'
 import { classes } from './classes'
-import { AppLogoTile } from './ConnectCards'
 import './ConnectorPages.css'
+import { AddingSpinner, PluginPill, PluginSwitch } from './Connectors'
 import { Line, MentionContext, type MentionSetting } from './MessageText'
 import {
   SettingsActionRow,
@@ -79,103 +82,6 @@ function PageSymbol({
         )}
       </g>
     </svg>
-  )
-}
-
-// MARK: Icons
-
-/**
- * An app's icon on its page (`PluginIcon`): its own app icon, whole; else
- * a tile (white, #232325 on dark, a hairline, an app icon's corners) with
- * the brand's logo bundled with the app or the catalogue's logo as the
- * computer read it (`resolvePluginLogo`, asked for once), at 76%; else its
- * first letter (36%, semibold, grey). 6c's rows draw the same.
- */
-export function PageIcon({
-  name,
-  side,
-  id,
-  iconUrl,
-  logos,
-  loadLogo,
-}: {
-  name: string
-  side: number
-  id?: string
-  iconUrl?: string
-  /** The catalogue's logos read so far, by address. */
-  logos: ReadonlyMap<string, string>
-  loadLogo: (address: string) => void
-}) {
-  const logo = appLogo(name, id)
-  const bundled = logo.kind === 'logo' ? logo : undefined
-  const wanted = logo.kind !== 'icon' && !bundled ? iconUrl : undefined
-  useEffect(() => {
-    if (wanted !== undefined) loadLogo(wanted)
-  }, [wanted, loadLogo])
-  if (logo.kind === 'icon')
-    return <AppLogoTile name={name} id={id} side={side} />
-  const read = wanted !== undefined ? logos.get(wanted) : undefined
-  return (
-    <span
-      className="page-icon"
-      style={{
-        width: side,
-        height: side,
-        borderRadius: (side * 11) / 40,
-        fontSize: side * 0.36,
-      }}
-      aria-hidden="true"
-    >
-      {bundled?.mono ? (
-        <span
-          className="page-icon-mask"
-          style={{
-            maskImage: `url("${bundled.url}")`,
-            WebkitMaskImage: `url("${bundled.url}")`,
-          }}
-        />
-      ) : bundled || read !== undefined ? (
-        <img src={bundled?.url ?? read} alt="" />
-      ) : (
-        firstLetter(name).toUpperCase()
-      )}
-    </span>
-  )
-}
-
-/** The first character as a person reads it (`String.prefix(1)`). */
-function firstLetter(name: string): string {
-  const first = new Intl.Segmenter().segment(name)[Symbol.iterator]().next()
-  return first.done ? '' : first.value.segment
-}
-
-/** A skill's tile on its page (`SkillTile`, 48): the list mark (18, in the ink) on the ink at 3%, a ring at 10%, an app icon's corners. */
-export function SkillTile({ side }: { side: number }) {
-  return (
-    <span
-      className="page-skill-tile"
-      style={{ width: side, height: side, borderRadius: (side * 11) / 40 }}
-      aria-hidden="true"
-    >
-      <svg width="20" height="20" viewBox="0 0 20 20">
-        <g
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.4"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <rect x="2.2" y="3.5" width="15.6" height="13" rx="2.6" />
-          <path d="M8.6 7.6h6M8.6 10h6M8.6 12.4h6" />
-        </g>
-        <g fill="currentColor">
-          <circle cx="5.9" cy="7.6" r="0.85" />
-          <circle cx="5.9" cy="10" r="0.85" />
-          <circle cx="5.9" cy="12.4" r="0.85" />
-        </g>
-      </svg>
-    </span>
   )
 }
 
@@ -492,58 +398,6 @@ export function RemoveGroup({
   )
 }
 
-/**
- * A pill (`PluginPill`, the iPhone's: 12 medium, 24 high, 10 a side,
- * round): `secondary`, the grey, a step darker under the pointer (Reopen,
- * Remove, Edit Values); `primary`, white on Connect's blue (Save, Add);
- * `label`, a team's, grey words on the grey; `soon`, Coming soon, fainter
- * words. The last two are not buttons. Faded to 56% while it waits.
- */
-export function PagePill({
-  title,
-  label,
-  kind = 'secondary',
-  disabled,
-  onClick,
-}: {
-  title: string
-  label?: string
-  kind?: 'secondary' | 'primary' | 'label' | 'soon'
-  disabled?: boolean
-  onClick?: () => void
-}) {
-  if (kind === 'label' || kind === 'soon')
-    return (
-      <span className={`page-pill ${kind}`} aria-label={label}>
-        {title}
-      </span>
-    )
-  return (
-    <button
-      type="button"
-      className={classes('page-pill', kind === 'primary' && 'primary')}
-      aria-label={label}
-      disabled={disabled}
-      onClick={onClick}
-    >
-      {title}
-    </button>
-  )
-}
-
-/** While an add runs (`AddingSpinner`, in the marks' 28 square): a 15 ring turning every 0.7 s, its bottom quarter fainter. */
-export function PageSpinner({ name }: { name: string }) {
-  return (
-    <span
-      className="page-spinner"
-      role="img"
-      aria-label={t`Connecting ${name}`}
-    >
-      <span className="page-spinner-ring" />
-    </span>
-  )
-}
-
 // MARK: The folds
 
 /** The fold (`FoldShell`): a summary row that opens and shuts it (the chevron turns in 0.12 s; the rows come at once), then what stays under it. */
@@ -641,7 +495,7 @@ export function ServerAccountsCard({
             )}
           </span>
           {row.signIn && (
-            <PagePill
+            <PluginPill
               title={row.signIn.title}
               disabled={row.signIn.disabled}
               onClick={row.signIn.go}
@@ -709,7 +563,7 @@ export function AppAccountsList({
               <PageSymbol name="pencil" size={13} weight={1.25} />
             </button>
             {accounts.length > 1 && (
-              <PagePill title={t('Remove')} onClick={() => remove(account)} />
+              <PluginPill title={t('Remove')} onClick={() => remove(account)} />
             )}
           </CardRow>
         )
@@ -718,7 +572,7 @@ export function AppAccountsList({
         <CardRow divided>
           {adding ? (
             <>
-              <PageSpinner name={name} />
+              <AddingSpinner name={name} />
               <span className="page-spacer" />
             </>
           ) : (
@@ -881,17 +735,11 @@ export function ToolsCard({
             <span className="page-tool" title={tool.description}>
               {tool.name}
             </span>
-            {/* The iPhone's switch: Apple's own at its size, in Settings' blue; changed at once. */}
-            <button
-              type="button"
-              role="switch"
-              aria-checked={tool.on}
-              aria-label={label}
-              className={classes('settings-switch', tool.on && 'on')}
-              onClick={() => toggle(index)}
-            >
-              <span className="settings-switch-knob" />
-            </button>
+            <PluginSwitch
+              on={tool.on}
+              label={label}
+              flip={() => toggle(index)}
+            />
           </CardRow>
         )
       })}

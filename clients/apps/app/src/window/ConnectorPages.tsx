@@ -73,16 +73,13 @@ import {
   MetaLine,
   PageCard,
   PageHead,
-  PageIcon,
-  PagePill,
-  PageSpinner,
   RemoveGroup,
   ServerAccountsCard,
   SetupField,
   SkillField,
-  SkillTile,
   ToolsCard,
 } from './ConnectorPageParts'
+import { AddingSpinner, PluginIcon, PluginPill, SkillTile } from './Connectors'
 import type { PluginsModel, PluginsPage } from './pluginsModel'
 import { SettingsActionRow, SettingsGroup } from './SettingsParts'
 import { useWatched } from './useStore'
@@ -245,13 +242,12 @@ function PluginPage({
     <div className="plugin-page">
       <div className="plugin-page-top">
         <div className="plugin-page-head">
-          <PageIcon
+          <PluginIcon
             name={entry.displayName}
             id={entry.id}
             iconUrl={entry.iconUrl}
             side={64}
-            logos={model.logos}
-            loadLogo={(address) => void model.loadLogo(address)}
+            model={model}
           />
           <div className="plugin-page-words">
             <span className="plugin-page-name">{entry.displayName}</span>
@@ -304,7 +300,7 @@ function PluginPage({
           <PageCard heading={t('Setup')}>
             <CardRow>
               <span className="page-row-words">{t('Setup Values')}</span>
-              <PagePill
+              <PluginPill
                 title={t('Edit Values')}
                 disabled={model.isBusy}
                 onClick={() => model.editValues(entry)}
@@ -377,13 +373,13 @@ function PageActionView({
     case 'add':
       if (comingSoon)
         return (
-          <PagePill
+          <PluginPill
             kind="soon"
             title={comingSoonWord()}
             label={t`${name} is coming soon`}
           />
         )
-      if (adding) return <PageSpinner name={name} />
+      if (adding) return <AddingSpinner name={name} />
       if (large)
         return (
           <ConnectPill
@@ -393,7 +389,7 @@ function PageActionView({
           />
         )
       return (
-        <PagePill
+        <PluginPill
           kind="primary"
           title={connectWord()}
           label={t`Connect ${name}`}
@@ -405,7 +401,7 @@ function PageActionView({
       return null
     case 'remove':
     case 'managed':
-      return <PagePill kind="label" title={action.label} />
+      return <PluginPill kind="label" title={action.label} />
   }
 }
 
@@ -426,14 +422,7 @@ function ServerPage({
     <div className="plugin-page">
       <PageHead
         name={server.name}
-        icon={
-          <PageIcon
-            name={server.name}
-            side={48}
-            logos={model.logos}
-            loadLogo={(address) => void model.loadLogo(address)}
-          />
-        }
+        icon={<PluginIcon name={server.name} side={48} model={model} />}
         meta={
           host !== undefined && <span className="page-head-host">{host}</span>
         }
@@ -699,7 +688,7 @@ function SetupPage({
         {tried && missing.length > 0 && (
           <span className="setup-missing">{fillInLine(missing.length)}</span>
         )}
-        <PagePill
+        <PluginPill
           kind="primary"
           title={setupSubmit(entry.displayName, editing)}
           disabled={model.isBusy}
@@ -798,7 +787,7 @@ function SkillPage({
       />
       {!managed && (
         <div className="skill-page-save">
-          <PagePill
+          <PluginPill
             kind="primary"
             title={t('Save')}
             disabled={!ready}

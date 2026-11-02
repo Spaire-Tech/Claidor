@@ -311,12 +311,12 @@ describe('Connectors’ pages', () => {
     expect(html).toContain('Write the report.')
     // Nothing changed yet: Save waits.
     expect(html).toMatch(
-      /<button[^>]*class="page-pill primary"[^>]*disabled=""/,
+      /<button[^>]*class="plugin-pill primary waiting"[^>]*disabled=""/,
     )
     const org = draw({ kind: 'skill', id: 'w-org' }, model, store)
     expect(words(org)).toContain('Managed by your organization')
     expect(org).not.toContain('Delete skill')
-    expect(org).not.toContain('page-pill primary')
+    expect(org).not.toContain('plugin-pill primary')
   })
 
   it('waits for the catalogue; a page whose thing is gone has no title', async () => {
