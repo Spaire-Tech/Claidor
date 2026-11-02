@@ -571,7 +571,8 @@ function useNow(every: number): number {
  * detail or event under the pointer. "No runs yet" when there are none.
  */
 function RunHistory({ runs }: { runs: RoutineRun[] }) {
-  const now = useNow(30_000)
+  // A run in the history has begun: one that began since the last tick (or on a computer whose clock is ahead) reads "Just now", where the Mac's timeline says "In 1 min".
+  const now = Math.max(useNow(30_000), ...runs.map((run) => run.at ?? 0))
   if (runs.length === 0)
     return <div className="run-history-none">{t('No runs yet')}</div>
   return (

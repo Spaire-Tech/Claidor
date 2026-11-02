@@ -870,7 +870,26 @@
   cursor: pointer;
 }
 
+/* In a narrow chat the words before them keep their size and the chips' names are cut at their end, as the Mac's `SystemEvent`. */
+.system-event:has(.routine-chip) {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.system-event:has(.routine-chip) .label,
+.system-event button.routine-chip svg {
+  flex: none;
+}
+
+/* Each chip an equal share of what is left, a short name keeping its own width (SwiftUI's HStack). */
+.system-event .routine:has(.routine-chip) {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: max-content;
+}
+
 .system-event button.routine-chip .chip-title {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
 }

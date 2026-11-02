@@ -189,12 +189,21 @@ export function TriggerCard({
     }
   }, [open])
 
+  // A menu notes what has the keys as it opens (the pill clicked, or the field), to give them back.
+  const openMenu = (next: OpenMenu) =>
+    setMenu({
+      ...next,
+      returnTo:
+        document.activeElement instanceof HTMLElement
+          ? document.activeElement
+          : null,
+    })
   // The Add menu ("Trigger source", at least 240 wide) under Add trigger; closing it with no pick keeps or puts back the rows.
   const showAddMenu = () => {
     if (editing.openRow !== undefined) return
     const button = addButton.current
     if (!button) return
-    setMenu({
+    openMenu({
       anchor: button.getBoundingClientRect(),
       label: t('Trigger source'),
       minWidth: 240,
@@ -217,7 +226,7 @@ export function TriggerCard({
   }, [requests])
 
   return (
-    <MenuOpener.Provider value={setMenu}>
+    <MenuOpener.Provider value={openMenu}>
       <div
         ref={card}
         className="trigger-card"
@@ -680,7 +689,8 @@ function AdvancedGrid({
             openMenu({
               anchor,
               label: t('Months'),
-              minWidth: 160,
+              // At least 160, its ticks' views 180 wide.
+              minWidth: 180,
               rows: () => [
                 {
                   label: t('Any month'),
@@ -804,7 +814,8 @@ function ticks(
   let current = [...picked]
   return {
     anchor,
-    minWidth: 160,
+    // At least 160, its ticks' views 180 wide.
+    minWidth: 180,
     rows: () =>
       entries.map((entry) => ({
         label: entry.label,
@@ -1107,7 +1118,8 @@ function GitFields({
             openMenu({
               anchor,
               label: t('Git events'),
-              minWidth: 160,
+              // At least 160, its ticks' views 200 wide.
+              minWidth: 200,
               rows: () => {
                 const current = edit.current()
                 const events = current?.kind === 'github' ? current.events : []
@@ -1795,6 +1807,8 @@ export interface OpenMenu {
   /** The row placed over the anchor (a Select's chosen one), else the menu opens 4 under it. */
   over?: number
   closed?: (picked: boolean) => void
+  /** What had the keys when it opened: they go back to it when it closes. */
+  returnTo?: HTMLElement | null
 }
 
 /**
@@ -1817,16 +1831,14 @@ function RoutineMenu({
   useLayoutEffect(() => {
     latest.current = close
   })
-  // The keys go back to what had them when it closes.
-  useEffect(() => {
-    const before =
-      document.activeElement instanceof HTMLElement
-        ? document.activeElement
-        : null
-    return () => {
-      if (before?.isConnected) before.focus({ preventScroll: true })
-    }
-  }, [])
+  // The keys go back to what had them when it opened, once it closes.
+  const returnTo = menu.returnTo
+  useEffect(
+    () => () => {
+      if (returnTo?.isConnected) returnTo.focus({ preventScroll: true })
+    },
+    [returnTo],
+  )
   useEffect(() => {
     let swallow = false
     const down = (event: PointerEvent) => {
