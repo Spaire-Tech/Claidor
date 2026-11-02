@@ -41,6 +41,8 @@ import {
   type SendOptions,
   newMessageId,
 } from './backend'
+import { type CallEngine, type CallState, voiceCallsEnabled } from './call'
+import { type CallTonePlaying, WebCallTones } from './callTones'
 import {
   addingAllowRule,
   autoReviewFrom,
@@ -75,6 +77,7 @@ import {
   listenerConnectedIn,
 } from './connectCards'
 import { type ConnectedApp, connectedApp } from './connectedApps'
+import { callTransport } from './elevenLabsVoice'
 import { Entry, appliedChange } from './entry'
 import {
   type AgentFace,
@@ -151,6 +154,7 @@ import {
   packSectionId,
 } from './starterPacks'
 import { bytesFromBase64URL } from './tokens'
+import { LiveCall, type VoiceTransport } from './voiceCall'
 
 /** A call whose failure changes nothing: tried, and let be. */
 async function quietly(call: Promise<unknown>): Promise<void> {
@@ -3683,8 +3687,104 @@ export class AppStore {
   // (Exchange.swift). 5d's state and commands go below this line, and
   // nowhere else.
 
-  /** 5d's state back to nothing (signed out): a call on ends. */
-  private resetCalls(): void {}
+  /**
+   * The call shown (Store.swift's `call`), its waveform's bars kept apart
+   * (`callLevels`): they change every 90 ms, and only the waveform reads
+   * them, so they change nothing the screens redraw for. The call keeps
+   * only whether there are bars.
+   */
+  call?: CallState
+  callLevels: number[] = []
+  /** The voice for the next call (ElevenLabs' kit; a stand-in in the tests). */
+  callVoice: () => VoiceTransport = callTransport
+  /** The ring and the hang-up (the browser's audio; none in the tests unless given). */
+  callTones: () => CallTonePlaying | undefined = () =>
+    typeof AudioContext === 'undefined' ? undefined : new WebCallTones()
+  /** One line per step of a call (the Mac's `voice-call.log`, echoed to the console as the Mac echoes it to stderr). */
+  callLog: (line: string) => void = (line) =>
+    console.info(`[simeon] voice-call ${line}`)
+  /** The call's engine, for the computer it was made for (the Mac's `backend.call`, made at sign-in). */
+  private callEngine?: { engine: CallEngine; backend: AgentBackend }
+
+  /** Calls are on, and there is a computer to call through (`canCall`). */
+  get canCall(): boolean {
+    return this.backend != null && voiceCallsEnabled()
+  }
+
+  /**
+   * The engine for this sign-in (MacSession.swift's `LiveCall`): the voice,
+   * the person's name for the prompt, the agent's voice from its picker
+   * (`ensureVoice`), the ring, a failed call kept until dismissed (the
+   * banner's 20 s or Close), the log. Only while this is the computer in
+   * use: a call heard after a sign-out never comes back on screen.
+   */
+  private callEngineNow(): CallEngine | undefined {
+    const backend = this.backend
+    if (!backend || !voiceCallsEnabled()) return undefined
+    if (this.callEngine?.backend === backend) return this.callEngine.engine
+    const engine = new LiveCall({
+      backend,
+      transport: this.callVoice(),
+      personName: () => this.account?.name,
+      voiceFor: (agentId) => this.ensureVoice(agentId),
+      tones: this.callTones(),
+      failedStays: null,
+      log: (line) => this.callLog(line),
+      language: currentLanguage,
+    })
+    this.callEngine = { engine, backend }
+    engine.observe((state) => {
+      if (this.callEngine?.engine === engine) this.takeCall(state)
+    })
+    return engine
+  }
+
+  /** The call's change: the screens redraw only when more than its bars changed (Store.swift's `take`). */
+  private takeCall(state: CallState | undefined): void {
+    if (!state) {
+      this.callLevels = []
+      if (this.call) {
+        this.call = undefined
+        this.changed()
+      }
+      return
+    }
+    this.callLevels = state.levels
+    const kept: CallState = {
+      ...state,
+      levels: state.levels.length === 0 ? [] : [1],
+    }
+    if (JSON.stringify(kept) === JSON.stringify(this.call)) return
+    this.call = kept
+    this.changed()
+  }
+
+  /** The agent's own colour on the call: the one the app draws it in, not blue (the founder, 9 October 2026: the call showed another avatar). */
+  startCall(agent: Agent): void {
+    this.callEngineNow()?.start(agent.id, agent.name, agent.colour ?? '')
+  }
+
+  mute(muted: boolean): void {
+    this.callEngine?.engine.mute(muted)
+  }
+
+  hangUp(): void {
+    this.callEngine?.engine.hangUp()
+  }
+
+  /** A finished or failed call put away (the banner's Close). */
+  dismissCall(): void {
+    this.callEngine?.engine.dismiss()
+  }
+
+  /** 5d's state back to nothing (signed out): a call on ends (its voice let go, its record sent), and nothing of it comes back on screen. */
+  private resetCalls(): void {
+    const engine = this.callEngine?.engine
+    this.callEngine = undefined
+    engine?.hangUp()
+    this.call = undefined
+    this.callLevels = []
+  }
 
   // MARK: The composer's lists
 
