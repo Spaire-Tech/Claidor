@@ -20,6 +20,7 @@ import { type ReactNode, useEffect, useRef, useState } from 'react'
 import { t as coreT } from '../core/l10n'
 import type { AppStore } from '../core/store'
 import { desktop } from '../desktop/desktop'
+import { desktopUpdates } from '../desktop/updates'
 import { t } from '../l10n'
 import type { WebSession } from '../session'
 import { Alert } from './Dialogs'
@@ -37,7 +38,7 @@ import {
   SettingsSymbol,
   type SettingsSymbolName,
 } from './SettingsParts'
-import { SettingsUpdatesPage } from './SettingsUpdates'
+import { SettingsUpdatesPage, useCheckForUpdates } from './SettingsUpdates'
 import { SettingsUsagePage } from './SettingsUsage'
 import { SettingsWalletPage } from './SettingsWallet'
 import { classes } from './classes'
@@ -139,10 +140,14 @@ export function SignOutQuestion({
   )
 }
 
+/** Nothing to watch on the web (no updater). */
+const quiet = { subscribe: () => () => {}, getVersion: () => 0 }
+
 /**
  * The pages ("Settings sections"), 210 wide: each its symbol (14) and its
  * name (13), 32 high, the current one (or the one it sits under) on a grey
- * ground, 8 round; Log out at the foot, asked first.
+ * ground, 8 round; the dot (7, the unread blue) beside Updates while a
+ * release waits; Log out at the foot, asked first.
  */
 function SettingsNav({
   store,
@@ -156,6 +161,9 @@ function SettingsNav({
   const model = useWindowModel()
   const [asking, setAsking] = useState(false)
   const shown = parentOf(current) ?? current
+  // A release found by the Windows app's updater (step 7e): a dot beside Updates while it waits.
+  const updates = desktopUpdates()
+  useWatched(updates ?? quiet)
   return (
     <nav className="settings-nav" aria-label="Settings sections">
       {listed(store).map((page) => (
@@ -170,6 +178,13 @@ function SettingsNav({
             <SettingsSymbol name={pages[page].symbol} size={14} />
           </span>
           <span className="settings-nav-name">{pages[page].title()}</span>
+          {page === 'updates' && updates?.found != null && (
+            <span
+              className="settings-nav-dot"
+              role="img"
+              aria-label={t('Update available')}
+            />
+          )}
         </button>
       ))}
       <span className="settings-nav-spacer" />
@@ -289,6 +304,8 @@ export function SettingsLayer({
 }) {
   const model = useWindowModel()
   useWatched(store)
+  // Check for Updates… in the Windows app opens Settings on Updates (step 7e).
+  useCheckForUpdates(model)
   const overlay = model.overlay
   const open = overlay?.kind === 'settings'
   const page = open ? overlay.page : undefined

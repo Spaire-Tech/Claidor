@@ -58,8 +58,10 @@ function corsHeaders(origin) {
 
 /**
  * Starts the stand-in. `routes` may answer a path first (each part's own
- * calls): `(request, body) => ({ status, json } | { status, text, type } | undefined)`,
- * or a promise of it (an answer that takes its time).
+ * calls): `(request, body) => ({ status, json } | { status, text, type } |
+ * { status, body, headers } | undefined)`, or a promise of one (an answer
+ * that takes its time). `body` is bytes or text; `headers` are added (a 302's
+ * `location`: the updates' feed, 7e).
  */
 export async function startStandIn({ routes } = {}) {
   const state = { requests: [], box: computer() }
@@ -75,6 +77,8 @@ export async function startStandIn({ routes } = {}) {
       origin: origin ?? null,
       bearer: (request.headers.authorization ?? '').startsWith('Bearer '),
       client: request.headers['x-simeon-client-version'] ?? null,
+      // What the updater says of this PC (7e: the same for everyone).
+      updaterId: request.headers['x-user-staging-id'] ?? null,
     }
     state.requests.push(record)
     const cors = corsHeaders(origin)
@@ -107,6 +111,14 @@ export async function startStandIn({ routes } = {}) {
     const own = await routes?.(record, args, state)
     if (own) {
       if ('json' in own) return json(own.json, own.status ?? 200)
+      if ('body' in own || 'headers' in own) {
+        response.writeHead(own.status ?? 200, {
+          'cache-control': 'no-store',
+          ...cors,
+          ...own.headers,
+        })
+        return response.end(own.body ?? '')
+      }
       return send(own.status ?? 200, own.text ?? '', own.type ?? 'text/plain')
     }
 

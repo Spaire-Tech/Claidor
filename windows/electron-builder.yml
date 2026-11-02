@@ -1,5 +1,6 @@
 # The Windows installer (electron-builder): `npm run package` on Windows, or
-# on Linux with Wine. Step 7e adds the icon, the signing and the updates' feed.
+# on Linux with Wine, for a developer's build; `node scripts/release.mjs` for
+# a release (its build number, its signature, its feed files).
 
 appId: com.simeonlabs.simeon
 productName: Simeon
@@ -20,10 +21,16 @@ protocols:
     schemes:
       - simeon
 win:
+  # The Mac's icon (scripts/make-icon.mjs).
+  icon: resources/icon.ico
   target:
     - target: nsis
       arch:
         - x64
+  # Signed only when a certificate is given through the environment
+  # (WIN_CSC_LINK and WIN_CSC_KEY_PASSWORD, electron-builder's own); the
+  # release names the signers, in full, the installed app asks of every
+  # update (scripts/lib/release.mjs, `signers`).
 nsis:
   # One click, for this person only: no administrator, in %LOCALAPPDATA%\Programs\Simeon.
   oneClick: true
@@ -32,7 +39,11 @@ nsis:
   createStartMenuShortcut: true
   shortcutName: Simeon
   artifactName: Simeon-Setup-${version}.${ext}
-# Updates (7e): electron-updater reads `latest.yml` here; the server sends it on to the release bucket, as the Mac's appcast.
+# Updates (src/main/updates): electron-updater reads `latest.yml` here and the
+# installer it names; the server sends both on to the release bucket's
+# releases/win32-x64/, as the Mac's appcast (server/simeon/desktop/releases.py).
+# S3 answers one range a request, so a partial download asks them one by one.
 publish:
   provider: generic
   url: https://api.simeonlabs.com/desktop/download/windows
+  useMultipleRangeRequest: false
