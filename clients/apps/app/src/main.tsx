@@ -5,7 +5,7 @@ import { currentLanguage } from './core/language'
 import { loadWords } from './core/words'
 import { desktop } from './desktop/desktop'
 import { listenForQuitting } from './desktop/quitting'
-import { desktopSessionOptions } from './desktop/session'
+import { desktopSessionOptions, startDesktopSession } from './desktop/session'
 import './index.css'
 import { WebSession } from './session'
 import './window/desktop.css'
@@ -23,6 +23,7 @@ async function start() {
   if (host) document.documentElement.dataset.desktop = host.facts.platform
   const session = new WebSession(host ? desktopSessionOptions(host) : {})
   if (host) listenForQuitting(host)
+  if (host) startDesktopSession(host, session)
   const root = document.getElementById('root')
   if (root) {
     createRoot(root).render(

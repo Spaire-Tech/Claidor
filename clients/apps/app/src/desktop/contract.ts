@@ -58,6 +58,27 @@ export interface DesktopCalls {
 
   // MARK: 7b, signing in and the session
 
+  /** Settings › General's Relaunch (the Mac's `relaunch`): the app starts again, after the page's own work, as at any quit. */
+  relaunch(): void
+  /** A line for one of the app's logs in its data folder (the Mac's `voice-call.log`, `computer-stream.log`), stamped and appended there. */
+  writeLog(name: 'voice-call.log' | 'computer-stream.log', line: string): void
+  /** The logs' last 256 KB each, for a report's diagnostics (the Mac's `MacFeedback.logFiles`); an empty one is left out. */
+  readLogs(): { name: 'computer-stream.log' | 'voice-call.log'; text: string }[]
+  /** This PC's maker and model as Windows names them, for a report (the Mac's `hw.model`); else the processor's kind ("x86_64"). */
+  deviceModel(): string
+  /** The agents, the sidebar's pins and sections and the connectors' catalogue kept on this PC (the Mac's `SavedChats`), each null when there is none. */
+  readSaved(): { roster: unknown; layout: unknown; catalog: unknown }
+  /** One chat's lines kept on this PC, or null. */
+  readSavedChat(agentId: string): unknown
+  /** Keeps one of the three files (a JSON object). */
+  writeSaved(name: 'roster' | 'layout' | 'catalog', record: unknown): void
+  /** Keeps one chat's lines (a JSON object), or forgets them (null). */
+  writeSavedChat(agentId: string, record: unknown): void
+  /** Every chat kept but these agents' goes. */
+  keepSavedChats(agentIds: string[]): void
+  /** Everything kept of the agents and chats goes (signed out). */
+  forgetSaved(): void
+
   // MARK: 7c, notifications, the taskbar, the tray, the menu and the call's window
 
   // MARK: 7d, links and pages outside
