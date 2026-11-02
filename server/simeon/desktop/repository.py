@@ -52,12 +52,21 @@ class DesktopSessionRepository(RepositoryBase[DesktopSession]):
         """Whether the person has ever signed in to the Mac app: one of
         their sessions names itself `mac-<version>` (`MacSession.clientVersion`),
         a cloud job's credential aside."""
+        return await self._has_app_named(user_id, "mac-%")
+
+    async def has_windows_app(self, user_id: UUID) -> bool:
+        """Whether the person has ever signed in to the Windows app: one of
+        their sessions names itself `windows-<version>+<build>`
+        (`desktopClientVersion`, clients/apps/app/src/desktop/session.ts)."""
+        return await self._has_app_named(user_id, "windows-%")
+
+    async def _has_app_named(self, user_id: UUID, pattern: str) -> bool:
         statement = (
             self.get_base_statement()
             .where(
                 DesktopSession.user_id == user_id,
                 DesktopSession.job_id.is_(None),
-                DesktopSession.client_version.like("mac-%"),
+                DesktopSession.client_version.like(pattern),
             )
             .limit(1)
         )

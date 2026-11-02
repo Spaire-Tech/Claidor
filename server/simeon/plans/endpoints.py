@@ -191,10 +191,10 @@ async def get_subscription(
     )
     # Someone who uses the Mac app is sent back to it after a checkout, whatever
     # link brought them to the page (the founder, 29 October 2026: "the app is
-    # clearly downloaded here").
-    answer.has_mac_app = await DesktopSessionRepository.from_session(
-        session
-    ).has_mac_app(user.id)
+    # clearly downloaded here"); the Windows app's the same on Windows.
+    desktop_sessions = DesktopSessionRepository.from_session(session)
+    answer.has_mac_app = await desktop_sessions.has_mac_app(user.id)
+    answer.has_windows_app = await desktop_sessions.has_windows_app(user.id)
     return answer
 
 
