@@ -69,6 +69,14 @@ import { type ConnectedApp, connectedApp } from './connectedApps'
 import { Entry, appliedChange } from './entry'
 import { fileLine, fileSize } from './fileLine'
 import { byteCap, computerPath } from './filePreview'
+import {
+  type FlightBookingAnswer,
+  type FlightOffer,
+  type OpenFlight,
+  type Traveller,
+  bookingAnswer,
+  travellerJSON,
+} from './flightCards'
 import { GatewayError } from './gatewayConnection'
 import { type JSONValue, arr, bool, field, int, num, str, text } from './json'
 import { t } from './l10n'
@@ -1638,13 +1646,95 @@ export class AppStore {
   // form (Store.swift's `startFlightBooking`, `submitFlightPassengers`…).
   // The flights' state and commands go below this line, and nowhere else.
 
-  /** The flight cards' state back to nothing (signed out). */
-  private resetFlightCards(): void {}
+  /**
+   * The flight whose details the pane shows (`PaneState.flight`): its key
+   * (the card's row and the offer's place), the offer as it was opened, and
+   * the agent whose chat holds the card. The window draws it beside that
+   * chat (FlightCards.tsx) until the agent's pane comes (step 4).
+   */
+  openFlight?: OpenFlight
 
-  /** The flight cards' answers shown here, settled once the computer's copy of a chat has them. */
+  /** The flight cards' state back to nothing (signed out). */
+  private resetFlightCards(): void {
+    this.openFlight = undefined
+  }
+
+  /**
+   * Nothing to settle: Book with Simeon and the form's Continue wait for the
+   * computer's own answer, and the form's state is the computer's
+   * (`passengersState`), so nothing is shown here ahead of its copy.
+   */
   private settleFlightCards(agentId: string, entries: readonly Entry[]): void {
     void agentId
     void entries
+  }
+
+  /** A flight row (`__simeonOpenFlight`): the open one again closes its details; another shows in their place. */
+  toggleFlight(key: string, offer: FlightOffer, agentId: string): void {
+    this.openFlight =
+      this.openFlight?.key === key ? undefined : { key, offer, agentId }
+    this.changed()
+  }
+
+  /** The details' ×, Escape, Book with Simeon done, or another chat opened. */
+  closeFlight(): void {
+    if (this.openFlight === undefined) return
+    this.openFlight = undefined
+    this.changed()
+  }
+
+  /** "Book with Simeon" on a flight (`startFlightBooking`): the traveller form in the chat, or why not. */
+  async startFlightBooking(
+    entryId: string,
+    offerIndex: number,
+    agentId: string,
+  ): Promise<FlightBookingAnswer> {
+    const backend = this.backend
+    if (!backend) return { message: t("Your computer isn't connected.") }
+    try {
+      return bookingAnswer(
+        await backend.command('startFlightBooking', {
+          agentId,
+          entryId,
+          offerIndex,
+        }),
+      )
+    } catch (error) {
+      return { message: error instanceof Error ? error.message : String(error) }
+    }
+  }
+
+  /** The traveller form's Continue (`submitFlightPassengers`): the flight's checkout card, or what to fix. */
+  async submitFlightPassengers(
+    entryId: string,
+    travellers: readonly Traveller[],
+    agentId: string,
+  ): Promise<FlightBookingAnswer> {
+    const backend = this.backend
+    if (!backend) return { message: t("Your computer isn't connected.") }
+    try {
+      return bookingAnswer(
+        await backend.command('submitFlightPassengers', {
+          agentId,
+          entryId,
+          passengers: travellers.map(travellerJSON),
+        }),
+      )
+    } catch (error) {
+      return { message: error instanceof Error ? error.message : String(error) }
+    }
+  }
+
+  /** The traveller form's Cancel (the core's; neither the Mac's form nor the iPhone's offers it). */
+  async cancelFlightPassengers(
+    entryId: string,
+    agentId: string,
+  ): Promise<void> {
+    await this.command(
+      'submitFlightPassengers',
+      { agentId, entryId, cancel: true },
+      t("Couldn't cancel the booking"),
+    )
   }
 
   // MARK: Step 3d's shop cards: a checkout paid with Link and products to
