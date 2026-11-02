@@ -81,6 +81,6 @@ export class GatewayLocalExecSandBox<Client = unknown, Accessor = GatewayLocalEx
 export function createBridgeUserComputers<Client = unknown, Accessor = GatewayLocalExecManager<Client>>(bridge: SandLocalExecBridge, options: Omit<GatewayLocalExecSandBoxOptions<Client, Accessor>, "computerId">) {
   return {
     list: (): ReturnType<SandLocalExecBridge["listComputers"]> => bridge.listComputers(),
-    resolve: (id?: string) => { const selected = id === undefined ? bridge.activeComputer() : bridge.listComputers().find((computer) => computer.id === id); return selected === undefined ? undefined : { id: selected.id, label: selected.label, box: new GatewayLocalExecSandBox(bridge, { ...options, ...(id === undefined ? {} : { computerId: selected.id }) }) }; }
+    resolve: (id?: string) => { const selected = id === undefined ? bridge.activeComputer() : bridge.listComputers().find((computer) => computer.id === id); return selected === undefined ? undefined : { id: selected.id, label: selected.label, ...(selected.platform === undefined ? {} : { platform: selected.platform }), box: new GatewayLocalExecSandBox(bridge, { ...options, ...(id === undefined ? {} : { computerId: selected.id }) }) }; }
   };
 }
