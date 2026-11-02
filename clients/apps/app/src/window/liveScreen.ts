@@ -12,11 +12,17 @@
 // as its own file. Its licence and those of the code inside it (pako, MIT;
 // DES, BSD-style) are served beside the app, as the wordmark font's is:
 // `novnc/LICENSE.txt`, `novnc/LICENSE.MPL-2.0`, `novnc/pako-LICENSE.txt`
-// and `novnc/des-NOTICE.txt` in `public/`. Its source is noVNC's own,
-// unchanged: https://github.com/novnc/noVNC/tree/v1.7.0.
+// and `novnc/des-NOTICE.txt` in `public/`, with `novnc/README.txt` saying
+// where its source is (MPL 2.0, 3.2): noVNC's own, unmodified, from npm's
+// `@novnc/novnc@1.7.0`, https://github.com/novnc/noVNC/tree/v1.7.0.
 
 import type RFB from '@novnc/novnc'
-import { ScreenCrashes, computerScreen, streamLog } from '../core/cloudComputer'
+import {
+  ClipboardBridge,
+  ScreenCrashes,
+  computerScreen,
+  streamLog,
+} from '../core/cloudComputer'
 
 /** An Apple computer: ⌘ is its command key (`buildVncMacKeyMappingScript` is the Mac's alone). */
 const apple =
@@ -66,18 +72,70 @@ export function ctrlStrokes(code: string, shift: boolean): KeyStroke[] {
   return strokes
 }
 
+/** The left Control and Shift: pressed again after a paste's own strokes while still held in the screen. */
+const putBack: Readonly<Record<string, number>> = {
+  ControlLeft: 0xffe3,
+  ShiftLeft: 0xffe1,
+}
+
 /**
- * The paste's keys once its words are on the computer's clipboard. On a
- * Mac, ⌘V becomes Ctrl+V as above. Elsewhere Ctrl (and ⇧) are already held
- * on the computer, as noVNC sent them when they went down: only the V.
+ * The paste's keys once its words are on the computer's clipboard: Ctrl+V
+ * (with ⇧) pressed and let go of here, on every computer, as the Mac's and
+ * the iPhone's pages do (`simeonPasteKeys`, `simeonPaste`). noVNC may not
+ * have sent a held Control yet (on Windows it waits up to 100 ms for
+ * AltGr), and a Control held before the screen had the keys was never
+ * sent. Then the left Control and Shift held in the screen (`held`) are
+ * pressed again, so the computer has them as noVNC thinks it does, and
+ * noVNC lets go of them with the keys.
  */
-export function pasteStrokes(onApple: boolean, shift: boolean): KeyStroke[] {
-  if (onApple) return ctrlStrokes('KeyV', shift)
-  const v = computerScreen.commandKeys.KeyV!
-  return [
-    [v, 'KeyV', true],
-    [v, 'KeyV', false],
-  ]
+export function pasteStrokes(
+  shift: boolean,
+  held: Iterable<string> = [],
+): KeyStroke[] {
+  return withHeld(ctrlStrokes('KeyV', shift), held)
+}
+
+/** A Ctrl shortcut's strokes, then the left Control and Shift still held in the screen pressed again. */
+function withHeld(strokes: KeyStroke[], held: Iterable<string>): KeyStroke[] {
+  const out = [...strokes]
+  for (const code of held) {
+    const keysym = putBack[code]
+    if (keysym !== undefined) out.push([keysym, code, true])
+  }
+  return out
+}
+
+/**
+ * The full view's clipboard between this computer and the agent's
+ * (ComputerView.swift's `bridge`, `pasteboardSent`): the core's
+ * `ClipboardBridge`, and what the agent's clipboard holds now as far as
+ * the page knows, the last words sent to it or copied on it. A paste's
+ * words go unless the agent's clipboard holds them already: the Mac's rule
+ * (only what changed on this computer's clipboard since it was last sent or
+ * written goes), as near as a page can tell without the clipboard's change
+ * count. The agent's copy is written here only while the page has the
+ * focus; one made while it is behind is dropped, so it never overwrites a
+ * newer copy made elsewhere meanwhile.
+ */
+export class ScreenClipboard {
+  private readonly bridge = new ClipboardBridge()
+  /** What the agent's clipboard holds now, as far as this page knows. */
+  holds?: string
+
+  /** The agent's copy: the words to write on this computer's clipboard, or none. */
+  fromBox(words: string, focused: boolean): string | undefined {
+    if (words !== '') this.holds = words
+    if (!focused) return undefined
+    return this.bridge.fromBox(words)
+  }
+
+  /** A paste's words: those to send before the keys, or none when the agent's clipboard holds them already. */
+  toBox(words: string | undefined): string | undefined {
+    if (words == null || words === '' || words === this.holds) return undefined
+    this.holds = words
+    this.bridge.sent(words)
+    return words
+  }
 }
 
 /** What a screen tells the view holding it, and what the view asks of it (`ScreenEvents`); each callback is optional. */
@@ -121,6 +179,8 @@ export class LiveScreen {
   private viewOnly: boolean
   /** A paste's keys are on their way: Ctrl+V alone if the browser's paste brings no words. */
   private pasting?: { shift: boolean; timer: ReturnType<typeof setTimeout> }
+  /** The left Control and Shift held down in the screen now (noVNC has them, or will). */
+  private held = new Set<string>()
 
   constructor(
     private readonly host: HTMLElement,
@@ -135,6 +195,8 @@ export class LiveScreen {
     )
     if (this.interactive) {
       host.addEventListener('keydown', this.keyDown, true)
+      host.addEventListener('keyup', this.keyUp, true)
+      host.addEventListener('focusout', this.letGo)
       host.addEventListener('paste', this.pasted, true)
     }
     void this.start()
@@ -259,7 +321,7 @@ export class LiveScreen {
     const rfb = this.rfb
     if (!rfb) return
     if (words) rfb.clipboardPasteFrom(words)
-    for (const [keysym, code, down] of pasteStrokes(apple, shift))
+    for (const [keysym, code, down] of pasteStrokes(shift, this.held))
       rfb.sendKey(keysym, code, down)
   }
 
@@ -271,6 +333,7 @@ export class LiveScreen {
    */
   private keyDown = (event: KeyboardEvent): void => {
     if (event.isComposing) return
+    if (event.code in putBack) this.held.add(event.code)
     const command = apple ? event.metaKey : event.ctrlKey
     const other = apple ? event.ctrlKey : event.metaKey
     if (command && !other && !event.altKey && event.code === 'KeyV') {
@@ -293,9 +356,9 @@ export class LiveScreen {
       if (!rfb) return
       event.preventDefault()
       event.stopImmediatePropagation()
-      for (const [keysym, code, down] of ctrlStrokes(
-        event.code,
-        event.shiftKey,
+      for (const [keysym, code, down] of withHeld(
+        ctrlStrokes(event.code, event.shiftKey),
+        this.held,
       ))
         rfb.sendKey(keysym, code, down)
       return
@@ -312,6 +375,15 @@ export class LiveScreen {
         if (!this.closed) this.events.onHostKey(key)
       }, 0)
     }
+  }
+
+  private keyUp = (event: KeyboardEvent): void => {
+    this.held.delete(event.code)
+  }
+
+  /** The screen let go of the keys: noVNC lets go of every key it held (`_allKeysUp`). */
+  private letGo = (): void => {
+    this.held.clear()
   }
 
   /** The browser's paste, in the screen holding the keys: its words go with the keys. */
@@ -334,6 +406,8 @@ export class LiveScreen {
     clearTimeout(this.retry)
     if (this.pasting) clearTimeout(this.pasting.timer)
     this.host.removeEventListener('keydown', this.keyDown, true)
+    this.host.removeEventListener('keyup', this.keyUp, true)
+    this.host.removeEventListener('focusout', this.letGo)
     this.host.removeEventListener('paste', this.pasted, true)
     const rfb = this.rfb
     this.rfb = undefined
