@@ -21,6 +21,7 @@ import { handle, text } from '../bridge'
 import type { AppContext } from '../context'
 import { deviceModel } from '../session/device'
 import { AppLogs, isLogName } from '../session/logs'
+import { relaunchArguments } from '../session/relaunch'
 import {
   SavedChatsFolder,
   agentIdArgument,
@@ -35,7 +36,7 @@ const mostAgents = 10_000
 
 export function register(context: AppContext): void {
   const logs = new AppLogs(context.dataFolder)
-  void logs.startStreamLog()
+  void logs.startStreamLog().then(() => logs.trimCallLog())
   const saved = new SavedChatsFolder(
     savedChatsFolder({
       dataFolder: context.dataFolder,
@@ -45,7 +46,8 @@ export function register(context: AppContext): void {
   )
 
   handle('relaunch', () => {
-    app.relaunch()
+    // As the Mac's: a new instance with no link (the one Windows started this one with is not handed over again).
+    app.relaunch({ args: relaunchArguments(context.app.argv) })
     context.quit()
   })
 

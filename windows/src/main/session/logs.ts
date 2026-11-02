@@ -12,7 +12,7 @@
 // reads their last 256 KB each (`MacFeedback.logFiles`). The page's lines
 // carry no token (they are scrubbed again in a report's diagnostics).
 
-import { appendFile, mkdir, open, writeFile } from 'node:fs/promises'
+import { appendFile, mkdir, open, stat, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
 export const logNames = ['computer-stream.log', 'voice-call.log'] as const
@@ -22,6 +22,13 @@ export type LogName = (typeof logNames)[number]
 export const logTail = 256 * 1024
 /** The longest line the page may write; the rest is cut. */
 export const longestLogLine = 16 * 1024
+/**
+ * The call's log is never emptied (the Mac's isn't): past 5 MB at a launch,
+ * its newest 1 MB is kept. The app's data folder roams with a company's
+ * roaming profile, which copies it at every sign-in (a Windows decision).
+ */
+export const longestCallLog = 5 * 1024 * 1024
+export const callLogKept = 1024 * 1024
 
 export function isLogName(value: unknown): value is LogName {
   return (logNames as readonly unknown[]).includes(value)
@@ -75,10 +82,36 @@ export class AppLogs {
   }
 
   write(name: LogName, line: string): Promise<void> {
-    if (name === 'voice-call.log') this.echo(`[simeon] voice-call ${line}\n`)
+    if (name === 'voice-call.log')
+      this.echo(`[simeon] voice-call ${line.slice(0, longestLogLine)}\n`)
     return this.queue(name, async () => {
       await mkdir(this.folder, { recursive: true })
       await appendFile(this.file(name), stampedLine(name, line, this.now()))
+    })
+  }
+
+  /** At launch: the call's log past `longestCallLog` keeps its newest `callLogKept`, from a line's start. */
+  trimCallLog(): Promise<void> {
+    const name = 'voice-call.log'
+    return this.queue(name, async () => {
+      const file = this.file(name)
+      let size: number
+      try {
+        size = (await stat(file)).size
+      } catch {
+        return
+      }
+      if (size <= longestCallLog) return
+      const handle = await open(file, 'r')
+      let kept: Buffer
+      try {
+        kept = Buffer.alloc(callLogKept)
+        await handle.read(kept, 0, callLogKept, size - callLogKept)
+      } finally {
+        await handle.close()
+      }
+      const start = kept.indexOf(0x0a) + 1
+      await writeFile(file, kept.subarray(start))
     })
   }
 

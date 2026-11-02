@@ -6,9 +6,9 @@
 // 24 and 20 under it, the buttons 300 wide and 40 high, 28 under the title
 // and 10 apart, in a block of 140 so nothing moves between states. While
 // the browser is open: "Continue in your browser", Reopen link · Cancel.
-// Then "Setting up Simeon's computer". Return is Continue to sign in,
-// Escape is Cancel. Only in the Windows app (App.tsx); the web signs in on
-// the website.
+// Then "Setting up Simeon's computer". Return is Continue to sign in
+// (Enter on a button the keys are on presses that one), Escape is Cancel.
+// Only in the Windows app (App.tsx); the web signs in on the website.
 
 import { useEffect, useRef } from 'react'
 import { logoInk, logoLightUpDuration, logoPlaces } from '../core/logoLightUp'
@@ -38,6 +38,9 @@ function Landing({ session }: { session: WebSession }) {
     const key = (event: KeyboardEvent) => {
       if (event.defaultPrevented || event.isComposing) return
       if (event.altKey || event.ctrlKey || event.metaKey) return
+      // A button the keys are on (Tab to Sign up) is pressed by Enter, Windows' way; else Return is the default button's.
+      if (event.key === 'Enter' && event.target instanceof HTMLButtonElement)
+        return
       if (event.key === 'Enter' && !waiting && !event.shiftKey) {
         event.preventDefault()
         session.signInWithBrowser()
@@ -180,7 +183,13 @@ function LogoShimmer() {
   useEffect(() => {
     const element = mark.current
     if (!element) return
-    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
+    // With Reduce Motion, and in Windows' contrast themes (the logo in their own text colour), the logo at once.
+    if (
+      window.matchMedia?.(
+        '(prefers-reduced-motion: reduce), (forced-colors: active)',
+      ).matches
+    )
+      return
     const start = performance.now()
     let frame = 0
     const draw = (now: number) => {

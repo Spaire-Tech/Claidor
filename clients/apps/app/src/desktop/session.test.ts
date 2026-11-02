@@ -5,7 +5,7 @@
 // it all and shows the screen again; the agents kept on the PC at launch;
 // the logs and the facts a report and About give.
 
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { SimeonAPI, sessionVault } from '../core/api'
 import type { LiveBackend } from '../core/backend'
 import { streamLog } from '../core/cloudComputer'
@@ -30,7 +30,11 @@ import {
   systemVersion,
 } from './facts'
 import { beforeQuit, runBeforeQuit } from './quitting'
-import { desktopSessionOptions, startDesktopSession } from './session'
+import {
+  desktopSessionOptions,
+  isCallWindow,
+  startDesktopSession,
+} from './session'
 import { FakeDesktop } from './testing'
 
 const base = 'https://api.example.com'
@@ -122,6 +126,69 @@ describe('the Windows app’s session', () => {
     expect(web.signedOutMessage).toBeUndefined()
     // No cookie traded, nothing asked of the website.
     expect(http.sent).toEqual([])
+  })
+
+  it('forgets at launch a copy of the chats left by a sign-in no longer kept', async () => {
+    const { fake, place } = windowsApp()
+    // A sign-out whose delete Windows refused (a file held a moment): the copy stayed, the pair went.
+    await place.write('roster', {
+      version: 1,
+      email: 'rhea@simeonlabs.com',
+      agents: [{ id: 'rhea-agent', name: 'Rhea’s' }],
+    })
+    await place.writeChat('rhea-agent', {
+      version: 1,
+      agentId: 'rhea-agent',
+      entries: [],
+    })
+    const host = install(fake)
+    const web = session(host, {
+      http: new ScriptedHTTP([]),
+      backend: new FakeBackend(),
+    })
+    await web.start()
+    expect(web.phase).toBe('signedOut')
+    await ms(5)
+    expect(place.files).toEqual({})
+    expect(place.chats.size).toBe(0)
+  })
+
+  it('never signs in nor keeps the chats in the call’s own window', async () => {
+    const fake = new FakeDesktop({ apiBase: base, window: 'call' })
+    const host = install(fake)
+    expect(isCallWindow(host)).toBe(true)
+    expect(desktopSessionOptions(host).savedChats).toBeUndefined()
+    const web = new WebSession(desktopSessionOptions(host))
+    const stop = startDesktopSession(host, web)
+    stop()
+    // No log written, no file asked for: the call's window answers nothing of the session's.
+    expect(fake.calls).toEqual([])
+  })
+
+  it('lets the buttons work again when the sign-in can’t even start', async () => {
+    const { fake, opened } = windowsApp()
+    const host = install(fake)
+    const digest = vi
+      .spyOn(crypto.subtle, 'digest')
+      .mockRejectedValueOnce(new Error('No hash here.'))
+    undo.push(() => digest.mockRestore())
+    const poll = new ScriptedHTTP([() => answer(404), pairBody])
+    const backend = new FakeBackend()
+    backend.agents = [makeAgent({ id: 'theo', name: 'Theo' })]
+    const web = session(host, {
+      http: new ScriptedHTTP([profile]),
+      poll,
+      backend,
+    })
+    await web.start()
+    web.signInWithBrowser()
+    await eventually(() => web.signedOutMessage != null)
+    expect(web.signedOutMessage).toBe('Sign-in did not finish. Try again.')
+    expect(opened).toEqual([])
+    // Continue works again.
+    web.signInWithBrowser()
+    await eventually(() => web.phase === 'signedIn')
+    expect(opened).toHaveLength(1)
   })
 
   it('signs in through the browser and /auth/poll, then the window', async () => {

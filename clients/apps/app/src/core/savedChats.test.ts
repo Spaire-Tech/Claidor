@@ -16,6 +16,7 @@ import { type Agent, agentFrom, makeAgent, previewLine } from './models'
 import {
   MemorySavedPlace,
   SavedChats,
+  type SavedFileName,
   agentSavedJSON,
   keptLines,
   linesKept,
@@ -59,6 +60,10 @@ function line(
   if (streaming) json.isStreaming = true
   return Entry.from(json)!
 }
+
+/** Whether the pins and sections shown are the device's copy (the core's `pinsKept`, `sectionsKept`; private in the store). */
+const kept = (store: AppStore) =>
+  store as unknown as { pinsKept: boolean; sectionsKept: boolean }
 
 const texts = (rows: readonly ChatRow[]) =>
   rows.flatMap((row) => (row.kind === 'bubble' ? [row.bubble.text] : []))
@@ -324,7 +329,96 @@ describe('the files', () => {
   })
 })
 
+describe('the order of reads and writes', () => {
+  /** A place whose writes take their time, as a large list's does through the app. */
+  class SlowPlace extends MemorySavedPlace {
+    override async write(
+      name: SavedFileName,
+      record: JSONValue,
+    ): Promise<void> {
+      await ms(30)
+      return super.write(name, record)
+    }
+  }
+
+  it('reads back nothing a sign-out forgot while a write was on its way (the Mac’s one queue)', async () => {
+    const place = new SlowPlace()
+    place.files.roster = JSON.stringify({
+      version: 1,
+      email: 'bass@simeonlabs.com',
+      agents: [{ id: 'theo', name: 'Theo' }],
+    })
+    place.chats.set(
+      'theo',
+      JSON.stringify({
+        version: 1,
+        agentId: 'theo',
+        entries: [
+          {
+            kind: 'message',
+            id: 'u1',
+            role: 'user',
+            content: 'Hi',
+            timestampMs: 1,
+          },
+        ],
+      }),
+    )
+    const saved = new SavedChats(place)
+    saved.writeRoster(
+      [makeAgent({ id: 'theo', name: 'Theo' })],
+      savedOwner('acct-1', bass.email),
+    )
+    saved.forget()
+    // The next sign-in reads as the forget is still waiting behind the write.
+    await saved.load()
+    expect(saved.readRoster()).toBeUndefined()
+    expect(await saved.readChat('theo')).toBeUndefined()
+  })
+})
+
 describe('the store', () => {
+  /** View › Reload (7c's Control-R) attaches again: what is kept on the PC stays, and shows again; only a sign-out, an ended sign-in or another account forget it. */
+  it('keeps the copy on the PC through a Reload', async () => {
+    const place = new MemorySavedPlace()
+    const store = await storeOn(place, bass)
+    const backend = new AwayBackend()
+    backend.lines.push({
+      kind: 'message',
+      id: 'a1',
+      role: 'assistant',
+      content: 'On it',
+      timestampMs: 3_000,
+    })
+    await store.attach(backend)
+    await store.open('theo')
+    store.saveNow()
+    await store.saved?.waitForWrites()
+    const files = { ...place.files }
+    const chats = new Map(place.chats)
+    expect(files.roster).toBeDefined()
+    expect(chats.size).toBe(1)
+    // Reload: the same computer, attached again, now asleep.
+    backend.away = true
+    let shown: string[] = []
+    await store.attach(backend, () => {
+      shown = store.agents.map((agent) => agent.id)
+    })
+    await store.saved?.waitForWrites()
+    expect(place.files.roster).toBe(files.roster)
+    expect(place.chats).toEqual(chats)
+    expect(shown).toEqual(['theo'])
+    expect(store.showingSaved).toBe(true)
+    await store.open('theo')
+    expect(texts(store.rows('theo'))).toEqual(['Hi Theo', 'On it'])
+    // A detach then an attach (a Reload done so) forgets nothing either.
+    store.detach()
+    await store.attach(backend)
+    await store.saved?.waitForWrites()
+    expect(place.chats).toEqual(chats)
+    expect(store.agents.map((agent) => agent.id)).toEqual(['theo'])
+  })
+
   /** A first launch keeps what the computer sent; the next, with the computer asleep, shows it at once, and the computer's copy replaces it when it wakes. */
   it('shows the list and a chat from this device while the computer is away', async () => {
     const place = new MemorySavedPlace()
@@ -468,6 +562,8 @@ describe('the store', () => {
     expect(shown?.pins).toEqual(['theo'])
     expect(shown?.folders).toEqual(['s1', unassignedId])
     expect(store.sidebarSections?.[0]?.agentIds).toEqual(['iris'])
+    expect(kept(store).pinsKept).toBe(true)
+    expect(kept(store).sectionsKept).toBe(true)
 
     // The computer wakes with changes made elsewhere: its own replace the device's, and are kept in turn.
     asleep.away = false
@@ -476,6 +572,8 @@ describe('the store', () => {
     await store.loadSections()
     expect(store.pinnedIds).toEqual(['iris'])
     expect(store.sidebarSections?.[0]?.id).toBe('s2')
+    expect(kept(store).pinsKept).toBe(false)
+    expect(kept(store).sectionsKept).toBe(false)
     await store.reloadRoster()
     store.saveNow()
     await store.saved?.waitForWrites()
@@ -521,10 +619,7 @@ describe('the store', () => {
     const read = await first.readCatalog()
     expect(read?.map((entry) => entry.id)).toEqual(['gmail'])
     expect(first.catalog.map((app) => app.title)).toEqual(['Gmail'])
-    // The list too, so the next launch has a list to show it with.
-    first.saveNow()
     await first.saved?.waitForWrites()
-    first.detach()
     expect((await readBack(place)).readCatalog(currentLanguage())).toBeDefined()
     expect((await readBack(place)).readCatalog('xx')).toBeUndefined()
 
@@ -576,6 +671,7 @@ describe('the store', () => {
     ]
     await store.attach(backend)
     expect(store.sidebarSections?.[0]?.id).toBe('s1')
+    expect(kept(store).sectionsKept).toBe(true)
 
     // Meanwhile, on another device: a folder "Work" and Iris pinned too.
     backend.away = false
@@ -598,6 +694,7 @@ describe('the store', () => {
     }[]
     expect(written.map((s) => s.id)).toEqual(['s1', 's2', unassignedId])
     expect(written[0]?.agentIds).toEqual(['iris', 'theo'])
+    expect(kept(store).sectionsKept).toBe(false)
 
     // Theo unpinned here: Iris, pinned elsewhere, stays.
     await store.setPinned('theo', false)

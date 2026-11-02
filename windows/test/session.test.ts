@@ -8,12 +8,22 @@ import os from 'node:os'
 import path from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import { modelName, registryValue } from '../src/main/session/device'
-import { AppLogs, isLogName, logTail, stampedLine } from '../src/main/session/logs'
+import {
+  AppLogs,
+  callLogKept,
+  isLogName,
+  logTail,
+  longestCallLog,
+  longestLogLine,
+  stampedLine,
+} from '../src/main/session/logs'
+import { relaunchArguments } from '../src/main/session/relaunch'
 import {
   SavedChatsFolder,
   agentIdArgument,
   isSavedName,
   recordText,
+  retried,
   savedChatFileName,
   savedChatsFolder,
   savedLimits,
@@ -62,6 +72,27 @@ describe('the logs', () => {
     )
     // Echoed to the console as the Mac echoes it to stderr.
     expect(echoed).toEqual(['[simeon] voice-call call started\n'])
+  })
+
+  it('keeps the call’s log’s newest 1 MB past 5 MB, and echoes a cut line', async () => {
+    const dir = folder()
+    const line = `${'y'.repeat(99)}\n`
+    writeFileSync(path.join(dir, 'voice-call.log'), line.repeat(Math.ceil((longestCallLog + 1) / line.length)))
+    const echoed: string[] = []
+    const logs = new AppLogs(dir, () => at, (text) => void echoed.push(text))
+    await logs.trimCallLog()
+    const kept = readFileSync(path.join(dir, 'voice-call.log'), 'utf8')
+    expect(kept.length).toBeLessThanOrEqual(callLogKept)
+    expect(kept.length).toBeGreaterThan(callLogKept - line.length)
+    // From a line's start.
+    expect(kept.startsWith('y')).toBe(true)
+    expect(kept.split('\n').slice(0, -1).every((one) => one === 'y'.repeat(99))).toBe(true)
+    // A small one stays as it is.
+    writeFileSync(path.join(dir, 'voice-call.log'), 'one call\n')
+    await logs.trimCallLog()
+    expect(readFileSync(path.join(dir, 'voice-call.log'), 'utf8')).toBe('one call\n')
+    await logs.write('voice-call.log', 'z'.repeat(longestLogLine * 3))
+    expect(echoed[0]!.length).toBe('[simeon] voice-call '.length + longestLogLine + 1)
   })
 
   it('reads the last 256 KB of each for a report, the screens’ first, an empty one left out', async () => {
@@ -169,6 +200,48 @@ describe('the agents and chats kept on this PC', () => {
     expect(savedChatsFolder({ dataFolder: '/tmp/d', platform: 'linux', env: {} })).toBe(
       path.join('/tmp/d', 'saved-chats'),
     )
+  })
+})
+
+describe('Relaunch', () => {
+  it('starts the app again without the link it was started with, as the Mac’s (no link, no argument)', () => {
+    // A packaged app started by Windows for a link.
+    expect(relaunchArguments(['C:\\Simeon\\Simeon.exe', 'simeon://app/v1/pack/add?id=p1'])).toEqual([])
+    // A developer's build, against a stand-in: the app's folder and --api= stay, the links of any case and length go.
+    expect(
+      relaunchArguments([
+        '/electron',
+        '/src/windows',
+        '--api=http://127.0.0.1:4310',
+        'SIMEON://mcp-oauth?state=s&code=c',
+        `simeon://app/v1/open?${'x'.repeat(3_000)}`,
+        '--no-sandbox',
+      ]),
+    ).toEqual(['/src/windows', '--api=http://127.0.0.1:4310', '--no-sandbox'])
+  })
+})
+
+describe('a file Windows holds a moment', () => {
+  it('is tried again while it is busy, and gives up on anything else', async () => {
+    let tries = 0
+    const busy = Object.assign(new Error('busy'), { code: 'EBUSY' })
+    expect(
+      await retried(async () => {
+        tries += 1
+        if (tries < 3) throw busy
+        return 'done'
+      }),
+    ).toBe('done')
+    expect(tries).toBe(3)
+    tries = 0
+    const missing = Object.assign(new Error('missing'), { code: 'EISDIR' })
+    await expect(
+      retried(async () => {
+        tries += 1
+        throw missing
+      }),
+    ).rejects.toBe(missing)
+    expect(tries).toBe(1)
   })
 })
 

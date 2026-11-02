@@ -1032,7 +1032,7 @@ export class AppStore {
 
   /** Pin or unpin: the whole ordered list is written, as the Mac writes it (`setHostSettings({pinnedAgentIds})`); a new pin goes last. */
   async setPinned(agentId: string, pinned: boolean): Promise<void> {
-    await this.freshPinsIfKept()
+    if (this.pinsKept) await this.freshPinsIfKept()
     const next = this.pinnedIds.filter((id) => id !== agentId)
     if (pinned) next.push(agentId)
     await this.writePins(
@@ -1043,7 +1043,7 @@ export class AppStore {
 
   /** Moves a pin to another pin's place (the Mac's drag in the pin grid). */
   async movePin(agentId: string, index: number): Promise<void> {
-    await this.freshPinsIfKept()
+    if (this.pinsKept) await this.freshPinsIfKept()
     const from = this.pinnedIds.indexOf(agentId)
     if (from < 0) return
     const next = this.pinnedIds.filter((id) => id !== agentId)
@@ -6214,13 +6214,13 @@ export class AppStore {
     this.saved?.forget()
   }
 
-  /** What `attach` shows before the computer answers: the list kept, its pins and folders, the catalogue; told as a list shows. */
+  /** What `attach` shows before the computer answers: the list kept, its pins and folders, the catalogue; then `shown` is told, as the core tells it (the session looks whether a list shows). */
   private showKept(shown?: () => void): void {
     if (!this.saved) return
     this.showSaved()
     this.showSavedLayout()
     this.showSavedCatalog()
-    if (this.showingSaved) shown?.()
+    shown?.()
   }
 
   /** The list kept, shown while the computer has not answered; another account's is forgotten instead (`showSaved`). */

@@ -23,7 +23,9 @@ async function start() {
   if (host) document.documentElement.dataset.desktop = host.facts.platform
   const session = new WebSession(host ? desktopSessionOptions(host) : {})
   if (host) listenForQuitting(host)
-  if (host) startDesktopSession(host, session)
+  // The call's own window (7c) shows the main window's call: it never signs in, nor keeps the chats (src/desktop/session.ts).
+  const signsIn = host?.facts.window !== 'call'
+  if (host && signsIn) startDesktopSession(host, session)
   const root = document.getElementById('root')
   if (root) {
     createRoot(root).render(
@@ -32,7 +34,7 @@ async function start() {
       </StrictMode>,
     )
   }
-  await session.start()
+  if (signsIn) await session.start()
 }
 
 void start()

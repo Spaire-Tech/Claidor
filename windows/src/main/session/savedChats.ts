@@ -27,6 +27,28 @@ export const savedLimits = {
 /** The longest agent's id taken. */
 export const longestAgentId = 1_024
 
+/**
+ * How a delete or a rename is tried again on Windows, where another
+ * program holding a file a moment (Defender scanning one just written, the
+ * indexer, a backup) makes it fail with EBUSY or EPERM; on the Mac they
+ * don't fail so (SavedChats.swift's `try?`). Sign-out's forget must hold.
+ */
+export const retries = { maxRetries: 5, retryDelay: 100 } as const
+const passing = new Set(['EBUSY', 'EPERM', 'EACCES', 'ENOTEMPTY'])
+
+/** A file operation tried again, `retries.maxRetries` more times, a little longer each, while it fails for a moment. */
+export async function retried<T>(task: () => Promise<T>): Promise<T> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await task()
+    } catch (error) {
+      const code = (error as { code?: string }).code
+      if (attempt >= retries.maxRetries || !code || !passing.has(code)) throw error
+      await new Promise((done) => setTimeout(done, retries.retryDelay * (attempt + 1)))
+    }
+  }
+}
+
 export function isSavedName(value: unknown): value is SavedName {
   return (savedNames as readonly unknown[]).includes(value)
 }
@@ -106,7 +128,7 @@ export class SavedChatsFolder {
     await mkdir(path.dirname(file), { recursive: true })
     const next = `${file}.next`
     await writeFile(next, text, { mode: 0o600 })
-    await rename(next, file)
+    await retried(() => rename(next, file))
   }
 
   read(): Promise<Record<SavedName, unknown>> {
@@ -129,7 +151,7 @@ export class SavedChatsFolder {
   writeChat(agentId: string, text: string | null): Promise<void> {
     const file = this.chatFile(agentId)
     return this.next(() =>
-      text == null ? rm(file, { force: true }) : this.writeText(file, text),
+      text == null ? retried(() => rm(file, { force: true })) : this.writeText(file, text),
     )
   }
 
@@ -144,13 +166,15 @@ export class SavedChatsFolder {
         return
       }
       for (const name of names)
-        if (!kept.has(name)) await rm(path.join(this.chats, name), { force: true })
+        if (!kept.has(name)) await retried(() => rm(path.join(this.chats, name), { force: true }))
     })
   }
 
-  /** Signed out: all of it goes, after any write still on its way. */
+  /** Signed out: all of it goes, after any write still on its way; tried again while Windows holds a file a moment (Node's own retries for a folder, `retried` around them). */
   forget(): Promise<void> {
-    return this.next(() => rm(this.folder, { recursive: true, force: true }))
+    return this.next(() =>
+      retried(() => rm(this.folder, { recursive: true, force: true, ...retries })),
+    )
   }
 
   /** Waits for what is on its way. */

@@ -20,6 +20,11 @@ export function desktopClientVersion(desktop: Desktop): string {
   return `windows-${desktop.facts.version}+${desktop.facts.build}`
 }
 
+/** The call's own window (7c): it draws the main window's call, and never signs in nor keeps the chats. */
+export function isCallWindow(desktop: Desktop): boolean {
+  return desktop.facts.window === 'call'
+}
+
 export function desktopSessionOptions(desktop: Desktop): SessionOptions {
   return {
     base: desktop.facts.apiBase,
@@ -33,7 +38,7 @@ export function desktopSessionOptions(desktop: Desktop): SessionOptions {
     // The server's sign-in page in the default browser (the Mac's `NSWorkspace.open`).
     openBrowser: (url) =>
       void desktop.call('openExternal', url).catch(() => {}),
-    savedChats: desktopSavedChats(desktop),
+    savedChats: isCallWindow(desktop) ? undefined : desktopSavedChats(desktop),
   }
 }
 
@@ -48,6 +53,7 @@ export function startDesktopSession(
   desktop: Desktop,
   session: WebSession,
 ): () => void {
+  if (isCallWindow(desktop)) return () => {}
   const store = session.store
   const write = (
     name: 'voice-call.log' | 'computer-stream.log',

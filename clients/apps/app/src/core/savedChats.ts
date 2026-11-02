@@ -319,12 +319,17 @@ export class SavedChats {
   /** Reads the list, the layout and the catalogue, as a sign-in starts; a place that can't be read has none. */
   async load(): Promise<void> {
     this.generation += 1
+    const started = this.generation
+    // A read waits for the writes before it: nothing is read back that a sign-out has forgotten.
+    await this.writes
     let files: Record<SavedFileName, unknown> | undefined
     try {
       files = await this.place.read()
     } catch {
       files = undefined
     }
+    // Forgotten (or read again) meanwhile: what this read found is gone.
+    if (started !== this.generation) return
     this.roster = decodeRoster(files?.roster)
     this.layout = decodeLayout(files?.layout)
     this.catalog = files?.catalog ?? undefined
@@ -350,6 +355,10 @@ export class SavedChats {
   async readChat(agentId: string): Promise<SavedLines | undefined> {
     if (this.chats.has(agentId)) return this.chats.get(agentId)
     const started = this.generation
+    // After the writes before it, as the Mac's one queue reads.
+    await this.writes
+    if (started !== this.generation) return undefined
+    if (this.chats.has(agentId)) return this.chats.get(agentId)
     let record: unknown
     try {
       record = await this.place.readChat(agentId)

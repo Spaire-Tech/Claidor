@@ -41,7 +41,13 @@ import {
   type SavedGatewayStore,
   sessionSavedGateway,
 } from './core/savedGateway'
-import { freshMetadata, loginURL, poll, simeonConfig } from './core/signIn'
+import {
+  type Outcome,
+  freshMetadata,
+  loginURL,
+  poll,
+  simeonConfig,
+} from './core/signIn'
 import { AppStore, accountFrom } from './core/store'
 import { t } from './l10n'
 
@@ -191,6 +197,8 @@ export class WebSession {
       }
     }
     if (!api.isSignedIn) {
+      // No sign-in kept: no copy of an earlier one's agents and chats outlives it, should its sign-out have failed to delete it (a Windows decision; the Mac relies on sign-out alone).
+      this.options.savedChats?.forget()
       this.goSignIn()
       return
     }
@@ -210,22 +218,28 @@ export class WebSession {
     const signing = new AbortController()
     this.signing = signing
     void (async () => {
-      const metadata = await freshMetadata()
-      if (this.signing !== signing) return
-      const url = loginURL(this.base, metadata, {
-        signUp,
-        redirectTarget: simeonConfig.macURLScheme,
-      })
-      this.loginPage = url
-      this.set('waitingForBrowser')
-      open(url)
-      const outcome = await poll(
-        this.base,
-        metadata,
-        this.clientVersion,
-        this.options.signInHTTP ?? new FetchClient(),
-        { signal: signing.signal, wait: this.options.signInWait },
-      )
+      let outcome: Outcome
+      try {
+        const metadata = await freshMetadata()
+        if (this.signing !== signing) return
+        const url = loginURL(this.base, metadata, {
+          signUp,
+          redirectTarget: simeonConfig.macURLScheme,
+        })
+        this.loginPage = url
+        this.set('waitingForBrowser')
+        open(url)
+        outcome = await poll(
+          this.base,
+          metadata,
+          this.clientVersion,
+          this.options.signInHTTP ?? new FetchClient(),
+          { signal: signing.signal, wait: this.options.signInWait },
+        )
+      } catch {
+        // Nothing could be asked (no random bytes, no hash): as a sign-in that didn't finish, and the buttons work again.
+        outcome = { kind: 'gaveUp' }
+      }
       if (this.signing !== signing || signing.signal.aborted) return
       this.signing = undefined
       this.loginPage = undefined

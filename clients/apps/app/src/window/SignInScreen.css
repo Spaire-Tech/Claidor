@@ -2,8 +2,10 @@
 /* window, its ground, one column in the middle; light and dark from the     */
 /* window's own colours (`Look`: the ink, its 60% and 40%, the link).        */
 
+/* Its own layer at 0: whatever the window shows over it (7d's Deep Links dialog at 93, About) stays above. */
 .sign-in-screen {
   position: relative;
+  z-index: 0;
   display: grid;
   place-items: center;
   height: 100%;
@@ -199,5 +201,20 @@
 @media (prefers-reduced-motion: reduce) {
   .sign-in-spinner {
     animation-duration: 1.6s;
+  }
+}
+
+/* Windows' contrast themes replace background colours: the marks keep the theme's own text colours. */
+@media (forced-colors: active) {
+  .sign-in-logo {
+    forced-color-adjust: none;
+    background: CanvasText;
+  }
+  .sign-in-pill-mark {
+    forced-color-adjust: none;
+    background: ButtonText;
+  }
+  .sign-in-spinner {
+    fill: CanvasText;
   }
 }
