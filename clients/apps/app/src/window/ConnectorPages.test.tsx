@@ -17,7 +17,7 @@ import { PluginsModel, type PluginsPage } from './pluginsModel'
 
 const gmailURL = 'https://api.simeonlabs.com/desktop/api/apps/mcp/gmail'
 
-const catalogue = [
+const catalogue: JSONValue[] = [
   {
     id: 'gmail',
     name: 'gmail',
@@ -65,7 +65,7 @@ const catalogue = [
   },
 ]
 
-const servers = [
+const servers: JSONValue[] = [
   {
     id: 'g1',
     name: 'Gmail',
