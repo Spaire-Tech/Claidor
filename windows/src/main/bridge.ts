@@ -28,6 +28,17 @@ type AnyHandler = (from: WebContents, ...args: unknown[]) => unknown
 
 const handlers = new Map<string, AnyHandler>()
 
+/** Pages that may make only some calls (the call's window, 7c): no kept values read or written, no other call. */
+const limited = new WeakMap<WebContents, ReadonlySet<string>>()
+
+/** A page held to `names` from now on (before it loads: its preload reads the kept values at once). */
+export function limit(
+  contents: WebContents,
+  names: readonly (keyof DesktopCalls)[],
+): void {
+  limited.set(contents, new Set(names))
+}
+
 /** Whether a frame's address is the app's own page. (Node gives an `app:` address the origin "null", so the scheme and host are compared, not `origin`.) */
 export function fromApp(frameURL: string | undefined): boolean {
   if (!frameURL) return false
@@ -67,15 +78,19 @@ export function startBridge(kept: KeptValues): void {
     if (!heard(event)) throw new Error('Only the app’s own page may call.')
     if (typeof name !== 'string' || !Array.isArray(args))
       throw new Error('A call is a name and a list.')
+    const allowed = limited.get(event.sender)
+    if (allowed && !allowed.has(name))
+      throw new Error(`${name} is not this window's.`)
     const handler = handlers.get(name)
     if (!handler) throw new Error(`${name} is not in this build.`)
     return handler(event.sender, ...args)
   })
   ipcMain.on('simeon:kept-read', (event) => {
-    event.returnValue = heard(event) ? kept.readAll() : {}
+    event.returnValue =
+      heard(event) && !limited.has(event.sender) ? kept.readAll() : {}
   })
   ipcMain.on('simeon:kept-write', (event, key: unknown, value: unknown) => {
-    if (!heard(event) || !isKeptKey(key)) return
+    if (!heard(event) || limited.has(event.sender) || !isKeptKey(key)) return
     if (value !== null && typeof value !== 'string') return
     kept.write(key, value)
   })
