@@ -477,6 +477,23 @@ describe('Connectors’ model', () => {
     expect(model.launchingFix).toBe(false)
   })
 
+  it('keeps a logo the computer read only when it is a picture, and reads each address once', async () => {
+    const { model, box } = await opened()
+    box.answers['desktopMcp:resolvePluginLogo'] = {
+      src: 'data:image/x-icon;base64,AA==',
+    }
+    await model.loadLogo('https://acme.example/favicon.ico')
+    await model.loadLogo('https://acme.example/favicon.ico')
+    expect(model.logos.get('https://acme.example/favicon.ico')).toBe(
+      'data:image/x-icon;base64,AA==',
+    )
+    expect(box.all('desktopMcp:resolvePluginLogo').length).toBe(1)
+    box.answers['desktopMcp:resolvePluginLogo'] =
+      'data:text/html,<script>alert(1)</script>'
+    await model.loadLogo('https://acme.example/page')
+    expect(model.logos.has('https://acme.example/page')).toBe(false)
+  })
+
   it('says each notice for 3.5 s, a failure for 6 s', async () => {
     vi.useFakeTimers()
     const store = new AppStore()

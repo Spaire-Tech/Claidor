@@ -4766,7 +4766,7 @@ export class AppStore {
   /**
    * A catalogue entry's logo (`loadLogo`, `resolvePluginLogo`): the
    * computer answers with a data URL (SVG or PNG); read once per address,
-   * and only a picture is kept.
+   * and only a picture is kept (any image kind the computer read: an `<img>` runs no script).
    */
   async readPluginLogo(address: string): Promise<void> {
     if (this.pluginLogos.has(address) || this.pluginLogoReads.has(address))
@@ -4780,11 +4780,7 @@ export class AppStore {
     } catch {
       return
     }
-    if (
-      source == null ||
-      !/^data:image\/(png|svg\+xml|jpeg|gif|webp)[;,]/i.test(source)
-    )
-      return
+    if (source == null || !/^data:image\/[a-z0-9.+-]+[;,]/i.test(source)) return
     this.pluginLogos = new Map(this.pluginLogos).set(address, source)
     this.changed()
   }
