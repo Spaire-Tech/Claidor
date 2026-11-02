@@ -107,7 +107,13 @@ import {
   listenerConnectedIn,
   webPage,
 } from './connectCards'
-import { type ConnectedApp, connectedApp } from './connectedApps'
+import { type ConnectedApp, connectedApp, makeApp } from './connectedApps'
+import {
+  type ConnectStart,
+  alreadySignedIn,
+  authorizationURL,
+  didntConnect,
+} from './connecting'
 import { callTransport } from './elevenLabsVoice'
 import { Entry, appliedChange } from './entry'
 import {
@@ -4580,7 +4586,167 @@ export class AppStore {
   // `Connecting.swift`, `AppAccounts.swift`). The screens' side is
   // src/window/connector.ts and ConnectConsent.tsx.
 
-  /** 6b's state back to nothing (signed out). */
+  /**
+   * Connect (`beginConnect`, `Connecting`): the app installed from the
+   * catalogue when it is not on the computer yet, then its sign-in started;
+   * the sign-in's page, and whether this connect added the app. An app this
+   * connect added whose sign-in then doesn't open is taken back at once, so
+   * nothing stays half added; `problem` says why.
+   */
+  async beginConnect(name: string): Promise<ConnectStart | undefined> {
+    const backend = this.backend
+    if (!backend) return undefined
+    // The box's app events keep the list current, so it is read here only when it never was (an empty list counts as never read: the web keeps no time of the last read).
+    if (this.catalog.length === 0 || this.apps.length === 0)
+      await this.loadAppCards()
+    if (this.backend !== backend) return undefined
+    const key = name.toLowerCase()
+    const plugin = this.catalogApp(name)
+    let server = this.apps.find(
+      (app) =>
+        app.name.toLowerCase() === key ||
+        (app.pluginId != null && app.pluginId === plugin?.id),
+    )
+    let added: string | undefined
+    if (!server && plugin) {
+      try {
+        // The install and the maker's server id at once (the second only names the server the first makes).
+        const [installed, vendor] = await Promise.all([
+          backend.command('desktopMcp', {
+            action: 'installEntry',
+            args: [{ entryId: plugin.id }],
+          }),
+          backend
+            .command('desktopMcp', {
+              action: 'vendorServerIdForPlugin',
+              args: [plugin.id],
+            })
+            .catch(() => undefined),
+        ])
+        if (this.backend !== backend) return undefined
+        added = plugin.id
+        this.apps = (arr(field(installed, 'servers')) ?? [])
+          .map(connectedApp)
+          .filter((app): app is ConnectedApp => app != null)
+        this.changed()
+        const vendorId = text(vendor)
+        server = vendorId
+          ? makeApp({
+              serverId: vendorId,
+              name: plugin.title,
+              pluginId: plugin.id,
+              accountKey: 'default',
+              status: 'needs-auth',
+              toolCount: 0,
+            })
+          : this.apps.find((app) => app.pluginId === plugin.id)
+      } catch (error) {
+        this.connectProblem(t`Couldn't add ${name}: ${this.connectWhy(error)}`)
+        return undefined
+      }
+    }
+    if (!server) {
+      this.connectProblem(t`${name} isn't in Simeon's apps yet.`)
+      return undefined
+    }
+    if (server.status === 'connected') return undefined
+    try {
+      const started = await backend.command('desktopMcp', {
+        action: 'authenticateServer',
+        args: [server.serverId, server.accountKey, 'connector_card'],
+      })
+      if (this.backend !== backend) return undefined
+      const url = await this.signInStarted(started, name)
+      if (url) return { url, addedPlugin: added }
+      // Signed in already: kept, whatever the list says yet.
+      if (alreadySignedIn(started)) return undefined
+    } catch (error) {
+      if (this.backend !== backend) return undefined
+      this.connectProblem(
+        didntConnect(name, plainError(this.connectWhy(error))),
+      )
+    }
+    // No sign-in to open: the app this connect added goes again, unless it turned out signed in already.
+    if (added) await this.takeBack(added, name, backend)
+    return undefined
+  }
+
+  /**
+   * A connect whose sign-in was cancelled (`undoConnect`, `Connecting.undoes`):
+   * the app it added is uninstalled again (`uninstallPlugin`, as Uninstall
+   * on its page does), so it isn't left added and not signed in. One the
+   * computer says is connected after all is kept.
+   */
+  async undoConnect(start: ConnectStart, name: string): Promise<void> {
+    const backend = this.backend
+    if (start.addedPlugin == null || !backend) return
+    await this.takeBack(start.addedPlugin, name, backend)
+  }
+
+  /** Sign in to one account of an app (`signInURL`, `authenticateServer`): its page, or none with the reason in `problem`. */
+  async signInURL(app: ConnectedApp): Promise<string | undefined> {
+    const backend = this.backend
+    if (!backend) return undefined
+    try {
+      const started = await backend.command('desktopMcp', {
+        action: 'authenticateServer',
+        args: [app.serverId, app.accountKey, 'connector_card'],
+      })
+      return await this.signInStarted(started, app.name)
+    } catch (error) {
+      this.connectProblem(
+        t`Couldn't sign in to ${app.name}: ${this.connectWhy(error)}`,
+      )
+      return undefined
+    }
+  }
+
+  /** The app a connect added, uninstalled again unless the computer now says it is connected (`takeBack`): only on the computer it was added to (`backend`), never another account's. */
+  private async takeBack(
+    plugin: string,
+    name: string,
+    backend: AgentBackend,
+  ): Promise<void> {
+    if (this.backend !== backend) return
+    await this.readApps(true)
+    if (this.backend !== backend || this.isConnected(name)) return
+    try {
+      await backend.command('desktopMcp', {
+        action: 'uninstallPlugin',
+        args: [plugin],
+      })
+    } catch {
+      // Left as it is: its page offers Uninstall.
+    }
+    if (this.backend === backend) await this.readApps(true)
+  }
+
+  /** The sign-in's page; or, when the computer has none to offer, why (it was signed in already, or the app can't sign in here), said rather than dropped (`signInStarted`). */
+  private async signInStarted(
+    started: JSONValue,
+    name: string,
+  ): Promise<string | undefined> {
+    const url = authorizationURL(started)
+    if (url) return url
+    if (alreadySignedIn(started)) {
+      await this.readApps(true)
+      return undefined
+    }
+    this.connectProblem(didntConnect(name, text(field(started, 'message'))))
+    return undefined
+  }
+
+  /** A failure's own words (`localizedDescription`). */
+  private connectWhy(error: unknown): string {
+    return error instanceof Error ? error.message : String(error)
+  }
+
+  private connectProblem(words: string): void {
+    this.problem = words
+    this.changed()
+  }
+
+  /** 6b's state back to nothing (signed out): it keeps none; the connector's sign-in ends with the window. */
   private resetConnecting(): void {}
 
   // MARK: Step 6c's Connectors: the catalogue's entries, the computer's
