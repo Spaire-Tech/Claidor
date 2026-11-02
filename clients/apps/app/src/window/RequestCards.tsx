@@ -4,12 +4,12 @@
 // in-chat form, 1Password's fill and connect cards. Read by
 // `src/core/requestCards.ts`.
 //
-// Left out until their step, so no button does nothing: the hand-off's Take
-// over, Open computer and the screen's picture (the computer over the
-// window, step 5); 1Password's Connect, which needs the 1Password app's
-// command-line tool on this computer (the Windows app, step 7). 1Password's
-// Fill asks for the person's OK in the window's own alert where the Mac asks
-// for Touch ID.
+// Left out until its step, so no button does nothing: 1Password's Connect,
+// which needs the 1Password app's command-line tool on this computer (the
+// Windows app, step 7). 1Password's Fill asks for the person's OK in the
+// window's own alert where the Mac asks for Touch ID. The hand-off's Take
+// over, Open computer and the screen's picture open the computer over the
+// window (step 5b, ComputerView.tsx).
 
 import { useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
@@ -42,9 +42,11 @@ import {
 import type { AppStore } from '../core/store'
 import { t } from '../l10n'
 import { CardButton, type CardProps, CardShell, GrowingField } from './Cards'
+import { openComputerView } from './ComputerView'
 import { Alert } from './Dialogs'
 import './RequestCards.css'
 import { classes } from './classes'
+import { useWindowModel } from './windowModel'
 
 type RequestKind = Extract<
   CardKind,
@@ -324,22 +326,28 @@ function SecretCardView({
  * The agent hands the person its computer (`simeon-handoff`, 20 round,
  * padded 16, its parts 14 apart): a tile (44, 12 round) with a screen,
  * "Your turn on the computer" (15, 600) over "Waiting for you" beside a
- * breathing blue dot; the agent's instruction (15 on 21); then Skip quiet
- * at the left and I'm done at the right. Once settled: "Computer" with what
- * happened in a pill (Done and Answered in green, Skipped in blue, Canceled
- * in red) and the instruction in grey.
+ * breathing blue dot; the agent's instruction (15 on 21); while it waits,
+ * the screen's picture when the computer sent one (16:10, 12 round, a
+ * hairline); then Skip quiet at the left, I'm done and Take over in the
+ * blue at the right. Once settled: "Computer" with what happened in a pill
+ * (Done and Answered in green, Skipped in blue, Canceled in red), the
+ * instruction in grey, and Open computer. The picture, Take over and Open
+ * computer open the computer over the window (step 5b), which starts it.
  *
- * It waits while its line has no answer (`HandoffCardState` with no status:
- * the computer's status, its picture of the screen, Take over and Open
- * computer come with the computer in step 5).
+ * It waits while the computer's status carries this request or while its
+ * line has no answer yet (`HandoffCardState`).
  */
 function ComputerHandoffCard({
   agentId,
   card,
   store,
 }: ViewProps<ComputerCard>) {
-  const state = handoffCardState(card, undefined)
+  const model = useWindowModel()
+  const state = handoffCardState(card, store.computer.status(agentId)?.handoff)
   const words = trimmed(state.instruction)
+  const snapshot = state.waiting ? picture(state.snapshotDataUrl) : undefined
+  /** Take over, the picture and Open computer: the computer over the window (trigger `handoff`), which starts it. */
+  const takeOver = () => openComputerView(model, store, agentId)
   return (
     <div
       className={classes('handoff-card', state.waiting && 'waiting')}
@@ -400,7 +408,18 @@ function ComputerHandoffCard({
         )}
       </div>
       {words !== '' && <div className="handoff-instruction">{words}</div>}
-      {state.waiting && (
+      {snapshot && (
+        // The screen when the agent asked; a click takes over.
+        <button
+          type="button"
+          className="handoff-snapshot"
+          aria-label={t('Take over the computer')}
+          onClick={takeOver}
+        >
+          <img src={snapshot} alt="" draggable={false} />
+        </button>
+      )}
+      {state.waiting ? (
         <div className="handoff-buttons">
           <button
             type="button"
@@ -420,10 +439,30 @@ function ComputerHandoffCard({
           >
             {t('I’m done')}
           </button>
+          <button
+            type="button"
+            className="handoff-pill blue"
+            onClick={takeOver}
+          >
+            {t('Take over')}
+          </button>
+        </div>
+      ) : (
+        <div className="handoff-buttons">
+          <button type="button" className="handoff-pill" onClick={takeOver}>
+            {t('Open computer')}
+          </button>
         </div>
       )}
     </div>
   )
+}
+
+/** A picture the computer sent as a `data:image/…;base64,…` address; nothing else is drawn. */
+function picture(address: string | undefined): string | undefined {
+  return address != null && /^data:image\/[\w.+-]+;base64,/.test(address)
+    ? address
+    : undefined
 }
 
 // MARK: The in-chat form

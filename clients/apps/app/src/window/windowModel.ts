@@ -8,6 +8,11 @@
 // shared through `WindowContext`; the screens read it with `useWindow()`.
 
 import { createContext, useContext } from 'react'
+import {
+  type ComputerHelper,
+  focusedHelper,
+  stepHelper,
+} from '../core/cloudComputer'
 import type { OpenFlight } from '../core/flightCards'
 import { chatMinimum } from './sidebarLayout'
 
@@ -566,6 +571,17 @@ export class WindowModel {
     if (this.computer === undefined || this.computer.helper === helper) return
     this.computer = { ...this.computer, helper }
     this.changed()
+  }
+
+  /** ↑← (-1) and ↓→ (1) between two or more helpers' screens, round (`stepComputerHelper`, `bbn`): `helpers` are the store's for the computer shown. */
+  stepComputerHelper(delta: number, helpers: readonly ComputerHelper[]): void {
+    if (this.computer === undefined) return
+    const next = stepHelper(
+      helpers,
+      focusedHelper(helpers, this.computer.helper),
+      delta,
+    )
+    if (next !== undefined) this.showComputerHelper(next)
   }
 
   // MARK: Step 5c's computer questions (`computerAsk`)

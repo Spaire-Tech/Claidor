@@ -6,9 +6,9 @@
 // first in the window's own alert, with the Mac's Touch ID words, and goes
 // without the device's approval, which a browser can't give, so Link asks
 // the person in the Link app (a Shop checkout is paid at once: the alert is
-// the only ask); Review order and Open the computer, which open
-// the agent's computer, wait for the computer's screen (step 5), but for a
-// Shop checkout, whose Review order is the store's page; pages open in a new
+// the only ask); Review order, the checkout's picture and Open the computer
+// open the agent's computer over the window (step 5b), but for a Shop
+// checkout, whose Review order is the store's page; pages open in a new
 // tab; the products' pictures come from the shops as the Mac's do, without
 // telling them the app's address.
 
@@ -60,6 +60,7 @@ import {
   shownPurchase,
   soldBy,
   stars,
+  waitsOnBank,
   waitsOnPerson,
   walletApp,
   walletLabel,
@@ -68,9 +69,11 @@ import type { AppStore } from '../core/store'
 import { t } from '../l10n'
 import { type CardProps, StatusPill, cardWidth } from './Cards'
 import { classes } from './classes'
+import { openComputerView } from './ComputerView'
 import { Alert, Sheet } from './Dialogs'
 import { AirlineMark } from './FlightCards'
 import './ShopCards.css'
+import { useWindowModel } from './windowModel'
 
 type ShopKind = Extract<CardKind, 'purchase' | 'products'>
 
@@ -393,18 +396,14 @@ function PurchaseCardView({
     store,
     24 << 20,
   )
-  // Review order opens the agent's computer on the checkout: on the web, only a Shop checkout's, which is the store's page (the computer's screen comes in step 5).
-  const reviewOrder =
-    shown.isShopCheckout && shown.url != null
-      ? () => openPage(shown.url!)
-      : undefined
-  // The shop's icon is worn only by Review order: read it only when the pill shows.
-  const icon = useComputerPicture(
-    reviewOrder ? card.icon?.url : undefined,
-    agentId,
-    store,
-    1 << 20,
-  )
+  const model = useWindowModel()
+  /** Review order: the agent's computer, on the checkout; for a Shop checkout, the store's page, since Shop holds the checkout and nothing is open on the computer. */
+  const shopPage = shown.isShopCheckout ? shown.url : undefined
+  const reviewOrder = () =>
+    shopPage != null
+      ? openPage(shopPage)
+      : openComputerView(model, store, agentId)
+  const icon = useComputerPicture(card.icon?.url, agentId, store, 1 << 20)
   // A picture that came but can't be drawn shows the photo symbol, as one that never came.
   const [brokenPreview, setBrokenPreview] = useState<string>()
   const previewDrawn =
@@ -448,10 +447,7 @@ function PurchaseCardView({
           role="group"
           aria-label={t('The checkout page')}
         >
-          <div
-            className={classes('picture-frame', reviewOrder && 'opens')}
-            onClick={reviewOrder}
-          >
+          <div className="picture-frame opens" onClick={reviewOrder}>
             {previewDrawn ? (
               <img
                 src={preview.address}
@@ -467,17 +463,22 @@ function PurchaseCardView({
               )
             )}
           </div>
-          {reviewOrder && (
-            <ReviewOrderPill icon={icon.address} open={reviewOrder} floats />
-          )}
+          <ReviewOrderPill
+            icon={icon.address}
+            open={reviewOrder}
+            shopPage={shopPage != null}
+            floats
+          />
         </div>
       ) : (
         line !== '' && (
           <div className="purchase-items">
             <span className="items-line">{line}</span>
-            {reviewOrder && (
-              <ReviewOrderPill icon={icon.address} open={reviewOrder} />
-            )}
+            <ReviewOrderPill
+              icon={icon.address}
+              open={reviewOrder}
+              shopPage={shopPage != null}
+            />
           </div>
         )
       )}
@@ -495,6 +496,7 @@ function PurchaseCardView({
       </div>
       <PurchaseFooter
         shown={shown}
+        openComputer={() => openComputerView(model, store, agentId)}
         answer={(allow) => {
           // Allow asks first, as the Mac asks for Touch ID (`PurchaseApproval.confirm`); Deny goes at once.
           if (allow) setConfirming(true)
@@ -523,22 +525,29 @@ function PurchaseCardView({
 
 /**
  * Review order in glass (28 high), wearing the shop's icon in a white
- * circle (a globe until it comes), with the arrows of a window opening.
+ * circle (a globe until it comes), with the arrows of a window opening:
+ * the agent's computer on the checkout, or a Shop checkout's store page.
  */
 function ReviewOrderPill({
   icon,
   open,
+  shopPage,
   floats = false,
 }: {
   icon?: string
   open: () => void
+  shopPage: boolean
   floats?: boolean
 }) {
   return (
     <button
       type="button"
       className={classes('review-order', 'glass', floats && 'floats')}
-      title={checkoutWords.openStorePage}
+      title={
+        shopPage
+          ? checkoutWords.openStorePage
+          : t('Open the computer on the checkout')
+      }
       onClick={open}
     >
       <span className="review-icon">
@@ -861,15 +870,19 @@ function Pill({
 /**
  * Waiting on the person: Deny and Allow at the right (Allow faded until a
  * card is picked), and Link's test line. Answered: where it stands with its
- * mark, the line under it, and while Link waits on the person, Get the Link
- * app and Open Link.
+ * mark, the line under it, while Link waits on the person Get the Link app
+ * and Open Link, and while the bank checks it's the person Open the
+ * computer.
  */
 function PurchaseFooter({
   shown,
   answer,
+  openComputer,
 }: {
   shown: PurchaseCard
   answer: (allow: boolean) => void
+  /** The bank's check: the agent's computer over the window (step 5b). */
+  openComputer: () => void
 }) {
   if (waitsOnPerson(shown)) {
     const waiting = needsCard(shown)
@@ -927,7 +940,16 @@ function PurchaseFooter({
           )}
         </div>
       )}
-      {/* The bank's check (`waitsOnBank`): the Mac's Open the computer comes with the computer's screen, step 5. */}
+      {/* The bank's check, on the agent's computer (`waitsOnBank`). */}
+      {waitsOnBank(shown) && (
+        <div className="purchase-buttons">
+          <Pill
+            title={checkoutWords.openComputer}
+            prominent
+            onClick={openComputer}
+          />
+        </div>
+      )}
     </div>
   )
 }
