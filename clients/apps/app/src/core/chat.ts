@@ -262,6 +262,28 @@ export const stampGap = 15 * 60 * 1000
 export const notShown = () =>
   t("This message can't be shown in this version of Simeon.")
 
+/** The cards the core says in the message's own words when it can't read them (`message["content"] ?? notShown`). */
+const ownWordsCards: ReadonlySet<CardKind> = new Set([
+  'purchase',
+  'products',
+  'flightPassengers',
+  'joined',
+])
+
+/**
+ * What the chat says, as a notice, for a card whose line can't be read
+ * (Chat.swift's `row(for:)`): a checkout, products, the travellers' form
+ * and a teammate joined say the message's own words when it has them; the
+ * others, "This message can't be shown…".
+ */
+export function unreadCardWords(kind: CardKind, entry: Entry): string {
+  return (
+    (ownWordsCards.has(kind)
+      ? text(field(entry.message, 'content'))
+      : undefined) ?? notShown()
+  )
+}
+
 /**
  * A long text cut for drawing (the Mac folds a message past 664 pt behind
  * "Show more"): at most `limit` characters, at the last line break in its

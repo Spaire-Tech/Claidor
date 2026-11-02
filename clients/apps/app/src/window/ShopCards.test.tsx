@@ -1,5 +1,6 @@
 // The shop cards as the window draws them, and the web's own choices
-// (docs/web-app/PROGRESS.md): a card the core can't read says its words;
+// (docs/web-app/PROGRESS.md): a card the core can't read is left to the
+// chat, which says its words;
 // Allow waits for a card to be picked; Review order is offered only where
 // it opens something on the web (a Shop checkout's page); the products
 // stand side by side when the chat has room, else in rows.
@@ -53,17 +54,15 @@ const purchase = (more: JSONObject = {}): JSONObject => ({
 })
 
 describe('the shop cards on the web', () => {
-  it('says the words of a card it can’t read', () => {
-    const page = draw('purchase', {
-      type: 'purchase',
-      content: 'Checkout at oldshop.com · $12.00',
-      purchase: { merchant: 'Old shop' },
-    })
-    expect(page).toContain('class="notice shop-notice"')
-    expect(page).toContain('Checkout at oldshop.com · $12.00')
-    expect(draw('products', { type: 'products', products: [] })).toContain(
-      'This message can&#x27;t be shown in this version of Simeon.',
-    )
+  it('draws nothing of its own for a card it can’t read (the chat says its words)', () => {
+    expect(
+      draw('purchase', {
+        type: 'purchase',
+        content: 'Checkout at oldshop.com · $12.00',
+        purchase: { merchant: 'Old shop' },
+      }),
+    ).toBe('')
+    expect(draw('products', { type: 'products', products: [] })).toBe('')
   })
 
   it('waits for a card to be picked before Allow', () => {

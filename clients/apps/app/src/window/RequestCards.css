@@ -44,7 +44,7 @@
 /* The site it is for: 13, one line, at 60%. */
 .ask-site {
   font-size: 13px;
-  line-height: 18px;
+  line-height: 16px;
   letter-spacing: -0.08px;
   color: var(--ink-secondary);
   white-space: nowrap;
@@ -54,6 +54,8 @@
 
 /* What went in, a note, the account: 14, at 60%. */
 .ask-said {
+  /* No line height on the Mac: the font's own, 17 at 14. */
+  line-height: 17px;
   letter-spacing: -0.15px;
   color: var(--ink-secondary);
   white-space: pre-wrap;
@@ -90,7 +92,7 @@
   align-items: flex-start;
   gap: 4px;
   font-size: 13px;
-  line-height: 18px;
+  line-height: 16px;
   letter-spacing: -0.08px;
   color: var(--ink-tertiary);
 }
@@ -104,7 +106,7 @@
 /* Why the computer didn't take it: 13, in red. */
 .ask-refusal {
   font-size: 13px;
-  line-height: 18px;
+  line-height: 16px;
   color: var(--danger);
   white-space: pre-wrap;
 }
@@ -130,7 +132,7 @@
 
 .form-label {
   font-size: 13px;
-  line-height: 18px;
+  line-height: 16px;
   letter-spacing: -0.08px;
   color: var(--ink-secondary);
 }
@@ -241,6 +243,7 @@
 }
 
 .form-outcome {
+  line-height: 17px;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -321,6 +324,8 @@
 
 .handoff-title {
   font-weight: 600;
+  /* No line height on the Mac: the font's own, 18 at 15. */
+  line-height: 18px;
 }
 
 .handoff-title.settled {

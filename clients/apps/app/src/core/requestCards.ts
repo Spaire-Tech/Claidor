@@ -36,7 +36,7 @@ export function trimmed(value: unknown): string {
 }
 
 /** Swift's `trimmingCharacters(in: .whitespaces)`: tabs and spaces, not line breaks. */
-function trimmedSpaces(value: string): string {
+export function trimmedSpaces(value: string): string {
   return value.replace(/^[\t\p{Zs}]+|[\t\p{Zs}]+$/gu, '')
 }
 

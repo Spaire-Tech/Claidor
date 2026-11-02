@@ -1515,7 +1515,8 @@ export class AppStore {
    * can't be connected yet, all at once. One read at a time.
    */
   loadAppCards(): Promise<void> {
-    this.appCardsLoad ??= (async () => {
+    if (this.appCardsLoad) return this.appCardsLoad
+    const load: Promise<void> = (async () => {
       const once = !this.catalogFresh
       await Promise.all([
         this.loadApps(),
@@ -1523,9 +1524,11 @@ export class AppStore {
         once ? this.loadAppsComingSoon() : undefined,
       ])
     })().finally(() => {
-      this.appCardsLoad = undefined
+      // Only this read's: a sign-out and sign-in meanwhile may have started another.
+      if (this.appCardsLoad === load) this.appCardsLoad = undefined
     })
-    return this.appCardsLoad
+    this.appCardsLoad = load
+    return load
   }
 
   /** The catalogue from the computer (`desktopMcp` `getCatalog`); what was shown stays when it doesn't answer. */

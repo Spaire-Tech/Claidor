@@ -295,6 +295,7 @@ export function GrowingField({
   onReturn,
   disabled,
   className,
+  id,
 }: {
   value: string
   onChange: (value: string) => void
@@ -306,6 +307,8 @@ export function GrowingField({
   onReturn?: () => void
   disabled?: boolean
   className?: string
+  /** For a `<label htmlFor>` naming the field. */
+  id?: string
 }) {
   const field = useRef<HTMLTextAreaElement>(null)
   useEffect(() => {
@@ -329,6 +332,7 @@ export function GrowingField({
   return (
     <textarea
       ref={field}
+      id={id}
       className={classes('growing-field', className)}
       value={value}
       rows={minLines}

@@ -42,12 +42,12 @@ import {
   exchangeLabel,
   exchangePeers,
   isOneEmoji,
-  notShown,
   quoteLine,
   replyPlaceholder,
   routineLabel,
   routineVerb,
   stampText,
+  unreadCardWords,
   voiceChatLabel,
 } from '../core/chat'
 import {
@@ -1101,9 +1101,13 @@ function CardRow({
   }
   const view = cardView(row.card, card)
   // A card whose line can't be read is said in the chat's middle, as the
-  // core makes it a notice (Chat.swift: "This message can't be shown…").
+  // core makes it a notice (`unreadCardWords`).
   if (view == null)
-    return <div className="notice card-notice">{notShown()}</div>
+    return (
+      <div className="notice card-notice">
+        {unreadCardWords(row.card, row.entry)}
+      </div>
+    )
   return (
     <div
       className={classes('card-row', startsGroup && 'starts-group')}

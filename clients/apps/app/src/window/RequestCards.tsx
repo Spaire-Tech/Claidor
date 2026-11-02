@@ -36,6 +36,7 @@ import {
   onePasswordConnectCard,
   secretCard,
   trimmed,
+  trimmedSpaces,
   userFormCard,
 } from '../core/requestCards'
 import type { AppStore } from '../core/store'
@@ -209,6 +210,26 @@ function useBusy(): [boolean, (work: () => Promise<void>) => void] {
   return [busy, run]
 }
 
+/**
+ * A field a secret is typed or pasted in (the Mac's `SecureField`): masked,
+ * and never offered the person's saved logins by the browser or a password
+ * manager (they aren't this field's: it goes to the agent's computer). It
+ * is left to the browser (not React's state), so what is typed is never
+ * copied into the page's HTML; it is read once, when it is sent, and
+ * emptied then.
+ */
+const secretField = {
+  type: 'password',
+  autoComplete: 'new-password',
+  autoCapitalize: 'none',
+  spellCheck: false,
+  defaultValue: '',
+  'data-1p-ignore': 'true',
+  'data-lpignore': 'true',
+  'data-bwignore': 'true',
+  'data-form-type': 'other',
+} as const
+
 /** Return in a one-line field (`onSubmit`), not while a word is being composed. */
 const onReturn =
   (act: () => void) => (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -233,7 +254,9 @@ function SecretCardView({
   card,
   store,
 }: ViewProps<SecretCard>) {
-  const [value, setValue] = useState('')
+  const field = useRef<HTMLInputElement>(null)
+  // Only whether something is in the field, for Save; never what.
+  const [typed, setTyped] = useState(false)
   const [saving, run] = useBusy()
   const open = !card.provided && !card.dismissed
   const line = card.provided
@@ -242,9 +265,11 @@ function SecretCardView({
       ? ''
       : card.description
   const save = () => {
-    const secret = value
+    const box = field.current
+    const secret = box?.value ?? ''
     if (secret === '' || saving) return
-    setValue('')
+    if (box) box.value = ''
+    setTyped(false)
     run(() => store.submitSecret(secret, entryId, agentId))
   }
   const prompt = t`Paste your ${card.label}`
@@ -271,21 +296,18 @@ function SecretCardView({
         <>
           <div className="secret-row">
             <input
-              type="password"
+              ref={field}
+              {...secretField}
               className="ask-input"
-              value={value}
               placeholder={prompt}
               aria-label={prompt}
-              autoComplete="off"
-              autoCapitalize="none"
-              spellCheck={false}
-              onChange={(event) => setValue(event.target.value)}
+              onChange={(event) => setTyped(event.target.value !== '')}
               onKeyDown={onReturn(save)}
             />
             <CardButton
               title={t('Save securely')}
               prominent
-              disabled={saving || value === ''}
+              disabled={saving || !typed}
               onClick={save}
             />
           </div>
@@ -419,7 +441,11 @@ function UserFormCardView({
   card,
   store,
 }: ViewProps<UserFormCard>) {
+  // What is typed in the plain fields; the secret ones are the browser's (`secretField`).
   const [values, setValues] = useState<Record<string, string>>({})
+  const secrets = useRef(new Map<string, HTMLInputElement>())
+  // Only whether each secret field has something in it, for Fill in; never what.
+  const [secretsTyped, setSecretsTyped] = useState<Record<string, string>>({})
   const [busy, run] = useBusy()
   const [refusal, setRefusal] = useState<string>()
   const ids = useId()
@@ -435,12 +461,17 @@ function UserFormCardView({
         : card.state === 'filling'
           ? 'blue'
           : undefined
-  const fillable = canFill(card, values)
+  const fillable = canFill(card, { ...values, ...secretsTyped })
   const fill = () => {
-    if (busy || !canFill(card, values)) return
-    const sent = formValues(card, values)
+    if (busy || !fillable) return
+    const typed: Record<string, string> = { ...values }
+    for (const one of card.fields)
+      if (one.secret) typed[one.id] = secrets.current.get(one.id)?.value ?? ''
+    const sent = formValues(card, typed)
     // What was typed leaves the card now; only the computer holds it, and only to type it in.
     setValues({})
+    setSecretsTyped({})
+    for (const box of secrets.current.values()) box.value = ''
     run(async () =>
       setRefusal(await store.submitUserForm(sent, entryId, agentId)),
     )
@@ -494,6 +525,7 @@ function UserFormCardView({
       case 'textarea':
         return (
           <GrowingField
+            id={id}
             className="ask-input form-words"
             value={value(one)}
             onChange={(next) => set(one, next)}
@@ -505,17 +537,42 @@ function UserFormCardView({
           />
         )
       default:
+        if (one.secret)
+          return (
+            <input
+              id={id}
+              ref={(box) => {
+                if (box) secrets.current.set(one.id, box)
+                else secrets.current.delete(one.id)
+              }}
+              {...secretField}
+              // A code from a message may be offered by the browser; never a saved login.
+              autoComplete={
+                one.kind === 'otp' ? 'one-time-code' : 'new-password'
+              }
+              className="ask-input"
+              placeholder={one.placeholder}
+              onChange={(event) => {
+                const something = trimmedSpaces(event.target.value) !== ''
+                setSecretsTyped((now) => ({
+                  ...now,
+                  [one.id]: something ? 'typed' : '',
+                }))
+              }}
+              onKeyDown={onReturn(fill)}
+            />
+          )
         return (
           <input
             id={id}
-            type={one.secret ? 'password' : 'text'}
+            type="text"
             className="ask-input"
             value={value(one)}
             placeholder={one.placeholder}
             inputMode={inputMode(one)}
             autoComplete={autoComplete(one)}
             autoCapitalize="none"
-            spellCheck={!one.secret && one.kind === 'text'}
+            spellCheck={one.kind === 'text'}
             onChange={(event) => set(one, event.target.value)}
             onKeyDown={onReturn(fill)}
           />
@@ -630,13 +687,11 @@ function inputMode(
 }
 
 /**
- * What the browser may offer for the field, as the iPhone's card names it:
- * the person's own email and number, a code from a message; never this
- * site's saved passwords, which aren't the page's on the agent's computer.
+ * What the browser may offer for a plain field, as the iPhone's card names
+ * it: the person's own email and number. (A secret field is `secretField`:
+ * a code from a message at most, never a saved login.)
  */
 function autoComplete(one: FormField): string {
-  if (one.kind === 'otp') return 'one-time-code'
-  if (one.secret) return 'off'
   switch (one.kind) {
     case 'email':
       return 'email'
@@ -748,10 +803,11 @@ function CredentialCardView({
 // MARK: 1Password's connect card
 
 /**
- * The 1Password connect card: "Connect 1Password", the agent's reason, and
- * the X, a decline. Connect is the Mac's alone for now: it asks the
- * person's 1Password app on that computer for the shared vault and its key.
- * Once answered, "Connected" with the account, or "Dismissed".
+ * The 1Password connect card: "Connect 1Password", the agent's reason, what
+ * connecting makes (the Mac's paragraph), and the X, a decline. Connect is
+ * the Mac's alone for now: it asks the person's 1Password app on that
+ * computer for the shared vault and its key. Once answered, "Connected"
+ * with the account, or "Dismissed".
  */
 function OnePasswordConnectCardView({
   entryId,
@@ -787,6 +843,13 @@ function OnePasswordConnectCardView({
       />
       {card.state === 'open' && card.reason && (
         <div className="ask-line">{card.reason}</div>
+      )}
+      {card.state === 'open' && (
+        <div className="ask-line">
+          {t(
+            'Your 1Password app makes a vault named “Shared with Simeon” and a key that can only read it. Put in it the logins your agents may use; they fill them with your OK and never see them.',
+          )}
+        </div>
       )}
       {card.state === 'connected' && card.account && (
         <div className="ask-said">{card.account}</div>

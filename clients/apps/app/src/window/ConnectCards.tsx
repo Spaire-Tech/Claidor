@@ -34,9 +34,10 @@ import {
   type JoinedCard,
   type ListenerCard,
 } from '../core/connectCards'
+import { pictureURL } from '../core/faces'
 import type { AppStore } from '../core/store'
 import { t } from '../l10n'
-import { AgentMark } from './AgentMark'
+import { AgentPicture } from './AgentMark'
 import { CardShell, type CardProps } from './Cards'
 import './ConnectCards.css'
 import { classes } from './classes'
@@ -269,9 +270,20 @@ function ListenerConnectCardView({
 
   useEffect(() => {
     let live = true
+    let asking = false
     const read = async () => {
-      const now = await store.listenerConnected(platform)
-      if (live) setConnected(now ?? false)
+      // One question at a time: coming back fires both focus and visibilitychange.
+      if (asking) return
+      asking = true
+      try {
+        const now = await store.listenerConnected(platform)
+        if (!live) return
+        setConnected(now ?? false)
+        // Connected: nothing more to wait for.
+        if (now === true) opened.current = false
+      } finally {
+        asking = false
+      }
     }
     void read()
     // Back from the page Connect opened: asked again, so the card says Connected once it is.
@@ -293,11 +305,15 @@ function ListenerConnectCardView({
     const tab = window.open('', '_blank')
     if (tab) tab.opener = null
     const page = webPage(await store.listenerConnectURL(platform))
-    if (page) {
+    if (!page) tab?.close()
+    else if (!tab) {
       opened.current = true
-      if (tab) tab.location.href = page
-      else window.open(page, '_blank', 'noopener')
-    } else tab?.close()
+      window.open(page, '_blank', 'noopener')
+    } else if (!tab.closed) {
+      opened.current = true
+      tab.location.href = page
+    }
+    // A tab the person closed before the page was known stays closed: they changed their mind.
     setOpening(false)
   }
 
@@ -328,7 +344,8 @@ function ListenerConnectCardView({
               <path
                 d="M4.9 8.3 7.1 10.4l4.1-4.6"
                 fill="none"
-                stroke="#ffffff"
+                // Cut out of the green, as `checkmark.circle.fill`: the card's grey shows through.
+                style={{ stroke: 'var(--theirs)' }}
                 strokeWidth="1.6"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -439,8 +456,21 @@ function CloudAgentCardView({
   store: AppStore
 }) {
   const [info, setInfo] = useState<CloudAgentInfo>()
+  // Asked only while it is on screen, as the Mac's lazy chat asks (its `.task` ends when the card scrolls away).
+  const box = useRef<HTMLDivElement>(null)
+  const [onScreen, setOnScreen] = useState(false)
+  useEffect(() => {
+    const element = box.current
+    if (!element) return
+    const watch = new IntersectionObserver((seen) =>
+      setOnScreen(seen.some((one) => one.isIntersecting)),
+    )
+    watch.observe(element)
+    return () => watch.disconnect()
+  }, [])
 
   useEffect(() => {
+    if (!onScreen) return
     let stopped = false
     let timer: ReturnType<typeof setTimeout> | undefined
     let known: CloudAgentInfo | undefined
@@ -459,7 +489,7 @@ function CloudAgentCardView({
       stopped = true
       clearTimeout(timer)
     }
-  }, [store, bcId])
+  }, [store, bcId, onScreen])
 
   const shown = info ?? unavailableCloudAgent
   const pull = webPage(shown.pullRequestURL)
@@ -467,89 +497,94 @@ function CloudAgentCardView({
   const changed = cloudAgentChangedLabel(shown)
   const openPull = t('Open the pull request')
   return (
-    <CardShell className="cloud-card">
-      <div className="cloud-facts">
-        <div className="cloud-head">
-          {pull ? (
+    <div ref={box} className="cloud-watch">
+      <CardShell className="cloud-card">
+        <div className="cloud-facts">
+          <div className="cloud-head">
+            {pull ? (
+              <a
+                className="cloud-name"
+                href={pull}
+                title={openPull}
+                {...pageLink}
+              >
+                {name}
+              </a>
+            ) : (
+              <span className="cloud-name">{name}</span>
+            )}
+            <span
+              className={classes(
+                'status-pill large',
+                shown.status === 'finished' && 'cloud-done',
+                shown.status === 'error' && 'cloud-error',
+              )}
+              role="status"
+            >
+              <span className="status-dot" />
+              {cloudAgentStatusLabel(shown)}
+            </span>
+          </div>
+          {shown.prompt !== '' && (
+            <div className="cloud-prompt">{shown.prompt}</div>
+          )}
+          {(shown.branch !== '' || shown.pullRequestNumber != null) && (
+            <div className="cloud-branch">
+              <span className="cloud-glyph">
+                <BranchGlyph />
+              </span>
+              {shown.branch !== '' && (
+                <MiddleLine
+                  words={shown.branch}
+                  className="cloud-branch-name"
+                />
+              )}
+              {shown.pullRequestNumber != null &&
+                (pull ? (
+                  <a
+                    className="cloud-pull"
+                    href={pull}
+                    title={openPull}
+                    {...pageLink}
+                  >
+                    {t`PR #${shown.pullRequestNumber}`}
+                  </a>
+                ) : (
+                  <span className="cloud-pull">
+                    {t`PR #${shown.pullRequestNumber}`}
+                  </span>
+                ))}
+            </div>
+          )}
+          {changed && (
+            <div className="cloud-changes">
+              <span className="cloud-files">
+                <span className="cloud-glyph">
+                  <DocumentGlyph />
+                </span>
+                {changed}
+              </span>
+              <span className="cloud-lines">
+                <span className="cloud-added">+{shown.linesAdded}</span>
+                <span className="cloud-removed">-{shown.linesRemoved}</span>
+              </span>
+            </div>
+          )}
+        </div>
+        {pull && (
+          <div className="card-buttons">
             <a
-              className="cloud-name"
+              className="card-button prominent"
               href={pull}
               title={openPull}
               {...pageLink}
             >
-              {name}
+              {t('View PR')}
             </a>
-          ) : (
-            <span className="cloud-name">{name}</span>
-          )}
-          <span
-            className={classes(
-              'status-pill large',
-              shown.status === 'finished' && 'cloud-done',
-              shown.status === 'error' && 'cloud-error',
-            )}
-            role="status"
-          >
-            <span className="status-dot" />
-            {cloudAgentStatusLabel(shown)}
-          </span>
-        </div>
-        {shown.prompt !== '' && (
-          <div className="cloud-prompt">{shown.prompt}</div>
-        )}
-        {(shown.branch !== '' || shown.pullRequestNumber != null) && (
-          <div className="cloud-branch">
-            <span className="cloud-glyph">
-              <BranchGlyph />
-            </span>
-            {shown.branch !== '' && (
-              <MiddleLine words={shown.branch} className="cloud-branch-name" />
-            )}
-            {shown.pullRequestNumber != null &&
-              (pull ? (
-                <a
-                  className="cloud-pull"
-                  href={pull}
-                  title={openPull}
-                  {...pageLink}
-                >
-                  {t`PR #${shown.pullRequestNumber}`}
-                </a>
-              ) : (
-                <span className="cloud-pull">
-                  {t`PR #${shown.pullRequestNumber}`}
-                </span>
-              ))}
           </div>
         )}
-        {changed && (
-          <div className="cloud-changes">
-            <span className="cloud-files">
-              <span className="cloud-glyph">
-                <DocumentGlyph />
-              </span>
-              {changed}
-            </span>
-            <span className="cloud-lines">
-              <span className="cloud-added">+{shown.linesAdded}</span>
-              <span className="cloud-removed">-{shown.linesRemoved}</span>
-            </span>
-          </div>
-        )}
-      </div>
-      {pull && (
-        <div className="card-buttons">
-          <a
-            className="card-button prominent"
-            href={pull}
-            title={openPull}
-            {...pageLink}
-          >
-            {t('View PR')}
-          </a>
-        </div>
-      )}
-    </CardShell>
+      </CardShell>
+    </div>
   )
 }
 
@@ -650,7 +685,7 @@ function JoinedCardView({
           {standing ? (
             <img src={standing} alt="" />
           ) : (
-            <AgentMark agent={agent} agents={agents} size={72} />
+            <AgentPicture url={pictureURL(agent)} size={72} />
           )}
         </div>
       )}

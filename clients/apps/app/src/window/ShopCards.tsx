@@ -19,8 +19,7 @@ import {
   useState,
 } from 'react'
 import { createPortal } from 'react-dom'
-import { type CardKind, notShown } from '../core/chat'
-import { field, text } from '../core/json'
+import type { CardKind } from '../core/chat'
 import { inlineRuns } from '../core/markdown'
 import {
   type CardChoice,
@@ -81,28 +80,14 @@ export function shopCardView(kind: ShopKind, card: CardProps): React.ReactNode {
     agentId: card.agentId,
     store: card.store,
   }
+  // A line the core can't read is the chat's notice in its own words (ChatPane.tsx's `CardRow`).
   if (kind === 'purchase') {
     const read = purchaseCard(card.entry)
-    return read ? (
-      <PurchaseCardView {...props} card={read} />
-    ) : (
-      <CardNotice entry={card.entry} />
-    )
+    return read && <PurchaseCardView {...props} card={read} />
   }
   const read = productsCard(card.entry)
-  return read ? (
-    <ProductsCardView {...props} card={read} column={card.column} />
-  ) : (
-    <CardNotice entry={card.entry} />
-  )
-}
-
-/** The message's own words (`content`), as the core's `.notice` for a card it can't read. */
-function CardNotice({ entry }: { entry: CardProps['entry'] }) {
   return (
-    <div className="notice shop-notice">
-      {text(field(entry.message, 'content')) ?? notShown()}
-    </div>
+    read && <ProductsCardView {...props} card={read} column={card.column} />
   )
 }
 

@@ -48,7 +48,7 @@ export function Alert({
   onCancel?: () => void
 }) {
   const first = useRef<HTMLButtonElement>(null)
-  useEffect(() => first.current?.focus(), [])
+  useTakesFocus(first)
   useEscape(onCancel ?? onAction)
   return (
     <div
@@ -93,6 +93,23 @@ export function Alert({
   )
 }
 
+/**
+ * Takes the keys while it is open, and gives them back to what had them
+ * when it closes (a Mac alert's and sheet's way), unless that is gone.
+ */
+function useTakesFocus(target: { current: HTMLElement | null }) {
+  useEffect(() => {
+    const before =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null
+    target.current?.focus()
+    return () => {
+      if (before?.isConnected) before.focus()
+    }
+  }, [target])
+}
+
 /** A sheet over the window: the dimmed window behind, a click outside or Escape closes it. */
 export function Sheet({
   label,
@@ -106,7 +123,7 @@ export function Sheet({
   className?: string
 }) {
   const box = useRef<HTMLDivElement>(null)
-  useEffect(() => box.current?.focus(), [])
+  useTakesFocus(box)
   useEscape(close)
   return (
     <div

@@ -61,15 +61,6 @@
   color: inherit;
 }
 
-/* A card the core can't read: its words, as the chat's notice (8 above it, never the group's 12). */
-.shop-notice {
-  width: fit-content;
-}
-
-.card-row.starts-group > .shop-notice {
-  margin-top: -4px;
-}
-
 /* MARK: The checkout card: padded 16, its parts 14 apart. */
 
 .purchase-card {

@@ -591,3 +591,8 @@ a.card-button {
     color: #0b1828;
   }
 }
+
+/* The cloud agent card's own box, watched for being on screen. */
+.cloud-watch {
+  width: 100%;
+}

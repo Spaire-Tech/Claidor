@@ -112,6 +112,11 @@ function GroupMark({ members, size }: { members: Member[]; size: number }) {
   )
 }
 
+/** An agent's own picture, or the quiet disc without one (the Mac's `AgentPicture`): never a group's members. */
+export function AgentPicture({ url, size }: { url?: string; size: number }) {
+  return <Picture url={url} size={size} />
+}
+
 function Picture({ url, size }: { url?: string; size: number }) {
   return (
     <span className="picture" style={{ width: size, height: size }}>
