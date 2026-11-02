@@ -63,6 +63,7 @@ import {
 } from '../surfaces/checks'
 import { markPolygons, menuDot, trayInk, trayMark, trayScales } from '../surfaces/picture'
 import { firstTray, trayTemplate } from '../surfaces/trayMenu'
+import { updatesItself } from './updates'
 
 /** The page whose window has the keys, if one of the app's has. */
 function focusedContents(): WebContents | undefined {
@@ -309,12 +310,13 @@ function trayIcon(context: AppContext) {
     checkForUpdates: () => emit(forward(), 'checkForUpdates', null),
     quit: () => context.quit(),
   }
+  const checksForUpdates = updatesItself(context)
   const build = () => {
     const template: MenuItemConstructorOptions[] = trayTemplate(
       menu,
       {
-        // The Mac's "only in a released build": the updater is a packaged build's (7e). At the merge: 7e's `releasedBuild`, not `app.isPackaged` alone.
-        checksForUpdates: app.isPackaged,
+        // The Mac's "only in a released build": a signed release, the only build with an updater (7e's `updatesItself`).
+        checksForUpdates: checksForUpdates,
         unreadMark: unreadMark(nativeTheme.shouldUseDarkColors),
       },
       actions,

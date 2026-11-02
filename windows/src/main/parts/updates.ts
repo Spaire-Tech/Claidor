@@ -47,15 +47,20 @@ function appPackage(): unknown {
   }
 }
 
-export function register(context: AppContext): void {
-  const keptFile = path.join(context.dataFolder, 'updates.json')
-  const signers = signersOf(appPackage())
-  const released = releasedBuild({
+/** Whether this build updates itself: a signed release installed on Windows (the tray's Check for Updates… is offered only then, 7c). */
+export function updatesItself(context: AppContext): boolean {
+  return releasedBuild({
     packaged: app.isPackaged,
     build: context.app.build,
     platform: context.app.platform,
-    signers,
+    signers: signersOf(appPackage()),
   })
+}
+
+export function register(context: AppContext): void {
+  const keptFile = path.join(context.dataFolder, 'updates.json')
+  const signers = signersOf(appPackage())
+  const released = updatesItself(context)
   // A release reads only its own feed, with the signers it was signed as; a stand-in feed is for the checks.
   const feed = released ? undefined : feedForChecks(context.app.env)
   const log = new UpdatesLog(context.dataFolder)
