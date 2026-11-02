@@ -1,0 +1,204 @@
+/*
+ * An app's consent (ConnectConsent.tsx) at the Mac's measures
+ * (mac/Simeon/MacConnector.swift's `ConnectConsentDialog`): 600 wide, 24
+ * round, × at the top left; the logo, the app, three points, a hairline,
+ * the small print, Connect across the foot. Over everything in the window
+ * (the Mac's AppRoot overlay): over Settings, Connectors, search, the
+ * sheets and the computer's dialogs and pills. Light and dark.
+ */
+
+/* The window behind, dimmed: #141414 at 50% (70% on dark), in over 0.18 s. */
+.sheet-scrim:has(> .consent-sheet) {
+  z-index: 92;
+  background: rgb(20 20 20 / 0.5);
+  animation-duration: 0.18s;
+}
+
+@media (prefers-color-scheme: dark) {
+  .sheet-scrim:has(> .consent-sheet) {
+    background: rgb(20 20 20 / 0.698);
+  }
+}
+
+/* The dialog: 600 wide (less in a narrower window), 32 from the window's top and bottom; the raised ground, a line at 10% on light, a soft shadow (22%, 50% on dark); in from 96% over 0.18 s. */
+.sheet.consent-sheet {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 600px;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 64px);
+  overflow: hidden;
+  border-radius: 24px;
+  background: var(--elevated);
+  color: var(--ink);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--ink) 10%, transparent),
+    0 12px 60px rgb(0 0 0 / 0.22);
+  animation: consent-in 0.18s ease-out;
+}
+
+@media (prefers-color-scheme: dark) {
+  .sheet.consent-sheet {
+    box-shadow: 0 12px 60px rgb(0 0 0 / 0.5);
+  }
+}
+
+@keyframes consent-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet.consent-sheet {
+    animation: none;
+  }
+}
+
+/* × (`GlassDiscButton`, 32): 16 in from the top left, over what scrolls. */
+.consent-close {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 1;
+  display: flex;
+}
+
+/* All of it, scrolled only when it doesn't fit (`ViewThatFits(in: .vertical)`); Connect stays at the foot. */
+.consent-content {
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* The app's logo (64), 36 from the top, a soft shadow under it (black at 12%, radius 6, 2 down). */
+.consent-logo {
+  display: flex;
+  padding-top: 36px;
+  filter: drop-shadow(0 2px 12px rgb(0 0 0 / 0.12));
+}
+
+/* The app (22, 600), 16 under the logo; what it does (14, the second ink), 6 under, 64 a side. */
+.consent-title {
+  padding-top: 16px;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 26px;
+  color: var(--ink);
+  text-align: center;
+}
+
+.consent-summary {
+  padding: 6px 64px 0;
+  font-size: 14px;
+  line-height: 17px;
+  color: var(--ink-secondary);
+  text-align: center;
+}
+
+/* The three points, 18 apart, 48 a side, 26 under the summary. */
+.consent-points {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 26px 48px 0;
+}
+
+/* A point: its symbol (19, in the blue) in a column 28 wide, its words 16 beside it, all at the top. */
+.consent-point {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.consent-symbol {
+  flex: none;
+  display: flex;
+  justify-content: center;
+  width: 28px;
+  color: var(--yours);
+}
+
+.consent-symbol svg {
+  display: block;
+}
+
+/* Its title (14, 600) over its words (13, the second ink), 3 apart. */
+.consent-point-words {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.consent-point-title {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 17px;
+  color: var(--ink);
+}
+
+.consent-point-body {
+  font-size: 13px;
+  line-height: 16px;
+  color: var(--ink-secondary);
+}
+
+/* The hairline: the ink at 10%, half a point, 48 a side, 22 under the points. */
+.consent-rule {
+  align-self: stretch;
+  flex: none;
+  height: 0.5px;
+  margin: 22px 48px 0;
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+/* The small print and the note: 12, the second ink, 8 apart; 14 under the hairline, 8 over Connect. */
+.consent-print {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 48px 8px;
+}
+
+.consent-print p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 15px;
+  color: var(--ink-secondary);
+}
+
+/* Connect: across the foot in the person's blue (`prominentGlassButton`, large), 36 high, white 14 at 600; 48 a side, 16 over, 28 under. */
+.consent-foot {
+  flex: none;
+  padding: 16px 48px 28px;
+}
+
+.consent-connect {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 36px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--yours);
+  color: #ffffff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.consent-connect:focus-visible {
+  outline: 2px solid var(--unread);
+  outline-offset: 1px;
+}
