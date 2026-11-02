@@ -32,7 +32,8 @@
 // waits under it, as it waits while the computer is rebuilt
 // (`isSendingPaused`). Else, in its place, the credits' line
 // (CreditsLine.tsx, step 6f): the credits spent, or near the limit; it
-// opens Usage & Billing.
+// opens Usage & Billing. Then, in the Windows app, the agent's ask to use
+// this PC (LocalAskDock.tsx, step 7f).
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { accessNotice } from '../core/access'
@@ -72,6 +73,7 @@ import {
   Transcribing,
   spacedDictation,
 } from './Dictation'
+import { LocalAskDock } from './LocalAskDock'
 import { type Reply, ReplyPill } from './MessageActions'
 import { useWatched } from './useStore'
 import { useWindowModel } from './windowModel'
@@ -378,6 +380,8 @@ export function Composer({
       {accessNotice(store.access) === undefined && (
         <CreditsLine store={store} agentId={agentId} />
       )}
+      {/* Then the agent's first waiting ask to use this PC (`BLn`, the Windows app's hands, step 7f). */}
+      <LocalAskDock store={store} agentId={agentId} />
       {/* The lines: a send refused (six seconds) in red, then the files' (five seconds) at 40%. */}
       {notice && (
         <div className="composer-line error" role="status">
