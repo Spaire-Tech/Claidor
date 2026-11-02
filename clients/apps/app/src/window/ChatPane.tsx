@@ -78,6 +78,7 @@ import {
 } from './Cards'
 import { Composer } from './Composer'
 import { connectCardView } from './ConnectCards'
+import { somethingOver } from './Dialogs'
 import { EmojiPicker } from './EmojiPicker'
 import { FileCard, LinkCard, useShownPicture } from './Files'
 import { FindBar, FindContext, Marked } from './FindBar'
@@ -228,6 +229,7 @@ export function ChatPane({
       if (event.shiftKey || event.altKey) return
       if (event.key.toLowerCase() !== 'f') return
       event.preventDefault()
+      if (somethingOver()) return
       setFind((now) => ({ ...now, open: true, focus: now.focus + 1 }))
     }
     window.addEventListener('keydown', key)

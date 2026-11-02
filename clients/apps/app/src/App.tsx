@@ -16,6 +16,7 @@ import { t } from './l10n'
 import type { WebSession } from './session'
 import { AccessCover } from './window/AccessCover'
 import { ChatPane } from './window/ChatPane'
+import { somethingOver } from './window/Dialogs'
 import { FirstRunScreen } from './window/FirstRun'
 import { FlightPane, useFlightPane } from './window/FlightCards'
 import { Sidebar, listOrder } from './window/Sidebar'
@@ -165,6 +166,7 @@ function MainWindow({ session }: { session: WebSession }) {
       if (event.shiftKey || event.altKey || event.key.toLowerCase() !== 'b')
         return
       event.preventDefault()
+      if (somethingOver()) return
       resize(toggled)
     }
     window.addEventListener('keydown', key)

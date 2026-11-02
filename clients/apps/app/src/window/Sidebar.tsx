@@ -51,7 +51,7 @@ import {
   type GlyphName,
   type MenuLine,
 } from './ContextMenu'
-import { Alert, Sheet } from './Dialogs'
+import { Alert, Sheet, somethingOver } from './Dialogs'
 import { useWatched } from './useStore'
 
 /** An Apple computer picks with ⌘-click; Windows with Control-click. */
@@ -752,7 +752,8 @@ export function Sidebar({
       event.altKey
     )
       return
-    if (picked.isEmpty || menu || asking || showsHidden) return
+    if (picked.isEmpty || menu || asking || showsHidden || somethingOver())
+      return
     if (renamingAgent || renamingSection || fieldHasKeys()) return
     if (event.key === 'Escape') {
       event.preventDefault()

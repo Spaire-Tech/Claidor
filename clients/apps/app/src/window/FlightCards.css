@@ -513,6 +513,10 @@
   height: 100%;
   overflow: hidden;
   background: var(--pane-ground);
+}
+
+/* Only as it opens and shuts; the window made wider or narrower moves it at once. */
+.flight-pane.moving {
   transition: width 0.24s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -807,6 +811,9 @@
   overflow: hidden;
   background: var(--grouped-ground);
   line-height: 1.19;
+  /* Drawn inside the card, it doesn't take the card's tighter letters or its cutting of words (the Mac's sheet is outside the card's stack). */
+  letter-spacing: normal;
+  overflow-wrap: normal;
 }
 
 .travellers-top {

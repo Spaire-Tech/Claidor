@@ -110,6 +110,15 @@ function useTakesFocus(target: { current: HTMLElement | null }) {
   }, [target])
 }
 
+/**
+ * Whether an alert, a sheet or a viewer is over the window. The window's
+ * own keys (⌘F, ⌘B, Delete on picked rows) wait until it is gone, as
+ * behind a Mac's sheet.
+ */
+export function somethingOver(): boolean {
+  return document.querySelector('[aria-modal="true"]') != null
+}
+
 /** A sheet over the window: the dimmed window behind, a click outside or Escape closes it. */
 export function Sheet({
   label,

@@ -729,6 +729,25 @@ const paneWidest = 480
 const paneNarrowest = 280
 /** Its motion (`PaneState.motion`, `linger`): 0.24 s, and the flight kept on screen while it slides shut. */
 const paneLinger = 240
+/** Whether opening the details folded the sidebar, kept in this browser under the Mac's name (`PaneState.tookKey`). */
+const tookKey = 'simeon.pane.tookSidebar'
+
+function readTook(): boolean {
+  try {
+    return localStorage.getItem(tookKey) === 'true'
+  } catch {
+    return false
+  }
+}
+
+function keepTook(took: boolean): void {
+  try {
+    if (took) localStorage.setItem(tookKey, 'true')
+    else localStorage.removeItem(tookKey)
+  } catch {
+    // A private window, or storage refused: kept for this visit only.
+  }
+}
 
 /**
  * Where the flight's details stand (AgentPane.swift's flight in
@@ -754,9 +773,16 @@ export function useFlightPane(
   }, [flight, agentId, store])
   const took = useRef(false)
   const wasOpen = useRef(false)
+  // Opened again after a reload, a sign-out or the access cover while the details had folded the sidebar: they are gone (the flight is kept in the tab's memory only), so the sidebar opens, as closing them would.
+  useEffect(() => {
+    if (!readTook()) return
+    keepTook(false)
+    resize((now) => (now.isCollapsed ? { ...now, isCollapsed: false } : now))
+  }, [resize])
   useEffect(() => {
     if (open && !wasOpen.current) {
       took.current = !size.isCollapsed
+      keepTook(took.current)
       if (took.current) resize((now) => ({ ...now, isCollapsed: true }))
     } else if (!open && wasOpen.current) {
       if (took.current)
@@ -764,6 +790,7 @@ export function useFlightPane(
           now.isCollapsed ? { ...now, isCollapsed: false } : now,
         )
       took.current = false
+      keepTook(false)
     }
     wasOpen.current = open
   }, [open, size.isCollapsed, resize])
@@ -823,9 +850,22 @@ export function FlightPane({
   }, [open, close])
   // Its page keeps its width as it slides shut.
   const pageWidth = width > 0 ? width : (kept?.width ?? 0)
+  // It slides only as it opens and shuts (`AgentPane`), not as the window is made wider or narrower.
+  const shown = width > 0
+  const [lastShown, setLastShown] = useState(shown)
+  const [moving, setMoving] = useState(false)
+  if (lastShown !== shown) {
+    setLastShown(shown)
+    setMoving(true)
+  }
+  useEffect(() => {
+    if (!moving) return
+    const done = window.setTimeout(() => setMoving(false), paneLinger)
+    return () => window.clearTimeout(done)
+  }, [moving, shown])
   return (
     <aside
-      className={classes('flight-pane', width > 0 && 'shown')}
+      className={classes('flight-pane', shown && 'shown', moving && 'moving')}
       style={{ width }}
       aria-label={t('Conversation details')}
       aria-hidden={width === 0}
@@ -1308,9 +1348,13 @@ function TravellerGroup({
   const set = <K extends keyof Traveller>(key: K, value: Traveller[K]) =>
     change({ ...traveller, [key]: value })
   const now = new Date()
+  // Years on from today as the Mac's calendar adds them: 29 February goes to the 28th in a year without one.
   const years = (count: number) => {
     const date = new Date(now)
+    date.setDate(1)
     date.setFullYear(date.getFullYear() + count)
+    const last = new Date(date.getFullYear(), date.getMonth() + 1, 0)
+    date.setDate(Math.min(now.getDate(), last.getDate()))
     return date
   }
   const day = (
