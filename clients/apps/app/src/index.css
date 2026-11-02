@@ -1115,13 +1115,10 @@ button {
   color: var(--ink-secondary);
 }
 
-/* A card step 3 draws: its place kept, and said. */
-.later-card {
-  font-size: 12px;
-  color: var(--ink-secondary);
-  padding: 8px 12px;
-  border-radius: 12px;
-  background: var(--theirs);
+/* A card whose line can't be read: the notice, in the chat's middle though its row is the agent's. */
+.card-notice {
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .starts-group {

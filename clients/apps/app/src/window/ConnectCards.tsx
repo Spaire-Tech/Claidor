@@ -14,7 +14,6 @@ import {
   cloudAgentChangedLabel,
   cloudAgentNextPoll,
   cloudAgentStatusLabel,
-  cloudAgentWebURL,
   comingSoonWord,
   connectedWord,
   connectorsCard,
@@ -427,10 +426,10 @@ function MiddleLine({
  * on 22, 500, opening the pull request) with its state in a pill (Done in
  * green, Error in red, the rest grey); what it was asked; its branch and
  * "PR #412"; how many files changed with the lines added in green and taken
- * out in red; View PR in the blue and Open plain. Asked again every five
- * seconds while it works. (Open's page, app.simeonlabs.com/agents/<id>,
- * does not exist yet, on the Mac as here: docs/services-agents.md, "Cloud
- * agents".)
+ * out in red; View PR in the blue. Asked again every five seconds while it
+ * works. The Mac's Open is left out until its page exists: it goes to
+ * app.simeonlabs.com/agents/<id>, which doesn't yet (docs/services-agents.md,
+ * "Cloud agents"), so it would land on a page not found.
  */
 function CloudAgentCardView({
   bcId,
@@ -464,7 +463,6 @@ function CloudAgentCardView({
 
   const shown = info ?? unavailableCloudAgent
   const pull = webPage(shown.pullRequestURL)
-  const page = webPage(cloudAgentWebURL(bcId))
   const name = shown.name === '' ? t('Cloud agent') : shown.name
   const changed = cloudAgentChangedLabel(shown)
   const openPull = t('Open the pull request')
@@ -539,8 +537,8 @@ function CloudAgentCardView({
           </div>
         )}
       </div>
-      <div className="card-buttons">
-        {pull && (
+      {pull && (
+        <div className="card-buttons">
           <a
             className="card-button prominent"
             href={pull}
@@ -549,18 +547,8 @@ function CloudAgentCardView({
           >
             {t('View PR')}
           </a>
-        )}
-        {page && (
-          <a
-            className="card-button"
-            href={page}
-            title={t('Open this cloud agent')}
-            {...pageLink}
-          >
-            {t('Open')}
-          </a>
-        )}
-      </div>
+        </div>
+      )}
     </CardShell>
   )
 }

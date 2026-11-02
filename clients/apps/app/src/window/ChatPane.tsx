@@ -1100,13 +1100,10 @@ function CardRow({
     openAgent: control.openAgent,
   }
   const view = cardView(row.card, card)
-  // A card its group can't read keeps its place, and says so.
+  // A card whose line can't be read is said in the chat's middle, as the
+  // core makes it a notice (Chat.swift: "This message can't be shown…").
   if (view == null)
-    return (
-      <div className={classes('later-card', startsGroup && 'starts-group')}>
-        {notShown()}
-      </div>
-    )
+    return <div className="notice card-notice">{notShown()}</div>
   return (
     <div
       className={classes('card-row', startsGroup && 'starts-group')}
