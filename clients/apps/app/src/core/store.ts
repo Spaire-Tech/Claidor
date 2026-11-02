@@ -741,6 +741,8 @@ export class AppStore {
   apply(event: BackendEvent): void {
     switch (event.kind) {
       case 'agents': {
+        // Held while the computer is rebuilt, read again once it ends (Store.swift's `rosterHeld`, 5c).
+        if (this.holdsRoster()) return
         this.showingSaved = false
         this.listFromServer = false
         const sorted = this.readingOpenChat(sortRoster(event.agents))
@@ -750,6 +752,7 @@ export class AppStore {
         return
       }
       case 'agentUpserted': {
+        if (this.holdsRoster()) return
         // The host sends the same agent again often (each step of a turn); only a change redraws the list.
         if (this.agents.some((agent) => sameAgent(agent, event.agent))) return
         const next = this.agents.filter((agent) => agent.id !== event.agent.id)
@@ -4613,6 +4616,8 @@ export class AppStore {
 
   /** Resend on a message that failed. */
   async resend(id: string, agentId: string): Promise<void> {
+    // Not while the computer is rebuilt (`rebuild-locked`), as Store.swift's.
+    if (this.isSendingPaused) return
     if (
       !(this.outbox.get(agentId) ?? []).some(
         (item) => item.id === id && item.state === 'failed',

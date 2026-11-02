@@ -348,8 +348,15 @@ describe('the store’s rebuild commands, against a stand-in server', () => {
       event: { operationId: 'op', phase: 'wiping', detail: '' },
     })
     expect(store.rebuild.isHardLocked).toBe(true)
-    // A roster push meanwhile is held (the merge has `apply` ask `holdsRoster`).
+    // A roster push meanwhile is held: the list shown doesn't change (Store.swift's `rosterHeld`).
     expect(store.holdsRoster()).toBe(true)
+    const shown = store.agents
+    store.apply({ kind: 'agents', agents: [] })
+    store.apply({
+      kind: 'agentUpserted',
+      agent: { ...shown[0]!, name: 'Renamed meanwhile' },
+    })
+    expect(store.agents).toBe(shown)
     await ms(10)
     expect(lists).toBe(0)
     store.apply({

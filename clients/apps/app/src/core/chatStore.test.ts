@@ -6,6 +6,7 @@
 // thread, and the server's copy while the computer is away.
 
 import { describe, expect, it } from 'vitest'
+import { checkingAccess } from './access'
 import { LiveBackend } from './backend'
 import { type ChatRow, chatRows } from './chat'
 import { Entry } from './entry'
@@ -275,8 +276,15 @@ describe('a message sent', () => {
     ).toEqual(['Book the flight', true])
     expect(failed?.kind === 'failedSend' && failed.nonce).toBe(mine?.id)
 
-    // Resend: it goes, and the host's copy takes its place.
+    // Resend waits while sending is paused (Store.swift's `resend`: not while the computer is rebuilt, nor without access).
     backend.failSends = false
+    store.access = { state: 'paymentRequired', reason: 'paywallIndividual' }
+    await store.resend(mine!.id, 'theo')
+    expect(store.rows('theo').some((row) => row.kind === 'failedSend')).toBe(
+      true,
+    )
+    store.access = checkingAccess
+    // Resend: it goes, and the host's copy takes its place.
     await store.resend(mine!.id, 'theo')
     expect(store.rows('theo').some((row) => row.kind === 'failedSend')).toBe(
       false,
