@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SimeonLabs | Docs | Plans and billing</title>
+<meta name="description" content="Simeon&#x27;s plans, the 7-day free trial, weekly usage, extra credits, and how to change or cancel your plan.">
+<link rel="canonical" href="https://simeonlabs.com/docs/billing">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://simeonlabs.com/docs/billing">
+<meta property="og:title" content="SimeonLabs | Docs | Plans and billing">
+<meta property="og:description" content="Simeon&#x27;s plans, the 7-day free trial, weekly usage, extra credits, and how to change or cancel your plan.">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap">
+<link rel="stylesheet" href="/site.css?v=0e63586d">
+<script>if (!/Macintosh|Mac OS X/.test(navigator.userAgent)) document.documentElement.classList.add('pc')</script>
+<style>
+/* The Marketplace pages (/marketplace, /marketplace/<pack>): the home page's bar, type and colours (source/page.html) around
+   the starter packs. Light only, every colour set here. Made by teams.py from server/simeon/desktop/packs.json. */
+:root{
+  --page:#fff; --soft:#f5f5f7; --ink:#1d1d1f; --ink2:#6e6e73; --ink3:#86868b; --line:#e5e5ea; --blue:#255a93;
+  --gutter:max(20px,4.6*var(--vw,1vw));
+  --col:min(1840px,calc(100*var(--vw,1vw) - 2 * var(--gutter))); /* the home page's column */
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--page);color:var(--ink);font-family:var(--font);font-size:17px;line-height:1.47;letter-spacing:-.022em;-webkit-font-smoothing:antialiased;overflow-x:clip}
+h1,h2,h3,p,ul,blockquote{margin:0}
+img{display:block;max-width:100%}
+a{color:inherit}
+.wrap{width:var(--col);margin-inline:auto}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.5em;border-radius:99px;background:#000;color:#fff;font-weight:400;letter-spacing:-.01em;white-space:nowrap;text-decoration:none;transition:background .2s}
+.btn:hover{background:#2b2b2d}
+.btn:focus-visible,a:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
+
+
+/* Faces in a row, each over the last, ringed in the ground they sit on. */
+.faces{display:flex;--fs:48px;--ring:var(--page)}
+.faces img,.faces .noface{width:var(--fs);height:var(--fs);border-radius:50%;object-fit:cover;flex:none;box-shadow:0 0 0 3px var(--ring);background:var(--soft)}
+.faces>*+*{margin-left:calc(var(--fs) * -.26)}
+.noface{display:grid;place-items:center;font-weight:500;color:var(--ink2);background:#e8e8ed}
+
+/* An app's tile: its own icon with an app icon's corners, else its mark on white, else its first letter. */
+.apps{display:flex;align-items:center;flex:none;--as:36px;--ring:var(--soft)}
+.app{position:relative;flex:none;display:grid;place-items:center;width:var(--as);height:var(--as);border-radius:calc(var(--as) * .2237);overflow:hidden;background:#fff;box-shadow:0 0 0 2.5px var(--ring)}
+.app::after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 0 .5px rgba(0,0,0,.16);pointer-events:none}
+.app+.app{margin-left:calc(var(--as) * -.14)}
+.app.icon img{width:100%;height:100%;object-fit:cover}
+.app.mark img{width:64%;height:64%;object-fit:contain}
+.app.mark i{display:block;width:64%;height:64%;-webkit-mask:var(--m) center/contain no-repeat;mask:var(--m) center/contain no-repeat}
+.app.letter{color:#3a3a3c;font-size:calc(var(--as) * .46);font-weight:600;letter-spacing:0;line-height:1}
+
+/* Add to Simeon, on a team's page and in its window on /marketplace. */
+.add{display:flex;flex-direction:column;align-items:center;margin-top:clamp(18px,1.6*var(--vw,1vw),32px)}
+.add .btn{height:var(--btn-h);padding:0 var(--btn-pad);font-size:var(--btn-font)} /* the home page's buttons */
+.add .btn svg{width:1em;height:1em;flex:none;margin-left:-.15em}
+.add-note{margin:0}
+.add-note[hidden]{display:none}
+.add.noapp .add-btn{display:none}
+.add .btn .dl{margin:0 -.15em 0 0} /* Download for macOS, its arrow after the words, as on the home page */
+.add .btn .apl{width:1.05em;height:1.05em;margin:-.18em .45em 0 -.1em;flex:none}
+.add-note .go{display:none}
+@media (max-width:734px){.add-note .btn:not(.go){display:none}.add-note .go{display:inline-flex}} /* a phone: Download for iOS, as on the home page */
+footer{margin-top:clamp(80px,8*var(--vw,1vw),140px)} /* the footer itself is site.css's (nav.py) */
+
+/* The documentation (docs.py): the site's bar, footer, type and sizes around the reference's three columns. Light only. */
+.docs{--bar:clamp(52px,3.8*var(--vw,1vw),76px);width:var(--col);margin-inline:auto;display:grid;grid-template-columns:clamp(220px,15*var(--vw,1vw),280px) minmax(0,1fr) clamp(190px,13*var(--vw,1vw),250px);gap:clamp(32px,3*var(--vw,1vw),64px);padding-bottom:clamp(64px,6*var(--vw,1vw),120px)}
+html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
+
+/* The left: the search, then the groups of pages */
+.docs .side{position:sticky;z-index:5;top:var(--bar);align-self:start;padding-top:clamp(20px,2*var(--vw,1vw),36px)}
+/* the pages scroll on their own under the search, so the search's results are never cut */
+.pages{max-height:calc(100*var(--vh,1vh) - var(--bar) - 120px);overflow-y:auto;padding-bottom:40px;scrollbar-width:none}
+.pages::-webkit-scrollbar{display:none}
+/* The Marketplace's and Connectors' search field (teams.py's .find), a touch smaller in the column */
+.docs .find{position:relative;margin:0 0 28px}
+.docs .find>svg{position:absolute;right:16px;top:22px;width:16px;height:16px;transform:translateY(-50%);color:#1d1d1f;pointer-events:none}
+.docs .find input{display:block;width:100%;height:44px;padding:0 44px 0 18px;border:1px solid #e3e3e8;border-radius:99px;background:#fff;color:var(--ink);font:inherit;font-size:15px;letter-spacing:-.01em;outline:none;-webkit-appearance:none;appearance:none;transition:border-color .2s,box-shadow .2s}
+.docs .find input:focus{border-color:#c7c7cc;box-shadow:0 4px 14px rgba(0,0,0,.05)}
+.docs .find input::placeholder{color:#86868b;opacity:1}
+.docs .find input::-webkit-search-decoration,.docs .find input::-webkit-search-cancel-button{-webkit-appearance:none}
+.hits{position:absolute;z-index:40;top:calc(100% + 8px);left:0;width:min(460px,calc(100*var(--vw,1vw) - 32px));max-height:min(420px,60*var(--vh,1vh));overflow-y:auto;padding:8px;border-radius:16px;background:var(--page);box-shadow:0 0 0 1px rgba(0,0,0,.06),0 14px 36px rgba(20,30,60,.12)}
+.hits[hidden]{display:none}
+.hit{display:block;padding:10px 12px;border-radius:10px;text-decoration:none}
+.hit.sel,.hit:hover{background:var(--soft)}
+.hit b{display:block;font-size:14px;font-weight:var(--w-title);letter-spacing:-.01em}
+.hit small{display:block;margin-top:2px;font-size:var(--t-tiny);line-height:1.5;color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hit em{font-style:normal;color:var(--ink);font-weight:var(--w-title)}
+.hits .nothing{padding:20px 12px;text-align:center;font-size:14px;color:var(--ink2)}
+.pages>summary{display:none}
+.group+.group{margin-top:24px}
+.group-name{display:block;padding:5px 10px;font-size:var(--t-small);font-weight:var(--w-title);color:var(--ink)}
+.group a{display:block;padding:6px 10px;border-radius:10px;font-size:14px;line-height:1.45;letter-spacing:-.01em;text-decoration:none;color:var(--ink2);transition:color .15s,background .15s}
+.group a:hover{color:var(--ink);background:var(--soft)}
+.group a[aria-current]{color:var(--ink);background:var(--soft)}
+
+/* The page */
+.docs .page{min-width:0;width:100%;max-width:680px;margin-inline:auto;padding-top:clamp(24px,2.4*var(--vw,1vw),44px)}
+.eyebrow{font-size:var(--t-small);color:var(--ink2)}
+.docs h1{margin-top:6px;font-size:var(--t-display);font-weight:var(--w-display);line-height:1.15;letter-spacing:-.025em;text-wrap:balance}
+.page-acts{display:flex;align-items:center;gap:16px;margin:16px 0 32px}
+.page-acts button,.page-acts a{display:inline-flex;align-items:center;gap:7px;padding:0;border:0;background:none;cursor:pointer;font:inherit;font-size:var(--t-tiny);font-weight:var(--w-title);letter-spacing:0;color:var(--ink2);text-decoration:none;transition:color .15s}
+.page-acts button:hover,.page-acts a:hover{color:var(--ink)}
+.page-acts svg,.toc-more svg{width:15px;height:15px;flex:none}
+.page-acts i{width:1px;height:14px;background:var(--line)}
+.words{font-size:var(--t-body);line-height:1.65;letter-spacing:-.01em}
+.words p,.words ul,.words ol{margin:0 0 20px}
+.words h2{margin:56px 0 16px;font-size:var(--t-title);font-weight:var(--w-display);line-height:1.3;letter-spacing:-.02em}
+.words h3{margin:36px 0 12px;font-size:var(--t-head);font-weight:var(--w-title);line-height:1.35;letter-spacing:-.015em}
+.words a{text-decoration:underline dotted;text-decoration-thickness:1px;text-underline-offset:3.5px}
+.words a:hover{text-decoration-style:solid}
+.words strong{font-weight:var(--w-title)}
+.words ul,.words ol{padding-left:22px}
+.words li{padding-left:4px;margin:0 0 8px}
+.words ul li::marker{color:var(--ink3)}
+.words ol li::marker{color:var(--ink2)}
+.words blockquote{margin:0 0 24px;padding:0 0 0 16px;border-left:3px solid var(--blue);font-style:italic;color:var(--ink2)}
+.words blockquote p{margin:0}
+.words code{padding:1px 5px;border-radius:5px;background:var(--soft);font:500 .85em/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--blue)}
+.words .table{margin:0 0 24px;overflow-x:auto}
+.words table{width:100%;border-collapse:collapse;font-size:var(--t-body)}
+.words th{padding:10px 16px 10px 0;text-align:left;font-weight:var(--w-title);border-bottom:1px solid var(--line)}
+.words td{padding:12px 16px 12px 0;vertical-align:top;border-bottom:1px solid var(--line)}
+/* An app's name, as a message in the apps names it: its logo (1.05 em, .04 em before and .26 em after, .18 em under the line) and its colour at 500 */
+.brand{font-weight:var(--w-title);white-space:nowrap}
+.brand .logo{display:inline-block;width:1.05em;height:1.05em;margin:0 .26em 0 .04em;vertical-align:-.18em;object-fit:contain}
+.brand i.logo{-webkit-mask:var(--m) center/contain no-repeat;mask:var(--m) center/contain no-repeat}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:8px 0 0}
+.card{display:flex;flex-direction:column;justify-content:space-between;gap:20px;padding:26px;border-radius:18px;background:var(--soft);text-decoration:none!important;transition:background .2s}
+.card:hover{background:#ededf0}
+.card h3{margin:0;font-size:var(--t-head);line-height:1.35;font-weight:var(--w-title);letter-spacing:-.015em}
+.card p{margin:6px 0 0;font-size:15px;line-height:1.55;color:var(--ink2)}
+.card .go{display:inline-flex;align-items:center;gap:6px;font-size:var(--t-small);color:var(--ink2)}
+.card .go svg{width:13px;height:13px;transition:transform .2s}
+.card:hover .go svg{transform:translateX(2px)}
+.updated{margin-top:64px;padding-top:20px;border-top:1px solid var(--line);font-size:var(--t-small);color:var(--ink2)}
+
+/* On this page */
+.toc{position:sticky;top:var(--bar);align-self:start;max-height:calc(100*var(--vh,1vh) - var(--bar));overflow-y:auto;padding:clamp(24px,2.4*var(--vw,1vw),44px) 0 40px;scrollbar-width:none}
+.toc-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;font-size:var(--t-small);font-weight:var(--w-title)}
+.toc-head svg{width:16px;height:16px;color:var(--ink3)}
+.toc a.t{display:block;padding:2px 0;font-size:var(--t-small);line-height:1.45;text-decoration:none;color:var(--ink3);transition:color .1s}
+.toc a.t+a.t{margin-top:6px}
+.toc a.t.l3{padding-left:12px}
+.toc a.t:hover,.toc a.t.on{color:var(--ink)}
+.toc-more{margin-top:16px;padding-top:16px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
+.toc-more a,.toc-more button{display:flex;align-items:center;gap:9px;padding:0;border:0;background:none;cursor:pointer;font:inherit;font-size:var(--t-small);color:var(--ink2);text-decoration:none}
+.toc-more a:hover,.toc-more button:hover{color:var(--ink)}
+.toast{position:fixed;left:50%;bottom:28px;z-index:60;transform:translate(-50%,12px);padding:10px 16px;border-radius:99px;background:#1d1d1f;color:#fff;font-size:var(--t-small);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+
+@media (max-width:1200px){.docs{grid-template-columns:clamp(220px,22*var(--vw,1vw),260px) minmax(0,1fr)}.toc{display:none}}
+/* A phone: the search, then the pages behind a button of the same shape, then the page */
+@media (max-width:899px){
+  .docs{display:block}
+  .docs .side{position:static;padding:20px 0 0}
+  .pages{max-height:none;overflow:visible;padding-bottom:0}
+  .docs .find{margin-bottom:10px}
+  .docs .find input{height:48px;padding:0 50px 0 22px;font-size:var(--t-field)}
+  .docs .find>svg{right:20px;top:24px;width:18px;height:18px}
+  .pages>summary{display:flex;align-items:center;justify-content:space-between;height:48px;padding:0 20px 0 22px;border:1px solid #e3e3e8;border-radius:99px;font-size:var(--t-field);letter-spacing:-.01em;list-style:none;cursor:pointer}
+  .pages>summary::-webkit-details-marker{display:none}
+  .pages>summary svg{width:12px;height:12px;transition:transform .2s}
+  .pages[open]>summary svg{transform:rotate(180deg)}
+  .pages[open]>summary{margin-bottom:16px}
+  .group a{font-size:var(--t-body);padding:8px 10px}
+  .docs .page{padding-top:28px}
+  .cards{grid-template-columns:1fr}
+}
+</style>
+<link rel="alternate" type="text/markdown" href="/docs/billing.md">
+</head>
+<body>
+
+<header class="bar">
+  <div class="wrap">
+    <a class="wordmark" href="/" aria-label="SimeonLabs home"></a>
+    <nav class="bar-links" aria-label="Pages"><button class="drop" type="button" aria-disabled="true">Products<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="drop" type="button" aria-disabled="true">Solutions<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div class="drops"><button class="drop" type="button" aria-haspopup="true">Resources<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div class="drop-panel"><a href="/marketplace">Marketplace</a><a href="/newsroom">Newsroom</a><a href="/docs" aria-current="page">Docs</a></div></div><a href="/connectors">Connectors</a><a href="/pricing">Pricing</a></nav>
+    <div class="acts"><a class="btn soft" href="/contact">Contact Sales</a><a class="btn" href="https://api.simeonlabs.com/desktop/download/mac">Download</a></div>
+    <details class="menu">
+      <summary aria-label="Menu"><i></i><i></i></summary>
+      <div class="menu-in"><nav aria-label="Pages"><button class="drop" type="button" aria-disabled="true">Products<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="drop" type="button" aria-disabled="true">Solutions<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><details class="menu-group"><summary>Resources<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></summary><div><a href="/marketplace">Marketplace</a><a href="/newsroom">Newsroom</a><a href="/docs" aria-current="page">Docs</a></div></details><a href="/connectors">Connectors</a><a href="/pricing">Pricing</a></nav><div class="menu-acts"><a class="btn soft" href="/contact">Contact Sales</a><a class="btn" href="https://api.simeonlabs.com/desktop/download/mac">Download</a></div></div>
+    </details>
+  </div>
+</header>
+
+<main>
+<div class="docs">
+  <nav class="side" aria-label="Documentation"><div class="find" role="search"><input type="search" id="docs-search" placeholder="Search the docs" aria-label="Search the docs" autocomplete="off" spellcheck="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m15.5 15.5 5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><div class="hits" hidden></div></div><details class="pages" open><summary>Plans and billing<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></summary><div class="group"><span class="group-name">Get started</span><a href="/docs">Overview</a><a href="/docs/get-started">Get started</a><a href="/docs/use-cases">Use cases</a><a href="/docs/iphone">Simeon for iPhone</a></div><div class="group"><span class="group-name">Work with Simeon</span><a href="/docs/agents">Create and manage agents</a><a href="/docs/messaging">Message and call</a><a href="/docs/computer">The computer</a><a href="/docs/connectors">Connect apps</a><a href="/docs/routines">Routines and skills</a><a href="/docs/credentials">Credentials Store</a></div><div class="group"><span class="group-name">Manage and protect</span><a href="/docs/approvals">Approvals, security, and privacy</a><a href="/docs/billing" aria-current=page>Plans and billing</a></div><div class="group"><span class="group-name">Help</span><a href="/docs/faq">FAQ</a></div></details></nav>
+  <article class="page">
+    <p class="eyebrow">Manage and protect</p>
+    <h1>Plans and billing</h1>
+    <div class="page-acts"><button type="button" data-copy><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 5V3.8A1.3 1.3 0 0 0 9.2 2.5H3.8a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 1.3 1.3H5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Copy for LLM</button><i></i><a href="/docs/billing.md"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 1.8h5.2L12.5 5v8.4a.8.8 0 0 1-.8.8H4a.8.8 0 0 1-.8-.8V2.6a.8.8 0 0 1 .8-.8z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M5.5 8.5h5M5.5 11h3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>View as Markdown</a></div>
+    <div class="words">
+<p>Every plan gives you the whole product: your agents, their computers, connectors, routines and voice calls. Plans differ in how much your agents can do each week.</p>
+<h2 id="plans">Plans</h2>
+<div class="table"><table><thead><tr><th>Plan</th><th>Price</th><th>Usage each week</th></tr></thead><tbody><tr><td><strong>Standard</strong></td><td>$30 a month</td><td>The base allowance</td></tr><tr><td><strong>Pro</strong></td><td>$100 a month</td><td>3.5 times Standard</td></tr><tr><td><strong>Max</strong></td><td>$200 a month</td><td>9 times Standard, and earliest access to new products</td></tr></tbody></table></div>
+<p>On the web, each plan is also sold yearly at 20% off. See <a href="/pricing">Pricing</a>.</p>
+<h2 id="free-trial">Free trial</h2>
+<p>Every plan starts with a 7-day free trial. On the web it starts with a card and becomes your plan when the week ends, unless you cancel. On iPhone it needs no card. A trial includes one week of Standard usage, whichever plan you chose.</p>
+<h2 id="usage">Usage</h2>
+<p>Your agents' work uses credits, and each plan gives you a number of credits a week. The week resets on its own. If you run out before it resets, you can wait, move to a bigger plan, or buy extra credits.</p>
+<h2 id="extra-credits">Extra credits</h2>
+<p>On a paid plan you can buy extra credits on the web: $10 for a pack. Extra credits are used only after the week's credits run out, and they last 12 months.</p>
+<h2 id="change-your-plan">Change your plan</h2>
+<ul><li><strong>Upgrade:</strong> starts today. You pay the new plan, less what's left of your current one, and get a fresh week.</li><li><strong>Downgrade:</strong> takes effect at your next renewal; you keep your current plan until then.</li></ul>
+<h2 id="cancel">Cancel</h2>
+<p>On the web, manage or cancel your subscription from your account's billing page. On iPhone, plans are bought through the App Store, so manage or cancel them in your Apple ID settings.</p>
+    </div>
+    <p class="updated">Last updated: November 2, 2026</p>
+  </article>
+  <aside class="toc"><div class="toc-head">On this page<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 4h8M5.5 8h8M5.5 12h8M2.5 4h.01M2.5 8h.01M2.5 12h.01" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div><a class="t l2" href="#plans">Plans</a><a class="t l2" href="#free-trial">Free trial</a><a class="t l2" href="#usage">Usage</a><a class="t l2" href="#extra-credits">Extra credits</a><a class="t l2" href="#change-your-plan">Change your plan</a><a class="t l2" href="#cancel">Cancel</a><div class="toc-more"><button type="button" data-copy><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 5V3.8A1.3 1.3 0 0 0 9.2 2.5H3.8a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 1.3 1.3H5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Copy for LLM</button><a href="/contact"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.2c3.3 0 5.8 2.2 5.8 5s-2.5 5-5.8 5c-.6 0-1.2-.1-1.8-.2L3 13.4l.7-2.6C2.7 9.9 2.2 8.6 2.2 7.2c0-2.8 2.5-5 5.8-5z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>Share feedback</a></div></aside>
+</div>
+<div class="toast" role="status"></div>
+<script type="text/markdown" id="md"># Plans and billing
+
+Every plan gives you the whole product: your agents, their computers, connectors, routines and voice calls. Plans differ in how much your agents can do each week.
+
+## Plans
+
+| Plan | Price | Usage each week |
+|---|---|---|
+| **Standard** | $30 a month | The base allowance |
+| **Pro** | $100 a month | 3.5 times Standard |
+| **Max** | $200 a month | 9 times Standard, and earliest access to new products |
+
+On the web, each plan is also sold yearly at 20% off. See [Pricing](/pricing).
+
+## Free trial
+
+Every plan starts with a 7-day free trial. On the web it starts with a card and becomes your plan when the week ends, unless you cancel. On iPhone it needs no card. A trial includes one week of Standard usage, whichever plan you chose.
+
+## Usage
+
+Your agents&#x27; work uses credits, and each plan gives you a number of credits a week. The week resets on its own. If you run out before it resets, you can wait, move to a bigger plan, or buy extra credits.
+
+## Extra credits
+
+On a paid plan you can buy extra credits on the web: $10 for a pack. Extra credits are used only after the week&#x27;s credits run out, and they last 12 months.
+
+## Change your plan
+
+- **Upgrade:** starts today. You pay the new plan, less what&#x27;s left of your current one, and get a fresh week.
+- **Downgrade:** takes effect at your next renewal; you keep your current plan until then.
+
+## Cancel
+
+On the web, manage or cancel your subscription from your account&#x27;s billing page. On iPhone, plans are bought through the App Store, so manage or cancel them in your Apple ID settings.
+</script>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <div class="foot-top">
+      <a class="foot-mark" href="/" aria-label="SimeonLabs home"></a>
+      <nav class="foot-cols" aria-label="Site"><div class="foot-col"><h2>Product</h2><a href="/marketplace">Marketplace</a><a href="/connectors">Connectors</a><a href="/pricing">Pricing</a><a href="https://api.simeonlabs.com/desktop/download/mac">Download for Mac</a></div><div class="foot-col"><h2>Company</h2><a href="/newsroom">Newsroom</a><a href="/docs" aria-current="page">Docs</a><a href="/contact">Contact</a></div><div class="foot-col"><h2>Legal</h2><a href="/privacy">Privacy policy</a><a href="/terms">Terms of service</a></div><div class="foot-col"><h2>Get started</h2><a href="https://app.simeonlabs.com/billing?plan=standard">Try it free</a><a href="https://app.simeonlabs.com/login">Log in</a></div></nav>
+    </div>
+    <div class="foot-base">
+      <a class="foot-word" href="/" aria-label="SimeonLabs"></a>
+      <span class="foot-copy">© 2026 Spaire, Inc.</span>
+      <span class="foot-lang"><svg viewBox="0 0 16 16" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.1"><circle cx="8" cy="8" r="6.5"/><path d="M1.5 8h13M8 1.5c1.9 1.8 2.9 4 2.9 6.5S9.9 12.7 8 14.5M8 1.5C6.1 3.3 5.1 5.5 5.1 8s1 4.7 2.9 6.5"/></g></svg>English</span>
+    </div>
+  </div>
+</footer>
+<script>
+(function(){
+  // A phone: the pages start closed behind their button
+  var pages = document.querySelector('.pages');
+  if (pages && matchMedia('(max-width:899px)').matches) pages.open = false;
+  // Copy for LLM: the page's Markdown, with its title
+  var toast = document.querySelector('.toast');
+  function say(t){ toast.textContent = t; toast.classList.add('on'); clearTimeout(say.t); say.t = setTimeout(function(){ toast.classList.remove('on'); }, 1600); }
+  document.querySelectorAll('[data-copy]').forEach(function(b){
+    b.addEventListener('click', function(){
+      var md = document.getElementById('md').textContent;
+      (navigator.clipboard ? navigator.clipboard.writeText(md) : Promise.reject()).then(function(){ say('Copied for LLM'); }, function(){ say('Could not copy'); });
+    });
+  });
+  // On this page: the line for the section you're reading darkens
+  var links = [].slice.call(document.querySelectorAll('.toc a.t'));
+  var heads = links.map(function(a){ return document.getElementById(a.hash.slice(1)); });
+  function spy(){
+    var on = 0;
+    heads.forEach(function(h, i){ if (h && h.getBoundingClientRect().top < 160) on = i; });
+    if (innerHeight + scrollY >= document.documentElement.scrollHeight - 4) on = heads.length - 1;
+    links.forEach(function(a, i){ a.classList.toggle('on', i === on && scrollY > 40); });
+  }
+  if (links.length) { addEventListener('scroll', spy, { passive: true }); spy(); }
+  // The search: every page's sections (search.json), dropped under the field as you type
+  var input = document.getElementById('docs-search'), hits = document.querySelector('.hits'), index = null, sel = 0;
+  function load(){ if (!index) fetch('/docs/search.json').then(function(r){ return r.json(); }).then(function(d){ index = d; draw(); }); }
+  function esc(s){ return s.replace(/[&<>"]/g, function(c){ return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function draw(){
+    var q = input.value.trim().toLowerCase();
+    if (!q) { hits.hidden = true; return; }
+    hits.hidden = false;
+    if (!index) { hits.innerHTML = '<div class="nothing">Loading…</div>'; return; }
+    var words = q.split(/\s+/), out = [];
+    index.forEach(function(s){
+      var hay = (s.page + ' ' + s.head + ' ' + s.text).toLowerCase();
+      if (!words.every(function(w){ return hay.indexOf(w) >= 0; })) return;
+      var score = words.reduce(function(n, w){ return n + ((s.page + ' ' + s.head).toLowerCase().indexOf(w) >= 0 ? 3 : 1); }, 0);
+      var at = s.text.toLowerCase().indexOf(words[0]), snip = s.text.slice(Math.max(0, at - 40), at + 110);
+      out.push({ s: s, score: score, snip: (at > 40 ? '…' : '') + snip });
+    });
+    out.sort(function(a, b){ return b.score - a.score; });
+    out = out.slice(0, 10); sel = 0;
+    if (!out.length) { hits.innerHTML = '<div class="nothing">No results for “' + esc(input.value) + '”</div>'; return; }
+    hits.innerHTML = out.map(function(o, i){
+      var snip = esc(o.snip);
+      words.forEach(function(w){ snip = snip.replace(new RegExp('(' + w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'ig'), '<em>$1</em>'); });
+      return '<a class="hit' + (i ? '' : ' sel') + '" href="' + o.s.url + '"><b>' + esc(o.s.page) + (o.s.head ? ' › ' + esc(o.s.head) : '') + '</b><small>' + snip + '</small></a>';
+    }).join('');
+  }
+  input.addEventListener('focus', function(){ load(); draw(); });
+  input.addEventListener('input', draw);
+  input.addEventListener('keydown', function(e){
+    var all = hits.querySelectorAll('.hit');
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); if (!all.length) return;
+      all[sel].classList.remove('sel'); sel = (sel + (e.key === 'ArrowDown' ? 1 : all.length - 1)) % all.length; all[sel].classList.add('sel'); all[sel].scrollIntoView({ block: 'nearest' }); }
+    else if (e.key === 'Enter' && all[sel]) location.href = all[sel].href;
+    else if (e.key === 'Escape') { input.value = ''; draw(); input.blur(); }
+  });
+  document.addEventListener('click', function(e){ if (!e.target.closest('.find')) hits.hidden = true; });
+  addEventListener('keydown', function(e){
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); input.focus(); input.select(); }
+  });
+})();
+</script>
+</body>
+</html>

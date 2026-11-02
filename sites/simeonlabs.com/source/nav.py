@@ -4,7 +4,7 @@ The bar (the founder, 30 October 2026, with another site's for reference: "this
 style for the nav bar"): the wordmark, then Products, Solutions, Resources,
 Connectors and Pricing beside it; Contact Sales and Download on the right.
 Products and Solutions show their arrow but open nothing yet ("a drop down but
-that don't work until i figure out"); Resources opens Marketplace and Newsroom,
+that don't work until i figure out"); Resources opens Marketplace, Newsroom and Docs,
 on a hover or a tap, with no script. On a phone a menu button takes their place
 and drops them over the whole page, the two buttons under them. The menu is a
 <details>, so it opens and closes with no script.
@@ -29,6 +29,7 @@ ARROW = '<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l
 RESOURCES = (
     ("marketplace", "/marketplace", "Marketplace"),
     ("newsroom", "/newsroom", "Newsroom"),
+    ("docs", "/docs", "Docs"),
 )
 
 # The pages after the menus.
@@ -79,6 +80,7 @@ COLUMNS = (
     )),
     ("Company", (
         ("newsroom", "/newsroom", "Newsroom"),
+        ("docs", "/docs", "Docs"),
         ("contact", "/contact", "Contact"),
     )),
     ("Legal", (
