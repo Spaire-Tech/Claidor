@@ -253,7 +253,14 @@ export function browserName(says: BrowserSays): string {
   return safari ? `Safari ${safari[1]}` : 'Browser'
 }
 
-/** The system and its version: "macOS 15.1", "Windows 11", "Linux". */
+/**
+ * The system and its version: "macOS 15.1", "Windows 11", "Android 14",
+ * from Chromium's client hints. Without them only the system is sent:
+ * browsers freeze the version they write in their user agent (every
+ * Safari and Firefox on a Mac says 10.15.7, Safari 26 on an iPhone 18.6,
+ * Windows says NT 10.0 for 10 and 11, Chrome on Android says 10), so it
+ * would be a wrong fact.
+ */
 export function systemName(says: BrowserSays): string {
   const version = says.platformVersion?.split('.') ?? []
   const major = Number(version[0])
@@ -267,14 +274,14 @@ export function systemName(says: BrowserSays): string {
       if (version.length > 0)
         return major >= 13 ? 'Windows 11' : major > 0 ? 'Windows 10' : 'Windows'
       break
+    case 'Android':
+      if (version.length > 0 && major > 0) return `Android ${major}`
+      break
   }
   const ua = says.userAgent
-  const mac = /Mac OS X (\d+(?:[._]\d+)*)/.exec(ua)
-  const iphone = /(?:iPhone|CPU) OS (\d+(?:_\d+)*)/.exec(ua)
-  const android = /Android (\d+(?:\.\d+)*)/.exec(ua)
-  if (iphone) return `iOS ${iphone[1]!.replace(/_/g, '.')}`
-  if (android) return `Android ${android[1]}`
-  if (mac) return `macOS ${mac[1]!.replace(/_/g, '.')}`
+  if (/iPhone|iPad|iPod/.test(ua)) return 'iOS'
+  if (/Android/.test(ua)) return 'Android'
+  if (/Macintosh|Mac OS X/.test(ua)) return 'macOS'
   if (/Windows/.test(ua)) return 'Windows'
   if (/CrOS/.test(ua)) return 'ChromeOS'
   if (/Linux/.test(ua)) return 'Linux'

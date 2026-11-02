@@ -166,12 +166,16 @@ function FeedbackSheet({
   const stepBack = kind === 'issue' && asked && !sent
   const title = kind === 'feedback' ? t('Send Feedback') : t('Report an Issue')
 
-  // The screenshots' pictures let go when the sheet goes.
+  // The screenshots' pictures let go when the sheet goes, those still being made too.
   const pictures = useRef(new Set<string>())
+  const shown = useRef(true)
   useEffect(() => {
     const kept = pictures.current
+    shown.current = true
     return () => {
+      shown.current = false
       for (const url of kept) URL.revokeObjectURL(url)
+      kept.clear()
     }
   }, [])
 
@@ -226,14 +230,23 @@ function FeedbackSheet({
     if (chosen.length === 0) return
     const shrunk: Shot[] = []
     for (const file of chosen) {
+      if (!shown.current) break
       const shot = await shrink(file)
-      if (shot) shrunk.push(shot)
+      if (!shot) continue
+      // The sheet gone meanwhile: the picture let go at once; else kept with the sheet's, which it lets go as it goes.
+      if (!shown.current) URL.revokeObjectURL(shot.url)
+      else {
+        pictures.current.add(shot.url)
+        shrunk.push(shot)
+      }
     }
+    if (!shown.current || shrunk.length === 0) return
     setReport((now) => {
       const kept = shrunk.slice(0, roomForScreenshots(now))
-      for (const shot of shrunk.slice(kept.length))
+      for (const shot of shrunk.slice(kept.length)) {
         URL.revokeObjectURL(shot.url)
-      for (const shot of kept) pictures.current.add(shot.url)
+        pictures.current.delete(shot.url)
+      }
       return { ...now, screenshots: [...now.screenshots, ...kept] }
     })
   }

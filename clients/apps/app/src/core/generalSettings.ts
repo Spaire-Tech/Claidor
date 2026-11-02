@@ -349,6 +349,16 @@ export function knownTimeZones(): string[] {
   }
 }
 
+/**
+ * A zone a browser says when it hides its own (Firefox's resist
+ * fingerprinting, LibreWolf, Tor and Mullvad Browser report UTC): not taken
+ * as the person's, so the agents' routines don't move by hours. A computer
+ * really set to UTC is taken as hiding it too.
+ */
+export function isHiddenZone(zone: string): boolean {
+  return zone === 'UTC' || zone === 'Etc/UTC'
+}
+
 /** The zone this browser is in (`TimeZone.current.identifier`). */
 export function detectedTimeZone(): string {
   try {
@@ -457,12 +467,28 @@ export interface RuleEditing {
  * list and the one edited in its row. Each page that shows some of them
  * holds its own, read when the page shows (`load`). A change is shown once
  * the computer has it; a refused one keeps the old value and says nothing.
+ *
+ * Nothing is written before the computer's values are read (`loaded`):
+ * each write sends the whole lists and the zone, so a change made on the
+ * page's defaults would replace the person's rules or their chosen zone.
+ * A read that fails keeps the page waiting (`loadFailed`). The Mac's model
+ * writes at once (the session's decision, 2 November 2026: the web's read
+ * can wake a resting computer and take tens of seconds).
  */
 export class GeneralSettingsModel {
   /** The zone this browser is in; the one chosen instead (none: this browser's). */
   readonly detectedZone: string
   zoneOverride?: string
   zonePending = false
+  /** The zone the computer keeps from the devices (`userTimeZone`), as last read. */
+  hostZone?: string
+
+  /** The computer's values are read: the page's controls may change them. */
+  loaded = false
+  /** The read failed: the page waits, saying so. */
+  loadFailed = false
+  /** Changes started, so a read sent before one is dropped (its answer is older). */
+  private writes = 0
 
   rules: AutoReviewInstructions = { isEnabled: true, allow: [], ask: [] }
   rulesPending = false
@@ -492,17 +518,41 @@ export class GeneralSettingsModel {
     for (const listener of [...this.listeners]) listener()
   }
 
-  /** The page shown: the computer's settings read (`getHostSettings`), the zone chosen and the rules taken from them. */
+  /** The page shown: the computer's settings read (`getHostSettings`), the zone chosen and the rules taken from them. A read that answers after a change began is dropped. */
   async load(): Promise<void> {
+    const started = this.writes
     const settings = await this.store.readHostSettings()
-    if (settings === undefined) return
+    if (this.writes !== started) return
+    if (settings === undefined) {
+      if (!this.loaded && !this.loadFailed) {
+        this.loadFailed = true
+        this.changed()
+      }
+      return
+    }
     this.zoneOverride = zoneOverrideOf(settings)
+    this.hostZone = str(field(settings, 'userTimeZone')) || undefined
     this.rules = normalizedRules(field(settings, 'autoReviewInstructions'))
+    this.loaded = true
+    this.loadFailed = false
     this.changed()
+  }
+
+  /**
+   * The zone the agents follow while none is chosen: this browser's, or,
+   * when the browser hides its own (`isHiddenZone`), the one the computer
+   * keeps from the person's other devices.
+   */
+  get followedZone(): string {
+    return isHiddenZone(this.detectedZone) && this.hostZone
+      ? this.hostZone
+      : this.detectedZone
   }
 
   /** The zone chosen, or none for this browser's (the switch, the menu): kept once the computer has it. */
   async setZone(zone: string | undefined): Promise<void> {
+    if (!this.loaded || this.zonePending) return
+    this.writes += 1
     this.zonePending = true
     this.changed()
     if (await this.store.setTimeZone(zone, this.detectedZone))
@@ -518,6 +568,8 @@ export class GeneralSettingsModel {
     next: AutoReviewInstructions,
     done: () => void = () => {},
   ): Promise<void> {
+    if (!this.loaded) return
+    this.writes += 1
     this.rulesPending = true
     this.changed()
     if (await this.store.setAutoReview(next)) {
@@ -548,6 +600,7 @@ export class GeneralSettingsModel {
     const words = (this.drafts[behavior] ?? '').trim()
     return (
       words !== '' &&
+      this.loaded &&
       this.editing === undefined &&
       !this.rulesPending &&
       savingRule(this.rules, words, behavior, undefined) !== undefined
@@ -568,12 +621,13 @@ export class GeneralSettingsModel {
   }
 
   delete(rule: ReviewRule): Promise<void> {
+    if (!this.loaded) return Promise.resolve()
     if (sameRule(this.editing?.rule, rule)) this.editing = undefined
     return this.write(removingRule(this.rules, rule))
   }
 
   edit(rule: ReviewRule): void {
-    if (this.editing !== undefined || this.rulesPending) return
+    if (!this.loaded || this.editing !== undefined || this.rulesPending) return
     this.editing = { rule, text: rule.text, behavior: rule.behavior }
     this.changed()
   }
@@ -598,7 +652,7 @@ export class GeneralSettingsModel {
 
   get canSave(): boolean {
     const editing = this.editing
-    if (!editing || this.rulesPending) return false
+    if (!editing || !this.loaded || this.rulesPending) return false
     const words = editing.text.trim()
     return (
       words !== '' &&

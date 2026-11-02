@@ -52,6 +52,7 @@ import {
   zoneTimesNow,
   zoneValues,
 } from '../core/generalSettings'
+import { t as coreT } from '../core/l10n'
 import {
   chooseLanguage,
   chosenAtLaunch,
@@ -283,29 +284,37 @@ function AppearanceGroup() {
  * The time zone the agents' computer keeps (`TimeZoneGroup`): "Set Time
  * Zone Automatically" follows this browser's; turned off, it keeps this
  * browser's until another is chosen in the menu of every zone, each with the
- * time there now. Each waits while its change goes.
+ * time there now. Each waits while its change goes, and until the
+ * computer's zone is read (a read that failed says so in red, the core's
+ * words for it).
  */
 function TimeZoneGroup({ model }: { model: GeneralSettingsModel }) {
   const automatic = model.zoneOverride === undefined
   const [menu, setMenu] = useState<HTMLElement>()
-  const current = model.zoneOverride ?? model.detectedZone
+  const current = model.zoneOverride ?? model.followedZone
+  const waits = !model.loaded || model.zonePending
   return (
     <SettingsGroup
       title={t('Time Zone')}
-      footer={t('Your agents keep this time zone for routines and reminders.')}
+      footer={
+        model.loadFailed
+          ? coreT("Couldn't load your settings")
+          : t('Your agents keep this time zone for routines and reminders.')
+      }
+      footerTint={model.loadFailed ? 'var(--danger)' : undefined}
     >
       <SettingsSwitch
         label={t('Set Time Zone Automatically')}
         on={automatic}
-        disabled={model.zonePending}
+        disabled={waits}
         onChange={(on) =>
-          void model.setZone(on ? undefined : model.detectedZone)
+          void model.setZone(on ? undefined : model.followedZone)
         }
       />
       <SettingsLine label={t('Time Zone')} divided>
         {automatic ? (
           <span className="general-zone-shown">
-            {zoneLabel(model.detectedZone)}
+            {zoneLabel(model.followedZone)}
           </span>
         ) : (
           <button
@@ -314,7 +323,7 @@ function TimeZoneGroup({ model }: { model: GeneralSettingsModel }) {
             aria-label={t('Time Zone')}
             aria-haspopup="menu"
             aria-expanded={menu !== undefined}
-            disabled={model.zonePending}
+            disabled={waits}
             onClick={(event) => setMenu(event.currentTarget)}
           >
             <SettingsMenuLabel text={zoneLabel(current)} />
@@ -661,6 +670,14 @@ function PasswordForm({
   const [saving, setSaving] = useState(false)
   const busy = useRef(false)
   const [problem, setProblem] = useState<string>()
+  // This form is shown: a save it began answers to it only, not to a form opened again meanwhile.
+  const shown = useRef(true)
+  useEffect(() => {
+    shown.current = true
+    return () => {
+      shown.current = false
+    }
+  }, [])
   useEffect(() => {
     let live = true
     void store.hasPassword().then((has) => {
@@ -688,6 +705,7 @@ function PasswordForm({
     setProblem(undefined)
     const refused = await store.setPassword(first.current?.value ?? '')
     busy.current = false
+    if (!shown.current) return
     setSaving(false)
     if (refused !== undefined) {
       setProblem(refused)
@@ -753,13 +771,21 @@ function PasswordForm({
  * does; on, its two lists as two cards, each saying what it means under it.
  * A list's rules are its rows, edited in their row and deleted at once; its
  * last row adds one, typed there. Twenty rules a list and a thousand
- * characters a rule. A change is shown once the computer has it.
+ * characters a rule. A change is shown once the computer has it. Nothing
+ * can be changed until the computer's rules are read (unlike the Mac,
+ * whose page writes on its defaults meanwhile): the switch waits greyed and
+ * the lists come with the read; a read that failed says so in red.
  */
 export function SettingsPermissionsPage({ store }: { store: AppStore }) {
   const model = usePageModel(store)
   return (
     <div className="settings-page">
-      <SettingsGroup>
+      <SettingsGroup
+        footer={
+          model.loadFailed ? coreT("Couldn't load your settings") : undefined
+        }
+        footerTint="var(--danger)"
+      >
         <SettingsSwitch
           label={t('Auto-review')}
           detail={t(
@@ -767,11 +793,13 @@ export function SettingsPermissionsPage({ store }: { store: AppStore }) {
           )}
           symbol="checkmarkShield"
           on={model.rules.isEnabled}
-          disabled={model.rulesPending}
+          disabled={!model.loaded || model.rulesPending}
           onChange={(on) => void model.setReviewing(on)}
         />
       </SettingsGroup>
-      {model.rules.isEnabled &&
+      {/* The lists once the computer's are read: never the page's empty ones in their place. */}
+      {model.loaded &&
+        model.rules.isEnabled &&
         ruleBehaviors.map((behavior) => (
           <RuleList key={behavior} behavior={behavior} model={model} />
         ))}
