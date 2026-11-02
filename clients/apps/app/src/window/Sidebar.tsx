@@ -45,6 +45,7 @@ import {
 import type { AppStore } from '../core/store'
 import { t } from '../l10n'
 import { AgentMark } from './AgentMark'
+import { ComputerUpdatePill } from './ComputerStates'
 import {
   ContextMenu,
   Glyph,
@@ -1235,6 +1236,12 @@ export function Sidebar({
       {rail && (
         <div className="rail-foot">
           <WindowDiscs />
+        </div>
+      )}
+      {/* The foot (`SidebarFoot`): the computer's Update at the right (step 5c); the account and Connect apps come with step 6. */}
+      {!rail && (
+        <div className="sidebar-foot">
+          <ComputerUpdatePill store={store} />
         </div>
       )}
       {menu && (

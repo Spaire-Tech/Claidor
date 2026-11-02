@@ -17,7 +17,10 @@ import { t } from './l10n'
 import type { WebSession } from './session'
 import { AccessCover } from './window/AccessCover'
 import { AgentPaneColumn, paneShownWidth } from './window/AgentPane'
+import { CallBanner } from './window/Call'
 import { ChatPane } from './window/ChatPane'
+import { ComputerDialogLayer, ComputerPills } from './window/ComputerStates'
+import { ComputerLayer } from './window/ComputerView'
 import { somethingOver } from './window/Dialogs'
 import { FirstRunScreen } from './window/FirstRun'
 import { NewAgentLayer } from './window/NewAgentSheet'
@@ -205,6 +208,20 @@ function MainWindow({ session }: { session: WebSession }) {
   }, [model, shown])
   // Signed out (or the computer lost): the chart and what floats over the window go with it.
   useEffect(() => () => model.leftWindow(), [model])
+  // The open agent's computer is read and followed while its chat shows, not a group's (MainWindow.swift's `watchedComputer`, step 5b).
+  const watched =
+    shown != null && store.agent(shown)?.isGroup === false ? shown : undefined
+  useEffect(() => {
+    if (watched == null) return
+    store.watchComputer(watched)
+    return () => store.unwatchComputer(watched)
+  }, [store, watched])
+  // The window coming forward (`windowCameForward`): a computer started here started again, what is watched read again (step 5b).
+  useEffect(() => {
+    const forward = () => store.windowCameForward()
+    window.addEventListener('focus', forward)
+    return () => window.removeEventListener('focus', forward)
+  }, [store])
   // Files dropped outside the chat are taken by nothing, and the browser does not open them in the window's place.
   useEffect(() => {
     const refuse = (event: DragEvent) => {
@@ -301,10 +318,15 @@ function MainWindow({ session }: { session: WebSession }) {
             dragging={setResizing}
           />
         </div>
+        {/* What stands over the window, in the Mac's order: a viewer, the computer, search, the sheets, the computer's dialogs and its pills; the call's banner above all (the Mac's own window). */}
         <ViewerLayer shown={viewer} store={store} close={closeViewer} />
+        <ComputerLayer store={store} />
         <SearchLayer store={store} />
         <NewAgentLayer store={store} />
         <StarterPackLayer store={store} />
+        <ComputerDialogLayer store={store} />
+        <ComputerPills store={store} />
+        <CallBanner store={store} />
       </ViewerContext.Provider>
     </WindowContext.Provider>
   )

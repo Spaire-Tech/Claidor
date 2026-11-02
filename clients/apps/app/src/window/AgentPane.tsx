@@ -31,6 +31,7 @@ import './AgentPane.css'
 import { AvatarEditorPopover } from './AvatarEditor'
 import { ChannelsBody } from './ChannelsPage'
 import { classes } from './classes'
+import { ComputerPreview } from './ComputerView'
 import { BookFlightButton, FlightPage } from './FlightCards'
 import { GroupMembersBody } from './GroupMembers'
 import { RoutineEditorPage, RoutinesBody } from './RoutinesPage'
@@ -323,11 +324,6 @@ export function PaneGlyph({ name }: { name: 'xmark' | 'chevronLeft' }) {
 
 // MARK: The agent's page
 
-/** Whether this agent's page has the Computer tab: a group's (its members, or a shared room's empty page); an agent's computer comes in step 5. */
-function hasComputerTab(agent: Agent): boolean {
-  return agent.isGroup
-}
-
 /** `.simeon-pane`: the head, the tabs (32 above, 26 below), the tab's page; the avatar editor under the avatar. */
 function AgentPage({
   store,
@@ -342,9 +338,8 @@ function AgentPage({
   const tabs: { section: PaneSection; name: string; glyph: TabGlyphName }[] = [
     { section: 'profile', name: t('Profile'), glyph: 'profile' },
     { section: 'routines', name: t('Routines'), glyph: 'routines' },
+    { section: 'computer', name: t('Computer'), glyph: 'computer' },
   ]
-  if (hasComputerTab(agent))
-    tabs.push({ section: 'computer', name: t('Computer'), glyph: 'computer' })
   let body: ReactNode = null
   switch (model.section) {
     case 'profile':
@@ -357,10 +352,12 @@ function AgentPage({
       body = <ChannelsBody store={store} agent={agent} />
       break
     case 'computer':
-      // A group's Computer tab is its members; a shared room's is empty, as on the Mac.
+      // A group's Computer tab is its members; a shared room's is empty; an agent's is its computer (step 5b), as on the Mac.
       body = showsMembers(agent) ? (
         <GroupMembersBody store={store} group={agent} />
-      ) : null
+      ) : agent.isGroup ? null : (
+        <ComputerPreview store={store} agent={agent} />
+      )
       break
   }
   return (

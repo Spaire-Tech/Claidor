@@ -573,6 +573,9 @@ export class AppStore {
     this.resetRoutines()
     this.resetSearchAndChannels()
     this.resetOrgChartAndPacks()
+    this.resetComputer()
+    this.resetRebuild()
+    this.resetCalls()
     this.firstRunAgentId = undefined
     this.firstRunNamed = false
     // A hand-off waiting on the name step ends (it finds the account gone and makes nothing).
@@ -772,6 +775,8 @@ export class AppStore {
         if (this.isDown === event.live) this.setDown(!event.live)
         if (was !== event.live) this.changed()
         if (recovered && this.backend) {
+          // The computers watched read again, and started again where started here (5b).
+          this.computerReconnected()
           void (async () => {
             await this.reloadRoster()
             if (this.openChat) await this.refresh(this.openChat)
@@ -798,8 +803,15 @@ export class AppStore {
         this.isAsleep = event.asleep
         this.changed()
         return
+      case 'computer':
+      case 'diskPressure':
+      case 'computerAction':
+      case 'subagents':
+        this.applyComputer(event)
+        return
       default:
-        // The rest comes with its screens.
+        // The rebuild's and the move's (5c); the rest comes with its screens.
+        this.applyRebuild(event)
         return
     }
   }
@@ -3600,6 +3612,66 @@ export class AppStore {
     this.packAsks += 1
     this.changed()
   }
+
+  // MARK: Step 5b's computer: its screen, the Computer tab and the full view
+  // (StoreComputer.swift, CloudComputer.swift, ComputerPreview.swift,
+  // ComputerView.swift). 5b's state and commands go below this line, and
+  // nowhere else.
+
+  /** 5b's state back to nothing (signed out). */
+  private resetComputer(): void {}
+
+  /** A `forever-box`, `box-disk-pressure`, `computer-action` or `subagents` push (StoreComputer.swift's `applyComputer`). */
+  private applyComputer(
+    event: Extract<
+      BackendEvent,
+      { kind: 'computer' | 'diskPressure' | 'computerAction' | 'subagents' }
+    >,
+  ): void {
+    void event
+  }
+
+  /** The event stream back (`computerReconnected`): what is watched read again, what was started here started again. */
+  private computerReconnected(): void {}
+
+  /** The open agent's computer, followed while its chat shows (MainWindow.swift's `watch`, StoreComputer.swift's `watchComputer`). */
+  watchComputer(agentId: string): void {
+    void agentId
+  }
+
+  unwatchComputer(agentId: string): void {
+    void agentId
+  }
+
+  /** The window came forward (`windowCameForward`): a computer started here started again; what is watched read again at most once a minute, not while the computer is rebuilt (`rebuildingNow`, 5c). */
+  windowCameForward(): void {}
+
+  // MARK: Step 5c's computer states: its rebuild, recovery and move, the
+  // dialogs and pills, low disk (ComputerRebuild.swift, RebuildDriver.swift,
+  // StoreRebuild.swift, MigrationWatch.swift, ComputerStates.swift). 5c's
+  // state and commands go below this line, and nowhere else.
+
+  /** 5c's state back to nothing (signed out). */
+  private resetRebuild(): void {}
+
+  /** An event no other section takes (the rebuild's and the move's, added by 5c). */
+  private applyRebuild(event: BackendEvent): void {
+    void event
+  }
+
+  /** A rebuild under way: the window's catch-up waits (`windowCameForward(rebuilding:)`). */
+  rebuildingNow(): boolean {
+    return false
+  }
+
+  // MARK: Step 5d's calls: a call with an agent, its banner and its lines
+  // (Call.swift, CallTones.swift, VoiceCall.swift, CallBannerWindow.swift,
+  // CallChat.swift), and two agents' exchange over the chat
+  // (Exchange.swift). 5d's state and commands go below this line, and
+  // nowhere else.
+
+  /** 5d's state back to nothing (signed out): a call on ends. */
+  private resetCalls(): void {}
 
   // MARK: The composer's lists
 

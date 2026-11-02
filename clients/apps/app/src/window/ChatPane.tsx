@@ -49,7 +49,6 @@ import {
   routineVerb,
   stampText,
   unreadCardWords,
-  voiceChatLabel,
 } from '../core/chat'
 import {
   FindMarks,
@@ -70,6 +69,7 @@ import { t } from '../l10n'
 import { ActivitySlot } from './ActivitySlot'
 import { AgentMark } from './AgentMark'
 import { DropOverlay, useFileDrop, useStaging } from './Attachments'
+import { CallHeadRow, CallLineRow, ChatCoverView } from './Call'
 import {
   ApprovalCardView,
   type CardProps,
@@ -78,6 +78,7 @@ import {
   cardWidth,
 } from './Cards'
 import { Composer } from './Composer'
+import { DiskBanner } from './ComputerStates'
 import { connectCardView } from './ConnectCards'
 import { ContextMenu } from './ContextMenu'
 import { somethingOver } from './Dialogs'
@@ -413,6 +414,8 @@ export function ChatPane({
         ) : (
           <ChatHeader store={store} agent={agent} />
         ))}
+      {/* Low disk, 8 under the head (step 5c). */}
+      <DiskBanner store={store} top={(threadRoot != null ? 44 : 116) + 8} />
       <Composer
         store={store}
         agentId={agentId}
@@ -481,6 +484,8 @@ export function ChatPane({
         />
       )}
       {drop.dropping && <DropOverlay />}
+      {/* A call's lines or two agents' exchange, over the chat and its field (step 5d). */}
+      <ChatCoverView store={store} agentId={agentId} />
     </section>
   )
 }
@@ -505,15 +510,18 @@ function ChatHeader({ store, agent }: { store: AppStore; agent: Agent }) {
         >
           <AgentMark agent={agent} agents={store.agents} size={52} />
         </button>
-        <button
-          type="button"
-          className="identity-button name-pill"
-          title={agent.name}
-          aria-label={t('View agent settings')}
-          onClick={() => model.toggleSettings()}
-        >
-          {agent.name}
-        </button>
+        {/* The phone beside the name while calls are on (step 5d). */}
+        <CallHeadRow store={store} agent={agent}>
+          <button
+            type="button"
+            className="identity-button name-pill"
+            title={agent.name}
+            aria-label={t('View agent settings')}
+            onClick={() => model.toggleSettings()}
+          >
+            {agent.name}
+          </button>
+        </CallHeadRow>
       </div>
     </header>
   )
@@ -1069,14 +1077,15 @@ function RowContent({
         />
       )
     case 'voiceCall':
+      // Step 5d's: an ended call with words opens them over the chat.
       return (
-        <div
-          className="call-line"
-          title={voiceChatLabel(row.seconds, row.live)}
-        >
-          <VoiceGlyph />
-          <span>{voiceChatLabel(row.seconds, row.live)}</span>
-        </div>
+        <CallLineRow
+          store={control.store}
+          agentId={control.agentId}
+          id={row.id}
+          seconds={row.seconds}
+          live={row.live}
+        />
       )
     case 'notice':
       return (
@@ -1328,21 +1337,6 @@ function Clock() {
         fill="none"
         stroke="currentColor"
         strokeWidth="1.2"
-        strokeLinecap="round"
-      />
-    </svg>
-  )
-}
-
-/** The call's glyph: five strokes of a voice, the middle ones tallest. */
-function VoiceGlyph() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
-      <path
-        d="M5 10v4M9 7v10M13 9v6M17 6v12M21 10v4"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
         strokeLinecap="round"
       />
     </svg>
