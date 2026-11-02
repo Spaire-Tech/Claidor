@@ -26,6 +26,7 @@ import {
 import { t } from '../l10n'
 import { type WebSession, clientVersion } from '../session'
 import './AccountMenu.css'
+import { copyText } from './clipboard'
 import { ContextMenu, type MenuLine } from './ContextMenu'
 import type { Dismissal } from './MessageActions'
 import './Settings.css'
@@ -432,8 +433,7 @@ function CopyVersionButton({ info }: { info: string }) {
       type="button"
       className="about-copy"
       onClick={() => {
-        void navigator.clipboard
-          .writeText(info)
+        void copyText(info)
           .then(() => {
             copies.current += 1
             const mine = copies.current

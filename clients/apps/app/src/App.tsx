@@ -13,6 +13,7 @@ import {
   useState,
   useSyncExternalStore,
 } from 'react'
+import { type LinkWindow, useDesktopLinks } from './desktop/links'
 import { t } from './l10n'
 import type { WebSession } from './session'
 import { AccessCover } from './window/AccessCover'
@@ -31,6 +32,7 @@ import { FirstRunScreen } from './window/FirstRun'
 import { apple } from './window/keys'
 import { NewAgentLayer } from './window/NewAgentSheet'
 import { OrgChartView } from './window/OrgChart'
+import { connectorBrowser } from './window/outside'
 import { SearchLayer } from './window/SearchPanel'
 import { SettingsLayer, overSlot } from './window/SettingsWindow'
 import { Sidebar, listOrder } from './window/Sidebar'
@@ -213,8 +215,15 @@ function MainWindow({ session }: { session: WebSession }) {
   useWatched(store)
   const [model] = useState(() => new WindowModel(agentInAddress()))
   useWatched(model)
-  // Connecting an app: one consent and one sign-in at a time, for the cards and Connectors alike (step 6b).
-  const [connector] = useState(() => new Connector(store))
+  // Connecting an app: one consent and one sign-in at a time, for the cards and Connectors alike (step 6b); the browser's tabs, or the Windows app's way (outside.ts).
+  const [connector] = useState(() => new Connector(store, connectorBrowser()))
+  // The Windows app's `simeon://` links meant for the signed-in window: a connector's page, a starter pack, a sign-in coming back (src/desktop/links.ts).
+  const [links] = useState<LinkWindow>(() => ({
+    openPlugin: (id) => model.openConnectors({ kind: 'plugin', id }),
+    askPack: (id) => store.askPack(id),
+    connector,
+  }))
+  useDesktopLinks(links)
   // The agent left open while it is there, else the first in the sidebar's order.
   const asked = model.selected
   const known =

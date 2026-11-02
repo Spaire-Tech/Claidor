@@ -111,6 +111,7 @@ import {
 import { type ConnectedApp, connectedApp, makeApp } from './connectedApps'
 import {
   type ConnectStart,
+  type SignInAnswer,
   alreadySignedIn,
   authorizationURL,
   didntConnect,
@@ -1395,13 +1396,16 @@ export class AppStore {
    * `billingPortal`): the confirmation of the next plan up (`update_confirm`
    * with its `tier`), the card form for a payment that failed
    * (`payment_method`), Start Plan Now for a card trial (`start_now`),
-   * extra credits (`credits`), or its front page. No `back`: the web opens it
-   * in a tab, and the page ends on the web's billing page (decision of 1
-   * November 2026). Its address, or the words to show.
+   * extra credits (`credits`), or its front page. No `back` on the web: it
+   * opens it in a tab, and the page ends on the web's billing page (decision
+   * of 1 November 2026); the Windows app names itself (`back: "simeon"`,
+   * as the Mac), so the page ends on the app's own link. Its address, or the
+   * words to show.
    */
   async billingPortal(
     flow?: string,
     tier?: string,
+    back?: string,
   ): Promise<{ url?: string; message?: string }> {
     const fallback = t('Couldn’t open billing. Try again.')
     const backend = this.backend
@@ -1415,6 +1419,7 @@ export class AppStore {
       [paymentMethodFlow, startNowFlow, creditsFlow].includes(flow)
     )
       fields.flow = flow
+    if (back) fields.back = back
     try {
       const answer = await backend.server('billing/portal', 'POST', fields)
       const url = str(field(answer, 'portalUrl'))
@@ -6139,6 +6144,116 @@ export class AppStore {
   // sign-in coming back (`completeMcpOAuth`), Stripe's pages in the app's window.
 
   private resetDesktopOutside(): void {}
+
+  /**
+   * A connector's sign-in answer, caught on this PC's loopback or sent back
+   * to the app by Simeon Labs' server (LoopbackSignIn.swift's and
+   * AppReturnSignIn.swift's `finishLoopbackSignIn`), handed to this
+   * account's computer, which started it: the code for the app's access
+   * (`completeMcpOAuth`), then the apps read again, so the sign-in's own
+   * wait sees it connected. The maker's refusal is said (`problem`).
+   */
+  async finishLoopbackSignIn(
+    answer: SignInAnswer,
+    name: string,
+  ): Promise<void> {
+    if (answer.error != null) {
+      this.problem =
+        answer.errorDescription ??
+        t`${name} refused the sign-in (${answer.error}).`
+      this.changed()
+      return
+    }
+    const backend = this.backend
+    if (answer.code == null || !backend) return
+    try {
+      await backend.command('completeMcpOAuth', {
+        stateId: answer.state,
+        code: answer.code,
+      })
+      await this.loadApps()
+    } catch (error) {
+      const why = error instanceof Error ? error.message : String(error)
+      this.problem = t`Couldn't finish connecting ${name}: ${why}`
+      this.changed()
+    }
+  }
+
+  /**
+   * Asks Simeon Labs' server to send this sign-in back to the app, by its
+   * own scheme (`sendSignInBack`, `POST mcp-oauth/return`); false when it
+   * could not (the server's own page then finishes it, as before).
+   */
+  async sendSignInBack(state: string, scheme: string): Promise<boolean> {
+    const backend = this.backend
+    if (!backend) return false
+    try {
+      await backend.server('mcp-oauth/return', 'POST', { state, back: scheme })
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  /**
+   * Stripe's page closed (`settleAfterCardPage`): after a failed payment,
+   * once it came back on the app's own link, the plan charged now on the
+   * card just saved (`billing/settle`); then the access, the usage and the
+   * plan the access notice words itself from read again, so the line over
+   * the composer goes and Send comes back at once when it went through.
+   */
+  async settleAfterCardPage(paymentFailed: boolean): Promise<void> {
+    const backend = this.backend
+    if (paymentFailed && backend) {
+      try {
+        await backend.server('billing/settle', 'POST', {})
+      } catch {
+        // The plan is read again either way: it says whether it went through.
+      }
+    }
+    await this.refreshAccess()
+    await Promise.all([this.refreshUsage(), this.refreshPlan()])
+  }
+
+  /** Whether a payment had failed when Stripe's page was asked for (`usage.summary?.paymentFailed`; the access cover's plan says it too). */
+  get paymentFailed(): boolean {
+    return (
+      shownSummary(this.usage)?.paymentFailed === true ||
+      this.plan?.paymentFailed === true
+    )
+  }
+
+  /**
+   * The 1Password connect card's key, made by the person's 1Password app on
+   * this PC, to the computer (`connectOnePassword`), which checks it with
+   * 1Password and keeps it; with the card that asked, the card says
+   * Connected. Nothing is kept here. None once kept, else why not.
+   */
+  async connectOnePassword(made: {
+    token: string
+    vaultId: string
+    vaultName: string
+    accountEmail?: string
+    entryId?: string
+    agentId?: string
+  }): Promise<string | undefined> {
+    const failed = t("1Password wasn't connected")
+    const args: Record<string, JSONValue> = {
+      token: made.token,
+      vaultId: made.vaultId,
+      vaultName: made.vaultName,
+    }
+    if (made.accountEmail != null) args.accountEmail = made.accountEmail
+    if (made.entryId != null && made.agentId != null) {
+      args.entryId = made.entryId
+      args.agentId = made.agentId
+    }
+    const reply = await this.command('connectOnePassword', args, failed)
+    if (reply === undefined) return failed
+    return bool(field(reply, 'ok')) === false
+      ? (text(field(reply, 'message')) ?? failed)
+      : undefined
+  }
 
   // MARK: Step 7e's updates (the updater's state lives in the main process; nothing of the
   // account's).
