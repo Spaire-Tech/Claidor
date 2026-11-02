@@ -1,0 +1,22 @@
+/* The call's own window in the Windows app (CallWindow.tsx;              */
+/* mac/Simeon/CallBannerWindow.swift): clear, with the card alone in it,  */
+/* the Mac's room around it for its shadow (`margin`: 10 above, 28 each   */
+/* side, 46 below), its top where the window's is.                        */
+
+:root[data-window='call'],
+:root[data-window='call'] body {
+  background: transparent;
+  overflow: hidden;
+}
+
+:root[data-window='call'] .call-window {
+  width: 360px;
+  padding: 10px 28px 46px;
+}
+
+:root[data-window='call'] .call-window .call-banner {
+  position: relative;
+  top: auto;
+  right: auto;
+  max-width: none;
+}

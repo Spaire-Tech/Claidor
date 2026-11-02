@@ -152,6 +152,7 @@ export function AgentRow({
   onMenu,
   rail = false,
   drag,
+  cycling = false,
 }: {
   agent: Agent
   agents: readonly Agent[]
@@ -167,6 +168,8 @@ export function AgentRow({
   /** On the rail: the picture alone (36), unread or at work on its corner. */
   rail?: boolean
   drag?: Dragging
+  /** Control-Tab's walk is on it (`CycleRing`, controlTab.ts). */
+  cycling?: boolean
 }) {
   const label = agent.hasUnread ? t`${agent.name}, Unread activity` : agent.name
   if (rail) {
@@ -179,7 +182,9 @@ export function AgentRow({
       <button
         type="button"
         className={
-          'agent-row rail' + (picked ? ' picked' : open ? ' open' : '')
+          'agent-row rail' +
+          (picked ? ' picked' : open ? ' open' : '') +
+          (cycling ? ' cycling' : '')
         }
         onClick={onClick}
         onContextMenu={onMenu}
@@ -208,7 +213,10 @@ export function AgentRow({
   const line = preview ?? previewLine(agent)
   const side = 46
   const badge = !agent.isRunning && agent.isGroup && hasPicture(agent)
-  const className = 'agent-row' + (picked ? ' picked' : open ? ' open' : '')
+  const className =
+    'agent-row' +
+    (picked ? ' picked' : open ? ' open' : '') +
+    (cycling ? ' cycling' : '')
   const body = (
     <>
       <span className={agent.isRunning ? 'agent-mark holed' : 'agent-mark'}>
@@ -354,6 +362,7 @@ function PinTile({
   onClick,
   onMenu,
   drag,
+  cycling = false,
 }: {
   agent: Agent
   agents: readonly Agent[]
@@ -364,6 +373,8 @@ function PinTile({
   onClick: (event: React.MouseEvent) => void
   onMenu: (event: React.MouseEvent) => void
   drag: Dragging
+  /** Control-Tab's walk is on it (`CycleRing`, controlTab.ts). */
+  cycling?: boolean
 }) {
   const dot = agent.hasUnread
     ? 'unread'
@@ -375,7 +386,9 @@ function PinTile({
     <button
       type="button"
       className={
-        'pin-tile' + (picked ? ' picked' : open ? ' open' : lit ? ' lit' : '')
+        'pin-tile' +
+        (picked ? ' picked' : open ? ' open' : lit ? ' lit' : '') +
+        (cycling ? ' cycling' : '')
       }
       data-id={agent.id}
       onClick={onClick}
@@ -471,6 +484,7 @@ export function Sidebar({
   rail = false,
   width,
   session,
+  cycling,
 }: {
   store: AppStore
   open?: string
@@ -480,6 +494,8 @@ export function Sidebar({
   width?: number
   /** The sign-in, for the account's disc and its menu (step 6); none in a test of the list alone. */
   session?: WebSession
+  /** The row Control-Tab's walk is on (controlTab.ts, the Windows app). */
+  cycling?: string
 }) {
   useWatched(store)
   const model = useWindowModel()
@@ -495,6 +511,13 @@ export function Sidebar({
     }, 4_000)
     return () => clearInterval(timer)
   }, [failed, store])
+  // Control-Tab's row in view as the walk moves (SidebarList.swift's `scrollTo`, 0.15 s easing out).
+  useEffect(() => {
+    if (cycling == null) return
+    document
+      .querySelector('.sidebar .cycling')
+      ?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+  }, [cycling])
 
   const [selection, setSelection] = useState(SidebarSelection.empty)
   // An agent opened from search or the org chart lets the picked rows go, its row the anchor (`sidebar.selection.plain`).
@@ -944,6 +967,7 @@ export function Sidebar({
       onMenu={showMenu(rowMenu(agent), menuNames.agent)}
       rail={rail}
       drag={dragFor('agent', agent.id)}
+      cycling={cycling === agent.id}
     />
   )
 
@@ -1174,6 +1198,7 @@ export function Sidebar({
                     onClick={(event) => click(agent.id, event)}
                     onMenu={showMenu(rowMenu(agent), menuNames.agent)}
                     drag={dragFor('pin', agent.id)!}
+                    cycling={cycling === agent.id}
                   />
                 ))}
               </div>

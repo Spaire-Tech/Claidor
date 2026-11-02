@@ -60,6 +60,37 @@ export interface DesktopCalls {
 
   // MARK: 7c, notifications, the taskbar, the tray, the menu and the call's window
 
+  /** A notification for an agent (MacServices.swift's `post`), in the page's words; Windows shows it, and a click brings the window forward and sends `openAgent`. */
+  notify(note: AgentNote): void
+  /** This run's notifications taken back: another account, or none (`removeDeliveredNotifications`). */
+  clearNotifications(): void
+  /** Whether the main window is the one in front now (`BrowserWindow.isFocused()`; the Mac's `isMainWindowFocused`). */
+  isWindowFocused(): boolean
+  /** The taskbar's number (the Mac's Dock badge): 0 for none. */
+  setBadge(badge: TaskbarBadge): void
+  /** The tray's menu (MenuBar.swift's `MenuBarMenu`, with the Mac's app menu's own items), in the page's words. */
+  setTray(tray: TrayMenu): void
+  /** Control-W (the Mac's File › Close Window): the window hides, as its ×. */
+  closeWindow(): void
+  /** F11 (the Mac's View › Enter Full Screen): the window full screen, or back. */
+  toggleFullScreen(): void
+  /** Control-Q (the Mac's Quit Simeon ⌘Q). */
+  quit(): void
+  /** The call as the main window's page has it, or null once it is put away: the call's own window opens, follows it and closes (CallBannerWindow.swift). */
+  showCall(call: ShownCall | null): void
+  /** The call's waveform, as it changes (every 90 ms or so). */
+  showCallLevels(levels: number[]): void
+  /** The call's window brought forward, without the keys (the chat's phone or Call <name> while a call is up: `CallBannerWindow.focus`). */
+  focusCall(): void
+  /** The call's window's page is up: the call as it is now, or null. */
+  callWindowReady(): ShownCall | null
+  /** The call's window's page: its card's height (the window follows, its top where it is; 40 to 480). */
+  callWindowHeight(height: number): void
+  /** The call's window's page: the pointer on the card, or off it (the window takes clicks only over its card). */
+  callWindowPointer(inside: boolean): void
+  /** The call's window's page: a button pressed there, sent on to the main window's page (`callAction`). */
+  callWindowAction(action: CallAction): void
+
   // MARK: 7d, links and pages outside
 
   // MARK: 7e, updates
@@ -78,6 +109,30 @@ export interface DesktopEvents {
 
   // MARK: 7c, notifications, the taskbar, the tray, the menu and the call's window
 
+  /** The main window came in front (true) or went behind (MacServices.swift's `focusChanged`: the window's own focus, as Windows has it). */
+  windowFocus: boolean
+  /** A notification clicked, or an agent chosen in the tray: the window is forward; that agent's chat opens (MacServices.swift's `open(agent:)`). Held until the window listens. */
+  openAgent: string
+  /** The tray's New Agent (New chat while group chats are on): the window is forward. */
+  newChat: null
+  /** The tray's About Simeon: the window is forward. */
+  openAbout: null
+  /** The tray's Call <name> (the Mac's Agent › Call): the open agent is called, or the call's window comes forward. */
+  callOpenAgent: null
+  /**
+   * The tray's Check for Updates… (the Mac's Simeon › Check for Updates…),
+   * offered only in a packaged build: the window is forward and the page
+   * opens Settings › Updates (7c); 7e's Updates page answers it with a
+   * check, as its Check Now.
+   */
+  checkForUpdates: null
+  /** A button pressed on the call's own window (or Control-W there), for the main window's page to do. */
+  callAction: CallAction
+  /** The call's window's page: the call changed; null once it is put away. */
+  callShown: ShownCall | null
+  /** The call's window's page: the waveform's bars. */
+  callLevels: number[]
+
   // MARK: 7d, links and pages outside
 
   // MARK: 7e, updates
@@ -85,8 +140,51 @@ export interface DesktopEvents {
   // MARK: 7f, the agent's hands on this PC
 }
 
+// MARK: 7c's shapes
+
+/** A notification's words and sound (`AgentNotifications.content`): the Mac's sound for "needs you", none for "done". */
+export interface AgentNote {
+  agentId: string
+  title: string
+  body: string
+  sound: boolean
+}
+
+/** The taskbar's number: the count, Windows' overlay drawn by the page (a square PNG data URL, 32 px for 16 on screen) and what it says to a screen reader. */
+export interface TaskbarBadge {
+  count: number
+  image?: string
+  description: string
+}
+
+/** The tray's menu as the page has it (MenuBar.swift): its words, and what the signed-in window adds. */
+export interface TrayMenu {
+  words: {
+    openSimeon: string
+    newChat: string
+    aboutSimeon: string
+    checkForUpdates: string
+    quitSimeon: string
+  }
+  /** Signed in and past the first run: the window's own items show. */
+  signedIn: boolean
+  /** The agents most recently at work, hidden ones aside, at most 8 (`MenuBarMenu.listed`). */
+  agents: { id: string; name: string; unread: boolean }[]
+  /** Call <name> for the open agent, or a disabled Call Agent; absent while calls are off. */
+  call?: { title: string; enabled: boolean }
+}
+
+/** The call as the call's window draws it: the core's `CallState` and its agent's row, as JSON. */
+export interface ShownCall {
+  call: Record<string, unknown>
+  agent?: Record<string, unknown>
+}
+
+/** The call's window's buttons: Mute, Unmute, End, Close (a failed call), and Control-W (ends a call that is on, puts away one that is over). */
+export type CallAction = 'mute' | 'unmute' | 'hangUp' | 'dismiss' | 'close'
+
 /** The events the preload holds while nobody listens, and hands to the first listener (a link that started the app, a notification clicked before the window was drawn). Each part adds its own. */
-export const heldEvents: readonly (keyof DesktopEvents)[] = []
+export const heldEvents: readonly (keyof DesktopEvents)[] = ['openAgent']
 
 /** What the page keeps on the device, sealed with Windows' own protection (`safeStorage`): the web's two session keys. */
 export const keptKeys = ['simeon.web.tokens', 'simeon.web.gateway'] as const
