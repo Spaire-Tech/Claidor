@@ -31,5 +31,5 @@ A skill is a way of doing something that an agent can reuse, like your report fo
 ## Good routines
 
 - **Start with a task that already worked once** in the chat, then make it a routine.
-- **Say what to do with the result:** send it to you, post it in Slack, or file it in Drive.
+- **Say what to do with the result:** send it to you, post it in Slack, or file it in Google Drive.
 - **Keep approvals on** for anything that sends, pays or posts. A routine still asks first.

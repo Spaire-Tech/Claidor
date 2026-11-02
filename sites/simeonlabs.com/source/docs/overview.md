@@ -23,7 +23,7 @@ Simeon runs on Mac and iPhone. Every plan starts with a 7-day free trial; see [P
 
 Start with a real task that spans a few tools and has a clear finish line:
 
-> Go through my inbox from this week. Reply to anything that only needs a yes or a date, flag what needs me, and put every invoice in the Finance folder in Drive. Ask me before sending anything to a client.
+> Go through my inbox from this week. Reply to anything that only needs a yes or a date, flag what needs me, and put every invoice in the Finance folder in Google Drive. Ask me before sending anything to a client.
 
 This tells the agent what to do, where to work, what to leave for you, and where to stop. Review the result, correct it, and turn what works into a [routine](/docs/routines).
 
