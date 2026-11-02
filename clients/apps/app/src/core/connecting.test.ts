@@ -17,6 +17,8 @@ import {
   queryItems,
   serverReturnState,
   signInAnswer,
+  signInEndsChannel,
+  signInHeard,
   stillConnectingNotice,
   undoes,
 } from './connecting'
@@ -155,6 +157,23 @@ describe('a sign-in returning through the server (AppReturnSignInTests)', () => 
     expect(signInAnswer('?code=c')).toBeUndefined()
     expect(signInAnswer('?state=&code=c')).toBeUndefined()
     expect(signInAnswer('')).toBeUndefined()
+  })
+
+  it('reads what the web app’s return page tells the window', () => {
+    expect(signInEndsChannel).toBe('simeon.sign-in-ends')
+    expect(signInHeard({ state: 'vendor-stripe-1', refused: true })).toEqual({
+      state: 'vendor-stripe-1',
+      refused: true,
+    })
+    expect(signInHeard({ state: 's', refused: false })?.refused).toBe(false)
+    for (const other of [
+      { state: '', refused: true },
+      { state: 's' },
+      { refused: true },
+      'refused',
+      null,
+    ])
+      expect(signInHeard(other)).toBeUndefined()
   })
 
   it('reads the query as Apple’s URLComponents does', () => {

@@ -11,7 +11,7 @@
 // browser has no such address, and the server's own "Connected" page ends
 // it) and `failed` (the address the sheet closed on).
 
-import { field, str, text } from './json'
+import { bool, field, str, text } from './json'
 import { t } from './l10n'
 
 /** The button of an app that isn't connected, wherever it shows (`Connecting.connect`). */
@@ -187,6 +187,31 @@ export function serverReturnState(url: string): string | undefined {
     return undefined
   const state = first(items, 'state')
   return state != null && state !== '' ? state : undefined
+}
+
+// MARK: How a sign-in that came back through the server ended (the web's)
+
+/**
+ * The channel the web app's return page tells the window on
+ * (`BroadcastChannel`, the same site only): on the Mac the sheet closes on
+ * the app's own address with the maker's answer
+ * (`AppReturnSignIn.answer`); in a browser the answer lands on the return
+ * page, in the sign-in's own tab, which says it here by the sign-in's state.
+ */
+export const signInEndsChannel = 'simeon.sign-in-ends'
+
+/** What the return page tells the window: the sign-in's state, and whether the maker refused it. */
+export interface SignInHeard {
+  state: string
+  refused: boolean
+}
+
+/** A message on the channel, read; none for anything else. */
+export function signInHeard(data: unknown): SignInHeard | undefined {
+  const state = text(field(data, 'state'))
+  const refused = bool(field(data, 'refused'))
+  if (state == null || refused == null) return undefined
+  return { state, refused }
 }
 
 /** What the maker sent back: the code, or its refusal, with the sign-in's state (`LoopbackSignIn.Answer`). */

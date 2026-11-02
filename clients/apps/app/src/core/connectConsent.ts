@@ -61,7 +61,7 @@ export function connectConsent(
   let reach: string
   const custom = reachSentences()[key]
   const things = reaches()[key]
-  if (custom != null) reach = custom.replaceAll('{App}', title)
+  if (custom != null) reach = custom.replaceAll('{App}', () => title)
   else if (things != null)
     reach = readOnly.has(key)
       ? t`Your agents can read ${things} in ${title}.`
@@ -87,7 +87,7 @@ export function connectConsent(
   ]
 
   const signIn =
-    signInSentences()[key]?.replaceAll('{App}', title) ??
+    signInSentences()[key]?.replaceAll('{App}', () => title) ??
     signInLine(route, title)
   const smallPrint = [
     signIn,
@@ -140,6 +140,18 @@ export function consentRoute(app: CatalogApp | undefined): ConsentRoute {
 }
 
 // MARK: Each app's part
+
+/** Each app's part as the tables hold it (the tests compare them with the Swift's, both ways). */
+export function consentTables() {
+  return {
+    reaches: reaches(),
+    reachSentences: reachSentences(),
+    signInSentences: signInSentences(),
+    notes: notes(),
+    readOnly,
+    money,
+  }
+}
 
 /** What the agents reach in each app, in Simeon's words. */
 function reaches(): Record<string, string> {

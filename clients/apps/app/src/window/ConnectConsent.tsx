@@ -4,50 +4,95 @@
 // src/core/connectConsent.ts): over everything, the window dimmed; Connect
 // goes on, ×, Escape or a click on the dim cancels. Step 6b.
 
-import { type ReactNode, useEffect, useRef } from 'react'
+import { type ReactNode, useEffect, useLayoutEffect, useRef } from 'react'
 import type { ConnectConsent, ConsentSymbol } from '../core/connectConsent'
 import { t } from '../l10n'
 import { AppLogoTile } from './ConnectCards'
 import './ConnectConsent.css'
 import { type Connector, useConnectorWatched } from './connector'
-import { Sheet } from './Dialogs'
+import { Alert, Sheet } from './Dialogs'
 import { PanelDisc } from './SettingsParts'
 
-/** The consent over the whole window, the chat dimmed behind it, as About and a starter pack sit (`ConnectConsentLayer`). */
+/** The consent over the whole window, the chat dimmed behind it, as About and a starter pack sit (`ConnectConsentLayer`); and the window's alert when a sign-in's page couldn't open. */
 export function ConsentLayer({ connector }: { connector: Connector }) {
   useConnectorWatched(connector)
   const ask = connector.asking
-  if (!ask) return null
   return (
-    <ConsentDialog
-      key={ask.consent.id}
-      consent={ask.consent}
-      connect={() => connector.confirm()}
-      cancel={() => connector.cancel()}
-    />
+    <>
+      {ask && (
+        <ConsentDialog
+          key={ask.consent.id}
+          consent={ask.consent}
+          connect={() => connector.confirm()}
+          cancel={() => connector.cancel()}
+        />
+      )}
+      {connector.told != null && (
+        // The browser refused the sign-in's tab (the web's alone: the Mac's sheet always opens, or its browser does).
+        <Alert
+          title={connector.told}
+          message=""
+          action={t('Done')}
+          onAction={() => connector.dismissTold()}
+        />
+      )}
+    </>
   )
 }
 
+/** A key pressed over the consent, as the Mac's `ViewerKeys(aboveLocks:)` takes it. */
+export interface ConsentKeyPress {
+  key: string
+  isComposing?: boolean
+  keyCode?: number
+  shiftKey?: boolean
+  altKey?: boolean
+  metaKey?: boolean
+  ctrlKey?: boolean
+}
+
 /**
- * Return connects (keypad Enter too), wherever the keys are in the window
- * (the Mac's `ViewerKeys` above everything); a button of the dialog that has
- * the keys does its own (× cancels).
+ * What a key does over the consent: Return (keypad Enter too) connects,
+ * Escape cancels, wherever the keys are in the window; with a modifier
+ * held, neither (`ignore`: the Mac lets it go, and the window's own keys
+ * wait under the consent). A button of the dialog that has the keys does
+ * its own on Return (× cancels); letters being composed keep their keys.
+ * Nothing (`undefined`) for every other key.
  */
-function useReturnConnects(connect: () => void) {
-  const latest = useRef(connect)
+export function consentKey(
+  press: ConsentKeyPress,
+  onDialogButton: boolean,
+): 'connect' | 'cancel' | 'ignore' | undefined {
+  if (press.key !== 'Enter' && press.key !== 'Escape') return undefined
+  // Letters still being composed (Japanese, Chinese…) take the key first; Safari sends that key as 229.
+  if (press.isComposing || press.keyCode === 229) return undefined
+  if (press.shiftKey || press.altKey || press.metaKey || press.ctrlKey)
+    return 'ignore'
+  if (press.key === 'Escape') return 'cancel'
+  return onDialogButton ? undefined : 'connect'
+}
+
+/**
+ * The consent's keys (`consentKey`), before anything else in the window
+ * hears them: in the capture, set up before the sheet's own Escape.
+ */
+function useConsentKeys(connect: () => void, cancel: () => void) {
+  const latest = useRef({ connect, cancel })
   useEffect(() => {
-    latest.current = connect
+    latest.current = { connect, cancel }
   })
-  useEffect(() => {
+  useLayoutEffect(() => {
     const key = (event: KeyboardEvent) => {
-      if (event.key !== 'Enter' || event.isComposing) return
-      if (event.shiftKey || event.altKey || event.metaKey || event.ctrlKey)
-        return
       const target = event.target instanceof Element ? event.target : null
-      if (target?.closest('.consent-sheet button')) return
+      const action = consentKey(
+        event,
+        target?.closest('.consent-sheet button') != null,
+      )
+      if (action === undefined) return
       event.preventDefault()
-      event.stopPropagation()
-      latest.current()
+      event.stopImmediatePropagation()
+      if (action === 'connect') latest.current.connect()
+      else if (action === 'cancel') latest.current.cancel()
     }
     window.addEventListener('keydown', key, true)
     return () => window.removeEventListener('keydown', key, true)
@@ -74,7 +119,7 @@ function ConsentDialog({
   connect: () => void
   cancel: () => void
 }) {
-  useReturnConnects(connect)
+  useConsentKeys(connect, cancel)
   const lines =
     consent.note != null
       ? [...consent.smallPrint, consent.note]
