@@ -51,6 +51,20 @@ import {
   threadTitle,
 } from './chat'
 import { type RunFlags, runFlags } from './chatRuns'
+import {
+  type CatalogApp,
+  type CloudAgentRead,
+  type ListenerPlatform,
+  appsComingSoonBuiltIn,
+  catalogApp,
+  catalogFrom,
+  cloudAgentInfo,
+  comingSoonFrom,
+  connectedToolCount,
+  isComingSoon,
+  isConnected,
+  listenerConnectedIn,
+} from './connectCards'
 import { type ConnectedApp, connectedApp } from './connectedApps'
 import { Entry, appliedChange } from './entry'
 import { fileLine, fileSize } from './fileLine'
@@ -1460,13 +1474,164 @@ export class AppStore {
   // the cloud agent, a new teammate joined (Store.swift's commands for them).
   // 3c's state and commands go below this line, and nowhere else.
 
-  /** 3c's card state back to nothing (signed out). */
-  private resetConnectCards(): void {}
+  /** The apps the catalogue offers (`getCatalog`, in the app's language): an app card's title and line, and the id the computer files it under. */
+  catalog: CatalogApp[] = []
+  /** The apps that can't be connected yet (`AppsComingSoon`): the server's list once read. */
+  appsComingSoon: Set<string> = new Set(appsComingSoonBuiltIn)
+  /** The catalogue was read from the computer in this sign-in. */
+  private catalogFresh = false
+  private appCardsLoad?: Promise<void>
 
-  /** 3c's answers shown here, settled once the computer's copy of a chat has them. */
+  /** 3c's card state back to nothing (signed out). */
+  private resetConnectCards(): void {
+    this.catalog = []
+    this.appsComingSoon = new Set(appsComingSoonBuiltIn)
+    this.catalogFresh = false
+    this.appCardsLoad = undefined
+  }
+
+  /**
+   * 3c's answers shown here, settled once the computer's copy of a chat has
+   * them: none. Nothing these cards show is the person's answer kept here:
+   * the apps, the catalogue, Slack's and GitHub's links, a cloud agent's
+   * state and the roster are each read from the computer as they are.
+   */
   private settleConnectCards(agentId: string, entries: readonly Entry[]): void {
     void agentId
     void entries
+  }
+
+  /**
+   * What an app card reads as it shows (the Mac's card's `loadApps`): the
+   * connected apps, and, once a sign-in, the catalogue and the apps that
+   * can't be connected yet, all at once. One read at a time.
+   */
+  loadAppCards(): Promise<void> {
+    this.appCardsLoad ??= (async () => {
+      const once = !this.catalogFresh
+      await Promise.all([
+        this.loadApps(),
+        once ? this.readCatalog() : undefined,
+        once ? this.loadAppsComingSoon() : undefined,
+      ])
+    })().finally(() => {
+      this.appCardsLoad = undefined
+    })
+    return this.appCardsLoad
+  }
+
+  /** The catalogue from the computer (`desktopMcp` `getCatalog`); what was shown stays when it doesn't answer. */
+  private async readCatalog(): Promise<void> {
+    const backend = this.backend
+    if (!backend) return
+    let answer: JSONValue
+    try {
+      answer = await backend.command('desktopMcp', {
+        action: 'getCatalog',
+        args: [{ language: currentLanguage() }],
+      })
+    } catch {
+      return
+    }
+    if (this.backend !== backend) return
+    this.catalogFresh = true
+    const next = catalogFrom(answer)
+    if (JSON.stringify(next) !== JSON.stringify(this.catalog)) {
+      this.catalog = next
+      this.changed()
+    }
+  }
+
+  /** Which apps can't be connected yet, from Simeon Labs' server (`GET apps`); an older server's answer, or none, keeps the list. */
+  async loadAppsComingSoon(): Promise<void> {
+    const backend = this.backend
+    if (!backend) return
+    let answer: JSONValue
+    try {
+      answer = await backend.server('apps')
+    } catch {
+      return
+    }
+    const named = comingSoonFrom(answer)
+    if (this.backend !== backend || !named) return
+    const same =
+      named.size === this.appsComingSoon.size &&
+      [...named].every((one) => this.appsComingSoon.has(one))
+    if (same) return
+    this.appsComingSoon = named
+    this.changed()
+  }
+
+  /** The catalogue's app a card names ("Gmail"). */
+  catalogApp(name: string): CatalogApp | undefined {
+    return catalogApp(this.catalog, name)
+  }
+
+  /** Whether an app a card names is connected. */
+  isConnected(name: string): boolean {
+    return isConnected(this.apps, this.catalog, name)
+  }
+
+  /** Whether an app can't be connected yet: "Coming soon" on its card. */
+  isComingSoon(name: string): boolean {
+    return isComingSoon(this.appsComingSoon, this.catalog, name)
+  }
+
+  /** How many tools a connected app brings. */
+  connectedToolCount(name: string): number {
+    return connectedToolCount(this.apps, name)
+  }
+
+  /** Whether Slack or GitHub is linked for routines to wake on (`getListenerIntegrations`); none while it can't be known. */
+  async listenerConnected(
+    platform: ListenerPlatform,
+  ): Promise<boolean | undefined> {
+    const backend = this.backend
+    if (!backend) return undefined
+    try {
+      return listenerConnectedIn(
+        await backend.command('getListenerIntegrations', {}),
+        platform,
+      )
+    } catch {
+      return undefined
+    }
+  }
+
+  /** The page that links Slack or GitHub (`getListenerConnectUrl`); a failure is said (`problem`), as the core says it. */
+  async listenerConnectURL(
+    platform: ListenerPlatform,
+  ): Promise<string | undefined> {
+    const backend = this.backend
+    if (!backend) return undefined
+    try {
+      const answer = await backend.command('getListenerConnectUrl', {
+        platform,
+      })
+      return text(field(answer, 'url'))
+    } catch (error) {
+      const why = error instanceof Error ? error.message : String(error)
+      this.problem = t`Couldn't open the link: ${why}`
+      this.changed()
+      return undefined
+    }
+  }
+
+  /** A cloud agent's state (`getCloudAgentInfo`): what it is, nothing (final), or that it couldn't be asked. */
+  async cloudAgent(bcId: string): Promise<CloudAgentRead> {
+    const backend = this.backend
+    if (!backend) return { kind: 'failed' }
+    let answer: JSONValue
+    try {
+      answer = await backend.command('getCloudAgentInfo', {
+        bcId,
+        includeFiles: false,
+      })
+    } catch {
+      return { kind: 'failed' }
+    }
+    const info = cloudAgentInfo(answer)
+    return info ? { kind: 'info', info } : { kind: 'empty' }
   }
 
   // MARK: Step 3d's flight cards: the flights found and the travellers'

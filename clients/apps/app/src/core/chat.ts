@@ -1346,7 +1346,15 @@ export function rowFor(entry: Entry): ChatRow | undefined {
         case 'flight-passengers':
           return card('flightPassengers')
         case 'agent-joined':
-          return card('joined')
+          // Without the agent's id and name, the message's own words (`JoinedCard(message:)`).
+          return text(field(message, 'agentId')) != null &&
+            (text(field(message, 'name'))?.trim() ?? '') !== ''
+            ? card('joined')
+            : {
+                kind: 'notice',
+                id: entry.id,
+                text: text(field(message, 'content')) ?? notShown(),
+              }
         case 'local-tool-permission': {
           // Waiting, it is the Mac's dock above the composer, not a line; expired, it is gone; answered, one line says how (`_Ln`).
           const status =
