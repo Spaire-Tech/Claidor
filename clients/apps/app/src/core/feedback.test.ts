@@ -312,13 +312,39 @@ describe('what the sheets post (FeedbackTests)', () => {
     expect(
       systemName({ ...chrome, platform: 'Windows', platformVersion: '10.0.0' }),
     ).toBe('Windows 10')
-    // Without client hints: the user agent.
+    expect(
+      systemName({
+        userAgent:
+          'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Mobile Safari/537.36',
+        platform: 'Android',
+        platformVersion: '14.0.0',
+      }),
+    ).toBe('Android 14')
+    // Without client hints: the user agent, whose versions are frozen, so only the system is sent.
     const safari = {
       userAgent:
         'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15',
     }
     expect(browserName(safari)).toBe('Safari 26.1')
-    expect(systemName(safari)).toBe('macOS 10.15.7')
+    expect(systemName(safari)).toBe('macOS')
+    expect(
+      systemName({
+        userAgent:
+          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:145.0) Gecko/20100101 Firefox/145.0',
+      }),
+    ).toBe('macOS')
+    const iphone = {
+      userAgent:
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1',
+    }
+    expect(browserName(iphone)).toBe('Safari 26.0')
+    expect(systemName(iphone)).toBe('iOS')
+    expect(
+      systemName({
+        userAgent:
+          'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Mobile Safari/537.36',
+      }),
+    ).toBe('Android')
     const firefox = {
       userAgent:
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:145.0) Gecko/20100101 Firefox/145.0',

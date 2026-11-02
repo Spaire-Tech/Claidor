@@ -12,8 +12,10 @@ import { AppStore } from '../core/store'
 import { SettingsComputerPage } from './SettingsComputer'
 import {
   SettingsAccountPage,
+  SettingsGeneralPage,
   SettingsHelpPage,
   SettingsLegalPage,
+  SettingsPermissionsPage,
 } from './SettingsGeneral'
 import { WindowContext, WindowModel } from './windowModel'
 
@@ -47,6 +49,22 @@ describe('Help & support and Legal', () => {
     expect(words(html)).toContain('|Terms of Service|')
     expect(html).toContain(copyrightLine)
     expect(copyrightLine).toMatch(/^Copyright © 2026 /)
+  })
+})
+
+describe('before the computer’s values are read (after the review)', () => {
+  it('keeps Permissions’ switch greyed and shows no lists, and General’s zone switch greyed', () => {
+    const store = new AppStore()
+    const permissions = draw(<SettingsPermissionsPage store={store} />)
+    expect(permissions).toMatch(
+      /<button type="button" role="switch" aria-checked="true" aria-label="Auto-review" class="settings-switch on" disabled="">/,
+    )
+    expect(permissions).not.toContain('Allow automatically')
+    expect(permissions).not.toContain('rule-new')
+    const general = draw(<SettingsGeneralPage store={store} />)
+    expect(general).toMatch(
+      /aria-label="Set Time Zone Automatically" class="settings-switch on" disabled="">/,
+    )
   })
 })
 

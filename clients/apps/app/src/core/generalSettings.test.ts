@@ -20,6 +20,7 @@ import {
   availableLanguages,
   clipRule,
   isFullList,
+  isHiddenZone,
   languageChoices,
   normalizedRules,
   relocatedRule,
@@ -276,9 +277,12 @@ class StandIn implements GeneralSettingsStore {
   written: AutoReviewInstructions[] = []
   private waiting: (() => void)[] = []
   holds = false
+  holdsRead = false
 
   async readHostSettings() {
-    return this.settings
+    const settings = this.settings
+    if (this.holdsRead) await new Promise<void>((go) => this.waiting.push(go))
+    return settings
   }
   async setTimeZone(zone: string | undefined, detected: string) {
     this.zones.push({ zone, detected })
@@ -331,6 +335,7 @@ describe('the pages’ values (GeneralSettingsModel)', () => {
   it('adds, edits, moves and deletes rules, each shown once the computer has it', async () => {
     const store = new StandIn()
     const model = new GeneralSettingsModel(store, 'UTC')
+    await model.load()
     model.setDraft('allow', '  read my calendar  ')
     expect(model.canAdd('allow')).toBe(true)
     await model.add('allow')
@@ -406,12 +411,83 @@ describe('the pages’ values (GeneralSettingsModel)', () => {
   })
 })
 
+describe('the pages wait for the computer’s values (after the review)', () => {
+  it('writes nothing before the read, and a read that failed keeps the page waiting', async () => {
+    const store = new StandIn()
+    store.settings = undefined
+    const model = new GeneralSettingsModel(store, 'Europe/Paris')
+    // The page's defaults: Auto-review on, no rules, the zone automatic. None of it may be written.
+    await model.setZone('Asia/Tokyo')
+    await model.setReviewing(false)
+    model.setDraft('allow', 'read my calendar')
+    expect(model.canAdd('allow')).toBe(false)
+    await model.add('allow')
+    await model.delete({ behavior: 'allow', text: 'x', listIndex: 0 })
+    model.edit({ behavior: 'allow', text: 'x', listIndex: 0 })
+    expect(model.editing).toBeUndefined()
+    expect(store.zones).toEqual([])
+    expect(store.written).toEqual([])
+    await model.load()
+    expect(model.loadFailed).toBe(true)
+    expect(model.loaded).toBe(false)
+    await model.setReviewing(false)
+    expect(store.written).toEqual([])
+    // Read at last: the person's own rules, then a change on them.
+    store.settings = {
+      autoReviewInstructions: {
+        isEnabled: false,
+        allowInstructions: Array.from({ length: 15 }, (_, i) => `rule ${i}`),
+        blockInstructions: [],
+      },
+    }
+    await model.load()
+    expect(model.loaded).toBe(true)
+    expect(model.loadFailed).toBe(false)
+    await model.add('allow')
+    expect(store.written.at(-1)?.allow).toHaveLength(16)
+    expect(store.written.at(-1)?.isEnabled).toBe(false)
+  })
+
+  it('drops a read that answers after a change began, so the change stays on screen', async () => {
+    const store = new StandIn()
+    store.settings = { userTimeZoneOverride: 'Asia/Tokyo' }
+    const model = new GeneralSettingsModel(store, 'Europe/Paris')
+    await model.load()
+    store.holdsRead = true
+    const reading = model.load()
+    await model.setZone(undefined)
+    expect(model.zoneOverride).toBeUndefined()
+    store.release()
+    await reading
+    expect(model.zoneOverride).toBeUndefined()
+  })
+
+  it('follows the zone the computer keeps when the browser hides its own (UTC)', async () => {
+    const store = new StandIn()
+    store.settings = { userTimeZone: 'Europe/Paris' }
+    const hidden = new GeneralSettingsModel(store, 'UTC')
+    expect(hidden.followedZone).toBe('UTC')
+    await hidden.load()
+    expect(hidden.followedZone).toBe('Europe/Paris')
+    const plain = new GeneralSettingsModel(store, 'America/New_York')
+    await plain.load()
+    expect(plain.followedZone).toBe('America/New_York')
+    store.settings = {}
+    const unknown = new GeneralSettingsModel(store, 'Etc/UTC')
+    await unknown.load()
+    expect(unknown.followedZone).toBe('Etc/UTC')
+    expect(isHiddenZone('UTC') && isHiddenZone('Etc/UTC')).toBe(true)
+    expect(isHiddenZone('Europe/London') || isHiddenZone('GMT')).toBe(false)
+  })
+})
+
 describe('the store’s settings commands (StoreSettings.swift)', () => {
   async function started() {
     const backend = new FakeBackend()
     backend.agents = [makeAgent({ id: 'theo', name: 'Theo' })]
     const store = new AppStore()
     store.account = { name: 'Bass', email: 'bass@simeonlabs.com' }
+    store.timeZoneNow = () => 'Europe/Paris'
     await store.attach(backend)
     return { store, backend }
   }
@@ -520,12 +596,44 @@ describe('the store’s settings commands (StoreSettings.swift)', () => {
     await eventually(() => told().length === 1)
     expect(told()[0]).toEqual({
       method: 'setHostSettings',
-      args: { userTimeZone: Intl.DateTimeFormat().resolvedOptions().timeZone },
+      args: { userTimeZone: 'Europe/Paris' },
       wakes: false,
     })
     store.apply({ kind: 'connection', live: false })
     store.apply({ kind: 'connection', live: true })
     await eventually(() => told().length === 2)
+    store.detach()
+  })
+
+  it('tells nothing, and writes no zone of its own, for a browser that hides its zone (UTC)', async () => {
+    const { store, backend } = await started()
+    store.timeZoneNow = () => 'UTC'
+    store.apply({ kind: 'connection', live: true })
+    await eventually(() =>
+      backend.commands.some(
+        (c) =>
+          c.method === 'setHostSettings' &&
+          field(c.args, 'userLanguage') !== undefined,
+      ),
+    )
+    await new Promise((done) => setTimeout(done, 20))
+    expect(
+      backend.commands.filter(
+        (c) =>
+          c.method === 'setHostSettings' &&
+          field(c.args, 'userTimeZone') !== undefined,
+      ),
+    ).toEqual([])
+    expect(await store.setTimeZone(undefined)).toBe(true)
+    expect(
+      backend.commands.filter((c) => c.method === 'setHostSettings').at(-1)
+        ?.args,
+    ).toEqual({ userTimeZoneOverride: '' })
+    expect(await store.setTimeZone('Asia/Tokyo', 'Etc/UTC')).toBe(true)
+    expect(
+      backend.commands.filter((c) => c.method === 'setHostSettings').at(-1)
+        ?.args,
+    ).toEqual({ userTimeZoneOverride: 'Asia/Tokyo' })
     store.detach()
   })
 })

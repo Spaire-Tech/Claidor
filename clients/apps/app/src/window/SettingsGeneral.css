@@ -272,8 +272,10 @@
 
 /* MARK: Permissions */
 
+/* A rule's words as written, its line breaks kept (the Mac's `Text`). */
 .rule-line .settings-line-label {
   overflow-wrap: anywhere;
+  white-space: pre-wrap;
 }
 
 /* Edit and Delete, 4 apart, shown under the pointer (and while one has the keys). */
@@ -286,6 +288,13 @@
 .rule-line:hover .rule-icons,
 .rule-line:focus-within .rule-icons {
   opacity: 1;
+}
+
+/* On a screen with no pointer to hover (a touch screen), always shown: a tap never deletes a rule it couldn't see. */
+@media (hover: none) {
+  .rule-icons {
+    opacity: 1;
+  }
 }
 
 .rule-icon {

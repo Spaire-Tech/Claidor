@@ -123,6 +123,7 @@ import { GatewayError } from './gatewayConnection'
 import {
   type AutoReviewInstructions,
   detectedTimeZone,
+  isHiddenZone,
   normalizedRules,
 } from './generalSettings'
 import {
@@ -4591,6 +4592,9 @@ export class AppStore {
   /** 6e's state back to nothing (signed out): it keeps none. */
   private resetGeneralSettings(): void {}
 
+  /** The zone this browser is in (`TimeZone.current`); the tests give their own. */
+  timeZoneNow: () => string = detectedTimeZone
+
   /**
    * The name changed in Settings › Account (StoreSettings.swift's
    * `changeName`): what the agents call the person, as the first run's name
@@ -4667,15 +4671,16 @@ export class AppStore {
     }
   }
 
-  /** The time zone (`setTimeZone`): the zone the agents and routines use, or none for the one this browser is in. */
+  /** The time zone (`setTimeZone`): the zone the agents and routines use, or none for the one this browser is in (not told when the browser hides it, `isHiddenZone`). */
   setTimeZone(
     zone: string | undefined,
-    detected: string = detectedTimeZone(),
+    detected: string = this.timeZoneNow(),
   ): Promise<boolean> {
-    return this.writeHostSettings({
-      userTimeZone: detected,
-      userTimeZoneOverride: zone ?? '',
-    })
+    return this.writeHostSettings(
+      isHiddenZone(detected)
+        ? { userTimeZoneOverride: zone ?? '' }
+        : { userTimeZone: detected, userTimeZoneOverride: zone ?? '' },
+    )
   }
 
   /** Auto-review (`setAutoReview`): its switch and its two lists of rules, as the host keeps them. */
@@ -4692,13 +4697,17 @@ export class AppStore {
    * comes (back), beside the language (MacServices.swift's `connected`),
    * without waking a computer that rests. The person's own pick stays the
    * computer's: the host keeps it apart (`userTimeZoneOverride`) and goes
-   * by it while there is one.
+   * by it while there is one. A browser that hides its zone (UTC,
+   * `isHiddenZone`) tells nothing: the agents keep the zone the person's
+   * other devices told.
    */
   private async tellTimeZone(backend: AgentBackend): Promise<void> {
+    const zone = this.timeZoneNow()
+    if (isHiddenZone(zone)) return
     await quietly(
       backend.command(
         'setHostSettings',
-        { userTimeZone: detectedTimeZone() },
+        { userTimeZone: zone },
         { wakes: false },
       ),
     )
