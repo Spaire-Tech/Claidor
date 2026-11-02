@@ -1,1 +1,1333 @@
-/* FlightCards.tsx's cards, at the Mac's measures (tokens from index.css). */
+/*
+ * FlightCards.tsx's cards, the flight's details beside the chat and the
+ * travellers' sheet, at the Mac's measures (mac/Simeon/Cards.swift,
+ * FlightBooking.swift, PaneMembersFlight.swift, AgentPane.swift). The
+ * window's colours come from index.css; these are the flight parts' own,
+ * light and dark.
+ */
+:root {
+  /* The flights card's ink and grey, its rows' rule, hover and chevron (`FlightsCardView`) */
+  --flight-ink: #1d1d1f;
+  --flight-grey: #86868b;
+  --flight-rule: rgb(60 60 67 / 0.14);
+  --flight-hover: rgb(120 120 128 / 0.1);
+  --flight-chevron: #c7c7cc;
+  /* Apple's lighter blue (`appleBlue`): the price, the calendar */
+  --apple-blue: #007aff;
+  /* The travellers' card: its ground, grey and blue (`FlightPassengersCardView`) */
+  --passengers-ground: var(--theirs);
+  --passengers-grey: #6e6e73;
+  --passengers-blue: #255a93;
+  --passengers-green: #00c972;
+  /* An airline's mark: the disc, its ring, the initials */
+  --mark-disc: #ffffff;
+  --mark-ring: rgb(0 0 0 / 0.12);
+  --mark-initials: #6e6e73;
+  /* The pane (`paneGround`, `paneInk`, `paneInk2`, `paneHairline`) and the total's green (`Ink.fare`) */
+  --pane-ground: #fbfbfd;
+  --pane-ink: #1d1d1f;
+  --pane-ink-2: #86868b;
+  --pane-hairline: rgb(0 0 0 / 0.08);
+  --fare-green: #248a3d;
+  /* Settings' parts on the sheet (`groupedGround`, `groupedRow`, `groupedRowHover`, `settingsAction`) */
+  --grouped-ground: #ffffff;
+  --grouped-row: #f4f4f4;
+  --grouped-row-hover: #ebebeb;
+  --settings-action: #0a6cdf;
+  /* A day's grey pill: the ink at 6% */
+  --day-pill: rgb(20 20 20 / 0.06);
+  --calendar-wash: rgb(0 122 255 / 0.14);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --flight-ink: #f5f5f7;
+    --flight-grey: #98989d;
+    --flight-rule: rgb(84 84 88 / 0.5);
+    --flight-hover: rgb(120 120 128 / 0.24);
+    --flight-chevron: #48484a;
+    --apple-blue: #0a84ff;
+    --passengers-ground: #2c2c2e;
+    --passengers-grey: #98989d;
+    --passengers-blue: #2f6db0;
+    --mark-disc: #232325;
+    --mark-ring: rgb(255 255 255 / 0.12);
+    --mark-initials: #b4b4b8;
+    --pane-ground: #1c1c1e;
+    --pane-ink: #f5f5f7;
+    --pane-ink-2: #98989d;
+    --pane-hairline: rgb(255 255 255 / 0.1);
+    --fare-green: #30d158;
+    --grouped-ground: #141414;
+    --grouped-row: #262626;
+    --grouped-row-hover: #2f2f2f;
+    --settings-action: #4c9bff;
+    --day-pill: rgb(252 252 252 / 0.1);
+    --calendar-wash: rgb(10 132 255 / 0.24);
+  }
+}
+
+.flight-symbol {
+  display: block;
+  flex: none;
+  overflow: visible;
+}
+
+/* The white spinner in a blue button (`ProgressView().controlSize(.small)`). */
+.flight-spinner {
+  display: inline-block;
+  flex: none;
+  width: 14px;
+  height: 14px;
+  box-sizing: border-box;
+  border: 2px solid rgb(255 255 255 / 0.35);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: flight-spin 0.8s linear infinite;
+}
+
+@keyframes flight-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* `ViewThatFits`: the room, and the wide layout laid out unseen at its own width. */
+.fitting {
+  position: relative;
+  display: block;
+  min-width: 0;
+  width: 100%;
+  overflow: clip;
+}
+
+.fitting-measure {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: max-content;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* An airline's mark: its logo sized by its shape, or its initials (500, a third of the side), on the disc with a faint ring. */
+.airline-mark {
+  display: grid;
+  flex: none;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--mark-disc);
+  box-shadow: inset 0 0 0 0.5px var(--mark-ring);
+  overflow: hidden;
+}
+
+.airline-mark img {
+  display: block;
+  user-select: none;
+}
+
+.airline-mark img.plain {
+  object-fit: contain;
+}
+
+.airline-initials {
+  font-weight: 500;
+  line-height: 1;
+  color: var(--mark-initials);
+  letter-spacing: 0;
+}
+
+/*
+ * The flights card: the agent's grey, 18 round with its hairline, the
+ * heading padded 16 a side, 14 above and 6 under; the rows 6 in, each
+ * padded 10, 12 round, a rule between them from 64 in to 10 from the end.
+ */
+.flights-card {
+  box-sizing: border-box;
+  width: 100%;
+  border-radius: 18px;
+  background: var(--theirs);
+  color: var(--flight-ink);
+  box-shadow:
+    0 0 0 0.5px var(--theirs-hairline),
+    0 1px 2px var(--theirs-shadow);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.19;
+}
+
+.flights-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px 16px 6px;
+}
+
+.flights-heading {
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: -0.2px;
+}
+
+.flights-aside {
+  font-size: 12px;
+  color: var(--flight-grey);
+}
+
+.flights-rows {
+  padding: 0 6px 6px;
+}
+
+.flights-rows.bare {
+  padding-top: 6px;
+}
+
+.flight-rule {
+  height: 0.5px;
+  margin: 0 10px 0 64px;
+  background: var(--flight-rule);
+}
+
+.flight-row {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  line-height: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.flight-row:hover,
+.flight-row.pressed {
+  background: var(--flight-hover);
+}
+
+/* A wide chat's row: the mark, the airline over its stops (150), the times (220 at least), the price, the chevron, 14 apart. */
+.flight-across {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.flight-airline {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 2px;
+  width: 150px;
+  min-width: 0;
+}
+
+.flight-airline-name,
+.flight-stops {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.flight-airline-name {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.flight-stops {
+  font-size: 12px;
+  color: var(--flight-grey);
+}
+
+.flight-times {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 220px;
+}
+
+.flight-price {
+  flex: none;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.15px;
+  color: var(--apple-blue);
+  white-space: nowrap;
+}
+
+.flight-chevron {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 12px;
+  height: 12px;
+  color: var(--flight-chevron);
+}
+
+/* The dashed rule between the times: what the line leaves, at least 12, the grey at 55%. */
+.flight-dashes {
+  flex: 1 1 0;
+  min-width: 12px;
+  height: 1px;
+  background: repeating-linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--flight-grey) 55%, transparent) 0 3px,
+    transparent 3px 6px
+  );
+}
+
+.times-across {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.times-across .time {
+  flex: none;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.times-across .times-label {
+  flex: none;
+  font-size: 11px;
+  color: var(--flight-grey);
+  white-space: nowrap;
+}
+
+/* A narrow chat's row (the iPhone's): the mark, the airline with its price at the far right (15) over the times (14, grey), the chevron, 12 apart. */
+.flight-stacked {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.flight-stack-words {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.flight-stack-top {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 15px;
+  letter-spacing: -0.15px;
+}
+
+.flight-stack-airline {
+  flex: 1;
+  min-width: 0;
+}
+
+.flight-stack-top .flight-price {
+  font-weight: 400;
+}
+
+.times-stacked {
+  font-size: 14px;
+  color: var(--flight-grey);
+}
+
+.times-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.times-line .time,
+.times-line .times-label {
+  flex: none;
+  white-space: nowrap;
+}
+
+.times-stacked .times-label {
+  font-size: 12px;
+}
+
+.times-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.flight-row:focus-visible,
+.pane-close:focus-visible,
+.book-flight-button:focus-visible,
+.passengers-fill:focus-visible,
+.travellers-continue:focus-visible,
+.travellers-close:focus-visible,
+.day-pill:focus-visible,
+.calendar-title:focus-visible,
+.calendar-step:focus-visible,
+.calendar-item:focus-visible {
+  outline: 2px solid var(--unread);
+  outline-offset: 1px;
+}
+
+/*
+ * The travellers' card in the chat: 20 round, padded 16, its parts 14
+ * apart, at most 520 wide; the card's own ground on dark (#2c2c2e).
+ */
+.passengers-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 16px;
+  border-radius: 20px;
+  background: var(--passengers-ground);
+  color: var(--flight-ink);
+  letter-spacing: -0.15px;
+  line-height: 1.19;
+  overflow-wrap: anywhere;
+}
+
+.passengers-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.passengers-words {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.passengers-title-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.passengers-title {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.passengers-title-line .status-pill {
+  align-self: center;
+  letter-spacing: 0;
+}
+
+.passengers-route {
+  font-size: 13px;
+  color: var(--passengers-grey);
+}
+
+/* The flight's lines: the day and times (14), the fare and its total (12, grey), what changed (12, 500, red). */
+.flight-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.flight-when {
+  font-size: 14px;
+}
+
+.flight-fare {
+  font-size: 12px;
+  color: var(--passengers-grey);
+}
+
+.flight-changed {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--danger);
+}
+
+.passengers-open {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.passengers-note {
+  font-size: 12px;
+  color: var(--danger);
+}
+
+.passengers-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+/* Add traveller details: 14, 500, white on the blue capsule, 32 high, padded 16, at least 88 wide. */
+.passengers-fill {
+  flex: none;
+  min-width: 88px;
+  height: 32px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--passengers-blue);
+  color: #ffffff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.15px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.passengers-settled {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.passengers-tick {
+  display: flex;
+  flex: none;
+  padding-top: 1px;
+  color: var(--passengers-grey);
+}
+
+.passengers-tick.saved {
+  color: var(--passengers-green);
+}
+
+.passengers-status {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/*
+ * A flight's details beside the chat: the pane's ground, a half-point line
+ * on its left, 0.24 s on the window's curve as it opens and shuts, its
+ * page laid out at its full width and fading in.
+ */
+.flight-pane {
+  position: relative;
+  flex: none;
+  height: 100%;
+  overflow: hidden;
+  background: var(--pane-ground);
+  transition: width 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.flight-pane.shown::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1;
+  width: 0.5px;
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+.window.resizing .flight-pane {
+  transition: none;
+}
+
+.flight-pane-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.flight-pane.shown .flight-pane-page {
+  animation: flight-pane-in 0.16s ease-in-out;
+}
+
+@keyframes flight-pane-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* The top bar: 44 high, padded 12 a side, Close (28, round 6) at its right. */
+.flight-pane-top {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: flex-end;
+  height: 44px;
+  padding: 0 12px;
+}
+
+.pane-close {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink-secondary);
+  cursor: pointer;
+  transition:
+    background 0.12s ease-out,
+    color 0.12s ease-out;
+}
+
+.pane-close:hover {
+  background: var(--row-hover);
+  color: var(--ink);
+}
+
+.flight-pane-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.flight-pane-body {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  box-sizing: border-box;
+  padding: 6px 20px 40px;
+}
+
+/* The flight, as the iPhone's sheet: its parts 16 apart, the words selectable. */
+.flight-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  color: var(--pane-ink);
+  line-height: 1.19;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.flight-page-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 0;
+  text-align: center;
+}
+
+.flight-page-route {
+  margin: 0;
+  overflow: hidden;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.484px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.flight-page-shape {
+  font-size: 15px;
+  color: var(--pane-ink-2);
+}
+
+.flight-total {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 4px;
+}
+
+.flight-total-line {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.flight-total-words {
+  flex: 1;
+  font-size: 17px;
+  font-weight: 500;
+}
+
+.flight-total-price {
+  flex: none;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--fare-green);
+}
+
+.flight-total-note {
+  font-size: 13px;
+  color: var(--pane-ink-2);
+}
+
+.flight-way {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.flight-way-title {
+  padding: 0 4px;
+  font-size: 13px;
+  color: var(--pane-ink-2);
+}
+
+/* One flight: padded 16 on the agent's grey, 18 round. */
+.flight-leg {
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  border-radius: 18px;
+  background: var(--theirs);
+}
+
+.flight-leg-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.flight-leg-route {
+  flex: 1;
+  min-width: 0;
+  font-size: 17px;
+  font-weight: 500;
+}
+
+.flight-moments {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 12px;
+}
+
+.flight-moment {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 15px;
+}
+
+.flight-moment-symbol {
+  display: flex;
+  flex: none;
+  justify-content: center;
+  width: 16px;
+  color: var(--pane-ink-2);
+}
+
+.flight-moment-label {
+  flex: none;
+  min-width: 76px;
+}
+
+.flight-moment-value {
+  flex: 1;
+  min-width: 0;
+}
+
+.flight-leg-rule {
+  height: 0.5px;
+  margin: 12px 0;
+  background: var(--pane-hairline);
+}
+
+.flight-leg-details {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 13px;
+  color: var(--pane-ink-2);
+}
+
+.flight-layover {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 6px;
+  font-size: 15px;
+  color: var(--pane-ink-2);
+}
+
+.flight-terms {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px;
+  border-radius: 18px;
+  background: var(--theirs);
+  font-size: 15px;
+  color: var(--pane-ink-2);
+}
+
+/* Book with Simeon: 15, 500, white on the blue capsule, 36 high, the pane's width; why not in red over it. */
+.book-flight {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.book-flight-refused {
+  font-size: 12px;
+  line-height: 1.19;
+  color: var(--danger);
+}
+
+.book-flight-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 36px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--passengers-blue);
+  color: #ffffff;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.book-flight-button:disabled {
+  cursor: default;
+}
+
+/*
+ * The travellers' sheet: 640 by 720 on Settings' white (#141414 on dark);
+ * the closing disc and the title at its top, each traveller a card of
+ * 56-high rows, Continue the one wide blue button at its foot.
+ */
+.sheet.travellers-sheet {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  width: 640px;
+  height: 720px;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 32px);
+  overflow: hidden;
+  background: var(--grouped-ground);
+  line-height: 1.19;
+}
+
+.travellers-top {
+  position: relative;
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 16px 16px 8px;
+}
+
+.travellers-title {
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+/* The glass disc that closes it: 32, its X at 40%, the discs' ink. */
+.travellers-close {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: var(--disc-ink);
+  cursor: pointer;
+}
+
+.travellers-close:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.travellers-form {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.travellers-scroll {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 24px;
+  min-height: 0;
+  padding: 8px 32px 24px;
+  overflow-y: auto;
+}
+
+.travellers-flight {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.travellers-flight-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  border-radius: 16px;
+  background: var(--grouped-row);
+}
+
+.travellers-flight-words {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.travellers-flight-route-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.travellers-flight-route {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.travellers-flight-when {
+  font-size: 13px;
+  color: var(--ink-secondary);
+}
+
+.travellers-flight-fare,
+.travellers-as-on-id {
+  font-size: 12px;
+  color: var(--ink-secondary);
+}
+
+.travellers-flight-changed {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--danger);
+}
+
+.travellers-as-on-id {
+  padding: 0 8px;
+}
+
+.travellers-bottom {
+  flex: none;
+  padding: 12px 32px 24px;
+}
+
+/* Continue: 14, 600, white on the person's blue, 36 high, the sheet's width less 32 a side. */
+.travellers-continue {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 36px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--yours);
+  color: #ffffff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.travellers-continue:disabled {
+  opacity: 0.75;
+  cursor: default;
+}
+
+/* A traveller: their seat's name (13, 500, grey) over their card (16 round); the thing to fix in red under it (12). */
+.traveller-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.traveller-heading {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-secondary);
+}
+
+.traveller-card {
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  background: var(--grouped-row);
+  overflow: hidden;
+}
+
+.traveller-problem {
+  padding: 0 8px;
+  font-size: 12px;
+  color: var(--danger);
+}
+
+/* A row: 18 in, 14 above and below, at least 56; the line between two inset 18 at both ends. */
+.traveller-line {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-sizing: border-box;
+  min-height: 56px;
+  padding: 14px 18px;
+}
+
+.traveller-line.divided::before,
+.traveller-add::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 18px;
+  left: 18px;
+  height: 0.5px;
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+.traveller-label {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.traveller-trailing {
+  display: flex;
+  flex: none;
+  align-items: center;
+}
+
+/* The field: 300 wide, its words at the right (13), "Required" at the ink's 40% until then. */
+.traveller-field {
+  width: 300px;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  text-align: right;
+}
+
+.traveller-field::placeholder {
+  color: var(--ink-tertiary);
+}
+
+/* A menu's face: the choice (13, grey) and a chevron down (9); the system's own list over it, unseen. */
+.traveller-menu {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--ink-secondary);
+  border-radius: 4px;
+}
+
+.traveller-menu:has(.traveller-select:focus-visible) {
+  outline: 2px solid var(--unread);
+  outline-offset: 3px;
+}
+
+.traveller-menu-words {
+  white-space: nowrap;
+}
+
+.traveller-menu-chevron {
+  color: var(--ink-tertiary);
+}
+
+.traveller-select {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* Add passport: the plus (16) and the words in the link blue, a step darker under the pointer. */
+.traveller-add {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 56px;
+  padding: 14px 18px;
+  border: 0;
+  background: transparent;
+  color: var(--settings-action);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.traveller-add:hover {
+  background: var(--grouped-row-hover);
+}
+
+.traveller-add:focus-visible {
+  outline: 2px solid var(--unread);
+  outline-offset: -2px;
+}
+
+.traveller-add-symbol {
+  display: flex;
+}
+
+/* A day: the date or "Choose" (13) in a grey pill, 30 high, padded 12, 8 round. */
+.day-pill {
+  height: 30px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--day-pill);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+/* The calendar's popover: padded 14 and 16, on the raised ground, with its arrow toward the pill. */
+.calendar-popover {
+  position: fixed;
+  z-index: 80;
+  padding: 16px 14px;
+  border-radius: 12px;
+  background: var(--elevated);
+  color: var(--ink);
+  box-shadow:
+    inset 0 0 0 0.5px var(--glass-rim),
+    0 10px 30px rgb(0 0 0 / 0.22);
+  line-height: 1.19;
+}
+
+.calendar-arrow {
+  position: absolute;
+  top: -9px;
+  width: 18px;
+  height: 9px;
+  background: var(--elevated);
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+
+.calendar-popover.above .calendar-arrow {
+  top: auto;
+  bottom: -9px;
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+}
+
+/* The calendar: seven 42-wide columns; the head 32 high, 10 over the days. */
+.calendar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 294px;
+}
+
+.calendar-head {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  padding-left: 10px;
+}
+
+.calendar-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 17px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.calendar-title-chevron {
+  color: var(--apple-blue);
+  transition: transform 0.2s ease-in-out;
+}
+
+.calendar-title-chevron.open {
+  transform: rotate(90deg);
+}
+
+.calendar-steps {
+  display: flex;
+  margin-left: auto;
+}
+
+.calendar-step {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--apple-blue);
+  cursor: pointer;
+}
+
+.calendar-step:disabled {
+  color: var(--ink-tertiary);
+  cursor: default;
+}
+
+/* Six weeks tall whatever the month: the weekdays (12, 600, at 40%) 4 over the days. */
+.calendar-days {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  height: 260px;
+}
+
+.calendar-weekdays,
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 42px);
+}
+
+.calendar-weekdays {
+  height: 16px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 16px;
+  color: var(--ink-tertiary);
+  text-align: center;
+}
+
+.calendar-grid {
+  grid-auto-rows: 40px;
+}
+
+/* A day: 17 on a 36 disc; the chosen one blue on the pale blue (white on the blue when it is today), today in blue, one outside the range grey. */
+.calendar-day {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 17px;
+  cursor: pointer;
+}
+
+.calendar-day:focus-visible {
+  outline: none;
+}
+
+.calendar-disc {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+}
+
+.calendar-day:hover:not(:disabled) .calendar-disc {
+  background: color-mix(in srgb, var(--ink) 7%, transparent);
+}
+
+.calendar-day:focus-visible .calendar-disc {
+  box-shadow: 0 0 0 2px var(--unread);
+}
+
+.calendar-day.today {
+  color: var(--apple-blue);
+  font-weight: 600;
+}
+
+.calendar-day.chosen {
+  color: var(--apple-blue);
+  font-weight: 600;
+}
+
+.calendar-day.chosen .calendar-disc,
+.calendar-day.chosen:hover .calendar-disc {
+  background: var(--calendar-wash);
+}
+
+.calendar-day.chosen.today .calendar-disc,
+.calendar-day.chosen.today:hover .calendar-disc {
+  background: var(--apple-blue);
+  color: #ffffff;
+}
+
+.calendar-day:disabled {
+  color: var(--ink-tertiary);
+  cursor: default;
+}
+
+/* The month and year lists, side by side (the years 96 wide): 17 each, the one shown blue on the pale blue band. */
+.calendar-lists {
+  display: flex;
+  gap: 8px;
+  height: 260px;
+}
+
+.calendar-list {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.calendar-list::-webkit-scrollbar {
+  display: none;
+}
+
+.calendar-list.narrow {
+  flex: none;
+  width: 96px;
+}
+
+.calendar-item {
+  flex: none;
+  min-height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 17px;
+  cursor: pointer;
+}
+
+.calendar-item.shown {
+  background: var(--calendar-wash);
+  color: var(--apple-blue);
+  font-weight: 600;
+}
+
+.calendar-item:disabled {
+  color: var(--ink-tertiary);
+  cursor: default;
+}

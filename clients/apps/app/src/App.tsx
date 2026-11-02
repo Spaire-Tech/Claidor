@@ -17,6 +17,7 @@ import type { WebSession } from './session'
 import { AccessCover } from './window/AccessCover'
 import { ChatPane } from './window/ChatPane'
 import { FirstRunScreen } from './window/FirstRun'
+import { FlightPane, useFlightPane } from './window/FlightCards'
 import { Sidebar, listOrder } from './window/Sidebar'
 import {
   type SidebarSize,
@@ -152,8 +153,10 @@ function MainWindow({ session }: { session: WebSession }) {
     })
   }, [])
   const [resizing, setResizing] = useState(false)
-  const rail = showsRail(size, windowWidth)
-  const width = sidebarWidth(size, windowWidth)
+  // A flight's details beside the chat (FlightCards.tsx, until the agent's pane in step 4): the sidebar is measured beside them.
+  const pane = useFlightPane(store, shown, size, resize, windowWidth)
+  const rail = showsRail(size, windowWidth - pane)
+  const width = sidebarWidth(size, windowWidth - pane)
   // ⌘B (Control-B on Windows) folds the sidebar to its rail and opens it again, from a field too.
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
@@ -190,6 +193,7 @@ function MainWindow({ session }: { session: WebSession }) {
             />
           )}
         </main>
+        <FlightPane store={store} width={pane} />
         <ResizeEdge
           left={width - 7}
           drag={(x) => resize((now) => dragTo(now, x, window.innerWidth))}
