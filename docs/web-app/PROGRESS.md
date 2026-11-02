@@ -17,8 +17,8 @@ file and the code disagree, the code is right and this file is fixed.
 | 1. The base: the server and the computer, signing in, the window | Done, 1 November 2026 (1a to 1d); the first run for a new account and the access cover, carried to step 2, done there |
 | 2. The sidebar and the chat | Done, 1 November 2026: 2a (the chat's core and the chat on screen), 2b (a message's actions, find, the working line, names in colour, link icons, the emoji picker), 2c (file cards, pictures, link cards, the preview with PDF, Word, sound and Excel, the viewer), 2e (the message field's own parts: files, ":", "@", "/", "#", dictation), 2f (the sidebar: pins, sections, picked rows, menus, renaming, hiding, deleting, dragging, the rail, the width), 2g (a new account's first run, the access cover). The sidebar's head and foot (search, new chat, the account, Connect apps) come with their screens in step 4. Next: step 3, the cards |
 | 3. The cards | Done, 2 November 2026: 3a (the card's frame, the question, the email and Slack drafts, the auto-review approval), 3b (the secret, the computer handed over, the in-chat form, 1Password's fill and connect cards), 3c (apps to connect, Slack or GitHub for a routine, the cloud agent, a new teammate), 3d (the flights, a flight's details, the travellers' form, the checkout, the products). What needs the computer's screen comes with it in step 5, an app's Connect in step 6, a teammate's View Profile in step 4. Next: step 4 |
-| 4. The agent's pane, search, new chat, the org chart, starter packs | Done, 2 November 2026: 4a (the agent's pane: its frame, Profile and Notifications, a flight's details taken in; the window's model; Search and New Agent in the sidebar), 4b (the avatar editor: faces and voices, a picture generated or of one's own; New Agent), 4c (an agent's routines and a routine's editor), 4d (search, ⌘K; an agent's channels; a group's members), 4e (the org chart, starter packs from `?pack=`). An agent's own Computer tab and the computer's screen come with step 5; in search and "/", Settings' pages, Connectors and the themes come with step 6, Update Simeon's Computer with step 5; the sidebar's account and Connect apps with step 6. Next: step 5, the computer and calls |
-| 5. The computer and calls | Not started |
+| 4. The agent's pane, search, new chat, the org chart, starter packs | Done, 2 November 2026: 4a (the agent's pane: its frame, Profile and Notifications, a flight's details taken in; the window's model; Search and New Agent in the sidebar), 4b (the avatar editor: faces and voices, a picture generated or of one's own; New Agent), 4c (an agent's routines and a routine's editor), 4d (search, ⌘K; an agent's channels; a group's members), 4e (the org chart, starter packs from `?pack=`). An agent's own Computer tab and the computer's screen come with step 5 (done); in search and "/", Settings' pages, Connectors and the themes come with step 6, Update Simeon's Computer with step 5 (done); the sidebar's account and Connect apps with step 6. Next: step 5, the computer and calls |
+| 5. The computer and calls | Done, 2 November 2026: 5a (the frame: the window model's and the store's places, noVNC and ElevenLabs' kit, the app window's policy), 5b (the pane's Computer tab, the full computer view with its keys, paste and helpers, the agent's pointer, step 3's buttons that open the computer), 5c (the rebuild, recovery and move, the computer's dialogs and pills, low disk, the access notice, the sidebar's card and Update pill, Update Simeon's Computer in ⌘K and "/"), 5d (calls with an agent: the ring, the banner, the call's line and its lines over the chat; and two agents' exchange over the chat, missed in step 2). Next: step 6, Connectors and Settings |
 | 6. Connectors and Settings | Not started |
 | 7. Windows | Not started |
 
@@ -61,7 +61,7 @@ file and the code disagree, the code is right and this file is fixed.
 | 2 November 2026 | The secret card says Saved only once the computer's copy says it kept the secret (`secretProvided`), as the iPhone does (the Mac says it as soon as the command returns). What is pasted, or typed in a form's masked field, is left to the browser, read only when sent and emptied then, never copied into the page's HTML; the browser and the password managers are asked not to offer the person's own logins there, which would go to the agent's computer | The session |
 | 2 November 2026 | Where the Mac asks for Touch ID (1Password's Fill, a checkout's Allow), the web asks in the window's own alert, with the words the Mac's Touch ID shows: a web page has no Touch ID of its own (WebAuthn would need the server to keep a key for each person), and the alert keeps the Mac's second, deliberate step. A checkout's Allow then carries no device approval, so Link asks the person in its own app, as the Mac does when there is none. In the Windows app: Windows Hello, decided at step 7 | The session |
 | 2 November 2026 | 1Password's Connect is left out on the web: it runs 1Password's command-line tool on the person's computer to make the shared vault and its read-only key, which a page can't. The card shows the agent's reason, the Mac's paragraph on what connecting makes, and the X. It comes back in the Windows app (step 7) | The session |
-| 2 November 2026 | What needs the computer's screen comes with it in step 5: the hand-off's Take over and Open computer, a Link checkout's Review order and its picture opening the checkout, the bank check's Open the computer. Until then they are left out, never a button that does nothing; a Shop checkout's Review order is the store's page, in a new tab, as on the Mac | The session |
+| 2 November 2026 | What needs the computer's screen comes with it in step 5: the hand-off's Take over and Open computer, a Link checkout's Review order and its picture opening the checkout, the bank check's Open the computer. Until then they are left out, never a button that does nothing; a Shop checkout's Review order is the store's page, in a new tab, as on the Mac (Step 5: done; see below.) | The session |
 | 2 November 2026 | An app card's Connect waits for step 6, with the founder's consent sheet (`ConnectConsent`) and the app's sign-in, built once there for the cards, the rows and the pages. Until then the card says Connected or Coming soon, and otherwise has no button | The session |
 | 2 November 2026 | Pages a card opens (a pull request, Link's and Shop's pages, a shop's page) open in a new tab, without `opener` or the referrer. Slack's and GitHub's linking page opens in a tab opened blank at once, so the browser lets it open while the computer is asked, then sent to the page, without `opener` (that page may be told the app's address, its origin only); the card asks again whether it is linked when the tab comes back to the front | The session |
 | 2 November 2026 | A cloud agent card has View PR and no Open: the Mac's Open goes to `app.simeonlabs.com/agents/<id>`, a page that doesn't exist. Its name and "PR #412" open the pull request when there is one; otherwise they are words | The session |
@@ -75,7 +75,7 @@ file and the code disagree, the code is right and this file is fixed.
 | 2 November 2026 | A card whose line can't be read is one notice, with the message's own words where the core keeps them (Chat.swift's `row(for:)`) | The session |
 | 2 November 2026 | Book with Simeon belongs to its flight: another flight shows its own button, and a booking answered after another flight was opened doesn't close that one (the Mac's reused button keeps the last flight's spinner or refusal). No beep when the sheet finds something to fix (the Mac's `NSSound.beep`): a page has no system alert sound | The session |
 | 2 November 2026 | The agent's pane takes what the window leaves beside the sidebar and the chat's 424, from 480 down to 280 (the Mac grows its window for it; a browser can't), and closes when dragged under 244. Whether it is open, its width and whether it folded the sidebar are kept in the browser under the Mac's names (`simeon.pane.open`, `simeon.pane.width`, `simeon.pane.tookSidebar`) | The session |
-| 2 November 2026 | The pane's Computer tab is left out for an agent until the computer comes (step 5); a group's Computer tab is its members, as on the Mac | The session |
+| 2 November 2026 | The pane's Computer tab is left out for an agent until the computer comes (step 5); a group's Computer tab is its members, as on the Mac (Step 5: done; see below.) | The session |
 | 2 November 2026 | ⌘N and the sidebar's compose button open New Agent: the Mac's `Features.groupChats` is off, so its To: line (`NewChatPane`) never shows there, and is left out | The session |
 | 2 November 2026 | "/" Open Hidden Agents opens the Hidden Agents list, as ⌘K's does, though the Mac's "/" offers it and does nothing | The session |
 | 2 November 2026 | A picture of one's own comes from the browser's file chooser (the Mac's panel's kinds), a drop or a paste outside a field. The browser reads it (turned by its EXIF, as on the Mac), it is drawn down to 1024, cropped in a canvas and sent as the Mac's 256-pixel PNG. A picture pasted as a picture is "Pasted image"; a file pasted keeps its name | The session |
@@ -89,7 +89,7 @@ file and the code disagree, the code is right and this file is fixed.
 | 2 November 2026 | Run history says "Just now" for a run begun since the last 30-second tick (the Mac's can say "In 1 min") | The session |
 | 2 November 2026 | A routine's popover keeps its connecting words ("at", "on", "every"…) and Advanced's "minutes" and "hours" in English in every language, as the Mac draws them: they are in neither catalogue | The session |
 | 2 November 2026 | A time of day in another language is that language's short time ("09:00" in French, "9:00" in Spanish), CLDR's, as Apple's "jmm" | The session |
-| 2 November 2026 | Search offers only the actions whose screens the window has, as "/" (`windowActionIds`): Org Chart, Open Hidden Agents, Members, Channels, Chat Settings. Settings: General, Usage & Billing, Connectors and the themes join it with step 6, Update Simeon's Computer with step 5; each is one id and one case in `runAction` | The session |
+| 2 November 2026 | Search offers only the actions whose screens the window has, as "/" (`windowActionIds`): Org Chart, Open Hidden Agents, Members, Channels, Chat Settings. Settings: General, Usage & Billing, Connectors and the themes join it with step 6, Update Simeon's Computer with step 5; each is one id and one case in `runAction` (Step 5: done; see below.) | The session |
 | 2 November 2026 | A routine found by search opens that routine in its agent's pane (`openRoutineFor`). The Mac, copying the Electron window, opens the open agent's pane on Computer, or another's on Profile | The session |
 | 2 November 2026 | A link found by search shows its address and its site's own icon, not the page's title (as in the chat, 1 November), and opens in a new tab without `opener` or the referrer | The session |
 | 2 November 2026 | With ⌘ held, search's rows show ⌘ on an Apple computer and Ctrl elsewhere (the Mac's always show ⌘) | The session |
@@ -99,6 +99,18 @@ file and the code disagree, the code is right and this file is fixed.
 | 2 November 2026 | A starter pack reaches the web app on its own address with the pack's id (`app.simeonlabs.com/app-next/?pack=<id>`, `/app/` after the move), read once the window is up (signed in, past the first run) and taken out of the address; the sign-in's `return_to` and the first run keep it. The website is not changed (Open questions). In the Windows app it is the `simeon://` link | The session |
 | 2 November 2026 | The org chart zooms with the wheel about the pointer, and with a pinch (the browser's Control-wheel) five times as fast; the page never zooms over it. A drag from a node pans and opens no card, as the window's. A new agent's node appears in its place (the Mac's fades in) | The session |
 | 2 November 2026 | The starter pack's sheet is 720 wide, or the window less 16 a side; Return adds from the sheet itself, a button with the keys does its own (3d's way). A pack that can't be read says the server's sentence, or "Simeon can't be reached…" for a machine's error; a team not made says this Add's last refusal (the Mac shows any problem the store holds) | The session |
+| 2 November 2026 | The website's policy for the app's window lets it connect to the API's `wss` address (the screen's stream goes through the API's own proxy, as production has it) and to `https://*.elevenlabs.io` and `wss://*.elevenlabs.io` (the call): connections only, no script of theirs | The session |
+| 2 November 2026 | The remote branch held step 4's commits, already squash-merged into `main` (#537): it was moved onto `main` with a force-with-lease push before step 5, as the branch's rules allow | The session |
+| 2 November 2026 | The computer's screen is drawn by noVNC 1.7.0 from npm (MPL 2.0, its latest release), in the app's page, loaded only when a screen shows; its licences and where its source is are served beside the app (`public/novnc/`). The iPhone and the Mac bundle a build of noVNC whose version isn't recorded; noVNC failing in the page counts as the Mac's crashed screen page | The session |
+| 2 November 2026 | The clipboard: a page can't read it without the browser asking, so this computer's words reach the agent's only with a paste (⌘V, Ctrl+V elsewhere) while its screen has the keys: the words onto the computer's clipboard, unless it holds them already, then Control and V pressed by the app on every computer. The computer's copied words are written to this computer's clipboard only while the page has the focus; one copied while it is behind is dropped | The session |
+| 2 November 2026 | While the full computer view shows, every key is its screen's: the window's own do nothing and Escape doesn't close it, as on the Mac; Tab goes round the view's own buttons (the Mac swallows it). The bar has no traffic lights | The session |
+| 2 November 2026 | A browser tab doesn't set Disk Saver to work by itself when the disk runs low, as the iPhone: the Mac app open beside it does, and two apps each making one would give two. The banner and Go to Disk Saver are there as on the Mac | The session |
+| 2 November 2026 | The server's watch of the computer's move (`WatchSandBoxMigration`) is read with the browser's own fetch: Connect's stream needs its enveloped request, which the app's stream reader doesn't send | The session |
+| 2 November 2026 | The window reads the account's access when it opens and each time it comes forward, not during a rebuild, as the Mac, so the access notice can show over the message field | The session |
+| 2 November 2026 | A call's voice is ElevenLabs' web kit (`@elevenlabs/client` 1.28.0), loaded only when a call starts, over WebRTC only; the browser asks for the microphone before it loads; one session and one record per call. Its resampler from jsdelivr is only on its WebSocket path, never taken, and the app's policy would refuse it | The session |
+| 2 November 2026 | The call's banner sits inside the window, over everything in it (a page can't float a window of its own), at the Mac's top right, 12 down and 16 in, of the chat's column: left of the agent's pane when it is open, 8 under find's bar when find is open, so it never covers the window's own controls | The session |
+| 2 November 2026 | The ring and the hang-up are the core's samples played with the browser's audio at the Mac's loudness; the waveform follows the Mac (random bars scaled by the voice's activity). No environment on the web: calls are on, the Mac's default. Leaving the page with a call on ends it. No Agent › Call menu (a page has none). A stand-in voice exists only for the tests and a development build | The session |
+| 2 November 2026 | Under a call's lines or an exchange, the chat, its head and its field are inert and files dropped refused, as the Mac's covers are modal; the cover takes its Escape, so find stays open | The session |
 
 ## For Windows
 
@@ -220,6 +232,31 @@ for is listed here. Added to with every step.
   signed in and past the first run, then `store.askPack(id)`; the same
   link within 2 s dropped, as on the Mac. The website's Add to Simeon
   could then offer `simeon://` on Windows too (Open questions).
+- **The computer's screen (5b).** The policy Electron sets needs the API's
+  `wss:` in `connect-src`, as the website's now has. Electron's
+  `clipboard` reads and writes without asking, so the Mac's way can come
+  back: this computer's words sent on a click in the screen, the window
+  coming forward and the screen coming up, by the clipboard's own change
+  count; the computer's copy written at once, even while the window is
+  behind. The full view's bar takes `-webkit-app-region: drag`, Exit not;
+  with `titleBarOverlay`, Exit moves left of Windows' own buttons. The
+  Windows key reaches the computer as Super.
+- **The computer's states (5c).** The dialogs take every key but Control
+  combinations and the F-keys; Alt-F4 stays Windows'. The Windows app
+  sets Disk Saver to work by itself on low disk, as the Mac. The move's
+  stream is a fetch with a body, which Electron's Chromium sends as the
+  browser does. The access notice's page opens in the default browser.
+- **Calls (5d).** The call's banner can have its own always-on-top window,
+  as the Mac's and as the Electron banner had: frameless, at the top right
+  of the work area under the pointer, shown without taking the keys, on
+  every desktop; the in-window banner hidden then. The policy needs
+  `connect-src https://*.elevenlabs.io wss://*.elevenlabs.io` and
+  `script-src 'self' blob:` (the kit's worklet); the microphone through
+  `setPermissionRequestHandler`, Windows' own microphone setting with it.
+  `SIMEON_VOICE_CALLS` through the preload, `voice-call.log` in the app's
+  data folder, `before-quit` ending a call and waiting for its record, and
+  "Call <name>" in the app's menu. The exchange's head and a call's head
+  move the window on the Mac: `-webkit-app-region: drag` there.
 - **Already listed in README.md's table:** notifications and the taskbar
   badge, the tray, updates, `simeon://` links, the agent's hands on the PC,
   1Password and Chrome on Windows.
@@ -282,10 +319,293 @@ For the founder, each to be answered before the step that needs it:
   pack link nothing serves; two comments that say otherwise than the
   code. For the founder: make them in the Mac and the core (then the web
   follows), or leave them.
+- **The Mac's and the core's own fixes found in step 5** (the log of 2
+  November 2026, step 5, "Found in the Mac's and the core's code"): the
+  Mac not following the open agent's computer after Reload; Take control
+  and Stop task on the Mac (only the iPhone has them); the helpers'
+  thumbnails all showing the agent's own screen; a failed call's `connect`
+  running on and one voice session shared by every call (Voice.swift); the
+  call's straight apostrophes; the waveform (random bars, or the sound's
+  real volumes?); the move's record read again at launch and while
+  offline; low disk saying Disk Saver audits when no app starts it; the
+  rebuild card's English ", completed"; a refused billing page shown
+  nowhere; the relay asking every 3 s for an account with no computer. For
+  the founder: make them in the Mac and the core (then the web follows),
+  or leave them.
 
 ## Log
 
 Newest first.
+
+### 2 November 2026: step 5, the computer and calls
+
+The founder: "go on with step 5". Part a, the frame, was written first by
+the session on the branch (`448f8638d`, `f10de4653`), with a place for each
+other part: a file for each part's screens, a section of the store each,
+the window model's slots. Parts b to d were then written at once, each in
+its own slim checkout (`web-5b`, `web-5c`, `web-5d`), each read by a second,
+independent reviewer against the Mac's Swift and the core, merged one by
+one, and fixed after its review by its own builder (below).
+
+**5a: the frame** (`448f8638d`, `f10de4653`)
+
+- `windowModel.ts`: the computer over the window (choosing any agent
+  closes it, the open one too, as the Mac's `open`), the computer's
+  questions (`computerAsk`), what covers the chat (`chatCover`: a call's
+  lines or two agents' exchange; another agent opened or signing out
+  closes it).
+- `store.ts`: a section for each part, each reset on sign-out; the
+  computer's four pushes to 5b, everything else unrouted to 5c, the
+  connection's return and the window coming forward to 5b. The disk's
+  state is kept with the computer's status (5b) and read by low disk (5c),
+  whose Disk Saver starts on its change, as in StoreRebuild.swift.
+- The screens' places, as the Mac's window has them: the computer after a
+  viewer; its dialogs and pills over everything else; the call's banner on
+  top. Low disk 8 under the head; the call's place in the head, its line
+  in the chat, the covers over the chat. The sidebar's foot (`SidebarFoot`)
+  with the Update pill at its right (the account and Connect apps join it
+  in step 6). Every agent's pane has the Computer tab (Profile, Routines,
+  Computer): an agent's is its computer, a group's its members, a shared
+  room's empty.
+- noVNC 1.7.0 and ElevenLabs' `@elevenlabs/client` 1.28.0 added, each
+  loaded only when a screen shows or a call starts; the website's policy
+  for the app's window lets it reach the API's `wss` address (the screen,
+  through the API's own proxy) and `https://*.elevenlabs.io`,
+  `wss://*.elevenlabs.io` (the call), connections only.
+- Two agents' messages to each other over the chat (mac/Simeon/
+  Exchange.swift) were missed in step 2: the "teammates" chip was drawn and
+  opened nothing. Found while mapping step 5; built in 5d with the call's
+  lines, since both cover the chat the same way.
+
+**5b: an agent's computer on screen** (`6f00cd99d`, `95a6a2015`)
+
+- `src/core/cloudComputer.ts` (CloudComputer.swift): the box's status, its
+  phase, the words over a screen not there yet, the helpers' screens, the
+  agent's pointer, crashes, the clipboard's go-between, the stream's reasons
+  and its log (kept in the tab, its last 500 lines, never a token), the
+  book of every agent's computer (one read at a time, a late answer kept,
+  32 kept). The store (StoreComputer.swift): watch, read under 15 s, start
+  (`ensureForeverBox`), retry, hand back (`handBackForeverBox`),
+  `typingFocus`, `takeComputerControl`, `stopAgentTask`, the screen's socket
+  through the gateway, helpers, the stream's return, the window coming
+  forward (at most once a minute, not during a rebuild), the four pushes.
+- `src/window/liveScreen.ts` (`LiveScreen`, shared by the iPhone and the
+  Mac): noVNC with the Mac's settings (shared, scaled to fit, the session
+  not resized, a click focusing it), its phases and log lines, its
+  reconnects, the page failing counted as a crash; ⌘A ⌘C ⌘X ⌘Z sent as
+  Control on a Mac; the paste. Its licences and where its source is
+  (`public/novnc/`, as the wordmark's font).
+- `src/window/ComputerView.tsx` and `.css` (ComputerPreview.swift,
+  ComputerView.swift): the pane's Computer tab (Needs your attention; the
+  16:10 frame watched only, the agent's pointer gliding and pressing, Open
+  on hover or focus; Booting up, Setting up with its percent, Can't reach
+  with Retry and the reason, the spinner and its notice after 20 s, Screen
+  preview unavailable; "{name}'s screen"); the full view over the window
+  (the 44 bar with Exit fullscreen, the hand-off's banner with Skip this
+  step and I'm done, continue, the largest 16:10 screen that fits, the
+  helpers' strip with "and N more"). Every key is the screen's while it
+  shows.
+- Step 3's buttons that waited for the screen (Cards.swift): the hand-off
+  card's picture, Take over and Open computer; a Link checkout's picture and
+  Review order; the bank's check's Open the computer.
+
+**5c: the computer's states** (`66ecdbbe8` to `6d0de3722`, `d12132d01`)
+
+- `src/core/computerRebuild.ts` (ComputerRebuild.swift): the server's
+  steps, the lock, the steps and how far, the dialog or the banner, the
+  words. `src/core/rebuildDriver.ts` (RebuildDriver.swift): update, update
+  anyway, reset, recover; Update when done; a failure kept until dismissed
+  or retried; Reconnecting 2.5 s after the stream drops; taking longer or
+  Couldn't Reach after two minutes. `src/core/migrationWatch.ts`
+  (MigrationWatch.swift): `RecreateSandBox`, `ForceRecreateSandBox`, the
+  `WatchSandBoxMigration` stream and its relay.
+- The store (StoreRebuild.swift): the driver follows the store's own
+  changes and 5b's `computerChanged`; Disk Saver; the language told to the
+  computer and the account each time the stream comes (back), as the core
+  does ("A computer rebuilt meanwhile starts with no language").
+- `src/window/ComputerStates.tsx` and `.css` (ComputerStates.swift): one
+  dialog at a time over everything (the rebuild's card with its steps and
+  bar, Continue in Background; Taking longer than expected; Couldn't Reach
+  Simeon's Computer; the recovery's question; a failed update, reset or
+  recovery; the update's question, idle or with agents at work), each
+  holding the keys; the pills at the window's top; low disk in the chat's
+  flow with Go to Disk Saver; the access notice over the message field
+  (Send waits under it); the sidebar's card with Recover computer; the
+  foot's Update pill; Update Simeon's Computer in ⌘K and "/".
+
+**5d: calls, and two agents' exchange** (`0c78d17c8`, `803a86275`)
+
+- `src/core/call.ts`, `callTones.ts`, `voiceCall.ts` (Call.swift,
+  CallTones.swift, VoiceCall.swift): the banner's states and words; the
+  ring and the hang-up made as samples and played at the Mac's loudness;
+  the call itself (the ticket, `proxy/v1/voice/calls`, refused 503 or 402
+  in the core's words; the agent's profile and last messages; the voice its
+  picker shows; the call's channel, `send_task` and `recall_text_messages`,
+  work said once the line is quiet; seven rings at most; the end with the
+  server's summary and the record to the agent). Each call keeps its own
+  record.
+- `src/core/elevenLabsVoice.ts` (Voice.swift's `ElevenLabsVoice`): the kit
+  over WebRTC only, the browser asked for the microphone first, one session
+  per call. `standInVoice.ts`: a stand-in voice for the tests and a
+  development build only.
+- `src/core/exchanges.ts` (Exchanges.swift) and `src/window/Call.tsx` and
+  `.css` (CallBannerWindow.swift, CallChat.swift, Exchange.swift,
+  ChatPane.swift's `CallButton`): the banner (the agent, its status line,
+  the waveform, Transcript, Mute, End; a failure's Close, 20 s); the phone
+  8 past the name's pill, not for a group; a call's line in the chat and
+  its lines over the chat; two agents' exchange over the chat from their
+  chip ("Agents in this exchange" for several); "This chat is view-only"
+  and Close Chat. Under a cover the chat, its head and its field are inert
+  and drops refused.
+
+**Putting the parts together**
+
+- Merged as they were done: 5d (`c1c2f3778`), 5b (`338bdced3`), then 5c,
+  which merged both into its own branch to wire its rebuild to 5b's status
+  (`6d0de3722`, `ebc651986`). Then each part's review fixes (`37ba585bb`,
+  `886169061`, `63434a28c`). One conflict, in `ChatPane.tsx`: 5d's cover
+  wrapping the chat and 5c's low disk telling its height to the messages;
+  both kept.
+- Left by 5c for the merge, done (`e5cd65892`): the agents' list holds
+  still through a rebuild and is read again after (Store.swift's
+  `rosterHeld`); Resend does nothing while sending waits. Tested.
+
+**What the reviews found, and what was done**
+
+- 5b (`95a6a2015`):
+  - High: off a Mac, a quick Ctrl+V typed "v" on the computer (noVNC holds
+    Control back up to 100 ms on Windows, waiting for AltGr). Control and V
+    are now pressed by the app on every computer, as the Mac's and the
+    iPhone's pages do, and the keys still held put back after;
+  - the same words pasted again after the computer copied others pasted
+    the computer's: they now go unless the agent's clipboard holds them;
+  - a copy the computer made while the page was behind overwrote a newer
+    one when the window came forward: it is dropped now;
+  - noVNC's source named beside its licences.
+  - Clean, per the reviewer: the core and the store rule for rule, the
+    races, no connection left open, the keys, nothing read without a
+    paste, no token anywhere, step 3's buttons.
+- 5c (`d12132d01`):
+  - a closed dialog flashed back for 160 ms (with its scrim, the window's
+    keys held) when a lock began or ended, and an open one blinked: the
+    fade now follows what the previous render drew, as the Mac animates
+    only a dialog that appears or goes;
+  - the move's stream stopped during a token's read still went out: now
+    nothing is sent; pages opened in a new tab no longer keep a handle on
+    the app (`opener`); small tidying.
+  - Clean, per the reviewer: the lock, steps, words, driver, stream and
+    envelopes rule for rule with the Swift; the merge's two items right and
+    complete.
+- 5d (`803a86275`):
+  - two calls shared the voice's session: a call hung up during the
+    microphone's question still opened one once allowed, and an earlier
+    call's late "connected" ended the next call's. Each call has its own
+    session now;
+  - an earlier call's work coming back late changed the next call (its
+    channel left open, the ring cut, its task's line on the next call's
+    banner): each call keeps its own record;
+  - under a cover, Tab reached the hidden chat and Return acted on it: the
+    chat, its head and its field are inert now; the cover takes its Escape,
+    so find stays open;
+  - the banner covered find's bar and the pane's Close: it sits in the
+    chat's column now (decision below); the tones' audio is let go; limits
+    count characters as Swift does.
+  - Clean, per the reviewer: the banner's states, every sentence the voice
+    is given, the flow and refusals, the record; no ticket logged or kept;
+    jsdelivr never reached on the call's path; the stand-in absent from the
+    production build.
+
+**Found in the Mac's and the core's code** (proposed, for the founder):
+
+- After View › Reload (⌘R) the Mac no longer follows the open agent's
+  computer, so its Computer tab stays on Booting up (read in the code, not
+  run on a Mac). The web keeps who is watching.
+- The Mac's full view has no Take control or Stop task: only the iPhone
+  uses them. The web follows the Mac (in the store, tested, not on screen).
+  Should the Mac, the web and Windows have them?
+- Every helper's thumbnail shows the agent's own screen, so the strip shows
+  one picture four times and a switch only reconnects; an arrow pressed in
+  the screen also switches the helper.
+- A failed call leaves its `connect` running: closed and called again
+  before the server answered, the first call's answer goes on as the new
+  call's. Voice.swift keeps one session for every call, so an earlier
+  call's late "connected" can end the next call's. The web keeps one record
+  and one session per call.
+- The call's words have a straight apostrophe ("Couldn't connect") where
+  the app writes ’ elsewhere. The waveform is random bars scaled by the
+  voice's activity (the old Electron banner drew the sound's real
+  frequencies): keep, or use the kit's volumes?
+- The move's record is read again from the start at launch and after each
+  failed read while offline, so a past update can take the lock for 1 to
+  2.5 s ("Updating Simeon's Computer", Send paused, the list held).
+- Low disk says "Disk Saver is auditing usage…" while the web never starts
+  Disk Saver by itself (the iPhone's choice too).
+- The rebuild card's ", completed" is English in every language; a refused
+  billing page from the access notice is kept where nothing shows it; the
+  pills' comment says the opposite of the code; the relay asks the server
+  again every 3 s for an account with no computer.
+
+**Tests:** 768 (73 files), from step 4's 633 (61): 2 for the frame; 5b's
+47 (the core's `CloudComputerTests` on its own fixture, `ComputerBookTests`,
+`ComputerControlTests`, the helpers and the host's events, the screens'
+states, the keys and the paste); 5c's 46 (the core's `ComputerRebuildTests`
+on its fixture, read in place, `RebuildDriverTests`, the envelopes, the
+relay, `FollowingTheRebuildTests`, the update's offer, the store's
+commands, the fade, the language); 5d's 40 (the core's `CallBannerTests`,
+`CallFlowTests`, `VoiceCallTests`, `ExchangePageTests`, the store's call,
+and a test for each race the review found, four of which fail on the first
+commit). The merge's two items were added to existing tests (the list
+held through a rebuild, Resend while sending waits).
+
+**Checked:**
+
+(Checked after the merge: in progress.)
+
+Before the merge, each part on its own branch, in Chromium against stand-ins
+(the session's scratchpad: `5b-check.cjs`, `5c-check.cjs`, `5d-check.cjs`
+and their probes; every outside address answered by a stand-in, nothing
+reached), light and dark, then French, no page errors:
+
+- 5b: the screen drawn by noVNC against a small RFB 3.8 server in the
+  script (its pixels read back from the canvas); the tab in each state; the
+  full view, its keys staying with the screen (Control-K, Escape, Control-F,
+  Control-B reached the computer and opened nothing), a paste, the
+  computer's copy, six helpers and their menu, the hand-off's answers, the
+  step 3 buttons; after the review, Chromium told it runs on Windows: a
+  quick Control+V sent Control, V, Control up, with the words first.
+- 5c: the update's pill, question and background pill from the server's
+  steps; an agent at work; Update anyway refused; Recover computer and a
+  failed reset; the stream lost: Reconnecting, Couldn't Reach after two
+  minutes (Playwright's clock), the recovery, Taking longer than expected,
+  the message sent once back; low disk and Go to Disk Saver; the move; the
+  access notice with Send waiting; after the review, the reviewer's probes
+  showing no dialog coming back.
+- 5d: the phone's place, none for a group; the server refusing (503,
+  402); a ticket given and the kit's one socket refused ("Couldn't
+  connect"); the microphone refused; with the development build's stand-in
+  voice: ringing, live, speaking, listening, the transcript, working,
+  muted, ended, the hang-up, the record sent, the call's line then its
+  lines; the exchange, its menu, Copy, its keys; after the review, Tab
+  under a cover, Escape with find open, the banner clear of find and the
+  pane, a late channel closed with its own id.
+
+**Not checked:**
+
+- Against the real computer, server and services (`/app-next` is not
+  live): a real screen through the proxy's `wss` with its token, a real VNC
+  server, real helpers and pointer pushes; a real rebuild, update, reset or
+  move and their timings; a real call (ElevenLabs, LiveKit, the server's
+  voice: nothing reached, no paid call), sound heard.
+- Side by side with the Mac: every measure read from the Swift; the
+  symbols drawn by eye.
+- Windows, Safari, Firefox, a screen reader, Reduce Motion, a touch
+  screen; a Mac's browser (⌘ keys: Control was pressed, on Linux); a real
+  Windows keyboard (Chromium was told it runs on Windows); the window
+  really going behind (a headless page always has the focus).
+- Leaving the page with a call on; words outside Latin-1 pasted into the
+  screen.
+
+**Next:** step 6, Connectors and Settings.
 
 ### 2 November 2026: step 4, the agent's pane, search, New Agent, the org chart and starter packs
 
