@@ -34,6 +34,7 @@ import { classes } from './classes'
 import { ComputerPreview } from './ComputerView'
 import { BookFlightButton, FlightPage } from './FlightCards'
 import { GroupMembersBody } from './GroupMembers'
+import { commandHeld } from './keys'
 import { RoutineEditorPage, RoutinesBody } from './RoutinesPage'
 import { chatMinimum } from './sidebarLayout'
 import { useWatched } from './useStore'
@@ -890,10 +891,7 @@ export function PaneTextArea({
           box.current?.blur()
           return
         }
-        const command = /Mac|iPhone|iPad/.test(navigator.platform)
-          ? event.metaKey
-          : event.ctrlKey
-        if (commandReturn && event.key === 'Enter' && command) {
+        if (commandReturn && event.key === 'Enter' && commandHeld(event)) {
           event.preventDefault()
           commandReturn()
         }

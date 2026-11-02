@@ -64,16 +64,13 @@ import { useConnector } from './connector'
 import { PluginPages, pluginPageTitle } from './ConnectorPages'
 import './Connectors.css'
 import { ContextMenu, type MenuLine } from './ContextMenu'
+import { apple } from './keys'
 import { PluginsModel, type PluginsPage } from './pluginsModel'
 import { PanelDisc, SettingsSymbol } from './SettingsParts'
 import { overSlot } from './SettingsWindow'
 import { listOrder } from './Sidebar'
 import { useWatched } from './useStore'
 import { type WindowModel, useWindowModel } from './windowModel'
-
-/** An Apple computer: its shortcuts take ⌘. */
-const apple =
-  typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform)
 
 /** How many of a section's apps Available shows under its name (two columns of three, the founder's reference); the name opens the rest (`PluginsPreview.count`). */
 const previewCount = 6

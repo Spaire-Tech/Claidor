@@ -28,6 +28,7 @@ import { ConnectorsLayer } from './window/Connectors'
 import { somethingOver } from './window/Dialogs'
 import { FeedbackLayer } from './window/Feedback'
 import { FirstRunScreen } from './window/FirstRun'
+import { apple } from './window/keys'
 import { NewAgentLayer } from './window/NewAgentSheet'
 import { OrgChartView } from './window/OrgChart'
 import { SearchLayer } from './window/SearchPanel'
@@ -47,10 +48,6 @@ import { StarterPackLayer } from './window/StarterPackSheet'
 import { useWatched } from './window/useStore'
 import { type Shown, ViewerContext, ViewerLayer } from './window/Viewers'
 import { WindowContext, WindowModel } from './window/windowModel'
-
-/** An Apple computer: its shortcuts take ⌘. */
-const apple =
-  typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform)
 
 /** The window's width, as it is resized. */
 function useWindowWidth(): number {
@@ -320,6 +317,8 @@ function MainWindow({ session }: { session: WebSession }) {
               session={session}
             />
             <main className="chat-area">
+              {/* Moves the Windows app's window, as the Mac's chat head and empty window do (window/desktop.css). */}
+              <div className="window-drag" aria-hidden="true" />
               {model.orgChart ? (
                 <OrgChartView store={store} />
               ) : (

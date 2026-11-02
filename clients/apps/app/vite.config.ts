@@ -9,8 +9,8 @@ import { themeCSS } from './scripts/theme-css.mjs'
 // Mac app has, then at /app in place of the old one. The website serves the
 // built files from clients/apps/web/public/app-next, committed like the old
 // app's; `pnpm test` fails when they are not the build of this source
-// (scripts/check-built.mjs). The Windows app will load the same files from
-// disk, with SIMEON_APP_BASE=./ .
+// (scripts/check-built.mjs). The Windows app (windows/) ships these same
+// committed files and serves them at app://simeon/app-next/.
 export default defineConfig({
   base: process.env.SIMEON_APP_BASE ?? '/app-next/',
   plugins: [react()],

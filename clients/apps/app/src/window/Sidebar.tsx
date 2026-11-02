@@ -55,12 +55,9 @@ import {
   type MenuLine,
 } from './ContextMenu'
 import { Alert, Sheet, somethingOver } from './Dialogs'
+import { apple } from './keys'
 import { useWatched } from './useStore'
 import { useWindowModel } from './windowModel'
-
-/** An Apple computer picks with ⌘-click; Windows with Control-click. */
-const apple =
-  typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform)
 
 /** The menus' names for a screen reader: English on the Mac too (its menus have none; not in the catalogue). */
 const menuNames = { agent: 'Agent actions', section: 'Section actions' }

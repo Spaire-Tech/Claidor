@@ -17,7 +17,12 @@
 // - Signing out drops this tab's pair, then the website's own sign-out ends
 //   its cookie, so the next visit does not sign straight back in.
 
-import { SimeonAPI, resolveApiBase, sessionVault } from './core/api'
+import {
+  SimeonAPI,
+  type TokenVault,
+  resolveApiBase,
+  sessionVault,
+} from './core/api'
 import { LiveBackend } from './core/backend'
 import { Gateway } from './core/gateway'
 import {
@@ -55,6 +60,12 @@ export interface SessionOptions {
   gateRetryMs?: number
   /** The first run on any account (`?first-run`). */
   forcesFirstRun?: boolean
+  /** Where the pair is kept; by default the tab's storage (the Windows app: its own, src/desktop/session.ts). */
+  vault?: TokenVault
+  /** How the app names itself to the server; by default the web's (`clientVersion`). */
+  clientVersion?: string
+  /** Trades the website's cookie for a pair when none is kept (the web's way in; the Windows app has no website cookie). */
+  tradesCookie?: boolean
 }
 
 export function defaultGoSignOut(base: string): void {
@@ -119,10 +130,14 @@ export class WebSession {
     const ended = () => this.ended(api)
     const api =
       this.options.makeAPI?.(base, ended) ??
-      new SimeonAPI({ base, clientVersion, vault: sessionVault() })
+      new SimeonAPI({
+        base,
+        clientVersion: this.options.clientVersion ?? clientVersion,
+        vault: this.options.vault ?? sessionVault(),
+      })
     api.onSessionEnded(ended)
     this.api = api
-    if (!api.isSignedIn) {
+    if (!api.isSignedIn && (this.options.tradesCookie ?? true)) {
       try {
         await api.signInFromCookie()
       } catch {

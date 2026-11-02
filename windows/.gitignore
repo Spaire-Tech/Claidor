@@ -1,0 +1,4 @@
+# esbuild's output (dist/ is also ignored at the root) and electron-builder's.
+dist/
+out/
+node_modules/

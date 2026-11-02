@@ -32,12 +32,9 @@ import {
   debounce,
 } from '../core/search'
 import type { AppStore } from '../core/store'
+import { apple } from './keys'
 import { themePreference } from './theme'
 import { type WindowModel, windowActionIds } from './windowModel'
-
-/** An Apple computer: its shortcuts take ⌘. */
-const apple =
-  typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform)
 
 /**
  * One list the computer answers for the words (`HostAnswer`, `_0t`): the

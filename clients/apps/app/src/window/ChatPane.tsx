@@ -111,6 +111,7 @@ import { useSearchReveal } from './SearchPanel'
 import { shopCardView } from './ShopCards'
 import { useOpenMedia } from './Viewers'
 import { classes } from './classes'
+import { apple } from './keys'
 import { useWatched } from './useStore'
 import { useWindowModel } from './windowModel'
 
@@ -165,10 +166,6 @@ interface FindState {
 }
 
 const noMatches: FindMatch[] = []
-
-/** An Apple computer: its shortcuts take ⌘. */
-const apple =
-  typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform)
 
 /** A click on the button whose menu or capsule it just closed closes it, and opens nothing (the Mac's `closedByClick`, half a second). */
 const reopenGap = 500

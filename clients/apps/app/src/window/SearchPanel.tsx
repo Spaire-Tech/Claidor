@@ -40,16 +40,13 @@ import { t } from '../l10n'
 import { AgentMark } from './AgentMark'
 import { classes } from './classes'
 import { somethingOver } from './Dialogs'
+import { apple } from './keys'
 import { useSiteIcon } from './MessageText'
 import './SearchPanel.css'
 import { type Listing, SearchState } from './searchState'
 import { listOrder } from './Sidebar'
 import { useWatched } from './useStore'
 import { type Reveal, type WindowModel, useWindowModel } from './windowModel'
-
-/** An Apple computer: its shortcuts take ⌘, elsewhere Control. */
-const apple =
-  typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform)
 
 /** The agent whose chat the window shows (App.tsx's `shown`): the one asked for while the roster has it, else the first in the sidebar's order. */
 function shownAgentId(store: AppStore, model: WindowModel): string | undefined {

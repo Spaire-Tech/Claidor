@@ -23,10 +23,7 @@ import {
   computerScreen,
   streamLog,
 } from '../core/cloudComputer'
-
-/** An Apple computer: ⌘ is its command key (`buildVncMacKeyMappingScript` is the Mac's alone). */
-const apple =
-  typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform)
+import { apple } from './keys'
 
 let loading: Promise<typeof RFB> | undefined
 
