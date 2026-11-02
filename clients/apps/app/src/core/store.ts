@@ -22,6 +22,7 @@ import {
   accessFrom,
   checkingAccess,
   pausesSending,
+  paymentMethodFlow,
   planFacts,
   unknownAccess,
 } from './access'
@@ -192,7 +193,6 @@ import { TrayList } from './trays'
 import {
   creditsFlow,
   isOutOfCredits,
-  paymentMethodFlow,
   startNowFlow,
   upgradeFlow,
 } from './upgrade'
@@ -4632,6 +4632,10 @@ export class AppStore {
   /** The computer's notices (`trayList`, Trays.swift): the credits' line reads the open agent's. */
   trayList = new TrayList()
   private usageReading?: Promise<void>
+  /** Each read of the usage numbered: only the latest one's answer lands. */
+  private usageSeq = 0
+  /** A billing page was opened in another tab and this one hasn't come back to the front since. */
+  private billingAway = false
 
   /**
    * Usage & Billing in Settings' list (SettingsWindow.swift's `pages`):
@@ -4674,19 +4678,41 @@ export class AppStore {
       this.changed()
       return
     }
+    this.usageSeq += 1
+    const seq = this.usageSeq
     const previous = shownSummary(this.usage)
     this.usage = { kind: 'loading', previous }
     this.changed()
+    // An answer lands only while it is the latest read's: an older one landing late (a turn's read under Cancel Trial's) is dropped.
+    const latest = () => this.backend === backend && seq === this.usageSeq
     try {
       const quota = await backend.server('user/quota')
-      if (this.backend !== backend) return
+      if (!latest()) return
       this.usage = { kind: 'ready', summary: usageSummary(quota) }
       this.usageReadAt = Date.now()
     } catch {
-      if (this.backend !== backend) return
+      if (!latest()) return
       this.usage = { kind: 'failed', previous }
     }
     this.changed()
+  }
+
+  /** A billing page opened in another tab (Usage & Billing's rows): when this tab comes back to the front, they are read again. */
+  billingTabOpened(): void {
+    this.billingAway = true
+  }
+
+  /**
+   * This tab back in front (the window's `focus`, the page shown again):
+   * after a billing page, the access, the plan the access notice words
+   * itself from (5c's `plan`) and the usage are read again, once, as the
+   * Mac reads them when its sheet closes; Settings may have closed meanwhile.
+   */
+  async billingTabBack(): Promise<void> {
+    if (!this.billingAway) return
+    this.billingAway = false
+    await this.refreshAccess()
+    await Promise.all([this.refreshUsage(), this.refreshPlan()])
   }
 
   /**
@@ -4711,7 +4737,8 @@ export class AppStore {
     }
     if (this.backend !== backend) return undefined
     await this.refreshAccess()
-    await this.refreshUsage()
+    // The usage, and the plan the access notice words itself from (5c's `plan`).
+    await Promise.all([this.refreshUsage(), this.refreshPlan()])
     return undefined
   }
 
@@ -4771,6 +4798,8 @@ export class AppStore {
     this.usage = emptyUsage
     this.usageReadAt = undefined
     this.usageReading = undefined
+    this.usageSeq += 1
+    this.billingAway = false
     this.trayList = new TrayList()
   }
 

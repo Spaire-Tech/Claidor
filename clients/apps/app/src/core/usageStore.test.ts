@@ -122,14 +122,18 @@ describe('Cancel Trial', () => {
     backend.serverAnswers['user/quota'] = {
       subscriptionStatus: 'none',
       creditsLimit: 0,
+      paymentFailed: true,
+      billedBy: 'stripe',
     }
     expect(await store.cancelTrial()).toBeUndefined()
     expect(backend.dashboardCalls).toContain('CancelSandTrial')
     expect(store.access.state).toBe('paymentRequired')
-    expect(quotaReads(backend)).toBe(reads + 1)
+    // The usage, and the plan the access notice words itself from (5c's), each read once.
+    expect(quotaReads(backend)).toBe(reads + 2)
     expect(store.usage.kind === 'ready' && store.usage.summary.isTrial).toBe(
       false,
     )
+    expect(store.plan?.paymentFailed).toBe(true)
   })
 
   it('says the server’s sentence for a refusal, or its own', async () => {
@@ -243,5 +247,127 @@ describe('the Credentials Store’s calls', () => {
     await expect(store.credentialsCall('credentials')).rejects.toThrow(
       'Sign in to Simeon first.',
     )
+  })
+})
+
+/** A server whose quota answers come when the test says, each read its own. */
+class SlowQuota extends Backend {
+  waiting: { quota: JSONValue; fail: boolean; done: () => void }[] = []
+  override async server(
+    path: string,
+    method?: string,
+    body?: JSONValue,
+  ): Promise<JSONValue> {
+    if (path !== 'user/quota') return super.server(path, method, body)
+    this.serverPaths.push(path)
+    const answer = { quota: null as JSONValue, fail: false, done: () => {} }
+    await new Promise<void>((done) => {
+      answer.done = done
+      this.waiting.push(answer)
+    })
+    if (answer.fail) throw new SimeonAPIError('Down.', 500)
+    return answer.quota
+  }
+  answer(index: number, quota: JSONValue | 'fail'): void {
+    const one = this.waiting[index]!
+    if (quota === 'fail') one.fail = true
+    else one.quota = quota
+    one.done()
+  }
+}
+
+describe('the usage read twice at once (the review’s L1)', () => {
+  const trial: JSONValue = {
+    subscriptionStatus: 'trialing',
+    tier: 'standard',
+    creditsLimit: 100,
+    creditsUsed: 10,
+    creditsRemaining: 90,
+    trialCancelable: true,
+  }
+  const cancelled: JSONValue = { subscriptionStatus: 'none', creditsLimit: 0 }
+
+  async function twoReads() {
+    const backend = new SlowQuota()
+    backend.agents = [makeAgent({ id: 'iris', name: 'Iris' })]
+    const store = new AppStore()
+    await store.attach(backend)
+    const older = store.refreshUsage()
+    const newer = store.refreshUsage()
+    await eventually(() => backend.waiting.length === 2)
+    return { backend, store, older, newer }
+  }
+
+  it('drops an older answer that lands after a newer one: Cancel Trial’s row can’t come back', async () => {
+    const { backend, store, older, newer } = await twoReads()
+    backend.answer(1, cancelled)
+    await newer
+    backend.answer(0, trial)
+    await older
+    expect(store.usage.kind).toBe('ready')
+    expect(store.usage.kind === 'ready' && store.usage.summary.isTrial).toBe(
+      false,
+    )
+  })
+
+  it('drops an older failure that lands after a newer success', async () => {
+    const { backend, store, older, newer } = await twoReads()
+    backend.answer(1, cancelled)
+    await newer
+    backend.answer(0, 'fail')
+    await older
+    expect(store.usage.kind).toBe('ready')
+  })
+
+  it('keeps a newer answer that lands last', async () => {
+    const { backend, store, older, newer } = await twoReads()
+    backend.answer(0, cancelled)
+    await older
+    // The older answer is not the latest read's: still reading.
+    expect(store.usage.kind).toBe('loading')
+    backend.answer(1, trial)
+    await newer
+    expect(store.usage.kind === 'ready' && store.usage.summary.isTrial).toBe(
+      true,
+    )
+  })
+})
+
+describe('a billing tab coming back (the review’s L7 and the merge’s plan)', () => {
+  it('reads the access, the plan and the usage again once, after a billing page only', async () => {
+    const { backend, store } = await signedIn()
+    backend.dashboardAnswers.GetSandAccessStatus = { state: 1 }
+    await store.loadUsage()
+    const reads = quotaReads(backend)
+    // Not after a billing page: nothing.
+    await store.billingTabBack()
+    expect(quotaReads(backend)).toBe(reads)
+    store.billingTabOpened()
+    backend.serverAnswers['user/quota'] = {
+      subscriptionStatus: 'none',
+      creditsLimit: 0,
+      paymentFailed: true,
+      billedBy: 'stripe',
+    }
+    await store.billingTabBack()
+    expect(backend.dashboardCalls).toContain('GetSandAccessStatus')
+    // The usage (whatever its age) and 5c's plan.
+    expect(quotaReads(backend)).toBe(reads + 2)
+    expect(store.plan?.paymentFailed).toBe(true)
+    expect(
+      store.usage.kind === 'ready' && store.usage.summary.paymentFailed,
+    ).toBe(true)
+    // Once: the next time the tab comes forward reads nothing.
+    await store.billingTabBack()
+    expect(quotaReads(backend)).toBe(reads + 2)
+  })
+
+  it('forgets a billing page on sign-out', async () => {
+    const { backend, store } = await signedIn()
+    store.billingTabOpened()
+    store.detach()
+    const reads = quotaReads(backend)
+    await store.billingTabBack()
+    expect(quotaReads(backend)).toBe(reads)
   })
 })

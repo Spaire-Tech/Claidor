@@ -117,12 +117,11 @@ export function CreditsLine({
           title={t('Close')}
           aria-label={t('Close')}
           onClick={() => {
+            // Kept at once, so a composer drawn meanwhile (another chat) finds it closed; gone once faded.
+            const next = approachingClosedAdding(key, keptClosed())
+            keepClosed(next)
             setFading(key)
-            setTimeout(() => {
-              const next = approachingClosedAdding(key, keptClosed())
-              keepClosed(next)
-              setClosed(next)
-            }, 150)
+            setTimeout(() => setClosed(next), 150)
           }}
         >
           <svg width="10" height="10" viewBox="0 0 16 16" aria-hidden="true">

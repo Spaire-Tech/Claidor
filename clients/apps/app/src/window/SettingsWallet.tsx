@@ -9,6 +9,7 @@
 // `loadAppCards`).
 
 import { useEffect } from 'react'
+import { t as coreT } from '../core/l10n'
 import type { AppStore } from '../core/store'
 import { t } from '../l10n'
 import { AppLogoTile } from './ConnectCards'
@@ -74,6 +75,8 @@ function WalletLine({
     <button
       type="button"
       className={classes('wallet-line', divided && 'divided')}
+      // The Mac's names for it ("Link by Stripe, connected", "Add Shop Pay"): its "Add %@" is the core's catalogue's; "%@, connected" is in neither, so the row's name with the word Connected.
+      aria-label={connected ? `${name}, ${t('Connected')}` : coreT`Add ${name}`}
       onClick={open}
     >
       <AppLogoTile name={title} side={28} id={id} />
