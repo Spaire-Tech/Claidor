@@ -14,6 +14,7 @@ import {
   type HeldTab,
   type SignInTab,
   askTimes,
+  closable,
 } from './connector'
 
 class StandInTab implements SignInTab {
@@ -492,5 +493,24 @@ describe('Add Another Account (MacConnector.addAccount)', () => {
     await eventually(() => connector.connecting === undefined)
     expect(browser.tabs[0]!.closedByApp).toBe(true)
     expect(browser.tabs[0]!.url).toBeUndefined()
+  })
+})
+
+describe('the browser’s tab (browserTabs)', () => {
+  it('is closed only while the window may close it: blank or on our own pages, never on another site', () => {
+    const tab = (closed: boolean, away: boolean) => ({
+      closed,
+      location: {
+        get href(): string {
+          if (away) throw new DOMException('Blocked a frame', 'SecurityError')
+          return 'about:blank'
+        },
+      },
+    })
+    expect(closable(tab(false, false))).toBe(true)
+    // On another site: the browser would refuse it (the window is no longer familiar with a tab whose opener it nulled).
+    expect(closable(tab(false, true))).toBe(false)
+    expect(closable(tab(true, false))).toBe(false)
+    expect(closable(tab(true, true))).toBe(false)
   })
 })

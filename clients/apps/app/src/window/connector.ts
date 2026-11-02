@@ -15,7 +15,15 @@
 // waits until its sign-in takes it, and closes if the work ends without
 // one. The page opens without `opener`, the way step 3c's Slack and GitHub
 // cards open theirs. As on the Mac the app is asked every 2 seconds, up to
-// 150 times, and the tab is closed once it is connected.
+// 150 times, and the tab is closed once it is connected, while it is still
+// the window's to close: blank, or on the web app's own pages. A tab that
+// has gone to another site can't be closed from here (measured in
+// Chromium): with `opener` nulled the window is no longer, in HTML's
+// words, familiar with it, and keeping `opener` would let that site send
+// the window itself to a page of its own (measured too). Such a tab stays
+// on that site's last page (the server's says "close this tab"); a
+// sign-in that comes back through the server ends on the web app's own
+// return page, which closes its tab itself.
 //
 // A tab the person closed can't say whether the sign-in had finished (the
 // server's last page says "close this tab", and the web app's own return
@@ -128,7 +136,7 @@ export const browserTabs: ConnectorBrowser = {
         if (!tab.closed) tab.location.href = url
       },
       close() {
-        if (!tab.closed) tab.close()
+        if (closable(tab)) tab.close()
       },
     }
   },
@@ -142,6 +150,25 @@ export const browserTabs: ConnectorBrowser = {
     }
     return () => channel.close()
   },
+}
+
+/**
+ * Whether the window may close a tab it opened: open, and blank or on the
+ * web app's own pages (its address can be read). On another site a browser
+ * refuses it ("Unsafe attempt to initiate navigation"), the tab's `opener`
+ * being nulled: nothing is tried there.
+ */
+export function closable(tab: {
+  readonly closed: boolean
+  readonly location: { readonly href: string }
+}): boolean {
+  if (tab.closed) return false
+  try {
+    void tab.location.href
+    return true
+  } catch {
+    return false
+  }
 }
 
 /** The app is asked every 2 seconds, 150 times: 5 minutes (`signIn`). */
