@@ -388,8 +388,22 @@ describe('the web sign-in', () => {
       resolveApiBase({ hostname, search, protocol })
     expect(at('app.simeonlabs.com')).toBe('https://api.simeonlabs.com')
     expect(at('localhost')).toBe('http://127.0.0.1:8000')
+    expect(
+      at('app.simeonlabs.com', '?api=https://api.staging.simeonlabs.com/'),
+    ).toBe('https://api.staging.simeonlabs.com')
+    // Another server, or plain http, from a link to the live page: not followed.
     expect(at('app.simeonlabs.com', '?api=https://api.staging.test/')).toBe(
-      'https://api.staging.test',
+      'https://api.simeonlabs.com',
+    )
+    expect(at('app.simeonlabs.com', '?api=http://api.simeonlabs.com')).toBe(
+      'https://api.simeonlabs.com',
+    )
+    expect(at('app.simeonlabs.com', '?api=javascript:alert(1)')).toBe(
+      'https://api.simeonlabs.com',
+    )
+    // A page served from this computer (the checks' stand-ins) follows any.
+    expect(at('localhost', '?api=http://localhost:4196/fake')).toBe(
+      'http://localhost:4196/fake',
     )
   })
 

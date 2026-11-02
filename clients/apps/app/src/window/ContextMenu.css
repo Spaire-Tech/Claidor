@@ -1,0 +1,75 @@
+/*
+ * What the account menu (step 6f) adds to the window's menus
+ * (ContextMenu.tsx): an item's badge and the figures that are not choices
+ * (mac/Simeon/Account.swift's `NSMenuItemBadge` and `UsageFigureRow`). The
+ * menus' own look is in index.css.
+ */
+
+/* A badge at an item's end, before a submenu's chevron: 12 in the grey on the ink at 8%, a capsule 16 high; white on the highlight. */
+.menu-badge {
+  flex: none;
+  height: 16px;
+  padding: 0 6px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  color: var(--ink-secondary);
+  font-size: 12px;
+  line-height: 16px;
+  font-variant-numeric: tabular-nums;
+}
+
+.menu-item:hover .menu-badge,
+.menu-item:focus-visible .menu-badge,
+.menu-item.expanded .menu-badge {
+  background: rgb(255 255 255 / 0.22);
+  color: #ffffff;
+}
+
+/* A figure: 46 high (30 without its line), 14 in from the menu's edges; its title (13, tracked -0.08) over its line (12, the lighter grey), its value (13) at the right, 8 from them. */
+.menu-figure {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 46px;
+  padding: 0 9px;
+  box-sizing: border-box;
+  color: var(--ink);
+  cursor: default;
+}
+
+.menu-figure.short {
+  height: 30px;
+}
+
+.menu-figure-words {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.menu-figure-title {
+  height: 18px;
+  overflow: hidden;
+  font-size: 13px;
+  line-height: 18px;
+  letter-spacing: -0.08px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.menu-figure-line {
+  height: 16px;
+  overflow: hidden;
+  color: var(--ink-tertiary);
+  font-size: 12px;
+  line-height: 16px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.menu-figure-value {
+  flex: none;
+  font-size: 13px;
+  white-space: nowrap;
+}

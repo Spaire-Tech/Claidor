@@ -10,12 +10,15 @@
     "format": "prettier --write ./src ./scripts",
     "format:check": "prettier -c ./src ./scripts",
     "lint": "pnpm format:check && eslint .",
-    "test": "vitest run && node scripts/make-words.mjs --check && node scripts/make-brands.mjs --check && node scripts/check-built.mjs",
+    "test": "vitest run && node scripts/make-words.mjs --check && node scripts/make-brands.mjs --check && node scripts/make-connector-pages.mjs --check && node scripts/check-built.mjs",
     "typecheck": "tsc --noEmit",
     "words": "node scripts/make-words.mjs",
-    "brands": "node scripts/make-brands.mjs"
+    "brands": "node scripts/make-brands.mjs",
+    "pages": "node scripts/make-connector-pages.mjs"
   },
   "dependencies": {
+    "@elevenlabs/client": "1.28.0",
+    "@novnc/novnc": "1.7.0",
     "dompurify": "3.3.1",
     "highlight.js": "11.9.0",
     "mammoth": "1.13.0",

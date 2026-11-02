@@ -10,13 +10,11 @@
 import {
   Fragment,
   type ReactNode,
-  useCallback,
   useEffect,
   useId,
   useLayoutEffect,
   useRef,
   useState,
-  useSyncExternalStore,
 } from 'react'
 import type { CardKind } from '../core/chat'
 import {
@@ -76,8 +74,9 @@ import { classes } from './classes'
 import countries from './countries.json'
 import { Sheet } from './Dialogs'
 import './FlightCards.css'
-import { type SidebarSize, chatMinimum, railWidth } from './sidebarLayout'
+import { useDarkScheme } from './theme'
 import { useWatched } from './useStore'
+import { useWindowModel } from './windowModel'
 
 type FlightKind = Extract<CardKind, 'flights' | 'flightPassengers'>
 
@@ -94,7 +93,6 @@ export function flightCardView(
           card={read}
           rowId={card.entryId}
           agentId={card.agentId}
-          store={card.store}
         />
       )
     )
@@ -114,17 +112,9 @@ export function flightCardView(
 
 // MARK: The look
 
-/** Dark or light, as the system says, kept up to date. */
+/** Dark or light, as the theme chosen or the system says, kept up to date. */
 function useDark(): boolean {
-  return useSyncExternalStore(
-    (changed) => {
-      const query = window.matchMedia('(prefers-color-scheme: dark)')
-      query.addEventListener('change', changed)
-      return () => query.removeEventListener('change', changed)
-    },
-    () => window.matchMedia('(prefers-color-scheme: dark)').matches,
-    () => false,
-  )
+  return useDarkScheme()
 }
 
 type SymbolName =
@@ -559,17 +549,18 @@ function FlightsCardView({
   card,
   rowId,
   agentId,
-  store,
 }: {
   card: FlightsCard
   rowId: string
   agentId: string
-  store: AppStore
 }) {
   const heading = flightsHeading(card)
   const aside = flightsAside(card)
   const headed = heading !== '' || aside !== ''
-  const open = store.openFlight
+  const model = useWindowModel()
+  useWatched(model)
+  // Pressed while the pane shows it (`pane.isOpen && pane.flight?.key == key`).
+  const open = model.paneOpen ? model.flight : undefined
   return (
     <div
       className="flights-card"
@@ -591,7 +582,7 @@ function FlightsCardView({
               <FlightRow
                 offer={offer}
                 pressed={open?.key === key}
-                open={() => store.toggleFlight(key, offer, agentId)}
+                open={() => model.toggleFlight(key, offer, agentId)}
               />
             </Fragment>
           )
@@ -722,183 +713,7 @@ function TimesStacked({ times }: { times: FlightTimes }) {
   )
 }
 
-// MARK: A flight's details, beside the chat
-
-/** The pane's widths (`PaneState`): 480 at first, 280 at its narrowest. */
-const paneWidest = 480
-const paneNarrowest = 280
-/** Its motion (`PaneState.motion`, `linger`): 0.24 s, and the flight kept on screen while it slides shut. */
-const paneLinger = 240
-/** Whether opening the details folded the sidebar, kept in this browser under the Mac's name (`PaneState.tookKey`). */
-const tookKey = 'simeon.pane.tookSidebar'
-
-function readTook(): boolean {
-  try {
-    return localStorage.getItem(tookKey) === 'true'
-  } catch {
-    return false
-  }
-}
-
-function keepTook(took: boolean): void {
-  try {
-    if (took) localStorage.setItem(tookKey, 'true')
-    else localStorage.removeItem(tookKey)
-  } catch {
-    // A private window, or storage refused: kept for this visit only.
-  }
-}
-
-/**
- * Where the flight's details stand (AgentPane.swift's flight in
- * `PaneState`): shown beside the chat whose card holds the flight, while
- * the chat keeps its 424 beside the sidebar as it stands. Opening folds an
- * open sidebar to its rail and closing opens it again if opening folded
- * it. Until the pane's edge can be dragged (step 4) it takes what the
- * window leaves, from 280 to 480. Another chat opened closes it (the
- * agent's page that the Mac shows there comes in step 4). The width the
- * pane is drawn at: 0 while closed or without room.
- */
-export function useFlightPane(
-  store: AppStore,
-  agentId: string | undefined,
-  size: SidebarSize,
-  resize: (change: (now: SidebarSize) => SidebarSize) => void,
-  windowWidth: number,
-): number {
-  const flight = store.openFlight
-  const open = flight != null && flight.agentId === agentId
-  useEffect(() => {
-    if (flight != null && flight.agentId !== agentId) store.closeFlight()
-  }, [flight, agentId, store])
-  const took = useRef(false)
-  const wasOpen = useRef(false)
-  // Opened again after a reload, a sign-out or the access cover while the details had folded the sidebar: they are gone (the flight is kept in the tab's memory only), so the sidebar opens, as closing them would.
-  useEffect(() => {
-    if (!readTook()) return
-    keepTook(false)
-    resize((now) => (now.isCollapsed ? { ...now, isCollapsed: false } : now))
-  }, [resize])
-  useEffect(() => {
-    if (open && !wasOpen.current) {
-      took.current = !size.isCollapsed
-      keepTook(took.current)
-      if (took.current) resize((now) => ({ ...now, isCollapsed: true }))
-    } else if (!open && wasOpen.current) {
-      if (took.current)
-        resize((now) =>
-          now.isCollapsed ? { ...now, isCollapsed: false } : now,
-        )
-      took.current = false
-      keepTook(false)
-    }
-    wasOpen.current = open
-  }, [open, size.isCollapsed, resize])
-  const standing = size.isCollapsed ? railWidth : size.expandedWidth
-  const room = Math.min(paneWidest, windowWidth - standing - chatMinimum)
-  return open && room >= paneNarrowest ? room : 0
-}
-
-/**
- * The pane with a flight in it (`AgentPaneColumn`, `PanePage`): the
- * pane's ground, the half-point line on its left, the top bar (44, Close
- * at its right) and the flight scrolling under it, "Book with Simeon" at
- * its end when the flight can be booked. It widens over 0.24 s and its
- * page fades in; the flight stays while it slides shut. Escape closes it
- * when nothing else takes the key.
- */
-export function FlightPane({
-  store,
-  width,
-}: {
-  store: AppStore
-  width: number
-}) {
-  useWatched(store)
-  const open = width > 0 ? store.openFlight : undefined
-  // The flight and the width it was shown at, kept while the pane slides shut.
-  const [kept, setKept] = useState<{ flight: OpenFlight; width: number }>()
-  if (open && (kept?.flight !== open || kept.width !== width))
-    setKept({ flight: open, width })
-  useEffect(() => {
-    if (open) return
-    const later = window.setTimeout(() => setKept(undefined), paneLinger)
-    return () => window.clearTimeout(later)
-  }, [open])
-  const flight = open ?? kept?.flight
-  const close = useCallback(() => store.closeFlight(), [store])
-  // Escape, after a field, a menu or a sheet had it (the message field's own Escape comes first), before the sidebar's picked rows.
-  useEffect(() => {
-    if (!open) return
-    const key = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape' || event.defaultPrevented) return
-      if (event.isComposing || event.metaKey || event.ctrlKey || event.altKey)
-        return
-      if (document.querySelector('[aria-modal="true"]')) return
-      const focused = document.activeElement
-      const field =
-        focused instanceof HTMLInputElement ||
-        focused instanceof HTMLTextAreaElement ||
-        focused instanceof HTMLSelectElement ||
-        (focused instanceof HTMLElement && focused.isContentEditable)
-      if (field && !focused.closest('.composer')) return
-      event.preventDefault()
-      close()
-    }
-    document.addEventListener('keydown', key)
-    return () => document.removeEventListener('keydown', key)
-  }, [open, close])
-  // Its page keeps its width as it slides shut.
-  const pageWidth = width > 0 ? width : (kept?.width ?? 0)
-  // It slides only as it opens and shuts (`AgentPane`), not as the window is made wider or narrower.
-  const shown = width > 0
-  const [lastShown, setLastShown] = useState(shown)
-  const [moving, setMoving] = useState(false)
-  if (lastShown !== shown) {
-    setLastShown(shown)
-    setMoving(true)
-  }
-  useEffect(() => {
-    if (!moving) return
-    const done = window.setTimeout(() => setMoving(false), paneLinger)
-    return () => window.clearTimeout(done)
-  }, [moving, shown])
-  return (
-    <aside
-      className={classes('flight-pane', shown && 'shown', moving && 'moving')}
-      style={{ width }}
-      aria-label={t('Conversation details')}
-      aria-hidden={width === 0}
-      inert={width === 0}
-    >
-      {flight && (
-        <div className="flight-pane-page" style={{ width: pageWidth }}>
-          <div className="flight-pane-top">
-            <button
-              type="button"
-              className="pane-close"
-              title={t('Close')}
-              aria-label={t('Close details')}
-              onClick={close}
-            >
-              <MacSymbol name="xmark" size={13} weight={1.3} />
-            </button>
-          </div>
-          <div className="flight-pane-scroll">
-            <div className="flight-pane-body">
-              <FlightPage offer={flight.offer} />
-              <BookFlightButton
-                key={flight.key}
-                store={store}
-                flight={flight}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-    </aside>
-  )
-}
+// MARK: A flight's details, in the agent's pane (AgentPane.tsx)
 
 /**
  * A flight (`FlightPage`), laid out as the iPhone's sheet: the route over
@@ -908,7 +723,7 @@ export function FlightPane({
  * round trip's two ways under their own titles; then the fare's terms in a
  * card of their own. Nothing to press but × and Book.
  */
-function FlightPage({ offer }: { offer: FlightOffer }) {
+export function FlightPage({ offer }: { offer: FlightOffer }) {
   const from = offer.from !== '' ? offer.from : (offer.legs[0]?.from ?? '')
   const to = offer.to !== '' ? offer.to : (offer.legs.at(-1)?.to ?? '')
   // The Mac's own " to " between the two places, in English in every language (PaneMembersFlight.swift).
@@ -1013,13 +828,15 @@ function FlightLegCard({ leg, logo }: { leg: FlightLeg; logo: string }) {
   )
 }
 
-/** "Book with Simeon" under a flight (`BookFlightButton`): the traveller form goes into the chat and the pane closes, or the reason it can't. */
-function BookFlightButton({
+/** "Book with Simeon" under a flight (`BookFlightButton`): the traveller form goes into the chat and the pane closes (`done`), or the reason it can't. */
+export function BookFlightButton({
   store,
   flight,
+  done,
 }: {
   store: AppStore
   flight: OpenFlight
+  done: () => void
 }) {
   const [booking, setBooking] = useState(false)
   const [refused, setRefused] = useState<string>()
@@ -1036,9 +853,8 @@ function BookFlightButton({
     )
     setBooking(false)
     // The details close, unless the person has opened another flight meanwhile.
-    if (bookingOK(answer)) {
-      if (store.openFlight?.key === flight.key) store.closeFlight()
-    } else setRefused(answer.message)
+    if (bookingOK(answer)) done()
+    else setRefused(answer.message)
   }
   return (
     <div className="book-flight">

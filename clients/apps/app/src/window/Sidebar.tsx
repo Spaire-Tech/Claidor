@@ -14,9 +14,9 @@
 // unpins it; a section goes above or below another. Folded, the sidebar is
 // its rail: the pictures alone.
 //
-// Still to come, each with its screen (docs/web-app/PROGRESS.md): search and
-// new chat in the head, the account and Connect apps in the foot (and the
-// rail's discs), Edit Profile (with the agent's pane), Recover computer.
+// The foot has the account's disc and Connect apps (step 6), the computer's
+// Update at its right (ComputerStates.tsx, step 5c); the rail's foot has
+// search, New Agent and the account's disc.
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { listTime } from '../core/listTime'
@@ -44,7 +44,10 @@ import {
 } from '../core/sidebarSections'
 import type { AppStore } from '../core/store'
 import { t } from '../l10n'
+import type { WebSession } from '../session'
+import { AccountDisc } from './AccountMenu'
 import { AgentMark } from './AgentMark'
+import { ComputerUpdatePill, StateSpinner } from './ComputerStates'
 import {
   ContextMenu,
   Glyph,
@@ -53,6 +56,7 @@ import {
 } from './ContextMenu'
 import { Alert, Sheet, somethingOver } from './Dialogs'
 import { useWatched } from './useStore'
+import { useWindowModel } from './windowModel'
 
 /** An Apple computer picks with ⌘-click; Windows with Control-click. */
 const apple =
@@ -469,6 +473,7 @@ export function Sidebar({
   onOpen,
   rail = false,
   width,
+  session,
 }: {
   store: AppStore
   open?: string
@@ -476,8 +481,14 @@ export function Sidebar({
   /** Folded to its rail (88): the pictures alone. */
   rail?: boolean
   width?: number
+  /** The sign-in, for the account's disc and its menu (step 6); none in a test of the list alone. */
+  session?: WebSession
 }) {
   useWatched(store)
+  const model = useWindowModel()
+  useWatched(model)
+  // No row is lit while the org chart is in the chat's place (SidebarList.swift's `RowGround(open: … && !window.orgChart)`).
+  const lit = model.orgChart ? undefined : open
   // Read again every 4 seconds while the list can't be read.
   const failed = store.rosterFailed
   useEffect(() => {
@@ -489,10 +500,18 @@ export function Sidebar({
   }, [failed, store])
 
   const [selection, setSelection] = useState(SidebarSelection.empty)
+  // An agent opened from search or the org chart lets the picked rows go, its row the anchor (`sidebar.selection.plain`).
+  const plain = model.sidebarPlain
+  const [plainTaken, setPlainTaken] = useState(plain)
+  if (plain !== plainTaken) {
+    setPlainTaken(plain)
+    if (plain) setSelection((now) => now.plain(plain.agentId))
+  }
   const [renamingAgent, setRenamingAgent] = useState<string>()
   const [renamingSection, setRenamingSection] = useState<string>()
   const [folded, setFolded] = useState<ReadonlySet<string>>(readFolded)
-  const [showsHidden, setShowsHidden] = useState(false)
+  const showsHidden = model.hiddenAgents
+  const setShowsHidden = (show: boolean) => model.showHiddenAgents(show)
   const [menu, setMenu] = useState<Shown>()
   const [asking, setAsking] = useState<Asking>()
   const menuClosed = useRef({ at: 0, fromBar: false })
@@ -669,9 +688,14 @@ export function Sidebar({
       glyph: agent.hasUnread ? 'bell' : 'bellBadge',
       action: () => void store.setUnread(agent.id, !agent.hasUnread),
     })
-    // Edit Profile comes with the agent's pane (step 4).
+    // The agent's pane on its Profile (`openProfile`), that agent opening if it is not the open one.
+    lines.push('separator', {
+      label: t('Edit Profile'),
+      glyph: 'pencil',
+      action: () => model.openPaneFor('profile', agent.id),
+    })
     if (!agent.isGroup && !agent.isRemoteRoom)
-      lines.push('separator', {
+      lines.push({
         label: t('Duplicate'),
         glyph: 'duplicate',
         action: () =>
@@ -910,7 +934,7 @@ export function Sidebar({
       key={agent.id}
       agent={agent}
       agents={store.agents}
-      open={open === agent.id}
+      open={lit === agent.id}
       picked={picked.has(agent.id)}
       preview={rowPreview(agent, store, open === agent.id)}
       renaming={!rail && renamingAgent === agent.id}
@@ -1055,7 +1079,7 @@ export function Sidebar({
     >
       {rail ? (
         <>
-          <div className="sidebar-head" />
+          <div className="sidebar-head rail-head" />
           {!picked.isEmpty && (
             <div className="rail-picked">
               {deleteButton}
@@ -1064,7 +1088,10 @@ export function Sidebar({
           )}
         </>
       ) : picked.isEmpty ? (
-        <div className="sidebar-head" />
+        // Search and New Agent, 40 round, 10 apart, 12 from the right edge (`sand-agents-sidebar__new-actions`).
+        <div className="sidebar-head">
+          <WindowDiscs />
+        </div>
       ) : (
         // Rows picked (C11): the head is 44 high, the picked rows' buttons at its right.
         <div className="sidebar-head picking">
@@ -1142,7 +1169,7 @@ export function Sidebar({
                     key={agent.id}
                     agent={agent}
                     agents={store.agents}
-                    open={open === agent.id}
+                    open={lit === agent.id}
                     picked={picked.has(agent.id)}
                     lit={
                       pinTarget?.kind === 'tile' && pinTarget.id === agent.id
@@ -1210,6 +1237,22 @@ export function Sidebar({
           </>
         )}
       </div>
+      {/* The rail's foot: search, New Agent and the account stacked, 10 apart, 8 from the bottom (`simeon-rail-discs`). */}
+      {rail && (
+        <div className="rail-foot">
+          <WindowDiscs />
+          {session && <AccountDisc store={store} session={session} />}
+        </div>
+      )}
+      {/* The foot (`SidebarFoot`): the account's disc and Connect apps beside it, 8 apart; the computer's Update at the right (step 5c). */}
+      {!rail && (
+        <div className="sidebar-foot">
+          {session && <AccountDisc store={store} session={session} />}
+          {session && <ConnectApps />}
+          <span className="sidebar-foot-spacer" />
+          <ComputerUpdatePill store={store} />
+        </div>
+      )}
       {menu && (
         <ContextMenu
           items={menu.items}
@@ -1239,6 +1282,105 @@ export function Sidebar({
         />
       )}
     </nav>
+  )
+}
+
+// MARK: The head's discs
+
+/**
+ * Search (⌘K) and New Agent (⌘N), each a 40 disc in Apple's glass with its
+ * symbol (16) at 78% black (86% white on dark), its name as its tooltip
+ * (`SearchDisc`, `NewChatDisc`). New Agent while group chats are off, as on
+ * the Mac and the iPhone.
+ */
+const connectAppsTiles = [
+  new URL(
+    '../../../../../mac/Simeon/Assets.xcassets/Gmail.imageset/Gmail@2x.png',
+    import.meta.url,
+  ).href,
+  new URL(
+    '../../../../../mac/Simeon/Assets.xcassets/GoogleCalendar.imageset/GoogleCalendar@2x.png',
+    import.meta.url,
+  ).href,
+  new URL(
+    '../../../../../mac/Simeon/Assets.xcassets/GoogleDrive.imageset/GoogleDrive@2x.png',
+    import.meta.url,
+  ).href,
+]
+
+/**
+ * Connect apps (`sand-agents-sidebar__plugins`): 15, medium, the window's
+ * blue, then Gmail, Calendar and Drive on three white tiles, the first
+ * turned 7° left, the last 7° right. It opens Connectors on Marketplace.
+ */
+function ConnectApps() {
+  const model = useWindowModel()
+  return (
+    <button
+      type="button"
+      className="connect-apps"
+      onClick={() => model.openConnectors()}
+    >
+      {t('Connect apps')}
+      <span className="connect-apps-tiles" aria-hidden="true">
+        {connectAppsTiles.map((tile, index) => (
+          <span
+            key={tile}
+            className="connect-apps-tile"
+            style={{ rotate: `${(index - 1) * 7}deg` }}
+          >
+            <img src={tile} alt="" draggable={false} />
+          </span>
+        ))}
+      </span>
+    </button>
+  )
+}
+
+function WindowDiscs() {
+  const model = useWindowModel()
+  return (
+    <>
+      <button
+        type="button"
+        className="window-disc glass-disc"
+        title={t('Search')}
+        aria-label={t('Search')}
+        onClick={() => model.openSearch()}
+      >
+        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+          <g
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.4"
+            strokeLinecap="round"
+          >
+            <circle cx="6.9" cy="6.9" r="4.7" />
+            <path d="M10.4 10.4 14 14" />
+          </g>
+        </svg>
+      </button>
+      <button
+        type="button"
+        className="window-disc glass-disc"
+        title={t('New Agent')}
+        aria-label={t('New Agent')}
+        onClick={() => model.startNewChat()}
+      >
+        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+          <g
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M12.6 9.2v3.3a1.6 1.6 0 0 1-1.6 1.6H3.5a1.6 1.6 0 0 1-1.6-1.6V5a1.6 1.6 0 0 1 1.6-1.6h3.3" />
+            <path d="M11.7 2.3 13.7 4.3 8.2 9.8 5.9 10.1 6.2 7.8Z" />
+          </g>
+        </svg>
+      </button>
+    </>
   )
 }
 
@@ -1315,12 +1457,35 @@ function HiddenAgentsSheet({
 
 // MARK: The computer out of reach
 
-/** "Can't reach your computer" over no list (`RosterCard`), with Retry; "Your computer isn't set up" for an account without access. */
+/**
+ * The sidebar when the agents can't be read (`RosterCard`, `tpn`): "Can’t
+ * reach your computer" (12/16, 500, at 60%, the display glyph) over why,
+ * then Retry and Recover computer (26 high, round, on a faint grey);
+ * "Retrying…" in Retry's place while it runs. "Your computer isn’t set up"
+ * with Retry alone while this account has no Simeon. Recover computer asks
+ * first (decision 8; the window resets at once): the computer's question
+ * (step 5c), then "Resetting Simeon's Computer".
+ */
 function RosterCard({ store }: { store: AppStore }) {
+  const model = useWindowModel()
+  const driver = store.rebuild
   const blocked = store.accessBlocked
+  const canRecover = !blocked && driver.canReset && !driver.isBlocked
+  const recovering =
+    driver.pendingKind === 'reset' || driver.lock.kind === 'reset'
   return (
     <div className="roster-card" role="status">
       <div className="heading">
+        <svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true">
+          <path
+            d="M2 3.5h12v8H2ZM6 14h4M8 11.5V14"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
         {blocked
           ? t('Your computer isn’t set up')
           : t('Can’t reach your computer')}
@@ -1330,24 +1495,50 @@ function RosterCard({ store }: { store: AppStore }) {
           ? t(
               'Simeon can’t set up a computer for this account yet. Setup starts automatically once this account has access.',
             )
-          : t('Your agents are safe — they just can’t be loaded right now.')}
+          : t('Your agents are safe — they just can’t be loaded right now.') +
+            (canRecover
+              ? t(
+                  ' If it doesn’t come back on its own, recover it — your files and logins are kept.',
+                )
+              : '')}
       </div>
-      {store.rosterRetrying ? (
-        <div>{t('Retrying…')}</div>
-      ) : (
-        <button
-          type="button"
-          className="pill-button"
-          onClick={() => void store.retryRoster()}
-        >
-          {t('Retry')}
-        </button>
-      )}
+      <div className="roster-card-buttons">
+        {store.rosterRetrying ? (
+          <div className="roster-retrying">
+            <StateSpinner size={12} />
+            {t('Retrying…')}
+          </div>
+        ) : (
+          <button
+            type="button"
+            className="pill-button"
+            onClick={() => void store.retryRoster()}
+          >
+            {t('Retry')}
+          </button>
+        )}
+        {canRecover && (
+          <button
+            type="button"
+            className="pill-button"
+            disabled={recovering}
+            onClick={() =>
+              model.askComputer({ kind: 'recover', fromSidebar: true })
+            }
+          >
+            {recovering ? t('Recovering…') : t('Recover computer')}
+          </button>
+        )}
+      </div>
     </div>
   )
 }
 
-/** "Reconnecting to your computer…" over a list already shown (`RosterLine`), and a quiet Retry. */
+/**
+ * "Reconnecting to your computer…" over a list already shown when reading
+ * it again fails (`RosterLine`, `npn`; decision 7): 28 high across the
+ * sidebar, 11/16 at 60%, and a quiet Retry ("Retrying…" while it runs).
+ */
 function RosterLine({ store }: { store: AppStore }) {
   return (
     <div className="roster-line" role="status">

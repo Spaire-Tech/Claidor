@@ -15,6 +15,8 @@ function useEscape(handle: () => void) {
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return
+      // Letters still being composed (Japanese, Chinese…) take Escape first, as a Mac field does; Safari sends that Escape as key 229.
+      if (event.isComposing || event.keyCode === 229) return
       event.preventDefault()
       event.stopPropagation()
       latest.current()
@@ -37,6 +39,8 @@ export function Alert({
   cancel,
   onAction,
   onCancel,
+  busy,
+  busyAction,
 }: {
   title: string
   message: string
@@ -46,10 +50,22 @@ export function Alert({
   cancel?: string
   onAction: () => void
   onCancel?: () => void
+  /** While its action is on its way: neither button can be pressed, and Escape waits (a Mac alert's disabled buttons). */
+  busy?: boolean
+  /** The action's words while it is on its way ("Canceling…", the Mac's `PendingAlert`); its own words otherwise. */
+  busyAction?: string
 }) {
   const first = useRef<HTMLButtonElement>(null)
   useTakesFocus(first)
-  useEscape(onCancel ?? onAction)
+  useEscape(() => {
+    if (!busy) (onCancel ?? onAction)()
+  })
+  // A disabled button lets go of the keys; once its action has answered, it takes them again, so Return presses it as on the Mac.
+  const wasBusy = useRef(busy)
+  useEffect(() => {
+    if (wasBusy.current && !busy) first.current?.focus()
+    wasBusy.current = busy
+  }, [busy])
   return (
     <div
       className="sheet-scrim"
@@ -70,10 +86,15 @@ export function Alert({
           aria-hidden="true"
         />
         <div className="alert-title">{title}</div>
-        <div className="alert-message">{message}</div>
+        {message !== '' && <div className="alert-message">{message}</div>}
         <div className="alert-buttons">
           {onCancel && (
-            <button type="button" className="alert-button" onClick={onCancel}>
+            <button
+              type="button"
+              className="alert-button"
+              disabled={busy}
+              onClick={onCancel}
+            >
               {cancel ?? t('Cancel')}
             </button>
           )}
@@ -83,9 +104,10 @@ export function Alert({
             className={
               destructive ? 'alert-button destructive' : 'alert-button default'
             }
+            disabled={busy}
             onClick={onAction}
           >
-            {action}
+            {busy && busyAction !== undefined ? busyAction : action}
           </button>
         </div>
       </div>
@@ -119,7 +141,7 @@ export function somethingOver(): boolean {
   return document.querySelector('[aria-modal="true"]') != null
 }
 
-/** A sheet over the window: the dimmed window behind, a click outside or Escape closes it. */
+/** A sheet over the window: the dimmed window behind, a click outside or Escape closes it (not a click a popover over it took first). */
 export function Sheet({
   label,
   close,
@@ -138,7 +160,9 @@ export function Sheet({
     <div
       className="sheet-scrim"
       onMouseDown={(event) => {
-        if (event.target === event.currentTarget) close()
+        // A click already taken by something over the sheet (a popover, a list; it called preventDefault) closes only that.
+        if (event.target === event.currentTarget && !event.defaultPrevented)
+          close()
       }}
     >
       <div

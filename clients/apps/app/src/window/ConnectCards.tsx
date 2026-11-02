@@ -2,9 +2,8 @@
 // GitHub for a routine, the cloud agent's card, and a new teammate joined.
 // Read by `src/core/connectCards.ts`.
 //
-// Left for their steps, so no button here does nothing: an app's Connect
-// (the consent, then the app added and its sign-in, step 6, "connecting"),
-// and the joined card's View Profile (the agent's pane, step 4).
+// An app's Connect (step 6b): the consent, then the app added and its
+// sign-in in one go, through the window's connector (connector.ts).
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { CardKind } from '../core/chat'
@@ -28,19 +27,25 @@ import {
   standingFace,
   standingURL,
   unavailableCloudAgent,
+  viewProfileWord,
   webPage,
   type CloudAgentInfo,
   type ConnectorsCard,
   type JoinedCard,
   type ListenerCard,
 } from '../core/connectCards'
+import { connectWord } from '../core/connecting'
 import { pictureURL } from '../core/faces'
 import type { AppStore } from '../core/store'
 import { t } from '../l10n'
 import { AgentPicture } from './AgentMark'
 import { CardShell, type CardProps } from './Cards'
 import './ConnectCards.css'
+import { openBlankTab } from './blankTab'
 import { classes } from './classes'
+import { useConnector, useConnectorWatched } from './connector'
+import { useDarkScheme } from './theme'
+import { useWindowModel } from './windowModel'
 
 type ConnectKind = Extract<
   CardKind,
@@ -121,8 +126,11 @@ function ConnectorCardsView({
 /**
  * One app: its icon (40), its name (13 on 18, 500), the agent's reason or
  * else what the app does (60%), how many tools it brings once connected
- * (12, 40%); at the right "Connected" in green, or "Coming soon" for an app
- * that can't be connected yet. Connect comes with step 6.
+ * (12, 40%); at the right "Connected" in green, "Coming soon" for an app
+ * that can't be connected yet, or Connect (`ConnectorCard`): the consent,
+ * then the app added and its sign-in in a tab (step 6b). A spinner in it
+ * while its sign-in is asked for and open; every other Connect waits
+ * meanwhile, one sign-in at a time.
  */
 function ConnectorCardView({
   name,
@@ -140,6 +148,8 @@ function ConnectorCardView({
   const connected = markedConnected || store.isConnected(name)
   const tools = store.connectedToolCount(name)
   const line = reason ?? app?.summary ?? ''
+  const connector = useConnector()
+  useConnectorWatched(connector)
   return (
     <CardShell>
       <div className="connector-row">
@@ -159,12 +169,28 @@ function ConnectorCardView({
         </div>
         {connected ? (
           <span className="connector-connected">{connectedWord()}</span>
+        ) : store.isComingSoon(name) ? (
+          <span className="connector-soon">
+            <span aria-hidden="true">{comingSoonWord()}</span>
+            <span className="connect-unseen">{t`${title} is coming soon`}</span>
+          </span>
         ) : (
-          store.isComingSoon(name) && (
-            <span className="connector-soon">
-              <span aria-hidden="true">{comingSoonWord()}</span>
-              <span className="connect-unseen">{t`${title} is coming soon`}</span>
-            </span>
+          connector && (
+            // The consent first, then the app's sign-in in a tab (`MacConnector`).
+            <button
+              type="button"
+              className="connector-connect"
+              disabled={connector.connecting !== undefined}
+              aria-busy={connector.connecting === name}
+              aria-label={t`Connect ${name}`}
+              onClick={() => connector.connect(name)}
+            >
+              {connector.connecting === name ? (
+                <span className="connect-spinner" aria-hidden="true" />
+              ) : (
+                connectWord()
+              )}
+            </button>
           )
         )}
       </div>
@@ -302,8 +328,7 @@ function ListenerConnectCardView({
   const connect = async () => {
     setOpening(true)
     // Opened at once, before the computer answers, so the browser lets it open; sent to the page once it is known.
-    const tab = window.open('', '_blank')
-    if (tab) tab.opener = null
+    const tab = openBlankTab()
     const page = webPage(await store.listenerConnectURL(platform))
     if (!page) tab?.close()
     else if (!tab) {
@@ -318,15 +343,11 @@ function ListenerConnectCardView({
   }
 
   const logo = listenerLogos[platform]
+  const dark = useDarkScheme()
   return (
     <div className="listener-card">
       <span className="listener-logo" aria-hidden="true">
-        <picture>
-          {logo.dark && (
-            <source srcSet={logo.dark} media="(prefers-color-scheme: dark)" />
-          )}
-          <img src={logo.light} alt="" />
-        </picture>
+        <img src={dark && logo.dark ? logo.dark : logo.light} alt="" />
       </span>
       <div className="listener-words">
         <div className="listener-title">{t`Connect ${name}`}</div>
@@ -619,11 +640,11 @@ function useFitted<Element extends HTMLElement>(
  * "Iris just joined your team" (the founder's design B): the agent another
  * one hired, its face standing on its own on the card's bottom edge at the
  * left (a picture of its own sits round in that place), the title (17,
- * 600), what it does in two lines at most, and Go to Chat at the bottom; the
- * card in the colour of the face's own background, its words white. One
- * height for every card, 168. The agent gone (deleted since), the words
- * stay on the chat's grey and the face and the button go. View Profile joins
- * Go to Chat with the agent's pane (step 4).
+ * 600), what it does in two lines at most, and Go to Chat and View Profile
+ * (the agent's pane on its Profile) at the bottom; the card in the colour
+ * of the face's own background, its words white. One height for every
+ * card, 168. The agent gone (deleted since), the words stay on the chat's
+ * grey and the face and the buttons go.
  */
 function JoinedCardView({
   card,
@@ -634,6 +655,7 @@ function JoinedCardView({
   store: AppStore
   openAgent: (agentId: string) => void
 }) {
+  const model = useWindowModel()
   const agents = store.agents
   const agent = joinedAgent(card, agents)
   const colours = joinedColours(card, agents)
@@ -700,6 +722,11 @@ function JoinedCardView({
               title={goToChatWord()}
               onClick={() => openAgent(card.agentId)}
             />
+            <JoinedButton
+              title={viewProfileWord()}
+              quiet
+              onClick={() => model.openPaneFor('profile', card.agentId)}
+            />
           </div>
         )}
       </div>
@@ -707,17 +734,28 @@ function JoinedCardView({
   )
 }
 
-/** Go to Chat: round ends, half the row (View Profile takes the other half in step 4); white with its words in the colour's deep shade on the colour, the window's blue on the grey. */
+/**
+ * Go to Chat and View Profile (`JoinedButton`), each half the row with
+ * round ends. Go to Chat: white with its words in the colour's deep shade
+ * on the colour, the window's blue on the grey. View Profile (`quiet`): a
+ * white pane over the colour with its edge, the wash on the grey.
+ */
 function JoinedButton({
   title,
+  quiet = false,
   onClick,
 }: {
   title: string
+  quiet?: boolean
   onClick: () => void
 }) {
   const words = useFitted<HTMLSpanElement>(14, 0.85, title)
   return (
-    <button type="button" className="joined-button" onClick={onClick}>
+    <button
+      type="button"
+      className={classes('joined-button', quiet && 'quiet')}
+      onClick={onClick}
+    >
       <span ref={words} className="joined-button-words">
         {title}
       </span>

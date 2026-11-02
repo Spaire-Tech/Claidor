@@ -1,0 +1,636 @@
+/*
+ * An agent's computer (ComputerView.tsx) at the Mac's measures
+ * (mac/Simeon/ComputerPreview.swift, ComputerView.swift): the pane's
+ * Computer tab and the full view over the window, light and dark. The full
+ * view is dark in both, as the Mac's.
+ */
+:root {
+  /* The stream's notices (`screenNotice`, `light-dark(#8a1c1c, #ff8a80)`) */
+  --screen-notice: #8a1c1c;
+  /* "Needs your attention": the orange title and its wash (`attentionInk`, `attentionWash`, 9%) */
+  --attention-ink: #c27400;
+  --attention-wash: rgb(255 152 0 / 0.09);
+  /* I'm done, continue in the pane (`primaryFill`, `onPrimary`) */
+  --computer-primary: #070707;
+  --computer-on-primary: #fcfcfc;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --screen-notice: #ff8a80;
+    --attention-ink: #ffaf38;
+    --attention-wash: rgb(255 152 0 / 0.173);
+    --computer-primary: #fafafa;
+    --computer-on-primary: #141414;
+  }
+}
+
+/* A screen: noVNC's own box fills it; one only watched takes no pointer. */
+.screen-host {
+  position: absolute;
+  inset: 0;
+}
+
+.screen-host.watched {
+  pointer-events: none;
+}
+
+/* The Computer tab: "Needs your attention", the frame, the caption, 10 apart. */
+.computer-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* The frame: as wide as the pane's page, 16:10, 14 round, the pane's grey and a hairline inside. */
+.computer-frame {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 1280 / 800;
+  overflow: hidden;
+  border-radius: 14px;
+  background: var(--pane-fill);
+}
+
+.computer-frame::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--pane-hairline);
+  border-radius: 14px;
+  pointer-events: none;
+}
+
+.computer-frame > * {
+  grid-area: 1 / 1;
+}
+
+.frame-screen {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* The whole frame opens the computer. Its ring would be cut by the frame: "Open" shows the focus instead. */
+.frame-open {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.frame-open:focus-visible {
+  outline: none;
+}
+
+/* "Open" (67 × 32): the arrows and the word (12/16), 6 apart, light on the dark scrim, a capsule; on hover or focus, over 0.12 s. */
+.open-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: var(--file-scrim);
+  color: #fcfcfc;
+  font-size: 12px;
+  line-height: 16px;
+  opacity: 0;
+  transition: opacity 0.12s ease-out;
+}
+
+.frame-open:hover .open-pill,
+.frame-open:focus-visible .open-pill {
+  opacity: 1;
+}
+
+/* "Screen preview unavailable" (12/16) and the display's glyph (13), in the third grey; neither takes the pointer. */
+.frame-words {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--ink-tertiary);
+  pointer-events: none;
+}
+
+.frame-display {
+  display: grid;
+  color: var(--ink-tertiary);
+  pointer-events: none;
+}
+
+/* A spinner up 20 seconds: why, at the frame's foot (12, centred, padded 6 by 8, the raised ground at 92%, 8 round, 8 in). */
+.frame-notice {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--elevated) 92%, transparent);
+  color: var(--screen-notice);
+  font-size: 12px;
+  line-height: 16.2px;
+  text-align: center;
+  pointer-events: none;
+}
+
+/* "{name}'s screen" under the frame: 12/16, the third grey, one line. */
+.computer-caption {
+  overflow: hidden;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--ink-tertiary);
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* "Needs your attention": padded 10, 14 round, the orange wash and the ink at 10% round it; the words 2 apart, the buttons 10 under them. */
+.computer-attention {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 14px;
+  background: var(--attention-wash);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+.attention-words {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.attention-title {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+  letter-spacing: -0.08px;
+  color: var(--attention-ink);
+}
+
+.attention-instruction {
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--ink);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Skip this step and I'm done, continue at the right, 4 apart: 24 high, 6 round, 12/16. */
+.attention-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+.attention-button {
+  height: 24px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--row-hover);
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+  line-height: 16px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.attention-button.primary {
+  background: var(--computer-primary);
+  color: var(--computer-on-primary);
+}
+
+.attention-button:focus-visible,
+.placeholder-retry:focus-visible,
+.helper-tile:focus-visible {
+  outline: 2px solid var(--unread);
+  outline-offset: 1px;
+}
+
+/* The words over a screen not there yet: centred; only Retry takes the pointer. */
+.placeholder-words {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  pointer-events: none;
+}
+
+.placeholder-words.pane {
+  gap: 8px;
+  padding: 12px;
+  color: var(--ink-secondary);
+}
+
+.placeholder-words.cover {
+  gap: 12px;
+  padding: 24px;
+  color: #fcfcfc;
+}
+
+.placeholder-message {
+  font-size: 13px;
+  line-height: 18px;
+}
+
+/* The pane's Retry: a 28 capsule, 13/16 500, the pane's second grey; the full view's: 24 high, 12/16, white on a faint wash with a half-point edge, brighter under the pointer. */
+.placeholder-retry {
+  pointer-events: auto;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.pane .placeholder-retry {
+  height: 28px;
+  margin-top: 4px;
+  padding: 0 13px;
+  background: var(--pane-fill-2);
+  color: var(--pane-ink);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 16px;
+}
+
+.cover .placeholder-retry {
+  height: 24px;
+  padding: 0 8px;
+  background: rgb(247 234 234 / 0.051);
+  box-shadow: inset 0 0 0 0.5px rgb(252 252 252 / 0.102);
+  color: #fcfcfc;
+  font-size: 12px;
+  line-height: 16px;
+  transition: background-color 0.12s ease-out;
+}
+
+.cover .placeholder-retry:hover {
+  background: rgb(247 234 234 / 0.102);
+}
+
+/* The reason under "Can't reach…": 12, centred, at most 432, in the notice's red (the full view's on its dark). */
+.placeholder-notice {
+  max-width: 432px;
+  font-size: 12px;
+  line-height: 16.2px;
+}
+
+.pane .placeholder-notice {
+  padding-top: 10px;
+  color: var(--screen-notice);
+}
+
+.cover .placeholder-notice {
+  padding-top: 6px;
+  color: #ff8a80;
+}
+
+/* The bar: 237 wide with its label, 8 apart; the track 6 high and round, the words' colour at 10%. */
+.computer-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 237px;
+}
+
+.bar-track {
+  position: relative;
+  flex: 1;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: color-mix(in srgb, currentColor 10%, transparent);
+}
+
+.bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: currentColor;
+}
+
+/* Moving: a 30% piece crossing every 1.4 s, ease-in-out, from 100% left of the track to 340% of the piece. */
+.bar-piece {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 30%;
+  height: 100%;
+  border-radius: 3px;
+  background: currentColor;
+  animation: bar-cross 1.4s ease-in-out infinite;
+}
+
+@keyframes bar-cross {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(340%);
+  }
+}
+
+.bar-label {
+  font-size: 13px;
+  line-height: 18px;
+}
+
+/* The spinner: a 2-point ring at 30% with its top quarter at 60%, turning every 0.7 s. */
+.screen-spinner {
+  box-sizing: border-box;
+  border: 2px solid color-mix(in srgb, var(--ink) 30%, transparent);
+  border-top-color: color-mix(in srgb, var(--ink) 60%, transparent);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: screen-spin 0.7s linear infinite;
+}
+
+@keyframes screen-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bar-piece,
+  .screen-spinner {
+    animation: none;
+  }
+
+  .bar-piece {
+    transform: none;
+  }
+}
+
+/* The agent's pointer: 20, drawn from its top left at 0.85 × the frame's scale (0.75 of that pressed), a soft shadow; it glides after its first place. */
+.agent-pointer-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.agent-pointer {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  transform: scale(var(--pointer-scale));
+  transform-origin: 0 0;
+  filter: drop-shadow(0 1px 1.2px rgb(0 0 0 / 0.35));
+  transition: transform 0.14s ease-out;
+  animation: pointer-in 0.09s ease-out;
+}
+
+.agent-pointer.gliding {
+  transition:
+    left 0.5s cubic-bezier(0.19, 1, 0.22, 1),
+    top 0.5s cubic-bezier(0.19, 1, 0.22, 1),
+    transform 0.14s ease-out;
+}
+
+@keyframes pointer-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* The full view: over the whole window (the viewers under it, search and the sheets over it), #141414 at 95%. */
+.computer-view {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  display: flex;
+  flex-direction: column;
+  background: rgb(20 20 20 / 0.95);
+  color: #fcfcfc;
+}
+
+/* The bar: 44 high, black at 55%, 8 in each side. */
+.computer-top-bar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 8px;
+  background: rgb(0 0 0 / 0.549);
+}
+
+/* Where the Mac's bar moves the window (`WindowDragArea`). */
+.computer-drag {
+  flex: 1;
+  align-self: stretch;
+}
+
+/* Exit fullscreen: 24 × 24, 6 round, the arrows white at 85%; white on the faint grey under the pointer; a ring that shows on the dark bar. */
+.computer-exit {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: rgb(255 255 255 / 0.85);
+  cursor: pointer;
+  transition:
+    background-color 0.12s ease-out,
+    color 0.12s ease-out;
+}
+
+.computer-exit:hover {
+  background: var(--row-hover);
+  color: #ffffff;
+}
+
+.computer-exit:focus-visible {
+  outline: 2px solid rgb(252 252 252 / 0.4);
+  outline-offset: -1px;
+}
+
+/* Under the bar, 8 in: the banner, the stage, the helper's name, the strip. */
+.computer-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px;
+}
+
+/* The hand-off's banner: 10 round, the orange at 13%, padded 10 (12 at the left), the words and the buttons 16 apart, 8 over the screen. */
+.handoff-banner {
+  flex: none;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 8px;
+  padding: 10px 10px 10px 12px;
+  border-radius: 10px;
+  background: rgb(249 133 0 / 0.129);
+}
+
+.handoff-banner-words {
+  flex: 1;
+  min-width: 0;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-size: 13px;
+  line-height: 18px;
+  color: #ffbd3b;
+  overflow-wrap: anywhere;
+}
+
+.handoff-banner-buttons {
+  flex: none;
+  display: flex;
+  gap: 8px;
+}
+
+/* Skip this step (white on a faint wash, a half-point edge) and I'm done, continue (near white): 24 high, 6 round, 12/16; brighter under the pointer. */
+.handoff-banner-button {
+  height: 24px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 6px;
+  background: rgb(247 234 234 / 0.051);
+  box-shadow: inset 0 0 0 0.5px rgb(252 252 252 / 0.102);
+  color: #fcfcfc;
+  font: inherit;
+  font-size: 12px;
+  line-height: 16px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.12s ease-out;
+}
+
+.handoff-banner-button:hover {
+  background: rgb(247 234 234 / 0.102);
+}
+
+.handoff-banner-button.primary {
+  background: #fdfdfd;
+  box-shadow: none;
+  color: #141414;
+}
+
+.handoff-banner-button.primary:hover {
+  background: #ffffff;
+}
+
+.handoff-banner-button:focus-visible {
+  outline: 2px solid rgb(252 252 252 / 0.4);
+  outline-offset: 1px;
+}
+
+/* The stage: the screen as the largest 16:10 that fits, or the words over a screen not there yet. */
+.computer-stage {
+  flex: 1;
+  min-height: 0;
+  align-self: stretch;
+  display: grid;
+  place-items: center;
+}
+
+/* The screen: the editor's ground until the picture paints, 6 round, a faint edge. */
+.computer-screen {
+  position: relative;
+  overflow: hidden;
+  border-radius: 6px;
+  background: var(--ground);
+}
+
+.computer-screen::after,
+.helper-thumb::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 0.5px solid rgb(252 252 252 / 0.102);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+/* The helper shown, named under the screen (12/16, white at 60%, one line), 6 below it. */
+.computer-helper-name {
+  flex: none;
+  max-width: 100%;
+  overflow: hidden;
+  padding-top: 6px;
+  font-size: 12px;
+  line-height: 16px;
+  color: rgb(252 252 252 / 0.6);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The other helpers' screens: 122 high, 8 apart, centred, 12 below. */
+.helper-strip {
+  flex: none;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 8px;
+  height: 122px;
+  margin-top: 12px;
+}
+
+.helper-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 160px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+/* A thumbnail: 160 × 100, 8 round, the ground until the screen is up; "more" a faint wash with the display's glyph at 40%. */
+.helper-thumb {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 160px;
+  height: 100px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: var(--ground);
+}
+
+.helper-thumb.more {
+  background: rgb(247 234 234 / 0.051);
+  color: rgb(252 252 252 / 0.4);
+}
+
+.helper-screen {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.helper-name {
+  max-width: 160px;
+  overflow: hidden;
+  font-size: 12px;
+  line-height: 16px;
+  color: rgb(252 252 252 / 0.6);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

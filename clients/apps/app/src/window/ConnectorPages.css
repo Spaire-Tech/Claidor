@@ -1,0 +1,699 @@
+/*
+ * Connectors' pages and their parts (ConnectorPages.tsx,
+ * ConnectorPageParts.tsx) at the Mac's measures
+ * (mac/Simeon/PluginsWindow.swift 1126-2058): the page's column, an app's
+ * head, the examples on the picture, the cards and rows (Settings' own),
+ * the folds, the accounts, the setup and skill fields. Light and dark.
+ * The pills, the spinner, the icons and the warning's orange are the list's
+ * (Connectors.css).
+ */
+:root {
+  /* `look.groupedRow`'s field (`SetupField`, `SkillField`): white, the row's grey on dark; a faint ring on light only. */
+  --page-field: #ffffff;
+  --page-field-ring: rgb(20 30 60 / 0.14);
+  /* The examples' pills: white at 82%, black at 50% on dark; the picture dimmed by black at 35% on dark. */
+  --page-example: rgb(255 255 255 / 0.82);
+  --page-hero-dim: transparent;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --page-field: rgb(119 119 119 / 0.173);
+    --page-field-ring: transparent;
+    --page-example: rgb(0 0 0 / 0.5);
+    --page-hero-dim: rgb(0 0 0 / 0.35);
+  }
+}
+
+/* MARK: The page's column (`PluginPages`): at most 720, in the middle of the panel; 16 above, 24 a side, 32 at the foot. */
+
+.page-column {
+  box-sizing: content-box;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 16px 24px 32px;
+}
+
+.page-waiting {
+  display: grid;
+  place-items: center;
+  padding-top: 40px;
+}
+
+/* MARK: An app's page (`PluginPage`): its head and words 20 apart, its cards 16 apart, the two 24 apart. */
+
+.plugin-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.plugin-page-top {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.plugin-page-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* The head: the icon (64), the name (20 medium) over its line (13, grey, two lines at most), 4 apart; Connect at the right, 16 from them. */
+.plugin-page-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.plugin-page-words {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.plugin-page-name {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 20px;
+  font-weight: 500;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.plugin-page-byline {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--ink-secondary);
+  font-size: 13px;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+/* A page's head (`PageHead`, 48): the icon, the name (13 medium) over its line, 2 apart, the action at the right; 12 apart. */
+.page-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+}
+
+.page-head-words {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.page-head-name {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.page-head-host {
+  overflow: hidden;
+  color: var(--ink-secondary);
+  font-size: 12px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* A page's words (`Description`): 13, 3 between the lines, grey, selectable. */
+.page-description {
+  margin: 0;
+  color: var(--ink-secondary);
+  font-size: 13px;
+  line-height: 19px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+
+/* Under a page's name (`MetaLine`): 12, grey, one line, 6 apart; View Source darker under the pointer. */
+.page-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  color: var(--ink-secondary);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.page-meta-source {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--ink-secondary);
+  text-decoration: none;
+}
+
+.page-meta-source:hover {
+  color: var(--ink);
+}
+
+/* MARK: The examples (`ExamplesCard`): on the picture, 30 above and below, 24 a side, 18 round; the pills 10 apart. */
+
+.page-examples {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 30px 24px;
+  border-radius: 18px;
+  background:
+    linear-gradient(var(--page-hero-dim), var(--page-hero-dim)),
+    var(--hero) center / cover no-repeat;
+}
+
+/* A pill: 13 on 18, centred, 16 and 9 in, 17 round, as wide as its words up to 520. */
+.page-example {
+  box-sizing: border-box;
+  width: fit-content;
+  max-width: min(520px, 100%);
+  margin: 0;
+  padding: 9px 16px;
+  border-radius: 17px;
+  background: var(--page-example);
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 18px;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+/* MARK: Cards and rows (`PageCard`, `CardRow`, `DetailPair`) */
+
+/* A row: Settings' (18 in, 14 above and below, at least 56), its parts 8 apart; Settings' line above it when it follows another. */
+.page-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 56px;
+  padding: 14px 18px;
+  box-sizing: border-box;
+}
+
+.page-row.divided::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 18px;
+  right: 18px;
+  height: 0.5px;
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+/* The room a Spacer takes: none at least, or 8 (`Spacer(minLength: 8)`). */
+.page-spacer {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.page-spacer.wide {
+  min-width: 8px;
+}
+
+/* A term and its value: the term whole, the value at the right in the faint grey, cut in its middle (the room it asks for is set as it is drawn), 4 from the edge. */
+.page-pair {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.page-term {
+  flex: none;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.page-pair-value {
+  flex: 0 1 auto;
+  min-width: 0;
+  margin-right: 4px;
+  overflow: hidden;
+  color: var(--ink-tertiary);
+  white-space: nowrap;
+}
+
+/* A link's line: its host in the link blue with ↗, 3 apart, lighter under the pointer, 4 from the edge. */
+.page-link {
+  flex: 0 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-right: 4px;
+  overflow: hidden;
+  color: var(--link);
+  text-decoration: none;
+}
+
+.page-link:hover {
+  opacity: 0.8;
+}
+
+.page-link:focus-visible {
+  outline: 2px solid var(--unread);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.page-link-host {
+  white-space: nowrap;
+}
+
+.page-link .settings-symbol {
+  flex: none;
+}
+
+/* MARK: Actions */
+
+/* Connect in an app's head (`ConnectPill`): a plus (12, semibold) and the word (13 medium) 5 apart, the ground's colour on the ink, 30 high, 14 a side; the ink at 85% under the pointer; faded while it can't be pressed. */
+.page-connect {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 30px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--ground);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.page-connect:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ink) 85%, transparent);
+}
+
+.page-connect:disabled {
+  opacity: 0.56;
+  cursor: default;
+}
+
+.page-connect:focus-visible,
+.page-pencil:focus-visible,
+.page-add-account:focus-visible {
+  outline: 2px solid var(--unread);
+  outline-offset: 2px;
+}
+
+/* Uninstall or Remove at the page's foot: 8 more above it. */
+.page-remove {
+  padding-top: 8px;
+}
+
+/* MARK: The folds (`FoldShell`, `FoldCard`) */
+
+/* The summary row: its words (13), the chevron (10, fainter, 4 from the edge) turning in 0.12 s; a step darker under the pointer. */
+.page-fold {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 56px;
+  padding: 14px 18px;
+  box-sizing: border-box;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.page-fold:hover {
+  background: var(--grouped-row-hover);
+}
+
+.page-fold:focus-visible {
+  outline: 2px solid var(--unread);
+  outline-offset: -2px;
+}
+
+.page-fold-summary {
+  flex: 1;
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.page-fold-chevron {
+  display: grid;
+  padding-right: 4px;
+  color: var(--ink-tertiary);
+  transition: transform 0.12s ease-out;
+}
+
+.page-fold-chevron.open {
+  transform: rotate(180deg);
+}
+
+/* A folded line: the name whole at the left, what it does at the right in the faint grey, cut short, 4 from the edge. */
+.page-fold-name {
+  flex: none;
+  color: var(--ink);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.page-fold-does {
+  flex: 0 1 auto;
+  min-width: 0;
+  padding-right: 4px;
+  overflow: hidden;
+  color: var(--ink-tertiary);
+  font-size: 13px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* MARK: Accounts and tools */
+
+/* An account: its name (13) over its status (12, in its tone), 2 apart; an error's detail under it (12, grey, selectable). */
+.page-account {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.page-account-title {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 13px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.page-account-line {
+  display: flex;
+  gap: 4px;
+  overflow: hidden;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.page-account-status {
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.page-account-status.success {
+  color: var(--settings-green);
+}
+
+.page-account-status.warning {
+  color: var(--plugin-warning);
+}
+
+.page-account-status.danger {
+  color: var(--danger);
+}
+
+.page-account-status.tertiary {
+  color: var(--ink-tertiary);
+}
+
+.page-account-who {
+  overflow: hidden;
+  color: var(--ink-secondary);
+  text-overflow: ellipsis;
+}
+
+.page-account-detail {
+  color: var(--ink-secondary);
+  font-size: 12px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+
+/* The pencil: 13, grey, in a 24 square. */
+.page-pencil {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink-secondary);
+  cursor: pointer;
+}
+
+/* Add Another Account: a plus (12) and the words (13), 6 apart, across the row. */
+.page-add-account {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.page-add-account:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* The rename's field in the window's alert: the alert's width, 24 high, 5 round, 7 in, the field's own ground; the blue edge with the keys. */
+.page-alert-field {
+  box-sizing: border-box;
+  align-self: stretch;
+  height: 24px;
+  margin-top: 12px;
+  padding: 0 7px;
+  border: 0;
+  border-radius: 5px;
+  background: var(--page-field);
+  box-shadow: inset 0 0 0 0.5px var(--hairline);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+}
+
+.page-alert-field:focus {
+  box-shadow: inset 0 0 0 1px var(--unread);
+}
+
+/* A tool: its name (13), cut short, its description as its tooltip. */
+.page-tool {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 13px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* A failure under the tools: 13, red. */
+.page-failure {
+  flex: 1;
+  color: var(--danger);
+  font-size: 13px;
+}
+
+/* MARK: The setup page (`SetupPage`, `SetupField`) */
+
+.setup-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.setup-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* A value: its label (13 medium; "(optional)" fainter), its field, its line under it (12), 4 apart. */
+.setup-value {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.setup-label {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.setup-optional {
+  color: var(--ink-tertiary);
+}
+
+.setup-required {
+  color: var(--danger);
+  font-size: 12px;
+}
+
+.setup-hint {
+  overflow: hidden;
+  color: var(--ink-tertiary);
+  font-size: 12px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Its foot: what is missing (12, fainter) and the blue pill at the right, 8 apart. */
+.setup-foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.setup-missing {
+  color: var(--ink-tertiary);
+  font-size: 12px;
+}
+
+/* The field: 32 high, 10 in, 8 round, 13; white with a faint ring (the row's grey on dark); the blue edge with the keys, red when it is missing. */
+.page-setup-field {
+  box-sizing: border-box;
+  width: 100%;
+  height: 32px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--page-field);
+  box-shadow: inset 0 0 0 0.5px var(--page-field-ring);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+}
+
+.page-setup-field::placeholder,
+.page-skill-input::placeholder {
+  color: var(--ink-tertiary);
+}
+
+.page-setup-field:focus {
+  box-shadow: inset 0 0 0 1px var(--unread);
+}
+
+.page-setup-field.invalid {
+  box-shadow: inset 0 0 0 1px var(--danger);
+}
+
+/* MARK: A skill's page (`SkillPage`, `SkillField`) */
+
+.skill-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.skill-page-top {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.skill-page-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.skill-page-words {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.skill-page-kind {
+  color: var(--ink-secondary);
+  font-size: 13px;
+}
+
+.skill-page-hint {
+  padding-top: 4px;
+  color: var(--ink-tertiary);
+  font-size: 12px;
+}
+
+.skill-page-save {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* A skill's field: its label (13 medium, grey) 8 over the field (at least 32, 7 and 10 in, 8 round, 13): white with a faint ring (the row's grey on dark). The instructions' at least 80 high and growing with its words. */
+.page-skill-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.page-skill-label {
+  padding-bottom: 8px;
+  color: var(--ink-secondary);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.page-skill-input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 32px;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--page-field);
+  box-shadow: inset 0 0 0 0.5px var(--page-field-ring);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  line-height: 18px;
+  outline: none;
+}
+
+.page-skill-input.lines {
+  min-height: 94px;
+  resize: none;
+  field-sizing: content;
+}
+
+.page-skill-input:disabled {
+  color: var(--ink-tertiary);
+}
+
+/* A row's words at its left (Setup Values): 13, the ink. */
+.page-row-words {
+  flex: 1;
+  min-width: 0;
+  color: var(--ink);
+  font-size: 13px;
+}

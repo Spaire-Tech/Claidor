@@ -49,12 +49,21 @@ const embeddedCSP = `
 // talks to the API and, through the API's proxy, to the person's cloud
 // computer: commands and the event stream (connect-src), the agents'
 // pictures (img-src) and the computer panel (frame-src). It is never
-// shown inside another site.
+// shown inside another site. The new app (/app-next) plays the voices'
+// samples from ElevenLabs' own links (the avatar editor's play button),
+// whose host varies, so sound may come from any https address, as pictures
+// may (media-src).
+// The app's window (`/app`, `/app-next`): the computer's screen is a
+// WebSocket to the API's own proxy (its wss address, named as well for the
+// browsers that don't take https as covering it); a call's voice is
+// ElevenLabs' kit, which talks to api.elevenlabs.io and LiveKit's
+// livekit.rtc.elevenlabs.io over https and wss (connections only: no script
+// of theirs is loaded).
 const appWindowCSP = `
   default-src 'self';
-  connect-src 'self' blob: ${process.env.NEXT_PUBLIC_API_URL};
+  connect-src 'self' blob: ${process.env.NEXT_PUBLIC_API_URL} ${(process.env.NEXT_PUBLIC_API_URL ?? '').replace(/^http/, 'ws')} https://*.elevenlabs.io wss://*.elevenlabs.io;
   img-src 'self' blob: data: https: ${process.env.NEXT_PUBLIC_API_URL};
-  media-src 'self' blob: ${process.env.NEXT_PUBLIC_API_URL};
+  media-src 'self' blob: https: ${process.env.NEXT_PUBLIC_API_URL};
   frame-src ${process.env.NEXT_PUBLIC_API_URL};
   script-src 'self' blob:;
   worker-src 'self' blob:;

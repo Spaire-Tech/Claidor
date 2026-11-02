@@ -27,10 +27,15 @@
 // the field says "Listening…", then "Transcribing…" with a small spinner;
 // what was said goes in at the caret. Escape drops the recording.
 //
-// Still to come, with its step (docs/web-app/PROGRESS.md): the access notice
-// and the credits line (step 6).
+// Over it all, 8 over the field and as wide, the access notice
+// (ComputerStates.tsx, step 5c): this account can't send, and why; Send
+// waits under it, as it waits while the computer is rebuilt
+// (`isSendingPaused`). Else, in its place, the credits' line
+// (CreditsLine.tsx, step 6f): the credits spent, or near the limit; it
+// opens Usage & Billing.
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { accessNotice } from '../core/access'
 import { maxStaged } from '../core/attachmentLimits'
 import {
   type ChipNode,
@@ -58,6 +63,8 @@ import {
   placeInField,
   useComposerPicks,
 } from './ComposerPicks'
+import { AccessNotice } from './ComputerStates'
+import { CreditsLine, useCreditsReads } from './CreditsLine'
 import {
   Dictation,
   MicButton,
@@ -67,6 +74,7 @@ import {
 } from './Dictation'
 import { type Reply, ReplyPill } from './MessageActions'
 import { useWatched } from './useStore'
+import { useWindowModel } from './windowModel'
 
 /** Six lines of 20, then the words scroll. */
 const tallest = 120
@@ -105,6 +113,9 @@ export function Composer({
   staging: Staging
 }) {
   useWatched(store)
+  const model = useWindowModel()
+  // The usage and the computer's notices, for the credits' line (6f).
+  useCreditsReads(store, agentId)
   const scope = draftScope(agentId, threadRoot)
   const [words, setWords] = useState(() => store.drafts[scope] ?? '')
   const [chips, setChips] = useState<ComposerChip[]>(() =>
@@ -275,8 +286,12 @@ export function Composer({
         node = row.row.insert
         break
       case 'slash':
-        // The app's actions join "/" with their screens (steps 4 to 6); a skill goes in as a pick.
-        if (row.item.kind !== 'skill') return
+        // An action runs at once and takes the "/" and what followed it out of the field (`run`); a skill goes in as a pick.
+        if (row.item.kind === 'action') {
+          insert(request.start, request.end, '')
+          model.runAction(row.item.action.id)
+          return
+        }
         node = {
           kind: 'workflow',
           id: row.item.skill.id,
@@ -333,7 +348,10 @@ export function Composer({
     }
   })
 
+  // While the computer is rebuilt or this account has no Simeon, Send is off and Return keeps the words (decision 3).
+  const paused = store.isSendingPaused
   const send = () => {
+    if (paused) return
     // The message has gone: dictation still on its way writes nothing more.
     if (dictation.phase !== 'idle') dictation.cancel()
     const message = prompt(words)
@@ -355,6 +373,11 @@ export function Composer({
 
   return (
     <div className="composer" ref={dock}>
+      {/* Whether this account may use Simeon (`Qvn`, step 5c), else the credits' line (6f): one at a time, over everything, 8 over it. */}
+      <AccessNotice store={store} />
+      {accessNotice(store.access) === undefined && (
+        <CreditsLine store={store} agentId={agentId} />
+      )}
       {/* The lines: a send refused (six seconds) in red, then the files' (five seconds) at 40%. */}
       {notice && (
         <div className="composer-line error" role="status">
@@ -531,7 +554,8 @@ export function Composer({
           ) : (
             <button
               type="button"
-              className="send-button"
+              className={paused ? 'send-button paused' : 'send-button'}
+              disabled={paused}
               aria-label={t('Send message')}
               title={t('Send message')}
               onClick={(event) => {

@@ -26,8 +26,8 @@ export function displayLocale(
   return regional ?? language
 }
 
-/** The day of `date` in `timeZone`, as a count of days. */
-function dayNumber(date: Date, timeZone?: string): number {
+/** The day of `date` in `timeZone`, as a count of days (also the credits' line's, upgrade.ts). */
+export function dayNumber(date: Date, timeZone?: string): number {
   const parts = new Intl.DateTimeFormat('en-US', {
     timeZone,
     year: 'numeric',

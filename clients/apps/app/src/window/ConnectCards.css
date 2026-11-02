@@ -94,6 +94,37 @@
   white-space: nowrap;
 }
 
+/* Connect: 13 in the ink, 32 high, 13 at the sides, on the grey capsule with a line at 15%; waiting while another app's sign-in is open (and its own, with the small spinner). */
+.connector-connect {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  box-sizing: border-box;
+  padding: 0 13px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--wash);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 15%, transparent);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  line-height: 18px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.connector-connect:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.connector-connect:focus-visible {
+  outline: 2px solid var(--unread);
+  outline-offset: 1px;
+}
+
 /* An app's own icon, whole, its corners 22.37% of its side, a hairline over it (the ink at 8%, 16% on dark). */
 .app-icon {
   position: relative;
@@ -542,6 +573,19 @@ a.card-button {
 .joined-card.coloured .joined-button {
   background: #ffffff;
   color: var(--joined-deep);
+}
+
+/* View Profile: the wash with a 1 edge at 15% of the ink on the grey; a white pane at 18% with a half-point edge at 40% on the colour, its words white. */
+.joined-button.quiet {
+  background: var(--wash);
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 15%, transparent);
+}
+
+.joined-card.coloured .joined-button.quiet {
+  background: rgb(255 255 255 / 0.18);
+  color: #ffffff;
+  box-shadow: inset 0 0 0 0.5px rgb(255 255 255 / 0.4);
 }
 
 .joined-button-words {

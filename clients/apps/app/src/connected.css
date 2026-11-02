@@ -1,0 +1,82 @@
+/*
+ * The page that ends a connected app's sign-in (connected.html): its words
+ * on a card in the middle, as the old web app's page has them, in the
+ * window's colours (index.css's, light and dark).
+ */
+
+:root {
+  color-scheme: light dark;
+  --ink: #141414;
+  --ink-secondary: rgb(20 20 20 / 0.6);
+  --ground: #fcfcfc;
+  --elevated: #ffffff;
+  --card-edge: rgb(20 30 60 / 0.08);
+  --card-shadow: rgb(20 30 60 / 0.05);
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink: #fcfcfc;
+    --ink-secondary: rgb(252 252 252 / 0.6);
+    --ground: #070707;
+    --elevated: #181818;
+    --card-edge: transparent;
+    --card-shadow: transparent;
+  }
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 0 16px;
+  box-sizing: border-box;
+  background: var(--ground);
+  color: var(--ink);
+  font:
+    14px/1.4 -apple-system,
+    BlinkMacSystemFont,
+    'SF Pro Text',
+    'Segoe UI',
+    system-ui,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* The card: at most 360 wide, padded 36 and 40, 18 round, a hairline and a soft shadow on light. */
+.connected-card {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 360px;
+  padding: 36px 40px;
+  border-radius: 18px;
+  background: var(--elevated);
+  text-align: center;
+  box-shadow:
+    0 0 0 0.5px var(--card-edge),
+    0 1px 2px var(--card-shadow);
+}
+
+/* Its title (20, 600) over its line (14, the second ink), 6 apart. */
+.connected-card h1 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 24px;
+}
+
+.connected-card p {
+  margin: 6px 0 0;
+  font-size: 14px;
+  line-height: 18px;
+  color: var(--ink-secondary);
+}

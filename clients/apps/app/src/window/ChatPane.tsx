@@ -10,16 +10,15 @@
 // over the field are in MessageActions.tsx.
 //
 // Find (⌘F) is in FindBar.tsx; the agent's working line under the messages
-// in ActivitySlot.tsx.
+// in ActivitySlot.tsx. The phone in the head, a call's line, its lines and
+// two agents' messages over the chat are in Call.tsx (step 5d).
 //
 // Still to come, each with its part (docs/web-app/PROGRESS.md): the motion
-// of a line coming in, the time on a sideways swipe, two agents' messages
-// and a call's lines opened over the chat (2b);
-// the pictures from the computer, files' kinds, sizes and Save, link cards,
-// previews (2c); the call button (step 5); the agent's pane opened from the
-// head (step 4). The cards (step 3) are drawn by `CardRow` from Cards.tsx
-// and their groups' files (RequestCards, ConnectCards, FlightCards,
-// ShopCards).
+// of a line coming in, the time on a sideways swipe (2b); the pictures from
+// the computer, files' kinds, sizes and Save, link cards, previews (2c); the
+// agent's pane opened from the head (step 4). The cards (step 3) are drawn
+// by `CardRow` from Cards.tsx and their groups' files (RequestCards,
+// ConnectCards, FlightCards, ShopCards).
 
 import {
   createContext,
@@ -32,15 +31,16 @@ import {
   useState,
 } from 'react'
 import { activityLine } from '../core/activity'
+import { parseCallRecord } from '../core/call'
 import { approvalCard, draftCard, questionCard } from '../core/cards'
 import {
   type Bubble,
   type CardKind,
   type ChatImage,
   type ChatRow,
+  type RoutineRef,
   channelTitle,
   exchangeLabel,
-  exchangePeers,
   isOneEmoji,
   quoteLine,
   replyPlaceholder,
@@ -48,7 +48,6 @@ import {
   routineVerb,
   stampText,
   unreadCardWords,
-  voiceChatLabel,
 } from '../core/chat'
 import {
   FindMarks,
@@ -70,6 +69,14 @@ import { ActivitySlot } from './ActivitySlot'
 import { AgentMark } from './AgentMark'
 import { DropOverlay, useFileDrop, useStaging } from './Attachments'
 import {
+  CallHeadRow,
+  CallLineRow,
+  CallRecordView,
+  ChatCoverView,
+  ExchangeChip,
+  useCovered,
+} from './Call'
+import {
   ApprovalCardView,
   type CardProps,
   DraftCardView,
@@ -77,7 +84,9 @@ import {
   cardWidth,
 } from './Cards'
 import { Composer } from './Composer'
+import { DiskBanner } from './ComputerStates'
 import { connectCardView } from './ConnectCards'
+import { ContextMenu } from './ContextMenu'
 import { somethingOver } from './Dialogs'
 import { EmojiPicker } from './EmojiPicker'
 import { FileCard, LinkCard, useShownPicture } from './Files'
@@ -98,10 +107,12 @@ import {
   MessageBlocks,
 } from './MessageText'
 import { requestCardView } from './RequestCards'
+import { useSearchReveal } from './SearchPanel'
 import { shopCardView } from './ShopCards'
 import { useOpenMedia } from './Viewers'
 import { classes } from './classes'
 import { useWatched } from './useStore'
+import { useWindowModel } from './windowModel'
 
 /** What a row asks of the chat around it: going to another row, opening a thread, a message's actions. */
 interface ChatControl {
@@ -181,10 +192,14 @@ export function ChatPane({
   const agent = store.agent(agentId)
   const threadRoot = store.openThreads[agentId]
   const [composerHeight, setComposerHeight] = useState(56)
+  // Low disk's height and the 8 under it, while it shows (`bannerHeight`, step 5c).
+  const [bannerHeight, setBannerHeight] = useState(0)
   const pane = useRef<HTMLElement>(null)
   // The files waiting to go with the next message (`ChatControl.staged`), and files dropped anywhere on the chat.
   const staging = useStaging()
   const drop = useFileDrop(staging.stage)
+  // A call's lines or an exchange over the chat (step 5d): its field is hidden and takes no keys, and files dropped are refused (`coversChat`).
+  const covered = useCovered(agentId)
   // The message being answered (`ChatControl.reply`), in the chat or the thread it was chosen in.
   const [answering, setAnswering] = useState<{
     reply: Reply
@@ -219,6 +234,9 @@ export function ChatPane({
       : undefined
   /** Brings a row to the middle without lighting it (find's `scrollToEntryWithoutHighlight`); set by the lines on screen. */
   const revealRef = useRef<(rowId: string) => void>(undefined)
+  /** Brings a row to the middle and lights it (`jump`); set by the lines on screen. A line search found goes there (step 4d). */
+  const jumpRef = useRef<(rowId: string) => void>(undefined)
+  useSearchReveal(store, agentId, jumpRef)
 
   // ⌘F (Ctrl-F on Windows): the bar, or its field again with its words chosen.
   useEffect(() => {
@@ -381,41 +399,55 @@ export function ChatPane({
       className="chat-pane"
       aria-label={agent?.name}
       ref={pane}
-      {...drop.handlers}
+      {...(covered ? {} : drop.handlers)}
     >
-      {/* A thread, or back to the chat: the lines on screen start again, at their newest. */}
-      <Transcript
-        key={threadRoot ?? ''}
-        store={store}
-        agentId={agentId}
-        threadRoot={threadRoot}
-        composerHeight={composerHeight}
-        actions={actions}
-        find={findOnScreen}
-        revealRef={revealRef}
-        openAgent={onOpenAgent}
-      />
-      {agent &&
-        (threadRoot != null ? (
-          <ThreadHeader
-            store={store}
-            agent={agent}
-            title={store.threadTitle(threadRoot, agentId)}
-          />
-        ) : (
-          <ChatHeader store={store} agent={agent} />
-        ))}
-      <Composer
-        store={store}
-        agentId={agentId}
-        name={agent?.name ?? ''}
-        threadRoot={threadRoot}
-        reply={reply}
-        onCancelReply={() => setAnswering(undefined)}
-        focusKey={focusKey}
-        onHeight={setComposerHeight}
-        staging={staging}
-      />
+      {/* Under a call's lines or an exchange (step 5d), the chat, its head and its field take no keys and are not read, as the Mac's covers are modal; find, the sidebar and search stay. */}
+      <div
+        className={classes('chat-under', covered && 'covered')}
+        inert={covered}
+      >
+        {/* A thread, or back to the chat: the lines on screen start again, at their newest. */}
+        <Transcript
+          key={threadRoot ?? ''}
+          store={store}
+          agentId={agentId}
+          threadRoot={threadRoot}
+          composerHeight={composerHeight}
+          bannerHeight={bannerHeight}
+          actions={actions}
+          find={findOnScreen}
+          revealRef={revealRef}
+          jumpRef={jumpRef}
+          openAgent={onOpenAgent}
+        />
+        {agent &&
+          (threadRoot != null ? (
+            <ThreadHeader
+              store={store}
+              agent={agent}
+              title={store.threadTitle(threadRoot, agentId)}
+            />
+          ) : (
+            <ChatHeader store={store} agent={agent} />
+          ))}
+        {/* Low disk, 8 under the head and in the page's flow: the messages start under it (step 5c). */}
+        <DiskBanner
+          store={store}
+          top={(threadRoot != null ? 44 : 116) + 8}
+          onHeight={setBannerHeight}
+        />
+        <Composer
+          store={store}
+          agentId={agentId}
+          name={agent?.name ?? ''}
+          threadRoot={threadRoot}
+          reply={reply}
+          onCancelReply={() => setAnswering(undefined)}
+          focusKey={focusKey}
+          onHeight={setComposerHeight}
+          staging={staging}
+        />
+      </div>
       {/* Find's bar, 8 under the head and 16 from the right, over the messages. */}
       {here.open && (
         <FindBar
@@ -472,7 +504,13 @@ export function ChatPane({
           close={closeOverlay}
         />
       )}
-      {drop.dropping && <DropOverlay />}
+      {drop.dropping && !covered && <DropOverlay />}
+      {/* A call's lines (under the agent's own head) or two agents' exchange, over the chat and its field (step 5d). */}
+      <ChatCoverView
+        store={store}
+        agentId={agentId}
+        head={agent && <ChatHeader store={store} agent={agent} />}
+      />
     </section>
   )
 }
@@ -483,12 +521,32 @@ export function ChatPane({
  * over its name in a pill (13, medium).
  */
 function ChatHeader({ store, agent }: { store: AppStore; agent: Agent }) {
+  const model = useWindowModel()
+  // Both open the agent's pane on Profile, and close it when it shows (`toggleSettings`).
   return (
     <header className="chat-header">
       <div className="veil" aria-hidden="true" />
-      <div className="identity" title={agent.name}>
-        <AgentMark agent={agent} agents={store.agents} size={52} />
-        <span className="name-pill">{agent.name}</span>
+      <div className="identity">
+        <button
+          type="button"
+          className="identity-button"
+          aria-label={t('View agent settings')}
+          onClick={() => model.toggleSettings()}
+        >
+          <AgentMark agent={agent} agents={store.agents} size={52} />
+        </button>
+        {/* The phone beside the name while calls are on (step 5d). */}
+        <CallHeadRow store={store} agent={agent}>
+          <button
+            type="button"
+            className="identity-button name-pill"
+            title={agent.name}
+            aria-label={t('View agent settings')}
+            onClick={() => model.toggleSettings()}
+          >
+            {agent.name}
+          </button>
+        </CallHeadRow>
       </div>
     </header>
   )
@@ -508,6 +566,7 @@ function ThreadHeader({
   agent: Agent
   title: string
 }) {
+  const model = useWindowModel()
   return (
     <header className="thread-header" aria-label={t('Thread breadcrumb')}>
       <button
@@ -521,7 +580,14 @@ function ThreadHeader({
         <span>{agent.name}</span>
       </button>
       <Chevron />
-      <span className="crumb title">{title}</span>
+      <button
+        type="button"
+        className="crumb title"
+        aria-label={t('View conversation details')}
+        onClick={() => model.toggleDetails()}
+      >
+        {title}
+      </button>
     </header>
   )
 }
@@ -567,19 +633,24 @@ function Transcript({
   agentId,
   threadRoot,
   composerHeight,
+  bannerHeight,
   actions,
   find,
   revealRef,
+  jumpRef,
   openAgent,
 }: {
   store: AppStore
   agentId: string
   threadRoot?: string
   composerHeight: number
+  /** Low disk's height and the 8 under it, or 0 (step 5c). */
+  bannerHeight: number
   actions: MessageActions
   /** What find lights: its words in small letters, and the match it stands on. */
   find?: { needle: string; current?: FindMatch }
   revealRef: React.RefObject<((rowId: string) => void) | undefined>
+  jumpRef: React.RefObject<((rowId: string) => void) | undefined>
   openAgent: (agentId: string) => void
 }) {
   const rows =
@@ -662,7 +733,8 @@ function Transcript({
     const element = scroller.current
     if (!element) return
     const gap = element.scrollHeight - element.scrollTop - element.clientHeight
-    pinned.current = gap <= pinGap
+    // A jump's scroll under way leaves the newest line, though its first steps are still near it.
+    if (!jumping.current) pinned.current = gap <= pinGap
     if (pinned.current !== atNewest) setAtNewest(pinned.current)
     const newest = rows[rows.length - 1]?.id
     if (pinned.current && seenUpTo !== newest) setSeenUpTo(newest)
@@ -675,18 +747,68 @@ function Transcript({
       void store.loadOlder(agentId)
   }
 
-  const jump = useCallback((rowId: string) => {
-    const element = scroller.current?.querySelector(
-      `[data-row-id="${CSS.escape(rowId)}"]`,
-    )
-    if (!element) return
+  /**
+   * A row brought to the middle: the chat holds its newest line no more,
+   * even while the scroll's first steps are still near it (a far one, a
+   * found line or a quote, was taken back to the newest). Once the scroll
+   * ends (or nothing moved, or after 3 s) the chat reads where it stands
+   * again, holding the newest line when it landed there (ChatPane.swift's
+   * `follow`). A later jump ends an earlier one's watch.
+   */
+  const jumping = useRef(false)
+  const jumpWatch = useRef<() => void>(undefined)
+  const settle = useRef<() => void>(undefined)
+  const scrollToRow = useCallback((element: Element) => {
+    jumpWatch.current?.()
+    const box = scroller.current
     pinned.current = false
     setAtNewest(false)
+    jumping.current = true
+    const startTop = box?.scrollTop
+    let watching = true
+    const stopWatching = () => {
+      if (!watching) return
+      watching = false
+      clearTimeout(timer)
+      clearTimeout(still)
+      box?.removeEventListener('scrollend', ended)
+      jumpWatch.current = undefined
+    }
+    const ended = () => {
+      stopWatching()
+      jumping.current = false
+      settle.current?.()
+    }
+    const timer = setTimeout(ended, 3_000)
+    // Already in place: no scroll starts, so no scroll ends.
+    const still = setTimeout(() => {
+      if (box && box.scrollTop === startTop) ended()
+    }, 150)
+    box?.addEventListener('scrollend', ended)
+    jumpWatch.current = stopWatching
     element.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    // Lit in the warning yellow at 22%, then it fades (`sand-12cjh1l`).
-    setLit(rowId)
-    setTimeout(() => setLit((now) => (now === rowId ? undefined : now)), 2_500)
   }, [])
+  useEffect(() => () => jumpWatch.current?.(), [])
+  useLayoutEffect(() => {
+    settle.current = onScroll
+  })
+
+  const jump = useCallback(
+    (rowId: string) => {
+      const element = scroller.current?.querySelector(
+        `[data-row-id="${CSS.escape(rowId)}"]`,
+      )
+      if (!element) return
+      scrollToRow(element)
+      // Lit in the warning yellow at 22%, then it fades (`sand-12cjh1l`).
+      setLit(rowId)
+      setTimeout(
+        () => setLit((now) => (now === rowId ? undefined : now)),
+        2_500,
+      )
+    },
+    [scrollToRow],
+  )
 
   // Find's step: the row to the middle, unlit, letting go of the newest.
   useEffect(() => {
@@ -695,14 +817,18 @@ function Transcript({
         `[data-row-id="${CSS.escape(rowId)}"]`,
       )
       if (!element) return
-      pinned.current = false
-      setAtNewest(false)
-      element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      scrollToRow(element)
     }
     return () => {
       revealRef.current = undefined
     }
-  }, [revealRef])
+  }, [revealRef, scrollToRow])
+  useEffect(() => {
+    jumpRef.current = jump
+    return () => {
+      jumpRef.current = undefined
+    }
+  }, [jump, jumpRef])
 
   // The agent at work: the words beside its picture under the messages.
   const activity = useMemo(
@@ -778,7 +904,8 @@ function Transcript({
           className="transcript-rows"
           ref={content}
           style={{
-            paddingTop: threadRoot != null ? 44 : 116,
+            // Under the head, and under low disk while it shows (step 5c).
+            paddingTop: (threadRoot != null ? 44 : 116) + bannerHeight,
             // Over the message field: its frame and 28 (the working line's 40 is in its slot).
             paddingBottom: composerHeight + 28,
           }}
@@ -938,72 +1065,37 @@ function RowContent({
           startsGroup={run.startsGroup}
         />
       )
-    case 'teammates': {
-      const peers = exchangePeers(row.exchange)
-      const title =
-        peers.length === 1 ? peers[0]!.name : t`${peers.length} agents`
+    case 'teammates':
+      // Step 5d's: the chip opens their messages over the chat, or a menu of them.
       return (
         <div className="system-event">
           <span className="label">{exchangeLabel(row.exchange)}</span>
-          <span className="event-chip">
-            <span className="marks">
-              {peers.slice(0, 3).map((peer) => {
-                const known = control.store.agent(peer.id)
-                return known ? (
-                  <AgentMark
-                    key={peer.id}
-                    agent={known}
-                    agents={control.store.agents}
-                    size={16}
-                  />
-                ) : (
-                  <span
-                    key={peer.id}
-                    className="picture"
-                    style={{ width: 16, height: 16 }}
-                  />
-                )
-              })}
-            </span>
-            <span className="chip-title">{title}</span>
-          </span>
+          <ExchangeChip
+            store={control.store}
+            agentId={control.agentId}
+            exchange={row.exchange}
+          />
         </div>
       )
-    }
     case 'routines':
-      return row.routines.length >= 3 ? (
-        <div className="system-event">
-          <span className="label">{routineVerb(row.action)}</span>
-          <span className="event-chip">
-            <Clock />
-            <span className="chip-title">{t`${row.routines.length} routines`}</span>
-          </span>
-        </div>
-      ) : (
-        <div className="system-event">
-          <span className="label">
-            {routineLabel(row.action, row.routines.length)}
-          </span>
-          {row.routines.map((routine, index) => (
-            <span key={routine.id} className="routine">
-              {index > 0 && <span className="label">{t('and')}</span>}
-              <span className="event-chip">
-                <Clock />
-                <span className="chip-title">{routine.name}</span>
-              </span>
-            </span>
-          ))}
-        </div>
+      return (
+        <RoutinesLine
+          action={row.action}
+          routines={row.routines}
+          agentId={control.agentId}
+        />
       )
     case 'voiceCall':
+      // Step 5d's: an ended call with words opens them over the chat.
       return (
-        <div
-          className="call-line"
-          title={voiceChatLabel(row.seconds, row.live)}
-        >
-          <VoiceGlyph />
-          <span>{voiceChatLabel(row.seconds, row.live)}</span>
-        </div>
+        <CallLineRow
+          store={control.store}
+          agentId={control.agentId}
+          id={row.id}
+          seconds={row.seconds}
+          lines={row.lines}
+          live={row.live}
+        />
       )
     case 'notice':
       return (
@@ -1164,6 +1256,81 @@ function cardView(kind: CardKind, card: CardProps): React.ReactNode {
   }
 }
 
+/**
+ * A line of routines made or changed (mac/Simeon/ChatPane.swift's
+ * `RoutinesLine`): one or two chips, joined by "and", three or more as a
+ * count. A routine's chip opens the agent's pane on Routines with its
+ * editor (`KPn`); the count opens a menu of them where the pointer is
+ * (`YPn`).
+ */
+function RoutinesLine({
+  action,
+  routines,
+  agentId,
+}: {
+  action: string
+  routines: RoutineRef[]
+  agentId: string
+}) {
+  const model = useWindowModel()
+  const [list, setList] = useState<{ x: number; y: number }>()
+  const open = (id: string) => model.openRoutineFor(id, agentId)
+  if (routines.length >= 3)
+    return (
+      <div className="system-event">
+        <span className="label">{routineVerb(action)}</span>
+        <button
+          type="button"
+          className="event-chip routine-chip"
+          title={t`${routines.length} routines, show list`}
+          aria-label={t`${routines.length} routines, show list`}
+          aria-haspopup="menu"
+          onClick={(event) => {
+            // From the keys (Return, Space) there is no pointer: the list opens under the chip.
+            if (event.detail === 0) {
+              const chip = event.currentTarget.getBoundingClientRect()
+              setList({ x: chip.left, y: chip.bottom + 4 })
+            } else setList({ x: event.clientX, y: event.clientY })
+          }}
+        >
+          <Clock />
+          <span className="chip-title">{t`${routines.length} routines`}</span>
+        </button>
+        {list && (
+          <ContextMenu
+            at={list}
+            close={() => setList(undefined)}
+            items={routines.map((routine) => ({
+              label: routine.name,
+              glyph: 'clock',
+              action: () => open(routine.id),
+            }))}
+          />
+        )}
+      </div>
+    )
+  return (
+    <div className="system-event">
+      <span className="label">{routineLabel(action, routines.length)}</span>
+      {routines.map((routine, index) => (
+        <span key={routine.id} className="routine">
+          {index > 0 && <span className="label">{t('and')}</span>}
+          <button
+            type="button"
+            className="event-chip routine-chip"
+            title={t`Open routine ${routine.name}`}
+            aria-label={t`Open routine ${routine.name}`}
+            onClick={() => open(routine.id)}
+          >
+            <Clock />
+            <span className="chip-title">{routine.name}</span>
+          </button>
+        </span>
+      ))}
+    </div>
+  )
+}
+
 function Clock() {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
@@ -1180,21 +1347,6 @@ function Clock() {
         fill="none"
         stroke="currentColor"
         strokeWidth="1.2"
-        strokeLinecap="round"
-      />
-    </svg>
-  )
-}
-
-/** The call's glyph: five strokes of a voice, the middle ones tallest. */
-function VoiceGlyph() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
-      <path
-        d="M5 10v4M9 7v10M13 9v6M17 6v12M21 10v4"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
         strokeLinecap="round"
       />
     </svg>
@@ -1522,6 +1674,9 @@ function AgentWords({ bubble }: { bubble: Bubble }) {
     }),
     [names, personName, speaker, bubble.introduces, store, openAgent],
   )
+  // A call written by a host from before 2 October 2026: its record, opening on its recap (step 5d, `CallRecordView`).
+  const record = parseCallRecord(bubble.text)
+  if (record) return <CallRecordView {...record} />
   return (
     <MentionContext.Provider value={setting}>
       <MessageBlocks markdown={bubble.text} />

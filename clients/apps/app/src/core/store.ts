@@ -21,10 +21,27 @@ import {
   type SandAccess,
   accessFrom,
   checkingAccess,
+  pausesSending,
+  paymentMethodFlow,
   planFacts,
   unknownAccess,
 } from './access'
+import type { AgentDraft } from './agentDraft'
+import { type ExchangeLine, exchangeLines } from './agentNetwork'
+import {
+  type VoiceChoice,
+  keptVoice,
+  voiceChoicesFrom,
+  voicePlan,
+} from './agentVoices'
 import { SimeonAPIError } from './api'
+import {
+  type AppAccount,
+  type AppAccounts,
+  accountPath,
+  appAccountsFrom,
+  toolkitOf,
+} from './appAccounts'
 import {
   type AgentBackend,
   type AttachmentRef,
@@ -33,12 +50,15 @@ import {
   type SendOptions,
   newMessageId,
 } from './backend'
+import { type CallEngine, type CallState, voiceCallsEnabled } from './call'
+import { type CallTonePlaying, WebCallTones } from './callTones'
 import {
   addingAllowRule,
   autoReviewFrom,
   autoReviewJSON,
   proposedRule,
 } from './cards'
+import { type ChannelsView, channelDeadline, channelsFrom } from './channels'
 import {
   type ChatRow,
   chatRows,
@@ -52,6 +72,28 @@ import {
 } from './chat'
 import { type RunFlags, runFlags } from './chatRuns'
 import {
+  type AgentPointer,
+  type BoxStatus,
+  ComputerBook,
+  type ComputerHelper,
+  type TypingField,
+  agentPointerFrom,
+  boxStatusFrom,
+  computerScreen,
+  helperScreens,
+  screenURL,
+  typingFieldFrom,
+  withDeadline,
+} from './cloudComputer'
+import {
+  type RebuildKind,
+  type RebuildSteps,
+  RebuildWords,
+  type UpdateAvailability,
+  projectSteps,
+  updateAvailability,
+} from './computerRebuild'
+import {
   type CatalogApp,
   type CloudAgentRead,
   type ListenerPlatform,
@@ -64,23 +106,60 @@ import {
   isComingSoon,
   isConnected,
   listenerConnectedIn,
+  webPage,
 } from './connectCards'
-import { type ConnectedApp, connectedApp } from './connectedApps'
+import { type ConnectedApp, connectedApp, makeApp } from './connectedApps'
+import {
+  type ConnectStart,
+  alreadySignedIn,
+  authorizationURL,
+  didntConnect,
+} from './connecting'
+import { callTransport } from './elevenLabsVoice'
 import { Entry, appliedChange } from './entry'
+import {
+  type AgentFace,
+  faceForReset,
+  faceURL,
+  ownFace,
+  shuffledFace,
+  voiceForFace,
+} from './faces'
+import { type DeviceFacts, type FeedbackReport, feedbackBody } from './feedback'
 import { fileLine, fileSize } from './fileLine'
 import { byteCap, computerPath } from './filePreview'
 import {
   type FlightBookingAnswer,
-  type FlightOffer,
-  type OpenFlight,
   type Traveller,
   bookingAnswer,
   travellerJSON,
 } from './flightCards'
 import { GatewayError } from './gatewayConnection'
-import { type JSONValue, arr, bool, field, int, num, str, text } from './json'
+import {
+  type AutoReviewInstructions,
+  detectedTimeZone,
+  isHiddenZone,
+  normalizedRules,
+} from './generalSettings'
+import {
+  type JSONObject,
+  type JSONValue,
+  arr,
+  bool,
+  field,
+  int,
+  num,
+  str,
+  text,
+} from './json'
 import { t } from './l10n'
 import { currentLanguage } from './language'
+import {
+  MigrationRelay,
+  type RebuildServer,
+  type RecreateAnswer,
+  rebuildServerOf,
+} from './migrationWatch'
 import { type Agent, agentFrom, sameAgent, sortRoster } from './models'
 import {
   type FirstRun,
@@ -94,6 +173,42 @@ import {
 } from './onboarding'
 import { plainError } from './plainWords'
 import {
+  PluginCalls,
+  type Removal,
+  privateCopies,
+  setupAgentIn,
+} from './pluginCalls'
+import {
+  type AgentSkill,
+  type EffectivePlugin,
+  type PluginEntry,
+  type PluginServer,
+  type PluginTool,
+  pluginEntriesFrom,
+  serverAccounts,
+} from './plugins'
+import { type SignInFlow, signInKey, signInTimeout } from './pluginsOverlay'
+import {
+  RebuildDriver,
+  type RebuildInputs,
+  noRebuildInputs,
+} from './rebuildDriver'
+import { RoutineTestRuns } from './routineEditing'
+import {
+  type Routine,
+  createdRoutine,
+  routinesFrom,
+  sameRoutines,
+} from './routines'
+import {
+  type FileHit,
+  type MessageHit,
+  type RoutineHit,
+  fileHitFrom,
+  messageHitFrom,
+  routineHitFrom,
+} from './search'
+import {
   type SidebarSection,
   createSection,
   newSectionId,
@@ -101,7 +216,32 @@ import {
   parseSections,
   sectionsJSON,
 } from './sidebarSections'
+import {
+  type PackAsk,
+  type StarterPack,
+  packAddFailure,
+  packAgentArguments,
+  packFrom,
+  packReadFailure,
+  packSectionId,
+} from './starterPacks'
 import { bytesFromBase64URL } from './tokens'
+import { TrayList } from './trays'
+import {
+  creditsFlow,
+  isOutOfCredits,
+  startNowFlow,
+  upgradeFlow,
+} from './upgrade'
+import {
+  type UsageLoad,
+  emptyUsage,
+  shownSummary,
+  showsSection,
+  usageFreshMs,
+  usageSummary,
+} from './usage'
+import { LiveCall, type VoiceTransport } from './voiceCall'
 
 /** A call whose failure changes nothing: tried, and let be. */
 async function quietly(call: Promise<unknown>): Promise<void> {
@@ -520,6 +660,18 @@ export class AppStore {
     this.resetConnectCards()
     this.resetFlightCards()
     this.resetShopCards()
+    this.resetAvatarAndNewAgent()
+    this.resetRoutines()
+    this.resetSearchAndChannels()
+    this.resetOrgChartAndPacks()
+    this.resetComputer()
+    this.resetRebuild()
+    this.resetCalls()
+    this.resetConnecting()
+    this.resetConnectors()
+    this.resetConnectorPages()
+    this.resetGeneralSettings()
+    this.resetUsageAndBilling()
     this.firstRunAgentId = undefined
     this.firstRunNamed = false
     // A hand-off waiting on the name step ends (it finds the account gone and makes nothing).
@@ -647,6 +799,8 @@ export class AppStore {
   apply(event: BackendEvent): void {
     switch (event.kind) {
       case 'agents': {
+        // Held while the computer is rebuilt, read again once it ends (Store.swift's `rosterHeld`, 5c).
+        if (this.holdsRoster()) return
         this.showingSaved = false
         this.listFromServer = false
         const sorted = this.readingOpenChat(sortRoster(event.agents))
@@ -656,6 +810,7 @@ export class AppStore {
         return
       }
       case 'agentUpserted': {
+        if (this.holdsRoster()) return
         // The host sends the same agent again often (each step of a turn); only a change redraws the list.
         if (this.agents.some((agent) => sameAgent(agent, event.agent))) return
         const next = this.agents.filter((agent) => agent.id !== event.agent.id)
@@ -719,6 +874,8 @@ export class AppStore {
         if (this.isDown === event.live) this.setDown(!event.live)
         if (was !== event.live) this.changed()
         if (recovered && this.backend) {
+          // The computers watched read again, and started again where started here (5b).
+          this.computerReconnected()
           void (async () => {
             await this.reloadRoster()
             if (this.openChat) await this.refresh(this.openChat)
@@ -737,13 +894,31 @@ export class AppStore {
         else if (sections) void this.loadSections()
         return
       }
+      case 'automations':
+        this.applyAutomations(event.agentId, event.automations)
+        return
       case 'computerAsleep':
         if (this.isAsleep === event.asleep) return
         this.isAsleep = event.asleep
         this.changed()
         return
+      case 'computer':
+      case 'diskPressure':
+      case 'computerAction':
+      case 'subagents':
+        this.applyComputer(event)
+        return
+      case 'tray':
+        // The computer's notices (6f): the credits' line reads an open agent's.
+        this.takeTray(event.tray)
+        return
+      case 'appsChanged':
+        // An app connected or removed on the computer: the apps read again (Store.swift's `.appsChanged`), so a sign-in finished after its wait says Connected.
+        void this.loadApps()
+        return
       default:
-        // The rest comes with its screens.
+        // The rebuild's and the move's (5c); the rest comes with its screens.
+        this.applyRebuild(event)
         return
     }
   }
@@ -966,6 +1141,7 @@ export class AppStore {
       delete this.chatRows[id]
       delete this.runFlags[id]
     }
+    this.forgetRoutines(agentIds)
     this.changed()
     return true
   }
@@ -990,19 +1166,7 @@ export class AppStore {
   async renameAgent(agentId: string, name: string): Promise<void> {
     const agent = this.agent(agentId)
     if (!agent) return
-    this.agents = this.agents.map((one) =>
-      one.id === agentId ? { ...one, name } : one,
-    )
-    this.changed()
-    // As the Mac's profile field: quietly, the roster read again on a refusal.
-    try {
-      await this.backend?.command('updateAgent', {
-        id: agentId,
-        profile: { name, description: agent.description },
-      })
-    } catch {
-      await this.reloadRoster()
-    }
+    await this.saveProfileField(agentId, name, agent.description)
   }
 
   // MARK: The first run (Onboarding.swift) and the account's access (StoreSettings.swift)
@@ -1221,19 +1385,33 @@ export class AppStore {
     }
   }
 
-  /** Stripe's page for the account (`POST billing/portal`, with its flow): its address, or the words to show. */
+  /**
+   * Stripe's page for the account (`POST billing/portal`, StoreSettings.swift's
+   * `billingPortal`): the confirmation of the next plan up (`update_confirm`
+   * with its `tier`), the card form for a payment that failed
+   * (`payment_method`), Start Plan Now for a card trial (`start_now`),
+   * extra credits (`credits`), or its front page. No `back`: the web opens it
+   * in a tab, and the page ends on the web's billing page (decision of 1
+   * November 2026). Its address, or the words to show.
+   */
   async billingPortal(
     flow?: string,
+    tier?: string,
   ): Promise<{ url?: string; message?: string }> {
     const fallback = t('Couldn’t open billing. Try again.')
     const backend = this.backend
     if (!backend) return { message: t('Sign in to Simeon to continue') }
+    const fields: JSONObject = {}
+    if (flow === upgradeFlow && tier) {
+      fields.flow = upgradeFlow
+      fields.tier = tier
+    } else if (
+      flow &&
+      [paymentMethodFlow, startNowFlow, creditsFlow].includes(flow)
+    )
+      fields.flow = flow
     try {
-      const answer = await backend.server(
-        'billing/portal',
-        'POST',
-        flow ? { flow } : {},
-      )
+      const answer = await backend.server('billing/portal', 'POST', fields)
       const url = str(field(answer, 'portalUrl'))
       return url?.startsWith('https://') ? { url } : { message: fallback }
     } catch (error) {
@@ -1484,18 +1662,23 @@ export class AppStore {
 
   /** The apps the catalogue offers (`getCatalog`, in the app's language): an app card's title and line, and the id the computer files it under. */
   catalog: CatalogApp[] = []
+  /** The same answer's entries as Connectors lists them (Store.swift's `catalogEntries`, `PluginEntry`; step 6c). */
+  catalogEntries: PluginEntry[] = []
   /** The apps that can't be connected yet (`AppsComingSoon`): the server's list once read. */
   appsComingSoon: Set<string> = new Set(appsComingSoonBuiltIn)
   /** The catalogue was read from the computer in this sign-in. */
   private catalogFresh = false
   private appCardsLoad?: Promise<void>
+  private catalogRead?: Promise<PluginEntry[] | undefined>
 
   /** 3c's card state back to nothing (signed out). */
   private resetConnectCards(): void {
     this.catalog = []
+    this.catalogEntries = []
     this.appsComingSoon = new Set(appsComingSoonBuiltIn)
     this.catalogFresh = false
     this.appCardsLoad = undefined
+    this.catalogRead = undefined
   }
 
   /**
@@ -1531,10 +1714,27 @@ export class AppStore {
     return load
   }
 
-  /** The catalogue from the computer (`desktopMcp` `getCatalog`); what was shown stays when it doesn't answer. */
-  private async readCatalog(): Promise<void> {
+  /**
+   * The catalogue from the computer (`desktopMcp` `getCatalog`, Store.swift's
+   * `readCatalog`): the cards' apps and Connectors' entries, from one answer
+   * (`takeCatalog`); what was shown stays when it doesn't answer. One read
+   * at a time: a card's and Connectors' often ask together. The entries, or
+   * none when it didn't answer.
+   */
+  readCatalog(): Promise<PluginEntry[] | undefined> {
+    if (this.catalogRead) return this.catalogRead
+    const read: Promise<PluginEntry[] | undefined> =
+      this.fetchCatalog().finally(() => {
+        // Only this read's: a sign-out and sign-in meanwhile may have started another.
+        if (this.catalogRead === read) this.catalogRead = undefined
+      })
+    this.catalogRead = read
+    return read
+  }
+
+  private async fetchCatalog(): Promise<PluginEntry[] | undefined> {
     const backend = this.backend
-    if (!backend) return
+    if (!backend) return undefined
     let answer: JSONValue
     try {
       answer = await backend.command('desktopMcp', {
@@ -1542,15 +1742,23 @@ export class AppStore {
         args: [{ language: currentLanguage() }],
       })
     } catch {
-      return
+      return undefined
     }
-    if (this.backend !== backend) return
+    if (this.backend !== backend) return undefined
     this.catalogFresh = true
     const next = catalogFrom(answer)
+    const entries = pluginEntriesFrom(answer)
+    let moved = false
     if (JSON.stringify(next) !== JSON.stringify(this.catalog)) {
       this.catalog = next
-      this.changed()
+      moved = true
     }
+    if (JSON.stringify(entries) !== JSON.stringify(this.catalogEntries)) {
+      this.catalogEntries = entries
+      moved = true
+    }
+    if (moved) this.changed()
+    return this.catalogEntries
   }
 
   /** Which apps can't be connected yet, from Simeon Labs' server (`GET apps`); an older server's answer, or none, keeps the list. */
@@ -1649,18 +1857,8 @@ export class AppStore {
   // form (Store.swift's `startFlightBooking`, `submitFlightPassengers`…).
   // The flights' state and commands go below this line, and nowhere else.
 
-  /**
-   * The flight whose details the pane shows (`PaneState.flight`): its key
-   * (the card's row and the offer's place), the offer as it was opened, and
-   * the agent whose chat holds the card. The window draws it beside that
-   * chat (FlightCards.tsx) until the agent's pane comes (step 4).
-   */
-  openFlight?: OpenFlight
-
-  /** The flight cards' state back to nothing (signed out). */
-  private resetFlightCards(): void {
-    this.openFlight = undefined
-  }
+  /** The flight cards' state back to nothing (signed out): none is kept here; a flight's details are the window's (windowModel.ts). */
+  private resetFlightCards(): void {}
 
   /**
    * Nothing to settle: Book with Simeon and the form's Continue wait for the
@@ -1670,20 +1868,6 @@ export class AppStore {
   private settleFlightCards(agentId: string, entries: readonly Entry[]): void {
     void agentId
     void entries
-  }
-
-  /** A flight row (`__simeonOpenFlight`): the open one again closes its details; another shows in their place. */
-  toggleFlight(key: string, offer: FlightOffer, agentId: string): void {
-    this.openFlight =
-      this.openFlight?.key === key ? undefined : { key, offer, agentId }
-    this.changed()
-  }
-
-  /** The details' ×, Escape, Book with Simeon done, or another chat opened. */
-  closeFlight(): void {
-    if (this.openFlight === undefined) return
-    this.openFlight = undefined
-    this.changed()
   }
 
   /** "Book with Simeon" on a flight (`startFlightBooking`): the traveller form in the chat, or why not. */
@@ -2631,6 +2815,2960 @@ export class AppStore {
     return backend.transcribe(audio, mimeType)
   }
 
+  // MARK: Step 4's agent's pane: Profile (StoreAgents.swift's
+  // `saveProfileField`, Store.swift's `setNotify`), and the gates "/" and
+  // ⌘K share (Jump.swift's `agentNetworkEnabled`, `channelsAvailable`).
+
+  /**
+   * One field of the profile (`updateAgent`), as the pane sends it: the
+   * name and description always, the title only when it is the field
+   * changed. Shown at once; a refusal puts the roster back, quietly.
+   */
+  async saveProfileField(
+    agentId: string,
+    name: string,
+    description: string,
+    title?: string,
+  ): Promise<void> {
+    if (!this.agent(agentId)) return
+    const profile: Record<string, JSONValue> = { name, description }
+    if (title !== undefined) profile.title = title
+    this.agents = this.agents.map((one) =>
+      one.id === agentId
+        ? {
+            ...one,
+            name,
+            description,
+            ...(title !== undefined ? { title } : {}),
+          }
+        : one,
+    )
+    this.changed()
+    try {
+      await this.backend?.command('updateAgent', { id: agentId, profile })
+    } catch {
+      await this.reloadRoster()
+    }
+  }
+
+  /** Notifications on the agent's page (`setAgentNotifyOnUpdates`): shown at once; a refusal is said. */
+  async setNotify(agentId: string, on: boolean): Promise<void> {
+    this.agents = this.agents.map((one) =>
+      one.id === agentId ? { ...one, notifyOnUpdates: on } : one,
+    )
+    this.changed()
+    await this.command(
+      'setAgentNotifyOnUpdates',
+      { id: agentId, isEnabled: on },
+      t("Couldn't change notifications"),
+    )
+  }
+
+  /** One read for a gate: with `wakes` false, a computer that rests is waited for, not woken, until `signal` ends the wait. */
+  private async gateRead(
+    method: string,
+    args: JSONValue,
+    wakes: boolean,
+    signal?: AbortSignal,
+  ): Promise<JSONValue | undefined> {
+    const backend = this.backend
+    if (!backend) return undefined
+    try {
+      if (!wakes && backend.commandWhenAwake)
+        return await backend.commandWhenAwake(method, args, signal)
+      return await backend.command(method, args, { wakes })
+    } catch {
+      return undefined
+    }
+  }
+
+  /** Whether the agent network is on for this account (`isAgentNetworkEnabled`): the Org Chart's gate. */
+  async agentNetworkEnabled(
+    wakes = true,
+    signal?: AbortSignal,
+  ): Promise<boolean> {
+    const answer = await this.gateRead(
+      'isAgentNetworkEnabled',
+      {},
+      wakes,
+      signal,
+    )
+    return bool(answer) ?? bool(field(answer, 'enabled')) ?? false
+  }
+
+  /** Whether a chat can have channels (`getAgentChannels`): any platform available, or any connected. */
+  async channelsAvailable(
+    agentId: string,
+    wakes = true,
+    signal?: AbortSignal,
+  ): Promise<boolean> {
+    const answer = await this.gateRead(
+      'getAgentChannels',
+      { id: agentId },
+      wakes,
+      signal,
+    )
+    const manifests = arr(field(answer, 'manifests')) ?? []
+    const connections = arr(field(answer, 'connections')) ?? []
+    return (
+      manifests.some(
+        (manifest) => str(field(manifest, 'availability')) === 'available',
+      ) || connections.length > 0
+    )
+  }
+
+  // MARK: Step 4b's avatar and New Agent: the avatar editor (AvatarEditor.swift,
+  // AvatarCrop.swift, AgentVoices.swift, StoreFaces.swift) and New Agent's
+  // sheet (NewAgentSheet.swift, AgentDraft.swift, StoreAgents.swift's
+  // `createAgent`). 4b's state and commands go below this line, and nowhere
+  // else.
+  //
+  // The pass that gives every agent without a picture its face
+  // (StoreFaces.swift's `queueFaces`, `assignMissingFaces`) is not here: the
+  // web shows the face each would be given (`pictureOf`) and leaves the
+  // giving to the Mac and the iPhone for now (docs/web-app/PROGRESS.md).
+
+  /** The voices listed, kept ten minutes as the Mac keeps them (`voiceList`). */
+  private voiceList?: { at: number; list: VoiceChoice[] }
+  /** A pass giving the agents their voices, one at a time (`assigning`). */
+  private assigningVoices?: Promise<Record<string, string>>
+
+  /**
+   * A face's picture as shipped (WebP, 512 px), read from the app's own
+   * copy: what is sent to the computer (`AgentFaces.data`). The tests give
+   * their own reader.
+   */
+  readFace = async (face: AgentFace): Promise<Uint8Array | undefined> => {
+    const url = faceURL(face)
+    if (!url) return undefined
+    try {
+      const answer = await fetch(url)
+      return answer.ok ? new Uint8Array(await answer.arrayBuffer()) : undefined
+    } catch {
+      return undefined
+    }
+  }
+
+  /** 4b's state back to nothing (signed out). */
+  private resetAvatarAndNewAgent(): void {
+    this.voiceList = undefined
+    this.assigningVoices = undefined
+  }
+
+  /** One agent's row changed here at once (`updateAgentLocally`). */
+  private changeAgent(agentId: string, change: (agent: Agent) => Agent): void {
+    let changed = false
+    this.agents = this.agents.map((agent) => {
+      if (agent.id !== agentId) return agent
+      changed = true
+      return change(agent)
+    })
+    if (changed) this.changed()
+  }
+
+  /**
+   * The voices to pick from (`GET proxy/v1/voice/voices`: the founder's,
+   * never ElevenLabs' others); none when calls are not switched on or the
+   * server can't be reached. Kept ten minutes, as the Mac keeps them.
+   */
+  async voices(): Promise<VoiceChoice[]> {
+    const kept = this.voiceList
+    if (kept && Date.now() - kept.at < 600_000) return kept.list
+    const backend = this.backend
+    if (!backend) return []
+    let list: VoiceChoice[]
+    try {
+      list = voiceChoicesFrom(await backend.server('proxy/v1/voice/voices'))
+    } catch {
+      return []
+    }
+    if (backend !== this.backend) return []
+    if (list.length > 0) this.voiceList = { at: Date.now(), list }
+    return list
+  }
+
+  /**
+   * The agent's voice for its picker (`ensureVoice`): its own while it is on
+   * the list, else one given now by its name, with every other agent missing
+   * one. Undefined is the agent's own voice, Michael.
+   */
+  async ensureVoice(agentId: string): Promise<string | undefined> {
+    if (!this.agent(agentId)) await this.reloadRoster()
+    const list = await this.voices()
+    const kept = keptVoice(this.agent(agentId)?.voiceId, list)
+    if (kept !== undefined) return kept
+    if (list.length === 0 || !this.agent(agentId)) return undefined
+    // A pass already under way may have started before this agent was hired: then one more.
+    let all = await this.assignMissingVoices()
+    if (all[agentId] === undefined) all = await this.assignMissingVoices()
+    return all[agentId]
+  }
+
+  /**
+   * Gives each agent without a voice on the list its own, as the Mac does
+   * (`assignMissingVoices`), and saves it on the agent (`updateAgent` with
+   * `voiceId`). One pass at a time; every agent's voice after it.
+   */
+  async assignMissingVoices(): Promise<Record<string, string>> {
+    if (this.assigningVoices) return this.assigningVoices
+    const pass = this.giveMissingVoices()
+    this.assigningVoices = pass
+    try {
+      return await pass
+    } finally {
+      if (this.assigningVoices === pass) this.assigningVoices = undefined
+    }
+  }
+
+  private async giveMissingVoices(): Promise<Record<string, string>> {
+    const list = await this.voices()
+    const plan = voicePlan(this.agents, list)
+    for (const { agentId, voiceId } of plan.given) {
+      const backend = this.backend
+      const agent = this.agent(agentId)
+      if (!backend || !agent) continue
+      this.changeAgent(agentId, (row) => ({ ...row, voiceId }))
+      // Given for now when it can't be saved; the next pass tries again.
+      await quietly(
+        backend.command('updateAgent', {
+          id: agentId,
+          profile: {
+            name: agent.name,
+            description: agent.description,
+            title: agent.title,
+            voiceId,
+          },
+        }),
+      )
+    }
+    return plan.voices
+  }
+
+  /** The agent's voice (`updateAgent` with `voiceId`, as the Mac's picker saves it): shown at once; refused, the old one comes back and the refusal is thrown. */
+  async setAgentVoice(agentId: string, voiceId: string): Promise<void> {
+    const agent = this.agent(agentId)
+    const backend = this.backend
+    if (!agent || !backend) return
+    const was = agent.voiceId
+    this.changeAgent(agentId, (row) => ({ ...row, voiceId }))
+    const profile: Record<string, JSONValue> = {
+      name: agent.name,
+      description: agent.description,
+      voiceId,
+    }
+    if (!agent.isGroup) profile.title = agent.title
+    try {
+      await backend.command('updateAgent', { id: agentId, profile })
+    } catch (error) {
+      this.changeAgent(agentId, (row) => ({ ...row, voiceId: was }))
+      throw error
+    }
+  }
+
+  /** The face's picture to the computer, and the face kept on the agent when it was not kept already (with the voice, when one is given with it). */
+  private async sendFace(
+    backend: AgentBackend,
+    face: AgentFace,
+    agent: Agent,
+    voiceId?: string,
+  ): Promise<void> {
+    const bytes = await this.readFace(face)
+    if (!bytes)
+      throw new GatewayError(
+        t`The face ${face.id} is missing from the app.`,
+        true,
+      )
+    await backend.command('setAgentAvatarBytes', {
+      id: agent.id,
+      pngBase64: base64(bytes),
+    })
+    if (agent.avatarShape === face.id && voiceId === undefined) return
+    // `updateAgent` always carries the name and the description; the fields left out are kept.
+    const profile: Record<string, JSONValue> = {
+      name: agent.name,
+      description: agent.description,
+      avatarShape: face.id,
+    }
+    if (voiceId !== undefined) profile.voiceId = voiceId
+    await backend.command('updateAgent', { id: agent.id, profile })
+  }
+
+  /**
+   * A face from the editor (a pick, Shuffle or Reset, `wearFace`): the
+   * agent's picture, and the face kept on it. When the face is not of its
+   * voice's gender, the voice changes with it, so face and voice agree.
+   * Shown at once; a refusal puts the roster back and is thrown.
+   */
+  async wearFace(agentId: string, face: AgentFace): Promise<void> {
+    const backend = this.backend
+    const agent = this.agent(agentId)
+    if (!backend || !agent) return
+    const list = await this.voices()
+    const voiceId = voiceForFace(agent, face, this.agents, list)
+    this.changeAgent(agentId, (row) => ({
+      ...row,
+      avatarVersion: face.version,
+      avatarShape: face.id,
+      avatarDataURL: undefined,
+      ...(voiceId !== undefined ? { voiceId } : {}),
+    }))
+    try {
+      await this.sendFace(backend, face, agent, voiceId)
+    } catch (error) {
+      await this.reloadRoster()
+      throw error
+    }
+    await this.reloadRoster()
+  }
+
+  /** Shuffle: the next face of `gender` no other agent wears, put on at once; the face, or undefined when there is none. */
+  async shuffleFace(
+    agentId: string,
+    gender: string,
+  ): Promise<AgentFace | undefined> {
+    const agent = this.agent(agentId)
+    if (!agent) return undefined
+    const current = ownFace(agent)
+    const face = shuffledFace(
+      current?.gender === gender ? current : undefined,
+      gender,
+      agentId,
+      this.agents,
+    )
+    if (!face) return undefined
+    await this.wearFace(agentId, face)
+    return face
+  }
+
+  /** Reset: back to the face the agent was given (or the one it would be given now, for an agent from before faces). */
+  async resetFace(agentId: string): Promise<AgentFace | undefined> {
+    const agent = this.agent(agentId)
+    if (!agent) return undefined
+    const face = faceForReset(agent, this.agents, await this.voices())
+    if (!face) return undefined
+    await this.wearFace(agentId, face)
+    return face
+  }
+
+  /** A picture of the agent's own, uploaded or drawn (`setAgentAvatarBytes`; the face it was given stays kept for Reset); the computer's refusal is thrown. */
+  async setAvatarImage(agentId: string, png: Uint8Array | null): Promise<void> {
+    const backend = this.backend
+    if (!backend) return
+    await backend.command('setAgentAvatarBytes', {
+      id: agentId,
+      pngBase64: png ? base64(png) : null,
+    })
+    await this.reloadRoster()
+  }
+
+  /**
+   * A picture drawn from a description for the avatar editor
+   * (`POST proxy/v1/images/generations`, the cheapest quality: it is a
+   * thumbnail); its bytes, or the words of what went wrong, thrown. It costs
+   * the person's credits.
+   */
+  async generateAvatarImage(description: string): Promise<Uint8Array> {
+    const words = description.trim()
+    if (words === '')
+      throw new GatewayError(t('Describe the avatar to generate first.'), true)
+    const backend = this.backend
+    if (!backend)
+      throw new GatewayError(t('Image generation returned no picture.'), false)
+    const answer = await backend.server('proxy/v1/images/generations', 'POST', {
+      prompt: words,
+      size: 'auto',
+      quality: 'low',
+    })
+    const drawn = text(field(arr(field(answer, 'data'))?.[0], 'b64_json'))
+    const bytes = drawn ? bytesFromBase64URL(drawn) : undefined
+    if (!bytes || bytes.length === 0)
+      throw new GatewayError(t('Image generation returned no picture.'), false)
+    return bytes
+  }
+
+  /**
+   * New Agent (`createAgent(name:draft:)`): the agent made with the face it
+   * was shown, its title and, when the person chose any, its voice; a
+   * picture drawn or uploaded goes right after it. It is asked to introduce
+   * itself. Its id, or undefined with the core's words in `problem`.
+   */
+  async createAgentFromDraft(
+    name: string,
+    draft: AgentDraft,
+  ): Promise<string | undefined> {
+    const backend = this.backend
+    if (!backend) return undefined
+    let ready = draft.named(name)
+    if (draft.chosen)
+      ready = ready.settleVoice(this.agents, await this.voices())
+    try {
+      const id = await this.mintAgent(backend, {
+        name,
+        title: ready.title,
+        face: ready.shownFace(this.agents)?.id,
+        voiceId: draft.chosen ? ready.voiceId : undefined,
+      })
+      if (draft.chosen && ready.picture)
+        // Not saved: it wears its face then, as any agent with no picture.
+        await quietly(
+          backend.command('setAgentAvatarBytes', {
+            id,
+            pngBase64: base64(ready.picture),
+          }),
+        )
+      await this.reloadRoster()
+      return id
+    } catch (error) {
+      const why = error instanceof Error ? error.message : String(error)
+      this.problem = t`Couldn't create ${name}: ${why}`
+      this.changed()
+      return undefined
+    }
+  }
+
+  /**
+   * `createAgent` as the core's backend sends it (Backend.swift's
+   * `createAgent(name:title:description:face:voiceId:)`): introduced at once,
+   * the face kept on it (`avatarShape`), its title its role, the voice kept.
+   */
+  private async mintAgent(
+    backend: AgentBackend,
+    agent: { name: string; title: string; face?: string; voiceId?: string },
+  ): Promise<string> {
+    const args: Record<string, JSONValue> = {
+      name: agent.name,
+      description: '',
+      isKickstartRequested: true,
+      origin: 'user',
+      clientNonce: newMessageId(),
+    }
+    const role = agent.title.trim()
+    if (role !== '') args.title = role
+    if (agent.face !== undefined) args.avatarShape = agent.face
+    if (agent.voiceId !== undefined) args.voiceId = agent.voiceId
+    const answer = await backend.command('createAgent', args)
+    const id = text(field(field(answer, 'agent'), 'id'))
+    if (!id) throw new GatewayError('createAgent: no agent in the answer', true)
+    return id
+  }
+
+  // MARK: Step 4c's routines: an agent's routines in its pane and a routine's
+  // editor (RoutinesPage.swift, RoutineTriggerCard.swift, Routines.swift,
+  // RoutineEditing.swift, RoutineTriggers.swift). 4c's state and commands go
+  // below this line, and nowhere else.
+
+  /** Each agent's routines as the host lists them (`getAgentAutomations`, and its `agents-automation` pushes); absent until read. A list is replaced only when it changed, so a screen sees a new list only then. */
+  routinesByAgent: Record<string, Routine[]> = {}
+  /** Test run's waits, for every routine (the Mac's `pane.runBlocks`). */
+  readonly routineRuns = new RoutineTestRuns(() => this.changed())
+
+  /** 4c's state back to nothing (signed out). */
+  private resetRoutines(): void {
+    this.routinesByAgent = {}
+    this.routineRuns.reset()
+  }
+
+  /** An agent's list, kept when it changed; Test run's waits move on. */
+  private setRoutines(agentId: string, list: Routine[] | undefined): void {
+    const was = this.routinesByAgent[agentId]
+    if (sameRoutines(was, list)) return
+    const next = { ...this.routinesByAgent }
+    if (list) next[agentId] = list
+    else delete next[agentId]
+    this.routinesByAgent = next
+    this.changed()
+    this.routineRuns.listChanged(agentId, this)
+  }
+
+  /** The host's answer, when it is a list (`takeRoutines`). */
+  private takeRoutines(agentId: string, answer: JSONValue): void {
+    const list = routinesFrom(answer)
+    if (list) this.setRoutines(agentId, list)
+  }
+
+  /** An agent's routines changed on the computer (`agents-automation`, Store.swift's `.automations`): the whole list. */
+  private applyAutomations(agentId: string, rows: JSONValue[]): void {
+    this.setRoutines(agentId, routinesFrom(rows) ?? [])
+  }
+
+  /** Agents deleted (`forgetAgents`): their routines go with them. */
+  private forgetRoutines(agentIds: readonly string[]): void {
+    for (const id of agentIds) this.setRoutines(id, undefined)
+  }
+
+  /** One routine command; its answer, or undefined when it was refused or the sign-in ended meanwhile. */
+  private async routineCommand(
+    method: string,
+    args: JSONValue,
+  ): Promise<{ answer: JSONValue } | undefined> {
+    const backend = this.backend
+    if (!backend) return undefined
+    try {
+      const answer = await backend.command(method, args)
+      return this.backend === backend ? { answer } : undefined
+    } catch {
+      return undefined
+    }
+  }
+
+  /** The agent's routines, read again (`getAgentAutomations`); false when the computer did not answer. */
+  async loadRoutines(agentId: string): Promise<boolean> {
+    const done = await this.routineCommand('getAgentAutomations', {
+      id: agentId,
+    })
+    if (!done) return false
+    this.takeRoutines(agentId, done.answer)
+    return true
+  }
+
+  /** A new routine (`createAgentAutomation`): the record made, or undefined when none was (a refusal, or the agent's 50 already). */
+  async createRoutine(
+    agentId: string,
+    spec: JSONObject,
+  ): Promise<Routine | undefined> {
+    const before = new Set(
+      (this.routinesByAgent[agentId] ?? []).map((routine) => routine.id),
+    )
+    const done = await this.routineCommand('createAgentAutomation', {
+      id: agentId,
+      spec,
+    })
+    if (!done) return undefined
+    this.takeRoutines(agentId, done.answer)
+    return createdRoutine(
+      this.routinesByAgent[agentId] ?? [],
+      before,
+      str(field(spec, 'name')) ?? '',
+    )
+  }
+
+  /** A routine changed (`updateAgentAutomation`); false when it was not saved. */
+  async updateRoutine(
+    agentId: string,
+    routineId: string,
+    spec: JSONObject,
+  ): Promise<boolean> {
+    const done = await this.routineCommand('updateAgentAutomation', {
+      id: agentId,
+      automationId: routineId,
+      spec,
+    })
+    if (!done) return false
+    this.takeRoutines(agentId, done.answer)
+    return true
+  }
+
+  /** The Active switch (`setAgentAutomationEnabled`), shown at once; false when refused, and the switch goes back. */
+  async enableRoutine(
+    agentId: string,
+    routineId: string,
+    on: boolean,
+  ): Promise<boolean> {
+    const was = this.routinesByAgent[agentId]
+    if (was?.some((routine) => routine.id === routineId))
+      this.setRoutines(
+        agentId,
+        was.map((routine) =>
+          routine.id === routineId ? { ...routine, isEnabled: on } : routine,
+        ),
+      )
+    const done = await this.routineCommand('setAgentAutomationEnabled', {
+      id: agentId,
+      automationId: routineId,
+      isEnabled: on,
+    })
+    if (!done) {
+      if (this.backend) this.setRoutines(agentId, was)
+      return false
+    }
+    this.takeRoutines(agentId, done.answer)
+    return true
+  }
+
+  /** Delete, with no question and nothing said when it fails (`deleteAgentAutomation`). */
+  async removeRoutine(agentId: string, routineId: string): Promise<void> {
+    const done = await this.routineCommand('deleteAgentAutomation', {
+      id: agentId,
+      automationId: routineId,
+    })
+    if (done) this.takeRoutines(agentId, done.answer)
+  }
+
+  /** Test run (`runAgentAutomationNow`), then the list again for its new run; nothing is said either way. False when the run was refused (and the list is not read). */
+  async testRoutine(agentId: string, routineId: string): Promise<boolean> {
+    const done = await this.routineCommand('runAgentAutomationNow', {
+      id: agentId,
+      automationId: routineId,
+    })
+    if (!done) return false
+    await this.loadRoutines(agentId)
+    return true
+  }
+
+  // MARK: Step 4d's search, channels and a group's members: ⌘K
+  // (SearchPanel.swift, Jump.swift, Search.swift), an agent's channels
+  // (ChannelsPage.swift, Channels.swift), a group's members
+  // (PaneMembersFlight.swift, GroupMembers.swift). 4d's state and commands
+  // go below this line, and nowhere else.
+
+  /**
+   * 4d's state back to nothing (signed out). The store keeps none: search's
+   * words and answers are the window's (SearchPanel.swift's `SearchState`),
+   * a Channels page's answer is its own (`ChannelsModel`), and a found line
+   * being read in (`loadUntil`) stops when the sign-in it began in ends.
+   */
+  private resetSearchAndChannels(): void {}
+
+  /** Whether the computer's search index is on (`isGlobalSearchEnabled`); on when it can't be read, as the Mac's default. */
+  async globalSearchEnabled(): Promise<boolean> {
+    const backend = this.backend
+    if (!backend) return true
+    let answer: JSONValue
+    try {
+      answer = await backend.command('isGlobalSearchEnabled', {})
+    } catch {
+      return true
+    }
+    return bool(answer) ?? bool(field(answer, 'enabled')) ?? true
+  }
+
+  /** Every chat's messages matching the words (`searchAgents`; the computer gives at most 50, 5 a chat, newest first). Thrown when it can't answer. */
+  async searchMessages(query: string): Promise<MessageHit[]> {
+    const backend = this.backend
+    if (!backend) return []
+    const answer = await backend.command('searchAgents', { query })
+    return (arr(answer) ?? [])
+      .map(messageHitFrom)
+      .filter((hit): hit is MessageHit => hit != null)
+  }
+
+  /** Files matching the words, or the newest 50 for none (`searchMedia`). Thrown when the computer can't answer. */
+  async searchFiles(query: string): Promise<FileHit[]> {
+    const backend = this.backend
+    if (!backend) return []
+    const answer = await backend.command('searchMedia', { query })
+    return (arr(answer) ?? [])
+      .map(fileHitFrom)
+      .filter((hit): hit is FileHit => hit != null)
+  }
+
+  /** Every agent's routines (`listAllAutomations`); none when they can't be read. */
+  async allRoutines(): Promise<RoutineHit[]> {
+    const backend = this.backend
+    if (!backend) return []
+    let answer: JSONValue
+    try {
+      answer = await backend.command('listAllAutomations', {})
+    } catch {
+      return []
+    }
+    return (arr(answer) ?? [])
+      .map(routineHitFrom)
+      .filter((hit): hit is RoutineHit => hit != null)
+  }
+
+  /**
+   * A chat's older lines, page by page, until the given one is among them
+   * (the Mac's `revealSearchHit`: at most 20 pages or 30 s). Whether it is.
+   * It ends with the sign-in it began in.
+   */
+  async loadUntil(
+    entryId: string,
+    agentId: string,
+    pages = 20,
+    seconds = 30,
+  ): Promise<boolean> {
+    const backend = this.backend
+    const started = Date.now()
+    const has = () =>
+      this.transcripts[agentId]?.some((entry) => entry.id === entryId) === true
+    const late = () => (Date.now() - started) / 1000 > seconds
+    // The chat opening fetches its newest lines first.
+    while (this.transcripts[agentId] == null || this.fetching.has(agentId)) {
+      if (late() || backend !== this.backend) return has()
+      await new Promise((resolve) => setTimeout(resolve, 100))
+    }
+    for (let page = 0; page < pages; page += 1) {
+      // A page the chat itself is reading (its own scroll near the top) is waited for, not counted: loadOlder returns at once meanwhile.
+      while (this.loadingOlder.has(agentId)) {
+        if (late() || backend !== this.backend) return has()
+        await new Promise((resolve) => setTimeout(resolve, 100))
+      }
+      if (has()) return true
+      if (this.olderBefore[agentId] == null || late()) return false
+      if (backend !== this.backend) return false
+      await this.loadOlder(agentId)
+    }
+    return has()
+  }
+
+  /** A group's members, in its order, those the roster has (`members(of:)`). */
+  members(group: Agent): Agent[] {
+    return group.memberIds
+      .map((id) => this.agent(id))
+      .filter((agent): agent is Agent => agent != null)
+  }
+
+  /** A group's members (`setGroupMembers`): shown at once, put back and thrown when refused, for the dialog to say. */
+  async setGroupMembers(groupId: string, memberIds: string[]): Promise<void> {
+    const backend = this.backend
+    if (!backend) return
+    const was = this.agent(groupId)?.memberIds
+    const set = (ids: string[]) => {
+      this.agents = this.agents.map((one) =>
+        one.id === groupId ? { ...one, memberIds: ids } : one,
+      )
+      this.changed()
+    }
+    if (was) set(memberIds)
+    try {
+      await backend.command('setGroupMembers', {
+        id: groupId,
+        memberAgentIds: memberIds,
+      })
+    } catch (error) {
+      if (was && this.agent(groupId) && backend === this.backend) set(was)
+      throw error
+    }
+  }
+
+  /** An agent's channels (`getAgentChannels`): undefined when the computer doesn't answer within 15 s. */
+  channels(agentId: string): Promise<ChannelsView | undefined> {
+    return this.channelCall('getAgentChannels', { id: agentId })
+  }
+
+  /** Store securely: the token for `platform` (Slack takes its app and bot tokens together, the computer sorts them). */
+  connectChannel(
+    agentId: string,
+    platform: string,
+    token: string,
+  ): Promise<ChannelsView | undefined> {
+    return this.channelCall('connectChannel', {
+      id: agentId,
+      platform,
+      token,
+    })
+  }
+
+  refreshChannel(
+    agentId: string,
+    platform: string,
+  ): Promise<ChannelsView | undefined> {
+    return this.channelCall('refreshChannel', { id: agentId, platform })
+  }
+
+  disconnectChannel(
+    agentId: string,
+    platform: string,
+  ): Promise<ChannelsView | undefined> {
+    return this.channelCall('disconnectChannel', { id: agentId, platform })
+  }
+
+  /** A channel call (`I$n`): it answers the whole view, and gives up after 15 s (a failure keeps the last answer on screen). */
+  private async channelCall(
+    method: string,
+    args: JSONValue,
+  ): Promise<ChannelsView | undefined> {
+    const backend = this.backend
+    if (!backend) return undefined
+    let timer: ReturnType<typeof setTimeout> | undefined
+    try {
+      const answer = await Promise.race([
+        backend.command(method, args),
+        new Promise<undefined>((resolve) => {
+          timer = setTimeout(() => resolve(undefined), channelDeadline * 1000)
+        }),
+      ])
+      return channelsFrom(answer)
+    } catch {
+      return undefined
+    } finally {
+      clearTimeout(timer)
+    }
+  }
+
+  // MARK: Step 4e's org chart and starter packs (OrgChart.swift,
+  // AgentNetwork.swift, StarterPackSheet.swift, StarterPacks.swift). 4e's
+  // state and commands go below this line, and nowhere else.
+
+  /**
+   * The starter pack's sheet while it shows (MacServices.swift's
+   * `packAsk`): the pack asked for, then read from the server or why it
+   * couldn't be, and Add under way. Asked by the window (`askPack`).
+   */
+  packAsk?: PackAsk
+  /** Bumped by each pack asked for and by signing out: a read begun before is dropped. */
+  private packAsks = 0
+
+  /** 4e's state back to nothing (signed out). */
+  private resetOrgChartAndPacks(): void {
+    this.packAsk = undefined
+    this.packAsks += 1
+  }
+
+  /** Signed out: what the core's `starterPack` says without a backend. */
+  private notSignedIn(): SimeonAPIError {
+    return new SimeonAPIError(t('Sign in to Simeon first.'), 401)
+  }
+
+  /**
+   * What two agents said to each other (OrgChart.swift's `ExchangeCard`):
+   * the first one's last 200 lines (`tail`, read without opening its chat
+   * or waking a computer that rests), their messages to each other, the
+   * last 30. Refused when the lines can't be read.
+   */
+  async networkExchange(
+    source: { id: string; name: string },
+    targetId: string,
+  ): Promise<ExchangeLine[]> {
+    const backend = this.backend
+    if (!backend) throw this.notSignedIn()
+    const entries = await backend.tail(source.id, 200)
+    return exchangeLines(entries, source, targetId)
+  }
+
+  /** A pack, read from Simeon Labs' server (`starterPack`); the server's sentence when it has none ("This team isn't available anymore."). */
+  async starterPack(id: string): Promise<StarterPack> {
+    const backend = this.backend
+    if (!backend) throw this.notSignedIn()
+    const answer = await backend.server(`packs/${id}`)
+    const pack = packFrom(answer)
+    if (!pack)
+      throw new SimeonAPIError(t("This team isn't available anymore."), 404)
+    return pack
+  }
+
+  /** The pack's agents already here (its section's, still listed); none when it was never added or they are gone. */
+  packAgents(pack: StarterPack): string[] {
+    const id = packSectionId(pack.id)
+    const section = this.sidebarSections?.find((one) => one.id === id)
+    if (!section) return []
+    const listed = new Set(this.agents.map((agent) => agent.id))
+    return section.agentIds.filter((agentId) => listed.has(agentId))
+  }
+
+  /**
+   * Add (`addPack`): the five agents made one after another, each with its
+   * face, title and instructions, and each speaking first at once; then a
+   * section named after the pack at the top of the sidebar, holding them.
+   * The ids made, the first to open; one that fails is said (`problem`)
+   * and the rest are still made.
+   */
+  async addPack(pack: StarterPack): Promise<string[]> {
+    return (await this.makePack(pack)).made
+  }
+
+  /** `addPack`, with the last refusal's words (what the Mac's sheet reads back as `problemShown`). */
+  private async makePack(
+    pack: StarterPack,
+  ): Promise<{ made: string[]; problem?: string }> {
+    const backend = this.backend
+    if (!backend) return { made: [] }
+    if (this.sidebarSections === undefined) await this.loadSections()
+    const made: string[] = []
+    let problem: string | undefined
+    for (const member of pack.members) {
+      try {
+        const answer = await backend.command(
+          'createAgent',
+          packAgentArguments(member, newMessageId()),
+        )
+        const id = text(field(field(answer, 'agent'), 'id'))
+        if (!id)
+          throw new GatewayError('createAgent: no agent in the answer', true)
+        made.push(id)
+      } catch (error) {
+        const why = error instanceof Error ? error.message : String(error)
+        problem = t`Couldn't create ${member.name}: ${why}`
+        this.problem = problem
+        this.changed()
+      }
+    }
+    if (backend !== this.backend) return { made: [], problem }
+    await this.reloadRoster()
+    if (made.length > 0) {
+      // A section at the top holding them, named after the pack (`create`, then `rename`; written normalised).
+      const sectionId = packSectionId(pack.id)
+      this.editSections((sections) =>
+        createSection(sections, sectionId, made).map((section) =>
+          section.id === sectionId
+            ? { ...section, name: pack.folder }
+            : section,
+        ),
+      )
+    }
+    return { made, problem }
+  }
+
+  /** The website's Add to Simeon (MacServices.swift's `askPack`): the sheet at once, its pack read from the server. */
+  askPack(id: string): void {
+    if (!this.backend) return
+    this.packAsks += 1
+    const asked = this.packAsks
+    this.packAsk = { id, adding: false }
+    this.changed()
+    void (async () => {
+      let read: PackAsk
+      try {
+        read = { id, adding: false, pack: await this.starterPack(id) }
+      } catch (error) {
+        read = { id, adding: false, failure: { read: packReadFailure(error) } }
+      }
+      if (asked !== this.packAsks || this.packAsk?.id !== id) return
+      this.packAsk = read
+      this.changed()
+    })()
+  }
+
+  /**
+   * Add on the sheet (`addAskedPack`): a team already added only opens;
+   * else the five are made and the sheet goes. The agent to open, the
+   * first one's chat; none while adding, or when nothing could be made
+   * (the sheet then says why).
+   */
+  async addAskedPack(): Promise<string | undefined> {
+    const ask = this.packAsk
+    const pack = ask?.pack
+    if (!ask || !pack || ask.adding) return undefined
+    const first = this.packAgents(pack)[0]
+    if (first) {
+      this.packAsk = undefined
+      this.changed()
+      return first
+    }
+    const asked = this.packAsks
+    this.packAsk = { ...ask, adding: true }
+    this.changed()
+    const { made, problem } = await this.makePack(pack)
+    if (asked !== this.packAsks || this.packAsk?.id !== pack.id)
+      return undefined
+    if (made[0]) {
+      this.packAsk = undefined
+      this.changed()
+      return made[0]
+    }
+    this.packAsk = {
+      id: pack.id,
+      adding: false,
+      failure: packAddFailure(problem),
+    }
+    this.changed()
+    return undefined
+  }
+
+  /** ×, Escape or a click beside the sheet: it goes, unless Add is under way. */
+  closePack(): void {
+    if (!this.packAsk || this.packAsk.adding) return
+    this.packAsk = undefined
+    this.packAsks += 1
+    this.changed()
+  }
+
+  // MARK: Step 5b's computer: its screen, the Computer tab and the full view
+  // (StoreComputer.swift, CloudComputer.swift, ComputerPreview.swift,
+  // ComputerView.swift). 5b's state and commands go below this line, and
+  // nowhere else.
+
+  /** Each agent's computer: its status, read and pushed, and who is looking (CloudComputer.swift's `ComputerBook`, Store.swift's `computer`). */
+  readonly computer = new ComputerBook()
+  /** Each agent's subagents, read once a view watches its computer (`getSubagents`), then kept by the host's pushes. */
+  subagentsByAgent: Record<string, JSONValue[]> = {}
+  /** The agent's pointer on its computer, the last place it moved or clicked (`computer-action`). */
+  pointers: Record<string, AgentPointer> = {}
+  /** When the computer was last read again for the window coming forward or the stream coming back, in ms (`lastComputerCatchUp`). */
+  lastComputerCatchUp = -Infinity
+  /** A status read or a start waits this long, in seconds (`ComputerScreen.deadline`; the tests make it short). */
+  computerDeadline: number = computerScreen.deadline
+
+  /**
+   * The computer's disk (CloudComputer.swift's `diskPressure`): kept by 5b
+   * from a status's `diskPressure` and the `box-disk-pressure` push, which
+   * then calls `diskPressureChanged` (5c's, StoreRebuild.swift's); read by
+   * 5c's low-disk banner. Nothing while it has room.
+   */
+  diskPressure?: JSONValue
+
+  /**
+   * 5b's state back to nothing (signed out): the book forgets everything
+   * but who is watching (`ComputerBook.reset`), so a start answered after
+   * the sign-out is dropped and the window's watch stays counted until it
+   * lets go. (Store.swift makes a new book, which forgets the watchers too.)
+   */
+  private resetComputer(): void {
+    this.computer.reset()
+    this.subagentsByAgent = {}
+    this.pointers = {}
+    this.lastComputerCatchUp = -Infinity
+    if (this.diskPressure !== undefined) {
+      this.diskPressure = undefined
+      this.diskPressureChanged()
+    }
+  }
+
+  /**
+   * After the book moved (Store.swift's `computer` didSet): the screens are
+   * told when something they draw changed, and 5c when the disk did
+   * (`diskPressureChanged`). `seen` is the book's version before.
+   */
+  private computerChanged(seen: number): void {
+    const disk = this.computer.diskPressure
+    if (JSON.stringify(disk) !== JSON.stringify(this.diskPressure)) {
+      this.diskPressure = disk
+      this.diskPressureChanged()
+    }
+    // The rebuild follows the selected computer's status (5c; Store.swift's `computer` didSet, StoreRebuild.swift's `rebuildInputs`).
+    this.rebuildStatusChanged()
+    if (this.computer.version !== seen) this.changed()
+  }
+
+  /** A `forever-box`, `box-disk-pressure`, `computer-action` or `subagents` push (StoreComputer.swift's `applyComputer`). */
+  private applyComputer(
+    event: Extract<
+      BackendEvent,
+      { kind: 'computer' | 'diskPressure' | 'computerAction' | 'subagents' }
+    >,
+  ): void {
+    const seen = this.computer.version
+    switch (event.kind) {
+      case 'computer': {
+        const status = boxStatusFrom(event.status)
+        if (status) this.computer.ingest(status)
+        break
+      }
+      case 'diskPressure':
+        // The same level again (the computer says it often) changes nothing.
+        this.computer.ingestDiskPressure(event.pressure)
+        break
+      case 'computerAction': {
+        const agentId = text(field(event.action, 'agentId'))
+        const pointer = agentPointerFrom(event.action)
+        if (agentId == null || pointer == null) return
+        this.pointers = { ...this.pointers, [agentId]: pointer }
+        this.changed()
+        return
+      }
+      case 'subagents':
+        this.subagentsByAgent = {
+          ...this.subagentsByAgent,
+          [event.parentId]: event.subagents,
+        }
+        this.changed()
+        return
+    }
+    this.computerChanged(seen)
+  }
+
+  /** The event stream back (`computerReconnected`, `noteReconnect`): what is watched read again, what was started here started again, the helpers again. */
+  private computerReconnected(): void {
+    this.lastComputerCatchUp = Date.now()
+    const { read, ensure } = this.computer.reconnected()
+    for (const id of read) {
+      this.readComputer(id)
+      void this.loadSubagents(id)
+    }
+    for (const id of ensure) this.ensureComputer(id)
+  }
+
+  /** A view shows this agent's computer (MainWindow.swift's `watch`, `watchComputer`): its status is read now when the stream is up, and kept fresh while it shows; its helpers read once. */
+  watchComputer(agentId: string): void {
+    this.computer.watch(agentId)
+    if (this.isLive) this.readComputer(agentId)
+    if (this.subagentsByAgent[agentId] === undefined)
+      void this.loadSubagents(agentId)
+  }
+
+  unwatchComputer(agentId: string): void {
+    this.computer.unwatch(agentId)
+  }
+
+  /** `getForeverBoxStatus`, given 15 s; a later answer is still taken if nothing newer came (`readComputer`). */
+  readComputer(agentId: string): void {
+    const backend = this.backend
+    if (!backend) return
+    const seen = this.computer.version
+    const attempt = this.computer.beginRead(agentId)
+    this.computerChanged(seen)
+    if (attempt == null) return
+    const call = backend.command('getForeverBoxStatus', { id: agentId })
+    void (async () => {
+      const outcome = await withDeadline(this.computerDeadline, call)
+      if (this.backend !== backend) return
+      const before = this.computer.version
+      if (outcome.kind === 'answered') {
+        this.computer.readAnswered(
+          agentId,
+          attempt,
+          boxStatusFrom(outcome.value),
+        )
+        this.computerChanged(before)
+        return
+      }
+      this.computer.readFailed(agentId, attempt)
+      this.computerChanged(before)
+      if (outcome.kind === 'failed') return
+      try {
+        const late = await call
+        if (this.backend !== backend) return
+        const now = this.computer.version
+        this.computer.lateRead(agentId, attempt, boxStatusFrom(late))
+        this.computerChanged(now)
+      } catch {
+        const now = this.computer.version
+        this.computer.readFailed(agentId, attempt)
+        this.computerChanged(now)
+      }
+    })()
+  }
+
+  /** `ensureForeverBox`: wakes or starts the computer and waits for its screen, given 15 s; the agent is "demanded" from now on (`ensureComputer`). */
+  ensureComputer(agentId: string): void {
+    const backend = this.backend
+    if (!backend) return
+    const seen = this.computer.version
+    const generation = this.computer.beginEnsure(agentId)
+    this.computerChanged(seen)
+    if (generation == null) return
+    const call = backend.command('ensureForeverBox', { id: agentId })
+    void (async () => {
+      const outcome = await withDeadline(this.computerDeadline, call)
+      if (this.backend !== backend) return
+      const before = this.computer.version
+      if (outcome.kind === 'answered') {
+        this.computer.ensureSettled(
+          agentId,
+          generation,
+          boxStatusFrom(outcome.value),
+          false,
+        )
+        this.computerChanged(before)
+        return
+      }
+      this.computer.ensureSettled(agentId, generation, undefined, true)
+      this.computerChanged(before)
+      if (outcome.kind === 'failed') return
+      try {
+        const late = await call
+        if (this.backend !== backend) return
+        const now = this.computer.version
+        this.computer.lateEnsure(agentId, generation, boxStatusFrom(late))
+        this.computerChanged(now)
+      } catch {
+        // Failed after its deadline: already said.
+      }
+    })()
+  }
+
+  /** Retry under "Can't reach…": read again, and start again if it was started here (`retryComputer`). */
+  retryComputer(agentId: string): void {
+    this.readComputer(agentId)
+    if (this.computer.demanded.has(agentId)) this.ensureComputer(agentId)
+  }
+
+  /** Opening the full view (`XOn` `_`): the computer is started (`openComputer`). */
+  openComputer(agentId: string): void {
+    this.ensureComputer(agentId)
+  }
+
+  /**
+   * What a click on the computer focused (`typingFocus`,
+   * host/box/typing-focus.ts): the field's kind, or `none` for nothing to
+   * type into; none when the computer did not say (an engine without the
+   * question, no answer). The iPhone's: the Mac's view doesn't ask.
+   */
+  async typingFocus(agentId: string): Promise<TypingField | undefined> {
+    const backend = this.backend
+    if (!backend) return undefined
+    try {
+      const answer = await backend.command('typingFocus', { id: agentId })
+      const focus = str(field(answer, 'focus'))
+      return focus == null ? undefined : typingFieldFrom(focus)
+    } catch {
+      return undefined
+    }
+  }
+
+  /** The person takes control: the computer's Chrome made ready to see their clicks (`typingFocus` with `prepare`); an engine without it does no harm. */
+  async prepareTypingFocus(agentId: string): Promise<void> {
+    await quietly(
+      this.backend?.command('typingFocus', { id: agentId, prepare: true }) ??
+        Promise.resolve(),
+    )
+  }
+
+  /** Take control (`takeComputerControl`): a working agent is stopped and the computer is the person's until handed back; true when that started a hand-off. */
+  async takeComputerControl(agentId: string): Promise<boolean> {
+    const backend = this.backend
+    if (!backend) return false
+    try {
+      const answer = await backend.command('takeComputerControl', {
+        id: agentId,
+      })
+      return bool(field(answer, 'handoff')) ?? false
+    } catch {
+      return false
+    }
+  }
+
+  /** Stop task (`stopAgentTask`): the agent's run and its helpers stop; an open hand-off ends without waking it. */
+  async stopAgentTask(agentId: string): Promise<boolean> {
+    const backend = this.backend
+    if (!backend) return false
+    try {
+      const answer = await backend.command('stopAgentTask', { id: agentId })
+      return bool(field(answer, 'stopped')) ?? false
+    } catch {
+      return false
+    }
+  }
+
+  /** The address of a screen the host gave (its loopback page), through Simeon Labs' proxy (`screenSocket`, `GatewayConnection.screenSocket`); none away from a live computer. */
+  async screenSocket(vncUrl: string): Promise<string | undefined> {
+    const backend = this.backend
+    if (!(backend instanceof LiveBackend)) return undefined
+    try {
+      const connection = await backend.gateway.currentConnection()
+      if (this.backend !== backend) return undefined
+      return connection.screenSocket(vncUrl)
+    } catch {
+      return undefined
+    }
+  }
+
+  /** The agent's subagents (`getSubagents`), read once a view watches its computer, then kept by the host's pushes. */
+  async loadSubagents(agentId: string): Promise<void> {
+    const backend = this.backend
+    if (!backend) return
+    let answer: JSONValue
+    try {
+      answer = await backend.command('getSubagents', { id: agentId })
+    } catch {
+      return
+    }
+    if (this.backend !== backend) return
+    this.subagentsByAgent = {
+      ...this.subagentsByAgent,
+      [agentId]: arr(answer) ?? arr(field(answer, 'subagents')) ?? [],
+    }
+    this.changed()
+  }
+
+  /**
+   * The helpers' screens on this agent's computer, in the host's order
+   * (`MTn`): only while the agent's own computer has a screen, since each
+   * helper is drawn with that screen (`CTn` gives them the agent's `N2e`).
+   */
+  computerHelpers(agentId: string): ComputerHelper[] {
+    if (screenURL(this.computer.status(agentId)) == null) return []
+    return helperScreens(this.subagentsByAgent[agentId] ?? [])
+  }
+
+  /** The most recent status of any agent's computer (`getMostRecentStatus`): the first run's "Waking your computer…". */
+  get latestComputerStatus(): BoxStatus | undefined {
+    return this.computer.mostRecent
+  }
+
+  /**
+   * The window came forward (`windowCameForward`). A computer started here
+   * is started again at once (`NTn`'s focus listener); at most once a
+   * minute, and not while the computer is being rebuilt (`rebuildingNow`,
+   * 5c), everything watched is read again with the agents, the open chat,
+   * the pins and the sections (`noteWindowFocus`).
+   */
+  windowCameForward(): void {
+    if (!this.isLive) return
+    for (const id of this.computer.watched)
+      if (this.computer.demanded.has(id)) this.ensureComputer(id)
+    if (
+      this.rebuildingNow() ||
+      Date.now() - this.lastComputerCatchUp < computerScreen.focusCatchUp * 1000
+    )
+      return
+    this.lastComputerCatchUp = Date.now()
+    const { read, ensure } = this.computer.focused()
+    for (const id of read) this.readComputer(id)
+    for (const id of ensure) this.ensureComputer(id)
+    void (async () => {
+      await this.reloadRoster()
+      if (this.openChat) await this.refresh(this.openChat)
+      await this.loadSidebar()
+    })()
+  }
+
+  // MARK: Step 5c's computer states: its rebuild, recovery and move, the
+  // dialogs and pills, low disk (ComputerRebuild.swift, RebuildDriver.swift,
+  // StoreRebuild.swift, MigrationWatch.swift, ComputerStates.swift). 5c's
+  // state and commands go below this line, and nowhere else.
+  //
+  // The rebuild follows the store as the Mac's `didSet`s tell it: each
+  // change the store announces is looked at here (`followRebuild`), and the
+  // driver hears the selected agent, the roster's work, the stream and the
+  // selected computer's status when they moved. The server's record of the
+  // computer being replaced is followed while a sign-in lasts
+  // (`MigrationRelay`), its steps coming in as `migration` events.
+
+  /**
+   * Simeon's computer being rebuilt, or the stream away (RebuildDriver.swift).
+   * Every change the store announces is looked at by the rebuild from the
+   * start (the Mac's `didSet`s on the roster, the chat, the stream and the
+   * computer).
+   */
+  readonly rebuild: RebuildDriver = (() => {
+    const driver = new RebuildDriver()
+    driver.onChange = () => this.changed()
+    driver.onHardLockChanged = (held) => this.hardLockChanged(held)
+    this.subscribe(() => this.followRebuild())
+    return driver
+  })()
+  /** The window shows the computer's rebuild (`followsRebuild`, the Mac's and the iPhone's): sending waits through it, the list holds still. */
+  followsRebuild = true
+  /**
+   * The disk running low sets Disk Saver to work by itself (`$8n`,
+   * `startsDiskSaver`). Not from a browser's tab, as the iPhone: the Mac
+   * app open beside it starts it, and two apps each making one would give
+   * the person two Disk Savers. The Windows app sets it, as the Mac.
+   */
+  startsDiskSaver = false
+  /** The agent the window has selected (`windowSelection`), told by the window, so a chat closing just before the next opens does not read as nothing selected. */
+  windowSelection?: string
+  /** How the rebuild reaches Simeon Labs' server for a computer: through its sign-in; the tests give their own. */
+  rebuildServerFor: (backend: AgentBackend) => RebuildServer | undefined =
+    rebuildServerOf
+  /** Roster pushes skipped while the computer was rebuilt: the list is read again after. */
+  private rosterHeld = false
+  /** A Disk Saver being made, so a second click waits for it. */
+  private diskSaverCreation?: Promise<string | undefined>
+  /** Disk Saver was set to work for this time the disk ran low. */
+  private diskAuditDone = false
+  /** The computer the rebuild follows, its relay, and what the driver was last told. */
+  private rebuildBackend?: AgentBackend
+  private migrations?: MigrationRelay
+  private stopMigrations?: () => void
+  private rebuildSeen: RebuildInputs = noRebuildInputs
+  private rebuildLive = false
+
+  /** 5c's state back to nothing (signed out). */
+  private resetRebuild(): void {
+    this.rebuildBackend = undefined
+    this.rebuildSeen = noRebuildInputs
+    this.rebuildLive = false
+    this.stopMigrations?.()
+    this.stopMigrations = undefined
+    this.migrations?.stop()
+    this.migrations = undefined
+    this.rosterHeld = false
+    this.diskSaverCreation = undefined
+    this.diskAuditDone = false
+    this.windowSelection = undefined
+    this.rebuild.reset()
+  }
+
+  /** An event no other section takes: a step of the server's replacement of the computer (`.migration`). */
+  private applyRebuild(event: BackendEvent): void {
+    if (event.kind === 'migration') this.rebuild.migrationEvent(event.event)
+  }
+
+  /** A rebuild under way: the window's catch-up waits (`windowCameForward(rebuilding:)`). */
+  rebuildingNow(): boolean {
+    return this.rebuild.isHardLocked
+  }
+
+  /** The agent the window shows now, told by the window (`windowSelection`). */
+  setWindowSelection(agentId: string | undefined): void {
+    if (this.windowSelection === agentId) return
+    this.windowSelection = agentId
+    this.changed()
+  }
+
+  /**
+   * Whether a newer computer is out for this agent's, as its status says
+   * (`computer.status(id)?.raw["imageUpdateAvailable"]`, 5b's book);
+   * unknown while it has none.
+   */
+  private imageUpdateAvailable(
+    agentId: string | undefined,
+  ): boolean | undefined {
+    return bool(
+      field(this.computer.status(agentId)?.raw, 'imageUpdateAvailable'),
+    )
+  }
+
+  /**
+   * The selected computer's status moved (Store.swift's `computer` didSet:
+   * `rebuild.statusChanged(rebuildInputs)`), told by 5b's `computerChanged`.
+   */
+  private rebuildStatusChanged(): void {
+    const inputs = this.rebuildInputs()
+    const seen = this.rebuildSeen
+    if (
+      inputs.phase === seen.phase &&
+      inputs.imageUpdateAvailable === seen.imageUpdateAvailable
+    )
+      return
+    this.rebuildSeen = {
+      ...seen,
+      phase: inputs.phase,
+      imageUpdateAvailable: inputs.imageUpdateAvailable,
+    }
+    this.rebuild.statusChanged(inputs)
+  }
+
+  /** The agent the window has selected, else the chat on screen (`computerSelection`). */
+  private get computerSelection(): string | undefined {
+    return this.windowSelection ?? this.openChat
+  }
+
+  /** What the driver is told (`rebuildInputs`): the selected agent when it is one and not a group, its computer, the agents at work, the stream. */
+  private rebuildInputs(): RebuildInputs {
+    const selection = this.computerSelection
+    const agent = selection !== undefined ? this.agent(selection) : undefined
+    const box = agent?.isGroup ? undefined : selection
+    return {
+      boxId: box,
+      isCurrentGroup: agent?.isGroup ?? false,
+      phase: this.computer.phase(box),
+      imageUpdateAvailable: this.imageUpdateAvailable(box),
+      anyRunning: this.agents.some((one) => one.isRunning),
+      // A computer asleep on purpose is not one the stream lost (`isAsleep`).
+      transportConnected: this.isLive || this.isAsleep,
+    }
+  }
+
+  /** The store changed: the driver hears what moved, as the Mac's `didSet`s tell it. */
+  private followRebuild(): void {
+    const backend = this.backend
+    if (backend !== this.rebuildBackend) {
+      this.rebuildBackend = backend
+      if (backend) {
+        this.connectRebuild(backend)
+        return
+      }
+    }
+    const inputs = this.rebuildInputs()
+    const seen = this.rebuildSeen
+    this.rebuildSeen = inputs
+    // Back after a drop (`recovered`): the server's last step read back.
+    const recovered = this.isLive && !this.rebuildLive
+    this.rebuildLive = this.isLive
+    if (inputs.transportConnected !== seen.transportConnected)
+      this.rebuild.transportChanged(inputs)
+    if (
+      inputs.boxId !== seen.boxId ||
+      inputs.isCurrentGroup !== seen.isCurrentGroup ||
+      inputs.anyRunning !== seen.anyRunning
+    )
+      this.rebuild.selectionChanged(inputs)
+    else if (
+      inputs.phase !== seen.phase ||
+      inputs.imageUpdateAvailable !== seen.imageUpdateAvailable
+    )
+      this.rebuild.statusChanged(inputs)
+    if (recovered && backend) {
+      this.rebuild.migrationReadBack(this.migrations?.status)
+      // A computer rebuilt meanwhile starts with no language: told again (Store.swift's `recovered`).
+      void this.tellLanguage(backend)
+      // And the zone this browser is in, as the Mac on every connect (step 6e).
+      void this.tellTimeZone(backend)
+    }
+  }
+
+  /**
+   * The app's language to the computer and the account (StoreSettings.swift's
+   * `tellLanguage`): the agents write in it. Told each time the stream comes
+   * (back), as the core tells it, without waking a computer that rests.
+   */
+  private async tellLanguage(backend: AgentBackend): Promise<void> {
+    const language = currentLanguage()
+    try {
+      await backend.command(
+        'setHostSettings',
+        { userLanguage: language },
+        { wakes: false },
+      )
+    } catch {
+      // Told the next time the stream comes back.
+    }
+    if (backend !== this.backend) return
+    try {
+      await backend.server('user/profile', 'POST', { language })
+    } catch {
+      // The header carries it meanwhile (`Accept-Language`).
+    }
+  }
+
+  /** The window starts with an account (`connectRebuild`): the driver gets its calls, the server's record is followed and its last step read back. */
+  private connectRebuild(backend: AgentBackend): void {
+    const server = this.rebuildServerFor(backend)
+    const relay = server
+      ? new MigrationRelay((from, signal) =>
+          server.watchMigration(from, signal),
+        )
+      : undefined
+    this.migrations = relay
+    if (relay) {
+      this.stopMigrations = relay.listen((event) => {
+        if (this.backend === backend) this.apply({ kind: 'migration', event })
+      })
+      relay.start()
+    }
+    // A recreate that started: its steps are watched for, and the computer is asked for again (the new one has new tokens).
+    const accepted = (answer: RecreateAnswer): RecreateAnswer => {
+      if (answer.kind === 'rejected') return answer
+      relay?.recreateAccepted(
+        answer.kind === 'started' ? answer.operationId : undefined,
+      )
+      backend.invalidate?.()
+      return answer
+    }
+    const notSignedIn = () =>
+      new SimeonAPIError(t('Sign in to Simeon first.'), 401)
+    const inputs = this.rebuildInputs()
+    this.rebuildSeen = inputs
+    this.rebuildLive = this.isLive
+    this.rebuild.connect(
+      {
+        update: async (_agentId, force) => {
+          if (!server) throw notSignedIn()
+          return accepted(await server.updateComputer(force))
+        },
+        reset: async () => {
+          if (!server) throw notSignedIn()
+          return accepted(await server.resetComputer())
+        },
+      },
+      inputs,
+    )
+    this.rebuild.migrationReadBack(relay?.status)
+  }
+
+  /** A rebuild began or ended: once it ends, a list held still meanwhile is read again, as after a reconnect (`GOn`). */
+  private hardLockChanged(held: boolean): void {
+    if (held || !this.rosterHeld) return
+    this.rosterHeld = false
+    this.computerReconnected()
+    void (async () => {
+      await this.reloadRoster()
+      if (this.openChat) await this.refresh(this.openChat)
+      await this.loadSidebar()
+    })()
+  }
+
+  /**
+   * Whether a roster push is held while the computer is rebuilt (`roster.setFrozen`):
+   * the store's `agents` and `agentUpserted` take nothing while this says
+   * so, and the list is read again once the rebuild ends.
+   */
+  holdsRoster(): boolean {
+    if (!this.followsRebuild || !this.rebuild.isHardLocked) return false
+    this.rosterHeld = true
+    return true
+  }
+
+  /** The agents at work now, by name (the busy confirmation's list). */
+  get workingAgentNames(): string[] {
+    return this.agents.filter((one) => one.isRunning).map((one) => one.name)
+  }
+
+  /**
+   * "Update Simeon's Computer" in ⌘K, "/" and the sidebar (`UOn`): ready,
+   * or with agents at work; undefined when it is not offered (no agent
+   * open, the computer known to be up to date, an update queued, a rebuild
+   * asked for or under way, or refused for the session). An unknown answer
+   * offers it, as the window does.
+   */
+  get computerUpdateOffer(): UpdateAvailability | undefined {
+    const selection = this.computerSelection
+    const selected = selection !== undefined ? this.agent(selection) : undefined
+    const baseline = selected !== undefined && !selected.isGroup
+    const availability = updateAvailability({
+      canUpdateBaseline: baseline,
+      canUpdateBox: baseline && this.workingAgentNames.length === 0,
+      isBoxUpToDate: this.imageUpdateAvailable(selection) === false,
+      isUpdateQueued: this.rebuild.isUpdateQueued,
+    })
+    if (
+      this.rebuild.pendingKind !== undefined ||
+      this.rebuild.lock.isLocked ||
+      this.rebuild.isBlocked ||
+      !(availability === 'ready' || availability === 'busy-override')
+    )
+      return undefined
+    return availability
+  }
+
+  /** A newer computer is out for the open agent (`imageUpdateAvailable`): the sidebar's Update. */
+  get computerUpdateAvailable(): boolean {
+    return this.imageUpdateAvailable(this.computerSelection) === true
+  }
+
+  /** The steps of the rebuild under way, for its dialog and its pill (`J1t`). */
+  rebuildSteps(kind: RebuildKind): RebuildSteps {
+    const lock = this.rebuild.lock
+    const box = this.rebuild.inputs.boxId
+    return projectSteps(
+      kind,
+      lock.stage,
+      this.rebuild.migration.phaseFor(lock.operationId),
+      this.rebuild.migration.phasesFor(lock.operationId),
+      this.computer.status(box)?.pullPercent,
+    )
+  }
+
+  /** A failure the window keeps (`store.problem = …`): the access notice's page that could not be opened, as the Mac's. */
+  keepProblem(words: string | undefined): void {
+    if (this.problem === words) return
+    this.problem = words
+    this.changed()
+  }
+
+  /** Sending waits while the computer is rebuilt (`isSendingPaused`), where the rebuild is shown, and while this account has no Simeon (`gft`). */
+  get isSendingPaused(): boolean {
+    return (
+      (this.followsRebuild && this.rebuild.isHardLocked) ||
+      pausesSending(this.access)
+    )
+  }
+
+  // The disk
+
+  /** The disk's state: "soft", "hard", or undefined when it has room (`diskPressureSnapshots`, from 5b's `diskPressure`). */
+  get diskLevel(): string | undefined {
+    return str(field(this.diskPressure, 'level'))
+  }
+
+  /** The Disk Saver agent, when there is one (`purpose: "disk-saver"`). */
+  get diskSaver(): Agent | undefined {
+    return this.agents.find((one) => one.purpose === 'disk-saver')
+  }
+
+  /**
+   * "Go to Disk Saver" (`D1t.launch`): its chat if it exists, else a new
+   * one made and introduced; the id to open, or undefined (the list not
+   * read yet, or the computer refused).
+   */
+  async launchDiskSaver(): Promise<string | undefined> {
+    const existing = this.diskSaver
+    if (existing) return existing.id
+    if (this.diskSaverCreation) return this.diskSaverCreation
+    if (this.agents.length === 0 && !this.backend) return undefined
+    const making = this.createDiskSaver()
+    this.diskSaverCreation = making
+    try {
+      return await making
+    } finally {
+      if (this.diskSaverCreation === making) this.diskSaverCreation = undefined
+    }
+  }
+
+  private async createDiskSaver(): Promise<string | undefined> {
+    const backend = this.backend
+    if (!backend) return undefined
+    let answer: JSONValue
+    try {
+      answer = await backend.command('createAgent', {
+        name: RebuildWords.diskSaverName,
+        description: RebuildWords.diskSaverDescription,
+        purpose: 'disk-saver',
+        origin: 'user',
+        isKickstartRequested: true,
+        clientNonce: newMessageId(),
+      })
+    } catch {
+      // Only reported in the window, never shown.
+      return undefined
+    }
+    await this.reloadRoster()
+    return (
+      text(field(field(answer, 'agent'), 'id')) ?? text(field(answer, 'id'))
+    )
+  }
+
+  /**
+   * The disk's state changed (StoreRebuild.swift's `diskPressureChanged`,
+   * `$8n`): called by 5b when `diskPressure` does. Once per time the disk
+   * runs low, where this app starts Disk Saver: an existing one not at work
+   * is asked to audit (`requestDiskSaverAudit`); with none, one is made,
+   * not opened.
+   */
+  private diskPressureChanged(): void {
+    if (this.diskLevel === undefined) {
+      this.diskAuditDone = false
+      return
+    }
+    const backend = this.backend
+    if (
+      !this.followsRebuild ||
+      !this.startsDiskSaver ||
+      this.diskAuditDone ||
+      this.agents.length === 0 ||
+      !backend
+    )
+      return
+    this.diskAuditDone = true
+    const saver = this.diskSaver
+    if (saver) {
+      if (saver.isRunning) return
+      void backend
+        .command('requestDiskSaverAudit', { id: saver.id })
+        .catch(() => {})
+    } else {
+      void this.launchDiskSaver()
+    }
+  }
+
+  // MARK: Step 5d's calls: a call with an agent, its banner and its lines
+  // (Call.swift, CallTones.swift, VoiceCall.swift, CallBannerWindow.swift,
+  // CallChat.swift), and two agents' exchange over the chat
+  // (Exchange.swift). 5d's state and commands go below this line, and
+  // nowhere else.
+
+  /**
+   * The call shown (Store.swift's `call`), its waveform's bars kept apart
+   * (`callLevels`): they change every 90 ms, and only the waveform reads
+   * them, so they change nothing the screens redraw for. The call keeps
+   * only whether there are bars.
+   */
+  call?: CallState
+  callLevels: number[] = []
+  /** The voice for the next call (ElevenLabs' kit; a stand-in in the tests). */
+  callVoice: () => VoiceTransport = callTransport
+  /** The ring and the hang-up (the browser's audio; none in the tests unless given). */
+  callTones: () => CallTonePlaying | undefined = () =>
+    typeof AudioContext === 'undefined' ? undefined : new WebCallTones()
+  /** One line per step of a call (the Mac's `voice-call.log`, echoed to the console as the Mac echoes it to stderr). */
+  callLog: (line: string) => void = (line) =>
+    console.info(`[simeon] voice-call ${line}`)
+  /** The call's engine, for the computer it was made for (the Mac's `backend.call`, made at sign-in), with its tones. */
+  private callEngine?: {
+    engine: CallEngine
+    backend: AgentBackend
+    tones?: CallTonePlaying
+  }
+
+  /** Calls are on, and there is a computer to call through (`canCall`). */
+  get canCall(): boolean {
+    return this.backend != null && voiceCallsEnabled()
+  }
+
+  /**
+   * The engine for this sign-in (MacSession.swift's `LiveCall`): the voice,
+   * the person's name for the prompt, the agent's voice from its picker
+   * (`ensureVoice`), the ring, a failed call kept until dismissed (the
+   * banner's 20 s or Close), the log. Only while this is the computer in
+   * use: a call heard after a sign-out never comes back on screen.
+   */
+  private callEngineNow(): CallEngine | undefined {
+    const backend = this.backend
+    if (!backend || !voiceCallsEnabled()) return undefined
+    if (this.callEngine?.backend === backend) return this.callEngine.engine
+    const tones = this.callTones()
+    const engine = new LiveCall({
+      backend,
+      transport: this.callVoice(),
+      personName: () => this.account?.name,
+      voiceFor: (agentId) => this.ensureVoice(agentId),
+      tones,
+      failedStays: null,
+      log: (line) => this.callLog(line),
+      language: currentLanguage,
+    })
+    this.callEngine = { engine, backend, tones }
+    engine.observe((state) => {
+      if (this.callEngine?.engine === engine) this.takeCall(state)
+    })
+    return engine
+  }
+
+  /** The call's change: the screens redraw only when more than its bars changed (Store.swift's `take`). */
+  private takeCall(state: CallState | undefined): void {
+    if (!state) {
+      this.callLevels = []
+      if (this.call) {
+        this.call = undefined
+        this.changed()
+      }
+      return
+    }
+    this.callLevels = state.levels
+    const kept: CallState = {
+      ...state,
+      levels: state.levels.length === 0 ? [] : [1],
+    }
+    if (JSON.stringify(kept) === JSON.stringify(this.call)) return
+    this.call = kept
+    this.changed()
+  }
+
+  /** The agent's own colour on the call: the one the app draws it in, not blue (the founder, 9 October 2026: the call showed another avatar). */
+  startCall(agent: Agent): void {
+    this.callEngineNow()?.start(agent.id, agent.name, agent.colour ?? '')
+  }
+
+  mute(muted: boolean): void {
+    this.callEngine?.engine.mute(muted)
+  }
+
+  hangUp(): void {
+    this.callEngine?.engine.hangUp()
+  }
+
+  /** A finished or failed call put away (the banner's Close). */
+  dismissCall(): void {
+    this.callEngine?.engine.dismiss()
+  }
+
+  /** 5d's state back to nothing (signed out): a call on ends (its voice let go, its record sent), and nothing of it comes back on screen. */
+  private resetCalls(): void {
+    const made = this.callEngine
+    this.callEngine = undefined
+    made?.engine.hangUp()
+    // The tones' audio let go, once the hang-up has played: one for each sign-in at most.
+    made?.tones?.close?.()
+    this.call = undefined
+    this.callLevels = []
+  }
+
+  // MARK: Step 6b's connecting: the consent, an app's sign-in, Add Another
+  // Account, the chat card's Connect (mac/Simeon/MacConnector.swift; the
+  // core's Store.swift `beginConnect`, `undoConnect`, `ConnectConsent.swift`,
+  // `Connecting.swift`, `AppAccounts.swift`). The screens' side is
+  // src/window/connector.ts and ConnectConsent.tsx.
+
+  /**
+   * Connect (`beginConnect`, `Connecting`): the app installed from the
+   * catalogue when it is not on the computer yet, then its sign-in started;
+   * the sign-in's page, and whether this connect added the app. An app this
+   * connect added whose sign-in then doesn't open is taken back at once, so
+   * nothing stays half added; `problem` says why.
+   */
+  async beginConnect(name: string): Promise<ConnectStart | undefined> {
+    const backend = this.backend
+    if (!backend) return undefined
+    // The box's app events keep the list current, so it is read here only when it never was (an empty list counts as never read: the web keeps no time of the last read).
+    if (this.catalog.length === 0 || this.apps.length === 0)
+      await this.loadAppCards()
+    if (this.backend !== backend) return undefined
+    const key = name.toLowerCase()
+    const plugin = this.catalogApp(name)
+    let server = this.apps.find(
+      (app) =>
+        app.name.toLowerCase() === key ||
+        (app.pluginId != null && app.pluginId === plugin?.id),
+    )
+    let added: string | undefined
+    if (!server && plugin) {
+      try {
+        // The install and the maker's server id at once (the second only names the server the first makes).
+        const [installed, vendor] = await Promise.all([
+          backend.command('desktopMcp', {
+            action: 'installEntry',
+            args: [{ entryId: plugin.id }],
+          }),
+          backend
+            .command('desktopMcp', {
+              action: 'vendorServerIdForPlugin',
+              args: [plugin.id],
+            })
+            .catch(() => undefined),
+        ])
+        if (this.backend !== backend) return undefined
+        added = plugin.id
+        this.apps = (arr(field(installed, 'servers')) ?? [])
+          .map(connectedApp)
+          .filter((app): app is ConnectedApp => app != null)
+        this.changed()
+        const vendorId = text(vendor)
+        server = vendorId
+          ? makeApp({
+              serverId: vendorId,
+              name: plugin.title,
+              pluginId: plugin.id,
+              accountKey: 'default',
+              status: 'needs-auth',
+              toolCount: 0,
+            })
+          : this.apps.find((app) => app.pluginId === plugin.id)
+      } catch (error) {
+        this.connectProblem(t`Couldn't add ${name}: ${this.connectWhy(error)}`)
+        return undefined
+      }
+    }
+    if (!server) {
+      this.connectProblem(t`${name} isn't in Simeon's apps yet.`)
+      return undefined
+    }
+    if (server.status === 'connected') return undefined
+    try {
+      const started = await backend.command('desktopMcp', {
+        action: 'authenticateServer',
+        args: [server.serverId, server.accountKey, 'connector_card'],
+      })
+      if (this.backend !== backend) return undefined
+      const url = await this.signInStarted(started, name)
+      if (url) return { url, addedPlugin: added }
+      // Signed in already: kept, whatever the list says yet.
+      if (alreadySignedIn(started)) return undefined
+    } catch (error) {
+      if (this.backend !== backend) return undefined
+      this.connectProblem(
+        didntConnect(name, plainError(this.connectWhy(error))),
+      )
+    }
+    // No sign-in to open: the app this connect added goes again, unless it turned out signed in already.
+    if (added) await this.takeBack(added, name, backend)
+    return undefined
+  }
+
+  /**
+   * A connect whose sign-in was cancelled (`undoConnect`, `Connecting.undoes`):
+   * the app it added is uninstalled again (`uninstallPlugin`, as Uninstall
+   * on its page does), so it isn't left added and not signed in. One the
+   * computer says is connected after all is kept.
+   */
+  async undoConnect(start: ConnectStart, name: string): Promise<void> {
+    const backend = this.backend
+    if (start.addedPlugin == null || !backend) return
+    await this.takeBack(start.addedPlugin, name, backend)
+  }
+
+  /** Sign in to one account of an app (`signInURL`, `authenticateServer`): its page, or none with the reason in `problem`. */
+  async signInURL(app: ConnectedApp): Promise<string | undefined> {
+    const backend = this.backend
+    if (!backend) return undefined
+    try {
+      const started = await backend.command('desktopMcp', {
+        action: 'authenticateServer',
+        args: [app.serverId, app.accountKey, 'connector_card'],
+      })
+      return await this.signInStarted(started, app.name)
+    } catch (error) {
+      this.connectProblem(
+        t`Couldn't sign in to ${app.name}: ${this.connectWhy(error)}`,
+      )
+      return undefined
+    }
+  }
+
+  /** The app a connect added, uninstalled again unless the computer now says it is connected (`takeBack`): only on the computer it was added to (`backend`), never another account's. */
+  private async takeBack(
+    plugin: string,
+    name: string,
+    backend: AgentBackend,
+  ): Promise<void> {
+    if (this.backend !== backend) return
+    await this.readApps(true)
+    if (this.backend !== backend || this.isConnected(name)) return
+    try {
+      await backend.command('desktopMcp', {
+        action: 'uninstallPlugin',
+        args: [plugin],
+      })
+    } catch {
+      // Left as it is: its page offers Uninstall.
+    }
+    if (this.backend === backend) await this.readApps(true)
+  }
+
+  /** The sign-in's page; or, when the computer has none to offer, why (it was signed in already, or the app can't sign in here), said rather than dropped (`signInStarted`). */
+  private async signInStarted(
+    started: JSONValue,
+    name: string,
+  ): Promise<string | undefined> {
+    const url = authorizationURL(started)
+    if (url) return url
+    if (alreadySignedIn(started)) {
+      await this.readApps(true)
+      return undefined
+    }
+    this.connectProblem(didntConnect(name, text(field(started, 'message'))))
+    return undefined
+  }
+
+  /** A failure's own words (`localizedDescription`). */
+  private connectWhy(error: unknown): string {
+    return error instanceof Error ? error.message : String(error)
+  }
+
+  private connectProblem(words: string): void {
+    this.problem = words
+    this.changed()
+  }
+
+  /** 6b's state back to nothing (signed out): it keeps none; the connector's sign-in ends with the window. */
+  private resetConnecting(): void {}
+
+  // MARK: Step 6c's Connectors: the catalogue's entries, the computer's
+  // servers and plugins, their tools and skills, the list
+  // (mac/Simeon/PluginsModel.swift, PluginsWindow.swift; the core's
+  // Plugins.swift, PluginsOverlay.swift, PluginCalls.swift). The screens'
+  // side is src/window/Connectors.tsx.
+
+  // The computer's side of mac/Simeon/PluginsModel.swift lives here, kept
+  // until sign-out (`forget`); the window's side (the view, the order of
+  // each action, its notice, the consent and the sign-in through the
+  // window's connector) is src/window/pluginsModel.ts. The catalogue's
+  // entries are 3c's `catalogEntries`, from the same `getCatalog` answer.
+
+  /** Each account of each of the computer's servers, as Connectors last read them (`servers`, `listServers`). */
+  pluginServers: PluginServer[] = []
+  /** The plugins the computer has on (`plugins`, `listEffectivePlugins`). */
+  effectivePlugins: EffectivePlugin[] = []
+  /** Each server's tools as last read (`tools`, `listServerTools`), by the server's id. */
+  pluginTools: ReadonlyMap<string, readonly PluginTool[]> = new Map()
+  /** Why a tool's switch didn't change, said under its server's tools (`toolFailures`), by the server's id. */
+  pluginToolFailures: ReadonlyMap<string, string> = new Map()
+  /** The open agent's skills (`skills`, `getAgentWorkflows`). */
+  agentSkills: AgentSkill[] = []
+  /** The plugins the GitHub banner names (`authBlocked`, `getPluginSyncStatus`). */
+  pluginAuthBlocked: string[] = []
+  /** Sign-ins waiting on their page, by key (`flows`, `signInKey`): kept across openings, as the Mac's window keeps them. */
+  signInFlows: ReadonlyMap<string, SignInFlow> = new Map()
+  /** The catalogue's logos read so far (`logos`, `resolvePluginLogo`): data URLs, by address. The catalogue's, not the account's: kept for the next account, as the Mac keeps them. */
+  pluginLogos: ReadonlyMap<string, string> = new Map()
+  private pluginLogoReads = new Set<string>()
+  private signInTimers = new Map<string, ReturnType<typeof setTimeout>>()
+  /** The agent the window shows, whose skills Connectors lists (the model's `setAgent`): an answer for another agent is not kept. */
+  private skillsAgent?: string
+
+  /** 6c's state back to nothing (signed out; `PluginsModel.forget`). */
+  private resetConnectors(): void {
+    this.pluginServers = []
+    this.effectivePlugins = []
+    this.pluginTools = new Map()
+    this.pluginToolFailures = new Map()
+    this.agentSkills = []
+    this.pluginAuthBlocked = []
+    this.signInFlows = new Map()
+    for (const timer of this.signInTimers.values()) clearTimeout(timer)
+    this.signInTimers.clear()
+    this.skillsAgent = undefined
+  }
+
+  /** Someone is signed in: Connectors' calls can go (the Mac's `try? calls()`). */
+  get pluginCallsReady(): boolean {
+    return this.backend != null
+  }
+
+  /** Connectors' calls to the computer (SimeonCore's `PluginCalls`); signed out, the core's words. */
+  private pluginCalls(): PluginCalls {
+    const backend = this.backend
+    if (!backend) throw new GatewayError(t('Sign in to Simeon first.'), true)
+    return new PluginCalls(backend)
+  }
+
+  // Reading
+
+  /** The servers read again (`refreshServers`): as Connectors opens, every 15 s while it is open, as the window comes forward, after a change. No answer: they stay. */
+  async readPluginServers(): Promise<void> {
+    const backend = this.backend
+    if (!backend) return
+    let next: PluginServer[] | undefined
+    try {
+      next = await new PluginCalls(backend).servers()
+    } catch {
+      return
+    }
+    if (this.backend === backend) this.applyPluginServers(next)
+  }
+
+  /** The servers an answer held (none: they stay as they were); only a change redraws. A sign-in whose account now says connected is over (`apply(servers:)`). */
+  private applyPluginServers(next: PluginServer[] | undefined): void {
+    if (!next) return
+    let moved = false
+    if (JSON.stringify(next) !== JSON.stringify(this.pluginServers)) {
+      this.pluginServers = next
+      moved = true
+    }
+    const over = [...this.signInFlows.keys()].filter((key) =>
+      this.pluginServers.some(
+        (server) =>
+          signInKey(server.serverIdentifier) === key &&
+          server.status === 'connected',
+      ),
+    )
+    if (over.length > 0) {
+      const flows = new Map(this.signInFlows)
+      for (const key of over) {
+        flows.delete(key)
+        clearTimeout(this.signInTimers.get(key))
+        this.signInTimers.delete(key)
+      }
+      this.signInFlows = flows
+      moved = true
+    }
+    if (moved) this.changed()
+  }
+
+  /** The plugins the computer has on, read again (`refreshPlugins`). */
+  async readEffectivePlugins(): Promise<void> {
+    const backend = this.backend
+    if (!backend) return
+    let list: EffectivePlugin[]
+    try {
+      list = await new PluginCalls(backend).effectivePlugins()
+    } catch {
+      return
+    }
+    if (this.backend !== backend) return
+    if (JSON.stringify(list) === JSON.stringify(this.effectivePlugins)) return
+    this.effectivePlugins = list
+    this.changed()
+  }
+
+  /** The open agent's skills (`loadSkills`); with no agent open, none. */
+  async readAgentSkills(agentId: string | undefined): Promise<void> {
+    if (agentId == null) {
+      if (this.skillsAgent != null || this.agentSkills.length === 0) return
+      this.agentSkills = []
+      this.changed()
+      return
+    }
+    const backend = this.backend
+    if (!backend) return
+    let list: AgentSkill[]
+    try {
+      list = await new PluginCalls(backend).skills(agentId)
+    } catch {
+      return
+    }
+    if (this.backend !== backend) return
+    this.setAgentSkills(agentId, list)
+  }
+
+  /**
+   * The agent the window shows (Connectors' `setAgent`): only its skills are
+   * kept, however the answers cross (an opening's read for no agent yet, an
+   * Add's skills step for the agent open when it began).
+   */
+  showSkillsOf(agentId: string | undefined): void {
+    this.skillsAgent = agentId
+  }
+
+  private setAgentSkills(agentId: string, list: AgentSkill[]): void {
+    if (agentId !== this.skillsAgent) return
+    if (JSON.stringify(list) === JSON.stringify(this.agentSkills)) return
+    this.agentSkills = list
+    this.changed()
+  }
+
+  /** A server's tools (`loadTools`); no answer, they stay. */
+  async readPluginTools(serverId: string): Promise<void> {
+    const backend = this.backend
+    if (!backend) return
+    let list: PluginTool[]
+    try {
+      list = await new PluginCalls(backend).tools(serverId)
+    } catch {
+      return
+    }
+    if (this.backend !== backend) return
+    this.pluginTools = new Map(this.pluginTools).set(serverId, list)
+    this.changed()
+  }
+
+  /** The GitHub banner's plugins (`readSyncStatus`, `getPluginSyncStatus`). */
+  async readPluginSyncStatus(): Promise<void> {
+    const backend = this.backend
+    if (!backend) return
+    let names: string[]
+    try {
+      names = await new PluginCalls(backend).authBlocked()
+    } catch {
+      return
+    }
+    if (this.backend !== backend) return
+    if (JSON.stringify(names) === JSON.stringify(this.pluginAuthBlocked)) return
+    this.pluginAuthBlocked = names
+    this.changed()
+  }
+
+  /** The one sync each opening of Connectors starts (`syncPluginSkills`), the banner read again after it; a failure is let go. */
+  async syncPluginSkillsQuietly(): Promise<void> {
+    const backend = this.backend
+    if (!backend) return
+    try {
+      await new PluginCalls(backend).syncSkills()
+    } catch {
+      // Let go: the banner says what can't be fetched.
+    }
+    await this.readPluginSyncStatus()
+  }
+
+  /**
+   * A catalogue entry's logo (`loadLogo`, `resolvePluginLogo`): the
+   * computer answers with a data URL (SVG or PNG); read once per address,
+   * and only a picture is kept (any image kind the computer read: an `<img>` runs no script).
+   */
+  async readPluginLogo(address: string): Promise<void> {
+    if (this.pluginLogos.has(address) || this.pluginLogoReads.has(address))
+      return
+    const backend = this.backend
+    if (!backend) return
+    this.pluginLogoReads.add(address)
+    let source: string | undefined
+    try {
+      source = await new PluginCalls(backend).logo(address)
+    } catch {
+      return
+    }
+    if (source == null || !/^data:image\/[a-z0-9.+-]+[;,]/i.test(source)) return
+    this.pluginLogos = new Map(this.pluginLogos).set(address, source)
+    this.changed()
+  }
+
+  // Add, setup, remove (each refusal thrown, for the window to say)
+
+  /** Add (`install`, `installEntry`): the servers as the computer answers them, and its plugins read again. */
+  async installPlugin(
+    entryId: string,
+    values: Readonly<Record<string, string>>,
+    team: boolean,
+  ): Promise<void> {
+    const calls = this.pluginCalls()
+    this.applyPluginServers(await calls.install(entryId, values, team))
+    await this.readEffectivePlugins()
+  }
+
+  /** The server a plugin from the app's own maker makes (`vendorServerIdForPlugin`), whose sign-in opens after Add; none for the rest. */
+  async pluginVendorServer(entryId: string): Promise<string | undefined> {
+    const backend = this.backend
+    if (!backend) return undefined
+    return new PluginCalls(backend).vendorServerId(entryId)
+  }
+
+  /** An account's sign-in asked of the computer (`authenticateServer`, no trigger: Connectors' own): its answer, with its status and the page to open. */
+  askServerSignIn(serverId: string, accountKey: string): Promise<JSONValue> {
+    return this.pluginCalls().signIn(serverId, accountKey)
+  }
+
+  /** Edit Values (`updatePluginInstall`): all of the plugin's setup values replaced. */
+  updatePluginValues(
+    pluginId: string,
+    values: Readonly<Record<string, string>>,
+  ): Promise<void> {
+    return this.pluginCalls().updateInstall(pluginId, values)
+  }
+
+  /** Uninstall or Remove of a server (`removeServer`): what it did, the servers as they are then. */
+  async removePluginServer(serverId: string): Promise<Removal> {
+    const removal = await this.pluginCalls().removeServer(serverId)
+    this.applyPluginServers(removal.servers)
+    return removal
+  }
+
+  /** Uninstall of a plugin (`uninstallPlugin`): what it did, the servers as they are then, its plugins read again. */
+  async uninstallPluginEntry(pluginId: string): Promise<Removal> {
+    const removal = await this.pluginCalls().uninstallPlugin(pluginId)
+    this.applyPluginServers(removal.servers)
+    await this.readEffectivePlugins()
+    return removal
+  }
+
+  /** A connect's app taken back out (`takeBack`): uninstalled again, unless the computer says it connected after all; the connected apps read again. */
+  async takeBackPlugin(pluginId: string, serverId: string): Promise<void> {
+    await this.readPluginServers()
+    if (
+      serverAccounts(this.pluginServers, serverId).some(
+        (server) => server.status === 'connected',
+      )
+    )
+      return
+    try {
+      await this.uninstallPluginEntry(pluginId)
+    } catch {
+      return
+    }
+    await this.loadApps()
+  }
+
+  // Skills
+
+  /** The agent's private copies of a plugin's skills dropped, before its own are synced (`dropPrivateCopies`); a failure is let go. */
+  async dropPluginCopies(
+    entry: PluginEntry,
+    agentId: string | undefined,
+  ): Promise<void> {
+    const backend = this.backend
+    if (!backend || agentId == null) return
+    if (privateCopies(entry, this.agentSkills).length === 0) return
+    await new PluginCalls(backend).dropPrivateCopies(
+      entry,
+      this.agentSkills,
+      agentId,
+    )
+  }
+
+  /** The computer's plugin skills synced (`syncPluginSkills`): how many of them are the plugin's (none asked, none counted). */
+  syncPluginSkills(pluginId?: string): Promise<number> {
+    return this.pluginCalls().syncSkills(pluginId)
+  }
+
+  /** A private skill's switch (`setEnabled`, `setAgentWorkflowEnabled`); a failure is let go, as the overlay does. */
+  async setAgentSkillEnabled(
+    skill: AgentSkill,
+    agentId: string | undefined,
+  ): Promise<void> {
+    const backend = this.backend
+    if (!backend || agentId == null) return
+    let list: AgentSkill[]
+    try {
+      list = await new PluginCalls(backend).setSkillEnabled(
+        skill,
+        !skill.isEnabledForAgent,
+        agentId,
+      )
+    } catch {
+      return
+    }
+    if (this.backend === backend) this.setAgentSkills(agentId, list)
+  }
+
+  /** Save on a skill's page (`updateAgentWorkflow`): the name and description trimmed, the trigger and source kept; the skills as the computer lists them. */
+  async saveAgentSkill(
+    skill: AgentSkill,
+    name: string,
+    description: string,
+    body: string,
+    agentId: string,
+  ): Promise<void> {
+    const list = await this.pluginCalls().updateSkill(
+      skill,
+      name,
+      description,
+      body,
+      agentId,
+    )
+    if (list) this.setAgentSkills(agentId, list)
+  }
+
+  /** Delete skill (`deleteAgentWorkflow`): the skills as the computer lists them. */
+  async deleteAgentSkill(skillId: string, agentId: string): Promise<void> {
+    const list = await this.pluginCalls().deleteSkill(skillId, agentId)
+    if (list) this.setAgentSkills(agentId, list)
+  }
+
+  // Tools
+
+  /**
+   * A tool's switch (`toggle`): changed at once, then asked of the
+   * computer (`toggleMcpToolDisabled`); a refusal is said under the tools
+   * and the switch goes back.
+   */
+  async togglePluginTool(toolName: string, serverId: string): Promise<void> {
+    const list = this.pluginTools.get(serverId)
+    if (list?.some((tool) => tool.name === toolName)) {
+      this.pluginTools = new Map(this.pluginTools).set(
+        serverId,
+        list.map((tool) =>
+          tool.name === toolName
+            ? { ...tool, isDisabled: !tool.isDisabled }
+            : tool,
+        ),
+      )
+      this.changed()
+    }
+    try {
+      const next = await this.pluginCalls().toggleTool(toolName, serverId)
+      this.pluginTools = new Map(this.pluginTools).set(serverId, next)
+      const failures = new Map(this.pluginToolFailures)
+      failures.delete(serverId)
+      this.pluginToolFailures = failures
+      this.changed()
+      await this.readPluginServers()
+    } catch (error) {
+      const why = error instanceof Error ? error.message : String(error)
+      this.pluginToolFailures = new Map(this.pluginToolFailures).set(
+        serverId,
+        plainError(why),
+      )
+      this.changed()
+      await this.readPluginTools(serverId)
+    }
+  }
+
+  // Sign-ins waiting (`PBn`)
+
+  /** A sign-in's page opened (`flows[key] = Flow`): Reopen while it waits, Retry once it has waited ten minutes (`expire`). */
+  startSignInFlow(key: string, url: string): void {
+    const openedAt = Date.now()
+    this.signInFlows = new Map(this.signInFlows).set(key, {
+      url,
+      openedAt,
+      timedOut: false,
+    })
+    this.expireSignInFlow(key, openedAt)
+    this.changed()
+  }
+
+  /** Reopen: the waiting page opened again, its ten minutes counted from now. */
+  reopenSignInFlow(key: string): void {
+    const flow = this.signInFlows.get(key)
+    if (!flow) return
+    const openedAt = Date.now()
+    this.signInFlows = new Map(this.signInFlows).set(key, { ...flow, openedAt })
+    this.expireSignInFlow(key, openedAt)
+    this.changed()
+  }
+
+  private expireSignInFlow(key: string, openedAt: number): void {
+    clearTimeout(this.signInTimers.get(key))
+    this.signInTimers.set(
+      key,
+      setTimeout(() => {
+        this.signInTimers.delete(key)
+        const flow = this.signInFlows.get(key)
+        if (!flow || flow.openedAt !== openedAt) return
+        this.signInFlows = new Map(this.signInFlows).set(key, {
+          ...flow,
+          timedOut: true,
+        })
+        this.changed()
+      }, signInTimeout * 1000),
+    )
+  }
+
+  // Fix with agent (`si.launch`)
+
+  /** The Plugin Setup agent there is already (by its purpose). */
+  get pluginSetupAgent(): Agent | undefined {
+    return setupAgentIn(this.agents)
+  }
+
+  /**
+   * Fix with agent once no Plugin Setup agent was found and the roster is
+   * in (PluginCalls.swift's `makePluginSetupAgent`): the agent made, the
+   * roster read again, and its first message sent. Its id once it can be
+   * opened (even when the message could not be sent), and what went wrong
+   * on the way, which the window says as `agentFailedNotice`.
+   */
+  async makePluginSetupAgent(): Promise<{ id?: string; failure?: string }> {
+    const backend = this.backend
+    if (!backend) return { failure: t('Sign in to Simeon first.') }
+    const calls = new PluginCalls(backend)
+    let id: string
+    try {
+      id = await calls.createSetupAgent()
+    } catch (error) {
+      return {
+        failure: plainError(
+          error instanceof Error ? error.message : String(error),
+        ),
+      }
+    }
+    await this.reloadRoster()
+    try {
+      await calls.sendSetupRequest(id)
+    } catch (error) {
+      return {
+        id,
+        failure: plainError(
+          error instanceof Error ? error.message : String(error),
+        ),
+      }
+    }
+    return { id }
+  }
+
+  // MARK: Step 6d's Connectors pages and an app's accounts on Simeon Labs'
+  // server (Add Another Account, rename, remove; the core's
+  // AppAccounts.swift, Store.swift's `loadAppAccounts`,
+  // `anotherAccountURL`). 6b's connector reads the three below; 6d writes
+  // them.
+
+  /** Each app's accounts as Simeon Labs' server last listed them, by the app's toolkit (`appAccounts`). */
+  appAccounts: Record<string, AppAccounts> = {}
+  /**
+   * How many changes (a rename, a Remove) have been sent for each app: an
+   * answer that left before a later change is older than that change's own
+   * and is dropped, so a slow read never brings back an account just
+   * removed or its old name. (The core keeps whichever answer comes last.)
+   */
+  private appAccountChanges = new Map<string, number>()
+
+  /** The toolkit of an app whose accounts Simeon's server keeps: by its server's address, else its catalogue row's (`appsToolkit(serverURL:pluginId:)`). */
+  appsToolkit(
+    serverURL: string | undefined,
+    pluginId: string | undefined,
+  ): string | undefined {
+    return (
+      toolkitOf(serverURL) ??
+      toolkitOf(
+        pluginId === undefined
+          ? undefined
+          : this.catalog.find((app) => app.id === pluginId)?.serverURL,
+      )
+    )
+  }
+
+  /** An app's accounts read again (`GET apps/{toolkit}/accounts`, `loadAppAccounts`); what was shown stays when they can't be read, or when a change was sent since the read began. */
+  async loadAppAccounts(toolkit: string): Promise<void> {
+    const backend = this.backend
+    if (!backend) return
+    const asked = this.appAccountChanges.get(toolkit) ?? 0
+    let answer: JSONValue
+    try {
+      answer = await backend.server(`apps/${toolkit}/accounts`)
+    } catch {
+      return
+    }
+    const read = appAccountsFrom(answer)
+    if (this.backend !== backend || !read) return
+    if ((this.appAccountChanges.get(toolkit) ?? 0) !== asked) return
+    this.appAccounts = { ...this.appAccounts, [toolkit]: read }
+    this.changed()
+  }
+
+  /** The ids of an app's accounts as last read (`appAccounts[toolkit].accounts`). */
+  appAccountIds(toolkit: string): readonly string[] {
+    return this.appAccounts[toolkit]?.accounts.map((one) => one.id) ?? []
+  }
+
+  /** The sign-in page for one more account (`POST apps/{toolkit}/connect` with `another`, `anotherAccountURL`): a web page only, and none once signed out; none when it can't be had (the store's problem says why). */
+  async anotherAccountURL(
+    toolkit: string,
+    name: string,
+  ): Promise<string | undefined> {
+    const backend = this.backend
+    if (!backend) return undefined
+    let why: string | undefined
+    let url: string | undefined
+    try {
+      const answer = await backend.server(`apps/${toolkit}/connect`, 'POST', {
+        another: true,
+      })
+      url = webPage(text(field(answer, 'url')))
+    } catch (error) {
+      why = plainError(error instanceof Error ? error.message : String(error))
+    }
+    if (this.backend !== backend) return undefined
+    if (url !== undefined) return url
+    this.problem = didntConnect(name, why)
+    this.changed()
+    return undefined
+  }
+
+  /** The pencil: the person's own name for one account; an empty one goes back to who it signs in as (`renameAppAccount`). */
+  async renameAppAccount(
+    toolkit: string,
+    account: AppAccount,
+    name: string,
+  ): Promise<void> {
+    const next = name.split(/\s+/).filter(Boolean).join(' ')
+    if (next === (account.name ?? '')) return
+    await this.changeAppAccounts(
+      toolkit,
+      account,
+      'PATCH',
+      { name: next },
+      t("Couldn't rename the account"),
+    )
+  }
+
+  /** One account signed out of the app; the others stay (`removeAppAccount`). */
+  async removeAppAccount(toolkit: string, account: AppAccount): Promise<void> {
+    await this.changeAppAccounts(
+      toolkit,
+      account,
+      'DELETE',
+      undefined,
+      t("Couldn't remove the account"),
+    )
+  }
+
+  /** A change to one account; the server answers with the app's accounts as they now are (kept unless a later change was sent meanwhile), and a refusal is said (`problem`). */
+  private async changeAppAccounts(
+    toolkit: string,
+    account: AppAccount,
+    method: string,
+    body: JSONValue | undefined,
+    failure: string,
+  ): Promise<void> {
+    const backend = this.backend
+    if (!backend) return
+    const change = (this.appAccountChanges.get(toolkit) ?? 0) + 1
+    this.appAccountChanges.set(toolkit, change)
+    try {
+      const answer = await backend.server(
+        `apps/${toolkit}/accounts/${accountPath(account.id)}`,
+        method,
+        body,
+      )
+      const read = appAccountsFrom(answer)
+      if (this.backend !== backend || !read) return
+      if (this.appAccountChanges.get(toolkit) !== change) return
+      this.appAccounts = { ...this.appAccounts, [toolkit]: read }
+    } catch (error) {
+      if (this.backend !== backend) return
+      const why = error instanceof Error ? error.message : String(error)
+      this.problem = t`${failure}: ${why}`
+      // The last change refused: an earlier one's answer may have been dropped for it, so the list is read again.
+      if (this.appAccountChanges.get(toolkit) === change)
+        void this.loadAppAccounts(toolkit)
+    }
+    this.changed()
+  }
+
+  /** 6d's state back to nothing (signed out). */
+  private resetConnectorPages(): void {
+    this.appAccounts = {}
+    this.appAccountChanges = new Map()
+  }
+
+  // MARK: Step 6e's Settings: General (the account, language, appearance,
+  // time zone), the account's page (name, password), Permissions
+  // (Auto-review's rules), Computer, Help & support, Legal; Send Feedback
+  // and Report an Issue (mac/Simeon/SettingsGeneral.swift, SettingsPages.swift,
+  // Feedback.swift; the core's AccountSettings.swift, StoreSettings.swift,
+  // Feedback.swift).
+  //
+  // Nothing of these pages is kept here: each page reads the computer's
+  // values afresh as it shows (`GeneralSettingsModel`), and each sheet holds
+  // its own words. A password typed is read only as it is sent, and never
+  // kept.
+
+  /** 6e's state back to nothing (signed out): it keeps none. */
+  private resetGeneralSettings(): void {}
+
+  /** The zone this browser is in (`TimeZone.current`); the tests give their own. */
+  timeZoneNow: () => string = detectedTimeZone
+
+  /**
+   * The name changed in Settings › Account (StoreSettings.swift's
+   * `changeName`): what the agents call the person, as the first run's name
+   * step saves it (`POST user/name`); the computer told to read it again
+   * (`refreshUserName`; asleep, it reads it as it wakes). None once saved,
+   * the account showing it; else why not, the server's sentence when it
+   * says one ("A name of 1 to 60 characters.").
+   */
+  async changeName(typed: string): Promise<string | undefined> {
+    const backend = this.backend
+    if (!backend) return t('Sign in to Simeon first.')
+    const name = normalizedName(typed)
+    try {
+      await backend.server('user/name', 'POST', { name })
+    } catch (error) {
+      if (error instanceof SimeonAPIError && error.message !== '')
+        return error.message
+      return t("Couldn't change it")
+    }
+    if (this.backend !== backend) return undefined
+    if (this.account) {
+      this.account = { ...this.account, name }
+      this.changed()
+    }
+    await quietly(backend.command('refreshUserName', {}, { wakes: false }))
+    return undefined
+  }
+
+  /** Settings › Account › Password: whether the account has one (`GET account/password`); none when it can't be asked (`hasPassword`). */
+  async hasPassword(): Promise<boolean | undefined> {
+    const backend = this.backend
+    if (!backend) return undefined
+    try {
+      return bool(field(await backend.server('account/password', 'GET'), 'set'))
+    } catch {
+      return undefined
+    }
+  }
+
+  /** Set or change the account's password (`PUT account/password`, `setPassword`): none once it is saved, else the sentence to show ("Use at least 8 characters."). The password is only sent. */
+  async setPassword(password: string): Promise<string | undefined> {
+    const backend = this.backend
+    if (!backend) return t('Sign in to Simeon first.')
+    try {
+      await backend.server('account/password', 'PUT', { password })
+      return undefined
+    } catch (error) {
+      if (error instanceof SimeonAPIError && error.message !== '')
+        return error.message
+      return t("The password wasn't saved. Try again.")
+    }
+  }
+
+  /** The computer's settings, quietly: none when they can't be read (`readHostSettings`). */
+  async readHostSettings(): Promise<JSONValue | undefined> {
+    const backend = this.backend
+    if (!backend) return undefined
+    try {
+      return await backend.command('getHostSettings', {})
+    } catch {
+      return undefined
+    }
+  }
+
+  /** A setting written, quietly: false when refused (`writeHostSettings`). */
+  private async writeHostSettings(update: JSONValue): Promise<boolean> {
+    const backend = this.backend
+    if (!backend) return false
+    try {
+      await backend.command('setHostSettings', update)
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  /** The time zone (`setTimeZone`): the zone the agents and routines use, or none for the one this browser is in (not told when the browser hides it, `isHiddenZone`). */
+  setTimeZone(
+    zone: string | undefined,
+    detected: string = this.timeZoneNow(),
+  ): Promise<boolean> {
+    return this.writeHostSettings(
+      isHiddenZone(detected)
+        ? { userTimeZoneOverride: zone ?? '' }
+        : { userTimeZone: detected, userTimeZoneOverride: zone ?? '' },
+    )
+  }
+
+  /** Auto-review (`setAutoReview`): its switch and its two lists of rules, as the host keeps them. */
+  setAutoReview(rules: AutoReviewInstructions): Promise<boolean> {
+    return this.writeHostSettings({
+      autoReviewInstructions: autoReviewJSON(
+        normalizedRules(autoReviewJSON(rules)),
+      ),
+    })
+  }
+
+  /**
+   * The zone this browser is in, told to the computer each time the stream
+   * comes (back), beside the language (MacServices.swift's `connected`),
+   * without waking a computer that rests. The person's own pick stays the
+   * computer's: the host keeps it apart (`userTimeZoneOverride`) and goes
+   * by it while there is one. A browser that hides its zone (UTC,
+   * `isHiddenZone`) tells nothing: the agents keep the zone the person's
+   * other devices told.
+   */
+  private async tellTimeZone(backend: AgentBackend): Promise<void> {
+    const zone = this.timeZoneNow()
+    if (isHiddenZone(zone)) return
+    await quietly(
+      backend.command(
+        'setHostSettings',
+        { userTimeZone: zone },
+        { wakes: false },
+      ),
+    )
+  }
+
+  /** Send Feedback and Report an Issue, e-mailed to Simeon Labs (`sendFeedback`); the server's sentence is thrown when it refuses. */
+  async sendFeedback(
+    report: FeedbackReport,
+    facts: DeviceFacts,
+    diagnostics: string | undefined,
+  ): Promise<void> {
+    const backend = this.backend
+    if (!backend) throw new SimeonAPIError(t('Sign in to Simeon first.'), 401)
+    await backend.server(
+      'feedback',
+      'POST',
+      feedbackBody(report, facts, diagnostics),
+    )
+  }
+
+  /** What the app knows of its own state, a line each, for a report's diagnostics (`diagnosticsState`). */
+  get diagnosticsState(): string[] {
+    const agents = this.agents.filter((agent) => !agent.isGroup).length
+    const groups = this.agents.filter((agent) => agent.isGroup).length
+    const lines = [
+      `Signed in: ${this.account === undefined ? 'no' : 'yes'}`,
+      `Agents: ${agents}, groups: ${groups}`,
+      `Computer: ${this.latestComputerStatus?.state ?? 'unknown'}, stream ${this.isLive ? 'connected' : 'not connected'}${this.isAsleep ? ', asleep' : ''}`,
+      `Open chat: ${this.openChat ?? 'none'}`,
+    ]
+    if (this.problem) lines.push(`Last problem shown: ${this.problem}`)
+    return lines
+  }
+
+  // MARK: Step 6f's usage and billing: the usage (`UsageLoad`), Usage &
+  // Billing, the credits line over the message field, Wallet, the
+  // Credentials Store, the account menu and its Weekly usage, About
+  // (mac/Simeon/SettingsUsage.swift, SettingsPages.swift's Wallet,
+  // SettingsCredentials.swift, Account.swift; the core's AccountSettings.swift
+  // usage, StoreSettings.swift, Upgrade.swift, Trays.swift, AccountMenu.swift,
+  // CredentialsStore.swift).
+
+  /**
+   * The account's usage (`usage`, StoreSettings.swift): read once signed
+   * in, as a chat opens and after each of its turns, when the account menu
+   * opens and on Usage & Billing, unless it was read in the last 30 s; a
+   * failure keeps the last summary on screen.
+   */
+  usage: UsageLoad = emptyUsage
+  /** When the usage was last read, in ms (`usageReadAt`): the account menu counts its reset from it. */
+  usageReadAt?: number
+  /** The computer's notices (`trayList`, Trays.swift): the credits' line reads the open agent's. */
+  trayList = new TrayList()
+  private usageReading?: Promise<void>
+  /** Each read of the usage numbered: only the latest one's answer lands. */
+  private usageSeq = 0
+  /** A billing page was opened in another tab and this one hasn't come back to the front since. */
+  private billingAway = false
+
+  /**
+   * Usage & Billing in Settings' list (SettingsWindow.swift's `pages`):
+   * while the usage is not read yet, and while it is shown (not for an
+   * enterprise team).
+   */
+  get usageListed(): boolean {
+    return shownSummary(this.usage) === undefined || showsSection(this.usage)
+  }
+
+  /** ⌘K and "/" offer Usage & Billing once the usage is read and shown (`usage.showsSection`). */
+  get usageOffered(): boolean {
+    return showsSection(this.usage)
+  }
+
+  /** The usage read again unless it was read under 30 s ago (`loadUsage`); a read on its way is waited for, not doubled. */
+  loadUsage(now: number = Date.now()): Promise<void> {
+    if (this.usage.kind === 'loading')
+      return this.usageReading ?? Promise.resolve()
+    if (
+      this.usage.kind === 'ready' &&
+      this.usageReadAt !== undefined &&
+      now - this.usageReadAt < usageFreshMs
+    )
+      return Promise.resolve()
+    return this.refreshUsage()
+  }
+
+  /** Retry, after Cancel Trial and after a billing page (`refreshUsage`): the server's quota summarised as the Electron app summarised it. */
+  refreshUsage(): Promise<void> {
+    const reading = this.readUsage()
+    this.usageReading = reading
+    return reading
+  }
+
+  private async readUsage(): Promise<void> {
+    const backend = this.backend
+    if (!backend) {
+      this.usage = emptyUsage
+      this.changed()
+      return
+    }
+    this.usageSeq += 1
+    const seq = this.usageSeq
+    const previous = shownSummary(this.usage)
+    this.usage = { kind: 'loading', previous }
+    this.changed()
+    // An answer lands only while it is the latest read's: an older one landing late (a turn's read under Cancel Trial's) is dropped.
+    const latest = () => this.backend === backend && seq === this.usageSeq
+    try {
+      const quota = await backend.server('user/quota')
+      if (!latest()) return
+      this.usage = { kind: 'ready', summary: usageSummary(quota) }
+      this.usageReadAt = Date.now()
+    } catch {
+      if (!latest()) return
+      this.usage = { kind: 'failed', previous }
+    }
+    this.changed()
+  }
+
+  /** A billing page opened in another tab (Usage & Billing's rows): when this tab comes back to the front, they are read again. */
+  billingTabOpened(): void {
+    this.billingAway = true
+  }
+
+  /**
+   * This tab back in front (the window's `focus`, the page shown again):
+   * after a billing page, the access, the plan the access notice words
+   * itself from (5c's `plan`) and the usage are read again, once, as the
+   * Mac reads them when its sheet closes; Settings may have closed meanwhile.
+   */
+  async billingTabBack(): Promise<void> {
+    if (!this.billingAway) return
+    this.billingAway = false
+    await this.refreshAccess()
+    await Promise.all([this.refreshUsage(), this.refreshPlan()])
+  }
+
+  /**
+   * Cancel Trial (`cancelTrial`, Connect's `CancelSandTrial`): none once it
+   * is done and the access and the usage read again (the trial's end
+   * changes what this account may do), else what to say in the question.
+   */
+  async cancelTrial(): Promise<string | undefined> {
+    const backend = this.backend
+    if (!backend?.dashboard) return t('Sign in to Simeon to continue')
+    try {
+      await backend.dashboard('CancelSandTrial', {})
+    } catch (error) {
+      if (
+        error instanceof SimeonAPIError &&
+        error.status >= 400 &&
+        error.status < 500 &&
+        error.message !== ''
+      )
+        return error.message
+      return t('Couldn’t cancel the trial. Try again.')
+    }
+    if (this.backend !== backend) return undefined
+    await this.refreshAccess()
+    // The usage, and the plan the access notice words itself from (5c's `plan`).
+    await Promise.all([this.refreshUsage(), this.refreshPlan()])
+    return undefined
+  }
+
+  /** One of the computer's `tray` events (snapshot, pushed, dismissed, cleared), applied as it comes. */
+  private takeTray(event: JSONValue): void {
+    const before = this.trayList.trays
+    this.trayList.take(event)
+    if (this.trayList.trays !== before) this.changed()
+  }
+
+  /**
+   * The computer's notices read (`loadTrays`, `getTrays`), what came
+   * meanwhile applied over the answer. A resting computer is not woken: it
+   * is read again when the stream comes back.
+   */
+  async loadTrays(): Promise<void> {
+    const backend = this.backend
+    if (!backend) return
+    const seq = this.trayList.beginRead()
+    let answer: JSONValue | undefined
+    try {
+      answer = await backend.command('getTrays', {}, { wakes: false })
+    } catch {
+      answer = undefined
+    }
+    if (this.backend !== backend) return
+    const before = this.trayList.trays
+    this.trayList.finishRead(seq, answer)
+    if (this.trayList.trays !== before) this.changed()
+  }
+
+  /** Whether one of the agent's notices carries the server's sentence for spent credits (the credits' line's `outOfCredits`). */
+  outOfCredits(agentId: string): boolean {
+    return this.trayList.shown(agentId).some(isOutOfCredits)
+  }
+
+  /**
+   * The Credentials Store's calls to Simeon Labs' server (`credentials`,
+   * `credentials/{id}`; `CredentialsStoreModel(store:)`): the page's model
+   * says each to the server, and keeps nothing of a password.
+   */
+  credentialsCall = (
+    path: string,
+    method?: string,
+    body?: JSONValue,
+  ): Promise<JSONValue> => {
+    const backend = this.backend
+    if (!backend)
+      return Promise.reject(
+        new SimeonAPIError(t('Sign in to Simeon first.'), 401),
+      )
+    return backend.server(path, method, body)
+  }
+
+  /** 6f's state back to nothing (signed out). */
+  private resetUsageAndBilling(): void {
+    this.usage = emptyUsage
+    this.usageReadAt = undefined
+    this.usageReading = undefined
+    this.usageSeq += 1
+    this.billingAway = false
+    this.trayList = new TrayList()
+  }
+
   // MARK: The composer's lists
 
   /**
@@ -2766,6 +5904,8 @@ export class AppStore {
 
   /** Resend on a message that failed. */
   async resend(id: string, agentId: string): Promise<void> {
+    // Not while the computer is rebuilt (`rebuild-locked`), as Store.swift's.
+    if (this.isSendingPaused) return
     if (
       !(this.outbox.get(agentId) ?? []).some(
         (item) => item.id === id && item.state === 'failed',
