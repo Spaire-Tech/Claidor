@@ -443,6 +443,48 @@
   cursor: pointer;
 }
 
+/* Take over: the card's blue, its words white (step 5b). */
+.handoff-pill.blue {
+  background: var(--handoff-blue);
+  color: #ffffff;
+}
+
+/* The screen when the agent asked (16:10, 12 round, a hairline, the tile's fill under it): it grows by 2% under the pointer over 0.3 s; a click takes over (step 5b). */
+.handoff-snapshot {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 12px;
+  background: var(--handoff-fill);
+  cursor: pointer;
+}
+
+.handoff-snapshot::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgb(0 0 0 / 0.06);
+  border-radius: 12px;
+  pointer-events: none;
+}
+
+.handoff-snapshot img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease-out;
+}
+
+.handoff-snapshot:hover img {
+  transform: scale(1.02);
+}
+
+.handoff-snapshot:focus-visible,
 .handoff-skip:focus-visible,
 .handoff-pill:focus-visible,
 .form-check input:focus-visible {
@@ -462,6 +504,10 @@
 
   .handoff-card .handoff-outcome {
     background: color-mix(in srgb, var(--handoff-tint) 20%, transparent);
+  }
+
+  .handoff-snapshot::after {
+    border-color: rgb(255 255 255 / 0.08);
   }
 
   .form-check input {

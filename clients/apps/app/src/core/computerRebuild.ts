@@ -8,24 +8,12 @@
 // (ComputerStates.tsx). Checked against the window's own code on the core's
 // fixture (rebuild-lock.json).
 
+import type { ComputerPhase } from './cloudComputer'
 import { type JSONValue, field, int, str, text } from './json'
 import { t } from './l10n'
 
-/** Where an agent's computer is (CloudComputer.swift's `ComputerPhase`, `qoe`). */
-export type ComputerPhase =
-  | 'pulling'
-  | 'running'
-  | 'local'
-  | 'starting'
-  | 'sleeping'
-  | 'off'
-
-/** What the rebuild reads of an agent's computer (StoreRebuild.swift's `rebuildInputs`): where it is, whether a newer image is out, how far its pull has come (0 to 100). */
-export interface RebuildComputer {
-  phase: ComputerPhase
-  imageUpdateAvailable?: boolean
-  pullPercent?: number
-}
+/** Where an agent's computer is (CloudComputer.swift's `ComputerPhase`, `qoe`): 5b's. */
+export type { ComputerPhase }
 
 // MARK: The server's steps
 

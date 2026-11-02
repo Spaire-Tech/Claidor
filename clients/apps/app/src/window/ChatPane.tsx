@@ -10,16 +10,15 @@
 // over the field are in MessageActions.tsx.
 //
 // Find (⌘F) is in FindBar.tsx; the agent's working line under the messages
-// in ActivitySlot.tsx.
+// in ActivitySlot.tsx. The phone in the head, a call's line, its lines and
+// two agents' messages over the chat are in Call.tsx (step 5d).
 //
 // Still to come, each with its part (docs/web-app/PROGRESS.md): the motion
-// of a line coming in, the time on a sideways swipe, two agents' messages
-// and a call's lines opened over the chat (2b);
-// the pictures from the computer, files' kinds, sizes and Save, link cards,
-// previews (2c); the call button (step 5); the agent's pane opened from the
-// head (step 4). The cards (step 3) are drawn by `CardRow` from Cards.tsx
-// and their groups' files (RequestCards, ConnectCards, FlightCards,
-// ShopCards).
+// of a line coming in, the time on a sideways swipe (2b); the pictures from
+// the computer, files' kinds, sizes and Save, link cards, previews (2c); the
+// agent's pane opened from the head (step 4). The cards (step 3) are drawn
+// by `CardRow` from Cards.tsx and their groups' files (RequestCards,
+// ConnectCards, FlightCards, ShopCards).
 
 import {
   createContext,
@@ -32,6 +31,7 @@ import {
   useState,
 } from 'react'
 import { activityLine } from '../core/activity'
+import { parseCallRecord } from '../core/call'
 import { approvalCard, draftCard, questionCard } from '../core/cards'
 import {
   type Bubble,
@@ -41,7 +41,6 @@ import {
   type RoutineRef,
   channelTitle,
   exchangeLabel,
-  exchangePeers,
   isOneEmoji,
   quoteLine,
   replyPlaceholder,
@@ -69,7 +68,14 @@ import { t } from '../l10n'
 import { ActivitySlot } from './ActivitySlot'
 import { AgentMark } from './AgentMark'
 import { DropOverlay, useFileDrop, useStaging } from './Attachments'
-import { CallHeadRow, CallLineRow, ChatCoverView } from './Call'
+import {
+  CallHeadRow,
+  CallLineRow,
+  CallRecordView,
+  ChatCoverView,
+  ExchangeChip,
+  useCovered,
+} from './Call'
 import {
   ApprovalCardView,
   type CardProps,
@@ -192,6 +198,8 @@ export function ChatPane({
   // The files waiting to go with the next message (`ChatControl.staged`), and files dropped anywhere on the chat.
   const staging = useStaging()
   const drop = useFileDrop(staging.stage)
+  // A call's lines or an exchange over the chat (step 5d): its field is hidden and takes no keys, and files dropped are refused (`coversChat`).
+  const covered = useCovered(agentId)
   // The message being answered (`ChatControl.reply`), in the chat or the thread it was chosen in.
   const [answering, setAnswering] = useState<{
     reply: Reply
@@ -391,7 +399,7 @@ export function ChatPane({
       className="chat-pane"
       aria-label={agent?.name}
       ref={pane}
-      {...drop.handlers}
+      {...(covered ? {} : drop.handlers)}
     >
       {/* A thread, or back to the chat: the lines on screen start again, at their newest. */}
       <Transcript
@@ -423,17 +431,19 @@ export function ChatPane({
         top={(threadRoot != null ? 44 : 116) + 8}
         onHeight={setBannerHeight}
       />
-      <Composer
-        store={store}
-        agentId={agentId}
-        name={agent?.name ?? ''}
-        threadRoot={threadRoot}
-        reply={reply}
-        onCancelReply={() => setAnswering(undefined)}
-        focusKey={focusKey}
-        onHeight={setComposerHeight}
-        staging={staging}
-      />
+      <div className={covered ? 'under-cover' : undefined} inert={covered}>
+        <Composer
+          store={store}
+          agentId={agentId}
+          name={agent?.name ?? ''}
+          threadRoot={threadRoot}
+          reply={reply}
+          onCancelReply={() => setAnswering(undefined)}
+          focusKey={focusKey}
+          onHeight={setComposerHeight}
+          staging={staging}
+        />
+      </div>
       {/* Find's bar, 8 under the head and 16 from the right, over the messages. */}
       {here.open && (
         <FindBar
@@ -490,9 +500,13 @@ export function ChatPane({
           close={closeOverlay}
         />
       )}
-      {drop.dropping && <DropOverlay />}
-      {/* A call's lines or two agents' exchange, over the chat and its field (step 5d). */}
-      <ChatCoverView store={store} agentId={agentId} />
+      {drop.dropping && !covered && <DropOverlay />}
+      {/* A call's lines (under the agent's own head) or two agents' exchange, over the chat and its field (step 5d). */}
+      <ChatCoverView
+        store={store}
+        agentId={agentId}
+        head={agent && <ChatHeader store={store} agent={agent} />}
+      />
     </section>
   )
 }
@@ -1047,38 +1061,18 @@ function RowContent({
           startsGroup={run.startsGroup}
         />
       )
-    case 'teammates': {
-      const peers = exchangePeers(row.exchange)
-      const title =
-        peers.length === 1 ? peers[0]!.name : t`${peers.length} agents`
+    case 'teammates':
+      // Step 5d's: the chip opens their messages over the chat, or a menu of them.
       return (
         <div className="system-event">
           <span className="label">{exchangeLabel(row.exchange)}</span>
-          <span className="event-chip">
-            <span className="marks">
-              {peers.slice(0, 3).map((peer) => {
-                const known = control.store.agent(peer.id)
-                return known ? (
-                  <AgentMark
-                    key={peer.id}
-                    agent={known}
-                    agents={control.store.agents}
-                    size={16}
-                  />
-                ) : (
-                  <span
-                    key={peer.id}
-                    className="picture"
-                    style={{ width: 16, height: 16 }}
-                  />
-                )
-              })}
-            </span>
-            <span className="chip-title">{title}</span>
-          </span>
+          <ExchangeChip
+            store={control.store}
+            agentId={control.agentId}
+            exchange={row.exchange}
+          />
         </div>
       )
-    }
     case 'routines':
       return (
         <RoutinesLine
@@ -1095,6 +1089,7 @@ function RowContent({
           agentId={control.agentId}
           id={row.id}
           seconds={row.seconds}
+          lines={row.lines}
           live={row.live}
         />
       )
@@ -1675,6 +1670,9 @@ function AgentWords({ bubble }: { bubble: Bubble }) {
     }),
     [names, personName, speaker, bubble.introduces, store, openAgent],
   )
+  // A call written by a host from before 2 October 2026: its record, opening on its recap (step 5d, `CallRecordView`).
+  const record = parseCallRecord(bubble.text)
+  if (record) return <CallRecordView {...record} />
   return (
     <MentionContext.Provider value={setting}>
       <MessageBlocks markdown={bubble.text} />

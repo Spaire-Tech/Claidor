@@ -1,9 +1,10 @@
 // The shop cards as the window draws them, and the web's own choices
 // (docs/web-app/PROGRESS.md): a card the core can't read is left to the
 // chat, which says its words;
-// Allow waits for a card to be picked; Review order is offered only where
-// it opens something on the web (a Shop checkout's page); the products
-// stand side by side when the chat has room, else in rows.
+// Allow waits for a card to be picked; Review order opens the agent's
+// computer, or a Shop checkout's page, and the bank's check has Open the
+// computer (step 5b); the products stand side by side when the chat has
+// room, else in rows.
 
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
@@ -12,6 +13,7 @@ import type { JSONObject } from '../core/json'
 import { AppStore } from '../core/store'
 import type { CardProps } from './Cards'
 import { shopCardView } from './ShopCards'
+import { WindowContext, WindowModel } from './windowModel'
 
 const store = new AppStore()
 
@@ -36,7 +38,11 @@ function draw(
     column,
     openAgent: () => {},
   }
-  return renderToStaticMarkup(<>{shopCardView(kind, card)}</>)
+  return renderToStaticMarkup(
+    <WindowContext.Provider value={new WindowModel('iris')}>
+      {shopCardView(kind, card)}
+    </WindowContext.Provider>,
+  )
 }
 
 const purchase = (more: JSONObject = {}): JSONObject => ({
@@ -80,9 +86,11 @@ describe('the shop cards on the web', () => {
     expect(page).toMatch(/<button[^>]*class="shop-pill prominent"[^>]*disabled/)
   })
 
-  it('offers Review order only where it opens something on the web', () => {
-    // A Link checkout's cart is on the agent's computer, whose screen comes in step 5.
-    expect(draw('purchase', purchase())).not.toContain('review-order')
+  it('opens the agent’s computer from Review order and the bank’s check, and a Shop checkout’s page', () => {
+    // A Link checkout's cart is on the agent's computer.
+    const link = draw('purchase', purchase())
+    expect(link).toContain('review-order')
+    expect(link).toContain('title="Open the computer on the checkout"')
     // A Shop checkout's is the store's page.
     const shop = draw(
       'purchase',
@@ -90,7 +98,7 @@ describe('the shop cards on the web', () => {
     )
     expect(shop).toContain('review-order')
     expect(shop).toContain('title="Open the store&#x27;s page"')
-    // The bank's check: no Open the computer yet, its words stay.
+    // The bank's check: Open the computer under its words.
     const bank = draw(
       'purchase',
       purchase({
@@ -103,7 +111,7 @@ describe('the shop cards on the web', () => {
       { purchaseState: 'approved', purchaseStep: 'verify' },
     )
     expect(bank).toContain('Your bank wants to confirm it&#x27;s you')
-    expect(bank).not.toContain('Open the computer<')
+    expect(bank).toContain('Open the computer<')
   })
 
   it('stands the products side by side when the chat has room, else in rows', () => {

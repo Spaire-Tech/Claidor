@@ -15,10 +15,17 @@ import { makeAgent } from './models'
 import { AppStore } from './store'
 import { FakeBackend, eventually, ms } from './testing'
 
-/** What 5b does with the computer's disk news (`box-disk-pressure`): kept, and 5c told (the merge routes it through `applyComputer`). */
+/** The computer's disk news (`box-disk-pressure`): 5b keeps it and tells 5c (`diskPressureChanged`). */
 function diskNews(store: AppStore, level: string | undefined): void {
-  store.diskPressure = level === undefined ? undefined : { level }
-  ;(store as unknown as { diskPressureChanged(): void }).diskPressureChanged()
+  store.apply({
+    kind: 'diskPressure',
+    pressure: level === undefined ? null : { level },
+  })
+}
+
+/** An agent's computer as the host pushes it (`forever-box`), kept by 5b's book. */
+function status(store: AppStore, fields: Record<string, JSONValue>): void {
+  store.apply({ kind: 'computer', status: { agentId: 'theo', ...fields } })
 }
 
 /** The server's side, as the test tells it: the two recreates' answers, and the record's stream, fed by the test. */
@@ -182,15 +189,9 @@ describe('Update Simeon’s Computer is offered as the window offers it (`testUp
     store.setWindowSelection('theo')
     expect(store.computerUpdateOffer, 'unknown: offered').toBe('ready')
     expect(store.computerUpdateAvailable).toBe(false)
-    store.rebuildComputerChanged('theo', {
-      phase: 'running',
-      imageUpdateAvailable: false,
-    })
+    status(store, { state: 'running', imageUpdateAvailable: false })
     expect(store.computerUpdateOffer, 'known up to date').toBeUndefined()
-    store.rebuildComputerChanged('theo', {
-      phase: 'running',
-      imageUpdateAvailable: true,
-    })
+    status(store, { state: 'running', imageUpdateAvailable: true })
     expect(store.computerUpdateOffer).toBe('ready')
     expect(store.computerUpdateAvailable).toBe(true)
     store.setWindowSelection('squad')
@@ -209,6 +210,27 @@ describe('Update Simeon’s Computer is offered as the window offers it (`testUp
     store.setWindowSelection('theo')
     expect(store.computerUpdateOffer).toBe('busy-override')
     expect(store.workingAgentNames).toEqual(['Theo'])
+  })
+})
+
+describe('the rebuild follows the selected computer’s status (5b’s book, `computerChanged`)', () => {
+  it('its phase; a computer that starts pulling by itself is an update', async () => {
+    const store = new AppStore()
+    await store.attach(roster())
+    store.apply({ kind: 'connection', live: true })
+    store.setWindowSelection('theo')
+    status(store, {
+      state: 'running',
+      vncUrl: 'http://127.0.0.1:6080/vnc.html',
+    })
+    expect(store.rebuild.lock.boxPhase).toBe('running')
+    expect(store.rebuild.lock.kind).toBeUndefined()
+    status(store, { state: 'running', pull: { percent: 40 } })
+    expect(store.rebuild.lock.boxPhase).toBe('pulling')
+    expect(store.rebuild.lock.kind).toBe('update')
+    expect(store.rebuild.lock.updateSource).toBe('auto')
+    expect(store.rebuildSteps('update').progress).toBeCloseTo((2 + 0.4) / 6, 9)
+    store.detach()
   })
 })
 
