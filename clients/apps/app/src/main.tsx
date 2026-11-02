@@ -3,9 +3,11 @@ import { createRoot } from 'react-dom/client'
 import { App } from './App'
 import { currentLanguage } from './core/language'
 import { loadWords } from './core/words'
+import { CallWindowPage } from './desktop/CallWindow'
 import { desktop } from './desktop/desktop'
 import { listenForQuitting } from './desktop/quitting'
 import { desktopSessionOptions, startDesktopSession } from './desktop/session'
+import { DesktopSurfaces } from './desktop/surfaces'
 import './index.css'
 import { WebSession } from './session'
 import './window/desktop.css'
@@ -21,11 +23,24 @@ async function start() {
   // In the Windows app: its own server, keeping and name (src/desktop/session.ts), and the window's own drag areas (window/desktop.css).
   const host = desktop()
   if (host) document.documentElement.dataset.desktop = host.facts.platform
+  // The Windows app's call window: the call's banner alone (src/desktop/CallWindow.tsx), no session of its own.
+  if (host?.facts.window === 'call') {
+    document.documentElement.dataset.window = 'call'
+    const root = document.getElementById('root')
+    if (root)
+      createRoot(root).render(
+        <StrictMode>
+          <CallWindowPage host={host} />
+        </StrictMode>,
+      )
+    return
+  }
   const session = new WebSession(host ? desktopSessionOptions(host) : {})
   if (host) listenForQuitting(host)
-  // The call's own window (7c) shows the main window's call: it never signs in, nor keeps the chats (src/desktop/session.ts).
-  const signsIn = host?.facts.window !== 'call'
-  if (host && signsIn) startDesktopSession(host, session)
+  // The logs and the chats kept on this PC (src/desktop/session.ts); the call's window returned above and never signs in.
+  if (host) startDesktopSession(host, session)
+  // Windows' notifications, the taskbar, the tray and the menu keys, for the app's life (src/desktop/surfaces.ts).
+  if (host) new DesktopSurfaces(host, session).start()
   const root = document.getElementById('root')
   if (root) {
     createRoot(root).render(
@@ -34,7 +49,7 @@ async function start() {
       </StrictMode>,
     )
   }
-  if (signsIn) await session.start()
+  await session.start()
 }
 
 void start()

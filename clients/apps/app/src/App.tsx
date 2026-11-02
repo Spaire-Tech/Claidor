@@ -14,6 +14,7 @@ import {
   useSyncExternalStore,
 } from 'react'
 import { desktop } from './desktop/desktop'
+import { useDesktopWindow } from './desktop/useDesktopWindow'
 import { t } from './l10n'
 import type { WebSession } from './session'
 import { AccessCover } from './window/AccessCover'
@@ -26,6 +27,7 @@ import { ComputerLayer } from './window/ComputerView'
 import { ConsentLayer } from './window/ConnectConsent'
 import { Connector, ConnectorContext } from './window/connector'
 import { ConnectorsLayer } from './window/Connectors'
+import { useControlTab } from './window/controlTab'
 import { somethingOver } from './window/Dialogs'
 import { FeedbackLayer } from './window/Feedback'
 import { FirstRunScreen } from './window/FirstRun'
@@ -298,6 +300,9 @@ function MainWindow({ session }: { session: WebSession }) {
   const rail = showsRail(size, windowWidth - pane)
   const width = sidebarWidth(size, windowWidth - pane)
   useWindowKeys(model, resize)
+  // The Windows app: Control-Tab's walk (the Mac's), the tray's and the notifications' asks (step 7c).
+  const cycling = useControlTab(store, model, shown)
+  useDesktopWindow(store, model, shown)
   // A file's preview, or pictures and videos, over the window (`Viewers`), one at a time.
   const [viewer, setViewer] = useState<Shown>()
   const closeViewer = useCallback(() => setViewer(undefined), [])
@@ -317,6 +322,7 @@ function MainWindow({ session }: { session: WebSession }) {
               rail={rail}
               width={width}
               session={session}
+              cycling={cycling}
             />
             <main className="chat-area">
               {/* Moves the Windows app's window, as the Mac's chat head and empty window do (window/desktop.css). */}
