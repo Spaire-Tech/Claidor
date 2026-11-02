@@ -19,6 +19,14 @@ Windows' own parts around it. The plan and the record are
   (`src/preload/preload.ts`) carries the calls and events, nothing else.
 - **Kept on the device**: the session's pair and the computer's address,
   sealed with Windows' own protection (`safeStorage`) in `%APPDATA%\Simeon\kept`.
+- **Updates** (`src/main/updates/`, the Mac's `Updates.swift`): electron-updater
+  reads the feed electron-builder.yml names (`publish`: the server, which sends
+  it on to the release bucket's `releases/win32-x64/`), daily and from Settings ›
+  Updates; only a release updates itself (a build number from
+  `scripts/release.mjs`), never a developer's build. The switches and the last
+  check are kept in `%APPDATA%\Simeon\updates.json`.
+- **The icon** is the Mac's (`resources/icon.ico`, `icon.png`, made by
+  `scripts/make-icon.mjs` from `mac/Simeon/Assets.xcassets/MacIcon.appiconset`).
 
 ## Commands
 
@@ -31,8 +39,15 @@ npm run typecheck
 npm start                  # the app, against https://api.simeonlabs.com
 npm start -- --api=http://127.0.0.1:8000   # against a server on this computer
 npm run smoke              # the app run for real against a stand-in (Linux: xvfb-run -a npm run smoke)
-npm run package            # the installer in out/ (on Linux: needs Wine)
+npm run package            # a developer's installer in out/ (on Linux: needs Wine)
+node scripts/release.mjs   # a release in out/release/<version>/ (signed with WIN_CSC_LINK, WIN_CSC_KEY_PASSWORD)
+node scripts/release.mjs --publish   # and on the website (signed only; the aws command line signed in)
+node scripts/make-icon.mjs # the icon again, from the Mac's
 ```
+
+`SIMEON_UPDATES_FEED=http://127.0.0.1:<port>/<path>` gives a build that
+isn't a release a stand-in feed on this computer (the checks); a release
+reads only its own.
 
 `SIMEON_APP_ROOT=<folder>` loads another build of the web app;
 `SIMEON_USER_DATA=<folder>` gives the app a data folder of its own (the

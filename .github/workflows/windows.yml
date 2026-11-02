@@ -1,0 +1,73 @@
+name: Windows app
+
+# The Windows app (windows/, docs/web-app/README.md step 7) on a Windows
+# runner: its tests, its typecheck, the app run for real against the
+# stand-in server on the runner itself (scripts/smoke.mjs: nothing outside
+# is reached), then a release's installer (scripts/release.mjs, without
+# --publish: nothing is uploaded), kept as an artifact of the run.
+#
+# The installer is signed when the repository has the certificate as two
+# secrets, WIN_CSC_LINK (the .pfx, in base64) and WIN_CSC_KEY_PASSWORD;
+# without them it is built unsigned. Publishing stays on a person's computer
+# (node scripts/release.mjs --publish), as the Mac's release.
+#
+# By hand only, as desktop_mac.yml: GitHub bills Windows runners at twice
+# the Linux minute rate, and the build takes a while.
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: windows-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: windows
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v7
+        with:
+          # The build number is the commit count (scripts/release.mjs).
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: clients/.node-version
+          cache: npm
+          cache-dependency-path: windows/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Electron's own binary
+        run: npm run electron:install
+
+      - name: Test
+        run: npm test
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Run the app against the stand-in
+        run: npm run smoke
+
+      - name: Build the installer
+        run: node scripts/release.mjs
+        env:
+          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+
+      - name: Keep the installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: Simeon-Windows-x64
+          path: windows/out/release/
+          if-no-files-found: error
+          retention-days: 14
