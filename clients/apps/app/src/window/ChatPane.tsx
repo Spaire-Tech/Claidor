@@ -98,6 +98,7 @@ import {
   MessageBlocks,
 } from './MessageText'
 import { requestCardView } from './RequestCards'
+import { useSearchReveal } from './SearchPanel'
 import { shopCardView } from './ShopCards'
 import { useOpenMedia } from './Viewers'
 import { classes } from './classes'
@@ -220,6 +221,9 @@ export function ChatPane({
       : undefined
   /** Brings a row to the middle without lighting it (find's `scrollToEntryWithoutHighlight`); set by the lines on screen. */
   const revealRef = useRef<(rowId: string) => void>(undefined)
+  /** Brings a row to the middle and lights it (`jump`); set by the lines on screen. A line search found goes there (step 4d). */
+  const jumpRef = useRef<(rowId: string) => void>(undefined)
+  useSearchReveal(store, agentId, jumpRef)
 
   // ⌘F (Ctrl-F on Windows): the bar, or its field again with its words chosen.
   useEffect(() => {
@@ -394,6 +398,7 @@ export function ChatPane({
         actions={actions}
         find={findOnScreen}
         revealRef={revealRef}
+        jumpRef={jumpRef}
         openAgent={onOpenAgent}
       />
       {agent &&
@@ -596,6 +601,7 @@ function Transcript({
   actions,
   find,
   revealRef,
+  jumpRef,
   openAgent,
 }: {
   store: AppStore
@@ -606,6 +612,7 @@ function Transcript({
   /** What find lights: its words in small letters, and the match it stands on. */
   find?: { needle: string; current?: FindMatch }
   revealRef: React.RefObject<((rowId: string) => void) | undefined>
+  jumpRef: React.RefObject<((rowId: string) => void) | undefined>
   openAgent: (agentId: string) => void
 }) {
   const rows =
@@ -688,7 +695,8 @@ function Transcript({
     const element = scroller.current
     if (!element) return
     const gap = element.scrollHeight - element.scrollTop - element.clientHeight
-    pinned.current = gap <= pinGap
+    // A jump's scroll under way leaves the newest line, though its first steps are still near it.
+    if (!jumping.current) pinned.current = gap <= pinGap
     if (pinned.current !== atNewest) setAtNewest(pinned.current)
     const newest = rows[rows.length - 1]?.id
     if (pinned.current && seenUpTo !== newest) setSeenUpTo(newest)
@@ -701,18 +709,36 @@ function Transcript({
       void store.loadOlder(agentId)
   }
 
-  const jump = useCallback((rowId: string) => {
-    const element = scroller.current?.querySelector(
-      `[data-row-id="${CSS.escape(rowId)}"]`,
-    )
-    if (!element) return
+  /** A row brought to the middle: the chat holds its newest line no more, even while the scroll's first steps are still near it (a far one, a found line or a quote, was taken back to the newest). */
+  const jumping = useRef(false)
+  const scrollToRow = useCallback((element: Element) => {
     pinned.current = false
     setAtNewest(false)
+    jumping.current = true
+    const done = () => {
+      jumping.current = false
+    }
+    scroller.current?.addEventListener('scrollend', done, { once: true })
+    setTimeout(done, 3_000)
     element.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    // Lit in the warning yellow at 22%, then it fades (`sand-12cjh1l`).
-    setLit(rowId)
-    setTimeout(() => setLit((now) => (now === rowId ? undefined : now)), 2_500)
   }, [])
+
+  const jump = useCallback(
+    (rowId: string) => {
+      const element = scroller.current?.querySelector(
+        `[data-row-id="${CSS.escape(rowId)}"]`,
+      )
+      if (!element) return
+      scrollToRow(element)
+      // Lit in the warning yellow at 22%, then it fades (`sand-12cjh1l`).
+      setLit(rowId)
+      setTimeout(
+        () => setLit((now) => (now === rowId ? undefined : now)),
+        2_500,
+      )
+    },
+    [scrollToRow],
+  )
 
   // Find's step: the row to the middle, unlit, letting go of the newest.
   useEffect(() => {
@@ -721,14 +747,18 @@ function Transcript({
         `[data-row-id="${CSS.escape(rowId)}"]`,
       )
       if (!element) return
-      pinned.current = false
-      setAtNewest(false)
-      element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      scrollToRow(element)
     }
     return () => {
       revealRef.current = undefined
     }
-  }, [revealRef])
+  }, [revealRef, scrollToRow])
+  useEffect(() => {
+    jumpRef.current = jump
+    return () => {
+      jumpRef.current = undefined
+    }
+  }, [jump, jumpRef])
 
   // The agent at work: the words beside its picture under the messages.
   const activity = useMemo(

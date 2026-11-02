@@ -35,6 +35,13 @@ export interface PaneLayout {
   setCollapsed(collapsed: boolean): void
 }
 
+/** A line search found (step 4d): its chat, the line, and a count that makes each one new. */
+export interface Reveal {
+  agentId: string
+  entryId: string
+  count: number
+}
+
 /** A routine's editor, while it is open (step 4c): the routine, or none for New Routine. */
 export interface RoutineEditing {
   agentId: string
@@ -119,9 +126,30 @@ export class WindowModel {
   newAgent = false
   /** The Hidden Agents sheet (the sidebar's foot, ⌘K and "/"). */
   hiddenAgents = false
+  /** A message or file found by search, its chat to open at that line, lit (`pendingReveal`, step 4d); the count makes each one new. */
+  pendingReveal?: Reveal
 
   constructor(selected?: string) {
     this.selected = selected
+  }
+
+  /** Search's message or file (`reveal`): its chat opens (the chart gives way to it) and goes to the line. */
+  reveal(entryId: string, agentId: string): void {
+    this.pendingReveal = {
+      agentId,
+      entryId,
+      count: (this.pendingReveal?.count ?? 0) + 1,
+    }
+    this.orgChart = false
+    this.selected = agentId
+    this.changed()
+  }
+
+  /** The chat has taken the line it was asked to show. */
+  revealTaken(reveal: Reveal): void {
+    if (this.pendingReveal !== reveal) return
+    this.pendingReveal = undefined
+    this.changed()
   }
 
   /** An agent opened (`WindowState.choose`): the org chart closes. The pane follows it in `agentChanged`, once the window shows it. */
@@ -471,6 +499,7 @@ export class WindowModel {
     this.newAgent = false
     this.hiddenAgents = false
     this.avatarEditorFor = undefined
+    this.pendingReveal = undefined
     this.changed()
   }
 }
