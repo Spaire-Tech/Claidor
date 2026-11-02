@@ -3,6 +3,7 @@
 // folder is in orgChartStore.test.ts, against the stand-in computer.
 
 import { describe, expect, it } from 'vitest'
+import { NetworkError } from './http'
 import {
   addressWithoutPack,
   isPackId,
@@ -171,6 +172,11 @@ describe('a starter pack', () => {
     expect(packReadFailure(new Error(''))).toBe(
       'Simeon isn’t available at the moment. Try again in a little while.',
     )
+    // No answer at all: the browser's words ("Failed to fetch", "Load failed") are never shown.
+    for (const words of ['Failed to fetch', 'Load failed'])
+      expect(packReadFailure(new NetworkError(words, 'unreachable'))).toBe(
+        "Simeon can't be reached. Check your connection and try again.",
+      )
     expect(packAddFailure(undefined)).toEqual({ added: undefined })
     expect(
       packAddFailure("Couldn't create Hugo: the gateway closed (1006)"),

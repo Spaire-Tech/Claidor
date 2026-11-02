@@ -98,7 +98,8 @@
   position: relative;
   flex: 1;
   min-height: 0;
-  overflow: hidden;
+  /* The card slides in from the right edge and stays inside it; its shadow falls softly over the foot, as the Mac's card, a sibling of the clipped canvas, casts it (only the canvas clips itself). */
+  clip-path: inset(-48px 0 -48px 0);
 }
 
 .network-canvas {

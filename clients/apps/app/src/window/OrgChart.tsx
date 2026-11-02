@@ -139,13 +139,6 @@ function useNow(): number {
   return now
 }
 
-/** A group's members, in its order, those still listed (`AppStore.members(of:)`). */
-function membersOf(group: Agent, agents: readonly Agent[]): Agent[] {
-  return group.memberIds
-    .map((id) => agents.find((agent) => agent.id === id))
-    .filter((agent): agent is Agent => agent != null)
-}
-
 /** A field holds the keys: Escape is its own. */
 function fieldHasKeys(): boolean {
   const element = document.activeElement
@@ -449,16 +442,27 @@ function NetworkStage({
 
   const onPointerDown = (event: React.PointerEvent) => {
     if (event.button !== 0 || agents.length === 0) return
+    const id = event.pointerId
     press.current = {
-      id: event.pointerId,
+      id,
       x: event.clientX,
       y: event.clientY,
       view,
       moved: false,
     }
+    // A press let go anywhere, inside the canvas or out, is over: only a press that begins on the canvas pans it (the Mac's DragGesture). A drag ends on the canvas's own pointerup, its pointer captured.
+    const over = (up: PointerEvent) => {
+      if (up.pointerId !== id) return
+      window.removeEventListener('pointerup', over, true)
+      window.removeEventListener('pointercancel', over, true)
+      if (press.current?.id === id && !press.current.moved)
+        press.current = undefined
+    }
+    window.addEventListener('pointerup', over, true)
+    window.addEventListener('pointercancel', over, true)
   }
   const onPointerMove = (event: React.PointerEvent) => {
-    // A press let go outside the canvas, before it became a drag, is over.
+    // A press let go where no pointerup reached the page (outside the window), before it became a drag, is over.
     if (press.current && (event.buttons & 1) === 0 && !press.current.moved)
       press.current = undefined
     const held = press.current
@@ -517,6 +521,7 @@ function NetworkStage({
         onPointerMove={onPointerMove}
         onPointerUp={endPress}
         onPointerCancel={endPress}
+        onLostPointerCapture={endPress}
         onPointerLeave={() => {
           pointer.current = undefined
           if (hoveredLine !== undefined) setHoveredLine(undefined)
@@ -835,10 +840,16 @@ function NetworkLine({
         : 0.6
   // Only the pointer's coming and going is eased (0.48 s); the rest changes at once.
   const [hoverSeen, setHoverSeen] = useState(hovering)
+  const [selectedSeen, setSelectedSeen] = useState(selected)
   const [easing, setEasing] = useState(false)
   if (hoverSeen !== hovering) {
     setHoverSeen(hovering)
     setEasing(true)
+  }
+  // A line picked turns blue at once, even just after the pointer reached it (the Mac eases only `hovering`).
+  if (selectedSeen !== selected) {
+    setSelectedSeen(selected)
+    setEasing(false)
   }
   useEffect(() => {
     if (!easing) return
@@ -961,7 +972,7 @@ function AgentCard({ agent, store }: { agent: Agent; store: AppStore }) {
       {agent.isGroup && (
         <div className="card-section">
           <SectionHeading>{memberCount(agent.memberIds.length)}</SectionHeading>
-          <MemberMarks members={membersOf(agent, store.agents)} store={store} />
+          <MemberMarks members={store.members(agent)} store={store} />
         </div>
       )}
       {line != null && line !== '' && (
@@ -1053,7 +1064,7 @@ function MembershipCard({
       />
       <div className="card-section">
         <SectionHeading>{memberCount(group.memberIds.length)}</SectionHeading>
-        <MemberMarks members={membersOf(group, store.agents)} store={store} />
+        <MemberMarks members={store.members(group)} store={store} />
       </div>
       <ChartButton
         title={t('Open room')}
@@ -1070,8 +1081,9 @@ function PersonMark() {
       <mask id="org-chart-person">
         <rect width="22" height="22" fill="white" />
         <circle cx="11" cy="8.6" r="3.9" fill="black" />
+        {/* The body runs past the circle, which crops it (no band under the shoulders). */}
         <path
-          d="M4.6 18.2c1.3-2.8 3.8-4.3 6.4-4.3s5.1 1.5 6.4 4.3"
+          d="M3.6 24c0-5.6 3.3-10.1 7.4-10.1s7.4 4.5 7.4 10.1z"
           fill="black"
         />
       </mask>

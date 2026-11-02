@@ -11,7 +11,9 @@
 // first at once (`isKickstartRequested`): its instructions say to ask for
 // its apps, and an app already connected is only named.
 
+import { NetworkError } from './http'
 import { type JSONValue, arr, field, isObject, str } from './json'
+import { t } from './l10n'
 import { plainError, plainProblem, unavailable } from './plainWords'
 
 export interface PackApp {
@@ -58,8 +60,15 @@ export interface PackAsk {
   adding: boolean
 }
 
-/** A read that failed, as the sheet says it: the server's sentence ("This team isn't available anymore."), or a plain one. */
+/**
+ * A read that failed, as the sheet says it: the server's sentence ("This
+ * team isn't available anymore."), or a plain one; no answer at all (the
+ * browser's "Failed to fetch", "Load failed"…) says so in the person's
+ * language, as the Mac shows the system's own words for it.
+ */
 export function packReadFailure(error: unknown): string {
+  if (error instanceof NetworkError)
+    return t("Simeon can't be reached. Check your connection and try again.")
   const words = error instanceof Error ? error.message : String(error)
   return plainError(words) || unavailable()
 }
