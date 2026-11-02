@@ -827,11 +827,14 @@ function Transcript({
     }
   }, [jump, jumpRef])
 
-  // The agent at work: the words beside its picture under the messages.
+  // The agent at work: the words beside its picture under the messages; none while it waits on an ask to use this PC (`Le`: the Allow card says it).
+  const asking = agent ? store.localAsk(agent.id) != null : false
   const activity = useMemo(
     () =>
-      agent ? activityLine(agent, (id) => store.agent(id)?.name) : undefined,
-    [agent, store],
+      agent && !asking
+        ? activityLine(agent, (id) => store.agent(id)?.name)
+        : undefined,
+    [agent, asking, store],
   )
 
   const unseen = useMemo(() => {
