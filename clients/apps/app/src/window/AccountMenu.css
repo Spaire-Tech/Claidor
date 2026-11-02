@@ -1,0 +1,130 @@
+/*
+ * About over the window (AccountMenu.tsx, mac/Simeon/Account.swift's
+ * `AboutLayer`, `AboutCard`, `CopyVersionButton`), light and dark. The
+ * account menu itself is drawn as the window's menus (ContextMenu.css).
+ */
+
+/* The window darkened: #141414 at 50% (70% on dark); over everything but the call's banner. No motion. */
+.about-dim {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  background: rgb(20 20 20 / 0.5);
+}
+
+@media (prefers-color-scheme: dark) {
+  .about-dim {
+    background: rgb(20 20 20 / 0.698);
+  }
+}
+
+/* The card: 360 wide on the raised ground, round 14 with a line at 15% (none on dark). */
+.about-card {
+  position: relative;
+  width: 360px;
+  overflow: hidden;
+  border-radius: 14px;
+  background: var(--elevated);
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--panel-edge);
+  outline: none;
+}
+
+/* Padded 32 above and 16 around, 12 between its lines. */
+.about-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 32px 16px 16px;
+}
+
+.about-icon {
+  display: block;
+  width: 64px;
+  height: 64px;
+}
+
+/* "Simeon" (22, semibold, tracked -0.264) over the version (12, grey), 2 apart. */
+.about-names {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.about-name {
+  height: 28px;
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 28px;
+  letter-spacing: -0.264px;
+}
+
+.about-version {
+  height: 16px;
+  color: var(--ink-secondary);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+/* The copyright: 11, tracked 0.07, the lighter grey. */
+.about-copyright {
+  height: 14px;
+  color: var(--ink-tertiary);
+  font-size: 11px;
+  line-height: 14px;
+  letter-spacing: 0.07px;
+}
+
+/* Copy version info's bar: 12 above it, 32 under, 16 at its left and 12 at its right. */
+.about-foot {
+  display: flex;
+  justify-content: center;
+  padding: 12px 12px 32px 16px;
+}
+
+/* Copy version info: 14, 32 high, 10 a side, round 8, a half-point line at 15%; the row's grey, a step darker under the pointer. */
+.about-copy {
+  height: 32px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: rgb(119 119 119 / 0.09);
+  box-shadow: inset 0 0 0 0.5px color-mix(in srgb, var(--ink) 15%, transparent);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.about-copy:hover {
+  background: rgb(119 119 119 / 0.17);
+}
+
+.about-copy:focus-visible {
+  outline: 2px solid var(--unread);
+  outline-offset: 1px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .about-copy {
+    background: rgb(119 119 119 / 0.173);
+  }
+
+  .about-copy:hover {
+    background: rgb(119 119 119 / 0.32);
+  }
+}
+
+/* × at the top right, 11 in. */
+.about-close {
+  position: absolute;
+  top: 11px;
+  right: 11px;
+  display: flex;
+}

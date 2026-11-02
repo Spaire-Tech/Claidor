@@ -223,6 +223,22 @@ import {
   packSectionId,
 } from './starterPacks'
 import { bytesFromBase64URL } from './tokens'
+import { TrayList } from './trays'
+import {
+  creditsFlow,
+  isOutOfCredits,
+  paymentMethodFlow,
+  startNowFlow,
+  upgradeFlow,
+} from './upgrade'
+import {
+  type UsageLoad,
+  emptyUsage,
+  shownSummary,
+  showsSection,
+  usageFreshMs,
+  usageSummary,
+} from './usage'
 import { LiveCall, type VoiceTransport } from './voiceCall'
 
 /** A call whose failure changes nothing: tried, and let be. */
@@ -890,6 +906,10 @@ export class AppStore {
       case 'subagents':
         this.applyComputer(event)
         return
+      case 'tray':
+        // The computer's notices (6f): the credits' line reads an open agent's.
+        this.takeTray(event.tray)
+        return
       default:
         // The rebuild's and the move's (5c); the rest comes with its screens.
         this.applyRebuild(event)
@@ -1359,19 +1379,33 @@ export class AppStore {
     }
   }
 
-  /** Stripe's page for the account (`POST billing/portal`, with its flow): its address, or the words to show. */
+  /**
+   * Stripe's page for the account (`POST billing/portal`, StoreSettings.swift's
+   * `billingPortal`): the confirmation of the next plan up (`update_confirm`
+   * with its `tier`), the card form for a payment that failed
+   * (`payment_method`), Start Plan Now for a card trial (`start_now`),
+   * extra credits (`credits`), or its front page. No `back`: the web opens it
+   * in a tab, and the page ends on the web's billing page (decision of 1
+   * November 2026). Its address, or the words to show.
+   */
   async billingPortal(
     flow?: string,
+    tier?: string,
   ): Promise<{ url?: string; message?: string }> {
     const fallback = t('Couldn’t open billing. Try again.')
     const backend = this.backend
     if (!backend) return { message: t('Sign in to Simeon to continue') }
+    const fields: JSONObject = {}
+    if (flow === upgradeFlow && tier) {
+      fields.flow = upgradeFlow
+      fields.tier = tier
+    } else if (
+      flow &&
+      [paymentMethodFlow, startNowFlow, creditsFlow].includes(flow)
+    )
+      fields.flow = flow
     try {
-      const answer = await backend.server(
-        'billing/portal',
-        'POST',
-        flow ? { flow } : {},
-      )
+      const answer = await backend.server('billing/portal', 'POST', fields)
       const url = str(field(answer, 'portalUrl'))
       return url?.startsWith('https://') ? { url } : { message: fallback }
     } catch (error) {
@@ -5510,21 +5544,158 @@ export class AppStore {
   // CredentialsStore.swift).
 
   /**
+   * The account's usage (`usage`, StoreSettings.swift): read once signed
+   * in, as a chat opens and after each of its turns, when the account menu
+   * opens and on Usage & Billing, unless it was read in the last 30 s; a
+   * failure keeps the last summary on screen.
+   */
+  usage: UsageLoad = emptyUsage
+  /** When the usage was last read, in ms (`usageReadAt`): the account menu counts its reset from it. */
+  usageReadAt?: number
+  /** The computer's notices (`trayList`, Trays.swift): the credits' line reads the open agent's. */
+  trayList = new TrayList()
+  private usageReading?: Promise<void>
+
+  /**
    * Usage & Billing in Settings' list (SettingsWindow.swift's `pages`):
    * while the usage is not read yet, and while it is shown (not for an
-   * enterprise team). 6f reads it.
+   * enterprise team).
    */
   get usageListed(): boolean {
-    return true
+    return shownSummary(this.usage) === undefined || showsSection(this.usage)
   }
 
-  /** ⌘K and "/" offer Usage & Billing once the usage is read and shown (`usage.showsSection`). 6f reads it. */
+  /** ⌘K and "/" offer Usage & Billing once the usage is read and shown (`usage.showsSection`). */
   get usageOffered(): boolean {
-    return false
+    return showsSection(this.usage)
+  }
+
+  /** The usage read again unless it was read under 30 s ago (`loadUsage`); a read on its way is waited for, not doubled. */
+  loadUsage(now: number = Date.now()): Promise<void> {
+    if (this.usage.kind === 'loading')
+      return this.usageReading ?? Promise.resolve()
+    if (
+      this.usage.kind === 'ready' &&
+      this.usageReadAt !== undefined &&
+      now - this.usageReadAt < usageFreshMs
+    )
+      return Promise.resolve()
+    return this.refreshUsage()
+  }
+
+  /** Retry, after Cancel Trial and after a billing page (`refreshUsage`): the server's quota summarised as the Electron app summarised it. */
+  refreshUsage(): Promise<void> {
+    const reading = this.readUsage()
+    this.usageReading = reading
+    return reading
+  }
+
+  private async readUsage(): Promise<void> {
+    const backend = this.backend
+    if (!backend) {
+      this.usage = emptyUsage
+      this.changed()
+      return
+    }
+    const previous = shownSummary(this.usage)
+    this.usage = { kind: 'loading', previous }
+    this.changed()
+    try {
+      const quota = await backend.server('user/quota')
+      if (this.backend !== backend) return
+      this.usage = { kind: 'ready', summary: usageSummary(quota) }
+      this.usageReadAt = Date.now()
+    } catch {
+      if (this.backend !== backend) return
+      this.usage = { kind: 'failed', previous }
+    }
+    this.changed()
+  }
+
+  /**
+   * Cancel Trial (`cancelTrial`, Connect's `CancelSandTrial`): none once it
+   * is done and the access and the usage read again (the trial's end
+   * changes what this account may do), else what to say in the question.
+   */
+  async cancelTrial(): Promise<string | undefined> {
+    const backend = this.backend
+    if (!backend?.dashboard) return t('Sign in to Simeon to continue')
+    try {
+      await backend.dashboard('CancelSandTrial', {})
+    } catch (error) {
+      if (
+        error instanceof SimeonAPIError &&
+        error.status >= 400 &&
+        error.status < 500 &&
+        error.message !== ''
+      )
+        return error.message
+      return t('Couldn’t cancel the trial. Try again.')
+    }
+    if (this.backend !== backend) return undefined
+    await this.refreshAccess()
+    await this.refreshUsage()
+    return undefined
+  }
+
+  /** One of the computer's `tray` events (snapshot, pushed, dismissed, cleared), applied as it comes. */
+  private takeTray(event: JSONValue): void {
+    const before = this.trayList.trays
+    this.trayList.take(event)
+    if (this.trayList.trays !== before) this.changed()
+  }
+
+  /**
+   * The computer's notices read (`loadTrays`, `getTrays`), what came
+   * meanwhile applied over the answer. A resting computer is not woken: it
+   * is read again when the stream comes back.
+   */
+  async loadTrays(): Promise<void> {
+    const backend = this.backend
+    if (!backend) return
+    const seq = this.trayList.beginRead()
+    let answer: JSONValue | undefined
+    try {
+      answer = await backend.command('getTrays', {}, { wakes: false })
+    } catch {
+      answer = undefined
+    }
+    if (this.backend !== backend) return
+    const before = this.trayList.trays
+    this.trayList.finishRead(seq, answer)
+    if (this.trayList.trays !== before) this.changed()
+  }
+
+  /** Whether one of the agent's notices carries the server's sentence for spent credits (the credits' line's `outOfCredits`). */
+  outOfCredits(agentId: string): boolean {
+    return this.trayList.shown(agentId).some(isOutOfCredits)
+  }
+
+  /**
+   * The Credentials Store's calls to Simeon Labs' server (`credentials`,
+   * `credentials/{id}`; `CredentialsStoreModel(store:)`): the page's model
+   * says each to the server, and keeps nothing of a password.
+   */
+  credentialsCall = (
+    path: string,
+    method?: string,
+    body?: JSONValue,
+  ): Promise<JSONValue> => {
+    const backend = this.backend
+    if (!backend)
+      return Promise.reject(
+        new SimeonAPIError(t('Sign in to Simeon first.'), 401),
+      )
+    return backend.server(path, method, body)
   }
 
   /** 6f's state back to nothing (signed out). */
-  private resetUsageAndBilling(): void {}
+  private resetUsageAndBilling(): void {
+    this.usage = emptyUsage
+    this.usageReadAt = undefined
+    this.usageReading = undefined
+    this.trayList = new TrayList()
+  }
 
   // MARK: The composer's lists
 
