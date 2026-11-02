@@ -60,7 +60,8 @@
   position: fixed;
   top: 12px;
   right: 16px;
-  z-index: 90;
+  /* Over About and an app's consent too (92): the Mac's banner is a window of its own over every other. */
+  z-index: 95;
   width: 360px;
   max-width: calc(100vw - 32px);
   overflow: hidden;

@@ -113,21 +113,53 @@ export class SimeonAPIError extends Error {
   }
 }
 
+/** A page served from this computer (a developer's, or the checks'). */
+function isLoopback(host: string): boolean {
+  return (
+    host === 'localhost' ||
+    host === '127.0.0.1' ||
+    host === '::1' ||
+    host === '[::1]'
+  )
+}
+
+/**
+ * An `?api=` the page may follow: any on a page served from this computer;
+ * elsewhere only Simeon Labs' own servers, over https, so a link can't send
+ * a person's window to another server.
+ */
+function allowedAPI(asked: string, pageHost: string): boolean {
+  let url: URL
+  try {
+    url = new URL(asked)
+  } catch {
+    return false
+  }
+  if (url.protocol !== 'https:' && url.protocol !== 'http:') return false
+  if (isLoopback(pageHost)) return true
+  return (
+    url.protocol === 'https:' &&
+    (url.hostname === 'simeonlabs.com' ||
+      url.hostname.endsWith('.simeonlabs.com'))
+  )
+}
+
 /**
  * Where the API is, from where the page is (desktop/web/api.ts):
  * app.simeonlabs.com talks to api.simeonlabs.com; a page served from
- * loopback to the API a developer runs on 8000; `?api=` overrides both.
+ * loopback to the API a developer runs on 8000; `?api=` overrides both,
+ * any server on a page served from this computer, only Simeon Labs' own
+ * elsewhere.
  */
 export function resolveApiBase(location: {
   readonly hostname: string
   readonly search: string
   readonly protocol: string
 }): string {
-  const asked = new URLSearchParams(location.search).get('api')
-  if (asked != null && /^https?:\/\//.test(asked))
-    return asked.replace(/\/+$/, '')
   const host = location.hostname
-  if (host === 'localhost' || host === '127.0.0.1' || host === '::1') {
+  const asked = new URLSearchParams(location.search).get('api')
+  if (asked != null && allowedAPI(asked, host)) return asked.replace(/\/+$/, '')
+  if (isLoopback(host)) {
     return 'http://127.0.0.1:8000'
   }
   if (host.startsWith('app.'))
