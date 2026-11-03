@@ -34,10 +34,11 @@ struct Composer: View {
   @Environment(ChatControl.self) private var control
   @Environment(NewChatState.self) private var newChat
   @Environment(PaneState.self) private var pane
-  @Environment(WindowState.self) private var window
   @Environment(SettingsState.self) private var settings
-  @Environment(PluginsState.self) private var plugins
   @Environment(SidebarLayout.self) private var layout
+  /** "/"'s actions run as search's do (`SearchState.run`). */
+  @Environment(SearchState.self) private var search
+  @Environment(SidebarState.self) private var sidebar
   @State private var text = ""
   /** The picks in the words ("@Nora" as one piece). */
   @State private var chips: [ComposerChip] = []
@@ -435,25 +436,14 @@ struct Composer: View {
   }
 
   /**
-   * An action from "/": the themes, the org chart (in the chat's place),
-   * Chat Settings (the agent's pane on Profile), Members (on Computer),
-   * Channels (its page in the pane), Settings and Plugins.
+   * An action from "/": search's own (`SearchState.run`), as the window's
+   * commands each carry one `run` that "/" and search share: the themes,
+   * Open Hidden Agents, the org chart (in the chat's place), Chat Settings
+   * (the agent's pane on Profile), Members (on Computer), Channels (its page
+   * in the pane), Update Simeon's Computer, Settings and Plugins.
    */
   private func run(_ action: ComposerLists.Action) {
-    switch action.id {
-    case "org-chart", "view:org-chart": window.orgChart = true
-    case "computer-update": window.computerAsk = .update
-    case "info:channels": pane.open(.channels, layout: layout)
-    case "info:settings": pane.open(.profile, layout: layout)
-    case "info:members": pane.open(.computer, layout: layout)
-    case "settings:general": settings.open(.general)
-    case "settings:usage": settings.open(.usage)
-    case "overlay:plugins": plugins.open()
-    case "theme:system": MacTheme.set("system")
-    case "theme:light": MacTheme.set("light")
-    case "theme:dark": MacTheme.set("dark")
-    default: break
-    }
+    search.run(action.id, sidebar: sidebar)
   }
 
   /** The new chat's words and picks moved to the chat they were meant for (the window's `setDraft` on that chat). */

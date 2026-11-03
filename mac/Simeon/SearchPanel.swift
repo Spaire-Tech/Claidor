@@ -286,15 +286,18 @@ final class SearchState {
   @ObservationIgnored weak var plugins: PluginsState?
 
   /**
-   * An action: the themes, Open Hidden Agents, the org chart (in the chat's
-   * place), Chat Settings (the pane on Profile), Members (on Computer),
-   * Channels (its page in the pane), Settings and Plugins.
+   * An action, from search or "/" (the window gives each command its own
+   * `run`, which both share): the themes, Open Hidden Agents, the org chart
+   * (in the chat's place), Chat Settings (the pane on Profile), Members (on
+   * Computer), Channels (its page in the pane), Update Simeon's Computer,
+   * Settings and Plugins.
    */
-  private func run(_ id: String, sidebar: SidebarState) {
+  func run(_ id: String, sidebar: SidebarState) {
     switch id {
     case "view:org-chart", "org-chart":
       window?.orgChart = true
-    case "update:computer":
+    // Search's id, and "/"'s (`ComposerLists.appActions`).
+    case "update:computer", "computer-update":
       // Its question (step 13): "Update Simeon's Computer?", or "An agent is working".
       window?.computerAsk = .update
     case "info:channels":
