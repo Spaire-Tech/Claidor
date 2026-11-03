@@ -354,9 +354,10 @@ export class Connector {
    * added and its sign-in opened in one go, closed once the app is
    * connected. A sign-in the person cancels takes the app it added back
    * out, the card's spinner held until that is done. `onRefused` hears
-   * false as it begins and true when the computer refused it (3 November
-   * 2026, the window's connector card: its button then reads Retry); signed
-   * in already, nothing is marked.
+   * false as it begins and true when the computer refused it or the
+   * browser refused the click's tab (3 November 2026, the window's
+   * connector card: its button then reads Retry); signed in already,
+   * nothing is marked.
    */
   connect(
     name: string,
@@ -364,9 +365,10 @@ export class Connector {
   ): void {
     this.ask(name, async (held) => {
       if (this.connecting !== undefined) return
-      // The browser refused the click's tab: no page can be shown, so nothing is asked or added; the person is told.
+      // The browser refused the click's tab: no page can be shown, so nothing is asked or added; the person is told, and the card reads Retry.
       if (held?.refused) {
         this.tell(didntConnect(name))
+        onRefused(true)
         return
       }
       // The card's spinner while the page is asked for.
