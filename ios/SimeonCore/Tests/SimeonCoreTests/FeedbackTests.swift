@@ -90,8 +90,11 @@ final class FeedbackTests: XCTestCase {
       ("computer stream log at /Users/bass/Library/Application Support/Simeon/computer-stream.log", "computer stream log at ~/Library/Application Support/Simeon/computer-stream.log"),
       ("cd /Users/bass && ls", "cd ~ && ls"),
       (#"read "/Users/bass/Documents/a.txt", then /Users/bass/b"#, #"read "~/Documents/a.txt", then ~/b"#),
+      // Punctuation after it ends it.
+      ("saved in /Users/bass.", "saved in ~."),
+      ("in /Users/bass, /Users/bass; (/Users/bass) '/Users/bass': /Users/bass...", "in ~, ~; (~) '~': ~..."),
       // Another folder that starts with the same letters is not the home folder.
-      ("/Users/bassist/x /Users/bass.old/y /Users/bass_2", "/Users/bassist/x /Users/bass.old/y /Users/bass_2"),
+      ("/Users/bassist/x /Users/bass.old/y /Users/bass_2 /Users/bass-2", "/Users/bassist/x /Users/bass.old/y /Users/bass_2 /Users/bass-2"),
       ("nothing here", "nothing here"),
     ]
     for (line, scrubbed) in cases { XCTAssertEqual(Diagnostics.scrub(line, home: home), scrubbed, line) }

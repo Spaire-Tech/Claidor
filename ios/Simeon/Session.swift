@@ -681,7 +681,8 @@ final class AppConnector {
     // Closed on the vendor's confirm page, or back on our address: look a little longer. Cancelled, or back saying it didn't work: two looks, then the buttons are free again (Cancel used to hold every Add for 20 s).
     let session = ASWebAuthenticationSession(url: url, callback: .customScheme(AppPlatform.urlScheme)) { callback, error in
       if let answer = AppReturnSignIn.answer(callback) {
-        Task { @MainActor in await store.finishLoopbackSignIn(answer, name: name) }
+        // Only the sign-in named above, once, a refusal in the app's own words (`finishReturnedSignIn`, as the Mac's sheet).
+        Task { @MainActor in await store.finishReturnedSignIn(answer) }
         state.close(confirmed: answer.error == nil)
         return
       }

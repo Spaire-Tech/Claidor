@@ -262,11 +262,14 @@ public enum Diagnostics {
     }
   }
 
-  /** The home folder as `~` where it is a whole path's start (`/Users/bass/x`, not `/Users/bassist`); nothing for `/` or none. */
+  /**
+   * The home folder as `~` where it is a whole path's start (`/Users/bass/x`, and before punctuation: `/Users/bass.`),
+   * not another folder's (`/Users/bassist`, `/Users/bass.old`); nothing for `/` or none.
+   */
   static func withoutHome(_ line: String, home: String) -> String {
     var folder = home
     while folder.count > 1 && folder.hasSuffix("/") { folder.removeLast() }
-    guard folder.count > 1, let rule = try? NSRegularExpression(pattern: NSRegularExpression.escapedPattern(for: folder) + #"(?![\w.-])"#) else { return line }
+    guard folder.count > 1, let rule = try? NSRegularExpression(pattern: NSRegularExpression.escapedPattern(for: folder) + #"(?![\w-]|\.[\w-])"#) else { return line }
     return rule.stringByReplacingMatches(in: line, range: NSRange(line.startIndex..., in: line), withTemplate: "~")
   }
 }

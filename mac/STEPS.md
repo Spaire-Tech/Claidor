@@ -2203,8 +2203,9 @@ cannot be read, a group's own picture). Pushed in three parts:
   front, and the open chat counts as read only while it is, so the Dock,
   the sidebar's dots and the notifications agree.
 - **What connecting sets**: the computer's own notifications off (the Mac
-  says them), this Mac's time zone, the local setting squared with the
-  computer's, the security key's switch.
+  says them), this Mac's time zone, the local setting as this Mac has it
+  (the computer's own copy never taken: 3 November 2026), the security
+  key's switch.
 - **Links into the app** (`simeon://app/v1/…`): the window forward;
   the same link twice within 2 seconds once; `info?topic=deep-links`
   shows the Deep Links dialog (signed out too; Done, × and Escape close
