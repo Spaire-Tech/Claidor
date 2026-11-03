@@ -814,6 +814,91 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 3 November 2026: the Mac's bugs against the upstream app
+
+The founder asked how the reconstruction of the upstream app
+(`desktop/NOTICE.md`; `desktop/source`, the untouched copy in commit
+`86d49feb0`, and its window's compiled build in
+`clients/apps/web/public/app/assets`) does each of the Mac's and the core's
+bugs found in steps 3 to 7. Four readers compared 29 of them, read only:
+nothing changed, nothing run on a Mac. Items 1 to 3 were measured by running
+the old app's guard in node on the cases. "Simeon's" means a change Simeon
+Labs made to the old Electron app, not upstream code.
+
+**The upstream app avoids it** (the way to follow):
+- A team's lower ceiling: upstream sends the device's choice, after the
+  ceiling, to the computer at every connect. Simeon's change of 25 September
+  (`5aca82560`, "adopts the box's standing choice") broke it, and the Mac
+  copied that. Proposed: after adopting, push the effective value when it
+  differs.
+- The agent raising its own permission (not checked before): upstream never
+  reads the choice back from the computer; only the device's window writes
+  it. The computer's `settings.json` is under `/home/box/sand-data`, which
+  the agent can write as root, so the raise looks reachable on the Mac (read,
+  not run). Proposed: take only a lower value from the computer at connect.
+- `simeon://mcp-oauth` from anyone: upstream has no such link; its sign-in
+  return answers only a `state` it began, with an expiry, and shows its own
+  fixed words, never the maker's text. Proposed: the same.
+- The home folder in `computer-stream.log`: upstream sends no log file with
+  feedback. Proposed: the file's name only on that line, or the scrub turns
+  the home folder into `~`.
+- Settings writing defaults first: upstream keeps the rules on the device
+  and pushes them at each connect, so nothing is written over.
+- A change after sign-out: upstream runs one engine per account, cuts the
+  old calls at sign-out and drops late answers; one gap left (a three-step
+  remove). Proposed: each action takes the account once and checks it after
+  every await.
+- Calls: upstream has no call; Simeon's own Electron call (30 September)
+  kept one record and one voice session per call. Proposed: the same.
+- Reload stuck on Booting up: upstream's watch lives as long as the view;
+  an account change keeps watched entries. Proposed: watch from the view's
+  lifetime, and `computer.reset()` in place of a new book.
+- The secret card's Saved: upstream shows it only from `secretProvided`.
+- Usage reads out of order: upstream numbers each read and keeps only the
+  newest.
+- "/" Open Hidden Agents: upstream gives each command its own `run`, which
+  "/" and search share.
+- ⌘V in New Agent: upstream's avatar editor takes the paste on its own view.
+- "SEA to LAX": the old app's flight pane (Simeon's) wrote "SEA → LAX".
+- ", completed": upstream treats the three states alike; the Mac translates
+  two.
+- Channels every 4 s: upstream reads only while the pane is shown and the
+  window visible.
+- Partly: a refusal's command name (upstream leaves it out but shows a code
+  name instead: keep the command in a field, not the message); a refused
+  Connect (upstream's button turns to Retry, with no reason).
+
+**The upstream app has the same bug**:
+- Letter case in the guard (`~/.SSH`), `;`, `>`, `${HOME}`, the working
+  folder, the carried folder and links, and the missing
+  `.git-credentials`, `gh` and `op` files: the old app's guard is Simeon's
+  (25 September), the same rules; upstream had none, its sandbox's read list
+  (which would block these) switched off. The old app also let `file://`
+  through, which the Mac already refuses.
+- A failed read lifting the team's ceiling: upstream's own
+  (`catch { return undefined; }`), copied.
+- Every helper's thumbnail the agent's screen: upstream's own, copied; no
+  upstream mapping of a helper to its screen to learn from.
+- A routines list that can't be read shows nothing: upstream's own; it only
+  reads again later.
+- A routine found by search not opened: upstream's own; the Mac already has
+  `openRoutine(_:for:)` (the chat's chip).
+- The routine words in English: upstream has no French at all.
+- Open on a cloud agent's card: the old app's address (Simeon's), a page
+  never made.
+- "7 nov..": the old app's line (Simeon's); upstream's says "Resets in N
+  days", no date. Proposed: the full month.
+- The relay asking every 3 s: upstream's own.
+
+**Simeon's own, no upstream counterpart**: 92% and 93% (use the meter's
+number), "Last checked in 0 seconds" (upstream shows no time: "just now"
+under a minute, redrawn), Han numerals in a name (flights are Simeon's:
+`[0-9]` for `\d`; the server and the computer count digits and the 40
+differently too), and search waking a resting computer (resting is
+Simeon's, #420).
+
+Next: the founder's word on the three batches (Open questions).
+
 ### 3 November 2026: the Microsoft Store
 
 Asked what signing costs, the founder chose the Microsoft Store: "we'll use
