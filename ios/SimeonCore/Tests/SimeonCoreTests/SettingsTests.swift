@@ -163,4 +163,27 @@ final class SettingsTests: XCTestCase {
     XCTAssertEqual(TimeZoneChoices.values(override: "Mars/Olympus", known: ["Europe/Paris"]), ["auto", "Mars/Olympus", "Europe/Paris"])
     XCTAssertEqual(TimeZoneChoices.values(override: "Europe/Paris", known: ["Europe/Paris"]), ["auto", "Europe/Paris"])
   }
+
+  /** General and Permissions wait for the computer's values, as the web's pages do (`GeneralSettingsModel.load`). */
+  func testTheSettingsPagesWaitForTheComputersValues() {
+    var load = HostSettingsLoad()
+    XCTAssertFalse(load.loaded, "nothing can be changed before the computer answers")
+    XCTAssertFalse(load.failed)
+    let first = load.reading
+    XCTAssertFalse(load.answered(nil, readAt: first))
+    XCTAssertFalse(load.loaded)
+    XCTAssertTrue(load.failed, "a failed read says so and keeps the page waiting")
+    let second = load.reading
+    XCTAssertTrue(load.answered(["userTimeZoneOverride": "Europe/Paris"], readAt: second))
+    XCTAssertTrue(load.loaded)
+    XCTAssertFalse(load.failed)
+    let third = load.reading
+    XCTAssertFalse(load.answered(nil, readAt: third))
+    XCTAssertTrue(load.loaded, "a later failure keeps what was read")
+    XCTAssertFalse(load.failed)
+    let older = load.reading
+    load.writing()
+    XCTAssertFalse(load.answered(["userTimeZoneOverride": ""], readAt: older), "a read sent before a change is older than it, and dropped")
+    XCTAssertTrue(load.answered(["userTimeZoneOverride": ""], readAt: load.reading))
+  }
 }

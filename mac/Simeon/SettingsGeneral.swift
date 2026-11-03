@@ -104,10 +104,14 @@ private struct TimeZoneGroup: View {
 
   var body: some View {
     let automatic = model.zoneOverride == nil
-    SettingsGroup(title: String(localized: "Time Zone"), footer: String(localized: "Your agents keep this time zone for routines and reminders."), look: look) {
+    // Nothing here changes the zone until the computer's is read (`HostSettingsLoad`, the web's wait); a failed read says so in red.
+    let waits = !model.hostRead.loaded || model.zonePending
+    SettingsGroup(title: String(localized: "Time Zone"),
+                  footer: model.hostRead.failed ? L10n.text("Couldn't load your settings") : String(localized: "Your agents keep this time zone for routines and reminders."),
+                  footerTint: model.hostRead.failed ? look.danger : nil, look: look) {
       SettingsSwitch(label: String(localized: "Set Time Zone Automatically"),
                      isOn: Binding(get: { automatic }, set: { on in model.setZone(on ? nil : model.detectedZone, store: store) }),
-                     disabled: model.zonePending, look: look)
+                     disabled: waits, look: look)
       SettingsLine(label: String(localized: "Time Zone"), divided: true, look: look) {
         if automatic {
           Text(TimeZoneChoices.label(model.detectedZone))
@@ -118,7 +122,7 @@ private struct TimeZoneGroup: View {
             SettingsMenuLabel(text: TimeZoneChoices.label(model.zoneOverride ?? model.detectedZone), look: look)
           }
           .buttonStyle(.hand)
-          .disabled(model.zonePending)
+          .disabled(waits)
           .background(WindowSpotReader(spot: spot))
           .accessibilityLabel("Time Zone")
         }
@@ -427,6 +431,9 @@ private struct PasswordForm: View {
  * its rows, edited in their row and deleted at once; its last row adds one
  * to it, typed there. Twenty rules a list and a thousand characters a rule
  * (`AutoReviewInstructions`). A change is shown once the computer has it.
+ * Nothing can be changed until the computer's rules are read (the web's
+ * wait, `HostSettingsLoad`): the switch waits greyed and the lists come with
+ * the read; a read that failed says so in red.
  */
 struct SettingsPermissionsPage: View {
   let look: Look
@@ -435,14 +442,15 @@ struct SettingsPermissionsPage: View {
 
   var body: some View {
     VStack(alignment: .leading, spacing: 24) {
-      SettingsGroup(look: look) {
+      SettingsGroup(footer: model.hostRead.failed ? L10n.text("Couldn't load your settings") : nil, footerTint: look.danger, look: look) {
         SettingsSwitch(label: String(localized: "Auto-review"),
                        detail: String(localized: "Simeon checks each action before it runs and asks you first when needed."),
                        symbol: "checkmark.shield",
                        isOn: Binding(get: { model.rules.isEnabled }, set: { @MainActor on in model.setReviewing(on, store: store) }),
-                       disabled: model.rulesPending, look: look)
+                       disabled: !model.hostRead.loaded || model.rulesPending, look: look)
       }
-      if model.rules.isEnabled {
+      // The lists once the computer's are read: never the page's empty ones in their place.
+      if model.hostRead.loaded && model.rules.isEnabled {
         RuleList(behavior: .allow, model: model, look: look)
         RuleList(behavior: .ask, model: model, look: look)
       }
@@ -686,7 +694,8 @@ struct SettingsLegalPage: View {
  * General's values as the computer keeps them: the time zone chosen, how
  * the agent may use this Mac and the team's ceiling, Auto-review and its
  * rules, and the rule being written or edited. Each page that shows some of
- * them holds its own, read when the page shows.
+ * them holds its own, read when the page shows; the zone and the rules can't
+ * be changed until the computer's are read (`hostRead`).
  */
 @MainActor
 @Observable
@@ -702,6 +711,8 @@ final class GeneralSettingsModel {
 
   var rules = AutoReviewInstructions()
   var rulesPending = false
+  /** Whether the computer's zone and rules are read (the web's wait): until then neither is written, so the page's defaults never replace the person's. */
+  var hostRead = HostSettingsLoad()
   /** The rule being written at the foot of each list. */
   var drafts: [AutoReviewInstructions.Behavior: String] = [:]
 
@@ -720,7 +731,10 @@ final class GeneralSettingsModel {
     // The same key as at sign-in (MacServices: lower case), or another account's would be taken and the choice wiped.
     if let email = store.account?.email, !email.isEmpty { localTools.scope(to: email.lowercased()) }
     permission = localTools.effective
-    if let settings = await store.readHostSettings() {
+    let readAt = hostRead.reading
+    let settings = await store.readHostSettings()
+    // Taken unless a change began meanwhile (this answer is older); a failure keeps the page waiting.
+    if hostRead.answered(settings, readAt: readAt), let settings {
       zoneOverride = TimeZoneChoices.override(hostSettings: settings)
       rules = AutoReviewInstructions.normalized(json: settings["autoReviewInstructions"])
     }
@@ -734,6 +748,9 @@ final class GeneralSettingsModel {
   }
 
   func setZone(_ zone: String?, store: AppStore) {
+    // Not before the computer's zone is read: this Mac's would replace the one chosen.
+    guard hostRead.loaded else { return }
+    hostRead.writing()
     zonePending = true
     Task {
       if await store.setTimeZone(zone, detected: detectedZone) { zoneOverride = zone }
@@ -758,6 +775,9 @@ final class GeneralSettingsModel {
 
   /** One write of both lists and the switch; shown once the computer has them. */
   private func write(_ next: AutoReviewInstructions, store: AppStore, then done: @escaping () -> Void = {}) {
+    // Not before the computer's rules are read: the page's empty lists would replace them.
+    guard hostRead.loaded else { return }
+    hostRead.writing()
     rulesPending = true
     Task {
       if await store.setAutoReview(next) {

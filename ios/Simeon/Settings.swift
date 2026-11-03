@@ -288,7 +288,7 @@ struct ConnectAppsRow: View {
  * October 2026: "in settings remove the word agents"). Auto-review and its
  * rules moved to Permissions (PermissionsPage) on 18 October 2026.
  * `settings` is the box's host settings, read once by the page that holds
- * this section.
+ * this section; the switch waits greyed until it is.
  */
 struct AgentSettingsSection: View {
   @Binding var settings: JSON?
@@ -299,6 +299,8 @@ struct AgentSettingsSection: View {
       // The words alone, with no line under them (the founder, 19 October 2026).
       Toggle("Set Time Zone Automatically", isOn: automaticZone)
         .tint(Ink.blue)
+        // Not until the computer's settings are read (the web's and the Mac's wait): this phone's zone would replace the one chosen.
+        .disabled(settings == nil)
       if automaticZone.wrappedValue {
         LabeledContent("Time Zone", value: zoneName)
       } else {
@@ -338,7 +340,8 @@ struct AgentSettingsSection: View {
 /**
  * Permissions (the founder, 18 October 2026: "bring auto review and auto
  * review rules there"): Auto-review, with the line saying what it does, and
- * its rules. `settings` is the box's host settings, read by Settings.
+ * its rules. `settings` is the box's host settings, read by Settings; both
+ * wait greyed until it is (a failed read is the store's problem).
  */
 struct PermissionsPage: View {
   @Binding var settings: JSON?
@@ -355,11 +358,14 @@ struct PermissionsPage: View {
           }
         }
         .tint(Ink.blue)
+        // Neither until the computer's settings are read (the web's and the Mac's wait): the page's empty lists would replace the person's rules.
+        .disabled(settings == nil)
         NavigationLink {
           AutoReviewRules(settings: $settings)
         } label: {
           LabeledContent("Auto-review Rules", value: rulesCount == 0 ? String(localized: "None") : "\(rulesCount)")
         }
+        .disabled(settings == nil)
       }
       .listRowBackground(Ink.groupedRow)
     }
