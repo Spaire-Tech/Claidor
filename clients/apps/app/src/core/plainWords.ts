@@ -30,6 +30,8 @@ const internalMarks: RegExp[] = [
   /\b[\w-]+\.(ts|js|mjs|py|swift|json|log)\b/i,
   /https?:\/\/|localhost|127\.0\.0\.1|\bport\b/i,
   /\b(gateway|proxy|endpoint|host bundle|npm|socket|websocket|vnc|json|stack ?trace|exception|traceback|undefined|null pointer|nil)\b/i,
+  // The computer's own key refused ("unauthorized", its 401), never the person's doing.
+  /\bunauthori[sz]ed\b/i,
   // A gateway method named before its error ("createAgent: …"), in its own case.
   /^[a-z]+[A-Z][A-Za-z]*: /,
 ]

@@ -21,6 +21,23 @@ export function connectWord(): string {
   return t('Connect')
 }
 
+/** A chat card's button once its Connect was refused (`Connecting.retry`), as the window's connector card says it; no reason with it. */
+export function retryWord(): string {
+  return t('Retry')
+}
+
+/**
+ * How a Connect began (`ConnectOutcome`, the store's `startConnect`): its
+ * sign-in page to open; the app connected, or signed in already
+ * ("already-authenticated"), when only the list is read again; or refused
+ * (not added, not in Simeon's apps, its sign-in refused or not opened),
+ * `problem` saying why, when the card is marked and its button reads Retry.
+ */
+export type ConnectOutcome =
+  | { kind: 'started'; start: ConnectStart }
+  | { kind: 'connected' }
+  | { kind: 'refused' }
+
 /** How a sign-in ended (`SignInEnd`). */
 export type SignInEnd =
   /** The computer says the app is connected. */

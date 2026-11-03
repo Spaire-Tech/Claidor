@@ -353,9 +353,15 @@ export class Connector {
    * A chat card's Connect (`connect(_:store:)`): the consent, then the app
    * added and its sign-in opened in one go, closed once the app is
    * connected. A sign-in the person cancels takes the app it added back
-   * out, the card's spinner held until that is done.
+   * out, the card's spinner held until that is done. `onRefused` hears
+   * false as it begins and true when the computer refused it (3 November
+   * 2026, the window's connector card: its button then reads Retry); signed
+   * in already, nothing is marked.
    */
-  connect(name: string): void {
+  connect(
+    name: string,
+    onRefused: (refused: boolean) => void = () => {},
+  ): void {
     this.ask(name, async (held) => {
       if (this.connecting !== undefined) return
       // The browser refused the click's tab: no page can be shown, so nothing is asked or added; the person is told.
@@ -366,14 +372,17 @@ export class Connector {
       // The card's spinner while the page is asked for.
       this.connecting = name
       this.changed()
-      const start = await this.store.beginConnect(name)
-      if (!start) {
+      onRefused(false)
+      const outcome = await this.store.startConnect(name)
+      if (outcome.kind !== 'started') {
         if (this.connecting === name) {
           this.connecting = undefined
           this.changed()
         }
+        if (outcome.kind === 'refused') onRefused(true)
         return
       }
+      const start = outcome.start
       const { end, refused } = await this.run(
         start.url,
         name,

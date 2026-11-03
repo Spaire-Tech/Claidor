@@ -390,9 +390,84 @@ final class GatewayTests: XCTestCase {
       _ = try await Gateway(api: api, http: http).command("getAgentTranscriptWindow", [:])
       XCTFail("expected a refusal")
     } catch {
-      XCTAssertEqual(error.localizedDescription, "getAgentTranscriptWindow: Malformed getAgentTranscriptWindow request")
+      // The computer's sentence alone; the command apart, as the Electron app's coordinator keeps it (3 November 2026).
+      XCTAssertEqual(error.localizedDescription, "Malformed getAgentTranscriptWindow request")
+      XCTAssertEqual((error as? GatewayError)?.method, "getAgentTranscriptWindow")
+      XCTAssertEqual((error as? GatewayError)?.refused, true)
     }
     XCTAssertEqual(http.sent.count, 2)
+  }
+
+  /**
+   * A refusal as the person reads it (3 November 2026): the computer's own
+   * sentence for a refusal it means (a 4xx), never the command's name
+   * ("setAgentAvatarBytes. Try again in a little while.", "Couldn't create
+   * Arlo: createAgent: Not now"). Its 500s (any exception, in its own
+   * words) and an answer with no sentence stay a machine's line, which
+   * PlainWords hides.
+   */
+  func testARefusalSaysTheComputersSentenceAndNotTheCommand() async {
+    func refusal(_ method: String, _ status: Int, _ body: Data) async -> GatewayError? {
+      let vault = MemoryVault(SessionTokens(accessToken: "t", refreshToken: "r", expiresAtMs: 9e15))
+      let http = ScriptedHTTP([
+        { _ in HTTPAnswer(status: 200, body: json(#"{"gatewayUrl":"https://box-1"}"#)) },
+        { _ in HTTPAnswer(status: status, body: body) },
+      ])
+      let api = SimeonAPI(base: URL(string: "https://x")!, clientVersion: "1", vault: vault, http: http)
+      do { _ = try await Gateway(api: api, http: http).command(method, [:]) } catch { return error as? GatewayError }
+      return nil
+    }
+    let said = await refusal("createAgent", 409, json(#"{"error":"Not now"}"#))
+    XCTAssertEqual(said?.message, "Not now")
+    XCTAssertEqual(said?.method, "createAgent")
+    XCTAssertEqual(said?.status, 409)
+    XCTAssertEqual(PlainWords.problem("Couldn't create Arlo: \(said?.localizedDescription ?? "")"), "Couldn't create Arlo: Not now")
+    XCTAssertEqual(PlainWords.problem(said?.message ?? "", fallback: "Couldn’t change the avatar. Try again in a little while."), "Not now")
+
+    let bare = await refusal("setAgentAvatarBytes", 400, Data("upstream said no".utf8))
+    XCTAssertEqual(bare?.message, "gateway setAgentAvatarBytes failed: upstream said no")
+    XCTAssertEqual(bare?.method, "setAgentAvatarBytes")
+    XCTAssertEqual(PlainWords.error(bare?.message ?? ""), PlainWords.unavailable)
+    XCTAssertEqual(PlainWords.problem("Couldn't create Arlo: \(bare?.message ?? "")"), "Couldn't create Arlo. Try again in a little while.")
+
+    // The host's 500 is any exception it threw, in its own words: the machine line, hidden.
+    for words in ["SQLITE_BUSY: database is locked", "MCP server not found.", "production Agent conversation state is not bound", "Invalid Sand agent id", "ENOENT: no such file or directory, open '/home/box/x'"] {
+      let thrown = await refusal("desktopMcp", 500, Data(#"{"error":"\#(words)"}"#.utf8))
+      XCTAssertEqual(thrown?.message, "gateway desktopMcp failed: \(words)")
+      XCTAssertEqual(thrown?.refused, false)
+      XCTAssertEqual(PlainWords.error(thrown?.localizedDescription ?? ""), PlainWords.unavailable, words)
+      XCTAssertEqual(PlainWords.problem("Couldn't create Arlo: \(thrown?.localizedDescription ?? "")"), "Couldn't create Arlo. Try again in a little while.", words)
+    }
+    // The box's own key refused (its 401): its word, hidden too.
+    let unauthorized = await refusal("listAgents", 401, json(#"{"error":"unauthorized"}"#))
+    XCTAssertEqual(unauthorized?.message, "unauthorized")
+    XCTAssertEqual(PlainWords.error(unauthorized?.message ?? ""), PlainWords.unavailable)
+    // Each failure noted with its command, for a report.
+    XCTAssertTrue(RecentActivity.all.contains { $0.hasSuffix("gateway desktopMcp 500: SQLITE_BUSY: database is locked") })
+    XCTAssertTrue(RecentActivity.all.contains { $0.hasSuffix("gateway createAgent 409: Not now") })
+
+    // The words the store looks for are still there: the limit's (409) and a stale approval's (thrown, so 500).
+    let limit = await refusal("createAgent", 409, json(#"{"error":"50 is the maximum"}"#))
+    guard let limit else { return XCTFail("no refusal") }
+    let failure = await AppStore.createFailure(limit)
+    XCTAssertEqual(failure, .limit)
+    let stale = await refusal("resolveAutoReviewApproval", 500, json(#"{"error":"auto-review/stale: The Auto-review request is stale, expired, or not authorized."}"#))
+    XCTAssertTrue((stale?.localizedDescription ?? "").contains("auto-review/stale"))
+  }
+
+  /** The app's own failures the same way (3 November 2026: "Couldn't create Arlo: createAgent: no agent in the answer"): a machine line, the command apart. */
+  func testTheAppsOwnFailureNamesNoCommand() async {
+    let vault = MemoryVault(SessionTokens(accessToken: "t", refreshToken: "r", expiresAtMs: 9e15))
+    let http = ScriptedHTTP([
+      { _ in HTTPAnswer(status: 200, body: json(#"{"gatewayUrl":"https://box-1"}"#)) },
+      { _ in HTTPAnswer(status: 200, body: json(#"{}"#)) },
+    ])
+    let api = SimeonAPI(base: URL(string: "https://x")!, clientVersion: "1", vault: vault, http: http)
+    var made: GatewayError?
+    do { _ = try await LiveBackend(gateway: Gateway(api: api, http: http)).createAgent(name: "Arlo", face: nil) } catch { made = error as? GatewayError }
+    XCTAssertEqual(made?.message, "gateway createAgent failed: no agent in the answer")
+    XCTAssertEqual(made?.method, "createAgent")
+    XCTAssertEqual(PlainWords.problem("Couldn't create Arlo: \(made?.localizedDescription ?? "")"), "Couldn't create Arlo. Try again in a little while.")
   }
 
   func testSendCarriesTheHostsArgumentNames() async throws {
@@ -989,6 +1064,26 @@ final class StoreTests: XCTestCase {
     XCTAssertTrue(store.isConnected("Linear"))
     await store.open("launch-squad")
     XCTAssertTrue(store.rows(for: "launch-squad").contains { $0.id == "unread-divider" })
+  }
+
+  /**
+   * The secret card's Saved (3 November 2026): only from the computer's own
+   * entry (`secretProvided`, the window's `isProvided`), which the Mac's
+   * card reads, never because the save returned (it returns on a refusal
+   * too, the store's problem saying so).
+   */
+  func testASecretIsSavedOnlyOnceTheComputerSaysSo() async throws {
+    func provided(_ store: AppStore) -> Bool? {
+      guard case .request(_, .secret(_, _, let provided, _))? = store.rows(for: "cards").first(where: { $0.id == "x10" }) else { return nil }
+      return provided
+    }
+    let store = AppStore()
+    await store.attach(DemoBackend(seed: DemoData.seed(gallery: true), pace: 0.01, call: nil))
+    await store.open("cards")
+    XCTAssertEqual(provided(store), false)
+    await store.submitSecret("sk_live_x", entryId: "x10", in: "cards")
+    try await Task.sleep(nanoseconds: 100_000_000)
+    XCTAssertEqual(provided(store), true, "the computer's entry says it kept it")
   }
 }
 

@@ -16,6 +16,8 @@ public enum Connecting {
   public static let connect = L10n.text("Connect")
   /** What an app that is connected says in place of the button. */
   public static let connected = L10n.text("Connected")
+  /** A chat card's button once its Connect was refused (`ConnectOutcome.refused`), as the window's connector card says it; no reason with it. */
+  public static let retry = L10n.text("Retry")
 
   /** A connect that ended so takes back the app it added: only one the person cancelled, never one that may still finish. */
   public static func undoes(_ end: SignInEnd, start: ConnectStart) -> Bool {
@@ -67,6 +69,19 @@ public enum Connecting {
     guard let callback, let items = URLComponents(url: callback, resolvingAgainstBaseURL: false)?.queryItems else { return false }
     return items.contains { $0.name == "status" && ["failed", "error"].contains($0.value?.lowercased() ?? "") }
   }
+}
+
+/**
+ * How a Connect began (`AppStore.startConnect`): its sign-in page to open;
+ * the app connected, or signed in already ("already-authenticated"), when
+ * only the list is read again; or refused (not added, not in Simeon's
+ * apps, its sign-in refused or not opened), `problem` saying why, when the
+ * window's connector card marks the card and its button reads Retry.
+ */
+public enum ConnectOutcome: Sendable, Equatable {
+  case started(ConnectStart)
+  case connected
+  case refused
 }
 
 /** A connect begun (`AppStore.beginConnect`): the sign-in page, and the app this connect added, so a cancelled one can be taken back. */

@@ -18,16 +18,27 @@ extension AppStore {
     await refreshUsage()
   }
 
-  /** Retry, and after Cancel Trial: the server's quota as the Electron app summarises it. */
+  /**
+   * Retry, and after Cancel Trial: the server's quota as the Electron app
+   * summarises it. Each read is numbered as it starts and lands only while
+   * no newer one has started (the window's loader, `pu`, supersedes the
+   * read on its way at each refresh and at reset), so an older answer
+   * coming late (a turn's read under Cancel Trial's, or one from before
+   * signing out) never takes the newer one's place.
+   */
   public func refreshUsage() async {
     guard let backend else { usage = .empty; return }
+    usageReads += 1
+    let read = usageReads
     let previous = usage.summary
     usage = .loading(previous: previous)
     do {
       let quota = try await backend.server("user/quota", method: nil, body: nil)
+      guard read == usageReads else { return }
       usage = .ready(UsageSummary(quota: quota))
       usageReadAt = Date()
     } catch {
+      guard read == usageReads else { return }
       usage = .failed(previous: previous)
     }
   }

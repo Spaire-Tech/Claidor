@@ -481,7 +481,7 @@ export function cloudAgentNextPoll(
   }
 }
 
-/** Where Open goes (`cloudAgentWebUrl`): Simeon's page for the run, its id written as a path's part (`urlPathAllowed` without "/"). */
+/** Where Open would go (`cloudAgentWebUrl`): Simeon's page for the run, its id written as a path's part (`urlPathAllowed` without "/"). Not made yet, so the cards leave Open out. */
 export function cloudAgentWebURL(bcId: string): string {
   let part: string
   try {

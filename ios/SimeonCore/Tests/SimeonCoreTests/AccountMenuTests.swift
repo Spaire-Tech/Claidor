@@ -82,4 +82,14 @@ final class AccountMenuTests: XCTestCase {
     XCTAssertEqual(AboutSimeon.versionInfo(version: "0.1.2"), "Version: 0.1.2\nRelease Track: stable\nOS: darwin")
     XCTAssertEqual(AboutSimeon.versionLine("0.1.0"), "Version 0.1.0")
   }
+
+  /** Settings › Updates' "Last checked …" (3 November 2026: "Last checked in 0 seconds."): "just now" under a minute, as the window's relative time. */
+  func testACheckAMomentAgoIsJustNow() {
+    let now = Date(timeIntervalSince1970: 1_792_000_000)
+    XCTAssertEqual(AboutSimeon.checkedJustNow(now, now: now), "just now")
+    XCTAssertEqual(AboutSimeon.checkedJustNow(now.addingTimeInterval(-59), now: now), "just now")
+    XCTAssertEqual(AboutSimeon.checkedJustNow(now.addingTimeInterval(0.2), now: now), "just now", "a moment ahead, the clock's")
+    XCTAssertNil(AboutSimeon.checkedJustNow(now.addingTimeInterval(-60), now: now), "from a minute on, the system's own words")
+    XCTAssertEqual(RoutineSchedule.when(now.timeIntervalSince1970 * 1000 - 30_000, now: now.timeIntervalSince1970 * 1000, zone: TimeZone(identifier: "UTC")!), "Just now", "the window's own word")
+  }
 }

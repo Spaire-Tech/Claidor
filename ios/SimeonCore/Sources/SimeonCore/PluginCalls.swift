@@ -166,7 +166,7 @@ public struct PluginCalls: Sendable {
       "name": .string(Plugins.setupAgentName), "description": .string(Plugins.setupAgentDescription),
       "purpose": .string(Plugins.setupAgentPurpose), "isIntroductionSuppressed": true,
     ])
-    guard let id = answer["agent"]?["id"]?.text ?? answer["id"]?.text else { throw GatewayError(message: "createAgent: no agent in the answer", refused: true) }
+    guard let id = answer["agent"]?["id"]?.text ?? answer["id"]?.text else { throw GatewayError(message: "gateway createAgent failed: no agent in the answer", refused: true, method: "createAgent") }
     return id
   }
 

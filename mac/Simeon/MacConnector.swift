@@ -60,14 +60,26 @@ final class MacConnector {
    * consent, then the app added and its sign-in opened in the window in one
    * go, closed once the app is connected. A sign-in the person cancels takes
    * the app it added back out, the card's spinner held until that is done.
+   * `refused` hears false as it begins and true when the computer refused
+   * it (3 November 2026, the window's connector card: its button then reads
+   * Retry); signed in already, nothing is marked.
    */
-  func connect(_ name: String, store: AppStore) {
+  func connect(_ name: String, store: AppStore, refused: @escaping @MainActor (Bool) -> Void = { _ in }) {
     ask(name, store: store) { [weak self] in
       guard let self, self.connecting == nil else { return }
       // The card's spinner while the page is asked for.
       self.connecting = name
-      guard let start = await store.beginConnect(named: name) else {
+      refused(false)
+      let start: ConnectStart
+      switch await store.startConnect(named: name) {
+      case .started(let begun):
+        start = begun
+      case .connected:
         self.connecting = nil
+        return
+      case .refused:
+        self.connecting = nil
+        refused(true)
         return
       }
       let end = await self.signIn(start.url, name: name, store: store) {

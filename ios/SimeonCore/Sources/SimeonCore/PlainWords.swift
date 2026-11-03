@@ -72,6 +72,8 @@ public enum PlainWords {
     #"\b[\w-]+\.(ts|js|mjs|py|swift|json|log)\b"#,
     #"https?://|localhost|127\.0\.0\.1|\bport\b"#,
     #"\b(gateway|proxy|endpoint|host bundle|npm|socket|websocket|vnc|json|stack ?trace|exception|traceback|undefined|null pointer|nil)\b"#,
+    // The computer's own key refused ("unauthorized", its 401), never the person's doing.
+    #"\bunauthori[sz]ed\b"#,
   ].map { try! NSRegularExpression(pattern: $0, options: [.caseInsensitive]) } + [
     // A gateway method named before its error ("createAgent: …"), in its own case.
     try! NSRegularExpression(pattern: #"^[a-z]+[A-Z][A-Za-z]*: "#),

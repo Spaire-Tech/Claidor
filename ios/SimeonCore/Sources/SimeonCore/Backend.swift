@@ -462,13 +462,13 @@ public final class LiveBackend: AgentBackend, @unchecked Sendable {
     // The host keeps a voice given with the agent (`mintAgent`, host-gateway-api.ts).
     if let voiceId { args = args.setting("voiceId", .string(voiceId)) }
     let answer = try await gateway.command("createAgent", args)
-    guard let id = answer["agent"]?["id"]?.text else { throw GatewayError(message: "createAgent: no agent in the answer", refused: true) }
+    guard let id = answer["agent"]?["id"]?.text else { throw GatewayError(message: "gateway createAgent failed: no agent in the answer", refused: true, method: "createAgent") }
     return id
   }
 
   public func createGroup(name: String, memberIds: [String]) async throws -> String {
     let answer = try await gateway.command("createGroup", ["name": .string(name), "description": "", "memberAgentIds": JSON(memberIds)])
-    guard let id = answer["agent"]?["id"]?.text ?? answer["id"]?.text else { throw GatewayError(message: "createGroup: no group in the answer", refused: true) }
+    guard let id = answer["agent"]?["id"]?.text ?? answer["id"]?.text else { throw GatewayError(message: "gateway createGroup failed: no group in the answer", refused: true, method: "createGroup") }
     return id
   }
 

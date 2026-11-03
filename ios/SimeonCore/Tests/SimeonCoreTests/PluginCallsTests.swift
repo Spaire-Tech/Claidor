@@ -275,6 +275,49 @@ final class PluginCallsTests: XCTestCase {
     XCTAssertEqual(Connecting.didntConnect("Linear", why: nil), "Linear didn't connect. Try again.")
   }
 
+  /**
+   * A chat card's Connect that opens no sign-in (3 November 2026): refused,
+   * the card's button reads Retry, as the window's connector card marks it;
+   * signed in already ("already-authenticated"), nothing is marked and the
+   * list is read again.
+   */
+  @MainActor
+  func testAConnectSaysARefusalApartFromSignedInAlready() async throws {
+    let box = PluginsBox()
+    box.answers["desktopMcp:getCatalog"] = ["plugins": [["id": "linear", "displayName": "Linear"]]]
+    box.answers["desktopMcp:listServers"] = ["servers": [["id": "900042", "name": "Linear", "pluginId": "linear", "status": "needsAuth"]]]
+    let store = AppStore()
+    await store.attach(box)
+    await store.loadApps()
+
+    box.answers["desktopMcp:authenticateServer"] = ["status": "started", "authorizationUrl": "https://linear.app/oauth"]
+    let started = await store.startConnect(named: "Linear")
+    XCTAssertEqual(started, .started(ConnectStart(url: URL(string: "https://linear.app/oauth")!, addedPlugin: nil)))
+
+    box.answers["desktopMcp:authenticateServer"] = ["status": "not-supported", "message": "Linear is coming soon in Simeon."]
+    let refused = await store.startConnect(named: "Linear")
+    XCTAssertEqual(refused, .refused)
+    XCTAssertEqual(store.problem, "Linear didn't connect: Linear is coming soon in Simeon.")
+
+    store.problem = nil
+    let lists = box.all("desktopMcp:listServers").count
+    box.answers["desktopMcp:authenticateServer"] = ["status": "already-authenticated"]
+    let already = await store.startConnect(named: "Linear")
+    XCTAssertEqual(already, .connected)
+    XCTAssertNil(store.problem)
+    XCTAssertGreaterThan(box.all("desktopMcp:listServers").count, lists, "the list read again")
+
+    let unknown = await store.startConnect(named: "Acme")
+    XCTAssertEqual(unknown, .refused)
+    XCTAssertEqual(store.problem, "Acme isn't in Simeon's apps yet.")
+
+    box.answers["desktopMcp:listServers"] = ["servers": [["id": "900042", "name": "Linear", "pluginId": "linear", "status": "connected"]]]
+    await store.loadApps()
+    let connected = await store.startConnect(named: "Linear")
+    XCTAssertEqual(connected, .connected)
+    XCTAssertEqual(Connecting.retry, "Retry")
+  }
+
   /** 13 October 2026: the sign-in's last page sends the person back to the app that opened it, and says when it failed. */
   func testOurStartLinkNamesTheAppThatOpensIt() {
     let start = URL(string: "https://api.simeonlabs.com/desktop/apps/start?to=https%3A%2F%2Faccounts.google.com%2Fo&e=1&s=ab")!
@@ -317,7 +360,8 @@ final class PluginsBox: AgentBackend, @unchecked Sendable {
         agent.purpose = args["purpose"]?.text
         made.append(agent)
       }
-      return failing.contains(key) ? nil : answers[key] ?? .null
+      // `JSON?.none`, not `nil`: JSON takes a bare `nil` as its own null, and a failing command then answered null instead of failing.
+      return failing.contains(key) ? JSON?.none : answers[key] ?? .null
     }
     guard let answer else { throw GatewayError(message: "\(key) failed", refused: true) }
     return answer

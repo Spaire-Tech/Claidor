@@ -19,6 +19,7 @@ import {
 } from './faces'
 import type { JSONValue } from './json'
 import { type Agent, agentFrom, makeAgent } from './models'
+import { plainProblem } from './plainWords'
 import { AppStore } from './store'
 import { FakeBackend } from './testing'
 
@@ -409,6 +410,20 @@ describe('New Agent', () => {
     // The picture stays; no face is put on over it.
     expect(wornFace(made)).toBeUndefined()
     expect(made.avatarDataURL).toBe(`data:image/png;base64,${base64Of(png)}`)
+  })
+
+  it('names no command when the answer has no agent (testTheAppsOwnFailureNamesNoCommand)', async () => {
+    // 3 November 2026: "Couldn't create Arlo: createAgent: no agent in the answer".
+    const { backend, store } = await attached(team())
+    backend.commandAnswers.createAgent = () => ({})
+    const draft = new AgentDraft({ name: 'Arlo' }).settleFace(store.agents)
+    expect(await store.createAgentFromDraft('Arlo', draft)).toBeUndefined()
+    expect(store.problem).toBe(
+      "Couldn't create Arlo: gateway createAgent failed: no agent in the answer",
+    )
+    expect(plainProblem(store.problem ?? '')).toBe(
+      "Couldn't create Arlo. Try again in a little while.",
+    )
   })
 
   it('a voice picked goes with it', async () => {

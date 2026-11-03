@@ -384,11 +384,19 @@ public struct UsageMeters: Equatable, Sendable {
   }
 
   /** "42%", "1%" for anything above nothing and under one (`qct`). */
-  public static func percent(_ value: Double) -> String {
-    guard value.isFinite else { return shown(0) }
+  public static func percent(_ value: Double) -> String { shown(percentNumber(value)) }
+
+  /**
+   * The number `percent` shows: 0 to 100, to the nearest (a half up), 1 for
+   * anything above nothing and under one. The credits' line over the
+   * composer says it too (`PhoneUpgrade.approaching`), so the two never
+   * read 92% and 93% (3 November 2026; the line rounded down).
+   */
+  public static func percentNumber(_ value: Double) -> Int {
+    guard value.isFinite else { return 0 }
     let clamped = max(0, min(100, value))
-    if clamped > 0 && clamped < 1 { return shown(1) }
-    return shown(Int(clamped.rounded(.toNearestOrAwayFromZero)))
+    if clamped > 0 && clamped < 1 { return 1 }
+    return Int(clamped.rounded(.toNearestOrAwayFromZero))
   }
 
   /** "42%", "42 %" in French. */

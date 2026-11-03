@@ -422,6 +422,10 @@ final class RoutineRunBlocks {
  * The Routines tab's body (`K2n`, a column 6 apart): New Routine at the
  * right when there are routines, then their rows; the empty state when
  * there are none; nothing while the first read is on its way or failed.
+ * The list is read each time the tab is shown, and again while it is shown
+ * when the connection comes back (the window's routines store reads its
+ * watched lists again at `noteReconnect`), so one that couldn't be read
+ * isn't left empty.
  */
 struct RoutinesBody: View {
   let agent: Agent
@@ -460,6 +464,10 @@ struct RoutinesBody: View {
     }
     .onChange(of: list) { _, _ in takeRequest() }
     .onChange(of: pane.routineRequest) { _, _ in takeRequest() }
+    // The connection back: read again, a list that couldn't be read included (`noteReconnect`).
+    .onChange(of: store.isLive) { _, live in
+      if live { Task { await store.loadRoutines(agent.id) } }
+    }
     .onAppear { takeRequest() }
   }
 

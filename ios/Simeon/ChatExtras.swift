@@ -349,9 +349,12 @@ struct ThreadBreadcrumb: View {
  * (a link to the pull request when there is one) and state ("Creating",
  * "Running", "Done", "Error", "Expired", "Status unavailable"), what it was
  * asked, its branch with the pull request's mark and "PR #N", what it
- * changed; View PR and Open. Three bars while it is first read; "Cloud
- * agent", "Status unavailable" when nothing could be. Asked again as the
- * window asks (`CloudAgentInfo.nextPoll`).
+ * changed; View PR. Three bars while it is first read; "Cloud agent",
+ * "Status unavailable" when nothing could be. Asked again as the window
+ * asks (`CloudAgentInfo.nextPoll`). Open is left out until its page exists,
+ * as the web's card leaves it out (3 November 2026): it went to
+ * app.simeonlabs.com/agents/<id> (`CloudAgentInfo.webURL`), which doesn't
+ * yet, so it landed on a page not found.
  */
 struct CloudAgentCard: View {
   let entryId: String
@@ -447,16 +450,14 @@ struct CloudAgentCard: View {
         }
         .font(.system(size: 12)).monospacedDigit()
       }
-      HStack(spacing: 8) {
-        if let pull {
+      if let pull {
+        HStack(spacing: 8) {
           Button { openURL(pull) } label: { Label("View PR", systemImage: "arrow.up.right") }
             .help("Open the pull request")
         }
-        Button { if let page = CloudAgentInfo.webURL(bcId), !bcId.isEmpty { openURL(page) } } label: { Label("Open", systemImage: "arrow.up.forward.app") }
-          .help("Open this cloud agent")
+        .buttonStyle(.bordered)
+        .controlSize(.small)
       }
-      .buttonStyle(.bordered)
-      .controlSize(.small)
     }
   }
 
