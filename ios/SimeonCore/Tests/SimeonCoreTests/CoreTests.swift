@@ -990,6 +990,26 @@ final class StoreTests: XCTestCase {
     await store.open("launch-squad")
     XCTAssertTrue(store.rows(for: "launch-squad").contains { $0.id == "unread-divider" })
   }
+
+  /**
+   * The secret card's Saved (3 November 2026): only from the computer's own
+   * entry (`secretProvided`, the window's `isProvided`), which the Mac's
+   * card reads, never because the save returned (it returns on a refusal
+   * too, the store's problem saying so).
+   */
+  func testASecretIsSavedOnlyOnceTheComputerSaysSo() async throws {
+    func provided(_ store: AppStore) -> Bool? {
+      guard case .request(_, .secret(_, _, let provided, _))? = store.rows(for: "cards").first(where: { $0.id == "x10" }) else { return nil }
+      return provided
+    }
+    let store = AppStore()
+    await store.attach(DemoBackend(seed: DemoData.seed(gallery: true), pace: 0.01, call: nil))
+    await store.open("cards")
+    XCTAssertEqual(provided(store), false)
+    await store.submitSecret("sk_live_x", entryId: "x10", in: "cards")
+    try await Task.sleep(nanoseconds: 100_000_000)
+    XCTAssertEqual(provided(store), true, "the computer's entry says it kept it")
+  }
 }
 
 final class MarkdownTests: XCTestCase {
