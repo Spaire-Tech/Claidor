@@ -113,6 +113,7 @@ import {
 } from './connectCards'
 import { type ConnectedApp, connectedApp, makeApp } from './connectedApps'
 import {
+  type ConnectOutcome,
   type ConnectStart,
   type SignInAnswer,
   alreadySignedIn,
@@ -169,7 +170,6 @@ import {
   type LocalToolPermission,
   defaultLocalToolPermission,
   isAboveCeiling,
-  reconcilePermission,
   teamCeiling,
 } from './localToolPermission'
 import {
@@ -1377,7 +1377,12 @@ export class AppStore {
       const id =
         text(field(field(made, 'agent'), 'id')) ?? text(field(made, 'id'))
       if (!id)
-        throw new GatewayError('createAgent: no agent in the answer', true)
+        throw new GatewayError(
+          'gateway createAgent failed: no agent in the answer',
+          true,
+          undefined,
+          'createAgent',
+        )
       this.firstRunAgentId = id
     }
     const id = this.firstRunAgentId
@@ -3331,7 +3336,13 @@ export class AppStore {
     if (agent.voiceId !== undefined) args.voiceId = agent.voiceId
     const answer = await backend.command('createAgent', args)
     const id = text(field(field(answer, 'agent'), 'id'))
-    if (!id) throw new GatewayError('createAgent: no agent in the answer', true)
+    if (!id)
+      throw new GatewayError(
+        'gateway createAgent failed: no agent in the answer',
+        true,
+        undefined,
+        'createAgent',
+      )
     return id
   }
 
@@ -3615,9 +3626,16 @@ export class AppStore {
     }
   }
 
-  /** An agent's channels (`getAgentChannels`): undefined when the computer doesn't answer within 15 s. */
-  channels(agentId: string): Promise<ChannelsView | undefined> {
-    return this.channelCall('getAgentChannels', { id: agentId })
+  /**
+   * An agent's channels (`getAgentChannels`): undefined when the computer
+   * doesn't answer within 15 s. With `wakes` false (the page's reads every
+   * 4 s and as the window comes forward), a computer that rests is let
+   * rest: the read fails at once and the page keeps what it shows
+   * (Channels.swift's `channels(_:wakes:)`), so a page left open never
+   * keeps it awake; the read as the page opens, and after a change, wake it.
+   */
+  channels(agentId: string, wakes = true): Promise<ChannelsView | undefined> {
+    return this.channelCall('getAgentChannels', { id: agentId }, wakes)
   }
 
   /** Store securely: the token for `platform` (Slack takes its app and bot tokens together, the computer sorts them). */
@@ -3651,13 +3669,16 @@ export class AppStore {
   private async channelCall(
     method: string,
     args: JSONValue,
+    wakes = true,
   ): Promise<ChannelsView | undefined> {
     const backend = this.backend
     if (!backend) return undefined
     let timer: ReturnType<typeof setTimeout> | undefined
     try {
       const answer = await Promise.race([
-        backend.command(method, args),
+        wakes
+          ? backend.command(method, args)
+          : backend.command(method, args, { wakes: false }),
         new Promise<undefined>((resolve) => {
           timer = setTimeout(() => resolve(undefined), channelDeadline * 1000)
         }),
@@ -3758,7 +3779,12 @@ export class AppStore {
         )
         const id = text(field(field(answer, 'agent'), 'id'))
         if (!id)
-          throw new GatewayError('createAgent: no agent in the answer', true)
+          throw new GatewayError(
+            'gateway createAgent failed: no agent in the answer',
+            true,
+            undefined,
+            'createAgent',
+          )
         made.push(id)
       } catch (error) {
         const why = error instanceof Error ? error.message : String(error)
@@ -4716,20 +4742,31 @@ export class AppStore {
   // `Connecting.swift`, `AppAccounts.swift`). The screens' side is
   // src/window/connector.ts and ConnectConsent.tsx.
 
+  /** Connect's sign-in page (`beginConnect`, `startConnect`), for callers that need no more: undefined when none opened, whether refused or signed in already. */
+  async beginConnect(name: string): Promise<ConnectStart | undefined> {
+    const outcome = await this.startConnect(name)
+    return outcome.kind === 'started' ? outcome.start : undefined
+  }
+
   /**
-   * Connect (`beginConnect`, `Connecting`): the app installed from the
+   * Connect (`startConnect`, `Connecting`): the app installed from the
    * catalogue when it is not on the computer yet, then its sign-in started;
    * the sign-in's page, and whether this connect added the app. An app this
    * connect added whose sign-in then doesn't open is taken back at once, so
-   * nothing stays half added; `problem` says why.
+   * nothing stays half added; `problem` says why. With no sign-in to open,
+   * whether the app is signed in already or the connect was refused (3
+   * November 2026): the window's connector card marks a refusal, its button
+   * then reading Retry, and on "already-authenticated" only reads the list
+   * again. Signed out meanwhile, it was refused.
    */
-  async beginConnect(name: string): Promise<ConnectStart | undefined> {
+  async startConnect(name: string): Promise<ConnectOutcome> {
+    const refused: ConnectOutcome = { kind: 'refused' }
     const backend = this.backend
-    if (!backend) return undefined
+    if (!backend) return refused
     // The box's app events keep the list current, so it is read here only when it never was (an empty list counts as never read: the web keeps no time of the last read).
     if (this.catalog.length === 0 || this.apps.length === 0)
       await this.loadAppCards()
-    if (this.backend !== backend) return undefined
+    if (this.backend !== backend) return refused
     const key = name.toLowerCase()
     const plugin = this.catalogApp(name)
     let server = this.apps.find(
@@ -4753,7 +4790,7 @@ export class AppStore {
             })
             .catch(() => undefined),
         ])
-        if (this.backend !== backend) return undefined
+        if (this.backend !== backend) return refused
         added = plugin.id
         this.apps = (arr(field(installed, 'servers')) ?? [])
           .map(connectedApp)
@@ -4772,33 +4809,33 @@ export class AppStore {
           : this.apps.find((app) => app.pluginId === plugin.id)
       } catch (error) {
         this.connectProblem(t`Couldn't add ${name}: ${this.connectWhy(error)}`)
-        return undefined
+        return refused
       }
     }
     if (!server) {
       this.connectProblem(t`${name} isn't in Simeon's apps yet.`)
-      return undefined
+      return refused
     }
-    if (server.status === 'connected') return undefined
+    if (server.status === 'connected') return { kind: 'connected' }
     try {
       const started = await backend.command('desktopMcp', {
         action: 'authenticateServer',
         args: [server.serverId, server.accountKey, 'connector_card'],
       })
-      if (this.backend !== backend) return undefined
+      if (this.backend !== backend) return refused
       const url = await this.signInStarted(started, name)
-      if (url) return { url, addedPlugin: added }
+      if (url) return { kind: 'started', start: { url, addedPlugin: added } }
       // Signed in already: kept, whatever the list says yet.
-      if (alreadySignedIn(started)) return undefined
+      if (alreadySignedIn(started)) return { kind: 'connected' }
     } catch (error) {
-      if (this.backend !== backend) return undefined
+      if (this.backend !== backend) return refused
       this.connectProblem(
         didntConnect(name, plainError(this.connectWhy(error))),
       )
     }
     // No sign-in to open: the app this connect added goes again, unless it turned out signed in already.
     if (added) await this.takeBack(added, name, backend)
-    return undefined
+    return refused
   }
 
   /**
@@ -4929,6 +4966,17 @@ export class AppStore {
   /** Someone is signed in: Connectors' calls can go (the Mac's `try? calls()`). */
   get pluginCallsReady(): boolean {
     return this.backend != null
+  }
+
+  /**
+   * Who Connectors' calls go to now, as an identity only (the computer
+   * stays the store's): an action takes it at its start and, after each
+   * await, goes on only while it is the same, so a change under way after
+   * a sign-out never acts on the next account's computer
+   * (PluginsModel.swift's `isCurrent`).
+   */
+  get pluginSignIn(): object | undefined {
+    return this.backend
   }
 
   /** Connectors' calls to the computer (SimeonCore's `PluginCalls`); signed out, the core's words. */
@@ -5073,6 +5121,8 @@ export class AppStore {
     } catch {
       // Let go: the banner says what can't be fetched.
     }
+    // Signed out, or into another account, meanwhile: the next computer is not asked.
+    if (this.backend !== backend) return
     await this.readPluginSyncStatus()
   }
 
@@ -5106,8 +5156,12 @@ export class AppStore {
     values: Readonly<Record<string, string>>,
     team: boolean,
   ): Promise<void> {
+    const backend = this.backend
     const calls = this.pluginCalls()
-    this.applyPluginServers(await calls.install(entryId, values, team))
+    const servers = await calls.install(entryId, values, team)
+    // Signed out, or into another account, meanwhile: nothing kept, and the next computer is not asked.
+    if (this.backend !== backend) return
+    this.applyPluginServers(servers)
     await this.readEffectivePlugins()
   }
 
@@ -5133,14 +5187,19 @@ export class AppStore {
 
   /** Uninstall or Remove of a server (`removeServer`): what it did, the servers as they are then. */
   async removePluginServer(serverId: string): Promise<Removal> {
+    const backend = this.backend
     const removal = await this.pluginCalls().removeServer(serverId)
-    this.applyPluginServers(removal.servers)
+    // Signed out, or into another account, meanwhile: nothing kept.
+    if (this.backend === backend) this.applyPluginServers(removal.servers)
     return removal
   }
 
   /** Uninstall of a plugin (`uninstallPlugin`): what it did, the servers as they are then, its plugins read again. */
   async uninstallPluginEntry(pluginId: string): Promise<Removal> {
+    const backend = this.backend
     const removal = await this.pluginCalls().uninstallPlugin(pluginId)
+    // Signed out, or into another account, meanwhile: nothing kept, and the next computer is not asked.
+    if (this.backend !== backend) return removal
     this.applyPluginServers(removal.servers)
     await this.readEffectivePlugins()
     return removal
@@ -5148,7 +5207,10 @@ export class AppStore {
 
   /** A connect's app taken back out (`takeBack`): uninstalled again, unless the computer says it connected after all; the connected apps read again. */
   async takeBackPlugin(pluginId: string, serverId: string): Promise<void> {
+    const backend = this.backend
     await this.readPluginServers()
+    // Signed out, or into another account, meanwhile: nothing more, on either computer.
+    if (this.backend !== backend) return
     if (
       serverAccounts(this.pluginServers, serverId).some(
         (server) => server.status === 'connected',
@@ -5160,6 +5222,7 @@ export class AppStore {
     } catch {
       return
     }
+    if (this.backend !== backend) return
     await this.loadApps()
   }
 
@@ -5213,6 +5276,7 @@ export class AppStore {
     body: string,
     agentId: string,
   ): Promise<void> {
+    const backend = this.backend
     const list = await this.pluginCalls().updateSkill(
       skill,
       name,
@@ -5220,13 +5284,16 @@ export class AppStore {
       body,
       agentId,
     )
-    if (list) this.setAgentSkills(agentId, list)
+    // Signed out, or into another account, meanwhile: nothing kept.
+    if (list && this.backend === backend) this.setAgentSkills(agentId, list)
   }
 
   /** Delete skill (`deleteAgentWorkflow`): the skills as the computer lists them. */
   async deleteAgentSkill(skillId: string, agentId: string): Promise<void> {
+    const backend = this.backend
     const list = await this.pluginCalls().deleteSkill(skillId, agentId)
-    if (list) this.setAgentSkills(agentId, list)
+    // Signed out, or into another account, meanwhile: nothing kept.
+    if (list && this.backend === backend) this.setAgentSkills(agentId, list)
   }
 
   // Tools
@@ -5249,8 +5316,11 @@ export class AppStore {
       )
       this.changed()
     }
+    const backend = this.backend
     try {
       const next = await this.pluginCalls().toggleTool(toolName, serverId)
+      // Signed out, or into another account, meanwhile: nothing kept, and the next computer is not asked.
+      if (this.backend !== backend) return
       this.pluginTools = new Map(this.pluginTools).set(serverId, next)
       const failures = new Map(this.pluginToolFailures)
       failures.delete(serverId)
@@ -5258,6 +5328,7 @@ export class AppStore {
       this.changed()
       await this.readPluginServers()
     } catch (error) {
+      if (this.backend !== backend) return
       const why = error instanceof Error ? error.message : String(error)
       this.pluginToolFailures = new Map(this.pluginToolFailures).set(
         serverId,
@@ -6780,8 +6851,8 @@ export class AppStore {
   // In the Windows app only (`desktop()`), as MacServices.swift's `track`
   // and MacLocalPermission.swift: signed in, this account's setting and its
   // team's ceiling are read, and the computer told when they change what it
-  // should do; each time the computer is reached the setting is squared
-  // with its own. The hands' loop (`LocalHandsProvider.run`) hands the main
+  // should do; each time the computer is reached it is told this PC's
+  // setting, its own copy never taken back. The hands' loop (`LocalHandsProvider.run`) hands the main
   // process the computer's address and dials again when the stream drops,
   // never a computer that rests; the main process reads the stream and runs
   // what it asks (windows/src/main/hands/). The Allow card's ask is read
@@ -6995,9 +7066,9 @@ export class AppStore {
    * Signed in, and at each launch (`MacLocalPermission.signedIn`): this
    * account's setting, and its team's ceiling read from Simeon Labs. The
    * computer is told when that changes what it should do. When Simeon Labs
-   * does not answer, the ceiling this PC last had for the account holds
-   * (the Mac's counts as none, which lifts a team's "Never" at every
-   * offline launch: proposed for the Mac too).
+   * does not answer, the ceiling this PC last had for the account holds, as
+   * the Mac's does (`LocalToolSettings.take`: taken as none, a team's
+   * "Never" was lifted at every offline launch).
    */
   private async localPermissionSignedIn(
     host: Desktop,
@@ -7042,38 +7113,25 @@ export class AppStore {
     this.changed()
   }
 
-  /** Connected (`MacLocalPermission.connected`): a computer set to always or never while this PC is at the default is taken; otherwise it is told this PC's. */
+  /**
+   * Connected (`MacLocalPermission.connected`; upstream's
+   * `coordinator-resync.ts`, step `local_tool_permission`): the computer is
+   * told this PC's setting, the ceiling applied, and nothing is taken from
+   * its own copy. Only this PC writes it: the computer keeps it in a
+   * `settings.json` its agent can write, so taking it back could raise this
+   * PC from Ask to Always; and a ceiling that lowers the choice reaches the
+   * computer, which then sends the asks this PC can answer.
+   */
   private async localPermissionConnected(
     host: Desktop,
     backend: AgentBackend,
   ): Promise<void> {
-    let box: unknown
-    try {
-      box = field(
-        await backend.command('getHostSettings', {}),
-        'localToolPermission',
-      )
-    } catch {
-      box = undefined
-    }
     const here = await host.call('handsPermission', null).catch(() => undefined)
     if (!here || backend !== this.backend) return
-    const step = reconcilePermission(box, here.effective)
-    if (step.kind === 'adopt') {
-      const now = await host
-        .call('handsChoose', step.value)
-        .catch(() => undefined)
-      if (now) {
-        this.localPermission = now.effective
-        this.changed()
-        // The team's ceiling lowered what was taken: the computer is told what holds, or it would send no asks this PC could answer (the Mac doesn't: proposed for it too).
-        if (now.effective !== step.value)
-          await this.pushHostSetting('localToolPermission', now.effective)
-      }
-      return
-    }
     await quietly(
-      backend.command('setHostSettings', { localToolPermission: step.value }),
+      backend.command('setHostSettings', {
+        localToolPermission: here.effective,
+      }),
     )
   }
 

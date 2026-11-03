@@ -138,9 +138,19 @@ public enum LocalToolRules {
    * `isLocalUseBlocked`): a place that holds keys first, whatever the
    * setting; then Never; Always; and under Ask, only what the person allowed
    * once, exactly that (a command's approval also covers its terminal file).
+   * A command is also refused when a folder it would run in (`folders`:
+   * `commandFolders`) is such a place, and the names in its words are also
+   * read from there, as the Windows app refuses it
+   * (windows/src/main/hands/rules.ts): `cat id_rsa` run in `~/.ssh`, or
+   * `cat hosts.yml` in `~/.config/gh`, names no place in its words.
    */
-  public static func refusal(request: LocalToolRequest?, approvalId: String?, permission: LocalToolPermission, live: [String: LocalToolApproval], terminalsFolder: String, home: String) -> String? {
-    if let request, let sensitive = SensitivePaths.refusal(action: request.action, target: request.target, home: home) { return sensitive }
+  public static func refusal(request: LocalToolRequest?, approvalId: String?, permission: LocalToolPermission, live: [String: LocalToolApproval], terminalsFolder: String, home: String, folders: [String] = []) -> String? {
+    if let request, let sensitive = SensitivePaths.refusal(action: request.action, target: request.target, home: home, folders: folders) { return sensitive }
+    if request?.action == "run-command" {
+      for folder in folders where !folder.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+        if let inside = SensitivePaths.refusal(action: "list-directory", target: folder, home: home) { return inside }
+      }
+    }
     switch permission {
     case .never: return LocalExec.disabled
     case .always: return nil
@@ -168,6 +178,24 @@ public enum LocalToolRules {
     if shared == from.count && shared == to.count { return false }
     if shared < from.count { return true }
     return to[shared].hasPrefix("..")
+  }
+
+  /**
+   * The folders a command would run in, for the places that hold keys (the
+   * Windows app's `exec`, windows/src/main/hands/provider.ts): first the one
+   * asked for (`workingDirectory`) from the root, else the one the shell
+   * carried from the last command (`carried`); then the one asked for as
+   * written, and where the first really is, links followed (`real`). None
+   * for anything but a command.
+   */
+  public static func commandFolders(kind: String, value: JSON, root: String, carried: String, real: (String) -> String) -> [String] {
+    guard kind == "shellStreamArgs" || kind == "backgroundShellSpawnArgs" else { return [] }
+    let asked = (value["workingDirectory"]?.string ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+    let folder = asked.isEmpty ? carried : resolve(asked, against: root)
+    var out = asked.isEmpty || asked == folder ? [folder] : [folder, asked]
+    let actual = real(folder)
+    if actual != folder { out.append(actual) }
+    return out
   }
 
   /** The folder a command runs in: none given is the shell's own; one that is not there is the root, said first on stderr. */

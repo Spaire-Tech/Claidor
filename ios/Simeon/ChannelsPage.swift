@@ -5,9 +5,11 @@ import SimeonCore
  * An agent's channels as its computer last answered (the Mac's
  * `ChannelsModel`, mac/Simeon/ChannelsPage.swift; the window's channels
  * store, `I$n`): read when the page shows, every 4 s while it is open and
- * when the app comes forward, 15 s at most, a failed read keeping the last
- * answer; Connect, Disconnect and Refresh put the answer in place, then
- * read again.
+ * the app is active, and when the app comes forward (the window's own reads
+ * only while it can be seen, `document.visibilityState`), 15 s at most, a
+ * failed read keeping the last answer; those last two let a resting
+ * computer rest. Connect, Disconnect and Refresh put the answer in place,
+ * then read again.
  */
 @MainActor
 @Observable
@@ -21,10 +23,11 @@ final class ChannelsModel {
   @ObservationIgnored private var issued = 0
   @ObservationIgnored private var shown = 0
 
-  func load(_ agentId: String, store: AppStore) async {
+  /** A read; with `wakes` false, one that lets a resting computer rest (`AppStore.channels`). */
+  func load(_ agentId: String, store: AppStore, wakes: Bool = true) async {
     issued += 1
     let number = issued
-    apply(await store.channels(agentId), number)
+    apply(await store.channels(agentId, wakes: wakes), number)
     firstReadDone = true
   }
 
@@ -58,6 +61,8 @@ struct ChannelsPage: View {
   @Environment(AppStore.self) private var store
   @Environment(\.scenePhase) private var scenePhase
   @State private var model = ChannelsModel()
+  /** The app is active (`scenePhase`), kept where the 4 s loop reads it as it is now. */
+  @State private var active = true
 
   var body: some View {
     Form {
@@ -85,14 +90,17 @@ struct ChannelsPage: View {
     .inlineBarTitle()
     .tint(Ink.blue)
     .task(id: agentId) {
+      await model.load(agentId, store: store)
+      // Every 4 s only while the app is active (the window's own: while `document.visibilityState` is "visible").
       while !Task.isCancelled {
-        await model.load(agentId, store: store)
         try? await Task.sleep(nanoseconds: 4_000_000_000)
+        if !Task.isCancelled && active { await model.load(agentId, store: store, wakes: false) }
       }
     }
-    // Back in front: read at once (the Mac's window coming forward).
+    // Back in front: read at once (the Mac's window coming forward), letting a resting computer rest.
     .onChange(of: scenePhase) { _, phase in
-      if phase == .active { Task { await model.load(agentId, store: store) } }
+      active = phase == .active
+      if phase == .active { Task { await model.load(agentId, store: store, wakes: false) } }
     }
   }
 }

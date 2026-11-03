@@ -79,6 +79,31 @@ final class SettingsTests: XCTestCase {
     XCTAssertEqual(AutoReviewInstructions.label(.ask), "Ask first")
   }
 
+  /**
+   * "Ton essai se termine le 7 nov..": the plan's date had a short month, which ends in a full stop in French, German,
+   * Portuguese and Swedish, before the sentence's own. Its month is in full in every language, with one full stop.
+   */
+  func testThePlanLineWritesTheMonthInFull() {
+    let utc = TimeZone(identifier: "UTC")!
+    // 7 October 2026, 00:00 UTC.
+    let end = 1_791_331_200_000.0
+    let trial = UsageSummary.ManagePlan(planName: "Pro", tier: "pro", status: "trialing", periodEndMs: end, nextTier: nil)
+    let active = UsageSummary.ManagePlan(planName: "Pro", tier: "pro", status: "active", periodEndMs: end, nextTier: nil)
+    XCTAssertEqual(trial.line(locale: Locale(identifier: "en_US"), timeZone: utc), "Your trial ends on October 7.")
+    XCTAssertEqual(active.line(locale: Locale(identifier: "en_US"), timeZone: utc), "Usage resets on October 7.")
+    let dates = [
+      "fr_FR": "7 octobre", "de_DE": "7. Oktober", "pt_BR": "7 de outubro", "sv_SE": "7 oktober", "es_ES": "7 de octubre",
+      "nl_NL": "7 oktober", "it_IT": "7 ottobre", "pl_PL": "7 października", "tr_TR": "7 Ekim",
+    ]
+    for (identifier, date) in dates {
+      for plan in [trial, active] {
+        let line = plan.line(locale: Locale(identifier: identifier), timeZone: utc)
+        XCTAssertTrue(line.contains(date), "\(identifier): \(line)")
+        XCTAssertFalse(line.contains(".."), "\(identifier): \(line)")
+      }
+    }
+  }
+
   func testUsageSummaryAndMetersAsTheElectronAppAndWindow() {
     let cases = Self.fixture["usage"]?.array ?? []
     XCTAssertEqual(cases.count, 500)
@@ -102,7 +127,9 @@ final class SettingsTests: XCTestCase {
       XCTAssertEqual(summary.managePlan?.nextTier?.label, shipped?["managePlan"]?["nextTier"]?["label"]?.string, label)
       XCTAssertEqual(summary.managePlan?.periodEndMs, shipped?["managePlan"]?["periodEndMs"]?.double, label)
       if let line = row["planLine"]?.string {
-        XCTAssertEqual(summary.managePlan?.line(locale: Locale(identifier: "en_US"), timeZone: TimeZone(identifier: "UTC")!), line, label)
+        // The patch's line with its month in full ("Oct 16" is "October 16"; `testThePlanLineWritesTheMonthInFull`).
+        let inFull = line.replacingOccurrences(of: " on Oct ", with: " on October ")
+        XCTAssertEqual(summary.managePlan?.line(locale: Locale(identifier: "en_US"), timeZone: TimeZone(identifier: "UTC")!), inFull, label)
       } else {
         XCTAssertNil(summary.managePlan, label)
       }
@@ -163,4 +190,100 @@ final class SettingsTests: XCTestCase {
     XCTAssertEqual(TimeZoneChoices.values(override: "Mars/Olympus", known: ["Europe/Paris"]), ["auto", "Mars/Olympus", "Europe/Paris"])
     XCTAssertEqual(TimeZoneChoices.values(override: "Europe/Paris", known: ["Europe/Paris"]), ["auto", "Europe/Paris"])
   }
+
+  /** General and Permissions wait for the computer's values, as the web's pages do (`GeneralSettingsModel.load`). */
+  func testTheSettingsPagesWaitForTheComputersValues() {
+    var load = HostSettingsLoad()
+    XCTAssertFalse(load.loaded, "nothing can be changed before the computer answers")
+    XCTAssertFalse(load.failed)
+    let first = load.reading
+    XCTAssertFalse(load.answered(nil, readAt: first))
+    XCTAssertFalse(load.loaded)
+    XCTAssertTrue(load.failed, "a failed read says so and keeps the page waiting")
+    let second = load.reading
+    XCTAssertTrue(load.answered(["userTimeZoneOverride": "Europe/Paris"], readAt: second))
+    XCTAssertTrue(load.loaded)
+    XCTAssertFalse(load.failed)
+    let third = load.reading
+    XCTAssertFalse(load.answered(nil, readAt: third))
+    XCTAssertTrue(load.loaded, "a later failure keeps what was read")
+    XCTAssertFalse(load.failed)
+    let older = load.reading
+    load.writing()
+    XCTAssertFalse(load.answered(["userTimeZoneOverride": ""], readAt: older), "a read sent before a change is older than it, and dropped")
+    XCTAssertTrue(load.answered(["userTimeZoneOverride": ""], readAt: load.reading))
+  }
+}
+
+/** Settings › Account's name (`changeName`) after a sign-out: the Electron app's `updateDisplayName` keeps it under the account it was asked for. */
+@MainActor
+final class NameChangeTests: XCTestCase {
+  func testANameSavedAfterASignOutGoesIntoNoOtherAccount() async throws {
+    let first = NameGateBackend()
+    let store = AppStore()
+    store.account = Account(name: "Bass", email: "bass@example.com", id: "1")
+    await store.attach(first)
+    let saving = Task { await store.changeName("Basile") }
+    try await Task.sleep(nanoseconds: 50_000_000)
+    XCTAssertTrue(first.asked, "the server is asked")
+    store.detach()
+    let second = NameGateBackend()
+    store.account = Account(name: "Dana", email: "dana@example.com", id: "2")
+    await store.attach(second)
+    first.answer()
+    let refused = await saving.value
+    XCTAssertNil(refused, "saved, for the account that asked")
+    XCTAssertEqual(store.account, Account(name: "Dana", email: "dana@example.com", id: "2"), "the next account keeps its own name")
+    XCTAssertFalse(first.methods.contains("refreshUserName"), "nothing more goes to the earlier computer")
+    XCTAssertFalse(second.methods.contains("refreshUserName"), "nor to the next one")
+    store.detach()
+  }
+
+  func testANameSavedIsShownAndTold() async throws {
+    let backend = NameGateBackend()
+    let store = AppStore()
+    store.account = Account(name: "Bass", email: "bass@example.com", id: "1")
+    await store.attach(backend)
+    let saving = Task { await store.changeName("Basile") }
+    try await Task.sleep(nanoseconds: 50_000_000)
+    backend.answer()
+    let refused = await saving.value
+    XCTAssertNil(refused)
+    XCTAssertEqual(store.account, Account(name: "Basile", email: "bass@example.com", id: "1"))
+    XCTAssertTrue(backend.methods.contains("refreshUserName"), "the computer is told to read it again")
+    store.detach()
+  }
+}
+
+/** A computer whose server answers `user/name` only when the test says. */
+final class NameGateBackend: AgentBackend, @unchecked Sendable {
+  private let lock = NSLock()
+  private var sent: [String] = []
+  private var waiting: CheckedContinuation<Void, Never>?
+  private var wasAsked = false
+  var methods: [String] { lock.withLock { sent } }
+  var asked: Bool { lock.withLock { wasAsked } }
+  func answer() { lock.withLock { let resume = waiting; waiting = nil; return resume }?.resume() }
+  func tail(_ agentId: String, limit: Int) async throws -> [Entry] { [] }
+  func listAgents() async throws -> [Agent] { [Agent(id: "theo", name: "Theo")] }
+  func transcript(_ agentId: String) async throws -> [Entry] { [] }
+  func send(_ agentId: String, text: String, attachments: [AttachmentRef], options: SendOptions, nonce: String?) async throws {}
+  func markRead(_ agentId: String) async {}
+  func createAgent(name: String, face: String?) async throws -> String { "x" }
+  func createGroup(name: String, memberIds: [String]) async throws -> String { "g" }
+  func answer(_ agentId: String, entryId: String, value: String) async throws {}
+  func updateAgent(_ agentId: String, name: String, title: String, description: String) async throws {}
+  func routines(_ agentId: String) async throws -> [JSON] { [] }
+  func events() -> AsyncStream<BackendEvent> { AsyncStream { _ in } }
+  var call: CallEngine? { nil }
+  func command(_ method: String, _ args: JSON) async throws -> JSON {
+    lock.withLock { sent.append(method) }
+    return [:]
+  }
+  func server(_ path: String, method: String?, body: JSON?) async throws -> JSON {
+    guard path == "user/name" else { return [:] }
+    await withCheckedContinuation { continuation in lock.withLock { waiting = continuation; wasAsked = true } }
+    return [:]
+  }
+  func screen(_ agentId: String) async throws -> ScreenState { ScreenState(socket: nil, state: "starting") }
 }

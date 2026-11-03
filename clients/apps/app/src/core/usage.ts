@@ -183,8 +183,10 @@ export function usageSummary(
 
 /**
  * The Plan group's line (`ManagePlan.line`): when the trial ends or the
- * usage resets ("Oct 12", the month and day in the app's language), and
- * "Upgrade for more usage." when there is a plan above.
+ * usage resets ("October 12", the month in full and the day in the app's
+ * language: a short month ends in a full stop in French, German, Portuguese
+ * and Swedish, and the sentence's own made two, "7 nov.."), and "Upgrade
+ * for more usage." when there is a plan above.
  */
 export function planLine(
   plan: ManagePlan,
@@ -193,7 +195,7 @@ export function planLine(
   let when: string | undefined
   if (plan.periodEndMs !== undefined)
     when = new Intl.DateTimeFormat(options.locale ?? displayLocale(), {
-      month: 'short',
+      month: 'long',
       day: 'numeric',
       timeZone: options.timeZone,
     }).format(new Date(plan.periodEndMs))
@@ -317,11 +319,21 @@ export function countdown(
 
 /** "42%" ("42 %" in French), "1%" for anything above nothing and under one (`percent`, `qct`). */
 export function percentLabel(value: number): string {
-  if (!Number.isFinite(value)) return t`${0}%`
+  return t`${percentNumber(value)}%`
+}
+
+/**
+ * The number `percentLabel` shows (`percentNumber`): 0 to 100, to the
+ * nearest (a half up), 1 for anything above nothing and under one. The
+ * credits' line over the composer says it too (upgrade.ts's `approaching`),
+ * so the two never read 92% and 93% (3 November 2026; the line rounded down).
+ */
+export function percentNumber(value: number): number {
+  if (!Number.isFinite(value)) return 0
   const clamped = clamp(value)
-  if (clamped > 0 && clamped < 1) return t`${1}%`
+  if (clamped > 0 && clamped < 1) return 1
   // Swift's `.toNearestOrAwayFromZero`: never below zero here, so a half goes up.
-  return t`${Math.floor(clamped + 0.5)}%`
+  return Math.floor(clamped + 0.5)
 }
 
 /** The account menu's spend (`compactMoney`, `wze`): "$12.5", "$100", "$1.2k" from a thousand dollars up; a half goes up, as JavaScript's `toFixed`. */
@@ -433,6 +445,17 @@ export const copiedSeconds = 1.2
 
 export function versionLine(version: string): string {
   return t`Version ${version}`
+}
+
+/**
+ * When Settings › Updates last looked, in its "Last checked …" line
+ * (`checkedJustNow`): "just now" under a minute ago (or a moment ahead, the
+ * clock's), as the window's relative time says it; undefined from a minute
+ * on, for `relativeWords`. Until 3 November 2026 a check a moment ago read
+ * "0 seconds ago", and stayed so.
+ */
+export function checkedJustNow(date: number, now: number): string | undefined {
+  return now - date < 60_000 ? t('just now') : undefined
 }
 
 /** What Copy version info writes: the window's three lines, word for word (`versionInfo`). */

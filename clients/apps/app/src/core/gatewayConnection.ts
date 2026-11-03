@@ -158,11 +158,14 @@ export class GatewayError extends Error {
   resting = false
 
   constructor(
+    /** What the computer said (its answer's `error`), never the command's name: the person may read it (`plainWords`). */
     message: string,
     /** The host answered and refused (a 4xx): retrying the same call will not help. */
     readonly refused: boolean,
     /** The HTTP status, when the box answered at all. */
     readonly status?: number,
+    /** The command the computer answered (`createAgent`), for the trace; never in `message`. */
+    readonly method?: string,
   ) {
     super(message)
     this.name = 'GatewayError'

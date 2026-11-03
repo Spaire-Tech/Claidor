@@ -167,6 +167,8 @@ public final class AppStore {
   /** Settings' Usage & Billing (`usageSummary`): read when Settings opens, at most every 30 s. */
   public internal(set) var usage: UsageLoad = .empty
   @ObservationIgnored public internal(set) var usageReadAt: Date?
+  /** Each read of the usage numbered as it starts (`refreshUsage`), and again at sign-out: only the newest read's answer lands. */
+  @ObservationIgnored var usageReads = 0
   /** Something went wrong that the person should hear about, once. */
   public var problem: String?
   /** The problem as the person reads it (PlainWords): what failed, never the words behind it. */
@@ -338,6 +340,8 @@ public final class AppStore {
   @ObservationIgnored var pendingFaces: [String: AgentFace] = [:]
   /** Agents given a face in this sign-in: one the host refused is not sent again on every roster change. */
   @ObservationIgnored var facesSent: Set<String> = []
+  /** The sign-ins this app named to Simeon Labs' server to come back to it, by their state: the app's name and when (AppReturnSignIn.swift). */
+  @ObservationIgnored var returnedSignIns: [String: (name: String, at: Date)] = [:]
   /** A line search found, to show once its chat is open (agent → entry; Search.swift). */
   public var revealing: [String: String] = [:]
   /** The thread open in each chat (agent → the id of its first message), laid out in `threadRows`. */
@@ -432,7 +436,17 @@ public final class AppStore {
     let signedIn = account
     // What changed since the last save is kept before it goes (View › Reload), and shown again at once below.
     saveNow()
+    // The same computer again (Reload): the agents' computers a view still shows stay watched, and started again if they
+    // were started here, everything else about them forgotten and read again once the stream is back
+    // (`ComputerBook.reset`), as the window's watch lasts as long as its view; the window does not watch again, its
+    // selection unchanged. Another sign-in starts with none watched.
+    let book = computer
     detach(endingCall: !same)
+    if same {
+      var kept = book
+      kept.reset(keepingStarts: true)
+      computer = kept
+    }
     account = signedIn
     self.backend = backend
     // The list kept on this device, until the computer answers (SavedChats); the server's copy, when it comes first.
@@ -489,7 +503,7 @@ public final class AppStore {
     listening?.cancel()
     listening = nil
     backend = nil
-    agents = []; transcripts = [:]; chatRows = [:]; runFlags = [:]; steps = [:]; call = nil; callLevels = []; isLive = false; account = nil; usage = .empty; usageReadAt = nil; access = .checking; accessBlocked = false; hasReachedBox = false; openChat = nil
+    agents = []; transcripts = [:]; chatRows = [:]; runFlags = [:]; steps = [:]; call = nil; callLevels = []; isLive = false; account = nil; usage = .empty; usageReadAt = nil; usageReads += 1; access = .checking; accessBlocked = false; hasReachedBox = false; openChat = nil
     layoutTask?.cancel(); layoutTask = nil; pendingLayout = []; refreshing = []; caughtUp = [:]
     pendingAnswers = [:]; answeredApprovals = [:]; answeredPurchases = [:]; watchedPurchases = []; pickedPurchaseCards = [:]; pressedProducts = [:]; localAsks = [:]; trayList = TrayList(); fileLines = [:]; fileReadsAsText = [:]; unreadAfter = [:]; apps = []; catalog = []; appsComingSoon = AppsComingSoon.builtIn; appAccounts = [:]; catalogEntries = []; catalogFresh = false; pinnedIds = []; routinesByAgent = [:]; sidebarSections = nil
     streamingOnly = [:]; outbox = [:]; sentOffline = [:]; arrived = []; olderBefore = [:]; loadingOlder = []; paged = []; firstRunAgentId = nil; revealing = [:]
@@ -501,6 +515,8 @@ public final class AppStore {
     voiceList = nil
     givingFaces?.cancel(); givingFaces = nil; pendingFaces = [:]; facesSent = []
     sentFiles = []
+    // A sign-in named in this sign-in is finished in it only (the web's `resetDesktopOutside`).
+    returnedSignIns = [:]
     // Last: wiping the list above asked for a save, which must not happen.
     stopSaving()
   }
@@ -1911,15 +1927,25 @@ public final class AppStore {
     await beginConnect(named: name)?.url
   }
 
+  /** Connect's sign-in page (`startConnect`), for callers that need no more: nil when none opened, whether refused or signed in already. */
+  public func beginConnect(named name: String) async -> ConnectStart? {
+    if case .started(let start) = await startConnect(named: name) { return start }
+    return nil
+  }
+
   /**
    * Connect (`Connecting`): install the app from the catalog when it is not
    * there, then start its sign-in; the sign-in's web address, for the
    * system's sign-in sheet, and whether this connect added the app. An app
    * this connect added whose sign-in then doesn't open is taken back at
-   * once, so nothing stays half added; `problem` says why.
+   * once, so nothing stays half added; `problem` says why. With no sign-in
+   * to open, whether the app is signed in already or the connect was
+   * refused (3 November 2026): the window's connector card marks a refusal,
+   * its button then reading Retry, and on "already-authenticated" only
+   * reads the list again.
    */
-  public func beginConnect(named name: String) async -> ConnectStart? {
-    guard let backend else { return nil }
+  public func startConnect(named name: String) async -> ConnectOutcome {
+    guard let backend else { return .refused }
     // The box's app events keep the list current, so it is read here only when it never was.
     if catalog.isEmpty || appsLoadedAt == nil { await loadApps() }
     let key = name.lowercased()
@@ -1941,22 +1967,22 @@ public final class AppStore {
         }
       } catch {
         problem = L10n.text("Couldn't add \(name): \(error.localizedDescription)")
-        return nil
+        return .refused
       }
     }
-    guard let server else { problem = L10n.text("\(name) isn't in Simeon's apps yet."); return nil }
-    if server.status == "connected" { return nil }
+    guard let server else { problem = L10n.text("\(name) isn't in Simeon's apps yet."); return .refused }
+    if server.status == "connected" { return .connected }
     do {
       let started = try await backend.command("desktopMcp", ["action": "authenticateServer", "args": [.string(server.serverId), .string(server.accountKey), "connector_card"]])
-      if let url = await signInStarted(started, name: name) { return ConnectStart(url: url, addedPlugin: added) }
+      if let url = await signInStarted(started, name: name) { return .started(ConnectStart(url: url, addedPlugin: added)) }
       // Signed in already: kept, whatever the list says yet.
-      if started["status"]?.string == "already-authenticated" { return nil }
+      if started["status"]?.string == "already-authenticated" { return .connected }
     } catch {
       problem = Connecting.didntConnect(name, why: PlainWords.error(error.localizedDescription))
     }
     // No sign-in to open: the app this connect added goes again, unless it turned out signed in already.
     if let added { await takeBack(added, name: name) }
-    return nil
+    return .refused
   }
 
   /**

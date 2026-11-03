@@ -228,7 +228,7 @@ public enum Diagnostics {
       "Device: \(facts.device), \(facts.osVersion)",
       "Language: \(facts.language), time zone: \(facts.timeZone)",
     ]
-    parts += state.map(scrub)
+    parts += state.map { scrub($0) }
     parts += ["", "Recent activity (oldest first):"]
     parts += activity.isEmpty ? ["Nothing yet."] : activity
     for file in files {
@@ -250,11 +250,27 @@ public enum Diagnostics {
     (#"\b(?![0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b)[A-Za-z0-9_\-]{32,}"#, "***"),
   ].compactMap { pair in (try? NSRegularExpression(pattern: pair.0)).map { ($0, pair.1) } }
 
-  /** `line` with what looks like a secret replaced by `***`: query strings, bearer tokens, web tokens and long opaque runs. */
-  public static func scrub(_ line: String) -> String {
-    rules.reduce(line) { text, rule in
+  /**
+   * `line` with what looks like a secret replaced by `***`: query strings,
+   * bearer tokens, web tokens and long opaque runs; and this device's home
+   * folder (`home`) written `~`, so no line names the person (as the Windows
+   * app's `updates.log` writes it).
+   */
+  public static func scrub(_ line: String, home: String = NSHomeDirectory()) -> String {
+    rules.reduce(withoutHome(line, home: home)) { text, rule in
       rule.0.stringByReplacingMatches(in: text, range: NSRange(text.startIndex..., in: text), withTemplate: rule.1)
     }
+  }
+
+  /**
+   * The home folder as `~` where it is a whole path's start (`/Users/bass/x`, and before punctuation: `/Users/bass.`),
+   * not another folder's (`/Users/bassist`, `/Users/bass.old`); nothing for `/` or none.
+   */
+  static func withoutHome(_ line: String, home: String) -> String {
+    var folder = home
+    while folder.count > 1 && folder.hasSuffix("/") { folder.removeLast() }
+    guard folder.count > 1, let rule = try? NSRegularExpression(pattern: NSRegularExpression.escapedPattern(for: folder) + #"(?![\w-]|\.[\w-])"#) else { return line }
+    return rule.stringByReplacingMatches(in: line, range: NSRange(line.startIndex..., in: line), withTemplate: "~")
   }
 }
 

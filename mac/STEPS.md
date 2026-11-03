@@ -574,7 +574,7 @@ from its code. Pushed so far:
 | Button | Its part or step |
 |---|---|
 | "/" Org Chart, Channels | 12 (done) |
-| "/" Open Hidden Agents | 3 |
+| "/" Open Hidden Agents | 3 (done: "/" runs its actions as search does) |
 | "/" Chat Settings | 7 (done) |
 | "/" Members | 7d (done) |
 | "/" Settings: General, Settings: Usage & Billing | 8 (done) |
@@ -850,8 +850,9 @@ tested against what the window lists for the same words. Pushed:
   keys back.
 - **What a row does**: an agent opens; a message or a file opens its chat,
   reads back until that line is there, and brings it to the middle lit in
-  yellow; a link opens in the browser; a routine opens its agent; a theme
-  is set at once; Open Hidden Agents opens the Hidden Agents dialog.
+  yellow; a link opens in the browser; a routine opens in its agent's
+  Routines with its editor, as the chat's routine chip does; a theme is set
+  at once; Open Hidden Agents opens the Hidden Agents dialog.
 - **Empty tabs** say the window's words: "No agents yet", "Search messages"
   ("Type to find messages across your chats."), "No group chats yet", "No
   files yet", "No links in this chat yet", "No routines yet", "No
@@ -1923,7 +1924,11 @@ coming soon (N01–N08, O01). Pushed:
   token's field under the row ("Paste your bot token", "Stored securely,
   never shown to your agent.", Cancel, Store securely; Return stores). The
   page reads the computer again every 4 seconds while the pane is open and
-  when the window comes forward, 15 seconds at most a read.
+  when the window comes forward, 15 seconds at most a read. (3 November
+  2026: every 4 seconds only while Simeon is the active app, as the
+  upstream window reads only while it can be seen; those reads and the one
+  as the window comes forward let a resting computer rest, while the read
+  as the page opens, and the one after a change, wake it.)
 - **A message from or to a platform** keeps its tag in the bubble, now
   with the window's straight arrows (↓ Slack, ↑ Slack).
 
@@ -2044,8 +2049,9 @@ kind, its failures, low disk, every access answer). Pushed in two parts:
   keys. Choosing an agent, Settings and Plugins close it.
 - **The hand-off card** in the chat: Take over, its snapshot and Open
   computer open the computer; I'm done and Skip answer as before.
-- **Search's routine** opens the open agent's pane on Computer (another
-  agent's: that agent with its pane on Profile), as the window does.
+- **Search's routine** opens its agent's pane on Routines with that
+  routine's editor, as the chat's routine chip does (the window opens only
+  the pane; decision 6 below).
 - **The stream away**: "Reconnecting" at the window's top after 2.5
   seconds, "Checking connection" for a second once it is back, "Simeon's
   computer restarting" while it comes up; after two minutes "Couldn't Reach
@@ -2105,8 +2111,9 @@ The computer:
 4. Closing the computer lets go of its screen. (The window keeps it
    connected, hidden, while the pane is open, even for the next agent.)
 5. Every helper's screen shows the agent's own screen, as in the window.
-6. A routine found by search opens the pane on Computer, not the routine,
-   as in the window.
+6. A routine found by search opens in its agent's Routines with its
+   editor, as the chat's routine chip does (3 November 2026). (The window
+   drops the routine and opens only the pane, on Computer.)
 7. "and N more" has the thumbnails' frame (the window's is 42 high), and
    its menu is the Mac's.
 8. "Exit fullscreen" keeps the window's word, though it only closes the
@@ -2203,8 +2210,9 @@ cannot be read, a group's own picture). Pushed in three parts:
   front, and the open chat counts as read only while it is, so the Dock,
   the sidebar's dots and the notifications agree.
 - **What connecting sets**: the computer's own notifications off (the Mac
-  says them), this Mac's time zone, the local setting squared with the
-  computer's, the security key's switch.
+  says them), this Mac's time zone, the local setting as this Mac has it
+  (the computer's own copy never taken: 3 November 2026), the security
+  key's switch.
 - **Links into the app** (`simeon://app/v1/…`): the window forward;
   the same link twice within 2 seconds once; `info?topic=deep-links`
   shows the Deep Links dialog (signed out too; Done, × and Escape close

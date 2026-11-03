@@ -11,7 +11,7 @@
 // for Windows", so the group is the app's own name, "Simeon" (the Mac
 // catalogue's). Every other sentence is the Mac page's, none naming the Mac.
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { displayLocale } from '../core/listTime'
 import type { AppStore } from '../core/store'
 import { versionLine } from '../core/usage'
@@ -29,6 +29,16 @@ import './SettingsUpdates.css'
 import { useWatched } from './useStore'
 import { type WindowModel, useWindowModel } from './windowModel'
 
+/** The time now, again every `every` ms (the Mac's `TimelineView(.periodic(by: 30))`): "Last checked …" drawn again. */
+function useNow(every: number): number {
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), every)
+    return () => clearInterval(timer)
+  }, [every])
+  return now
+}
+
 /** Nothing to watch on the web (the page isn't listed there). */
 const nothing = {
   subscribe: () => () => {},
@@ -40,6 +50,7 @@ export function SettingsUpdatesPage({ store }: { store: AppStore }) {
   const updates = desktopUpdates()
   useWatched(updates ?? nothing)
   const model = useWindowModel()
+  const now = useNow(30_000)
   // The feed asked quietly as the page opens (`.task { updates.lookQuietly() }`).
   useEffect(() => {
     desktopUpdates()?.look()
@@ -65,7 +76,7 @@ export function SettingsUpdatesPage({ store }: { store: AppStore }) {
       >
         <SettingsLine
           label={versionLine(host.facts.version)}
-          detail={checkedLine(state, Date.now(), displayLocale())}
+          detail={checkedLine(state, now, displayLocale())}
         >
           {state?.checking ? (
             <span className="updates-checking">

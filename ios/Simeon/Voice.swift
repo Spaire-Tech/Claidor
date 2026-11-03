@@ -10,20 +10,25 @@ import SimeonCore
  * as the Mac's banner starts the same conversation with the web kit. The
  * kit's client tools (`send_task`, `recall_text_messages`) and its
  * transcript come back as `VoiceEvent`s; `LiveCall` (SimeonCore) does the
- * rest.
+ * rest, each call's events its own. One session a call: one the kit hands
+ * over after its call ended, or after another call began, is let go at
+ * once, so it never speaks over, nor takes the place of, a later call's
+ * (the Electron banner's session per call, call-controller.ts).
  */
 final class ElevenLabsVoice: VoiceTransport, @unchecked Sendable {
   @MainActor private var conversation: Conversation?
   @MainActor private var watching: Set<AnyCancellable> = []
   /** Hung up before the kit handed the conversation over: the conversation is ended the moment it arrives. */
   @MainActor private var endedEarly = false
+  /** Each call's session, numbered as it starts: one handed over for an earlier number is that earlier call's. */
+  @MainActor private var session = 0
 
   struct MicrophoneRefused: LocalizedError {
     var errorDescription: String? { String(localized: "Simeon can't use the microphone.") }
   }
 
   func start(token: String, prompt: String, firstMessage: String, voiceId: String?, language: String, events: @escaping @Sendable (VoiceEvent) -> Void) async throws {
-    await beginCall()
+    let session = await beginCall()
     guard await AVAudioApplication.requestRecordPermission() else { throw MicrophoneRefused() }
     #if os(iOS)
     // The session able to record before the kit takes the microphone, whatever the ring or dictation left (CallAudio).
@@ -43,6 +48,12 @@ final class ElevenLabsVoice: VoiceTransport, @unchecked Sendable {
       agentStateConfiguration: .default,
       onAgentStateChange: { state in events(.agentSpeaking(state == .speaking)) }
     )
+    // This session's end lets go of the microphone, unless a later call's session has begun since (`release`).
+    #if os(iOS)
+    let released: @Sendable () -> Void = { [weak self] in Task { await self?.release(session) } }
+    #else
+    let released: @Sendable () -> Void = {}
+    #endif
     let started: Conversation
     do {
       started = try await ElevenLabs.startConversation(
@@ -52,28 +63,38 @@ final class ElevenLabsVoice: VoiceTransport, @unchecked Sendable {
         onDisconnect: { _ in
           events(.ended)
           // The agent hung up, or the line dropped: the microphone let go as on a hang-up here.
-          #if os(iOS)
-          Task { await CallAudio.release() }
-          #endif
+          released()
         }
       )
     } catch {
-      #if os(iOS)
-      Task { await CallAudio.release() }
-      #endif
+      released()
       throw error
     }
-    await hold(started, events: events)
+    await hold(started, session: session, events: events)
   }
 
-  @MainActor private func beginCall() { endedEarly = false }
+  @MainActor private func beginCall() -> Int {
+    endedEarly = false
+    session += 1
+    return session
+  }
 
-  @MainActor private func hold(_ started: Conversation, events: @escaping @Sendable (VoiceEvent) -> Void) {
-    // Hung up while it connected: let it go at once, so no voice speaks after the call ended.
-    if endedEarly {
+  #if os(iOS)
+  /** The microphone let go at `session`'s end, unless a later call's session has begun since: that call holds it now. */
+  @MainActor private func release(_ session: Int) async {
+    guard session == self.session else { return }
+    await CallAudio.release()
+  }
+  #endif
+
+  @MainActor private func hold(_ started: Conversation, session: Int, events: @escaping @Sendable (VoiceEvent) -> Void) {
+    // Hung up while it connected, or another call began since: let it go at once, so no voice speaks after its call ended, and the later call's stays its own.
+    if endedEarly || session != self.session {
       Task { await started.endConversation() }
       return
     }
+    // One an earlier call left behind (it failed once connected) goes, so only this call's speaks.
+    if let earlier = conversation { Task { await earlier.endConversation() } }
     conversation = started
     watching = []
     started.$messages
@@ -102,7 +123,10 @@ final class ElevenLabsVoice: VoiceTransport, @unchecked Sendable {
 
   @MainActor private func mainEnd() async {
     endedEarly = true
+    let ending = session
     await conversation?.endConversation()
+    // Another call's session begun while this one ended: it is that call's, kept with its microphone.
+    guard ending == session else { return }
     conversation = nil
     watching = []
     #if os(iOS)

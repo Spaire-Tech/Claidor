@@ -543,8 +543,12 @@ public struct ComputerBook: Equatable, Sendable {
     return (ids, ids.filter { demanded.contains($0) })
   }
 
-  /** The account went (`reset`): everything forgotten but who is watching. */
-  public mutating func reset() {
+  /**
+   * The account went (`reset`): everything forgotten but who is watching. The same computer again (View › Reload,
+   * `keepingStarts`) also keeps, for what is still watched, that it was started here, so the stream coming back starts
+   * it again (`reconnected`), as the Electron window's reload opens the full view, and starts it, anew.
+   */
+  public mutating func reset(keepingStarts: Bool = false) {
     generation += 1
     for id in order {
       guard let entry = entries[id] else { continue }
@@ -552,7 +556,7 @@ public struct ComputerBook: Equatable, Sendable {
       entries[id] = Entry(status: nil, settled: nil, readAttempt: entry.readAttempt + 1, reading: nil, ensuring: false, watchers: entry.watchers)
     }
     order = order.filter { entries[$0] != nil }
-    demanded = []
+    demanded = keepingStarts ? demanded.filter { entries[$0] != nil } : []
     diskPressure = nil
   }
 }

@@ -89,6 +89,17 @@ public enum AboutSimeon {
 
   public static func versionLine(_ version: String) -> String { L10n.text("Version \(version)") }
 
+  /**
+   * When Settings › Updates last looked, in its "Last checked …" line:
+   * "just now" under a minute ago (or a moment ahead, the clock's), as the
+   * window's relative time says it (`pgn`, `RoutineSchedule.when`); nil from
+   * a minute on, for the system's own words ("3 minutes ago"). Until 3
+   * November 2026 a check a moment ago read "in 0 seconds", and stayed so.
+   */
+  public static func checkedJustNow(_ date: Date, now: Date) -> String? {
+    now.timeIntervalSince(date) < 60 ? L10n.text("just now") : nil
+  }
+
   /** What Copy version info writes: the window's lines, word for word ("darwin" is the Mac's name there). */
   public static func versionInfo(version: String, track: String = "stable", os: String = "darwin") -> String {
     ["Version: \(version)", "Release Track: \(track)", "OS: \(os)"].joined(separator: "\n")

@@ -27,7 +27,6 @@ import {
   normalizedPermission,
   permissionLabel,
   permissionRank,
-  reconcilePermission,
   teamCeiling,
 } from './localToolPermission'
 
@@ -83,37 +82,6 @@ describe('the menu (LocalToolPermissionTests)', () => {
     expect(ceiling(2)).toBe('ask')
     expect(ceiling(3)).toBe('always')
     expect(ceiling(0)).toBeUndefined()
-  })
-
-  it('takes the computer’s word on connecting only over the default', () => {
-    expect(reconcilePermission('always', 'ask')).toEqual({
-      kind: 'adopt',
-      value: 'always',
-    })
-    expect(reconcilePermission('never', 'ask')).toEqual({
-      kind: 'adopt',
-      value: 'never',
-    })
-    expect(reconcilePermission('ask', 'ask')).toEqual({
-      kind: 'push',
-      value: 'ask',
-    })
-    expect(reconcilePermission(undefined, 'ask')).toEqual({
-      kind: 'push',
-      value: 'ask',
-    })
-    expect(reconcilePermission('always', 'never')).toEqual({
-      kind: 'push',
-      value: 'never',
-    })
-    expect(reconcilePermission('never', 'always')).toEqual({
-      kind: 'push',
-      value: 'always',
-    })
-    expect(reconcilePermission('sometimes', 'ask')).toEqual({
-      kind: 'push',
-      value: 'ask',
-    })
   })
 })
 

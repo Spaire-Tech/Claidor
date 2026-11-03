@@ -444,7 +444,9 @@ struct DraftCardView: View {
  * Connect ("Added" and Add until 13 October 2026, `Connecting`): since the
  * Apple design pass the iPhone's consent, then the app added and its
  * sign-in inside the app in one go (`MacConnector`; the Electron app opened
- * the browser).
+ * the browser). A Connect the computer refused turns the button to Retry,
+ * with no reason, as the window's connector card does (3 November 2026:
+ * the card had said nothing).
  */
 struct ConnectorCards: View {
   let names: [String]
@@ -473,6 +475,8 @@ private struct ConnectorCard: View {
   var markedConnected = false
   let look: Look
   @Environment(AppStore.self) private var store
+  /** Its last Connect was refused (`ConnectOutcome.refused`): the button reads Retry, as the window's card's does, until the next one begins. */
+  @State private var refused = false
 
   var body: some View {
     let catalog = store.catalogApp(named: name)
@@ -529,9 +533,9 @@ private struct ConnectorCard: View {
             .accessibilityLabel("\(catalog?.title ?? name) is coming soon")
         } else {
           // The consent first, then the app's sign-in in the window (the Apple design pass, `MacConnector`).
-          Button { MacConnector.shared.connect(name, store: store) } label: {
+          Button { MacConnector.shared.connect(name, store: store) { refused = $0 } } label: {
             Group {
-              if adding { ProgressView().controlSize(.small) } else { Text(Connecting.connect) }
+              if adding { ProgressView().controlSize(.small) } else { Text(refused ? Connecting.retry : Connecting.connect) }
             }
             .font(.system(size: 13))
             .foregroundStyle(look.ink)
@@ -543,7 +547,8 @@ private struct ConnectorCard: View {
           }
           .buttonStyle(.hand)
           .disabled(MacConnector.shared.connecting != nil)
-          .accessibilityLabel("Connect \(name)")
+          // Its name says what it shows: Retry after a refusal (the window's button is named by its word).
+          .accessibilityLabel(refused ? Connecting.retry : String(localized: "Connect \(name)"))
         }
       }
     }
@@ -853,8 +858,11 @@ struct ListenerConnectCardView: View {
  * A secret the agent asks for (`sand-secret-request`): its name (14 on 22,
  * 500) and why (60%); a field ("Paste your <name>", on the ground with a
  * 15% edge, 32 high) and Save securely in the blue; under them a lock and
- * "Stored securely, never shown to your agent." (13, 40%). Once saved:
- * "Saved securely and kept private." and a "Saved" pill.
+ * "Stored securely, never shown to your agent." (13, 40%). Once the
+ * computer says it has it (the entry's `secretProvided`, as the window's
+ * card reads `isProvided`): "Saved securely and kept private." and a
+ * "Saved" pill. A save on its way only greys Save securely; one the
+ * computer didn't keep leaves the field and Save securely there.
  */
 struct SecretCardView: View {
   let entryId: String
@@ -868,7 +876,6 @@ struct SecretCardView: View {
   @Environment(AppStore.self) private var store
   @State private var value = ""
   @State private var saving = false
-  @State private var saved = false
 
   var body: some View {
     CardShell(look: look) {
@@ -879,7 +886,7 @@ struct SecretCardView: View {
             .tracking(-0.15)
             .foregroundStyle(look.ink)
             .cssLineHeight(22, size: 14, weight: .medium)
-          let line = provided || saved ? String(localized: "Saved securely and kept private.") : dismissed ? "" : description
+          let line = provided ? String(localized: "Saved securely and kept private.") : dismissed ? "" : description
           if !line.isEmpty {
             Text(line)
               .font(.system(size: 14))
@@ -889,7 +896,7 @@ struct SecretCardView: View {
           }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        if provided || saved {
+        if provided {
           StatusPill(text: String(localized: "Saved"), look: look, dot: look.working)
         } else if dismissed {
           StatusPill(text: String(localized: "Dismissed"), look: look)
@@ -908,7 +915,7 @@ struct SecretCardView: View {
           .accessibilityLabel("Dismiss request")
         }
       }
-      if !(provided || saved || dismissed) {
+      if !(provided || dismissed) {
         HStack(alignment: .top, spacing: 8) {
           SecureField("", text: $value, prompt: Text("Paste your \(label)").foregroundStyle(look.placeholder))
             .textFieldStyle(.plain)
@@ -941,10 +948,10 @@ struct SecretCardView: View {
     guard !secret.isEmpty, !saving else { return }
     saving = true
     Task {
+      // Saved only once the computer's entry says so (`provided`), never because the call returned: it returns on a failure too.
       await store.submitSecret(secret, entryId: entryId, in: agentId)
       value = ""
       saving = false
-      saved = true
     }
   }
 }
@@ -2133,8 +2140,11 @@ private struct MacCardChooser: View {
  * on 22, 500, opening the pull request) with its state in a pill (Done in
  * green, Error in red, the rest grey); what it was asked; its branch and
  * "PR #412"; how many files changed with the lines added in green and taken
- * out in red; View PR in the blue and Open plain. Asked again every five
- * seconds while it works (SimeonCore's `CloudAgentInfo.nextPoll`).
+ * out in red; View PR in the blue. Asked again every five seconds while it
+ * works (SimeonCore's `CloudAgentInfo.nextPoll`). Open is left out until
+ * its page exists, as the web's card leaves it out (3 November 2026): it
+ * went to app.simeonlabs.com/agents/<id> (`CloudAgentInfo.webURL`), which
+ * doesn't yet, so it landed on a page not found.
  */
 struct CloudAgentCardView: View {
   let bcId: String
@@ -2215,15 +2225,11 @@ struct CloudAgentCardView: View {
           .tracking(-0.15)
         }
       }
-      HStack(spacing: 8) {
-        if let pull {
+      if let pull {
+        HStack(spacing: 8) {
           CardButton(title: String(localized: "View PR"), prominent: true, look: look) { NSWorkspace.shared.open(pull) }
             .help("Open the pull request")
         }
-        CardButton(title: String(localized: "Open"), look: look) {
-          if let page = CloudAgentInfo.webURL(bcId) { NSWorkspace.shared.open(page) }
-        }
-        .help("Open this cloud agent")
       }
     }
     .task(id: bcId) {

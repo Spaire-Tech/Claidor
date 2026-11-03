@@ -87,10 +87,27 @@ final class ConnectAppsModel {
 
   // MARK: Reading
 
+  /**
+   * The box's calls, or the words when no one is signed in. An action takes them once, at its start, and after each
+   * await goes on only while they are still the signed-in computer's (`isCurrent`), as the Mac's Plugins window does.
+   */
   private func calls() throws -> PluginCalls {
     guard let backend = store?.backend else { throw GatewayError(message: String(localized: "Sign in to Simeon first."), refused: true) }
     return PluginCalls(backend)
   }
+
+  /** The calls an action took at its start, or the words when no one was signed in then (never a later sign-in's). */
+  private func calls(_ box: PluginCalls?) throws -> PluginCalls {
+    guard let box else { throw GatewayError(message: String(localized: "Sign in to Simeon first."), refused: true) }
+    return box
+  }
+
+  /**
+   * Whether `box` (taken at an action's start) is still the signed-in computer's: after a sign-out, or another sign-in,
+   * the action writes nothing more and makes no more calls, so it never acts on the next account's computer (the
+   * Electron app runs an engine per account and cuts its calls at sign-out).
+   */
+  private func isCurrent(_ box: PluginCalls?) -> Bool { store?.backend === box?.backend }
 
   /** Opening, as the Mac's overlay opens: the catalog, the servers, the plugins, the agent's skills, the banner; then the one sync it starts, and the banner again. */
   func load() async {
@@ -105,13 +122,21 @@ final class ConnectAppsModel {
     async let catalogAnswer = store?.readCatalog()
     async let pluginsAnswer = try? reader?.effectivePlugins()
     await refreshServers()
-    if let list = await catalogAnswer { entries = list }
+    let catalog = await catalogAnswer
+    // Signed out, or into another account, meanwhile: nothing of this opening is kept, and nothing more is asked.
+    guard isCurrent(reader) else { return }
+    if let list = catalog { entries = list }
     catalogLoaded = true
-    if let list = await pluginsAnswer { plugins = list }
+    let pluginList = await pluginsAnswer
+    guard isCurrent(reader) else { return }
+    if let list = pluginList { plugins = list }
     await loadSkills()
+    guard isCurrent(reader) else { return }
     await readSyncStatus()
+    guard isCurrent(reader) else { return }
     Task {
       _ = try? await reader?.syncSkills()
+      guard self.isCurrent(reader) else { return }
       await self.readSyncStatus()
     }
   }
@@ -123,11 +148,12 @@ final class ConnectAppsModel {
   }
 
   func readSyncStatus() async {
-    if let names = try? await calls().authBlocked() { authBlocked = names }
+    guard let box = try? calls(), let names = try? await box.authBlocked(), isCurrent(box) else { return }
+    authBlocked = names
   }
 
   func refreshServers() async {
-    guard let next = try? await calls().servers() else { return }
+    guard let box = try? calls(), let next = try? await box.servers(), isCurrent(box) else { return }
     apply(servers: next)
   }
 
@@ -138,12 +164,14 @@ final class ConnectAppsModel {
   }
 
   func refreshPlugins() async {
-    if let list = try? await calls().effectivePlugins() { plugins = list }
+    guard let box = try? calls(), let list = try? await box.effectivePlugins(), isCurrent(box) else { return }
+    plugins = list
   }
 
   func loadSkills() async {
     guard let agentId else { skills = []; return }
-    if let list = try? await calls().skills(agentId) { skills = list }
+    guard let box = try? calls(), let list = try? await box.skills(agentId), isCurrent(box) else { return }
+    skills = list
   }
 
   /** Private's agent chosen: its skills read. */
@@ -170,11 +198,12 @@ final class ConnectAppsModel {
 
   private func fail(_ error: Error) { show(Plugins.Notice(isError: true, text: PlainWords.error(error.localizedDescription))) }
 
-  /** One of the busy actions, its failure as the notice (`runReportingNotice`). */
+  /** One of the busy actions, its failure as the notice (`runReportingNotice`); none once another sign-in's. */
   private func reporting(_ work: () async throws -> Void) async {
     busy += 1
     defer { busy -= 1 }
-    do { try await work() } catch { fail(error) }
+    let box = try? calls()
+    do { try await work() } catch { if isCurrent(box) { fail(error) } }
   }
 
   // MARK: Add, setup, remove
@@ -189,10 +218,12 @@ final class ConnectAppsModel {
     show(nil)
     guard let agentId else { show(Plugins.needsAgentNotice); return }
     let team = effective[entry.id]?.hasTeamConfiguredVariables == true
+    let box = try? calls()
     adding = entry.id
     defer { adding = nil }
-    guard await install(entry.id, values: [:], team: team) else { return }
+    guard await install(entry.id, values: [:], team: team), isCurrent(box) else { return }
     let synced = await syncSkills(entry, agentId: agentId)
+    guard isCurrent(box) else { return }
     show(synced.error.map { Plugins.skillsDidntSyncNotice(entry.displayName, $0) } ?? Plugins.skillsAddedNotice(entry.displayName, added: synced.added))
     signInAfterSetup()
   }
@@ -205,14 +236,19 @@ final class ConnectAppsModel {
    * sign-in at all: the store's problem has said why.
    */
   func connectEnded(_ entry: PluginEntry?, name: String, end: SignInEnd?) async {
+    let box = try? calls()
     await refreshPlugins()
+    guard isCurrent(box) else { return }
     await refreshServers()
+    // Signed out, or into another account, meanwhile: nothing more of this connect, here or on that computer.
+    guard isCurrent(box) else { return }
     let shown = entry?.displayName ?? name
     switch end {
     case .connected?:
       guard store?.isConnected(name) == true else { return }
       guard let entry else { show(Connecting.connectedNotice(shown, skills: 0, error: nil)); return }
       let synced = await syncSkills(entry, agentId: agentId)
+      guard isCurrent(box) else { return }
       show(Connecting.connectedNotice(shown, skills: synced.added, error: synced.error))
     case .cancelled?:
       show(Connecting.notConnectedNotice(shown))
@@ -227,18 +263,24 @@ final class ConnectAppsModel {
   private func install(_ entryId: String, values: [String: String], team: Bool) async -> Bool {
     busy += 1
     defer { busy -= 1 }
+    let box = try? calls()
     do {
-      let box = try calls()
-      apply(servers: try await box.install(entryId, values: values, team: team))
+      let answer = try await calls(box).install(entryId, values: values, team: team)
+      // Signed out, or into another account, meanwhile: nothing written, nothing more asked, nothing said.
+      guard isCurrent(box) else { return false }
+      apply(servers: answer)
       await refreshPlugins()
-      if let serverId = await box.vendorServerId(entryId) {
+      guard isCurrent(box) else { return false }
+      if let serverId = try await calls(box).vendorServerId(entryId) {
+        guard isCurrent(box) else { return false }
         let name = entry(entryId)?.displayName ?? serverId
         pendingSignIn = ConnectedApp(serverId: serverId, name: name, pluginId: entryId, accountKey: PluginServer.defaultAccount, status: "needsAuth", toolCount: 0)
       }
+      guard isCurrent(box) else { return false }
       Task { await store?.loadApps() }
       return true
     } catch {
-      fail(error)
+      if isCurrent(box) { fail(error) }
       return false
     }
   }
@@ -247,20 +289,28 @@ final class ConnectAppsModel {
   func signInAfterSetup() {
     guard let account = pendingSignIn, let store else { return }
     pendingSignIn = nil
+    let box = try? calls()
     Task {
       let end = await AppConnector.shared.signIn(account, store: store)
+      // Signed out, or into another account, while the page was open: nothing more of it.
+      guard self.isCurrent(box) else { return }
       await self.connectEnded(account.pluginId.flatMap { self.entry($0) }, name: account.name, end: end)
     }
   }
 
   /** The skills step (`Is`): the agent's private copies of the plugin's skills dropped, then the box's plugin skills synced. */
   private func syncSkills(_ entry: PluginEntry, agentId: String?) async -> (added: Int, error: String?) {
+    let box = try? calls()
     await dropPrivateCopies(entry, agentId: agentId)
+    // Signed out, or into another account, meanwhile: nothing more goes to that computer.
+    guard isCurrent(box) else { return (0, nil) }
     busy += 1
     defer { busy -= 1 }
     do {
-      let added = try await calls().syncSkills(of: entry.id)
+      let added = try await calls(box).syncSkills(of: entry.id)
+      guard isCurrent(box) else { return (added, nil) }
       await readSyncStatus()
+      guard isCurrent(box) else { return (added, nil) }
       await loadSkills()
       return (added, nil)
     } catch {
@@ -286,18 +336,22 @@ final class ConnectAppsModel {
     let entry = self.entry(setup.entryId)
     let name = entry?.displayName ?? String(localized: "the plugin")
     show(nil)
+    let box = try? calls()
     await reporting {
       if setup.editing {
-        try await calls().updateInstall(setup.entryId, values: values)
+        try await calls(box).updateInstall(setup.entryId, values: values)
+        // Signed out, or into another account, meanwhile: nothing more of it here.
+        guard isCurrent(box) else { return }
         show(Plugins.setupSavedNotice(name))
       } else {
         adding = setup.entryId
         defer { adding = nil }
-        guard await install(setup.entryId, values: values, team: false) else { return }
+        guard await install(setup.entryId, values: values, team: false), isCurrent(box) else { return }
         if pendingSignIn != nil {
           // Its sign-in opens once this page has gone (`signInAfterSetup`), and says how it went: not "Added" before it is connected.
         } else if let entry {
           let synced = await syncSkills(entry, agentId: agentId)
+          guard isCurrent(box) else { return }
           show(Plugins.addedNotice(name, added: synced.added, failed: [], error: synced.error))
         } else {
           show(Plugins.Notice(isError: false, text: String(localized: "Added \(name)")))
@@ -312,17 +366,23 @@ final class ConnectAppsModel {
     guard let server = onePerServer.first(where: { $0.id == serverId }) else { return false }
     show(nil)
     var removed = false
+    let box = try? calls()
     await reporting {
-      let removal = try await calls().removeServer(serverId)
+      let removal = try await calls(box).removeServer(serverId)
+      // Signed out, or into another account, meanwhile: nothing more written here, nor asked of that computer.
+      guard isCurrent(box) else { return }
       apply(servers: removal.servers)
       removed = removal.removed
       show(Plugins.removedNotice(server.name, removed: removal.removed, reason: removal.reason))
       if let entry = Plugins.entry(for: server, in: entries), removal.resyncsSkills {
         await dropPrivateCopies(entry, agentId: agentId)
-        _ = try? await calls().syncSkills()
+        guard isCurrent(box) else { return }
+        _ = try? await calls(box).syncSkills()
+        guard isCurrent(box) else { return }
         await loadSkills()
       }
     }
+    guard isCurrent(box) else { return removed }
     await store?.loadApps()
     return removed
   }
@@ -332,17 +392,24 @@ final class ConnectAppsModel {
     let entry = self.entry(pluginId)
     let name = entry?.displayName ?? effective[pluginId]?.displayName ?? String(localized: "the plugin")
     show(nil)
+    let box = try? calls()
     await reporting {
-      let removal = try await calls().uninstallPlugin(pluginId)
+      let removal = try await calls(box).uninstallPlugin(pluginId)
+      // Signed out, or into another account, meanwhile: nothing more written here, nor asked of that computer.
+      guard isCurrent(box) else { return }
       apply(servers: removal.servers)
       await refreshPlugins()
+      guard isCurrent(box) else { return }
       show(Plugins.removedNotice(name, removed: removal.removed, reason: removal.reason))
       if let entry, removal.resyncsSkills {
         await dropPrivateCopies(entry, agentId: agentId)
-        _ = try? await calls().syncSkills()
+        guard isCurrent(box) else { return }
+        _ = try? await calls(box).syncSkills()
+        guard isCurrent(box) else { return }
         await loadSkills()
       }
     }
+    guard isCurrent(box) else { return }
     await store?.loadApps()
   }
 
@@ -351,19 +418,24 @@ final class ConnectAppsModel {
   /** A private skill's switch; a failure is let go, as the overlay does. */
   func setEnabled(_ skill: AgentSkill) async {
     guard let agentId else { return }
-    if let list = try? await calls().setSkillEnabled(skill, !skill.isEnabledForAgent, agentId: agentId) { skills = list }
+    guard let box = try? calls(), let list = try? await box.setSkillEnabled(skill, !skill.isEnabledForAgent, agentId: agentId), isCurrent(box) else { return }
+    skills = list
   }
 
   func save(_ skill: AgentSkill, name: String, description: String, body: String) async -> Bool {
     guard let agentId else { return false }
     show(nil)
     let named = name.trimmingCharacters(in: .whitespacesAndNewlines)
+    let box = try? calls()
     do {
-      if let list = try await calls().updateSkill(skill, name: name, description: description, body: body, agentId: agentId) { skills = list }
+      let list = try await calls(box).updateSkill(skill, name: name, description: description, body: body, agentId: agentId)
+      // Signed out, or into another account, meanwhile: nothing written or said here.
+      guard isCurrent(box) else { return false }
+      if let list { skills = list }
       show(Plugins.savedNotice(named))
       return true
     } catch {
-      fail(error)
+      if isCurrent(box) { fail(error) }
       return false
     }
   }
@@ -372,12 +444,16 @@ final class ConnectAppsModel {
   func delete(_ skill: AgentSkill) async -> Bool {
     guard let agentId else { return false }
     show(nil)
+    let box = try? calls()
     do {
-      if let list = try await calls().deleteSkill(skill.id, agentId: agentId) { skills = list }
+      let list = try await calls(box).deleteSkill(skill.id, agentId: agentId)
+      // Signed out, or into another account, meanwhile: nothing written or said here.
+      guard isCurrent(box) else { return false }
+      if let list { skills = list }
       show(Plugins.deletedNotice(skill.name))
       return true
     } catch {
-      fail(error)
+      if isCurrent(box) { fail(error) }
       return false
     }
   }

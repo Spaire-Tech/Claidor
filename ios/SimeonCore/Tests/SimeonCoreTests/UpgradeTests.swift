@@ -217,4 +217,97 @@ final class UpgradeTests: XCTestCase {
     XCTAssertFalse(ApproachingClosed.contains(at95.key, in: kept))
     XCTAssertEqual(PhoneUpgrade.day(now.addingTimeInterval(3_600), now: now, timeZone: utc) == "today" || PhoneUpgrade.day(now.addingTimeInterval(3_600), now: now, timeZone: utc) == "tomorrow", true)
   }
+
+  /** The line and the meter say one number (3 November 2026: 92.6% read 92% over the composer and 93% in Usage). */
+  func testTheLineSaysTheMetersNumber() throws {
+    let utc = TimeZone(identifier: "UTC")!
+    let week = usage(["subscriptionStatus": "active", "tier": "standard", "creditsLimit": 1_000, "creditsUsed": 926, "creditsRemaining": 74])
+    let line = try XCTUnwrap(PhoneUpgrade.approaching(access: granted, usage: week, now: now, timeZone: utc))
+    XCTAssertEqual(UsageMeters(week, now: now).weekly?.valueLabel, "93%")
+    XCTAssertEqual(line.words.body, "You’ve used 93% of this week’s credits.")
+    let trial = usage(["subscriptionStatus": "trialing", "creditsLimit": 1_000, "creditsUsed": 816, "creditsRemaining": 184])
+    XCTAssertEqual(PhoneUpgrade.approaching(access: granted, usage: trial, now: now, timeZone: utc)?.words.body, "You’ve used 82% of your free credits.")
+    XCTAssertEqual(UsageMeters.percentNumber(0.4), 1)
+    XCTAssertEqual(UsageMeters.percentNumber(.nan), 0)
+    XCTAssertEqual(UsageMeters.percentNumber(140), 100)
+  }
+}
+
+/**
+ * Usage read twice at once (3 November 2026; Retry, the end of a turn and
+ * Cancel Trial each read it): as the window's loader (`pu`), each read is
+ * numbered as it starts and only the newest one's answer lands, and none
+ * from before signing out.
+ */
+@MainActor
+final class UsageReadsTests: XCTestCase {
+  func testAnOlderReadLandingLateIsDropped() async throws {
+    let box = QuotaBox()
+    let store = AppStore()
+    await store.attach(box)
+    let older = Task { await store.refreshUsage() }
+    try await box.until(asked: 1)
+    let newer = Task { await store.refreshUsage() }
+    try await box.until(asked: 2)
+    box.answer(1, used: 750)
+    await newer.value
+    XCTAssertEqual(store.usage.summary?.usagePercent, 75)
+    box.answer(0, used: 250)
+    await older.value
+    XCTAssertEqual(store.usage.summary?.usagePercent, 75, "the older answer, come late, is dropped")
+    XCTAssertFalse(store.usage.isLoading)
+
+    // Signed out while a read is on its way: its answer never lands.
+    let before = Task { await store.refreshUsage() }
+    try await box.until(asked: 3)
+    store.detach()
+    box.answer(2, used: 100)
+    await before.value
+    XCTAssertNil(store.usage.summary)
+  }
+}
+
+/** Simeon Labs' server holding each `user/quota` read until the test answers it, with that many credits of 1,000 used. */
+final class QuotaBox: AgentBackend, @unchecked Sendable {
+  private let lock = NSLock()
+  private var held: [CheckedContinuation<JSON, Error>] = []
+  private var asked = 0
+
+  func until(asked count: Int) async throws {
+    for _ in 0..<200 {
+      if lock.withLock({ asked >= count }) { return }
+      try await Task.sleep(nanoseconds: 10_000_000)
+    }
+    XCTFail("only \(lock.withLock { asked }) reads of \(count)")
+  }
+
+  /** The read made `index`th (from 0) answers. */
+  func answer(_ index: Int, used: Double) {
+    let read = lock.withLock { held[index] }
+    read.resume(returning: ["subscriptionStatus": "active", "tier": "standard", "creditsLimit": 1_000, "creditsUsed": .number(used), "creditsRemaining": .number(1_000 - used)])
+  }
+
+  func server(_ path: String, method: String?, body: JSON?) async throws -> JSON {
+    guard path == "user/quota" else { return [:] }
+    return try await withCheckedThrowingContinuation { read in
+      lock.withLock {
+        held.append(read)
+        asked += 1
+      }
+    }
+  }
+
+  func listAgents() async throws -> [Agent] { [] }
+  func transcript(_ agentId: String) async throws -> [Entry] { [] }
+  func send(_ agentId: String, text: String, attachments: [AttachmentRef], options: SendOptions, nonce: String?) async throws {}
+  func markRead(_ agentId: String) async {}
+  func createAgent(name: String, face: String?) async throws -> String { "x" }
+  func createGroup(name: String, memberIds: [String]) async throws -> String { "g" }
+  func answer(_ agentId: String, entryId: String, value: String) async throws {}
+  func updateAgent(_ agentId: String, name: String, title: String, description: String) async throws {}
+  func routines(_ agentId: String) async throws -> [JSON] { [] }
+  func events() -> AsyncStream<BackendEvent> { AsyncStream { _ in } }
+  var call: CallEngine? { nil }
+  func command(_ method: String, _ args: JSON) async throws -> JSON { [:] }
+  func screen(_ agentId: String) async throws -> ScreenState { ScreenState(socket: nil, state: "starting") }
 }

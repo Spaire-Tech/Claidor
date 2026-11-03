@@ -199,7 +199,7 @@ extension AppStore {
     if let kickstart { args = args.setting("isKickstartRequested", .bool(kickstart)) }
     if quiet { args = args.setting("isIntroductionSuppressed", true) }
     let answer = try await backend.command("createAgent", args)
-    guard let id = answer["agent"]?["id"]?.text ?? answer["id"]?.text else { throw GatewayError(message: "createAgent: no agent in the answer", refused: true) }
+    guard let id = answer["agent"]?["id"]?.text ?? answer["id"]?.text else { throw GatewayError(message: "gateway createAgent failed: no agent in the answer", refused: true, method: "createAgent") }
     await reloadRoster()
     return id
   }
@@ -208,7 +208,7 @@ extension AppStore {
   public func makeGroup(name: String, memberIds: [String]) async throws -> String {
     guard let backend else { throw GatewayError(message: L10n.text("Can't reach your computer right now. Check your connection and try again."), refused: false) }
     let answer = try await backend.command("createGroup", ["name": .string(name), "description": "", "memberAgentIds": JSON(memberIds)])
-    guard let id = answer["agent"]?["id"]?.text ?? answer["id"]?.text else { throw GatewayError(message: "createGroup: no group in the answer", refused: true) }
+    guard let id = answer["agent"]?["id"]?.text ?? answer["id"]?.text else { throw GatewayError(message: "gateway createGroup failed: no group in the answer", refused: true, method: "createGroup") }
     await reloadRoster()
     return id
   }

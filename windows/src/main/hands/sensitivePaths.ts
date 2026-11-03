@@ -21,8 +21,15 @@
 // command makes (a junction or a hard link), and secrets reached through
 // Windows' own interfaces rather than paths (the Credential Manager,
 // `cmdkey`, DPAPI, the certificate store, the registry) all pass it. It
-// stops the plain spellings, and the files the hands read or write
-// themselves are also checked where they really are (provider.ts).
+// stops the plain spellings, and when in doubt it refuses; a folder change
+// the words don't show (a function or alias defined earlier, the location
+// stack) passes it too, as do wildcards. Every folder a command may be in
+// (where the shell is, the one asked for, each one it `cd`s, `pushd`es or
+// `-C`s to, and those above each) holds for the whole of it, so a command
+// run while the shell sits in or beside a folder that holds keys may be
+// refused for a name there: the remedy is to `cd` elsewhere first, as a
+// command of its own. The files the hands read or write themselves are
+// also checked where they really are (provider.ts).
 
 /** Where this PC keeps things (`os.homedir()`, `%APPDATA%`, `%LOCALAPPDATA%`, `%SystemRoot%`, the app's data folder and its own folder). */
 export interface SensitivePlaces {
@@ -57,8 +64,10 @@ interface Entry {
  * folder (its contexts' keys too); `_netrc` is the name curl reads on
  * Windows; `Vault` and `Crypto` hold the same kind of keys as
  * `Credentials` and `Protect`. `/etc/shadow` becomes the registry's hives
- * in `System32\config`. The app's data folder and its install folder are
- * added by `places`.
+ * in `System32\config`. GitHub's command-line tool keeps its sign-ins in
+ * `%APPDATA%\GitHub CLI` on Windows, and in `.config/gh` where
+ * `XDG_CONFIG_HOME` says so. The app's data folder and its install folder
+ * are added by `places`.
  */
 export const windowsEntries: readonly Entry[] = [
   { base: 'home', path: '.ssh' },
@@ -72,6 +81,12 @@ export const windowsEntries: readonly Entry[] = [
   { base: 'home', path: '_netrc' },
   { base: 'home', path: '.npmrc' },
   { base: 'home', path: '.pypirc' },
+  // Sign-ins kept as plain text: git's (`credential.helper store`, in either of its places), GitHub's command-line tool's, 1Password's.
+  { base: 'home', path: '.git-credentials' },
+  { base: 'home', path: '.config/git/credentials' },
+  { base: 'home', path: '.config/gh/hosts.yml' },
+  { base: 'appData', path: 'GitHub CLI/hosts.yml' },
+  { base: 'home', path: '.config/op' },
   // The Mac's data folder (the Mac's earlier one is left out: no Windows app ever kept one).
   { base: 'home', path: '.simeon' },
   { base: 'home', path: '.cursor' },
@@ -388,18 +403,24 @@ function decodeURIComponentSafely(value: string): string {
   }
 }
 
-/** What may come just before a path in a command's words, and just after a name. */
-const edge = `^|[\\s"'=(,;|&<>:{]`
+/** What may come just before a path in a command's words (an `@` too, before a file curl sends), and just after a name (a `(` too, as after the Mac's: `~/.netrc(.)`). */
+const edge = `^|[\\s"'=(,;|&<>:{@]`
 const before = `(?:${edge})`
 const between = `[. ]*(?::[^/\\s"']*)?/+`
-const after = `[. ]*(?:[:/\\s"'),;|&<>*?}]|$)`
+const after = `[. ]*(?:[:/\\s"'),;|&<>*?}(]|$)`
 const gap = `[^/\\s"',;|&<>]*`
 
-/** `x/..` worked out in a command's words, as often as it comes; `/./` as `/`. */
+/** `x/..` worked out in a command's words, as often as it comes, also at a word's start (`x/../y` is `y`, the Mac's `workedOut`); `/./` as `/`. */
 function workedOut(text: string): string {
   let out = text.replace(/\/\.(?=\/)/g, '')
   const step = /\/(?!\.\.(?:\/|$))[^/\s"'(),;|&<>]+\/\.\.(?=[/\s"'(),;|&<>]|$)/
-  for (let i = 0; i < 64 && step.test(out); i += 1) out = out.replace(step, '')
+  // At a word's start, `.` is no folder to come back out of (`./../x` is `../x`).
+  const first = /(^|[\s"'=(,;|&<>:{])(?!\.{1,2}(?:\/|$))[^/\s"'(),;|&<>:]+\/\.\.\//
+  for (let i = 0; i < 64; i += 1) {
+    if (step.test(out)) out = out.replace(step, '')
+    else if (first.test(out)) out = out.replace(first, '$1')
+    else break
+  }
   return out
 }
 
@@ -437,10 +458,87 @@ function foldersMovedTo(text: string, from: string): string[] {
 }
 
 /**
+ * The command's `cd`s (`Set-Location`, `pushd`…, a quote before one, a
+ * `${…}` in its folder too), each where it moves to, read from `from` on
+ * (`foldersMovedTo` on the command as written); a folder cut at a `~` inside
+ * it too, as the Mac reads zsh's `gh~x` (more folders, never fewer). And
+ * each folder a `-C <dir>` names (git, make and tar work there), from the
+ * folder it starts in and each one it moves to.
+ */
+function movesIn(plain: string, of: SensitivePlaces, from: string): string[] {
+  const out: string[] = []
+  const word = /(?:"([^"]*)"|'([^']*)'|((?:\$\{[^}]*\}|[^\s;|&)}"'])+))/.source
+  const moves = new RegExp(
+    `(?:^|[;&|\\n{("'])\\s*(?:cd|chdir|sl|set-location|pushd|push-location)\\s+(?:-(?:literalpath|path|lp)\\s+)?${word}`,
+    'gi',
+  )
+  let at = from
+  for (const match of plain.matchAll(moves)) {
+    const target = (match[1] ?? match[2] ?? match[3] ?? '').trim()
+    if (target === '' || target === '-' || target === '+') continue
+    at = folderOf(target, of, at)
+    out.push(at)
+    const cut = target.indexOf('~', 1)
+    if (cut > 0) out.push(folderOf(target.slice(0, cut), of, at))
+  }
+  const bases = [from, ...out]
+  for (const match of plain.matchAll(new RegExp(`(?:^|[\\s;&|(\`"'])-C\\s*${word}`, 'g'))) {
+    const target = (match[1] ?? match[2] ?? match[3] ?? '').trim()
+    if (target !== '') for (const base of bases) out.push(folderOf(target, of, base))
+  }
+  return out
+}
+
+/** A cd's folder as the matching reads it: its forms worked out, from `at` when relative. */
+function folderOf(target: string, of: SensitivePlaces, at: string): string {
+  let written = expandForms(target, of).replace(/\\/g, '/').toLowerCase()
+  written = junctionForms(deviceForms(written, of, '^').replace(/\/{2,}/g, '/'), of)
+  return canonicalNames(isAbsolute(written) ? written : at ? `${at}/${written}` : written)
+}
+
+/**
+ * Whether a name written bare (no `/` in it) is a path where it is,
+ * `prefix` before it and `next` after it (the Mac's `bareNameIsPath`):
+ * always but as a command's own name, and that too when a `/` follows. A
+ * name glued to what comes before (`$f=hosts.yml`, `@hosts.yml`,
+ * `"hosts.yml"`) is one.
+ */
+function bareNameIsPath(prefix: string, next: string | undefined): boolean {
+  if (next === '/') return true
+  const edgeChar = prefix.at(-1)
+  if (edgeChar == null) return false
+  if (!(/\s/.test(edgeChar) || ';&|\n'.includes(edgeChar) || (edgeChar === '(' && prefix.at(-2) !== '=')))
+    return true
+  const cut = Math.max(...[';', '&', '|', '\n', '(', '{'].map((one) => prefix.lastIndexOf(one)))
+  const words = prefix
+    .slice(cut + 1)
+    .split(/\s+/)
+    .filter((one) => one !== '')
+  while (words.length > 0 && /^[a-z_]\w*=/i.test(words[0] ?? '')) words.shift()
+  return words.length > 0
+}
+
+/** A folder (canonical) and each one above it, with how many levels up: `c:/a/b`, `c:/a`, `c:/`. */
+function foldersUp(folder: string): { folder: string; up: number }[] {
+  const out = [{ folder, up: 0 }]
+  let at = folder
+  for (let up = 1; up < 256 && at !== '/' && !/^[a-z]:\/$/.test(at); up += 1) {
+    const cut = at.replace(/\/[^/]*$/, '')
+    at = cut === '' ? '/' : /^[a-z]:$/.test(cut) ? `${cut}/` : cut
+    out.push({ folder: at, up })
+  }
+  return out
+}
+
+/**
  * The place a shell command names as a path (`sensitiveLocalPathInCommand`):
  * written whole (its drive left out too, when it is the home folder's), from
  * the home folder, or from a folder the command runs in (`folders`: where
- * the shell is, or the one asked for) or moves to.
+ * the shell is, or the one asked for) or moves to, or from a folder above
+ * one of those, `../` (or `..\`) as many times as it is above, any number
+ * once at the drive's root (the Mac's `SensitivePaths.entry(inCommand:)`):
+ * every one of them for the whole command. A name written bare from one of
+ * those folders counts as `bareNameIsPath` says.
  */
 export function placeInCommand(
   command: string,
@@ -450,10 +548,14 @@ export function placeInCommand(
   const texts = commandTexts(command, of)
   const homeDrive = driveOf(canonical(of.home, of))
   const starts = folders.filter((one) => one.trim() !== '').map((one) => canonical(one, of))
+  const from = starts[0] ?? canonical(of.home, of)
+  const plain = command.replace(/[`^]/g, '')
   const contexts = new Set(starts)
-  for (const text of texts) for (const one of foldersMovedTo(text, starts[0] ?? canonical(of.home, of))) contexts.add(one)
+  for (const text of texts) for (const one of foldersMovedTo(text, from)) contexts.add(one)
+  for (const one of movesIn(plain, of, from)) contexts.add(one)
   for (const place of places(of)) {
     const patterns: RegExp[] = []
+    const bare: RegExp[] = []
     const drive = driveOf(place.absolute)
     const whole =
       drive && drive === homeDrive
@@ -461,12 +563,27 @@ export function placeInCommand(
         : spelled(place.absolute, between, gap)
     patterns.push(new RegExp(`${before}${whole}${after}`))
     if (place.fromHome) patterns.push(new RegExp(`${before}/?${spelled(place.fromHome, between, gap)}${after}`))
-    for (const context of contexts) {
-      if (!under(place.absolute, context) || place.absolute === context) continue
-      const relative = place.absolute.slice(context.length + (context.endsWith('/') ? 0 : 1))
-      patterns.push(new RegExp(`${before}(?:\\./)?${spelled(relative, between, gap)}${after}`))
-    }
+    for (const start of contexts)
+      for (const { folder: context, up } of foldersUp(start)) {
+        if (!under(place.absolute, context) || place.absolute === context) continue
+        const relative = place.absolute.slice(context.length + (context.endsWith('/') ? 0 : 1))
+        const name = spelled(relative, between, gap)
+        if (up === 0 && !relative.includes('/')) {
+          patterns.push(new RegExp(`${before}(?:\\./+)+${name}${after}`))
+          bare.push(new RegExp(`(?:${edge})(${name})(?=${after})`, 'g'))
+          continue
+        }
+        const step = '\\.\\./+(?:\\./+)*'
+        const climb = context === '/' || /^[a-z]:\/$/.test(context) ? `(?:${step}){${up},}` : step.repeat(up)
+        patterns.push(new RegExp(`${before}(?:\\./+)*${climb}${name}${after}`))
+      }
     if (texts.some((one) => patterns.some((pattern) => pattern.test(one)))) return place
+    for (const text of texts)
+      for (const pattern of bare)
+        for (const match of text.matchAll(pattern)) {
+          const end = (match.index ?? 0) + match[0].length
+          if (bareNameIsPath(text.slice(0, end - (match[1] ?? '').length), text[end])) return place
+        }
   }
   return undefined
 }

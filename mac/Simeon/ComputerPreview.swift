@@ -28,7 +28,8 @@ final class ComputerStreamLog {
     path = file.path
     FileManager.default.createFile(atPath: path, contents: Data())
     handle = try? FileHandle(forWritingTo: file)
-    write("computer stream log at \(path)")
+    // The file's name only: a report attaches the file, and its full path names the home folder.
+    write("computer stream log at \(file.lastPathComponent)")
   }
 
   func write(_ text: String) {

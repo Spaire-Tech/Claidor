@@ -390,7 +390,7 @@ private struct RebuildDialog: View {
               }
               .frame(height: 18)
               .accessibilityElement(children: .ignore)
-              .accessibilityLabel(step.label + (step.state == .done ? ", completed" : step.state == .active ? String(localized: ", in progress") : String(localized: ", not started")))
+              .accessibilityLabel(step.label + (step.state == .done ? String(localized: ", completed") : step.state == .active ? String(localized: ", in progress") : String(localized: ", not started")))
             }
           }
           HStack(spacing: 8) {

@@ -77,20 +77,20 @@ file and the code disagree, the code is right and this file is fixed.
 | 2 November 2026 | The agent's pane takes what the window leaves beside the sidebar and the chat's 424, from 480 down to 280 (the Mac grows its window for it; a browser can't), and closes when dragged under 244. Whether it is open, its width and whether it folded the sidebar are kept in the browser under the Mac's names (`simeon.pane.open`, `simeon.pane.width`, `simeon.pane.tookSidebar`) | The session |
 | 2 November 2026 | The pane's Computer tab is left out for an agent until the computer comes (step 5); a group's Computer tab is its members, as on the Mac (Step 5: done; see below.) | The session |
 | 2 November 2026 | ⌘N and the sidebar's compose button open New Agent: the Mac's `Features.groupChats` is off, so its To: line (`NewChatPane`) never shows there, and is left out | The session |
-| 2 November 2026 | "/" Open Hidden Agents opens the Hidden Agents list, as ⌘K's does, though the Mac's "/" offers it and does nothing | The session |
+| 2 November 2026 | "/" Open Hidden Agents opens the Hidden Agents list, as ⌘K's does, though the Mac's "/" offers it and does nothing (3 November 2026: the Mac's does too) | The session |
 | 2 November 2026 | A picture of one's own comes from the browser's file chooser (the Mac's panel's kinds), a drop or a paste outside a field. The browser reads it (turned by its EXIF, as on the Mac), it is drawn down to 1024, cropped in a canvas and sent as the Mac's 256-pixel PNG. A picture pasted as a picture is "Pasted image"; a file pasted keeps its name | The session |
 | 2 November 2026 | A voice's sample plays in the browser's own audio, one at a time, stopped when the editor closes; one the browser can't fetch or play greys its button. The website's policy for the app's window lets sound come from any https address (`media-src … https:`, as `img-src`): the samples are ElevenLabs' own links, whose host varies, and a sound can't run code | The session |
-| 2 November 2026 | New Agent's editor is the window's own popover under the face, without the Mac popover's arrow, kept in the window. ⌘V pastes a picture into it too (the Mac's doesn't, though its drop zone says "paste") | The session |
+| 2 November 2026 | New Agent's editor is the window's own popover under the face, without the Mac popover's arrow, kept in the window. ⌘V pastes a picture into it too (the Mac's doesn't, though its drop zone says "paste"; 3 November 2026: it does now) | The session |
 | 2 November 2026 | The voice field names the agent's voice after a face of the other gender changed it (the Mac's keeps the old name). No beep when Create is refused, as in 3d | The session |
 | 2 November 2026 | The pass that gives a face to every agent without a picture (`assignMissingFaces`) waits for the store's own passes; meanwhile the web shows the face each would get, and the Mac and the iPhone give it | The session |
 | 2 November 2026 | No check generates a picture on the real server: it costs the person's credits. The stand-in's is used | The session |
 | 2 November 2026 | A routine's Delete asks nothing, as on the Mac and the iPhone | The session |
 | 2 November 2026 | The routines' menus are drawn in the page as the window's own (glass, 10 round, items 13 on 24), not the browser's `<select>`, which can't hold the logos, submenus, headings or ticks that stay open. A click outside a menu or a trigger's popover only closes it, as the Mac's | The session |
 | 2 November 2026 | Run history says "Just now" for a run begun since the last 30-second tick (the Mac's can say "In 1 min") | The session |
-| 2 November 2026 | A routine's popover keeps its connecting words ("at", "on", "every"…) and Advanced's "minutes" and "hours" in English in every language, as the Mac draws them: they are in neither catalogue | The session |
+| 2 November 2026 | A routine's popover keeps its connecting words ("at", "on", "every"…) and Advanced's "minutes" and "hours" in English in every language, as the Mac draws them: they are in neither catalogue (3 November 2026: translated on the Mac and the web; see the log) | The session |
 | 2 November 2026 | A time of day in another language is that language's short time ("09:00" in French, "9:00" in Spanish), CLDR's, as Apple's "jmm" | The session |
 | 2 November 2026 | Search offers only the actions whose screens the window has, as "/" (`windowActionIds`): Org Chart, Open Hidden Agents, Members, Channels, Chat Settings. Settings: General, Usage & Billing, Connectors and the themes join it with step 6, Update Simeon's Computer with step 5; each is one id and one case in `runAction` (Step 5: done; see below.) (Step 6: done; see below.) | The session |
-| 2 November 2026 | A routine found by search opens that routine in its agent's pane (`openRoutineFor`). The Mac, copying the Electron window, opens the open agent's pane on Computer, or another's on Profile | The session |
+| 2 November 2026 | A routine found by search opens that routine in its agent's pane (`openRoutineFor`). The Mac, copying the Electron window, opens the open agent's pane on Computer, or another's on Profile (3 November 2026: the Mac opens the routine too) | The session |
 | 2 November 2026 | A link found by search shows its address and its site's own icon, not the page's title (as in the chat, 1 November), and opens in a new tab without `opener` or the referrer | The session |
 | 2 November 2026 | With ⌘ held, search's rows show ⌘ on an Apple computer and Ctrl elsewhere (the Mac's always show ⌘) | The session |
 | 2 November 2026 | A channel's token is pasted in a masked field left to the browser, read once when sent and emptied, never in the page's HTML; the password managers are asked not to offer the person's logins there (the secret card's way, 3b) | The session |
@@ -138,7 +138,7 @@ file and the code disagree, the code is right and this file is fixed.
 | 2 November 2026 | On a connector page, the rename is the window's alert with a field (the Mac's alert with a `TextField`); the examples' picture is the Mac's own asset (`ConnectorHero`), shipped with the app; a long value is cut in its middle; the instructions' field grows with its words where the browser can (`field-sizing: content`), else stays 94 high and scrolls; a page reads its server's tools as it shows and again once its server is there; Add Another Account is faded while another app's sign-in is open | The session |
 | 2 November 2026 | " (optional)" after a setup value's label and "URL" in a server's Details stay English in every language, as the Mac draws them (neither is in a catalogue) | The session |
 | 2 November 2026 | The language chosen in Settings is kept in the browser (`simeon.language`) and read once as the page loads, as Apple reads an app's language at launch, so the window never mixes two; Relaunch loads the page again; System gives it back to the browser's languages. The server and the computer are told it from the next load | The session |
-| 2 November 2026 | General's time zone and Permissions wait until the computer's values are read: the switches greyed, the rules coming with the read; a failed read says "Couldn't load your settings" and keeps them waiting; a read answering after a change is dropped. The Mac writes on its defaults meanwhile; on the web the read can wake a resting computer and take tens of seconds, and a write replaces every rule or the zone chosen (proposed for the Mac and the iPhone) | The session |
+| 2 November 2026 | General's time zone and Permissions wait until the computer's values are read: the switches greyed, the rules coming with the read; a failed read says "Couldn't load your settings" and keeps them waiting; a read answering after a change is dropped. The Mac writes on its defaults meanwhile; on the web the read can wake a resting computer and take tens of seconds, and a write replaces every rule or the zone chosen (proposed for the Mac and the iPhone; 3 November 2026: done on both) | The session |
 | 2 November 2026 | The time zone menu lists the browser's own zones (`Intl.supportedValuesOf('timeZone')`, 418 in Chromium 141), drawn as the window's menus with each zone's time in grey and the Mac's type-to-select, not the browser's `<select>`; a zone chosen elsewhere that the browser doesn't list shows first, ticked | The session |
 | 2 November 2026 | The browser's zone is told to the computer each time the stream comes (back), beside the language, without waking it, as the Mac tells its own on every connect; the person's own pick stays (the computer keeps it apart, `userTimeZoneOverride`). A browser that says exactly UTC (the privacy browsers hide the zone so) tells nothing and writes no zone of its own; General then shows the computer's | The session |
 | 2 November 2026 | The account's password is typed in the browser's own masked fields, as a new password (a password manager may keep it: it is the person's own Simeon password), read once as it is sent and emptied once saved; never in the page's HTML or storage | The session |
@@ -244,6 +244,8 @@ file and the code disagree, the code is right and this file is fixed.
 | 2 November 2026 | The engine hears the PC's system and shell in the hello (`platform`, `shell`, `shellVersion`, `osVersion`) and tells the agent in a section of its brief of its own ("The user's computer"), frozen as the channels and routines are; CopyToBox and CopyFromBox take a Windows path's own name and `Downloads\`. A Mac's hello says none, and nothing changes for it | The session, after the review (the engine, `ebc47f773`) |
 | 3 November 2026 | The web app is offered to no one. It is only the means of building the Windows app, whose page it is, so it never moves to `/app` and replaces nothing there. The Windows app is the product | The founder: "know that the web app will be available to no one btw. the whole point of the web app is to build the window app" |
 | 3 November 2026 | The old web app at `/app` is not touched by this. The new one stays at `/app-next` on the website, where the founder can look at it in a browser, until the founder says otherwise (Open questions). The plan's checks (`README.md`) still hold: they measure the Windows app's page | The session |
+| 3 November 2026 | The Windows app is released through the Microsoft Store: a company account is free (since May 2026) and Microsoft signs the Store's package, so no certificate is bought. Microsoft's Artifact Signing (about $10 a month) takes only companies with three years of tax history, and the legal company (CLAUDE.md) is under one | The founder: "we'll use the microsoft store, it's free. plus [the legal company] is not even 1" |
+| 3 November 2026 | The Store's package (MSIX, electron-builder's `appx` target) is built on Windows only: measured here, electron-builder 26.18.0 on Linux stops with "AppX is supported only on Windows 10". So it is built on GitHub's Windows machines (`.github/workflows/windows.yml`, once Actions runs) or on the Windows PC that tests it. The Store's app updates through the Store: its build leaves the app's own updater (step 7e) off | The session |
 
 ## For Windows
 
@@ -577,37 +579,41 @@ For the founder, each to be answered before the step that needs it:
   in Vercel and say whether the newer ones were ignored, failed or are
   waiting to be promoted.
 
-- **A Windows code-signing certificate.** An unsigned installer makes
-  Windows warn people before it runs (SmartScreen), and an unsigned build
-  never updates itself (step 7's decision), so today no Windows build can
-  be released. Needed before the first release: a code-signing certificate
-  in the legal company's name (CLAUDE.md; `lib/release.mjs`'s `company`);
-  its subject in full, every part as Windows shows it
-  (`CN=…, O=…, L=…, S=…, C=…`), written into
-  `windows/scripts/lib/release.mjs`'s `signers` before the first signed
-  release; the GitHub Environment
-  `windows-release` (the repository's Settings › Environments, deployment
-  branches main only, a required reviewer if wanted) holding the
-  certificate as `WIN_CSC_LINK` (the .pfx in base64) and its password as
-  `WIN_CSC_KEY_PASSWORD`; then a signed release tried on a Windows PC
-  before the first `node scripts/release.mjs --publish` (from Windows, the
-  `aws` command line signed in). At the company's rename, one release
-  signed with the old certificate lists both subjects, then the new
-  certificate (the rule beside `signers`).
+- **The Microsoft Store account** (3 November 2026: the founder chose the
+  Store; no certificate is bought, and the GitHub Environment
+  `windows-release` with `WIN_CSC_LINK` is not needed). Needed before the
+  first release: a company account in Microsoft's Partner Center (free;
+  verified with a D-U-N-S number or the company's documents; 4 November
+  2026, the founder: "last night i received my duns, so we can go with duns
+  in the windows plan": the account is verified with the legal company's
+  D-U-N-S number, typed by the founder into Partner Center), the name
+  "Simeon" reserved for the app there, and the package's identity it gives
+  (its identity name, publisher and publisher name) for the Store's build.
+  Then the Store's listing: description, screenshots, the privacy policy's
+  address, the age rating. The Store's review runs on each release.
+- **GitHub Actions doesn't run.** Every job on every pull request (#539 to
+  #542) ends 2 to 3 seconds after it starts, with no machine given to it
+  (no runner's name, 0 ms billed) and no log: what GitHub does when an
+  account can't run Actions (a failed payment, or the minutes used with a
+  $0 spending limit; not confirmed: the organisation's billing page says).
+  Meanwhile every check runs on this side before a merge. It matters for
+  the Store's package, which is built on Windows: GitHub's Windows
+  machines, or the Windows PC.
 - **Who checks on a Windows PC.** Nothing is done until it has run on the
   machine people use; for Windows, someone installs each build on a
   Windows PC. Needed before the first release: nothing of step 7 has run on
   a Windows PC (the log of 2 November 2026, step 7, "Not checked"). First:
   Windows Hello and where its prompt opens, the toasts, the tray and the
-  taskbar's number, the call's window, the installer and an update
-  installed, SmartScreen, `simeon://` from a browser, the sealed pair.
+  taskbar's number, the call's window, the Store's package installed,
+  `simeon://` from a browser, the sealed pair. Without Actions, the same PC
+  builds the Store's package (one command).
 - **The Mac's and the core's own fixes found in step 3** (the log of 2
   November 2026, "Found in the Mac's and the core's code"): the secret
   card's Saved, the cloud agent's Open landing on a page that doesn't
   exist, Han numerals refused in a name, " to " and "Ms" in French, Link's
   line for a refused card, Review order's tooltip on a Shop checkout. For
   the founder: make them in the Mac and the core (then the web follows), or
-  leave them.
+  leave them. 3 November 2026, fixed (the log "the Mac's bugs fixed"): the secret card's Saved, Open on a cloud agent's card, Han numerals, " to "; the rest open.
 - **The iPhone's 1Password connect sentence** ("Open Simeon on your Mac to
   connect it: …") is in neither catalogue the web reads. The web card says
   the Mac's paragraph instead. Adding a sentence to the Mac's catalogue
@@ -635,7 +641,7 @@ For the founder, each to be answered before the step that needs it:
   Open Hidden Agents doing nothing; the pack sheet's older problem; the
   pack link nothing serves; two comments that say otherwise than the
   code. For the founder: make them in the Mac and the core (then the web
-  follows), or leave them.
+  follows), or leave them. 3 November 2026, fixed: a refusal's command name, ⌘V in New Agent, the routines' words, a routine found by search, "/" Open Hidden Agents; the rest open.
 - **The Mac's and the core's own fixes found in step 5** (the log of 2
   November 2026, step 5, "Found in the Mac's and the core's code"): the
   Mac not following the open agent's computer after Reload; Take control
@@ -648,7 +654,7 @@ For the founder, each to be answered before the step that needs it:
   rebuild card's English ", completed"; a refused billing page shown
   nowhere; the relay asking every 3 s for an account with no computer. For
   the founder: make them in the Mac and the core (then the web follows),
-  or leave them.
+  or leave them. 3 November 2026, fixed: Reload and the open computer, a failed call's connect and the shared voice session, the relay every 3 s; the helpers' thumbnails are right (one screen); the rest open.
 - **The Mac's and the core's own fixes found in step 6** (the log of 2
   November 2026, step 6, "Found in the Mac's and the core's code"): a
   refused Connect on a chat card saying nothing (the store's `problem`,
@@ -671,7 +677,7 @@ For the founder, each to be answered before the step that needs it:
   flooring a share the meter rounds; the menu's spend never in the app's
   language; "Update card" opening two different pages; "%@, connected" in
   no catalogue; two usage reads landing out of order. For the founder: make
-  them in the Mac and the core (then the web follows), or leave them.
+  them in the Mac and the core (then the web follows), or leave them. 3 November 2026, fixed: a refused Connect saying nothing, a change after a sign-out, General and Permissions writing first, the French plan line, the credits' line, two usage reads; the rest open.
 - **A sentence for the makers a browser can't connect.** Eighteen makers
   take only the loopback (`loopbackOnly`: Dropbox, Canva, Square, Vercel
   and others). The web never opens their page and takes the app back, but
@@ -730,7 +736,8 @@ For the founder, each to be answered before the step that needs it:
   (`PurchaseApproval.swift`); the Windows app doesn't, as a PC without
   Hello may still have a password. Stricter than the Mac: keep it?
 - **The website's Download for Windows.** It waits for the first published
-  Windows release (step 7's decision); until then
+  Windows release (step 7's decision), and is then the Store's own "Get it
+  from Microsoft" link (3 November 2026); until then
   `/desktop/download/windows` says "Simeon for Windows is not published
   yet.", and the website's billing page still offers Download for Mac to a
   Windows visitor without the app. Needed after the first release: the
@@ -772,7 +779,7 @@ For the founder, each to be answered before the step that needs it:
   computer's `settings.json` and so raise the PC from Ask to Always at the
   next connect (on the Mac too: worth a look in the engine). For the
   founder: make them in the Mac and the core (then the web and Windows
-  follow), or leave them.
+  follow), or leave them. 3 November 2026, fixed: `simeon://mcp-oauth`, the home folder in reports, "Last checked in 0 seconds", the guard's letter case, spellings, folders, links and missing files, the team's ceiling, and the computer's copy of the choice (the agent can no longer raise it); the rest open.
 - **The engine on the cloud computers.** Step 7 changed the engine
   (`desktop/source`, `ebc47f773`): the hello says the PC's `platform`,
   `shell`, `shellVersion` and `osVersion`; the agent is told the PC runs
@@ -782,7 +789,11 @@ For the founder, each to be answered before the step that needs it:
   npm run publish:host-bundle`, macOS arm64, CLAUDE.md). Until then the
   agent writes for a Mac: much of it fails in PowerShell, and in Windows
   PowerShell 5.1 `&&` doesn't parse, so nothing runs. Needed before the
-  first Windows release: a host bundle published.
+  first Windows release: a host bundle published. `npm run package` runs the
+  engine's whole suite first (`npm run check`); its feedback route test,
+  failing since #502 moved the body into `feedback.py`, would have stopped
+  it, and is fixed (3 November 2026). The packaging audit's test needs the
+  Mac's `npm run bootstrap` and was not run here.
 - **The call's words on a PC.** The Windows app's call labels are the
   page's (`clients/apps/app/src/core/voiceCall.ts`) and still say
   "Running a command on your Mac…" and "Reading a file on your Mac…".
@@ -805,6 +816,252 @@ For the founder, each to be answered before the step that needs it:
 ## Log
 
 Newest first.
+
+### 3 November 2026: the Mac's bugs fixed, the way the upstream app does
+
+The founder, on the 29 compared below: "yes fix them all the way [the upstream app]
+does - but be extremely careful not to break anything". Four parts, each
+written in its own worktree off `main`, each read by a second, independent
+reviewer, its findings fixed, then merged here and read once more as a
+whole. Where the upstream app has the same bug, the fix follows the Windows
+app or the web where they already did it right. Where the web and Windows
+had the same bug, they were fixed the same way.
+
+**Security** (`fix/a-security`)
+- The guard on the places that hold keys (`SensitivePaths`,
+  `LocalExecRules`, `MacLocalHands`, and Windows' `sensitivePaths.ts`):
+  - letter case ignored, as the Mac's disk does (upstream's
+    `_caseInsensitiveFs`);
+  - `;`, `>`, `${HOME}`, quotes, escapes, `/./` and `x/../` read as zsh
+    reads them (Windows' `commandTexts`);
+  - the folder a command runs in, the shell's carried folder (read once,
+    then passed to the run) and every `cd`/`pushd` target checked, with
+    names relative to them, `../` included, and `-C <dir>` (git, make,
+    tar). Every folder applies to the whole command, always. Three
+    tries at leaving out the shell's earlier folder after `cd X &&` each
+    opened a way in (`cd -`, `c''d -`, an alias), so the session's
+    decision is none: a command run while the shell sits in or beside a
+    folder that holds keys may be refused for a name there, and the agent
+    runs `cd ~/project` on its own first. A bare name is a path everywhere
+    but as the command's own name. The final reading compared some 300
+    commands with `main`'s guard and the one before: nothing they refused
+    passes, and each newly refused one names a key place, or is that
+    accepted case;
+  - a file's real path behind a link checked and opened;
+  - `.git-credentials`, `.config/gh/hosts.yml`, `.config/op` and
+    `.config/git/credentials` added, on the Mac and Windows (and GitHub's
+    CLI file under `%APPDATA%` on Windows).
+- A failed read of the team's settings keeps the last ceiling; `{}` (no
+  team) lifts it.
+- Execution on Local Computer: the device is the only writer of its
+  choice. Every connect tells the computer this device's effective value
+  (ceiling applied) and takes nothing back, as upstream's resync. Before,
+  a computer saying Always or Never was adopted, and the agent can write
+  that file. This applies to the Mac and to the web/Windows
+  (`reconcile`/`reconcilePermission` removed).
+- `simeon://mcp-oauth` is finished only for a sign-in this app named,
+  signed in, within 10 minutes, once (`finishReturnedSignIn`, as the web).
+  It covers the Mac's link and sheet and the iPhone's sheet. A refusal
+  says "<app> didn't connect. Try again.", never the link's words.
+- Reports: `computer-stream.log`'s first line names only the file (Mac and
+  Windows); the scrub writes the home folder as `~`.
+
+**State and data** (`fix/b-state`)
+- General and Permissions wait for the computer's values on the Mac and
+  the iPhone (the web's way, proposed 2 November), and read again only
+  when the computer comes back with nothing read yet (web too), so an open
+  page never wakes a resting computer.
+- Sign-out: each Connectors action takes the signed-in computer once and
+  stops when it changes (Mac `PluginsModel`, the iPhone's
+  `ConnectAppsModel`, the web's flows); `changeName` writes only for the
+  same sign-in.
+- Calls: each call numbered; only its own connect, ring and voice events
+  reach it. `fail()` cancels its work and lets its voice go. Each voice
+  session keeps to its call. The iPhone's microphone is released only by
+  the current session. A hang-up no longer wipes the next call's session.
+- Reload: attaching the same computer again keeps the watched entries and
+  their starts (`ComputerBook.reset(keepingStarts:)`), so the Computer tab
+  follows again. Another sign-in still starts empty.
+- Channels: read every 4 s only while the app is active (Mac, iPhone) or
+  the page visible (web), with reads that don't wake a resting computer.
+- The relay backs off (3 s to 60 s) only when the server's own end frame
+  comes within 5 s with nothing in it (an account with no computer); a
+  cut connection (`ConnectStreamCut`) doesn't count.
+- Helpers' thumbnails: unchanged. A screen-driving helper uses its agent's
+  own screen (`allocateWindow` gives it window 1), so the picture is right.
+
+**What shows** (`fix/c-display`)
+- The Mac's secret card says Saved only from `secretProvided`.
+- Refusals: `GatewayError` keeps the command in `method`.
+  - A 4xx keeps the computer's own sentence ("Not now", "50 is the
+    maximum").
+  - A 5xx, or no sentence, is the machine line the plain words hide, as
+    before.
+  - The apps' own "createAgent: …" lines are machine lines too.
+  - Each failure is written to the recent-activity log with its command
+    and status.
+- Usage: the credits' line uses the meter's number, and a usage read
+  superseded by a newer one is dropped.
+- "Last checked" says "just now" under a minute and is redrawn every
+  30 s, on the web too.
+- Routines are read again when the stream comes back (Mac, web).
+- A refused Connect, or a sign-in tab the browser blocks, turns the card's
+  button to Retry, its accessible name too (Mac, web); `startConnect` tells started, connected and refused
+  apart.
+- Open on a cloud agent's card is left out on the Mac and the iPhone, as
+  on the web (the page doesn't exist).
+
+**Clicks and words** (`fix/d-words`)
+- "/" Open Hidden Agents runs search's own action.
+- A routine found by search opens that routine (`openRoutine`).
+- ⌘V pastes into New Agent's avatar editor (its own key watcher).
+- The routine popover's words and Advanced's units are translated (new Mac
+  catalog entries, keys `hourly.at`, `weekly.on`, `between.and`; "from" as
+  "From:"), Mac and web.
+- Flights join airports with " → ".
+- ", completed" is translated.
+- The plan line's date has the full month ("7 novembre", not "7 nov.." in
+  French, pt-BR, sv).
+- A traveller's name refuses every decimal digit (`\p{Nd}`), as the server
+  does, and takes Han numerals (李一), as the server and the computer do.
+
+**Checked:**
+- The core's 599 tests, run on Linux with Swift 6.2.1. A runner in the
+  session's scratchpad makes the test methods `async` in a copy, because
+  Linux's XCTest aborts on `@MainActor` test classes, on `main` too. Only
+  the three that also fail on `main` fail:
+  - `ChatTests.testEveryCardTheMacDraws`;
+  - `ConnectorIconsTests.testEveryConnectorHasItsIconInTheApp` (its folder
+    moved);
+  - `LocalToolApprovalsTests.testRecordRetireAndClear` (a macOS path).
+- The web app's 1,195 tests, its typecheck and lint, and the committed
+  build matching the source.
+- Windows' 195 tests (21 more need PowerShell) and its typecheck.
+- `check_names.py` and `check_translations.py`.
+- Every edited Mac and iPhone file parses (`swiftc -parse`), and each part
+  was read line by line for compiling.
+
+**Not checked:** the Mac and iPhone apps weren't built or run (no Xcode
+here). That needs `mac/scripts/build.sh` and a try on a Mac and an
+iPhone, above all:
+- a call, hung up and called again;
+- View › Reload with the Computer tab open;
+- ⌘V in New Agent;
+- a refused Connect;
+- General and Permissions while the computer wakes;
+- a routine found by search.
+
+**Left as they are:**
+- Not in the 29: the rest of each step's list (Open questions).
+- Not closable by a word guard (a sandbox would be needed): globs, `$(…)`,
+  input sent to a running shell, aliases and functions, the directory
+  stack (`~1`), `~bass/`, `$PWD`, `/System/Volumes/…`, `/Volumes/…`
+  (named in the guard's comment).
+- The iPhone's routine words (`TriggerWord`).
+- Search waking a resting computer: its first read must wake, so search
+  stays as it is.
+
+### 3 November 2026: the Mac's bugs against the upstream app
+
+The founder asked how the reconstruction of the upstream app
+(`desktop/NOTICE.md`; `desktop/source`, the untouched copy in commit
+`86d49feb0`, and its window's compiled build in
+`clients/apps/web/public/app/assets`) does each of the Mac's and the core's
+bugs found in steps 3 to 7. Four readers compared 29 of them, read only:
+nothing changed, nothing run on a Mac. Items 1 to 3 were measured by running
+the old app's guard in node on the cases. "Simeon's" means a change Simeon
+Labs made to the old Electron app, not upstream code.
+
+**The upstream app avoids it** (the way to follow):
+- A team's lower ceiling: upstream sends the device's choice, after the
+  ceiling, to the computer at every connect. Simeon's change of 25 September
+  (`5aca82560`, "adopts the box's standing choice") broke it, and the Mac
+  copied that. Proposed: after adopting, push the effective value when it
+  differs.
+- The agent raising its own permission (not checked before): upstream never
+  reads the choice back from the computer; only the device's window writes
+  it. The computer's `settings.json` is under `/home/box/sand-data`, which
+  the agent can write as root, so the raise looks reachable on the Mac (read,
+  not run). Proposed: take only a lower value from the computer at connect.
+- `simeon://mcp-oauth` from anyone: upstream has no such link; its sign-in
+  return answers only a `state` it began, with an expiry, and shows its own
+  fixed words, never the maker's text. Proposed: the same.
+- The home folder in `computer-stream.log`: upstream sends no log file with
+  feedback. Proposed: the file's name only on that line, or the scrub turns
+  the home folder into `~`.
+- Settings writing defaults first: upstream keeps the rules on the device
+  and pushes them at each connect, so nothing is written over.
+- A change after sign-out: upstream runs one engine per account, cuts the
+  old calls at sign-out and drops late answers; one gap left (a three-step
+  remove). Proposed: each action takes the account once and checks it after
+  every await.
+- Calls: upstream has no call; Simeon's own Electron call (30 September)
+  kept one record and one voice session per call. Proposed: the same.
+- Reload stuck on Booting up: upstream's watch lives as long as the view;
+  an account change keeps watched entries. Proposed: watch from the view's
+  lifetime, and `computer.reset()` in place of a new book.
+- The secret card's Saved: upstream shows it only from `secretProvided`.
+- Usage reads out of order: upstream numbers each read and keeps only the
+  newest.
+- "/" Open Hidden Agents: upstream gives each command its own `run`, which
+  "/" and search share.
+- ⌘V in New Agent: upstream's avatar editor takes the paste on its own view.
+- "SEA to LAX": the old app's flight pane (Simeon's) wrote "SEA → LAX".
+- ", completed": upstream treats the three states alike; the Mac translates
+  two.
+- Channels every 4 s: upstream reads only while the pane is shown and the
+  window visible.
+- Partly: a refusal's command name (upstream leaves it out but shows a code
+  name instead: keep the command in a field, not the message); a refused
+  Connect (upstream's button turns to Retry, with no reason).
+
+**The upstream app has the same bug**:
+- Letter case in the guard (`~/.SSH`), `;`, `>`, `${HOME}`, the working
+  folder, the carried folder and links, and the missing
+  `.git-credentials`, `gh` and `op` files: the old app's guard is Simeon's
+  (25 September), the same rules; upstream had none, its sandbox's read list
+  (which would block these) switched off. The old app also let `file://`
+  through, which the Mac already refuses.
+- A failed read lifting the team's ceiling: upstream's own
+  (`catch { return undefined; }`), copied.
+- Every helper's thumbnail the agent's screen: upstream's own, copied; no
+  upstream mapping of a helper to its screen to learn from.
+- A routines list that can't be read shows nothing: upstream's own; it only
+  reads again later.
+- A routine found by search not opened: upstream's own; the Mac already has
+  `openRoutine(_:for:)` (the chat's chip).
+- The routine words in English: upstream has no French at all.
+- Open on a cloud agent's card: the old app's address (Simeon's), a page
+  never made.
+- "7 nov..": the old app's line (Simeon's); upstream's says "Resets in N
+  days", no date. Proposed: the full month.
+- The relay asking every 3 s: upstream's own.
+
+**Simeon's own, no upstream counterpart**: 92% and 93% (use the meter's
+number), "Last checked in 0 seconds" (upstream shows no time: "just now"
+under a minute, redrawn), Han numerals in a name (flights are Simeon's:
+`[0-9]` for `\d`; the server and the computer count digits and the 40
+differently too), and search waking a resting computer (resting is
+Simeon's, #420).
+
+Next: the founder's word on the three batches (Open questions).
+
+### 3 November 2026: the Microsoft Store
+
+Asked what signing costs, the founder chose the Microsoft Store: "we'll use
+the microsoft store, it's free. plus [the legal company] is not even 1". Measured: a
+certificate bought now keeps its key in hardware (the CA/B Forum's rule
+since June 2023), so the release script's `.pfx` (`WIN_CSC_LINK`) could not
+have taken one; Artifact Signing (about $10 a month) needs three years of
+tax history; the Store's company account is free since May 2026 and
+Microsoft signs its package. electron-builder makes that package only on
+Windows (tried here on Linux: "AppX is supported only on Windows 10"). Why
+Actions fails was read from a job: no machine was given to it (Open
+questions).
+
+**Next:** the Store's build (the `appx` target with the identity Partner
+Center gives, the app's own updater off in it), once the account exists;
+the plan's checks.
 
 ### 3 November 2026: the web app is offered to no one
 

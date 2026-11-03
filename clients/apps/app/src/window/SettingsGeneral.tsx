@@ -97,9 +97,14 @@ function openPage(url: string): void {
 function usePageModel(store: AppStore): GeneralSettingsModel {
   const [model] = useState(() => new GeneralSettingsModel(store))
   useWatched(model)
+  // Read as the page shows, and again when the computer comes back while nothing was read (`readAgainWhenBack`).
   useEffect(() => {
     void model.load()
-  }, [model])
+    const stop = model.readAgainWhenBack(store)
+    return () => {
+      stop()
+    }
+  }, [model, store])
   return model
 }
 
@@ -778,9 +783,10 @@ function PasswordForm({
  * A list's rules are its rows, edited in their row and deleted at once; its
  * last row adds one, typed there. Twenty rules a list and a thousand
  * characters a rule. A change is shown once the computer has it. Nothing
- * can be changed until the computer's rules are read (unlike the Mac,
- * whose page writes on its defaults meanwhile): the switch waits greyed and
- * the lists come with the read; a read that failed says so in red.
+ * can be changed until the computer's rules are read (as on the Mac since
+ * 3 November 2026): the switch waits greyed and the lists come with the
+ * read; a read that failed says so in red, and is tried again as the
+ * stream comes back.
  */
 export function SettingsPermissionsPage({ store }: { store: AppStore }) {
   const model = usePageModel(store)
