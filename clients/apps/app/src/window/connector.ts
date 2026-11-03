@@ -43,6 +43,18 @@
 // browser can't listen, so their page is never opened here (it couldn't
 // finish) and the connect ends `cancelled`, the app it added taken back.
 // The catalogues have no sentence for why yet (docs/web-app/PROGRESS.md).
+//
+// The Windows app's way (step 7d, `ConnectorBrowser`'s `scheme` and
+// `catchLoopback`, src/desktop/connectorBrowser.ts): the page opens in the
+// default browser (Google and others refuse their sign-in inside an
+// embedded web view), which the app can't watch or close, so it is the
+// Mac's browser fallback, asked every 2 seconds, 150 times. As on the Mac,
+// our start link names the app (`back=simeon`), a sign-in that comes back
+// through Simeon Labs' server is named to it first (`sendSignInBack`), and
+// the app listens on this PC's loopback for the makers that take only that
+// (`LoopbackCatcher`). What comes back on the app's own address
+// (`simeon://connected`, `simeon://mcp-oauth`) is the Mac's sheet closing
+// there (`cameBack`, `answered`).
 
 import {
   createContext,
@@ -52,9 +64,12 @@ import {
 } from 'react'
 import { type ConnectConsent, connectConsent } from '../core/connectConsent'
 import {
+  type SignInAnswer,
   type SignInEnd,
   didntConnect,
+  loopbackBusy,
   loopbackState,
+  returning,
   serverReturnState,
   signInEndsChannel,
   signInHeard,
@@ -114,6 +129,23 @@ export interface ConnectorBrowser {
   wait(ms: number): Promise<void>
   /** Hears the web app's return page say how a sign-in with this state ended (`signInEndsChannel`); stops hearing when called back. */
   hear?(state: string, heard: (refused: boolean) => void): () => void
+  /**
+   * The app's own scheme, when a sign-in's last page can send the browser
+   * back to the app (the Windows app's `simeon`): our start link names it
+   * (`returning`), and a sign-in that comes back through Simeon Labs'
+   * server is named to it first (`sendSignInBack`). None on the web.
+   */
+  readonly scheme?: string
+  /**
+   * Listens on this computer's loopback for a sign-in whose page returns
+   * there (the Windows app, the core's `LoopbackCatcher`), telling `caught`
+   * its answer, once. Resolves with what stops listening, or none when
+   * another app holds the address. None on the web, which can't listen.
+   */
+  catchLoopback?(
+    state: string,
+    caught: (answer: SignInAnswer) => void,
+  ): Promise<(() => void) | undefined>
 }
 
 /** The browser's own tabs. */
@@ -187,6 +219,12 @@ export const looksAfterRefusal = 2
 class TabWatch {
   private looksLeft?: number
   private refusedOnPage = false
+  /** The sign-in came back on the app's own address (the Windows app): the Mac's sheet closed there. */
+  private backHere = false
+
+  cameBack(): void {
+    this.backHere = true
+  }
 
   refused(): void {
     if (this.refusedOnPage) return
@@ -195,7 +233,7 @@ class TabWatch {
   }
 
   keepGoing(closed: boolean): boolean {
-    if (!closed && !this.refusedOnPage) return true
+    if (!closed && !this.backHere && !this.refusedOnPage) return true
     this.looksLeft ??= looksAfterClosing
     if (this.looksLeft <= 0) return false
     this.looksLeft -= 1
@@ -227,6 +265,10 @@ export class Connector {
   private tab?: SignInTab
   /** The newest sign-in (`current`): an older one finds it changed and ends `replaced`. */
   private current = 0
+  /** The open sign-in's loopback listener (the Mac's `catcher`), stopped as it ends or another takes its place. */
+  private stopLoopback?: () => void
+  /** The open sign-in, once its page is shown: its name, the state it comes back with through the server, and its watch. */
+  private open?: { name: string; state?: string; watch: TabWatch }
 
   constructor(
     readonly store: AppStore,
@@ -411,6 +453,53 @@ export class Connector {
     return (await this.run(url, name, done, options)).end
   }
 
+  /**
+   * The server's last page of a sign-in sent the browser back to the app
+   * (the Windows app's `simeon://connected`): as the Mac's sheet closing on
+   * the app's own address, ten more looks, or two when the page said it
+   * didn't work, then ended (`SignInSheetState.close`).
+   */
+  cameBack(failed: boolean): void {
+    const open = this.open
+    if (!open) return
+    if (failed) open.watch.refused()
+    else open.watch.cameBack()
+  }
+
+  /**
+   * A maker's answer the server sent back to the app (the Windows app's
+   * `simeon://mcp-oauth`): when it is the open sign-in's (its state), it is
+   * finished on this account's computer (`finishReturnedSignIn`, the
+   * catalogue's words for a refusal), and the sign-in then ends as the
+   * Mac's sheet does on it; false when it isn't, or the store doesn't take
+   * it (not named by this app, already finished): then nothing ends.
+   */
+  async answered(answer: SignInAnswer): Promise<boolean> {
+    const open = this.open
+    if (!open || open.state == null || open.state !== answer.state) return false
+    if (!(await this.store.finishReturnedSignIn(answer))) return false
+    if (answer.error == null) open.watch.cameBack()
+    else open.watch.refused()
+    return true
+  }
+
+  /**
+   * The window went (signed out, the page going): the open sign-in ends
+   * here, its loopback listener let go (the port freed), its wait stops at
+   * its next look, and nothing it catches later goes anywhere. A newer
+   * sign-in may start afterwards (React may draw the window again).
+   */
+  close(): void {
+    this.current += 1
+    this.stopLoopback?.()
+    this.stopLoopback = undefined
+    this.open = undefined
+    this.tab = undefined
+    this.asking = undefined
+    this.connecting = undefined
+    this.changed()
+  }
+
   /** The window's alert, read: gone. */
   dismissTold(): void {
     if (this.told === undefined) return
@@ -435,6 +524,9 @@ export class Connector {
     if (own) own.taken = true
     this.tab?.close()
     this.tab = undefined
+    // The replaced sign-in's listener lets go of the address now.
+    this.stopLoopback?.()
+    this.stopLoopback = undefined
     const token = ++this.current
     this.connecting = name
     this.changed()
@@ -445,10 +537,46 @@ export class Connector {
         own?.tab?.close()
         return { end: 'replaced', refused: false }
       }
-      // A maker that sends it back only to this computer's loopback: a browser can't listen there, so its page couldn't finish.
-      if (loopbackState(url) != null) {
-        own?.tab?.close()
-        return { end: 'cancelled', refused: false }
+      // The sign-in's last page sends the browser back to the app (`returning`), when the app has an address of its own.
+      const scheme = this.browser.scheme
+      const page = scheme != null ? returning(url, scheme) : url
+      const loopback = loopbackState(page)
+      if (loopback != null) {
+        // A maker that sends it back only to this computer's loopback: a browser can't listen there, so its page couldn't finish.
+        if (!this.browser.catchLoopback) {
+          own?.tab?.close()
+          return { end: 'cancelled', refused: false }
+        }
+        // The Windows app listens there while the sign-in is open; its answer goes to this account's computer.
+        const listening: { stop?: () => void } = {}
+        const stop = await this.browser.catchLoopback(loopback, (answer) => {
+          listening.stop?.()
+          // Caught after this sign-in ended (replaced, the window gone): it goes nowhere.
+          if (this.current !== token) return
+          void this.store.finishLoopbackSignIn(answer, name)
+        })
+        // A newer sign-in took this one's place meanwhile: replaced, never "busy" (nothing it added is taken back).
+        if (this.current !== token) {
+          stop?.()
+          own?.tab?.close()
+          return { end: 'replaced', refused: false }
+        }
+        if (!stop) {
+          this.store.keepProblem(loopbackBusy(name))
+          own?.tab?.close()
+          return { end: 'cancelled', refused: false }
+        }
+        listening.stop = stop
+        this.stopLoopback = stop
+      }
+      // One that comes back through Simeon Labs' server comes back to the app, named to the server first, which finishes it on its own computer (`AppReturnSignIn`).
+      const serverState = serverReturnState(page)
+      if (serverState != null && scheme != null) {
+        await this.store.sendSignInBack(serverState, scheme, name)
+        if (this.current !== token) {
+          own?.tab?.close()
+          return { end: 'replaced', refused: false }
+        }
       }
       // Its click's own tab; with none given, one opened now (a sign-in started on the click itself).
       const tab = held ? own?.tab : this.browser.openTab()
@@ -458,15 +586,14 @@ export class Connector {
       if (tab.closed) return { end: 'cancelled', refused: false }
       this.tab = tab
       const watch = new TabWatch()
-      // One that comes back through Simeon Labs' server is named to it first by the Mac and the iPhone, with their own
-      // address; the web has none, and the server sends it on to the web app's own page (connected.html), which finishes
-      // it on the computer, closes the tab and says here, by its state, whether the maker refused it.
-      const state = serverReturnState(url)
-      if (state != null)
-        stopHearing = this.browser.hear?.(state, (refused) => {
+      this.open = { name, state: serverState, watch }
+      // On the web, one that comes back through Simeon Labs' server goes on to the web app's own page (connected.html),
+      // which finishes it on the computer, closes the tab and says here, by its state, whether the maker refused it.
+      if (serverState != null)
+        stopHearing = this.browser.hear?.(serverState, (refused) => {
           if (refused) watch.refused()
         })
-      tab.go(url)
+      tab.go(page)
       for (let look = 0; look < askTimes; look += 1) {
         await this.browser.wait(askEvery)
         if (this.current !== token) return { end: 'replaced', refused: false }
@@ -482,6 +609,9 @@ export class Connector {
     } finally {
       stopHearing?.()
       if (this.current === token) {
+        this.stopLoopback?.()
+        this.stopLoopback = undefined
+        this.open = undefined
         this.tab = undefined
         this.connecting = undefined
         this.changed()

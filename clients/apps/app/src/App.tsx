@@ -13,6 +13,9 @@ import {
   useState,
   useSyncExternalStore,
 } from 'react'
+import { desktop } from './desktop/desktop'
+import { type LinkWindow, useDesktopLinks } from './desktop/links'
+import { useDesktopWindow } from './desktop/useDesktopWindow'
 import { t } from './l10n'
 import type { WebSession } from './session'
 import { AccessCover } from './window/AccessCover'
@@ -25,11 +28,14 @@ import { ComputerLayer } from './window/ComputerView'
 import { ConsentLayer } from './window/ConnectConsent'
 import { Connector, ConnectorContext } from './window/connector'
 import { ConnectorsLayer } from './window/Connectors'
+import { useControlTab } from './window/controlTab'
 import { somethingOver } from './window/Dialogs'
 import { FeedbackLayer } from './window/Feedback'
 import { FirstRunScreen } from './window/FirstRun'
+import { apple } from './window/keys'
 import { NewAgentLayer } from './window/NewAgentSheet'
 import { OrgChartView } from './window/OrgChart'
+import { connectorBrowser } from './window/outside'
 import { SearchLayer } from './window/SearchPanel'
 import { SettingsLayer, overSlot } from './window/SettingsWindow'
 import { Sidebar, listOrder } from './window/Sidebar'
@@ -43,14 +49,11 @@ import {
   sidebarWidth,
   toggled,
 } from './window/sidebarLayout'
+import { SignInScreen } from './window/SignInScreen'
 import { StarterPackLayer } from './window/StarterPackSheet'
 import { useWatched } from './window/useStore'
 import { type Shown, ViewerContext, ViewerLayer } from './window/Viewers'
 import { WindowContext, WindowModel } from './window/windowModel'
-
-/** An Apple computer: its shortcuts take ⌘. */
-const apple =
-  typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform)
 
 /** The window's width, as it is resized. */
 function useWindowWidth(): number {
@@ -216,8 +219,17 @@ function MainWindow({ session }: { session: WebSession }) {
   useWatched(store)
   const [model] = useState(() => new WindowModel(agentInAddress()))
   useWatched(model)
-  // Connecting an app: one consent and one sign-in at a time, for the cards and Connectors alike (step 6b).
-  const [connector] = useState(() => new Connector(store))
+  // Connecting an app: one consent and one sign-in at a time, for the cards and Connectors alike (step 6b); the browser's tabs, or the Windows app's way (outside.ts).
+  const [connector] = useState(() => new Connector(store, connectorBrowser()))
+  // The Windows app's `simeon://` links meant for the signed-in window: a connector's page, a starter pack, a sign-in coming back (src/desktop/links.ts).
+  const [links] = useState<LinkWindow>(() => ({
+    openPlugin: (id) => model.openConnectors({ kind: 'plugin', id }),
+    askPack: (id) => store.askPack(id),
+    connector,
+  }))
+  useDesktopLinks(links)
+  // The window going (signed out): its open sign-in ends with it, its loopback let go (step 7d).
+  useEffect(() => () => connector.close(), [connector])
   // The agent left open while it is there, else the first in the sidebar's order.
   const asked = model.selected
   const known =
@@ -299,6 +311,9 @@ function MainWindow({ session }: { session: WebSession }) {
   const rail = showsRail(size, windowWidth - pane)
   const width = sidebarWidth(size, windowWidth - pane)
   useWindowKeys(model, resize)
+  // The Windows app: Control-Tab's walk (the Mac's), the tray's and the notifications' asks (step 7c).
+  const cycling = useControlTab(store, model, shown)
+  useDesktopWindow(store, model, shown)
   // A file's preview, or pictures and videos, over the window (`Viewers`), one at a time.
   const [viewer, setViewer] = useState<Shown>()
   const closeViewer = useCallback(() => setViewer(undefined), [])
@@ -318,8 +333,11 @@ function MainWindow({ session }: { session: WebSession }) {
               rail={rail}
               width={width}
               session={session}
+              cycling={cycling}
             />
             <main className="chat-area">
+              {/* Moves the Windows app's window, as the Mac's chat head and empty window do (window/desktop.css). */}
+              <div className="window-drag" aria-hidden="true" />
               {model.orgChart ? (
                 <OrgChartView store={store} />
               ) : (
@@ -397,5 +415,7 @@ export function App({ session }: { session?: WebSession }) {
   if (!session) return <Splash />
   if (session.phase === 'signedIn' || session.phase === 'firstRun')
     return <SignedIn session={session} />
+  // The Windows app signs in as the Mac does, on its own screen (step 7b); the web on the website, the mark meanwhile.
+  if (desktop()) return <SignInScreen session={session} />
   return <Splash />
 }

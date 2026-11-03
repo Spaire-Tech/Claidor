@@ -1,0 +1,105 @@
+/* The Windows app's window (windows/src/main/window.ts): no title bar of    */
+/* its own, so the places the Mac's window is moved by (`WindowDragArea`,    */
+/* mac/Simeon/Sidebar.swift) move it here too, and Windows' own buttons      */
+/* (minimise, maximise, close: Electron's `titleBarOverlay`, 44 high at the  */
+/* top right) keep their corner clear. Nothing here applies on the web:      */
+/* every rule is under `:root[data-desktop]`, set in main.tsx.               */
+
+:root[data-desktop] {
+  /* How much of the window's right edge Windows' buttons take (0 when they are not there). */
+  --title-bar-right: calc(
+    100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw)
+  );
+  /* As tall as the buttons. */
+  --title-bar-height: env(titlebar-area-height, 44px);
+}
+
+/* MARK: Where the window is moved from */
+
+/* The sidebar's head (and the rail's, and the head with rows picked); a thread's, an exchange's and the pane's top bars; the routine editor's and the org chart's heads; the computer's full view bar. */
+:root[data-desktop] .sidebar-head,
+:root[data-desktop] .thread-header,
+:root[data-desktop] .exchange-head,
+:root[data-desktop] .pane-top-bar,
+:root[data-desktop] .org-chart-head,
+:root[data-desktop] .computer-drag,
+:root[data-desktop] .window-drag {
+  -webkit-app-region: drag;
+  app-region: drag;
+}
+
+/* A strip of its own where the Mac moves the window by a place the web draws nothing in: the chat's head (its top 52, not the 116 the head's veil covers), the window with no chat open, the first run. */
+.window-drag {
+  display: none;
+}
+
+:root[data-desktop] .first-run {
+  position: relative;
+}
+
+:root[data-desktop] .window-drag {
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: var(--title-bar-right);
+  height: 52px;
+  pointer-events: none;
+}
+
+/* What is pressed or typed in, in those places, still takes the pointer. */
+:root[data-desktop]
+  .sidebar-head
+  :is(button, a, input, textarea, select, [role='button'], [tabindex]),
+:root[data-desktop]
+  .thread-header
+  :is(button, a, input, textarea, select, [role='button'], [tabindex]),
+:root[data-desktop]
+  .exchange-head
+  :is(button, a, input, textarea, select, [role='button'], [tabindex]),
+:root[data-desktop]
+  .pane-top-bar
+  :is(button, a, input, textarea, select, [role='button'], [tabindex]),
+:root[data-desktop]
+  .org-chart-head
+  :is(button, a, input, textarea, select, [role='button'], [tabindex]),
+:root[data-desktop] .chat-header .identity,
+:root[data-desktop] .chat-header :is(button, a, [role='button']) {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+/* Whatever is drawn over the window (the panels, sheets, menus, viewers, search, the call's banner) takes the pointer everywhere it covers. */
+:root[data-desktop]
+  :is(
+    .overlay-dim,
+    .context-menus,
+    [aria-modal='true'],
+    .media-viewer,
+    .file-scrim,
+    .call-banner,
+    .computer-view .computer-exit,
+    .computer-top-bar button
+  ) {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+/* MARK: Windows' own buttons' corner */
+
+/* The rows at the window's top right move their own buttons left of Windows' (the pane's Close, the routine editor's Back and Close, the org chart's ×, the full view's Exit, the viewer's Close). */
+:root[data-desktop] .pane-top-bar {
+  padding-right: calc(12px + var(--title-bar-right));
+}
+
+:root[data-desktop] .org-chart-head {
+  padding-right: calc(20px + var(--title-bar-right));
+}
+
+:root[data-desktop] .computer-top-bar {
+  padding-right: calc(8px + var(--title-bar-right));
+}
+
+:root[data-desktop] .media-close {
+  right: calc(8px + var(--title-bar-right));
+}

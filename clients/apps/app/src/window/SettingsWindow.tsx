@@ -7,7 +7,7 @@
 // under it. General, Usage & Billing once the account's usage is in hand,
 // Wallet, Credentials Store, Permissions, Computer, Help & support and
 // Legal; the account is General's first row, its page under General with
-// Back. Updates is the Mac's alone (Sparkle): a web page is always the
+// Back. Updates in the Windows app only (step 7e): a web page is always the
 // latest. Each opening starts afresh on the page asked for, at its top.
 // ⌘, (Control-, off a Mac) opens it on General; ⌘K and "/" the page picked;
 // Escape, × or a click on the dim close it.
@@ -19,6 +19,8 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react'
 import { t as coreT } from '../core/l10n'
 import type { AppStore } from '../core/store'
+import { desktop } from '../desktop/desktop'
+import { desktopUpdates } from '../desktop/updates'
 import { t } from '../l10n'
 import type { WebSession } from '../session'
 import { Alert } from './Dialogs'
@@ -36,6 +38,7 @@ import {
   SettingsSymbol,
   type SettingsSymbolName,
 } from './SettingsParts'
+import { SettingsUpdatesPage, useCheckForUpdates } from './SettingsUpdates'
 import { SettingsUsagePage } from './SettingsUsage'
 import { SettingsWalletPage } from './SettingsWallet'
 import { classes } from './classes'
@@ -53,6 +56,7 @@ const pages: Record<
   credentials: { title: () => t('Credentials Store'), symbol: 'key' },
   permissions: { title: () => t('Permissions'), symbol: 'handRaised' },
   computer: { title: () => t('Computer'), symbol: 'desktopcomputer' },
+  updates: { title: () => t('Updates'), symbol: 'arrowDownCircle' },
   help: { title: () => t('Help & support'), symbol: 'questionmarkCircle' },
   legal: { title: () => t('Legal'), symbol: 'checkmarkShield' },
   account: { title: () => t('Account'), symbol: 'personCropCircle' },
@@ -63,7 +67,7 @@ function parentOf(page: SettingsPage): SettingsPage | undefined {
   return page === 'account' ? 'general' : undefined
 }
 
-/** The pages listed, in the Mac's order: Usage & Billing as the iPhone lists it, not for an enterprise team (`store.usageListed`). */
+/** The pages listed, in the Mac's order: Usage & Billing as the iPhone lists it, not for an enterprise team (`store.usageListed`); Updates in the Windows app only (a web page is always the latest). */
 function listed(store: AppStore): SettingsPage[] {
   const order: SettingsPage[] = [
     'general',
@@ -72,10 +76,15 @@ function listed(store: AppStore): SettingsPage[] {
     'credentials',
     'permissions',
     'computer',
+    'updates',
     'help',
     'legal',
   ]
-  return order.filter((page) => page !== 'usage' || store.usageListed)
+  return order.filter(
+    (page) =>
+      (page !== 'usage' || store.usageListed) &&
+      (page !== 'updates' || desktop() !== undefined),
+  )
 }
 
 /** The page drawn for each name. */
@@ -93,6 +102,8 @@ function PageBody({ page, store }: { page: SettingsPage; store: AppStore }) {
       return <SettingsPermissionsPage store={store} />
     case 'computer':
       return <SettingsComputerPage store={store} />
+    case 'updates':
+      return <SettingsUpdatesPage store={store} />
     case 'help':
       return <SettingsHelpPage store={store} />
     case 'legal':
@@ -129,10 +140,14 @@ export function SignOutQuestion({
   )
 }
 
+/** Nothing to watch on the web (no updater). */
+const quiet = { subscribe: () => () => {}, getVersion: () => 0 }
+
 /**
  * The pages ("Settings sections"), 210 wide: each its symbol (14) and its
  * name (13), 32 high, the current one (or the one it sits under) on a grey
- * ground, 8 round; Log out at the foot, asked first.
+ * ground, 8 round; the dot (7, the unread blue) beside Updates while a
+ * release waits; Log out at the foot, asked first.
  */
 function SettingsNav({
   store,
@@ -146,6 +161,9 @@ function SettingsNav({
   const model = useWindowModel()
   const [asking, setAsking] = useState(false)
   const shown = parentOf(current) ?? current
+  // A release found by the Windows app's updater (step 7e): a dot beside Updates while it waits.
+  const updates = desktopUpdates()
+  useWatched(updates ?? quiet)
   return (
     <nav className="settings-nav" aria-label="Settings sections">
       {listed(store).map((page) => (
@@ -160,6 +178,13 @@ function SettingsNav({
             <SettingsSymbol name={pages[page].symbol} size={14} />
           </span>
           <span className="settings-nav-name">{pages[page].title()}</span>
+          {page === 'updates' && updates?.found != null && (
+            <span
+              className="settings-nav-dot"
+              role="img"
+              aria-label={t('Update available')}
+            />
+          )}
         </button>
       ))}
       <span className="settings-nav-spacer" />
@@ -279,6 +304,8 @@ export function SettingsLayer({
 }) {
   const model = useWindowModel()
   useWatched(store)
+  // Check for Updates… in the Windows app opens Settings on Updates (step 7e).
+  useCheckForUpdates(model)
   const overlay = model.overlay
   const open = overlay?.kind === 'settings'
   const page = open ? overlay.page : undefined

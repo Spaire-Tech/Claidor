@@ -23,9 +23,12 @@ import {
   versionInfo,
   versionLine,
 } from '../core/usage'
+import { desktop } from '../desktop/desktop'
+import { aboutFacts } from '../desktop/facts'
 import { t } from '../l10n'
 import { type WebSession, clientVersion } from '../session'
 import './AccountMenu.css'
+import { copyText } from './clipboard'
 import { ContextMenu, type MenuLine } from './ContextMenu'
 import type { Dismissal } from './MessageActions'
 import './Settings.css'
@@ -382,7 +385,12 @@ function AboutShown({ close }: { close: () => void }) {
       if (before?.isConnected) before.focus()
     }
   }, [])
-  const info = versionInfo(webVersion, releaseTrack(), systemName())
+  // The Windows app's own facts (its version, track and "win32"), else the web's.
+  const host = desktop()
+  const facts = host
+    ? aboutFacts(host)
+    : { version: webVersion, track: releaseTrack(), os: systemName() }
+  const info = versionInfo(facts.version, facts.track, facts.os)
   return (
     <div
       className="about-dim"
@@ -408,7 +416,7 @@ function AboutShown({ close }: { close: () => void }) {
           />
           <div className="about-names">
             <h2 className="about-name">{aboutName}</h2>
-            <div className="about-version">{versionLine(webVersion)}</div>
+            <div className="about-version">{versionLine(facts.version)}</div>
           </div>
           <div className="about-copyright">{aboutCopyright}</div>
         </div>
@@ -432,8 +440,7 @@ function CopyVersionButton({ info }: { info: string }) {
       type="button"
       className="about-copy"
       onClick={() => {
-        void navigator.clipboard
-          .writeText(info)
+        void copyText(info)
           .then(() => {
             copies.current += 1
             const mine = copies.current

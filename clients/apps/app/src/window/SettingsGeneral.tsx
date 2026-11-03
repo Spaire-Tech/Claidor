@@ -60,8 +60,10 @@ import {
 } from '../core/language'
 import { normalizedName } from '../core/onboarding'
 import type { AppStore } from '../core/store'
+import { desktop } from '../desktop/desktop'
 import { t } from '../l10n'
 import { classes } from './classes'
+import { copyText } from './clipboard'
 import { ContextMenu, Glyph } from './ContextMenu'
 import { markStyle } from './FirstRun'
 import { useDismiss } from './MessageActions'
@@ -220,11 +222,19 @@ function AccountRow({ onClick }: { onClick: () => void }) {
   )
 }
 
+/** Relaunch: the Windows app starts again (the Mac's `relaunch`, SettingsGeneral.swift), the page loads again on the web. */
+function relaunch(): void {
+  const host = desktop()
+  if (host) void host.call('relaunch').catch(() => window.location.reload())
+  else window.location.reload()
+}
+
 /**
  * Language (`LanguageGroup`): System, or a language Simeon is in, each in
  * its own name, kept in this browser. Another choice than the one the page
  * was loaded with waits for a reload: "Relaunch Simeon to use it." and the
- * row that loads the page again in it (the Mac relaunches the app).
+ * row that loads the page again in it (the Mac relaunches the app; the
+ * Windows app does too, `relaunch`).
  */
 function LanguageGroup() {
   const [chosen, setChosen] = useState(() => chosenLanguage())
@@ -244,11 +254,7 @@ function LanguageGroup() {
         }}
       />
       {waiting && (
-        <SettingsActionRow
-          title={t('Relaunch')}
-          divided
-          onClick={() => window.location.reload()}
-        />
+        <SettingsActionRow title={t('Relaunch')} divided onClick={relaunch} />
       )}
     </SettingsGroup>
   )
@@ -503,7 +509,7 @@ export function SettingsAccountPage({ store }: { store: AppStore }) {
     return () => clearTimeout(timer)
   }, [copied])
   const copy = () => {
-    void navigator.clipboard?.writeText(mail).then(
+    void copyText(mail).then(
       () => setCopied(true),
       () => {},
     )

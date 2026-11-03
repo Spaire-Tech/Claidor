@@ -5,6 +5,7 @@
 // loopback, a refusal, Add Another Account.
 
 import { describe, expect, it } from 'vitest'
+import type { SignInAnswer } from '../core/connecting'
 import type { JSONValue } from '../core/json'
 import { AppStore } from '../core/store'
 import { FakeBackend, eventually } from '../core/testing'
@@ -512,5 +513,251 @@ describe('the browser’s tab (browserTabs)', () => {
     expect(closable(tab(false, true))).toBe(false)
     expect(closable(tab(true, false))).toBe(false)
     expect(closable(tab(true, true))).toBe(false)
+  })
+})
+
+/** The Windows app's browser: the default browser (its tabs can't be watched or closed), the app's own scheme, and this PC's loopback. */
+class StandInDesktop extends StandInBrowser {
+  readonly scheme = 'simeon'
+  /** Whether the loopback's address is taken by another app. */
+  busy = false
+  listening: { state: string; caught: (answer: SignInAnswer) => void }[] = []
+  stopped: string[] = []
+  async catchLoopback(state: string, caught: (answer: SignInAnswer) => void) {
+    if (this.busy) return undefined
+    this.listening.push({ state, caught })
+    return () => {
+      this.stopped.push(state)
+    }
+  }
+}
+
+async function desktopWorld() {
+  const made = await world()
+  const browser = new StandInDesktop()
+  const connector = new Connector(made.store, browser)
+  made.backend.serverAnswers['mcp-oauth/return'] = {}
+  return { ...made, browser, connector }
+}
+
+const canva =
+  'https://mcp.canva.com/authorize?redirect_uri=http%3A%2F%2Flocalhost%3A8787%2Fcallback&state=vendor-canva-1'
+const stripe =
+  'https://access.stripe.com/mcp/oauth2/authorize?redirect_uri=https%3A%2F%2Fapi.simeonlabs.com%2Fdesktop%2Fmcp-oauth%2Fcallback&state=vendor-stripe-Ab_9'
+
+describe('a sign-in in the Windows app (MacConnector.signIn, the browser’s way)', () => {
+  it('names the app on our own start link, so its last page comes back to the app', async () => {
+    const { browser, connector } = await desktopWorld()
+    let looks = 0
+    const end = await connector.signIn(
+      'https://api.simeonlabs.com/desktop/apps/start?to=https%3A%2F%2Faccounts.google.com%2Fo&s=ab',
+      'Gmail',
+      async () => {
+        looks += 1
+        return looks === 2
+      },
+    )
+    expect(end).toBe('connected')
+    expect(browser.tabs[0]!.url).toBe(
+      'https://api.simeonlabs.com/desktop/apps/start?to=https%3A%2F%2Faccounts.google.com%2Fo&s=ab&back=simeon',
+    )
+    // A maker's own page is left as it is.
+    await connector.signIn(
+      'https://linear.app/oauth?state=s',
+      'Linear',
+      async () => true,
+    )
+    expect(browser.tabs[1]!.url).toBe('https://linear.app/oauth?state=s')
+  })
+
+  it('listens on the loopback while the sign-in is open, and hands its answer to this account’s computer', async () => {
+    const { backend, browser, connector } = await desktopWorld()
+    let connected = false
+    const end = connector.signIn(canva, 'Canva', async () => connected)
+    await eventually(() => browser.tabs.length === 1)
+    expect(browser.listening.map((one) => one.state)).toEqual([
+      'vendor-canva-1',
+    ])
+    expect(browser.tabs[0]!.url).toBe(canva)
+    browser.listening[0]!.caught({ state: 'vendor-canva-1', code: 'abc' })
+    // Caught once: the listener lets go of the address.
+    expect(browser.stopped).toEqual(['vendor-canva-1'])
+    await eventually(() =>
+      backend.commands.some((one) => one.method === 'completeMcpOAuth'),
+    )
+    expect(
+      backend.commands.find((one) => one.method === 'completeMcpOAuth')?.args,
+    ).toEqual({ stateId: 'vendor-canva-1', code: 'abc' })
+    connected = true
+    expect(await end).toBe('connected')
+  })
+
+  it('stops listening when the sign-in ends, and when a newer one takes its place', async () => {
+    const { browser, connector } = await desktopWorld()
+    const first = connector.signIn(canva, 'Canva', async () => false)
+    await eventually(() => browser.tabs.length === 1)
+    const second = connector.signIn(
+      canva.replace('vendor-canva-1', 'vendor-canva-2'),
+      'Canva',
+      async () => true,
+    )
+    expect(await first).toBe('replaced')
+    expect(await second).toBe('connected')
+    expect(browser.stopped).toEqual(['vendor-canva-1', 'vendor-canva-2'])
+  })
+
+  it('says so when another app holds the loopback, and takes the app back', async () => {
+    const { answers, browser, connector, sent, store } = await desktopWorld()
+    browser.busy = true
+    answers.authenticateServer = { status: 'started', authorizationUrl: canva }
+    connector.connect('Linear')
+    connector.confirm()
+    await eventually(() => sent('uninstallPlugin').length === 1)
+    await eventually(() => connector.connecting === undefined)
+    expect(store.problem).toBe(
+      "Linear's sign-in comes back to localhost:8787, and another app is using it. Quit the other Simeon app and try again.",
+    )
+    expect(browser.tabs[0]!.url).toBeUndefined()
+  })
+
+  it('names one that comes back through the server first, then finishes its answer under its own name', async () => {
+    const { backend, browser, connector } = await desktopWorld()
+    let connected = false
+    const end = connector.signIn(stripe, 'Stripe', async () => connected)
+    await eventually(() => browser.tabs.length === 1)
+    const named = backend.serverCalls.findIndex(
+      (call) => call.path === 'mcp-oauth/return',
+    )
+    expect(backend.serverCalls[named]?.body).toEqual({
+      state: 'vendor-stripe-Ab_9',
+      back: 'simeon',
+    })
+    expect(browser.tabs[0]!.url).toBe(stripe)
+    // Another sign-in's answer is not this one's.
+    expect(await connector.answered({ state: 'other', code: 'x' })).toBe(false)
+    expect(
+      await connector.answered({ state: 'vendor-stripe-Ab_9', code: 'c/1' }),
+    ).toBe(true)
+    expect(
+      backend.commands.find((one) => one.method === 'completeMcpOAuth')?.args,
+    ).toEqual({ stateId: 'vendor-stripe-Ab_9', code: 'c/1' })
+    // The same answer again, while the sign-in is still open: finished once, it ends nothing more (review S2).
+    expect(
+      await connector.answered({
+        state: 'vendor-stripe-Ab_9',
+        error: 'access_denied',
+      }),
+    ).toBe(false)
+    expect(
+      backend.commands.filter((one) => one.method === 'completeMcpOAuth'),
+    ).toHaveLength(1)
+    connected = true
+    expect(await end).toBe('connected')
+    // Nothing open any more: an answer then is no sign-in's of this window.
+    expect(await connector.answered({ state: 'vendor-stripe-Ab_9' })).toBe(
+      false,
+    )
+  })
+
+  it('ends as the Mac’s sheet closing on the app’s address: ten more looks, may still finish', async () => {
+    const { browser, connector } = await desktopWorld()
+    browser.onLook = (look) => {
+      if (look === 1) connector.cameBack(false)
+    }
+    const end = await connector.signIn(
+      'https://linear.app/oauth?state=s',
+      'Linear',
+      async () => false,
+    )
+    expect(end).toBe('unconfirmed')
+    expect(browser.looks).toBe(11)
+  })
+
+  it('ends as the Mac’s sheet closing on a refusal: two more looks, then cancelled', async () => {
+    const { browser, connector, store } = await desktopWorld()
+    browser.onLook = (look) => {
+      if (look === 1) connector.cameBack(true)
+    }
+    expect(
+      await connector.signIn(
+        'https://linear.app/oauth?state=s',
+        'Linear',
+        async () => false,
+      ),
+    ).toBe('cancelled')
+    expect(browser.looks).toBe(3)
+    // The maker's refusal through the server: said, then two looks.
+    browser.looks = 0
+    browser.onLook = (look) => {
+      if (look === 1)
+        void connector.answered({
+          state: 'vendor-stripe-Ab_9',
+          error: 'access_denied',
+          errorDescription: 'You declined.',
+        })
+    }
+    expect(await connector.signIn(stripe, 'Stripe', async () => false)).toBe(
+      'cancelled',
+    )
+    expect(browser.looks).toBe(3)
+    // The catalogue's sentence, never the link's own words (review S2).
+    expect(store.problem).toBe("Stripe didn't connect. Try again.")
+  })
+
+  it('lets go of the loopback and stops waiting when the window goes; a code caught after goes nowhere (review S3)', async () => {
+    const { backend, browser, connector } = await desktopWorld()
+    const end = connector.signIn(canva, 'Canva', async () => false)
+    await eventually(() => browser.tabs.length === 1)
+    const caught = browser.listening[0]!.caught
+    connector.close()
+    const looks = browser.looks
+    expect(browser.stopped).toEqual(['vendor-canva-1'])
+    expect(connector.connecting).toBeUndefined()
+    expect(await end).toBe('replaced')
+    // Its wait ends at its next look.
+    expect(browser.looks).toBeLessThanOrEqual(looks + 1)
+    caught({ state: 'vendor-canva-1', code: 'late' })
+    await new Promise((done) => setTimeout(done, 10))
+    expect(
+      backend.commands.filter((one) => one.method === 'completeMcpOAuth'),
+    ).toEqual([])
+    // The server's later answer for a closed window's sign-in: no open one has it.
+    expect(
+      await connector.answered({ state: 'vendor-canva-1', code: 'x' }),
+    ).toBe(false)
+  })
+
+  it('ends an older loopback sign-in replaced, never busy, when a newer one takes the address first (review nit 2)', async () => {
+    const { browser, connector, store } = await desktopWorld()
+    let release!: () => void
+    const held = new Promise<void>((done) => (release = done))
+    const real = browser.catchLoopback.bind(browser)
+    let calls = 0
+    browser.catchLoopback = async (state, caught) => {
+      calls += 1
+      // The first ask finds the address taken by the newer one, which answers first.
+      if (calls === 1) {
+        await held
+        return undefined
+      }
+      return real(state, caught)
+    }
+    const first = connector.signIn(canva, 'Canva', async () => false)
+    await new Promise((done) => setTimeout(done, 0))
+    const second = connector.signIn(
+      canva.replace('vendor-canva-1', 'vendor-canva-2'),
+      'Canva',
+      async () => true,
+    )
+    release()
+    expect(await first).toBe('replaced')
+    expect(await second).toBe('connected')
+    expect(store.problem).toBeUndefined()
+  })
+
+  it('is told nothing outside a sign-in', async () => {
+    const { connector } = await desktopWorld()
+    connector.cameBack(false)
+    expect(await connector.answered({ state: 's', code: 'c' })).toBe(false)
   })
 })

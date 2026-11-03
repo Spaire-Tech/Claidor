@@ -12,11 +12,12 @@
 // The Mac's second group, "Your Computer" (how the agents may use this Mac,
 // with the team's ceiling; hardware security keys; the commands allowed
 // once), is about the Mac's own hands on the person's computer, which a
-// browser doesn't have: it is left out, and comes back in the Windows app
-// with the agent's hands on the PC.
+// browser doesn't have: it is left out on the web, and shown in the Windows
+// app with the agent's hands on the PC (SettingsYourComputer.tsx, step 7f).
 
 import { RebuildWords } from '../core/computerRebuild'
 import type { AppStore } from '../core/store'
+import { desktop } from '../desktop/desktop'
 import { t } from '../l10n'
 import { Glyph } from './ContextMenu'
 import './SettingsComputer.css'
@@ -26,6 +27,7 @@ import {
   SettingsLine,
   SettingsPill,
 } from './SettingsParts'
+import { YourComputerGroup } from './SettingsYourComputer'
 import { useWatched } from './useStore'
 import { useWindowModel } from './windowModel'
 
@@ -89,6 +91,7 @@ export function SettingsComputerPage({ store }: { store: AppStore }) {
           }
         />
       </SettingsGroup>
+      {desktop() !== undefined && <YourComputerGroup store={store} />}
     </div>
   )
 }

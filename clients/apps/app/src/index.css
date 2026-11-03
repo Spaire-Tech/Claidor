@@ -668,6 +668,12 @@ button {
   box-shadow: none;
 }
 
+/* Control-Tab's walk (`CycleRing`, the Windows app): a 2-point ring in the unread blue on the row it would open. */
+.agent-row.cycling,
+.pin-tile.cycling {
+  box-shadow: inset 0 0 0 2px var(--unread);
+}
+
 /* The tile's corner: unread (blue) or at work (green), 10 across, 2 in, in a hole 14 across. */
 .agent-mark.holed.wide > :first-child {
   mask: radial-gradient(

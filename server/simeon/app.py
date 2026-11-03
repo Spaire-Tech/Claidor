@@ -74,6 +74,19 @@ from . import rate_limit
 log: Logger = structlog.get_logger()
 
 
+#: The Windows app's page (windows/src/main/appProtocol.ts): Electron's
+#: privileged `app` scheme gives it this origin.
+DESKTOP_APP_ORIGINS = frozenset({"app://simeon"})
+
+#: The window on the web reads these off the box gateway's answers through
+#: the proxy (`gateway-client.ts`, 4 October 2026); the Windows app's page too.
+APP_WINDOW_EXPOSED_HEADERS = [
+    "x-sand-mint-dedupe",
+    "x-automation-failure-hint",
+    "retry-after",
+]
+
+
 def configure_cors(app: FastAPI) -> None:
     configs: list[CORSConfig] = []
 
@@ -95,15 +108,22 @@ def configure_cors(app: FastAPI) -> None:
         allow_credentials=True,  # Cookies are allowed, but only there!
         allow_methods=["*"],
         allow_headers=["*"],
-        # The window on the web reads these off the box gateway's answers
-        # through the proxy (`gateway-client.ts`, 4 October 2026).
-        expose_headers=[
-            "x-sand-mint-dedupe",
-            "x-automation-failure-hint",
-            "retry-after",
-        ],
+        expose_headers=APP_WINDOW_EXPOSED_HEADERS,
     )
     configs.append(simeon_frontend_config)
+
+    # The Windows app (windows/): the web app loaded from the app's own
+    # scheme. It signs in with a bearer and never sends a cookie, so it gets
+    # the window's headers, sent and read, but no credentials.
+    desktop_app_config = CORSConfig(
+        lambda origin, scope: origin in DESKTOP_APP_ORIGINS,
+        allow_origins=list(DESKTOP_APP_ORIGINS),
+        allow_credentials=False,
+        allow_methods=["*"],
+        allow_headers=["*"],
+        expose_headers=APP_WINDOW_EXPOSED_HEADERS,
+    )
+    configs.append(desktop_app_config)
 
     # Creator custom storefront domains (learn.creator.com). The web app
     # sends credentials: 'include' on every request, and browsers reject

@@ -62,6 +62,12 @@ class CurrentSubscription(Schema):
             "the page brings the app forward, and offers no download."
         ),
     )
+    has_windows_app: bool = Field(
+        default=False,
+        description=(
+            "The person has signed in to the Windows app: the same, on a Windows PC."
+        ),
+    )
 
 
 class CheckoutCreate(Schema):

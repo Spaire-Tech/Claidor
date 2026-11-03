@@ -387,10 +387,16 @@ async def local_exec_daemon_credential(
     db: AsyncSession = Depends(get_db_session),
 ) -> JSONResponse:
     if desktop_session.is_web:
-        # The daemon runs on the person's Mac; a session signed in from
-        # the browser has no Mac to hand a credential to.
+        # The daemon runs on the person's computer (the Mac app, the Windows
+        # app); a session signed in from the browser has none to hand a
+        # credential to.
         return JSONResponse(
-            {"error": "The browser has no local machine. Open Simeon on your Mac."},
+            {
+                "error": (
+                    "The browser has no local machine. "
+                    "Open the Simeon app on your computer."
+                )
+            },
             status_code=403,
         )
     """`{}` → `{credential, expiresAtMs}` (`BrokeredHostConnector.

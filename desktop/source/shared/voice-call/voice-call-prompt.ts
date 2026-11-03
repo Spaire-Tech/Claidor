@@ -374,11 +374,16 @@ export function workingLabel(task: string): string {
   return `${[gerund(first), ...rest].join(" ")}…`;
 }
 
-const TOOL_LABELS: Readonly<Record<string, (detail: string | null) => string>> = {
+/** How the person's own computer is named: "your PC" when its hello said Windows (`win32`), else "your Mac", as it always was. */
+function yourComputer(platform: string | undefined): string {
+  return platform === "win32" ? "your PC" : "your Mac";
+}
+
+const TOOL_LABELS: Readonly<Record<string, (detail: string | null, platform?: string) => string>> = {
   Shell: (detail) => (detail != null ? `Editing ${detail}…` : "Running a command…"),
-  ExternalShell: (detail) => (detail != null ? `Editing ${detail}…` : "Running a command on your Mac…"),
+  ExternalShell: (detail, platform) => (detail != null ? `Editing ${detail}…` : `Running a command on ${yourComputer(platform)}…`),
   Read: (detail) => (detail != null ? `Reading ${detail}…` : "Reading a file…"),
-  ExternalRead: (detail) => (detail != null ? `Reading ${detail}…` : "Reading a file on your Mac…"),
+  ExternalRead: (detail, platform) => (detail != null ? `Reading ${detail}…` : `Reading a file on ${yourComputer(platform)}…`),
   AwaitShell: () => "Waiting on a command…",
   ExternalAwaitShell: () => "Waiting on a command…",
   WebSearch: () => "Searching the web…",
@@ -401,12 +406,14 @@ function appName(identifier: string): string {
 /**
  * The agent's current activity (`currentActivity` on the roster row) as a
  * short line, or null when it names nothing more specific than thinking.
+ * `platform` is the person's computer's, as its hello said it (`win32`: "on
+ * your PC"); without it, "on your Mac".
  */
-export function describeAgentActivity(activity: unknown): string | null {
+export function describeAgentActivity(activity: unknown, platform?: string): string | null {
   if (!isRecord(activity) || activity.kind !== "tool" || typeof activity.tool !== "string") return null;
   const detail = typeof activity.detail === "string" && activity.detail.trim().length > 0 ? clamp(collapse(activity.detail), 40) : null;
   const label = TOOL_LABELS[activity.tool];
-  return label != null ? label(detail) : "Working on it…";
+  return label != null ? label(detail, platform) : "Working on it…";
 }
 
 // --- after the call -------------------------------------------------------------

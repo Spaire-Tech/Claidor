@@ -10,9 +10,11 @@ open questions are in `PROGRESS.md`, updated with every change.
 
 ## The plan it rests on
 
-- **The Windows app is Electron around a web app.** That web app is also
-  the one at `app.simeonlabs.com/app`, so one codebase serves the web,
-  Windows (and Linux).
+- **The Windows app is Electron around a web app.** The web app is only
+  the means: it is offered to no one, and the Windows app is the product
+  (the founder, 3 November 2026: "the whole point of the web app is to
+  build the window app"). It never replaces the web app at
+  `app.simeonlabs.com/app`.
 - **That web app is a translation of the Mac app**, screen by screen, into
   code Simeon Labs owns (`clients/apps/app`). It is not the web app people
   use today.
@@ -133,10 +135,10 @@ it at the same address. Skills publishing is left out, as on the Mac
 | The menu bar icon | – | The system tray icon |
 | Updates (Sparkle, `/desktop/download/mac/appcast.xml`) | Always the latest | Electron's updater, on a Windows feed the server serves |
 | `simeon://` links (packs, plugins, sign-in returns) | Web addresses | The `simeon://` handler registered on Windows |
-| The agent's hands on this Mac (`MacLocalHands`, `LocalExec*`, `SensitivePaths`) | Not possible in a browser | A Windows version: commands in PowerShell, Windows' paths, Windows' sensitive folders. A later phase |
-| "Execution on Local Computer" | – | With the hands above |
-| 1Password through its Mac app | – | 1Password's Windows app, later |
-| Chrome's cookies imported (Mac only) | – | Chrome on Windows, later |
+| The agent's hands on this Mac (`MacLocalHands`, `LocalExec*`, `SensitivePaths`) | Not possible in a browser | A Windows version: commands in PowerShell, Windows' paths, Windows' sensitive folders (7f, `windows/src/main/hands/`) |
+| "Execution on Local Computer" | – | With the hands above (7f, Settings › Computer › Your Computer) |
+| 1Password through its Mac app | – | 1Password's Windows app, through `op.exe`, with Windows Hello (7d) |
+| Chrome's cookies imported (Mac only) | – | Nothing to port: not built on the Mac (`PROGRESS.md`, "Decisions") |
 | Dictation (recorded, transcribed by the server) | The browser's microphone, the same server call | The same |
 | Liquid Glass | Its look in CSS (blur, tint, rim) | The same |
 

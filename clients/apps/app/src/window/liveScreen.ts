@@ -23,10 +23,7 @@ import {
   computerScreen,
   streamLog,
 } from '../core/cloudComputer'
-
-/** An Apple computer: ⌘ is its command key (`buildVncMacKeyMappingScript` is the Mac's alone). */
-const apple =
-  typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform)
+import { apple } from './keys'
 
 let loading: Promise<typeof RFB> | undefined
 
@@ -127,6 +124,11 @@ export class ScreenClipboard {
     if (words !== '') this.holds = words
     if (!focused) return undefined
     return this.bridge.fromBox(words)
+  }
+
+  /** Whether this computer's clipboard may be read and sent now: 0.2 s since the last try (the Windows app's way, window/clipboard.ts). */
+  mayRead(now?: number): boolean {
+    return this.bridge.mayRead(now)
   }
 
   /** A paste's words: those to send before the keys, or none when the agent's clipboard holds them already. */

@@ -22,6 +22,7 @@ the website's footer and the invoices (`INVOICES_NAME`). The brand
 | `clients/` | The web app at `app.simeonlabs.com` (sign-in pages, account dashboard). Patterns: `clients/CLAUDE.md`. |
 | `ios/` | **The iPhone app** (SwiftUI), the phone design in Apple's own parts. `ios/README.md`. |
 | `mac/` | **The Mac app** (SwiftUI): a copy of the Electron Mac app with Apple's controls, which replaced it on 11 October 2026 (bundle id `com.simeonlabs.simeon`, scheme `simeon`). It shares `ios/SimeonCore` (no screens). `mac/README.md`, `mac/STEPS.md`. |
+| `windows/` | **The Windows app** (Electron): the web app's committed build (`clients/apps/web/public/app-next`) in a window of its own, with Windows' own parts (step 7 of `docs/web-app/README.md`). Its main process is Simeon Labs' own, nothing from `desktop/`. `windows/README.md`. |
 | `sites/simeonlabs.com/` | The public website and its live demo. |
 | `docs/` | Start at `docs/README.md`. |
 | `render.yaml` | The Render services (API, worker, runner, Postgres, Redis). |
@@ -108,6 +109,11 @@ cd ios && xcodegen generate && open Simeon.xcodeproj
 mac/scripts/build.sh
 mac/scripts/release.sh
 cd mac && xcodegen generate && open SimeonMac.xcodeproj
+
+# Windows app (windows/README.md; runs on Linux too, the smoke check under xvfb-run)
+cd windows && npm ci && npm run electron:install && npm test && npm run typecheck
+cd windows && npm run smoke               # the app run for real against a stand-in server
+cd windows && npm run package             # the installer (on Linux: needs Wine)
 
 # Earlier names, and every string translated (docs/localization.md)
 python3 scripts/check_names.py

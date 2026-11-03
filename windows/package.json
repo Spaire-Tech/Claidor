@@ -1,0 +1,35 @@
+{
+  "name": "simeon-windows",
+  "productName": "Simeon",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Simeon for Windows: the web app in Electron, with Windows' own parts",
+  "author": "Simeon Labs",
+  "license": "UNLICENSED",
+  "type": "module",
+  "main": "dist/main.cjs",
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "start": "npm run build && electron .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "electron:install": "node node_modules/electron/install.js",
+    "smoke": "npm run build && node scripts/smoke.mjs",
+    "package": "npm run build && electron-builder --win --x64 --publish never"
+  },
+  "dependencies": {
+    "electron-updater": "6.8.11"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.2",
+    "electron": "44.10.1",
+    "electron-builder": "26.18.0",
+    "esbuild": "0.28.2",
+    "playwright-core": "1.56.1",
+    "typescript": "5.9.3",
+    "vitest": "3.2.4"
+  }
+}

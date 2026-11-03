@@ -50,6 +50,7 @@ import {
 import { type AgentName, type Mention, findMentions } from '../core/mentions'
 import { t } from '../l10n'
 import { FindContext, markedWords } from './FindBar'
+import { copyText } from './clipboard'
 
 /** What names in a message are read with (`MessageLine`'s agents, person and speaker), and what a pill does; none for the person's own words. */
 export interface MentionSetting {
@@ -561,7 +562,10 @@ export function CodeBlock({ words }: { words: string }) {
         aria-label={t('Copy code')}
         title={t('Copy code')}
         onClick={() => {
-          void navigator.clipboard?.writeText(words).then(() => setCopied(true))
+          void copyText(words).then(
+            () => setCopied(true),
+            () => {},
+          )
         }}
       >
         {copied ? '✓' : '⧉'}

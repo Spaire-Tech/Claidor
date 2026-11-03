@@ -89,7 +89,8 @@ test("an attachment is never the credential mount or a sign-in file, and a too-l
   assert.match(read, /const cacheKey = createHash\("sha256"\)\.update\(output\.value\)\.digest\("hex"\);/);
   assert.match(read, /PDF_TEXT_CACHE_MAX_ENTRIES = 32/);
   assert.match(await src("electron-main/attachments/attachment-manager.ts"), /isWithinDesktopAttachmentStaging\(filePath\) \? await readDesktopImageAttachment\(filePath, deps\) : null/);
-  assert.match(await src("host/runner/tools/sand-file-transfer-tools.ts"), /posix\.join\("Downloads", posix\.basename\(boxPath\)\)/);
+  // Downloads, by the computer's own path rules (a Windows PC's are Windows', web app step 7f).
+  assert.match(await src("host/runner/tools/sand-file-transfer-tools.ts"), /computerPaths\(computer\)\.join\("Downloads", posix\.basename\(boxPath\)\)/);
 });
 
 test("the production toolset offers request_box_help, bound to the session's hand-off service", async () => {

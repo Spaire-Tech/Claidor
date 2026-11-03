@@ -1,0 +1,21 @@
+/*
+ * Settings' Updates in the Windows app (SettingsUpdates.tsx) at the Mac's
+ * measures (mac/Simeon/SettingsPages.swift's `SettingsUpdatesPage`).
+ */
+
+/* A check under way: the small spinner, then "Checking…" (13, grey), 6 apart. */
+.updates-checking {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-secondary);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+/* Update Now, and the spinner before it while the release downloads and installs. */
+.updates-install {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
