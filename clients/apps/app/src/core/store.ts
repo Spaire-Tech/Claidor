@@ -3615,9 +3615,16 @@ export class AppStore {
     }
   }
 
-  /** An agent's channels (`getAgentChannels`): undefined when the computer doesn't answer within 15 s. */
-  channels(agentId: string): Promise<ChannelsView | undefined> {
-    return this.channelCall('getAgentChannels', { id: agentId })
+  /**
+   * An agent's channels (`getAgentChannels`): undefined when the computer
+   * doesn't answer within 15 s. With `wakes` false (the page's reads every
+   * 4 s and as the window comes forward), a computer that rests is let
+   * rest: the read fails at once and the page keeps what it shows
+   * (Channels.swift's `channels(_:wakes:)`), so a page left open never
+   * keeps it awake; the read as the page opens, and after a change, wake it.
+   */
+  channels(agentId: string, wakes = true): Promise<ChannelsView | undefined> {
+    return this.channelCall('getAgentChannels', { id: agentId }, wakes)
   }
 
   /** Store securely: the token for `platform` (Slack takes its app and bot tokens together, the computer sorts them). */
@@ -3651,13 +3658,16 @@ export class AppStore {
   private async channelCall(
     method: string,
     args: JSONValue,
+    wakes = true,
   ): Promise<ChannelsView | undefined> {
     const backend = this.backend
     if (!backend) return undefined
     let timer: ReturnType<typeof setTimeout> | undefined
     try {
       const answer = await Promise.race([
-        backend.command(method, args),
+        wakes
+          ? backend.command(method, args)
+          : backend.command(method, args, { wakes: false }),
         new Promise<undefined>((resolve) => {
           timer = setTimeout(() => resolve(undefined), channelDeadline * 1000)
         }),

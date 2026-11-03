@@ -369,6 +369,78 @@ describe('following the server’s record (`MigrationRelay`)', () => {
     relay.stop()
   })
 
+  it('asks less and less often while the server says there is no computer, 60 s apart at most', async () => {
+    const streams = new Streams()
+    const timers = new Timers()
+    const relay = new MigrationRelay(streams.open, timers.wait, timers.timer)
+    relay.start()
+    for (let round = 1; round <= 7; round += 1) {
+      await eventually(() => streams.offsets.length === round)
+      // The server's answer for an account with no computer: the stream ends at once, with nothing in it.
+      streams.end()
+      await eventually(() => timers.waits.length === round)
+      timers.resume()
+    }
+    expect(timers.waits).toEqual([
+      3_000, 6_000, 12_000, 24_000, 48_000, 60_000, 60_000,
+    ])
+    relay.stop()
+  })
+
+  it('anything else the server says, and a recreate accepted, bring it back to 3 s', async () => {
+    const streams = new Streams()
+    const timers = new Timers()
+    let clock = 0
+    const relay = new MigrationRelay(
+      streams.open,
+      timers.wait,
+      timers.timer,
+      () => clock,
+    )
+    relay.start()
+    const round = async (end: () => void) => {
+      const reads = streams.offsets.length
+      const waits = timers.waits.length
+      end()
+      await eventually(() => timers.waits.length === waits + 1)
+      timers.resume()
+      await eventually(() => streams.offsets.length === reads + 1)
+    }
+    await eventually(() => streams.offsets.length === 1)
+    await round(() => streams.end())
+    await round(() => streams.end())
+    // A finished step.
+    await round(() => {
+      streams.push({ phase: 6, operationId: 'op', offsetKey: '4' })
+      streams.end()
+    })
+    await round(() => streams.end())
+    await round(() => streams.end())
+    // A failure.
+    await round(() => streams.end(new Error('refused')))
+    await round(() => streams.end())
+    await round(() => streams.end())
+    // A computer's stream, quiet for 25 s.
+    await round(() => {
+      clock += 25_000
+      streams.end()
+    })
+    expect(timers.waits).toEqual([
+      3_000, 6_000, 3_000, 3_000, 6_000, 3_000, 3_000, 6_000, 3_000,
+    ])
+    // Asked less often again, then a recreate accepted: read again at once, without waiting.
+    await round(() => streams.end())
+    streams.end()
+    await eventually(() => timers.waits.length === 11)
+    expect(timers.waits.at(-1)).toBe(6_000)
+    relay.recreateAccepted('op')
+    await eventually(() => streams.offsets.length === 12)
+    streams.end()
+    await eventually(() => timers.waits.length === 12)
+    expect(timers.waits.at(-1)).toBe(3_000)
+    relay.stop()
+  })
+
   it('a silent stream while a step is under way is read again, twenty times at most', async () => {
     const streams = new Streams()
     const timers = new Timers()

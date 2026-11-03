@@ -288,12 +288,36 @@ const systemTimer: RelayTimer = (ms, work) => {
  * stream read again 3 s after it ends, from where it stopped; a stream
  * silent for 30 s while a step is under way is dropped and read again,
  * twenty times at most; and the last event (or the last finished one) kept
- * for the window to read back.
+ * for the window to read back. While the server says the account has no
+ * computer, it is asked less and less often (`reattachWaitMs`).
  */
 export class MigrationRelay {
   static readonly reattachMs = 3_000
   static readonly stallMs = 30_000
   static readonly maxStallReattaches = 20
+  /** The longest wait between two reads while the server says there is no computer. */
+  static readonly maxReattachMs = 60_000
+  /**
+   * A stream the server ends this soon with nothing in it says the account
+   * has no computer (MigrationWatch.swift's `noComputerWithin`): it ends at
+   * once for one with none (`watch_sand_box_migration`), and holds a
+   * computer's open 25 s while nothing happens (`MigrationLog.idle`).
+   */
+  static readonly noComputerWithinMs = 5_000
+
+  /**
+   * The wait before the stream is read again after the server said
+   * `streak` times running that there is no computer: 3 s, then doubled
+   * each time, 60 s at most; 3 s again once it says anything else, at a new
+   * sign-in (a new relay) and when the stream is followed again (`start`).
+   */
+  static reattachWaitMs(streak: number): number {
+    if (streak <= 1) return MigrationRelay.reattachMs
+    return Math.min(
+      MigrationRelay.reattachMs * 2 ** Math.min(streak - 1, 5),
+      MigrationRelay.maxReattachMs,
+    )
+  }
 
   private lastUpdate?: MigrationEvent
   private lastTerminal?: MigrationEvent
@@ -304,6 +328,10 @@ export class MigrationRelay {
   private watchdog?: () => void
   private remainingStalls = 0
   private owed?: string
+  /** How many reads running the server said there is no computer. */
+  private noComputer = 0
+  /** The wait before the next read, while it lasts. */
+  private pausing?: AbortController
 
   constructor(
     /** Reads the stream from an offset. */
@@ -316,6 +344,7 @@ export class MigrationRelay {
       signal: AbortSignal,
     ) => Promise<void> = pause,
     private readonly timer: RelayTimer = systemTimer,
+    private readonly now: () => number = Date.now,
   ) {}
 
   /** What the window reads back on connecting (`getBoxMigrationStatus`). */
@@ -331,6 +360,7 @@ export class MigrationRelay {
 
   start(): void {
     if (this.running) return
+    this.noComputer = 0
     const running = new AbortController()
     this.running = running
     void this.loop(running)
@@ -349,6 +379,9 @@ export class MigrationRelay {
   /** A recreate was accepted: watch for its steps (`noteRecreateAccepted`). */
   recreateAccepted(operationId: string | undefined): void {
     this.owed = operationId
+    // There is a computer now (a recreate is refused without one): read again at once if it was being asked less often.
+    if (this.noComputer > 1) this.pausing?.abort()
+    this.noComputer = 0
     this.arm(operationId)
   }
 
@@ -359,7 +392,9 @@ export class MigrationRelay {
       const stop = () => attempt.abort()
       running.signal.addEventListener('abort', stop, { once: true })
       this.attempt = attempt
+      const began = this.now()
       let received = false
+      let failed = false
       try {
         for await (const message of this.open(from, attempt.signal)) {
           if (attempt.signal.aborted) break
@@ -367,6 +402,7 @@ export class MigrationRelay {
           this.take(message)
         }
       } catch {
+        failed = true
         // A stream that failed before anything came starts over from the beginning (the offset may be gone).
         if (!received && from !== '' && !attempt.signal.aborted)
           this.resumeOffset = ''
@@ -375,11 +411,27 @@ export class MigrationRelay {
       this.lastUpdate = undefined
       if (this.attempt === attempt) this.attempt = undefined
       if (running.signal.aborted) break
+      // Ended by the server with nothing in it, at once (not a failure, nor cut by the watchdog): no computer.
+      const saysNoComputer =
+        !received &&
+        !failed &&
+        !attempt.signal.aborted &&
+        this.now() - began < MigrationRelay.noComputerWithinMs
+      this.noComputer = saysNoComputer ? this.noComputer + 1 : 0
+      const pausing = new AbortController()
+      const stopWaiting = () => pausing.abort()
+      running.signal.addEventListener('abort', stopWaiting, { once: true })
+      this.pausing = pausing
       try {
-        await this.wait(MigrationRelay.reattachMs, running.signal)
+        await this.wait(
+          MigrationRelay.reattachWaitMs(this.noComputer),
+          pausing.signal,
+        )
       } catch {
-        break
+        // Cut short: by a stop (the loop ends), or by a recreate accepted (read again at once).
       }
+      running.signal.removeEventListener('abort', stopWaiting)
+      if (this.pausing === pausing) this.pausing = undefined
     }
   }
 

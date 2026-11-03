@@ -229,6 +229,25 @@ describe('the channel calls', () => {
     expect(calls[3]?.args).toEqual({ id: 'simeon', platform: 'discord' })
   })
 
+  it('the page’s repeated reads let a resting computer rest; its opening and a change wake it', async () => {
+    const { backend, store } = await attached((one) => {
+      for (const method of ['getAgentChannels', 'connectChannel'])
+        one.commandAnswers[method] = () => view
+    })
+    expect((await store.channels('simeon', false))?.manifests.length).toBe(2)
+    await store.channels('simeon')
+    await store.connectChannel('simeon', 'discord', 'abc')
+    const calls = backend.commands.filter(
+      (one) =>
+        one.method === 'getAgentChannels' || one.method === 'connectChannel',
+    )
+    expect(calls.map((one) => [one.method, one.wakes])).toEqual([
+      ['getAgentChannels', false],
+      ['getAgentChannels', true],
+      ['connectChannel', true],
+    ])
+  })
+
   it('a refusal, or no answer in 15 s, is nothing', async () => {
     const { backend, store } = await attached()
     backend.refusedCommands.add('connectChannel')

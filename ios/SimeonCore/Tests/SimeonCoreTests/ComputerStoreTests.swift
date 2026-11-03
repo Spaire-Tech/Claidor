@@ -469,6 +469,99 @@ final class ComputerReloadTests: XCTestCase {
   }
 }
 
+/**
+ * The relay (`MigrationRelay`) for an account the server says has no
+ * computer: the stream ends at once with nothing in it, and is asked less
+ * and less often, 60 s apart at most; anything else, and a recreate
+ * accepted, bring it back to 3 s.
+ */
+final class MigrationRelayTests: XCTestCase {
+  func testWhileTheServerSaysThereIsNoComputerItIsAskedLessAndLessOften() async throws {
+    let script = RelayScript(held: 8)
+    let relay = MigrationRelay(open: { script.open($0) }, pause: { await script.pause($0) }, now: { script.now() })
+    relay.start()
+    try await script.until { script.waits.count == 9 }
+    relay.stop()
+    XCTAssertEqual(script.waits, [3, 6, 12, 24, 48, 60, 60, 60, 60])
+  }
+
+  func testAnythingElseItSaysBringsItBackTo3s() async throws {
+    let plan: [RelayScript.Stream] = [.nothing, .nothing, .event, .nothing, .nothing, .failure, .nothing, .nothing, .quiet]
+    let script = RelayScript(held: plan.count, plan: plan)
+    let relay = MigrationRelay(open: { script.open($0) }, pause: { await script.pause($0) }, now: { script.now() })
+    relay.start()
+    // The wait after the last planned stream is the one that holds.
+    try await script.until { script.waits.count == plan.count + 1 }
+    relay.stop()
+    XCTAssertEqual(Array(script.waits.prefix(plan.count)), [3, 6, 3, 3, 6, 3, 3, 6, 3], "an event, a failure and a computer's quiet stream each say there is a computer")
+    XCTAssertEqual(MigrationRelay.reattachWait(noComputerStreak: 0), 3)
+    XCTAssertEqual(MigrationRelay.reattachWait(noComputerStreak: 1), 3)
+    XCTAssertEqual(MigrationRelay.reattachWait(noComputerStreak: 40), 60)
+  }
+
+  func testARecreateAcceptedReadsAgainAtOnce() async throws {
+    let script = RelayScript(held: 4)
+    let relay = MigrationRelay(open: { script.open($0) }, pause: { await script.pause($0) }, now: { script.now() })
+    relay.start()
+    try await script.until { script.waits.count == 5 }
+    XCTAssertEqual(script.waits.last, 48, "waiting long while there was no computer")
+    XCTAssertEqual(script.opened, 5)
+    relay.recreateAccepted("op")
+    try await script.until { script.waits.count == 6 }
+    XCTAssertEqual(script.opened, 6, "read again at once")
+    XCTAssertEqual(script.waits.last, 3, "and asked as often as before")
+    relay.stop()
+  }
+}
+
+/** The relay's streams and waits as a test writes them: each stream by its number, the waits written down, a clock the test moves. */
+final class RelayScript: @unchecked Sendable {
+  /** Nothing at once (no computer), a finished step, a failure, nothing after 25 s (a computer's quiet stream). */
+  enum Stream { case nothing, event, failure, quiet }
+  private let lock = NSLock()
+  private let plan: [Stream]
+  /** Waits past this many last until cancelled (a stop, a recreate accepted). */
+  private let held: Int
+  private var waitList: [TimeInterval] = []
+  private var opens = 0
+  private var clock = Date(timeIntervalSince1970: 0)
+  init(held: Int, plan: [Stream] = []) { self.held = held; self.plan = plan }
+  var waits: [TimeInterval] { lock.withLock { waitList } }
+  var opened: Int { lock.withLock { opens } }
+  func now() -> Date { lock.withLock { clock } }
+  func open(_ offset: String) -> AsyncThrowingStream<JSON, Error> {
+    let kind: Stream = lock.withLock {
+      opens += 1
+      if opens <= plan.count { return plan[opens - 1] }
+      return .nothing
+    }
+    return AsyncThrowingStream { continuation in
+      switch kind {
+      case .nothing: continuation.finish()
+      case .event:
+        continuation.yield(["phase": 6, "operationId": "op", "offsetKey": "1"])
+        continuation.finish()
+      case .failure: continuation.finish(throwing: SimeonAPIError(message: "refused", status: 500))
+      case .quiet:
+        self.lock.withLock { self.clock.addTimeInterval(25) }
+        continuation.finish()
+      }
+    }
+  }
+  func pause(_ seconds: TimeInterval) async {
+    let count: Int = lock.withLock { waitList.append(seconds); return waitList.count }
+    if count > held { try? await Task.sleep(nanoseconds: 10_000_000_000) } else { await Task.yield() }
+  }
+  func until(_ condition: () -> Bool) async throws {
+    var tries = 0
+    while !condition(), tries < 200 {
+      try await Task.sleep(nanoseconds: 10_000_000)
+      tries += 1
+    }
+    XCTAssertTrue(condition(), "in time")
+  }
+}
+
 /** A host with one agent, Theo, that writes down each gateway command it is sent; `createAgent` answers with the id "saver". */
 final class CommandLogBackend: AgentBackend, @unchecked Sendable {
   private let lock = NSLock()
