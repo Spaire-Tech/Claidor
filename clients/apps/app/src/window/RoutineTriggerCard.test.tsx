@@ -1,8 +1,8 @@
 // A trigger's popover in the app's language (RoutineTriggerCard.swift's
 // `Word` and Advanced's units): each connecting word from the Mac app's
-// catalogue, "at" a minute past the hour and "on" a day of the week each
-// with its own key, and Advanced's Every in minutes or hours as Interval
-// says them (`unitLabel`), not as they are saved.
+// catalogue, "at" a minute past the hour, "on" a day of the week and "and"
+// between two hours each with its own key, and Advanced's Every in minutes
+// or hours as Interval says them (`unitLabel`), not as they are saved.
 
 import { renderToStaticMarkup } from 'react-dom/server'
 import {
@@ -28,7 +28,11 @@ afterAll(() => vi.unstubAllGlobals())
 afterEach(() => setWords('en', {}))
 
 /** The keyed entries' English, as the catalogue's `en` (`src/words/mac/en.json`). */
-const english = { 'hourly.at': 'at', 'weekly.on': 'on' }
+const english = {
+  'hourly.at': 'at',
+  'weekly.on': 'on',
+  'between.and': 'and',
+}
 
 /** The Mac app's catalogue's Spanish for the popover's words (mac/Simeon/Localizable.xcstrings). */
 const spanish = {
@@ -38,7 +42,7 @@ const spanish = {
   'on the': 'el',
   every: 'cada',
   between: 'entre',
-  and: 'y',
+  'between.and': 'y',
   in: 'en',
   on: 'en',
   containing: 'que contienen',
@@ -170,5 +174,11 @@ describe('a trigger’s connecting words', () => {
       )?.[1]
     expect(unit('*/30 9-17 * * *')).toBe('minutos')
     expect(unit('@every 30m')).toBe('minutos')
+  })
+
+  it('“and” between two hours with a key of its own: Polish says “między … a …”', () => {
+    // The chat's "and" (a routine's chips) is Polish "i"; the routine's hours take "a".
+    setWords('pl', { mac: { and: 'i', between: 'między', 'between.and': 'a' } })
+    expect(words(schedule('*/30 9-17 * * *'))).toEqual(['między', 'a'])
   })
 })

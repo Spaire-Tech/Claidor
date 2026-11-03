@@ -466,7 +466,7 @@ private struct AdvancedGrid: View {
       ChoicePill(label: String(localized: "From hour"), options: (0..<24).map { (value: $0, label: RoutineSchedule.clock($0, 0)) }, value: from, look: look) {
         change(.interval(unit: unit, amount: amount, fromHour: $0, toHour: max(to, $0)))
       }
-      Word(String(localized: "and"), look: look)
+      Word(String(localized: "between.and", defaultValue: "and"), look: look)
       ChoicePill(label: String(localized: "To hour"), options: (from..<24).map { (value: $0, label: RoutineSchedule.clock($0, 0)) }, value: to, look: look) {
         change(.interval(unit: unit, amount: amount, fromHour: from, toHour: $0))
       }
@@ -730,7 +730,8 @@ private struct LinearFields: View {
  * written (`String(localized:)`, docs/localization.md: a custom view's
  * `String` is shown as it comes). One English word read two ways has its own
  * key: "at" a minute past the hour (`hourly.at`), "on" a day of the week
- * (`weekly.on`).
+ * (`weekly.on`), "and" between two hours (`between.and`: Polish says
+ * "między … a …", the chat's "and" is "i").
  */
 private struct Word: View {
   let text: String

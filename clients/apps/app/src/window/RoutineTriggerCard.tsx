@@ -920,7 +920,7 @@ function TimeControls({
           change({ ...time, fromHour: next, toHour: Math.max(toHour, next) })
         }
       />
-      <Word text={t('and')} />
+      <Word text={tk('between.and')} />
       <ChoicePill
         label={t('To hour')}
         options={Array.from({ length: 24 - fromHour }, (_, i) => ({
@@ -1354,7 +1354,8 @@ function FlowLine({ children }: { children: ReactNode }) {
  * written, as the Mac's (`Word`, each `String(localized:)`): "at", "in",
  * "from"… are the catalogue's; one English word read two ways has its own
  * key ("at" a minute past the hour is `hourly.at`, "on" a day of the week
- * `weekly.on`).
+ * `weekly.on`, "and" between two hours `between.and`: Polish says "między
+ * … a …", the chat's "and" is "i").
  */
 function Word({ text }: { text: string }) {
   return <span className="flow-word">{text}</span>
