@@ -574,7 +574,7 @@ from its code. Pushed so far:
 | Button | Its part or step |
 |---|---|
 | "/" Org Chart, Channels | 12 (done) |
-| "/" Open Hidden Agents | 3 |
+| "/" Open Hidden Agents | 3 (done: "/" runs its actions as search does) |
 | "/" Chat Settings | 7 (done) |
 | "/" Members | 7d (done) |
 | "/" Settings: General, Settings: Usage & Billing | 8 (done) |
@@ -850,8 +850,9 @@ tested against what the window lists for the same words. Pushed:
   keys back.
 - **What a row does**: an agent opens; a message or a file opens its chat,
   reads back until that line is there, and brings it to the middle lit in
-  yellow; a link opens in the browser; a routine opens its agent; a theme
-  is set at once; Open Hidden Agents opens the Hidden Agents dialog.
+  yellow; a link opens in the browser; a routine opens in its agent's
+  Routines with its editor, as the chat's routine chip does; a theme is set
+  at once; Open Hidden Agents opens the Hidden Agents dialog.
 - **Empty tabs** say the window's words: "No agents yet", "Search messages"
   ("Type to find messages across your chats."), "No group chats yet", "No
   files yet", "No links in this chat yet", "No routines yet", "No
@@ -2044,8 +2045,9 @@ kind, its failures, low disk, every access answer). Pushed in two parts:
   keys. Choosing an agent, Settings and Plugins close it.
 - **The hand-off card** in the chat: Take over, its snapshot and Open
   computer open the computer; I'm done and Skip answer as before.
-- **Search's routine** opens the open agent's pane on Computer (another
-  agent's: that agent with its pane on Profile), as the window does.
+- **Search's routine** opens its agent's pane on Routines with that
+  routine's editor, as the chat's routine chip does (the window opens only
+  the pane; decision 6 below).
 - **The stream away**: "Reconnecting" at the window's top after 2.5
   seconds, "Checking connection" for a second once it is back, "Simeon's
   computer restarting" while it comes up; after two minutes "Couldn't Reach
@@ -2105,8 +2107,9 @@ The computer:
 4. Closing the computer lets go of its screen. (The window keeps it
    connected, hidden, while the pane is open, even for the next agent.)
 5. Every helper's screen shows the agent's own screen, as in the window.
-6. A routine found by search opens the pane on Computer, not the routine,
-   as in the window.
+6. A routine found by search opens in its agent's Routines with its
+   editor, as the chat's routine chip does (3 November 2026). (The window
+   drops the routine and opens only the pane, on Computer.)
 7. "and N more" has the thumbnails' frame (the window's is 42 high), and
    its menu is the Mac's.
 8. "Exit fullscreen" keeps the window's word, though it only closes the
