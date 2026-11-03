@@ -74,8 +74,9 @@ export const windowsEntries: readonly Entry[] = [
   { base: 'home', path: '_netrc' },
   { base: 'home', path: '.npmrc' },
   { base: 'home', path: '.pypirc' },
-  // Sign-ins kept as plain text: git's (`credential.helper store`), GitHub's command-line tool's, 1Password's.
+  // Sign-ins kept as plain text: git's (`credential.helper store`, in either of its places), GitHub's command-line tool's, 1Password's.
   { base: 'home', path: '.git-credentials' },
+  { base: 'home', path: '.config/git/credentials' },
   { base: 'home', path: '.config/gh/hosts.yml' },
   { base: 'appData', path: 'GitHub CLI/hosts.yml' },
   { base: 'home', path: '.config/op' },

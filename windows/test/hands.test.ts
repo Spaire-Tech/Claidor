@@ -128,6 +128,7 @@ describe('the places that hold keys (testPlacesThatHoldKeys)', () => {
       ['C:\\Users\\bass\\_netrc', '~\\_netrc'],
       // Sign-ins kept as plain text (the Mac's list too): git's, GitHub's command-line tool's (where Windows keeps it, and `.config`), 1Password's.
       ['~\\.git-credentials', '~\\.git-credentials'],
+      ['C:\\Users\\bass\\.config\\git\\credentials', '~\\.config\\git\\credentials'],
       ['C:\\Users\\bass\\.config\\gh\\hosts.yml', '~\\.config\\gh\\hosts.yml'],
       ['%APPDATA%\\GitHub CLI\\hosts.yml', '%APPDATA%\\GitHub CLI\\hosts.yml'],
       ['C:\\Users\\bass\\AppData\\Roaming\\github cli\\HOSTS.YML', '%APPDATA%\\GitHub CLI\\hosts.yml'],
@@ -190,6 +191,7 @@ describe('the places that hold keys (testPlacesThatHoldKeys)', () => {
       ['Get-Content FileSystem::C:\\Users\\bass\\.ssh\\id_rsa', '~\\.ssh'],
       ['Get-Content $env:APPDATA\\Simeon\\local-tool-approvals.json', '%APPDATA%\\Simeon'],
       ['type %USERPROFILE%\\.git-credentials', '~\\.git-credentials'],
+      ['gc ~/.config/git/credentials', '~\\.config\\git\\credentials'],
       ['gc "$env:APPDATA\\GitHub CLI\\hosts.yml"', '%APPDATA%\\GitHub CLI\\hosts.yml'],
       ['dir ~\\.config\\op', '~\\.config\\op'],
       // A wildcard that would match one is not caught, as on the Mac (recorded as a gap).

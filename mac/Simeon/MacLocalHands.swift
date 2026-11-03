@@ -263,8 +263,10 @@ actor LocalHandsProvider {
     }
     let (kind, value) = LocalExecWire.command(message)
     // The folder a command would run in (the one asked for, else where the shell is), as written and where it really is:
-    // one that holds keys is refused, whatever the command's words (the Windows app's `exec`).
-    let folders = LocalToolRules.commandFolders(kind: kind, value: value, root: root, carried: shell.cwd) { Self.realpathNearestExisting($0) }
+    // one that holds keys is refused, and names in its words are read from there too (the Windows app's `exec`). The
+    // shell's folder is read once: the command runs in the one checked, not one another request moved it to meanwhile.
+    let carried = shell.cwd
+    let folders = LocalToolRules.commandFolders(kind: kind, value: value, root: root, carried: carried) { Self.realpathNearestExisting($0) }
     if let reason = refusal(for: LocalToolRules.describe(kind: kind, value: value, terminalsFolder: terminalsFolder), approvalId: request.approvalId, folders: folders) {
       enqueue(LocalExecWire.control(request.requestId, LocalExecWire.thrown(id: 0, error: reason)))
       return
@@ -288,9 +290,9 @@ actor LocalHandsProvider {
     do {
       switch kind {
       case "shellStreamArgs":
-        try await ShellStreamRun(args: value, root: root, shell: shell, background: background, requestId: requestId, provider: self, started: started, send: { event in await send("shellStream", event) }).run()
+        try await ShellStreamRun(args: value, root: root, carried: carried, shell: shell, background: background, requestId: requestId, provider: self, started: started, send: { event in await send("shellStream", event) }).run()
       case "backgroundShellSpawnArgs":
-        await send("backgroundShellSpawnResult", await spawnInBackground(value))
+        await send("backgroundShellSpawnResult", await spawnInBackground(value, carried: carried))
       case "readArgs":
         await send("readResult", try await read(value))
       case "lsArgs":
@@ -308,11 +310,13 @@ actor LocalHandsProvider {
   // MARK: Files
 
   /**
-   * Inside the root, also once links are followed (`containPath`); the path as the root sees it. Where it really is is
-   * checked against the places that hold keys too, so a link inside the root to one of them is refused (the Windows
-   * app's `contain`).
+   * Inside the root, also once links are followed (`containPath`): the path as the root sees it (`shown`, what the
+   * answers name) and where it really is (`real`), as the Windows app's `contain`. Where it really is is checked against
+   * the places that hold keys too, so a link inside the root to one of them is refused, and is what is then read or
+   * written, so a link changed after the check is not followed (it narrows that moment without closing it: a folder on
+   * the way could still be swapped between the check and the open).
    */
-  func contain(_ path: String) throws -> String {
+  func contain(_ path: String) throws -> (shown: String, real: String) {
     let resolved = LocalToolRules.resolve(path, against: root)
     if LocalToolRules.escapesRoot(root, resolved) { throw LocalHandsError(LocalExec.outsideRoot(path)) }
     let realRoot = Self.realpathNearestExisting(root)
@@ -321,7 +325,7 @@ actor LocalHandsProvider {
     for one in [resolved, realResolved] {
       if let sensitive = SensitivePaths.refusal(action: "read-file", target: one, home: home) { throw LocalHandsError(sensitive) }
     }
-    return resolved
+    return (resolved, realResolved)
   }
 
   /** The nearest folder that exists, links followed, with the rest put back (`realpathNearestExisting`). */
@@ -353,20 +357,20 @@ actor LocalHandsProvider {
     let target = LocalRead.resolve(args["path"]?.string ?? "", root: root, home: home)
     if let sensitive = SensitivePaths.refusal(action: "read-file", target: target, home: home) { throw LocalHandsError(sensitive) }
     let contained = try contain(target)
-    if let size = Self.regularFileSize(contained), size > LocalExec.maxFileBytes {
-      return LocalExecWire.readFailure("error", path: contained, detail: ("error", LocalExec.fileTooLarge(size)))
+    if let size = Self.regularFileSize(contained.real), size > LocalExec.maxFileBytes {
+      return LocalExecWire.readFailure("error", path: contained.shown, detail: ("error", LocalExec.fileTooLarge(size)))
     }
-    return LocalReader.read(path: contained, offset: args["offset"]?.int, limit: args["limit"]?.int)
+    return LocalReader.read(path: contained.shown, offset: args["offset"]?.int, limit: args["limit"]?.int, opening: contained.real)
   }
 
   /** A folder's listing (`lsArgs`): the shipped one answers for a missing path or a file, and fails on a real folder. */
   private func list(_ args: JSON) async throws {
     let contained = try contain(args["path"]?.string ?? "")
     var isDirectory: ObjCBool = false
-    if !FileManager.default.fileExists(atPath: contained, isDirectory: &isDirectory) {
-      throw LocalHandsError("Path does not exist: \(contained)")
+    if !FileManager.default.fileExists(atPath: contained.real, isDirectory: &isDirectory) {
+      throw LocalHandsError("Path does not exist: \(contained.shown)")
     }
-    if !isDirectory.boolValue { throw LocalHandsError("Path is not a directory: \(contained)") }
+    if !isDirectory.boolValue { throw LocalHandsError("Path is not a directory: \(contained.shown)") }
     throw LocalHandsError("")
   }
 
@@ -377,9 +381,9 @@ actor LocalHandsProvider {
     if let reason = refusal(for: described, approvalId: request.approvalId) { enqueue(LocalExecWire.fileError(request.requestId, reason)); return }
     do {
       let contained = try contain(path)
-      if let size = Self.regularFileSize(contained), size > LocalExec.maxFileBytes { throw LocalHandsError(LocalExec.fileTooLarge(size)) }
-      guard FileManager.default.fileExists(atPath: contained) else { throw LocalHandsError("ENOENT: no such file or directory, open '\(contained)'") }
-      let data = try Data(contentsOf: URL(fileURLWithPath: contained))
+      if let size = Self.regularFileSize(contained.real), size > LocalExec.maxFileBytes { throw LocalHandsError(LocalExec.fileTooLarge(size)) }
+      guard FileManager.default.fileExists(atPath: contained.real) else { throw LocalHandsError("ENOENT: no such file or directory, open '\(contained.shown)'") }
+      let data = try Data(contentsOf: URL(fileURLWithPath: contained.real))
       enqueue(LocalExecWire.file(request.requestId, bytesBase64: data.base64EncodedString()))
     } catch {
       enqueue(LocalExecWire.fileError(request.requestId, (error as? LocalHandsError)?.message ?? error.localizedDescription))
@@ -397,7 +401,7 @@ actor LocalHandsProvider {
     do {
       let contained = try contain(path)
       guard let data = Data(base64Encoded: base64) else { throw LocalHandsError("The upload was not valid base64.") }
-      try Self.writeAtomically(data, to: contained)
+      try Self.writeAtomically(data, to: contained.real)
       enqueue(LocalExecWire.file(request.requestId))
     } catch {
       enqueue(LocalExecWire.fileError(request.requestId, (error as? LocalHandsError)?.message ?? error.localizedDescription))
@@ -427,11 +431,11 @@ actor LocalHandsProvider {
     guard rename(temp, path) == 0 else { let message = String(cString: strerror(errno)); unlink(temp); throw LocalHandsError(message) }
   }
 
-  /** `backgroundShellSpawnArgs`: started straight into the background, its terminal file from the start. */
-  private func spawnInBackground(_ args: JSON) async -> JSON {
+  /** `backgroundShellSpawnArgs`: started straight into the background, its terminal file from the start; with none asked for, in the shell's folder as checked (`carried`). */
+  private func spawnInBackground(_ args: JSON, carried: String) async -> JSON {
     let command = args["command"]?.string ?? ""
     let folder = LocalToolRules.workingDirectory(requested: args["workingDirectory"]?.string ?? "", root: root) { Self.isDirectory($0) }
-    let cwd = folder.path.isEmpty ? shell.cwd : folder.path
+    let cwd = folder.path.isEmpty ? carried : folder.path
     do {
       let process = try await shell.spawn(command: command, cwd: cwd, pipeStdin: false)
       let shellId = background.adopt(process, command: command, cwd: cwd, title: args["description"]?.string, shell: shell)
@@ -520,16 +524,18 @@ struct LocalHandsError: Error {
 
 /** The read executor (`LocalReadExecutor`): text with its lines, or the bytes of an image, a PDF or a video. */
 enum LocalReader {
-  static func read(path: String, offset: Int?, limit: Int?) -> JSON {
+  /** `path` is what the answers name and the kind is read from; `real`, where it really is (`contain`), is what is opened, as the Windows app's `readLocalFile`. */
+  static func read(path: String, offset: Int?, limit: Int?, opening real: String? = nil) -> JSON {
+    let file = real ?? path
     var isDirectory: ObjCBool = false
-    guard FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory) else {
+    guard FileManager.default.fileExists(atPath: file, isDirectory: &isDirectory) else {
       return LocalExecWire.readFailure("fileNotFound", path: path)
     }
     if isDirectory.boolValue { return LocalExecWire.readFailure("invalidFile", path: path, detail: ("reason", "Path is a directory, not a file")) }
-    guard LocalHandsProvider.regularFileSize(path) != nil else { return LocalExecWire.readFailure("invalidFile", path: path, detail: ("reason", "Path is neither a file nor a directory")) }
-    guard FileManager.default.isReadableFile(atPath: path) else { return LocalExecWire.readFailure("permissionDenied", path: path) }
+    guard LocalHandsProvider.regularFileSize(file) != nil else { return LocalExecWire.readFailure("invalidFile", path: path, detail: ("reason", "Path is neither a file nor a directory")) }
+    guard FileManager.default.isReadableFile(atPath: file) else { return LocalExecWire.readFailure("permissionDenied", path: path) }
     do {
-      let data = try Data(contentsOf: URL(fileURLWithPath: path))
+      let data = try Data(contentsOf: URL(fileURLWithPath: file))
       let size = data.count
       let header = [UInt8](data.prefix(8192))
       switch LocalRead.kind(header: header) {
@@ -993,6 +999,8 @@ final class BackgroundShells: @unchecked Sendable {
 struct ShellStreamRun {
   let args: JSON
   let root: String
+  /** The shell's folder as the places that hold keys checked it: the command runs there when none is asked for. */
+  let carried: String
   let shell: ZshHost
   let background: BackgroundShells
   let requestId: String
@@ -1010,7 +1018,7 @@ struct ShellStreamRun {
     let hardTimeout = args["hardTimeout"]?.int.flatMap { $0 > 0 ? $0 : nil }
     let block = LocalExec.blockMs(timeout: args["timeout"]?.int ?? 0, isBackground: args["isBackground"]?.bool == true, timeoutBehaviorBackground: backgroundBehavior, hardTimeout: hardTimeout)
     let pipeStdin = backgroundBehavior && args["closeStdin"]?.bool != true
-    let cwd = folder.path.isEmpty ? shell.cwd : folder.path
+    let cwd = folder.path.isEmpty ? carried : folder.path
     let process = try await shell.spawn(command: command, cwd: cwd, pipeStdin: pipeStdin)
 
     // Output in order, each stream's bytes read as UTF-8 across the pipe's pieces.

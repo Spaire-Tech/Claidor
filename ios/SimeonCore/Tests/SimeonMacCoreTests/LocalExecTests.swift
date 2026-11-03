@@ -10,7 +10,7 @@ import SimeonCore
  * Node with the home folder `/Users/bass`, said (scratchpad
  * `s7/fixtures/sensitive-and-describe-probe.txt`), the holes included; where
  * the Mac now closes one of them as the Windows app does (letter case, `;`,
- * `>`, `${HOME}`), the case says so.
+ * `>`, `${HOME}`, an escaped space), the case says so.
  */
 final class LocalExecTests: XCTestCase {
   private let home = "/Users/bass"
@@ -59,7 +59,8 @@ final class LocalExecTests: XCTestCase {
       ("cat \"$HOME/.ssh/id_rsa\"", ".ssh"),
       ("cat ${HOME}/.ssh/id_rsa", ".ssh"),
       ("cd ~/.ssh; cat id_rsa", ".ssh"),
-      ("cat ~/Library/Application\\ Support/Google/Chrome/x", nil),
+      // An escaped space reads as a space, as zsh reads it (the review of 3 November 2026).
+      ("cat ~/Library/Application\\ Support/Google/Chrome/x", "Library/Application Support/Google/Chrome"),
       ("cat '/Users/bass/Library/Application Support/Google/Chrome/x'", "Library/Application Support/Google/Chrome"),
       ("ls /etc/shadow", "/etc/shadow"),
       ("echo x>/etc/shadow", "/etc/shadow"),
@@ -89,6 +90,7 @@ final class LocalExecTests: XCTestCase {
       ("/Users/bass/.config/gh/hosts.yml", ".config/gh/hosts.yml"),
       ("~/.config/op/config", ".config/op"),
       ("~/.config/OP", ".config/op"),
+      ("~/.config/git/credentials", ".config/git/credentials"),
       // Not one of them.
       ("~/.config/gh/config.yml", nil),
       ("~/.config/opal/x", nil),
@@ -120,10 +122,58 @@ final class LocalExecTests: XCTestCase {
       ("cat ~/.config/gh/config.yml", nil),
       ("ls ~/.ss*", nil),
       ("cat /etc/shadows", nil),
+      // Read as zsh reads them, as the Windows app reads PowerShell's: quotes join words, an escape is its letter, `/./` and `x/..` worked out.
+      (#"cat ~/.s'sh'/id_rsa"#, ".ssh"),
+      (#"cat ~/".ss"h/id_rsa"#, ".ssh"),
+      (#"cat ~/.s\sh/id_rsa"#, ".ssh"),
+      ("cat ~/./.ssh/id_rsa", ".ssh"),
+      ("cat ~/x/../.ssh/id_rsa", ".ssh"),
+      ("cat /Users/bass/Documents/a/../../.aws/credentials", ".aws"),
+      ("cat ~/.config/git/credentials", ".config/git/credentials"),
+      (#"echo "it's" \.sshx"#, nil),
+      ("cat ~/x/../.sshx", nil),
     ]
     for (command, entry) in commands {
       XCTAssertEqual(SensitivePaths.entry(inCommand: command, home: home), entry, command)
     }
+  }
+
+  /** Names read from the folder a command runs in or moves to, as the Windows app reads them (`placeInCommand`'s `foldersMovedTo`). */
+  func testNamesFromTheFolderACommandIsIn() {
+    let moved: [(String, String?)] = [
+      ("cd ~/Library && cat Keychains/login.keychain-db", "Library/Keychains"),
+      ("cd ~/.docker && cat config.json", ".docker/config.json"),
+      (#"cd ~/Library/Application\ Support/Google; cat Chrome/Default/Cookies"#, "Library/Application Support/Google/Chrome"),
+      (#"cd "$HOME/Library/Application Support"; ls ./Arc"#, "Library/Application Support/Arc"),
+      ("pushd /etc && cat shadow", "/etc/shadow"),
+      ("cd ~/Library; cd Application\\ Support && cat Firefox/x", "Library/Application Support/Firefox"),
+      ("cd /Users && cd bass/Library && ls Cookies", "Library/Cookies"),
+      ("cd ~/LIBRARY && cat keychains/x", "Library/Keychains"),
+      // Look-alikes still pass.
+      ("cd ~/Library && cat Cookies.bak", nil),
+      ("cd ~/Library && cat KeychainsBackup/x", nil),
+      ("cd /Users/bassist && ls", nil),
+      ("cd /Users && cat bassist/.sshx", nil),
+      ("cd ~/.docker && cat config.json.bak", nil),
+      ("cd ~/projects && cat Keychains/x", nil),
+      ("cd - && cat Keychains/x", nil),
+    ]
+    for (command, entry) in moved {
+      XCTAssertEqual(SensitivePaths.entry(inCommand: command, home: home), entry, command)
+    }
+    // The folder it runs in: `cd ~/.config/gh` as one request, then `cat hosts.yml` as the next, from the shell's carried folder.
+    XCTAssertNil(SensitivePaths.entry(inCommand: "cd ~/.config/gh", home: home))
+    XCTAssertEqual(SensitivePaths.entry(inCommand: "cat hosts.yml", home: home, folders: ["/Users/bass/.config/gh"]), ".config/gh/hosts.yml")
+    XCTAssertEqual(SensitivePaths.entry(inCommand: "cat ./hosts.yml", home: home, folders: ["~/.config/gh"]), ".config/gh/hosts.yml")
+    XCTAssertEqual(SensitivePaths.entry(inCommand: "cat Keychains/x", home: home, folders: ["/Users/bass/Library"]), "Library/Keychains")
+    XCTAssertEqual(SensitivePaths.entry(inCommand: "cat shadow", home: home, folders: ["/"]), nil)
+    XCTAssertEqual(SensitivePaths.entry(inCommand: "cat etc/shadow", home: home, folders: ["/"]), "/etc/shadow")
+    XCTAssertEqual(SensitivePaths.entry(inCommand: "cd .. && cat .config/gh/hosts.yml", home: home, folders: ["/Users/bass/projects"]), ".config/gh/hosts.yml")
+    XCTAssertNil(SensitivePaths.entry(inCommand: "cat hosts.yml", home: home, folders: ["/Users/bass/projects"]))
+    XCTAssertNil(SensitivePaths.entry(inCommand: "cat Cookies.bak", home: home, folders: ["/Users/bass/Library"]))
+    let gate = LocalToolRules.refusal(request: LocalToolRequest(action: "run-command", target: "cat hosts.yml"), approvalId: nil, permission: .always, live: [:], terminalsFolder: "/Users/bass/terminals", home: home,
+                                      folders: LocalToolRules.commandFolders(kind: "shellStreamArgs", value: ["command": "cat hosts.yml"], root: home, carried: "/Users/bass/.config/gh") { $0 })
+    XCTAssertEqual(gate, "Simeon does not read, write or run anything under ~/.config/gh/hosts.yml on this Mac: it holds keys or sign-ins. Ask the person to do that part themselves.")
   }
 
   func testWhatARequestIsAbout() {
@@ -188,8 +238,8 @@ final class LocalExecTests: XCTestCase {
     func folders(_ kind: String, _ value: JSON, carried: String = "/Users/bass", real: (String) -> String = { $0 }) -> [String] {
       LocalToolRules.commandFolders(kind: kind, value: value, root: home, carried: carried, real: real)
     }
-    XCTAssertEqual(folders("shellStreamArgs", ["command": "cat id_rsa", "workingDirectory": ".ssh"]), [".ssh", "/Users/bass/.ssh"])
-    XCTAssertEqual(folders("shellStreamArgs", ["command": "cat id_rsa", "workingDirectory": " ~/.ssh "]), ["~/.ssh", "/Users/bass/~/.ssh"])
+    XCTAssertEqual(folders("shellStreamArgs", ["command": "cat id_rsa", "workingDirectory": ".ssh"]), ["/Users/bass/.ssh", ".ssh"])
+    XCTAssertEqual(folders("shellStreamArgs", ["command": "cat id_rsa", "workingDirectory": " ~/.ssh "]), ["/Users/bass/~/.ssh", "~/.ssh"])
     XCTAssertEqual(folders("backgroundShellSpawnArgs", ["command": "cat id_rsa", "workingDirectory": "/Users/bass/.ssh"]), ["/Users/bass/.ssh"])
     XCTAssertEqual(folders("shellStreamArgs", ["command": "cat id_rsa"], carried: "/Users/bass/.ssh", real: same), ["/Users/bass/.ssh"])
     XCTAssertEqual(folders("shellStreamArgs", ["command": "cat id_rsa", "workingDirectory": ""], carried: "/Users/bass/keys") { $0 == "/Users/bass/keys" ? "/Users/bass/.ssh" : $0 }, ["/Users/bass/keys", "/Users/bass/.ssh"])
