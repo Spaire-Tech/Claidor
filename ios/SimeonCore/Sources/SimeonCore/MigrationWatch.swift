@@ -48,6 +48,11 @@ public struct ConnectEnvelopes: Sendable {
   }
 }
 
+/** A server stream whose connection ended before the server's last frame (`ConnectEnvelopes`): cut, not ended by the server. */
+public struct ConnectStreamCut: Error, Sendable {
+  public init() {}
+}
+
 /**
  * What a recreate the person asked for answered (`box-host-connector.ts`):
  * started, with the operation to follow; started with nothing to follow it
@@ -78,12 +83,23 @@ public enum RecreateAnswer: Equatable, Sendable {
  * app runs (`createSandBoxMigrationRelay`): the stream read again 3 s after
  * it ends, from where it stopped; a stream silent for 30 s while a step is
  * under way is dropped and read again, twenty times at most; and the last
- * event (or the last finished one) kept for the window to read back.
+ * event (or the last finished one) kept for the window to read back. While
+ * the server says the account has no computer, it is asked less and less
+ * often (`reattachWait`; the upstream app asks every 3 s whatever it says).
  */
 public final class MigrationRelay: @unchecked Sendable {
   public static let reattach: TimeInterval = 3
   public static let stall: TimeInterval = 30
   public static let maxStallReattaches = 20
+  /** The longest wait between two reads while the server says there is no computer. */
+  public static let maxReattach: TimeInterval = 60
+  /**
+   * A stream the server ends this soon, with its last frame and nothing before it, says the account has no computer:
+   * it ends at once for one with none (`watch_sand_box_migration`, server/simeon/sand/box_broker.py), and holds a
+   * computer's open 25 s while nothing happens (`MigrationLog.idle`, box_service.py). A connection cut before that
+   * frame (`ConnectStreamCut`) says nothing.
+   */
+  public static let noComputerWithin: TimeInterval = 5
 
   private let lock = NSLock()
   private var lastUpdate: MigrationEvent?
@@ -91,15 +107,35 @@ public final class MigrationRelay: @unchecked Sendable {
   private var resumeOffset = ""
   private var listeners: [UUID: (MigrationEvent) -> Void] = [:]
   private var running: Task<Void, Never>?
-  private var attempt: Task<Void, Never>?
+  private var attempt: Task<Bool, Never>?
   private var watching = false
   private var watchdog: Task<Void, Never>?
   private var remainingStalls = 0
   private var owed: String?
+  /** How many reads running the server said there is no computer. */
+  private var noComputer = 0
+  /** The wait before the next read, while it lasts. */
+  private var pausing: Task<Void, Never>?
   private let open: @Sendable (String) -> AsyncThrowingStream<JSON, Error>
+  private let pause: @Sendable (TimeInterval) async -> Void
+  private let now: @Sendable () -> Date
 
-  /** `open` reads the stream from an offset (`WatchSandBoxMigration {fromOffsetKey, includeFinished: true}`). */
-  public init(open: @escaping @Sendable (String) -> AsyncThrowingStream<JSON, Error>) { self.open = open }
+  /** `open` reads the stream from an offset (`WatchSandBoxMigration {fromOffsetKey, includeFinished: true}`); `pause` and `now` are the tests'. */
+  public init(open: @escaping @Sendable (String) -> AsyncThrowingStream<JSON, Error>,
+              pause: @escaping @Sendable (TimeInterval) async -> Void = { try? await Task.sleep(nanoseconds: UInt64($0 * 1_000_000_000)) },
+              now: @escaping @Sendable () -> Date = { Date() }) {
+    self.open = open; self.pause = pause; self.now = now
+  }
+
+  /**
+   * The wait before the stream is read again after the server said `streak` times running that there is no computer:
+   * 3 s, then doubled each time, 60 s at most; 3 s again once it says anything else (an event, a computer's quiet
+   * stream, a failure), at a new sign-in (a new relay) and when the stream is followed again (`start`).
+   */
+  public static func reattachWait(noComputerStreak streak: Int) -> TimeInterval {
+    guard streak > 1 else { return reattach }
+    return min(reattach * Double(1 << min(streak - 1, 5)), maxReattach)
+  }
 
   /** What the window reads back on connecting (`getBoxMigrationStatus`). */
   public var status: MigrationEvent? { lock.withLock { lastUpdate ?? lastTerminal } }
@@ -114,6 +150,7 @@ public final class MigrationRelay: @unchecked Sendable {
   public func start() {
     lock.lock()
     guard running == nil else { lock.unlock(); return }
+    noComputer = 0
     running = Task { [weak self] in await self?.loop() }
     lock.unlock()
   }
@@ -126,31 +163,53 @@ public final class MigrationRelay: @unchecked Sendable {
 
   /** A recreate was accepted: watch for its steps (`noteRecreateAccepted`). */
   public func recreateAccepted(_ operationId: String?) {
-    lock.withLock { owed = operationId }
+    lock.withLock {
+      owed = operationId
+      // There is a computer now (a recreate is refused without one): read again at once if it was being asked less often.
+      if noComputer > 1 { pausing?.cancel() }
+      noComputer = 0
+    }
     arm(operationId)
   }
 
   private func loop() async {
     while !Task.isCancelled {
       let from = lock.withLock { resumeOffset }
+      let began = now()
       let stream = open(from)
-      let task = Task { [weak self] in
+      // Whether the server's last frame ended it with nothing in it (not a failure, a cut connection, nor the watchdog).
+      let task = Task { [weak self] () -> Bool in
         var received = false
         do {
           for try await message in stream {
             received = true
             self?.take(message)
           }
+        } catch is ConnectStreamCut {
+          // Cut before the server's last frame: not its word; read again from where it stopped, as a stream that ended.
+          return false
         } catch {
           // A stream that failed before anything came starts over from the beginning (the offset may be gone).
           if !received, !from.isEmpty, !Task.isCancelled { self?.lock.withLock { self?.resumeOffset = "" } }
+          return false
         }
+        return !received && !Task.isCancelled
       }
       lock.withLock { attempt = task }
-      await task.value
-      lock.withLock { lastUpdate = nil; if attempt == task { attempt = nil } }
+      let empty = await task.value
+      let saysNoComputer = empty && now().timeIntervalSince(began) < Self.noComputerWithin
+      let wait: TimeInterval = lock.withLock {
+        lastUpdate = nil; if attempt == task { attempt = nil }
+        noComputer = saysNoComputer ? noComputer + 1 : 0
+        return Self.reattachWait(noComputerStreak: noComputer)
+      }
       if Task.isCancelled { break }
-      try? await Task.sleep(nanoseconds: UInt64(Self.reattach * 1_000_000_000))
+      let pause = self.pause
+      let waiting = Task { await pause(wait) }
+      lock.withLock { pausing = waiting }
+      // A stop ends the wait too.
+      await withTaskCancellationHandler { await waiting.value } onCancel: { waiting.cancel() }
+      lock.withLock { if pausing == waiting { pausing = nil } }
     }
   }
 
@@ -242,7 +301,8 @@ extension SimeonAPI {
               }
             }
           }
-          continuation.finish()
+          // The connection ended before the server's last frame: cut, which the relay tells from the server's own end.
+          continuation.finish(throwing: ConnectStreamCut())
         } catch {
           continuation.finish(throwing: error)
         }

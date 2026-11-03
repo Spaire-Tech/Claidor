@@ -393,6 +393,48 @@ describe('Connectors’ model', () => {
     expect(model.isBusy).toBe(false)
   })
 
+  it('stops a change under way at a sign-out: nothing of it reaches the next account or its computer', async () => {
+    const box = computer()
+    box.answers['desktopMcp:listServers'] = {
+      servers: [
+        {
+          id: '900042',
+          name: 'Linear',
+          pluginId: 'linear',
+          status: 'connected',
+        },
+      ],
+    }
+    box.answers['desktopMcp:listEffectivePlugins'] = [
+      { pluginId: 'linear', isEnabled: true, installMode: 'user' },
+    ]
+    const { store, model } = await opened(box)
+    // A team's plugin: its skills would be synced again after the answer.
+    box.answers['desktopMcp:uninstallPlugin'] = {
+      removed: false,
+      reason: 'team-server',
+    }
+    let answer = () => {}
+    box.before = (key) =>
+      key === 'desktopMcp:uninstallPlugin'
+        ? new Promise<void>((resolve) => (answer = resolve))
+        : undefined
+    const uninstalling = model.uninstall('linear', 'theo')
+    await eventually(() => box.all('desktopMcp:uninstallPlugin').length === 1)
+    const syncsBefore = box.all('syncPluginSkills').length
+    store.detach()
+    const next = computer()
+    await store.attach(next)
+    answer()
+    await uninstalling
+    expect(next.all('syncPluginSkills')).toEqual([])
+    expect(next.all('getAgentWorkflows')).toEqual([])
+    expect(next.all('desktopMcp:listEffectivePlugins')).toEqual([])
+    expect(box.all('syncPluginSkills').length).toBe(syncsBefore)
+    expect(model.notice).toBeUndefined()
+    expect(model.isBusy).toBe(false)
+  })
+
   it('signs an account in: Connect asks first, Reopen goes straight back, Retry after ten minutes', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true })
     const box = computer()

@@ -529,3 +529,43 @@ public enum TimeZoneChoices {
     return zone
   }
 }
+
+/**
+ * General's and Permissions' wait for the computer's values, as the web's
+ * pages wait (`GeneralSettingsModel.load`,
+ * clients/apps/app/src/core/generalSettings.ts; docs/web-app/PROGRESS.md,
+ * the decision of 2 November 2026): nothing there may be changed until the
+ * computer's settings are read, so the page's defaults are never written
+ * over the person's rules or zone; a read that failed before any answer
+ * says so and keeps the page waiting; a read sent before a change began is
+ * dropped, its answer being older. The upstream app has no wait: it keeps
+ * these on the device and gives them to the computer at each connect.
+ */
+public struct HostSettingsLoad: Equatable, Sendable {
+  /** The computer's values are read: the page's controls may change them. */
+  public private(set) var loaded = false
+  /** The read failed before any answer came: the page waits, saying so. */
+  public private(set) var failed = false
+  /** Changes begun, so a read sent before one is dropped. */
+  private var writes = 0
+
+  public init() {}
+
+  /** A read begins: what to hand back with its answer (`answered`). */
+  public var reading: Int { writes }
+
+  /** A change begins: a read sent before it is dropped. */
+  public mutating func writing() { writes += 1 }
+
+  /** A read's answer (nil: it failed), with what `reading` said as it began: true when the page should take it. */
+  public mutating func answered(_ settings: JSON?, readAt: Int) -> Bool {
+    guard readAt == writes else { return false }
+    guard settings != nil else {
+      if !loaded { failed = true }
+      return false
+    }
+    loaded = true
+    failed = false
+    return true
+  }
+}

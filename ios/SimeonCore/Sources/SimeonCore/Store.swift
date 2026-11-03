@@ -436,7 +436,17 @@ public final class AppStore {
     let signedIn = account
     // What changed since the last save is kept before it goes (View › Reload), and shown again at once below.
     saveNow()
+    // The same computer again (Reload): the agents' computers a view still shows stay watched, and started again if they
+    // were started here, everything else about them forgotten and read again once the stream is back
+    // (`ComputerBook.reset`), as the window's watch lasts as long as its view; the window does not watch again, its
+    // selection unchanged. Another sign-in starts with none watched.
+    let book = computer
     detach(endingCall: !same)
+    if same {
+      var kept = book
+      kept.reset(keepingStarts: true)
+      computer = kept
+    }
     account = signedIn
     self.backend = backend
     // The list kept on this device, until the computer answers (SavedChats); the server's copy, when it comes first.

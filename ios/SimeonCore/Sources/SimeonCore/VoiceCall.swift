@@ -379,6 +379,14 @@ public final class LiveCall: CallEngine, @unchecked Sendable {
   private let log: @Sendable (String) -> Void
   private var state: CallState?
   private var listeners: [@Sendable (CallState?) -> Void] = []
+  /**
+   * The call on now, numbered as it starts: what an earlier call started
+   * (its `connect`, its ring, its voice's events) goes on only while its
+   * number is this one and it is not over (`isOn`), and is handed only to
+   * itself, as the Electron app's call keeps one record per call
+   * (`call !== active || active.isFinished`, voice-call-service.ts).
+   */
+  private var current = 0
   private var callId = ""
   private var conversationId: String?
   private var opened = false
@@ -435,18 +443,23 @@ public final class LiveCall: CallEngine, @unchecked Sendable {
     let busy = lock.withLock { state != nil }
     if busy { return }
     log("call started for agent \(agentId)")
-    lock.withLock {
+    let number: Int = lock.withLock {
+      current += 1
       callId = UUID().uuidString.lowercased(); conversationId = nil; opened = false; viaChat = false
       after = 0; seenChat = []; lastTask = nil; finished = false; speaking = false; activity = 0
       pendingReplies = []; prepared = false; tokenHere = false
+      return current
     }
     set(CallState(phase: .ringing, status: VoiceCallText.calling, agentId: agentId, agentName: agentName, agentColour: colour, isMuted: false, agentSpeaking: false, levels: [], lines: [], connectedAt: nil, endedAt: nil))
     // The ring, as the Mac's banner rings, while the call gets ready.
-    let ring = Task { [weak self] () -> Void in await self?.ring() }
+    let ring = Task { [weak self] () -> Void in await self?.ring(number) }
     lock.withLock { ringing = ring }
     keep(ring)
-    keep(Task { [weak self] in await self?.connect(agentId: agentId, agentName: agentName) })
+    keep(Task { [weak self] in await self?.connect(number, agentId: agentId, agentName: agentName) })
   }
+
+  /** Whether call `number` is the one on now and not over: what it started goes on only then. */
+  private func isOn(_ number: Int) -> Bool { lock.withLock { current == number && !finished } }
 
   /**
    * Twice, then once more at a time while the call is still getting ready,
@@ -454,39 +467,42 @@ public final class LiveCall: CallEngine, @unchecked Sendable {
    * ready after the seventh, the call fails "Couldn't connect", as the Mac's
    * banner does (`call-controller.ts`).
    */
-  private func ring() async {
+  private func ring(_ number: Int) async {
     guard let tones else { return }
     await tones.ring(cycles: CallTones.ringsBeforeConnect)
     var rings = CallTones.ringsBeforeConnect
-    while !Task.isCancelled, !isFinished, !lock.withLock({ prepared }), rings < CallTones.maxRings {
+    while !Task.isCancelled, isOn(number), !lock.withLock({ prepared }), rings < CallTones.maxRings {
       await tones.ring(cycles: 1)
       rings += 1
     }
-    if !Task.isCancelled, !isFinished, !lock.withLock({ tokenHere }), rings >= CallTones.maxRings {
+    if !Task.isCancelled, isOn(number), !lock.withLock({ tokenHere }), rings >= CallTones.maxRings {
       log("connect: no token after \(rings) rings")
-      fail(VoiceCallText.couldNotConnect)
+      fail(VoiceCallText.couldNotConnect, call: number)
     }
   }
 
-  private func connect(agentId: String, agentName: String) async {
-    guard let backend else { return fail(VoiceCallText.couldNotConnect) }
+  /** Call `number`'s start: after each step, it goes on only while that call is on (`isOn`), and what it finds is its own. */
+  private func connect(_ number: Int, agentId: String, agentName: String) async {
+    guard let backend else { return fail(VoiceCallText.couldNotConnect, call: number) }
     let roster = (try? await backend.listAgents()) ?? []
+    guard isOn(number) else { return }
     let row = roster.first { $0.id == agentId }
     let page = try? await backend.command("getAgentTranscriptTail", ["id": .string(agentId), "limit": 80])
+    guard isOn(number) else { return }
     let entries = page?["entries"]?.array ?? page?.array ?? []
     let ticket: JSON
     do {
       ticket = try await backend.server("proxy/v1/voice/calls", method: "POST", body: [:])
     } catch let error as SimeonAPIError {
       log("connect: the server refused the call: \(error.message)")
-      return fail(error.status == 503 ? VoiceCallText.notSwitchedOn : error.status == 402 ? VoiceCallText.noCredit : VoiceCallText.couldNotConnect)
+      return fail(error.status == 503 ? VoiceCallText.notSwitchedOn : error.status == 402 ? VoiceCallText.noCredit : VoiceCallText.couldNotConnect, call: number)
     } catch {
       log("connect: the server refused the call: \(error.localizedDescription)")
-      return fail(VoiceCallText.couldNotConnect)
+      return fail(VoiceCallText.couldNotConnect, call: number)
     }
-    // Hung up (or given up on) while the server answered: nothing more to do (`voice-call-service.ts`).
-    guard !isFinished else { return }
-    guard let token = ticket["token"]?.text else { return fail(VoiceCallText.couldNotConnect) }
+    // Hung up (or given up on), or another call begun, while the server answered: nothing more to do (`voice-call-service.ts`).
+    guard isOn(number) else { return }
+    guard let token = ticket["token"]?.text else { return fail(VoiceCallText.couldNotConnect, call: number) }
     lock.withLock { conversationId = ticket["conversation_id"]?.text; tokenHere = true }
     let person = personName()
     let teammates = roster.filter { $0.id != agentId && !$0.isGroup && !$0.isRemoteRoom && !$0.isHidden && !$0.name.isEmpty }.map { (name: $0.name, title: $0.title) }
@@ -499,36 +515,43 @@ public final class LiveCall: CallEngine, @unchecked Sendable {
     // The voice its picker shows, never one taken off the list (9 October 2026); nil is the agent's own, Michael.
     let voiceId: String?
     if let voiceFor { voiceId = await voiceFor(agentId) } else { voiceId = row?.voiceId }
-    guard !isFinished else { return }
+    guard isOn(number) else { return }
     // The call's address opens while it still rings, and the agent's chat gets its line ("Voice chat · now"), as on the Mac.
-    await open(agentId: agentId)
+    await open(number, agentId: agentId)
+    guard isOn(number) else { return }
     // The voice starts once the ring is over, so the two never sound together.
     let ring: Task<Void, Never>? = lock.withLock { prepared = true; return ringing }
     await ring?.value
+    // Over, or another call begun, meanwhile: the ring is not this call's to stop (an ended call stopped its own).
+    guard isOn(number) else { return }
     tones?.stopRinging()
-    guard !isFinished else { return }
     log("connect: token issued for agent \(agentId) (voice \(voiceId ?? "the agent's own"), \(entries.count) chat entries read)")
     do {
+      // Its voice's events are this call's only: an earlier call's that come late are dropped (`handle`).
       try await transport.start(token: token, prompt: prompt, firstMessage: greeting, voiceId: voiceId, language: language) { [weak self] event in
-        self?.handle(event, agentId: agentId)
+        self?.handle(event, call: number, agentId: agentId)
       }
     } catch {
       log("starting the conversation failed: \(error)")
       let text = "\(error)".lowercased()
-      fail(text.contains("microphone") || text.contains("permission") ? VoiceCallText.noMicrophone : VoiceCallText.couldNotConnect)
+      fail(text.contains("microphone") || text.contains("permission") ? VoiceCallText.noMicrophone : VoiceCallText.couldNotConnect, call: number)
     }
   }
 
   private var isFinished: Bool { lock.withLock { finished } }
 
   /** Opens `voice:<call>` on the agent; a host without the channel gets the call through its chat. */
-  private func open(agentId: String) async {
+  private func open(_ number: Int, agentId: String) async {
     guard let backend else { return }
     let id = lock.withLock { callId }
     do {
       _ = try await backend.command("voiceCall", ["agentId": .string(agentId), "callId": .string(id), "kind": "open"])
-      // Ended (hung up, or the seventh ring) while it opened: closed at once, so the chat's line does not stay "now".
-      let over: Bool = lock.withLock { opened = true; return finished }
+      // Ended (hung up, the seventh ring, or another call begun) while it opened: closed at once, so the chat's line does not stay "now".
+      let over: Bool = lock.withLock {
+        guard current == number else { return true }
+        opened = true
+        return finished
+      }
       if over {
         _ = try? await backend.command("voiceCall", ["agentId": .string(agentId), "callId": .string(id), "kind": "ended", "record": ["seconds": 0, "recap": nil, "transcript": []]])
         return
@@ -536,15 +559,20 @@ public final class LiveCall: CallEngine, @unchecked Sendable {
     } catch {
       let page = try? await backend.command("getAgentTranscriptTail", ["id": .string(agentId), "limit": 30])
       let ids = (page?["entries"]?.array ?? []).compactMap { $0["kind"]?.string == "send-message" ? $0["id"]?.text : nil }
-      lock.withLock { seenChat = Set(ids); viaChat = true; opened = true }
+      lock.withLock {
+        guard current == number else { return }
+        seenChat = Set(ids); viaChat = true; opened = true
+      }
     }
-    guard !isFinished else { return }
+    guard isOn(number) else { return }
     keep(Task { [weak self] in await self?.pollLoop(agentId: agentId) })
     keep(Task { [weak self] in await self?.waveLoop() })
     keep(Task { [weak self] in await self?.replyLoop() })
   }
 
-  private func handle(_ event: VoiceEvent, agentId: String) {
+  private func handle(_ event: VoiceEvent, call number: Int, agentId: String) {
+    // An earlier call's voice speaking up late (connecting, or ending): its own, never the call on now's; the voice lets that session go itself (Voice.swift).
+    guard lock.withLock({ current == number }) else { return }
     // The call is over (hung up while the voice was still connecting): what the kit says now is dropped, and a voice that connects late is let go.
     if isFinished {
       if case .connected = event { Task { [transport] in await transport.end() } }
@@ -580,7 +608,7 @@ public final class LiveCall: CallEngine, @unchecked Sendable {
     case .ended:
       // Dropped before it connected (not hung up): "Couldn't connect", as the Mac's banner (`call-state.ts`).
       if lock.withLock({ state?.connectedAt == nil && !finished }) {
-        fail(VoiceCallText.couldNotConnect)
+        fail(VoiceCallText.couldNotConnect, call: number)
       } else {
         finish(agentId: agentId)
       }
@@ -591,7 +619,7 @@ public final class LiveCall: CallEngine, @unchecked Sendable {
       } else {
         // The voice service's own words go to the log; the person reads plain ones (PlainWords).
         log("banner: sdk error before connecting: \(message)")
-        fail(message.isEmpty ? VoiceCallText.couldNotConnect : PlainWords.error(message, fallback: VoiceCallText.couldNotConnect))
+        fail(message.isEmpty ? VoiceCallText.couldNotConnect : PlainWords.error(message, fallback: VoiceCallText.couldNotConnect), call: number)
       }
     }
   }
@@ -719,9 +747,12 @@ public final class LiveCall: CallEngine, @unchecked Sendable {
     Task { [transport] in await transport.end() }
   }
 
-  private func fail(_ message: String) {
+  /** Call `number` could not start: said on the banner, and what it started ends with it. */
+  private func fail(_ message: String, call number: Int) {
     // Read with the end in one step: `open` closes the channel itself when it finds the call over.
     let (already, wasOpen): (Bool, (Bool, String, String?)) = lock.withLock {
+      // Another call begun since: this one's late failure is its own, and changes nothing now.
+      guard current == number else { return (true, (false, "", nil)) }
       let was = finished
       finished = true
       return (was, (opened, callId, state?.agentId))
@@ -731,6 +762,11 @@ public final class LiveCall: CallEngine, @unchecked Sendable {
     tones?.stopRinging()
     log("call failed: \(message)")
     update { $0.phase = .ended; $0.status = message; $0.failed = true; $0.activity = nil; $0.levels = []; $0.endedAt = Date() }
+    // Its tasks end with it, as at the end (`finish`): its `connect` still waiting on the server among them.
+    let running: [Task<Void, Never>] = lock.withLock { let all = tasks; tasks = []; return all }
+    for task in running { task.cancel() }
+    // And its voice, as a hang-up lets it go: one still connecting, or connected but never live, speaks to no one.
+    Task { [transport] in await transport.end() }
     if wasOpen.0, let agentId = wasOpen.2, let backend {
       Task { _ = try? await backend.command("voiceCall", ["agentId": .string(agentId), "callId": .string(wasOpen.1), "kind": "ended", "record": ["seconds": 0, "recap": nil, "transcript": []]]) }
     }
