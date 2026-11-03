@@ -77,20 +77,20 @@ file and the code disagree, the code is right and this file is fixed.
 | 2 November 2026 | The agent's pane takes what the window leaves beside the sidebar and the chat's 424, from 480 down to 280 (the Mac grows its window for it; a browser can't), and closes when dragged under 244. Whether it is open, its width and whether it folded the sidebar are kept in the browser under the Mac's names (`simeon.pane.open`, `simeon.pane.width`, `simeon.pane.tookSidebar`) | The session |
 | 2 November 2026 | The pane's Computer tab is left out for an agent until the computer comes (step 5); a group's Computer tab is its members, as on the Mac (Step 5: done; see below.) | The session |
 | 2 November 2026 | ⌘N and the sidebar's compose button open New Agent: the Mac's `Features.groupChats` is off, so its To: line (`NewChatPane`) never shows there, and is left out | The session |
-| 2 November 2026 | "/" Open Hidden Agents opens the Hidden Agents list, as ⌘K's does, though the Mac's "/" offers it and does nothing | The session |
+| 2 November 2026 | "/" Open Hidden Agents opens the Hidden Agents list, as ⌘K's does, though the Mac's "/" offers it and does nothing (3 November 2026: the Mac's does too) | The session |
 | 2 November 2026 | A picture of one's own comes from the browser's file chooser (the Mac's panel's kinds), a drop or a paste outside a field. The browser reads it (turned by its EXIF, as on the Mac), it is drawn down to 1024, cropped in a canvas and sent as the Mac's 256-pixel PNG. A picture pasted as a picture is "Pasted image"; a file pasted keeps its name | The session |
 | 2 November 2026 | A voice's sample plays in the browser's own audio, one at a time, stopped when the editor closes; one the browser can't fetch or play greys its button. The website's policy for the app's window lets sound come from any https address (`media-src … https:`, as `img-src`): the samples are ElevenLabs' own links, whose host varies, and a sound can't run code | The session |
-| 2 November 2026 | New Agent's editor is the window's own popover under the face, without the Mac popover's arrow, kept in the window. ⌘V pastes a picture into it too (the Mac's doesn't, though its drop zone says "paste") | The session |
+| 2 November 2026 | New Agent's editor is the window's own popover under the face, without the Mac popover's arrow, kept in the window. ⌘V pastes a picture into it too (the Mac's doesn't, though its drop zone says "paste"; 3 November 2026: it does now) | The session |
 | 2 November 2026 | The voice field names the agent's voice after a face of the other gender changed it (the Mac's keeps the old name). No beep when Create is refused, as in 3d | The session |
 | 2 November 2026 | The pass that gives a face to every agent without a picture (`assignMissingFaces`) waits for the store's own passes; meanwhile the web shows the face each would get, and the Mac and the iPhone give it | The session |
 | 2 November 2026 | No check generates a picture on the real server: it costs the person's credits. The stand-in's is used | The session |
 | 2 November 2026 | A routine's Delete asks nothing, as on the Mac and the iPhone | The session |
 | 2 November 2026 | The routines' menus are drawn in the page as the window's own (glass, 10 round, items 13 on 24), not the browser's `<select>`, which can't hold the logos, submenus, headings or ticks that stay open. A click outside a menu or a trigger's popover only closes it, as the Mac's | The session |
 | 2 November 2026 | Run history says "Just now" for a run begun since the last 30-second tick (the Mac's can say "In 1 min") | The session |
-| 2 November 2026 | A routine's popover keeps its connecting words ("at", "on", "every"…) and Advanced's "minutes" and "hours" in English in every language, as the Mac draws them: they are in neither catalogue | The session |
+| 2 November 2026 | A routine's popover keeps its connecting words ("at", "on", "every"…) and Advanced's "minutes" and "hours" in English in every language, as the Mac draws them: they are in neither catalogue (3 November 2026: translated on the Mac and the web; see the log) | The session |
 | 2 November 2026 | A time of day in another language is that language's short time ("09:00" in French, "9:00" in Spanish), CLDR's, as Apple's "jmm" | The session |
 | 2 November 2026 | Search offers only the actions whose screens the window has, as "/" (`windowActionIds`): Org Chart, Open Hidden Agents, Members, Channels, Chat Settings. Settings: General, Usage & Billing, Connectors and the themes join it with step 6, Update Simeon's Computer with step 5; each is one id and one case in `runAction` (Step 5: done; see below.) (Step 6: done; see below.) | The session |
-| 2 November 2026 | A routine found by search opens that routine in its agent's pane (`openRoutineFor`). The Mac, copying the Electron window, opens the open agent's pane on Computer, or another's on Profile | The session |
+| 2 November 2026 | A routine found by search opens that routine in its agent's pane (`openRoutineFor`). The Mac, copying the Electron window, opens the open agent's pane on Computer, or another's on Profile (3 November 2026: the Mac opens the routine too) | The session |
 | 2 November 2026 | A link found by search shows its address and its site's own icon, not the page's title (as in the chat, 1 November), and opens in a new tab without `opener` or the referrer | The session |
 | 2 November 2026 | With ⌘ held, search's rows show ⌘ on an Apple computer and Ctrl elsewhere (the Mac's always show ⌘) | The session |
 | 2 November 2026 | A channel's token is pasted in a masked field left to the browser, read once when sent and emptied, never in the page's HTML; the password managers are asked not to offer the person's logins there (the secret card's way, 3b) | The session |
@@ -138,7 +138,7 @@ file and the code disagree, the code is right and this file is fixed.
 | 2 November 2026 | On a connector page, the rename is the window's alert with a field (the Mac's alert with a `TextField`); the examples' picture is the Mac's own asset (`ConnectorHero`), shipped with the app; a long value is cut in its middle; the instructions' field grows with its words where the browser can (`field-sizing: content`), else stays 94 high and scrolls; a page reads its server's tools as it shows and again once its server is there; Add Another Account is faded while another app's sign-in is open | The session |
 | 2 November 2026 | " (optional)" after a setup value's label and "URL" in a server's Details stay English in every language, as the Mac draws them (neither is in a catalogue) | The session |
 | 2 November 2026 | The language chosen in Settings is kept in the browser (`simeon.language`) and read once as the page loads, as Apple reads an app's language at launch, so the window never mixes two; Relaunch loads the page again; System gives it back to the browser's languages. The server and the computer are told it from the next load | The session |
-| 2 November 2026 | General's time zone and Permissions wait until the computer's values are read: the switches greyed, the rules coming with the read; a failed read says "Couldn't load your settings" and keeps them waiting; a read answering after a change is dropped. The Mac writes on its defaults meanwhile; on the web the read can wake a resting computer and take tens of seconds, and a write replaces every rule or the zone chosen (proposed for the Mac and the iPhone) | The session |
+| 2 November 2026 | General's time zone and Permissions wait until the computer's values are read: the switches greyed, the rules coming with the read; a failed read says "Couldn't load your settings" and keeps them waiting; a read answering after a change is dropped. The Mac writes on its defaults meanwhile; on the web the read can wake a resting computer and take tens of seconds, and a write replaces every rule or the zone chosen (proposed for the Mac and the iPhone; 3 November 2026: done on both) | The session |
 | 2 November 2026 | The time zone menu lists the browser's own zones (`Intl.supportedValuesOf('timeZone')`, 418 in Chromium 141), drawn as the window's menus with each zone's time in grey and the Mac's type-to-select, not the browser's `<select>`; a zone chosen elsewhere that the browser doesn't list shows first, ticked | The session |
 | 2 November 2026 | The browser's zone is told to the computer each time the stream comes (back), beside the language, without waking it, as the Mac tells its own on every connect; the person's own pick stays (the computer keeps it apart, `userTimeZoneOverride`). A browser that says exactly UTC (the privacy browsers hide the zone so) tells nothing and writes no zone of its own; General then shows the computer's | The session |
 | 2 November 2026 | The account's password is typed in the browser's own masked fields, as a new password (a password manager may keep it: it is the person's own Simeon password), read once as it is sent and emptied once saved; never in the page's HTML or storage | The session |
@@ -610,7 +610,7 @@ For the founder, each to be answered before the step that needs it:
   exist, Han numerals refused in a name, " to " and "Ms" in French, Link's
   line for a refused card, Review order's tooltip on a Shop checkout. For
   the founder: make them in the Mac and the core (then the web follows), or
-  leave them.
+  leave them. 3 November 2026, fixed (the log "the Mac's bugs fixed"): the secret card's Saved, Open on a cloud agent's card, Han numerals, " to "; the rest open.
 - **The iPhone's 1Password connect sentence** ("Open Simeon on your Mac to
   connect it: …") is in neither catalogue the web reads. The web card says
   the Mac's paragraph instead. Adding a sentence to the Mac's catalogue
@@ -638,7 +638,7 @@ For the founder, each to be answered before the step that needs it:
   Open Hidden Agents doing nothing; the pack sheet's older problem; the
   pack link nothing serves; two comments that say otherwise than the
   code. For the founder: make them in the Mac and the core (then the web
-  follows), or leave them.
+  follows), or leave them. 3 November 2026, fixed: a refusal's command name, ⌘V in New Agent, the routines' words, a routine found by search, "/" Open Hidden Agents; the rest open.
 - **The Mac's and the core's own fixes found in step 5** (the log of 2
   November 2026, step 5, "Found in the Mac's and the core's code"): the
   Mac not following the open agent's computer after Reload; Take control
@@ -651,7 +651,7 @@ For the founder, each to be answered before the step that needs it:
   rebuild card's English ", completed"; a refused billing page shown
   nowhere; the relay asking every 3 s for an account with no computer. For
   the founder: make them in the Mac and the core (then the web follows),
-  or leave them.
+  or leave them. 3 November 2026, fixed: Reload and the open computer, a failed call's connect and the shared voice session, the relay every 3 s; the helpers' thumbnails are right (one screen); the rest open.
 - **The Mac's and the core's own fixes found in step 6** (the log of 2
   November 2026, step 6, "Found in the Mac's and the core's code"): a
   refused Connect on a chat card saying nothing (the store's `problem`,
@@ -674,7 +674,7 @@ For the founder, each to be answered before the step that needs it:
   flooring a share the meter rounds; the menu's spend never in the app's
   language; "Update card" opening two different pages; "%@, connected" in
   no catalogue; two usage reads landing out of order. For the founder: make
-  them in the Mac and the core (then the web follows), or leave them.
+  them in the Mac and the core (then the web follows), or leave them. 3 November 2026, fixed: a refused Connect saying nothing, a change after a sign-out, General and Permissions writing first, the French plan line, the credits' line, two usage reads; the rest open.
 - **A sentence for the makers a browser can't connect.** Eighteen makers
   take only the loopback (`loopbackOnly`: Dropbox, Canva, Square, Vercel
   and others). The web never opens their page and takes the app back, but
@@ -776,7 +776,7 @@ For the founder, each to be answered before the step that needs it:
   computer's `settings.json` and so raise the PC from Ask to Always at the
   next connect (on the Mac too: worth a look in the engine). For the
   founder: make them in the Mac and the core (then the web and Windows
-  follow), or leave them.
+  follow), or leave them. 3 November 2026, fixed: `simeon://mcp-oauth`, the home folder in reports, "Last checked in 0 seconds", the guard's letter case, spellings, folders, links and missing files, the team's ceiling, and the computer's copy of the choice (the agent can no longer raise it); the rest open.
 - **The engine on the cloud computers.** Step 7 changed the engine
   (`desktop/source`, `ebc47f773`): the hello says the PC's `platform`,
   `shell`, `shellVersion` and `osVersion`; the agent is told the PC runs
@@ -813,6 +813,137 @@ For the founder, each to be answered before the step that needs it:
 ## Log
 
 Newest first.
+
+### 3 November 2026: the Mac's bugs fixed, the way the upstream app does
+
+The founder, on the 29 compared below: "yes fix them all the way grok bot
+does - but be extremely careful not to break anything". Four parts, each
+written in its own worktree off `main`, each read by a second, independent
+reviewer, its findings fixed, then merged here and read once more as a
+whole. Where the upstream app has the same bug, the fix follows the Windows
+app or the web where they already did it right. Where the web and Windows
+had the same bug, they were fixed the same way.
+
+**Security** (`fix/a-security`)
+- The guard on the places that hold keys (`SensitivePaths`,
+  `LocalExecRules`, `MacLocalHands`, and Windows' `sensitivePaths.ts`):
+  - letter case ignored, as the Mac's disk does (upstream's
+    `_caseInsensitiveFs`);
+  - `;`, `>`, `${HOME}`, quotes, escapes, `/./` and `x/../` read as zsh
+    reads them (Windows' `commandTexts`);
+  - the folder a command runs in, the shell's carried folder (read once,
+    then passed to the run) and every `cd`/`pushd` target checked, with
+    names relative to them, `../` included;
+  - a file's real path behind a link checked and opened;
+  - `.git-credentials`, `.config/gh/hosts.yml`, `.config/op` and
+    `.config/git/credentials` added, on the Mac and Windows (and GitHub's
+    CLI file under `%APPDATA%` on Windows).
+- A failed read of the team's settings keeps the last ceiling; `{}` (no
+  team) lifts it.
+- Execution on Local Computer: the device is the only writer of its
+  choice. Every connect tells the computer this device's effective value
+  (ceiling applied) and takes nothing back, as upstream's resync. Before,
+  a computer saying Always or Never was adopted, and the agent can write
+  that file. This applies to the Mac and to the web/Windows
+  (`reconcile`/`reconcilePermission` removed).
+- `simeon://mcp-oauth` is finished only for a sign-in this app named,
+  signed in, within 10 minutes, once (`finishReturnedSignIn`, as the web).
+  It covers the Mac's link and sheet and the iPhone's sheet. A refusal
+  says "<app> didn't connect. Try again.", never the link's words.
+- Reports: `computer-stream.log`'s first line names only the file (Mac and
+  Windows); the scrub writes the home folder as `~`.
+
+**State and data** (`fix/b-state`)
+- General and Permissions wait for the computer's values on the Mac and
+  the iPhone (the web's way, proposed 2 November), and read again when the
+  stream comes back after a failed read (web too).
+- Sign-out: each Connectors action takes the signed-in computer once and
+  stops when it changes (Mac `PluginsModel`, the iPhone's
+  `ConnectAppsModel`, the web's flows); `changeName` writes only for the
+  same sign-in.
+- Calls: each call numbered; only its own connect, ring and voice events
+  reach it. `fail()` cancels its work and lets its voice go. Each voice
+  session keeps to its call. The iPhone's microphone is released only by
+  the current session. A hang-up no longer wipes the next call's session.
+- Reload: attaching the same computer again keeps the watched entries and
+  their starts (`ComputerBook.reset(keepingStarts:)`), so the Computer tab
+  follows again. Another sign-in still starts empty.
+- Channels: read every 4 s only while the app is active (Mac, iPhone) or
+  the page visible (web), with reads that don't wake a resting computer.
+- The relay backs off (3 s to 60 s) only when the server's own end frame
+  comes within 5 s with nothing in it (an account with no computer); a
+  cut connection (`ConnectStreamCut`) doesn't count.
+- Helpers' thumbnails: unchanged. A screen-driving helper uses its agent's
+  own screen (`allocateWindow` gives it window 1), so the picture is right.
+
+**What shows** (`fix/c-display`)
+- The Mac's secret card says Saved only from `secretProvided`.
+- Refusals: `GatewayError` keeps the command in `method`.
+  - A 4xx keeps the computer's own sentence ("Not now", "50 is the
+    maximum").
+  - A 5xx, or no sentence, is the machine line the plain words hide, as
+    before.
+  - The apps' own "createAgent: …" lines are machine lines too.
+  - Each failure is written to the recent-activity log with its command
+    and status.
+- Usage: the credits' line uses the meter's number, and a usage read
+  superseded by a newer one is dropped.
+- "Last checked" says "just now" under a minute and is redrawn every
+  30 s, on the web too.
+- Routines are read again when the stream comes back (Mac, web).
+- A refused Connect turns the card's button to Retry, its accessible name
+  too (Mac, web); `startConnect` tells started, connected and refused
+  apart.
+- Open on a cloud agent's card is left out on the Mac and the iPhone, as
+  on the web (the page doesn't exist).
+
+**Clicks and words** (`fix/d-words`)
+- "/" Open Hidden Agents runs search's own action.
+- A routine found by search opens that routine (`openRoutine`).
+- ⌘V pastes into New Agent's avatar editor (its own key watcher).
+- The routine popover's words and Advanced's units are translated (new Mac
+  catalog entries, keys `hourly.at`, `weekly.on`, `between.and`; "from" as
+  "From:"), Mac and web.
+- Flights join airports with " → ".
+- ", completed" is translated.
+- The plan line's date has the full month ("7 novembre", not "7 nov.." in
+  French, pt-BR, sv).
+- A traveller's name refuses every decimal digit (`\p{Nd}`), as the server
+  does, and takes Han numerals (李一), as the server and the computer do.
+
+**Checked:**
+- The core's 596 tests, run on Linux with Swift 6.2.1. A runner in the
+  session's scratchpad makes the test methods `async` in a copy, because
+  Linux's XCTest aborts on `@MainActor` test classes, on `main` too. Only
+  the three that also fail on `main` fail:
+  - `ChatTests.testEveryCardTheMacDraws`;
+  - `ConnectorIconsTests.testEveryConnectorHasItsIconInTheApp` (its folder
+    moved);
+  - `LocalToolApprovalsTests.testRecordRetireAndClear` (a macOS path).
+- The web app's 1,194 tests, its typecheck and lint, and the committed
+  build matching the source.
+- Windows' 192 tests (21 need PowerShell) and its typecheck.
+- `check_names.py` and `check_translations.py`.
+- Every edited Mac and iPhone file parses (`swiftc -parse`), and each part
+  was read line by line for compiling.
+
+**Not checked:** the Mac and iPhone apps weren't built or run (no Xcode
+here). That needs `mac/scripts/build.sh` and a try on a Mac and an
+iPhone, above all:
+- a call, hung up and called again;
+- View › Reload with the Computer tab open;
+- ⌘V in New Agent;
+- a refused Connect;
+- General and Permissions while the computer wakes;
+- a routine found by search.
+
+**Left as they are:**
+- Not in the 29: the rest of each step's list (Open questions).
+- Not closable by a word guard (a sandbox would be needed): globs, `$(…)`,
+  input sent to a running shell.
+- The iPhone's routine words (`TriggerWord`).
+- Search waking a resting computer: its first read must wake, so search
+  stays as it is.
 
 ### 3 November 2026: the Mac's bugs against the upstream app
 
