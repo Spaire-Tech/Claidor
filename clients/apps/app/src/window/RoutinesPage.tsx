@@ -50,8 +50,11 @@ import { type RoutineEditing as Opened, useWindowModel } from './windowModel'
  * Routines (`RoutinesBody`, `K2n`, a column 6 apart): New Routine at the
  * right when there are routines, then their rows; the empty state when
  * there are none; nothing while the first read is on its way or failed.
- * The list is read again each time it shows; a routine's chip in the chat
- * opens its editor once the list has it (`W2n`).
+ * The list is read again each time it shows, and while it shows when the
+ * connection comes back (the window's routines store reads its watched
+ * lists again at `noteReconnect`), so one that couldn't be read isn't left
+ * empty; a routine's chip in the chat opens its editor once the list has
+ * it (`W2n`).
  */
 export function RoutinesBody({
   store,
@@ -88,6 +91,13 @@ export function RoutinesBody({
     }
   }, [store, agent.id])
   useEffect(() => takeRequest.current(), [list, request])
+  // The connection back: read again, a list that couldn't be read included (`noteReconnect`).
+  const connected = store.isLive
+  const wasConnected = useRef(connected)
+  useEffect(() => {
+    if (connected && !wasConnected.current) void store.loadRoutines(agent.id)
+    wasConnected.current = connected
+  }, [store, agent.id, connected])
 
   if (!list) return <div className="routines-none" />
   const create = () => model.openRoutine(undefined, agent.id)
