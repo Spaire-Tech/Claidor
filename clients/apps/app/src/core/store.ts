@@ -1378,7 +1378,12 @@ export class AppStore {
       const id =
         text(field(field(made, 'agent'), 'id')) ?? text(field(made, 'id'))
       if (!id)
-        throw new GatewayError('createAgent: no agent in the answer', true)
+        throw new GatewayError(
+          'gateway createAgent failed: no agent in the answer',
+          true,
+          undefined,
+          'createAgent',
+        )
       this.firstRunAgentId = id
     }
     const id = this.firstRunAgentId
@@ -3332,7 +3337,13 @@ export class AppStore {
     if (agent.voiceId !== undefined) args.voiceId = agent.voiceId
     const answer = await backend.command('createAgent', args)
     const id = text(field(field(answer, 'agent'), 'id'))
-    if (!id) throw new GatewayError('createAgent: no agent in the answer', true)
+    if (!id)
+      throw new GatewayError(
+        'gateway createAgent failed: no agent in the answer',
+        true,
+        undefined,
+        'createAgent',
+      )
     return id
   }
 
@@ -3759,7 +3770,12 @@ export class AppStore {
         )
         const id = text(field(field(answer, 'agent'), 'id'))
         if (!id)
-          throw new GatewayError('createAgent: no agent in the answer', true)
+          throw new GatewayError(
+            'gateway createAgent failed: no agent in the answer',
+            true,
+            undefined,
+            'createAgent',
+          )
         made.push(id)
       } catch (error) {
         const why = error instanceof Error ? error.message : String(error)

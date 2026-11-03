@@ -455,6 +455,21 @@ final class GatewayTests: XCTestCase {
     XCTAssertTrue((stale?.localizedDescription ?? "").contains("auto-review/stale"))
   }
 
+  /** The app's own failures the same way (3 November 2026: "Couldn't create Arlo: createAgent: no agent in the answer"): a machine line, the command apart. */
+  func testTheAppsOwnFailureNamesNoCommand() async {
+    let vault = MemoryVault(SessionTokens(accessToken: "t", refreshToken: "r", expiresAtMs: 9e15))
+    let http = ScriptedHTTP([
+      { _ in HTTPAnswer(status: 200, body: json(#"{"gatewayUrl":"https://box-1"}"#)) },
+      { _ in HTTPAnswer(status: 200, body: json(#"{}"#)) },
+    ])
+    let api = SimeonAPI(base: URL(string: "https://x")!, clientVersion: "1", vault: vault, http: http)
+    var made: GatewayError?
+    do { _ = try await LiveBackend(gateway: Gateway(api: api, http: http)).createAgent(name: "Arlo", face: nil) } catch { made = error as? GatewayError }
+    XCTAssertEqual(made?.message, "gateway createAgent failed: no agent in the answer")
+    XCTAssertEqual(made?.method, "createAgent")
+    XCTAssertEqual(PlainWords.problem("Couldn't create Arlo: \(made?.localizedDescription ?? "")"), "Couldn't create Arlo. Try again in a little while.")
+  }
+
   func testSendCarriesTheHostsArgumentNames() async throws {
     let vault = MemoryVault(SessionTokens(accessToken: "t", refreshToken: "r", expiresAtMs: 9e15))
     let http = ScriptedHTTP([
