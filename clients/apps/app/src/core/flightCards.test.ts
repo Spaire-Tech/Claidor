@@ -4,8 +4,8 @@
 // `DemoData.seed(gallery: true)`), its `PaneMembersFlightTests` (the
 // flight's details) and `FlightBookingTests` (the offer to book, the form,
 // its checks, the computer's answer). The checks' Swift ways (a phone's
-// Unicode digits, a name's 0 to 9, characters counted as a person reads
-// them) were measured from the core's own code.
+// Unicode digits, a name's decimal digits, characters counted as a person
+// reads them) were measured from the core's own code.
 
 import { readFileSync } from 'node:fs'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -656,17 +656,20 @@ describe('booking a flight (FlightBookingTests)', () => {
     expect(given('é'.repeat(41))).toBe('given_name')
     expect(given('Zoë')).toBeUndefined()
     expect(given('李')).toBeUndefined()
-    // A digit is 0 to 9 only, as the computer's (`NAME`) and the core's `[0-9]`: other scripts' digits, ①, Han numerals are a name's.
+    // A digit is any decimal digit, as the server's (`_NAME`, a Python `\d`) and the core's `\p{Nd}`: another script's, a
+    // wide one, and a character that starts with one (a keycap, a digit with an accent); a Han numeral, ① or Ⅷ is a name's.
     expect(given('Ada1')).toBe('given_name')
     expect(given('9')).toBe('given_name')
-    expect(given('Ada٣')).toBeUndefined()
-    expect(given('A１')).toBeUndefined()
+    expect(given('Ada٣')).toBe('given_name')
+    expect(given('३')).toBe('given_name')
+    expect(given('A１')).toBe('given_name')
+    expect(given('太郎１')).toBe('given_name')
+    expect(given('1️⃣')).toBe('given_name')
+    expect(given('A1́')).toBe('given_name')
     expect(given('A①')).toBeUndefined()
+    expect(given('Ⅷ')).toBeUndefined()
     expect(given('李一')).toBeUndefined()
     expect(given('健一')).toBeUndefined()
-    // A digit with something added to it is no longer the digit, as a mark (Swift's `[0-9]` takes a whole character).
-    expect(given('1️⃣')).toBeUndefined()
-    expect(given('A1́')).toBeUndefined()
     // A mark with something added to it is no longer the mark.
     expect(given('#️⃣')).toBeUndefined()
     expect(given('A#́')).toBeUndefined()

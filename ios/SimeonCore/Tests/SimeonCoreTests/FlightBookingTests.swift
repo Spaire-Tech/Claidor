@@ -96,8 +96,11 @@ final class FlightBookingTests: XCTestCase {
     XCTAssertEqual(Traveller.age("2008-11-13", on: "2026-11-12"), 17)
   }
 
-  /** A name's digits are 0 to 9 only, as the computer's check (`NAME`, a JavaScript `\d`): a Han numeral or another script's digit is a name's. */
-  func testANameRefusesOnlyTheDigitsZeroToNine() {
+  /**
+   * A name refuses the digits the server refuses (`_NAME`, a Python `\d`: any decimal digit, in any script) and no other
+   * character with a value as a number: a Han numeral (李一, 健一), ① or Ⅻ is a name's.
+   */
+  func testANameRefusesOnlyDecimalDigits() {
     let today = Traveller.date("2026-10-13")!
     var ada = Traveller(id: "pas_0000Ada")
     ada.givenName = "Ada"; ada.familyName = "Lovelace"; ada.title = .ms; ada.gender = .f
@@ -112,12 +115,12 @@ final class FlightBookingTests: XCTestCase {
       traveller.familyName = name
       return traveller.problem(passportNeeded: false, today: today)?.field
     }
-    // A digit with something added to it is no longer the digit, as a mark (`[0-9]` takes a whole character; the web's `isName`).
-    for name in ["李一", "健一", "一郎", "〇", "Ada٣", "A１", "A①", "Ⅻ", "1\u{FE0F}\u{20E3}", "A1\u{301}"] {
+    for name in ["李一", "健一", "一郎", "〇", "A①", "Ⅻ", "Ⅷ"] {
       XCTAssertNil(given(name), name)
       XCTAssertNil(family(name), name)
     }
-    for name in ["Ada1", "0", "9", "A9a"] {
+    // Another script's digit, a wide one, and a digit with something added to it (a keycap, an accent), as the server reads them.
+    for name in ["Ada1", "0", "9", "A9a", "Ada٣", "Ali٣", "३", "A１", "太郎１", "1\u{FE0F}\u{20E3}", "A1\u{301}"] {
       XCTAssertEqual(given(name), "given_name", name)
       XCTAssertEqual(family(name), "family_name", name)
     }

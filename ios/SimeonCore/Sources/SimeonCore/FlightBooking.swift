@@ -216,9 +216,10 @@ public struct Traveller: Hashable, Sendable {
 
   /** The first thing to fix, as the host checks it (`checkTravellers`), so Continue says it at once: the field and the sentence. `adultOn`: the day an adult must be 18 by (`FlightPassengersCard.adultOn`). */
   public func problem(passportNeeded: Bool, adultOn: String? = nil, today: Date = Date()) -> (field: String, message: String)? {
-    // The computer's `NAME` (flight-booking.ts), whose JavaScript `\d` is 0 to 9 only: Swift's `\d` takes any character with a
-    // value as a number, so it refused names with a Han numeral (李一, 健一).
-    let name = #/^[^0-9!"#$%&()*+,./:;<=>?@\[\\\]^_`{|}~]{1,40}$/#
+    // The digits the server refuses (`_NAME`, flight_booking.py; the computer's JavaScript `\d` refuses fewer, 0 to 9): its
+    // Python `\d` is any decimal digit (`\p{Nd}`: 1, ٣, १, １), never a Han numeral, ① or Ⅷ. Swift's `\d` takes any character
+    // with a value as a number, and refused names such as 李一 and 健一.
+    let name = #/^[^\p{Nd}!"#$%&()*+,./:;<=>?@\[\\\]^_`{|}~]{1,40}$/#
     let given = givenName.trimmingCharacters(in: .whitespaces), family = familyName.trimmingCharacters(in: .whitespaces)
     if given.wholeMatch(of: name) == nil { return ("given_name", L10n.text("Write the first name as on the ID.")) }
     if family.wholeMatch(of: name) == nil { return ("family_name", L10n.text("Write the last name as on the ID.")) }
