@@ -445,6 +445,17 @@ export function versionLine(version: string): string {
   return t`Version ${version}`
 }
 
+/**
+ * When Settings › Updates last looked, in its "Last checked …" line
+ * (`checkedJustNow`): "just now" under a minute ago (or a moment ahead, the
+ * clock's), as the window's relative time says it; undefined from a minute
+ * on, for `relativeWords`. Until 3 November 2026 a check a moment ago read
+ * "0 seconds ago", and stayed so.
+ */
+export function checkedJustNow(date: number, now: number): string | undefined {
+  return now - date < 60_000 ? t('just now') : undefined
+}
+
 /** What Copy version info writes: the window's three lines, word for word (`versionInfo`). */
 export function versionInfo(
   version: string,

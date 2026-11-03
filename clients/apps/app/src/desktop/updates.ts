@@ -5,6 +5,7 @@
 // as it changes. The updater itself, its feed and its switches live in the
 // main process; nothing here is the account's, so signing out keeps it.
 
+import { checkedJustNow } from '../core/usage'
 import { t } from '../l10n'
 import type { Desktop, DesktopEvents } from './desktop'
 import { desktop } from './desktop'
@@ -149,7 +150,7 @@ export function relativeWords(
   }).format(past ? -value : value, unit)
 }
 
-/** Under the version (`checkedLine`): "Simeon is up to date." once a check found nothing, and when it last looked; nothing when neither is known. */
+/** Under the version (`checkedLine`): "Simeon is up to date." once a check found nothing, and when it last looked ("just now" under a minute, `checkedJustNow`, then `relativeWords`); nothing when neither is known. */
 export function checkedLine(
   state: UpdatesState | undefined,
   now: number,
@@ -159,7 +160,9 @@ export function checkedLine(
   const parts: string[] = []
   if (state.upToDate) parts.push(t('Simeon is up to date.'))
   if (state.lastChecked != null) {
-    const words = relativeWords(state.lastChecked, now, locale)
+    const words =
+      checkedJustNow(state.lastChecked, now) ??
+      relativeWords(state.lastChecked, now, locale)
     parts.push(t`Last checked ${words}.`)
   }
   return parts.length === 0 ? undefined : parts.join(' ')

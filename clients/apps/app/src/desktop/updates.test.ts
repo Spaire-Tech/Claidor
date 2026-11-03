@@ -169,6 +169,23 @@ describe('the line under the version (checkedLine)', () => {
     ).toBe('Last checked 1 hour ago.')
   })
 
+  it('says just now under a minute (testACheckAMomentAgoIsJustNow)', () => {
+    // 3 November 2026: a check a moment ago read "0 seconds ago", and stayed so.
+    expect(
+      checkedLine({ ...state, upToDate: true, lastChecked: now }, now, 'en-US'),
+    ).toBe('Simeon is up to date. Last checked just now.')
+    expect(
+      checkedLine({ ...state, lastChecked: now - 59_000 }, now, 'en-US'),
+    ).toBe('Last checked just now.')
+    // A moment ahead (the page's clock drawn before the check ended): just now, never "in 0 seconds".
+    expect(
+      checkedLine({ ...state, lastChecked: now + 200 }, now, 'en-US'),
+    ).toBe('Last checked just now.')
+    expect(
+      checkedLine({ ...state, lastChecked: now - 60_000 }, now, 'en-US'),
+    ).toBe('Last checked 1 minute ago.')
+  })
+
   it('in French, from the Mac’s own table', () => {
     const mac = JSON.parse(
       readFileSync(new URL('../words/mac/fr.json', import.meta.url), 'utf8'),
@@ -181,5 +198,13 @@ describe('the line under the version (checkedLine)', () => {
         'fr-FR',
       ),
     ).toBe('Simeon est à jour. Dernière vérification il y a 2 minutes.')
+    // "just now" is the core's word (RoutineTriggers' `relative`), in its table.
+    const core = JSON.parse(
+      readFileSync(new URL('../words/core/fr.json', import.meta.url), 'utf8'),
+    ) as Record<string, string>
+    setWords('fr', { mac, core })
+    expect(
+      checkedLine({ ...state, lastChecked: now - 5_000 }, now, 'fr-FR'),
+    ).toBe('Dernière vérification à l’instant.')
   })
 })
