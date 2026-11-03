@@ -726,8 +726,8 @@ function TimesStacked({ times }: { times: FlightTimes }) {
 export function FlightPage({ offer }: { offer: FlightOffer }) {
   const from = offer.from !== '' ? offer.from : (offer.legs[0]?.from ?? '')
   const to = offer.to !== '' ? offer.to : (offer.legs.at(-1)?.to ?? '')
-  // The Mac's own " to " between the two places, in English in every language (PaneMembersFlight.swift).
-  const route = [from, to].filter((part) => part !== '').join(' to ')
+  // "SEA → LAX", as the Mac's (PaneMembersFlight.swift) and the old app's flight pane: an arrow reads the same in every language.
+  const route = [from, to].filter((part) => part !== '').join(' → ')
   const fare = terms(offer)
   const flightShape = shape(offer)
   return (
@@ -806,7 +806,7 @@ function FlightLegCard({ leg, logo }: { leg: FlightLeg; logo: string }) {
     <div className="flight-leg">
       <div className="flight-leg-head">
         <span className="flight-leg-route">
-          {[leg.from, leg.to].filter((part) => part !== '').join(' to ')}
+          {[leg.from, leg.to].filter((part) => part !== '').join(' → ')}
         </span>
         <AirlineMark name={leg.carrier} logo={logo} side={30} />
       </div>
