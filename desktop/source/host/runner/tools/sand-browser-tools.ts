@@ -21,6 +21,8 @@ import {
 } from "./sand-browser-driver-source.js";
 import { SAND_BROWSER_PLAYWRIGHT_FILES, SAND_BROWSER_PLAYWRIGHT_VERSION } from "./sand-browser-playwright.gen.js";
 import { createOneAtATime } from "./one-at-a-time.js";
+import { BOX_ROUTE, contextSignal, readUploadFiles, type AppBrowserChoice, type AppBrowserLive, type AppBrowserRoute } from "./app-browser-route.js";
+import { LOCAL_BROWSER_REVIEW_STATE_TIMEOUT_MS } from "../../../shared/local-browser-gateway.js";
 
 export const BOX_CDP_PORT_BASE = 9_222;
 
@@ -205,12 +207,44 @@ export interface BrowserDriverDependencies<Context> {
     | ((bytes: Uint8Array, mimeType: string) => Promise<unknown>)
     | undefined;
   readonly autoReview?: SandBrowserAutoReviewOptions;
+  /** The browser in the Mac or Windows app (`app-browser-route.ts`); without it every step runs on the computer. */
+  readonly appBrowser?: AppBrowserRoute;
 }
 
 export interface BrowserDriverOutput {
   readonly text: string;
   readonly imageB64?: string;
   readonly isError?: boolean;
+}
+
+/** A screenshot from the app larger than this (base64) is left out of the answer. */
+const APP_BROWSER_SCREENSHOT_MAX_B64 = 16 * 1024 * 1024;
+
+/** The view a step acts on: the one it names, else the agent's own. */
+function browserViewId(args: Record<string, unknown>, dependencies: { getDefaultViewId(): string }): string {
+  const requested = args.viewId;
+  return typeof requested === "string" && requested.length > 0 ? requested : dependencies.getDefaultViewId();
+}
+
+/** A helper's answer as the tool's text: a failure's sentence, or the summary, the page and its data. */
+function driverAnswerText(response: BrowserDriverResponse, imageB64?: string): BrowserDriverOutput {
+  if (!response.ok) {
+    return {
+      text: response.error ?? "The browser action failed.",
+      isError: true,
+    };
+  }
+  const parts = [response.summary ?? "Done."];
+  if (response.url != null && response.url.length > 0) {
+    parts.push(`Current page: ${response.title ?? ""} (${response.url})`);
+  }
+  if (response.data != null && response.data.length > 0) {
+    parts.push(response.data);
+  }
+  return {
+    text: parts.join("\n\n"),
+    ...(imageB64 == null ? {} : { imageB64 }),
+  };
 }
 
 export class SandBrowserDriver<Context = unknown> {
@@ -300,15 +334,12 @@ export class SandBrowserDriver<Context = unknown> {
     const screenshotPath = input.skipScreenshot === true
       ? undefined
       : `${SAND_BROWSER_DRIVER_BOX_DIR}/shot-${sanitizeForBoxPath(input.toolCallId)}.png`;
-    const requestedViewId = input.args.viewId;
     const request = {
       ...input.args,
       op: input.op,
       display: windowIndex,
       cdpPort: BOX_CDP_PORT_BASE + windowIndex,
-      viewId: typeof requestedViewId === "string" && requestedViewId.length > 0
-        ? requestedViewId
-        : this.dependencies.getDefaultViewId(),
+      viewId: browserViewId(input.args, this.dependencies),
       ...(screenshotPath == null ? {} : { screenshotPath }),
       ...(playwrightRoot === undefined ? {} : { playwrightRoot }),
     };
@@ -348,28 +379,57 @@ export class SandBrowserDriver<Context = unknown> {
         `The browser on this computer did not respond (exit ${shell.exitCode ?? "unknown"})${detail.length > 0 ? `: ${detail}` : ""}`,
       );
     }
-    if (!response.ok) {
-      return {
-        text: response.error ?? "The browser action failed.",
-        isError: true,
-      };
-    }
-
-    const parts = [response.summary ?? "Done."];
-    if (response.url != null && response.url.length > 0) {
-      parts.push(`Current page: ${response.title ?? ""} (${response.url})`);
-    }
-    if (response.data != null && response.data.length > 0) {
-      parts.push(response.data);
-    }
+    if (!response.ok) return driverAnswerText(response);
 
     const imageB64 = response.screenshot === true && screenshotPath != null
       ? await this.fetchScreenshot(context, screenshotPath)
       : undefined;
-    return {
-      text: parts.join("\n\n"),
-      ...(imageB64 == null ? {} : { imageB64 }),
-    };
+    return driverAnswerText(response, imageB64);
+  }
+
+  /**
+   * The same step in the browser of the Mac or Windows app
+   * (docs/app-browser/protocol.md): the tool's arguments go as they are,
+   * the files of an upload read from the computer, and the answer is
+   * written as the computer's helper's is.
+   */
+  async runInApp(
+    context: Context,
+    choice: AppBrowserLive,
+    input: {
+      readonly op: string;
+      readonly toolCallId: string;
+      readonly args: Record<string, unknown>;
+      readonly skipScreenshot?: boolean;
+    },
+  ): Promise<BrowserDriverOutput> {
+    const route = this.dependencies.appBrowser;
+    if (route === undefined) throw new SandBrowserDriverError("The browser in the app is not available.");
+    const { viewId: _viewId, paths, ...rest } = input.args;
+    const args: Record<string, unknown> = input.op === "upload_file"
+      ? { ...rest, files: await readUploadFiles(this.dependencies, context, paths, input.toolCallId) }
+      : { ...rest, ...(paths === undefined ? {} : { paths }) };
+    const screenshot = input.skipScreenshot !== true;
+    const answer = await route.request(choice, {
+      op: input.op,
+      viewId: browserViewId(input.args, this.dependencies),
+      args,
+      screenshot,
+    }, {
+      ...(contextSignal(context) === undefined ? {} : { signal: contextSignal(context)! }),
+      timeoutMs: SAND_BROWSER_STEP_LIMIT_MS,
+    });
+    const response = toDriverResponse(answer);
+    if (!response.ok) return driverAnswerText(response);
+    const shot = typeof answer.screenshotB64 === "string" ? answer.screenshotB64 : "";
+    const imageB64 = screenshot && response.screenshot === true && shot.length > 0 && shot.length <= APP_BROWSER_SCREENSHOT_MAX_B64
+      ? shot
+      : undefined;
+    if (imageB64 !== undefined) {
+      const persistImage = this.dependencies.getPersistImage?.();
+      if (persistImage != null) await persistImage(Buffer.from(imageB64, "base64"), "image/png").catch(() => null);
+    }
+    return driverAnswerText(response, imageB64);
   }
 
   async fetchScreenshot(
@@ -504,6 +564,50 @@ async function captureBrowserReviewState(args: {
     .join("\n");
   return {
     displayStateIdentity: createHash("sha256").update(pageIdentity).digest("hex"),
+    ...(targetPageUrl === undefined ? {} : { targetPageUrl }),
+  };
+}
+
+/**
+ * Auto-review's page state for a step in the app's browser: the app's
+ * list of pages and the page of the step's view, sent back as JSON by the
+ * `review_state` request (docs/app-browser/protocol.md), hashed as the
+ * computer's list is. Anything else (no answer, a refusal, a list that
+ * isn't one) refuses the step, as a probe that fails on the computer does.
+ */
+export async function captureAppBrowserReviewState(args: {
+  readonly route: AppBrowserRoute;
+  readonly choice: AppBrowserLive;
+  readonly viewId: string;
+  readonly signal?: AbortSignal;
+}): Promise<{ displayStateIdentity: string; targetPageUrl?: string }> {
+  let answer: Record<string, unknown>;
+  try {
+    answer = await args.route.request(args.choice, { op: "review_state", viewId: args.viewId, args: {}, screenshot: false }, {
+      ...(args.signal === undefined ? {} : { signal: args.signal }),
+      timeoutMs: LOCAL_BROWSER_REVIEW_STATE_TIMEOUT_MS,
+    });
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") throw error;
+    throw new SandBrowserAutoReviewBlockedError(`Browser Auto-review could not capture the current page state: ${captureFailureText(error)}`);
+  }
+  if (answer.ok !== true) {
+    throw new SandBrowserAutoReviewBlockedError(`Browser Auto-review could not capture the current page state: ${captureFailureText(typeof answer.error === "string" ? answer.error : undefined)}`);
+  }
+  let state: unknown;
+  try { state = typeof answer.data === "string" ? JSON.parse(answer.data) : undefined; } catch { state = undefined; }
+  const fields = state !== null && typeof state === "object" && !Array.isArray(state) ? state as Record<string, unknown> : undefined;
+  const pages = Array.isArray(fields?.pages) ? fields.pages : undefined;
+  if (pages === undefined) throw new SandBrowserAutoReviewBlockedError("Browser Auto-review could not capture the current page state: the app's browser sent no list of pages");
+  const listed = pages
+    .filter((page): page is Record<string, unknown> => page !== null && typeof page === "object" && !Array.isArray(page) && typeof (page as Record<string, unknown>).id === "string")
+    .map(page => ({ id: page.id as string, url: typeof page.url === "string" ? page.url : "" }));
+  const pageIdentity = listed.map(page => `${page.id}\t${page.url.trim()}`).sort().join("\n");
+  const viewPageId = typeof fields?.viewPageId === "string" ? fields.viewPageId : undefined;
+  const viewPage = viewPageId === undefined ? undefined : listed.find(page => page.id === viewPageId);
+  const targetPageUrl = viewPage === undefined ? undefined : normalizeNavigationUrl(viewPage.url);
+  return {
+    displayStateIdentity: createHash("sha256").update(`app:${pageIdentity}`).digest("hex"),
     ...(targetPageUrl === undefined ? {} : { targetPageUrl }),
   };
 }
@@ -677,20 +781,39 @@ async function runBrowserSpec<Context>(
 ): Promise<BrowserDriverOutput> {
   try {
     validateArguments(spec.schema ?? {}, args);
+    // Which browser the step runs in (docs/app-browser/README.md): the
+    // computer's unless the app's browser is there and the switch is on;
+    // a task stays in the one it started in.
+    const signal = contextSignal(context);
+    const choice: AppBrowserChoice = dependencies.appBrowser === undefined
+      ? BOX_ROUTE
+      : await dependencies.appBrowser.choose(browserViewId(args, dependencies), {
+        opensAddress: spec.op === "navigate",
+        ...(signal === undefined ? {} : { signal }),
+      });
+    if (choice.route === "gone") return { text: choice.message, isError: true };
     if (dependencies.autoReview !== undefined) {
       const exactAction = toBrowserReviewAction(spec.op, args, dependencies.getDefaultViewId());
+      const appRoute = dependencies.appBrowser;
       await runSandBrowserAutoReviewPreflight({
         ctx: context as unknown as OperationContext,
         resourceAccessor: dependencies.resourceAccessor as ResourceAccessor<RemoteExecManager>,
         options: {
           ...dependencies.autoReview,
-          captureReviewState: (stateCtx, stateToolCallId) => captureBrowserReviewState({
-            ctx: stateCtx,
-            resourceAccessor: dependencies.resourceAccessor as ResourceAccessor<RemoteExecManager>,
-            toolCallId: stateToolCallId,
-            resolveDisplayNumber: dependencies.autoReview!.resolveDisplayNumber,
-            ...(spec.op !== "tabs" && exactAction.viewId === undefined ? {} : { viewId: exactAction.viewId }),
-          }),
+          captureReviewState: (stateCtx, stateToolCallId) => choice.route === "app" && appRoute !== undefined
+            ? captureAppBrowserReviewState({
+              route: appRoute,
+              choice,
+              viewId: exactAction.viewId,
+              ...(contextSignal(stateCtx) === undefined ? {} : { signal: contextSignal(stateCtx)! }),
+            })
+            : captureBrowserReviewState({
+              ctx: stateCtx,
+              resourceAccessor: dependencies.resourceAccessor as ResourceAccessor<RemoteExecManager>,
+              toolCallId: stateToolCallId,
+              resolveDisplayNumber: dependencies.autoReview!.resolveDisplayNumber,
+              ...(spec.op !== "tabs" && exactAction.viewId === undefined ? {} : { viewId: exactAction.viewId }),
+            }),
         },
         exactAction,
         toolCallId: metadata.toolCallId,
@@ -698,14 +821,17 @@ async function runBrowserSpec<Context>(
         ...(metadata.workspacePaths === undefined ? {} : { workspacePaths: metadata.workspacePaths }),
       });
     }
-    const output = await driver.run(context, {
+    const step = {
       op: spec.op,
       toolCallId: metadata.toolCallId,
       args,
       ...(spec.skipScreenshot === undefined
         ? {}
         : { skipScreenshot: spec.skipScreenshot }),
-    });
+    };
+    const output = choice.route === "app"
+      ? await driver.runInApp(context, choice, step)
+      : await driver.run(context, step);
     if (spec.canNavigate === true && output.isError !== true) {
       dependencies.onPossibleNavigation?.(context);
     }

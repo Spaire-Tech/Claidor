@@ -81,6 +81,7 @@ import {
 } from "./sand-activity.js";
 import { connectorCardEmissionToMessage } from "./runner/tools/box-help-tool.js";
 import type { FlightSearchAnswer } from "./runner/tools/flight-search-tool.js";
+import type { AppBrowserRoute } from "./runner/tools/app-browser-route.js";
 import type { BookFlightDependencies } from "./runner/tools/book-flight-tool.js";
 import { getSandRootDir } from "./host-paths.js";
 import { getConfiguredBackendUrl } from "../shared/node/simeon-token.js";
@@ -259,6 +260,18 @@ export interface HostRunnerOverrides {
 
 export interface HostRunnerExtensions {
   api(id: string): DynamicApi;
+}
+
+/**
+ * The browser in the Mac and Windows apps, when the local-browser extension
+ * is there (docs/app-browser/README.md); the browser tools then ask it which
+ * browser each step goes to. A host without it keeps the computer's only.
+ */
+function appBrowserRouteOf(extensions: HostRunnerExtensions): AppBrowserRoute | undefined {
+  let api: unknown;
+  try { api = extensions.api("local-browser"); } catch { return undefined; }
+  const route = api as Partial<AppBrowserRoute> | undefined;
+  return typeof route?.choose === "function" && typeof route.request === "function" ? route as AppBrowserRoute : undefined;
 }
 
 /**
@@ -1000,6 +1013,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
   ): Runner {
     const isSharedRoomTurn = overrides.isSharedRoomTurn === true;
     const localExec = extensions.api("local-exec");
+    const appBrowser = appBrowserRouteOf(extensions);
     const attachments = extensions.api("attachments");
     const memory = extensions.api("memory");
     const transcript = extensions.api("transcript");
@@ -1191,6 +1205,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
               ...(persistImageForTurn === undefined
                 ? {}
                 : { getPersistImage: () => persistImageForTurn }),
+              ...(appBrowser === undefined ? {} : { appBrowser }),
             }),
             createBoxShellExecutor: () => shell,
           };
