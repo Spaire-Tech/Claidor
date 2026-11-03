@@ -100,6 +100,20 @@ final class ComputerBookTests: XCTestCase {
     book.unwatch("a")
     XCTAssertEqual(book.focused().read, ["b"])
   }
+
+  func testTheSameComputerAgainKeepsWhatItsViewsStarted() {
+    var book = ComputerBook()
+    book.watch("a")
+    _ = book.beginEnsure("a")
+    _ = book.beginEnsure("b")
+    var reload = book
+    reload.reset(keepingStarts: true)
+    XCTAssertEqual(reload.demanded, ["a"], "only what is still watched")
+    XCTAssertEqual(reload.reconnected().ensure, ["a"], "started again as the stream comes back")
+    XCTAssertFalse(reload.isEnsuring("a"), "the start under way before is forgotten")
+    book.reset()
+    XCTAssertTrue(book.demanded.isEmpty, "another account: none")
+  }
 }
 
 @MainActor
@@ -453,19 +467,29 @@ final class ComputerReloadTests: XCTestCase {
     store.detach()
   }
 
-  func testReloadForgetsWhatWasReadAndStarted() async throws {
-    let backend = DemoBackend(seed: DemoData.seed(), pace: 0.01, call: nil)
+  func testReloadStartsAgainTheComputerTheOpenViewStarted() async throws {
+    let backend = CommandLogBackend()
     let store = AppStore()
     await store.attach(backend)
-    store.watchComputer("kept")
-    store.computer.ingest(BoxStatus(json: ["agentId": "kept", "state": "running", "vncUrl": "http://127.0.0.1:6080/vnc.html"])!)
-    store.computer.ingest(BoxStatus(json: ["agentId": "other", "state": "running", "vncUrl": "http://127.0.0.1:6080/vnc.html"])!)
-    _ = store.computer.beginEnsure("kept")
+    // The full view open on Theo's computer, which it started; Iris's started too, then no longer shown.
+    store.watchComputer("theo")
+    store.openComputer("theo")
+    store.watchComputer("iris")
+    store.openComputer("iris")
+    store.unwatchComputer("iris")
+    try await Task.sleep(nanoseconds: 50_000_000)
+    let starts = backend.methods.filter { $0 == "ensureForeverBox" }.count
+    XCTAssertEqual(starts, 2)
     await store.attach(backend)
-    XCTAssertTrue(store.computer.isWatched("kept"))
-    XCTAssertTrue(store.computer.demanded.isEmpty, "what was started is not started again by itself, as `reset` has it")
-    XCTAssertNil(store.computer.entries["other"], "an entry nobody watches goes")
+    XCTAssertTrue(store.computer.isWatched("theo"))
+    XCTAssertEqual(store.computer.demanded, ["theo"], "what the open view started, not what nobody shows")
+    XCTAssertNil(store.computer.entries["iris"], "an entry nobody watches goes")
+    // The stream back: Theo's computer is read and started again.
+    store.apply(.connection(live: true))
+    try await Task.sleep(nanoseconds: 50_000_000)
+    XCTAssertEqual(backend.methods.filter { $0 == "ensureForeverBox" }.count, starts + 1)
     store.detach()
+    XCTAssertTrue(store.computer.demanded.isEmpty, "signed out: nothing kept")
   }
 }
 
@@ -499,6 +523,17 @@ final class MigrationRelayTests: XCTestCase {
     XCTAssertEqual(MigrationRelay.reattachWait(noComputerStreak: 40), 60)
   }
 
+  func testAConnectionCutBeforeTheServersLastFrameSaysNothing() async throws {
+    let plan: [RelayScript.Stream] = [.nothing, .nothing, .cut, .cut, .nothing, .event, .cut]
+    let script = RelayScript(held: plan.count, plan: plan)
+    let relay = MigrationRelay(open: { script.open($0) }, pause: { await script.pause($0) }, now: { script.now() })
+    relay.start()
+    try await script.until { script.waits.count == plan.count + 1 }
+    relay.stop()
+    XCTAssertEqual(Array(script.waits.prefix(plan.count)), [3, 6, 3, 3, 3, 3, 3], "only the server's own quick, empty end says there is no computer")
+    XCTAssertEqual(script.offsets.last, "1", "a cut stream is read again from where it stopped")
+  }
+
   func testARecreateAcceptedReadsAgainAtOnce() async throws {
     let script = RelayScript(held: 4)
     let relay = MigrationRelay(open: { script.open($0) }, pause: { await script.pause($0) }, now: { script.now() })
@@ -516,22 +551,25 @@ final class MigrationRelayTests: XCTestCase {
 
 /** The relay's streams and waits as a test writes them: each stream by its number, the waits written down, a clock the test moves. */
 final class RelayScript: @unchecked Sendable {
-  /** Nothing at once (no computer), a finished step, a failure, nothing after 25 s (a computer's quiet stream). */
-  enum Stream { case nothing, event, failure, quiet }
+  /** Nothing at once (no computer), a finished step, a failure, nothing after 25 s (a computer's quiet stream), a connection cut before the server's last frame. */
+  enum Stream { case nothing, event, failure, quiet, cut }
   private let lock = NSLock()
   private let plan: [Stream]
   /** Waits past this many last until cancelled (a stop, a recreate accepted). */
   private let held: Int
   private var waitList: [TimeInterval] = []
   private var opens = 0
+  private var offsetList: [String] = []
   private var clock = Date(timeIntervalSince1970: 0)
   init(held: Int, plan: [Stream] = []) { self.held = held; self.plan = plan }
   var waits: [TimeInterval] { lock.withLock { waitList } }
   var opened: Int { lock.withLock { opens } }
+  var offsets: [String] { lock.withLock { offsetList } }
   func now() -> Date { lock.withLock { clock } }
   func open(_ offset: String) -> AsyncThrowingStream<JSON, Error> {
     let kind: Stream = lock.withLock {
       opens += 1
+      offsetList.append(offset)
       if opens <= plan.count { return plan[opens - 1] }
       return .nothing
     }
@@ -545,6 +583,7 @@ final class RelayScript: @unchecked Sendable {
       case .quiet:
         self.lock.withLock { self.clock.addTimeInterval(25) }
         continuation.finish()
+      case .cut: continuation.finish(throwing: ConnectStreamCut())
       }
     }
   }

@@ -48,6 +48,11 @@ public struct ConnectEnvelopes: Sendable {
   }
 }
 
+/** A server stream whose connection ended before the server's last frame (`ConnectEnvelopes`): cut, not ended by the server. */
+public struct ConnectStreamCut: Error, Sendable {
+  public init() {}
+}
+
 /**
  * What a recreate the person asked for answered (`box-host-connector.ts`):
  * started, with the operation to follow; started with nothing to follow it
@@ -89,9 +94,10 @@ public final class MigrationRelay: @unchecked Sendable {
   /** The longest wait between two reads while the server says there is no computer. */
   public static let maxReattach: TimeInterval = 60
   /**
-   * A stream the server ends this soon with nothing in it says the account has no computer: it ends at once for one
-   * with none (`watch_sand_box_migration`, server/simeon/sand/box_broker.py), and holds a computer's open 25 s while
-   * nothing happens (`MigrationLog.idle`, box_service.py).
+   * A stream the server ends this soon, with its last frame and nothing before it, says the account has no computer:
+   * it ends at once for one with none (`watch_sand_box_migration`, server/simeon/sand/box_broker.py), and holds a
+   * computer's open 25 s while nothing happens (`MigrationLog.idle`, box_service.py). A connection cut before that
+   * frame (`ConnectStreamCut`) says nothing.
    */
   public static let noComputerWithin: TimeInterval = 5
 
@@ -171,7 +177,7 @@ public final class MigrationRelay: @unchecked Sendable {
       let from = lock.withLock { resumeOffset }
       let began = now()
       let stream = open(from)
-      // Whether the server ended it with nothing in it (not a failure, nor cut by the watchdog).
+      // Whether the server's last frame ended it with nothing in it (not a failure, a cut connection, nor the watchdog).
       let task = Task { [weak self] () -> Bool in
         var received = false
         do {
@@ -179,6 +185,9 @@ public final class MigrationRelay: @unchecked Sendable {
             received = true
             self?.take(message)
           }
+        } catch is ConnectStreamCut {
+          // Cut before the server's last frame: not its word; read again from where it stopped, as a stream that ended.
+          return false
         } catch {
           // A stream that failed before anything came starts over from the beginning (the offset may be gone).
           if !received, !from.isEmpty, !Task.isCancelled { self?.lock.withLock { self?.resumeOffset = "" } }
@@ -292,7 +301,8 @@ extension SimeonAPI {
               }
             }
           }
-          continuation.finish()
+          // The connection ended before the server's last frame: cut, which the relay tells from the server's own end.
+          continuation.finish(throwing: ConnectStreamCut())
         } catch {
           continuation.finish(throwing: error)
         }

@@ -91,6 +91,14 @@ export class ConnectEnvelopes {
 /** How long the stream may stay silent before it is dropped and dialled again (the Mac's `timeoutInterval`, 60 s). */
 const streamSilenceMs = 60_000
 
+/** A server stream whose connection ended before the server's last frame (MigrationWatch.swift's `ConnectStreamCut`): cut, not ended by the server. */
+export class ConnectStreamCut extends Error {
+  constructor() {
+    super('The stream was cut before its end.')
+    this.name = 'ConnectStreamCut'
+  }
+}
+
 /**
  * A server stream on the box broker, Connect JSON enveloped, message by
  * message, until it ends or `signal` aborts (`SimeonAPI.connectStream`).
@@ -139,13 +147,14 @@ export async function* connectStream(
         response.status,
       )
     const reader = response.body?.getReader()
-    if (!reader) return
+    // No body, or one that ends before the server's last frame: cut, which the relay tells from the server's own end.
+    if (!reader) throw new ConnectStreamCut()
     const frames = new ConnectEnvelopes()
     try {
       for (;;) {
         watch()
         const { done, value } = await reader.read()
-        if (done) return
+        if (done) throw new ConnectStreamCut()
         if (!value) continue
         for (const frame of frames.feed(value)) {
           if (frame.kind === 'message') {
@@ -298,10 +307,12 @@ export class MigrationRelay {
   /** The longest wait between two reads while the server says there is no computer. */
   static readonly maxReattachMs = 60_000
   /**
-   * A stream the server ends this soon with nothing in it says the account
-   * has no computer (MigrationWatch.swift's `noComputerWithin`): it ends at
-   * once for one with none (`watch_sand_box_migration`), and holds a
-   * computer's open 25 s while nothing happens (`MigrationLog.idle`).
+   * A stream the server ends this soon, with its last frame and nothing
+   * before it, says the account has no computer (MigrationWatch.swift's
+   * `noComputerWithin`): it ends at once for one with none
+   * (`watch_sand_box_migration`), and holds a computer's open 25 s while
+   * nothing happens (`MigrationLog.idle`). A connection cut before that
+   * frame (`ConnectStreamCut`) says nothing.
    */
   static readonly noComputerWithinMs = 5_000
 
@@ -401,17 +412,23 @@ export class MigrationRelay {
           received = true
           this.take(message)
         }
-      } catch {
+      } catch (error) {
         failed = true
-        // A stream that failed before anything came starts over from the beginning (the offset may be gone).
-        if (!received && from !== '' && !attempt.signal.aborted)
+        // A stream that failed before anything came starts over from the beginning (the offset may be gone); one cut
+        // before the server's last frame is read again from where it stopped, as a stream that ended.
+        if (
+          !(error instanceof ConnectStreamCut) &&
+          !received &&
+          from !== '' &&
+          !attempt.signal.aborted
+        )
           this.resumeOffset = ''
       }
       running.signal.removeEventListener('abort', stop)
       this.lastUpdate = undefined
       if (this.attempt === attempt) this.attempt = undefined
       if (running.signal.aborted) break
-      // Ended by the server with nothing in it, at once (not a failure, nor cut by the watchdog): no computer.
+      // Ended by the server's last frame with nothing in it, at once (not a failure, a cut connection, nor the watchdog): no computer.
       const saysNoComputer =
         !received &&
         !failed &&
