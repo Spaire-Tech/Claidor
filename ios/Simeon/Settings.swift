@@ -161,12 +161,10 @@ struct SettingsSheet: View {
       } message: {
         Text(AccountMenu.signOutLine)
       }
-      .task {
-        async let host = store.hostSettings()
-        async let usage: Void = store.loadUsage()
-        settings = await host
-        await usage
-      }
+      .task { await store.loadUsage() }
+      // The computer's settings as Settings opens, and again as the stream comes and goes until a read answers: the
+      // switches wait greyed till then, and a read that failed doesn't keep them waiting.
+      .task(id: store.isLive) { if settings == nil { settings = await store.hostSettings() } }
       // Read again on coming back from the phone's Settings, where notifications may have just been allowed.
       .task(id: scenePhase) { notificationsRefused = await Notifications.refused() }
     }

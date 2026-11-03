@@ -25,7 +25,8 @@ struct SettingsGeneralPage: View {
       AppearanceGroup(look: look)
       TimeZoneGroup(model: model, look: look)
     }
-    .task { await model.load(store: store) }
+    // Read as the page shows, and again as the stream comes and goes: a read that failed doesn't keep the page waiting.
+    .task(id: store.isLive) { await model.load(store: store) }
   }
 }
 
@@ -433,7 +434,8 @@ private struct PasswordForm: View {
  * (`AutoReviewInstructions`). A change is shown once the computer has it.
  * Nothing can be changed until the computer's rules are read (the web's
  * wait, `HostSettingsLoad`): the switch waits greyed and the lists come with
- * the read; a read that failed says so in red.
+ * the read; a read that failed says so in red, and is tried again as the
+ * stream comes back.
  */
 struct SettingsPermissionsPage: View {
   let look: Look
@@ -455,7 +457,8 @@ struct SettingsPermissionsPage: View {
         RuleList(behavior: .ask, model: model, look: look)
       }
     }
-    .task { await model.load(store: store) }
+    // Read as the page shows, and again as the stream comes and goes: a read that failed doesn't keep the page waiting.
+    .task(id: store.isLive) { await model.load(store: store) }
   }
 }
 
@@ -694,8 +697,9 @@ struct SettingsLegalPage: View {
  * General's values as the computer keeps them: the time zone chosen, how
  * the agent may use this Mac and the team's ceiling, Auto-review and its
  * rules, and the rule being written or edited. Each page that shows some of
- * them holds its own, read when the page shows; the zone and the rules can't
- * be changed until the computer's are read (`hostRead`).
+ * them holds its own, read when the page shows and again as the stream
+ * comes and goes; the zone and the rules can't be changed until the
+ * computer's are read (`hostRead`).
  */
 @MainActor
 @Observable
