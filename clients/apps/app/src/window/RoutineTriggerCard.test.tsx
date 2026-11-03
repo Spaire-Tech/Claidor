@@ -43,7 +43,7 @@ const spanish = {
   on: 'en',
   containing: 'que contienen',
   'with emoji': 'con el emoji',
-  from: 'de',
+  from: 'de:',
   'on branch': 'en la rama',
   tenant: 'inquilino',
   channels: 'canales',
@@ -109,7 +109,7 @@ describe('a trigger’s connecting words', () => {
     expect(words({ ...slack, match: 'reaction' })).toEqual([
       'en',
       'con el emoji',
-      'de',
+      'de:',
     ])
     const git = {
       kind: 'github',
@@ -121,7 +121,7 @@ describe('a trigger’s connecting words', () => {
       'en',
       'en la rama',
     ])
-    expect(words({ ...git, events: ['pr-opened'] })).toEqual(['en', 'de'])
+    expect(words({ ...git, events: ['pr-opened'] })).toEqual(['en', 'de:'])
     expect(
       words({
         kind: 'teams',
@@ -132,7 +132,7 @@ describe('a trigger’s connecting words', () => {
         isRegex: false,
         linkedOnly: false,
       }),
-    ).toEqual(['en', 'inquilino', 'canales', 'que contienen', 'de'])
+    ).toEqual(['en', 'inquilino', 'canales', 'que contienen', 'de:'])
     const linear = {
       kind: 'linear',
       statusIds: '',
