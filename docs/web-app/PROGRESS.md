@@ -583,7 +583,10 @@ For the founder, each to be answered before the step that needs it:
   Store; no certificate is bought, and the GitHub Environment
   `windows-release` with `WIN_CSC_LINK` is not needed). Needed before the
   first release: a company account in Microsoft's Partner Center (free;
-  verified with a D-U-N-S number or the company's documents), the name
+  verified with a D-U-N-S number or the company's documents; 4 November
+  2026, the founder: "last night i received my duns, so we can go with duns
+  in the windows plan": the account is verified with the legal company's
+  D-U-N-S number, typed by the founder into Partner Center), the name
   "Simeon" reserved for the app there, and the package's identity it gives
   (its identity name, publisher and publisher name) for the Store's build.
   Then the Store's listing: description, screenshots, the privacy policy's
