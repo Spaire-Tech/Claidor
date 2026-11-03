@@ -317,7 +317,12 @@ export class PluginCalls {
     const id =
       text(field(field(answer, 'agent'), 'id')) ?? text(field(answer, 'id'))
     if (id == null)
-      throw new GatewayError('createAgent: no agent in the answer', true)
+      throw new GatewayError(
+        'gateway createAgent failed: no agent in the answer',
+        true,
+        undefined,
+        'createAgent',
+      )
     return id
   }
 

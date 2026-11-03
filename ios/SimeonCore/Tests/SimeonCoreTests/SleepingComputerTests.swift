@@ -275,6 +275,22 @@ final class SleepingComputerTests: XCTestCase {
     XCTAssertEqual(backend.woken, ["isAgentNetworkEnabled"])
   }
 
+  func testTheChannelsPagesRepeatedReadsLetItRestAndItsOpeningWakesIt() async throws {
+    let backend = RestingBackend(rest: .asleep)
+    let store = await MainActor.run { AppStore() }
+    await store.attach(backend)
+    let resting = await store.channels("theo", wakes: false)
+    XCTAssertNil(resting, "the read every 4 s fails at once while it rests: the page keeps what it shows")
+    XCTAssertEqual(backend.woken, [], "and wakes nothing")
+    XCTAssertTrue(backend.held.contains("getAgentChannels"))
+    // The page opening, and its read after a change, wake it as before.
+    _ = await store.channels("theo")
+    XCTAssertEqual(backend.woken, ["getAgentChannels"])
+    _ = await store.channels("theo", wakes: false)
+    XCTAssertTrue(backend.read.contains("getAgentChannels"), "awake, the same read is asked")
+    XCTAssertEqual(backend.woken, ["getAgentChannels"])
+  }
+
   func testARestingComputerIsNoFailureAndNothingAtLaunchWakesIt() async throws {
     let backend = RestingBackend(rest: .asleep)
     backend.serverAnswers["chats/agents"] = ["agents": [["id": "theo", "name": "Theo"]]]

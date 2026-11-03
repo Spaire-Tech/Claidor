@@ -245,14 +245,17 @@ struct SettingsUpdatesPage: View {
       SettingsGroup(title: String(localized: "Simeon for Mac"),
                     footer: updates.available ? nil : String(localized: "This build doesn't update itself. Released builds of Simeon check for updates on their own."),
                     look: look) {
-        SettingsLine(label: AboutSimeon.versionLine(version), detail: checkedLine, look: look) {
-          if updates.checking {
-            HStack(spacing: 6) {
-              ProgressView().controlSize(.small)
-              Text("Checking…").font(PanelType.row).foregroundStyle(look.inkSecondary)
+        // When it last looked, drawn again every 30 seconds, as the Usage page's meters are.
+        TimelineView(.periodic(from: .now, by: 30)) { context in
+          SettingsLine(label: AboutSimeon.versionLine(version), detail: checkedLine(now: context.date), look: look) {
+            if updates.checking {
+              HStack(spacing: 6) {
+                ProgressView().controlSize(.small)
+                Text("Checking…").font(PanelType.row).foregroundStyle(look.inkSecondary)
+              }
+            } else if updates.found == nil {
+              SettingsPill(title: String(localized: "Check Now"), disabled: !updates.available, look: look) { updates.lookQuietly() }
             }
-          } else if updates.found == nil {
-            SettingsPill(title: String(localized: "Check Now"), disabled: !updates.available, look: look) { updates.lookQuietly() }
           }
         }
         if let found = updates.found {
@@ -276,12 +279,12 @@ struct SettingsUpdatesPage: View {
     .task { updates.lookQuietly() }
   }
 
-  /** "Simeon is up to date" once a check found nothing, and when it last looked. */
-  private var checkedLine: String? {
+  /** "Simeon is up to date" once a check found nothing, and when it last looked: "just now" under a minute (`AboutSimeon.checkedJustNow`), then the system's words. */
+  private func checkedLine(now: Date) -> String? {
     var parts: [String] = []
     if updates.upToDate { parts.append(String(localized: "Simeon is up to date.")) }
     if let date = updates.lastChecked {
-      let words = RelativeDateTimeFormatter().localizedString(for: date, relativeTo: Date())
+      let words = AboutSimeon.checkedJustNow(date, now: now) ?? RelativeDateTimeFormatter().localizedString(for: date, relativeTo: now)
       parts.append(String(localized: "Last checked \(words)."))
     }
     return parts.isEmpty ? nil : parts.joined(separator: " ")

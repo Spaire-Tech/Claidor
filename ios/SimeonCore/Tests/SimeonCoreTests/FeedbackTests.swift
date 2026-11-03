@@ -83,6 +83,30 @@ final class FeedbackTests: XCTestCase {
     XCTAssertEqual(Diagnostics.scrub(kept), kept)
   }
 
+  /** The home folder names the person: a report writes it `~` (the Mac's `computer-stream.log` named it in its first line). */
+  func testDiagnosticsWriteTheHomeFolderAsATilde() {
+    let home = "/Users/bass"
+    let cases: [(String, String)] = [
+      ("computer stream log at /Users/bass/Library/Application Support/Simeon/computer-stream.log", "computer stream log at ~/Library/Application Support/Simeon/computer-stream.log"),
+      ("cd /Users/bass && ls", "cd ~ && ls"),
+      (#"read "/Users/bass/Documents/a.txt", then /Users/bass/b"#, #"read "~/Documents/a.txt", then ~/b"#),
+      // Punctuation after it ends it.
+      ("saved in /Users/bass.", "saved in ~."),
+      ("in /Users/bass, /Users/bass; (/Users/bass) '/Users/bass': /Users/bass...", "in ~, ~; (~) '~': ~..."),
+      // Another folder that starts with the same letters is not the home folder.
+      ("/Users/bassist/x /Users/bass.old/y /Users/bass_2 /Users/bass-2", "/Users/bassist/x /Users/bass.old/y /Users/bass_2 /Users/bass-2"),
+      ("nothing here", "nothing here"),
+    ]
+    for (line, scrubbed) in cases { XCTAssertEqual(Diagnostics.scrub(line, home: home), scrubbed, line) }
+    XCTAssertEqual(Diagnostics.scrub("at /Users/bass/x", home: "/Users/bass/"), "at ~/x")
+    // No home folder to hide: the line as it was.
+    XCTAssertEqual(Diagnostics.scrub("at /x", home: "/"), "at /x")
+    XCTAssertEqual(Diagnostics.scrub("at /x", home: ""), "at /x")
+    // This device's own, by default, in a log a report attaches.
+    let text = Diagnostics.text(facts: facts, state: [], activity: [], files: [("computer-stream.log", "t computer stream log at \(NSHomeDirectory())/Library/x.log\n")])
+    XCTAssertTrue(text.hasSuffix("t computer stream log at ~/Library/x.log"), text)
+  }
+
   func testRecentActivityKeepsTheLastLinesScrubbedAndTimed() {
     RecentActivity.clear()
     defer { RecentActivity.clear() }

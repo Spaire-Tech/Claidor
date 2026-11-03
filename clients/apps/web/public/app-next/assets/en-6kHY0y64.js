@@ -1,0 +1,1 @@
+const e={"between.and":"and","feedback.agent.none":"None","hourly.at":"at","section.open":"Open","traveller.title":"Title","weekly.on":"on"};export{e as default};

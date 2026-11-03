@@ -193,14 +193,18 @@ public struct UsageSummary: Equatable, Sendable {
     public let periodEndMs: Double?
     public let nextTier: NextTier?
 
-    /** The card's line (the patch's `line`): when the trial ends or the usage resets, and "Upgrade for more usage." when there is a plan above. */
+    /**
+     * The card's line (the patch's `line`): when the trial ends or the usage resets, and "Upgrade for more usage." when there is
+     * a plan above. The month is written in full ("October 7", "7 octobre"): a short one ends in a full stop in French, German,
+     * Portuguese and Swedish ("7 nov."), and the sentence's own made two ("7 nov..").
+     */
     public func line(locale: Locale = L10n.locale(english: .current), timeZone: TimeZone = .current) -> String {
       var when: String?
       if let periodEndMs {
         let formatter = DateFormatter()
         formatter.locale = locale
         formatter.timeZone = timeZone
-        formatter.setLocalizedDateFormatFromTemplate("MMMd")
+        formatter.setLocalizedDateFormatFromTemplate("MMMMd")
         when = formatter.string(from: Date(timeIntervalSince1970: periodEndMs / 1000))
       }
       let head = status == "trialing" ? (when.map { L10n.text("Your trial ends on \($0).") } ?? L10n.text("Your trial is running.")) : (when.map { L10n.text("Usage resets on \($0).") } ?? "")
@@ -384,11 +388,19 @@ public struct UsageMeters: Equatable, Sendable {
   }
 
   /** "42%", "1%" for anything above nothing and under one (`qct`). */
-  public static func percent(_ value: Double) -> String {
-    guard value.isFinite else { return shown(0) }
+  public static func percent(_ value: Double) -> String { shown(percentNumber(value)) }
+
+  /**
+   * The number `percent` shows: 0 to 100, to the nearest (a half up), 1 for
+   * anything above nothing and under one. The credits' line over the
+   * composer says it too (`PhoneUpgrade.approaching`), so the two never
+   * read 92% and 93% (3 November 2026; the line rounded down).
+   */
+  public static func percentNumber(_ value: Double) -> Int {
+    guard value.isFinite else { return 0 }
     let clamped = max(0, min(100, value))
-    if clamped > 0 && clamped < 1 { return shown(1) }
-    return shown(Int(clamped.rounded(.toNearestOrAwayFromZero)))
+    if clamped > 0 && clamped < 1 { return 1 }
+    return Int(clamped.rounded(.toNearestOrAwayFromZero))
   }
 
   /** "42%", "42 %" in French. */
@@ -515,5 +527,45 @@ public enum TimeZoneChoices {
   public static func override(hostSettings: JSON?) -> String? {
     guard let zone = hostSettings?["userTimeZoneOverride"]?.string?.trimmingCharacters(in: .whitespaces), !zone.isEmpty else { return nil }
     return zone
+  }
+}
+
+/**
+ * General's and Permissions' wait for the computer's values, as the web's
+ * pages wait (`GeneralSettingsModel.load`,
+ * clients/apps/app/src/core/generalSettings.ts; docs/web-app/PROGRESS.md,
+ * the decision of 2 November 2026): nothing there may be changed until the
+ * computer's settings are read, so the page's defaults are never written
+ * over the person's rules or zone; a read that failed before any answer
+ * says so and keeps the page waiting; a read sent before a change began is
+ * dropped, its answer being older. The upstream app has no wait: it keeps
+ * these on the device and gives them to the computer at each connect.
+ */
+public struct HostSettingsLoad: Equatable, Sendable {
+  /** The computer's values are read: the page's controls may change them. */
+  public private(set) var loaded = false
+  /** The read failed before any answer came: the page waits, saying so. */
+  public private(set) var failed = false
+  /** Changes begun, so a read sent before one is dropped. */
+  private var writes = 0
+
+  public init() {}
+
+  /** A read begins: what to hand back with its answer (`answered`). */
+  public var reading: Int { writes }
+
+  /** A change begins: a read sent before it is dropped. */
+  public mutating func writing() { writes += 1 }
+
+  /** A read's answer (nil: it failed), with what `reading` said as it began: true when the page should take it. */
+  public mutating func answered(_ settings: JSON?, readAt: Int) -> Bool {
+    guard readAt == writes else { return false }
+    guard settings != nil else {
+      if !loaded { failed = true }
+      return false
+    }
+    loaded = true
+    failed = false
+    return true
   }
 }

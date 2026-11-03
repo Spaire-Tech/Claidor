@@ -120,8 +120,13 @@ extension AppStore {
   /** How long a channel call may take (`I$n`). */
   public static let channelDeadline: Double = 15
 
-  public func channels(_ agentId: String) async -> ChannelsView? {
-    await channelCall("getAgentChannels", ["id": .string(agentId)])
+  /**
+   * The view. With `wakes` false (the page's reads every 4 s and as the window comes forward), a computer that rests is
+   * let rest: the read fails at once and the page keeps what it shows (`commandIfAwake`, step 4), so a page left open
+   * never keeps it awake; the read as the page opens, and the one after a change, wake it as before.
+   */
+  public func channels(_ agentId: String, wakes: Bool = true) async -> ChannelsView? {
+    await channelCall("getAgentChannels", ["id": .string(agentId)], wakes: wakes)
   }
 
   /** Store securely: the token for `platform` (Slack takes its app and bot tokens together, the computer sorts them). */
@@ -137,10 +142,13 @@ extension AppStore {
     await channelCall("disconnectChannel", ["id": .string(agentId), "platform": .string(platform)])
   }
 
-  private func channelCall(_ method: String, _ args: JSON) async -> ChannelsView? {
+  private func channelCall(_ method: String, _ args: JSON, wakes: Bool = true) async -> ChannelsView? {
     guard let backend else { return nil }
     let answer = try? await withThrowingTaskGroup(of: JSON.self) { group in
-      group.addTask { try await backend.command(method, args) }
+      group.addTask {
+        if wakes { return try await backend.command(method, args) }
+        return try await backend.commandIfAwake(method, args)
+      }
       group.addTask {
         try await Task.sleep(nanoseconds: UInt64(Self.channelDeadline * 1_000_000_000))
         throw CancellationError()

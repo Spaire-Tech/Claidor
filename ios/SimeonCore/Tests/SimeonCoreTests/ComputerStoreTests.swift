@@ -100,6 +100,20 @@ final class ComputerBookTests: XCTestCase {
     book.unwatch("a")
     XCTAssertEqual(book.focused().read, ["b"])
   }
+
+  func testTheSameComputerAgainKeepsWhatItsViewsStarted() {
+    var book = ComputerBook()
+    book.watch("a")
+    _ = book.beginEnsure("a")
+    _ = book.beginEnsure("b")
+    var reload = book
+    reload.reset(keepingStarts: true)
+    XCTAssertEqual(reload.demanded, ["a"], "only what is still watched")
+    XCTAssertEqual(reload.reconnected().ensure, ["a"], "started again as the stream comes back")
+    XCTAssertFalse(reload.isEnsuring("a"), "the start under way before is forgotten")
+    book.reset()
+    XCTAssertTrue(book.demanded.isEmpty, "another account: none")
+  }
 }
 
 @MainActor
@@ -423,6 +437,167 @@ final class FollowingTheRebuildTests: XCTestCase {
       XCTAssertEqual(store.isSendingPaused, follows, "follows: \(follows)")
       store.detach()
     }
+  }
+}
+
+/**
+ * View › Reload keeps who is watching (the window's watch lasts as long as
+ * its view, and an account change keeps watched entries, `ComputerBook.reset`):
+ * the open agent's computer is read again rather than left on "Booting up";
+ * a sign-out still leaves nothing watched for the next account.
+ */
+@MainActor
+final class ComputerReloadTests: XCTestCase {
+  func testReloadKeepsWhoIsWatchingAndASignOutDoesNot() async throws {
+    let backend = DemoBackend(seed: DemoData.seed(), pace: 0.01, call: nil)
+    let store = AppStore()
+    await store.attach(backend)
+    guard let agent = store.agents.first(where: { !$0.isGroup }) else { return XCTFail("the demo has agents") }
+    store.watchComputer(agent.id)
+    try await Task.sleep(nanoseconds: 150_000_000)
+    XCTAssertNotNil(store.computer.status(agent.id), "read as it is watched")
+    await store.attach(backend)
+    XCTAssertTrue(store.computer.isWatched(agent.id), "still followed after Reload, the window's selection unchanged")
+    try await Task.sleep(nanoseconds: 150_000_000)
+    XCTAssertNotNil(store.computer.status(agent.id), "and read again once the stream is back")
+    store.detach()
+    XCTAssertTrue(store.computer.watched.isEmpty, "signed out: nothing watched")
+    await store.attach(DemoBackend(seed: DemoData.seed(), pace: 0.01, call: nil))
+    XCTAssertTrue(store.computer.watched.isEmpty, "nor for the next sign-in")
+    store.detach()
+  }
+
+  func testReloadStartsAgainTheComputerTheOpenViewStarted() async throws {
+    let backend = CommandLogBackend()
+    let store = AppStore()
+    await store.attach(backend)
+    // The full view open on Theo's computer, which it started; Iris's started too, then no longer shown.
+    store.watchComputer("theo")
+    store.openComputer("theo")
+    store.watchComputer("iris")
+    store.openComputer("iris")
+    store.unwatchComputer("iris")
+    try await Task.sleep(nanoseconds: 50_000_000)
+    let starts = backend.methods.filter { $0 == "ensureForeverBox" }.count
+    XCTAssertEqual(starts, 2)
+    await store.attach(backend)
+    XCTAssertTrue(store.computer.isWatched("theo"))
+    XCTAssertEqual(store.computer.demanded, ["theo"], "what the open view started, not what nobody shows")
+    XCTAssertNil(store.computer.entries["iris"], "an entry nobody watches goes")
+    // The stream back: Theo's computer is read and started again.
+    store.apply(.connection(live: true))
+    try await Task.sleep(nanoseconds: 50_000_000)
+    XCTAssertEqual(backend.methods.filter { $0 == "ensureForeverBox" }.count, starts + 1)
+    store.detach()
+    XCTAssertTrue(store.computer.demanded.isEmpty, "signed out: nothing kept")
+  }
+}
+
+/**
+ * The relay (`MigrationRelay`) for an account the server says has no
+ * computer: the stream ends at once with nothing in it, and is asked less
+ * and less often, 60 s apart at most; anything else, and a recreate
+ * accepted, bring it back to 3 s.
+ */
+final class MigrationRelayTests: XCTestCase {
+  func testWhileTheServerSaysThereIsNoComputerItIsAskedLessAndLessOften() async throws {
+    let script = RelayScript(held: 8)
+    let relay = MigrationRelay(open: { script.open($0) }, pause: { await script.pause($0) }, now: { script.now() })
+    relay.start()
+    try await script.until { script.waits.count == 9 }
+    relay.stop()
+    XCTAssertEqual(script.waits, [3, 6, 12, 24, 48, 60, 60, 60, 60])
+  }
+
+  func testAnythingElseItSaysBringsItBackTo3s() async throws {
+    let plan: [RelayScript.Stream] = [.nothing, .nothing, .event, .nothing, .nothing, .failure, .nothing, .nothing, .quiet]
+    let script = RelayScript(held: plan.count, plan: plan)
+    let relay = MigrationRelay(open: { script.open($0) }, pause: { await script.pause($0) }, now: { script.now() })
+    relay.start()
+    // The wait after the last planned stream is the one that holds.
+    try await script.until { script.waits.count == plan.count + 1 }
+    relay.stop()
+    XCTAssertEqual(Array(script.waits.prefix(plan.count)), [3, 6, 3, 3, 6, 3, 3, 6, 3], "an event, a failure and a computer's quiet stream each say there is a computer")
+    XCTAssertEqual(MigrationRelay.reattachWait(noComputerStreak: 0), 3)
+    XCTAssertEqual(MigrationRelay.reattachWait(noComputerStreak: 1), 3)
+    XCTAssertEqual(MigrationRelay.reattachWait(noComputerStreak: 40), 60)
+  }
+
+  func testAConnectionCutBeforeTheServersLastFrameSaysNothing() async throws {
+    let plan: [RelayScript.Stream] = [.nothing, .nothing, .cut, .cut, .nothing, .event, .cut]
+    let script = RelayScript(held: plan.count, plan: plan)
+    let relay = MigrationRelay(open: { script.open($0) }, pause: { await script.pause($0) }, now: { script.now() })
+    relay.start()
+    try await script.until { script.waits.count == plan.count + 1 }
+    relay.stop()
+    XCTAssertEqual(Array(script.waits.prefix(plan.count)), [3, 6, 3, 3, 3, 3, 3], "only the server's own quick, empty end says there is no computer")
+    XCTAssertEqual(script.offsets.last, "1", "a cut stream is read again from where it stopped")
+  }
+
+  func testARecreateAcceptedReadsAgainAtOnce() async throws {
+    let script = RelayScript(held: 4)
+    let relay = MigrationRelay(open: { script.open($0) }, pause: { await script.pause($0) }, now: { script.now() })
+    relay.start()
+    try await script.until { script.waits.count == 5 }
+    XCTAssertEqual(script.waits.last, 48, "waiting long while there was no computer")
+    XCTAssertEqual(script.opened, 5)
+    relay.recreateAccepted("op")
+    try await script.until { script.waits.count == 6 }
+    XCTAssertEqual(script.opened, 6, "read again at once")
+    XCTAssertEqual(script.waits.last, 3, "and asked as often as before")
+    relay.stop()
+  }
+}
+
+/** The relay's streams and waits as a test writes them: each stream by its number, the waits written down, a clock the test moves. */
+final class RelayScript: @unchecked Sendable {
+  /** Nothing at once (no computer), a finished step, a failure, nothing after 25 s (a computer's quiet stream), a connection cut before the server's last frame. */
+  enum Stream { case nothing, event, failure, quiet, cut }
+  private let lock = NSLock()
+  private let plan: [Stream]
+  /** Waits past this many last until cancelled (a stop, a recreate accepted). */
+  private let held: Int
+  private var waitList: [TimeInterval] = []
+  private var opens = 0
+  private var offsetList: [String] = []
+  private var clock = Date(timeIntervalSince1970: 0)
+  init(held: Int, plan: [Stream] = []) { self.held = held; self.plan = plan }
+  var waits: [TimeInterval] { lock.withLock { waitList } }
+  var opened: Int { lock.withLock { opens } }
+  var offsets: [String] { lock.withLock { offsetList } }
+  func now() -> Date { lock.withLock { clock } }
+  func open(_ offset: String) -> AsyncThrowingStream<JSON, Error> {
+    let kind: Stream = lock.withLock {
+      opens += 1
+      offsetList.append(offset)
+      if opens <= plan.count { return plan[opens - 1] }
+      return .nothing
+    }
+    return AsyncThrowingStream { continuation in
+      switch kind {
+      case .nothing: continuation.finish()
+      case .event:
+        continuation.yield(["phase": 6, "operationId": "op", "offsetKey": "1"])
+        continuation.finish()
+      case .failure: continuation.finish(throwing: SimeonAPIError(message: "refused", status: 500))
+      case .quiet:
+        self.lock.withLock { self.clock.addTimeInterval(25) }
+        continuation.finish()
+      case .cut: continuation.finish(throwing: ConnectStreamCut())
+      }
+    }
+  }
+  func pause(_ seconds: TimeInterval) async {
+    let count: Int = lock.withLock { waitList.append(seconds); return waitList.count }
+    if count > held { try? await Task.sleep(nanoseconds: 10_000_000_000) } else { await Task.yield() }
+  }
+  func until(_ condition: () -> Bool) async throws {
+    var tries = 0
+    while !condition(), tries < 200 {
+      try await Task.sleep(nanoseconds: 10_000_000)
+      tries += 1
+    }
+    XCTAssertTrue(condition(), "in time")
   }
 }
 

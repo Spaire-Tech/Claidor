@@ -71,23 +71,6 @@ public enum LocalToolPermission: String, CaseIterable, Sendable {
     default: nil
     }
   }
-
-  /**
-   * What connecting to the box does with the setting
-   * (`coordinator-resync.ts`, step `local_tool_permission`): a box that
-   * says always or never while this Mac is at "ask" is taken as the
-   * choice here (another Mac set it); otherwise the box is given this
-   * Mac's.
-   */
-  public enum Reconcile: Equatable, Sendable {
-    case adopt(LocalToolPermission)
-    case push(LocalToolPermission)
-  }
-
-  public static func reconcile(box: String?, mac: LocalToolPermission) -> Reconcile {
-    if mac == .ask, let box = box.flatMap(LocalToolPermission.init(rawValue:)), box != .ask { return .adopt(box) }
-    return .push(mac)
-  }
 }
 
 /**
@@ -123,7 +106,25 @@ public final class LocalToolSettings: @unchecked Sendable {
     }
   }
 
-  /** What the box is told and the menu shows (`getLocalToolPermission`). */
+  /**
+   * The team's answer (`GetTeamAdminSettingsOrEmptyIfNotInTeam`) kept: its
+   * ceiling, or none for `{}` (no team). A read that failed (nil) keeps the
+   * ceiling of the last answer, as the Windows app keeps it: taken as none,
+   * a team's "Never allow" was lifted at every launch without the network
+   * (the Electron app's `catch { return undefined; }` does that).
+   */
+  public func take(teamAdminSettings answer: JSON?) {
+    guard let answer else { return }
+    ceiling = LocalToolPermission.ceiling(teamAdminSettings: answer)
+  }
+
+  /**
+   * What the box is told and the menu shows (`getLocalToolPermission`): at
+   * each connect too, whatever the box's own copy says, as upstream's resync
+   * tells it (`coordinator-resync.ts`, step `local_tool_permission`). Nothing
+   * is taken back from the box: only this Mac writes it, and the box keeps it
+   * in a `settings.json` its agent can write.
+   */
   public var effective: LocalToolPermission { choice.capped(by: ceiling) }
 
   /** Another account than the last one forgets the last one's choice and ceiling; the first account keeps what is there. */

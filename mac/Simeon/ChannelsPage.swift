@@ -6,8 +6,10 @@ import SimeonMacCore
 /**
  * An agent's channels as its computer last answered (the window's channels
  * store, `I$n`): read when the page shows, every 4 s while the pane is open
- * and when the window comes forward, 15 s at most, a failed read keeping
- * the last answer; Connect, Disconnect and Refresh put the answer in place,
+ * and Simeon is in front, and when the window comes forward (the window's
+ * own reads only while it can be seen, `document.visibilityState`), 15 s at
+ * most, a failed read keeping the last answer; those last two let a resting
+ * computer rest. Connect, Disconnect and Refresh put the answer in place,
  * then read again.
  */
 @MainActor
@@ -20,10 +22,11 @@ final class ChannelsModel {
   @ObservationIgnored private var issued = 0
   @ObservationIgnored private var shown = 0
 
-  func load(_ agentId: String, store: AppStore) async {
+  /** A read; with `wakes` false, one that lets a resting computer rest (`AppStore.channels`). */
+  func load(_ agentId: String, store: AppStore, wakes: Bool = true) async {
     issued += 1
     let number = issued
-    apply(await store.channels(agentId), number)
+    apply(await store.channels(agentId, wakes: wakes), number)
   }
 
   private func apply(_ next: ChannelsView?, _ number: Int) {
@@ -75,13 +78,15 @@ struct ChannelsBody: View {
     }
     .frame(maxWidth: .infinity, alignment: .leading)
     .task(id: agent.id) {
+      await model.load(agent.id, store: store)
+      // Every 4 s only while Simeon is in front (the window's own: while `document.visibilityState` is "visible"), so a pane left open behind other apps, or a hidden Simeon, asks nothing.
       while !Task.isCancelled {
-        await model.load(agent.id, store: store)
         try? await Task.sleep(nanoseconds: 4_000_000_000)
+        if !Task.isCancelled && NSApp.isActive { await model.load(agent.id, store: store, wakes: false) }
       }
     }
     .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
-      Task { await model.load(agent.id, store: store) }
+      Task { await model.load(agent.id, store: store, wakes: false) }
     }
   }
 }

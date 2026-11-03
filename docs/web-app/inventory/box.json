@@ -207,8 +207,7 @@
     "ios/SimeonCore/Sources/SimeonCore/Onboarding.swift",
     "ios/SimeonCore/Sources/SimeonCore/Store.swift",
     "ios/SimeonCore/Sources/SimeonCore/StoreAgents.swift",
-    "ios/SimeonCore/Sources/SimeonCore/StoreSettings.swift",
-    "mac/Simeon/MacLocalPermission.swift"
+    "ios/SimeonCore/Sources/SimeonCore/StoreSettings.swift"
    ],
    "old_web_app": true
   },

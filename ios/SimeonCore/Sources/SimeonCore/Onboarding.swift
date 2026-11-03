@@ -189,7 +189,7 @@ extension AppStore {
       // The name the person gave, read again by the computer: it read Google's as it started, minutes before.
       _ = try? await backend.command("refreshUserName", [:])
       let made = try await backend.command("createAgent", Onboarding.chiefOfStaff(nonce: "\(client)-onboarding-\(UUID().uuidString.lowercased())"))
-      guard let id = made["agent"]?["id"]?.text ?? made["id"]?.text else { throw GatewayError(message: "createAgent: no agent in the answer", refused: true) }
+      guard let id = made["agent"]?["id"]?.text ?? made["id"]?.text else { throw GatewayError(message: "gateway createAgent failed: no agent in the answer", refused: true, method: "createAgent") }
       firstRunAgentId = id
     }
     guard let id = firstRunAgentId else { return nil }

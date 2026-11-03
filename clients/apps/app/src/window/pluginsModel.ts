@@ -435,19 +435,36 @@ export class PluginsModel {
    */
   async load(agentId: string | undefined): Promise<void> {
     const store = this.store
+    const signedIn = store.pluginSignIn
     this.catalogLoaded = store.catalogEntries.length > 0
     this.changed()
     const catalogAnswer = store.readCatalog()
     const pluginsAnswer = store.readEffectivePlugins()
     await store.readPluginServers()
     await catalogAnswer
+    // Signed out, or into another account, meanwhile: nothing more of this opening, and the next computer is not asked.
+    if (!this.isCurrent(signedIn)) return
     this.catalogLoaded = true
     this.changed()
     await pluginsAnswer
+    if (!this.isCurrent(signedIn)) return
     await store.readAgentSkills(agentId)
+    if (!this.isCurrent(signedIn)) return
     await store.readPluginSyncStatus()
+    if (!this.isCurrent(signedIn)) return
     // The one sync its opening starts; the banner is read again after it.
     void store.syncPluginSkillsQuietly()
+  }
+
+  /**
+   * Whether the sign-in an action began in (`store.pluginSignIn`, taken at
+   * its start) is still the one: after a sign-out, or another sign-in, the
+   * action writes nothing more and makes no more calls, so it never acts on
+   * the next account's computer (PluginsModel.swift's `isCurrent`; the
+   * Electron app runs an engine per account and cuts its calls at sign-out).
+   */
+  private isCurrent(signedIn: object | undefined): boolean {
+    return this.store.pluginSignIn === signedIn
   }
 
   /** The servers read again (`refreshServers`). */
@@ -498,13 +515,14 @@ export class PluginsModel {
     this.changed()
   }
 
-  /** One of the overlay's busy actions, its failure as the notice (`runReportingNotice`). */
+  /** One of the overlay's busy actions, its failure as the notice (`runReportingNotice`); none once another sign-in's. */
   private async reporting(work: () => Promise<void>): Promise<void> {
+    const signedIn = this.store.pluginSignIn
     this.setBusy(1)
     try {
       await work()
     } catch (error) {
-      this.fail(error)
+      if (this.isCurrent(signedIn)) this.fail(error)
     } finally {
       this.setBusy(-1)
     }
@@ -554,6 +572,7 @@ export class PluginsModel {
     this.show(undefined)
     const team =
       this.effective.get(entry.id)?.hasTeamConfiguredVariables === true
+    const signedIn = this.store.pluginSignIn
     if (connectorList(entry).length === 0) {
       if (agentId == null) {
         this.show(needsAgentNotice())
@@ -562,7 +581,9 @@ export class PluginsModel {
       this.setAdding(entry.id)
       try {
         if (!(await this.install(entry.id, {}, team))) return
+        if (!this.isCurrent(signedIn)) return
         const synced = await this.syncSkills(entry, agentId)
+        if (!this.isCurrent(signedIn)) return
         this.show(
           synced.error != null
             ? skillsDidntSyncNotice(entry.displayName, synced.error)
@@ -582,6 +603,7 @@ export class PluginsModel {
     try {
       const addedNow = !this.installed(entry).isInstalled
       if (!(await this.install(entry.id, {}, team))) return
+      if (!this.isCurrent(signedIn)) return
       await this.connectAfterInstall(entry, addedNow, agentId, tab)
     } finally {
       this.setAdding(undefined)
@@ -594,12 +616,13 @@ export class PluginsModel {
     values: Readonly<Record<string, string>>,
     team: boolean,
   ): Promise<boolean> {
+    const signedIn = this.store.pluginSignIn
     this.setBusy(1)
     try {
       await this.store.installPlugin(entryId, values, team)
       return true
     } catch (error) {
-      this.fail(error)
+      if (this.isCurrent(signedIn)) this.fail(error)
       return false
     } finally {
       this.setBusy(-1)
@@ -623,7 +646,10 @@ export class PluginsModel {
     const store = this.store
     const name = entry.displayName
     if (!store.pluginCallsReady) return
+    const signedIn = store.pluginSignIn
     const vendorId = await store.pluginVendorServer(entry.id)
+    // Signed out, or into another account, meanwhile: nothing more of this connect, here or on that computer.
+    if (!this.isCurrent(signedIn)) return
     const servers = store.pluginServers
     const row =
       (vendorId != null
@@ -636,6 +662,7 @@ export class PluginsModel {
     const serverId = vendorId ?? row?.id
     if (serverId == null || !needsSignIn) {
       const synced = await this.syncSkills(entry, agentId)
+      if (!this.isCurrent(signedIn)) return
       this.show(
         row?.status === 'connected'
           ? connectedNotice(name, synced.added, synced.error)
@@ -648,35 +675,49 @@ export class PluginsModel {
     try {
       answer = await store.askServerSignIn(serverId, accountKey)
     } catch (error) {
+      if (!this.isCurrent(signedIn)) return
       if (addedNow) await store.takeBackPlugin(entry.id, serverId)
+      if (!this.isCurrent(signedIn)) return
       this.show({ isError: true, text: didntConnect(name, why(error)) })
       return
     }
+    if (!this.isCurrent(signedIn)) return
     if (str(field(answer, 'status')) === 'already-authenticated') {
       await store.readPluginServers()
+      if (!this.isCurrent(signedIn)) return
       const synced = await this.syncSkills(entry, agentId)
+      if (!this.isCurrent(signedIn)) return
       this.show(connectedNotice(name, synced.added, synced.error))
       return
     }
     const url = webAddress(text(field(answer, 'authorizationUrl')))
     if (url == null) {
       if (addedNow) await store.takeBackPlugin(entry.id, serverId)
+      if (!this.isCurrent(signedIn)) return
       this.show({
         isError: true,
         text: didntConnect(name, str(field(answer, 'message'))),
       })
       return
     }
-    switch (
-      await this.openSignInAndWait(url, serverId, accountKey, name, tab)
-    ) {
+    const end = await this.openSignInAndWait(
+      url,
+      serverId,
+      accountKey,
+      name,
+      tab,
+    )
+    if (!this.isCurrent(signedIn)) return
+    switch (end) {
       case 'connected': {
         const synced = await this.syncSkills(entry, agentId)
+        if (!this.isCurrent(signedIn)) return
         this.show(connectedNotice(name, synced.added, synced.error))
         break
       }
       case 'cancelled':
         if (addedNow) await store.takeBackPlugin(entry.id, serverId)
+        if (!this.isCurrent(signedIn)) return
         this.show(notConnectedNotice(name))
         break
       case 'unconfirmed':
@@ -693,11 +734,16 @@ export class PluginsModel {
     agentId: string | undefined,
   ): Promise<Synced> {
     const store = this.store
+    const signedIn = store.pluginSignIn
     await store.dropPluginCopies(entry, agentId)
+    // Signed out, or into another account, meanwhile: nothing more goes to that computer.
+    if (!this.isCurrent(signedIn)) return { added: 0 }
     this.setBusy(1)
     try {
       const added = await store.syncPluginSkills(entry.id)
+      if (!this.isCurrent(signedIn)) return { added }
       await store.readPluginSyncStatus()
+      if (!this.isCurrent(signedIn)) return { added }
       await store.readAgentSkills(agentId)
       return { added }
     } catch (error) {
@@ -742,13 +788,17 @@ export class PluginsModel {
     const entry = this.catalog.find((one) => one.id === setup.entryId)
     const name = entry?.displayName ?? t('the plugin')
     this.show(undefined)
+    const signedIn = this.store.pluginSignIn
     let installedNew = false
     await this.reporting(async () => {
       if (setup.editing) {
         await this.store.updatePluginValues(setup.entryId, values)
+        // Signed out, or into another account, meanwhile: nothing more of it here.
+        if (!this.isCurrent(signedIn)) return
         this.show(setupSavedNotice(name))
       } else {
         if (!(await this.install(setup.entryId, values, false))) return
+        if (!this.isCurrent(signedIn)) return
         installedNew = true
       }
       this.setup = undefined
@@ -757,7 +807,7 @@ export class PluginsModel {
       if (samePage(this.path.at(-1), { kind: 'setup', id: setup.entryId }))
         this.back()
     })
-    if (!installedNew) return
+    if (!installedNew || !this.isCurrent(signedIn)) return
     // Its sign-in, when it has one, outside the busy mark (the window stays usable while the page is open); the values given are kept whatever the sign-in does.
     if (entry) await this.connectAfterInstall(entry, false, agentId, tab)
     else this.show({ isError: false, text: t`Added ${name}` })
@@ -769,18 +819,24 @@ export class PluginsModel {
     if (!server) return
     const store = this.store
     this.show(undefined)
+    const signedIn = store.pluginSignIn
     await this.reporting(async () => {
       const removal = await store.removePluginServer(serverId)
+      // Signed out, or into another account, meanwhile: nothing more said here, nor asked of that computer.
+      if (!this.isCurrent(signedIn)) return
       this.show(removedNotice(server.name, removal.removed, removal.reason))
       const entry = entryForServer(server, this.catalog)
       if (entry && resyncsSkills(removal)) {
         await store.dropPluginCopies(entry, agentId)
+        if (!this.isCurrent(signedIn)) return
         try {
           await store.syncPluginSkills()
         } catch {
           // Let go, as the Mac does.
         }
+        if (!this.isCurrent(signedIn)) return
         await store.readAgentSkills(agentId)
+        if (!this.isCurrent(signedIn)) return
       }
       // A server no entry claims has no page left.
       if (
@@ -804,16 +860,21 @@ export class PluginsModel {
       this.effective.get(pluginId)?.displayName ??
       t('the plugin')
     this.show(undefined)
+    const signedIn = store.pluginSignIn
     await this.reporting(async () => {
       const removal = await store.uninstallPluginEntry(pluginId)
+      // Signed out, or into another account, meanwhile: nothing more said here, nor asked of that computer.
+      if (!this.isCurrent(signedIn)) return
       this.show(removedNotice(name, removal.removed, removal.reason))
       if (entry && resyncsSkills(removal)) {
         await store.dropPluginCopies(entry, agentId)
+        if (!this.isCurrent(signedIn)) return
         try {
           await store.syncPluginSkills()
         } catch {
           // Let go, as the Mac does.
         }
+        if (!this.isCurrent(signedIn)) return
         await store.readAgentSkills(agentId)
       }
     })
@@ -876,8 +937,11 @@ export class PluginsModel {
       return
     }
     this.show(undefined)
+    const signedIn = store.pluginSignIn
     await this.reporting(async () => {
       const answer = await store.askServerSignIn(server.id, accountKey)
+      // Signed out, or into another account, meanwhile: nothing more of this sign-in here.
+      if (!this.isCurrent(signedIn)) return
       const status = str(field(answer, 'status')) ?? ''
       const url = webAddress(text(field(answer, 'authorizationUrl')))
       if (status === 'started' && url != null) {
@@ -890,6 +954,7 @@ export class PluginsModel {
           server.name,
           tab,
         ).then((end) => {
+          if (!this.isCurrent(signedIn)) return
           switch (end) {
             case 'connected':
               this.show(connectedNotice(server.name, 0))
@@ -1002,12 +1067,15 @@ export class PluginsModel {
     agentId: string,
   ): Promise<boolean> {
     this.show(undefined)
+    const signedIn = this.store.pluginSignIn
     try {
       await this.store.saveAgentSkill(skill, name, description, body, agentId)
+      // Signed out, or into another account, meanwhile: nothing said here.
+      if (!this.isCurrent(signedIn)) return false
       this.show(savedNotice(name.trim()))
       return true
     } catch (error) {
-      this.fail(error)
+      if (this.isCurrent(signedIn)) this.fail(error)
       return false
     }
   }
@@ -1015,13 +1083,16 @@ export class PluginsModel {
   /** Delete skill: its page closes once it is gone (`delete`). */
   async delete(skill: AgentSkill, agentId: string): Promise<void> {
     this.show(undefined)
+    const signedIn = this.store.pluginSignIn
     try {
       await this.store.deleteAgentSkill(skill.id, agentId)
+      // Signed out, or into another account, meanwhile: nothing said here.
+      if (!this.isCurrent(signedIn)) return
       this.show(deletedNotice(skill.name))
       if (samePage(this.path.at(-1), { kind: 'skill', id: skill.id }))
         this.back()
     } catch (error) {
-      this.fail(error)
+      if (this.isCurrent(signedIn)) this.fail(error)
     }
   }
 

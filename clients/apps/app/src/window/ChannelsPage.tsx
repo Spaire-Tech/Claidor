@@ -32,9 +32,10 @@ import { useWatched } from './useStore'
 /**
  * An agent's channels as its computer last answered (`ChannelsModel`, the
  * window's channels store `I$n`): read when the page shows, every 4 s while
- * it does and when the window comes forward, 15 s at most, a failed read
- * keeping the last answer; Connect, Disconnect and Refresh put their answer
- * in place, then read again.
+ * it does and the window can be seen (`POn`: `document.visibilityState`),
+ * and when the window comes forward, 15 s at most, a failed read keeping
+ * the last answer; those last two let a resting computer rest. Connect,
+ * Disconnect and Refresh put their answer in place, then read again.
  */
 class ChannelsModel {
   private listeners = new Set<() => void>()
@@ -64,10 +65,11 @@ class ChannelsModel {
     readonly agentId: string,
   ) {}
 
-  async load(): Promise<void> {
+  /** A read; with `wakes` false, one that lets a resting computer rest (`AppStore.channels`). */
+  async load(wakes = true): Promise<void> {
     this.issued += 1
     const number = this.issued
-    this.apply(await this.store.channels(this.agentId), number)
+    this.apply(await this.store.channels(this.agentId, wakes), number)
   }
 
   private apply(next: ChannelsView | undefined, number: number): void {
@@ -107,16 +109,18 @@ export function ChannelsBody({
 }) {
   const [model] = useState(() => new ChannelsModel(store, agent.id))
   useWatched(model)
-  // Read now and every 4 s after each answer while the page shows, and when the window comes forward.
+  // Read now; then every 4 s after each answer while the page shows and the window can be seen (`POn`: a hidden or
+  // minimized window asks nothing), and when the window comes forward.
   useEffect(() => {
     let live = true
     let timer: ReturnType<typeof setTimeout> | undefined
-    const loop = async () => {
-      await model.load()
-      if (live) timer = setTimeout(() => void loop(), 4_000)
+    const loop = async (first: boolean) => {
+      if (first) await model.load()
+      else if (document.visibilityState === 'visible') await model.load(false)
+      if (live) timer = setTimeout(() => void loop(false), 4_000)
     }
-    void loop()
-    const forward = () => void model.load()
+    void loop(true)
+    const forward = () => void model.load(false)
     window.addEventListener('focus', forward)
     return () => {
       live = false

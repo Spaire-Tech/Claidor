@@ -96,6 +96,36 @@ final class FlightBookingTests: XCTestCase {
     XCTAssertEqual(Traveller.age("2008-11-13", on: "2026-11-12"), 17)
   }
 
+  /**
+   * A name refuses the digits the server refuses (`_NAME`, a Python `\d`: any decimal digit, in any script) and no other
+   * character with a value as a number: a Han numeral (李一, 健一), ① or Ⅻ is a name's.
+   */
+  func testANameRefusesOnlyDecimalDigits() {
+    let today = Traveller.date("2026-10-13")!
+    var ada = Traveller(id: "pas_0000Ada")
+    ada.givenName = "Ada"; ada.familyName = "Lovelace"; ada.title = .ms; ada.gender = .f
+    ada.bornOn = "1987-07-24"; ada.email = "ada@example.com"; ada.phone = "+1 (206) 555-0100"
+    func given(_ name: String) -> String? {
+      var traveller = ada
+      traveller.givenName = name
+      return traveller.problem(passportNeeded: false, today: today)?.field
+    }
+    func family(_ name: String) -> String? {
+      var traveller = ada
+      traveller.familyName = name
+      return traveller.problem(passportNeeded: false, today: today)?.field
+    }
+    for name in ["李一", "健一", "一郎", "〇", "A①", "Ⅻ", "Ⅷ"] {
+      XCTAssertNil(given(name), name)
+      XCTAssertNil(family(name), name)
+    }
+    // Another script's digit, a wide one, and a digit with something added to it (a keycap, an accent), as the server reads them.
+    for name in ["Ada1", "0", "9", "A9a", "Ada٣", "Ali٣", "३", "A１", "太郎１", "1\u{FE0F}\u{20E3}", "A1\u{301}"] {
+      XCTAssertEqual(given(name), "given_name", name)
+      XCTAssertEqual(family(name), "family_name", name)
+    }
+  }
+
   func testAnAdultSeatAndWhatChangedComeWithTheFlight() throws {
     let card = try form()
     XCTAssertNil(card.adultOn(0), "a form from before the flight's day checks no age")

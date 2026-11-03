@@ -332,6 +332,50 @@ describe('the pages’ values (GeneralSettingsModel)', () => {
     expect(model.rules.allow).toEqual(['read my calendar'])
   })
 
+  it('reads again when the computer comes back after a failed read, never as it goes to rest', async () => {
+    const store = new StandIn()
+    let reads = 0
+    const read = store.readHostSettings.bind(store)
+    store.readHostSettings = () => {
+      reads += 1
+      return read()
+    }
+    const listeners = new Set<() => void>()
+    const stream = {
+      isLive: true,
+      subscribe(listener: () => void) {
+        listeners.add(listener)
+        return () => {
+          listeners.delete(listener)
+        }
+      },
+    }
+    const tell = (live: boolean) => {
+      stream.isLive = live
+      for (const listener of [...listeners]) listener()
+    }
+    const model = new GeneralSettingsModel(store, 'UTC')
+    store.settings = undefined
+    await model.load()
+    expect(model.loadFailed).toBe(true)
+    const stop = model.readAgainWhenBack(stream)
+    // The computer goes to rest: a read would wake it.
+    tell(false)
+    expect(reads).toBe(1)
+    // Back: read again, as nothing was read.
+    store.settings = { userTimeZoneOverride: 'Asia/Tokyo' }
+    tell(true)
+    await eventually(() => model.loaded)
+    expect(reads).toBe(2)
+    expect(model.zoneOverride).toBe('Asia/Tokyo')
+    // Read: resting and coming back again ask nothing more.
+    tell(false)
+    tell(true)
+    expect(reads).toBe(2)
+    stop()
+    expect(listeners.size).toBe(0)
+  })
+
   it('adds, edits, moves and deletes rules, each shown once the computer has it', async () => {
     const store = new StandIn()
     const model = new GeneralSettingsModel(store, 'UTC')

@@ -278,7 +278,8 @@ struct FlightPage: View {
   var body: some View {
     let from = offer.from.isEmpty ? (offer.legs.first?.from ?? "") : offer.from
     let to = offer.to.isEmpty ? (offer.legs.last?.to ?? "") : offer.to
-    let route = [from, to].filter { !$0.isEmpty }.joined(separator: " to ")
+    // "SEA → LAX", as the old app's flight pane wrote it (`simeon-flight-pane`); an arrow reads the same in every language.
+    let route = [from, to].filter { !$0.isEmpty }.joined(separator: " → ")
     VStack(alignment: .leading, spacing: 16) {
       VStack(spacing: 2) {
         Text(route)
@@ -373,7 +374,7 @@ private struct FlightLegCard: View {
     let details = (leg.flightLines + [leg.cabin, leg.duration.isEmpty ? "" : String(localized: "\(leg.duration) in the air")]).filter { !$0.isEmpty }
     VStack(alignment: .leading, spacing: 0) {
       HStack(alignment: .center, spacing: 12) {
-        Text([leg.from, leg.to].filter { !$0.isEmpty }.joined(separator: " to "))
+        Text([leg.from, leg.to].filter { !$0.isEmpty }.joined(separator: " → "))
           .font(.system(size: 17, weight: .medium))
           .foregroundStyle(look.paneInk)
         Spacer(minLength: 0)

@@ -9,6 +9,7 @@ import { migrationEventFrom } from './computerRebuild'
 import type { JSONValue } from './json'
 import {
   ConnectEnvelopes,
+  ConnectStreamCut,
   MigrationRelay,
   apiRebuildServer,
   connectStream,
@@ -186,6 +187,38 @@ describe('the server’s side of the rebuild (`ComputerWireTests`)', () => {
           void one
       })(),
     ).rejects.toThrow('503')
+  })
+
+  it('a connection that ends before the server’s last frame is cut, not ended', async () => {
+    const read = async (body: Uint8Array) => {
+      const fetcher = (async () =>
+        new Response(new Uint8Array(body), {
+          status: 200,
+        })) as unknown as typeof fetch
+      const got: JSONValue[] = []
+      for await (const one of connectStream(
+        api(),
+        'WatchSandBoxMigration',
+        {},
+        new AbortController().signal,
+        fetcher,
+      ))
+        got.push(one)
+      return got
+    }
+    const step = ConnectEnvelopes.envelope({
+      phase: 1,
+      operationId: 'op',
+      offsetKey: '4',
+    })
+    expect(await read(new Uint8Array([...step, ...end('{}')]))).toHaveLength(1)
+    expect(await read(new Uint8Array(end('{}')))).toEqual([])
+    await expect(read(new Uint8Array(step))).rejects.toBeInstanceOf(
+      ConnectStreamCut,
+    )
+    await expect(read(new Uint8Array())).rejects.toBeInstanceOf(
+      ConnectStreamCut,
+    )
   })
 
   it('stopped while its token is read, the stream sends nothing', async () => {
@@ -366,6 +399,111 @@ describe('following the server’s record (`MigrationRelay`)', () => {
     timers.resume()
     await eventually(() => streams.offsets.length === 3)
     expect(streams.offsets).toEqual(['', '3', ''])
+    relay.stop()
+  })
+
+  it('asks less and less often while the server says there is no computer, 60 s apart at most', async () => {
+    const streams = new Streams()
+    const timers = new Timers()
+    const relay = new MigrationRelay(streams.open, timers.wait, timers.timer)
+    relay.start()
+    for (let round = 1; round <= 7; round += 1) {
+      await eventually(() => streams.offsets.length === round)
+      // The server's answer for an account with no computer: the stream ends at once, with nothing in it.
+      streams.end()
+      await eventually(() => timers.waits.length === round)
+      timers.resume()
+    }
+    expect(timers.waits).toEqual([
+      3_000, 6_000, 12_000, 24_000, 48_000, 60_000, 60_000,
+    ])
+    relay.stop()
+  })
+
+  it('anything else the server says, and a recreate accepted, bring it back to 3 s', async () => {
+    const streams = new Streams()
+    const timers = new Timers()
+    let clock = 0
+    const relay = new MigrationRelay(
+      streams.open,
+      timers.wait,
+      timers.timer,
+      () => clock,
+    )
+    relay.start()
+    const round = async (end: () => void) => {
+      const reads = streams.offsets.length
+      const waits = timers.waits.length
+      end()
+      await eventually(() => timers.waits.length === waits + 1)
+      timers.resume()
+      await eventually(() => streams.offsets.length === reads + 1)
+    }
+    await eventually(() => streams.offsets.length === 1)
+    await round(() => streams.end())
+    await round(() => streams.end())
+    // A finished step.
+    await round(() => {
+      streams.push({ phase: 6, operationId: 'op', offsetKey: '4' })
+      streams.end()
+    })
+    await round(() => streams.end())
+    await round(() => streams.end())
+    // A failure.
+    await round(() => streams.end(new Error('refused')))
+    await round(() => streams.end())
+    await round(() => streams.end())
+    // A computer's stream, quiet for 25 s.
+    await round(() => {
+      clock += 25_000
+      streams.end()
+    })
+    expect(timers.waits).toEqual([
+      3_000, 6_000, 3_000, 3_000, 6_000, 3_000, 3_000, 6_000, 3_000,
+    ])
+    // Asked less often again, then a recreate accepted: read again at once, without waiting.
+    await round(() => streams.end())
+    streams.end()
+    await eventually(() => timers.waits.length === 11)
+    expect(timers.waits.at(-1)).toBe(6_000)
+    relay.recreateAccepted('op')
+    await eventually(() => streams.offsets.length === 12)
+    streams.end()
+    await eventually(() => timers.waits.length === 12)
+    expect(timers.waits.at(-1)).toBe(3_000)
+    relay.stop()
+  })
+
+  it('a connection cut before the server’s last frame says nothing about a computer', async () => {
+    const streams = new Streams()
+    const timers = new Timers()
+    const relay = new MigrationRelay(streams.open, timers.wait, timers.timer)
+    relay.start()
+    const ends: (() => void)[] = [
+      () => streams.end(),
+      () => streams.end(),
+      () => streams.end(new ConnectStreamCut()),
+      () => streams.end(new ConnectStreamCut()),
+      () => streams.end(),
+      () => {
+        streams.push({ phase: 6, operationId: 'op', offsetKey: '7' })
+        streams.end()
+      },
+      () => streams.end(new ConnectStreamCut()),
+    ]
+    for (const [index, end] of ends.entries()) {
+      await eventually(() => streams.offsets.length === index + 1)
+      end()
+      await eventually(() => timers.waits.length === index + 1)
+      timers.resume()
+    }
+    await eventually(() => streams.offsets.length === ends.length + 1)
+    // Only the server's own quick, empty end says there is no computer.
+    expect(timers.waits).toEqual([
+      3_000, 6_000, 3_000, 3_000, 3_000, 3_000, 3_000,
+    ])
+    // A cut stream is read again from where it stopped.
+    expect(streams.offsets.at(-1)).toBe('7')
     relay.stop()
   })
 
