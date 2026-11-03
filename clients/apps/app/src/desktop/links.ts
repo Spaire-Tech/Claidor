@@ -8,7 +8,8 @@
 //   finished on this account's computer only when this app named that
 //   sign-in to the server, signed in, in its lifetime
 //   (`finishReturnedSignIn`); any other is dropped without a word, its
-//   words never shown (the Mac finishes any: review of 2 November 2026).
+//   words never shown (review of 2 November 2026; the Mac's
+//   `finishReturnedSignIn` the same since 3 November).
 //   Never held, never dropped as a repeat.
 // - The server's last page back on the app's address (`simeon://connected`)
 //   is the open sign-in's sheet closing there; outside a sign-in nothing.

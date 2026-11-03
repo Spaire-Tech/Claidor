@@ -675,7 +675,7 @@ final class AppConnector {
     // app, which finishes it on its own computer: never the web page, which
     // used whichever account the browser held (`AppReturnSignIn`).
     if let returning = AppReturnSignIn.state(returningViaServer: url) {
-      await store.sendSignInBack(state: returning, scheme: AppPlatform.urlScheme)
+      await store.sendSignInBack(state: returning, scheme: AppPlatform.urlScheme, name: name)
     }
     let state = SheetState()
     // Closed on the vendor's confirm page, or back on our address: look a little longer. Cancelled, or back saying it didn't work: two looks, then the buttons are free again (Cancel used to hold every Add for 20 s).
