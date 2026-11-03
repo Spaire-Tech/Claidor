@@ -3,7 +3,13 @@ import Foundation
 /**
  * The places on the person's Mac that Simeon does not touch, whatever the
  * local-computer setting says (`shared/sensitive-local-paths.ts`): keys and
- * sign-ins. Matched as the Electron app matches them, letter case and all.
+ * sign-ins. Matched as the Electron app matches them, but with no regard to
+ * letter case, as the Mac's disk reads a name (APFS ignores it: `~/.SSH` is
+ * `~/.ssh`; upstream's sandbox takes darwin's file system as case-insensitive,
+ * `_caseInsensitiveFs` in `packages/shell-exec/sandbox/hardcoded-policy.ts`),
+ * and, as the Windows app's guard reads them
+ * (windows/src/main/hands/sensitivePaths.ts): `;`, `|`, `&`, `<`, `>` and `,`
+ * start or end a name in a command, and `${HOME}` is the home folder in a path.
  */
 public enum SensitivePaths {
   /** Relative to the home folder unless absolute (`SENSITIVE_LOCAL_PATHS`). */
@@ -18,6 +24,10 @@ public enum SensitivePaths {
     ".netrc",
     ".npmrc",
     ".pypirc",
+    // Sign-ins kept as plain text: git's (`credential.helper store`), GitHub's command-line tool's, 1Password's.
+    ".git-credentials",
+    ".config/gh/hosts.yml",
+    ".config/op",
     ".simeon",
     // The data folder's earlier name.
     ".caisra",
@@ -47,7 +57,7 @@ public enum SensitivePaths {
     entry.hasPrefix("/") ? entry : "\(stripTrailingSlash(normalizeSeparators(home)))/\(entry)"
   }
 
-  /** `~/x`, `$HOME/x` and `x` (relative to home) all become `<home>/x` (`expandLocalPath`). */
+  /** `~/x`, `$HOME/x`, `${HOME}/x` and `x` (relative to home) all become `<home>/x` (`expandLocalPath`). */
   public static func expand(_ target: String, home: String) -> String {
     var unquoted = target.trimmingCharacters(in: .whitespacesAndNewlines)
     if let first = unquoted.first, first == "\"" || first == "'" { unquoted.removeFirst() }
@@ -56,14 +66,17 @@ public enum SensitivePaths {
     let base = stripTrailingSlash(normalizeSeparators(home))
     if trimmed == "~" { return base }
     if trimmed.hasPrefix("~/") { return "\(base)/\(trimmed.dropFirst(2))" }
-    if trimmed == "$HOME" { return base }
+    if trimmed == "$HOME" || trimmed == "${HOME}" { return base }
     if trimmed.hasPrefix("$HOME/") { return "\(base)/\(trimmed.dropFirst(6))" }
+    if trimmed.hasPrefix("${HOME}/") { return "\(base)/\(trimmed.dropFirst(8))" }
     if trimmed.hasPrefix("/") { return trimmed }
     return "\(base)/\(trimmed)"
   }
 
+  /** Under `root` or `root` itself, letter case aside (APFS). */
   static func isUnder(_ path: String, _ root: String) -> Bool {
-    let normalized = stripTrailingSlash(path)
+    let normalized = stripTrailingSlash(path).lowercased()
+    let root = root.lowercased()
     return normalized == root || normalized.hasPrefix(root + "/")
   }
 
@@ -83,15 +96,19 @@ public enum SensitivePaths {
     return entries.first { isUnder(resolved, absolute($0, home: home)) }
   }
 
-  /** The entry a shell command names as a path (`sensitiveLocalPathInCommand`). */
+  /** What may come just before a path in a command's words, and just after a name (the Windows app's `edge` and `after`, less Windows' own `:`). */
+  static let before = "(?:^|[\\s\"'=(,;|&<>\\{])"
+  static let after = "(?:[/\\s\"'),;|&<>*?\\}]|$)"
+
+  /** The entry a shell command names as a path (`sensitiveLocalPathInCommand`); the names, the home folder's too, in any letter case. */
   public static func entry(inCommand command: String, home: String) -> String? {
     let text = normalizeSeparators(command)
     let base = stripTrailingSlash(normalizeSeparators(home))
     for entry in entries {
       let escaped = NSRegularExpression.escapedPattern(for: entry)
       let pattern = entry.hasPrefix("/")
-        ? "(?:^|[\\s\"'=(])\(escaped)(?:[/\\s\"')]|$)"
-        : "(?:^|[\\s\"'=(])(?:~|\\$HOME|\\$\\{HOME\\}|\(NSRegularExpression.escapedPattern(for: base)))?/?\(escaped)(?:[/\\s\"')]|$)"
+        ? "\(before)(?i:\(escaped))\(after)"
+        : "\(before)(?:~|\\$HOME|\\$\\{HOME\\}|(?i:\(NSRegularExpression.escapedPattern(for: base))))?/?(?i:\(escaped))\(after)"
       if text.range(of: pattern, options: .regularExpression) != nil { return entry }
     }
     return nil

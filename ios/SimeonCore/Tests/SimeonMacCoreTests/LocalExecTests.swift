@@ -8,7 +8,9 @@ import SimeonCore
  * below are what `shared/sensitive-local-paths.ts` and
  * `shared/local-tool-permission-machinery.ts`, bundled as shipped and run in
  * Node with the home folder `/Users/bass`, said (scratchpad
- * `s7/fixtures/sensitive-and-describe-probe.txt`), the holes included.
+ * `s7/fixtures/sensitive-and-describe-probe.txt`), the holes included; where
+ * the Mac now closes one of them as the Windows app does (letter case, `;`,
+ * `>`, `${HOME}`), the case says so.
  */
 final class LocalExecTests: XCTestCase {
   private let home = "/Users/bass"
@@ -17,14 +19,17 @@ final class LocalExecTests: XCTestCase {
     let paths: [(String, String, String?)] = [
       ("read-file", "~/.ssh/id_rsa", ".ssh"),
       ("read-file", "file:///Users/bass/.ssh/id_rsa", nil),
-      ("read-file", "/USERS/bass/.ssh/id_rsa", nil),
-      ("read-file", "/Users/bass/.SSH/id_rsa", nil),
+      // Holes in the Electron app's guard (letter case), closed: the Mac's disk ignores it.
+      ("read-file", "/USERS/bass/.ssh/id_rsa", ".ssh"),
+      ("read-file", "/Users/bass/.SSH/id_rsa", ".ssh"),
       ("read-file", "~/.ssh", ".ssh"),
       ("read-file", "~/.ssh/", ".ssh"),
       ("read-file", "/Users/bass//.ssh", ".ssh"),
       ("read-file", "\"~/.ssh/x\"", ".ssh"),
       ("read-file", "$HOME/.aws/credentials", ".aws"),
-      ("read-file", "${HOME}/.aws/credentials", nil),
+      // A hole in the Electron app's guard, closed as on Windows.
+      ("read-file", "${HOME}/.aws/credentials", ".aws"),
+      ("read-file", "${HOME}", nil),
       ("read-file", "/private/etc/shadow", nil),
       ("read-file", "/etc/master.passwd", "/etc/master.passwd"),
       ("read-file", "~/Library/Keychains", "Library/Keychains"),
@@ -49,14 +54,15 @@ final class LocalExecTests: XCTestCase {
       ("cat ~/.ssh/id_rsa", ".ssh"),
       ("cat /Users/bass/.ssh/id_rsa", ".ssh"),
       ("cd ~ && cat .ssh/id_rsa", ".ssh"),
-      ("cat ~/.SSH/id_rsa", nil),
+      // Holes in the Electron app's guard, closed as the Windows app closes them: letter case, ";" and ">".
+      ("cat ~/.SSH/id_rsa", ".ssh"),
       ("cat \"$HOME/.ssh/id_rsa\"", ".ssh"),
       ("cat ${HOME}/.ssh/id_rsa", ".ssh"),
-      ("cd ~/.ssh; cat id_rsa", nil),
+      ("cd ~/.ssh; cat id_rsa", ".ssh"),
       ("cat ~/Library/Application\\ Support/Google/Chrome/x", nil),
       ("cat '/Users/bass/Library/Application Support/Google/Chrome/x'", "Library/Application Support/Google/Chrome"),
       ("ls /etc/shadow", "/etc/shadow"),
-      ("echo x>/etc/shadow", nil),
+      ("echo x>/etc/shadow", "/etc/shadow"),
       ("cat ~/.sshfs", nil),
       ("cat ~/.ssh", ".ssh"),
       ("f=~/.ssh/id; cat $f", ".ssh"),
@@ -65,8 +71,59 @@ final class LocalExecTests: XCTestCase {
       XCTAssertEqual(SensitivePaths.entry(inCommand: command, home: home), entry, command)
     }
     XCTAssertNil(SensitivePaths.refusal(action: "send-input", target: "cat ~/.ssh/id_rsa", home: home))
+    XCTAssertEqual(SensitivePaths.refusal(action: "read-file", target: "~/.git-credentials", home: home), "Simeon does not read, write or run anything under ~/.git-credentials on this Mac: it holds keys or sign-ins. Ask the person to do that part themselves.")
     XCTAssertEqual(SensitivePaths.refusal(action: "read-file", target: "~/.ssh/x", home: home), "Simeon does not read, write or run anything under ~/.ssh on this Mac: it holds keys or sign-ins. Ask the person to do that part themselves.")
     XCTAssertEqual(SensitivePaths.refusal(action: "run-command", target: "ls /etc/shadow", home: home), "Simeon does not read, write or run anything under /etc/shadow on this Mac: it holds keys or sign-ins. Ask the person to do that part themselves.")
+  }
+
+  /** The Windows app's own cases for what the Electron app let through (windows/test/hands.test.ts), on the Mac. */
+  func testTheOtherSpellingsOfAPlace() {
+    let paths: [(String, String?)] = [
+      ("/users/BASS/Library/keychains/login.keychain-db", "Library/Keychains"),
+      ("~/library/application support/google/chrome/Default/Cookies", "Library/Application Support/Google/Chrome"),
+      ("/ETC/master.passwd", "/etc/master.passwd"),
+      ("${HOME}/.ssh", ".ssh"),
+      ("\"${HOME}/.kube/config\"", ".kube"),
+      // Sign-ins kept as plain text, on the list now (the Windows app's too).
+      ("~/.git-credentials", ".git-credentials"),
+      ("/Users/bass/.config/gh/hosts.yml", ".config/gh/hosts.yml"),
+      ("~/.config/op/config", ".config/op"),
+      ("~/.config/OP", ".config/op"),
+      // Not one of them.
+      ("~/.config/gh/config.yml", nil),
+      ("~/.config/opal/x", nil),
+      ("~/.git-credentials.md", nil),
+      ("~/.sshx/a", nil),
+      ("~/Documents/.ssh-notes.txt", nil),
+      ("/Users/bassist/.ssh/id_rsa", nil),
+    ]
+    for (target, entry) in paths {
+      XCTAssertEqual(SensitivePaths.entry(forPath: target, home: home), entry, target)
+    }
+    let commands: [(String, String?)] = [
+      ("CAT /USERS/BASS/.SSH/ID_RSA", ".ssh"),
+      ("cat $HOME/.SSH/id_rsa", ".ssh"),
+      ("cat </etc/shadow", "/etc/shadow"),
+      ("cat ~/.netrc|base64", ".netrc"),
+      ("cat ~/.netrc&", ".netrc"),
+      ("echo x>>~/.aws/credentials", ".aws"),
+      ("cd ~/.ssh&&cat id_rsa", ".ssh"),
+      ("ls ~/.ssh*", ".ssh"),
+      ("echo {~/.netrc,x}", ".netrc"),
+      ("cat ~/.git-credentials", ".git-credentials"),
+      ("gh auth status; cat ~/.config/gh/hosts.yml", ".config/gh/hosts.yml"),
+      ("ls ~/.config/op", ".config/op"),
+      // Not one of them.
+      ("npm install && npm test", nil),
+      ("git log HEAD~1", nil),
+      ("echo .sshx", nil),
+      ("cat ~/.config/gh/config.yml", nil),
+      ("ls ~/.ss*", nil),
+      ("cat /etc/shadows", nil),
+    ]
+    for (command, entry) in commands {
+      XCTAssertEqual(SensitivePaths.entry(inCommand: command, home: home), entry, command)
+    }
   }
 
   func testWhatARequestIsAbout() {
@@ -105,6 +162,52 @@ final class LocalExecTests: XCTestCase {
     XCTAssertEqual(gate(LocalToolRequest(action: "run-command", target: "ls -la", resourcePath: terminals), "q1", .ask, approved), LocalExec.unapproved)
     // The command's approval reads its own terminal file (AwaitExternalShell).
     XCTAssertNil(gate(LocalToolRequest(action: "read-file", target: terminals + "/42.txt", attachToResourcePath: terminals), "q1", .ask, approved))
+  }
+
+  /** A command run in a place that holds keys is refused whatever its words, as the Windows app refuses it. */
+  func testTheFolderACommandRunsIn() {
+    let terminals = "/Users/bass/terminals"
+    let cat = LocalToolRequest(action: "run-command", target: "cat id_rsa", resourcePath: terminals)
+    func gate(_ request: LocalToolRequest, _ folders: [String], _ permission: LocalToolPermission = .always) -> String? {
+      LocalToolRules.refusal(request: request, approvalId: nil, permission: permission, live: [:], terminalsFolder: terminals, home: home, folders: folders)
+    }
+    let refused = "Simeon does not read, write or run anything under ~/.ssh on this Mac: it holds keys or sign-ins. Ask the person to do that part themselves."
+    XCTAssertEqual(gate(cat, ["/Users/bass/.ssh"]), refused)
+    XCTAssertEqual(gate(cat, ["~/.ssh"]), refused)
+    XCTAssertEqual(gate(cat, ["/Users/bass/projects", "/Users/bass/.SSH"]), refused)
+    XCTAssertEqual(gate(cat, ["/Users/bass/.ssh"], .never), refused)
+    XCTAssertNil(gate(cat, ["/Users/bass/projects"]))
+    XCTAssertNil(gate(cat, ["", " "]))
+    XCTAssertNil(gate(cat, []))
+    XCTAssertEqual(gate(cat, ["/Users/bass/projects"], .never), LocalExec.disabled)
+    // Only a command has a folder.
+    XCTAssertNil(gate(LocalToolRequest(action: "send-input", target: "y"), ["/Users/bass/.ssh"]))
+
+    // The folders: the one asked for, as written and from the root, else the shell's own; then where it really is.
+    let same: (String) -> String = { $0 }
+    func folders(_ kind: String, _ value: JSON, carried: String = "/Users/bass", real: (String) -> String = { $0 }) -> [String] {
+      LocalToolRules.commandFolders(kind: kind, value: value, root: home, carried: carried, real: real)
+    }
+    XCTAssertEqual(folders("shellStreamArgs", ["command": "cat id_rsa", "workingDirectory": ".ssh"]), [".ssh", "/Users/bass/.ssh"])
+    XCTAssertEqual(folders("shellStreamArgs", ["command": "cat id_rsa", "workingDirectory": " ~/.ssh "]), ["~/.ssh", "/Users/bass/~/.ssh"])
+    XCTAssertEqual(folders("backgroundShellSpawnArgs", ["command": "cat id_rsa", "workingDirectory": "/Users/bass/.ssh"]), ["/Users/bass/.ssh"])
+    XCTAssertEqual(folders("shellStreamArgs", ["command": "cat id_rsa"], carried: "/Users/bass/.ssh", real: same), ["/Users/bass/.ssh"])
+    XCTAssertEqual(folders("shellStreamArgs", ["command": "cat id_rsa", "workingDirectory": ""], carried: "/Users/bass/keys") { $0 == "/Users/bass/keys" ? "/Users/bass/.ssh" : $0 }, ["/Users/bass/keys", "/Users/bass/.ssh"])
+    XCTAssertEqual(folders("readArgs", ["path": "/Users/bass/.ssh/id_rsa"]), [])
+    XCTAssertEqual(folders("writeShellStdinArgs", ["chars": "y"]), [])
+    // Each of those refused under Always; the root, the projects folder and a link to it are not.
+    let cases: [(JSON, String, (String) -> String)] = [
+      (["command": "cat id_rsa", "workingDirectory": ".ssh"], "/Users/bass", same),
+      (["command": "cat id_rsa", "workingDirectory": "~/.ssh"], "/Users/bass", same),
+      (["command": "cat id_rsa"], "/Users/bass/.ssh", same),
+      (["command": "cat id_rsa"], "/Users/bass/keys", { $0 == "/Users/bass/keys" ? "/Users/bass/.ssh" : $0 }),
+    ]
+    for (value, carried, real) in cases {
+      XCTAssertEqual(gate(cat, folders("shellStreamArgs", value, carried: carried, real: real)), refused, "\(value) in \(carried)")
+    }
+    XCTAssertNil(gate(cat, folders("shellStreamArgs", ["command": "cat id_rsa"])))
+    XCTAssertNil(gate(cat, folders("shellStreamArgs", ["command": "ls", "workingDirectory": "projects"])))
+    XCTAssertNil(gate(cat, folders("shellStreamArgs", ["command": "ls"], carried: "/Users/bass/link") { _ in "/Users/bass/projects" }))
   }
 
   func testWhereThingsMayBe() {

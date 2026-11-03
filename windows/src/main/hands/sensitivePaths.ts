@@ -57,8 +57,10 @@ interface Entry {
  * folder (its contexts' keys too); `_netrc` is the name curl reads on
  * Windows; `Vault` and `Crypto` hold the same kind of keys as
  * `Credentials` and `Protect`. `/etc/shadow` becomes the registry's hives
- * in `System32\config`. The app's data folder and its install folder are
- * added by `places`.
+ * in `System32\config`. GitHub's command-line tool keeps its sign-ins in
+ * `%APPDATA%\GitHub CLI` on Windows, and in `.config/gh` where
+ * `XDG_CONFIG_HOME` says so. The app's data folder and its install folder
+ * are added by `places`.
  */
 export const windowsEntries: readonly Entry[] = [
   { base: 'home', path: '.ssh' },
@@ -72,6 +74,11 @@ export const windowsEntries: readonly Entry[] = [
   { base: 'home', path: '_netrc' },
   { base: 'home', path: '.npmrc' },
   { base: 'home', path: '.pypirc' },
+  // Sign-ins kept as plain text: git's (`credential.helper store`), GitHub's command-line tool's, 1Password's.
+  { base: 'home', path: '.git-credentials' },
+  { base: 'home', path: '.config/gh/hosts.yml' },
+  { base: 'appData', path: 'GitHub CLI/hosts.yml' },
+  { base: 'home', path: '.config/op' },
   // The Mac's data folder (the Mac's earlier one is left out: no Windows app ever kept one).
   { base: 'home', path: '.simeon' },
   { base: 'home', path: '.cursor' },

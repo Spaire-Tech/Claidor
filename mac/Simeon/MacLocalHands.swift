@@ -12,8 +12,9 @@ import SimeonMacCore
  * signed in, the box's requests come in on `GET {gateway}/local-exec/requests`
  * and are answered on `POST {gateway}/local-exec/responses`. A command runs
  * in the person's zsh, its state carried from one to the next; a file is
- * read or moved. Each request passes the places that hold keys, then the
- * setting (Never, Always allow, or what the person allowed once).
+ * read or moved. Each request passes the places that hold keys (a command's
+ * folder and a file's real place too), then the setting (Never, Always
+ * allow, or what the person allowed once).
  *
  * Inside the app, not a second process: the hands stop when Simeon quits or
  * signs out, where the Electron daemon kept serving after both.
@@ -250,9 +251,9 @@ actor LocalHandsProvider {
     }
   }
 
-  /** The places that hold keys, then the setting (`isLocalUseBlocked`). */
-  private func refusal(for described: LocalToolRequest?, approvalId: String?) -> String? {
-    LocalToolRules.refusal(request: described, approvalId: approvalId, permission: LocalToolSettings().effective, live: MacLocalPermission.approvals.live(), terminalsFolder: terminalsFolder, home: home)
+  /** The places that hold keys (a command's `folders` too), then the setting (`isLocalUseBlocked`). */
+  private func refusal(for described: LocalToolRequest?, approvalId: String?, folders: [String] = []) -> String? {
+    LocalToolRules.refusal(request: described, approvalId: approvalId, permission: LocalToolSettings().effective, live: MacLocalPermission.approvals.live(), terminalsFolder: terminalsFolder, home: home, folders: folders)
   }
 
   private func exec(_ request: LocalExecWire.Request) async {
@@ -261,7 +262,10 @@ actor LocalHandsProvider {
       return
     }
     let (kind, value) = LocalExecWire.command(message)
-    if let reason = refusal(for: LocalToolRules.describe(kind: kind, value: value, terminalsFolder: terminalsFolder), approvalId: request.approvalId) {
+    // The folder a command would run in (the one asked for, else where the shell is), as written and where it really is:
+    // one that holds keys is refused, whatever the command's words (the Windows app's `exec`).
+    let folders = LocalToolRules.commandFolders(kind: kind, value: value, root: root, carried: shell.cwd) { Self.realpathNearestExisting($0) }
+    if let reason = refusal(for: LocalToolRules.describe(kind: kind, value: value, terminalsFolder: terminalsFolder), approvalId: request.approvalId, folders: folders) {
       enqueue(LocalExecWire.control(request.requestId, LocalExecWire.thrown(id: 0, error: reason)))
       return
     }
@@ -303,13 +307,20 @@ actor LocalHandsProvider {
 
   // MARK: Files
 
-  /** Inside the root, also once links are followed (`containPath`); the path as the root sees it. */
+  /**
+   * Inside the root, also once links are followed (`containPath`); the path as the root sees it. Where it really is is
+   * checked against the places that hold keys too, so a link inside the root to one of them is refused (the Windows
+   * app's `contain`).
+   */
   func contain(_ path: String) throws -> String {
     let resolved = LocalToolRules.resolve(path, against: root)
     if LocalToolRules.escapesRoot(root, resolved) { throw LocalHandsError(LocalExec.outsideRoot(path)) }
     let realRoot = Self.realpathNearestExisting(root)
     let realResolved = Self.realpathNearestExisting(resolved)
     if LocalToolRules.escapesRoot(realRoot, realResolved) { throw LocalHandsError(LocalExec.throughSymlink(path)) }
+    for one in [resolved, realResolved] {
+      if let sensitive = SensitivePaths.refusal(action: "read-file", target: one, home: home) { throw LocalHandsError(sensitive) }
+    }
     return resolved
   }
 

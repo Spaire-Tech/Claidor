@@ -202,10 +202,11 @@ export function covers(
  * `LocalToolRules.refusal`): a place that holds keys first, whatever the
  * setting; then Never; Always; and under Ask, only what the person allowed
  * once, exactly that (a command's approval also covers its terminal file).
- * On Windows a command is also refused when the folder it would run in (the
- * one asked for, or where the shell is; the provider gives it as written
- * and where it really is) is such a place, and names in its words are also
- * read from that folder: the Mac checks the command's words only.
+ * A command is also refused when the folder it would run in (the one asked
+ * for, or where the shell is; the provider gives it as written and where it
+ * really is) is such a place, as on the Mac (`LocalToolRules.commandFolders`);
+ * here names in its words are also read from that folder, which the Mac
+ * doesn't do.
  */
 export function refusal(fields: {
   request: LocalToolRequest | undefined
