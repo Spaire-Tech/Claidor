@@ -839,13 +839,21 @@ export function travellerJSON(traveller: Traveller): JSONObject {
 
 const nameMarks = new Set('!"#$%&()*+,./:;<=>?@[\\]^_`{|}~')
 
-/** A name as on the ID: 1 to 40 characters, no digits and none of the marks the host refuses. */
+/**
+ * A name as on the ID: 1 to 40 characters, none of them a decimal digit or
+ * one of the marks the host refuses. The digits are the server's (`_NAME`,
+ * a Python `\d`), as the core's `\p{Nd}`: any script's decimal digit (٣, १,
+ * １), and a character whose first scalar is one (a keycap, a digit with an
+ * accent), is refused; a Han numeral (李一), ① or Ⅷ is a name's.
+ */
 function isName(value: string): boolean {
   const each = characters(value)
   return (
     each.length >= 1 &&
     each.length <= 40 &&
-    each.every((character) => !isDigit(character) && !nameMarks.has(character))
+    each.every(
+      (character) => !/^\p{Nd}/u.test(character) && !nameMarks.has(character),
+    )
   )
 }
 

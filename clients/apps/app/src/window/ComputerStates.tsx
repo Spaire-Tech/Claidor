@@ -633,7 +633,7 @@ function DialogButton({
  * only goes forward for this rebuild; Continue in Background on a bar under
  * a hairline. It cannot be closed.
  */
-function RebuildCard({
+export function RebuildCard({
   view,
   driver,
   box,
@@ -666,7 +666,7 @@ function RebuildCard({
               aria-label={
                 step.label +
                 (step.state === 'done'
-                  ? ', completed'
+                  ? t(', completed')
                   : step.state === 'active'
                     ? t(', in progress')
                     : t(', not started'))

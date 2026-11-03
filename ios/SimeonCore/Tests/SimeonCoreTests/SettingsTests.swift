@@ -79,6 +79,31 @@ final class SettingsTests: XCTestCase {
     XCTAssertEqual(AutoReviewInstructions.label(.ask), "Ask first")
   }
 
+  /**
+   * "Ton essai se termine le 7 nov..": the plan's date had a short month, which ends in a full stop in French, German,
+   * Portuguese and Swedish, before the sentence's own. Its month is in full in every language, with one full stop.
+   */
+  func testThePlanLineWritesTheMonthInFull() {
+    let utc = TimeZone(identifier: "UTC")!
+    // 7 October 2026, 00:00 UTC.
+    let end = 1_791_331_200_000.0
+    let trial = UsageSummary.ManagePlan(planName: "Pro", tier: "pro", status: "trialing", periodEndMs: end, nextTier: nil)
+    let active = UsageSummary.ManagePlan(planName: "Pro", tier: "pro", status: "active", periodEndMs: end, nextTier: nil)
+    XCTAssertEqual(trial.line(locale: Locale(identifier: "en_US"), timeZone: utc), "Your trial ends on October 7.")
+    XCTAssertEqual(active.line(locale: Locale(identifier: "en_US"), timeZone: utc), "Usage resets on October 7.")
+    let dates = [
+      "fr_FR": "7 octobre", "de_DE": "7. Oktober", "pt_BR": "7 de outubro", "sv_SE": "7 oktober", "es_ES": "7 de octubre",
+      "nl_NL": "7 oktober", "it_IT": "7 ottobre", "pl_PL": "7 października", "tr_TR": "7 Ekim",
+    ]
+    for (identifier, date) in dates {
+      for plan in [trial, active] {
+        let line = plan.line(locale: Locale(identifier: identifier), timeZone: utc)
+        XCTAssertTrue(line.contains(date), "\(identifier): \(line)")
+        XCTAssertFalse(line.contains(".."), "\(identifier): \(line)")
+      }
+    }
+  }
+
   func testUsageSummaryAndMetersAsTheElectronAppAndWindow() {
     let cases = Self.fixture["usage"]?.array ?? []
     XCTAssertEqual(cases.count, 500)
@@ -102,7 +127,9 @@ final class SettingsTests: XCTestCase {
       XCTAssertEqual(summary.managePlan?.nextTier?.label, shipped?["managePlan"]?["nextTier"]?["label"]?.string, label)
       XCTAssertEqual(summary.managePlan?.periodEndMs, shipped?["managePlan"]?["periodEndMs"]?.double, label)
       if let line = row["planLine"]?.string {
-        XCTAssertEqual(summary.managePlan?.line(locale: Locale(identifier: "en_US"), timeZone: TimeZone(identifier: "UTC")!), line, label)
+        // The patch's line with its month in full ("Oct 16" is "October 16"; `testThePlanLineWritesTheMonthInFull`).
+        let inFull = line.replacingOccurrences(of: " on Oct ", with: " on October ")
+        XCTAssertEqual(summary.managePlan?.line(locale: Locale(identifier: "en_US"), timeZone: TimeZone(identifier: "UTC")!), inFull, label)
       } else {
         XCTAssertNil(summary.managePlan, label)
       }
