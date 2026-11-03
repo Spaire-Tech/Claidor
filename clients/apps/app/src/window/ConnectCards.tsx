@@ -186,7 +186,7 @@ function ConnectorCardView({
               className="connector-connect"
               disabled={connector.connecting !== undefined}
               aria-busy={connector.connecting === name}
-              aria-label={t`Connect ${name}`}
+              aria-label={refused ? retryWord() : t`Connect ${name}`}
               onClick={() => connector.connect(name, setRefused)}
             >
               {connector.connecting === name ? (

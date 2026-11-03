@@ -547,7 +547,8 @@ private struct ConnectorCard: View {
           }
           .buttonStyle(.hand)
           .disabled(MacConnector.shared.connecting != nil)
-          .accessibilityLabel("Connect \(name)")
+          // Its name says what it shows: Retry after a refusal (the window's button is named by its word).
+          .accessibilityLabel(refused ? Connecting.retry : String(localized: "Connect \(name)"))
         }
       }
     }
