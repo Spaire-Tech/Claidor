@@ -157,6 +157,16 @@ final class LocalExecTests: XCTestCase {
       ("cd ~/.docker && cat config.json.bak", nil),
       ("cd ~/projects && cat Keychains/x", nil),
       ("cd - && cat Keychains/x", nil),
+      // Up from a folder it moves to, `../` as many times as it goes up (`./` and doubled slashes between).
+      ("cd ~/Documents; cat ../.ssh/id_rsa", ".ssh"),
+      ("cd ~/a/b && cat ../../.aws/credentials", ".aws"),
+      ("cd ~/a/b && cat ./..//./../.aws/credentials", ".aws"),
+      ("cd ~/Library/Caches && ls ../Keychains", "Library/Keychains"),
+      ("cd /Users/bass/Documents && cat ../../../etc/shadow", "/etc/shadow"),
+      ("cd ~/Documents && cat ../notes.txt", nil),
+      ("cd ~/Documents && cat ../.sshx", nil),
+      ("cd ~/a/b && cat ../.aws/credentials", nil),
+      ("cat ../.sshx", nil),
     ]
     for (command, entry) in moved {
       XCTAssertEqual(SensitivePaths.entry(inCommand: command, home: home), entry, command)
@@ -171,6 +181,11 @@ final class LocalExecTests: XCTestCase {
     XCTAssertEqual(SensitivePaths.entry(inCommand: "cd .. && cat .config/gh/hosts.yml", home: home, folders: ["/Users/bass/projects"]), ".config/gh/hosts.yml")
     XCTAssertNil(SensitivePaths.entry(inCommand: "cat hosts.yml", home: home, folders: ["/Users/bass/projects"]))
     XCTAssertNil(SensitivePaths.entry(inCommand: "cat Cookies.bak", home: home, folders: ["/Users/bass/Library"]))
+    // Up from the folder it runs in.
+    XCTAssertEqual(SensitivePaths.entry(inCommand: "cat ../.ssh/id_rsa", home: home, folders: ["/Users/bass/Documents"]), ".ssh")
+    XCTAssertEqual(SensitivePaths.entry(inCommand: "cat ../.ssh/id_rsa", home: home, folders: ["~/Documents"]), ".ssh")
+    XCTAssertNil(SensitivePaths.entry(inCommand: "cat ../notes.txt", home: home, folders: ["/Users/bass/Documents"]))
+    XCTAssertNil(SensitivePaths.entry(inCommand: "cat ../.sshx", home: home, folders: ["/Users/bass/Documents"]))
     let gate = LocalToolRules.refusal(request: LocalToolRequest(action: "run-command", target: "cat hosts.yml"), approvalId: nil, permission: .always, live: [:], terminalsFolder: "/Users/bass/terminals", home: home,
                                       folders: LocalToolRules.commandFolders(kind: "shellStreamArgs", value: ["command": "cat hosts.yml"], root: home, carried: "/Users/bass/.config/gh") { $0 })
     XCTAssertEqual(gate, "Simeon does not read, write or run anything under ~/.config/gh/hosts.yml on this Mac: it holds keys or sign-ins. Ask the person to do that part themselves.")

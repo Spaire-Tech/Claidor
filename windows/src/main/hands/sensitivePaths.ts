@@ -444,11 +444,25 @@ function foldersMovedTo(text: string, from: string): string[] {
   return out
 }
 
+/** A folder (canonical) and each one above it, with how many levels up: `c:/a/b`, `c:/a`, `c:/`. */
+function foldersUp(folder: string): { folder: string; up: number }[] {
+  const out = [{ folder, up: 0 }]
+  let at = folder
+  for (let up = 1; up < 256 && at !== '/' && !/^[a-z]:\/$/.test(at); up += 1) {
+    const cut = at.replace(/\/[^/]*$/, '')
+    at = cut === '' ? '/' : /^[a-z]:$/.test(cut) ? `${cut}/` : cut
+    out.push({ folder: at, up })
+  }
+  return out
+}
+
 /**
  * The place a shell command names as a path (`sensitiveLocalPathInCommand`):
  * written whole (its drive left out too, when it is the home folder's), from
  * the home folder, or from a folder the command runs in (`folders`: where
- * the shell is, or the one asked for) or moves to.
+ * the shell is, or the one asked for) or moves to, or from a folder above
+ * one of those, `../` (or `..\`) as many times as it is above (the Mac's
+ * `SensitivePaths.entry(inCommand:)`).
  */
 export function placeInCommand(
   command: string,
@@ -469,11 +483,13 @@ export function placeInCommand(
         : spelled(place.absolute, between, gap)
     patterns.push(new RegExp(`${before}${whole}${after}`))
     if (place.fromHome) patterns.push(new RegExp(`${before}/?${spelled(place.fromHome, between, gap)}${after}`))
-    for (const context of contexts) {
-      if (!under(place.absolute, context) || place.absolute === context) continue
-      const relative = place.absolute.slice(context.length + (context.endsWith('/') ? 0 : 1))
-      patterns.push(new RegExp(`${before}(?:\\./)?${spelled(relative, between, gap)}${after}`))
-    }
+    for (const start of contexts)
+      for (const { folder: context, up } of foldersUp(start)) {
+        if (!under(place.absolute, context) || place.absolute === context) continue
+        const relative = place.absolute.slice(context.length + (context.endsWith('/') ? 0 : 1))
+        const climb = `(?:\\./+)*${'\\.\\./+(?:\\./+)*'.repeat(up)}`
+        patterns.push(new RegExp(`${before}${climb}${spelled(relative, between, gap)}${after}`))
+      }
     if (texts.some((one) => patterns.some((pattern) => pattern.test(one)))) return place
   }
   return undefined

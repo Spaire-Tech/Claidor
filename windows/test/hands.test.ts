@@ -329,6 +329,29 @@ describe('Windows’ own spellings in a command (the review’s probe, S2, S5)',
     expect(gate(['C:\\Users\\Jonathan\\Documents'])).toBeUndefined()
   })
 
+  it('refuses a name reached by going up from a folder it runs in or moves to, as the Mac does', () => {
+    const up: [string, string | undefined][] = [
+      ['cd ~/Documents; cat ../.ssh/id_rsa', ssh],
+      ['cd ~\\Documents; gc ..\\.ssh\\id_rsa', ssh],
+      ['cd ~/a/b && cat ../../.aws/credentials', '~\\.aws'],
+      ['cd ~\\a\\b; gc ..\\..\\.aws\\credentials', '~\\.aws'],
+      ['cd ~/a/b && cat ./..//./../.aws/credentials', '~\\.aws'],
+      ['cd $env:APPDATA\\Microsoft\\Windows; gci ..\\Protect', '%APPDATA%\\Microsoft\\Protect'],
+      ['cd C:\\Users\\Jonathan\\Documents; type ..\\..\\..\\Windows\\System32\\config\\SAM', '%SystemRoot%\\System32\\config'],
+      // Still not one of them.
+      ['cd ~/Documents && cat ../notes.txt', undefined],
+      ['cd ~/Documents && cat ../.sshx', undefined],
+      ['cd ~/a/b && cat ../.aws/credentials', undefined],
+      ['cat ../.sshx', undefined],
+    ]
+    for (const [command, shown] of up) expect(inCommand(command), command).toBe(shown)
+    // Up from the folder it runs in.
+    expect(inCommand('cat ../.ssh/id_rsa', ['C:\\Users\\Jonathan\\Documents'])).toBe(ssh)
+    expect(inCommand('gc ..\\.ssh\\id_rsa', ['C:\\Users\\Jonathan\\Documents'])).toBe(ssh)
+    expect(inCommand('cat ../notes.txt', ['C:\\Users\\Jonathan\\Documents'])).toBeUndefined()
+    expect(inCommand('cat ../.sshx', ['C:\\Users\\Jonathan\\Documents'])).toBeUndefined()
+  })
+
   it('reads a long name’s short form in the home folder too', () => {
     const long: SensitivePlaces = {
       home: 'C:\\Users\\Christopher',

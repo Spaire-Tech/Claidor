@@ -12,7 +12,7 @@ import Foundation
  * start or end a name in a command, and `${HOME}` is the home folder in a path;
  * a command's words are read as zsh reads them (escapes and quotes taken out,
  * `/./` and `x/../` worked out), and its names also from the folders it runs
- * in or `cd`s into. No guard on a command's words can be complete (a name
+ * in or `cd`s into, and from the folders above them (`../`). No guard on a command's words can be complete (a name
  * built while it runs, a wildcard, `$(…)`): it stops the plain spellings.
  */
 public enum SensitivePaths {
@@ -168,12 +168,17 @@ public enum SensitivePaths {
       var patterns = [entry.hasPrefix("/")
         ? "\(before)(?i:\(escaped))\(after)"
         : "\(before)(?:~|\\$HOME|\\$\\{HOME\\}|(?i:\(NSRegularExpression.escapedPattern(for: base))))?/?(?i:\(escaped))\(after)"]
-      // From each folder it runs in or moves to, the place's rest of the way (`./` before it or not).
+      // From each folder it runs in or moves to, the place's rest of the way (`./` before it or not), and from each folder
+      // above that one, `../` as many times as it is above (`cd ~/Documents; cat ../.ssh/id_rsa`).
       let place = absolute(entry, home: home).lowercased()
       for context in contexts {
-        let prefix = context == "/" ? "/" : context.lowercased() + "/"
-        guard place.hasPrefix(prefix), place.count > prefix.count else { continue }
-        patterns.append("\(before)(?:\\./)?(?i:\(NSRegularExpression.escapedPattern(for: String(place.dropFirst(prefix.count)))))\(after)")
+        let names = segments(context.lowercased())
+        for up in 0...names.count {
+          let prefix = "/" + names.dropLast(up).map { $0 + "/" }.joined()
+          guard place.hasPrefix(prefix), place.count > prefix.count else { continue }
+          let climb = "(?:\\./+)*" + String(repeating: "\\.\\./+(?:\\./+)*", count: up)
+          patterns.append("\(before)\(climb)(?i:\(NSRegularExpression.escapedPattern(for: String(place.dropFirst(prefix.count)))))\(after)")
+        }
       }
       let pattern = patterns.map { "(?:\($0))" }.joined(separator: "|")
       if versions.contains(where: { $0.range(of: pattern, options: .regularExpression) != nil }) { return entry }
