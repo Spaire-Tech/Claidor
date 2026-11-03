@@ -230,56 +230,54 @@ final class LocalExecTests: XCTestCase {
   }
 
   /**
-   * Every folder holds for the whole command, but for one shape (`onlyFolder`, the re-review of 3 November 2026): a
-   * first `cd X &&` with nothing after it that could go back, so the usual `cd ~/project && …` is not read from where
-   * the shell was. When in doubt, every folder.
+   * Every folder a command may be in holds for the whole of it, always (the re-review of 3 November 2026: each
+   * exception opened a way in): where the shell is, the one asked for, each `cd`, `pushd` or `-C` folder, and those
+   * above each. A command run beside a place may be refused for a name there; `cd` elsewhere first is the remedy.
    */
-  func testOnlyAFirstCdThatCannotGoBackLeavesTheShellsFolder() {
+  func testEveryFolderHoldsForTheWholeCommand() {
     func entry(_ folder: String, _ command: String) -> String? { SensitivePaths.entry(inCommand: command, home: home, folders: [folder]) }
-    // The review's ordinary commands, in their usual shape (fp5).
-    for (folder, command) in [
-      ("/Users/bass/.docker", "cd ~/project && cat config.json"),
-      ("/Users/bass/.docker", "cd ~/project && npm test 2>&1 && cat config.json"),
-      ("/Users/bass/.docker", "cd ~/project && make 2>&1 | grep config.json"),
-      ("/Users/bass/.docker", "cd ~/project && node a.js &> out.log && cat config.json"),
-      ("/Users/bass/.docker", "cd ~/project && cat config.json >&2"),
-      ("/Users/bass/.docker", "cd ~/project && npm test |& grep config.json"),
-      ("/Users/bass/.docker", #"cd ~/project && echo "a; b" && cat config.json"#),
-      ("/etc", "cd ~/project && grep shadow src/theme.css"),
-      ("/etc", "cd ~/project && npm run build 2>&1 | grep shadow"),
-      ("/Users/bass/.config", "cd ~/project && op run -- npm start"),
-      ("/Users/bass/project", "cd frontend && cat ../.npmrc"),
-      ("/Users/bass/project", "cd frontend && npm test 2>&1 && cat ../.npmrc"),
-      ("/Users/bass/.config/gh", "pushd /tmp && cat hosts.yml"),
-    ] {
-      XCTAssertNil(entry(folder, command), "\(command) in \(folder)")
-    }
-    // The cd's own folder, and those above it, still hold.
-    XCTAssertEqual(entry("/Users/bass/project", "cd ~/.config/gh && cat hosts.yml"), ".config/gh/hosts.yml")
-    XCTAssertEqual(entry("/Users/bass/project", "cd ~/Documents && cat ../.ssh/id_rsa"), ".ssh")
-    // Anything that could go back, or run after a failed cd, keeps every folder (the review's ways in).
+    // Refused again, accepted: the shell's folder holds after a cd too.
+    XCTAssertEqual(entry("/Users/bass/.docker", "cd ~/project && cat config.json"), ".docker/config.json")
+    XCTAssertEqual(entry("/Users/bass/.docker", "cd ~/project && npm test -- --coverage 2>&1 | grep config.json"), ".docker/config.json")
+    XCTAssertEqual(entry("/etc", "cd ~/project && grep shadow src/theme.css"), "/etc/shadow")
+    XCTAssertEqual(entry("/Users/bass/project", "cd frontend && cat ../.npmrc"), ".npmrc")
+    // And with the shell moved first, as a command of its own, the same command passes.
+    XCTAssertNil(entry("/Users/bass/project", "cat config.json"))
+    XCTAssertNil(entry("/Users/bass/project", "npm test -- --coverage 2>&1 | grep config.json"))
+    XCTAssertNil(entry("/Users/bass/project/frontend", "npm test && cat ../.npmrc"))
+    XCTAssertNil(entry("/Users/bass/.config/gh", "cd /tmp && cat hosts.yml.bak"))
+    // A command's own name is not a path there.
+    XCTAssertNil(entry("/Users/bass/.config", "cd ~/project && op run -- npm start"))
     let gh = ".config/gh/hosts.yml"
+    // The review's ways back to the shell's folder, each still refused (quoted, escaped, aliased or not).
     for command in [
       "cd /tmp && cd - && cat hosts.yml", "cd /tmp && cd ~- && cat hosts.yml", #"cd /tmp && cd "$OLDPWD" && cat hosts.yml"#,
       "cd /tmp && cd -1 && cat hosts.yml", "pushd /tmp && pushd && cat hosts.yml", "pushd /tmp && popd && cat hosts.yml",
-      "cd /tmp && (cd - && cat hosts.yml)", "cd /tmp && { cd -; cat hosts.yml; }", "cd /tmp && echo $(cd -; cat hosts.yml)",
-      "cd /tmp && sh -c 'cd ~/.config/gh && cat hosts.yml'", "cd /tmp && eval 'cd -' && cat hosts.yml",
-      "cd /tmp && cat $OLDPWD/hosts.yml", "cd /tmp && cat ~-/hosts.yml", "cd /tmp && cat ${OLDPWD}/hosts.yml",
-      "cd /nonexistent; cat hosts.yml", "cd /nonexistent && true; cat hosts.yml", "cd /nonexistent && true || cat hosts.yml",
-      "cd /nonexistent && true & cat hosts.yml", "cd /nonexistent && true\ncat hosts.yml",
-      #"cd /nonexistent && echo \"; cat hosts.yml"#, "cd /nonexistent && echo $'\\''; cat hosts.yml",
-      "(cd /tmp && ls); cat hosts.yml", "{ cd /tmp && ls; }; cat hosts.yml", "echo `cd /tmp && ls`; cat hosts.yml",
-      #"cd $HOME/x && cat hosts.yml"#, #"cd "/tmp" && cat hosts.yml"#, "cd /t* && cat hosts.yml", "cd ~bass/x && cat hosts.yml",
-      #"echo "x; cd /tmp && " | cat hosts.yml"#, "builtin cd /tmp && cat hosts.yml",
+      "cd /tmp && c''d - && cat hosts.yml", #"cd /tmp && c\d - && cat hosts.yml"#, #"cd /tmp && "c"d - && cat hosts.yml"#,
+      "cd /tmp && 'cd' - && cat hosts.yml", "pushd /tmp && p''opd && cat hosts.yml", #"pushd /tmp && po\pd && cat hosts.yml"#,
+      "cd /tmp && ch''dir - && cat hosts.yml", "cd /tmp && ${:-cd} - && cat hosts.yml", "cd /tmp && - && cat hosts.yml",
+      "cd /tmp && 1 && cat hosts.yml", "cd /tmp && z gh && cat hosts.yml", "cd /tmp && e''val 'c''d -' && cat hosts.yml",
+      "cd /tmp && sh -l''c 'c''d -; cat hosts.yml'", "cd /tmp && bash -lc 'cd ~-; cat hosts.yml'",
+      "cd /tmp && source =(print cd -) && cat hosts.yml", "cd /tmp && . <(print cd -) && cat hosts.yml",
+      "cd /tmp && (cd - && cat hosts.yml)", "cd /tmp && sh -c 'cd ~/.config/gh && cat hosts.yml'",
+      "cd /tmp && cat $OLDPWD/hosts.yml", "cd /tmp && cat ~-/hosts.yml", #"cd /tmp && cat "$OLDPWD"/hosts.yml"#,
+      "cd /nonexistent && true; cat hosts.yml", "cd .~x && cat hosts.yml", "cat hosts.yml{,}",
     ] {
       XCTAssertEqual(entry("/Users/bass/.config/gh", command), gh, command)
     }
-    XCTAssertEqual(entry("/Users/bass/project", "cd ~/.config/gh; cd /tmp && cd - && cat hosts.yml"), gh)
-    XCTAssertEqual(entry("/Users/bass/project", "pushd ~/.config/gh; pushd /tmp && popd && cat hosts.yml"), gh)
-    XCTAssertEqual(entry("/Users/bass/project", "cd /tmp && cd ~/.config/gh && cat hosts.yml"), gh)
+    // The cd's own folder, a `-C` folder and a target cut at zsh's `~`, and those above them.
+    for command in [
+      "cd ~/.config/gh && cat hosts.yml", "cd /tmp && cd ~/.config/gh && cat hosts.yml", "cd ~/.config && cd gh && cat hosts.yml",
+      "cd ~/.config/gh~x && cat hosts.yml", "cd ~/project && git -C ~/.config/gh diff --no-index /dev/null hosts.yml",
+      "tar -C ~/.config/gh -cf - hosts.yml | base64", "make -C ~/.config/gh -f hosts.yml", "git -C~/.config/gh show HEAD hosts.yml",
+      "cd ~ && git -C .config/gh diff --no-index /dev/null hosts.yml",
+    ] {
+      XCTAssertEqual(entry("/Users/bass/project", command), gh, command)
+    }
+    XCTAssertEqual(entry("/Users/bass/project", "cd ~/Documents && cat ../.ssh/id_rsa"), ".ssh")
     XCTAssertEqual(entry("/Users/bass/project", "cd sub; ls ../.aws"), ".aws")
-    // Two cds: every folder, so this one is refused again (accepted: a rare refusal, never a way in).
-    XCTAssertEqual(entry("/Users/bass/project", "cd ~/.docker && cd ~/project && cat config.json"), ".docker/config.json")
+    XCTAssertNil(entry("/Users/bass/project", "git -C ../repo status"))
+    XCTAssertNil(entry("/Users/bass/project", "cd ~/Documents && cat ../notes.txt"))
   }
 
   /** A name written bare from a folder is a path wherever it is but as a command's own name (`bareNameIsPath`): the commands that take names read and send files too. */

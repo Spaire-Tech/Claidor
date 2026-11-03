@@ -15,15 +15,21 @@ import Foundation
  * in or `cd`s into, and from the folders above them (`../`).
  *
  * No guard on a command's words can be complete: it stops the plain
- * spellings, and when in doubt it refuses. Known to pass it: another
- * spelling of the home folder (`~bass/`, `/System/Volumes/Data/Users/…`,
- * `/Volumes/<disk>/Users/…`, `$PWD`); the folder before (`~-`, `$OLDPWD`,
- * `${OLDPWD}`: read as the shell's folder, which is what they are after a
- * first `cd`, not what an earlier command left); a wildcard (`~/.ss*`); a
- * name built while the command runs (`$(…)`, a variable set by an earlier
- * command); a folder change the words don't show (an alias or function
- * defined earlier, `AUTO_CD`, `CDPATH`, a link made earlier); and what is
- * typed into a command already running (send-input).
+ * spellings, and when in doubt it refuses. Every folder a command may be in
+ * (where the shell is, the one asked for, each one it `cd`s, `pushd`es or
+ * `-C`s to, and those above each) holds for the whole of it, so a command
+ * run while the shell sits in or beside a folder that holds keys may be
+ * refused for a name there: the remedy is to `cd` elsewhere first, as a
+ * command of its own. Known to pass it: another spelling of the home folder
+ * (`~bass/`, `/System/Volumes/Data/Users/…`, `/Volumes/<disk>/Users/…`,
+ * `$PWD`); the folder before (`~-`, `$OLDPWD`, `${OLDPWD}`: read as the
+ * shell's folder, which is what they are after a first `cd`, not what an
+ * earlier command left) and the directory stack (`~1`, `~+1`, `~-1`); a
+ * wildcard or glob (`~/.ss*`, `hosts.y?l`); a name built while the command
+ * runs (`$(…)`, a variable set by an earlier command); a folder change the
+ * words don't show (an alias or function defined earlier, `AUTO_CD`,
+ * `CDPATH`, a link made earlier); and what is typed into a command already
+ * running (send-input).
  */
 public enum SensitivePaths {
   /** Relative to the home folder unless absolute (`SENSITIVE_LOCAL_PATHS`). */
@@ -111,9 +117,9 @@ public enum SensitivePaths {
     return entries.first { isUnder(resolved, absolute($0, home: home)) }
   }
 
-  /** What may come just before a path in a command's words, and just after a name (the Windows app's `edge` and `after`, less Windows' own `:`; zsh's backtick, an `@` before a file curl sends, and a glob qualifier's `(` after a name: `~/.netrc(.)`). */
+  /** What may come just before a path in a command's words, and just after a name (the Windows app's `edge` and `after`, less Windows' own `:`; zsh's backtick, an `@` before a file curl sends, and a glob qualifier's `(` or a brace expansion's `{` after a name: `~/.netrc(.)`, `hosts.yml{,}`). */
   static let before = "(?:^|[\\s\"'=(,;|&<>\\{`@])"
-  static let after = "(?:[/\\s\"'),;|&<>*?\\}(`]|$)"
+  static let after = "(?:[/\\s\"'),;|&<>*?\\}(`{]|$)"
 
   /**
    * A command's words in the versions the matching reads (the Windows app's
@@ -168,53 +174,45 @@ public enum SensitivePaths {
    * a quote or a backtick too), read from `from` on (the Windows app's
    * `foldersMovedTo`): each one a shell word, its quotes and escapes taken
    * out; `~`, `$HOME` and `${HOME}` the home folder, anything else from the
-   * folder before.
+   * folder before. A `~` inside it is zsh's extendedglob exclusion, so
+   * `gh~x` is `gh` (both are read). And each folder a `-C <dir>` names (git,
+   * make and tar work there), from the folder it starts in and each one it
+   * moves to.
    */
   static func foldersMovedTo(_ command: String, from: String, home: String) -> [String] {
     let word = #"(?:"[^"]*"|'[^']*'|\$\{[^}]*\}|\\.|[^\s;|&)}"'\\])+"#
     let verb = #"(?:^|[;&|\n{(`"'])\s*(?:(?:if|then|else|elif|do|while|until|!|builtin|command)\s+)*(?:cd|chdir|pushd)\s+(?:(?:-[A-Za-z]+|--)\s+)*("#
-    guard let moves = try? NSRegularExpression(pattern: verb + word + ")") else { return [] }
-    var at = from
-    var out: [String] = []
-    for match in moves.matches(in: command, range: NSRange(command.startIndex..., in: command)) {
-      guard let range = Range(match.range(at: 1), in: command) else { continue }
+    guard let moves = try? NSRegularExpression(pattern: verb + word + ")"), let named = try? NSRegularExpression(pattern: #"(?:^|[\s;&|(`"'])-C\s*("# + word + ")") else { return [] }
+    func written(_ range: NSRange) -> String? {
+      guard let range = Range(range, in: command) else { return nil }
       let target = String(command[range])
         .replacingOccurrences(of: #"\\(.)"#, with: "$1", options: .regularExpression)
         .replacingOccurrences(of: #"["']"#, with: "", options: .regularExpression)
-      if target.isEmpty || target.range(of: #"^[-+][0-9]*$"#, options: .regularExpression) != nil { continue }
+      return target.isEmpty || target.range(of: #"^[-+][0-9]*$"#, options: .regularExpression) != nil ? nil : target
+    }
+    func folder(_ target: String, from at: String) -> String {
       let anchored = target.hasPrefix("/") || ["~", "$HOME", "${HOME}"].contains { target == $0 || target.hasPrefix($0 + "/") }
-      at = "/" + segments(anchored ? expand(target, home: home) : at + "/" + target).joined(separator: "/")
-      out.append(at)
+      return "/" + segments(anchored ? expand(target, home: home) : at + "/" + target).joined(separator: "/")
+    }
+    var at = from
+    var out: [String] = []
+    for match in moves.matches(in: command, range: NSRange(command.startIndex..., in: command)) {
+      guard let target = written(match.range(at: 1)) else { continue }
+      let whole = folder(target, from: at)
+      if let cut = target.dropFirst().firstIndex(of: "~") {
+        at = folder(String(target[..<cut]), from: at)
+        out += [whole, at]
+      } else {
+        at = whole
+        out.append(at)
+      }
+    }
+    let bases = [from] + out
+    for match in named.matches(in: command, range: NSRange(command.startIndex..., in: command)) {
+      guard let target = written(match.range(at: 1)) else { continue }
+      out += bases.map { folder(target, from: $0) }
     }
     return out
-  }
-
-  /**
-   * Where a command goes before anything else, when nothing it then does can
-   * be where the shell was: its first step is `cd X &&` or `pushd X &&`, `X`
-   * written plainly (no `$`, quote, escape, wildcard, `-`, `±N`, `~-`, `~+`
-   * or `~name`); no other `cd`, `chdir`, `pushd` or `popd` anywhere, quoted
-   * or not; no `~-`, `~+`, `OLDPWD`, `eval` or `-c`; and nothing runs after
-   * a failed `cd` (no `;`, `||`, `&` to the background or new line outside
-   * quotes). Then the folders it was in are not read from: only `X` (and
-   * those above it), as `cd ~/project && npm test 2>&1 | grep x && cat
-   * config.json` from `~/.docker`. Else nil, and every folder is.
-   */
-  static func onlyFolder(_ command: String, from: String, home: String) -> String? {
-    guard let first = command.range(of: #"^\s*(?:cd|pushd)\s+[A-Za-z0-9._/+@%,:=~-]+\s*&&"#, options: .regularExpression) else { return nil }
-    let target = String(command[first]).replacingOccurrences(of: #"^\s*(?:cd|pushd)\s+|\s*&&$"#, with: "", options: .regularExpression)
-    guard target.range(of: #"^(?:[-+][0-9]*|~[-+].*|~[^/].*)$"#, options: .regularExpression) == nil else { return nil }
-    let moves = (try? NSRegularExpression(pattern: #"\b(?:cd|chdir|pushd|popd)\b"#, options: .caseInsensitive))?.numberOfMatches(in: command, range: NSRange(command.startIndex..., in: command)) ?? 0
-    guard moves == 1, !["~-", "~+", "OLDPWD", "eval", "-c"].contains(where: { command.range(of: $0, options: .caseInsensitive) != nil }) else { return nil }
-    // Quotes are taken out only when they are plain (no escape, `$'…'`, `$(…)` or backtick that could nest them, and balanced).
-    var outside = command
-    if command.range(of: #"[\\`]|\$'|\$\("#, options: .regularExpression) == nil {
-      let stripped = command.replacingOccurrences(of: #"'[^']*'|"[^"]*""#, with: "''", options: .regularExpression)
-      if !stripped.replacingOccurrences(of: "''", with: "").contains(where: { $0 == "\"" || $0 == "'" }) { outside = stripped }
-    }
-    guard outside.range(of: #";|\n|\|\||(?<![&>|])&(?![&>])"#, options: .regularExpression) == nil else { return nil }
-    let anchored = target.hasPrefix("/") || target == "~" || target.hasPrefix("~/")
-    return "/" + segments(anchored ? expand(target, home: home) : from + "/" + target).joined(separator: "/")
   }
 
   /** Words before a command's own name: zsh's keywords and the commands that run the next one. */
@@ -245,15 +243,14 @@ public enum SensitivePaths {
    * the home folder, or from a folder the command runs in (`folders`: where
    * the shell is, or the one asked for) or moves to, or from a folder above
    * one of those (`../`, any number of them once at `/`), as the Windows
-   * app's `placeInCommand`; the folders it runs in left out only as
-   * `onlyFolder` says. A name written bare from one of those folders counts
-   * as `bareNameIsPath` says.
+   * app's `placeInCommand`: every one of them for the whole command. A name
+   * written bare from one of those folders counts as `bareNameIsPath` says.
    */
   public static func entry(inCommand command: String, home: String, folders: [String] = []) -> String? {
     let base = stripTrailingSlash(normalizeSeparators(home))
     let starts = folders.filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }.map { "/" + segments(expand($0, home: home)).joined(separator: "/") }
     let from = starts.first ?? base
-    let contexts = onlyFolder(command, from: from, home: home).map { [$0] } ?? starts + foldersMovedTo(command, from: from, home: home)
+    let contexts = starts + foldersMovedTo(command, from: from, home: home)
     let versions = texts(command, home: home, carried: starts.first)
     for entry in entries {
       let escaped = NSRegularExpression.escapedPattern(for: entry)
@@ -283,7 +280,7 @@ public enum SensitivePaths {
       }
       let pattern = patterns.map { "(?:\($0))" }.joined(separator: "|")
       if versions.contains(where: { $0.range(of: pattern, options: .regularExpression) != nil }) { return entry }
-      if !bare.isEmpty, let named = try? NSRegularExpression(pattern: "(?:^|[\\s\"'=(,;|&<>\\{`@])(\(bare.joined(separator: "|")))(?=[/\\s\"'),;|&<>*?\\}(`]|$)") {
+      if !bare.isEmpty, let named = try? NSRegularExpression(pattern: "(?:^|[\\s\"'=(,;|&<>\\{`@])(\(bare.joined(separator: "|")))(?=[/\\s\"'),;|&<>*?\\}(`{]|$)") {
         for version in versions {
           let text = version as NSString
           for match in named.matches(in: version, range: NSRange(location: 0, length: text.length)) {
