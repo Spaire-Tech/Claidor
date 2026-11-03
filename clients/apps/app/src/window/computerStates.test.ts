@@ -1,14 +1,17 @@
 // The computer's one dialog at a time (ComputerStates.swift's
-// `ComputerDialog.current`), and Update Simeon's Computer among the
-// window's actions ("/" and ⌘K).
+// `ComputerDialog.current`), Update Simeon's Computer among the window's
+// actions ("/" and ⌘K), and what a rebuild's steps say to VoiceOver.
 
-import { describe, expect, it } from 'vitest'
+import { createElement } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
+import { afterEach, describe, expect, it } from 'vitest'
 import {
   type RebuildClock,
   RebuildDriver,
   type RebuildInputs,
 } from '../core/rebuildDriver'
-import { currentDialog, lockFade } from './ComputerStates'
+import { setWords } from '../core/words'
+import { RebuildCard, currentDialog, lockFade } from './ComputerStates'
 import { WindowModel, windowActionIds } from './windowModel'
 
 /** Time that moves only when the test says. */
@@ -156,5 +159,51 @@ describe('the fade as a lock begins or settles (the Mac animates `lock.kind == n
     expect(
       lockFade(rebuild, { kind: 'failed', rebuild: 'reset', episode: 1 }),
     ).toBe('in')
+  })
+})
+
+describe('a rebuild’s steps, as VoiceOver reads them', () => {
+  afterEach(() => setWords('en', {}))
+
+  const labels = (): string[] => {
+    const markup = renderToStaticMarkup(
+      createElement(RebuildCard, {
+        view: {
+          kind: 'update',
+          title: 'Updating Simeon’s Computer',
+          steps: [
+            { label: 'Saving your files', state: 'done' },
+            { label: 'Starting the new computer', state: 'active' },
+            { label: 'Putting your files back', state: 'pending' },
+          ],
+          progress: 0.4,
+        },
+        driver: make().driver,
+        box: { current: null },
+      }),
+    )
+    return [
+      ...markup.matchAll(/class="rebuild-step [a-z]+" aria-label="([^"]*)"/g),
+    ].map((found) => found[1]!)
+  }
+
+  it('each state in the app’s language, “completed” too', () => {
+    expect(labels()).toEqual([
+      'Saving your files, completed',
+      'Starting the new computer, in progress',
+      'Putting your files back, not started',
+    ])
+    setWords('fr', {
+      mac: {
+        ', completed': ', terminé',
+        ', in progress': ', en cours',
+        ', not started': ', pas commencé',
+      },
+    })
+    expect(labels()).toEqual([
+      'Saving your files, terminé',
+      'Starting the new computer, en cours',
+      'Putting your files back, pas commencé',
+    ])
   })
 })
