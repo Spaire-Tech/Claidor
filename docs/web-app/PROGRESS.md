@@ -833,13 +833,17 @@ had the same bug, they were fixed the same way.
     reads them (Windows' `commandTexts`);
   - the folder a command runs in, the shell's carried folder (read once,
     then passed to the run) and every `cd`/`pushd` target checked, with
-    names relative to them, `../` included. After `cd X &&`, names are
-    read from X only, so an ordinary command in a project isn't refused
-    for where the shell was before. A bare name counts after `<` or `>`
-    or as a command's argument, never as an argument to a command whose
-    words are names or messages (echo, git, npm, brew, op and others).
-    The final reading compared about 230 commands with `main`'s guard:
-    each one newly refused names a real key place;
+    names relative to them, `../` included, and `-C <dir>` (git, make,
+    tar). Every folder applies to the whole command, always. Three
+    tries at leaving out the shell's earlier folder after `cd X &&` each
+    opened a way in (`cd -`, `c''d -`, an alias), so the session's
+    decision is none: a command run while the shell sits in or beside a
+    folder that holds keys may be refused for a name there, and the agent
+    runs `cd ~/project` on its own first. A bare name is a path everywhere
+    but as the command's own name. The final reading compared some 300
+    commands with `main`'s guard and the one before: nothing they refused
+    passes, and each newly refused one names a key place, or is that
+    accepted case;
   - a file's real path behind a link checked and opened;
   - `.git-credentials`, `.config/gh/hosts.yml`, `.config/op` and
     `.config/git/credentials` added, on the Mac and Windows (and GitHub's
@@ -947,7 +951,9 @@ iPhone, above all:
 **Left as they are:**
 - Not in the 29: the rest of each step's list (Open questions).
 - Not closable by a word guard (a sandbox would be needed): globs, `$(…)`,
-  input sent to a running shell.
+  input sent to a running shell, aliases and functions, the directory
+  stack (`~1`), `~bass/`, `$PWD`, `/System/Volumes/…`, `/Volumes/…`
+  (named in the guard's comment).
 - The iPhone's routine words (`TriggerWord`).
 - Search waking a resting computer: its first read must wake, so search
   stays as it is.
