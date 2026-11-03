@@ -244,6 +244,8 @@ file and the code disagree, the code is right and this file is fixed.
 | 2 November 2026 | The engine hears the PC's system and shell in the hello (`platform`, `shell`, `shellVersion`, `osVersion`) and tells the agent in a section of its brief of its own ("The user's computer"), frozen as the channels and routines are; CopyToBox and CopyFromBox take a Windows path's own name and `Downloads\`. A Mac's hello says none, and nothing changes for it | The session, after the review (the engine, `ebc47f773`) |
 | 3 November 2026 | The web app is offered to no one. It is only the means of building the Windows app, whose page it is, so it never moves to `/app` and replaces nothing there. The Windows app is the product | The founder: "know that the web app will be available to no one btw. the whole point of the web app is to build the window app" |
 | 3 November 2026 | The old web app at `/app` is not touched by this. The new one stays at `/app-next` on the website, where the founder can look at it in a browser, until the founder says otherwise (Open questions). The plan's checks (`README.md`) still hold: they measure the Windows app's page | The session |
+| 3 November 2026 | The Windows app is released through the Microsoft Store: a company account is free (since May 2026) and Microsoft signs the Store's package, so no certificate is bought. Microsoft's Artifact Signing (about $10 a month) takes only companies with three years of tax history, and the legal company (CLAUDE.md) is under one | The founder: "we'll use the microsoft store, it's free. plus [the legal company] is not even 1" |
+| 3 November 2026 | The Store's package (MSIX, electron-builder's `appx` target) is built on Windows only: measured here, electron-builder 26.18.0 on Linux stops with "AppX is supported only on Windows 10". So it is built on GitHub's Windows machines (`.github/workflows/windows.yml`, once Actions runs) or on the Windows PC that tests it. The Store's app updates through the Store: its build leaves the app's own updater (step 7e) off | The session |
 
 ## For Windows
 
@@ -577,30 +579,31 @@ For the founder, each to be answered before the step that needs it:
   in Vercel and say whether the newer ones were ignored, failed or are
   waiting to be promoted.
 
-- **A Windows code-signing certificate.** An unsigned installer makes
-  Windows warn people before it runs (SmartScreen), and an unsigned build
-  never updates itself (step 7's decision), so today no Windows build can
-  be released. Needed before the first release: a code-signing certificate
-  in the legal company's name (CLAUDE.md; `lib/release.mjs`'s `company`);
-  its subject in full, every part as Windows shows it
-  (`CN=…, O=…, L=…, S=…, C=…`), written into
-  `windows/scripts/lib/release.mjs`'s `signers` before the first signed
-  release; the GitHub Environment
-  `windows-release` (the repository's Settings › Environments, deployment
-  branches main only, a required reviewer if wanted) holding the
-  certificate as `WIN_CSC_LINK` (the .pfx in base64) and its password as
-  `WIN_CSC_KEY_PASSWORD`; then a signed release tried on a Windows PC
-  before the first `node scripts/release.mjs --publish` (from Windows, the
-  `aws` command line signed in). At the company's rename, one release
-  signed with the old certificate lists both subjects, then the new
-  certificate (the rule beside `signers`).
+- **The Microsoft Store account** (3 November 2026: the founder chose the
+  Store; no certificate is bought, and the GitHub Environment
+  `windows-release` with `WIN_CSC_LINK` is not needed). Needed before the
+  first release: a company account in Microsoft's Partner Center (free;
+  verified with a D-U-N-S number or the company's documents), the name
+  "Simeon" reserved for the app there, and the package's identity it gives
+  (its identity name, publisher and publisher name) for the Store's build.
+  Then the Store's listing: description, screenshots, the privacy policy's
+  address, the age rating. The Store's review runs on each release.
+- **GitHub Actions doesn't run.** Every job on every pull request (#539 to
+  #542) ends 2 to 3 seconds after it starts, with no machine given to it
+  (no runner's name, 0 ms billed) and no log: what GitHub does when an
+  account can't run Actions (a failed payment, or the minutes used with a
+  $0 spending limit; not confirmed: the organisation's billing page says).
+  Meanwhile every check runs on this side before a merge. It matters for
+  the Store's package, which is built on Windows: GitHub's Windows
+  machines, or the Windows PC.
 - **Who checks on a Windows PC.** Nothing is done until it has run on the
   machine people use; for Windows, someone installs each build on a
   Windows PC. Needed before the first release: nothing of step 7 has run on
   a Windows PC (the log of 2 November 2026, step 7, "Not checked"). First:
   Windows Hello and where its prompt opens, the toasts, the tray and the
-  taskbar's number, the call's window, the installer and an update
-  installed, SmartScreen, `simeon://` from a browser, the sealed pair.
+  taskbar's number, the call's window, the Store's package installed,
+  `simeon://` from a browser, the sealed pair. Without Actions, the same PC
+  builds the Store's package (one command).
 - **The Mac's and the core's own fixes found in step 3** (the log of 2
   November 2026, "Found in the Mac's and the core's code"): the secret
   card's Saved, the cloud agent's Open landing on a page that doesn't
@@ -730,7 +733,8 @@ For the founder, each to be answered before the step that needs it:
   (`PurchaseApproval.swift`); the Windows app doesn't, as a PC without
   Hello may still have a password. Stricter than the Mac: keep it?
 - **The website's Download for Windows.** It waits for the first published
-  Windows release (step 7's decision); until then
+  Windows release (step 7's decision), and is then the Store's own "Get it
+  from Microsoft" link (3 November 2026); until then
   `/desktop/download/windows` says "Simeon for Windows is not published
   yet.", and the website's billing page still offers Download for Mac to a
   Windows visitor without the app. Needed after the first release: the
@@ -805,6 +809,23 @@ For the founder, each to be answered before the step that needs it:
 ## Log
 
 Newest first.
+
+### 3 November 2026: the Microsoft Store
+
+Asked what signing costs, the founder chose the Microsoft Store: "we'll use
+the microsoft store, it's free. plus [the legal company] is not even 1". Measured: a
+certificate bought now keeps its key in hardware (the CA/B Forum's rule
+since June 2023), so the release script's `.pfx` (`WIN_CSC_LINK`) could not
+have taken one; Artifact Signing (about $10 a month) needs three years of
+tax history; the Store's company account is free since May 2026 and
+Microsoft signs its package. electron-builder makes that package only on
+Windows (tried here on Linux: "AppX is supported only on Windows 10"). Why
+Actions fails was read from a job: no machine was given to it (Open
+questions).
+
+**Next:** the Store's build (the `appx` target with the identity Partner
+Center gives, the app's own updater off in it), once the account exists;
+the plan's checks.
 
 ### 3 November 2026: the web app is offered to no one
 
