@@ -204,9 +204,9 @@ export function covers(
  * once, exactly that (a command's approval also covers its terminal file).
  * A command is also refused when the folder it would run in (the one asked
  * for, or where the shell is; the provider gives it as written and where it
- * really is) is such a place, as on the Mac (`LocalToolRules.commandFolders`);
- * here names in its words are also read from that folder, which the Mac
- * doesn't do.
+ * really is) is such a place, and names in its words are also read from that
+ * folder, from those above it and from those it moves to, as on the Mac
+ * (`LocalToolRules.commandFolders`, `SensitivePaths.entry(inCommand:)`).
  */
 export function refusal(fields: {
   request: LocalToolRequest | undefined
