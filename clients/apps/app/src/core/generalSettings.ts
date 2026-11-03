@@ -465,8 +465,8 @@ export interface RuleEditing {
  * General's values as the computer keeps them: the time zone chosen,
  * Auto-review and its rules, the rule being written at the foot of each
  * list and the one edited in its row. Each page that shows some of them
- * holds its own, read when the page shows and again as the stream comes
- * and goes (`load`). A change is shown once the computer has it; a refused
+ * holds its own, read when the page shows and again when the computer
+ * comes back while nothing was read (`load`, `readAgainWhenBack`). A change is shown once the computer has it; a refused
  * one keeps the old value and says nothing.
  *
  * Nothing is written before the computer's values are read (`loaded`):
@@ -519,6 +519,25 @@ export class GeneralSettingsModel {
   private changed(): void {
     this.version += 1
     for (const listener of [...this.listeners]) listener()
+  }
+
+  /**
+   * After the read as the page shows: read again when the computer comes
+   * back (`isLive` true) while nothing has been read, so a read that failed
+   * doesn't keep the page waiting; never as it goes to rest, which a read
+   * would wake. The function returned stops it (SettingsGeneral.swift's
+   * `onChange(of: store.isLive)`).
+   */
+  readAgainWhenBack(stream: {
+    readonly isLive: boolean
+    subscribe(listener: () => void): () => void
+  }): () => void {
+    let live = stream.isLive
+    return stream.subscribe(() => {
+      if (stream.isLive === live) return
+      live = stream.isLive
+      if (live && !this.loaded) void this.load()
+    })
   }
 
   /** The page shown: the computer's settings read (`getHostSettings`), the zone chosen and the rules taken from them. A read that answers after a change began is dropped. */

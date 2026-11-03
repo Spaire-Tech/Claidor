@@ -97,16 +97,10 @@ function openPage(url: string): void {
 function usePageModel(store: AppStore): GeneralSettingsModel {
   const [model] = useState(() => new GeneralSettingsModel(store))
   useWatched(model)
-  // Read as the page shows, and again as the stream comes and goes, so a read that failed doesn't keep the page
-  // waiting (the Mac's `.task(id: store.isLive)`).
+  // Read as the page shows, and again when the computer comes back while nothing was read (`readAgainWhenBack`).
   useEffect(() => {
     void model.load()
-    let live = store.isLive
-    const stop = store.subscribe(() => {
-      if (store.isLive === live) return
-      live = store.isLive
-      void model.load()
-    })
+    const stop = model.readAgainWhenBack(store)
     return () => {
       stop()
     }

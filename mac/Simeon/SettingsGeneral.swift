@@ -25,8 +25,12 @@ struct SettingsGeneralPage: View {
       AppearanceGroup(look: look)
       TimeZoneGroup(model: model, look: look)
     }
-    // Read as the page shows, and again as the stream comes and goes: a read that failed doesn't keep the page waiting.
-    .task(id: store.isLive) { await model.load(store: store) }
+    .task { await model.load(store: store) }
+    // Read again when the computer comes back while nothing was read, so a read that failed doesn't keep the page
+    // waiting; never as it goes to rest, which a read would wake.
+    .onChange(of: store.isLive) { _, live in
+      if live && !model.hostRead.loaded { Task { await model.load(store: store) } }
+    }
   }
 }
 
@@ -457,8 +461,12 @@ struct SettingsPermissionsPage: View {
         RuleList(behavior: .ask, model: model, look: look)
       }
     }
-    // Read as the page shows, and again as the stream comes and goes: a read that failed doesn't keep the page waiting.
-    .task(id: store.isLive) { await model.load(store: store) }
+    .task { await model.load(store: store) }
+    // Read again when the computer comes back while nothing was read, so a read that failed doesn't keep the page
+    // waiting; never as it goes to rest, which a read would wake.
+    .onChange(of: store.isLive) { _, live in
+      if live && !model.hostRead.loaded { Task { await model.load(store: store) } }
+    }
   }
 }
 
@@ -697,9 +705,9 @@ struct SettingsLegalPage: View {
  * General's values as the computer keeps them: the time zone chosen, how
  * the agent may use this Mac and the team's ceiling, Auto-review and its
  * rules, and the rule being written or edited. Each page that shows some of
- * them holds its own, read when the page shows and again as the stream
- * comes and goes; the zone and the rules can't be changed until the
- * computer's are read (`hostRead`).
+ * them holds its own, read when the page shows and again when the
+ * computer comes back while nothing was read; the zone and the rules can't
+ * be changed until the computer's are read (`hostRead`).
  */
 @MainActor
 @Observable
