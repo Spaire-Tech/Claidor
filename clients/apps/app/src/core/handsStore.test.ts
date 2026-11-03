@@ -1,8 +1,9 @@
 // Step 7f's store in the Windows app, against the app's stand-in
 // (desktop/testing.ts) and a stand-in computer: MacServices.swift's `track`
 // for the hands (signed in, connected, signed out), MacLocalPermission.swift
-// (the ceiling read, the computer told only when it changes things, the
-// computer's word taken over the default), GeneralSettingsModel's
+// (the ceiling read, the computer told only when it changes things, and
+// told this PC's setting at each connect, its own copy never taken),
+// GeneralSettingsModel's
 // `setPermission`, the Allow card's answer (Allow once written before the
 // computer hears it), a message sent letting go of the answers, and
 // `LocalHandsProvider.run`'s loop (the gateway's address handed over,
@@ -185,7 +186,7 @@ describe('signed in (MacLocalPermission.signedIn)', () => {
     const { host, store, backend } = await signedIn({
       setting: keptSetting({ choice: 'always', ceiling: 'never' }),
     })
-    // Not lifted by a read that failed (the Mac's lifts it: proposed for the Mac).
+    // Not lifted by a read that failed (nor the Mac's: `LocalToolSettings.take`).
     expect(calls(host, 'handsCeiling')).toEqual([])
     expect(store.localCeiling).toBe('never')
     expect(store.localPermission).toBe('never')
@@ -209,41 +210,48 @@ describe('signed in (MacLocalPermission.signedIn)', () => {
     expect(store.localCeiling).toBeUndefined()
   })
 
-  it('tells the computer what holds when the ceiling lowers what it took from it', async () => {
-    const adopting = new SettingsBackend()
-    adopting.settings.localToolPermission = 'always'
+  it('tells the computer what holds under the team’s ceiling when it connects, whatever the computer says', async () => {
+    const raised = new SettingsBackend()
+    // This PC's choice is "Always allow" and the team allows "Ask every time": the sign-in tells the computer so.
     const { host, store } = await signedIn({
-      box: adopting,
+      box: raised,
+      setting: keptSetting({ choice: 'always' }),
       team: { localToolControls: { permissionCeiling: 2 } },
     })
-    adopting.push({ kind: 'connection', live: true })
-    await eventually(() => calls(host, 'handsChoose').length > 0)
-    expect(calls(host, 'handsChoose')[0]?.args).toEqual(['always'])
+    await eventually(() => raised.settings.localToolPermission === 'ask')
+    await ms(20)
+    // Then the computer says "Always allow" again (its agent can write its settings) and connects.
+    raised.settings.localToolPermission = 'always'
+    raised.push({ kind: 'connection', live: true })
     // This PC holds "Ask every time" under the team's ceiling: the computer is told, so it sends the asks this PC can answer.
-    await eventually(() => adopting.settings.localToolPermission === 'ask')
-    expect(adopting.settings.localToolPermission).toBe('ask')
+    await eventually(() => raised.settings.localToolPermission === 'ask')
+    expect(raised.settings.localToolPermission).toBe('ask')
     expect(store.localPermission).toBe('ask')
+    expect(calls(host, 'handsChoose')).toEqual([])
   })
 
-  it('takes the computer’s always or never over this PC’s default once connected, else tells it this PC’s', async () => {
-    const adopting = new SettingsBackend()
-    adopting.settings.localToolPermission = 'never'
-    const first = await signedIn({ box: adopting })
-    adopting.push({ kind: 'connection', live: true })
-    await eventually(() => calls(first.host, 'handsChoose').length > 0)
-    expect(calls(first.host, 'handsChoose')[0]?.args).toEqual(['never'])
-    await eventually(() => first.store.localPermission === 'never')
+  it('never takes the computer’s copy once connected: it is told this PC’s (upstream’s resync)', async () => {
+    // The agent wrote "Always allow" in its computer's settings while this PC asks every time: not a raise.
+    const raised = new SettingsBackend()
+    raised.settings.localToolPermission = 'always'
+    const first = await signedIn({ box: raised })
+    raised.push({ kind: 'connection', live: true })
+    await eventually(() => raised.settings.localToolPermission === 'ask')
+    expect(calls(first.host, 'handsChoose')).toEqual([])
+    expect(first.store.localPermission).toBe('ask')
     restore?.()
 
-    const telling = new SettingsBackend()
-    telling.settings.localToolPermission = 'always'
+    // Nor its "Never allow" over this PC's "Always allow": this PC's choice is told.
+    const lowered = new SettingsBackend()
+    lowered.settings.localToolPermission = 'never'
     const second = await signedIn({
-      box: telling,
-      setting: keptSetting({ choice: 'never' }),
+      box: lowered,
+      setting: keptSetting({ choice: 'always' }),
     })
-    telling.push({ kind: 'connection', live: true })
-    await eventually(() => telling.settings.localToolPermission === 'never')
+    lowered.push({ kind: 'connection', live: true })
+    await eventually(() => lowered.settings.localToolPermission === 'always')
     expect(calls(second.host, 'handsChoose')).toEqual([])
+    expect(second.store.localPermission).toBe('always')
   })
 
   it('forgets the setting and stops the hands when signed out', async () => {

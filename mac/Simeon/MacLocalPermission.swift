@@ -6,10 +6,11 @@ import SimeonMacCore
 /**
  * "Execution on Local Computer", kept on this Mac per account and given to
  * the computer (`localToolPermission` in its settings), as the Electron app
- * does: main's settings store holds the choice and the team's ceiling, the
- * computer is told the choice lowered to the ceiling, and connecting
- * squares the two (`coordinator-resync.ts`). Settings › General shows the
- * same stored choice (`GeneralSettingsModel`).
+ * does: main's settings store holds the choice and the team's ceiling, and
+ * the computer is told the choice lowered to the ceiling, again at each
+ * connect, never taking the computer's copy back (upstream's
+ * `coordinator-resync.ts`). Settings › General shows the same stored choice
+ * (`GeneralSettingsModel`).
  */
 @MainActor
 @Observable
@@ -17,7 +18,7 @@ final class MacLocalPermission {
   static let shared = MacLocalPermission()
 
   @ObservationIgnored private let settings = LocalToolSettings()
-  /** The team's ceiling, once read this sign-in (a failed read counts as none). */
+  /** The team's ceiling, once read this sign-in (a failed read keeps the one this Mac last had). */
   private(set) var ceiling: LocalToolPermission?
   private(set) var ceilingKnown = false
   /** Bumped by each read of the ceiling, so an older answer is dropped (`localToolCeilingSyncSeq`). */
@@ -45,7 +46,8 @@ final class MacLocalPermission {
   /**
    * Signed in (and at each launch): this account's choice, and its team's
    * ceiling read from Simeon Labs (`GetTeamAdminSettingsOrEmptyIfNotInTeam`;
-   * none when it does not answer). The computer is told when that changes
+   * when it does not answer, the ceiling this Mac last had for the account
+   * holds, as in the Windows app). The computer is told when that changes
    * what it should do.
    */
   func signedIn(_ account: String?, store: AppStore) async {
@@ -56,7 +58,7 @@ final class MacLocalPermission {
     let read = ceilingReads
     let answer = await store.teamAdminSettings()
     guard read == ceilingReads else { return }
-    settings.ceiling = LocalToolPermission.ceiling(teamAdminSettings: answer)
+    settings.take(teamAdminSettings: answer)
     ceiling = settings.ceiling
     ceilingKnown = true
     let now = settings.effective
@@ -78,15 +80,16 @@ final class MacLocalPermission {
     ceilingKnown = false
   }
 
-  /** Connected: a computer set to always or never while this Mac is at the default is taken; otherwise it is told this Mac's. */
+  /**
+   * Connected: the computer is told this Mac's choice, the ceiling applied,
+   * and nothing is taken from its own copy (upstream's `coordinator-resync.ts`,
+   * step `local_tool_permission`). Only this Mac writes it: the computer keeps
+   * it in a `settings.json` its agent can write, so taking it back could raise
+   * this Mac from Ask to Always; and a ceiling that lowers the choice reaches
+   * the computer, which then sends the asks this Mac can answer.
+   */
   func connected(_ backend: AgentBackend) async {
-    let box = (try? await backend.command("getHostSettings", [:]))?["localToolPermission"]?.string
-    switch LocalToolPermission.reconcile(box: box, mac: settings.effective) {
-    case .adopt(let value):
-      settings.choice = value
-    case .push(let value):
-      _ = try? await backend.command("setHostSettings", ["localToolPermission": .string(value.rawValue)])
-    }
+    _ = try? await backend.command("setHostSettings", ["localToolPermission": .string(settings.effective.rawValue)])
   }
 }
 

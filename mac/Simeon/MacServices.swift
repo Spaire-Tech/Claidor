@@ -158,7 +158,7 @@ final class MacServices {
       _ = try? await backend.command("setHostSettings", ["notifications": ["isEnabled": false]])
       // The zone this Mac is in; the person's own pick stays the computer's (Settings).
       _ = try? await backend.command("setHostSettings", ["userTimeZone": .string(TimeZone.current.identifier)])
-      // "Execution on Local Computer" squared with the computer's, and the security key's switch (Settings › General).
+      // "Execution on Local Computer" as this Mac has it (the computer's own copy never taken), and the security key's switch (Settings › General).
       await MacLocalPermission.shared.connected(backend)
       _ = try? await backend.command("setHostSettings", ["webauthnProxyEnabled": .bool(SecurityKeySetting.enabled)])
       sendFocus()
