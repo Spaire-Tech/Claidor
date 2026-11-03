@@ -7,7 +7,8 @@ import SimeonCore
 /**
  * The avatar editor (`c3n`, reference I04): what the pencil on the pane's
  * avatar opens. Its state lives here so the window's keys can reach it
- * (Escape closes it; ⌘V pastes a picture into Upload). Closing it during
+ * (Escape closes it; ⌘V pastes a picture into Upload; in a window of its
+ * own, New Agent's popover, the editor takes ⌘V itself). Closing it during
  * Generate still saves the picture when it arrives, cropped in its middle.
  * For a new agent (the New Agent sheet, as the iPhone's) it changes an
  * `AgentDraft` instead, and nothing reaches the computer until Create.
@@ -315,6 +316,7 @@ struct AvatarEditorPopover: View {
     .clipShape(shape)
     .shadow(color: Color(red: 20 / 255, green: 20 / 255, blue: 20 / 255).opacity(card ? 0.09 : 0), radius: 12, x: 0, y: 8)
     .shadow(color: Color(red: 20 / 255, green: 20 / 255, blue: 20 / 255).opacity(card ? 0.09 : 0), radius: 1.5, x: 0, y: 1)
+    .background(EditorPasteKeys(model: model))
   }
 
   /** The tabs (26 high, round 8, 13/18; the chosen one on the grey) and Reset (22 high) at the right, 8 apart, padded 8. */
@@ -335,6 +337,58 @@ struct AvatarEditorPopover: View {
       }
     }
     .padding(8)
+  }
+}
+
+/**
+ * ⌘V in the editor's own window, outside a field: the clipboard's picture
+ * into Upload (`paste`), as the window's editor takes the paste on its own
+ * view (`onPasteCapture`; a field's paste stays the field's). In the main
+ * window its keys already paste into the pane's editor (`KeyWatcher`, after
+ * their own checks), so only a window of its own is watched here, New
+ * Agent's popover: one ⌘V, one paste.
+ */
+private struct EditorPasteKeys: NSViewRepresentable {
+  let model: AvatarEditorModel
+
+  func makeNSView(context: Context) -> WatchView {
+    let view = WatchView()
+    view.model = model
+    return view
+  }
+
+  func updateNSView(_ view: WatchView, context: Context) {
+    view.model = model
+  }
+
+  final class WatchView: NSView {
+    var model: AvatarEditorModel?
+    nonisolated(unsafe) private var monitor: Any?
+
+    override func viewDidMoveToWindow() {
+      super.viewDidMoveToWindow()
+      stop()
+      guard window != nil else { return }
+      monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+        let took = MainActor.assumeIsolated { () -> Bool in
+          guard let self, let window = self.window, event.window === window, window !== MacServices.shared.mainWindow, let model = self.model else { return false }
+          let mods = event.modifierFlags.intersection([.command, .shift, .option, .control])
+          guard mods == .command, event.charactersIgnoringModifiers?.lowercased() == "v", !(window.firstResponder is NSText) else { return false }
+          model.paste()
+          return true
+        }
+        return took ? nil : event
+      }
+    }
+
+    private func stop() {
+      if let monitor { NSEvent.removeMonitor(monitor) }
+      monitor = nil
+    }
+
+    deinit {
+      if let monitor { NSEvent.removeMonitor(monitor) }
+    }
   }
 }
 
