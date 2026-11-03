@@ -25,24 +25,14 @@
   --btn-font:clamp(15px,.95*var(--vw),17px);
   --win:1vw;                         /* a hundredth of the whole window, for what runs to its edges (the galleries' rails) */
   --vw:min(1vw,14.4px); --vh:1vh; --dvh:1dvh; /* a hundredth of the window, the unit every page's sizes use in place of vw, vh and dvh
-                                        (a zoomed page's own vw would shrink with it; see html.pc below). A page
+                                        (a zoomed page's own vw would shrink with it). A page
                                         writes var(--vw,1vw), so it still lays out with an older copy of this file.
                                         --vw stops growing at a window of 1440 points: on a wider screen the column
                                         (about 1300) and every size stay as at 1440, centred, as the big sites'
                                         pages are (the founder, 2 November 2026: "that in a big screen it stays the same") */
 }
-/* A computer other than a Mac (each page's first script marks it `pc`) is drawn at three quarters, as a Mac
-   draws it. Windows counts 96 pixels to an inch of screen and then enlarges them by its display scaling, where
-   a Mac laptop counts about 127, so every fixed size (a panel, a card, a row, a button, a word) stood a third
-   larger than on the founder's Mac while the headline, the column and the demo, measured from the window, did
-   not (the founder, 23 October 2026: "i get the real app when i size it down to 75%"). The page is zoomed to
-   75% and --vw, --vh and --dvh still measure the whole window, as the browser's own 75% does. Phones, tablets
-   and windows as narrow as a phone keep their own sizes. The 1440 at which --vw stops growing is the screen's
-   1440 here too: 19.2 zoomed points are 14.4 on the screen (it stopped at 1080 before, the column 980 wide in
-   any window: the founder, 3 November 2026, "windows is too small ... do it exactly like mac"). */
-@media (min-width:735px) and (hover:hover) and (pointer:fine){
-  html.pc{zoom:.75;--win:calc(1vw / .75);--vw:min(calc(1vw / .75),19.2px);--vh:calc(1vh / .75);--dvh:calc(1dvh / .75)}
-}
+/* Every computer draws the page as a Mac does, at the same sizes: Windows' zoom to 75% (23 October 2026) is gone
+   (the founder, 3 November 2026: "remove the zoom, make it exactly like mac"). */
 body{font-family:var(--font)}
 
 /* The bar at the top of every page (nav.py writes it), in the reference's layout (the founder, 30 October 2026):
