@@ -22,9 +22,14 @@
 // Windows' own interfaces rather than paths (the Credential Manager,
 // `cmdkey`, DPAPI, the certificate store, the registry) all pass it. It
 // stops the plain spellings, and when in doubt it refuses; a folder change
-// the words don't show (a function or alias defined earlier) passes it too.
-// The files the hands read or write themselves are also checked where they
-// really are (provider.ts).
+// the words don't show (a function or alias defined earlier, the location
+// stack) passes it too, as do wildcards. Every folder a command may be in
+// (where the shell is, the one asked for, each one it `cd`s, `pushd`es or
+// `-C`s to, and those above each) holds for the whole of it, so a command
+// run while the shell sits in or beside a folder that holds keys may be
+// refused for a name there: the remedy is to `cd` elsewhere first, as a
+// command of its own. The files the hands read or write themselves are
+// also checked where they really are (provider.ts).
 
 /** Where this PC keeps things (`os.homedir()`, `%APPDATA%`, `%LOCALAPPDATA%`, `%SystemRoot%`, the app's data folder and its own folder). */
 export interface SensitivePlaces {
@@ -455,18 +460,31 @@ function foldersMovedTo(text: string, from: string): string[] {
 /**
  * The command's `cd`s (`Set-Location`, `pushd`…, a quote before one, a
  * `${…}` in its folder too), each where it moves to, read from `from` on
- * (`foldersMovedTo` on the command as written).
+ * (`foldersMovedTo` on the command as written); a folder cut at a `~` inside
+ * it too, as the Mac reads zsh's `gh~x` (more folders, never fewer). And
+ * each folder a `-C <dir>` names (git, make and tar work there), from the
+ * folder it starts in and each one it moves to.
  */
 function movesIn(plain: string, of: SensitivePlaces, from: string): string[] {
   const out: string[] = []
-  const moves =
-    /(?:^|[;&|\n{("'])\s*(?:cd|chdir|sl|set-location|pushd|push-location)\s+(?:-(?:literalpath|path|lp)\s+)?(?:"([^"]*)"|'([^']*)'|((?:\$\{[^}]*\}|[^\s;|&)}"'])+))/gi
+  const word = /(?:"([^"]*)"|'([^']*)'|((?:\$\{[^}]*\}|[^\s;|&)}"'])+))/.source
+  const moves = new RegExp(
+    `(?:^|[;&|\\n{("'])\\s*(?:cd|chdir|sl|set-location|pushd|push-location)\\s+(?:-(?:literalpath|path|lp)\\s+)?${word}`,
+    'gi',
+  )
   let at = from
   for (const match of plain.matchAll(moves)) {
     const target = (match[1] ?? match[2] ?? match[3] ?? '').trim()
     if (target === '' || target === '-' || target === '+') continue
     at = folderOf(target, of, at)
     out.push(at)
+    const cut = target.indexOf('~', 1)
+    if (cut > 0) out.push(folderOf(target.slice(0, cut), of, at))
+  }
+  const bases = [from, ...out]
+  for (const match of plain.matchAll(new RegExp(`(?:^|[\\s;&|(\`"'])-C\\s*${word}`, 'g'))) {
+    const target = (match[1] ?? match[2] ?? match[3] ?? '').trim()
+    if (target !== '') for (const base of bases) out.push(folderOf(target, of, base))
   }
   return out
 }
@@ -476,36 +494,6 @@ function folderOf(target: string, of: SensitivePlaces, at: string): string {
   let written = expandForms(target, of).replace(/\\/g, '/').toLowerCase()
   written = junctionForms(deviceForms(written, of, '^').replace(/\/{2,}/g, '/'), of)
   return canonicalNames(isAbsolute(written) ? written : at ? `${at}/${written}` : written)
-}
-
-/**
- * Where a command goes before anything else, when nothing it then does can
- * be where the shell was (the Mac's `onlyFolder`): its first step is
- * `cd X &&` (`Set-Location`, `pushd`…), `X` written plainly (no `$`, `%`,
- * `!`, quote, wildcard, `-`, `±N`, `~-` or `~+`); no other `cd`, `chdir`,
- * `sl`, `Set-Location`, `pushd`, `Push-Location`, `popd` or `Pop-Location`
- * anywhere, quoted or not; no `~-`, `~+`, `OLDPWD`, `eval`, `iex`,
- * `Invoke-Expression`, `-c` or cmd's `/c` and `/k`; and nothing runs after a
- * failed `cd` (no `;`, `||`, `&` or new line outside plain quotes). Then the
- * folders it was in are not read from: only `X` (and those above it). Else
- * undefined, and every folder is.
- */
-function onlyFolder(command: string, of: SensitivePlaces, from: string): string | undefined {
-  const first = /^\s*(?:cd|chdir|sl|set-location|pushd|push-location)\s+([A-Za-z0-9._\\/+@,:=~-]+)\s*&&/i.exec(command)
-  const target = first?.[1]
-  if (target == null || /^(?:[-+][0-9]*|~[-+].*|~[^\\/].*)$/.test(target)) return undefined
-  const moves = command.match(/\b(?:cd|chdir|sl|set-location|pushd|push-location|popd|pop-location)\b/gi) ?? []
-  if (moves.length !== 1) return undefined
-  const lower = command.toLowerCase()
-  if (['~-', '~+', 'oldpwd', 'eval', 'iex', 'invoke-expression', '-c', '/c', '/k'].some((one) => lower.includes(one))) return undefined
-  // Quotes are taken out only when they are plain: no escape (`` ` ``, `^`) or `$(…)` that could nest them, and balanced.
-  let outside = command
-  if (!/[`^]|\$\(/.test(command)) {
-    const stripped = command.replace(/'[^']*'|"[^"]*"/g, "''")
-    if (!/["']/.test(stripped.replace(/''/g, ''))) outside = stripped
-  }
-  if (/;|\n|\|\||(?<![&>|])&(?![&>])/.test(outside)) return undefined
-  return folderOf(target, of, from)
 }
 
 /**
@@ -548,9 +536,9 @@ function foldersUp(folder: string): { folder: string; up: number }[] {
  * the home folder, or from a folder the command runs in (`folders`: where
  * the shell is, or the one asked for) or moves to, or from a folder above
  * one of those, `../` (or `..\`) as many times as it is above, any number
- * once at the drive's root (the Mac's `SensitivePaths.entry(inCommand:)`);
- * the folders it runs in left out only as `onlyFolder` says. A name written
- * bare from one of those folders counts as `bareNameIsPath` says.
+ * once at the drive's root (the Mac's `SensitivePaths.entry(inCommand:)`):
+ * every one of them for the whole command. A name written bare from one of
+ * those folders counts as `bareNameIsPath` says.
  */
 export function placeInCommand(
   command: string,
@@ -562,12 +550,9 @@ export function placeInCommand(
   const starts = folders.filter((one) => one.trim() !== '').map((one) => canonical(one, of))
   const from = starts[0] ?? canonical(of.home, of)
   const plain = command.replace(/[`^]/g, '')
-  const only = onlyFolder(command, of, from)
-  const contexts = new Set(only != null ? [only] : starts)
-  if (only == null) {
-    for (const text of texts) for (const one of foldersMovedTo(text, from)) contexts.add(one)
-    for (const one of movesIn(plain, of, from)) contexts.add(one)
-  }
+  const contexts = new Set(starts)
+  for (const text of texts) for (const one of foldersMovedTo(text, from)) contexts.add(one)
+  for (const one of movesIn(plain, of, from)) contexts.add(one)
   for (const place of places(of)) {
     const patterns: RegExp[] = []
     const bare: RegExp[] = []

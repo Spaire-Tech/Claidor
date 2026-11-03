@@ -329,41 +329,44 @@ describe('Windows’ own spellings in a command (the review’s probe, S2, S5)',
     expect(gate(['C:\\Users\\Jonathan\\Documents'])).toBeUndefined()
   })
 
-  it('reads every folder for the whole command but after a first cd that cannot go back, as the Mac does (the re-review)', () => {
+  it('reads every folder for the whole command, always, as the Mac does (the re-review)', () => {
     const gh = '~\\.config\\gh\\hosts.yml'
     const inGh = (command: string) => inCommand(command, ['C:\\Users\\Jonathan\\.config\\gh'])
-    // The usual shape: not read from where the shell was.
-    expect(inGh('cd ~\\project && gc hosts.yml')).toBeUndefined()
-    expect(inGh('cd C:\\Temp && gc hosts.yml')).toBeUndefined()
-    expect(inGh('cd ~\\project && npm test *> out.log && gc hosts.yml')).toBeUndefined()
-    expect(inGh('cd ~\\project && echo "a; b" && gc hosts.yml')).toBeUndefined()
-    expect(inCommand('cd ~\\project && npm test 2>&1 && gc config.json', ['C:\\Users\\Jonathan\\.docker'])).toBeUndefined()
+    // Refused again, accepted: the shell's folder holds after a cd too; moved first, as a command of its own, it passes.
+    expect(inGh('cd ~\\project && gc hosts.yml')).toBe(gh)
+    expect(inCommand('cd ~\\project && npm test -- --coverage 2>&1 | Select-String gcloud', ['C:\\Users\\Jonathan\\.config'])).toBe(
+      '~\\.config\\gcloud',
+    )
+    expect(inCommand('cd frontend && gc ..\\.npmrc', ['C:\\Users\\Jonathan\\project'])).toBe('~\\.npmrc')
+    expect(inCommand('npm test 2>&1 && gc ..\\.npmrc', ['C:\\Users\\Jonathan\\project\\frontend'])).toBeUndefined()
     expect(inCommand('cd ~\\project && op run -- npm start', ['C:\\Users\\Jonathan\\.config'])).toBeUndefined()
-    expect(inCommand('cd ~\\project && findstr config src\\theme.css', ['C:\\Windows\\System32'])).toBeUndefined()
-    expect(inCommand('cd frontend && gc ..\\.npmrc', ['C:\\Users\\Jonathan\\project'])).toBeUndefined()
-    // Anything that could go back, or run after a failed cd, keeps every folder (the review's ways in, on Windows).
+    // The review's ways back to the shell's folder, each still refused (quoted, escaped or aliased).
     for (const command of [
       'cd C:\\temp && cd - && gc hosts.yml',
-      'cd C:\\temp && cd ~- && gc hosts.yml',
-      'pushd C:\\temp && popd && gc hosts.yml',
+      'cd C:\\temp && c`d - && gc hosts.yml',
+      "cd C:\\temp && c''d - && gc hosts.yml",
+      'cd C:\\temp && "c"d - && gc hosts.yml',
+      'cd C:\\temp && pop`d && gc hosts.yml',
+      "cd C:\\temp && p''opd && gc hosts.yml",
+      "cd C:\\temp && e''val 'c''d -' && gc hosts.yml",
+      'cd C:\\temp && z gh && gc hosts.yml',
       'pushd C:\\temp && Pop-Location && gc hosts.yml',
       "cd C:\\temp && iex 'cd -' && gc hosts.yml",
-      "cd C:\\temp && Invoke-Expression 'cd ..' && gc hosts.yml",
-      'cd C:\\temp && cmd /c "cd /d %USERPROFILE%\\.config\\gh & type hosts.yml"',
-      'cd C:\\nowhere; gc hosts.yml',
       'cd C:\\nowhere && dir; gc hosts.yml',
-      'cd C:\\nowhere && dir || gc hosts.yml',
-      'cd C:\\nowhere && echo `"; gc hosts.yml; `"',
-      `cd C:\\nowhere && echo "$(';'); gc hosts.yml"`,
-      'cd $env:TEMP && gc hosts.yml',
-      'cd "C:\\temp" && gc hosts.yml',
       '(cd C:\\Temp && dir); gc hosts.yml',
-      'echo "x; cd C:\\Temp && " | gc hosts.yml',
-      "echo 'cd C:\\Temp && ' | gc h'o'sts.yml",
     ])
       expect(inGh(command), command).toBe(gh)
-    expect(inCommand('cd ~\\.config\\gh && gc hosts.yml')).toBe(gh)
-    expect(inCommand('cd C:\\Temp && cd ~\\.config\\gh && gc hosts.yml')).toBe(gh)
+    // The cd's own folder, a `-C` folder and a folder cut at a `~` inside it (zsh's on the Mac; more folders, never fewer).
+    for (const command of [
+      'cd ~\\.config\\gh && gc hosts.yml',
+      'cd C:\\Temp && cd ~\\.config\\gh && gc hosts.yml',
+      'cd ~\\.config\\gh~x && gc hosts.yml',
+      'git -C ~\\.config\\gh diff --no-index NUL hosts.yml',
+      'tar -C ~\\.config\\gh -cf - hosts.yml',
+      'git -C$env:USERPROFILE\\.config\\gh show HEAD hosts.yml',
+    ])
+      expect(inCommand(command, ['C:\\Users\\Jonathan\\project']), command).toBe(gh)
+    expect(inCommand('git -C ..\\repo status', ['C:\\Users\\Jonathan\\project'])).toBeUndefined()
   })
 
   it('reads a bare name from a folder as a path wherever it is but as a command’s own name, as the Mac does', () => {
