@@ -503,15 +503,18 @@ export class Gateway {
     const connection = await this.currentConnection(wakes)
     const answer = await this.http.send(connection.commandRequest(method, args))
     if (!isOk(answer)) {
+      // Only the computer's own sentence is passed on, the command kept apart (`method`), as the Electron app's
+      // coordinator does (`gateway-client.ts`, `extractGatewayErrorMessage`; Gateway.swift's `send`): until 3 November
+      // 2026 the message began with the command ("Couldn't create Arlo: createAgent: Not now"). An answer with no
+      // sentence is the coordinator's machine line ("gateway createAgent failed: <the body>"), which plainWords hides.
       const parsed = answerJSON(answer)
-      const detail =
-        text(field(parsed, 'error')) ??
-        text(field(parsed, 'message')) ??
-        answer.text.slice(0, 300)
+      const sentence =
+        text(field(parsed, 'error')) ?? text(field(parsed, 'message'))
       throw new GatewayError(
-        `${method}: ${detail}`,
+        sentence ?? `gateway ${method} failed: ${answer.text.slice(0, 300)}`,
         answer.status < 500,
         answer.status,
+        method,
       )
     }
     // The box answered: awake, and the stream need not wait for the record to say so.

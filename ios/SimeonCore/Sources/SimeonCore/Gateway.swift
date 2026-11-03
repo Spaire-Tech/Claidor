@@ -153,18 +153,21 @@ public struct GatewayConnection: Sendable, Equatable {
 }
 
 public struct GatewayError: Error, LocalizedError, Sendable {
+  /** What the computer said (its answer's `error`), never the command's name: the person may read it (`PlainWords`). */
   public let message: String
   /** The host answered and refused (a 4xx): retrying the same call will not help. */
   public let refused: Bool
   /** The HTTP status, when the box answered at all. */
   public let status: Int?
+  /** The command the computer answered (`createAgent`), for the trace; never in `message`. */
+  public let method: String?
   public var errorDescription: String? { message }
 
   /** The box rests where the server lets it sleep, and this read did not wake it (`Gateway.command(_:_:wakes:)`). */
   public var resting = false
 
-  public init(message: String, refused: Bool, status: Int? = nil) {
-    self.message = message; self.refused = refused; self.status = status
+  public init(message: String, refused: Bool, status: Int? = nil, method: String? = nil) {
+    self.message = message; self.refused = refused; self.status = status; self.method = method
   }
 
   /** A read that did not wake the resting box: the app shows what it kept instead, and says nothing went wrong. */
@@ -555,8 +558,13 @@ public actor Gateway {
     let connection = try await currentConnection(wakes: wakes)
     let answer = try await http.send(connection.commandRequest(method, args))
     guard answer.ok else {
-      let detail = answer.json?["error"]?.text ?? answer.json?["message"]?.text ?? String(decoding: answer.body.prefix(300), as: UTF8.self)
-      throw GatewayError(message: "\(method): \(detail)", refused: answer.status < 500, status: answer.status)
+      // Only the computer's own sentence is passed on, the command kept apart (`method`), as the Electron app's
+      // coordinator does (`gateway-client.ts`, `extractGatewayErrorMessage`); until 3 November 2026 the message began
+      // with the command, and people read "Couldn't create Arlo: createAgent: Not now". An answer with no sentence is
+      // the coordinator's machine line ("gateway createAgent failed: <the body>"), which PlainWords keeps from the person.
+      let sentence = answer.json?["error"]?.text ?? answer.json?["message"]?.text
+      let message = sentence ?? "gateway \(method) failed: \(String(decoding: answer.body.prefix(300), as: UTF8.self))"
+      throw GatewayError(message: message, refused: answer.status < 500, status: answer.status, method: method)
     }
     // The box answered: awake, and the stream need not wait for the record to say so.
     rest = nil

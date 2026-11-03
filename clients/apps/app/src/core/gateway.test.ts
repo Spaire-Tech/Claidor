@@ -12,6 +12,7 @@ import {
 } from './gateway'
 import { NetworkError } from './http'
 import { type JSONValue, arr, field } from './json'
+import { plainError, plainProblem, unavailable } from './plainWords'
 import { MemorySavedGateway, decodeSavedGateway } from './savedGateway'
 import {
   Clock,
@@ -132,12 +133,58 @@ describe('the gateway', () => {
       vault: signedIn(),
       http,
     })
-    await expect(
-      new Gateway({ api, http }).command('getAgentTranscriptWindow', {}),
-    ).rejects.toThrow(
-      'getAgentTranscriptWindow: Malformed getAgentTranscriptWindow request',
+    // The computer's sentence alone; the command apart, as the Electron app's coordinator keeps it (3 November 2026).
+    const refusal = await new Gateway({ api, http })
+      .command('getAgentTranscriptWindow', {})
+      .catch((error: unknown) => error)
+    expect(refusal).toBeInstanceOf(GatewayError)
+    expect((refusal as GatewayError).message).toBe(
+      'Malformed getAgentTranscriptWindow request',
     )
+    expect((refusal as GatewayError).method).toBe('getAgentTranscriptWindow')
+    expect((refusal as GatewayError).refused).toBe(true)
     expect(http.sent).toHaveLength(2)
+  })
+
+  it('says the computer’s sentence and not the command (testARefusalSaysTheComputersSentenceAndNotTheCommand)', async () => {
+    const refusal = async (method: string, status: number, body: string) => {
+      const http = new ScriptedHTTP([
+        () => answer(200, '{"gatewayUrl":"https://box-1"}'),
+        () => answer(status, body),
+      ])
+      const api = new SimeonAPI({
+        base: 'https://x',
+        clientVersion: '1',
+        vault: signedIn(),
+        http,
+      })
+      return (await new Gateway({ api, http })
+        .command(method, {})
+        .catch((error: unknown) => error)) as GatewayError
+    }
+    const said = await refusal('createAgent', 409, '{"error":"Not now"}')
+    expect(said.message).toBe('Not now')
+    expect(said.method).toBe('createAgent')
+    expect(said.status).toBe(409)
+    expect(plainProblem(`Couldn't create Arlo: ${said.message}`)).toBe(
+      "Couldn't create Arlo: Not now",
+    )
+    expect(
+      plainProblem(
+        said.message,
+        'Couldn’t change the avatar. Try again in a little while.',
+      ),
+    ).toBe('Not now')
+
+    const bare = await refusal('setAgentAvatarBytes', 400, 'upstream said no')
+    expect(bare.message).toBe(
+      'gateway setAgentAvatarBytes failed: upstream said no',
+    )
+    expect(bare.method).toBe('setAgentAvatarBytes')
+    expect(plainError(bare.message)).toBe(unavailable())
+    expect(plainProblem(`Couldn't create Arlo: ${bare.message}`)).toBe(
+      "Couldn't create Arlo. Try again in a little while.",
+    )
   })
 
   it("reaches an agent's screen through the proxy", () => {

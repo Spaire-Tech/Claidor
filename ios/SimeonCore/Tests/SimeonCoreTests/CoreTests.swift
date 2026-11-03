@@ -390,9 +390,43 @@ final class GatewayTests: XCTestCase {
       _ = try await Gateway(api: api, http: http).command("getAgentTranscriptWindow", [:])
       XCTFail("expected a refusal")
     } catch {
-      XCTAssertEqual(error.localizedDescription, "getAgentTranscriptWindow: Malformed getAgentTranscriptWindow request")
+      // The computer's sentence alone; the command apart, as the Electron app's coordinator keeps it (3 November 2026).
+      XCTAssertEqual(error.localizedDescription, "Malformed getAgentTranscriptWindow request")
+      XCTAssertEqual((error as? GatewayError)?.method, "getAgentTranscriptWindow")
+      XCTAssertEqual((error as? GatewayError)?.refused, true)
     }
     XCTAssertEqual(http.sent.count, 2)
+  }
+
+  /**
+   * A refusal as the person reads it (3 November 2026): the computer's own
+   * sentence, never the command's name ("setAgentAvatarBytes. Try again in
+   * a little while.", "Couldn't create Arlo: createAgent: Not now"). An
+   * answer with no sentence stays a machine's line, which PlainWords hides.
+   */
+  func testARefusalSaysTheComputersSentenceAndNotTheCommand() async {
+    func refusal(_ method: String, _ status: Int, _ body: Data) async -> GatewayError? {
+      let vault = MemoryVault(SessionTokens(accessToken: "t", refreshToken: "r", expiresAtMs: 9e15))
+      let http = ScriptedHTTP([
+        { _ in HTTPAnswer(status: 200, body: json(#"{"gatewayUrl":"https://box-1"}"#)) },
+        { _ in HTTPAnswer(status: status, body: body) },
+      ])
+      let api = SimeonAPI(base: URL(string: "https://x")!, clientVersion: "1", vault: vault, http: http)
+      do { _ = try await Gateway(api: api, http: http).command(method, [:]) } catch { return error as? GatewayError }
+      return nil
+    }
+    let said = await refusal("createAgent", 409, json(#"{"error":"Not now"}"#))
+    XCTAssertEqual(said?.message, "Not now")
+    XCTAssertEqual(said?.method, "createAgent")
+    XCTAssertEqual(said?.status, 409)
+    XCTAssertEqual(PlainWords.problem("Couldn't create Arlo: \(said?.localizedDescription ?? "")"), "Couldn't create Arlo: Not now")
+    XCTAssertEqual(PlainWords.problem(said?.message ?? "", fallback: "Couldn’t change the avatar. Try again in a little while."), "Not now")
+
+    let bare = await refusal("setAgentAvatarBytes", 400, Data("upstream said no".utf8))
+    XCTAssertEqual(bare?.message, "gateway setAgentAvatarBytes failed: upstream said no")
+    XCTAssertEqual(bare?.method, "setAgentAvatarBytes")
+    XCTAssertEqual(PlainWords.error(bare?.message ?? ""), PlainWords.unavailable)
+    XCTAssertEqual(PlainWords.problem("Couldn't create Arlo: \(bare?.message ?? "")"), "Couldn't create Arlo. Try again in a little while.")
   }
 
   func testSendCarriesTheHostsArgumentNames() async throws {
