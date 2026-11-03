@@ -833,7 +833,13 @@ had the same bug, they were fixed the same way.
     reads them (Windows' `commandTexts`);
   - the folder a command runs in, the shell's carried folder (read once,
     then passed to the run) and every `cd`/`pushd` target checked, with
-    names relative to them, `../` included;
+    names relative to them, `../` included. After `cd X &&`, names are
+    read from X only, so an ordinary command in a project isn't refused
+    for where the shell was before. A bare name counts after `<` or `>`
+    or as a command's argument, never as an argument to a command whose
+    words are names or messages (echo, git, npm, brew, op and others).
+    The final reading compared about 230 commands with `main`'s guard:
+    each one newly refused names a real key place;
   - a file's real path behind a link checked and opened;
   - `.git-credentials`, `.config/gh/hosts.yml`, `.config/op` and
     `.config/git/credentials` added, on the Mac and Windows (and GitHub's
@@ -855,8 +861,9 @@ had the same bug, they were fixed the same way.
 
 **State and data** (`fix/b-state`)
 - General and Permissions wait for the computer's values on the Mac and
-  the iPhone (the web's way, proposed 2 November), and read again when the
-  stream comes back after a failed read (web too).
+  the iPhone (the web's way, proposed 2 November), and read again only
+  when the computer comes back with nothing read yet (web too), so an open
+  page never wakes a resting computer.
 - Sign-out: each Connectors action takes the signed-in computer once and
   stops when it changes (Mac `PluginsModel`, the iPhone's
   `ConnectAppsModel`, the web's flows); `changeName` writes only for the
@@ -891,8 +898,8 @@ had the same bug, they were fixed the same way.
 - "Last checked" says "just now" under a minute and is redrawn every
   30 s, on the web too.
 - Routines are read again when the stream comes back (Mac, web).
-- A refused Connect turns the card's button to Retry, its accessible name
-  too (Mac, web); `startConnect` tells started, connected and refused
+- A refused Connect, or a sign-in tab the browser blocks, turns the card's
+  button to Retry, its accessible name too (Mac, web); `startConnect` tells started, connected and refused
   apart.
 - Open on a cloud agent's card is left out on the Mac and the iPhone, as
   on the web (the page doesn't exist).
@@ -912,7 +919,7 @@ had the same bug, they were fixed the same way.
   does, and takes Han numerals (李一), as the server and the computer do.
 
 **Checked:**
-- The core's 596 tests, run on Linux with Swift 6.2.1. A runner in the
+- The core's 599 tests, run on Linux with Swift 6.2.1. A runner in the
   session's scratchpad makes the test methods `async` in a copy, because
   Linux's XCTest aborts on `@MainActor` test classes, on `main` too. Only
   the three that also fail on `main` fail:
@@ -920,9 +927,9 @@ had the same bug, they were fixed the same way.
   - `ConnectorIconsTests.testEveryConnectorHasItsIconInTheApp` (its folder
     moved);
   - `LocalToolApprovalsTests.testRecordRetireAndClear` (a macOS path).
-- The web app's 1,194 tests, its typecheck and lint, and the committed
+- The web app's 1,195 tests, its typecheck and lint, and the committed
   build matching the source.
-- Windows' 192 tests (21 need PowerShell) and its typecheck.
+- Windows' 195 tests (21 more need PowerShell) and its typecheck.
 - `check_names.py` and `check_translations.py`.
 - Every edited Mac and iPhone file parses (`swiftc -parse`), and each part
   was read line by line for compiling.
