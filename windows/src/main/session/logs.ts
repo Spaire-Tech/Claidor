@@ -2,8 +2,9 @@
 // keeps them in `~/Library/Application Support/Simeon`:
 //
 // - `computer-stream.log` (mac/Simeon/ComputerPreview.swift,
-//   `ComputerStreamLog`): emptied at each launch, its first line where it
-//   is, then a line per step of the screens' connections.
+//   `ComputerStreamLog`): emptied at each launch, its first line its name
+//   (not its path, which names the person's folder, and a report attaches
+//   it), then a line per step of the screens' connections.
 // - `voice-call.log` (ios/Simeon/Voice.swift, `VoiceCallLog`): a line per
 //   step of a call, appended, its runs of white space as one, and echoed
 //   to the console as `[simeon] voice-call …`.
@@ -72,15 +73,12 @@ export class AppLogs {
     return next
   }
 
-  /** At launch: the screens' log emptied, and where it is said in its first line. */
+  /** At launch: the screens' log emptied, and its name said in its first line (the Mac's: never its path, which names the person's folder). */
   startStreamLog(): Promise<void> {
     const name = 'computer-stream.log'
     return this.queue(name, async () => {
       await mkdir(this.folder, { recursive: true })
-      await writeFile(
-        this.file(name),
-        stampedLine(name, `computer stream log at ${this.file(name)}`, this.now()),
-      )
+      await writeFile(this.file(name), stampedLine(name, `computer stream log at ${name}`, this.now()))
     })
   }
 
