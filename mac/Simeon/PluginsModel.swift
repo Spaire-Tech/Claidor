@@ -126,11 +126,27 @@ final class PluginsModel {
 
   // MARK: Reading
 
-  /** The box's calls (SimeonCore's `PluginCalls`), or the overlay's words when no one is signed in. */
+  /**
+   * The box's calls (SimeonCore's `PluginCalls`), or the overlay's words when no one is signed in. An action takes them
+   * once, at its start, and after each await goes on only while they are still the signed-in computer's (`isCurrent`).
+   */
   private func calls() throws -> PluginCalls {
     guard let backend = store?.backend else { throw GatewayError(message: String(localized: "Sign in to Simeon first."), refused: true) }
     return PluginCalls(backend)
   }
+
+  /** The calls an action took at its start, or the overlay's words when no one was signed in then (never a later sign-in's). */
+  private func calls(_ box: PluginCalls?) throws -> PluginCalls {
+    guard let box else { throw GatewayError(message: String(localized: "Sign in to Simeon first."), refused: true) }
+    return box
+  }
+
+  /**
+   * Whether `box` (taken at an action's start) is still the signed-in computer's: after a sign-out, or another sign-in,
+   * the action writes nothing more and makes no more calls, so it never acts on the next account's computer (the
+   * Electron app runs an engine per account and cuts its calls at sign-out; its stores drop late answers).
+   */
+  private func isCurrent(_ box: PluginCalls?) -> Bool { store?.backend === box?.backend }
 
   /**
    * Opening (`getMcpState`, `getEffectivePlugins`, the sync status, a sync,
@@ -152,25 +168,34 @@ final class PluginsModel {
     async let catalogAnswer = store?.readCatalog()
     async let pluginsAnswer = try? reader?.effectivePlugins()
     await refreshServers()
-    if let entries = await catalogAnswer { catalog = entries }
+    let entries = await catalogAnswer
+    // Signed out, or into another account, meanwhile: nothing of this opening is kept, and nothing more is asked.
+    guard isCurrent(reader) else { return }
+    if let entries { catalog = entries }
     catalogLoaded = true
-    if let list = await pluginsAnswer { plugins = list }
+    let list = await pluginsAnswer
+    guard isCurrent(reader) else { return }
+    if let list { plugins = list }
     await loadSkills(agentId)
+    guard isCurrent(reader) else { return }
     await readSyncStatus()
+    guard isCurrent(reader) else { return }
     // The one sync its opening starts; the banner is read again after it.
     Task {
       _ = try? await reader?.syncSkills()
+      guard self.isCurrent(reader) else { return }
       await self.readSyncStatus()
     }
   }
 
   /** The banner's plugins (`getPluginSyncStatus`). */
   func readSyncStatus() async {
-    if let names = try? await calls().authBlocked() { authBlocked = names }
+    guard let box = try? calls(), let names = try? await box.authBlocked(), isCurrent(box) else { return }
+    authBlocked = names
   }
 
   func refreshServers() async {
-    guard let next = try? await calls().servers() else { return }
+    guard let box = try? calls(), let next = try? await box.servers(), isCurrent(box) else { return }
     apply(servers: next)
   }
 
@@ -184,16 +209,18 @@ final class PluginsModel {
   }
 
   private func refreshPlugins() async {
-    if let list = try? await calls().effectivePlugins() { plugins = list }
+    guard let box = try? calls(), let list = try? await box.effectivePlugins(), isCurrent(box) else { return }
+    plugins = list
   }
 
   func loadSkills(_ agentId: String?) async {
     guard let agentId else { skills = []; return }
-    if let list = try? await calls().skills(agentId) { skills = list }
+    guard let box = try? calls(), let list = try? await box.skills(agentId), isCurrent(box) else { return }
+    skills = list
   }
 
   func loadTools(_ serverId: String) async {
-    guard let list = try? await calls().tools(serverId) else { return }
+    guard let box = try? calls(), let list = try? await box.tools(serverId), isCurrent(box) else { return }
     tools[serverId] = list
   }
 
@@ -230,11 +257,12 @@ final class PluginsModel {
 
   private func fail(_ error: Error) { show(Plugins.Notice(isError: true, text: PlainWords.error(error.localizedDescription))) }
 
-  /** One of the overlay's busy actions, its failure as the notice (`runReportingNotice`). */
+  /** One of the overlay's busy actions, its failure as the notice (`runReportingNotice`); none once another sign-in's. */
   private func reporting(_ work: () async throws -> Void) async {
     busy += 1
     defer { busy -= 1 }
-    do { try await work() } catch { fail(error) }
+    let box = try? calls()
+    do { try await work() } catch { if isCurrent(box) { fail(error) } }
   }
 
   // MARK: Add, setup, remove
@@ -251,12 +279,14 @@ final class PluginsModel {
   func add(_ entry: PluginEntry, agentId: String?) async {
     show(nil)
     let team = effective[entry.id]?.hasTeamConfiguredVariables == true
+    let box = try? calls()
     if entry.connectorList.isEmpty {
       guard let agentId else { show(Plugins.needsAgentNotice); return }
       adding = entry.id
       defer { adding = nil }
-      guard await install(entry.id, values: [:], team: team) else { return }
+      guard await install(entry.id, values: [:], team: team), isCurrent(box) else { return }
       let synced = await syncSkills(entry, agentId: agentId)
+      guard isCurrent(box) else { return }
       show(synced.error.map { Plugins.skillsDidntSyncNotice(entry.displayName, $0) } ?? Plugins.skillsAddedNotice(entry.displayName, added: synced.added))
       return
     }
@@ -268,7 +298,7 @@ final class PluginsModel {
     adding = entry.id
     defer { adding = nil }
     let addedNow = !installed(entry).isInstalled
-    guard await install(entry.id, values: [:], team: team) else { return }
+    guard await install(entry.id, values: [:], team: team), isCurrent(box) else { return }
     await connectAfterInstall(entry, addedNow: addedNow, agentId: agentId)
   }
 
@@ -276,12 +306,16 @@ final class PluginsModel {
   private func install(_ entryId: String, values: [String: String], team: Bool) async -> Bool {
     busy += 1
     defer { busy -= 1 }
+    let box = try? calls()
     do {
-      apply(servers: try await calls().install(entryId, values: values, team: team))
+      let answer = try await calls(box).install(entryId, values: values, team: team)
+      // Signed out, or into another account, meanwhile: nothing written, nothing more asked, nothing said.
+      guard isCurrent(box) else { return false }
+      apply(servers: answer)
       await refreshPlugins()
       return true
     } catch {
-      fail(error)
+      if isCurrent(box) { fail(error) }
       return false
     }
   }
@@ -298,10 +332,13 @@ final class PluginsModel {
     let name = entry.displayName
     guard let box = try? calls() else { return }
     let vendorId = await box.vendorServerId(entry.id)
+    // Signed out, or into another account, meanwhile: nothing more of this connect, here or on that computer.
+    guard isCurrent(box) else { return }
     let row = vendorId.flatMap { id in servers.first { $0.id == id } } ?? servers.first { $0.pluginId == entry.id }
     let needsSignIn = vendorId != nil ? row?.status != "connected" : row?.status == "needsAuth"
     guard let serverId = vendorId ?? row?.id, needsSignIn else {
       let synced = await syncSkills(entry, agentId: agentId)
+      guard isCurrent(box) else { return }
       show(row?.status == "connected"
         ? Connecting.connectedNotice(name, skills: synced.added, error: synced.error)
         : Plugins.addedNotice(name, added: synced.added, failed: [], error: synced.error))
@@ -312,27 +349,37 @@ final class PluginsModel {
     do {
       answer = try await box.signIn(serverId, accountKey: accountKey)
     } catch {
+      guard isCurrent(box) else { return }
       if addedNow { await takeBack(entry, serverId: serverId) }
+      guard isCurrent(box) else { return }
       show(Plugins.Notice(isError: true, text: Connecting.didntConnect(name, why: PlainWords.error(error.localizedDescription))))
       return
     }
+    guard isCurrent(box) else { return }
     if answer["status"]?.string == "already-authenticated" {
       await refreshServers()
+      guard isCurrent(box) else { return }
       let synced = await syncSkills(entry, agentId: agentId)
+      guard isCurrent(box) else { return }
       show(Connecting.connectedNotice(name, skills: synced.added, error: synced.error))
       return
     }
     guard let url = answer["authorizationUrl"]?.text.flatMap(URL.init(string:)) else {
       if addedNow { await takeBack(entry, serverId: serverId) }
+      guard isCurrent(box) else { return }
       show(Plugins.Notice(isError: true, text: Connecting.didntConnect(name, why: answer["message"]?.string)))
       return
     }
-    switch await openSignInAndWait(url, serverId: serverId, accountKey: accountKey, name: name) {
+    let end = await openSignInAndWait(url, serverId: serverId, accountKey: accountKey, name: name)
+    guard isCurrent(box) else { return }
+    switch end {
     case .connected:
       let synced = await syncSkills(entry, agentId: agentId)
+      guard isCurrent(box) else { return }
       show(Connecting.connectedNotice(name, skills: synced.added, error: synced.error))
     case .cancelled:
       if addedNow { await takeBack(entry, serverId: serverId) }
+      guard isCurrent(box) else { return }
       show(Connecting.notConnectedNotice(name))
     case .unconfirmed:
       show(Connecting.stillConnectingNotice(name))
@@ -343,22 +390,30 @@ final class PluginsModel {
 
   /** A connect's app taken back out (`Connecting.undoes`): uninstalled again (`uninstallPlugin`, as Uninstall does), unless the computer says it connected after all. */
   private func takeBack(_ entry: PluginEntry, serverId: String) async {
+    guard let box = try? calls() else { return }
     await refreshServers()
+    guard isCurrent(box) else { return }
     if Plugins.accounts(servers, of: serverId).contains(where: { $0.status == "connected" }) { return }
-    guard let removal = try? await calls().uninstallPlugin(entry.id) else { return }
+    guard let removal = try? await box.uninstallPlugin(entry.id), isCurrent(box) else { return }
     apply(servers: removal.servers)
     await refreshPlugins()
+    guard isCurrent(box) else { return }
     await store?.loadApps()
   }
 
   /** The skills step (`Is`): the agent's private copies of the plugin's skills dropped, then the box's plugin skills synced. */
   private func syncSkills(_ entry: PluginEntry, agentId: String?) async -> (added: Int, error: String?) {
+    let box = try? calls()
     await dropPrivateCopies(entry, agentId: agentId)
+    // Signed out, or into another account, meanwhile: nothing more goes to that computer.
+    guard isCurrent(box) else { return (0, nil) }
     busy += 1
     defer { busy -= 1 }
     do {
-      let added = try await calls().syncSkills(of: entry.id)
+      let added = try await calls(box).syncSkills(of: entry.id)
+      guard isCurrent(box) else { return (added, nil) }
       await readSyncStatus()
+      guard isCurrent(box) else { return (added, nil) }
       await loadSkills(agentId)
       return (added, nil)
     } catch {
@@ -385,20 +440,23 @@ final class PluginsModel {
     let entry = catalog.first { $0.id == setup.entryId }
     let name = entry?.displayName ?? String(localized: "the plugin")
     show(nil)
+    let box = try? calls()
     var installedNew = false
     await reporting {
       if setup.editing {
-        try await calls().updateInstall(setup.entryId, values: values)
+        try await calls(box).updateInstall(setup.entryId, values: values)
+        // Signed out, or into another account, meanwhile: nothing more of it here.
+        guard isCurrent(box) else { return }
         show(Plugins.setupSavedNotice(name))
       } else {
-        guard await install(setup.entryId, values: values, team: false) else { return }
+        guard await install(setup.entryId, values: values, team: false), isCurrent(box) else { return }
         installedNew = true
       }
       self.setup = nil
       // Back to where Add or Edit Values was pressed, unless the person went back already.
       if path.last == .setup(setup.entryId) { path.removeLast() }
     }
-    guard installedNew else { return }
+    guard installedNew, isCurrent(box) else { return }
     // Its sign-in, when it has one, outside the busy mark (the window stays usable while the page is open); the values given are kept whatever the sign-in does.
     if let entry {
       await connectAfterInstall(entry, addedNow: false, agentId: agentId)
@@ -412,14 +470,20 @@ final class PluginsModel {
     guard let server = onePerServer.first(where: { $0.id == serverId }) else { return }
     show(nil)
     await reporting {
-      let removal = try await calls().removeServer(serverId)
+      let box = try calls()
+      let removal = try await box.removeServer(serverId)
+      // Signed out, or into another account, meanwhile: nothing more written here, nor asked of that computer.
+      guard isCurrent(box) else { return }
       apply(servers: removal.servers)
       show(Plugins.removedNotice(server.name, removed: removal.removed, reason: removal.reason))
       let entry = Plugins.entry(for: server, in: catalog)
       if let entry, removal.resyncsSkills {
         await dropPrivateCopies(entry, agentId: agentId)
-        _ = try? await calls().syncSkills()
+        guard isCurrent(box) else { return }
+        _ = try? await box.syncSkills()
+        guard isCurrent(box) else { return }
         await loadSkills(agentId)
+        guard isCurrent(box) else { return }
       }
       // A server no entry claims has no page left.
       if removal.removed && entry == nil && path.last == .installed(serverId) { path.removeLast() }
@@ -432,13 +496,19 @@ final class PluginsModel {
     let name = entry?.displayName ?? effective[pluginId]?.displayName ?? String(localized: "the plugin")
     show(nil)
     await reporting {
-      let removal = try await calls().uninstallPlugin(pluginId)
+      let box = try calls()
+      let removal = try await box.uninstallPlugin(pluginId)
+      // Signed out, or into another account, meanwhile: nothing more written here, nor asked of that computer.
+      guard isCurrent(box) else { return }
       apply(servers: removal.servers)
       await refreshPlugins()
+      guard isCurrent(box) else { return }
       show(Plugins.removedNotice(name, removed: removal.removed, reason: removal.reason))
       if let entry, removal.resyncsSkills {
         await dropPrivateCopies(entry, agentId: agentId)
-        _ = try? await calls().syncSkills()
+        guard isCurrent(box) else { return }
+        _ = try? await box.syncSkills()
+        guard isCurrent(box) else { return }
         await loadSkills(agentId)
       }
     }
@@ -469,7 +539,10 @@ final class PluginsModel {
     }
     show(nil)
     await reporting {
-      let answer = try await calls().signIn(server.id, accountKey: accountKey)
+      let box = try calls()
+      let answer = try await box.signIn(server.id, accountKey: accountKey)
+      // Signed out, or into another account, meanwhile: nothing more of this sign-in here.
+      guard isCurrent(box) else { return }
       let status = answer["status"]?.string ?? ""
       if status == "started", let url = answer["authorizationUrl"]?.text.flatMap(URL.init(string:)) {
         let opened = Date()
@@ -478,7 +551,9 @@ final class PluginsModel {
         // The sheet over the window is what the person sees now ("Opened the OAuth flow in your browser" no longer said); how it ends is said once it has.
         Task { [weak self] in
           guard let self else { return }
-          switch await self.openSignInAndWait(url, serverId: server.id, accountKey: accountKey, name: server.name) {
+          let end = await self.openSignInAndWait(url, serverId: server.id, accountKey: accountKey, name: server.name)
+          guard self.isCurrent(box) else { return }
+          switch end {
           case .connected: self.show(Connecting.connectedNotice(server.name, skills: 0, error: nil))
           case .cancelled: self.show(Connecting.notConnectedNotice(server.name))
           case .unconfirmed: self.show(Connecting.stillConnectingNotice(server.name))
@@ -579,11 +654,16 @@ final class PluginsModel {
       list[index].isDisabled.toggle()
       tools[serverId] = list
     }
+    let box = try? calls()
     do {
-      tools[serverId] = try await calls().toggleTool(tool.name, of: serverId)
+      let next = try await calls(box).toggleTool(tool.name, of: serverId)
+      // Signed out, or into another account, meanwhile: nothing written here, nothing more asked.
+      guard isCurrent(box) else { return }
+      tools[serverId] = next
       toolFailures[serverId] = nil
       await refreshServers()
     } catch {
+      guard isCurrent(box) else { return }
       toolFailures[serverId] = PlainWords.error(error.localizedDescription)
       await loadTools(serverId)
     }
@@ -592,31 +672,40 @@ final class PluginsModel {
   /** A private skill's switch; a failure is let go, as the overlay does. */
   func setEnabled(_ skill: AgentSkill, agentId: String?) async {
     guard let agentId else { return }
-    if let list = try? await calls().setSkillEnabled(skill, !skill.isEnabledForAgent, agentId: agentId) { skills = list }
+    guard let box = try? calls(), let list = try? await box.setSkillEnabled(skill, !skill.isEnabledForAgent, agentId: agentId), isCurrent(box) else { return }
+    skills = list
   }
 
   func save(_ skill: AgentSkill, name: String, description: String, body: String, agentId: String) async -> Bool {
     show(nil)
     let named = name.trimmingCharacters(in: .whitespacesAndNewlines)
+    let box = try? calls()
     do {
       // The name and description trimmed, the trigger and source kept (`Plugins.skillSpec`).
-      if let list = try await calls().updateSkill(skill, name: name, description: description, body: body, agentId: agentId) { skills = list }
+      let list = try await calls(box).updateSkill(skill, name: name, description: description, body: body, agentId: agentId)
+      // Signed out, or into another account, meanwhile: nothing written or said here.
+      guard isCurrent(box) else { return false }
+      if let list { skills = list }
       show(Plugins.savedNotice(named))
       return true
     } catch {
-      fail(error)
+      if isCurrent(box) { fail(error) }
       return false
     }
   }
 
   func delete(_ skill: AgentSkill, agentId: String) async {
     show(nil)
+    let box = try? calls()
     do {
-      if let list = try await calls().deleteSkill(skill.id, agentId: agentId) { skills = list }
+      let list = try await calls(box).deleteSkill(skill.id, agentId: agentId)
+      // Signed out, or into another account, meanwhile: nothing written or said here.
+      guard isCurrent(box) else { return }
+      if let list { skills = list }
       show(Plugins.deletedNotice(skill.name))
       if path.last == .skill(skill.id) { path.removeLast() }
     } catch {
-      fail(error)
+      if isCurrent(box) { fail(error) }
     }
   }
 

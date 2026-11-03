@@ -58,7 +58,10 @@ extension AppStore {
    * at their next turn, the computer told to read it again
    * (`refreshUserName`; asleep, it reads it as it wakes). nil once saved, the
    * account showing it; else why not, the server's sentence when it says
-   * one ("A name of 1 to 60 characters.").
+   * one ("A name of 1 to 60 characters."). The name is shown only while the
+   * sign-in it was asked in is still the one (the Electron app's
+   * `updateDisplayName` keeps it under the account read before the call,
+   * electron-main/account/account-auth.ts).
    */
   public func changeName(_ typed: String) async -> String? {
     guard let backend else { return L10n.text("Sign in to Simeon first.") }
@@ -70,6 +73,8 @@ extension AppStore {
     } catch {
       return L10n.text("Couldn't change it")
     }
+    // Signed out, or into another account, meanwhile: the name was the earlier account's, so it is written into no other, and nothing more goes to its computer.
+    guard self.backend === backend else { return nil }
     if let account { self.account = Account(name: name, email: account.email, pictureURL: account.pictureURL, id: account.id) }
     _ = try? await backend.commandIfAwake("refreshUserName", [:])
     return nil

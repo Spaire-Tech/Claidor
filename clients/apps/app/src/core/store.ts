@@ -4931,6 +4931,17 @@ export class AppStore {
     return this.backend != null
   }
 
+  /**
+   * Who Connectors' calls go to now, as an identity only (the computer
+   * stays the store's): an action takes it at its start and, after each
+   * await, goes on only while it is the same, so a change under way after
+   * a sign-out never acts on the next account's computer
+   * (PluginsModel.swift's `isCurrent`).
+   */
+  get pluginSignIn(): object | undefined {
+    return this.backend
+  }
+
   /** Connectors' calls to the computer (SimeonCore's `PluginCalls`); signed out, the core's words. */
   private pluginCalls(): PluginCalls {
     const backend = this.backend
@@ -5073,6 +5084,8 @@ export class AppStore {
     } catch {
       // Let go: the banner says what can't be fetched.
     }
+    // Signed out, or into another account, meanwhile: the next computer is not asked.
+    if (this.backend !== backend) return
     await this.readPluginSyncStatus()
   }
 
@@ -5106,8 +5119,12 @@ export class AppStore {
     values: Readonly<Record<string, string>>,
     team: boolean,
   ): Promise<void> {
+    const backend = this.backend
     const calls = this.pluginCalls()
-    this.applyPluginServers(await calls.install(entryId, values, team))
+    const servers = await calls.install(entryId, values, team)
+    // Signed out, or into another account, meanwhile: nothing kept, and the next computer is not asked.
+    if (this.backend !== backend) return
+    this.applyPluginServers(servers)
     await this.readEffectivePlugins()
   }
 
@@ -5133,14 +5150,19 @@ export class AppStore {
 
   /** Uninstall or Remove of a server (`removeServer`): what it did, the servers as they are then. */
   async removePluginServer(serverId: string): Promise<Removal> {
+    const backend = this.backend
     const removal = await this.pluginCalls().removeServer(serverId)
-    this.applyPluginServers(removal.servers)
+    // Signed out, or into another account, meanwhile: nothing kept.
+    if (this.backend === backend) this.applyPluginServers(removal.servers)
     return removal
   }
 
   /** Uninstall of a plugin (`uninstallPlugin`): what it did, the servers as they are then, its plugins read again. */
   async uninstallPluginEntry(pluginId: string): Promise<Removal> {
+    const backend = this.backend
     const removal = await this.pluginCalls().uninstallPlugin(pluginId)
+    // Signed out, or into another account, meanwhile: nothing kept, and the next computer is not asked.
+    if (this.backend !== backend) return removal
     this.applyPluginServers(removal.servers)
     await this.readEffectivePlugins()
     return removal
@@ -5148,7 +5170,10 @@ export class AppStore {
 
   /** A connect's app taken back out (`takeBack`): uninstalled again, unless the computer says it connected after all; the connected apps read again. */
   async takeBackPlugin(pluginId: string, serverId: string): Promise<void> {
+    const backend = this.backend
     await this.readPluginServers()
+    // Signed out, or into another account, meanwhile: nothing more, on either computer.
+    if (this.backend !== backend) return
     if (
       serverAccounts(this.pluginServers, serverId).some(
         (server) => server.status === 'connected',
@@ -5160,6 +5185,7 @@ export class AppStore {
     } catch {
       return
     }
+    if (this.backend !== backend) return
     await this.loadApps()
   }
 
@@ -5213,6 +5239,7 @@ export class AppStore {
     body: string,
     agentId: string,
   ): Promise<void> {
+    const backend = this.backend
     const list = await this.pluginCalls().updateSkill(
       skill,
       name,
@@ -5220,13 +5247,16 @@ export class AppStore {
       body,
       agentId,
     )
-    if (list) this.setAgentSkills(agentId, list)
+    // Signed out, or into another account, meanwhile: nothing kept.
+    if (list && this.backend === backend) this.setAgentSkills(agentId, list)
   }
 
   /** Delete skill (`deleteAgentWorkflow`): the skills as the computer lists them. */
   async deleteAgentSkill(skillId: string, agentId: string): Promise<void> {
+    const backend = this.backend
     const list = await this.pluginCalls().deleteSkill(skillId, agentId)
-    if (list) this.setAgentSkills(agentId, list)
+    // Signed out, or into another account, meanwhile: nothing kept.
+    if (list && this.backend === backend) this.setAgentSkills(agentId, list)
   }
 
   // Tools
@@ -5249,8 +5279,11 @@ export class AppStore {
       )
       this.changed()
     }
+    const backend = this.backend
     try {
       const next = await this.pluginCalls().toggleTool(toolName, serverId)
+      // Signed out, or into another account, meanwhile: nothing kept, and the next computer is not asked.
+      if (this.backend !== backend) return
       this.pluginTools = new Map(this.pluginTools).set(serverId, next)
       const failures = new Map(this.pluginToolFailures)
       failures.delete(serverId)
@@ -5258,6 +5291,7 @@ export class AppStore {
       this.changed()
       await this.readPluginServers()
     } catch (error) {
+      if (this.backend !== backend) return
       const why = error instanceof Error ? error.message : String(error)
       this.pluginToolFailures = new Map(this.pluginToolFailures).set(
         serverId,
